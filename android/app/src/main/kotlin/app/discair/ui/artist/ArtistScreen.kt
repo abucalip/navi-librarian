@@ -43,6 +43,9 @@ import app.discair.ui.common.AlbumCover
 import app.discair.ui.common.ArtistCircle
 import app.discair.ui.common.ArtistPhoto
 import app.discair.ui.common.CheckBadge
+import app.discair.ui.common.GetAlbumButton
+import app.discair.ui.common.GetSongButton
+import app.discair.ui.common.pageMetadata
 import app.discair.ui.common.Heading
 import app.discair.ui.common.LoadView
 import app.discair.ui.common.LocalRepository
@@ -151,7 +154,12 @@ private fun ArtistContent(route: ArtistRoute, page: ArtistPage, open: Opener, li
                                 }
                                 Text(abbreviate(song.listenCount), style = MaterialTheme.typography.labelMedium.copy(fontFamily = Mono), color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 Spacer(Modifier.width(8.dp))
-                                Box(Modifier.size(Target), contentAlignment = Alignment.Center) { OwnedMark(song.owned) }
+                                Box(Modifier.size(Target), contentAlignment = Alignment.Center) {
+                                    val onAlbum = song.album?.takeIf { it.isNotBlank() }
+                                    // Only a song that names its album can be filed with it (ACQ-08).
+                                    if (song.owned || onAlbum == null) OwnedMark(song.owned)
+                                    else GetSongButton(name, onAlbum, song.name, null, null)
+                                }
                             }
                         }
                         if (allSongs.size > SONGS_SHOWN && !showAllSongs) {
@@ -213,6 +221,7 @@ private fun ArtistContent(route: ArtistRoute, page: ArtistPage, open: Opener, li
                             val sub = listOfNotNull(album.year?.toString(), if (album.popularity > 0) abbreviate(album.popularity) + " listens" else null).joinToString(" · ")
                             if (sub.isNotEmpty()) Text(sub, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
+                        GetAlbumButton(name, album.name, pageMetadata(name, album.name, album.year))
                     }
                     RowDivider(Modifier.padding(horizontal = 16.dp))
                 }

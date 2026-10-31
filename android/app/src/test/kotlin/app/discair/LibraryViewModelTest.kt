@@ -66,6 +66,12 @@ class LibraryViewModelTest {
         override fun albumLinks(artist: String, album: String, mbid: String?) = app.discair.model.AlbumLinks()
         override fun albumImage(artist: String, album: String): String? = null
         override fun artistImage(name: String): String? = null
+        override fun acquireAlbum(artist: String, album: String, metadata: kotlinx.serialization.json.JsonObject) = app.discair.model.GetState.Idle
+        override fun acquireTrack(artist: String, album: String, title: String, trackNumber: Int?, year: Int?, metadata: kotlinx.serialization.json.JsonObject?) = app.discair.model.GetState.Idle
+        override fun acquisitions() = emptyList<app.discair.model.AcquisitionJob>()
+        override fun acquisitionStream(onSnapshot: (List<app.discair.model.AcquisitionJob>) -> Unit, onProblem: (String) -> Unit) = Unit
+        override fun skipSource(artist: String, album: String): String? = null
+        override fun dismissAcquisition(artist: String, album: String): String? = null
     }
 
     @Before fun setUp() = Dispatchers.setMain(dispatcher)

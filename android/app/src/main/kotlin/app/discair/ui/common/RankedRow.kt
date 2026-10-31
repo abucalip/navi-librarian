@@ -59,11 +59,15 @@ data class RowModel(
     val lead: RowLead,
     val meta: List<String>,
     val bio: Boolean,
+    /** The row exactly as the server sent it; Get sends it back as `metadata`, as the web does. */
+    val metadata: kotlinx.serialization.json.JsonObject = kotlinx.serialization.json.JsonObject(emptyMap()),
+    /** The server says the album is already in the library: show the check instead of Get. */
+    val owned: Boolean = false,
 )
 
 /**
  * The shared ranked album row (contract 6.5, web PRs #533 and #554): lead column, artwork, title,
- * artist, meta lines, artist bio that expands on tap, and the Save and Not-for-me controls.
+ * artist, meta lines, artist bio that expands on tap, and the Get, Save and Not-for-me controls.
  * Rows keep the order the server sent; the row only draws.
  */
 @Composable
@@ -118,6 +122,8 @@ fun RankedRow(
             if (model.bio) ArtistBio(model.artist)
         }
         Column {
+            if (model.owned) Box(Modifier.size(Target), contentAlignment = Alignment.Center) { OwnedMark(true) }
+            else GetAlbumButton(model.artist, model.album, model.metadata)
             SaveButton(model.album, saveState, onSave)
             DismissMenu(model.album, model.artist, onDismiss)
         }

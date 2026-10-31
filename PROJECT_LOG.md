@@ -1,3 +1,9 @@
+## 2026-10-31 — Android client Phase 4 (acquisitions): built on the PR #651 branch
+
+- Added: cloud Get button (ranked rows, Recommended card, album and artist pages, song Get), `AcquisitionHub` (Get state, snapshot, SSE stream with polling fallback, retry, next source, dismiss), Downloads page with a header badge, confirmation before any Dismiss.
+- Verified: `./gradlew testDebugUnitTest assembleDebug lintDebug` with JDK 17 (81 unit tests, 30 new; all pass). The `/mobile-design` checklist found one gap (no retry when the first read fails), fixed.
+- Not verified: emulator or phone run, any real slskd download, skip, retry or dismiss, the `live_progress` shape (never captured), the stream over Tailscale, TalkBack, landscape. Not merged, released or deployed.
+
 ## 2026-10-31 — Android client Phase 3 (Discover, Search, shared row): committed on the PR #651 branch
 
 - Commit `2841dba` on `claude/android-client-contract`: Discover tab (six lists in server order), Search tab (SSE, owned first), shared ranked row with Save and Not for me (Undo window, Save shown only after the server's `ok`), New releases shelf on Home.

@@ -1,6 +1,14 @@
 package app.discair.data
 
+import app.discair.model.AcquisitionJob
 import app.discair.model.AlbumLinks
+import app.discair.model.GetState
+import app.discair.model.albumLaunchBody
+import app.discair.model.identityBody
+import app.discair.model.launchOutcome
+import app.discair.model.parseAcquisitions
+import app.discair.model.replyMessage
+import app.discair.model.trackLaunchBody
 import app.discair.model.DiscoveryResult
 import app.discair.model.FeedbackAction
 import app.discair.model.FeedbackReply
@@ -24,6 +32,9 @@ import app.discair.net.LibrarianClient
 import java.util.concurrent.ConcurrentHashMap
 import kotlinx.serialization.serializer
 
+/** Thrown from a stream callback to end the read and close the connection. */
+class StopStream : RuntimeException()
+
 enum class Shelves(val path: String) { Newest("newest"), Recent("recent"), Frequent("frequent") }
 
 /** Server-side sort fields, exactly as Librarian names them, with the direction each starts in. */
@@ -36,11 +47,34 @@ enum class AlbumSort(val param: String, val label: String, val startsDescending:
     Added("added", "Date added", true), Tracks("song_count", "Track count", true)
 }
 
+/** The acquisition calls (contract 5.3). The server decides everything; nothing here assumes success. */
+interface AcquisitionApi {
+    /** Launches an album with automatic source choice. The outcome reads the reply's `ok` and `status`, not the HTTP code. */
+    fun acquireAlbum(artist: String, album: String, metadata: JsonObject): GetState
+
+    /** Launches one song, filed with its album. */
+    fun acquireTrack(artist: String, album: String, title: String, trackNumber: Int?, year: Int?, metadata: JsonObject?): GetState
+
+    fun acquisitions(): List<AcquisitionJob>
+
+    /**
+     * Reads the live status stream, calling [onSnapshot] for each snapshot and [onProblem] for an
+     * `error` event. Blocks until the stream ends or [onSnapshot] throws [StopStream].
+     */
+    fun acquisitionStream(onSnapshot: (List<AcquisitionJob>) -> Unit, onProblem: (String) -> Unit)
+
+    /** Asks for the next source; returns the server's message. Throws on a refusal. */
+    fun skipSource(artist: String, album: String): String?
+
+    /** Dismisses a record and deletes its download files (ACQ-04); returns the server's message. Throws on refusal. */
+    fun dismissAcquisition(artist: String, album: String): String?
+}
+
 /**
  * Everything the screens read. Librarian supplies the order and the content; nothing here sorts,
  * ranks or filters. All calls block, so callers run them on the IO dispatcher.
  */
-interface LibraryRepository {
+interface LibraryRepository : AcquisitionApi {
     /** Resolves a server-relative path such as an owned-artwork URL to an absolute address. */
     fun absolute(path: String): String
 
@@ -138,6 +172,35 @@ class LibrarianRepository(
         client.stream(listOf("api", "search"), mapOf("q" to query, "scope" to "all", "limit" to "10")) { name, data ->
             parseSearchEvent(name, data)?.let(onEvent)
         }
+
+    override fun acquireAlbum(artist: String, album: String, metadata: JsonObject) =
+        launchOutcome(client.post(listOf("api", "acquire"), albumLaunchBody(artist, album, metadata)))
+
+    override fun acquireTrack(artist: String, album: String, title: String, trackNumber: Int?, year: Int?, metadata: JsonObject?) =
+        launchOutcome(
+            client.post(listOf("api", "acquire", "track"), trackLaunchBody(artist, album, title, trackNumber, year, metadata)),
+        )
+
+    override fun acquisitions() = parseAcquisitions(client.get(listOf("api", "acquisitions")))
+
+    override fun acquisitionStream(onSnapshot: (List<AcquisitionJob>) -> Unit, onProblem: (String) -> Unit) {
+        try {
+            client.stream(listOf("api", "acquisitions", "stream"), emptyMap()) { name, data ->
+                when (name) {
+                    "message" -> onSnapshot(parseAcquisitions(data))
+                    "error" -> onProblem(replyMessage(data) ?: "The status stream could not read the list.")
+                }
+            }
+        } catch (stop: StopStream) {
+            // The screen left; the connection is closed.
+        }
+    }
+
+    override fun skipSource(artist: String, album: String) =
+        replyMessage(client.post(listOf("api", "acquisitions", "skip"), identityBody(artist, album)))
+
+    override fun dismissAcquisition(artist: String, album: String) =
+        replyMessage(client.post(listOf("api", "acquisitions", "dismiss"), identityBody(artist, album)))
 
     override fun albumImage(artist: String, album: String) =
         lookup("album|$artist|$album", listOf("api", "artwork"), mapOf("artist" to artist, "album" to album))

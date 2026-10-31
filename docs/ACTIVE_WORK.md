@@ -101,11 +101,11 @@ Done: Genres grid and four album shelves on the dashboard, the Recommended slide
 - A relayed station uses the app address saved on the Radio page (for example the Tailscale address); with none saved it uses the address of the browser tab it was switched on from. Saving a new address moves stations that are already relayed. Away from home, the phone must reach that address (Tailscale connected).
 - Not done: browser checklist, live slskd download of a radio song, a phone client test away from home.
 
-## 2f. Android client (Discair) — contract PR #651, phases 0–3 built
+## 2f. Android client (Discair) — contract PR #651, phases 0–4 built
 
 - Branch `claude/android-client-contract`; contract and status per phase in [ANDROID_CLIENT_CONTRACT.md](ANDROID_CLIENT_CONTRACT.md), design decisions in `android/DESIGN.md`. The PR is open and awaits the owner's approval; nothing is merged, released or deployed.
-- Phase 3 (discovery lists, feedback, search, shared row) is committed and was run on an emulator against a local Librarian. It is not verified on the owner's phone over Tailscale.
-- **Next:** Phase 4 (acquisitions: launch, live progress, retry, skip, dismiss with confirmation). Still owed from earlier phases: the `/mobile-design` review of the built screens on a device (rule 9), TalkBack, landscape, Undo and "Never suggest" taps, and captured payloads for the list-refresh route and the daily lens lists (section 7 of the contract).
+- Phases 3 and 4 are committed and unit-tested (Phase 4: Get everywhere, Downloads page with live progress, retry, next source, confirmed dismiss). Phase 3 was run on an emulator against a local Librarian; Phase 4 was not run on an emulator, a phone or against slskd.
+- **Next:** Phase 5 (caching, offline and error states, session expiry, accessibility pass, signed release build). Still owed from earlier phases: running Phase 4 on an emulator with a stub of the acquisition routes (the real progress item shape is not captured), the `/mobile-design` review of the built screens on a device (rule 9), TalkBack, landscape, Undo and "Never suggest" taps, and captured payloads for the list-refresh route and the daily lens lists (section 7 of the contract).
 - Open contract question: whether `tailscale serve` hides the client IP from the login rate limit (contract section 9).
 
 ## 3. Recommendation engine — gated

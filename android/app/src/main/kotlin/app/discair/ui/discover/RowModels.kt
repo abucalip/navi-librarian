@@ -22,6 +22,13 @@ fun releaseDateLead(value: String?): RowLead.Date? {
 /** Builds a row from a list entry. Order and content come from the server; this only labels them. */
 fun rowModel(list: DiscoveryList, entry: DiscoveryEntry, position: Int): RowModel {
     val item = entry.item
+    return withServerData(buildRow(list, item, position), entry)
+}
+
+private fun withServerData(row: RowModel, entry: DiscoveryEntry) =
+    row.copy(metadata = entry.raw, owned = entry.item.acquired)
+
+private fun buildRow(list: DiscoveryList, item: app.discair.model.DiscoveryItem, position: Int): RowModel {
     val listeners = (item.albumListeners ?: item.listeners)?.takeIf { it > 0 }?.let { "%,d listeners".format(it) }
     return when (list) {
         DiscoveryList.NewReleases -> RowModel(

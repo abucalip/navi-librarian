@@ -44,6 +44,9 @@ import app.discair.ui.AlbumRoute
 import app.discair.ui.Opener
 import app.discair.ui.common.AlbumCover
 import app.discair.ui.common.ArtistCircle
+import app.discair.ui.common.GetAlbumButton
+import app.discair.ui.common.GetSongButton
+import app.discair.ui.common.pageMetadata
 import app.discair.ui.common.Heading
 import app.discair.ui.common.Load
 import app.discair.ui.common.LoadView
@@ -124,6 +127,10 @@ private fun AlbumContent(route: AlbumRoute, page: AlbumPage, open: Opener, list:
                     if (year != null) Text("$year", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 if (!owned) Text("Not in your library", style = MaterialTheme.typography.bodyMedium, color = Ink.Caution)
+                // The album-level Get stays until every track is in the library (ACQ-08).
+                if (!owned || tracks.any { !it.owned }) GetAlbumButton(
+                    artist, title, pageMetadata(artist, title, year, info?.releaseGroupMbid),
+                )
             }
         }
         val notes = s.description.description?.paragraphs.orEmpty().joinToString("\n\n")
@@ -145,7 +152,9 @@ private fun AlbumContent(route: AlbumRoute, page: AlbumPage, open: Opener, list:
                         t.durationSeconds?.let {
                             Text("%d:%02d".format(it / 60, it % 60), style = MaterialTheme.typography.labelMedium.copy(fontFamily = Mono), color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
-                        Box(Modifier.size(Target), contentAlignment = Alignment.Center) { OwnedMark(t.owned) }
+                        Box(Modifier.size(Target), contentAlignment = Alignment.Center) {
+                            if (t.owned) OwnedMark(true) else GetSongButton(artist, title, t.title, t.number, year)
+                        }
                     }
                     RowDivider(Modifier.padding(horizontal = 12.dp))
                 }

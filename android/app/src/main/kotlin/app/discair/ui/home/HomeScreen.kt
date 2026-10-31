@@ -50,6 +50,8 @@ import app.discair.model.Pick
 import app.discair.model.ShelfAlbum
 import app.discair.ui.Opener
 import app.discair.ui.common.AlbumCover
+import app.discair.ui.common.GetAlbumButton
+import app.discair.ui.common.pageMetadata
 import app.discair.ui.common.CheckBadge
 import app.discair.ui.common.Load
 import app.discair.ui.common.LocalRepository
@@ -189,6 +191,7 @@ private fun Recommended(items: List<Pick>, open: Opener) {
                     pick.listeners?.takeIf { it > 0 }?.let { "%,d listeners".format(it) },
                 ).joinToString(" · ")
                 if (extra.isNotEmpty()) Text(extra, style = MaterialTheme.typography.labelMedium, color = Ink.Accent)
+                GetAlbumButton(pick.artist, pick.album, pageMetadata(pick.artist, pick.album, pick.year))
             }
         }
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {

@@ -48,7 +48,21 @@ import app.discair.AppViewModel
 import app.discair.UiState
 import app.discair.ui.album.AlbumScreen
 import app.discair.ui.artist.ArtistScreen
+import app.discair.ui.common.LocalAcquisitions
 import app.discair.ui.common.LocalImageLoader
+import app.discair.ui.downloads.DownloadsScreen
+import app.discair.data.AcquisitionHub
+import androidx.compose.material3.BadgedBox
+import androidx.compose.material3.Badge
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.contentDescription
+import app.discair.R
+import kotlinx.coroutines.Dispatchers
 import app.discair.ui.common.LocalRepository
 import app.discair.ui.home.HomeScreen
 import app.discair.ui.library.LibraryScreen
@@ -60,6 +74,15 @@ private data class Tab(val route: Any, val label: String, val icon: ImageVector)
 fun MainShell(state: UiState, model: AppViewModel, container: AppContainer) {
     val repo = remember(state.saved) { container.repository(state.saved) }
     val nav = rememberNavController()
+    val scope = rememberCoroutineScope()
+    val hub = remember(repo) { AcquisitionHub({ repo }, scope, Dispatchers.IO) }
+    val snackbar = remember { SnackbarHostState() }
+    DisposableEffect(hub) {
+        hub.start()
+        onDispose { hub.stop() }
+    }
+    // Outcomes of Get, retry, skip and dismiss: spoken by the snackbar, one at a time.
+    LaunchedEffect(hub) { hub.messages.collect { snackbar.showSnackbar(it) } }
     val entry by nav.currentBackStackEntryAsState()
     val destination = entry?.destination
     val tabs = listOf(
@@ -81,9 +104,18 @@ fun MainShell(state: UiState, model: AppViewModel, container: AppContainer) {
         )
     }
 
-    CompositionLocalProvider(LocalRepository provides repo, LocalImageLoader provides container.imageLoader) {
+    CompositionLocalProvider(
+        LocalRepository provides repo, LocalImageLoader provides container.imageLoader, LocalAcquisitions provides hub,
+    ) {
         Scaffold(
-            topBar = { if (onTopLevel) AppHeader(onSettings = { nav.navigate(SettingsRoute) }) },
+            snackbarHost = { SnackbarHost(snackbar) },
+            topBar = {
+                if (onTopLevel) AppHeader(
+                    active = hub.activeDownloads,
+                    onDownloads = { nav.navigate(DownloadsRoute) { launchSingleTop = true } },
+                    onSettings = { nav.navigate(SettingsRoute) },
+                )
+            },
             bottomBar = {
                 // Four labelled tabs cannot fit at 200% text: cap this bar at 130% so labels never split mid-word.
                 if (onTopLevel) CompositionLocalProvider(
@@ -114,6 +146,7 @@ fun MainShell(state: UiState, model: AppViewModel, container: AppContainer) {
                 composable<DiscoverRoute> { DiscoverScreen(open) }
                 composable<SearchRoute> { SearchScreen(open) }
                 composable<LibraryRoute> { LibraryScreen(open) }
+                composable<DownloadsRoute> { DownloadsScreen(open) }
                 composable<SettingsRoute> { SettingsScreen(state, model, onBack = { nav.popBackStack() }) }
                 composable<ArtistRoute> { ArtistScreen(it.toRoute(), open) }
                 composable<AlbumRoute> { AlbumScreen(it.toRoute(), open) }
@@ -123,9 +156,9 @@ fun MainShell(state: UiState, model: AppViewModel, container: AppContainer) {
     }
 }
 
-/** The bar over every top-level page: the app name in the display face and the Settings button. */
+/** The bar over every top-level page: the app name in the display face, Downloads (with the active count, as the web nav has) and Settings. */
 @Composable
-private fun AppHeader(onSettings: () -> Unit) {
+private fun AppHeader(active: Int, onDownloads: () -> Unit, onSettings: () -> Unit) {
     Column(Modifier.background(app.discair.ui.theme.Ink.Rail)) {
         Row(
             Modifier.fillMaxWidth().statusBarsPadding().heightIn(min = 56.dp).padding(start = 16.dp, end = 4.dp),
@@ -135,6 +168,13 @@ private fun AppHeader(onSettings: () -> Unit) {
                 "DISCAIR", style = MaterialTheme.typography.headlineMedium,
                 modifier = Modifier.weight(1f).semantics { heading() },
             )
+            IconButton(onClick = onDownloads, Modifier.size(Target)) {
+                val label = if (active == 0) "Downloads" else "Downloads, $active active"
+                BadgedBox(
+                    badge = { if (active > 0) Badge { Text("$active") } },
+                    modifier = Modifier.semantics { contentDescription = label },
+                ) { Icon(painterResource(R.drawable.ic_get_cloud), contentDescription = null) }
+            }
             IconButton(onClick = onSettings, Modifier.size(Target)) {
                 Icon(Icons.Default.Settings, contentDescription = "Settings")
             }

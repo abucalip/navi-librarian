@@ -121,3 +121,16 @@ Decided with `/mobile-design` while building; the built screens still need the r
 - **Honest empty states:** a list the server says is disabled or not yet built shows the server's message; a Build this list button is offered only for lists that can be built.
 - Remaining differences from the web phone UI: lists render as vertical rows rather than card tracks; Classics is not capped at three per artist or shuffled; no recent-searches panel.
 - Bottom bar text is capped at 130% (the rest of the app follows the system setting to 200%): four labelled tabs split mid-word at 200% on a 360dp-class screen.
+
+## Phase 4 decisions (Get, Downloads)
+
+Checked against the `/mobile-design` checklist (touch targets and spacing, thumb zone, loading and error states with a way out, destructive-action confirmation, no gesture-only controls, cleanup, accessibility labels). The built screens have not been reviewed on a device.
+
+- **Get is the web's cloud button as a 48dp icon control.** Idle is the cloud, pending a spinner, requested a green check, failed a warning triangle; each has a spoken state, and failed speaks the server's reason. Requested and pending ignore taps, so a request cannot be sent twice (ACQ-02). Failures and acceptances are also announced in a shell-level snackbar.
+- **Song Get only where the server can file it:** on the album page for tracks the library lacks, and on Top songs that name an album.
+- **Downloads is a header button, not a tab.** It carries a badge with the active count and a spoken "Downloads, N active". Trade-off: the header is outside the thumb zone; a fifth tab would have split labels at large text. It is reached rarely and the badge shows when to look.
+- **Actions are labelled buttons, not icons or swipes,** wrapped in a flow row with 8dp gaps: "Use next source (12s)", "Try again", "Dismiss". Dismiss is the only destructive one; it opens a dialog that says files are deleted and that the server refuses unsafe cases, and Cancel is the dialog's other button. The dialog does not name the files, which only the server can identify.
+- **Status is icon plus words,** colour only adds emphasis. Progress is a bar plus the percentage in text; the bar is announced as "Download progress N percent".
+- **No dead ends:** loading spinner, an error line with Try again if the first read fails, and an empty message. Rows already shown stay if a later read fails.
+- **Known gaps:** Get, Save and the menu are three stacked 48dp targets with no gap on ranked rows (Save and the menu were already adjacent); the stream is stopped on app stop and screen leave but battery use has not been measured.
+
