@@ -5240,11 +5240,12 @@ async function loadAlbumReviews() {
   if (seq !== albumTabState.reviewSeq) return;
   const reviews = Array.isArray(data.reviews) ? data.reviews : [];
   $('albumReviews').replaceChildren(...reviews.map(buildAlbumReview));
-  // A partial answer stays retryable: the reader can ask the outlets that failed again.
-  albumTabState.reviews = data.retryable ? 'idle' : 'loaded';
+  // A partial answer is shown as it is; only the button asks the outlets that failed again, so
+  // switching tabs never re-requests or flickers.
+  albumTabState.reviews = 'loaded';
   $('albumReviewsRetry').hidden = !data.retryable;
   setSectionNote('albumReviewsNote', reviews.length ? (data.retryable ? 'Some sources did not answer.' : '')
-    : data.retryable ? 'Reviews could not be loaded.' : 'No reviews found for this album.');
+    : data.retryable ? 'No reviews found. Some sources did not answer.' : 'No reviews found for this album.');
 }
 
 // The description's first paragraph shows, three lines of it (six on a phone). "Read more"

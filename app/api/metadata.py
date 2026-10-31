@@ -7,6 +7,7 @@ invalid request parameters; discovery itself does not depend on metadata.
 import json
 import os
 import re
+import time
 from concurrent.futures import ThreadPoolExecutor, wait
 from time import monotonic
 from urllib.parse import quote, urlencode
@@ -540,11 +541,36 @@ def _wordpress_review(name: str, site: str, artist: str, album: str):
     return album_reviews.review(name, album_reviews.page_dek(page.text), url)
 
 
+# Each outlet's answer is kept on its own: a review for a month, "nothing there" for three days, a failure
+# not at all. A retry after a partial answer then asks only the outlets that failed, and an album the
+# outlets never reviewed is not asked about again after a restart.
+_SOURCE_FOUND_TTL = 30 * 24 * 60 * 60
+_SOURCE_MISS_TTL = 3 * 24 * 60 * 60
+
+
+def _outlet_review(name: str, artist: str, album: str, ask):
+    """The outlet's review (or None) from its own stored answer, else ``ask()``; an exception is not stored."""
+    store_key = f"album-review-source:v1:{name}:{artist.casefold()}:{album.casefold()}"
+    stored = persistent_metadata.read(store_key, _SOURCE_FOUND_TTL)
+    if isinstance(stored, dict) and "review" in stored and (
+            stored["review"] or time.time() - float(stored.get("checked") or 0) < _SOURCE_MISS_TTL):
+        return stored["review"]
+    found = ask()
+    persistent_metadata.write(store_key, {"review": found, "checked": time.time()})
+    return found
+
+
 def _review_sources(artist: str, album: str):
-    """The source lookups in display order, each a no-argument callable returning a review or None."""
-    sources = [lambda: _pitchfork_review(artist, album), lambda: _guardian_review(artist, album)]
-    sources += [(lambda n=name, s=site: _wordpress_review(n, s, artist, album)) for name, site in _WORDPRESS_REVIEW_SITES]
-    return sources
+    """The source lookups in display order, each a no-argument callable returning a review or None.
+
+    The Guardian is left out without a key, so a missing key is never stored as "no review".
+    """
+    asks = [("Pitchfork", lambda: _pitchfork_review(artist, album))]
+    if os.environ.get("GUARDIAN_API_KEY", "").strip():
+        asks.append(("The Guardian", lambda: _guardian_review(artist, album)))
+    asks += [(name, lambda n=name, site=site: _wordpress_review(n, site, artist, album))
+             for name, site in _WORDPRESS_REVIEW_SITES]
+    return [lambda n=name, ask=ask: _outlet_review(n, artist, album, ask) for name, ask in asks]
 
 
 def album_reviews_for(artist: str, album: str) -> dict:

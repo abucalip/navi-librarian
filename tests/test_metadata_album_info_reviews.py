@@ -232,6 +232,83 @@ class ReviewTests(StoreCase):
             self.assertEqual(client.get.call_count, 1)
 
 
+class OutletCacheTests(StoreCase):
+    """Each outlet's answer is stored on its own, so only an unanswered outlet is asked again."""
+
+    def sources(self, **env):
+        with patch.dict(os.environ, {"GUARDIAN_API_KEY": "", **env}):
+            return metadata._review_sources("Opeth", "Watershed")
+
+    def run_sources(self, sources):
+        return [source() for source in sources]
+
+    def test_without_a_guardian_key_the_guardian_is_not_asked_or_stored(self):
+        with patch.object(metadata, "_pitchfork_review", return_value=None), \
+                patch.object(metadata, "_wordpress_review", return_value=None), \
+                patch.object(metadata, "_guardian_review") as guardian:
+            self.run_sources(self.sources())
+            self.run_sources(self.sources(GUARDIAN_API_KEY="k"))
+        self.assertEqual(guardian.call_count, 1, "only the run with a key asked the Guardian")
+        self.assertEqual(sum("The Guardian" in key for key in self.store.data), 1)
+
+    def test_a_found_review_and_a_miss_are_not_asked_again_after_a_restart(self):
+        found = review("Pitchfork")
+        with patch.object(metadata, "_pitchfork_review", return_value=found) as pitchfork, \
+                patch.object(metadata, "_wordpress_review", return_value=None) as wordpress:
+            self.run_sources(self.sources())
+            clear_caches()
+            self.assertEqual(self.run_sources(self.sources())[0], found)
+        self.assertEqual(pitchfork.call_count, 1)
+        self.assertEqual(wordpress.call_count, len(metadata._WORDPRESS_REVIEW_SITES))
+
+    def test_a_failed_outlet_is_asked_again_but_the_ones_that_answered_are_not(self):
+        with patch.object(metadata, "_pitchfork_review", side_effect=[RuntimeError("down"), review("Pitchfork")]) as pitchfork, \
+                patch.object(metadata, "_wordpress_review", return_value=None) as wordpress:
+            first = self.sources()
+            results = []
+            for source in first:
+                try:
+                    results.append(source())
+                except RuntimeError:
+                    results.append("failed")
+            self.assertEqual(results[0], "failed")
+            self.run_sources(self.sources())
+        self.assertEqual(pitchfork.call_count, 2)
+        self.assertEqual(wordpress.call_count, len(metadata._WORDPRESS_REVIEW_SITES), "answered outlets are not re-asked")
+
+    def test_a_miss_is_asked_again_after_three_days_but_a_review_is_kept_for_a_month(self):
+        now = [1_000_000.0]
+        with patch.object(metadata.time, "time", lambda: now[0]), \
+                patch.object(metadata, "_pitchfork_review", return_value=None) as pitchfork, \
+                patch.object(metadata, "_wordpress_review", return_value=None):
+            self.run_sources(self.sources())
+            now[0] += metadata._SOURCE_MISS_TTL - 60
+            self.run_sources(self.sources())
+            self.assertEqual(pitchfork.call_count, 1)
+            now[0] += 120
+            self.run_sources(self.sources())
+            self.assertEqual(pitchfork.call_count, 2)
+        found = review("Pitchfork")
+        self.store.data.clear()
+        with patch.object(metadata.time, "time", lambda: now[0]), \
+                patch.object(metadata, "_pitchfork_review", return_value=found) as pitchfork, \
+                patch.object(metadata, "_wordpress_review", return_value=None):
+            self.run_sources(self.sources())
+            now[0] += metadata._SOURCE_MISS_TTL * 5
+            self.assertEqual(self.run_sources(self.sources())[0], found)
+        self.assertEqual(pitchfork.call_count, 1)
+
+    def test_an_album_nobody_reviewed_is_remembered_across_a_restart_without_asking_any_outlet(self):
+        with patch.dict(os.environ, {"GUARDIAN_API_KEY": ""}), \
+                patch.object(metadata, "_pitchfork_review", return_value=None) as pitchfork, \
+                patch.object(metadata, "_wordpress_review", return_value=None) as wordpress:
+            self.assertEqual(metadata.album_reviews_for("Opeth", "Watershed"), {"reviews": []})
+            clear_caches()
+            self.assertEqual(metadata.album_reviews_for("Opeth", "Watershed"), {"reviews": []})
+        self.assertEqual(pitchfork.call_count, 1)
+        self.assertEqual(wordpress.call_count, len(metadata._WORDPRESS_REVIEW_SITES))
+
+
 class RouteTests(StoreCase):
     def setUp(self):
         super().setUp()

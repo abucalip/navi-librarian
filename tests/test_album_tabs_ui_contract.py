@@ -48,9 +48,18 @@ class AlbumTabsUIContractTests(unittest.TestCase):
         self.assertIn("link.rel = 'noopener noreferrer';", build)
         self.assertNotIn("innerHTML", build)
 
-    def test_a_partial_answer_can_be_asked_again(self):
-        self.assertIn("albumTabState.reviews = data.retryable ? 'idle' : 'loaded';", JS)
+    def test_a_partial_answer_is_asked_again_only_by_the_button(self):
+        load = JS[JS.index("async function loadAlbumReviews"):JS.index("// The description's first paragraph")]
+        # Only a failed request leaves the tab ready to ask again; a partial answer is kept as shown.
+        self.assertEqual(load.count("albumTabState.reviews = 'idle';"), 1)
+        self.assertIn("albumTabState.reviews = 'loaded';", load)
+        self.assertIn("'No reviews found. Some sources did not answer.'", load)
         self.assertIn("$('albumReviewsRetry').addEventListener('click', loadAlbumReviews);", JS)
+
+    def test_the_status_note_and_retry_button_follow_the_reviews(self):
+        panel = HTML[HTML.index('id="albumReviewsPanel"'):]
+        self.assertLess(panel.index('id="albumReviews"'), panel.index('id="albumReviewsNote"'))
+        self.assertLess(panel.index('id="albumReviewsNote"'), panel.index('id="albumReviewsRetry"'))
 
     def test_tab_styles_cover_the_active_tab_and_hidden_panels(self):
         for rule in (".album-tabs .album-tab.active {", ".album-tab-panel[hidden] { display: none; }",
