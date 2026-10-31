@@ -28,7 +28,7 @@ LASTFM_BASE = "https://ws.audioscrobbler.com/2.0/"
 DISCOGS_BASE = "https://api.discogs.com"
 DISCOGS_ATTRIBUTION = "Data provided by Discogs"
 MB_HEADERS = {
-    "User-Agent": "NavidromeLibrarian/1.0 (personal music discovery; contact: local app)",
+    "User-Agent": "Discair/1.0 (personal music discovery; contact: local app)",
     "Accept": "application/json",
 }
 # Pause before each retry after a MusicBrainz 503 (section 9: backoff and retry are required).

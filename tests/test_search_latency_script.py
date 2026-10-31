@@ -17,7 +17,7 @@ class SearchLatencyHelpersTests(unittest.TestCase):
         from tempfile import TemporaryDirectory
 
         root = Path(__file__).resolve().parent.parent
-        with self.assertRaisesRegex(ValueError, "Set NAVIDROME_LIBRARIAN_DATA_DIR"):
+        with self.assertRaisesRegex(ValueError, "Set DISCAIR_DATA_DIR"):
             validate_isolated_data_dir(None, root)
         with self.assertRaisesRegex(ValueError, "outside the repository"):
             validate_isolated_data_dir(str(root), root)

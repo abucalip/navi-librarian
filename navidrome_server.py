@@ -941,7 +941,7 @@ def _build_new_releases_list():
     candidates = {}
     errors = []
     artist_batch = qualified_artists[:120]
-    headers = {"User-Agent": "NavidromeLibrarian/1.0 (personal music discovery)"}
+    headers = {"User-Agent": "Discair/1.0 (personal music discovery)"}
 
     for index, artist_record in enumerate(artist_batch):
         artist = artist_record["name"].strip()

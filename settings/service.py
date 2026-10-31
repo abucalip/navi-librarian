@@ -462,7 +462,7 @@ def test_lastfm_connection(settings_read, http_get, json_dumps):
         response = http_get(
             "https://ws.audioscrobbler.com/2.0/",
             params={"method": "chart.getTopArtists", "api_key": key, "format": "json", "limit": 1},
-            headers={"User-Agent": "NavidromeLibrarian/0.1"}, timeout=10,
+            headers={"User-Agent": "Discair/0.1"}, timeout=10,
         )
         response.raise_for_status()
         if response.json().get("error"):
@@ -478,7 +478,7 @@ def test_listenbrainz_connection(username_get, http_get, json_dumps):
         username = username_get()
         response = http_get(
             f"https://api.listenbrainz.org/1/user/{username}/listens",
-            params={"count": 1}, headers={"User-Agent": "NavidromeLibrarian/0.1"}, timeout=10,
+            params={"count": 1}, headers={"User-Agent": "Discair/0.1"}, timeout=10,
         )
         if response.status_code == 404:
             return json_dumps({"ok": False, "status": "not_found", "message": "ListenBrainz user was not found."})
@@ -495,7 +495,7 @@ def test_discogs_connection(token, http_get, json_dumps):
     try:
         response = http_get(
             "https://api.discogs.com/oauth/identity",
-            headers={"Authorization": f"Discogs token={token}", "User-Agent": "NavidromeLibrarian/1.0"},
+            headers={"Authorization": f"Discogs token={token}", "User-Agent": "Discair/1.0"},
             timeout=10,
         )
         if response.status_code in (401, 403):

@@ -40,7 +40,7 @@ _EXTERNAL_HTTP = httpx.Client(
     # Wikimedia answers 403 ("robot policy") to this User-Agent when the request carries httpx's
     # default `Accept: */*`, so every artist bio came back empty. A JSON Accept header fixes it.
     headers={
-        "User-Agent": "NavidromeLibrarian/1.0 (personal music discovery; contact: local app)",
+        "User-Agent": "Discair/1.0 (personal music discovery; contact: local app)",
         "Accept": "application/json",
     },
 )

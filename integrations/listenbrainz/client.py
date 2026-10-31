@@ -9,7 +9,7 @@ from typing import Any
 import httpx
 
 
-USER_AGENT = "NavidromeLibrarian/1.0 (+https://github.com/abucalip/navi-librarian)"
+USER_AGENT = "Discair/1.0 (+https://github.com/abucalip/navi-librarian)"
 
 
 _token_source: Callable[[], str] | None = None

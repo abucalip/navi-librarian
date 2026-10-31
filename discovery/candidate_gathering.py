@@ -612,7 +612,7 @@ def gather_recommendation_candidates(
     cf_recording_records = []
     failures = []
     headers = {
-        "User-Agent": "NavidromeLibrarian/1.0 (personal music discovery)"
+        "User-Agent": "Discair/1.0 (personal music discovery)"
     }
 
     artist_resolved_counts = Counter()

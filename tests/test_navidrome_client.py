@@ -130,7 +130,7 @@ class NavidromeClientTests(unittest.TestCase):
         self.assertEqual(query["s"], "fixed-salt")
         self.assertEqual(query["t"], hashlib.md5(b"secretfixed-salt").hexdigest())
         self.assertEqual(query["v"], "1.16.1")
-        self.assertEqual(query["c"], "navidrome-librarian")
+        self.assertEqual(query["c"], "discair")
         self.assertEqual(query["f"], "json")
         self.assertEqual(query["musicFolderId"], "music-root")
 

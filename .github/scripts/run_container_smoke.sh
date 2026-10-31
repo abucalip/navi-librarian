@@ -28,7 +28,7 @@ docker run --detach \
   --mount "type=volume,src=$VOLUME_NAME,dst=/data" \
   --mount "type=bind,src=$TEMP_ROOT/music,dst=/music,readonly" \
   --mount "type=bind,src=$TEMP_ROOT/downloads,dst=/downloads,readonly" \
-  --env NAVIDROME_LIBRARIAN_DATA_DIR=/data \
+  --env DISCAIR_DATA_DIR=/data \
   --env NAVIDROME_MUSIC_DIR=/music \
   --env SLSKD_DOWNLOADS_DIR=/downloads \
   "$IMAGE_TAG" >/dev/null

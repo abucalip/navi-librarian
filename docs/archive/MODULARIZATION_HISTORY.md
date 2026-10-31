@@ -750,12 +750,12 @@ Navidrome, Last.fm, and ListenBrainz connection-check logic is extracted into `s
 
 ## 2026-10-15 — Data-directory resolution extraction in progress
 
-The next small application-assembly seam is pure resolution of `NAVIDROME_LIBRARIAN_DATA_DIR` versus the source-directory fallback. `data_directory.py` resolves the path without creating it; `navidrome_server.py` retains the legacy `DATA_DIR` symbol and the existing `mkdir` side effect, so data persistence and permissions remain owned by the existing service. Direct-import tests cover explicit path expansion, empty configuration, and fallback behavior. Docker packaging is updated. Verify the focused tests, full suite, syntax, and all four required workflows on the exact final PR head before merge. Publishing remains paused.
+The next small application-assembly seam is pure resolution of `DISCAIR_DATA_DIR` versus the source-directory fallback. `data_directory.py` resolves the path without creating it; `navidrome_server.py` retains the legacy `DATA_DIR` symbol and the existing `mkdir` side effect, so data persistence and permissions remain owned by the existing service. Direct-import tests cover explicit path expansion, empty configuration, and fallback behavior. Docker packaging is updated. Verify the focused tests, full suite, syntax, and all four required workflows on the exact final PR head before merge. Publishing remains paused.
 
 
 ## Completed — data-directory resolution (PR #152, 2026-10-15)
 
-Extracted the pure `NAVIDROME_LIBRARIAN_DATA_DIR` / source-directory fallback resolver to `data_directory.py`. The legacy `navidrome_server.DATA_DIR` and directory-creation behavior remain intact. Three direct-import regression tests and Docker packaging were added. All four required workflows passed on exact PR head `756ef13f6946299e2eacccbf5f9a55ebaf092aae`; merged by squash as `567409bb90f240667575a3730976e4c52676bc02`. Publishing remains paused; no deployment or production runtime verification is claimed.
+Extracted the pure `DISCAIR_DATA_DIR` / source-directory fallback resolver to `data_directory.py`. The legacy `navidrome_server.DATA_DIR` and directory-creation behavior remain intact. Three direct-import regression tests and Docker packaging were added. All four required workflows passed on exact PR head `756ef13f6946299e2eacccbf5f9a55ebaf092aae`; merged by squash as `567409bb90f240667575a3730976e4c52676bc02`. Publishing remains paused; no deployment or production runtime verification is claimed.
 
 
 ## Subsonic response collection normalization — implementation in progress
@@ -2240,7 +2240,7 @@ The next candidate moves normalized ownership identity construction and full-alb
 - **Published image:** `ghcr.io/abucalip/navi-librarian:latest` and `ghcr.io/abucalip/navi-librarian:sha-ac0eec1`; manifest digest `sha256:7a9415a7e6d10bd9864a2e03db8c452cfdc35cb69359eaa0e9b0552552afb5b1`.
 - **UI verification:** user tested the PR build and reports album artwork now loads very fast.
 - **Deployment distinction:** image is published, but this session did not have access to the media VM's Docker/Compose shell and did not pull/recreate the production container. Host deployment is pending; follow `docs/DEPLOYMENT.md` and record the running image digest after the host update.
-- **Next:** pull and recreate only `navidrome-librarian` on the media VM, then verify container health and artwork in the deployed UI. Sync local Git without overwriting unrelated local changes.
+- **Next:** pull and recreate only `discair` on the media VM, then verify container health and artwork in the deployed UI. Sync local Git without overwriting unrelated local changes.
 
 ## Latest session — 2026-10-13 (broaden zero-response slskd searches in progress)
 
@@ -2267,7 +2267,7 @@ Last updated: 2026-10-13
 
 ## Product summary
 
-Navidrome Librarian combines a web UI with existing music-discovery and acquisition logic in `navidrome_server.py`. The web app is served by FastAPI from `app/main.py`. It connects to an existing Navidrome instance and slskd service; neither is bundled into the app container.
+Discair combines a web UI with existing music-discovery and acquisition logic in `navidrome_server.py`. The web app is served by FastAPI from `app/main.py`. It connects to an existing Navidrome instance and slskd service; neither is bundled into the app container.
 
 ## Feature ledger
 
@@ -2580,7 +2580,7 @@ Never record credentials, API keys, cookies, or other secrets in documentation.
 
 ## 2026-10-15 — Data-directory resolution extraction in progress
 
-- Branch `refactor/extract-data-directory-config` extracts only the selection of `NAVIDROME_LIBRARIAN_DATA_DIR` versus the source-directory fallback into `data_directory.py`. The legacy `DATA_DIR` name and directory creation remain in `navidrome_server.py`; persistence ownership and import-time initialization behavior are unchanged.
+- Branch `refactor/extract-data-directory-config` extracts only the selection of `DISCAIR_DATA_DIR` versus the source-directory fallback into `data_directory.py`. The legacy `DATA_DIR` name and directory creation remain in `navidrome_server.py`; persistence ownership and import-time initialization behavior are unchanged.
 - Added direct-import tests for explicit home expansion, empty environment fallback, and resolved source-directory fallback. Docker packaging includes the new module.
 - Pending: run focused and full tests, verify syntax plus all four required CI workflows on the exact final PR head, review the full diff, then update the closeout record. No test/CI success, merge, publication, deployment, or runtime verification is claimed yet.
 
@@ -2588,7 +2588,7 @@ Never record credentials, API keys, cookies, or other secrets in documentation.
 ## 2026-10-15 — PR #152 merged: data-directory resolution extraction
 
 - PR: https://github.com/abucalip/navi-librarian/pull/152. Exact tested PR head: `756ef13f6946299e2eacccbf5f9a55ebaf092aae`; squash merge commit: `567409bb90f240667575a3730976e4c52676bc02`.
-- Extracted `NAVIDROME_LIBRARIAN_DATA_DIR` resolution and the source-directory fallback into pure `data_directory.py`; retained `navidrome_server.DATA_DIR`, `mkdir` behavior, persistence ownership, and MCP compatibility. Added three direct-import regression tests and Docker packaging.
+- Extracted `DISCAIR_DATA_DIR` resolution and the source-directory fallback into pure `data_directory.py`; retained `navidrome_server.DATA_DIR`, `mkdir` behavior, persistence ownership, and MCP compatibility. Added three direct-import regression tests and Docker packaging.
 - All four required workflows passed on the exact PR head: Python syntax `38807325467`, Docker packaging/full unit suite/build `38807325564`, container runtime smoke `38807325555`, and validation-only multi-architecture image validation `38807325557`.
 - State: implemented, CI passed, merged. Publishing remains paused; no image publication, deployment, or production runtime verification is claimed.
 - Next: inspect current GitHub main, open PRs, and the roadmap before selecting the next small application-assembly/domain-service dependency.

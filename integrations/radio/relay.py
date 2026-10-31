@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from integrations.radio.icy import IcyParser, stream_title
 
-USER_AGENT = "NavidromeLibrarian-Radio/1.0"
+USER_AGENT = "Discair-Radio/1.0"
 UPSTREAM_REQUEST_HEADERS = {"Icy-MetaData": "1", "User-Agent": USER_AGENT, "Accept": "*/*"}
 # A playlist or web page is not a stream; relaying it would hand the client a broken station.
 REFUSED_TYPES = ("text/", "application/vnd.apple.mpegurl", "application/x-mpegurl",

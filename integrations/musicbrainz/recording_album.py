@@ -17,7 +17,7 @@ def _escape(value: str) -> str:
 def _fetch_recordings(query: str, limit: int):
     request = Request(
         "https://musicbrainz.org/ws/2/recording/?" + urlencode({"query": query, "fmt": "json", "limit": limit}),
-        headers={"User-Agent": "NavidromeLibrarian/1.0 (personal music discovery)"},
+        headers={"User-Agent": "Discair/1.0 (personal music discovery)"},
     )
     with urlopen(request, timeout=10) as response:
         return json.loads(response.read().decode("utf-8")).get("recordings") or []

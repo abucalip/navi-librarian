@@ -141,7 +141,7 @@ class ServiceSettingsTests(unittest.TestCase):
         self.assertEqual(self.writes, [])
 
     def test_navidrome_rejects_nonexistent_or_relative_library_path(self):
-        for path in ("relative/music", "/this/path/should/not/exist/navidrome-librarian"):
+        for path in ("relative/music", "/this/path/should/not/exist/discair"):
             with self.subTest(path=path):
                 result = json.loads(set_navidrome_settings(
                     self.read_settings, self.write_settings, lambda: Path("/music"),

@@ -11,7 +11,7 @@ ROOT = Path(__file__).resolve().parents[1]
 STATIC = ROOT / "static"
 FONTS = STATIC / "fonts"
 TEMPLATES = ROOT / "app" / "templates"
-FONT_BUDGET_BYTES = 150 * 1024
+FONT_BUDGET_BYTES = 180 * 1024
 ICON_NAMES = [
     # list-music: the Daily lists nav item (Engine 2, Phase 4 slice 4), added with its rail entry.
     "layout-dashboard", "compass", "calendar-plus", "user-round", "list-music", "library", "mic-vocal",
@@ -34,19 +34,19 @@ class SelfHostedFontTests(unittest.TestCase):
             self.assertNotIn("fonts.googleapis.com", text, path.name)
             self.assertNotIn("fonts.gstatic.com", text, path.name)
 
-    def test_both_pages_link_the_self_hosted_stylesheet_and_preload_only_the_display_face(self):
+    def test_both_pages_link_the_self_hosted_stylesheet_and_preload_only_the_display_faces(self):
         for name in ("index.html", "login.html"):
             text = (TEMPLATES / name).read_text(encoding="utf-8")
             self.assertIn('href="/static/fonts/fonts.css"', text, name)
             preloads = re.findall(r'<link rel="preload"[^>]*href="([^"]+)"', text)
-            self.assertEqual(preloads, ["/static/fonts/big-shoulders-display-700.woff2"], name)
+            self.assertEqual(preloads, ["/static/fonts/peace-sans-latin-400-normal.woff2", "/static/fonts/big-shoulders-display-700.woff2"], name)
             self.assertIn("crossorigin", text.split("/static/fonts/big-shoulders-display-700.woff2")[1].split(">")[0], name)
 
     def test_every_face_declared_is_shipped_with_swap_and_the_total_is_within_budget(self):
         css = (FONTS / "fonts.css").read_text(encoding="utf-8")
         urls = re.findall(r'url\("([^"]+\.woff2)"\)', css)
-        self.assertEqual(len(urls), 7)
-        self.assertEqual(css.count("font-display: swap"), 7)
+        self.assertEqual(len(urls), 8)
+        self.assertEqual(css.count("font-display: swap"), 8)
         total = 0
         for url in urls:
             path = FONTS / url
@@ -55,7 +55,7 @@ class SelfHostedFontTests(unittest.TestCase):
         self.assertLessEqual(total, FONT_BUDGET_BYTES)
 
     def test_each_font_family_ships_its_ofl_licence(self):
-        for family in ("big-shoulders-display", "schibsted-grotesk", "jetbrains-mono"):
+        for family in ("big-shoulders-display", "peace-sans", "open-sans", "jetbrains-mono"):
             licence = (FONTS / f"LICENSE-{family}.txt").read_text(encoding="utf-8")
             self.assertIn("SIL OPEN FONT LICENSE VERSION 1.1", licence.upper(), family)
 
