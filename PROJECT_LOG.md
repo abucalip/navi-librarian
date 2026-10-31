@@ -1,7 +1,7 @@
 ## 2026-10-31 — Android client: signed Phase 5 build run on the owner's phone
 
 - Result (owner's report): the signed, minified release build installed and ran over Tailscale with no crash. Sign-in to Librarian and Navidrome, Library navigation, search and Home worked; a Get launched from the app finished and was imported; the Downloads page showed progress; in airplane mode the "Can't reach Librarian" banner appeared and a cold start opened on saved pages. The first attempt failed with "Unable to parse TLS packet header" until the addresses pointed at `tailscale serve` HTTPS endpoints (a setup mistake, not an app fault). Signing key created by the owner; `keystore.properties` and the `.jks` are untracked.
-- Not verified: session expiry, skip, retry and dismiss on real jobs, TalkBack, landscape, 200% text, use away from home, low-end device, the `/mobile-design` review on a device. Not merged, released or deployed; PR #651 awaits the owner.
+- Not verified: session expiry, skip, retry and dismiss on real jobs, TalkBack, landscape, 200% text, use away from home, low-end device, the `/mobile-design` review on a device. The owner deferred UI polish, including that device review, to a later pass. Not merged, released or deployed; PR #651 awaits the owner.
 
 ## 2026-10-31 — Android client Phase 5 (offline, session expiry, release build): partly built on the PR #651 branch
 
