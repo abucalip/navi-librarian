@@ -37,3 +37,25 @@ Status: proposal, Phase 0. Produced with the `/mobile-design` skill (platform An
 
 ## Testing
 - Compose screenshot tests per screen state at default and 200% font scale; TalkBack manual pass in Phase 5; low-end device check before the signed build.
+
+## Phase 1 review decisions (setup, connection and home shell)
+
+Reviewed with `/mobile-design` against the built screens. Each item was fixed in Phase 1.
+
+1. **Nothing encrypted is opened on the main thread.** The settings and cookie stores open lazily on the IO dispatcher; the view model starts on a Checking screen and loads the saved settings from there. Keystore setup can take hundreds of milliseconds.
+2. **Sign out is destructive, rare and confirmed.** It is a text button set 32dp apart from the routine actions, and opens a dialog that says what is erased (both addresses, user names and passwords). The dialog's default dismiss is "Keep me signed in".
+3. **A failed check of saved servers is not first-time setup.** A separate Unavailable screen ("Can't connect", nothing was changed) offers Try again, Open Tailscale (only if the Tailscale app is installed) and Edit servers. The setup form appears only for first-time setup, for editing, or when the Connect attempt itself fails. A failed edit never replaces working saved settings.
+4. **Editing can be abandoned.** Cancel and system or predictive back (opted in with `enableOnBackInvokedCallback`) drop the edits and re-check the saved servers. First-time setup has no Cancel and back leaves the app.
+5. **Typing on a phone is minimised.** Each field has an IME action: Next moves down, Done on the last field submits. User name and password fields carry autofill content types so a password manager can fill them. Passwords have a Show/Hide toggle with a 48dp target and a spoken label.
+6. **The Connect button never goes dead.** It stays enabled while idle; pressing it with blanks marks each empty field "Required." in text and colour. It is disabled only while a check is running.
+7. **Headings are exposed.** The app title and the Librarian and Navidrome section titles carry heading semantics for TalkBack heading navigation.
+
+Smaller decisions from the same review:
+- Server status rows are hidden until a check has run, so the first screen is only the form.
+- Forms are capped at 480dp wide and centred, so tablets and landscape stay readable.
+- The launcher icon is adaptive with a monochrome layer for themed icons.
+- Verified on an emulator at 200% font scale: nothing clipped, fields still at least 56dp, Show toggle intact.
+
+Not yet checked on a device: TalkBack reading order, the real Open Tailscale intent, and password-manager autofill.
+
+Library note: the `ContentType` autofill API is public only from Compose UI 1.8, so the Compose BOM is 2025.04.01.

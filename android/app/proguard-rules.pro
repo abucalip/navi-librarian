@@ -1,0 +1,3 @@
+-keepclassmembers class app.discair.** { *** Companion; }
+-keepattributes *Annotation*, InnerClasses
+-dontnote kotlinx.serialization.**

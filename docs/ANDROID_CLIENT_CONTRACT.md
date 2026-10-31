@@ -29,6 +29,7 @@ Out of scope for v1:
 6. **No third-party runtime assets.** Fonts and icons are bundled in the app. No analytics or crash-reporting SDKs.
 7. D-016 (`navidrome_server.py` takes no additions) applies to any backend change that this contract later proposes.
 8. In all documentation, comments and communications, refer to the person directing the project as "the owner".
+9. **Every design choice goes through `/mobile-design`.** Any decision about layout, navigation, interaction, touch targets, typography, colour, copy, states or accessibility is run past the `/mobile-design` skill before it is built, and re-reviewed with it once built. The outcome is recorded in `android/DESIGN.md`. A design change made without that pass is not accepted, and a phase is not complete until its screens have had the review.
 
 ## 3. Platform
 
@@ -100,7 +101,7 @@ Behaviour:
 
 ## 6. Design and UX
 
-1. **The `/mobile-design` skill is used for every UI decision.** Before the first screen is built, it is invoked to settle navigation pattern, touch targets, thumb-zone placement, list performance and Android conventions. It is invoked again for each new screen type (list rows, artist and album pages, progress screen, search). Decisions it produces are recorded in `android/DESIGN.md`.
+1. **The `/mobile-design` skill is used for every UI decision (binding rule 9).** Before the first screen is built, it is invoked to settle navigation pattern, touch targets, thumb-zone placement, list performance and Android conventions. It is invoked again for each new screen type (list rows, artist and album pages, progress screen, search). Decisions it produces are recorded in `android/DESIGN.md`.
 2. Design is a port of the mobile web UI, not a WebView. Visual identity comes from `static/app.css` and `docs/archive/redesign/DESIGN*.md`: the warm dark ink palette, chart-red emphasis, yellow for primary and selected states, artwork-led layouts. Reference screenshots: `album page.jpg`, `artist page.jpg`, `genre tiles.png` (owner's folder, outside the repo).
 3. Icons are converted from `static/icons.svg` to vector drawables. Fonts are the self-hosted ones from `static/fonts`.
 4. Navigation: bottom bar, icon-only with labels for TalkBack, with a More overflow for the less-used lists, as in the web mobile nav (PRs #546 and #547).
@@ -125,6 +126,9 @@ Steps:
 5. Resolve the rate-limit question and the Navidrome-versus-Librarian field gaps (section 9).
 
 ## 8. Phases and acceptance
+
+**Phase 1 status: built and unit-tested, not verified against your servers.** `android/` holds the Gradle project (package `app.discair`, min and target SDK 33, compile SDK 36). Done: themed shell with the bundled fonts, setup screen, HTTPS-only address validation, Librarian sign-in with a persistent encrypted cookie jar and one re-login on 401, Navidrome Subsonic ping, failure kinds shown as icon plus words (no network, unreachable with Tailscale hint, unauthorised, rate limited, certificate, server), encrypted credential storage, automatic re-check on start, sign-out. A `/mobile-design` review fixed seven items (decisions in `android/DESIGN.md`): off-main-thread storage, confirmed sign-out, an Unavailable screen with retry, Cancel and back, IME actions with autofill and show-password, a non-dead Connect button, and heading semantics. Run so far: `./gradlew testDebugUnitTest assembleDebug lintDebug` (31 unit tests, build and lint succeeded); debug APK started on an Android 36 emulator, the setup screen rendered (also at 200% font scale, and with Required markers on an empty form), and entering unresolvable addresses produced the "Server unreachable. Is Tailscale connected?" state. **Not run:** a successful sign-in against real servers over Tailscale, restart persistence on a device, a rejected-certificate case, and TalkBack. Deviation from section 3: Hilt, Retrofit, Room, Coil and Navigation-Compose are not added yet (manual wiring of one view model); they arrive with the phase that first needs them.
+
 
 | Phase | Deliverable | Acceptance |
 |---|---|---|
