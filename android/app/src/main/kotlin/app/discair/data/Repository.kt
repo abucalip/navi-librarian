@@ -1,6 +1,14 @@
 package app.discair.data
 
 import app.discair.model.AlbumLinks
+import app.discair.model.DiscoveryResult
+import app.discair.model.FeedbackAction
+import app.discair.model.FeedbackReply
+import app.discair.model.SearchEvent
+import app.discair.model.feedbackBody
+import app.discair.model.parseDiscovery
+import app.discair.model.parseSearchEvent
+import kotlinx.serialization.json.JsonObject
 import app.discair.model.AlbumPage
 import app.discair.model.ApiJson
 import app.discair.model.ArtistPage
@@ -46,6 +54,21 @@ interface LibraryRepository {
     fun genrePage(tag: String): GenrePage
     fun albumLinks(artist: String, album: String, mbid: String?): AlbumLinks
 
+    /** One discovery list in the server's order. [list] is a path name such as `new_releases` or a lens name. */
+    fun discovery(list: String, count: Int): DiscoveryResult
+
+    /** Sends feedback; throws unless the server answers `ok`. Nothing is assumed saved before this returns. */
+    fun feedback(action: FeedbackAction, artist: String, album: String, metadata: JsonObject)
+
+    /** Asks the server to rebuild a list in the background (count 1-20). */
+    fun refreshList(list: String)
+
+    /** Artist biography text, or null when none is available. */
+    fun artistBio(artist: String): String?
+
+    /** Streams a search to [onEvent]; blocks until it ends. */
+    fun search(query: String, onEvent: (SearchEvent) -> Unit)
+
     /** Cover for an album the library does not own; null when no source has one. */
     fun albumImage(artist: String, album: String): String?
     fun artistImage(name: String): String?
@@ -87,6 +110,34 @@ class LibrarianRepository(
 
     override fun albumLinks(artist: String, album: String, mbid: String?) =
         read<AlbumLinks>(listOf("api", "album-links"), mapOf("artist" to artist, "album" to album, "mbid" to mbid))
+
+    override fun discovery(list: String, count: Int) =
+        parseDiscovery(client.get(listOf("api", "discovery", list), mapOf("count" to "$count")))
+
+    override fun feedback(action: FeedbackAction, artist: String, album: String, metadata: JsonObject) {
+        val reply = ApiJson.decodeFromString(
+            FeedbackReply.serializer(),
+            client.post(listOf("api", "discovery", "feedback"), feedbackBody(action, artist, album, metadata)),
+        )
+        if (!reply.ok) throw IllegalStateException(reply.error ?: "The server did not accept this.")
+    }
+
+    override fun refreshList(list: String) {
+        client.post(listOf("api", "discovery", list, "refresh"), """{"count":20}""")
+    }
+
+    override fun artistBio(artist: String): String? = try {
+        (ApiJson.parseToJsonElement(client.get(listOf("api", "artist-bio"), mapOf("artist" to artist)))
+            as? JsonObject)?.get("bio")?.let { it as? kotlinx.serialization.json.JsonPrimitive }
+            ?.takeIf { it.isString }?.content?.takeIf { it.isNotBlank() }
+    } catch (e: Exception) {
+        null
+    }
+
+    override fun search(query: String, onEvent: (SearchEvent) -> Unit) =
+        client.stream(listOf("api", "search"), mapOf("q" to query, "scope" to "all", "limit" to "10")) { name, data ->
+            parseSearchEvent(name, data)?.let(onEvent)
+        }
 
     override fun albumImage(artist: String, album: String) =
         lookup("album|$artist|$album", listOf("api", "artwork"), mapOf("artist" to artist, "album" to album))

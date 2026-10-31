@@ -108,3 +108,16 @@ Still different from the web, on purpose or because it is not built yet:
 - Section titles are headings. Owned checks have a spoken label. Pager and sort buttons have descriptions that say what they do and their current state. Loading, empty, "index still building" and error-with-retry states exist for every list.
 - Number columns use a fixed width, not a fixed size, so they align with the first line of text.
 - Not yet checked on a device: TalkBack reading order across these pages, 200% font scale on the new screens, and landscape.
+
+## Phase 3 decisions (Discover, Search, shared row, feedback)
+
+Decided with `/mobile-design` while building; the built screens still need the rule 9 re-review.
+
+- **Bottom bar has four tabs:** Home, Discover, Search, Library. Search is a tab because it is used from anywhere, one tap from the thumb zone; Discover holds the six lists as 48dp chips in one scrolling row instead of the web's More menu, so no list is hidden behind a second tap.
+- **Shared ranked row:** lead column 36dp (position, or release date on New releases), artwork 72dp, title (display face, two lines), artist link (48dp tall), meta lines, bio of three lines that expands on tap (with a spoken Expanded/Collapsed state). Actions are two 48dp icon buttons stacked at the right: Save and a menu. Fixed height is not forced; long titles clamp to two lines.
+- **Save is not colour alone:** outline heart (not saved), spinner (pending), filled heart (saved), warning triangle (failed, tap to retry), each with a spoken state. It turns to Saved only on the server's `ok`.
+- **"Not for me" is a menu, not a swipe:** "Not this album" or "Never suggest <artist>". Both hide the row and show Undo for 6 s before anything is sent. A second dismissal sends the first at once, as on the web. Neither deletes files, so no confirmation dialog; the dialog stays reserved for acquisition Dismiss (Phase 4).
+- **Search:** live search after 400 ms of typing, a Clear button, status text announced politely ("Searching…", "No matches.", "Some sources did not answer"). "No matches." appears only after the stream's `done`. Results keep the server's order, owned first.
+- **Honest empty states:** a list the server says is disabled or not yet built shows the server's message; a Build this list button is offered only for lists that can be built.
+- Remaining differences from the web phone UI: lists render as vertical rows rather than card tracks; Classics is not capped at three per artist or shuffled; no recent-searches panel.
+- Bottom bar text is capped at 130% (the rest of the app follows the system setting to 200%): four labelled tabs split mid-word at 200% on a 360dp-class screen.

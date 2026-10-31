@@ -20,6 +20,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.automirrored.filled.List
+import app.discair.ui.discover.DiscoverScreen
+import app.discair.ui.search.SearchScreen
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -60,7 +64,9 @@ fun MainShell(state: UiState, model: AppViewModel, container: AppContainer) {
     val destination = entry?.destination
     val tabs = listOf(
         Tab(HomeRoute, "Home", Icons.Default.Home),
-        Tab(LibraryRoute, "Library", Icons.Default.Search),
+        Tab(DiscoverRoute, "Discover", Icons.Default.Star),
+        Tab(SearchRoute, "Search", Icons.Default.Search),
+        Tab(LibraryRoute, "Library", Icons.AutoMirrored.Filled.List),
     )
     val onTopLevel = tabs.any { destination?.hasRoute(it.route::class) == true }
 
@@ -79,7 +85,13 @@ fun MainShell(state: UiState, model: AppViewModel, container: AppContainer) {
         Scaffold(
             topBar = { if (onTopLevel) AppHeader(onSettings = { nav.navigate(SettingsRoute) }) },
             bottomBar = {
-                if (onTopLevel) NavigationBar {
+                // Four labelled tabs cannot fit at 200% text: cap this bar at 130% so labels never split mid-word.
+                if (onTopLevel) CompositionLocalProvider(
+                    androidx.compose.ui.platform.LocalDensity provides androidx.compose.ui.unit.Density(
+                        androidx.compose.ui.platform.LocalDensity.current.density,
+                        minOf(androidx.compose.ui.platform.LocalDensity.current.fontScale, 1.3f),
+                    ),
+                ) { NavigationBar {
                     tabs.forEach { tab ->
                         NavigationBarItem(
                             selected = destination?.hasRoute(tab.route::class) == true,
@@ -91,14 +103,16 @@ fun MainShell(state: UiState, model: AppViewModel, container: AppContainer) {
                                 }
                             },
                             icon = { Icon(tab.icon, contentDescription = null) },
-                            label = { Text(tab.label) },
+                            label = { Text(tab.label, maxLines = 1) },
                         )
                     }
-                }
+                } }
             },
         ) { padding ->
             NavHost(nav, startDestination = HomeRoute, modifier = Modifier.padding(padding).fillMaxSize()) {
                 composable<HomeRoute> { HomeScreen(open) }
+                composable<DiscoverRoute> { DiscoverScreen(open) }
+                composable<SearchRoute> { SearchScreen(open) }
                 composable<LibraryRoute> { LibraryScreen(open) }
                 composable<SettingsRoute> { SettingsScreen(state, model, onBack = { nav.popBackStack() }) }
                 composable<ArtistRoute> { ArtistScreen(it.toRoute(), open) }

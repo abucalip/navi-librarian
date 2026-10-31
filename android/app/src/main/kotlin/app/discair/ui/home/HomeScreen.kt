@@ -113,8 +113,9 @@ fun HomeScreen(open: Opener) {
                 is Load.Ready -> GenreGrid(state.value, open, if (showAllGenres) GENRES_MAX else GENRES_SHOWN)
             }
         }
+        item(key = "new_releases") { ShelfRow("new_releases", "New releases", open) { repo.newReleases() } }
         for (shelf in listOf(Shelves.Newest to "Newly added", Shelves.Recent to "Recently played", Shelves.Frequent to "Most played")) {
-            item(key = shelf.first.path) { ShelfRow(shelf.first, shelf.second, open) }
+            item(key = shelf.first.path) { ShelfRow(shelf.first.path, shelf.second, open) { repo.shelf(shelf.first, 20).items } }
         }
     }
 }
@@ -246,9 +247,8 @@ private fun GenreGrid(all: List<GenreTile>, open: Opener, limit: Int) {
 }
 
 @Composable
-private fun ShelfRow(shelf: Shelves, title: String, open: Opener) {
-    val repo = LocalRepository.current
-    val loaded = rememberLoad(shelf) { repo.shelf(shelf, 20).items }
+private fun ShelfRow(shelf: String, title: String, open: Opener, load: () -> List<ShelfAlbum>) {
+    val loaded = rememberLoad(shelf) { load() }
     PageHeading(title, Modifier.padding(start = 16.dp, end = 16.dp, top = 24.dp, bottom = 8.dp))
     when (val state = loaded.state) {
         Load.Loading -> Muted("Loading…")
@@ -257,7 +257,7 @@ private fun ShelfRow(shelf: Shelves, title: String, open: Opener) {
             contentPadding = PaddingValues(horizontal = 16.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            items(state.value, key = { it.id }) { album: ShelfAlbum ->
+            items(state.value, key = { it.id.ifBlank { it.artist + '/' + it.name } }) { album: ShelfAlbum ->
                 Panel(Modifier.width(208.dp).clickable {
                     open.album(routeKey(album.artist, album.name), album.artist, album.name, album.id, album.year)
                 }) {
@@ -285,3 +285,9 @@ private fun ShelfRow(shelf: Shelves, title: String, open: Opener) {
         }
     }
 }
+
+/** The New releases shelf: the discovery list in the server's order, cards without an owned cover. */
+private fun app.discair.data.LibraryRepository.newReleases(): List<ShelfAlbum> =
+    discovery("new_releases", 20).entries.distinctBy { it.key }.map {
+        ShelfAlbum(name = it.item.album, artist = it.item.artistName, year = it.item.year, owned = false)
+    }

@@ -58,6 +58,11 @@ class LibraryViewModelTest {
         override fun artistPage(key: String, id: String?, name: String?, mbid: String?) = ArtistPage()
         override fun albumPage(key: String, id: String?, artist: String?, name: String?, year: Int?) = AlbumPage()
         override fun genrePage(tag: String) = GenrePage()
+        override fun discovery(list: String, count: Int) = app.discair.model.DiscoveryResult(emptyList(), false, null)
+        override fun feedback(action: app.discair.model.FeedbackAction, artist: String, album: String, metadata: kotlinx.serialization.json.JsonObject) = Unit
+        override fun refreshList(list: String) = Unit
+        override fun artistBio(artist: String): String? = null
+        override fun search(query: String, onEvent: (app.discair.model.SearchEvent) -> Unit) = Unit
         override fun albumLinks(artist: String, album: String, mbid: String?) = app.discair.model.AlbumLinks()
         override fun albumImage(artist: String, album: String): String? = null
         override fun artistImage(name: String): String? = null

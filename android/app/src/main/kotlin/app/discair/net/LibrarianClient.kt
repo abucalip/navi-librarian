@@ -84,6 +84,65 @@ class LibrarianClient(
         }
     }
 
+    /** POST a JSON body to [segments]. Same one-time re-login on 401; a 429 or error status throws. */
+    fun post(segments: List<String>, json: String): String {
+        val url = baseUrl.toHttpUrl().newBuilder().apply { segments.forEach { addPathSegment(it) } }.build()
+        return get(Request.Builder().url(url).post(json.toRequestBody(JSON)).build())
+    }
+
+    /**
+     * Reads a server-sent event stream, calling [onEvent] with each event's name and data line.
+     * Blocks until the stream ends; cancelling the calling coroutine's thread work closes the call.
+     */
+    fun stream(segments: List<String>, query: Map<String, String?>, onEvent: (String, String) -> Unit) {
+        val url = baseUrl.toHttpUrl().newBuilder().apply {
+            segments.forEach { addPathSegment(it) }
+            query.forEach { (key, value) -> if (value != null) addQueryParameter(key, value) }
+        }.build()
+        val request = Request.Builder().url(url).header("Accept", "text/event-stream").get().build()
+        val response = try {
+            open(request)
+        } catch (e: ConnectionException) {
+            if (e.failure !is ConnectionFailure.Unauthorised) throw e
+            login()
+            open(request)
+        }
+        response.use { r ->
+            val source = r.body?.source() ?: return
+            var name = "message"
+            val data = StringBuilder()
+            while (true) {
+                val line = source.readUtf8Line() ?: break
+                when {
+                    line.isEmpty() -> {
+                        if (data.isNotEmpty()) onEvent(name, data.toString())
+                        name = "message"
+                        data.setLength(0)
+                    }
+                    line.startsWith("event:") -> name = line.substring(6).trim()
+                    line.startsWith("data:") -> {
+                        if (data.isNotEmpty()) data.append('\n')
+                        data.append(line.substring(5).trimStart())
+                    }
+                }
+            }
+            if (data.isNotEmpty()) onEvent(name, data.toString())
+        }
+    }
+
+    private fun open(request: Request): Response {
+        val response = http.newCall(request).execute()
+        val failure = if (response.isSuccessful) null else {
+            val text = response.body?.string().orEmpty()
+            classifyStatus(response.code, errorDetail(text)) ?: ConnectionFailure.Server(response.code, errorDetail(text))
+        }
+        if (failure != null) {
+            response.close()
+            throw ConnectionException(failure)
+        }
+        return response
+    }
+
     fun signOut() {
         try {
             send(Request.Builder().url("$baseUrl/api/auth/logout").post("{}".toRequestBody(JSON)).build())
