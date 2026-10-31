@@ -1,6 +1,5 @@
 package app.discair
 
-import android.app.Application
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -147,8 +146,8 @@ class AppViewModel(
     }
 }
 
-class AppViewModelFactory(private val app: Application) : ViewModelProvider.Factory {
+class AppViewModelFactory(private val container: AppContainer) : ViewModelProvider.Factory {
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T =
-        AppViewModel(LazySettingsStore(app), AppConnector(app)) as T
+        AppViewModel(LazySettingsStore(container.app), container.connector) as T
 }

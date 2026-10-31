@@ -22,6 +22,7 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Warning
@@ -69,13 +70,13 @@ private val MaxFormWidth = 480.dp
 private val Target = 48.dp
 
 @Composable
-fun DiscairApp(state: UiState, model: AppViewModel) {
+fun DiscairApp(state: UiState, model: AppViewModel, container: app.discair.AppContainer) {
     Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         when (state.screen) {
             Screen.Checking -> CheckingScreen(state)
             Screen.Setup -> SetupScreen(state, model)
             Screen.Unavailable -> UnavailableScreen(state, model)
-            Screen.Home -> HomeScreen(state, model)
+            Screen.Home -> MainShell(state, model, container)
         }
     }
 }
@@ -199,11 +200,16 @@ private fun UnavailableScreen(state: UiState, model: AppViewModel) {
 }
 
 @Composable
-private fun HomeScreen(state: UiState, model: AppViewModel) {
+fun SettingsScreen(state: UiState, model: AppViewModel, onBack: () -> Unit) {
     var confirmSignOut by remember { mutableStateOf(false) }
     Page {
-        Title("Discair")
-        Text("Connected. The dashboard arrives in the next phase.", style = MaterialTheme.typography.bodyLarge)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            androidx.compose.material3.IconButton(onClick = onBack, Modifier.size(Target)) {
+                Icon(androidx.compose.material.icons.Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+            }
+            Text("Settings", style = MaterialTheme.typography.headlineMedium, modifier = Modifier.semantics { heading() })
+        }
+        Text("Connected to your servers.", style = MaterialTheme.typography.bodyLarge)
         CheckLine("Librarian", state.librarian)
         CheckLine("Navidrome", state.navidrome)
         Spacer(Modifier.weight(1f))

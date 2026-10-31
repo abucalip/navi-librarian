@@ -1,0 +1,130 @@
+package app.discair.ui
+
+import androidx.compose.foundation.layout.fillMaxSize
+import app.discair.ui.common.Target
+import app.discair.ui.common.RowDivider
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.Alignment
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.IconButton
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.Icon
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.navigation.NavDestination.Companion.hasRoute
+import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.rememberNavController
+import androidx.navigation.toRoute
+import app.discair.AppContainer
+import app.discair.AppViewModel
+import app.discair.UiState
+import app.discair.ui.album.AlbumScreen
+import app.discair.ui.artist.ArtistScreen
+import app.discair.ui.common.LocalImageLoader
+import app.discair.ui.common.LocalRepository
+import app.discair.ui.home.HomeScreen
+import app.discair.ui.library.LibraryScreen
+
+private data class Tab(val route: Any, val label: String, val icon: ImageVector)
+
+/** Signed-in shell: bottom bar on the two top-level tabs, stack destinations for every page. */
+@Composable
+fun MainShell(state: UiState, model: AppViewModel, container: AppContainer) {
+    val repo = remember(state.saved) { container.repository(state.saved) }
+    val nav = rememberNavController()
+    val entry by nav.currentBackStackEntryAsState()
+    val destination = entry?.destination
+    val tabs = listOf(
+        Tab(HomeRoute, "Home", Icons.Default.Home),
+        Tab(LibraryRoute, "Library", Icons.Default.Search),
+    )
+    val onTopLevel = tabs.any { destination?.hasRoute(it.route::class) == true }
+
+    val open = remember(nav) {
+        Opener(
+            artist = { name, key, id, mbid ->
+                nav.navigate(ArtistRoute(key = key?.ifBlank { null } ?: name.trim().lowercase(), name = name, id = id, mbid = mbid))
+            },
+            album = { key, artist, name, id, year -> nav.navigate(AlbumRoute(key, artist, name, id, year)) },
+            genre = { tag, name -> nav.navigate(GenreRoute(tag, name)) },
+            back = { nav.popBackStack() },
+        )
+    }
+
+    CompositionLocalProvider(LocalRepository provides repo, LocalImageLoader provides container.imageLoader) {
+        Scaffold(
+            topBar = { if (onTopLevel) AppHeader(onSettings = { nav.navigate(SettingsRoute) }) },
+            bottomBar = {
+                if (onTopLevel) NavigationBar {
+                    tabs.forEach { tab ->
+                        NavigationBarItem(
+                            selected = destination?.hasRoute(tab.route::class) == true,
+                            onClick = {
+                                nav.navigate(tab.route) {
+                                    popUpTo(nav.graph.findStartDestination().id) { saveState = true }
+                                    launchSingleTop = true
+                                    restoreState = true
+                                }
+                            },
+                            icon = { Icon(tab.icon, contentDescription = null) },
+                            label = { Text(tab.label) },
+                        )
+                    }
+                }
+            },
+        ) { padding ->
+            NavHost(nav, startDestination = HomeRoute, modifier = Modifier.padding(padding).fillMaxSize()) {
+                composable<HomeRoute> { HomeScreen(open) }
+                composable<LibraryRoute> { LibraryScreen(open) }
+                composable<SettingsRoute> { SettingsScreen(state, model, onBack = { nav.popBackStack() }) }
+                composable<ArtistRoute> { ArtistScreen(it.toRoute(), open) }
+                composable<AlbumRoute> { AlbumScreen(it.toRoute(), open) }
+                composable<GenreRoute> { GenreScreen(it.toRoute(), open) }
+            }
+        }
+    }
+}
+
+/** The bar over every top-level page: the app name in the display face and the Settings button. */
+@Composable
+private fun AppHeader(onSettings: () -> Unit) {
+    Column(Modifier.background(app.discair.ui.theme.Ink.Rail)) {
+        Row(
+            Modifier.fillMaxWidth().statusBarsPadding().heightIn(min = 56.dp).padding(start = 16.dp, end = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                "DISCAIR", style = MaterialTheme.typography.headlineMedium,
+                modifier = Modifier.weight(1f).semantics { heading() },
+            )
+            IconButton(onClick = onSettings, Modifier.size(Target)) {
+                Icon(Icons.Default.Settings, contentDescription = "Settings")
+            }
+        }
+        RowDivider()
+    }
+}

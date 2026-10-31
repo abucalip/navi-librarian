@@ -36,6 +36,7 @@ class AppConnector(context: Context) : Connector {
     // which is always on the IO dispatcher.
     private val cookies by lazy { PersistentCookieJar(EncryptedPrefs.open(appContext, "discair_session")) }
     private val http by lazy { httpClient(cookies) }
+    val client: okhttp3.OkHttpClient get() = http
 
     override fun networkAvailable(): Boolean {
         val manager = appContext.getSystemService(ConnectivityManager::class.java)

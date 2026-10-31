@@ -13,6 +13,7 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
+import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.Response
 
@@ -61,9 +62,19 @@ class LibrarianClient(
         send(Request.Builder().url("$baseUrl/api/health").get().build())
     }
 
+    /** GET with path segments and query parameters encoded by OkHttp. Null query values are left out. */
+    fun get(segments: List<String>, query: Map<String, String?> = emptyMap()): String {
+        val url = baseUrl.toHttpUrl().newBuilder().apply {
+            segments.forEach { addPathSegment(it) }
+            query.forEach { (key, value) -> if (value != null) addQueryParameter(key, value) }
+        }.build()
+        return get(Request.Builder().url(url).get().build())
+    }
+
     /** Runs a GET with the one-time re-login on 401. */
-    fun get(path: String): String {
-        val request = Request.Builder().url("$baseUrl$path").get().build()
+    fun get(path: String): String = get(Request.Builder().url("$baseUrl$path").get().build())
+
+    private fun get(request: Request): String {
         return try {
             send(request)
         } catch (e: ConnectionException) {
