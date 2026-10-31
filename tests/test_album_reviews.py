@@ -34,6 +34,10 @@ class DekTests(unittest.TestCase):
         self.assertIsNone(reviews.clean_dek(
             "Each Sunday, Pitchfork takes an in-depth look at a significant album from the past, and an artist's best."))
 
+    def test_a_removed_post_notice_is_rejected(self):
+        self.assertIsNone(reviews.clean_dek(
+            "This post has been removed because it promoted Nazi or Nazi-adjacent metal bands."))
+
     def test_the_opening_of_a_review_is_not_a_summary(self):
         self.assertIsNone(reviews.clean_dek(
             "It begins somewhere for everyone. There's the first song that grabs your attention. Then the album."))

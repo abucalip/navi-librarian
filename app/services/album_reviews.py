@@ -25,8 +25,9 @@ _TAG = re.compile(r"<[^>]+>")
 _BLOCK_END = re.compile(r"<br\s*/?>|</(?:p|div|li)>", re.IGNORECASE)
 _BRACKETED = re.compile(r"\s*[(\[][^)\]]*[)\]]")
 _SENTENCE_END = re.compile(r"(?<=[.!?])[\"'”’)]*\s+(?=[\"'“‘(]*[A-Z0-9])")
-# Pitchfork's weekly reissue reviews carry this line instead of a summary of the record.
-_BOILERPLATE = ("each sunday, pitchfork",)
+# Lines an outlet shows instead of a summary of the record: Pitchfork's weekly reissue reviews, and the
+# stub Angry Metal Guy leaves where it removed a post.
+_BOILERPLATE = ("each sunday, pitchfork", "this post has been removed", "this review has been removed")
 
 
 # "Kind of Blue: 50th Anniversary Edition" is a review of Kind of Blue; the edition is not another album.
