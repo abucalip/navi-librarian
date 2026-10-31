@@ -389,10 +389,24 @@
           <p id="albumArtist" class="album-hero-artist"></p>
           <p class="album-meta"><span id="albumGenre"></span><span id="albumYear"></span></p>
           <p id="albumOwnership" class="album-meta" hidden>Not in your library</p>
-          <div id="albumDescription" class="album-description" hidden>
-            <div id="albumDescriptionText" class="album-description-text"></div>
-            <button type="button" id="albumDescriptionToggle" class="bio-toggle" aria-expanded="false" aria-controls="albumDescriptionText" hidden>Read more</button>
-            <p class="album-description-source">Description from <a id="albumDescriptionLink" href="#" target="_blank" rel="noopener noreferrer">Apple Music</a></p>
+          <div class="album-about">
+            <div class="album-tabs" role="tablist" aria-label="About this album">
+              <button type="button" id="albumTabInfo" class="album-tab active" role="tab" aria-selected="true" aria-controls="albumInfoPanel" data-album-tab="info">Info</button>
+              <button type="button" id="albumTabReviews" class="album-tab" role="tab" aria-selected="false" aria-controls="albumReviewsPanel" tabindex="-1" data-album-tab="reviews">Reviews</button>
+            </div>
+            <div id="albumInfoPanel" class="album-tab-panel" role="tabpanel" aria-labelledby="albumTabInfo">
+              <p id="albumInfoNote" class="section-note" role="status">Loading description…</p>
+              <div id="albumDescription" class="album-description" hidden>
+                <div id="albumDescriptionText" class="album-description-text"></div>
+                <button type="button" id="albumDescriptionToggle" class="bio-toggle" aria-expanded="false" aria-controls="albumDescriptionText" hidden>Read more</button>
+                <p class="album-description-source">Description from <a id="albumDescriptionLink" href="#" target="_blank" rel="noopener noreferrer">Apple Music</a><span id="albumDescriptionLicense"></span></p>
+              </div>
+            </div>
+            <div id="albumReviewsPanel" class="album-tab-panel" role="tabpanel" aria-labelledby="albumTabReviews" hidden>
+              <p id="albumReviewsNote" class="section-note" role="status" hidden></p>
+              <ul id="albumReviews" class="album-reviews"></ul>
+              <button type="button" id="albumReviewsRetry" class="bio-toggle" hidden>Try again</button>
+            </div>
           </div>
           <p id="albumStatus" class="status-line" aria-live="polite"></p>
         </div>
