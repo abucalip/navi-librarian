@@ -565,10 +565,13 @@
     <h3 id="radioStationsHeading">Stations</h3>
     <div id="radioStations" class="radio-list" aria-labelledby="radioStationsHeading"></div>
     <h3 id="radioPlaysHeading">Heard</h3>
-    <div id="radioPlays" class="radio-list" aria-labelledby="radioPlaysHeading"></div>
-    <div class="action-group" role="group" aria-label="Radio">
-      <button id="refreshRadio" type="button" title="Refresh" aria-label="Refresh"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="/static/icons.svg#rotate-cw"></use></svg></button>
+    <div class="radio-toolbar">
+      <div class="action-group" role="group" aria-label="Heard list">
+        <button id="refreshRadio" type="button" title="Refresh" aria-label="Refresh"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="/static/icons.svg#rotate-cw"></use></svg></button>
+        <button id="clearRadioPlays" type="button" title="Clear all" aria-label="Clear all"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="/static/icons.svg#trash-2"></use></svg></button>
+      </div>
     </div>
+    <div id="radioPlays" class="radio-list" aria-labelledby="radioPlaysHeading"></div>
   </div>
 </section>
 

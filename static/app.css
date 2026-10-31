@@ -1042,6 +1042,9 @@ button.inline-link:focus-visible { outline: 2px solid var(--accent); outline-off
   display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 18px;
   background: var(--surface); border-bottom: 1px solid var(--edge);
 }
+.radio-toolbar { display: flex; justify-content: center; margin: 0 0 24px; }
+.radio-toolbar > .action-group { margin: 0 auto; }
+.radio-toolbar .action-group > button { width: 44px; min-width: 0; min-height: 0; height: var(--group-h); padding: 0; }
 .radio-main { min-width: 0; }
 .radio-title { margin: 0; color: var(--text); font: 600 var(--text-base)/1.25 var(--body); overflow-wrap: anywhere; }
 .radio-meta { margin: 2px 0 0; color: var(--text-muted); font-size: var(--text-xs); overflow-wrap: anywhere; }
