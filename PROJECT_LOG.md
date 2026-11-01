@@ -4,7 +4,8 @@
 - **Results:** the queue lives inside the player (contract corrected). A helper player cannot be aligned with the main player (position noise about 250 ms): rejected. Twin full-playlist players with a mirror wrapper and `MediaSession.setPlayer` swap worked in 7 joins: the session followed the incoming song, no crash, next during a fade aborts correctly. Bugs found for the build: audio-focus order, the outgoing player advancing at its end, pause not reaching the tail, shuffle order not mirrored.
 - **Not done or not claimed:** nothing was heard; scrobbling on the server, the equalizer sound, Bluetooth, calls, Doze, data and CPU cost were not checked. No unit tests were written (a spike). The full suite was not run.
 - **Phone state:** the spike build is installed over the owner's release app; sign-in kept.
-- **Next action:** the owner listens, then decides A2; then X2.
+- **Owner's listening result:** the owner reported the A2 overlap sounds clean (message read "it sounds wlean", read as "clean"). X1 closed; A2 decided; D-021 updated.
+- **Next action:** X2, when the owner schedules it.
 
 ## 2026-11-01 — Android crossfade X0: documents
 

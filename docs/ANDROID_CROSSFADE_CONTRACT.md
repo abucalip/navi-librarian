@@ -1,6 +1,6 @@
 # Android crossfade contract (Discair)
 
-Status: **phase X0 (documents) started on the owner's instruction on 2026-11-01. The owner did not answer section 11 point by point, so every proposed default there stands until the owner overrides it before the phase it affects. Nothing is built; X1 (the spike) was run on the owner's phone on 2026-11-01 and its measured result is in section 13; X1 stays open until the owner has listened to it.** This is the "crossfade" item that [`ANDROID_PLAYER_CONTRACT.md`](ANDROID_PLAYER_CONTRACT.md) sections 6 and 14, [`ANDROID_EQ_CONTRACT.md`](ANDROID_EQ_CONTRACT.md) section 1 and `ACTIVE_WORK.md` left for its own contract (proposed `D-021`). It was committed directly to `main` as documentation only (workflow rule 8). No code is written before X1 is approved.
+Status: **phase X0 (documents) started on the owner's instruction on 2026-11-01. The owner did not answer section 11 point by point, so every proposed default there stands until the owner overrides it before the phase it affects. Nothing is built; X1 (the spike) was run on the owner's phone on 2026-11-01 and its measured result is in section 13. The owner listened on the phone and reported the overlap sounds clean (2026-11-01), so X1 is closed and the architecture is decided: twin players (A2). X2 is next and needs the owner's go-ahead.** This is the "crossfade" item that [`ANDROID_PLAYER_CONTRACT.md`](ANDROID_PLAYER_CONTRACT.md) sections 6 and 14, [`ANDROID_EQ_CONTRACT.md`](ANDROID_EQ_CONTRACT.md) section 1 and `ACTIVE_WORK.md` left for its own contract (proposed `D-021`). It was committed directly to `main` as documentation only (workflow rule 8). No code is written before X1 is approved.
 
 ## 1. Purpose and scope
 
@@ -63,7 +63,7 @@ Four ways to get a crossfade were considered.
 | Equalizer | Two sinks, so two processors on the same setting | Two sinks, same | One, unchanged | One, unchanged |
 | Cost to build | High | Medium to high, and the hand-over glitch risk is not known to be solvable | Low | Very high; touches ExoPlayer internals that are not stable API |
 
-**Proposed: A, behind a spike (phase X1) that decides it.** A is the only design that gives a true, clean overlap without private ExoPlayer internals. B is the cheaper-looking route but its hand-over can glitch; X1 builds the smallest version of A and of B on the owner's phone and the owner picks by ear and by the checks in section 9 before anything is built for real. C is the honest fallback if A and B both fail: a "fade between songs" that is not a crossfade, called by that name in the screen, and the owner decides whether it is worth shipping. D is rejected: it depends on unstable ExoPlayer internals.
+**Decided after X1: A in its twin-player form (A2, section 13).** *(Original wording: Proposed: A, behind a spike (phase X1) that decides it.)* A is the only design that gives a true, clean overlap without private ExoPlayer internals. B is the cheaper-looking route but its hand-over can glitch; X1 builds the smallest version of A and of B on the owner's phone and the owner picks by ear and by the checks in section 9 before anything is built for real. C is the honest fallback if A and B both fail: a "fade between songs" that is not a crossfade, called by that name in the screen, and the owner decides whether it is worth shipping. D is rejected: it depends on unstable ExoPlayer internals.
 
 Rules for A (to be confirmed or changed by X1):
 - **Superseded by section 13.** The first draft said the two players would not copy the queue. X1 showed the order lives inside the player, so the proposed form of A is two players holding identical playlists (section 13).
@@ -193,7 +193,7 @@ Each phase is one focused PR from `main`, with tests, no full-suite run by agent
 
 Proposed defaults. The owner started X0 without changing any of them (2026-11-01), so each applies as written unless the owner changes it before the phase it affects.
 
-1. **Architecture: A (two players), B (a helper player) or C (a dip), decided by the X1 spike?** Proposed: spike both A and B; build whichever sounds clean and keeps the session honest. If neither does, ship C under an honest name or stop.
+1. **Architecture: A (two players), B (a helper player) or C (a dip), decided by the X1 spike?** **Decided (2026-11-01): A2, twin players with identical playlists** (section 13). The owner listened to the spike on the phone and reported the overlap sounds clean. B and B2 are dropped; C stays only as a fallback if A2 fails in a later device run.
 2. **Default length and range?** Proposed: default 5 s, range 1 to 12 s in 1 s steps. A longer range (up to 20 s) is a later change, not a risk.
 3. **Do manual skips crossfade?** Proposed: **no** in version 1. A short fade on a tap of "next" is a common feature but adds the hardest cases (a skip storm, a skip during a fade); it can be a later contract.
 4. **Keep same-album consecutive tracks gapless by default?** Proposed: yes (5.3).
@@ -244,3 +244,5 @@ What the logs and `dumpsys media_session` showed, 7 crossfaded joins across runs
 **Recommendation:** choose **A2**, subject to the owner's listening check. B and B2 are dropped; C (the fade dip) stays the fallback. If the owner agrees, X2 is unchanged, and X3 is "twin players with a mirror wrapper" with the four rules above as its first tests.
 
 **To listen on the phone (the spike build is installed over the app):** start a queue of songs, then run `adb shell am broadcast -a app.discair.XFSPIKE --es cmd on --el ms 5000` to turn it on, and `adb shell am broadcast -a app.discair.XFSPIKE --es cmd end --el ms 30000` to jump to 30 s before the end of the song. Listen to the join and the notification. Turn it off with `--es cmd off`. To go back to the normal app, install the release build of `main`.
+
+**Owner's listening result (2026-11-01):** the owner listened to the A2 spike on the phone and reported that the overlap sounds clean (the report read "it sounds wlean"; read as "clean"). This is the only audio judgement on record: one listening session on the spike with the equalizer setting as it was, no specific tracks, lengths or checks beyond the 5 s fade were reported. X1 is closed. The checks listed above as "not measured or not checked" are still open and move to X3 and X5.
