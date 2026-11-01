@@ -1,3 +1,11 @@
+## 2026-11-01 — Android lyrics L1 to L3 merged (PRs #668, #669, #670)
+
+- **Merged:** #668 `ecdea99be4eed8d947561b9c5da2d2493509fdc8` (head `853a191`), #669 `27a5d3d08e99f0869b9174d8235251333bd00915` (head `44d3391`), #670 `8c2808cbfc87d03d552b5652f2f5e6a45e47a8b6`. Required checks (compile, container-smoke, test-and-build, validate-container) passed on each exact head before merge; the full suite ran in CI only.
+- **Built:** `lyrics/` package: Navidrome source with once-per-session `songLyrics` check, choosing and cleaning rules, hashed on-device cache (300 songs or 5 MB, none for 24 h, cleared at sign-out); `LyricsTimeline` and the visible-only 250 ms `LyricsFollower`; `LyricsController` (cache first, one request at a time, next-song prefetch, cancel on close); Player / Lyrics / Queue tabs and `LyricsPanel`; `PlayerController.livePositionMs()`.
+- **Tests actually run (local, JDK 17):** `./gradlew testDebugUnitTest --tests 'app.discair.lyrics.*' --tests 'app.discair.player.*' lintDebug assembleDebug assembleRelease` all passed (lyrics: 68 tests). R8 output inspected: the three lyrics serializers are present in the minified build.
+- **Not done:** any emulator or phone run, Compose UI tests, release-build cache read/write on a device, the `/mobile-design` review on built screens. No publication or deployment.
+- **Next action:** L4, the owner's device run per contract section 10; record results here and in `android/DESIGN.md`.
+
 ## 2026-11-01 — Android lyrics, phase L0 (documents)
 
 - **Done:** documentation only, committed directly to `main` per the workflow. Added D-019 to `docs/DECISIONS.md`, `LYRICS-01` to `LYRICS-04` to `docs/REQUIREMENTS.md`, an "Android lyrics focused checks" section to `docs/TEST_PLAN.md`, and replaced the "pending approval" pointer in `docs/ANDROID_PLAYER_CONTRACT.md` with the approved-contract reference. `docs/ACTIVE_WORK.md` records L0 as done.
