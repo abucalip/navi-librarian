@@ -1,3 +1,11 @@
+## 2026-11-01 — Android crossfade X4 merged; X5 first device run
+
+- **Merged:** PR #680, squash `af8ece1f98a099b40de1024bd0a724ed0fdc1fc3`, from tested head `35c7d99`; compile, container-smoke, test-and-build and validate-container passed on that head before merge; the full suite ran in CI only.
+- **Device (owner's phone, SM_G781B, over adb, signed release build of the PR head):** the Settings row, the page off and on and the Now Playing link were seen on screenshots; switching on built the second player; one 5 s fade between songs of different albums was logged (start, complete) and the media session followed to the next song; no crash. Details and the full list of what was not seen: `docs/ANDROID_CROSSFADE_CONTRACT.md` section 17.
+- **Not reported, so not claimed:** how the join sounds, and everything in the checklist of contract section 10 that was not run.
+- **State left on the phone:** crossfade on at 5 s, "Keep albums gapless" on.
+- **Next action:** the owner's listening and checklist; fixes go against the contract as bugs.
+
 ## 2026-11-01 — Android crossfade X4: settings page
 
 - **Merged earlier:** X3, PR #679, squash `19dab68d8a4457a3dc1590d236a935c34d0545fe`; all four required checks passed on its head.

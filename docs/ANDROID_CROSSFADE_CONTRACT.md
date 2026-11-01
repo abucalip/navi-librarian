@@ -292,3 +292,19 @@ Run: `./gradlew testDebugUnitTest --tests 'app.discair.player.*' lintDebug assem
 Deviations from section 7: (1) a page rather than a sheet; (2) the Now Playing "Crossfade: 5 s" is a text button that opens the page (like the equalizer link), not plain text; (3) the "Skipping a song yourself is not faded" line is in the switch's help text, not a separate line; (4) no landscape layout.
 
 Not done or not verified: no screenshot, no TalkBack, no 200% text, no one-handed check; no screen tests exist (the project has none), so the layout is checked only by compiling and by the text rules.
+
+## 17. Phase X5: first device run (2026-11-01)
+
+**X4 was merged in PR #680 (`af8ece1`; all four required checks passed on its head `35c7d99`). The first device run of the production crossfade was done on the owner's phone (SM_G781B) over adb with the signed release build of that head, installed over the earlier spike build. It is a short run by the assistant, which cannot hear: whether the join sounded clean was not reported by the owner for this run, so nothing about sound is claimed. X5 stays open.**
+
+**Seen (screenshots of the phone and the service log, tag `Crossfade`):**
+- Settings, Playback: a "Crossfade" row under "Equalizer", reading "Off" on a fresh install.
+- The page, off: "Off. Songs follow each other as they do now. Turn it on to choose a length."; "Fade length 5 seconds" with minus, slider and plus dimmed; "Keep albums gapless" shown on; the line that a change applies at the next song change.
+- The page, on: the switch yellow with "On. The end of one song fades into the start of the next. Skipping a song yourself is not faded."; the length controls live.
+- Now Playing, Player view: "Crossfade: 5 s" under "Equalizer: off", shown after the switch was turned on.
+- Switching crossfade on mid-song made the engine build its second player at once (`second player player1 created with 14 songs`), so the settings listener reaches the service.
+- With the 5 s length, after a seek to about 3:30 of "Starlight" (Muse, 3:59): `fade start: player0 -> player1, 5000 ms`, then `fade complete`. The media session then reported the next song, "White Flag" (Dido, a different album), as playing at a position near 0 with the right title and artist. At the end of the queue the engine logged `no fade: NoNextSong`. No crash and no error in the log; playback was still running afterwards.
+
+**Not seen, so not claimed:** how the join sounds; the album rule on two consecutive songs of one album (the run crossed albums); skip, seek and pause during a fade; a phone call; shuffle; repeat modes; screen off or Doze; Bluetooth; quality below Original; the equalizer on both players; scrobbling and now-playing in Navidrome across a swap; the notification and lock screen beyond what the media session showed; the extra data, CPU and battery; 200% text, TalkBack and one-handed reach on the new page. These remain the owner's checklist in section 10.
+
+**State left on the phone:** crossfade is on at 5 s with "Keep albums gapless" on (turned on for the run; the owner can switch it off in Settings).
