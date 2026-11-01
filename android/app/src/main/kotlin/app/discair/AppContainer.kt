@@ -14,6 +14,8 @@ import app.discair.player.FileQueueStorage
 import app.discair.player.Media3Port
 import app.discair.player.NavidromeScrobbler
 import app.discair.player.PlayerController
+import app.discair.player.PlayerSettings
+import app.discair.player.PrefsPlayerSettings
 import app.discair.player.ScrobbleApi
 import app.discair.player.ScrobbleCoordinator
 import app.discair.player.SendOutcome
@@ -40,13 +42,17 @@ class AppContainer(val app: Application) {
         }
     }
 
-    /** The one player controller. It binds to the playback service on first use and restores the saved queue, paused. */
-    val player: PlayerController by lazy {
+    /** Per-device playback choices (streaming quality, scrobbling). */
+    val playerSettings: PlayerSettings by lazy {
+        PrefsPlayerSettings(app.getSharedPreferences("discair_player", android.content.Context.MODE_PRIVATE))
+    }
+
+    private val playerLazy = lazy {
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
         val controller = PlayerController(
             port = Media3Port(app),
             storage = FileQueueStorage(java.io.File(app.filesDir, "player_queue.json")),
-            scrobbler = ScrobbleCoordinator(scrobbleApi, CoroutineScope(SupervisorJob() + Dispatchers.Default)),
+            scrobbler = ScrobbleCoordinator(scrobbleApi, CoroutineScope(SupervisorJob() + Dispatchers.Default), enabled = playerSettings.scrobbling),
             scope = scope,
         )
         controller.restore()
@@ -58,6 +64,15 @@ class AppContainer(val app: Application) {
         })
         connector.onSignedOut = { android.os.Handler(android.os.Looper.getMainLooper()).post { controller.signOut() } }
         controller
+    }
+
+    /** The one player controller. It binds to the playback service on first use and restores the saved queue, paused. */
+    val player: PlayerController get() = playerLazy.value
+
+    /** Saves the choice and applies it to a player that is already running. */
+    fun setScrobbling(on: Boolean) {
+        playerSettings.scrobbling = on
+        if (playerLazy.isInitialized()) playerLazy.value.setScrobbling(on)
     }
 
     val imageLoader: ImageLoader by lazy {

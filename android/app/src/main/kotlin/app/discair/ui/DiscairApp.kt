@@ -17,6 +17,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.ui.semantics.Role
+import app.discair.AppContainer
+import app.discair.DiscairApplication
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -220,7 +226,9 @@ private fun UnavailableScreen(state: UiState, model: AppViewModel) {
 @Composable
 fun SettingsScreen(state: UiState, model: AppViewModel, onBack: () -> Unit) {
     var confirmSignOut by remember { mutableStateOf(false) }
-    Page {
+    val container = (androidx.compose.ui.platform.LocalContext.current.applicationContext as DiscairApplication).container
+    // The page scrolls because the playback choices make it taller than a phone in landscape or at large text.
+    Page(scroll = true) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             androidx.compose.material3.IconButton(onClick = onBack, Modifier.size(Target)) {
                 Icon(androidx.compose.material.icons.Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
@@ -230,7 +238,8 @@ fun SettingsScreen(state: UiState, model: AppViewModel, onBack: () -> Unit) {
         Text("Connected to your servers.", style = MaterialTheme.typography.bodyLarge)
         CheckLine("Librarian", state.librarian)
         CheckLine("Navidrome", state.navidrome)
-        Spacer(Modifier.weight(1f))
+        PlaybackSettings(container)
+        Spacer(Modifier.size(24.dp))
         OutlinedButton(onClick = model::recheck, modifier = Modifier.fillMaxWidth().heightIn(min = Target)) {
             Text("Check again")
         }
@@ -267,6 +276,47 @@ fun SettingsScreen(state: UiState, model: AppViewModel, onBack: () -> Unit) {
                 ) { Text("Sign out", color = MaterialTheme.colorScheme.error) }
             },
         )
+    }
+}
+
+/** Streaming quality and scrobbling. Both are per device and apply to songs started afterwards. */
+@Composable
+private fun PlaybackSettings(container: AppContainer) {
+    val settings = container.playerSettings
+    var rate by remember { mutableStateOf(settings.maxBitRate) }
+    var scrobble by remember { mutableStateOf(settings.scrobbling) }
+    Section("Playback")
+    Text("Streaming quality", style = MaterialTheme.typography.titleMedium)
+    Column(Modifier.selectableGroup()) {
+        app.discair.player.QUALITY_CHOICES.forEach { choice ->
+            Row(
+                Modifier.fillMaxWidth().heightIn(min = Target)
+                    .selectable(selected = rate == choice, role = Role.RadioButton, onClick = { rate = choice; settings.maxBitRate = choice }),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                androidx.compose.material3.RadioButton(selected = rate == choice, onClick = null)
+                Text(app.discair.player.qualityLabel(choice), Modifier.padding(start = 12.dp), style = MaterialTheme.typography.bodyLarge)
+            }
+        }
+    }
+    Text(
+        "Original plays the file as it is. A lower rate converts on the server and saves data. It applies to songs you start after changing it.",
+        style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+    Row(
+        Modifier.fillMaxWidth().heightIn(min = Target)
+            .toggleable(value = scrobble, role = Role.Switch, onValueChange = { scrobble = it; container.setScrobbling(it) }),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(Modifier.weight(1f).padding(end = 12.dp)) {
+            Text("Record plays", style = MaterialTheme.typography.titleMedium)
+            Text(
+                if (scrobble) "On. Songs you play here are added to your listening history, which also shapes your recommendations."
+                else "Off. Plays are not sent, so they will not change your history or recommendations.",
+                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        androidx.compose.material3.Switch(checked = scrobble, onCheckedChange = null)
     }
 }
 

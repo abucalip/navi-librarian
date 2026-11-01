@@ -56,7 +56,7 @@ class PlaybackService : MediaSessionService() {
             )
             .setHandleAudioBecomingNoisy(true)
             .build()
-        val resolver = StreamResolver(container)
+        val resolver = StreamResolver.forContainer(container)
         val mediaSession = MediaSession.Builder(this, exo)
             .setCallback(object : MediaSession.Callback {
                 // Only this app and the system (notification, lock screen, Bluetooth) may control playback.
