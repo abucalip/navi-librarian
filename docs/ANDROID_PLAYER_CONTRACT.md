@@ -89,7 +89,7 @@ Each phase is one focused PR from `main`. Agents run focused tests only (the own
 4. **Entry points.** (Built; see section 12.) Album, Artist, Library and Search, plus play next and add to queue.
 5. **Settings and hardening.** (Built; see section 13. The device run is the owner's.) Quality and scrobble toggle, the format fallback, expired sign-in and offline behaviour, TalkBack, landscape, 200 % text, reduced motion, signed release build run on the owner's phone.
 
-Later, each with its own contract: crossfade, EQ, lyrics (gapless was taken on in section 14). Lyrics: a proposal is drafted in [`ANDROID_LYRICS_CONTRACT.md`](ANDROID_LYRICS_CONTRACT.md), pending the owner's approval.
+Later, each with its own contract: crossfade, EQ, lyrics (gapless was taken on in section 14). Lyrics: governed by [`ANDROID_LYRICS_CONTRACT.md`](ANDROID_LYRICS_CONTRACT.md) (D-019), approved by the owner on 2026-11-01.
 
 ## 7. Verification
 

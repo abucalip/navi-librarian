@@ -1,3 +1,9 @@
+## 2026-11-01 — Android lyrics, phase L0 (documents)
+
+- **Done:** documentation only, committed directly to `main` per the workflow. Added D-019 to `docs/DECISIONS.md`, `LYRICS-01` to `LYRICS-04` to `docs/REQUIREMENTS.md`, an "Android lyrics focused checks" section to `docs/TEST_PLAN.md`, and replaced the "pending approval" pointer in `docs/ANDROID_PLAYER_CONTRACT.md` with the approved-contract reference. `docs/ACTIVE_WORK.md` records L0 as done.
+- **Not done:** no code, no tests run (none apply), no PR, no publication, no deployment. Nothing is implemented; the requirement rows say "Contract only".
+- **Next action:** phase L1 (data layer) when the owner schedules it.
+
 ## 2026-11-01 — Android header button group: PR #660 merged
 
 - **Change:** PR [#660](https://github.com/abucalip/navi-librarian/pull/660), squash `c2fa8dab1f342a5dcfb6279de8813463babb8318`. Downloads and Settings in the app header are one joined group in the web action-group style (6dp radius, 1px edge, divider, 38dp tall, 44dp buttons). The wordmark no longer shares weight with the spacer, which had left the group about 28dp short of the right edge; it now sits 16dp from the edge, level with the wordmark's left margin.

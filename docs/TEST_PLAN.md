@@ -166,6 +166,18 @@ Contract: `docs/ANDROID_PLAYER_CONTRACT.md`. Unit tests in `android/app/src/test
 - **Scrobble retry:** a request that was sent and whose response was lost is not retried and cannot duplicate; a connect failure before any bytes is retried at most 3 times with the original `time`; now-playing is never retried.
 - **Device (owner):** the manual list in contract section 7. Do not claim device results from unit tests.
 
+## Android lyrics focused checks (LYRICS-01 to LYRICS-04)
+
+Contract: `docs/ANDROID_LYRICS_CONTRACT.md`. Unit tests in `android/app/src/test`; focused runs only, the owner runs the full suite. Fixtures use placeholder text with the structure of the real answer; no real lyrics anywhere in the repository.
+
+- **Parsing and choice:** timed, plain and empty answers; several entries; phone-language preference; timed before plain.
+- **Cleaning:** unsorted starts, missing or negative `start`, an `offset`, over-long lines (500), over-many lines (2,000), control characters, equal or backward starts treated as plain.
+- **Source:** a bad song id makes no request; error code 70 is "none"; auth codes are "login rejected"; a network failure is "unreachable"; no `songLyrics` extension makes no lyrics request; no password, token or lyrics text in any error or log.
+- **Cache:** hit, miss, size and count limits, another server or user does not read it, cleared at sign-out, "none" expires after 24 hours.
+- **Timeline:** exact boundaries, before the first and after the last line, seek backward and forward, an offset, pause, empty and one-line cases; the 250 ms check stops when the view is hidden or playback pauses.
+- **Screen:** the state choice from the data layer's results.
+- **Device (owner):** the manual list in contract section 10. Do not claim device results from unit tests.
+
 ## UI changes
 
 After automated CI succeeds, run the full manual browser checklist in `docs/LOCAL_UI_TESTING.md` against the exact tested SHA. Cover affected workflows and record the actual result. Do not claim manual verification from source inspection or automated tests alone.

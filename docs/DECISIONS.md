@@ -155,3 +155,11 @@ Record decisions here when they constrain future implementation. Add new entries
 **Reason:** The owner chose direct access for the Android app (contract section 9, decision 3), so a proxy would add backend code and doubled bandwidth without a new security boundary. The review findings on PR #645 (ownership, stream lifecycle, scrobble duplicates, format allowlist) are carried into the Android contract in their Android form.
 
 **Consequence:** `docs/ANDROID_PLAYER_CONTRACT.md` is the governing contract. `PRODUCT.md` and `ANDROID_CLIENT_CONTRACT.md` are amended. Playback needs a media foreground service, an exception to the earlier no-background rule that covers playback only. D-016 is unaffected. `docs/PLAYER_PROPOSAL.md` (PR #645) remains the web proposal and is not approved. Enabling scrobbling feeds the history that discovery reads.
+
+## D-019 — Android lyrics come only from the owner's Navidrome
+
+**Decision:** The Android app shows lyrics for the playing song inside the Now Playing sheet, read directly from Navidrome with the login already saved on the device (`getLyricsBySongId`, after a `getOpenSubsonicExtensions` check for `songLyrics`). Timed lyrics follow the music; plain lyrics are text. Lines are not tappable. Fetching happens only when the Lyrics view is opened, with a prefetch of the next song while it stays open. A small on-device cache (300 songs or 5 MB, refreshed at most daily, "none" kept 24 hours) is cleared at sign-out.
+
+**Reason:** Lyrics text is copyrighted, so no outside service is used and nothing is logged, committed or sent anywhere except from Navidrome to the screen. A survey on the owner's server (2026-11-01) showed Navidrome 0.64.2 supports `songLyrics`, that lookups are slow (4.1 s average, 12.5 s worst on the local network) and that about one song in eight has none, so the design needs a loading state, a cache and "none" as a normal answer.
+
+**Consequence:** `docs/ANDROID_LYRICS_CONTRACT.md` is the governing contract (approved by the owner on 2026-11-01). The web UI and Librarian are unchanged (D-016 untouched). `ANDROID_PLAYER_CONTRACT.md` points to it. Work runs in phases L0 to L4, each one PR except L0 (documentation, direct to `main`).

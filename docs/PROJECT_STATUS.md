@@ -4,6 +4,7 @@ Last checked: 2026-11-01. GitHub `main` is authoritative.
 
 ## Current state
 
+- **Android lyrics L0 (documents) done (2026-11-01):** D-019, `LYRICS-01..04`, the lyrics test-plan section and the player-contract pointer are on `main` (documentation only, direct commit). Nothing is implemented. Next phase: L1, data layer, when the owner schedules it.
 - **Peace Sans for album titles merged (2026-11-01):** PR [#658](https://github.com/abucalip/navi-librarian/pull/658), squash `cafbaf32cff8c6080e8d52db1daea240ac7e72e8`, from tested head `b488527f09e1750be265a0534b6cf1a910a75f20`; all required checks passed on that head (the full suite ran in CI only). Album titles on cards, list rows, acquisition rows, artist-page album rows and library names use Peace Sans; Big Shoulders Display remains for numerals. The owner viewed the card titles locally; list and acquisition rows were not confirmed. Not published, not deployed.
 - **Post-merge Python learning rule added (2026-11-01):** `docs/DEVELOPMENT_WORKFLOW.md` now requires every successful merge response to include a concise, beginner-friendly **Did you know?** lesson about a basic Python concept. The rule calls for plain language, a tiny example where useful, and no assumed coding knowledge. Workflow commit: `0bf04aa71a07c4c6814cca2241fcbcf777fb3364`.
 
