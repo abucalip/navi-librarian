@@ -171,3 +171,11 @@ Record decisions here when they constrain future implementation. Add new entries
 **Reason:** The same sound on every phone and output, and a filter that is unit-testable in plain Kotlin like the rest of the player. The platform effect varies by maker, cannot be checked for clipping, and needs session tracking. The platform effect remains the fallback if the owner's phone shows a CPU or battery problem.
 
 **Consequence:** `docs/ANDROID_EQ_CONTRACT.md` is the governing contract (approved by the owner on 2026-11-01, all defaults accepted). The web UI and Librarian are unchanged (D-016 untouched). Gapless playback and scrobbling must not change. Work runs in phases E0 to E4, each one PR except E0 (documentation). Crossfade, bass boost, normalisation, per-output profiles and curve import stay out of scope.
+
+## D-021 — Android crossfade is a service-level overlap, chosen by a spike
+
+**Decision:** The Android app gets an optional crossfade between songs, off by default, 1 to 12 seconds (default 5), equal-power, applied only to automatic song changes (manual skips stay instant). Consecutive tracks of one album stay gapless by default. The overlap needs a second audio path in the playback service; the architecture (two players behind one session wrapper, a helper player, or a plain fade dip) is decided by a throwaway spike (phase X1) on the owner's phone before real code is written. Settings are per device and kept at sign-out. No permission, third-party SDK or Librarian change is added.
+
+**Reason:** ExoPlayer plays one song at a time on one audio track, so a true overlap cannot be done inside the current single player, and Media3 1.11.0 is not known to offer one (to be confirmed in X1). The owner confirmed that gapless playback is seamless today, so the design must leave it untouched with crossfade off and for same-album joins, and must keep scrobbling, the equalizer and the notification honest.
+
+**Consequence:** `docs/ANDROID_CROSSFADE_CONTRACT.md` is the governing contract (X0 started by the owner on 2026-11-01; its proposed defaults stand until overridden). The web UI and Librarian are unchanged (D-016 untouched). Work runs in phases X0 to X5, each one PR except X0 (documentation, direct to `main`); X1 is a spike that is not merged. Crossfade on manual skips, normalisation and automatic mix points stay out of scope.

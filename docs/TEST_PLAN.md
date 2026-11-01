@@ -191,6 +191,17 @@ Contract: `docs/ANDROID_EQ_CONTRACT.md`. Unit tests in `android/app/src/test`; f
 - **Screen:** preset-to-bands mapping, the move-to-Custom rule, dB text and TalkBack text.
 - **Device (owner):** the manual list in contract section 10. Do not claim device results from unit tests.
 
+## Android crossfade focused checks (XFADE-01 to XFADE-04)
+
+Contract: `docs/ANDROID_CROSSFADE_CONTRACT.md`. Unit tests in `android/app/src/test`; focused runs only, the owner runs the full suite.
+
+- **Curve:** gains at progress 0, 0.5 and 1; the sum of squares is 1 across the ramp; monotonic; no step larger than the set bound per update.
+- **Planner:** every refusal reason has a test (crossfade off, manual change, no next song, repeat-one, unknown or short duration, next song not ready, same-album rule); a short song gets a shorter fade; repeat-all at the end of the queue; shuffle; hostile lengths are clamped.
+- **Off means off:** with crossfade off the second path is never created.
+- **Service:** a thrown error becomes "play as today"; both players are released exactly once; a manual skip during the overlap snaps to the incoming song; one scrobble and one now-playing per join; both equalizer processors follow one setting.
+- **Settings and screen:** round trip, clamping, corrupt data, defaults, sign-out does not clear them; length text and TalkBack text; the quality line shows only below Original.
+- **Device (owner):** the manual list in contract section 10. Anything needing a real `ExoPlayer` or `AudioTrack` is a device check; do not claim device results from unit tests.
+
 ## UI changes
 
 After automated CI succeeds, run the full manual browser checklist in `docs/LOCAL_UI_TESTING.md` against the exact tested SHA. Cover affected workflows and record the actual result. Do not claim manual verification from source inspection or automated tests alone.

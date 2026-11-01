@@ -1,3 +1,10 @@
+## 2026-11-01 — Android crossfade X0: documents
+
+- **Done:** `docs/ANDROID_CROSSFADE_CONTRACT.md` (proposed architecture: two players behind one session wrapper, decided by a spike; album rule keeps same-album joins gapless; automatic changes only), `D-021`, `XFADE-01..04`, the crossfade section of `TEST_PLAN.md`, pointers in `ANDROID_PLAYER_CONTRACT.md`, `ACTIVE_WORK.md` and `PROJECT_STATUS.md`. Documentation only, committed directly to `main` per the workflow.
+- **Not done:** no code, no tests, no device check. Whether Media3 1.11.0 offers a crossfade was not checked against the library source; X1 must confirm.
+- **Owner input:** the owner asked for the contract to be pushed and X0 started; section 11 was not answered point by point, so its proposed defaults stand.
+- **Next action:** X1, the spike, when the owner schedules it.
+
 ## 2026-11-01 — Android equalizer E1 to E4: built, merged, first listening test passed
 
 - **Merged:** contract PR #673 (`86e173f`), E1 filter and processor #674 (`64fb9bc`), E2 settings and service wiring #675 (`906f446`), E3 screen #676 (`85b379d`), and the E4 follow-up #677 (`5741e2a`). Required checks (compile, container-smoke, test-and-build, validate-container) passed on each PR head before merge. Governing documents: `docs/ANDROID_EQ_CONTRACT.md`, D-020, `EQ-01..04`, the equalizer section of `TEST_PLAN.md`.

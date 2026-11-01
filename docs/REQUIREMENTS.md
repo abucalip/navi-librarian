@@ -62,6 +62,10 @@ This is the user-facing behavior ledger. If implementation and this document dis
 | EQ-02 | With the equalizer off, or every band and the pre-gain at 0 dB, the audio is bit-exact bypass. Automatic pre-gain and a soft limiter prevent clipping. Gapless joins keep their sample counts and no click is made by a change while playing. | Specified; not built |
 | EQ-03 | Nine built-in presets plus Custom; moving a band switches to Custom without overwriting a preset; Reset returns to Flat. The equalizer is off by default and its settings are stored per device and survive sign-out. | Specified; not built |
 | EQ-04 | The Equalizer screen (from Settings and Now Playing) meets the Android accessibility floor: 48dp minus and plus buttons per band, TalkBack values in hertz and decibels, states in words, 200% text and landscape. A processing fault falls back to bypass and never stops the music. | Specified; not built |
+| XFADE-01 | The Android player can crossfade automatic song changes in the playback service (length 1 to 12 s, default 5 s, equal-power curve, off by default, stored per device and kept at sign-out), with no new permission, third-party SDK or Librarian change. Manual skips, seeks and queue taps are not faded. | Specified in `ANDROID_CROSSFADE_CONTRACT.md`; not built |
+| XFADE-02 | With crossfade off the second audio path is never created and playback, gapless joins, preload and scrobbling are unchanged. Consecutive tracks of one album join gapless by default even with crossfade on. | Specified; not built |
+| XFADE-03 | Each song is scrobbled once and now-playing is sent once per join, crossfaded or not; the notification, lock screen and Now Playing show the incoming song from the start of the overlap; the equalizer curve applies to both songs. | Specified; not built |
+| XFADE-04 | A fault in the second audio path, a join that is not ready, or a song of unknown duration plays as today and never stops the music. The Crossfade page meets the Android accessibility floor (48dp length buttons, TalkBack text, 200% text). | Specified; not built |
 
 ## Safety rules for acquisition and deletion
 
