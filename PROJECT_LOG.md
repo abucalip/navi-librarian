@@ -1,3 +1,10 @@
+## 2026-11-01 — Android header button group: PR #660 merged
+
+- **Change:** PR [#660](https://github.com/abucalip/navi-librarian/pull/660), squash `c2fa8dab1f342a5dcfb6279de8813463babb8318`. Downloads and Settings in the app header are one joined group in the web action-group style (6dp radius, 1px edge, divider, 38dp tall, 44dp buttons). The wordmark no longer shares weight with the spacer, which had left the group about 28dp short of the right edge; it now sits 16dp from the edge, level with the wordmark's left margin.
+- **Tests run:** `assembleRelease` locally (JDK 17). Compile, container-smoke, test-and-build and validate-container passed in CI on the PR head.
+- **Device results:** signed build installed on the owner's phone over wireless debugging; the owner confirmed the alignment. No TalkBack or large-font check.
+- **Limits:** the group is 38dp tall, below the 48dp touch target, matching the web at the owner's earlier request. Not published, not deployed.
+
 ## 2026-11-01 — Android Discover tab redesign, card menu, icon-only bar, tab swiping: PR #659 merged
 
 - **Change:** PR [#659](https://github.com/abucalip/navi-librarian/pull/659), squash `52431e041b6fa76d71cbd884383a775c77751447`. Home tag chip text centred; Discover cards get a top-right three-dot menu (Download, Save, Not this album, Not this artist) and a one-line shrinking Peace Sans title; Discover opens on Daily picks with a segmented control (short labels first, Saved last, "Deep dives") and editor-style sub-tabs for Daily picks and Deep dives; bottom bar is icons only; swiping on Discover moves through sub-tabs then main tabs and never leaves for Home or Search.
