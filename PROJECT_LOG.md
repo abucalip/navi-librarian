@@ -1,3 +1,10 @@
+## 2026-11-01 — Android crossfade X2: fade curve and join planner
+
+- **Built:** `player/crossfade/FadeCurve.kt` and `CrossfadePlanner.kt` with `FadeCurveTest` (6) and `CrossfadePlannerTest` (17). Contract section 14 records the details and one deviation (the album rule uses the album id only, since a queue item has no track number).
+- **Tests actually run (local, JDK 17):** `testDebugUnitTest --tests 'app.discair.player.crossfade.*'` (23 tests, 0 failures after fixing one wrong expectation in my own test), `lintDebug`, `assembleDebug`, `minifyReleaseWithR8`. The full suite was not run by the assistant (owner rule).
+- **Not done:** nothing is wired into the player; no device check; CI not yet seen on the PR head.
+- **Next action:** CI and merge, then X3.
+
 ## 2026-11-01 — Android crossfade X1: spike run on the phone
 
 - **Done:** a throwaway branch `spike/crossfade-x1` (not merged, not pushed) with two designs, run on the owner's phone over adb with a signed release build installed over the app. Evidence and rules: `docs/ANDROID_CROSSFADE_CONTRACT.md` section 13.
