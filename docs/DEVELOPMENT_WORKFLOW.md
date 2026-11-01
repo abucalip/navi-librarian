@@ -11,6 +11,13 @@ Last updated: 2026-10-24.
 - MCP is retired as a supported interface. Do not reintroduce MCP runtime, registration, or startup paths. Preserve the supported web interface and shared service behavior.
 - UI work follows the same repository, testing, safety, and review rules as backend work. Keep domain/discovery/acquisition/import logic server-side; do not duplicate it in browser code. Preserve established API, authentication, accessibility, keyboard/focus, responsive, and reduced-motion behavior. UI work must use the isolated procedure in [`LOCAL_UI_TESTING.md`](LOCAL_UI_TESTING.md), plus the UI acceptance gates in [`TEST_PLAN.md`](TEST_PLAN.md). Historical redesign direction and phase evidence are in [`archive/redesign/`](archive/redesign/).
 
+## Owner learning note after successful merges
+
+- **Every successful PR merge must be followed by a beginner-friendly `Did you know?` section in the agent's final response to the owner.** This is required even when the merge is documentation-only; if a task merges multiple PRs, include a learning section after reporting the merges (one lesson per merged PR is ideal, and do not omit the section).
+- Teach one basic Python idea per lesson, using plain language for someone with no coding background. Prefer a concept connected to the merged change when possible, but the lesson itself must be about Python.
+- Keep each lesson short and concrete: explain the idea in everyday terms, show a tiny Python example when useful, and explain what the example does. Avoid unexplained jargon, assume no prior knowledge, and vary topics over time rather than repeating the same lesson.
+- Only claim a merge occurred when GitHub confirms it. If no PR was successfully merged, this post-merge requirement is not triggered.
+
 ## Normal change cycle
 
 1. Inspect repository state, relevant documentation, implementation, all callers, tests, configuration, packaging, and compatibility boundaries.
