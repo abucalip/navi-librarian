@@ -34,7 +34,8 @@ sealed interface LyricsAnswer {
     data object Unsupported : LyricsAnswer
 }
 
-enum class LyricsProblem { Unreachable, Unauthorised, Other }
+/** [TimedOut]: Navidrome was reached but did not answer in time (slow for songs it has no lyrics for). */
+enum class LyricsProblem { Unreachable, TimedOut, Unauthorised, Other }
 
 /** Messages are fixed text: never a URL, token, response body or lyric (contract L1 tests). */
 class LyricsException(val problem: LyricsProblem, message: String) : Exception(message)
