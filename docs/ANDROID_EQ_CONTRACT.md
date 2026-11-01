@@ -1,6 +1,6 @@
 # Android equalizer contract (Discair)
 
-Status: **approved by the owner on 2026-11-01: every proposed default in section 11 is accepted (answers 1 to 8). Phase E0 (documents) is done and E1 (the filter) is built and unit-tested but not wired in; E2 to E4 are not started.** This is the "EQ" item that [`ANDROID_PLAYER_CONTRACT.md`](ANDROID_PLAYER_CONTRACT.md) section 6 and `ACTIVE_WORK.md` 2g left for its own contract (proposed `D-020`). It goes through a PR, as the Android contracts do.
+Status: **approved by the owner on 2026-11-01: every proposed default in section 11 is accepted (answers 1 to 8). Phase E0 (documents) is done and E1 (the filter) and E2 (settings and service wiring) are built and unit-tested; E3 and E4 are not started.** This is the "EQ" item that [`ANDROID_PLAYER_CONTRACT.md`](ANDROID_PLAYER_CONTRACT.md) section 6 and `ACTIVE_WORK.md` 2g left for its own contract (proposed `D-020`). It goes through a PR, as the Android contracts do.
 
 ## 1. Purpose and scope
 
@@ -179,3 +179,21 @@ Not done or not verified:
 - The CPU cost is unmeasured. The 20 ms ramp costs per-sample coefficient updates only while a change is in progress.
 - No listening test; the tests check computed responses, levels, continuity and lengths, not how it sounds.
 - The 250 ms-style "no allocation" rule is met by reusing one scratch array, but this is not measured; the output buffer is allocated by `BaseAudioProcessor` per call.
+
+## 14. Phase E2 status
+
+**Built and unit-tested; the equalizer is now installed in the player but has no screen, so it is always off. Not run on a device.** E1 was merged in PR #674. New or changed:
+- `eq/EqSettings.kt`: `EqSettings` (the audio setting plus a validated preset id, default `flat`), the `EqSettingsStore` interface, `PrefsEqSettingsStore` (ordinary preferences file `discair_eq`; version 1; the ten gains in one string so a change is one write; clamped on read; an unknown version or an unreadable value gives Flat and off) and `MemoryEqSettingsStore` for tests. `EqBinding` applies the saved setting to a target at once and after every save, swallows a target's error, and removes its listener on `close()`.
+- `AppContainer.eqSettings`: the store. Sign-out does not touch it (contract 6).
+- `PlaybackService`: the player is built with a `DefaultRenderersFactory` whose audio sink carries the `EqAudioProcessor`; the binding is closed in the existing `ReleaseGuard`, so release happens once with the player.
+- `EqAudioProcessor` now implements `EqTarget`.
+
+Decision recorded for the E1 deviation: **float output is not requested in version 1.** The sink keeps ExoPlayer's default (`enableFloatOutput` as ExoPlayer passes it), and the processor keeps the input encoding. Revisit only if the device check finds a 24-bit file being cut.
+
+Run: `./gradlew testDebugUnitTest --tests 'app.discair.player.eq.*' assembleDebug lintDebug minifyReleaseWithR8` on JDK 17: 29 tests, 0 failures (7 new settings and binding tests); debug build, lint and R8 passed. The full suite and the signed release build were not run.
+
+Not done or not verified:
+- The sink wiring in `PlaybackService` is covered only by compiling and R8; no unit test builds a `DefaultAudioSink` (it needs an Android context). Whether audio actually flows through the processor is unconfirmed until a device run.
+- `PrefsEqSettingsStore` is tested through the in-memory store's rules only; the SharedPreferences class itself has no test (no Robolectric in the project).
+- Nothing sets the settings yet (E3), so nothing can turn the equalizer on.
+- The "Not applied to this song" and fault states exist on the processor (`applies`, `hasFaulted`) but are not surfaced.

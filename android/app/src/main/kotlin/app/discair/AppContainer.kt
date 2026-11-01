@@ -19,6 +19,8 @@ import app.discair.player.NavidromeScrobbler
 import app.discair.player.PlayerController
 import app.discair.player.PlayerSettings
 import app.discair.player.PrefsPlayerSettings
+import app.discair.player.eq.EqSettingsStore
+import app.discair.player.eq.PrefsEqSettingsStore
 import app.discair.player.ScrobbleApi
 import app.discair.player.ScrobbleCoordinator
 import app.discair.player.SendOutcome
@@ -48,6 +50,11 @@ class AppContainer(val app: Application) {
     /** Per-device playback choices (streaming quality, scrobbling). */
     val playerSettings: PlayerSettings by lazy {
         PrefsPlayerSettings(app.getSharedPreferences("discair_player", android.content.Context.MODE_PRIVATE))
+    }
+
+    /** Per-device equalizer setting; kept at sign-out on purpose (ANDROID_EQ_CONTRACT.md 6). */
+    val eqSettings: EqSettingsStore by lazy {
+        PrefsEqSettingsStore(app.getSharedPreferences("discair_eq", android.content.Context.MODE_PRIVATE))
     }
 
     private val playerLazy = lazy {
