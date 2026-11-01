@@ -28,6 +28,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -42,10 +45,15 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import app.discair.lyrics.LyricsController
+import app.discair.lyrics.LyricsFollower
+import app.discair.lyrics.LyricsTimeline
+import app.discair.lyrics.LyricsUiState
 import app.discair.player.PlayerController
 import app.discair.player.PlayerUiState
 import app.discair.player.RepeatMode
 import app.discair.ui.common.Cover
+import app.discair.ui.common.SegmentedTabs
 import app.discair.ui.common.Target
 import app.discair.ui.theme.Ink
 import app.discair.ui.theme.Mono
@@ -58,12 +66,34 @@ fun formatTime(ms: Long): String {
 /** Spoken value of the seek bar, for example "1:23 of 4:10". */
 fun seekDescription(positionMs: Long, durationMs: Long) = "${formatTime(positionMs)} of ${formatTime(durationMs)}"
 
+/** The view last used in this session (lyrics contract 7); the sheet can be closed and reopened. */
+private var lastView = 0
+
+private val ViewLabels = listOf("Player", "Lyrics", "Queue")
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun NowPlayingSheet(state: PlayerUiState, controller: PlayerController, onDismiss: () -> Unit, onSignIn: () -> Unit) {
+fun NowPlayingSheet(state: PlayerUiState, controller: PlayerController, lyrics: LyricsController, onDismiss: () -> Unit, onSignIn: () -> Unit) {
     val sheet = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    var showQueue by remember { mutableStateOf(false) }
-    BackHandler(enabled = showQueue) { showQueue = false }
+    var view by remember { mutableStateOf(lastView) }
+    BackHandler(enabled = view != 0) { view = 0; lastView = 0 }
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
+    val follower = remember { LyricsFollower(scope, controller::livePositionMs) }
+    val lyricsState by lyrics.state.collectAsState()
+    val songId = state.current?.songId
+    val nextId = state.queue.nextIndex()?.let { state.queue.items.getOrNull(it)?.songId }?.takeIf { it != songId }
+    val lyricsOpen = view == 1
+    // Fetch only while the Lyrics view is open for the song that is playing; close stops everything.
+    LaunchedEffect(lyricsOpen, songId, nextId) {
+        if (lyricsOpen && songId != null) lyrics.open(songId, nextId) else lyrics.close()
+    }
+    DisposableEffect(Unit) { onDispose { lyrics.close(); follower.setVisible(false) } }
+    val ready = (lyricsState as? LyricsUiState.Ready)?.takeIf { it.songId == songId }
+    LaunchedEffect(ready) { follower.setTimeline(ready?.let { LyricsTimeline(it.lyrics) }) }
+    LaunchedEffect(lyricsOpen) { follower.setVisible(lyricsOpen) }
+    LaunchedEffect(state.isPlaying) { follower.setPlaying(state.isPlaying) }
+    LaunchedEffect(songId, state.positionMs) { follower.refresh() } // a seek or skip shows at once, also while paused
+    val currentLine by follower.line.collectAsState()
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheet, containerColor = Ink.Surface) {
         val item = state.current
         if (item == null) { onDismiss(); return@ModalBottomSheet }
@@ -71,14 +101,19 @@ fun NowPlayingSheet(state: PlayerUiState, controller: PlayerController, onDismis
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = onDismiss, Modifier.size(Target)) { Icon(PlayerIcons.Down, contentDescription = "Close now playing") }
                 Spacer(Modifier.weight(1f))
-                IconButton(onClick = { showQueue = !showQueue }, Modifier.size(Target)) {
-                    Icon(
-                        PlayerIcons.Queue,
-                        contentDescription = if (showQueue) "Show player" else "Show queue, ${state.queue.items.size} songs",
-                    )
-                }
+                // Three labelled views; the selected one is announced as selected and drawn raised (not colour alone).
+                SegmentedTabs(ViewLabels, view, { view = it; lastView = it })
+                Spacer(Modifier.weight(1f))
+                Spacer(Modifier.size(Target)) // balances the close button so the tabs sit in the middle
             }
-            if (showQueue) QueuePanel(state, controller) else Player(state, controller, onSignIn)
+            when (view) {
+                1 -> LyricsPanel(
+                    if (lyricsState.songIdOrNull() == songId) lyricsState else LyricsUiState.Idle,
+                    currentLine, songId.orEmpty(), onTryAgain = { if (songId != null) lyrics.retry(songId, nextId) },
+                )
+                2 -> QueuePanel(state, controller)
+                else -> Player(state, controller, onSignIn)
+            }
         }
     }
 }
@@ -173,4 +208,13 @@ private fun Player(state: PlayerUiState, controller: PlayerController, onSignIn:
             confirmButton = { TextButton(onClick = { confirmClear = false; controller.clear() }) { Text("Clear queue") } },
         )
     }
+}
+
+private fun LyricsUiState.songIdOrNull(): String? = when (this) {
+    is LyricsUiState.Loading -> songId
+    is LyricsUiState.Ready -> songId
+    is LyricsUiState.None -> songId
+    is LyricsUiState.Unsupported -> songId
+    is LyricsUiState.Failed -> songId
+    LyricsUiState.Idle -> null
 }

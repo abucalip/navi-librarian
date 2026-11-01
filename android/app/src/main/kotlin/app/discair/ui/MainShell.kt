@@ -171,7 +171,7 @@ fun MainShell(state: UiState, model: AppViewModel, container: AppContainer) {
     ) {
         // Inside the provider: the sheet's cover needs the image loader, which only exists here.
         if (nowPlayingOpen && playerState.visible) {
-            NowPlayingSheet(playerState, player, onDismiss = { nowPlayingOpen = false }, onSignIn = { nowPlayingOpen = false; model.sessionExpired() })
+            NowPlayingSheet(playerState, player, container.lyrics, onDismiss = { nowPlayingOpen = false }, onSignIn = { nowPlayingOpen = false; model.sessionExpired() })
         }
         Scaffold(
             snackbarHost = { SnackbarHost(snackbar) },
