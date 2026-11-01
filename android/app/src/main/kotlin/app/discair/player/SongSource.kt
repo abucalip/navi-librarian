@@ -25,6 +25,11 @@ data class SongRef(
     val track: Int?,
     val disc: Int?,
     val durationSec: Int,
+    val year: Int? = null,
+    val bitRateKbps: Int? = null,
+    val suffix: String = "",
+    val bitDepth: Int? = null,
+    val samplingRateHz: Int? = null,
 )
 
 enum class SongSourceProblem { Unreachable, Unauthorised, NotFound, Other }
@@ -38,6 +43,9 @@ interface SongSource {
 
     /** The ids of the artist's albums in Navidrome's order. Throws [SongSourceException]. */
     fun artistAlbumIds(artistId: String): List<String>
+
+    /** One song with its year and file details, or null when Navidrome can't give it. Throws [SongSourceException]. */
+    fun song(songId: String): SongRef? = null
 }
 
 object SubsonicParse {
@@ -64,18 +72,28 @@ object SubsonicParse {
     private fun JsonObject.text(key: String) = this[key]?.jsonPrimitive?.contentOrNull.orEmpty()
     private fun JsonObject.number(key: String) = this[key]?.jsonPrimitive?.intOrNull
 
+    fun song(body: String): SongRef? = (root(body)["song"] as? JsonObject)?.let { songRef(it, null) }
+
+    private fun songRef(s: JsonObject, album: JsonObject?): SongRef? {
+        val id = s.text("id")
+        if (!isValidSongId(id)) return null
+        val fallback = album ?: JsonObject(emptyMap())
+        return run {
+            SongRef(
+                id = id, title = s.text("title"), artist = s.text("artist").ifBlank { fallback.text("artist") },
+                album = s.text("album").ifBlank { fallback.text("name") }, albumId = s.text("albumId").ifBlank { fallback.text("id") },
+                track = s.number("track"), disc = s.number("discNumber"), durationSec = s.number("duration") ?: 0,
+                year = (s.number("year") ?: fallback.number("year"))?.takeIf { it > 0 },
+                bitRateKbps = s.number("bitRate")?.takeIf { it > 0 }, suffix = s.text("suffix"),
+                bitDepth = s.number("bitDepth")?.takeIf { it > 0 }, samplingRateHz = s.number("samplingRate")?.takeIf { it > 0 },
+            )
+        }
+    }
+
     fun albumSongs(body: String): List<SongRef> {
         val album = root(body)["album"] as? JsonObject ?: return emptyList()
         val songs = (album["song"] as? JsonArray)?.map { it.jsonObject } ?: return emptyList()
-        return songs.mapNotNull { s ->
-            val id = s.text("id")
-            if (!isValidSongId(id)) return@mapNotNull null
-            SongRef(
-                id = id, title = s.text("title"), artist = s.text("artist").ifBlank { album.text("artist") },
-                album = s.text("album").ifBlank { album.text("name") }, albumId = s.text("albumId").ifBlank { album.text("id") },
-                track = s.number("track"), disc = s.number("discNumber"), durationSec = s.number("duration") ?: 0,
-            )
-        }.sortedWith(compareBy({ it.disc ?: 1 }, { it.track ?: Int.MAX_VALUE }, { it.title.lowercase() }))
+        return songs.mapNotNull { songRef(it, album) }.sortedWith(compareBy({ it.disc ?: 1 }, { it.track ?: Int.MAX_VALUE }, { it.title.lowercase() }))
     }
 
     fun artistAlbumIds(body: String): List<String> {
@@ -117,4 +135,5 @@ class SubsonicSongSource(
 
     override fun albumSongs(albumId: String) = SubsonicParse.albumSongs(get("getAlbum", albumId))
     override fun artistAlbumIds(artistId: String) = SubsonicParse.artistAlbumIds(get("getArtist", artistId))
+    override fun song(songId: String) = SubsonicParse.song(get("getSong", songId))
 }

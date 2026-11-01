@@ -17,6 +17,7 @@ import androidx.compose.foundation.gestures.draggable
 import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
@@ -44,7 +45,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -75,6 +75,7 @@ import app.discair.lyrics.LyricsUiState
 import app.discair.player.PlayerController
 import app.discair.player.PlayerUiState
 import app.discair.player.RepeatMode
+import app.discair.player.qualityLabel
 import app.discair.ui.common.Cover
 import app.discair.ui.common.Target
 import app.discair.ui.theme.Ink
@@ -286,8 +287,13 @@ private fun Player(state: PlayerUiState, controller: PlayerController, onSignIn:
             style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth(),
         )
-        // Reserved space: the extra song details sit here, above the progress bar and the controls.
-        Spacer(Modifier.height(48.dp))
+        item.year?.let {
+            Text(
+                "$it", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(top = 2.dp),
+            )
+        }
+        Spacer(Modifier.height(24.dp))
         // Status in words: loading, buffering, lost connection, unavailable, queue full.
         val subtitle = playerSubtitle(state)
         if (state.status != null || state.buffering) {
@@ -300,19 +306,31 @@ private fun Player(state: PlayerUiState, controller: PlayerController, onSignIn:
         if (state.signInRequired) TextButton(onClick = { controller.dismissSignIn(); onSignIn() }, Modifier.heightIn(min = Target)) { Text("Sign in again") }
         if (state.waitingForNetwork) TextButton(onClick = controller::retryNow, Modifier.heightIn(min = Target)) { Text("Retry now") }
 
-        Slider(
-            value = fraction,
-            onValueChange = { dragging = it },
-            onValueChangeFinished = { dragging?.let { controller.seekTo((it * duration).toLong()) }; dragging = null },
-            enabled = duration > 0,
-            modifier = Modifier.fillMaxWidth().padding(top = 8.dp).semantics {
-                contentDescription = "Seek"
-                stateDescription = seekDescription(if (dragging != null) (fraction * duration).toLong() else state.positionMs, duration)
-            },
-        )
-        Row(Modifier.fillMaxWidth().padding(horizontal = 4.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text(formatTime(if (dragging != null) (fraction * duration).toLong() else state.positionMs), style = MaterialTheme.typography.bodySmall.copy(fontFamily = Mono))
-            Text(if (duration > 0) formatTime(duration) else "--:--", style = MaterialTheme.typography.bodySmall.copy(fontFamily = Mono))
+        val shown = if (dragging != null) (fraction * duration).toLong() else state.positionMs
+        val timeStyle = MaterialTheme.typography.labelSmall.copy(fontFamily = Mono)
+        val quality = qualityLabel(item)
+        Box(Modifier.fillMaxWidth().padding(top = 8.dp)) {
+            if (quality != null) {
+                Text(
+                    quality, style = timeStyle, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1,
+                    modifier = Modifier.align(Alignment.TopCenter)
+                        .border(1.dp, Ink.Edge, RoundedCornerShape(4.dp))
+                        .padding(horizontal = 6.dp, vertical = 1.dp),
+                )
+            }
+            Row(Modifier.fillMaxWidth().padding(top = if (quality != null) 14.dp else 0.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text(formatTime(shown), style = timeStyle, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(end = 8.dp))
+                SeekBar(
+                    fraction = fraction, enabled = duration > 0,
+                    onChange = { dragging = it },
+                    onFinish = { dragging?.let { controller.seekTo((it * duration).toLong()) }; dragging = null },
+                    modifier = Modifier.weight(1f).semantics {
+                        contentDescription = "Seek"
+                        stateDescription = seekDescription(shown, duration)
+                    },
+                )
+                Text(if (duration > 0) formatTime(duration) else "--:--", style = timeStyle, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(start = 8.dp))
+            }
         }
 
         Row(Modifier.fillMaxWidth().padding(vertical = 8.dp), horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically) {
