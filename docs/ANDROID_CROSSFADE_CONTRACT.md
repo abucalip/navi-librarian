@@ -277,3 +277,18 @@ What the tests cover (with fakes): off never asks for the second player; every r
 **Not covered by any test, and not run on a device:** `ExoFadePlayer`, `TwinMirror`, `ExoTwins` and the service wiring (they need a real ExoPlayer; only compiling and R8 checked them); that the session really follows the swap in the production code (only the spike showed it); the shuffle order actually matching; the MP3-fallback `replaceMediaItem` path; scrobbling and now-playing across a swap; the equalizer on both players; focus on a call or another app; Doze; data and CPU. These are the device checks of X5, which needs X4's screen first (or a temporary build).
 
 Deviations: (1) the settings storage that the contract placed in X4 is built here, because the engine needs it; X4 keeps the screen and its tests. (2) With crossfade off the session now faces a pass-through `ForwardingPlayer` (no partner, no second player), not the bare ExoPlayer; behaviour is meant to be identical but this is a change in the path that only a device run can confirm (contract 3 rule 5, 5.4). (3) The equalizer status listener is set on every player, so whichever player is sounding publishes.
+
+## 16. Phase X4 status
+
+**Built and unit-tested; the page has not been run on an emulator or a phone (the phone was not reachable over adb).** X3 was merged in PR #679 (`19dab68`; all four required checks passed on its head). New or changed:
+- `crossfade/CrossfadeText.kt`: the words and small rules of the page with no Android types: the length text ("1 second", "5 seconds") and its TalkBack text, the Settings summary ("Off" or the length), the Now Playing link text (only while on), the switch and album help lines, the quality line (only below Original), minus and plus stopping at 1 and 12, and the slider's whole-second value.
+- `ui/player/CrossfadeScreen.kt`: the page (switch, length with 48dp minus and plus and a slider, "Keep albums gapless", the quality line, a line that changes apply at the next song change) and `CrossfadeLink` for the Now Playing sheet.
+- `CrossfadeRoute`, a Settings row under Equalizer, and the link on the Now Playing sheet. The decisions and the review are in `android/DESIGN.md` ("Crossfade page").
+
+With this, crossfade can be switched on from the phone, so the production engine of X3 can be run on a device (X5).
+
+Run: `./gradlew testDebugUnitTest --tests 'app.discair.player.*' lintDebug assembleDebug minifyReleaseWithR8 assembleRelease` on JDK 17: 239 tests, 0 failures (9 new, in `CrossfadeTextTest`); lint, debug build, R8 and the signed release build passed. The full suite was not run (the owner runs it; CI runs it on the PR head).
+
+Deviations from section 7: (1) a page rather than a sheet; (2) the Now Playing "Crossfade: 5 s" is a text button that opens the page (like the equalizer link), not plain text; (3) the "Skipping a song yourself is not faded" line is in the switch's help text, not a separate line; (4) no landscape layout.
+
+Not done or not verified: no screenshot, no TalkBack, no 200% text, no one-handed check; no screen tests exist (the project has none), so the layout is checked only by compiling and by the text rules.
