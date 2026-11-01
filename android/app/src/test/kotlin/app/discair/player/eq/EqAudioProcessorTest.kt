@@ -81,4 +81,14 @@ class EqAudioProcessorTest {
         val p = EqAudioProcessor(); p.setConfig(on()); p.configure(fmt(44100, 2, C.ENCODING_PCM_16BIT)); p.flush()
         p.queueInput(ByteBuffer.allocateDirect(0)); assertEquals(0, p.output.remaining())
     }
+
+    @Test fun theStatusListenerHearsWhetherTheSongCanBeProcessed() {
+        val p = EqAudioProcessor(); val seen = mutableListOf<EqRuntimeStatus>()
+        p.statusListener = { seen += it }
+        p.configure(fmt(44100, 2, C.ENCODING_PCM_16BIT)); p.configure(fmt(44100, 2, C.ENCODING_PCM_24BIT))
+        assertEquals(listOf(true, false), seen.map { it.appliesToThisSong })
+        assertTrue(seen.none { it.faulted })
+        p.reset()
+        assertEquals(false, seen.last().appliesToThisSong)
+    }
 }

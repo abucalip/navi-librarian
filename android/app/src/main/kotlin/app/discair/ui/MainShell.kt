@@ -171,7 +171,7 @@ fun MainShell(state: UiState, model: AppViewModel, container: AppContainer) {
     ) {
         // Inside the provider: the sheet's cover needs the image loader, which only exists here.
         if (nowPlayingOpen && playerState.visible) {
-            NowPlayingSheet(playerState, player, container.lyrics, onDismiss = { nowPlayingOpen = false }, onSignIn = { nowPlayingOpen = false; model.sessionExpired() })
+            NowPlayingSheet(playerState, player, container.lyrics, onDismiss = { nowPlayingOpen = false }, onSignIn = { nowPlayingOpen = false; model.sessionExpired() }, onEqualizer = { nowPlayingOpen = false; nav.navigate(EqualizerRoute) { launchSingleTop = true } })
         }
         Scaffold(
             snackbarHost = { SnackbarHost(snackbar) },
@@ -248,7 +248,8 @@ fun MainShell(state: UiState, model: AppViewModel, container: AppContainer) {
                 composable<SearchRoute> { SearchScreen(open) }
                 composable<LibraryRoute> { LibraryScreen(open) }
                 composable<DownloadsRoute> { DownloadsScreen(open) }
-                composable<SettingsRoute> { SettingsScreen(state, model, onBack = { nav.popBackStack() }) }
+                composable<SettingsRoute> { SettingsScreen(state, model, onBack = { nav.popBackStack() }, onEqualizer = { nav.navigate(EqualizerRoute) { launchSingleTop = true } }) }
+                composable<EqualizerRoute> { app.discair.ui.player.EqualizerScreen(container, onBack = { nav.popBackStack() }) }
                 composable<ArtistRoute> { ArtistScreen(it.toRoute(), open) }
                 composable<AlbumRoute> { AlbumScreen(it.toRoute(), open) }
                 composable<GenreRoute> { GenreScreen(it.toRoute(), open) }

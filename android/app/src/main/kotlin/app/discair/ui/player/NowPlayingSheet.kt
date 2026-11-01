@@ -73,7 +73,7 @@ private val ViewLabels = listOf("Player", "Lyrics", "Queue")
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun NowPlayingSheet(state: PlayerUiState, controller: PlayerController, lyrics: LyricsController, onDismiss: () -> Unit, onSignIn: () -> Unit) {
+fun NowPlayingSheet(state: PlayerUiState, controller: PlayerController, lyrics: LyricsController, onDismiss: () -> Unit, onSignIn: () -> Unit, onEqualizer: () -> Unit = {}) {
     val sheet = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var view by remember { mutableStateOf(lastView) }
     BackHandler(enabled = view != 0) { view = 0; lastView = 0 }
@@ -113,14 +113,14 @@ fun NowPlayingSheet(state: PlayerUiState, controller: PlayerController, lyrics: 
                     currentLine, songId.orEmpty(), onTryAgain = { if (songId != null) lyrics.retry(songId, nextId) },
                 )
                 2 -> QueuePanel(state, controller)
-                else -> Player(state, controller, onSignIn)
+                else -> Player(state, controller, onSignIn, onEqualizer)
             }
         }
     }
 }
 
 @Composable
-private fun Player(state: PlayerUiState, controller: PlayerController, onSignIn: () -> Unit) {
+private fun Player(state: PlayerUiState, controller: PlayerController, onSignIn: () -> Unit, onEqualizer: () -> Unit) {
     val item = state.current ?: return
     var confirmClear by remember { mutableStateOf(false) }
     var dragging by remember { mutableStateOf<Float?>(null) }
@@ -196,6 +196,7 @@ private fun Player(state: PlayerUiState, controller: PlayerController, onSignIn:
             }
         }
         Text("Volume follows the phone's volume buttons.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        EqualizerLink(onEqualizer)
         Spacer(Modifier.height(32.dp)) // the destructive-looking action sits well away from the transport controls
         TextButton(onClick = { confirmClear = true }, Modifier.heightIn(min = Target)) { Text("Clear queue and stop") }
         Spacer(Modifier.height(24.dp))

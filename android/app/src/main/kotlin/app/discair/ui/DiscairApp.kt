@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.selection.selectable
@@ -39,6 +40,7 @@ import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -224,7 +226,7 @@ private fun UnavailableScreen(state: UiState, model: AppViewModel) {
 }
 
 @Composable
-fun SettingsScreen(state: UiState, model: AppViewModel, onBack: () -> Unit) {
+fun SettingsScreen(state: UiState, model: AppViewModel, onBack: () -> Unit, onEqualizer: () -> Unit = {}) {
     var confirmSignOut by remember { mutableStateOf(false) }
     val container = (androidx.compose.ui.platform.LocalContext.current.applicationContext as DiscairApplication).container
     // The page scrolls because the playback choices make it taller than a phone in landscape or at large text.
@@ -238,7 +240,7 @@ fun SettingsScreen(state: UiState, model: AppViewModel, onBack: () -> Unit) {
         Text("Connected to your servers.", style = MaterialTheme.typography.bodyLarge)
         CheckLine("Librarian", state.librarian)
         CheckLine("Navidrome", state.navidrome)
-        PlaybackSettings(container)
+        PlaybackSettings(container, onEqualizer)
         Spacer(Modifier.size(24.dp))
         OutlinedButton(onClick = model::recheck, modifier = Modifier.fillMaxWidth().heightIn(min = Target)) {
             Text("Check again")
@@ -281,7 +283,7 @@ fun SettingsScreen(state: UiState, model: AppViewModel, onBack: () -> Unit) {
 
 /** Streaming quality and scrobbling. Both are per device and apply to songs started afterwards. */
 @Composable
-private fun PlaybackSettings(container: AppContainer) {
+private fun PlaybackSettings(container: AppContainer, onEqualizer: () -> Unit) {
     val settings = container.playerSettings
     var rate by remember { mutableStateOf(settings.maxBitRate) }
     var scrobble by remember { mutableStateOf(settings.scrobbling) }
@@ -317,6 +319,26 @@ private fun PlaybackSettings(container: AppContainer) {
             )
         }
         androidx.compose.material3.Switch(checked = scrobble, onCheckedChange = null)
+    }
+    // The summary says on or off in words, so the state is not left to colour or to opening the page.
+    val eq = remember { container.eqSettings.load() }
+    var eqNow by remember { mutableStateOf(eq) }
+    androidx.compose.runtime.DisposableEffect(Unit) {
+        val remove = container.eqSettings.addListener { eqNow = container.eqSettings.load() }
+        onDispose { remove() }
+    }
+    Row(
+        Modifier.fillMaxWidth().heightIn(min = Target).clickable(role = Role.Button, onClick = onEqualizer),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(Modifier.weight(1f).padding(end = 12.dp)) {
+            Text("Equalizer", style = MaterialTheme.typography.titleMedium)
+            Text(
+                app.discair.player.eq.eqSummary(eqNow).removePrefix("Equalizer: ").replaceFirstChar { it.uppercase() },
+                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        Icon(androidx.compose.material.icons.Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null)
     }
 }
 
