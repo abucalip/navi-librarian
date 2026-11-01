@@ -1,3 +1,11 @@
+## 2026-11-01 — Android crossfade X1: spike run on the phone
+
+- **Done:** a throwaway branch `spike/crossfade-x1` (not merged, not pushed) with two designs, run on the owner's phone over adb with a signed release build installed over the app. Evidence and rules: `docs/ANDROID_CROSSFADE_CONTRACT.md` section 13.
+- **Results:** the queue lives inside the player (contract corrected). A helper player cannot be aligned with the main player (position noise about 250 ms): rejected. Twin full-playlist players with a mirror wrapper and `MediaSession.setPlayer` swap worked in 7 joins: the session followed the incoming song, no crash, next during a fade aborts correctly. Bugs found for the build: audio-focus order, the outgoing player advancing at its end, pause not reaching the tail, shuffle order not mirrored.
+- **Not done or not claimed:** nothing was heard; scrobbling on the server, the equalizer sound, Bluetooth, calls, Doze, data and CPU cost were not checked. No unit tests were written (a spike). The full suite was not run.
+- **Phone state:** the spike build is installed over the owner's release app; sign-in kept.
+- **Next action:** the owner listens, then decides A2; then X2.
+
 ## 2026-11-01 — Android crossfade X0: documents
 
 - **Done:** `docs/ANDROID_CROSSFADE_CONTRACT.md` (proposed architecture: two players behind one session wrapper, decided by a spike; album rule keeps same-album joins gapless; automatic changes only), `D-021`, `XFADE-01..04`, the crossfade section of `TEST_PLAN.md`, pointers in `ANDROID_PLAYER_CONTRACT.md`, `ACTIVE_WORK.md` and `PROJECT_STATUS.md`. Documentation only, committed directly to `main` per the workflow.

@@ -1,6 +1,6 @@
 # Android crossfade contract (Discair)
 
-Status: **phase X0 (documents) started on the owner's instruction on 2026-11-01. The owner did not answer section 11 point by point, so every proposed default there stands until the owner overrides it before the phase it affects. Nothing is built; X1 (the spike) is the next phase and needs the owner's go-ahead.** This is the "crossfade" item that [`ANDROID_PLAYER_CONTRACT.md`](ANDROID_PLAYER_CONTRACT.md) sections 6 and 14, [`ANDROID_EQ_CONTRACT.md`](ANDROID_EQ_CONTRACT.md) section 1 and `ACTIVE_WORK.md` left for its own contract (proposed `D-021`). It was committed directly to `main` as documentation only (workflow rule 8). No code is written before X1 is approved.
+Status: **phase X0 (documents) started on the owner's instruction on 2026-11-01. The owner did not answer section 11 point by point, so every proposed default there stands until the owner overrides it before the phase it affects. Nothing is built; X1 (the spike) was run on the owner's phone on 2026-11-01 and its measured result is in section 13; X1 stays open until the owner has listened to it.** This is the "crossfade" item that [`ANDROID_PLAYER_CONTRACT.md`](ANDROID_PLAYER_CONTRACT.md) sections 6 and 14, [`ANDROID_EQ_CONTRACT.md`](ANDROID_EQ_CONTRACT.md) section 1 and `ACTIVE_WORK.md` left for its own contract (proposed `D-021`). It was committed directly to `main` as documentation only (workflow rule 8). No code is written before X1 is approved.
 
 ## 1. Purpose and scope
 
@@ -27,7 +27,7 @@ From `PlaybackService.kt`, `PlayerSettings.kt`, `PlayerPort.kt` and `build.gradl
 | Fact | Value |
 |---|---|
 | Engine | One Media3 `ExoPlayer` 1.11.0 in a `MediaSessionService`, with one `MediaSession` on it |
-| Queue | Every song is one item of that player's playlist; the app's queue logic drives it through `PlayerPort` / `Media3Port` |
+| Queue | Every song is one item of that player's playlist. **The playlist, the shuffle order and repeat live inside the ExoPlayer**: `Media3Port` sends the whole list and the player decides what comes next. (The first draft of this contract wrongly said the app's own queue logic owns the order; X1 found this in the code.) |
 | Gapless | The player joins items without a gap when the file carries gapless data; `PreloadConfiguration` loads the first 10 s of the next item (PR #666). The owner confirmed it is seamless |
 | Audio path | One `DefaultAudioSink` carrying one `EqAudioProcessor` |
 | Volume | `PlayerPort.setVolume(Float)` exists; system volume is separate |
@@ -66,7 +66,7 @@ Four ways to get a crossfade were considered.
 **Proposed: A, behind a spike (phase X1) that decides it.** A is the only design that gives a true, clean overlap without private ExoPlayer internals. B is the cheaper-looking route but its hand-over can glitch; X1 builds the smallest version of A and of B on the owner's phone and the owner picks by ear and by the checks in section 9 before anything is built for real. C is the honest fallback if A and B both fail: a "fade between songs" that is not a crossfade, called by that name in the screen, and the owner decides whether it is worth shipping. D is rejected: it depends on unstable ExoPlayer internals.
 
 Rules for A (to be confirmed or changed by X1):
-- **One owner of the queue.** The existing queue logic (`PlayQueue`, `PlayerController`, `QueueStorage`) stays the single source of truth for the order. The two players each hold the item they are playing and, when it exists, the one they are about to play, and nothing else; the queue is not copied into two playlists.
+- **Superseded by section 13.** The first draft said the two players would not copy the queue. X1 showed the order lives inside the player, so the proposed form of A is two players holding identical playlists (section 13).
 - **One session, one face.** A wrapper `Player` (a `ForwardingPlayer` over the active player, or `SimpleBasePlayer` if X1 shows forwarding is not enough) is what `MediaSession` sees. Controllers (the app, the notification, the lock screen, Bluetooth) never learn there are two players. Position, duration, the current item and the play state are always those of the **incoming** song from the moment the overlap starts.
 - **Audio focus** is taken once. Only the active player holds it; the second player is built with focus handling off and gets the same attributes. When focus is lost, both pause together.
 - **Volumes** are set only through `Player.setVolume` on each player (never the system stream). Between songs both are at full volume on the active one; system volume is not touched.
@@ -215,3 +215,32 @@ Proposed defaults. The owner started X0 without changing any of them (2026-11-01
 8. **Duration data:** a stream with no known length gets no fade; a wrong duration from the server could start the fade early or late. The planner prefers the player's own duration when it is known, as the scrobbler does.
 9. **Scope creep:** crossfade on manual skips, auto-mix points, silence trimming, normalisation and a "gapless vs crossfade per album" memory are tempting neighbours; each is out of scope and needs its own contract.
 10. **Release build:** Media3 classes under R8; checked on the minified release build in X5.
+
+## 13. X1 spike result (2026-11-01)
+
+**Run on the owner's phone (SM-G781B) over adb, signed release build, branch `spike/crossfade-x1`, never merged. Nothing was heard by the assistant: whether an overlap sounds clean is the owner's to judge. Everything below is what the logs and the media session showed.** The spike is driven by a broadcast (`app.discair.XFSPIKE`, `cmd` on / off / end), so it is invisible in the app.
+
+**Finding 1: the queue lives in the player.** Section 2 and section 4 are corrected above. A wrapper that presents one queue over two players must therefore keep two identical playlists, shuffle order included.
+
+**B2 (one main player plus a helper that plays the outgoing tail) is rejected.** It must start the helper on the same song at the exact point the main player leaves it. The measured helper-minus-main offset swung by about 250 ms from sample to sample (for example -170, -198, +49, -228, +14, -259, -6, -275 ms at 150 ms intervals), and three "settled" samples agreeing was a coincidence that made a correction worse (-273 ms before, -468 ms at the splice). ExoPlayer's public position on this phone is only good to roughly a quarter of a second, so the splice would repeat or skip a fraction of a second of the song. It cannot be fixed from outside the player. Original B (helper plays the incoming song) has the same alignment problem at the end of the fade.
+
+**A2 (twin players with identical playlists, session swapped) works mechanically.** Both players are full ExoPlayers; a `ForwardingPlayer` mirrors every playlist change (set, add, remove, move, replace, clear, shuffle, repeat, stop) to the idle twin, which stays paused. About 10 s before the fade the idle twin is positioned on the next item, by media id, and prepared. At the fade point it starts that item from 0 and fades in while the outgoing player plays on to its natural end; `MediaSession.setPlayer` moves the session to the twin at once. No song is handed from one decoder to another, so nothing has to be aligned.
+
+What the logs and `dumpsys media_session` showed, 7 crossfaded joins across runs, 5 s fade:
+- the join happened at the planned point every time (fade start within 0.1 s of the plan);
+- at the fade start the session's metadata and state were already the incoming song's, and it reported PLAYING with a position near 0; the app showed the right song in the mini-player; no crash and no error;
+- the outgoing player was still playing at the fade start (`playing=true`) and reached its natural end during the fade;
+- **next during a fade:** the fade aborts and the session goes to the song after the incoming one, as intended;
+- **pause during a fade:** the session pauses on the incoming song at the right position and resumes, but see the bugs below.
+
+**Bugs found in the spike (each becomes a rule for X3):**
+1. **Audio focus order.** Asking for focus on the twin first made the outgoing player lose focus and pause, so no overlap happened (first A2 run). Fixed by turning focus handling off on the outgoing player first, then on for the incoming one. X3 must keep that order and a test of it where possible.
+2. **The outgoing player advances on its own.** At its natural end it moves to the next item (seen: about 250 ms before the fade ended). At that volume it is inaudible (about -30 dB), but X3 must pause the outgoing player just before its end, not after the fade ends.
+3. **Pause and resume during a fade.** The session's pause reached only the incoming player; the outgoing tail kept playing. X3 must pause and resume both together and drive the fade from a clock that stops while paused (the spike used wall-clock time, so the fade finished while paused).
+4. **Shuffle order was not mirrored.** The spike finds the next item by media id, which works with shuffle off. With shuffle on, the twin's own random order would differ after the swap. X3 must give both players the same order (`setShuffleOrder`) and a test for it. **Not tested in the spike.**
+
+**Not measured or not checked:** how the join sounds (the owner's ear); that the equalizer sounds the same on both players; scrobbling and now-playing in Navidrome across a swap (the app's `onItemChanged` ran; the result on the server was not read); the notification and lock screen across a swap beyond what `dumpsys` showed; the extra data, memory and CPU of the second prepared stream; Bluetooth, a phone call, screen off and Doze; a quality below Original; a song without a known duration; the MP3-fallback `replaceMediaItem` path; repeat-all at the end of the queue; seek during a fade.
+
+**Recommendation:** choose **A2**, subject to the owner's listening check. B and B2 are dropped; C (the fade dip) stays the fallback. If the owner agrees, X2 is unchanged, and X3 is "twin players with a mirror wrapper" with the four rules above as its first tests.
+
+**To listen on the phone (the spike build is installed over the app):** start a queue of songs, then run `adb shell am broadcast -a app.discair.XFSPIKE --es cmd on --el ms 5000` to turn it on, and `adb shell am broadcast -a app.discair.XFSPIKE --es cmd end --el ms 30000` to jump to 30 s before the end of the song. Listen to the join and the notification. Turn it off with `--es cmd off`. To go back to the normal app, install the release build of `main`.
