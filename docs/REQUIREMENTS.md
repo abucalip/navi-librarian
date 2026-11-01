@@ -50,6 +50,10 @@ This is the user-facing behavior ledger. If implementation and this document dis
 | API-01 | Validate API input and return useful HTTP errors rather than exposing internal exceptions or credentials. | Ongoing quality requirement; `/api/acquire` rejects non-boolean `auto_queue` values with HTTP 400 rather than truthiness-coercing strings or numbers. |
 | OPS-01 | Validate reproducible Docker builds for `linux/amd64` and `linux/arm64`; publish to GHCR only after the modularization roadmap is complete and release is explicitly authorized. | Runtime/build validation automated; GHCR publication intentionally paused |
 | OPS-02 | Keep Navidrome and slskd as external services; the web container must not start a second copy of either service. | Current deployment design |
+| PLAYER-01 | The Android app streams owned songs directly from Navidrome, built only from allowlisted parameters (`id`, `maxBitRate` of 64–320, `format` of `mp3` or `opus`), never logging credentials, with a queue that restores paused. | Contract only (`docs/ANDROID_PLAYER_CONTRACT.md`); not implemented |
+| PLAYER-02 | Playback failures are classified and shown in words: unavailable song, Subsonic error bodies, expired sign-in (no retry loop), network drop with resume, unsupported-format fallback. The player and connections are released on service stop. | Contract only; not implemented |
+| PLAYER-03 | Scrobbling sends one now-playing call and at most one final scrobble per play (half the track or 4 minutes, tracks of 30 s or more), never retries an ambiguous outcome, and is fully suppressed when the Settings toggle is off. | Contract only; not implemented |
+| PLAYER-04 | Playback controls exist only on owned items and meet the Android accessibility floor (48dp targets, TalkBack, reduced motion). | Contract only; not implemented |
 
 ## Safety rules for acquisition and deletion
 

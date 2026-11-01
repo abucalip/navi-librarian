@@ -14,7 +14,7 @@ In scope (v1):
 - Settings: server addresses, sign-in, sign-out.
 
 Out of scope for v1:
-- Playback (may be added later; it needs its own contract, see section 9).
+- Playback in the first release. It is now specified in [`ANDROID_PLAYER_CONTRACT.md`](ANDROID_PLAYER_CONTRACT.md) (D-018) and is built in its own phases.
 - Radio, Librarian service settings (Navidrome, slskd, Last.fm, ListenBrainz, Discogs), household or multi-user use.
 - Any on-device ranking, matching or similarity logic.
 - Tailscale itself. The Tailscale app must be connected on the phone.
@@ -175,4 +175,4 @@ Decided by the owner:
 
 Still open:
 1. **Login rate limit:** confirm whether `tailscale serve` hides the client IP from Librarian. If it does, the shared 15-minute lockout could block the app. Any change would be a backend contract proposal.
-2. **Playback later:** it would reuse the Navidrome credentials already on the device, or use the proxy routes in `docs/PLAYER_PROPOSAL.md`. It needs its own approval and contract and amends `PRODUCT.md`.
+2. **Playback — decided by the owner on 2026-11-01:** the app streams directly from Navidrome with the credentials already on the device; the proxy routes in `docs/PLAYER_PROPOSAL.md` are not used. Contract: [`ANDROID_PLAYER_CONTRACT.md`](ANDROID_PLAYER_CONTRACT.md). It adds a media foreground service for playback only; acquisition still has no notifications or background work.

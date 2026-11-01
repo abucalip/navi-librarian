@@ -155,6 +155,17 @@ python scripts/search_latency.py --network --network-queries 5 --network-gap 5  
 
 Focused tests: `python -m unittest discover -s tests -p 'test_search_latency_script.py' -v`. A stub run does not count for the index build time. Record each result against its target in `PROJECT_LOG.md`, and say which targets were not measured (browser-side targets need a real browser). The script prints aggregate timings only, so reports can be kept in the repository.
 
+## Android player focused checks (PLAYER-01 to PLAYER-04)
+
+Contract: `docs/ANDROID_PLAYER_CONTRACT.md`. Unit tests in `android/app/src/test`; focused runs only, the owner runs the full suite.
+
+- **Stream URL builder:** only `id`, allowlisted `maxBitRate` and `format`; `format=raw`, repeats and unknown values are rejected; fresh salt per URL; no password, token or salt in logs, errors or exception text.
+- **Queue:** restore paused; corrupt or old data dropped; shuffle off restores order; 500 cap message; play album replaces, play next and add to queue append.
+- **Failures:** Subsonic error-as-200 bodies, 404, auth codes 40/41/44/50 (one "Sign in again", no loop), network drop and resume, unsupported-format fallback once without changing the setting. A fake player and connection must report zero open handles after service stop, cancellation and every failure path; a happy-path-only implementation must fail that assertion.
+- **Scrobble tracker:** tracks under 30 s, missing or zero duration, duration disagreement over 10 %, seek forward and back, buffering, repeat-one, repeated playback, toggle off and on mid-track, no scrobble for a skip at 10 s.
+- **Scrobble retry:** a request that was sent and whose response was lost is not retried and cannot duplicate; a connect failure before any bytes is retried at most 3 times with the original `time`; now-playing is never retried.
+- **Device (owner):** the manual list in contract section 7. Do not claim device results from unit tests.
+
 ## UI changes
 
 After automated CI succeeds, run the full manual browser checklist in `docs/LOCAL_UI_TESTING.md` against the exact tested SHA. Cover affected workflows and record the actual result. Do not claim manual verification from source inspection or automated tests alone.

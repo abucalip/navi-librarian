@@ -13,7 +13,7 @@ A single owner who self-hosts Navidrome (their music library) and slskd (Soulsee
 Discair is a web UI for discovering music and managing acquisitions on top of an existing Navidrome library and slskd. Success is a collector who can go from "what should I add next?" to a confirmed, tracked request in a few deliberate steps, without second-guessing whether the request landed or whether a destructive action touched the right files.
 
 ## Positioning
-Discair is an acquisition-aware discovery tool, not a player. It knows the user's library and listening history, so it recommends what is missing rather than what is popular, and it closes the loop through slskd. Streaming apps cannot truthfully copy "request this album into my own library and watch it arrive".
+Discair is an acquisition-aware discovery tool. The web UI is not a player. The Android app may play owned music directly from Navidrome (D-018, `docs/ANDROID_PLAYER_CONTRACT.md`). It knows the user's library and listening history, so it recommends what is missing rather than what is popular, and it closes the loop through slskd. Streaming apps cannot truthfully copy "request this album into my own library and watch it arrive".
 
 ## Operating Context
 - FastAPI app serving a single-page shell: `app/templates/index.html`, `static/app.css`, `static/app.js`. No framework, no build system.
@@ -24,7 +24,7 @@ Discair is an acquisition-aware discovery tool, not a player. It knows the user'
 
 ## Capabilities and Constraints
 - The existing API is authoritative. No endpoint or field may be invented; needs are written up as contract proposals.
-- No playback exists. Reference mockups show a player bar; the owner's decision is to borrow the visual language only. A now-playing or streaming bar is out of scope unless separately approved with an API contract.
+- The web UI has no playback; a now-playing or streaming bar there is out of scope unless separately approved with an API contract. Android playback is approved as a contract (D-018) and is not implemented until its phases land. Radio playback is out of scope.
 - Fonts and icons are self-hosted; do not introduce third-party runtime asset requests without explicit approval.
 - Acquisition information (quality, progress, status, actions) must stay coherent and scannable.
 - The current front-end redesign is complete. Historical design decisions and phase evidence are preserved in `docs/archive/redesign/`; permanent interaction, accessibility, safety, and testing rules live in `docs/DEVELOPMENT_WORKFLOW.md` and `docs/TEST_PLAN.md`.

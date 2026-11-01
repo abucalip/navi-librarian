@@ -147,3 +147,11 @@ Record decisions here when they constrain future implementation. Add new entries
 
 **Consequence:** The recommendation path still reads the unscoped library snapshot, so the generation rule covers search only. The owner accepted that gap as a deferred follow-up (SEARCH_CONTRACT section 11.4). Index state is per process; a restart rebuilds it from the snapshot.
 
+
+## D-018 — Android playback streams directly from Navidrome
+
+**Decision:** The Android app may play owned songs. Audio is streamed directly from Navidrome with the Subsonic credentials already stored on the device. The queue is kept on the device. Playback scrobbles to Navidrome through a per-device toggle that is on by default. The web UI stays without a player, and Librarian gets no stream or scrobble routes.
+
+**Reason:** The owner chose direct access for the Android app (contract section 9, decision 3), so a proxy would add backend code and doubled bandwidth without a new security boundary. The review findings on PR #645 (ownership, stream lifecycle, scrobble duplicates, format allowlist) are carried into the Android contract in their Android form.
+
+**Consequence:** `docs/ANDROID_PLAYER_CONTRACT.md` is the governing contract. `PRODUCT.md` and `ANDROID_CLIENT_CONTRACT.md` are amended. Playback needs a media foreground service, an exception to the earlier no-background rule that covers playback only. D-016 is unaffected. `docs/PLAYER_PROPOSAL.md` (PR #645) remains the web proposal and is not approved. Enabling scrobbling feeds the history that discovery reads.
