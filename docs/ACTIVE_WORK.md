@@ -109,6 +109,11 @@ Done: Genres grid and four album shelves on the dashboard, the Recommended slide
 - **UI and speed pass (2026-10-31, uncommitted on the PR #651 branch):** the owner's Home, Discover, Library and navigation changes, streamed album and artist pages, and saved-copy-first loading are built, unit-tested in part, run on the emulator, and installed by the owner as a release build on the phone; details and gaps in `PROJECT_LOG.md`. **Next:** the owner's report on speed and layout on the phone, unit tests for `ReadMode`, the card grid and the swipe gestures, a decision on the 20 MB response-cache size, then commit to the PR #651 branch.
 - Open contract question: whether `tailscale serve` hides the client IP from the login rate limit (contract section 9).
 
+## 2g. Android player — phases 0–5 built, awaiting the owner's device run
+
+- Contract: [ANDROID_PLAYER_CONTRACT.md](ANDROID_PLAYER_CONTRACT.md) (D-018). Merged: docs `dbdd0a7`; phase 1 PR #661; phase 2 PR #662; phase 3 PR #663; phase 4 PR #664; phase 5 is open as a PR (see the contract, section 13).
+- Everything is unit-tested only. **Nothing has been run on a device.** The next action is the owner's device checklist in contract section 13; findings go back into the contract and `android/DESIGN.md`.
+
 ## 3. Recommendation engine — gated
 
 - CF freshness capture repeated 2026-10-23 after the imported history was recomputed: outcome "mixed", defaults kept. Deeper CF pages measured at 4 / 6 / 8: the larger pool changed the final list by one album (9/10 overlap), so `CF_MAX_PAGES` stays 4. A recent-30-days vs all-time profile comparison showed ranking responds to listening habits but the final list barely does. Evidence and limits: `PROJECT_LOG.md` (2026-10-23 entry).

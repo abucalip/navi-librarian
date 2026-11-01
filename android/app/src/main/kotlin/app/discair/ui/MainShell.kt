@@ -165,13 +165,14 @@ fun MainShell(state: UiState, model: AppViewModel, container: AppContainer) {
         )
     }
 
-    if (nowPlayingOpen && playerState.visible) {
-        NowPlayingSheet(playerState, player, onDismiss = { nowPlayingOpen = false }, onSignIn = { nowPlayingOpen = false; model.sessionExpired() })
-    }
     CompositionLocalProvider(
         LocalRepository provides repo, LocalImageLoader provides container.imageLoader, LocalAcquisitions provides hub,
         app.discair.ui.player.LocalPlayActions provides playActions,
     ) {
+        // Inside the provider: the sheet's cover needs the image loader, which only exists here.
+        if (nowPlayingOpen && playerState.visible) {
+            NowPlayingSheet(playerState, player, onDismiss = { nowPlayingOpen = false }, onSignIn = { nowPlayingOpen = false; model.sessionExpired() })
+        }
         Scaffold(
             snackbarHost = { SnackbarHost(snackbar) },
             topBar = {

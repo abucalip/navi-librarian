@@ -87,7 +87,7 @@ Each phase is one focused PR from `main`. Agents run focused tests only (the own
 2. **Scrobble tracker.** (Built; see section 10.) A pure Kotlin class and a `scrobble.view` client. Tests: short tracks, missing or zero duration, duration disagreement, seek, buffering, repeat-one, repeated playback, toggle on and off mid-track, retry classification, and a response lost after the request was sent being **not** retried.
 3. **UI.** (Built; see section 11.) Mini-player, Now Playing sheet, queue panel, notification and lock-screen controls.
 4. **Entry points.** (Built; see section 12.) Album, Artist, Library and Search, plus play next and add to queue.
-5. **Settings and hardening.** Quality and scrobble toggle, the format fallback, expired sign-in and offline behaviour, TalkBack, landscape, 200 % text, reduced motion, signed release build run on the owner's phone.
+5. **Settings and hardening.** (Built; see section 13. The device run is the owner's.) Quality and scrobble toggle, the format fallback, expired sign-in and offline behaviour, TalkBack, landscape, 200 % text, reduced motion, signed release build run on the owner's phone.
 
 Later, each with its own contract: gapless and crossfade, EQ, lyrics.
 
@@ -173,3 +173,39 @@ Not done or not verified:
 - The Top song button depends on the artist's library album having the same name as the song's album; otherwise only the owned mark shows.
 - Playing a large artist reads one album per request before playback starts; the time over Tailscale is unmeasured.
 - The Settings toggles for streaming quality and scrobbling are still Phase 5.
+
+## 13. Phase 5 status
+
+**Built and unit-tested; not run on an emulator or a phone.** Phase 4 was merged in PR #664 (`dd89b51`; CI passed on head `5470011`).
+
+Built:
+- Settings, section "Playback": streaming quality (Original or 320, 256, 192, 128, 96, 64 kbps) and "Record plays" (on by default), both per device in ordinary preferences (`PlayerSettings`). The quality is read each time a stream address is made, so a change applies to songs started afterwards; the Record plays switch is applied to the running player at once (off cancels pending retries and sends nothing more for the current play, as in section 4).
+- The service no longer opens the encrypted settings on its main thread each time items are added: it uses the servers the signed-in screens already hold, and reads the encrypted store once as a fallback when the service starts without the app open (the gap noted in section 11). The stream address is now made by a function that is tested without Android (`StreamResolver.urlFor`).
+- Already built earlier and now the hardening for this phase: the MP3 retry for one song without changing the saved quality (Phase 3), "Sign in again" without a retry loop (Phase 3), resume after a lost connection (Phase 3), sign-out stops the service and deletes the queue (Phases 1 and 3).
+
+Run: `./gradlew testDebugUnitTest assembleDebug lintDebug assembleRelease` on JDK 17: 230 unit tests, 0 failures (7 new), debug build, lint and the signed release build succeeded.
+
+Not done or not verified (the acceptance in section 6 needs the owner's phone, which this environment does not have):
+- The whole path from tap to sound has never run: service start, the Media3 connection, a real stream from Navidrome, seek, the notification, lock screen and headset buttons, audio focus, a phone call, airplane mode mid-song, restart restoring paused, a scrobble appearing once in Navidrome, session expiry, TalkBack, landscape, 200% text.
+- Reduced motion: standard Compose animations follow the system animator scale; not checked on a device.
+- The notification and lock screen cover art: not built on purpose, but the owner's phone shows a cover in the notification anyway (see the first device findings).
+- The scrobble `time` and `submission` parameters are unconfirmed against the owner's Navidrome version.
+
+**Owner's device checklist** (install the signed release build; record what you saw in `android/DESIGN.md`):
+1. Sign in; open an album in the library; tap Play. Does music start, and does the mini-player show the title?
+2. Seek in a FLAC and in an MP3. Pause, resume, next, previous, shuffle, repeat one.
+3. Lock the phone: do the notification and lock-screen controls work? Press a headset button.
+4. Start a call or another audio app: does playback pause and resume sensibly?
+5. Switch to airplane mode mid-song, then back: does it say it is waiting and resume by itself?
+6. Close the app from the recent apps list and reopen it: is the queue back, paused, at the same place?
+7. Play a song past the halfway point: does Navidrome (or Last.fm) show exactly one play? Skip a song at 10 seconds: no play.
+8. Turn Record plays off and play a song past halfway: no play recorded. Change the streaming quality and start a song: does it convert?
+9. Turn TalkBack on and go through the mini-player, the sheet, the queue and the Settings section. Try 200% text and landscape.
+10. Sign out: does the notification disappear and the queue stay gone after signing in again?
+
+### First device findings (2026-11-01, owner's phone)
+
+- Works: play from an album page, next, shuffle, the media notification.
+- **Crash when opening Now Playing from the mini-player (several times).** Cause (found by reading the code, not by a stack trace): the sheet was composed outside the `CompositionLocalProvider` that supplies the image loader, so its cover threw "No image loader". The mini-player is inside the provider, which is why it drew. Fixed by moving the sheet inside the provider. The fix is built and unit tests pass, but it has not been confirmed on the phone; no regression test exists because the screens have no UI tests.
+- Covers: shown in the mini-player, the Now Playing sheet and (unexpectedly, since Phase 3 did not build it) the media notification. Missing in the queue list because the queue rows had no cover at all; a 40dp cover was added to each row.
+- Confirmed by the owner after the fix: Now Playing opens, the queue shows, the seek bar moves and seeking works, and Record plays works.

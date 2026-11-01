@@ -186,3 +186,12 @@ Code-level review with the `/mobile-design` principles; **not run on an emulator
 6. **Where the ids come from.** The web album page carries no song ids, so the app asks Navidrome (`getAlbum`, `getArtist`) with the login saved on the device; search results already carry the song id.
 
 Known gaps: per-track Play next and Add to queue, a Shuffle button on library rows and play controls on Discover or Home cards are not built. Not checked on a device: layout at 200% font and in landscape, TalkBack order on the track rows, thumb reach of the buttons, the time to load a large artist.
+
+## Player settings and hardening (Phase 5 of the player, 2026-11-01)
+
+Code-level review with the `/mobile-design` principles; **not run on an emulator or a phone**.
+
+1. **Playback section in Settings.** Streaming quality is a radio list (Original, then 320 down to 64 kbps), each row at least 48dp and selectable as a whole row, with a note that a change applies to songs started afterwards. "Record plays" is a switch row (the whole row toggles) whose supporting text changes with the state in words: On says plays shape the listening history and recommendations; Off says they will not.
+2. **The Settings page scrolls.** With the new section it is taller than a phone in landscape or at large text, so the fixed layout with a flexible spacer became a scrolling column.
+3. **Reduced motion.** The mini-player and sheet use standard Compose animations, which follow the system animator scale, so the system "Remove animations" setting switches them off. This is from the framework's behaviour, not checked on a device.
+4. **Not covered:** TalkBack order and spoken state on the new rows, 200% text and landscape on Settings, and thumb reach have not been checked on a device.
