@@ -1,8 +1,10 @@
 # Project status
 
-Last checked: 2026-10-31. GitHub `main` is authoritative.
+Last checked: 2026-11-01. GitHub `main` is authoritative.
 
 ## Current state
+
+- **Post-merge Python learning rule added (2026-11-01):** `docs/DEVELOPMENT_WORKFLOW.md` now requires every successful merge response to include a concise, beginner-friendly **Did you know?** lesson about a basic Python concept. The rule calls for plain language, a tiny example where useful, and no assumed coding knowledge. Workflow commit: `0bf04aa71a07c4c6814cca2241fcbcf777fb3364`.
 
 - **Heard list Clear all merged (2026-10-31):** PR [#653](https://github.com/abucalip/navi-librarian/pull/653), squash `7e1ebeca2935ecdf674eba96dff3b7df7acf2b26`, from tested head `1c309dca362a2acd46c23e674f13bb8c22c05f76`; all required checks passed on that head (the full suite ran in CI only). The Radio page's Heard list has a centred Refresh and Clear all action group above the list (the bottom Refresh is gone); Clear all asks for confirmation and calls the new `DELETE /api/radio/plays`. Not browser-checked, not published, not deployed. Details: `PROJECT_LOG.md`.
 - **Album page Info and Reviews tabs merged (2026-10-31):** PR [#652](https://github.com/abucalip/navi-librarian/pull/652), squash `f352e6fcf3b7ed0d7ebcd84388e34e5689e07781`, from tested head `9be5cb20d11fc19ba7bb59e0c98a75c25896dcd7`; all required checks passed on that head (the full suite ran in CI only). The album page description becomes Info (Apple Music notes, else the Wikipedia lead with its CC BY-SA 4.0 licence) and Reviews (new `GET /api/album-reviews`, up to three outlets' summary lines with links). Not browser-checked against the full checklist, not published, not deployed. Details: `PROJECT_LOG.md`.
