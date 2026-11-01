@@ -236,3 +236,18 @@ Run with the `/mobile-design` checklist against the release build on the owner's
 - Discover has two rows of tabs in two different styles (a raised track on top, underlined tabs below). It looks deliberate; both scroll sideways and show a cut-off label as the cue.
 
 **Not covered:** TalkBack order on every page, thumb reach, the Album and Artist pages at 200% text, and the offline banner (needs airplane mode; songs cannot be streamed offline).
+
+## Equalizer screen (Phase E3 of the EQ contract, 2026-11-01)
+
+Code-level review with the `/mobile-design` principles (Android, native Compose; touch targets, thumb zone, no gesture-only control, every state in words); **not run on an emulator or a phone**.
+
+1. **Where it lives.** A full page (`EqualizerRoute`), opened from Settings, Playback section ("Equalizer", with "Off" or the preset name under it and an arrow) and from the Player view of the Now Playing sheet (a 48dp text button reading "Equalizer: off" or "Equalizer: Rock", placed under the volume note and away from "Clear queue and stop"). Opening it from the sheet closes the sheet. Back returns to where it was opened.
+2. **Order, top to bottom:** the on/off switch with a sentence in words; the "Not applied to this song." or "Equalizer unavailable for this song." line when it applies; the preset button (a drop-down menu whose items are at least 48dp; the chosen item says "(selected)"); ten band rows; Headroom (automatic switch, and a manual row only when automatic is off); Reset to flat. The page scrolls.
+3. **Deviation from contract section 7: horizontal rows, not ten vertical sliders.** In portrait, ten columns leave about 33dp each, which cannot hold 48dp minus and plus buttons. Each band is one block: its name ("62 Hz") on the left and its value ("+3.5 dB", with a true minus sign) on the right, then a 48dp minus button, a slider and a 48dp plus button. The text follows the system font size and wraps, so 200% text keeps the buttons usable. Landscape has no special layout (the owner dismissed landscape on 2026-11-01); the page just scrolls.
+4. **No gesture-only control.** The slider is the quick way; minus and plus move 0.5 dB and stop at the limits (the button that cannot move is disabled). Sliders step in 0.5 dB, so TalkBack's increase and decrease gestures work.
+5. **Off is shown, not hidden.** With the equalizer off, every control stays on screen, disabled, under the sentence "Off. Songs play as they are. Turn it on to use the controls below." State is carried by words and by disabled controls, not by colour alone.
+6. **TalkBack.** A band reads "62 hertz" with the state "plus 3.5 decibels"; the buttons read "Lower 62 hertz by half a decibel" and "Raise ..."; the switches are announced as switches with their state; the preset button reads "Preset, Rock"; headings mark Bands and Headroom; the status line is a polite live region.
+7. **Reset** asks first ("Reset the equalizer?"), says what it erases (the Custom curve) and what it leaves (the presets, and whether the equalizer is on).
+8. **No custom animation** is added, so reduced motion needs nothing extra.
+
+Not checked on a device: thumb reach of the Now Playing link and of the minus and plus buttons, TalkBack order and wording, 200% text, how the ten rows feel to scroll and drag, whether a slider drag is smooth (each step saves and re-aims the filter), the drop-down on a small phone.

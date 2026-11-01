@@ -1,6 +1,6 @@
 # Android equalizer contract (Discair)
 
-Status: **approved by the owner on 2026-11-01: every proposed default in section 11 is accepted (answers 1 to 8). Phase E0 (documents) is done and E1 (the filter) and E2 (settings and service wiring) are built and unit-tested; E3 and E4 are not started.** This is the "EQ" item that [`ANDROID_PLAYER_CONTRACT.md`](ANDROID_PLAYER_CONTRACT.md) section 6 and `ACTIVE_WORK.md` 2g left for its own contract (proposed `D-020`). It goes through a PR, as the Android contracts do.
+Status: **approved by the owner on 2026-11-01: every proposed default in section 11 is accepted (answers 1 to 8). Phase E0 (documents) is done and E1 (the filter), E2 (settings and service wiring) and E3 (the screen) are built and unit-tested; E4 (the device run) is the owner's.** This is the "EQ" item that [`ANDROID_PLAYER_CONTRACT.md`](ANDROID_PLAYER_CONTRACT.md) section 6 and `ACTIVE_WORK.md` 2g left for its own contract (proposed `D-020`). It goes through a PR, as the Android contracts do.
 
 ## 1. Purpose and scope
 
@@ -197,3 +197,21 @@ Not done or not verified:
 - `PrefsEqSettingsStore` is tested through the in-memory store's rules only; the SharedPreferences class itself has no test (no Robolectric in the project).
 - Nothing sets the settings yet (E3), so nothing can turn the equalizer on.
 - The "Not applied to this song" and fault states exist on the processor (`applies`, `hasFaulted`) but are not surfaced.
+
+## 15. Phase E3 status
+
+**Built and unit-tested; the screen has not been run on an emulator or a phone.** E2 was merged in PR #675. New or changed:
+- `eq/EqEditor.kt`: the nine presets (fixed numbers in `EQ_PRESETS`), the rules of the screen with no Android types (choosing a preset sets the bands; moving a band switches to Custom and keeps the curve; Custom restores it; nudges stop at ±12 dB; Reset goes Flat, erases Custom, keeps on or off and restores automatic pre-gain), and the text for dB values, band names, TalkBack and the summary and status lines.
+- `eq/EqSettings.kt`: the saved settings now also keep the Custom curve (`custom_gains_db`).
+- `eq/EqAudioProcessor.kt` reports "applies to this song" and "faulted" through a listener; the service publishes it to `AppContainer.eqStatus`, and clears it at release.
+- `ui/player/EqualizerScreen.kt`, `EqualizerRoute`, a Settings row and a Now Playing link. Decisions and the deviation below: `android/DESIGN.md`.
+
+**Deviation from section 7:** the ten bands are horizontal rows (name and value, then minus, slider, plus), not ten vertical sliders, because ten columns cannot hold 48dp buttons in portrait. No landscape layout (landscape is dismissed by the owner).
+
+Run: `./gradlew testDebugUnitTest --tests 'app.discair.player.eq.*' assembleDebug lintDebug minifyReleaseWithR8` on JDK 17: 41 tests, 0 failures (12 new: 11 editor, 1 status listener); build, lint and R8 passed. The full suite and the signed release build were not run.
+
+Not done or not verified:
+- No screen test exists (the project has no UI tests); the state choices are tested in `EqEditor`, the layout is not.
+- Nothing was listened to. Whether the presets sound right, whether the pre-gain wording matches what is heard, and whether a drag clicks are device checks (section 10).
+- The preset numbers are a first choice; the owner may want to change them.
+- Reset is disabled while the equalizer is off.

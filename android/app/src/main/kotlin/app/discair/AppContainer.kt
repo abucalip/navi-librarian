@@ -19,7 +19,9 @@ import app.discair.player.NavidromeScrobbler
 import app.discair.player.PlayerController
 import app.discair.player.PlayerSettings
 import app.discair.player.PrefsPlayerSettings
+import app.discair.player.eq.EqRuntimeStatus
 import app.discair.player.eq.EqSettingsStore
+import kotlinx.coroutines.flow.MutableStateFlow
 import app.discair.player.eq.PrefsEqSettingsStore
 import app.discair.player.ScrobbleApi
 import app.discair.player.ScrobbleCoordinator
@@ -56,6 +58,9 @@ class AppContainer(val app: Application) {
     val eqSettings: EqSettingsStore by lazy {
         PrefsEqSettingsStore(app.getSharedPreferences("discair_eq", android.content.Context.MODE_PRIVATE))
     }
+
+    /** What the playback service says about the equalizer for the song now playing; read by the Equalizer screen. */
+    val eqStatus = MutableStateFlow(EqRuntimeStatus())
 
     private val playerLazy = lazy {
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)

@@ -3,8 +3,17 @@ package app.discair.player.eq
 import android.content.SharedPreferences
 
 /** What is saved for the equalizer: the audio setting plus the name of the preset it came from. */
-data class EqSettings(val config: EqConfig = EqConfig(), val presetId: String = PRESET_FLAT) {
-    fun sanitized() = EqSettings(config.sanitized(), sanitizePresetId(presetId))
+data class EqSettings(
+    val config: EqConfig = EqConfig(),
+    val presetId: String = PRESET_FLAT,
+    /** The last hand-made curve, kept so choosing a preset does not lose it (contract 5.3). */
+    val customGainsDb: List<Double> = List(EQ_BAND_COUNT) { 0.0 },
+) {
+    fun sanitized() = EqSettings(
+        config.sanitized(),
+        sanitizePresetId(presetId),
+        EqConfig(bandGainsDb = customGainsDb).sanitized().bandGainsDb,
+    )
 
     companion object {
         const val PRESET_FLAT = "flat"
@@ -71,6 +80,7 @@ class PrefsEqSettingsStore(private val prefs: SharedPreferences) : EqSettingsSto
                     preGainDb = prefs.getFloat(KEY_PRE_DB, 0f).toDouble(),
                 ),
                 EqSettings.sanitizePresetId(prefs.getString(KEY_PRESET, null)),
+                prefs.getString(KEY_CUSTOM, null)?.split(',')?.map { it.trim().toDoubleOrNull() ?: 0.0 } ?: emptyList(),
             ).sanitized()
         }
     } catch (_: Exception) { EqSettings() } // for example a value of the wrong type
@@ -84,6 +94,7 @@ class PrefsEqSettingsStore(private val prefs: SharedPreferences) : EqSettingsSto
             .putBoolean(KEY_PRE_AUTO, s.config.preGainAuto)
             .putFloat(KEY_PRE_DB, s.config.preGainDb.toFloat())
             .putString(KEY_PRESET, s.presetId)
+            .putString(KEY_CUSTOM, s.customGainsDb.joinToString(","))
             .apply()
     }
 
@@ -101,5 +112,6 @@ class PrefsEqSettingsStore(private val prefs: SharedPreferences) : EqSettingsSto
         const val KEY_PRE_AUTO = "pre_gain_auto"
         const val KEY_PRE_DB = "pre_gain_db"
         const val KEY_PRESET = "preset_id"
+        const val KEY_CUSTOM = "custom_gains_db"
     }
 }

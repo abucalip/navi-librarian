@@ -18,6 +18,7 @@ import androidx.media3.session.MediaSessionService
 import app.discair.DiscairApplication
 import app.discair.player.eq.EqAudioProcessor
 import app.discair.player.eq.EqBinding
+import app.discair.player.eq.EqRuntimeStatus
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
 import java.util.concurrent.TimeUnit
@@ -63,6 +64,7 @@ class PlaybackService : MediaSessionService() {
                 .setAudioProcessors(arrayOf(eq))
                 .build()
         }
+        eq.statusListener = { container.eqStatus.value = it }
         val eqBinding = EqBinding(container.eqSettings, eq)
         val exo = ExoPlayer.Builder(this, renderers)
             .setMediaSourceFactory(DefaultMediaSourceFactory(dataSource))
@@ -108,6 +110,8 @@ class PlaybackService : MediaSessionService() {
         session = mediaSession
         guard = ReleaseGuard {
             eqBinding.close()
+            eq.statusListener = null
+            container.eqStatus.value = EqRuntimeStatus()
             mediaSession.release()
             exo.release()
         }

@@ -30,6 +30,11 @@ class EqAudioProcessor : BaseAudioProcessor(), EqTarget {
     @Volatile var hasFaulted: Boolean = false
         private set
 
+    /** Told whenever the answer to "is the equalizer applied to this song?" changes. May run on the playback thread. */
+    @Volatile var statusListener: ((EqRuntimeStatus) -> Unit)? = null
+
+    private fun publish() { statusListener?.invoke(EqRuntimeStatus(applies, hasFaulted)) }
+
     override fun setConfig(config: EqConfig) {
         pending = config.sanitized()
         configVersion++
@@ -39,6 +44,7 @@ class EqAudioProcessor : BaseAudioProcessor(), EqTarget {
         val ok = inputAudioFormat.channelCount in 1..8 &&
             (inputAudioFormat.encoding == C.ENCODING_PCM_16BIT || inputAudioFormat.encoding == C.ENCODING_PCM_FLOAT)
         applies = ok
+        publish()
         return if (ok) inputAudioFormat else AudioProcessor.AudioFormat.NOT_SET
     }
 
@@ -52,6 +58,7 @@ class EqAudioProcessor : BaseAudioProcessor(), EqTarget {
     override fun onReset() {
         engine = null
         applies = false
+        publish()
     }
 
     override fun queueInput(inputBuffer: ByteBuffer) {
@@ -84,6 +91,7 @@ class EqAudioProcessor : BaseAudioProcessor(), EqTarget {
             out.flip()
         } catch (e: Exception) {
             faulted = true; hasFaulted = true
+            publish()
             out.clear()
             inputBuffer.position(start)
             out.put(inputBuffer)
