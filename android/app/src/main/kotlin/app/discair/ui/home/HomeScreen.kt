@@ -42,6 +42,8 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.PlatformTextStyle
+import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -131,11 +133,16 @@ private fun pickTag(label: String): String = when {
 /** The tag chip: mono capitals on a dark ground with a yellow bar on its left edge. */
 @Composable
 private fun TagChip(text: String) {
-    Row(Modifier.height(22.dp).background(Ink.Raised)) {
+    Row(Modifier.height(22.dp).background(Ink.Raised), verticalAlignment = Alignment.CenterVertically) {
         Box(Modifier.width(3.dp).fillMaxHeight().background(Ink.Accent))
+        // Line height is trimmed evenly above and below the capitals, so the text sits in the middle of the chip.
         Text(
-            text.uppercase(), style = MaterialTheme.typography.labelSmall,
-            modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp),
+            text.uppercase(),
+            style = MaterialTheme.typography.labelSmall.copy(
+                lineHeightStyle = LineHeightStyle(LineHeightStyle.Alignment.Center, LineHeightStyle.Trim.Both),
+                platformStyle = PlatformTextStyle(includeFontPadding = false),
+            ),
+            modifier = Modifier.padding(horizontal = 6.dp),
         )
     }
 }

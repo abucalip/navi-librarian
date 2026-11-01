@@ -8,11 +8,11 @@ import kotlinx.serialization.json.decodeFromJsonElement
 
 /** The lists Librarian serves under `GET /api/discovery/{list}`. Names are the server's. */
 enum class DiscoveryList(val path: String, val label: String, val empty: String) {
-    Personal("personal", "Personal discoveries", "No personal discoveries yet."),
     Daily("daily", "Daily picks", "No daily picks today."),
+    DeepDive("artist_deep_dive", "Deep dives", "No deep dives yet."),
     NewReleases("new_releases", "New releases", "No new releases found."),
     Classics("classics", "Add to your collection", "No suggestions yet."),
-    DeepDive("artist_deep_dive", "Artist deep dives", "No deep dives yet."),
+    Personal("personal", "Personal discoveries", "No personal discoveries yet."),
     Saved("for_me", "Saved", "Nothing saved yet."),
 }
 
