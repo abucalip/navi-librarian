@@ -1,6 +1,6 @@
 # Android equalizer contract (Discair)
 
-Status: **approved by the owner on 2026-11-01: every proposed default in section 11 is accepted (answers 1 to 8). Phase E0 (documents) is done and E1 (the filter), E2 (settings and service wiring) and E3 (the screen) are built and unit-tested; E4 (the device run) is the owner's.** This is the "EQ" item that [`ANDROID_PLAYER_CONTRACT.md`](ANDROID_PLAYER_CONTRACT.md) section 6 and `ACTIVE_WORK.md` 2g left for its own contract (proposed `D-020`). It goes through a PR, as the Android contracts do.
+Status: **approved by the owner on 2026-11-01: every proposed default in section 11 is accepted (answers 1 to 8). Phase E0 (documents) is done and E1 (the filter), E2 (settings and service wiring) and E3 (the screen) are built and unit-tested; E4 (the device run, checklist in section 16) is the owner's and has not been done.** This is the "EQ" item that [`ANDROID_PLAYER_CONTRACT.md`](ANDROID_PLAYER_CONTRACT.md) section 6 and `ACTIVE_WORK.md` 2g left for its own contract (proposed `D-020`). It goes through a PR, as the Android contracts do.
 
 ## 1. Purpose and scope
 
@@ -215,3 +215,43 @@ Not done or not verified:
 - Nothing was listened to. Whether the presets sound right, whether the pre-gain wording matches what is heard, and whether a drag clicks are device checks (section 10).
 - The preset numbers are a first choice; the owner may want to change them.
 - Reset is disabled while the equalizer is off.
+
+## 16. Phase E4 status and the owner's device checklist
+
+**E3 was merged in PR #676 (`85b379d`; all four required checks passed on its head). The signed release build of `main` at `85b379d` was built (`assembleRelease` on JDK 17, `android/app/build/outputs/apk/release/app-release.apk`). Nothing in this phase has been run on a phone: E4 is the owner's device run, and no result below is claimed until the owner records it.**
+
+Install over the current app (keeps the sign-in): `adb install -r android/app/build/outputs/apk/release/app-release.apk`. Record what you hear and see in `android/DESIGN.md`; mark each line **works / problem (what) / skipped**.
+
+**A. Basics**
+1. Settings, Playback: an "Equalizer" row reads "Off". Open it. With it off, the controls are greyed and the page says why.
+2. Switch it on, choose Bass boost while a song plays. Is the change audible within a moment, and is there no click?
+3. Choose Flat. Does it sound the same as the switch off? (Switch it off and on a few times, listening for a difference.)
+4. Now Playing, Player view: the button reads "Equalizer: Bass boost" (or the name chosen) and opens the page; Back returns.
+
+**B. Sound**
+5. On a track you know well, try each preset. Do the names match what you hear? Note any preset you want changed (the numbers are a first choice).
+6. Raise one band to +12 dB with Automatic headroom on: no distortion? Turn Automatic off, set the volume change to 0 and keep +12 dB on several bands on a loud song: it may distort, and the limiter should keep it from harshness. Record what you hear.
+7. Drag a slider slowly and quickly while a song plays, and hold the plus button: any clicks, crackle or dropouts?
+
+**C. Formats and gapless**
+8. Play a FLAC, an MP3, an M4A and an Opus song with the EQ on: all play, all show the EQ working. Does any show "Not applied to this song"?
+9. If you have a 24-bit file, play it with the EQ on and off: does it sound cut or noisy? (Float output was not requested in version 1.)
+10. Streaming quality 128 kbps with the EQ on: works?
+11. A live or continuous album with the EQ on: still gapless? Compare with the EQ off.
+
+**D. Player behaviour**
+12. Lock the phone, use the lock-screen and headset buttons, take a call and return: the EQ stays on and nothing breaks.
+13. Bluetooth headphones and then the phone speaker: same curve, no problem switching.
+14. Close the app from recent apps and reopen: the EQ is still on with the same curve; the queue is back, paused.
+15. Sign out and sign in again: the EQ setting is **still there** (by design). Does that feel right?
+16. Reset to flat: asks first, erases Custom, leaves the on/off switch as it was.
+
+**E. Accessibility and feel**
+17. TalkBack: a band reads "62 hertz, plus 3.5 decibels"; swipe up and down changes it by 0.5 dB; minus and plus buttons are named; switches say on or off.
+18. 200% text: the ten rows stay usable, nothing is cut off, the buttons stay tappable.
+19. One-handed: can you reach the Now Playing link and the minus and plus buttons?
+20. Battery: a long listen (an hour or more) with the EQ on, compared with the EQ off, if you can. Record the percentage drop for each, and whether the phone feels warmer.
+
+**What would send this back to the code:** clicks when changing a setting, a format that shows "Not applied", gapless broken with the EQ on, distortion with Automatic headroom on, a visible battery cost, or any crash. The fallback if CPU or battery is the problem is the platform equalizer (section 4, decision D-020).
+
+R8 and release-build notes: the minified release built without extra keep rules for the equalizer classes. Whether R8 changed behaviour (for example a stripped `AudioProcessor` method) can only be seen on the phone, in items 2 and 8.
