@@ -58,6 +58,8 @@ class AppConnector(context: Context, private val cache: app.discair.data.Respons
     override fun signOut(librarianUrl: String, user: String, password: String) {
         LibrarianClient(http, librarianUrl, user, password).signOut()
         cookies.clear()
+        app.discair.player.PlaybackService.stop(appContext) // contract 3.2: sign-out releases the player
+        app.discair.player.FileQueueStorage(java.io.File(appContext.filesDir, "player_queue.json")).clear()
         cache.clear() // saved copies belong to the signed-in account
     }
 
