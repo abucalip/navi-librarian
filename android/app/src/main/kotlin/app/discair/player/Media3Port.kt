@@ -8,6 +8,7 @@ import androidx.media3.common.MediaMetadata
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.session.MediaController
+import app.discair.player.crossfade.EXTRA_ALBUM_ID
 import androidx.media3.session.SessionToken
 import com.google.common.util.concurrent.MoreExecutors
 
@@ -82,11 +83,14 @@ class Media3Port(context: Context) : PlayerPort {
 
     private fun mediaItem(item: QueueItem, mp3: Boolean = false): MediaItem {
         val extras = Bundle().apply { if (mp3) putString(EXTRA_FORMAT, TranscodeFormat.Mp3.wire) }
+        // The album id and the server's length let the service apply the crossfade rules without a server call.
+        val meta = Bundle().apply { if (item.albumId.isNotBlank()) putString(EXTRA_ALBUM_ID, item.albumId) }
         return MediaItem.Builder()
             .setMediaId(item.songId)
             .setRequestMetadata(MediaItem.RequestMetadata.Builder().setExtras(extras).build())
             .setMediaMetadata(
-                MediaMetadata.Builder().setTitle(item.title).setArtist(item.artist).setAlbumTitle(item.album).build(),
+                MediaMetadata.Builder().setTitle(item.title).setArtist(item.artist).setAlbumTitle(item.album)
+                    .setExtras(meta).apply { if (item.durationSec > 0) setDurationMs(item.durationSec * 1000L) }.build(),
             )
             .build()
     }
