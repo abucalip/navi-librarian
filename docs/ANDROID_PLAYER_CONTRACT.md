@@ -1,6 +1,6 @@
 # Android player contract (Discair)
 
-Status: **Phases 0 to 5 are merged (PRs #661 to #665) and the first device run on the owner's phone worked: playback, next, shuffle, the notification, Now Playing, the queue with covers, seeking and Record plays.** The rest of the device checklist (section 13) is still open. Gapless preloading and the playback gaps below are in section 14 (open PR). Crossfade, EQ and lyrics are not started and need their own contract and approval.
+Status: **Phases 0 to 5 are merged (PRs #661 to #665) and the first device run on the owner's phone worked: playback, next, shuffle, the notification, Now Playing, the queue with covers, seeking and Record plays.** The rest of the device checklist (section 13) is still open. Gapless preloading, the playback gaps and the slash fix are merged (section 14, PR #666) and the slash fix and gapless were confirmed on the owner's phone. Crossfade, EQ and lyrics are not started and need their own contract and approval.
 
 This contract adapts the web proposal in [`PLAYER_PROPOSAL.md`](PLAYER_PROPOSAL.md) (PR #645) to the Android app only. The web UI gets no player under this contract, and no Librarian backend change is made (D-016 is untouched). Where the two documents disagree for Android, this one governs. Playback is Android-only: the web UI remains "not a player".
 
@@ -220,3 +220,5 @@ Built (unit-tested where there is logic; not run on a device):
 - **Gapless:** the songs are one playlist in one player, so ExoPlayer already joins them without a gap when the file carries gapless data (MP3 with a LAME or Xing header, M4A, FLAC, Opus). Added: the player now preloads the first ten seconds of the next song (`PreloadConfiguration`), so a slow link does not cause a pause between songs. A lower streaming quality converts on the server, and that stream loses the gapless data, so the Settings text now says it can leave a short gap. Crossfade is not built.
 
 Not verified: gapless on a real album (a live album or a classical piece is the best test), the new buttons, and that the Tony Allen album now opens.
+
+**Owner's device report (2026-11-01):** the slash bug is fixed (the Tony Allen album opens) and gapless playback is seamless. The new queue buttons and the Home play buttons were not mentioned and are still unchecked.
