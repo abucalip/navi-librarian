@@ -1,3 +1,10 @@
+## 2026-11-01 — Require a beginner Python lesson after every successful merge
+
+- **Change:** Updated `docs/DEVELOPMENT_WORKFLOW.md` on GitHub `main` at `0bf04aa71a07c4c6814cca2241fcbcf777fb3364`. After every successfully merged PR, the agent's final response must include a **Did you know?** section teaching one basic Python idea in beginner-friendly language. Lessons should be short, use a tiny example when helpful, explain it plainly, and vary topics. This applies to documentation-only merges too; no lesson is required when nothing was merged.
+- **Documentation closeout:** Recorded the new rule in `docs/PROJECT_STATUS.md` (commit `ab8afaaf4ab28c611d7cdf219a24e9b1a99e0b76`) and this log entry.
+- **Verification:** Read the current workflow, project status, requirements, test plan, active work, architecture and decisions documentation; checked recent GitHub commits and open PRs. Documentation-only direct-to-`main` is the existing workflow rule. No tests were run because this change affects workflow documentation only. The final documentation changes are on `main`; no PR was opened.
+- **Next action:** Apply the new learning section after the next successful merge.
+
 ## 2026-10-31 — Heard list Clear all: PR #653 merged
 
 - **Change:** PR [#653](https://github.com/abucalip/navi-librarian/pull/653), squash `7e1ebeca2935ecdf674eba96dff3b7df7acf2b26`, from tested head `1c309dca362a2acd46c23e674f13bb8c22c05f76`, at the owner's direction. The Heard list on the Radio page has a centred action group above the list with Refresh and Clear all (trash icon, browser confirm); the bottom Refresh is removed. New `DELETE /api/radio/plays` and `RadioStore.clear_plays` empty the log; `navidrome_server.py` is untouched. A follow-up commit centred the group and added 24px between it and the first row.
