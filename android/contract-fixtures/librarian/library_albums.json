@@ -1,0 +1,55 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/api/library/albums",
+    "query": {},
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "content_type": "application/json",
+    "elapsed_seconds": 0.0,
+    "body": {
+      "items": [
+        {
+          "id": "4gCQ2yO6LBg9txXHri4aBL",
+          "key": "菅野よう子/",
+          "name": "?????????????????",
+          "artist": "菅野よう子",
+          "artist_key": "菅野よう子",
+          "year": 1998,
+          "added": "2026-09-14T17:23:21.573405186Z",
+          "song_count": 1,
+          "artwork_url": "/api/owned/artwork/4gCQ2yO6LBg9txXHri4aBL"
+        },
+        {
+          "id": "13g3SB0vxsIQUQGACCbLnQ",
+          "key": "beatles/1",
+          "name": "1",
+          "artist": "The Beatles",
+          "artist_key": "beatles",
+          "year": 2000,
+          "added": "2026-09-14T17:21:38.01117883Z",
+          "song_count": 10,
+          "artwork_url": "/api/owned/artwork/13g3SB0vxsIQUQGACCbLnQ"
+        },
+        {
+          "id": "5VInYXIFWyPAkUNAerYI9e",
+          "key": "taha khaled faudel/1 2 3 soleils",
+          "name": "1,2,3 Soleils",
+          "artist": "Taha, Khaled, Faudel",
+          "artist_key": "taha khaled faudel",
+          "year": 1998,
+          "added": "2026-09-14T17:09:12.424014633Z",
+          "song_count": 6,
+          "artwork_url": "/api/owned/artwork/5VInYXIFWyPAkUNAerYI9e"
+        }
+      ],
+      "next_cursor": "eyJvIjo2MCwicSI6IiIsInMiOiJuYW1lIiwiciI6ImFzYyJ9",
+      "total": 1755,
+      "index_state": "fresh",
+      "snapshot_at": "2026-10-30T23:15:20Z"
+    }
+  },
+  "captured_at": "2026-10-30T23:16:03Z"
+}

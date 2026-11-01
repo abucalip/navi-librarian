@@ -1,0 +1,25 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/api/artwork",
+    "query": {
+      "artist": "The Beatles",
+      "album": "1"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "content_type": "application/json",
+    "elapsed_seconds": 0.0,
+    "body": {
+      "artwork_url": "https://cdn-images.dzcdn.net/images/cover/e6b1f1fe4b354609ba357015a52c9921/500x500-000000-80-0-0.jpg",
+      "image_kind": "album",
+      "source": "Deezer",
+      "matched_artist": "The Beatles",
+      "matched_album": "Michelle (Take 1)",
+      "year": null
+    }
+  },
+  "captured_at": "2026-10-30T23:16:05Z"
+}

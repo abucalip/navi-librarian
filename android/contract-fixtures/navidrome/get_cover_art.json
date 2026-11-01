@@ -1,0 +1,18 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/rest/getCoverArt",
+    "query": {
+      "id": "al-7y8UEyluchKVjyUsqNJQRQ_a83305b4cffa73be",
+      "size": 300
+    }
+  },
+  "response": {
+    "status": 200,
+    "content_type": "image/jpeg",
+    "body": {
+      "bytes": 23741
+    }
+  },
+  "captured_at": "2026-10-30T23:14:33Z"
+}

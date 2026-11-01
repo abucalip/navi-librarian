@@ -1,0 +1,337 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/api/artists/abd%20al%20malik",
+    "query": {
+      "id": "2oQcvqplsiJFiOwhVpp2Ow",
+      "name": "Abd Al Malik"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "content_type": "application/json",
+    "elapsed_seconds": 0.03,
+    "body": {
+      "capabilities": {
+        "sections": {
+          "artist": {
+            "available": true,
+            "reason": null
+          },
+          "owned_albums": {
+            "available": true,
+            "reason": null
+          },
+          "bio": {
+            "available": true,
+            "reason": null
+          },
+          "tags": {
+            "available": true,
+            "reason": null
+          },
+          "top_songs": {
+            "available": true,
+            "reason": null
+          },
+          "albums": {
+            "available": true,
+            "reason": null
+          },
+          "missing_albums": {
+            "available": true,
+            "reason": null
+          },
+          "similar": {
+            "available": true,
+            "reason": null
+          }
+        },
+        "sources": {
+          "navidrome": {
+            "available": true,
+            "reason": null
+          },
+          "musicbrainz": {
+            "available": true,
+            "reason": null
+          },
+          "lastfm": {
+            "available": true,
+            "reason": null
+          },
+          "listenbrainz": {
+            "available": true,
+            "reason": null
+          },
+          "discogs": {
+            "available": false,
+            "reason": "source_disabled"
+          }
+        },
+        "owned_index": {
+          "available": true,
+          "reason": null,
+          "state": "fresh"
+        }
+      },
+      "sections": {
+        "artist": {
+          "available": true,
+          "complete": true,
+          "reason": null,
+          "artist": {
+            "id": "2oQcvqplsiJFiOwhVpp2Ow",
+            "name": "Abd Al Malik",
+            "mbid": "4c7a7959-7cf8-4de8-b7b7-6fe83122926b",
+            "owned": true,
+            "album_count": 2,
+            "genre": "Rap"
+          }
+        },
+        "owned_albums": {
+          "available": true,
+          "complete": true,
+          "reason": null,
+          "items": [
+            {
+              "name": "Chateau Rouge",
+              "year": 2010,
+              "song_count": 14,
+              "key": "abd al malik/chateau rouge",
+              "id": "0N3nZYI6n6CfqmGcDEPnNe",
+              "artwork_url": "/api/owned/artwork/0N3nZYI6n6CfqmGcDEPnNe"
+            },
+            {
+              "name": "Chateau Rouge",
+              "year": 2010,
+              "song_count": 16,
+              "key": "abd al malik/chateau rouge",
+              "id": "5CQopOsmzSwM9XFAFQV13e",
+              "artwork_url": "/api/owned/artwork/5CQopOsmzSwM9XFAFQV13e"
+            }
+          ]
+        },
+        "bio": {
+          "available": true,
+          "complete": true,
+          "reason": null,
+          "bio": {
+            "text": "Regis Fayette‑Mikano, known professionally as Abd al Malik, was born on 14 March 1975 in the 14th arrondissement of Paris and emerged as a French rapper, slam poet, songwriter, producer, writer, filmmaker, actor and screenwriter. He began his musical path in the late 1980s by co‑founding the rap collective New African Poets (NAP) with his brother Bilal and cousin Aissa, while simultaneously developing his lyrical craft. Abd al Malik’s breakthrough came in 2004 with his debut solo album Le Face à Face des Cœurs, which entered the French charts at Number 155 and was followed by the autobiographical book Qu’Allah bénisse la France. His second studio effort, Gibraltar (2006), achieved a peak position of Number 13 on the French charts and sold over 250 000 copies, earning him several awards, including the Prix Constantin, the Académie Charles‑Cros Prize, the SACEM Prize and a Victoire de la musique for the best urban music album. Subsequent albums-including Dante (2008), Château Rouge (2010), Scarifications (2015) and Le Jeune Noir à l’Épée (2019)-continued to solidify his presence in the French rap scene, with Scarifications produced by Laurent Garnier and featuring the single \"Allogène (J'suis un stremon)\". Abd al Malik expanded into film and television, directing Qu’Allah bénisse la France (2014) and the mini‑series Cités (2021), while his literary works earned the Prix Laurence Trân (2005) and the Edgar‑Fauré prize (2010). His career is marked by consistent chart performance, critical acclaim, and a series of awards recognizing both his musical and literary contributions. In 2026, he released the album Furcy Héritage, composed based on the film Furcy, né libre, which he himself directed. Created with Matteo Falkone, it features contributions from Ministère A.M.E.R, Neg'Marrons, Soprano, Youssoupha, Wallen, Lindigo, Jahyanai, Mac Tyer, and Saamou.",
+            "source": "navidrome"
+          }
+        },
+        "tags": {
+          "available": true,
+          "complete": true,
+          "reason": null,
+          "items": [
+            {
+              "name": "rap"
+            },
+            {
+              "name": "conscious hip hop"
+            },
+            {
+              "name": "hip hop"
+            }
+          ]
+        },
+        "top_songs": {
+          "available": true,
+          "complete": true,
+          "reason": null,
+          "items": [
+            {
+              "rank": 1,
+              "name": "Gibraltar",
+              "listen_count": 7611,
+              "source": "listenbrainz",
+              "recording_mbid": "dc2bc1da-b0d6-4be4-a6eb-e364bb2d4642",
+              "owned": false,
+              "album": "Gibraltar"
+            },
+            {
+              "rank": 2,
+              "name": "12 Septembre 2001",
+              "listen_count": 5934,
+              "source": "listenbrainz",
+              "recording_mbid": "5550377e-3c2f-4979-b912-b1fb61447433",
+              "owned": false,
+              "album": "Gibraltar"
+            },
+            {
+              "rank": 3,
+              "name": "Les Autres",
+              "listen_count": 4963,
+              "source": "listenbrainz",
+              "recording_mbid": "17722161-dba3-4df8-a7f3-16f2c69eedcb",
+              "owned": false,
+              "album": "Gibraltar"
+            }
+          ]
+        },
+        "albums": {
+          "available": true,
+          "complete": true,
+          "reason": null,
+          "items": [
+            {
+              "name": "Gibraltar",
+              "year": 2006,
+              "release_group_mbid": "49abdc87-ed28-35af-b7ab-3a237d62c37a",
+              "popularity": 3932,
+              "popularity_source": "listenbrainz",
+              "sources": [
+                "musicbrainz",
+                "lastfm",
+                "listenbrainz"
+              ],
+              "rank": 0,
+              "owned": false,
+              "artist": "Abd Al Malik",
+              "key": "abd al malik/gibraltar",
+              "id": null,
+              "artwork_url": null
+            },
+            {
+              "name": "Dante",
+              "year": 2008,
+              "release_group_mbid": "a8af01c5-3ed4-311a-a071-f2b50bd8aa29",
+              "popularity": 1156,
+              "popularity_source": "listenbrainz",
+              "sources": [
+                "musicbrainz",
+                "lastfm",
+                "listenbrainz"
+              ],
+              "rank": 2,
+              "owned": false,
+              "artist": "Abd Al Malik",
+              "key": "abd al malik/dante",
+              "id": null,
+              "artwork_url": null
+            },
+            {
+              "name": "Château rouge",
+              "year": 2010,
+              "release_group_mbid": "913e157c-d1d5-4c7a-92bd-ba1c40bbc425",
+              "popularity": 780,
+              "popularity_source": "listenbrainz",
+              "sources": [
+                "musicbrainz",
+                "lastfm",
+                "listenbrainz"
+              ],
+              "rank": 6,
+              "owned": true,
+              "artist": "Abd Al Malik",
+              "key": "abd al malik/chateau rouge",
+              "id": "0N3nZYI6n6CfqmGcDEPnNe",
+              "artwork_url": "/api/owned/artwork/0N3nZYI6n6CfqmGcDEPnNe"
+            }
+          ]
+        },
+        "missing_albums": {
+          "available": true,
+          "complete": true,
+          "reason": null,
+          "items": [
+            {
+              "name": "Gibraltar",
+              "year": 2006,
+              "key": "abd al malik/gibraltar",
+              "release_group_mbid": "49abdc87-ed28-35af-b7ab-3a237d62c37a",
+              "popularity": 3932,
+              "popularity_source": "listenbrainz",
+              "sources": [
+                "musicbrainz",
+                "lastfm",
+                "listenbrainz"
+              ]
+            },
+            {
+              "name": "Dante",
+              "year": 2008,
+              "key": "abd al malik/dante",
+              "release_group_mbid": "a8af01c5-3ed4-311a-a071-f2b50bd8aa29",
+              "popularity": 1156,
+              "popularity_source": "listenbrainz",
+              "sources": [
+                "musicbrainz",
+                "lastfm",
+                "listenbrainz"
+              ]
+            },
+            {
+              "name": "Scarifications",
+              "year": 2015,
+              "key": "abd al malik/scarifications",
+              "release_group_mbid": "3021b544-06ae-49a3-aeb3-76cda6395533",
+              "popularity": 723,
+              "popularity_source": "listenbrainz",
+              "sources": [
+                "musicbrainz",
+                "lastfm",
+                "listenbrainz"
+              ]
+            }
+          ]
+        },
+        "similar": {
+          "available": true,
+          "complete": true,
+          "reason": null,
+          "items": [
+            {
+              "name": "Oxmo Puccino",
+              "key": "oxmo puccino",
+              "artwork_url": null,
+              "mbid": "faf5d956-ba11-4e01-9634-2f1c9ec92df5",
+              "owned": false,
+              "id": null,
+              "score": 1.083,
+              "reasons": [
+                "Last.fm similar artist",
+                "Shared tags: hip hop"
+              ]
+            },
+            {
+              "name": "Demi Portion",
+              "key": "demi portion",
+              "artwork_url": null,
+              "mbid": "a661f3c4-4c38-4ec1-93a9-4fec5b16577e",
+              "owned": false,
+              "id": null,
+              "score": 0.95,
+              "reasons": [
+                "Last.fm similar artist",
+                "Shared tags: conscious hip hop, hip hop"
+              ]
+            },
+            {
+              "name": "Cabadzi",
+              "key": "cabadzi",
+              "artwork_url": null,
+              "mbid": "e9df7231-410f-4f4e-a586-37063bc940e1",
+              "owned": false,
+              "id": null,
+              "score": 0.768,
+              "reasons": [
+                "Last.fm similar artist",
+                "Shared tags: hip hop"
+              ]
+            }
+          ]
+        }
+      },
+      "done": {
+        "elapsed_ms": 23,
+        "deadline_hit": false,
+        "partial": false
+      }
+    }
+  },
+  "captured_at": "2026-10-30T23:16:05Z"
+}

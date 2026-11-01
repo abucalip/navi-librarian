@@ -1,0 +1,46 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/api/library/artists",
+    "query": {},
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "content_type": "application/json",
+    "elapsed_seconds": 0.0,
+    "body": {
+      "items": [
+        {
+          "id": "3rPoD7qONIBTqzc4kSCBON",
+          "key": "5 6 7 8 s",
+          "name": "5.6.7.8's",
+          "album_count": 1,
+          "added": "2026-09-14T17:09:24.010074285Z",
+          "artwork_url": "/api/owned/artwork/3rPoD7qONIBTqzc4kSCBON"
+        },
+        {
+          "id": "4fpO2ZcWAZsfRGxxrJcvCl",
+          "key": "764 hero",
+          "name": "764-HERO",
+          "album_count": 1,
+          "added": null,
+          "artwork_url": "/api/owned/artwork/4fpO2ZcWAZsfRGxxrJcvCl"
+        },
+        {
+          "id": "1rdx3bFyZlu1EzJyBuJkLf",
+          "key": "a weather",
+          "name": "A Weather",
+          "album_count": 1,
+          "added": "2026-09-14T17:11:45.843804545Z",
+          "artwork_url": "/api/owned/artwork/1rdx3bFyZlu1EzJyBuJkLf"
+        }
+      ],
+      "next_cursor": "eyJvIjo2MCwicSI6IiIsInMiOiJuYW1lIiwiciI6ImFzYyJ9",
+      "total": 733,
+      "index_state": "fresh",
+      "snapshot_at": "2026-10-30T23:15:20Z"
+    }
+  },
+  "captured_at": "2026-10-30T23:16:03Z"
+}

@@ -1,0 +1,492 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/api/search",
+    "query": {
+      "q": "Abd Al Malik",
+      "scope": "all"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "content_type": "text/event-stream",
+    "elapsed_seconds": 2.16,
+    "body": {
+      "sse_events": [
+        {
+          "event": "capabilities",
+          "data": {
+            "types": {
+              "artist": {
+                "available": true,
+                "reason": null
+              },
+              "album": {
+                "available": true,
+                "reason": null
+              },
+              "song": {
+                "available": true,
+                "reason": null
+              },
+              "genre": {
+                "available": true,
+                "reason": null
+              }
+            },
+            "sources": {
+              "navidrome": {
+                "available": true,
+                "reason": null
+              },
+              "musicbrainz": {
+                "available": true,
+                "reason": null
+              },
+              "lastfm": {
+                "available": true,
+                "reason": null
+              },
+              "listenbrainz": {
+                "available": false,
+                "reason": "not_in_this_build"
+              },
+              "discogs": {
+                "available": false,
+                "reason": "source_disabled"
+              }
+            },
+            "owned_index": {
+              "available": true,
+              "reason": null,
+              "state": "fresh"
+            }
+          }
+        },
+        {
+          "event": "result",
+          "data": {
+            "type": "artist",
+            "owned": true,
+            "id": "2oQcvqplsiJFiOwhVpp2Ow",
+            "key": "abd al malik",
+            "name": "Abd Al Malik",
+            "mbid": "4c7a7959-7cf8-4de8-b7b7-6fe83122926b",
+            "album_count": 2,
+            "genre": "Rap",
+            "sources": [
+              "navidrome"
+            ],
+            "artwork_url": "/api/owned/artwork/2oQcvqplsiJFiOwhVpp2Ow"
+          }
+        },
+        {
+          "event": "source",
+          "data": {
+            "source": "musicbrainz",
+            "state": "pending",
+            "count": null,
+            "ms": null
+          }
+        },
+        {
+          "event": "source",
+          "data": {
+            "source": "lastfm",
+            "state": "pending",
+            "count": null,
+            "ms": null
+          }
+        },
+        {
+          "event": "result",
+          "data": {
+            "type": "artist",
+            "owned": false,
+            "id": "lastfm:abd al malik cocknbullkid",
+            "key": "abd al malik cocknbullkid",
+            "name": "Abd al Malik & Cocknbullkid",
+            "mbid": null,
+            "sources": [
+              "lastfm"
+            ],
+            "artwork_url": null,
+            "album_count": null,
+            "genre": null
+          }
+        },
+        {
+          "event": "result",
+          "data": {
+            "type": "artist",
+            "owned": false,
+            "id": "lastfm:abd al malik ezra koenig",
+            "key": "abd al malik ezra koenig",
+            "name": "Abd al Malik & Ezra Koenig",
+            "mbid": null,
+            "sources": [
+              "lastfm"
+            ],
+            "artwork_url": null,
+            "album_count": null,
+            "genre": null
+          }
+        },
+        {
+          "event": "result",
+          "data": {
+            "type": "artist",
+            "owned": false,
+            "id": "lastfm:abd al malik juliette greco",
+            "key": "abd al malik juliette greco",
+            "name": "Abd al Malik & Juliette Gréco",
+            "mbid": null,
+            "sources": [
+              "lastfm"
+            ],
+            "artwork_url": null,
+            "album_count": null,
+            "genre": null
+          }
+        },
+        {
+          "event": "result",
+          "data": {
+            "type": "artist",
+            "owned": false,
+            "id": "lastfm:abd al malik matteo falkone",
+            "key": "abd al malik matteo falkone",
+            "name": "Abd al Malik & Matteo Falkone",
+            "mbid": null,
+            "sources": [
+              "lastfm"
+            ],
+            "artwork_url": null,
+            "album_count": null,
+            "genre": null
+          }
+        },
+        {
+          "event": "result",
+          "data": {
+            "type": "artist",
+            "owned": false,
+            "id": "lastfm:abd al malik papa wemba",
+            "key": "abd al malik papa wemba",
+            "name": "Abd al Malik & Papa Wemba",
+            "mbid": null,
+            "sources": [
+              "lastfm"
+            ],
+            "artwork_url": null,
+            "album_count": null,
+            "genre": null
+          }
+        },
+        {
+          "event": "result",
+          "data": {
+            "type": "artist",
+            "owned": false,
+            "id": "lastfm:abd al malik primary 1",
+            "key": "abd al malik primary 1",
+            "name": "Abd al Malik & Primary 1",
+            "mbid": null,
+            "sources": [
+              "lastfm"
+            ],
+            "artwork_url": null,
+            "album_count": null,
+            "genre": null
+          }
+        },
+        {
+          "event": "result",
+          "data": {
+            "type": "artist",
+            "owned": false,
+            "id": "lastfm:abd al malik wallen",
+            "key": "abd al malik wallen",
+            "name": "Abd Al Malik & Wallen",
+            "mbid": null,
+            "sources": [
+              "lastfm"
+            ],
+            "artwork_url": null,
+            "album_count": null,
+            "genre": null
+          }
+        },
+        {
+          "event": "result",
+          "data": {
+            "type": "artist",
+            "owned": false,
+            "id": "lastfm:abd al malik feat wallen",
+            "key": "abd al malik feat wallen",
+            "name": "Abd Al Malik Feat Wallen",
+            "mbid": null,
+            "sources": [
+              "lastfm"
+            ],
+            "artwork_url": null,
+            "album_count": null,
+            "genre": null
+          }
+        },
+        {
+          "event": "result",
+          "data": {
+            "type": "artist",
+            "owned": false,
+            "id": "lastfm:abd al malik feat aissa",
+            "key": "abd al malik feat aissa",
+            "name": "Abd Al Malik feat. Aïssa",
+            "mbid": null,
+            "sources": [
+              "lastfm"
+            ],
+            "artwork_url": null,
+            "album_count": null,
+            "genre": null
+          }
+        },
+        {
+          "event": "result",
+          "data": {
+            "type": "artist",
+            "owned": false,
+            "id": "lastfm:abd al malik feat juliette greco",
+            "key": "abd al malik feat juliette greco",
+            "name": "Abd Al Malik feat. Juliette Gréco",
+            "mbid": null,
+            "sources": [
+              "lastfm"
+            ],
+            "artwork_url": null,
+            "album_count": null,
+            "genre": null
+          }
+        },
+        {
+          "event": "result",
+          "data": {
+            "type": "album",
+            "owned": false,
+            "id": "lastfm:abd al malik/2008 by popof",
+            "key": "abd al malik/2008 by popof",
+            "name": "-2008-BY POPOF",
+            "mbid": null,
+            "sources": [
+              "lastfm"
+            ],
+            "artwork_url": null,
+            "artist": "Abd Al Malik",
+            "artist_key": "abd al malik",
+            "year": null,
+            "release_group_mbid": null
+          }
+        },
+        {
+          "event": "result",
+          "data": {
+            "type": "album",
+            "owned": false,
+            "id": "lastfm:abd al malik/12 septembre 2001",
+            "key": "abd al malik/12 septembre 2001",
+            "name": "12 Septembre 2001",
+            "mbid": null,
+            "sources": [
+              "lastfm"
+            ],
+            "artwork_url": null,
+            "artist": "Abd Al Malik",
+            "artist_key": "abd al malik",
+            "year": null,
+            "release_group_mbid": null
+          }
+        },
+        {
+          "event": "result",
+          "data": {
+            "type": "album",
+            "owned": false,
+            "id": "lastfm:abd al malik/abd al malik",
+            "key": "abd al malik/abd al malik",
+            "name": "Abd Al Malik",
+            "mbid": null,
+            "sources": [
+              "lastfm"
+            ],
+            "artwork_url": null,
+            "artist": "Abd Al Malik",
+            "artist_key": "abd al malik",
+            "year": null,
+            "release_group_mbid": null
+          }
+        },
+        {
+          "event": "result",
+          "data": {
+            "type": "album",
+            "owned": false,
+            "id": "lastfm:abd al malik/allogene j suis un stremon",
+            "key": "abd al malik/allogene j suis un stremon",
+            "name": "Allogène (j'suis un stremon)",
+            "mbid": null,
+            "sources": [
+              "lastfm"
+            ],
+            "artwork_url": null,
+            "artist": "Abd Al Malik",
+            "artist_key": "abd al malik",
+            "year": null,
+            "release_group_mbid": null
+          }
+        },
+        {
+          "event": "result",
+          "data": {
+            "type": "album",
+            "owned": false,
+            "id": "lastfm:abd al malik/c est du lourd",
+            "key": "abd al malik/c est du lourd",
+            "name": "C'Est Du Lourd",
+            "mbid": null,
+            "sources": [
+              "lastfm"
+            ],
+            "artwork_url": null,
+            "artist": "Abd Al Malik",
+            "artist_key": "abd al malik",
+            "year": null,
+            "release_group_mbid": null
+          }
+        },
+        {
+          "event": "result",
+          "data": {
+            "type": "album",
+            "owned": false,
+            "id": "lastfm:abd al malik/daniel darc",
+            "key": "abd al malik/daniel darc",
+            "name": "Daniel Darc",
+            "mbid": null,
+            "sources": [
+              "lastfm"
+            ],
+            "artwork_url": null,
+            "artist": "Abd Al Malik",
+            "artist_key": "abd al malik",
+            "year": null,
+            "release_group_mbid": null
+          }
+        },
+        {
+          "event": "result",
+          "data": {
+            "type": "album",
+            "owned": false,
+            "id": "lastfm:abd al malik/dante",
+            "key": "abd al malik/dante",
+            "name": "Dante",
+            "mbid": null,
+            "sources": [
+              "lastfm"
+            ],
+            "artwork_url": null,
+            "artist": "Abd Al Malik",
+            "artist_key": "abd al malik",
+            "year": null,
+            "release_group_mbid": null
+          }
+        },
+        {
+          "event": "result",
+          "data": {
+            "type": "album",
+            "owned": false,
+            "id": "lastfm:abd al malik wallen/dante",
+            "key": "abd al malik wallen/dante",
+            "name": "Dante",
+            "mbid": null,
+            "sources": [
+              "lastfm"
+            ],
+            "artwork_url": null,
+            "artist": "Abd Al Malik & Wallen",
+            "artist_key": "abd al malik wallen",
+            "year": null,
+            "release_group_mbid": null
+          }
+        },
+        {
+          "event": "result",
+          "data": {
+            "type": "album",
+            "owned": false,
+            "id": "lastfm:abd al malik juliette greco/dante",
+            "key": "abd al malik juliette greco/dante",
+            "name": "Dante",
+            "mbid": null,
+            "sources": [
+              "lastfm"
+            ],
+            "artwork_url": null,
+            "artist": "Abd al Malik & Juliette Gréco",
+            "artist_key": "abd al malik juliette greco",
+            "year": null,
+            "release_group_mbid": null
+          }
+        },
+        {
+          "event": "result",
+          "data": {
+            "type": "album",
+            "owned": false,
+            "id": "lastfm:abd al malik/dante bonus track version",
+            "key": "abd al malik/dante bonus track version",
+            "name": "Dante (Bonus Track Version)",
+            "mbid": null,
+            "sources": [
+              "lastfm"
+            ],
+            "artwork_url": null,
+            "artist": "Abd Al Malik",
+            "artist_key": "abd al malik",
+            "year": null,
+            "release_group_mbid": null
+          }
+        },
+        {
+          "event": "source",
+          "data": {
+            "source": "lastfm",
+            "state": "cached",
+            "count": 100,
+            "ms": 0
+          }
+        },
+        {
+          "event": "source",
+          "data": {
+            "source": "musicbrainz",
+            "state": "done",
+            "count": 1,
+            "ms": 2138
+          }
+        },
+        {
+          "event": "done",
+          "data": {
+            "elapsed_ms": 2162,
+            "deadline_hit": false,
+            "partial": false
+          }
+        }
+      ]
+    }
+  },
+  "captured_at": "2026-10-30T23:16:05Z"
+}

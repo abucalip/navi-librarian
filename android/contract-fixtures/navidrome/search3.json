@@ -1,0 +1,156 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/rest/search3",
+    "query": {
+      "query": "5.6.7.8's",
+      "artistCount": 5,
+      "albumCount": 5,
+      "songCount": 5
+    }
+  },
+  "response": {
+    "status": 200,
+    "content_type": "application/json",
+    "body": {
+      "subsonic-response": {
+        "status": "ok",
+        "version": "1.16.1",
+        "type": "navidrome",
+        "serverVersion": "0.64.2 (10114574)",
+        "openSubsonic": true,
+        "searchResult3": {
+          "artist": [
+            {
+              "id": "3rPoD7qONIBTqzc4kSCBON",
+              "name": "5.6.7.8's",
+              "albumCount": 1,
+              "musicBrainzId": "",
+              "sortName": "5.6.7.8's",
+              "roles": [
+                "albumartist",
+                "maincredit"
+              ]
+            },
+            {
+              "id": "4Bd1p8malLjgFPPj6RsNxQ",
+              "name": "The 5.6.7.8's",
+              "coverArt": "ar-4Bd1p8malLjgFPPj6RsNxQ_909bd009554bf9cc",
+              "albumCount": 0,
+              "artistImageUrl": "https://navidrome.example.ts.net/share/img/REDACTED?size=600",
+              "musicBrainzId": "",
+              "sortName": "5.6.7.8's",
+              "roles": [
+                "artist",
+                "maincredit"
+              ]
+            }
+          ],
+          "album": [
+            {
+              "id": "7y8UEyluchKVjyUsqNJQRQ",
+              "name": "Kill Bill (Volume One)",
+              "artist": "5.6.7.8's",
+              "artistId": "3rPoD7qONIBTqzc4kSCBON",
+              "coverArt": "al-7y8UEyluchKVjyUsqNJQRQ_a83305b4cffa73be",
+              "songCount": 1,
+              "duration": 118,
+              "created": "2026-09-14T17:09:24.010074285Z",
+              "year": 2003,
+              "genre": "Soundtrack",
+              "userRating": 0,
+              "genres": [
+                {
+                  "name": "Soundtrack"
+                }
+              ],
+              "musicBrainzId": "",
+              "isCompilation": false,
+              "sortName": "kill bill (volume one)",
+              "discTitles": [],
+              "originalReleaseDate": {},
+              "releaseDate": {},
+              "releaseTypes": [],
+              "recordLabels": [
+                {
+                  "name": "Maverick"
+                }
+              ],
+              "moods": [],
+              "artists": [
+                {
+                  "id": "3rPoD7qONIBTqzc4kSCBON",
+                  "name": "5.6.7.8's"
+                }
+              ],
+              "displayArtist": "5.6.7.8's",
+              "explicitStatus": "",
+              "version": ""
+            }
+          ],
+          "song": [
+            {
+              "id": "1aF3pKQJpLQmSVb50IlxsP",
+              "parent": "7y8UEyluchKVjyUsqNJQRQ",
+              "isDir": false,
+              "title": "''Woo Hoo''",
+              "album": "Kill Bill (Volume One)",
+              "artist": "The 5.6.7.8's",
+              "track": 11,
+              "year": 2003,
+              "genre": "Soundtrack",
+              "coverArt": "mf-1aF3pKQJpLQmSVb50IlxsP",
+              "size": 3136125,
+              "contentType": "audio/mpeg",
+              "suffix": "mp3",
+              "duration": 118,
+              "bitRate": 192,
+              "path": "5.6.7.8's/Kill Bill (Volume One)/11 - ''Woo Hoo''.mp3",
+              "created": "2026-09-29T13:44:03.224611619Z",
+              "albumId": "7y8UEyluchKVjyUsqNJQRQ",
+              "artistId": "4Bd1p8malLjgFPPj6RsNxQ",
+              "type": "music",
+              "bpm": 0,
+              "comment": "",
+              "sortName": "''woo hoo''",
+              "mediaType": "song",
+              "musicBrainzId": "",
+              "isrc": [],
+              "genres": [
+                {
+                  "name": "Soundtrack"
+                }
+              ],
+              "replayGain": {},
+              "channelCount": 2,
+              "samplingRate": 44100,
+              "bitDepth": 0,
+              "moods": [],
+              "artists": [
+                {
+                  "id": "4Bd1p8malLjgFPPj6RsNxQ",
+                  "name": "The 5.6.7.8's"
+                }
+              ],
+              "displayArtist": "The 5.6.7.8's",
+              "albumArtists": [
+                {
+                  "id": "3rPoD7qONIBTqzc4kSCBON",
+                  "name": "5.6.7.8's"
+                }
+              ],
+              "displayAlbumArtist": "5.6.7.8's",
+              "contributors": [],
+              "displayComposer": "",
+              "explicitStatus": "",
+              "groupings": [],
+              "works": [],
+              "movements": []
+            }
+          ]
+        }
+      }
+    }
+  },
+  "captured_at": "2026-10-30T23:14:33Z"
+}
