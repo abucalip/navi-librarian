@@ -1,3 +1,13 @@
+## 2026-11-01 — Android Now Playing redesign merged (PR #681)
+
+- **Merged:** PR #681, squash `c7cc967a70ebe86f06db33b785a802ae8414cdf4`, from tested head `dbecf4d415cc2bcb177d0bca66c3963f0f1b32dc`; compile, container-smoke, test-and-build and validate-container passed on that head before merge; the full suite ran in CI only.
+- **Changed (Android only, no server change):** the player requests artwork with `size=1000` (the server cap) while lists and the mini player keep the default; the artwork is the centre view and flips in 3D to the lyrics (swipe from the right) or the queue (swipe from the left); the Queue, Player and Lyrics tabs became three icons (list, music note, quote marks; active larger and white, others smaller and dim); the equalizer (wave on a centre line) and crossfade (swap arrows) are icon buttons on one row that open bottom sheets over the player instead of navigating away (the Settings entries still open the full pages); the volume hint and the Clear queue and stop button were removed (queue rows keep Remove); the sheet is washed with the artwork colour using the same picker as the album and artist pages. A gap above the progress bar is reserved for metadata that is not yet chosen.
+- **Tests run:** `app.discair.player.*` and `app.discair.ui.*` unit tests (new `PlayerArtworkUrlTest`), `assembleRelease` on JDK 17 (the default JDK 27 fails).
+- **Device (owner's phone, SM_G781B, over adb, signed release build):** the owner confirmed the flip direction and sharper artwork, and approved the icons and the sheets. Install over the existing app works because the build uses the release key; a debug build is refused (signature mismatch).
+- **Not checked, not claimed:** TalkBack, landscape, 200% text, lint, the tint on many covers, the full unit suite run by the owner.
+- **Not done:** publication and deployment (not authorized).
+- **Next action:** choose the metadata fields (for example year, genre, format, track number) and fill the reserved space.
+
 ## 2026-11-01 — Android crossfade X5 closed; branches cleaned up
 
 - **Closed:** X5 is closed for version 1 on the owner's word, after the walkthrough recorded in contract section 17; section 18 lists what was not checked and the known limits. Crossfade is done for version 1.
