@@ -10,16 +10,20 @@
   src: url("big-shoulders-display-800.woff2") format("woff2");
 }
 @font-face {
-  font-family: "Schibsted Grotesk"; font-style: normal; font-weight: 400; font-display: swap;
-  src: url("schibsted-grotesk-latin-400-normal.woff2") format("woff2");
+  font-family: "Peace Sans"; font-style: normal; font-weight: 400; font-display: swap;
+  src: url("peace-sans-latin-400-normal.woff2") format("woff2");
 }
 @font-face {
-  font-family: "Schibsted Grotesk"; font-style: normal; font-weight: 500; font-display: swap;
-  src: url("schibsted-grotesk-latin-500-normal.woff2") format("woff2");
+  font-family: "Open Sans"; font-style: normal; font-weight: 400; font-display: swap;
+  src: url("open-sans-latin-400-normal.woff2") format("woff2");
 }
 @font-face {
-  font-family: "Schibsted Grotesk"; font-style: normal; font-weight: 600; font-display: swap;
-  src: url("schibsted-grotesk-latin-600-normal.woff2") format("woff2");
+  font-family: "Open Sans"; font-style: normal; font-weight: 500; font-display: swap;
+  src: url("open-sans-latin-500-normal.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Open Sans"; font-style: normal; font-weight: 600; font-display: swap;
+  src: url("open-sans-latin-600-normal.woff2") format("woff2");
 }
 @font-face {
   font-family: "JetBrains Mono"; font-style: normal; font-weight: 400; font-display: swap;

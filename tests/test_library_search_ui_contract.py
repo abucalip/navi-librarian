@@ -209,7 +209,7 @@ class LibrarySearchUIContractTests(unittest.TestCase):
         self.assertIn("buildArtwork(sizedArtwork(target.artworkUrl, ARTIST_HERO_PHOTO_SIZE), 'artist-hero-art')", self.new_js)
         self.assertIn("$('libraryHeading').hidden = name === 'artist' || name === 'album';", self.new_js)
         self.assertIn("'/api/artist-image?'", self.new_js)
-        self.assertIn("#artistDetailHeading { margin: 0; font: 700 clamp(2.75rem, 8vw, 6.5rem)/.92 var(--display);", self.css)
+        self.assertIn("#artistDetailHeading { margin: 0; font: 400 clamp(2.75rem, 8vw, 6.5rem)/var(--title-leading) var(--title);", self.css)
 
     def test_artist_page_has_an_icon_only_back_button_and_no_library_heading(self):
         self.assertIn('<button type="button" id="libraryBack" class="artist-back" aria-label="Back" title="Back">', self.html)

@@ -77,7 +77,7 @@ def lookup_album_year(artist: str, album: str):
             })
             request = Request(
                 "https://musicbrainz.org/ws/2/release-group/?" + query,
-                headers={"User-Agent": "NavidromeLibrarian/1.0 (personal music discovery)"},
+                headers={"User-Agent": "Discair/1.0 (personal music discovery)"},
             )
             _last_request = monotonic()
             with urlopen(request, timeout=8) as response:
@@ -107,7 +107,7 @@ def _fetch_release_groups(query: str, limit: int):
     request = Request(
         "https://musicbrainz.org/ws/2/release-group/?"
         + urlencode({"query": query, "fmt": "json", "limit": limit}),
-        headers={"User-Agent": "NavidromeLibrarian/1.0 (personal music discovery)"},
+        headers={"User-Agent": "Discair/1.0 (personal music discovery)"},
     )
     with urlopen(request, timeout=10) as response:
         return json.loads(response.read().decode("utf-8")).get("release-groups") or []

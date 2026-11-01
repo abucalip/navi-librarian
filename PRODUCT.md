@@ -10,10 +10,10 @@ web
 A single owner who self-hosts Navidrome (their music library) and slskd (Soulseek downloads) at home. Desktop-first, with occasional use from a phone on the same network. The job: understand what is already in the library, find music worth adding (new releases, missing albums by artists they already own, classics, taste-based picks), request an acquisition with confidence, and check on its progress. Household or multi-user use is not a requirement.
 
 ## Product Purpose
-Navidrome Librarian is a web UI for discovering music and managing acquisitions on top of an existing Navidrome library and slskd. Success is a collector who can go from "what should I add next?" to a confirmed, tracked request in a few deliberate steps, without second-guessing whether the request landed or whether a destructive action touched the right files.
+Discair is a web UI for discovering music and managing acquisitions on top of an existing Navidrome library and slskd. Success is a collector who can go from "what should I add next?" to a confirmed, tracked request in a few deliberate steps, without second-guessing whether the request landed or whether a destructive action touched the right files.
 
 ## Positioning
-Librarian is an acquisition-aware discovery tool, not a player. It knows the user's library and listening history, so it recommends what is missing rather than what is popular, and it closes the loop through slskd. Streaming apps cannot truthfully copy "request this album into my own library and watch it arrive".
+Discair is an acquisition-aware discovery tool, not a player. It knows the user's library and listening history, so it recommends what is missing rather than what is popular, and it closes the loop through slskd. Streaming apps cannot truthfully copy "request this album into my own library and watch it arrive".
 
 ## Operating Context
 - FastAPI app serving a single-page shell: `app/templates/index.html`, `static/app.css`, `static/app.js`. No framework, no build system.

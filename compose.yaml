@@ -1,14 +1,14 @@
 services:
-  navidrome-librarian:
+  discair:
     build:
       context: .
     image: ghcr.io/abucalip/navi-librarian:latest
-    container_name: navidrome-librarian
+    container_name: discair
     restart: unless-stopped
     ports:
       - "${WEB_PORT:-8080}:8080"
     environment:
-      NAVIDROME_LIBRARIAN_DATA_DIR: /data
+      DISCAIR_DATA_DIR: /data
       NAVIDROME_MUSIC_DIR: /music
       SLSKD_DOWNLOADS_DIR: /downloads
       NAVIDROME_URL: ${NAVIDROME_URL:-}
@@ -17,6 +17,7 @@ services:
       SLSKD_URL: ${SLSKD_URL:-}
       SLSKD_API_KEY: ${SLSKD_API_KEY:-}
       LASTFM_API_KEY: ${LASTFM_API_KEY:-}
+      GUARDIAN_API_KEY: ${GUARDIAN_API_KEY:-}
       LISTENBRAINZ_USERNAME: ${LISTENBRAINZ_USERNAME:-}
     volumes:
       - librarian_data:/data

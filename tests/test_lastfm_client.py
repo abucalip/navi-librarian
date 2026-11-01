@@ -60,7 +60,7 @@ class LastFmClientTests(unittest.TestCase):
             "method": "artist.getTopTags", "api_key": "key", "format": "json",
             "autocorrect": 1, "artist": "Björk",
         })
-        self.assertEqual(request[2]["headers"], {"User-Agent": "NavidromeLibrarian/1.0"})
+        self.assertEqual(request[2]["headers"], {"User-Agent": "Discair/1.0"})
         self.assertEqual(request[2]["timeout"], 15)
         expected_key = "discovery:lastfm:" + hashlib.sha256(
             json.dumps({"method": "artist.getTopTags", "params": {"artist": "Björk"}},

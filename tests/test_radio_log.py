@@ -111,6 +111,13 @@ class StoreTests(unittest.TestCase):
         self.assertTrue(self.store.delete_play(play))
         self.assertFalse(self.store.delete_play(play))
 
+    def test_clear_plays_removes_every_song_and_counts_them(self):
+        self.store.record_play("1", "Rock FM", "A - S", "A", "S", 60, now=5000.0)
+        self.store.record_play("1", "Rock FM", "B - T", "B", "T", 60, now=9000.0)
+        self.assertEqual(self.store.clear_plays(), 2)
+        self.assertEqual(self.store.list_plays(), [])
+        self.assertEqual(self.store.clear_plays(), 0)
+
 
 if __name__ == "__main__":
     unittest.main()

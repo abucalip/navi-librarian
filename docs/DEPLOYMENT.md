@@ -30,20 +30,20 @@ A Git commit SHA tag (for example, `sha-<commit>`) is a tag convention. An immut
 
 ## Add the service safely
 
-Do not replace the existing Compose file. Add only the `navidrome-librarian` service and its top-level named volume if they are not already present. The named volume must be at the top level, not nested under `services`.
+Do not replace the existing Compose file. Add only the `discair` service and its top-level named volume if they are not already present. The named volume must be at the top level, not nested under `services`.
 
 Illustrative service block (adapt network, paths, and settings to the actual file):
 
 ```yaml
-  navidrome-librarian:
+  discair:
     image: ghcr.io/abucalip/navi-librarian:latest
-    container_name: navidrome-librarian
+    container_name: discair
     restart: unless-stopped
     pull_policy: always
     ports:
       - "8689:8080"
     environment:
-      NAVIDROME_LIBRARIAN_DATA_DIR: /data
+      DISCAIR_DATA_DIR: /data
       NAVIDROME_MUSIC_DIR: /music
       SLSKD_DOWNLOADS_DIR: /downloads
       NAVIDROME_URL: http://navidrome:4533
@@ -67,10 +67,10 @@ Run from the directory containing the real Compose file:
 
 ```sh
 docker compose config --quiet
-docker compose pull navidrome-librarian
-docker compose up -d navidrome-librarian
-docker compose ps navidrome-librarian
-docker compose logs --tail=100 navidrome-librarian
+docker compose pull discair
+docker compose up -d discair
+docker compose ps discair
+docker compose logs --tail=100 discair
 ```
 
 If using a source checkout instead of a registry image, follow [DOCKER.md](../DOCKER.md); do not mix source-build and registry-image procedures without checking the Compose configuration.
@@ -92,7 +92,7 @@ For a future deployment/update:
 ## Rollback
 
 - Keep the previous working image tag/digest recorded before an upgrade.
-- Revert the service image to that exact known-good version, then run `docker compose up -d navidrome-librarian`.
+- Revert the service image to that exact known-good version, then run `docker compose up -d discair`.
 - Do not delete `librarian_data` during rollback; it contains persistent application state and authentication material.
 - If an upgrade changes the database schema, confirm backward compatibility before reverting the image.
 

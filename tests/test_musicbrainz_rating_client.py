@@ -56,7 +56,7 @@ class MusicBrainzRatingClientTests(unittest.TestCase):
         self.assertEqual(request[1], "https://musicbrainz.org/ws/2/release-group/mbid-1")
         self.assertEqual(request[2]["params"], {"fmt": "json", "inc": "ratings"})
         self.assertEqual(request[2]["headers"], {
-            "User-Agent": "NavidromeLibrarian/1.0 (personal music discovery)"
+            "User-Agent": "Discair/1.0 (personal music discovery)"
         })
         self.assertEqual(request[2]["timeout"], 15)
         self.assertEqual(self.sleeps, [1.1])

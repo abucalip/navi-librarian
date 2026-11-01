@@ -42,6 +42,7 @@ class MetadataRoutesTests(unittest.TestCase):
             ("/api/artist-image", "GET"),
             ("/api/album-links", "GET"),
             ("/api/album-description", "GET"),
+            ("/api/album-reviews", "GET"),
         })
 
     def test_artist_image_returns_the_large_deezer_photo_for_an_exact_name(self):

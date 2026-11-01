@@ -149,7 +149,7 @@ Measure the section 2.1 targets of `docs/SEARCH_CONTRACT.md` with the script, ag
 
 ```sh
 set -a; source /path/to/config.env; set +a
-NAVIDROME_LIBRARIAN_DATA_DIR=/tmp/search-latency-data python scripts/search_latency.py --builds 3 --queries 20
+DISCAIR_DATA_DIR=/tmp/search-latency-data python scripts/search_latency.py --builds 3 --queries 20
 python scripts/search_latency.py --network --network-queries 5 --network-gap 5   # live providers: owner-approved runs only
 ```
 

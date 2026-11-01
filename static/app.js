@@ -5160,22 +5160,117 @@ function formatDuration(seconds) {
   return Math.floor(seconds / 60) + ':' + String(seconds % 60).padStart(2, '0');
 }
 
-// Apple Music's notes: the first paragraph shows, three lines of it (six on a phone). "Read more"
+// The album page's Info and Reviews tabs. Info is the description (Apple Music's notes, or the
+// Wikipedia lead when Apple has none); Reviews are up to three outlets' summary lines, each with a
+// link to the full review, fetched the first time the tab opens. An album with no description opens
+// on Reviews unless the reader already picked a tab.
+const albumTabState = {selected: 'info', chosen: false, reviews: 'idle', reviewSeq: 0};
+const albumTabButtons = [...document.querySelectorAll('[data-album-tab]')];
+const albumTabPanels = {info: 'albumInfoPanel', reviews: 'albumReviewsPanel'};
+
+function selectAlbumTab(name, {byReader = true, moveFocus = false} = {}) {
+  if (byReader) albumTabState.chosen = true;
+  albumTabState.selected = name;
+  for (const tab of albumTabButtons) {
+    const active = tab.dataset.albumTab === name;
+    tab.classList.toggle('active', active);
+    tab.setAttribute('aria-selected', String(active));
+    // Only the selected tab stays in the document tab order.
+    tab.setAttribute('tabindex', active ? '0' : '-1');
+    if (active && moveFocus) tab.focus();
+  }
+  for (const [tabName, id] of Object.entries(albumTabPanels)) $(id).hidden = tabName !== name;
+  if (name === 'info') fitAlbumDescription();
+  if (name === 'reviews' && albumTabState.reviews === 'idle') loadAlbumReviews();
+}
+
+function moveAlbumTab(from, step) {
+  const index = albumTabButtons.indexOf(from);
+  selectAlbumTab(albumTabButtons[(index + step + albumTabButtons.length) % albumTabButtons.length].dataset.albumTab,
+    {moveFocus: true});
+}
+
+function resetAlbumTabs() {
+  albumTabState.reviews = 'idle';
+  albumTabState.reviewSeq++;
+  albumTabState.chosen = false;
+  $('albumReviews').replaceChildren();
+  $('albumReviewsRetry').hidden = true;
+  setSectionNote('albumReviewsNote', '');
+  selectAlbumTab('info', {byReader: false});
+}
+
+function buildAlbumReview(review) {
+  const item = document.createElement('li');
+  item.className = 'album-review';
+  const quote = document.createElement('blockquote');
+  addTextElement(quote, 'p', '', '\u201c' + review.quote + '\u201d');
+  item.append(quote);
+  const link = document.createElement('a');
+  link.className = 'album-review-link';
+  link.href = review.url;
+  link.target = '_blank';
+  link.rel = 'noopener noreferrer';
+  link.textContent = 'Read the full review at ' + review.source;
+  item.append(link);
+  return item;
+}
+
+async function loadAlbumReviews() {
+  const album = albumPage.album || albumPage.target;
+  if (!album || !album.artist || !album.name) {
+    setSectionNote('albumReviewsNote', 'Reviews are not available for this album.');
+    return;
+  }
+  const seq = albumTabState.reviewSeq;
+  albumTabState.reviews = 'loading';
+  $('albumReviewsRetry').hidden = true;
+  setSectionNote('albumReviewsNote', 'Loading reviews\u2026');
+  const params = new URLSearchParams({artist: album.artist, album: album.name});
+  let data;
+  try {
+    data = await requestJSON('/api/album-reviews?' + params);
+  } catch (error) {
+    if (seq !== albumTabState.reviewSeq) return;
+    albumTabState.reviews = 'idle';
+    setSectionNote('albumReviewsNote', 'Reviews could not be loaded.');
+    $('albumReviewsRetry').hidden = false;
+    return;
+  }
+  if (seq !== albumTabState.reviewSeq) return;
+  const reviews = Array.isArray(data.reviews) ? data.reviews : [];
+  $('albumReviews').replaceChildren(...reviews.map(buildAlbumReview));
+  // A partial answer is shown as it is; only the button asks the outlets that failed again, so
+  // switching tabs never re-requests or flickers.
+  albumTabState.reviews = 'loaded';
+  $('albumReviewsRetry').hidden = !data.retryable;
+  setSectionNote('albumReviewsNote', reviews.length ? (data.retryable ? 'Some sources did not answer.' : '')
+    : data.retryable ? 'No reviews found. Some sources did not answer.' : 'No reviews found for this album.');
+}
+
+// The description's first paragraph shows, three lines of it (six on a phone). "Read more"
 // appears only when there is more to show: a second paragraph or a first one that overflows.
-// Albums Apple has no notes for show no description at all.
+// null means a new album is loading; an answer without paragraphs says so on the Info tab.
 function setAlbumDescription(description) {
   const box = $('albumDescription');
   const text = $('albumDescriptionText');
   const paragraphs = description && Array.isArray(description.paragraphs) ? description.paragraphs : [];
   text.replaceChildren();
   box.hidden = !paragraphs.length;
+  setSectionNote('albumInfoNote', paragraphs.length ? '' : description ? 'No description found for this album.'
+    : 'Loading description\u2026');
   $('albumDescriptionToggle').hidden = true;
   $('albumDescriptionToggle').setAttribute('aria-expanded', 'false');
-  if (!paragraphs.length) return;
+  if (!paragraphs.length) {
+    if (description && !albumTabState.chosen) selectAlbumTab('reviews', {byReader: false});
+    return;
+  }
   for (const paragraph of paragraphs) addTextElement(text, 'p', '', paragraph);
   const link = $('albumDescriptionLink');
   link.href = description.url || '#';
   link.hidden = !description.url;
+  link.textContent = description.source || 'Apple Music';
+  $('albumDescriptionLicense').textContent = description.license ? ' \u00b7 ' + description.license : '';
   fitAlbumDescription();
 }
 
@@ -5214,9 +5309,11 @@ function renderAlbum(target) {
   clearPageTint('libraryAlbumView');
   $('albumAction').replaceChildren();
   albumPage.album = null;
+  albumPage.target = target;
   $('albumTracks').replaceChildren();
   for (const id of ['albumSimilarArtists', 'albumSimilarAlbums']) $(id).replaceChildren();
   $('albumSimilarAlbumsAll').hidden = true;
+  resetAlbumTabs();
   setAlbumDescription(null);
   setSectionNote('albumTracksNote', 'Loading tracklist…');
   setSectionNote('albumSimilarArtistsNote', 'Loading similar artists…');
@@ -5353,7 +5450,7 @@ function setAlbumGenre(genre) {
 }
 
 // The album the open page shows, as its album section reported it; track rows read it for their Get.
-const albumPage = {album: null};
+const albumPage = {album: null, target: null};
 
 // The album's own state: a green check when every song is in the library, the Get button when not.
 // Before the tracklist arrives an owned album shows the check, as it always did.
@@ -5652,6 +5749,21 @@ for (const id of ['libraryBack', 'albumBack', 'genreBack']) $(id).addEventListen
 $('artistBioToggle').addEventListener('click', toggleArtistBio);
 window.addEventListener('resize', () => { fitArtistBio(); fitAlbumDescription(); });
 $('albumDescriptionToggle').addEventListener('click', toggleAlbumDescription);
+$('albumReviewsRetry').addEventListener('click', loadAlbumReviews);
+albumTabButtons.forEach(button => {
+  button.addEventListener('click', () => selectAlbumTab(button.dataset.albumTab));
+  button.addEventListener('keydown', event => {
+    if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
+      event.preventDefault(); moveAlbumTab(button, 1);
+    } else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
+      event.preventDefault(); moveAlbumTab(button, -1);
+    } else if (event.key === 'Home') {
+      event.preventDefault(); selectAlbumTab(albumTabButtons[0].dataset.albumTab, {moveFocus: true});
+    } else if (event.key === 'End') {
+      event.preventDefault(); selectAlbumTab(albumTabButtons[albumTabButtons.length - 1].dataset.albumTab, {moveFocus: true});
+    }
+  });
+});
 // Crossing the phone breakpoint (a rotation, a resized window) rebuilds what was drawn for the other
 // layout: the picks strip and the card or row lists. Lists already on screen are reloaded the way
 // they were loaded; the picks keep the albums they had.

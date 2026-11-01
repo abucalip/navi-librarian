@@ -74,6 +74,11 @@ def radio_plays(limit: int = 100, store=Depends(get_store)):
     return {"items": store.list_plays(limit)}
 
 
+@router.delete("/api/radio/plays")
+def radio_clear_plays(store=Depends(get_store)):
+    return {"ok": True, "removed": store.clear_plays()}
+
+
 @router.delete("/api/radio/plays/{play_id}")
 def radio_delete_play(play_id: int, store=Depends(get_store)):
     if not store.delete_play(play_id):

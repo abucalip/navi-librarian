@@ -14,6 +14,7 @@ _FOUND_KEY = {
     "/api/artist-image": "artwork_url",
     "/api/album-details": "tracks",
     "/api/album-description": "paragraphs",
+    "/api/album-reviews": "reviews",
     "/api/artist-bio": "bio",
     "/api/album-year": "year",
 }

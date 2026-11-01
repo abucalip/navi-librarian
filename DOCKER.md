@@ -1,6 +1,6 @@
 # Docker deployment
 
-Navidrome Librarian runs as a standalone web app. Navidrome and slskd remain external services; this container does not bundle or start either service, and it does not start the separate MCP server.
+Discair runs as a standalone web app. Navidrome and slskd remain external services; this container does not bundle or start either service, and it does not start the separate MCP server.
 
 ## Requirements
 
@@ -21,7 +21,7 @@ Navidrome Librarian runs as a standalone web app. Navidrome and slskd remain ext
 docker compose config
 docker compose build
 docker compose up -d
-docker compose logs -f navidrome-librarian
+docker compose logs -f discair
 ```
 
 Open `http://<docker-host>:8080` (or the port set with `WEB_PORT`). Complete the first-run owner account setup in the web UI.

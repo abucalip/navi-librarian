@@ -3,8 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Navidrome Librarian</title>
+<title>Discair</title>
 <link rel="icon" type="image/jpeg" href="/assets/cassette.png">
+<link rel="preload" href="/static/fonts/peace-sans-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/static/fonts/big-shoulders-display-700.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/static/fonts/fonts.css">
 <!-- Vendored toast stylesheet loads first so app.css can theme .notyf on top of it. -->
@@ -16,7 +17,7 @@
      It sits ahead of the header element so the header's gear button does not displace it as the first tab stop. -->
 <a class="skip-link" href="#content">Skip to content</a>
 <header>
-  <h1>Navidrome Librarian</h1>
+  <h1><svg class="wordmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 371" aria-hidden="true" focusable="false"><path fill="currentColor" fill-rule="evenodd" d="M533.0 370.3C501.2 368.2 473.1 359.0 448.0 342.6L439.5 337.1L439.2 350.5L438.9 364.0L383.5 364.0L328.0 364.0L328.0 240.5L328.0 117.0L383.5 117.0L439.0 117.0L439.2 212.8L439.5 308.5L450.9 290.2L462.4 271.9L463.7 272.4C464.4 272.7 467.4 274.7 470.3 276.9C478.2 282.8 490.4 288.6 501.0 291.5L510.5 294.0L518.2 294.0L525.8 294.0L528.9 291.5C534.8 286.4 533.9 282.5 525.7 278.3C522.8 276.9 513.2 272.5 504.3 268.5C463.5 250.4 446.8 232.1 443.0 201.3C436.7 151.6 474.1 116.0 538.0 110.9L550.8 109.9L562.1 110.9C583.0 112.7 601.9 117.9 619.5 126.7C635.7 134.9 653.7 147.8 652.6 150.6C652.2 151.7 633.1 182.7 621.4 201.1L619.0 205.0L613.7 201.1C592.6 185.2 563.2 182.0 563.0 195.6C563.0 199.7 567.0 202.1 589.0 211.5C610.7 220.7 620.9 226.9 631.8 237.4L638.0 243.4L638.0 235.9C638.0 214.0 647.3 186.0 660.8 167.1C685.0 133.4 719.1 114.7 763.3 110.9L775.6 109.9L787.9 110.9C821.0 113.8 854.1 127.0 874.9 145.7L879.4 149.6L856.4 186.3C843.8 206.5 833.1 223.0 832.7 223.0C832.2 223.0 830.0 221.5 827.7 219.6C818.9 212.6 808.1 207.7 797.6 206.0L791.1 205.0L783.8 206.1C770.9 208.1 762.1 214.3 757.1 224.9L754.5 230.5L754.5 240.5L754.5 250.5L757.1 256.1C762.1 266.7 771.3 273.2 784.0 275.0L791.2 276.0L797.6 275.0C808.9 273.2 822.2 266.8 830.1 259.3L832.8 256.9L843.1 273.4C848.8 282.4 853.7 289.7 854.1 289.5C854.4 289.2 855.0 286.2 855.3 282.7C856.5 269.5 864.5 253.3 874.2 244.3C895.9 224.3 924.9 217.0 982.8 217.0C993.9 217.0 1003.0 216.8 1003.0 216.5C1003.0 214.1 997.2 205.5 993.3 202.0C985.2 194.9 975.2 191.7 961.0 191.7L952.5 191.8L945.2 194.3C937.1 197.1 928.9 201.7 923.0 206.7L919.2 210.0L899.6 178.8L880.0 147.6L883.2 144.2C890.6 136.7 912.6 123.9 927.0 118.8C937.5 115.1 952.4 112.0 964.6 111.0L976.9 109.9L988.7 110.9C1051.4 116.0 1097.4 154.4 1111.7 213.5L1113.4 220.5L1113.7 292.3L1114.1 364.0L1060.9 363.8L1007.7 363.5L1003.0 349.6L998.4 335.6L995.3 340.1C976.4 367.5 942.0 377.4 906.0 365.8C893.3 361.7 876.3 350.7 871.6 343.5C869.4 340.2 869.2 340.3 861.3 345.5C841.0 359.1 815.3 367.7 787.7 370.1L775.4 371.1L763.1 370.0C718.9 366.2 685.0 347.6 660.7 313.7C657.6 309.5 654.8 305.1 654.5 304.0C653.5 300.8 652.2 301.7 651.5 306.1C648.2 325.4 631.0 346.4 609.5 357.2C590.2 367.0 559.8 372.2 533.0 370.3ZM87.0 368.0C53.4 367.1 11.8 365.3 4.8 364.4L0.0 363.8L-0.0 201.0L-0.0 38.2L6.2 37.6C49.3 33.7 143.1 32.3 171.5 35.1C230.2 41.0 277.2 67.2 301.2 107.5C317.5 134.8 325.0 164.4 325.0 201.0C325.0 296.3 269.8 356.1 172.0 367.0C158.2 368.5 120.8 368.9 87.0 368.0ZM1117.0 240.5L1117.0 117.0L1173.0 117.0L1229.0 117.0L1229.0 240.5L1229.0 364.0L1173.0 364.0L1117.0 364.0L1117.0 240.5ZM1236.0 240.5L1236.0 117.0L1289.3 117.0L1342.6 117.0L1346.4 128.7C1348.5 135.2 1350.7 141.6 1351.2 142.9L1352.1 145.3L1355.4 140.4C1366.3 124.3 1383.2 113.3 1400.9 110.9L1408.7 109.8L1416.6 110.9C1426.2 112.2 1439.0 115.9 1439.6 117.5C1440.0 118.5 1422.3 218.0 1421.6 218.7C1421.4 218.9 1418.2 217.7 1414.3 216.1C1391.6 206.8 1374.5 208.6 1361.6 221.7C1356.5 226.8 1351.0 237.2 1348.9 245.5L1347.7 250.5L1347.3 307.2L1346.9 364.0L1291.4 364.0L1236.0 364.0L1236.0 240.5ZM988.1 294.4C996.0 290.5 1002.9 274.9 1003.0 260.8L1003.0 256.2L998.8 256.6C983.9 258.2 974.8 262.3 969.6 269.7L966.6 274.0L966.2 279.9L965.8 285.9L968.0 289.5C972.2 296.3 980.3 298.3 988.1 294.4ZM156.2 264.6C165.8 262.0 171.2 258.9 178.1 252.0C185.7 244.5 189.0 238.6 192.2 226.8L194.5 218.5L194.5 201.0L194.5 183.5L192.2 175.2C186.6 154.7 174.6 142.2 155.7 137.3L149.5 135.7L135.0 135.6L120.5 135.5L120.2 200.0C120.1 235.5 120.2 265.1 120.5 265.9L121.0 267.3L135.8 266.7C144.0 266.4 153.0 265.5 156.2 264.6Z"/><path fill="#f5d33f" d="M328.0 45.0L328.0 0.0L383.5 0.0L439.0 0.0L439.0 45.0L439.0 90.0L383.5 90.0L328.0 90.0L328.0 45.0ZM1117.0 45.0L1117.0 0.0L1173.0 0.0L1229.0 0.0L1229.0 45.0L1229.0 90.0L1173.0 90.0L1117.0 90.0L1117.0 45.0Z"/></svg><span class="sr-only">Discair</span></h1>
   <form id="globalSearch" class="global-search" role="search" autocomplete="off">
     <label for="globalSearchInput" class="sr-only">Search your library or discover new music</label>
     <!-- Phone only: the magnifier that opens the field (hidden by the stylesheet on wider screens). -->
@@ -389,10 +390,24 @@
           <p id="albumArtist" class="album-hero-artist"></p>
           <p class="album-meta"><span id="albumGenre"></span><span id="albumYear"></span></p>
           <p id="albumOwnership" class="album-meta" hidden>Not in your library</p>
-          <div id="albumDescription" class="album-description" hidden>
-            <div id="albumDescriptionText" class="album-description-text"></div>
-            <button type="button" id="albumDescriptionToggle" class="bio-toggle" aria-expanded="false" aria-controls="albumDescriptionText" hidden>Read more</button>
-            <p class="album-description-source">Description from <a id="albumDescriptionLink" href="#" target="_blank" rel="noopener noreferrer">Apple Music</a></p>
+          <div class="album-about">
+            <div class="album-tabs" role="tablist" aria-label="About this album">
+              <button type="button" id="albumTabInfo" class="album-tab active" role="tab" aria-selected="true" aria-controls="albumInfoPanel" data-album-tab="info">Info</button>
+              <button type="button" id="albumTabReviews" class="album-tab" role="tab" aria-selected="false" aria-controls="albumReviewsPanel" tabindex="-1" data-album-tab="reviews">Reviews</button>
+            </div>
+            <div id="albumInfoPanel" class="album-tab-panel" role="tabpanel" aria-labelledby="albumTabInfo">
+              <p id="albumInfoNote" class="section-note" role="status">Loading description…</p>
+              <div id="albumDescription" class="album-description" hidden>
+                <div id="albumDescriptionText" class="album-description-text"></div>
+                <button type="button" id="albumDescriptionToggle" class="bio-toggle" aria-expanded="false" aria-controls="albumDescriptionText" hidden>Read more</button>
+                <p class="album-description-source">Description from <a id="albumDescriptionLink" href="#" target="_blank" rel="noopener noreferrer">Apple Music</a><span id="albumDescriptionLicense"></span></p>
+              </div>
+            </div>
+            <div id="albumReviewsPanel" class="album-tab-panel" role="tabpanel" aria-labelledby="albumTabReviews" hidden>
+              <ul id="albumReviews" class="album-reviews"></ul>
+              <p id="albumReviewsNote" class="section-note" role="status" hidden></p>
+              <button type="button" id="albumReviewsRetry" class="bio-toggle" hidden>Try again</button>
+            </div>
           </div>
           <p id="albumStatus" class="status-line" aria-live="polite"></p>
         </div>
@@ -442,7 +457,7 @@
 <section id="settings" class="page hidden" aria-labelledby="settingsHeading">
   <div class="panel">
     <h2 id="settingsHeading">Settings</h2>
-    <p>Configure the services used by Navidrome Librarian. Secrets are never displayed after saving.</p>
+    <p>Configure the services used by Discair. Secrets are never displayed after saving.</p>
     <div class="settings-tabs" role="tablist" aria-label="Service settings">
       <button type="button" id="tabNavidrome" class="settings-tab active" role="tab" aria-selected="true" aria-controls="settingsNavidrome" data-settings-tab="navidrome">Navidrome</button>
       <button type="button" id="tabSlskd" class="settings-tab" role="tab" aria-selected="false" aria-controls="settingsSlskd" data-settings-tab="slskd">slskd</button>
@@ -551,10 +566,13 @@
     <h3 id="radioStationsHeading">Stations</h3>
     <div id="radioStations" class="radio-list" aria-labelledby="radioStationsHeading"></div>
     <h3 id="radioPlaysHeading">Heard</h3>
-    <div id="radioPlays" class="radio-list" aria-labelledby="radioPlaysHeading"></div>
-    <div class="action-group" role="group" aria-label="Radio">
-      <button id="refreshRadio" type="button" title="Refresh" aria-label="Refresh"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="/static/icons.svg#rotate-cw"></use></svg></button>
+    <div class="radio-toolbar">
+      <div class="action-group" role="group" aria-label="Heard list">
+        <button id="refreshRadio" type="button" title="Refresh" aria-label="Refresh"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="/static/icons.svg#rotate-cw"></use></svg></button>
+        <button id="clearRadioPlays" type="button" title="Clear all" aria-label="Clear all"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="/static/icons.svg#trash-2"></use></svg></button>
+      </div>
     </div>
+    <div id="radioPlays" class="radio-list" aria-labelledby="radioPlaysHeading"></div>
   </div>
 </section>
 

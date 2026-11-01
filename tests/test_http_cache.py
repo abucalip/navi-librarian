@@ -14,6 +14,7 @@ class CacheControlForTests(unittest.TestCase):
             ("/api/artist-image", {"artwork_url": "https://x/a.jpg"}),
             ("/api/album-details", {"tracks": [{"title": "t"}]}),
             ("/api/album-description", {"paragraphs": ["p"]}),
+            ("/api/album-reviews", {"reviews": [{"source": "S"}]}),
             ("/api/artist-bio", {"bio": "text"}),
             ("/api/album-year", {"year": 1994}),
             ("/api/album-links", {"deezer": "https://d"}),
@@ -25,6 +26,8 @@ class CacheControlForTests(unittest.TestCase):
         self.assertIsNone(http_cache.cache_control_for("/api/artwork", {"artwork_url": "u", "retryable": True}))
         self.assertIsNone(http_cache.cache_control_for("/api/album-links", {}))
         self.assertIsNone(http_cache.cache_control_for("/api/artist-bio", {"bio": ""}))
+        self.assertIsNone(http_cache.cache_control_for("/api/album-reviews", {"reviews": []}))
+        self.assertIsNone(http_cache.cache_control_for("/api/album-reviews", {"reviews": [{"source": "S"}], "retryable": True}))
         self.assertIsNone(http_cache.cache_control_for("/api/other", {"bio": "x"}))
         self.assertIsNone(http_cache.cache_control_for("/api/artwork", [1]))
 

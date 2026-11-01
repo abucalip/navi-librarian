@@ -4,7 +4,7 @@
 The script serves only the search router in a throwaway app and times real HTTP/SSE requests against
 it, so the route, the owned index and the stream framing are the production code. It reads the
 Navidrome, Last.fm and other settings from the environment, like the app. Run it with an isolated
-``NAVIDROME_LIBRARIAN_DATA_DIR`` so it never touches the app's own data.
+``DISCAIR_DATA_DIR`` so it never touches the app's own data.
 
 ``--network`` adds ``scope=all`` runs, which call the live providers; run those only with the
 owner's approval. Output is aggregate timings only: no library names, no credentials.
@@ -47,7 +47,7 @@ def percentile(values: list[float], fraction: float) -> float | None:
 def validate_isolated_data_dir(raw_path: str | None, root: Path) -> Path:
     """Require an existing, copied data directory outside the source tree."""
     if not raw_path or not raw_path.strip():
-        raise ValueError("Set NAVIDROME_LIBRARIAN_DATA_DIR to an isolated copy of the app data directory.")
+        raise ValueError("Set DISCAIR_DATA_DIR to an isolated copy of the app data directory.")
     path = Path(raw_path).expanduser().resolve()
     source_root = root.resolve()
     if path == source_root or source_root in path.parents:
@@ -183,7 +183,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.network_gap < 0:
         parser.error("--network-gap cannot be negative")
     try:
-        data_dir = validate_isolated_data_dir(os.environ.get("NAVIDROME_LIBRARIAN_DATA_DIR"), ROOT)
+        data_dir = validate_isolated_data_dir(os.environ.get("DISCAIR_DATA_DIR"), ROOT)
     except ValueError as exc:
         parser.error(str(exc))
 

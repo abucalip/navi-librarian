@@ -89,7 +89,7 @@ class AlbumModalStyleTests(unittest.TestCase):
         self.assertIn("text-wrap: balance;", self.block)
 
     def test_modal_title_stays_at_the_page_head_maximum(self):
-        self.assertIn("font: 600 var(--text-2xl)/1.05 var(--display);", self.block)
+        self.assertIn("font: 400 var(--text-2xl)/var(--title-leading) var(--title);", self.block)
 
 
 class AlbumModalBehaviourGuardTests(unittest.TestCase):

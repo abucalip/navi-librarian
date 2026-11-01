@@ -376,7 +376,7 @@ Then trigger one successful recommendation refresh in that isolated app. The con
 Use the same isolated source environment (Python dependencies installed) to run:
 
 ```sh
-NAVIDROME_LIBRARIAN_DATA_DIR="$(mktemp -d)" python recommendation_replay.py "$HOME/navi-librarian-test/private-recommendation-fixtures/baseline-unique.json"
+DISCAIR_DATA_DIR="$(mktemp -d)" python recommendation_replay.py "$HOME/navi-librarian-test/private-recommendation-fixtures/baseline-unique.json"
 ```
 
 The temporary data directory prevents module initialization from touching the app's normal persisted database. The replay validates the schema and checksum first, then replays provider/cache responses in strict call order and substitutes captured Last.fm results. It does not call the live provider functions, open real HTTP clients, sleep for provider rate limits, or write pool diagnostics to the application database. A changed call order, missing response, extra/unused tape event, or output mismatch fails the replay. The report compares stable output fields and omits only volatile pool-overlap diagnostics and Last.fm error-state text.
@@ -651,7 +651,7 @@ Supply funnel from the same capture (`recommendation_replay.py`, aggregate): 200
 
 **Still open, needs the owner:** approval for any extra ListenBrainz page, and the cold-run budget decision (see the roadmap open items).
 
-**Client identity (owner-approved 2026-10-20):** `listenbrainz_client.request_headers()` sends `User-Agent: NavidromeLibrarian/1.0 (+https://github.com/abucalip/navi-librarian)` and, only if the env var `LISTENBRAINZ_TOKEN` is set, `Authorization: Token <token>`. Applies to the recent-listens call; the token is never logged or stored. The recent-listens timeout did not recur in the live pair below; which change fixed it was not isolated.
+**Client identity (owner-approved 2026-10-20):** `listenbrainz_client.request_headers()` sends `User-Agent: Discair/1.0 (+https://github.com/abucalip/navi-librarian)` and, only if the env var `LISTENBRAINZ_TOKEN` is set, `Authorization: Token <token>`. Applies to the recent-listens call; the token is never logged or stored. The recent-listens timeout did not recur in the live pair below; which change fixed it was not isolated.
 
 Tests (focused): `test_discovery_candidate_gathering`, `test_discovery_candidate_supply` (53, OK), `test_listenbrainz_client` plus `py_compile` on the changed files. CI: see the PR.
 
