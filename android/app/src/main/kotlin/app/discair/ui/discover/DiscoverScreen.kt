@@ -13,11 +13,7 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items as gridItems
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ScrollableTabRow
-import androidx.compose.material3.Tab
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
@@ -35,6 +31,13 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.unit.Velocity
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.contentDescription
@@ -51,7 +54,8 @@ import app.discair.ui.Opener
 import app.discair.ui.common.Load
 import app.discair.ui.common.LocalRepository
 import app.discair.ui.common.PageHeading
-import app.discair.ui.common.ElegantButton
+import app.discair.ui.common.EditorTabs
+import app.discair.ui.common.SegmentedTabs
 import app.discair.ui.common.SaveState
 import app.discair.ui.common.Target
 import app.discair.ui.common.rememberLoad
@@ -80,7 +84,7 @@ fun DiscoverScreen(open: Opener) {
     val repo = LocalRepository.current
     val scope = rememberCoroutineScope()
     val snackbar = remember { SnackbarHostState() }
-    var selected by rememberSaveable { mutableStateOf(DiscoveryList.Personal.name) }
+    var selected by rememberSaveable { mutableStateOf(DiscoveryList.Daily.name) }
     val list = DiscoveryList.valueOf(selected)
     var statusLine by remember { mutableStateOf<String?>(null) }
     val saves = remember { mutableStateMapOf<String, SaveState>() }
@@ -176,19 +180,30 @@ fun DiscoverScreen(open: Opener) {
 
     // The shell's Scaffold already insets for the bars, so this one adds none (it left a gap under the header).
     Scaffold(snackbarHost = { SnackbarHost(snackbar) }, contentWindowInsets = androidx.compose.foundation.layout.WindowInsets(0)) { padding ->
-        Column(Modifier.padding(padding).fillMaxSize()) {
+        fun switchBy(step: Int) {
+            val options = DiscoveryList.entries
+            val target = options.indexOf(list) + step
+            if (target in options.indices) { selected = options[target].name; statusLine = null }
+        }
+        val swipeThreshold = with(androidx.compose.ui.platform.LocalDensity.current) { 72.dp.toPx() }
+        // A sideways swipe moves between Discover's own tabs and never reaches the app's tab swipe, so it cannot
+        // leave for Home or Search. Swipes the card pager uses (Daily picks, Deep dives) are used there first;
+        // one it cannot use, past its last page, moves to the next tab here.
+        Column(Modifier.padding(padding).fillMaxSize().pointerInput(list) {
+            var total = 0f
+            detectHorizontalDragGestures(
+                onDragStart = { total = 0f },
+                onDragCancel = { total = 0f },
+                onDragEnd = { switchBy(if (total < -swipeThreshold) 1 else if (total > swipeThreshold) -1 else 0) },
+            ) { _, delta -> total += delta }
+        }) {
             PageHeading("Discover", Modifier.padding(start = 16.dp, top = 12.dp, end = 16.dp), large = true)
-            LazyRow(
-                contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                items(DiscoveryList.entries.toList(), key = { it.name }) { option ->
-                    ElegantButton(
-                        option.label, selected = option == list,
-                        onClick = { if (option != list) { selected = option.name; statusLine = null } },
-                    )
-                }
-            }
+            val options = DiscoveryList.entries
+            SegmentedTabs(
+                options.map { it.label }, options.indexOf(list),
+                onSelect = { i -> if (options[i] != list) { selected = options[i].name; statusLine = null } },
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+            )
             statusLine?.let {
                 Text(
                     it, color = Ink.ChartRedText, style = MaterialTheme.typography.bodyMedium,
@@ -209,6 +224,7 @@ fun DiscoverScreen(open: Opener) {
                     list, state.value, open, saves, hidden,
                     onSave = { save(it, list == DiscoveryList.Saved) },
                     onDismiss = ::dismiss,
+                    onEdgeSwipe = ::switchBy,
                     onRefresh = {
                         scope.launch {
                             statusLine = try {
@@ -261,6 +277,7 @@ private fun ListBody(
     hidden: Map<String, Boolean>,
     onSave: (DiscoveryEntry) -> Unit,
     onDismiss: (DiscoveryEntry, Boolean) -> Unit,
+    onEdgeSwipe: (Int) -> Unit,
     onRefresh: () -> Unit,
 ) {
     val pages = pagesFor(list, sections, hidden)
@@ -294,19 +311,28 @@ private fun ListBody(
         val pager = rememberPagerState { pages.size }
         val scope = rememberCoroutineScope()
         Column(Modifier.fillMaxSize()) {
-            ScrollableTabRow(
-                selectedTabIndex = pager.currentPage, edgePadding = 8.dp,
-                containerColor = Color.Transparent, divider = {},
-            ) {
-                pages.forEachIndexed { index, page ->
-                    Tab(
-                        selected = pager.currentPage == index,
-                        onClick = { scope.launch { pager.animateScrollToPage(index) } },
-                        modifier = Modifier.heightIn(min = Target),
-                    ) { Text(page.title.orEmpty(), maxLines = 1, modifier = Modifier.padding(horizontal = 8.dp)) }
+            val titles = pages.map { it.title.orEmpty() }
+            val pick: (Int) -> Unit = { scope.launch { pager.animateScrollToPage(it) } }
+            EditorTabs(titles, pager.currentPage, pick)
+            // Swipe left over the last page, or right over the first, is what the pager could not use: it moves to
+            // the next or previous main tab. The distance is added up over the drag and decided when the finger lifts.
+            val threshold = with(androidx.compose.ui.platform.LocalDensity.current) { 72.dp.toPx() }
+            val edge = remember(pager, threshold) {
+                object : NestedScrollConnection {
+                    var overflow = 0f
+                    override fun onPostScroll(consumed: Offset, available: Offset, source: NestedScrollSource): Offset {
+                        if (source == NestedScrollSource.UserInput) overflow += available.x
+                        return Offset.Zero
+                    }
+                    override suspend fun onPreFling(available: Velocity): Velocity {
+                        val total = overflow
+                        overflow = 0f
+                        if (total < -threshold) onEdgeSwipe(1) else if (total > threshold) onEdgeSwipe(-1)
+                        return Velocity.Zero
+                    }
                 }
             }
-            HorizontalPager(pager, Modifier.weight(1f).fillMaxWidth(), key = { pages[it].title ?: it }) { index ->
+            HorizontalPager(pager, Modifier.weight(1f).fillMaxWidth().nestedScroll(edge), key = { pages[it].title ?: it }) { index ->
                 cards(pages[index])
             }
         }

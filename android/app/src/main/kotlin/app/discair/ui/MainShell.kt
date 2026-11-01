@@ -137,22 +137,16 @@ fun MainShell(state: UiState, model: AppViewModel, container: AppContainer) {
                 )
             },
             bottomBar = {
-                // Four labelled tabs cannot fit at 200% text: cap this bar at 130% so labels never split mid-word.
-                if (onTopLevel) CompositionLocalProvider(
-                    androidx.compose.ui.platform.LocalDensity provides androidx.compose.ui.unit.Density(
-                        androidx.compose.ui.platform.LocalDensity.current.density,
-                        minOf(androidx.compose.ui.platform.LocalDensity.current.fontScale, 1.3f),
-                    ),
-                ) { NavigationBar {
+                if (onTopLevel) NavigationBar {
                     tabs.forEach { tab ->
                         NavigationBarItem(
                             selected = destination?.hasRoute(tab.route::class) == true,
                             onClick = { goTab(tab) },
-                            icon = { Icon(tab.icon, contentDescription = null) },
-                            label = { Text(tab.label, maxLines = 1) },
+                            // Icons only; the name is still spoken by TalkBack.
+                            icon = { Icon(tab.icon, contentDescription = tab.label) },
                         )
                     }
-                } }
+                }
             },
         ) { padding ->
             Column(Modifier.padding(padding).fillMaxSize()) {
