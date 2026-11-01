@@ -5,6 +5,9 @@ import app.discair.data.FileResponseCache
 import app.discair.data.LibrarianRepository
 import app.discair.data.LibraryRepository
 import app.discair.data.ServerSettings
+import app.discair.lyrics.LyricsCache
+import app.discair.lyrics.LyricsController
+import app.discair.lyrics.SubsonicLyricsSource
 import app.discair.net.LibrarianClient
 import coil3.ImageLoader
 import coil3.request.allowHardware
@@ -73,6 +76,22 @@ class AppContainer(val app: Application) {
     fun setScrobbling(on: Boolean) {
         playerSettings.scrobbling = on
         if (playerLazy.isInitialized()) playerLazy.value.setScrobbling(on)
+    }
+
+    private val lyricsCache = LyricsCache(
+        java.io.File(app.cacheDir, "lyrics"),
+        scope = { "${servers.navidromeUrl}|${servers.navidromeUser}" },
+    ).also { connector.lyricsCache = it }
+
+    /** Lyrics for the song that is playing; fetches only while the Now Playing sheet shows the Lyrics view. */
+    val lyrics: LyricsController by lazy {
+        val source = SubsonicLyricsSource(
+            OkHttpClient(),
+            login = { servers.let { Triple(it.navidromeUrl, it.navidromeUser, it.navidromePassword) } },
+        )
+        LyricsController(
+            CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate), source, lyricsCache, Dispatchers.IO,
+        )
     }
 
     val imageLoader: ImageLoader by lazy {

@@ -146,6 +146,9 @@ class PlayerController(
         port.play()
     }
 
+    /** The player's position right now, for the lyrics follower (the state's own copy updates once a second). */
+    fun livePositionMs(): Long = port.positionMs
+
     fun seekTo(ms: Long) {
         val target = ms.coerceIn(0, _state.value.durationMs.takeIf { it > 0 } ?: Long.MAX_VALUE)
         port.seekTo(target)

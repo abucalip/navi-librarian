@@ -204,3 +204,16 @@ Code-level review; **not run on a device**.
 2. **Library rows** keep the Play button and gain a More menu: Shuffle, Play next, Add to queue (albums and artists).
 3. **Home shelf cards** (Newest, Recently played, Most played) show a 48dp play button on the cover of albums in the library. Discover and Recommended cards still offer none: they are not in Navidrome.
 4. **Quality note.** The Settings text now says converted streams can leave a short gap between songs.
+
+## Lyrics view (Phase L3 of the lyrics contract, 2026-11-01)
+
+Code-level review with the `/mobile-design` principles; **not run on an emulator or a phone**. The owner's polish pass on a device is still deferred (see the Phase 5 decision of 2026-10-31).
+
+1. **Three labelled views in the Now Playing sheet: Player, Lyrics, Queue.** The old queue icon is gone; the segmented text tabs (each at least 48dp, selected tab announced as selected and drawn raised, so not colour alone) sit in the middle of the header with Close on the left. The last view used is remembered while the app process lives, not across restarts. Back returns to Player from the other two views.
+2. **Every state is written out.** "Loading lyrics…" with a progress ring; the lines; "These lyrics are not timed." above plain lyrics; "No lyrics for this song." with no retry button; a failure sentence with **Try again**; "Saved copy" above lyrics shown from the cache when a refresh failed; "Your Navidrome doesn't provide lyrics."
+3. **Following the music.** The current line is larger and bold and carries the spoken state "Current line"; it is kept about a third of the way down the list. The current line is not announced as it changes (it would talk over the music). A hand scroll stops following and shows **Back to the current line** (48dp, bottom centre); following resumes when the song changes. With the system animation scale at 0 the list jumps instead of scrolling.
+4. **Lines do nothing when tapped** (owner decision). Empty lines are drawn as space and hidden from TalkBack.
+5. **Size.** The list is at most half the screen height, so it fits landscape and large text and scrolls inside the sheet. Text uses the system font size and wraps.
+6. **Fetching.** Only while the Lyrics view is open, for the song that is playing; the next song is prefetched while it stays open; closing the view or the sheet cancels everything. The cache is cleared at sign-out.
+
+Not checked on a device: TalkBack order across the three tabs and the lines, 200% text and landscape, thumb reach of the tabs, whether the 4 s average lookup feels acceptable over Tailscale, scroll behaviour on very long lyrics.
