@@ -9,6 +9,7 @@ import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -20,6 +21,10 @@ private class FakeSource(val albums: Map<String, List<SongRef>> = emptyMap(), va
     }
     override fun artistAlbumIds(artistId: String): List<String> {
         requests += "artist:$artistId"; failure?.let { throw it }; return artists[artistId] ?: emptyList()
+    }
+    val songs = mutableMapOf<String, SongRef>()
+    override fun song(songId: String): SongRef? {
+        requests += "song:$songId"; failure?.let { throw it }; return songs[songId]
     }
 }
 
@@ -111,15 +116,30 @@ class PlayActionsTest {
         assertEquals("Still loading songs.", r.messages.single())
     }
 
-    @Test fun aSearchSongPlaysAtOnceWithNoRequest() = runTest {
+    @Test fun aSearchSongGetsItsYearAndQualityFromNavidrome() = runTest {
         val source = FakeSource()
+        source.songs["s1"] = SongRef("s1", "Song", "Ar", "Al", "al1", 1, null, 100, year = 1999, bitRateKbps = 320, suffix = "mp3")
         val r = rig(source)
         val item = QueueItem("s1", "Song", "Ar", "Al", "al1", "al1", durationSec = 100)
-        r.actions.playSong(item)
-        assertEquals(listOf("s1"), r.controller.state.value.queue.items.map { it.songId }); assertTrue(source.requests.isEmpty())
-        r.actions.queueSong(item.copy(songId = "s2", title = "Two"), next = false)
+        r.actions.playSong(item); advanceUntilIdle()
+        val played = r.controller.state.value.queue.items.single()
+        assertEquals(1999, played.year); assertEquals("320Kbps", qualityLabel(played))
+        r.actions.queueSong(item.copy(songId = "s2", title = "Two"), next = false); advanceUntilIdle()
         assertEquals(2, r.controller.state.value.queue.items.size)
         assertEquals("Added \"Two\" to the queue.", r.messages.last())
+    }
+
+    @Test fun aSearchSongStillPlaysWhenNavidromeCantAnswer() = runTest {
+        val source = FakeSource(); source.failure = SongSourceException(SongSourceProblem.Unreachable, "down")
+        val r = rig(source)
+        r.actions.playSong(QueueItem("s1", "Song", "Ar", "Al", "al1", "al1", durationSec = 100)); advanceUntilIdle()
+        val played = r.controller.state.value.queue.items.single()
+        assertEquals("s1", played.songId); assertNull(played.year)
+    }
+
+    @Test fun parsingASingleSong() {
+        val song = SubsonicParse.song("""{"subsonic-response":{"status":"ok","song":{"id":"x1","title":"T","artist":"A","album":"B","albumId":"al","year":2001,"suffix":"flac","bitDepth":24,"samplingRate":96000}}}""")!!
+        assertEquals(2001, song.year); assertEquals(24, song.bitDepth); assertEquals("al", song.albumId)
     }
 
     @Test fun badSongIdsAreIgnored() = runTest {
@@ -130,7 +150,7 @@ class PlayActionsTest {
 
     @Test fun aSingleTrackCanBeQueuedNextOrAtTheEnd() = runTest {
         val r = rig(FakeSource(mapOf("al1" to album1)))
-        r.actions.playSong(QueueItem("x1", "Other", "Ar", "Al", "al9"))
+        r.actions.playSong(QueueItem("x1", "Other", "Ar", "Al", "al9")); advanceUntilIdle()
         r.actions.queueTrack("al1", "Two", 2, next = true); advanceUntilIdle()
         r.actions.queueTrack("al1", "Three", 3, next = false); advanceUntilIdle()
         assertEquals(listOf("x1", "a2", "a3"), r.controller.state.value.queue.items.map { it.songId })

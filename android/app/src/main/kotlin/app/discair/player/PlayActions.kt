@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 
 private fun norm(text: String) = text.lowercase().filter { it.isLetterOrDigit() }
 
@@ -38,6 +39,7 @@ class PlayActions(
     private fun item(s: SongRef) = QueueItem(
         songId = s.id, title = s.title, artist = s.artist, album = s.album, albumId = s.albumId,
         coverId = s.albumId, coverUrl = coverUrl(s.albumId), durationSec = s.durationSec,
+        year = s.year, bitRateKbps = s.bitRateKbps, suffix = s.suffix, bitDepth = s.bitDepth, samplingRateHz = s.samplingRateHz,
     )
 
     private fun launch(block: suspend () -> Unit) {
@@ -109,11 +111,35 @@ class PlayActions(
     }
 
     /** One song from search, already known: no request is needed. */
-    fun playSong(item: QueueItem) { if (isValidSongId(item.songId)) { controller.playItems(listOf(item)); controller.setShuffle(false) } }
+    /**
+     * Search results carry no year or file details (Librarian's index drops them), so ask Navidrome for
+     * this one song first. Any failure or a slow answer just plays the song as it came.
+     */
+    private suspend fun detailed(item: QueueItem): QueueItem {
+        if (item.suffix.isNotEmpty() && item.year != null) return item
+        val found = try {
+            withTimeoutOrNull(DETAIL_WAIT_MS) { withContext(io) { source.song(item.songId) } }
+        } catch (e: kotlinx.coroutines.CancellationException) { throw e } catch (e: Exception) { null } ?: return item
+        return item.copy(
+            year = item.year ?: found.year, bitRateKbps = item.bitRateKbps ?: found.bitRateKbps,
+            suffix = item.suffix.ifEmpty { found.suffix }, bitDepth = item.bitDepth ?: found.bitDepth,
+            samplingRateHz = item.samplingRateHz ?: found.samplingRateHz,
+        )
+    }
+
+    fun playSong(item: QueueItem) {
+        if (!isValidSongId(item.songId)) return
+        scope.launch { controller.playItems(listOf(detailed(item))); controller.setShuffle(false) }
+    }
 
     fun queueSong(item: QueueItem, next: Boolean) {
         if (!isValidSongId(item.songId)) return
-        if (next) controller.playNext(listOf(item)) else controller.enqueue(listOf(item))
-        _messages.tryEmit(if (next) "\"${item.title}\" will play next." else "Added \"${item.title}\" to the queue.")
+        scope.launch {
+            val full = detailed(item)
+            if (next) controller.playNext(listOf(full)) else controller.enqueue(listOf(full))
+            _messages.tryEmit(if (next) "\"${item.title}\" will play next." else "Added \"${item.title}\" to the queue.")
+        }
     }
+
+    private companion object { const val DETAIL_WAIT_MS = 2_000L }
 }

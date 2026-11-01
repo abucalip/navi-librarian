@@ -18,6 +18,11 @@ data class QueueItem(
     /** Absolute address of the cover on Librarian (loaded with the app's session); empty when unknown. */
     val coverUrl: String = "",
     val durationSec: Int = 0,
+    val year: Int? = null,
+    val bitRateKbps: Int? = null,
+    val suffix: String = "",
+    val bitDepth: Int? = null,
+    val samplingRateHz: Int? = null,
 )
 
 /** Result of an add: the new state and whether the 500-song cap cut the request short. */
