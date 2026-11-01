@@ -86,7 +86,7 @@ Each phase is one focused PR from `main`. Agents run focused tests only (the own
 1. **Playback core.** Media3 dependencies, `PlaybackService`, the stream URL builder with the allowlist, queue model and persistence, failure handling in 3.2. **Status: built and unit-tested; not run on a device (see "Phase 1 status" below).** Tests: URL building (allowlist, no credentials in logs or errors), queue logic including restore and corrupt data, failure classification against recorded Subsonic error bodies, and release on service stop with fakes that report open handles at the end.
 2. **Scrobble tracker.** (Built; see section 10.) A pure Kotlin class and a `scrobble.view` client. Tests: short tracks, missing or zero duration, duration disagreement, seek, buffering, repeat-one, repeated playback, toggle on and off mid-track, retry classification, and a response lost after the request was sent being **not** retried.
 3. **UI.** (Built; see section 11.) Mini-player, Now Playing sheet, queue panel, notification and lock-screen controls.
-4. **Entry points.** Album, Artist, Library and Search, plus play next and add to queue.
+4. **Entry points.** (Built; see section 12.) Album, Artist, Library and Search, plus play next and add to queue.
 5. **Settings and hardening.** Quality and scrobble toggle, the format fallback, expired sign-in and offline behaviour, TalkBack, landscape, 200 % text, reduced motion, signed release build run on the owner's phone.
 
 Later, each with its own contract: gapless and crossfade, EQ, lyrics.
@@ -155,3 +155,21 @@ Not done or not verified:
 - The service reads the encrypted settings on its main thread each time items are added (from Phase 1); worth moving off it.
 - The Settings toggle for scrobbling and the streaming quality are Phase 5; the controller's `setScrobbling` exists but nothing calls it.
 - The sheet's animation is not switched off for the reduced-motion setting.
+
+## 12. Phase 4 status
+
+**Built and unit-tested; not run on an emulator or a phone.** Phase 3 was merged in PR #663 (`1d41f79`; CI passed on head `8002f5f`; a signed release build also succeeded once the keystore was reachable again).
+
+**Finding that shaped the design:** the Librarian album page does not return song ids (its tracks carry number, title, duration and `owned` only), and the web proposal had left this as a Phase 1 check. No backend change was made. The album page gives the Navidrome album id, and `ANDROID_CLIENT_CONTRACT.md` 5.1 already lists `getAlbum` and `getArtist` as direct Navidrome calls, so the app reads song ids from Navidrome. Song search results already carry `id`, `album_id`, `duration` and `track_number`.
+
+New in `player/`: `SongSource` (`SubsonicSongSource` reads `getAlbum` and `getArtist`; ids are validated and a bad id never makes a request; songs are put in disc then track order) and `PlayActions` (play album, play from a track, shuffle, Play next, Add to queue, play artist, play one search song; one load at a time; failures become messages and leave playback alone). Screens: Play, Shuffle and More on the album page, owned tracks tap to play from there, Play and Shuffle on the artist page and a play button on owned Top songs, a play button on Library album and artist rows, Play and Add to queue on song search results. Messages show in the snackbar. Design notes: `android/DESIGN.md`.
+
+Run: `./gradlew testDebugUnitTest assembleDebug lintDebug assembleRelease` on JDK 17: 223 unit tests, 0 failures (23 new: the recorded `getAlbum` and `getArtist` answers, error bodies, signing without the password, bad ids, track matching, and the play actions against a fake source and player), debug build, lint and the signed release build succeeded.
+
+Not done or not verified:
+- No screen was run on a device; nothing has played a real song from Navidrome through the Media3 service, so the whole path from tap to sound is untested.
+- Per-track Play next and Add to queue, a Shuffle button on Library rows, and play controls on Home and Discover cards are not built.
+- Matching a page track to a Navidrome song uses the normalised title, then the track number. A remastered title with a different number can fail to match and says so.
+- The Top song button depends on the artist's library album having the same name as the song's album; otherwise only the owned mark shows.
+- Playing a large artist reads one album per request before playback starts; the time over Tailscale is unmeasured.
+- The Settings toggles for streaming quality and scrobbling are still Phase 5.

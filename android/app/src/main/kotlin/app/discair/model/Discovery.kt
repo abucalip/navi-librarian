@@ -112,6 +112,10 @@ data class SearchResult(
     val year: Int? = null,
     val album: String? = null,
     val tag: String? = null,
+    /** For a song result: the Navidrome album it is on, its length and its place (the server sends these). */
+    @SerialName("album_id") val albumId: String? = null,
+    val duration: Int? = null,
+    @SerialName("track_number") val trackNumber: Int? = null,
 )
 
 @Serializable

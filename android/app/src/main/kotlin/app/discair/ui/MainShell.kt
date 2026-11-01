@@ -127,6 +127,13 @@ fun MainShell(state: UiState, model: AppViewModel, container: AppContainer) {
             askNotifications.launch(android.Manifest.permission.POST_NOTIFICATIONS)
         }
     }
+    val playActions = remember(repo) {
+        app.discair.player.PlayActions(
+            app.discair.player.SubsonicSongSource(okhttp3.OkHttpClient(), { container.servers.let { Triple(it.navidromeUrl, it.navidromeUser, it.navidromePassword) } }),
+            player, scope, Dispatchers.IO, { id -> repo.absolute("/api/owned/artwork/$id") },
+        )
+    }
+    LaunchedEffect(playActions) { playActions.messages.collect { snackbar.showSnackbar(it) } }
     val entry by nav.currentBackStackEntryAsState()
     val destination = entry?.destination
     val tabs = listOf(
@@ -163,6 +170,7 @@ fun MainShell(state: UiState, model: AppViewModel, container: AppContainer) {
     }
     CompositionLocalProvider(
         LocalRepository provides repo, LocalImageLoader provides container.imageLoader, LocalAcquisitions provides hub,
+        app.discair.ui.player.LocalPlayActions provides playActions,
     ) {
         Scaffold(
             snackbarHost = { SnackbarHost(snackbar) },
