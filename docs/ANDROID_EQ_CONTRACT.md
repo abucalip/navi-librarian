@@ -1,6 +1,6 @@
 # Android equalizer contract (Discair)
 
-Status: **approved by the owner on 2026-11-01: every proposed default in section 11 is accepted (answers 1 to 8). Phase E0 (documents) is done and E1 (the filter) is built and unit-tested but not wired in; E2 to E4 are not started.** This is the "EQ" item that [`ANDROID_PLAYER_CONTRACT.md`](ANDROID_PLAYER_CONTRACT.md) section 6 and `ACTIVE_WORK.md` 2g left for its own contract (proposed `D-020`). It goes through a PR, as the Android contracts do.
+Status: **approved by the owner on 2026-11-01: every proposed default in section 11 is accepted (answers 1 to 8). Phase E0 (documents) is done and E1 (the filter) and E2 (settings and service wiring) are built and unit-tested; E3 and E4 are not started.** This is the "EQ" item that [`ANDROID_PLAYER_CONTRACT.md`](ANDROID_PLAYER_CONTRACT.md) section 6 and `ACTIVE_WORK.md` 2g left for its own contract (proposed `D-020`). It goes through a PR, as the Android contracts do.
 
 ## 1. Purpose and scope
 
