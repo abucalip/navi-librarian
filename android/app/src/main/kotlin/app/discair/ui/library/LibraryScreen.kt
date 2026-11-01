@@ -227,6 +227,14 @@ private fun Rows(state: LibraryState, model: LibraryViewModel, open: Opener, lis
                     }
                     val play = app.discair.ui.player.LocalPlayActions.current
                     app.discair.ui.player.RowPlayButton(artist.name, { play.playArtist(artist.id, shuffle = false) })
+                    app.discair.ui.player.RowMoreMenu(
+                        artist.name,
+                        listOf(
+                            "Shuffle" to { play.playArtist(artist.id, shuffle = true) },
+                            "Play next" to { play.queueArtist(artist.id, next = true) },
+                            "Add to queue" to { play.queueArtist(artist.id, next = false) },
+                        ),
+                    )
                 }
             }
         } else {
@@ -248,6 +256,14 @@ private fun Rows(state: LibraryState, model: LibraryViewModel, open: Opener, lis
                     }
                     val play = app.discair.ui.player.LocalPlayActions.current
                     app.discair.ui.player.RowPlayButton(album.name, { play.playAlbum(album.id) })
+                    app.discair.ui.player.RowMoreMenu(
+                        album.name,
+                        listOf(
+                            "Shuffle" to { play.playAlbum(album.id, shuffle = true) },
+                            "Play next" to { play.queueAlbum(album.id, next = true) },
+                            "Add to queue" to { play.queueAlbum(album.id, next = false) },
+                        ),
+                    )
                 }
             }
         }

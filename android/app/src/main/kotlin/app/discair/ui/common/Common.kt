@@ -420,8 +420,14 @@ fun genreHue(tag: String): Int {
 
 fun plural(n: Int, one: String, many: String = one + "s") = if (n == 1) "1 $one" else "$n $many"
 
+/**
+ * One part of a route key. A "/" inside a name (Jealousy/Progress, AC/DC) would split the web address into too
+ * many segments and the server answers 404 "Not Found", so it becomes a space, as the server's own keys do.
+ */
+fun routePart(name: String) = name.trim().lowercase().replace('/', ' ')
+
 /** A key the route accepts for an album the server has not told us the key of; the server normalises it. */
-fun routeKey(artist: String, album: String) = "${artist.trim().lowercase()}/${album.trim().lowercase()}"
+fun routeKey(artist: String, album: String) = "${routePart(artist)}/${routePart(album)}"
 
 /** Similar artists as the web phone shows them: one row that swipes sideways, 112dp circles, names wrap. */
 @Composable

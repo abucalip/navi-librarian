@@ -195,3 +195,12 @@ Code-level review with the `/mobile-design` principles; **not run on an emulator
 2. **The Settings page scrolls.** With the new section it is taller than a phone in landscape or at large text, so the fixed layout with a flexible spacer became a scrolling column.
 3. **Reduced motion.** The mini-player and sheet use standard Compose animations, which follow the system animator scale, so the system "Remove animations" setting switches them off. This is from the framework's behaviour, not checked on a device.
 4. **Not covered:** TalkBack order and spoken state on the new rows, 200% text and landscape on Settings, and thumb reach have not been checked on a device.
+
+## Playback gaps and gapless (2026-11-01)
+
+Code-level review; **not run on a device**.
+
+1. **Per-track queue actions.** Each owned track on the album page has a 48dp More button (Play next, Add to queue) beside the owned mark.
+2. **Library rows** keep the Play button and gain a More menu: Shuffle, Play next, Add to queue (albums and artists).
+3. **Home shelf cards** (Newest, Recently played, Most played) show a 48dp play button on the cover of albums in the library. Discover and Recommended cards still offer none: they are not in Navidrome.
+4. **Quality note.** The Settings text now says converted streams can leave a short gap between songs.

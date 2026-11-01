@@ -127,4 +127,30 @@ class PlayActionsTest {
         r.actions.playSong(QueueItem("bad/id", "x", "y", "z")); r.actions.queueSong(QueueItem("", "x", "y", "z"), next = true)
         assertFalse(r.controller.state.value.visible)
     }
+
+    @Test fun aSingleTrackCanBeQueuedNextOrAtTheEnd() = runTest {
+        val r = rig(FakeSource(mapOf("al1" to album1)))
+        r.actions.playSong(QueueItem("x1", "Other", "Ar", "Al", "al9"))
+        r.actions.queueTrack("al1", "Two", 2, next = true); advanceUntilIdle()
+        r.actions.queueTrack("al1", "Three", 3, next = false); advanceUntilIdle()
+        assertEquals(listOf("x1", "a2", "a3"), r.controller.state.value.queue.items.map { it.songId })
+        assertEquals("Added \"Three\" to the queue.", r.messages.last())
+    }
+
+    @Test fun aMissingTrackIsReportedWhenQueueing() = runTest {
+        val r = rig(FakeSource(mapOf("al1" to album1)))
+        r.actions.queueTrack("al1", "Nope", 9, next = false); advanceUntilIdle()
+        assertFalse(r.controller.state.value.visible)
+        assertEquals("Couldn't find \"Nope\" in your library.", r.messages.last())
+    }
+
+    @Test fun anArtistCanBeQueuedNextOrAtTheEnd() = runTest {
+        val r = rig(FakeSource(mapOf("al1" to album1, "al2" to album2), mapOf("ar1" to listOf("al1", "al2"))))
+        r.actions.playAlbum("al1"); advanceUntilIdle()
+        r.actions.queueArtist("ar1", next = true); advanceUntilIdle()
+        assertEquals(listOf("a1", "a1", "a2", "a3", "b1", "b2", "a2", "a3"), r.controller.state.value.queue.items.map { it.songId })
+        r.actions.queueArtist("ar1", next = false); advanceUntilIdle()
+        assertEquals(13, r.controller.state.value.queue.items.size)
+        assertTrue(r.messages.contains("Added 5 songs to the queue."))
+    }
 }

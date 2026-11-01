@@ -157,7 +157,7 @@ fun MainShell(state: UiState, model: AppViewModel, container: AppContainer) {
     val open = remember(nav) {
         Opener(
             artist = { name, key, id, mbid ->
-                nav.navigate(ArtistRoute(key = key?.ifBlank { null } ?: name.trim().lowercase(), name = name, id = id, mbid = mbid))
+                nav.navigate(ArtistRoute(key = key?.ifBlank { null } ?: app.discair.ui.common.routePart(name), name = name, id = id, mbid = mbid))
             },
             album = { key, artist, name, id, year -> nav.navigate(AlbumRoute(key, artist, name, id, year)) },
             genre = { tag, name -> nav.navigate(GenreRoute(tag, name)) },

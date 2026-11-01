@@ -74,13 +74,34 @@ class PlayActions(
     }
 
     /** Every owned album of the artist, up to the queue cap, in Navidrome's order. */
-    fun playArtist(artistId: String, shuffle: Boolean) = launch {
-        _messages.tryEmit("Loading songs…")
+    private suspend fun artistItems(artistId: String): List<QueueItem> {
         val all = mutableListOf<QueueItem>()
         for (albumId in withContext(io) { source.artistAlbumIds(artistId) }) {
             if (all.size >= MAX_QUEUE) break
             all += album(albumId)
         }
+        return all
+    }
+
+    /** One track of an album, added after the current song or at the end. */
+    fun queueTrack(albumId: String, title: String, number: Int?, next: Boolean) = launch {
+        val songs = withContext(io) { source.albumSongs(albumId) }
+        val match = matchSong(songs, title, number)
+        if (match == null) { _messages.tryEmit("Couldn't find \"$title\" in your library."); return@launch }
+        queueSong(item(match), next)
+    }
+
+    fun queueArtist(artistId: String, next: Boolean) = launch {
+        _messages.tryEmit("Loading songs…")
+        val items = artistItems(artistId)
+        if (items.isEmpty()) { _messages.tryEmit("No songs found for that artist in your library."); return@launch }
+        if (next) controller.playNext(items) else controller.enqueue(items)
+        _messages.tryEmit(if (next) "${items.size} songs will play next." else "Added ${items.size} songs to the queue.")
+    }
+
+    fun playArtist(artistId: String, shuffle: Boolean) = launch {
+        _messages.tryEmit("Loading songs…")
+        val all = artistItems(artistId)
         if (all.isEmpty()) { _messages.tryEmit("No songs found for that artist in your library."); return@launch }
         controller.playItems(all, if (shuffle) random.nextInt(minOf(all.size, MAX_QUEUE)) else 0)
         controller.setShuffle(shuffle)

@@ -300,7 +300,7 @@ private fun PlaybackSettings(container: AppContainer) {
         }
     }
     Text(
-        "Original plays the file as it is. A lower rate converts on the server and saves data. It applies to songs you start after changing it.",
+        "Original plays the file as it is and keeps songs gapless. A lower rate converts on the server and saves data, but the converted stream can leave a short gap between songs. It applies to songs you start after changing it.",
         style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
     Row(
