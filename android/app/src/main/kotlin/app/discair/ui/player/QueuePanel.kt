@@ -57,6 +57,7 @@ fun QueuePanel(state: PlayerUiState, controller: PlayerController) {
                         .clickable(onClickLabel = "Play this song", role = Role.Button) { if (!unavailable) controller.skipTo(index) },
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
+                    app.discair.ui.common.Cover(item.coverUrl.ifBlank { null }, Modifier.padding(end = 12.dp).size(40.dp))
                     Column(Modifier.weight(1f).padding(vertical = 8.dp)) {
                         // The state is written out, never colour alone.
                         val tag = when { unavailable -> "Unavailable"; current && state.isPlaying -> "Now playing"; current -> "Paused here"; else -> null }

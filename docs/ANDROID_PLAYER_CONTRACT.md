@@ -188,7 +188,7 @@ Run: `./gradlew testDebugUnitTest assembleDebug lintDebug assembleRelease` on JD
 Not done or not verified (the acceptance in section 6 needs the owner's phone, which this environment does not have):
 - The whole path from tap to sound has never run: service start, the Media3 connection, a real stream from Navidrome, seek, the notification, lock screen and headset buttons, audio focus, a phone call, airplane mode mid-song, restart restoring paused, a scrobble appearing once in Navidrome, session expiry, TalkBack, landscape, 200% text.
 - Reduced motion: standard Compose animations follow the system animator scale; not checked on a device.
-- The notification and lock screen have no cover art.
+- The notification and lock screen cover art: not built on purpose, but the owner's phone shows a cover in the notification anyway (see the first device findings).
 - The scrobble `time` and `submission` parameters are unconfirmed against the owner's Navidrome version.
 
 **Owner's device checklist** (install the signed release build; record what you saw in `android/DESIGN.md`):
@@ -207,3 +207,5 @@ Not done or not verified (the acceptance in section 6 needs the owner's phone, w
 
 - Works: play from an album page, next, shuffle, the media notification.
 - **Crash when opening Now Playing from the mini-player (several times).** Cause (found by reading the code, not by a stack trace): the sheet was composed outside the `CompositionLocalProvider` that supplies the image loader, so its cover threw "No image loader". The mini-player is inside the provider, which is why it drew. Fixed by moving the sheet inside the provider. The fix is built and unit tests pass, but it has not been confirmed on the phone; no regression test exists because the screens have no UI tests.
+- Covers: shown in the mini-player, the Now Playing sheet and (unexpectedly, since Phase 3 did not build it) the media notification. Missing in the queue list because the queue rows had no cover at all; a 40dp cover was added to each row.
+- Confirmed by the owner after the fix: Now Playing opens, the queue shows, the seek bar moves and seeking works, and Record plays works.
