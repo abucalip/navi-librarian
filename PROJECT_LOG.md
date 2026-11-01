@@ -1,3 +1,10 @@
+## 2026-11-01 — Android crossfade X5 closed; branches cleaned up
+
+- **Closed:** X5 is closed for version 1 on the owner's word, after the walkthrough recorded in contract section 17; section 18 lists what was not checked and the known limits. Crossfade is done for version 1.
+- **Cleaned up:** remote branches `feat/android-crossfade-x3` and `x4` deleted (their PRs #679 and #680 were merged; `x2` was deleted earlier with #678); local branches `feat/android-crossfade-x2`, `x3`, `x4` and `spike/crossfade-x1` deleted; the temporary worktree used for the PRs was removed. The throwaway X1 spike (never merged) was saved as a patch outside the repository before its branch was deleted.
+- **Not done:** publication and deployment (not authorized).
+- **Next action:** the owner's next priority.
+
 ## 2026-11-01 — Android crossfade X4 merged; X5 first device run
 
 - **Merged:** PR #680, squash `af8ece1f98a099b40de1024bd0a724ed0fdc1fc3`, from tested head `35c7d99`; compile, container-smoke, test-and-build and validate-container passed on that head before merge; the full suite ran in CI only.
