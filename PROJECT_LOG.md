@@ -2,9 +2,10 @@
 
 - **Merged:** PR #680, squash `af8ece1f98a099b40de1024bd0a724ed0fdc1fc3`, from tested head `35c7d99`; compile, container-smoke, test-and-build and validate-container passed on that head before merge; the full suite ran in CI only.
 - **Device (owner's phone, SM_G781B, over adb, signed release build of the PR head):** the Settings row, the page off and on and the Now Playing link were seen on screenshots; switching on built the second player; one 5 s fade between songs of different albums was logged (start, complete) and the media session followed to the next song; no crash. Details and the full list of what was not seen: `docs/ANDROID_CROSSFADE_CONTRACT.md` section 17.
-- **Not reported, so not claimed:** how the join sounds, and everything in the checklist of contract section 10 that was not run.
-- **State left on the phone:** crossfade on at 5 s, "Keep albums gapless" on.
-- **Next action:** the owner's listening and checklist; fixes go against the contract as bugs.
+- **Walkthrough (later the same day, owner at the phone):** heard clean at 1 s, 12 s and 5 s (same album, rule off); same-album join with the rule on heard seamless; silence while paused mid-fade and a smooth resume; next, seek and previous during a fade logged correct. Per-item results and the open list: contract section 17.
+- **Not reported, so not claimed:** shuffle and repeat, call, Bluetooth, equalizer on both players, 128 kbps, scrobbling, screen off (not verified; the phone kept waking), TalkBack, 200% text, battery.
+- **State left on the phone:** crossfade on at 12 s, "Keep albums gapless" off.
+- **Next action:** the rest of the checklist; fixes go against the contract as bugs.
 
 ## 2026-11-01 — Android crossfade X4: settings page
 

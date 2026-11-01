@@ -308,3 +308,20 @@ Not done or not verified: no screenshot, no TalkBack, no 200% text, no one-hande
 **Not seen, so not claimed:** how the join sounds; the album rule on two consecutive songs of one album (the run crossed albums); skip, seek and pause during a fade; a phone call; shuffle; repeat modes; screen off or Doze; Bluetooth; quality below Original; the equalizer on both players; scrobbling and now-playing in Navidrome across a swap; the notification and lock screen beyond what the media session showed; the extra data, CPU and battery; 200% text, TalkBack and one-handed reach on the new page. These remain the owner's checklist in section 10.
 
 **State left on the phone:** crossfade is on at 5 s with "Keep albums gapless" on (turned on for the run; the owner can switch it off in Settings).
+
+### Checklist walkthrough with the owner (2026-11-01, same build, owner at the phone)
+
+The assistant drove the phone over adb (seek, media keys, settings taps) and read the `Crossfade` log and the media session; the owner listened and answered by item. **Result per item of section 10** (heard = the owner's report; logged = the service log and media session; nothing is claimed beyond that):
+- **1 (the row and the page, off):** seen on screenshots; the length controls and album switch are dimmed with the reason in words.
+- **2 (different albums, 5 s):** logged only (Starlight to White Flag, 5000 ms, session followed); the sound was not reported for that join.
+- **3 (lengths):** **heard clean at 12 s** (Teardrop to Inertia Creeps) **and at 1 s** (Inertia Creeps to Exchange). The page stops at "1 second" (minus dimmed) and "12 seconds" (plus dimmed), seen on screenshots.
+- **5 (same album, "Keep albums gapless" on):** logged `no fade: SameAlbum` (Angel to Risingson); **heard seamless**.
+- **6 (same album, switch off, 5 s):** logged a 5000 ms fade (Risingson to Teardrop); **heard as a clean overlap**.
+- **10 (next during a fade):** logged `fade interrupted: seek`; the session went to the song after the incoming one (Man Next Door) and played from its start. Sound not reported.
+- **11 (seek bar and previous during a fade):** each logged `fade interrupted: seek`; a seek left the session on the incoming song at the new position; previous restarted the incoming song (it was past 3 s in), which is what previous does. Sound not reported. Tapping a queue row was not tried.
+- **12 (pause in the middle of a fade for a minute, then resume):** the session showed PAUSED on the incoming song at 4.8 s and carried on from there; the fade completed after the resume. **Heard silent while paused and smooth after the resume.**
+- Across the run the two players swapped in both directions (player0 to player1 and player1 to player0) in about ten fades with no crash and no error in the log.
+
+**Not done, still open:** 4 (switch off, the next join is plain); 7 (shuffle, repeat all at the end of the queue, repeat one); 8 and 9 (a very short song; a slow link with the next song not ready); 13 (notification and lock-screen controls during a fade; the media session was seen to follow, the lock screen was not looked at); 14 (equalizer on both players); 15 (128 kbps); 16 (scrobbling and now-playing in Navidrome: not read; sign-out was not run so as not to sign the owner out); 17 (a call, headphones, Bluetooth); 18 (screen off: attempted twice, but the phone kept waking, so it is **not verified**); 19 (closing the app from recents); 20 (sign-out keeping the setting); 21 to 23 (TalkBack, 200% text, battery). Item 4 and 19 can be done over adb; 14 to 17 and 21 to 23 need the owner.
+
+**State left on the phone:** crossfade on at 12 s with "Keep albums gapless" off (set for the run); the owner can restore 5 s and gapless albums in Settings.
