@@ -4,7 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
@@ -95,10 +95,8 @@ private fun CardMenu(entry: DiscoveryEntry, saveState: SaveState, onSave: () -> 
     var open by remember { mutableStateOf(false) }
     Box(modifier) {
         IconButton(onClick = { open = true }, Modifier.size(Target)) {
-            // A soft dark halo (two dim, slightly larger black copies) keeps the dots readable on light covers.
-            Box(contentAlignment = Alignment.Center) {
-                Icon(Icons.Default.MoreVert, null, Modifier.size(30.dp).offset(y = 1.dp), tint = Color.Black.copy(alpha = 0.18f))
-                Icon(Icons.Default.MoreVert, null, Modifier.size(27.dp).offset(y = 1.dp), tint = Color.Black.copy(alpha = 0.3f))
+            // A dark round backing keeps the dots readable on any cover; the old soft halo vanished on white and yellow ones.
+            Box(Modifier.size(34.dp).background(Color.Black.copy(alpha = 0.55f), CircleShape), contentAlignment = Alignment.Center) {
                 Icon(Icons.Default.MoreVert, contentDescription = "Options for ${item.album}", tint = Color.White)
             }
         }
