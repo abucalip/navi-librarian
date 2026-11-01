@@ -1,3 +1,11 @@
+## 2026-11-01 — Android crossfade X3: twin-player engine in the service
+
+- **Merged earlier:** X2, PR #678, squash `aa7ed16c02da4dd655abf35823ae18b70cce617a`; all four required checks passed on its head.
+- **Built:** `crossfade/CrossfadeEngine.kt`, `FadePlayer.kt`, `ExoTwins.kt`, `ShuffleOrders.kt`, settings storage in `PlayerSettings`, album id and length on media items in `Media3Port`, and the service wiring. Details, the four X1 rules and three deviations: contract section 15.
+- **Tests actually run (local, JDK 17):** 123 focused tests, 0 failures (23 engine, 4 shuffle order, 3 settings new, with the planner, curve, equalizer, settings and controller suites), `lintDebug`, `assembleDebug`, `minifyReleaseWithR8`, `assembleRelease`. One engine bug was found by a test and fixed. The full suite was not run by the assistant.
+- **Not done:** no device run of the production code (the phone was not reachable over adb); the real ExoPlayer classes and the service wiring have no unit tests; no screen, so crossfade cannot be switched on yet.
+- **Next action:** CI and merge, then X4.
+
 ## 2026-11-01 — Android crossfade X2: fade curve and join planner
 
 - **Built:** `player/crossfade/FadeCurve.kt` and `CrossfadePlanner.kt` with `FadeCurveTest` (6) and `CrossfadePlannerTest` (17). Contract section 14 records the details and one deviation (the album rule uses the album id only, since a queue item has no track number).
