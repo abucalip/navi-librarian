@@ -85,7 +85,7 @@ Each phase is one focused PR from `main`. Agents run focused tests only (the own
 0. **Docs** (this change). `PRODUCT.md`, `D-018`, `PLAYER-01..` rows, a Player section in `TEST_PLAN.md`, and amendments to `ANDROID_CLIENT_CONTRACT.md`. Direct to `main` by the documentation-only rule.
 1. **Playback core.** Media3 dependencies, `PlaybackService`, the stream URL builder with the allowlist, queue model and persistence, failure handling in 3.2. **Status: built and unit-tested; not run on a device (see "Phase 1 status" below).** Tests: URL building (allowlist, no credentials in logs or errors), queue logic including restore and corrupt data, failure classification against recorded Subsonic error bodies, and release on service stop with fakes that report open handles at the end.
 2. **Scrobble tracker.** (Built; see section 10.) A pure Kotlin class and a `scrobble.view` client. Tests: short tracks, missing or zero duration, duration disagreement, seek, buffering, repeat-one, repeated playback, toggle on and off mid-track, retry classification, and a response lost after the request was sent being **not** retried.
-3. **UI.** Mini-player, Now Playing sheet, queue panel, notification and lock-screen controls.
+3. **UI.** (Built; see section 11.) Mini-player, Now Playing sheet, queue panel, notification and lock-screen controls.
 4. **Entry points.** Album, Artist, Library and Search, plus play next and add to queue.
 5. **Settings and hardening.** Quality and scrobble toggle, the format fallback, expired sign-in and offline behaviour, TalkBack, landscape, 200 % text, reduced motion, signed release build run on the owner's phone.
 
@@ -137,3 +137,21 @@ Not done or not verified:
 - The "request was sent" signal depends on OkHttp's `requestHeadersStart`; a connection reset during that write is counted as sent (ambiguous), which is the safe direction.
 - An error returned with a non-2xx status (for example 401) is treated as ambiguous and dropped, not shown as "Sign in again".
 - Tick cadence (about 1 s) is assumed by the 2 s cap; the Phase 3 position poller must keep to it.
+
+## 11. Phase 3 status
+
+**Built and unit-tested; not run on an emulator or a phone.** Phase 2 was merged in PR #662 (`67f1c0c`; CI passed on head `90ded07`). New:
+- `PlayerPort` / `Media3Port`: the player seen from the controller, and its Media3 `MediaController` adapter. Commands given before the service connects are held and run in order. Items carry only the song id and display text; the service builds the signed stream URL, and a per-item `format=mp3` request (the unsupported-format fallback) is read there.
+- `PlayerController`: the queue, saved to disk on change (position about every 5 s), restored paused; failure handling (an unavailable song is marked and skipped with words; a rejected login pauses once and shows "Sign in again"; a lost connection waits and resumes when the connection returns, or on Retry now; an unsupported format retries once with MP3 and then gives the song up); scrobble wiring (a play starts when playback first runs, repeat-one loops are new plays, seeks are not credited). It holds no Android types.
+- Screens in `ui/player/`: mini-player, Now Playing sheet (cover, seek bar, shuffle, previous, play or pause, next, repeat, clear queue with confirmation) and the queue panel (play, Move up, Move down, Remove). Mounted in `MainShell` above the bottom navigation on every page; the notification permission is requested once when playback first starts. Sign-out empties the controller before the service is stopped. Design decisions: `android/DESIGN.md`.
+
+Run: `./gradlew testDebugUnitTest assembleDebug lintDebug minifyReleaseWithR8` on JDK 17: 200 unit tests, 0 failures (22 new for the controller), lint clean, R8 succeeded. The signed release build was **not** run: `keystore.properties` points to `~/Documents/andr/discair-release.jks`, which macOS moved into `~/iCloud Drive (Archive)/Documents/andr/` when iCloud sync was switched off; the key was left where it is.
+
+Not done or not verified:
+- Nothing in the app calls `playItems`, `enqueue` or `playNext` yet, so there is no way to start playback from the UI until the Phase 4 entry points exist.
+- Nothing was run on a device: the service start, the Media3 connection, the media notification, lock-screen and headset controls, audio focus, the sheet, TalkBack, landscape and 200% text.
+- The notification has no cover art. The queue items need a cover address; Phase 4 supplies it.
+- Playback restore with an empty or changed Navidrome login: the service drops items it cannot sign, and the controller does not yet notice.
+- The service reads the encrypted settings on its main thread each time items are added (from Phase 1); worth moving off it.
+- The Settings toggle for scrobbling and the streaming quality are Phase 5; the controller's `setScrobbling` exists but nothing calls it.
+- The sheet's animation is not switched off for the reduced-motion setting.

@@ -6,7 +6,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class QueueCodecTest {
-    private fun song(i: Int) = QueueItem("s$i", "T$i", "A", "Al", "al1", "c$i", 180)
+    private fun song(i: Int) = QueueItem("s$i", "T$i", "A", "Al", "al1", "c$i", durationSec = 180)
     private val saved = QueueState().replace((1..4).map(::song), 2).state
         .withPosition(51_000).withRepeat(RepeatMode.All).withVolume(0.5f)
 

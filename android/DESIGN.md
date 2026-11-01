@@ -153,3 +153,23 @@ Decided without a device run; the owner then ran the signed build on their phone
 
 ## Album Info and Reviews tabs
 Mirrors PR #652. The description area is two tabs. Info shows the description with its source link and licence (Wikipedia is CC BY-SA 4.0). Reviews calls `GET /api/album-reviews` only when first opened, shows up to three outlet lines with links, and offers Try again when the answer is partial (`retryable`) or fails. With no description, Reviews opens by itself unless the reader already chose a tab.
+
+## Player UI decisions (Phase 3 of the player, 2026-11-01)
+
+Reviewed with the `/mobile-design` principles (touch targets, thumb zone, platform conventions, state honesty) against the code. **No screen has been run on an emulator or a phone**, so this is a code-level review only (rule 9 is only partly met).
+
+1. **Mini-player above the bottom navigation, on every page.** It sits in the thumb zone, 64dp high, and shows on stacked pages too (clearing the system bar itself). It is absent from the layout when the queue is empty.
+2. **Controls are 48dp, text is the control.** Play or pause and next are 48dp buttons; the title and artist area is one 48dp-high button labelled "Open now playing". The progress line is decorative and hidden from TalkBack because Now Playing has the seek bar.
+3. **Now Playing is a modal bottom sheet** (Android convention), closable by back, the down button or a drag. Transport sits in the lower half of the sheet. Play or pause is the one large (64dp) control.
+4. **State in words, not colour.** Loading, buffering, lost connection, unavailable song, queue full and "Sign in again" are written under the title. Queue rows say "Now playing", "Paused here" or "Unavailable". Shuffle and repeat carry spoken state ("On", "Repeat one").
+5. **The seek bar speaks its value** ("1:23 of 4:10"). The track title is a polite live region so a track change is announced once, not on every position update.
+6. **No gesture-only action.** Queue reorder is Move up, Move down and Remove in a per-row menu, not drag. Skipping is buttons.
+7. **Destructive action kept apart and confirmed.** "Clear queue and stop" is 32dp below the transport controls and opens a dialog that says the library is not changed.
+8. **Volume is the phone's volume.** No in-app slider; a one-line note says so.
+9. **Sign-in problem pauses once.** The Sign in again button reuses the existing session-expired flow (back to the setup screen with the saved values); it does not erase the saved login.
+10. **Notification permission** is asked once, when playback first starts, because the media notification needs it on Android 13.
+
+Known gaps:
+- Not checked on a device: layout at default and 200% font, landscape, TalkBack reading order, thumb reach, contrast of the status line, the sheet's open and close animation (it is not switched off for the reduced-motion setting yet).
+- The notification and lock screen show title, artist and album but no cover (the cover needs a signed Navidrome address; left for a later pass). In the app, the cover is loaded from Librarian when a queue item carries one.
+- No Compose screenshot tests.

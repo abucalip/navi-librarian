@@ -15,6 +15,8 @@ data class QueueItem(
     val album: String,
     val albumId: String = "",
     val coverId: String = "",
+    /** Absolute address of the cover on Librarian (loaded with the app's session); empty when unknown. */
+    val coverUrl: String = "",
     val durationSec: Int = 0,
 )
 

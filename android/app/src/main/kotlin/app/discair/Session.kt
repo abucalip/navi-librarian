@@ -41,6 +41,9 @@ class AppConnector(context: Context, private val cache: app.discair.data.Respons
     private val http by lazy { httpClient(cookies) }
     val client: okhttp3.OkHttpClient get() = http
 
+    /** Set by the container once the player exists, so sign-out also empties the in-memory queue. */
+    @Volatile var onSignedOut: () -> Unit = {}
+
     override fun networkAvailable(): Boolean {
         val manager = appContext.getSystemService(ConnectivityManager::class.java)
         val caps = manager.getNetworkCapabilities(manager.activeNetwork ?: return false)
@@ -58,6 +61,7 @@ class AppConnector(context: Context, private val cache: app.discair.data.Respons
     override fun signOut(librarianUrl: String, user: String, password: String) {
         LibrarianClient(http, librarianUrl, user, password).signOut()
         cookies.clear()
+        onSignedOut() // clears the queue and stops audio first, then the service is stopped
         app.discair.player.PlaybackService.stop(appContext) // contract 3.2: sign-out releases the player
         app.discair.player.FileQueueStorage(java.io.File(appContext.filesDir, "player_queue.json")).clear()
         cache.clear() // saved copies belong to the signed-in account
