@@ -21,6 +21,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -41,6 +43,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import app.discair.R
 import app.discair.model.AlbumPage
+import app.discair.model.Description
+import app.discair.model.Done
 import app.discair.ui.AlbumRoute
 import app.discair.ui.Opener
 import app.discair.ui.common.AlbumCover
@@ -64,7 +68,6 @@ import app.discair.ui.common.aspectSquare
 import app.discair.ui.common.plural
 import app.discair.ui.common.rememberLoad
 import app.discair.ui.common.rememberStreamLoad
-import app.discair.ui.theme.Display
 import app.discair.ui.theme.Ink
 import app.discair.ui.theme.Mono
 import java.net.URLEncoder
@@ -110,7 +113,7 @@ private fun AlbumContent(route: AlbumRoute, page: AlbumPage, open: Opener, list:
         item {
             Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(
-                    title, style = MaterialTheme.typography.headlineLarge.copy(fontFamily = Display),
+                    title, style = MaterialTheme.typography.headlineLarge,
                     textAlign = TextAlign.Center, modifier = Modifier.padding(top = 8.dp).semantics { heading() },
                 )
                 Text(
@@ -135,8 +138,7 @@ private fun AlbumContent(route: AlbumRoute, page: AlbumPage, open: Opener, list:
                 )
             }
         }
-        val notes = s.description.description?.paragraphs.orEmpty().joinToString("\n\n")
-        if (notes.isNotBlank()) item { ReadMore(notes, Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) }
+        item { InfoReviewsTabs(artist, title, s.description.description, finished = page.done != Done()) }
         if (tracks.isNotEmpty()) {
             item { RowDivider(Modifier.padding(horizontal = 12.dp).padding(top = 12.dp)) }
             items(tracks.size) { i ->
@@ -256,6 +258,94 @@ private fun ServiceLinks(artist: String, album: String, mbid: String?) {
                     .semantics { contentDescription = "Open ${service.name}" },
                 contentAlignment = Alignment.Center,
             ) { androidx.compose.foundation.Image(painterResource(service.icon), contentDescription = null, modifier = Modifier.size(24.dp)) }
+        }
+    }
+}
+
+/**
+ * The description area as two tabs, like the web. Info is the description (Apple Music, else Wikipedia with its
+ * source and licence); Reviews asks the server on first open. With no description the Reviews tab opens by
+ * itself, unless the reader has already picked a tab.
+ */
+@Composable
+private fun InfoReviewsTabs(artist: String, album: String, description: Description?, finished: Boolean) {
+    val paragraphs = description?.paragraphs.orEmpty()
+    var chosen by remember(artist, album) { mutableStateOf<Int?>(null) }
+    val tab = chosen ?: if (finished && paragraphs.isEmpty()) 1 else 0
+    Column(Modifier.fillMaxWidth().padding(top = 12.dp)) {
+        TabRow(
+            selectedTabIndex = tab, containerColor = Color.Transparent, contentColor = Ink.Accent,
+            divider = { RowDivider(Modifier.padding(horizontal = 12.dp)) },
+        ) {
+            listOf("Info", "Reviews").forEachIndexed { i, label ->
+                Tab(
+                    selected = tab == i, onClick = { chosen = i }, modifier = Modifier.heightIn(min = Target),
+                    selectedContentColor = Ink.Accent, unselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    text = { Text(label, style = MaterialTheme.typography.labelLarge) },
+                )
+            }
+        }
+        if (tab == 0) InfoTab(description, paragraphs, finished) else ReviewsTab(artist, album)
+    }
+}
+
+@Composable
+private fun InfoTab(description: Description?, paragraphs: List<String>, finished: Boolean) {
+    val uri = LocalUriHandler.current
+    Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
+        if (paragraphs.isEmpty()) {
+            Text(
+                if (finished) "No description found for this album." else "Loading description…",
+                style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            return@Column
+        }
+        ReadMore(paragraphs.joinToString("\n\n"))
+        val source = description?.source ?: "Apple Music"
+        val credit = listOfNotNull(source, description?.license).joinToString(" · ")
+        val link = description?.url
+        Text(
+            credit, style = MaterialTheme.typography.bodySmall,
+            color = if (link != null) Ink.Accent else MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.heightIn(min = Target).then(
+                if (link != null) Modifier.clickable(role = Role.Button) { uri.openUri(link) } else Modifier,
+            ).padding(vertical = 14.dp),
+        )
+    }
+}
+
+@Composable
+private fun ReviewsTab(artist: String, album: String) {
+    val repo = LocalRepository.current
+    val uri = LocalUriHandler.current
+    val loaded = rememberLoad(artist, album) { repo.albumReviews(artist, album) }
+    Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
+        when (val state = loaded.state) {
+            Load.Loading -> Text("Loading reviews…", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            is Load.Failed -> {
+                Text("Reviews could not be loaded.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                OutlinedButton(onClick = loaded.reload, Modifier.heightIn(min = Target)) { Text("Try again") }
+            }
+            is Load.Ready -> {
+                val data = state.value
+                data.reviews.forEach { review ->
+                    Column(Modifier.padding(bottom = 16.dp)) {
+                        Text("\u201c${review.quote}\u201d", style = MaterialTheme.typography.bodyMedium)
+                        Text(
+                            "Read the full review at ${review.source}", style = MaterialTheme.typography.bodySmall, color = Ink.Accent,
+                            modifier = Modifier.heightIn(min = Target).clickable(role = Role.Button) { uri.openUri(review.url) }.padding(vertical = 14.dp),
+                        )
+                    }
+                }
+                val note = when {
+                    data.reviews.isNotEmpty() -> if (data.retryable) "Some sources did not answer." else ""
+                    data.retryable -> "No reviews found. Some sources did not answer."
+                    else -> "No reviews found for this album."
+                }
+                if (note.isNotEmpty()) Text(note, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                // Only the button asks the failed outlets again, so switching tabs never re-requests.
+                if (data.retryable) OutlinedButton(onClick = loaded.reload, Modifier.heightIn(min = Target)) { Text("Try again") }
+            }
         }
     }
 }

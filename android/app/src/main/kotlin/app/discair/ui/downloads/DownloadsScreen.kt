@@ -62,7 +62,6 @@ import app.discair.ui.common.RowDivider
 import app.discair.ui.common.Target
 import app.discair.ui.common.plural
 import app.discair.ui.common.routeKey
-import app.discair.ui.theme.Display
 import app.discair.ui.theme.Ink
 import java.text.DateFormat
 import kotlinx.coroutines.launch
@@ -186,7 +185,7 @@ private fun JobRow(job: AcquisitionJob, hub: AcquisitionHub, now: Double, open: 
         )
         Column(Modifier.weight(1f).padding(start = 12.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(
-                job.title, style = MaterialTheme.typography.titleLarge.copy(fontFamily = Display),
+                job.title, style = MaterialTheme.typography.titleLarge,
                 maxLines = 2, overflow = TextOverflow.Ellipsis,
                 modifier = if (job.isSong) Modifier else Modifier.clickable(role = Role.Button) {
                     open.album(routeKey(job.artist, job.albumName), job.artist, job.albumName, null, job.year)

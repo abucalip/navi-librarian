@@ -8,6 +8,7 @@ import java.io.IOException
 import javax.net.ssl.SSLException
 import app.discair.model.AcquisitionJob
 import app.discair.model.AlbumLinks
+import app.discair.model.AlbumReviews
 import app.discair.model.GetState
 import app.discair.model.albumLaunchBody
 import app.discair.model.identityBody
@@ -107,6 +108,9 @@ interface LibraryRepository : AcquisitionApi {
     fun artistPageStream(key: String, id: String?, name: String?, mbid: String?, onPage: (ArtistPage) -> Unit) =
         onPage(artistPage(key, id, name, mbid))
     fun albumLinks(artist: String, album: String, mbid: String?): AlbumLinks
+
+    /** Outlet review lines for the album page's Reviews tab; asked only when the tab is opened. */
+    fun albumReviews(artist: String, album: String): AlbumReviews = AlbumReviews()
 
     /** One discovery list in the server's order. [list] is a path name such as `new_releases` or a lens name. */
     fun discovery(list: String, count: Int): DiscoveryResult
@@ -222,6 +226,9 @@ class LibrarianRepository(
 
     override fun albumLinks(artist: String, album: String, mbid: String?) =
         read<AlbumLinks>(listOf("api", "album-links"), mapOf("artist" to artist, "album" to album, "mbid" to mbid))
+
+    override fun albumReviews(artist: String, album: String) =
+        read<AlbumReviews>(listOf("api", "album-reviews"), mapOf("artist" to artist, "album" to album))
 
     override fun discovery(list: String, count: Int) =
         parseDiscovery(fetch(listOf("api", "discovery", list), mapOf("count" to "$count")))

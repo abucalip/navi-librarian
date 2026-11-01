@@ -34,7 +34,6 @@ import app.discair.ui.common.SaveState
 import app.discair.ui.common.aspectSquare
 import app.discair.ui.common.rememberAlbumYear
 import app.discair.ui.common.routeKey
-import app.discair.ui.theme.Display
 import app.discair.ui.theme.Ink
 
 private const val BIO_LINES = 3
@@ -78,7 +77,7 @@ fun DiscoverCard(
         }
         Column(Modifier.padding(start = 12.dp, end = 12.dp, top = 8.dp, bottom = 12.dp)) {
             Text(
-                item.album, style = MaterialTheme.typography.titleMedium.copy(fontFamily = Display),
+                item.album, style = MaterialTheme.typography.titleMedium,
                 minLines = 2, maxLines = 2, overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.clickable(role = Role.Button, onClick = openAlbum),
             )

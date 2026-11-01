@@ -65,7 +65,6 @@ import app.discair.ui.common.plural
 import app.discair.ui.common.rememberAlbumYear
 import app.discair.ui.common.rememberLoad
 import app.discair.ui.common.routeKey
-import app.discair.ui.theme.Display
 import app.discair.ui.theme.Ink
 import app.discair.ui.theme.Mono
 import kotlinx.coroutines.launch
@@ -246,7 +245,7 @@ private fun ShelfRow(shelf: String, title: String, open: Opener, load: () -> Lis
                         }
                         Column(Modifier.padding(12.dp).heightIn(min = 76.dp)) {
                             Text(
-                                album.name, style = MaterialTheme.typography.titleLarge.copy(fontFamily = Display),
+                                album.name, style = MaterialTheme.typography.titleLarge,
                                 maxLines = 2, overflow = TextOverflow.Ellipsis,
                             )
                             album.year?.let {

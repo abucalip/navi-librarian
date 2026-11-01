@@ -64,7 +64,6 @@ import app.discair.ui.common.aspectSquare
 import app.discair.ui.common.plural
 import app.discair.ui.common.rememberLoad
 import app.discair.ui.common.rememberStreamLoad
-import app.discair.ui.theme.Display
 import app.discair.ui.theme.Ink
 import app.discair.ui.theme.Mono
 
@@ -115,7 +114,7 @@ private fun ArtistContent(route: ArtistRoute, page: ArtistPage, open: Opener, li
                 OverlayBack(open.back, Modifier.align(Alignment.TopStart).padding(12.dp))
                 Column(Modifier.align(Alignment.BottomStart).padding(16.dp)) {
                     Text(
-                        name, style = MaterialTheme.typography.headlineLarge.copy(fontFamily = Display),
+                        name, style = MaterialTheme.typography.headlineLarge,
                         maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.semantics { heading() },
                     )
                     val genres = sections.tags.items.map { it.name }.ifEmpty { listOfNotNull(info?.genre) }.take(3)

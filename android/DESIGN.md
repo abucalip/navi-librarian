@@ -28,7 +28,7 @@ Status: proposal, Phase 0. Produced with the `/mobile-design` skill (platform An
 ## Colour and type
 - Dark theme only, built from the web tokens (ink `#141211`, surface `#1c1a18`, raised `#252220`, text `#f4efe6`, accent `#f5d33f` on-accent `#141211`, chart red `#ff5a3c`, ok `#86d39b`, caution `#f0a640`). Material 3 colour roles are mapped to these; **dynamic colour is off** because the identity is fixed and artwork tints are applied per page.
 - Background is the warm near-black from the web UI rather than pure black; accepted trade for identity over maximum OLED saving.
-- Fonts bundled from `static/fonts`: Big Shoulders Display (headings), Schibsted Grotesk (body), JetBrains Mono (numbers). All text in `sp`, and layouts must hold at 200% font scale; headings may wrap, ranked-row titles clamp to two lines.
+- Fonts bundled from `static/fonts`: Peace Sans (page and section titles, -0.085em tracking, 1.05 line height, matching the wordmark), Open Sans (body), Big Shoulders Display (rank numerals), JetBrains Mono (numbers). The Discair wordmark (`ic_wordmark`, traced from `static/discair-logo.svg`) replaces the text title in the top bar and setup screens. All text in `sp`, and layouts must hold at 200% font scale; headings may wrap, ranked-row titles clamp to two lines.
 - Contrast: text on surfaces at least 4.5:1; `--text-subtle` is used only for large or supplementary text and is checked in Phase 1.
 
 ## Security
@@ -150,3 +150,6 @@ Decided without a device run; the owner then ran the signed build on their phone
 - **Artist names are white; the year is the accent colour and the listener count grey.** Categories use the dark pill with a lighter border and a glow while pressed; the selected one has the accent border and is announced as selected.
 - **Pages show what they have.** First paint comes from the saved copy, then the server replaces it; an album or artist page shows each section as the server finishes it. A failure after something is on screen keeps it. Cosmetic lookups (covers, bios, years) run on a few threads so they never delay page data.
 - **Open:** the Sort by pill and its direction button are 32 dp tall, below the 48 dp touch target used elsewhere; the owner asked for them small. Thumb reach of the on-cover buttons belongs to the deferred device review.
+
+## Album Info and Reviews tabs
+Mirrors PR #652. The description area is two tabs. Info shows the description with its source link and licence (Wikipedia is CC BY-SA 4.0). Reviews calls `GET /api/album-reviews` only when first opened, shows up to three outlet lines with links, and offers Try again when the answer is partial (`retryable`) or fails. With no description, Reviews opens by itself unless the reader already chose a tab.

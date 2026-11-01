@@ -1,5 +1,8 @@
 package app.discair.ui
 
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.layout.fillMaxSize
 import app.discair.ui.common.Target
 import app.discair.ui.common.RowDivider
@@ -216,10 +219,11 @@ private fun AppHeader(active: Int, onDownloads: () -> Unit, onSettings: () -> Un
             Modifier.fillMaxWidth().statusBarsPadding().heightIn(min = 56.dp).padding(start = 16.dp, end = 4.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(
-                "DISCAIR", style = MaterialTheme.typography.headlineMedium,
-                modifier = Modifier.weight(1f).semantics { heading() },
+            Icon(
+                painterResource(R.drawable.ic_wordmark), contentDescription = "Discair", tint = Color.Unspecified,
+                modifier = Modifier.weight(1f, fill = false).height(30.dp).semantics { heading() },
             )
+            Spacer(Modifier.weight(1f))
             IconButton(onClick = onDownloads, Modifier.size(Target)) {
                 val label = if (active == 0) "Downloads" else "Downloads, $active active"
                 BadgedBox(

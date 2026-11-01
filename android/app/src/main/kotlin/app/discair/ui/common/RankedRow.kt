@@ -35,6 +35,8 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.dp
 import app.discair.ui.Opener
 import app.discair.ui.theme.Display
@@ -84,7 +86,7 @@ fun RankedRow(
         Box(Modifier.width(if (model.lead is RowLead.Date) 48.dp else 36.dp).padding(top = 4.dp).clearAndSetSemantics {}) {
             when (val lead = model.lead) {
                 is RowLead.Rank -> Text(
-                    "%02d".format(lead.n), style = MaterialTheme.typography.titleLarge,
+                    "%02d".format(lead.n), style = MaterialTheme.typography.titleLarge.copy(fontFamily = Display, fontWeight = FontWeight.Bold, letterSpacing = 0.sp),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 is RowLead.Date -> Column {
@@ -102,7 +104,7 @@ fun RankedRow(
         )
         Column(Modifier.weight(1f).padding(start = 12.dp)) {
             Text(
-                model.album, style = MaterialTheme.typography.titleLarge.copy(fontFamily = Display),
+                model.album, style = MaterialTheme.typography.titleLarge,
                 maxLines = 2, overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.clickable(role = Role.Button) {
                     open.album(routeKey(model.artist, model.album), model.artist, model.album, null, model.year)

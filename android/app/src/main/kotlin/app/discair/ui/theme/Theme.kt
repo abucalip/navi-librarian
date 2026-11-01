@@ -10,6 +10,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import app.discair.R
 
@@ -37,10 +38,13 @@ val Display = FontFamily(
     Font(R.font.big_shoulders_display_800, FontWeight.ExtraBold),
 )
 val Body = FontFamily(
-    Font(R.font.schibsted_grotesk_400, FontWeight.Normal),
-    Font(R.font.schibsted_grotesk_500, FontWeight.Medium),
-    Font(R.font.schibsted_grotesk_600, FontWeight.SemiBold),
+    Font(R.font.open_sans_400, FontWeight.Normal),
+    Font(R.font.open_sans_500, FontWeight.Medium),
+    Font(R.font.open_sans_600, FontWeight.SemiBold),
 )
+/** Page and section titles, matching the wordmark (web: Peace Sans, -0.085em tracking, 1.05 line height). Single weight. */
+val Title = FontFamily(Font(R.font.peace_sans_400, FontWeight.Normal))
+private val TitleTracking = (-0.085).em
 val Mono = FontFamily(
     Font(R.font.jetbrains_mono_400, FontWeight.Normal),
     Font(R.font.jetbrains_mono_500, FontWeight.Medium),
@@ -72,10 +76,15 @@ private val colors: ColorScheme = darkColorScheme(
 private fun style(family: FontFamily, weight: FontWeight, size: Int, line: Int) =
     TextStyle(fontFamily = family, fontWeight = weight, fontSize = size.sp, lineHeight = line.sp)
 
+private fun titleStyle(size: Int) = TextStyle(
+    fontFamily = Title, fontWeight = FontWeight.Normal, fontSize = size.sp,
+    lineHeight = (size * 1.05f).sp, letterSpacing = TitleTracking,
+)
+
 private val type = Typography(
-    headlineLarge = style(Display, FontWeight.ExtraBold, 32, 36),
-    headlineMedium = style(Display, FontWeight.Bold, 28, 32),
-    titleLarge = style(Display, FontWeight.Bold, 22, 28),
+    headlineLarge = titleStyle(32),
+    headlineMedium = titleStyle(28),
+    titleLarge = titleStyle(22),
     titleMedium = style(Body, FontWeight.SemiBold, 16, 24),
     titleSmall = style(Body, FontWeight.Medium, 14, 20),
     bodyLarge = style(Body, FontWeight.Normal, 16, 24),

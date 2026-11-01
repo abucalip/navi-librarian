@@ -205,7 +205,13 @@ data class AlbumSection(val available: Boolean = false, val album: AlbumInfo? = 
 data class GenreValue(val available: Boolean = false, val genre: String? = null)
 
 @Serializable
-data class Description(val paragraphs: List<String> = emptyList(), val source: String? = null, val url: String? = null)
+data class Description(
+    val paragraphs: List<String> = emptyList(),
+    val source: String? = null,
+    val url: String? = null,
+    /** Set when the text is Wikipedia's (CC BY-SA 4.0). */
+    val license: String? = null,
+)
 
 @Serializable
 data class DescriptionSection(val available: Boolean = false, val description: Description? = null)
@@ -280,3 +286,11 @@ data class AlbumLinks(
     val musicbrainz: String? = null,
     val listenbrainz: String? = null,
 )
+
+// ---- Album reviews (GET /api/album-reviews): up to three outlet summary lines; `retryable` when some outlets did not answer
+
+@Serializable
+data class AlbumReview(val source: String = "", val quote: String = "", val url: String = "")
+
+@Serializable
+data class AlbumReviews(val reviews: List<AlbumReview> = emptyList(), val retryable: Boolean = false)

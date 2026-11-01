@@ -1,5 +1,9 @@
 package app.discair.ui
 
+import app.discair.R
+import androidx.compose.foundation.layout.height
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import android.content.Intent
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
@@ -99,6 +103,13 @@ private fun Page(scroll: Boolean = false, content: @Composable ColumnScope.() ->
 
 @Composable
 private fun Title(text: String) {
+    if (text == "Discair") {
+        Icon(
+            painterResource(R.drawable.ic_wordmark), contentDescription = text, tint = Color.Unspecified,
+            modifier = Modifier.height(40.dp).semantics { heading() },
+        )
+        return
+    }
     Text(
         text,
         style = MaterialTheme.typography.headlineLarge,
