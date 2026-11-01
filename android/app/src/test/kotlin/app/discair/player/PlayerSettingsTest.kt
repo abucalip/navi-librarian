@@ -59,4 +59,29 @@ class PlayerSettingsTest {
         val s = MemoryPlayerSettings(scrobbling = false)
         assertFalse(s.scrobbling)
     }
+
+    @Test fun crossfadeDefaultsAreOffFiveSecondsAndAlbumsGapless() {
+        val s = MemoryPlayerSettings()
+        assertFalse(s.crossfadeEnabled); assertEquals(5, s.crossfadeSeconds); assertTrue(s.crossfadeSkipSameAlbum)
+        assertFalse(s.crossfade.enabled); assertEquals(5_000L, s.crossfade.lengthMs)
+    }
+
+    @Test fun crossfadeSecondsAreClampedWhenSaved() {
+        val s = MemoryPlayerSettings()
+        s.crossfadeSeconds = 10_000; assertEquals(12, s.crossfadeSeconds)
+        s.crossfadeSeconds = -4; assertEquals(1, s.crossfadeSeconds)
+        assertEquals(1_000L, s.crossfade.lengthMs)
+        assertEquals(12, MemoryPlayerSettings(crossfadeSeconds = 99).crossfadeSeconds)
+    }
+
+    @Test fun crossfadeChangesAreAnnouncedUntilTheListenerIsClosed() {
+        val s = MemoryPlayerSettings()
+        var calls = 0
+        val handle = s.onChange { calls++ }
+        s.crossfadeEnabled = true; s.crossfadeSeconds = 8; s.crossfadeSkipSameAlbum = false
+        assertEquals(3, calls)
+        handle.close()
+        s.crossfadeEnabled = false
+        assertEquals(3, calls)
+    }
 }
