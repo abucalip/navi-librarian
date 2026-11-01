@@ -1,3 +1,11 @@
+## 2026-11-01 — Android polish pass on built screens: PR #672 merged
+
+- **Merged:** PR #672, squash `ae0eb4fb06fa30ad83071443e696406836687ff3`; required checks (compile, container-smoke, test-and-build, validate-container) passed on the exact head before merge; the full suite ran in CI only.
+- **Method:** the `/mobile-design` checklist run over adb on the owner's phone against the release build: tappable elements on Home, Discover, Search, Library, Downloads, Settings and Now Playing measured from the accessibility tree, plus screenshots at default text size (deleted afterwards). Landscape dismissed by the owner. Details and the not-changed list: `android/DESIGN.md`, "Polish pass on built screens".
+- **Changed:** header Downloads and Settings buttons 44dp to 48dp wide; Discover card three-dot menu on a dark round backing; 12dp under the Player / Lyrics / Queue tabs in every view.
+- **Tests actually run (local, JDK 17):** `testDebugUnitTest --tests 'app.discair.lyrics.*' --tests 'app.discair.player.*'`, `lintDebug`, `assembleDebug`, `assembleRelease`, all passed. On the phone: Discover screen (no element under 48dp, menu readable on a light cover) and the sheet's Player and Lyrics views checked. Not checked: the plain-lyrics note after the spacing change, TalkBack, thumb reach, album and artist pages at 200% text, the offline banner. No UI tests exist for these screens. Not published, not deployed.
+- **Next action:** none queued; the owner's choice of what to work on next.
+
 ## 2026-11-01 — Android lyrics L4: first device run (owner's phone)
 
 - **Done:** the release APK built from `main` at `8c2808c` was installed over wireless debugging on the owner's phone (SM-G781B, `adb install -r`, success). The owner reported: the Lyrics tab works, timed lyrics follow the music, and everything looked good.
