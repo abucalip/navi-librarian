@@ -22,6 +22,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -34,6 +35,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
@@ -203,6 +205,11 @@ private fun GainRow(
                 valueRange = min.toFloat()..max.toFloat(),
                 steps = ((max - min) / EQ_STEP_DB).toInt() - 1,
                 enabled = enabled,
+                // 47 step marks drawn as dots were noise on the device; the 0.5 dB steps still work.
+                colors = SliderDefaults.colors(
+                    activeTickColor = Color.Transparent, inactiveTickColor = Color.Transparent,
+                    disabledActiveTickColor = Color.Transparent, disabledInactiveTickColor = Color.Transparent,
+                ),
                 modifier = Modifier.weight(1f).semantics {
                     contentDescription = spokenName
                     stateDescription = spokenValue
