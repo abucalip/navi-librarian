@@ -69,7 +69,7 @@ import app.discair.ui.common.Target
  * Off is shown in words and the controls stay on screen, marked unavailable.
  */
 @Composable
-fun EqualizerScreen(container: AppContainer, onBack: () -> Unit) {
+fun EqualizerScreen(container: AppContainer, onBack: (() -> Unit)?) {
     val editor = remember { EqEditor(container.eqSettings) }
     val settings by editor.state.collectAsState()
     val status by container.eqStatus.collectAsState()
@@ -80,7 +80,8 @@ fun EqualizerScreen(container: AppContainer, onBack: () -> Unit) {
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = onBack, Modifier.size(Target)) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") }
+            // Inside the Now Playing sheet there is no back arrow: the sheet closes by swipe, scrim tap or back.
+            if (onBack != null) IconButton(onClick = onBack, Modifier.size(Target)) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") }
             Text("Equalizer", style = MaterialTheme.typography.headlineMedium, modifier = Modifier.semantics { heading() })
         }
         Row(
@@ -231,5 +232,9 @@ fun EqualizerLink(onOpen: () -> Unit) {
         val remove = store.addListener { summary = eqSummary(store.load()) }
         onDispose { remove() }
     }
-    TextButton(onClick = onOpen, Modifier.heightIn(min = Target)) { Text(summary) }
+    // The state stays in words for TalkBack; sighted users read it from the icon's brightness.
+    val on = !summary.endsWith(": off")
+    IconButton(onClick = onOpen, Modifier.size(Target)) {
+        Icon(PlayerIcons.Wave, contentDescription = summary, tint = if (on) Color.White else Color.White.copy(alpha = 0.4f), modifier = Modifier.size(24.dp))
+    }
 }

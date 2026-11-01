@@ -62,7 +62,7 @@ private fun rememberCrossfade(settings: PlayerSettings): Pair<CrossfadeSettings,
  * Off is shown in words and the controls stay on screen, marked unavailable.
  */
 @Composable
-fun CrossfadeScreen(container: AppContainer, onBack: () -> Unit) {
+fun CrossfadeScreen(container: AppContainer, onBack: (() -> Unit)?) {
     val settings = container.playerSettings
     val (xf, rate) = rememberCrossfade(settings)
     val on = xf.enabled
@@ -72,7 +72,8 @@ fun CrossfadeScreen(container: AppContainer, onBack: () -> Unit) {
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = onBack, Modifier.size(Target)) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") }
+            // Inside the Now Playing sheet there is no back arrow: the sheet closes by swipe, scrim tap or back.
+            if (onBack != null) IconButton(onClick = onBack, Modifier.size(Target)) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") }
             Text("Crossfade", style = MaterialTheme.typography.headlineMedium, modifier = Modifier.semantics { heading() })
         }
         Row(
@@ -153,7 +154,9 @@ fun CrossfadeScreen(container: AppContainer, onBack: () -> Unit) {
 fun CrossfadeLink(onOpen: () -> Unit) {
     val settings = (LocalContext.current.applicationContext as DiscairApplication).container.playerSettings
     val (xf, _) = rememberCrossfade(settings)
-    CrossfadeText.nowPlayingLink(xf)?.let { label ->
-        TextButton(onClick = onOpen, Modifier.heightIn(min = Target)) { Text(label) }
+    // Always shown so the page stays reachable; white when on, dim when off, and the state is spoken too.
+    val label = CrossfadeText.nowPlayingLink(xf) ?: "Crossfade: off"
+    IconButton(onClick = onOpen, Modifier.size(Target)) {
+        Icon(PlayerIcons.Swap, contentDescription = label, tint = if (xf.enabled) Color.White else Color.White.copy(alpha = 0.4f), modifier = Modifier.size(24.dp))
     }
 }

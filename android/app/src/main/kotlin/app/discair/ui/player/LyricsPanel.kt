@@ -42,8 +42,8 @@ import app.discair.ui.common.Target
 
 /** The Lyrics view of the Now Playing sheet (lyrics contract 7). Lines are not tappable (owner decision). */
 @Composable
-fun LyricsPanel(state: LyricsUiState, currentLine: Int, songId: String, onTryAgain: () -> Unit) {
-    Column(Modifier.fillMaxWidth().heightIn(min = 240.dp)) {
+fun LyricsPanel(state: LyricsUiState, currentLine: Int, songId: String, onTryAgain: () -> Unit, modifier: Modifier = Modifier) {
+    Column(modifier.fillMaxWidth()) {
         when (state) {
             LyricsUiState.Idle, is LyricsUiState.Loading -> Message("Loading lyrics…", progress = true)
             is LyricsUiState.None -> Message("No lyrics for this song.")
@@ -56,7 +56,7 @@ fun LyricsPanel(state: LyricsUiState, currentLine: Int, songId: String, onTryAga
                 // Both labels are words, not colour: saved copies and untimed lyrics say so.
                 if (state.savedCopy) Note("Saved copy")
                 if (!state.lyrics.timed) Note("These lyrics are not timed.")
-                Lines(state, currentLine, songId)
+                Lines(state, currentLine, songId, Modifier.weight(1f))
             }
         }
     }
@@ -75,7 +75,7 @@ private fun Note(text: String) =
     Text(text, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(bottom = 8.dp))
 
 @Composable
-private fun Lines(state: LyricsUiState.Ready, currentLine: Int, songId: String) {
+private fun Lines(state: LyricsUiState.Ready, currentLine: Int, songId: String, modifier: Modifier = Modifier) {
     val list = rememberLazyListState()
     // Following resumes when the song changes (contract 6).
     var following by remember(songId) { mutableStateOf(true) }
@@ -97,10 +97,9 @@ private fun Lines(state: LyricsUiState.Ready, currentLine: Int, songId: String) 
         } finally { scrolling = false }
     }
 
-    // Half the screen height: fits portrait, landscape and large text, and the list scrolls inside it.
-    val maxHeight = (LocalConfiguration.current.screenHeightDp * 0.5f).dp.coerceAtLeast(160.dp)
-    Box(Modifier.fillMaxWidth().heightIn(max = maxHeight)) {
-        LazyColumn(Modifier.fillMaxWidth().heightIn(max = maxHeight), state = list, verticalArrangement = Arrangement.spacedBy(10.dp)) {
+    // The list fills the flip card it sits in and scrolls inside it.
+    Box(modifier.fillMaxWidth()) {
+        LazyColumn(Modifier.fillMaxSize(), state = list, verticalArrangement = Arrangement.spacedBy(10.dp)) {
             itemsIndexed(state.lyrics.lines) { index, line ->
                 val current = timed && index == currentLine
                 if (line.text.isBlank()) {

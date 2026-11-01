@@ -36,9 +36,9 @@ import app.discair.ui.common.RowDivider
 
 /** The queue: tap a row to play it; the menu has Move up, Move down and Remove (no drag-only reordering). */
 @Composable
-fun QueuePanel(state: PlayerUiState, controller: PlayerController) {
+fun QueuePanel(state: PlayerUiState, controller: PlayerController, modifier: Modifier = Modifier) {
     val items = state.queue.items
-    Column(Modifier.fillMaxWidth()) {
+    Column(modifier.fillMaxWidth()) {
         Text(
             "Queue · ${items.size} ${if (items.size == 1) "song" else "songs"}",
             style = MaterialTheme.typography.titleMedium,
@@ -47,7 +47,7 @@ fun QueuePanel(state: PlayerUiState, controller: PlayerController) {
         if (state.status != null) {
             Text(state.status, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(bottom = 8.dp))
         }
-        LazyColumn(Modifier.fillMaxWidth().heightIn(max = 480.dp)) {
+        LazyColumn(Modifier.fillMaxWidth().weight(1f)) {
             itemsIndexed(items, key = { index, item -> "$index-${item.songId}" }) { index, item ->
                 val current = index == state.queue.index
                 val unavailable = item.songId in state.queue.unavailable
