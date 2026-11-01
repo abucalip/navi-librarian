@@ -1,3 +1,11 @@
+## 2026-11-01 — Peace Sans for album titles: PR #658 merged
+
+- **Change:** PR [#658](https://github.com/abucalip/navi-librarian/pull/658), squash `cafbaf32cff8c6080e8d52db1daea240ac7e72e8`, from tested head `b488527f09e1750be265a0534b6cf1a910a75f20`, at the owner's direction. Album titles on cards (`.card h3`), ranked list rows (`.ranked-row h3`: Recommendations, New releases, Daily picks, Deep Dives), acquisition rows (`.acq-row h3`), artist-page album rows and library album names use the `--title` face (Peace Sans, weight 400) with the shared title tracking and leading. Big Shoulders Display stays for numerals (rank numerals, dates, top-song and list counters, the empty-artwork placeholder text). CSS only, in `static/app.css`.
+- **Tests run:** focused UI-contract modules passed locally: acquisition, new releases, login, button group, add to collection, classics card, artist deep dive, album modal, album tabs, Discogs genre. The full suite ran in CI only.
+- **CI:** compile, container-smoke, test-and-build, validate-container and validate-release-workflow passed on the tested head; publish-release was skipped.
+- **UI results:** the owner viewed the card titles on the local test server and said they looked good. The list-row and acquisition-row changes were served locally but not confirmed by the owner.
+- **Limits:** the shared -.085em tracking was designed for large titles and may look tight on long card titles. Not published, not deployed.
+
 ## 2026-11-01 — Android launcher icon uses the Discair wordmark: PR #656 merged
 
 - **Change:** PR [#656](https://github.com/abucalip/navi-librarian/pull/656), squash `fecb7e7fe43ac4aa19d4e291cbb06a28a2039568`, from tested head `54799de36fffac8e704d3e43891eea8388f5e52d`, at the owner's direction. The launcher foreground is the Discair wordmark (cream with the two yellow dots), 60dp wide and centred in the adaptive-icon safe zone, on the existing dark background; the themed-icon layer uses the same vector. The yellow D and the unused `launcher_foreground` colour are removed.
