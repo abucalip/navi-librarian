@@ -14,7 +14,7 @@ import java.nio.ByteBuffer
  * into the player (contract 8).
  */
 @OptIn(UnstableApi::class)
-class EqAudioProcessor : BaseAudioProcessor() {
+class EqAudioProcessor : BaseAudioProcessor(), EqTarget {
     @Volatile private var pending: EqConfig = EqConfig()
     @Volatile private var configVersion = 0
     private var appliedVersion = -1
@@ -30,7 +30,7 @@ class EqAudioProcessor : BaseAudioProcessor() {
     @Volatile var hasFaulted: Boolean = false
         private set
 
-    fun setConfig(config: EqConfig) {
+    override fun setConfig(config: EqConfig) {
         pending = config.sanitized()
         configVersion++
     }

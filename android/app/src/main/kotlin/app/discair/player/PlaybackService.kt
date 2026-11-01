@@ -8,11 +8,16 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DefaultDataSource
 import androidx.media3.datasource.okhttp.OkHttpDataSource
+import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.audio.AudioSink
+import androidx.media3.exoplayer.audio.DefaultAudioSink
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
 import app.discair.DiscairApplication
+import app.discair.player.eq.EqAudioProcessor
+import app.discair.player.eq.EqBinding
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
 import java.util.concurrent.TimeUnit
@@ -45,7 +50,21 @@ class PlaybackService : MediaSessionService() {
             .addInterceptor(RefusedBodyInterceptor())
             .build()
         val dataSource = DefaultDataSource.Factory(this, OkHttpDataSource.Factory(http))
-        val exo = ExoPlayer.Builder(this)
+        // The equalizer sits in the audio sink only (ANDROID_EQ_CONTRACT.md 4); with it off it copies bytes unchanged.
+        val eq = EqAudioProcessor()
+        val renderers = object : DefaultRenderersFactory(this) {
+            override fun buildAudioSink(
+                context: Context,
+                enableFloatOutput: Boolean,
+                enableAudioTrackPlaybackParams: Boolean,
+            ): AudioSink = DefaultAudioSink.Builder(context)
+                .setEnableFloatOutput(enableFloatOutput)
+                .setEnableAudioTrackPlaybackParams(enableAudioTrackPlaybackParams)
+                .setAudioProcessors(arrayOf(eq))
+                .build()
+        }
+        val eqBinding = EqBinding(container.eqSettings, eq)
+        val exo = ExoPlayer.Builder(this, renderers)
             .setMediaSourceFactory(DefaultMediaSourceFactory(dataSource))
             .setAudioAttributes(
                 AudioAttributes.Builder()
@@ -88,6 +107,7 @@ class PlaybackService : MediaSessionService() {
         player = exo
         session = mediaSession
         guard = ReleaseGuard {
+            eqBinding.close()
             mediaSession.release()
             exo.release()
         }
