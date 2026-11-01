@@ -251,3 +251,21 @@ Code-level review with the `/mobile-design` principles (Android, native Compose;
 8. **No custom animation** is added, so reduced motion needs nothing extra.
 
 Not checked on a device: thumb reach of the Now Playing link and of the minus and plus buttons, TalkBack order and wording, 200% text, how the ten rows feel to scroll and drag, whether a slider drag is smooth (each step saves and re-aims the filter), the drop-down on a small phone.
+
+## Equalizer: first device run over adb (2026-11-01, E4)
+
+Run by the assistant against the signed release build of `main` (`85b379d`, then one fix) on the owner's phone (SM-G781B, Android 13, wireless debugging), by driving the app with `adb input` and reading the accessibility tree, screenshots, `dumpsys` and `logcat`. **Nothing was heard**: no audio was recorded or listened to, and the phone was on silent. The owner's listening checks are still open (contract section 16, B and C).
+
+**Seen working**
+- Settings, Playback: the Equalizer row reads "Off", then the preset name once on. The page opens; with the switch off every control is disabled and the page says why.
+- The switch, the preset menu (items 48dp apart; the chosen one says "(selected)"), and Bass boost setting +6, +5, +4, +2 dB on the first four bands.
+- With a song playing and the equalizer on: 12 plus taps (stops at +12 dB), fast slider drags back and forth, four preset changes and six switch toggles. Playback stayed `PLAYING`; no `FATAL EXCEPTION`, no ANR, no app error in `logcat`.
+- The system audio server shows the app's track as 16-bit stereo at 44.1 kHz, not offloaded, **0 underruns** after about a minute of playback with the equalizer on and changing. (This shows a normal, healthy track. It does not prove the filter is in the path.)
+- Moving a band switches to Custom; Custom survived closing the app from the task list and reopening ("Equalizer / Custom" in Settings); Reset asked first, then went to Flat with the switch left on; the switch off again, playback paused.
+- The Now Playing link ("Equalizer: Custom") opens the page, and Back returns to the page the sheet was opened from.
+- 200% text: the rows reflow, the sheet scrolls to the link, nothing is cut off, and the plus button disables at +12 dB.
+- Touch target: a tap 8px inside the 48dp area of a minus button (outside the 24dp icon) worked; a tap 28px outside it did nothing. (`uiautomator` reports the icon's 24dp, not the button's 48dp.)
+
+**Found and fixed in the follow-up PR:** the sliders drew all 47 step marks as dots, which cluttered every row. The tick colours are now transparent, in both the enabled and the disabled state (the first fix cleared only the enabled one; the screenshot of the disabled state showed it). Checked on the phone with the equalizer on.
+
+**Not checked** (still the owner's): that the filter is audible and sounds right, the presets, no clicks when a setting changes, +12 dB with automatic headroom on and off, FLAC / M4A / Opus and a 24-bit file (only the current queued song, "Track 7", was played, its format not read), 128 kbps, gapless on a live album, lock screen, headset buttons, a phone call, Bluetooth, TalkBack, one-handed reach, battery, and sign-out keeping the setting (not run: it would sign the owner out). Whether any song shows "Not applied to this song" was not seen.

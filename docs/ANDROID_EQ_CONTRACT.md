@@ -255,3 +255,7 @@ Install over the current app (keeps the sign-in): `adb install -r android/app/bu
 **What would send this back to the code:** clicks when changing a setting, a format that shows "Not applied", gapless broken with the EQ on, distortion with Automatic headroom on, a visible battery cost, or any crash. The fallback if CPU or battery is the problem is the platform equalizer (section 4, decision D-020).
 
 R8 and release-build notes: the minified release built without extra keep rules for the equalizer classes. Whether R8 changed behaviour (for example a stripped `AudioProcessor` method) can only be seen on the phone, in items 2 and 8.
+
+### E4 first run, over adb (2026-11-01)
+
+The assistant ran part of the checklist on the owner's phone by driving the app over adb (results in `android/DESIGN.md`, "Equalizer: first device run over adb"). Seen: the page, switch, presets, Custom, Reset, the Now Playing link, restart persistence, 200% text and the 48dp touch area all work; playback with the equalizer on and changing stayed healthy with no crash and no underrun. One defect found and fixed: the slider step marks. **Not heard:** no audio was listened to, so items 2, 3, 5, 6, 7 and 9 to 13, 15, 17, 19 and 20 of the checklist remain the owner's. E4 stays open until the owner has done them.
