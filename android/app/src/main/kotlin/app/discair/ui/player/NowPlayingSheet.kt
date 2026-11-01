@@ -106,6 +106,7 @@ fun NowPlayingSheet(state: PlayerUiState, controller: PlayerController, lyrics: 
                 Spacer(Modifier.weight(1f))
                 Spacer(Modifier.size(Target)) // balances the close button so the tabs sit in the middle
             }
+            Spacer(Modifier.height(12.dp)) // the tabs must not touch the cover, the lyrics note or the queue title
             when (view) {
                 1 -> LyricsPanel(
                     if (lyricsState.songIdOrNull() == songId) lyricsState else LyricsUiState.Idle,

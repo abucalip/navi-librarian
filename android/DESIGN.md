@@ -217,3 +217,22 @@ Code-level review with the `/mobile-design` principles; **not run on an emulator
 6. **Fetching.** Only while the Lyrics view is open, for the song that is playing; the next song is prefetched while it stays open; closing the view or the sheet cancels everything. The cache is cleared at sign-out.
 
 Seen on the owner's phone (2026-11-01, screenshots over adb): plain lyrics with their note; 200% text keeps the tabs on one line ("Queue" near the right edge) and wraps lines; landscape at 200% fits but shows only about three lines at a time; the "not timed" note has no space above it (cosmetic, not fixed). Not checked on a device: TalkBack order across the three tabs and the lines, thumb reach of the tabs, whether the 4 s average lookup feels acceptable over Tailscale, scroll behaviour on very long lyrics.
+
+## Polish pass on built screens (2026-11-01)
+
+Run with the `/mobile-design` checklist against the release build on the owner's phone (SM-G781B, 1080x2400 at 480 dpi), over adb. Method: every tappable element on Home, Discover, Search, Library, Downloads, Settings and Now Playing was measured from the accessibility tree (`uiautomator dump`, bounds converted to dp) and each screen was screenshotted at default text size. Landscape is dismissed by the owner. TalkBack and thumb reach were not re-run (TalkBack was confirmed by the owner for lyrics).
+
+**Measured:** no tappable element under 48dp on any screen once items clipped by the mini-player or the sheet edge are excluded. Two apparent misses were checked and are not defects: the mini-player's Play and Next report 27dp tall on pages without the bottom bar, but a tap 63px below the icon centre (inside 48dp, outside 27dp) still toggled playback and a tap 77px above did not; "Clear queue and stop" reports 43dp only because the sheet edge clips it.
+
+**Changed:**
+1. **Header buttons 44dp to 48dp wide** (Downloads and Settings). They measured 45 wide, so their touch areas overlapped by 3dp.
+2. **Discover card menu (the three dots) now sits on a dark round backing** (34dp, 55% black). The old soft halo vanished on white and yellow covers.
+3. **12dp of space under the Player / Lyrics / Queue tabs in every view.** The tabs sat 5px above the cover on Player and touched the "These lyrics are not timed." note. Verified on the phone for the Player and Lyrics views; the plain-lyrics note itself was not on screen after the change (the playing song has no lyrics).
+
+**Seen, not changed:**
+- Discover cards cut the listener count to "39,904 listene…" at default text size. The line is one row on purpose so cards stay level; the number is intact.
+- Search shows an empty page under the field before typing (the field label already says what to type). Recent searches or a hint would be an owner decision.
+- Failed downloads show the server's long diagnostic text in full ("No matching album folders were found among 0 collected peer responses…"). Wording is the server's; a short summary with the detail behind a tap would be a Librarian change.
+- Discover has two rows of tabs in two different styles (a raised track on top, underlined tabs below). It looks deliberate; both scroll sideways and show a cut-off label as the cue.
+
+**Not covered:** TalkBack order on every page, thumb reach, the Album and Artist pages at 200% text, and the offline banner (needs airplane mode; songs cannot be streamed offline).

@@ -279,7 +279,7 @@ private fun AppHeader(active: Int, onDownloads: () -> Unit, onSettings: () -> Un
             ) {
                 val label = if (active == 0) "Downloads" else "Downloads, $active active"
                 Box(
-                    Modifier.width(44.dp).fillMaxHeight().clickable(role = Role.Button, onClick = onDownloads)
+                    Modifier.width(48.dp).fillMaxHeight().clickable(role = Role.Button, onClick = onDownloads)
                         .semantics { contentDescription = label },
                     contentAlignment = Alignment.Center,
                 ) {
@@ -288,7 +288,7 @@ private fun AppHeader(active: Int, onDownloads: () -> Unit, onSettings: () -> Un
                 }
                 Box(Modifier.width(1.dp).fillMaxHeight().background(app.discair.ui.theme.Ink.EdgeStrong))
                 Box(
-                    Modifier.width(44.dp).fillMaxHeight().clickable(role = Role.Button, onClick = onSettings),
+                    Modifier.width(48.dp).fillMaxHeight().clickable(role = Role.Button, onClick = onSettings),
                     contentAlignment = Alignment.Center,
                 ) {
                     Icon(Icons.Default.Settings, contentDescription = "Settings", tint = app.discair.ui.theme.Ink.TextMuted, modifier = Modifier.size(20.dp))
