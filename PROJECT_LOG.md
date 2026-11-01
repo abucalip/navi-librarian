@@ -1,3 +1,10 @@
+## 2026-11-01 — Android Discover tab redesign, card menu, icon-only bar, tab swiping: PR #659 merged
+
+- **Change:** PR [#659](https://github.com/abucalip/navi-librarian/pull/659), squash `52431e041b6fa76d71cbd884383a775c77751447`. Home tag chip text centred; Discover cards get a top-right three-dot menu (Download, Save, Not this album, Not this artist) and a one-line shrinking Peace Sans title; Discover opens on Daily picks with a segmented control (short labels first, Saved last, "Deep dives") and editor-style sub-tabs for Daily picks and Deep dives; bottom bar is icons only; swiping on Discover moves through sub-tabs then main tabs and never leaves for Home or Search.
+- **Tests run:** `:app:compileDebugKotlin`, `assembleRelease` and `DiscoveryTest` locally (JDK 17). Compile, container-smoke, test-and-build and validate-container passed in CI on the PR head.
+- **Device results:** signed release build installed on the owner's phone over wireless debugging; the owner confirmed the swipe behaviour (Saved back to Personal discoveries, last Daily picks sub-tab on to Deep dives). Other changes were not reviewed on a device; no emulator, TalkBack or large-font check.
+- **Limits:** the three dots have no backing and may be faint on very light covers. Not published, not deployed. No unit tests were added for the new tab components or swipe logic.
+
 ## 2026-11-01 — Peace Sans for album titles: PR #658 merged
 
 - **Change:** PR [#658](https://github.com/abucalip/navi-librarian/pull/658), squash `cafbaf32cff8c6080e8d52db1daea240ac7e72e8`, from tested head `b488527f09e1750be265a0534b6cf1a910a75f20`, at the owner's direction. Album titles on cards (`.card h3`), ranked list rows (`.ranked-row h3`: Recommendations, New releases, Daily picks, Deep Dives), acquisition rows (`.acq-row h3`), artist-page album rows and library album names use the `--title` face (Peace Sans, weight 400) with the shared title tracking and leading. Big Shoulders Display stays for numerals (rank numerals, dates, top-song and list counters, the empty-artwork placeholder text). CSS only, in `static/app.css`.
