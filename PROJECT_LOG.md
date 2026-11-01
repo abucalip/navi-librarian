@@ -1,3 +1,12 @@
+## 2026-11-01 — Android equalizer E1 to E4: built, merged, first listening test passed
+
+- **Merged:** contract PR #673 (`86e173f`), E1 filter and processor #674 (`64fb9bc`), E2 settings and service wiring #675 (`906f446`), E3 screen #676 (`85b379d`), and the E4 follow-up #677 (`5741e2a`). Required checks (compile, container-smoke, test-and-build, validate-container) passed on each PR head before merge. Governing documents: `docs/ANDROID_EQ_CONTRACT.md`, D-020, `EQ-01..04`, the equalizer section of `TEST_PLAN.md`.
+- **Tests actually run (local, JDK 17):** `testDebugUnitTest --tests 'app.discair.player.eq.*'` (41 tests, 0 failures), `assembleDebug`, `lintDebug`, `minifyReleaseWithR8`, `assembleRelease`. The full suite was not run by the assistant (owner rule); CI ran it on each PR head.
+- **Device (owner's phone, SM-G781B):** the assistant drove the app over adb (screen, switch, presets, Custom, Reset, restart persistence, 200% text, 48dp touch area, playback stable under changes with no crash and no underrun; one defect, the slider step marks, found and fixed in #677). The owner then did a listening test: switched the equalizer on mid-song and reported that the presets change the sound noticeably and that all was good.
+- **Not reported, so not claimed:** FLAC, M4A, Opus and 24-bit files, 128 kbps, gapless on a live album, lock screen, headset buttons, a phone call, Bluetooth, TalkBack, one-handed reach, battery, high-gain distortion at +12 dB with and without automatic headroom, and sign-out keeping the setting.
+- **Deviations from the contract (recorded in it):** bands are horizontal rows rather than vertical sliders and there is no landscape layout; the processor keeps the input encoding and float output is not requested.
+- **Next action:** none queued; the owner's choice. Crossfade still needs its own contract.
+
 ## 2026-11-01 — Android polish pass on built screens: PR #672 merged
 
 - **Merged:** PR #672, squash `ae0eb4fb06fa30ad83071443e696406836687ff3`; required checks (compile, container-smoke, test-and-build, validate-container) passed on the exact head before merge; the full suite ran in CI only.

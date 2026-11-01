@@ -1,6 +1,6 @@
 # Android equalizer contract (Discair)
 
-Status: **approved by the owner on 2026-11-01: every proposed default in section 11 is accepted (answers 1 to 8). Phase E0 (documents) is done and E1 (the filter), E2 (settings and service wiring) and E3 (the screen) are built and unit-tested; E4 (the device run, checklist in section 16) is the owner's and has not been done.** This is the "EQ" item that [`ANDROID_PLAYER_CONTRACT.md`](ANDROID_PLAYER_CONTRACT.md) section 6 and `ACTIVE_WORK.md` 2g left for its own contract (proposed `D-020`). It goes through a PR, as the Android contracts do.
+Status: **approved by the owner on 2026-11-01: every proposed default in section 11 is accepted (answers 1 to 8). Phase E0 (documents) is done and E1 (the filter), E2 (settings and service wiring) and E3 (the screen) are built and unit-tested; E4 (the device run) is closed for version 1 on the owner's word of 2026-11-01: the listening test passed; the checklist items the owner did not report stay unchecked (section 16).** This is the "EQ" item that [`ANDROID_PLAYER_CONTRACT.md`](ANDROID_PLAYER_CONTRACT.md) section 6 and `ACTIVE_WORK.md` 2g left for its own contract (proposed `D-020`). It goes through a PR, as the Android contracts do.
 
 ## 1. Purpose and scope
 
@@ -259,3 +259,7 @@ R8 and release-build notes: the minified release built without extra keep rules 
 ### E4 first run, over adb (2026-11-01)
 
 The assistant ran part of the checklist on the owner's phone by driving the app over adb (results in `android/DESIGN.md`, "Equalizer: first device run over adb"). Seen: the page, switch, presets, Custom, Reset, the Now Playing link, restart persistence, 200% text and the 48dp touch area all work; playback with the equalizer on and changing stayed healthy with no crash and no underrun. One defect found and fixed: the slider step marks. **Not heard:** no audio was listened to, so items 2, 3, 5, 6, 7 and 9 to 13, 15, 17, 19 and 20 of the checklist remain the owner's. E4 stays open until the owner has done them.
+
+### E4 closed (2026-11-01)
+
+The owner did the listening test on the phone: the equalizer switched on mid-song, and the presets change the sound noticeably; the owner reported all good. PRs #673 to #677 are merged. Items of section 16 that were not reported are not claimed as checked, and a problem found in any of them later is handled as a bug against this contract, not as an open phase.
