@@ -1,6 +1,6 @@
 # Android lyrics contract (Discair)
 
-Status: **proposal, pending owner approval. Nothing here is implemented.** Section 11 holds proposed answers to the open questions for the owner to confirm or override. This contract is the "lyrics" item that [`ANDROID_PLAYER_CONTRACT.md`](ANDROID_PLAYER_CONTRACT.md) section 6 left for its own contract (D-018). It goes through a PR, as the Android contracts do.
+Status: **approved by the owner on 2026-11-01 (answers 1 to 4 in section 11); work is parked and will be scheduled by the owner later. Nothing here is implemented.** Answers 5 to 8 were not discussed: their proposed defaults stand until the owner overrides them before the phase they affect. This contract is the "lyrics" item that [`ANDROID_PLAYER_CONTRACT.md`](ANDROID_PLAYER_CONTRACT.md) section 6 left for its own contract (D-018). It goes through a PR, as the Android contracts do.
 
 ## 1. Purpose and scope
 
@@ -77,7 +77,7 @@ Cleaning, for safety and layout:
 - A seek, a skip or a restart moves the marker at once. Pause freezes it.
 - The current line is kept near the middle of the view. If the owner scrolls the lyrics by hand, following stops and a "Back to the current line" button appears (no gesture is the only way back). Following also resumes when the song changes.
 - Reduced motion: the view jumps to the current line instead of scrolling smoothly (Compose already follows the system animation setting).
-- Tapping a timed line seeks to it (open question 1).
+- Tapping a line does nothing (owner decision, section 11, answer 1). The only ways to move the music remain the seek bar and the player controls, so an accidental touch while reading never moves the song.
 
 ## 7. The screen
 
@@ -123,15 +123,20 @@ Each phase is one focused PR from `main`, with tests, no full-suite run by agent
 ## 10. Verification
 
 - Unit tests as above; `./gradlew testDebugUnitTest assembleDebug lintDebug assembleRelease` on JDK 17 per phase.
-- On the owner's phone over Tailscale: a timed song (line follows the music, a seek moves it), a plain song, a song with none, the slowest case (is the loading state clear after 10 s?), airplane mode with a cached song and an uncached song, a song change with the view open (does the next song's lyrics arrive in time?), TalkBack through the three views, 200 % text and landscape, scrolling by hand and the return button, battery over a long listen with the view open, sign-out clearing the cache.
+- On the owner's phone over Tailscale: a timed song (line follows the music, a seek moves it), a plain song, a song with none, the slowest case (is the loading state clear after 10 s?), airplane mode with a cached song and an uncached song, a song change with the view open (does the next song's lyrics arrive in time?), TalkBack through the three views, 200 % text and landscape, scrolling by hand and the return button, a tap on a line doing nothing, battery over a long listen with the view open, sign-out clearing the cache.
 - Nothing is claimed as verified on a device until the owner has tested it.
 
 ## 11. Open questions, with proposed answers
 
-1. **Tap a line to seek?** Proposed: yes for timed lyrics, because it is what people expect. Risk: an accidental tap moves the song. The owner may turn it off.
-2. **A language switch?** Proposed: no in version 1; the phone's language is preferred, otherwise the first listed. The sample showed only undetermined language.
-3. **Prefetch the next song's lyrics?** Proposed: yes, only while the Lyrics view is open (section 8), because lookups can take several seconds.
-4. **Cache size and life.** Proposed: 300 songs or 5 MB, refreshed at most daily, "none" for 24 hours.
+Decided by the owner on 2026-11-01:
+
+1. **Tap a line to seek: no.** Lines are not tappable.
+2. **A language switch: no.** The phone's language is preferred, otherwise the first listed. The sample showed only undetermined language.
+3. **Prefetch the next song's lyrics: yes,** only while the Lyrics view is open (section 8), because lookups can take several seconds.
+4. **Cache size and life: yes** to 300 songs or 5 MB, refreshed at most daily, "none" for 24 hours.
+
+Not yet discussed (the proposed answer stands until the owner overrides it):
+
 5. **Hide the Lyrics tab when the server lacks `songLyrics`, or show it with a message?** Proposed: show it with the message, so the owner knows why.
 6. **Lyrics on the lock screen or notification?** Proposed: no. Android's media notification has no lyrics area.
 7. **Font size control inside the view?** Proposed: no; follow the system font size.

@@ -115,7 +115,8 @@ Done: Genres grid and four album shelves on the dashboard, the Recommended slide
 - First device run (2026-11-01, owner's phone): play from an album, next, shuffle, notification, Now Playing, queue with covers, seeking and Record plays work. A crash opening Now Playing was found and fixed in #665.
 - PR #666: slash-in-name fix, per-track and row queue actions, Home shelf play buttons and gapless preload. The owner confirmed the slash fix and seamless gapless playback on the phone; the new buttons are unchecked.
 - Still unchecked on a device: the rest of the checklist in contract section 13 (offline resume, restart restoring paused, exactly one play in Navidrome, streaming-quality conversion, call interruption, TalkBack, landscape, 200% text).
-- Not started, each needing its own contract: gapless and crossfade, EQ, lyrics.
+- Lyrics: contract approved by the owner on 2026-11-01 ([ANDROID_LYRICS_CONTRACT.md](ANDROID_LYRICS_CONTRACT.md), PR #667); parked, not started. Next action when the owner schedules it: phase L0 (documents), then L1 (data layer).
+- Not started, each needing its own contract: crossfade, EQ.
 
 ## 3. Recommendation engine — gated
 
