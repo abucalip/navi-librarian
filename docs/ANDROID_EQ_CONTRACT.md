@@ -1,6 +1,6 @@
 # Android equalizer contract (Discair)
 
-Status: **approved by the owner on 2026-11-01: every proposed default in section 11 is accepted (answers 1 to 8). Phase E0 (documents) is done; E1 to E4 are not started and nothing is built.** This is the "EQ" item that [`ANDROID_PLAYER_CONTRACT.md`](ANDROID_PLAYER_CONTRACT.md) section 6 and `ACTIVE_WORK.md` 2g left for its own contract (proposed `D-020`). It goes through a PR, as the Android contracts do.
+Status: **approved by the owner on 2026-11-01: every proposed default in section 11 is accepted (answers 1 to 8). Phase E0 (documents) is done and E1 (the filter) is built and unit-tested but not wired in; E2 to E4 are not started.** This is the "EQ" item that [`ANDROID_PLAYER_CONTRACT.md`](ANDROID_PLAYER_CONTRACT.md) section 6 and `ACTIVE_WORK.md` 2g left for its own contract (proposed `D-020`). It goes through a PR, as the Android contracts do.
 
 ## 1. Purpose and scope
 
@@ -163,3 +163,19 @@ The owner approved all proposed answers on 2026-11-01. They are the decisions of
 5. **Offload:** enabling the EQ disables any future audio offload; accepted, because offload is not used.
 6. **Scope creep:** crossfade, bass boost and normalisation are tempting neighbours; each is out of scope and needs its own contract.
 7. **Release build:** Media3 audio classes under R8; checked on the minified release build in E4.
+
+## 13. Phase E1 status
+
+**Built and unit-tested; not wired into the player and not run on a device.** E0 was merged in PR #673. New in `android/app/src/main/kotlin/app/discair/player/eq/`:
+- `EqConfig.kt`: the setting as plain data (enabled, ten band gains, automatic or manual pre-gain). Gains are clamped to ±12 dB and rounded to 0.5 dB; NaN and missing values become 0; the manual pre-gain is limited to 0 or below. `isBypass()` is true when off or flat.
+- `EqEngine.kt`: RBJ peaking biquads (Q 1.41) at the ten centres, bands above 0.45 × the sample rate bypassed, pre-gain, a soft limiter (transparent up to 0.9, never above 1.0), and a 20 ms linear ramp of coefficients and gain on every change. Filter state is kept across buffers and settings, never reset by the engine; the engine returns exactly the samples it is given.
+- `EqAudioProcessor.kt`: the Media3 `AudioProcessor`. It accepts 16-bit and float PCM with 1 to 8 channels, leaves any other format inactive (pass-through), keeps the input encoding, copies bytes unchanged in bypass, and falls back to a plain copy for the rest of the stream if the engine throws. A flush (seek, format change) starts a fresh engine.
+
+Run: `./gradlew testDebugUnitTest --tests 'app.discair.player.eq.*' assembleDebug lintDebug` on JDK 17: 22 tests, 0 failures (16 engine, 6 processor); debug build and lint passed. The full suite was not run (the owner runs it; CI runs it on the PR head).
+
+Not done or not verified:
+- Nothing installs the processor in `PlaybackService` yet (E2). The release build and R8 were not run.
+- **Deviation from section 4:** the contract says the processor requests float output so 24-bit files are not cut to 16 bits. E1 keeps the input encoding instead (16-bit in, 16-bit out; float in, float out) and does not change what `DefaultAudioSink` is asked for. Whether to request float is decided in E2, with the device check of a 24-bit FLAC.
+- The CPU cost is unmeasured. The 20 ms ramp costs per-sample coefficient updates only while a change is in progress.
+- No listening test; the tests check computed responses, levels, continuity and lengths, not how it sounds.
+- The 250 ms-style "no allocation" rule is met by reusing one scratch array, but this is not measured; the output buffer is allocated by `BaseAudioProcessor` per call.
