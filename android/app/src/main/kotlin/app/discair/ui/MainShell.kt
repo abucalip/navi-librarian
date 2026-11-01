@@ -21,6 +21,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.background
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
@@ -210,23 +218,36 @@ fun MainShell(state: UiState, model: AppViewModel, container: AppContainer) {
 private fun AppHeader(active: Int, onDownloads: () -> Unit, onSettings: () -> Unit) {
     Column(Modifier.background(app.discair.ui.theme.Ink.Rail)) {
         Row(
-            Modifier.fillMaxWidth().statusBarsPadding().heightIn(min = 56.dp).padding(start = 16.dp, end = 4.dp),
+            Modifier.fillMaxWidth().statusBarsPadding().heightIn(min = 56.dp).padding(start = 16.dp, end = 16.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(
                 painterResource(R.drawable.ic_wordmark), contentDescription = "Discair", tint = Color.Unspecified,
-                modifier = Modifier.weight(1f, fill = false).height(30.dp).semantics { heading() },
+                modifier = Modifier.height(30.dp).semantics { heading() },
             )
             Spacer(Modifier.weight(1f))
-            IconButton(onClick = onDownloads, Modifier.size(Target)) {
+            // The web's joined action group: one rounded frame, a hairline between the two buttons.
+            val frame = RoundedCornerShape(6.dp)
+            Row(
+                Modifier.height(38.dp).clip(frame).background(app.discair.ui.theme.Ink.Surface)
+                    .border(1.dp, app.discair.ui.theme.Ink.EdgeStrong, frame),
+            ) {
                 val label = if (active == 0) "Downloads" else "Downloads, $active active"
-                BadgedBox(
-                    badge = { if (active > 0) Badge { Text("$active") } },
-                    modifier = Modifier.semantics { contentDescription = label },
-                ) { Icon(painterResource(R.drawable.ic_get_cloud), contentDescription = null) }
-            }
-            IconButton(onClick = onSettings, Modifier.size(Target)) {
-                Icon(Icons.Default.Settings, contentDescription = "Settings")
+                Box(
+                    Modifier.width(44.dp).fillMaxHeight().clickable(role = Role.Button, onClick = onDownloads)
+                        .semantics { contentDescription = label },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(painterResource(R.drawable.ic_get_cloud), contentDescription = null, tint = app.discair.ui.theme.Ink.TextMuted, modifier = Modifier.size(20.dp))
+                    if (active > 0) Badge(Modifier.align(Alignment.TopEnd).padding(top = 3.dp, end = 3.dp)) { Text("$active") }
+                }
+                Box(Modifier.width(1.dp).fillMaxHeight().background(app.discair.ui.theme.Ink.EdgeStrong))
+                Box(
+                    Modifier.width(44.dp).fillMaxHeight().clickable(role = Role.Button, onClick = onSettings),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(Icons.Default.Settings, contentDescription = "Settings", tint = app.discair.ui.theme.Ink.TextMuted, modifier = Modifier.size(20.dp))
+                }
             }
         }
         RowDivider()
