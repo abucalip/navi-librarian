@@ -98,6 +98,8 @@ private fun ArtistContent(route: ArtistRoute, page: ArtistPage, open: Opener, li
     // LIB-05: five similar artists chosen at random on each page load. Variety only; the server's list is the source.
     val similar = remember(page) { sections.similar.items.shuffled().take(SIMILAR_SHOWN) }
     val owned = sections.ownedAlbums.items
+    val artistId = (info?.id ?: route.id)?.takeIf { it.isNotBlank() && owned.isNotEmpty() }
+    val play = app.discair.ui.player.LocalPlayActions.current
 
     LazyColumn(Modifier.fillMaxSize(), state = list, contentPadding = PaddingValues(bottom = 32.dp)) {
         item {
@@ -133,6 +135,12 @@ private fun ArtistContent(route: ArtistRoute, page: ArtistPage, open: Opener, li
                 }
             }
         }
+        if (artistId != null) item {
+            app.discair.ui.player.PlayRow(
+                onPlay = { play.playArtist(artistId, shuffle = false) }, onShuffle = { play.playArtist(artistId, shuffle = true) },
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+            )
+        }
         val allSongs = sections.topSongs.items
         val songs = if (showAllSongs) allSongs else allSongs.take(SONGS_SHOWN)
         if (songs.isNotEmpty()) {
@@ -158,7 +166,10 @@ private fun ArtistContent(route: ArtistRoute, page: ArtistPage, open: Opener, li
                                 Box(Modifier.size(Target), contentAlignment = Alignment.Center) {
                                     val onAlbum = song.album?.takeIf { it.isNotBlank() }
                                     // Only a song that names its album can be filed with it (ACQ-08).
-                                    if (song.owned || onAlbum == null) OwnedMark(song.owned)
+                                    // An owned top song plays from its album when the album is in the library.
+                                    val albumId = onAlbum?.let { a -> owned.firstOrNull { it.name.equals(a, ignoreCase = true) }?.id }?.takeIf { it.isNotBlank() }
+                                    if (song.owned && albumId != null) app.discair.ui.player.RowPlayButton(song.name, { play.playAlbum(albumId, song.name, null) })
+                                    else if (song.owned || onAlbum == null) OwnedMark(song.owned)
                                     else GetSongButton(name, onAlbum, song.name, null, null)
                                 }
                             }

@@ -216,7 +216,17 @@ private fun ResultRow(r: SearchResult, open: Opener, showType: Boolean = false) 
                     color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis,
                 )
             }
-            OwnedMark(r.owned)
+            if (r.type == "song" && r.owned && !r.albumId.isNullOrBlank()) {
+                val play = app.discair.ui.player.LocalPlayActions.current
+                val item = app.discair.player.QueueItem(
+                    songId = r.id, title = r.name, artist = r.artist.orEmpty(), album = r.album.orEmpty(), albumId = r.albumId,
+                    coverId = r.albumId, coverUrl = repo.absolute("/api/owned/artwork/${r.albumId}"), durationSec = r.duration ?: 0,
+                )
+                app.discair.ui.player.RowPlayButton(r.name, { play.playSong(item) })
+                IconButton(onClick = { play.queueSong(item, next = false) }, Modifier.size(Target)) {
+                    Icon(app.discair.ui.player.PlayerIcons.Add, contentDescription = "Add ${r.name} to the queue")
+                }
+            } else OwnedMark(r.owned)
         }
         RowDivider()
     }

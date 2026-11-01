@@ -98,6 +98,9 @@ private fun AlbumContent(route: AlbumRoute, page: AlbumPage, open: Opener, list:
     var showAllSimilar by remember { mutableStateOf(false) }
     val similarArtists = remember(page) { s.similarArtists.items.shuffled().take(SIMILAR_ARTISTS_SHOWN) }
     val tracks = s.tracks.items
+    // Playback is for albums in the library only; the id is the Navidrome album id the page already carries.
+    val albumId = (info?.id ?: route.id)?.takeIf { owned && it.isNotBlank() }
+    val play = app.discair.ui.player.LocalPlayActions.current
 
     LazyColumn(Modifier.fillMaxSize(), state = list, contentPadding = PaddingValues(bottom = 32.dp)) {
         item {
@@ -132,6 +135,11 @@ private fun AlbumContent(route: AlbumRoute, page: AlbumPage, open: Opener, list:
                     if (year != null) Text("$year", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 if (!owned) Text("Not in your library", style = MaterialTheme.typography.bodyMedium, color = Ink.Caution)
+                if (albumId != null) app.discair.ui.player.PlayRow(
+                    onPlay = { play.playAlbum(albumId) }, onShuffle = { play.playAlbum(albumId, shuffle = true) },
+                    modifier = Modifier.padding(top = 8.dp),
+                    onPlayNext = { play.queueAlbum(albumId, next = true) }, onAddToQueue = { play.queueAlbum(albumId, next = false) },
+                )
                 // The album-level Get stays until every track is in the library (ACQ-08).
                 if (!owned || tracks.any { !it.owned }) GetAlbumButton(
                     artist, title, pageMetadata(artist, title, year, info?.releaseGroupMbid),
@@ -145,7 +153,10 @@ private fun AlbumContent(route: AlbumRoute, page: AlbumPage, open: Opener, list:
                 val t = tracks[i]
                 Column {
                     Row(
-                        Modifier.fillMaxWidth().heightIn(min = 52.dp).padding(horizontal = 16.dp),
+                        // An owned track plays the album from that track.
+                        Modifier.fillMaxWidth().heightIn(min = 52.dp)
+                            .let { if (t.owned && albumId != null) it.clickable(onClickLabel = "Play ${t.title}", role = Role.Button) { play.playAlbum(albumId, t.title, t.number) } else it }
+                            .padding(horizontal = 16.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Text(

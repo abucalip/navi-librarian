@@ -173,3 +173,16 @@ Known gaps:
 - Not checked on a device: layout at default and 200% font, landscape, TalkBack reading order, thumb reach, contrast of the status line, the sheet's open and close animation (it is not switched off for the reduced-motion setting yet).
 - The notification and lock screen show title, artist and album but no cover (the cover needs a signed Navidrome address; left for a later pass). In the app, the cover is loaded from Librarian when a queue item carries one.
 - No Compose screenshot tests.
+
+## Player entry points (Phase 4 of the player, 2026-11-01)
+
+Code-level review with the `/mobile-design` principles; **not run on an emulator or a phone**.
+
+1. **Play controls exist only for albums and artists in the library.** Album page: Play and Shuffle buttons (48dp, thumb-reachable under the header) and a More menu with Play next and Add to queue. An unowned album shows none of them, and recommendation and Get cards never do.
+2. **Tapping an owned track plays the album from that track**, with the rest of the album after it. The row says "Play <title>" to TalkBack. A track that is not in the library keeps its Get button and does nothing on tap.
+3. **Artist page:** Play and Shuffle for the artist's library albums, and a play button on an owned Top song whose album is in the library. A Top song whose album cannot be found keeps its owned mark.
+4. **Library and Search rows:** a 48dp play button on each album and artist row, and Play and Add to queue buttons on each song result. The row text still opens the page.
+5. **Honest feedback in words.** Loading, success of the queue actions ("2 songs will play next.") and every failure (can't reach Navidrome, login rejected, no songs found, song not in the library) appear in the snackbar. A second tap while songs are loading is ignored with "Still loading songs.".
+6. **Where the ids come from.** The web album page carries no song ids, so the app asks Navidrome (`getAlbum`, `getArtist`) with the login saved on the device; search results already carry the song id.
+
+Known gaps: per-track Play next and Add to queue, a Shuffle button on library rows and play controls on Discover or Home cards are not built. Not checked on a device: layout at 200% font and in landscape, TalkBack order on the track rows, thumb reach of the buttons, the time to load a large artist.

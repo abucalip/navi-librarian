@@ -218,13 +218,15 @@ private fun Rows(state: LibraryState, model: LibraryViewModel, open: Opener, lis
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Cover(artist.artworkUrl?.let { LocalRepository.current.absolute(it) }, Modifier.size(48.dp))
-                    Column(Modifier.padding(start = 12.dp)) {
+                    Column(Modifier.weight(1f).padding(start = 12.dp)) {
                         Text(artist.name, style = MaterialTheme.typography.bodyLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         Text(
                             plural(artist.albumCount, "album"),
                             style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
+                    val play = app.discair.ui.player.LocalPlayActions.current
+                    app.discair.ui.player.RowPlayButton(artist.name, { play.playArtist(artist.id, shuffle = false) })
                 }
             }
         } else {
@@ -236,7 +238,7 @@ private fun Rows(state: LibraryState, model: LibraryViewModel, open: Opener, lis
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Cover(album.artworkUrl?.let { LocalRepository.current.absolute(it) }, Modifier.size(48.dp))
-                    Column(Modifier.padding(start = 12.dp)) {
+                    Column(Modifier.weight(1f).padding(start = 12.dp)) {
                         Text(album.name, style = MaterialTheme.typography.bodyLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         Text(
                             listOfNotNull(album.artist, album.year?.toString(), plural(album.songCount, "song")).joinToString(" · "),
@@ -244,6 +246,8 @@ private fun Rows(state: LibraryState, model: LibraryViewModel, open: Opener, lis
                             maxLines = 1, overflow = TextOverflow.Ellipsis,
                         )
                     }
+                    val play = app.discair.ui.player.LocalPlayActions.current
+                    app.discair.ui.player.RowPlayButton(album.name, { play.playAlbum(album.id) })
                 }
             }
         }
