@@ -246,3 +246,15 @@ What the logs and `dumpsys media_session` showed, 7 crossfaded joins across runs
 **To listen on the phone (the spike build is installed over the app):** start a queue of songs, then run `adb shell am broadcast -a app.discair.XFSPIKE --es cmd on --el ms 5000` to turn it on, and `adb shell am broadcast -a app.discair.XFSPIKE --es cmd end --el ms 30000` to jump to 30 s before the end of the song. Listen to the join and the notification. Turn it off with `--es cmd off`. To go back to the normal app, install the release build of `main`.
 
 **Owner's listening result (2026-11-01):** the owner listened to the A2 spike on the phone and reported that the overlap sounds clean (first message "it sounds wlean", confirmed by the owner as "clean"). This is the only audio judgement on record: one listening session on the spike with the equalizer setting as it was, no specific tracks, lengths or checks beyond the 5 s fade were reported. X1 is closed. The checks listed above as "not measured or not checked" are still open and move to X3 and X5.
+
+## 14. Phase X2 status
+
+**Built and unit-tested; nothing is wired into the player and nothing was run on a device.** New in `android/app/src/main/kotlin/app/discair/player/crossfade/`, plain Kotlin with no Android types:
+- `FadeCurve.kt`: the equal-power gains (`cos` out, `sin` in; progress clamped, NaN counts as 0), `progress` for a time into a fade, and `ramp` (steps at most 20 ms apart, first at 0, last exactly at the length with gains 0 and 1).
+- `CrossfadePlanner.kt`: `CrossfadeSettings` (off, 5 s, keep-albums-gapless on by default; seconds clamped to 1 to 12; `parseSeconds` turns text that is not a whole number into the default), `JoinSong`, `JoinContext`, `NoFadeReason` and `CrossfadePlanner.plan`. It applies contract 5.1 to 5.3 in the contract's order: off, not automatic, no next song, repeat-one or the same entry, unknown duration, too short, same album, next song not buffered enough (`fade + 2 s`). A fade is `min(setting, shorter song ÷ 3)`, at least 1 s, starting that long before the end of the current song.
+
+Run: `./gradlew testDebugUnitTest --tests 'app.discair.player.crossfade.*' lintDebug assembleDebug minifyReleaseWithR8` on JDK 17: 23 tests, 0 failures (6 curve, 17 planner); lint, debug build and R8 passed. The full suite and the signed release build were not run (the owner runs the full suite; CI runs it on the PR head).
+
+**Deviation from section 5.3:** `QueueItem` carries no track number, so the album rule is "the next song in playback order has the same non-blank album id". A shuffled queue that happens to put two songs of one album next to each other keeps them gapless too; that was judged acceptable (the owner can switch the rule off). Songs with no album id are never treated as one album.
+
+Not done: the settings storage (X4), the service wiring and the twin players (X3). The planner takes `nextBufferedMs` and `nextIsSameEntry` from its caller; how X3 reads them from the players is not yet written.
