@@ -76,6 +76,15 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import app.discair.ui.player.MiniPlayer
+import app.discair.ui.player.NowPlayingSheet
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.contentDescription
@@ -101,6 +110,23 @@ fun MainShell(state: UiState, model: AppViewModel, container: AppContainer) {
     }
     // Outcomes of Get, retry, skip and dismiss: spoken by the snackbar, one at a time.
     LaunchedEffect(hub) { hub.messages.collect { snackbar.showSnackbar(it) } }
+    // Playback: one controller for the whole signed-in session. It is created on first use.
+    container.servers = state.saved
+    val player = container.player
+    val playerState by player.state.collectAsState()
+    var nowPlayingOpen by rememberSaveable { mutableStateOf(false) }
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val askNotifications = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
+    var askedNotifications by rememberSaveable { mutableStateOf(false) }
+    // The media notification needs this permission on Android 13; asked once, when playback first starts.
+    LaunchedEffect(playerState.isPlaying) {
+        if (playerState.isPlaying && !askedNotifications &&
+            context.checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED
+        ) {
+            askedNotifications = true
+            askNotifications.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+        }
+    }
     val entry by nav.currentBackStackEntryAsState()
     val destination = entry?.destination
     val tabs = listOf(
@@ -132,6 +158,9 @@ fun MainShell(state: UiState, model: AppViewModel, container: AppContainer) {
         )
     }
 
+    if (nowPlayingOpen && playerState.visible) {
+        NowPlayingSheet(playerState, player, onDismiss = { nowPlayingOpen = false }, onSignIn = { nowPlayingOpen = false; model.sessionExpired() })
+    }
     CompositionLocalProvider(
         LocalRepository provides repo, LocalImageLoader provides container.imageLoader, LocalAcquisitions provides hub,
     ) {
@@ -145,6 +174,12 @@ fun MainShell(state: UiState, model: AppViewModel, container: AppContainer) {
                 )
             },
             bottomBar = {
+              Column {
+                MiniPlayer(
+                    playerState, player, onOpen = { nowPlayingOpen = true },
+                    // On pages without the navigation bar the mini-player clears the system bar itself.
+                    modifier = if (onTopLevel) Modifier else Modifier.navigationBarsPadding(),
+                )
                 if (onTopLevel) NavigationBar {
                     tabs.forEach { tab ->
                         NavigationBarItem(
@@ -155,6 +190,7 @@ fun MainShell(state: UiState, model: AppViewModel, container: AppContainer) {
                         )
                     }
                 }
+              }
             },
         ) { padding ->
             Column(Modifier.padding(padding).fillMaxSize()) {

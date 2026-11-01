@@ -10,12 +10,55 @@ import coil3.ImageLoader
 import coil3.request.allowHardware
 import coil3.network.okhttp.OkHttpNetworkFetcherFactory
 import okhttp3.OkHttpClient
+import app.discair.player.FileQueueStorage
+import app.discair.player.Media3Port
+import app.discair.player.NavidromeScrobbler
+import app.discair.player.PlayerController
+import app.discair.player.ScrobbleApi
+import app.discair.player.ScrobbleCoordinator
+import app.discair.player.SendOutcome
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 
 /** Process-wide wiring: one HTTP client, so the session cookie is shared by the API and by images. */
 class AppContainer(val app: Application) {
     private val cache = FileResponseCache(java.io.File(app.cacheDir, "responses"))
     val connector = AppConnector(app, cache)
     private val http: OkHttpClient get() = connector.client
+
+    /** The saved servers, set by the signed-in shell, so playback never opens the encrypted store on the main thread. */
+    @Volatile var servers: ServerSettings = ServerSettings()
+
+    /** Sends scrobbles with the Navidrome login that is current when the scrobble goes out. */
+    private val scrobbleApi = object : ScrobbleApi {
+        override suspend fun send(songId: String, submission: Boolean, timeMs: Long): SendOutcome {
+            val s = servers
+            val api = NavidromeScrobbler.create(OkHttpClient(), s.navidromeUrl, s.navidromeUser, s.navidromePassword)
+                ?: return SendOutcome.Ambiguous
+            return api.send(songId, submission, timeMs)
+        }
+    }
+
+    /** The one player controller. It binds to the playback service on first use and restores the saved queue, paused. */
+    val player: PlayerController by lazy {
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+        val controller = PlayerController(
+            port = Media3Port(app),
+            storage = FileQueueStorage(java.io.File(app.filesDir, "player_queue.json")),
+            scrobbler = ScrobbleCoordinator(scrobbleApi, CoroutineScope(SupervisorJob() + Dispatchers.Default)),
+            scope = scope,
+        )
+        controller.restore()
+        val manager = app.getSystemService(android.net.ConnectivityManager::class.java)
+        manager.registerDefaultNetworkCallback(object : android.net.ConnectivityManager.NetworkCallback() {
+            override fun onAvailable(network: android.net.Network) {
+                android.os.Handler(android.os.Looper.getMainLooper()).post { controller.networkAvailable() }
+            }
+        })
+        connector.onSignedOut = { android.os.Handler(android.os.Looper.getMainLooper()).post { controller.signOut() } }
+        controller
+    }
 
     val imageLoader: ImageLoader by lazy {
         ImageLoader.Builder(app)

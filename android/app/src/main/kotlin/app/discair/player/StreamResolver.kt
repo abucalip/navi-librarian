@@ -24,7 +24,10 @@ class StreamResolver(
         val builder = StreamUrlBuilder(saved.navidromeUrl, saved.navidromeUser, saved.navidromePassword)
         return items.mapNotNull { item ->
             if (!isValidSongId(item.mediaId)) return@mapNotNull null
-            val url = builder.build(item.mediaId, quality(), format())
+            // A per-item request (the MP3 fallback after an unsupported-format error) wins over the global setting.
+            val itemFormat = item.requestMetadata.extras?.getString(EXTRA_FORMAT)
+                ?.let { wire -> TranscodeFormat.entries.firstOrNull { it.wire == wire } }
+            val url = builder.build(item.mediaId, quality(), itemFormat ?: format())
             item.buildUpon().setUri(url.toString()).build()
         }
     }
