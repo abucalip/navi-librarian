@@ -1,3 +1,11 @@
+## 2026-11-01 — Android crossfade X4: settings page
+
+- **Merged earlier:** X3, PR #679, squash `19dab68d8a4457a3dc1590d236a935c34d0545fe`; all four required checks passed on its head.
+- **Built:** `CrossfadeText.kt` (words and rules), `CrossfadeScreen.kt` and `CrossfadeLink`, `CrossfadeRoute`, the Settings row and the Now Playing link. Decisions and review: `android/DESIGN.md` ("Crossfade page"); status and four deviations: contract section 16.
+- **Tests actually run (local, JDK 17):** `testDebugUnitTest --tests 'app.discair.player.*'` (239 tests, 0 failures; 9 new), `lintDebug`, `assembleDebug`, `minifyReleaseWithR8`, `assembleRelease`. The full suite was not run by the assistant.
+- **Not done:** no emulator or phone run (adb had no device); no screenshots, TalkBack, 200% text or one-handed check; the X3 engine has still not been run on a device in its production form.
+- **Next action:** CI and merge, then X5, the device run.
+
 ## 2026-11-01 — Android crossfade X3: twin-player engine in the service
 
 - **Merged earlier:** X2, PR #678, squash `aa7ed16c02da4dd655abf35823ae18b70cce617a`; all four required checks passed on its head.

@@ -269,3 +269,20 @@ Run by the assistant against the signed release build of `main` (`85b379d`, then
 **Found and fixed in the follow-up PR:** the sliders drew all 47 step marks as dots, which cluttered every row. The tick colours are now transparent, in both the enabled and the disabled state (the first fix cleared only the enabled one; the screenshot of the disabled state showed it). Checked on the phone with the equalizer on.
 
 **Not checked** (still the owner's): that the filter is audible and sounds right, the presets, no clicks when a setting changes, +12 dB with automatic headroom on and off, FLAC / M4A / Opus and a 24-bit file (only the current queued song, "Track 7", was played, its format not read), 128 kbps, gapless on a live album, lock screen, headset buttons, a phone call, Bluetooth, TalkBack, one-handed reach, battery, and sign-out keeping the setting (not run: it would sign the owner out). Whether any song shows "Not applied to this song" was not seen.
+
+## Crossfade page (X4, 2026-11-01)
+
+Produced with the `/mobile-design` skill. Platform Android, Kotlin and Compose, phone only, dark theme (all fixed by this file). **What was and was not read:** the skill's main file was loaded and its checklist applied; its reference files were not read one by one, because the page is built from the equalizer page's patterns, which went through the same review. **Not run on an emulator or a phone** (the phone was not reachable over adb), so nothing below is seen, only built and compiled.
+
+- **Where:** a Settings row "Crossfade" under "Equalizer" in the Playback section, whose second line says "Off" or the length in words ("5 seconds"); a stack page (`CrossfadeRoute`) with Back; and a "Crossfade: 5 s" link on the Now Playing sheet under the equalizer link, shown only while crossfade is on. The link opens the page and closes the sheet, as the equalizer link does.
+- **Page order, top to bottom:** Back and title; the Crossfade switch with a line that says on or off in words; Length (the value in words, minus button, slider, plus button); Albums ("Keep albums gapless" switch with help text); the quality line (only below Original); one line saying a change applies at the next song change. Everything scrolls; nothing is placed in a fixed bottom bar.
+- **Touch:** every row and button is at least 48dp (`Target`); minus and plus change the length by one second and are the main way, the slider is the quick way, no gesture is the only route. The destructive-looking actions of the equalizer page (Reset) have no counterpart here: nothing on this page deletes anything, so there is no confirmation.
+- **States:** off shows the length controls and the album switch greyed (unavailable), not hidden, with the reason in the switch's help text; on shows them live. Every state has words; none is shown by colour alone. The quality line is a plain text line, not a warning colour.
+- **TalkBack:** the switches are `Role.Switch` rows with their help text; the slider reads "Crossfade length, 5 seconds" with the value as its state, and the buttons are named ("Shorten the crossfade by one second", "Lengthen the crossfade by one second"). Not yet tried with TalkBack on a device.
+- **Text size:** all text follows the system font size; the page scrolls, so 200% text should fit. Not seen.
+- **Landscape:** not designed (dismissed by the owner earlier).
+- **Motion:** none added; the page has no animation, so reduced motion needs nothing.
+- **Performance and battery:** the page reads and writes the existing preferences only; it starts no work. Setting changes reach the service through the preferences listener.
+- **Security:** no credentials, no network, nothing logged.
+- **Thumb reach:** the switch is the first control under the title (upper area, like the equalizer page); the length buttons and slider sit in the middle of the screen. Not tested one-handed.
+- **Not done:** a screenshot pass (default and 200% text, off and on, with and without the quality line), TalkBack, one-handed reach.

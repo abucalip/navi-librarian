@@ -23,6 +23,7 @@ import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.ui.semantics.Role
 import app.discair.AppContainer
+import app.discair.player.crossfade
 import app.discair.DiscairApplication
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
@@ -226,7 +227,7 @@ private fun UnavailableScreen(state: UiState, model: AppViewModel) {
 }
 
 @Composable
-fun SettingsScreen(state: UiState, model: AppViewModel, onBack: () -> Unit, onEqualizer: () -> Unit = {}) {
+fun SettingsScreen(state: UiState, model: AppViewModel, onBack: () -> Unit, onEqualizer: () -> Unit = {}, onCrossfade: () -> Unit = {}) {
     var confirmSignOut by remember { mutableStateOf(false) }
     val container = (androidx.compose.ui.platform.LocalContext.current.applicationContext as DiscairApplication).container
     // The page scrolls because the playback choices make it taller than a phone in landscape or at large text.
@@ -240,7 +241,7 @@ fun SettingsScreen(state: UiState, model: AppViewModel, onBack: () -> Unit, onEq
         Text("Connected to your servers.", style = MaterialTheme.typography.bodyLarge)
         CheckLine("Librarian", state.librarian)
         CheckLine("Navidrome", state.navidrome)
-        PlaybackSettings(container, onEqualizer)
+        PlaybackSettings(container, onEqualizer, onCrossfade)
         Spacer(Modifier.size(24.dp))
         OutlinedButton(onClick = model::recheck, modifier = Modifier.fillMaxWidth().heightIn(min = Target)) {
             Text("Check again")
@@ -283,7 +284,7 @@ fun SettingsScreen(state: UiState, model: AppViewModel, onBack: () -> Unit, onEq
 
 /** Streaming quality and scrobbling. Both are per device and apply to songs started afterwards. */
 @Composable
-private fun PlaybackSettings(container: AppContainer, onEqualizer: () -> Unit) {
+private fun PlaybackSettings(container: AppContainer, onEqualizer: () -> Unit, onCrossfade: () -> Unit) {
     val settings = container.playerSettings
     var rate by remember { mutableStateOf(settings.maxBitRate) }
     var scrobble by remember { mutableStateOf(settings.scrobbling) }
@@ -335,6 +336,25 @@ private fun PlaybackSettings(container: AppContainer, onEqualizer: () -> Unit) {
             Text("Equalizer", style = MaterialTheme.typography.titleMedium)
             Text(
                 app.discair.player.eq.eqSummary(eqNow).removePrefix("Equalizer: ").replaceFirstChar { it.uppercase() },
+                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        Icon(androidx.compose.material.icons.Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null)
+    }
+    // Crossfade: the summary says off or the length in words (ANDROID_CROSSFADE_CONTRACT.md 7).
+    var xfNow by remember { mutableStateOf(settings.crossfade) }
+    androidx.compose.runtime.DisposableEffect(settings) {
+        val handle = settings.onChange { xfNow = settings.crossfade }
+        onDispose { handle.close() }
+    }
+    Row(
+        Modifier.fillMaxWidth().heightIn(min = Target).clickable(role = Role.Button, onClick = onCrossfade),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(Modifier.weight(1f).padding(end = 12.dp)) {
+            Text("Crossfade", style = MaterialTheme.typography.titleMedium)
+            Text(
+                app.discair.player.crossfade.CrossfadeText.summary(xfNow),
                 style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
