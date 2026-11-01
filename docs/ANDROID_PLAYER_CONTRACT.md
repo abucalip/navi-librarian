@@ -202,3 +202,8 @@ Not done or not verified (the acceptance in section 6 needs the owner's phone, w
 8. Turn Record plays off and play a song past halfway: no play recorded. Change the streaming quality and start a song: does it convert?
 9. Turn TalkBack on and go through the mini-player, the sheet, the queue and the Settings section. Try 200% text and landscape.
 10. Sign out: does the notification disappear and the queue stay gone after signing in again?
+
+### First device findings (2026-11-01, owner's phone)
+
+- Works: play from an album page, next, shuffle, the media notification.
+- **Crash when opening Now Playing from the mini-player (several times).** Cause (found by reading the code, not by a stack trace): the sheet was composed outside the `CompositionLocalProvider` that supplies the image loader, so its cover threw "No image loader". The mini-player is inside the provider, which is why it drew. Fixed by moving the sheet inside the provider. The fix is built and unit tests pass, but it has not been confirmed on the phone; no regression test exists because the screens have no UI tests.
