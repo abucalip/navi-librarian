@@ -1,6 +1,6 @@
 # Android player contract (Discair)
 
-Status: **Phase 0 documentation. The owner approved the direct-streaming approach on 2026-11-01. Nothing in this document is implemented.** Each later phase still needs its own PR and review.
+Status: **Phases 0 to 5 are merged (PRs #661 to #665) and the first device run on the owner's phone worked: playback, next, shuffle, the notification, Now Playing, the queue with covers, seeking and Record plays.** The rest of the device checklist (section 13) is still open. Gapless, crossfade, EQ and lyrics are not started and need their own contract and approval.
 
 This contract adapts the web proposal in [`PLAYER_PROPOSAL.md`](PLAYER_PROPOSAL.md) (PR #645) to the Android app only. The web UI gets no player under this contract, and no Librarian backend change is made (D-016 is untouched). Where the two documents disagree for Android, this one governs. Playback is Android-only: the web UI remains "not a player".
 

@@ -109,10 +109,12 @@ Done: Genres grid and four album shelves on the dashboard, the Recommended slide
 - **UI and speed pass (2026-10-31, uncommitted on the PR #651 branch):** the owner's Home, Discover, Library and navigation changes, streamed album and artist pages, and saved-copy-first loading are built, unit-tested in part, run on the emulator, and installed by the owner as a release build on the phone; details and gaps in `PROJECT_LOG.md`. **Next:** the owner's report on speed and layout on the phone, unit tests for `ReadMode`, the card grid and the swipe gestures, a decision on the 20 MB response-cache size, then commit to the PR #651 branch.
 - Open contract question: whether `tailscale serve` hides the client IP from the login rate limit (contract section 9).
 
-## 2g. Android player — phases 0–5 built, awaiting the owner's device run
+## 2g. Android player — phases 0–5 merged, partly checked on the owner's phone
 
-- Contract: [ANDROID_PLAYER_CONTRACT.md](ANDROID_PLAYER_CONTRACT.md) (D-018). Merged: docs `dbdd0a7`; phase 1 PR #661; phase 2 PR #662; phase 3 PR #663; phase 4 PR #664; phase 5 is open as a PR (see the contract, section 13).
-- Everything is unit-tested only. **Nothing has been run on a device.** The next action is the owner's device checklist in contract section 13; findings go back into the contract and `android/DESIGN.md`.
+- Contract: [ANDROID_PLAYER_CONTRACT.md](ANDROID_PLAYER_CONTRACT.md) (D-018). Merged: docs `dbdd0a7`; PRs #661, #662, #663, #664 and #665 (`3ad4be3`).
+- First device run (2026-11-01, owner's phone): play from an album, next, shuffle, notification, Now Playing, queue with covers, seeking and Record plays work. A crash opening Now Playing was found and fixed in #665.
+- Still unchecked on a device: the rest of the checklist in contract section 13 (offline resume, restart restoring paused, exactly one play in Navidrome, streaming-quality conversion, call interruption, TalkBack, landscape, 200% text).
+- Not started, each needing its own contract: gapless and crossfade, EQ, lyrics.
 
 ## 3. Recommendation engine — gated
 
