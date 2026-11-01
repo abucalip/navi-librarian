@@ -53,7 +53,7 @@ Navidrome, directly, with the login already saved on the device (the same as str
 - `getOpenSubsonicExtensions`, once per session, to see whether `songLyrics` is listed. If it is not, the Lyrics view says "Your Navidrome doesn't provide lyrics" and no lyrics requests are made.
 - The older `getLyrics` (artist and title) is not used: it matches by name, can pick the wrong song, and returns plain text only.
 
-Requests use the signing style of `SubsonicSongSource` (fresh salt per request, no password in the address, https only, no redirects). The read timeout for a lyrics request is 20 s. A failure is classified as in `SongSourceProblem`: unreachable, login rejected, not found (code 70, treated as "no lyrics"), other.
+Requests use the signing style of `SubsonicSongSource` (fresh salt per request, no password in the address, https only, no redirects). The read timeout for a lyrics request is 45 s (measured 2026-11-01: songs with no lyrics can take over 23 s to be answered, so the first 20 s was too short; a timeout is shown as its own state, not as "unreachable"). A failure is classified as in `SongSourceProblem`: unreachable, login rejected, not found (code 70, treated as "no lyrics"), other.
 
 ## 5. Choosing and cleaning the lyrics
 

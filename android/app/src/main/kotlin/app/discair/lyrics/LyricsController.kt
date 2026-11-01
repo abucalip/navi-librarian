@@ -29,6 +29,7 @@ sealed interface LyricsUiState {
 /** The words for a failed lookup, in the same terms as the rest of the app. */
 fun lyricsFailureText(problem: LyricsProblem) = when (problem) {
     LyricsProblem.Unreachable -> "Can't reach Navidrome. Is Tailscale connected?"
+    LyricsProblem.TimedOut -> "Navidrome took too long to find lyrics for this song."
     LyricsProblem.Unauthorised -> "Navidrome rejected the saved login. Sign in again from Settings."
     LyricsProblem.Other -> "Navidrome could not give the lyrics."
 }

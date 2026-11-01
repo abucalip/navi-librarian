@@ -47,9 +47,9 @@ class LyricsSourceTest {
         assertTrue(a is LyricsAnswer.Found)
     }
 
-    @Test fun readTimeoutIsTwentySeconds() {
+    @Test fun readTimeoutIsFortyFiveSeconds() {
         val rig = Rig(); source(rig).lyrics("song1")
-        assertEquals(20_000, rig.timeoutSeen)
+        assertEquals(45_000, rig.timeoutSeen)
     }
 
     @Test fun badIdsMakeNoRequest() {
@@ -87,6 +87,18 @@ class LyricsSourceTest {
         assertEquals(LyricsProblem.Unreachable, e.problem)
         val text = e.message.orEmpty() + e.cause?.message.orEmpty() + e.toString()
         for (secret in listOf("hunter2", "tok", "navi.ts.net", "u=owner")) assertFalse(text.contains(secret))
+    }
+
+    @Test fun aSlowAnswerIsATimeoutNotUnreachable() {
+        val slow = Interceptor { throw java.net.SocketTimeoutException("timeout https://navi.ts.net/rest/x?u=owner&t=tok&s=salt") }
+        val s = SubsonicLyricsSource(OkHttpClient.Builder().addInterceptor(slow).build(), { Triple("https://navi.ts.net", "owner", "hunter2") }, { "en" }) { "salt" }
+        val e = assertThrows(LyricsException::class.java) { s.lyrics("a") }
+        assertEquals(LyricsProblem.TimedOut, e.problem)
+        for (secret in listOf("hunter2", "tok", "navi.ts.net", "u=owner")) assertFalse((e.message.orEmpty() + e.cause?.message.orEmpty()).contains(secret))
+    }
+
+    @Test fun anEmptyLyricsListIsNone() {
+        assertEquals(LyricsAnswer.None, source(lyrics = """{"subsonic-response":{"status":"ok","version":"1.16.1","lyricsList":{}}}""").lyrics("a"))
     }
 
     @Test fun otherFailuresCarryNoBodyOrLyrics() {

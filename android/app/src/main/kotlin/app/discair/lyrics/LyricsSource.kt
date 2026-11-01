@@ -50,6 +50,8 @@ class SubsonicLyricsSource(
                 // A cap, so an odd answer cannot fill memory.
                 return response.peekBody(MAX_BODY_BYTES).string()
             }
+        } catch (e: java.net.SocketTimeoutException) {
+            throw LyricsException(LyricsProblem.TimedOut, "Navidrome took too long to answer.")
         } catch (e: IOException) {
             // The IOException is dropped: its text can carry the request address.
             throw LyricsException(LyricsProblem.Unreachable, "Can't reach Navidrome. Is Tailscale connected?")
@@ -70,7 +72,8 @@ class SubsonicLyricsSource(
     }
 
     companion object {
-        const val READ_TIMEOUT_SECONDS = 20L
+        // Measured on the owner's server: songs with no lyrics can take over 23 s to be answered.
+        const val READ_TIMEOUT_SECONDS = 45L
         const val MAX_BODY_BYTES = 1_000_000L
     }
 }

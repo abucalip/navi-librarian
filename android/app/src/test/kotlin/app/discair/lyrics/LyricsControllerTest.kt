@@ -135,6 +135,11 @@ class LyricsControllerTest {
         assertEquals("b", (c.state.value as LyricsUiState.Ready).songId)
     }
 
+    @Test fun aTimeoutHasItsOwnWordsAndNeverBlamesTailscale() {
+        assertTrue(!lyricsFailureText(LyricsProblem.TimedOut).contains("Tailscale"))
+        assertTrue(lyricsFailureText(LyricsProblem.TimedOut) != lyricsFailureText(LyricsProblem.Unreachable))
+    }
+
     @Test fun failureTextsAreFixedWords() {
         for (p in LyricsProblem.values()) assertTrue(lyricsFailureText(p).isNotBlank())
     }
