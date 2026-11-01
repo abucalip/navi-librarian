@@ -239,7 +239,7 @@ p { line-height: 1.55; }
 .acq-row .card-art-placeholder::before { content: none; }
 .acq-main { min-width: 0; }
 /* A status record shows the whole album name: it wraps rather than clamps, so no title is hidden. */
-.acq-row h3 { margin: 0; font: 600 var(--text-lg)/1.15 var(--display); letter-spacing: .005em; color: var(--text); overflow-wrap: anywhere; }
+.acq-row h3 { margin: 0; font: 400 var(--text-lg)/var(--title-leading) var(--title); letter-spacing: var(--title-tracking); color: var(--text); overflow-wrap: anywhere; }
 .acq-row h3 .album-year { margin-left: 6px; color: var(--accent); font: 500 var(--text-xs)/1 var(--mono); white-space: nowrap; }
 .acq-artist { margin: 3px 0 0; color: var(--text-muted); font-size: var(--text-sm); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* Technical metadata is the one place the mono face appears in a row (DESIGN_SYSTEM.md 5). */
@@ -425,7 +425,7 @@ p { line-height: 1.55; }
 .card-art-placeholder::before { content: "NL / 01"; display: block; margin-bottom: 8px; color: var(--accent); font: 600 var(--text-2xl)/1 var(--display); letter-spacing: -.02em; }
 .card > :not(.card-art) { margin-left: 13px; margin-right: 13px; }
 .card-category { display: inline-block; max-width: calc(100% - 26px); margin-top: 13px; margin-bottom: 9px; padding: 3px 6px; color: var(--accent); background: var(--surface-hover); border-left: 2px solid var(--accent); border-radius: 0; font: 500 .625rem/1.4 var(--mono); letter-spacing: .04em; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; vertical-align: top; }
-.card h3 { margin-top: 0; margin-bottom: 4px; font: 600 var(--text-lg)/1.1 var(--display); letter-spacing: .005em; overflow-wrap: anywhere; }
+.card h3 { margin-top: 0; margin-bottom: 4px; font: 400 var(--text-lg)/var(--title-leading) var(--title); letter-spacing: var(--title-tracking); overflow-wrap: anywhere; }
 .card-artist { margin-top: 0; margin-bottom: 13px; color: var(--text-muted); font-size: var(--text-xs); }
 .genre-list { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 12px; }
 .genre-tag { padding: 3px 6px; color: var(--text-muted); background: var(--surface-raised); border: 1px solid var(--edge); border-radius: 2px; font: var(--text-xs)/1.35 var(--mono); }
@@ -629,7 +629,7 @@ footer { margin: 36px 34px 0 calc(var(--rail-w) + 34px); padding-top: 14px; bord
 .row-main { min-width: 0; }
 .ranked-row .row-main { height: var(--row-art); display: flex; flex-direction: column; justify-content: center; overflow: hidden; }
 .ranked-row h3 {
-  margin: 0; font: 600 var(--text-lg)/1.15 var(--display); letter-spacing: .005em; color: var(--text);
+  margin: 0; font: 400 var(--text-lg)/var(--title-leading) var(--title); letter-spacing: var(--title-tracking); color: var(--text);
   display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; overflow-wrap: anywhere;
 }
 .ranked-row h3 .album-year { margin-left: 12px; color: var(--accent); font: 500 var(--text-xs)/1 var(--mono); white-space: nowrap; }
@@ -810,7 +810,7 @@ button.search-item-content:hover, .library-artist:hover { background: var(--surf
 .album-row-art img, .album-hero-art img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .album-row-text { display: grid; min-width: 0; }
 .album-row-title { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
-.album-row-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.album-row-name { font: 400 var(--text-md)/var(--title-leading) var(--title); letter-spacing: var(--title-tracking); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .album-row-listens, .album-row-artist { flex: 0 1 auto; overflow: hidden; color: var(--text-muted); font-size: var(--text-sm); text-overflow: ellipsis; white-space: nowrap; }
 .album-row-detail { color: var(--text-muted); font-size: var(--text-sm); }
 .album-row > .get-album, .album-row > .owned-check { flex: 0 0 44px; margin-right: 8px; }
@@ -985,7 +985,7 @@ button.inline-link:focus-visible { outline: 2px solid var(--accent); outline-off
 .owned-album-art img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .owned-album-art .owned-check { position: absolute; top: var(--space-2); right: var(--space-2); width: 28px; height: 28px; background: var(--surface-raised); border: 2px solid var(--ok); border-radius: 50%; }
 .owned-album-art .owned-check-glyph { width: 16px; height: 16px; }
-.owned-album-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.owned-album-name { font: 400 var(--text-md)/var(--title-leading) var(--title); letter-spacing: var(--title-tracking); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .owned-album-year { color: var(--text-muted); font-size: var(--text-sm); }
 .ranked-album-list { counter-reset: ranked; }
 .ranked-album-list .album-row { counter-increment: ranked; }
