@@ -84,7 +84,7 @@ Each phase is one focused PR from `main`. Agents run focused tests only (the own
 
 0. **Docs** (this change). `PRODUCT.md`, `D-018`, `PLAYER-01..` rows, a Player section in `TEST_PLAN.md`, and amendments to `ANDROID_CLIENT_CONTRACT.md`. Direct to `main` by the documentation-only rule.
 1. **Playback core.** Media3 dependencies, `PlaybackService`, the stream URL builder with the allowlist, queue model and persistence, failure handling in 3.2. **Status: built and unit-tested; not run on a device (see "Phase 1 status" below).** Tests: URL building (allowlist, no credentials in logs or errors), queue logic including restore and corrupt data, failure classification against recorded Subsonic error bodies, and release on service stop with fakes that report open handles at the end.
-2. **Scrobble tracker.** A pure Kotlin class and a `scrobble.view` client. Tests: short tracks, missing or zero duration, duration disagreement, seek, buffering, repeat-one, repeated playback, toggle on and off mid-track, retry classification, and a response lost after the request was sent being **not** retried.
+2. **Scrobble tracker.** (Built; see section 10.) A pure Kotlin class and a `scrobble.view` client. Tests: short tracks, missing or zero duration, duration disagreement, seek, buffering, repeat-one, repeated playback, toggle on and off mid-track, retry classification, and a response lost after the request was sent being **not** retried.
 3. **UI.** Mini-player, Now Playing sheet, queue panel, notification and lock-screen controls.
 4. **Entry points.** Album, Artist, Library and Search, plus play next and add to queue.
 5. **Settings and hardening.** Quality and scrobble toggle, the format fallback, expired sign-in and offline behaviour, TalkBack, landscape, 200 % text, reduced motion, signed release build run on the owner's phone.
@@ -121,3 +121,19 @@ Run: `./gradlew clean testDebugUnitTest assembleDebug lintDebug assembleRelease`
 - The `ReleaseGuard` test uses a fake that counts open handles; it does not prove the real ExoPlayer is released.
 - The interceptor reads error bodies only for answers whose content type is not audio. A Navidrome that returns an error with an audio content type would not be caught.
 - The Gradle build needs JDK 17; the system default on the owner's Mac is JDK 27 and fails, so set `JAVA_HOME` to the Homebrew `openjdk@17`.
+
+## 10. Phase 2 status
+
+**Built and unit-tested; not run on an emulator or a phone, and not wired to the player.** Phase 1 was merged in PR #661 (`c2b63ae`; CI passed on head `02f6c81`). In `player/`:
+- `ScrobbleTracker.kt`: per-play played-time counting from the player's media position. Only small forward steps (up to 2 s per tick) while advancing are credited; seeks, pauses, buffering and playback speed add or remove nothing. Threshold `min(duration/2, 240 s)`, tracks under 30 s never scrobble, server duration is authoritative, the player's duration is used when the server's is missing, the larger applies when they differ by more than 10 %, and with no duration the limit is 240 s.
+- `ScrobbleCoordinator.kt`: one now-playing per play (on first playing), one final scrobble per play, a play id and a submitted flag, retries only for a request that was provably not sent (at most 3, after 2 s, 10 s and 30 s, with the original start time), no retry after an ambiguous outcome, no retry of now-playing, and the Settings toggle (off cancels pending retries and sends nothing for the current play; on mid-track counts from then, with no backfill and no now-playing ping). Errors from the client are swallowed and never reach playback.
+- `NavidromeScrobbler.kt`: direct `scrobble` call with `id`, `time` and `submission`. The HTTP client records when it starts writing the request, so a failure before that is `NotSent` and every failure after it is `Ambiguous`; a non-2xx answer or a Subsonic error body is `Ambiguous`. Redirects are not followed. The production factory requires https.
+
+Run: `./gradlew clean testDebugUnitTest assembleDebug lintDebug assembleRelease` on JDK 17: 178 unit tests, 0 failures (52 new), debug build, lint and the minified release build succeeded. The client tests use a local socket server, including a request that arrives and is then dropped without an answer (ambiguous, counted once) and a refused connection (not sent). The coordinator tests use virtual time and include: a lost response after send is not retried; retries stop at 3 and keep the original time; short tracks, repeat-one, repeated playback, seeking, a skip at 10 s, and the toggle off and on mid-track.
+
+Not done or not verified:
+- Nothing feeds player events into the coordinator yet (Phase 3), and the Settings toggle and its storage are Phase 5; `enabled` is a constructor flag for now.
+- No scrobble was sent to a real Navidrome, so the `time` and `submission` parameters are not confirmed against the owner's server version, and nothing was checked in Navidrome's play counts or Last.fm or ListenBrainz.
+- The "request was sent" signal depends on OkHttp's `requestHeadersStart`; a connection reset during that write is counted as sent (ambiguous), which is the safe direction.
+- An error returned with a non-2xx status (for example 401) is treated as ambiguous and dropped, not shown as "Sign in again".
+- Tick cadence (about 1 s) is assumed by the 2 s cap; the Phase 3 position poller must keep to it.
