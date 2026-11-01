@@ -5,7 +5,8 @@
 - **Walkthrough (later the same day, owner at the phone):** heard clean at 1 s, 12 s and 5 s (same album, rule off); same-album join with the rule on heard seamless; silence while paused mid-fade and a smooth resume; next, seek and previous during a fade logged correct. Per-item results and the open list: contract section 17.
 - **Not reported, so not claimed:** shuffle and repeat, call, Bluetooth, equalizer on both players, 128 kbps, scrobbling, screen off (not verified; the phone kept waking), TalkBack, 200% text, battery.
 - **Items 4 and 19 (same day):** with crossfade off nothing was logged and the join was heard as plain; after a force-stop and reopen the setting (12 seconds) and the paused queue were kept.
-- **State left on the phone:** crossfade off, length 12 s, "Keep albums gapless" off.
+- **Item 7 (same day):** repeat all from the last song into the first, repeat one (plain loop, no fade into itself) and four shuffled joins in the recorded play order, alternating players, were all heard clean; details and the one untested case (editing the queue in shuffle mode with a second player) are in contract section 17.
+- **State left on the phone:** crossfade on at 5 s, "Keep albums gapless" off, shuffle off, repeat off.
 - **Next action:** the rest of the checklist; fixes go against the contract as bugs.
 
 ## 2026-11-01 — Android crossfade X4: settings page
