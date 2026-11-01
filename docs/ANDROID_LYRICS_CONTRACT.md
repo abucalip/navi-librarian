@@ -1,6 +1,6 @@
 # Android lyrics contract (Discair)
 
-Status: **approved by the owner on 2026-11-01 (answers 1 to 4 in section 11); phases L1 to L3 are merged (PRs #668, #669, #670: data layer, timeline, screen) and are unit-tested only. Phase L4, the device run on the owner's phone (section 10), is open; nothing is claimed as verified on a device.** Answers 5 to 8 were not discussed: their proposed defaults stand until the owner overrides them before the phase they affect. This contract is the "lyrics" item that [`ANDROID_PLAYER_CONTRACT.md`](ANDROID_PLAYER_CONTRACT.md) section 6 left for its own contract (D-018). It goes through a PR, as the Android contracts do.
+Status: **approved by the owner on 2026-11-01 (answers 1 to 4 in section 11); phases L1 to L3 are merged (PRs #668, #669, #670: data layer, timeline, screen) and are unit-tested only. Phase L4, the device run on the owner's phone (section 10), has started: on 2026-11-01 the owner confirmed the Lyrics tab works and timed lyrics follow the music. The rest of section 10 is unchecked and not claimed.** Answers 5 to 8 were not discussed: their proposed defaults stand until the owner overrides them before the phase they affect. This contract is the "lyrics" item that [`ANDROID_PLAYER_CONTRACT.md`](ANDROID_PLAYER_CONTRACT.md) section 6 left for its own contract (D-018). It goes through a PR, as the Android contracts do.
 
 ## 1. Purpose and scope
 

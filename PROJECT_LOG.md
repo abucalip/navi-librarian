@@ -1,3 +1,9 @@
+## 2026-11-01 — Android lyrics L4: first device run (owner's phone)
+
+- **Done:** the release APK built from `main` at `8c2808c` was installed over wireless debugging on the owner's phone (SM-G781B, `adb install -r`, success). The owner reported: the Lyrics tab works, timed lyrics follow the music, and everything looked good.
+- **Not reported, so not claimed:** plain and no-lyrics songs, the slowest lookup over Tailscale, airplane mode with cached and uncached songs, a song change with the view open (prefetch), TalkBack, 200% text, landscape, hand scrolling and the return button, a tap on a line, battery, sign-out clearing the cache.
+- **Next action:** the owner runs the rest of contract section 10 when convenient and reports problems; the `/mobile-design` polish pass on built screens stays deferred (owner decision, 2026-10-31).
+
 ## 2026-11-01 — Android lyrics L1 to L3 merged (PRs #668, #669, #670)
 
 - **Merged:** #668 `ecdea99be4eed8d947561b9c5da2d2493509fdc8` (head `853a191`), #669 `27a5d3d08e99f0869b9174d8235251333bd00915` (head `44d3391`), #670 `8c2808cbfc87d03d552b5652f2f5e6a45e47a8b6`. Required checks (compile, container-smoke, test-and-build, validate-container) passed on each exact head before merge; the full suite ran in CI only.
