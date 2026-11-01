@@ -63,3 +63,15 @@ fun PlayRow(
 fun RowPlayButton(label: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
     IconButton(onClick = onClick, modifier.size(Target)) { Icon(PlayerIcons.Play, contentDescription = "Play $label") }
 }
+
+/** A 48dp "more" button for a list row with a short menu of ways to play (Shuffle, Play next, Add to queue). */
+@Composable
+fun RowMoreMenu(label: String, actions: List<Pair<String, () -> Unit>>, modifier: Modifier = Modifier) {
+    var menu by remember { mutableStateOf(false) }
+    Box(modifier) {
+        IconButton(onClick = { menu = true }, Modifier.size(Target)) { Icon(Icons.Default.MoreVert, contentDescription = "More ways to play $label") }
+        DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+            actions.forEach { (text, run) -> DropdownMenuItem(text = { Text(text) }, onClick = { menu = false; run() }) }
+        }
+    }
+}

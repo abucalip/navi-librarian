@@ -56,6 +56,10 @@ class PlaybackService : MediaSessionService() {
             )
             .setHandleAudioBecomingNoisy(true)
             .build()
+        // Gapless: the first ten seconds of the next song load before the current one ends, so a slow link
+        // (Tailscale, mobile data) does not leave a pause. ExoPlayer trims encoder padding itself when the file
+        // carries gapless data (MP3 with a LAME or Xing header, M4A, FLAC, Opus).
+        exo.preloadConfiguration = ExoPlayer.PreloadConfiguration(PRELOAD_NEXT_US)
         val resolver = StreamResolver.forContainer(container)
         val mediaSession = MediaSession.Builder(this, exo)
             .setCallback(object : MediaSession.Callback {
@@ -104,6 +108,8 @@ class PlaybackService : MediaSessionService() {
     }
 
     companion object {
+        private const val PRELOAD_NEXT_US = 10_000_000L
+
         /** Stops playback and releases the player, for example on sign-out. */
         fun stop(context: Context) {
             context.applicationContext.stopService(Intent(context.applicationContext, PlaybackService::class.java))

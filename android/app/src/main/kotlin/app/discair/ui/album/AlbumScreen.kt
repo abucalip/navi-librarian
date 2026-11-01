@@ -170,6 +170,13 @@ private fun AlbumContent(route: AlbumRoute, page: AlbumPage, open: Opener, list:
                         Box(Modifier.size(Target), contentAlignment = Alignment.Center) {
                             if (t.owned) OwnedMark(true) else GetSongButton(artist, title, t.title, t.number, year)
                         }
+                        if (t.owned && albumId != null) app.discair.ui.player.RowMoreMenu(
+                            t.title,
+                            listOf(
+                                "Play next" to { play.queueTrack(albumId, t.title, t.number, next = true) },
+                                "Add to queue" to { play.queueTrack(albumId, t.title, t.number, next = false) },
+                            ),
+                        )
                     }
                     RowDivider(Modifier.padding(horizontal = 12.dp))
                 }

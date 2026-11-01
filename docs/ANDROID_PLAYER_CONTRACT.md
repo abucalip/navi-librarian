@@ -1,6 +1,6 @@
 # Android player contract (Discair)
 
-Status: **Phases 0 to 5 are merged (PRs #661 to #665) and the first device run on the owner's phone worked: playback, next, shuffle, the notification, Now Playing, the queue with covers, seeking and Record plays.** The rest of the device checklist (section 13) is still open. Gapless, crossfade, EQ and lyrics are not started and need their own contract and approval.
+Status: **Phases 0 to 5 are merged (PRs #661 to #665) and the first device run on the owner's phone worked: playback, next, shuffle, the notification, Now Playing, the queue with covers, seeking and Record plays.** The rest of the device checklist (section 13) is still open. Gapless preloading and the playback gaps below are in section 14 (open PR). Crossfade, EQ and lyrics are not started and need their own contract and approval.
 
 This contract adapts the web proposal in [`PLAYER_PROPOSAL.md`](PLAYER_PROPOSAL.md) (PR #645) to the Android app only. The web UI gets no player under this contract, and no Librarian backend change is made (D-016 is untouched). Where the two documents disagree for Android, this one governs. Playback is Android-only: the web UI remains "not a player".
 
@@ -89,7 +89,7 @@ Each phase is one focused PR from `main`. Agents run focused tests only (the own
 4. **Entry points.** (Built; see section 12.) Album, Artist, Library and Search, plus play next and add to queue.
 5. **Settings and hardening.** (Built; see section 13. The device run is the owner's.) Quality and scrobble toggle, the format fallback, expired sign-in and offline behaviour, TalkBack, landscape, 200 % text, reduced motion, signed release build run on the owner's phone.
 
-Later, each with its own contract: gapless and crossfade, EQ, lyrics.
+Later, each with its own contract: crossfade, EQ, lyrics (gapless was taken on in section 14).
 
 ## 7. Verification
 
@@ -209,3 +209,14 @@ Not done or not verified (the acceptance in section 6 needs the owner's phone, w
 - **Crash when opening Now Playing from the mini-player (several times).** Cause (found by reading the code, not by a stack trace): the sheet was composed outside the `CompositionLocalProvider` that supplies the image loader, so its cover threw "No image loader". The mini-player is inside the provider, which is why it drew. Fixed by moving the sheet inside the provider. The fix is built and unit tests pass, but it has not been confirmed on the phone; no regression test exists because the screens have no UI tests.
 - Covers: shown in the mini-player, the Now Playing sheet and (unexpectedly, since Phase 3 did not build it) the media notification. Missing in the queue list because the queue rows had no cover at all; a 40dp cover was added to each row.
 - Confirmed by the owner after the fix: Now Playing opens, the queue shows, the seek bar moves and seeking works, and Record plays works.
+
+## 14. Playback gaps, gapless and the slash bug
+
+**Bug found on the owner's phone: an album (Tony Allen, Jealousy/Progress) showed "not found".** Cause, reproduced against FastAPI's router: the app built album route keys from raw names (`routeKey`), so a "/" inside a name (Jealousy/Progress, AC/DC) added a web-address segment and the server answered `404 {"detail":"Not Found"}`. It was **not** the m4a format. The keys the server sends have no slash, so only the rows that build a key from names were hit (Home, Discover, Search song results, Downloads, and the artist fallback key). Fixed by turning "/" inside a name into a space, as the server's own keys do (`routePart`); covered by `RouteKeyTest`. The web page's own code has the same shape only if it ever builds a key from a raw name; it was not changed. Whether the owner's phone now opens that album was not checked.
+**m4a:** ExoPlayer plays AAC in M4A. Nothing in the app is specific to the file format, and no m4a file was played here.
+
+Built (unit-tested where there is logic; not run on a device):
+- **Gaps from the contract:** per-track Play next and Add to queue on the album page; a More menu (Shuffle, Play next, Add to queue) on Library album and artist rows (`queueArtist`, `queueTrack`); a play button on owned albums in the Home shelves. Discover and Recommended cards stay without play controls because they are not in Navidrome.
+- **Gapless:** the songs are one playlist in one player, so ExoPlayer already joins them without a gap when the file carries gapless data (MP3 with a LAME or Xing header, M4A, FLAC, Opus). Added: the player now preloads the first ten seconds of the next song (`PreloadConfiguration`), so a slow link does not cause a pause between songs. A lower streaming quality converts on the server, and that stream loses the gapless data, so the Settings text now says it can leave a short gap. Crossfade is not built.
+
+Not verified: gapless on a real album (a live album or a classical piece is the best test), the new buttons, and that the Tony Allen album now opens.

@@ -249,6 +249,14 @@ private fun ShelfRow(shelf: String, title: String, open: Opener, load: () -> Lis
                         Box {
                             AlbumCover(album.artist, album.name, album.artworkUrl, Modifier.fillMaxWidth().aspectSquare(), rect = true)
                             if (album.owned) CheckBadge(Modifier.align(Alignment.BottomEnd).padding(8.dp))
+                            // Only an album in the library can play; its id is the Navidrome album id.
+                            if (album.owned && album.id.isNotBlank()) {
+                                val play = app.discair.ui.player.LocalPlayActions.current
+                                androidx.compose.material3.FilledIconButton(
+                                    onClick = { play.playAlbum(album.id) },
+                                    modifier = Modifier.align(Alignment.BottomStart).padding(8.dp).size(Target),
+                                ) { androidx.compose.material3.Icon(app.discair.ui.player.PlayerIcons.Play, contentDescription = "Play ${album.name}") }
+                            }
                         }
                         Column(Modifier.padding(12.dp).heightIn(min = 76.dp)) {
                             Text(
