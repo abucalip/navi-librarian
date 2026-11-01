@@ -10,7 +10,7 @@ This contract adapts the web proposal in [`PLAYER_PROPOSAL.md`](PLAYER_PROPOSAL.
 |---|---|
 | Audio path | **Direct from Navidrome** with Subsonic `stream.view`, using the credentials already on the device (`ANDROID_CLIENT_CONTRACT.md` 4.2). No Librarian proxy route. |
 | Engine | AndroidX Media3 `ExoPlayer` inside a `MediaSessionService` (foreground service, media notification, lock-screen, Bluetooth and headset controls, audio focus). |
-| Queue | On the device only, stored in DataStore, restored **paused** after a restart. |
+| Queue | On the device only, in a private app file written atomically (changed from DataStore in Phase 1 to avoid a new dependency for one small document), restored **paused** after a restart. |
 | Form | Mini-player above the bottom bar, expanding to a Now Playing sheet (seek, shuffle, repeat, queue). |
 | Entry points | Album page, Artist page, Library rows, song search results. Owned items only. |
 | Scrobbling | Yes, per-device toggle in Settings, on by default. |
@@ -44,7 +44,7 @@ The player layer owns connection lifetime, so these must be tested:
 
 ### 3.3 Queue and persistence
 - Item: `{songId, title, artist, album, albumId, coverId, durationSec}`. Cover art goes through the existing artwork loading.
-- State: `{items, index, positionMs, shuffle, repeat: off|all|one, volume}` under one versioned DataStore key. Position is written about every 5 s and on pause and stop.
+- State: `{items, index, positionMs, shuffle, repeat: off|all|one, volume}` in one versioned JSON document. Position is written about every 5 s and on pause and stop.
 - Restore on start: queue, index and position, **paused**. Corrupt or old data is dropped without a crash.
 - Shuffle keeps a permuted order separate from display order so turning it off restores the original.
 - Cap 500 items with a visible message at the cap.
@@ -83,7 +83,7 @@ The app calls Navidrome's `scrobble.view` directly. This writes to the listening
 Each phase is one focused PR from `main`. Agents run focused tests only (the owner runs the full suite; CI runs it on the PR head). UI phases get the `/mobile-design` review and a device check, and those are not claimed until done.
 
 0. **Docs** (this change). `PRODUCT.md`, `D-018`, `PLAYER-01..` rows, a Player section in `TEST_PLAN.md`, and amendments to `ANDROID_CLIENT_CONTRACT.md`. Direct to `main` by the documentation-only rule.
-1. **Playback core.** Media3 dependencies, `PlaybackService`, the stream URL builder with the allowlist, queue model and persistence, failure handling in 3.2. Tests: URL building (allowlist, no credentials in logs or errors), queue logic including restore and corrupt data, failure classification against recorded Subsonic error bodies, and release on service stop with fakes that report open handles at the end.
+1. **Playback core.** Media3 dependencies, `PlaybackService`, the stream URL builder with the allowlist, queue model and persistence, failure handling in 3.2. **Status: built and unit-tested; not run on a device (see "Phase 1 status" below).** Tests: URL building (allowlist, no credentials in logs or errors), queue logic including restore and corrupt data, failure classification against recorded Subsonic error bodies, and release on service stop with fakes that report open handles at the end.
 2. **Scrobble tracker.** A pure Kotlin class and a `scrobble.view` client. Tests: short tracks, missing or zero duration, duration disagreement, seek, buffering, repeat-one, repeated playback, toggle on and off mid-track, retry classification, and a response lost after the request was sent being **not** retried.
 3. **UI.** Mini-player, Now Playing sheet, queue panel, notification and lock-screen controls.
 4. **Entry points.** Album, Artist, Library and Search, plus play next and add to queue.
@@ -105,3 +105,19 @@ Later, each with its own contract: gapless and crossfade, EQ, lyrics.
 3. Foreground-service and battery behaviour on Android 13 and later (notification permission, service type `mediaPlayback`): decided in Phase 1.
 4. Direct streaming puts the Navidrome account's full access behind the app; accepted by the owner (`ANDROID_CLIENT_CONTRACT.md` section 9, decision 3).
 5. FLAC seek and codec support varies by device; the format fallback is the mitigation.
+
+## 9. Phase 1 status
+
+**Built and unit-tested; not run on an emulator or a phone.** In `android/app/src/main/kotlin/app/discair/player/`:
+- `StreamUrl.kt`: the stream URL builder (allowlisted `id`, `maxBitRate`, `format`; fresh salt per URL; https only; no password in the URL) and `redactSecrets`.
+- `PlayQueue.kt`, `QueueStorage.kt`: the queue (replace, enqueue, play next, remove, move, shuffle, repeat, unavailable songs, 500 cap) and its versioned JSON codec, which clamps hostile values and returns an empty queue for corrupt or old data; an atomic file store.
+- `PlaybackFailure.kt`, `RefusedBodyInterceptor.kt`: failure classification (Subsonic errors arriving as 200 JSON or XML, HTTP statuses, auth codes 40/41/44/50 as "Sign in again", 70 as unavailable). The interceptor stops an error body reaching the decoder and never puts the URL or token in the exception.
+- `PlaybackService.kt`, `StreamResolver.kt`: a `MediaSessionService` with ExoPlayer (audio focus, becoming-noisy pause, own OkHttp client with no cookies and no redirects). Controllers add items by song id only; the service builds the signed URL. Only this app and trusted system controllers may connect. The task being removed pauses and stops the service; destroy releases the player and session once (`ReleaseGuard`). Sign-out stops the service and deletes the saved queue.
+- Manifest: `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_MEDIA_PLAYBACK`, `POST_NOTIFICATIONS`, and the service with type `mediaPlayback`.
+
+Run: `./gradlew clean testDebugUnitTest assembleDebug lintDebug assembleRelease` (136 unit tests, 0 failures, of which the player tests are new; the debug build and lint passed, and the minified release build succeeded with Media3). Not done or not verified:
+- Nothing connects the queue to the player yet (that is Phase 3), so the service has no caller other than sign-out. The `POST_NOTIFICATIONS` runtime prompt is not requested yet.
+- A real stream, seek, focus loss, headset unplug, network drop and resume, the unsupported-format retry with `format=mp3`, and the 401 "Sign in again" path are covered only as classification and URL logic, not against a device or the real Navidrome.
+- The `ReleaseGuard` test uses a fake that counts open handles; it does not prove the real ExoPlayer is released.
+- The interceptor reads error bodies only for answers whose content type is not audio. A Navidrome that returns an error with an audio content type would not be caught.
+- The Gradle build needs JDK 17; the system default on the owner's Mac is JDK 27 and fails, so set `JAVA_HOME` to the Homebrew `openjdk@17`.
