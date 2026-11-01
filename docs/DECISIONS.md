@@ -163,3 +163,11 @@ Record decisions here when they constrain future implementation. Add new entries
 **Reason:** Lyrics text is copyrighted, so no outside service is used and nothing is logged, committed or sent anywhere except from Navidrome to the screen. A survey on the owner's server (2026-11-01) showed Navidrome 0.64.2 supports `songLyrics`, that lookups are slow (4.1 s average, 12.5 s worst on the local network) and that about one song in eight has none, so the design needs a loading state, a cache and "none" as a normal answer.
 
 **Consequence:** `docs/ANDROID_LYRICS_CONTRACT.md` is the governing contract (approved by the owner on 2026-11-01). The web UI and Librarian are unchanged (D-016 untouched). `ANDROID_PLAYER_CONTRACT.md` points to it. Work runs in phases L0 to L4, each one PR except L0 (documentation, direct to `main`).
+
+## D-020 — Android equalizer is the app's own audio processor
+
+**Decision:** The Android app gets a 10-band graphic equalizer (31 Hz to 16 kHz, ±12 dB in 0.5 dB steps) implemented as a Media3 `AudioProcessor` in the ExoPlayer audio sink, not the platform `android.media.audiofx.Equalizer`. It has nine built-in presets and a Custom slot, automatic pre-gain with a soft limiter, and a true bypass. It is off by default, one curve applies to every output, and the setting is stored per device and kept at sign-out. No permission, third-party SDK or Librarian change is added.
+
+**Reason:** The same sound on every phone and output, and a filter that is unit-testable in plain Kotlin like the rest of the player. The platform effect varies by maker, cannot be checked for clipping, and needs session tracking. The platform effect remains the fallback if the owner's phone shows a CPU or battery problem.
+
+**Consequence:** `docs/ANDROID_EQ_CONTRACT.md` is the governing contract (approved by the owner on 2026-11-01, all defaults accepted). The web UI and Librarian are unchanged (D-016 untouched). Gapless playback and scrobbling must not change. Work runs in phases E0 to E4, each one PR except E0 (documentation). Crossfade, bass boost, normalisation, per-output profiles and curve import stay out of scope.

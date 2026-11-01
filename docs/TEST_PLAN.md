@@ -178,6 +178,19 @@ Contract: `docs/ANDROID_LYRICS_CONTRACT.md`. Unit tests in `android/app/src/test
 - **Screen:** the state choice from the data layer's results.
 - **Device (owner):** the manual list in contract section 10. Do not claim device results from unit tests.
 
+## Android equalizer focused checks (EQ-01 to EQ-04)
+
+Contract: `docs/ANDROID_EQ_CONTRACT.md`. Unit tests in `android/app/src/test`; focused runs only, the owner runs the full suite.
+
+- **Filter:** each band's response at several sample rates within 0.1 dB at its centre; a flat curve is bit-exact bypass; bands above Nyquist bypassed; coefficient changes are smooth.
+- **Headroom:** automatic pre-gain for several curves; a full-scale sine through +12 dB does not exceed full scale after the limiter.
+- **Formats:** 16-bit and float input; mono, stereo and six channels; a format change recomputes coefficients; unsupported formats pass through untouched.
+- **Gapless:** no samples added or removed over a long buffer and across a simulated song change; filter state is not reset at a join.
+- **Settings:** round trip, clamping of hostile values, corrupt data falls back to Flat and off, sign-out does not clear them.
+- **Service:** a thrown error becomes bypass, not a crash; the processor is released with the player.
+- **Screen:** preset-to-bands mapping, the move-to-Custom rule, dB text and TalkBack text.
+- **Device (owner):** the manual list in contract section 10. Do not claim device results from unit tests.
+
 ## UI changes
 
 After automated CI succeeds, run the full manual browser checklist in `docs/LOCAL_UI_TESTING.md` against the exact tested SHA. Cover affected workflows and record the actual result. Do not claim manual verification from source inspection or automated tests alone.

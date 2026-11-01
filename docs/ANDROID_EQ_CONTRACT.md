@@ -1,6 +1,6 @@
 # Android equalizer contract (Discair)
 
-Status: **DRAFT, awaiting the owner's approval. Nothing is built.** This is the "EQ" item that [`ANDROID_PLAYER_CONTRACT.md`](ANDROID_PLAYER_CONTRACT.md) section 6 and `ACTIVE_WORK.md` 2g left for its own contract (proposed `D-020`). It goes through a PR, as the Android contracts do. Section 11 lists the questions the owner must answer; the proposed answer stands for each until the owner overrides it.
+Status: **approved by the owner on 2026-11-01: every proposed default in section 11 is accepted (answers 1 to 8). Phase E0 (documents) is done; E1 to E4 are not started and nothing is built.** This is the "EQ" item that [`ANDROID_PLAYER_CONTRACT.md`](ANDROID_PLAYER_CONTRACT.md) section 6 and `ACTIVE_WORK.md` 2g left for its own contract (proposed `D-020`). It goes through a PR, as the Android contracts do.
 
 ## 1. Purpose and scope
 
@@ -141,7 +141,9 @@ Each phase is one focused PR from `main`, with tests, no full-suite run by agent
 - On the owner's phone over Tailscale: a bass boost on a known track is audible and Flat sounds identical to EQ off; a +12 dB band with automatic pre-gain does not distort; toggling the switch and moving a band while playing makes no click; the setting survives closing the app and a restart; gapless is still seamless on a live album with the EQ on; a FLAC (including 24-bit if one exists), an MP3, an M4A and an Opus song all work; quality 128 kbps works; Bluetooth headphones and the speaker; headset buttons, lock-screen controls and a phone call interrupting playback still behave; TalkBack through the screen, 200% text and landscape; a battery check over a long listen with the EQ on compared with off; sign-out does not clear the setting.
 - Nothing is claimed as verified on a device until the owner has tested it.
 
-## 11. Open questions, with proposed answers
+## 11. Decisions
+
+The owner approved all proposed answers on 2026-11-01. They are the decisions of record; a change needs the owner's approval before the phase it affects.
 
 1. **Own processor or the platform Equalizer?** Proposed: own processor (section 4); fall back to the platform effect only if the owner's phone shows a CPU or battery problem.
 2. **Ten bands, ±12 dB?** Proposed: yes. Fewer bands (five) are simpler to use on a phone; ten gives finer control. The owner may prefer five.
