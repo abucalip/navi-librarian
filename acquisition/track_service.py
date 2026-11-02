@@ -22,6 +22,7 @@ from typing import Any
 import httpx
 
 from acquisition import track_search
+from acquisition.import_hooks import notify_imported
 from acquisition.progress_accounting import observe_progress
 from acquisition.track_destination import DestinationError, plan_destination
 from acquisition.track_import import destination_filename, import_track_file
@@ -478,6 +479,7 @@ def import_completed_track(librarian: Any, ctx: dict[str, Any], candidate: dict[
             return "failed"
         _status(librarian, ctx, "imported", candidate, source_folder=str(source_folder),
                 destination=str(destination), imported_at=time.time())
+        notify_imported(ctx["artist"], ctx["album"])
         return "imported"
 
 

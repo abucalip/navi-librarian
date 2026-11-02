@@ -245,6 +245,7 @@ fun SettingsScreen(state: UiState, model: AppViewModel, onBack: () -> Unit, onEq
         Section("Appearance", bold = true)
         app.discair.ui.settings.AppearanceSettings(container.appearance)
         PlaybackSettings(container, onEqualizer, onCrossfade)
+        LibrarySettings()
         Spacer(Modifier.size(24.dp))
         // One joined group on one line, like the web's action groups.
         app.discair.ui.common.ActionGroup(Modifier.fillMaxWidth()) {
@@ -286,6 +287,61 @@ fun SettingsScreen(state: UiState, model: AppViewModel, onBack: () -> Unit, onEq
                 ) { Text("Sign out", color = MaterialTheme.colorScheme.error) }
             },
         )
+    }
+}
+
+/**
+ * The server's "resync the library after an import" option. It lives on the server, so this row reads
+ * it live and writes it back; if the server cannot be reached the row says so instead of guessing.
+ */
+@Composable
+private fun LibrarySettings() {
+    val repo = app.discair.ui.common.LocalRepository.current
+    var value by remember { mutableStateOf<Boolean?>(null) }
+    var problem by remember { mutableStateOf<String?>(null) }
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
+    androidx.compose.runtime.LaunchedEffect(repo) {
+        try {
+            value = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { repo.libraryResync() }
+        } catch (e: Exception) {
+            problem = "Could not read this option from the server."
+        }
+    }
+    Section("Library", bold = true)
+    val current = value
+    Row(
+        Modifier.fillMaxWidth().heightIn(min = Target).then(
+            if (current == null) Modifier else Modifier.toggleable(value = current, role = Role.Switch) { on ->
+                value = on
+                problem = null
+                scope.launch {
+                    try {
+                        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { repo.setLibraryResync(on) }
+                    } catch (e: Exception) {
+                        value = !on
+                        problem = "The server did not save this. Try again."
+                    }
+                }
+            },
+        ),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(Modifier.weight(1f).padding(end = 12.dp)) {
+            Text("Resync after import", style = MaterialTheme.typography.titleMedium)
+            Text(
+                when {
+                    current == null && problem == null -> "Checking the server."
+                    current == null -> problem.orEmpty()
+                    current -> "On. A few seconds after a successful import, the server reloads your library from Navidrome so the new album shows up here."
+                    else -> "Off. A new album can take up to ten minutes to show up here after an import."
+                },
+                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            if (current != null && problem != null) {
+                Text(problem.orEmpty(), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
+            }
+        }
+        if (current != null) app.discair.ui.common.DiscairSwitch(checked = current)
     }
 }
 

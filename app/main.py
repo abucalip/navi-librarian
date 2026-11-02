@@ -98,6 +98,14 @@ def _schedule_discovery_scheduler_startup():
 
 
 @app.on_event("startup")
+def _install_library_resync():
+    """Resync the library copy shortly after each import (setting ``library_resync_after_import``)."""
+    from app import library_resync
+
+    library_resync.install(get_librarian)
+
+
+@app.on_event("startup")
 def _start_discovery_scheduler():
     """Schedule refresh startup without blocking authentication or route startup."""
     _schedule_discovery_scheduler_startup()

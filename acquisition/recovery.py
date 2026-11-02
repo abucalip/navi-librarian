@@ -6,6 +6,8 @@ staged files only when the manifest, names, sizes, and source ownership match.
 """
 from pathlib import Path
 
+from acquisition.import_hooks import notify_imported
+
 
 def reconcile_interrupted_import(
     artist, album, candidate, *,
@@ -107,6 +109,7 @@ def reconcile_interrupted_import(
                     "imported_at": now(),
                     "recovered_after_restart": True,
                 })
+                notify_imported(artist, album)
                 return True
 
             # A crash during cross-filesystem moves can leave some tracks in a
@@ -189,4 +192,5 @@ def reconcile_interrupted_import(
             "imported_at": now(),
             "recovered_after_restart": True,
         })
+        notify_imported(artist, album)
         return True
