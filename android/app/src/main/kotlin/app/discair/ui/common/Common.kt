@@ -361,7 +361,8 @@ fun ReadMore(text: String, modifier: Modifier = Modifier, lines: Int = 3) {
         Text(
             shown,
             inlineContent = square,
-            style = MaterialTheme.typography.bodyMedium,
+            // A little air between lines for long reading; em keeps it in step with the text size setting.
+            style = MaterialTheme.typography.bodyMedium.copy(lineHeight = 1.6.em),
             maxLines = if (expanded) Int.MAX_VALUE else lines,
             overflow = TextOverflow.Ellipsis,
             onTextLayout = { if (!expanded) overflows = it.hasVisualOverflow },

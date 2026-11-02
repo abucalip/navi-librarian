@@ -67,10 +67,18 @@ class PaletteTest {
     @Test fun overArtworkKeepsLightTextOnLightThemes() {
         val over = Palettes.Sand.overArtwork(Palettes.Night)
         assertEquals(Palettes.Night.text, over.text)
-        assertEquals(Palettes.Night.accent, over.accent)
+        // The accent stays the theme's own, so the sheet's Play button matches the album page's.
+        assertEquals(Palettes.Sand.accent, over.accent)
+        assertEquals(Palettes.Sand.onAccent, over.onAccent)
         assertTrue(!over.light)
         // A dark theme is left alone.
         assertEquals(Palettes.Ember.accent, Palettes.Ember.overArtwork(Palettes.Night).accent)
+    }
+
+    // Sand is the default day theme. (Day · Mist's blue is 2.98 here, just under 3.0; not changed.)
+    @Test fun sandAccentStaysVisibleOverArtwork() {
+        val over = Palettes.Sand.overArtwork(Palettes.Night)
+        check(over, "accent over artwork", over.accent, over.surface, 3.0, "dark surface")
     }
 
     @Test fun fivePairsWithUniqueIdsAndDiscairFirst() {
