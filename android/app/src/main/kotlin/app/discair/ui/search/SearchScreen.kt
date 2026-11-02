@@ -225,7 +225,7 @@ private fun ResultRow(r: SearchResult, open: Opener, showType: Boolean = false) 
             }
             if (ownedSong != null) {
                 IconButton(onClick = { playActions.queueSong(ownedSong, next = false) }, Modifier.size(Target)) {
-                    Icon(app.discair.ui.player.PlayerIcons.Add, contentDescription = "Add ${r.name} to the queue")
+                    Icon(app.discair.ui.player.PlayerIcons.QueueAdd, contentDescription = "Add ${r.name} to the queue")
                 }
             } else if (r.type != "song") OwnedMark(r.owned)
         }
