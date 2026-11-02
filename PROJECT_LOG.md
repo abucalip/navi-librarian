@@ -1,3 +1,14 @@
+## 2026-11-02 — Wrong artist photo fixed (PR #691) and v0.3.6 published, not deployed
+
+- **Cause:** Deezer's artist search lists several artists named exactly "Adele" (a record label's one-off release with about 500 fans, the singer with 15.5 million) in a changing order, and `select_artist_artwork` took the first exact-name match. The first exact match was verified to be the image in the owner's screenshot ("Be Divine", Ricsta feat. Adele).
+- **Merged:** PR #691, squash `2f43508850f1dc48de515e14c2c4e9e2fcca6e39`, from tested head `5d4e00dd83bac9ab6920f939dedd259629ee77c4`; compile, container-smoke, test-and-build, validate-container and validate-release-workflow passed on that head.
+- **Fix:** `pick_artist` (`app/services/deezer_artwork.py`) takes, among exact-name matches, the artist with the most Deezer fans (list order breaks ties); `select_artist_artwork` and `/api/artist-image` (large photo) both use it; saved results moved from `artist-image:v1:` to `v2:` so wrong photos already saved are looked up again; `/api/artwork`'s artist fallback shares the selection. Limit: popularity decides, so a lesser-known artist sharing a name with a famous one gets the famous one's photo.
+- **Tests run:** `test_deezer_artwork`, `test_metadata_routes`, `test_metadata_persistent_cache` (37 passed, new cases for same-name artists, order, ties and the large photo); the real function against live Deezer results for Adele (returns the 15.5M-fan artist in either list order). Not run: the full suite (CI only).
+- **Published, not deployed:** tag `v0.3.6` at `main` `2f43508850f1dc48de515e14c2c4e9e2fcca6e39`, image `ghcr.io/abucalip/navi-librarian:v0.3.6` (digest `sha256:2334d4a5f53bcabc7e203fc85387e39d455828b727561cc0c68c5c674faf0a37`; also tagged `sha-2f43508850f1dc48de515e14c2c4e9e2fcca6e39`), release run [41446571843](https://github.com/abucalip/navi-librarian/actions/runs/41446571843) passed (smoke test, multi-arch build and push), published on the owner's instruction. `latest` not changed. Digest taken from the run log. Rollback reference: `v0.3.5`.
+- **Not done:** deployment and runtime verification; the Adele page was not re-checked on the phone (the Android app also remembers an image it looked up until it restarts).
+- **Open:** PR #692 (release workflow also publishes `latest`, owner request) is not merged and untested (the publish job only runs on a release tag).
+- **Next action:** the owner deploys `v0.3.6`, restarts the app and checks the Adele page; then merge #692 and publish the next version.
+
 ## 2026-11-02 — Android now-playing icon, numbered queue, linked artist and album, timed lyrics, album label merged (PR #690)
 
 - **Merged (owner requests):** PR #690, squash `f33247a5e86ed1fc54672cf0e23f5734799007f5`, from tested head `c12023a9bc939239190596c9a1ec079702c2ee09`; compile, container-smoke, test-and-build and validate-container passed on that head.
