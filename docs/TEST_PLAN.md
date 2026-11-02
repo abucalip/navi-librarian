@@ -136,6 +136,8 @@ python -m unittest discover -s tests -p 'test_api_search_routes.py' -v
 python -m unittest discover -s tests -p 'test_album_links.py' -v
 python -m unittest discover -s tests -p 'test_apple_description.py' -v
 python -m unittest discover -s tests -p 'test_metadata_routes.py' -v
+python -m unittest discover -s tests -p 'test_fallback_artwork.py' -v
+python -m unittest discover -s tests -p 'test_quality_label.py' -v
 python -m unittest discover -s tests -p 'test_library_search_ui_contract.py' -v
 ```
 
