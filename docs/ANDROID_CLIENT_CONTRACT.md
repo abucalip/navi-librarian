@@ -107,7 +107,7 @@ Behaviour:
 3. Icons are converted from `static/icons.svg` to vector drawables. Fonts are the self-hosted ones from `static/fonts`.
 4. Navigation: bottom bar, icon-only with labels for TalkBack, with a More overflow for the less-used lists, as in the web mobile nav (PRs #546 and #547).
 5. Shared "ranked album row": artwork, title, artist, artist bio in the middle with click-to-expand, fixed row height, equal-width ranked rows (web PRs #533, #554).
-6. Dark theme only in v1, matching the web UI.
+6. Dark only in v1, matching the web UI. Day mode, 11 more themes and four more font pairs were added later by owner decision (2026-11-02); see `android/DESIGN.md`, "Themes and fonts".
 
 ## 7. Phase 0: payload fixtures (gate before any UI work)
 

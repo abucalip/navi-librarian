@@ -115,7 +115,7 @@ private fun Page(scroll: Boolean = false, content: @Composable ColumnScope.() ->
 private fun Title(text: String) {
     if (text == "Discair") {
         Icon(
-            painterResource(R.drawable.ic_wordmark), contentDescription = text, tint = Color.Unspecified,
+            painterResource(if (app.discair.ui.theme.LocalPalette.current.light) R.drawable.ic_wordmark_light else R.drawable.ic_wordmark), contentDescription = text, tint = Color.Unspecified,
             modifier = Modifier.height(40.dp).semantics { heading() },
         )
         return
@@ -242,6 +242,8 @@ fun SettingsScreen(state: UiState, model: AppViewModel, onBack: () -> Unit, onEq
         Text("Connected to your servers.", style = MaterialTheme.typography.bodyLarge)
         CheckLine("Librarian", state.librarian)
         CheckLine("Navidrome", state.navidrome)
+        Section("Appearance", bold = true)
+        app.discair.ui.settings.AppearanceSettings(container.appearance)
         PlaybackSettings(container, onEqualizer, onCrossfade)
         Spacer(Modifier.size(24.dp))
         // One joined group on one line, like the web's action groups.
@@ -401,7 +403,7 @@ private fun Section(title: String, bold: Boolean = false) {
         title,
         // Bold in the body face instead of the display face (owner request for Playback).
         style = if (bold) MaterialTheme.typography.titleLarge.copy(
-            fontFamily = app.discair.ui.theme.Body, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold, letterSpacing = androidx.compose.ui.unit.TextUnit.Unspecified,
+            fontFamily = MaterialTheme.typography.bodyLarge.fontFamily, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold, letterSpacing = androidx.compose.ui.unit.TextUnit.Unspecified,
         ) else MaterialTheme.typography.titleLarge,
         modifier = Modifier.padding(top = 12.dp).semantics { heading() },
     )

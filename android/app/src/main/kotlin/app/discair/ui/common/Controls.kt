@@ -52,10 +52,10 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.discair.ui.theme.Ink
+import app.discair.ui.theme.LocalPalette
 import app.discair.ui.theme.Mono
 
-private val SwitchTrack = Color(0xFF252220)
-private val SwitchEdge = Color(0xFF34302C)
+// Dark themes keep the original dark pill; light themes get an inset pill with a pale knob.
 private val SwitchOffRing = Color(0xFFEF565F)
 
 /**
@@ -69,13 +69,19 @@ fun DiscairSwitch(checked: Boolean, modifier: Modifier = Modifier, enabled: Bool
     val ringX by animateDpAsState(if (checked) 5.dp else 37.dp, tween(300), label = "ringX")
     val ring by animateColorAsState(if (checked) Ink.Accent else SwitchOffRing, tween(300), label = "ring")
     val shape = RoundedCornerShape(50)
+    val light = LocalPalette.current.light
+    val track = if (light) Ink.Edge else Color(0xFF252220)
+    val trackEdge = if (light) Ink.EdgeStrong else Color(0xFF34302C)
+    val knob = if (light) listOf(Ink.Surface, Ink.Raised) else listOf(Color(0xFF3A3632), Color(0xFF292624))
+    val knobEdge = if (light) Ink.EdgeStrong else Color(0xFF4A4540)
+    val inset = if (light) Color(0x33000000) else Color(0x80121110)
     Box(
         modifier.alpha(if (enabled) 1f else 0.45f).size(width = 66.dp, height = 32.dp)
-            .clip(shape).background(SwitchTrack).border(BorderStroke(1.dp, SwitchEdge), shape)
+            .clip(shape).background(track).border(BorderStroke(1.dp, trackEdge), shape)
             .padding(4.dp),
     ) {
         // The inset shadow along the top edge.
-        Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color(0x80121110), Color.Transparent))))
+        Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(inset, Color.Transparent))))
         // Off: a red ring. On: the wordmark's filled yellow square.
         if (checked) Box(Modifier.align(Alignment.CenterStart).offset(x = ringX + 2.dp).size(10.dp).background(Ink.Accent))
         else Box(
@@ -85,8 +91,8 @@ fun DiscairSwitch(checked: Boolean, modifier: Modifier = Modifier, enabled: Bool
         Box(
             Modifier.align(Alignment.CenterStart).offset(x = knobX).size(24.dp)
                 .shadow(4.dp, CircleShape)
-                .background(Brush.verticalGradient(listOf(Color(0xFF3A3632), Color(0xFF292624))), CircleShape)
-                .border(BorderStroke(0.5.dp, Color(0xFF4A4540)), CircleShape),
+                .background(Brush.verticalGradient(knob), CircleShape)
+                .border(BorderStroke(0.5.dp, knobEdge), CircleShape),
         )
     }
 }
@@ -137,14 +143,14 @@ fun ActionGroupButton(
 /** An icon cell: white, or the accent when it is the selected one. */
 @Composable
 fun GroupIcon(icon: ImageVector, selected: Boolean = false) {
-    Icon(icon, contentDescription = null, tint = if (selected) Ink.Accent else Color.White, modifier = Modifier.size(22.dp))
+    Icon(icon, contentDescription = null, tint = if (selected) Ink.Accent else Ink.Text, modifier = Modifier.size(22.dp))
 }
 
 /** A text cell: white, as the web's group buttons. */
 @Composable
 fun GroupLabel(text: String) {
     Text(
-        text, color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center,
+        text, color = Ink.Text, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center,
         maxLines = 2, overflow = TextOverflow.Ellipsis,
     )
 }

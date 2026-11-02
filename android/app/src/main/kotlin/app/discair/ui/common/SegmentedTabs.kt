@@ -40,10 +40,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.discair.ui.theme.Ink
+import app.discair.ui.theme.LocalPalette
 
 private val TrackShape = RoundedCornerShape(9.dp)
 private val ThumbShape = RoundedCornerShape(7.dp)
-private val Thumb = Color(0xFF3A3632)
+private val ThumbDark = Color(0xFF3A3632)
 
 /**
  * The segmented tab control (Uiverse, zanina-yassine) in the app's palette: a rounded dark track with a
@@ -58,6 +59,8 @@ fun SegmentedTabs(
     onSelect: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val thumb = if (LocalPalette.current.light) Ink.Surface else ThumbDark
+    val labelColor = Ink.Text
     val scroll: ScrollState = rememberScrollState()
     val density = LocalDensity.current
     // Each tab's left edge and width inside the track, in dp, as laid out.
@@ -76,7 +79,7 @@ fun SegmentedTabs(
         Box(Modifier.horizontalScroll(scroll).padding(2.dp)) {
             if (widths[selectedIndex] != null) Box(
                 Modifier.offset(x = thumbX).width(thumbW).height(Target - 4.dp)
-                    .shadow(3.dp, ThumbShape).clip(ThumbShape).background(Thumb)
+                    .shadow(3.dp, ThumbShape).clip(ThumbShape).background(thumb)
                     .border(BorderStroke(0.5.dp, Ink.EdgeStrong.copy(alpha = 0.5f)), ThumbShape),
             )
             Row {
@@ -99,7 +102,7 @@ fun SegmentedTabs(
                         contentAlignment = Alignment.Center,
                     ) {
                         Text(
-                            label, color = Color.White, fontSize = 12.sp,
+                            label, color = labelColor, fontSize = 12.sp,
                             fontWeight = if (on) FontWeight.SemiBold else FontWeight.Normal,
                             maxLines = 1, modifier = Modifier.alpha(if (on) 1f else 0.6f),
                         )

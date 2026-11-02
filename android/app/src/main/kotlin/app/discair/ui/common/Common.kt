@@ -55,6 +55,8 @@ import app.discair.net.ConnectionFailure
 import app.discair.net.classifyException
 import app.discair.ui.player.PlayerIcons
 import app.discair.ui.theme.Ink
+import app.discair.ui.theme.Palettes
+import app.discair.ui.theme.forTheme
 import coil3.ImageLoader
 import coil3.compose.AsyncImage
 import coil3.toBitmap
@@ -242,13 +244,15 @@ fun TintedPage(
     content: @Composable () -> Unit,
 ) {
     val fade = with(androidx.compose.ui.platform.LocalDensity.current) { 720.dp.toPx() }
+    val ground = Ink.Ink
+    val wash = tint?.forTheme()
     Box(
         modifier.fillMaxSize().drawBehind {
-            drawRect(Ink.Ink)
-            if (tint != null) {
+            drawRect(ground)
+            if (wash != null) {
                 // The tint scrolls away with the page, as on the web.
                 val scrolled = if (list.firstVisibleItemIndex > 0) fade else list.firstVisibleItemScrollOffset.toFloat()
-                drawRect(Brush.verticalGradient(listOf(tint, Ink.Ink), startY = -scrolled, endY = fade - scrolled))
+                drawRect(Brush.verticalGradient(listOf(wash, ground), startY = -scrolled, endY = fade - scrolled))
             }
         },
     ) { content() }
@@ -315,7 +319,7 @@ fun NameLink(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, m
 @Composable
 fun OwnedMark(owned: Boolean, modifier: Modifier = Modifier) {
     if (owned) Box(
-        modifier.size(20.dp).clip(CircleShape).background(Ink.Ink.copy(alpha = 0.82f)),
+        modifier.size(20.dp).clip(CircleShape).background(Palettes.Night.ink.copy(alpha = 0.82f)),
         contentAlignment = Alignment.Center,
     ) { Icon(PlayerIcons.Play, contentDescription = "In your library", tint = Color.White, modifier = Modifier.size(12.dp)) }
 }
@@ -495,7 +499,7 @@ fun OverlayBack(onBack: () -> Unit, modifier: Modifier = Modifier) {
 @Composable
 fun CheckBadge(modifier: Modifier = Modifier, onPlay: (() -> Unit)? = null, label: String = "") {
     Box(
-        modifier.size(32.dp).clip(CircleShape).background(Ink.Ink.copy(alpha = 0.82f))
+        modifier.size(32.dp).clip(CircleShape).background(Palettes.Night.ink.copy(alpha = 0.82f))
             .let { if (onPlay != null) it.clickable(onClickLabel = "Play $label", role = Role.Button, onClick = onPlay) else it },
         contentAlignment = Alignment.Center,
     ) { Icon(PlayerIcons.Play, contentDescription = if (onPlay != null) "Play $label" else "In your library", tint = Color.White, modifier = Modifier.size(20.dp)) }

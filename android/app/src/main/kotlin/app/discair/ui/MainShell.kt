@@ -184,14 +184,17 @@ fun MainShell(state: UiState, model: AppViewModel, container: AppContainer) {
     ) {
         // Inside the provider: the sheet's cover needs the image loader, which only exists here.
         if (nowPlayingOpen && playerState.visible) {
-            NowPlayingSheet(
-                playerState, player, container.lyrics, onDismiss = { nowPlayingOpen = false }, onSignIn = { nowPlayingOpen = false; model.sessionExpired() },
-                onOpenArtist = { song -> nowPlayingOpen = false; open.artist(song.artist, null, null, null) },
-                onOpenAlbum = { song ->
-                    nowPlayingOpen = false
-                    open.album(app.discair.ui.common.routeKey(song.artist, song.album), song.artist, song.album, song.albumId.ifBlank { null }, song.year)
-                },
-            )
+            // The sheet is drawn over an artwork tint, which is dark whatever the theme: it keeps light text.
+            app.discair.ui.theme.OnArtwork {
+                NowPlayingSheet(
+                    playerState, player, container.lyrics, onDismiss = { nowPlayingOpen = false }, onSignIn = { nowPlayingOpen = false; model.sessionExpired() },
+                    onOpenArtist = { song -> nowPlayingOpen = false; open.artist(song.artist, null, null, null) },
+                    onOpenAlbum = { song ->
+                        nowPlayingOpen = false
+                        open.album(app.discair.ui.common.routeKey(song.artist, song.album), song.artist, song.album, song.albumId.ifBlank { null }, song.year)
+                    },
+                )
+            }
         }
         if (searchOpen) {
             // Opening a result closes the sheet first, so the page opens on the app, not under the sheet.
@@ -260,19 +263,22 @@ fun MainShell(state: UiState, model: AppViewModel, container: AppContainer) {
             }
         }
         // The island floats over the pages: no bar behind it. Hidden cover load below gives it the artwork's tint.
-        NavIsland(
-            tint = islandTint,
-            homeSelected = destination?.hasRoute(HomeRoute::class) == true,
-            playing = playerState.isPlaying,
-            playerLabel = playerState.current?.let { "Now playing: ${it.title}, ${it.artist}. Open player" } ?: "Player, nothing playing",
-            onSearch = { searchOpen = true },
-            onHome = goHome,
-            onPlayer = {
-                if (playerState.visible) nowPlayingOpen = true
-                else scope.launch { snackbar.showSnackbar("Nothing is playing.") }
-            },
-            modifier = Modifier.align(Alignment.BottomCenter).onSizeChanged { islandPx = it.height },
-        )
+        // It is drawn over a dark artwork tint, so it keeps light icons on every theme.
+        app.discair.ui.theme.OnArtwork {
+            NavIsland(
+                tint = islandTint,
+                homeSelected = destination?.hasRoute(HomeRoute::class) == true,
+                playing = playerState.isPlaying,
+                playerLabel = playerState.current?.let { "Now playing: ${it.title}, ${it.artist}. Open player" } ?: "Player, nothing playing",
+                onSearch = { searchOpen = true },
+                onHome = goHome,
+                onPlayer = {
+                    if (playerState.visible) nowPlayingOpen = true
+                    else scope.launch { snackbar.showSnackbar("Nothing is playing.") }
+                },
+                modifier = Modifier.align(Alignment.BottomCenter).onSizeChanged { islandPx = it.height },
+            )
+        }
         playerState.current?.coverUrl?.takeIf { it.isNotBlank() }?.let { url ->
             app.discair.ui.common.Cover(app.discair.ui.player.playerArtworkUrl(url), Modifier.size(1.dp), onColor = { islandTint = it })
         }
@@ -289,7 +295,7 @@ private fun AppHeader(active: Int, onDownloads: () -> Unit) {
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(
-                painterResource(R.drawable.ic_wordmark), contentDescription = "Discair", tint = Color.Unspecified,
+                painterResource(if (app.discair.ui.theme.LocalPalette.current.light) R.drawable.ic_wordmark_light else R.drawable.ic_wordmark), contentDescription = "Discair", tint = Color.Unspecified,
                 modifier = Modifier.height(30.dp).semantics { heading() },
             )
             Spacer(Modifier.weight(1f))
