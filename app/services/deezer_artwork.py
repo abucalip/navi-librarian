@@ -31,18 +31,31 @@ def select_album_artwork(
     }
 
 
-def select_artist_artwork(
-    artists: Iterable[dict[str, Any]], artist: str, year: int | None = None
-) -> dict[str, Any] | None:
-    """Select a case-insensitive exact artist identity and shape its photo payload."""
+def _fans(value: Any) -> int:
+    """Deezer's fan count as a number; a missing or odd value counts as none."""
+    return value if isinstance(value, int) and not isinstance(value, bool) and value > 0 else 0
+
+
+def pick_artist(artists: Iterable[dict[str, Any]], artist: str) -> dict[str, Any] | None:
+    """The Deezer artist with exactly this name (case aside), or None.
+
+    Deezer lists several unrelated artists with the same name (a label's one-off release, a
+    tribute act) in a changing order, so the first exact match is not necessarily the artist.
+    Among the exact names, the one with the most fans is the artist people mean; the list order
+    breaks ties.
+    """
     artist_key = artist.casefold()
     if not artist_key:
         return None
+    exact = [item for item in artists if str(item.get("name") or "").casefold() == artist_key]
+    return max(exact, key=lambda item: _fans(item.get("nb_fan"))) if exact else None
 
-    match = next(
-        (item for item in artists if str(item.get("name") or "").casefold() == artist_key),
-        None,
-    )
+
+def select_artist_artwork(
+    artists: Iterable[dict[str, Any]], artist: str, year: int | None = None
+) -> dict[str, Any] | None:
+    """Select the exact-name artist (see ``pick_artist``) and shape its photo payload."""
+    match = pick_artist(artists, artist)
     if match is None:
         return None
 

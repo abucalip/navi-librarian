@@ -88,7 +88,7 @@ class PersistentMetadataCacheTests(unittest.TestCase):
 
     def test_found_artist_image_survives_a_restart(self):
         stored = {"artwork_url": "https://x/xl.jpg", "image_kind": "artist", "source": "Deezer"}
-        persistent_metadata.write("artist-image:v1:portishead", stored)
+        persistent_metadata.write("artist-image:v2:portishead", stored)
         with patch.object(metadata, "_EXTERNAL_HTTP") as client:
             self.assertEqual(metadata.artist_image("Portishead"), stored)
             client.get.assert_not_called()
