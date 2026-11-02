@@ -31,7 +31,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.background
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.painterResource
@@ -107,11 +109,15 @@ private fun AlbumContent(route: AlbumRoute, page: AlbumPage, open: Opener, list:
         item {
             Box(Modifier.statusBarsPadding().fillMaxWidth().padding(12.dp)) {
                 OverlayBack(open.back, Modifier.align(Alignment.TopStart))
-                AlbumCover(
-                    artist, title, info?.artworkUrl,
-                    Modifier.align(Alignment.TopCenter).size(240.dp).aspectSquare(),
-                    onColor = onTint,
-                )
+                Box(Modifier.align(Alignment.TopCenter).size(240.dp)) {
+                    AlbumCover(
+                        artist, title, info?.artworkUrl,
+                        Modifier.size(240.dp).aspectSquare(),
+                        onColor = onTint,
+                    )
+                    // The album's file quality, as a label on the lower right corner of the artwork.
+                    info?.quality?.takeIf { it.isNotBlank() }?.let { QualityTag(it, Modifier.align(Alignment.BottomEnd)) }
+                }
             }
         }
         item {
@@ -134,8 +140,6 @@ private fun AlbumContent(route: AlbumRoute, page: AlbumPage, open: Opener, list:
                     )
                     if (!genre.isNullOrBlank() && year != null) Text("·", color = MaterialTheme.colorScheme.onSurfaceVariant)
                     if (year != null) Text("$year", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    // One tag for the whole album, beside the year.
-                    info?.quality?.takeIf { it.isNotBlank() }?.let { QualityTag(it) }
                 }
                 if (!owned) Text("Not in your library", style = MaterialTheme.typography.bodyMedium, color = Ink.Caution)
                 if (albumId != null) app.discair.ui.player.PlayRow(
@@ -169,13 +173,20 @@ private fun AlbumContent(route: AlbumRoute, page: AlbumPage, open: Opener, list:
                             color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.width(32.dp),
                         )
                         Row(Modifier.weight(1f).padding(end = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Text(t.title, style = MaterialTheme.typography.bodyLarge, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
+                            val playingNow = app.discair.ui.player.LocalPlayingNow.current
+                            val isCurrent = t.owned && playingNow?.matches(albumId, t.title) == true
+                            Text(
+                                t.title, style = MaterialTheme.typography.bodyLarge, fontWeight = if (isCurrent) FontWeight.Bold else FontWeight.Normal,
+                                maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false),
+                            )
+                            if (isCurrent) app.discair.ui.player.NowPlayingIndicator(playingNow!!.isPlaying, Modifier.padding(start = 8.dp))
                         }
                         t.durationSeconds?.let {
                             Text("%d:%02d".format(it / 60, it % 60), style = MaterialTheme.typography.labelMedium.copy(fontFamily = Mono), color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
-                        Box(Modifier.size(Target), contentAlignment = Alignment.Center) {
-                            if (!t.owned) GetSongButton(artist, title, t.title, t.number, year)
+                        // Only a song the library lacks has a Get slot; an owned row puts the length right beside its menu.
+                        if (!t.owned) Box(Modifier.size(Target), contentAlignment = Alignment.Center) {
+                            GetSongButton(artist, title, t.title, t.number, year)
                         }
                         if (t.owned && albumId != null) app.discair.ui.player.RowMoreMenu(
                             t.title,
@@ -252,16 +263,22 @@ private fun DiscHeading(disc: Int) {
     )
 }
 
-/** A small, discreet box with the album's file quality ("FLAC", "lossless", "320k") beside the year. */
+/**
+ * The album's file quality ("FLAC", "lossless", "320k") as a dark label stuck on the artwork's lower right
+ * corner: flush to both edges, only its top-left corner rounded (its bottom-right follows the cover's 4dp corner).
+ */
 @Composable
 private fun QualityTag(text: String, modifier: Modifier = Modifier) {
+    val shape = RoundedCornerShape(topStart = 8.dp, topEnd = 0.dp, bottomStart = 0.dp, bottomEnd = 4.dp)
     Text(
         text, maxLines = 1, softWrap = false,
-        style = MaterialTheme.typography.labelSmall.copy(fontFamily = Mono, fontSize = 10.sp),
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        style = MaterialTheme.typography.labelSmall.copy(fontFamily = Mono, fontSize = 12.sp, fontWeight = FontWeight.SemiBold),
+        color = Color.White,
         modifier = modifier
-            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(4.dp))
-            .padding(horizontal = 5.dp, vertical = 1.dp),
+            .clip(shape)
+            .background(Color.Black.copy(alpha = 0.78f))
+            .padding(start = 12.dp, end = 11.dp, top = 5.dp, bottom = 5.dp)
+            .semantics { contentDescription = "File quality $text" },
     )
 }
 

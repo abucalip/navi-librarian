@@ -1,6 +1,8 @@
 package app.discair.ui.player
 
 import android.provider.Settings
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -35,6 +37,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import app.discair.lyrics.LyricsTimeline
 import app.discair.lyrics.LyricsUiState
 import app.discair.lyrics.lyricsFailureText
@@ -74,6 +77,32 @@ private fun Message(text: String, progress: Boolean = false) {
 private fun Note(text: String) =
     Text(text, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(bottom = 8.dp))
 
+/** Timed lyrics are set larger, so about five or six lines fill the card. */
+private const val TIMED_BASE_SP = 22f
+/** The active line is a quarter bigger than the rest (owner decision). */
+private const val ACTIVE_SCALE = 1.25f
+
+/**
+ * One line of timed lyrics. The body font stays; the active line is bold and 25% bigger, the others are
+ * smaller and dimmed while a line is active. Moving to the next line animates both: the old one shrinks
+ * and fades, the new one grows and brightens (instant when animations are off).
+ */
+@Composable
+private fun TimedLine(text: String, active: Boolean, anyActive: Boolean, reduceMotion: Boolean) {
+    val spec = if (reduceMotion) tween<Float>(0) else tween<Float>(300)
+    val scale by animateFloatAsState(if (active) ACTIVE_SCALE else 1f, spec, label = "lineScale")
+    // Before the first line starts nothing is dimmed; once a line is active the rest recede.
+    val alpha by animateFloatAsState(if (!anyActive || active) 1f else 0.45f, spec, label = "lineAlpha")
+    val size = (TIMED_BASE_SP * scale).sp
+    Text(
+        text,
+        style = MaterialTheme.typography.bodyLarge.copy(fontSize = size, lineHeight = (TIMED_BASE_SP * scale * 1.3f).sp),
+        fontWeight = if (active) FontWeight.Bold else FontWeight.Normal,
+        color = (if (active) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant).copy(alpha = alpha),
+        modifier = Modifier.fillMaxWidth().then(if (active) Modifier.semantics { stateDescription = "Current line" } else Modifier),
+    )
+}
+
 @Composable
 private fun Lines(state: LyricsUiState.Ready, currentLine: Int, songId: String, modifier: Modifier = Modifier) {
     val list = rememberLazyListState()
@@ -105,13 +134,8 @@ private fun Lines(state: LyricsUiState.Ready, currentLine: Int, songId: String, 
                 if (line.text.isBlank()) {
                     Spacer(Modifier.height(14.dp).fillMaxWidth().clearAndSetSemantics { })
                 } else {
-                    Text(
-                        line.text,
-                        style = if (current) MaterialTheme.typography.titleLarge else MaterialTheme.typography.bodyLarge,
-                        fontWeight = if (current) FontWeight.Bold else FontWeight.Normal,
-                        color = if (current) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.fillMaxWidth().then(if (current) Modifier.semantics { stateDescription = "Current line" } else Modifier),
-                    )
+                    if (timed) TimedLine(line.text, current, anyActive = currentLine >= 0, reduceMotion = reduceMotion)
+                    else Text(line.text, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.fillMaxWidth())
                 }
             }
         }

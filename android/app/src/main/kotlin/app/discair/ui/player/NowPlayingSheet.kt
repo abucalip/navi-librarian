@@ -77,6 +77,10 @@ import app.discair.player.PlayerUiState
 import app.discair.player.RepeatMode
 import app.discair.player.qualityLabel
 import app.discair.ui.common.Cover
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.ui.text.style.TextOverflow
+import app.discair.player.QueueItem
 import app.discair.ui.common.Target
 import app.discair.ui.theme.Ink
 import app.discair.ui.theme.Mono
@@ -130,7 +134,9 @@ fun playerArtworkUrl(url: String): String? =
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun NowPlayingSheet(state: PlayerUiState, controller: PlayerController, lyrics: LyricsController, onDismiss: () -> Unit, onSignIn: () -> Unit) {
+fun NowPlayingSheet(state: PlayerUiState, controller: PlayerController, lyrics: LyricsController, onDismiss: () -> Unit, onSignIn: () -> Unit,
+    onOpenArtist: (QueueItem) -> Unit, onOpenAlbum: (QueueItem) -> Unit,
+) {
     val sheet = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var view by remember { mutableStateOf(lastView) }
     var tint by remember { mutableStateOf<Color?>(null) }
@@ -182,7 +188,7 @@ fun NowPlayingSheet(state: PlayerUiState, controller: PlayerController, lyrics: 
             }
             Spacer(Modifier.height(12.dp)) // the tabs must not touch the cover, the lyrics note or the queue title
             Player(
-                state, controller, onSignIn, { eqOpen = true }, { crossfadeOpen = true },
+                state, controller, onSignIn, { eqOpen = true }, { crossfadeOpen = true }, onOpenArtist, onOpenAlbum,
                 card = {
                     FlipCard(
                         progress = flip.value,
@@ -272,7 +278,9 @@ private fun FlipCard(
 }
 
 @Composable
-private fun Player(state: PlayerUiState, controller: PlayerController, onSignIn: () -> Unit, onEqualizer: () -> Unit, onCrossfade: () -> Unit, card: @Composable () -> Unit) {
+private fun Player(state: PlayerUiState, controller: PlayerController, onSignIn: () -> Unit, onEqualizer: () -> Unit, onCrossfade: () -> Unit,
+    onOpenArtist: (QueueItem) -> Unit, onOpenAlbum: (QueueItem) -> Unit, card: @Composable () -> Unit,
+) {
     val item = state.current ?: return
     var dragging by remember { mutableStateOf<Float?>(null) }
     val duration = state.durationMs
@@ -284,11 +292,21 @@ private fun Player(state: PlayerUiState, controller: PlayerController, onSignIn:
             item.title, style = MaterialTheme.typography.titleLarge, textAlign = TextAlign.Center,
             modifier = Modifier.fillMaxWidth().semantics { liveRegion = LiveRegionMode.Polite; heading() },
         )
-        Text(
-            listOf(item.artist, item.album).filter { it.isNotBlank() }.joinToString(" · "),
-            style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth(),
-        )
+        // The artist and the album each open their own page.
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
+            val link = MaterialTheme.typography.bodyMedium
+            if (item.artist.isNotBlank()) Text(
+                item.artist, style = link, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f, fill = false).heightIn(min = Target).clickable(onClickLabel = "Open artist", role = Role.Button) { onOpenArtist(item) }
+                    .wrapContentHeight(Alignment.CenterVertically),
+            )
+            if (item.artist.isNotBlank() && item.album.isNotBlank()) Text(" · ", style = link, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            if (item.album.isNotBlank()) Text(
+                item.album, style = link, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f, fill = false).heightIn(min = Target).clickable(onClickLabel = "Open album", role = Role.Button) { onOpenAlbum(item) }
+                    .wrapContentHeight(Alignment.CenterVertically),
+            )
+        }
         item.year?.let {
             Text(
                 "$it", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,

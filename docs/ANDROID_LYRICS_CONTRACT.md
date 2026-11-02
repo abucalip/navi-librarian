@@ -85,7 +85,7 @@ The Now Playing sheet already toggles between the player and the queue. It gets 
 
 States, each written out:
 - **Loading:** "Loading lyrics…" (lookups can take several seconds; a plain progress indicator with the text).
-- **Timed lyrics:** the lines; the current line is larger and bold and carries the spoken state "Current line"; the others are normal.
+- **Timed lyrics:** the lines; text is 22 sp so about five or six lines fill the card; the current line keeps the body font, is bold and 25% bigger and carries the spoken state "Current line"; the other lines are smaller and dimmed (45%) while a line is active; when the next line starts the old one shrinks and fades and the new one grows and brightens over 300 ms (instant when animations are off). Untimed lyrics stay plain.
 - **Plain lyrics:** the lines, with "These lyrics are not timed." above them.
 - **None:** "No lyrics for this song." No retry button, because this is a normal answer.
 - **Cannot reach Navidrome / login rejected / other:** a sentence in the same words as the rest of the app, with Try again. Lyrics already in the cache are shown instead, marked "Saved copy", when the phone is offline.

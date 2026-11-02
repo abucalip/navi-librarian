@@ -9,6 +9,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.layout.width
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.snapshotFlow
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import kotlinx.coroutines.flow.first
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.DropdownMenu
@@ -47,7 +54,14 @@ fun QueuePanel(state: PlayerUiState, controller: PlayerController, modifier: Mod
         if (state.status != null) {
             Text(state.status, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(bottom = 8.dp))
         }
-        LazyColumn(Modifier.fillMaxWidth().weight(1f)) {
+        val list = rememberLazyListState()
+        // Opening the queue brings the playing song into view when it is not already on screen.
+        LaunchedEffect(Unit) {
+            if (items.isEmpty()) return@LaunchedEffect
+            val shown = snapshotFlow { list.layoutInfo.visibleItemsInfo }.first { it.isNotEmpty() }
+            if (shown.none { it.index == state.queue.index }) list.scrollToItem(state.queue.index.coerceIn(0, items.lastIndex))
+        }
+        LazyColumn(Modifier.fillMaxWidth().weight(1f), state = list) {
             itemsIndexed(items, key = { index, item -> "$index-${item.songId}" }) { index, item ->
                 val current = index == state.queue.index
                 val unavailable = item.songId in state.queue.unavailable
@@ -57,12 +71,23 @@ fun QueuePanel(state: PlayerUiState, controller: PlayerController, modifier: Mod
                         .clickable(onClickLabel = "Play this song", role = Role.Button) { if (!unavailable) controller.skipTo(index) },
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
+                    // The song's place in the queue.
+                    Text(
+                        "${index + 1}", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.End, maxLines = 1, modifier = Modifier.width(28.dp).padding(end = 8.dp),
+                    )
                     app.discair.ui.common.Cover(item.coverUrl.ifBlank { null }, Modifier.padding(end = 12.dp).size(40.dp))
                     Column(Modifier.weight(1f).padding(vertical = 8.dp)) {
-                        // The state is written out, never colour alone.
-                        val tag = when { unavailable -> "Unavailable"; current && state.isPlaying -> "Now playing"; current -> "Paused here"; else -> null }
-                        if (tag != null) Text(tag, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
-                        Text(item.title, style = MaterialTheme.typography.bodyMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        // The state is a moving icon beside the title (still when paused, spoken as words) or the word Unavailable; never colour alone.
+                        if (unavailable) Text("Unavailable", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                item.title, style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = if (current) FontWeight.Bold else FontWeight.Normal, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.weight(1f, fill = false),
+                            )
+                            if (current && !unavailable) NowPlayingIndicator(state.isPlaying, Modifier.padding(start = 8.dp))
+                        }
                         Text(item.artist, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     }
                     Column {
