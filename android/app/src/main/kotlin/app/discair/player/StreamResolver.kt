@@ -16,6 +16,8 @@ class StreamResolver(
     private val settings: () -> ServerSettings,
     private val quality: () -> StreamQuality = { StreamQuality.Original },
     private val format: () -> TranscodeFormat? = { null },
+    /** The file saved on the device for a song id, if there is one. */
+    private val saved: (String) -> java.io.File? = { null },
 ) {
     /** The signed address for one song, or null when the id is invalid or the login is incomplete. */
     fun urlFor(songId: String, itemFormatWire: String? = null): HttpUrl? {
@@ -29,6 +31,10 @@ class StreamResolver(
     }
 
     fun resolve(items: List<MediaItem>): List<MediaItem> = items.mapNotNull { item ->
+        // A song saved on the device plays from its file: no network, no converting. The MP3 fallback is a stream request.
+        if (item.requestMetadata.extras?.getString(EXTRA_FORMAT) == null && isValidSongId(item.mediaId)) {
+            saved(item.mediaId)?.let { return@mapNotNull item.buildUpon().setUri(android.net.Uri.fromFile(it)).build() }
+        }
         val url = urlFor(item.mediaId, item.requestMetadata.extras?.getString(EXTRA_FORMAT)) ?: return@mapNotNull null
         item.buildUpon().setUri(url.toString()).build()
     }
@@ -43,6 +49,7 @@ class StreamResolver(
             return StreamResolver(
                 settings = { container.servers.takeIf { it.navidromeUrl.isNotBlank() } ?: fallback.value },
                 quality = { StreamQuality(container.playerSettings.maxBitRate) },
+                saved = { container.offline.find(it) },
             )
         }
     }

@@ -87,37 +87,23 @@ fun CrossfadeScreen(container: AppContainer, onBack: (() -> Unit)?) {
                     style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-            Switch(checked = on, onCheckedChange = null)
+            app.discair.ui.common.DiscairSwitch(checked = on)
         }
 
         Text("Length", style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(top = 8.dp).semantics { heading() })
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text("Fade length", style = MaterialTheme.typography.bodyLarge)
-            Text(CrossfadeText.length(seconds), style = MaterialTheme.typography.bodyLarge)
-        }
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            IconButton(
-                onClick = { settings.crossfadeSeconds = CrossfadeText.nudge(seconds, -1) },
-                enabled = on && CrossfadeText.canLower(seconds), modifier = Modifier.size(Target),
-            ) { Icon(PlayerIcons.Remove, contentDescription = "Shorten the crossfade by one second") }
-            Slider(
-                value = seconds.toFloat(), onValueChange = { settings.crossfadeSeconds = CrossfadeText.fromSlider(it) },
-                valueRange = CrossfadeSettings.MIN_SECONDS.toFloat()..CrossfadeSettings.MAX_SECONDS.toFloat(),
+        app.discair.ui.common.GlassCard(Modifier.fillMaxWidth()) {
+            app.discair.ui.common.GlassBand(
+                label = "Fade", value = CrossfadeText.length(seconds), spokenName = CrossfadeText.lengthSpoken(seconds),
+                spokenValue = CrossfadeText.length(seconds),
+                min = CrossfadeSettings.MIN_SECONDS.toFloat(), max = CrossfadeSettings.MAX_SECONDS.toFloat(),
                 steps = CrossfadeSettings.MAX_SECONDS - CrossfadeSettings.MIN_SECONDS - 1,
-                enabled = on,
-                colors = SliderDefaults.colors(
-                    activeTickColor = Color.Transparent, inactiveTickColor = Color.Transparent,
-                    disabledActiveTickColor = Color.Transparent, disabledInactiveTickColor = Color.Transparent,
-                ),
-                modifier = Modifier.weight(1f).semantics {
-                    contentDescription = CrossfadeText.lengthSpoken(seconds)
-                    stateDescription = CrossfadeText.length(seconds)
-                },
+                sliderValue = seconds.toFloat(), enabled = on,
+                canLower = CrossfadeText.canLower(seconds), canRaise = CrossfadeText.canRaise(seconds),
+                lowerLabel = "Shorten the crossfade by one second", raiseLabel = "Lengthen the crossfade by one second",
+                onSlide = { settings.crossfadeSeconds = CrossfadeText.fromSlider(it) },
+                onNudge = { settings.crossfadeSeconds = CrossfadeText.nudge(seconds, it) },
+                valueWidth = 76.dp, labelWidth = 36.dp,
             )
-            IconButton(
-                onClick = { settings.crossfadeSeconds = CrossfadeText.nudge(seconds, +1) },
-                enabled = on && CrossfadeText.canRaise(seconds), modifier = Modifier.size(Target),
-            ) { Icon(PlayerIcons.Add, contentDescription = "Lengthen the crossfade by one second") }
         }
 
         Text("Albums", style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(top = 8.dp).semantics { heading() })
@@ -134,7 +120,7 @@ fun CrossfadeScreen(container: AppContainer, onBack: (() -> Unit)?) {
                     style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-            Switch(checked = keep, onCheckedChange = null, enabled = on)
+            app.discair.ui.common.DiscairSwitch(checked = keep, enabled = on)
         }
 
         CrossfadeText.qualityLine(rate)?.let {

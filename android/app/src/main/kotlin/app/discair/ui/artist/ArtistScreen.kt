@@ -174,6 +174,14 @@ private fun ArtistContent(route: ArtistRoute, page: ArtistPage, open: Opener, li
                                 if (!song.owned && onAlbum != null) Box(Modifier.size(Target), contentAlignment = Alignment.Center) {
                                     GetSongButton(name, onAlbum, song.name, null, null)
                                 }
+                                if (song.owned && albumId != null) app.discair.ui.player.RowMoreMenu(
+                                    song.name,
+                                    listOf(
+                                        "Play next" to { play.queueTrack(albumId, song.name, null, next = true) },
+                                        "Add to queue" to { play.queueTrack(albumId, song.name, null, next = false) },
+                                        "Download to device" to { play.downloadTrack(albumId, song.name, null) },
+                                    ),
+                                )
                             }
                         }
                         if (allSongs.size > SONGS_SHOWN && !showAllSongs) {

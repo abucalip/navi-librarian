@@ -1,6 +1,7 @@
 package app.discair.ui.downloads
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -24,6 +25,7 @@ import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -94,10 +96,14 @@ fun DownloadsScreen(open: Opener) {
         PageHeading("Downloads", Modifier.padding(start = 16.dp, end = 16.dp), large = true)
         StatusLine(hub, jobs)
         val imported = jobs.orEmpty().count { it.isImported }
-        if (imported > 0) OutlinedButton(
-            onClick = { confirm = Confirm.Imported(imported) },
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp).heightIn(min = Target),
-        ) { Text("Dismiss all successful imports") }
+        if (imported > 0) Row(
+            Modifier.padding(horizontal = 16.dp, vertical = 4.dp).heightIn(min = Target)
+                .clickable(role = Role.Button, onClickLabel = "Dismiss all successful imports") { confirm = Confirm.Imported(imported) },
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(app.discair.ui.player.PlayerIcons.Close, contentDescription = null, tint = Color.White, modifier = Modifier.size(24.dp))
+            Text("Dismiss all successful imports", color = Color.White, modifier = Modifier.padding(start = 12.dp))
+        }
         when {
             jobs == null && hub.listProblem == null -> Column(
                 Modifier.fillMaxSize(), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally,
@@ -177,18 +183,23 @@ private fun StatusLine(hub: AcquisitionHub, jobs: List<AcquisitionJob>?) {
 @Composable
 private fun JobRow(job: AcquisitionJob, hub: AcquisitionHub, now: Double, open: Opener, onDismiss: () -> Unit) {
     val busy = hub.busy(job)
+    Box(Modifier.fillMaxWidth()) {
     Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp)) {
         AlbumCover(
             job.artistName, job.albumName, null,
             Modifier.size(64.dp).clickable(role = Role.Button) { open.album(routeKey(job.artist, job.albumName), job.artist, job.albumName, null, job.year) },
         )
         Column(Modifier.weight(1f).padding(start = 12.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            // Room on the right for the icons in the card's corner.
+            val iconRoom = if (!job.canDismiss) 0.dp else if (job.canRetry) 96.dp else 48.dp
             Text(
                 job.title, style = MaterialTheme.typography.titleLarge,
                 maxLines = 2, overflow = TextOverflow.Ellipsis,
-                modifier = if (job.isSong) Modifier else Modifier.clickable(role = Role.Button) {
-                    open.album(routeKey(job.artist, job.albumName), job.artist, job.albumName, null, job.year)
-                },
+                modifier = Modifier.padding(end = iconRoom).then(
+                    if (job.isSong) Modifier else Modifier.clickable(role = Role.Button) {
+                        open.album(routeKey(job.artist, job.albumName), job.artist, job.albumName, null, job.year)
+                    },
+                ),
             )
             Text(
                 job.artistName, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary,
@@ -239,23 +250,22 @@ private fun JobRow(job: AcquisitionJob, hub: AcquisitionHub, now: Double, open: 
                         )
                     }
                 }
-                if (job.canDismiss) {
-                    if (job.canRetry) OutlinedButton(
-                        onClick = { hub.retry(job) }, enabled = busy == null, modifier = Modifier.heightIn(min = Target),
-                    ) {
-                        Icon(Icons.Default.Refresh, contentDescription = null, Modifier.size(18.dp))
-                        Text(if (busy == RowBusy.Retrying) "Retrying…" else "Try again", Modifier.padding(start = 6.dp))
-                    }
-                    OutlinedButton(
-                        onClick = onDismiss, enabled = busy == null,
-                        modifier = Modifier.heightIn(min = Target).semantics { contentDescription = "Dismiss ${job.title}" },
-                    ) {
-                        Icon(Icons.Default.Delete, contentDescription = null, Modifier.size(18.dp))
-                        Text(if (busy == RowBusy.Dismissing) "Dismissing…" else "Dismiss", Modifier.padding(start = 6.dp))
-                    }
-                }
             }
         }
+    }
+    if (job.canDismiss) Row(Modifier.align(Alignment.TopEnd).padding(top = 4.dp, end = 4.dp)) {
+        // Icons only, like the app's other icon buttons: no square, no text; the words are spoken.
+        if (job.canRetry) IconButton(
+            onClick = { hub.retry(job) }, enabled = busy == null, modifier = Modifier.size(Target),
+        ) {
+            if (busy == RowBusy.Retrying) CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp, color = Color.White)
+            else Icon(app.discair.ui.player.PlayerIcons.Retry, contentDescription = "Try again, ${job.title}", tint = Color.White)
+        }
+        IconButton(onClick = onDismiss, enabled = busy == null, modifier = Modifier.size(Target)) {
+            if (busy == RowBusy.Dismissing) CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp, color = Color.White)
+            else Icon(app.discair.ui.player.PlayerIcons.Close, contentDescription = "Dismiss ${job.title}", tint = Color.White)
+        }
+    }
     }
 }
 

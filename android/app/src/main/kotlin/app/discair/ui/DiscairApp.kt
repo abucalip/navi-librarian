@@ -48,7 +48,9 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import kotlinx.coroutines.launch
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -61,6 +63,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.contentType
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.liveRegion
@@ -241,11 +244,15 @@ fun SettingsScreen(state: UiState, model: AppViewModel, onBack: () -> Unit, onEq
         CheckLine("Navidrome", state.navidrome)
         PlaybackSettings(container, onEqualizer, onCrossfade)
         Spacer(Modifier.size(24.dp))
-        OutlinedButton(onClick = model::recheck, modifier = Modifier.fillMaxWidth().heightIn(min = Target)) {
-            Text("Check again")
-        }
-        OutlinedButton(onClick = model::editServers, modifier = Modifier.fillMaxWidth().heightIn(min = Target)) {
-            Text("Edit servers")
+        // One joined group on one line, like the web's action groups.
+        app.discair.ui.common.ActionGroup(Modifier.fillMaxWidth()) {
+            app.discair.ui.common.ActionGroupButton(model::recheck, Modifier.weight(1f)) {
+                app.discair.ui.common.GroupLabel("Check connection")
+            }
+            app.discair.ui.common.GroupDivider()
+            app.discair.ui.common.ActionGroupButton(model::editServers, Modifier.weight(1f)) {
+                app.discair.ui.common.GroupLabel("Edit servers")
+            }
         }
         // Destructive and rare: set apart from the routine actions and always confirmed.
         Spacer(Modifier.size(32.dp))
@@ -286,17 +293,27 @@ private fun PlaybackSettings(container: AppContainer, onEqualizer: () -> Unit, o
     val settings = container.playerSettings
     var rate by remember { mutableStateOf(settings.maxBitRate) }
     var scrobble by remember { mutableStateOf(settings.scrobbling) }
-    Section("Playback")
+    Section("Playback", bold = true)
+    var qualityOpen by remember { mutableStateOf(false) }
+    val qualityName = app.discair.player.qualityLabel(rate)
     Text("Streaming quality", style = MaterialTheme.typography.titleMedium)
-    Column(Modifier.selectableGroup()) {
-        app.discair.player.QUALITY_CHOICES.forEach { choice ->
-            Row(
-                Modifier.fillMaxWidth().heightIn(min = Target)
-                    .selectable(selected = rate == choice, role = Role.RadioButton, onClick = { rate = choice; settings.maxBitRate = choice }),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                androidx.compose.material3.RadioButton(selected = rate == choice, onClick = null)
-                Text(app.discair.player.qualityLabel(choice), Modifier.padding(start = 12.dp), style = MaterialTheme.typography.bodyLarge)
+    Box {
+        OutlinedButton(
+            onClick = { qualityOpen = true },
+            modifier = Modifier.fillMaxWidth().heightIn(min = Target)
+                .semantics { contentDescription = "Streaming quality, $qualityName"; role = Role.DropdownList },
+        ) {
+            Text(qualityName, Modifier.weight(1f))
+            Icon(app.discair.ui.player.PlayerIcons.Down, contentDescription = null)
+        }
+        androidx.compose.material3.DropdownMenu(expanded = qualityOpen, onDismissRequest = { qualityOpen = false }) {
+            app.discair.player.QUALITY_CHOICES.forEach { choice ->
+                val name = app.discair.player.qualityLabel(choice)
+                androidx.compose.material3.DropdownMenuItem(
+                    text = { Text(if (choice == rate) "$name (selected)" else name) },
+                    onClick = { qualityOpen = false; rate = choice; settings.maxBitRate = choice },
+                    modifier = Modifier.heightIn(min = Target),
+                )
             }
         }
     }
@@ -310,14 +327,32 @@ private fun PlaybackSettings(container: AppContainer, onEqualizer: () -> Unit, o
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(Modifier.weight(1f).padding(end = 12.dp)) {
-            Text("Record plays", style = MaterialTheme.typography.titleMedium)
+            Text("Scrobble", style = MaterialTheme.typography.titleMedium)
             Text(
                 if (scrobble) "On. Songs you play here are added to your listening history, which also shapes your recommendations."
                 else "Off. Plays are not sent, so they will not change your history or recommendations.",
                 style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-        androidx.compose.material3.Switch(checked = scrobble, onCheckedChange = null)
+        app.discair.ui.common.DiscairSwitch(checked = scrobble)
+    }
+    // Songs saved with "Download to device": how many, how much room they take, and one way to clear them.
+    val offline = container.offline
+    val offlineStatus by offline.status.collectAsState()
+    val savedCount = offlineStatus.count { it.value == app.discair.player.OfflineStatus.Done }
+    val offlineScope = androidx.compose.runtime.rememberCoroutineScope()
+    Row(Modifier.fillMaxWidth().heightIn(min = Target), verticalAlignment = Alignment.CenterVertically) {
+        Column(Modifier.weight(1f).padding(end = 12.dp)) {
+            Text("Downloaded songs", style = MaterialTheme.typography.titleMedium)
+            Text(
+                if (savedCount == 0) "None. Use a song's menu and choose Download to device to play it without a connection."
+                else "$savedCount on this device, ${"%.1f".format(offline.savedBytes() / 1_048_576.0)} MB.",
+                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        if (savedCount > 0) TextButton(
+            onClick = { offlineScope.launch { offline.removeAll() } }, modifier = Modifier.heightIn(min = Target),
+        ) { Text("Remove all") }
     }
     // The summary says on or off in words, so the state is not left to colour or to opening the page.
     val eq = remember { container.eqSettings.load() }
@@ -361,10 +396,13 @@ private fun PlaybackSettings(container: AppContainer, onEqualizer: () -> Unit, o
 }
 
 @Composable
-private fun Section(title: String) {
+private fun Section(title: String, bold: Boolean = false) {
     Text(
         title,
-        style = MaterialTheme.typography.titleLarge,
+        // Bold in the body face instead of the display face (owner request for Playback).
+        style = if (bold) MaterialTheme.typography.titleLarge.copy(
+            fontFamily = app.discair.ui.theme.Body, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold, letterSpacing = androidx.compose.ui.unit.TextUnit.Unspecified,
+        ) else MaterialTheme.typography.titleLarge,
         modifier = Modifier.padding(top = 12.dp).semantics { heading() },
     )
 }

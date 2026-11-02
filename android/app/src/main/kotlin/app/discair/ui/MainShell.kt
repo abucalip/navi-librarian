@@ -132,8 +132,12 @@ fun MainShell(state: UiState, model: AppViewModel, container: AppContainer) {
     }
     val playActions = remember(repo) {
         app.discair.player.PlayActions(
-            app.discair.player.SubsonicSongSource(okhttp3.OkHttpClient(), { container.servers.let { Triple(it.navidromeUrl, it.navidromeUser, it.navidromePassword) } }),
+            app.discair.player.OfflineAwareSongSource(
+                app.discair.player.SubsonicSongSource(okhttp3.OkHttpClient(), { container.servers.let { Triple(it.navidromeUrl, it.navidromeUser, it.navidromePassword) } }),
+                container.offline,
+            ),
             player, scope, Dispatchers.IO, { id -> repo.absolute("/api/owned/artwork/$id") },
+            offline = container.offline,
         )
     }
     LaunchedEffect(playActions) { playActions.messages.collect { snackbar.showSnackbar(it) } }

@@ -2,6 +2,8 @@ package app.discair.ui.common
 
 import android.graphics.Bitmap
 import androidx.compose.foundation.background
+import androidx.compose.ui.unit.em
+import androidx.compose.foundation.text.appendInlineContent
 import androidx.compose.foundation.clickable
 import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.layout.Arrangement
@@ -336,8 +338,23 @@ fun ReadMore(text: String, modifier: Modifier = Modifier, lines: Int = 3) {
     var expanded by remember { mutableStateOf(false) }
     var overflows by remember { mutableStateOf(false) }
     Column(modifier) {
+        // The closing full stop becomes the wordmark's yellow square.
+        val trimmed = text.trimEnd()
+        val ends = trimmed.endsWith(".") && !trimmed.endsWith("..")
+        val shown = androidx.compose.ui.text.buildAnnotatedString {
+            append(if (ends) trimmed.dropLast(1) else trimmed)
+            if (ends) appendInlineContent("endSquare", ".")
+        }
+        val square = mapOf(
+            "endSquare" to androidx.compose.foundation.text.InlineTextContent(
+                androidx.compose.ui.text.Placeholder(
+                    0.5.em, 0.5.em, androidx.compose.ui.text.PlaceholderVerticalAlign.AboveBaseline,
+                ),
+            ) { Box(Modifier.padding(start = 2.dp).fillMaxSize().background(Ink.Accent)) },
+        )
         Text(
-            text,
+            shown,
+            inlineContent = square,
             style = MaterialTheme.typography.bodyMedium,
             maxLines = if (expanded) Int.MAX_VALUE else lines,
             overflow = TextOverflow.Ellipsis,
