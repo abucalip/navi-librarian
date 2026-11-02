@@ -2,6 +2,7 @@ package app.discair.ui.theme
 
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.Dp
 
 /**
  * One colour theme. The names are the `Ink` roles from static/app.css; [Ink] reads whichever palette is
@@ -28,7 +29,19 @@ class Palette(
     val caution: Color,
     /** The smallest text contrast this theme is held to by the unit test (WCAG: 4.5 normal text, 7 for AAA). */
     val minTextContrast: Double = 4.5,
+    /** Classic themes keep the original soft look; Brutal themes draw hard outlines and offset shadows (android/DESIGN.md). */
+    val family: Family = Family.Classic,
+    /** Corner radius, outline and hard-shadow offset of a Brutal theme; null on Classic themes, which keep each component's own. */
+    val shape: BrutalShape? = null,
+    /** Three extra colours for badges, bar fills and rank chips on Brutal themes. */
+    val accent2: Color = accent, val accent3: Color = accent, val accent4: Color = accent,
+    /** The colour of the hard shadow (Brutal only). */
+    val shadowColor: Color = Color.Transparent,
+    /** The smallest contrast of the accent against the page. Brutal accents are pastel and rely on the outline (held to 3:1). */
+    val minAccentContrast: Double = 3.0,
 ) {
+    val brutal: Boolean get() = shape != null
+
     /**
      * A copy that keeps this theme's accent but uses [dark]'s surfaces and text. For screens drawn over artwork.
      * The accent stays the theme's own, so the player sheet's Play button and the island's ring match the album page's Play.
@@ -38,8 +51,15 @@ class Palette(
         accent = accent, accentDim = if (light) dark.accentDim else accentDim,
         onAccent = onAccent,
         chartRed = dark.chartRed, chartRedText = dark.chartRedText, ok = dark.ok, caution = dark.caution,
+        minTextContrast = minTextContrast, family = family, shape = shape,
+        accent2 = accent2, accent3 = accent3, accent4 = accent4, shadowColor = shadowColor, minAccentContrast = minAccentContrast,
     )
 }
+
+enum class Family(val label: String) { Classic("Classic"), Brutal("Brutal") }
+
+/** Corner radius, outline width and hard-shadow offset, all in dp. A radius of 0 is square; pills are drawn at 50%. */
+class BrutalShape(val radius: Int, val outline: Int, val shadow: Int)
 
 private fun c(hex: Long) = Color(0xFF000000 or hex)
 
@@ -122,11 +142,85 @@ object Palettes {
         minTextContrast = 7.0,
     )
 
+
+    // Brutal family (owner-approved 2026-11-02): pastel fills, hard outlines and offset shadows, varied corner radius.
+    val BrutLavender = Palette(
+        "brutlavender", "Brut · Lavender", true,
+        rail = c(0xF0EEFC), ink = c(0xF0EEFC), surface = c(0xFFFFFF), raised = c(0xDDD7F5), edge = c(0x000000), edgeStrong = c(0x000000),
+        text = c(0x000000), textMuted = c(0x4A4570), accent = c(0xB6ACE4), accentDim = c(0xDDD7F5), onAccent = c(0x000000),
+        chartRed = c(0xB3261E), chartRedText = c(0xB3261E), ok = c(0x1B6B33), caution = c(0x7F4A00),
+        family = Family.Brutal, shape = BrutalShape(6, 2, 4), shadowColor = c(0x000000),
+        accent2 = c(0xF28E8E), accent3 = c(0x8FD6CC), accent4 = c(0xFBE27A), minAccentContrast = 1.3,
+    )
+
+    val BrutMint = Palette(
+        "brutmint", "Brut · Mint", true,
+        rail = c(0xEEFBEC), ink = c(0xEEFBEC), surface = c(0xFFFFFF), raised = c(0xCFF3C8), edge = c(0x000000), edgeStrong = c(0x000000),
+        text = c(0x000000), textMuted = c(0x2F5A2A), accent = c(0x97EE88), accentDim = c(0xCFF3C8), onAccent = c(0x000000),
+        chartRed = c(0xB3261E), chartRedText = c(0xB3261E), ok = c(0x1B6B33), caution = c(0x7F4A00),
+        family = Family.Brutal, shape = BrutalShape(6, 2, 4), shadowColor = c(0x000000),
+        accent2 = c(0xFED170), accent3 = c(0x9CC9F0), accent4 = c(0xF4A6B8), minAccentContrast = 1.3,
+    )
+
+    val BrutLemon = Palette(
+        "brutlemon", "Brut · Lemon", true,
+        rail = c(0xFFFBF0), ink = c(0xFFFBF0), surface = c(0xFFFFFF), raised = c(0xFFEBC2), edge = c(0x000000), edgeStrong = c(0x000000),
+        text = c(0x000000), textMuted = c(0x6B4E12), accent = c(0xFED170), accentDim = c(0xFFEBC2), onAccent = c(0x000000),
+        chartRed = c(0xB3261E), chartRedText = c(0xB3261E), ok = c(0x1B6B33), caution = c(0x7F4A00),
+        family = Family.Brutal, shape = BrutalShape(6, 2, 4), shadowColor = c(0x000000),
+        accent2 = c(0xB6ACE4), accent3 = c(0x97EE88), accent4 = c(0xF29B8B), minAccentContrast = 1.3,
+    )
+
+    val BrutCream = Palette(
+        "brutcream", "Brut · Cream Pop", true,
+        rail = c(0xFBF0E6), ink = c(0xFBF0E6), surface = c(0xFFFFFF), raised = c(0xF6DFCF), edge = c(0x000000), edgeStrong = c(0x000000),
+        text = c(0x000000), textMuted = c(0x5A4636), accent = c(0xEE6F6A), accentDim = c(0xF6DFCF), onAccent = c(0x000000),
+        chartRed = c(0xB3261E), chartRedText = c(0xB3261E), ok = c(0x1B6B33), caution = c(0x7F4A00),
+        family = Family.Brutal, shape = BrutalShape(16, 3, 5), shadowColor = c(0x000000),
+        accent2 = c(0xA48FE8), accent3 = c(0x6FCBBF), accent4 = c(0xF8DF72), minAccentContrast = 1.3,
+    )
+
+    val BrutSky = Palette(
+        "brutsky", "Brut · Sky Pill", true,
+        rail = c(0xE8F2FB), ink = c(0xE8F2FB), surface = c(0xFFFFFF), raised = c(0xC8E1F7), edge = c(0x000000), edgeStrong = c(0x000000),
+        text = c(0x000000), textMuted = c(0x2B4C6B), accent = c(0x8CC4F0), accentDim = c(0xC8E1F7), onAccent = c(0x000000),
+        chartRed = c(0xB3261E), chartRedText = c(0xB3261E), ok = c(0x1B6B33), caution = c(0x7F4A00),
+        family = Family.Brutal, shape = BrutalShape(18, 2, 3), shadowColor = c(0x000000),
+        accent2 = c(0xF7B267), accent3 = c(0xF4A6C8), accent4 = c(0xA8E6A1), minAccentContrast = 1.3,
+    )
+
+    val BrutPoster = Palette(
+        "brutposter", "Brut · Poster", true,
+        rail = c(0xF3F1EA), ink = c(0xF3F1EA), surface = c(0xFFFFFF), raised = c(0xE2DFD2), edge = c(0x000000), edgeStrong = c(0x000000),
+        text = c(0x000000), textMuted = c(0x3F3D36), accent = c(0xFF5A47), accentDim = c(0xE2DFD2), onAccent = c(0x000000),
+        chartRed = c(0xB3261E), chartRedText = c(0xB3261E), ok = c(0x1B6B33), caution = c(0x7F4A00),
+        family = Family.Brutal, shape = BrutalShape(0, 4, 8), shadowColor = c(0x000000),
+        accent2 = c(0xFFD21F), accent3 = c(0x2DD4A8), accent4 = c(0x6C8CFF), minAccentContrast = 1.3,
+    )
+
+    val BrutInk = Palette(
+        "brutink", "Brut · Ink Lavender", false,
+        rail = c(0x15121D), ink = c(0x15121D), surface = c(0x1F1B2B), raised = c(0x2B2640), edge = c(0xF3EEFF), edgeStrong = c(0xF3EEFF),
+        text = c(0xF8F5FF), textMuted = c(0xC9C1E6), accent = c(0xB6ACE4), accentDim = c(0x2B2640), onAccent = c(0x000000),
+        chartRed = c(0xFF8A80), chartRedText = c(0xFF8A80), ok = c(0x86D39B), caution = c(0xF0A640),
+        family = Family.Brutal, shape = BrutalShape(6, 2, 4), shadowColor = c(0xB6ACE4),
+        accent2 = c(0xF28E8E), accent3 = c(0x8FD6CC), accent4 = c(0xFBE27A), minAccentContrast = 1.3,
+    )
+
+    val BrutMidnight = Palette(
+        "brutmidnight", "Brut · Midnight Mint", false,
+        rail = c(0x0E1512), ink = c(0x0E1512), surface = c(0x16211C), raised = c(0x1F3029), edge = c(0x97EE88), edgeStrong = c(0x97EE88),
+        text = c(0xEEFBEC), textMuted = c(0xB5CFC0), accent = c(0x97EE88), accentDim = c(0x1F3029), onAccent = c(0x000000),
+        chartRed = c(0xFF8A80), chartRedText = c(0xFF8A80), ok = c(0x86D39B), caution = c(0xF0A640),
+        family = Family.Brutal, shape = BrutalShape(12, 2, 4), shadowColor = c(0x97EE88),
+        accent2 = c(0xFED170), accent3 = c(0x9CC9F0), accent4 = c(0xF4A6B8), minAccentContrast = 1.3,
+    )
+
     /** Light themes in the order the picker shows them; the first is the default day theme. */
-    val Light: List<Palette> = listOf(Sand, Paper, Mist, Sage, Blush)
+    val Light: List<Palette> = listOf(Sand, Paper, Mist, Sage, Blush, BrutLavender, BrutMint, BrutLemon, BrutCream, BrutSky, BrutPoster)
 
     /** Dark themes in the order the picker shows them; the first is the default night theme. */
-    val Dark: List<Palette> = listOf(Night, Amoled, Forest, Ocean, Ember, Graphite, HighContrast)
+    val Dark: List<Palette> = listOf(Night, Amoled, Forest, Ocean, Ember, Graphite, HighContrast, BrutInk, BrutMidnight)
 
     val All: List<Palette> = Light + Dark
 

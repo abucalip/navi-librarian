@@ -10,6 +10,7 @@ import kotlinx.serialization.Serializable
 @Serializable data object DownloadsRoute
 @Serializable data object EqualizerRoute
 @Serializable data object CrossfadeRoute
+@Serializable data object AppearanceRoute
 
 @Serializable
 data class ArtistRoute(val key: String, val name: String, val id: String? = null, val mbid: String? = null)

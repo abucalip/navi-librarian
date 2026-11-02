@@ -270,6 +270,6 @@ fun DiscairTheme(palette: Palette = Palettes.Night, fonts: FontPair = FontPairs.
     val scheme = remember(palette) { colorScheme(palette) }
     val type = remember(fonts) { typography(fonts) }
     CompositionLocalProvider(LocalPalette provides palette, LocalFontPair provides fonts) {
-        MaterialTheme(colorScheme = scheme, typography = type, content = content)
+        MaterialTheme(colorScheme = scheme, typography = type, shapes = shapesFor(palette), content = content)
     }
 }

@@ -272,7 +272,8 @@ fun MainShell(state: UiState, model: AppViewModel, container: AppContainer) {
                 composable<DiscoverRoute> { Opaque { DiscoverScreen(open) } }
                 composable<LibraryRoute> { Opaque { LibraryScreen(open) } }
                 composable<DownloadsRoute> { Opaque { DownloadsScreen(open) } }
-                composable<SettingsRoute> { Opaque { SettingsScreen(state, model, onBack = { nav.popBackStack() }, onEqualizer = { nav.navigate(EqualizerRoute) { launchSingleTop = true } }, onCrossfade = { nav.navigate(CrossfadeRoute) { launchSingleTop = true } }) } }
+                composable<SettingsRoute> { Opaque { SettingsScreen(state, model, onBack = { nav.popBackStack() }, onEqualizer = { nav.navigate(EqualizerRoute) { launchSingleTop = true } }, onCrossfade = { nav.navigate(CrossfadeRoute) { launchSingleTop = true } }, onAppearance = { nav.navigate(AppearanceRoute) { launchSingleTop = true } }) } }
+                composable<AppearanceRoute> { Opaque { app.discair.ui.settings.AppearanceScreen(container.appearance, onBack = { nav.popBackStack() }) } }
                 composable<EqualizerRoute> { Opaque { app.discair.ui.player.EqualizerScreen(container, onBack = { nav.popBackStack() }) } }
                 composable<CrossfadeRoute> { Opaque { app.discair.ui.player.CrossfadeScreen(container, onBack = { nav.popBackStack() }) } }
                 composable<ArtistRoute> { Opaque { ArtistScreen(it.toRoute(), open) } }

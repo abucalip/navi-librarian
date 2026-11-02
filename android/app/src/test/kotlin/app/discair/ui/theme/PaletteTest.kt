@@ -19,10 +19,13 @@ class PaletteTest {
         assertTrue("${p.label}: $what on $bgName is %.2f, needs %.1f".format(got, need), got >= need)
     }
 
-    @Test fun twelveThemesWithUniqueIds() {
-        assertEquals(12, Palettes.All.size)
-        assertEquals(5, Palettes.Light.size)
-        assertEquals(7, Palettes.Dark.size)
+    @Test fun twentyThemesWithUniqueIds() {
+        assertEquals(20, Palettes.All.size)
+        assertEquals(11, Palettes.Light.size)
+        assertEquals(9, Palettes.Dark.size)
+        assertEquals(12, Palettes.All.count { it.family == Family.Classic })
+        assertEquals(8, Palettes.All.count { it.family == Family.Brutal })
+        assertTrue(Palettes.All.all { (it.family == Family.Brutal) == (it.shape != null) })
         assertEquals(Palettes.All.size, Palettes.All.map { it.id }.toSet().size)
         assertEquals(Palettes.All.size, Palettes.All.map { it.label }.toSet().size)
         assertTrue(Palettes.Light.all { it.light } && Palettes.Dark.none { it.light })
@@ -58,9 +61,12 @@ class PaletteTest {
 
     @Test fun graphicsMeetThreeToOne() {
         for (p in Palettes.All) {
-            check(p, "accent", p.accent, p.ink, 3.0, "page")
-            check(p, "accent", p.accent, p.surface, 3.0, "surface")
+            // Brutal accents are pastel and always drawn inside the theme's thick outline, so the accent itself is
+            // held to a lower bar there and the outline carries the 3:1.
+            check(p, "accent", p.accent, p.ink, p.minAccentContrast, "page")
+            check(p, "accent", p.accent, p.surface, p.minAccentContrast, "surface")
             check(p, "strong edge", p.edgeStrong, p.surface, 3.0, "surface")
+            check(p, "strong edge", p.edgeStrong, p.ink, 3.0, "page")
         }
     }
 
@@ -106,4 +112,21 @@ class PaletteTest {
         val blue = pastelOf(Color.hsv(220f, 0.8f, 0.4f))
         assertTrue(blue.blue > blue.red)
     }
+
+    @Test fun brutalThemesHaveTheirOwnShapes() {
+        val radii = Palettes.All.filter { it.brutal }.map { it.shape!!.radius }.toSet()
+        assertTrue("shape variety kept: $radii", radii.size >= 5)
+        assertEquals(0, Palettes.BrutPoster.shape!!.radius) // square
+        assertTrue(Palettes.All.filter { it.brutal }.all { it.shape!!.outline >= 2 && it.shapeShadowIsVisible() })
+        assertTrue(Palettes.All.filter { !it.brutal }.all { it.shape == null })
+    }
+
+    @Test fun brutalLabelsOnTheThreeExtraColoursAreReadable() {
+        // Rank chips and badges put black text on accent2..4 (the number chips in the Appearance tiles and lists).
+        for (p in Palettes.All.filter { it.brutal }) {
+            for ((i, c) in listOf(p.accent2, p.accent3, p.accent4).withIndex()) check(p, "black on accent${i + 2}", Color.Black, c, 4.5, "chip")
+        }
+    }
+
+    private fun Palette.shapeShadowIsVisible() = shadowColor != Color.Transparent && contrast(shadowColor, ink) >= 3.0
 }

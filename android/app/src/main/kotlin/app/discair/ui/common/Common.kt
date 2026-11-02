@@ -45,6 +45,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.border
+import app.discair.ui.theme.brutalShadow
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
@@ -473,7 +475,13 @@ fun PageHeading(text: String, modifier: Modifier = Modifier, large: Boolean = fa
 
 @Composable
 fun Panel(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
-    Box(modifier.clip(RoundedCornerShape(12.dp)).background(MaterialTheme.colorScheme.surface)) { content() }
+    val shape = app.discair.ui.theme.themeShape(12.dp)
+    val brutal = app.discair.ui.theme.LocalPalette.current.brutal
+    val line = app.discair.ui.theme.themeBorder(androidx.compose.foundation.BorderStroke(0.dp, Color.Transparent))
+    Box(
+        modifier.brutalShadow(shape).clip(shape).background(MaterialTheme.colorScheme.surface)
+            .then(if (brutal) Modifier.border(line, shape) else Modifier),
+    ) { content() }
 }
 
 /** The rank numeral on ranked rows: display face, muted, in a fixed-width column. */

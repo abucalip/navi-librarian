@@ -58,6 +58,10 @@ import androidx.compose.ui.unit.sp
 import app.discair.ui.theme.Ink
 import app.discair.ui.theme.LocalPalette
 import app.discair.ui.theme.Mono
+import app.discair.ui.theme.brutalShadow
+import app.discair.ui.theme.pillShape
+import app.discair.ui.theme.themeBorder
+import app.discair.ui.theme.themeShape
 
 // Dark themes keep the original dark pill; light themes get an inset pill with a pale knob.
 
@@ -70,7 +74,11 @@ import app.discair.ui.theme.Mono
 fun DiscairSwitch(checked: Boolean, modifier: Modifier = Modifier, enabled: Boolean = true) {
     val knobX by animateDpAsState(if (checked) 32.dp else 0.dp, tween(300), label = "knob")
     val glow by animateFloatAsState(if (checked) 1f else 0f, tween(300), label = "glow")
-    val shape = RoundedCornerShape(50)
+    val shape = pillShape()
+    if (LocalPalette.current.brutal) {
+        BrutalSwitch(checked, shape, modifier)
+        return
+    }
     val light = LocalPalette.current.light
     // Light themes: a well pressed into the page, a little darker at the top, with the page's own cream at the bottom.
     // Dark themes keep the original dark pill. When on, the accent lights the well from the square's side.
@@ -115,7 +123,6 @@ fun DiscairSwitch(checked: Boolean, modifier: Modifier = Modifier, enabled: Bool
     }
 }
 
-private val GroupShape = RoundedCornerShape(10.dp)
 
 /**
  * The web's action group: buttons joined in one rounded frame on the surface colour, with a hairline between
@@ -123,8 +130,9 @@ private val GroupShape = RoundedCornerShape(10.dp)
  */
 @Composable
 fun ActionGroup(modifier: Modifier = Modifier, content: @Composable RowScope.() -> Unit) {
+    val shape = themeShape(10.dp)
     Row(
-        modifier.height(Target).clip(GroupShape).background(Ink.Surface).border(BorderStroke(1.dp, Ink.EdgeStrong), GroupShape),
+        modifier.brutalShadow(shape).height(Target).clip(shape).background(Ink.Surface).border(themeBorder(BorderStroke(1.dp, Ink.EdgeStrong)), shape),
         verticalAlignment = Alignment.CenterVertically,
         content = content,
     )
@@ -181,9 +189,10 @@ private val GlassTrack: Color @Composable get() = if (LocalPalette.current.light
 /** The glass card behind a set of bands (Uiverse, byllzz), in the app's palette. */
 @Composable
 fun GlassCard(modifier: Modifier = Modifier, content: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit) {
-    val shape = RoundedCornerShape(14.dp)
+    val shape = themeShape(14.dp)
     androidx.compose.foundation.layout.Column(
-        modifier.clip(shape).background(Ink.Surface).border(BorderStroke(1.dp, if (LocalPalette.current.light) Ink.Edge else Color(0x14FFFFFF)), shape).padding(8.dp),
+        modifier.brutalShadow(shape).clip(shape).background(Ink.Surface)
+            .border(themeBorder(BorderStroke(1.dp, if (LocalPalette.current.light) Ink.Edge else Color(0x14FFFFFF))), shape).padding(8.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp),
         content = content,
     )
@@ -257,5 +266,22 @@ fun GlassBand(
 private fun BandNudge(icon: ImageVector, description: String, enabled: Boolean, onClick: () -> Unit) {
     IconButton(onClick = onClick, enabled = enabled, modifier = Modifier.size(36.dp)) {
         Icon(icon, contentDescription = description, modifier = Modifier.size(14.dp))
+    }
+}
+
+/** The Brutal themes' switch: a flat track (accent when on), an outlined round knob that slides across, a hard shadow. */
+@Composable
+private fun BrutalSwitch(checked: Boolean, shape: androidx.compose.ui.graphics.Shape, modifier: Modifier) {
+    val knobX by animateDpAsState(if (checked) 40.dp else 0.dp, tween(200), label = "knob")
+    val line = themeBorder(BorderStroke(2.dp, Ink.EdgeStrong))
+    val knobShape = if (LocalPalette.current.shape?.radius == 0) androidx.compose.ui.graphics.RectangleShape else CircleShape
+    Box(
+        modifier.size(width = 66.dp, height = 32.dp).brutalShadow(shape).clip(shape)
+            .background(if (checked) Ink.Accent else Ink.Surface).border(line, shape),
+    ) {
+        Box(
+            Modifier.padding(3.dp).align(Alignment.CenterStart).offset(x = knobX).size(22.dp)
+                .background(if (checked) Color.White else Ink.Text, knobShape).border(line, knobShape),
+        )
     }
 }

@@ -41,9 +41,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.discair.ui.theme.Ink
 import app.discair.ui.theme.LocalPalette
+import app.discair.ui.theme.brutalShadow
+import app.discair.ui.theme.themeBorder
+import app.discair.ui.theme.themeShape
 
-private val TrackShape = RoundedCornerShape(9.dp)
-private val ThumbShape = RoundedCornerShape(7.dp)
 private val ThumbDark = Color(0xFF3A3632)
 
 /**
@@ -59,7 +60,10 @@ fun SegmentedTabs(
     onSelect: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val thumb = if (LocalPalette.current.light) Ink.Surface else ThumbDark
+    val TrackShape = themeShape(9.dp)
+    val ThumbShape = themeShape(7.dp)
+    val brutal = LocalPalette.current.brutal
+    val thumb = if (brutal) Ink.Accent else if (LocalPalette.current.light) Ink.Surface else ThumbDark
     val labelColor = Ink.Text
     val scroll: ScrollState = rememberScrollState()
     val density = LocalDensity.current
@@ -74,13 +78,14 @@ fun SegmentedTabs(
         scroll.animateScrollTo((left - (scroll.viewportSize - width) / 2f).toInt().coerceAtLeast(0))
     }
     Box(
-        modifier.clip(TrackShape).background(Ink.Raised).border(BorderStroke(0.5.dp, Ink.Edge), TrackShape),
+        modifier.brutalShadow(TrackShape).clip(TrackShape).background(if (brutal) Ink.Surface else Ink.Raised)
+            .border(themeBorder(BorderStroke(0.5.dp, Ink.Edge)), TrackShape),
     ) {
         Box(Modifier.horizontalScroll(scroll).padding(2.dp)) {
             if (widths[selectedIndex] != null) Box(
                 Modifier.offset(x = thumbX).width(thumbW).height(Target - 4.dp)
-                    .shadow(3.dp, ThumbShape).clip(ThumbShape).background(thumb)
-                    .border(BorderStroke(0.5.dp, Ink.EdgeStrong.copy(alpha = 0.5f)), ThumbShape),
+                    .then(if (brutal) Modifier else Modifier.shadow(3.dp, ThumbShape)).clip(ThumbShape).background(thumb)
+                    .border(if (brutal) themeBorder(BorderStroke(0.dp, Color.Transparent)) else BorderStroke(0.5.dp, Ink.EdgeStrong.copy(alpha = 0.5f)), ThumbShape),
             )
             Row {
                 labels.forEachIndexed { index, label ->
@@ -102,7 +107,7 @@ fun SegmentedTabs(
                         contentAlignment = Alignment.Center,
                     ) {
                         Text(
-                            label, color = labelColor, fontSize = 12.sp,
+                            label, color = if (brutal && on) Ink.OnAccent else labelColor, fontSize = 12.sp,
                             fontWeight = if (on) FontWeight.SemiBold else FontWeight.Normal,
                             maxLines = 1, modifier = Modifier.alpha(if (on) 1f else 0.6f),
                         )
