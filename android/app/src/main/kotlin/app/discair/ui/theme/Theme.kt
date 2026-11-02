@@ -60,7 +60,12 @@ fun Color.forTheme(): Color = if (LocalPalette.current.light) androidx.compose.u
 fun OnArtwork(content: @Composable () -> Unit) {
     val current = LocalPalette.current
     val palette = remember(current) { if (current.light) current.overArtwork(Palettes.Night) else current }
-    CompositionLocalProvider(LocalPalette provides palette, content = content)
+    if (palette === current) { content(); return }
+    // Material components and plain Text read the colour scheme, not Ink, so swap that too.
+    val scheme = remember(palette) { colorScheme(palette) }
+    CompositionLocalProvider(LocalPalette provides palette) {
+        MaterialTheme(colorScheme = scheme, typography = MaterialTheme.typography, shapes = MaterialTheme.shapes, content = content)
+    }
 }
 
 @OptIn(androidx.compose.ui.text.ExperimentalTextApi::class)
