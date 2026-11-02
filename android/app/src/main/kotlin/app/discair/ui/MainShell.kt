@@ -168,10 +168,20 @@ fun MainShell(state: UiState, model: AppViewModel, container: AppContainer) {
     CompositionLocalProvider(
         LocalRepository provides repo, LocalImageLoader provides container.imageLoader, LocalAcquisitions provides hub,
         app.discair.ui.player.LocalPlayActions provides playActions,
+        app.discair.ui.player.LocalPlayingNow provides playerState.current?.let {
+            app.discair.ui.player.PlayingNow(it.albumId, it.title, playerState.isPlaying)
+        },
     ) {
         // Inside the provider: the sheet's cover needs the image loader, which only exists here.
         if (nowPlayingOpen && playerState.visible) {
-            NowPlayingSheet(playerState, player, container.lyrics, onDismiss = { nowPlayingOpen = false }, onSignIn = { nowPlayingOpen = false; model.sessionExpired() })
+            NowPlayingSheet(
+                playerState, player, container.lyrics, onDismiss = { nowPlayingOpen = false }, onSignIn = { nowPlayingOpen = false; model.sessionExpired() },
+                onOpenArtist = { song -> nowPlayingOpen = false; open.artist(song.artist, null, null, null) },
+                onOpenAlbum = { song ->
+                    nowPlayingOpen = false
+                    open.album(app.discair.ui.common.routeKey(song.artist, song.album), song.artist, song.album, song.albumId.ifBlank { null }, song.year)
+                },
+            )
         }
         Scaffold(
             snackbarHost = { SnackbarHost(snackbar) },

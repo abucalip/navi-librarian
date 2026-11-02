@@ -173,7 +173,13 @@ private fun AlbumContent(route: AlbumRoute, page: AlbumPage, open: Opener, list:
                             color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.width(32.dp),
                         )
                         Row(Modifier.weight(1f).padding(end = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Text(t.title, style = MaterialTheme.typography.bodyLarge, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
+                            val playingNow = app.discair.ui.player.LocalPlayingNow.current
+                            val isCurrent = t.owned && playingNow?.matches(albumId, t.title) == true
+                            Text(
+                                t.title, style = MaterialTheme.typography.bodyLarge, fontWeight = if (isCurrent) FontWeight.Bold else FontWeight.Normal,
+                                maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false),
+                            )
+                            if (isCurrent) app.discair.ui.player.NowPlayingIndicator(playingNow!!.isPlaying, Modifier.padding(start = 8.dp))
                         }
                         t.durationSeconds?.let {
                             Text("%d:%02d".format(it / 60, it % 60), style = MaterialTheme.typography.labelMedium.copy(fontFamily = Mono), color = MaterialTheme.colorScheme.onSurfaceVariant)
