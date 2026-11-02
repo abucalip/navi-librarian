@@ -320,6 +320,13 @@ Reviewed with `/mobile-design` (colour, typography and Android references), then
 
 **Checked:** theme and rules unit tests, `assembleDebug`, `lintDebug`, and the emulator (Sand by day, Forest with Transit, the Appearance section, the font menu, persistence across restart, status bar and wordmark on light). **Not checked:** the other themes on screen, every screen on a light theme (album, artist, player sheet, Downloads, Equalizer, Crossfade), 200% font scale with the new fonts, TalkBack on the pickers, a real OLED device, and the Android 36 gesture bar over the island on light themes.
 
+## Sheets, toggle and bands (2026-11-02, PR #697)
+
+- **Sheets:** full-height sheets (Now Playing, Search) use `RectangleShape`. The player sits in `OnArtwork`, which forces a dark palette; `InChosenTheme` (in `theme/Theme.kt`, reading `LocalThemePalette`) restores the chosen theme for the EQ and Crossfade sheets.
+- **`DiscairSwitch`:** no off ring. Light themes: a well darker at the top, with the page's cream at the bottom and an inner top shadow; off uses the lighter shade, on the deeper one. On: a radial accent glow lights the inside from the square. Enabled and disabled look the same; only the row text says a toggle is disabled.
+- **Bands (`GlassCard`, `GlassBand`):** light themes use `Ink.Raised` for rows, `Ink.Edge` for the slider track, `Ink.EdgeStrong` for the divider and `Ink.TextMuted` for text; dark themes are unchanged.
+- **Album page:** genre/year row is offset up 14 dp so the gaps album name to artist and artist to genre/year are both about 12 dp.
+
 ## Page transitions, reading text and buffering (2026-11-02, PR #696)
 
 - **Page transitions:** pages other than the three tabs slide in from the right; Back (button, system gesture or swipe-right) slides the page out to the right while the one beneath returns from a quarter of the width to the left, 300 ms, fast-out slow-in. Tab-to-tab keeps its order-based slide. Each page paints the app background (`Opaque` in `MainShell.kt`) so the page beneath never shows through. The swipe still goes back once the drag passes 72 dp and then plays the slide-out; it does not follow the finger.

@@ -1,3 +1,11 @@
+## 2026-11-02 — Android sheets, toggle, bands and album header spacing merged (PR #697)
+
+- **Merged (owner request):** PR [#697](https://github.com/abucalip/navi-librarian/pull/697), squash `c4e8a6f29ece4eba12b1b7119f5b84415984a068`; compile, container-smoke, test-and-build and validate-container passed on the PR head. No workflow builds the Android app, so those checks did not exercise this change.
+- **Changes (Android only):** Now Playing and Search sheets have square top corners; the player's EQ and Crossfade sheets follow the chosen theme (`InChosenTheme`, because the player is otherwise drawn in the dark over-artwork palette); `DiscairSwitch` lost its red off ring, is a recessed well in theme tones on light themes, is lit from inside by an accent glow when on, and looks the same when off whether or not the row is enabled (the 45% dimming is gone); Length and EQ bands use theme surfaces and muted text on light themes; the album page genre/year line sits as far below the artist as the artist sits below the album name (a 14 dp pull-up that overlaps the two tap areas by about 14 dp). Details in `android/DESIGN.md`, "Sheets, toggle and bands".
+- **Tests run:** `compileDebugKotlin` through `assembleRelease` with JDK 17; signed release APKs were sent to the owner. The full Android suite was not run by the agent (owner rule); no new tests.
+- **Not done / not claimed:** the final toggle, band and album-spacing builds were not seen on a device; a disabled toggle no longer looks different from an enabled one; the glow strength (55% light, 42% dark) is a judgement. No publication or deployment.
+- **Next action:** the owner installs the APK and checks the toggles (on, off, disabled) and the Length/EQ bands on Sand and another light theme, the genre/year spacing, and taps just under the artist name.
+
 ## 2026-11-02 — Android page transitions, FLAC buffering, reading text and accent over artwork merged (PR #696)
 
 - **Merged (owner request):** PR [#696](https://github.com/abucalip/navi-librarian/pull/696), squash `34c0df4fbbbfae4944fd24740a91ee6622bb9015`, from head `e9c5f5c628762501beae6155e758204840934f86`; compile, container-smoke, test-and-build and validate-container passed on that head. No workflow builds the Android app, so those checks did not exercise this change.
