@@ -1,3 +1,11 @@
+## 2026-11-02 — Android album page merged (PR #685); installed on the phone
+
+- **Merged:** PR #685, squash `164bb27a31b477725833f35d0166d3779035f99e`, from tested head `301a63e40859b88f9d97b0d7e688592ad6b6938f`; compile, container-smoke, test-and-build and validate-container passed on that head before merge (the Python full suite ran in CI only). Contents are in the entry below (disc headings, quality tag, disc-aware play and queue).
+- **Device (owner's phone, SM_G781B, over wireless adb):** the signed release build of that head (`assembleRelease`, JDK 17, signer `CN=owner`) was installed over the existing app with `adb install -r` (reported Success, data kept). The owner saw no disc headings and no tags: the app talks to the deployed Librarian, which does not include PRs #683 and #684 (merged, not published, not deployed), so the server sent neither `disc_number` nor `quality`. The app code was not seen working; the owner will update the server later and the check is repeated then.
+- **Not checked, not claimed:** the headings, the tag and disc-aware play and queue on a device; TalkBack, landscape, 200% text; `assembleRelease` beyond building it; the Android full suite.
+- **Not done:** publication and deployment (not authorized); the player sheet's quality tag and the extra `getSong` call (server-side search index, `ACTIVE_WORK.md` 2g).
+- **Next action:** after the server update, open an owned multi-disc album (for example Black Sabbath "Reunion") on the phone and in the browser and confirm the headings, tags and per-disc play.
+
 ## 2026-11-02 — Multi-disc album pages merged (PR #684); Android album page in PR #685
 
 - **Merged:** PR #684, squash `cf4330229b19e72a7b891c0fd2a12254b2a0c646`, from tested head `b058e08e0d16e5dce163e4124fb5a182c3e17033`; compile, container-smoke, test-and-build, validate-container and validate-release-workflow passed on that head before merge; the full suite ran in CI only.
