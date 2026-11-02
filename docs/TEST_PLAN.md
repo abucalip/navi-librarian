@@ -205,6 +205,11 @@ Contract: `docs/ANDROID_CROSSFADE_CONTRACT.md`. Unit tests in `android/app/src/t
 - **Settings and screen:** round trip, clamping, corrupt data, defaults, sign-out does not clear them; length text and TalkBack text; the quality line shows only below Original.
 - **Device (owner):** the manual list in contract section 10. Anything needing a real `ExoPlayer` or `AudioTrack` is a device check; do not claim device results from unit tests.
 
+## Library resync after import focused checks (SET-04)
+
+- Run `tests/test_library_resync.py` (delay, coalescing, disabled option, failure handling, setting and routes), the import-success listener assertion in `tests/test_acquisition_import.py`, and `LibraryResyncSettingTest` on Android.
+- Runtime (owner, after deployment): import an album and confirm it shows in the app within about 15 seconds; turn the option off and confirm the old delay returns. Not verified against a live Navidrome by the agent.
+
 ## UI changes
 
 After automated CI succeeds, run the full manual browser checklist in `docs/LOCAL_UI_TESTING.md` against the exact tested SHA. Cover affected workflows and record the actual result. Do not claim manual verification from source inspection or automated tests alone.
