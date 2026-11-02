@@ -1,3 +1,12 @@
+## 2026-11-02 — Releases now publish `latest` (PR #692); v0.3.7 published, not deployed
+
+- **Merged (owner request):** PR #692, squash `1d9bd490df8c40c6668ecbd4a7267ad0d86bf8e4`, from tested head `da4591fcaa30db67af954ed912ab42e0bfcb5977`; compile, container-smoke, test-and-build, validate-container and validate-release-workflow passed on that head. The owner ran the merge and pushed the `v0.3.7` tag from their own terminal after the auto-mode classifier denied the same steps when run by the agent (reason "Create Public Surface").
+- **Change:** `docker-release.yml` also tags the image `latest` (the run summary says it moved); `DOCKER.md` records the decision and the compose setup (`image: ghcr.io/abucalip/navi-librarian:latest`, `pull_policy: always`). This reverses the earlier rule that releases never move `latest`; the tag-equals-current-`main` check still stops `latest` moving backwards. Rolling back means naming the previous version tag.
+- **Published, not deployed:** tag `v0.3.7` at `main` `1d9bd490df8c40c6668ecbd4a7267ad0d86bf8e4`, image `ghcr.io/abucalip/navi-librarian:v0.3.7` and `:latest`, both digest `sha256:9354b08e74913cb9e45f528a31ba63a5618b17d6d54fc82c2351f5f35e06f0d5` (read from the run log); also tagged `sha-1d9bd490df8c40c6668ecbd4a7267ad0d86bf8e4`. Release run [41447994600](https://github.com/abucalip/navi-librarian/actions/runs/41447994600) passed (smoke test, multi-arch build and push). Contents: `v0.3.6` plus the workflow and documentation change only; no application code changed. Rollback reference: `v0.3.6`.
+- **Tests run:** `test_docker_packaging` (14 passed) before merge; the publish job itself ran for the first time here and succeeded. Not run: a `docker pull` of `latest` on the owner's host.
+- **Not done:** deployment and runtime verification; the compose file on the owner's host still names a version.
+- **Next action:** the owner switches the compose file to `:latest`, runs `docker compose pull && docker compose up -d` (this also brings in `v0.3.6`'s Adele fix), then restarts the app and checks the Adele page.
+
 ## 2026-11-02 — Wrong artist photo fixed (PR #691) and v0.3.6 published, not deployed
 
 - **Cause:** Deezer's artist search lists several artists named exactly "Adele" (a record label's one-off release with about 500 fans, the singer with 15.5 million) in a changing order, and `select_artist_artwork` took the first exact-name match. The first exact match was verified to be the image in the owner's screenshot ("Be Divine", Ricsta feat. Adele).
