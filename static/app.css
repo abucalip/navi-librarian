@@ -1023,6 +1023,7 @@ button.inline-link:focus-visible { outline: 2px solid var(--accent); outline-off
 .album-head .bio-toggle { margin-top: calc(var(--space-2) * -1); }
 .track-list { margin: var(--space-6) 0 0; padding: 0; list-style: none; border-top: 1px solid var(--edge); }
 .track { display: grid; grid-template-columns: 3ch minmax(0, 1fr) auto minmax(28px, auto); align-items: center; gap: var(--space-3); min-height: 52px; padding: var(--space-2) var(--space-2); border-bottom: 1px solid var(--edge); }
+.track-disc { padding: var(--space-4) var(--space-2) var(--space-2); border-bottom: 1px solid var(--edge); color: var(--text-muted); font: 600 var(--text-xs)/1.4 var(--mono); letter-spacing: .08em; text-transform: uppercase; }
 .track-number { color: var(--text-muted); font-variant-numeric: tabular-nums; text-align: right; }
 .track-title { min-width: 0; overflow-wrap: anywhere; }
 .track-duration { color: var(--text-muted); font-variant-numeric: tabular-nums; }

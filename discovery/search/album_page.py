@@ -27,6 +27,7 @@ from discovery.search.artist_sections import (
     tag_items,
 )
 from discovery.search.cache import provider_cache_key
+from discovery.search.disc_layout import disc_of, is_multi_disc, place_unmatched
 from discovery.search.index import OwnedData
 from discovery.search.merge import OwnedKeys
 from discovery.search.normalize import normalize_key
@@ -64,13 +65,20 @@ def _with_quality(track: dict[str, Any], song: dict[str, Any]) -> dict[str, Any]
 def owned_tracks(data: OwnedData, album_id: str) -> list[dict[str, Any]]:
     songs = sorted(
         (s for s in data.songs if s["album_id"] == album_id),
-        key=lambda s: (s["track_number"] is None, s["track_number"] or 0, s["name"].casefold()),
+        key=lambda s: (disc_of(s), s["track_number"] is None, s["track_number"] or 0, s["name"].casefold()),
     )
-    return [
-        _with_quality({"track_number": s["track_number"] or index + 1, "title": s["name"],
-                       "duration_seconds": s["duration"] or 0, "owned": True}, s)
-        for index, s in enumerate(songs)
-    ]
+    multi = is_multi_disc(songs)
+    seen_on_disc: dict[int, int] = {}
+    tracks = []
+    for s in songs:
+        disc = disc_of(s)
+        seen_on_disc[disc] = seen_on_disc.get(disc, 0) + 1
+        track = {"track_number": s["track_number"] or seen_on_disc[disc], "title": s["name"],
+                 "duration_seconds": s["duration"] or 0, "owned": True}
+        if multi:
+            track["disc_number"] = disc
+        tracks.append(_with_quality(track, s))
+    return tracks
 
 
 def mark_owned_tracks(provider: list[dict[str, Any]], songs: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -79,7 +87,10 @@ def mark_owned_tracks(provider: list[dict[str, Any]], songs: list[dict[str, Any]
     ``songs`` are the library's songs for this album. A track is owned when a song has the same
     normalized title, or the same track number and a length within a few seconds (remasters
     rename tracks but keep their place). Songs matching no track are appended as owned.
+    When the songs span several discs, every track also gets its ``disc_number`` and its number
+    on that disc (see ``disc_layout``).
     """
+    multi = is_multi_disc(songs)
     unmatched = list(songs)
     matched: dict[int, dict[str, Any]] = {}
     for index, track in enumerate(provider):
@@ -91,9 +102,12 @@ def mark_owned_tracks(provider: list[dict[str, Any]], songs: list[dict[str, Any]
     for index, track in enumerate(provider):
         if index in matched or not track.get("duration_seconds"):
             continue
+        # The provider counts straight through the album, so its number only means the song's
+        # own number on disc 1.
         song = next((
             s for s in unmatched
             if s["track_number"] == track["track_number"] and s["duration"]
+            and (not multi or disc_of(s) == 1)
             and abs(s["duration"] - track["duration_seconds"]) <= TRACK_LENGTH_TOLERANCE_SECONDS
         ), None)
         if song is not None:
@@ -103,12 +117,21 @@ def mark_owned_tracks(provider: list[dict[str, Any]], songs: list[dict[str, Any]
         _with_quality({**track, "owned": True}, matched[index]) if index in matched else {**track, "owned": False}
         for index, track in enumerate(provider)
     ]
-    extras = sorted(unmatched, key=lambda s: (s["track_number"] is None, s["track_number"] or 0, s["name"].casefold()))
+    if multi and matched:
+        known = {i: (disc_of(song), song["track_number"] or provider[i]["track_number"]) for i, song in matched.items()}
+        for index, (disc, number) in place_unmatched(len(provider), known).items():
+            items[index]["disc_number"], items[index]["track_number"] = disc, number
+    extras = sorted(unmatched, key=lambda s: (disc_of(s), s["track_number"] is None, s["track_number"] or 0, s["name"].casefold()))
     for song in extras:
-        items.append(_with_quality({
+        extra = {
             "track_number": song["track_number"] or len(items) + 1,
             "title": song["name"], "duration_seconds": song["duration"] or 0, "owned": True,
-        }, song))
+        }
+        if multi:
+            extra["disc_number"] = disc_of(song)
+        items.append(_with_quality(extra, song))
+    if multi and matched:
+        items.sort(key=lambda t: (t["disc_number"], t["track_number"]))
     return items
 
 
