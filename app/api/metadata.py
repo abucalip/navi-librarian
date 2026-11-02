@@ -19,6 +19,9 @@ from pydantic import BaseModel, Field
 from app.api.dependencies import get_librarian
 from app.services.artist_bio import resolve_artist_bio
 from app.services.deezer_tracklist import shape_tracklist
+from app.services.fallback_artwork import (
+    parse_qobuz_albums, select_apple_artwork, select_qobuz_artwork,
+)
 from app.services.deezer_artwork import select_album_artwork, select_artist_artwork
 from app.services.deezer_album_details import shape_album_match
 from app.services import album_links, album_reviews, album_wikipedia, persistent_metadata
@@ -718,6 +721,21 @@ def artist_image(name: str = ""):
     return result
 
 
+def _fallback_album_artwork(artist: str, album: str):
+    """An exact-match cover from Apple Music, else Qobuz. Raises when a provider cannot be reached."""
+    response = _EXTERNAL_HTTP.get("https://itunes.apple.com/search", params={
+        "term": f"{artist} {album}", "entity": "album", "limit": 10})
+    response.raise_for_status()
+    found = select_apple_artwork(response.json().get("results") or [], artist, album)
+    if found:
+        return found
+    response = _EXTERNAL_HTTP.get(
+        "https://www.qobuz.com/us-en/search", params={"q": f"{artist} {album}"},
+        headers=_APPLE_PAGE_HEADERS, follow_redirects=True)
+    response.raise_for_status()
+    return select_qobuz_artwork(parse_qobuz_albums(response.text), artist, album)
+
+
 @router.get("/api/artwork")
 def album_artwork(artist: str = "", album: str = ""):
     artist = artist.strip()[:180]
@@ -732,7 +750,7 @@ def album_artwork(artist: str = "", album: str = ""):
         ttl = _ARTWORK_CACHE_TTL if cached["data"].get("artwork_url") else _ARTWORK_NEGATIVE_CACHE_TTL
         if now - cached["time"] < ttl:
             return cached["data"]
-    store_key = "album-artwork:v1:" + key[0] + ":" + key[1]
+    store_key = "album-artwork:v2:" + key[0] + ":" + key[1]
     stored = persistent_metadata.read(store_key)
     if stored and stored.get("artwork_url"):
         _artwork_cache[key] = {"time": monotonic(), "data": stored}
@@ -759,8 +777,13 @@ def album_artwork(artist: str = "", album: str = ""):
         # Do not perform a serialized MusicBrainz lookup here: it rate-limits
         # requests and can delay artwork by several seconds. Deezer release dates
         # are shown when available; missing years must never delay the cover.
-        # If the album is not in the catalog, use a matching artist photo instead.
-        if not result["artwork_url"] and artist:
+        # Deezer does not have the album: ask Apple Music, then Qobuz, for an exactly matching cover.
+        if not result["artwork_url"] and artist and album:
+            result = _fallback_album_artwork(artist, album) or result
+
+        # An artist photo is only a valid answer when no album was requested; using it
+        # for a missing album made one picture appear on several albums of an artist.
+        if not result["artwork_url"] and artist and not album:
             artist_query = urlencode({"q": artist, "limit": 8})
             response = _EXTERNAL_HTTP.get("https://api.deezer.com/search/artist?" + artist_query)
             response.raise_for_status()

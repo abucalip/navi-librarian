@@ -5468,7 +5468,12 @@ function buildTrackRow(track, index) {
   const row = document.createElement('li');
   row.className = 'track';
   addTextElement(row, 'span', 'track-number', track.track_number || index + 1);
-  addTextElement(row, 'span', 'track-title', track.title);
+  const title = addTextElement(row, 'span', 'track-title', track.title);
+  // The file's quality (FLAC 16/44, MP3 320k), only for a song the library has.
+  if (track.owned && track.quality) {
+    const tag = addTextElement(title, 'span', 'track-quality', track.quality);
+    tag.title = 'File quality';
+  }
   addTextElement(row, 'span', 'track-duration', formatDuration(track.duration_seconds));
   // A song the library lacks gets its own Get, once the album it belongs to is known.
   const album = albumPage.album;

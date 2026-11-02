@@ -30,6 +30,7 @@ from discovery.search.cache import provider_cache_key
 from discovery.search.index import OwnedData
 from discovery.search.merge import OwnedKeys
 from discovery.search.normalize import normalize_key
+from discovery.search.quality_label import quality_label
 from discovery.search.query import artwork_url
 
 ALBUM_SECTION_ORDER = ("album", "year", "genre", "description", "tracks", "similar_artists", "similar_albums")
@@ -54,14 +55,20 @@ def find_album(data: OwnedData, artist_key: str, album_key: str, album_id: str |
     return matches[0] if matches else None
 
 
+def _with_quality(track: dict[str, Any], song: dict[str, Any]) -> dict[str, Any]:
+    """The track with the song file's quality tag when it has one; the key is absent otherwise."""
+    label = quality_label(song.get("suffix"), song.get("bit_rate"), song.get("bit_depth"), song.get("sampling_rate"))
+    return {**track, "quality": label} if label else track
+
+
 def owned_tracks(data: OwnedData, album_id: str) -> list[dict[str, Any]]:
     songs = sorted(
         (s for s in data.songs if s["album_id"] == album_id),
         key=lambda s: (s["track_number"] is None, s["track_number"] or 0, s["name"].casefold()),
     )
     return [
-        {"track_number": s["track_number"] or index + 1, "title": s["name"],
-         "duration_seconds": s["duration"] or 0, "owned": True}
+        _with_quality({"track_number": s["track_number"] or index + 1, "title": s["name"],
+                       "duration_seconds": s["duration"] or 0, "owned": True}, s)
         for index, s in enumerate(songs)
     ]
 
@@ -92,13 +99,16 @@ def mark_owned_tracks(provider: list[dict[str, Any]], songs: list[dict[str, Any]
         if song is not None:
             unmatched.remove(song)
             matched[index] = song
-    items = [{**track, "owned": index in matched} for index, track in enumerate(provider)]
+    items = [
+        _with_quality({**track, "owned": True}, matched[index]) if index in matched else {**track, "owned": False}
+        for index, track in enumerate(provider)
+    ]
     extras = sorted(unmatched, key=lambda s: (s["track_number"] is None, s["track_number"] or 0, s["name"].casefold()))
     for song in extras:
-        items.append({
+        items.append(_with_quality({
             "track_number": song["track_number"] or len(items) + 1,
             "title": song["name"], "duration_seconds": song["duration"] or 0, "owned": True,
-        })
+        }, song))
     return items
 
 
