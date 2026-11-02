@@ -1026,6 +1026,7 @@ button.inline-link:focus-visible { outline: 2px solid var(--accent); outline-off
 .track-number { color: var(--text-muted); font-variant-numeric: tabular-nums; text-align: right; }
 .track-title { min-width: 0; overflow-wrap: anywhere; }
 .track-duration { color: var(--text-muted); font-variant-numeric: tabular-nums; }
+.track-quality { display: inline-block; margin-left: var(--space-2); padding: 1px 5px; border: 1px solid var(--edge); border-radius: var(--radius-control); color: var(--text-subtle); font: 500 .625rem/1.3 var(--mono); letter-spacing: .02em; vertical-align: middle; white-space: nowrap; }
 .track .owned-check { width: 28px; height: 28px; }
 /* A song's own Get: the same circle, smaller. */
 .track > .get-track, .top-song > .get-track { width: 26px; height: 26px; }

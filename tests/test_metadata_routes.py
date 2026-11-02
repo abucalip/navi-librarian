@@ -254,26 +254,32 @@ class MetadataRoutesTests(unittest.TestCase):
         })
         client.get.assert_called_once()
 
-    def test_artwork_falls_back_to_exact_artist_photo_when_album_match_is_weak(self):
+    def test_artwork_never_uses_the_artist_photo_for_a_missing_album(self):
         album_response = _Response({"data": [{
             "artist": {"name": "Other Artist"}, "title": "Different Album",
             "cover_xl": "https://images.test/unrelated.jpg",
         }]})
+        with patch.object(metadata, "_EXTERNAL_HTTP") as client:
+            qobuz_page = _Response({})
+            qobuz_page.text = "<html></html>"
+            client.get.side_effect = [album_response, _Response({"results": []}), qobuz_page]
+            result = metadata.album_artwork("Artist", "Album")
+        self.assertIsNone(result["artwork_url"])
+        self.assertEqual(result["image_kind"], "album")
+        self.assertNotIn("retryable", result)
+        self.assertEqual(client.get.call_count, 3)  # Deezer, Apple Music, Qobuz; never the artist search
+
+    def test_artist_only_artwork_still_uses_exact_artist_photo(self):
+        album_response = _Response({"data": []})
         artist_response = _Response({"data": [
             {"name": "Artist Tribute", "picture_xl": "https://images.test/wrong.jpg"},
             {"name": "Artist", "picture_big": "http://images.test/artist.jpg"},
         ]})
         with patch.object(metadata, "_EXTERNAL_HTTP") as client:
             client.get.side_effect = [album_response, artist_response]
-            result = metadata.album_artwork("Artist", "Album")
-        self.assertEqual(result, {
-            "artwork_url": "https://images.test/artist.jpg",
-            "image_kind": "artist",
-            "source": "Deezer",
-            "matched_artist": "Artist",
-            "year": None,
-        })
-        self.assertEqual(client.get.call_count, 2)
+            result = metadata.album_artwork("Artist", "")
+        self.assertEqual(result["artwork_url"], "https://images.test/artist.jpg")
+        self.assertEqual(result["image_kind"], "artist")
 
     def test_artwork_returns_cached_result_and_rejects_empty_request(self):
         with self.assertRaises(HTTPException) as raised:

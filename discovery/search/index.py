@@ -167,6 +167,11 @@ def _song_entry(song: Mapping[str, Any]) -> dict[str, Any]:
         "key": f"{normalize_key(artist_name)}/{normalize_key(title)}",
         "duration": int(duration) if isinstance(duration, (int, float)) else None,
         "track_number": int(track) if isinstance(track, int) and track >= 1 else None,
+        # The file's own format fields (Subsonic ``suffix``, ``bitRate`` kbps, ``bitDepth``, ``samplingRate`` Hz).
+        "suffix": str(song.get("suffix") or "").strip() or None,
+        "bit_rate": song.get("bitRate") if isinstance(song.get("bitRate"), (int, float)) else None,
+        "bit_depth": song.get("bitDepth") if isinstance(song.get("bitDepth"), (int, float)) else None,
+        "sampling_rate": song.get("samplingRate") if isinstance(song.get("samplingRate"), (int, float)) else None,
         # Navidrome's play count for the song (Subsonic ``playCount``); zero when absent.
         "plays": _count(song.get("playCount")),
     }
