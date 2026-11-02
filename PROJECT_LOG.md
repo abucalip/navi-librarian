@@ -1,3 +1,14 @@
+## 2026-11-02 — Android New releases tiles, new icons and overlay download icon merged (PR #687)
+
+- **Merged:** PR #687, squash `e6914acd39a10fdafd11f461c0ad05dce717cd46`, from tested head `b5679c821bde377575d2d6c5a49beb034e25a69e`; compile, container-smoke, test-and-build and validate-container passed on that head.
+- **New releases:** `NewReleasesSection` shows the discovery list in pages of three tiles that slide sideways; the date reads "Oct 2026" from `first_release_date` (`releaseMonth`: month and year, a bare year, the list's year, or nothing). The tile menu has Download only (Save and the two dismissals stay on the Discover cards).
+- **Icons (owner's picks):** `PlayerIcons` gains `Cloud`, `Tune` and `Left`; downloads use the solid cloud, Settings the sliders, back and forward arrows the chevron (Library sort direction and the equalizer dropdown too). The outline cloud drawable was deleted.
+- **Overlay download icon:** on artwork (For you picks) the Get icon has no circle; it is white over a blurred dark copy.
+- **Tests run (local, JDK 17):** `testDebugUnitTest` (including 5 new `ReleaseDateTest` cases), `lintDebug`, `assembleRelease`. Not run: the Python full suite (CI only), instrumented tests.
+- **Not checked, not claimed:** on-device look of the tiles, icons and shadow; TalkBack, landscape, 200% text.
+- **Not done:** publication and deployment (the Android app is not part of the image).
+- **Next action:** the owner checks the tiles, the icons and the picks' download icon on the phone.
+
 ## 2026-11-02 — Android play badge, Recently added albums and bottom band fix merged (PR #686)
 
 - **Merged:** PR #686, squash `3167c45a889d1fcf654d7eda6cb4121a5010f2d7`, from tested head `08edffab8b095c0e2b0347891e6e347fe877942a`; compile, container-smoke, test-and-build and validate-container passed on that head.
