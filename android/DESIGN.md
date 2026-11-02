@@ -286,3 +286,15 @@ Produced with the `/mobile-design` skill. Platform Android, Kotlin and Compose, 
 - **Security:** no credentials, no network, nothing logged.
 - **Thumb reach:** the switch is the first control under the title (upper area, like the equalizer page); the length buttons and slider sit in the middle of the screen. Not tested one-handed.
 - **Not done:** a screenshot pass (default and 200% text, off and on, with and without the quality line), TalkBack, one-handed reach.
+
+## Navigation island (2026-11-02, replaces the bottom bar and the mini-player)
+
+The bottom navigation bar and the mini-player are gone; the earlier sections that describe them are superseded by this one.
+
+- **Island:** a floating pill on every signed-in page, with no bar behind it, so pages scroll under it. Search on the left, Home (the dashboard) in the middle, animated play bars on the right. Buttons are 48dp, icon only, no backgrounds; the active page (Home) has a yellow ring, not a yellow icon. Each button is announced by name; the bars say "Now playing: title, artist. Open player" or "Player, nothing playing".
+- **Play bars:** they move while music plays and stand still when paused or when nothing is queued. A tap opens the Now Playing sheet; with an empty queue it says "Nothing is playing." in the snackbar. Play, pause and next are now only in the sheet.
+- **Tint:** the island takes the dark tint of the current song's artwork (the colour the sheet uses), playing or paused; the default dark colour when nothing is queued.
+- **Search:** a full-height modal sheet over the current page, not a tab. Opening a result closes the sheet first. The typed text is kept while the app is open. The sheet makes the system navigation bar transparent so no strip shows at the bottom.
+- **Home:** Discover, Library and Settings are icon-only buttons in one joined group (a rounded frame, hairlines between the buttons, about the island's width) at the end of the dashboard. Discover and Library open as pages that Back, or a swipe to the right, returns from; sideways swiping between tabs is gone. The header shows the wordmark and Downloads only, on Home, Discover and Library.
+- **Clearance:** pages end with extra padding (`LocalBottomClearance`, the island's measured height) so the last item can scroll clear of it. Snackbars sit above it.
+- **Seen on the phone (2026-11-02):** Home, the island tint, the Search sheet, Discover, the Artist page and the button group. **Not checked:** the bars animating during playback, the end of every page clearing the island, Settings spacing at the bottom, TalkBack, 200% text, landscape, one-handed reach. Not published, not deployed.

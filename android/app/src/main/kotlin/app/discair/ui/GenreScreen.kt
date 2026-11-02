@@ -36,7 +36,7 @@ fun GenreScreen(route: GenreRoute, open: Opener) {
         LoadView(loaded) { page ->
             val artists = page.sections.artists.items
             val albums = page.sections.albums.items
-            LazyColumn(Modifier.fillMaxSize(), contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 32.dp)) {
+            LazyColumn(Modifier.fillMaxSize(), contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 32.dp + app.discair.ui.LocalBottomClearance.current)) {
                 item {
                     Text(
                         route.name, style = MaterialTheme.typography.headlineLarge,

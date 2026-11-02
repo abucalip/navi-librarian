@@ -1,6 +1,7 @@
 package app.discair.ui.home
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.layout.Arrangement
@@ -23,6 +24,10 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -74,11 +79,11 @@ import kotlinx.coroutines.launch
 private const val GENRES_SHOWN = 6
 
 @Composable
-fun HomeScreen(open: Opener) {
+fun HomeScreen(open: Opener, onDiscover: () -> Unit, onLibrary: () -> Unit, onSettings: () -> Unit) {
     val repo = LocalRepository.current
     val picks = rememberLoad("picks") { repo.picks(10).items }
     val genres = rememberLoad("genres") { repo.genres().items }
-    LazyColumn(Modifier.fillMaxWidth(), contentPadding = PaddingValues(top = 12.dp, bottom = 24.dp)) {
+    LazyColumn(Modifier.fillMaxWidth(), contentPadding = PaddingValues(top = 12.dp, bottom = 24.dp + app.discair.ui.LocalBottomClearance.current)) {
         item { PageHeading("For you", Modifier.padding(start = 16.dp, end = 16.dp, bottom = 8.dp)) }
         item {
             Box(Modifier.heightIn(min = 120.dp)) {
@@ -106,7 +111,35 @@ fun HomeScreen(open: Opener) {
         for (shelf in listOf(Shelves.Recent to "Recently played", Shelves.Frequent to "Most played")) {
             item(key = shelf.first.path) { ShelfRow(shelf.first.path, shelf.second, open) { repo.shelf(shelf.first, 20).items } }
         }
+        item(key = "pages") { PageButtons(onDiscover, onLibrary, onSettings) }
     }
+}
+
+/**
+ * Where the bottom bar's Discover and Library tabs went, with Settings beside them: icons only, in the
+ * web's joined button group (one rounded frame, a hairline between the buttons). Each is announced by name.
+ */
+@Composable
+private fun PageButtons(onDiscover: () -> Unit, onLibrary: () -> Unit, onSettings: () -> Unit) {
+    val frame = RoundedCornerShape(6.dp)
+    Box(Modifier.fillMaxWidth().padding(vertical = 24.dp), contentAlignment = Alignment.Center) {
+    // About as wide as the navigation island below it.
+    Row(Modifier.width(200.dp).height(48.dp).clip(frame).background(Ink.Surface).border(1.dp, Ink.EdgeStrong, frame)) {
+        PageButton("Discover", Icons.Default.Star, onDiscover, Modifier.weight(1f))
+        Box(Modifier.width(1.dp).fillMaxHeight().background(Ink.EdgeStrong))
+        PageButton("Library", Icons.AutoMirrored.Filled.List, onLibrary, Modifier.weight(1f))
+        Box(Modifier.width(1.dp).fillMaxHeight().background(Ink.EdgeStrong))
+        PageButton("Settings", app.discair.ui.player.PlayerIcons.Tune, onSettings, Modifier.weight(1f))
+    }
+    }
+}
+
+@Composable
+private fun PageButton(label: String, icon: androidx.compose.ui.graphics.vector.ImageVector, onClick: () -> Unit, modifier: Modifier) {
+    Box(
+        modifier.fillMaxHeight().clickable(role = Role.Button, onClick = onClick).semantics { contentDescription = label },
+        contentAlignment = Alignment.Center,
+    ) { Icon(icon, contentDescription = null, tint = Ink.TextMuted, modifier = Modifier.size(24.dp)) }
 }
 
 @Composable

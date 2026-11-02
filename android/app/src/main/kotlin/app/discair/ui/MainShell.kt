@@ -11,7 +11,6 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.Alignment
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.IconButton
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -47,6 +46,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.navigation.NavDestination.Companion.hasRoute
@@ -90,9 +90,12 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.contentDescription
 import app.discair.R
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import app.discair.ui.common.LocalRepository
 import app.discair.ui.home.HomeScreen
 import app.discair.ui.library.LibraryScreen
+
+private fun androidx.navigation.NavDestination?.isHome() = this?.hasRoute(HomeRoute::class) == true
 
 private data class Tab(val route: Any, val label: String, val icon: ImageVector)
 
@@ -134,23 +137,26 @@ fun MainShell(state: UiState, model: AppViewModel, container: AppContainer) {
         )
     }
     LaunchedEffect(playActions) { playActions.messages.collect { snackbar.showSnackbar(it) } }
+    var islandPx by remember { mutableStateOf(0) }
+    var islandTint by remember { mutableStateOf<Color?>(null) }
+    LaunchedEffect(playerState.current?.coverUrl) { if (playerState.current?.coverUrl.isNullOrBlank()) islandTint = null }
+    val clearance = with(androidx.compose.ui.platform.LocalDensity.current) { islandPx.toDp() }
     val entry by nav.currentBackStackEntryAsState()
     val destination = entry?.destination
     val tabs = listOf(
         Tab(HomeRoute, "Home", Icons.Default.Home),
         Tab(DiscoverRoute, "Discover", Icons.Default.Star),
-        Tab(SearchRoute, "Search", Icons.Default.Search),
         Tab(LibraryRoute, "Library", Icons.AutoMirrored.Filled.List),
     )
     val onTopLevel = tabs.any { destination?.hasRoute(it.route::class) == true }
     val tabIndex = tabs.indexOfFirst { destination?.hasRoute(it.route::class) == true }
-    val goTab: (Tab) -> Unit = { tab ->
-        nav.navigate(tab.route) {
-            popUpTo(nav.graph.findStartDestination().id) { saveState = true }
-            launchSingleTop = true
-            restoreState = true
-        }
+    // Discover, Library and Settings are buttons on Home now; they open as pages and Back returns to Home.
+    val goPage: (Any) -> Unit = { route -> nav.navigate(route) { launchSingleTop = true } }
+    val goHome: () -> Unit = {
+        nav.navigate(HomeRoute) { popUpTo(nav.graph.findStartDestination().id); launchSingleTop = true }
     }
+    var searchOpen by rememberSaveable { mutableStateOf(false) }
+    var searchText by rememberSaveable { mutableStateOf("") }
     /** Which top-level tab a route is, for choosing the slide direction; -1 for every other page. */
     fun indexOf(e: androidx.navigation.NavBackStackEntry) = tabs.indexOfFirst { e.destination.hasRoute(it.route::class) }
 
@@ -166,7 +172,7 @@ fun MainShell(state: UiState, model: AppViewModel, container: AppContainer) {
     }
 
     CompositionLocalProvider(
-        LocalRepository provides repo, LocalImageLoader provides container.imageLoader, LocalAcquisitions provides hub,
+        LocalBottomClearance provides clearance, LocalRepository provides repo, LocalImageLoader provides container.imageLoader, LocalAcquisitions provides hub,
         app.discair.ui.player.LocalPlayActions provides playActions,
         app.discair.ui.player.LocalPlayingNow provides playerState.current?.let {
             app.discair.ui.player.PlayingNow(it.albumId, it.title, playerState.isPlaying)
@@ -183,59 +189,40 @@ fun MainShell(state: UiState, model: AppViewModel, container: AppContainer) {
                 },
             )
         }
+        if (searchOpen) {
+            // Opening a result closes the sheet first, so the page opens on the app, not under the sheet.
+            val fromSheet = Opener(
+                artist = { n, k, i, m -> searchOpen = false; open.artist(n, k, i, m) },
+                album = { k, a, n, i, y -> searchOpen = false; open.album(k, a, n, i, y) },
+                genre = { t, n -> searchOpen = false; open.genre(t, n) },
+                back = { searchOpen = false },
+            )
+            SearchSheet(searchText, { searchText = it }, fromSheet, onDismiss = { searchOpen = false })
+        }
+        Box(Modifier.fillMaxSize()) {
         Scaffold(
-            snackbarHost = { SnackbarHost(snackbar) },
+            snackbarHost = { SnackbarHost(snackbar, Modifier.padding(bottom = clearance)) },
+            // Pages run behind the system navigation bar; the island and each page's end padding clear it.
+            contentWindowInsets = androidx.compose.foundation.layout.WindowInsets(0),
             topBar = {
                 if (onTopLevel) AppHeader(
                     active = hub.activeDownloads,
                     onDownloads = { nav.navigate(DownloadsRoute) { launchSingleTop = true } },
-                    onSettings = { nav.navigate(SettingsRoute) },
                 )
-            },
-            bottomBar = {
-              Column {
-                MiniPlayer(
-                    playerState, player, onOpen = { nowPlayingOpen = true },
-                    // On pages without the navigation bar the mini-player clears the system bar itself.
-                    modifier = if (onTopLevel) Modifier else Modifier.navigationBarsPadding(),
-                )
-                if (onTopLevel) NavigationBar {
-                    tabs.forEach { tab ->
-                        NavigationBarItem(
-                            selected = destination?.hasRoute(tab.route::class) == true,
-                            onClick = { goTab(tab) },
-                            // Icons only; the name is still spoken by TalkBack.
-                            icon = { Icon(tab.icon, contentDescription = tab.label) },
-                        )
-                    }
-                }
-              }
             },
         ) { padding ->
             Column(Modifier.padding(padding).fillMaxSize()) {
             OfflineBanner(repo.staleSince)
             val swipeThreshold = with(androidx.compose.ui.platform.LocalDensity.current) { 72.dp.toPx() }
-            // Swiping sideways on a top-level page moves to the next tab. Carousels and rows inside the
-            // page take their own swipes first; only a drag nothing else used reaches this.
-            val swipe = if (!onTopLevel) Modifier.pointerInput(Unit) {
-                // On an artist, album, genre or other stacked page, a swipe to the right goes back.
+            // On any page but Home, a drag nothing else used (carousels, rows and pagers take theirs first) to the right goes back.
+            val swipe = if (!destination.isHome()) Modifier.pointerInput(Unit) {
                 var total = 0f
                 detectHorizontalDragGestures(
                     onDragStart = { total = 0f },
                     onDragCancel = { total = 0f },
                     onDragEnd = { if (total > swipeThreshold) nav.popBackStack() },
                 ) { _, delta -> total += delta }
-            } else Modifier.pointerInput(tabIndex) {
-                var total = 0f
-                detectHorizontalDragGestures(
-                    onDragStart = { total = 0f },
-                    onDragCancel = { total = 0f },
-                    onDragEnd = {
-                        val target = tabIndex + if (total < -swipeThreshold) 1 else if (total > swipeThreshold) -1 else 0
-                        if (target != tabIndex && target in tabs.indices) goTab(tabs[target])
-                    },
-                ) { _, delta -> total += delta }
-            }
+            } else Modifier
             NavHost(
                 nav, startDestination = HomeRoute, modifier = Modifier.weight(1f).fillMaxWidth().then(swipe),
                 enterTransition = {
@@ -253,9 +240,10 @@ fun MainShell(state: UiState, model: AppViewModel, container: AppContainer) {
                 popEnterTransition = { fadeIn() },
                 popExitTransition = { fadeOut() },
             ) {
-                composable<HomeRoute> { HomeScreen(open) }
+                composable<HomeRoute> {
+                    HomeScreen(open, onDiscover = { goPage(DiscoverRoute) }, onLibrary = { goPage(LibraryRoute) }, onSettings = { goPage(SettingsRoute) })
+                }
                 composable<DiscoverRoute> { DiscoverScreen(open) }
-                composable<SearchRoute> { SearchScreen(open) }
                 composable<LibraryRoute> { LibraryScreen(open) }
                 composable<DownloadsRoute> { DownloadsScreen(open) }
                 composable<SettingsRoute> { SettingsScreen(state, model, onBack = { nav.popBackStack() }, onEqualizer = { nav.navigate(EqualizerRoute) { launchSingleTop = true } }, onCrossfade = { nav.navigate(CrossfadeRoute) { launchSingleTop = true } }) }
@@ -267,12 +255,30 @@ fun MainShell(state: UiState, model: AppViewModel, container: AppContainer) {
             }
             }
         }
+        // The island floats over the pages: no bar behind it. Hidden cover load below gives it the artwork's tint.
+        NavIsland(
+            tint = islandTint,
+            homeSelected = destination?.hasRoute(HomeRoute::class) == true,
+            playing = playerState.isPlaying,
+            playerLabel = playerState.current?.let { "Now playing: ${it.title}, ${it.artist}. Open player" } ?: "Player, nothing playing",
+            onSearch = { searchOpen = true },
+            onHome = goHome,
+            onPlayer = {
+                if (playerState.visible) nowPlayingOpen = true
+                else scope.launch { snackbar.showSnackbar("Nothing is playing.") }
+            },
+            modifier = Modifier.align(Alignment.BottomCenter).onSizeChanged { islandPx = it.height },
+        )
+        playerState.current?.coverUrl?.takeIf { it.isNotBlank() }?.let { url ->
+            app.discair.ui.common.Cover(app.discair.ui.player.playerArtworkUrl(url), Modifier.size(1.dp), onColor = { islandTint = it })
+        }
+        }
     }
 }
 
-/** The bar over every top-level page: the app name in the display face, Downloads (with the active count, as the web nav has) and Settings. */
+/** The bar over Home, Discover and Library: the app name in the display face and Downloads (with the active count, as the web nav has). */
 @Composable
-private fun AppHeader(active: Int, onDownloads: () -> Unit, onSettings: () -> Unit) {
+private fun AppHeader(active: Int, onDownloads: () -> Unit) {
     Column(Modifier.background(app.discair.ui.theme.Ink.Rail)) {
         Row(
             Modifier.fillMaxWidth().statusBarsPadding().heightIn(min = 56.dp).padding(start = 16.dp, end = 16.dp),
@@ -283,28 +289,17 @@ private fun AppHeader(active: Int, onDownloads: () -> Unit, onSettings: () -> Un
                 modifier = Modifier.height(30.dp).semantics { heading() },
             )
             Spacer(Modifier.weight(1f))
-            // The web's joined action group: one rounded frame, a hairline between the two buttons.
             val frame = RoundedCornerShape(6.dp)
-            Row(
-                Modifier.height(38.dp).clip(frame).background(app.discair.ui.theme.Ink.Surface)
-                    .border(1.dp, app.discair.ui.theme.Ink.EdgeStrong, frame),
+            val label = if (active == 0) "Downloads" else "Downloads, $active active"
+            Box(
+                Modifier.size(48.dp, 38.dp).clip(frame).background(app.discair.ui.theme.Ink.Surface)
+                    .border(1.dp, app.discair.ui.theme.Ink.EdgeStrong, frame)
+                    .clickable(role = Role.Button, onClick = onDownloads)
+                    .semantics { contentDescription = label },
+                contentAlignment = Alignment.Center,
             ) {
-                val label = if (active == 0) "Downloads" else "Downloads, $active active"
-                Box(
-                    Modifier.width(48.dp).fillMaxHeight().clickable(role = Role.Button, onClick = onDownloads)
-                        .semantics { contentDescription = label },
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(app.discair.ui.player.PlayerIcons.Cloud, contentDescription = null, tint = app.discair.ui.theme.Ink.TextMuted, modifier = Modifier.size(20.dp))
-                    if (active > 0) Badge(Modifier.align(Alignment.TopEnd).padding(top = 3.dp, end = 3.dp)) { Text("$active") }
-                }
-                Box(Modifier.width(1.dp).fillMaxHeight().background(app.discair.ui.theme.Ink.EdgeStrong))
-                Box(
-                    Modifier.width(48.dp).fillMaxHeight().clickable(role = Role.Button, onClick = onSettings),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(app.discair.ui.player.PlayerIcons.Tune, contentDescription = "Settings", tint = app.discair.ui.theme.Ink.TextMuted, modifier = Modifier.size(20.dp))
-                }
+                Icon(app.discair.ui.player.PlayerIcons.Cloud, contentDescription = null, tint = app.discair.ui.theme.Ink.TextMuted, modifier = Modifier.size(20.dp))
+                if (active > 0) Badge(Modifier.align(Alignment.TopEnd).padding(top = 3.dp, end = 3.dp)) { Text("$active") }
             }
         }
         RowDivider()
@@ -331,5 +326,19 @@ private fun OfflineBanner(staleSince: Long?) {
             "Can't reach Librarian. Showing a copy saved $saved.",
             style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(start = 8.dp),
         )
+    }
+}
+
+/** Search as a full-height sheet over the current page; the typed text is kept while the app is open. */
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+@Composable
+private fun SearchSheet(text: String, onText: (String) -> Unit, open: Opener, onDismiss: () -> Unit) {
+    androidx.compose.material3.ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = androidx.compose.material3.rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        containerColor = app.discair.ui.theme.Ink.Ink,
+    ) {
+        app.discair.ui.common.TransparentNavigationBar()
+        CompositionLocalProvider(LocalBottomClearance provides 0.dp) { SearchScreen(open, text, onText) }
     }
 }

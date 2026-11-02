@@ -207,7 +207,7 @@ private fun Rows(state: LibraryState, model: LibraryViewModel, open: Opener, lis
         snapshotFlow { list.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0 }
             .collect { last -> if (last >= list.layoutInfo.totalItemsCount - 6) model.loadMore() }
     }
-    LazyColumn(Modifier.fillMaxSize(), state = list) {
+    LazyColumn(Modifier.fillMaxSize(), state = list, contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = app.discair.ui.LocalBottomClearance.current)) {
         if (state.tab == LibraryTab.Artists) {
             items(state.artists, key = { it.id }) { artist ->
                 Row(

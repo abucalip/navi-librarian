@@ -105,7 +105,7 @@ private fun AlbumContent(route: AlbumRoute, page: AlbumPage, open: Opener, list:
     val albumId = (info?.id ?: route.id)?.takeIf { owned && it.isNotBlank() }
     val play = app.discair.ui.player.LocalPlayActions.current
 
-    LazyColumn(Modifier.fillMaxSize(), state = list, contentPadding = PaddingValues(bottom = 32.dp)) {
+    LazyColumn(Modifier.fillMaxSize(), state = list, contentPadding = PaddingValues(bottom = 32.dp + app.discair.ui.LocalBottomClearance.current)) {
         item {
             Box(Modifier.statusBarsPadding().fillMaxWidth().padding(12.dp)) {
                 OverlayBack(open.back, Modifier.align(Alignment.TopStart))

@@ -115,7 +115,7 @@ fun DownloadsScreen(open: Opener) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(16.dp),
             )
-            else -> LazyColumn(Modifier.fillMaxSize()) {
+            else -> LazyColumn(Modifier.fillMaxSize(), contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = app.discair.ui.LocalBottomClearance.current)) {
                 items(jobs, key = { it.key }) { job ->
                     JobRow(job, hub, now, open, onDismiss = { confirm = Confirm.One(job) })
                     RowDivider()

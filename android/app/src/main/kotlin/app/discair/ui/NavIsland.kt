@@ -1,0 +1,125 @@
+package app.discair.ui
+
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.Icon
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.dp
+import app.discair.ui.theme.Ink
+
+/** Heights (share of the icon's height) the bars rest at when nothing moves them. */
+private val RestingBars = floatArrayOf(0.45f, 0.85f, 0.6f, 0.75f)
+
+/** Seconds-ish periods (ms) per bar, so the four never move in step. */
+private val BarPeriods = intArrayOf(520, 380, 610, 450)
+
+/** Extra room the last item on a page needs so it can scroll clear of the floating island. */
+val LocalBottomClearance = androidx.compose.runtime.compositionLocalOf { 0.dp }
+
+/**
+ * The floating navigation island: Search on the left, Home (the dashboard) in the middle and the
+ * play bars on the right, which open the player. No bar sits behind it, so pages scroll underneath.
+ * It takes the dark tint of the artwork of the current song, playing or paused; the active page
+ * is marked by a yellow ring.
+ */
+@Composable
+fun NavIsland(
+    tint: Color?,
+    homeSelected: Boolean,
+    playing: Boolean,
+    playerLabel: String,
+    onSearch: () -> Unit,
+    onHome: () -> Unit,
+    onPlayer: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Box(modifier.fillMaxWidth().navigationBarsPadding().padding(bottom = 12.dp), contentAlignment = Alignment.BottomCenter) {
+        val card = RoundedCornerShape(50.dp)
+        val fill by animateColorAsState(tint ?: Ink.Raised, animationSpec = tween(500), label = "islandTint")
+        Row(
+            Modifier.shadow(10.dp, card).background(fill, card).border(1.dp, Color.White.copy(alpha = 0.12f), card)
+                .padding(horizontal = 14.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(14.dp),
+        ) {
+            IslandButton(onClick = onSearch, label = "Search") {
+                Icon(Icons.Default.Search, contentDescription = null, tint = Ink.Text, modifier = Modifier.size(24.dp))
+            }
+            IslandButton(onClick = onHome, label = "Home", selected = homeSelected) {
+                Icon(Icons.Default.Home, contentDescription = null, tint = Ink.Text, modifier = Modifier.size(24.dp))
+            }
+            IslandButton(onClick = onPlayer, label = playerLabel) { PlayBars(playing, Ink.Text) }
+        }
+    }
+}
+
+@Composable
+private fun IslandButton(onClick: () -> Unit, label: String, selected: Boolean = false, content: @Composable () -> Unit) {
+    Box(
+        Modifier.size(48.dp).clip(CircleShape).then(if (selected) Modifier.border(2.dp, Ink.Accent, CircleShape) else Modifier)
+            .clickable(role = Role.Button, onClick = onClick)
+            .semantics { contentDescription = label; this.selected = selected },
+        contentAlignment = Alignment.Center,
+    ) { content() }
+}
+
+/** Four rounded bars. They bounce while music plays and stand still otherwise (paused, or nothing queued). */
+@Composable
+private fun PlayBars(playing: Boolean, color: Color) {
+    val heights = FloatArray(RestingBars.size) { RestingBars[it] }
+    if (playing) {
+        val transition = rememberInfiniteTransition(label = "playBars")
+        for (i in heights.indices) {
+            val h by transition.animateFloat(
+                initialValue = 0.25f, targetValue = 1f,
+                animationSpec = infiniteRepeatable(tween(BarPeriods[i], easing = LinearEasing), RepeatMode.Reverse),
+                label = "bar$i",
+            )
+            heights[i] = h
+        }
+    }
+    Canvas(Modifier.size(22.dp)) {
+        val bar = 3.5.dp.toPx()
+        val gap = (size.width - bar * heights.size) / (heights.size - 1)
+        heights.forEachIndexed { i, share ->
+            val h = size.height * share
+            drawRoundRect(
+                color, topLeft = Offset(i * (bar + gap), size.height - h), size = Size(bar, h), cornerRadius = CornerRadius(bar / 2),
+            )
+        }
+    }
+}

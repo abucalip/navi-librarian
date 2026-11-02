@@ -67,7 +67,7 @@ fun CrossfadeScreen(container: AppContainer, onBack: (() -> Unit)?) {
     val on = xf.enabled
     val seconds = CrossfadeSettings.sanitizeSeconds(xf.seconds)
     Column(
-        Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 8.dp),
+        Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(start = 16.dp, top = 8.dp, end = 16.dp, bottom = 8.dp + app.discair.ui.LocalBottomClearance.current),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {

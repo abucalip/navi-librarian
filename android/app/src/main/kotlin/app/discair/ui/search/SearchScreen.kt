@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -75,9 +74,8 @@ private data class SearchState(
 private val typeOrder = listOf("artist" to "Artists", "album" to "Albums", "song" to "Songs", "genre" to "Genres")
 
 @Composable
-fun SearchScreen(open: Opener) {
+fun SearchScreen(open: Opener, text: String, onText: (String) -> Unit) {
     val repo = LocalRepository.current
-    var text by rememberSaveable { mutableStateOf("") }
     var state by remember { mutableStateOf(SearchState()) }
     val focus = remember { FocusRequester() }
     val keyboard = androidx.compose.ui.platform.LocalSoftwareKeyboardController.current
@@ -118,11 +116,11 @@ fun SearchScreen(open: Opener) {
     Column(Modifier.fillMaxSize()) {
         PageHeading("Search", Modifier.padding(start = 16.dp, top = 12.dp, end = 16.dp), large = true)
         OutlinedTextField(
-            value = text, onValueChange = { text = it.take(200) }, singleLine = true,
+            value = text, onValueChange = { onText(it.take(200)) }, singleLine = true,
             label = { Text("Artists, albums, songs, genres") },
             leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
             trailingIcon = {
-                if (text.isNotEmpty()) IconButton(onClick = { text = "" }, Modifier.size(Target)) {
+                if (text.isNotEmpty()) IconButton(onClick = { onText("") }, Modifier.size(Target)) {
                     Icon(Icons.Default.Clear, contentDescription = "Clear search")
                 }
             },
@@ -154,7 +152,7 @@ fun SearchScreen(open: Opener) {
 private fun Results(results: List<SearchResult>, open: Opener) {
     val owned = results.filter { it.owned }
     val other = results.filter { !it.owned }
-    LazyColumn(Modifier.fillMaxSize().imePadding(), contentPadding = PaddingValues(bottom = 24.dp)) {
+    LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 24.dp)) {
         typeOrder.forEach { (type, title) ->
             val rows = owned.filter { it.type == type }
             if (rows.isNotEmpty()) {
@@ -226,7 +224,7 @@ private fun ResultRow(r: SearchResult, open: Opener, showType: Boolean = false) 
             }
             if (ownedSong != null) {
                 IconButton(onClick = { playActions.queueSong(ownedSong, next = false) }, Modifier.size(Target)) {
-                    Icon(app.discair.ui.player.PlayerIcons.Add, contentDescription = "Add ${r.name} to the queue")
+                    Icon(app.discair.ui.player.PlayerIcons.QueueAdd, contentDescription = "Add ${r.name} to the queue")
                 }
             } else if (r.type != "song") OwnedMark(r.owned)
         }
