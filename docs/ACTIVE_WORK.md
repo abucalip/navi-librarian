@@ -150,3 +150,4 @@ Done: Genres grid and four album shelves on the dashboard, the Recommended slide
 - Current architecture and boundaries: [ARCHITECTURE.md](ARCHITECTURE.md), [DECISIONS.md](DECISIONS.md)
 - Chronological implementation/verification evidence: root [PROJECT_LOG.md](../PROJECT_LOG.md)
 - Historical roadmaps and completed plans: [archive](archive/)
+- **Wrong artist photo (open PR [#691](https://github.com/abucalip/navi-librarian/pull/691), 2026-11-02):** the owner's phone showed a record label's cover on the Adele page. `select_artist_artwork` took the first Deezer artist with the exact name; Deezer lists several (the label release had about 500 fans, the singer 15.5 million) in a changing order. The fix picks the exact-name artist with the most fans, uses that artist's large photo, and moves saved results to `artist-image:v2`. Not merged, published or deployed; the owner checks the Adele page after a release is deployed.

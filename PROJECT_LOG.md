@@ -1,3 +1,16 @@
+## 2026-11-02 — Android now-playing icon, numbered queue, linked artist and album, timed lyrics, album label merged (PR #690)
+
+- **Merged (owner requests):** PR #690, squash `f33247a5e86ed1fc54672cf0e23f5734799007f5`, from tested head `c12023a9bc939239190596c9a1ec079702c2ee09`; compile, container-smoke, test-and-build and validate-container passed on that head.
+- **Album page:** the quality tag is a dark label on the lower right corner of the artwork (chosen from five proposals); an owned song's length sits next to the three dots (the empty Get slot now exists only on songs the library lacks).
+- **Now-playing icon:** five voice bars (chosen from five proposals), still when paused or with animations off, beside the playing song's bold title in the queue (replacing "Now playing") and on the album page (matched by album id and title; `LocalPlayingNow`).
+- **Queue:** every row shows its position; opening the queue scrolls to the playing song when it is off screen.
+- **Player sheet:** artist and album open their pages (the artist by name).
+- **Timed lyrics:** body font kept; the active line is bold and 25% bigger; the rest are smaller and dimmed (45%); a 300 ms animation between lines; 22 sp text for about five or six lines. `ANDROID_LYRICS_CONTRACT.md` section 7 updated.
+- **Tests run (local, JDK 17):** `testDebugUnitTest` for `app.discair.ui.*`, `app.discair.lyrics.*`, `app.discair.player.*`, `lintDebug`, `assembleRelease`. Not run: the full suite (CI only), instrumented tests. No new unit tests for the new composables.
+- **Phone:** the signed release APK (built before the squash, same code) was installed over wireless adb; the owner has not yet reported on these changes. Not checked: the 22 sp lyrics size, the artist link, the album-page match.
+- **Not done:** publication and deployment (the Android app is not part of the image; the last release is `v0.3.5`).
+- **Next action:** the owner checks the new screens on the phone.
+
 ## 2026-11-02 — v0.3.5 published, not deployed
 
 - **Published (owner's instruction):** tag `v0.3.5` at `main` `b97306fc38eb99bbb290b4a44acdfb8a2f07c294` (the documentation commit after PR #689, `46a238f`), image `ghcr.io/abucalip/navi-librarian:v0.3.5` (digest `sha256:a1376304b32fb7e8efe1bb26383970631b45d441cdcad5b93b3959348c0424f0`; also tagged `sha-b97306fc38eb99bbb290b4a44acdfb8a2f07c294`), release run [41440845963](https://github.com/abucalip/navi-librarian/actions/runs/41440845963) passed (smoke test, multi-arch build and push). `latest` not changed. Digest taken from the run log, not read from the registry.
