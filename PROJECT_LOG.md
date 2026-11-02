@@ -1,3 +1,14 @@
+## 2026-11-02 — Search song results carry year and file details; v0.3.4 published (PR #688)
+
+- **Merged (owner's go-ahead):** PR #688, squash `909e88e1e6bfa75f15a130accc248833a67010c0`, from tested head `7707fc0baa3e1eb6a9f59aa6215deea9edb565a3`; compile, container-smoke, test-and-build and validate-container passed on that head.
+- **Server:** `_song_entry` keeps the song `year`; `_song_result` returns `year`, `suffix`, `bit_rate`, `bit_depth`, `sampling_rate` and `quality` (the `quality_label` tag), each null when unknown. `SEARCH_CONTRACT.md` updated. Contract fixtures unchanged: the recorded search responses hold no song results.
+- **Android:** `SearchResult` reads the new fields, the owned search song carries them into its queue item, and the extra Navidrome `getSong` call (`SongSource.song`, `SubsonicParse.song`, `PlayActions.detailed`) is removed.
+- **Tests run:** `test_discovery_search_query`, `test_api_search_routes`, `test_android_contract_fixtures`, `test_discovery_search_album_page` (111 passed); locally on JDK 17 `testDebugUnitTest` for `app.discair.player.*` and `app.discair.model.*` plus `assembleRelease` passed. Not run: the Python full suite (CI only), instrumented tests.
+- **Phone:** the signed release APK was installed over wireless adb; the new behavior was not opened or checked on the device.
+- **Published, not deployed:** tag `v0.3.4` at `main` `909e88e1e6bfa75f15a130accc248833a67010c0`, image `ghcr.io/abucalip/navi-librarian:v0.3.4` (digest `sha256:0c237ebd50a73a358c74d03f914c950fbc6cacb58910b6e61b02247745c2cf4d`; also tagged `sha-909e88e1e6bfa75f15a130accc248833a67010c0`), release run [41438653988](https://github.com/abucalip/navi-librarian/actions/runs/41438653988) passed (smoke test, multi-arch build and push), published on the owner's instruction. `latest` not changed. Rollback reference: `v0.3.3`.
+- **Not done:** deployment and runtime verification; the song year and quality tag appear on the phone only after the server runs `v0.3.4`.
+- **Next action:** the owner deploys `v0.3.4`, then checks the player sheet and search songs on the phone.
+
 ## 2026-11-02 — Android New releases tiles, new icons and overlay download icon merged (PR #687)
 
 - **Merged:** PR #687, squash `e6914acd39a10fdafd11f461c0ad05dce717cd46`, from tested head `b5679c821bde377575d2d6c5a49beb034e25a69e`; compile, container-smoke, test-and-build and validate-container passed on that head.
