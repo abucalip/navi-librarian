@@ -53,6 +53,10 @@ import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.fadeIn
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.ui.input.pointer.pointerInput
@@ -94,6 +98,15 @@ import kotlinx.coroutines.launch
 import app.discair.ui.common.LocalRepository
 import app.discair.ui.home.HomeScreen
 import app.discair.ui.library.LibraryScreen
+
+/** Pages slide over each other, so each paints the app background: the one underneath must not show through. */
+@Composable
+private fun Opaque(content: @Composable () -> Unit) {
+    Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) { content() }
+}
+
+private const val PageMs = 300
+private val PageEase = FastOutSlowInEasing
 
 private fun androidx.navigation.NavDestination?.isHome() = this?.hasRoute(HomeRoute::class) == true
 
@@ -232,33 +245,39 @@ fun MainShell(state: UiState, model: AppViewModel, container: AppContainer) {
             } else Modifier
             NavHost(
                 nav, startDestination = HomeRoute, modifier = Modifier.weight(1f).fillMaxWidth().then(swipe),
+                // Deeper pages slide in from the right; Back (button or swipe) slides the page out to the right and
+                // the one under it returns from a quarter of the way left. Tabs keep their own order-based slide.
                 enterTransition = {
                     val from = indexOf(initialState); val to = indexOf(targetState)
                     if (from >= 0 && to >= 0) slideIntoContainer(
                         if (to > from) AnimatedContentTransitionScope.SlideDirection.Start else AnimatedContentTransitionScope.SlideDirection.End,
-                    ) else fadeIn()
+                    ) else slideInHorizontally(tween(PageMs, easing = PageEase)) { it }
                 },
                 exitTransition = {
                     val from = indexOf(initialState); val to = indexOf(targetState)
                     if (from >= 0 && to >= 0) slideOutOfContainer(
                         if (to > from) AnimatedContentTransitionScope.SlideDirection.Start else AnimatedContentTransitionScope.SlideDirection.End,
-                    ) else fadeOut()
+                    ) else slideOutHorizontally(tween(PageMs, easing = PageEase)) { -it / 4 } + fadeOut(tween(PageMs))
                 },
-                popEnterTransition = { fadeIn() },
-                popExitTransition = { fadeOut() },
+                popEnterTransition = {
+                    slideInHorizontally(tween(PageMs, easing = PageEase)) { -it / 4 } + fadeIn(tween(PageMs))
+                },
+                popExitTransition = {
+                    slideOutHorizontally(tween(PageMs, easing = PageEase)) { it }
+                },
             ) {
                 composable<HomeRoute> {
-                    HomeScreen(open, onDiscover = { goPage(DiscoverRoute) }, onLibrary = { goPage(LibraryRoute) }, onSettings = { goPage(SettingsRoute) })
+                    Opaque { HomeScreen(open, onDiscover = { goPage(DiscoverRoute) }, onLibrary = { goPage(LibraryRoute) }, onSettings = { goPage(SettingsRoute) }) }
                 }
-                composable<DiscoverRoute> { DiscoverScreen(open) }
-                composable<LibraryRoute> { LibraryScreen(open) }
-                composable<DownloadsRoute> { DownloadsScreen(open) }
-                composable<SettingsRoute> { SettingsScreen(state, model, onBack = { nav.popBackStack() }, onEqualizer = { nav.navigate(EqualizerRoute) { launchSingleTop = true } }, onCrossfade = { nav.navigate(CrossfadeRoute) { launchSingleTop = true } }) }
-                composable<EqualizerRoute> { app.discair.ui.player.EqualizerScreen(container, onBack = { nav.popBackStack() }) }
-                composable<CrossfadeRoute> { app.discair.ui.player.CrossfadeScreen(container, onBack = { nav.popBackStack() }) }
-                composable<ArtistRoute> { ArtistScreen(it.toRoute(), open) }
-                composable<AlbumRoute> { AlbumScreen(it.toRoute(), open) }
-                composable<GenreRoute> { GenreScreen(it.toRoute(), open) }
+                composable<DiscoverRoute> { Opaque { DiscoverScreen(open) } }
+                composable<LibraryRoute> { Opaque { LibraryScreen(open) } }
+                composable<DownloadsRoute> { Opaque { DownloadsScreen(open) } }
+                composable<SettingsRoute> { Opaque { SettingsScreen(state, model, onBack = { nav.popBackStack() }, onEqualizer = { nav.navigate(EqualizerRoute) { launchSingleTop = true } }, onCrossfade = { nav.navigate(CrossfadeRoute) { launchSingleTop = true } }) } }
+                composable<EqualizerRoute> { Opaque { app.discair.ui.player.EqualizerScreen(container, onBack = { nav.popBackStack() }) } }
+                composable<CrossfadeRoute> { Opaque { app.discair.ui.player.CrossfadeScreen(container, onBack = { nav.popBackStack() }) } }
+                composable<ArtistRoute> { Opaque { ArtistScreen(it.toRoute(), open) } }
+                composable<AlbumRoute> { Opaque { AlbumScreen(it.toRoute(), open) } }
+                composable<GenreRoute> { Opaque { GenreScreen(it.toRoute(), open) } }
             }
             }
         }

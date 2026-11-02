@@ -29,11 +29,14 @@ class Palette(
     /** The smallest text contrast this theme is held to by the unit test (WCAG: 4.5 normal text, 7 for AAA). */
     val minTextContrast: Double = 4.5,
 ) {
-    /** A copy that keeps this theme's accent but uses [dark]'s surfaces and text. For screens drawn over artwork. */
+    /**
+     * A copy that keeps this theme's accent but uses [dark]'s surfaces and text. For screens drawn over artwork.
+     * The accent stays the theme's own, so the player sheet's Play button and the island's ring match the album page's Play.
+     */
     fun overArtwork(dark: Palette) = Palette(
         id, label, false, dark.rail, dark.ink, dark.surface, dark.raised, dark.edge, dark.edgeStrong, dark.text, dark.textMuted,
-        accent = if (light) dark.accent else accent, accentDim = if (light) dark.accentDim else accentDim,
-        onAccent = if (light) dark.onAccent else onAccent,
+        accent = accent, accentDim = if (light) dark.accentDim else accentDim,
+        onAccent = onAccent,
         chartRed = dark.chartRed, chartRedText = dark.chartRedText, ok = dark.ok, caution = dark.caution,
     )
 }

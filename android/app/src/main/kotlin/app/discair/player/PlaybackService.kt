@@ -13,6 +13,7 @@ import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DefaultDataSource
+import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.datasource.okhttp.OkHttpDataSource
 import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ExoPlayer
@@ -78,6 +79,14 @@ class PlaybackService : MediaSessionService() {
             }
             override fun onPlayerError(error: PlaybackException) { if (mine()) engineRef?.onActiveInterrupted("error ${error.errorCodeName}") }
         }
+        // ExoPlayer's stock settings resume after only 2 s of audio once a stall happens, so on a slow or jittery link
+        // (Tailscale relay, mobile data) a lossless file, which needs several times the bytes per second of an MP3,
+        // drains again at once and stalls over and over. Resume with a real cushion, read further ahead, and count the
+        // buffer in seconds, not bytes, so hi-res FLAC is not capped at a few seconds by the byte limit.
+        val loadControl = DefaultLoadControl.Builder()
+            .setBufferDurationsMs(MIN_BUFFER_MS, MAX_BUFFER_MS, START_BUFFER_MS, REBUFFER_MS)
+            .setPrioritizeTimeOverSizeThresholds(true)
+            .build()
         fun buildPlayer(focus: Boolean, primary: Boolean): Pair<ExoPlayer, () -> Unit> {
             val eq = EqAudioProcessor()
             val renderers = object : DefaultRenderersFactory(this@PlaybackService) {
@@ -95,6 +104,7 @@ class PlaybackService : MediaSessionService() {
             val binding = EqBinding(container.eqSettings, eq)
             val player = ExoPlayer.Builder(this@PlaybackService, renderers)
                 .setMediaSourceFactory(DefaultMediaSourceFactory(dataSource))
+                .setLoadControl(loadControl)
                 .setAudioAttributes(attrs, /* handleAudioFocus = */ focus)
                 .setHandleAudioBecomingNoisy(true)
                 .build()
@@ -179,6 +189,10 @@ class PlaybackService : MediaSessionService() {
 
     companion object {
         private const val PRELOAD_NEXT_US = 10_000_000L
+        private const val MIN_BUFFER_MS = 30_000
+        private const val MAX_BUFFER_MS = 60_000
+        private const val START_BUFFER_MS = 1_500
+        private const val REBUFFER_MS = 8_000
         private const val TAG = "Crossfade"
 
         /** Stops playback and releases the player, for example on sign-out. */
