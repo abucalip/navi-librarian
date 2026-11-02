@@ -5463,6 +5463,30 @@ function setAlbumAction(album, tracks) {
   $('albumAction').replaceChildren(complete ? state : wrapInActionGroup(state, 'Actions for ' + album.name));
 }
 
+// The tracklist. An album on several discs shows each disc under its own "Disc N" heading, so
+// track numbers restart on each disc instead of repeating in one list.
+function fillTrackRows(list, tracks) {
+  const discs = new Set(tracks.map(track => track.disc_number));
+  if (discs.size < 2 || discs.has(undefined)) {
+    fillRows(list, tracks, buildTrackRow);
+    return;
+  }
+  list.replaceChildren();
+  let disc = null;
+  let onDisc = 0;
+  tracks.forEach(track => {
+    if (track.disc_number !== disc) {
+      disc = track.disc_number;
+      onDisc = 0;
+      const heading = document.createElement('li');
+      heading.className = 'track-disc';
+      heading.textContent = 'Disc ' + disc;
+      list.append(heading);
+    }
+    list.append(buildTrackRow(track, onDisc++));
+  });
+}
+
 // A track: number, title, length, and a green check when the library has the song.
 function buildTrackRow(track, index) {
   const row = document.createElement('li');
@@ -5538,7 +5562,7 @@ function applyAlbumSection(section, target) {
   }
   if (section.section === 'tracks') {
     if (section.available && section.items.length) {
-      fillRows($('albumTracks'), section.items, buildTrackRow);
+      fillTrackRows($('albumTracks'), section.items);
       // Album Get stays until every song is in the library, then becomes the check.
       if (albumPage.album) setAlbumAction(albumPage.album, section.items);
       $('albumSummary').textContent = albumSummary(section.items);

@@ -248,7 +248,8 @@ class LibrarySearchUIContractTests(unittest.TestCase):
         self.assertIn("function buildTrackRow(track, index) {", self.new_js)
         self.assertIn("row.append(track.owned ? buildOwnedCheck()", self.new_js)
         self.assertIn("createTrackGetButton({", self.new_js)
-        self.assertIn("fillRows($('albumTracks'), section.items, buildTrackRow);", self.new_js)
+        self.assertIn("fillTrackRows($('albumTracks'), section.items);", self.new_js)
+        self.assertIn("heading.className = 'track-disc';", self.new_js)
         self.assertIn("function albumSummary(tracks) {", self.new_js)
 
     def test_album_genre_is_a_text_link_before_the_year(self):
