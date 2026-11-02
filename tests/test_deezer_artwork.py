@@ -1,7 +1,7 @@
 """Direct-import regressions for Deezer artwork selection policy."""
 import unittest
 
-from app.services.deezer_artwork import select_album_artwork, select_artist_artwork
+from app.services.deezer_artwork import pick_artist, select_album_artwork, select_artist_artwork
 
 
 class DeezerArtworkTests(unittest.TestCase):
@@ -52,6 +52,21 @@ class DeezerArtworkTests(unittest.TestCase):
         self.assertIsNotNone(result)
         self.assertIsNone(result["artwork_url"])
         self.assertIsNone(result["year"])
+
+    def test_artists_sharing_a_name_resolve_to_the_one_with_most_fans(self):
+        artists = [
+            {"name": "Adele", "nb_fan": 497, "picture_big": "https://images.test/label.jpg"},
+            {"name": "Adele & Andy", "nb_fan": 900000, "picture_big": "https://images.test/duo.jpg"},
+            {"name": "ADELE", "nb_fan": 15510953, "picture_big": "https://images.test/real.jpg"},
+            {"name": "Adele", "picture_big": "https://images.test/nofans.jpg"},
+        ]
+        self.assertEqual(select_artist_artwork(artists, "Adele")["artwork_url"], "https://images.test/real.jpg")
+        self.assertEqual(pick_artist(artists, "adele")["nb_fan"], 15510953)
+        # The order of the list does not decide it, and equal fans keep the list order.
+        self.assertEqual(select_artist_artwork(list(reversed(artists)), "Adele")["artwork_url"], "https://images.test/real.jpg")
+        tied = [{"name": "A", "nb_fan": 5, "picture_big": "https://i/1.jpg"}, {"name": "A", "nb_fan": 5, "picture_big": "https://i/2.jpg"}]
+        self.assertEqual(select_artist_artwork(tied, "A")["artwork_url"], "https://i/1.jpg")
+        self.assertIsNone(pick_artist(artists, ""))
 
     def test_artist_selection_requires_case_insensitive_exact_name_and_photo(self):
         result = select_artist_artwork([

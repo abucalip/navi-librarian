@@ -57,6 +57,17 @@ class MetadataRoutesTests(unittest.TestCase):
         with self.assertRaises(HTTPException):
             metadata.artist_image(" ")
 
+    def test_artist_image_uses_the_most_followed_artist_of_that_name(self):
+        metadata._artist_image_cache.clear()
+        with patch.object(metadata, "_EXTERNAL_HTTP") as client, patch.object(metadata.persistent_metadata, "read", return_value=None), \
+             patch.object(metadata.persistent_metadata, "write"):
+            client.get.return_value.json.return_value = {"data": [
+                {"name": "Adele", "nb_fan": 497, "picture_big": "http://x/label_big.jpg", "picture_xl": "http://x/label_xl.jpg"},
+                {"name": "Adele", "nb_fan": 15510953, "picture_big": "http://x/real_big.jpg", "picture_xl": "http://x/real_xl.jpg"},
+            ]}
+            result = metadata.artist_image("Adele")
+        self.assertEqual(result["artwork_url"], "https://x/real_xl.jpg")
+
     def test_artist_bio_validates_input_and_returns_cached_bio(self):
         with self.assertRaises(HTTPException) as raised:
             metadata.artist_bio("")

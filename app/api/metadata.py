@@ -22,7 +22,7 @@ from app.services.deezer_tracklist import shape_tracklist
 from app.services.fallback_artwork import (
     parse_qobuz_albums, select_apple_artwork, select_qobuz_artwork,
 )
-from app.services.deezer_artwork import select_album_artwork, select_artist_artwork
+from app.services.deezer_artwork import pick_artist, select_album_artwork, select_artist_artwork
 from app.services.deezer_album_details import shape_album_match
 from app.services import album_links, album_reviews, album_wikipedia, persistent_metadata
 from app.services.apple_description import parse_editorial_notes
@@ -695,7 +695,7 @@ def artist_image(name: str = ""):
     cached = _artist_image_cache.get(name.casefold())
     if cached and monotonic() - cached["time"] < _ARTWORK_CACHE_TTL:
         return cached["data"]
-    store_key = "artist-image:v1:" + name.casefold()
+    store_key = "artist-image:v2:" + name.casefold()
     stored = persistent_metadata.read(store_key)
     if stored and stored.get("artwork_url"):
         _artist_image_cache[name.casefold()] = {"time": monotonic(), "data": stored}
@@ -704,13 +704,11 @@ def artist_image(name: str = ""):
     try:
         response = _EXTERNAL_HTTP.get("https://api.deezer.com/search/artist?" + urlencode({"q": name, "limit": 8}))
         response.raise_for_status()
-        match = select_artist_artwork(response.json().get("data") or [], name)
+        artists = response.json().get("data") or []
+        match = select_artist_artwork(artists, name)
         if match is not None:
-            photo = next(
-                (item.get("picture_xl") for item in response.json().get("data") or []
-                 if str(item.get("name") or "").casefold() == name.casefold() and item.get("picture_xl")),
-                None,
-            )
+            # The larger photo of the artist that was matched, not of another artist with the same name.
+            photo = (pick_artist(artists, name) or {}).get("picture_xl")
             result = {**match, "artwork_url": (photo or match["artwork_url"]).replace("http://", "https://", 1)}
     except Exception:
         # A provider outage is not cached, so the next visit retries.
