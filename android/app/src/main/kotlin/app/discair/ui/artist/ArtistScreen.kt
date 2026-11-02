@@ -113,7 +113,7 @@ private fun ArtistContent(route: ArtistRoute, page: ArtistPage, open: Opener, li
                         Brush.verticalGradient(listOf(Color.Transparent, Ink.Ink.copy(alpha = 0.92f)), startY = 120f),
                     ),
                 )
-                OverlayBack(open.back, Modifier.align(Alignment.TopStart).padding(12.dp))
+                OverlayBack(open.back, Modifier.align(Alignment.TopStart).padding(12.dp), onPhoto = true)
                 Column(Modifier.align(Alignment.BottomStart).padding(16.dp)) {
                     Text(
                         name, style = MaterialTheme.typography.headlineLarge,

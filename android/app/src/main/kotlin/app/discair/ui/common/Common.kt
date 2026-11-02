@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
@@ -39,6 +40,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Brush
@@ -55,6 +57,8 @@ import app.discair.net.ConnectionFailure
 import app.discair.net.classifyException
 import app.discair.ui.player.PlayerIcons
 import app.discair.ui.theme.Ink
+import app.discair.ui.theme.Palettes
+import app.discair.ui.theme.forTheme
 import coil3.ImageLoader
 import coil3.compose.AsyncImage
 import coil3.toBitmap
@@ -242,13 +246,15 @@ fun TintedPage(
     content: @Composable () -> Unit,
 ) {
     val fade = with(androidx.compose.ui.platform.LocalDensity.current) { 720.dp.toPx() }
+    val ground = Ink.Ink
+    val wash = tint?.forTheme()
     Box(
         modifier.fillMaxSize().drawBehind {
-            drawRect(Ink.Ink)
-            if (tint != null) {
+            drawRect(ground)
+            if (wash != null) {
                 // The tint scrolls away with the page, as on the web.
                 val scrolled = if (list.firstVisibleItemIndex > 0) fade else list.firstVisibleItemScrollOffset.toFloat()
-                drawRect(Brush.verticalGradient(listOf(tint, Ink.Ink), startY = -scrolled, endY = fade - scrolled))
+                drawRect(Brush.verticalGradient(listOf(wash, ground), startY = -scrolled, endY = fade - scrolled))
             }
         },
     ) { content() }
@@ -315,7 +321,7 @@ fun NameLink(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, m
 @Composable
 fun OwnedMark(owned: Boolean, modifier: Modifier = Modifier) {
     if (owned) Box(
-        modifier.size(20.dp).clip(CircleShape).background(Ink.Ink.copy(alpha = 0.82f)),
+        modifier.size(20.dp).clip(CircleShape).background(Palettes.Night.ink.copy(alpha = 0.82f)),
         contentAlignment = Alignment.Center,
     ) { Icon(PlayerIcons.Play, contentDescription = "In your library", tint = Color.White, modifier = Modifier.size(12.dp)) }
 }
@@ -480,22 +486,31 @@ fun RankNumeral(n: Int, modifier: Modifier = Modifier) {
     )
 }
 
-/** Dark rounded-square Back button laid over a hero or cover, as on the web pages. */
+/**
+ * The Back chevron on its own, with no square behind it (owner decision, 2026-11-02). On a page it takes the
+ * theme's text colour; over a photo ([onPhoto]) it is white with a soft shadow so it shows on any picture.
+ */
 @Composable
-fun OverlayBack(onBack: () -> Unit, modifier: Modifier = Modifier) {
+fun OverlayBack(onBack: () -> Unit, modifier: Modifier = Modifier, onPhoto: Boolean = false) {
     Box(
-        modifier.size(Target).clip(RoundedCornerShape(6.dp))
-            .background(Ink.Ink.copy(alpha = 0.78f))
-            .clickable(role = Role.Button, onClick = onBack),
+        modifier.size(Target).clip(CircleShape).clickable(role = Role.Button, onClick = onBack),
         contentAlignment = Alignment.Center,
-    ) { Icon(app.discair.ui.player.PlayerIcons.Left, contentDescription = "Back") }
+    ) {
+        if (onPhoto) {
+            Icon(
+                app.discair.ui.player.PlayerIcons.Left, contentDescription = null, tint = Color.Black.copy(alpha = 0.6f),
+                modifier = Modifier.offset(y = 1.dp).blur(2.dp),
+            )
+            Icon(app.discair.ui.player.PlayerIcons.Left, contentDescription = "Back", tint = Color.White)
+        } else Icon(app.discair.ui.player.PlayerIcons.Left, contentDescription = "Back", tint = Ink.Text)
+    }
 }
 
 /** The white play triangle in a dark circle, on a cover that is in the library. */
 @Composable
 fun CheckBadge(modifier: Modifier = Modifier, onPlay: (() -> Unit)? = null, label: String = "") {
     Box(
-        modifier.size(32.dp).clip(CircleShape).background(Ink.Ink.copy(alpha = 0.82f))
+        modifier.size(32.dp).clip(CircleShape).background(Palettes.Night.ink.copy(alpha = 0.82f))
             .let { if (onPlay != null) it.clickable(onClickLabel = "Play $label", role = Role.Button, onClick = onPlay) else it },
         contentAlignment = Alignment.Center,
     ) { Icon(PlayerIcons.Play, contentDescription = if (onPlay != null) "Play $label" else "In your library", tint = Color.White, modifier = Modifier.size(20.dp)) }

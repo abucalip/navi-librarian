@@ -72,6 +72,7 @@ import app.discair.ui.common.rememberAlbumYear
 import app.discair.ui.common.rememberLoad
 import app.discair.ui.common.routeKey
 import app.discair.ui.theme.Ink
+import app.discair.ui.theme.forTheme
 import app.discair.ui.theme.Mono
 import kotlinx.coroutines.launch
 
@@ -193,7 +194,7 @@ private fun Recommended(items: List<Pick>, open: Opener) {
         var tint by remember(pick) { mutableStateOf<Color?>(null) }
         Box(
             Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp))
-                .background(tint?.let { lerp(Ink.Surface, it, 0.7f) } ?: Ink.Surface)
+                .background(tint?.let { lerp(Ink.Surface, it.forTheme(), 0.7f) } ?: Ink.Surface)
                 .clickable(role = Role.Button) { open.album(routeKey(pick.artist, pick.album), pick.artist, pick.album, null, pick.year) },
         ) {
             Column(

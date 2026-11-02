@@ -101,8 +101,8 @@ fun DownloadsScreen(open: Opener) {
                 .clickable(role = Role.Button, onClickLabel = "Dismiss all successful imports") { confirm = Confirm.Imported(imported) },
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Icon(app.discair.ui.player.PlayerIcons.Close, contentDescription = null, tint = Color.White, modifier = Modifier.size(24.dp))
-            Text("Dismiss all successful imports", color = Color.White, modifier = Modifier.padding(start = 12.dp))
+            Icon(app.discair.ui.player.PlayerIcons.Close, contentDescription = null, tint = Ink.Text, modifier = Modifier.size(24.dp))
+            Text("Dismiss all successful imports", color = Ink.Text, modifier = Modifier.padding(start = 12.dp))
         }
         when {
             jobs == null && hub.listProblem == null -> Column(
@@ -258,12 +258,12 @@ private fun JobRow(job: AcquisitionJob, hub: AcquisitionHub, now: Double, open: 
         if (job.canRetry) IconButton(
             onClick = { hub.retry(job) }, enabled = busy == null, modifier = Modifier.size(Target),
         ) {
-            if (busy == RowBusy.Retrying) CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp, color = Color.White)
-            else Icon(app.discair.ui.player.PlayerIcons.Retry, contentDescription = "Try again, ${job.title}", tint = Color.White)
+            if (busy == RowBusy.Retrying) CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp, color = Ink.Text)
+            else Icon(app.discair.ui.player.PlayerIcons.Retry, contentDescription = "Try again, ${job.title}", tint = Ink.Text)
         }
         IconButton(onClick = onDismiss, enabled = busy == null, modifier = Modifier.size(Target)) {
-            if (busy == RowBusy.Dismissing) CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp, color = Color.White)
-            else Icon(app.discair.ui.player.PlayerIcons.Close, contentDescription = "Dismiss ${job.title}", tint = Color.White)
+            if (busy == RowBusy.Dismissing) CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp, color = Ink.Text)
+            else Icon(app.discair.ui.player.PlayerIcons.Close, contentDescription = "Dismiss ${job.title}", tint = Ink.Text)
         }
     }
     }
@@ -309,6 +309,7 @@ private fun statusIcon(job: AcquisitionJob): androidx.compose.ui.graphics.vector
     Tone.Active -> Icons.Default.Refresh
 }
 
+@Composable
 private fun toneColor(tone: Tone): Color = when (tone) {
     Tone.Ok -> Ink.Ok
     Tone.Error -> Ink.ChartRedText

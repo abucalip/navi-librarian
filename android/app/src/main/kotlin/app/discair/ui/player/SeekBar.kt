@@ -33,6 +33,9 @@ fun SeekBar(fraction: Float, enabled: Boolean, onChange: (Float) -> Unit, onFini
     var active by remember { mutableStateOf(false) }
     val radius by animateDpAsState(if (active) ThumbActive else Thumb, label = "seekThumb")
     val pad = ThumbActive
+    val trackColor = Ink.Edge
+    val fill = Ink.Accent
+    val dot = if (enabled) Ink.Accent else Ink.EdgeStrong
     Canvas(
         modifier.fillMaxWidth().height(48.dp)
             .semantics { if (!enabled) disabled() }
@@ -55,8 +58,8 @@ fun SeekBar(fraction: Float, enabled: Boolean, onChange: (Float) -> Unit, onFini
         val y = size.height / 2
         val track = 2.dp.toPx()
         val x = inset + (size.width - 2 * inset) * fraction.coerceIn(0f, 1f)
-        drawLine(Ink.Edge, Offset(inset, y), Offset(size.width - inset, y), strokeWidth = track, cap = StrokeCap.Round)
-        drawLine(Ink.Accent, Offset(inset, y), Offset(x, y), strokeWidth = track, cap = StrokeCap.Round)
-        drawCircle(if (enabled) Ink.Accent else Ink.EdgeStrong, radius.toPx(), Offset(x, y))
+        drawLine(trackColor, Offset(inset, y), Offset(size.width - inset, y), strokeWidth = track, cap = StrokeCap.Round)
+        drawLine(fill, Offset(inset, y), Offset(x, y), strokeWidth = track, cap = StrokeCap.Round)
+        drawCircle(dot, radius.toPx(), Offset(x, y))
     }
 }

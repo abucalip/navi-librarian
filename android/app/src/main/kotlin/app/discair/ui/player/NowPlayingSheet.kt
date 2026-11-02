@@ -169,13 +169,14 @@ fun NowPlayingSheet(state: PlayerUiState, controller: PlayerController, lyrics: 
         val item = state.current
         if (item == null) { onDismiss(); return@ModalBottomSheet }
         // The artwork's colour washes down from the top, as on the album and artist pages.
-        val wash by animateColorAsState(tint ?: Ink.Ink, animationSpec = tween(500), label = "artworkTint")
+        val ground = Ink.Ink
+        val wash by animateColorAsState(tint ?: ground, animationSpec = tween(500), label = "artworkTint")
         LaunchedEffect(item.coverUrl) { if (item.coverUrl.isBlank()) tint = null }
         Column(
             Modifier.fillMaxWidth().drawBehind {
                 // Starts above the content so the drag handle sits on the tint too.
                 val top = -48.dp.toPx()
-                drawRect(Brush.verticalGradient(listOf(wash, Ink.Ink), startY = top, endY = size.height * 0.9f), topLeft = androidx.compose.ui.geometry.Offset(0f, top), size = androidx.compose.ui.geometry.Size(size.width, size.height - top))
+                drawRect(Brush.verticalGradient(listOf(wash, ground), startY = top, endY = size.height * 0.9f), topLeft = androidx.compose.ui.geometry.Offset(0f, top), size = androidx.compose.ui.geometry.Size(size.width, size.height - top))
             }.padding(horizontal = 16.dp),
         ) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {

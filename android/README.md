@@ -12,7 +12,7 @@ cd android
 ./gradlew assembleDebug lintDebug
 ```
 
-Fonts in `app/src/main/res/font` are converted from `static/fonts` (woff2 to ttf, unchanged glyphs); licences are in `licenses/`.
+Fonts in `app/src/main/res/font` are converted from `static/fonts` (woff2 to ttf, unchanged glyphs); licences are in `licenses/`. The extra font pairs (Fraunces, Inter, Bricolage Grotesque, Source Sans 3, Outfit, Manrope, Barlow, Barlow Condensed) come from the Google Fonts repository (SIL OFL), subset to Latin and, for the variable fonts, limited to the weights used.
 
 ## Release build
 

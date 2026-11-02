@@ -1,5 +1,6 @@
 package app.discair
 
+import app.discair.ui.theme.Appearance
 import android.app.Application
 import app.discair.data.FileResponseCache
 import app.discair.data.LibrarianRepository
@@ -53,6 +54,11 @@ class AppContainer(val app: Application) {
     /** Per-device playback choices (streaming quality, scrobbling). */
     val playerSettings: PlayerSettings by lazy {
         PrefsPlayerSettings(app.getSharedPreferences("discair_player", android.content.Context.MODE_PRIVATE))
+    }
+
+    /** Per-device theme and font choices (Settings, Appearance). Kept at sign-out like the other device choices. */
+    val appearance: Appearance by lazy {
+        Appearance(app.getSharedPreferences("discair_appearance", android.content.Context.MODE_PRIVATE))
     }
 
     /** Per-device equalizer setting; kept at sign-out on purpose (ANDROID_EQ_CONTRACT.md 6). */

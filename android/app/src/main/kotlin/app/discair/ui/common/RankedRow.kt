@@ -39,7 +39,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.dp
 import app.discair.ui.Opener
-import app.discair.ui.theme.Display
+import app.discair.ui.theme.LocalFontPair
 import app.discair.ui.theme.Ink
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -86,7 +86,7 @@ fun RankedRow(
         Box(Modifier.width(if (model.lead is RowLead.Date) 48.dp else 36.dp).padding(top = 4.dp).clearAndSetSemantics {}) {
             when (val lead = model.lead) {
                 is RowLead.Rank -> Text(
-                    "%02d".format(lead.n), style = MaterialTheme.typography.titleLarge.copy(fontFamily = Display, fontWeight = FontWeight.Bold, letterSpacing = 0.sp),
+                    "%02d".format(lead.n), style = MaterialTheme.typography.titleLarge.copy(fontFamily = LocalFontPair.current.numeral, fontWeight = LocalFontPair.current.numeralWeight, letterSpacing = 0.sp),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 is RowLead.Date -> Column {

@@ -47,9 +47,12 @@ fun EditorTabs(labels: List<String>, selectedIndex: Int, onSelect: (Int) -> Unit
         val width = widths[selectedIndex] ?: return@LaunchedEffect
         scroll.animateScrollTo((left - (scroll.viewportSize - width) / 2f).toInt().coerceAtLeast(0))
     }
+    val labelOn = Ink.Text
+    val edge = Ink.Edge
+    val accent = Ink.Accent
     Box(
         modifier.fillMaxWidth().background(Ink.Raised).drawBehind {
-            drawLine(Ink.Edge, Offset(0f, size.height - 0.5f), Offset(size.width, size.height - 0.5f), 1.dp.toPx())
+            drawLine(edge, Offset(0f, size.height - 0.5f), Offset(size.width, size.height - 0.5f), 1.dp.toPx())
         },
     ) {
         Row(Modifier.horizontalScroll(scroll)) {
@@ -62,14 +65,14 @@ fun EditorTabs(labels: List<String>, selectedIndex: Int, onSelect: (Int) -> Unit
                         .onGloballyPositioned { lefts[index] = it.positionInParent().x; widths[index] = it.size.width.toFloat() }
                         .background(if (on) Ink.Ink else if (pressed) Ink.Surface else Color.Transparent)
                         .drawBehind {
-                            if (on) drawLine(Ink.Accent, Offset(0f, size.height - 1.dp.toPx()), Offset(size.width, size.height - 1.dp.toPx()), 2.dp.toPx())
+                            if (on) drawLine(accent, Offset(0f, size.height - 1.dp.toPx()), Offset(size.width, size.height - 1.dp.toPx()), 2.dp.toPx())
                         }
                         .clickable(source, indication = null, role = Role.Tab) { onSelect(index) }
                         .semantics { selected = on }
                         .padding(horizontal = 18.dp),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Text(label, color = if (on || pressed) Color.White else Color.White.copy(alpha = 0.7f), fontSize = 13.sp, maxLines = 1)
+                    Text(label, color = if (on || pressed) labelOn else labelOn.copy(alpha = 0.7f), fontSize = 13.sp, maxLines = 1)
                 }
             }
         }
