@@ -101,7 +101,7 @@ private fun Page(scroll: Boolean = false, content: @Composable ColumnScope.() ->
                 .widthIn(max = MaxFormWidth)
                 .fillMaxSize()
                 .then(if (scroll) Modifier.verticalScroll(rememberScrollState()) else Modifier)
-                .padding(horizontal = 16.dp, vertical = 24.dp),
+                .padding(start = 16.dp, top = 24.dp, end = 16.dp, bottom = 24.dp + app.discair.ui.LocalBottomClearance.current),
             verticalArrangement = Arrangement.spacedBy(12.dp),
             content = content,
         )

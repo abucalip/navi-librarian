@@ -74,9 +74,8 @@ private data class SearchState(
 private val typeOrder = listOf("artist" to "Artists", "album" to "Albums", "song" to "Songs", "genre" to "Genres")
 
 @Composable
-fun SearchScreen(open: Opener) {
+fun SearchScreen(open: Opener, text: String, onText: (String) -> Unit) {
     val repo = LocalRepository.current
-    var text by rememberSaveable { mutableStateOf("") }
     var state by remember { mutableStateOf(SearchState()) }
     val focus = remember { FocusRequester() }
     val keyboard = androidx.compose.ui.platform.LocalSoftwareKeyboardController.current
@@ -117,11 +116,11 @@ fun SearchScreen(open: Opener) {
     Column(Modifier.fillMaxSize()) {
         PageHeading("Search", Modifier.padding(start = 16.dp, top = 12.dp, end = 16.dp), large = true)
         OutlinedTextField(
-            value = text, onValueChange = { text = it.take(200) }, singleLine = true,
+            value = text, onValueChange = { onText(it.take(200)) }, singleLine = true,
             label = { Text("Artists, albums, songs, genres") },
             leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
             trailingIcon = {
-                if (text.isNotEmpty()) IconButton(onClick = { text = "" }, Modifier.size(Target)) {
+                if (text.isNotEmpty()) IconButton(onClick = { onText("") }, Modifier.size(Target)) {
                     Icon(Icons.Default.Clear, contentDescription = "Clear search")
                 }
             },

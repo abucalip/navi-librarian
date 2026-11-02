@@ -101,7 +101,7 @@ private fun ArtistContent(route: ArtistRoute, page: ArtistPage, open: Opener, li
     val artistId = (info?.id ?: route.id)?.takeIf { it.isNotBlank() && owned.isNotEmpty() }
     val play = app.discair.ui.player.LocalPlayActions.current
 
-    LazyColumn(Modifier.fillMaxSize(), state = list, contentPadding = PaddingValues(bottom = 32.dp)) {
+    LazyColumn(Modifier.fillMaxSize(), state = list, contentPadding = PaddingValues(bottom = 32.dp + app.discair.ui.LocalBottomClearance.current)) {
         item {
             Box(
                 Modifier.statusBarsPadding().padding(12.dp).fillMaxWidth().height(300.dp)
