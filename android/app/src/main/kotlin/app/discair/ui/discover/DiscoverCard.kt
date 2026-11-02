@@ -104,7 +104,7 @@ private fun CardMenu(entry: DiscoveryEntry, saveState: SaveState, onSave: () -> 
             val downloadable = !item.acquired && (get is GetState.Idle || get is GetState.Failed)
             DropdownMenuItem(
                 text = { Text(if (item.acquired) "In your library" else if (get is GetState.Requested) "Requested" else "Download") },
-                leadingIcon = { Icon(painterResource(R.drawable.ic_get_cloud), contentDescription = null) },
+                leadingIcon = { Icon(app.discair.ui.player.PlayerIcons.Cloud, contentDescription = null) },
                 enabled = downloadable,
                 onClick = { open = false; hub.getAlbum(artist, item.album, entry.raw) },
             )

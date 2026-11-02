@@ -34,14 +34,12 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -234,7 +232,7 @@ fun SettingsScreen(state: UiState, model: AppViewModel, onBack: () -> Unit, onEq
     Page(scroll = true) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             androidx.compose.material3.IconButton(onClick = onBack, Modifier.size(Target)) {
-                Icon(androidx.compose.material.icons.Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                Icon(app.discair.ui.player.PlayerIcons.Left, contentDescription = "Back")
             }
             Text("Settings", style = MaterialTheme.typography.headlineMedium, modifier = Modifier.semantics { heading() })
         }
@@ -339,7 +337,7 @@ private fun PlaybackSettings(container: AppContainer, onEqualizer: () -> Unit, o
                 style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-        Icon(androidx.compose.material.icons.Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null)
+        Icon(app.discair.ui.player.PlayerIcons.Right, contentDescription = null)
     }
     // Crossfade: the summary says off or the length in words (ANDROID_CROSSFADE_CONTRACT.md 7).
     var xfNow by remember { mutableStateOf(settings.crossfade) }
@@ -358,7 +356,7 @@ private fun PlaybackSettings(container: AppContainer, onEqualizer: () -> Unit, o
                 style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-        Icon(androidx.compose.material.icons.Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null)
+        Icon(app.discair.ui.player.PlayerIcons.Right, contentDescription = null)
     }
 }
 

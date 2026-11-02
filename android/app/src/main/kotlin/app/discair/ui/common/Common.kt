@@ -21,7 +21,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -323,7 +322,7 @@ fun OwnedMark(owned: Boolean, modifier: Modifier = Modifier) {
 fun BackBar(onBack: () -> Unit, title: String? = null) {
     Row(Modifier.fillMaxWidth().heightIn(min = 56.dp), verticalAlignment = Alignment.CenterVertically) {
         IconButton(onClick = onBack, Modifier.size(Target)) {
-            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+            Icon(app.discair.ui.player.PlayerIcons.Left, contentDescription = "Back")
         }
         if (title != null) {
             Text(title, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -472,7 +471,7 @@ fun OverlayBack(onBack: () -> Unit, modifier: Modifier = Modifier) {
             .background(Ink.Ink.copy(alpha = 0.78f))
             .clickable(role = Role.Button, onClick = onBack),
         contentAlignment = Alignment.Center,
-    ) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") }
+    ) { Icon(app.discair.ui.player.PlayerIcons.Left, contentDescription = "Back") }
 }
 
 /** The white play triangle in a dark circle, on a cover that is in the library. */

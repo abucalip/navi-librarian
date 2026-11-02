@@ -1,6 +1,13 @@
 package app.discair.ui.common
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
+import androidx.compose.material3.ProgressIndicatorDefaults
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.blur
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Warning
@@ -40,7 +47,7 @@ fun pageMetadata(artist: String, album: String, year: Int?, releaseGroupMbid: St
  * Requested appears only after the server accepted the request.
  */
 @Composable
-fun GetButton(noun: String, name: String, state: GetState, onClick: () -> Unit, modifier: Modifier = Modifier) {
+fun GetButton(noun: String, name: String, state: GetState, onClick: () -> Unit, modifier: Modifier = Modifier, overlay: Boolean = false) {
     IconButton(
         onClick = { if (state is GetState.Idle || state is GetState.Failed) onClick() },
         modifier.size(Target).semantics {
@@ -54,19 +61,35 @@ fun GetButton(noun: String, name: String, state: GetState, onClick: () -> Unit, 
         },
     ) {
         when (state) {
-            GetState.Idle -> Icon(painterResource(R.drawable.ic_get_cloud), contentDescription = null)
-            GetState.Pending -> CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
-            is GetState.Requested -> Icon(Icons.Default.Check, contentDescription = null, tint = Ink.Ok)
-            is GetState.Failed -> Icon(Icons.Default.Warning, contentDescription = null, tint = Ink.ChartRedText)
+            GetState.Idle -> GetIcon(app.discair.ui.player.PlayerIcons.Cloud, null, overlay)
+            GetState.Pending -> CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp, color = if (overlay) Color.White else ProgressIndicatorDefaults.circularColor)
+            is GetState.Requested -> GetIcon(Icons.Default.Check, Ink.Ok, overlay)
+            is GetState.Failed -> GetIcon(Icons.Default.Warning, Ink.ChartRedText, overlay)
         }
+    }
+}
+
+/**
+ * A state icon. On artwork ([overlay]) it has no backing circle: it is white (or its state colour) over a soft
+ * dark shadow, so it stays visible on light covers.
+ */
+@Composable
+private fun GetIcon(icon: ImageVector, tint: Color?, overlay: Boolean) {
+    if (!overlay) {
+        if (tint == null) Icon(icon, contentDescription = null) else Icon(icon, contentDescription = null, tint = tint)
+        return
+    }
+    Box(contentAlignment = Alignment.Center) {
+        Icon(icon, contentDescription = null, tint = Color.Black.copy(alpha = 0.6f), modifier = Modifier.offset(y = 1.dp).blur(2.dp))
+        Icon(icon, contentDescription = null, tint = tint ?: Color.White)
     }
 }
 
 /** Get for a whole album. */
 @Composable
-fun GetAlbumButton(artist: String, album: String, metadata: JsonObject, modifier: Modifier = Modifier) {
+fun GetAlbumButton(artist: String, album: String, metadata: JsonObject, modifier: Modifier = Modifier, overlay: Boolean = false) {
     val hub = LocalAcquisitions.current
-    GetButton("album", album, hub.getState(artist, album), { hub.getAlbum(artist, album, metadata) }, modifier)
+    GetButton("album", album, hub.getState(artist, album), { hub.getAlbum(artist, album, metadata) }, modifier, overlay)
 }
 
 /** Get for one song, filed with [album] by the server. */

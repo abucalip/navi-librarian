@@ -12,7 +12,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -73,7 +72,7 @@ fun CrossfadeScreen(container: AppContainer, onBack: (() -> Unit)?) {
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             // Inside the Now Playing sheet there is no back arrow: the sheet closes by swipe, scrim tap or back.
-            if (onBack != null) IconButton(onClick = onBack, Modifier.size(Target)) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") }
+            if (onBack != null) IconButton(onClick = onBack, Modifier.size(Target)) { Icon(app.discair.ui.player.PlayerIcons.Left, contentDescription = "Back") }
             Text("Crossfade", style = MaterialTheme.typography.headlineMedium, modifier = Modifier.semantics { heading() })
         }
         Row(

@@ -15,7 +15,6 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
@@ -229,7 +228,7 @@ private fun JobRow(job: AcquisitionJob, hub: AcquisitionHub, now: Double, open: 
                         enabled = left > 0 && busy == null,
                         modifier = Modifier.heightIn(min = Target),
                     ) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null, Modifier.size(18.dp))
+                        Icon(app.discair.ui.player.PlayerIcons.Right, contentDescription = null, Modifier.size(18.dp))
                         Text(
                             when {
                                 busy == RowBusy.Skipping -> "Requesting source switch…"
