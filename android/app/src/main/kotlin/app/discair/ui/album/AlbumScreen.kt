@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -133,7 +134,9 @@ private fun AlbumContent(route: AlbumRoute, page: AlbumPage, open: Opener, list:
                         .padding(vertical = 12.dp),
                 )
                 val genre = s.genre.genre
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                // The artist's 48dp tap box leaves 12dp below its text and this row 14dp above its own, so pull the row up
+                // 14dp: genre and year then sit as far below the artist as the artist sits below the album name (12dp).
+                Row(Modifier.offset(y = (-14).dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     if (!genre.isNullOrBlank()) Text(
                         genre.lowercase(), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.heightIn(min = Target).clickable(role = Role.Button) { open.genre(genre.lowercase(), genre) }.padding(vertical = 14.dp),
