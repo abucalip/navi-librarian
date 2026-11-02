@@ -34,6 +34,23 @@ class StreamUrlBuilder(
     private val password: String,
     private val newSalt: () -> String = { java.util.UUID.randomUUID().toString().replace("-", "").take(12) },
 ) {
+    /** The address of the original file (the Subsonic `download` call), for saving a song on the device. */
+    fun buildDownload(songId: String): HttpUrl {
+        require(isValidSongId(songId)) { "Invalid song id." }
+        val base = baseUrl.toHttpUrlOrNull()
+        require(base != null && base.isHttps) { "The Navidrome address must be https." }
+        val salt = newSalt()
+        return base.newBuilder()
+            .addPathSegments("rest/download")
+            .addQueryParameter("u", username)
+            .addQueryParameter("t", Subsonic.token(password, salt))
+            .addQueryParameter("s", salt)
+            .addQueryParameter("v", Subsonic.API_VERSION)
+            .addQueryParameter("c", Subsonic.CLIENT)
+            .addQueryParameter("id", songId)
+            .build()
+    }
+
     fun build(songId: String, quality: StreamQuality = StreamQuality.Original, format: TranscodeFormat? = null): HttpUrl {
         require(isValidSongId(songId)) { "Invalid song id." }
         val base = baseUrl.toHttpUrlOrNull()

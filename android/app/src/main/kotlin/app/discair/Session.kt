@@ -46,6 +46,8 @@ class AppConnector(context: Context, private val cache: app.discair.data.Respons
 
     /** Lyrics already fetched belong to the signed-in account and go at sign-out (lyrics contract 3.4). */
     @Volatile var lyricsCache: app.discair.lyrics.LyricsCache? = null
+    /** Songs saved on the device are erased with the rest of the account data at sign-out. */
+    @Volatile var offlineSongs: app.discair.player.OfflineSongs? = null
 
     override fun networkAvailable(): Boolean {
         val manager = appContext.getSystemService(ConnectivityManager::class.java)
@@ -69,6 +71,7 @@ class AppConnector(context: Context, private val cache: app.discair.data.Respons
         app.discair.player.FileQueueStorage(java.io.File(appContext.filesDir, "player_queue.json")).clear()
         cache.clear() // saved copies belong to the signed-in account
         lyricsCache?.clear()
+        offlineSongs?.removeAllNow()
     }
 
     override fun hasOfflineData() = cache.hasContent()

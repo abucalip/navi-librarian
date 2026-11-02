@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -28,6 +29,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.items as gridItems
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.DropdownMenu
@@ -56,6 +58,11 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import app.discair.data.AlbumSort
 import app.discair.data.ArtistSort
 import app.discair.ui.Opener
+import app.discair.ui.common.ActionGroup
+import app.discair.ui.common.ActionGroupButton
+import app.discair.ui.common.GroupDivider
+import app.discair.ui.common.GroupIcon
+import androidx.compose.ui.semantics.stateDescription
 import app.discair.ui.common.Cover
 import app.discair.ui.common.ErrorBlock
 import app.discair.ui.common.LocalRepository
@@ -71,14 +78,11 @@ fun LibraryScreen(open: Opener) {
     val model: LibraryViewModel = viewModel(factory = LibraryViewModelFactory(repo))
     val state by model.state.collectAsState()
     val list = rememberLazyListState()
+    var grid by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(false) }
+    var cell by androidx.compose.runtime.saveable.rememberSaveable { androidx.compose.runtime.mutableFloatStateOf(120f) }
 
     Column(Modifier.fillMaxSize()) {
         PageHeading("Library", Modifier.padding(start = 16.dp, top = 16.dp, end = 16.dp), large = true)
-        Text(
-            "Your Navidrome library by artist or album. Select one to see its page.",
-            style = MaterialTheme.typography.bodyLarge,
-            modifier = Modifier.padding(start = 16.dp, top = 12.dp, end = 16.dp),
-        )
         OutlinedTextField(
             value = state.query,
             onValueChange = model::search,
@@ -90,21 +94,35 @@ fun LibraryScreen(open: Opener) {
             modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp)
                 .semantics { contentDescription = "Search your library" },
         )
-        SingleChoiceSegmentedButtonRow(Modifier.padding(horizontal = 16.dp)) {
-            LibraryTab.entries.forEachIndexed { index, tab ->
-                SegmentedButton(
-                    selected = state.tab == tab,
-                    onClick = { model.selectTab(tab) },
-                    shape = SegmentedButtonDefaults.itemShape(index, LibraryTab.entries.size),
-                    colors = SegmentedButtonDefaults.colors(
-                        activeContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-                        activeContentColor = MaterialTheme.colorScheme.primary,
-                        inactiveContainerColor = MaterialTheme.colorScheme.background,
-                    ),
-                    icon = {},
-                    modifier = Modifier.heightIn(min = Target),
-                ) { Text(tab.name) }
+        Row(
+            Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            // Artists and Albums as two icons in one joined group; the names are spoken.
+            ActionGroup {
+                ActionGroupButton(
+                    { model.selectTab(LibraryTab.Artists) }, description = "Artists", selected = state.tab == LibraryTab.Artists,
+                ) { GroupIcon(app.discair.ui.player.PlayerIcons.Person, state.tab == LibraryTab.Artists) }
+                GroupDivider()
+                ActionGroupButton(
+                    { model.selectTab(LibraryTab.Albums) }, description = "Albums", selected = state.tab == LibraryTab.Albums,
+                ) { GroupIcon(app.discair.ui.player.PlayerIcons.Album, state.tab == LibraryTab.Albums) }
             }
+            // One button flips between icons and a list; it shows the view it would switch to.
+            ActionGroup {
+                ActionGroupButton(
+                    { grid = !grid },
+                    description = if (grid) "Showing icons. Switch to a list." else "Showing a list. Switch to icons.",
+                ) { GroupIcon(if (grid) app.discair.ui.player.PlayerIcons.List else app.discair.ui.player.PlayerIcons.Grid) }
+            }
+            if (grid) androidx.compose.material3.Slider(
+                value = cell, onValueChange = { cell = it }, valueRange = 80f..200f,
+                modifier = Modifier.weight(1f).semantics {
+                    contentDescription = "Icon size"
+                    stateDescription = "${cell.toInt()} density-independent pixels"
+                },
+            )
         }
         SortRow(state, model)
         Row(Modifier.padding(horizontal = 16.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -122,6 +140,7 @@ fun LibraryScreen(open: Opener) {
                 !state.loading && currentCount(state) == 0 -> Message(
                     if (state.query.isBlank()) "Your library is empty." else "Nothing in your library matches “${state.query}”.",
                 )
+                grid -> GridRows(state, model, open, cell.dp)
                 else -> Rows(state, model, open, list)
             }
         }
@@ -273,6 +292,47 @@ private fun Rows(state: LibraryState, model: LibraryViewModel, open: Opener, lis
             Column(Modifier.padding(16.dp)) {
                 Text(state.failure.message, color = Ink.ChartRedText)
                 OutlinedButton(onClick = model::loadMore, Modifier.heightIn(min = Target)) { Text("Try again") }
+            }
+        }
+    }
+}
+
+/** The same pages as [Rows], as a grid of covers. The cell width follows the slider; names sit under the cover. */
+@Composable
+private fun GridRows(state: LibraryState, model: LibraryViewModel, open: Opener, cell: androidx.compose.ui.unit.Dp) {
+    val grid = androidx.compose.foundation.lazy.grid.rememberLazyGridState()
+    LaunchedEffect(grid, state.nextCursor) {
+        snapshotFlow { grid.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0 }
+            .collect { last -> if (last >= grid.layoutInfo.totalItemsCount - 6) model.loadMore() }
+    }
+    val repo = LocalRepository.current
+    androidx.compose.foundation.lazy.grid.LazyVerticalGrid(
+        columns = androidx.compose.foundation.lazy.grid.GridCells.Adaptive(cell),
+        state = grid,
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(start = 12.dp, end = 12.dp, top = 4.dp, bottom = app.discair.ui.LocalBottomClearance.current),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp),
+    ) {
+        if (state.tab == LibraryTab.Artists) {
+            gridItems(state.artists, key = { it.id }) { artist ->
+                Column(Modifier.clickable(role = Role.Button) { open.artist(artist.name, artist.key, artist.id, null) }) {
+                    Cover(artist.artworkUrl?.let { repo.absolute(it) }, Modifier.fillMaxWidth().aspectRatio(1f), circle = true)
+                    Text(artist.name, style = MaterialTheme.typography.bodyMedium, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 6.dp))
+                    Text(plural(artist.albumCount, "album"), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
+                }
+            }
+        } else {
+            gridItems(state.albums, key = { it.id }) { album ->
+                Column(Modifier.clickable(role = Role.Button) { open.album(album.key, album.artist, album.name, album.id, album.year) }) {
+                    Cover(album.artworkUrl?.let { repo.absolute(it) }, Modifier.fillMaxWidth().aspectRatio(1f))
+                    Text(album.name, style = MaterialTheme.typography.bodyMedium, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 6.dp))
+                    Text(
+                        listOfNotNull(album.artist, album.year?.toString()).joinToString(" · "),
+                        style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1, overflow = TextOverflow.Ellipsis,
+                    )
+                }
             }
         }
     }

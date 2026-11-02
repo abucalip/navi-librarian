@@ -95,7 +95,7 @@ fun EqualizerScreen(container: AppContainer, onBack: (() -> Unit)?) {
                     style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-            Switch(checked = on, onCheckedChange = null)
+            app.discair.ui.common.DiscairSwitch(checked = on)
         }
         eqStatusLine(on, status)?.let {
             Text(
@@ -107,12 +107,14 @@ fun EqualizerScreen(container: AppContainer, onBack: (() -> Unit)?) {
         PresetPicker(settings, enabled = on, onPick = editor::selectPreset)
 
         Text("Bands", style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(top = 8.dp).semantics { heading() })
-        for (i in 0 until EQ_BAND_COUNT) {
-            GainRow(
-                label = bandLabel(EQ_BAND_HZ[i]), spokenName = bandSpoken(EQ_BAND_HZ[i]),
-                db = settings.config.bandGainsDb[i], min = -EQ_MAX_GAIN_DB, max = EQ_MAX_GAIN_DB, enabled = on,
-                onChange = { editor.setBand(i, it) }, onNudge = { editor.nudgeBand(i, it) },
-            )
+        app.discair.ui.common.GlassCard(Modifier.fillMaxWidth()) {
+            for (i in 0 until EQ_BAND_COUNT) {
+                GainRow(
+                    label = bandLabel(EQ_BAND_HZ[i]), spokenName = bandSpoken(EQ_BAND_HZ[i]),
+                    db = settings.config.bandGainsDb[i], min = -EQ_MAX_GAIN_DB, max = EQ_MAX_GAIN_DB, enabled = on,
+                    onChange = { editor.setBand(i, it) }, onNudge = { editor.nudgeBand(i, it) },
+                )
+            }
         }
 
         Text("Headroom", style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(top = 8.dp).semantics { heading() })
@@ -130,7 +132,7 @@ fun EqualizerScreen(container: AppContainer, onBack: (() -> Unit)?) {
                     style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-            Switch(checked = auto, onCheckedChange = null, enabled = on)
+            app.discair.ui.common.DiscairSwitch(checked = auto, enabled = on)
         }
         if (!auto) {
             GainRow(
@@ -183,42 +185,19 @@ private fun PresetPicker(settings: EqSettings, enabled: Boolean, onPick: (String
     }
 }
 
-/** Name and value on one line, then minus, slider and plus on the next. Text follows the system font size. */
+/** One line: minus, the frequency, the slider, the dB value and plus, in the glass band style. */
 @Composable
 private fun GainRow(
     label: String, spokenName: String, db: Double, min: Double, max: Double, enabled: Boolean,
     onChange: (Double) -> Unit, onNudge: (Int) -> Unit,
 ) {
-    val spokenValue = formatDb(db, spoken = true)
-    Column(Modifier.fillMaxWidth()) {
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text(label, style = MaterialTheme.typography.bodyLarge)
-            Text(formatDb(db), style = MaterialTheme.typography.bodyLarge)
-        }
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            IconButton(
-                onClick = { onNudge(-1) }, enabled = enabled && db > min, modifier = Modifier.size(Target),
-            ) { Icon(PlayerIcons.Remove, contentDescription = "Lower $spokenName by half a decibel") }
-            Slider(
-                value = db.toFloat(), onValueChange = { onChange(it.toDouble()) },
-                valueRange = min.toFloat()..max.toFloat(),
-                steps = ((max - min) / EQ_STEP_DB).toInt() - 1,
-                enabled = enabled,
-                // 47 step marks drawn as dots were noise on the device; the 0.5 dB steps still work.
-                colors = SliderDefaults.colors(
-                    activeTickColor = Color.Transparent, inactiveTickColor = Color.Transparent,
-                    disabledActiveTickColor = Color.Transparent, disabledInactiveTickColor = Color.Transparent,
-                ),
-                modifier = Modifier.weight(1f).semantics {
-                    contentDescription = spokenName
-                    stateDescription = spokenValue
-                },
-            )
-            IconButton(
-                onClick = { onNudge(+1) }, enabled = enabled && db < max, modifier = Modifier.size(Target),
-            ) { Icon(PlayerIcons.Add, contentDescription = "Raise $spokenName by half a decibel") }
-        }
-    }
+    app.discair.ui.common.GlassBand(
+        label = label, value = formatDb(db), spokenName = spokenName, spokenValue = formatDb(db, spoken = true),
+        min = min.toFloat(), max = max.toFloat(), steps = ((max - min) / EQ_STEP_DB).toInt() - 1,
+        sliderValue = db.toFloat(), enabled = enabled, canLower = db > min, canRaise = db < max,
+        lowerLabel = "Lower $spokenName by half a decibel", raiseLabel = "Raise $spokenName by half a decibel",
+        onSlide = { onChange(it.toDouble()) }, onNudge = onNudge,
+    )
 }
 
 /** The sheet's entry to the page: the state is in the words, so it can be read without opening the page. */

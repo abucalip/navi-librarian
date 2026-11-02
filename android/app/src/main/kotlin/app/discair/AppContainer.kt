@@ -16,6 +16,7 @@ import okhttp3.OkHttpClient
 import app.discair.player.FileQueueStorage
 import app.discair.player.Media3Port
 import app.discair.player.NavidromeScrobbler
+import app.discair.player.OfflineSongs
 import app.discair.player.PlayerController
 import app.discair.player.PlayerSettings
 import app.discair.player.PrefsPlayerSettings
@@ -57,6 +58,15 @@ class AppContainer(val app: Application) {
     /** Per-device equalizer setting; kept at sign-out on purpose (ANDROID_EQ_CONTRACT.md 6). */
     val eqSettings: EqSettingsStore by lazy {
         PrefsEqSettingsStore(app.getSharedPreferences("discair_eq", android.content.Context.MODE_PRIVATE))
+    }
+
+    /** Songs saved on the device ("Download to device"); played from their files whenever one exists. */
+    val offline: OfflineSongs by lazy {
+        OfflineSongs(
+            java.io.File(app.filesDir, "offline"), OkHttpClient(),
+            login = { servers.let { Triple(it.navidromeUrl, it.navidromeUser, it.navidromePassword) } },
+            io = Dispatchers.IO,
+        ).also { connector.offlineSongs = it }
     }
 
     /** What the playback service says about the equalizer for the song now playing; read by the Equalizer screen. */

@@ -39,6 +39,8 @@ class PlayActions(
     /** Absolute address of an owned album's cover on Librarian. */
     private val coverUrl: (albumId: String) -> String,
     private val random: kotlin.random.Random = kotlin.random.Random,
+    /** Where "Download to device" saves songs; null in tests that don't need it. */
+    private val offline: OfflineSongs? = null,
 ) {
     private val _messages = MutableSharedFlow<String>(extraBufferCapacity = 4, onBufferOverflow = BufferOverflow.DROP_OLDEST)
     val messages: SharedFlow<String> = _messages.asSharedFlow()
@@ -99,6 +101,26 @@ class PlayActions(
         val match = matchSong(songs, title, number, disc)
         if (match == null) { _messages.tryEmit("Couldn't find \"$title\" in your library."); return@launch }
         queueSong(item(match), next)
+    }
+
+    /** Saves one track of an album on the device so it plays without a connection. */
+    fun downloadTrack(albumId: String, title: String, number: Int?, disc: Int? = null) {
+        val store = offline ?: return
+        // Its own coroutine: a long download must not block Play, Add to queue and the like.
+        scope.launch {
+            try {
+                val songs = withContext(io) { source.albumSongs(albumId) }
+                val match = matchSong(songs, title, number, disc)
+                if (match == null) { _messages.tryEmit("Couldn't find \"$title\" in your library."); return@launch }
+                if (store.isSaved(match.id)) { _messages.tryEmit("\"${match.title}\" is already on this device."); return@launch }
+                _messages.tryEmit("Saving \"${match.title}\" to this device…")
+                store.download(match)
+                _messages.tryEmit("\"${match.title}\" is on this device. It plays without a connection.")
+            } catch (e: SongSourceException) { _messages.tryEmit(e.message.orEmpty()) }
+            catch (e: OfflineException) { _messages.tryEmit(e.message.orEmpty()) }
+            catch (e: kotlinx.coroutines.CancellationException) { throw e }
+            catch (e: Exception) { _messages.tryEmit("Couldn't save the song.") }
+        }
     }
 
     fun queueArtist(artistId: String, next: Boolean) = launch {

@@ -193,6 +193,7 @@ private fun AlbumContent(route: AlbumRoute, page: AlbumPage, open: Opener, list:
                             listOf(
                                 "Play next" to { play.queueTrack(albumId, t.title, t.number, next = true, disc = t.disc) },
                                 "Add to queue" to { play.queueTrack(albumId, t.title, t.number, next = false, disc = t.disc) },
+                                "Download to device" to { play.downloadTrack(albumId, t.title, t.number, disc = t.disc) },
                             ),
                         )
                     }
