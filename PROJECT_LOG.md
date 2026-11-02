@@ -1,3 +1,13 @@
+## 2026-11-02 — Published v0.3.3 (not deployed)
+
+- **Authorization:** the owner instructed publication of current `main` as the next version.
+- **Published:** annotated tag `v0.3.3` at `main` `8292620afa2b4f2c28019f02556143ea78e0def1` (the exact current `main` commit, as the release workflow requires); release run 41374337070 passed (tag check, container smoke test, multi-arch build and push, `publish-release` success). Image `ghcr.io/abucalip/navi-librarian:v0.3.3`, also `sha-8292620afa2b4f2c28019f02556143ea78e0def1`, digest `sha256:94108d70b176c53d8e8378da0f747acda27e645521b606a08ab0c975c072e535` (read from the registry listing and the run log).
+- **Before tagging:** local `main` equalled `origin/main`; Container runtime smoke test, Python syntax check, Validate Docker packaging and Validate Docker image all succeeded on that commit.
+- **Contents:** everything on `main` since `v0.3.2` (`bd10a2b`), including PRs #683 (artwork fix, Apple Music and Qobuz cover fallbacks, quality tag), #684 (multi-disc album pages) and #685 (Android album page; the app is not in the image).
+- **Rollback reference:** `v0.3.2`, digest `sha256:32d356e3d2e7fd213a730978b160344b7cab08539b596e1a0f436527887952ce`. Its publication was not recorded in these documents before; it was found in the registry listing.
+- **Not done:** deployment and runtime verification (separate owner authorization; the owner will update the server later), moving `latest` (releases never move it).
+- **Next action:** the owner deploys `v0.3.3` when ready (replace `build:` in `compose.yaml` with the image, per `DOCKER.md`), then checks the album page with a multi-disc album and a missing cover, and the Android app against it.
+
 ## 2026-11-02 — Android album page merged (PR #685); installed on the phone
 
 - **Merged:** PR #685, squash `164bb27a31b477725833f35d0166d3779035f99e`, from tested head `301a63e40859b88f9d97b0d7e688592ad6b6938f`; compile, container-smoke, test-and-build and validate-container passed on that head before merge (the Python full suite ran in CI only). Contents are in the entry below (disc headings, quality tag, disc-aware play and queue).
