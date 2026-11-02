@@ -5303,6 +5303,8 @@ function renderAlbum(target) {
   heading.textContent = displayAlbumName(target.name) || 'Loading album…';
   $('albumArtist').replaceChildren();
   $('albumYear').textContent = target.year || '';
+  $('albumQuality').textContent = '';
+  $('albumQuality').hidden = true;
   $('albumGenre').replaceChildren();
   $('albumSummary').textContent = '';
   $('albumOwnership').hidden = target.owned !== false;
@@ -5492,12 +5494,7 @@ function buildTrackRow(track, index) {
   const row = document.createElement('li');
   row.className = 'track';
   addTextElement(row, 'span', 'track-number', track.track_number || index + 1);
-  const title = addTextElement(row, 'span', 'track-title', track.title);
-  // The file's quality (FLAC 16/44, MP3 320k), only for a song the library has.
-  if (track.owned && track.quality) {
-    const tag = addTextElement(title, 'span', 'track-quality', track.quality);
-    tag.title = 'File quality';
-  }
+  addTextElement(row, 'span', 'track-title', track.title);
   addTextElement(row, 'span', 'track-duration', formatDuration(track.duration_seconds));
   // A song the library lacks gets its own Get, once the album it belongs to is known.
   const album = albumPage.album;
@@ -5535,6 +5532,9 @@ function applyAlbumSection(section, target) {
       tintAlbumPage(sizedArtwork(album.artwork_url, 500), libraryView.albumSeq);
     }
     $('albumYear').textContent = album.year || $('albumYear').textContent;
+    // One file-quality tag for the whole album (FLAC, lossless, 320k), beside the year.
+    $('albumQuality').textContent = album.quality || '';
+    $('albumQuality').hidden = !album.quality;
     $('albumOwnership').hidden = Boolean(album.owned);
     const artist = $('albumArtist');
     artist.replaceChildren();

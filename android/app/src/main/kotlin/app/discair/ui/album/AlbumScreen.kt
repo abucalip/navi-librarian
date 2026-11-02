@@ -134,6 +134,8 @@ private fun AlbumContent(route: AlbumRoute, page: AlbumPage, open: Opener, list:
                     )
                     if (!genre.isNullOrBlank() && year != null) Text("·", color = MaterialTheme.colorScheme.onSurfaceVariant)
                     if (year != null) Text("$year", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    // One tag for the whole album, beside the year.
+                    info?.quality?.takeIf { it.isNotBlank() }?.let { QualityTag(it) }
                 }
                 if (!owned) Text("Not in your library", style = MaterialTheme.typography.bodyMedium, color = Ink.Caution)
                 if (albumId != null) app.discair.ui.player.PlayRow(
@@ -168,8 +170,6 @@ private fun AlbumContent(route: AlbumRoute, page: AlbumPage, open: Opener, list:
                         )
                         Row(Modifier.weight(1f).padding(end = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                             Text(t.title, style = MaterialTheme.typography.bodyLarge, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
-                            // The file's quality, only for a song in the library.
-                            if (t.owned) t.quality?.let { QualityTag(it, Modifier.padding(start = 8.dp)) }
                         }
                         t.durationSeconds?.let {
                             Text("%d:%02d".format(it / 60, it % 60), style = MaterialTheme.typography.labelMedium.copy(fontFamily = Mono), color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -252,7 +252,7 @@ private fun DiscHeading(disc: Int) {
     )
 }
 
-/** A small, discreet box with the file's quality ("FLAC 16/44", "MP3 320k") beside an owned song's title. */
+/** A small, discreet box with the album's file quality ("FLAC", "lossless", "320k") beside the year. */
 @Composable
 private fun QualityTag(text: String, modifier: Modifier = Modifier) {
     Text(

@@ -235,7 +235,7 @@ class LibrarySearchUIContractTests(unittest.TestCase):
 
     def test_album_page_is_one_centered_column_in_the_owner_s_order(self):
         album = self.html[self.html.index('<div id="libraryAlbumView" class="tint-backdrop" hidden>'):self.html.index('<div id="libraryGenreView"')]
-        order = ['id="albumAction"', 'id="albumHeading"', 'id="albumArtist"', 'id="albumGenre"', 'id="albumYear"',
+        order = ['id="albumAction"', 'id="albumHeading"', 'id="albumArtist"', 'id="albumGenre"', 'id="albumYear"', 'id="albumQuality"',
                  'id="albumDescription"', 'id="albumTracks"', 'id="albumPlatformLinks"', 'id="albumSimilarAlbums"',
                  'id="albumSimilarArtists"']
         positions = [album.index(part) for part in order]
@@ -251,6 +251,11 @@ class LibrarySearchUIContractTests(unittest.TestCase):
         self.assertIn("fillTrackRows($('albumTracks'), section.items);", self.new_js)
         self.assertIn("heading.className = 'track-disc';", self.new_js)
         self.assertIn("function albumSummary(tracks) {", self.new_js)
+
+    def test_album_quality_is_one_tag_beside_the_year_and_tracks_have_none(self):
+        self.assertIn("$('albumQuality').textContent = album.quality || '';", self.new_js)
+        self.assertNotIn("track-quality", self.new_js)
+        self.assertIn(".album-quality {", self.css)
 
     def test_album_genre_is_a_text_link_before_the_year(self):
         self.assertIn("section.section === 'genre'", self.new_js)

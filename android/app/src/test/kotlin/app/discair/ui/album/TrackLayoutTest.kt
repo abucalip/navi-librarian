@@ -1,5 +1,6 @@
 package app.discair.ui.album
 
+import app.discair.model.AlbumInfo
 import app.discair.model.ApiJson
 import app.discair.model.Track
 import kotlinx.serialization.builtins.ListSerializer
@@ -35,13 +36,17 @@ class TrackLayoutTest {
         assertEquals(2, trackNumberShown(twoDiscs, 3))
     }
 
-    @Test fun serverTracksDecodeDiscAndQualityAndOlderAnswersStillDecode() {
-        val json = """[{"track_number":1,"title":"A","duration_seconds":100,"owned":true,"disc_number":2,"quality":"FLAC 16/44"},
+    @Test fun serverTracksDecodeDiscAndOlderAnswersStillDecode() {
+        val json = """[{"track_number":1,"title":"A","duration_seconds":100,"owned":true,"disc_number":2},
                        {"track_number":2,"title":"B","duration_seconds":100,"owned":false}]"""
         val tracks = ApiJson.decodeFromString(ListSerializer(Track.serializer()), json)
         assertEquals(2, tracks[0].disc)
-        assertEquals("FLAC 16/44", tracks[0].quality)
         assertNull(tracks[1].disc)
-        assertNull(tracks[1].quality)
+    }
+
+    @Test fun albumInfoDecodesTheQualityTagAndOlderAnswersStillDecode() {
+        val withTag = ApiJson.decodeFromString(AlbumInfo.serializer(), """{"name":"A","quality":"320k"}""")
+        assertEquals("320k", withTag.quality)
+        assertNull(ApiJson.decodeFromString(AlbumInfo.serializer(), """{"name":"A"}""").quality)
     }
 }

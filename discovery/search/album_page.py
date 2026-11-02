@@ -31,7 +31,7 @@ from discovery.search.disc_layout import disc_of, is_multi_disc, place_unmatched
 from discovery.search.index import OwnedData
 from discovery.search.merge import OwnedKeys
 from discovery.search.normalize import normalize_key
-from discovery.search.quality_label import quality_label
+from discovery.search.quality_label import album_quality_label
 from discovery.search.query import artwork_url
 
 ALBUM_SECTION_ORDER = ("album", "year", "genre", "description", "tracks", "similar_artists", "similar_albums")
@@ -56,12 +56,6 @@ def find_album(data: OwnedData, artist_key: str, album_key: str, album_id: str |
     return matches[0] if matches else None
 
 
-def _with_quality(track: dict[str, Any], song: dict[str, Any]) -> dict[str, Any]:
-    """The track with the song file's quality tag when it has one; the key is absent otherwise."""
-    label = quality_label(song.get("suffix"), song.get("bit_rate"), song.get("bit_depth"), song.get("sampling_rate"))
-    return {**track, "quality": label} if label else track
-
-
 def owned_tracks(data: OwnedData, album_id: str) -> list[dict[str, Any]]:
     songs = sorted(
         (s for s in data.songs if s["album_id"] == album_id),
@@ -77,7 +71,7 @@ def owned_tracks(data: OwnedData, album_id: str) -> list[dict[str, Any]]:
                  "duration_seconds": s["duration"] or 0, "owned": True}
         if multi:
             track["disc_number"] = disc
-        tracks.append(_with_quality(track, s))
+        tracks.append(track)
     return tracks
 
 
@@ -114,7 +108,7 @@ def mark_owned_tracks(provider: list[dict[str, Any]], songs: list[dict[str, Any]
             unmatched.remove(song)
             matched[index] = song
     items = [
-        _with_quality({**track, "owned": True}, matched[index]) if index in matched else {**track, "owned": False}
+        {**track, "owned": True} if index in matched else {**track, "owned": False}
         for index, track in enumerate(provider)
     ]
     if multi and matched:
@@ -129,7 +123,7 @@ def mark_owned_tracks(provider: list[dict[str, Any]], songs: list[dict[str, Any]
         }
         if multi:
             extra["disc_number"] = disc_of(song)
-        items.append(_with_quality(extra, song))
+        items.append(extra)
     if multi and matched:
         items.sort(key=lambda t: (t["disc_number"], t["track_number"]))
     return items
@@ -248,6 +242,8 @@ def album_sections(
         "artwork_url": artwork_url(album["id"]) if album else None,
         "release_group_mbid": (album or {}).get("release_group_mbid") or release_group_mbid,
         "song_count": album["song_count"] if album else None,
+        # One file-quality tag for the whole album (``FLAC``, ``lossless``, ``320k``); null when unknown.
+        "quality": album_quality_label(s for s in data.songs if s["album_id"] == album["id"]) if album and data else None,
     })
 
     shown_artist = album["artist"] if album else artist
