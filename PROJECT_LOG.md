@@ -1,3 +1,14 @@
+## 2026-11-02 — Album page shows one quality tag beside the year (PR #689)
+
+- **Merged (owner request):** PR #689, squash `46a238f80a65764d2981bf01414368a2603ca49b`, from tested head `c4bef7496dcfdcc0afb1de60f6235bf62dcb7271`; compile, container-smoke, test-and-build, validate-container and validate-release-workflow passed on that head.
+- **Rule (owner's):** every song FLAC gives `FLAC`; every song lossless but not all FLAC gives `lossless`; otherwise the compressed songs' average bit rate (`320k`, or the format name when no rate is reported). Decisions made without the owner: a compressed and lossless mix shows the compressed rate (lowest quality), and differing bit rates are averaged. No tag when the album is not owned or no format is known.
+- **Server:** `album_quality_label` in `discovery/search/quality_label.py`; the `album` section carries `quality`; tracks no longer carry the per-song `quality` that #683 added. `SEARCH_CONTRACT.md` 14.4 updated. Song search results (#688) keep their own `quality`.
+- **Web and Android:** one rounded tag after the year (`#albumQuality`, `QualityTag` in `AlbumScreen`); the per-song tags are removed.
+- **Tests run:** `test_quality_label` (new album cases), `test_discovery_search_album_page`, `test_discovery_search_query`, `test_api_search_routes`, `test_android_contract_fixtures`, `test_library_search_ui_contract`, `test_disc_layout` (188 passed); Android `ui.album`, `model` and `player` unit tests, `lintDebug`, `assembleRelease` on JDK 17. Not run: the Python full suite (CI only), instrumented tests. Fixture `album_page.json` unchanged.
+- **Phone:** the signed release APK was installed over wireless adb; not opened, so the tag is not seen on the device. The web tag was not checked in a browser (phone-width wrapping unconfirmed).
+- **Not done:** publication and deployment; the server image `v0.3.4` lacks this change, so the tag appears only after a later release is published and deployed.
+- **Next action:** the owner decides when to publish the next version, then checks the tag on the phone and in the browser.
+
 ## 2026-11-02 — Search song results carry year and file details; v0.3.4 published (PR #688)
 
 - **Merged (owner's go-ahead):** PR #688, squash `909e88e1e6bfa75f15a130accc248833a67010c0`, from tested head `7707fc0baa3e1eb6a9f59aa6215deea9edb565a3`; compile, container-smoke, test-and-build and validate-container passed on that head.
