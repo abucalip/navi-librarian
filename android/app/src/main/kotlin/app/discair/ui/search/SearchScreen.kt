@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -154,7 +153,7 @@ fun SearchScreen(open: Opener) {
 private fun Results(results: List<SearchResult>, open: Opener) {
     val owned = results.filter { it.owned }
     val other = results.filter { !it.owned }
-    LazyColumn(Modifier.fillMaxSize().imePadding(), contentPadding = PaddingValues(bottom = 24.dp)) {
+    LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 24.dp)) {
         typeOrder.forEach { (type, title) ->
             val rows = owned.filter { it.type == type }
             if (rows.isNotEmpty()) {
