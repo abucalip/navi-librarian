@@ -196,6 +196,8 @@ data class AlbumInfo(
     @SerialName("artwork_url") val artworkUrl: String? = null,
     @SerialName("song_count") val songCount: Int = 0,
     @SerialName("release_group_mbid") val releaseGroupMbid: String? = null,
+    /** One file-quality tag for the whole album ("FLAC", "lossless", "320k"); absent when unknown. */
+    val quality: String? = null,
 )
 
 @Serializable
@@ -224,8 +226,6 @@ data class Track(
     val owned: Boolean = false,
     /** The disc, sent only for an album whose library songs span several discs; [number] counts within it. */
     @SerialName("disc_number") val disc: Int? = null,
-    /** The file's quality tag for an owned song ("FLAC 16/44", "MP3 320k"); absent when unknown. */
-    val quality: String? = null,
 )
 
 @Serializable

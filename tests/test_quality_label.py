@@ -1,8 +1,9 @@
 import unittest
+from types import SimpleNamespace
 
-from discovery.search.album_page import mark_owned_tracks, owned_tracks
+from discovery.search.album_page import album_sections, find_album, mark_owned_tracks, owned_tracks
 from discovery.search.index import build_owned_data
-from discovery.search.quality_label import quality_label
+from discovery.search.quality_label import album_quality_label, quality_label
 
 
 class QualityLabelTests(unittest.TestCase):
@@ -54,18 +55,48 @@ class OwnedTrackQualityTests(unittest.TestCase):
         self.assertEqual((song["suffix"], song["bit_rate"], song["bit_depth"], song["sampling_rate"]), ("flac", 900, 16, 44100))
         self.assertIsNone(_data().songs[2]["suffix"])
 
-    def test_library_tracks_carry_a_tag_only_when_the_file_has_one(self):
-        tracks = owned_tracks(_data(), "al1")
-        self.assertEqual([t.get("quality") for t in tracks], ["FLAC 16/44", "MP3 320k", None])
-        self.assertNotIn("quality", tracks[2])
+    def test_tracks_carry_no_per_song_tag(self):
+        self.assertTrue(all("quality" not in t for t in owned_tracks(_data(), "al1")))
+        provider = [{"track_number": 1, "title": "One", "duration_seconds": 100}]
+        marked = mark_owned_tracks(provider, [s for s in _data().songs if s["album_id"] == "al1"])
+        self.assertTrue(all("quality" not in t for t in marked))
 
-    def test_provider_tracks_get_a_tag_when_owned_and_none_when_not(self):
+
+def _song(suffix, rate=None, depth=None):
+    return {"suffix": suffix, "bit_rate": rate, "bit_depth": depth, "sampling_rate": 44100}
+
+
+class AlbumQualityLabelTests(unittest.TestCase):
+    def test_any_flac_is_just_flac(self):
+        self.assertEqual(album_quality_label([_song("flac", 900, 16), _song("flac", 2800, 24)]), "FLAC")
+
+    def test_other_lossless_or_a_flac_mix_is_lossless(self):
+        self.assertEqual(album_quality_label([_song("m4a", 900, 16), _song("m4a", 900, 16)]), "lossless")
+        self.assertEqual(album_quality_label([_song("wav", None, 16)]), "lossless")
+        self.assertEqual(album_quality_label([_song("flac", 900, 16), _song("alac", 900, 16)]), "lossless")
+
+    def test_compressed_shows_the_bit_rate(self):
+        self.assertEqual(album_quality_label([_song("mp3", 320), _song("mp3", 320)]), "320k")
+        self.assertEqual(album_quality_label([_song("m4a", 256, 0)]), "256k")
+        self.assertEqual(album_quality_label([_song("mp3", 245), _song("mp3", 255)]), "250k")
+
+    def test_compressed_among_lossless_wins_as_the_lowest_quality(self):
+        self.assertEqual(album_quality_label([_song("flac", 900, 16), _song("mp3", 320)]), "320k")
+
+    def test_compressed_without_a_rate_shows_the_format(self):
+        self.assertEqual(album_quality_label([_song("opus")]), "OPUS")
+
+    def test_unknown_formats_give_no_tag(self):
+        self.assertIsNone(album_quality_label([]))
+        self.assertIsNone(album_quality_label([_song(None, 320), _song("", 320)]))
+
+    def test_album_page_album_section_carries_the_tag(self):
         data = _data()
-        provider = [{"track_number": n, "title": t, "duration_seconds": 100} for n, t in ((1, "One"), (2, "Missing"), (3, "Two"))]
-        marked = mark_owned_tracks(provider, [s for s in data.songs if s["album_id"] == "al1"])
-        self.assertEqual([(t["title"], t["owned"], t.get("quality")) for t in marked],
-                         [("One", True, "FLAC 16/44"), ("Missing", False, None), ("Two", True, "MP3 320k"),
-                          ("Three", True, None)])
+        album = find_album(data, "radiohead", "kid a", None)
+        first = next(album_sections(SimpleNamespace(clock=lambda: 0.0, deadline_seconds=1.0), data, album=album, artist="Radiohead", artist_key="radiohead",
+                                    name="Kid A", year=2000, release_group_mbid=None))
+        self.assertEqual(first["section"], "album")
+        self.assertEqual(first["album"]["quality"], "320k")
 
 
 if __name__ == "__main__":
