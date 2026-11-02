@@ -198,6 +198,7 @@ private fun ResultRow(r: SearchResult, open: Opener, showType: Boolean = false) 
     val ownedSong = if (r.type == "song" && r.owned && !r.albumId.isNullOrBlank()) app.discair.player.QueueItem(
         songId = r.id, title = r.name, artist = r.artist.orEmpty(), album = r.album.orEmpty(), albumId = r.albumId,
         coverId = r.albumId, coverUrl = repoForPlay.absolute("/api/owned/artwork/${r.albumId}"), durationSec = r.duration ?: 0,
+        year = r.year, bitRateKbps = r.bitRate, suffix = r.suffix.orEmpty(), bitDepth = r.bitDepth, samplingRateHz = r.samplingRate,
     ) else null
     val go: (() -> Unit)? = when {
         ownedSong != null -> { { playActions.playSong(ownedSong) } }

@@ -43,9 +43,6 @@ interface SongSource {
 
     /** The ids of the artist's albums in Navidrome's order. Throws [SongSourceException]. */
     fun artistAlbumIds(artistId: String): List<String>
-
-    /** One song with its year and file details, or null when Navidrome can't give it. Throws [SongSourceException]. */
-    fun song(songId: String): SongRef? = null
 }
 
 object SubsonicParse {
@@ -71,8 +68,6 @@ object SubsonicParse {
 
     private fun JsonObject.text(key: String) = this[key]?.jsonPrimitive?.contentOrNull.orEmpty()
     private fun JsonObject.number(key: String) = this[key]?.jsonPrimitive?.intOrNull
-
-    fun song(body: String): SongRef? = (root(body)["song"] as? JsonObject)?.let { songRef(it, null) }
 
     private fun songRef(s: JsonObject, album: JsonObject?): SongRef? {
         val id = s.text("id")
@@ -135,5 +130,4 @@ class SubsonicSongSource(
 
     override fun albumSongs(albumId: String) = SubsonicParse.albumSongs(get("getAlbum", albumId))
     override fun artistAlbumIds(artistId: String) = SubsonicParse.artistAlbumIds(get("getArtist", artistId))
-    override fun song(songId: String) = SubsonicParse.song(get("getSong", songId))
 }

@@ -169,6 +169,8 @@ def _song_entry(song: Mapping[str, Any]) -> dict[str, Any]:
         "track_number": int(track) if isinstance(track, int) and track >= 1 else None,
         # The disc the song is on (Subsonic ``discNumber``); ``track_number`` counts within it.
         "disc_number": int(song["discNumber"]) if isinstance(song.get("discNumber"), int) and song["discNumber"] >= 1 else None,
+        # The song's own year (Subsonic ``year``), when the library gives one.
+        "year": _year(song.get("year")),
         # The file's own format fields (Subsonic ``suffix``, ``bitRate`` kbps, ``bitDepth``, ``samplingRate`` Hz).
         "suffix": str(song.get("suffix") or "").strip() or None,
         "bit_rate": song.get("bitRate") if isinstance(song.get("bitRate"), (int, float)) else None,

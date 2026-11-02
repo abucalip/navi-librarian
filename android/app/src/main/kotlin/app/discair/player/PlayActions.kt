@@ -9,7 +9,6 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import kotlinx.coroutines.withTimeoutOrNull
 
 private fun norm(text: String) = text.lowercase().filter { it.isLetterOrDigit() }
 
@@ -119,36 +118,17 @@ class PlayActions(
         if (all.size > MAX_QUEUE) _messages.tryEmit("Queue is full at $MAX_QUEUE songs.")
     }
 
-    /** One song from search, already known: no request is needed. */
-    /**
-     * Search results carry no year or file details (Librarian's index drops them), so ask Navidrome for
-     * this one song first. Any failure or a slow answer just plays the song as it came.
-     */
-    private suspend fun detailed(item: QueueItem): QueueItem {
-        if (item.suffix.isNotEmpty() && item.year != null) return item
-        val found = try {
-            withTimeoutOrNull(DETAIL_WAIT_MS) { withContext(io) { source.song(item.songId) } }
-        } catch (e: kotlinx.coroutines.CancellationException) { throw e } catch (e: Exception) { null } ?: return item
-        return item.copy(
-            year = item.year ?: found.year, bitRateKbps = item.bitRateKbps ?: found.bitRateKbps,
-            suffix = item.suffix.ifEmpty { found.suffix }, bitDepth = item.bitDepth ?: found.bitDepth,
-            samplingRateHz = item.samplingRateHz ?: found.samplingRateHz,
-        )
-    }
-
+    /** One song from search: the result already carries its year and file details, so no request is needed. */
     fun playSong(item: QueueItem) {
         if (!isValidSongId(item.songId)) return
-        scope.launch { controller.playItems(listOf(detailed(item))); controller.setShuffle(false) }
+        scope.launch { controller.playItems(listOf(item)); controller.setShuffle(false) }
     }
 
     fun queueSong(item: QueueItem, next: Boolean) {
         if (!isValidSongId(item.songId)) return
         scope.launch {
-            val full = detailed(item)
-            if (next) controller.playNext(listOf(full)) else controller.enqueue(listOf(full))
+            if (next) controller.playNext(listOf(item)) else controller.enqueue(listOf(item))
             _messages.tryEmit(if (next) "\"${item.title}\" will play next." else "Added \"${item.title}\" to the queue.")
         }
     }
-
-    private companion object { const val DETAIL_WAIT_MS = 2_000L }
 }
