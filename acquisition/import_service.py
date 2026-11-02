@@ -8,6 +8,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from acquisition.import_hooks import notify_imported
+
 
 def import_completed_source_locked(
     artist, album, source, music_root, candidate, *,
@@ -108,4 +110,5 @@ def import_completed_source_locked(
         "source_folder": str(source), "destination": str(album_dir),
         "source_username": candidate.get("username"), "imported_at": now(),
     })
+    notify_imported(artist, album)
     return "imported"

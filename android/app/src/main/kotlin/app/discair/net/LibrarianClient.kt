@@ -94,6 +94,12 @@ class LibrarianClient(
         return get(Request.Builder().url(url).post(json.toRequestBody(JSON)).build())
     }
 
+    /** PUT a JSON body to [segments]. Same one-time re-login on 401; an error status throws. */
+    fun put(segments: List<String>, json: String): String {
+        val url = baseUrl.toHttpUrl().newBuilder().apply { segments.forEach { addPathSegment(it) } }.build()
+        return get(Request.Builder().url(url).put(json.toRequestBody(JSON)).build())
+    }
+
     /**
      * Reads a server-sent event stream, calling [onEvent] with each event's name and data line.
      * Blocks until the stream ends; cancelling the calling coroutine's thread work closes the call.

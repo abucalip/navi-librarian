@@ -85,6 +85,33 @@ def engine2_lens_lists_enabled_value(settings_read):
     return value if type(value) is bool else DEFAULT_ENGINE2_LENS_LISTS_ENABLED
 
 
+LIBRARY_RESYNC_KEY = "library_resync_after_import"
+DEFAULT_LIBRARY_RESYNC_ENABLED = True
+
+
+def library_resync_enabled_value(settings_read):
+    """Read the resync-after-import switch; absent or non-boolean values mean on."""
+    value = settings_read().get(LIBRARY_RESYNC_KEY, DEFAULT_LIBRARY_RESYNC_ENABLED)
+    return value if type(value) is bool else DEFAULT_LIBRARY_RESYNC_ENABLED
+
+
+def get_library_resync_settings(settings_read):
+    """Return the stable public resync payload."""
+    return json.dumps({LIBRARY_RESYNC_KEY: library_resync_enabled_value(settings_read)})
+
+
+def set_library_resync_settings(settings_write, value):
+    """Persist the resync switch, refusing non-boolean input without writing."""
+    if type(value) is not bool:
+        return json.dumps({"ok": False, "error": "library_resync_after_import must be a boolean."})
+    settings_write({LIBRARY_RESYNC_KEY: value})
+    return json.dumps({
+        "ok": True,
+        LIBRARY_RESYNC_KEY: value,
+        "message": "Library resync preference saved.",
+    })
+
+
 def get_automatic_refill_settings(settings_read):
     """Return the stable public refill payload."""
     return json.dumps({AUTOMATIC_REFILL_KEY: automatic_refill_enabled_value(settings_read)})

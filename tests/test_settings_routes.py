@@ -36,6 +36,8 @@ class SettingsRoutesTests(unittest.TestCase):
             ("/api/settings/slskd", "GET"),
             ("/api/settings/slskd", "PUT"),
             ("/api/settings/slskd/test", "POST"),
+            ("/api/settings/library-resync", "GET"),
+            ("/api/settings/library-resync", "PUT"),
             ("/api/settings/recommendation-diversity", "GET"),
             ("/api/settings/recommendation-diversity", "PUT"),
             ("/api/settings/automatic-refill", "GET"),

@@ -2,7 +2,9 @@
 import tempfile
 import unittest
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import Mock, patch
+
+from acquisition import import_hooks
 
 from acquisition.import_files import import_matched_album_files
 from acquisition.import_service import import_completed_source_locked
@@ -223,6 +225,18 @@ class ImportCompletionServiceTests(unittest.TestCase):
         self.assertEqual(kwargs["expected_music_root"], self.music.resolve())
         self.assertEqual(kwargs["expected_device"], self.music.stat().st_dev)
         self.assertEqual(self.statuses[-1][3]["imported_at"], 123.0)
+
+    def test_success_notifies_import_listeners_and_failure_does_not(self):
+        listener = Mock()
+        saved = list(import_hooks._listeners)
+        import_hooks._listeners[:] = [listener]
+        try:
+            self.assertEqual(self.run_import(status_result=False), "failed")
+            listener.assert_not_called()
+            self.assertEqual(self.run_import(), "imported")
+            listener.assert_called_once_with("Artist", "Album")
+        finally:
+            import_hooks._listeners[:] = saved
 
     def test_symlinked_artist_destination_is_refused(self):
         outside = self.root / "outside"

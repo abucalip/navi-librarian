@@ -26,6 +26,8 @@ import app.discair.model.parseSearchEvent
 import kotlinx.serialization.json.JsonObject
 import app.discair.model.AlbumPage
 import app.discair.model.ApiJson
+import kotlinx.serialization.json.booleanOrNull
+import kotlinx.serialization.json.jsonPrimitive
 import app.discair.model.ArtistPage
 import app.discair.model.GenrePage
 import app.discair.model.GenreTiles
@@ -120,6 +122,12 @@ interface LibraryRepository : AcquisitionApi {
 
     /** Asks the server to rebuild a list in the background (count 1-20). */
     fun refreshList(list: String)
+
+    /** Whether the server resyncs its library from Navidrome shortly after each import. Read live, never from the saved copies. */
+    fun libraryResync(): Boolean = true
+
+    /** Turns that server option on or off; throws unless the server saved it. */
+    fun setLibraryResync(on: Boolean): Unit = throw UnsupportedOperationException()
 
     /** Artist biography text, or null when none is available. */
     fun artistBio(artist: String): String?
@@ -239,6 +247,19 @@ class LibrarianRepository(
             client.post(listOf("api", "discovery", "feedback"), feedbackBody(action, artist, album, metadata)),
         )
         if (!reply.ok) throw IllegalStateException(reply.error ?: "The server did not accept this.")
+    }
+
+    override fun libraryResync(): Boolean =
+        (ApiJson.parseToJsonElement(client.get(listOf("api", "settings", "library-resync"))) as? JsonObject)
+            ?.get("library_resync_after_import")?.jsonPrimitive?.booleanOrNull ?: true
+
+    override fun setLibraryResync(on: Boolean) {
+        val reply = ApiJson.parseToJsonElement(
+            client.put(listOf("api", "settings", "library-resync"), """{"library_resync_after_import":$on}"""),
+        ) as? JsonObject
+        if (reply?.get("ok")?.jsonPrimitive?.booleanOrNull != true) {
+            throw IllegalStateException("The server did not save this.")
+        }
     }
 
     override fun refreshList(list: String) {

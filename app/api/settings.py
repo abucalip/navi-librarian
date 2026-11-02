@@ -16,6 +16,8 @@ from settings.service import (
     set_discogs_settings as _set_discogs_settings,
     test_discogs_connection as _test_discogs_connection,
     get_automatic_refill_settings as _get_automatic_refill_settings,
+    get_library_resync_settings as _get_library_resync_settings,
+    set_library_resync_settings as _set_library_resync_settings,
     get_recommendation_diversity_settings as _get_recommendation_diversity_settings,
     set_automatic_refill_settings as _set_automatic_refill_settings,
     set_recommendation_diversity_settings as _set_recommendation_diversity_settings,
@@ -46,6 +48,30 @@ def set_automatic_refill_settings(payload: dict, librarian=Depends(get_librarian
         raise
     except Exception:
         raise HTTPException(status_code=502, detail="Could not save automatic refill settings.")
+
+
+@router.get("/api/settings/library-resync")
+def get_library_resync_settings(librarian=Depends(get_librarian)):
+    try:
+        return parse_result(_get_library_resync_settings(librarian._discovery_settings_read))
+    except Exception:
+        raise HTTPException(status_code=502, detail="Could not read library resync settings.")
+
+
+@router.put("/api/settings/library-resync")
+def set_library_resync_settings(payload: dict, librarian=Depends(get_librarian)):
+    value = payload.get("library_resync_after_import")
+    if type(value) is not bool:
+        raise HTTPException(status_code=400, detail="library_resync_after_import must be a boolean.")
+    try:
+        result = parse_result(_set_library_resync_settings(librarian._discovery_settings_write, value))
+        if isinstance(result, dict) and not result.get("ok"):
+            raise HTTPException(status_code=400, detail=result.get("error", "Invalid library resync setting."))
+        return result
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(status_code=502, detail="Could not save library resync settings.")
 
 
 @router.get("/api/settings/recommendation-diversity")
