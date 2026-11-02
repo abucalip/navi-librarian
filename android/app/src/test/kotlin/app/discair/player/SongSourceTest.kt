@@ -109,4 +109,16 @@ class SongSourceTest {
         assertNull(matchSong(songs, "Nothing", 7))
         assertNull(matchSong(songs, "", null))
     }
+
+    @Test fun matchingReadsNumbersAndSharedTitlesOnTheRightDisc() {
+        val songs = listOf(
+            SongRef("d1", "Intro", "x", "y", "al", 1, 1, 10), SongRef("d1b", "One", "x", "y", "al", 2, 1, 10),
+            SongRef("d2", "Intro", "x", "y", "al", 1, 2, 10), SongRef("d2b", "Two", "x", "y", "al", 2, 2, 10),
+        )
+        assertEquals("d2", matchSong(songs, "Intro", 1, 2)?.id)
+        assertEquals("d1", matchSong(songs, "Intro", 1, 1)?.id)
+        assertEquals("d2b", matchSong(songs, "Renamed", 2, 2)?.id)
+        assertEquals("d1b", matchSong(songs, "Renamed", 2, 1)?.id)
+        assertEquals("d1", matchSong(songs, "Intro", null, null)?.id)
+    }
 }

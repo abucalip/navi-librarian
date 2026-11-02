@@ -41,6 +41,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import app.discair.R
 import app.discair.model.AlbumPage
 import app.discair.model.Description
@@ -149,21 +150,27 @@ private fun AlbumContent(route: AlbumRoute, page: AlbumPage, open: Opener, list:
         item { InfoReviewsTabs(artist, title, s.description.description, finished = page.done != Done()) }
         if (tracks.isNotEmpty()) {
             item { RowDivider(Modifier.padding(horizontal = 12.dp).padding(top = 12.dp)) }
-            items(tracks.size) { i ->
+            for (i in tracks.indices) {
+                if (startsDisc(tracks, i)) item(key = "disc-${tracks[i].disc}") { DiscHeading(tracks[i].disc ?: 1) }
+                item {
                 val t = tracks[i]
                 Column {
                     Row(
                         // An owned track plays the album from that track.
                         Modifier.fillMaxWidth().heightIn(min = 52.dp)
-                            .let { if (t.owned && albumId != null) it.clickable(onClickLabel = "Play ${t.title}", role = Role.Button) { play.playAlbum(albumId, t.title, t.number) } else it }
+                            .let { if (t.owned && albumId != null) it.clickable(onClickLabel = "Play ${t.title}", role = Role.Button) { play.playAlbum(albumId, t.title, t.number, startDisc = t.disc) } else it }
                             .padding(horizontal = 16.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Text(
-                            "${t.number ?: i + 1}", style = MaterialTheme.typography.bodyLarge,
+                            "${trackNumberShown(tracks, i)}", style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.width(32.dp),
                         )
-                        Text(t.title, style = MaterialTheme.typography.bodyLarge, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f).padding(end = 8.dp))
+                        Row(Modifier.weight(1f).padding(end = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Text(t.title, style = MaterialTheme.typography.bodyLarge, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
+                            // The file's quality, only for a song in the library.
+                            if (t.owned) t.quality?.let { QualityTag(it, Modifier.padding(start = 8.dp)) }
+                        }
                         t.durationSeconds?.let {
                             Text("%d:%02d".format(it / 60, it % 60), style = MaterialTheme.typography.labelMedium.copy(fontFamily = Mono), color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
@@ -173,12 +180,13 @@ private fun AlbumContent(route: AlbumRoute, page: AlbumPage, open: Opener, list:
                         if (t.owned && albumId != null) app.discair.ui.player.RowMoreMenu(
                             t.title,
                             listOf(
-                                "Play next" to { play.queueTrack(albumId, t.title, t.number, next = true) },
-                                "Add to queue" to { play.queueTrack(albumId, t.title, t.number, next = false) },
+                                "Play next" to { play.queueTrack(albumId, t.title, t.number, next = true, disc = t.disc) },
+                                "Add to queue" to { play.queueTrack(albumId, t.title, t.number, next = false, disc = t.disc) },
                             ),
                         )
                     }
                     RowDivider(Modifier.padding(horizontal = 12.dp))
+                }
                 }
             }
             item { Summary(tracks.size, tracks.sumOf { it.durationSeconds ?: 0 }, tracks.count { it.owned }) }
@@ -231,6 +239,30 @@ private fun AlbumContent(route: AlbumRoute, page: AlbumPage, open: Opener, list:
             }
         }
     }
+}
+
+/** "Disc 2" above the first track of each disc of an album that spans several discs. */
+@Composable
+private fun DiscHeading(disc: Int) {
+    Text(
+        "Disc $disc".uppercase(), style = MaterialTheme.typography.labelMedium.copy(fontFamily = Mono, letterSpacing = 1.sp),
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 8.dp)
+            .semantics { heading() },
+    )
+}
+
+/** A small, discreet box with the file's quality ("FLAC 16/44", "MP3 320k") beside an owned song's title. */
+@Composable
+private fun QualityTag(text: String, modifier: Modifier = Modifier) {
+    Text(
+        text, maxLines = 1, softWrap = false,
+        style = MaterialTheme.typography.labelSmall.copy(fontFamily = Mono, fontSize = 10.sp),
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = modifier
+            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(4.dp))
+            .padding(horizontal = 5.dp, vertical = 1.dp),
+    )
 }
 
 /** "27 songs, 1 hour 19 minutes · 10 in your library", centred under the tracklist. */

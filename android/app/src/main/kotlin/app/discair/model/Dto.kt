@@ -222,6 +222,10 @@ data class Track(
     val title: String = "",
     @SerialName("duration_seconds") val durationSeconds: Int? = null,
     val owned: Boolean = false,
+    /** The disc, sent only for an album whose library songs span several discs; [number] counts within it. */
+    @SerialName("disc_number") val disc: Int? = null,
+    /** The file's quality tag for an owned song ("FLAC 16/44", "MP3 320k"); absent when unknown. */
+    val quality: String? = null,
 )
 
 @Serializable

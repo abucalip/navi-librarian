@@ -13,10 +13,19 @@ import kotlinx.coroutines.withTimeoutOrNull
 
 private fun norm(text: String) = text.lowercase().filter { it.isLetterOrDigit() }
 
-/** Finds a page track among the album's songs: the same title first, then the same track number. */
-fun matchSong(songs: List<SongRef>, title: String, number: Int?): SongRef? =
-    songs.firstOrNull { norm(it.title) == norm(title) && norm(title).isNotEmpty() }
-        ?: number?.let { n -> songs.firstOrNull { it.track == n } }
+/**
+ * Finds a page track among the album's songs: the same title first, then the same track number.
+ * Numbers count within a disc, so when the page knows the [disc] a title shared by two discs
+ * ("Intro") and a number are read on that disc only.
+ */
+fun matchSong(songs: List<SongRef>, title: String, number: Int?, disc: Int? = null): SongRef? {
+    fun onDisc(song: SongRef) = disc == null || (song.disc ?: 1) == disc
+    val titled = if (norm(title).isEmpty()) emptyList() else songs.filter { norm(it.title) == norm(title) }
+    return titled.firstOrNull { onDisc(it) && (number == null || it.track == number) }
+        ?: titled.firstOrNull { onDisc(it) }
+        ?: titled.firstOrNull()
+        ?: number?.let { n -> songs.firstOrNull { it.track == n && onDisc(it) } }
+}
 
 /**
  * What the Play, Shuffle, Play next and Add to queue buttons do. Only songs that Navidrome lists for the
@@ -55,12 +64,12 @@ class PlayActions(
         withContext(io) { source.albumSongs(albumId) }.map(::item)
 
     /** Play album, or play from a track (by title or number) with the rest of the album after it. */
-    fun playAlbum(albumId: String, startTitle: String? = null, startNumber: Int? = null, shuffle: Boolean = false) = launch {
+    fun playAlbum(albumId: String, startTitle: String? = null, startNumber: Int? = null, shuffle: Boolean = false, startDisc: Int? = null) = launch {
         val songs = withContext(io) { source.albumSongs(albumId) }
         if (songs.isEmpty()) { _messages.tryEmit("No songs found for that album in your library."); return@launch }
         var start = 0
         if (startTitle != null) {
-            val match = matchSong(songs, startTitle, startNumber)
+            val match = matchSong(songs, startTitle, startNumber, startDisc)
             if (match == null) { _messages.tryEmit("Couldn't find \"$startTitle\" in your library."); return@launch }
             start = songs.indexOf(match)
         } else if (shuffle) start = random.nextInt(songs.size)
@@ -86,9 +95,9 @@ class PlayActions(
     }
 
     /** One track of an album, added after the current song or at the end. */
-    fun queueTrack(albumId: String, title: String, number: Int?, next: Boolean) = launch {
+    fun queueTrack(albumId: String, title: String, number: Int?, next: Boolean, disc: Int? = null) = launch {
         val songs = withContext(io) { source.albumSongs(albumId) }
-        val match = matchSong(songs, title, number)
+        val match = matchSong(songs, title, number, disc)
         if (match == null) { _messages.tryEmit("Couldn't find \"$title\" in your library."); return@launch }
         queueSong(item(match), next)
     }
