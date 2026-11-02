@@ -193,7 +193,14 @@ private fun ResultRow(r: SearchResult, open: Opener, showType: Boolean = false) 
     ).joinToString(" · ")
     val artist = r.artist
     val album = r.album
+    val repoForPlay = repo
+    val playActions = app.discair.ui.player.LocalPlayActions.current
+    val ownedSong = if (r.type == "song" && r.owned && !r.albumId.isNullOrBlank()) app.discair.player.QueueItem(
+        songId = r.id, title = r.name, artist = r.artist.orEmpty(), album = r.album.orEmpty(), albumId = r.albumId,
+        coverId = r.albumId, coverUrl = repoForPlay.absolute("/api/owned/artwork/${r.albumId}"), durationSec = r.duration ?: 0,
+    ) else null
     val go: (() -> Unit)? = when {
+        ownedSong != null -> { { playActions.playSong(ownedSong) } }
         r.type == "artist" -> { { open.artist(r.name, r.key, ownedId, r.mbid) } }
         r.type == "album" && artist != null -> { { open.album(r.key, artist, r.name, ownedId, r.year) } }
         // A song opens its album's page, which lists the track.
@@ -216,17 +223,11 @@ private fun ResultRow(r: SearchResult, open: Opener, showType: Boolean = false) 
                     color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis,
                 )
             }
-            if (r.type == "song" && r.owned && !r.albumId.isNullOrBlank()) {
-                val play = app.discair.ui.player.LocalPlayActions.current
-                val item = app.discair.player.QueueItem(
-                    songId = r.id, title = r.name, artist = r.artist.orEmpty(), album = r.album.orEmpty(), albumId = r.albumId,
-                    coverId = r.albumId, coverUrl = repo.absolute("/api/owned/artwork/${r.albumId}"), durationSec = r.duration ?: 0,
-                )
-                app.discair.ui.player.RowPlayButton(r.name, { play.playSong(item) })
-                IconButton(onClick = { play.queueSong(item, next = false) }, Modifier.size(Target)) {
+            if (ownedSong != null) {
+                IconButton(onClick = { playActions.queueSong(ownedSong, next = false) }, Modifier.size(Target)) {
                     Icon(app.discair.ui.player.PlayerIcons.Add, contentDescription = "Add ${r.name} to the queue")
                 }
-            } else OwnedMark(r.owned)
+            } else if (r.type != "song") OwnedMark(r.owned)
         }
         RowDivider()
     }

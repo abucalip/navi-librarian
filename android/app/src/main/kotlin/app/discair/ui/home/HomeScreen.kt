@@ -55,7 +55,6 @@ import app.discair.ui.Opener
 import app.discair.ui.common.AlbumCover
 import app.discair.ui.common.GetAlbumButton
 import app.discair.ui.common.pageMetadata
-import app.discair.ui.common.CheckBadge
 import app.discair.ui.common.Load
 import app.discair.ui.common.LocalRepository
 import app.discair.ui.common.PageHeading
@@ -102,20 +101,21 @@ fun HomeScreen(open: Opener) {
                 is Load.Ready -> GenreRow(state.value, open)
             }
         }
+        item(key = "recently_added") { RecentlyAddedSection(open) }
         item(key = "new_releases") { ShelfRow("new_releases", "New releases", open) { repo.newReleases() } }
-        for (shelf in listOf(Shelves.Newest to "Newly added", Shelves.Recent to "Recently played", Shelves.Frequent to "Most played")) {
+        for (shelf in listOf(Shelves.Recent to "Recently played", Shelves.Frequent to "Most played")) {
             item(key = shelf.first.path) { ShelfRow(shelf.first.path, shelf.second, open) { repo.shelf(shelf.first, 20).items } }
         }
     }
 }
 
 @Composable
-private fun Muted(text: String) {
+internal fun Muted(text: String) {
     Text(text, Modifier.padding(horizontal = 16.dp, vertical = 8.dp), color = MaterialTheme.colorScheme.onSurfaceVariant)
 }
 
 @Composable
-private fun Inline(message: String, retry: () -> Unit) {
+internal fun Inline(message: String, retry: () -> Unit) {
     Column(Modifier.padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(message, color = Ink.ChartRedText, style = MaterialTheme.typography.bodyMedium)
         OutlinedButton(onClick = retry, Modifier.heightIn(min = Target)) { Text("Try again") }
@@ -248,14 +248,14 @@ private fun ShelfRow(shelf: String, title: String, open: Opener, load: () -> Lis
                     Column {
                         Box {
                             AlbumCover(album.artist, album.name, album.artworkUrl, Modifier.fillMaxWidth().aspectSquare(), rect = true)
-                            if (album.owned) CheckBadge(Modifier.align(Alignment.BottomEnd).padding(8.dp))
                             // Only an album in the library can play; its id is the Navidrome album id.
-                            if (album.owned && album.id.isNotBlank()) {
+                            if (album.owned) {
                                 val play = app.discair.ui.player.LocalPlayActions.current
-                                androidx.compose.material3.FilledIconButton(
-                                    onClick = { play.playAlbum(album.id) },
-                                    modifier = Modifier.align(Alignment.BottomStart).padding(8.dp).size(Target),
-                                ) { androidx.compose.material3.Icon(app.discair.ui.player.PlayerIcons.Play, contentDescription = "Play ${album.name}") }
+                                app.discair.ui.common.CheckBadge(
+                                    Modifier.align(Alignment.BottomEnd).padding(8.dp),
+                                    onPlay = album.id.takeIf { it.isNotBlank() }?.let { id -> { play.playAlbum(id) } },
+                                    label = album.name,
+                                )
                             }
                         }
                         Column(Modifier.padding(12.dp).heightIn(min = 76.dp)) {
