@@ -1,3 +1,11 @@
+## 2026-11-02 — v0.3.5 published, not deployed
+
+- **Published (owner's instruction):** tag `v0.3.5` at `main` `b97306fc38eb99bbb290b4a44acdfb8a2f07c294` (the documentation commit after PR #689, `46a238f`), image `ghcr.io/abucalip/navi-librarian:v0.3.5` (digest `sha256:a1376304b32fb7e8efe1bb26383970631b45d441cdcad5b93b3959348c0424f0`; also tagged `sha-b97306fc38eb99bbb290b4a44acdfb8a2f07c294`), release run [41440845963](https://github.com/abucalip/navi-librarian/actions/runs/41440845963) passed (smoke test, multi-arch build and push). `latest` not changed. Digest taken from the run log, not read from the registry.
+- **Contents:** PR #688 (song details in search) was already in `v0.3.4`; this release adds PR #689 (one album quality tag beside the year, no per-song tags) on top of `v0.3.4`.
+- **Rollback reference:** `v0.3.4`.
+- **Not done:** deployment and runtime verification; the owner's server is not yet on `v0.3.5`, so the album tag and the search song details are not visible on the phone. The installed APK was built from `main` after #689.
+- **Next action:** the owner deploys `v0.3.5`, then checks the album tag, the player sheet and search songs on the phone.
+
 ## 2026-11-02 — Album page shows one quality tag beside the year (PR #689)
 
 - **Merged (owner request):** PR #689, squash `46a238f80a65764d2981bf01414368a2603ca49b`, from tested head `c4bef7496dcfdcc0afb1de60f6235bf62dcb7271`; compile, container-smoke, test-and-build, validate-container and validate-release-workflow passed on that head.
