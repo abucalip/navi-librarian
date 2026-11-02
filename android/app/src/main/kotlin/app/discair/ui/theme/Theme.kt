@@ -11,6 +11,7 @@ import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
@@ -45,11 +46,35 @@ object Ink {
 
 /**
  * Artwork tints are dark (value at most 0.4). On a light theme they would sit under dark text, so a light theme
- * gets the same hue washed out toward white; dark themes use the tint as it is.
+ * gets a pastel of the same hue ([pastelOf]); dark themes use the tint as it is.
  */
 @Composable
 @ReadOnlyComposable
-fun Color.forTheme(): Color = if (LocalPalette.current.light) androidx.compose.ui.graphics.lerp(this, Color.White, 0.82f) else this
+fun Color.forTheme(): Color = if (LocalPalette.current.light) pastelOf(this) else this
+
+/**
+ * The cover's hue as a light wash: low saturation, high value, then lightened further only until its luminance
+ * is at least [MIN_PASTEL_LUMINANCE], which keeps the light themes' muted text above 4.5:1 on any hue (blues and
+ * purples need the most lightening).
+ */
+fun pastelOf(tint: Color): Color {
+    val max = maxOf(tint.red, tint.green, tint.blue)
+    val min = minOf(tint.red, tint.green, tint.blue)
+    val delta = max - min
+    val saturation = if (max == 0f) 0f else delta / max
+    val hue = when {
+        delta == 0f -> 0f
+        max == tint.red -> 60f * (((tint.green - tint.blue) / delta).mod(6f))
+        max == tint.green -> 60f * ((tint.blue - tint.red) / delta + 2f)
+        else -> 60f * ((tint.red - tint.green) / delta + 4f)
+    }
+    var out = Color.hsv(hue, (saturation * 0.6f).coerceAtMost(0.5f), 0.95f)
+    var steps = 0
+    while (out.luminance() < MIN_PASTEL_LUMINANCE && steps++ < 20) out = androidx.compose.ui.graphics.lerp(out, Color.White, 0.12f)
+    return out
+}
+
+const val MIN_PASTEL_LUMINANCE = 0.72f
 
 /**
  * Runs [content] with dark surfaces and light text whatever the theme is. For screens that sit on a tint taken

@@ -78,4 +78,24 @@ class PaletteTest {
         assertEquals(FontPairs.All.size, FontPairs.All.map { it.id }.toSet().size)
         assertEquals("discair", FontPairs.All.first().id)
     }
+
+    @Test fun pastelTintsKeepMutedTextReadableOnEveryHue() {
+        val muted = Palettes.Light.minOf { contrast(it.textMuted, Color.White) } // the weakest muted text over white
+        assertTrue("muted text over white is only %.2f".format(muted), muted >= 4.5)
+        for (hue in 0 until 360 step 15) {
+            val tint = Color.hsv(hue.toFloat(), 0.85f, 0.4f) // the strongest tint the app produces
+            val wash = pastelOf(tint)
+            for (p in Palettes.Light) {
+                check(p, "muted text over the $hue degree tint", p.textMuted, wash, 4.5, "pastel")
+                check(p, "text over the $hue degree tint", p.text, wash, 4.5, "pastel")
+            }
+        }
+    }
+
+    @Test fun pastelKeepsTheHueOfTheCover() {
+        val red = pastelOf(Color.hsv(0f, 0.8f, 0.4f))
+        assertTrue(red.red > red.green && red.red > red.blue)
+        val blue = pastelOf(Color.hsv(220f, 0.8f, 0.4f))
+        assertTrue(blue.blue > blue.red)
+    }
 }
