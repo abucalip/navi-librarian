@@ -12,7 +12,6 @@ import androidx.compose.material3.OutlinedIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.Icons
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.background
@@ -195,7 +194,7 @@ private fun SortRow(state: LibraryState, model: LibraryViewModel) {
             modifier = Modifier.size(32.dp).semantics { contentDescription = directionLabel(state) + ". Switch the order." },
         ) {
             Icon(
-                Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null,
+                app.discair.ui.player.PlayerIcons.Left, contentDescription = null,
                 modifier = Modifier.size(16.dp).rotate(if (state.effectiveDescending) -90f else 90f),
             )
         }

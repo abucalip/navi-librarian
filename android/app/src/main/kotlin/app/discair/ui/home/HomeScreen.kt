@@ -102,7 +102,7 @@ fun HomeScreen(open: Opener) {
             }
         }
         item(key = "recently_added") { RecentlyAddedSection(open) }
-        item(key = "new_releases") { ShelfRow("new_releases", "New releases", open) { repo.newReleases() } }
+        item(key = "new_releases") { NewReleasesSection(open) }
         for (shelf in listOf(Shelves.Recent to "Recently played", Shelves.Frequent to "Most played")) {
             item(key = shelf.first.path) { ShelfRow(shelf.first.path, shelf.second, open) { repo.shelf(shelf.first, 20).items } }
         }
@@ -169,10 +169,10 @@ private fun Recommended(items: List<Pick>, open: Opener) {
             ) {
                 Box(Modifier.fillMaxWidth(0.6f)) {
                     AlbumCover(pick.artist, pick.album, null, Modifier.fillMaxWidth().aspectSquare(), onColor = { tint = it })
-                    Box(
-                        Modifier.align(Alignment.BottomStart).padding(4.dp).clip(CircleShape)
-                            .background(Color.Black.copy(alpha = 0.55f)),
-                    ) { GetAlbumButton(pick.artist, pick.album, pageMetadata(pick.artist, pick.album, pick.year)) }
+                    GetAlbumButton(
+                        pick.artist, pick.album, pageMetadata(pick.artist, pick.album, pick.year),
+                        Modifier.align(Alignment.BottomStart).padding(4.dp), overlay = true,
+                    )
                 }
                 val tags = pick.genres.filter { it.isNotBlank() }.take(2).joinToString(" · ")
                 if (tags.isNotEmpty()) Text(
@@ -277,9 +277,3 @@ private fun ShelfRow(shelf: String, title: String, open: Opener, load: () -> Lis
         }
     }
 }
-
-/** The New releases shelf: the discovery list in the server's order, cards without an owned cover. */
-private fun app.discair.data.LibraryRepository.newReleases(): List<ShelfAlbum> =
-    discovery("new_releases", 20).entries.distinctBy { it.key }.map {
-        ShelfAlbum(name = it.item.album, artist = it.item.artistName, year = it.item.year, owned = false)
-    }

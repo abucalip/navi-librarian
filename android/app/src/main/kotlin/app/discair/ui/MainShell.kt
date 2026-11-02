@@ -285,7 +285,7 @@ private fun AppHeader(active: Int, onDownloads: () -> Unit, onSettings: () -> Un
                         .semantics { contentDescription = label },
                     contentAlignment = Alignment.Center,
                 ) {
-                    Icon(painterResource(R.drawable.ic_get_cloud), contentDescription = null, tint = app.discair.ui.theme.Ink.TextMuted, modifier = Modifier.size(20.dp))
+                    Icon(app.discair.ui.player.PlayerIcons.Cloud, contentDescription = null, tint = app.discair.ui.theme.Ink.TextMuted, modifier = Modifier.size(20.dp))
                     if (active > 0) Badge(Modifier.align(Alignment.TopEnd).padding(top = 3.dp, end = 3.dp)) { Text("$active") }
                 }
                 Box(Modifier.width(1.dp).fillMaxHeight().background(app.discair.ui.theme.Ink.EdgeStrong))
@@ -293,7 +293,7 @@ private fun AppHeader(active: Int, onDownloads: () -> Unit, onSettings: () -> Un
                     Modifier.width(48.dp).fillMaxHeight().clickable(role = Role.Button, onClick = onSettings),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Icon(Icons.Default.Settings, contentDescription = "Settings", tint = app.discair.ui.theme.Ink.TextMuted, modifier = Modifier.size(20.dp))
+                    Icon(app.discair.ui.player.PlayerIcons.Tune, contentDescription = "Settings", tint = app.discair.ui.theme.Ink.TextMuted, modifier = Modifier.size(20.dp))
                 }
             }
         }

@@ -12,8 +12,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -81,7 +79,7 @@ fun EqualizerScreen(container: AppContainer, onBack: (() -> Unit)?) {
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             // Inside the Now Playing sheet there is no back arrow: the sheet closes by swipe, scrim tap or back.
-            if (onBack != null) IconButton(onClick = onBack, Modifier.size(Target)) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") }
+            if (onBack != null) IconButton(onClick = onBack, Modifier.size(Target)) { Icon(app.discair.ui.player.PlayerIcons.Left, contentDescription = "Back") }
             Text("Equalizer", style = MaterialTheme.typography.headlineMedium, modifier = Modifier.semantics { heading() })
         }
         Row(
@@ -171,7 +169,7 @@ private fun PresetPicker(settings: EqSettings, enabled: Boolean, onPick: (String
                 .semantics { contentDescription = "Preset, $name"; role = Role.DropdownList },
         ) {
             Text(name, Modifier.weight(1f))
-            Icon(Icons.Filled.KeyboardArrowDown, contentDescription = null)
+            Icon(app.discair.ui.player.PlayerIcons.Down, contentDescription = null)
         }
         DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
             (EQ_PRESETS.map { it.id to it.label } + (EqSettings.PRESET_CUSTOM to "Custom")).forEach { (id, label) ->
