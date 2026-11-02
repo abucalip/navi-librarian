@@ -1,3 +1,14 @@
+## 2026-11-02 — Android play badge, Recently added albums and bottom band fix merged (PR #686)
+
+- **Merged:** PR #686, squash `3167c45a889d1fcf654d7eda6cb4121a5010f2d7`, from tested head `08edffab8b095c0e2b0347891e6e347fe877942a`; compile, container-smoke, test-and-build and validate-container passed on that head.
+- **Play badge (owner's direction):** the check mark on owned albums is replaced by a dark circle with a white play triangle at the bottom right of the cover; it starts the album on Home shelves, the Artist page and Recently added cards, and is a marker elsewhere (Discover cards, Genre, Similar albums, ranked rows), where no album id is at hand. Song rows lost the triangle; owned songs play on tap (Artist top songs rows and Search song rows were changed to do so).
+- **Recently added albums:** new Home section below the genre tiles, built from the library list sorted by date added (`LibraryRepository.recentlyAdded`, 30 days, at most 8 pages): two swipeable rows, an arrow that opens a bottom sheet with the full list. It replaces the Newly added shelf (same albums). New Android code: `data/RecentlyAdded.kt`, `ui/home/RecentlyAdded.kt`, `ui/common/SystemBars.kt`.
+- **Bottom band:** the light band under the player, crossfade and Recently added sheets came from each sheet being its own window without the activity's transparent navigation bar; `TransparentNavigationBar()` sets it in each sheet.
+- **Tests run (local, JDK 17):** `testDebugUnitTest` (431 tests, 0 failures, including 4 new in `RecentlyAddedTest`), `lintDebug`, `assembleRelease`. Not run: the Python full suite (CI only), instrumented tests.
+- **Not checked, not claimed:** on-device look of the badge, section and sheet; the bottom band fix on the phone; TalkBack, landscape, 200% text; the 30-day list against a library with more than 8 pages of recent albums.
+- **Not done:** publication and deployment (the Android app is not part of the image).
+- **Next action:** the owner installs the release build and checks the badge, the section and sheet, and the bottom of the sheets.
+
 ## 2026-11-02 — Published v0.3.3 (not deployed)
 
 - **Authorization:** the owner instructed publication of current `main` as the next version.
