@@ -116,6 +116,12 @@ data class SearchResult(
     @SerialName("album_id") val albumId: String? = null,
     val duration: Int? = null,
     @SerialName("track_number") val trackNumber: Int? = null,
+    /** For an owned song: the file's details (`year` above). Absent or null when the library lacks them. */
+    val suffix: String? = null,
+    @SerialName("bit_rate") val bitRate: Int? = null,
+    @SerialName("bit_depth") val bitDepth: Int? = null,
+    @SerialName("sampling_rate") val samplingRate: Int? = null,
+    val quality: String? = null,
 )
 
 @Serializable

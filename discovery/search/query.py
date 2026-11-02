@@ -9,6 +9,7 @@ from typing import Any
 
 from discovery.search.index import OwnedData
 from discovery.search.normalize import normalize_key
+from discovery.search.quality_label import quality_label
 
 ARTWORK_PATH = "/api/owned/artwork/"
 SEARCH_TYPES = ("artist", "album", "song", "genre")
@@ -83,6 +84,13 @@ def _song_result(entry: dict[str, Any]) -> dict[str, Any]:
         "artist_key": entry["artist_key"],
         "duration": entry["duration"],
         "track_number": entry["track_number"],
+        # The file's details, so a player can show them without asking the library again.
+        "year": entry.get("year"),
+        "suffix": entry.get("suffix"),
+        "bit_rate": entry.get("bit_rate"),
+        "bit_depth": entry.get("bit_depth"),
+        "sampling_rate": entry.get("sampling_rate"),
+        "quality": quality_label(entry.get("suffix"), entry.get("bit_rate"), entry.get("bit_depth"), entry.get("sampling_rate")),
         "sources": [SOURCE_NAME],
         "artwork_url": artwork_url(entry["album_id"] or None),
     }

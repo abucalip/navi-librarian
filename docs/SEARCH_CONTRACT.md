@@ -66,7 +66,7 @@ Events (each `data:` line is JSON):
    "name": "Beyoncé", "mbid": "…|null", "album_count": 12,
    "sources": ["navidrome", "musicbrainz"], "artwork_url": "…|null"}
   ```
-  Album results add `"artist"`, `"artist_key"`, `"year"`, `"release_group_mbid"`. Song results add `"album"`, `"duration"`, `"track_number"`. Genre results add `"tag"` and `"tag_source"` (`musicbrainz`, `discogs`, `listenbrainz`).
+  Album results add `"artist"`, `"artist_key"`, `"year"`, `"release_group_mbid"`. Song results add `"album"`, `"album_id"`, `"duration"`, `"track_number"` and, each null when unknown, `"year"`, `"suffix"`, `"bit_rate"`, `"bit_depth"`, `"sampling_rate"`, `"quality"` (the short tag, see section 14). Genre results add `"tag"` and `"tag_source"` (`musicbrainz`, `discogs`, `listenbrainz`).
   `owned` is `true` only when the match is confirmed by MBID or, failing that, by normalized name plus year. Otherwise it is `false`, and `"owned_candidates"` may list library keys that are close but not confirmed.
 - `event: source` — status of one provider. Schema in section 3.8.
   ```json

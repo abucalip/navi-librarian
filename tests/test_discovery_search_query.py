@@ -73,7 +73,7 @@ def sample_data():
         {"id": "al5", "artist": "Ash", "artist_id": "ar2", "album": "1977", "year": 1996, "song_count": 13},
     ]
     songs = [
-        {"id": "s1", "title": "Karma Police", "artist": "Radiohead", "artistId": "ar5", "album": "OK Computer", "albumId": "alx", "duration": 264, "track": 6},
+        {"id": "s1", "title": "Karma Police", "artist": "Radiohead", "artistId": "ar5", "album": "OK Computer", "albumId": "alx", "duration": 264, "track": 6, "year": 1997, "suffix": "flac", "bitRate": 900, "bitDepth": 24, "samplingRate": 96000},
         {"id": "s2", "title": "Kid A", "artist": "Radiohead", "artistId": "ar5", "album": "Kid A", "albumId": "al1", "duration": 284.9, "track": "x"},
     ]
     return build_owned_data(
@@ -118,6 +118,20 @@ class SearchOwnedTests(unittest.TestCase):
         self.assertEqual(song["album"], "OK Computer")
         self.assertEqual(song["duration"], 264)
         self.assertEqual(song["track_number"], 6)
+
+    def test_song_result_carries_year_and_file_details(self):
+        song = search_owned(sample_data(), "karma", ["song"], limit=5)["song"][0]
+        self.assertEqual(song["year"], 1997)
+        self.assertEqual(song["suffix"], "flac")
+        self.assertEqual(song["bit_rate"], 900)
+        self.assertEqual(song["bit_depth"], 24)
+        self.assertEqual(song["sampling_rate"], 96000)
+        self.assertEqual(song["quality"], "FLAC 24/96")
+
+    def test_song_without_file_details_gets_empty_fields(self):
+        song = search_owned(sample_data(), "kid a", ["song"], limit=5)["song"][0]
+        for field in ("year", "suffix", "bit_rate", "bit_depth", "sampling_rate", "quality"):
+            self.assertIsNone(song[field], field)
 
     def test_song_with_non_integer_duration_or_track_is_normalized(self):
         data = sample_data()
