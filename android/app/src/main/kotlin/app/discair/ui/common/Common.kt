@@ -22,7 +22,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -53,6 +52,7 @@ import app.discair.data.LibraryRepository
 import app.discair.data.ReadMode
 import app.discair.net.ConnectionFailure
 import app.discair.net.classifyException
+import app.discair.ui.player.PlayerIcons
 import app.discair.ui.theme.Ink
 import coil3.ImageLoader
 import coil3.compose.AsyncImage
@@ -313,12 +313,10 @@ fun NameLink(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, m
 
 @Composable
 fun OwnedMark(owned: Boolean, modifier: Modifier = Modifier) {
-    if (owned) Icon(
-        Icons.Default.Check,
-        contentDescription = "In your library",
-        tint = Ink.Ok,
-        modifier = modifier.size(20.dp),
-    )
+    if (owned) Box(
+        modifier.size(20.dp).clip(CircleShape).background(Ink.Ink.copy(alpha = 0.82f)),
+        contentAlignment = Alignment.Center,
+    ) { Icon(PlayerIcons.Play, contentDescription = "In your library", tint = Color.White, modifier = Modifier.size(12.dp)) }
 }
 
 @Composable
@@ -477,13 +475,14 @@ fun OverlayBack(onBack: () -> Unit, modifier: Modifier = Modifier) {
     ) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") }
 }
 
-/** The green check in a dark circle, bottom right of a cover that is in the library. */
+/** The white play triangle in a dark circle, on a cover that is in the library. */
 @Composable
-fun CheckBadge(modifier: Modifier = Modifier) {
+fun CheckBadge(modifier: Modifier = Modifier, onPlay: (() -> Unit)? = null, label: String = "") {
     Box(
-        modifier.size(32.dp).clip(CircleShape).background(Ink.Ink.copy(alpha = 0.82f)),
+        modifier.size(32.dp).clip(CircleShape).background(Ink.Ink.copy(alpha = 0.82f))
+            .let { if (onPlay != null) it.clickable(onClickLabel = "Play $label", role = Role.Button, onClick = onPlay) else it },
         contentAlignment = Alignment.Center,
-    ) { Icon(Icons.Default.Check, contentDescription = "In your library", tint = Ink.Ok, modifier = Modifier.size(20.dp)) }
+    ) { Icon(PlayerIcons.Play, contentDescription = if (onPlay != null) "Play $label" else "In your library", tint = Color.White, modifier = Modifier.size(20.dp)) }
 }
 
 /** 18300 becomes "18.3K", as on the web. */

@@ -153,7 +153,14 @@ private fun ArtistContent(route: ArtistRoute, page: ArtistPage, open: Opener, li
                         )
                         songs.forEachIndexed { i, song ->
                             if (i > 0) RowDivider()
-                            Row(Modifier.fillMaxWidth().heightIn(min = 64.dp), verticalAlignment = Alignment.CenterVertically) {
+                            val onAlbum = song.album?.takeIf { it.isNotBlank() }
+                            // An owned top song plays from its album when the album is in the library.
+                            val albumId = onAlbum?.let { a -> owned.firstOrNull { it.name.equals(a, ignoreCase = true) }?.id }?.takeIf { it.isNotBlank() }
+                            Row(
+                                Modifier.fillMaxWidth().heightIn(min = 64.dp)
+                                    .let { if (song.owned && albumId != null) it.clickable(onClickLabel = "Play ${song.name}", role = Role.Button) { play.playAlbum(albumId, song.name, null) } else it },
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
                                 RankNumeral(song.rank)
                                 Column(Modifier.weight(1f).padding(end = 8.dp)) {
                                     Text(song.name, style = MaterialTheme.typography.bodyLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -163,14 +170,9 @@ private fun ArtistContent(route: ArtistRoute, page: ArtistPage, open: Opener, li
                                 }
                                 Text(abbreviate(song.listenCount), style = MaterialTheme.typography.labelMedium.copy(fontFamily = Mono), color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 Spacer(Modifier.width(8.dp))
-                                Box(Modifier.size(Target), contentAlignment = Alignment.Center) {
-                                    val onAlbum = song.album?.takeIf { it.isNotBlank() }
-                                    // Only a song that names its album can be filed with it (ACQ-08).
-                                    // An owned top song plays from its album when the album is in the library.
-                                    val albumId = onAlbum?.let { a -> owned.firstOrNull { it.name.equals(a, ignoreCase = true) }?.id }?.takeIf { it.isNotBlank() }
-                                    if (song.owned && albumId != null) app.discair.ui.player.RowPlayButton(song.name, { play.playAlbum(albumId, song.name, null) })
-                                    else if (song.owned || onAlbum == null) OwnedMark(song.owned)
-                                    else GetSongButton(name, onAlbum, song.name, null, null)
+                                // Only a song that names its album can be filed with it (ACQ-08).
+                                if (!song.owned && onAlbum != null) Box(Modifier.size(Target), contentAlignment = Alignment.Center) {
+                                    GetSongButton(name, onAlbum, song.name, null, null)
                                 }
                             }
                         }
@@ -197,7 +199,11 @@ private fun ArtistContent(route: ArtistRoute, page: ArtistPage, open: Opener, li
                         ) {
                             Box {
                                 AlbumCover(name, album.name, album.artworkUrl, Modifier.fillMaxWidth().aspectSquare())
-                                CheckBadge(Modifier.align(Alignment.TopEnd).padding(8.dp))
+                                CheckBadge(
+                                    Modifier.align(Alignment.BottomEnd).padding(8.dp),
+                                    onPlay = album.id.takeIf { it.isNotBlank() }?.let { id -> { play.playAlbum(id) } },
+                                    label = album.name,
+                                )
                             }
                             Text(album.name, style = MaterialTheme.typography.bodyLarge, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 6.dp))
                             album.year?.let { Text("$it", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }

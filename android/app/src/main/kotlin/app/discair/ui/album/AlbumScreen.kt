@@ -175,7 +175,7 @@ private fun AlbumContent(route: AlbumRoute, page: AlbumPage, open: Opener, list:
                             Text("%d:%02d".format(it / 60, it % 60), style = MaterialTheme.typography.labelMedium.copy(fontFamily = Mono), color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                         Box(Modifier.size(Target), contentAlignment = Alignment.Center) {
-                            if (t.owned) OwnedMark(true) else GetSongButton(artist, title, t.title, t.number, year)
+                            if (!t.owned) GetSongButton(artist, title, t.title, t.number, year)
                         }
                         if (t.owned && albumId != null) app.discair.ui.player.RowMoreMenu(
                             t.title,
