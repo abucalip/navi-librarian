@@ -89,7 +89,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Publish version and source-SHA tags
+      - name: Publish version, source-SHA and latest tags
         id: build
         uses: docker/build-push-action@v6
         with:
@@ -99,6 +99,7 @@ jobs:
           tags: |
             ghcr.io/${{ github.repository }}:${{ github.ref_name }}
             ghcr.io/${{ github.repository }}:sha-${{ github.sha }}
+            ghcr.io/${{ github.repository }}:latest
           build-args: |
             APP_VERSION=${{ github.ref_name }}
           provenance: true
@@ -122,5 +123,5 @@ jobs:
             echo "- Digest: $IMAGE_DIGEST"
             echo "- Platforms: linux/amd64, linux/arm64"
             echo "- Provenance/SBOM: enabled"
-            echo "- latest tag: not changed"
+            echo "- Latest tag: ghcr.io/${GITHUB_REPOSITORY}:latest (moved to this release)"
           } >> "$GITHUB_STEP_SUMMARY"
