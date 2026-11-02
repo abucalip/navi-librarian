@@ -134,3 +134,6 @@ object Palettes {
 }
 
 val LocalPalette = staticCompositionLocalOf { Palettes.Night }
+
+/** The owner's chosen palette while [app.discair.ui.theme.OnArtwork] has swapped in a dark one; null otherwise. */
+val LocalThemePalette = staticCompositionLocalOf<Palette?> { null }

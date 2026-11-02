@@ -366,6 +366,7 @@ private fun SearchSheet(text: String, onText: (String) -> Unit, open: Opener, on
         onDismissRequest = onDismiss,
         sheetState = androidx.compose.material3.rememberModalBottomSheetState(skipPartiallyExpanded = true),
         containerColor = app.discair.ui.theme.Ink.Ink,
+        shape = androidx.compose.ui.graphics.RectangleShape,
     ) {
         app.discair.ui.common.TransparentNavigationBar()
         CompositionLocalProvider(LocalBottomClearance provides 0.dp) { SearchScreen(open, text, onText) }

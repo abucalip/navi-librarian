@@ -164,7 +164,8 @@ fun NowPlayingSheet(state: PlayerUiState, controller: PlayerController, lyrics: 
     LaunchedEffect(state.isPlaying) { follower.setPlaying(state.isPlaying) }
     LaunchedEffect(songId, state.positionMs) { follower.refresh() } // a seek or skip shows at once, also while paused
     val currentLine by follower.line.collectAsState()
-    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheet, containerColor = Ink.Ink) {
+    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheet, containerColor = Ink.Ink,
+        shape = androidx.compose.ui.graphics.RectangleShape) {
         app.discair.ui.common.TransparentNavigationBar()
         val item = state.current
         if (item == null) { onDismiss(); return@ModalBottomSheet }
@@ -223,9 +224,12 @@ fun NowPlayingSheet(state: PlayerUiState, controller: PlayerController, lyrics: 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun SettingsSheet(onDismiss: () -> Unit, content: @Composable () -> Unit) {
-    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true), containerColor = Ink.Surface) {
-        app.discair.ui.common.TransparentNavigationBar()
-        content()
+    // The player is drawn dark over the artwork; these sheets follow the chosen theme instead.
+    app.discair.ui.theme.InChosenTheme {
+        ModalBottomSheet(onDismissRequest = onDismiss, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true), containerColor = Ink.Surface) {
+            app.discair.ui.common.TransparentNavigationBar()
+            content()
+        }
     }
 }
 

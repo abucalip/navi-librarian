@@ -88,7 +88,17 @@ fun OnArtwork(content: @Composable () -> Unit) {
     if (palette === current) { content(); return }
     // Material components and plain Text read the colour scheme, not Ink, so swap that too.
     val scheme = remember(palette) { colorScheme(palette) }
-    CompositionLocalProvider(LocalPalette provides palette) {
+    CompositionLocalProvider(LocalPalette provides palette, LocalThemePalette provides current) {
+        MaterialTheme(colorScheme = scheme, typography = MaterialTheme.typography, shapes = MaterialTheme.shapes, content = content)
+    }
+}
+
+/** Runs [content] in the theme the owner chose, undoing [OnArtwork]'s dark override. For sheets that do not sit on artwork. */
+@Composable
+fun InChosenTheme(content: @Composable () -> Unit) {
+    val chosen = LocalThemePalette.current ?: run { content(); return }
+    val scheme = remember(chosen) { colorScheme(chosen) }
+    CompositionLocalProvider(LocalPalette provides chosen, LocalThemePalette provides null) {
         MaterialTheme(colorScheme = scheme, typography = MaterialTheme.typography, shapes = MaterialTheme.shapes, content = content)
     }
 }

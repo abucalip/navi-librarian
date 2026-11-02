@@ -1,6 +1,7 @@
 package app.discair.ui.common
 
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
@@ -38,7 +39,10 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -56,40 +60,54 @@ import app.discair.ui.theme.LocalPalette
 import app.discair.ui.theme.Mono
 
 // Dark themes keep the original dark pill; light themes get an inset pill with a pale knob.
-private val SwitchOffRing = Color(0xFFEF565F)
 
 /**
- * The app's switch (Uiverse, Admin12121): a dark inset pill with a raised round knob and a ring on the
- * other side. The ring is red while the switch is off and the app's yellow when it is on. It only draws the
+ * The app's switch (Uiverse, Admin12121): a dark inset pill with a raised round knob and a filled square on the
+ * other side, shown only while the switch is on, with a faint glow of the same colour around it. It only draws the
  * state; the row that holds it is the toggle, so a tap anywhere on the row works and TalkBack reads one control.
  */
 @Composable
 fun DiscairSwitch(checked: Boolean, modifier: Modifier = Modifier, enabled: Boolean = true) {
     val knobX by animateDpAsState(if (checked) 32.dp else 0.dp, tween(300), label = "knob")
-    val ringX by animateDpAsState(if (checked) 5.dp else 37.dp, tween(300), label = "ringX")
-    val ring by animateColorAsState(if (checked) Ink.Accent else SwitchOffRing, tween(300), label = "ring")
+    val glow by animateFloatAsState(if (checked) 1f else 0f, tween(300), label = "glow")
     val shape = RoundedCornerShape(50)
     val light = LocalPalette.current.light
-    val track = if (light) Ink.Edge else Color(0xFF252220)
-    val trackEdge = if (light) Ink.EdgeStrong else Color(0xFF34302C)
-    val knob = if (light) listOf(Ink.Surface, Ink.Raised) else listOf(Color(0xFF3A3632), Color(0xFF292624))
+    // Light themes: a well pressed into the page, a little darker at the top, with the page's own cream at the bottom.
+    // Dark themes keep the original dark pill. When on, the accent lights the well from the square's side.
+    // Off is the lighter shade, the same whether or not the row is enabled; only the on state is deeper.
+    val trackTop = if (light) lerp(Ink.Raised, Ink.EdgeStrong, if (checked) 0.38f else 0.14f) else Color(0xFF1E1C1A)
+    val trackBottom = if (light) lerp(Ink.Raised, Ink.Surface, if (checked) 0.35f else 0.6f) else Color(0xFF2A2725)
+    val trackEdge = if (light) (if (checked) Ink.EdgeStrong else lerp(Ink.Edge, Ink.EdgeStrong, 0.4f)) else Color(0xFF34302C)
+    val knob = if (light) listOf(Ink.Surface, lerp(Ink.Surface, Ink.Edge, 0.6f)) else listOf(Color(0xFF3A3632), Color(0xFF292624))
     val knobEdge = if (light) Ink.EdgeStrong else Color(0xFF4A4540)
-    val inset = if (light) Color(0x33000000) else Color(0x80121110)
+    val inset = if (light) Color(0x40000000) else Color(0x80121110)
     Box(
-        modifier.alpha(if (enabled) 1f else 0.45f).size(width = 66.dp, height = 32.dp)
-            .clip(shape).background(track).border(BorderStroke(1.dp, trackEdge), shape)
-            .padding(4.dp),
+        modifier.size(width = 66.dp, height = 32.dp)
+            .clip(shape).background(Brush.verticalGradient(listOf(trackTop, trackBottom)))
+            .border(BorderStroke(1.dp, trackEdge), shape),
     ) {
-        // The inset shadow along the top edge.
-        Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(inset, Color.Transparent))))
-        // Off: a red ring. On: the wordmark's filled yellow square.
-        if (checked) Box(Modifier.align(Alignment.CenterStart).offset(x = ringX + 2.dp).size(10.dp).background(Ink.Accent))
-        else Box(
-            Modifier.align(Alignment.CenterStart).offset(x = ringX).size(14.dp)
-                .border(BorderStroke(2.dp, ring), CircleShape),
-        )
+        // The glow lights the inside of the well, strongest at the square and fading across the pill.
+        if (glow > 0f) {
+            Box(
+                Modifier.fillMaxSize().alpha(glow).background(
+                    Brush.radialGradient(
+                        0f to Ink.Accent.copy(alpha = if (light) 0.55f else 0.42f),
+                        0.55f to Ink.Accent.copy(alpha = if (light) 0.22f else 0.14f),
+                        1f to Color.Transparent,
+                        center = Offset(with(LocalDensity.current) { 16.dp.toPx() }, with(LocalDensity.current) { 16.dp.toPx() }),
+                        radius = with(LocalDensity.current) { 44.dp.toPx() },
+                    ),
+                ),
+            )
+        }
+        // The inset shadow along the top edge, over the glow so the well keeps its depth.
+        Box(Modifier.fillMaxWidth().height(12.dp).background(Brush.verticalGradient(listOf(inset, Color.Transparent))))
+        Box(Modifier.fillMaxWidth().height(6.dp).align(Alignment.BottomCenter).background(Brush.verticalGradient(listOf(Color.Transparent, if (light) Color(0x22FFFFFF) else Color(0x14FFFFFF)))))
+        if (glow > 0f) {
+            Box(Modifier.align(Alignment.CenterStart).offset(x = 11.dp).size(10.dp).alpha(glow).background(Ink.Accent))
+        }
         Box(
-            Modifier.align(Alignment.CenterStart).offset(x = knobX).size(24.dp)
+            Modifier.padding(4.dp).align(Alignment.CenterStart).offset(x = knobX).size(24.dp)
                 .shadow(4.dp, CircleShape)
                 .background(Brush.verticalGradient(knob), CircleShape)
                 .border(BorderStroke(0.5.dp, knobEdge), CircleShape),
@@ -155,15 +173,17 @@ fun GroupLabel(text: String) {
     )
 }
 
-private val GlassFill = Color(0xBF242424)
-private val GlassTrack = Color(0xFF1A1A1A)
+private val GlassFillDark = Color(0xBF242424)
+private val GlassTrackDark = Color(0xFF1A1A1A)
+private val GlassFill: Color @Composable get() = if (LocalPalette.current.light) Ink.Raised else GlassFillDark
+private val GlassTrack: Color @Composable get() = if (LocalPalette.current.light) Ink.Edge else GlassTrackDark
 
 /** The glass card behind a set of bands (Uiverse, byllzz), in the app's palette. */
 @Composable
 fun GlassCard(modifier: Modifier = Modifier, content: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit) {
     val shape = RoundedCornerShape(14.dp)
     androidx.compose.foundation.layout.Column(
-        modifier.clip(shape).background(Ink.Surface).border(BorderStroke(1.dp, Color(0x14FFFFFF)), shape).padding(8.dp),
+        modifier.clip(shape).background(Ink.Surface).border(BorderStroke(1.dp, if (LocalPalette.current.light) Ink.Edge else Color(0x14FFFFFF)), shape).padding(8.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp),
         content = content,
     )
@@ -200,7 +220,7 @@ fun GlassBand(
     ) {
         BandNudge(app.discair.ui.player.PlayerIcons.Remove, lowerLabel, enabled && canLower) { onNudge(-1) }
         Text(
-            label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant,
+            label, style = MaterialTheme.typography.labelMedium, color = Ink.TextMuted,
             maxLines = 1, modifier = Modifier.widthIn(min = labelWidth).padding(horizontal = 2.dp),
         )
         Slider(
@@ -222,10 +242,10 @@ fun GlassBand(
                 }
             },
         )
-        Box(Modifier.padding(horizontal = 6.dp).width(1.dp).height(16.dp).background(Color(0x77CCCCCC)))
+        Box(Modifier.padding(horizontal = 6.dp).width(1.dp).height(16.dp).background(if (LocalPalette.current.light) Ink.EdgeStrong else Color(0x77CCCCCC)))
         Text(
             value, style = MaterialTheme.typography.labelMedium.copy(fontFamily = Mono, fontWeight = FontWeight.SemiBold),
-            color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, textAlign = TextAlign.End,
+            color = Ink.TextMuted, maxLines = 1, textAlign = TextAlign.End,
             modifier = Modifier.widthIn(min = valueWidth),
         )
         BandNudge(app.discair.ui.player.PlayerIcons.Add, raiseLabel, enabled && canRaise) { onNudge(+1) }
