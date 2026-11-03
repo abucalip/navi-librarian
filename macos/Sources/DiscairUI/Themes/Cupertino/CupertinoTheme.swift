@@ -78,7 +78,7 @@ struct CupertinoWindow: View {
         switch state.screen {
         case .home: CupertinoHome(state: state)
         case .album: CupertinoAlbum(state: state)
-        case .queue: CupertinoAlbumsGrid()
+        case .queue, .albums: CupertinoAlbumsGrid(state: state, inspector: state.screen == .queue)
         case .library: CupertinoLibrary(state: state)
         default: Text("\(state.screen.rawValue): not built yet").foregroundStyle(CU.muted).padding(28)
         }
@@ -91,10 +91,14 @@ struct CupertinoSidebar: View {
         switch state.screen {
         case .home: "Home"
         case .queue, .library: "Songs"
+        case .albums: "Albums"
         case .artist: "Artists"
         default: "Recently Added"
         }
     }
+    /// Where each row goes. Rows without a screen yet do nothing (they are still real buttons, so keyboard and
+    /// VoiceOver treat them like the rest).
+    private let target: [String: Screen] = ["Home": .home, "Songs": .library, "Albums": .albums, "Artists": .artist]
     private let nav: [(String, String)] = [
         ("house", "Home"), ("sparkles", "New"), ("clock", "Recently Added"), ("music.mic", "Artists"),
         ("square.stack", "Albums"), ("music.note", "Songs"), ("dot.radiowaves.left.and.right", "Gap Radar"),
@@ -106,6 +110,9 @@ struct CupertinoSidebar: View {
             TrafficLights().padding(.leading, 6).padding(.bottom, 20)
             ForEach(nav, id: \.1) { icon, label in
                 let on = label == selected
+                Button {
+                    if let t = target[label] { state.screen = t }
+                } label: {
                 HStack(spacing: 9) {
                     Image(systemName: icon).foregroundStyle(CU.accent).frame(width: 18)
                     Text(label).fontWeight(on ? .semibold : .regular)
@@ -119,15 +126,22 @@ struct CupertinoSidebar: View {
                 .foregroundStyle(on ? CU.accent : CU.ink)
                 .padding(.horizontal, 10).padding(.vertical, 6)
                 .background(on ? CU.accent.opacity(0.13) : .clear, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
-                .accessibilityElement(children: .combine)
+                .contentShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
+                }
+                .buttonStyle(.plain)
+                .accessibilityAddTraits(on ? .isSelected : [])
             }
             Text("Playlists").font(.system(size: 11, weight: .bold)).foregroundStyle(CU.muted).padding(.leading, 10).padding(.top, 14)
             ForEach(["Unplayed from artists I own", "1990s, rated 4+", "Late night"], id: \.self) { p in
-                HStack(spacing: 9) {
-                    Image(systemName: "music.note.list").foregroundStyle(CU.accent).frame(width: 18)
-                    Text(p).lineLimit(1)
+                Button { } label: {
+                    HStack(spacing: 9) {
+                        Image(systemName: "music.note.list").foregroundStyle(CU.accent).frame(width: 18)
+                        Text(p).lineLimit(1)
+                    }
+                    .font(.system(size: 13.5)).padding(.horizontal, 10).padding(.vertical, 6)
+                    .contentShape(Rectangle())
                 }
-                .font(.system(size: 13.5)).padding(.horizontal, 10).padding(.vertical, 6)
+                .buttonStyle(.plain)
             }
             Spacer()
         }

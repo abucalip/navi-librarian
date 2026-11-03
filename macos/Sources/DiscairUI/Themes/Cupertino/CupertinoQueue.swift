@@ -3,12 +3,16 @@ import SwiftUI
 /// Queue: Up Next as a trailing inspector (glass, a control layer) over the Albums grid, with an Autoplay (radio)
 /// switch, saved queue and history. Mockup: `R.cupertino.queue`.
 struct CupertinoAlbumsGrid: View {
+    let state: AppState
+    /// True when the Up Next inspector is open and the grid must stay clear of it.
+    var inspector = false
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
                 Text("Albums").font(CU.title(34)).padding(.top, 4).padding(.bottom, 14)
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 128, maximum: 128), spacing: 18, alignment: .top)], alignment: .leading, spacing: 18) {
                     ForEach(Fixtures.albums([0, 1, 2, 3, 4, 5, 6, 13, 12, 11])) { a in
+                        Button { state.selectedAlbum = a; state.screen = .album } label: {
                         VStack(alignment: .leading, spacing: 0) {
                             CoverView(album: a).frame(width: 128).clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
                                 .shadow(color: .black.opacity(0.2), radius: 7, y: 4).padding(.bottom, 9)
@@ -16,10 +20,14 @@ struct CupertinoAlbumsGrid: View {
                             Text(a.artist).foregroundStyle(CU.muted).lineLimit(1)
                         }
                         .font(.system(size: 13)).frame(width: 128, alignment: .leading)
+                        .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("\(a.title), \(a.artist)")
                     }
                 }
             }
-            .padding(.leading, 28).padding(.trailing, 28 + CupertinoQueueInspector.width).padding(.bottom, 28)   // keeps content out from under the inspector
+            .padding(.leading, 28).padding(.trailing, 28 + (inspector ? CupertinoQueueInspector.width : 0)).padding(.bottom, 28)   // keeps content out from under the inspector
         }
         .scrollEdgeEffectStyle(.hard, for: .top)
     }

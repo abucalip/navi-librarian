@@ -4,6 +4,8 @@ import SwiftUI
 /// The six screens every theme must provide (contract section 9, M3 mockups).
 public enum Screen: String, CaseIterable, Sendable {
     case home, album, nowPlaying, queue, library, artist
+    /// The Albums grid on its own (the queue screen shows the same grid under the Up Next inspector).
+    case albums
 }
 
 /// What a theme may ask the app to do. Themes call these; they never reach the network or the audio engine.
