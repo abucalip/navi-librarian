@@ -26,7 +26,7 @@ class CrateLayoutTests(unittest.TestCase):
         self.themes = (STATIC / "themes.css").read_text(encoding="utf-8")
         self.layouts = (STATIC / "layouts.css").read_text(encoding="utf-8")
         self.app = (STATIC / "app.js").read_text(encoding="utf-8")
-        self.crate = self.layouts.split('==== Crate Wall ("crate")')[1].split("*/", 1)[1]
+        self.crate = self.layouts.split('==== Crate Wall ("crate")')[1].split("*/", 1)[1].split("==== Zine Spread")[0]
 
     def _block(self, theme):
         return self.themes.split(f':root[data-theme="{theme}"]')[1].split("\n}")[0]

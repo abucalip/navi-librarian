@@ -21,6 +21,13 @@ function isAlbumRecommendation(item) {
     .some(pattern => pattern.test(normalized));
 }
 
+// Layout hooks: static/layout-zine.js (Zine Spread) defines functions that this file calls by name. They are looked up when called, so a
+// page without that script (or with another layout) simply does nothing.
+function zineHook(name, ...args) {
+  if (typeof window[name] === 'function') return window[name](...args);
+  return undefined;
+}
+
 let activePage = 'dashboard';
 // Destinations behind the phone bottom bar's More control (under 620px); see index.html.
 const NAV_MORE_PAGES = ['newReleases', 'classics', 'artistDeepDive'];
@@ -39,6 +46,7 @@ function showPage(name) {
   syncNavAria();
   syncLocationHash();
   updateLedgerCrumb(name);
+  zineHook('updateZineMast');
 }
 
 // Ledger Room only (static/layouts.css shows it; the element is hidden and aria-hidden in every other theme):
@@ -674,6 +682,7 @@ function updateActiveDownloadBadge(data) {
   badge.setAttribute('aria-label', count + ' active download' + (count === 1 ? '' : 's'));
   updateLedgerStats(jobs, count);
   updateTapeDecks(jobs);
+  zineHook('updateZineTicker', jobs);
 }
 
 // The three figures the Ledger strip and the Tape Deck show, counted from the acquisition list the page already loads.
@@ -1525,6 +1534,19 @@ function dashboardTag(label, phone) {
 
 function dismissDashboardPick(tile, artist, album, item) {
   const slider = $('dashboardCarousel');
+  if (tile.parentNode !== slider) {
+    // A tile on the Zine Spread front page (lead story or classified): the pick leaves the kept list, the strip and the front page are
+    // rebuilt from it, and Undo or a failed request puts the pick back at its place.
+    const spot = dashboardPickItems.indexOf(item);
+    if (spot >= 0) dashboardPickItems.splice(spot, 1);
+    renderDashboardPicks();
+    zineHook('focusZineLead');
+    sendFeedback('dismiss', artist, album, item, 'dashboard_picks', tile, () => {
+      if (spot >= 0) dashboardPickItems.splice(spot, 0, item);
+      renderDashboardPicks();
+    });
+    return;
+  }
   const before = tile.nextElementSibling;
   // The kept list loses the pick too, so a rebuild for the other layout does not bring it back.
   const position = dashboardPickItems.indexOf(item);
@@ -1707,6 +1729,7 @@ function renderDashboardPicks() {
   if (!isMobileLayout() && target.children.length > 1) target.prepend(target.lastElementChild);
   target.scrollLeft = 0;
   syncDashboardSlider();
+  zineHook('renderZineFront');
 }
 
 async function loadDashboardPicks() {
@@ -2083,6 +2106,9 @@ function shelfItemFromDiscovery(item) {
   };
 }
 
+// The items each dashboard shelf last loaded, kept so the Zine Spread front page can build its New this week column from them.
+const shelfItems = {};
+
 async function loadShelf(name, url, mapItems, withActions = false) {
   const target = $('shelf' + name);
   const status = $('shelf' + name + 'Status');
@@ -2091,6 +2117,8 @@ async function loadShelf(name, url, mapItems, withActions = false) {
     const data = await requestJSON(url);
     const items = mapItems(data).filter(item => item.name);
     target.replaceChildren(...items.map(item => buildShelfCard(item, withActions)));
+    shelfItems[name] = items;
+    if (name === 'NewReleases') zineHook('renderZineFront');
     status.textContent = items.length ? '' : 'Nothing to show yet.';
   } catch (error) {
     status.textContent = error.message;
@@ -4713,6 +4741,8 @@ async function loadLibrary({reset = true} = {}) {
     }
     for (const item of data.items) list.append(buildLibraryRow(item));
     view.cursor = data.next_cursor;
+    view.total = data.total;
+    zineHook('updateZineMast');
     const shown = list.children.length;
     if (!data.total) {
       setStatus(status, 'No ' + tab.noun[1] + ' in your library.', 'empty');
@@ -4789,6 +4819,7 @@ function libraryShow(name) {
   $('libraryIntro').hidden = name !== 'list';
   // The artist and album pages open on the picture: the section heading would only repeat the sidebar tab.
   $('libraryHeading').hidden = name === 'artist' || name === 'album';
+  zineHook('updateZineMast');
 }
 
 function closeLibraryStreams() {
@@ -5467,14 +5498,18 @@ function applyArtistSection(section, ctx) {
     ctx.artistShown = true;
     ctx.name = artist.name;
     ctx.owned = artist.owned;
+    ctx.albumCount = artist.album_count;
     $('artistDetailHeading').textContent = artist.name;
     setStatus(status, artist.owned ? pluralize(artist.album_count, 'album', 'albums') + ' in your library' : 'Not in your library', 'idle');
   } else if (section.section === 'owned_albums') {
     if (!section.available || !section.items.length) return;
     fillRows($('artistOwnedAlbums'), section.items.map(album => ({...album, owned: true, artist: ctx.name})), buildOwnedAlbumCard);
     $('artistOwnedSection').hidden = false;
+    ctx.ownedAlbums = section.items.map(album => ({...album, owned: true, artist: ctx.name}));
+    zineHook('renderZineArtist', ctx);
   } else if (section.section === 'bio') {
     setArtistBio(section.bio);
+    zineHook('renderZineArtist', ctx);
   } else if (section.section === 'tags') {
     const tags = $('artistTags');
     fillRows(tags, section.items || [], tag => {
@@ -5491,11 +5526,13 @@ function applyArtistSection(section, ctx) {
     ctx.topSongs = section.items;
     setSectionNote('artistTopSongsNote', '');
     paintTopSongs(ctx);
+    zineHook('renderZineArtist', ctx);
   } else if (section.section === 'missing_albums') {
     if (section.available) {
       ctx.missing = section.items.map(item => ({...item, artist: ctx.name, owned: false}));
       paintMissingAlbums(ctx);
       fillMissingYears(ctx);
+      zineHook('renderZineArtist', ctx);
       if (!section.items.length) setSectionNote('artistMissingNote', 'You have every album we could find.');
       else setSectionNote('artistMissingNote', section.complete ? '' : 'Some albums may be missing. Popularity could not be fully loaded.');
     } else {
@@ -5503,7 +5540,10 @@ function applyArtistSection(section, ctx) {
     }
   } else if (section.section === 'similar') {
     if (section.available && section.items.length) {
-      fillRows($('artistSimilar'), randomSample(section.items, SIMILAR_ARTISTS_SHOWN), buildArtistChip);
+      const similarShown = randomSample(section.items, SIMILAR_ARTISTS_SHOWN);
+      fillRows($('artistSimilar'), similarShown, buildArtistChip);
+      ctx.similar = similarShown;
+      zineHook('renderZineArtist', ctx);
       // A tag lookup that ran out of time only changes the order, so the list needs no warning.
       setSectionNote('artistSimilarNote', '');
     } else {
@@ -5673,6 +5713,7 @@ function renderAlbum(target) {
   clearPageTint('libraryAlbumView');
   $('albumAction').replaceChildren();
   albumPage.album = null;
+  albumPage.tracks = null;
   albumPage.target = target;
   $('albumTracks').replaceChildren();
   for (const id of ['albumSimilarArtists', 'albumSimilarAlbums']) $(id).replaceChildren();
@@ -5907,6 +5948,7 @@ function applyAlbumSection(section, target) {
     setAlbumPagePlatformLinks(album.artist, album.name, album.release_group_mbid);
     albumPage.album = album;
     setAlbumAction(album);
+    zineHook('renderZineAlbum');
     return true;
   }
   if (section.section === 'year') {
@@ -5920,6 +5962,7 @@ function applyAlbumSection(section, target) {
   }
   if (section.section === 'genre') {
     setAlbumGenre(section.available ? section.genre : null);
+    zineHook('renderZineAlbum');
     return false;
   }
   if (section.section === 'tracks') {
@@ -5928,6 +5971,8 @@ function applyAlbumSection(section, target) {
       // Album Get stays until every song is in the library, then becomes the check.
       if (albumPage.album) setAlbumAction(albumPage.album, section.items);
       $('albumSummary').textContent = albumSummary(section.items);
+      albumPage.tracks = section.items;
+      zineHook('renderZineAlbum');
       setSectionNote('albumTracksNote', '');
     } else {
       setSectionNote('albumTracksNote', section.available ? 'No tracklist was found for this album.'

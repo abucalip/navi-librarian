@@ -115,12 +115,42 @@
   <!-- Ledger Room layout only (static/layouts.css shows both; they are hidden in every other theme). -->
   <p id="ledgerCrumb" class="ledger-crumb" aria-hidden="true" hidden></p>
 
+  <!-- Zine Spread layout only (static/layouts.css shows it; hidden in every other theme): the dated ticker strip under the label strip,
+       filled by static/app.js from the acquisition list the page already loads. Decorative: the Acquisitions page holds the same facts. -->
+  <div id="zineMast" class="zine-mast" aria-hidden="true" hidden><b id="zineMastTitle">The Discair Daily</b><span id="zineMastNote"></span></div>
+  <p id="zineTicker" class="zine-ticker" aria-hidden="true" hidden><span class="zine-ticker-items" id="zineTickerItems"></span></p>
+
   <section id="dashboard" class="page" aria-labelledby="dashboardHeading">
     <div id="ledgerStats" class="ledger-stats" role="group" aria-label="Acquisition summary" hidden>
       <div><small>Active</small><b id="ledgerStatActive">0</b></div>
       <div><small>Imported, 7 days</small><b id="ledgerStatImported">0</b></div>
       <div><small>Failed</small><b id="ledgerStatFailed">0</b></div>
       <div><small>All records</small><b id="ledgerStatTotal">0</b></div>
+    </div>
+    <!-- Zine Spread layout only (hidden in every other theme): the front page. The lead story, the Classifieds and New this week are built by
+         static/app.js from the same picks and New releases data and the same card builders as the default dashboard, whose Recommended
+         panel and New releases shelf the layout hides. -->
+    <div id="zineFront" class="zine-front" hidden>
+      <section class="zine-lead-col" aria-labelledby="zineLeadHeading">
+        <div class="zine-front-head">
+          <h2 id="zineLeadHeading">Lead story</h2>
+          <button type="button" id="zineShuffle" class="zine-shuffle">New edition</button>
+        </div>
+        <p id="zineLeadStatus" class="status-line" aria-live="polite"></p>
+        <div id="zineLead" class="zine-lead"></div>
+        <section class="zine-class-col" aria-labelledby="zineClassHeading">
+          <h2 id="zineClassHeading">Classifieds</h2>
+          <div class="zine-wanted-bar"><p id="zineWanted" class="zine-wanted"></p><button type="button" id="zineGetAll" class="zine-get-all" hidden>Get all →</button></div>
+          <div id="zineClassifieds" class="zine-classifieds"></div>
+        </section>
+      </section>
+      <aside class="zine-side" aria-label="Beside the lead story">
+        <section class="zine-new-col" aria-labelledby="zineNewHeading">
+          <h2 id="zineNewHeading">New this week</h2>
+          <div id="zineNew" class="zine-new"></div>
+        </section>
+      </aside>
+      <div class="zine-index-foot"><span class="zine-index-label">Index:</span><span id="zineIndexChips" class="zine-index-chips"></span><span class="zine-keys">J / K next story</span></div>
     </div>
     <div class="panel">
       <div class="dashboard-carousel-heading">
@@ -359,7 +389,11 @@
           </div>
         </div>
         <p id="libraryStatus" class="status-line" aria-live="polite"></p>
-        <ul id="libraryList" class="library-list"></ul>
+        <div class="zine-index">
+          <!-- Zine Spread layout only (hidden in every other theme): the vertical A-Z letter margin. static/layout-zine.js builds it from the rows already loaded. -->
+          <div id="zineLetters" class="zine-letters" role="group" aria-label="Jump to a letter" hidden></div>
+          <ul id="libraryList" class="library-list"></ul>
+        </div>
         <div id="libraryMoreGroup" class="action-group" role="group" aria-label="More" hidden>
           <button id="libraryMore" type="button" title="Load more" aria-label="Load more"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="/static/icons.svg#plus"></use></svg></button>
         </div>
@@ -368,6 +402,8 @@
     <div id="libraryDetailView" class="tint-backdrop" hidden>
       <div class="artist-hero">
         <div class="artist-stage">
+          <!-- Zine Spread layout only (hidden in every other theme): the cover lines, built from the sections the page already loads. -->
+          <div id="zineCoverLines" class="zine-cover-lines" aria-hidden="true" hidden></div>
           <button type="button" id="libraryBack" class="artist-back" aria-label="Back" title="Back"><svg class="icon" aria-hidden="true" focusable="false"><use href="/static/icons.svg#chevron-left"></use></svg></button>
           <div class="artist-hero-text">
             <h2 id="artistDetailHeading" tabindex="-1"></h2>
@@ -382,6 +418,10 @@
           <button type="button" id="artistTopSongsAll" class="show-all-button" hidden>All top songs</button>
         </section>
       </div>
+      <section id="zineIssuesSection" class="zine-issues" aria-labelledby="zineIssuesHeading" hidden>
+        <h4 id="zineIssuesHeading">Back issues</h4>
+        <ol id="zineIssues" class="zine-issue-list"></ol>
+      </section>
       <p id="artistBio" class="library-bio" hidden></p>
       <button type="button" id="artistBioToggle" class="bio-toggle" aria-expanded="false" aria-controls="artistBio" hidden>Read more</button>
       <section id="artistOwnedSection" aria-labelledby="artistOwnedHeading" hidden>
@@ -405,10 +445,14 @@
         <button type="button" id="albumBack" class="album-back" aria-label="Back" title="Back"><svg class="icon" aria-hidden="true" focusable="false"><use href="/static/icons.svg#chevron-left"></use></svg></button>
         <div class="album-head">
           <div class="album-hero-art-wrap"><div id="albumAction" class="album-hero-action"></div></div>
+          <!-- Zine Spread layout only (hidden in every other theme): byline, a button for the missing tracks, and the pull quote. -->
+          <p id="zineAlbumBy" class="zine-album-by" hidden></p>
+          <button type="button" id="zineGetMissing" class="zine-get-missing" hidden></button>
           <h2 id="albumHeading" tabindex="-1"></h2>
           <p id="albumArtist" class="album-hero-artist"></p>
           <p class="album-meta"><span id="albumGenre"></span><span id="albumYear"></span><span id="albumQuality" class="album-quality" title="File quality" hidden></span></p>
           <p id="albumOwnership" class="album-meta" hidden>Not in your library</p>
+          <blockquote id="zinePull" class="zine-pull" hidden></blockquote>
           <div class="album-about">
             <div class="album-tabs" role="tablist" aria-label="About this album">
               <button type="button" id="albumTabInfo" class="album-tab active" role="tab" aria-selected="true" aria-controls="albumInfoPanel" data-album-tab="info">Info</button>
@@ -630,6 +674,7 @@
 </div>
 <script src="/static/vendor/notyf/notyf.min.js" defer></script>
 <script src="/static/app.js" defer></script>
+<script src="/static/layout-zine.js" defer></script>
 <script src="/static/radio.js" defer></script>
 </body>
 </html>
