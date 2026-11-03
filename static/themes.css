@@ -99,6 +99,52 @@
   --brut-nav-bg: #b6ff3b; --brut-nav-text: #000000; --brut-nav-edge: #ffffff; --brut-line: #ffffff;
 }
 
+/* Neobrut · Tape Deck · Lime (layout "tape": static/layouts.css) */
+:root[data-theme="tapelime"] {
+  color-scheme: light;
+  --ink-rail: #fffdf6; --ink: #f1eee3; --surface: #fffdf6; --surface-raised: #f1ecdc; --surface-hover: #e9f8b4;
+  --edge: #111111; --edge-strong: #111111;
+  --text: #111111; --text-muted: #4f4d44; --text-subtle: #5f5c52;
+  --accent: #c6f432; --accent-text: #3f5200; --focus: #111111; --accent-hover: #aedb1e; --accent-dim: #e9f8b4; --on-accent: #111111;
+  --chart-red: #b3261e; --chart-red-text: #b3261e; --ok: #1b6b33; --caution: #7f4a00;
+  --slider-fade: #141211;
+  --shadow-menu: 5px 5px 0 #111111;
+  --bw: 2px; --radius-control: 2px; --radius-panel: 2px; --radius-chip: 0px;
+  --brut-sh: 5px; --brut-shadow-color: #111111; --brut-lift: -2px;
+  --brut-nav-bg: #c6f432; --brut-nav-text: #111111; --brut-nav-edge: #111111; --brut-line: #111111;
+  --tape-soft: #e9f8b4;
+}
+/* Neobrut · Tape Deck · Cobalt (layout "tape": static/layouts.css) */
+:root[data-theme="tapecobalt"] {
+  color-scheme: light;
+  --ink-rail: #fbfcff; --ink: #e6edfb; --surface: #fbfcff; --surface-raised: #dbe5fa; --surface-hover: #d3dfff;
+  --edge: #0e1b3d; --edge-strong: #0e1b3d;
+  --text: #0e1b3d; --text-muted: #43527a; --text-subtle: #4f5e86;
+  --accent: #3d68f0; --accent-text: #2441b8; --focus: #0e1b3d; --accent-hover: #2f55d1; --accent-dim: #d3dfff; --on-accent: #ffffff;
+  --chart-red: #b3261e; --chart-red-text: #b3261e; --ok: #1b6b33; --caution: #7f4a00;
+  --slider-fade: #141211;
+  --shadow-menu: 5px 5px 0 #0e1b3d;
+  --bw: 2px; --radius-control: 2px; --radius-panel: 2px; --radius-chip: 0px;
+  --brut-sh: 5px; --brut-shadow-color: #0e1b3d; --brut-lift: -2px;
+  --brut-nav-bg: #3d68f0; --brut-nav-text: #ffffff; --brut-nav-edge: #0e1b3d; --brut-line: #0e1b3d;
+  --tape-soft: #d3dfff;
+}
+/* Neobrut · Tape Deck · Tangerine (layout "tape": static/layouts.css) */
+:root[data-theme="tapetangerine"] {
+  color-scheme: light;
+  --ink-rail: #fffaf2; --ink: #fff0dc; --surface: #fffaf2; --surface-raised: #fbe6c8; --surface-hover: #ffe0b8;
+  --edge: #1b120a; --edge-strong: #1b120a;
+  --text: #1b120a; --text-muted: #5e4a35; --text-subtle: #6b563f;
+  --accent: #ff8a1f; --accent-text: #9a4a00; --focus: #1b120a; --accent-hover: #e87a10; --accent-dim: #ffe0b8; --on-accent: #1b120a;
+  --chart-red: #b3261e; --chart-red-text: #b3261e; --ok: #1b6b33; --caution: #7f4a00;
+  --slider-fade: #141211;
+  --shadow-menu: 5px 5px 0 #1b120a;
+  --bw: 2px; --radius-control: 2px; --radius-panel: 2px; --radius-chip: 0px;
+  --brut-sh: 5px; --brut-shadow-color: #1b120a; --brut-lift: -2px;
+  --brut-nav-bg: #ff8a1f; --brut-nav-text: #1b120a; --brut-nav-edge: #1b120a; --brut-line: #1b120a;
+  --tape-soft: #ffe0b8;
+}
+
 /* ---- Neobrut components: only the themes that set data-brut ---- */
 :root[data-brut] header { border-bottom: var(--bw) solid var(--edge); }
 :root[data-brut] nav { border-right: var(--bw) solid var(--edge); }
