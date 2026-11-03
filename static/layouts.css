@@ -603,6 +603,11 @@
   :root[data-layout="zine"] .zine-headline { margin: 8px 0; font: 400 clamp(1.9rem, 3.4vw, 2.75rem)/.95 var(--display); text-transform: uppercase; letter-spacing: 0; overflow-wrap: anywhere; }
   :root[data-layout="zine"] .zine-blurb { margin: 0 0 8px; font-size: var(--text-sm); line-height: 1.5; }
   :root[data-layout="zine"] .zine-blurb::first-letter { font: 400 var(--text-xl)/1 var(--display); }
+  :root[data-layout="zine"] .zine-desc { column-count: 2; column-gap: 14px; margin: 0 0 4px; font-size: var(--text-sm); line-height: 1.5; text-align: justify; hyphens: auto; }
+  :root[data-layout="zine"] .zine-desc[hidden] { display: none; }
+  :root[data-layout="zine"] .zine-desc::first-letter { float: left; padding: 2px 6px 0 0; font: 400 2.5rem/.8 var(--display); }
+  :root[data-layout="zine"] .zine-desc-credit { margin: 0 0 8px; font: 600 var(--text-xs)/1.4 var(--mono); text-transform: uppercase; color: var(--text-muted); }
+  :root[data-layout="zine"] .zine-lead-tile.has-desc .artist-bio { display: none; }
   :root[data-layout="zine"] .zine-lead-tile .card-artist, :root[data-layout="zine"] .zine-lead-tile .dashboard-tile-meta .about-toggle { display: none; }
   :root[data-layout="zine"] .zine-lead-tile .artist-bio { display: block; column-count: 2; column-gap: 14px; margin: 0 0 10px; font-size: var(--text-sm); line-height: 1.5; text-align: justify; hyphens: auto; max-height: 11em; overflow: hidden; }
   

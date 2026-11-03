@@ -96,41 +96,143 @@ function zineLabelActions(tile) {
   if (dismiss && !dismiss.querySelector('.dismiss-album-label')) addTextElement(dismiss, 'span', 'dismiss-album-label', 'Not for me');
 }
 
-// How many records by this artist the library holds, read once per artist from the existing library list (exact name match).
-async function zineOwnedCount(artist) {
+// What the library holds by this artist: its albums with their years, read once per artist from the existing library album list (exact
+// artist-name match). null when the index cannot answer yet.
+async function zineShelfFacts(artist) {
   const key = foldKey(artist);
   if (zineOwnedCounts.has(key)) return zineOwnedCounts.get(key);
-  let count = null;
+  let facts = null;
   try {
-    const data = await requestJSON('/api/library/artists?' + new URLSearchParams({q: artist, limit: '20'}));
-    if (data.index_state === 'ready' || data.index_state === 'stale' || Array.isArray(data.items)) {
-      const hit = (data.items || []).find(item => foldKey(item.name) === key);
-      count = hit ? Number(hit.album_count) || 0 : 0;
+    const data = await requestJSON('/api/library/albums?' + new URLSearchParams({q: artist, limit: '60', sort: 'year', order: 'asc'}));
+    if (data.index_state !== 'building' && data.index_state !== 'unavailable') {
+      const albums = (data.items || []).filter(item => foldKey(item.artist) === key)
+        .map(item => ({name: displayAlbumName(item.name), year: Number(item.year) || null}));
+      facts = {count: albums.length, albums};
     }
   } catch (error) {
-    count = null;
+    facts = null;
   }
-  zineOwnedCounts.set(key, count);
-  return count;
+  zineOwnedCounts.set(key, facts);
+  return facts;
 }
 
-function zineApplyOwnership(tile, artist, count) {
+// The first quality the owner asked for (Settings), read once.
+let zineQualityPromise = null;
+function zineTargetQuality() {
+  if (!zineQualityPromise) {
+    zineQualityPromise = requestJSON('/api/settings/slskd').then(data => {
+      const first = Array.isArray(data.quality_priority) ? data.quality_priority[0] : null;
+      const option = qualityOptions.find(([value]) => value === first);
+      return option ? option[1] : null;
+    }).catch(() => null);
+  }
+  return zineQualityPromise;
+}
+
+// The album's own description (Apple Music, else Wikipedia), read once per album through the same endpoint the album page uses.
+const zineDescriptions = new Map();
+function zineAlbumDescription(artist, album) {
+  const key = foldKey(artist) + '::' + foldKey(album);
+  if (!zineDescriptions.has(key)) {
+    zineDescriptions.set(key, requestJSON('/api/album-description?' + new URLSearchParams({artist, album})).catch(() => null));
+  }
+  return zineDescriptions.get(key);
+}
+
+function zineList(names) {
+  if (names.length < 2) return names.join('');
+  return names.slice(0, -1).join(', ') + ' and ' + names[names.length - 1];
+}
+
+const ZINE_ORDINALS = ['first', 'second', 'third', 'fourth', 'fifth', 'sixth', 'seventh', 'eighth', 'ninth', 'tenth'];
+
+// Where the pick sits among the records the library already holds, in words.
+function zinePosition(artist, year, facts) {
+  if (!facts || !facts.count) return facts ? 'is your way into ' + artist : '';
+  const owned = facts.albums;
+  const dated = owned.filter(entry => entry.year);
+  if (year && dated.length) {
+    const before = [...dated].reverse().find(entry => entry.year < year);
+    const after = dated.find(entry => entry.year > year);
+    if (before && after) return facts.count === 2 ? 'sits between the two you have' : 'sits between ' + before.name + ' and ' + after.name;
+    if (before) return 'comes after ' + before.name + ', the latest you have';
+    if (after) return 'comes before ' + after.name + ', the earliest you have';
+  }
+  return 'joins the ' + zineWord(facts.count) + ' you have' + (facts.count <= 3 ? ': ' + zineList(owned.map(entry => entry.name)) : '');
+}
+
+// The reason, in words: the owner's own plays of records by the artist, Last.fm neighbours, else the server's reason.
+function zineWhy(item, facts, rank) {
+  const key = foldKey(item.artist || item.album_artist || '');
+  const owned = new Set(((facts && facts.albums) || []).map(entry => foldKey(entry.name)));
+  const played = [];
+  for (const entry of shelfItems.Frequent || []) {
+    if (foldKey(entry.artist) === key && owned.has(foldKey(displayAlbumName(entry.name))) && !played.includes(displayAlbumName(entry.name))) played.push(displayAlbumName(entry.name));
+  }
+  const generic = /Genre tags connect this artist to your established musical interests/i.test(item.reason || '');
+  const lead = rank === 0 ? 'Ranked first today' : 'Ranked ' + (ZINE_ORDINALS[rank] || '#' + (rank + 1)) + ' today';
+  const parts = [];
+  if (played.length) parts.push('from your plays of ' + zineList(played.slice(0, 2)));
+  if (item.anchor_artist) parts.push((played.length ? 'and ' : '') + 'from Last.fm neighbours of ' + item.anchor_artist);
+  if (parts.length) return lead + ' ' + parts.join(' ') + '.';
+  if (item.reason && !generic) return lead + ': ' + item.reason.replace(/\.$/, '') + '.';
+  return lead + ' among your recommendations.';
+}
+
+// A description is shortened at a sentence end so it fills the two columns without running on.
+function zineExcerpt(paragraphs, limit) {
+  const text = paragraphs.join(' ').replace(/\s+/g, ' ').trim();
+  if (text.length <= limit) return text;
+  const cut = text.slice(0, limit);
+  const end = Math.max(cut.lastIndexOf('. '), cut.lastIndexOf('! '), cut.lastIndexOf('? '));
+  return (end > limit * 0.5 ? cut.slice(0, end + 1) : cut.replace(/\s+\S*$/, '') + '…');
+}
+
+function zineApplyLead(tile, item, rank) {
+  const artist = item.artist || item.album_artist || 'this artist';
+  const album = item.album || item.title || item.name || '';
   const headline = tile.querySelector('.zine-headline');
   const kicker = tile.querySelector('.zine-kicker');
-  if (!headline || !tile.isConnected) return;
-  if (count > 0) {
-    headline.textContent = zineSentence('you own ' + zineWord(count) + ' ' + artist + (count === 1 ? ' record' : ' records') + '. Not this one.');
-    if (kicker) kicker.textContent = 'Lead story · missing from your shelf';
-  } else if (count === 0) {
-    headline.textContent = 'Nothing by ' + artist + ' on your shelf. Start here.';
-    if (kicker) kicker.textContent = 'Lead story · new to your shelf';
-  } else {
-    headline.textContent = artist + ', picked for you today.';
-  }
+  const blurb = tile.querySelector('.zine-blurb');
+  const link = blurb.querySelector('a, button');
+  Promise.all([zineShelfFacts(artist), zineTargetQuality(), zineAlbumDescription(artist, album)]).then(([facts, quality, description]) => {
+    if (!tile.isConnected) return;
+    const count = facts ? facts.count : null;
+    if (count > 0) {
+      headline.textContent = zineSentence('you own ' + zineWord(count) + ' ' + artist + (count === 1 ? ' record' : ' records') + '. Not this one.');
+      kicker.textContent = 'Lead story · missing from your shelf';
+    } else if (count === 0) {
+      headline.textContent = 'Nothing by ' + artist + ' on your shelf. Start here.';
+      kicker.textContent = 'Lead story · new to your shelf';
+    } else {
+      headline.textContent = artist + ', picked for you today.';
+    }
+    const year = firstReleaseYear(item.year, item.release_year, item.first_release_year);
+    const position = zinePosition(artist, year ? Number(year) : null, facts);
+    blurb.replaceChildren();
+    if (link) blurb.append(link);
+    blurb.append((year ? ' (' + year + ')' : '') + (position ? ' ' + position + '. ' : ' ') + zineWhy(item, facts, rank) + (quality ? ' Target quality: ' + quality + '.' : ''));
+    // The album's own description is the better text; the artist's bio stays as the fallback when there is none.
+    const paragraphs = description && Array.isArray(description.paragraphs) ? description.paragraphs : [];
+    const text = tile.querySelector('.zine-desc');
+    if (paragraphs.length) {
+      text.textContent = zineExcerpt(paragraphs, 720);
+      text.hidden = false;
+      let credit = tile.querySelector('.zine-desc-credit');
+      if (!credit) {
+        credit = document.createElement('p');
+        credit.className = 'zine-desc-credit';
+        text.after(credit);
+      }
+      credit.textContent = 'About the album · ' + (description.source || 'Apple Music');
+      tile.classList.add('has-desc');
+    }
+  });
 }
 
-// The lead story: a kicker, a headline sentence about what the library holds, then the album named in a two-column blurb.
-function zineComposeLead(tile, item) {
+// The lead story: a kicker, a headline sentence about what the library holds, a blurb that places the pick on your shelf and says why it
+// was chosen, then the album's own description (the artist's bio when there is none), set in two columns.
+function zineComposeLead(tile, item, rank) {
   const meta = tile.querySelector('.dashboard-tile-meta');
   if (!meta) return;
   const artist = item.artist || item.album_artist || 'this artist';
@@ -144,19 +246,16 @@ function zineComposeLead(tile, item) {
   blurb.className = 'zine-blurb';
   const albumHeading = meta.querySelector('h3:not(.zine-headline)');
   if (albumHeading) {
-    // Only the album's own link goes into the blurb; the year is written out beside it, and the listen count is dropped.
+    // Only the album's own link goes into the blurb; the year and the listen count are written out or dropped.
     const link = albumHeading.querySelector('a, button');
     if (link) blurb.append(link);
     albumHeading.remove();
   }
-  const year = firstReleaseYear(item.year, item.release_year, item.first_release_year);
-  if (year) blurb.append(' (' + year + ')');
-  const generic = /Genre tags connect this artist to your established musical interests/i.test(item.reason || '');
-  const why = item.reason && !generic ? item.reason : '';
-  blurb.append(' ranked first today' + (why ? ': ' + why.replace(/\.$/, '') : ' among your recommendations') + '.');
-  if (item.anchor_artist) blurb.append(' Similar to ' + item.anchor_artist + '.');
-  meta.prepend(kicker, headline, blurb);
-  zineOwnedCount(artist).then(count => zineApplyOwnership(tile, artist, count));
+  const text = document.createElement('p');
+  text.className = 'zine-desc';
+  text.hidden = true;
+  meta.prepend(kicker, headline, blurb, text);
+  zineApplyLead(tile, item, rank);
 }
 
 function zineVisiblePicks() {
@@ -178,7 +277,7 @@ function renderZineFront() {
     const tile = buildDashboardTile(ordered[0]);
     tile.classList.add('zine-lead-tile');
     zineLabelActions(tile);
-    zineComposeLead(tile, ordered[0]);
+    zineComposeLead(tile, ordered[0], dashboardPickItems.indexOf(ordered[0]));
     lead.append(tile);
     for (const item of ordered.slice(1, 5)) {
       const ad = buildDashboardTile(item);

@@ -116,14 +116,33 @@ class ZineLayoutTests(unittest.TestCase):
         self.assertIn("zineHook('renderZineFront')", self.app.split("function renderDashboardPicks() {")[1].split("\n}\n")[0])
 
     def test_the_lead_story_headline_names_what_the_library_holds(self):
-        fn = self.zine_js.split("function zineApplyOwnership(")[1].split("\n}\n")[0]
+        fn = self.zine_js.split("function zineApplyLead(")[1].split("\n}\n")[0]
         self.assertIn("'you own '", fn)
         self.assertIn("Not this one.", fn)
         self.assertIn("missing from your shelf", fn)
         self.assertIn("Start here.", fn)
-        count = self.zine_js.split("async function zineOwnedCount(")[1].split("\n}\n")[0]
-        self.assertIn("/api/library/artists", count)
+        facts = self.zine_js.split("async function zineShelfFacts(")[1].split("\n}\n")[0]
+        self.assertIn("/api/library/albums", facts)
         self.assertNotIn("/api/acquire", self.zine_js)
+
+    def test_the_lead_blurb_places_the_pick_on_the_shelf_says_why_and_names_the_target_quality(self):
+        position = self.zine_js.split("function zinePosition(")[1].split("\n}\n")[0]
+        for text in ("sits between the two you have", "comes after", "comes before", "is your way into"):
+            self.assertIn(text, position)
+        why = self.zine_js.split("function zineWhy(")[1].split("\n}\n")[0]
+        for text in ("Ranked first today", "from your plays of", "Last.fm neighbours of", "shelfItems.Frequent"):
+            self.assertIn(text, why)
+        fn = self.zine_js.split("function zineApplyLead(")[1].split("\n}\n")[0]
+        self.assertIn("' Target quality: '", fn)
+        self.assertIn("quality_priority", self.zine_js.split("function zineTargetQuality()")[1].split("\n}\n")[0])
+
+    def test_the_album_description_leads_and_the_artist_bio_is_the_fallback(self):
+        self.assertIn("/api/album-description", self.zine_js)
+        fn = self.zine_js.split("function zineApplyLead(")[1].split("\n}\n")[0]
+        self.assertIn("paragraphs.length", fn)
+        self.assertIn("tile.classList.add('has-desc')", fn)
+        self.assertIn(".zine-lead-tile.has-desc .artist-bio { display: none; }", self.zine)
+        self.assertIn(".zine-lead-tile .artist-bio { display: block;", self.zine)
 
     def test_j_and_k_step_the_lead_story_on_the_dashboard_and_lines_in_the_library(self):
         block = self.zine_js.split("document.addEventListener('keydown'")[1].split("/* ----------------------------------------------------------------")[0]
