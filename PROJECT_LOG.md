@@ -1,3 +1,12 @@
+## 2026-11-04 — macOS M5 slice 2a: acquisition client and Get / Save / Not for me merged (PR #723)
+
+- **Merged (owner request):** PR [#723](https://github.com/abucalip/navi-librarian/pull/723), squash `c8014c8bd5059e476cdc42e7e182d37310e0f8b7`, from tested head `cb61a71c4686afb2c91f983497cd6c5e8ed91c3d`; compile, container-smoke, swift, test-and-build and validate-container passed on that head.
+- **What:** `DiscairLibrarian` acquisition calls (`acquire` with `auto_queue: true`, `acquireTrack`, `acquisitions`, `skipSource`, `dismissAcquisition`, `feedback`), one re-login on 401 for every call, a refusal read from `ok: false` rather than the HTTP code. `AcquisitionModel`: Getting… / Requested / Retry from the server's answer, Saved, Not for me hidden at once and sent after a 6 s Undo window, Never suggest (`dismiss_artist`), a failed dismissal restores the album with a notice, best-effort flush on quit, job polling (4 s busy, 30 s idle) for the Zine ticker and the Cupertino Downloads badge, song rows use the song call. Both themes show Get states by text, tooltip and VoiceOver hint, with an Undo bar in each theme's style.
+- **Verification:** `swift test --filter DiscairUITests` (38 pass) and `swift test --filter DiscairLibrarianTests` (22 pass) locally; acquisition-state renders for both themes viewed. CI passed on the head. Full unit suite not run by the agent (owner rule). **Not run against the owner's Librarian or slskd**; tests use the recorded Android contract fixtures and stub transports.
+- **Known limits:** no Downloads screens, no SSE stream; a dismissal is lost if the app is killed inside its window; Saved albums are not listed anywhere; Get on a partly owned album asks for the whole album.
+- **State:** merged only. Not published, not deployed.
+- **Next action:** slice 2b, Downloads screens.
+
 ## 2026-11-04 — macOS M5 slice 1b: live library data and artwork merged (PR #722)
 
 - **Merged (owner request):** PR [#722](https://github.com/abucalip/navi-librarian/pull/722), squash `2b8a1419637e042a0bce1d7e5de02dcaf6a24f63`, from tested head `3d14768d64b6cce41c63a7783b36254e342fc8c2`; compile, container-smoke, swift, test-and-build and validate-container passed on that head.
