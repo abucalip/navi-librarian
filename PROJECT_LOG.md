@@ -1,3 +1,14 @@
+## 2026-11-03 — Web Zine Spread layout merged (PR #709)
+
+- **Merged (owner request):** PR [#709](https://github.com/abucalip/navi-librarian/pull/709), squash `3f546f9ec409a127ca8d5ce8f9e677ba1865479e`, from tested head `a6141c8cd1296ca635c924c8abd1a7fb1f7ce8a2`; compile, container-smoke, test-and-build, validate-container and validate-release-workflow passed on that head.
+- **What:** phase P1 of `docs/BRUT_ROUND3_PLAN.md` (D-024). Theme `zine` ("Zine · Yellow"); `static/layout-zine.js` (new), a block in `static/layouts.css`, a palette in `static/themes.css`, hidden-by-default hooks in `app/templates/index.html`, small hooks in `static/app.js` (`zineHook`, a dismiss path for front-page tiles, data kept for the artist and album hooks). Screens: mast and ticker on every page; dashboard front page (lead story with dynamic copy, New this week, Classifieds with Get all, index of letter ranges, J/K); Library A–Z index with a vertical letter margin; album article; artist cover with back issues; acquisition dispatches. Rules added to the plan during the work: themes own their screens; the approved mockups are the spec. The plan's section 12 records the lessons.
+- **Existing reads used, no new endpoints:** `/api/library/albums`, `/api/album-description`, `/api/settings/slskd`.
+- **Tests run (agent, focused only):** new `tests/test_zine_layout_ui_contract.py`; all 38 `*ui_contract*` modules plus the fonts test (504 tests, passing); `node --check` on `app.js`, `appearance.js`, `layout-zine.js`. Crate, tape and fonts tests were adjusted for the new layout and theme. The full suite was not run by the agent (CI ran it on the head).
+- **UI checks:** the agent rendered each screen at 1280 px (dashboard also 1024 px) in headless Chrome with mocked data; the owner reviewed the screens in the browser on the local server and approved the merge. Not exercised against real data by the agent: Get all, Get missing, Not for me with Undo, the index chips and J/K.
+- **Limits:** library rows show "n albums" (no per-artist total in the API); cover lines are text and the real Top songs list stays below the cover; Classifieds come from the remaining picks; phone width is unchanged.
+- **State:** merged only. Not published, not deployed.
+- **Next action:** P2, the web Pipeline Board.
+
 ## 2026-11-03 — Round 3 Neobrut plan written (documentation only)
 
 - **What:** `docs/BRUT_ROUND3_PLAN.md`, decision D-024 in `docs/DECISIONS.md`, reference mockups in `docs/design/brut-round3/mockups.html`, and entries in `docs/ACTIVE_WORK.md` (section 2i, parked Material themes) and `docs/PROJECT_STATUS.md`. The owner approved five Neobrut themes (web: Zine Spread, Pipeline Board, Window Manager; Android: Receipt Roll, Binder), one palette each, each on its own platform, covering every screen including album and artist pages.

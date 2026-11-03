@@ -1,6 +1,6 @@
 # Brut round 3 plan (web and Android)
 
-Last updated: 2026-11-03 (P0, the plan, written; theme-ownership rule added to section 2). Governing decision: D-024 in [DECISIONS.md](DECISIONS.md). Status tracking: the table in section 9 (update it in the PR that completes each phase). GitHub `main` is authoritative.
+Last updated: 2026-11-03 (P1 merged; theme-ownership and mockup-is-the-spec rules in section 2). Governing decision: D-024 in [DECISIONS.md](DECISIONS.md). Status tracking: the table in section 9 (update it in the PR that completes each phase). GitHub `main` is authoritative.
 
 ## 1. What this is
 
@@ -182,7 +182,7 @@ One PR per phase except P0 and the closeout (documents, direct to `main`). Each 
 | Phase | Scope | Status |
 |---|---|---|
 | P0 | This plan, D-024, mockups in `docs/design/brut-round3/` | **done 2026-11-03** (documentation, direct to `main`) |
-| P1 | Web Zine Spread: catalogue entry, palette, `layouts.css` block, hooks, all five web screens, tests | not started |
+| P1 | Web Zine Spread: catalogue entry, palette, `layouts.css` block, hooks, all five web screens, tests | **done 2026-11-03**, PR [#709](https://github.com/abucalip/navi-librarian/pull/709), squash `3f546f9ec409a127ca8d5ce8f9e677ba1865479e` (see "As built, P1" below) |
 | P2 | Web Pipeline Board: board, drag with real Get and Save, keyboard path, swimlanes, stage tracker, tests | not started |
 | P3a | Web Window Manager: shell, taskbar, single windows on every screen, tests | not started |
 | P3b | Web Window Manager: second album window (spike first) | not started |
@@ -220,3 +220,14 @@ Order rationale: web first, from the most CSS-only (Zine) to the riskiest (Windo
 - **Receipt's barcode seek bar** must keep real slider semantics and a 48 dp touch height; the stripes are decoration.
 - **Typography:** Compose cannot uppercase through styles; uppercase in code and keep the real name for TalkBack.
 - Fonts and icons are self-hosted; the mockups' Google Fonts links never ship.
+
+## 12. As built, P1 (Zine Spread, PR #709)
+
+Lessons for the other web themes:
+- **Build to the mockup element by element.** A first pass that only re-skinned the default pages was rejected; the accepted one rebuilt each screen from the mockup (see the rules in section 2). Keep a checklist per mockup screen.
+- **Own file, one hook function.** All behaviour is in `static/layout-zine.js`; `app.js` reaches it only through `zineHook(name, ...)` (a no-op when the file or layout is absent). New hidden-by-default elements in `index.html`, shown only by the layout.
+- **Replace, do not restyle, where the default structure fights the design.** The default Recommended panel and New releases shelf are hidden by the layout and the front page is built from the same data with the same builders (`buildDashboardTile`, `buildShelfCard`), so Get, Save and Not for me are the real controls; the dismiss path in `app.js` was made to work for tiles outside the slider.
+- **Words for state.** Text labels on Get, Save and Not for me where prominent; verbs for acquisition state in CSS (`content: "..." / ""`).
+- **Reads used (existing endpoints only):** `/api/library/albums` (owned albums by the lead's artist), `/api/album-description`, `/api/settings/slskd` (first quality). The lead copy is built from these plus the picks' `reason`/`anchor_artist` and the Most played shelf; the album description leads and the artist bio is the fallback.
+- **Departures recorded in the PR:** library rows show "n albums" (no per-artist total in the API); cover lines are text, with the real Top songs list kept below; fine-pointer letter buttons 24 px (44 px on touch); Classifieds built from the remaining picks (no library-wide missing list).
+- **Not covered:** the album page's contents box falls under the cover column at 1280 px (floats); phone width is unchanged by design; Get all, Get missing, Not for me and Undo were not exercised by the agent against real data (the owner reviewed the screens in the browser).
