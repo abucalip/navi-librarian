@@ -88,11 +88,6 @@ class ZineLayoutTests(unittest.TestCase):
         self.assertNotIn("fetch(", fn)
         self.assertNotIn("requestJSON", fn)
 
-    def test_the_lead_story_and_shelves_keep_dom_order_and_are_css_only(self):
-        self.assertIn('#dashboard > .panel:not(.dashboard-shelf) { grid-column: 1 / -1; }', self.zine)
-        self.assertIn("column-count: 2", self.zine)
-        self.assertNotIn("grid-row:", self.zine)  # nothing is placed out of document order
-
     def test_j_and_k_are_layout_gated_ignore_fields_modifiers_and_the_open_dialog(self):
         block = self.app.split("// Zine Spread only: J and K step")[1].split("$('albumModalClose')")[0]
         self.assertIn("dataset.layout !== 'zine'", block)
@@ -104,6 +99,32 @@ class ZineLayoutTests(unittest.TestCase):
         css = self.zine.split("Acquisitions: each request is a dispatch")[1]
         self.assertIn(".acq-progress-fill", css)
         self.assertNotIn("display: none", css)
+
+    def test_the_front_page_is_hidden_by_default_and_built_from_the_default_builders(self):
+        self.assertRegex(self.html, r'<div id="zineFront" class="zine-front" hidden>')
+        for hook in ('id="zineLead"', 'id="zineNew"', 'id="zineClassifieds"', "Lead story", "New this week", "Classifieds"):
+            self.assertIn(hook, self.html)
+        fn = self.app.split("function renderZineFront() {")[1].split("\n}\n")[0]
+        self.assertIn("buildDashboardTile(", fn)
+        self.assertIn("buildShelfCard(", fn)
+        self.assertNotIn("fetch(", fn)
+        self.assertNotIn("requestJSON", fn)
+        self.assertIn("renderZineFront();", self.app.split("function renderDashboardPicks() {")[1].split("\n}\n")[0])
+
+    def test_the_front_page_actions_carry_text_labels_including_not_for_me(self):
+        self.assertIn("'dismiss-album-label', 'Not for me'", self.app)
+        for label in ("get-album-label", "save-album-label", "dismiss-album-label"):
+            self.assertIn(f".zine-lead-tile .action-group .{label}", self.zine)
+
+    def test_dismissing_a_front_page_pick_uses_the_feedback_path_and_can_be_undone(self):
+        fn = self.app.split("function dismissDashboardPick(tile, artist, album, item) {")[1].split("\n}\n")[0]
+        self.assertIn("tile.parentNode !== slider", fn)
+        self.assertIn("sendFeedback('dismiss', artist, album, item, 'dashboard_picks', tile", fn)
+        self.assertIn("dashboardPickItems.splice(spot, 0, item)", fn)
+
+    def test_the_default_recommended_panel_and_new_releases_shelf_are_hidden_only_by_this_layout(self):
+        self.assertIn('#dashboard > .panel:has(#dashboardCarousel)', self.zine)
+        self.assertIn('shelfNewReleasesHeading', self.zine)
 
     def test_reduced_motion_disables_any_zine_animation(self):
         css = re.sub(r"/\*.*?\*/", "", self.zine, flags=re.S)

@@ -579,20 +579,61 @@
   :root[data-layout="zine"] .shelf-arrows[data-fits] { display: none; }
   :root[data-layout="zine"] .genre-tile { border: var(--zine-rule); border-left-width: 8px; border-radius: 0; font-weight: 700; }
 
-  /* The lead story: a kicker label, the cover with a hard shadow, a headline set big and condensed, a two-column blurb. */
-  :root[data-layout="zine"] .dashboard-carousel-heading h2 {
-    display: inline-block; margin: 0; padding: 3px 10px 2px; color: var(--zine-on-colour); background: var(--zine-pink); border: var(--zine-rule);
+  /* ---- The front page (static/app.js builds it from the same picks and New releases data): the lead story beside a column of New this
+     week and Classifieds. The default Recommended panel and New releases shelf are replaced by it and hidden here. ---- */
+  :root[data-layout="zine"] #dashboard > .panel:has(#dashboardCarousel),
+  :root[data-layout="zine"] #dashboard > .dashboard-shelf[aria-labelledby="shelfNewReleasesHeading"] { display: none; }
+  :root[data-layout="zine"] .panel h2::after { display: none; }
+  :root[data-layout="zine"] .zine-front { display: grid; grid-template-columns: minmax(0, 2fr) minmax(300px, 1fr); gap: 28px; align-items: start; grid-column: 1 / -1; margin-bottom: 32px; }
+  :root[data-layout="zine"] .zine-front h2 {
+    display: inline-block; margin: 0 0 12px; padding: 3px 10px 2px; color: var(--zine-on-colour); background: var(--zine-pink); border: var(--zine-rule);
     font: 800 var(--text-xs)/1.4 var(--mono); letter-spacing: .16em; text-transform: uppercase;
   }
-  :root[data-layout="zine"] .panel h2::after { display: none; }
-  :root[data-layout="zine"] .dashboard-slider { border-radius: 0; background: var(--surface); border: var(--zine-rule); box-shadow: var(--brut-sh) var(--brut-sh) 0 var(--brut-shadow-color); }
-  :root[data-layout="zine"] .dashboard-slider > .card { border: var(--zine-rule); border-radius: 0; box-shadow: var(--brut-sh) var(--brut-sh) 0 var(--brut-shadow-color); }
-  :root[data-layout="zine"] .dashboard-slider > .card[data-slot="1"] { border: 0; box-shadow: none; }
-  :root[data-layout="zine"] .dashboard-slider > .card[data-slot="1"] > .card-art { border: 0; border-right: var(--zine-rule); border-radius: 0; }
-  :root[data-layout="zine"] .dashboard-slider > .card[data-slot="1"] h3 {
-    font-family: var(--display); font-size: clamp(var(--text-2xl), 3.4vw, 3.25rem); line-height: .98; text-transform: uppercase; overflow-wrap: anywhere; letter-spacing: 0;
+  :root[data-layout="zine"] .zine-front-head { display: flex; align-items: flex-start; gap: 14px; }
+  :root[data-layout="zine"] .zine-shuffle { margin-left: auto; min-height: 44px; padding: 0 16px; color: var(--text); background: var(--surface); border: var(--bw) solid var(--edge); border-radius: 0; font: 800 var(--text-xs)/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; }
+  :root[data-layout="zine"] .zine-shuffle:hover { color: var(--on-accent); background: var(--accent); }
+  :root[data-layout="zine"] .zine-front .card { border-radius: 0; }
+
+  /* Lead story: cover with a hard shadow beside a headline set big and condensed, a two-column blurb and labelled actions. */
+  :root[data-layout="zine"] .zine-lead-tile { display: grid; grid-template-columns: minmax(200px, 38%) minmax(0, 1fr); grid-template-rows: auto 1fr auto; column-gap: 28px; padding: 22px; background: var(--surface); border: var(--zine-rule); box-shadow: var(--brut-sh) var(--brut-sh) 0 var(--brut-shadow-color); }
+  :root[data-layout="zine"] .zine-lead-tile > .card-art { grid-row: 1 / -1; grid-column: 1; align-self: start; width: 100%; border: var(--zine-rule); border-radius: 0; box-shadow: var(--brut-sh) var(--brut-sh) 0 var(--brut-shadow-color); }
+  :root[data-layout="zine"] .zine-lead-tile > .dashboard-tile-meta { grid-column: 2; grid-row: 1 / 3; min-width: 0; margin: 0; }
+  :root[data-layout="zine"] .zine-lead-tile > .action-group { grid-column: 2; grid-row: 3; margin-top: 16px; }
+  :root[data-layout="zine"] .zine-lead-tile h3 { margin: 6px 0 4px; font-family: var(--display); font-size: clamp(2.25rem, 4.2vw, 4rem); line-height: .95; text-transform: uppercase; letter-spacing: 0; overflow-wrap: anywhere; }
+  :root[data-layout="zine"] .zine-lead-tile .card-artist { font: 800 var(--text-sm)/1.3 var(--mono); letter-spacing: .1em; text-transform: uppercase; }
+  :root[data-layout="zine"] .zine-lead-tile .artist-bio { column-width: 15rem; column-gap: 22px; column-rule: var(--zine-hair); margin-top: 14px; max-height: 13em; overflow: hidden; }
+
+  /* Prominent actions carry their words: Get, Save and Not for me. */
+  :root[data-layout="zine"] .zine-lead-tile .action-group, :root[data-layout="zine"] .zine-ad .action-group { display: flex; flex-wrap: wrap; gap: 8px; overflow: visible; background: transparent; border: 0; box-shadow: none; position: static; }
+  :root[data-layout="zine"] .zine-lead-tile .action-group > button, :root[data-layout="zine"] .zine-ad .action-group > button {
+    display: inline-flex; align-items: center; gap: 8px; width: auto; min-width: 44px; min-height: 44px; padding: 0 14px; color: var(--text); background: var(--surface);
+    border: var(--bw) solid var(--edge); border-left: var(--bw) solid var(--edge); border-radius: 0; font: 800 var(--text-xs)/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; box-shadow: calc(var(--brut-sh) * .6) calc(var(--brut-sh) * .6) 0 var(--brut-shadow-color);
   }
-  :root[data-layout="zine"] .dashboard-slider > .card[data-slot="1"] .artist-bio { column-count: 2; column-gap: 22px; column-rule: var(--zine-hair); text-align: left; max-height: 9.6em; overflow: hidden; }
+  :root[data-layout="zine"] .zine-lead-tile .action-group > .get-album, :root[data-layout="zine"] .zine-ad .action-group > .get-album { color: var(--zine-on-colour); background: var(--zine-teal); }
+  :root[data-layout="zine"] .zine-lead-tile .action-group .get-album-label, :root[data-layout="zine"] .zine-lead-tile .action-group .save-album-label, :root[data-layout="zine"] .zine-lead-tile .action-group .dismiss-album-label,
+  :root[data-layout="zine"] .zine-ad .action-group .get-album-label, :root[data-layout="zine"] .zine-ad .action-group .save-album-label, :root[data-layout="zine"] .zine-ad .action-group .dismiss-album-label { display: inline; }
+
+  /* Classifieds: small ruled ads, each with its own labelled Get. */
+  :root[data-layout="zine"] .zine-front .status-line:empty { display: none; }
+  :root[data-layout="zine"] .zine-class-col { margin-top: 28px; }
+  :root[data-layout="zine"] .zine-classifieds { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+  :root[data-layout="zine"] .zine-ad { display: grid; grid-template-columns: 76px minmax(0, 1fr); gap: 4px 12px; align-items: start; padding: 10px; background: var(--surface); border: 2px dashed var(--edge); }
+  :root[data-layout="zine"] .zine-ad > .card-art { grid-row: 1; width: 76px; border: var(--zine-rule); border-radius: 0; }
+  :root[data-layout="zine"] .zine-ad > .dashboard-tile-meta { grid-column: 2; margin: 0; min-width: 0; }
+  :root[data-layout="zine"] .zine-ad > .action-group { grid-column: 1 / -1; margin-top: 6px; }
+  :root[data-layout="zine"] .zine-ad h3 { font-size: var(--text-md); line-height: 1.15; text-transform: uppercase; overflow-wrap: anywhere; }
+  :root[data-layout="zine"] .zine-ad .artist-bio, :root[data-layout="zine"] .zine-ad .card-category { display: none; }
+
+  /* New this week: a ruled list of rows. */
+  :root[data-layout="zine"] .zine-side { display: grid; gap: 24px; }
+  :root[data-layout="zine"] .zine-new { display: grid; border: var(--zine-rule); background: var(--surface); box-shadow: var(--brut-sh) var(--brut-sh) 0 var(--brut-shadow-color); }
+  :root[data-layout="zine"] .zine-new .shelf-card { display: grid; grid-template-columns: 56px minmax(0, 1fr) auto; align-items: center; gap: 12px; width: auto; padding: 8px 10px; border: 0; border-bottom: var(--zine-hair); box-shadow: none; }
+  :root[data-layout="zine"] .zine-new .shelf-card:last-child { border-bottom: 0; }
+  :root[data-layout="zine"] .zine-new .shelf-card > .card-art { width: 56px; border: var(--bw) solid var(--edge); border-radius: 0; }
+  :root[data-layout="zine"] .zine-new .shelf-card > .dashboard-tile-meta { margin: 0; min-width: 0; }
+  :root[data-layout="zine"] .zine-new .shelf-card h3 { font-size: var(--text-sm); line-height: 1.2; text-transform: uppercase; overflow-wrap: anywhere; }
+  :root[data-layout="zine"] .zine-new .shelf-card .artist-bio { display: none; }
+  :root[data-layout="zine"] .zine-new .shelf-card > .action-group { position: static; margin: 0; }
 
   /* ---- Library: an A-Z index. The letter strip sticks under the label strip; the list is three columns with dotted leaders. ---- */
   :root[data-layout="zine"] .zine-letters { display: flex; flex-wrap: wrap; position: sticky; top: calc(89px + var(--zine-nav-h)); z-index: 5; margin: 14px 0 0; background: var(--surface); border: var(--zine-rule); }

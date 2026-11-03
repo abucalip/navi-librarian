@@ -126,6 +126,29 @@
       <div><small>Failed</small><b id="ledgerStatFailed">0</b></div>
       <div><small>All records</small><b id="ledgerStatTotal">0</b></div>
     </div>
+    <!-- Zine Spread layout only (hidden in every other theme): the front page. The lead story, the Classifieds and New this week are built by
+         static/app.js from the same picks and New releases data and the same card builders as the default dashboard, whose Recommended
+         panel and New releases shelf the layout hides. -->
+    <div id="zineFront" class="zine-front" hidden>
+      <section class="zine-lead-col" aria-labelledby="zineLeadHeading">
+        <div class="zine-front-head">
+          <h2 id="zineLeadHeading">Lead story</h2>
+          <button type="button" id="zineShuffle" class="zine-shuffle">New edition</button>
+        </div>
+        <p id="zineLeadStatus" class="status-line" aria-live="polite"></p>
+        <div id="zineLead" class="zine-lead"></div>
+        <section class="zine-class-col" aria-labelledby="zineClassHeading">
+          <h2 id="zineClassHeading">Classifieds</h2>
+          <div id="zineClassifieds" class="zine-classifieds"></div>
+        </section>
+      </section>
+      <aside class="zine-side" aria-label="Beside the lead story">
+        <section class="zine-new-col" aria-labelledby="zineNewHeading">
+          <h2 id="zineNewHeading">New this week</h2>
+          <div id="zineNew" class="zine-new"></div>
+        </section>
+      </aside>
+    </div>
     <div class="panel">
       <div class="dashboard-carousel-heading">
         <div>

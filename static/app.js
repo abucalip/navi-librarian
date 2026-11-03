@@ -1562,6 +1562,20 @@ function dashboardTag(label, phone) {
 
 function dismissDashboardPick(tile, artist, album, item) {
   const slider = $('dashboardCarousel');
+  if (tile.parentNode !== slider) {
+    // A tile on the Zine Spread front page (lead story or classified): the pick leaves the kept list, the strip and the front page are
+    // rebuilt from it, and Undo or a failed request puts the pick back at its place.
+    const spot = dashboardPickItems.indexOf(item);
+    if (spot >= 0) dashboardPickItems.splice(spot, 1);
+    renderDashboardPicks();
+    const next = document.querySelector('#zineLead .dashboard-tile-open');
+    if (next) next.focus();
+    sendFeedback('dismiss', artist, album, item, 'dashboard_picks', tile, () => {
+      if (spot >= 0) dashboardPickItems.splice(spot, 0, item);
+      renderDashboardPicks();
+    });
+    return;
+  }
   const before = tile.nextElementSibling;
   // The kept list loses the pick too, so a rebuild for the other layout does not bring it back.
   const position = dashboardPickItems.indexOf(item);
@@ -1744,7 +1758,53 @@ function renderDashboardPicks() {
   if (!isMobileLayout() && target.children.length > 1) target.prepend(target.lastElementChild);
   target.scrollLeft = 0;
   syncDashboardSlider();
+  renderZineFront();
 }
+
+// Zine Spread only: the dashboard's front page. The lead story is the first pick, the Classifieds are the next four picks, and New this
+// week is the head of the New releases shelf. Every card comes from the default builders (buildDashboardTile, buildShelfCard), so Get,
+// Save and Not for me are the real controls with the real requests. The prominent picks show their actions with text labels, outside the
+// cover. Skipped on a phone and when another layout is active (the elements stay hidden).
+function zineFrontActive() {
+  return Boolean($('zineFront')) && document.documentElement.dataset.layout === 'zine' && !isMobileLayout();
+}
+
+function zineLabelActions(tile) {
+  const group = tile.querySelector('.card-art > .action-group');
+  if (group) tile.append(group);
+  const dismiss = tile.querySelector('.dismiss-album');
+  if (dismiss && !dismiss.querySelector('.dismiss-album-label')) addTextElement(dismiss, 'span', 'dismiss-album-label', 'Not for me');
+}
+
+function renderZineFront() {
+  if (!zineFrontActive()) return;
+  const lead = $('zineLead');
+  const ads = $('zineClassifieds');
+  lead.replaceChildren();
+  ads.replaceChildren();
+  const picks = dashboardPickItems;
+  if (picks.length) {
+    const tile = buildDashboardTile(picks[0]);
+    tile.classList.add('zine-lead-tile');
+    zineLabelActions(tile);
+    lead.append(tile);
+    for (const item of picks.slice(1, 5)) {
+      const ad = buildDashboardTile(item);
+      ad.classList.add('zine-ad');
+      zineLabelActions(ad);
+      ads.append(ad);
+    }
+  }
+  $('zineLeadStatus').textContent = picks.length ? '' : ($('dashboardPicksStatus').textContent || 'No suggestions yet.');
+  $('zineNew').replaceChildren(...(shelfItems.NewReleases || []).slice(0, 6).map(item => buildShelfCard(item, true)));
+}
+
+$('zineShuffle').addEventListener('click', () => $('shuffleDashboard').click());
+// The picks' own status line (loading, count, failure) is mirrored under the lead story, because the layout hides the panel that holds it.
+new MutationObserver(() => { if (zineFrontActive() && !dashboardPickItems.length) $('zineLeadStatus').textContent = $('dashboardPicksStatus').textContent; })
+  .observe($('dashboardPicksStatus'), {childList: true, characterData: true, subtree: true});
+// The layout is chosen in Settings without a reload, so build (or clear) the front page and the letter strip when it changes.
+new MutationObserver(() => { renderZineFront(); updateZineLetters(); }).observe(document.documentElement, {attributes: true, attributeFilter: ['data-layout']});
 
 async function loadDashboardPicks() {
   const target = $('dashboardCarousel');
@@ -2120,6 +2180,9 @@ function shelfItemFromDiscovery(item) {
   };
 }
 
+// The items each dashboard shelf last loaded, kept so the Zine Spread front page can build its New this week column from them.
+const shelfItems = {};
+
 async function loadShelf(name, url, mapItems, withActions = false) {
   const target = $('shelf' + name);
   const status = $('shelf' + name + 'Status');
@@ -2128,6 +2191,8 @@ async function loadShelf(name, url, mapItems, withActions = false) {
     const data = await requestJSON(url);
     const items = mapItems(data).filter(item => item.name);
     target.replaceChildren(...items.map(item => buildShelfCard(item, withActions)));
+    shelfItems[name] = items;
+    if (name === 'NewReleases') renderZineFront();
     status.textContent = items.length ? '' : 'Nothing to show yet.';
   } catch (error) {
     status.textContent = error.message;
