@@ -1,3 +1,12 @@
+## 2026-11-03 — Android layout plumbing and Cassette Deck merged (PR #704)
+
+- **Merged (owner request):** PR [#704](https://github.com/abucalip/navi-librarian/pull/704), squash `95e7da330c64763fd5f83b7430922e1cf0481b43`, from tested head `085f876c846f149638d843a6715aefad149cf3cc`; compile, container-smoke, test-and-build and validate-container passed on that head.
+- **What:** phase P4 of `docs/BRUT_LAYOUTS_PLAN.md` (D-023). `Layout` enum and `Palette.layout`; themes `tapelime`, `tapecobalt`, `tapetangerine`; `ui/common/TapeDeck.kt` (`TapeDeckRules`, `TapeMeter`, `TapeNavBar`); `ui/player/TapeMiniPlayer.kt` and `ui/player/TapePlayer.kt`; changes in `NavIsland.kt`, `MainShell.kt`, `HomeScreen.kt`, `RecentlyAdded.kt`, `NowPlayingSheet.kt` and the Appearance tile description. Under the owner's behaviour rule (recorded in the plan, section 2) the layout adds a mini player, replaces the flip card with a player card and a playlist, adds a lyrics button, and puts Settings in the bar.
+- **Tests and builds run:** `./gradlew testDebugUnitTest` (all unit tests; new `TapeDeckTest`, updated `PaletteTest` counts), `assembleDebug`, `lintDebug` (0 errors, 41 warnings, 3 hints; not compared with main) and the signed R8 `assembleRelease`, built with JDK 17 (Gradle 8.11 cannot run on the installed JDK 27). The web `*ui_contract*` set was not affected.
+- **Device check:** the owner installed the release build over wifi adb and reviewed it on the phone (SM-G781B). Not checked: TalkBack, 200% text, the Cobalt and Tangerine palettes on every screen.
+- **Not done / not claimed:** not published or deployed; no four-cell bar; no separate ruled seek bar.
+- **Next action:** P5, the Android Sheet Stack layout, from the plan.
+
 ## 2026-11-03 — Web Crate Wall layout merged (PR #703)
 
 - **Merged (owner request):** PR [#703](https://github.com/abucalip/navi-librarian/pull/703), squash `c6dbc43bd113bd3033ad430e787d3c1da05377ce`, from tested head `3fe82b944eaf1eb2a5ac06a19e7a66ae4c22067c`; compile, container-smoke, test-and-build, validate-container and validate-release-workflow passed on that head.

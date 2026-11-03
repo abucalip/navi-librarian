@@ -1,6 +1,6 @@
 # Brut layouts plan (web and Android)
 
-Last updated: 2026-11-03 (P3 merged; behaviour rule added). Governing decision: D-023 in [DECISIONS.md](DECISIONS.md). Status tracking: the table in section 9 (update it in the PR that completes each phase). GitHub `main` is authoritative.
+Last updated: 2026-11-03 (P4 merged). Governing decision: D-023 in [DECISIONS.md](DECISIONS.md). Status tracking: the table in section 9 (update it in the PR that completes each phase). GitHub `main` is authoritative.
 
 ## 1. What this is
 
@@ -144,6 +144,8 @@ Idea: artwork leads; the wall is the home.
 ### A1 Cassette Deck (phase P4)
 Palettes Lime, Cobalt Reel, Tangerine Reel. Home: ruled recently added list, the playing row shows a 3-bar meter, the mini player has a seek strip along its bottom edge. Now Playing: the full player card (cover 68 dp with hard shadow, "Track n of m" mono label, title, 5-bar meter, ruled seek bar, square transport, queue as a playlist under the card). Nav: the existing island becomes a ruled four-cell bar. The meter reflects real playback state (playing, paused, buffering) and stops when paused or under reduced motion.
 
+**As built in P4:** the plumbing is a `Layout` enum (`Standard`, `TapeDeck`, `SheetStack`, `StickerWall`) and a `layout` field on `Palette` (default `Standard`; kept by `overArtwork`), read in Compose with `currentLayout()`; P5 and P6 reuse it. Composition rules that are pure functions live in `TapeDeckRules` (`ui/common/TapeDeck.kt`) with unit tests. Themes `Tape · Lime`, `Tape · Cobalt` (accent `#3D68F0`; fourth tone a light blue `#9DB5FF` because the mockup's navy failed the black-label contrast test) and `Tape · Tangerine`, in the day list. **Navigation:** a full-width ruled bar of three cells (Search, Home, Settings), because the app has three bar actions and the mini player opens Now Playing; Home's page buttons shrink to Discover and Library on this layout. **Mini player (added at the owner's request under the behaviour rule):** shown only on this layout while a song is queued, above the bar: cover, title and artist, 3-bar meter, play or pause, next, and a seek strip on its bottom edge. **Home:** Recently added is a ruled list of the newest 8 albums (the arrow still opens all), the playing album's row shows the meter and is announced Playing or Paused. **Now Playing:** no flip card; a player card (68 dp cover with a hard shadow, Track n of m, title, artist, 5-bar meter, seek bar, square transport) with the queue as a playlist under it and a **lyrics button** that swaps the playlist for the lyrics (same view and fetching). The meter moves only while a song plays (not paused, buffering, or with animations off). Not built: a four-cell bar and a separate ruled seek bar (see above).
+
 ### A3 Sheet Stack (phase P5)
 Palettes Violet-orange (current), Acid Night, Daylight Sheet. Home: a carousel row ("Today") over item rows with status badges for requests (Fetching, Queued, Done, always with words). Nav: a joined four-segment toggle group replaces the island. Now Playing: a bottom sheet with a grab handle, large cover with a vertical volume slider beside it, a joined transport (previous, play, next, queue), a lyrics strip that uses the existing lyrics feature (D-019) and shows "no lyrics" states as today.
 
@@ -164,7 +166,7 @@ One PR per phase except P0 and P7 (documents, direct to `main`). Each code PR: b
 | P1 | Web infrastructure (`data-layout`, `layouts.css`, catalogue fields, test scaffold) and the Tape Deck layout with Lime, Cobalt Reel, Tangerine Reel | **done 2026-11-03**: PR [#701](https://github.com/abucalip/navi-librarian/pull/701), squash `a4961c9`; owner checked it in the browser; not published |
 | P2 | Web Ledger Room with Ink Slate, Plum Archive, Paper Mono | **done 2026-11-03**: PR [#702](https://github.com/abucalip/navi-librarian/pull/702), squash `d94667d8fe645197acd9a2cb98e68836306132f3`; owner checked it in the browser; not published |
 | P3 | Web Crate Wall with Kraft, Mint Sleeve, Night Press | **done 2026-11-03**: PR [#703](https://github.com/abucalip/navi-librarian/pull/703), squash `c6dbc43bd113bd3033ad430e787d3c1da05377ce`; owner checked it in the browser; not published |
-| P4 | Android layout plumbing and Cassette Deck with Lime, Cobalt Reel, Tangerine Reel | not started |
+| P4 | Android layout plumbing and Cassette Deck with Lime, Cobalt Reel, Tangerine Reel | **done 2026-11-03**: PR [#704](https://github.com/abucalip/navi-librarian/pull/704), squash `95e7da330c64763fd5f83b7430922e1cf0481b43`; owner checked it on the phone; not published |
 | P5 | Android Sheet Stack with Violet-orange, Acid Night, Daylight Sheet | not started |
 | P6 | Android Sticker Wall with Peach-teal | not started |
 | P7 | Closeout: documents, a published release when the owner authorises it | not started |
