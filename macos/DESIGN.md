@@ -39,7 +39,7 @@ Rules: mockups are built element by element (no light re-skins); list dropped el
 
 - **Theme layer:** `DiscairTheme` owns the whole window for the current screen; `ThemeRegistry` maps `ThemeID` to a theme. Themes read `AppState` and call `DiscairActions` (play, Get, Save, Not for me, resume); they never touch the network or audio. Zine Spread is a placeholder until its slice.
 - **Window chrome:** the window stays `.titled | .resizable | .fullSizeContentView` with the system title bar and buttons hidden and the background draggable, so resize, shadow and full screen keep working; the theme draws its own traffic lights. A truly borderless window was rejected because it loses those.
-- **Cupertino Home:** built from the mockup (inset glass sidebar, glass toolbar pieces and centre display, opaque white content, Continue listening card, Missing shelf with Get / Save / Not for me, Recently added). Not yet built: library, artist.
+- **Cupertino Home:** built from the mockup (inset glass sidebar, glass toolbar pieces and centre display, opaque white content, Continue listening card, Missing shelf with Get / Save / Not for me, Recently added). Not yet built: artist.
 - **Dropped or different from the mockup:** cover art is a hue gradient placeholder; the blurred pastel window backdrop is not visible because content is opaque; glass does not render in the offscreen screenshot test (it needs a live window), so screenshots show glass areas unfilled.
 - **Screenshot tests:** render through `NSHostingView` in a borderless offscreen window (`ImageRenderer` cannot draw ScrollView or glass). PNGs are written to `DISCAIR_SCREENSHOT_DIR`; baseline comparison starts after the owner approves the look.
 
@@ -79,3 +79,7 @@ Built from `R.cupertino.now`: full-window dark backdrop, cover with shadow, titl
 ## M4 slice 4: Cupertino Queue
 
 Built from `R.cupertino.queue`: Up Next as a trailing inspector (glass, 380 pt, full height) with Up Next / History segmented control, song count and duration, Autoplay (radio) switch, queue rows with the playing row tinted, Save queue and Clear. Opened from the Up Next chip on Now Playing; the sidebar highlights Songs. Differences from the mockup: the Albums grid and the toolbar stop short of the inspector instead of running under it, so Search and the connection indicator stay visible and no text collides with the glass (HIG: toolbar items must stay reachable); History shows one sample line; drag reorder and Save queue / Clear do nothing yet (a non-gesture path for reorder, such as move up / down, comes with M5).
+
+## M4 slice 5: Cupertino Library
+
+Built from `R.cupertino.library`: bold Songs title, source segmented control (Songs, Albums, Artists, Missing), view segmented control (Table, Grid, Columns), zebra table with cover thumbnails, format badges and the selected row in the accent colour. The header buttons sort for real (Title, Artist, Year, Genre, Format, Plays; click again to reverse) and a row click selects it; both are labelled for VoiceOver. Dropped or different: the Songs / Albums / Artists / Missing and Table / Grid / Columns controls change their highlight but the other views are not built yet (Miller columns are an opt-in feature in M6); Bitrate, Last played and Added are not sortable yet; the data is the mockup's twelve sample rows.

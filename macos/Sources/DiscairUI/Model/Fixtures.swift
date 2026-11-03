@@ -25,6 +25,13 @@ public struct TrackItem: Identifiable, Equatable, Sendable {
     public let playing: Bool
 }
 
+public struct SongRow: Identifiable, Equatable, Sendable {
+    public let id: Int
+    public let album: Int
+    public let title, artist, genre, format, bitrate, lastPlayed, added: String
+    public let year, plays: Int
+}
+
 public enum Fixtures {
     public static let albums: [AlbumItem] = [
         ("Laughing Stock", "Talk Talk", 1991, "Post-rock", "FLAC 16/44", true, 28),
@@ -54,6 +61,24 @@ public enum Fixtures {
         ("Runeii", "4:49", "FLAC 16/44", true, false),
     ].enumerated().map { i, t in
         TrackItem(id: i, title: t.0, duration: t.1, format: t.2, owned: t.3, playing: t.4)
+    }
+
+    /// Library table sample, from the mockup (`lib_rows`).
+    public static let songs: [SongRow] = [
+        (2, "Roygbiv", "Boards of Canada", 1998, "Pop", "FLAC 16/44", "1.0 Mb", 41, "Today", "Oct 12"),
+        (0, "After the Flood", "Talk Talk", 1991, "Post-rock", "FLAC 16/44", "0.9 Mb", 88, "Today", "Aug 3"),
+        (3, "Glory Box", "Portishead", 1994, "Trip hop", "FLAC 16/44", "0.9 Mb", 63, "Yesterday", "Aug 3"),
+        (4, "Cloudbusting", "Kate Bush", 1985, "Art pop", "FLAC 24/96", "2.4 Mb", 57, "Oct 30", "Sep 18"),
+        (6, "So What", "Miles Davis", 1959, "Jazz", "FLAC 24/192", "4.1 Mb", 102, "Oct 28", "Jun 2"),
+        (5, "Maria También", "Khruangbin", 2018, "Soul", "MP3 320", "320 kb", 35, "Oct 27", "Jul 21"),
+        (1, "I Believe in You", "Talk Talk", 1988, "Art rock", "FLAC 16/44", "0.9 Mb", 29, "Oct 25", "Aug 3"),
+        (13, "Such a Shame", "Talk Talk", 1984, "Synth-pop", "FLAC 16/44", "0.8 Mb", 44, "Oct 22", "Aug 3"),
+        (3, "Roads", "Portishead", 1994, "Trip hop", "FLAC 16/44", "0.9 Mb", 21, "Oct 20", "Aug 3"),
+        (2, "Aquarius", "Boards of Canada", 1998, "IDM", "FLAC 16/44", "0.9 Mb", 18, "Oct 14", "Oct 12"),
+        (6, "Blue in Green", "Miles Davis", 1959, "Jazz", "FLAC 24/192", "4.0 Mb", 77, "Oct 9", "Jun 2"),
+        (5, "Evan Finds the Third Room", "Khruangbin", 2018, "Soul", "MP3 320", "320 kb", 24, "Oct 5", "Jul 21"),
+    ].enumerated().map { i, r in
+        SongRow(id: i, album: r.0, title: r.1, artist: r.2, genre: r.4, format: r.5, bitrate: r.6, lastPlayed: r.8, added: r.9, year: r.3, plays: r.7)
     }
 
     /// Up Next sample (title, album index into `albums`, time), from the mockup.

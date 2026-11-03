@@ -79,6 +79,7 @@ struct CupertinoWindow: View {
         case .home: CupertinoHome(state: state)
         case .album: CupertinoAlbum(state: state)
         case .queue: CupertinoAlbumsGrid()
+        case .library: CupertinoLibrary(state: state)
         default: Text("\(state.screen.rawValue): not built yet").foregroundStyle(CU.muted).padding(28)
         }
     }
