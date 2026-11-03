@@ -1,6 +1,6 @@
 # Brut round 3 plan (web and Android)
 
-Last updated: 2026-11-03 (P1 merged; theme-ownership and mockup-is-the-spec rules in section 2). Governing decision: D-024 in [DECISIONS.md](DECISIONS.md). Status tracking: the table in section 9 (update it in the PR that completes each phase). GitHub `main` is authoritative.
+Last updated: 2026-11-03 (P1 merged; P2 part 1, the dashboard board, merged as PR #710; theme-ownership and mockup-is-the-spec rules in section 2). Governing decision: D-024 in [DECISIONS.md](DECISIONS.md). Status tracking: the table in section 9 (update it in the PR that completes each phase). GitHub `main` is authoritative.
 
 ## 1. What this is
 
@@ -183,7 +183,7 @@ One PR per phase except P0 and the closeout (documents, direct to `main`). Each 
 |---|---|---|
 | P0 | This plan, D-024, mockups in `docs/design/brut-round3/` | **done 2026-11-03** (documentation, direct to `main`) |
 | P1 | Web Zine Spread: catalogue entry, palette, `layouts.css` block, hooks, all five web screens, tests | **done 2026-11-03**, PR [#709](https://github.com/abucalip/navi-librarian/pull/709), squash `3f546f9ec409a127ca8d5ce8f9e677ba1865479e` (see "As built, P1" below) |
-| P2 | Web Pipeline Board: board, drag with real Get and Save, keyboard path, swimlanes, stage tracker, tests | not started |
+| P2 | Web Pipeline Board: board, drag with real Get and Save, keyboard path, swimlanes, stage tracker, tests | **part 1 done 2026-11-03**, PR [#710](https://github.com/abucalip/navi-librarian/pull/710), squash `24064759`: the dashboard board, drop and Move to… paths, tests. **P2b (open):** library swimlanes, album stage tracker, artist lanes, acquisitions board; then a browser check on the local server |
 | P3a | Web Window Manager: shell, taskbar, single windows on every screen, tests | not started |
 | P3b | Web Window Manager: second album window (spike first) | not started |
 | P4 | Android Receipt Roll: `Layout.ReceiptRoll`, palette, components, nav and mini player, Home, Library, Album, Artist, Downloads, Now Playing, tests | not started |
