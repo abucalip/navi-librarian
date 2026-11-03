@@ -1,3 +1,12 @@
+## 2026-11-03 — macOS M4 slice 2: Zine Spread theme and six screens merged (PR #719)
+
+- **Merged (owner request):** PR [#719](https://github.com/abucalip/navi-librarian/pull/719), squash `7ea0bf87f59422d27488bf98cd906c4bac3f3fe2`, from tested head `cabe0b033a6da39fe1fc8737cf5baafa48df1fc8`; compile, container-smoke, swift, test-and-build and validate-container passed on that head.
+- **What:** Zine Spread built from `R.zine` in `docs/design/macos-m4/mockups.html`: masthead with the connection indicator in the dateline, section tabs, own window controls, pipeline ticker, black player strip; Home, Album, Now Playing, Queue, Library, Artist. Anton, Space Mono (from the repo's Android resources) and Source Serif 4 (from the owner's zip, statics only) are package resources with licences. The app activates itself under `swift run`, `DISCAIR_THEME` picks the starting theme, and the Theme menu has option-command-1 and 2. Differences and dropped elements are in `macos/DESIGN.md` (slice 7).
+- **Verification:** `swift test --filter ScreenshotTests` locally (14 renders, all themes and screens, pass); six Zine renders viewed by the agent (Home, Album, Artist, Now Playing seen; Queue and Library not inspected). CI passed on the PR head. Full unit suite not run by the agent (owner rule).
+- **Known limits:** not yet reviewed live by the owner; no way into the Album screen from Zine; letter margin, Radio, Save queue, Clear, EQ, Crossfade and Quality chips and the reorder handle are placeholders; covers are generated patterns; the ticker does not scroll; bold lead lines use the font's bold trait and were not checked for the real Bold face. The screenshot colour check was lowered from 12 to 8 distinct colours because Zine is mostly ink and paper.
+- **State:** merged only. Not published, not deployed.
+- **Next action:** the owner reviews Zine live, then fixes, an Album entry point, and screenshot baselines.
+
 ## 2026-11-03 — macOS M4 slice 1: theme layer and six Cupertino screens merged (PR #718)
 
 - **Merged (owner request):** PR [#718](https://github.com/abucalip/navi-librarian/pull/718), squash `626494c7fdf48c7d1ae0b8cd5a5b15de3621d129`, from tested head `4de810712986766d2296b7b3eca7a4d16145dd48`; swift (macos-26), test-and-build, compile, container-smoke and validate-container passed on that head (the `swift` job was awaited before merging).
