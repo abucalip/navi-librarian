@@ -79,6 +79,22 @@ class CrateLayoutTests(unittest.TestCase):
         self.assertIn('[data-layout="crate"] .album-modal { animation: none; }', reduced)
         self.assertNotIn("display: none", drawer.split(".album-modal-layout")[0])  # nothing in the dialog is hidden
 
+    def test_get_moves_to_the_drawer_foot_and_not_for_me_runs_the_rows_own_dismiss_control(self):
+        index = (ROOT / "app" / "templates" / "index.html").read_text(encoding="utf-8")
+        self.assertIn('<div id="albumModalFoot" class="album-modal-foot" hidden>', index)
+        self.assertIn('id="albumModalActions" class="action-group"', index)
+        placed = self.app.split("function placeAlbumModalActions() {")[1].split("\n}\n")[0]
+        self.assertIn("document.documentElement.dataset.layout === 'crate' && albumDrawerQuery.matches", placed)
+        self.assertIn("foot.prepend(group)", placed)  # the same element moves, so Get keeps its state and handlers
+        self.assertIn("art.append(group)", placed)
+        skip = self.app.split("$('albumModalSkip').addEventListener('click', () => {")[1].split("});")[0]
+        self.assertIn("querySelector('.dismiss-album')", skip)
+        self.assertIn("dismiss.click();", skip)
+        self.assertLess(skip.index("closeAlbumModal();"), skip.index("dismiss.click();"))
+        self.assertIn("skip.toggleAttribute('data-available', Boolean(card.querySelector('.dismiss-album')));", self.app)
+        self.assertIn(":root[data-layout=\"crate\"] .album-modal-skip:not([data-available]) { display: none; }", self.crate)
+        self.assertNotIn(".album-modal-foot", (STATIC / "app.css").read_text(encoding="utf-8"))
+
     def test_the_hover_card_exists_only_for_hover_capable_devices(self):
         card = self.crate.split("The hover card")[1].split("*/")[1]
         self.assertTrue(card.lstrip().startswith(':root[data-layout="crate"] .ranked-row .row-meta { display: none; }'))

@@ -396,6 +396,17 @@
   }
   :root[data-layout="crate"] .album-modal-layout { grid-template-columns: 1fr; gap: 18px; }
   :root[data-layout="crate"] .album-modal-art-column { width: min(100%, 300px); }
+  /* Get and Not for me sit at the drawer's foot (Get is moved here by static/app.js; Not for me only where the row can be dismissed). */
+  :root[data-layout="crate"] .album-modal-foot {
+    display: flex; gap: 12px; align-items: center; position: sticky; bottom: -32px; z-index: 3; margin: 24px -24px -32px; padding: 14px 24px;
+    background: var(--surface-raised); border-top: var(--crate-rule);
+  }
+  :root[data-layout="crate"] .album-modal-foot .action-group { position: static; margin: 0; }
+  :root[data-layout="crate"] .album-modal-foot .get-album { position: static; display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: auto; min-width: 96px; height: 44px; padding: 0 20px; border-radius: 0; font: 800 var(--text-sm)/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; }
+  :root[data-layout="crate"] .album-modal-foot .get-album-label { display: inline; }
+  :root[data-layout="crate"] .album-modal-skip:not([data-available]) { display: none; }
+  :root[data-layout="crate"] .album-modal-skip { min-height: 44px; padding: 0 20px; color: var(--text); background: var(--surface); border: var(--bw) solid var(--edge); border-radius: 0; font: 800 var(--text-sm)/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; }
+  :root[data-layout="crate"] .album-modal-skip:hover { background: var(--accent); color: var(--on-accent); }
   :root[data-layout="crate"] .album-modal-tracklist > li { border-bottom: 2px dashed var(--edge); }
   :root[data-layout="crate"] .album-modal-tracklist > li:last-child { border-bottom: 0; }
   :root[data-layout="crate"] .track-number, :root[data-layout="crate"] .track-duration { font-family: var(--mono); font-size: var(--text-xs); }

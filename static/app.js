@@ -1163,6 +1163,24 @@ function trapAlbumModalFocus(event) {
   }
 }
 
+// Crate Wall drawer: the Get group (the same element, so its state and handlers travel with it) sits at the drawer's foot
+// instead of over the cover. In every other theme, and below 901px, it stays on the cover.
+const albumDrawerQuery = window.matchMedia('(min-width: 901px)');
+function placeAlbumModalActions() {
+  const group = $('albumModalActions'), foot = $('albumModalFoot'), art = document.querySelector('.album-modal-art');
+  if (!group || !foot || !art) return;
+  const inFoot = document.documentElement.dataset.layout === 'crate' && albumDrawerQuery.matches;
+  if (inFoot && group.parentElement !== foot) foot.prepend(group);
+  else if (!inFoot && group.parentElement !== art) art.append(group);
+}
+albumDrawerQuery.addEventListener('change', placeAlbumModalActions);
+$('albumModalSkip').addEventListener('click', () => {
+  const dismiss = activeAlbumModal && activeAlbumModal.card.querySelector('.dismiss-album');
+  if (!dismiss) return;
+  closeAlbumModal();
+  dismiss.click();
+});
+
 function closeAlbumModal() {
   $('albumModalBackdrop').hidden = true;
   activeAlbumModal = null;
@@ -1220,6 +1238,11 @@ async function openAlbumModal(card, returnFocus = card) {
   artwork.alt = 'Album artwork for ' + album + ' by ' + artist;
   setGetButtonState(get, 'idle', artist, album);
   get.onclick = () => searchAlbum(artist, album, metadata, get);
+  placeAlbumModalActions();
+  // "Not for me" exists only where the originating row has a dismiss control of its own.
+  const skip = $('albumModalSkip');
+  skip.toggleAttribute('data-available', Boolean(card.querySelector('.dismiss-album')));
+  skip.setAttribute('aria-label', 'Not for me: ' + album);
   backdrop.hidden = false;
   $('albumModalClose').focus();
   try {
