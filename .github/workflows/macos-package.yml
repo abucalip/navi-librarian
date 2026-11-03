@@ -1,0 +1,49 @@
+name: macOS package
+
+# Runs only when the macOS client changes (contract docs/MACOS_CLIENT_CONTRACT.md, phase M1).
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "macos/**"
+      - "android/contract-fixtures/**"
+      - ".github/workflows/macos-package.yml"
+  push:
+    branches: [main]
+    paths:
+      - "macos/**"
+      - "android/contract-fixtures/**"
+      - ".github/workflows/macos-package.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  swift:
+    runs-on: macos-26
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: macos
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Select Xcode 26
+        run: |
+          set -euo pipefail
+          XCODE="$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -n 1)"
+          test -n "$XCODE" || { echo "No Xcode 26 on this runner"; ls /Applications | grep -i xcode || true; exit 1; }
+          sudo xcode-select -s "$XCODE/Contents/Developer"
+          xcodebuild -version
+          swift --version
+
+      - name: Build
+        run: swift build
+
+      - name: Test
+        run: swift test
+
+      - name: Test through xcodebuild
+        run: xcodebuild -scheme Discair-Package -destination 'platform=macOS' test
