@@ -20,6 +20,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.graphics.drawOutline
+import androidx.compose.ui.graphics.drawscope.translate
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Search
@@ -70,9 +73,14 @@ fun NavIsland(
     Box(modifier.fillMaxWidth().navigationBarsPadding().padding(bottom = 12.dp), contentAlignment = Alignment.BottomCenter) {
         val card = RoundedCornerShape(50.dp)
         val fill by animateColorAsState(tint ?: Ink.Raised, animationSpec = tween(500), label = "islandTint")
+        // Neobrut: the outline and hard shadow of the theme the owner chose (the island itself may sit on the dark artwork palette).
+        val chosen = app.discair.ui.theme.LocalThemePalette.current ?: app.discair.ui.theme.LocalPalette.current
+        val frame = if (chosen.brutal) {
+            val outline = (chosen.shape?.outline ?: 2).dp
+            Modifier.brutalShadowOf(card, chosen).background(fill, card).border(outline, chosen.edgeStrong, card)
+        } else Modifier.shadow(10.dp, card).background(fill, card).border(1.dp, Color.White.copy(alpha = 0.12f), card)
         Row(
-            Modifier.shadow(10.dp, card).background(fill, card).border(1.dp, Color.White.copy(alpha = 0.12f), card)
-                .padding(horizontal = 14.dp, vertical = 6.dp),
+            frame.padding(horizontal = 14.dp, vertical = 6.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(14.dp),
         ) {
@@ -121,5 +129,15 @@ private fun PlayBars(playing: Boolean, color: Color) {
                 color, topLeft = Offset(i * (bar + gap), size.height - h), size = Size(bar, h), cornerRadius = CornerRadius(bar / 2),
             )
         }
+    }
+}
+
+/** A hard shadow in a given palette's shadow colour (the island needs the chosen theme's, not the over-artwork copy's edge). */
+private fun Modifier.brutalShadowOf(shape: androidx.compose.ui.graphics.Shape, p: app.discair.ui.theme.Palette): Modifier {
+    val s = p.shape ?: return this
+    if (s.shadow == 0) return this
+    return drawBehind {
+        val outline = shape.createOutline(size, layoutDirection, this)
+        translate(s.shadow.dp.toPx(), s.shadow.dp.toPx()) { drawOutline(outline, p.shadowColor) }
     }
 }

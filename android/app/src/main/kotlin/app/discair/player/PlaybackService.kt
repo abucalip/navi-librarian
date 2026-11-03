@@ -6,6 +6,7 @@ import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
 import android.util.Log
+import androidx.compose.ui.graphics.toArgb
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
@@ -20,6 +21,8 @@ import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.audio.AudioSink
 import androidx.media3.exoplayer.audio.DefaultAudioSink
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
+import androidx.media3.session.DefaultMediaNotificationProvider
+import androidx.media3.session.MediaNotification
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
 import app.discair.DiscairApplication
@@ -143,6 +146,8 @@ class PlaybackService : MediaSessionService() {
                     Futures.immediateFuture(resolver.resolve(mediaItems).toMutableList())
             })
             .build()
+        // The notification is drawn by the system, so the theme reaches it only as its accent colour: a Neobrut theme tints it.
+        setMediaNotificationProvider(ThemedNotificationProvider(DefaultMediaNotificationProvider(this)) { notificationAccent(container) })
         // Crossfade (ANDROID_CROSSFADE_CONTRACT.md): off by default, so the engine does nothing and no second player exists.
         val scheduler = object : Scheduler {
             override fun nowMs() = SystemClock.elapsedRealtime()
@@ -199,5 +204,30 @@ class PlaybackService : MediaSessionService() {
         fun stop(context: Context) {
             context.applicationContext.stopService(Intent(context.applicationContext, PlaybackService::class.java))
         }
+    }
+}
+
+/** The accent of the Neobrut theme in use (the day or the night one, as the phone is set), or null for a Classic theme. */
+private fun PlaybackService.notificationAccent(container: app.discair.AppContainer): Int? {
+    val dark = (resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK) == android.content.res.Configuration.UI_MODE_NIGHT_YES
+    val palette = container.appearance.palette(dark)
+    return if (palette.brutal) palette.accent.toArgb() else null
+}
+
+/** Media3's stock notification, with the notification colour set to a Neobrut theme's accent. A Classic theme is left as it was. */
+@UnstableApi
+private class ThemedNotificationProvider(
+    private val base: MediaNotification.Provider,
+    private val accent: () -> Int?,
+) : MediaNotification.Provider by base {
+    override fun createNotification(
+        mediaSession: MediaSession,
+        mediaButtonPreferences: com.google.common.collect.ImmutableList<androidx.media3.session.CommandButton>,
+        actionFactory: MediaNotification.ActionFactory,
+        onNotificationChangedCallback: MediaNotification.Provider.Callback,
+    ): MediaNotification {
+        val made = base.createNotification(mediaSession, mediaButtonPreferences, actionFactory, onNotificationChangedCallback)
+        accent()?.let { made.notification.color = it }
+        return made
     }
 }

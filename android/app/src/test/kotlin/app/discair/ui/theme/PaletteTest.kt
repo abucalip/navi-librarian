@@ -87,10 +87,27 @@ class PaletteTest {
         check(over, "accent over artwork", over.accent, over.surface, 3.0, "dark surface")
     }
 
-    @Test fun fivePairsWithUniqueIdsAndDiscairFirst() {
-        assertEquals(5, FontPairs.All.size)
+    @Test fun elevenPairsWithUniqueIdsAndDiscairFirst() {
+        assertEquals(11, FontPairs.All.size)
         assertEquals(FontPairs.All.size, FontPairs.All.map { it.id }.toSet().size)
+        assertEquals(FontPairs.All.size, FontPairs.All.map { it.label }.toSet().size)
         assertEquals("discair", FontPairs.All.first().id)
+    }
+
+    @Test fun sixBrutPairsAreNamedBrutAndAreIndependentOfTheTheme() {
+        val brut = FontPairs.All.filter { it.id.startsWith("brut_") }
+        assertEquals(listOf("Baseline", "Technical", "Editorial", "Modern", "Poster shout", "Swiss brut").map { "Brut · $it" }, brut.map { it.label })
+        // Each pair is chosen by its id alone: the saved font id never depends on the colour theme.
+        for (p in brut) assertEquals(p.id, AppearanceRules.sanitizeFont(p.id))
+        // The older pairs keep JetBrains Mono for numbers; the Brut pairs that name another mono bring it.
+        assertEquals(setOf("JetBrains Mono"), FontPairs.All.filter { !it.id.startsWith("brut_") }.map { it.monoName }.toSet())
+        assertEquals(setOf("JetBrains Mono", "IBM Plex Mono", "DM Mono", "Space Mono", "Roboto Mono"), brut.map { it.monoName }.toSet())
+        assertTrue(brut.all { it.titleScale in 0.5f..1.5f })
+        // Technical's body is proportional (IBM Plex Sans); only its numbers are monospaced.
+        val technical = brut.first { it.id == "brut_technical" }
+        assertEquals("IBM Plex Sans", technical.bodyName)
+        assertEquals("IBM Plex Mono", technical.monoName)
+        assertEquals(0.8f, technical.titleScale)
     }
 
     @Test fun pastelTintsKeepMutedTextReadableOnEveryHue() {

@@ -15,7 +15,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Slider
+import app.discair.ui.common.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -141,7 +141,8 @@ fun CrossfadeLink(onOpen: () -> Unit) {
     val (xf, _) = rememberCrossfade(settings)
     // Always shown so the page stays reachable; white when on, dim when off, and the state is spoken too.
     val label = CrossfadeText.nowPlayingLink(xf) ?: "Crossfade: off"
-    IconButton(onClick = onOpen, Modifier.size(Target)) {
-        Icon(PlayerIcons.Swap, contentDescription = label, tint = if (xf.enabled) Color.White else Color.White.copy(alpha = 0.4f), modifier = Modifier.size(24.dp))
+    val brut = app.discair.ui.theme.LocalPalette.current.brutal
+    app.discair.ui.common.PlayerIconButton(onClick = onOpen, Modifier.size(if (brut) 48.dp else Target), selected = xf.enabled) {
+        Icon(PlayerIcons.Swap, contentDescription = label, tint = if (brut) androidx.compose.material3.LocalContentColor.current else if (xf.enabled) Color.White else Color.White.copy(alpha = 0.4f), modifier = Modifier.size(24.dp))
     }
 }

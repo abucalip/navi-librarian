@@ -37,14 +37,16 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
+import app.discair.ui.common.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilledIconButton
+import app.discair.ui.common.FilledIconButton
 import androidx.compose.material3.Icon
+import app.discair.ui.theme.brutalShadow
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
+import app.discair.ui.common.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -65,6 +67,8 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -83,7 +87,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import app.discair.player.QueueItem
 import app.discair.ui.common.Target
 import app.discair.ui.theme.Ink
-import app.discair.ui.theme.Mono
 
 fun formatTime(ms: Long): String {
     val total = (ms.coerceAtLeast(0) / 1000).toInt()
@@ -110,6 +113,19 @@ private val ViewTabs = listOf(
 /** Three icons; the active one is larger and white, the others smaller and dim. Selection is also announced, not colour alone. */
 @Composable
 private fun ViewIcons(selected: Int, onSelect: (Int) -> Unit) {
+    if (app.discair.ui.theme.LocalPalette.current.brutal) {
+        // Neobrut: three square icon buttons; the open view is filled with the accent and announced as selected.
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            ViewTabs.forEach { tab ->
+                val active = tab.view == selected
+                app.discair.ui.common.BrutalIconButton(
+                    onClick = { onSelect(tab.view) }, selected = active,
+                    modifier = Modifier.size(44.dp).semantics { this.selected = active; role = Role.Tab; contentDescription = tab.label },
+                ) { Icon(tab.icon, contentDescription = null, modifier = Modifier.size(22.dp)) }
+            }
+        }
+        return
+    }
     Row(verticalAlignment = Alignment.CenterVertically) {
         ViewTabs.forEach { tab ->
             val active = tab.view == selected
@@ -171,7 +187,8 @@ fun NowPlayingSheet(state: PlayerUiState, controller: PlayerController, lyrics: 
         if (item == null) { onDismiss(); return@ModalBottomSheet }
         // The artwork's colour washes down from the top, as on the album and artist pages.
         val ground = Ink.Ink
-        val wash by animateColorAsState(tint ?: ground, animationSpec = tween(500), label = "artworkTint")
+        val brutal = app.discair.ui.theme.LocalPalette.current.brutal
+        val wash by animateColorAsState(if (brutal) ground else tint ?: ground, animationSpec = tween(500), label = "artworkTint")
         LaunchedEffect(item.coverUrl) { if (item.coverUrl.isBlank()) tint = null }
         Column(
             Modifier.fillMaxWidth().drawBehind {
@@ -181,7 +198,7 @@ fun NowPlayingSheet(state: PlayerUiState, controller: PlayerController, lyrics: 
             }.padding(horizontal = 16.dp),
         ) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = onDismiss, Modifier.size(Target)) { Icon(PlayerIcons.Down, contentDescription = "Close now playing") }
+                app.discair.ui.common.PlayerIconButton(onClick = onDismiss, Modifier.size(Target)) { Icon(PlayerIcons.Down, contentDescription = "Close now playing") }
                 Spacer(Modifier.weight(1f))
                 // Three labelled views; the selected one is announced as selected and drawn raised (not colour alone).
                 ViewIcons(view) { view = it; lastView = it }
@@ -271,8 +288,10 @@ private fun FlipCard(
                 rotationY = if (showFront) angle else if (p > 0f) angle + 180f else angle - 180f
                 cameraDistance = 14f * density
             }
-            .clip(RoundedCornerShape(12.dp))
-            .background(MaterialTheme.colorScheme.surfaceVariant),
+            .then(if (app.discair.ui.theme.LocalPalette.current.brutal) Modifier.brutalShadow(app.discair.ui.theme.themeShape(12.dp)) else Modifier)
+            .clip(app.discair.ui.theme.themeShape(12.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant)
+            .then(if (app.discair.ui.theme.LocalPalette.current.brutal) Modifier.border(app.discair.ui.theme.brutalOutline(), app.discair.ui.theme.themeShape(12.dp)) else Modifier),
     ) {
         when {
             showFront -> front()
@@ -332,7 +351,7 @@ private fun Player(state: PlayerUiState, controller: PlayerController, onSignIn:
         if (state.waitingForNetwork) TextButton(onClick = controller::retryNow, Modifier.heightIn(min = Target)) { Text("Retry now") }
 
         val shown = if (dragging != null) (fraction * duration).toLong() else state.positionMs
-        val timeStyle = MaterialTheme.typography.labelSmall.copy(fontFamily = Mono)
+        val timeStyle = MaterialTheme.typography.labelSmall.copy(fontFamily = app.discair.ui.theme.LocalFontPair.current.mono)
         val quality = qualityLabel(item)
         Box(Modifier.fillMaxWidth().padding(top = 8.dp)) {
             if (quality != null) {
@@ -360,28 +379,31 @@ private fun Player(state: PlayerUiState, controller: PlayerController, onSignIn:
 
         Row(Modifier.fillMaxWidth().padding(vertical = 8.dp), horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically) {
             val shuffle = state.queue.shuffle
-            IconButton(
-                onClick = { controller.setShuffle(!shuffle) },
-                Modifier.size(Target).semantics { stateDescription = if (shuffle) "On" else "Off" },
+            val brut = app.discair.ui.theme.LocalPalette.current.brutal
+            val buttonSize = if (brut) 48.dp else Target
+            app.discair.ui.common.PlayerIconButton(
+                onClick = { controller.setShuffle(!shuffle) }, Modifier.size(buttonSize).semantics { stateDescription = if (shuffle) "On" else "Off" },
+                selected = shuffle,
             ) {
-                Icon(PlayerIcons.Shuffle, contentDescription = "Shuffle", tint = if (shuffle) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
+                Icon(PlayerIcons.Shuffle, contentDescription = "Shuffle", tint = if (brut) LocalContentColor.current else if (shuffle) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            IconButton(onClick = controller::previous, Modifier.size(Target)) { Icon(PlayerIcons.Previous, contentDescription = "Previous song") }
+            app.discair.ui.common.PlayerIconButton(onClick = controller::previous, Modifier.size(buttonSize)) { Icon(PlayerIcons.Previous, contentDescription = "Previous song") }
             FilledIconButton(
                 onClick = controller::playPause, Modifier.size(64.dp),
                 colors = IconButtonDefaults.filledIconButtonColors(containerColor = MaterialTheme.colorScheme.primary, contentColor = MaterialTheme.colorScheme.onPrimary),
             ) {
                 Icon(if (state.isPlaying) PlayerIcons.Pause else PlayerIcons.Play, contentDescription = if (state.isPlaying) "Pause" else "Play", modifier = Modifier.size(32.dp))
             }
-            IconButton(onClick = controller::next, Modifier.size(Target), enabled = state.queue.items.size > 1) { Icon(PlayerIcons.Next, contentDescription = "Next song") }
+            app.discair.ui.common.PlayerIconButton(onClick = controller::next, Modifier.size(buttonSize), enabled = state.queue.items.size > 1) { Icon(PlayerIcons.Next, contentDescription = "Next song") }
             val repeat = state.queue.repeat
-            IconButton(
+            app.discair.ui.common.PlayerIconButton(
                 onClick = controller::cycleRepeat,
-                Modifier.size(Target).semantics { stateDescription = when (repeat) { RepeatMode.Off -> "Off"; RepeatMode.All -> "Repeat all"; RepeatMode.One -> "Repeat one" } },
+                Modifier.size(buttonSize).semantics { stateDescription = when (repeat) { RepeatMode.Off -> "Off"; RepeatMode.All -> "Repeat all"; RepeatMode.One -> "Repeat one" } },
+                selected = repeat != RepeatMode.Off,
             ) {
                 Icon(
                     if (repeat == RepeatMode.One) PlayerIcons.RepeatOne else PlayerIcons.Repeat, contentDescription = "Repeat",
-                    tint = if (repeat == RepeatMode.Off) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.primary,
+                    tint = if (brut) LocalContentColor.current else if (repeat == RepeatMode.Off) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.primary,
                 )
             }
         }

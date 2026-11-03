@@ -64,7 +64,7 @@ class AlbumModalStyleTests(unittest.TestCase):
     def test_year_uses_the_accent_like_every_other_year(self):
         # The owner asked for yellow years everywhere except the New releases date column.
         year = re.search(r"\.album-modal-year \{[^}]*\}", self.block).group(0)
-        self.assertIn("var(--accent)", year)
+        self.assertIn("var(--accent-text)", year)
 
     def test_motion_is_opacity_and_an_eight_pixel_translate_only(self):
         self.assertIn("@keyframes album-modal-rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }", self.block)
@@ -89,7 +89,7 @@ class AlbumModalStyleTests(unittest.TestCase):
         self.assertIn("text-wrap: balance;", self.block)
 
     def test_modal_title_stays_at_the_page_head_maximum(self):
-        self.assertIn("font: 400 var(--text-2xl)/var(--title-leading) var(--title);", self.block)
+        self.assertIn("font: var(--name-weight) calc(var(--text-2xl) * var(--name-scale))/var(--title-leading) var(--name-face);", self.block)
 
 
 class AlbumModalBehaviourGuardTests(unittest.TestCase):

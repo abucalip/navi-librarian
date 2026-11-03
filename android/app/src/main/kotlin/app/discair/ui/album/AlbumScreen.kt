@@ -21,7 +21,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
+import app.discair.ui.common.OutlinedButton
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
@@ -73,7 +73,6 @@ import app.discair.ui.common.plural
 import app.discair.ui.common.rememberLoad
 import app.discair.ui.common.rememberStreamLoad
 import app.discair.ui.theme.Ink
-import app.discair.ui.theme.Mono
 import java.net.URLEncoder
 
 private const val SIMILAR_ALBUMS_SHOWN = 6
@@ -185,7 +184,7 @@ private fun AlbumContent(route: AlbumRoute, page: AlbumPage, open: Opener, list:
                             if (isCurrent) app.discair.ui.player.NowPlayingIndicator(playingNow!!.isPlaying, Modifier.padding(start = 8.dp))
                         }
                         t.durationSeconds?.let {
-                            Text("%d:%02d".format(it / 60, it % 60), style = MaterialTheme.typography.labelMedium.copy(fontFamily = Mono), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text("%d:%02d".format(it / 60, it % 60), style = MaterialTheme.typography.labelMedium.copy(fontFamily = app.discair.ui.theme.LocalFontPair.current.mono), color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                         // Only a song the library lacks has a Get slot; an owned row puts the length right beside its menu.
                         if (!t.owned) Box(Modifier.size(Target), contentAlignment = Alignment.Center) {
@@ -260,7 +259,7 @@ private fun AlbumContent(route: AlbumRoute, page: AlbumPage, open: Opener, list:
 @Composable
 private fun DiscHeading(disc: Int) {
     Text(
-        "Disc $disc".uppercase(), style = MaterialTheme.typography.labelMedium.copy(fontFamily = Mono, letterSpacing = 1.sp),
+        "Disc $disc".uppercase(), style = MaterialTheme.typography.labelMedium.copy(fontFamily = app.discair.ui.theme.LocalFontPair.current.mono, letterSpacing = 1.sp),
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 8.dp)
             .semantics { heading() },
@@ -273,10 +272,16 @@ private fun DiscHeading(disc: Int) {
  */
 @Composable
 private fun QualityTag(text: String, modifier: Modifier = Modifier) {
+    if (app.discair.ui.theme.LocalPalette.current.brutal) {
+        app.discair.ui.common.BrutalTag(modifier.semantics { contentDescription = "File quality $text" }, primary = false) {
+            Text(text, maxLines = 1, softWrap = false, style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold))
+        }
+        return
+    }
     val shape = RoundedCornerShape(topStart = 8.dp, topEnd = 0.dp, bottomStart = 0.dp, bottomEnd = 4.dp)
     Text(
         text, maxLines = 1, softWrap = false,
-        style = MaterialTheme.typography.labelSmall.copy(fontFamily = Mono, fontSize = 12.sp, fontWeight = FontWeight.SemiBold),
+        style = MaterialTheme.typography.labelSmall.copy(fontFamily = app.discair.ui.theme.LocalFontPair.current.mono, fontSize = 12.sp, fontWeight = FontWeight.SemiBold),
         color = Color.White,
         modifier = modifier
             .clip(shape)

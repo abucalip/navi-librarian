@@ -3586,7 +3586,8 @@ $('testDiscogs').addEventListener('click', () => testServiceConnection('/api/set
 const settingsTabs = [...document.querySelectorAll('[data-settings-tab]')];
 const settingsPanels = {
   navidrome: 'settingsNavidrome', slskd: 'settingsSlskd',
-  lastfm: 'settingsLastfm', listenbrainz: 'settingsListenbrainz', discogs: 'settingsDiscogs'
+  lastfm: 'settingsLastfm', listenbrainz: 'settingsListenbrainz', discogs: 'settingsDiscogs',
+  appearance: 'settingsAppearance'
 };
 
 function selectSettingsTab(button, moveFocus = true) {
@@ -3628,6 +3629,31 @@ settingsTabs.forEach(button => {
   // Set the initial roving state without moving focus on page load.
   button.setAttribute('tabindex', button.classList.contains('active') ? '0' : '-1');
 });
+
+// Settings > Appearance: two rows of pills, FONT then THEME (static/appearance.js holds the catalogue and the storage).
+function initAppearanceSettings() {
+  const A = window.DiscairAppearance;
+  if (!A || !$('appearanceTheme')) return;
+  const rows = {
+    appearanceFont: { kind: 'font', items: A.FONTS.map(f => ({ value: f.id, label: f.label })) },
+    appearanceTheme: { kind: 'theme', items: A.THEMES.map(t => ({ value: t.id, label: t.label })) }
+  };
+  const sync = () => {
+    for (const [id, row] of Object.entries(rows)) {
+      const value = A.get(row.kind);
+      $(id).querySelectorAll('input').forEach(input => { input.checked = input.value === value; });
+    }
+  };
+  for (const [id, row] of Object.entries(rows)) {
+    // Built once, so keyboard focus stays on the pill while the arrow keys move the choice.
+    $(id).innerHTML = row.items.map(item =>
+      `<div class="appearance-pill"><input type="radio" name="${id}" value="${item.value}" aria-label="${item.label}"><span aria-hidden="true">${item.label}</span></div>`
+    ).join('');
+    $(id).querySelectorAll('input').forEach(input => input.addEventListener('change', () => { A.set(row.kind, input.value); sync(); }));
+  }
+  sync();
+}
+initAppearanceSettings();
 
 async function loadSlskdSettings() {
   try {

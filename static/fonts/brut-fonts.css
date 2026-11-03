@@ -1,0 +1,99 @@
+/* Self-hosted Latin subsets for the Brut font pairs (SIL Open Font License 1.1; see LICENSE-*.txt in this folder).
+   Loaded on every page, but a browser fetches a face only when the chosen pair uses it, so a default
+   install downloads none of these. Static instances cut from the Google Fonts sources, subset to Latin. */
+@font-face {
+  font-family: "Anton"; font-style: normal; font-weight: 400; font-display: swap;
+  src: url("anton-400.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Barlow"; font-style: normal; font-weight: 400; font-display: swap;
+  src: url("barlow-400.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Barlow"; font-style: normal; font-weight: 600; font-display: swap;
+  src: url("barlow-600.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Bebas Neue"; font-style: normal; font-weight: 400; font-display: swap;
+  src: url("bebas-neue-400.woff2") format("woff2");
+}
+@font-face {
+  font-family: "DM Mono"; font-style: normal; font-weight: 400; font-display: swap;
+  src: url("dm-mono-400.woff2") format("woff2");
+}
+@font-face {
+  font-family: "DM Mono"; font-style: normal; font-weight: 500; font-display: swap;
+  src: url("dm-mono-500.woff2") format("woff2");
+}
+@font-face {
+  font-family: "IBM Plex Mono"; font-style: normal; font-weight: 400; font-display: swap;
+  src: url("ibm-plex-mono-400.woff2") format("woff2");
+}
+@font-face {
+  font-family: "IBM Plex Mono"; font-style: normal; font-weight: 500; font-display: swap;
+  src: url("ibm-plex-mono-500.woff2") format("woff2");
+}
+@font-face {
+  font-family: "IBM Plex Mono"; font-style: normal; font-weight: 600; font-display: swap;
+  src: url("ibm-plex-mono-600.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Inter"; font-style: normal; font-weight: 400; font-display: swap;
+  src: url("inter-400.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Inter"; font-style: normal; font-weight: 600; font-display: swap;
+  src: url("inter-600.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Inter Tight"; font-style: normal; font-weight: 800; font-display: swap;
+  src: url("inter-tight-800.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Outfit"; font-style: normal; font-weight: 400; font-display: swap;
+  src: url("outfit-400.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Outfit"; font-style: normal; font-weight: 600; font-display: swap;
+  src: url("outfit-600.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Public Sans"; font-style: normal; font-weight: 400; font-display: swap;
+  src: url("public-sans-400.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Public Sans"; font-style: normal; font-weight: 600; font-display: swap;
+  src: url("public-sans-600.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Roboto Mono"; font-style: normal; font-weight: 400; font-display: swap;
+  src: url("roboto-mono-400.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Roboto Mono"; font-style: normal; font-weight: 500; font-display: swap;
+  src: url("roboto-mono-500.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Rubik Mono One"; font-style: normal; font-weight: 400; font-display: swap;
+  src: url("rubik-mono-one-400.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Space Grotesk"; font-style: normal; font-weight: 700; font-display: swap;
+  src: url("space-grotesk-700.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Space Mono"; font-style: normal; font-weight: 400; font-display: swap;
+  src: url("space-mono-400.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Space Mono"; font-style: normal; font-weight: 700; font-display: swap;
+  src: url("space-mono-700.woff2") format("woff2");
+}
+@font-face {
+  font-family: "IBM Plex Sans"; font-style: normal; font-weight: 400; font-display: swap;
+  src: url("ibm-plex-sans-400.woff2") format("woff2");
+}
+@font-face {
+  font-family: "IBM Plex Sans"; font-style: normal; font-weight: 600; font-display: swap;
+  src: url("ibm-plex-sans-600.woff2") format("woff2");
+}

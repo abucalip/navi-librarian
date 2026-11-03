@@ -8,7 +8,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.OutlinedIconButton
+import app.discair.ui.common.OutlinedIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material.icons.filled.Search
@@ -32,12 +32,12 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.grid.items as gridItems
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.DropdownMenu
+import app.discair.ui.common.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.FilterChip
+import app.discair.ui.common.FilterChip
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
+import app.discair.ui.common.OutlinedButton
+import app.discair.ui.common.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -116,7 +116,7 @@ fun LibraryScreen(open: Opener) {
                     description = if (grid) "Showing icons. Switch to a list." else "Showing a list. Switch to icons.",
                 ) { GroupIcon(if (grid) app.discair.ui.player.PlayerIcons.List else app.discair.ui.player.PlayerIcons.Grid) }
             }
-            if (grid) androidx.compose.material3.Slider(
+            if (grid) app.discair.ui.common.Slider(
                 value = cell, onValueChange = { cell = it }, valueRange = 80f..200f,
                 modifier = Modifier.weight(1f).semantics {
                     contentDescription = "Icon size"

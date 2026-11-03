@@ -40,12 +40,12 @@ fun themeBorder(classic: BorderStroke): BorderStroke {
 
 /** The hard offset shadow of a Brutal theme, drawn behind the component; nothing on a Classic theme. */
 @Composable
-fun Modifier.brutalShadow(shape: Shape): Modifier {
+fun Modifier.brutalShadow(shape: Shape, scale: Float = 1f): Modifier {
     val p = LocalPalette.current
     val s = p.shape ?: return this
     if (s.shadow == 0) return this
     val color = p.shadowColor
-    val offset = s.shadow.dp
+    val offset = (s.shadow * scale).dp
     return drawBehind {
         val outline = shape.createOutline(size, layoutDirection, this)
         translate(offset.toPx(), offset.toPx()) { drawOutline(outline, color) }
@@ -57,4 +57,11 @@ fun shapesFor(p: Palette): Shapes {
     val r = p.shape?.radius ?: return Shapes()
     val s = RoundedCornerShape(r.dp)
     return Shapes(extraSmall = s, small = s, medium = s, large = s, extraLarge = s)
+}
+
+/** The outline of a Brutal theme's components: its outline width in the strong edge colour. */
+@Composable @ReadOnlyComposable
+fun brutalOutline(): BorderStroke {
+    val p = LocalPalette.current
+    return BorderStroke((p.shape?.outline ?: 1).dp, p.edgeStrong)
 }

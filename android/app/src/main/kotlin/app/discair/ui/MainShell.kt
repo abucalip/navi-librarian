@@ -28,6 +28,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
@@ -76,7 +77,7 @@ import app.discair.ui.downloads.DownloadsScreen
 import app.discair.data.AcquisitionHub
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Badge
-import androidx.compose.material3.SnackbarHost
+import app.discair.ui.common.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -198,7 +199,7 @@ fun MainShell(state: UiState, model: AppViewModel, container: AppContainer) {
         // Inside the provider: the sheet's cover needs the image loader, which only exists here.
         if (nowPlayingOpen && playerState.visible) {
             // The sheet is drawn over an artwork tint, which is dark whatever the theme: it keeps light text.
-            app.discair.ui.theme.OnArtwork {
+            app.discair.ui.theme.OnArtwork(keepBrutal = true) {
                 NowPlayingSheet(
                     playerState, player, container.lyrics, onDismiss = { nowPlayingOpen = false }, onSignIn = { nowPlayingOpen = false; model.sessionExpired() },
                     onOpenArtist = { song -> nowPlayingOpen = false; open.artist(song.artist, null, null, null) },
@@ -314,14 +315,19 @@ private fun AppHeader(active: Int, onDownloads: () -> Unit) {
             Modifier.fillMaxWidth().statusBarsPadding().heightIn(min = 56.dp).padding(start = 16.dp, end = 16.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Icon(
-                painterResource(if (app.discair.ui.theme.LocalPalette.current.light) R.drawable.ic_wordmark_light else R.drawable.ic_wordmark), contentDescription = "Discair", tint = Color.Unspecified,
-                modifier = Modifier.height(30.dp).semantics { heading() },
-            )
+            app.discair.ui.common.Wordmark(30.dp)
             Spacer(Modifier.weight(1f))
             val frame = RoundedCornerShape(6.dp)
             val label = if (active == 0) "Downloads" else "Downloads, $active active"
-            Box(
+            if (app.discair.ui.theme.LocalPalette.current.brutal) {
+                // Neobrut: a square icon button with an outline and a hard shadow; the active count is a badge on it.
+                app.discair.ui.common.BrutalIconButton(onClick = onDownloads, modifier = Modifier.size(48.dp, 40.dp).semantics { contentDescription = label }) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(app.discair.ui.player.PlayerIcons.Cloud, contentDescription = null, modifier = Modifier.size(22.dp))
+                        if (active > 0) Badge(Modifier.align(Alignment.TopEnd).offset(x = 10.dp, y = (-8).dp)) { Text("$active") }
+                    }
+                }
+            } else Box(
                 Modifier.size(48.dp, 38.dp).clip(frame).background(app.discair.ui.theme.Ink.Surface)
                     .border(1.dp, app.discair.ui.theme.Ink.EdgeStrong, frame)
                     .clickable(role = Role.Button, onClick = onDownloads)
@@ -363,7 +369,7 @@ private fun OfflineBanner(staleSince: Long?) {
 @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
 private fun SearchSheet(text: String, onText: (String) -> Unit, open: Opener, onDismiss: () -> Unit) {
-    androidx.compose.material3.ModalBottomSheet(
+    app.discair.ui.common.ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = androidx.compose.material3.rememberModalBottomSheetState(skipPartiallyExpanded = true),
         containerColor = app.discair.ui.theme.Ink.Ink,

@@ -12,14 +12,14 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.DropdownMenu
+import app.discair.ui.common.AlertDialog
+import app.discair.ui.common.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Slider
+import app.discair.ui.common.OutlinedButton
+import app.discair.ui.common.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -211,7 +211,8 @@ fun EqualizerLink(onOpen: () -> Unit) {
     }
     // The state stays in words for TalkBack; sighted users read it from the icon's brightness.
     val on = !summary.endsWith(": off")
-    IconButton(onClick = onOpen, Modifier.size(Target)) {
-        Icon(PlayerIcons.Wave, contentDescription = summary, tint = if (on) Color.White else Color.White.copy(alpha = 0.4f), modifier = Modifier.size(24.dp))
+    val brut = app.discair.ui.theme.LocalPalette.current.brutal
+    app.discair.ui.common.PlayerIconButton(onClick = onOpen, Modifier.size(if (brut) 48.dp else Target), selected = on) {
+        Icon(PlayerIcons.Wave, contentDescription = summary, tint = if (brut) androidx.compose.material3.LocalContentColor.current else if (on) Color.White else Color.White.copy(alpha = 0.4f), modifier = Modifier.size(24.dp))
     }
 }

@@ -10,7 +10,7 @@
   --text: #f4efe6; --text-muted: #b4ac9f; --text-subtle: #9c958a;
   /* One working accent (do this / selected / focus) and one signature accent (chart red). Red is never
      the sole carrier of an error: error and caution always add a glyph and a text label (DESIGN_SYSTEM.md 4.3). */
-  --accent: #f5d33f; --accent-hover: #f8e08a; --accent-dim: #554b26; --on-accent: #141211;
+  --accent: #f5d33f; --accent-text: var(--accent); --accent-hover: #f8e08a; --accent-dim: #554b26; --on-accent: #141211;
   --chart-red: #ff5a3c; --chart-red-text: #ff7b62;
   --ok: #86d39b; --caution: #f0a640;
   /* Single-purpose tokens kept from PR #194 after audit: only --shadow-menu. The rest were merged (see
@@ -35,16 +35,27 @@
   /* Page and section titles use Peace Sans, matching the Discair wordmark: -85 tracking, 1.05 line height. */
   --title: "Peace Sans", "Arial Black", sans-serif;
   --title-tracking: -.085em; --title-leading: 1.05;
+  /* Theme and font hooks (static/themes.css). The defaults below are today's look: a Brut font pair or a Neobrut
+     theme changes them, nothing else does. --title-scale shrinks wide display faces; --display-weight is the
+     weight of rank numerals (600 for Big Shoulders). --bw is the outline width of boxes; --brut-sh is the hard
+     shadow offset (0 = none) and --brut-lift the hover nudge of a Neobrut control. */
+  --title-weight: 400; --title-case: none; --title-scale: 1; --display-weight: 600;
+  --bw: 1px; --brut-sh: 0px; --brut-shadow-color: transparent; --brut-lift: 0px;
+  /* --focus is the keyboard focus ring (the accent, unless a theme's accent is too pale to see). The --name-* tokens are
+     for album, artist and song names: they follow the title face by default, and a font pair that sets titles in capitals
+     or in a caps-only face points them at the body face instead, so a name is never re-cased (DESIGN: names stay as they are). */
+  --focus: var(--accent);
+  --name-face: var(--title); --name-weight: var(--title-weight); --name-tracking: var(--title-tracking); --name-scale: var(--title-scale);
 }
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
 body { margin: 0; background: var(--ink); color: var(--text); font: var(--text-base)/1.55 var(--body); -webkit-font-smoothing: antialiased; }
 button, input, select, textarea { font: inherit; }
-button, select, input { color: var(--text); background: var(--surface); border: 1px solid var(--edge-strong); border-radius: 4px; padding: 10px 12px; }
+button, select, input { color: var(--text); background: var(--surface); border: var(--bw) solid var(--edge-strong); border-radius: var(--radius-control); padding: 10px 12px; }
 button { cursor: pointer; }
 button:hover { border-color: var(--accent); background: var(--surface-hover); }
 button:disabled { opacity: .55; cursor: wait; }
-button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 header {
   position: fixed; inset: 0 0 auto 0; z-index: 20; min-height: 82px;
   display: flex; align-items: center; justify-content: space-between; gap: 24px;
@@ -52,6 +63,8 @@ header {
 }
 header h1 { display: flex; align-items: center; gap: 12px; margin: 0; color: var(--text); line-height: 0; }
 header h1 .wordmark { display: block; height: 30px; width: auto; }
+/* The i-dots of the wordmark take the theme accent (the standalone discair-logo.svg keeps the Ink yellow). */
+.wordmark .wordmark-dots { fill: var(--accent); }
 header h1::before {
   content: ""; display: block; flex: 0 0 42px; width: 42px; height: 42px;
   background: center / contain no-repeat url("/assets/cassette.png");
@@ -64,13 +77,13 @@ header h1::before {
   color: var(--text-muted); background: transparent; border-radius: 4px;
 }
 .header-menu-toggle svg { display: block; width: 20px; height: 20px; }
-.header-menu-toggle[aria-expanded="true"] { color: var(--accent); background: var(--surface-raised); border-color: var(--accent); }
+.header-menu-toggle[aria-expanded="true"] { color: var(--accent-text); background: var(--surface-raised); border-color: var(--accent); }
 /* Settings is the current page but is no longer a rail item, so the toggle carries the cue. */
-.header-menu-toggle.is-current { color: var(--accent); box-shadow: inset 0 -3px var(--accent); }
+.header-menu-toggle.is-current { color: var(--accent-text); box-shadow: inset 0 -3px var(--accent-text); }
 .header-menu-panel {
   position: absolute; top: calc(100% + 8px); right: 0; z-index: 1;
   min-width: 176px; max-width: calc(100vw - 30px); padding: 4px;
-  background: var(--surface-raised); border: 1px solid var(--edge-strong); border-radius: var(--radius-panel);
+  background: var(--surface-raised); border: var(--bw) solid var(--edge-strong); border-radius: var(--radius-panel);
   box-shadow: var(--shadow-menu);
 }
 .header-menu-panel[hidden] { display: none; }
@@ -84,8 +97,8 @@ header h1::before {
 }
 .header-menu-panel button:hover { background: var(--surface-hover); }
 /* Inset so the ring is never clipped by the panel's own edge. */
-.header-menu-panel button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
-.header-menu-panel button[aria-current="page"] { background: var(--accent-dim); box-shadow: inset 3px 0 var(--accent); }
+.header-menu-panel button:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
+.header-menu-panel button[aria-current="page"] { background: var(--accent-dim); box-shadow: inset 3px 0 var(--accent-text); }
 .header-menu-separator { height: 1px; margin: 4px 0; background: var(--edge); }
 @media (prefers-reduced-motion: reduce) { .header-menu-panel:not([hidden]) { animation: none; } }
 main { max-width: none; margin: 112px 34px 0 calc(var(--rail-w) + 34px); padding: 0 0 60px; }
@@ -110,7 +123,7 @@ nav {
    height would force layout on every navigation. The goo filter and spring easing are gone. */
 .nav-indicator {
   position: absolute; left: 0; top: 0; z-index: 2; width: 3px; height: 44px;
-  background: var(--accent); border-radius: 0 var(--radius-chip) var(--radius-chip) 0; pointer-events: none;
+  background: var(--accent-text); border-radius: 0 var(--radius-chip) var(--radius-chip) 0; pointer-events: none;
   transform: translateY(0); transition: transform var(--dur) var(--ease-out);
 }
 .nav-indicator[hidden] { display: none; }
@@ -123,7 +136,7 @@ nav button.active { color: var(--text); background: var(--surface-raised); box-s
 .nav-count[hidden] { display: none; }
 /* Phone-only More disclosure (under 620px, see the bottom tab bar block below). */
 .nav-more-toggle, .nav-more-panel { display: none; }
-nav button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+nav button:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 /* Skip link: visually hidden until it receives keyboard focus, then presented over the header.
    Uses a transform rather than display so it stays focusable, and stays inside the viewport
    when shown so it cannot be clipped. */
@@ -135,25 +148,41 @@ nav button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px
   text-decoration: none;
   transform: translateY(-200%);
 }
-.skip-link:focus-visible, .skip-link:focus { transform: translateY(0); outline: 2px solid var(--accent); outline-offset: 3px; }
+.skip-link:focus-visible, .skip-link:focus { transform: translateY(0); outline: 2px solid var(--focus); outline-offset: 3px; }
 /* main is focusable only as a skip-link target, never as a tab stop of its own. */
 main:focus { outline: none; }
 .panel { min-width: 0; margin: 0 0 36px; padding: 0; background: transparent; border: 0; border-radius: 0; }
-.panel h2 { margin: 0 0 9px; font: 400 var(--text-2xl)/var(--title-leading) var(--title); letter-spacing: var(--title-tracking); }
+.panel h2 { margin: 0 0 9px; font: var(--title-weight) calc(var(--text-2xl) * var(--title-scale))/var(--title-leading) var(--title); letter-spacing: var(--title-tracking); text-transform: var(--title-case); }
 .panel h2::after { content: ""; display: block; width: 34px; height: 3px; margin-top: 11px; background: var(--chart-red); }
-h3 { margin: 0 0 5px; font: 400 var(--text-md)/var(--title-leading) var(--title); letter-spacing: var(--title-tracking); }
+h3 { margin: 0 0 5px; font: var(--title-weight) calc(var(--text-md) * var(--title-scale))/var(--title-leading) var(--title); letter-spacing: var(--title-tracking); text-transform: var(--title-case); }
 p { line-height: 1.55; }
 .panel > p { max-width: 760px; }
 /* Settings tabs (DESIGN_SYSTEM.md 9.7). The ARIA tabs pattern is unchanged; the selected tab takes the accent underline and text. */
 .settings-tabs { display: flex; flex-wrap: wrap; gap: 0 4px; margin: 22px 0 24px; border-bottom: 1px solid var(--edge); }
 .settings-tabs .settings-tab { min-height: 44px; margin-bottom: -1px; padding: 0 16px; border: 0; border-bottom: 3px solid transparent; border-radius: 0; color: var(--text-muted); background: transparent; font-size: var(--text-sm); font-weight: 600; }
 .settings-tabs .settings-tab:hover { color: var(--text); border-bottom-color: var(--edge-strong); background: transparent; }
-.settings-tabs .settings-tab.active { color: var(--accent); border-bottom-color: var(--accent); background: transparent; }
+.settings-tabs .settings-tab.active { color: var(--accent-text); border-bottom-color: var(--accent-text); background: transparent; }
 .settings-tab-panel { max-width: 880px; }
 .settings-tab-panel[hidden] { display: none; }
 .settings-tab-panel label { display: block; margin: 14px 0; color: var(--text-muted); font-size: var(--text-sm); }
-.settings-tab-panel input { display: block; box-sizing: border-box; width: 100%; min-height: 44px; margin-top: 6px; padding: 10px 12px; border: 1px solid var(--edge-strong); border-radius: 4px; color: var(--text); background: var(--surface); }
+.settings-tab-panel input { display: block; box-sizing: border-box; width: 100%; min-height: 44px; margin-top: 6px; padding: 10px 12px; border: var(--bw) solid var(--edge-strong); border-radius: 4px; color: var(--text); background: var(--surface); }
 .settings-tab-panel button { margin-right: 6px; }
+/* Settings > Appearance: FONT and THEME as rows of pill buttons, as in the owner's screenshot (a native radio group, so the arrow
+   keys work). A heavy text-coloured outline, the chosen pill filled with the text colour. The pill is 32px tall; the invisible
+   radio input is 44px tall, so the tap target keeps the 44px floor. The pills are not buttons, so Neobrut gives them no shadow. */
+#settingsAppearance { max-width: none; }
+.settings-tab-panel > .appearance-row { grid-column: 1 / -1; }
+.appearance-row { display: flex; flex-wrap: nowrap; align-items: flex-start; gap: 0 var(--space-4); margin: 0 0 var(--space-3); }
+.appearance-label { flex: 0 0 auto; padding-top: 9px; color: var(--text); font: 700 var(--text-sm)/1 var(--mono); letter-spacing: .06em; text-transform: uppercase; }
+.appearance-pills { display: flex; flex: 1 1 auto; flex-wrap: wrap; gap: var(--space-3) 3px; min-width: 0; }
+.appearance-pill { position: relative; display: inline-flex; }
+.settings-tab-panel .appearance-pill input { position: absolute; inset: -6px 0; z-index: 1; display: block; width: 100%; height: calc(100% + 12px); min-height: 0; margin: 0; padding: 0; border: 0; border-radius: 999px; background: transparent; opacity: 0; cursor: pointer; appearance: none; }
+.appearance-pill span { display: inline-flex; align-items: center; min-height: 32px; padding: 0 13px; color: var(--text); background: var(--surface); border: max(var(--bw), 2px) solid var(--text); border-radius: 999px; font-size: .875rem; font-weight: 600; white-space: nowrap; }
+.appearance-pill input:checked + span { color: var(--ink); background: var(--text); }
+.appearance-pill input:focus-visible + span { outline: 2px solid var(--focus); outline-offset: 2px; }
+/* Phone width: the label sits above its pills (not beside them), so the pills use the whole row and flow two or three to a line. */
+@media (max-width: 620px) { .appearance-row { flex-wrap: wrap; margin-bottom: var(--space-5); } .appearance-label { flex: 1 0 100%; padding-top: 0; margin-bottom: var(--space-2); } }
+
 .settings-actions { margin: 14px 0; }
 /* Two columns for fields from 900px up; headings, notes, status lines and the tier list span both. */
 @media (min-width: 900px) {
@@ -182,7 +211,7 @@ p { line-height: 1.55; }
 .status-line.is-success { color: var(--ok); }
 .status-line.is-success::before { content: "\2713"; color: var(--ok); }
 .status-line.is-progress { color: var(--text); }
-.status-line.is-progress::before { content: "\203A"; color: var(--accent); }
+.status-line.is-progress::before { content: "\203A"; color: var(--accent-text); }
 /* The album page's status line is empty until something goes wrong, so it draws nothing until then. */
 #albumStatus:empty { display: none; }
 @media (max-width: 620px) { .status-line { font-size: var(--text-sm); } }
@@ -195,7 +224,7 @@ p { line-height: 1.55; }
 .controls label { color: var(--text-muted); font-size: var(--text-sm); }
 /* Pressed toggles (Daily lists lens picker) mark the selection with the same accent rule the
    header menu uses for its current page, so the state is not carried by the label alone. */
-.controls button[aria-pressed="true"] { color: var(--text); box-shadow: inset 0 -3px var(--accent); }
+.controls button[aria-pressed="true"] { color: var(--text); box-shadow: inset 0 -3px var(--accent-text); }
 .controls button, .card-actions button, #settings button { font-size: var(--text-xs); font-weight: 600; letter-spacing: .015em; }
 /* Discover music is a two-phase task: build a set, then narrow it. The request group and the
    results toolbar are separated by a wider interval than anything inside either group, so the
@@ -207,7 +236,7 @@ p { line-height: 1.55; }
 .results-toolbar .discovery-controls { margin: 0; }
 .discovery-controls { display: grid; grid-template-columns: minmax(220px, 2fr) repeat(2, minmax(145px, 1fr)); gap: 8px; margin: 17px 0 8px; }
 .controls select, .discovery-controls select { -webkit-appearance: none; appearance: none; padding-right: 40px; cursor: pointer; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239c958a' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; background-size: 18px; }
-.discovery-controls input, .discovery-controls select { width: 100%; min-width: 0; background-color: var(--surface); border: 1px solid var(--edge-strong); color: var(--text); padding: 10px 12px; border-radius: 4px; }
+.discovery-controls input, .discovery-controls select { width: 100%; min-width: 0; background-color: var(--surface); border: var(--bw) solid var(--edge-strong); color: var(--text); padding: 10px 12px; border-radius: 4px; }
 /* A sentence with embedded counts, not a code readout: it is read as prose and announced
    as a live region, so it takes the body face at the same 13px the .status-line convention
    uses. Monospace at 11px fell below the readable floor for text a user must read.
@@ -229,9 +258,9 @@ p { line-height: 1.55; }
   background: var(--surface); border-bottom: 1px solid var(--edge);
 }
 .acq-row:hover { background: var(--surface-hover); }
-.acq-row:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.acq-row:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
 .acq-row .card-art {
-  width: 64px; height: 64px; aspect-ratio: auto; border: 1px solid var(--edge); border-radius: var(--radius-control);
+  width: 64px; height: 64px; aspect-ratio: auto; border: var(--bw) solid var(--edge); border-radius: var(--radius-control);
   background: var(--surface-raised);
 }
 .acq-row .card-art::after { display: none; }
@@ -239,8 +268,8 @@ p { line-height: 1.55; }
 .acq-row .card-art-placeholder::before { content: none; }
 .acq-main { min-width: 0; }
 /* A status record shows the whole album name: it wraps rather than clamps, so no title is hidden. */
-.acq-row h3 { margin: 0; font: 400 var(--text-lg)/var(--title-leading) var(--title); letter-spacing: var(--title-tracking); color: var(--text); overflow-wrap: anywhere; }
-.acq-row h3 .album-year { margin-left: 6px; color: var(--accent); font: 500 var(--text-xs)/1 var(--mono); white-space: nowrap; }
+.acq-row h3 { margin: 0; font: var(--name-weight) calc(var(--text-lg) * var(--name-scale))/var(--title-leading) var(--name-face); letter-spacing: var(--name-tracking); text-transform: none; color: var(--text); overflow-wrap: anywhere; }
+.acq-row h3 .album-year { margin-left: 6px; color: var(--accent-text); font: 500 var(--text-xs)/1 var(--mono); white-space: nowrap; }
 .acq-artist { margin: 3px 0 0; color: var(--text-muted); font-size: var(--text-sm); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* Technical metadata is the one place the mono face appears in a row (DESIGN_SYSTEM.md 5). */
 .acq-profile { margin: 6px 0 0; color: var(--text-subtle); font: 500 var(--text-xs)/1.4 var(--mono); overflow-wrap: anywhere; }
@@ -249,7 +278,7 @@ p { line-height: 1.55; }
 .acq-line + .acq-line { margin-top: 2px; }
 .acq-state { min-width: 0; display: grid; gap: 6px; align-content: start; }
 .acq-status { margin: 0; display: flex; align-items: baseline; gap: 8px; color: var(--text); font: 600 var(--text-sm)/1.35 var(--body); }
-.acq-glyph { flex: 0 0 1.1em; text-align: center; color: var(--accent); font: 600 var(--text-base)/1 var(--mono); }
+.acq-glyph { flex: 0 0 1.1em; text-align: center; color: var(--accent-text); font: 600 var(--text-base)/1 var(--mono); }
 .acq-status.is-error, .acq-status.is-error .acq-glyph { color: var(--chart-red-text); }
 .acq-status.is-caution, .acq-status.is-caution .acq-glyph { color: var(--caution); }
 .acq-status.is-ok, .acq-status.is-ok .acq-glyph { color: var(--ok); }
@@ -286,24 +315,24 @@ p { line-height: 1.55; }
 .dashboard-carousel > .card { flex: 0 0 218px; width: 218px; scroll-snap-align: start; }
 /* Dashboard picks: a static, unranked strip of artwork tiles (DESIGN_SYSTEM.md 8, D1). The strip
    is the native scroller above; it takes a tab stop so the arrow, Home and End keys work on it. */
-.dashboard-carousel:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+.dashboard-carousel:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 4px; }
 /* One named button covers the whole tile and opens the album dialog. It sits under Get (z 3),
    and its focus ring is drawn inside the clipped tile. The selector has three classes so it beats
    the generic `.card > :not(.card-art)` side margins, which would otherwise inset it by 13px. */
 .dashboard-tile { position: relative; }
 .dashboard-tile.card > .dashboard-tile-open { position: absolute; inset: 0; z-index: 2; margin: 0; padding: 0; min-height: 0; background: transparent; border: 0; border-radius: 0; box-shadow: none; cursor: pointer; }
 .dashboard-tile.card > .dashboard-tile-open:hover { background: transparent; border: 0; }
-.dashboard-tile.card > .dashboard-tile-open:focus-visible { outline: 2px solid var(--accent); outline-offset: -4px; }
+.dashboard-tile.card > .dashboard-tile-open:focus-visible { outline: 2px solid var(--focus); outline-offset: -4px; }
 .dashboard-tile-meta { min-width: 0; }
 .dashboard-carousel-heading { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
 .dashboard-carousel-heading p { margin: 0; color: var(--text-muted); font-size: var(--text-xs); }
 .dashboard-picks-bar { display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-3); }
 .dashboard-picks-bar .dashboard-picks-status { margin: 0; }
 /* Square icon button in the Get button's frame: 38px (the action group's height), panel radius, strong edge. */
-.icon-square-button { display: inline-grid; place-items: center; flex: none; width: 38px; height: 38px; padding: 0; background: var(--surface); border: 1px solid var(--edge-strong); border-radius: var(--radius-panel); color: var(--text-muted); cursor: pointer; }
+.icon-square-button { display: inline-grid; place-items: center; flex: none; width: 38px; height: 38px; padding: 0; background: var(--surface); border: var(--bw) solid var(--edge-strong); border-radius: var(--radius-panel); color: var(--text-muted); cursor: pointer; }
 .icon-square-button .icon { width: 18px; height: 18px; }
-.icon-square-button:hover:not(:disabled) { background: var(--surface-raised); color: var(--accent); }
-.icon-square-button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.icon-square-button:hover:not(:disabled) { background: var(--surface-raised); color: var(--accent-text); }
+.icon-square-button:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 .icon-square-button:disabled { cursor: progress; }
 .icon-square-button:disabled .icon { animation: icon-spin 1.15s linear infinite; }
 @keyframes icon-spin { to { transform: rotate(360deg); } }
@@ -311,7 +340,7 @@ p { line-height: 1.55; }
 .dashboard-picks-status { min-height: 18px; color: var(--text-muted); font-size: var(--text-xs); }
 .genre-row { min-width: 0; }
 .genre-row-heading { display: flex; align-items: baseline; gap: 12px; margin: 0 0 10px; }
-.genre-row-heading h3 { margin: 0; color: var(--text); font: 400 var(--text-xl)/var(--title-leading) var(--title); letter-spacing: var(--title-tracking); }
+.genre-row-heading h3 { margin: 0; color: var(--text); font: var(--title-weight) calc(var(--text-xl) * var(--title-scale))/var(--title-leading) var(--title); letter-spacing: var(--title-tracking); text-transform: var(--title-case); }
 .genre-row-count { color: var(--text-muted); font: 500 var(--text-sm)/1.4 var(--body); font-variant-numeric: tabular-nums; }
 .genre-row-arrows { margin-left: auto; align-self: center; }
 .genre-row-arrows[hidden] { display: none; }
@@ -326,7 +355,7 @@ p { line-height: 1.55; }
    links beneath the artwork; stacked below 650px. Motion is opacity and an 8px translate (section 11). */
 .album-modal-backdrop { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; padding: var(--space-5); background: rgb(20 18 17 / .8); animation: album-modal-fade var(--dur-slow) var(--ease-out); }
 .album-modal-backdrop[hidden] { display: none; }
-.album-modal { position: relative; width: min(100%, 1040px); max-height: min(90vh, 900px); overflow: auto; overscroll-behavior: contain; padding: var(--space-5); background: var(--surface-raised); border: 1px solid var(--edge); border-radius: var(--radius-panel); animation: album-modal-rise var(--dur-slow) var(--ease-out); }
+.album-modal { position: relative; width: min(100%, 1040px); max-height: min(90vh, 900px); overflow: auto; overscroll-behavior: contain; padding: var(--space-5); background: var(--surface-raised); border: var(--bw) solid var(--edge); border-radius: var(--radius-panel); animation: album-modal-rise var(--dur-slow) var(--ease-out); }
 @keyframes album-modal-fade { from { opacity: 0; } to { opacity: 1; } }
 @keyframes album-modal-rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) { .album-modal-backdrop, .album-modal { animation: none; } }
@@ -334,28 +363,28 @@ p { line-height: 1.55; }
 .album-modal-close .icon { width: 20px; height: 20px; }
 .album-modal-layout { display: grid; grid-template-columns: minmax(220px, 340px) minmax(0, 1fr); gap: var(--space-5); clear: both; }
 .album-modal-art-column { min-width: 0; align-self: start; }
-.album-modal-art { position: relative; overflow: hidden; aspect-ratio: 1; background: var(--surface); border: 1px solid var(--edge); border-radius: var(--radius-chip); }
+.album-modal-art { position: relative; overflow: hidden; aspect-ratio: 1; background: var(--surface); border: var(--bw) solid var(--edge); border-radius: var(--radius-chip); }
 .album-modal-art img { display: block; width: 100%; height: 100%; object-fit: cover; }
 /* Platform links are 44x44 chips, so the visible target is the touch target. Five chips and four gaps fit the 340px column. */
 .album-modal-art-column .album-platform-links { position: static; display: flex; flex-flow: row wrap; align-items: center; justify-content: center; gap: var(--space-2); width: 100%; max-width: 100%; min-width: 0; margin: var(--space-2) 0 0; padding: 0; border: 0; background: transparent; box-shadow: none; }
-.album-modal-art-column .album-platform-links a { box-sizing: border-box; display: inline-flex; flex: 0 1 auto; align-items: center; justify-content: center; gap: var(--space-2); width: 44px; height: 44px; padding: 0; border: 1px solid var(--edge-strong); border-radius: var(--radius-control); color: var(--text); background: var(--surface); font: 600 var(--text-xs)/1 var(--body); white-space: nowrap; text-decoration: none; }
+.album-modal-art-column .album-platform-links a { box-sizing: border-box; display: inline-flex; flex: 0 1 auto; align-items: center; justify-content: center; gap: var(--space-2); width: 44px; height: 44px; padding: 0; border: var(--bw) solid var(--edge-strong); border-radius: var(--radius-control); color: var(--text); background: var(--surface); font: 600 var(--text-xs)/1 var(--body); white-space: nowrap; text-decoration: none; }
 .album-modal-art-column .album-platform-links a img { display: block; flex: 0 0 auto; width: 22px; height: 22px; }
 .album-modal-art-column .album-platform-links a:hover { border-color: var(--accent); background: var(--surface-hover); }
-.album-modal-art-column .album-platform-links a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.album-modal-art-column .album-platform-links a:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 .album-modal-art > .action-group { position: absolute; right: var(--space-3); bottom: var(--space-3); }
 .album-modal-art .action-group > .get-album { width: 44px; height: var(--group-h); }
-.album-modal-copy h2 { margin: 0 0 var(--space-2); font: 400 var(--text-2xl)/var(--title-leading) var(--title); letter-spacing: var(--title-tracking); overflow-wrap: anywhere; text-wrap: balance; }
+.album-modal-copy h2 { margin: 0 0 var(--space-2); font: var(--name-weight) calc(var(--text-2xl) * var(--name-scale))/var(--title-leading) var(--name-face); letter-spacing: var(--name-tracking); text-transform: none; overflow-wrap: anywhere; text-wrap: balance; }
 .album-modal-artist { margin: 0 0 var(--space-4); color: var(--text-muted); }
 .album-modal-bio { margin: var(--space-3) 0 0; color: var(--text-muted); font: 400 var(--text-sm)/1.5 var(--body); max-width: 60ch; }
 .album-modal-bio[hidden] { display: none; }
-.album-modal-year { margin: 0; color: var(--accent); font: 500 var(--text-sm)/1.4 var(--body); font-variant-numeric: tabular-nums; }
+.album-modal-year { margin: 0; color: var(--accent-text); font: 500 var(--text-sm)/1.4 var(--body); font-variant-numeric: tabular-nums; }
 /* Tracklist rhythm (section 6): compact 48px rows, tabular numbers, one divider per row. */
 .album-modal-tracklist { margin: var(--space-4) 0 0; padding: 0; list-style: none; border-top: 1px solid var(--edge); }
 .album-modal-tracklist li { display: grid; grid-template-columns: 32px minmax(0,1fr) auto; gap: var(--space-3); align-items: center; min-height: 48px; padding: var(--space-2) 0; border-bottom: 1px solid var(--edge); font-size: var(--text-base); }
 .album-modal-tracklist .track-number, .album-modal-tracklist .track-duration { color: var(--text-subtle); font: 500 var(--text-xs)/1.4 var(--mono); font-variant-numeric: tabular-nums; }
 .album-modal-status { color: var(--text-muted); font-size: var(--text-xs); }
 @media (max-width: 650px) { .album-modal-backdrop { padding: var(--space-2); } .album-modal { padding: var(--space-4); max-height: 96vh; } .album-modal-layout { grid-template-columns: minmax(0,1fr); gap: var(--space-4); } .album-modal-art-column { width: min(100%, 300px); margin: 0 auto; } }
-.card h3 .album-year, .card-artist .album-year { margin-left: 5px; color: var(--accent); font: 500 var(--text-xs)/1 var(--mono); white-space: nowrap; }
+.card h3 .album-year, .card-artist .album-year { margin-left: 5px; color: var(--accent-text); font: 500 var(--text-xs)/1 var(--mono); white-space: nowrap; }
 /* Years use the Get button's yellow to set them apart from titles. New releases' release-date column stays plain. */
 .card .artist-bio { margin-top: 7px; color: var(--text-muted); font: 400 var(--text-xs)/1.45 var(--body); display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 4; overflow: hidden; min-height: calc(2 * 1.45em); }
 .card .artist-bio.is-pending { visibility: hidden; }
@@ -371,8 +400,8 @@ p { line-height: 1.55; }
    class, never by colour alone. */
 .get-album {
   display: inline-grid; place-items: center; padding: 0;
-  border-radius: 50%; background: var(--ink); border: 1px solid var(--accent);
-  color: var(--accent); box-shadow: 0 3px 12px rgba(0,0,0,.55);
+  border-radius: 50%; background: var(--ink); border: var(--bw) solid var(--accent);
+  color: var(--accent-text); box-shadow: 0 3px 12px rgba(0,0,0,.55);
   font: 700 var(--text-xs)/1 var(--mono); text-transform: uppercase;
   cursor: pointer;
 }
@@ -385,7 +414,7 @@ p { line-height: 1.55; }
 .get-album:not(.is-pending):not(.requested):not(.is-failed) .get-album-down, .get-album:not(.is-pending):not(.requested):not(.is-failed) .get-album-tray { opacity: 1; }
 .get-album:hover:not(:disabled):not(.is-failed) .get-album-down { animation: get-arrow-in var(--dur-slow) var(--ease-out) both; }
 @keyframes get-arrow-in { from { transform: translateY(-8px); opacity: 0; } to { transform: none; opacity: 1; } }
-.get-album:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.get-album:focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; }
 .get-album-glyph { grid-area: 1 / 1; width: 100%; height: 100%; }
 .get-album-arc, .get-album-tick, .get-album-arrow, .get-album-arrow-head { opacity: 0; }
 /* Pending: the request is in flight. Applied before the server answers, so it must not
@@ -409,7 +438,7 @@ p { line-height: 1.55; }
 .get-album:disabled { cursor: progress; }
 @media (max-width: 1100px) { .cards:not(.deep-dive-rows) { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 @media (max-width: 760px) { .cards:not(.deep-dive-rows) { grid-template-columns: repeat(2, minmax(0, 1fr)); } .genre-row-track > .card { flex-basis: 185px; width: 185px; } }
-.card { min-width: 0; overflow: hidden; padding: 0 0 1px; background: var(--surface); border: 1px solid var(--edge); border-radius: var(--radius-panel); }
+.card { min-width: 0; overflow: hidden; padding: 0 0 1px; background: var(--surface); border: var(--bw) solid var(--edge); border-radius: var(--radius-panel); }
 .card:hover { border-color: var(--edge-strong); }
 .card-art {
   position: relative; display: grid; place-items: center; aspect-ratio: 1 / 1; width: 100%; overflow: hidden;
@@ -422,13 +451,13 @@ p { line-height: 1.55; }
 .card-art.has-image img { opacity: 1; }
 .card-art.has-image .card-art-placeholder { display: none; }
 .card-art-placeholder { padding: 12px; color: var(--text-muted); text-align: center; font: 500 var(--text-xs)/1.5 var(--mono); letter-spacing: .12em; }
-.card-art-placeholder::before { content: "NL / 01"; display: block; margin-bottom: 8px; color: var(--accent); font: 600 var(--text-2xl)/1 var(--display); letter-spacing: -.02em; }
+.card-art-placeholder::before { content: "NL / 01"; display: block; margin-bottom: 8px; color: var(--accent-text); font: var(--display-weight) var(--text-2xl)/1 var(--display); letter-spacing: -.02em; }
 .card > :not(.card-art) { margin-left: 13px; margin-right: 13px; }
-.card-category { display: inline-block; max-width: calc(100% - 26px); margin-top: 13px; margin-bottom: 9px; padding: 3px 6px; color: var(--accent); background: var(--surface-hover); border-left: 2px solid var(--accent); border-radius: 0; font: 500 .625rem/1.4 var(--mono); letter-spacing: .04em; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; vertical-align: top; }
-.card h3 { margin-top: 0; margin-bottom: 4px; font: 400 var(--text-lg)/var(--title-leading) var(--title); letter-spacing: var(--title-tracking); overflow-wrap: anywhere; }
+.card-category { display: inline-block; max-width: calc(100% - 26px); margin-top: 13px; margin-bottom: 9px; padding: 3px 6px; color: var(--accent-text); background: var(--surface-hover); border-left: 2px solid var(--accent); border-radius: 0; font: 500 .625rem/1.4 var(--mono); letter-spacing: .04em; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; vertical-align: top; }
+.card h3 { margin-top: 0; margin-bottom: 4px; font: var(--name-weight) calc(var(--text-lg) * var(--name-scale))/var(--title-leading) var(--name-face); letter-spacing: var(--name-tracking); text-transform: none; overflow-wrap: anywhere; }
 .card-artist { margin-top: 0; margin-bottom: 13px; color: var(--text-muted); font-size: var(--text-xs); }
 .genre-list { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 12px; }
-.genre-tag { padding: 3px 6px; color: var(--text-muted); background: var(--surface-raised); border: 1px solid var(--edge); border-radius: 2px; font: var(--text-xs)/1.35 var(--mono); }
+.genre-tag { padding: 3px 6px; color: var(--text-muted); background: var(--surface-raised); border: var(--bw) solid var(--edge); border-radius: var(--radius-chip); font: var(--text-xs)/1.35 var(--mono); }
 .card-meta, .card-source { margin-top: 7px; margin-bottom: 0; color: var(--text-muted); font-size: var(--text-xs); overflow-wrap: anywhere; }
 .card-source { padding-top: 8px; border-top: 1px solid var(--edge); }
 .card-actions { display: flex; flex-wrap: wrap; gap: 6px; padding-top: 13px; padding-bottom: 13px; }
@@ -446,14 +475,14 @@ summary { min-height: 44px; display: list-item; padding-top: 10px; padding-botto
 .skip-link { min-height: 44px; }
 .quality-priority-list { display: grid; gap: 8px; max-width: 680px; margin: 12px 0 18px; padding: 0; list-style: none; }
 /* Compact 48px rows for Settings (DESIGN_SYSTEM.md 6). The move buttons keep 44px targets. */
-.quality-priority-item { position: relative; display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 0 8px 0 0; border: 1px solid var(--edge); border-radius: 4px; background: var(--surface); will-change: transform; }
+.quality-priority-item { position: relative; display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 0 8px 0 0; border: var(--bw) solid var(--edge); border-radius: 4px; background: var(--surface); will-change: transform; }
 .quality-priority-item.is-idle { transition: transform var(--dur-slow) var(--ease-out); }
 .quality-priority-item.is-draggable { z-index: 10; border-color: var(--accent); box-shadow: 0 6px 16px rgba(0, 0, 0, .35); cursor: grabbing; }
 /* The grip is the drag handle: a 44px target that opts out of touch scrolling so touch drags reach the pointer handlers. */
-.quality-priority-grip { display: flex; align-items: center; justify-content: center; flex: 0 0 44px; min-height: 44px; color: var(--accent); font: var(--text-md)/1 var(--mono); cursor: grab; user-select: none; touch-action: none; }
+.quality-priority-grip { display: flex; align-items: center; justify-content: center; flex: 0 0 44px; min-height: 44px; color: var(--accent-text); font: var(--text-md)/1 var(--mono); cursor: grab; user-select: none; touch-action: none; }
 .quality-priority-item.is-draggable .quality-priority-grip { cursor: grabbing; }
 @media (prefers-reduced-motion: reduce) { .quality-priority-item.is-idle { transition: none; } }
-.quality-priority-position { flex: 0 0 24px; color: var(--accent); font: var(--text-xs)/1 var(--mono); }
+.quality-priority-position { flex: 0 0 24px; color: var(--accent-text); font: var(--text-xs)/1 var(--mono); }
 .quality-priority-label { flex: 1; min-width: 0; font-size: var(--text-sm); }
 .quality-priority-moves { flex: none; --group-h: 28px; }
 #settings .quality-priority-moves > button { width: 32px; }
@@ -473,7 +502,7 @@ footer { margin: 36px 34px 0 calc(var(--rail-w) + 34px); padding-top: 14px; bord
    but the container itself was not focusable, so the row could only be walked one card at a
    time. The ring has to be drawn on the container now that it is the thing that takes focus.
    The dashboard strip takes the same treatment, styled in the dashboard block below. */
-.genre-row-track:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+.genre-row-track:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 4px; }
 
 /* Transient acquisition feedback. Deliberately visual only: app.js hides .notyf from
    assistive tech and silences Notyf's own announcer so each message is announced exactly
@@ -486,7 +515,7 @@ footer { margin: 36px 34px 0 calc(var(--rail-w) + 34px); padding-top: 14px; bord
    category tell. It was also redundant: the icon disc below already carries the state by shape
    and hue, and the message text carries it again. The element is rewritten rather than softened —
    a thinner tab would be the same mistake, quieter. */
-.notyf__toast { max-width: min(340px, calc(100vw - 32px)); border: 1px solid var(--edge-strong); border-radius: var(--radius-panel); color: var(--text); font: var(--text-sm)/1.5 var(--body); box-shadow: var(--shadow-menu); }
+.notyf__toast { max-width: min(340px, calc(100vw - 32px)); border: var(--bw) solid var(--edge-strong); border-radius: var(--radius-panel); color: var(--text); font: var(--text-sm)/1.5 var(--body); box-shadow: var(--shadow-menu); }
 .notyf__message { font: inherit; }
 /* Notyf draws each icon as a white disc with currentColor bars. Recolouring the disc to
    the state colour and leaving the bars on the dark inline colour keeps the success and
@@ -498,12 +527,12 @@ footer { margin: 36px 34px 0 calc(var(--rail-w) + 34px); padding-top: 14px; bord
 /* Undo snackbar (lower right, the same surface and edge as the toasts above). Shown after a
    dismissal; the dismissal is sent only when the window closes. Hidden with opacity and
    pointer-events; app.js sets the inert attribute, so its button is out of the tab order until it is open. */
-.undo-snackbar { position: fixed; right: 24px; bottom: 24px; z-index: 200; display: flex; align-items: center; gap: 12px; max-width: min(420px, calc(100vw - 32px)); min-height: 48px; padding: 6px 6px 6px 16px; overflow: hidden; background: var(--surface-raised); border: 1px solid var(--edge-strong); border-radius: var(--radius-panel); box-shadow: var(--shadow-menu); color: var(--text); font: var(--text-sm)/1.5 var(--body); pointer-events: none; opacity: 0; transform: translateY(8px); transition: opacity var(--dur) var(--ease-out), transform var(--dur) var(--ease-out); }
+.undo-snackbar { position: fixed; right: 24px; bottom: 24px; z-index: 200; display: flex; align-items: center; gap: 12px; max-width: min(420px, calc(100vw - 32px)); min-height: 48px; padding: 6px 6px 6px 16px; overflow: hidden; background: var(--surface-raised); border: var(--bw) solid var(--edge-strong); border-radius: var(--radius-panel); box-shadow: var(--shadow-menu); color: var(--text); font: var(--text-sm)/1.5 var(--body); pointer-events: none; opacity: 0; transform: translateY(8px); transition: opacity var(--dur) var(--ease-out), transform var(--dur) var(--ease-out); }
 .undo-snackbar.is-open { pointer-events: auto; opacity: 1; transform: none; }
 .undo-snackbar-text { flex: 1 1 auto; min-width: 0; margin: 0; overflow-wrap: anywhere; }
-.undo-snackbar button { flex: none; min-width: 44px; min-height: 44px; padding: 0 12px; background: transparent; border: 0; border-radius: var(--radius-control); color: var(--accent); font: 600 var(--text-sm)/1 var(--body); cursor: pointer; }
+.undo-snackbar button { flex: none; min-width: 44px; min-height: 44px; padding: 0 12px; background: transparent; border: 0; border-radius: var(--radius-control); color: var(--accent-text); font: 600 var(--text-sm)/1 var(--body); cursor: pointer; }
 .undo-snackbar button:hover { background: var(--surface-hover); }
-.undo-snackbar button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.undo-snackbar button:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 .undo-snackbar-timer { position: absolute; left: 0; right: 0; bottom: 0; height: 2px; background: var(--accent); transform-origin: left center; transform: scaleX(0); }
 .undo-snackbar-timer.is-running { animation: undo-drain linear forwards; }
 @keyframes undo-drain { from { transform: scaleX(1); } to { transform: scaleX(0); } }
@@ -543,16 +572,16 @@ footer { margin: 36px 34px 0 calc(var(--rail-w) + 34px); padding-top: 14px; bord
   nav button { flex: 1 1 0; width: auto; min-width: 0; min-height: 56px; flex-direction: column; justify-content: center; gap: 0; padding: 6px 2px; font-size: var(--text-xs); line-height: 1.2; text-align: center; }
   /* Names (including More) are visually hidden but stay in the accessibility tree; each button keeps its title. */
   nav button > span:not(.nav-count) { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
-  nav button.active { box-shadow: inset 0 3px var(--accent); }
+  nav button.active { box-shadow: inset 0 3px var(--accent-text); }
   nav .nav-overflow { display: none; }
   nav .nav-more-toggle { display: flex; }
-  nav .nav-more-panel:not([hidden]) { position: fixed; z-index: 1; right: 8px; bottom: calc(65px + env(safe-area-inset-bottom, 0px)); display: block; min-width: 216px; max-width: calc(100vw - 16px); padding: 4px; background: var(--surface-raised); border: 1px solid var(--edge-strong); border-radius: var(--radius-panel); box-shadow: var(--shadow-menu); }
+  nav .nav-more-panel:not([hidden]) { position: fixed; z-index: 1; right: 8px; bottom: calc(65px + env(safe-area-inset-bottom, 0px)); display: block; min-width: 216px; max-width: calc(100vw - 16px); padding: 4px; background: var(--surface-raised); border: var(--bw) solid var(--edge-strong); border-radius: var(--radius-panel); box-shadow: var(--shadow-menu); }
   .nav-more-panel button { flex: none; display: block; width: 100%; min-height: 44px; padding: 10px 14px; color: var(--text); background: transparent; border: 0; border-radius: var(--radius-chip); font: 400 var(--text-sm)/1.4 var(--body); text-align: left; }
   .nav-more-panel button:hover { background: var(--surface-hover); }
-  .nav-more-panel button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
-  .nav-more-panel button[aria-current="page"] { background: var(--accent-dim); box-shadow: inset 3px 0 var(--accent); }
-  .nav-more-toggle[aria-expanded="true"], .nav-more-toggle.is-current { color: var(--accent); }
-  .nav-more-toggle.is-current { box-shadow: inset 0 3px var(--accent); }
+  .nav-more-panel button:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
+  .nav-more-panel button[aria-current="page"] { background: var(--accent-dim); box-shadow: inset 3px 0 var(--accent-text); }
+  .nav-more-toggle[aria-expanded="true"], .nav-more-toggle.is-current { color: var(--accent-text); }
+  .nav-more-toggle.is-current { box-shadow: inset 0 3px var(--accent-text); }
   main { margin: 136px 14px 0; padding-bottom: calc(56px + env(safe-area-inset-bottom, 0px) + 24px); } footer { margin-left: 14px; margin-right: 14px; } .panel h2 { font-size: var(--text-2xl); } .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; } .card h3 { font-size: var(--text-md); } .card > :not(.card-art) { margin-left: 10px; margin-right: 10px; } .card-category { max-width: calc(100% - 20px); } .discovery-controls { grid-template-columns: 1fr; } .discovery-controls input { grid-column: auto; }
 }
 @media (max-width: 360px) { .cards { grid-template-columns: 1fr; } }
@@ -588,9 +617,9 @@ footer { margin: 36px 34px 0 calc(var(--rail-w) + 34px); padding-top: 14px; bord
   --row-edge-x: calc((var(--row-art) + 8px - 38px) / 2);
 }
 .ranked-row:hover { background: var(--surface-hover); }
-.ranked-row:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.ranked-row:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
 .rank-numeral {
-  justify-self: end; font: 600 var(--num-row)/1 var(--display); letter-spacing: -.01em; color: var(--chart-red-text);
+  justify-self: end; font: var(--display-weight) var(--num-row)/1 var(--display); letter-spacing: -.01em; color: var(--chart-red-text);
   font-variant-numeric: tabular-nums;
 }
 /* Personal Discoveries: a muted position, not a rank. The server order is not a score order, so
@@ -608,7 +637,7 @@ footer { margin: 36px 34px 0 calc(var(--rail-w) + 34px); padding-top: 14px; bord
    that one row. Rows are otherwise one fixed height, the artwork size. */
 .ranked-row .artist-bio.is-expandable { cursor: pointer; }
 .ranked-row .artist-bio.is-expandable:hover { color: var(--text); }
-.ranked-row .artist-bio.is-expandable:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.ranked-row .artist-bio.is-expandable:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 .ranked-row.is-bio-open .row-main { height: auto; min-height: var(--row-art); }
 .ranked-row.is-bio-open .artist-bio { display: block; -webkit-line-clamp: none; overflow: visible; }
 /* New releases: the release date replaces the numeral (DESIGN_SYSTEM.md section 8). Plain text,
@@ -617,10 +646,10 @@ footer { margin: 36px 34px 0 calc(var(--rail-w) + 34px); padding-top: 14px; bord
   justify-self: end; min-width: 0; display: grid; justify-items: end; gap: 3px; text-align: right;
   font-variant-numeric: tabular-nums;
 }
-.row-date-day { font: 600 var(--text-md)/1.2 var(--display); color: var(--text); white-space: nowrap; }
+.row-date-day { font: var(--display-weight) var(--text-md)/1.2 var(--display); color: var(--text); white-space: nowrap; }
 .row-date-year { font: 500 var(--text-xs)/1.2 var(--mono); color: var(--text-muted); }
 .ranked-row .card-art {
-  width: var(--row-art); height: var(--row-art); aspect-ratio: auto; border: 1px solid var(--edge); border-radius: var(--radius-control);
+  width: var(--row-art); height: var(--row-art); aspect-ratio: auto; border: var(--bw) solid var(--edge); border-radius: var(--radius-control);
   background: var(--surface-raised);
 }
 .ranked-row .card-art::after { display: none; }
@@ -629,10 +658,10 @@ footer { margin: 36px 34px 0 calc(var(--rail-w) + 34px); padding-top: 14px; bord
 .row-main { min-width: 0; }
 .ranked-row .row-main { height: var(--row-art); display: flex; flex-direction: column; justify-content: center; overflow: hidden; }
 .ranked-row h3 {
-  margin: 0; font: 400 var(--text-lg)/var(--title-leading) var(--title); letter-spacing: var(--title-tracking); color: var(--text);
+  margin: 0; font: var(--name-weight) calc(var(--text-lg) * var(--name-scale))/var(--title-leading) var(--name-face); letter-spacing: var(--name-tracking); text-transform: none; color: var(--text);
   display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; overflow-wrap: anywhere;
 }
-.ranked-row h3 .album-year { margin-left: 12px; color: var(--accent); font: 500 var(--text-xs)/1 var(--mono); white-space: nowrap; }
+.ranked-row h3 .album-year { margin-left: 12px; color: var(--accent-text); font: 500 var(--text-xs)/1 var(--mono); white-space: nowrap; }
 .row-artist { margin: 3px 0 0; color: var(--text-muted); font-size: var(--text-sm); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .row-meta { min-width: 0; color: var(--text-muted); font-size: var(--text-xs); }
 .row-meta-line { margin: 0; overflow-wrap: anywhere; }
@@ -684,7 +713,7 @@ footer { margin: 36px 34px 0 calc(var(--rail-w) + 34px); padding-top: 14px; bord
    the buttons. Each button is an icon on a 44px-high target; its name is the aria-label. State is
    the icon (cloud, outline vs. checked bookmark, tick, retry arrow) and aria-pressed; the colour
    is a reinforcement, never the only signal. */
-.action-group { --group-h: 38px; display: inline-flex; overflow: hidden; background: var(--surface); border: 1px solid var(--edge-strong); border-radius: var(--radius-panel); }
+.action-group { --group-h: 38px; display: inline-flex; overflow: hidden; background: var(--surface); border: var(--bw) solid var(--edge-strong); border-radius: var(--radius-panel); }
 .action-group > button {
   display: inline-grid; place-items: center; box-sizing: border-box;
   width: 44px; height: var(--group-h); margin: 0; padding: 0;
@@ -699,7 +728,7 @@ footer { margin: 36px 34px 0 calc(var(--rail-w) + 34px); padding-top: 14px; bord
 .action-group > button[aria-busy="true"] .icon { animation: icon-spin 1.15s linear infinite; }
 @media (prefers-reduced-motion: reduce) { .action-group > button[aria-busy="true"] .icon { animation: none; } }
 .action-group > button:hover:not(:disabled):not(.is-failed) { background: var(--surface-raised); color: var(--text); }
-.action-group > button:focus-visible { outline: 2px solid var(--accent); outline-offset: -3px; }
+.action-group > button:focus-visible { outline: 2px solid var(--focus); outline-offset: -3px; }
 /* On a card the group floats over the artwork, bottom right; the solid ground and shadow keep it legible on any cover. */
 .card-art > .action-group { position: absolute; z-index: 3; left: 0; right: 0; bottom: 8px; margin: 0 auto; width: max-content; box-shadow: 0 3px 12px rgba(0,0,0,.55); }
 /* The tile rule that pins a lone Get to the artwork corner must not apply inside the group. */
@@ -714,11 +743,11 @@ footer { margin: 36px 34px 0 calc(var(--rail-w) + 34px); padding-top: 14px; bord
 /* Get keeps its pending, requested and failed faces; only the idle face becomes the cloud. */
 .action-group .get-album-down, .action-group .get-album-tray { display: none; }
 .action-group .get-album:not(.is-pending):not(.requested):not(.is-failed) .get-album-cloud { opacity: 1; }
-.action-group .get-album:hover:not(:disabled):not(.is-failed) { color: var(--accent); }
+.action-group .get-album:hover:not(:disabled):not(.is-failed) { color: var(--accent-text); }
 .action-group .get-album.is-pending { background: transparent; }
 .action-group .get-album.requested, .action-group .get-album.requested:hover { background: var(--accent); color: var(--on-accent); }
 .action-group .get-album.is-failed { background: transparent; color: var(--chart-red-text); }
-.action-group .save-album.is-saved { color: var(--accent); }
+.action-group .save-album.is-saved { color: var(--accent-text); }
 .action-group .save-album.is-failed { color: var(--chart-red-text); }
 .action-group .save-album[aria-busy="true"] { cursor: progress; opacity: .7; }
 .action-group .dismiss-album:hover { color: var(--chart-red-text); }
@@ -737,14 +766,14 @@ footer { margin: 36px 34px 0 calc(var(--rail-w) + 34px); padding-top: 14px; bord
 .search-submit { position: absolute; top: 0; right: 0; display: grid; place-items: center; width: 44px; height: 100%; padding: 0; background: transparent; border: 0; border-radius: 0 30px 30px 0; cursor: pointer; }
 .search-submit:hover { background: transparent; }
 .search-icon { width: 1.3em; height: 1.3em; color: var(--text-muted); }
-.search-submit:hover .search-icon, .global-search input[type="search"]:focus + .search-submit .search-icon { color: var(--accent); }
+.search-submit:hover .search-icon, .global-search input[type="search"]:focus + .search-submit .search-icon { color: var(--accent-text); }
 .search-recent { padding: var(--space-2); }
 .search-recent[hidden] { display: none; }
 /* The library filter filters as you type, so its icon is decoration rather than a button. */
 .search-icon-inline { position: absolute; right: 16px; pointer-events: none; }
 .library-control select { padding-right: 40px; cursor: pointer; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239c958a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; background-size: 18px; }
 @media (prefers-reduced-motion: reduce) { .search-field::before { transition: none; } }
-.search-results { position: absolute; top: calc(100% + 8px); left: 0; right: 0; z-index: 30; max-height: min(64vh, 560px); overflow-y: auto; padding: var(--space-3); background: var(--surface-raised); border: 1px solid var(--edge-strong); border-radius: 4px; }
+.search-results { position: absolute; top: calc(100% + 8px); left: 0; right: 0; z-index: 30; max-height: min(64vh, 560px); overflow-y: auto; padding: var(--space-3); background: var(--surface-raised); border: var(--bw) solid var(--edge-strong); border-radius: 4px; }
 .search-results[hidden], #libraryDetailView[hidden], #libraryListView[hidden], #libraryAlbumView[hidden], #libraryGenreView[hidden], #libraryMoreGroup[hidden], #librarySearchResults[hidden], #libraryBrowse[hidden], #libraryFilterClear[hidden], .library-size[hidden] { display: none; }
 .search-group + .search-group { margin-top: var(--space-3); }
 .search-group-heading { margin: 0 0 var(--space-2); color: var(--text-muted); font-size: var(--text-xs); letter-spacing: .08em; text-transform: uppercase; }
@@ -771,7 +800,7 @@ button.search-item-content:hover, .library-artist:hover { background: var(--surf
 .library-sort select:focus { background-color: var(--surface-raised); }
 .library-sort label { color: var(--text-muted); font-size: var(--text-sm); }
 .action-group > button.text-button { width: auto; padding: 0 var(--space-4); font-size: var(--text-sm); }
-.action-group > button[aria-pressed="true"] { color: var(--accent); background: var(--surface-hover); }
+.action-group > button[aria-pressed="true"] { color: var(--accent-text); background: var(--surface-hover); }
 .library-size { display: flex; align-items: center; min-height: 44px; }
 .library-size input[type="range"] { width: 140px; accent-color: var(--accent); cursor: pointer; }
 #librarySearchResults { margin-top: var(--space-4); }
@@ -796,7 +825,7 @@ button.search-item-content:hover, .library-artist:hover { background: var(--surf
 .library-bio.is-clamped { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; }
 @media (max-width: 620px) { .library-bio.is-clamped { -webkit-line-clamp: 6; } }
 .bio-toggle { min-height: 44px; padding: 0; color: var(--text-muted); font-size: var(--text-sm); background: transparent; border-color: transparent; }
-.bio-toggle:hover { color: var(--accent); text-decoration: underline; background: transparent; border-color: transparent; }
+.bio-toggle:hover { color: var(--accent-text); text-decoration: underline; background: transparent; border-color: transparent; }
 .tag-list { display: flex; flex-wrap: wrap; gap: 8px; margin: var(--space-3) 0 0; padding: 0; list-style: none; }
 .tag-list[hidden] { display: none; }
 .library-link { min-height: 44px; padding: 0; text-align: left; background: transparent; border-color: transparent; text-decoration: underline; overflow-wrap: anywhere; }
@@ -810,7 +839,7 @@ button.search-item-content:hover, .library-artist:hover { background: var(--surf
 .album-row-art img, .album-hero-art img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .album-row-text { display: grid; min-width: 0; }
 .album-row-title { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
-.album-row-name { font: 400 var(--text-md)/var(--title-leading) var(--title); letter-spacing: var(--title-tracking); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.album-row-name { font: var(--name-weight) calc(var(--text-md) * var(--name-scale))/var(--title-leading) var(--name-face); letter-spacing: var(--name-tracking); text-transform: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .album-row-listens, .album-row-artist { flex: 0 1 auto; overflow: hidden; color: var(--text-muted); font-size: var(--text-sm); text-overflow: ellipsis; white-space: nowrap; }
 .album-row-detail { color: var(--text-muted); font-size: var(--text-sm); }
 .album-row > .get-album, .album-row > .owned-check { flex: 0 0 44px; margin-right: 8px; }
@@ -832,8 +861,8 @@ button.search-item-content:hover, .library-artist:hover { background: var(--surf
 
 /* Names and tags on cards and rows that open a library page: plain text until hovered or focused. */
 button.inline-link { display: inline; min-height: 0; padding: 0; color: inherit; background: transparent; border: 0; border-radius: 2px; font: inherit; letter-spacing: inherit; text-align: inherit; text-transform: inherit; overflow-wrap: anywhere; }
-button.inline-link:hover { color: var(--accent); text-decoration: underline; background: transparent; }
-button.inline-link:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+button.inline-link:hover { color: var(--accent-text); text-decoration: underline; background: transparent; }
+button.inline-link:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 .dashboard-tile-meta .inline-link { position: relative; z-index: 3; }
 
 /* The album's heading and year start level with the top of the artwork; the description follows them. */
@@ -852,7 +881,7 @@ button.inline-link:focus-visible { outline: 2px solid var(--accent); outline-off
 .album-head .album-about #albumReviewsRetry { display: block; margin: var(--space-2) auto 0; }
 .album-tabs .album-tab { min-height: 44px; margin-bottom: -1px; padding: 0 14px; border: 0; border-bottom: 3px solid transparent; border-radius: 0; color: var(--text-muted); background: transparent; font-size: var(--text-sm); font-weight: 600; }
 .album-tabs .album-tab:hover { color: var(--text); border-bottom-color: var(--edge-strong); background: transparent; }
-.album-tabs .album-tab.active { color: var(--accent); border-bottom-color: var(--accent); background: transparent; }
+.album-tabs .album-tab.active { color: var(--accent-text); border-bottom-color: var(--accent-text); background: transparent; }
 .album-tab-panel { padding-top: var(--space-3); }
 .album-tab-panel[hidden] { display: none; }
 .album-head .album-about .album-description { margin-top: 0; }
@@ -860,7 +889,7 @@ button.inline-link:focus-visible { outline: 2px solid var(--accent); outline-off
 .album-review { margin: 0 0 var(--space-4); }
 .album-review blockquote { margin: 0; padding-left: var(--space-3); border-left: 2px solid var(--edge-strong); line-height: 1.55; }
 .album-review-link { display: inline-block; margin-top: var(--space-2); padding-left: var(--space-3); color: var(--text-muted); font-size: var(--text-xs); }
-.album-review-link:hover { color: var(--accent); }
+.album-review-link:hover { color: var(--accent-text); }
 
 /* Dashboard genre tiles and album shelves */
 .dashboard-shelf, .dashboard-genres { margin-top: var(--space-4); }
@@ -879,7 +908,7 @@ button.inline-link:focus-visible { outline: 2px solid var(--accent); outline-off
 .shelf-card > .dashboard-tile-meta { margin-top: 13px; }
 .shelf-card .dashboard-tile-meta .inline-link { position: relative; z-index: 3; }
 .shelf-card > .dashboard-tile-open { position: absolute; inset: 0; z-index: 2; margin: 0; padding: 0; min-height: 0; background: transparent; border: 0; border-radius: 0; box-shadow: none; cursor: pointer; }
-.shelf-card > .dashboard-tile-open:focus-visible { outline: 2px solid var(--accent); outline-offset: -4px; }
+.shelf-card > .dashboard-tile-open:focus-visible { outline: 2px solid var(--focus); outline-offset: -4px; }
 /* An empty status line on these sections would show only its bullet. It stays in the page so its live region still announces. */
 .dashboard-genres .status-line:empty, .dashboard-shelf .status-line:empty { margin: 0; }
 .dashboard-genres .status-line:empty::before, .dashboard-shelf .status-line:empty::before { content: none; }
@@ -904,7 +933,7 @@ button.inline-link:focus-visible { outline: 2px solid var(--accent); outline-off
 .dashboard-slider-wrap { --slider-h: 380px; --art: 380px; --thumb-w: 140px; --thumb-h: 190px; --thumb-gap: 12px; --thumbs: 3; position: relative; }
 .dashboard-slider-box { container-type: inline-size; }
 .dashboard-slider { position: relative; height: var(--slider-h); margin: 0; border-radius: 12px; background: var(--surface-raised); }
-.dashboard-slider:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.dashboard-slider:focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; }
 .dashboard-slider > .card { position: absolute; top: 50%; right: 20px; width: var(--thumb-w); height: var(--thumb-h); margin: 0; padding: 0; transform: translateY(-50%); border: 0; border-radius: 10px; box-shadow: 0 12px 28px rgb(0 0 0 / .45); cursor: pointer; transition: opacity var(--dur) var(--ease-out); }
 .dashboard-slider > .card[data-slot="4"], .dashboard-slider > .card[data-slot="5"] { right: 20px; }
 .dashboard-slider > .card[data-slot="3"] { right: calc(20px + var(--thumb-w) + var(--thumb-gap)); }
@@ -949,28 +978,28 @@ button.inline-link:focus-visible { outline: 2px solid var(--accent); outline-off
 .artist-hero-art { position: absolute; inset: 0; z-index: -2; overflow: hidden; }
 .artist-hero-art img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: center 25%; }
 .artist-hero-text { display: grid; gap: var(--space-2); min-width: 0; width: 100%; padding: var(--space-5); }
-#artistDetailHeading { margin: 0; font: 400 clamp(2.75rem, 8vw, 6.5rem)/var(--title-leading) var(--title); letter-spacing: var(--title-tracking); text-wrap: balance; overflow-wrap: anywhere; }
+#artistDetailHeading { margin: 0; font: var(--name-weight) calc(clamp(2.75rem, 8vw, 6.5rem) * var(--name-scale))/var(--title-leading) var(--name-face); letter-spacing: var(--name-tracking); text-transform: none; text-wrap: balance; overflow-wrap: anywhere; }
 #artistDetailHeading::after { content: none; }
 /* Genres are plain small text under the name. The 44px hit area stays; the negative margin keeps the lines tight. */
 .artist-hero-text .tag-list { gap: 0 var(--space-3); margin: calc(var(--space-2) * -1) 0; }
 .artist-hero-text .tag-list li + li::before { content: "\00b7"; margin-right: var(--space-3); color: var(--text-subtle); }
 .artist-hero-text .tag-list li { display: flex; align-items: center; }
 .genre-text-link { min-height: 44px; padding: 0; color: var(--text-muted); font-size: var(--text-sm); text-transform: lowercase; text-decoration: none; background: transparent; border-color: transparent; }
-.genre-text-link:hover { color: var(--accent); text-decoration: underline; background: transparent; border-color: transparent; }
+.genre-text-link:hover { color: var(--accent-text); text-decoration: underline; background: transparent; border-color: transparent; }
 .artist-hero-text .status-line { margin: 0; color: var(--text); }
 #artistDetailStatus:not([class*="is-"])::before { content: none; }
 .artist-back { position: absolute; top: var(--space-3); left: var(--space-3); display: grid; place-items: center; width: 44px; height: 44px; padding: 0; background: rgba(20, 18, 17, .72); }
 .artist-back .icon { display: block; width: 22px; height: 22px; }
 .artist-top-songs { min-width: 0; padding: var(--space-4); background: color-mix(in srgb, var(--surface) 70%, transparent); border-radius: var(--radius-panel); }
 .artist-top-songs[hidden] { display: none; }
-.artist-top-songs h3 { margin: 0 0 var(--space-3); font: 400 var(--text-xl)/var(--title-leading) var(--title); letter-spacing: var(--title-tracking); }
+.artist-top-songs h3 { margin: 0 0 var(--space-3); font: var(--title-weight) calc(var(--text-xl) * var(--title-scale))/var(--title-leading) var(--title); letter-spacing: var(--title-tracking); text-transform: var(--title-case); }
 /* "All top songs" and "All missing albums" are plain clickable text, like the genres under the name; the 44px hit area stays. */
 .artist-top-songs .show-all-button, #artistMissingAll { min-height: 44px; margin-top: var(--space-2); padding: 0; color: var(--text-muted); font-size: var(--text-sm); background: transparent; border-color: transparent; }
-.artist-top-songs .show-all-button:hover, #artistMissingAll:hover { color: var(--accent); text-decoration: underline; background: transparent; border-color: transparent; }
+.artist-top-songs .show-all-button:hover, #artistMissingAll:hover { color: var(--accent-text); text-decoration: underline; background: transparent; border-color: transparent; }
 .top-song-list { display: grid; margin: 0; padding: 0; list-style: none; }
 .top-song { display: grid; grid-template-columns: 2ch minmax(0, 1fr) auto minmax(28px, auto); align-items: center; gap: var(--space-3); min-height: 56px; padding: var(--space-2) 0; border-bottom: 1px solid var(--edge); }
 .top-song:last-child { border-bottom: 0; }
-.top-song-rank { color: var(--text-muted); font: 600 var(--text-md)/1 var(--display); font-variant-numeric: tabular-nums; }
+.top-song-rank { color: var(--text-muted); font: var(--display-weight) var(--text-md)/1 var(--display); font-variant-numeric: tabular-nums; }
 .top-song-text { display: grid; min-width: 0; }
 .top-song-name, .top-song-album { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .top-song-album, .top-song-listens { color: var(--text-muted); font-size: var(--text-sm); }
@@ -980,16 +1009,16 @@ button.inline-link:focus-visible { outline: 2px solid var(--accent); outline-off
 .owned-album-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: var(--space-4); margin: var(--space-3) 0 0; padding: 0; list-style: none; }
 .owned-album-card { display: grid; align-content: start; gap: 2px; width: 100%; padding: 0; text-align: left; background: transparent; border-color: transparent; }
 .owned-album-card:hover { background: transparent; border-color: transparent; }
-.owned-album-card:hover .owned-album-art { outline: 2px solid var(--accent); outline-offset: 2px; }
+.owned-album-card:hover .owned-album-art { outline: 2px solid var(--focus); outline-offset: 2px; }
 .owned-album-art { position: relative; width: 100%; aspect-ratio: 1; margin-bottom: var(--space-2); overflow: hidden; background: var(--surface-hover); border-radius: var(--radius-control); }
 .owned-album-art img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .owned-album-art .owned-check { position: absolute; top: var(--space-2); right: var(--space-2); width: 28px; height: 28px; background: var(--surface-raised); border: 2px solid var(--ok); border-radius: 50%; }
 .owned-album-art .owned-check-glyph { width: 16px; height: 16px; }
-.owned-album-name { font: 400 var(--text-md)/var(--title-leading) var(--title); letter-spacing: var(--title-tracking); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.owned-album-name { font: var(--name-weight) calc(var(--text-md) * var(--name-scale))/var(--title-leading) var(--name-face); letter-spacing: var(--name-tracking); text-transform: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .owned-album-year { color: var(--text-muted); font-size: var(--text-sm); }
 .ranked-album-list { counter-reset: ranked; }
 .ranked-album-list .album-row { counter-increment: ranked; }
-.ranked-album-list .album-row::before { content: counter(ranked); flex: 0 0 2.5ch; padding-left: var(--space-2); color: var(--text-muted); font: 600 var(--text-md)/1 var(--display); font-variant-numeric: tabular-nums; }
+.ranked-album-list .album-row::before { content: counter(ranked); flex: 0 0 2.5ch; padding-left: var(--space-2); color: var(--text-muted); font: var(--display-weight) var(--text-md)/1 var(--display); font-variant-numeric: tabular-nums; }
 @media (min-width: 1000px) {
   .artist-hero { grid-template-columns: minmax(0, 1fr) minmax(300px, 400px); }
   .artist-hero.no-songs { grid-template-columns: minmax(0, 1fr); }
@@ -1010,11 +1039,11 @@ button.inline-link:focus-visible { outline: 2px solid var(--accent); outline-off
 .album-back .icon { display: block; width: 22px; height: 22px; }
 .album-head { display: grid; justify-items: center; gap: var(--space-1); min-width: 0; text-align: center; }
 .album-hero-art-wrap { position: relative; width: clamp(240px, 32vw, 320px); max-width: 100%; margin-bottom: var(--space-4); }
-#albumHeading { margin: 0; font: 400 clamp(1.875rem, 4vw, 2.5rem)/var(--title-leading) var(--title); letter-spacing: var(--title-tracking); overflow-wrap: anywhere; }
+#albumHeading { margin: 0; font: var(--name-weight) calc(clamp(1.875rem, 4vw, 2.5rem) * var(--name-scale))/var(--title-leading) var(--name-face); letter-spacing: var(--name-tracking); text-transform: none; overflow-wrap: anywhere; }
 #albumHeading::after { content: none; }
 .album-hero-artist { margin: 0; color: var(--text); font-size: var(--text-md); }
 .album-hero-artist .library-link { min-height: 44px; margin: -10px 0; text-decoration: none; }
-.album-hero-artist .library-link:hover { color: var(--accent); text-decoration: underline; background: transparent; border-color: transparent; }
+.album-hero-artist .library-link:hover { color: var(--accent-text); text-decoration: underline; background: transparent; border-color: transparent; }
 .album-meta { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; margin: 0; color: var(--text-muted); font-size: var(--text-sm); }
 .album-meta[hidden] { display: none; }
 #albumGenre .genre-text-link { min-height: 44px; margin: -10px 0; }
@@ -1027,7 +1056,7 @@ button.inline-link:focus-visible { outline: 2px solid var(--accent); outline-off
 .track-number { color: var(--text-muted); font-variant-numeric: tabular-nums; text-align: right; }
 .track-title { min-width: 0; overflow-wrap: anywhere; }
 .track-duration { color: var(--text-muted); font-variant-numeric: tabular-nums; }
-.album-quality { display: inline-block; margin-left: var(--space-2); padding: 1px 6px; border: 1px solid var(--edge); border-radius: var(--radius-control); color: var(--text-subtle); font: 500 .6875rem/1.3 var(--mono); letter-spacing: .02em; white-space: nowrap; }
+.album-quality { display: inline-block; margin-left: var(--space-2); padding: 1px 6px; border: var(--bw) solid var(--edge); border-radius: var(--radius-control); color: var(--text-subtle); font: 500 .6875rem/1.3 var(--mono); letter-spacing: .02em; white-space: nowrap; }
 .album-quality[hidden] { display: none; }
 .track .owned-check { width: 28px; height: 28px; }
 /* A song's own Get: the same circle, smaller. */
@@ -1037,10 +1066,10 @@ button.inline-link:focus-visible { outline: 2px solid var(--accent); outline-off
 .album-summary { margin: var(--space-4) var(--space-2) 0; color: var(--text-muted); font-size: var(--text-sm); text-align: center; }
 .album-summary:empty { display: none; }
 .album-page .album-platform-links { display: flex; flex-flow: row wrap; align-items: center; justify-content: center; gap: var(--space-2); margin: var(--space-3) var(--space-2) 0; }
-.album-page .album-platform-links a { box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; padding: 0; border: 1px solid var(--edge-strong); border-radius: var(--radius-control); color: var(--text); background: var(--surface); text-decoration: none; }
+.album-page .album-platform-links a { box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; padding: 0; border: var(--bw) solid var(--edge-strong); border-radius: var(--radius-control); color: var(--text); background: var(--surface); text-decoration: none; }
 .album-page .album-platform-links a img { display: block; flex: 0 0 auto; width: 22px; height: 22px; }
 .album-page .album-platform-links a:hover { border-color: var(--accent); background: var(--surface-hover); }
-.album-page .album-platform-links a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.album-page .album-platform-links a:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 @media (max-width: 620px) { .track { gap: var(--space-2); } }
 
 /* Grab the radio: stations and the songs heard, as plain rows with the name on the left and the actions on the right. */
@@ -1076,7 +1105,7 @@ button.inline-link:focus-visible { outline: 2px solid var(--accent); outline-off
 .radio-switch[aria-checked="true"]::before { transform: translateX(20px); background: var(--ink); }
 .radio-switch:active:not(:disabled)::before { transform: translate(0); }
 .radio-switch:disabled { opacity: .6; cursor: progress; }
-.radio-switch:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.radio-switch:focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; }
 @media (prefers-reduced-motion: reduce) { .radio-switch::before { transition: none; } }
 
 /* Album cards with an action group: the group sits at the foot of the card, below the text, and the
@@ -1093,7 +1122,7 @@ button.inline-link:focus-visible { outline: 2px solid var(--accent); outline-off
 @media (prefers-reduced-motion: reduce) { .card-art > .artist-bio { transition: none; } }
 
 /* Feature-slide tint (tintDashboardSlider): the cover's dominant colour, capped dark like the album and artist page backdrops, fading toward the page ground. */
-.dashboard-slider::before { content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; opacity: 0; background-color: var(--slider-tint, transparent); background-image: linear-gradient(to bottom, transparent 0, var(--ink) 130%); transition: opacity var(--dur-slow) var(--ease-out); }
+.dashboard-slider::before { content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; opacity: 0; background-color: var(--slider-tint, transparent); background-image: linear-gradient(to bottom, transparent 0, var(--slider-fade, var(--ink)) 130%); transition: opacity var(--dur-slow) var(--ease-out); }
 .dashboard-slider.has-tint::before { opacity: 1; }
 @media (prefers-reduced-motion: reduce) { .dashboard-slider::before { transition: none; } }
 /* The feature slide covers the whole strip with its own surface, which hid the tint behind it. */
@@ -1205,4 +1234,34 @@ button.inline-link:focus-visible { outline: 2px solid var(--accent); outline-off
   .similar-artists > li { flex: 0 0 112px; width: 112px; scroll-snap-align: start; }
   .similar-artists .library-artist { height: 100%; align-items: center; justify-content: flex-start; }
   .similar-artists .library-artist-name, .similar-artists .library-artist-count { overflow: visible; text-overflow: clip; white-space: normal; overflow-wrap: anywhere; }
+}
+
+/* Text drawn over a fixed dark scrim (the artist hero, its back button, the About overlay) keeps Ink's light colours
+   on every theme. The scrims are the same dark on every theme, so a light theme's dark text would vanish on them. */
+.artist-stage, .artist-back, .card-art > .artist-bio, .about-toggle {
+  --text: #f4efe6; --text-muted: #d4cdc0; --text-subtle: #bdb6a9; --accent-text: #f5d33f;
+  --surface: #1c1a18; --surface-raised: #252220; --surface-hover: #2d2926; --edge: #34302c; --edge-strong: #787168;
+  color: var(--text);
+}
+
+/* The dashboard carousel's featured slide sits on the cover's dark tint (the tint fades to Ink's dark on every theme, see
+   --slider-fade), so its text column keeps Ink's light colours (the artwork side, with the action group on its own light surface, does not): the bio, the artist name and the listener count stay readable on a light theme. */
+.dashboard-slider.has-tint > .card[data-slot="1"] > .dashboard-tile-meta, .dashboard-slider.has-tint .dashboard-slider-count {
+  --text: #f4efe6; --text-muted: #d4cdc0; --text-subtle: #bdb6a9; --accent-text: #f5d33f;
+  color: var(--text);
+}
+
+/* A very long album title runs on over the first thumbnail (blurred and inert) instead of wrapping into a tall block, so the
+   bio and the info keep to their column, above the navigation buttons. The featured slide ignores the pointer except on its
+   artwork and text, so the thumbnails beside it stay usable; the title is the only part that covers one. Wide layout only. */
+@media (min-width: 621px) {
+  .dashboard-slider > .card[data-slot="1"] { z-index: 2; pointer-events: none; }
+  .dashboard-slider > .card[data-slot="1"] > .card-art, .dashboard-slider > .card[data-slot="1"] > .dashboard-tile-meta { pointer-events: auto; }
+  .dashboard-slider > .card:not([data-slot="1"]) { z-index: 1; }
+  /* Room for the navigation buttons under the text, so the bio never runs behind them. */
+  .dashboard-slider > .card[data-slot="1"] > .dashboard-tile-meta { padding-bottom: 76px; }
+  .dashboard-slider > .card[data-slot="1"] h3 {
+    position: relative; z-index: 3; margin-right: calc(-1 * min(var(--thumbs), 1) * (var(--thumb-w) + var(--thumb-gap)));
+    max-height: calc(3 * var(--title-leading) * 1em); overflow: hidden; overflow-wrap: anywhere;
+  }
 }

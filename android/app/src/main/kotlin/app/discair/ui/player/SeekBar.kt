@@ -33,6 +33,7 @@ fun SeekBar(fraction: Float, enabled: Boolean, onChange: (Float) -> Unit, onFini
     var active by remember { mutableStateOf(false) }
     val radius by animateDpAsState(if (active) ThumbActive else Thumb, label = "seekThumb")
     val pad = ThumbActive
+    val palette = app.discair.ui.theme.LocalPalette.current
     val trackColor = Ink.Edge
     val fill = Ink.Accent
     val dot = if (enabled) Ink.Accent else Ink.EdgeStrong
@@ -56,6 +57,26 @@ fun SeekBar(fraction: Float, enabled: Boolean, onChange: (Float) -> Unit, onFini
     ) {
         val inset = pad.toPx()
         val y = size.height / 2
+        if (palette.brutal) {
+            // Neobrut: an outlined track (thin, like the reference) with the accent for the played part, and a square
+            // outlined thumb with a hard shadow that grows a little while it is held.
+            val outline = (palette.shape?.outline ?: 2).dp.toPx()
+            val h = 14.dp.toPx()
+            val corner = androidx.compose.ui.geometry.CornerRadius(minOf(palette.shape?.radius ?: 0, 3).dp.toPx())
+            val left = inset
+            val width = size.width - 2 * inset
+            val x = left + width * fraction.coerceIn(0f, 1f)
+            drawRoundRect(palette.surface, Offset(left, y - h / 2), androidx.compose.ui.geometry.Size(width, h), corner)
+            drawRoundRect(palette.accent, Offset(left, y - h / 2), androidx.compose.ui.geometry.Size((x - left).coerceAtLeast(0f), h), corner)
+            drawRoundRect(palette.edgeStrong, Offset(left, y - h / 2), androidx.compose.ui.geometry.Size(width, h), corner, style = androidx.compose.ui.graphics.drawscope.Stroke(outline))
+            val t = (if (active) 26.dp else 22.dp).toPx()
+            val sh = ((palette.shape?.shadow ?: 0) * 0.5f).dp.toPx()
+            val tl = Offset(x - t / 2, y - t / 2)
+            drawRoundRect(palette.shadowColor, Offset(tl.x + sh, tl.y + sh), androidx.compose.ui.geometry.Size(t, t), corner)
+            drawRoundRect(if (enabled) palette.surface else palette.raised, tl, androidx.compose.ui.geometry.Size(t, t), corner)
+            drawRoundRect(palette.edgeStrong, tl, androidx.compose.ui.geometry.Size(t, t), corner, style = androidx.compose.ui.graphics.drawscope.Stroke(outline))
+            return@Canvas
+        }
         val track = 2.dp.toPx()
         val x = inset + (size.width - 2 * inset) * fraction.coerceIn(0f, 1f)
         drawLine(trackColor, Offset(inset, y), Offset(size.width - inset, y), strokeWidth = track, cap = StrokeCap.Round)

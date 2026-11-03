@@ -31,7 +31,7 @@ Discair is an acquisition-aware discovery tool. The web UI is not a player. The 
 
 ## Current interface identity
 
-The shipped interface uses a warm, dark ink palette with chart-red emphasis, yellow for primary/selected states, and artwork-led, scannable layouts. Typography and detailed visual tokens are documented historically in `docs/archive/redesign/DESIGN.md` and `docs/archive/redesign/DESIGN_SYSTEM.md`; consult them when maintaining existing visual consistency, not as an unfinished roadmap.
+The shipped interface uses a warm, dark ink palette with chart-red emphasis, yellow for primary/selected states, and artwork-led, scannable layouts. That is the default (Ink); Settings > Appearance also offers eight more themes (dark, light and Neobrut) and six Brut font pairs, decision D-022. Typography and detailed visual tokens are documented historically in `docs/archive/redesign/DESIGN.md` and `docs/archive/redesign/DESIGN_SYSTEM.md`; consult them when maintaining existing visual consistency, not as an unfinished roadmap.
 
 ## Product Principles
 1. Artwork leads; metadata supports.

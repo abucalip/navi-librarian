@@ -48,7 +48,7 @@ class FlatSurfaceUIContractTests(unittest.TestCase):
 
     def test_card_artwork_keeps_its_edge(self):
         self.assertIn("border-bottom: 1px solid var(--edge);", rule_body(self.css, ".card-art"))
-        self.assertIn("border: 1px solid var(--edge);", rule_body(self.css, ".ranked-row .card-art"))
+        self.assertIn("border: var(--bw) solid var(--edge);", rule_body(self.css, ".ranked-row .card-art"))
 
 
 if __name__ == "__main__":

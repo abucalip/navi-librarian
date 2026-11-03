@@ -68,7 +68,7 @@ class SettingsLayoutContractTests(unittest.TestCase):
         self.assertRegex(self.css, r"#settings \.action-group > button \{ min-height: 0; height: var\(--group-h\);")
 
     def test_selected_tab_is_marked_by_more_than_color_alone(self):
-        self.assertRegex(self.css, r"\.settings-tabs \.settings-tab\.active \{[^}]*border-bottom-color: var\(--accent\);")
+        self.assertRegex(self.css, r"\.settings-tabs \.settings-tab\.active \{[^}]*border-bottom-color: var\(--accent-text\);")
 
     def test_settings_text_uses_tokens_not_hardcoded_greys(self):
         self.assertNotIn("#c8c8bd", self.css)
