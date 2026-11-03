@@ -256,22 +256,6 @@
   --zine-pink: #ff4d6d; --zine-teal: #2ec4b6; --zine-on-colour: #111111; --zine-cover: #2a3b5c;
 }
 
-/* Pipeline Board (round 3, P2): ground #e7f0ff with a white card per column; the accents are the mockup's lime (Get), orange (progress). */
-:root[data-theme="pipeline"] {
-  color-scheme: light;
-  --ink-rail: #ff7a1a; --ink: #e7f0ff; --surface: #ffffff; --surface-raised: #f4f8ff; --surface-hover: #f0f5ff;
-  --edge: #0a0a0a; --edge-strong: #0a0a0a;
-  --text: #0a0a0a; --text-muted: #3d4663; --text-subtle: #3d4663;
-  --accent: #c6f432; --accent-text: #0a0a0a; --focus: #0a0a0a; --accent-hover: #b5e51f; --accent-dim: #e6fba6; --on-accent: #0a0a0a;
-  --chart-red: #b3261e; --chart-red-text: #b3261e; --ok: #1b6b33; --caution: #7f4a00;
-  --slider-fade: #141211;
-  --shadow-menu: 5px 5px 0 #0a0a0a;
-  --bw: 2px; --radius-control: 0px; --radius-panel: 0px; --radius-chip: 0px;
-  --brut-sh: 4px; --brut-shadow-color: #0a0a0a; --brut-lift: -2px;
-  --brut-nav-bg: #0a0a0a; --brut-nav-text: #c6f432; --brut-nav-edge: #0a0a0a; --brut-line: #0a0a0a;
-  --pipe-orange: #ff7a1a; --pipe-lime: #c6f432; --pipe-yellow: #ffde59; --pipe-violet: #7b4dff; --pipe-red: #d7263d; --pipe-teal: #2ec4b6; --pipe-green: #9be3b0;
-}
-
 /* ---- Neobrut components: only the themes that set data-brut ---- */
 :root[data-brut] header { border-bottom: var(--bw) solid var(--edge); }
 :root[data-brut] nav { border-right: var(--bw) solid var(--edge); }
