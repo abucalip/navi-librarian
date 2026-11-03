@@ -259,11 +259,43 @@ object Palettes {
         layout = Layout.TapeDeck,
     )
 
+    // Round 2, Sheet Stack (owner-approved 2026-11-03): soft-cornered sheets, a joined navigation group, a bottom-sheet player with a
+    // volume slider. Values from docs/BRUT_LAYOUTS_PLAN.md section 3 ("ink" is the text and the edge; "cy" is the second tone).
+    val SheetViolet = Palette(
+        "sheetviolet", "Sheet · Violet-orange", false,
+        rail = c(0x15131F), ink = c(0x15131F), surface = c(0x221F31), raised = c(0x2E2A43), edge = c(0xF4F1FF), edgeStrong = c(0xF4F1FF),
+        text = c(0xF4F1FF), textMuted = c(0xA8A2C4), accent = c(0xFF6A3D), accentDim = c(0x2E2A43), onAccent = c(0x15131F),
+        chartRed = c(0xFF8A80), chartRedText = c(0xFF8A80), ok = c(0x86D39B), caution = c(0xF0A640),
+        family = Family.Brutal, shape = BrutalShape(14, 2, 4), shadowColor = c(0xFF6A3D),
+        accent2 = c(0x35E0D0), accent3 = c(0xFFD166), accent4 = c(0xB6A4FF), minAccentContrast = 3.0,
+        layout = Layout.SheetStack,
+    )
+
+    val SheetAcid = Palette(
+        "sheetacid", "Sheet · Acid Night", false,
+        rail = c(0x0D1210), ink = c(0x0D1210), surface = c(0x17201B), raised = c(0x22302A), edge = c(0xEEFAF0), edgeStrong = c(0xEEFAF0),
+        text = c(0xEEFAF0), textMuted = c(0x93AD9B), accent = c(0xC6F432), accentDim = c(0x22302A), onAccent = c(0x0D1210),
+        chartRed = c(0xFF8A80), chartRedText = c(0xFF8A80), ok = c(0x86D39B), caution = c(0xF0A640),
+        family = Family.Brutal, shape = BrutalShape(14, 2, 4), shadowColor = c(0xC6F432),
+        accent2 = c(0xFF5DC8), accent3 = c(0x35E0D0), accent4 = c(0xFFD166), minAccentContrast = 3.0,
+        layout = Layout.SheetStack,
+    )
+
+    val SheetDaylight = Palette(
+        "sheetdaylight", "Sheet · Daylight", true,
+        rail = c(0xF4EFE6), ink = c(0xF4EFE6), surface = c(0xFFFDF7), raised = c(0xECE4D4), edge = c(0x14121C), edgeStrong = c(0x14121C),
+        text = c(0x14121C), textMuted = c(0x5A546A), accent = c(0xFF6A3D), accentDim = c(0xFFD9CB), onAccent = c(0x14121C),
+        chartRed = c(0xB3261E), chartRedText = c(0xB3261E), ok = c(0x1B6B33), caution = c(0x7F4A00),
+        family = Family.Brutal, shape = BrutalShape(14, 2, 4), shadowColor = c(0x14121C),
+        accent2 = c(0x2BB3A6), accent3 = c(0xFFC93C), accent4 = c(0xB6A4FF), minAccentContrast = 1.8,
+        layout = Layout.SheetStack,
+    )
+
     /** Light themes in the order the picker shows them; the first is the default day theme. */
-    val Light: List<Palette> = listOf(Sand, Paper, Mist, Sage, Blush, BrutLavender, BrutMint, BrutLemon, BrutCream, BrutSky, BrutPoster, TapeLime, TapeCobalt, TapeTangerine)
+    val Light: List<Palette> = listOf(Sand, Paper, Mist, Sage, Blush, BrutLavender, BrutMint, BrutLemon, BrutCream, BrutSky, BrutPoster, TapeLime, TapeCobalt, TapeTangerine, SheetDaylight)
 
     /** Dark themes in the order the picker shows them; the first is the default night theme. */
-    val Dark: List<Palette> = listOf(Night, Amoled, Forest, Ocean, Ember, Graphite, HighContrast, BrutInk, BrutMidnight)
+    val Dark: List<Palette> = listOf(Night, Amoled, Forest, Ocean, Ember, Graphite, HighContrast, BrutInk, BrutMidnight, SheetViolet, SheetAcid)
 
     val All: List<Palette> = Light + Dark
 

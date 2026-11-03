@@ -84,8 +84,10 @@ fun HomeScreen(open: Opener, onDiscover: () -> Unit, onLibrary: () -> Unit, onSe
     val repo = LocalRepository.current
     val picks = rememberLoad("picks") { repo.picks(10).items }
     val genres = rememberLoad("genres") { repo.genres().items }
+    val sheetStack = app.discair.ui.theme.currentLayout() == app.discair.ui.theme.Layout.SheetStack
     LazyColumn(Modifier.fillMaxWidth(), contentPadding = PaddingValues(top = 12.dp, bottom = 24.dp + app.discair.ui.LocalBottomClearance.current)) {
-        item { PageHeading("For you", Modifier.padding(start = 16.dp, end = 16.dp, bottom = 8.dp)) }
+        // Sheet Stack: the picks are "Today", with the newest requests (and their status words) under them.
+        item { PageHeading(if (sheetStack) "Today" else "For you", Modifier.padding(start = 16.dp, end = 16.dp, bottom = 8.dp)) }
         item {
             Box(Modifier.heightIn(min = 120.dp)) {
                 when (val state = picks.state) {
@@ -107,6 +109,7 @@ fun HomeScreen(open: Opener, onDiscover: () -> Unit, onLibrary: () -> Unit, onSe
                 is Load.Ready -> GenreRow(state.value, open)
             }
         }
+        if (sheetStack) item(key = "requests") { SheetRequestsSection(open) }
         item(key = "recently_added") { RecentlyAddedSection(open) }
         item(key = "new_releases") { NewReleasesSection(open) }
         for (shelf in listOf(Shelves.Recent to "Recently played", Shelves.Frequent to "Most played")) {
@@ -129,13 +132,17 @@ private fun PageButtons(onDiscover: () -> Unit, onLibrary: () -> Unit, onSetting
     // About as wide as the navigation island below it. Neobrut: one outlined frame with a hard shadow and thick seams (a button group).
     // Cassette Deck: Settings lives in its navigation bar, so only Discover and Library are left here.
     val withSettings = app.discair.ui.common.TapeDeckRules.homeShowsSettingsButton(palette.layout)
+    // Sheet Stack: Library is a segment of its navigation group, so Discover and Settings are left here.
+    val withLibrary = app.discair.ui.common.SheetStackRules.homeShowsLibraryButton(palette.layout)
     Row(
-        Modifier.width(if (withSettings) 200.dp else 136.dp).height(48.dp).brutalShadow(frame).clip(frame).background(Ink.Surface)
+        Modifier.width(if (withSettings && withLibrary) 200.dp else 136.dp).height(48.dp).brutalShadow(frame).clip(frame).background(Ink.Surface)
             .border(if (palette.brutal) app.discair.ui.theme.brutalOutline() else androidx.compose.foundation.BorderStroke(1.dp, Ink.EdgeStrong), frame),
     ) {
         PageButton("Discover", Icons.Default.Star, onDiscover, Modifier.weight(1f))
-        Box(Modifier.width(seam).fillMaxHeight().background(Ink.EdgeStrong))
-        PageButton("Library", Icons.AutoMirrored.Filled.List, onLibrary, Modifier.weight(1f))
+        if (withLibrary) {
+            Box(Modifier.width(seam).fillMaxHeight().background(Ink.EdgeStrong))
+            PageButton("Library", Icons.AutoMirrored.Filled.List, onLibrary, Modifier.weight(1f))
+        }
         if (withSettings) {
             Box(Modifier.width(seam).fillMaxHeight().background(Ink.EdgeStrong))
             PageButton("Settings", app.discair.ui.player.PlayerIcons.Tune, onSettings, Modifier.weight(1f))
