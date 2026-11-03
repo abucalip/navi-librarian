@@ -638,4 +638,29 @@
   :root[data-layout="zine"] .album-modal { border-radius: 0; background: var(--surface); }
   :root[data-layout="zine"] .album-modal-art, :root[data-layout="zine"] .album-hero-art-wrap { border-radius: 0; }
   :root[data-layout="zine"] .album-tab { border-radius: 0; }
+
+  /* ---- Artist: a magazine cover. The name is set very large on a plate and cropped by the right edge (the full text stays in the
+     DOM, so the accessible name is unchanged); Top songs are the cover lines; owned albums are solid, missing ones dashed with the
+     word Missing and their real Get; similar artists are "also in this issue" chips. ---- */
+  :root[data-layout="zine"][data-brut] .artist-stage { border-radius: 0; min-height: clamp(260px, 30vw, 380px); align-items: flex-end; }
+  :root[data-layout="zine"] .artist-stage::after { display: none; }
+  :root[data-layout="zine"] .artist-hero-text { gap: 4px; padding: 10px 24px 14px; color: var(--text); background: var(--surface); border-top: var(--zine-rule); }
+  :root[data-layout="zine"] #artistDetailHeading { overflow: hidden; white-space: nowrap; text-overflow: clip; text-transform: uppercase; font-family: var(--display); font-size: clamp(4rem, 12vw, 9.5rem); line-height: .9; letter-spacing: 0; text-wrap: nowrap; overflow-wrap: normal; }
+  :root[data-layout="zine"] .artist-back { background: var(--surface); border-radius: 0; }
+  :root[data-layout="zine"] .artist-top-songs { background: var(--surface); border: var(--zine-rule); border-radius: 0; box-shadow: var(--brut-sh) var(--brut-sh) 0 var(--brut-shadow-color); }
+  :root[data-layout="zine"] .artist-top-songs h3, :root[data-layout="zine"] #artistOwnedHeading, :root[data-layout="zine"] #artistMissingHeading, :root[data-layout="zine"] #artistSimilarHeading {
+    display: inline-block; margin: 0 0 10px; padding: 3px 10px 2px; color: var(--zine-on-colour); background: var(--zine-pink); border: var(--zine-rule);
+    font: 800 var(--text-xs)/1.4 var(--mono); letter-spacing: .16em; text-transform: uppercase;
+  }
+  :root[data-layout="zine"] #artistOwnedHeading, :root[data-layout="zine"] #artistMissingHeading, :root[data-layout="zine"] #artistSimilarHeading { margin-top: 28px; }
+  :root[data-layout="zine"] .top-song-rank { color: var(--accent-text); font-family: var(--mono); }
+  :root[data-layout="zine"] .owned-album-grid { gap: 18px; }
+  :root[data-layout="zine"] .owned-album-art { border: var(--zine-rule); border-radius: 0; box-shadow: var(--brut-sh) var(--brut-sh) 0 var(--brut-shadow-color); }
+  :root[data-layout="zine"] #artistMissingAlbums .album-row { border: 2px dashed var(--edge); border-radius: 0; background: var(--surface); }
+  :root[data-layout="zine"] #artistMissingAlbums .album-row::after { content: "Missing"; order: 9; flex: 0 0 auto; padding: 1px 8px; color: var(--text); background: var(--surface-raised); border: var(--bw) solid var(--edge); font: 800 var(--text-xs)/1.5 var(--mono); letter-spacing: .1em; text-transform: uppercase; }
+  :root[data-layout="zine"] .similar-artists { display: flex; flex-wrap: wrap; gap: 8px; }
+  :root[data-layout="zine"] .similar-artists .library-artist { flex-direction: row; width: auto; min-height: 44px; padding: 4px 14px; text-align: left; background: var(--surface); border: var(--zine-rule); border-radius: 0; }
+  :root[data-layout="zine"] .similar-artists .library-art { display: none; }
+  :root[data-layout="zine"] .similar-artists .library-artist-name { font-weight: 800; }
+  :root[data-layout="zine"] .library-bio { column-width: 22rem; column-gap: 26px; column-rule: var(--zine-hair); max-width: none; }
 }
