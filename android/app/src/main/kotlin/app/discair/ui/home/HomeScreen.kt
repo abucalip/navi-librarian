@@ -138,7 +138,7 @@ private fun PageButtons(onDiscover: () -> Unit, onLibrary: () -> Unit, onSetting
     // Sheet Stack: Library is a segment of its navigation group, so Discover and Settings are left here.
     val withLibrary = app.discair.ui.common.SheetStackRules.homeShowsLibraryButton(palette.layout)
     Row(
-        Modifier.width(if (withSettings && withLibrary) 200.dp else 136.dp).height(48.dp).brutalShadow(frame).clip(frame).background(Ink.Surface)
+        Modifier.width(when { withSettings && withLibrary -> 200.dp; withSettings || withLibrary -> 136.dp; else -> 72.dp }).height(48.dp).brutalShadow(frame).clip(frame).background(Ink.Surface)
             .border(if (palette.brutal) app.discair.ui.theme.brutalOutline() else androidx.compose.foundation.BorderStroke(1.dp, Ink.EdgeStrong), frame),
     ) {
         PageButton("Discover", Icons.Default.Star, onDiscover, Modifier.weight(1f))

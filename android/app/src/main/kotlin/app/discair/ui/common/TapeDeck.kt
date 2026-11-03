@@ -61,6 +61,12 @@ object TapeDeckRules {
     /** Settings sits in the Cassette Deck's navigation bar (the mini player took the player's place), so Home's page buttons drop it. */
     fun homeShowsSettingsButton(layout: app.discair.ui.theme.Layout): Boolean = layout != app.discair.ui.theme.Layout.TapeDeck
 
+    /** The Cassette Deck's bar also has a Library cell, so Home's page buttons drop Library there too (Discover is what is left). */
+    fun homeShowsLibraryButton(layout: app.discair.ui.theme.Layout): Boolean = layout != app.discair.ui.theme.Layout.TapeDeck
+
+    /** Where the ruler marks of the Cassette Deck's seek bar sit, as fractions of the track: [count] equal steps, the two ends excluded. */
+    fun seekTicks(count: Int): List<Float> = if (count < 2) emptyList() else List(count - 1) { (it + 1f) / count }
+
     /** The lyrics button on Now Playing: the view is lyrics (1) or the queue under the player (0). A stale queue-face view (2) also becomes lyrics. */
     fun toggleLyrics(view: Int): Int = if (view == 1) 0 else 1
 
@@ -106,7 +112,7 @@ fun TapeMeter(bars: Int, moving: Boolean, color: Color, modifier: Modifier = Mod
 }
 
 /**
- * The ruled navigation bar of the Cassette Deck: Search, Home and Settings in a full-width bar split by rules; the current page is
+ * The ruled navigation bar of the Cassette Deck: Search, Home, Library and Settings (four cells) in a full-width bar split by rules; the current page is
  * filled with the accent. The player has no cell here: the mini player above the bar opens Now Playing. [palette] is the owner's
  * chosen theme: the bar sits on the page, not on the dark artwork tint the island takes.
  */
@@ -114,13 +120,16 @@ fun TapeMeter(bars: Int, moving: Boolean, color: Color, modifier: Modifier = Mod
 fun TapeNavBar(
     palette: Palette,
     homeSelected: Boolean,
+    librarySelected: Boolean,
     settingsSelected: Boolean,
     onSearch: () -> Unit,
     onHome: () -> Unit,
+    onLibrary: () -> Unit,
     onSettings: () -> Unit,
     modifier: Modifier = Modifier,
     searchIcon: @Composable (Color) -> Unit,
     homeIcon: @Composable (Color) -> Unit,
+    libraryIcon: @Composable (Color) -> Unit,
     settingsIcon: @Composable (Color) -> Unit,
 ) {
     val rule = (palette.shape?.outline ?: 2).dp
@@ -132,6 +141,7 @@ fun TapeNavBar(
     ) {
         TapeNavCell(palette, "Search", false, onSearch, Modifier.weight(1f), rule, last = false) { searchIcon(it) }
         TapeNavCell(palette, "Home", homeSelected, onHome, Modifier.weight(1f), rule, last = false) { homeIcon(it) }
+        TapeNavCell(palette, "Library", librarySelected, onLibrary, Modifier.weight(1f), rule, last = false) { libraryIcon(it) }
         TapeNavCell(palette, "Settings", settingsSelected, onSettings, Modifier.weight(1f), rule, last = true) { settingsIcon(it) }
     }
 }

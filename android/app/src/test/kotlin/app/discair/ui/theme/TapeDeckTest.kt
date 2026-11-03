@@ -93,6 +93,25 @@ class TapeDeckTest {
         for (layout in Layout.values().filter { it != Layout.TapeDeck }) assertTrue(TapeDeckRules.homeShowsSettingsButton(layout))
     }
 
+    @Test fun libraryJoinsTheCassetteDeckBarSoHomeKeepsOnlyDiscover() {
+        assertFalse(TapeDeckRules.homeShowsLibraryButton(Layout.TapeDeck))
+        assertFalse(TapeDeckRules.homeShowsSettingsButton(Layout.TapeDeck))
+        assertTrue(TapeDeckRules.homeShowsLibraryButton(Layout.Standard) && TapeDeckRules.homeShowsLibraryButton(Layout.StickerWall))
+        assertFalse(app.discair.ui.common.SheetStackRules.homeShowsLibraryButton(Layout.TapeDeck))
+        assertFalse(app.discair.ui.common.SheetStackRules.homeShowsLibraryButton(Layout.SheetStack))
+        assertTrue(app.discair.ui.common.SheetStackRules.homeShowsLibraryButton(Layout.Standard))
+    }
+
+    @Test fun theSeekBarRulerHasNineMarksInTenthsAndNoneAtTheEnds() {
+        val ticks = TapeDeckRules.seekTicks(10)
+        assertEquals(9, ticks.size)
+        assertEquals(0.1f, ticks.first(), 0.0001f)
+        assertEquals(0.9f, ticks.last(), 0.0001f)
+        assertTrue(ticks.zipWithNext().all { (a, b) -> b > a })
+        assertEquals(emptyList<Float>(), TapeDeckRules.seekTicks(1))
+        assertEquals(listOf(0.5f), TapeDeckRules.seekTicks(2))
+    }
+
     @Test fun theLyricsButtonSwapsTheQueueAndTheLyrics() {
         assertEquals(1, TapeDeckRules.toggleLyrics(0)) // queue -> lyrics
         assertEquals(0, TapeDeckRules.toggleLyrics(1)) // lyrics -> queue
