@@ -106,9 +106,9 @@ if __name__ == "__main__":
 
 
 class ThemeAndFontChoiceTests(unittest.TestCase):
-    """Settings > Appearance: fifteen themes and seven font pairs, applied before first paint from localStorage."""
+    """Settings > Appearance: eighteen themes and seven font pairs, applied before first paint from localStorage."""
 
-    THEME_IDS = ["ink", "vinyl", "nocturne", "parchment", "gallery", "sleeve", "cassette", "mintdesk", "nightshift", "tapelime", "tapecobalt", "tapetangerine", "ledgerslate", "ledgerplum", "ledgermono"]
+    THEME_IDS = ["ink", "vinyl", "nocturne", "parchment", "gallery", "sleeve", "cassette", "mintdesk", "nightshift", "tapelime", "tapecobalt", "tapetangerine", "ledgerslate", "ledgerplum", "ledgermono", "cratekraft", "cratemint", "cratenight"]
     FONT_IDS = ["discair", "baseline", "technical", "editorial", "modern", "shout", "swiss"]
 
     def test_every_theme_and_font_in_the_script_has_a_stylesheet_block_except_the_defaults(self):
@@ -128,7 +128,7 @@ class ThemeAndFontChoiceTests(unittest.TestCase):
         css = (STATIC / "themes.css").read_text(encoding="utf-8")
         themes = script.split("var THEMES = [")[1].split("];")[0]
         brut = [m.group(1) for m in re.finditer(r"id: '(\w+)'[^}]*brut: true", themes)]
-        self.assertEqual(brut, ["cassette", "mintdesk", "nightshift", "tapelime", "tapecobalt", "tapetangerine", "ledgerslate", "ledgerplum", "ledgermono"])
+        self.assertEqual(brut, ["cassette", "mintdesk", "nightshift", "tapelime", "tapecobalt", "tapetangerine", "ledgerslate", "ledgerplum", "ledgermono", "cratekraft", "cratemint", "cratenight"])
         for theme in self.THEME_IDS[1:]:
             block = css.split(f':root[data-theme="{theme}"]')[1].split("}")[0]
             self.assertEqual("--brut-sh:" in block, theme in brut, theme)
@@ -345,7 +345,7 @@ class ThemeAndFontChoiceTests(unittest.TestCase):
         self.assertIn("--text-muted: #d4cdc0", block)
         self.assertIn("--accent-text: #f5d33f", block)
         # light themes fade the tint to Ink's dark; dark themes already end dark and need nothing
-        light = {"parchment", "gallery", "sleeve", "cassette", "mintdesk", "tapelime", "tapecobalt", "tapetangerine", "ledgerslate", "ledgerplum", "ledgermono"}
+        light = {"parchment", "gallery", "sleeve", "cassette", "mintdesk", "tapelime", "tapecobalt", "tapetangerine", "ledgerslate", "ledgerplum", "ledgermono", "cratekraft", "cratemint"}
         for theme, themed in self._theme_blocks().items():
             self.assertEqual("--slider-fade: #141211" in themed, theme in light, theme)
 

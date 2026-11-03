@@ -5930,6 +5930,39 @@ mobileLayoutQuery.addEventListener('change', () => {
   if ($('savedCards').childElementCount) loadSaved();
   if ($('lensListsCards').childElementCount) loadLensList(activeLens);
 });
+// Crate Wall only: previous and next arrows on each dashboard shelf, the way the Deep Dives rows have them. Hidden by default;
+// the layout shows them, and they hide themselves (data-fits) while the strip fits without scrolling.
+function buildShelfArrows() {
+  for (const id of ['shelfNewReleases', 'shelfNewest', 'shelfRecent', 'shelfFrequent']) {
+    const track = $(id);
+    const heading = track && track.closest('.dashboard-shelf') && track.closest('.dashboard-shelf').querySelector('.dashboard-shelf-heading');
+    if (!heading) continue;
+    const arrows = document.createElement('div');
+    arrows.className = 'shelf-arrows action-group';
+    arrows.hidden = true;
+    arrows.setAttribute('role', 'group');
+    arrows.setAttribute('aria-label', (track.getAttribute('aria-label') || 'Albums') + ' scroll');
+    for (const [icon, direction] of [['chevron-left', -1], ['chevron-right', 1]]) {
+      const arrow = document.createElement('button');
+      arrow.type = 'button';
+      arrow.append(spriteIcon(icon));
+      arrow.title = direction < 0 ? 'Scroll albums left' : 'Scroll albums right';
+      arrow.setAttribute('aria-label', arrow.title);
+      arrow.addEventListener('click', () => scrollTrackBy(track, direction * trackScrollStep(track)));
+      arrows.append(arrow);
+    }
+    const sync = () => arrows.toggleAttribute('data-fits', track.scrollWidth <= track.clientWidth + 1);
+    track.addEventListener('scroll', sync, {passive: true});
+    if (typeof ResizeObserver === 'function') {
+      const observer = new ResizeObserver(sync);
+      observer.observe(track);
+      new MutationObserver(sync).observe(track, {childList: true});
+    }
+    heading.append(arrows);
+  }
+}
+
 buildLedgerFilters();
+buildShelfArrows();
 updateLedgerCrumb(activePage);
 if (window.location.hash) applyHash(window.location.hash);
