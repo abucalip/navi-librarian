@@ -240,6 +240,22 @@
   --crate-gold: #ffbf3c; --crate-on-gold: #1b1713;
 }
 
+/* Neobrut · Zine Spread · Yellow (layout "zine": static/layouts.css) */
+:root[data-theme="zine"] {
+  color-scheme: light;
+  --ink-rail: #ffde59; --ink: #f1ede4; --surface: #ffffff; --surface-raised: #ebe5d6; --surface-hover: #f7f3e8;
+  --edge: #111111; --edge-strong: #111111;
+  --text: #111111; --text-muted: #4a463d; --text-subtle: #4a463d;
+  --accent: #ffde59; --accent-text: #b0102f; --focus: #111111; --accent-hover: #f2cf3f; --accent-dim: #fff1b3; --on-accent: #111111;
+  --chart-red: #b3261e; --chart-red-text: #b3261e; --ok: #1b6b33; --caution: #7f4a00;
+  --slider-fade: #141211;
+  --shadow-menu: 5px 5px 0 #111111;
+  --bw: 2px; --radius-control: 0px; --radius-panel: 0px; --radius-chip: 0px;
+  --brut-sh: 4px; --brut-shadow-color: #111111; --brut-lift: -2px;
+  --brut-nav-bg: #111111; --brut-nav-text: #ffde59; --brut-nav-edge: #111111; --brut-line: #111111;
+  --zine-pink: #ff4d6d; --zine-teal: #2ec4b6; --zine-on-colour: #111111;
+}
+
 /* ---- Neobrut components: only the themes that set data-brut ---- */
 :root[data-brut] header { border-bottom: var(--bw) solid var(--edge); }
 :root[data-brut] nav { border-right: var(--bw) solid var(--edge); }

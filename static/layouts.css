@@ -509,3 +509,58 @@
   :root[data-layout="crate"] .album-modal { animation: none; }
   :root[data-layout="crate"] .ranked-row, :root[data-layout="crate"] nav button { transition: none; transform: none; }
 }
+
+/* ==== Zine Spread ("zine"): print. A newspaper front page: a yellow masthead band, the page labels as a ruled strip of boxes, a dated
+   ticker of the newest requests, then dense ruled columns. Reading order is the DOM order; every status is a word. Applies from 901px
+   up; below that the phone shell stays and receives only the theme's tokens. ==== */
+@media (min-width: 901px) {
+  :root[data-layout="zine"] { --rail-w: 0px; --zine-nav-h: 56px; --zine-rule: var(--bw) solid var(--edge); --zine-hair: 1px solid var(--edge); }
+
+  /* ---- Shell: masthead band, double rule, label strip ---- */
+  :root[data-layout="zine"][data-brut] header { border-bottom: 0; box-shadow: 0 5px 0 var(--ink-rail), 0 7px 0 var(--edge); }
+  :root[data-layout="zine"] header h1 .wordmark { height: 38px; }
+  :root[data-layout="zine"] header h1::after {
+    content: "The Daily" / ""; margin-left: 4px; padding: 3px 8px 2px; color: var(--ink-rail); background: var(--edge);
+    font: 800 var(--text-xs)/1.2 var(--mono); letter-spacing: .16em; text-transform: uppercase;
+  }
+  :root[data-layout="zine"] nav {
+    inset: 89px 0 auto 0; width: auto; height: var(--zine-nav-h);
+    flex-direction: row; align-items: stretch; gap: 0; overflow-x: auto; overflow-y: hidden;
+    padding: 0 30px; background: var(--surface); border-right: 0; border-bottom: var(--zine-rule);
+  }
+  :root[data-layout="zine"][data-brut] nav { border-right: 0; }
+  :root[data-layout="zine"] .nav-list { flex: 0 0 auto; flex-direction: row; align-items: stretch; gap: 0; }
+  :root[data-layout="zine"] .nav-group { flex-direction: row; align-items: stretch; gap: 0; }
+  :root[data-layout="zine"] .nav-group + .nav-group { margin: 0 0 0 18px; padding-left: 18px; border-left: var(--zine-rule); }
+  :root[data-layout="zine"] .nav-group-label {
+    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+  }
+  :root[data-layout="zine"][data-brut] nav button {
+    flex: 0 0 auto; width: auto; min-height: 44px; margin: 6px 0; padding: 0 14px; gap: 8px; justify-content: center; white-space: nowrap;
+    color: var(--text); background: transparent; border: 0; border-right: var(--zine-hair); border-radius: 0;
+    font: 800 var(--text-xs)/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; box-shadow: none;
+  }
+  :root[data-layout="zine"][data-brut] nav button:hover { background: var(--surface-raised); transform: none; box-shadow: none; }
+  :root[data-layout="zine"][data-brut] nav button.active { color: var(--brut-nav-text); background: var(--brut-nav-bg); transform: none; box-shadow: none; }
+  :root[data-layout="zine"] nav button:focus-visible { outline-offset: -4px; }
+  :root[data-layout="zine"] nav button > .icon { display: none; }
+  :root[data-layout="zine"] nav .nav-count { margin-left: 4px; position: static; }
+  :root[data-layout="zine"] .app-version { margin: 0 0 0 auto; padding: 0 0 0 16px; align-self: center; flex: 0 0 auto; white-space: nowrap; }
+  :root[data-layout="zine"] main { margin-top: calc(89px + var(--zine-nav-h) + 24px); }
+  :root[data-layout="zine"] .search-shortcut { display: block; position: absolute; right: 52px; top: 50%; transform: translateY(-50%); padding: 0 6px; color: var(--text); background: var(--surface-raised); border: var(--bw) solid var(--edge); font: 700 var(--text-xs)/1.5 var(--mono); pointer-events: none; }
+  :root[data-layout="zine"] .global-search input[type="search"] { padding-right: 120px; }
+  :root[data-layout="zine"] .global-search input[type="search"]:focus + .search-shortcut { display: none; }
+  :root[data-layout="zine"] .search-field,
+  :root[data-layout="zine"] .search-field::before,
+  :root[data-layout="zine"] .global-search input[type="search"],
+  :root[data-layout="zine"] .library-control input[type="search"],
+  :root[data-layout="zine"] .library-control select { border-radius: 0; }
+
+  /* ---- Ticker: the date, then the newest requests, as words ---- */
+  :root[data-layout="zine"] .zine-ticker {
+    display: flex; align-items: stretch; margin: 0 0 24px; overflow: hidden; color: var(--text); background: var(--surface);
+    border: var(--zine-rule); font: 700 var(--text-xs)/1.4 var(--mono); letter-spacing: .04em; text-transform: uppercase;
+  }
+  :root[data-layout="zine"] .zine-date { flex: 0 0 auto; padding: 6px 14px; color: var(--on-accent); background: var(--zine-pink); border-right: var(--zine-rule); white-space: nowrap; }
+  :root[data-layout="zine"] .zine-ticker-items { flex: 1 1 auto; min-width: 0; padding: 6px 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+}

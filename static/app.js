@@ -674,6 +674,7 @@ function updateActiveDownloadBadge(data) {
   badge.setAttribute('aria-label', count + ' active download' + (count === 1 ? '' : 's'));
   updateLedgerStats(jobs, count);
   updateTapeDecks(jobs);
+  updateZineTicker(jobs);
 }
 
 // The three figures the Ledger strip and the Tape Deck show, counted from the acquisition list the page already loads.
@@ -696,6 +697,19 @@ function updateLedgerStats(jobs, active) {
   $('ledgerStatImported').textContent = String(counts.imported);
   $('ledgerStatFailed').textContent = String(counts.failed);
   $('ledgerStatTotal').textContent = String(counts.total);
+}
+
+// Zine Spread only (static/layouts.css shows the strip; the element is hidden and aria-hidden in every other theme): today's date and
+// the newest few requests as "Downloading: Album", "Imported: Album", "Failed: Album" items, built from the acquisition list this page
+// already loads (no new request). The state is always a word. Rebuilt only when the text changes.
+function updateZineTicker(jobs) {
+  const strip = $('zineTicker');
+  if (!strip || document.documentElement.dataset.layout !== 'zine') return;
+  $('zineDate').textContent = new Date().toLocaleDateString(undefined, {weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'});
+  const items = orderAcquisitions(jobs).slice(0, 6).map(job => acquisitionStatusInfo(job.status).label + ': ' + (job.album || job.artist || 'Unknown'));
+  const text = items.join('\u2003\u2022\u2003') || 'No requests yet';
+  const holder = $('zineTickerItems');
+  if (holder.textContent !== text) holder.textContent = text;
 }
 
 // Tape Deck only (static/layouts.css shows the two panels; they are hidden in every other theme): the deck. The request being fetched
