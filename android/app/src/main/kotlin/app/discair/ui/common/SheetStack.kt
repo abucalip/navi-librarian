@@ -45,7 +45,7 @@ import app.discair.ui.theme.themeShape
 /** Pure rules for the Sheet Stack layout (docs/BRUT_LAYOUTS_PLAN.md section 7), apart from the drawing so they are unit-tested. */
 object SheetStackRules {
     /** Library moves into the Sheet Stack's navigation group, so Home's page buttons drop it. */
-    fun homeShowsLibraryButton(layout: Layout): Boolean = layout != Layout.SheetStack
+    fun homeShowsLibraryButton(layout: Layout): Boolean = layout != Layout.SheetStack && TapeDeckRules.homeShowsLibraryButton(layout)
 
     /** The request words of Home's list: Fetching, Queued, Done; any other status keeps the app's own label (never a bare colour). */
     fun requestWord(status: String, label: String): String = when (status.lowercase()) {

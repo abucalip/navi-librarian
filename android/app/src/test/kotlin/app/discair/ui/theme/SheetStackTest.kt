@@ -66,7 +66,7 @@ class SheetStackTest {
 
     @Test fun libraryMovesIntoTheNavigationGroupOnlyOnTheSheetStack() {
         assertFalse(SheetStackRules.homeShowsLibraryButton(Layout.SheetStack))
-        for (l in Layout.values().filter { it != Layout.SheetStack }) assertTrue(SheetStackRules.homeShowsLibraryButton(l))
+        for (l in Layout.values().filter { it != Layout.SheetStack && it != Layout.TapeDeck }) assertTrue(SheetStackRules.homeShowsLibraryButton(l)) // the Cassette Deck bar has a Library cell too
     }
 
     @Test fun theVolumeSliderMapsATouchToZeroToOneFromTheBottom() {

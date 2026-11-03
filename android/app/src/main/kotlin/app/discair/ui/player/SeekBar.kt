@@ -57,6 +57,26 @@ fun SeekBar(fraction: Float, enabled: Boolean, onChange: (Float) -> Unit, onFini
     ) {
         val inset = pad.toPx()
         val y = size.height / 2
+        if (palette.layout == app.discair.ui.theme.Layout.TapeDeck) {
+            // Cassette Deck: a ruled track with a mark every tenth, the played part filled with the accent, and a tall bar as the thumb.
+            val outline = (palette.shape?.outline ?: 2).dp.toPx()
+            val h = 18.dp.toPx()
+            val left = inset
+            val width = size.width - 2 * inset
+            val x = left + width * fraction.coerceIn(0f, 1f)
+            val top = y - h / 2
+            drawRect(palette.surface, Offset(left, top), androidx.compose.ui.geometry.Size(width, h))
+            drawRect(palette.accent, Offset(left, top), androidx.compose.ui.geometry.Size((x - left).coerceAtLeast(0f), h))
+            for (tick in app.discair.ui.common.TapeDeckRules.seekTicks(10)) {
+                val tx = left + width * tick
+                drawLine(palette.edgeStrong, Offset(tx, top + h * 0.55f), Offset(tx, top + h), strokeWidth = (outline / 2).coerceAtLeast(1f))
+            }
+            drawRect(palette.edgeStrong, Offset(left, top), androidx.compose.ui.geometry.Size(width, h), style = androidx.compose.ui.graphics.drawscope.Stroke(outline))
+            val tw = (if (active) 8.dp else 6.dp).toPx()
+            val th = 30.dp.toPx()
+            drawRect(palette.edgeStrong, Offset(x - tw / 2, y - th / 2), androidx.compose.ui.geometry.Size(tw, th))
+            return@Canvas
+        }
         if (palette.brutal) {
             // Neobrut: an outlined track (thin, like the reference) with the accent for the played part, and a square
             // outlined thumb with a hard shadow that grows a little while it is held.

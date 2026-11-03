@@ -70,7 +70,7 @@ fun NavIsland(
     onHome: () -> Unit,
     onPlayer: () -> Unit,
     modifier: Modifier = Modifier,
-    /** Cassette Deck only: Settings takes the player's cell in its ruled bar (the mini player opens Now Playing). */
+    /** Cassette Deck only: Settings (and Library) take cells in its ruled bar; the mini player opens Now Playing. */
     onSettings: () -> Unit = {},
     settingsSelected: Boolean = false,
     /** Sheet Stack only: Library takes a segment of its joined group. */
@@ -81,9 +81,10 @@ fun NavIsland(
     val deckTheme = app.discair.ui.theme.LocalThemePalette.current ?: app.discair.ui.theme.LocalPalette.current
     if (deckTheme.layout == app.discair.ui.theme.Layout.TapeDeck) {
         app.discair.ui.common.TapeNavBar(
-            deckTheme, homeSelected, settingsSelected, onSearch, onHome, onSettings, modifier,
+            deckTheme, homeSelected, librarySelected, settingsSelected, onSearch, onHome, onLibrary, onSettings, modifier,
             searchIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = it, modifier = Modifier.size(24.dp)) },
             homeIcon = { Icon(Icons.Default.Home, contentDescription = null, tint = it, modifier = Modifier.size(24.dp)) },
+            libraryIcon = { Icon(Icons.AutoMirrored.Filled.List, contentDescription = null, tint = it, modifier = Modifier.size(24.dp)) },
             settingsIcon = { Icon(app.discair.ui.player.PlayerIcons.Tune, contentDescription = null, tint = it, modifier = Modifier.size(24.dp)) },
         )
         return
