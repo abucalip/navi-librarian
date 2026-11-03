@@ -13,6 +13,15 @@ func makeClient() throws -> NavidromeClient {
     return try NavidromeClient(baseURL: try AddressPolicy.validate(url), credential: Credential(username: user, password: pw))
 }
 
+/// Maps the `path` Navidrome reports to the mounted share. With "Report Real Path" on, Navidrome reports the server's
+/// absolute path (for example /media/library/music/Artist/Album/01 Song.flac): the server music root is swapped for the
+/// mount. With it off, Navidrome reports a rebuilt name that matches no file, so this finds nothing.
+func localPath(forServerPath path: String) -> String {
+    let serverRoot = ProcessInfo.processInfo.environment["DISCAIR_SERVER_MUSIC_ROOT"] ?? "/media/library/music"
+    if path.hasPrefix(serverRoot + "/") { return smbRoot + path.dropFirst(serverRoot.count) }
+    return path.hasPrefix("/") ? path : "\(smbRoot)/\(path)"
+}
+
 /// Finds one real song per file type, and a pair of consecutive tracks, from random albums. Prints ids and paths only.
 func samples(client: NavidromeClient) async throws {
     print("Samples from the library (ids and relative paths only)")
@@ -32,7 +41,7 @@ func samples(client: NavidromeClient) async throws {
     }
     report("albums scanned", "\(seen)")
     for (k, s) in byKind.sorted(by: { $0.key < $1.key }) {
-        let local = s.path.map { FileManager.default.fileExists(atPath: "\(smbRoot)/\($0)") }
+        let local = s.path.map { FileManager.default.fileExists(atPath: localPath(forServerPath: $0)) }
         report("\(k)", "id=\(s.id) \(s.bitRate ?? 0) kbps \(s.duration ?? 0)s mounted=\(local.map(String.init) ?? "n/a")")
         if let p = s.path { report("   path", p) }
     }
@@ -187,4 +196,74 @@ func partialTest(_ source: URL, kiB: Int, directory: URL) {
     } catch {
         report("\(ext): first \(kiB) KiB of \(all.count / 1024)", "does not open")
     }
+}
+
+// MARK: find and listen
+
+/// Lists albums whose artist or title contains `text` (case and accent insensitive), with song ids on request.
+func find(client: NavidromeClient, text: String, songs: Bool) async throws {
+    let needle = text.folding(options: [.caseInsensitive, .diacriticInsensitive], locale: nil)
+    var hits = 0
+    for album in try await client.allAlbums() {
+        let hay = "\(album.artist ?? "") \(album.name)".folding(options: [.caseInsensitive, .diacriticInsensitive], locale: nil)
+        guard hay.contains(needle) else { continue }
+        hits += 1
+        print("  \(album.artist ?? "?") | \(album.name) | \(album.year.map(String.init) ?? "?") | \(album.songCount ?? 0) songs | album id \(album.id)")
+        if songs {
+            for s in try await client.album(id: album.id).songs.sorted(by: { ($0.discNumber ?? 1, $0.track ?? 0) < ($1.discNumber ?? 1, $1.track ?? 0) }) {
+                print("      \(s.discNumber ?? 1)-\(s.track ?? 0) \(s.title) | \(s.suffix ?? "?") | \(s.duration ?? 0)s | song id \(s.id)")
+            }
+        }
+    }
+    if hits == 0 { print("  no album matches \"\(text)\"") }
+}
+
+/// Real-time playback of the end of track A into the start of track B, to listen for gaps.
+/// `crossfade` 0 means gapless (B queued on the same player node); above 0 is an equal-power crossfade.
+func listen(a: URL, b: URL, crossfade: Double, tail: Double, head: Double, volume: Float) async throws {
+    let fa = try AVAudioFile(forReading: a), fb = try AVAudioFile(forReading: b)
+    let rate = fa.processingFormat.sampleRate
+    let startA = max(0, fa.length - AVAudioFramePosition(tail * rate))
+    let countA = AVAudioFrameCount(fa.length - startA)
+    let countB = AVAudioFrameCount(min(fb.length, AVAudioFramePosition(head * fb.processingFormat.sampleRate)))
+    let engine = AVAudioEngine()
+    engine.mainMixerNode.outputVolume = volume
+    let pa = AVAudioPlayerNode(), pb = AVAudioPlayerNode()
+    engine.attach(pa); engine.attach(pb)
+    if crossfade <= 0 {
+        guard fa.processingFormat.sampleRate == fb.processingFormat.sampleRate, fa.processingFormat.channelCount == fb.processingFormat.channelCount else {
+            throw SpikeError("the two tracks differ in sample rate or channels; gapless needs a conversion step")
+        }
+        engine.connect(pa, to: engine.mainMixerNode, format: fa.processingFormat)
+        pa.scheduleSegment(fa, startingFrame: startA, frameCount: countA, at: nil, completionHandler: nil)
+        pa.scheduleSegment(fb, startingFrame: 0, frameCount: countB, at: nil, completionHandler: nil)
+        try engine.start(); pa.play()
+        print("  playing the last \(f(Double(countA) / rate, 0)) s of A, then B, gapless (volume \(f(Double(volume))))")
+        try await Task.sleep(for: .seconds(Double(countA) / rate + Double(countB) / fb.processingFormat.sampleRate + 0.5))
+    } else {
+        engine.connect(pa, to: engine.mainMixerNode, format: fa.processingFormat)
+        engine.connect(pb, to: engine.mainMixerNode, format: fb.processingFormat)
+        pa.scheduleSegment(fa, startingFrame: startA, frameCount: countA, at: nil, completionHandler: nil)
+        pb.scheduleSegment(fb, startingFrame: 0, frameCount: countB, at: nil, completionHandler: nil)
+        pb.volume = 0
+        try engine.start(); pa.play()
+        print("  playing the last \(f(Double(countA) / rate, 0)) s of A with a \(f(crossfade, 1)) s equal-power crossfade into B (volume \(f(Double(volume))))")
+        let fadeStart = Double(countA) / rate - crossfade
+        var bStarted = false
+        while true {
+            guard let t = pa.lastRenderTime, let p = pa.playerTime(forNodeTime: t) else { try await Task.sleep(for: .milliseconds(10)); continue }
+            let pos = Double(p.sampleTime) / p.sampleRate
+            if pos >= Double(countA) / rate { break }
+            if pos >= fadeStart {
+                if !bStarted { pb.play(); bStarted = true }
+                let x = min((pos - fadeStart) / crossfade, 1)
+                pa.volume = Float(cos(x * .pi / 2)); pb.volume = Float(sin(x * .pi / 2))
+            }
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        pb.volume = 1
+        try await Task.sleep(for: .seconds(Double(countB) / fb.processingFormat.sampleRate - crossfade + 0.5))
+    }
+    engine.stop()
+    print("  done")
 }

@@ -203,7 +203,7 @@ Two `AVAudioPlayerNode`s into the mixer, the second started sample-accurately wi
 
 ### 12.5 Gapless
 
-One player node with the next file scheduled before the current one ends: a sine split at an arbitrary frame into two files joins with zero error for PCM and 6e-8 (24-bit rounding) for FLAC, with no inserted or dropped frames. Two real MP3 tracks of the library joined with zero sample error and the exact frame total; the engine adds no gap, so any gap heard is silence stored in the files (those two tracks had 1.9 s of it, which is normal for non-continuous tracks). Whether the decoder trims MP3 encoder delay was not measured separately. A continuous album (live or concept) was not identified; the owner should name one for the by-ear check.
+One player node with the next file scheduled before the current one ends: a sine split at an arbitrary frame into two files joins with zero error for PCM and 6e-8 (24-bit rounding) for FLAC, with no inserted or dropped frames. Two real MP3 tracks of the library joined with zero sample error and the exact frame total; the engine adds no gap, so any gap heard is silence stored in the files (those two tracks had 1.9 s of it, which is normal for non-continuous tracks). Whether the decoder trims MP3 encoder delay was not measured separately. Continuous album, measured: *The Dark Side of the Moon* (MP3, 10 tracks). *Breathe In The Air* into *On The Run*, and *Brain Damage* into *Eclipse*, have 0.0 ms of stored silence at both ends of the join and joined with zero sample error and the exact frame total. The decoded lengths are not multiples of the MP3 frame size (1152), and there is no leading digital silence, which is consistent with the decoder trimming encoder padding (not proven by a separate test). The by-ear check is still the owner's (12.9).
 
 ### 12.6 Output sample rate
 
@@ -219,11 +219,28 @@ The default output (MacBook Air speakers) offers 44100, 48000, 88200 and 96000 H
 
 Proposed budget (section 7): a tag read must finish within 150 ms (measured 50 ms); a waveform is computed in the background and shown only if ready within 5 s of the song starting (measured worst case 3.4 s for a 52 MB FLAC, under 1 s for the others), otherwise the seek bar stays plain, the work continues, and the result is cached per song (1000 peaks, about 2 KB). Never over HTTP.
 
-**Path mapping finding (needs the owner):** Navidrome's `path` does not match the files on the share. For 5 of 5 sampled songs `/Volumes/media/library/music/<Navidrome path>` did not exist: the artist folders match, but folder and file names differ (Navidrome `AM (Jewel Case)/01-01 - Do I Wanna Know?.flac` against the share's `AM (2013)/0101 Do I Wanna Know_.flac`; Navidrome `01-01 - Change.m4a` against `01 Change.m4a`; one artist (Noura) was not found at all). Either Navidrome reads a different folder than this share path, or the share was reorganised after the last scan. A plain prefix setting will not work; the owner must say where Navidrome's music folder lives (the Docker volume mapping), or the app must match by artist, album, track number and title. Waveforms and tag reads depend on this, and neither is needed for playback.
+**Path mapping: cause found, one setting left for the owner.** For 5 of 5 sampled songs, `/Volumes/media/library/music/<Subsonic path>` did not exist, although the folders are the same ones: Navidrome's Subsonic `path` was `AM (Jewel Case)/01-01 - Do I Wanna Know?.flac`, the file on the share is `AM (2013)/0101 Do I Wanna Know_.flac`. Navidrome's own API (`/api/song/<id>`, read-only, used once for this diagnosis only; the app does not use it) returns the real path, and all 5 real paths exist under the mount. So Navidrome stores the right path and the mount is right. By default Navidrome does not report real paths over the Subsonic API: its configuration option `Subsonic.DefaultReportRealPath` (`ND_SUBSONIC_DEFAULTREPORTREALPATH`) is `false` ("can be customized individually for each client/player", "this can be a security risk, so it is disabled by default", [navidrome.org configuration options](https://www.navidrome.org/docs/usage/configuration/options/)) and a rebuilt `Artist/Album/disc-track - Title.ext` name is returned instead. Every player registered in the owner's Navidrome currently has it off, including `discair [CFNetwork]` (created by the M1 and M2 tools).
 
-### 12.8 What the owner still decides
+What the owner does (either one): in the Navidrome web UI open the Players page and switch on "Report Real Path" for the player called `discair [CFNetwork]` (the Mac app will appear as its own player name and needs the same switch once), **or** set `ND_SUBSONIC_DEFAULTREPORTREALPATH=true` on the home server's Navidrome and restart it (a community report says the default applies to newly registered players only, so an existing player still needs its own switch). With it on, Navidrome is expected to report the server's absolute path, `/media/library/music/<Artist>/<Album>/<file>` (the server mounts the same folder there), and the app's prefix setting maps `/media/library/music` to `/Volumes/media/library/music`. **That absolute form is not yet verified** (no player was changed by the agent). To verify: `macos/scripts/spike.sh samples` should then print `mounted=true` for each song; it maps the prefix `/media/library/music` (override with `DISCAIR_SERVER_MUSIC_ROOT`). Until then the app must not guess paths: with the setting off it has no valid mapping, and SMB features stay off.
 
-1. Where Navidrome's music folder is on the share (12.7), or accept fuzzy matching.
-2. Transcode quality for Ogg Vorbis and WMA sources (12.1).
-3. Run check 11.2 (rate limit) with a second device.
-4. A by-ear session once M4/M5 has a real player: gapless on a continuous album, crossfade length, output device.
+### 12.8 Owner decisions
+
+1. **Path mapping:** the owner's answer (2026-11-03): Navidrome's music folder is the same folder as the share, mounted on the server as `/media/library/music`. Cause and remaining switch: 12.7.
+2. **Transcode for Ogg Vorbis and WMA sources: opus at 192** (the recommendation, accepted by the owner).
+3. **Check 11.2 (rate limit): accepted, to be run by the owner** (steps in 11.2).
+4. **By-ear gapless check:** see 12.9.
+
+### 12.9 Listening session (the owner, about 10 minutes)
+
+`discair-audio-spike listen` plays sound on the Mac's current output (default volume 0.5; lower it first). From `macos/`, with `scripts/spike.sh` (it reads the Navidrome login from `~/Desktop/disqair/config.env`, or the file named in `DISCAIR_ENV_FILE`):
+
+```sh
+# 1. gapless: the last 20 s of Breathe, then On The Run (a seamless segue on the record)
+./scripts/spike.sh listen 5NvmJiy1uTG8HkoUAMaEEB 0moCUUrucnJAPO74LkcFL8
+# 2. gapless: Brain Damage into Eclipse
+./scripts/spike.sh listen 2KKthn7KKdaFJEiaOT78dn 4CYrvCn4U3Wy98uP1gxih7
+# 3. crossfade 4 s, equal-power, between two songs: Money into Us And Them
+./scripts/spike.sh listen 40DXYbfXU5PJQda4si36jN 4oyxwB1jkJBihafgXlTETd --crossfade 4
+```
+
+Listen for: any click, pop or dropout at the join in 1 and 2 (there should be none; the join was measured as exact); in 3, whether the fade is smooth and whether the level dips or bumps in the middle. Also repeat 1 with another output (headphones, a DAC, Bluetooth) if available, and say which one was used. Add `--volume 0.3` for quieter, `--tail 40` to hear more of the first song. Report: "1 clean / click", "2 clean / click", "3 smooth / bumpy", and the output used.
