@@ -1,6 +1,6 @@
 # Brut layouts plan (web and Android)
 
-Last updated: 2026-11-03 (P2 merged). Governing decision: D-023 in [DECISIONS.md](DECISIONS.md). Status tracking: the table in section 9 (update it in the PR that completes each phase). GitHub `main` is authoritative.
+Last updated: 2026-11-03 (P3 merged). Governing decision: D-023 in [DECISIONS.md](DECISIONS.md). Status tracking: the table in section 9 (update it in the PR that completes each phase). GitHub `main` is authoritative.
 
 ## 1. What this is
 
@@ -126,6 +126,7 @@ Idea: artwork leads; the wall is the home.
 - **Album detail:** the modal becomes a right-hand drawer (the existing `.album-modal` dialog, restyled and anchored right, same focus trap, Escape and backdrop behaviour); tracklist as dashed-rule rows; Get and Skip at the foot.
 - **Hover card** on tiles for hover-capable devices only, showing artist, year and owned count from data already on the card; never the only way to reach information.
 - **Palettes:** Kraft, Mint Sleeve, Night Press.
+- **As built in P3 (differs from the text above):** the header and a stamped label strip under it read as one band (the nav stays a separate element; labels are bordered mono capitals, the current one tilted -2 degrees and filled with the stamp red; the tilt is static, so reduced motion has nothing to stop). Every ranked list is the wall: 5 columns from 1280 px, 4 from 1060 px, 3 below; there is no 2-column step because the layout stops at 900 px (the phone shell keeps its own grid). The first tile is the 2x2 hero. Status stamps reuse the P2 status cell (Owned, Missing, Queued as words; Queued uses `--crate-gold`). The hover card (hover-capable devices only) shows the row's own metadata lines; the owned count is not on the card, so it is not shown. The dashboard shelves stay horizontal strips of cards with arrows added by a hidden-by-default hook (hidden again while the strip fits). The album dialog is the drawer: Get moves from the cover to a sticky foot (the same element) and **Not for me** (added at the owner's request) runs the originating row's own dismiss control, so it appears only for rows that have one. Kraft's accent text is `#b01c31` (the stamp red failed AA on the raised surface); Mint and Night passed with the plan's values; Night is dark with a gold focus ring and red shadows.
 - **Acceptance:** wall reflows 5 → 4 → 3 → 2 columns; the drawer meets the dialog accessibility rules already in the album modal tests; tile order matches the DOM order of the lists it restyles; reduced motion removes the stamp tilt animation.
 
 ## 6. Android architecture (shared by A1, A3, A4)
@@ -161,7 +162,7 @@ One PR per phase except P0 and P7 (documents, direct to `main`). Each code PR: b
 | P0 | This plan, D-023, mockups in `docs/design/brut-layouts/` | done 2026-11-03 (documentation, direct to `main`) |
 | P1 | Web infrastructure (`data-layout`, `layouts.css`, catalogue fields, test scaffold) and the Tape Deck layout with Lime, Cobalt Reel, Tangerine Reel | **done 2026-11-03**: PR [#701](https://github.com/abucalip/navi-librarian/pull/701), squash `a4961c9`; owner checked it in the browser; not published |
 | P2 | Web Ledger Room with Ink Slate, Plum Archive, Paper Mono | **done 2026-11-03**: PR [#702](https://github.com/abucalip/navi-librarian/pull/702), squash `d94667d8fe645197acd9a2cb98e68836306132f3`; owner checked it in the browser; not published |
-| P3 | Web Crate Wall with Kraft, Mint Sleeve, Night Press | not started |
+| P3 | Web Crate Wall with Kraft, Mint Sleeve, Night Press | **done 2026-11-03**: PR [#703](https://github.com/abucalip/navi-librarian/pull/703), squash `c6dbc43bd113bd3033ad430e787d3c1da05377ce`; owner checked it in the browser; not published |
 | P4 | Android layout plumbing and Cassette Deck with Lime, Cobalt Reel, Tangerine Reel | not started |
 | P5 | Android Sheet Stack with Violet-orange, Acid Night, Daylight Sheet | not started |
 | P6 | Android Sticker Wall with Peach-teal | not started |

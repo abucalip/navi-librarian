@@ -1,3 +1,12 @@
+## 2026-11-03 — Web Crate Wall layout merged (PR #703)
+
+- **Merged (owner request):** PR [#703](https://github.com/abucalip/navi-librarian/pull/703), squash `c6dbc43bd113bd3033ad430e787d3c1da05377ce`, from tested head `3fe82b944eaf1eb2a5ac06a19e7a66ae4c22067c`; compile, container-smoke, test-and-build, validate-container and validate-release-workflow passed on that head.
+- **What:** phase P3 of `docs/BRUT_LAYOUTS_PLAN.md` (D-023). Three palettes in `static/themes.css` (Crate · Kraft, Mint, Night), `layout: 'crate'` entries in `static/appearance.js`, the crate block in `static/layouts.css` (901 px and up): stamped label strip, mosaic wall (5/4/3 columns, 2x2 hero), rubber-stamp status words, hover card, dashed-rule lists, and the album dialog as a right-hand drawer. Hooks in `index.html` and `static/app.js`: shelf arrows (hidden by default), a drawer foot where Get moves from the cover (same element) and a **Not for me** button that runs the originating row's own dismiss control (owner request after the first review).
+- **Tests run (focused only):** the new `tests/test_crate_layout_ui_contract.py`, the updated tape, ledger and fonts modules, and the whole `*ui_contract*` set (441 tests) with system Python; `node --check static/app.js`. The full suite ran in CI only.
+- **UI check:** the owner checked it in the browser on a local server (isolated data, slskd disabled) and approved it. Not checked at phone widths or with real data in every list.
+- **Not done / not claimed:** not published or deployed; no 2-column step, no owned count on the hover card (see the plan). The three web layouts are complete.
+- **Next action:** P4, the Android layout plumbing and Cassette Deck, from the plan.
+
 ## 2026-11-03 — Web Ledger Room layout merged (PR #702)
 
 - **Merged (owner request):** PR [#702](https://github.com/abucalip/navi-librarian/pull/702), squash `d94667d8fe645197acd9a2cb98e68836306132f3`, from tested head `fdc93d2a82e3da69aef6e70de6c0d3ad1d12dfd4`; compile, container-smoke, test-and-build, validate-container and validate-release-workflow passed on that head.
