@@ -1,24 +1,33 @@
+import CoreText
 import SwiftUI
 
 /// Artist: a magazine cover. The name set huge and cropped, cover lines from top songs, back issues owned solid
 /// and missing dashed. Mockup: `R.zine.artist`.
 struct ZineArtist: View {
     let state: AppState
+    static let bannerHeight: CGFloat = 215
+    static let nameSize: CGFloat = 240
+    static var nameAscent: CGFloat {
+        _ = Z.fontsRegistered
+        return CTFontGetAscent(CTFontCreateWithName("Anton-Regular" as CFString, nameSize, nil))
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             ZStack(alignment: .topLeading) {
-                Text("Talk Talk").font(Z.an(290)).textCase(.uppercase).lineLimit(1).fixedSize()
-                    .offset(x: -6, y: -34).accessibilityAddTraits(.isHeader)
+                // The whole name is shown (owner review: the cropped version cut the letters off). The text box is placed
+                // from the font's own ascent so the baseline sits 10 pt above the rule.
+                Text("Talk Talk").font(Z.an(Self.nameSize)).textCase(.uppercase).lineLimit(1).fixedSize()
+                    .offset(x: -2, y: Self.bannerHeight - 10 - Self.nameAscent).accessibilityAddTraits(.isHeader)
                 VStack(alignment: .leading, spacing: 2) {
                     Mono("Cover lines")
                     ForEach(ZineFixtures.coverLines, id: \.self) { Text($0).font(Z.an(17)).textCase(.uppercase) }
                 }
                 .padding(.horizontal, 12).padding(.vertical, 10)
                 .background(Z.yellow).zBorder(3)
-                .frame(maxWidth: .infinity, alignment: .topTrailing).padding(.trailing, 20).padding(.top, 10)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing).padding(.trailing, 20).padding(.top, 10)
             }
-            .frame(height: 215, alignment: .topLeading).clipped()
+            .frame(height: Self.bannerHeight, alignment: .topLeading).clipped()
             .overlay(alignment: .bottom) { Rectangle().fill(Z.ink).frame(height: 4) }
 
             HStack(spacing: 20) {

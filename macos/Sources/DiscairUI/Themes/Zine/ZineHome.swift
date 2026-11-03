@@ -30,7 +30,7 @@ struct ZineHome: View {
                 HStack(spacing: 12) {
                     Button("Get this album") { state.actions.get(album: lead) }.buttonStyle(ZineButtonStyle(kind: .yellow))
                     Button("Save") { state.actions.save(album: lead) }.buttonStyle(ZineButtonStyle())
-                    Button("Not for me") { state.actions.notForMe(album: lead) }.buttonStyle(ZineLinkStyle()).padding(.leading, 4)
+                    Button("Not for me") { state.actions.notForMe(album: lead) }.buttonStyle(ZineButtonStyle())
                 }
                 .padding(.top, 14)
             }
