@@ -22,7 +22,7 @@ public enum ThemeRegistry {
     public static func theme(_ id: ThemeID) -> DiscairTheme {
         switch id {
         case .cupertino: CupertinoTheme()
-        case .zine: PlaceholderTheme(id: .zine, name: "Zine Spread", scheme: .light)
+        case .zine: ZineTheme()
         }
     }
 }

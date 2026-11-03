@@ -19,7 +19,11 @@ let package = Package(
         .target(name: "DiscairCore"),
         .target(name: "DiscairNavidrome", dependencies: ["DiscairCore"]),
         .target(name: "DiscairLibrarian", dependencies: ["DiscairCore"]),
-        .target(name: "DiscairUI", dependencies: ["DiscairCore", "DiscairNavidrome", "DiscairLibrarian"]),
+        .target(
+            name: "DiscairUI",
+            dependencies: ["DiscairCore", "DiscairNavidrome", "DiscairLibrarian"],
+            resources: [.copy("Resources/Fonts")]
+        ),
         .executableTarget(name: "DiscairApp", dependencies: ["DiscairUI"]),
         .executableTarget(
             name: "DiscairChecks",
