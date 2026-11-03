@@ -145,6 +145,54 @@
   --tape-soft: #ffe0b8;
 }
 
+/* Neobrut · Ledger Room · Ink Slate (layout "ledger": static/layouts.css) */
+:root[data-theme="ledgerslate"] {
+  color-scheme: light;
+  --ink-rail: #fbfcff; --ink: #e4e9f2; --surface: #fbfcff; --surface-raised: #e4e9f2; --surface-hover: #eef3ff;
+  --edge: #14213d; --edge-strong: #14213d;
+  --text: #14213d; --text-muted: #50607f; --text-subtle: #50607f;
+  --accent: #fca311; --accent-text: #8a5600; --focus: #14213d; --accent-hover: #e8920a; --accent-dim: #fde2b0; --on-accent: #000000;
+  --chart-red: #b3261e; --chart-red-text: #b3261e; --ok: #1b6b33; --caution: #7f4a00;
+  --slider-fade: #141211;
+  --shadow-menu: 5px 5px 0 #14213d;
+  --bw: 2px; --radius-control: 0px; --radius-panel: 0px; --radius-chip: 0px;
+  --brut-sh: 4px; --brut-shadow-color: #14213d; --brut-lift: -2px;
+  --brut-nav-bg: #fca311; --brut-nav-text: #000000; --brut-nav-edge: #14213d; --brut-line: #14213d;
+  --ledger-side: #14213d; --ledger-side-text: #e4e9f2; --ledger-side-muted: #8fa0c4;
+}
+
+/* Neobrut · Ledger Room · Plum Archive (layout "ledger": static/layouts.css) */
+:root[data-theme="ledgerplum"] {
+  color-scheme: light;
+  --ink-rail: #fffaff; --ink: #efe3f0; --surface: #fffaff; --surface-raised: #efe3f0; --surface-hover: #f8ecf9;
+  --edge: #2d1233; --edge-strong: #2d1233;
+  --text: #2d1233; --text-muted: #6b4a73; --text-subtle: #6b4a73;
+  --accent: #ff5ca8; --accent-text: #a3195f; --focus: #2d1233; --accent-hover: #ee4a97; --accent-dim: #ffd3e8; --on-accent: #000000;
+  --chart-red: #b3261e; --chart-red-text: #b3261e; --ok: #1b6b33; --caution: #7f4a00;
+  --slider-fade: #141211;
+  --shadow-menu: 5px 5px 0 #2d1233;
+  --bw: 2px; --radius-control: 0px; --radius-panel: 0px; --radius-chip: 0px;
+  --brut-sh: 4px; --brut-shadow-color: #2d1233; --brut-lift: -2px;
+  --brut-nav-bg: #ff5ca8; --brut-nav-text: #000000; --brut-nav-edge: #2d1233; --brut-line: #2d1233;
+  --ledger-side: #2d1233; --ledger-side-text: #f0e0f2; --ledger-side-muted: #b28bb9;
+}
+
+/* Neobrut · Ledger Room · Paper Mono (layout "ledger": static/layouts.css) */
+:root[data-theme="ledgermono"] {
+  color-scheme: light;
+  --ink-rail: #ffffff; --ink: #f4f4f0; --surface: #ffffff; --surface-raised: #f4f4f0; --surface-hover: #f0f3ff;
+  --edge: #0a0a0a; --edge-strong: #0a0a0a;
+  --text: #0a0a0a; --text-muted: #555555; --text-subtle: #555555;
+  --accent: #2f5bff; --accent-text: #2f5bff; --focus: #0a0a0a; --accent-hover: #1f47e0; --accent-dim: #dbe3ff; --on-accent: #ffffff;
+  --chart-red: #b3261e; --chart-red-text: #b3261e; --ok: #1b6b33; --caution: #7f4a00;
+  --slider-fade: #141211;
+  --shadow-menu: 5px 5px 0 #0a0a0a;
+  --bw: 2px; --radius-control: 0px; --radius-panel: 0px; --radius-chip: 0px;
+  --brut-sh: 4px; --brut-shadow-color: #0a0a0a; --brut-lift: -2px;
+  --brut-nav-bg: #2f5bff; --brut-nav-text: #ffffff; --brut-nav-edge: #0a0a0a; --brut-line: #0a0a0a;
+  --ledger-side: #0a0a0a; --ledger-side-text: #f4f4f0; --ledger-side-muted: #9a9a9a;
+}
+
 /* ---- Neobrut components: only the themes that set data-brut ---- */
 :root[data-brut] header { border-bottom: var(--bw) solid var(--edge); }
 :root[data-brut] nav { border-right: var(--bw) solid var(--edge); }

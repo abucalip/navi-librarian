@@ -141,3 +141,107 @@
 @media (prefers-reduced-motion: reduce) {
   :root[data-layout="tape"] .acq-row .acq-status::after { animation: none; }
 }
+
+/* ==== Ledger Room ("ledger"): table-first, for scanning many albums at once. A dark ink sidebar, ruled table-style rows
+   with a hover band, compact shelf tables on the dashboard and ruled genre bands on Artist Deep Dives. Owned, Queued and
+   Missing always keep their words and glyphs; the --ledger-* fills are decoration only. ==== */
+@media (min-width: 901px) {
+  :root[data-layout="ledger"] { --ledger-rule: var(--bw) solid var(--edge); }
+
+  /* ---- Shell: the sidebar is the ink colour ---- */
+  :root[data-layout="ledger"] nav { background: var(--ledger-side); border-right: var(--ledger-rule); }
+  :root[data-layout="ledger"] .nav-group-label { color: var(--ledger-side-muted); font: 700 var(--text-xs)/1.4 var(--mono); letter-spacing: .12em; text-transform: uppercase; }
+  :root[data-layout="ledger"][data-brut] nav button { color: var(--ledger-side-text); border-radius: 0; }
+  :root[data-layout="ledger"][data-brut] nav button:hover { color: var(--ledger-side-text); background: color-mix(in srgb, var(--ledger-side-text) 14%, transparent); border-color: var(--ledger-side-muted); transform: none; box-shadow: none; }
+  :root[data-layout="ledger"][data-brut] nav button.active { color: var(--on-accent); background: var(--accent); border-color: var(--accent); box-shadow: 3px 3px 0 var(--ledger-side-muted); margin-right: 3px; }
+  :root[data-layout="ledger"] nav button:focus-visible { outline-color: var(--ledger-side-text); }
+  :root[data-layout="ledger"] nav .nav-count { color: var(--ledger-side-text); background: transparent; border: var(--bw) solid currentColor; box-shadow: none; font: 700 var(--text-xs)/1.4 var(--mono); padding: 0 6px; }
+  :root[data-layout="ledger"] .app-version { color: var(--ledger-side-muted); }
+  :root[data-layout="ledger"] .search-field,
+  :root[data-layout="ledger"] .search-field::before,
+  :root[data-layout="ledger"] .global-search input[type="search"],
+  :root[data-layout="ledger"] .library-control input[type="search"],
+  :root[data-layout="ledger"] .library-control select { border-radius: 0; }
+
+  /* ---- Tables: the ranked rows of every discovery page are ledger lines ---- */
+  :root[data-layout="ledger"] .ranked-list { border: var(--ledger-rule); background: var(--surface); box-shadow: var(--brut-sh) var(--brut-sh) 0 var(--brut-shadow-color); }
+  :root[data-layout="ledger"] .ranked-row {
+    --row-art: 56px; --row-edge-x: 14px;
+    grid-template-columns: 56px var(--row-art) minmax(0, 1fr) 200px auto; gap: 0 16px; padding: 8px var(--row-edge-x) 8px 8px;
+    border-bottom: var(--ledger-rule);
+  }
+  :root[data-layout="ledger"] .ranked-row.no-meta { grid-template-columns: 56px var(--row-art) minmax(0, 1fr) auto; }
+  :root[data-layout="ledger"] .ranked-row:last-child { border-bottom: 0; }
+  /* The text column grows with its content (a bio that loads late never covers the album name). */
+  :root[data-layout="ledger"] .ranked-row .row-main { height: auto; min-height: var(--row-art); overflow: visible; justify-content: center; }
+  :root[data-layout="ledger"] .ranked-row .artist-bio { -webkit-line-clamp: 1; margin-top: 3px; }
+  :root[data-layout="ledger"] .ranked-row.is-bio-open .artist-bio { display: block; -webkit-line-clamp: none; overflow: visible; }
+  :root[data-layout="ledger"] .ranked-row:hover { background: var(--surface-hover); }
+  :root[data-layout="ledger"] .ranked-row .card-art { border-width: var(--bw); border-radius: var(--radius-control); }
+  :root[data-layout="ledger"] .rank-numeral,
+  :root[data-layout="ledger"] .rank-numeral.is-index,
+  :root[data-layout="ledger"] .ranked-list > .ranked-row:first-child > .rank-numeral:not(.is-index) {
+    justify-self: center; font: 700 var(--text-sm)/1 var(--mono); letter-spacing: 0; color: var(--text-muted);
+  }
+  :root[data-layout="ledger"] .row-date { justify-self: center; justify-items: center; text-align: center; }
+  :root[data-layout="ledger"] .row-date-day { font: 700 var(--text-sm)/1.2 var(--mono); }
+  :root[data-layout="ledger"] .row-meta { font-family: var(--mono); font-size: var(--text-xs); padding-left: 14px; border-left: var(--ledger-rule); }
+  /* The year and the quality columns read as table cells in the mono face. */
+  :root[data-layout="ledger"] .ranked-row h3 .album-year { font-weight: 700; }
+
+  /* ---- Dashboard: the picks panel and genres span the page; the four shelves are compact tables, two to a row ---- */
+  :root[data-layout="ledger"] #dashboard { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 28px; align-items: start; }
+  :root[data-layout="ledger"] #dashboard > .panel:not(.dashboard-shelf) { grid-column: 1 / -1; }
+  :root[data-layout="ledger"] .dashboard-shelf { margin-top: 0; }
+  :root[data-layout="ledger"] .dashboard-shelf-heading h2 { font-family: var(--mono); font-size: var(--text-sm); letter-spacing: .08em; text-transform: uppercase; }
+  :root[data-layout="ledger"] .dashboard-carousel {
+    display: block; overflow: visible; padding: 0; scroll-snap-type: none;
+    background: var(--surface); border: var(--ledger-rule); box-shadow: var(--brut-sh) var(--brut-sh) 0 var(--brut-shadow-color);
+  }
+  :root[data-layout="ledger"] .dashboard-carousel:empty { display: none; }
+  :root[data-layout="ledger"] .dashboard-carousel > .shelf-card {
+    width: auto; display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; align-items: center; gap: 0 12px;
+    padding: 6px 14px 6px 8px; overflow: visible; background: transparent; border: 0; border-bottom: var(--ledger-rule); border-radius: 0; box-shadow: none; transition: none;
+  }
+  :root[data-layout="ledger"] .dashboard-carousel > .shelf-card:last-child { border-bottom: 0; }
+  :root[data-layout="ledger"][data-brut] .dashboard-carousel > .shelf-card:hover { background: var(--surface-hover); transform: none; box-shadow: none; }
+  :root[data-layout="ledger"] .shelf-card > .card-art { grid-column: 1; width: 44px; height: 44px; aspect-ratio: auto; overflow: visible; border: var(--bw) solid var(--edge); border-radius: var(--radius-control); }
+  :root[data-layout="ledger"] .shelf-card > .card-art > img { border-radius: calc(var(--radius-control) - 1px); }
+  :root[data-layout="ledger"] .shelf-card .card-art-placeholder { padding: 0; font-size: 0; }
+  :root[data-layout="ledger"] .shelf-card .card-art-placeholder::before { content: none; }
+  :root[data-layout="ledger"] .shelf-card .card-art > .artist-bio,
+  :root[data-layout="ledger"] .shelf-card .card-art > .about-toggle { display: none; }
+  :root[data-layout="ledger"] .shelf-card > .dashboard-tile-meta { grid-column: 2; margin: 0; min-width: 0; }
+  :root[data-layout="ledger"] .shelf-card > .dashboard-tile-meta h3 { font-size: var(--text-md); display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  :root[data-layout="ledger"] .shelf-card > .dashboard-tile-meta .card-artist { margin: 2px 0 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  :root[data-layout="ledger"] .shelf-card > .action-group { grid-column: 3; margin: 0; }
+  :root[data-layout="ledger"] .shelf-card .card-art .get-album,
+  :root[data-layout="ledger"] .shelf-card .card-art .owned-check { right: -9px; bottom: -9px; width: 26px; height: 26px; box-shadow: none; }
+  :root[data-layout="ledger"] .shelf-card .card-art .action-group { right: -9px; bottom: -9px; }
+
+  /* ---- Artist Deep Dives: each genre is a ruled band headed by an ink bar ---- */
+  :root[data-layout="ledger"] .cards.deep-dive-rows { gap: 20px; }
+  :root[data-layout="ledger"] .genre-row { background: var(--surface); border: var(--ledger-rule); box-shadow: var(--brut-sh) var(--brut-sh) 0 var(--brut-shadow-color); }
+  :root[data-layout="ledger"] .genre-row-heading { margin: 0; padding: 8px 14px; background: var(--ledger-side); border-bottom: var(--ledger-rule); }
+  :root[data-layout="ledger"] .genre-row-heading h3 { color: var(--ledger-side-text); font-family: var(--mono); font-size: var(--text-sm); letter-spacing: .08em; text-transform: uppercase; }
+  :root[data-layout="ledger"] .genre-row-heading h3 a { color: inherit; }
+  :root[data-layout="ledger"] .genre-row-count { color: var(--ledger-side-muted); font-family: var(--mono); font-size: var(--text-xs); }
+  :root[data-layout="ledger"] .genre-row-track { padding: 12px 14px 12px; }
+
+  /* ---- Acquisitions: a ruled table with a square progress column ---- */
+  :root[data-layout="ledger"] .acq-list { border: var(--ledger-rule); box-shadow: var(--brut-sh) var(--brut-sh) 0 var(--brut-shadow-color); }
+  :root[data-layout="ledger"] .acq-row { border-bottom: var(--ledger-rule); padding: 12px 16px; }
+  :root[data-layout="ledger"] .acq-row:last-child { border-bottom: 0; }
+  :root[data-layout="ledger"] .acq-state { padding-left: 16px; border-left: var(--ledger-rule); }
+  :root[data-layout="ledger"] .acq-progress { height: 14px; background: var(--surface); border: var(--ledger-rule); border-radius: 0; }
+  :root[data-layout="ledger"] .acq-progress-fill { background: var(--accent); border-right: var(--ledger-rule); }
+  :root[data-layout="ledger"] .acq-status { font-family: var(--mono); font-size: var(--text-xs); text-transform: uppercase; letter-spacing: .04em; }
+  :root[data-layout="ledger"] .acq-percent, :root[data-layout="ledger"] .acq-stat { font-family: var(--mono); }
+
+  /* ---- Album dialog: the track list is a ruled table ---- */
+  :root[data-layout="ledger"] .track-list { border: var(--ledger-rule); background: var(--surface); }
+  :root[data-layout="ledger"] .track { border-bottom: var(--ledger-rule); }
+  :root[data-layout="ledger"] .track:last-child { border-bottom: 0; }
+  :root[data-layout="ledger"] .track:hover { background: var(--surface-hover); }
+  :root[data-layout="ledger"] .track-number, :root[data-layout="ledger"] .track-duration { font-family: var(--mono); font-size: var(--text-xs); }
+}
