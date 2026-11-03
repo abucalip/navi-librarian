@@ -7,7 +7,8 @@ struct CupertinoAlbum: View {
 
     var body: some View {
         let a = state.selectedAlbum
-        let owned = Fixtures.tracks.filter(\.owned).count
+        let tracks = state.library.tracks
+        let owned = tracks.filter(\.owned).count
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
                 HStack(alignment: .top, spacing: 30) {
@@ -15,15 +16,18 @@ struct CupertinoAlbum: View {
                         .shadow(color: .black.opacity(0.2), radius: 7, y: 4)
                     VStack(alignment: .leading, spacing: 0) {
                         Text(a.title).font(CU.title(38))
-                        Text(a.artist).font(.system(size: 22)).foregroundStyle(CU.accent).padding(.top, 4)
-                        Text("\(a.genre) · \(String(a.year)) · \(Fixtures.tracks.count) songs, 41 minutes")
+                        Button { state.openArtist(named: a.artist) } label: { Text(a.artist).font(.system(size: 22)).foregroundStyle(CU.accent) }
+                            .buttonStyle(.plain).padding(.top, 4).accessibilityLabel("Open artist \(a.artist)")
+                        Text(a.line([a.genre, a.yearText, tracks.isEmpty ? "" : "\(tracks.count) songs" + (state.library.isLive ? "" : ", 41 minutes")]))
                             .foregroundStyle(CU.muted).padding(.top, 6)
                         HStack(spacing: 6) {
-                            Text("Lossless \(a.format)").font(.system(size: 10.5, weight: .bold))
-                                .padding(.horizontal, 7).padding(.vertical, 1)
-                                .foregroundStyle(Color(red: 0.11, green: 0.54, blue: 0.23))
-                                .background(Color(red: 0.90, green: 0.965, blue: 0.918), in: RoundedRectangle(cornerRadius: 5))
-                            Text("\(owned) of \(Fixtures.tracks.count) owned").font(.system(size: 10.5, weight: .bold))
+                            if let q = tracks.first(where: \.owned)?.format, !q.isEmpty {
+                                Text(q).font(.system(size: 10.5, weight: .bold))
+                                    .padding(.horizontal, 7).padding(.vertical, 1)
+                                    .foregroundStyle(Color(red: 0.11, green: 0.54, blue: 0.23))
+                                    .background(Color(red: 0.90, green: 0.965, blue: 0.918), in: RoundedRectangle(cornerRadius: 5))
+                            }
+                            Text("\(owned) of \(tracks.count) owned").font(.system(size: 10.5, weight: .bold))
                                 .padding(.horizontal, 7).padding(.vertical, 1)
                                 .foregroundStyle(Color(white: 0.27))
                                 .background(CU.fill, in: RoundedRectangle(cornerRadius: 5))
@@ -47,28 +51,34 @@ struct CupertinoAlbum: View {
 
                 trackTable.padding(.top, 22)
 
+                if !state.library.more(by: a).isEmpty {
                 Text("More by \(a.artist)").font(CU.title(20)).padding(.top, 22).padding(.bottom, 10)
                     .accessibilityAddTraits(.isHeader)
                 HStack(alignment: .top, spacing: 20) {
-                    ForEach(Fixtures.albums([1, 13, 11])) { m in
+                    ForEach(state.library.more(by: a)) { m in
+                        Button { state.open(album: m) } label: {
                         VStack(alignment: .leading, spacing: 8) {
                             CoverView(album: m).frame(width: 110).clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
                                 .shadow(color: .black.opacity(0.2), radius: 7, y: 4)
                             Text(m.title).fontWeight(.semibold).lineLimit(1)
                         }
                         .font(.system(size: 13)).frame(width: 110, alignment: .leading)
+                        }
+                        .buttonStyle(.plain).accessibilityLabel("Open \(m.title)")
                     }
+                }
                 }
             }
             .padding(.horizontal, 28).padding(.bottom, 28)
         }
         .scrollEdgeEffectStyle(.hard, for: .top)
+        .task(id: a.id) { await state.loadSelectedAlbum() }
     }
 
     private var trackTable: some View {
         VStack(spacing: 0) {
             row(["#", "Song", "Time", "Quality", ""], header: true, shaded: false, playing: false, missing: false)
-            ForEach(Array(Fixtures.tracks.enumerated()), id: \.element.id) { i, t in
+            ForEach(Array(state.library.tracks.enumerated()), id: \.element.id) { i, t in
                 row(nil, track: t, index: i, shaded: i % 2 == 0)
             }
         }

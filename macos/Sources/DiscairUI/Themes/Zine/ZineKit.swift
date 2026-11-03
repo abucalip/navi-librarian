@@ -193,7 +193,10 @@ struct ZineCover: View {
         let c1 = Color(hue: h / 360, saturation: 0.62, brightness: 0.98 - 0.0)
         let c2 = Color(hue: ((h + 40).truncatingRemainder(dividingBy: 360)) / 360, saturation: 0.75, brightness: 0.46)
         let c3 = Color(hue: ((h + 180).truncatingRemainder(dividingBy: 360)) / 360, saturation: 0.6, brightness: 0.95)
-        ZStack { pattern(album.id % 5, c1, c2, c3) }
+        ZStack {
+            pattern(album.id % 5, c1, c2, c3)
+            ArtworkImage(album: album, px: width > 200 ? 600 : 200).frame(width: width, height: width).clipped()
+        }
             .frame(width: width, height: width)
             .clipped()
             .zBorder(border)

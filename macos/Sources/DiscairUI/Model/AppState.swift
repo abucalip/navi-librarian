@@ -44,11 +44,47 @@ public final class AppState {
     public var connectionLabel: String { session?.label ?? "Home network · http (local)" }
     public var connectionIsGood: Bool { session?.isGood ?? true }
     public let actions: DiscairActions
+    /// Sample data until a session connects, then the owner's library.
+    public let library = LibraryModel()
+    public let artwork = ArtworkStore()
+    public var selectedArtist: ArtistItem = ArtistItem(id: 0, name: "Talk Talk", albumCount: 5)
+    /// The letter shown in the Zine A-Z index.
+    public var selectedLetter = "T"
 
     public init(themeID: ThemeID = .cupertino, screen: Screen = .home, actions: DiscairActions = NoopActions(), session: SessionModel? = nil) {
         self.session = session
         self.themeID = themeID
         self.screen = screen
         self.actions = actions
+        session?.onConnected = { [weak self] in await self?.refreshLibrary() }
+    }
+
+    // MARK: Library
+
+    /// Points artwork at the active profile and loads the home data.
+    public func refreshLibrary() async {
+        guard let session, let navidrome = session.navidrome else { return }
+        artwork.configure(navidrome.urls)
+        await library.load(navidrome: navidrome, librarian: session.librarian)
+        if library.isLive { selectedArtist = library.artists.first ?? selectedArtist; selectedLetter = selectedArtist.letter }
+        if library.isLive, let first = library.recent.first ?? library.albums.first { selectedAlbum = first }
+    }
+
+    public func loadSelectedAlbum() async {
+        await library.loadTracks(for: selectedAlbum, navidrome: session?.navidrome)
+    }
+
+    public func loadSelectedArtist() async {
+        await library.loadArtist(selectedArtist, navidrome: session?.navidrome)
+    }
+
+    public func open(album: AlbumItem) { selectedAlbum = album; screen = .album }
+
+    public func open(artist: ArtistItem) { selectedArtist = artist; selectedLetter = artist.letter; screen = .artist }
+
+    /// Opens an artist by name when the library has them; otherwise nothing happens.
+    public func openArtist(named name: String) {
+        if let a = library.artist(named: name) { open(artist: a) }
+        else if !library.isLive { screen = .artist }
     }
 }

@@ -10,8 +10,10 @@ struct CupertinoAlbumsGrid: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
                 Text("Albums").font(CU.title(34)).padding(.top, 4).padding(.bottom, 14)
+                if state.library.phase == .loading { Text("Loading your library…").foregroundStyle(CU.muted).padding(.bottom, 8) }
+                if case .failed(let m) = state.library.phase { Text(m).foregroundStyle(CU.accent).padding(.bottom, 8) }
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 128, maximum: 128), spacing: 18, alignment: .top)], alignment: .leading, spacing: 18) {
-                    ForEach(Fixtures.albums([0, 1, 2, 3, 4, 5, 6, 13, 12, 11])) { a in
+                    ForEach(state.library.albums) { a in
                         Button { state.selectedAlbum = a; state.screen = .album } label: {
                         VStack(alignment: .leading, spacing: 0) {
                             CoverView(album: a).frame(width: 128).clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))

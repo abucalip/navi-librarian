@@ -6,7 +6,16 @@ struct ZineHome: View {
     let state: AppState
 
     var body: some View {
-        let lead = Fixtures.albums[7]   // Tago Mago, missing
+        let lib = state.library
+        let lead = lib.missing.first ?? Fixtures.albums[7]   // the top pick; sample data is Tago Mago
+        let story = lib.isLive ? [lead.reason ?? "Recommended for you by Librarian.",
+                                  lead.suggestedTracks.isEmpty ? "" : "Suggested tracks: " + lead.suggestedTracks.prefix(4).joined(separator: ", ") + "."]
+                               : [ZineFixtures.leadStory.headline + ZineFixtures.leadStory.p1, ZineFixtures.leadStory.p2]
+        let fresh = lib.isLive ? Array(lib.missing.dropFirst().prefix(3)) : Fixtures.albums([8, 9, 10])
+        let classifieds = lib.isLive ? Array(lib.missing.dropFirst(4).prefix(4)) : ZineFixtures.classifieds.compactMap { t in Fixtures.albums.first { $0.title == t } }
+        VStack(alignment: .leading, spacing: 10) {
+        if case .failed(let m) = lib.phase { Mono(m, bold: true).foregroundStyle(Z.red) }
+        if lib.phase == .loading { Mono("Loading your library…") }
         HStack(alignment: .top, spacing: 22) {
             VStack(alignment: .leading, spacing: 0) {
                 HStack(alignment: .top, spacing: 22) {
@@ -17,14 +26,14 @@ struct ZineHome: View {
                             .foregroundStyle(Z.yellow).padding(.horizontal, 8).padding(.vertical, 1).background(Z.ink)
                         Text(lead.title).font(Z.an(92)).textCase(.uppercase).tracking(0.9).lineLimit(1).minimumScaleFactor(0.5)
                             .lineSpacing(-8).accessibilityAddTraits(.isHeader)
-                        Mono("\(lead.artist) · \(lead.year) · \(lead.genre)").padding(.bottom, 2)
+                        Mono(lead.line([lead.artist, lead.yearText, lead.genre])).padding(.bottom, 2)
                     }
                 }
                 HStack(alignment: .top, spacing: 20) {
-                    (Text(ZineFixtures.leadStory.headline).bold() + Text(ZineFixtures.leadStory.p1))
+                    (lib.isLive ? Text(story[0]) : Text(ZineFixtures.leadStory.headline).bold() + Text(ZineFixtures.leadStory.p1))
                         .frame(maxWidth: .infinity, alignment: .leading)
                     Rectangle().fill(Z.ink).frame(width: 2)
-                    Text(ZineFixtures.leadStory.p2).frame(maxWidth: .infinity, alignment: .leading)
+                    Text(story[1]).frame(maxWidth: .infinity, alignment: .leading)
                 }
                 .font(Z.serif(14.5)).fixedSize(horizontal: false, vertical: true).padding(.top, 16)
                 HStack(spacing: 12) {
@@ -38,8 +47,8 @@ struct ZineHome: View {
 
             VStack(alignment: .leading, spacing: 14) {
                 VStack(alignment: .leading, spacing: 0) {
-                    ZineH2("New this week")
-                    ForEach(Fixtures.albums([8, 9, 10])) { a in
+                    ZineH2(lib.isLive ? "More picks" : "New this week")
+                    ForEach(fresh) { a in
                         ZineListRow {
                             HStack(spacing: 10) {
                                 Button { state.selectedAlbum = a; state.screen = .album } label: {
@@ -64,21 +73,22 @@ struct ZineHome: View {
                 }
                 VStack(alignment: .leading, spacing: 0) {
                     ZineH2("Classifieds · Missing", size: 18)
-                    ForEach(ZineFixtures.classifieds, id: \.self) { t in
+                    ForEach(classifieds) { a in
                         DotRow {
-                            Mono(t)
+                            Mono(a.title).lineLimit(1)
                         } right: {
-                            Button { if let a = Fixtures.albums.first(where: { $0.title == t }) { state.actions.get(album: a) } } label: { Mono("Get") }
-                                .buttonStyle(ZineLinkStyle()).accessibilityLabel("Get \(t)")
+                            Button { state.actions.get(album: a) } label: { Mono("Get") }
+                                .buttonStyle(ZineLinkStyle()).accessibilityLabel("Get \(a.title)")
                         }
                         .padding(.vertical, 1)
                     }
-                    Mono("Recently added: Dummy, Hounds of Love").padding(.top, 6)
+                    Mono("Recently added: " + (lib.isLive ? lib.recent.prefix(2).map(\.title).joined(separator: ", ") : "Dummy, Hounds of Love")).padding(.top, 6).lineLimit(2)
                 }
                 .padding(.horizontal, 12).padding(.vertical, 10)
                 .zBorder(3, dashed: true)
             }
             .frame(width: 400)
+        }
         }
     }
 }

@@ -12,8 +12,35 @@ public struct AlbumItem: Identifiable, Equatable, Sendable {
     public let genre: String
     public let format: String
     public let owned: Bool
-    /// Placeholder cover colour (0..360) until real cover art is wired in.
+    /// Placeholder cover colour (0..360), used when there is no artwork.
     public let hue: Double
+    /// Set for live albums: the Navidrome album id (nil for a Librarian pick, which the library does not hold yet).
+    public var remoteID: String? = nil
+    /// Navidrome cover art id; the image is fetched through `ArtworkStore`.
+    public var coverArt: String? = nil
+    /// Librarian's reason and suggested tracks, for picks.
+    public var reason: String? = nil
+    public var suggestedTracks: [String] = []
+    public var artistRemoteID: String? = nil
+    public var songCount: Int? = nil
+    public var durationSeconds: Int? = nil
+
+    /// "Artist · 1991 · Genre" without empty parts (live data may not know a year or genre).
+    public func line(_ parts: [String]) -> String { parts.filter { !$0.isEmpty }.joined(separator: " · ") }
+    public var yearText: String { year > 0 ? String(year) : "" }
+}
+
+public struct ArtistItem: Identifiable, Equatable, Sendable {
+    public let id: Int
+    /// Navidrome artist id (nil for sample data).
+    public var remoteID: String? = nil
+    public let name: String
+    public let albumCount: Int
+    /// First letter for the A-Z index ("#" for anything that is not a letter).
+    public var letter: String {
+        guard let c = name.folding(options: .diacriticInsensitive, locale: nil).uppercased().first, c.isLetter else { return "#" }
+        return String(c)
+    }
 }
 
 public struct TrackItem: Identifiable, Equatable, Sendable {
