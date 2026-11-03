@@ -177,6 +177,8 @@
       <p id="shelfFrequentStatus" class="status-line" aria-live="polite"></p>
       <div id="shelfFrequent" class="dashboard-carousel" role="group" aria-label="Most played albums"></div>
     </div>
+    <!-- Tape Deck layout only (shown by static/layouts.css): the deck column beside the shelves. -->
+    <aside id="tapeDashDeck" class="tape-deck" aria-label="Acquisition deck" hidden></aside>
   </section>
 
   <section id="recommendations" class="page hidden" aria-labelledby="recommendationsHeading">
@@ -564,6 +566,8 @@
         <button type="button" id="dismissImportedAcquisitions" class="dismiss-album" title="Dismiss all successful imports" aria-label="Dismiss all successful imports"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="/static/icons.svg#trash-2"></use></svg></button>
       </div>
     </div>
+    <!-- Tape Deck layout only (static/layouts.css shows it; hidden in every other theme): the request being fetched, large. -->
+    <div id="tapeAcqDeck" class="tape-deck tape-deck-large" role="region" aria-label="Acquisition deck" hidden></div>
     <div id="acquisitionCards" class="acq-list"></div>
     <button type="button" id="refreshAcquisitions" class="icon-square-button" title="Refresh status" aria-label="Refresh status"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="/static/icons.svg#rotate-cw"></use></svg></button>
   </div>

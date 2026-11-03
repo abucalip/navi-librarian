@@ -115,19 +115,40 @@ class LedgerLayoutTests(unittest.TestCase):
         body = app.split("function updateLedgerStats(jobs, active) {")[1].split("\n}\n")[0]
         self.assertNotIn("fetch(", body)
         self.assertNotIn("requestJSON", body)
-        self.assertIn("7 * 86400", body)
+        self.assertIn("acquisitionCounts(jobs)", body)
+        counts = app.split("function acquisitionCounts(jobs) {")[1].split("\n}\n")[0]
+        self.assertIn("7 * 86400", counts)
+        self.assertNotIn("fetch(", counts)
 
     def test_ctrl_k_jumps_to_search_only_in_the_ledger_layout_and_the_hint_is_hidden_elsewhere(self):
         app = (STATIC / "app.js").read_text(encoding="utf-8")
         index = (ROOT / "app" / "templates" / "index.html").read_text(encoding="utf-8")
         handler = app.split("document.addEventListener('keydown', event => {\n  if ((event.ctrlKey")[1].split("return;")[0]
         self.assertIn("event.key.toLowerCase() === 'k'", handler)
-        self.assertIn("document.documentElement.dataset.layout === 'ledger'", handler)
+        self.assertIn("&& document.documentElement.dataset.layout) {", handler)  # any layout theme, never a plain theme
         self.assertIn("event.preventDefault();", handler)
         self.assertIn("setSearchExpanded(true, {focus: true});", handler)
         self.assertIn('<kbd class="search-shortcut" aria-hidden="true" hidden></kbd>', index)
         self.assertIn(':root[data-layout="ledger"] .search-shortcut {', self.ledger)
         self.assertNotIn(".search-shortcut", (STATIC / "app.css").read_text(encoding="utf-8"))
+
+    def test_the_column_ruler_is_decorative_and_the_pager_never_reorders_or_removes_rows(self):
+        app = (STATIC / "app.js").read_text(encoding="utf-8")
+        self.assertIn("head.setAttribute('aria-hidden', 'true');", app)
+        view = app.split("function applyLedgerView(list) {")[1].split("\n}\n")[0]
+        self.assertIn("row.classList.toggle('ledger-off', !visible.has(row));", view)
+        for forbidden in ("appendChild", ".append(", "insertBefore", ".remove(", "sort("):
+            self.assertNotIn(forbidden, view)
+        self.assertIn("LEDGER_PAGE_SIZE = 25", app)
+        self.assertIn(':root[data-layout="ledger"] .ranked-row.ledger-off { display: none; }', self.ledger)
+        self.assertIn(':root[data-layout="ledger"] .ledger-pager[data-single] { display: none; }', self.ledger)
+        self.assertIn(":root[data-layout=\"ledger\"] .ledger-head {", self.ledger)
+        for selector in (".ledger-head {", ".ledger-pager {"):
+            self.assertNotIn(selector, (STATIC / "app.css").read_text(encoding="utf-8"))
+
+    def test_the_library_list_is_a_ruled_table_only_in_list_mode(self):
+        self.assertIn(':root[data-layout="ledger"] .library-list:not(.is-grid) {', self.ledger)
+        self.assertIn(':root[data-layout="ledger"] .library-list:not(.is-grid) .library-artist-count { font-family: var(--mono);', self.ledger)
 
     def test_the_default_theme_is_still_ink(self):
         self.assertIn("ink", self.script.split("var THEMES = [")[1].split("\n")[1])

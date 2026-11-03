@@ -673,19 +673,109 @@ function updateActiveDownloadBadge(data) {
   badge.hidden = count === 0;
   badge.setAttribute('aria-label', count + ' active download' + (count === 1 ? '' : 's'));
   updateLedgerStats(jobs, count);
+  updateTapeDecks(jobs);
+}
+
+// The three figures the Ledger strip and the Tape Deck show, counted from the acquisition list the page already loads.
+function acquisitionCounts(jobs) {
+  const weekAgo = Date.now() / 1000 - 7 * 86400;
+  return {
+    active: jobs.filter(job => ACTIVE_DOWNLOAD_STATUSES.has(String(job.status || '').toLowerCase())).length,
+    imported: jobs.filter(job => String(job.status || '').toLowerCase() === 'imported' && Number(job.updated_at) >= weekAgo).length,
+    failed: jobs.filter(job => acquisitionStatusInfo(job.status).tone === 'error').length,
+    total: jobs.length
+  };
 }
 
 // Ledger Room only: the dashboard's summary strip, counted from the acquisition list this page already loads
 // (no new request). Imported counts jobs the server marked imported in the last seven days.
 function updateLedgerStats(jobs, active) {
   if (!$('ledgerStats')) return;
-  const weekAgo = Date.now() / 1000 - 7 * 86400;
-  const imported = jobs.filter(job => String(job.status || '').toLowerCase() === 'imported' && Number(job.updated_at) >= weekAgo).length;
-  const failed = jobs.filter(job => acquisitionStatusInfo(job.status).tone === 'error').length;
+  const counts = acquisitionCounts(jobs);
   $('ledgerStatActive').textContent = String(active);
-  $('ledgerStatImported').textContent = String(imported);
-  $('ledgerStatFailed').textContent = String(failed);
-  $('ledgerStatTotal').textContent = String(jobs.length);
+  $('ledgerStatImported').textContent = String(counts.imported);
+  $('ledgerStatFailed').textContent = String(counts.failed);
+  $('ledgerStatTotal').textContent = String(counts.total);
+}
+
+// Tape Deck only (static/layouts.css shows the two panels; they are hidden in every other theme): the deck. The request being fetched
+// is shown large (cover, title, artist, status word, a five-bar meter and a seek-style progress bar), with three counts under it. The
+// meter and the bar are acquisition progress only: the web UI plays nothing. Built from the list the page already has; rebuilt only
+// when what it shows changes, so the cover is not reloaded on every poll.
+const TAPE_DECK_LIVE = new Set(['downloading', 'importing', 'monitoring', 'download_complete_waiting_for_folder', 'searching']);
+
+function updateTapeDecks(jobs) {
+  const boxes = ['tapeDashDeck', 'tapeAcqDeck'].map($).filter(Boolean);
+  if (!boxes.length) return;
+  const active = jobs.filter(job => ACTIVE_DOWNLOAD_STATUSES.has(String(job.status || '').toLowerCase()));
+  const current = active.find(job => TAPE_DECK_LIVE.has(String(job.status || '').toLowerCase())) || active[0] || null;
+  const live = current && current.details && current.details.live_progress;
+  const percent = live && live.percent !== null && Number.isFinite(Number(live.percent)) ? Math.max(0, Math.min(100, Number(live.percent))) : null;
+  const counts = acquisitionCounts(jobs);
+  const signature = JSON.stringify([current && [current.artist, current.album, current.status, percent, current.details && current.details.track_title], counts]);
+  for (const box of boxes) {
+    if (box.dataset.sig === signature) continue;
+    box.dataset.sig = signature;
+    buildTapeDeck(box, current, percent, counts);
+  }
+}
+
+function buildTapeDeck(box, job, percent, counts) {
+  box.replaceChildren();
+  addTextElement(box, 'p', 'tape-deck-label', job ? 'Now fetching' : 'Deck idle');
+  if (job) {
+    const details = job.details || {};
+    const artist = job.artist || 'Unknown artist';
+    const isSong = details.kind === 'track';
+    const album = (isSong ? details.album_name : job.album) || 'Unknown album';
+    const info = acquisitionStatusInfo(job.status);
+    const body = document.createElement('div');
+    body.className = 'tape-deck-body';
+    attachArtwork(body, artist, album);
+    const text = document.createElement('div');
+    text.className = 'tape-deck-text';
+    addTextElement(text, 'h3', '', isSong ? (details.track_title || job.album || 'Unknown song') : album);
+    addTextElement(text, 'p', 'tape-deck-artist', artist);
+    const status = document.createElement('p');
+    status.className = 'tape-deck-status is-' + info.tone;
+    status.append(info.glyph + ' ' + info.label);
+    if (TAPE_DECK_LIVE.has(String(job.status || '').toLowerCase())) {
+      const meter = document.createElement('span');
+      meter.className = 'tape-meter';
+      meter.setAttribute('aria-hidden', 'true');
+      for (let i = 0; i < 5; i += 1) meter.append(document.createElement('i'));
+      status.append(meter);
+    }
+    text.append(status);
+    if (percent !== null) {
+      const bar = document.createElement('div');
+      bar.className = 'acq-progress';
+      bar.setAttribute('role', 'progressbar');
+      bar.setAttribute('aria-label', 'Download progress');
+      bar.setAttribute('aria-valuemin', '0');
+      bar.setAttribute('aria-valuemax', '100');
+      bar.setAttribute('aria-valuenow', String(Math.round(percent)));
+      const fill = document.createElement('span');
+      fill.className = 'acq-progress-fill';
+      fill.style.setProperty('--progress', String(percent / 100));
+      bar.append(fill);
+      text.append(bar);
+      addTextElement(text, 'p', 'acq-percent', Math.round(percent) + '% complete');
+    }
+    body.append(text);
+    box.append(body);
+  } else {
+    addTextElement(box, 'p', 'tape-deck-idle', 'No request is being fetched.');
+  }
+  const list = document.createElement('dl');
+  list.className = 'tape-deck-counts';
+  for (const [label, value] of [['Active', counts.active], ['Imported, 7 days', counts.imported], ['Failed', counts.failed]]) {
+    const cell = document.createElement('div');
+    addTextElement(cell, 'dt', '', label);
+    addTextElement(cell, 'dd', '', String(value));
+    list.append(cell);
+  }
+  box.append(list);
 }
 
 async function refreshActiveDownloadBadge() {
@@ -1303,13 +1393,14 @@ document.addEventListener('click', event => {
   if (!card || event.target.closest('button, a, input, select, textarea')) return;
   openAlbumModal(card);
 });
-// Ledger Room only: Ctrl+K (Cmd+K on a Mac) jumps to the header search. The page takes the key from the browser, which uses it
-// for its own search bar, so the shortcut exists in no other theme and the hint beside the field is shown by this layout alone.
+// Layout themes only (Tape Deck, Ledger Room, Crate Wall): Ctrl+K (Cmd+K on a Mac) jumps to the header search. The page takes the key
+// from the browser, which uses it for its own search bar, so the shortcut exists in no other theme and the hint beside the field is
+// shown by the layouts alone.
 const searchShortcutLabel = /Mac|iPhone|iPad/.test(navigator.platform || '') ? '\u2318K' : 'Ctrl K';
 document.querySelectorAll('.search-shortcut').forEach(hint => { hint.textContent = searchShortcutLabel; });
 document.addEventListener('keydown', event => {
   if ((event.ctrlKey || event.metaKey) && !event.altKey && !event.shiftKey && event.key.toLowerCase() === 'k'
-      && document.documentElement.dataset.layout === 'ledger') {
+      && document.documentElement.dataset.layout) {
     event.preventDefault();
     setSearchExpanded(true, {focus: true});
     $('globalSearchInput').select();
@@ -2273,7 +2364,67 @@ function buildLedgerFilters() {
       group.append(button);
     }
     list.before(group);
+    // The column labels above the rows: a visual ruler only (the rows are interactive articles, not table cells, so it is hidden from
+    // assistive tech; the sort control and each row's own name carry the meaning).
+    const head = document.createElement('div');
+    head.className = 'ledger-head';
+    head.hidden = true;
+    head.setAttribute('aria-hidden', 'true');
+    for (const label of ['#', '', 'Album', 'Details', 'Status', '']) addTextElement(head, 'span', '', label);
+    group.after(head);
+    // Pagination of what is already on the page (25 rows a page): it never reorders or re-ranks, and it counts only the rows the
+    // switch above lets through.
+    const pager = document.createElement('div');
+    pager.className = 'ledger-pager';
+    pager.hidden = true;
+    const range = addTextElement(pager, 'span', 'ledger-pager-range', '');
+    range.setAttribute('aria-live', 'polite');
+    const nav = document.createElement('div');
+    nav.className = 'action-group';
+    nav.setAttribute('role', 'group');
+    nav.setAttribute('aria-label', 'Pages');
+    const prev = document.createElement('button');
+    prev.type = 'button'; prev.title = 'Previous page'; prev.setAttribute('aria-label', 'Previous page'); prev.append(spriteIcon('chevron-left'));
+    const next = document.createElement('button');
+    next.type = 'button'; next.title = 'Next page'; next.setAttribute('aria-label', 'Next page'); next.append(spriteIcon('chevron-right'));
+    nav.append(prev, next);
+    pager.append(nav);
+    list.after(pager);
+    const state = {page: 0, group, head, pager, range, prev, next};
+    ledgerLists.set(list, state);
+    prev.addEventListener('click', () => { state.page = Math.max(0, state.page - 1); applyLedgerView(list); });
+    next.addEventListener('click', () => { state.page += 1; applyLedgerView(list); });
+    group.addEventListener('click', () => { state.page = 0; applyLedgerView(list); });
+    if (typeof MutationObserver === 'function') {
+      new MutationObserver(() => applyLedgerView(list)).observe(list, {childList: true, subtree: true, attributes: true, attributeFilter: ['data-state']});
+    }
+    applyLedgerView(list);
   }
+}
+
+const ledgerLists = new Map();
+const LEDGER_PAGE_SIZE = 25;
+
+// Marks the rows outside the chosen page or switch with the class that the Ledger layout hides (nothing is removed or moved).
+function applyLedgerView(list) {
+  const state = ledgerLists.get(list);
+  if (!state) return;
+  const filter = list.dataset.ledgerFilter || 'all';
+  const rows = Array.from(list.children).filter(child => child.classList.contains('ranked-row'));
+  const matching = rows.filter(row => filter === 'all' || (row.querySelector('.status-badge') || {dataset: {}}).dataset.state === filter);
+  const pages = Math.max(1, Math.ceil(matching.length / LEDGER_PAGE_SIZE));
+  state.page = Math.min(state.page, pages - 1);
+  const first = state.page * LEDGER_PAGE_SIZE;
+  const visible = new Set(matching.slice(first, first + LEDGER_PAGE_SIZE));
+  for (const row of rows) row.classList.toggle('ledger-off', !visible.has(row));
+  state.head.toggleAttribute('data-empty', !rows.length);
+  state.head.toggleAttribute('data-nometa', rows.length > 0 && rows[0].classList.contains('no-meta'));
+  state.pager.toggleAttribute('data-single', pages <= 1);
+  state.range.textContent = matching.length
+    ? 'Showing ' + (first + 1) + '\u2013' + Math.min(first + LEDGER_PAGE_SIZE, matching.length) + ' of ' + matching.length
+    : '';
+  state.prev.disabled = state.page === 0;
+  state.next.disabled = state.page >= pages - 1;
 }
 
 const monthAbbreviations = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];

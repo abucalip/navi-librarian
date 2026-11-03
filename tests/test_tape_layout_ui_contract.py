@@ -121,6 +121,32 @@ class TapeLayoutTests(unittest.TestCase):
         self.assertEqual(self._token(block, "accent"), "#3d68f0")
         self.assertGreaterEqual(_contrast("#ffffff", "#3d68f0"), 4.5)
 
+    def test_the_deck_is_hidden_by_default_built_from_the_loaded_list_and_its_meter_is_decorative_and_stops_under_reduced_motion(self):
+        index = (TEMPLATES / "index.html").read_text(encoding="utf-8")
+        app = (STATIC / "app.js").read_text(encoding="utf-8")
+        self.assertIn('<aside id="tapeDashDeck" class="tape-deck" aria-label="Acquisition deck" hidden></aside>', index)
+        self.assertIn('id="tapeAcqDeck" class="tape-deck tape-deck-large" role="region" aria-label="Acquisition deck" hidden>', index)
+        build = app.split("function buildTapeDeck(box, job, percent, counts) {")[1].split("\n}\n")[0]
+        self.assertIn("meter.setAttribute('aria-hidden', 'true');", build)
+        self.assertNotIn("fetch(", build)
+        update = app.split("function updateTapeDecks(jobs) {")[1].split("\n}\n")[0]
+        self.assertNotIn("requestJSON", update)
+        self.assertIn("if (box.dataset.sig === signature) continue;", update)  # rebuilt only when what it shows changes
+        self.assertIn("updateTapeDecks(jobs);", app.split("function updateActiveDownloadBadge(data) {")[1].split("\n}\n")[0])
+        reduced = self.layouts.split("@media (prefers-reduced-motion: reduce) {")[1]
+        self.assertIn(':root[data-layout="tape"] .tape-meter > i { animation: none;', reduced)
+        for selector in (".tape-deck {", ".tape-meter {"):
+            self.assertIn(':root[data-layout="tape"] ' + selector, self.layouts)
+            self.assertNotIn(selector, (STATIC / "app.css").read_text(encoding="utf-8"))
+
+    def test_the_dashboard_has_a_deck_column_beside_the_shelves(self):
+        self.assertIn("grid-template-columns: repeat(2, minmax(0, 1fr)) minmax(260px, 300px);", self.layouts)
+        self.assertIn(':root[data-layout="tape"] #tapeDashDeck { grid-column: 3; grid-row: 3 / span 2; }', self.layouts)
+
+    def test_the_search_shortcut_hint_is_shown_by_every_layout(self):
+        for layout in ("tape", "ledger", "crate"):
+            self.assertIn(f':root[data-layout="{layout}"] .search-shortcut {{ display: block;', self.layouts)
+
 
 if __name__ == "__main__":
     unittest.main()
