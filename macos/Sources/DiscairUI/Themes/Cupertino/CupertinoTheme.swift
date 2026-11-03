@@ -19,6 +19,8 @@ enum CU {
     static let ink = Color(red: 0.114, green: 0.114, blue: 0.122)        // #1d1d1f
     static let card = Color(red: 0.96, green: 0.96, blue: 0.97)          // #f5f5f7
     static let fill = Color(red: 0.925, green: 0.925, blue: 0.94)        // #ececf0
+    /// Mockup glass: rgba(246,246,249,.74) over the blur. Bare `.regular` is too clear over the pastel backdrop.
+    static let glass: Glass = .regular.tint(Color(red: 0.965, green: 0.965, blue: 0.976).opacity(0.74))
     static let sidebarRadius: CGFloat = 20
     static let windowRadius: CGFloat = 26
     static func title(_ size: CGFloat) -> Font { .system(size: size, weight: .bold).width(.standard) }
@@ -102,7 +104,7 @@ struct CupertinoSidebar: View {
         }
         .padding(10).padding(.top, 6)
         .frame(width: 216)
-        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: CU.sidebarRadius, style: .continuous))
+        .glassEffect(CU.glass, in: RoundedRectangle(cornerRadius: CU.sidebarRadius, style: .continuous))
         .padding(10)
     }
 }
@@ -117,7 +119,7 @@ struct CupertinoToolbar: View {
                 }
             }
             .padding(.horizontal, 18).frame(height: 40)
-            .glassEffect(.regular, in: Capsule())
+            .glassEffect(CU.glass, in: Capsule())
 
             nowPlayingDisplay.frame(maxWidth: 470)
 
@@ -126,7 +128,7 @@ struct CupertinoToolbar: View {
                 Text("Search  ⌘K")
             }
             .foregroundStyle(CU.muted).padding(.horizontal, 14).frame(width: 210, height: 36)
-            .glassEffect(.regular, in: Capsule())
+            .glassEffect(CU.glass, in: Capsule())
         }
         .frame(height: 44)
     }
@@ -148,7 +150,7 @@ struct CupertinoToolbar: View {
                 .frame(height: 3)
         }
         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .glassEffect(CU.glass, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Now playing: After the Flood, Talk Talk, 3:12 of 9:41")
     }
