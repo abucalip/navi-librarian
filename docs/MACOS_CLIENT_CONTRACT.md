@@ -195,7 +195,7 @@ Recommendation for M5: download to a temporary file; start playing a progressive
 
 ### 12.3 10-band EQ (`AVAudioUnitEQ`, parametric, one-octave bands at 31, 62, 125, 250, 500, 1k, 2k, 4k, 8k, 16k Hz)
 
-Measured on pure tones: +12 dB at 1 kHz gives +12.00 dB at 1 kHz and +0.08 and +0.10 dB at 100 Hz and 8 kHz; -12 dB at 62 Hz gives -12.00 dB; +12 dB at 16 kHz gives +12.00 dB; flat is 0.00 dB; `globalGain` of -6 gives -6.00 dB (pre-gain works); bypassed bands give 0.00 dB. The EQ is exact and sample rate independent enough for the Android presets to be ported as they are (`ANDROID_EQ_CONTRACT.md`).
+Measured on pure tones: +12 dB at 1 kHz gives +12.00 dB at 1 kHz and +0.08 and +0.10 dB at 100 Hz and 8 kHz; -12 dB at 62 Hz gives -12.00 dB; +12 dB at 16 kHz gives +12.00 dB; flat is 0.00 dB; `globalGain` of -6 gives -6.00 dB (pre-gain works); bypassed bands give 0.00 dB. Measured at 44.1 kHz only. The EQ behaves as specified, so the Android presets can be ported as they are (`ANDROID_EQ_CONTRACT.md`).
 
 ### 12.4 Crossfade
 
@@ -203,7 +203,7 @@ Two `AVAudioPlayerNode`s into the mixer, the second started sample-accurately wi
 
 ### 12.5 Gapless
 
-One player node with the next file scheduled before the current one ends: a sine split at an arbitrary frame into two files joins with zero error for PCM and 6e-8 (24-bit rounding) for FLAC, with no inserted or dropped frames. Two real MP3 tracks of the library joined with zero sample error and the exact frame total; the engine adds no gap, so any gap heard is silence stored in the files (those two tracks had 1.9 s of it, which is normal for non-continuous tracks). The decoder trims MP3 encoder delay where the file declares it. A continuous album (live or concept) was not identified; the owner should name one for the by-ear check.
+One player node with the next file scheduled before the current one ends: a sine split at an arbitrary frame into two files joins with zero error for PCM and 6e-8 (24-bit rounding) for FLAC, with no inserted or dropped frames. Two real MP3 tracks of the library joined with zero sample error and the exact frame total; the engine adds no gap, so any gap heard is silence stored in the files (those two tracks had 1.9 s of it, which is normal for non-continuous tracks). Whether the decoder trims MP3 encoder delay was not measured separately. A continuous album (live or concept) was not identified; the owner should name one for the by-ear check.
 
 ### 12.6 Output sample rate
 
