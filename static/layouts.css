@@ -611,4 +611,31 @@
   :root[data-layout="zine"] .library-list:not(.is-grid) .library-artist:hover .library-artist-name,
   :root[data-layout="zine"] .library-list:not(.is-grid) .library-artist:hover .library-artist-count { background: var(--surface-hover); }
   :root[data-layout="zine"] .library-toolbar .action-group > button { border-radius: 0; }
+
+  /* ---- Album: an article. A giant headline, a ruled byline row, the tracklist as a two-column contents box. A missing track's own Get
+     (the real per-track control) sits in a dashed coupon. Applies to the album page and to the album window. ---- */
+  :root[data-layout="zine"] #albumHeading,
+  :root[data-layout="zine"] .album-modal-copy h2 {
+    font-family: var(--display); font-size: clamp(2.25rem, 5vw, 4.25rem); line-height: .95; text-transform: uppercase; letter-spacing: 0; overflow-wrap: anywhere;
+  }
+  :root[data-layout="zine"] .album-hero-artist, :root[data-layout="zine"] .album-modal-artist { font: 800 var(--text-sm)/1.3 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--text); }
+  :root[data-layout="zine"] .album-meta { justify-content: flex-start; color: var(--text); display: flex; flex-wrap: wrap; gap: 0; margin: 14px 0; border-top: var(--zine-rule); border-bottom: var(--zine-rule); font: 700 var(--text-xs)/1.4 var(--mono); letter-spacing: .08em; text-transform: uppercase; }
+  :root[data-layout="zine"] .album-meta[hidden] { display: none; }
+  :root[data-layout="zine"] .album-page { max-width: 1100px; margin: 0; }
+  :root[data-layout="zine"] .album-head { justify-items: start; text-align: left; padding-top: 56px; }
+  :root[data-layout="zine"] .album-head .album-about { width: 100%; }
+  :root[data-layout="zine"] .album-tabs { justify-content: flex-start; }
+  :root[data-layout="zine"] .album-about .section-note { text-align: left; }
+  :root[data-layout="zine"] .album-meta > span { padding: 6px 14px 6px 0; margin-right: 14px; border-right: var(--zine-hair); }
+  :root[data-layout="zine"] .album-meta > span:empty { display: none; }
+  :root[data-layout="zine"] .album-meta > span:last-child { border-right: 0; }
+  :root[data-layout="zine"] .album-description-text, :root[data-layout="zine"] .album-modal-bio { column-width: 22rem; column-gap: 26px; column-rule: var(--zine-hair); max-width: none; }
+  :root[data-layout="zine"] .track-list, :root[data-layout="zine"] .album-modal-tracklist { column-width: 20rem; column-gap: 28px; column-rule: var(--zine-hair); border-top: var(--zine-rule); }
+  :root[data-layout="zine"] .track-list > li, :root[data-layout="zine"] .album-modal-tracklist > li { break-inside: avoid; border-bottom: var(--zine-hair); }
+  :root[data-layout="zine"] .track-list > .track-disc { column-span: all; border-bottom: var(--zine-rule); }
+  :root[data-layout="zine"] .track:has(> .action-group) { margin: 4px 0; border: 2px dashed var(--edge); background: var(--surface); }
+  :root[data-layout="zine"] .track-number, :root[data-layout="zine"] .track-duration { font-family: var(--mono); font-size: var(--text-xs); }
+  :root[data-layout="zine"] .album-modal { border-radius: 0; background: var(--surface); }
+  :root[data-layout="zine"] .album-modal-art, :root[data-layout="zine"] .album-hero-art-wrap { border-radius: 0; }
+  :root[data-layout="zine"] .album-tab { border-radius: 0; }
 }
