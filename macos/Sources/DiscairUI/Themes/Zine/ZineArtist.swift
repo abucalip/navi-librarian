@@ -58,7 +58,8 @@ struct ZineArtist: View {
     private func issue(_ a: AlbumItem) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             if a.owned {
-                ZineCover(album: a, width: 130)
+                Button { state.selectedAlbum = a; state.screen = .album } label: { ZineCover(album: a, width: 130) }
+                    .buttonStyle(.plain).accessibilityLabel("Open \(a.title)")
             } else {
                 VStack(spacing: 4) {
                     Mono("Missing").multilineTextAlignment(.center)
@@ -69,7 +70,10 @@ struct ZineArtist: View {
                 .background(StripeFill())
                 .zBorder(3, dashed: true)
             }
-            Text(a.title).font(Z.an(14)).textCase(.uppercase).lineLimit(2).lineSpacing(-2).frame(width: 130, alignment: .leading)
+            Button { state.selectedAlbum = a; state.screen = .album } label: {
+                Text(a.title).font(Z.an(14)).textCase(.uppercase).lineLimit(2).lineSpacing(-2).frame(width: 130, alignment: .leading)
+            }
+            .buttonStyle(.plain).accessibilityLabel("Open \(a.title)")
             Mono("\(a.year)\(a.owned ? "" : " · missing")")
         }
         .frame(width: 140, alignment: .leading)
