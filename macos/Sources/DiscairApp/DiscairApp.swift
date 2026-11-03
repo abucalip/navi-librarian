@@ -1,11 +1,13 @@
 import AppKit
+import DiscairCore
 import DiscairUI
 import SwiftUI
 
 @main
 struct DiscairApp: App {
     @State private var state = AppState(
-        themeID: ProcessInfo.processInfo.environment["DISCAIR_THEME"].flatMap(ThemeID.init(rawValue:)) ?? .cupertino
+        themeID: ProcessInfo.processInfo.environment["DISCAIR_THEME"].flatMap(ThemeID.init(rawValue:)) ?? .cupertino,
+        session: SessionModel(store: ProfileStore(fileURL: SessionModel.defaultStoreURL))
     )
 
     init() {
@@ -17,6 +19,7 @@ struct DiscairApp: App {
     var body: some Scene {
         Window("Discair", id: "main") {
             RootView(state: state)
+                .task { await state.session?.connect() }
         }
         .windowStyle(.hiddenTitleBar)
         .defaultSize(width: 1280, height: 800)

@@ -62,7 +62,7 @@ struct CupertinoWindow: View {
             }
             // Top right under the search pill (owner decision), not at the bottom of the window or sidebar (HIG).
             HStack(spacing: 5) {
-                Circle().fill(Color.green).frame(width: 7, height: 7)
+                Circle().fill(state.connectionIsGood ? Color.green : CU.accent).frame(width: 7, height: 7)
                 Text(state.connectionLabel)
             }
             .font(.system(size: 11)).foregroundStyle(state.screen == .artist ? Color.white.opacity(0.9) : CU.muted)   // over the dark banner
@@ -83,6 +83,7 @@ struct CupertinoWindow: View {
         case .queue, .albums: CupertinoAlbumsGrid(state: state, inspector: state.screen == .queue)
         case .library: CupertinoLibrary(state: state)
         case .artist: CupertinoArtist(state: state)
+        case .settings: CupertinoSettings(state: state)
         default: Text("\(state.screen.rawValue): not built yet").foregroundStyle(CU.muted).padding(28)
         }
     }
@@ -96,16 +97,17 @@ struct CupertinoSidebar: View {
         case .queue, .library: "Songs"
         case .albums: "Albums"
         case .artist: "Artists"
+        case .settings: "Settings"
         default: "Recently Added"
         }
     }
     /// Where each row goes. Rows without a screen yet do nothing (they are still real buttons, so keyboard and
     /// VoiceOver treat them like the rest).
-    private let target: [String: Screen] = ["Home": .home, "Songs": .library, "Albums": .albums, "Artists": .artist]
+    private let target: [String: Screen] = ["Home": .home, "Songs": .library, "Albums": .albums, "Artists": .artist, "Settings": .settings]
     private let nav: [(String, String)] = [
         ("house", "Home"), ("sparkles", "New"), ("clock", "Recently Added"), ("music.mic", "Artists"),
         ("square.stack", "Albums"), ("music.note", "Songs"), ("dot.radiowaves.left.and.right", "Gap Radar"),
-        ("clock.arrow.circlepath", "History"), ("arrow.down.circle", "Downloads"),
+        ("clock.arrow.circlepath", "History"), ("arrow.down.circle", "Downloads"), ("gearshape", "Settings"),
     ]
 
     var body: some View {
