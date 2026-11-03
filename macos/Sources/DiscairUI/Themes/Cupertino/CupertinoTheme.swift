@@ -47,6 +47,16 @@ struct CupertinoWindow: View {
             CupertinoSidebar(state: state)
             CupertinoToolbar(state: state)
                 .padding(.leading, 238).padding(.trailing, 16).padding(.top, 12)
+            // Top right under the search pill (owner decision), not at the bottom of the window or sidebar (HIG).
+            HStack(spacing: 5) {
+                Circle().fill(Color.green).frame(width: 7, height: 7)
+                Text(state.connectionLabel)
+            }
+            .font(.system(size: 11)).foregroundStyle(CU.muted)
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("Connection: \(state.connectionLabel)")
+            .frame(maxWidth: .infinity, alignment: .trailing)
+            .padding(.trailing, 20).padding(.top, 52)
         }
         .foregroundStyle(CU.ink)
         .clipShape(RoundedRectangle(cornerRadius: CU.windowRadius, style: .continuous))
@@ -73,15 +83,7 @@ struct CupertinoSidebar: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
-            TrafficLights().padding(.leading, 6).padding(.bottom, 10)
-            // Top of the sidebar, not the bottom: windows are often dragged partly off screen (HIG, Sidebars).
-            HStack(spacing: 5) {
-                Circle().fill(.green).frame(width: 7, height: 7)
-                Text(state.connectionLabel)
-            }
-            .font(.system(size: 11)).foregroundStyle(CU.muted).padding(.horizontal, 10).padding(.bottom, 8)
-            .accessibilityElement(children: .combine)
-            .accessibilityLabel("Connection: \(state.connectionLabel)")
+            TrafficLights().padding(.leading, 6).padding(.bottom, 20)
             ForEach(nav, id: \.1) { icon, label in
                 let on = label == selected
                 HStack(spacing: 9) {

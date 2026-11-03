@@ -60,7 +60,7 @@ Read in full from PDFs the owner saved from developer.apple.com (not committed; 
 - Corner radii concentric with the window and bars; no hard-coded control heights where a system control exists.
 
 **Differences from the approved mockups (owner decided 2026-11-03):**
-1. **Connection indicator and "unencrypted" badge:** moved to the top of the sidebar (below the traffic lights), not the bottom. HIG: people often move windows so the bottom edge is off screen. Done for Cupertino; every theme follows.
+1. **Connection indicator and "unencrypted" badge:** moved off the bottom (HIG: people often move windows so the bottom edge is off screen). First put at the top of the sidebar; the owner then asked for the top right corner, under the search pill. Done for Cupertino; other themes place it at the top.
 2. **Zine Spread black player strip at the bottom:** kept as drawn. Transport is also in the menu bar, media keys and the mini window, so playback never depends on the strip.
 3. **Tinted glass** (74% light tint): kept as approved; revisit if legibility checks fail.
 4. **Fixed red-pink sidebar icons:** kept fixed as part of Cupertino's identity.
@@ -69,3 +69,5 @@ Read in full from PDFs the owner saved from developer.apple.com (not committed; 
 ## M4 slice 2: Cupertino Album
 
 Built from `R.cupertino.album`: artwork, bold sans title, red artist name, quality and owned badges, Play / Shuffle / Get missing song (outlined) / Save, zebra track table with the playing row in the accent colour and the missing song as a dashed row with its own Get song, More by artist shelf. "Open album" on Home navigates here; the sidebar highlights Recently Added. Dropped or different: track "..." menus are text placeholders until M5; Shuffle has no action yet; runtime "41 minutes" is a sample value.
+
+Home change (owner, after slice 2): Not for me is a labelled capsule button like Get and Save (outlined, own row under them so all three fit a 156 pt tile).

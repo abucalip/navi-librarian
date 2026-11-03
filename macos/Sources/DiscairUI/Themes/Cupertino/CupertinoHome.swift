@@ -66,11 +66,14 @@ struct CupertinoHome: View {
             Text(a.title).fontWeight(.semibold).lineLimit(1)
             Text(missing ? "\(a.artist) · \(a.year)" : a.artist).foregroundStyle(CU.muted).lineLimit(1)
             if missing {
-                HStack(spacing: 5) {
-                    Button("Get") { state.actions.get(album: a) }.buttonStyle(CapsuleButtonStyle(primary: true, small: true))
-                    Button("Save") { state.actions.save(album: a) }.buttonStyle(CapsuleButtonStyle(small: true))
+                // Get, Save and Not for me are all real buttons with text labels; the third sits on its own row to fit the tile.
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack(spacing: 5) {
+                        Button("Get") { state.actions.get(album: a) }.buttonStyle(CapsuleButtonStyle(primary: true, small: true))
+                        Button("Save") { state.actions.save(album: a) }.buttonStyle(CapsuleButtonStyle(small: true))
+                    }
                     Button("Not for me") { state.actions.notForMe(album: a) }
-                        .buttonStyle(.plain).font(.system(size: 12)).foregroundStyle(CU.muted).underline().lineLimit(1).fixedSize()
+                        .buttonStyle(CapsuleButtonStyle(small: true, outlined: true))
                 }
                 .padding(.top, 7)
             }
