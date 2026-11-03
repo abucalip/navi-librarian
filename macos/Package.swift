@@ -10,6 +10,8 @@ let package = Package(
         .library(name: "DiscairCore", targets: ["DiscairCore"]),
         .library(name: "DiscairNavidrome", targets: ["DiscairNavidrome"]),
         .library(name: "DiscairLibrarian", targets: ["DiscairLibrarian"]),
+        .library(name: "DiscairUI", targets: ["DiscairUI"]),
+        .executable(name: "Discair", targets: ["DiscairApp"]),
         .executable(name: "discair-checks", targets: ["DiscairChecks"]),
         .executable(name: "discair-audio-spike", targets: ["AudioSpike"]),
     ],
@@ -17,6 +19,8 @@ let package = Package(
         .target(name: "DiscairCore"),
         .target(name: "DiscairNavidrome", dependencies: ["DiscairCore"]),
         .target(name: "DiscairLibrarian", dependencies: ["DiscairCore"]),
+        .target(name: "DiscairUI", dependencies: ["DiscairCore", "DiscairNavidrome", "DiscairLibrarian"]),
+        .executableTarget(name: "DiscairApp", dependencies: ["DiscairUI"]),
         .executableTarget(
             name: "DiscairChecks",
             dependencies: ["DiscairCore", "DiscairNavidrome", "DiscairLibrarian"]
@@ -26,6 +30,7 @@ let package = Package(
             name: "AudioSpike",
             dependencies: ["DiscairCore", "DiscairNavidrome"]
         ),
+        .testTarget(name: "DiscairUITests", dependencies: ["DiscairUI"]),
         .testTarget(
             name: "DiscairCoreTests",
             dependencies: ["DiscairCore"]

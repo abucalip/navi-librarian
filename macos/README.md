@@ -9,6 +9,8 @@ Swift 6, macOS 26, Apple Silicon. No third-party dependencies.
 | `DiscairCore` | Address rules (https, or http only for RFC 1918, `.local`, 100.64.0.0/10), profiles and their JSON store, reachability and profile selection (LAN, then Tailscale, manual override), Tailscale detection from network interfaces, error kinds, Keychain store, HTTP transport |
 | `DiscairNavidrome` | Subsonic token and salt auth, `ping`, library read (artists, albums, songs, cover art URLs), playlist calls, the one stream-URL builder |
 | `DiscairLibrarian` | Login and the dashboard picks read |
+| `DiscairUI` | M4 UI layer: theme protocol and registry, app state and actions, sample data, window chrome, Cupertino (Home so far) |
+| `Discair` | The SwiftUI app (`swift run Discair`); a thin shell over `DiscairUI` |
 | `discair-checks` | Command-line harness for the two server checks (contract section 11) |
 | `discair-audio-spike` | M2 measurement tool, not shipped: `AVAudioEngine` decode, EQ, crossfade, gapless, device rates, SMB timings (contract section 12) |
 
