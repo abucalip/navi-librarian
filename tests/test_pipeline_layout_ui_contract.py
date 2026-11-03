@@ -96,6 +96,12 @@ class PipelineLayoutTests(unittest.TestCase):
         self.assertNotIn("sendJSON('/api/acquire'", self.pipe_js)
         self.assertNotIn("/api/acquire", self.pipe_js)
 
+    def test_the_toast_follows_the_real_get_state_after_a_drop(self):
+        self.assertIn("function pipelineFollowGet(get, album, target)", self.pipe_js)
+        self.assertIn("pipelineFollowGet(get, album, 'pipelineToast');", self.pipe_js)
+        self.assertIn("pipelineFollowGet(get, album, 'pipelineArtistStatus');", self.pipe_js)
+        self.assertIn("get.classList.contains('is-failed')", self.pipe_js)
+
     def test_only_queued_and_saved_accept_a_drop(self):
         self.assertIn("const PIPELINE_DROP = new Set(['queued', 'saved']);", self.pipe_js)
         self.assertNotIn("dismiss-album'", self.pipe_js.split("function pipelineAct")[1].split("function pipelineMoveMenu")[0])
@@ -109,6 +115,93 @@ class PipelineLayoutTests(unittest.TestCase):
             self.assertIn(builder, self.pipe_js)
         self.assertIn("/api/discovery/for_me", self.pipe_js)
         self.assertNotIn("/api/library/", self.pipe_js)
+
+    def test_the_part_one_count_bug_is_gone(self):
+        # Part one read an undeclared `count` in pipelineColumnElement, which threw as soon as the board drew.
+        self.assertNotIn("String(count)", self.pipe_js)
+        self.assertIn("badge.textContent = '0';", self.pipe_js)
+
+    def test_p2b_uses_only_the_existing_read_endpoints(self):
+        # No new endpoint or field: every /api path the layout script names must already be read by the app.
+        paths = set(re.findall(r"'(/api/[^'?]+)", self.pipe_js))
+        self.assertEqual(paths, {"/api/discovery/for_me", "/api/dashboard/genres", "/api/genres/"}, paths)
+        for path in paths:
+            self.assertIn(path, self.app + self.pipe_js, path)
+        self.assertNotIn("/api/acquire", self.pipe_js)
+        self.assertNotIn("/api/acquisitions/dismiss", self.pipe_js)
+
+    def test_p2b_hooks_are_called_from_app_js_and_are_no_ops_in_other_layouts(self):
+        for hook in ("renderPipelineLanes", "renderPipelineAlbum", "renderPipelineArtist"):
+            self.assertIn("zineHook('%s'" % hook, self.app, hook)
+            self.assertIn("function %s(" % hook, self.pipe_js, hook)
+            self.assertIn(hook, self.app)
+        self.assertGreaterEqual(self.app.count("zineHook('renderPipelineAlbum');"), 4)
+        self.assertIn("zineHook('renderPipelineLanes');", self.app.split("function libraryShow(name)")[1].split("function closeLibraryStreams")[0])
+        for fn in ("renderPipelineLanes", "renderPipelineAlbum", "renderPipelineArtist", "renderPipelineAcquisitions"):
+            body = self.pipe_js.split("function %s(" % fn)[1].split("\nfunction ")[0]
+            self.assertTrue("pipelineWide()" in body or "pipelineActive()" in body or "pipelineWide" in body, fn)
+
+    def test_p2b_containers_are_hidden_by_default(self):
+        for markup in (
+            '<section id="pipelineLanes" class="pipeline-lanes" aria-labelledby="pipelineLanesHeading" hidden>',
+            '<div id="pipelineStages" class="pipeline-stages" hidden></div>',
+            '<div id="pipelineArtistQueue" class="pipeline-drop" role="group" aria-label="Queued" hidden>',
+            '<div id="pipelineAcq" class="pipeline-acq" aria-labelledby="pipelineAcqHeading" hidden>',
+            'id="pipelineAcqStatus" class="pipeline-toast" role="status"',
+            'id="pipelineAcqCols"',
+        ):
+            self.assertIn(markup, self.html, markup)
+
+    def test_the_default_library_and_acquisition_lists_are_hidden_only_in_this_layout(self):
+        self.assertIn(':root[data-layout="pipeline"] #libraryBrowse > .library-toolbar', self.pipe)
+        self.assertIn(':root[data-layout="pipeline"] #libraryBrowse > .zine-index', self.pipe)
+        self.assertIn(':root[data-layout="pipeline"] #acquisitionCards { display: none; }', self.pipe)
+
+    def test_acquisition_retry_and_dismiss_are_proxies_for_the_real_rows(self):
+        acq = self.pipe_js.split("function pipelineProxyButton")[1].split("function pipelineAcqCard")[0]
+        self.assertIn("pipelineRealRow(acquisitionRowKey(job))", acq)
+        self.assertIn("control.click();", acq)
+        self.assertNotIn("sendJSON(", acq)
+        self.assertNotIn("fetch(", acq)
+        self.assertIn("pipelineProxyButton('Retry', 'retry-acquisition', job)", self.pipe_js)
+        self.assertIn("pipelineProxyButton('Dismiss', 'dismiss-album', job)", self.pipe_js)
+
+    def test_failed_requests_are_not_in_the_dashboard_downloading_column(self):
+        column = self.pipe_js.split("function pipelineJobColumn")[1].split("function renderPipelineBoard")[0]
+        self.assertIn("if (acquisitionStatusInfo(job.status).tone === 'error') return null;", column)
+        self.assertNotIn("tone === 'error') return 'downloading'", column)
+
+    def test_stage_tracker_states_are_words_and_a_position(self):
+        self.assertIn("const PIPELINE_STAGE_WORDS = {done: 'Done', current: 'Now', todo: 'To do'};", self.pipe_js)
+        self.assertIn("const PIPELINE_STAGES = ['Recommended', 'Saved', 'Queued', 'Downloaded', 'In library'];", self.pipe_js)
+        self.assertIn("'Step ' + (index + 1) + ' of ' + PIPELINE_STAGES.length", self.pipe_js)
+        self.assertIn("item.setAttribute('aria-current', 'step')", self.pipe_js)
+
+    def test_stage_buttons_run_the_real_save_and_get_controls(self):
+        self.assertIn("createSaveButton(artist, name, metadata, 'pipeline_album')", self.pipe_js)
+        self.assertIn("get.addEventListener('click', () => getControl.click());", self.pipe_js)
+        self.assertIn("$('albumAction').querySelector('.get-album')", self.pipe_js)
+
+    def test_artist_drop_runs_the_dropped_rows_own_get(self):
+        drop = self.pipe_js.split("function pipelineWireArtistStrip")[1].split("/* ----")[0]
+        self.assertIn("pipelineDragged.querySelector('.get-album')", drop)
+        self.assertIn("get.click();", drop)
+        self.assertNotIn("sendJSON", drop)
+        self.assertIn("'Missing (drag to Queued)'", self.pipe_js)
+
+    def test_genre_lanes_load_on_first_open_and_reuse_the_genre_endpoint(self):
+        lane = self.pipe_js.split("function buildPipelineLane")[1].split("/* ----")[0]
+        self.assertIn("if (!open || loaded) return;", lane)
+        self.assertIn("requestJSON('/api/genres/' + encodeURIComponent(genre.tag))", lane)
+        self.assertIn("buildShelfCard({...item, owned: Boolean(item.owned)}, true)", lane)
+
+    def test_p2b_new_rules_are_scoped_and_keep_hidden_elements_hidden(self):
+        for selector in (".pipeline-lanes[hidden]", ".pipeline-stages[hidden]", ".pipeline-drop[hidden]", "#pipelineAcq[hidden]"):
+            self.assertIn(':root[data-layout="pipeline"] ' + selector, self.pipe, selector)
+
+    def test_p2b_focus_is_visible_on_every_new_control(self):
+        self.assertIn(":focus-visible", self.pipe)
+        self.assertIn("outline: 3px solid var(--focus)", self.pipe)
 
     def test_reduced_motion_removes_movement(self):
         self.assertIn("@media (prefers-reduced-motion: reduce)", self.pipe)

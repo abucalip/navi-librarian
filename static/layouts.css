@@ -814,6 +814,56 @@
   :root[data-layout="pipeline"] .pipeline-bar i { display: block; height: 100%; background: var(--pipe-orange); }
   :root[data-layout="pipeline"] .pipeline-toast { margin: 0; padding: 8px 12px; background: var(--pipe-lime); border: var(--bw) solid var(--edge); box-shadow: 3px 3px 0 var(--edge); font: 500 var(--text-xs)/1.3 var(--mono); }
   :root[data-layout="pipeline"] .pipeline-toast:empty { display: none; }
+  /* P2b: library lanes, the album stage tracker, artist lanes and the Acquisitions board. Hidden [hidden] elements keep display: none. */
+  :root[data-layout="pipeline"] #libraryBrowse > .library-toolbar, :root[data-layout="pipeline"] #libraryBrowse > .zine-index,
+  :root[data-layout="pipeline"] #libraryBrowse > #libraryMoreGroup { display: none !important; }
+  :root[data-layout="pipeline"] .pipeline-lanes[hidden], :root[data-layout="pipeline"] .pipeline-lane-panel[hidden],
+  :root[data-layout="pipeline"] .pipeline-stages[hidden], :root[data-layout="pipeline"] .pipeline-drop[hidden],
+  :root[data-layout="pipeline"] #pipelineAcq[hidden] { display: none; }
+  :root[data-layout="pipeline"] .pipeline-lanes { display: grid; gap: 10px; margin: 12px 0; }
+  :root[data-layout="pipeline"] .pipeline-lanes > h3 { margin: 0; font: 700 var(--text-xl)/1.1 var(--display); letter-spacing: 0; }
+  :root[data-layout="pipeline"] .pipeline-lane-list { display: grid; gap: 10px; }
+  :root[data-layout="pipeline"] .pipeline-lane { min-width: 0; background: var(--surface); border: var(--bw) solid var(--edge); border-left: 10px solid var(--tc, var(--edge)); box-shadow: var(--brut-sh) var(--brut-sh) 0 var(--edge); }
+  :root[data-layout="pipeline"] .pipeline-lane h4 { margin: 0; }
+  :root[data-layout="pipeline"] .pipeline-lane-toggle { display: flex; justify-content: space-between; align-items: center; gap: 10px; width: 100%; min-height: 44px; padding: 0 12px; background: var(--surface); color: var(--text); border: 0; border-bottom: var(--bw) solid var(--edge); font: 700 var(--text-xs)/1.2 var(--mono); text-transform: uppercase; letter-spacing: .04em; text-align: left; box-shadow: none; }
+  :root[data-layout="pipeline"] .pipeline-lane-toggle:focus-visible, :root[data-layout="pipeline"] .pipeline-stage-actions button:focus-visible,
+  :root[data-layout="pipeline"] .pipeline-proxy:focus-visible, :root[data-layout="pipeline"] .pipeline-acq-cols button:focus-visible,
+  :root[data-layout="pipeline"] .pipeline-lane-all:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+  :root[data-layout="pipeline"] .pipeline-lane-count { font: 500 var(--text-xs)/1.2 var(--mono); color: var(--text-muted); }
+  :root[data-layout="pipeline"] .pipeline-lane-panel { padding: 10px 12px; display: grid; gap: 8px; }
+  :root[data-layout="pipeline"] .pipeline-lane-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px; list-style: none; margin: 0; padding: 0; }
+  :root[data-layout="pipeline"] .pipeline-lane-cards > li { min-width: 0; }
+  :root[data-layout="pipeline"] .pipeline-lane-note { margin: 0; font: 500 var(--text-xs)/1.3 var(--mono); color: var(--text-muted); }
+  :root[data-layout="pipeline"] .pipeline-lane-all { justify-self: start; min-height: 44px; }
+  :root[data-layout="pipeline"] .pipeline-stages { display: grid; gap: 8px; margin: 12px 0; }
+  :root[data-layout="pipeline"] .pipeline-stage-list { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); list-style: none; margin: 0; padding: 0; border: var(--bw) solid var(--edge); box-shadow: var(--brut-sh) var(--brut-sh) 0 var(--edge); }
+  :root[data-layout="pipeline"] .pipeline-stage { display: grid; gap: 2px; min-width: 0; padding: 8px; background: var(--surface); color: var(--text); border-right: var(--bw) solid var(--edge); }
+  :root[data-layout="pipeline"] .pipeline-stage:last-child { border-right: 0; }
+  :root[data-layout="pipeline"] .pipeline-stage.is-done { background: var(--pipe-green); }
+  :root[data-layout="pipeline"] .pipeline-stage.is-current { background: var(--pipe-orange); font-weight: 700; }
+  :root[data-layout="pipeline"] .pipeline-stage.is-todo { color: var(--text-muted); }
+  :root[data-layout="pipeline"] .pipeline-stage-name, :root[data-layout="pipeline"] .pipeline-stage-word, :root[data-layout="pipeline"] .pipeline-stage-pos { font: 500 var(--text-xs)/1.25 var(--mono); overflow-wrap: anywhere; }
+  :root[data-layout="pipeline"] .pipeline-stage-word { font-weight: 700; text-transform: uppercase; }
+  :root[data-layout="pipeline"] .pipeline-stage-now { margin: 0; font: 700 var(--text-xs)/1.3 var(--mono); }
+  :root[data-layout="pipeline"] .pipeline-stage-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+  :root[data-layout="pipeline"] .pipeline-stage-actions button { min-height: 44px; padding: 0 12px; font: 700 var(--text-xs)/1 var(--mono); background: var(--surface); color: var(--text); border: var(--bw) solid var(--edge); box-shadow: none; }
+  :root[data-layout="pipeline"] .pipeline-stage-actions button[aria-pressed="true"], :root[data-layout="pipeline"] .pipeline-stage-get { background: var(--pipe-lime); }
+  :root[data-layout="pipeline"] #artistOwnedSection, :root[data-layout="pipeline"] #artistMissingSection, :root[data-layout="pipeline"] #artistSimilarSection { border-top: 4px solid var(--edge); padding-top: 8px; }
+  :root[data-layout="pipeline"] #artistMissingAlbums > li[draggable="true"] { cursor: grab; }
+  :root[data-layout="pipeline"] #artistMissingAlbums > li.is-dragging { opacity: .5; }
+  :root[data-layout="pipeline"] .pipeline-drop { display: grid; gap: 4px; margin: 10px 0; padding: 10px 12px; background: var(--pipe-lime); color: var(--text); border: var(--bw) dashed var(--edge); }
+  :root[data-layout="pipeline"] .pipeline-drop.over { background: var(--pipe-yellow); border-style: solid; }
+  :root[data-layout="pipeline"] .pipeline-drop-label, :root[data-layout="pipeline"] .pipeline-drop-hint { margin: 0; font: 700 var(--text-xs)/1.3 var(--mono); }
+  :root[data-layout="pipeline"] .pipeline-drop-hint { font-weight: 500; }
+  :root[data-layout="pipeline"] #pipelineArtistStatus:empty, :root[data-layout="pipeline"] #pipelineAcqStatus:empty, :root[data-layout="pipeline"] #pipelineLanesStatus:empty { display: none; }
+  :root[data-layout="pipeline"] #acquisitionCards { display: none; }
+  :root[data-layout="pipeline"] .pipeline-acq { display: grid; gap: 10px; margin: 12px 0; }
+  :root[data-layout="pipeline"] .pipeline-acq-head { margin: 0; font: 700 var(--text-xl)/1.1 var(--display); letter-spacing: 0; }
+  :root[data-layout="pipeline"] .pipeline-acq-cols { grid-template-columns: repeat(4, minmax(200px, 1fr)); }
+  :root[data-layout="pipeline"] .pipeline-acq-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+  :root[data-layout="pipeline"] .pipeline-proxy { min-height: 44px; padding: 0 12px; font: 700 var(--text-xs)/1 var(--mono); background: var(--surface); color: var(--text); border: var(--bw) solid var(--edge); box-shadow: none; }
+  :root[data-layout="pipeline"] .pipeline-proxy.dismiss-album { background: var(--pipe-yellow); }
+  :root[data-layout="pipeline"] .pipeline-proxy.retry-acquisition { background: var(--pipe-lime); }
   @media (prefers-reduced-motion: reduce) {
     :root[data-layout="pipeline"] .pipeline-card, :root[data-layout="pipeline"] .pipeline-card * { transition: none !important; transform: none !important; }
   }

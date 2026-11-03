@@ -396,6 +396,12 @@
           </div>
         </div>
         <p id="libraryStatus" class="status-line" aria-live="polite"></p>
+        <!-- Pipeline Board layout only (hidden in every other theme): genre swimlanes. static/layout-pipeline.js builds them when Library shows. -->
+        <section id="pipelineLanes" class="pipeline-lanes" aria-labelledby="pipelineLanesHeading" hidden>
+          <h3 id="pipelineLanesHeading">Genres in your library</h3>
+          <p id="pipelineLanesStatus" class="status-line" aria-live="polite"></p>
+          <div id="pipelineLaneList" class="pipeline-lane-list"></div>
+        </section>
         <div class="zine-index">
           <!-- Zine Spread layout only (hidden in every other theme): the vertical A-Z letter margin. static/layout-zine.js builds it from the rows already loaded. -->
           <div id="zineLetters" class="zine-letters" role="group" aria-label="Jump to a letter" hidden></div>
@@ -431,6 +437,12 @@
       </section>
       <p id="artistBio" class="library-bio" hidden></p>
       <button type="button" id="artistBioToggle" class="bio-toggle" aria-expanded="false" aria-controls="artistBio" hidden>Read more</button>
+      <!-- Pipeline Board layout only (hidden in every other theme): the Queued strip that a dragged Missing album is dropped on. -->
+      <div id="pipelineArtistQueue" class="pipeline-drop" role="group" aria-label="Queued" hidden>
+        <p class="pipeline-drop-label">Queued</p>
+        <p class="pipeline-drop-hint">Drop a missing album here to Get it. The Get button on its row does the same.</p>
+        <p id="pipelineArtistStatus" class="pipeline-toast" role="status"></p>
+      </div>
       <section id="artistOwnedSection" aria-labelledby="artistOwnedHeading" hidden>
         <h4 id="artistOwnedHeading">In your library</h4>
         <ul id="artistOwnedAlbums" class="owned-album-grid"></ul>
@@ -459,6 +471,8 @@
           <p id="albumArtist" class="album-hero-artist"></p>
           <p class="album-meta"><span id="albumGenre"></span><span id="albumYear"></span><span id="albumQuality" class="album-quality" title="File quality" hidden></span></p>
           <p id="albumOwnership" class="album-meta" hidden>Not in your library</p>
+          <!-- Pipeline Board layout only (hidden in every other theme): the stage tracker, built by static/layout-pipeline.js. -->
+          <div id="pipelineStages" class="pipeline-stages" hidden></div>
           <blockquote id="zinePull" class="zine-pull" hidden></blockquote>
           <div class="album-about">
             <div class="album-tabs" role="tablist" aria-label="About this album">
@@ -621,6 +635,12 @@
     </div>
     <!-- Tape Deck layout only (static/layouts.css shows it; hidden in every other theme): the request being fetched, large. -->
     <div id="tapeAcqDeck" class="tape-deck tape-deck-large" role="region" aria-label="Acquisition deck" hidden></div>
+    <!-- Pipeline Board layout only (hidden in every other theme): the same requests in four columns. The rows above stay in the DOM and supply the Retry and Dismiss controls. -->
+    <div id="pipelineAcq" class="pipeline-acq" aria-labelledby="pipelineAcqHeading" hidden>
+      <h3 id="pipelineAcqHeading" class="pipeline-acq-head">Acquisition board</h3>
+      <p id="pipelineAcqStatus" class="pipeline-toast" role="status"></p>
+      <div id="pipelineAcqCols" class="pipeline-cols pipeline-acq-cols"></div>
+    </div>
     <div id="acquisitionCards" class="acq-list"></div>
     <button type="button" id="refreshAcquisitions" class="icon-square-button" title="Refresh status" aria-label="Refresh status"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="/static/icons.svg#rotate-cw"></use></svg></button>
   </div>

@@ -4823,6 +4823,7 @@ function libraryShow(name) {
   // The artist and album pages open on the picture: the section heading would only repeat the sidebar tab.
   $('libraryHeading').hidden = name === 'artist' || name === 'album';
   zineHook('updateZineMast');
+  zineHook('renderPipelineLanes');
 }
 
 function closeLibraryStreams() {
@@ -5490,6 +5491,7 @@ function hideTopSongs() {
 
 function applyArtistSection(section, ctx) {
   const status = $('artistDetailStatus');
+  zineHook('renderPipelineArtist');
   if (section.section === 'artist') {
     if (!section.available) {
       $('artistDetailHeading').textContent = ctx.name || 'Artist';
@@ -5536,6 +5538,7 @@ function applyArtistSection(section, ctx) {
       paintMissingAlbums(ctx);
       fillMissingYears(ctx);
       zineHook('renderZineArtist', ctx);
+      zineHook('renderPipelineArtist');
       if (!section.items.length) setSectionNote('artistMissingNote', 'You have every album we could find.');
       else setSectionNote('artistMissingNote', section.complete ? '' : 'Some albums may be missing. Popularity could not be fully loaded.');
     } else {
@@ -5718,6 +5721,7 @@ function renderAlbum(target) {
   albumPage.album = null;
   albumPage.tracks = null;
   albumPage.target = target;
+  zineHook('renderPipelineAlbum');
   $('albumTracks').replaceChildren();
   for (const id of ['albumSimilarArtists', 'albumSimilarAlbums']) $(id).replaceChildren();
   $('albumSimilarAlbumsAll').hidden = true;
@@ -5952,6 +5956,7 @@ function applyAlbumSection(section, target) {
     albumPage.album = album;
     setAlbumAction(album);
     zineHook('renderZineAlbum');
+    zineHook('renderPipelineAlbum');
     return true;
   }
   if (section.section === 'year') {
@@ -5966,6 +5971,7 @@ function applyAlbumSection(section, target) {
   if (section.section === 'genre') {
     setAlbumGenre(section.available ? section.genre : null);
     zineHook('renderZineAlbum');
+    zineHook('renderPipelineAlbum');
     return false;
   }
   if (section.section === 'tracks') {
@@ -5976,6 +5982,7 @@ function applyAlbumSection(section, target) {
       $('albumSummary').textContent = albumSummary(section.items);
       albumPage.tracks = section.items;
       zineHook('renderZineAlbum');
+      zineHook('renderPipelineAlbum');
       setSectionNote('albumTracksNote', '');
     } else {
       setSectionNote('albumTracksNote', section.available ? 'No tracklist was found for this album.'
