@@ -95,6 +95,7 @@ fun RecentlyAddedSection(open: Opener) {
         is Load.Ready -> {
             if (state.value.isEmpty()) Muted("Nothing was added in the last $RECENT_DAYS days.")
             else if (app.discair.ui.theme.currentLayout() == app.discair.ui.theme.Layout.TapeDeck) TapeRecentList(state.value.take(TapeDeckRules.HOME_ROWS), open)
+            else if (app.discair.ui.theme.currentLayout() == app.discair.ui.theme.Layout.StickerWall) StickerRecentWall(state.value.take(app.discair.ui.common.StickerWallRules.WALL_TILES), open)
             else LazyHorizontalGrid(
                 rows = GridCells.Fixed(2),
                 modifier = Modifier.fillMaxWidth().height((2 * (CARD_WIDTH + TEXT_BLOCK) + GRID_GAP).dp),
