@@ -46,7 +46,7 @@ What the results mean and how to record them: contract section 11.
 swift build -c release --product discair-audio-spike
 .build/release/discair-audio-spike offline        # EQ, crossfade, gapless, device rates: silent, needs nothing
 .build/release/discair-audio-spike device --switch  # tries a rate change on the default output and restores it
-# with DISCAIR_NAVIDROME_* set: samples | formats <id>... | gap <id> <id> | partial <id>... | find <text> [--songs]
+# with DISCAIR_NAVIDROME_* set: samples | formats <id>... | gap <id> <id> | partial <id>... | find <text> [--songs] | mapcheck [albums]
 # listen <id> <id> [--crossfade S] PLAYS SOUND: end of one song into the next, to listen for gaps
 # scripts/spike.sh <command...> runs any of these with the login read from ~/Desktop/disqair/config.env
 .build/release/discair-audio-spike smb "<path under /Volumes/media/library/music>"

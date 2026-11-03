@@ -18,6 +18,7 @@ usage: discair-audio-spike <command>
   find <text> [--songs]   list albums whose artist or title contains the text (to pick a continuous album)
   listen <id> <id> [--crossfade S] [--tail S] [--head S] [--volume V]
                    PLAYS SOUND: end of the first song into the start of the second (gapless, or crossfade)
+  mapcheck [albums]   how many songs resolve to a file on the mounted share (default 60 albums)
   smb <relative path>             time tag read, whole-file read and waveform over the SMB mount
 """
 
@@ -73,6 +74,8 @@ do {
         let a = try await fetch(client: client, id: ids[0], format: nil, bitRate: nil, to: work)
         let b = try await fetch(client: client, id: ids[1], format: nil, bitRate: nil, to: work)
         try await listen(a: a, b: b, crossfade: opt("--crossfade") ?? 0, tail: opt("--tail") ?? 20, head: opt("--head") ?? 20, volume: Float(opt("--volume") ?? 0.5))
+    case "mapcheck":
+        try await mapCheck(client: try makeClient(), albums: args.dropFirst().first.flatMap(Int.init) ?? 60)
     case "smb":
         guard args.count > 1 else { throw SpikeError(usage) }
         try smbWaveform(relativePath: args.dropFirst().joined(separator: " "))

@@ -14,10 +14,10 @@ func makeClient() throws -> NavidromeClient {
 }
 
 /// Maps the `path` Navidrome reports to the mounted share. With "Report Real Path" on, Navidrome reports the server's
-/// absolute path (for example /media/library/music/Artist/Album/01 Song.flac): the server music root is swapped for the
+/// absolute path (for example /music/Artist/Album/01 Song.flac, where /music is the folder inside the Navidrome container): the server music root is swapped for the
 /// mount. With it off, Navidrome reports a rebuilt name that matches no file, so this finds nothing.
 func localPath(forServerPath path: String) -> String {
-    let serverRoot = ProcessInfo.processInfo.environment["DISCAIR_SERVER_MUSIC_ROOT"] ?? "/media/library/music"
+    let serverRoot = ProcessInfo.processInfo.environment["DISCAIR_SERVER_MUSIC_ROOT"] ?? "/music"
     if path.hasPrefix(serverRoot + "/") { return smbRoot + path.dropFirst(serverRoot.count) }
     return path.hasPrefix("/") ? path : "\(smbRoot)/\(path)"
 }
@@ -266,4 +266,23 @@ func listen(a: URL, b: URL, crossfade: Double, tail: Double, head: Double, volum
     }
     engine.stop()
     print("  done")
+}
+
+/// How many songs resolve to a file on the mounted share through `localPath`. Prints a few misses (relative paths only).
+func mapCheck(client: NavidromeClient, albums wanted: Int) async throws {
+    print("Path mapping over the SMB mount (server root \(ProcessInfo.processInfo.environment["DISCAIR_SERVER_MUSIC_ROOT"] ?? "/music"))")
+    var found = 0, missing: [String] = [], total = 0, albumsSeen = 0
+    while albumsSeen < wanted {
+        for album in try await client.albumList(.random, size: min(50, wanted - albumsSeen)) {
+            albumsSeen += 1
+            for song in try await client.album(id: album.id).songs {
+                guard let path = song.path else { continue }
+                total += 1
+                if FileManager.default.fileExists(atPath: localPath(forServerPath: path)) { found += 1 } else { missing.append(path) }
+            }
+        }
+    }
+    report("albums / songs checked", "\(albumsSeen) / \(total)")
+    report("found on the share", "\(found) (\(f(100 * Double(found) / Double(max(total, 1)), 1)) %)")
+    for m in missing.prefix(8) { report("   missing", m) }
 }
