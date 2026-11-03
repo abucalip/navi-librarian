@@ -245,7 +245,8 @@ private fun ThemeTile(p: Palette, selected: Boolean, modifier: Modifier, onClick
     val inner: Shape = if (radius == 0) RectangleShape else RoundedCornerShape((radius * 0.6f).coerceAtLeast(3f).dp)
     val outline = (s?.outline ?: 1).dp
     val edge = if (s != null) p.edgeStrong else p.edge
-    val kind = (if (p.light) "Light" else "Dark") + if (p.family == Family.Brutal) " · Brutal" else ""
+    val kind = (if (p.light) "Light" else "Dark") + (if (p.family == Family.Brutal) " · Brutal" else "") +
+        (if (p.layout != app.discair.ui.theme.Layout.Standard) " · ${p.layout.label}" else "")
     val description = "${p.label}, ${kind.replace(" · ", ", ").lowercase()}${if (selected) ", selected" else ""}"
     Column(
         modifier.selectable(selected = selected, role = Role.RadioButton, onClick = onClick)

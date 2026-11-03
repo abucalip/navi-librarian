@@ -19,12 +19,12 @@ class PaletteTest {
         assertTrue("${p.label}: $what on $bgName is %.2f, needs %.1f".format(got, need), got >= need)
     }
 
-    @Test fun twentyThemesWithUniqueIds() {
-        assertEquals(20, Palettes.All.size)
-        assertEquals(11, Palettes.Light.size)
+    @Test fun twentyThreeThemesWithUniqueIds() {
+        assertEquals(23, Palettes.All.size)
+        assertEquals(14, Palettes.Light.size)
         assertEquals(9, Palettes.Dark.size)
         assertEquals(12, Palettes.All.count { it.family == Family.Classic })
-        assertEquals(8, Palettes.All.count { it.family == Family.Brutal })
+        assertEquals(11, Palettes.All.count { it.family == Family.Brutal })
         assertTrue(Palettes.All.all { (it.family == Family.Brutal) == (it.shape != null) })
         assertEquals(Palettes.All.size, Palettes.All.map { it.id }.toSet().size)
         assertEquals(Palettes.All.size, Palettes.All.map { it.label }.toSet().size)

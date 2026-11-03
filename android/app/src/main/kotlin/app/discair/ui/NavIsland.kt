@@ -70,6 +70,16 @@ fun NavIsland(
     onPlayer: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    // Cassette Deck: a full-width ruled bar in the owner's theme (the island's tint and pill are the Standard composition).
+    val deckTheme = app.discair.ui.theme.LocalThemePalette.current ?: app.discair.ui.theme.LocalPalette.current
+    if (deckTheme.layout == app.discair.ui.theme.Layout.TapeDeck) {
+        app.discair.ui.common.TapeNavBar(
+            deckTheme, homeSelected, playing, playerLabel, onSearch, onHome, onPlayer, modifier,
+            searchIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = it, modifier = Modifier.size(24.dp)) },
+            homeIcon = { Icon(Icons.Default.Home, contentDescription = null, tint = it, modifier = Modifier.size(24.dp)) },
+        )
+        return
+    }
     Box(modifier.fillMaxWidth().navigationBarsPadding().padding(bottom = 12.dp), contentAlignment = Alignment.BottomCenter) {
         val card = RoundedCornerShape(50.dp)
         val fill by animateColorAsState(tint ?: Ink.Raised, animationSpec = tween(500), label = "islandTint")
