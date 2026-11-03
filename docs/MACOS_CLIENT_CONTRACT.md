@@ -1,6 +1,6 @@
 # macOS client contract (Discair)
 
-Status: **draft, pending owner approval. Nothing is built.** Written from the owner's answers of 2026-11-03 (sections 1 to 40 of the grilling). Mockups come after this contract is approved (section 9).
+Status: **approved by the owner and merged (PR [#713](https://github.com/abucalip/navi-librarian/pull/713), squash `8a3bab9706e49dcd485cb6c92073ee0285b1a4e7`, 2026-11-03). Phase M0 is done. Nothing is built; M1 is next, to start only when the owner asks.** Written from the owner's answers of 2026-11-03. Mockup rounds 1 and 2 are done (section 9); the launch themes are Cupertino and Zine Spread.
 
 ## 1. Purpose and scope
 
@@ -104,7 +104,7 @@ Queue (play next, add to queue, reorder), shuffle, repeat, gapless with next-tra
 
 | Phase | Content | Gate |
 |---|---|---|
-| M0 | This contract, `macos/DESIGN.md` skeleton, project layout | Owner approves PR |
+| M0 | This contract, `macos/DESIGN.md` skeleton, project layout | **Done**: owner approved, merged in PR #713 (the `macos/` folder and `DESIGN.md` are created in M1) |
 | M1 | Package skeleton, profiles and reachability, Keychain, Navidrome auth, library read, Navidrome playlist API check, rate-limit check | Tests pass |
 | M2 | Audio spike: `AVAudioEngine` decode of FLAC/MP3/Opus, EQ, crossfade, gapless, SMB waveform speed | Measured result recorded |
 | M3 | **Mockups:** done in two rounds (9 theme drawings, 6 screens each) | Owner picked: Cupertino and Zine first, Bento Block and Native Glass v2 later |
@@ -122,3 +122,4 @@ Priorities when trade-offs appear (owner, 2026-11-03): the look, smooth browsing
 - **Mini window:** floating always-on-top; cover, transport, seek bar, peek at the next track.
 - **Cache (optional, off by default):** audio, covers and metadata, capped at **2 GB** with least-recently-used eviction, a clear button and a size readout in Settings.
 - **SMB:** music folder is `/Volumes/media/library/music`, mounted by hand today. The app mounts it itself: the share address is a setting, the SMB login is stored in the Keychain, and the app calls Apple's NetFS mount API at launch and when the profile changes (the same as Finder "Connect to Server", no extra tools). If the mount fails or the volume is absent, SMB features switch off silently and playback is unaffected. Remaining detail for M2: the Navidrome-path to `/Volumes/media/library/music` prefix mapping, which the spike confirms against real paths. Share address: `smb://192.168.1.87/media` (username and password login; the credentials go in the Keychain, never in the repo).
+- **O7 Xcode is not installed on the owner's Mac (checked 2026-11-03).** Only the Command Line Tools with Swift 6.2 are present. M1's Swift package (logic and unit tests) builds and tests with `swift build` and `swift test` alone. The SwiftUI app shell, screenshot tests and Sparkle need full Xcode (free from the App Store, large download, macOS 26 SDK). Needed before M4, and for M1 only if the app shell is started there; the owner installs it, then runs `sudo xcode-select -s /Applications/Xcode.app`. CI uses GitHub's macOS runners, which include Xcode.

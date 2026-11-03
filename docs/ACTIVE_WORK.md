@@ -140,6 +140,12 @@ Done: Genres grid and four album shelves on the dashboard, the Recommended slide
 - **Pipeline Board dropped (2026-11-03, owner decision):** the dashboard part (PR [#710](https://github.com/abucalip/navi-librarian/pull/710)) is removed from `main` by PR [#712](https://github.com/abucalip/navi-librarian/pull/712), squash `97a80caf5954c20d3467d07cb5a38b2fd2506725`; the P2b PR ([#711](https://github.com/abucalip/navi-librarian/pull/711)) is closed unmerged. Plan section 5 B records the drop.
 - **Next action:** none queued. The next phase in the plan is P3a, Window Manager, to start only when the owner asks.
 
+## 2j. macOS client (Discair for Mac): contract merged, M1 next
+
+- Governing contract: [MACOS_CLIENT_CONTRACT.md](MACOS_CLIENT_CONTRACT.md) (D-025), merged in PR [#713](https://github.com/abucalip/navi-librarian/pull/713), squash `8a3bab9706e49dcd485cb6c92073ee0285b1a4e7`. Mockups: `docs/design/macos-m3/mockups.html` (round 1) and `docs/design/macos-m4/mockups.html` (round 2).
+- Launch themes Cupertino and Zine Spread; Bento Block and Native Glass v2 are documented for later (contract section 4).
+- **Next action:** M1 (Swift package skeleton: profiles and reachability, Keychain, Navidrome auth, library read, playlist API check, rate-limit check), to start only when the owner asks. The start prompt is [MACOS_M1_PROMPT.md](MACOS_M1_PROMPT.md). Xcode is not installed on the owner's Mac (contract O7); M1's package part does not need it.
+
 ## 3. Recommendation engine — gated
 
 - CF freshness capture repeated 2026-10-23 after the imported history was recomputed: outcome "mixed", defaults kept. Deeper CF pages measured at 4 / 6 / 8: the larger pool changed the final list by one album (9/10 overlap), so `CF_MAX_PAGES` stays 4. A recent-30-days vs all-time profile comparison showed ranking responds to listening habits but the final list barely does. Evidence and limits: `PROJECT_LOG.md` (2026-10-23 entry).
