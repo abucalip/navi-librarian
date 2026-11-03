@@ -1,3 +1,12 @@
+## 2026-11-03 — Layout revisit merged (PRs #707 and #708)
+
+- **Merged (owner request):** PR [#707](https://github.com/abucalip/navi-librarian/pull/707), squash `087ead6b5bac4480035607b12f8ba5b592dce787`, from tested head `480b9a387761c7b2e107c998567f8effc0d3b34a`, and PR [#708](https://github.com/abucalip/navi-librarian/pull/708), squash `fff47de860844e811bfffd9480f2dc5ee118fe58`, from tested head `9eb70f0b0720846fdc8ec84a04879ad4a661d9fe`; compile, container-smoke, test-and-build, validate-container and validate-release-workflow passed on each head (#707 has no release-workflow run, as an Android-only change).
+- **What:** the items the first layouts skipped before the owner's behaviour rule. Web (#708): `static/app.js`, `static/layouts.css`, `app/templates/index.html` and the ledger and tape tests: the Tape Deck deck (`updateTapeDecks`, `buildTapeDeck`), the Ledger column ruler, 25-row pagination (`applyLedgerView`), the Library list as a ruled table, the dashboard genre accordion (`buildGenreAccordionRow`, albums from `/api/genres/{tag}`), and Ctrl+K and its hint on the three layouts. Android (#707): `TapeNavBar` has four cells, `SeekBar` has a ruled variant, `TapeDeckRules` gains the Library rule and `seekTicks`.
+- **Tests and builds run:** the whole `*ui_contract*` set (447 tests, system Python) and `node --check static/app.js`; Android `./gradlew testDebugUnitTest`, `assembleDebug`, `lintDebug` (0 errors, 41 warnings, 3 hints) and the signed R8 `assembleRelease` with JDK 17. The full Python suite ran in CI only.
+- **UI check:** the owner checked the web on a local server (isolated data, slskd disabled) and the Android build on the phone and approved both. Not checked: the Tape deck with a real download in progress, TalkBack on the new bar cell and the seek bar.
+- **Not done / not claimed:** not published or deployed. Still not built (plan, "Revisit of the skipped items"): real `th` cells, the Crate Wall 2-column step and hover-card owned count.
+- **Next action:** P7, the closeout.
+
 ## 2026-11-03 — Android Sticker Wall layout merged (PR #706)
 
 - **Merged (owner request):** PR [#706](https://github.com/abucalip/navi-librarian/pull/706), squash `ee9ff84886e3cca8b031b15def3ba395509f18d3`, from tested head `f07ee37e99398629da8fcee4ce548977ee048304`; compile, container-smoke, test-and-build and validate-container passed on that head.

@@ -1,6 +1,6 @@
 # Brut layouts plan (web and Android)
 
-Last updated: 2026-11-03 (P6 merged). Governing decision: D-023 in [DECISIONS.md](DECISIONS.md). Status tracking: the table in section 9 (update it in the PR that completes each phase). GitHub `main` is authoritative.
+Last updated: 2026-11-03 (P6 merged; skipped items revisited). Governing decision: D-023 in [DECISIONS.md](DECISIONS.md). Status tracking: the table in section 9 (update it in the PR that completes each phase). GitHub `main` is authoritative.
 
 ## 1. What this is
 
@@ -173,9 +173,14 @@ One PR per phase except P0 and P7 (documents, direct to `main`). Each code PR: b
 | P4 | Android layout plumbing and Cassette Deck with Lime, Cobalt Reel, Tangerine Reel | **done 2026-11-03**: PR [#704](https://github.com/abucalip/navi-librarian/pull/704), squash `95e7da330c64763fd5f83b7430922e1cf0481b43`; owner checked it on the phone; not published |
 | P5 | Android Sheet Stack with Violet-orange, Acid Night, Daylight Sheet | **done 2026-11-03**: PR [#705](https://github.com/abucalip/navi-librarian/pull/705), squash `43159c7a60ca693b474421bb2537d57427328b90`; owner checked it on the phone; not published |
 | P6 | Android Sticker Wall with Peach-teal | **done 2026-11-03**: PR [#706](https://github.com/abucalip/navi-librarian/pull/706), squash `ee9ff84886e3cca8b031b15def3ba395509f18d3`; owner checked it on the phone; not published |
+| R | Revisit of the items skipped before the behaviour rule | **done 2026-11-03**: PR [#707](https://github.com/abucalip/navi-librarian/pull/707) (Android, squash `087ead6b5bac4480035607b12f8ba5b592dce787`) and PR [#708](https://github.com/abucalip/navi-librarian/pull/708) (web, squash `fff47de860844e811bfffd9480f2dc5ee118fe58`); owner checked both; not published |
 | P7 | Closeout: documents, a published release when the owner authorises it | not started |
 
 **Starting a later phase in a new session:** read `handoff.md`, `ACTIVE_WORK.md`, this plan and the previous phase's PR; reuse the infrastructure P1 (web) or P4 (Android) left; start from the layout's section above, build the three palettes from section 3, and follow `LOCAL_UI_TESTING.md` for the web check. Do not widen the scope (no new pages, endpoints or playback on the web).
+
+### Revisit of the skipped items (2026-11-03)
+
+After the behaviour rule (section 2) the items the first layouts had skipped were revisited. **Built:** the Tape Deck's acquisition deck (a column beside the dashboard shelves and a large panel above the list on Acquisitions, from the acquisition list the page already loads; the meter and bar are acquisition progress only); the Ledger Room's column ruler (decorative, hidden from assistive tech), 25-row pagination over the rows already on the page (it counts only what the All/Missing/Queued switch lets through, and never reorders or removes a row), the Library page's list mode as a ruled table, and the **dashboard genres as an accordion** (each row loads up to 6 of the genre's albums once from `/api/genres/{tag}`, the genre page's own endpoint, with a link to the whole genre page; the tiles are hidden on this layout only); Ctrl+K (Cmd+K on a Mac) and its hint on **all three web layouts** (still never on a plain theme); on Android the Cassette Deck's **four-cell bar** (Search, Home, Library, Settings; Home keeps only Discover there) and a **ruled seek bar** (a ruled track with a mark every tenth and a tall bar as the thumb). **Still not built, with reasons:** real `th` header cells on the Ledger tables (the rows are interactive articles; table semantics would conflict with their button behaviour); the Crate Wall's 2-column step (the web layouts stop at 900 px, where the phone shell has its own grid; changing that is the separate decision in section 10); the Crate Wall hover card's owned count (the card does not carry it; it would need a lookup per tile).
 
 ## 10. Risks and open points
 
