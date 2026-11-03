@@ -1,3 +1,12 @@
+## 2026-11-03 — Web Ledger Room layout merged (PR #702)
+
+- **Merged (owner request):** PR [#702](https://github.com/abucalip/navi-librarian/pull/702), squash `d94667d8fe645197acd9a2cb98e68836306132f3`, from tested head `fdc93d2a82e3da69aef6e70de6c0d3ad1d12dfd4`; compile, container-smoke, test-and-build, validate-container and validate-release-workflow passed on that head.
+- **What:** phase P2 of `docs/BRUT_LAYOUTS_PLAN.md` (D-023). Three palettes in `static/themes.css` (Ledger · Slate, Plum, Mono; mockup values, all AA), `layout: 'ledger'` entries in `static/appearance.js`, the ledger block in `static/layouts.css` (901 px and up): ink sidebar, ruled table rows, compact shelf tables, ink-barred genre bands, ruled acquisitions and track lists. Hidden-by-default hooks in `index.html` and `static/app.js`: breadcrumb, summary strip (from the acquisition list already loaded), status cell and All/Missing/Queued switch on ranked rows, fold button on Deep Dives genres, and Ctrl/Cmd+K to the header search (ledger layout only).
+- **Tests run (focused only):** the new `tests/test_ledger_layout_ui_contract.py`, the updated tape and fonts modules, and the whole `*ui_contract*` set (432 tests) with system Python on the venv's packages; `node --check static/app.js`. The full suite ran in CI only.
+- **UI check:** the owner checked it in the browser on a local server (isolated data, slskd disabled) and approved it. Not checked at phone widths or with a real download.
+- **Not done / not claimed:** not published or deployed; pagination, sort changes and real `th` cells not built (recorded in the plan). The repo's `.venv` has no Python binary, so `local-test.sh` cannot start the server until it is repaired.
+- **Next action:** P3, the web Crate Wall layout, from the plan.
+
 ## 2026-11-03 — Web Tape Deck layout merged (PR #701)
 
 - **Merged (owner request):** PR [#701](https://github.com/abucalip/navi-librarian/pull/701), squash `a4961c953766039e54067a62385633453d6cbd60`, from tested head `110a7ab625fe22656d131e8cb06537f86a046007`; compile, container-smoke, test-and-build, validate-container and validate-release-workflow passed on that head.

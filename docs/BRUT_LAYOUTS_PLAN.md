@@ -1,6 +1,6 @@
 # Brut layouts plan (web and Android)
 
-Last updated: 2026-11-03 (P1 merged). Governing decision: D-023 in [DECISIONS.md](DECISIONS.md). Status tracking: the table in section 9 (update it in the PR that completes each phase). GitHub `main` is authoritative.
+Last updated: 2026-11-03 (P2 merged). Governing decision: D-023 in [DECISIONS.md](DECISIONS.md). Status tracking: the table in section 9 (update it in the PR that completes each phase). GitHub `main` is authoritative.
 
 ## 1. What this is
 
@@ -115,6 +115,7 @@ Idea: table-first, for scanning many albums at once.
 - **Dashboard:** stat strip, then the Recommended slider and shelves as compact tables.
 - **Acquisitions:** table with a progress column.
 - **Palettes:** Ink Slate, Plum Archive, Paper Mono. Paper Mono has a white-on-blue accent (check AA); badge fills never carry meaning alone.
+- **As built in P2 (differs from the text above):** the layout is CSS plus small hidden-by-default hooks (a breadcrumb, a summary strip, a status cell per ranked row, a filter switch per discovery list, a fold button per Deep Dives genre; all shown only by the layout). The summary strip counts the acquisition list the page already loads (Active, Imported in 7 days, Failed, All records), because the dashboard does not load Owned or Missing library totals. The status cell reads Owned, Missing or Queued as a word and follows the row's Get button. The All/Missing/Queued switch hides rows by that cell and never reorders. **Ctrl+K (Cmd+K on a Mac)** jumps to the header search in the ledger layout only, with a hint in the field (added at the owner's request; no other theme has the shortcut). **Not built:** pagination and sort changes (no new endpoints, no client-side re-ranking), real `th` header cells (rows stay interactive articles), the Library page as a table (it is an artist/album grid with its own sort). The sidebar and the Owned/Queued/Missing fills of the plan's palette table (`ok`, `wait`, `miss`) are not used: status keeps its word and the sidebar tokens are `--ledger-side*`. All three palettes passed AA with the mockup values.
 - **Acceptance:** tables become stacked rows below 900 px (the mobile shell), scroll horizontally inside their own container only if they must; header cells are real `th` with `scope`; sort state is announced; the table keeps working with the existing keyboard activation of rows.
 
 ### W4 Crate Wall (phase P3)
@@ -159,7 +160,7 @@ One PR per phase except P0 and P7 (documents, direct to `main`). Each code PR: b
 |---|---|---|
 | P0 | This plan, D-023, mockups in `docs/design/brut-layouts/` | done 2026-11-03 (documentation, direct to `main`) |
 | P1 | Web infrastructure (`data-layout`, `layouts.css`, catalogue fields, test scaffold) and the Tape Deck layout with Lime, Cobalt Reel, Tangerine Reel | **done 2026-11-03**: PR [#701](https://github.com/abucalip/navi-librarian/pull/701), squash `a4961c9`; owner checked it in the browser; not published |
-| P2 | Web Ledger Room with Ink Slate, Plum Archive, Paper Mono | not started |
+| P2 | Web Ledger Room with Ink Slate, Plum Archive, Paper Mono | **done 2026-11-03**: PR [#702](https://github.com/abucalip/navi-librarian/pull/702), squash `d94667d8fe645197acd9a2cb98e68836306132f3`; owner checked it in the browser; not published |
 | P3 | Web Crate Wall with Kraft, Mint Sleeve, Night Press | not started |
 | P4 | Android layout plumbing and Cassette Deck with Lime, Cobalt Reel, Tangerine Reel | not started |
 | P5 | Android Sheet Stack with Violet-orange, Acid Night, Daylight Sheet | not started |
