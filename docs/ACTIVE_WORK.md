@@ -137,7 +137,7 @@ Done: Genres grid and four album shelves on the dashboard, the Recommended slide
 ## 2i. Round 3 Neobrut themes: Pipeline Board dropped
 
 - Governing plan: [BRUT_ROUND3_PLAN.md](BRUT_ROUND3_PLAN.md) (D-024). Four themes remain: web Zine Spread (merged, P1), web Window Manager, Android Receipt Roll, Android Binder.
-- **Pipeline Board dropped (2026-11-03, owner decision):** the dashboard part (PR [#710](https://github.com/abucalip/navi-librarian/pull/710)) is removed from `main` by the removal PR; the P2b PR ([#711](https://github.com/abucalip/navi-librarian/pull/711)) is closed unmerged. Plan section 5 B records the drop.
+- **Pipeline Board dropped (2026-11-03, owner decision):** the dashboard part (PR [#710](https://github.com/abucalip/navi-librarian/pull/710)) is removed from `main` by PR [#712](https://github.com/abucalip/navi-librarian/pull/712), squash `97a80caf5954c20d3467d07cb5a38b2fd2506725`; the P2b PR ([#711](https://github.com/abucalip/navi-librarian/pull/711)) is closed unmerged. Plan section 5 B records the drop.
 - **Next action:** none queued. The next phase in the plan is P3a, Window Manager, to start only when the owner asks.
 
 ## 3. Recommendation engine — gated

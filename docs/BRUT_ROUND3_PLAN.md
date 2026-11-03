@@ -172,7 +172,7 @@ One PR per phase except P0 and the closeout (documents, direct to `main`). Each 
 |---|---|---|
 | P0 | This plan, D-024, mockups in `docs/design/brut-round3/` | **done 2026-11-03** (documentation, direct to `main`) |
 | P1 | Web Zine Spread: catalogue entry, palette, `layouts.css` block, hooks, all five web screens, tests | **done 2026-11-03**, PR [#709](https://github.com/abucalip/navi-librarian/pull/709), squash `3f546f9ec409a127ca8d5ce8f9e677ba1865479e` (see "As built, P1" below) |
-| P2 | Web Pipeline Board | **Dropped 2026-11-03 by the owner.** Part 1 (PR [#710](https://github.com/abucalip/navi-librarian/pull/710), squash `24064759`) was merged and is removed from `main` by the removal PR; P2b (PR #711) was closed unmerged |
+| P2 | Web Pipeline Board | **Dropped 2026-11-03 by the owner.** Part 1 (PR [#710](https://github.com/abucalip/navi-librarian/pull/710), squash `24064759`) was merged and is removed from `main` by PR [#712](https://github.com/abucalip/navi-librarian/pull/712), squash `97a80caf5954c20d3467d07cb5a38b2fd2506725`; P2b (PR #711) was closed unmerged |
 | P3a | Web Window Manager: shell, taskbar, single windows on every screen, tests | not started |
 | P3b | Web Window Manager: second album window (spike first) | not started |
 | P4 | Android Receipt Roll: `Layout.ReceiptRoll`, palette, components, nav and mini player, Home, Library, Album, Artist, Downloads, Now Playing, tests | not started |
