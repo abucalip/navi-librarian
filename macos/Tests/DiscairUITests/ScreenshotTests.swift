@@ -1,4 +1,5 @@
 import AppKit
+import DiscairCore
 import SwiftUI
 import Testing
 @testable import DiscairUI
@@ -7,10 +8,14 @@ import Testing
 /// Baseline comparison is added once the owner approves the look on the Mac (contract M4 gate).
 @MainActor
 struct ScreenshotTests {
-    @Test(arguments: ThemeID.allCases, [Screen.home, Screen.album, Screen.nowPlaying, Screen.queue, Screen.library, Screen.albums, Screen.artist])
+    @Test(arguments: ThemeID.allCases, [Screen.home, Screen.album, Screen.nowPlaying, Screen.queue, Screen.library, Screen.albums, Screen.artist, Screen.settings])
     func rendersWindow(theme: ThemeID, screen: Screen) throws {
         RenderMode.offscreenScreenshot = true
-        let state = AppState(themeID: theme, screen: screen)
+        // Settings needs a session; a throwaway one with a sample profile and an in-memory keychain.
+        let session = SessionModel(store: ProfileStore(fileURL: FileManager.default.temporaryDirectory.appending(path: "discair-shot-\(UUID().uuidString)/profiles.json")), secrets: InMemorySecretStore())
+        try session.addProfile(name: "Home", librarianURL: "http://192.168.1.87:8686", navidromeURL: "http://192.168.1.87:4533")
+        try session.saveLogin(.navidrome, username: "owner", password: "not-shown")
+        let state = AppState(themeID: theme, screen: screen, session: screen == .settings ? session : nil)
         let size = NSSize(width: 1280, height: 800)
         let host = NSHostingView(rootView: RootView(state: state).frame(width: size.width, height: size.height))
         host.frame = NSRect(origin: .zero, size: size)

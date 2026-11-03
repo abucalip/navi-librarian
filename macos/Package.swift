@@ -24,7 +24,7 @@ let package = Package(
             dependencies: ["DiscairCore", "DiscairNavidrome", "DiscairLibrarian"],
             resources: [.copy("Resources/Fonts")]
         ),
-        .executableTarget(name: "DiscairApp", dependencies: ["DiscairUI"]),
+        .executableTarget(name: "DiscairApp", dependencies: ["DiscairUI", "DiscairCore"]),
         .executableTarget(
             name: "DiscairChecks",
             dependencies: ["DiscairCore", "DiscairNavidrome", "DiscairLibrarian"]
@@ -34,7 +34,7 @@ let package = Package(
             name: "AudioSpike",
             dependencies: ["DiscairCore", "DiscairNavidrome"]
         ),
-        .testTarget(name: "DiscairUITests", dependencies: ["DiscairUI"]),
+        .testTarget(name: "DiscairUITests", dependencies: ["DiscairUI", "DiscairCore"]),
         .testTarget(
             name: "DiscairCoreTests",
             dependencies: ["DiscairCore"]

@@ -4,6 +4,8 @@ import SwiftUI
 /// The six screens every theme must provide (contract section 9, M3 mockups).
 public enum Screen: String, CaseIterable, Sendable {
     case home, album, nowPlaying, queue, library, artist
+    /// Profiles, logins and the connection (M5; no mockup exists, each theme draws it in its own language).
+    case settings
     /// The Albums grid on its own (the queue screen shows the same grid under the Up Next inspector).
     case albums
 }
@@ -37,10 +39,14 @@ public final class AppState {
     public var themeID: ThemeID
     public var screen: Screen
     public var selectedAlbum: AlbumItem = Fixtures.albums[0]
-    public var connectionLabel = "Home network · http (local)"
+    /// The live connection and logins. `nil` in previews and screenshot tests, which show the sample label.
+    public let session: SessionModel?
+    public var connectionLabel: String { session?.label ?? "Home network · http (local)" }
+    public var connectionIsGood: Bool { session?.isGood ?? true }
     public let actions: DiscairActions
 
-    public init(themeID: ThemeID = .cupertino, screen: Screen = .home, actions: DiscairActions = NoopActions()) {
+    public init(themeID: ThemeID = .cupertino, screen: Screen = .home, actions: DiscairActions = NoopActions(), session: SessionModel? = nil) {
+        self.session = session
         self.themeID = themeID
         self.screen = screen
         self.actions = actions
