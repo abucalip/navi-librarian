@@ -29,6 +29,9 @@ public final class SessionModel {
     /// Set when the Librarian login was refused or missing while Navidrome worked; the app is usable without it.
     public private(set) var librarianNote: String?
 
+    /// Called after a successful connect (the app uses it to load the library). Not called on failure.
+    public var onConnected: (@MainActor () async -> Void)?
+
     private let store: ProfileStore
     private let secrets: any SecretStore
     private let resolver: ProfileResolver
@@ -132,6 +135,7 @@ public final class SessionModel {
                 librarianNote = "No Librarian login is saved, so recommendations and Get are off."
             }
             status = .connected(profile: selection.profile, manualOverride: selection.isManualOverride)
+            await onConnected?()
         } catch let e as DiscairError {
             status = .failed(e)
         } catch ProfileError.notFound {

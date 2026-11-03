@@ -15,24 +15,43 @@ struct ZineAlbum: View {
             HStack(alignment: .top, spacing: 22) {
                 VStack(alignment: .leading, spacing: 0) {
                     ZineCover(album: a, width: 260)
-                    Rectangle().fill(Z.ink).frame(height: 4).padding(.top, 20)
-                    Text(ZineFixtures.albumPull).font(Z.serif(19, italic: true)).padding(.top, 6)
+                    if !state.library.isLive {
+                        Rectangle().fill(Z.ink).frame(height: 4).padding(.top, 20)
+                        Text(ZineFixtures.albumPull).font(Z.serif(19, italic: true)).padding(.top, 6)
+                    }
                 }
                 .frame(width: 260)
                 VStack(alignment: .leading, spacing: 8) {
-                    (Text(ZineFixtures.albumLede).bold() + Text(ZineFixtures.albumBody1))
-                    Text(ZineFixtures.albumBody2)
+                    if state.library.isLive {
+                        if let r = a.reason { Text(r) } else { Mono("No article for this album yet") }
+                    } else {
+                        (Text(ZineFixtures.albumLede).bold() + Text(ZineFixtures.albumBody1))
+                        Text(ZineFixtures.albumBody2)
+                    }
                 }
                 .font(Z.serif(14.5)).frame(maxWidth: .infinity, alignment: .topLeading)
                 contents(a).frame(maxWidth: .infinity)
             }
         }
+        .task(id: a.id) { await state.loadSelectedAlbum() }
+    }
+
+    private var summary: String {
+        let n = state.library.tracks.count
+        guard state.library.isLive else { return "6 songs · 41 min" }
+        let a = state.selectedAlbum
+        let minutes = a.durationSeconds.map { " · \($0 / 60) min" } ?? ""
+        return "\(a.songCount ?? n) songs" + minutes
     }
 
     private func byline(_ a: AlbumItem) -> some View {
         HStack(spacing: 26) {
-            Mono("By \(a.artist)"); Mono("\(a.year)"); Mono(a.genre); Mono("6 songs · 41 min")
-            ZineBadge(a.format.isEmpty ? "Not owned" : a.format)
+            Button { state.openArtist(named: a.artist) } label: { Mono("By \(a.artist)") }.buttonStyle(.plain)
+                .accessibilityLabel("Open artist \(a.artist)")
+            if a.year > 0 { Mono("\(a.year)") }
+            if !a.genre.isEmpty { Mono(a.genre) }
+            Mono(summary)
+            ZineBadge(!a.owned ? "Not owned" : (state.library.tracks.first(where: \.owned)?.format ?? "").isEmpty ? "In library" : state.library.tracks.first(where: \.owned)!.format)
             Spacer()
             HStack(spacing: 10) {
                 Button { state.actions.play(album: a) } label: { Label("Play", systemImage: "play.fill") }
@@ -49,7 +68,7 @@ struct ZineAlbum: View {
     private func contents(_ a: AlbumItem) -> some View {
         VStack(alignment: .leading, spacing: 0) {
             ZineH2("Contents", size: 20)
-            ForEach(Array(Fixtures.tracks.enumerated()), id: \.element.id) { i, t in
+            ForEach(Array(state.library.tracks.enumerated()), id: \.element.id) { i, t in
                 if t.owned {
                     DotRow {
                         HStack(spacing: 6) { Text("\(i + 1)").font(Z.an(15)); Text(t.title).font(Z.serif(14)) }
@@ -67,8 +86,9 @@ struct ZineAlbum: View {
                     .padding(.vertical, 4)
                 }
             }
-            if let p = Fixtures.tracks.firstIndex(where: { $0.playing }) {
-                Mono("▶ Now playing: \(p + 1) \(Fixtures.tracks[p].title)").padding(.top, 6)
+            if state.library.tracksLoading { Mono("Loading songs…").padding(.top, 6) }
+            if let p = state.library.tracks.firstIndex(where: { $0.playing }) {
+                Mono("▶ Now playing: \(p + 1) \(state.library.tracks[p].title)").padding(.top, 6)
             }
         }
         .padding(.horizontal, 12).padding(.vertical, 10)

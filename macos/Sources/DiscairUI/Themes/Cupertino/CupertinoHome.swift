@@ -9,11 +9,15 @@ struct CupertinoHome: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
                 Text("Home").font(CU.title(34)).padding(.top, 4).padding(.bottom, 14)
-                continueCard
-                sectionTitle("Missing from your library", sub: "Recommended for you")
-                shelf(Fixtures.albums([7, 8, 9, 10, 11]), missing: true)
+                if !state.library.isLive { continueCard }   // needs playback history, which arrives with the audio engine
+                if case .failed(let m) = state.library.phase { Text(m).foregroundStyle(CU.accent).padding(.bottom, 8) }
+                if state.library.phase == .loading { Text("Loading your library…").foregroundStyle(CU.muted).padding(.bottom, 8) }
+                if !state.library.missing.isEmpty || !state.library.isLive {
+                    sectionTitle("Missing from your library", sub: "Recommended for you")
+                    shelf(state.library.missing, missing: true)
+                }
                 sectionTitle("Recently added", sub: nil)
-                shelf(Fixtures.albums([2, 3, 4, 5, 6]), missing: false)
+                shelf(state.library.recent, missing: false)
             }
             .padding(.horizontal, 28).padding(.bottom, 28)
         }
@@ -61,10 +65,13 @@ struct CupertinoHome: View {
 
     private func tile(_ a: AlbumItem, missing: Bool) -> some View {
         VStack(alignment: .leading, spacing: 0) {
-            CoverView(album: a).frame(width: 156).clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-                .shadow(color: .black.opacity(0.2), radius: 7, y: 4).padding(.bottom, 9)
+            Button { if a.owned { state.open(album: a) } } label: {
+                CoverView(album: a).frame(width: 156).clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                    .shadow(color: .black.opacity(0.2), radius: 7, y: 4)
+            }
+            .buttonStyle(.plain).padding(.bottom, 9).accessibilityLabel(a.owned ? "Open \(a.title)" : "\(a.title), not in your library")
             Text(a.title).fontWeight(.semibold).lineLimit(1)
-            Text(missing ? "\(a.artist) · \(a.year)" : a.artist).foregroundStyle(CU.muted).lineLimit(1)
+            Text(missing ? a.line([a.artist, a.yearText]) : a.artist).foregroundStyle(CU.muted).lineLimit(1)
             if missing {
                 // Get, Save and Not for me are all real buttons with text labels; the third sits on its own row to fit the tile.
                 VStack(alignment: .leading, spacing: 6) {

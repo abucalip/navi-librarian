@@ -182,7 +182,15 @@ struct CupertinoToolbar: View {
         .frame(height: 44)
     }
 
-    private var nowPlayingDisplay: some View {
+    @ViewBuilder private var nowPlayingDisplay: some View {
+        if state.library.isLive {
+            Text("Nothing playing").font(.system(size: 12)).foregroundStyle(CU.muted)
+                .frame(maxWidth: .infinity).frame(height: 44)
+                .glassEffect(CU.glass, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        } else { sampleDisplay }
+    }
+
+    private var sampleDisplay: some View {
         let a = Fixtures.albums[0]
         return HStack(spacing: 10) {
             CoverView(album: a).frame(width: 32).clipShape(RoundedRectangle(cornerRadius: 5))

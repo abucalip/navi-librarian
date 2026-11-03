@@ -9,6 +9,7 @@ public struct RootView: View {
         let theme = ThemeRegistry.theme(state.themeID)
         theme.window(state: state)
             .preferredColorScheme(theme.colorScheme)
+            .environment(\.artwork, state.artwork)
             .frame(minWidth: 1100, minHeight: 700)
     }
 }

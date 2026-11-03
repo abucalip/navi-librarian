@@ -8,8 +8,8 @@ enum CupertinoArtistLayout { static let bannerHeight: CGFloat = 356 }
 struct CupertinoArtistBanner: View {
     let state: AppState
     var body: some View {
-        let a = Fixtures.albums[1]
-        let h = a.hue / 360
+        let lib = state.library
+        let h = (lib.isLive ? LibraryModel.hue(for: state.selectedArtist.name) : Fixtures.albums[1].hue) / 360
         ZStack(alignment: .topLeading) {
             Color(hue: h, saturation: 0.45, brightness: 0.45)
             RadialGradient(colors: [Color(hue: h, saturation: 0.6, brightness: 0.9).opacity(0.95), .clear],
@@ -22,10 +22,10 @@ struct CupertinoArtistBanner: View {
         .frame(maxWidth: .infinity)
         .overlay(alignment: .topLeading) {
             VStack(alignment: .leading, spacing: 0) {
-                Text("Talk Talk").font(.system(size: 60, weight: .bold)).tracking(-1.5)
-                Text("3 of 5 albums owned · Post-rock, Synth-pop").opacity(0.85).padding(.top, 6).padding(.bottom, 12)
+                Text(state.selectedArtist.name).font(.system(size: 60, weight: .bold)).tracking(-1.5).lineLimit(1).minimumScaleFactor(0.5)
+                Text(lib.isLive ? "\(lib.artistOwnedCount) of \(lib.artistOwnedCount + lib.artistMissingCount) albums owned" : "3 of 5 albums owned · Post-rock, Synth-pop").opacity(0.85).padding(.top, 6).padding(.bottom, 12)
                 HStack(spacing: 8) {
-                    Button { state.actions.play(album: Fixtures.albums[1]) } label: { Label("Play", systemImage: "play.fill") }
+                    Button { state.actions.play(album: lib.artistAlbums.first ?? Fixtures.albums[1]) } label: { Label("Play", systemImage: "play.fill") }
                         .buttonStyle(CapsuleButtonStyle(primary: true))
                     Button { } label: { Label("Shuffle", systemImage: "shuffle") }
                         .buttonStyle(CapsuleButtonStyle(translucent: true))
@@ -50,17 +50,20 @@ struct CupertinoArtist: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
-                Text("Top songs").font(CU.title(20)).padding(.top, 22).padding(.bottom, 10).accessibilityAddTraits(.isHeader)
-                LazyVGrid(columns: [GridItem(.flexible(), spacing: 24), GridItem(.flexible())], spacing: 0) {
-                    ForEach(Array(top.enumerated()), id: \.offset) { _, t in songRow(t) }
+                if !state.library.isLive {   // top songs need a Navidrome call the client does not have yet
+                    Text("Top songs").font(CU.title(20)).padding(.top, 22).padding(.bottom, 10).accessibilityAddTraits(.isHeader)
+                    LazyVGrid(columns: [GridItem(.flexible(), spacing: 24), GridItem(.flexible())], spacing: 0) {
+                        ForEach(Array(top.enumerated()), id: \.offset) { _, t in songRow(t) }
+                    }
                 }
                 Text("Albums").font(CU.title(20)).padding(.top, 22).padding(.bottom, 10).accessibilityAddTraits(.isHeader)
-                HStack(alignment: .top, spacing: 16) {
-                    ForEach(Fixtures.albums([12, 13, 11, 1, 0])) { a in albumTile(a) }
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 128, maximum: 128), spacing: 16, alignment: .top)], alignment: .leading, spacing: 18) {
+                    ForEach(state.library.artistAlbums) { a in albumTile(a) }
                 }
             }
             .padding(.horizontal, 28).padding(.bottom, 28)
         }
+        .task(id: state.selectedArtist.id) { await state.loadSelectedArtist() }
     }
 
     private func songRow(_ t: (title: String, album: Int, sub: String, missing: Bool)) -> some View {
@@ -83,13 +86,15 @@ struct CupertinoArtist: View {
 
     private func albumTile(_ a: AlbumItem) -> some View {
         VStack(alignment: .leading, spacing: 0) {
+            Button { if a.owned { state.open(album: a) } } label: {
             CoverView(album: a).frame(width: 128).clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
                 .opacity(a.owned ? 1 : 0.35)
                 .overlay { if !a.owned { RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(Color(white: 0.53), style: StrokeStyle(lineWidth: 2, dash: [5, 4])).padding(-3) } }
                 .shadow(color: .black.opacity(a.owned ? 0.2 : 0), radius: 7, y: 4)
-                .padding(.bottom, 8)
+            }
+            .buttonStyle(.plain).padding(.bottom, 8).accessibilityLabel(a.owned ? "Open \(a.title)" : "\(a.title), missing")
             Text(a.title).fontWeight(.semibold).lineLimit(1)
-            Text(a.owned ? String(a.year) : "\(a.year) · Missing").foregroundStyle(CU.muted)
+            Text(a.line([a.yearText, a.owned ? "" : "Missing"])).foregroundStyle(CU.muted)
             if !a.owned {
                 Button("Get") { state.actions.get(album: a) }.buttonStyle(CapsuleButtonStyle(primary: true, small: true)).padding(.top, 7)
             }

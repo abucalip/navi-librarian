@@ -17,7 +17,7 @@ struct ZineWindow: View {
     var body: some View {
         VStack(spacing: 0) {
             ZineMasthead(state: state)
-            ZineTicker()
+            ZineTicker(live: state.library.isLive)
             ScrollView {
                 page.padding(.horizontal, 22).padding(.vertical, 16)
                     .frame(maxWidth: .infinity, alignment: .topLeading)
@@ -69,13 +69,13 @@ struct ZineMasthead: View {
                     Mono("Vol. 1 · No. 307")
                     Spacer()
                     HStack(spacing: 6) {
-                        Mono("Tuesday 3 November 2026 ·")
+                        Mono(state.library.isLive ? Date.now.formatted(.dateTime.weekday(.wide).day().month(.wide).year()) + " ·" : "Tuesday 3 November 2026 ·")
                         Mono(state.connectionLabel)
                     }
                     .accessibilityElement(children: .combine)
-                    .accessibilityLabel("Tuesday 3 November 2026. Connection: \(state.connectionLabel)")
+                    .accessibilityLabel("Connection: \(state.connectionLabel)")
                     Spacer()
-                    Mono("Library 4,812 albums")
+                    Mono(state.library.totalAlbumsText)
                 }
                 .padding(.trailing, 70).padding(.bottom, 4)
                 .overlay(alignment: .bottom) { Rectangle().fill(Z.ink).frame(height: 2) }
@@ -129,15 +129,17 @@ struct ZineLights: View {
 
 /// Pipeline as a ticker: acquisition progress while listening.
 struct ZineTicker: View {
+    /// A live library has no acquisition feed yet (Downloads is a later slice), so the ticker says so instead of showing sample items.
+    var live = false
     var body: some View {
-        Mono("▶ Downloading: Tago Mago 64%  ■  Queued: Zombie  ■  Imported: Heaven or Las Vegas  ■  Failed: none")
+        Mono(live ? "Pipeline: no downloads in progress" : "▶ Downloading: Tago Mago 64%  ■  Queued: Zombie  ■  Imported: Heaven or Las Vegas  ■  Failed: none")
             .lineLimit(1).fixedSize()
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 22).padding(.vertical, 4)
             .background(Z.yellow)
             .overlay(alignment: .bottom) { Rectangle().fill(Z.ink).frame(height: 3) }
             .clipped()
-            .accessibilityLabel("Pipeline: downloading Tago Mago 64 percent, queued Zombie, imported Heaven or Las Vegas, failed none")
+            .accessibilityLabel(live ? "Pipeline: no downloads in progress" : "Pipeline: downloading Tago Mago 64 percent, queued Zombie, imported Heaven or Las Vegas, failed none")
     }
 }
 
@@ -146,12 +148,17 @@ struct ZinePlayerStrip: View {
     let state: AppState
     var body: some View {
         let a = Fixtures.albums[0]
+        let idle = state.library.isLive   // no audio engine yet, so a live library shows nothing playing
         HStack(spacing: 16) {
             Button { state.screen = .nowPlaying } label: {
                 HStack(spacing: 16) {
-                    CoverView(album: a).frame(width: 34).overlay { Rectangle().strokeBorder(Z.paper, lineWidth: 2) }
-                    Text("After the Flood").font(Z.an(20)).textCase(.uppercase).foregroundStyle(Z.yellow)
-                    Mono("Talk Talk · 3:12 / 9:41").foregroundStyle(Z.paper)
+                    if idle {
+                        Text("Nothing playing").font(Z.an(20)).textCase(.uppercase).foregroundStyle(Z.yellow)
+                    } else {
+                        CoverView(album: a).frame(width: 34).overlay { Rectangle().strokeBorder(Z.paper, lineWidth: 2) }
+                        Text("After the Flood").font(Z.an(20)).textCase(.uppercase).foregroundStyle(Z.yellow)
+                        Mono("Talk Talk · 3:12 / 9:41").foregroundStyle(Z.paper)
+                    }
                 }
                 .contentShape(Rectangle())
             }
@@ -160,7 +167,7 @@ struct ZinePlayerStrip: View {
 
             ZStack(alignment: .leading) {
                 Rectangle().fill(Color(white: 0.267)).frame(height: 8)
-                GeometryReader { g in Rectangle().fill(Z.yellow).frame(width: g.size.width * 0.33, height: 8) }.frame(height: 8)
+                GeometryReader { g in Rectangle().fill(Z.yellow).frame(width: g.size.width * (idle ? 0 : 0.33), height: 8) }.frame(height: 8)
             }
             .frame(maxWidth: 360)
             .accessibilityElement().accessibilityLabel("Position").accessibilityValue("33 percent")
@@ -172,7 +179,7 @@ struct ZinePlayerStrip: View {
                 }
                 Button { state.screen = .queue } label: { Image(systemName: "list.bullet") }
                     .buttonStyle(.plain).accessibilityLabel("Up Next")
-                Mono("· FLAC 16/44")
+                if !idle { Mono("· FLAC 16/44") }
             }
             .font(.system(size: 14, weight: .bold)).foregroundStyle(Z.paper)
         }
