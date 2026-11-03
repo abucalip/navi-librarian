@@ -25,8 +25,7 @@
     { id: 'cratekraft', label: 'Crate \u00b7 Kraft', group: 'Crate Wall', dark: false, brut: true, layout: 'crate', bar: '#d9b98a' },
     { id: 'cratemint', label: 'Crate \u00b7 Mint', group: 'Crate Wall', dark: false, brut: true, layout: 'crate', bar: '#a9d9b4' },
     { id: 'cratenight', label: 'Crate \u00b7 Night', group: 'Crate Wall', dark: true, brut: true, layout: 'crate', bar: '#1b1713' },
-    { id: 'zine', label: 'Zine \u00b7 Yellow', group: 'Zine Spread', dark: false, brut: true, layout: 'zine', bar: '#ffde59' },
-    { id: 'pipeline', label: 'Pipeline \u00b7 Orange', group: 'Pipeline Board', dark: false, brut: true, layout: 'pipeline', bar: '#ff7a1a' }
+    { id: 'zine', label: 'Zine \u00b7 Yellow', group: 'Zine Spread', dark: false, brut: true, layout: 'zine', bar: '#ffde59' }
   ];
   var FONTS = [
     { id: 'discair', label: 'Discair (current)' },

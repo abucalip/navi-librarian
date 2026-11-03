@@ -1,6 +1,6 @@
 # Brut round 3 plan (web and Android)
 
-Last updated: 2026-11-03 (P1 merged; P2 part 1, the dashboard board, merged as PR #710; theme-ownership and mockup-is-the-spec rules in section 2). Governing decision: D-024 in [DECISIONS.md](DECISIONS.md). Status tracking: the table in section 9 (update it in the PR that completes each phase). GitHub `main` is authoritative.
+Last updated: 2026-11-03 (P1 merged; P2, Pipeline Board, dropped by the owner the same day and removed from `main`; theme-ownership and mockup-is-the-spec rules in section 2). Governing decision: D-024 in [DECISIONS.md](DECISIONS.md). Status tracking: the table in section 9 (update it in the PR that completes each phase). GitHub `main` is authoritative.
 
 ## 1. What this is
 
@@ -11,7 +11,7 @@ The owner approved five themes, one palette each:
 | Id | Theme | Platform | Idea in one line |
 |---|---|---|---|
 | Z | **Zine Spread** (`zine`) | Web | A newspaper front page; the album is an article, the artist a magazine cover |
-| B | **Pipeline Board** (`pipeline`) | Web | A kanban board; dragging a card into Queued is Get |
+| ~~B~~ | ~~Pipeline Board (`pipeline`)~~ | Web | **Dropped 2026-11-03 by the owner**; removed from `main` (section 5 B) |
 | W | **Window Manager** (`windows`) | Web | A desktop: pages and albums are windows, two albums can sit side by side |
 | R | **Receipt Roll** (`receipt`) | Android | Thermal receipt paper: itemised albums, barcode seek bar, tear-off slips |
 | K | **Binder** (`binder`) | Android | A collector's binder: every album a slot, missing ones dashed with a Get |
@@ -35,7 +35,7 @@ Everything in BRUT_LAYOUTS_PLAN.md section 2 still applies. Restated, with the r
 - **The approved mockups are the spec (owner rule, 2026-11-03).** `design/brut-round3/mockups.html` is what the owner approved. Each theme's screens must follow its mockup closely, element by element: every band, strip, column, box, label, headline pattern, behaviour hint (for example J / K, the letter margin, the index footer) and piece of dynamic copy the mockup shows is built, not approximated, and a light re-skin of the default page does not count. Before calling a screen done, compare it to the mockup tab for that screen and list every element; an element that cannot be built (a data gap, an accessibility conflict) is named in the PR with its fallback, never silently dropped. The sample numbers and names in a mockup are placeholders; the wording patterns (for example "You own two X records. Not this one.") are the design.
 - **A theme owns its screens (owner rule, 2026-11-03).** A round 3 theme may change how any screen is laid out and operated, and may move, merge, replace or drop any element of the default layout, including shelves, carousels and the New releases list. Nothing in the default layout is sacred: the default theme keeps all of it, and the owner can switch back to it. Do not trade a theme's essential structure (for Zine Spread: the lead story, the New this week column and the Classifieds box) for fidelity to the default arrangement. What a theme may not do is change what the app is allowed to do: the data and actions stay the API's, every action keeps its real control and its confirmation, and Get, Save and Not for me always stay reachable (with a visible text label wherever the theme makes that action prominent). Where the theme replaces an element, it builds the replacement from the same builders and data (one render path per card), not a second implementation.
 - **The web UI has no playback.** Nothing on the web may imply audio plays in the browser. Window Manager has no player window.
-- **A gesture is never the only way.** Drag (Pipeline), swipe (Receipt), tap-on-slot (Binder) each have a visible button or keyboard equivalent that does exactly the same thing.
+- **A gesture is never the only way.** Swipe (Receipt), tap-on-slot (Binder) each have a visible button or keyboard equivalent that does exactly the same thing.
 - **A gesture never skips a confirmation the button has.** Dismissing an acquisition deletes the album's folder (ACQ-04); a swipe or a drop may open the existing confirm, never replace it. Get and Save are non-destructive and may run on a drop.
 - **The client never reports success before the server confirms** (existing rule). A card dropped into Queued shows the pending state, moves when the request is confirmed, and returns with a worded failure otherwise. The existing `searchAlbum(...)` flow and its `setGetButtonState` states are the single code path; a drop calls it (or clicks the card's real Get button), it does not re-implement it.
 - Accessibility floor: WCAG 2.1 AA text contrast (computed in tests from the hex values), 44x44 px (web) / 48 dp (Android) touch targets, visible focus, full keyboard operation, `prefers-reduced-motion` honoured, status never by colour alone (words or icons).
@@ -50,10 +50,10 @@ Everything in BRUT_LAYOUTS_PLAN.md section 2 still applies. Restated, with the r
 Already on `main` from round 2: `data-layout` set by `static/appearance.js` from a `layout` field on a theme entry; `static/layouts.css` with one block per layout, every selector scoped `:root[data-layout="…"]`; palettes as `:root[data-theme="…"]` blocks in `static/themes.css`; layouts loaded on the main page only.
 
 Round 3 adds, per layout:
-- Catalogue entries in `appearance.js` (`layout: 'zine'`, `'pipeline'`, `'windows'`; `brut: true`; `dark`; `bar` colour) in a new group each, shown as new optgroups in Settings > Appearance.
+- Catalogue entries in `appearance.js` (`layout: 'zine'`, `'windows'`; `brut: true`; `dark`; `bar` colour) in a new group each, shown as new optgroups in Settings > Appearance.
 - A block in `layouts.css` headed `==== Zine Spread ("zine")` (same header style as the others, the tests split on it).
 - A palette block in `themes.css` with the full token set (see the existing Brut themes for names: `--ink-rail`, `--ink`, `--surface`, `--surface-raised`, `--surface-hover`, `--edge`, `--text*`, `--accent*`, `--on-accent`, `--focus`, `--bw`, radii, `--brut-*`).
-- Hooks in `app.js` / `index.html` that are **hidden by default** and shown only by the layout, so every other theme renders exactly as today. New JS lives in new functions guarded by `document.documentElement.dataset.layout === '…'`; prefer a new file (for example `static/layout-pipeline.js`) over growing `app.js` (6,205 lines), registered in the template, the static packaging and the packaging tests.
+- Hooks in `app.js` / `index.html` that are **hidden by default** and shown only by the layout, so every other theme renders exactly as today. New JS lives in new functions guarded by `document.documentElement.dataset.layout === '…'`; prefer a new file (for example `static/layout-zine.js`) over growing `app.js` (6,205 lines), registered in the template, the static packaging and the packaging tests.
 - A test module `tests/test_<layout>_layout_ui_contract.py` in the pattern of `test_crate_layout_ui_contract.py`: catalogue ids and fields, every selector scoped, full token set, AA contrast of text on ground, text on accent and focus, hooks hidden without the layout, reduced motion disables animation.
 
 Phone-width web is not redesigned (decision in BRUT_LAYOUTS_PLAN.md section 4 stands).
@@ -73,7 +73,7 @@ Token names as in round 2: `bg` ground, `sf` surface, `ink` text and outlines, `
 | Theme (proposed label) | bg | sf | ink | mu (to set) | accents |
 |---|---|---|---|---|---|
 | Zine · Yellow (`zine`) | `#f1ede4` | `#ffffff` | `#111111` | `#4a463d` | yellow `#ffde59` (masthead, current), pink `#ff4d6d` (kicker), teal `#2ec4b6` (buttons) |
-| Pipeline · Orange (`pipeline`) | `#e7f0ff` | `#ffffff` | `#0a0a0a` | `#3d4663` | orange `#ff7a1a` (progress), lime `#c6f432` (toast, Get), yellow `#ffde59`, violet `#7b4dff`, red `#d7263d`, teal `#2ec4b6` (genre tags; white on violet and red must pass or the text stays ink) |
+
 | Windows · Pink (`windows`) | `#ffb4c8` + dot grid `#0a0a0a` | `#fffdf6` | `#0a0a0a` | `#4a4440` | yellow `#ffde59` (title tab, current), orange `#ff7a1a`, green `#9be3b0` (Owned), rose `#ff9aa8` (Missing) |
 | Receipt · Paper (`receipt`, Android, light) | `#d8d4cc` | `#fffef8` | `#1a1a1a` | `#4a4640` | stamp red `#d7263d`, yellow `#ffde59` (ADD, nav) |
 | Binder · Teal (`binder`, Android, light) | `#fbf1e3` | `#ffffff` | `#17110a` | `#5c4630` | teal `#2ec4b6`, pink `#ff7a8a`, yellow `#ffde59`, violet `#7c5aa6`, blue `#a8d8ff`, lilac `#d9c6f2` |
@@ -97,19 +97,9 @@ Idea: print. Dense, columnar, headline-led. Reading order matters; J / K moves t
 - **Palette and type:** Zine · Yellow. Suggested font pair: Poster shout (Anton) for headlines; the layout works with any pair.
 - **Acceptance:** works at 1280, 1024 and 900 px, falls back correctly at 899 and 390; long names wrap inside the headline, never clip; the cropped artist name has the full name available to assistive tech; no horizontal overflow; keyboard order matches reading order; the nine round 1 and sixteen round 2 themes render byte-identical CSS outside the new blocks.
 
-### B. Pipeline Board (phase P2)
+### B. Pipeline Board (phase P2): dropped
 
-Idea: the app's job is "from what should I add next to a confirmed request"; the screen is that pipeline.
-- **Dashboard:** a five-column board: Recommended (the existing dashboard picks), Saved (the Saved page's existing loader), Queued and Downloading (the acquisition list already loaded), In library (the existing Newly added shelf data). Cards carry a genre colour bar like the genre tiles. Each card is the existing card with its real Get / Save / Not for me controls inside; the board only arranges them.
-- **Drag:** HTML5 drag and drop, desktop only (the layout is 900 px and up). **Drop on Queued** = click the card's real Get button (the `searchAlbum` path): the card shows the pending state in place and moves to Queued only when the server confirms and the acquisition list reports it; on failure it stays where it was with the worded failure (existing toast and `is-failed` state). **Drop on Saved** = the real Save. No drop target for Not for me (destructive paths stay buttons). A toast region (`role="status"`) announces results.
-- **Keyboard:** Space picks a card up, arrows move between columns, Enter drops; the same two actions (Get, Save). A visible "Move to…" menu button on each card is the non-drag, non-chord alternative.
-- **Library:** swimlanes by genre (a lane per genre with the albums as cards), reusing the genre loader from the dashboard accordion (PR #708) and `/api/library/*` data; a lane loads on first open, like the accordion.
-- **Album:** the album window gains a stage tracker (Recommended, Saved, Queued, Downloaded, In library) derived from state the card already knows; the stage shown is a **word and a position**, never colour alone; per-track Get unchanged.
-- **Artist:** three lanes: In library (owned albums), Missing (missing albums, each draggable to Queued with the same rules), Similar artists (cards that open the artist).
-- **Acquisitions:** the right four columns of the board: Queued, Downloading, Done (Imported), Failed, live progress bars from the existing stream; Retry and Dismiss unchanged, Dismiss keeps its confirm.
-- **Palette and type:** Pipeline · Orange. Suggested pair: Swiss brut or Baseline.
-- **Acceptance:** drag works with a real request on the local test server with slskd disabled (the failure path is the testable one) and the pending/failed states are visible; keyboard path reaches the same result; reduced motion removes card tilt and transitions; board scrolls sideways inside its own container only when it must; at 900 px five columns still fit or scroll cleanly; tests assert the drop code calls the existing request function and contains no second `fetch('/api/acquire')`.
-- **Risk:** the board duplicates cards that other pages also render. Cards must be cloned from, or re-rendered by, the existing render functions, not rebuilt by hand, so state (pending, requested, failed) stays one source of truth. Decide in the first hour of P2 and write the choice in the PR.
+Dropped by the owner on 2026-11-03. The theme, its palette, its layout CSS, its script, its dashboard markup and its tests were removed from `main`. The part-one board (PR #710) and the P2b tiles, lanes and album and artist restyles (PR #711, closed unmerged) are not in the product. Nothing in this section is to be built.
 
 ### W. Window Manager (phase P3, two steps)
 
@@ -168,7 +158,6 @@ Idea: collecting. Every album is a slot in a binder page; a missing slot is dash
 | Discography completion on the artist page | Yes, from `owned_albums` and `missing_albums` (missing is capped at 50 and ranked) | Label it "known albums" |
 | Per-track owned flags on the album page | Yes (PR #635) | Used for totals and coupons |
 | Search / transfer / import phases of a request | Partly: states plus transfer percentage | Map as described in section 6 K; no new fields |
-| Saved list on the dashboard (Pipeline) | The Saved page loads it; the dashboard does not | Pipeline loads it with the Saved page's existing loader, in this layout only |
 | Genre loader for swimlanes | Yes (`/api/genres/{tag}`, PR #708) | Reuse |
 
 ## 8. Decision D-024 (text for DECISIONS.md)
@@ -183,7 +172,7 @@ One PR per phase except P0 and the closeout (documents, direct to `main`). Each 
 |---|---|---|
 | P0 | This plan, D-024, mockups in `docs/design/brut-round3/` | **done 2026-11-03** (documentation, direct to `main`) |
 | P1 | Web Zine Spread: catalogue entry, palette, `layouts.css` block, hooks, all five web screens, tests | **done 2026-11-03**, PR [#709](https://github.com/abucalip/navi-librarian/pull/709), squash `3f546f9ec409a127ca8d5ce8f9e677ba1865479e` (see "As built, P1" below) |
-| P2 | Web Pipeline Board: board, drag with real Get and Save, keyboard path, swimlanes, stage tracker, tests | **part 1 done 2026-11-03**, PR [#710](https://github.com/abucalip/navi-librarian/pull/710), squash `24064759`: the dashboard board, drop and Move to… paths, tests. **P2b (open):** library swimlanes, album stage tracker, artist lanes, acquisitions board; then a browser check on the local server |
+| P2 | Web Pipeline Board | **Dropped 2026-11-03 by the owner.** Part 1 (PR [#710](https://github.com/abucalip/navi-librarian/pull/710), squash `24064759`) was merged and is removed from `main` by the removal PR; P2b (PR #711) was closed unmerged |
 | P3a | Web Window Manager: shell, taskbar, single windows on every screen, tests | not started |
 | P3b | Web Window Manager: second album window (spike first) | not started |
 | P4 | Android Receipt Roll: `Layout.ReceiptRoll`, palette, components, nav and mini player, Home, Library, Album, Artist, Downloads, Now Playing, tests | not started |
@@ -212,7 +201,6 @@ Order rationale: web first, from the most CSS-only (Zine) to the riskiest (Windo
 
 ## 11. Risks and open points
 
-- **Pipeline duplicates cards** that other pages render (section 5 B): keep one render path.
 - **Window Manager** touches focus order and dialog semantics; split in two and spike the second window.
 - **Two data gaps** (completion fractions, library-wide missing total) change the mockups: the plan shows the fallbacks; a `missing_count` contract is parked until the owner decides.
 - **Contrast** of muted text on coloured grounds and of white on violet, red and teal is unchecked; a failure changes the palette value, not the layout.

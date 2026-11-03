@@ -9,6 +9,14 @@
 - **State:** merged only. Not published, not deployed.
 - **Next action:** P2, the web Pipeline Board.
 
+## 2026-11-03 — Pipeline Board dropped and removed
+
+- **Owner decision:** drop the Pipeline Board theme entirely and delete it from the plan.
+- **Done:** PR #711 (P2b) closed unmerged and its branch deleted. The removal PR takes the part-one board (PR #710, squash `24064759`) off `main`: `static/layout-pipeline.js`, its layout and palette blocks, the catalogue entry, the dashboard markup and script tag, the dashboard hook calls in `static/app.js`, and `tests/test_pipeline_layout_ui_contract.py`. The fonts test lists no longer name the theme.
+- **Docs:** `docs/BRUT_ROUND3_PLAN.md` (theme row, palette row, section 5 B, phase table, risks), `docs/DECISIONS.md` (D-024 text: four themes), `docs/ACTIVE_WORK.md` (section 2i), `docs/PROJECT_STATUS.md`. Mockup tab 2 is kept in `docs/design/brut-round3/mockups.html` as the record of the drop.
+- **Tests:** zine, crate, tape, ledger and fonts contract modules, 92 passing. `node --check` on `static/app.js` and `static/appearance.js`.
+- **Not done:** no browser check (nothing to check). The removal PR's CI result and merge are recorded here after merge.
+
 ## 2026-11-03 — Round 3 Neobrut plan written (documentation only)
 
 - **What:** `docs/BRUT_ROUND3_PLAN.md`, decision D-024 in `docs/DECISIONS.md`, reference mockups in `docs/design/brut-round3/mockups.html`, and entries in `docs/ACTIVE_WORK.md` (section 2i, parked Material themes) and `docs/PROJECT_STATUS.md`. The owner approved five Neobrut themes (web: Zine Spread, Pipeline Board, Window Manager; Android: Receipt Roll, Binder), one palette each, each on its own platform, covering every screen including album and artist pages.
