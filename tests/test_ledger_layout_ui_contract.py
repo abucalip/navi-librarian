@@ -150,6 +150,20 @@ class LedgerLayoutTests(unittest.TestCase):
         self.assertIn(':root[data-layout="ledger"] .library-list:not(.is-grid) {', self.ledger)
         self.assertIn(':root[data-layout="ledger"] .library-list:not(.is-grid) .library-artist-count { font-family: var(--mono);', self.ledger)
 
+    def test_the_dashboard_genres_are_an_accordion_that_loads_albums_from_the_genre_endpoint_on_demand(self):
+        app = (STATIC / "app.js").read_text(encoding="utf-8")
+        index = (ROOT / "app" / "templates" / "index.html").read_text(encoding="utf-8")
+        self.assertIn('<div id="dashboardGenreAccordion" class="genre-accordion" hidden></div>', index)
+        row = app.split("function buildGenreAccordionRow(genre) {")[1].split("\n}\nconst GENRE_ACCORDION_ALBUMS")[0]
+        self.assertIn("toggle.setAttribute('aria-expanded', 'false');", row)
+        self.assertIn("toggle.setAttribute('aria-controls', id);", row)
+        self.assertIn("panel.hidden = true;", row)
+        self.assertIn("fetch('/api/genres/' + encodeURIComponent(genre.tag))", row)  # the genre page's own endpoint, nothing new
+        self.assertIn("if (!open || loaded) return;", row)  # loaded once per row
+        self.assertIn(':root[data-layout="ledger"] .genre-tiles { display: none; }', self.ledger)
+        self.assertIn(':root[data-layout="ledger"] .genre-accordion {', self.ledger)
+        self.assertNotIn(".genre-accordion", (STATIC / "app.css").read_text(encoding="utf-8"))
+
     def test_the_default_theme_is_still_ink(self):
         self.assertIn("ink", self.script.split("var THEMES = [")[1].split("\n")[1])
 

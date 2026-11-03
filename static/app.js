@@ -1932,6 +1932,67 @@ function buildGenreTile(genre) {
   return tile;
 }
 
+// Ledger Room only (static/layouts.css shows the accordion and hides the tiles; it is hidden in every other theme): each genre is an
+// accordion row. Opening a row loads that genre's albums once from the same endpoint the genre page uses (no new request type), as
+// rows with their library status in words, with a link to the whole genre page.
+let genreAccordionSeq = 0;
+function buildGenreAccordionRow(genre) {
+  const id = 'genreAcc' + (genreAccordionSeq += 1);
+  const row = document.createElement('div');
+  row.className = 'genre-acc-row';
+  const toggle = document.createElement('button');
+  toggle.type = 'button';
+  toggle.className = 'genre-acc-toggle';
+  toggle.setAttribute('aria-expanded', 'false');
+  toggle.setAttribute('aria-controls', id);
+  addTextElement(toggle, 'span', 'genre-acc-name', genre.name);
+  addTextElement(toggle, 'span', 'genre-acc-count', pluralize(genre.album_count, 'album', 'albums'));
+  toggle.append(spriteIcon('chevron-down'));
+  const panel = document.createElement('div');
+  panel.id = id;
+  panel.className = 'genre-acc-panel';
+  panel.hidden = true;
+  let loaded = false;
+  toggle.addEventListener('click', async () => {
+    const open = toggle.getAttribute('aria-expanded') !== 'true';
+    toggle.setAttribute('aria-expanded', String(open));
+    panel.hidden = !open;
+    toggle.querySelector('svg').replaceWith(spriteIcon(open ? 'chevron-up' : 'chevron-down'));
+    if (!open || loaded) return;
+    panel.replaceChildren();
+    addTextElement(panel, 'p', 'genre-acc-note', 'Loading…');
+    try {
+      const response = await fetch('/api/genres/' + encodeURIComponent(genre.tag));
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || 'Request failed');
+      const section = data.sections && data.sections.albums;
+      const items = section && section.available ? section.items.slice(0, GENRE_ACCORDION_ALBUMS) : [];
+      panel.replaceChildren();
+      if (items.length) {
+        const list = document.createElement('ul');
+        list.className = 'genre-acc-list';
+        for (const item of items) list.append(buildGenreItem(item, 'albums'));
+        panel.append(list);
+      } else {
+        addTextElement(panel, 'p', 'genre-acc-note', 'No albums could be listed for this genre right now.');
+      }
+      const all = document.createElement('button');
+      all.type = 'button';
+      all.className = 'link-button genre-acc-all';
+      all.textContent = 'Open the ' + genre.name + ' page';
+      all.addEventListener('click', () => openLibraryTarget({type: 'genre', tag: genre.tag}));
+      panel.append(all);
+      loaded = items.length > 0;
+    } catch (error) {
+      panel.replaceChildren();
+      addTextElement(panel, 'p', 'genre-acc-note', 'This genre could not be loaded. Close and open it to try again.');
+    }
+  });
+  row.append(toggle, panel);
+  return row;
+}
+const GENRE_ACCORDION_ALBUMS = 6;
+
 async function loadDashboardGenres() {
   const target = $('dashboardGenreTiles');
   const status = $('dashboardGenresStatus');
@@ -1941,7 +2002,9 @@ async function loadDashboardGenres() {
     const data = await requestJSON('/api/dashboard/genres?limit=60');
     const genres = data.items || [];
     const render = expanded => {
-      target.replaceChildren(...(expanded ? genres : genres.slice(0, GENRE_TILES_COLLAPSED)).map(buildGenreTile));
+      const shown = expanded ? genres : genres.slice(0, GENRE_TILES_COLLAPSED);
+      target.replaceChildren(...shown.map(buildGenreTile));
+      if ($('dashboardGenreAccordion')) $('dashboardGenreAccordion').replaceChildren(...shown.map(buildGenreAccordionRow));
       more.setAttribute('aria-expanded', String(expanded));
       more.textContent = expanded ? 'Show fewer' : 'View more';
     };
