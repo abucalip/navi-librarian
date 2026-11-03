@@ -10,7 +10,8 @@ struct ZineHome: View {
         HStack(alignment: .top, spacing: 22) {
             VStack(alignment: .leading, spacing: 0) {
                 HStack(alignment: .top, spacing: 22) {
-                    ZineCover(album: lead, width: 250)
+                    Button { state.selectedAlbum = lead; state.screen = .album } label: { ZineCover(album: lead, width: 250) }
+                        .buttonStyle(.plain).accessibilityLabel("Open \(lead.title)")
                     VStack(alignment: .leading, spacing: 6) {
                         Mono("Lead story · Missing from your library")
                             .foregroundStyle(Z.yellow).padding(.horizontal, 8).padding(.vertical, 1).background(Z.ink)
@@ -29,7 +30,7 @@ struct ZineHome: View {
                 HStack(spacing: 12) {
                     Button("Get this album") { state.actions.get(album: lead) }.buttonStyle(ZineButtonStyle(kind: .yellow))
                     Button("Save") { state.actions.save(album: lead) }.buttonStyle(ZineButtonStyle())
-                    Button("Not for me") { state.actions.notForMe(album: lead) }.buttonStyle(ZineLinkStyle()).padding(.leading, 4)
+                    Button("Not for me") { state.actions.notForMe(album: lead) }.buttonStyle(ZineButtonStyle())
                 }
                 .padding(.top, 14)
             }
@@ -41,12 +42,19 @@ struct ZineHome: View {
                     ForEach(Fixtures.albums([8, 9, 10])) { a in
                         ZineListRow {
                             HStack(spacing: 10) {
-                                ZineCover(album: a, width: 44, border: 2, shadow: 3)
-                                VStack(alignment: .leading, spacing: 1) {
-                                    Text(a.title).font(Z.an(16)).textCase(.uppercase).lineLimit(1)
-                                    Mono(a.artist)
+                                Button { state.selectedAlbum = a; state.screen = .album } label: {
+                                    HStack(spacing: 10) {
+                                        ZineCover(album: a, width: 44, border: 2, shadow: 3)
+                                        VStack(alignment: .leading, spacing: 1) {
+                                            Text(a.title).font(Z.an(16)).textCase(.uppercase).lineLimit(1)
+                                            Mono(a.artist)
+                                        }
+                                        Spacer(minLength: 4)
+                                    }
+                                    .contentShape(Rectangle())
                                 }
-                                Spacer(minLength: 4)
+                                .buttonStyle(.plain)
+                                .accessibilityLabel("Open \(a.title) by \(a.artist)")
                                 Button("Get") { state.actions.get(album: a) }
                                     .buttonStyle(ZineButtonStyle(kind: .yellow, small: true))
                                     .accessibilityLabel("Get \(a.title)")
