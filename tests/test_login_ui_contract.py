@@ -83,7 +83,7 @@ class LoginStylesheetTests(unittest.TestCase):
         self.assertRegex(self.rules, r"input\s*\{[^}]*min-height: 44px")
 
     def test_focus_is_visible_on_inputs_and_the_button(self):
-        self.assertRegex(self.rules, r"button:focus-visible, input:focus-visible \{[^}]*outline: 2px solid var\(--accent\)")
+        self.assertRegex(self.rules, r"button:focus-visible, input:focus-visible \{[^}]*outline: 2px solid var\(--focus\)")
 
     def test_error_is_carried_by_a_glyph_and_text_not_colour_alone(self):
         self.assertIn(".glyph", self.rules)

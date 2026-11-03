@@ -37,13 +37,13 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Warning
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
+import app.discair.ui.common.AlertDialog
+import app.discair.ui.common.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
+import app.discair.ui.common.OutlinedButton
+import app.discair.ui.common.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -114,10 +114,7 @@ private fun Page(scroll: Boolean = false, content: @Composable ColumnScope.() ->
 @Composable
 private fun Title(text: String) {
     if (text == "Discair") {
-        Icon(
-            painterResource(if (app.discair.ui.theme.LocalPalette.current.light) R.drawable.ic_wordmark_light else R.drawable.ic_wordmark), contentDescription = text, tint = Color.Unspecified,
-            modifier = Modifier.height(40.dp).semantics { heading() },
-        )
+        app.discair.ui.common.Wordmark(40.dp)
         return
     }
     Text(
@@ -363,7 +360,7 @@ private fun PlaybackSettings(container: AppContainer, onEqualizer: () -> Unit, o
             Text(qualityName, Modifier.weight(1f))
             Icon(app.discair.ui.player.PlayerIcons.Down, contentDescription = null)
         }
-        androidx.compose.material3.DropdownMenu(expanded = qualityOpen, onDismissRequest = { qualityOpen = false }) {
+        app.discair.ui.common.DropdownMenu(expanded = qualityOpen, onDismissRequest = { qualityOpen = false }) {
             app.discair.player.QUALITY_CHOICES.forEach { choice ->
                 val name = app.discair.player.qualityLabel(choice)
                 androidx.compose.material3.DropdownMenuItem(

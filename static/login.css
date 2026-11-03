@@ -5,7 +5,7 @@
   --ink: #141211; --surface: #1c1a18; --surface-raised: #252220;
   --edge: #34302c; --edge-strong: #787168;
   --text: #f4efe6; --text-muted: #b4ac9f; --text-subtle: #9c958a;
-  --accent: #f5d33f; --accent-hover: #f8e08a; --on-accent: #141211;
+  --accent: #f5d33f; --focus: var(--accent); --accent-hover: #f8e08a; --on-accent: #141211;
   --chart-red: #ff5a3c; --chart-red-text: #ff7b62;
   --space-2: 8px; --space-3: 12px; --space-4: 16px; --space-5: 24px; --space-6: 32px;
   --radius-control: 4px; --radius-panel: 6px; --radius-chip: 2px;
@@ -54,7 +54,7 @@ button {
 }
 button:hover { background: var(--accent-hover); border-color: var(--accent-hover) }
 button:disabled { opacity: .55; cursor: wait }
-button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px }
+button:focus-visible, input:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px }
 /* Errors and caution always carry a glyph and text, never colour alone (DESIGN_SYSTEM.md 4.2). */
 .message { display: flex; gap: var(--space-2); align-items: flex-start; min-height: 24px; margin: var(--space-3) 0 0; color: var(--chart-red-text); font-size: var(--text-sm) }
 .glyph {
@@ -68,3 +68,5 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
 
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 h1 .wordmark { display: block; height: 34px; width: auto; }
+/* The i-dots of the wordmark take the theme accent (the standalone discair-logo.svg keeps the Ink yellow). */
+.wordmark .wordmark-dots { fill: var(--accent); }

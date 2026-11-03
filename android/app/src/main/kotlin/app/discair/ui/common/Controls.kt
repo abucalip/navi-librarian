@@ -57,7 +57,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.discair.ui.theme.Ink
 import app.discair.ui.theme.LocalPalette
-import app.discair.ui.theme.Mono
 import app.discair.ui.theme.brutalShadow
 import app.discair.ui.theme.pillShape
 import app.discair.ui.theme.themeBorder
@@ -239,6 +238,7 @@ fun GlassBand(
                 stateDescription = spokenValue
             },
             thumb = {
+                if (LocalPalette.current.brutal) BrutalSliderThumb(enabled) else
                 Box(
                     Modifier.size(20.dp).shadow(2.dp, CircleShape).background(Color.White, CircleShape)
                         .border(BorderStroke(1.dp, Color(0x1A000000)), CircleShape),
@@ -246,6 +246,7 @@ fun GlassBand(
             },
             track = { state: SliderState ->
                 val frac = ((state.value - state.valueRange.start) / (state.valueRange.endInclusive - state.valueRange.start)).coerceIn(0f, 1f)
+                if (LocalPalette.current.brutal) BrutalSliderTrack(frac, enabled) else
                 Box(Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(3.dp)).background(GlassTrack)) {
                     Box(Modifier.fillMaxWidth(frac).fillMaxHeight().background(if (enabled) Ink.Accent else Ink.AccentDim))
                 }
@@ -253,7 +254,7 @@ fun GlassBand(
         )
         Box(Modifier.padding(horizontal = 6.dp).width(1.dp).height(16.dp).background(if (LocalPalette.current.light) Ink.EdgeStrong else Color(0x77CCCCCC)))
         Text(
-            value, style = MaterialTheme.typography.labelMedium.copy(fontFamily = Mono, fontWeight = FontWeight.SemiBold),
+            value, style = MaterialTheme.typography.labelMedium.copy(fontFamily = app.discair.ui.theme.LocalFontPair.current.mono, fontWeight = FontWeight.SemiBold),
             color = Ink.TextMuted, maxLines = 1, textAlign = TextAlign.End,
             modifier = Modifier.widthIn(min = valueWidth),
         )

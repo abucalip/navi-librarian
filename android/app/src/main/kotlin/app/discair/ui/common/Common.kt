@@ -28,7 +28,6 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -518,6 +517,16 @@ fun OverlayBack(onBack: () -> Unit, modifier: Modifier = Modifier, onPhoto: Bool
 /** The white play triangle in a dark circle, on a cover that is in the library. */
 @Composable
 fun CheckBadge(modifier: Modifier = Modifier, onPlay: (() -> Unit)? = null, label: String = "") {
+    val palette = app.discair.ui.theme.LocalPalette.current
+    if (palette.brutal) {
+        // Neobrut: the accent disc with an outline and a hard shadow-sm, the play mark in the label colour.
+        Box(
+            modifier.size(32.dp).brutalShadow(CircleShape, 0.5f).clip(CircleShape).background(palette.accent).border(app.discair.ui.theme.brutalOutline(), CircleShape)
+                .let { if (onPlay != null) it.clickable(onClickLabel = "Play $label", role = Role.Button, onClick = onPlay) else it },
+            contentAlignment = Alignment.Center,
+        ) { Icon(PlayerIcons.Play, contentDescription = if (onPlay != null) "Play $label" else "In your library", tint = palette.onAccent, modifier = Modifier.size(20.dp)) }
+        return
+    }
     Box(
         modifier.size(32.dp).clip(CircleShape).background(Palettes.Night.ink.copy(alpha = 0.82f))
             .let { if (onPlay != null) it.clickable(onClickLabel = "Play $label", role = Role.Button, onClick = onPlay) else it },

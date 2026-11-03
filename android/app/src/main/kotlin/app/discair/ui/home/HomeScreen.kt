@@ -29,7 +29,7 @@ import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
+import app.discair.ui.common.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -72,8 +72,8 @@ import app.discair.ui.common.rememberAlbumYear
 import app.discair.ui.common.rememberLoad
 import app.discair.ui.common.routeKey
 import app.discair.ui.theme.Ink
+import app.discair.ui.theme.brutalShadow
 import app.discair.ui.theme.forTheme
-import app.discair.ui.theme.Mono
 import kotlinx.coroutines.launch
 
 /** The genre row shows this many, drawn at random each time Home opens. */
@@ -122,14 +122,19 @@ fun HomeScreen(open: Opener, onDiscover: () -> Unit, onLibrary: () -> Unit, onSe
  */
 @Composable
 private fun PageButtons(onDiscover: () -> Unit, onLibrary: () -> Unit, onSettings: () -> Unit) {
-    val frame = RoundedCornerShape(6.dp)
+    val palette = app.discair.ui.theme.LocalPalette.current
+    val frame = app.discair.ui.theme.themeShape(6.dp)
+    val seam = if (palette.brutal) (palette.shape?.outline ?: 2).dp else 1.dp
     Box(Modifier.fillMaxWidth().padding(vertical = 24.dp), contentAlignment = Alignment.Center) {
-    // About as wide as the navigation island below it.
-    Row(Modifier.width(200.dp).height(48.dp).clip(frame).background(Ink.Surface).border(1.dp, Ink.EdgeStrong, frame)) {
+    // About as wide as the navigation island below it. Neobrut: one outlined frame with a hard shadow and thick seams (a button group).
+    Row(
+        Modifier.width(200.dp).height(48.dp).brutalShadow(frame).clip(frame).background(Ink.Surface)
+            .border(if (palette.brutal) app.discair.ui.theme.brutalOutline() else androidx.compose.foundation.BorderStroke(1.dp, Ink.EdgeStrong), frame),
+    ) {
         PageButton("Discover", Icons.Default.Star, onDiscover, Modifier.weight(1f))
-        Box(Modifier.width(1.dp).fillMaxHeight().background(Ink.EdgeStrong))
+        Box(Modifier.width(seam).fillMaxHeight().background(Ink.EdgeStrong))
         PageButton("Library", Icons.AutoMirrored.Filled.List, onLibrary, Modifier.weight(1f))
-        Box(Modifier.width(1.dp).fillMaxHeight().background(Ink.EdgeStrong))
+        Box(Modifier.width(seam).fillMaxHeight().background(Ink.EdgeStrong))
         PageButton("Settings", app.discair.ui.player.PlayerIcons.Tune, onSettings, Modifier.weight(1f))
     }
     }
@@ -140,7 +145,7 @@ private fun PageButton(label: String, icon: androidx.compose.ui.graphics.vector.
     Box(
         modifier.fillMaxHeight().clickable(role = Role.Button, onClick = onClick).semantics { contentDescription = label },
         contentAlignment = Alignment.Center,
-    ) { Icon(icon, contentDescription = null, tint = Ink.TextMuted, modifier = Modifier.size(24.dp)) }
+    ) { Icon(icon, contentDescription = null, tint = if (app.discair.ui.theme.LocalPalette.current.brutal) Ink.Text else Ink.TextMuted, modifier = Modifier.size(24.dp)) }
 }
 
 @Composable
@@ -167,6 +172,13 @@ private fun pickTag(label: String): String = when {
 /** The tag chip: mono capitals on a dark ground with a yellow bar on its left edge. */
 @Composable
 private fun TagChip(text: String) {
+    if (app.discair.ui.theme.LocalPalette.current.brutal) {
+        // Neobrut: a bordered, bold badge with a shadow-sm (neobrutalism.com Badge) instead of the yellow-barred chip.
+        app.discair.ui.common.BrutalTag {
+            Text(text.uppercase(), style = MaterialTheme.typography.labelSmall.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold))
+        }
+        return
+    }
     Row(Modifier.height(22.dp).background(Ink.Raised), verticalAlignment = Alignment.CenterVertically) {
         Box(Modifier.width(3.dp).fillMaxHeight().background(Ink.Accent))
         // Line height is trimmed evenly above and below the capitals, so the text sits in the middle of the chip.
@@ -246,17 +258,23 @@ private fun GenreRow(all: List<GenreTile>, open: Opener) {
     val tiles = remember(all) { all.shuffled().take(GENRES_SHOWN) }
     LazyRow(contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         items(tiles, key = { it.tag }) { genre ->
+            val brutal = app.discair.ui.theme.LocalPalette.current.brutal
+            val tile = app.discair.ui.theme.themeShape(6.dp)
+            // Neobrut: a tile filled with the genre's own hue, outlined, with a hard shadow-sm and black text (the hue is the same one the web uses).
+            val hue = Color.hsv(app.discair.ui.common.genreHue(genre.tag).toFloat(), 0.42f, 0.97f)
             Row(
                 Modifier.heightIn(min = Target)
-                    .clip(RoundedCornerShape(6.dp))
-                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                    .then(if (brutal) Modifier.brutalShadow(tile, 0.6f) else Modifier)
+                    .clip(tile)
+                    .background(if (brutal) hue else MaterialTheme.colorScheme.surfaceVariant)
+                    .then(if (brutal) Modifier.border(app.discair.ui.theme.brutalOutline(), tile) else Modifier)
                     .clickable(role = Role.Button) { open.genre(genre.tag, genre.name) }
                     .semantics { contentDescription = "${genre.name}, " + plural(genre.albumCount, "album") },
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    genre.name, style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurface, maxLines = 1,
+                    genre.name, style = if (brutal) MaterialTheme.typography.bodyMedium.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold) else MaterialTheme.typography.bodyMedium,
+                    color = if (brutal) Color.Black else MaterialTheme.colorScheme.onSurface, maxLines = 1,
                     overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(horizontal = 12.dp),
                 )
             }
@@ -298,7 +316,7 @@ private fun ShelfRow(shelf: String, title: String, open: Opener, load: () -> Lis
                                 maxLines = 2, overflow = TextOverflow.Ellipsis,
                             )
                             album.year?.let {
-                                Text("$it", style = MaterialTheme.typography.labelMedium.copy(fontFamily = Mono), color = Ink.Accent)
+                                Text("$it", style = MaterialTheme.typography.labelMedium.copy(fontFamily = app.discair.ui.theme.LocalFontPair.current.mono), color = Ink.Accent)
                             }
                             if (album.artist.isNotBlank()) Text(
                                 album.artist, style = MaterialTheme.typography.bodyMedium,

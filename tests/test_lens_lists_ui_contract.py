@@ -123,7 +123,7 @@ class LensListsUiContractTests(unittest.TestCase):
 
     def test_the_selected_lens_has_a_visible_mark_besides_aria_pressed(self):
         css = (ROOT / "static" / "app.css").read_text(encoding="utf-8")
-        self.assertIn('.controls button[aria-pressed="true"] { color: var(--text); box-shadow: inset 0 -3px var(--accent); }', css)
+        self.assertIn('.controls button[aria-pressed="true"] { color: var(--text); box-shadow: inset 0 -3px var(--accent-text); }', css)
 
     def test_disabled_state_is_neutral_copy_without_the_config_key(self):
         start = self.js.index("async function loadLensList(")

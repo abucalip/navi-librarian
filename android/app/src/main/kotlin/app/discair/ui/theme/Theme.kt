@@ -82,8 +82,10 @@ const val MIN_PASTEL_LUMINANCE = 0.72f
  * must not put dark text on them.
  */
 @Composable
-fun OnArtwork(content: @Composable () -> Unit) {
+fun OnArtwork(keepBrutal: Boolean = false, content: @Composable () -> Unit) {
     val current = LocalPalette.current
+    // A Brutal theme's player sheet stays in the chosen theme: its outline and hard shadow need the theme's own ground.
+    if (keepBrutal && current.brutal) { content(); return }
     val palette = remember(current) { if (current.light) current.overArtwork(Palettes.Night) else current }
     if (palette === current) { content(); return }
     // Material components and plain Text read the colour scheme, not Ink, so swap that too.
@@ -123,6 +125,11 @@ class FontPair(
     val body: FontFamily,
     val numeral: FontFamily,
     val numeralWeight: FontWeight,
+    /** Numbers, counts and durations. JetBrains Mono for every pair but the Brut ones, which bring their own. */
+    val mono: FontFamily = Mono,
+    val monoName: String = "JetBrains Mono",
+    /** Wide or tall display faces are scaled so a page title keeps its place (Rubik Mono One is very wide, Bebas Neue is narrow). */
+    val titleScale: Float = 1f,
 )
 
 object FontPairs {
@@ -190,7 +197,75 @@ object FontPairs {
         )
     }
 
-    val All: List<FontPair> = listOf(Discair, Editorial, Bricolage, Geometric, Transit)
+    // ---- Brut pairs (owner-approved 2026-11-02): independent of the theme, each with its own mono. ----
+    private fun bodyOf(regular: Int, semibold: Int, medium: Int = regular) = FontFamily(
+        Font(regular, FontWeight.Normal), Font(medium, FontWeight.Medium), Font(semibold, FontWeight.SemiBold),
+    )
+    private fun monoOf(regular: Int, medium: Int) = FontFamily(Font(regular, FontWeight.Normal), Font(medium, FontWeight.Medium))
+    private fun variableBody(res: Int) = FontFamily(variable(res, 400), variable(res, 500), variable(res, 600))
+
+    val BrutBaseline = run {
+        val title = FontFamily(Font(R.font.space_grotesk_700, FontWeight.Bold))
+        FontPair(
+            "brut_baseline", "Brut · Baseline", "Space Grotesk", "Public Sans",
+            title = title, titleWeight = FontWeight.Bold, titleTracking = (-0.03).em, titleLineHeight = 1.1f,
+            body = bodyOf(R.font.public_sans_400, R.font.public_sans_600),
+            numeral = title, numeralWeight = FontWeight.Bold,
+        )
+    }
+    /** Rubik Mono One is very wide, so titles are scaled down. The body is IBM Plex Sans (proportional, so text and names stay readable); numbers are IBM Plex Mono. */
+    val BrutTechnical = run {
+        val title = FontFamily(Font(R.font.rubik_mono_one_400, FontWeight.Normal))
+        FontPair(
+            "brut_technical", "Brut · Technical", "Rubik Mono One", "IBM Plex Sans",
+            title = title, titleWeight = FontWeight.Normal, titleTracking = (-0.02).em, titleLineHeight = 1.2f,
+            body = bodyOf(R.font.ibm_plex_sans_400, R.font.ibm_plex_sans_600, R.font.ibm_plex_sans_500),
+            numeral = title, numeralWeight = FontWeight.Normal,
+            mono = monoOf(R.font.ibm_plex_mono_400, R.font.ibm_plex_mono_500), monoName = "IBM Plex Mono", titleScale = 0.8f,
+        )
+    }
+    /** Bebas Neue has capitals only, so titles always read in capitals; it is narrow, so it is scaled up. */
+    val BrutEditorial = run {
+        val title = FontFamily(Font(R.font.bebas_neue_400, FontWeight.Normal))
+        FontPair(
+            "brut_editorial", "Brut · Editorial", "Bebas Neue", "Outfit",
+            title = title, titleWeight = FontWeight.Normal, titleTracking = 0.02.em, titleLineHeight = 1.05f,
+            body = variableBody(R.font.outfit_variable), numeral = title, numeralWeight = FontWeight.Normal,
+            mono = monoOf(R.font.dm_mono_400, R.font.dm_mono_500), monoName = "DM Mono", titleScale = 1.25f,
+        )
+    }
+    val BrutModern = run {
+        val title = FontFamily(Font(R.font.space_grotesk_700, FontWeight.Bold))
+        FontPair(
+            "brut_modern", "Brut · Modern", "Space Grotesk", "Inter",
+            title = title, titleWeight = FontWeight.Bold, titleTracking = (-0.03).em, titleLineHeight = 1.1f,
+            body = variableBody(R.font.inter_variable), numeral = title, numeralWeight = FontWeight.Bold,
+        )
+    }
+    val BrutShout = run {
+        val title = FontFamily(Font(R.font.anton_400, FontWeight.Normal))
+        FontPair(
+            "brut_shout", "Brut · Poster shout", "Anton", "Barlow",
+            title = title, titleWeight = FontWeight.Normal, titleTracking = 0.01.em, titleLineHeight = 1.1f,
+            body = bodyOf(R.font.barlow_regular, R.font.barlow_semibold, R.font.barlow_medium),
+            numeral = title, numeralWeight = FontWeight.Normal,
+            mono = monoOf(R.font.space_mono_400, R.font.space_mono_700), monoName = "Space Mono", titleScale = 1.1f,
+        )
+    }
+    val BrutSwiss = run {
+        val title = FontFamily(Font(R.font.inter_tight_800, FontWeight.ExtraBold))
+        FontPair(
+            "brut_swiss", "Brut · Swiss brut", "Inter Tight", "Inter",
+            title = title, titleWeight = FontWeight.ExtraBold, titleTracking = (-0.03).em, titleLineHeight = 1.1f,
+            body = variableBody(R.font.inter_variable), numeral = title, numeralWeight = FontWeight.ExtraBold,
+            mono = monoOf(R.font.roboto_mono_400, R.font.roboto_mono_500), monoName = "Roboto Mono",
+        )
+    }
+
+    val All: List<FontPair> = listOf(
+        Discair, Editorial, Bricolage, Geometric, Transit,
+        BrutBaseline, BrutTechnical, BrutEditorial, BrutModern, BrutShout, BrutSwiss,
+    )
 
     fun byId(id: String?): FontPair? = All.firstOrNull { it.id == id }
 }
@@ -246,10 +321,12 @@ private fun style(family: FontFamily, weight: FontWeight, size: Int, line: Int) 
     TextStyle(fontFamily = family, fontWeight = weight, fontSize = size.sp, lineHeight = line.sp)
 
 private fun typography(f: FontPair): Typography {
-    fun title(size: Int) = TextStyle(
-        fontFamily = f.title, fontWeight = f.titleWeight, fontSize = size.sp,
-        lineHeight = (size * f.titleLineHeight).sp, letterSpacing = f.titleTracking,
-    )
+    fun title(size: Int) = (size * f.titleScale).let { scaled ->
+        TextStyle(
+            fontFamily = f.title, fontWeight = f.titleWeight, fontSize = scaled.sp,
+            lineHeight = (scaled * f.titleLineHeight).sp, letterSpacing = f.titleTracking,
+        )
+    }
     return Typography(
         headlineLarge = title(32),
         headlineMedium = title(28),
@@ -260,8 +337,8 @@ private fun typography(f: FontPair): Typography {
         bodyMedium = style(f.body, FontWeight.Normal, 14, 20),
         bodySmall = style(f.body, FontWeight.Normal, 12, 16),
         labelLarge = style(f.body, FontWeight.SemiBold, 14, 20),
-        labelMedium = style(Mono, FontWeight.Medium, 12, 16),
-        labelSmall = style(Mono, FontWeight.Normal, 11, 16),
+        labelMedium = style(f.mono, FontWeight.Medium, 12, 16),
+        labelSmall = style(f.mono, FontWeight.Normal, 11, 16),
     )
 }
 

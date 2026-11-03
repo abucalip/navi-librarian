@@ -15,7 +15,7 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material3.DropdownMenu
+import app.discair.ui.common.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -47,7 +47,6 @@ import app.discair.ui.common.LocalRepository
 import app.discair.ui.common.Target
 import app.discair.ui.common.rememberLoad
 import app.discair.ui.common.routeKey
-import app.discair.ui.theme.Mono
 
 private const val ROWS_PER_PAGE = 3
 
@@ -97,7 +96,7 @@ private fun ReleaseTile(entry: DiscoveryEntry, open: Opener) {
             )
         }
         releaseMonth(item.firstReleaseDate, item.year)?.let {
-            Text(it, style = MaterialTheme.typography.labelMedium.copy(fontFamily = Mono), color = MaterialTheme.colorScheme.onSurface, maxLines = 1)
+            Text(it, style = MaterialTheme.typography.labelMedium.copy(fontFamily = app.discair.ui.theme.LocalFontPair.current.mono), color = MaterialTheme.colorScheme.onSurface, maxLines = 1)
         }
         ReleaseMenu(entry)
     }

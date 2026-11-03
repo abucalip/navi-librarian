@@ -21,7 +21,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
+import app.discair.ui.common.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -65,7 +65,6 @@ import app.discair.ui.common.plural
 import app.discair.ui.common.rememberLoad
 import app.discair.ui.common.rememberStreamLoad
 import app.discair.ui.theme.Ink
-import app.discair.ui.theme.Mono
 
 private const val SONGS_SHOWN = 5
 private const val ALBUMS_SHOWN = 6
@@ -168,7 +167,7 @@ private fun ArtistContent(route: ArtistRoute, page: ArtistPage, open: Opener, li
                                         Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
                                     }
                                 }
-                                Text(abbreviate(song.listenCount), style = MaterialTheme.typography.labelMedium.copy(fontFamily = Mono), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text(abbreviate(song.listenCount), style = MaterialTheme.typography.labelMedium.copy(fontFamily = app.discair.ui.theme.LocalFontPair.current.mono), color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 Spacer(Modifier.width(8.dp))
                                 // Only a song that names its album can be filed with it (ACQ-08).
                                 if (!song.owned && onAlbum != null) Box(Modifier.size(Target), contentAlignment = Alignment.Center) {

@@ -79,7 +79,7 @@ class ScrollTrackKeyboardTests(unittest.TestCase):
     def test_focus_ring_is_drawn_on_the_scroll_container(self):
         self.assertIn(
             ".genre-row-track:focus-visible "
-            "{ outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }",
+            "{ outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 4px; }",
             self.css,
         )
 
@@ -167,7 +167,7 @@ class DashboardTileStripTests(unittest.TestCase):
         self.assertIn('aria-roledescription="carousel"', self.index)
         self.assertIn('aria-label="Previous album"', self.index)
         self.assertIn('aria-label="Next album"', self.index)
-        self.assertIn(".dashboard-slider:focus-visible { outline: 2px solid var(--accent);", self.css)
+        self.assertIn(".dashboard-slider:focus-visible { outline: 2px solid var(--focus);", self.css)
 
     def test_slider_rotates_with_buttons_arrow_keys_and_thumbnail_clicks(self):
         self.assertIn("function rotateDashboardSlider(direction) {", self.js)
@@ -183,7 +183,7 @@ class DashboardTileStripTests(unittest.TestCase):
         self.assertIn('@media (prefers-reduced-motion: reduce) { .dashboard-slider > .card[data-slot="1"] > .dashboard-tile-meta { animation: none; } }', self.css)
 
     def test_tile_open_control_has_a_visible_focus_ring_inside_the_clipped_tile(self):
-        self.assertIn(".dashboard-tile.card > .dashboard-tile-open:focus-visible { outline: 2px solid var(--accent); outline-offset: -4px; }", self.css)
+        self.assertIn(".dashboard-tile.card > .dashboard-tile-open:focus-visible { outline: 2px solid var(--focus); outline-offset: -4px; }", self.css)
         # The generic card margins would inset the open control; the overlay must still cover the tile.
         self.assertIn(".dashboard-tile.card > .dashboard-tile-open { position: absolute; inset: 0;", self.css)
 

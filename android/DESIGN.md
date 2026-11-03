@@ -347,3 +347,34 @@ Previews the owner chose from are not in the repo; the values are in `ui/theme/P
 
 **Not checked:** the Brutal themes and the Appearance screen on a phone or emulator (the build, lint and theme unit tests ran; Settings needs real server logins), the hard shadow where a parent clips it (shadows are drawn outside a component's bounds), every screen on every Brutal theme, 200% font scale, TalkBack.
 
+## Brut font pairs and the wordmark (owner-approved 2026-11-02)
+
+**Six Brut pairs** join the five (11 in all), named `Brut · …` and independent of the colour theme (the saved font id never depends on the theme): Baseline (Space Grotesk / Public Sans), Technical (Rubik Mono One / IBM Plex Sans, numbers in IBM Plex Mono), Editorial (Bebas Neue / Outfit), Modern (Space Grotesk / Inter), Poster shout (Anton / Barlow) and Swiss brut (Inter Tight / Inter). The same six exist on the web (D-022).
+
+**A mono per pair.** `FontPair` gains `mono` and `monoName`: durations, counts and the `labelMedium`/`labelSmall` styles use the pair's own mono. The older pairs keep JetBrains Mono; Technical uses IBM Plex Mono for numbers (its body is IBM Plex Sans, changed 2026-11-02 after the design review so text and names stay readable), Editorial DM Mono, Poster shout Space Mono, Swiss brut Roboto Mono. The Font picker says which ("Numbers use …").
+
+**Title scale.** `FontPair.titleScale` keeps a page title in its place: Technical 0.8 (Rubik Mono One is very wide), Editorial 1.25 (Bebas Neue is narrow), Poster shout 1.1.
+
+**Capitals.** On the web, Technical, Editorial and Poster shout set titles in capitals (CSS `text-transform`). Compose has no such switch and titles are plain strings, so on Android only Bebas Neue is capitals (it has no lowercase); Anton and Rubik Mono One show mixed case.
+
+**Files.** Static Latin-Extended `.ttf` instances cut from the Google Fonts sources into `res/font` (about 540 KB; Outfit, Inter and Barlow are the existing files). Licences (all SIL OFL 1.1) are in `android/licenses`.
+
+**Wordmark.** `ui/common/Wordmark.kt` draws the traced wordmark in two layers (`ic_wordmark_letters`, `ic_wordmark_dots`): the letters in the theme's text colour and the i-dots in its accent, so every theme has a readable header and its own dot colour. It replaces `ic_wordmark` and `ic_wordmark_light`. Sand's dots were golden before and are now its rust accent.
+
+**Not checked:** the six pairs and the new wordmark on a phone (build, lint and the font and theme unit tests ran), titles at 200% font scale with Technical and Editorial, TalkBack on the Font picker.
+
+## Neobrut components (2026-11-03, `neobrut.md`)
+
+Neobrut themes restyle their components after neobrutalism.com: a thick outline, a small radius, a hard shadow, and a press that drops the control into its shadow. `ui/common/BrutalComponents.kt` provides composables with the names and parameters of Material's: `Button` (accent fill), `OutlinedButton` (surface), `FilledTonalButton` (`accent2`), `FilledIconButton`, `OutlinedIconButton`, `OutlinedTextField` (outlined box with a shadow-sm, the outline thickens on focus, red when in error), `DropdownMenu` (outlined panel with its shadow drawn inside the popup), `AlertDialog` (outlined card, bold title, a footer band with the actions), `Slider` (square outlined thumb, outlined track with a solid fill), `LinearProgressIndicator`, `SnackbarHost` (outlined card with a pressable action), `ModalBottomSheet` (outlined edge) and `FilterChip` (a badge: outlined, bold, the chosen one filled). On a Classic theme each passes straight through to Material, so Classic themes are unchanged. **Call sites import these from `app.discair.ui.common`, not from Material; new code must do the same.** Also restyled: the Home tag chip and the album quality tag (`BrutalTag`), the library badge, the navigation island (the chosen theme's outline and shadow, even over artwork) and the equalizer sliders. Already Neobrut: cards, panels, button groups, the segmented tabs and the switch.
+
+**Not applicable:** skeleton (the app has none), pagination, radio group and checkbox (none), carousel arrows (it swipes). **Not done:** a dropdown's or dialog's shadow is drawn inside its popup window, so it is clipped to that window; the mini-player's 2dp progress line stays Material (decorative). **Not checked:** any of this on a phone (build, lint and the theme unit tests ran; the components are composables, so there is no unit test for their look), every screen on every Neobrut theme, 200% font scale, TalkBack on the new dialog.
+
+## Neobrut player, Home and notification (2026-11-03, owner review)
+
+- **Fixes:** the text-field label now sits above the box instead of floating onto the thick outline (it showed as a black bar); a bottom sheet has a rule across its top and no side outlines (they stopped part-way down); the slider thumb and track have a near-square corner (at most 2dp and 3dp) on every theme.
+- **Player sheet:** a Brutal theme's sheet stays in the chosen theme instead of the dark artwork palette (`OnArtwork(keepBrutal = true)`), so the outline and hard shadow show on a light ground; the artwork's colour wash is skipped. Close, Queue, Player and Lyrics are square icon buttons (`BrutalIconButton`), the open view filled with the accent; Shuffle, Previous, Next, Repeat, Equalizer and Crossfade are square icon buttons too (on states filled); Play is the large accent square. The seek bar is an outlined track with an accent fill and a square outlined thumb with a hard shadow (`SeekBar.kt`). The cover is framed with an outline and a hard shadow. This follows the owner's `neobrut player.png`; the app has no volume slider, so that part of the reference is not drawn.
+- **Home:** the Discover / Library / Settings group is one outlined frame with a hard shadow and thick seams; the genre tiles are filled with the genre's own hue, outlined, shadowed, with black text (the same hue the web uses).
+- **Top bar:** the Downloads button is a square outlined icon button with a hard shadow; the active count is a badge on it.
+- **Notification:** the media notification is drawn by the system, so the theme reaches it only as its colour: `ThemedNotificationProvider` wraps Media3's stock provider and sets the notification colour to the accent of the Neobrut theme in use (the day or the night one, as the phone is set). A Classic theme is left as it was. The system may ignore the colour on some Android versions and the notification shade's media card.
+- **Not changed:** the lyrics and queue faces inside the player and the mini-player keep their current look. **Not checked on a phone:** all of the above.
+
