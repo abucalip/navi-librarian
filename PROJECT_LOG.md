@@ -1,3 +1,10 @@
+## 2026-11-03 — Round 2 Neobrut layouts planned (documentation only)
+
+- **Done:** `docs/BRUT_LAYOUTS_PLAN.md`, decision D-023, an `ACTIVE_WORK.md` section and a `PROJECT_STATUS.md` line, plus the two reference mockups in `docs/design/brut-layouts/`. Documentation only, committed directly to `main`.
+- **Scope approved by the owner:** web Tape Deck (Lime, Cobalt Reel, Tangerine Reel), Ledger Room (Ink Slate, Plum Archive, Paper Mono), Crate Wall (Kraft, Mint Sleeve, Night Press); Android Cassette Deck (Lime, Cobalt Reel, Tangerine Reel), Sheet Stack (Violet-orange, Acid Night, Daylight Sheet), Sticker Wall (Peach-teal).
+- **Not done / not claimed:** no code; palette contrast not yet checked; the stream/ui colour tokens were approximated, not read from source.
+- **Next action:** P1, the web infrastructure and the Tape Deck layout, in a PR.
+
 ## 2026-11-03 — Web themes, Brut font pairs, Neobrut components and the Android Neobrut player merged (PR #700) and v0.3.9 published
 
 - **Merged (owner request):** PR [#700](https://github.com/abucalip/navi-librarian/pull/700), squash `ac230b96546414ab7f5fc128a10267ba4eafd0fa`, from head `f3ea7acfaac979aa6ca5693e27904330729e8e1c`; compile, container-smoke, test-and-build, validate-container and validate-release-workflow passed on that head (`publish-release` is skipped on a PR). No workflow builds the Android app, so those checks did not exercise the Android part.

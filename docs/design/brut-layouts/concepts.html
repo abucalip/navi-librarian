@@ -1,0 +1,381 @@
+<title>Brut Layout Concepts</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@400;600;800&family=Bangers&family=Bowlby+One&family=Comic+Neue:wght@400;700&family=JetBrains+Mono:wght@400;700&family=Outfit:wght@400;600;800&family=Public+Sans:wght@400;600;800&family=Space+Grotesk:wght@400;700&family=Space+Mono:wght@400;700&display=swap">
+<style>
+/* Layout: gallery shell with 4 desktop mockups then 4 phone mockup pairs; each concept scopes its own tokens. */
+:root{--bg:#f2f1ee;--fg:#16151a;--mute:#5d5b66;--line:#16151a;--pick:#16151a;--pickfg:#fff}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#17161b;--fg:#f1f0f5;--mute:#a09eab;--line:#f1f0f5;--pick:#f1f0f5;--pickfg:#17161b;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#17161b;--fg:#f1f0f5;--mute:#a09eab;--line:#f1f0f5;--pick:#f1f0f5;--pickfg:#17161b;color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:15px/1.5 "Space Grotesk",system-ui,sans-serif;padding-inline:max(16px,env(safe-area-inset-left,0px)) max(16px,env(safe-area-inset-right,0px));padding-block:32px 110px}
+.wrap{max-width:1180px;margin:auto}
+h1{font:700 clamp(28px,5vw,42px)/1.05 "Space Grotesk",sans-serif;margin:0 0 8px;text-wrap:balance}
+.lede{color:var(--mute);max-width:66ch;margin:0 0 20px}
+.access{border:2px solid var(--line);padding:14px 16px;margin:0 0 8px;font-size:14px;max-width:80ch}
+.access b{font-family:"Space Mono",monospace;font-size:12px;letter-spacing:.06em;text-transform:uppercase}
+.access ul{margin:6px 0 0;padding-left:18px}
+.group-title{font:700 12px "Space Mono",monospace;letter-spacing:.14em;text-transform:uppercase;color:var(--mute);margin:44px 0 6px}
+.entry{margin:22px 0 40px;min-width:0}
+.entry h2{font:700 22px "Space Grotesk",sans-serif;margin:0}
+.entry .src{font:12px "Space Mono",monospace;color:var(--mute);margin:2px 0 6px}
+.entry p.d{margin:0 0 12px;max-width:80ch;font-size:14px}
+.pickbtn{margin-top:12px;font:700 13px "Space Grotesk",sans-serif;padding:7px 14px;border:2px solid var(--line);background:transparent;color:var(--fg);cursor:pointer;border-radius:6px}
+.pickbtn[aria-pressed="true"]{background:var(--pick);color:var(--pickfg)}
+.pickbtn:focus-visible{outline:3px solid #2a5bff;outline-offset:2px}
+.bar{position:fixed;left:0;right:0;bottom:0;background:var(--pick);color:var(--pickfg);padding:12px max(16px,env(safe-area-inset-right,0px)) calc(12px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));z-index:50;font-size:14px}
+.bar b{font-family:"Space Mono",monospace}
+.scroll{overflow-x:auto;padding:4px 10px 14px 4px}
+.mock{width:900px;position:relative;overflow:hidden;font-size:13px;line-height:1.35}
+.phones{display:flex;gap:22px;flex-wrap:wrap}
+.phone{width:262px;height:520px;border:3px solid var(--line);border-radius:30px;overflow:hidden;position:relative;font-size:12px;line-height:1.3;display:flex;flex-direction:column;flex:none}
+.phone .lbl{position:absolute;top:-1px;left:50%;transform:translateX(-50%);width:70px;height:8px;background:var(--line);border-radius:0 0 8px 8px;z-index:9}
+.cap{font:11px "Space Mono",monospace;color:var(--mute);margin:6px 0 0;text-align:center;width:262px}
+.mock *,.phone *{box-sizing:border-box}
+.mock button,.phone button{font:inherit;color:inherit;cursor:default}
+.mock h3,.phone h3{margin:0}
+/* shared bits */
+.art{aspect-ratio:1;flex:none;position:relative;background:var(--t1)}
+.art.a0{background:conic-gradient(from 200deg at 35% 65%,var(--t1),var(--t2),var(--t3),var(--t1))}
+.art.a1{background:linear-gradient(135deg,var(--t2) 0 50%,var(--t3) 50%)}
+.art.a2{background:radial-gradient(circle at 70% 30%,var(--t4) 0 22%,var(--t1) 23%)}
+.art.a3{background:repeating-linear-gradient(45deg,var(--t3) 0 8px,var(--t1) 8px 16px)}
+.art.a4{background:linear-gradient(0deg,var(--t4) 0 35%,var(--t2) 35%)}
+.art.a5{background:radial-gradient(circle,var(--t3) 0 30%,var(--t2) 31% 60%,var(--t1) 61%)}
+.eq{display:inline-flex;align-items:flex-end;gap:2px;height:14px}
+.eq i{display:block;width:4px;background:var(--ink);height:40%;animation:bounce .9s ease-in-out infinite alternate}
+.eq i:nth-child(2){animation-duration:.6s}.eq i:nth-child(3){animation-duration:1.1s}.eq i:nth-child(4){animation-duration:.75s}.eq i:nth-child(5){animation-duration:.95s}.eq i:nth-child(6){animation-duration:.7s}
+@keyframes bounce{from{height:20%}to{height:100%}}
+@media (prefers-reduced-motion:reduce){.eq i,.notes span{animation:none}.eq i{height:70%}}
+.mono{font-family:var(--mono)}
+.trk{display:flex;align-items:center;gap:10px}
+.trk b{display:block}
+.trk small{color:var(--mu);display:block}
+/* ============ WEB 1 TAPE DECK ============ */
+.w1{--bg:#f1eee3;--sf:#fffdf6;--ink:#111;--mu:#5b594f;--ac:#c6f432;--soft:#e9f8b4;--pink:#ff5d8f;--blue:#3d7bff;--mono:"JetBrains Mono",monospace;--t1:#3d7bff;--t2:#ff5d8f;--t3:#c6f432;--t4:#ffc93c;background:var(--bg);color:var(--ink);font-family:Archivo,sans-serif;border:2px solid var(--ink);box-shadow:6px 6px 0 var(--ink)}
+.w1 .top{display:flex;align-items:stretch;border-bottom:2px solid var(--ink);background:var(--sf)}
+.w1 .brand{font:800 18px Archivo;padding:10px 16px;border-right:2px solid var(--ink);display:flex;align-items:center;gap:8px}
+.w1 .brand i{width:12px;height:12px;background:var(--ac);border:2px solid var(--ink);border-radius:50%}
+.w1 .tabs{display:flex;flex:1}
+.w1 .tabs span{padding:12px 16px;font-weight:600;border-right:2px solid var(--ink)}
+.w1 .tabs span.on{background:var(--ac)}
+.w1 .srch{display:flex;align-items:center;gap:8px;padding:0 14px;font-family:var(--mono);font-size:12px;color:var(--mu)}
+.w1 .srch kbd{border:2px solid var(--ink);padding:0 5px;font:700 11px var(--mono);color:var(--ink)}
+.w1 .body{display:grid;grid-template-columns:1.5fr 1fr}
+.w1 .list{border-right:2px solid var(--ink)}
+.w1 h3{font:800 12px var(--mono);letter-spacing:.1em;text-transform:uppercase;padding:10px 16px;border-bottom:2px solid var(--ink);background:var(--sf)}
+.w1 ol{list-style:none;margin:0;padding:0;background:var(--sf)}
+.w1 li{display:flex;align-items:center;gap:12px;padding:9px 16px;border-bottom:2px solid var(--ink)}
+.w1 li:last-child{border-bottom:0}
+.w1 li.hot{background:var(--soft)}
+.w1 .n{width:20px;text-align:center;font:12px var(--mono);color:var(--mu)}
+.w1 li .art{width:38px;border:2px solid var(--ink)}
+.w1 li .trk{flex:1}.w1 li .q{font:12px var(--mono);color:var(--mu)}
+.w1 .btn{font:700 12px Archivo;border:2px solid var(--ink);background:var(--ac);padding:5px 12px;box-shadow:3px 3px 0 var(--ink)}
+.w1 .btn.sec{background:var(--sf)}
+.w1 aside{display:flex;flex-direction:column}
+.w1 .deck{background:var(--sf);border-bottom:2px solid var(--ink);padding:14px 16px;display:flex;flex-direction:column;gap:10px}
+.w1 .deck .head{display:flex;gap:12px;align-items:center}
+.w1 .deck .art{width:72px;border:2px solid var(--ink);box-shadow:3px 3px 0 var(--ink)}
+.w1 .deck .ct{font:11px var(--mono);color:var(--mu);text-transform:uppercase}
+.w1 .deck .eq{height:22px;margin-top:4px}.w1 .deck .eq i{background:var(--ink)}
+.w1 .seek{height:18px;border:2px solid var(--ink);background:var(--bg);position:relative}
+.w1 .seek i{position:absolute;inset:0 38% 0 0;background:var(--ac);border-right:2px solid var(--ink)}
+.w1 .row{display:flex;justify-content:space-between;font:11px var(--mono);color:var(--mu)}
+.w1 .ctl{display:flex;gap:8px}
+.w1 .stats{display:grid;grid-template-columns:repeat(3,1fr);background:var(--sf)}
+.w1 .stats div{padding:12px 14px;border-right:2px solid var(--ink)}.w1 .stats div:last-child{border-right:0}
+.w1 .stats small{font:700 10px var(--mono);text-transform:uppercase;color:var(--mu);display:block}
+.w1 .stats b{font:800 26px Archivo}
+/* ============ WEB 2 COMIC ISSUE ============ */
+.w2{--bg:#fffaf0;--ink:#161616;--mu:#4a4a4a;--yel:#ffd400;--cy:#29c5f6;--mg:#ff3d8b;--t1:#29c5f6;--t2:#ff3d8b;--t3:#ffd400;--t4:#fffaf0;--mono:"Space Mono",monospace;background:var(--bg) radial-gradient(circle,rgba(41,197,246,.35) 1.2px,transparent 1.6px) 0 0/10px 10px;color:var(--ink);font-family:"Comic Neue",sans-serif;font-weight:700;border:3px solid var(--ink);padding:16px}
+.w2 .mast{display:flex;align-items:center;gap:14px;margin-bottom:14px}
+.w2 .mast h1{font:400 40px/1 Bangers;letter-spacing:.04em;background:var(--yel);border:3px solid var(--ink);padding:2px 14px;transform:rotate(-1.5deg);box-shadow:5px 5px 0 var(--ink);margin:0}
+.w2 .mast span{font:700 12px var(--mono);border:3px solid var(--ink);background:#fff;padding:2px 8px;transform:rotate(1.5deg)}
+.w2 .mast nav{margin-left:auto;display:flex;gap:8px}
+.w2 .mast nav span{background:#fff;transform:none;font-family:"Comic Neue";font-weight:700;font-size:13px}
+.w2 .mast nav span.on{background:var(--mg);color:#fff;transform:rotate(-2deg)}
+.w2 .pg{display:grid;grid-template-columns:1.4fr 1fr 1fr;grid-template-rows:170px 150px;gap:14px}
+.w2 .panel{background:#fff;border:3px solid var(--ink);box-shadow:6px 6px 0 var(--ink);transform:skewX(-3deg);position:relative;overflow:hidden}
+.w2 .panel>.in{transform:skewX(3deg);height:100%;padding:12px 14px;display:flex;flex-direction:column;gap:6px;position:relative}
+.w2 .p1{grid-row:span 2;background:var(--yel)}
+.w2 .cap{position:absolute;top:0;left:0;background:#fff;border:3px solid var(--ink);border-width:0 3px 3px 0;padding:2px 8px;font:700 11px var(--mono);text-transform:uppercase;z-index:2;width:auto;margin:0;text-align:left;color:var(--ink)}
+.w2 .p1 .art{width:150px;border:3px solid var(--ink);box-shadow:5px 5px 0 var(--ink);transform:rotate(-3deg);margin-top:22px}
+.w2 .p1 h3{font:400 30px/1 Bangers;letter-spacing:.03em}
+.w2 .burst{position:absolute;right:12px;bottom:12px;width:96px;height:96px;display:grid;place-content:center;text-align:center;font:400 20px/1 Bangers;color:#fff;transform:rotate(8deg);filter:drop-shadow(3px 3px 0 var(--ink))}
+.w2 .burst::before{content:"";position:absolute;inset:-4px;background:var(--ink);clip-path:var(--star)}
+.w2 .burst::after{content:"";position:absolute;inset:0;background:var(--mg);clip-path:var(--star)}
+.w2 .burst span{position:relative;z-index:1}
+.w2 .sticker{position:absolute;top:8px;right:8px;background:var(--yel);border:3px solid var(--ink);font:400 16px Bangers;padding:0 6px;transform:rotate(8deg);z-index:2}
+.w2 .p2 .art,.w2 .p3 .art{width:64px;border:3px solid var(--ink)}
+.w2 .p2 h4,.w2 .p3 h4{margin:0;font:400 18px/1.05 Bangers;letter-spacing:.03em}
+.w2 .p2 small,.w2 .p3 small{color:var(--mu)}
+.w2 .p2 .in,.w2 .p3 .in{flex-direction:row;align-items:center;gap:10px;padding-top:24px}
+.w2 .p4{grid-column:span 2;background:var(--cy)}
+.w2 .p4 .in{padding-top:26px}
+.w2 .ceq{display:flex;align-items:flex-end;gap:5px;height:56px}
+.w2 .ceq i{width:16px;border:3px solid var(--ink);animation:bounce .8s ease-in-out infinite alternate}
+.w2 .ceq i:nth-child(1){background:var(--mg)}.w2 .ceq i:nth-child(2){background:var(--yel);animation-duration:.55s}.w2 .ceq i:nth-child(3){background:#fff;animation-duration:1s}.w2 .ceq i:nth-child(4){background:var(--mg);animation-duration:.7s}.w2 .ceq i:nth-child(5){background:var(--yel);animation-duration:.9s}.w2 .ceq i:nth-child(6){background:#fff;animation-duration:.6s}
+.w2 .notes{position:absolute;right:20px;top:20px;font:700 22px serif}
+.w2 .notes span{display:inline-block;animation:float 2.2s ease-in infinite}.w2 .notes span+span{animation-delay:.8s}
+@keyframes float{from{transform:translateY(24px);opacity:1}to{transform:translateY(-16px);opacity:0}}
+.w2 .prog{height:20px;border:3px solid var(--ink);background:#fff;overflow:hidden}.w2 .prog i{display:block;width:62%;height:100%;background:repeating-linear-gradient(-45deg,var(--mg) 0 8px,#ff7bb0 8px 16px)}
+/* ============ WEB 3 LEDGER ROOM ============ */
+.w3{--bg:#e3efdc;--sf:#fbfff8;--ink:#0f2a1d;--mu:#46604f;--ac:#ff7a45;--ok:#8fd694;--wait:#ffd54a;--miss:#ff9b8a;--mono:"JetBrains Mono",monospace;--t1:#0f2a1d;--t2:#ff7a45;--t3:#8fd694;--t4:#ffd54a;display:grid;grid-template-columns:190px 1fr;background:var(--bg);color:var(--ink);font-family:"Public Sans",sans-serif;border:2px solid var(--ink)}
+.w3 .side{background:var(--ink);color:#e3efdc;padding:14px 10px;display:flex;flex-direction:column;gap:4px;border-right:2px solid var(--ink)}
+.w3 .side .brand{font:800 18px "Public Sans";padding:2px 8px 12px;color:#fff}
+.w3 .side .grp{font:700 10px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:#8fb59a;padding:10px 8px 4px}
+.w3 .side a{display:flex;justify-content:space-between;padding:7px 8px;border:2px solid transparent;font-weight:600}
+.w3 .side a.on{background:var(--ac);color:#000;border-color:#000;box-shadow:3px 3px 0 #000;margin-right:3px}
+.w3 .side a em{font:700 10px var(--mono);font-style:normal;border:2px solid currentColor;padding:0 4px}
+.w3 .main{padding:14px 16px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.w3 .bc{display:flex;align-items:center;gap:8px;font:12px var(--mono)}
+.w3 .bc b{background:var(--ink);color:#fff;padding:0 6px}
+.w3 .cmd{margin-left:auto;border:2px solid var(--ink);background:var(--sf);padding:4px 10px;font:12px var(--mono);color:var(--mu);box-shadow:3px 3px 0 var(--ink);display:flex;gap:10px}
+.w3 .cmd kbd{border:2px solid var(--ink);padding:0 5px;font-weight:700;color:var(--ink)}
+.w3 .stats{display:grid;grid-template-columns:repeat(4,1fr);border:2px solid var(--ink);background:var(--sf)}
+.w3 .stats div{padding:10px 12px;border-right:2px solid var(--ink)}.w3 .stats div:last-child{border-right:0}
+.w3 .stats small{font:700 10px var(--mono);text-transform:uppercase;color:var(--mu);display:block}
+.w3 .stats b{font:800 24px "Public Sans"}
+.w3 .tools{display:flex;gap:10px;align-items:center}
+.w3 .tg{display:flex;border:2px solid var(--ink);background:var(--sf)}
+.w3 .tg span{padding:4px 12px;font-weight:600;border-right:2px solid var(--ink)}.w3 .tg span:last-child{border-right:0}.w3 .tg span.on{background:var(--ink);color:#fff}
+.w3 table{width:100%;border-collapse:collapse;background:var(--sf);border:2px solid var(--ink)}
+.w3 th{font:700 10px var(--mono);text-transform:uppercase;letter-spacing:.08em;text-align:left;padding:7px 10px;background:var(--ink);color:#e3efdc}
+.w3 td{padding:6px 10px;border-top:2px solid var(--ink);vertical-align:middle}
+.w3 tr:hover td{background:#eef9e8}
+.w3 td .trk .art{width:30px;border:2px solid var(--ink)}
+.w3 .bdg{font:700 10px var(--mono);text-transform:uppercase;border:2px solid var(--ink);padding:1px 6px;display:inline-block;box-shadow:2px 2px 0 var(--ink)}
+.w3 .bdg.ok{background:var(--ok)}.w3 .bdg.wait{background:var(--wait)}.w3 .bdg.miss{background:var(--miss)}
+.w3 .get{font:700 11px "Public Sans";border:2px solid var(--ink);background:var(--ac);padding:2px 10px;box-shadow:2px 2px 0 var(--ink)}
+.w3 .foot{display:flex;justify-content:space-between;align-items:center;font:12px var(--mono)}
+.w3 .pg{display:flex;gap:4px}.w3 .pg span{border:2px solid var(--ink);padding:0 8px;background:var(--sf)}.w3 .pg span.on{background:var(--ink);color:#fff}
+.w3 .acc{border:2px solid var(--ink);background:var(--sf)}
+.w3 .acc div{display:flex;justify-content:space-between;padding:7px 12px;font-weight:600;border-top:2px solid var(--ink)}.w3 .acc div:first-child{border-top:0}
+.w3 .acc div span{font:12px var(--mono);color:var(--mu)}
+/* ============ WEB 4 CRATE WALL ============ */
+.w4{--bg:#d9b98a;--sf:#fff6e2;--ink:#17110a;--mu:#5c4630;--red:#d7263d;--mono:"Space Mono",monospace;--t1:#d7263d;--t2:#17110a;--t3:#f2c14e;--t4:#3b8ea5;background:var(--bg);color:var(--ink);font-family:"Space Mono",monospace;border:3px solid var(--ink);position:relative;min-height:600px}
+.w4 .hd{display:flex;align-items:center;gap:14px;padding:12px 16px;border-bottom:3px solid var(--ink);background:var(--sf)}
+.w4 .hd h1{font:400 26px "Bowlby One";margin:0;letter-spacing:.01em}
+.w4 .hd h1 i{color:var(--red);font-style:normal}
+.w4 .hd nav{display:flex;gap:6px;margin-left:auto}
+.w4 .hd nav span{font:700 11px var(--mono);text-transform:uppercase;padding:4px 10px;border:3px solid transparent}
+.w4 .hd nav span.on{border-color:var(--ink);background:var(--red);color:#fff;transform:rotate(-2deg)}
+.w4 .strip{display:flex;align-items:center;gap:12px;padding:12px 16px}
+.w4 .strip h3{font:400 15px "Bowlby One";white-space:nowrap}
+.w4 .cr{display:flex;gap:12px;flex:1;overflow:hidden}
+.w4 .cr .ci{width:96px;flex:none}
+.w4 .cr .ci .art{border:3px solid var(--ink);box-shadow:4px 4px 0 var(--ink)}
+.w4 .cr .ci small{display:block;font-size:10px;margin-top:4px;font-weight:700}
+.w4 .arr{width:34px;height:34px;border:3px solid var(--ink);background:var(--sf);display:grid;place-content:center;font-weight:700;box-shadow:3px 3px 0 var(--ink)}
+.w4 .wall{display:grid;grid-template-columns:repeat(5,1fr);grid-auto-rows:118px;gap:12px;padding:6px 16px 20px;width:640px}
+.w4 .tile{border:3px solid var(--ink);box-shadow:5px 5px 0 var(--ink);position:relative;overflow:hidden}
+.w4 .tile.big{grid-column:span 2;grid-row:span 2}
+.w4 .tile .art{position:absolute;inset:0;width:100%;height:100%;aspect-ratio:auto}
+.w4 .stamp{position:absolute;top:8px;left:-6px;font:700 10px var(--mono);text-transform:uppercase;letter-spacing:.08em;padding:2px 8px;border:3px solid var(--ink);background:var(--sf);transform:rotate(-8deg);z-index:2}
+.w4 .stamp.red{background:var(--red);color:#fff}.w4 .stamp.gold{background:#f2c14e}
+.w4 .tile .nm{position:absolute;left:0;right:0;bottom:0;background:var(--sf);border-top:3px solid var(--ink);padding:3px 8px;font-size:11px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.w4 .hov{position:absolute;left:150px;top:300px;width:190px;background:var(--sf);border:3px solid var(--ink);box-shadow:5px 5px 0 var(--ink);padding:10px;font-size:11px;z-index:3}
+.w4 .hov b{font:400 14px "Bowlby One";display:block}
+.w4 .drawer{position:absolute;right:0;top:0;bottom:0;width:240px;background:var(--sf);border-left:3px solid var(--ink);box-shadow:-6px 0 0 var(--ink);display:flex;flex-direction:column;z-index:4}
+.w4 .drawer .dh{padding:12px;border-bottom:3px solid var(--ink);display:flex;gap:10px;align-items:center;background:var(--t3)}
+.w4 .drawer .dh .art{width:60px;border:3px solid var(--ink)}
+.w4 .drawer .dh b{font:400 14px/1.1 "Bowlby One";display:block}
+.w4 .drawer ol{list-style:none;margin:0;padding:0;flex:1}
+.w4 .drawer li{display:flex;gap:8px;padding:6px 12px;border-bottom:2px dashed var(--ink);font-size:11px}
+.w4 .drawer li span:first-child{color:var(--mu);width:16px}.w4 .drawer li em{margin-left:auto;font-style:normal;color:var(--mu)}
+.w4 .drawer .df{padding:12px;display:flex;gap:8px;border-top:3px solid var(--ink)}
+.w4 .gb{font:700 12px var(--mono);border:3px solid var(--ink);background:var(--red);color:#fff;padding:6px 12px;box-shadow:3px 3px 0 var(--ink);flex:1;text-align:center}
+.w4 .gb.sec{background:var(--sf);color:var(--ink);flex:none}
+/* ============ APP 1 TAPE DECK ============ */
+.a1{--bg:#f1eee3;--sf:#fffdf6;--ink:#111;--mu:#5b594f;--ac:#c6f432;--soft:#e9f8b4;--mono:"JetBrains Mono",monospace;--t1:#3d7bff;--t2:#ff5d8f;--t3:#c6f432;--t4:#ffc93c;background:var(--bg);color:var(--ink);font-family:Archivo,sans-serif}
+.a1 .tb{display:flex;justify-content:space-between;align-items:center;padding:22px 14px 8px;font:800 16px Archivo}
+.a1 h3{font:800 11px var(--mono);letter-spacing:.1em;text-transform:uppercase;padding:6px 14px;border-block:2px solid var(--ink);background:var(--sf)}
+.a1 ol{list-style:none;margin:0;padding:0;background:var(--sf);flex:1;overflow:hidden}
+.a1 li{display:flex;align-items:center;gap:10px;padding:8px 14px;border-bottom:2px solid var(--ink)}
+.a1 li.hot{background:var(--soft)}
+.a1 .n{width:16px;text-align:center;font:11px var(--mono);color:var(--mu)}
+.a1 li .trk{flex:1;min-width:0}.a1 li .d{font:11px var(--mono);color:var(--mu)}
+.a1 .mini{border-top:2px solid var(--ink);background:var(--sf);box-shadow:0 -4px 0 var(--ink)}
+.a1 .mini .r{display:flex;align-items:center;gap:10px;padding:8px 12px}
+.a1 .mini .art{width:40px;border:2px solid var(--ink)}
+.a1 .sq{width:34px;height:34px;border:2px solid var(--ink);background:var(--ac);display:grid;place-content:center;font-weight:800;box-shadow:2px 2px 0 var(--ink)}
+.a1 .sq.sec{background:var(--sf)}
+.a1 .sk{height:22px;border-top:2px solid var(--ink);position:relative;background:var(--bg)}.a1 .sk i{position:absolute;inset:0 55% 0 0;background:var(--ac);border-right:2px solid var(--ink)}
+.a1 .nv{display:flex;border-top:2px solid var(--ink);background:var(--sf)}.a1 .nv span{flex:1;text-align:center;padding:10px 0;font:700 11px var(--mono);border-right:2px solid var(--ink)}.a1 .nv span:last-child{border:0}.a1 .nv span.on{background:var(--ac)}
+.a1 .pl{margin:30px 14px 0;border:2px solid var(--ink);box-shadow:5px 5px 0 var(--ink);background:var(--sf)}
+.a1 .pl .hd{display:flex;gap:10px;align-items:center;padding:10px;border-bottom:2px solid var(--ink)}
+.a1 .pl .hd .art{width:68px;border:2px solid var(--ink);box-shadow:3px 3px 0 var(--ink)}
+.a1 .pl .ct{font:10px var(--mono);color:var(--mu);text-transform:uppercase}
+.a1 .pl .hd b{font:800 15px/1.1 Archivo;display:block}
+.a1 .pl .eq{height:18px;margin-top:4px}
+.a1 .pl .ctl{padding:10px;display:flex;flex-direction:column;gap:8px}
+.a1 .pl .sl{height:16px;border:2px solid var(--ink);background:var(--bg);position:relative}.a1 .pl .sl i{position:absolute;inset:0 40% 0 0;background:var(--ac);border-right:2px solid var(--ink)}
+.a1 .pl .tm{display:flex;justify-content:space-between;font:10px var(--mono);color:var(--mu)}
+.a1 .pl .tr{display:flex;justify-content:space-between;align-items:center}
+.a1 .pl .tr div{display:flex;gap:6px}
+.a1 .pl .sq.big{width:44px;height:44px}
+.a1 .qh{margin:14px 14px 0;border:2px solid var(--ink);border-bottom:0;font:800 11px var(--mono);letter-spacing:.1em;text-transform:uppercase;padding:5px 10px;background:var(--sf)}
+.a1 .ql{margin:0 14px;border:2px solid var(--ink);background:var(--sf);list-style:none;padding:0}
+.a1 .ql li{padding:6px 10px;font-size:11px}
+/* ============ APP 2 COMIC BURST ============ */
+.a2{--bg:#fffaf0;--ink:#161616;--mu:#4a4a4a;--yel:#ffd400;--cy:#29c5f6;--mg:#ff3d8b;--mono:"Space Mono",monospace;--t1:#29c5f6;--t2:#ff3d8b;--t3:#ffd400;--t4:#fffaf0;background:var(--bg) radial-gradient(circle,rgba(41,197,246,.35) 1.2px,transparent 1.6px) 0 0/9px 9px;color:var(--ink);font-family:"Comic Neue",sans-serif;font-weight:700}
+.a2 .tb{padding:22px 12px 6px;display:flex;align-items:center;gap:8px}
+.a2 .tb h1{font:400 26px Bangers;letter-spacing:.04em;background:var(--yel);border:3px solid var(--ink);padding:0 10px;transform:rotate(-2deg);box-shadow:4px 4px 0 var(--ink);margin:0}
+.a2 .pn{background:#fff;border:3px solid var(--ink);box-shadow:5px 5px 0 var(--ink);transform:skewX(-3deg);position:relative;margin:10px 12px 4px;overflow:hidden}
+.a2 .pn>.in{transform:skewX(3deg);padding:10px 12px}
+.a2 .cp{display:inline-block;background:var(--yel);border:3px solid var(--ink);font:700 10px var(--mono);text-transform:uppercase;padding:1px 6px;margin-bottom:6px}
+.a2 .pn.big .in{display:flex;gap:10px;align-items:center}
+.a2 .pn .art{width:78px;border:3px solid var(--ink);transform:rotate(-3deg);box-shadow:3px 3px 0 var(--ink)}
+.a2 .pn h4{margin:0;font:400 20px/1 Bangers;letter-spacing:.03em}
+.a2 .two{display:grid;grid-template-columns:1fr 1fr;gap:0 4px;margin:0 12px;padding-inline:0}
+.a2 .two .pn{margin:10px 6px 4px}.a2 .two .pn .art{width:100%;transform:none}
+.a2 .sticker{position:absolute;top:4px;right:6px;background:var(--yel);border:3px solid var(--ink);font:400 13px Bangers;padding:0 5px;transform:rotate(8deg) skewX(3deg);z-index:2}
+.a2 .burst{position:relative;width:64px;height:64px;display:grid;place-content:center;font:400 15px/1 Bangers;color:#fff;transform:rotate(8deg);filter:drop-shadow(2px 2px 0 var(--ink));flex:none}
+.a2 .burst::before{content:"";position:absolute;inset:-3px;background:var(--ink);clip-path:var(--star)}
+.a2 .burst::after{content:"";position:absolute;inset:0;background:var(--mg);clip-path:var(--star)}
+.a2 .burst span{position:relative;z-index:1}
+.a2 .nvb{margin-top:auto;display:flex;justify-content:space-around;padding:10px 8px 14px}
+.a2 .blob{width:46px;height:46px;border:3px solid var(--ink);border-radius:48% 52% 50% 50%/55% 45% 55% 45%;background:#fff;display:grid;place-content:center;font:400 16px Bangers;box-shadow:3px 3px 0 var(--ink)}
+.a2 .blob.on{background:var(--mg);color:#fff;transform:rotate(-6deg)}
+.a2 .pc{margin:24px 12px 0;border:3px solid var(--ink);background:#fff;box-shadow:6px 6px 0 var(--ink);position:relative}
+.a2 .pc .hd{padding:12px;border-bottom:3px solid var(--ink);background:var(--yel) radial-gradient(circle,rgba(0,0,0,.25) 1px,transparent 1.5px) 0 0/7px 7px;display:flex;flex-direction:column;align-items:center;gap:8px}
+.a2 .pc .cov{width:120px;transform:rotate(-3deg);border:3px solid var(--ink);box-shadow:4px 4px 0 var(--ink)}
+.a2 .pc .tag{background:var(--cy);border:3px solid var(--ink);font:700 10px var(--mono);text-transform:uppercase;padding:0 6px;transform:rotate(-2deg)}
+.a2 .pc h4{margin:0;font:400 22px/1 Bangers;text-transform:uppercase;letter-spacing:.03em;text-align:center}
+.a2 .ceq{display:flex;align-items:flex-end;gap:4px;height:34px;justify-content:center}
+.a2 .ceq i{width:12px;border:3px solid var(--ink);animation:bounce .8s ease-in-out infinite alternate}
+.a2 .ceq i:nth-child(1){background:var(--mg)}.a2 .ceq i:nth-child(2){background:var(--yel);animation-duration:.55s}.a2 .ceq i:nth-child(3){background:#fff;animation-duration:1s}.a2 .ceq i:nth-child(4){background:var(--mg);animation-duration:.7s}.a2 .ceq i:nth-child(5){background:var(--yel);animation-duration:.9s}.a2 .ceq i:nth-child(6){background:#fff;animation-duration:.6s}
+.a2 .notes{position:absolute;right:10px;top:70px;font:700 18px serif}.a2 .notes span{display:inline-block;animation:float 2.2s ease-in infinite}.a2 .notes span+span{animation-delay:.8s}
+.a2 .ctl{padding:12px;display:flex;flex-direction:column;gap:8px;align-items:center}
+.a2 .sl{height:18px;width:100%;border:3px solid var(--ink);background:#fff}.a2 .sl i{display:block;width:45%;height:100%;background:repeating-linear-gradient(-45deg,var(--mg) 0 7px,#ff7bb0 7px 14px)}
+.a2 .tm{display:flex;justify-content:space-between;font:700 10px var(--mono);width:100%}
+.a2 .tr{display:flex;align-items:center;gap:14px}
+.a2 .tr .burst{width:76px;height:76px;font-size:17px}
+/* ============ APP 3 SHEET STACK ============ */
+.a3{--bg:#15131f;--sf:#221f31;--sf2:#2e2a43;--ink:#f4f1ff;--mu:#a8a2c4;--ac:#ff6a3d;--cy:#35e0d0;--on:#15131f;--edge:#f4f1ff;--mono:"JetBrains Mono",monospace;--t1:#ff6a3d;--t2:#35e0d0;--t3:#8a6cff;--t4:#ffd23f;background:var(--bg);color:var(--ink);font-family:Outfit,sans-serif}
+.a3 .tb{padding:22px 14px 8px;display:flex;justify-content:space-between;align-items:center}
+.a3 .tb b{font:800 20px Outfit}
+.a3 .tb span{border:2px solid var(--edge);padding:2px 8px;font:700 10px var(--mono);box-shadow:3px 3px 0 var(--cy)}
+.a3 .lbl2{font:700 10px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--mu);padding:8px 14px 6px}
+.a3 .car{display:flex;gap:10px;padding:0 14px;overflow:hidden}
+.a3 .ct{width:118px;flex:none;border:2px solid var(--edge);background:var(--sf);box-shadow:4px 4px 0 var(--ac)}
+.a3 .ct .art{border-bottom:2px solid var(--edge)}
+.a3 .ct div{padding:5px 8px;font-size:11px}.a3 .ct b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.a3 .it{display:flex;align-items:center;gap:10px;margin:0 14px 8px;border:2px solid var(--edge);background:var(--sf);padding:6px;box-shadow:3px 3px 0 var(--edge)}
+.a3 .it .art{width:38px;border:2px solid var(--edge)}.a3 .it .trk{flex:1;min-width:0}.a3 .it small{color:var(--mu)}
+.a3 .bd{font:700 9px var(--mono);text-transform:uppercase;border:2px solid var(--edge);padding:0 5px;background:var(--cy);color:var(--on)}
+.a3 .bd.w{background:var(--t4)}
+.a3 .tgn{display:flex;margin:auto 14px 14px;border:2px solid var(--edge);background:var(--sf);box-shadow:4px 4px 0 var(--edge)}
+.a3 .tgn span{flex:1;text-align:center;padding:9px 0;font:700 10px var(--mono);border-right:2px solid var(--edge)}.a3 .tgn span:last-child{border:0}.a3 .tgn span.on{background:var(--ac);color:var(--on)}
+.a3 .sheet{margin-top:34px;flex:1;border:2px solid var(--edge);border-bottom:0;border-radius:18px 18px 0 0;background:var(--sf);box-shadow:0 -5px 0 var(--ac);padding:8px 14px 14px;display:flex;flex-direction:column;gap:10px}
+.a3 .grab{width:44px;height:6px;background:var(--edge);margin:0 auto}
+.a3 .top2{display:flex;gap:12px}
+.a3 .top2 .art{width:150px;border:2px solid var(--edge);box-shadow:4px 4px 0 var(--cy)}
+.a3 .vol{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;font:700 9px var(--mono);color:var(--mu)}
+.a3 .vol .v{flex:1;width:22px;border:2px solid var(--edge);background:var(--bg);position:relative;min-height:90px}.a3 .vol .v i{position:absolute;left:0;right:0;bottom:0;height:70%;background:var(--cy);border-top:2px solid var(--edge)}
+.a3 h4{margin:0;font:800 20px/1.05 Outfit}
+.a3 .sl{height:14px;border:2px solid var(--edge);background:var(--bg);position:relative}.a3 .sl i{position:absolute;inset:0 42% 0 0;background:var(--ac);border-right:2px solid var(--edge)}
+.a3 .tm{display:flex;justify-content:space-between;font:10px var(--mono);color:var(--mu)}
+.a3 .grp{display:flex;border:2px solid var(--edge);background:var(--bg)}
+.a3 .grp span{flex:1;text-align:center;padding:9px 0;font-weight:800;border-right:2px solid var(--edge)}.a3 .grp span:last-child{border:0}.a3 .grp span.pl{background:var(--ac);color:var(--on)}
+.a3 .ly{border:2px dashed var(--mu);padding:7px 10px;font-size:11px;color:var(--mu)}.a3 .ly b{color:var(--ink)}
+/* ============ APP 4 STICKER WALL ============ */
+.a4{--bg:#ffe8d6;--sf:#fffaf5;--ink:#3b1f14;--mu:#7a4a36;--teal:#2ec4b6;--ora:#ff9f68;--pnk:#ff6b8b;--yel:#ffd23f;--t1:#2ec4b6;--t2:#ff9f68;--t3:#ff6b8b;--t4:#ffd23f;background:var(--bg);color:var(--ink);font-family:Outfit,sans-serif}
+.a4 .pill{margin:22px 12px 8px;display:flex;align-items:center;gap:4px;background:var(--sf);border:3px solid var(--ink);border-radius:999px;padding:4px;box-shadow:4px 4px 0 var(--ink)}
+.a4 .pill b{font:800 14px Outfit;padding:0 8px}
+.a4 .pill span{flex:1;text-align:center;font-weight:600;padding:5px 0;border-radius:999px;font-size:11px}
+.a4 .pill span.on{background:var(--teal);border:2px solid var(--ink)}
+.a4 .wl{display:grid;grid-template-columns:1fr 1fr;gap:14px 12px;padding:8px 14px}
+.a4 .tl{border:3px solid var(--ink);background:var(--sf);box-shadow:4px 4px 0 var(--ink);border-radius:14px;position:relative;transform:rotate(-1.5deg)}
+.a4 .tl:nth-child(even){transform:rotate(1.2deg);margin-top:16px}
+.a4 .tl .art{border-radius:11px 11px 0 0;border-bottom:3px solid var(--ink)}
+.a4 .tl div{padding:4px 8px 6px;font-size:11px}.a4 .tl b{display:block;font-size:12px}
+.a4 .st{position:absolute;top:-8px;right:-6px;font:800 9px Outfit;background:var(--yel);border:2px solid var(--ink);border-radius:999px;padding:1px 7px;transform:rotate(8deg);z-index:2}
+.a4 .st.p{background:var(--pnk);color:#fff}
+.a4 .full{flex:1;margin:22px 0 0;position:relative;display:flex;flex-direction:column;padding:0 14px 14px;gap:8px}
+.a4 .bg{position:absolute;inset:0 0 auto 0;height:260px;background:conic-gradient(from 200deg at 35% 65%,var(--t1),var(--t2),var(--t3),var(--t1));border-bottom:3px solid var(--ink)}
+.a4 .bg::after{content:"";position:absolute;right:30px;top:60px;width:110px;height:110px;border-radius:50%;background:var(--bg);border:3px solid var(--ink);box-shadow:4px 4px 0 var(--ink)}
+.a4 .big{position:relative;z-index:1;margin-top:150px;font:400 42px/.92 Anton;text-transform:uppercase;color:var(--ink);text-shadow:3px 3px 0 var(--sf)}
+.a4 .by{position:relative;z-index:1;font-weight:600;background:var(--sf);border:3px solid var(--ink);align-self:flex-start;padding:0 10px;border-radius:999px;transform:rotate(-1.5deg)}
+.a4 .bars{display:flex;flex-direction:column;gap:6px;margin-top:6px}
+.a4 .bars div{display:flex;align-items:center;gap:8px;font:700 10px "Space Mono",monospace}
+.a4 .bars em{font-style:normal;width:34px}
+.a4 .bars i{flex:1;height:14px;border:3px solid var(--ink);border-radius:999px;background:var(--sf);position:relative;overflow:hidden}
+.a4 .bars i::after{content:"";position:absolute;inset:0 var(--r) 0 0;background:var(--c)}
+.a4 .ctl{display:flex;justify-content:center;gap:12px;align-items:center;margin-top:auto}
+.a4 .rb{width:46px;height:46px;border:3px solid var(--ink);border-radius:50%;background:var(--sf);display:grid;place-content:center;font-weight:800;box-shadow:3px 3px 0 var(--ink)}
+.a4 .rb.p{width:62px;height:62px;background:var(--teal);font-size:20px;box-shadow:4px 4px 0 var(--ink)}
+.a4 .sw{display:flex;justify-content:space-between;align-items:center;font-size:11px;font-weight:600}
+.a4 .sw i{width:44px;height:24px;border:3px solid var(--ink);border-radius:999px;background:var(--teal);position:relative}.a4 .sw i::after{content:"";position:absolute;right:2px;top:2px;width:14px;height:14px;border-radius:50%;background:var(--ink)}
+</style>
+<div class="wrap">
+  <h1>Brut layout concepts: 4 Web UI, 4 Android</h1>
+  <p class="lede">Eight themes that change the composition as well as the colours, built from neobrutalism.com and stream/ui components. Mockups use sample albums. Equalizers and meters animate.</p>
+  <div class="access">
+    <b>Component access</b>
+    <ul>
+      <li><b>Fine:</b> the neobrutalism.com docs index, and the 57 component pages' behaviour and variants.</li>
+      <li><b>Fine:</b> stream/ui Track List, Audio Player (classic and comic, with class names), Equalizer, Card.</li>
+      <li><b>Missing, so I approximated:</b> stream/ui colour token values (<code>ink</code>, <code>paper-raised</code>, <code>lime-soft</code>, <code>shadow-brutal</code>), the comic helpers (<code>halftone</code>, <code>sketchy</code>, <code>ComicButton</code>), and the Equalizer source. I picked my own values. The registry JSON files might hold them; paste the source of any component you want matched exactly.</li>
+      <li><b>Scope:</b> the web UI has no playback (PRODUCT.md), so Web themes use the player components only for acquisition progress and the album track list.</li>
+    </ul>
+  </div>
+  <div id="root"></div>
+</div>
+<div class="bar" role="status">Picked: <b id="picked">none yet</b></div>
+<script>
+const star=(n,ri)=>{let p=[];for(let i=0;i<n*2;i++){const a=Math.PI*i/n-Math.PI/2,r=i%2?ri:50;p.push((50+r*Math.cos(a)).toFixed(1)+'% '+(50+r*Math.sin(a)).toFixed(1)+'%')}return 'polygon('+p.join(',')+')'};
+document.documentElement.style.setProperty('--star',star(14,38));
+const AL=[['Blue Train','John Coltrane','FLAC 24/96'],['Kind of Blue','Miles Davis','FLAC 16/44'],['Rumours','Fleetwood Mac','FLAC 24/96'],['Blonde','Frank Ocean','FLAC 16/44'],['In Rainbows','Radiohead','FLAC 24/48'],['Madvillainy','Madvillain','FLAC 16/44'],['Mingus Ah Um','Charles Mingus','FLAC 16/44'],['Selected Ambient Works','Aphex Twin','FLAC 16/44']];
+const art=(i,x='')=>`<div class="art a${i%6} ${x}"></div>`;
+const eq=(n=3,c='')=>`<span class="eq ${c}">${'<i></i>'.repeat(n)}</span>`;
+const W={},A={};
+W.tape=()=>`<div class="mock w1"><div class="top"><div class="brand"><i></i>DISCAIR</div><div class="tabs"><span class="on">Dashboard</span><span>Discover</span><span>New releases</span><span>Acquisitions</span><span>Settings</span></div><div class="srch">Search <kbd>Ctrl K</kbd></div></div>
+<div class="body"><div class="list"><h3>Ten from the collection</h3><ol>${AL.slice(0,7).map((a,i)=>`<li class="${i==2?'hot':''}"><span class="n">${i==2?eq(3):i+1}</span>${art(i)}<div class="trk"><div><b>${a[0]}</b><small>${a[1]}</small></div></div><span class="q">${a[2]}</span><button class="btn ${i==2?'':'sec'}">${i==2?'Fetching':'Get'}</button></li>`).join('')}</ol></div>
+<aside><h3>Now acquiring</h3><div class="deck"><div class="head">${art(2)}<div><div class="ct">Request 1 of 3</div><b style="font-size:17px">Rumours</b><div style="color:var(--mu)">Fleetwood Mac</div>${eq(5)}</div></div><div class="seek"><i></i></div><div class="row"><span>7 of 11 tracks</span><span>62%</span></div><div class="ctl"><button class="btn sec">Pause</button><button class="btn sec">Cancel</button></div></div>
+<div class="stats"><div><small>Owned</small><b>1,248</b></div><div><small>Queued</small><b>3</b></div><div><small>Missing</small><b>37</b></div></div></aside></div></div>`;
+W.comic=()=>`<div class="mock w2"><div class="mast"><h1>DISCAIR</h1><span>ISSUE #47</span><nav><span class="on">The collection</span><span>Discover</span><span>Requests</span></nav></div>
+<div class="pg"><div class="panel p1"><div class="in"><div class="cap">Meanwhile, in your library…</div>${art(0)}<h3>Blue Train</h3><div>John Coltrane · 1958 · FLAC 24/96</div><div style="font-size:12px;max-width:190px">You own 3 of his albums. This one is missing.</div><div class="burst"><span>GET<br>IT!</span></div></div></div>
+<div class="panel p2"><div class="in"><div class="sticker">NEW!</div>${art(3)}<div><h4>Blonde</h4><small>Frank Ocean</small></div></div></div>
+<div class="panel p3"><div class="in"><div class="sticker">HOT</div>${art(4)}<div><h4>In Rainbows</h4><small>Radiohead</small></div></div></div>
+<div class="panel p4"><div class="in"><div class="cap">Kapow! 7 of 11 tracks in</div><div style="display:flex;gap:14px;align-items:flex-end"><div class="ceq"><i style="height:40px"></i><i></i><i></i><i></i><i></i><i></i></div><div style="flex:1"><b style="font:400 22px Bangers">Rumours · Fleetwood Mac</b><div class="prog"><i></i></div></div></div><div class="notes"><span>♪</span><span>♫</span></div></div></div></div></div>`;
+W.ledger=()=>`<div class="mock w3"><div class="side"><div class="brand">Discair</div><div class="grp">Library</div><a class="on">Dashboard</a><a>Discover <em>24</em></a><a>New releases <em>9</em></a><a>Deep dives</a><div class="grp">Acquire</div><a>Requests <em>3</em></a><a>History</a><div class="grp">System</div><a>Settings</a></div>
+<div class="main"><div class="bc">Library / Discover / <b>Jazz</b><div class="cmd">Jump to… <kbd>Ctrl K</kbd></div></div>
+<div class="stats"><div><small>Owned</small><b>1,248</b></div><div><small>Missing</small><b>37</b></div><div><small>Queued</small><b>3</b></div><div><small>Imported 7d</small><b>12</b></div></div>
+<div class="tools"><div class="tg"><span class="on">All</span><span>Missing</span><span>Queued</span></div><span style="font:12px var(--mono);color:var(--mu)">sorted by year, newest first</span></div>
+<table><thead><tr><th>Album</th><th>Year</th><th>Quality</th><th>Status</th><th></th></tr></thead><tbody>${[[0,1958,'FLAC 24/96','miss','Missing','Get'],[1,1959,'FLAC 16/44','ok','Owned',''],[6,1959,'FLAC 16/44','wait','Queued','Cancel'],[2,1977,'FLAC 24/96','miss','Missing','Get'],[4,2007,'FLAC 24/48','ok','Owned','']].map(r=>`<tr><td><div class="trk">${art(r[0])}<div><b>${AL[r[0]][0]}</b><small>${AL[r[0]][1]}</small></div></div></td><td class="mono">${r[1]}</td><td class="mono">${r[2]}</td><td><span class="bdg ${r[3]}">${r[4]}</span></td><td>${r[5]?`<span class="get">${r[5]}</span>`:''}</td></tr>`).join('')}</tbody></table>
+<div class="foot"><span>Showing 1–5 of 37</span><div class="pg"><span>‹</span><span class="on">1</span><span>2</span><span>3</span><span>›</span></div></div>
+<div class="acc"><div>Jazz <span>8 deep dives ▾</span></div><div>Hip hop <span>6 deep dives ▸</span></div><div>Electronic <span>5 deep dives ▸</span></div></div></div></div>`;
+W.crate=()=>`<div class="mock w4"><div class="hd"><h1>DISC<i>AIR</i></h1><nav><span class="on">The wall</span><span>Discover</span><span>Requests</span><span>Settings</span></nav></div>
+<div class="strip"><h3>New<br>releases</h3><div class="arr">‹</div><div class="cr">${AL.slice(3,8).map((a,i)=>`<div class="ci">${art(i+2)}<small>${a[0]}</small></div>`).join('')}</div><div class="arr">›</div></div>
+<div class="wall"><div class="tile big">${art(0)}<span class="stamp red">Missing</span><div class="nm">Blue Train · Coltrane</div></div>
+${[1,2,3,4,5,6,7].map(i=>`<div class="tile">${art(i)}<span class="stamp ${i%3==0?'gold':i%3==1?'':'red'}">${i%3==0?'Queued':i%3==1?'Owned':'Missing'}</span><div class="nm">${AL[i][0]}</div></div>`).join('')}</div>
+<div class="hov"><b>Rumours</b>Fleetwood Mac · 1977<br>Owned: 2 of 5 albums<br><span style="color:var(--mu)">Hover card</span></div>
+<div class="drawer"><div class="dh">${art(0)}<div><b>Blue Train</b>John Coltrane<br>1958 · 5 tracks</div></div><ol>${['Blue Train','Moment’s Notice','Locomotion','I’m Old Fashioned','Lazy Bird'].map((t,i)=>`<li><span>${i+1}</span>${t}<em>${['10:39','9:06','7:11','7:55','7:13'][i]}</em></li>`).join('')}</ol><div class="df"><div class="gb">Get album</div><div class="gb sec">Skip</div></div></div></div>`;
+const ph=(cls,body,cap)=>`<div><div class="phone ${cls}"><span class="lbl"></span>${body}</div><div class="cap">${cap}</div></div>`;
+A.tape=()=>ph('a1',`<div class="tb"><span>Discair</span><span>⌕</span></div><h3>Recently added</h3><ol>${AL.map((a,i)=>`<li class="${i==1?'hot':''}"><span class="n">${i==1?eq(3):i+1}</span><div class="trk"><div><b>${a[0]}</b><small>${a[1]}</small></div></div><span class="d">${['10:39','9:22','4:17','4:03','5:30','3:48','7:51','5:14'][i]}</span></li>`).join('')}</ol><div class="mini"><div class="r">${art(1)}<div class="trk" style="flex:1;min-width:0"><div><b>Kind of Blue</b><small>Miles Davis</small></div></div>${eq(3)}<div class="sq">❚❚</div><div class="sq sec">▶▶</div></div><div class="sk"><i></i></div></div><div class="nv"><span class="on">HOME</span><span>LIBRARY</span><span>GET</span><span>MORE</span></div>`,'Home: ruled track list, mini player with a seek strip')+
+ph('a1',`<div class="tb"><span>‹ Now playing</span><span>⋯</span></div><div class="pl"><div class="hd">${art(1)}<div><div class="ct">Track 2 of 8</div><b>Freddie Freeloader</b><div style="font-size:11px;color:var(--mu)">Miles Davis</div>${eq(5)}</div></div><div class="ctl"><div class="sl"><i></i></div><div class="tm"><span>2:41</span><span>9:46</span></div><div class="tr"><div><div class="sq sec">◀◀</div><div class="sq big">❚❚</div><div class="sq sec">▶▶</div></div><div class="sq sec">♪</div></div></div></div><div class="qh">Up next</div><ul class="ql"><li>So What · 9:22</li><li>Blue in Green · 5:37</li><li>All Blues · 11:33</li></ul>`,'Now playing: the full player card, queue as a playlist')
+A.comic=()=>ph('a2',`<div class="tb"><h1>DISCAIR</h1></div><div class="pn big"><div class="in"><span class="cp">Meanwhile, in your library…</span><div style="display:flex;gap:10px;align-items:center">${art(0)}<div><h4>12 new albums!</h4><div style="font-size:11px">since Tuesday</div></div></div></div></div><div class="two"><div class="pn"><div class="in"><div class="sticker">NEW!</div>${art(3)}<h4 style="margin-top:4px">Blonde</h4></div></div><div class="pn"><div class="in">${art(4)}<h4 style="margin-top:4px">In Rainbows</h4></div></div></div><div class="pn"><div class="in" style="display:flex;align-items:center;gap:8px"><div style="flex:1"><span class="cp">Fetching</span><h4>Rumours</h4><div style="font-size:11px">7 of 11 tracks</div></div><div class="burst"><span>KAPOW!</span></div></div></div><div class="nvb"><div class="blob on">Home</div><div class="blob">Lib</div><div class="blob">Get</div><div class="blob">Set</div></div>`,'Home: comic panels, captions, sound effects')+
+ph('a2',`<div class="tb"><h1>NOW!</h1></div><div class="pc"><div class="hd"><div class="cov art a1"></div><span class="tag">Track 2 of 8</span><h4>Freddie Freeloader</h4><div style="font-size:11px">Miles Davis</div><div class="ceq"><i style="height:20px"></i><i></i><i></i><i></i><i></i><i></i></div></div><div class="notes"><span>♪</span><span>♫</span></div><div class="ctl"><div class="sl"><i></i></div><div class="tm"><span>2:41</span><span>9:46</span></div><div class="tr"><div class="blob">◀◀</div><div class="burst"><span>Shh!</span></div><div class="blob">▶▶</div></div></div></div>`,'Now playing: tilted cover sticker, starburst play, comic meter')
+A.sheet=()=>ph('a3',`<div class="tb"><b>Discair</b><span>3 QUEUED</span></div><div class="lbl2">Today</div><div class="car">${AL.slice(0,4).map((a,i)=>`<div class="ct">${art(i)}<div><b>${a[0]}</b>${a[1]}</div></div>`).join('')}</div><div class="lbl2">Requests</div><div class="it">${art(2)}<div class="trk"><div><b>Rumours</b><small>62% · 7 of 11</small></div></div><span class="bd w">Fetching</span></div><div class="it">${art(5)}<div class="trk"><div><b>Madvillainy</b><small>Queued</small></div></div><span class="bd w">Queued</span></div><div class="it">${art(6)}<div class="trk"><div><b>Mingus Ah Um</b><small>Imported</small></div></div><span class="bd">Done</span></div><div class="tgn"><span class="on">HOME</span><span>LIBRARY</span><span>GET</span><span>SET</span></div>`,'Home: carousel, item rows with status badges, joined toggle nav')+
+ph('a3',`<div class="tb"><b>Discair</b><span>⌄</span></div><div class="sheet"><div class="grab"></div><div class="top2">${art(1)}<div class="vol"><span>VOL</span><div class="v"><i></i></div><span>70</span></div></div><div><h4>Freddie Freeloader</h4><div style="color:var(--mu)">Miles Davis · Kind of Blue</div></div><div><div class="sl"><i></i></div><div class="tm"><span>2:41</span><span>9:46</span></div></div><div class="grp"><span>◀◀</span><span class="pl">❚❚</span><span>▶▶</span><span>☰</span></div><div class="ly"><b>Lyrics</b> · instrumental</div></div>`,'Now playing: sheet with a vertical volume slider, joined transport')
+A.sticker=()=>ph('a4',`<div class="pill"><b>discair</b><span class="on">Home</span><span>Lib</span><span>Get</span></div><div class="wl">${AL.slice(0,6).map((a,i)=>`<div class="tl">${i==0?'<span class="st">NEW</span>':i==3?'<span class="st p">MISSING</span>':''}${art(i)}<div><b>${a[0]}</b>${a[1]}</div></div>`).join('')}</div>`,'Home: tilted tile wall with stickers, floating pill nav')+
+ph('a4',`<div class="full"><div class="bg"></div><div class="big">Freddie<br>Free-<br>loader</div><div class="by">Miles Davis</div><div class="bars"><div><em>BASS</em><i style="--r:30%;--c:var(--teal)"></i></div><div><em>MID</em><i style="--r:50%;--c:var(--ora)"></i></div><div><em>TREBLE</em><i style="--r:20%;--c:var(--pnk)"></i></div></div><div class="sw"><span>Crossfade</span><i></i></div><div class="ctl"><div class="rb">◀◀</div><div class="rb p">❚❚</div><div class="rb">▶▶</div></div></div>`,'Now playing: poster type, equalizer as stacked pill bars')
+const E=[
+ {g:'Web UI',k:'tape',id:'W1',n:'Tape Deck',s:'stream/ui Track List + Audio Player (classic), neobrutalism.com Tabs, Input Group, Progress, Button Group',d:'Pages become a ruled playlist. The dashboard is a numbered list with the current request shown by a live meter. Acquisition progress sits in a player-style deck on the right (not playback). Top tabs run as one ruled strip. Hard rectangles, lime on paper, mono numerals.',f:W.tape},
+ {g:'Web UI',k:'comic',id:'W2',n:'Comic Issue',s:'stream/ui comic Card, Equalizer and Audio Player, Badge',d:'The dashboard is a comic page. A hero panel pushes the one album worth adding, with a starburst Get button. Recommendations are skewed panels with NEW! stickers. A wide panel with the thick coloured meter and floating notes shows the active request. Captions replace section headings.',f:W.comic},
+ {g:'Web UI',k:'ledger',id:'W3',n:'Ledger Room',s:'neobrutalism.com Sidebar, Data Table, Breadcrumb, Toggle Group, Command, Pagination, Accordion, Badge',d:'Table-first. A dark sidebar with counts, breadcrumb and a Ctrl K command bar. Stat strip on top, then a data table with owned, missing and queued badges and inline Get. Deep dives become an accordion by genre. Built for scanning many albums at once.',f:W.ledger},
+ {g:'Web UI',k:'crate',id:'W4',n:'Crate Wall',s:'neobrutalism.com Carousel, Sheet (Drawer), Hover Card, Badge, Tooltip, Pagination',d:'Artwork leads. A mosaic wall with one 2×2 hero tile; status as rubber-stamp labels. New releases run as a carousel strip. Album detail opens as a side drawer with the tracklist and Get, replacing the modal. Kraft paper and red stamp ink.',f:W.crate},
+ {g:'Android',k:'tape',id:'A1',n:'Cassette Deck',s:'stream/ui Audio Player (classic), Mini Player, Track List, Equalizer',d:'Closest to the stream/ui player. Home is a ruled track list with a live meter on the playing row, and a mini player with a seek strip along its bottom edge. Now Playing is the full player card with a 5-bar meter, a queue as a playlist, and a square-button transport.',f:A.tape,ph:1},
+ {g:'Android',k:'comic',id:'A2',n:'Comic Burst',s:'stream/ui comic Audio Player, Card, Equalizer, Button (burst, blob)',d:'Home is a stack of skewed comic panels with narration captions and sound-effect stickers. Now Playing has a tilted cover sticker, a halftone header, a six-bar comic meter with floating notes, and a starburst play button that says "La la!" or "Shh!". Android caveat: skew and clip shapes are easy in Compose; halftone needs a small drawable.',f:A.comic,ph:1},
+ {g:'Android',k:'sheet',id:'A3',n:'Sheet Stack',s:'neobrutalism.com Sheet, Carousel, Item, Toggle Group, Slider, Badge, Button Group',d:'Dark, orange and cyan. A carousel for today, item rows with status badges for requests, and a joined toggle group as the bottom nav in place of the island. Now Playing is a bottom sheet with a vertical volume slider beside the cover, a joined transport and a lyrics strip.',f:A.sheet,ph:1},
+ {g:'Android',k:'sticker',id:'A4',n:'Sticker Wall',s:'neobrutalism.com Badge, Avatar, Progress, Switch, Button; the screenshot-1 style',d:'Peach and teal, brown ink. A floating pill nav over a tilted two-column tile wall with sticker badges. Now Playing is poster-style with huge stacked type, the equalizer as three stacked pill bars (bass, mid, treble) to match your existing Equalizer screen, a crossfade switch and round buttons.',f:A.sticker,ph:1}
+];
+const root=document.getElementById('root');let lg='';
+E.forEach((e,i)=>{
+ if(e.g!==lg){lg=e.g;root.insertAdjacentHTML('beforeend',`<div class="group-title">${e.g} themes</div>`)}
+ root.insertAdjacentHTML('beforeend',`<section class="entry"><h2>${e.id} · ${e.n}</h2><div class="src">${e.s}</div><p class="d">${e.d}</p>${e.ph?`<div class="phones">${e.f()}</div>`:`<div class="scroll">${e.f()}</div>`}<button class="pickbtn" aria-pressed="false" data-i="${i}">Pick ${e.id}</button></section>`);
+});
+const picks=new Set();
+document.addEventListener('click',ev=>{const p=ev.target.closest('.pickbtn');if(!p)return;const i=+p.dataset.i;picks.has(i)?picks.delete(i):picks.add(i);p.setAttribute('aria-pressed',picks.has(i));document.getElementById('picked').textContent=picks.size?[...picks].sort((a,b)=>a-b).map(x=>E[x].id+' '+E[x].n).join(', '):'none yet'});
+</script>
