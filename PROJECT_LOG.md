@@ -1,3 +1,10 @@
+## 2026-11-03 — Round 3 Neobrut plan written (documentation only)
+
+- **What:** `docs/BRUT_ROUND3_PLAN.md`, decision D-024 in `docs/DECISIONS.md`, reference mockups in `docs/design/brut-round3/mockups.html`, and entries in `docs/ACTIVE_WORK.md` (section 2i, parked Material themes) and `docs/PROJECT_STATUS.md`. The owner approved five Neobrut themes (web: Zine Spread, Pipeline Board, Window Manager; Android: Receipt Roll, Binder), one palette each, each on its own platform, covering every screen including album and artist pages.
+- **Tests and builds run:** none (documentation only). The mockup file was checked only by running its script's screen builders in Node (56 screens build); it was not opened in a browser by the agent.
+- **Not done / not claimed:** no code, no PR, nothing published or deployed. The plan lists data the mockups assume but the API does not carry (per-artist missing count, library-wide missing total); those are fallbacks, not built.
+- **Next action:** P1, the web Zine Spread.
+
 ## 2026-11-03 — Layout revisit merged (PRs #707 and #708)
 
 - **Merged (owner request):** PR [#707](https://github.com/abucalip/navi-librarian/pull/707), squash `087ead6b5bac4480035607b12f8ba5b592dce787`, from tested head `480b9a387761c7b2e107c998567f8effc0d3b34a`, and PR [#708](https://github.com/abucalip/navi-librarian/pull/708), squash `fff47de860844e811bfffd9480f2dc5ee118fe58`, from tested head `9eb70f0b0720846fdc8ec84a04879ad4a661d9fe`; compile, container-smoke, test-and-build, validate-container and validate-release-workflow passed on each head (#707 has no release-workflow run, as an Android-only change).
