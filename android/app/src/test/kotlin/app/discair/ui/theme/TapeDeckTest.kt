@@ -81,6 +81,19 @@ class TapeDeckTest {
         assertEquals("", TapeDeckRules.trackLabel(-1, 3))
     }
 
+    @Test fun theMiniPlayerExistsOnlyOnTheCassetteDeckAndOnlyWhileASongIsQueued() {
+        assertTrue(TapeDeckRules.miniPlayerShown(Layout.TapeDeck, hasSong = true))
+        assertFalse(TapeDeckRules.miniPlayerShown(Layout.TapeDeck, hasSong = false))
+        for (layout in Layout.values().filter { it != Layout.TapeDeck }) assertFalse(TapeDeckRules.miniPlayerShown(layout, hasSong = true))
+    }
+
+    @Test fun theLyricsButtonSwapsTheQueueAndTheLyrics() {
+        assertEquals(1, TapeDeckRules.toggleLyrics(0)) // queue -> lyrics
+        assertEquals(0, TapeDeckRules.toggleLyrics(1)) // lyrics -> queue
+        assertEquals(1, TapeDeckRules.toggleLyrics(2)) // a queue face left over from another theme counts as the queue
+        assertEquals(0, TapeDeckRules.toggleLyrics(TapeDeckRules.toggleLyrics(0)))
+    }
+
     @Test fun everyLayoutHasAUniqueLabel() {
         assertEquals(Layout.values().size, Layout.values().map { it.label }.toSet().size)
     }

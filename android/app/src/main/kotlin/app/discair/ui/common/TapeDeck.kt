@@ -55,6 +55,12 @@ object TapeDeckRules {
     /** "Track 2 of 8"; blank when there is no queue to place the song in. */
     fun trackLabel(index: Int, total: Int): String = if (total <= 0 || index < 0 || index >= total) "" else "Track ${index + 1} of $total"
 
+    /** The mini player belongs to the Cassette Deck only, and only while a song is queued; every other layout has none. */
+    fun miniPlayerShown(layout: app.discair.ui.theme.Layout, hasSong: Boolean): Boolean = layout == app.discair.ui.theme.Layout.TapeDeck && hasSong
+
+    /** The lyrics button on Now Playing: the view is lyrics (1) or the queue under the player (0). A stale queue-face view (2) also becomes lyrics. */
+    fun toggleLyrics(view: Int): Int = if (view == 1) 0 else 1
+
     /** How many rows the Home list shows before "See all": the ruled list is not lazy, so it stays short. */
     const val HOME_ROWS = 8
 }

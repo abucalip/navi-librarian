@@ -285,20 +285,25 @@ fun MainShell(state: UiState, model: AppViewModel, container: AppContainer) {
         }
         // The island floats over the pages: no bar behind it. Hidden cover load below gives it the artwork's tint.
         // It is drawn over a dark artwork tint, so it keeps light icons on every theme.
-        app.discair.ui.theme.OnArtwork {
-            NavIsland(
-                tint = islandTint,
-                homeSelected = destination?.hasRoute(HomeRoute::class) == true,
-                playing = playerState.isPlaying,
-                playerLabel = playerState.current?.let { "Now playing: ${it.title}, ${it.artist}. Open player" } ?: "Player, nothing playing",
-                onSearch = { searchOpen = true },
-                onHome = goHome,
-                onPlayer = {
-                    if (playerState.visible) nowPlayingOpen = true
-                    else scope.launch { snackbar.showSnackbar("Nothing is playing.") }
-                },
-                modifier = Modifier.align(Alignment.BottomCenter).onSizeChanged { islandPx = it.height },
-            )
+        // Cassette Deck: the mini player sits on the ruled bar while a song is queued. Standard themes have no mini player.
+        Column(Modifier.align(Alignment.BottomCenter).onSizeChanged { islandPx = it.height }) {
+            if (app.discair.ui.common.TapeDeckRules.miniPlayerShown(app.discair.ui.theme.LocalPalette.current.layout, playerState.current != null)) {
+                app.discair.ui.player.TapeMiniPlayer(playerState, player, onOpen = { if (playerState.visible) nowPlayingOpen = true })
+            }
+            app.discair.ui.theme.OnArtwork {
+                NavIsland(
+                    tint = islandTint,
+                    homeSelected = destination?.hasRoute(HomeRoute::class) == true,
+                    playing = playerState.isPlaying,
+                    playerLabel = playerState.current?.let { "Now playing: ${it.title}, ${it.artist}. Open player" } ?: "Player, nothing playing",
+                    onSearch = { searchOpen = true },
+                    onHome = goHome,
+                    onPlayer = {
+                        if (playerState.visible) nowPlayingOpen = true
+                        else scope.launch { snackbar.showSnackbar("Nothing is playing.") }
+                    },
+                )
+            }
         }
         playerState.current?.coverUrl?.takeIf { it.isNotBlank() }?.let { url ->
             app.discair.ui.common.Cover(app.discair.ui.player.playerArtworkUrl(url), Modifier.size(1.dp), onColor = { islandTint = it })

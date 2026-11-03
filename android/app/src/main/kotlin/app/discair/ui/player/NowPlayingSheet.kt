@@ -159,6 +159,9 @@ fun NowPlayingSheet(state: PlayerUiState, controller: PlayerController, lyrics: 
     var eqOpen by remember { mutableStateOf(false) }
     var crossfadeOpen by remember { mutableStateOf(false) }
     val container = (androidx.compose.ui.platform.LocalContext.current.applicationContext as app.discair.DiscairApplication).container
+    // Cassette Deck: no flip card; the queue sits under the player and a lyrics button swaps it for the lyrics (view 1 is lyrics, anything else the queue).
+    val tape = app.discair.ui.theme.LocalPalette.current.layout == app.discair.ui.theme.Layout.TapeDeck
+    LaunchedEffect(tape) { if (tape && view == 2) { view = 0; lastView = 0 } }
     BackHandler(enabled = view != 0) { view = 0; lastView = 0 }
     val scope = androidx.compose.runtime.rememberCoroutineScope()
     // -1 = queue, 0 = artwork, +1 = lyrics; fractions are mid-flip while a finger is down or the flip settles.
@@ -200,13 +203,31 @@ fun NowPlayingSheet(state: PlayerUiState, controller: PlayerController, lyrics: 
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 app.discair.ui.common.PlayerIconButton(onClick = onDismiss, Modifier.size(Target)) { Icon(PlayerIcons.Down, contentDescription = "Close now playing") }
                 Spacer(Modifier.weight(1f))
-                // Three labelled views; the selected one is announced as selected and drawn raised (not colour alone).
-                ViewIcons(view) { view = it; lastView = it }
+                if (tape) {
+                    Text(
+                        "Now playing", style = MaterialTheme.typography.labelLarge.copy(fontFamily = app.discair.ui.theme.LocalFontPair.current.mono),
+                        modifier = Modifier.semantics { heading() },
+                    )
+                } else {
+                    // Three labelled views; the selected one is announced as selected and drawn raised (not colour alone).
+                    ViewIcons(view) { view = it; lastView = it }
+                }
                 Spacer(Modifier.weight(1f))
                 Spacer(Modifier.size(Target)) // balances the close button so the tabs sit in the middle
             }
             Spacer(Modifier.height(12.dp)) // the tabs must not touch the cover, the lyrics note or the queue title
-            Player(
+            if (tape) TapePlayer(
+                state, controller, showLyrics = view == 1, onToggleLyrics = { view = app.discair.ui.common.TapeDeckRules.toggleLyrics(view); lastView = view },
+                onSignIn = onSignIn, onEqualizer = { eqOpen = true }, onCrossfade = { crossfadeOpen = true },
+                onOpenArtist = onOpenArtist, onOpenAlbum = onOpenAlbum, onCoverColor = { tint = it },
+                lyricsPanel = {
+                    LyricsPanel(
+                        if (lyricsState.songIdOrNull() == songId) lyricsState else LyricsUiState.Idle,
+                        currentLine, songId.orEmpty(), onTryAgain = { if (songId != null) lyrics.retry(songId, nextId) },
+                        Modifier.fillMaxSize().padding(vertical = 8.dp),
+                    )
+                },
+            ) else Player(
                 state, controller, onSignIn, { eqOpen = true }, { crossfadeOpen = true }, onOpenArtist, onOpenAlbum,
                 card = {
                     FlipCard(
