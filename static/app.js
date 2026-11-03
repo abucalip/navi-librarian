@@ -1428,6 +1428,29 @@ document.addEventListener('keydown', event => {
     event.preventDefault(); openAlbumModal(event.target);
   }
 });
+// Zine Spread only: J and K step to the next and previous story on the dashboard and to the next and previous line of the library list.
+// Only when no field has focus, no dialog is open and no modifier is held, so typing and the browser's own shortcuts are untouched. It
+// moves focus to a real control; Enter then does what it already does there.
+document.addEventListener('keydown', event => {
+  if (document.documentElement.dataset.layout !== 'zine' || event.ctrlKey || event.metaKey || event.altKey || event.shiftKey) return;
+  const key = event.key.toLowerCase();
+  if (key !== 'j' && key !== 'k') return;
+  const target = event.target;
+  if (target && (target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName))) return;
+  if (!$('albumModalBackdrop').hidden) return;
+  const visible = el => el.getClientRects().length > 0;
+  const page = ['dashboard', 'library'].find(id => !$(id).classList.contains('hidden'));
+  const selector = page === 'dashboard'
+    ? '#dashboard .shelf-card > .dashboard-tile-open, #dashboard .dashboard-slider > .card[data-slot="1"] > .dashboard-tile-open'
+    : page === 'library' ? '#libraryList .library-artist' : '';
+  if (!selector) return;
+  const stories = [...document.querySelectorAll(selector)].filter(visible);
+  if (!stories.length) return;
+  event.preventDefault();
+  const at = stories.indexOf(document.activeElement);
+  const next = key === 'j' ? Math.min(at + 1, stories.length - 1) : Math.max(at < 0 ? 0 : at - 1, 0);
+  stories[next].focus();
+});
 $('albumModalClose').addEventListener('click', closeAlbumModal);
 // The artwork image is created here rather than written into the markup, so the page never ships
 // an <img> without a source. It stays hidden until openAlbumModal sets a URL.

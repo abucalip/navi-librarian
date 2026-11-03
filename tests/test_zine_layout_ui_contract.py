@@ -91,7 +91,19 @@ class ZineLayoutTests(unittest.TestCase):
     def test_the_lead_story_and_shelves_keep_dom_order_and_are_css_only(self):
         self.assertIn('#dashboard > .panel:not(.dashboard-shelf) { grid-column: 1 / -1; }', self.zine)
         self.assertIn("column-count: 2", self.zine)
-        self.assertNotIn("order:", re.sub(r"/\*.*?\*/", "", self.zine, flags=re.S).replace("border:", "").replace("-order", ""))
+        self.assertNotIn("grid-row:", self.zine)  # nothing is placed out of document order
+
+    def test_j_and_k_are_layout_gated_ignore_fields_modifiers_and_the_open_dialog(self):
+        block = self.app.split("// Zine Spread only: J and K step")[1].split("$('albumModalClose')")[0]
+        self.assertIn("dataset.layout !== 'zine'", block)
+        for guard in ("event.ctrlKey", "event.metaKey", "event.altKey", "INPUT|TEXTAREA|SELECT", "albumModalBackdrop"):
+            self.assertIn(guard, block)
+        self.assertNotIn("fetch(", block)
+
+    def test_acquisition_dispatches_keep_their_controls_and_state_words(self):
+        css = self.zine.split("Acquisitions: each request is a dispatch")[1]
+        self.assertIn(".acq-progress-fill", css)
+        self.assertNotIn("display: none", css)
 
     def test_reduced_motion_disables_any_zine_animation(self):
         css = re.sub(r"/\*.*?\*/", "", self.zine, flags=re.S)

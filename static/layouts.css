@@ -663,4 +663,16 @@
   :root[data-layout="zine"] .similar-artists .library-art { display: none; }
   :root[data-layout="zine"] .similar-artists .library-artist-name { font-weight: 800; }
   :root[data-layout="zine"] .library-bio { column-width: 22rem; column-gap: 26px; column-rule: var(--zine-hair); max-width: none; }
+
+  /* ---- Acquisitions: each request is a dispatch: a headline, a state in words, a press-run bar. Retry and Dismiss are unchanged. ---- */
+  :root[data-layout="zine"] .acq-list { border: var(--zine-rule); background: var(--surface); box-shadow: var(--brut-sh) var(--brut-sh) 0 var(--brut-shadow-color); }
+  :root[data-layout="zine"] .acq-row { border-bottom: var(--zine-rule); }
+  :root[data-layout="zine"] .acq-row:last-child { border-bottom: 0; }
+  :root[data-layout="zine"] .acq-row .card-art { border: var(--zine-rule); border-radius: 0; }
+  :root[data-layout="zine"] .acq-row h3 { font-family: var(--display); font-size: var(--text-2xl); line-height: 1; text-transform: uppercase; overflow-wrap: anywhere; letter-spacing: 0; }
+  :root[data-layout="zine"] .acq-artist { font: 800 var(--text-xs)/1.4 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--text); }
+  :root[data-layout="zine"] .acq-status { font: 800 var(--text-xs)/1.4 var(--mono); letter-spacing: .1em; text-transform: uppercase; }
+  :root[data-layout="zine"] .acq-progress { height: 14px; background: var(--surface); border: var(--bw) solid var(--edge); border-radius: 0; }
+  :root[data-layout="zine"] .acq-progress-fill { background: repeating-linear-gradient(135deg, var(--zine-pink) 0 6px, var(--edge) 6px 8px); border-radius: 0; }
+  :root[data-layout="zine"] .acq-actions button { border-radius: 0; font: 800 var(--text-xs)/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; }
 }
