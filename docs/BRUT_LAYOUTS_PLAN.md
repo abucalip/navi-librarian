@@ -1,6 +1,6 @@
 # Brut layouts plan (web and Android)
 
-Last updated: 2026-11-03 (P3 merged). Governing decision: D-023 in [DECISIONS.md](DECISIONS.md). Status tracking: the table in section 9 (update it in the PR that completes each phase). GitHub `main` is authoritative.
+Last updated: 2026-11-03 (P3 merged; behaviour rule added). Governing decision: D-023 in [DECISIONS.md](DECISIONS.md). Status tracking: the table in section 9 (update it in the PR that completes each phase). GitHub `main` is authoritative.
 
 ## 1. What this is
 
@@ -25,7 +25,8 @@ Reference mockups (static HTML, open in a browser, animated meters): [`design/br
 
 - The API is authoritative; no endpoint or field is invented. Domain, discovery, acquisition and import logic stay server-side (D-016: `navidrome_server.py` takes no additions).
 - **The web UI has no playback** (PRODUCT.md). Player-style pieces on the web (Tape Deck's "deck", equalizer meters) show **acquisition progress only**. Nothing may imply audio plays in the browser.
-- The Android player contract (D-018) is unchanged: gapless playback, scrobbling, the equalizer (D-020) and crossfade (D-021) behave as today. Layouts change how Now Playing and the mini player look, not what they do.
+- **A layout may change how a screen is operated, not only how it looks (owner rule, 2026-11-03).** Whenever it serves the layout, a theme's composition may rearrange or replace UI behaviour: which controls appear where, how views are switched (a lyrics button in place of a flip card, a queue shown under the player instead of on a card face), whether a mini player or a floating island is used, what a tap opens. Each such change applies to that layout's themes only; every other theme keeps today's behaviour.
+- What a layout may not change is the contract underneath: the API and data, the Android player contract (D-018: gapless playback, scrobbling, the equalizer D-020 and crossfade D-021 behave as today), no playback on the web, and the accessibility floor below. A rearranged control still does exactly what the original did.
 - Accessibility is a floor: WCAG 2.1 AA text contrast, 44x44 touch targets, visible focus, keyboard-operable, `prefers-reduced-motion` honoured (meters and tilts stop), status never by colour alone.
 - Existing themes (Ink, Vinyl, Nocturne, Parchment, Gallery, Sleeve, Cassette, Mint Desk, Night Shift on web; the 20 app themes) stay unchanged and selectable. The default stays Ink.
 - Neobrut shadows and outlines remain the opt-in exception to the flat-depth rule (D-022); the new layouts extend that exception and nothing else.
