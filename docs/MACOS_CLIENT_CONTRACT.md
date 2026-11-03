@@ -164,7 +164,7 @@ If shared: the owner's own web UI and the app lock each other out after 8 failur
 
 ## 12. M2 audio spike: measured results (2026-11-03)
 
-Tool: `discair-audio-spike` (`macos/Sources/AudioSpike`, build `swift build -c release --product discair-audio-spike`). Offline tests use `AVAudioEngine` manual rendering, so they are deterministic and play no sound. Library tests ran against the owner's Navidrome (LAN, plain http) and the mounted SMB share. Machine: MacBook Air, macOS 26.5 SDK, Xcode 26.6. **Not measured, because it needs the owner's ears or hardware:** real-time playback quality, gapless and crossfade by ear, and any DAC or Bluetooth output.
+Tool: `discair-audio-spike` (`macos/Sources/AudioSpike`, build `swift build -c release --product discair-audio-spike`). Offline tests use `AVAudioEngine` manual rendering, so they are deterministic and play no sound. Library tests ran against the owner's Navidrome (LAN, plain http) and the mounted SMB share. Machine: MacBook Air, macOS 26.5 SDK, Xcode 26.6. **Not measured, because it needs the owner's ears or hardware:** any DAC or Bluetooth output. Gapless and crossfade were checked by ear by the owner on headphones (12.9).
 
 ### 12.1 Decoding (`AVAudioFile`, no third-party decoder)
 
@@ -244,3 +244,5 @@ What the owner does (either one): in the Navidrome web UI open the Players page 
 ```
 
 Listen for: any click, pop or dropout at the join in 1 and 2 (there should be none; the join was measured as exact); in 3, whether the fade is smooth and whether the level dips or bumps in the middle. Also repeat 1 with another output (headphones, a DAC, Bluetooth) if available, and say which one was used. Add `--volume 0.3` for quieter, `--tail 40` to hear more of the first song. Report: "1 clean / click", "2 clean / click", "3 smooth / bumpy", and the output used.
+
+**Result (owner, 2026-11-03), on good headphones:** 1 clean, 2 clean (no click or gap at either gapless join), 3 smooth (the 4 s equal-power crossfade had no audible bump). This confirms the measurements of 12.4 and 12.5 by ear for the built-in decoder, `AVAudioPlayerNode` queueing and the timer-driven gain ramp. Not yet heard: a DAC or Bluetooth output, and the Opus or MP3 transcode path.
