@@ -1,3 +1,12 @@
+## 2026-11-03 — macOS Zine review fixes merged (PR #720)
+
+- **Merged (owner request):** PR [#720](https://github.com/abucalip/navi-librarian/pull/720), squash `561a6a83109532a10928a41428f507a296b795b9`, from tested head `39f59a052c5d37e87bb8bb5305a0bfb12b91cab0`; compile, container-smoke, swift, test-and-build and validate-container passed on that head.
+- **What:** the owner reviewed Zine live and approved it. Fixes from the review: the Album screen is reachable from Zine (Home lead story cover, New this week rows, Artist back-issue covers and titles); Not for me on Home is a bordered button; the Artist name is shown whole (240 pt Anton placed from the font's ascent) instead of cropped, a departure from the mockup by the owner's report. Queue rows do not open the Album screen (a tap should play, M5).
+- **Verification:** `swift test --filter ScreenshotTests` locally (14 renders pass); Artist render viewed. CI passed on the head. Full unit suite not run by the agent (owner rule).
+- **Known limits:** the Album page still shows the mockup's sample article for every album; sample data throughout; Zine and Cupertino screenshot baselines not yet added.
+- **State:** merged only. Not published, not deployed.
+- **Next action:** M5 slice 1, real data and Settings.
+
 ## 2026-11-03 — macOS M4 slice 2: Zine Spread theme and six screens merged (PR #719)
 
 - **Merged (owner request):** PR [#719](https://github.com/abucalip/navi-librarian/pull/719), squash `7ea0bf87f59422d27488bf98cd906c4bac3f3fe2`, from tested head `cabe0b033a6da39fe1fc8737cf5baafa48df1fc8`; compile, container-smoke, swift, test-and-build and validate-container passed on that head.
