@@ -1,6 +1,6 @@
 # macOS client contract (Discair)
 
-Status: **approved by the owner and merged (PR [#713](https://github.com/abucalip/navi-librarian/pull/713), squash `8a3bab9706e49dcd485cb6c92073ee0285b1a4e7`, 2026-11-03). Phase M0 is done. M1 (Swift package skeleton, section 11) is merged (PR [#716](https://github.com/abucalip/navi-librarian/pull/716), squash `77e87484042a9db5c6987cb6b15f0f5b38e94d60`, 2026-11-03); M2 (audio spike, section 12) is merged (PR [#717](https://github.com/abucalip/navi-librarian/pull/717), squash `f4d01daafda2b581aa881ffe3d8400186074fe77`, 2026-11-03); M4 (window shell, theme layer, Cupertino and Zine Spread) is next, to start only when the owner asks.** Written from the owner's answers of 2026-11-03. Mockup rounds 1 and 2 are done (section 9); the launch themes are Cupertino and Zine Spread.
+Status: **approved by the owner and merged (PR [#713](https://github.com/abucalip/navi-librarian/pull/713), squash `8a3bab9706e49dcd485cb6c92073ee0285b1a4e7`, 2026-11-03). Phase M0 is done. M1 (Swift package skeleton, section 11) is merged (PR [#716](https://github.com/abucalip/navi-librarian/pull/716), squash `77e87484042a9db5c6987cb6b15f0f5b38e94d60`, 2026-11-03); M2 (audio spike, section 12) is merged (PR [#717](https://github.com/abucalip/navi-librarian/pull/717), squash `f4d01daafda2b581aa881ffe3d8400186074fe77`, 2026-11-03); M4 slice 1 (theme layer, window chrome and the six Cupertino screens) is merged (PR [#718](https://github.com/abucalip/navi-librarian/pull/718), squash `626494c7fdf48c7d1ae0b8cd5a5b15de3621d129`, 2026-11-03); Zine Spread is next, to start only when the owner asks.** Written from the owner's answers of 2026-11-03. Mockup rounds 1 and 2 are done (section 9); the launch themes are Cupertino and Zine Spread.
 
 ## 1. Purpose and scope
 
@@ -108,7 +108,7 @@ Queue (play next, add to queue, reorder), shuffle, repeat, gapless with next-tra
 | M1 | Package skeleton, profiles and reachability, Keychain, Navidrome auth, library read, Navidrome playlist API check, rate-limit check | Tests pass. **Done**: merged in PR #716, see section 11 (both server checks are done: 11.1 passed, 11.2 not shared) |
 | M2 | Audio spike: `AVAudioEngine` decode of FLAC/MP3/Opus, EQ, crossfade, gapless, SMB waveform speed | Measured result recorded: **done**, section 12 (gapless and crossfade confirmed by ear on headphones; DAC and Bluetooth not heard) |
 | M3 | **Mockups:** done in two rounds (9 theme drawings, 6 screens each) | Owner picked: Cupertino and Zine first, Bento Block and Native Glass v2 later |
-| M4 | Window shell, theme layer, Cupertino and Zine Spread, all screens | Screenshot tests; owner approves the UI on the Mac |
+| M4 | Window shell, theme layer, Cupertino and Zine Spread, all screens | Screenshot tests; owner approves the UI on the Mac. **Slice 1 done** (theme layer, Cupertino, all six screens, owner-approved live, PR #718); Zine Spread and baselines open |
 | M5 | Parity: Discover, Downloads, Settings, EQ, lyrics, scrobbling, cache, Sparkle | Tests |
 | M6 | Desktop features (section 6), mini window, widget, notifications, command palette | Per-feature acceptance |
 | M7 | Bento Block, Native Glass v2, then remaining themes, one at a time | Owner approves each |
