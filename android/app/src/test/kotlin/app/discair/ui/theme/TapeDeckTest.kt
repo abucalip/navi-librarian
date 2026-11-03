@@ -87,6 +87,11 @@ class TapeDeckTest {
         for (layout in Layout.values().filter { it != Layout.TapeDeck }) assertFalse(TapeDeckRules.miniPlayerShown(layout, hasSong = true))
     }
 
+    @Test fun settingsMovesToTheCassetteDeckBarAndLeavesHomeWithTwoPageButtons() {
+        assertFalse(TapeDeckRules.homeShowsSettingsButton(Layout.TapeDeck))
+        for (layout in Layout.values().filter { it != Layout.TapeDeck }) assertTrue(TapeDeckRules.homeShowsSettingsButton(layout))
+    }
+
     @Test fun theLyricsButtonSwapsTheQueueAndTheLyrics() {
         assertEquals(1, TapeDeckRules.toggleLyrics(0)) // queue -> lyrics
         assertEquals(0, TapeDeckRules.toggleLyrics(1)) // lyrics -> queue

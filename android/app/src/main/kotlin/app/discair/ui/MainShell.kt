@@ -302,6 +302,8 @@ fun MainShell(state: UiState, model: AppViewModel, container: AppContainer) {
                         if (playerState.visible) nowPlayingOpen = true
                         else scope.launch { snackbar.showSnackbar("Nothing is playing.") }
                     },
+                    onSettings = { goPage(SettingsRoute) },
+                    settingsSelected = destination?.hasRoute(SettingsRoute::class) == true,
                 )
             }
         }

@@ -69,14 +69,18 @@ fun NavIsland(
     onHome: () -> Unit,
     onPlayer: () -> Unit,
     modifier: Modifier = Modifier,
+    /** Cassette Deck only: Settings takes the player's cell in its ruled bar (the mini player opens Now Playing). */
+    onSettings: () -> Unit = {},
+    settingsSelected: Boolean = false,
 ) {
     // Cassette Deck: a full-width ruled bar in the owner's theme (the island's tint and pill are the Standard composition).
     val deckTheme = app.discair.ui.theme.LocalThemePalette.current ?: app.discair.ui.theme.LocalPalette.current
     if (deckTheme.layout == app.discair.ui.theme.Layout.TapeDeck) {
         app.discair.ui.common.TapeNavBar(
-            deckTheme, homeSelected, playing, playerLabel, onSearch, onHome, onPlayer, modifier,
+            deckTheme, homeSelected, settingsSelected, onSearch, onHome, onSettings, modifier,
             searchIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = it, modifier = Modifier.size(24.dp)) },
             homeIcon = { Icon(Icons.Default.Home, contentDescription = null, tint = it, modifier = Modifier.size(24.dp)) },
+            settingsIcon = { Icon(app.discair.ui.player.PlayerIcons.Tune, contentDescription = null, tint = it, modifier = Modifier.size(24.dp)) },
         )
         return
     }

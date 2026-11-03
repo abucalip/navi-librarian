@@ -58,6 +58,9 @@ object TapeDeckRules {
     /** The mini player belongs to the Cassette Deck only, and only while a song is queued; every other layout has none. */
     fun miniPlayerShown(layout: app.discair.ui.theme.Layout, hasSong: Boolean): Boolean = layout == app.discair.ui.theme.Layout.TapeDeck && hasSong
 
+    /** Settings sits in the Cassette Deck's navigation bar (the mini player took the player's place), so Home's page buttons drop it. */
+    fun homeShowsSettingsButton(layout: app.discair.ui.theme.Layout): Boolean = layout != app.discair.ui.theme.Layout.TapeDeck
+
     /** The lyrics button on Now Playing: the view is lyrics (1) or the queue under the player (0). A stale queue-face view (2) also becomes lyrics. */
     fun toggleLyrics(view: Int): Int = if (view == 1) 0 else 1
 
@@ -103,25 +106,24 @@ fun TapeMeter(bars: Int, moving: Boolean, color: Color, modifier: Modifier = Mod
 }
 
 /**
- * The ruled navigation bar of the Cassette Deck: the same three actions as the island (Search, Home, Now playing), in a
- * full-width bar split by rules; the current page is filled with the accent. [palette] is the owner's chosen theme: the bar
- * sits on the page, not on the dark artwork tint the island takes.
+ * The ruled navigation bar of the Cassette Deck: Search, Home and Settings in a full-width bar split by rules; the current page is
+ * filled with the accent. The player has no cell here: the mini player above the bar opens Now Playing. [palette] is the owner's
+ * chosen theme: the bar sits on the page, not on the dark artwork tint the island takes.
  */
 @Composable
 fun TapeNavBar(
     palette: Palette,
     homeSelected: Boolean,
-    playing: Boolean,
-    playerLabel: String,
+    settingsSelected: Boolean,
     onSearch: () -> Unit,
     onHome: () -> Unit,
-    onPlayer: () -> Unit,
+    onSettings: () -> Unit,
     modifier: Modifier = Modifier,
     searchIcon: @Composable (Color) -> Unit,
     homeIcon: @Composable (Color) -> Unit,
+    settingsIcon: @Composable (Color) -> Unit,
 ) {
     val rule = (palette.shape?.outline ?: 2).dp
-    val reduced = rememberReducedMotion()
     Row(
         modifier.fillMaxWidth().background(palette.surface).drawBehind {
             drawRect(palette.edgeStrong, Offset.Zero, Size(size.width, rule.toPx()))
@@ -130,9 +132,7 @@ fun TapeNavBar(
     ) {
         TapeNavCell(palette, "Search", false, onSearch, Modifier.weight(1f), rule, last = false) { searchIcon(it) }
         TapeNavCell(palette, "Home", homeSelected, onHome, Modifier.weight(1f), rule, last = false) { homeIcon(it) }
-        TapeNavCell(palette, playerLabel, false, onPlayer, Modifier.weight(1f), rule, last = true) {
-            TapeMeter(4, TapeDeckRules.meterMoves(playing, false, reduced), it, size = 22.dp)
-        }
+        TapeNavCell(palette, "Settings", settingsSelected, onSettings, Modifier.weight(1f), rule, last = true) { settingsIcon(it) }
     }
 }
 
