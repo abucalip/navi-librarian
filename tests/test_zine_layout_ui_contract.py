@@ -79,6 +79,20 @@ class ZineLayoutTests(unittest.TestCase):
         self.assertIn("acquisitionStatusInfo(job.status).label", fn)
         self.assertNotIn("fetch(", fn)
 
+    def test_the_letter_strip_is_hidden_by_default_acts_only_on_loaded_rows_and_never_fetches(self):
+        self.assertIn('<div id="zineLetters" class="zine-letters" role="group" aria-label="Jump to a letter" hidden></div>', self.html)
+        fn = self.app.split("function updateZineLetters() {")[1].split("\n}\n")[0]
+        self.assertIn("document.documentElement.dataset.layout !== 'zine'", fn)
+        self.assertIn("button.disabled = true;", fn)
+        self.assertIn("No loaded entry starts with", fn)
+        self.assertNotIn("fetch(", fn)
+        self.assertNotIn("requestJSON", fn)
+
+    def test_the_lead_story_and_shelves_keep_dom_order_and_are_css_only(self):
+        self.assertIn('#dashboard > .panel:not(.dashboard-shelf) { grid-column: 1 / -1; }', self.zine)
+        self.assertIn("column-count: 2", self.zine)
+        self.assertNotIn("order:", re.sub(r"/\*.*?\*/", "", self.zine, flags=re.S).replace("border:", "").replace("-order", ""))
+
     def test_reduced_motion_disables_any_zine_animation(self):
         css = re.sub(r"/\*.*?\*/", "", self.zine, flags=re.S)
         if "animation:" in css or "transition:" in css:

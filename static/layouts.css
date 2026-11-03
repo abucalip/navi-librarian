@@ -593,4 +593,22 @@
     font-family: var(--display); font-size: clamp(var(--text-2xl), 3.4vw, 3.25rem); line-height: .98; text-transform: uppercase; overflow-wrap: anywhere; letter-spacing: 0;
   }
   :root[data-layout="zine"] .dashboard-slider > .card[data-slot="1"] .artist-bio { column-count: 2; column-gap: 22px; column-rule: var(--zine-hair); text-align: left; max-height: 9.6em; overflow: hidden; }
+
+  /* ---- Library: an A-Z index. The letter strip sticks under the label strip; the list is three columns with dotted leaders. ---- */
+  :root[data-layout="zine"] .zine-letters { display: flex; flex-wrap: wrap; position: sticky; top: calc(89px + var(--zine-nav-h)); z-index: 5; margin: 14px 0 0; background: var(--surface); border: var(--zine-rule); }
+  :root[data-layout="zine"] .zine-letters button { flex: 1 0 34px; min-height: 44px; padding: 0; color: var(--text); background: transparent; border: 0; border-right: var(--zine-hair); border-radius: 0; font: 800 var(--text-sm)/1 var(--mono); box-shadow: none !important; transform: none !important; }
+  :root[data-layout="zine"] .zine-letters button:hover:not(:disabled) { color: var(--on-accent); background: var(--accent); }
+  :root[data-layout="zine"] .zine-letters button:disabled { opacity: 1; color: var(--text-muted); text-decoration: line-through; cursor: not-allowed; }
+  :root[data-layout="zine"] .library-list:not(.is-grid) { grid-template-columns: repeat(3, minmax(0, 1fr)); column-gap: 28px; row-gap: 0; }
+  :root[data-layout="zine"] .library-list:not(.is-grid) .library-art { display: none; }
+  :root[data-layout="zine"] .library-list:not(.is-grid) .library-artist { min-height: 44px; border-radius: 0; }
+  :root[data-layout="zine"] .library-list:not(.is-grid) .library-artist-text {
+    display: flex; align-items: baseline; gap: 0; width: 100%;
+    background: radial-gradient(circle, var(--edge) 1px, transparent 1.3px) 0 78% / 6px 4px repeat-x;
+  }
+  :root[data-layout="zine"] .library-list:not(.is-grid) .library-artist-name { flex: 0 1 auto; padding-right: 6px; background: var(--ink); font-weight: 700; }
+  :root[data-layout="zine"] .library-list:not(.is-grid) .library-artist-count { flex: 0 0 auto; margin-left: auto; padding-left: 6px; background: var(--ink); font-family: var(--mono); }
+  :root[data-layout="zine"] .library-list:not(.is-grid) .library-artist:hover .library-artist-name,
+  :root[data-layout="zine"] .library-list:not(.is-grid) .library-artist:hover .library-artist-count { background: var(--surface-hover); }
+  :root[data-layout="zine"] .library-toolbar .action-group > button { border-radius: 0; }
 }

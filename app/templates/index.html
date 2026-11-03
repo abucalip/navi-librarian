@@ -363,6 +363,8 @@
           </div>
         </div>
         <p id="libraryStatus" class="status-line" aria-live="polite"></p>
+        <!-- Zine Spread layout only (hidden in every other theme): the A-Z letter strip. static/app.js builds it from the rows already loaded. -->
+        <div id="zineLetters" class="zine-letters" role="group" aria-label="Jump to a letter" hidden></div>
         <ul id="libraryList" class="library-list"></ul>
         <div id="libraryMoreGroup" class="action-group" role="group" aria-label="More" hidden>
           <button id="libraryMore" type="button" title="Load more" aria-label="Load more"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="/static/icons.svg#plus"></use></svg></button>

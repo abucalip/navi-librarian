@@ -4781,6 +4781,45 @@ function buildLibraryRow(item) {
   return row;
 }
 
+// Zine Spread only (the strip is hidden in every other theme): an A-Z index over the rows the list has LOADED. The library is paged by
+// the API, so a letter with no loaded row is disabled (with a tooltip) instead of re-sorting the list on the client; "Load more" and the
+// search box reach the rest. A letter button scrolls to the first loaded row that starts with it and focuses that row.
+function zineLetterOf(name) {
+  const first = String(name || '').trim().charAt(0).normalize('NFD').charAt(0).toUpperCase();
+  return /[A-Z]/.test(first) ? first : '#';
+}
+
+function updateZineLetters() {
+  const strip = $('zineLetters');
+  if (!strip || document.documentElement.dataset.layout !== 'zine') return;
+  const firstRows = new Map();
+  for (const row of $('libraryList').children) {
+    const name = row.querySelector('.library-artist-name');
+    const letter = zineLetterOf(name && name.textContent);
+    if (!firstRows.has(letter)) firstRows.set(letter, row);
+  }
+  const letters = [...'ABCDEFGHIJKLMNOPQRSTUVWXYZ', '#'];
+  strip.replaceChildren(...letters.map(letter => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.textContent = letter;
+    const row = firstRows.get(letter);
+    if (row) {
+      button.setAttribute('aria-label', 'Jump to ' + letter);
+      button.addEventListener('click', () => {
+        row.scrollIntoView({block: 'center', behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'});
+        row.querySelector('button').focus({preventScroll: true});
+      });
+    } else {
+      button.disabled = true;
+      button.title = 'No loaded entry starts with ' + letter;
+      button.setAttribute('aria-label', letter + ': no loaded entry');
+    }
+    return button;
+  }));
+}
+new MutationObserver(updateZineLetters).observe($('libraryList'), {childList: true});
+
 // ---- Navigation between library views ----
 // One stack serves the artist, album and genre views, so every name in the library can open its
 // page and Back always returns to the page the reader came from. The list is the stack's floor.
