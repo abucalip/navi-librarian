@@ -14,7 +14,7 @@ struct CupertinoHome: View {
                 if state.library.phase == .loading { Text("Loading your library…").foregroundStyle(CU.muted).padding(.bottom, 8) }
                 if !state.library.missing.isEmpty || !state.library.isLive {
                     sectionTitle("Missing from your library", sub: "Recommended for you")
-                    shelf(state.library.missing, missing: true)
+                    shelf(state.visible(state.library.missing), missing: true)
                 }
                 sectionTitle("Recently added", sub: nil)
                 shelf(state.library.recent, missing: false)
@@ -76,8 +76,11 @@ struct CupertinoHome: View {
                 // Get, Save and Not for me are all real buttons with text labels; the third sits on its own row to fit the tile.
                 VStack(alignment: .leading, spacing: 6) {
                     HStack(spacing: 5) {
-                        Button("Get") { state.actions.get(album: a) }.buttonStyle(CapsuleButtonStyle(primary: true, small: true))
-                        Button("Save") { state.actions.save(album: a) }.buttonStyle(CapsuleButtonStyle(small: true))
+                        Button(state.acquisition.buttonLabel(for: a)) { state.actions.get(album: a) }
+                            .buttonStyle(CapsuleButtonStyle(primary: true, small: true)).disabled(!state.acquisition.canGet(a))
+                            .help(state.acquisition.detail(for: a)).accessibilityHint(state.acquisition.detail(for: a))
+                        Button(state.acquisition.isSaved(a) ? "Saved" : "Save") { state.actions.save(album: a) }
+                            .buttonStyle(CapsuleButtonStyle(small: true)).disabled(state.acquisition.isSaved(a))
                     }
                     Button("Not for me") { state.actions.notForMe(album: a) }
                         .buttonStyle(CapsuleButtonStyle(small: true, outlined: true))

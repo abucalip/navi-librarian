@@ -8,8 +8,31 @@ import Testing
 
 /// Renders the screens that read the library with live-shaped data (no artwork, since nothing is fetched), to check
 /// the layout with real-looking names, empty years and genres, and the "Nothing playing" state.
+private struct OkTransport: HTTPTransport {
+    func send(_ request: URLRequest) async throws -> (Data, HTTPURLResponse) {
+        let body = request.url!.path == "/api/acquisitions"
+            ? #"{"ok":true,"acquisitions":[{"artist":"Stereolab","album":"Dots and Loops","status":"downloading","details":{"live_progress":{"available":true,"percent":64}}},{"artist":"Fela Kuti","album":"Zombie","status":"queued"}]}"#
+            : #"{"ok":true,"status":"queued","message":"Queued for download."}"#
+        return (Data(body.utf8), HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!)
+    }
+}
+
 @MainActor
 struct LiveScreenshotTests {
+    /// Home with a job list (ticker, Requested button) and a Not for me waiting for its Undo.
+    @Test(arguments: ThemeID.allCases)
+    func rendersAcquisitionStates(theme: ThemeID) async throws {
+        RenderMode.offscreenScreenshot = true
+        let state = try liveState(theme: theme, screen: .home)
+        state.acquisition.configure(librarian: try LibrarianClient(baseURL: URL(string: "https://lib.example.ts.net")!,
+                                                                    credential: Credential(username: "o", password: "p"), transport: OkTransport()))
+        await state.acquisition.refresh()
+        await state.acquisition.get(state.library.missing[0])
+        state.acquisition.notForMe(state.library.missing[2])
+        try render(state, theme, .home, suffix: "acq")
+        state.acquisition.configure(librarian: nil)
+    }
+
     private func liveState(theme: ThemeID, screen: Screen) throws -> AppState {
         let state = AppState(themeID: theme, screen: screen)
         let dec = JSONDecoder()
@@ -43,7 +66,7 @@ struct LiveScreenshotTests {
         #expect(state.library.isLive)
     }
 
-    private func render(_ state: AppState, _ theme: ThemeID, _ screen: Screen) throws {
+    private func render(_ state: AppState, _ theme: ThemeID, _ screen: Screen, suffix: String = "live") throws {
         let size = NSSize(width: 1280, height: 800)
         let host = NSHostingView(rootView: RootView(state: state).frame(width: size.width, height: size.height))
         host.frame = NSRect(origin: .zero, size: size)
@@ -57,6 +80,6 @@ struct LiveScreenshotTests {
         let png = try #require(rep.representation(using: .png, properties: [:]))
         let dir = URL(fileURLWithPath: ProcessInfo.processInfo.environment["DISCAIR_SCREENSHOT_DIR"] ?? NSTemporaryDirectory())
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        try png.write(to: dir.appendingPathComponent("\(theme.rawValue)-\(screen.rawValue)-live.png"))
+        try png.write(to: dir.appendingPathComponent("\(theme.rawValue)-\(screen.rawValue)-\(suffix).png"))
     }
 }

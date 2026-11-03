@@ -56,8 +56,13 @@ struct ZineAlbum: View {
             HStack(spacing: 10) {
                 Button { state.actions.play(album: a) } label: { Label("Play", systemImage: "play.fill") }
                     .buttonStyle(ZineButtonStyle(kind: .yellow, small: true))
-                Button("Save") { state.actions.save(album: a) }.buttonStyle(ZineButtonStyle(small: true))
-                Button("Get album") { state.actions.get(album: a) }.buttonStyle(ZineButtonStyle(small: true))
+                Button(state.acquisition.isSaved(a) ? "Saved" : "Save") { state.actions.save(album: a) }
+                    .buttonStyle(ZineButtonStyle(small: true)).disabled(state.acquisition.isSaved(a))
+                if !a.owned || !state.library.isLive {
+                    Button(state.acquisition.buttonLabel(for: a) == "Get" ? "Get album" : state.acquisition.buttonLabel(for: a)) { state.actions.get(album: a) }
+                        .buttonStyle(ZineButtonStyle(small: true)).disabled(!state.acquisition.canGet(a))
+                        .help(state.acquisition.detail(for: a))
+                }
             }
         }
         .padding(.vertical, 6)
@@ -79,7 +84,11 @@ struct ZineAlbum: View {
                     HStack {
                         Mono("\(i + 1) \(t.title) · not owned")
                         Spacer(minLength: 6)
-                        Button("Get song") { state.actions.get(album: a) }.buttonStyle(ZineButtonStyle(kind: .yellow, small: true))
+                        Button(state.acquisition.buttonLabel(for: a, song: t.title) == "Get" ? "Get song" : state.acquisition.buttonLabel(for: a, song: t.title)) {
+                            state.actions.getSong(album: a, title: t.title, trackNumber: i + 1)
+                        }
+                        .buttonStyle(ZineButtonStyle(kind: .yellow, small: true))
+                        .disabled(!state.acquisition.canGet(a, song: t.title)).help(state.acquisition.detail(for: a, song: t.title))
                     }
                     .padding(.horizontal, 10).padding(.vertical, 6)
                     .background(Z.yellow).zBorder(3, dashed: true)

@@ -91,7 +91,9 @@ struct ZineArtist: View {
             } else {
                 VStack(spacing: 4) {
                     Mono("Missing").multilineTextAlignment(.center)
-                    Button("Get") { state.actions.get(album: a) }.buttonStyle(ZineButtonStyle(kind: .yellow, small: true))
+                    Button(state.acquisition.buttonLabel(for: a)) { state.actions.get(album: a) }
+                        .buttonStyle(ZineButtonStyle(kind: .yellow, small: true)).disabled(!state.acquisition.canGet(a))
+                        .help(state.acquisition.detail(for: a))
                         .accessibilityLabel("Get \(a.title)")
                 }
                 .frame(width: 130, height: 130)

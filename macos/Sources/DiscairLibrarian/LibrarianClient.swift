@@ -59,16 +59,71 @@ public struct LibrarianClient: Sendable {
     }
 
     public func dashboardPicks(count: Int = 10) async throws -> [DashboardPick] {
-        let path = "api/dashboard-picks?count=\(min(max(count, 1), 30))"
-        var (data, http) = try await send("GET", path, body: nil)
-        if http.statusCode == 401 {
-            try await login()
-            (data, http) = try await send("GET", path, body: nil)
-        }
+        let (data, http) = try await authedSend("GET", "api/dashboard-picks?count=\(min(max(count, 1), 30))", body: nil)
         return try decode(DashboardPicks.self, data, http).items
     }
 
+    // MARK: Acquisition and feedback (Android contract 5.3, macOS contract section 5)
+
+    /// Get an album: the Librarian searches and queues the best source automatically (`auto_queue: true`).
+    /// The result is the server's answer; nothing here assumes success.
+    public func acquire(artist: String, album: String, metadata: [String: String] = [:]) async throws -> AcquireResult {
+        let body = try json(["artist": artist, "album": album, "metadata": metadata, "auto_queue": true])
+        let (data, http) = try await authedSend("POST", "api/acquire", body: body)
+        return try decode(AcquireResult.self, data, http)
+    }
+
+    /// Get one song of an album; the best clear file is chosen by the server.
+    public func acquireTrack(artist: String, album: String, title: String, trackNumber: Int? = nil, year: Int? = nil,
+                             metadata: [String: String] = [:]) async throws -> AcquireResult {
+        var payload: [String: Any] = ["artist": artist, "album": album, "title": title]
+        if let trackNumber, trackNumber >= 1 { payload["track_number"] = trackNumber }
+        if let year { payload["year"] = year }
+        if !metadata.isEmpty { payload["metadata"] = metadata }
+        let (data, http) = try await authedSend("POST", "api/acquire/track", body: try json(payload))
+        return try decode(AcquireResult.self, data, http)
+    }
+
+    /// A snapshot of every job. The app polls this while a screen that shows jobs is visible (the SSE stream is a later step).
+    public func acquisitions() async throws -> [Acquisition] {
+        let (data, http) = try await authedSend("GET", "api/acquisitions", body: nil)
+        return try decode(AcquisitionsPayload.self, data, http).acquisitions
+    }
+
+    /// Ask the server to switch the download source of a job that is downloading (409 when it is not).
+    public func skipSource(artist: String, album: String) async throws {
+        let (data, http) = try await authedSend("POST", "api/acquisitions/skip", body: try json(["artist": artist, "album": album]))
+        if let failure = failure(http, data) { throw failure }
+    }
+
+    /// Dismiss a job. **This deletes the job's downloaded files on the server**, so callers confirm first.
+    public func dismissAcquisition(artist: String, album: String) async throws -> String? {
+        let (data, http) = try await authedSend("POST", "api/acquisitions/dismiss", body: try json(["artist": artist, "album": album]))
+        return try decode(AcquireResult.self, data, http).message
+    }
+
+    /// Save, Not for me (`dismiss`), Never suggest (`dismiss_artist`) and removal from For me.
+    public func feedback(artist: String, album: String, action: FeedbackAction, metadata: [String: String] = [:]) async throws {
+        let body = try json(["artist": artist, "album": album, "action": action.rawValue, "metadata": metadata])
+        let (data, http) = try await authedSend("POST", "api/discovery/feedback", body: body)
+        if let failure = failure(http, data) { throw failure }
+    }
+
     // MARK: Plumbing
+
+    private func json(_ object: [String: Any]) throws -> Data {
+        try JSONSerialization.data(withJSONObject: object, options: [.sortedKeys])
+    }
+
+    /// One send with a single re-login on 401 (the session cookie lives in memory only).
+    private func authedSend(_ method: String, _ path: String, body: Data?) async throws -> (Data, HTTPURLResponse) {
+        var (data, http) = try await send(method, path, body: body)
+        if http.statusCode == 401 {
+            try await login()
+            (data, http) = try await send(method, path, body: body)
+        }
+        return (data, http)
+    }
 
     private func send(_ method: String, _ path: String, body: Data?) async throws -> (Data, HTTPURLResponse) {
         let parts = path.split(separator: "?", maxSplits: 1).map(String.init)
