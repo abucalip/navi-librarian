@@ -96,7 +96,9 @@ struct CupertinoArtist: View {
             Text(a.title).fontWeight(.semibold).lineLimit(1)
             Text(a.line([a.yearText, a.owned ? "" : "Missing"])).foregroundStyle(CU.muted)
             if !a.owned {
-                Button("Get") { state.actions.get(album: a) }.buttonStyle(CapsuleButtonStyle(primary: true, small: true)).padding(.top, 7)
+                Button(state.acquisition.buttonLabel(for: a)) { state.actions.get(album: a) }
+                    .buttonStyle(CapsuleButtonStyle(primary: true, small: true)).padding(.top, 7).disabled(!state.acquisition.canGet(a))
+                    .help(state.acquisition.detail(for: a))
             }
         }
         .font(.system(size: 13)).frame(width: 128, alignment: .leading)

@@ -7,12 +7,13 @@ struct ZineHome: View {
 
     var body: some View {
         let lib = state.library
-        let lead = lib.missing.first ?? Fixtures.albums[7]   // the top pick; sample data is Tago Mago
+        let picks = state.visible(lib.missing)
+        let lead = picks.first ?? Fixtures.albums[7]   // the top pick; sample data is Tago Mago
         let story = lib.isLive ? [lead.reason ?? "Recommended for you by Librarian.",
                                   lead.suggestedTracks.isEmpty ? "" : "Suggested tracks: " + lead.suggestedTracks.prefix(4).joined(separator: ", ") + "."]
                                : [ZineFixtures.leadStory.headline + ZineFixtures.leadStory.p1, ZineFixtures.leadStory.p2]
-        let fresh = lib.isLive ? Array(lib.missing.dropFirst().prefix(3)) : Fixtures.albums([8, 9, 10])
-        let classifieds = lib.isLive ? Array(lib.missing.dropFirst(4).prefix(4)) : ZineFixtures.classifieds.compactMap { t in Fixtures.albums.first { $0.title == t } }
+        let fresh = lib.isLive ? Array(picks.dropFirst().prefix(3)) : Fixtures.albums([8, 9, 10])
+        let classifieds = lib.isLive ? Array(picks.dropFirst(4).prefix(4)) : ZineFixtures.classifieds.compactMap { t in Fixtures.albums.first { $0.title == t } }
         VStack(alignment: .leading, spacing: 10) {
         if case .failed(let m) = lib.phase { Mono(m, bold: true).foregroundStyle(Z.red) }
         if lib.phase == .loading { Mono("Loading your library…") }
@@ -37,8 +38,11 @@ struct ZineHome: View {
                 }
                 .font(Z.serif(14.5)).fixedSize(horizontal: false, vertical: true).padding(.top, 16)
                 HStack(spacing: 12) {
-                    Button("Get this album") { state.actions.get(album: lead) }.buttonStyle(ZineButtonStyle(kind: .yellow))
-                    Button("Save") { state.actions.save(album: lead) }.buttonStyle(ZineButtonStyle())
+                    Button(state.acquisition.buttonLabel(for: lead) == "Get" ? "Get this album" : state.acquisition.buttonLabel(for: lead)) { state.actions.get(album: lead) }
+                        .buttonStyle(ZineButtonStyle(kind: .yellow)).disabled(!state.acquisition.canGet(lead))
+                        .help(state.acquisition.detail(for: lead))
+                    Button(state.acquisition.isSaved(lead) ? "Saved" : "Save") { state.actions.save(album: lead) }
+                        .buttonStyle(ZineButtonStyle()).disabled(state.acquisition.isSaved(lead))
                     Button("Not for me") { state.actions.notForMe(album: lead) }.buttonStyle(ZineButtonStyle())
                 }
                 .padding(.top, 14)
@@ -64,7 +68,8 @@ struct ZineHome: View {
                                 }
                                 .buttonStyle(.plain)
                                 .accessibilityLabel("Open \(a.title) by \(a.artist)")
-                                Button("Get") { state.actions.get(album: a) }
+                                Button(state.acquisition.buttonLabel(for: a)) { state.actions.get(album: a) }
+                                    .disabled(!state.acquisition.canGet(a))
                                     .buttonStyle(ZineButtonStyle(kind: .yellow, small: true))
                                     .accessibilityLabel("Get \(a.title)")
                             }
@@ -77,8 +82,8 @@ struct ZineHome: View {
                         DotRow {
                             Mono(a.title).lineLimit(1)
                         } right: {
-                            Button { state.actions.get(album: a) } label: { Mono("Get") }
-                                .buttonStyle(ZineLinkStyle()).accessibilityLabel("Get \(a.title)")
+                            Button { state.actions.get(album: a) } label: { Mono(state.acquisition.buttonLabel(for: a)) }
+                                .buttonStyle(ZineLinkStyle()).disabled(!state.acquisition.canGet(a)).accessibilityLabel("Get \(a.title)")
                         }
                         .padding(.vertical, 1)
                     }

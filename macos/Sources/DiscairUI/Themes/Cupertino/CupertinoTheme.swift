@@ -71,6 +71,7 @@ struct CupertinoWindow: View {
             .frame(maxWidth: .infinity, alignment: .trailing)
             .padding(.trailing, state.screen == .queue ? CupertinoQueueInspector.width + 20 : 20).padding(.top, 52)
         }
+        .overlay(alignment: .bottom) { CupertinoNotice(state: state).padding(.bottom, 22) }
         .foregroundStyle(CU.ink)
         .clipShape(RoundedRectangle(cornerRadius: CU.windowRadius, style: .continuous))
         .background(WindowConfigurator())
@@ -122,8 +123,8 @@ struct CupertinoSidebar: View {
                     Image(systemName: icon).foregroundStyle(CU.accent).frame(width: 18)
                     Text(label).fontWeight(on ? .semibold : .regular)
                     Spacer()
-                    if label == "Downloads" {
-                        Text("2").font(.system(size: 11, weight: .bold)).foregroundStyle(.white)
+                    if label == "Downloads", !state.library.isLive || state.acquisition.activeCount > 0 {
+                        Text(state.library.isLive ? String(state.acquisition.activeCount) : "2").font(.system(size: 11, weight: .bold)).foregroundStyle(.white)
                             .padding(.horizontal, 7).background(CU.accent, in: Capsule())
                     }
                 }
@@ -210,5 +211,30 @@ struct CupertinoToolbar: View {
         .glassEffect(CU.glass, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Now playing: After the Flood, Talk Talk, 3:12 of 9:41")
+    }
+}
+
+/// Not for me waits a few seconds so it can be undone; failures of Save or a dismissal show here until closed.
+struct CupertinoNotice: View {
+    let state: AppState
+    var body: some View {
+        let acq = state.acquisition
+        if let p = acq.pending {
+            HStack(spacing: 12) {
+                Text("Not for me: \(p.title)").fontWeight(.semibold).lineLimit(1)
+                Button("Undo") { acq.undo() }.buttonStyle(CapsuleButtonStyle(primary: true, small: true))
+                Button("Never suggest \(p.artist)") { Task { await acq.neverSuggest() } }.buttonStyle(CapsuleButtonStyle(small: true, outlined: true))
+            }
+            .font(.system(size: 13)).padding(.horizontal, 16).padding(.vertical, 10)
+            .glassEffect(CU.glass, in: Capsule())
+            .accessibilityElement(children: .contain)
+        } else if let n = acq.notice {
+            HStack(spacing: 12) {
+                Text(n).lineLimit(2)
+                Button("Dismiss") { acq.clearNotice() }.buttonStyle(CapsuleButtonStyle(small: true))
+            }
+            .font(.system(size: 13)).padding(.horizontal, 16).padding(.vertical, 10)
+            .glassEffect(CU.glass, in: Capsule())
+        }
     }
 }

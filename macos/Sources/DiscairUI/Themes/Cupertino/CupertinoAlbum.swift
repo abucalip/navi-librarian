@@ -38,10 +38,18 @@ struct CupertinoAlbum: View {
                                 .buttonStyle(CapsuleButtonStyle(primary: true, large: true))
                             Button { } label: { Label("Shuffle", systemImage: "shuffle") }
                                 .buttonStyle(CapsuleButtonStyle(large: true))
-                            Button { state.actions.get(album: a) } label: { Label("Get missing song", systemImage: "plus") }
-                                .buttonStyle(CapsuleButtonStyle(outlined: true, large: true))
-                            Button("Save") { state.actions.save(album: a) }
-                                .buttonStyle(CapsuleButtonStyle(large: true))
+                            if !a.owned {
+                                Button { state.actions.get(album: a) } label: { Label(state.acquisition.buttonLabel(for: a) == "Get" ? "Get album" : state.acquisition.buttonLabel(for: a), systemImage: "plus") }
+                                    .buttonStyle(CapsuleButtonStyle(outlined: true, large: true)).disabled(!state.acquisition.canGet(a))
+                                    .help(state.acquisition.detail(for: a))
+                            } else if let t = tracks.first(where: { !$0.owned }) {
+                                Button { state.actions.getSong(album: a, title: t.title, trackNumber: t.id + 1) } label: {
+                                    Label(state.acquisition.buttonLabel(for: a, song: t.title) == "Get" ? "Get missing song" : state.acquisition.buttonLabel(for: a, song: t.title), systemImage: "plus") }
+                                    .buttonStyle(CapsuleButtonStyle(outlined: true, large: true)).disabled(!state.acquisition.canGet(a, song: t.title))
+                                    .help(state.acquisition.detail(for: a, song: t.title))
+                            }
+                            Button(state.acquisition.isSaved(a) ? "Saved" : "Save") { state.actions.save(album: a) }
+                                .buttonStyle(CapsuleButtonStyle(large: true)).disabled(state.acquisition.isSaved(a))
                         }
                     }
                     .padding(.top, 8)
@@ -111,8 +119,12 @@ struct CupertinoAlbum: View {
                 if !isHeader {
                     if track!.owned { Text("···") }
                     else {
-                        Button("Get song") { state.actions.get(album: state.selectedAlbum) }
-                            .buttonStyle(CapsuleButtonStyle(primary: true, small: true))
+                        Button(state.acquisition.buttonLabel(for: state.selectedAlbum, song: track!.title) == "Get" ? "Get song" : state.acquisition.buttonLabel(for: state.selectedAlbum, song: track!.title)) {
+                            state.actions.getSong(album: state.selectedAlbum, title: track!.title, trackNumber: index + 1)
+                        }
+                        .buttonStyle(CapsuleButtonStyle(primary: true, small: true))
+                        .disabled(!state.acquisition.canGet(state.selectedAlbum, song: track!.title))
+                        .help(state.acquisition.detail(for: state.selectedAlbum, song: track!.title))
                     }
                 }
             }

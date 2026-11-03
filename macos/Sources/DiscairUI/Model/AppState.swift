@@ -16,6 +16,7 @@ public enum Screen: String, CaseIterable, Sendable {
 public protocol DiscairActions: AnyObject {
     func play(album: AlbumItem)
     func get(album: AlbumItem)
+    func getSong(album: AlbumItem, title: String, trackNumber: Int?)
     func save(album: AlbumItem)
     func notForMe(album: AlbumItem)
     func resume()
@@ -27,6 +28,7 @@ public final class NoopActions: DiscairActions {
     public init() {}
     public func play(album: AlbumItem) {}
     public func get(album: AlbumItem) {}
+    public func getSong(album: AlbumItem, title: String, trackNumber: Int?) {}
     public func save(album: AlbumItem) {}
     public func notForMe(album: AlbumItem) {}
     public func resume() {}
@@ -44,6 +46,8 @@ public final class AppState {
     public var connectionLabel: String { session?.label ?? "Home network · http (local)" }
     public var connectionIsGood: Bool { session?.isGood ?? true }
     public let actions: DiscairActions
+    /// Get, Save, Not for me and the job list. Live only once a session connects.
+    public let acquisition: AcquisitionModel
     /// Sample data until a session connects, then the owner's library.
     public let library = LibraryModel()
     public let artwork = ArtworkStore()
@@ -51,11 +55,13 @@ public final class AppState {
     /// The letter shown in the Zine A-Z index.
     public var selectedLetter = "T"
 
-    public init(themeID: ThemeID = .cupertino, screen: Screen = .home, actions: DiscairActions = NoopActions(), session: SessionModel? = nil) {
+    public init(themeID: ThemeID = .cupertino, screen: Screen = .home, actions: DiscairActions? = nil, session: SessionModel? = nil) {
+        let acquisition = AcquisitionModel()
+        self.acquisition = acquisition
         self.session = session
         self.themeID = themeID
         self.screen = screen
-        self.actions = actions
+        self.actions = actions ?? (session != nil ? AcquisitionActions(acquisition) : NoopActions())
         session?.onConnected = { [weak self] in await self?.refreshLibrary() }
     }
 
@@ -65,6 +71,7 @@ public final class AppState {
     public func refreshLibrary() async {
         guard let session, let navidrome = session.navidrome else { return }
         artwork.configure(navidrome.urls)
+        acquisition.configure(librarian: session.librarian)
         await library.load(navidrome: navidrome, librarian: session.librarian)
         if library.isLive { selectedArtist = library.artists.first ?? selectedArtist; selectedLetter = selectedArtist.letter }
         if library.isLive, let first = library.recent.first ?? library.albums.first { selectedAlbum = first }
@@ -77,6 +84,9 @@ public final class AppState {
     public func loadSelectedArtist() async {
         await library.loadArtist(selectedArtist, navidrome: session?.navidrome)
     }
+
+    /// Library lists without the albums the owner dismissed.
+    public func visible(_ albums: [AlbumItem]) -> [AlbumItem] { albums.filter { !acquisition.isHidden($0) } }
 
     public func open(album: AlbumItem) { selectedAlbum = album; screen = .album }
 

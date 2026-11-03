@@ -17,7 +17,7 @@ struct ZineWindow: View {
     var body: some View {
         VStack(spacing: 0) {
             ZineMasthead(state: state)
-            ZineTicker(live: state.library.isLive)
+            ZineTicker(live: state.library.isLive, text: state.acquisition.tickerText)
             ScrollView {
                 page.padding(.horizontal, 22).padding(.vertical, 16)
                     .frame(maxWidth: .infinity, alignment: .topLeading)
@@ -25,6 +25,7 @@ struct ZineWindow: View {
             .scrollEdgeEffectStyle(.hard, for: .top)
             ZinePlayerStrip(state: state)
         }
+        .overlay(alignment: .bottom) { ZineNotice(state: state).padding(.bottom, 70) }
         .foregroundStyle(Z.ink)
         .background(Z.paper)
         .overlay { Rectangle().strokeBorder(Z.ink, lineWidth: 3).allowsHitTesting(false) }
@@ -131,15 +132,16 @@ struct ZineLights: View {
 struct ZineTicker: View {
     /// A live library has no acquisition feed yet (Downloads is a later slice), so the ticker says so instead of showing sample items.
     var live = false
+    var text = "Pipeline: no downloads in progress"
     var body: some View {
-        Mono(live ? "Pipeline: no downloads in progress" : "▶ Downloading: Tago Mago 64%  ■  Queued: Zombie  ■  Imported: Heaven or Las Vegas  ■  Failed: none")
+        Mono(live ? text : "▶ Downloading: Tago Mago 64%  ■  Queued: Zombie  ■  Imported: Heaven or Las Vegas  ■  Failed: none")
             .lineLimit(1).fixedSize()
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 22).padding(.vertical, 4)
             .background(Z.yellow)
             .overlay(alignment: .bottom) { Rectangle().fill(Z.ink).frame(height: 3) }
             .clipped()
-            .accessibilityLabel(live ? "Pipeline: no downloads in progress" : "Pipeline: downloading Tago Mago 64 percent, queued Zombie, imported Heaven or Las Vegas, failed none")
+            .accessibilityLabel(live ? text : "Pipeline: downloading Tago Mago 64 percent, queued Zombie, imported Heaven or Las Vegas, failed none")
     }
 }
 
@@ -185,5 +187,28 @@ struct ZinePlayerStrip: View {
         }
         .padding(.horizontal, 22).frame(height: 54)
         .background(Z.ink)
+    }
+}
+
+/// Not for me waits a few seconds so it can be undone; failures show here until closed.
+struct ZineNotice: View {
+    let state: AppState
+    var body: some View {
+        let acq = state.acquisition
+        if let p = acq.pending {
+            HStack(spacing: 12) {
+                Mono("Not for me: \(p.title)", bold: true).lineLimit(1)
+                Button("Undo") { acq.undo() }.buttonStyle(ZineButtonStyle(small: true))
+                Button("Never suggest \(p.artist)") { Task { await acq.neverSuggest() } }.buttonStyle(ZineButtonStyle(small: true))
+            }
+            .padding(.horizontal, 12).padding(.vertical, 8).background(Z.yellow).zBorder(3).zShadow(4)
+            .accessibilityElement(children: .contain)
+        } else if let n = acq.notice {
+            HStack(spacing: 12) {
+                Mono(n, bold: true).lineLimit(2)
+                Button("Dismiss") { acq.clearNotice() }.buttonStyle(ZineButtonStyle(small: true))
+            }
+            .padding(.horizontal, 12).padding(.vertical, 8).background(Z.yellow).zBorder(3).zShadow(4)
+        }
     }
 }

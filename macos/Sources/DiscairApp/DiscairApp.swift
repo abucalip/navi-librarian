@@ -20,6 +20,10 @@ struct DiscairApp: App {
         Window("Discair", id: "main") {
             RootView(state: state)
                 .task { await state.session?.connect() }
+                // Best effort: a Not for me still inside its Undo window is sent before the app quits.
+                .onReceive(NotificationCenter.default.publisher(for: NSApplication.willTerminateNotification)) { _ in
+                    Task { await state.acquisition.flush() }
+                }
         }
         .windowStyle(.hiddenTitleBar)
         .defaultSize(width: 1280, height: 800)
