@@ -59,9 +59,9 @@ Read in full from PDFs the owner saved from developer.apple.com (not committed; 
 - Check every screen with Reduce Transparency and Increase Contrast.
 - Corner radii concentric with the window and bars; no hard-coded control heights where a system control exists.
 
-**Differences from the approved mockups (owner to decide):**
-1. **Connection indicator at the bottom of the sidebar** (and the "unencrypted" badge, contract section 3). HIG: people often move windows so the bottom edge is off screen; keep critical information and actions away from the bottom of sidebars and windows. Proposal: show the active profile and the unencrypted badge in the toolbar or at the top of the sidebar.
-2. **Zine Spread black player strip at the bottom.** Same HIG rule for the window bottom. Proposal: keep the strip as drawn (approved "very good"), and also expose transport in the menu bar, media keys and the mini window so playback never depends on the strip being on screen.
-3. **Tinted glass** (74% light tint, owner approved on 2026-11-03). HIG prefers few toolbar backgrounds and tints. Kept as approved; revisit if legibility checks fail.
-4. **Fixed red-pink accent in sidebar icons.** HIG: sidebar icons follow the system accent colour unless a fixed colour has a purpose. The accent is part of the Cupertino identity, so it stays fixed for that theme.
-5. **Custom traffic lights.** The system buttons are hidden and redrawn (contract decision); they must keep close, minimise and zoom behaviour and VoiceOver labels.
+**Differences from the approved mockups (owner decided 2026-11-03):**
+1. **Connection indicator and "unencrypted" badge:** moved to the top of the sidebar (below the traffic lights), not the bottom. HIG: people often move windows so the bottom edge is off screen. Done for Cupertino; every theme follows.
+2. **Zine Spread black player strip at the bottom:** kept as drawn. Transport is also in the menu bar, media keys and the mini window, so playback never depends on the strip.
+3. **Tinted glass** (74% light tint): kept as approved; revisit if legibility checks fail.
+4. **Fixed red-pink sidebar icons:** kept fixed as part of Cupertino's identity.
+5. **Custom traffic lights:** must keep close, minimise and zoom behaviour and VoiceOver labels.

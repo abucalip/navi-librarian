@@ -20,7 +20,10 @@ enum CU {
     static let card = Color(red: 0.96, green: 0.96, blue: 0.97)          // #f5f5f7
     static let fill = Color(red: 0.925, green: 0.925, blue: 0.94)        // #ececf0
     /// Mockup glass: rgba(246,246,249,.74) over the blur. Bare `.regular` is too clear over the pastel backdrop.
-    static let glass: Glass = .regular.tint(Color(red: 0.965, green: 0.965, blue: 0.976).opacity(0.74))
+    /// Offscreen screenshot renders blank when the tint is applied, so tests switch it off (`RenderMode`).
+    static var glass: Glass {
+        RenderMode.offscreenScreenshot ? .regular : .regular.tint(Color(red: 0.965, green: 0.965, blue: 0.976).opacity(0.74))
+    }
     static let sidebarRadius: CGFloat = 20
     static let windowRadius: CGFloat = 26
     static func title(_ size: CGFloat) -> Font { .system(size: size, weight: .bold).width(.standard) }
@@ -68,7 +71,15 @@ struct CupertinoSidebar: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
-            TrafficLights().padding(.leading, 6).padding(.bottom, 20)
+            TrafficLights().padding(.leading, 6).padding(.bottom, 10)
+            // Top of the sidebar, not the bottom: windows are often dragged partly off screen (HIG, Sidebars).
+            HStack(spacing: 5) {
+                Circle().fill(.green).frame(width: 7, height: 7)
+                Text(state.connectionLabel)
+            }
+            .font(.system(size: 11)).foregroundStyle(CU.muted).padding(.horizontal, 10).padding(.bottom, 8)
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("Connection: \(state.connectionLabel)")
             ForEach(nav, id: \.1) { icon, label in
                 let on = label == "Home"
                 HStack(spacing: 9) {
@@ -95,12 +106,6 @@ struct CupertinoSidebar: View {
                 .font(.system(size: 13.5)).padding(.horizontal, 10).padding(.vertical, 6)
             }
             Spacer()
-            HStack(spacing: 5) {
-                Circle().fill(.green).frame(width: 7, height: 7)
-                Text(state.connectionLabel)
-            }
-            .font(.system(size: 11)).foregroundStyle(CU.muted).padding(.horizontal, 6)
-            .accessibilityLabel("Connection: \(state.connectionLabel)")
         }
         .padding(10).padding(.top, 6)
         .frame(width: 216)
