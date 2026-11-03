@@ -11,6 +11,7 @@ let package = Package(
         .library(name: "DiscairNavidrome", targets: ["DiscairNavidrome"]),
         .library(name: "DiscairLibrarian", targets: ["DiscairLibrarian"]),
         .executable(name: "discair-checks", targets: ["DiscairChecks"]),
+        .executable(name: "discair-audio-spike", targets: ["AudioSpike"]),
     ],
     targets: [
         .target(name: "DiscairCore"),
@@ -19,6 +20,11 @@ let package = Package(
         .executableTarget(
             name: "DiscairChecks",
             dependencies: ["DiscairCore", "DiscairNavidrome", "DiscairLibrarian"]
+        ),
+        // M2 measurement tool (contract section 12). Not shipped in the app.
+        .executableTarget(
+            name: "AudioSpike",
+            dependencies: ["DiscairCore", "DiscairNavidrome"]
         ),
         .testTarget(
             name: "DiscairCoreTests",
