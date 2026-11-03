@@ -1,6 +1,6 @@
 # Brut layouts plan (web and Android)
 
-Last updated: 2026-11-03 (P4 merged). Governing decision: D-023 in [DECISIONS.md](DECISIONS.md). Status tracking: the table in section 9 (update it in the PR that completes each phase). GitHub `main` is authoritative.
+Last updated: 2026-11-03 (P5 merged). Governing decision: D-023 in [DECISIONS.md](DECISIONS.md). Status tracking: the table in section 9 (update it in the PR that completes each phase). GitHub `main` is authoritative.
 
 ## 1. What this is
 
@@ -149,6 +149,8 @@ Palettes Lime, Cobalt Reel, Tangerine Reel. Home: ruled recently added list, the
 ### A3 Sheet Stack (phase P5)
 Palettes Violet-orange (current), Acid Night, Daylight Sheet. Home: a carousel row ("Today") over item rows with status badges for requests (Fetching, Queued, Done, always with words). Nav: a joined four-segment toggle group replaces the island. Now Playing: a bottom sheet with a grab handle, large cover with a vertical volume slider beside it, a joined transport (previous, play, next, queue), a lyrics strip that uses the existing lyrics feature (D-019) and shows "no lyrics" states as today.
 
+**As built in P5:** themes `Sheet · Violet-orange` and `Sheet · Acid Night` (dark, night list) and `Sheet · Daylight` (light, day list), Brutal family with 14 dp corners; Daylight's muted text is `#5A546A` (the mockup's `#6A647A` failed AA). Pure rules are in `SheetStackRules` (`ui/common/SheetStack.kt`) with `SheetStackTest`. **Navigation:** one joined four-segment group (Home, Search, Library, Player with the live meter) replaces the island; Library moves into it, so Home's page buttons here are Discover and Settings. **Home:** "Today" heading over the picks, then a **Requests** list of the 4 newest acquisition requests from the same hub as the Downloads page, with a status badge that is always a word (Fetching, Queued, Done, otherwise the app's own label). **Now Playing:** the bottom sheet's grab handle, a large cover with a **vertical volume slider** (existing `setVolume`; drag, tap and screen-reader adjustment), title, seek bar, a joined four-button transport (previous, play or pause, next, queue) and a **lyrics strip** (the line being sung, or the same no-lyrics words as the Lyrics view); the queue button and the strip open their panel under the transport and a second press closes it. The strip is the Lyrics view, so lyrics load whenever the sheet is open on this layout (the Standard layout loads them only while its Lyrics face is open). Nothing from the A3 text is left out.
+
 ### A4 Sticker Wall (phase P6)
 Palette Peach-teal only. Home: floating pill nav over a two-column tilted tile wall with sticker badges (New, Missing; text). Now Playing: poster style, large stacked title, the equalizer shown as three stacked pill bars that are the real controls of the existing Equalizer screen (bass, mid, treble summary; tapping opens the Equalizer, no new audio behaviour), a crossfade switch that is the real setting, round transport buttons. Tilts are static (no animation), removed from the accessibility tree and never reduce touch targets below 44 dp.
 
@@ -167,7 +169,7 @@ One PR per phase except P0 and P7 (documents, direct to `main`). Each code PR: b
 | P2 | Web Ledger Room with Ink Slate, Plum Archive, Paper Mono | **done 2026-11-03**: PR [#702](https://github.com/abucalip/navi-librarian/pull/702), squash `d94667d8fe645197acd9a2cb98e68836306132f3`; owner checked it in the browser; not published |
 | P3 | Web Crate Wall with Kraft, Mint Sleeve, Night Press | **done 2026-11-03**: PR [#703](https://github.com/abucalip/navi-librarian/pull/703), squash `c6dbc43bd113bd3033ad430e787d3c1da05377ce`; owner checked it in the browser; not published |
 | P4 | Android layout plumbing and Cassette Deck with Lime, Cobalt Reel, Tangerine Reel | **done 2026-11-03**: PR [#704](https://github.com/abucalip/navi-librarian/pull/704), squash `95e7da330c64763fd5f83b7430922e1cf0481b43`; owner checked it on the phone; not published |
-| P5 | Android Sheet Stack with Violet-orange, Acid Night, Daylight Sheet | not started |
+| P5 | Android Sheet Stack with Violet-orange, Acid Night, Daylight Sheet | **done 2026-11-03**: PR [#705](https://github.com/abucalip/navi-librarian/pull/705), squash `43159c7a60ca693b474421bb2537d57427328b90`; owner checked it on the phone; not published |
 | P6 | Android Sticker Wall with Peach-teal | not started |
 | P7 | Closeout: documents, a published release when the owner authorises it | not started |
 

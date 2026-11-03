@@ -1,3 +1,12 @@
+## 2026-11-03 — Android Sheet Stack layout merged (PR #705)
+
+- **Merged (owner request):** PR [#705](https://github.com/abucalip/navi-librarian/pull/705), squash `43159c7a60ca693b474421bb2537d57427328b90`, from tested head `5162ef93aa08505b0151746dc408af2a742a593f`; compile, container-smoke, test-and-build and validate-container passed on that head.
+- **What:** phase P5 of `docs/BRUT_LAYOUTS_PLAN.md` (D-023). Themes `sheetviolet`, `sheetacid`, `sheetdaylight` in `Palette.kt`; `ui/common/SheetStack.kt` (`SheetStackRules`, `SheetNavGroup`, `VerticalVolumeSlider`); `ui/player/SheetPlayer.kt`; `ui/home/SheetRequests.kt`; changes in `NavIsland.kt`, `MainShell.kt`, `HomeScreen.kt` and `NowPlayingSheet.kt`. Under the owner's behaviour rule the layout has its own navigation group, a Requests list, a volume slider and a lyrics strip.
+- **Tests and builds run:** `./gradlew testDebugUnitTest` (all unit tests; new `SheetStackTest`, updated `PaletteTest` and `TapeDeckTest`), `assembleDebug`, `lintDebug` (0 errors, 41 warnings, 3 hints) and the signed R8 `assembleRelease` with JDK 17.
+- **Device check:** the owner installed the release build over wifi adb and reviewed it on the phone (SM-G781B) and approved it. Not checked: TalkBack (volume slider, strip), 200% text, Acid Night and Daylight on every screen.
+- **Not done / not claimed:** not published or deployed. Lyrics load whenever the sheet is open on this layout (recorded in the plan).
+- **Next action:** P6, the Android Sticker Wall layout, from the plan.
+
 ## 2026-11-03 — Android layout plumbing and Cassette Deck merged (PR #704)
 
 - **Merged (owner request):** PR [#704](https://github.com/abucalip/navi-librarian/pull/704), squash `95e7da330c64763fd5f83b7430922e1cf0481b43`, from tested head `085f876c846f149638d843a6715aefad149cf3cc`; compile, container-smoke, test-and-build and validate-container passed on that head.
