@@ -31,7 +31,7 @@ Out of scope: App Store distribution, Intel Macs, macOS before 26, multi-user, i
 - Auto-select by reachability (LAN first, then Tailscale) with a manual override and a visible active-profile indicator.
 - Plain `http://` is allowed only for RFC 1918 addresses, `.local` names and `100.64.0.0/10`. A visible "unencrypted" badge is shown. Public HTTP is blocked (App Transport Security local-networking exception only).
 - Errors distinguish: no network, server unreachable, **Tailscale not connected** (detected from network interfaces; no Tailscale SDK), unauthorised, server error. Each has a retry action.
-- Both servers are on the same host. The login rate limit under `tailscale serve` is verified in phase M1 and recorded.
+- Both servers are on the same host. The login rate limit under `tailscale serve` was verified (2026-11-03, section 11.2): it is counted per tailnet device, not shared.
 
 ## 4. Themes
 
@@ -105,8 +105,8 @@ Queue (play next, add to queue, reorder), shuffle, repeat, gapless with next-tra
 | Phase | Content | Gate |
 |---|---|---|
 | M0 | This contract, `macos/DESIGN.md` skeleton, project layout | **Done**: owner approved, merged in PR #713 (the `macos/` folder and `DESIGN.md` are created in M1) |
-| M1 | Package skeleton, profiles and reachability, Keychain, Navidrome auth, library read, Navidrome playlist API check, rate-limit check | Tests pass. **Done**: merged in PR #716, see section 11 (the two server checks are run in M2 with the owner's servers) |
-| M2 | Audio spike: `AVAudioEngine` decode of FLAC/MP3/Opus, EQ, crossfade, gapless, SMB waveform speed | Measured result recorded: **done**, section 12 (listening judgement by the owner still open) |
+| M1 | Package skeleton, profiles and reachability, Keychain, Navidrome auth, library read, Navidrome playlist API check, rate-limit check | Tests pass. **Done**: merged in PR #716, see section 11 (both server checks are done: 11.1 passed, 11.2 not shared) |
+| M2 | Audio spike: `AVAudioEngine` decode of FLAC/MP3/Opus, EQ, crossfade, gapless, SMB waveform speed | Measured result recorded: **done**, section 12 (gapless and crossfade confirmed by ear on headphones; DAC and Bluetooth not heard) |
 | M3 | **Mockups:** done in two rounds (9 theme drawings, 6 screens each) | Owner picked: Cupertino and Zine first, Bento Block and Native Glass v2 later |
 | M4 | Window shell, theme layer, Cupertino and Zine Spread, all screens | Screenshot tests; owner approves the UI on the Mac |
 | M5 | Parity: Discover, Downloads, Settings, EQ, lyrics, scrobbling, cache, Sparkle | Tests |
@@ -144,16 +144,9 @@ Code: `macos/` (`README.md` there says how to build and test). Rules as decided 
 
 ### 11.2 Check (b): is the Librarian login rate limit shared behind `tailscale serve`?
 
-**Status: still open: it needs a second tailnet device, and running step 1 locks that address out of the Librarian login for 15 minutes, so the agent did not run it without the owner present.** What the code says: the limit is 8 attempts per 15 minutes per `request.client.host` (`app/api/auth.py`), held in memory. The container starts uvicorn without `--forwarded-allow-ips`, so it trusts `X-Forwarded-For` only from 127.0.0.1. If the proxy reaches the container through Docker's port mapping, every tailnet client probably shares one key (the bridge address). This is a hypothesis, not a result. To settle it:
+**Done 2026-11-03: NOT shared.** Run by the owner. From the Mac, through the `tailscale serve` address, `discair-checks ratelimit --yes` got 401 for 8 wrong logins and `429` on the 9th ("The server limit is reached after 8 attempts from this address"), matching the code (8 attempts per 15 minutes per client address, `app/api/auth.py`). Straight afterwards the owner's phone, through the same `tailscale serve` address, got "Invalid username or password" (401, not 429), and a wrong login from the Mac through the home-network address also got 401. So the Librarian sees a different client address per tailnet device, the lockout of one device does not reach another, and the app and the web UI cannot lock each other out. No backend change or proposal is needed. The hypothesis in the earlier draft (all tailnet clients share the proxy's address) was wrong. Not tested: two sessions from the same device (for example the app and a browser on the Mac share one address, so eight wrong logins in 15 minutes from either would lock both out; the app shows the 429 message and does not retry).
 
-1. From the Mac, through the `tailscale serve` address: `export DISCAIR_LIBRARIAN_URL=<tailscale address>; swift run discair-checks ratelimit --yes`. It sends wrong logins for the user `discair-m1-ratelimit-probe` and prints the attempt that gets a 429 (expected 9, after 8).
-2. Straight away, from a second device on the tailnet (the phone's browser or the Android app), try one wrong login through the same address. **429 means the limit is shared**; a 401 means each client has its own.
-3. Also try one wrong login from the LAN address on the home network: expected 401 in both cases, since that is a different client address.
-4. Wait 15 minutes, or restart the Librarian container, to clear the lockout (the limit is in memory).
-
-If shared: the owner's own web UI and the app lock each other out after 8 failures in 15 minutes. Any fix (trusting the proxy's forwarded address) is a backend contract proposal and needs the owner's approval; the app already shows the 429 message and does not retry.
-
-### 11.3 What M2 (audio spike) needs from the owner
+### 11.3 What M2 (audio spike) needed from the owner (all supplied; M2 is done, see section 12)
 
 - Approval to start M2, and the two server checks of 11.1 and 11.2 run or deferred.
 - The Navidrome address and login (in the Keychain through the app or the harness, never in the repo), so the spike streams real files.
@@ -227,7 +220,7 @@ Proposed budget (section 7): a tag read must finish within 150 ms (measured 50 m
 
 1. **Path mapping: done.** Navidrome's music folder is the same folder as the share (`/media/library/music` on the host, `/music` inside the container). Cause, switch and verification: 12.7.
 2. **Transcode for Ogg Vorbis and WMA sources: opus at 192** (the recommendation, accepted by the owner).
-3. **Check 11.2 (rate limit): accepted, to be run by the owner** (steps in 11.2).
+3. **Check 11.2 (rate limit): done by the owner, not shared** (11.2).
 4. **By-ear gapless check:** see 12.9.
 
 ### 12.9 Listening session (the owner, about 10 minutes)

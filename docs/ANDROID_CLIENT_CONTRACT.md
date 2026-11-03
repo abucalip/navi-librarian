@@ -51,7 +51,7 @@ Out of scope for v1:
 - `GET /api/auth/status`, then `POST /api/auth/login` with `{username, password}`. The session cookie (strict, HTTP-only, Secure) is kept in a persistent cookie jar that is stored encrypted.
 - Any `401` triggers re-login with the stored credentials once; if that fails the app shows the sign-in screen. `429` shows the retry-later message from the server and does not retry automatically.
 - First-time account setup (`/api/auth/setup`) is not part of the app. The owner creates the account in the web UI.
-- **Open question:** behind `tailscale serve` every request may share one client IP, which would share the login rate limit with the web UI (section 9).
+- **Resolved 2026-11-03:** behind `tailscale serve` the Librarian sees a different client address per tailnet device, so the login rate limit is not shared between devices (measured by the owner, `MACOS_CLIENT_CONTRACT.md` 11.2). Two sessions on the same device still share one limit.
 
 ### 4.2 Navidrome authentication
 - Subsonic API with token and salt per request, using the owner's Navidrome credentials stored in the Keystore. The password is never sent or logged.
@@ -116,7 +116,7 @@ Behaviour:
 - Album launch and song launch both returned HTTP 200 with `ok: false` and `status: "settings_required"` when slskd is not configured, so the app must read `ok` and `status`, not the HTTP code.
 - `POST /api/acquisitions/skip` for an unknown acquisition returned 409.
 - Not captured: refresh routes and any acquisition with real items (slskd disabled). The progress item shape remains to be recorded.
-- The `tailscale serve` client-IP question (section 9) cannot be answered locally and is still open.
+- The `tailscale serve` client-IP question (section 9) cannot be answered locally; it was answered on the owner's servers on 2026-11-03 (not shared, `MACOS_CLIENT_CONTRACT.md` 11.2).
 
 Steps:
 
@@ -174,5 +174,5 @@ Decided by the owner:
 4. **This contract goes through a PR**, not directly to `main`.
 
 Still open:
-1. **Login rate limit:** confirm whether `tailscale serve` hides the client IP from Librarian. If it does, the shared 15-minute lockout could block the app. Any change would be a backend contract proposal.
+1. **Login rate limit: resolved 2026-11-03.** `tailscale serve` does not hide the client address: a lockout of one tailnet device did not affect another (`MACOS_CLIENT_CONTRACT.md` 11.2). No backend change is needed.
 2. **Playback — decided by the owner on 2026-11-01:** the app streams directly from Navidrome with the credentials already on the device; the proxy routes in `docs/PLAYER_PROPOSAL.md` are not used. Contract: [`ANDROID_PLAYER_CONTRACT.md`](ANDROID_PLAYER_CONTRACT.md). It adds a media foreground service for playback only; acquisition still has no notifications or background work.
