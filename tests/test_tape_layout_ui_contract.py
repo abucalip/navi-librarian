@@ -88,6 +88,10 @@ class TapeLayoutTests(unittest.TestCase):
         self.assertIn(".shelf-card .card-art > .about-toggle", hidden)
         self.assertIn("display: none", hidden)
 
+    def test_the_small_shelf_cover_shows_no_placeholder_text(self):
+        self.assertIn(':root[data-layout="tape"] .shelf-card .card-art-placeholder { padding: 0; font-size: 0; }', self.layouts)
+        self.assertIn(':root[data-layout="tape"] .shelf-card .card-art-placeholder::before { content: none; }', self.layouts)
+
     def test_the_downloading_meter_is_decorative_and_stops_under_reduced_motion(self):
         self.assertIn('.acq-row[data-status="downloading"] .acq-status::after', self.layouts)
         self.assertIn('content: ""', self.layouts)

@@ -96,6 +96,9 @@
   }
   :root[data-layout="tape"] .shelf-card > .card-art { grid-column: 2; width: 52px; height: 52px; aspect-ratio: auto; overflow: visible; border: var(--bw) solid var(--edge); border-radius: var(--radius-control); }
   :root[data-layout="tape"] .shelf-card > .card-art > img { border-radius: calc(var(--radius-control) - 1px); }
+  /* A cover that has not loaded (or has none) shows no "NL / 01" mark or name: the 52px square is too small for them, as on the ranked rows. */
+  :root[data-layout="tape"] .shelf-card .card-art-placeholder { padding: 0; font-size: 0; }
+  :root[data-layout="tape"] .shelf-card .card-art-placeholder::before { content: none; }
   /* The hover bio and its about button are made for a large cover; the small cover has no room for them. */
   :root[data-layout="tape"] .shelf-card .card-art > .artist-bio,
   :root[data-layout="tape"] .shelf-card .card-art > .about-toggle { display: none; }
