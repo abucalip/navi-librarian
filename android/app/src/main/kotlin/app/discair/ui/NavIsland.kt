@@ -88,6 +88,17 @@ fun NavIsland(
         )
         return
     }
+    // Sticker Wall: a floating pill (Search, Home, Player) in the owner's theme.
+    if (deckTheme.layout == app.discair.ui.theme.Layout.StickerWall) {
+        val reduced = app.discair.ui.common.rememberReducedMotion()
+        app.discair.ui.common.StickerPill(
+            deckTheme, homeSelected, playerLabel, onSearch, onHome, onPlayer, modifier,
+            searchIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = it, modifier = Modifier.size(24.dp)) },
+            homeIcon = { Icon(Icons.Default.Home, contentDescription = null, tint = it, modifier = Modifier.size(24.dp)) },
+            player = { app.discair.ui.common.TapeMeter(4, app.discair.ui.common.TapeDeckRules.meterMoves(playing, false, reduced), it, size = 22.dp) },
+        )
+        return
+    }
     // Sheet Stack: one joined four-segment group (Home, Search, Library, Player) in the owner's theme.
     if (deckTheme.layout == app.discair.ui.theme.Layout.SheetStack) {
         val reduced = app.discair.ui.common.rememberReducedMotion()

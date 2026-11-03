@@ -291,8 +291,19 @@ object Palettes {
         layout = Layout.SheetStack,
     )
 
+    // Round 2, Sticker Wall (owner-approved 2026-11-03): one palette, round shapes, tilted tiles with text stickers, a floating pill.
+    val StickerPeach = Palette(
+        "stickerpeach", "Sticker · Peach-teal", true,
+        rail = c(0xFFE8D6), ink = c(0xFFE8D6), surface = c(0xFFFAF5), raised = c(0xFFD9C0), edge = c(0x3B1F14), edgeStrong = c(0x3B1F14),
+        text = c(0x3B1F14), textMuted = c(0x6E3F2C), accent = c(0x2EC4B6), accentDim = c(0xBDF0EA), onAccent = c(0x3B1F14),
+        chartRed = c(0xB3261E), chartRedText = c(0xB3261E), ok = c(0x1B6B33), caution = c(0x7F4A00),
+        family = Family.Brutal, shape = BrutalShape(18, 3, 5), shadowColor = c(0x3B1F14),
+        accent2 = c(0xFF9F68), accent3 = c(0xFF6B8B), accent4 = c(0xFFD23F), minAccentContrast = 1.8,
+        layout = Layout.StickerWall,
+    )
+
     /** Light themes in the order the picker shows them; the first is the default day theme. */
-    val Light: List<Palette> = listOf(Sand, Paper, Mist, Sage, Blush, BrutLavender, BrutMint, BrutLemon, BrutCream, BrutSky, BrutPoster, TapeLime, TapeCobalt, TapeTangerine, SheetDaylight)
+    val Light: List<Palette> = listOf(Sand, Paper, Mist, Sage, Blush, BrutLavender, BrutMint, BrutLemon, BrutCream, BrutSky, BrutPoster, TapeLime, TapeCobalt, TapeTangerine, SheetDaylight, StickerPeach)
 
     /** Dark themes in the order the picker shows them; the first is the default night theme. */
     val Dark: List<Palette> = listOf(Night, Amoled, Forest, Ocean, Ember, Graphite, HighContrast, BrutInk, BrutMidnight, SheetViolet, SheetAcid)

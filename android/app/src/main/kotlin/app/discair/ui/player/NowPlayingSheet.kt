@@ -164,6 +164,8 @@ fun NowPlayingSheet(state: PlayerUiState, controller: PlayerController, lyrics: 
     LaunchedEffect(tape) { if (tape && view == 2) { view = 0; lastView = 0 } }
     // Sheet Stack: the lyrics strip is the Lyrics view, so lyrics load while the sheet is open; the queue button and the strip open a panel (2 = queue, 1 = lyrics).
     val sheetStack = app.discair.ui.theme.LocalPalette.current.layout == app.discair.ui.theme.Layout.SheetStack
+    // Sticker Wall: a poster with a round transport; the queue and lyrics open from two pill buttons (view 2 = queue, 1 = lyrics).
+    val sticker = app.discair.ui.theme.LocalPalette.current.layout == app.discair.ui.theme.Layout.StickerWall
     BackHandler(enabled = view != 0) { view = 0; lastView = 0 }
     val scope = androidx.compose.runtime.rememberCoroutineScope()
     // -1 = queue, 0 = artwork, +1 = lyrics; fractions are mid-flip while a finger is down or the flip settles.
@@ -205,7 +207,7 @@ fun NowPlayingSheet(state: PlayerUiState, controller: PlayerController, lyrics: 
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 app.discair.ui.common.PlayerIconButton(onClick = onDismiss, Modifier.size(Target)) { Icon(PlayerIcons.Down, contentDescription = "Close now playing") }
                 Spacer(Modifier.weight(1f))
-                if (tape || sheetStack) {
+                if (tape || sheetStack || sticker) {
                     Text(
                         "Now playing", style = MaterialTheme.typography.labelLarge.copy(fontFamily = app.discair.ui.theme.LocalFontPair.current.mono),
                         modifier = Modifier.semantics { heading() },
@@ -218,7 +220,18 @@ fun NowPlayingSheet(state: PlayerUiState, controller: PlayerController, lyrics: 
                 Spacer(Modifier.size(Target)) // balances the close button so the tabs sit in the middle
             }
             Spacer(Modifier.height(12.dp)) // the tabs must not touch the cover, the lyrics note or the queue title
-            if (sheetStack) SheetPlayer(
+            if (sticker) StickerPlayer(
+                state, controller, view, onView = { view = it; lastView = it },
+                onSignIn = onSignIn, onEqualizer = { eqOpen = true }, onCrossfade = { crossfadeOpen = true },
+                onOpenArtist = onOpenArtist, onOpenAlbum = onOpenAlbum, onCoverColor = { tint = it },
+                lyricsPanel = {
+                    LyricsPanel(
+                        if (lyricsState.songIdOrNull() == songId) lyricsState else LyricsUiState.Idle,
+                        currentLine, songId.orEmpty(), onTryAgain = { if (songId != null) lyrics.retry(songId, nextId) },
+                        Modifier.fillMaxSize().padding(vertical = 8.dp),
+                    )
+                },
+            ) else if (sheetStack) SheetPlayer(
                 state, controller, view, onView = { view = it; lastView = it },
                 lyricsState = if (lyricsState.songIdOrNull() == songId) lyricsState else LyricsUiState.Idle, currentLine = currentLine,
                 onSignIn = onSignIn, onEqualizer = { eqOpen = true }, onCrossfade = { crossfadeOpen = true },

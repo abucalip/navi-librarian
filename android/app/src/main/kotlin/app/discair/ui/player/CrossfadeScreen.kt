@@ -46,7 +46,7 @@ import app.discair.ui.common.Target
 
 /** The settings as the page shows them; refreshed whenever any player setting is saved. */
 @Composable
-private fun rememberCrossfade(settings: PlayerSettings): Pair<CrossfadeSettings, Int?> {
+internal fun rememberCrossfade(settings: PlayerSettings): Pair<CrossfadeSettings, Int?> {
     var now by remember { mutableStateOf(settings.crossfade to settings.maxBitRate) }
     DisposableEffect(settings) {
         val handle = settings.onChange { now = settings.crossfade to settings.maxBitRate }

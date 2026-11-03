@@ -85,6 +85,8 @@ fun HomeScreen(open: Opener, onDiscover: () -> Unit, onLibrary: () -> Unit, onSe
     val picks = rememberLoad("picks") { repo.picks(10).items }
     val genres = rememberLoad("genres") { repo.genres().items }
     val sheetStack = app.discair.ui.theme.currentLayout() == app.discair.ui.theme.Layout.SheetStack
+    // Sticker Wall: the picks and the recently added albums are walls of tilted, stickered tiles.
+    val stickerWall = app.discair.ui.theme.currentLayout() == app.discair.ui.theme.Layout.StickerWall
     LazyColumn(Modifier.fillMaxWidth(), contentPadding = PaddingValues(top = 12.dp, bottom = 24.dp + app.discair.ui.LocalBottomClearance.current)) {
         // Sheet Stack: the picks are "Today", with the newest requests (and their status words) under them.
         item { PageHeading(if (sheetStack) "Today" else "For you", Modifier.padding(start = 16.dp, end = 16.dp, bottom = 8.dp)) }
@@ -95,6 +97,7 @@ fun HomeScreen(open: Opener, onDiscover: () -> Unit, onLibrary: () -> Unit, onSe
                     is Load.Failed -> Inline(state.failure.message, picks.reload)
                     is Load.Ready ->
                         if (state.value.isEmpty()) Muted("Nothing recommended right now.")
+                        else if (stickerWall) StickerPicksWall(state.value.take(app.discair.ui.common.StickerWallRules.WALL_TILES), open)
                         else Recommended(state.value, open)
                 }
             }
