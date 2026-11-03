@@ -75,7 +75,7 @@ class CrateLayoutTests(unittest.TestCase):
         self.assertIn("place-items: stretch end;", drawer)
         self.assertIn(".album-modal {", drawer)
         self.assertIn("animation: crate-drawer-in", drawer)
-        reduced = self.layouts.split("@media (prefers-reduced-motion: reduce) {")[-1]
+        reduced = self.layouts.split("==== Zine Spread")[0].split("@media (prefers-reduced-motion: reduce) {")[-1]
         self.assertIn('[data-layout="crate"] .album-modal { animation: none; }', reduced)
         self.assertNotIn("display: none", drawer.split(".album-modal-layout")[0])  # nothing in the dialog is hidden
 

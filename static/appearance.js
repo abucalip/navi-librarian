@@ -1,7 +1,7 @@
 /* Theme and font for the web UI (owner-approved 2026-11-02). Loaded synchronously in <head> on every page so the
    saved choice is on <html> before first paint (no flash). The choice lives in localStorage on this browser only.
      data-theme  the theme id; data-brut is set on the Neobrut themes; data-font is the font pair id;
-     data-layout is set on the themes that rearrange the pages (Tape Deck: "tape", Ledger Room: "ledger", Crate Wall: "crate", Zine Spread: "zine"; static/layouts.css) and absent otherwise.
+     data-layout is set on the themes that rearrange the pages (Tape Deck: "tape", Ledger Room: "ledger", Crate Wall: "crate", Zine Spread: "zine", Pipeline Board: "pipeline"; static/layouts.css) and absent otherwise.
    Settings > Appearance (static/app.js) reads the catalogue below and calls set(). The defaults are today's look:
    the Ink theme and the Discair font pair. */
 (function () {
@@ -25,7 +25,8 @@
     { id: 'cratekraft', label: 'Crate \u00b7 Kraft', group: 'Crate Wall', dark: false, brut: true, layout: 'crate', bar: '#d9b98a' },
     { id: 'cratemint', label: 'Crate \u00b7 Mint', group: 'Crate Wall', dark: false, brut: true, layout: 'crate', bar: '#a9d9b4' },
     { id: 'cratenight', label: 'Crate \u00b7 Night', group: 'Crate Wall', dark: true, brut: true, layout: 'crate', bar: '#1b1713' },
-    { id: 'zine', label: 'Zine \u00b7 Yellow', group: 'Zine Spread', dark: false, brut: true, layout: 'zine', bar: '#ffde59' }
+    { id: 'zine', label: 'Zine \u00b7 Yellow', group: 'Zine Spread', dark: false, brut: true, layout: 'zine', bar: '#ffde59' },
+    { id: 'pipeline', label: 'Pipeline \u00b7 Orange', group: 'Pipeline Board', dark: false, brut: true, layout: 'pipeline', bar: '#ff7a1a' }
   ];
   var FONTS = [
     { id: 'discair', label: 'Discair (current)' },

@@ -683,6 +683,7 @@ function updateActiveDownloadBadge(data) {
   updateLedgerStats(jobs, count);
   updateTapeDecks(jobs);
   zineHook('updateZineTicker', jobs);
+  zineHook('renderPipelineBoard', jobs);
 }
 
 // The three figures the Ledger strip and the Tape Deck show, counted from the acquisition list the page already loads.
@@ -1730,6 +1731,7 @@ function renderDashboardPicks() {
   target.scrollLeft = 0;
   syncDashboardSlider();
   zineHook('renderZineFront');
+  zineHook('renderPipelineBoard');
 }
 
 async function loadDashboardPicks() {
@@ -2119,6 +2121,7 @@ async function loadShelf(name, url, mapItems, withActions = false) {
     target.replaceChildren(...items.map(item => buildShelfCard(item, withActions)));
     shelfItems[name] = items;
     if (name === 'NewReleases') zineHook('renderZineFront');
+    if (name === 'Recent') zineHook('renderPipelineBoard');
     status.textContent = items.length ? '' : 'Nothing to show yet.';
   } catch (error) {
     status.textContent = error.message;
