@@ -111,7 +111,16 @@
     <p class="app-version" title="Version">__APP_VERSION__</p>
   </nav>
 
+  <!-- Ledger Room layout only (static/layouts.css shows both; they are hidden in every other theme). -->
+  <p id="ledgerCrumb" class="ledger-crumb" aria-hidden="true" hidden></p>
+
   <section id="dashboard" class="page" aria-labelledby="dashboardHeading">
+    <div id="ledgerStats" class="ledger-stats" role="group" aria-label="Acquisition summary" hidden>
+      <div><small>Active</small><b id="ledgerStatActive">0</b></div>
+      <div><small>Imported, 7 days</small><b id="ledgerStatImported">0</b></div>
+      <div><small>Failed</small><b id="ledgerStatFailed">0</b></div>
+      <div><small>All records</small><b id="ledgerStatTotal">0</b></div>
+    </div>
     <div class="panel">
       <div class="dashboard-carousel-heading">
         <div>

@@ -89,6 +89,34 @@ class LedgerLayoutTests(unittest.TestCase):
             self.assertGreaterEqual(_contrast(self._token(block, "accent"), side), 3.0, f"{theme} active tab on the sidebar")
             self.assertEqual(self._token(block, "ink-rail"), surface, f"{theme} header shares the surface colour")
 
+    def test_the_new_markup_is_hidden_by_default_and_shown_only_by_the_ledger_layout(self):
+        index = (ROOT / "app" / "templates" / "index.html").read_text(encoding="utf-8")
+        app = (STATIC / "app.js").read_text(encoding="utf-8")
+        self.assertIn('<p id="ledgerCrumb" class="ledger-crumb" aria-hidden="true" hidden></p>', index)
+        self.assertIn('id="ledgerStats" class="ledger-stats" role="group" aria-label="Acquisition summary" hidden>', index)
+        self.assertIn("badge.hidden = true;", app)
+        self.assertIn("group.hidden = true;", app)
+        self.assertIn("fold.hidden = true;", app)
+        for selector in (".ledger-crumb {", ".ledger-stats {", ".status-badge {", ".ledger-filter {", ".genre-row-fold {"):
+            self.assertIn(':root[data-layout="ledger"] ' + selector, self.ledger)
+            self.assertNotIn(selector, (STATIC / "app.css").read_text(encoding="utf-8"))
+
+    def test_status_is_a_word_and_follows_the_get_button_and_the_filter_never_reorders(self):
+        app = (STATIC / "app.js").read_text(encoding="utf-8")
+        self.assertIn("{owned: 'Owned', queued: 'Queued', missing: 'Missing'}", app)
+        self.assertIn("new MutationObserver(sync).observe(get, {attributes: true, attributeFilter: ['class']})", app)
+        filt = self.ledger.split("The switch hides rows by their own status cell")[1].split("*/")[1]
+        self.assertIn("display: none;", filt)
+        self.assertNotRegex(filt, r"(?<![-\w])order\s*:")
+        self.assertIn('content: "Nothing in this view."', filt)
+
+    def test_the_summary_strip_counts_the_acquisition_list_already_loaded(self):
+        app = (STATIC / "app.js").read_text(encoding="utf-8")
+        body = app.split("function updateLedgerStats(jobs, active) {")[1].split("\n}\n")[0]
+        self.assertNotIn("fetch(", body)
+        self.assertNotIn("requestJSON", body)
+        self.assertIn("7 * 86400", body)
+
     def test_the_default_theme_is_still_ink(self):
         self.assertIn("ink", self.script.split("var THEMES = [")[1].split("\n")[1])
 

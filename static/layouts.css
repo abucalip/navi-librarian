@@ -167,10 +167,13 @@
   :root[data-layout="ledger"] .ranked-list { border: var(--ledger-rule); background: var(--surface); box-shadow: var(--brut-sh) var(--brut-sh) 0 var(--brut-shadow-color); }
   :root[data-layout="ledger"] .ranked-row {
     --row-art: 56px; --row-edge-x: 14px;
-    grid-template-columns: 56px var(--row-art) minmax(0, 1fr) 200px auto; gap: 0 16px; padding: 8px var(--row-edge-x) 8px 8px;
+    grid-template-columns: 56px var(--row-art) minmax(0, 1fr) 200px 104px auto; gap: 0 16px; padding: 8px var(--row-edge-x) 8px 8px;
     border-bottom: var(--ledger-rule);
   }
-  :root[data-layout="ledger"] .ranked-row.no-meta { grid-template-columns: 56px var(--row-art) minmax(0, 1fr) auto; }
+  :root[data-layout="ledger"] .ranked-row.no-meta { grid-template-columns: 56px var(--row-art) minmax(0, 1fr) 104px auto; }
+  /* The status and action cells are placed from the right edge, so a row without a status cell keeps its columns. */
+  :root[data-layout="ledger"] .ranked-row > .status-badge { grid-column: -3 / -2; }
+  :root[data-layout="ledger"] .ranked-row > .row-actions { grid-column: -2 / -1; }
   :root[data-layout="ledger"] .ranked-row:last-child { border-bottom: 0; }
   /* The text column grows with its content (a bio that loads late never covers the album name). */
   :root[data-layout="ledger"] .ranked-row .row-main { height: auto; min-height: var(--row-art); overflow: visible; justify-content: center; }
@@ -188,6 +191,39 @@
   :root[data-layout="ledger"] .row-meta { font-family: var(--mono); font-size: var(--text-xs); padding-left: 14px; border-left: var(--ledger-rule); }
   /* The year and the quality columns read as table cells in the mono face. */
   :root[data-layout="ledger"] .ranked-row h3 .album-year { font-weight: 700; }
+
+  /* ---- Shown only by this layout: the breadcrumb, the summary strip, the status cell, the filter switch, the fold button ---- */
+  :root[data-layout="ledger"] .ledger-crumb { display: flex; align-items: center; gap: 6px; margin: 0 0 18px; font: 600 var(--text-xs)/1.4 var(--mono); color: var(--text-muted); }
+  :root[data-layout="ledger"] .ledger-crumb b { padding: 0 6px; color: var(--surface); background: var(--text); font-weight: 700; }
+  :root[data-layout="ledger"] .ledger-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-column: 1 / -1; margin-bottom: 24px; background: var(--surface); border: var(--ledger-rule); box-shadow: var(--brut-sh) var(--brut-sh) 0 var(--brut-shadow-color); }
+  :root[data-layout="ledger"] .ledger-stats > div { padding: 10px 14px; border-right: var(--ledger-rule); min-width: 0; }
+  :root[data-layout="ledger"] .ledger-stats > div:last-child { border-right: 0; }
+  :root[data-layout="ledger"] .ledger-stats small { display: block; color: var(--text-muted); font: 700 var(--text-xs)/1.4 var(--mono); letter-spacing: .08em; text-transform: uppercase; }
+  :root[data-layout="ledger"] .ledger-stats b { font: 800 var(--text-2xl)/1.2 var(--display); font-variant-numeric: tabular-nums; color: var(--text); }
+  :root[data-layout="ledger"] .status-badge {
+    display: inline-block; justify-self: start; padding: 1px 8px; color: var(--text); background: var(--surface-raised); border: var(--bw) solid var(--edge);
+    box-shadow: 2px 2px 0 var(--brut-shadow-color); font: 700 var(--text-xs)/1.5 var(--mono); letter-spacing: .04em; text-transform: uppercase;
+  }
+  /* Owned is filled solid, Queued is filled with the soft accent, Missing stays plain: the word carries the meaning, the fill only helps the scan. */
+  :root[data-layout="ledger"] .status-badge[data-state="owned"] { color: var(--surface); background: var(--text); }
+  :root[data-layout="ledger"] .status-badge[data-state="queued"] { background: var(--accent-dim); }
+  :root[data-layout="ledger"] .ledger-filter { display: inline-flex; margin: 0 0 14px; background: var(--surface); border: var(--ledger-rule); box-shadow: 3px 3px 0 var(--brut-shadow-color); }
+  :root[data-layout="ledger"] .ledger-filter > button { min-height: 44px; min-width: 44px; padding: 0 16px; border: 0; border-right: var(--ledger-rule); border-radius: 0; background: transparent; color: var(--text); font-weight: 600; box-shadow: none; }
+  :root[data-layout="ledger"] .ledger-filter > button:last-child { border-right: 0; }
+  :root[data-layout="ledger"] .ledger-filter > button[aria-pressed="true"] { color: var(--surface); background: var(--text); }
+  :root[data-layout="ledger"] .ledger-filter > button:focus-visible { outline-offset: -4px; }
+  /* The switch hides rows by their own status cell, so it keeps working as a request turns Missing into Queued. */
+  :root[data-layout="ledger"] .ranked-list[data-ledger-filter="missing"] > .ranked-row:not(:has(.status-badge[data-state="missing"])),
+  :root[data-layout="ledger"] .ranked-list[data-ledger-filter="queued"] > .ranked-row:not(:has(.status-badge[data-state="queued"])) { display: none; }
+  :root[data-layout="ledger"] .ranked-list[data-ledger-filter="missing"]:not(:has(.status-badge[data-state="missing"]))::after,
+  :root[data-layout="ledger"] .ranked-list[data-ledger-filter="queued"]:not(:has(.status-badge[data-state="queued"]))::after {
+    content: "Nothing in this view."; display: block; padding: 16px; font: 600 var(--text-sm)/1.4 var(--mono); color: var(--text-muted);
+  }
+  :root[data-layout="ledger"] .genre-row-fold { display: grid; place-items: center; width: 44px; height: 44px; padding: 0; margin-left: 8px; color: var(--ledger-side-text); background: transparent; border: var(--bw) solid var(--ledger-side-muted); border-radius: 0; box-shadow: none; }
+  :root[data-layout="ledger"] .genre-row-fold:focus-visible { outline-color: var(--ledger-side-text); }
+  :root[data-layout="ledger"] .genre-row[data-folded] .genre-row-track,
+  :root[data-layout="ledger"] .genre-row[data-folded] .genre-row-arrows { display: none; }
+  :root[data-layout="ledger"] .genre-row[data-folded] .genre-row-heading { border-bottom: 0; }
 
   /* ---- Dashboard: the picks panel and genres span the page; the four shelves are compact tables, two to a row ---- */
   :root[data-layout="ledger"] #dashboard { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 28px; align-items: start; }
