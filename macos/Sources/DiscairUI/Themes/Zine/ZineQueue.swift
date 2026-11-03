@@ -24,7 +24,7 @@ struct ZineQueue: View {
                         let a = Fixtures.albums[row.album]
                         ZineListRow(highlight: on) {
                             HStack(spacing: 10) {
-                                Text("\(i + 1)").font(Z.an(22)).frame(width: 28, alignment: .leading)
+                                Text("\(i + 1)").font(Z.an(22)).lineLimit(1).fixedSize().frame(width: 36, alignment: .leading)
                                 ZineCover(album: a, width: 44, border: 2, shadow: 3)
                                 VStack(alignment: .leading, spacing: 1) {
                                     Text(row.title).font(Z.an(16)).textCase(.uppercase).lineLimit(1)
