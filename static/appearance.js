@@ -1,6 +1,7 @@
 /* Theme and font for the web UI (owner-approved 2026-11-02). Loaded synchronously in <head> on every page so the
    saved choice is on <html> before first paint (no flash). The choice lives in localStorage on this browser only.
-     data-theme  the theme id; data-brut is set on the Neobrut themes; data-font is the font pair id.
+     data-theme  the theme id; data-brut is set on the Neobrut themes; data-font is the font pair id;
+     data-layout is set on the themes that rearrange the pages (Tape Deck: "tape"; static/layouts.css) and absent otherwise.
    Settings > Appearance (static/app.js) reads the catalogue below and calls set(). The defaults are today's look:
    the Ink theme and the Discair font pair. */
 (function () {
@@ -14,7 +15,10 @@
     { id: 'sleeve', label: 'Sleeve', group: 'Light', dark: false, bar: '#ddd0bb' },
     { id: 'cassette', label: 'Brut \u00b7 Cassette', group: 'Neobrut', dark: false, brut: true, bar: '#fbe9a9' },
     { id: 'mintdesk', label: 'Brut \u00b7 Mint Desk', group: 'Neobrut', dark: false, brut: true, bar: '#cff3c8' },
-    { id: 'nightshift', label: 'Brut \u00b7 Night Shift', group: 'Neobrut', dark: true, brut: true, bar: '#0a0a0a' }
+    { id: 'nightshift', label: 'Brut \u00b7 Night Shift', group: 'Neobrut', dark: true, brut: true, bar: '#0a0a0a' },
+    { id: 'tapelime', label: 'Tape \u00b7 Lime', group: 'Tape Deck', dark: false, brut: true, layout: 'tape', bar: '#fffdf6' },
+    { id: 'tapecobalt', label: 'Tape \u00b7 Cobalt', group: 'Tape Deck', dark: false, brut: true, layout: 'tape', bar: '#fbfcff' },
+    { id: 'tapetangerine', label: 'Tape \u00b7 Tangerine', group: 'Tape Deck', dark: false, brut: true, layout: 'tape', bar: '#fffaf2' }
   ];
   var FONTS = [
     { id: 'discair', label: 'Discair (current)' },
@@ -46,6 +50,7 @@
     var root = document.documentElement, theme = resolve();
     root.setAttribute('data-theme', theme.id);
     if (theme.brut) root.setAttribute('data-brut', ''); else root.removeAttribute('data-brut');
+    if (theme.layout) root.setAttribute('data-layout', theme.layout); else root.removeAttribute('data-layout');
     root.setAttribute('data-font', get('font'));
     // The browser's own bar (a phone's address bar) takes the theme's top-bar colour.
     var meta = document.querySelector('meta[name="theme-color"]');

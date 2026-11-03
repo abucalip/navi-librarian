@@ -1,0 +1,123 @@
+/* Layouts for the web UI (D-023, docs/BRUT_LAYOUTS_PLAN.md). A layout rearranges the shell and the main pages; a theme
+   (static/themes.css) only supplies the tokens. Loaded after themes.css on the main page only.
+   Rules:
+     - every selector is scoped by :root[data-layout="<id>"], so deleting a layout means deleting its block;
+     - a layout applies from 901px up; below that the existing mobile shell (icon rail, bottom bar) is kept and
+       receives only the theme's tokens and Neobrut component skin;
+     - no layout adds markup: it restyles what app.js already renders, and anything decorative is a pseudo-element
+       (so it is never announced) that stops moving under prefers-reduced-motion.
+   ==== Tape Deck ("tape"): lists read as a ruled playlist, the page tabs are one ruled strip under the header, and a
+   request that is downloading shows a live three-bar meter. The web UI plays nothing: the meter shows acquisition
+   progress only. ==== */
+@media (min-width: 901px) {
+  :root[data-layout="tape"] { --rail-w: 0px; --tape-nav-h: 52px; --tape-rule: var(--bw) solid var(--edge); }
+
+  /* ---- Shell: header, then one ruled tab strip, no left rail ---- */
+  :root[data-layout="tape"] nav {
+    inset: 82px 0 auto 0; width: auto; height: var(--tape-nav-h);
+    flex-direction: row; align-items: stretch; gap: 0; overflow-x: auto; overflow-y: hidden;
+    padding: 0 30px; background: var(--surface); border-right: 0; border-bottom: var(--tape-rule);
+  }
+  :root[data-layout="tape"] .nav-list { flex: 0 0 auto; flex-direction: row; align-items: stretch; gap: 0; }
+  :root[data-layout="tape"] .nav-group { flex-direction: row; align-items: stretch; gap: 0; }
+  :root[data-layout="tape"] .nav-group + .nav-group { margin: 0; border-left: var(--tape-rule); }
+  /* Group names stay in the accessibility tree, hidden from the eye. */
+  :root[data-layout="tape"] .nav-group-label {
+    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+  }
+  :root[data-layout="tape"] nav button {
+    flex: 0 0 auto; width: auto; min-height: var(--tape-nav-h); padding: 0 18px; gap: 8px; justify-content: center; white-space: nowrap;
+    color: var(--text); background: transparent; font-weight: 600;
+    border: 0; border-right: var(--tape-rule); border-radius: 0; box-shadow: none;
+  }
+  :root[data-layout="tape"][data-brut] nav button:hover { background: var(--surface-hover); color: var(--text); border-color: var(--edge); transform: none; box-shadow: none; }
+  :root[data-layout="tape"][data-brut] nav button.active { color: var(--brut-nav-text); background: var(--accent); border-color: var(--edge); box-shadow: none; }
+  :root[data-layout="tape"] nav button:focus-visible { outline-offset: -4px; }
+  /* The strip is text only: the rail icons are decorative and would make the eight tabs too wide. */
+  :root[data-layout="tape"] nav button > .icon { display: none; }
+  :root[data-layout="tape"] nav .nav-count { margin-left: 4px; position: static; }
+  /* The version label sits at the right end of the strip. */
+  :root[data-layout="tape"] .app-version { margin: 0 0 0 auto; padding: 0 0 0 16px; align-self: center; flex: 0 0 auto; white-space: nowrap; }
+  :root[data-layout="tape"] main { margin-top: calc(82px + var(--tape-nav-h) + 30px); }
+
+  /* ---- Ruled lists: the ranked rows of every discovery page ---- */
+  :root[data-layout="tape"] .ranked-list { border: var(--tape-rule); box-shadow: var(--brut-sh) var(--brut-sh) 0 var(--brut-shadow-color); background: var(--surface); }
+  :root[data-layout="tape"] .ranked-row {
+    --row-art: 64px; --row-edge-x: 16px;
+    grid-template-columns: 52px var(--row-art) minmax(0, 1fr) 200px auto; gap: 0 16px; padding: 8px var(--row-edge-x) 8px 8px;
+    border-bottom: var(--tape-rule);
+  }
+  :root[data-layout="tape"] .ranked-row.no-meta { grid-template-columns: 52px var(--row-art) minmax(0, 1fr) auto; }
+  :root[data-layout="tape"] .ranked-row:last-child { border-bottom: 0; }
+  :root[data-layout="tape"] .ranked-row:hover { background: var(--surface-hover); }
+  :root[data-layout="tape"] .ranked-row .card-art { border-width: var(--bw); border-radius: var(--radius-control); }
+  /* The number cell is a plain mono numeral, never the big red rank. */
+  :root[data-layout="tape"] .rank-numeral,
+  :root[data-layout="tape"] .rank-numeral.is-index,
+  :root[data-layout="tape"] .ranked-list > .ranked-row:first-child > .rank-numeral:not(.is-index) {
+    justify-self: center; font: 600 var(--text-sm)/1 var(--mono); letter-spacing: 0; color: var(--text-muted);
+  }
+  :root[data-layout="tape"] .row-date { justify-self: center; justify-items: center; text-align: center; }
+  :root[data-layout="tape"] .row-date-day { font: 700 var(--text-sm)/1.2 var(--mono); }
+  :root[data-layout="tape"] .row-meta { font-family: var(--mono); font-size: var(--text-xs); }
+
+  /* ---- Dashboard: the picks panel and the genres span the page; the four shelves are ruled lists, two to a row ---- */
+  :root[data-layout="tape"] #dashboard { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 28px; align-items: start; }
+  :root[data-layout="tape"] #dashboard > .panel:not(.dashboard-shelf) { grid-column: 1 / -1; }
+  :root[data-layout="tape"] .dashboard-shelf { margin-top: 0; }
+  :root[data-layout="tape"] .dashboard-carousel {
+    display: block; overflow: visible; padding: 0; scroll-snap-type: none; counter-reset: tape-row;
+    background: var(--surface); border: var(--tape-rule); box-shadow: var(--brut-sh) var(--brut-sh) 0 var(--brut-shadow-color);
+  }
+  :root[data-layout="tape"] .dashboard-carousel:empty { display: none; }
+  :root[data-layout="tape"] .dashboard-carousel > .shelf-card {
+    width: auto; display: grid; grid-template-columns: 28px 52px minmax(0, 1fr) auto; align-items: center; gap: 0 12px;
+    padding: 8px 14px 8px 8px; overflow: visible; background: transparent; border: 0; border-bottom: var(--tape-rule); border-radius: 0; box-shadow: none;
+    counter-increment: tape-row; transition: none;
+  }
+  :root[data-layout="tape"] .dashboard-carousel > .shelf-card:last-child { border-bottom: 0; }
+  :root[data-layout="tape"][data-brut] .dashboard-carousel > .shelf-card:hover { background: var(--surface-hover); transform: none; box-shadow: none; }
+  :root[data-layout="tape"] .dashboard-carousel > .shelf-card::before {
+    content: counter(tape-row); grid-column: 1; text-align: center; color: var(--text-muted); font: 600 var(--text-sm)/1 var(--mono);
+  }
+  :root[data-layout="tape"] .shelf-card > .card-art { grid-column: 2; width: 52px; height: 52px; aspect-ratio: auto; overflow: visible; border: var(--bw) solid var(--edge); border-radius: var(--radius-control); }
+  :root[data-layout="tape"] .shelf-card > .card-art > img { border-radius: calc(var(--radius-control) - 1px); }
+  :root[data-layout="tape"] .shelf-card > .dashboard-tile-meta { grid-column: 3; margin: 0; min-width: 0; }
+  :root[data-layout="tape"] .shelf-card > .dashboard-tile-meta h3 { font-size: var(--text-md); display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  :root[data-layout="tape"] .shelf-card > .dashboard-tile-meta .card-artist { margin: 2px 0 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  :root[data-layout="tape"] .shelf-card > .action-group { grid-column: 4; margin: 0; }
+  /* The Get control and the owned check become a corner badge on the small cover. */
+  :root[data-layout="tape"] .shelf-card .card-art .get-album,
+  :root[data-layout="tape"] .shelf-card .card-art .owned-check { right: -9px; bottom: -9px; width: 26px; height: 26px; box-shadow: none; }
+  :root[data-layout="tape"] .shelf-card .card-art .action-group { right: -9px; bottom: -9px; }
+
+  /* ---- Acquisitions: a request that is downloading shows a three-bar meter after its status text ---- */
+  :root[data-layout="tape"] .acq-row { border-bottom: var(--tape-rule); }
+  :root[data-layout="tape"] .acq-row[data-status="downloading"] .acq-status::after,
+  :root[data-layout="tape"] .acq-row[data-status="monitoring"] .acq-status::after,
+  :root[data-layout="tape"] .acq-row[data-status="importing"] .acq-status::after {
+    content: ""; flex: 0 0 18px; align-self: center; height: 14px; margin-left: 2px; color: var(--text);
+    background:
+      linear-gradient(currentColor, currentColor) 0 100% / 4px 40% no-repeat,
+      linear-gradient(currentColor, currentColor) 7px 100% / 4px 80% no-repeat,
+      linear-gradient(currentColor, currentColor) 14px 100% / 4px 55% no-repeat;
+    animation: tape-meter .9s ease-in-out infinite alternate;
+  }
+  :root[data-layout="tape"] .acq-progress { height: 16px; background: var(--surface); border: var(--tape-rule); border-radius: 0; }
+  :root[data-layout="tape"] .acq-progress-fill { background: var(--accent); border-right: var(--tape-rule); }
+
+  /* ---- Album dialog: the track list is a ruled playlist ---- */
+  :root[data-layout="tape"] .track-list { border: var(--tape-rule); background: var(--surface); }
+  :root[data-layout="tape"] .track { border-bottom: var(--tape-rule); }
+  :root[data-layout="tape"] .track:last-child { border-bottom: 0; }
+  :root[data-layout="tape"] .track-number, :root[data-layout="tape"] .track-duration { font-family: var(--mono); font-size: var(--text-xs); }
+}
+
+@keyframes tape-meter {
+  0% { background-size: 4px 30%, 4px 90%, 4px 45%; }
+  50% { background-size: 4px 85%, 4px 40%, 4px 95%; }
+  100% { background-size: 4px 55%, 4px 100%, 4px 30%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  :root[data-layout="tape"] .acq-row .acq-status::after { animation: none; }
+}
