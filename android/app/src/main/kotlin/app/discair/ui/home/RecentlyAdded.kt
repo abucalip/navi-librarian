@@ -1,6 +1,8 @@
 package app.discair.ui.home
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.border
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -37,6 +39,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import app.discair.data.RECENT_DAYS
@@ -48,11 +51,15 @@ import app.discair.ui.common.CheckBadge
 import app.discair.ui.common.Load
 import app.discair.ui.common.LocalRepository
 import app.discair.ui.common.Target
+import app.discair.ui.common.TapeDeckRules
+import app.discair.ui.common.TapeMeter
+import app.discair.ui.common.rememberReducedMotion
 import app.discair.ui.common.aspectSquare
 import app.discair.ui.common.plural
 import app.discair.ui.common.rememberLoad
 import app.discair.ui.common.routeKey
 import app.discair.ui.player.LocalPlayActions
+import app.discair.ui.theme.brutalShadow
 
 private const val CARD_WIDTH = 156
 private const val TEXT_BLOCK = 60
@@ -87,6 +94,7 @@ fun RecentlyAddedSection(open: Opener) {
         is Load.Failed -> Inline(state.failure.message, loaded.reload)
         is Load.Ready -> {
             if (state.value.isEmpty()) Muted("Nothing was added in the last $RECENT_DAYS days.")
+            else if (app.discair.ui.theme.currentLayout() == app.discair.ui.theme.Layout.TapeDeck) TapeRecentList(state.value.take(TapeDeckRules.HOME_ROWS), open)
             else LazyHorizontalGrid(
                 rows = GridCells.Fixed(2),
                 modifier = Modifier.fillMaxWidth().height((2 * (CARD_WIDTH + TEXT_BLOCK) + GRID_GAP).dp),
@@ -171,6 +179,59 @@ private fun RecentlyAddedSheet(albums: List<LibraryAlbum>, open: Opener, onDismi
                     }
                 }
             }
+        }
+    }
+}
+
+/**
+ * Cassette Deck: the newest albums as one ruled list in a hard-shadowed frame (number, cover, title and artist, year). The row of
+ * the album that is playing shows the live meter in place of its number, and is announced as playing or paused. Not lazy, so it
+ * stops at [TapeDeckRules.HOME_ROWS]; the arrow above opens the full list.
+ */
+@Composable
+private fun TapeRecentList(albums: List<LibraryAlbum>, open: Opener) {
+    val p = app.discair.ui.theme.LocalPalette.current
+    val play = LocalPlayActions.current
+    val now = app.discair.ui.player.LocalPlayingNow.current
+    val reduced = rememberReducedMotion()
+    val rule = (p.shape?.outline ?: 2).dp
+    val mono = app.discair.ui.theme.LocalFontPair.current.mono
+    Column(
+        Modifier.padding(start = 16.dp, end = 21.dp, top = 8.dp, bottom = 6.dp).fillMaxWidth()
+            .brutalShadow(androidx.compose.ui.graphics.RectangleShape)
+            .background(p.surface).border(rule, p.edgeStrong),
+    ) {
+        albums.forEachIndexed { index, album ->
+            val playing = now != null && album.id.isNotBlank() && now.albumId == album.id
+            Row(
+                Modifier.fillMaxWidth().heightIn(min = 64.dp)
+                    .background(if (playing) p.accentDim else p.surface)
+                    .clickable(role = Role.Button) { open.album(album.key, album.artist, album.name, album.id, album.year) }
+                    .semantics(mergeDescendants = true) {
+                        if (playing && now != null) stateDescription = if (now.isPlaying) "Playing" else "Paused"
+                    }
+                    .padding(horizontal = 8.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Box(Modifier.width(32.dp), contentAlignment = Alignment.Center) {
+                    if (playing && now != null) TapeMeter(3, TapeDeckRules.meterMoves(now.isPlaying, false, reduced), p.text, size = 16.dp)
+                    else Text("%02d".format(index + 1), style = MaterialTheme.typography.labelMedium.copy(fontFamily = mono), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                AlbumCover(album.artist, album.name, album.artworkUrl, Modifier.size(48.dp).border(rule, p.edgeStrong), rect = true)
+                Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
+                    Text(album.name, style = MaterialTheme.typography.bodyLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Text(
+                        album.artist, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1, overflow = TextOverflow.Ellipsis,
+                    )
+                }
+                album.year?.let { Text(it.toString(), style = MaterialTheme.typography.labelMedium.copy(fontFamily = mono), modifier = Modifier.padding(end = 4.dp)) }
+                CheckBadge(
+                    onPlay = album.id.takeIf { it.isNotBlank() }?.let { id -> { play.playAlbum(id) } },
+                    label = album.name,
+                )
+            }
+            if (index < albums.lastIndex) Box(Modifier.fillMaxWidth().height(rule).background(p.edgeStrong))
         }
     }
 }

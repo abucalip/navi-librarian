@@ -127,15 +127,19 @@ private fun PageButtons(onDiscover: () -> Unit, onLibrary: () -> Unit, onSetting
     val seam = if (palette.brutal) (palette.shape?.outline ?: 2).dp else 1.dp
     Box(Modifier.fillMaxWidth().padding(vertical = 24.dp), contentAlignment = Alignment.Center) {
     // About as wide as the navigation island below it. Neobrut: one outlined frame with a hard shadow and thick seams (a button group).
+    // Cassette Deck: Settings lives in its navigation bar, so only Discover and Library are left here.
+    val withSettings = app.discair.ui.common.TapeDeckRules.homeShowsSettingsButton(palette.layout)
     Row(
-        Modifier.width(200.dp).height(48.dp).brutalShadow(frame).clip(frame).background(Ink.Surface)
+        Modifier.width(if (withSettings) 200.dp else 136.dp).height(48.dp).brutalShadow(frame).clip(frame).background(Ink.Surface)
             .border(if (palette.brutal) app.discair.ui.theme.brutalOutline() else androidx.compose.foundation.BorderStroke(1.dp, Ink.EdgeStrong), frame),
     ) {
         PageButton("Discover", Icons.Default.Star, onDiscover, Modifier.weight(1f))
         Box(Modifier.width(seam).fillMaxHeight().background(Ink.EdgeStrong))
         PageButton("Library", Icons.AutoMirrored.Filled.List, onLibrary, Modifier.weight(1f))
-        Box(Modifier.width(seam).fillMaxHeight().background(Ink.EdgeStrong))
-        PageButton("Settings", app.discair.ui.player.PlayerIcons.Tune, onSettings, Modifier.weight(1f))
+        if (withSettings) {
+            Box(Modifier.width(seam).fillMaxHeight().background(Ink.EdgeStrong))
+            PageButton("Settings", app.discair.ui.player.PlayerIcons.Tune, onSettings, Modifier.weight(1f))
+        }
     }
     }
 }

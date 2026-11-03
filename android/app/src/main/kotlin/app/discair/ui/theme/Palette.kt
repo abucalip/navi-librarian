@@ -39,6 +39,8 @@ class Palette(
     val shadowColor: Color = Color.Transparent,
     /** The smallest contrast of the accent against the page. Brutal accents are pastel and rely on the outline (held to 3:1). */
     val minAccentContrast: Double = 3.0,
+    /** How the screens are composed (D-023). Every theme but the Round 2 ones keeps [Layout.Standard], today's composition. */
+    val layout: Layout = Layout.Standard,
 ) {
     val brutal: Boolean get() = shape != null
 
@@ -53,10 +55,19 @@ class Palette(
         chartRed = dark.chartRed, chartRedText = dark.chartRedText, ok = dark.ok, caution = dark.caution,
         minTextContrast = minTextContrast, family = family, shape = shape,
         accent2 = accent2, accent3 = accent3, accent4 = accent4, shadowColor = shadowColor, minAccentContrast = minAccentContrast,
+        layout = layout,
     )
 }
 
 enum class Family(val label: String) { Classic("Classic"), Brutal("Brutal") }
+
+/**
+ * The composition a theme asks for (docs/BRUT_LAYOUTS_PLAN.md, D-023). A layout changes how Home, Now Playing and the
+ * navigation are arranged, never what they do. [Standard] is the composition every earlier theme has.
+ */
+enum class Layout(val label: String) {
+    Standard("Standard"), TapeDeck("Cassette Deck"), SheetStack("Sheet Stack"), StickerWall("Sticker Wall"),
+}
 
 /** Corner radius, outline width and hard-shadow offset, all in dp. A radius of 0 is square; pills are drawn at 50%. */
 class BrutalShape(val radius: Int, val outline: Int, val shadow: Int)
@@ -216,8 +227,40 @@ object Palettes {
         accent2 = c(0xFED170), accent3 = c(0x9CC9F0), accent4 = c(0xF4A6B8), minAccentContrast = 1.3,
     )
 
+    // Round 2, Cassette Deck (owner-approved 2026-11-03): ruled lists, a ruled navigation bar and a live meter. The same three
+    // palettes as the web's Tape Deck; Cobalt's accent is the web's darkened #3D68F0 so white text on it passes.
+    val TapeLime = Palette(
+        "tapelime", "Tape · Lime", true,
+        rail = c(0xF1EEE3), ink = c(0xF1EEE3), surface = c(0xFFFDF6), raised = c(0xF1ECDC), edge = c(0x111111), edgeStrong = c(0x111111),
+        text = c(0x111111), textMuted = c(0x4F4D44), accent = c(0xC6F432), accentDim = c(0xE9F8B4), onAccent = c(0x111111),
+        chartRed = c(0xB3261E), chartRedText = c(0xB3261E), ok = c(0x1B6B33), caution = c(0x7F4A00),
+        family = Family.Brutal, shape = BrutalShape(2, 2, 5), shadowColor = c(0x111111),
+        accent2 = c(0xFF5D8F), accent3 = c(0x3D7BFF), accent4 = c(0xFFC93C), minAccentContrast = 1.1,
+        layout = Layout.TapeDeck,
+    )
+
+    val TapeCobalt = Palette(
+        "tapecobalt", "Tape · Cobalt", true,
+        rail = c(0xE6EDFB), ink = c(0xE6EDFB), surface = c(0xFBFCFF), raised = c(0xDBE5FA), edge = c(0x0E1B3D), edgeStrong = c(0x0E1B3D),
+        text = c(0x0E1B3D), textMuted = c(0x43527A), accent = c(0x3D68F0), accentDim = c(0xD3DFFF), onAccent = c(0xFFFFFF),
+        chartRed = c(0xB3261E), chartRedText = c(0xB3261E), ok = c(0x1B6B33), caution = c(0x7F4A00),
+        family = Family.Brutal, shape = BrutalShape(2, 2, 5), shadowColor = c(0x0E1B3D),
+        accent2 = c(0xFF6B4A), accent3 = c(0xFFD23F), accent4 = c(0x9DB5FF), minAccentContrast = 3.0,
+        layout = Layout.TapeDeck,
+    )
+
+    val TapeTangerine = Palette(
+        "tapetangerine", "Tape · Tangerine", true,
+        rail = c(0xFFF0DC), ink = c(0xFFF0DC), surface = c(0xFFFAF2), raised = c(0xFBE6C8), edge = c(0x1B120A), edgeStrong = c(0x1B120A),
+        text = c(0x1B120A), textMuted = c(0x5E4A35), accent = c(0xFF8A1F), accentDim = c(0xFFE0B8), onAccent = c(0x1B120A),
+        chartRed = c(0xB3261E), chartRedText = c(0xB3261E), ok = c(0x1B6B33), caution = c(0x7F4A00),
+        family = Family.Brutal, shape = BrutalShape(2, 2, 5), shadowColor = c(0x1B120A),
+        accent2 = c(0x1F8A70), accent3 = c(0xFFD23F), accent4 = c(0xFF5D8F), minAccentContrast = 1.3,
+        layout = Layout.TapeDeck,
+    )
+
     /** Light themes in the order the picker shows them; the first is the default day theme. */
-    val Light: List<Palette> = listOf(Sand, Paper, Mist, Sage, Blush, BrutLavender, BrutMint, BrutLemon, BrutCream, BrutSky, BrutPoster)
+    val Light: List<Palette> = listOf(Sand, Paper, Mist, Sage, Blush, BrutLavender, BrutMint, BrutLemon, BrutCream, BrutSky, BrutPoster, TapeLime, TapeCobalt, TapeTangerine)
 
     /** Dark themes in the order the picker shows them; the first is the default night theme. */
     val Dark: List<Palette> = listOf(Night, Amoled, Forest, Ocean, Ember, Graphite, HighContrast, BrutInk, BrutMidnight)
@@ -231,3 +274,8 @@ val LocalPalette = staticCompositionLocalOf { Palettes.Night }
 
 /** The owner's chosen palette while [app.discair.ui.theme.OnArtwork] has swapped in a dark one; null otherwise. */
 val LocalThemePalette = staticCompositionLocalOf<Palette?> { null }
+
+/** The layout of the theme the owner chose, also while [app.discair.ui.theme.OnArtwork] has swapped in a dark copy of it. */
+@androidx.compose.runtime.Composable
+@androidx.compose.runtime.ReadOnlyComposable
+fun currentLayout(): Layout = LocalPalette.current.layout
