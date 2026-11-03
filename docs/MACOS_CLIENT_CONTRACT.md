@@ -1,6 +1,6 @@
 # macOS client contract (Discair)
 
-Status: **approved by the owner and merged (PR [#713](https://github.com/abucalip/navi-librarian/pull/713), squash `8a3bab9706e49dcd485cb6c92073ee0285b1a4e7`, 2026-11-03). Phase M0 is done. Nothing is built; M1 is next, to start only when the owner asks.** Written from the owner's answers of 2026-11-03. Mockup rounds 1 and 2 are done (section 9); the launch themes are Cupertino and Zine Spread.
+Status: **approved by the owner and merged (PR [#713](https://github.com/abucalip/navi-librarian/pull/713), squash `8a3bab9706e49dcd485cb6c92073ee0285b1a4e7`, 2026-11-03). Phase M0 is done. M1 (Swift package skeleton, section 11) is built and in review; M2 is next, to start only when the owner asks.** Written from the owner's answers of 2026-11-03. Mockup rounds 1 and 2 are done (section 9); the launch themes are Cupertino and Zine Spread.
 
 ## 1. Purpose and scope
 
@@ -105,7 +105,7 @@ Queue (play next, add to queue, reorder), shuffle, repeat, gapless with next-tra
 | Phase | Content | Gate |
 |---|---|---|
 | M0 | This contract, `macos/DESIGN.md` skeleton, project layout | **Done**: owner approved, merged in PR #713 (the `macos/` folder and `DESIGN.md` are created in M1) |
-| M1 | Package skeleton, profiles and reachability, Keychain, Navidrome auth, library read, Navidrome playlist API check, rate-limit check | Tests pass |
+| M1 | Package skeleton, profiles and reachability, Keychain, Navidrome auth, library read, Navidrome playlist API check, rate-limit check | Tests pass. **Built**: see section 11 (the two server checks still need the owner's addresses) |
 | M2 | Audio spike: `AVAudioEngine` decode of FLAC/MP3/Opus, EQ, crossfade, gapless, SMB waveform speed | Measured result recorded |
 | M3 | **Mockups:** done in two rounds (9 theme drawings, 6 screens each) | Owner picked: Cupertino and Zine first, Bento Block and Native Glass v2 later |
 | M4 | Window shell, theme layer, Cupertino and Zine Spread, all screens | Screenshot tests; owner approves the UI on the Mac |
@@ -122,4 +122,50 @@ Priorities when trade-offs appear (owner, 2026-11-03): the look, smooth browsing
 - **Mini window:** floating always-on-top; cover, transport, seek bar, peek at the next track.
 - **Cache (optional, off by default):** audio, covers and metadata, capped at **2 GB** with least-recently-used eviction, a clear button and a size readout in Settings.
 - **SMB:** music folder is `/Volumes/media/library/music`, mounted by hand today. The app mounts it itself: the share address is a setting, the SMB login is stored in the Keychain, and the app calls Apple's NetFS mount API at launch and when the profile changes (the same as Finder "Connect to Server", no extra tools). If the mount fails or the volume is absent, SMB features switch off silently and playback is unaffected. Remaining detail for M2: the Navidrome-path to `/Volumes/media/library/music` prefix mapping, which the spike confirms against real paths. Share address: `smb://192.168.1.87/media` (username and password login; the credentials go in the Keychain, never in the repo).
-- **O7 Xcode is not installed on the owner's Mac (checked 2026-11-03).** Only the Command Line Tools with Swift 6.2 are present. M1's Swift package (logic and unit tests) builds and tests with `swift build` and `swift test` alone. The SwiftUI app shell, screenshot tests and Sparkle need full Xcode (free from the App Store, large download, macOS 26 SDK). Needed before M4, and for M1 only if the app shell is started there; the owner installs it, then runs `sudo xcode-select -s /Applications/Xcode.app`. CI uses GitHub's macOS runners, which include Xcode.
+- **O7 Xcode (resolved 2026-11-03):** Xcode 26.6 (macOS SDK 26.5) is installed and active at `/Applications/Xcode.app` on the owner's Mac (the earlier note that only the Command Line Tools were present is out of date). The package builds and tests with `swift build`, `swift test` and `xcodebuild -scheme Discair-Package -destination 'platform=macOS' test`. The SwiftUI app shell, screenshot tests and Sparkle start in M4. CI uses GitHub's `macos-26` runner (Xcode 26.6 is its default).
+
+## 11. M1 package and checks (2026-11-03)
+
+Code: `macos/` (`README.md` there says how to build and test). Rules as decided by the owner in sections 3 and 10; where the contract left a detail open, M1 picked the recommended option, listed here:
+
+- **Profiles** carry a `network` (LAN, Tailscale, other) that is inferred from the addresses and can be changed. Probe order is LAN, then Tailscale, then other; ties keep the owner's order. A profile counts as reachable only when both its Librarian and Navidrome addresses answer (any HTTP answer below 500, 3 s timeout, no redirects). A manual override skips probing. A Tailscale profile is not probed when no Tailscale interface is up.
+- **Tailscale detection:** an up `utun` interface holding an address in 100.64.0.0/10 or `fd7a:115c:a1e0::/48`.
+- **HTTP allowlist:** strict dotted-decimal IPv4 only (so `192.168.1.1.example.com`, octal and hex forms are names and are blocked over http); `localhost`, `127.0.0.1` and IPv6 over http are blocked because section 3 does not list them. Credentials inside a URL are refused.
+- **Error kinds:** the five of section 3 plus `tooManyAttempts` for the Librarian's 429 (ANDROID_CLIENT_CONTRACT 4.1: shown, never retried automatically), and an address-rejected kind that has no retry.
+- **Keychain:** one generic-password item per login (`app.discair.navidrome`, `app.discair.librarian`), this device only, no sync, no access group. `Credential` prints as redacted.
+- **Subsonic auth:** token = md5(password + salt), fresh 16-hex-character salt per request URL; `u t s v=1.16.1 c=discair f=json`. Redirects are refused. One request timeout of 30 s (the separate 10 s connect timeout of the Android contract is not available in `URLSession`; the 3 s probe timeout covers reachability).
+- **Stream URLs:** one builder; `id`, optional `maxBitRate` from 64, 96, 128, 192, 256, 320 and optional `format` of `mp3` or `opus`, written from the allowlist; song ids `[A-Za-z0-9_-]{1,128}`. The Android rule "https only" is widened to the section 3 transport rules for the Mac.
+- **Librarian:** `GET /api/auth/status`, `POST /api/auth/login`, `GET /api/dashboard-picks?count=` (clamped 1 to 30). One re-login on a 401, then the error is reported. The session cookie is kept in memory only; persisting it is left to M5.
+- **Not done in M1 (by scope):** the library cache, `getGenres` and `search3` reads, the other Librarian reads, SSE, and cookie persistence.
+
+### 11.1 Check (a): Navidrome playlist API (needed for smart playlists)
+
+**Status: open, needs the owner's Navidrome address.** The package implements `getPlaylists`, `getPlaylist`, `createPlaylist`, `updatePlaylist` (add songs) and `deletePlaylist` against the Subsonic 1.16.1 specification, and unit tests cover them with spec-shaped payloads. No playlist call was captured from the owner's Navidrome (`android/contract-fixtures/navidrome/` has none), so whether this server accepts them is not yet known. To run it:
+
+```sh
+cd macos
+export DISCAIR_NAVIDROME_URL=<address>  DISCAIR_NAVIDROME_USER=<user>  DISCAIR_NAVIDROME_PASSWORD=<password>
+swift run discair-checks playlists --write
+```
+
+It reads the playlist list, creates `discair-m1-check` with one song, reads it back, adds the song again, deletes the playlist and confirms it is gone. Pass means smart playlists can be saved to Navidrome; any FAIL line names the failing call. Record the result here with the Navidrome version. Not yet checked: removing or reordering songs (`songIndexToRemove`), which smart playlists may need.
+
+### 11.2 Check (b): is the Librarian login rate limit shared behind `tailscale serve`?
+
+**Status: open, needs the owner's addresses and a second tailnet device.** What the code says: the limit is 8 attempts per 15 minutes per `request.client.host` (`app/api/auth.py`), held in memory. The container starts uvicorn without `--forwarded-allow-ips`, so it trusts `X-Forwarded-For` only from 127.0.0.1. If the proxy reaches the container through Docker's port mapping, every tailnet client probably shares one key (the bridge address). This is a hypothesis, not a result. To settle it:
+
+1. From the Mac, through the `tailscale serve` address: `export DISCAIR_LIBRARIAN_URL=<tailscale address>; swift run discair-checks ratelimit --yes`. It sends wrong logins for the user `discair-m1-ratelimit-probe` and prints the attempt that gets a 429 (expected 9, after 8).
+2. Straight away, from a second device on the tailnet (the phone's browser or the Android app), try one wrong login through the same address. **429 means the limit is shared**; a 401 means each client has its own.
+3. Also try one wrong login from the LAN address on the home network: expected 401 in both cases, since that is a different client address.
+4. Wait 15 minutes, or restart the Librarian container, to clear the lockout (the limit is in memory).
+
+If shared: the owner's own web UI and the app lock each other out after 8 failures in 15 minutes. Any fix (trusting the proxy's forwarded address) is a backend contract proposal and needs the owner's approval; the app already shows the 429 message and does not retry.
+
+### 11.3 What M2 (audio spike) needs from the owner
+
+- Approval to start M2, and the two server checks of 11.1 and 11.2 run or deferred.
+- The Navidrome address and login (in the Keychain through the app or the harness, never in the repo), so the spike streams real files.
+- A few real song ids from the library: one FLAC (ideally high sample rate), one MP3, one Opus if any, and two consecutive tracks of a continuous album (for the gapless test).
+- The SMB share (`smb://192.168.1.87/media`) reachable from the Mac with its login, and one Navidrome `path` value next to the matching file under `/Volumes/media/library/music`, to confirm the prefix mapping.
+- The output device to judge by ear (built-in, headphones, DAC) and the owner's verdict on gapless and crossfade quality; automated tests cannot judge that.
+- A decision on the waveform time budget (contract section 7): the spike proposes a value from measurements.
