@@ -130,6 +130,13 @@
     <!-- Zine Spread layout only (hidden in every other theme): the front page. The lead story, the Classifieds and New this week are built by
          static/app.js from the same picks and New releases data and the same card builders as the default dashboard, whose Recommended
          panel and New releases shelf the layout hides. -->
+    <!-- Pipeline Board layout only (hidden in every other theme): the dashboard as a five-column board. static/layout-pipeline.js fills it from
+         the same picks, Saved list, acquisition list and recent library shelf, with the same card builders and Get / Save controls. -->
+    <section id="pipelineBoard" class="pipeline-board" aria-labelledby="pipelineHeading" hidden>
+      <div class="pipeline-top"><h2 id="pipelineHeading">Pipeline</h2><p class="pipeline-hint">Drag a card into Queued to Get it, or use Move to…</p></div>
+      <div id="pipelineCols" class="pipeline-cols"></div>
+      <p id="pipelineToast" class="pipeline-toast" role="status"></p>
+    </section>
     <div id="zineFront" class="zine-front" hidden>
       <section class="zine-lead-col" aria-labelledby="zineLeadHeading">
         <div class="zine-front-head">
@@ -675,6 +682,7 @@
 <script src="/static/vendor/notyf/notyf.min.js" defer></script>
 <script src="/static/app.js" defer></script>
 <script src="/static/layout-zine.js" defer></script>
+<script src="/static/layout-pipeline.js" defer></script>
 <script src="/static/radio.js" defer></script>
 </body>
 </html>

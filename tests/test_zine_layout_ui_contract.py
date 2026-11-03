@@ -27,7 +27,7 @@ class ZineLayoutTests(unittest.TestCase):
         self.app = (STATIC / "app.js").read_text(encoding="utf-8")
         self.zine_js = (STATIC / "layout-zine.js").read_text(encoding="utf-8")
         self.html = (ROOT / "app" / "templates" / "index.html").read_text(encoding="utf-8")
-        self.zine = self.layouts.split('==== Zine Spread ("zine")')[1].split("*/", 1)[1]
+        self.zine = self.layouts.split('==== Zine Spread ("zine")')[1].split("*/", 1)[1].split("==== Pipeline Board")[0]
         self.block = self.themes.split(':root[data-theme="zine"]')[1].split("\n}")[0]
 
     def _token(self, name):
