@@ -253,7 +253,7 @@
   --bw: 2px; --radius-control: 0px; --radius-panel: 0px; --radius-chip: 0px;
   --brut-sh: 4px; --brut-shadow-color: #111111; --brut-lift: -2px;
   --brut-nav-bg: #111111; --brut-nav-text: #ffde59; --brut-nav-edge: #111111; --brut-line: #111111;
-  --zine-pink: #ff4d6d; --zine-teal: #2ec4b6; --zine-on-colour: #111111;
+  --zine-pink: #ff4d6d; --zine-teal: #2ec4b6; --zine-on-colour: #111111; --zine-cover: #2a3b5c;
 }
 
 /* ---- Neobrut components: only the themes that set data-brut ---- */

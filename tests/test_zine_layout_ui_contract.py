@@ -25,6 +25,7 @@ class ZineLayoutTests(unittest.TestCase):
         self.themes = (STATIC / "themes.css").read_text(encoding="utf-8")
         self.layouts = (STATIC / "layouts.css").read_text(encoding="utf-8")
         self.app = (STATIC / "app.js").read_text(encoding="utf-8")
+        self.zine_js = (STATIC / "layout-zine.js").read_text(encoding="utf-8")
         self.html = (ROOT / "app" / "templates" / "index.html").read_text(encoding="utf-8")
         self.zine = self.layouts.split('==== Zine Spread ("zine")')[1].split("*/", 1)[1]
         self.block = self.themes.split(':root[data-theme="zine"]')[1].split("\n}")[0]
@@ -52,7 +53,7 @@ class ZineLayoutTests(unittest.TestCase):
 
     def test_the_palette_has_the_full_token_set(self):
         for name in ("ink-rail", "ink", "surface", "surface-raised", "surface-hover", "edge", "text", "text-muted", "accent", "accent-text",
-                     "focus", "on-accent", "bw", "brut-sh", "brut-shadow-color", "brut-nav-bg", "brut-nav-text", "zine-pink", "zine-teal"):
+                     "focus", "on-accent", "bw", "brut-sh", "brut-shadow-color", "brut-nav-bg", "brut-nav-text", "zine-pink", "zine-teal", "zine-cover"):
             self.assertRegex(self.block, rf"--{name}:", name)
         self.assertEqual(self._token("accent"), "#ffde59")
 
@@ -60,7 +61,7 @@ class ZineLayoutTests(unittest.TestCase):
         t = self._token
         pairs = [("text", "ink"), ("text", "surface"), ("text-muted", "ink"), ("text-muted", "surface"), ("text-muted", "ink-rail"),
                  ("text", "ink-rail"), ("accent-text", "surface"), ("accent-text", "ink"), ("on-accent", "accent"),
-                 ("zine-on-colour", "zine-pink"), ("zine-on-colour", "zine-teal"), ("brut-nav-text", "brut-nav-bg"),
+                 ("zine-on-colour", "zine-pink"), ("zine-on-colour", "zine-teal"), ("brut-nav-text", "brut-nav-bg"), ("accent", "zine-cover"),
                  ("text", "surface-raised"), ("text-muted", "surface-raised")]
         for fg, bg in pairs:
             fg_hex = t(fg) if fg != "zine-on-colour" else self._token("zine-on-colour")
@@ -68,51 +69,71 @@ class ZineLayoutTests(unittest.TestCase):
         self.assertGreaterEqual(_contrast(t("focus"), t("ink")), 3, "focus ring on ground")
         self.assertGreaterEqual(_contrast(t("focus"), t("surface")), 3, "focus ring on surface")
 
-    def test_the_ticker_is_hidden_and_aria_hidden_by_default_and_shown_only_by_the_layout(self):
-        self.assertRegex(self.html, r'<p id="zineTicker" class="zine-ticker" aria-hidden="true" hidden>')
-        self.assertNotIn(".zine-ticker", self.layouts.split('==== Zine Spread ("zine")')[0])
-        self.assertIn('document.documentElement.dataset.layout !== \'zine\'', self.app)
-        self.assertIn("updateZineTicker(jobs);", self.app)
-
-    def test_the_ticker_states_are_words_and_make_no_new_request(self):
-        fn = self.app.split("function updateZineTicker(jobs) {")[1].split("\n}\n")[0]
-        self.assertIn("acquisitionStatusInfo(job.status).label", fn)
-        self.assertNotIn("fetch(", fn)
-
-    def test_the_letter_strip_is_hidden_by_default_acts_only_on_loaded_rows_and_never_fetches(self):
-        self.assertIn('<div id="zineLetters" class="zine-letters" role="group" aria-label="Jump to a letter" hidden></div>', self.html)
-        fn = self.app.split("function updateZineLetters() {")[1].split("\n}\n")[0]
-        self.assertIn("document.documentElement.dataset.layout !== 'zine'", fn)
-        self.assertIn("button.disabled = true;", fn)
-        self.assertIn("No loaded entry starts with", fn)
-        self.assertNotIn("fetch(", fn)
-        self.assertNotIn("requestJSON", fn)
-
-    def test_j_and_k_are_layout_gated_ignore_fields_modifiers_and_the_open_dialog(self):
-        block = self.app.split("// Zine Spread only: J and K step")[1].split("$('albumModalClose')")[0]
-        self.assertIn("dataset.layout !== 'zine'", block)
-        for guard in ("event.ctrlKey", "event.metaKey", "event.altKey", "INPUT|TEXTAREA|SELECT", "albumModalBackdrop"):
-            self.assertIn(guard, block)
-        self.assertNotIn("fetch(", block)
-
-    def test_acquisition_dispatches_keep_their_controls_and_state_words(self):
-        css = self.zine.split("Acquisitions: each request is a dispatch")[1]
-        self.assertIn(".acq-progress-fill", css)
-        self.assertNotIn("display: none", css)
-
-    def test_the_front_page_is_hidden_by_default_and_built_from_the_default_builders(self):
-        self.assertRegex(self.html, r'<div id="zineFront" class="zine-front" hidden>')
-        for hook in ('id="zineLead"', 'id="zineNew"', 'id="zineClassifieds"', "Lead story", "New this week", "Classifieds"):
+    # ---- hooks: hidden by default, filled only by static/layout-zine.js, in the template once ----
+    def test_every_hook_is_hidden_by_default(self):
+        for hook in ('id="zineMast" class="zine-mast" aria-hidden="true" hidden', 'id="zineTicker" class="zine-ticker" aria-hidden="true" hidden',
+                     'id="zineFront" class="zine-front" hidden', 'id="zineLetters" class="zine-letters" role="group" aria-label="Jump to a letter" hidden',
+                     'id="zineAlbumBy" class="zine-album-by" hidden', 'id="zineGetMissing" class="zine-get-missing" hidden', 'id="zinePull" class="zine-pull" hidden',
+                     'id="zineCoverLines" class="zine-cover-lines" aria-hidden="true" hidden', 'id="zineIssuesSection" class="zine-issues"'):
             self.assertIn(hook, self.html)
-        fn = self.app.split("function renderZineFront() {")[1].split("\n}\n")[0]
+        before = self.layouts.split('==== Zine Spread ("zine")')[0]
+        self.assertNotIn(".zine-", before)
+
+    def test_the_script_loads_after_app_js_and_app_js_reaches_it_only_through_the_hook(self):
+        self.assertLess(self.html.index('/static/app.js'), self.html.index('/static/layout-zine.js'))
+        self.assertIn("function zineHook(name, ...args)", self.app)
+        for name in ("updateZineTicker", "renderZineFront", "updateZineMast", "renderZineArtist", "renderZineAlbum", "focusZineLead"):
+            self.assertIn(f"zineHook('{name}'", self.app)
+        self.assertNotRegex(self.app, r"(?<!zineHook\(')(?<!function )\b(updateZine\w+|renderZine\w+)\(")
+
+    def test_every_function_returns_unless_the_layout_is_active(self):
+        for fn in ("updateZineMast", "renderZineArtist", "renderZineAlbum", "updateZineLetters"):
+            body = self.zine_js.split(f"function {fn}(")[1].split("\n}\n")[0]
+            self.assertIn("zineOn()", body, fn)
+        self.assertIn("zineFrontActive()", self.zine_js.split("function renderZineFront() {")[1].split("\n}\n")[0])
+
+    # ---- mast and ticker ----
+    def test_the_mast_names_the_page_like_the_mockup(self):
+        mast = self.zine_js.split("function updateZineMast() {")[1].split("\n}\n")[0]
+        for text in ("The Discair Daily", "The Index", "The Wire", "'Vol. '", "imported this week", "/ to filter", "Review"):
+            self.assertIn(text, mast)
+
+    def test_the_ticker_is_black_with_words_and_glyphs_and_makes_no_request(self):
+        fn = self.zine_js.split("function updateZineTicker(jobs) {")[1].split("\n}\n")[0]
+        for text in ("downloading", "imported", "failed", "(retry)", "new releases this week"):
+            self.assertIn(text, fn)
+        self.assertNotIn("fetch(", fn)
+        self.assertIn("color: var(--accent); background: var(--edge)", self.zine)
+
+    # ---- dashboard ----
+    def test_the_front_page_is_built_from_the_default_builders(self):
+        for hook in ('id="zineLead"', 'id="zineNew"', 'id="zineClassifieds"', "New this week", "Classifieds", 'id="zineGetAll"', 'id="zineIndexChips"', "J / K next story"):
+            self.assertIn(hook, self.html)
+        fn = self.zine_js.split("function renderZineFront() {")[1].split("\n}\n")[0]
         self.assertIn("buildDashboardTile(", fn)
         self.assertIn("buildShelfCard(", fn)
         self.assertNotIn("fetch(", fn)
-        self.assertNotIn("requestJSON", fn)
-        self.assertIn("renderZineFront();", self.app.split("function renderDashboardPicks() {")[1].split("\n}\n")[0])
+        self.assertIn("zineHook('renderZineFront')", self.app.split("function renderDashboardPicks() {")[1].split("\n}\n")[0])
+
+    def test_the_lead_story_headline_names_what_the_library_holds(self):
+        fn = self.zine_js.split("function zineApplyOwnership(")[1].split("\n}\n")[0]
+        self.assertIn("'you own '", fn)
+        self.assertIn("Not this one.", fn)
+        self.assertIn("missing from your shelf", fn)
+        self.assertIn("Start here.", fn)
+        count = self.zine_js.split("async function zineOwnedCount(")[1].split("\n}\n")[0]
+        self.assertIn("/api/library/artists", count)
+        self.assertNotIn("/api/acquire", self.zine_js)
+
+    def test_j_and_k_step_the_lead_story_on_the_dashboard_and_lines_in_the_library(self):
+        block = self.zine_js.split("document.addEventListener('keydown'")[1].split("/* ----------------------------------------------------------------")[0]
+        for guard in ("event.ctrlKey", "event.metaKey", "event.altKey", "INPUT|TEXTAREA|SELECT", "albumModalBackdrop", "zineStep(", "'/'"):
+            self.assertIn(guard, block)
+        step = self.zine_js.split("function zineStep(delta) {")[1].split("\n}\n")[0]
+        self.assertIn("'Story '", step)
 
     def test_the_front_page_actions_carry_text_labels_including_not_for_me(self):
-        self.assertIn("'dismiss-album-label', 'Not for me'", self.app)
+        self.assertIn("'dismiss-album-label', 'Not for me'", self.zine_js)
         for label in ("get-album-label", "save-album-label", "dismiss-album-label"):
             self.assertIn(f".zine-lead-tile .action-group .{label}", self.zine)
 
@@ -122,9 +143,64 @@ class ZineLayoutTests(unittest.TestCase):
         self.assertIn("sendFeedback('dismiss', artist, album, item, 'dashboard_picks', tile", fn)
         self.assertIn("dashboardPickItems.splice(spot, 0, item)", fn)
 
+    def test_get_all_clicks_the_real_get_buttons(self):
+        fn = self.zine_js.split("function zineGetAll() {")[1].split("\n}\n")[0]
+        self.assertIn("#zineClassifieds .get-album:not(:disabled)", fn)
+        self.assertIn("button.click()", fn)
+
     def test_the_default_recommended_panel_and_new_releases_shelf_are_hidden_only_by_this_layout(self):
         self.assertIn('#dashboard > .panel:has(#dashboardCarousel)', self.zine)
         self.assertIn('shelfNewReleasesHeading', self.zine)
+
+    def test_the_index_foot_opens_the_library_at_a_range_of_letters(self):
+        self.assertIn("['ABCD', 'EFGH', 'IJKL', 'MNOP', 'QRST', 'UVWXYZ']", self.zine_js)
+        fn = self.zine_js.split("function zineOpenIndex(range) {")[1].split("\n}\n")[0]
+        self.assertIn("navigateTo('library')", fn)
+        self.assertIn("libraryView.sort = 'name'", fn)
+
+    # ---- library ----
+    def test_the_letter_margin_is_vertical_acts_only_on_loaded_rows_and_never_fetches(self):
+        self.assertIn('<div class="zine-index">', self.html)
+        fn = self.zine_js.split("function updateZineLetters() {")[1].split("\n}\n")[0]
+        self.assertIn("button.disabled = true;", fn)
+        self.assertIn("No loaded entry starts with", fn)
+        self.assertIn("zine-letter-head", fn)
+        self.assertNotIn("fetch(", fn)
+        self.assertNotIn("requestJSON", fn)
+        self.assertIn("flex-direction: column", self.zine.split(".zine-letters {")[1].split("}")[0])
+        self.assertIn('[aria-current="true"]', self.zine)
+
+    # ---- album ----
+    def test_the_album_article_has_a_byline_pull_quote_and_missing_track_coupons(self):
+        fn = self.zine_js.split("function renderZineAlbum() {")[1].split("\n}\n")[0]
+        for text in ("owned ", "' tracks'", "One is a coupon.", "Every song is on your shelf.", "Get missing track"):
+            self.assertIn(text, fn)
+        self.assertIn("content: \"GET \\2702\"", self.zine)
+        self.assertIn(".album-head { display: contents; }", self.zine)
+        self.assertIn(".album-hero-art-wrap { float: left;", self.zine)
+        self.assertIn("columns: 2; column-gap: 16px", self.zine.split(".track-list {")[1].split("}")[0])
+        self.assertIn("albumPage.tracks = section.items;", self.app)
+
+    # ---- artist ----
+    def test_the_artist_cover_has_cover_lines_and_back_issues_built_from_the_page_data(self):
+        fn = self.zine_js.split("function renderZineArtist(ctx) {")[1].split("\n}\n")[0]
+        for text in ("Inside: ", "issues on your shelf", "Also: ", "ctx.ownedAlbums", "ctx.missing", "ctx.similar"):
+            self.assertIn(text, fn)
+        card = self.zine_js.split("function zineIssueCard(item) {")[1].split("\n}\n")[0]
+        self.assertIn("buildAlbumState(item)", card)
+        self.assertIn("Missing \u00b7 Get", card)
+        self.assertIn("--zine-cover", self.zine)
+        self.assertIn("white-space: nowrap", self.zine.split("#artistDetailHeading {")[1].split("}")[0])
+        for hook in ("ctx.ownedAlbums = ", "ctx.similar = ", "ctx.albumCount = "):
+            self.assertIn(hook, self.app)
+
+    # ---- acquisitions ----
+    def test_acquisition_dispatches_have_verbs_a_hatched_press_bar_and_keep_their_controls(self):
+        css = self.zine.split("Acquisitions: THE WIRE")[1]
+        for verb in ('" arrives"', '" waits its turn"', '" stalls"'):
+            self.assertIn(verb, css)
+        self.assertIn("repeating-linear-gradient(90deg", css)
+        self.assertNotIn(".acq-actions { display: none", css)
 
     def test_reduced_motion_disables_any_zine_animation(self):
         css = re.sub(r"/\*.*?\*/", "", self.zine, flags=re.S)
