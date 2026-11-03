@@ -140,11 +140,11 @@ Done: Genres grid and four album shelves on the dashboard, the Recommended slide
 - **Pipeline Board dropped (2026-11-03, owner decision):** the dashboard part (PR [#710](https://github.com/abucalip/navi-librarian/pull/710)) is removed from `main` by PR [#712](https://github.com/abucalip/navi-librarian/pull/712), squash `97a80caf5954c20d3467d07cb5a38b2fd2506725`; the P2b PR ([#711](https://github.com/abucalip/navi-librarian/pull/711)) is closed unmerged. Plan section 5 B records the drop.
 - **Next action:** none queued. The next phase in the plan is P3a, Window Manager, to start only when the owner asks.
 
-## 2j. macOS client (Discair for Mac): M1 package in review
+## 2j. macOS client (Discair for Mac): M1 merged, M2 in progress
 
 - Governing contract: [MACOS_CLIENT_CONTRACT.md](MACOS_CLIENT_CONTRACT.md) (D-025), merged in PR [#713](https://github.com/abucalip/navi-librarian/pull/713), squash `8a3bab9706e49dcd485cb6c92073ee0285b1a4e7`. Mockups: `docs/design/macos-m3/mockups.html` (round 1) and `docs/design/macos-m4/mockups.html` (round 2).
 - Launch themes Cupertino and Zine Spread; Bento Block and Native Glass v2 are documented for later (contract section 4).
-- **M1 (Swift package in `macos/`, CI `macos-package.yml`) is in review; see contract section 11.** Left for the owner: approve the PR, and run the two server checks (contract 11.1 and 11.2), which need the owner's addresses. **Next action after that:** M2 (audio spike), to start only when the owner asks; contract section 11 lists what M2 needs.
+- **M1 merged (2026-11-03, owner-approved):** PR [#716](https://github.com/abucalip/navi-librarian/pull/716), squash `77e87484042a9db5c6987cb6b15f0f5b38e94d60` (package in `macos/`, CI `macos-package.yml`; contract section 11). **M2 (audio spike) approved by the owner and in progress.** The owner supplied the Navidrome login (local `config.env`) and the SMB user name; the two server checks (contract 11.1 and 11.2) run as part of M2.
 
 ## 3. Recommendation engine — gated
 

@@ -1,3 +1,12 @@
+## 2026-11-03 — macOS M1 Swift package merged (PR #716)
+
+- **Merged (owner request):** PR [#716](https://github.com/abucalip/navi-librarian/pull/716), squash `77e87484042a9db5c6987cb6b15f0f5b38e94d60`, from tested head `c9feee10d6029f29d763194882e9896a03285f59`; compile, container-smoke, swift, test-and-build and validate-container passed on that head. The new `swift` job ran on `macos-26` with Xcode 26.6.
+- **What:** phase M1 of `docs/MACOS_CLIENT_CONTRACT.md` (D-025). `macos/` Swift package (Swift 6, macOS 26): `DiscairCore` (address rules, profiles, reachability, Tailscale detection, error kinds, Keychain store, transport), `DiscairNavidrome` (Subsonic token and salt, library read, playlist calls, stream-URL builder), `DiscairLibrarian` (login, dashboard picks), `discair-checks` harness; `macos/README.md`, `macos/DESIGN.md`; workflow `.github/workflows/macos-package.yml` (runs only on `macos/**`, fixtures or the workflow). Contract section 11 records the M1 choices.
+- **Tests run (agent):** `swift build` (no warnings), `swift test` (81 tests in 10 suites, including one real Keychain round trip) and `xcodebuild -scheme Discair-Package -destination 'platform=macOS' test`, locally on Xcode 26.6 and in CI. The Python suite was not run (nothing changed there).
+- **Limits:** no UI, audio or themes. The two server checks (Navidrome playlist API, Librarian rate limit under `tailscale serve`) had not been run when this merged; no server was contacted by M1 code. Test fixtures are the Android fixtures, linked into the test targets.
+- **State:** merged only. Not published, not deployed.
+- **Next action:** M2, the audio spike (owner approved the start).
+
 ## 2026-11-03 — Web Zine Spread layout merged (PR #709)
 
 - **Merged (owner request):** PR [#709](https://github.com/abucalip/navi-librarian/pull/709), squash `3f546f9ec409a127ca8d5ce8f9e677ba1865479e`, from tested head `a6141c8cd1296ca635c924c8abd1a7fb1f7ce8a2`; compile, container-smoke, test-and-build, validate-container and validate-release-workflow passed on that head.
