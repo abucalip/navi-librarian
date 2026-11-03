@@ -38,6 +38,20 @@ function showPage(name) {
   moveNavIndicator();
   syncNavAria();
   syncLocationHash();
+  updateLedgerCrumb(name);
+}
+
+// Ledger Room only (static/layouts.css shows it; the element is hidden and aria-hidden in every other theme):
+// a "Group / Page" line above the page, taken from the navigation's own labels so the two never disagree.
+function updateLedgerCrumb(name) {
+  const crumb = $('ledgerCrumb');
+  if (!crumb) return;
+  const button = document.querySelector('nav button[data-page="' + name + '"]') || document.querySelector('.header-menu button[data-page="' + name + '"]');
+  const group = button && button.closest('.nav-group');
+  const groupLabel = group && group.querySelector('.nav-group-label');
+  const label = button ? (button.title || button.textContent.trim()) : name;
+  crumb.replaceChildren((groupLabel ? groupLabel.textContent : 'Account') + ' / ');
+  addTextElement(crumb, 'b', '', label);
 }
 
 // Slide the navigation indicator to the active item using translateY only. The indicator is a
@@ -658,6 +672,20 @@ function updateActiveDownloadBadge(data) {
   badge.textContent = String(count);
   badge.hidden = count === 0;
   badge.setAttribute('aria-label', count + ' active download' + (count === 1 ? '' : 's'));
+  updateLedgerStats(jobs, count);
+}
+
+// Ledger Room only: the dashboard's summary strip, counted from the acquisition list this page already loads
+// (no new request). Imported counts jobs the server marked imported in the last seven days.
+function updateLedgerStats(jobs, active) {
+  if (!$('ledgerStats')) return;
+  const weekAgo = Date.now() / 1000 - 7 * 86400;
+  const imported = jobs.filter(job => String(job.status || '').toLowerCase() === 'imported' && Number(job.updated_at) >= weekAgo).length;
+  const failed = jobs.filter(job => acquisitionStatusInfo(job.status).tone === 'error').length;
+  $('ledgerStatActive').textContent = String(active);
+  $('ledgerStatImported').textContent = String(imported);
+  $('ledgerStatFailed').textContent = String(failed);
+  $('ledgerStatTotal').textContent = String(jobs.length);
 }
 
 async function refreshActiveDownloadBadge() {
@@ -1252,7 +1280,18 @@ document.addEventListener('click', event => {
   if (!card || event.target.closest('button, a, input, select, textarea')) return;
   openAlbumModal(card);
 });
+// Ledger Room only: Ctrl+K (Cmd+K on a Mac) jumps to the header search. The page takes the key from the browser, which uses it
+// for its own search bar, so the shortcut exists in no other theme and the hint beside the field is shown by this layout alone.
+const searchShortcutLabel = /Mac|iPhone|iPad/.test(navigator.platform || '') ? '\u2318K' : 'Ctrl K';
+document.querySelectorAll('.search-shortcut').forEach(hint => { hint.textContent = searchShortcutLabel; });
 document.addEventListener('keydown', event => {
+  if ((event.ctrlKey || event.metaKey) && !event.altKey && !event.shiftKey && event.key.toLowerCase() === 'k'
+      && document.documentElement.dataset.layout === 'ledger') {
+    event.preventDefault();
+    setSearchExpanded(true, {focus: true});
+    $('globalSearchInput').select();
+    return;
+  }
   const albumModalOpen = !$('albumModalBackdrop').hidden;
   if (event.key === 'Escape' && albumModalOpen) closeAlbumModal();
   else if (event.key === 'Escape' && !appMenu.hidden) setAppMenuOpen(false, {focusToggle: true});
@@ -2165,8 +2204,53 @@ function buildRecommendationRow(item, rank, options = {}) {
   });
   if (options.saved) setSaveButtonState(group.querySelector('.save-album'), true, album);
   actions.append(group);
+  const badge = buildStatusBadge(group, options.owned || item.owned);
+  if (badge) row.append(badge);
   row.append(actions);
   return row;
+}
+
+// The Ledger Room status cell: Owned, Missing or Queued, always as a word. Hidden in every other theme (static/layouts.css
+// shows it). It follows the row's own Get button, so a request made from the row turns Missing into Queued without a reload.
+function buildStatusBadge(group, owned) {
+  const get = group.querySelector('.get-album');
+  if (!owned && !get) return null;
+  const badge = document.createElement('span');
+  badge.className = 'status-badge';
+  badge.hidden = true;
+  const labels = {owned: 'Owned', queued: 'Queued', missing: 'Missing'};
+  const set = state => { badge.dataset.state = state; badge.textContent = labels[state]; };
+  if (owned || !get) { set('owned'); return badge; }
+  const sync = () => set(get.classList.contains('requested') || get.classList.contains('is-pending') ? 'queued' : 'missing');
+  sync();
+  if (typeof MutationObserver === 'function') new MutationObserver(sync).observe(get, {attributes: true, attributeFilter: ['class']});
+  return badge;
+}
+
+// Ledger Room only: an All / Missing / Queued switch above each ranked list. It filters what is already on the page by the
+// status cell (CSS in static/layouts.css reads data-ledger-filter); it never reorders or re-ranks the server's list.
+function buildLedgerFilters() {
+  for (const id of ['recommendationCards', 'newReleasesCards', 'personalCards', 'lensListsCards', 'classicsCards']) {
+    const list = $(id);
+    if (!list || !list.parentNode) continue;
+    const group = document.createElement('div');
+    group.className = 'ledger-filter';
+    group.hidden = true;
+    group.setAttribute('role', 'group');
+    group.setAttribute('aria-label', 'Show albums');
+    for (const [value, label] of [['all', 'All'], ['missing', 'Missing'], ['queued', 'Queued']]) {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.textContent = label;
+      button.setAttribute('aria-pressed', String(value === 'all'));
+      button.addEventListener('click', () => {
+        if (value === 'all') delete list.dataset.ledgerFilter; else list.dataset.ledgerFilter = value;
+        for (const other of group.children) other.setAttribute('aria-pressed', String(other === button));
+      });
+      group.append(button);
+    }
+    list.before(group);
+  }
 }
 
 const monthAbbreviations = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -2793,6 +2877,21 @@ async function loadDiscovery(name, options = {}) {
         }
         requestAnimationFrame(syncArrows);
         heading.append(arrows);
+        // Ledger Room only: folds the genre like an accordion row (hidden in every other theme; CSS reads data-folded).
+        const fold = document.createElement('button');
+        fold.type = 'button';
+        fold.className = 'genre-row-fold';
+        fold.hidden = true;
+        fold.title = 'Show or hide ' + genreRowLabel(genre, rowLabels) + ' albums';
+        fold.setAttribute('aria-label', genreRowLabel(genre, rowLabels) + ' albums');
+        fold.setAttribute('aria-expanded', 'true');
+        fold.append(spriteIcon('chevron-up'));
+        fold.addEventListener('click', () => {
+          const folded = row.toggleAttribute('data-folded');
+          fold.setAttribute('aria-expanded', String(!folded));
+          fold.replaceChildren(spriteIcon(folded ? 'chevron-down' : 'chevron-up'));
+        });
+        heading.append(fold);
         row.append(heading, track);
         target.append(row);
         for (const item of genreItems) destinationByItem.set(item, track);
@@ -5831,4 +5930,6 @@ mobileLayoutQuery.addEventListener('change', () => {
   if ($('savedCards').childElementCount) loadSaved();
   if ($('lensListsCards').childElementCount) loadLensList(activeLens);
 });
+buildLedgerFilters();
+updateLedgerCrumb(activePage);
 if (window.location.hash) applyHash(window.location.hash);

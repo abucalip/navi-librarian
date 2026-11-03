@@ -41,7 +41,7 @@ class TapeLayoutTests(unittest.TestCase):
             self.assertIn("brut: true", line, theme)
             self.assertIn("dark: false", line, theme)
         for line in entries.splitlines():
-            if not any(f"id: '{t}'" in line for t in TAPE_THEMES):
+            if not any(f"id: '{t}'" in line for t in TAPE_THEMES) and "layout: 'ledger'" not in line:
                 self.assertNotIn("layout:", line)  # every earlier theme keeps today's pages
         self.assertIn("root.setAttribute('data-layout', theme.layout)", self.script)
         self.assertIn("root.removeAttribute('data-layout')", self.script)
@@ -61,7 +61,7 @@ class TapeLayoutTests(unittest.TestCase):
             selectors.extend(part.strip() for part in text.split(","))
         self.assertGreater(len(selectors), 30)
         for selector in selectors:
-            self.assertTrue(selector.startswith(':root[data-layout="tape"]'), selector)
+            self.assertTrue(selector.startswith((':root[data-layout="tape"]', ':root[data-layout="ledger"]')), selector)
 
     def test_the_layout_applies_only_above_900px_so_the_phone_and_icon_rail_shells_are_untouched(self):
         self.assertIn("@media (min-width: 901px) {", self.layouts)
