@@ -1,6 +1,6 @@
 # Brut layouts plan (web and Android)
 
-Last updated: 2026-11-03. Governing decision: D-023 in [DECISIONS.md](DECISIONS.md). Status tracking: the table in section 9 (update it in the PR that completes each phase). GitHub `main` is authoritative.
+Last updated: 2026-11-03 (P1 merged). Governing decision: D-023 in [DECISIONS.md](DECISIONS.md). Status tracking: the table in section 9 (update it in the PR that completes each phase). GitHub `main` is authoritative.
 
 ## 1. What this is
 
@@ -103,6 +103,7 @@ Idea: lists read as a ruled playlist; the top of the window is one ruled tab str
 - **Album modal:** the track list uses the ruled playlist rows (number, title, mono duration); no play control.
 - **Components:** square 2 px outlines, hard 5 px shadow, pill-less rectangles (radius 0 to 2 px), mono numerals. Equalizer meters are decorative (`aria-hidden`), animation off under reduced motion.
 - **Palettes:** Lime, Cobalt Reel, Tangerine Reel (section 3).
+- **As built in P1 (differs from the text above):** the tab strip is text only (rail icons hidden) and scrolls sideways below about 1,250 px; there is no `Ctrl K` hint (no such shortcut exists); the dashboard has no deck column (it has no acquisition data), so the three-bar meter sits on the Acquisitions page (rows that are downloading, monitoring or importing); search fields are rectangles; ranked rows are 72 px with a one-line bio and a text column that grows, never clips; the shelf covers are 52 px with a corner badge and no placeholder text or hover bio. Cobalt's accent is `#3d68f0` (the mockup's `#4f7cff` failed AA with white text).
 - **Acceptance:** the nine existing themes render byte-identical CSS output outside `layouts.css`; Tape pages work at 1280, 1024 and 900 px, fall back correctly at 899 px and 390 px; keyboard order matches reading order after the nav moved; no horizontal overflow; long names truncate; missing artwork shows the existing fallback.
 
 ### W3 Ledger Room (phase P2)
@@ -157,7 +158,7 @@ One PR per phase except P0 and P7 (documents, direct to `main`). Each code PR: b
 | Phase | Scope | Status |
 |---|---|---|
 | P0 | This plan, D-023, mockups in `docs/design/brut-layouts/` | done 2026-11-03 (documentation, direct to `main`) |
-| P1 | Web infrastructure (`data-layout`, `layouts.css`, catalogue fields, test scaffold) and the Tape Deck layout with Lime, Cobalt Reel, Tangerine Reel | next (started in the same session as P0; see `PROJECT_LOG.md` for the PR) |
+| P1 | Web infrastructure (`data-layout`, `layouts.css`, catalogue fields, test scaffold) and the Tape Deck layout with Lime, Cobalt Reel, Tangerine Reel | **done 2026-11-03**: PR [#701](https://github.com/abucalip/navi-librarian/pull/701), squash `a4961c9`; owner checked it in the browser; not published |
 | P2 | Web Ledger Room with Ink Slate, Plum Archive, Paper Mono | not started |
 | P3 | Web Crate Wall with Kraft, Mint Sleeve, Night Press | not started |
 | P4 | Android layout plumbing and Cassette Deck with Lime, Cobalt Reel, Tangerine Reel | not started |
@@ -168,6 +169,8 @@ One PR per phase except P0 and P7 (documents, direct to `main`). Each code PR: b
 **Starting a later phase in a new session:** read `handoff.md`, `ACTIVE_WORK.md`, this plan and the previous phase's PR; reuse the infrastructure P1 (web) or P4 (Android) left; start from the layout's section above, build the three palettes from section 3, and follow `LOCAL_UI_TESTING.md` for the web check. Do not widen the scope (no new pages, endpoints or playback on the web).
 
 ## 10. Risks and open points
+
+- **Lessons from P1 for P2 and P3:** a fixed-height text column clips late-loading bios (let rows grow); a placeholder mark (`NL / 01`) is drawn inside any small cover (hide it, as `.ranked-row` and `.acq-row` do); the last item of a group must drop its right rule or the group divider doubles; a hidden `.page` uses `display: none !important`, so a layout may set `display` on `#dashboard` safely; the focused test pattern is `tests/test_tape_layout_ui_contract.py`; to check a layout without a login, render `app/templates/index.html` with sample rows in headless Chrome.
 
 - `app.css` is long and cascade-heavy (1,267 lines plus `themes.css`). Layout rules therefore live in their own file with a scoped prefix and are verified at the listed widths; do not edit `app.css` selectors to make a layout work unless the change is behaviour-neutral for every other theme and tested.
 - stream/ui's colour tokens and comic helpers were never read from source (the doc pages do not show them); the mockups use approximated values. If the owner wants exact matches, they must supply the component source.

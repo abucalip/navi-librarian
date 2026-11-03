@@ -129,9 +129,9 @@ Done: Genres grid and four album shelves on the dashboard, the Recommended slide
 - Now Playing redesign: merged in PR #681 (`c7cc967`, 2026-11-01): flip-card artwork with lyrics and queue on its backs, icon switcher, equalizer and crossfade as bottom sheets, 1000 px artwork, artwork tint. Seen working on the owner's phone; TalkBack, landscape and 200% text unchecked. **Next:** metadata fields in the reserved space above the progress bar, when the owner chooses them.
 - Play badge, Recently added albums and the bottom band fix are merged (PR #686, `3167c45`): unit-tested and built only; the owner has not yet checked them on the phone. Other album-level marks (Discover cards, Genre, Similar albums, ranked rows) are markers, not play buttons. New releases tiles, the new icons and the overlay download icon are merged too (PR #687, `e6914ac`), also unchecked on the phone.
 
-## 2h. Round 2 Neobrut layouts — plan approved, phase P1 next
+## 2h. Round 2 Neobrut layouts — P0 and P1 done, P2 (Ledger Room) next
 
-- Governing plan: [BRUT_LAYOUTS_PLAN.md](BRUT_LAYOUTS_PLAN.md) (D-023): six layouts and sixteen themes (web: Tape Deck, Ledger Room, Crate Wall; Android: Cassette Deck, Sheet Stack, Sticker Wall), one PR per phase, P0 (the plan) done 2026-11-03.
+- Governing plan: [BRUT_LAYOUTS_PLAN.md](BRUT_LAYOUTS_PLAN.md) (D-023): six layouts and sixteen themes (web: Tape Deck, Ledger Room, Crate Wall; Android: Cassette Deck, Sheet Stack, Sticker Wall), one PR per phase. P0 (the plan) and P1 (web hook and Tape Deck, PR [#701](https://github.com/abucalip/navi-librarian/pull/701), `a4961c9`) are done as of 2026-11-03; P1 is merged and not published.
 - Order: P1 web infrastructure and Tape Deck, P2 Ledger Room, P3 Crate Wall, P4 to P6 the Android layouts, P7 closeout. The status table in the plan is the place to see the current phase. The web has no playback; Android playback behaviour does not change.
 
 ## 3. Recommendation engine — gated

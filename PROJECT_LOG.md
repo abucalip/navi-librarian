@@ -1,3 +1,13 @@
+## 2026-11-03 — Web Tape Deck layout merged (PR #701)
+
+- **Merged (owner request):** PR [#701](https://github.com/abucalip/navi-librarian/pull/701), squash `a4961c953766039e54067a62385633453d6cbd60`, from tested head `110a7ab625fe22656d131e8cb06537f86a046007`; compile, container-smoke, test-and-build, validate-container and validate-release-workflow passed on that head.
+- **What:** phase P1 of `docs/BRUT_LAYOUTS_PLAN.md` (D-023). `static/appearance.js` gets a `layout` field and sets `data-layout`; new `static/layouts.css` (scoped, 901 px and up) holds the Tape Deck rules; three palettes in `static/themes.css` (Tape · Lime, Cobalt, Tangerine). Tab strip in place of the rail, ruled playlist rows and shelves, rectangular search fields, a three-bar meter on downloading requests, a ruled album track list.
+- **Owner review fixes, same PR:** one rule between tab groups (no double line), rectangular search fields, rows grow with their text so a loaded bio no longer covers the album name, no `NL / 01` placeholder inside the small shelf covers.
+- **Tests run (focused only):** the new `tests/test_tape_layout_ui_contract.py` (10 tests), the updated fonts module, and with the other `*ui_contract*`, keyboard, login and quality-priority modules 477 pass (system Python on the venv's packages) before the review fixes; the layout and fonts modules were rerun after each fix. `node --check static/*.js` and `compileall app`. The full suite ran in CI only.
+- **UI check:** the owner checked it in the browser on a local server (isolated data, slskd disabled) and approved it. Not checked with a real download in progress (the meter needs one), at phone widths, or on Cobalt and Tangerine in every page.
+- **Not done / not claimed:** not published or deployed; the plan's dashboard deck column and `Ctrl K` hint were not built (recorded in the plan and D-023).
+- **Next action:** P2, the web Ledger Room layout, in a new session from the plan.
+
 ## 2026-11-03 — Round 2 Neobrut layouts planned (documentation only)
 
 - **Done:** `docs/BRUT_LAYOUTS_PLAN.md`, decision D-023, an `ACTIVE_WORK.md` section and a `PROJECT_STATUS.md` line, plus the two reference mockups in `docs/design/brut-layouts/`. Documentation only, committed directly to `main`.
