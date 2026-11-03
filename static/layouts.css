@@ -52,12 +52,17 @@
   /* ---- Ruled lists: the ranked rows of every discovery page ---- */
   :root[data-layout="tape"] .ranked-list { border: var(--tape-rule); box-shadow: var(--brut-sh) var(--brut-sh) 0 var(--brut-shadow-color); background: var(--surface); }
   :root[data-layout="tape"] .ranked-row {
-    --row-art: 64px; --row-edge-x: 16px;
+    --row-art: 72px; --row-edge-x: 16px;
     grid-template-columns: 52px var(--row-art) minmax(0, 1fr) 200px auto; gap: 0 16px; padding: 8px var(--row-edge-x) 8px 8px;
     border-bottom: var(--tape-rule);
   }
   :root[data-layout="tape"] .ranked-row.no-meta { grid-template-columns: 52px var(--row-art) minmax(0, 1fr) auto; }
   :root[data-layout="tape"] .ranked-row:last-child { border-bottom: 0; }
+  /* A row never clips its text: the text column grows with its content (the title keeps its two lines, the artist one,
+     the bio one) and is at least as tall as the cover, so a bio that loads late no longer covers the album name. */
+  :root[data-layout="tape"] .ranked-row .row-main { height: auto; min-height: var(--row-art); overflow: visible; justify-content: center; }
+  :root[data-layout="tape"] .ranked-row .artist-bio { -webkit-line-clamp: 1; margin-top: 3px; }
+  :root[data-layout="tape"] .ranked-row.is-bio-open .artist-bio { display: block; -webkit-line-clamp: none; overflow: visible; }
   :root[data-layout="tape"] .ranked-row:hover { background: var(--surface-hover); }
   :root[data-layout="tape"] .ranked-row .card-art { border-width: var(--bw); border-radius: var(--radius-control); }
   /* The number cell is a plain mono numeral, never the big red rank. */
@@ -91,6 +96,9 @@
   }
   :root[data-layout="tape"] .shelf-card > .card-art { grid-column: 2; width: 52px; height: 52px; aspect-ratio: auto; overflow: visible; border: var(--bw) solid var(--edge); border-radius: var(--radius-control); }
   :root[data-layout="tape"] .shelf-card > .card-art > img { border-radius: calc(var(--radius-control) - 1px); }
+  /* The hover bio and its about button are made for a large cover; the small cover has no room for them. */
+  :root[data-layout="tape"] .shelf-card .card-art > .artist-bio,
+  :root[data-layout="tape"] .shelf-card .card-art > .about-toggle { display: none; }
   :root[data-layout="tape"] .shelf-card > .dashboard-tile-meta { grid-column: 3; margin: 0; min-width: 0; }
   :root[data-layout="tape"] .shelf-card > .dashboard-tile-meta h3 { font-size: var(--text-md); display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   :root[data-layout="tape"] .shelf-card > .dashboard-tile-meta .card-artist { margin: 2px 0 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

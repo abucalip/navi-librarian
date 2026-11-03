@@ -78,6 +78,16 @@ class TapeLayoutTests(unittest.TestCase):
             self.assertIn(selector, rule)
         self.assertIn("border-radius: 0;", rule)
 
+    def test_a_row_never_clips_its_text_and_the_small_shelf_cover_hides_the_hover_bio(self):
+        row = self.layouts.split("A row never clips its text")[1].split("*/")[1]
+        self.assertIn('.ranked-row .row-main { height: auto; min-height: var(--row-art); overflow: visible;', row)
+        self.assertIn('.ranked-row .artist-bio { -webkit-line-clamp: 1;', row)
+        self.assertIn('.ranked-row.is-bio-open .artist-bio { display: block; -webkit-line-clamp: none;', row)
+        hidden = self.layouts.split("The hover bio and its about button")[1].split("}")[0]
+        self.assertIn(".shelf-card .card-art > .artist-bio", hidden)
+        self.assertIn(".shelf-card .card-art > .about-toggle", hidden)
+        self.assertIn("display: none", hidden)
+
     def test_the_downloading_meter_is_decorative_and_stops_under_reduced_motion(self):
         self.assertIn('.acq-row[data-status="downloading"] .acq-status::after', self.layouts)
         self.assertIn('content: ""', self.layouts)
