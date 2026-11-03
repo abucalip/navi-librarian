@@ -144,7 +144,7 @@ Done: Genres grid and four album shelves on the dashboard, the Recommended slide
 
 - Governing contract: [MACOS_CLIENT_CONTRACT.md](MACOS_CLIENT_CONTRACT.md) (D-025), merged in PR [#713](https://github.com/abucalip/navi-librarian/pull/713), squash `8a3bab9706e49dcd485cb6c92073ee0285b1a4e7`. Mockups: `docs/design/macos-m3/mockups.html` (round 1) and `docs/design/macos-m4/mockups.html` (round 2).
 - Launch themes Cupertino and Zine Spread; Bento Block and Native Glass v2 are documented for later (contract section 4).
-- **Next action:** M1 (Swift package skeleton: profiles and reachability, Keychain, Navidrome auth, library read, playlist API check, rate-limit check), to start only when the owner asks. The start prompt is [MACOS_M1_PROMPT.md](MACOS_M1_PROMPT.md). Xcode is not installed on the owner's Mac (contract O7); M1's package part does not need it.
+- **Next action:** M1 (Swift package skeleton: profiles and reachability, Keychain, Navidrome auth, library read, playlist API check, rate-limit check), to start only when the owner asks. The start prompt is [MACOS_M1_PROMPT.md](MACOS_M1_PROMPT.md). Xcode 26.6 is installed on the owner's Mac (contract O7, resolved); M1 is still the Swift package only.
 
 ## 3. Recommendation engine — gated
 
