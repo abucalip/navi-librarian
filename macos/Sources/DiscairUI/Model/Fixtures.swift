@@ -56,5 +56,11 @@ public enum Fixtures {
         TrackItem(id: i, title: t.0, duration: t.1, format: t.2, owned: t.3, playing: t.4)
     }
 
+    /// Up Next sample (title, album index into `albums`, time), from the mockup.
+    public static let queue: [(title: String, album: Int, time: String)] = [
+        ("After the Flood", 2, "3:12"), ("Glory Box", 3, "9:41"), ("Cloudbusting", 4, "5:44"), ("Maria También", 5, "6:52"),
+        ("So What", 6, "4:47"), ("Such a Shame", 13, "8:46"), ("I Believe in You", 1, "4:49"), ("Myrrhman", 0, "3:12"),
+    ]
+
     public static func albums(_ ids: [Int]) -> [AlbumItem] { ids.map { albums[$0] } }
 }

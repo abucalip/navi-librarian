@@ -54,7 +54,10 @@ struct CupertinoWindow: View {
 
             CupertinoSidebar(state: state)
             CupertinoToolbar(state: state)
-                .padding(.leading, 238).padding(.trailing, 16).padding(.top, 12)
+                .padding(.leading, 238).padding(.trailing, state.screen == .queue ? CupertinoQueueInspector.width + 16 : 16).padding(.top, 12)
+            if state.screen == .queue {
+                CupertinoQueueInspector(state: state).frame(maxWidth: .infinity, alignment: .trailing)
+            }
             // Top right under the search pill (owner decision), not at the bottom of the window or sidebar (HIG).
             HStack(spacing: 5) {
                 Circle().fill(Color.green).frame(width: 7, height: 7)
@@ -64,7 +67,7 @@ struct CupertinoWindow: View {
             .accessibilityElement(children: .combine)
             .accessibilityLabel("Connection: \(state.connectionLabel)")
             .frame(maxWidth: .infinity, alignment: .trailing)
-            .padding(.trailing, 20).padding(.top, 52)
+            .padding(.trailing, state.screen == .queue ? CupertinoQueueInspector.width + 20 : 20).padding(.top, 52)
         }
         .foregroundStyle(CU.ink)
         .clipShape(RoundedRectangle(cornerRadius: CU.windowRadius, style: .continuous))
@@ -75,6 +78,7 @@ struct CupertinoWindow: View {
         switch state.screen {
         case .home: CupertinoHome(state: state)
         case .album: CupertinoAlbum(state: state)
+        case .queue: CupertinoAlbumsGrid()
         default: Text("\(state.screen.rawValue): not built yet").foregroundStyle(CU.muted).padding(28)
         }
     }
@@ -82,7 +86,14 @@ struct CupertinoWindow: View {
 
 struct CupertinoSidebar: View {
     let state: AppState
-    private var selected: String { state.screen == .home ? "Home" : "Recently Added" }
+    private var selected: String {
+        switch state.screen {
+        case .home: "Home"
+        case .queue, .library: "Songs"
+        case .artist: "Artists"
+        default: "Recently Added"
+        }
+    }
     private let nav: [(String, String)] = [
         ("house", "Home"), ("sparkles", "New"), ("clock", "Recently Added"), ("music.mic", "Artists"),
         ("square.stack", "Albums"), ("music.note", "Songs"), ("dot.radiowaves.left.and.right", "Gap Radar"),
