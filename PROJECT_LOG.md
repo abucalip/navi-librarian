@@ -1,3 +1,12 @@
+## 2026-11-04 — macOS M5 slice 1b: live library data and artwork merged (PR #722)
+
+- **Merged (owner request):** PR [#722](https://github.com/abucalip/navi-librarian/pull/722), squash `2b8a1419637e042a0bce1d7e5de02dcaf6a24f63`, from tested head `3d14768d64b6cce41c63a7783b36254e342fc8c2`; compile, container-smoke, swift, test-and-build and validate-container passed on that head.
+- **What:** `LibraryModel` (newest 24 albums, first 120 albums A-Z, all artists, Librarian dashboard picks with owned ones dropped; album songs and artist albums read on open) and `ArtworkStore` (cover art through the active profile, no redirects, memory cache, failures remembered). Live on Cupertino and Zine: Home, Albums, Album, Artist, Zine A-Z index, album and artist links, library count and date. Once live, sample-only pieces become honest states: no Continue listening, "Nothing playing", "no downloads in progress" ticker, no Top songs (Cupertino) or Also in this issue (Zine).
+- **Verification:** `swift test --filter DiscairUITests` locally (23 pass: 12 new tests for mapping, picks, letters, tracks, artist and more-by pages, artwork cache, failure and invalid ids; live-data screenshot renders for both themes viewed). CI passed on the head. Full unit suite not run by the agent (owner rule). **Not run against the owner's real server or Keychain.**
+- **Known limits:** Get / Save / Not for me do nothing (no acquisition client); Songs table, both Queue screens and Now Playing are sample data; the Albums grid shows the first 120 albums; quality shows file type and bit rate only; artwork over plain http needs the App Transport Security local-networking exception once the app is bundled; no disk cache.
+- **State:** merged only. Not published, not deployed.
+- **Next action:** M5 slice 2, the Librarian acquisition client (Get, Save, Not for me, Undo, progress, retry).
+
 ## 2026-11-03 — macOS M5 slice 1a: session model and Settings merged (PR #721)
 
 - **Merged (owner request):** PR [#721](https://github.com/abucalip/navi-librarian/pull/721), squash `d47874d780f3df8bc1a36849fab2c4d5f81672f8`, from tested head `118dbfd37a8beec45ebac874addc3b3ba5464e25`; compile, container-smoke, swift, test-and-build and validate-container passed on that head.
