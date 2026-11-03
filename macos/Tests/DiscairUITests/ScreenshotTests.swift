@@ -7,7 +7,7 @@ import Testing
 /// Baseline comparison is added once the owner approves the look on the Mac (contract M4 gate).
 @MainActor
 struct ScreenshotTests {
-    @Test(arguments: [ThemeID.cupertino], [Screen.home])
+    @Test(arguments: [ThemeID.cupertino], [Screen.home, Screen.album])
     func rendersWindow(theme: ThemeID, screen: Screen) throws {
         RenderMode.offscreenScreenshot = true
         let state = AppState(themeID: theme, screen: screen)

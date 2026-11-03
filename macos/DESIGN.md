@@ -39,7 +39,7 @@ Rules: mockups are built element by element (no light re-skins); list dropped el
 
 - **Theme layer:** `DiscairTheme` owns the whole window for the current screen; `ThemeRegistry` maps `ThemeID` to a theme. Themes read `AppState` and call `DiscairActions` (play, Get, Save, Not for me, resume); they never touch the network or audio. Zine Spread is a placeholder until its slice.
 - **Window chrome:** the window stays `.titled | .resizable | .fullSizeContentView` with the system title bar and buttons hidden and the background draggable, so resize, shadow and full screen keep working; the theme draws its own traffic lights. A truly borderless window was rejected because it loses those.
-- **Cupertino Home:** built from the mockup (inset glass sidebar, glass toolbar pieces and centre display, opaque white content, Continue listening card, Missing shelf with Get / Save / Not for me, Recently added). Not yet built: the other five screens, the trailing Up Next inspector.
+- **Cupertino Home:** built from the mockup (inset glass sidebar, glass toolbar pieces and centre display, opaque white content, Continue listening card, Missing shelf with Get / Save / Not for me, Recently added). Not yet built: now playing, queue (trailing Up Next inspector), library, artist.
 - **Dropped or different from the mockup:** cover art is a hue gradient placeholder; the blurred pastel window backdrop is not visible because content is opaque; glass does not render in the offscreen screenshot test (it needs a live window), so screenshots show glass areas unfilled.
 - **Screenshot tests:** render through `NSHostingView` in a borderless offscreen window (`ImageRenderer` cannot draw ScrollView or glass). PNGs are written to `DISCAIR_SCREENSHOT_DIR`; baseline comparison starts after the owner approves the look.
 
@@ -65,3 +65,7 @@ Read in full from PDFs the owner saved from developer.apple.com (not committed; 
 3. **Tinted glass** (74% light tint): kept as approved; revisit if legibility checks fail.
 4. **Fixed red-pink sidebar icons:** kept fixed as part of Cupertino's identity.
 5. **Custom traffic lights:** must keep close, minimise and zoom behaviour and VoiceOver labels.
+
+## M4 slice 2: Cupertino Album
+
+Built from `R.cupertino.album`: artwork, bold sans title, red artist name, quality and owned badges, Play / Shuffle / Get missing song (outlined) / Save, zebra track table with the playing row in the accent colour and the missing song as a dashed row with its own Get song, More by artist shelf. "Open album" on Home navigates here; the sidebar highlights Recently Added. Dropped or different: track "..." menus are text placeholders until M5; Shuffle has no action yet; runtime "41 minutes" is a sample value.

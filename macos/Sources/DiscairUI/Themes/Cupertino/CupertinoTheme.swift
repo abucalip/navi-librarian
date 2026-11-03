@@ -56,6 +56,7 @@ struct CupertinoWindow: View {
     @ViewBuilder private var content: some View {
         switch state.screen {
         case .home: CupertinoHome(state: state)
+        case .album: CupertinoAlbum(state: state)
         default: Text("\(state.screen.rawValue): not built yet").foregroundStyle(CU.muted).padding(28)
         }
     }
@@ -63,6 +64,7 @@ struct CupertinoWindow: View {
 
 struct CupertinoSidebar: View {
     let state: AppState
+    private var selected: String { state.screen == .home ? "Home" : "Recently Added" }
     private let nav: [(String, String)] = [
         ("house", "Home"), ("sparkles", "New"), ("clock", "Recently Added"), ("music.mic", "Artists"),
         ("square.stack", "Albums"), ("music.note", "Songs"), ("dot.radiowaves.left.and.right", "Gap Radar"),
@@ -81,7 +83,7 @@ struct CupertinoSidebar: View {
             .accessibilityElement(children: .combine)
             .accessibilityLabel("Connection: \(state.connectionLabel)")
             ForEach(nav, id: \.1) { icon, label in
-                let on = label == "Home"
+                let on = label == selected
                 HStack(spacing: 9) {
                     Image(systemName: icon).foregroundStyle(CU.accent).frame(width: 18)
                     Text(label).fontWeight(on ? .semibold : .regular)

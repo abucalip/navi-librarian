@@ -32,7 +32,7 @@ struct CupertinoHome: View {
                 HStack {
                     Button { state.actions.resume() } label: { Label("Resume", systemImage: "play.fill") }
                         .buttonStyle(CapsuleButtonStyle(primary: true))
-                    Button("Open album") { state.actions.play(album: a) }
+                    Button("Open album") { state.selectedAlbum = a; state.screen = .album }
                         .buttonStyle(CapsuleButtonStyle())
                 }
             }
@@ -84,14 +84,17 @@ struct CupertinoHome: View {
 struct CapsuleButtonStyle: ButtonStyle {
     var primary = false
     var small = false
+    var outlined = false
+    var large = false
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(.system(size: small ? 12 : 14, weight: .semibold))
             .lineLimit(1).fixedSize()
-            .padding(.horizontal, small ? 10 : 20)
-            .frame(minHeight: small ? 24 : 36)
-            .foregroundStyle(primary ? Color.white : CU.ink)
-            .background(primary ? CU.accent : CU.fill, in: Capsule())
+            .padding(.horizontal, small ? 10 : (large ? 24 : 20))
+            .frame(minHeight: small ? 24 : (large ? 40 : 36))
+            .foregroundStyle(primary ? Color.white : (outlined ? CU.muted : CU.ink))
+            .background(primary ? CU.accent : (outlined ? Color.clear : CU.fill), in: Capsule())
+            .overlay { if outlined { Capsule().strokeBorder(CU.muted, lineWidth: 1.5) } }
             .opacity(configuration.isPressed ? 0.8 : 1)
     }
 }
