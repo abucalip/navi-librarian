@@ -33,6 +33,14 @@ struct CupertinoWindow: View {
     let state: AppState
 
     var body: some View {
+        if state.screen == .nowPlaying {
+            CupertinoNowPlaying(state: state)
+        } else {
+            library
+        }
+    }
+
+    private var library: some View {
         ZStack(alignment: .topLeading) {
             LinearGradient(colors: [Color(red: 0.937, green: 0.914, blue: 0.969), Color(red: 0.969, green: 0.925, blue: 0.918), Color(red: 0.918, green: 0.945, blue: 0.969)], startPoint: .topLeading, endPoint: .bottomTrailing)
 
@@ -130,7 +138,8 @@ struct CupertinoToolbar: View {
             .padding(.horizontal, 18).frame(height: 40)
             .glassEffect(CU.glass, in: Capsule())
 
-            nowPlayingDisplay.frame(maxWidth: 470)
+            Button { state.screen = .nowPlaying } label: { nowPlayingDisplay }
+                .buttonStyle(.plain).frame(maxWidth: 470)
 
             HStack(spacing: 8) {
                 Image(systemName: "magnifyingglass")
