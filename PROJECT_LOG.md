@@ -1,3 +1,12 @@
+## 2026-11-03 — macOS M5 slice 1a: session model and Settings merged (PR #721)
+
+- **Merged (owner request):** PR [#721](https://github.com/abucalip/navi-librarian/pull/721), squash `d47874d780f3df8bc1a36849fab2c4d5f81672f8`, from tested head `118dbfd37a8beec45ebac874addc3b3ba5464e25`; compile, container-smoke, swift, test-and-build and validate-container passed on that head.
+- **What:** `SessionModel` in `DiscairUI` (profiles in `~/Library/Application Support/Discair/profiles.json`; Navidrome and Librarian logins in the Keychain, never read back or shown; connect with the contract section 3 profile rules, Navidrome `ping`, Librarian login if saved; named error kinds with Retry). The connection indicator in both themes shows the real state and the app connects at launch. New `Screen.settings` for Cupertino (sidebar row, cards) and Zine (Settings tab, boxes). No Settings mockup exists; the owner reviewed both: Cupertino login fields halved, Zine fine.
+- **Verification:** `swift test --filter DiscairUITests` locally (11 pass: 9 new session tests with a stub network and an in-memory keychain, plus the screenshot renders including Settings). CI passed on the head. Full unit suite not run by the agent (owner rule). Not run against the owner's real server or Keychain.
+- **Known limits:** no live library data or artwork yet; no other settings (quality cap, EQ, scrobbling, cache, SMB); a profile cannot be edited in place (remove and add again); the app has not been tried with the owner's real logins.
+- **State:** merged only. Not published, not deployed.
+- **Next action:** slice 1b, live library data and artwork.
+
 ## 2026-11-03 — macOS Zine review fixes merged (PR #720)
 
 - **Merged (owner request):** PR [#720](https://github.com/abucalip/navi-librarian/pull/720), squash `561a6a83109532a10928a41428f507a296b795b9`, from tested head `39f59a052c5d37e87bb8bb5305a0bfb12b91cab0`; compile, container-smoke, swift, test-and-build and validate-container passed on that head.
