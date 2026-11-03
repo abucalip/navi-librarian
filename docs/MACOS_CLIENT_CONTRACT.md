@@ -35,13 +35,36 @@ Out of scope: App Store distribution, Intel Macs, macOS before 26, multi-user, i
 
 ## 4. Themes
 
-Launch set: **one Neobrut and one macOS theme** (owner's choice per theme when mockups are reviewed).
+Decided at mockup rounds 1 and 2 (2026-11-03). Mockups are the spec: `docs/design/macos-m3/mockups.html` (round 1) and `docs/design/macos-m4/mockups.html` (round 2, published as an artifact).
 
-Neobrut candidates (all radically different layouts; absolute variety is the goal): **Sheet Stack**, **Cassette Deck**, **Sticker Wall** (from Android) and **Zine Spread** (from the web UI), redesigned for a desktop window, not copied.
+**Build order**
+1. **Launch themes: Cupertino (macOS) and Zine Spread (Neobrut).**
+2. **Later, documented here and not yet scheduled: Bento Block (Neobrut) and Native Glass v2 (macOS).**
 
-macOS candidates: **Native Glass** (vibrancy, sidebar blur, system accent; the launch macOS theme), **Cupertino** (Music.app-style), **Hi-Fi Deck** (amp faceplate), **Liner Notes** (editorial serif), **Mini-Player Widget** (compact). Built after launch.
+| Theme | Kind | Decision | Build rule |
+|---|---|---|---|
+| **Cupertino** | macOS, light | Approved for launch. Change from the mockup: titles use a **bold sans-serif** (SF Pro Display), not a serif; the round 2 mockup is updated to match. | Follow the mockup; glass only on controls (sidebar, toolbar pieces, centre Now Playing display), opaque white content, red-pink accent, zebra tables, Up Next as a trailing inspector. |
+| **Zine Spread** | Neobrut | Approved for launch ("very good"). | Follow the mockup closely and keep every detail: masthead, ticker, lead story, New this week, Classifieds, running order, A-Z index, magazine-cover artist page, centre-spread Now Playing, black player strip. |
+| **Bento Block** | Neobrut | Approved, later ("very good"). | Follow the mockup details very closely: colour-block panels with one oversized corner on dotted paper, ink outlines and hard offset shadows, joined tabs, the permanent stream/ui player card in the right column, big circle play button with crescent shadow and coloured Prev / Next circles, square-thumb sliders, one-line timed lyric field, EQ as stacked bars, Pipeline strip on Home, ruled Ledger table in Library, overlapping avatars for similar artists. |
+| **Native Glass v2** | macOS, dark | Approved, later ("very good"). Supersedes the round 1 Native Glass. | Follow the round 2 mockup: floating inset glass sidebar, glass toolbar pieces, one glass player capsule, opaque content layer, artwork flowing under the sidebar, trailing inspector (Pipeline, notes), tint only on the primary action. |
 
-Rules: mockups are the spec and built element by element (no light re-skins); gestures are never the only path; Get, Save, Not for me stay reachable with text labels; list dropped elements in the PR; fonts are bundled from the repo plus system fonts (SF Pro, SF Mono, New York) where they look good; no third-party runtime asset requests. App and Dock icon get one variant per theme (logo variation designed later).
+Not built for the Mac: Cassette Deck, Sheet Stack, Sticker Wall (rejected in round 1) and the round 1 Native Glass (replaced by v2). One idea from them is kept for every Neobrut theme: the **single timed lyric line field** on Now Playing (Bento Block has it; Zine's mockup is approved as is).
+
+Remaining themes (Hi-Fi Deck, Liner Notes, Mini-Player Widget and others) are built later, one at a time.
+
+Rules: mockups are the spec and built element by element (no light re-skins); gestures are never the only path; Get, Save, Not for me stay reachable with text labels; list dropped elements in the PR; fonts are bundled from the repo plus system fonts (SF Pro, SF Mono, New York) where they look good; no third-party runtime asset requests. App and Dock icon get one variant per theme (logo variation designed later). The theme system must be built so a later theme is added without changing screens (themes own their layouts behind a shared set of data and actions).
+
+### 4.1 Apple design guidance applied to the macOS themes
+
+Sources actually read: WWDC25 "Build an AppKit app with the new design" (session 310) and "Get to know the new design system" (session 356). Apple's Human Interface Guidelines pages are rendered by script and could not be read in full; the HIG pages for Toolbars, Sidebars, Materials and Layout still need a direct read before M4.
+
+- Liquid Glass is for the functional layer that floats above content (sidebar, toolbar, player, sheets), never for content itself. No glass behind content as a sibling, no glass on glass.
+- Sidebars are inset, floating glass; content extends edge to edge and flows under them (background extension), with text and controls layered above.
+- Toolbars: group actions by function; search, segmented controls and pop-ups sit on their own glass; titles and status are not bordered like buttons; tint only for state or the primary action; symbols over text.
+- Windows with toolbars use larger corner radii; nested shapes are concentric (inner radius = outer radius minus padding); large controls are capsules, small ones rounded rectangles.
+- A scroll edge effect (hard variant on macOS) replaces hard dividers under floating bars; one effect per view.
+- Hierarchy comes from layout and grouping, not extra backgrounds or borders; type is bold and left-aligned for key moments; do not hard-code control heights.
+- Check legibility with Increase Contrast and Reduce Transparency.
 
 ## 5. Parity with Android
 
@@ -84,11 +107,11 @@ Queue (play next, add to queue, reorder), shuffle, repeat, gapless with next-tra
 | M0 | This contract, `macos/DESIGN.md` skeleton, project layout | Owner approves PR |
 | M1 | Package skeleton, profiles and reachability, Keychain, Navidrome auth, library read, Navidrome playlist API check, rate-limit check | Tests pass |
 | M2 | Audio spike: `AVAudioEngine` decode of FLAC/MP3/Opus, EQ, crossfade, gapless, SMB waveform speed | Measured result recorded |
-| M3 | **Mockups:** 5 themes, 6 screens each (Home, Album, Now Playing, Queue, Library, Artist) as an HTML artifact | **Owner picks themes** |
-| M4 | Window shell, launch Neobrut theme and Native Glass, all screens | Screenshot tests; owner approves the UI on the Mac |
+| M3 | **Mockups:** done in two rounds (9 theme drawings, 6 screens each) | Owner picked: Cupertino and Zine first, Bento Block and Native Glass v2 later |
+| M4 | Window shell, theme layer, Cupertino and Zine Spread, all screens | Screenshot tests; owner approves the UI on the Mac |
 | M5 | Parity: Discover, Downloads, Settings, EQ, lyrics, scrobbling, cache, Sparkle | Tests |
 | M6 | Desktop features (section 6), mini window, widget, notifications, command palette | Per-feature acceptance |
-| M7 | Remaining themes, one at a time | Owner approves each |
+| M7 | Bento Block, Native Glass v2, then remaining themes, one at a time | Owner approves each |
 
 Priorities when trade-offs appear (owner, 2026-11-03): the look, smooth browsing, getting new music.
 
