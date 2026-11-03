@@ -25,7 +25,7 @@ class LedgerLayoutTests(unittest.TestCase):
         self.script = (STATIC / "appearance.js").read_text(encoding="utf-8")
         self.themes = (STATIC / "themes.css").read_text(encoding="utf-8")
         self.layouts = (STATIC / "layouts.css").read_text(encoding="utf-8")
-        self.ledger = self.layouts.split('==== Ledger Room ("ledger")')[1].split("*/", 1)[1]
+        self.ledger = self.layouts.split('==== Ledger Room ("ledger")')[1].split("*/", 1)[1].split("==== Crate Wall")[0]
 
     def _block(self, theme):
         return self.themes.split(f':root[data-theme="{theme}"]')[1].split("\n}")[0]

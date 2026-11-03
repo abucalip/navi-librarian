@@ -193,6 +193,53 @@
   --ledger-side: #0a0a0a; --ledger-side-text: #f4f4f0; --ledger-side-muted: #9a9a9a;
 }
 
+/* Neobrut · Crate Wall · Kraft (layout "crate": static/layouts.css) */
+:root[data-theme="cratekraft"] {
+  color-scheme: light;
+  --ink-rail: #d9b98a; --ink: #d9b98a; --surface: #fff6e2; --surface-raised: #efd9ae; --surface-hover: #f7e6c0;
+  --edge: #17110a; --edge-strong: #17110a;
+  --text: #17110a; --text-muted: #5c4630; --text-subtle: #5c4630;
+  --accent: #d7263d; --accent-text: #b01c31; --focus: #17110a; --accent-hover: #bd1f35; --accent-dim: #f5c9cf; --on-accent: #ffffff;
+  --chart-red: #b3261e; --chart-red-text: #b3261e; --ok: #1b6b33; --caution: #7f4a00;
+  --slider-fade: #141211;
+  --shadow-menu: 5px 5px 0 #17110a;
+  --bw: 2px; --radius-control: 0px; --radius-panel: 0px; --radius-chip: 0px;
+  --brut-sh: 5px; --brut-shadow-color: #17110a; --brut-lift: -2px;
+  --brut-nav-bg: #d7263d; --brut-nav-text: #ffffff; --brut-nav-edge: #17110a; --brut-line: #17110a;
+  --crate-gold: #f2c14e; --crate-on-gold: #17110a;
+}
+
+/* Neobrut · Crate Wall · Mint Sleeve (layout "crate": static/layouts.css) */
+:root[data-theme="cratemint"] {
+  color-scheme: light;
+  --ink-rail: #a9d9b4; --ink: #a9d9b4; --surface: #f4fff6; --surface-raised: #d3eed9; --surface-hover: #e3f6e7;
+  --edge: #0d2a16; --edge-strong: #0d2a16;
+  --text: #0d2a16; --text-muted: #3c6a49; --text-subtle: #3c6a49;
+  --accent: #ff5a5f; --accent-text: #b8212a; --focus: #0d2a16; --accent-hover: #f2464b; --accent-dim: #ffd0d1; --on-accent: #0d2a16;
+  --chart-red: #b3261e; --chart-red-text: #b3261e; --ok: #1b6b33; --caution: #7f4a00;
+  --slider-fade: #141211;
+  --shadow-menu: 5px 5px 0 #0d2a16;
+  --bw: 2px; --radius-control: 0px; --radius-panel: 0px; --radius-chip: 0px;
+  --brut-sh: 5px; --brut-shadow-color: #0d2a16; --brut-lift: -2px;
+  --brut-nav-bg: #ff5a5f; --brut-nav-text: #0d2a16; --brut-nav-edge: #0d2a16; --brut-line: #0d2a16;
+  --crate-gold: #ffd166; --crate-on-gold: #0d2a16;
+}
+
+/* Neobrut · Crate Wall · Night Press (layout "crate": static/layouts.css) */
+:root[data-theme="cratenight"] {
+  color-scheme: dark;
+  --ink-rail: #1b1713; --ink: #1b1713; --surface: #2a241d; --surface-raised: #352d24; --surface-hover: #3f362b;
+  --edge: #f5ead8; --edge-strong: #f5ead8;
+  --text: #f5ead8; --text-muted: #b8a68c; --text-subtle: #b8a68c;
+  --accent: #ff4d4d; --accent-text: #ff6b6b; --focus: #ffbf3c; --accent-hover: #ff7a7a; --accent-dim: #5a2a26; --on-accent: #1b1713;
+  --chart-red: #ff5a3c; --chart-red-text: #ff8f80; --ok: #86d39b; --caution: #f0a640;
+  --shadow-menu: 5px 5px 0 #ff4d4d;
+  --bw: 2px; --radius-control: 0px; --radius-panel: 0px; --radius-chip: 0px;
+  --brut-sh: 5px; --brut-shadow-color: #ff4d4d; --brut-lift: -2px;
+  --brut-nav-bg: #ff4d4d; --brut-nav-text: #1b1713; --brut-nav-edge: #f5ead8; --brut-line: #f5ead8;
+  --crate-gold: #ffbf3c; --crate-on-gold: #1b1713;
+}
+
 /* ---- Neobrut components: only the themes that set data-brut ---- */
 :root[data-brut] header { border-bottom: var(--bw) solid var(--edge); }
 :root[data-brut] nav { border-right: var(--bw) solid var(--edge); }

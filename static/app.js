@@ -1163,6 +1163,24 @@ function trapAlbumModalFocus(event) {
   }
 }
 
+// Crate Wall drawer: the Get group (the same element, so its state and handlers travel with it) sits at the drawer's foot
+// instead of over the cover. In every other theme, and below 901px, it stays on the cover.
+const albumDrawerQuery = window.matchMedia('(min-width: 901px)');
+function placeAlbumModalActions() {
+  const group = $('albumModalActions'), foot = $('albumModalFoot'), art = document.querySelector('.album-modal-art');
+  if (!group || !foot || !art) return;
+  const inFoot = document.documentElement.dataset.layout === 'crate' && albumDrawerQuery.matches;
+  if (inFoot && group.parentElement !== foot) foot.prepend(group);
+  else if (!inFoot && group.parentElement !== art) art.append(group);
+}
+albumDrawerQuery.addEventListener('change', placeAlbumModalActions);
+$('albumModalSkip').addEventListener('click', () => {
+  const dismiss = activeAlbumModal && activeAlbumModal.card.querySelector('.dismiss-album');
+  if (!dismiss) return;
+  closeAlbumModal();
+  dismiss.click();
+});
+
 function closeAlbumModal() {
   $('albumModalBackdrop').hidden = true;
   activeAlbumModal = null;
@@ -1220,6 +1238,11 @@ async function openAlbumModal(card, returnFocus = card) {
   artwork.alt = 'Album artwork for ' + album + ' by ' + artist;
   setGetButtonState(get, 'idle', artist, album);
   get.onclick = () => searchAlbum(artist, album, metadata, get);
+  placeAlbumModalActions();
+  // "Not for me" exists only where the originating row has a dismiss control of its own.
+  const skip = $('albumModalSkip');
+  skip.toggleAttribute('data-available', Boolean(card.querySelector('.dismiss-album')));
+  skip.setAttribute('aria-label', 'Not for me: ' + album);
   backdrop.hidden = false;
   $('albumModalClose').focus();
   try {
@@ -5930,6 +5953,39 @@ mobileLayoutQuery.addEventListener('change', () => {
   if ($('savedCards').childElementCount) loadSaved();
   if ($('lensListsCards').childElementCount) loadLensList(activeLens);
 });
+// Crate Wall only: previous and next arrows on each dashboard shelf, the way the Deep Dives rows have them. Hidden by default;
+// the layout shows them, and they hide themselves (data-fits) while the strip fits without scrolling.
+function buildShelfArrows() {
+  for (const id of ['shelfNewReleases', 'shelfNewest', 'shelfRecent', 'shelfFrequent']) {
+    const track = $(id);
+    const heading = track && track.closest('.dashboard-shelf') && track.closest('.dashboard-shelf').querySelector('.dashboard-shelf-heading');
+    if (!heading) continue;
+    const arrows = document.createElement('div');
+    arrows.className = 'shelf-arrows action-group';
+    arrows.hidden = true;
+    arrows.setAttribute('role', 'group');
+    arrows.setAttribute('aria-label', (track.getAttribute('aria-label') || 'Albums') + ' scroll');
+    for (const [icon, direction] of [['chevron-left', -1], ['chevron-right', 1]]) {
+      const arrow = document.createElement('button');
+      arrow.type = 'button';
+      arrow.append(spriteIcon(icon));
+      arrow.title = direction < 0 ? 'Scroll albums left' : 'Scroll albums right';
+      arrow.setAttribute('aria-label', arrow.title);
+      arrow.addEventListener('click', () => scrollTrackBy(track, direction * trackScrollStep(track)));
+      arrows.append(arrow);
+    }
+    const sync = () => arrows.toggleAttribute('data-fits', track.scrollWidth <= track.clientWidth + 1);
+    track.addEventListener('scroll', sync, {passive: true});
+    if (typeof ResizeObserver === 'function') {
+      const observer = new ResizeObserver(sync);
+      observer.observe(track);
+      new MutationObserver(sync).observe(track, {childList: true});
+    }
+    heading.append(arrows);
+  }
+}
+
 buildLedgerFilters();
+buildShelfArrows();
 updateLedgerCrumb(activePage);
 if (window.location.hash) applyHash(window.location.hash);
