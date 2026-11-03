@@ -1,6 +1,6 @@
 # macOS client contract (Discair)
 
-Status: **approved by the owner and merged (PR [#713](https://github.com/abucalip/navi-librarian/pull/713), squash `8a3bab9706e49dcd485cb6c92073ee0285b1a4e7`, 2026-11-03). Phase M0 is done. M1 (Swift package skeleton, section 11) is merged (PR [#716](https://github.com/abucalip/navi-librarian/pull/716), squash `77e87484042a9db5c6987cb6b15f0f5b38e94d60`, 2026-11-03); M2 (audio spike) is approved by the owner and in progress.** Written from the owner's answers of 2026-11-03. Mockup rounds 1 and 2 are done (section 9); the launch themes are Cupertino and Zine Spread.
+Status: **approved by the owner and merged (PR [#713](https://github.com/abucalip/navi-librarian/pull/713), squash `8a3bab9706e49dcd485cb6c92073ee0285b1a4e7`, 2026-11-03). Phase M0 is done. M1 (Swift package skeleton, section 11) is merged (PR [#716](https://github.com/abucalip/navi-librarian/pull/716), squash `77e87484042a9db5c6987cb6b15f0f5b38e94d60`, 2026-11-03); M2 (audio spike, section 12) is approved by the owner; measurements are recorded in section 12 and in review.** Written from the owner's answers of 2026-11-03. Mockup rounds 1 and 2 are done (section 9); the launch themes are Cupertino and Zine Spread.
 
 ## 1. Purpose and scope
 
@@ -31,7 +31,7 @@ Out of scope: App Store distribution, Intel Macs, macOS before 26, multi-user, i
 - Auto-select by reachability (LAN first, then Tailscale) with a manual override and a visible active-profile indicator.
 - Plain `http://` is allowed only for RFC 1918 addresses, `.local` names and `100.64.0.0/10`. A visible "unencrypted" badge is shown. Public HTTP is blocked (App Transport Security local-networking exception only).
 - Errors distinguish: no network, server unreachable, **Tailscale not connected** (detected from network interfaces; no Tailscale SDK), unauthorised, server error. Each has a retry action.
-- Both servers are on the same host. The login rate limit under `tailscale serve` is verified in phase M1 and recorded.
+- Both servers are on the same host. The login rate limit under `tailscale serve` was verified (2026-11-03, section 11.2): it is counted per tailnet device, not shared.
 
 ## 4. Themes
 
@@ -105,8 +105,8 @@ Queue (play next, add to queue, reorder), shuffle, repeat, gapless with next-tra
 | Phase | Content | Gate |
 |---|---|---|
 | M0 | This contract, `macos/DESIGN.md` skeleton, project layout | **Done**: owner approved, merged in PR #713 (the `macos/` folder and `DESIGN.md` are created in M1) |
-| M1 | Package skeleton, profiles and reachability, Keychain, Navidrome auth, library read, Navidrome playlist API check, rate-limit check | Tests pass. **Done**: merged in PR #716, see section 11 (the two server checks are run in M2 with the owner's servers) |
-| M2 | Audio spike: `AVAudioEngine` decode of FLAC/MP3/Opus, EQ, crossfade, gapless, SMB waveform speed | Measured result recorded |
+| M1 | Package skeleton, profiles and reachability, Keychain, Navidrome auth, library read, Navidrome playlist API check, rate-limit check | Tests pass. **Done**: merged in PR #716, see section 11 (both server checks are done: 11.1 passed, 11.2 not shared) |
+| M2 | Audio spike: `AVAudioEngine` decode of FLAC/MP3/Opus, EQ, crossfade, gapless, SMB waveform speed | Measured result recorded: **done**, section 12 (gapless and crossfade confirmed by ear on headphones; DAC and Bluetooth not heard) |
 | M3 | **Mockups:** done in two rounds (9 theme drawings, 6 screens each) | Owner picked: Cupertino and Zine first, Bento Block and Native Glass v2 later |
 | M4 | Window shell, theme layer, Cupertino and Zine Spread, all screens | Screenshot tests; owner approves the UI on the Mac |
 | M5 | Parity: Discover, Downloads, Settings, EQ, lyrics, scrobbling, cache, Sparkle | Tests |
@@ -140,28 +140,13 @@ Code: `macos/` (`README.md` there says how to build and test). Rules as decided 
 
 ### 11.1 Check (a): Navidrome playlist API (needed for smart playlists)
 
-**Status: open, needs the owner's Navidrome address.** The package implements `getPlaylists`, `getPlaylist`, `createPlaylist`, `updatePlaylist` (add songs) and `deletePlaylist` against the Subsonic 1.16.1 specification, and unit tests cover them with spec-shaped payloads. No playlist call was captured from the owner's Navidrome (`android/contract-fixtures/navidrome/` has none), so whether this server accepts them is not yet known. To run it:
-
-```sh
-cd macos
-export DISCAIR_NAVIDROME_URL=<address>  DISCAIR_NAVIDROME_USER=<user>  DISCAIR_NAVIDROME_PASSWORD=<password>
-swift run discair-checks playlists --write
-```
-
-It reads the playlist list, creates `discair-m1-check` with one song, reads it back, adds the song again, deletes the playlist and confirms it is gone. Pass means smart playlists can be saved to Navidrome; any FAIL line names the failing call. Record the result here with the Navidrome version. Not yet checked: removing or reordering songs (`songIndexToRemove`), which smart playlists may need.
+**Done 2026-11-03: PASS.** Run by the agent with the owner's Navidrome login (read from the local `config.env`, never printed) through `discair-checks playlists --write`, over the owner's LAN address (plain http, allowed by the section 3 rules). `ping`, `getPlaylists` (37 playlists), `createPlaylist` with one song, `getPlaylist` read back (1 song), `updatePlaylist` adding a song (2 songs), `deletePlaylist`, and a final listing that no longer contained it all succeeded. The temporary playlist `discair-m1-check` was deleted by the check itself. So the login can read and write playlists, and smart playlists can be saved to Navidrome. Not checked: removing or reordering songs (`songIndexToRemove`), which smart playlists may need; to be tested when that feature is built (M6).
 
 ### 11.2 Check (b): is the Librarian login rate limit shared behind `tailscale serve`?
 
-**Status: open, needs the owner's addresses and a second tailnet device.** What the code says: the limit is 8 attempts per 15 minutes per `request.client.host` (`app/api/auth.py`), held in memory. The container starts uvicorn without `--forwarded-allow-ips`, so it trusts `X-Forwarded-For` only from 127.0.0.1. If the proxy reaches the container through Docker's port mapping, every tailnet client probably shares one key (the bridge address). This is a hypothesis, not a result. To settle it:
+**Done 2026-11-03: NOT shared.** Run by the owner. From the Mac, through the `tailscale serve` address, `discair-checks ratelimit --yes` got 401 for 8 wrong logins and `429` on the 9th ("The server limit is reached after 8 attempts from this address"), matching the code (8 attempts per 15 minutes per client address, `app/api/auth.py`). Straight afterwards the owner's phone, through the same `tailscale serve` address, got "Invalid username or password" (401, not 429), and a wrong login from the Mac through the home-network address also got 401. So the Librarian sees a different client address per tailnet device, the lockout of one device does not reach another, and the app and the web UI cannot lock each other out. No backend change or proposal is needed. The hypothesis in the earlier draft (all tailnet clients share the proxy's address) was wrong. Not tested: two sessions from the same device (for example the app and a browser on the Mac share one address, so eight wrong logins in 15 minutes from either would lock both out; the app shows the 429 message and does not retry).
 
-1. From the Mac, through the `tailscale serve` address: `export DISCAIR_LIBRARIAN_URL=<tailscale address>; swift run discair-checks ratelimit --yes`. It sends wrong logins for the user `discair-m1-ratelimit-probe` and prints the attempt that gets a 429 (expected 9, after 8).
-2. Straight away, from a second device on the tailnet (the phone's browser or the Android app), try one wrong login through the same address. **429 means the limit is shared**; a 401 means each client has its own.
-3. Also try one wrong login from the LAN address on the home network: expected 401 in both cases, since that is a different client address.
-4. Wait 15 minutes, or restart the Librarian container, to clear the lockout (the limit is in memory).
-
-If shared: the owner's own web UI and the app lock each other out after 8 failures in 15 minutes. Any fix (trusting the proxy's forwarded address) is a backend contract proposal and needs the owner's approval; the app already shows the 429 message and does not retry.
-
-### 11.3 What M2 (audio spike) needs from the owner
+### 11.3 What M2 (audio spike) needed from the owner (all supplied; M2 is done, see section 12)
 
 - Approval to start M2, and the two server checks of 11.1 and 11.2 run or deferred.
 - The Navidrome address and login (in the Keychain through the app or the harness, never in the repo), so the spike streams real files.
@@ -169,3 +154,88 @@ If shared: the owner's own web UI and the app lock each other out after 8 failur
 - The SMB share (`smb://192.168.1.87/media`) reachable from the Mac with its login, and one Navidrome `path` value next to the matching file under `/Volumes/media/library/music`, to confirm the prefix mapping.
 - The output device to judge by ear (built-in, headphones, DAC) and the owner's verdict on gapless and crossfade quality; automated tests cannot judge that.
 - A decision on the waveform time budget (contract section 7): the spike proposes a value from measurements.
+
+## 12. M2 audio spike: measured results (2026-11-03)
+
+Tool: `discair-audio-spike` (`macos/Sources/AudioSpike`, build `swift build -c release --product discair-audio-spike`). Offline tests use `AVAudioEngine` manual rendering, so they are deterministic and play no sound. Library tests ran against the owner's Navidrome (LAN, plain http) and the mounted SMB share. Machine: MacBook Air, macOS 26.5 SDK, Xcode 26.6. **Not measured, because it needs the owner's ears or hardware:** any DAC or Bluetooth output. Gapless and crossfade were checked by ear by the owner on headphones (12.9).
+
+### 12.1 Decoding (`AVAudioFile`, no third-party decoder)
+
+| Source in the library | Result | Speed |
+|---|---|---|
+| FLAC (44.1 kHz, 1546 kbps) | decodes | 333x real time |
+| M4A (256 kbps) | decodes | 773x |
+| MP3 (320 kbps) | decodes | 392x |
+| Ogg Opus (a Navidrome `format=opus` transcode) | decodes, always 48 kHz | 171 to 223x |
+| Navidrome `format=mp3` transcode | decodes | 411 to 440x |
+| **Ogg Vorbis** (found in the library) | **does not open** | |
+| **WMA** (found in the library) | **does not open** | |
+
+So Opus works natively on macOS 26 without a bundled decoder. Vorbis and WMA files must be played through the server's transcode (`format=opus` or `format=mp3`, both on the stream allowlist; `maxBitRate` up to 320). The library had 240 albums scanned: flac, m4a, mp3, ogg and wma occurred; no native `.opus` file was found. The app needs to know which suffixes it can play directly (flac, m4a, mp3, and others if found later: alac, wav, aiff) and use a transcode for the rest. The decision on the transcode quality for those two formats is the owner's (recommended: opus at 192 for ogg and wma sources, since transcoding is lossy either way).
+
+### 12.2 Starting playback before the download ends
+
+Whole-file download over the LAN: 52 MB FLAC took about 4 s (105 Mbit/s), a 9 MB MP3 or M4A under 1 s; first byte arrives in 10 to 120 ms. `AVAudioFile` reads a file only from disk, so playback needs either the whole file or a growing file. Tested on truncated copies:
+
+| Format | Opens when truncated? |
+|---|---|
+| MP3 | yes, at 256 KiB; decodes exactly what has arrived |
+| Ogg Opus | yes, at 256 KiB; decodes what has arrived |
+| FLAC | no at 256 KiB (large header, embedded art); yes at 2 MiB (5 s decodable) |
+| M4A | no, even at 2 MiB (the index is at the end of the file) |
+
+Recommendation for M5: download to a temporary file; start playing a progressive format (MP3, Opus, FLAC) once about 3 s are decodable, by reading what exists and re-opening as the file grows; for M4A, wait for the whole file (about 1 s on the LAN). Preload the next track in full in the background. The growing-file reader itself is not built or proven end to end; only the truncated-file behaviour is measured.
+
+### 12.3 10-band EQ (`AVAudioUnitEQ`, parametric, one-octave bands at 31, 62, 125, 250, 500, 1k, 2k, 4k, 8k, 16k Hz)
+
+Measured on pure tones: +12 dB at 1 kHz gives +12.00 dB at 1 kHz and +0.08 and +0.10 dB at 100 Hz and 8 kHz; -12 dB at 62 Hz gives -12.00 dB; +12 dB at 16 kHz gives +12.00 dB; flat is 0.00 dB; `globalGain` of -6 gives -6.00 dB (pre-gain works); bypassed bands give 0.00 dB. Measured at 44.1 kHz only. The EQ behaves as specified, so the Android presets can be ported as they are (`ANDROID_EQ_CONTRACT.md`).
+
+### 12.4 Crossfade
+
+Two `AVAudioPlayerNode`s into the mixer, the second started sample-accurately with `play(at: AVAudioTime(sampleTime:...))`, gain changed every 10 ms. Equal-power curve (cos, sin): level through a 4 s fade stays within 0.00 dB of steady state. A linear curve dips 3.01 dB, as expected, so equal-power is the default. Difference from the ideal per-sample curve: -56 dB (the stepping), far below audibility; a render-thread gain ramp is not needed for the launch. Continuous albums stay gapless (section 5): no fade is applied between consecutive tracks of one album.
+
+### 12.5 Gapless
+
+One player node with the next file scheduled before the current one ends: a sine split at an arbitrary frame into two files joins with zero error for PCM and 6e-8 (24-bit rounding) for FLAC, with no inserted or dropped frames. Two real MP3 tracks of the library joined with zero sample error and the exact frame total; the engine adds no gap, so any gap heard is silence stored in the files (those two tracks had 1.9 s of it, which is normal for non-continuous tracks). Whether the decoder trims MP3 encoder delay was not measured separately. Continuous album, measured: *The Dark Side of the Moon* (MP3, 10 tracks). *Breathe In The Air* into *On The Run*, and *Brain Damage* into *Eclipse*, have 0.0 ms of stored silence at both ends of the join and joined with zero sample error and the exact frame total. The decoded lengths are not multiples of the MP3 frame size (1152), and there is no leading digital silence, which is consistent with the decoder trimming encoder padding (not proven by a separate test). The by-ear check is still the owner's (12.9).
+
+### 12.6 Output sample rate
+
+The default output (MacBook Air speakers) offers 44100, 48000, 88200 and 96000 Hz. Setting the device's nominal rate to 96 kHz was accepted and read back, and was restored to 44.1 kHz. So matching the device to the file rate is possible where the device offers it (Opus is always 48 kHz); `AVAudioEngine` resamples otherwise. The app must restore the rate on quit and tell the owner it changes the system output rate. Not tested with a DAC or Bluetooth.
+
+### 12.7 SMB (`/Volumes/media/library/music`, already mounted by hand)
+
+| File | Size | Tag-sized read (64 KiB) | Whole-file read | Decode + 1000 peaks |
+|---|---|---|---|---|
+| FLAC | 52 MB | 50 ms | 2.6 s (166 Mbit/s) | 0.8 s |
+| MP3 | 9 MB | 46 ms | 0.3 s | 0.6 s |
+| M4A | 10 MB | 50 ms | 0.3 s | 0.4 s |
+
+Proposed budget (section 7): a tag read must finish within 150 ms (measured 50 ms); a waveform is computed in the background and shown only if ready within 5 s of the song starting (measured worst case 3.4 s for a 52 MB FLAC, under 1 s for the others), otherwise the seek bar stays plain, the work continues, and the result is cached per song (1000 peaks, about 2 KB). Never over HTTP.
+
+**Path mapping: cause found, one setting left for the owner.** For 5 of 5 sampled songs, `/Volumes/media/library/music/<Subsonic path>` did not exist, although the folders are the same ones: Navidrome's Subsonic `path` was `AM (Jewel Case)/01-01 - Do I Wanna Know?.flac`, the file on the share is `AM (2013)/0101 Do I Wanna Know_.flac`. Navidrome's own API (`/api/song/<id>`, read-only, used once for this diagnosis only; the app does not use it) returns the real path, and all 5 real paths exist under the mount. So Navidrome stores the right path and the mount is right. By default Navidrome does not report real paths over the Subsonic API: its configuration option `Subsonic.DefaultReportRealPath` (`ND_SUBSONIC_DEFAULTREPORTREALPATH`) is `false` ("can be customized individually for each client/player", "this can be a security risk, so it is disabled by default", [navidrome.org configuration options](https://www.navidrome.org/docs/usage/configuration/options/)) and a rebuilt `Artist/Album/disc-track - Title.ext` name is returned instead. Every player registered in the owner's Navidrome currently has it off, including `discair [CFNetwork]` (created by the M1 and M2 tools).
+
+**Resolved 2026-11-03.** The owner switched on "Report Real Path" for the player `discair [CFNetwork]` (the Mac tools' player; the real app will be a new player and needs the same switch once, or the server-wide default `ND_SUBSONIC_DEFAULTREPORTREALPATH=true`, which a community report says applies to newly registered players only). Navidrome then reports the path **as the Navidrome container sees it**, `/music/<Artist>/<Album>/<file>`, not the host path `/media/library/music` (the owner's first answer named the host path; the container mounts the same folder at `/music`). The app's path-mapping setting is therefore the pair **server root `/music` to local root `/Volumes/media/library/music`**, and the owner must be able to edit the server root. Verified with `scripts/spike.sh mapcheck 80`: 540 of 540 songs from 80 random albums resolved to an existing file on the mounted share (100 %). Until the switch is on for the app's player, Navidrome returns the rebuilt name that matches no file: the app must detect that (a path that does not start with the server root) and keep SMB features off with a one-line hint, not guess.
+
+### 12.8 Owner decisions
+
+1. **Path mapping: done.** Navidrome's music folder is the same folder as the share (`/media/library/music` on the host, `/music` inside the container). Cause, switch and verification: 12.7.
+2. **Transcode for Ogg Vorbis and WMA sources: opus at 192** (the recommendation, accepted by the owner).
+3. **Check 11.2 (rate limit): done by the owner, not shared** (11.2).
+4. **By-ear gapless check:** see 12.9.
+
+### 12.9 Listening session (the owner, about 10 minutes)
+
+`discair-audio-spike listen` plays sound on the Mac's current output (default volume 0.5; lower it first). From `macos/`, with `scripts/spike.sh` (it reads the Navidrome login from `~/Desktop/disqair/config.env`, or the file named in `DISCAIR_ENV_FILE`):
+
+```sh
+# 1. gapless: the last 20 s of Breathe, then On The Run (a seamless segue on the record)
+./scripts/spike.sh listen 5NvmJiy1uTG8HkoUAMaEEB 0moCUUrucnJAPO74LkcFL8
+# 2. gapless: Brain Damage into Eclipse
+./scripts/spike.sh listen 2KKthn7KKdaFJEiaOT78dn 4CYrvCn4U3Wy98uP1gxih7
+# 3. crossfade 4 s, equal-power, between two songs: Money into Us And Them
+./scripts/spike.sh listen 40DXYbfXU5PJQda4si36jN 4oyxwB1jkJBihafgXlTETd --crossfade 4
+```
+
+Listen for: any click, pop or dropout at the join in 1 and 2 (there should be none; the join was measured as exact); in 3, whether the fade is smooth and whether the level dips or bumps in the middle. Also repeat 1 with another output (headphones, a DAC, Bluetooth) if available, and say which one was used. Add `--volume 0.3` for quieter, `--tail 40` to hear more of the first song. Report: "1 clean / click", "2 clean / click", "3 smooth / bumpy", and the output used.
+
+**Result (owner, 2026-11-03), on good headphones:** 1 clean, 2 clean (no click or gap at either gapless join), 3 smooth (the 4 s equal-power crossfade had no audible bump). This confirms the measurements of 12.4 and 12.5 by ear for the built-in decoder, `AVAudioPlayerNode` queueing and the timer-driven gain ramp. Not yet heard: a DAC or Bluetooth output, and the Opus or MP3 transcode path.

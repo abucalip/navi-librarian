@@ -10,6 +10,7 @@ Swift 6, macOS 26, Apple Silicon. No third-party dependencies.
 | `DiscairNavidrome` | Subsonic token and salt auth, `ping`, library read (artists, albums, songs, cover art URLs), playlist calls, the one stream-URL builder |
 | `DiscairLibrarian` | Login and the dashboard picks read |
 | `discair-checks` | Command-line harness for the two server checks (contract section 11) |
+| `discair-audio-spike` | M2 measurement tool, not shipped: `AVAudioEngine` decode, EQ, crossfade, gapless, device rates, SMB timings (contract section 12) |
 
 ## Build and test
 
@@ -38,6 +39,20 @@ swift run discair-checks ratelimit --yes      # sends wrong logins until 429; lo
 ```
 
 What the results mean and how to record them: contract section 11.
+
+## Audio spike (M2)
+
+```sh
+swift build -c release --product discair-audio-spike
+.build/release/discair-audio-spike offline        # EQ, crossfade, gapless, device rates: silent, needs nothing
+.build/release/discair-audio-spike device --switch  # tries a rate change on the default output and restores it
+# with DISCAIR_NAVIDROME_* set: samples | formats <id>... | gap <id> <id> | partial <id>... | find <text> [--songs] | mapcheck [albums]
+# listen <id> <id> [--crossfade S] PLAYS SOUND: end of one song into the next, to listen for gaps
+# scripts/spike.sh <command...> runs any of these with the login read from ~/Desktop/disqair/config.env
+.build/release/discair-audio-spike smb "<path under /Volumes/media/library/music>"
+```
+
+Results and what they mean: contract section 12. The offline tests make no sound.
 
 ## Rules for contributors
 
