@@ -19,7 +19,8 @@ class TapeDeckTest {
     @Test fun onlyTheThreeTapeThemesAskForTheCassetteDeckAndEveryOtherThemeKeepsStandard() {
         assertEquals(listOf("tapelime", "tapecobalt", "tapetangerine"), tape.map { it.id })
         assertTrue(tape.all { it.layout == Layout.TapeDeck && it.light && it.brutal })
-        assertTrue(Palettes.All.filter { it !in tape }.all { it.layout == Layout.Standard })
+        assertTrue(Palettes.All.filter { it !in tape }.none { it.layout == Layout.TapeDeck })
+        assertTrue(Palettes.All.filter { it.layout == Layout.Standard }.size >= 20) // the twenty earlier themes keep Standard
         assertEquals(setOf("Tape · Lime", "Tape · Cobalt", "Tape · Tangerine"), tape.map { it.label }.toSet())
     }
 

@@ -162,6 +162,8 @@ fun NowPlayingSheet(state: PlayerUiState, controller: PlayerController, lyrics: 
     // Cassette Deck: no flip card; the queue sits under the player and a lyrics button swaps it for the lyrics (view 1 is lyrics, anything else the queue).
     val tape = app.discair.ui.theme.LocalPalette.current.layout == app.discair.ui.theme.Layout.TapeDeck
     LaunchedEffect(tape) { if (tape && view == 2) { view = 0; lastView = 0 } }
+    // Sheet Stack: the lyrics strip is the Lyrics view, so lyrics load while the sheet is open; the queue button and the strip open a panel (2 = queue, 1 = lyrics).
+    val sheetStack = app.discair.ui.theme.LocalPalette.current.layout == app.discair.ui.theme.Layout.SheetStack
     BackHandler(enabled = view != 0) { view = 0; lastView = 0 }
     val scope = androidx.compose.runtime.rememberCoroutineScope()
     // -1 = queue, 0 = artwork, +1 = lyrics; fractions are mid-flip while a finger is down or the flip settles.
@@ -171,7 +173,7 @@ fun NowPlayingSheet(state: PlayerUiState, controller: PlayerController, lyrics: 
     val lyricsState by lyrics.state.collectAsState()
     val songId = state.current?.songId
     val nextId = state.queue.nextIndex()?.let { state.queue.items.getOrNull(it)?.songId }?.takeIf { it != songId }
-    val lyricsOpen = view == 1 || flip.value > 0.5f
+    val lyricsOpen = view == 1 || flip.value > 0.5f || sheetStack
     // Fetch only while the Lyrics view is open for the song that is playing; close stops everything.
     LaunchedEffect(lyricsOpen, songId, nextId) {
         if (lyricsOpen && songId != null) lyrics.open(songId, nextId) else lyrics.close()
@@ -203,7 +205,7 @@ fun NowPlayingSheet(state: PlayerUiState, controller: PlayerController, lyrics: 
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 app.discair.ui.common.PlayerIconButton(onClick = onDismiss, Modifier.size(Target)) { Icon(PlayerIcons.Down, contentDescription = "Close now playing") }
                 Spacer(Modifier.weight(1f))
-                if (tape) {
+                if (tape || sheetStack) {
                     Text(
                         "Now playing", style = MaterialTheme.typography.labelLarge.copy(fontFamily = app.discair.ui.theme.LocalFontPair.current.mono),
                         modifier = Modifier.semantics { heading() },
@@ -216,7 +218,19 @@ fun NowPlayingSheet(state: PlayerUiState, controller: PlayerController, lyrics: 
                 Spacer(Modifier.size(Target)) // balances the close button so the tabs sit in the middle
             }
             Spacer(Modifier.height(12.dp)) // the tabs must not touch the cover, the lyrics note or the queue title
-            if (tape) TapePlayer(
+            if (sheetStack) SheetPlayer(
+                state, controller, view, onView = { view = it; lastView = it },
+                lyricsState = if (lyricsState.songIdOrNull() == songId) lyricsState else LyricsUiState.Idle, currentLine = currentLine,
+                onSignIn = onSignIn, onEqualizer = { eqOpen = true }, onCrossfade = { crossfadeOpen = true },
+                onOpenArtist = onOpenArtist, onOpenAlbum = onOpenAlbum, onCoverColor = { tint = it },
+                lyricsPanel = {
+                    LyricsPanel(
+                        if (lyricsState.songIdOrNull() == songId) lyricsState else LyricsUiState.Idle,
+                        currentLine, songId.orEmpty(), onTryAgain = { if (songId != null) lyrics.retry(songId, nextId) },
+                        Modifier.fillMaxSize().padding(vertical = 8.dp),
+                    )
+                },
+            ) else if (tape) TapePlayer(
                 state, controller, showLyrics = view == 1, onToggleLyrics = { view = app.discair.ui.common.TapeDeckRules.toggleLyrics(view); lastView = view },
                 onSignIn = onSignIn, onEqualizer = { eqOpen = true }, onCrossfade = { crossfadeOpen = true },
                 onOpenArtist = onOpenArtist, onOpenAlbum = onOpenAlbum, onCoverColor = { tint = it },

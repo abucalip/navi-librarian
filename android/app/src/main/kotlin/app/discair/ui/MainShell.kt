@@ -304,6 +304,8 @@ fun MainShell(state: UiState, model: AppViewModel, container: AppContainer) {
                     },
                     onSettings = { goPage(SettingsRoute) },
                     settingsSelected = destination?.hasRoute(SettingsRoute::class) == true,
+                    onLibrary = { goPage(LibraryRoute) },
+                    librarySelected = destination?.hasRoute(LibraryRoute::class) == true,
                 )
             }
         }

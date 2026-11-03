@@ -25,6 +25,7 @@ import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
@@ -72,6 +73,9 @@ fun NavIsland(
     /** Cassette Deck only: Settings takes the player's cell in its ruled bar (the mini player opens Now Playing). */
     onSettings: () -> Unit = {},
     settingsSelected: Boolean = false,
+    /** Sheet Stack only: Library takes a segment of its joined group. */
+    onLibrary: () -> Unit = {},
+    librarySelected: Boolean = false,
 ) {
     // Cassette Deck: a full-width ruled bar in the owner's theme (the island's tint and pill are the Standard composition).
     val deckTheme = app.discair.ui.theme.LocalThemePalette.current ?: app.discair.ui.theme.LocalPalette.current
@@ -81,6 +85,18 @@ fun NavIsland(
             searchIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = it, modifier = Modifier.size(24.dp)) },
             homeIcon = { Icon(Icons.Default.Home, contentDescription = null, tint = it, modifier = Modifier.size(24.dp)) },
             settingsIcon = { Icon(app.discair.ui.player.PlayerIcons.Tune, contentDescription = null, tint = it, modifier = Modifier.size(24.dp)) },
+        )
+        return
+    }
+    // Sheet Stack: one joined four-segment group (Home, Search, Library, Player) in the owner's theme.
+    if (deckTheme.layout == app.discair.ui.theme.Layout.SheetStack) {
+        val reduced = app.discair.ui.common.rememberReducedMotion()
+        app.discair.ui.common.SheetNavGroup(
+            deckTheme, homeSelected, librarySelected, playerLabel, onHome, onSearch, onLibrary, onPlayer, modifier,
+            homeIcon = { Icon(Icons.Default.Home, contentDescription = null, tint = it, modifier = Modifier.size(24.dp)) },
+            searchIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = it, modifier = Modifier.size(24.dp)) },
+            libraryIcon = { Icon(Icons.AutoMirrored.Filled.List, contentDescription = null, tint = it, modifier = Modifier.size(24.dp)) },
+            player = { app.discair.ui.common.TapeMeter(4, app.discair.ui.common.TapeDeckRules.meterMoves(playing, false, reduced), it, size = 22.dp) },
         )
         return
     }
