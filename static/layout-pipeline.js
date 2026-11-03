@@ -135,20 +135,23 @@ function pipelineTile(item, options = {}) {
   const text = document.createElement('span');
   text.className = 'pipeline-tile-text';
   addTextElement(text, 'b', '', displayAlbumName(name));
-  addTextElement(text, 'small', '', [artist, item.year].filter(Boolean).join(' · '));
+  addTextElement(text, 'small', '', artist);
+  const genre = options.genre || (Array.isArray(item.genres) && item.genres[0]) || '';
+  if (genre) addTextElement(text, 'small', 'pipeline-tile-genre', genre);
   open.append(text);
   open.addEventListener('click', () => openLibraryTarget(owned
     ? albumTarget({...item, name, artist, key: foldKey(artist) + '/' + foldKey(name)})
     : namedAlbumTarget(artist, name, item)));
   tile.append(open);
-  if (owned) {
-    addTextElement(tile, 'span', 'pipeline-tile-state', 'In library');
-  } else {
+  // Not in the library: the app's own Get, Save and Not for me stay in the tile, hidden, so a drop can click them. The album page
+  // shows them as visible buttons (the tile opens it).
+  if (!owned) {
     const metadata = {artist, album: name, year: item.year || null, release_group_mbid: item.release_group_mbid || null};
     const group = createActionGroup(artist, name, metadata, {
       listName: options.listName || 'dashboard_shelf',
       onDismiss: () => sendFeedback('dismiss', artist, name, metadata, options.listName || 'dashboard_shelf', tile),
     });
+    group.classList.add('pipeline-hidden-controls');
     if (options.saved) setSaveButtonState(group.querySelector('.save-album'), true, name);
     tile.append(group);
   }
@@ -200,7 +203,7 @@ function pipelineFollowGet(get, album, target) {
   watch.observe(get, {attributes: true, attributeFilter: ['class', 'title', 'disabled']});
 }
 
-// The card's own controls, reached by a pointer drop or by the Move to menu. Both paths end in the same click.
+// The card's own controls, reached by a pointer drop. The drop ends in the same click the album page offers.
 function pipelineAct(card, target) {
   const album = card.dataset.album || 'this album';
   if (target === 'queued') {
@@ -220,47 +223,6 @@ function pipelineAct(card, target) {
     }
     save.click();
   }
-}
-
-// Move to…: the non-drag, non-chord equivalent of a drop. Opens a short list of the real actions this card offers.
-function pipelineMoveMenu(card) {
-  const button = document.createElement('button');
-  button.type = 'button';
-  button.className = 'pipeline-move';
-  button.textContent = 'Move to…';
-  button.setAttribute('aria-expanded', 'false');
-  button.addEventListener('click', () => {
-    const open = card.querySelector('.pipeline-menu');
-    if (open) {
-      open.remove();
-      button.setAttribute('aria-expanded', 'false');
-      return;
-    }
-    const menu = document.createElement('div');
-    menu.className = 'pipeline-menu';
-    menu.setAttribute('role', 'group');
-    menu.setAttribute('aria-label', 'Move ' + (card.dataset.album || 'this album'));
-    const options = [];
-    if (card.querySelector('.get-album')) options.push(['Queued: Get it', 'queued']);
-    if (card.querySelector('.save-album')) options.push(['Saved: Save it', 'saved']);
-    if (!options.length) options.push(['Nothing to move to', null]);
-    for (const [label, target] of options) {
-      const option = document.createElement('button');
-      option.type = 'button';
-      option.textContent = label;
-      if (target) option.addEventListener('click', () => {
-        menu.remove();
-        button.setAttribute('aria-expanded', 'false');
-        pipelineAct(card, target);
-      });
-      else option.disabled = true;
-      menu.append(option);
-    }
-    button.setAttribute('aria-expanded', 'true');
-    card.append(menu);
-    menu.querySelector('button').focus();
-  });
-  return button;
 }
 
 function pipelineMakeDraggable(card) {
@@ -366,11 +328,10 @@ function renderPipelineBoard(jobs) {
   finishPipelineColumns(cols, lists, new Set(['saved']));
 }
 
-// Every card gets a drag handle and the Move to menu; the card itself stays the element the existing builder made.
+// Every card gets a drag handle; the card itself stays the element the tile builder made.
 function pipelinePlaceCard(card, list, album) {
   card.dataset.album = album || '';
   pipelineMakeDraggable(card);
-  card.append(pipelineMoveMenu(card));
   list.append(card);
 }
 
@@ -558,7 +519,7 @@ async function pipelineLoadLane(lane) {
       addTextElement(tiles, 'p', 'pipeline-lane-note', 'No albums could be listed for this genre right now.');
     } else {
       for (const item of items) {
-        const tile = pipelineTile({...item, owned: Boolean(item.owned)}, {listName: 'library_lane'});
+        const tile = pipelineTile({...item, owned: Boolean(item.owned)}, {listName: 'library_lane', genre: lane.dataset.name});
         tile.dataset.year = item.year ? String(item.year) : '';
         tile.dataset.genre = lane.dataset.tag;
         tiles.append(tile);
@@ -788,21 +749,6 @@ function pipelineRefresh() {
 function pipelineWire() {
   for (const id of ['pipelineFilterGenre', 'pipelineFilterYear']) if ($(id)) $(id).addEventListener('change', pipelineApplyLaneFilters);
   const board = $('pipelineBoard');
-  // Enter and Escape close an open Move to menu; focus returns to its button.
-  if (board) {
-    board.addEventListener('keydown', event => {
-      if (event.key !== 'Escape') return;
-      const menu = event.target.closest && event.target.closest('.pipeline-menu');
-      if (!menu) return;
-      const owner = menu.closest('.pipeline-card');
-      const move = owner && owner.querySelector('.pipeline-move');
-      menu.remove();
-      if (move) {
-        move.setAttribute('aria-expanded', 'false');
-        move.focus();
-      }
-    });
-  }
   pipelineWireArtistStrip();
   // The layout is chosen in Settings without a reload, so the layout's parts are built (or cleared) when it changes.
   new MutationObserver(pipelineRefresh).observe(document.documentElement, {attributes: true, attributeFilter: ['data-layout']});

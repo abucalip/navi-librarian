@@ -30,6 +30,9 @@ class PipelineLayoutTests(unittest.TestCase):
         self.pipe = self.layouts.split('==== Pipeline Board ("pipeline")')[1].split("*/", 1)[1]
         self.block = self.themes.split(':root[data-theme="pipeline"]')[1].split("\n}")[0]
 
+    def layouts_css_text(self):
+        return self.layouts
+
     def _token(self, name):
         return re.search(rf"--{name}: (#[0-9a-fA-F]{{6}})", self.block).group(1)
 
@@ -106,9 +109,12 @@ class PipelineLayoutTests(unittest.TestCase):
         self.assertIn("const PIPELINE_DROP = new Set(['queued', 'saved']);", self.pipe_js)
         self.assertNotIn("dismiss-album'", self.pipe_js.split("function pipelineAct")[1].split("function pipelineMoveMenu")[0])
 
-    def test_every_drag_has_a_button_alternative(self):
-        self.assertIn("button.className = 'pipeline-move';", self.pipe_js)
-        self.assertIn("button.textContent = 'Move to…';", self.pipe_js)
+    def test_no_move_to_button_on_the_tiles(self):
+        # The owner removed Move to from the tiles. The album page is the visible path to Get, Save and Not for me.
+        self.assertNotIn("'Move to…'", self.pipe_js)
+        self.assertNotIn("card.append(pipelineMoveMenu(card))", self.pipe_js)
+        self.assertIn("group.classList.add('pipeline-hidden-controls');", self.pipe_js)
+        self.assertIn(".pipeline-tile .pipeline-hidden-controls { display: none; }", self.app + self.layouts_css_text())
 
     def test_the_board_takes_its_cards_from_the_app_builders(self):
         # Tiles carry the app's own action group (Get, Save, Not for me) and its artwork builder.
@@ -199,7 +205,7 @@ class PipelineLayoutTests(unittest.TestCase):
         lane = self.pipe_js.split("async function pipelineLoadLane")[1].split("/* ----")[0]
         self.assertIn("pipelineLaneObserver.unobserve(entry.target);", self.pipe_js)
         self.assertIn("requestJSON('/api/genres/' + encodeURIComponent(lane.dataset.tag))", lane)
-        self.assertIn("pipelineTile({...item, owned: Boolean(item.owned)}, {listName: 'library_lane'})", lane)
+        self.assertIn("pipelineTile({...item, owned: Boolean(item.owned)}, {listName: 'library_lane', genre: lane.dataset.name})", lane)
         # A failed lane is not re-observed: that would retry in a loop while it stays on screen.
         self.assertNotIn("observe(lane)", lane.split("catch")[1])
 
