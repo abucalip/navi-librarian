@@ -1,3 +1,12 @@
+## 2026-11-03 — Android Sticker Wall layout merged (PR #706)
+
+- **Merged (owner request):** PR [#706](https://github.com/abucalip/navi-librarian/pull/706), squash `ee9ff84886e3cca8b031b15def3ba395509f18d3`, from tested head `f07ee37e99398629da8fcee4ce548977ee048304`; compile, container-smoke, test-and-build and validate-container passed on that head.
+- **What:** phase P6 of `docs/BRUT_LAYOUTS_PLAN.md` (D-023). Theme `stickerpeach` in `Palette.kt`; `ui/common/StickerWall.kt` (`StickerWallRules`, `StickerPill`, `StickerTile`, `StickerWall`); `ui/home/StickerHome.kt`; `ui/player/StickerPlayer.kt`; changes in `NavIsland.kt`, `HomeScreen.kt`, `RecentlyAdded.kt`, `NowPlayingSheet.kt` and `CrossfadeScreen.kt` (`rememberCrossfade` is now internal).
+- **Tests and builds run:** `./gradlew testDebugUnitTest` (all unit tests; new `StickerWallTest`, updated `PaletteTest` counts), `assembleDebug`, `lintDebug` (0 errors, 41 warnings, 3 hints) and the signed R8 `assembleRelease` with JDK 17.
+- **Device check:** the owner installed the release build over wifi adb, reviewed it on the phone (SM-G781B) and approved it. Not checked: TalkBack (tiles, equalizer bars, switch), 200% text.
+- **Not done / not claimed:** not published or deployed.
+- **Next action:** revisit the items skipped before the behaviour rule, then P7.
+
 ## 2026-11-03 — Android Sheet Stack layout merged (PR #705)
 
 - **Merged (owner request):** PR [#705](https://github.com/abucalip/navi-librarian/pull/705), squash `43159c7a60ca693b474421bb2537d57427328b90`, from tested head `5162ef93aa08505b0151746dc408af2a742a593f`; compile, container-smoke, test-and-build and validate-container passed on that head.

@@ -1,6 +1,6 @@
 # Brut layouts plan (web and Android)
 
-Last updated: 2026-11-03 (P5 merged). Governing decision: D-023 in [DECISIONS.md](DECISIONS.md). Status tracking: the table in section 9 (update it in the PR that completes each phase). GitHub `main` is authoritative.
+Last updated: 2026-11-03 (P6 merged). Governing decision: D-023 in [DECISIONS.md](DECISIONS.md). Status tracking: the table in section 9 (update it in the PR that completes each phase). GitHub `main` is authoritative.
 
 ## 1. What this is
 
@@ -154,6 +154,8 @@ Palettes Violet-orange (current), Acid Night, Daylight Sheet. Home: a carousel r
 ### A4 Sticker Wall (phase P6)
 Palette Peach-teal only. Home: floating pill nav over a two-column tilted tile wall with sticker badges (New, Missing; text). Now Playing: poster style, large stacked title, the equalizer shown as three stacked pill bars that are the real controls of the existing Equalizer screen (bass, mid, treble summary; tapping opens the Equalizer, no new audio behaviour), a crossfade switch that is the real setting, round transport buttons. Tilts are static (no animation), removed from the accessibility tree and never reduce touch targets below 44 dp.
 
+**As built in P6:** theme `Sticker · Peach-teal` (light, day list; Brutal family, 18 dp corners; muted text `#6E3F2C`, darker than the mockup for margin). Pure rules are in `StickerWallRules` (`ui/common/StickerWall.kt`) with `StickerWallTest`. **Navigation:** a floating pill (Search, Home, Player with the live meter), each cell an icon over a word, the current page a filled round chip. **Home:** the picks and the recently added albums are two-column walls of tilted tiles (static tilt, right column dropped); a pick says **Missing** (Get at the cover's top corner), a recently added album says **New**; each tile is one button named "album, by artist, sticker word". **Now Playing:** a poster with a tilted cover in a round frame, the title stacked in large letters (whole words, at most three lines), a round transport, the equalizer as three pill bars (bass, mid, treble; averages of bands 1 to 3, 4 to 7 and 8 to 10) that open the real Equalizer and only read the saved settings, the real crossfade switch (the Crossfade page's own setting), and Queue and Lyrics pill buttons that open those panels under the poster. Nothing from the A4 text is left out.
+
 ## 8. Decision D-023 (text for DECISIONS.md)
 
 Recorded in [DECISIONS.md](DECISIONS.md) in the same commit as this plan.
@@ -170,7 +172,7 @@ One PR per phase except P0 and P7 (documents, direct to `main`). Each code PR: b
 | P3 | Web Crate Wall with Kraft, Mint Sleeve, Night Press | **done 2026-11-03**: PR [#703](https://github.com/abucalip/navi-librarian/pull/703), squash `c6dbc43bd113bd3033ad430e787d3c1da05377ce`; owner checked it in the browser; not published |
 | P4 | Android layout plumbing and Cassette Deck with Lime, Cobalt Reel, Tangerine Reel | **done 2026-11-03**: PR [#704](https://github.com/abucalip/navi-librarian/pull/704), squash `95e7da330c64763fd5f83b7430922e1cf0481b43`; owner checked it on the phone; not published |
 | P5 | Android Sheet Stack with Violet-orange, Acid Night, Daylight Sheet | **done 2026-11-03**: PR [#705](https://github.com/abucalip/navi-librarian/pull/705), squash `43159c7a60ca693b474421bb2537d57427328b90`; owner checked it on the phone; not published |
-| P6 | Android Sticker Wall with Peach-teal | not started |
+| P6 | Android Sticker Wall with Peach-teal | **done 2026-11-03**: PR [#706](https://github.com/abucalip/navi-librarian/pull/706), squash `ee9ff84886e3cca8b031b15def3ba395509f18d3`; owner checked it on the phone; not published |
 | P7 | Closeout: documents, a published release when the owner authorises it | not started |
 
 **Starting a later phase in a new session:** read `handoff.md`, `ACTIVE_WORK.md`, this plan and the previous phase's PR; reuse the infrastructure P1 (web) or P4 (Android) left; start from the layout's section above, build the three palettes from section 3, and follow `LOCAL_UI_TESTING.md` for the web check. Do not widen the scope (no new pages, endpoints or playback on the web).
