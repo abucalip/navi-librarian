@@ -1,0 +1,121 @@
+import SwiftUI
+
+/// Now Playing: full-window blurred artwork, left-aligned bold lyrics beside the cover, EQ / crossfade / quality as
+/// glass chips (the real settings). Mockup: `R.cupertino.now`. Dark over the artwork; chips use clear glass over
+/// media with a dimming layer (HIG, Materials).
+struct CupertinoNowPlaying: View {
+    let state: AppState
+    private let lyrics = [
+        "A slow tide under the floorboards", "the lamp keeps counting what we left", "one long note, then the room agrees",
+        "nobody here is in a hurry", "the water finds its level", "and the level finds us",
+    ]
+
+    var body: some View {
+        let a = Fixtures.albums[0]
+        ZStack(alignment: .topLeading) {
+            HStack(spacing: 6) {
+                TrafficLights()
+                Button { state.screen = .home } label: {
+                    Image(systemName: "chevron.backward").font(.system(size: 13, weight: .semibold))
+                }
+                .buttonStyle(.plain).accessibilityLabel("Back").padding(.leading, 14)
+            }
+            .padding(18)
+
+            HStack(spacing: 10) {
+                chip("text.quote", "Lyrics")
+                Button { state.screen = .queue } label: { chip("list.bullet", "Up Next") }.buttonStyle(.plain)
+            }
+            .frame(maxWidth: .infinity, alignment: .trailing).padding(.trailing, 20).padding(.top, 14)
+
+            player(a).frame(width: 420).padding(.leading, 90).padding(.top, 90)
+
+            lyricColumn
+                .frame(height: 560).padding(.leading, 640).padding(.trailing, 60).padding(.top, 90)
+
+            HStack(spacing: 10) {
+                chip("slider.horizontal.3", "EQ · Custom")
+                chip(nil, "Crossfade 6 s")
+                chip(nil, "Original quality")
+                chip(nil, "FLAC 16/44", strong: true)
+            }
+            .padding(.leading, 640).frame(maxHeight: .infinity, alignment: .bottom).padding(.bottom, 34)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .background(alignment: .topLeading) { backdrop(a) }   // a background never changes the layout size
+        .foregroundStyle(.white)
+        .clipShape(RoundedRectangle(cornerRadius: CU.windowRadius, style: .continuous))
+        .background(WindowConfigurator())
+    }
+
+    /// Stand-in for the blurred artwork: soft radial colour fields from the cover's hues. Gradients render the same
+    /// live and in screenshots; a real blurred cover replaces this once artwork loads (M5).
+    private func backdrop(_ a: AlbumItem) -> some View {
+        let h = a.hue / 360
+        let warm = Color(hue: h, saturation: 0.6, brightness: 0.85)
+        let deep = Color(hue: (h + 0.08).truncatingRemainder(dividingBy: 1), saturation: 0.75, brightness: 0.5)
+        return ZStack {
+            Color(red: 0.227, green: 0.165, blue: 0.11)
+            RadialGradient(colors: [warm.opacity(0.9), .clear], center: UnitPoint(x: 0.1, y: 0.1), startRadius: 0, endRadius: 900)
+            RadialGradient(colors: [deep.opacity(0.9), .clear], center: UnitPoint(x: 0.85, y: 0.95), startRadius: 0, endRadius: 800)
+            Color(red: 0.08, green: 0.06, blue: 0.04).opacity(0.35)
+        }
+        .accessibilityHidden(true)
+    }
+
+    private func player(_ a: AlbumItem) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            CoverView(album: a).clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .shadow(color: .black.opacity(0.5), radius: 35, y: 30)
+            Text("After the Flood").font(.system(size: 24, weight: .bold)).padding(.top, 22)
+            Text("Talk Talk — Laughing Stock").font(.system(size: 18)).opacity(0.7)
+            HStack(spacing: 10) {
+                Text("3:12")
+                Capsule().fill(.white.opacity(0.3)).frame(height: 5)
+                    .overlay(alignment: .leading) { GeometryReader { g in Capsule().fill(.white).frame(width: g.size.width * 0.33) } }
+                Text("-6:29")
+            }
+            .font(.system(size: 11)).monospacedDigit().opacity(0.85).padding(.top, 16)
+            HStack(spacing: 34) {
+                transport("shuffle", 17, "Shuffle")
+                transport("backward.fill", 24, "Previous")
+                transport("pause.fill", 34, "Pause")
+                transport("forward.fill", 24, "Next")
+                transport("repeat", 17, "Repeat")
+            }
+            .frame(maxWidth: .infinity).padding(.top, 16)
+        }
+    }
+
+    private func transport(_ symbol: String, _ size: CGFloat, _ label: String) -> some View {
+        Button { } label: { Image(systemName: symbol).font(.system(size: size)) }
+            .buttonStyle(.plain).accessibilityLabel(label)
+    }
+
+    private var lyricColumn: some View {
+        VStack(alignment: .leading, spacing: 22) {
+            ForEach(Array(lyrics.enumerated()), id: \.offset) { i, line in
+                Text(line).font(.system(size: 36, weight: .bold)).tracking(-0.7).lineSpacing(2)
+                    .foregroundStyle(.white.opacity(i == 2 ? 1 : 0.38))
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .mask(LinearGradient(stops: [.init(color: .clear, location: 0), .init(color: .black, location: 0.12),
+                                     .init(color: .black, location: 0.8), .init(color: .clear, location: 1)],
+                             startPoint: .top, endPoint: .bottom))
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Lyrics. Current line: \(lyrics[2])")
+    }
+
+    private func chip(_ symbol: String?, _ text: String, strong: Bool = false) -> some View {
+        HStack(spacing: 6) {
+            if let symbol { Image(systemName: symbol) }
+            Text(text)
+        }
+        .font(.system(size: 13, weight: .semibold)).lineLimit(1).fixedSize().padding(.horizontal, 14).frame(height: 32)
+        .background(Color.black.opacity(0.3), in: Capsule())          // dimming layer under clear glass
+        .glassEffect(.clear, in: Capsule())
+        .overlay { if strong { Capsule().fill(.white.opacity(0.18)) } }
+    }
+}
