@@ -32,6 +32,8 @@
   }
   :root[data-layout="tape"][data-brut] nav button:hover { background: var(--surface-hover); color: var(--text); border-color: var(--edge); transform: none; box-shadow: none; }
   :root[data-layout="tape"][data-brut] nav button.active { color: var(--brut-nav-text); background: var(--accent); border-color: var(--edge); box-shadow: none; }
+  /* The last tab of a group has no right rule: the next group's left rule is the divider (no double line). */
+  :root[data-layout="tape"] .nav-group > button:last-of-type { border-right: 0; }
   :root[data-layout="tape"] nav button:focus-visible { outline-offset: -4px; }
   /* The strip is text only: the rail icons are decorative and would make the eight tabs too wide. */
   :root[data-layout="tape"] nav button > .icon { display: none; }
@@ -39,6 +41,13 @@
   /* The version label sits at the right end of the strip. */
   :root[data-layout="tape"] .app-version { margin: 0 0 0 auto; padding: 0 0 0 16px; align-self: center; flex: 0 0 auto; white-space: nowrap; }
   :root[data-layout="tape"] main { margin-top: calc(82px + var(--tape-nav-h) + 30px); }
+
+  /* ---- Search fields are plain rectangles ---- */
+  :root[data-layout="tape"] .search-field,
+  :root[data-layout="tape"] .search-field::before,
+  :root[data-layout="tape"] .global-search input[type="search"],
+  :root[data-layout="tape"] .library-control input[type="search"],
+  :root[data-layout="tape"] .library-control select { border-radius: 0; }
 
   /* ---- Ruled lists: the ranked rows of every discovery page ---- */
   :root[data-layout="tape"] .ranked-list { border: var(--tape-rule); box-shadow: var(--brut-sh) var(--brut-sh) 0 var(--brut-shadow-color); background: var(--surface); }

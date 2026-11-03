@@ -71,6 +71,13 @@ class TapeLayoutTests(unittest.TestCase):
         self.assertIn("@keyframes tape-meter", outside)
         self.assertNotIn("nav", outside.replace("tape-meter", ""))
 
+    def test_the_tab_strip_has_one_rule_between_groups_and_the_search_fields_are_rectangles(self):
+        self.assertIn(':root[data-layout="tape"] .nav-group > button:last-of-type { border-right: 0; }', self.layouts)
+        rule = self.layouts.split("Search fields are plain rectangles")[1].split("}")[0]
+        for selector in (".search-field,", ".search-field::before,", '.global-search input[type="search"],'):
+            self.assertIn(selector, rule)
+        self.assertIn("border-radius: 0;", rule)
+
     def test_the_downloading_meter_is_decorative_and_stops_under_reduced_motion(self):
         self.assertIn('.acq-row[data-status="downloading"] .acq-status::after', self.layouts)
         self.assertIn('content: ""', self.layouts)
