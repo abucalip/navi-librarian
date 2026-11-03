@@ -89,14 +89,16 @@ struct CapsuleButtonStyle: ButtonStyle {
     var small = false
     var outlined = false
     var large = false
+    /// White text on a 28% white fill, for buttons over a banner image.
+    var translucent = false
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(.system(size: small ? 12 : 14, weight: .semibold))
             .lineLimit(1).fixedSize()
             .padding(.horizontal, small ? 10 : (large ? 24 : 20))
             .frame(minHeight: small ? 24 : (large ? 40 : 36))
-            .foregroundStyle(primary ? Color.white : (outlined ? CU.muted : CU.ink))
-            .background(primary ? CU.accent : (outlined ? Color.clear : CU.fill), in: Capsule())
+            .foregroundStyle(primary || translucent ? Color.white : (outlined ? CU.muted : CU.ink))
+            .background(primary ? CU.accent : (translucent ? Color.white.opacity(0.28) : (outlined ? Color.clear : CU.fill)), in: Capsule())
             .overlay { if outlined { Capsule().strokeBorder(CU.muted, lineWidth: 1.5) } }
             .opacity(configuration.isPressed ? 0.8 : 1)
     }

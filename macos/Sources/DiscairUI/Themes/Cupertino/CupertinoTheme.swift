@@ -47,10 +47,12 @@ struct CupertinoWindow: View {
             // Opaque content; flows under the floating sidebar and toolbar (content is never glass).
             content
                 .padding(.leading, 236)
-                .padding(.top, 66)
+                .padding(.top, state.screen == .artist ? CupertinoArtistLayout.bannerHeight : 66)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                 .background(Color.white)
                 .padding(.leading, 0)
+
+            if state.screen == .artist { CupertinoArtistBanner(state: state) }   // under the sidebar and toolbar
 
             CupertinoSidebar(state: state)
             CupertinoToolbar(state: state)
@@ -63,7 +65,7 @@ struct CupertinoWindow: View {
                 Circle().fill(Color.green).frame(width: 7, height: 7)
                 Text(state.connectionLabel)
             }
-            .font(.system(size: 11)).foregroundStyle(CU.muted)
+            .font(.system(size: 11)).foregroundStyle(state.screen == .artist ? Color.white.opacity(0.9) : CU.muted)   // over the dark banner
             .accessibilityElement(children: .combine)
             .accessibilityLabel("Connection: \(state.connectionLabel)")
             .frame(maxWidth: .infinity, alignment: .trailing)
@@ -80,6 +82,7 @@ struct CupertinoWindow: View {
         case .album: CupertinoAlbum(state: state)
         case .queue, .albums: CupertinoAlbumsGrid(state: state, inspector: state.screen == .queue)
         case .library: CupertinoLibrary(state: state)
+        case .artist: CupertinoArtist(state: state)
         default: Text("\(state.screen.rawValue): not built yet").foregroundStyle(CU.muted).padding(28)
         }
     }
