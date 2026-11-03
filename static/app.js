@@ -1280,7 +1280,18 @@ document.addEventListener('click', event => {
   if (!card || event.target.closest('button, a, input, select, textarea')) return;
   openAlbumModal(card);
 });
+// Ledger Room only: Ctrl+K (Cmd+K on a Mac) jumps to the header search. The page takes the key from the browser, which uses it
+// for its own search bar, so the shortcut exists in no other theme and the hint beside the field is shown by this layout alone.
+const searchShortcutLabel = /Mac|iPhone|iPad/.test(navigator.platform || '') ? '\u2318K' : 'Ctrl K';
+document.querySelectorAll('.search-shortcut').forEach(hint => { hint.textContent = searchShortcutLabel; });
 document.addEventListener('keydown', event => {
+  if ((event.ctrlKey || event.metaKey) && !event.altKey && !event.shiftKey && event.key.toLowerCase() === 'k'
+      && document.documentElement.dataset.layout === 'ledger') {
+    event.preventDefault();
+    setSearchExpanded(true, {focus: true});
+    $('globalSearchInput').select();
+    return;
+  }
   const albumModalOpen = !$('albumModalBackdrop').hidden;
   if (event.key === 'Escape' && albumModalOpen) closeAlbumModal();
   else if (event.key === 'Escape' && !appMenu.hidden) setAppMenuOpen(false, {focusToggle: true});

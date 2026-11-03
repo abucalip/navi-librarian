@@ -117,6 +117,18 @@ class LedgerLayoutTests(unittest.TestCase):
         self.assertNotIn("requestJSON", body)
         self.assertIn("7 * 86400", body)
 
+    def test_ctrl_k_jumps_to_search_only_in_the_ledger_layout_and_the_hint_is_hidden_elsewhere(self):
+        app = (STATIC / "app.js").read_text(encoding="utf-8")
+        index = (ROOT / "app" / "templates" / "index.html").read_text(encoding="utf-8")
+        handler = app.split("document.addEventListener('keydown', event => {\n  if ((event.ctrlKey")[1].split("return;")[0]
+        self.assertIn("event.key.toLowerCase() === 'k'", handler)
+        self.assertIn("document.documentElement.dataset.layout === 'ledger'", handler)
+        self.assertIn("event.preventDefault();", handler)
+        self.assertIn("setSearchExpanded(true, {focus: true});", handler)
+        self.assertIn('<kbd class="search-shortcut" aria-hidden="true" hidden></kbd>', index)
+        self.assertIn(':root[data-layout="ledger"] .search-shortcut {', self.ledger)
+        self.assertNotIn(".search-shortcut", (STATIC / "app.css").read_text(encoding="utf-8"))
+
     def test_the_default_theme_is_still_ink(self):
         self.assertIn("ink", self.script.split("var THEMES = [")[1].split("\n")[1])
 

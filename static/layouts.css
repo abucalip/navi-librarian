@@ -163,6 +163,11 @@
   :root[data-layout="ledger"] .library-control input[type="search"],
   :root[data-layout="ledger"] .library-control select { border-radius: 0; }
 
+  /* The Ctrl K hint sits inside the field, left of the magnifier; the shortcut itself is in static/app.js. */
+  :root[data-layout="ledger"] .search-shortcut { display: block; position: absolute; right: 52px; top: 50%; transform: translateY(-50%); padding: 0 6px; color: var(--text); background: var(--surface-raised); border: var(--bw) solid var(--edge); font: 700 var(--text-xs)/1.5 var(--mono); pointer-events: none; }
+  :root[data-layout="ledger"] .global-search input[type="search"] { padding-right: 120px; }
+  :root[data-layout="ledger"] .global-search input[type="search"]:focus + .search-shortcut { display: none; }
+
   /* ---- Tables: the ranked rows of every discovery page are ledger lines ---- */
   :root[data-layout="ledger"] .ranked-list { border: var(--ledger-rule); background: var(--surface); box-shadow: var(--brut-sh) var(--brut-sh) 0 var(--brut-shadow-color); }
   :root[data-layout="ledger"] .ranked-row {
