@@ -56,7 +56,7 @@ Rules: mockups are the spec and built element by element (no light re-skins); ge
 
 ### 4.1 Apple design guidance applied to the macOS themes
 
-Sources actually read: WWDC25 "Build an AppKit app with the new design" (session 310) and "Get to know the new design system" (session 356). Apple's Human Interface Guidelines pages are rendered by script and could not be read in full; the HIG pages for Toolbars, Sidebars, Materials and Layout still need a direct read before M4.
+Sources actually read: WWDC25 "Build an AppKit app with the new design" (session 310) and "Get to know the new design system" (session 356). The HIG pages for Toolbars, Sidebars, Materials and Layout were read in full on 2026-11-03 (saved as PDFs by the owner); findings and the open differences from the mockups are in `macos/DESIGN.md`.
 
 - Liquid Glass is for the functional layer that floats above content (sidebar, toolbar, player, sheets), never for content itself. No glass behind content as a sibling, no glass on glass.
 - Sidebars are inset, floating glass; content extends edge to edge and flows under them (background extension), with text and controls layered above.
