@@ -131,9 +131,10 @@ struct CupertinoSettings: View {
                 if saved != nil { Button("Remove") { run(remove) }.buttonStyle(CapsuleButtonStyle(small: true, outlined: true)) }
             }
             HStack {
-                TextField("Username", text: user)
-                SecureField("Password", text: pass)
+                TextField("Username", text: user).frame(width: 220)
+                SecureField("Password", text: pass).frame(width: 220)
                 Button(saved == nil ? "Save" : "Replace") { run(save) }.buttonStyle(CapsuleButtonStyle(small: true))
+                Spacer(minLength: 0)
             }
             .textFieldStyle(.roundedBorder).autocorrectionDisabled()
         }
