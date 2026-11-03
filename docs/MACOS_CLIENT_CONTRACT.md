@@ -1,6 +1,6 @@
 # macOS client contract (Discair)
 
-Status: **approved by the owner and merged (PR [#713](https://github.com/abucalip/navi-librarian/pull/713), squash `8a3bab9706e49dcd485cb6c92073ee0285b1a4e7`, 2026-11-03). Phase M0 is done. M1 (Swift package skeleton, section 11) is merged (PR [#716](https://github.com/abucalip/navi-librarian/pull/716), squash `77e87484042a9db5c6987cb6b15f0f5b38e94d60`, 2026-11-03); M2 (audio spike, section 12) is approved by the owner; measurements are recorded in section 12 and in review.** Written from the owner's answers of 2026-11-03. Mockup rounds 1 and 2 are done (section 9); the launch themes are Cupertino and Zine Spread.
+Status: **approved by the owner and merged (PR [#713](https://github.com/abucalip/navi-librarian/pull/713), squash `8a3bab9706e49dcd485cb6c92073ee0285b1a4e7`, 2026-11-03). Phase M0 is done. M1 (Swift package skeleton, section 11) is merged (PR [#716](https://github.com/abucalip/navi-librarian/pull/716), squash `77e87484042a9db5c6987cb6b15f0f5b38e94d60`, 2026-11-03); M2 (audio spike, section 12) is merged (PR [#717](https://github.com/abucalip/navi-librarian/pull/717), squash `f4d01daafda2b581aa881ffe3d8400186074fe77`, 2026-11-03); M4 (window shell, theme layer, Cupertino and Zine Spread) is next, to start only when the owner asks.** Written from the owner's answers of 2026-11-03. Mockup rounds 1 and 2 are done (section 9); the launch themes are Cupertino and Zine Spread.
 
 ## 1. Purpose and scope
 

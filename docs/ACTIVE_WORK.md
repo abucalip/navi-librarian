@@ -140,11 +140,13 @@ Done: Genres grid and four album shelves on the dashboard, the Recommended slide
 - **Pipeline Board dropped (2026-11-03, owner decision):** the dashboard part (PR [#710](https://github.com/abucalip/navi-librarian/pull/710)) is removed from `main` by PR [#712](https://github.com/abucalip/navi-librarian/pull/712), squash `97a80caf5954c20d3467d07cb5a38b2fd2506725`; the P2b PR ([#711](https://github.com/abucalip/navi-librarian/pull/711)) is closed unmerged. Plan section 5 B records the drop.
 - **Next action:** none queued. The next phase in the plan is P3a, Window Manager, to start only when the owner asks.
 
-## 2j. macOS client (Discair for Mac): M1 merged, M2 in progress
+## 2j. macOS client (Discair for Mac): M1 and M2 merged, M4 next
 
 - Governing contract: [MACOS_CLIENT_CONTRACT.md](MACOS_CLIENT_CONTRACT.md) (D-025), merged in PR [#713](https://github.com/abucalip/navi-librarian/pull/713), squash `8a3bab9706e49dcd485cb6c92073ee0285b1a4e7`. Mockups: `docs/design/macos-m3/mockups.html` (round 1) and `docs/design/macos-m4/mockups.html` (round 2).
 - Launch themes Cupertino and Zine Spread; Bento Block and Native Glass v2 are documented for later (contract section 4).
-- **M1 merged (2026-11-03, owner-approved):** PR [#716](https://github.com/abucalip/navi-librarian/pull/716), squash `77e87484042a9db5c6987cb6b15f0f5b38e94d60` (package in `macos/`, CI `macos-package.yml`; contract section 11). **M2 (audio spike) approved by the owner and in progress.** The owner supplied the Navidrome login (local `config.env`) and the SMB user name; the two server checks (contract 11.1 and 11.2) run as part of M2.
+- **M1 merged (2026-11-03, owner-approved):** PR [#716](https://github.com/abucalip/navi-librarian/pull/716), squash `77e87484042a9db5c6987cb6b15f0f5b38e94d60` (package in `macos/`, CI `macos-package.yml`; contract section 11).
+- **M2 merged (2026-11-03, owner-approved):** PR [#717](https://github.com/abucalip/navi-librarian/pull/717), squash `f4d01daafda2b581aa881ffe3d8400186074fe77` (`discair-audio-spike` and measured results, contract section 12; Navidrome playlist check passed, 11.1; Librarian login limit is per device, not shared, 11.2). Done by the owner: switched on "Report Real Path" for the `discair [CFNetwork]` player in Navidrome, listened to gapless and crossfade on headphones (clean, smooth), ran the rate-limit test. Server path root is `/music` (container) mapped to `/Volumes/media/library/music`; 540 of 540 sampled songs resolved.
+- **Next action:** M4 (window shell, theme layer, Cupertino and Zine Spread, screenshot tests), to start only when the owner asks. Before M4: read the HIG pages for Toolbars, Sidebars, Materials and Layout (contract 4.1). Open items carried into M5: a growing-file reader for starting playback before the download ends, Opus transcode for Vorbis and WMA sources (owner chose opus at 192), the player switch "Report Real Path" for the app's own player, and a by-ear check of a DAC or Bluetooth output.
 
 ## 3. Recommendation engine — gated
 

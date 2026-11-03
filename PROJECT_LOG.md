@@ -1,3 +1,15 @@
+## 2026-11-03 — macOS M2 audio spike merged (PR #717)
+
+- **Merged (owner request):** PR [#717](https://github.com/abucalip/navi-librarian/pull/717), squash `f4d01daafda2b581aa881ffe3d8400186074fe77`, from tested head `6905e2ecb00e66c36e6b5e120579d562f2430021`; compile, container-smoke, swift, test-and-build and validate-container passed on that head (the `swift` job was awaited before merging).
+- **What:** phase M2 of `docs/MACOS_CLIENT_CONTRACT.md`. `discair-audio-spike` (`macos/Sources/AudioSpike`, `macos/scripts/spike.sh`), results in contract section 12. No app code.
+- **Measured (agent):** `AVAudioFile` decodes FLAC, M4A, MP3 and Ogg Opus; Ogg Vorbis and WMA do not open (server transcode needed). `AVAudioUnitEQ` 10 bands exact (+12.00 dB at the band, 0.1 dB elsewhere). Equal-power crossfade level flat to 0.00 dB, linear dips 3.01 dB. Gapless exact for split PCM and FLAC files and for two real MP3 joins, including two *Dark Side of the Moon* segues (0.0 ms stored silence). Output device rate switch to 96 kHz accepted and restored. SMB: tag read 50 ms, worst waveform 3.4 s (52 MB FLAC). Truncated MP3 and Opus open and decode, FLAC from about 2 MiB, M4A not. All offline tests are silent; `swift build`, `swift test` (81) and `xcodebuild` passed.
+- **Checks:** (a) Navidrome playlist API **passed** against the owner's server (create, read back, add, delete, gone; run by the agent with the owner's login from the local `config.env`, nothing printed or committed; the temporary playlist was removed). (b) Librarian login limit **not shared**: the Mac got 429 on attempt 9 through `tailscale serve`, the owner's phone through the same address still got 401, so the limit is per device (run by the owner).
+- **Path mapping finding:** Navidrome's Subsonic `path` is a rebuilt name unless "Report Real Path" is on for the player (default off, `Subsonic.DefaultReportRealPath`). Owner switched it on for `discair [CFNetwork]`; the reported path is `/music/...` (container), mapped to `/Volumes/media/library/music`; 540 of 540 songs from 80 random albums resolved. My first guess of the server root (`/media/library/music`) was wrong and corrected.
+- **By ear (owner, headphones):** two gapless joins clean, 4 s crossfade smooth.
+- **Not done / not claimed:** DAC or Bluetooth output, Opus and MP3 transcode playback by ear, the growing-file reader, the app UI, 11.1 song removal or reordering in playlists.
+- **State:** merged only. Not published, not deployed.
+- **Next action:** M4 (on the owner's word).
+
 ## 2026-11-03 — macOS M1 Swift package merged (PR #716)
 
 - **Merged (owner request):** PR [#716](https://github.com/abucalip/navi-librarian/pull/716), squash `77e87484042a9db5c6987cb6b15f0f5b38e94d60`, from tested head `c9feee10d6029f29d763194882e9896a03285f59`; compile, container-smoke, swift, test-and-build and validate-container passed on that head. The new `swift` job ran on `macos-26` with Xcode 26.6.
