@@ -117,6 +117,44 @@ function pipelineSameAlbum(entry, artist, album) {
     && String(entry.artist || entry.album_artist || '').toLocaleLowerCase() === String(artist || '').toLocaleLowerCase();
 }
 
+// A tile is the mockup's card: a small cover, the title and the artist, with the genre colour edge. Its controls are the app's own
+// Get, Save and Not for me (createActionGroup), so a tile that is not in the library carries the real request and bookmark.
+function pipelineTile(item, options = {}) {
+  const name = item.name || item.album || 'Untitled album';
+  const artist = item.artist || item.album_artist || 'Unknown artist';
+  const owned = Boolean(item.owned);
+  const tile = document.createElement('article');
+  tile.className = 'card pipeline-tile' + (owned ? ' is-owned' : '');
+  tile.dataset.album = name;
+  tile.style.setProperty('--tc', 'hsl(' + genreTileHue(artist) + ' 70% 45%)');
+  const open = document.createElement('button');
+  open.type = 'button';
+  open.className = 'pipeline-tile-open';
+  open.setAttribute('aria-label', 'Open ' + name + ' by ' + artist);
+  open.append(buildAlbumArtwork({artwork_url: item.artwork_url, owned, artist, name}, 'pipeline-tile-art', 84));
+  const text = document.createElement('span');
+  text.className = 'pipeline-tile-text';
+  addTextElement(text, 'b', '', displayAlbumName(name));
+  addTextElement(text, 'small', '', [artist, item.year].filter(Boolean).join(' · '));
+  open.append(text);
+  open.addEventListener('click', () => openLibraryTarget(owned
+    ? albumTarget({...item, name, artist, key: foldKey(artist) + '/' + foldKey(name)})
+    : namedAlbumTarget(artist, name, item)));
+  tile.append(open);
+  if (owned) {
+    addTextElement(tile, 'span', 'pipeline-tile-state', 'In library');
+  } else {
+    const metadata = {artist, album: name, year: item.year || null, release_group_mbid: item.release_group_mbid || null};
+    const group = createActionGroup(artist, name, metadata, {
+      listName: options.listName || 'dashboard_shelf',
+      onDismiss: () => sendFeedback('dismiss', artist, name, metadata, options.listName || 'dashboard_shelf', tile),
+    });
+    if (options.saved) setSaveButtonState(group.querySelector('.save-album'), true, name);
+    tile.append(group);
+  }
+  return tile;
+}
+
 function pipelineColumnElement(column) {
   const section = document.createElement('section');
   section.className = 'pipeline-col';
@@ -247,11 +285,12 @@ function pipelineJobCard(job) {
   const card = document.createElement('article');
   card.className = 'card pipeline-job';
   card.dataset.album = job.album || '';
-  const name = document.createElement('b');
-  name.textContent = job.album || 'Untitled album';
-  const who = document.createElement('small');
-  who.textContent = [job.artist, info.label].filter(Boolean).join(' · ');
-  card.append(name, who);
+  card.append(buildAlbumArtwork({artist: job.artist, name: job.album, artwork_url: null}, 'pipeline-tile-art', 84));
+  const text = document.createElement('span');
+  text.className = 'pipeline-tile-text';
+  addTextElement(text, 'b', '', job.album || 'Untitled album');
+  addTextElement(text, 'small', '', [job.artist, info.label].filter(Boolean).join(' · '));
+  card.append(text);
   const details = job.details || {};
   const progress = details.live_progress;
   if (String(job.status || '').toLowerCase() === 'downloading' && progress && Number.isFinite(Number(progress.percent))) {
@@ -302,7 +341,7 @@ function renderPipelineBoard(jobs) {
   const picks = (typeof dashboardPickItems !== 'undefined' ? dashboardPickItems : []);
   for (const item of picks.slice(0, 12)) {
     const shelf = pipelinePickAsShelf(item);
-    pipelinePlaceCard(buildShelfCard(shelf, true), lists.get('recommended'), shelf.name);
+    pipelinePlaceCard(pipelineTile(shelf, {listName: 'dashboard_shelf'}), lists.get('recommended'), shelf.name);
   }
   // Queued and Downloading: from the acquisition list already loaded.
   for (const job of pipelineJobs) {
@@ -311,7 +350,7 @@ function renderPipelineBoard(jobs) {
   }
   // In library: the recent library shelf, already loaded by the dashboard.
   for (const item of (shelfItems.Recent || []).slice(0, 12)) {
-    pipelinePlaceCard(buildShelfCard({...item, owned: true}, false), lists.get('library'), item.name);
+    pipelinePlaceCard(pipelineTile({...item, owned: true}), lists.get('library'), item.name);
   }
 
   // Saved: the Saved page's list, with the existing Saved card. The column waits for its list, so it shows no empty message until then.
@@ -320,7 +359,7 @@ function renderPipelineBoard(jobs) {
     const list = lists.get('saved');
     if (!list) return;
     list.replaceChildren();
-    for (const entry of entries.slice(0, 12)) pipelinePlaceCard(buildSavedCard(entry), list, entry.album);
+    for (const entry of entries.slice(0, 12)) pipelinePlaceCard(pipelineTile({...entry, name: pipelineNameOf(entry)}, {listName: 'saved', saved: true}), list, pipelineNameOf(entry));
     finishPipelineColumns(cols, lists);
     renderPipelineAlbum();
   });
@@ -468,71 +507,96 @@ function renderPipelineLanes() {
   status.textContent = 'Loading genres…';
   pipelineLoadGenres().then(genres => {
     status.textContent = genres.length ? '' : 'No genres in your library yet.';
+    $('pipelineLanesCount').textContent = pluralize(genres.length, 'genre', 'genres');
     list.replaceChildren(...genres.map(buildPipelineLane));
+    const genreSelect = $('pipelineFilterGenre');
+    genreSelect.replaceChildren(new Option('All genres', ''), ...genres.map(genre => new Option(genre.name, genre.tag)));
+    pipelineApplyLaneFilters();
   }).catch(() => {
     box.dataset.built = '';
     status.textContent = 'Genres could not be loaded. Open Library again to retry.';
   });
 }
 
+// Each lane's albums load once, when the lane first comes into view (the mockup's lanes are always open, so "open" means "seen").
+const pipelineLaneObserver = typeof IntersectionObserver === 'function'
+  ? new IntersectionObserver(entries => {
+    for (const entry of entries) {
+      if (!entry.isIntersecting) continue;
+      pipelineLaneObserver.unobserve(entry.target);
+      pipelineLoadLane(entry.target);
+    }
+  }, {rootMargin: '200px'})
+  : null;
+
 function buildPipelineLane(genre) {
-  const id = 'pipelineLane' + (pipelineLaneSeq += 1);
   const lane = document.createElement('section');
   lane.className = 'pipeline-lane';
+  lane.dataset.tag = genre.tag;
+  lane.dataset.name = genre.name;
   lane.style.setProperty('--tc', 'hsl(' + genreTileHue(genre.tag) + ' 70% 45%)');
-  const head = document.createElement('h4');
-  const toggle = document.createElement('button');
-  toggle.type = 'button';
-  toggle.className = 'pipeline-lane-toggle';
-  toggle.setAttribute('aria-expanded', 'false');
-  toggle.setAttribute('aria-controls', id);
-  addTextElement(toggle, 'span', 'pipeline-lane-name', genre.name);
-  addTextElement(toggle, 'span', 'pipeline-lane-count', pluralize(genre.album_count, 'album', 'albums'));
-  head.append(toggle);
-  const panel = document.createElement('div');
-  panel.id = id;
-  panel.className = 'pipeline-lane-panel';
-  panel.hidden = true;
-  let loaded = false;
-  toggle.addEventListener('click', async () => {
-    const open = toggle.getAttribute('aria-expanded') !== 'true';
-    toggle.setAttribute('aria-expanded', String(open));
-    panel.hidden = !open;
-    if (!open || loaded) return;
-    loaded = true;
-    panel.replaceChildren();
-    addTextElement(panel, 'p', 'pipeline-lane-note', 'Loading albums…');
-    try {
-      const data = await requestJSON('/api/genres/' + encodeURIComponent(genre.tag));
-      const section = data.sections && data.sections.albums;
-      const items = section && section.available ? section.items.filter(item => item.name).slice(0, PIPELINE_LANE_ALBUMS) : [];
-      panel.replaceChildren();
-      if (items.length) {
-        const cards = document.createElement('ul');
-        cards.className = 'pipeline-lane-cards';
-        for (const item of items) {
-          const li = document.createElement('li');
-          li.append(buildShelfCard({...item, owned: Boolean(item.owned)}, true));
-          cards.append(li);
-        }
-        panel.append(cards);
-      } else {
-        addTextElement(panel, 'p', 'pipeline-lane-note', 'No albums could be listed for this genre right now.');
-      }
-      const all = document.createElement('button');
-      all.type = 'button';
-      all.className = 'link-button pipeline-lane-all';
-      all.textContent = 'Open the ' + genre.name + ' page';
-      all.addEventListener('click', () => openLibraryTarget({type: 'genre', tag: genre.tag}));
-      panel.append(all);
-    } catch (error) {
-      loaded = false;
-      panel.replaceChildren();
-      addTextElement(panel, 'p', 'pipeline-lane-note', 'This genre could not be loaded. Close and open it to try again.');
-    }
-  });
-  lane.append(head, panel);
+  addTextElement(lane, 'b', 'pipeline-lane-name', genre.name);
+  const tiles = document.createElement('div');
+  tiles.className = 'pipeline-lane-tiles';
+  tiles.setAttribute('aria-label', genre.name + ' albums');
+  const note = addTextElement(tiles, 'p', 'pipeline-lane-note', 'Loading albums…');
+  note.dataset.loading = '1';
+  lane.append(tiles);
+  if (pipelineLaneObserver) pipelineLaneObserver.observe(lane);
+  else pipelineLoadLane(lane);
   return lane;
+}
+
+async function pipelineLoadLane(lane) {
+  const tiles = lane.querySelector('.pipeline-lane-tiles');
+  try {
+    const data = await requestJSON('/api/genres/' + encodeURIComponent(lane.dataset.tag));
+    const section = data.sections && data.sections.albums;
+    const items = section && section.available ? section.items.filter(item => item.name).slice(0, PIPELINE_LANE_ALBUMS) : [];
+    tiles.replaceChildren();
+    if (!items.length) {
+      addTextElement(tiles, 'p', 'pipeline-lane-note', 'No albums could be listed for this genre right now.');
+    } else {
+      for (const item of items) {
+        const tile = pipelineTile({...item, owned: Boolean(item.owned)}, {listName: 'library_lane'});
+        tile.dataset.year = item.year ? String(item.year) : '';
+        tile.dataset.genre = lane.dataset.tag;
+        tiles.append(tile);
+      }
+    }
+    const all = document.createElement('button');
+    all.type = 'button';
+    all.className = 'link-button pipeline-lane-all';
+    all.textContent = 'Open the ' + lane.dataset.name + ' page';
+    all.addEventListener('click', () => openLibraryTarget({type: 'genre', tag: lane.dataset.tag}));
+    tiles.append(all);
+    pipelineApplyLaneFilters();
+  } catch (error) {
+    tiles.replaceChildren();
+    addTextElement(tiles, 'p', 'pipeline-lane-note', 'This genre could not be loaded. Reload Library to try again.');
+  }
+}
+
+// Filter ▸ genre · year. Quality is shown in the mockup but the library rows carry no quality field, so it is shown disabled.
+function pipelineApplyLaneFilters() {
+  const genre = $('pipelineFilterGenre') ? $('pipelineFilterGenre').value : '';
+  const year = $('pipelineFilterYear') ? $('pipelineFilterYear').value : '';
+  const years = new Set();
+  for (const lane of document.querySelectorAll('#pipelineLaneList .pipeline-lane')) {
+    const onGenre = !genre || lane.dataset.tag === genre;
+    lane.hidden = !onGenre;
+    for (const tile of lane.querySelectorAll('.pipeline-tile')) {
+      if (tile.dataset.year) years.add(tile.dataset.year);
+      tile.hidden = Boolean(year) && tile.dataset.year !== year;
+    }
+  }
+  const yearSelect = $('pipelineFilterYear');
+  if (yearSelect && yearSelect.dataset.count !== String(years.size)) {
+    const current = yearSelect.value;
+    yearSelect.replaceChildren(new Option('Any year', ''), ...[...years].sort().reverse().map(value => new Option(value, value)));
+    yearSelect.value = years.has(current) ? current : '';
+    yearSelect.dataset.count = String(years.size);
+  }
 }
 
 /* ---------------------------------------------------------------- Album: stage tracker (P2b)
@@ -567,6 +631,7 @@ function renderPipelineAlbum() {
   const getState = getControl ? (getControl.disabled ? 'busy' : 'ready') : 'none';
   const signature = JSON.stringify([artist, name, current, saved, owned, getState]);
   box.hidden = false;
+  pipelineLabelTracks();
   if (box.dataset.sig === signature) return;
   box.dataset.sig = signature;
 
@@ -578,7 +643,8 @@ function renderPipelineAlbum() {
     const item = document.createElement('li');
     item.className = 'pipeline-stage is-' + state;
     if (state === 'current') item.setAttribute('aria-current', 'step');
-    addTextElement(item, 'span', 'pipeline-stage-name', stageName);
+    const label = stageName === 'In library' && tracks && tracks.length ? stageName + ' ' + tracks.filter(track => track.owned).length + '/' + tracks.length : stageName;
+    addTextElement(item, 'span', 'pipeline-stage-name', label);
     addTextElement(item, 'span', 'pipeline-stage-word', PIPELINE_STAGE_WORDS[state]);
     addTextElement(item, 'span', 'pipeline-stage-pos', 'Step ' + (index + 1) + ' of ' + PIPELINE_STAGES.length);
     list.append(item);
@@ -590,8 +656,8 @@ function renderPipelineAlbum() {
   actions.className = 'pipeline-stage-actions';
   actions.setAttribute('role', 'group');
   actions.setAttribute('aria-label', 'Move ' + name);
+  const metadata = {artist, album: name, year: album.year || null, release_group_mbid: album.release_group_mbid || null};
   if (!owned) {
-    const metadata = {artist, album: name, year: album.year || null, release_group_mbid: album.release_group_mbid || null};
     const save = createSaveButton(artist, name, metadata, 'pipeline_album');
     setSaveButtonState(save, saved, name);
     actions.append(save);
@@ -599,17 +665,40 @@ function renderPipelineAlbum() {
       const get = document.createElement('button');
       get.type = 'button';
       get.className = 'pipeline-stage-get';
-      get.textContent = getState === 'busy' ? 'Requesting…' : 'Get the album';
+      const partial = tracks && tracks.some(track => track.owned);
+      get.textContent = getState === 'busy' ? 'Requesting…' : partial ? 'Queue the rest' : 'Get the album';
       get.disabled = getState === 'busy';
       get.setAttribute('aria-label', getState === 'busy' ? 'Requesting ' + name : 'Get ' + name);
       get.addEventListener('click', () => getControl.click());
       actions.append(get);
     }
+    // Not for me: the app's own feedback action, with its undo, as on the cards.
+    const dismiss = document.createElement('button');
+    dismiss.type = 'button';
+    dismiss.className = 'pipeline-stage-dismiss';
+    dismiss.textContent = 'Not for me';
+    dismiss.setAttribute('aria-label', 'Not for me: ' + name);
+    dismiss.addEventListener('click', () => sendFeedback('dismiss', artist, name, metadata, 'pipeline_album', null));
+    actions.append(dismiss);
   }
   const line = document.createElement('p');
   line.className = 'pipeline-stage-now';
   line.textContent = now;
   box.replaceChildren(list, line, actions);
+}
+
+// The tracklist rows read as the mockup's rows. An owned track gets an OWNED tag; a missing track keeps its own Get button, which the
+// layout styles as the GET tag.
+function pipelineLabelTracks() {
+  for (const row of document.querySelectorAll('#albumTracks > li.track')) {
+    if (row.querySelector(':scope > .pipeline-tag')) continue;
+    const control = row.querySelector('.get-track');
+    if (control) continue;
+    const tag = document.createElement('span');
+    tag.className = 'pipeline-tag is-owned';
+    tag.textContent = 'Owned';
+    row.append(tag);
+  }
 }
 
 /* ---------------------------------------------------------------- Artist: lanes and drop to Queued (P2b)
@@ -651,6 +740,11 @@ function renderPipelineArtist() {
     }
   }
   strip.hidden = !(wide && rows.length);
+  // The mockup's header line: owned of the known albums (owned plus the missing list, which the API caps at 50).
+  const owned = $('artistOwnedAlbums').children.length;
+  if (wide && $('artistDetailStatus') && owned + rows.length) {
+    $('artistDetailStatus').textContent = owned + ' of ' + (owned + rows.length) + ' known albums in your library';
+  }
 }
 
 function pipelineWireArtistStrip() {
@@ -692,6 +786,7 @@ function pipelineRefresh() {
 }
 
 function pipelineWire() {
+  for (const id of ['pipelineFilterGenre', 'pipelineFilterYear']) if ($(id)) $(id).addEventListener('change', pipelineApplyLaneFilters);
   const board = $('pipelineBoard');
   // Enter and Escape close an open Move to menu; focus returns to its button.
   if (board) {

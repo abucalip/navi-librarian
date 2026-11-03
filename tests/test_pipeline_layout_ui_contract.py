@@ -111,10 +111,16 @@ class PipelineLayoutTests(unittest.TestCase):
         self.assertIn("button.textContent = 'Move to…';", self.pipe_js)
 
     def test_the_board_takes_its_cards_from_the_app_builders(self):
-        for builder in ("buildShelfCard(", "buildSavedCard(", "acquisitionStatusInfo(", "pipelineLoadSaved("):
+        # Tiles carry the app's own action group (Get, Save, Not for me) and its artwork builder.
+        for builder in ("createActionGroup(", "buildAlbumArtwork(", "acquisitionStatusInfo(", "pipelineLoadSaved(", "setSaveButtonState("):
             self.assertIn(builder, self.pipe_js)
         self.assertIn("/api/discovery/for_me", self.pipe_js)
         self.assertNotIn("/api/library/", self.pipe_js)
+        self.assertIn("sendFeedback('dismiss', artist, name, metadata", self.pipe_js)
+
+    def test_no_card_builder_shelf_cards_remain_on_the_board(self):
+        self.assertNotIn("buildShelfCard(shelf", self.pipe_js)
+        self.assertNotIn("buildSavedCard(entry)", self.pipe_js)
 
     def test_the_part_one_count_bug_is_gone(self):
         # Part one read an undeclared `count` in pipelineColumnElement, which threw as soon as the board drew.
@@ -189,11 +195,20 @@ class PipelineLayoutTests(unittest.TestCase):
         self.assertNotIn("sendJSON", drop)
         self.assertIn("'Missing (drag to Queued)'", self.pipe_js)
 
-    def test_genre_lanes_load_on_first_open_and_reuse_the_genre_endpoint(self):
-        lane = self.pipe_js.split("function buildPipelineLane")[1].split("/* ----")[0]
-        self.assertIn("if (!open || loaded) return;", lane)
-        self.assertIn("requestJSON('/api/genres/' + encodeURIComponent(genre.tag))", lane)
-        self.assertIn("buildShelfCard({...item, owned: Boolean(item.owned)}, true)", lane)
+    def test_genre_lanes_load_when_first_seen_and_reuse_the_genre_endpoint(self):
+        lane = self.pipe_js.split("async function pipelineLoadLane")[1].split("/* ----")[0]
+        self.assertIn("pipelineLaneObserver.unobserve(entry.target);", self.pipe_js)
+        self.assertIn("requestJSON('/api/genres/' + encodeURIComponent(lane.dataset.tag))", lane)
+        self.assertIn("pipelineTile({...item, owned: Boolean(item.owned)}, {listName: 'library_lane'})", lane)
+        # A failed lane is not re-observed: that would retry in a loop while it stays on screen.
+        self.assertNotIn("observe(lane)", lane.split("catch")[1])
+
+    def test_library_filters_are_genre_and_year_and_quality_is_disabled(self):
+        self.assertIn('id="pipelineFilterGenre"', self.html)
+        self.assertIn('id="pipelineFilterYear"', self.html)
+        self.assertIn('id="pipelineFilterQuality" disabled', self.html)
+        self.assertIn("$(id).addEventListener('change', pipelineApplyLaneFilters)", self.pipe_js)
+        self.assertIn("tile.hidden = Boolean(year) && tile.dataset.year !== year;", self.pipe_js)
 
     def test_p2b_new_rules_are_scoped_and_keep_hidden_elements_hidden(self):
         for selector in (".pipeline-lanes[hidden]", ".pipeline-stages[hidden]", ".pipeline-drop[hidden]", "#pipelineAcq[hidden]"):

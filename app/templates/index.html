@@ -398,7 +398,15 @@
         <p id="libraryStatus" class="status-line" aria-live="polite"></p>
         <!-- Pipeline Board layout only (hidden in every other theme): genre swimlanes. static/layout-pipeline.js builds them when Library shows. -->
         <section id="pipelineLanes" class="pipeline-lanes" aria-labelledby="pipelineLanesHeading" hidden>
-          <h3 id="pipelineLanesHeading">Genres in your library</h3>
+          <div class="pipeline-lanes-top">
+            <h3 id="pipelineLanesHeading">In library · <span id="pipelineLanesCount"></span></h3>
+            <div class="pipeline-filter" role="group" aria-label="Filter">
+              <span class="pipeline-filter-label" aria-hidden="true">Filter ▸</span>
+              <label>Genre <select id="pipelineFilterGenre"></select></label>
+              <label>Year <select id="pipelineFilterYear"><option value="">Any year</option></select></label>
+              <label title="The library rows carry no quality field yet">Quality <select id="pipelineFilterQuality" disabled><option>Not in library data</option></select></label>
+            </div>
+          </div>
           <p id="pipelineLanesStatus" class="status-line" aria-live="polite"></p>
           <div id="pipelineLaneList" class="pipeline-lane-list"></div>
         </section>
