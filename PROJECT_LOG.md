@@ -1,3 +1,11 @@
+## 2026-11-04 — macOS M5 optional media cache merged (PR #729)
+
+- **Merged (owner request):** PR [#729](https://github.com/abucalip/navi-librarian/pull/729), squash `2eb51863a8690e199fef17960678087844dad33d`, from tested head `f2b19490bcef2a9c37a1477568818676e98a05ce`; compile, container-smoke, swift (macos-26), test-and-build and validate-container passed on that head.
+- **What:** `MediaCache` and `CachingFetcher` (`DiscairAudio`), disk-backed covers in `ArtworkStore`, `CacheModel` and Settings controls in both themes.
+- **Verification:** 12 new tests; full macOS package suite 272 passed locally. The owner confirmed the cache works in the running app.
+- **Known limits:** the 2 GB limit was tested only with small caps; a partly downloaded song is not cached; Clear does not remove the always-on saved pages.
+- **Next action:** M5 remaining: the SMB mount (needs the share login in the Keychain), then Sparkle (needs a signing key and an appcast host).
+
 ## 2026-11-04 — macOS M5 offline banner and saved pages merged (PR #728)
 
 - **Merged (owner request):** PR [#728](https://github.com/abucalip/navi-librarian/pull/728), squash `1083eacbb668abc3f684b231045eeb16c3c925c8`, from tested head `e418d0cae08db5e76b390ba6e8fddf64905b2979`; compile, container-smoke, swift (macos-26), test-and-build and validate-container passed on that head.
