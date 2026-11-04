@@ -10,6 +10,8 @@ public enum Screen: String, CaseIterable, Sendable {
     case albums
     /// The job list: progress, retry, next source, dismiss (M5 slice 2b; no mockup, each theme draws it).
     case downloads
+    /// Discover lists: For you, Classics, New releases, Saved (M5 slice 3a; no mockup).
+    case discover
 }
 
 /// What a theme may ask the app to do. Themes call these; they never reach the network or the audio engine.
@@ -50,6 +52,7 @@ public final class AppState {
     public let actions: DiscairActions
     /// Get, Save, Not for me and the job list. Live only once a session connects.
     public let acquisition: AcquisitionModel
+    public let discovery = DiscoveryModel()
     /// Sample data until a session connects, then the owner's library.
     public let library = LibraryModel()
     public let artwork = ArtworkStore()
@@ -74,6 +77,7 @@ public final class AppState {
         guard let session, let navidrome = session.navidrome else { return }
         artwork.configure(navidrome.urls)
         acquisition.configure(librarian: session.librarian)
+        discovery.configure(librarian: session.librarian)
         await library.load(navidrome: navidrome, librarian: session.librarian)
         if library.isLive { selectedArtist = library.artists.first ?? selectedArtist; selectedLetter = selectedArtist.letter }
         if library.isLive, let first = library.recent.first ?? library.albums.first { selectedAlbum = first }

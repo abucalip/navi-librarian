@@ -26,6 +26,25 @@ public struct DashboardPicks: Decodable, Equatable, Sendable {
     public let items: [DashboardPick]
 }
 
+/// One discovery list (`GET /api/discovery/{list}`). Items share the dashboard pick shape; an empty list carries the
+/// server's own `message` ("No saved list yet…"), which is shown as it is.
+public struct DiscoveryList: Decodable, Equatable, Sendable {
+    public let list: String?
+    public let items: [DashboardPick]
+    public let message: String?
+    public let generatedAt: Double?
+
+    enum CodingKeys: String, CodingKey { case list, items, message; case generatedAt = "generated_at" }
+
+    public init(from decoder: any Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        list = try c.decodeIfPresent(String.self, forKey: .list)
+        items = try c.decodeIfPresent([DashboardPick].self, forKey: .items) ?? []
+        message = try c.decodeIfPresent(String.self, forKey: .message)
+        generatedAt = try c.decodeIfPresent(Double.self, forKey: .generatedAt)
+    }
+}
+
 /// Librarian client (ANDROID_CLIENT_CONTRACT 4.1 and 5.2): `GET /api/auth/status`, `POST /api/auth/login`,
 /// `GET /api/dashboard-picks`. The session cookie lives in the transport's in-memory jar.
 /// Any 401 triggers one re-login with the stored credential; a 429 is reported and never retried.
@@ -61,6 +80,18 @@ public struct LibrarianClient: Sendable {
     public func dashboardPicks(count: Int = 10) async throws -> [DashboardPick] {
         let (data, http) = try await authedSend("GET", "api/dashboard-picks?count=\(min(max(count, 1), 30))", body: nil)
         return try decode(DashboardPicks.self, data, http).items
+    }
+
+    /// A saved discovery list, in the order the server gives it (`personal`, `classics`, `new_releases`, `for_me`).
+    public func discoveryList(_ list: String, count: Int = 20) async throws -> DiscoveryList {
+        let (data, http) = try await authedSend("GET", "api/discovery/\(list)?count=\(min(max(count, 1), 150))", body: nil)
+        return try decode(DiscoveryList.self, data, http)
+    }
+
+    /// Builds a list that has no saved copy yet (the Android "Build this list" button).
+    public func refreshDiscoveryList(_ list: String, count: Int = 20) async throws {
+        let (data, http) = try await authedSend("POST", "api/discovery/\(list)/refresh", body: try json(["count": min(max(count, 1), 20)]))
+        if let failure = failure(http, data) { throw failure }
     }
 
     // MARK: Acquisition and feedback (Android contract 5.3, macOS contract section 5)

@@ -225,4 +225,32 @@ struct AcquisitionModelTests {
         #expect(m.jobs.count == 1)
         #expect(m.notice?.contains("Files are in use.") == true)
     }
+
+    // MARK: Discover
+
+    @Test func discoveryLoadsInServerOrderAndShowsTheServersEmptyMessage() async throws {
+        let list = #"{"list":"personal","items":[{"artist":"Can","album":"Ege Bamyasi","reason":"Because."},{"artist":"Neu!","album":"Neu! 2"}]}"#
+        let empty = #"{"list":"classics","items":[],"message":"No saved list yet."}"#
+        let t = RouteTransport(["/api/discovery/personal": (200, list), "/api/discovery/classics": (200, empty), "/api/discovery/new_releases": (500, #"{"detail":"boom"}"#)])
+        let client = try LibrarianClient(baseURL: URL(string: "https://lib.example.ts.net")!, credential: Credential(username: "o", password: "pw"), transport: t)
+        let d = DiscoveryModel()
+        d.configure(librarian: client)
+        await d.load(.personal)
+        #expect(d.page(.personal).albums.map(\.title) == ["Ege Bamyasi", "Neu! 2"] && d.page(.personal).albums[0].reason == "Because.")
+        await d.load(.classics)
+        #expect(d.page(.classics).albums.isEmpty && d.page(.classics).message == "No saved list yet.")
+        await d.load(.newReleases)
+        #expect(d.page(.newReleases).phase == .failed("boom"))
+    }
+
+    @Test func buildingAListReadsItAfterwards() async throws {
+        let t = RouteTransport(["/api/discovery/classics/refresh": fb, "/api/discovery/classics": (200, #"{"items":[{"artist":"Can","album":"Tago Mago"}]}"#)])
+        let client = try LibrarianClient(baseURL: URL(string: "https://lib.example.ts.net")!, credential: Credential(username: "o", password: "pw"), transport: t)
+        let d = DiscoveryModel()
+        d.configure(librarian: client)
+        await d.build(.classics)
+        #expect(d.page(.classics).albums.count == 1)
+        #expect(t.sent.map(\.path) == ["/api/discovery/classics/refresh", "/api/discovery/classics"])
+    }
 }
+

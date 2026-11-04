@@ -130,3 +130,9 @@ State is an icon plus words, with a percent bar and "3 of 11 tracks · 1.2 MB/s"
 
 Not in this slice: the SSE stream (polling stays: 4 s while something moves, 30 s otherwise), covers on the rows, and any run against the real Librarian or slskd. Tests: ordering, progress text, retry request body, skip and dismiss bodies, refused dismiss; screenshots of both themes.
 
+
+## M5 slice 3a: Discover lists
+
+New `Screen.discover` (Cupertino sidebar row "New", Zine masthead tab "Discover", both dead before). `DiscoveryModel` loads `GET /api/discovery/{personal|classics|new_releases|for_me}` once per list and shows items in the server's order, with no client ranking. Tabs: For you, Classics, New releases, Saved. Each entry has cover, artist (opens the artist when the library has them), the Librarian's reason, up to three suggested tracks, and Get, Save and Not for me as text buttons; dismissed albums disappear through the existing hide rules. An empty list shows the server's own message with "Build this list" (`POST /api/discovery/{list}/refresh`, count 20; not offered for Saved); a failed read shows the reason and Try again.
+
+Not in this slice: artist deep dives and the daily lens lists, "Similar to" chips, the release date column for New releases, and a run against the real Librarian. The refresh payload was never captured, so only its request is tested. Tests: client calls against the recorded `discovery_*` fixtures, model order, empty message, failure and build-then-read, plus screenshots of both themes.

@@ -42,6 +42,7 @@ struct ZineWindow: View {
         case .artist: ZineArtist(state: state)
         case .settings: ZineSettings(state: state)
         case .downloads: ZineDownloads(state: state)
+        case .discover: ZineDiscover(state: state)
         }
     }
 }
@@ -54,6 +55,7 @@ private func activeSection(_ s: Screen) -> String {
     case .artist: "Artists"
     case .settings: "Settings"
     case .downloads: "Downloads"
+    case .discover: "Discover"
     }
 }
 
@@ -61,7 +63,7 @@ struct ZineMasthead: View {
     let state: AppState
     private let sections: [(String, Screen?)] = [
         ("Home", .home), ("Library", .library), ("Artists", .artist),
-        ("Discover", nil), ("Downloads", .downloads), ("Settings", .settings),
+        ("Discover", .discover), ("Downloads", .downloads), ("Settings", .settings),
     ]
 
     var body: some View {

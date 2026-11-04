@@ -8,7 +8,7 @@ import Testing
 /// Baseline comparison is added once the owner approves the look on the Mac (contract M4 gate).
 @MainActor
 struct ScreenshotTests {
-    @Test(arguments: ThemeID.allCases, [Screen.home, Screen.album, Screen.nowPlaying, Screen.queue, Screen.library, Screen.albums, Screen.artist, Screen.settings, Screen.downloads])
+    @Test(arguments: ThemeID.allCases, [Screen.home, Screen.album, Screen.nowPlaying, Screen.queue, Screen.library, Screen.albums, Screen.artist, Screen.settings, Screen.downloads, Screen.discover])
     func rendersWindow(theme: ThemeID, screen: Screen) throws {
         RenderMode.offscreenScreenshot = true
         // Settings needs a session; a throwaway one with a sample profile and an in-memory keychain.
@@ -21,6 +21,7 @@ struct ScreenshotTests {
         host.frame = NSRect(origin: .zero, size: size)
         let window = NSWindow(contentRect: host.frame, styleMask: [.borderless], backing: .buffered, defer: false)
         if screen == .downloads { state.acquisition.showJobs(AcquisitionModelTests.sampleJobs) }
+        if screen == .discover { state.discovery.show(.personal, Fixtures.albums([7, 8, 9])) }
         window.contentView = host
         window.orderBack(nil)
         host.layoutSubtreeIfNeeded()

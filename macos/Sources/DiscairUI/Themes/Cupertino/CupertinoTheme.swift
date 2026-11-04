@@ -86,6 +86,7 @@ struct CupertinoWindow: View {
         case .artist: CupertinoArtist(state: state)
         case .settings: CupertinoSettings(state: state)
         case .downloads: CupertinoDownloads(state: state)
+        case .discover: CupertinoDiscover(state: state)
         default: Text("\(state.screen.rawValue): not built yet").foregroundStyle(CU.muted).padding(28)
         }
     }
@@ -101,12 +102,13 @@ struct CupertinoSidebar: View {
         case .artist: "Artists"
         case .settings: "Settings"
         case .downloads: "Downloads"
+        case .discover: "New"
         default: "Recently Added"
         }
     }
     /// Where each row goes. Rows without a screen yet do nothing (they are still real buttons, so keyboard and
     /// VoiceOver treat them like the rest).
-    private let target: [String: Screen] = ["Home": .home, "Songs": .library, "Albums": .albums, "Artists": .artist, "Downloads": .downloads, "Settings": .settings]
+    private let target: [String: Screen] = ["Home": .home, "Songs": .library, "Albums": .albums, "Artists": .artist, "New": .discover, "Downloads": .downloads, "Settings": .settings]
     private let nav: [(String, String)] = [
         ("house", "Home"), ("sparkles", "New"), ("clock", "Recently Added"), ("music.mic", "Artists"),
         ("square.stack", "Albums"), ("music.note", "Songs"), ("dot.radiowaves.left.and.right", "Gap Radar"),
