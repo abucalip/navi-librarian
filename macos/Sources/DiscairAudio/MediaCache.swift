@@ -141,4 +141,16 @@ public struct CachingFetcher: AudioFetcher {
         cache.store(copyOf: file, key: key, ext: ext)
         return file
     }
+
+    /// Streams a song that is not cached yet; a cached song returns nil so it plays from the cache copy. The finished
+    /// download is kept in the cache, as `fetch` does.
+    public func beginGrowing(_ url: URL, suffix: String?) -> GrowingDownload? {
+        let ext = suffix ?? "audio"
+        guard let key = Self.key(url) else { return base.beginGrowing(url, suffix: suffix) }
+        if cache.file(for: key, ext: ext) != nil { return nil }
+        guard let download = base.beginGrowing(url, suffix: suffix) else { return nil }
+        let cache = self.cache
+        download.onComplete = { file in cache.store(copyOf: file, key: key, ext: ext) }
+        return download
+    }
 }

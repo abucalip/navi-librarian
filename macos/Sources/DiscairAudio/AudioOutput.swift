@@ -13,6 +13,11 @@ public protocol AudioOutput: AnyObject {
     var duration: Double { get }
     /// Opens a local file ready to play from the start. Replaces whatever was open.
     func open(file: URL) throws
+    /// Plays a song that is still downloading: plays what is on disk and follows the file as it grows. `expectedDuration`
+    /// is what `duration` reports while it grows.
+    func openGrowing(_ download: GrowingDownload, expectedDuration: Double) throws
+    /// True while a growing song is open. No preload is accepted then.
+    var isGrowing: Bool { get }
     func play()
     func pause()
     func stop()
@@ -37,6 +42,10 @@ public protocol AudioOutput: AnyObject {
 }
 
 public extension AudioOutput {
+    func openGrowing(_ download: GrowingDownload, expectedDuration: Double) throws {
+        throw AudioError("Playing while the song downloads is not available.")
+    }
+    var isGrowing: Bool { false }
     func setMatchOutputRate(_ on: Bool) {}
     func restoreOutputRate() {}
 }
@@ -75,7 +84,8 @@ public final class EngineOutput: AudioOutput {
         var paused = false
         var pausedAt: Double = 0
         /// Segments handed to the node and not yet finished, oldest first: (frames, file).
-        var segments: [(frames: AVAudioFrameCount, file: AVAudioFile)] = []
+        /// `start` is the frame of `file` where the segment begins (0 except for the tail of a growing song).
+        var segments: [(frames: AVAudioFrameCount, file: AVAudioFile, start: AVAudioFramePosition)] = []
     }
 
     private let engine = AVAudioEngine()
@@ -91,6 +101,22 @@ public final class EngineOutput: AudioOutput {
     private var pending: Pending?
     private struct Fade { let from: Slot; let to: Slot; var elapsed: Double; let length: Double }
     private var fade: Fade?
+    /// A song still downloading. `scheduledFrames` is how far the file has been handed to the node; `stalled` means the node
+    /// was stopped at the end of what was on disk and waits for more bytes.
+    private struct Growth {
+        let download: GrowingDownload
+        let expectedDuration: Double
+        var scheduledFrames: AVAudioFramePosition
+        var nextCheck: Date
+        var stalled: Bool
+    }
+    private var growth: Growth?
+    /// How far ahead of the playhead (seconds) a growing song is kept scheduled, and how close to the playhead the node may
+    /// run before it is stopped for lack of data.
+    private static let growAhead = 4.0
+    /// A stall is detected by the node running dry (`segmentEnded`), never by the ticker, which a busy main thread can delay.
+    private static let stallBelow = 1.0
+    private static let growCheckEvery: TimeInterval = 0.25
     private var ticker: Task<Void, Never>?
     private static let tick = 0.02
 
@@ -140,7 +166,8 @@ public final class EngineOutput: AudioOutput {
 
     /// During a crossfade the song on screen is still the old one until the fade ends, so these describe the old song.
     private var shown: Slot { fade?.from ?? cur }
-    public var duration: Double { duration(of: shown) }
+    public var duration: Double { growth?.expectedDuration ?? duration(of: shown) }
+    public var isGrowing: Bool { growth != nil }
     private func duration(of slot: Slot) -> Double { slot.file.map { Double($0.length) / $0.processingFormat.sampleRate } ?? 0 }
     public var isPlaying: Bool { cur.node.isPlaying }
     /// Test hook: the level of the playing node and of the other one (during a fade, the new and the old song).
@@ -170,6 +197,18 @@ public final class EngineOutput: AudioOutput {
         schedule(cur, from: 0)
     }
 
+    public func openGrowing(_ download: GrowingDownload, expectedDuration: Double) throws {
+        stop()
+        let f: AVAudioFile
+        do { f = try AVAudioFile(forReading: download.file) } catch { throw AudioError("This file could not be opened for playback.") }
+        guard f.length > 0 else { throw AudioError("This file could not be opened for playback.") }
+        try attach(cur, file: f)
+        cur.file = f
+        cur.startOffset = 0; cur.baseSample = 0; cur.paused = false; cur.pausedAt = 0
+        growth = Growth(download: download, expectedDuration: expectedDuration, scheduledFrames: f.length, nextCheck: .distantPast, stalled: false)
+        schedule(cur, from: 0)
+    }
+
     private var matcher: RateMatcher?
     public func setMatchOutputRate(_ on: Bool) {
         if on { matcher = matcher ?? RateMatcher(device: SystemOutputDevice()) } else { matcher?.restore(); matcher = nil }
@@ -196,9 +235,13 @@ public final class EngineOutput: AudioOutput {
     private func enqueue(_ slot: Slot, file: AVAudioFile, from seconds: Double) {
         let rate = file.processingFormat.sampleRate
         let start = AVAudioFramePosition(max(0, min(seconds, Double(file.length) / rate)) * rate)
+        enqueueFrames(slot, file: file, startFrame: start)
+    }
+
+    private func enqueueFrames(_ slot: Slot, file: AVAudioFile, startFrame start: AVAudioFramePosition) {
         let frames = AVAudioFrameCount(max(0, file.length - start))
         let mine = slot.generation
-        slot.segments.append((frames, file))
+        slot.segments.append((frames, file, start))
         slot.node.scheduleSegment(file, startingFrame: start, frameCount: frames, at: nil, completionCallbackType: .dataPlayedBack) { [weak self, weak slot] _ in
             DispatchQueue.main.async {
                 MainActor.assumeIsolated {
@@ -231,16 +274,85 @@ public final class EngineOutput: AudioOutput {
         let done = slot.segments.removeFirst()
         if let next = slot.segments.first {
             slot.file = next.file
-            slot.startOffset = 0
+            slot.startOffset = Double(next.start) / next.file.processingFormat.sampleRate
             slot.baseSample += Int64(done.frames)
             pending = nil
             onAdvanced?()
         } else if let p = pending, !p.queuedOnNode {
             beginFade(into: p, length: 0)          // the ticker was late: join now rather than report the end
+        } else if var g = growth, !(g.download.isComplete || g.download.failure != nil) || g.scheduledFrames < (try? AVAudioFile(forReading: g.download.file))?.length ?? 0 {
+            // The node ran dry at the end of what was on disk. This is decided here, from the completion callback, not on the
+            // ticker, so a starved main thread cannot turn a stall into the end of the song. The ticker resumes it.
+            slot.node.stop()
+            slot.startOffset = Double(done.start + AVAudioFramePosition(done.frames)) / done.file.processingFormat.sampleRate
+            slot.baseSample = 0
+            g.stalled = true
+            g.nextCheck = .distantPast
+            growth = g
         } else {
             slot.paused = false
+            growth = nil                 // a growing song is over once its last segment has played
             onFinished?()
         }
+    }
+
+    // MARK: Growing song
+
+    /// Keeps a growing song scheduled `growAhead` seconds past the playhead. Runs on the ticker, at most every 0.25 s.
+    /// Each new tail is appended to the same node as a gapless join. When the download is behind the playhead, the node
+    /// runs dry at the end of what is on disk (see `segmentEnded`) and is restarted from that point once more bytes arrive.
+    private func feedGrowth() {
+        guard var g = growth, let file = cur.file, fade == nil else { return }
+        let now = Date()
+        guard now >= g.nextCheck else { return }
+        let rate = file.processingFormat.sampleRate
+        let remaining = Double(g.scheduledFrames) / rate - position(of: cur)
+        g.nextCheck = now.addingTimeInterval(Self.growCheckEvery)
+        guard remaining < Self.growAhead else { growth = g; return }
+        let ended = g.download.isComplete || g.download.failure != nil      // read before the file is opened
+        let fresh = try? AVAudioFile(forReading: g.download.file)
+        if let fresh, fresh.length > g.scheduledFrames {
+            if g.stalled {
+                resumeGrowth(fresh, &g)
+            } else {
+                enqueueFrames(cur, file: fresh, startFrame: g.scheduledFrames)
+                g.scheduledFrames = fresh.length
+            }
+        } else if ended {
+            // Nothing more is coming. A stopped node plays out what it has, so it is restarted for the last part.
+            if g.stalled { resumeGrowth(file, &g) }
+            growth = nil
+            return
+        }
+        growth = g
+    }
+
+    /// Restarts a stalled node from where it stopped, on a file that now has more frames.
+    private func resumeGrowth(_ file: AVAudioFile, _ g: inout Growth) {
+        let at = cur.startOffset
+        cur.file = file
+        schedule(cur, from: at)
+        g.scheduledFrames = file.length
+        g.stalled = false
+        if !cur.paused { cur.node.play() }
+    }
+
+    /// Seeks inside a growing song. A target past what is on disk is pulled back to just before its end.
+    private func seekGrowing(to seconds: Double) {
+        guard var g = growth, let old = cur.file else { return }
+        let fresh = (try? AVAudioFile(forReading: g.download.file)).flatMap { $0.length >= g.scheduledFrames ? $0 : nil } ?? old
+        let rate = fresh.processingFormat.sampleRate
+        let at = min(max(0, seconds), max(0, Double(fresh.length) / rate - Self.stallBelow))
+        let wasPlaying = !cur.paused
+        cur.node.stop()
+        cur.file = fresh
+        schedule(cur, from: at)
+        g.scheduledFrames = fresh.length
+        g.stalled = false
+        cur.pausedAt = cur.startOffset
+        cur.paused = !wasPlaying
+        if wasPlaying { cur.node.play() }
+        growth = g
     }
 
     // MARK: Transport
@@ -263,13 +375,14 @@ public final class EngineOutput: AudioOutput {
 
     public func stop() {
         for s in slots { s.generation += 1; s.node.stop(); s.node.volume = 1; s.file = nil; s.segments = []; s.paused = false; s.pausedAt = 0; s.startOffset = 0; s.baseSample = 0 }
-        pending = nil; fade = nil
+        pending = nil; fade = nil; growth = nil
         ticker?.cancel(); ticker = nil
         active = 0
     }
 
     public func seek(to seconds: Double) {
         guard cur.file != nil else { return }
+        if growth != nil { seekGrowing(to: seconds); return }
         if fade != nil { endFade(); return }      // the bar belongs to the old song, which is now over: the new one carries on
         let wasPlaying = cur.node.isPlaying
         cur.node.stop()
@@ -282,6 +395,7 @@ public final class EngineOutput: AudioOutput {
     // MARK: Preload, gapless and crossfade
 
     public func preload(file url: URL, transition: Transition) throws {
+        guard !isGrowing else { throw AudioError("The next song waits until this one has downloaded.") }
         guard let now = cur.file else { return }
         let next: AVAudioFile
         do { next = try AVAudioFile(forReading: url) } catch { throw AudioError("The next song could not be opened.") }
@@ -320,6 +434,7 @@ public final class EngineOutput: AudioOutput {
     }
 
     private func step() {
+        if growth != nil { feedGrowth(); return }
         if var f = fade {
             guard cur.node.isPlaying else { return }
             // The audio clock decides how far the fade is, not the count of ticks: a busy main thread delays ticks, and a

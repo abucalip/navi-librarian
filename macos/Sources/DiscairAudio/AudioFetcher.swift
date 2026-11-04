@@ -3,6 +3,12 @@ import Foundation
 /// Brings a song to a local file so `AVAudioFile` can read it (the spike measured about 4 s for a 52 MB FLAC over the LAN).
 public protocol AudioFetcher: Sendable {
     func fetch(_ url: URL, suffix: String?) async throws -> URL
+    /// Starts writing a song to disk as it arrives, for playback before the download ends. nil means "use `fetch`".
+    func beginGrowing(_ url: URL, suffix: String?) -> GrowingDownload?
+}
+
+public extension AudioFetcher {
+    func beginGrowing(_ url: URL, suffix: String?) -> GrowingDownload? { nil }
 }
 
 /// Downloads to the temporary directory. The URL carries the login token, so it is never logged or put in an error.
@@ -17,10 +23,19 @@ public struct URLSessionFetcher: AudioFetcher {
             try? FileManager.default.removeItem(at: tmp)
             throw AudioError("The server did not send the song.")
         }
-        let ext = (suffix?.isEmpty == false ? suffix! : "audio").filter { $0.isLetter || $0.isNumber }
-        let dest = directory.appending(path: "\(UUID().uuidString).\(ext)")
+        let dest = directory.appending(path: fileName(suffix))
         try FileManager.default.moveItem(at: tmp, to: dest)
         return dest
+    }
+
+    public func beginGrowing(_ url: URL, suffix: String?) -> GrowingDownload? {
+        let download = GrowingDownload(file: directory.appending(path: fileName(suffix)))
+        do { try download.start(url); return download } catch { return nil }
+    }
+
+    private func fileName(_ suffix: String?) -> String {
+        let ext = (suffix?.isEmpty == false ? suffix! : "audio").filter { $0.isLetter || $0.isNumber }
+        return "\(UUID().uuidString).\(ext)"
     }
 
     /// Deletes everything downloaded so far (called at launch and quit).

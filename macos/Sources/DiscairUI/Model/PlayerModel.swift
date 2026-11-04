@@ -83,6 +83,8 @@ public final class PlayerModel {
     @ObservationIgnored private var tickTask: Task<Void, Never>?
     @ObservationIgnored private var loadGeneration = 0
     @ObservationIgnored private var downloaded: URL?
+    /// The current song while it streams to disk (contract 12.2); cancelled when the song changes.
+    @ObservationIgnored private var growing: GrowingDownload?
     @ObservationIgnored private let defaults: UserDefaults
     @ObservationIgnored private var preloadTask: Task<Void, Never>?
     /// The song handed to the engine (or being fetched) as the follower, and its file once downloaded.
@@ -259,8 +261,27 @@ public final class PlayerModel {
         var opts = Self.streamOptions(suffix: item.suffix, cap: cap)
         loadTask = Task { [weak self, fetcher] in
             do {
-                var url = try urls.streamURL(songID: item.songID, maxBitRate: opts.bitRate, format: opts.format)
-                var file = try await fetcher.fetch(url, suffix: opts.format?.rawValue ?? item.suffix)
+                // A progressive format starts while it downloads (contract 12.2). A cached song, or one the engine cannot
+                // open while growing, takes the whole-file path below.
+                let streamSuffix = opts.format?.rawValue ?? item.suffix
+                let streamURL = try urls.streamURL(songID: item.songID, maxBitRate: opts.bitRate, format: opts.format)
+                if ProgressiveStart.requiredBytes(suffix: streamSuffix) != nil, let download = fetcher.beginGrowing(streamURL, suffix: streamSuffix) {
+                    do { try await Self.waitToStart(download, suffix: streamSuffix) }
+                    catch { download.cancel(); try? FileManager.default.removeItem(at: download.file); throw error }
+                    guard let self, !Task.isCancelled, self.loadGeneration == mine else { download.cancel(); try? FileManager.default.removeItem(at: download.file); return }
+                    self.cleanUp()
+                    self.growing = download
+                    self.downloaded = download.file
+                    if (try? self.output.openGrowing(download, expectedDuration: item.duration)) != nil {
+                        self.startPlayback(item: item, startAt: startAt)
+                        return
+                    }
+                    download.cancel()
+                    self.growing = nil
+                    self.downloaded = nil
+                }
+                var url = streamURL
+                var file = try await fetcher.fetch(url, suffix: streamSuffix)
                 guard let self, !Task.isCancelled, self.loadGeneration == mine else { try? FileManager.default.removeItem(at: file); return }
                 self.cleanUp()
                 self.downloaded = file
@@ -276,18 +297,33 @@ public final class PlayerModel {
                     try self.output.open(file: file)
                     self.notice = "This file cannot be played as it is, so the server sent an MP3 of it."
                 }
-                self.duration = self.output.duration
-                if startAt > 3, startAt < self.duration - 3 { self.output.seek(to: startAt); self.position = startAt }
-                self.output.play()
-                self.phase = .playing
-                self.scrobbler.begin(songID: item.songID, duration: item.duration)
-                self.startTicking()
-                self.refreshPreload()
+                self.startPlayback(item: item, startAt: startAt)
             } catch {
                 guard let self, self.loadGeneration == mine else { return }
                 self.scrobbler.end()
                 self.phase = .failed((error as? AudioError)?.description ?? "The song could not be played.")
             }
+        }
+    }
+
+    /// The engine holds the song: seek to the saved place, play, and start the clock, scrobbling and the next song.
+    private func startPlayback(item: QueueItem, startAt: Double) {
+        duration = output.duration
+        if startAt > 3, startAt < duration - 3 { output.seek(to: startAt); position = startAt }
+        output.play()
+        phase = .playing
+        scrobbler.begin(songID: item.songID, duration: item.duration)
+        startTicking()
+        refreshPreload()
+    }
+
+    /// Waits until the download has enough on disk to start (or is complete). Throws if the download fails or the task is cancelled.
+    private static func waitToStart(_ download: GrowingDownload, suffix: String?) async throws {
+        while true {
+            if let message = download.failure { throw AudioError(message) }
+            if ProgressiveStart.canStart(suffix: suffix, bytesOnDisk: download.bytesOnDisk, complete: download.isComplete) { return }
+            try Task.checkCancellation()
+            try await Task.sleep(for: .milliseconds(100))
         }
     }
 
@@ -317,6 +353,8 @@ public final class PlayerModel {
 
     /// Makes sure the engine holds the song that will really follow. Called after anything that changes what is next.
     private func refreshPreload() {
+        // A growing song has no fixed end yet, so the follower waits until it is fully scheduled (the ticker retries).
+        guard !output.isGrowing else { return }
         guard phase == .playing || phase == .paused, let now = queue.current, let next = queue.peekNext, let urls else {
             if phase == .playing || phase == .paused { dropPreload() }
             return
@@ -365,6 +403,7 @@ public final class PlayerModel {
     }
 
     private func cleanUp() {
+        growing?.cancel(); growing = nil
         if let d = downloaded { try? FileManager.default.removeItem(at: d); downloaded = nil }
     }
 
@@ -374,6 +413,7 @@ public final class PlayerModel {
             var n = 0
             while !Task.isCancelled {
                 self?.position = self?.output.position ?? 0
+                if let self, !self.output.isGrowing, self.phase == .playing { self.refreshPreload() }
                 if let self { self.scrobbler.update(position: self.output.position, playerDuration: self.output.duration, isPlaying: self.output.isPlaying) }
                 n += 1
                 if n % 20 == 0 { self?.persist() }
