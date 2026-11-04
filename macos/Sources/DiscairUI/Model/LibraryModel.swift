@@ -260,7 +260,16 @@ public final class LibraryModel {
         return SongRow(id: id, album: 0, title: s.title, artist: s.artist ?? "Unknown artist", genre: s.genre ?? "",
                        format: rowFormat(s), bitrate: s.bitRate.map { "\($0) kb" } ?? "", lastPlayed: shortDate(s.played),
                        added: shortDate(s.created), year: s.year ?? 0, plays: s.playCount ?? 0, remoteID: s.id, cover: album,
-                       suffix: s.suffix, seconds: Double(s.duration ?? 0), track: s.track, disc: s.discNumber)
+                       suffix: s.suffix, seconds: Double(s.duration ?? 0), track: s.track, disc: s.discNumber,
+                       rating: min(max(s.userRating ?? 0, 0), 5), bitrateKbps: s.bitRate ?? 0,
+                       addedAt: date(s.created), playedAt: date(s.played), hasMBID: !(s.musicBrainzId ?? "").isEmpty)
+    }
+
+    /// An ISO time as a date; nil when absent or Navidrome's "never" (year 0001).
+    static func date(_ iso: String?) -> Date? {
+        guard let iso, !iso.hasPrefix("0001") else { return nil }
+        let f = ISO8601DateFormatter(); f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return f.date(from: iso) ?? ISO8601DateFormatter().date(from: iso)
     }
 
     /// "FLAC 16/44" when the bit depth and sample rate are known, else the short form ("MP3 320").

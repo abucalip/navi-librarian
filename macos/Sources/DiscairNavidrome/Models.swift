@@ -50,6 +50,9 @@ public struct NavidromeSong: Codable, Equatable, Sendable, Identifiable {
     public let created: String?
     public let bitDepth: Int?
     public let samplingRate: Int?
+    /// The owner's star rating, 1 to 5 (absent or 0 when unrated).
+    public let userRating: Int?
+    public let musicBrainzId: String?
 }
 
 public struct NavidromeAlbumDetail: Equatable, Sendable {

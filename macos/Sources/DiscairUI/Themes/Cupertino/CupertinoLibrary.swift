@@ -4,26 +4,14 @@ import SwiftUI
 /// Columns (opt-in, contract section 6). Mockup: `R.cupertino.library`. Zebra rows, selection in the accent colour.
 struct CupertinoLibrary: View {
     let state: AppState
-    private enum Key: String { case title = "Title", artist = "Artist", year = "Year", genre = "Genre", format = "Format", plays = "Plays" }
-    @State private var sortKey: Key = .title
+    @State private var sortKey: SongColumn = .title
     @State private var ascending = true
     @State private var selected = 1
     @State private var source = "Songs"
     @State private var viewMode = "Table"
+    @State private var onlyMissingMBID = false
 
-    private var rows: [SongRow] {
-        let r = state.library.songs.sorted { a, b in
-            switch sortKey {
-            case .title: a.title.localizedCaseInsensitiveCompare(b.title) == .orderedAscending
-            case .artist: a.artist.localizedCaseInsensitiveCompare(b.artist) == .orderedAscending
-            case .year: a.year < b.year
-            case .genre: a.genre.localizedCaseInsensitiveCompare(b.genre) == .orderedAscending
-            case .format: a.format < b.format
-            case .plays: a.plays < b.plays
-            }
-        }
-        return ascending ? r : r.reversed()
-    }
+    private var rows: [SongRow] { SongTable.sorted(state.library.songs, by: sortKey, ascending: ascending, onlyMissingMBID: onlyMissingMBID) }
 
     var body: some View {
         ScrollView {
@@ -35,6 +23,8 @@ struct CupertinoLibrary: View {
                     Button { let shown = rows; if let i = shown.firstIndex(where: { $0.id == selected }) { state.play(rows: shown, startAt: i) } } label: { Label("Play", systemImage: "play.fill") }
                         .buttonStyle(CapsuleButtonStyle(primary: true, small: true)).disabled(!state.library.isLive)
                         .help("Play the selected song, then the rows below it")
+                    Toggle("No MBID", isOn: $onlyMissingMBID).toggleStyle(.button).controlSize(.small)
+                        .help("Show only songs without a MusicBrainz id")
                     CUSegmented(options: ["Table", "Grid", "Columns"], selection: $viewMode)
                 }
                 .padding(.top, 4).padding(.bottom, 12)
@@ -84,28 +74,27 @@ struct CupertinoLibrary: View {
         }
     }
 
-    private let w: [CGFloat?] = [36, nil, 150, 52, 92, 108, 74, 52, 92, 70]
+    private let w: [CGFloat?] = [36, nil, 150, 52, 92, 108, 74, 74, 52, 92, 70, 64]
 
     private var header: some View {
         HStack(spacing: 0) {
             cell(w[0]) { Text("") }
-            headCell("Title", .title, w[1]); headCell("Artist", .artist, w[2]); headCell("Year", .year, w[3])
-            headCell("Genre", .genre, w[4]); headCell("Format", .format, w[5])
-            cell(w[6]) { Text("Bitrate") }; headCell("Plays", .plays, w[7])
-            cell(w[8]) { Text("Last played") }; cell(w[9]) { Text("Added") }
+            headCell(.title, w[1]); headCell(.artist, w[2]); headCell(.year, w[3]); headCell(.genre, w[4])
+            headCell(.format, w[5]); headCell(.bitrate, w[6]); headCell(.rating, w[7]); headCell(.plays, w[8])
+            headCell(.lastPlayed, w[9]); headCell(.added, w[10]); headCell(.mbid, w[11])
         }
         .font(.system(size: 12, weight: .medium)).foregroundStyle(CU.muted).padding(.vertical, 6)
         .overlay(alignment: .bottom) { Rectangle().fill(Color.black.opacity(0.08)).frame(height: 1) }
     }
 
-    private func headCell(_ t: String, _ k: Key, _ width: CGFloat?) -> some View {
+    private func headCell(_ k: SongColumn, _ width: CGFloat?) -> some View {
         Button {
-            if sortKey == k { ascending.toggle() } else { sortKey = k; ascending = true }
+            if sortKey == k { ascending.toggle() } else { sortKey = k; ascending = k.startsAscending }
         } label: {
-            cell(width) { Text(sortKey == k ? "\(t) \(ascending ? "▴" : "▾")" : t) }
+            cell(width) { Text(sortKey == k ? "\(k.rawValue) \(ascending ? "▴" : "▾")" : k.rawValue).lineLimit(1) }
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("Sort by \(t)")
+        .accessibilityLabel("Sort by \(k.rawValue)")
         .accessibilityAddTraits(sortKey == k ? .isSelected : [])
     }
 
@@ -120,8 +109,11 @@ struct CupertinoLibrary: View {
                 Text(r.format).font(.system(size: 10.5, weight: .bold)).padding(.horizontal, 7).padding(.vertical, 1)
                     .background(on ? Color.white.opacity(0.25) : CU.fill, in: RoundedRectangle(cornerRadius: 5))
             }
-            cell(w[6]) { Text(r.bitrate) }; cell(w[7]) { Text(String(r.plays)) }
-            cell(w[8]) { Text(r.lastPlayed) }; cell(w[9]) { Text(r.added) }
+            cell(w[6]) { Text(r.bitrate) }
+            cell(w[7]) { Text(SongTable.stars(r.rating)).font(.system(size: 11)).accessibilityLabel(r.rating > 0 ? "\(r.rating) stars" : "Not rated") }
+            cell(w[8]) { Text(String(r.plays)) }
+            cell(w[9]) { Text(r.lastPlayed) }; cell(w[10]) { Text(r.added) }
+            cell(w[11]) { if !r.hasMBID { Text("Missing").font(.system(size: 11, weight: .semibold)).foregroundStyle(on ? Color.white : CU.accent) } }
         }
         .font(.system(size: 13)).monospacedDigit()
         .foregroundStyle(on ? Color.white : CU.ink)
