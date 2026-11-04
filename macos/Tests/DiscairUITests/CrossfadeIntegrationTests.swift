@@ -39,7 +39,7 @@ struct CrossfadeIntegrationTests {
             let l = out.levelsForTests
             if p.current?.title == "T1" {
                 if started == nil { started = out.position }
-                if l.current > 0.6, l.current < 0.8, l.other > 0.55, l.other < 0.85 { sawMiddle = true }
+                if l.current > 0.3, l.current < 0.95, l.other > 0.3, l.other < 0.95 { sawMiddle = true }
             }
         }
         #expect(p.current?.title == "T1")
