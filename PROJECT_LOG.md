@@ -1,3 +1,13 @@
+## 2026-11-04 — macOS owner-report fixes merged (PR #724)
+
+- **Merged (owner request):** PR [#724](https://github.com/abucalip/navi-librarian/pull/724), squash `3508d15a9574accdba3df15bdac8087c0580ee84`, from tested head `7d30c503f2e0d85d9800578909cfec8e83076b16`; compile, container-smoke, swift, test-and-build and validate-container passed on that head.
+- **What:** (1) The Cupertino album track table wrapped two-digit track numbers one digit per line, doubling the row: the number column went from 36 to 52 pt and the number, title and time cells are single-line (same rule for the Zine queue numbers). (2) The owner could not try Get and Save: a failed or missing Librarian read left the Missing shelf silently empty (`try?` swallowed the error) and the Zine lead story fell back to the sample "Tago Mago" with a live Get button. `LibraryModel.picksNote` now says why (no Librarian login with an Open Settings button, the server's error, or nothing to recommend); Zine Home shows a "Nothing to recommend" page with recently added albums.
+- **Verification:** `swift test --filter DiscairUITests` locally (42 pass, including a picks-note test and renders of 14 two-digit tracks and of Home without recommendations in both themes, viewed). CI passed on the head. Full unit suite not run by the agent (owner rule). Not run against the owner's servers.
+- **Note:** the agent's GitHub token expired during this change; the owner re-authenticated and the push and PR were retried.
+- **Known limits:** the Discover lists are not built, so Home is the only live source of recommendations.
+- **State:** merged only. Not published, not deployed.
+- **Next action:** slice 2b, Downloads screens; then the Discover lists.
+
 ## 2026-11-04 — macOS M5 slice 2a: acquisition client and Get / Save / Not for me merged (PR #723)
 
 - **Merged (owner request):** PR [#723](https://github.com/abucalip/navi-librarian/pull/723), squash `c8014c8bd5059e476cdc42e7e182d37310e0f8b7`, from tested head `cb61a71c4686afb2c91f983497cd6c5e8ed91c3d`; compile, container-smoke, swift, test-and-build and validate-container passed on that head.
