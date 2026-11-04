@@ -94,6 +94,17 @@ struct ZineSettings: View {
                 }
             }
             Text("Reports what you play to Navidrome, which feeds your listening history and so your recommendations. Off sends nothing from this Mac.").font(Z.serif(13))
+            Mono("Tell me when a Get finishes", bold: true).padding(.top, 6)
+            HStack(spacing: 8) {
+                ForEach([true, false], id: \.self) { on in
+                    let sel = state.acquisition.notifiesWhenFinished == on
+                    Button(on ? "On" : "Off") { state.acquisition.notifiesWhenFinished = on }
+                        .buttonStyle(ZineButtonStyle(kind: sel ? .yellow : .plain, small: true))
+                        .accessibilityLabel(on ? "Get finished notifications on" : "Get finished notifications off")
+                        .accessibilityAddTraits(sel ? .isSelected : [])
+                }
+            }
+            Text("A macOS notification when an album or song you asked for is in your library, or could not be found. macOS asks permission the first time.").font(Z.serif(13))
             Mono("Keep played songs and covers", bold: true).padding(.top, 6)
             HStack(spacing: 8) {
                 ForEach([true, false], id: \.self) { on in

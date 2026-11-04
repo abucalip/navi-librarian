@@ -43,17 +43,28 @@ public final class AcquisitionModel {
     public private(set) var clearedJobs: [String: Double] = [:]
     @ObservationIgnored private let defaults: UserDefaults
     private static let clearedKey = "discair.clearedDownloads"
+    private static let notifyKey = "discair.notifyGetFinished"
+
+    /// A system notification when a Get ends (in your library, or failed). On by default; Settings.
+    public var notifiesWhenFinished: Bool {
+        didSet { defaults.set(notifiesWhenFinished, forKey: Self.notifyKey) }
+    }
+    /// Set by the app; previews and tests leave it empty, so they never notify.
+    @ObservationIgnored public var notifier: GetNotifier?
+    @ObservationIgnored private var detector = GetFinishedDetector()
 
     public init(undoWindow: Duration = .seconds(6), defaults: UserDefaults = .standard) {
         self.undoWindow = undoWindow
         self.defaults = defaults
         clearedJobs = (defaults.dictionary(forKey: Self.clearedKey) as? [String: Double]) ?? [:]
+        notifiesWhenFinished = defaults.object(forKey: Self.notifyKey) as? Bool ?? true
     }
 
     public func configure(librarian: LibrarianClient?) {
         self.librarian = librarian
         pollTask?.cancel()
         jobs = []
+        detector.reset()
         guard librarian != nil else { return }
         pollTask = Task { [weak self] in
             while !Task.isCancelled {
@@ -271,7 +282,11 @@ public final class AcquisitionModel {
 
     public func refresh() async {
         guard let librarian else { return }
-        if let list = try? await librarian.acquisitions() { jobs = list }
+        guard let list = try? await librarian.acquisitions() else { return }
+        jobs = list
+        // Always run the detector so its picture of the jobs stays current, even while notifications are off.
+        let finished = detector.events(for: list)
+        if notifiesWhenFinished, let notifier { finished.forEach(notifier.deliver) }
     }
 
     // MARK: Downloads screen
