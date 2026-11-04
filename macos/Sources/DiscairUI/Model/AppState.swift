@@ -85,7 +85,7 @@ public final class AppState {
         let media = MediaCache(root: session == nil ? FileManager.default.temporaryDirectory.appending(path: "discair-preview-media-\(UUID().uuidString)") : MediaCache.defaultRoot)
         self.cache = CacheModel(media: media, defaults: defaults)
         // Previews and tests never touch the Keychain or mount anything.
-        self.share = session == nil ? ShareModel(defaults: defaults, secrets: InMemorySecretStore(), mounter: NoMounter()) : ShareModel(defaults: defaults)
+        self.share = session == nil ? ShareModel(defaults: defaults, secrets: InMemorySecretStore(), mounter: NoMounter()) : ShareModel(defaults: defaults, secrets: session?.secrets ?? InMemorySecretStore())
         self.artwork = ArtworkStore(media: media)
         let player = PlayerModel(output: output ?? EngineOutput(), fetcher: CachingFetcher(cache: media), defaults: defaults)
         self.player = player

@@ -31,7 +31,7 @@ public final class ShareModel {
     @ObservationIgnored private var attempt: Task<Void, Never>?
     private static let key = "discair.libraryShare"
 
-    public init(defaults: UserDefaults = .standard, secrets: any SecretStore = KeychainSecretStore(),
+    public init(defaults: UserDefaults = .standard, secrets: any SecretStore = KeychainSecretStore.shared,
                 mounter: any ShareMounter = NetFSMounter(),
                 folderExists: @escaping @Sendable (String) -> Bool = {
                     var isDir: ObjCBool = false

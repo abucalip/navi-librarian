@@ -1,5 +1,6 @@
 import Testing
 import Foundation
+import Security
 @testable import DiscairCore
 
 @Suite("Error mapping") struct ErrorMappingTests {
@@ -88,5 +89,34 @@ import Foundation
         try store.delete(.navidrome)
         #expect(try store.credential(for: .navidrome) == nil)
         #expect(try store.credential(for: .librarian) != nil)
+    }
+
+    /// One combined item, and a build that left one item per login is moved over once and the old items removed.
+    @Test(.enabled(if: ProcessInfo.processInfo.environment["DISCAIR_SKIP_KEYCHAIN_TESTS"] == nil))
+    func keychainMigratesOlderItems() throws {
+        let prefix = "app.discair.tests.\(UUID().uuidString)"
+        func raw(_ service: String) -> [String: Any] {
+            [kSecClass as String: kSecClassGenericPassword, kSecAttrService as String: service,
+             kSecAttrAccount as String: "login", kSecAttrSynchronizable as String: false]
+        }
+        func add(_ kind: String, _ c: Credential) throws {
+            var q = raw("\(prefix).\(kind)")
+            q[kSecValueData as String] = try JSONEncoder().encode(c)
+            #expect(SecItemAdd(q as CFDictionary, nil) == errSecSuccess)
+        }
+        func exists(_ service: String) -> Bool { SecItemCopyMatching(raw(service) as CFDictionary, nil) == errSecSuccess }
+        try add("navidrome", Credential(username: "navi", password: "p1"))
+        try add("smb", Credential(username: "nas", password: "p2"))
+        let store = KeychainSecretStore(servicePrefix: prefix)
+        defer { for k in SecretKind.allCases { try? store.delete(k) }; for s in ["logins", "navidrome", "librarian", "smb"] { SecItemDelete(raw("\(prefix).\(s)") as CFDictionary) } }
+        #expect(try store.credential(for: .navidrome)?.withPassword { $0 } == "p1")
+        #expect(try store.credential(for: .smb)?.username == "nas")
+        #expect(try store.credential(for: .librarian) == nil)
+        #expect(exists("\(prefix).logins") && !exists("\(prefix).navidrome") && !exists("\(prefix).smb"))
+        // A second store (a new launch) reads the combined item.
+        #expect(try KeychainSecretStore(servicePrefix: prefix).credential(for: .smb)?.username == "nas")
+        // Deleting the last login removes the item.
+        try store.delete(.navidrome); try store.delete(.smb)
+        #expect(!exists("\(prefix).logins"))
     }
 }
