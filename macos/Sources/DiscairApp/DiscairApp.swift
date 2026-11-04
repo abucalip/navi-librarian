@@ -19,7 +19,7 @@ struct DiscairApp: App {
     var body: some Scene {
         Window("Discair", id: "main") {
             RootView(state: state)
-                .task { await state.session?.connect() }
+                .task { state.share.start(); await state.session?.connect() }
                 // Best effort: a Not for me still inside its Undo window is sent before the app quits.
                 .onReceive(NotificationCenter.default.publisher(for: NSApplication.willTerminateNotification)) { _ in
                     Task { await state.acquisition.flush() }

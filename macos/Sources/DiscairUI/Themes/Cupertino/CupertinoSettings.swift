@@ -14,6 +14,11 @@ struct CupertinoSettings: View {
     @State private var libUser = ""
     @State private var libPass = ""
     @State private var message: String?
+    @State private var shareAddress = ""
+    @State private var shareServerRoot = ""
+    @State private var shareLocalRoot = ""
+    @State private var shareUser = ""
+    @State private var sharePass = ""
 
     var body: some View {
         ScrollView {
@@ -22,6 +27,7 @@ struct CupertinoSettings: View {
                 if let s = state.session {
                     connection(s)
                     playback
+                    musicFolder(s)
                     profiles(s)
                     logins(s)
                     if let message { Text(message).font(.system(size: 12)).foregroundStyle(CU.accent) }
@@ -99,6 +105,47 @@ struct CupertinoSettings: View {
         }
         .task { await state.cache.refresh() }
     }
+
+    private func musicFolder(_ s: SessionModel) -> some View {
+        let share = state.share
+        return card("Music folder over SMB") {
+            Text(share.statusLine).font(.system(size: 13)).foregroundStyle(share.isReady ? CU.muted : CU.accent)
+                .accessibilityLabel("Music folder status. \(share.statusLine)")
+            HStack(spacing: 8) {
+                ForEach([true, false], id: \.self) { on in
+                    Button(on ? "On" : "Off") { saveShare(); share.setEnabled(on) }
+                        .buttonStyle(CapsuleButtonStyle(primary: share.settings.enabled == on, small: true))
+                        .accessibilityLabel(on ? "Music folder on" : "Music folder off")
+                        .accessibilityAddTraits(share.settings.enabled == on ? .isSelected : [])
+                }
+                Button("Connect now") { saveShare(); Task { await share.mountNow() } }
+                    .buttonStyle(CapsuleButtonStyle(small: true)).disabled(!share.settings.enabled || share.status == .mounting)
+            }
+            TextField("Share address (smb://192.168.1.87/media)", text: $shareAddress)
+            TextField("Folder as Navidrome sees it (/music)", text: $shareServerRoot)
+            TextField("Same folder on this Mac (/Volumes/media/library/music)", text: $shareLocalRoot)
+            HStack {
+                TextField("Share username", text: $shareUser).frame(width: 220)
+                SecureField("Share password", text: $sharePass).frame(width: 220)
+                Button(share.username == nil ? "Save login" : "Replace login") {
+                    run { try share.saveLogin(username: shareUser, password: sharePass); sharePass = "" }
+                }.buttonStyle(CapsuleButtonStyle(small: true))
+                if share.username != nil { Button("Remove login") { run { try share.removeLogin() } }.buttonStyle(CapsuleButtonStyle(small: true, outlined: true)) }
+                Spacer(minLength: 0)
+            }
+            Text(share.username.map { "Login saved for \($0)." } ?? "No share login saved.").font(.system(size: 12)).foregroundStyle(CU.muted)
+            Button("Save folder settings") { saveShare() }.buttonStyle(CapsuleButtonStyle(small: true))
+            if let e = share.settingsError { Text(e).font(.system(size: 12)).foregroundStyle(CU.accent) }
+            Text("Optional. The app mounts the share itself, like Finder's Connect to Server, and only reads from it (waveforms and quick tag reads, coming later). Playback never needs it. The login is kept in the Keychain on this Mac.")
+                .font(.system(size: 12)).foregroundStyle(CU.muted)
+        }
+        .textFieldStyle(.roundedBorder).autocorrectionDisabled()
+        .onAppear {
+            shareAddress = share.settings.address; shareServerRoot = share.settings.serverRoot; shareLocalRoot = share.settings.localRoot
+        }
+    }
+
+    private func saveShare() { state.share.save(address: shareAddress, serverRoot: shareServerRoot, localRoot: shareLocalRoot) }
 
     private func connection(_ s: SessionModel) -> some View {
         card("Connection") {

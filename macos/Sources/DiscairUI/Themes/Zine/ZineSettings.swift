@@ -13,6 +13,11 @@ struct ZineSettings: View {
     @State private var libUser = ""
     @State private var libPass = ""
     @State private var message: String?
+    @State private var shareAddress = ""
+    @State private var shareServerRoot = ""
+    @State private var shareLocalRoot = ""
+    @State private var shareUser = ""
+    @State private var sharePass = ""
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -25,7 +30,7 @@ struct ZineSettings: View {
             if let s = state.session {
                 HStack(alignment: .top, spacing: 22) {
                     VStack(alignment: .leading, spacing: 14) { connection(s); playback; profiles(s) }.frame(maxWidth: .infinity)
-                    VStack(alignment: .leading, spacing: 14) { addProfile(s); logins(s) }.frame(maxWidth: .infinity)
+                    VStack(alignment: .leading, spacing: 14) { addProfile(s); musicFolder(s); logins(s) }.frame(maxWidth: .infinity)
                 }
                 if let message { Mono(message, bold: true).foregroundStyle(Z.red) }
             } else {
@@ -97,6 +102,47 @@ struct ZineSettings: View {
         }
         .task { await state.cache.refresh() }
     }
+
+    private func musicFolder(_ s: SessionModel) -> some View {
+        let share = state.share
+        return box("Music folder over SMB", fill: share.isReady ? Z.white : Z.white) {
+            Mono(share.status == .ready && share.pathHint == nil ? "● Connected" : (share.status == .mounting ? "◌ Connecting" : (share.settings.enabled ? "■ Not connected" : "○ Off")), bold: true)
+            Text(share.statusLine).font(Z.serif(14))
+                .accessibilityLabel("Music folder status. \(share.statusLine)")
+            HStack(spacing: 8) {
+                ForEach([true, false], id: \.self) { on in
+                    let sel = share.settings.enabled == on
+                    Button(on ? "On" : "Off") { saveShare(); share.setEnabled(on) }
+                        .buttonStyle(ZineButtonStyle(kind: sel ? .yellow : .plain, small: true))
+                        .accessibilityLabel(on ? "Music folder on" : "Music folder off")
+                        .accessibilityAddTraits(sel ? .isSelected : [])
+                }
+                Button("Connect now") { saveShare(); Task { await share.mountNow() } }
+                    .buttonStyle(ZineButtonStyle(small: true)).disabled(!share.settings.enabled || share.status == .mounting)
+            }
+            field("smb://192.168.1.87/media", $shareAddress)
+            field("Folder as Navidrome sees it (/music)", $shareServerRoot)
+            field("Same folder on this Mac (/Volumes/media/library/music)", $shareLocalRoot)
+            field("Share username", $shareUser)
+            SecureField("Share password", text: $sharePass).textFieldStyle(.plain).font(Z.mono(12))
+                .padding(.horizontal, 8).padding(.vertical, 5).background(Z.white).zBorder(2)
+            HStack(spacing: 8) {
+                Button(share.username == nil ? "Save login" : "Replace login") {
+                    run { try share.saveLogin(username: shareUser, password: sharePass); sharePass = "" }
+                }.buttonStyle(ZineButtonStyle(small: true))
+                if share.username != nil { Button("Remove login") { run { try share.removeLogin() } }.buttonStyle(ZineButtonStyle(small: true)) }
+                Button("Save folders") { saveShare() }.buttonStyle(ZineButtonStyle(small: true))
+            }
+            Mono(share.username.map { "Login saved for \($0)" } ?? "No share login saved", size: 10)
+            if let e = share.settingsError { Mono(e, bold: true).foregroundStyle(Z.red) }
+            Text("Optional. Mounted by the app, read only for waveforms and quick tag reads (coming later). Playback never needs it. Login kept in the Keychain.").font(Z.serif(12.5, italic: true))
+        }
+        .onAppear {
+            shareAddress = share.settings.address; shareServerRoot = share.settings.serverRoot; shareLocalRoot = share.settings.localRoot
+        }
+    }
+
+    private func saveShare() { state.share.save(address: shareAddress, serverRoot: shareServerRoot, localRoot: shareLocalRoot) }
 
     private func connection(_ s: SessionModel) -> some View {
         box("Connection", fill: s.isGood ? Z.white : Z.yellow) {
