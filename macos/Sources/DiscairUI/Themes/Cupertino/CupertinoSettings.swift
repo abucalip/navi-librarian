@@ -97,6 +97,17 @@ struct CupertinoSettings: View {
             }
             Text("Reports what you play to Navidrome, which feeds your listening history and so your recommendations. Off sends nothing from this Mac.")
                 .font(.system(size: 12)).foregroundStyle(CU.muted)
+            Text("Tell me when a Get finishes").fontWeight(.semibold).padding(.top, 6)
+            HStack(spacing: 8) {
+                ForEach([true, false], id: \.self) { on in
+                    Button(on ? "On" : "Off") { state.acquisition.notifiesWhenFinished = on }
+                        .buttonStyle(CapsuleButtonStyle(primary: state.acquisition.notifiesWhenFinished == on, small: true))
+                        .accessibilityLabel(on ? "Get finished notifications on" : "Get finished notifications off")
+                        .accessibilityAddTraits(state.acquisition.notifiesWhenFinished == on ? .isSelected : [])
+                }
+            }
+            Text("A macOS notification when an album or song you asked for is in your library, or could not be found. macOS asks permission the first time.")
+                .font(.system(size: 12)).foregroundStyle(CU.muted)
             Text("Keep played songs and covers").fontWeight(.semibold).padding(.top, 6)
             HStack(spacing: 8) {
                 ForEach([true, false], id: \.self) { on in

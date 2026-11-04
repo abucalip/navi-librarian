@@ -291,3 +291,10 @@ A progressive song (MP3, Opus, FLAC, or their transcodes) now starts while it do
 
 **Tests run (filtered):** `swift test --filter MiniPlayerTests` (5 passed: content logic, a render in each theme).
 **Not verified:** the window was not opened in a running app (floating level, Spaces, close and reopen), VoiceOver, and the mini window's look is not owner-approved. It does not yet remember its position or open at launch.
+
+## M6 slice 2: Get-finished notification
+
+`GetFinishedDetector` (`DiscairUI/Model/GetNotifications.swift`) compares each Librarian poll with the last one. A job that was moving (working, queued or other) and now reads imported or failed produces one `GetFinishedEvent`; the first poll after connecting only seeds, and a job that first appears already done is not announced, so old jobs never notify. A failed job that is retried and then imported notifies again. `AcquisitionModel.refresh()` feeds the detector on every poll and hands events to its `notifier` when `notifiesWhenFinished` is on (Settings, "Tell me when a Get finishes", both themes; default on; key `discair.notifyGetFinished`). `SystemGetNotifier` delivers through `UNUserNotificationCenter`, asks permission at the first delivery, does nothing outside an `.app` bundle (`swift run`, tests, previews), and a click activates the app and opens Downloads. Imported plays the default sound; failed is silent and carries the server's message.
+
+**Tests run (filtered):** `swift test --filter 'GetNotificationModelTests|GetFinishedDetectorTests|AcquisitionModelTests'` (all passed) and `swift test --filter ScreenshotTests` (Settings renders in both themes).
+**Not verified:** no notification was shown by a bundled app (permission prompt, banner, sound, click to Downloads); polling is every 4 s while busy and 30 s otherwise, so a banner can arrive up to that late and a job that starts and ends between two idle polls is never seen moving, so it does not notify. Notifications are not shown while Discair is the frontmost app (macOS default).

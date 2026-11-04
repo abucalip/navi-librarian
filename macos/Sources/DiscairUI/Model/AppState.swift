@@ -96,6 +96,9 @@ public final class AppState {
             self.actions = live
             live.onPlay = { [weak self] album in self?.playAlbum(album) }
             live.onResume = { [weak self] in self?.player.togglePlayPause() }
+            let notifier = SystemGetNotifier()
+            notifier.onOpen = { [weak self] in self?.screen = .downloads }
+            acquisition.notifier = notifier
         } else { self.actions = NoopActions() }
         session?.onConnected = { [weak self] in self?.share.startIfNeeded(); await self?.refreshLibrary() }
         session?.onNavidromeSignOut = { [weak self] in self?.lyrics.clearAll(); self?.library.clearSavedPages(); self?.cache.media.clear() }
