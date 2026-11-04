@@ -1,3 +1,11 @@
+## 2026-11-04 — macOS M6 slice 1: floating mini player merged (PR #739)
+
+- **Merged (owner request):** PR [#739](https://github.com/abucalip/navi-librarian/pull/739), squash `1bc88472f3b4e2f583910fd39622315882e71217`, tested head `2cb6ab32be57c3b158070df11843111a244a31ae`.
+- **What:** `MiniPlayerView`, `MiniPlayerContent`, `MiniWindowConfigurator` and the `Window("Mini Player")` scene with Window > Mini Player (option-command-M); first M6 task (mini window is first in the M6 row of the contract). Cover, transport, seek bar, next-track peek; floating, all Spaces; same `PlayerModel` as the main window.
+- **Tests run (filtered only):** `swift test --filter MiniPlayerTests`, 5 passed (content logic and a render in Cupertino and Zine; the render was looked at). GitHub runs no Swift job and the PR had no checks.
+- **Not verified:** the window in a running app (floating level, Spaces, reopen), VoiceOver, the owner's approval of its look. Position is not remembered. GitHub API timed out repeatedly; PR creation and merge went through on retry.
+- **Next action:** the owner opens the mini player live; then the next M6 feature (Get-finished notification, command palette, widget). Keychain and signing check and first release remain as in `docs/ACTIVE_WORK.md` 2j.
+
 ## 2026-11-04 — macOS M5 growing playback: partial MP3/FLAC length fix merged (PR #738)
 
 - **Merged (owner request):** PR [#738](https://github.com/abucalip/navi-librarian/pull/738), squash `4f4ef0f89615bd2acad2cd4f21d1e6276ff263f4`.

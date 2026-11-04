@@ -283,3 +283,11 @@ A progressive song (MP3, Opus, FLAC, or their transcodes) now starts while it do
 **Known limits, for the by-ear check:** a stall is not a pause (the phase stays Playing and a Pause press during a stall has no effect until data returns); a failed download ends the song at what arrived, without a message; the restart after a stall may repeat up to one frame; MP3 and Opus lengths of a partial file are whatever `AVAudioFile` reports, not yet measured on real downloads.
 
 **Tests run (filtered):** `swift test --filter 'DiscairAudioTests|PlayerModelTests'` (88 tests in the audio target plus the player-model suite, all passed, including 6 `ProgressiveStart`, 2 `GrowingDownload` on a stub `URLProtocol`, and 2 engine tests: a song plays through as the rest arrives, and a starved song waits instead of ending). The engine tests run a real engine on this Mac and return early on a machine with no audio output. Not run: any real server, real MP3/Opus/FLAC downloads, any by-ear listening.
+
+
+## M6 slice 1: floating mini player
+
+`MiniPlayerView` (`DiscairUI/Chrome/MiniPlayer.swift`) is a 340 x 150 window with the cover, previous, play or pause and next, the seek bar (`DragBar`), the elapsed time and a "Next:" line for the first song in Up Next. It reads the same `PlayerModel` as the main window. `Window("Mini Player", id: "mini")` in `DiscairApp`; opened from Window > Mini Player (option-command-M). `MiniWindowConfigurator` sets the floating level, all Spaces, full-screen auxiliary, drag by background and no resize. One dark look for both themes (blurred cover backdrop); Zine gets a square, bordered cover. `MiniPlayerContent` holds the pure text logic.
+
+**Tests run (filtered):** `swift test --filter MiniPlayerTests` (5 passed: content logic, a render in each theme).
+**Not verified:** the window was not opened in a running app (floating level, Spaces, close and reopen), VoiceOver, and the mini window's look is not owner-approved. It does not yet remember its position or open at launch.
