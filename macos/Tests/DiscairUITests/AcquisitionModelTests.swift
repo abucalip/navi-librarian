@@ -210,20 +210,39 @@ struct AcquisitionModelTests {
         #expect(m.notice == nil)
     }
 
-    @Test func skipSourceAndDismissSendTheJobAndDismissRemovesIt() async throws {
-        let (m, t) = try make(["/api/acquisitions/skip": fb, "/api/acquisitions/dismiss": ok, "/api/acquisitions": jobsEmpty])
+    @Test func skipSourceSendsTheJob() async throws {
+        let (m, t) = try make(["/api/acquisitions/skip": fb, "/api/acquisitions": jobsEmpty])
         await m.skipSource(Self.sampleJobs[0])
         #expect(t.sent.contains { $0.path == "/api/acquisitions/skip" && $0.body["artist"] as? String == "Can" })
-        await m.dismiss(Self.sampleJobs[3])
-        #expect(t.sent.contains { $0.path == "/api/acquisitions/dismiss" && $0.body["album"] as? String == "Laughing Stock" })
     }
 
-    @Test func aRefusedDismissKeepsTheJobAndShowsTheServersWords() async throws {
-        let (m, _) = try make(["/api/acquisitions/dismiss": (409, #"{"detail":"Files are in use."}"#), "/api/acquisitions": (200, #"{"ok":true,"acquisitions":[{"artist":"Talk Talk","album":"Laughing Stock","status":"imported"}]}"#)])
-        await m.refresh()
-        await m.dismiss(try #require(m.jobs.first))
-        #expect(m.jobs.count == 1)
-        #expect(m.notice?.contains("Files are in use.") == true)
+    @Test func dismissOnlyHidesTheCardAndNeverCallsTheServer() async throws {
+        let suite = UserDefaults(suiteName: "discair-test-\(UUID().uuidString)")!
+        let t = RouteTransport([:])
+        let client = try LibrarianClient(baseURL: URL(string: "https://lib.example.ts.net")!, credential: Credential(username: "o", password: "pw"), transport: t)
+        let m = AcquisitionModel(defaults: suite)
+        m.configure(librarian: client)
+        m.showJobs(Self.sampleJobs)
+        m.dismiss(Self.sampleJobs[2])
+        #expect(m.visibleJobs.count == 3 && !m.visibleJobs.contains { $0.artist == "Faust" })
+        m.dismissImported()
+        #expect(m.visibleJobs.map(\.artist) == ["Can", "Neu!"])
+        #expect(t.sent.filter { $0.path.contains("dismiss") }.isEmpty)
+        // It stays hidden after a restart, and returns if the server changes the job.
+        let again = AcquisitionModel(defaults: suite)
+        again.showJobs(Self.sampleJobs)
+        #expect(again.visibleJobs.count == 2)
+    }
+
+    @Test func aClearedJobComesBackWhenItChanges() {
+        let m = AcquisitionModel(defaults: UserDefaults(suiteName: "discair-test-\(UUID().uuidString)")!)
+        m.showJobs(Self.sampleJobs)
+        m.dismiss(Self.sampleJobs[2])
+        let retried = Self.sampleJobs[2]
+        let json = #"{"artist":"Faust","album":"Zamzam (song on Faust IV)","status":"searching","updated_at":99,"details":{"kind":"track","track_title":"Zamzam"}}"#
+        let changed = try! JSONDecoder().decode(Acquisition.self, from: Data(json.utf8))
+        m.showJobs([Self.sampleJobs[0], changed])
+        #expect(m.visibleJobs.contains { $0.artist == "Faust" } && retried.updatedAt == 10)
     }
 
     // MARK: Discover
