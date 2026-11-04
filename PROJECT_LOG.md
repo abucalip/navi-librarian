@@ -1,3 +1,11 @@
+## 2026-11-04 — macOS M6 slice 2: Get-finished notification merged (PR #740)
+
+- **Merged (owner request):** PR [#740](https://github.com/abucalip/navi-librarian/pull/740), squash `c60a1c65ce71cda6147a214701e551c4b8481e5d`, tested head `a29ab25e17d99adeddc227c34bc792ebcd529ce6`.
+- **What:** `GetFinishedDetector`, `GetFinishedEvent`, `SystemGetNotifier` (`DiscairUI/Model/GetNotifications.swift`); `AcquisitionModel.refresh()` announces a job once when it goes from moving to imported or failed; Settings switch "Tell me when a Get finishes" in Cupertino and Zine (default on). A click opens Downloads. No-op outside an `.app` bundle. Details in `macos/DESIGN.md` M6 slice 2.
+- **Tests run (filtered only):** `swift test --filter 'GetNotificationModelTests|GetFinishedDetectorTests|AcquisitionModelTests'` passed; `swift test --filter ScreenshotTests` passed (Settings in both themes). GitHub runs no Swift job.
+- **Not verified:** no notification shown by a bundled app (permission prompt, banner, sound, click to Downloads); delay up to one poll (4 s busy, 30 s idle); not shown while Discair is frontmost; the new Settings row is not owner-approved.
+- **Next action:** the owner builds with `macos/scripts/bundle.sh` and checks a real Get notifies; then the next M6 feature (command palette, widget, section 6 features).
+
 ## 2026-11-04 — macOS M6 slice 1: floating mini player merged (PR #739)
 
 - **Merged (owner request):** PR [#739](https://github.com/abucalip/navi-librarian/pull/739), squash `1bc88472f3b4e2f583910fd39622315882e71217`, tested head `2cb6ab32be57c3b158070df11843111a244a31ae`.
