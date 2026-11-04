@@ -19,9 +19,9 @@ public struct Credential: Codable, Equatable, Sendable, CustomStringConvertible,
     public var customMirror: Mirror { Mirror(self, children: ["username": username, "password": "<redacted>"]) }
 }
 
-/// Which login a Keychain item holds. Navidrome and Librarian are separate and never shared.
+/// Which login a Keychain item holds. Navidrome, Librarian and the SMB share are separate and never shared.
 public enum SecretKind: String, Sendable, CaseIterable {
-    case navidrome, librarian
+    case navidrome, librarian, smb
 }
 
 public protocol SecretStore: Sendable {

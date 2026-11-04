@@ -1,4 +1,5 @@
 import DiscairAudio
+import DiscairCore
 import DiscairNavidrome
 import Observation
 import SwiftUI
@@ -66,6 +67,8 @@ public final class AppState {
     public let artwork: ArtworkStore
     /// The optional on-disk copy of played songs and covers (off by default; Settings).
     public let cache: CacheModel
+    /// The optional SMB mount of the music folder (Settings; off by default).
+    public let share: ShareModel
     public var selectedArtist: ArtistItem = ArtistItem(id: 0, name: "Talk Talk", albumCount: 5)
     /// The letter shown in the Zine A-Z index.
     public var selectedLetter = "T"
@@ -81,6 +84,8 @@ public final class AppState {
         // Previews and tests keep their cache in a throwaway folder, so they never touch the real one.
         let media = MediaCache(root: session == nil ? FileManager.default.temporaryDirectory.appending(path: "discair-preview-media-\(UUID().uuidString)") : MediaCache.defaultRoot)
         self.cache = CacheModel(media: media, defaults: defaults)
+        // Previews and tests never touch the Keychain or mount anything.
+        self.share = session == nil ? ShareModel(defaults: defaults, secrets: InMemorySecretStore(), mounter: NoMounter()) : ShareModel(defaults: defaults)
         self.artwork = ArtworkStore(media: media)
         let player = PlayerModel(output: output ?? EngineOutput(), fetcher: CachingFetcher(cache: media), defaults: defaults)
         self.player = player
@@ -92,7 +97,7 @@ public final class AppState {
             live.onPlay = { [weak self] album in self?.playAlbum(album) }
             live.onResume = { [weak self] in self?.player.togglePlayPause() }
         } else { self.actions = NoopActions() }
-        session?.onConnected = { [weak self] in await self?.refreshLibrary() }
+        session?.onConnected = { [weak self] in self?.share.startIfNeeded(); await self?.refreshLibrary() }
         session?.onNavidromeSignOut = { [weak self] in self?.lyrics.clearAll(); self?.library.clearSavedPages(); self?.cache.media.clear() }
         session?.onConnectFailed = { [weak self] e in
             guard let self, session != nil, !self.library.isLive else { return }
@@ -114,6 +119,7 @@ public final class AppState {
         lyrics.configure(navidrome: navidrome, scope: "\(session.activeProfile?.navidromeURL.absoluteString ?? "")|\(session.navidromeUsername ?? "")")
         await library.load(navidrome: navidrome, librarian: session.librarian)
         await library.loadSongs(navidrome: navidrome)
+        share.noteServerPaths(library.songServerPaths)
         if library.isLive { selectedArtist = library.artists.first ?? selectedArtist; selectedLetter = selectedArtist.letter }
         if library.isLive, let first = library.recent.first ?? library.albums.first { selectedAlbum = first }
     }
@@ -183,4 +189,9 @@ public final class AppState {
         if let a = library.artist(named: name) { open(artist: a) }
         else if !library.isLive { screen = .artist }
     }
+}
+
+/// A mounter that does nothing: previews and screenshot tests.
+struct NoMounter: ShareMounter {
+    func mount(_ address: URL, credential: Credential?) async -> ShareMountOutcome { .failed(.unreachable) }
 }

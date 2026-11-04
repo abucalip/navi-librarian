@@ -54,6 +54,8 @@ public final class LibraryModel {
     public private(set) var songsHaveMore = false
     public private(set) var songsError: String?
     private var songsLoaded = false
+    /// Server-side paths of the first Songs page (for the SMB path check only; never shown).
+    public private(set) var songServerPaths: [String] = []
     static let songPage = 200
 
     public init() {}
@@ -238,7 +240,7 @@ public final class LibraryModel {
             songs = more ? songs + rows : rows
             songsHaveMore = page.count == Self.songPage
             songsLoaded = true
-            if !more { cache?.put("songs-first", page) }
+            if !more { songServerPaths = page.compactMap(\.path); cache?.put("songs-first", page) }
         } catch {
             let e = (error as? DiscairError) ?? ErrorMapping.map(error)
             if !more, let hit = cache?.get("songs-first", as: [NavidromeSong].self) {
