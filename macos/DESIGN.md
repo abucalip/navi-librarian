@@ -407,3 +407,14 @@ Completes contract section 6.3. In the Cupertino Library, the Columns switch (op
 
 **Tests run (filtered):** `swift test --skip-update --filter "BulkSongLoadTests|LibraryModelTests|SmartPlaylistTests|ListeningHistoryTests|ScreenshotTests|MillerColumnsTests|OfflineTests"` (56 passed; BulkSongLoadTests use a fake server: 4321 songs in order without gaps or repeats, an exact page multiple ends, a small library needs one request, a failure keeps and resumes). **Measured against the real server (2026-11-04, read-only `search3`, LAN):** library = 12,672 songs. One 500-song page 0.05 s (same at offset 0 and 12,000). Old way, 200 per page one after another: 4,000 songs in 0.47 s. Sequential 500 per page, whole library: 1.38 s. `loadAllSongs`: whole library in 1.66 s, all ids unique, no error. Its first run took 4.4 s because every row built three `ISO8601DateFormatter`s; one shared pair fixed that. Fetching four pages at once does not beat sequential here (the server answers quickly either way), so the width of 4 buys little on this LAN and may matter more over Tailscale.
 **Not verified:** memory use and scrolling on the real library, Tailscale speed, rows are not paged in the table (every loaded row is in memory and in the view).
+
+## Bug batch after the owner's live run (2026-11-05)
+
+- Seek, volume, EQ bands and queue-row drag: the SwiftUI gesture sat under an AppKit "no window drag" overlay and never saw the press. Controls now take the mouse through AppKit views (`PointerSurface`, `RowDragSurface` in `WindowChrome.swift`); a row drag is an AppKit drag session carrying the song's id as plain text. Unit-tested with synthetic events; not tried with a real mouse.
+- Restored position now applies only to Play on the queue restored at launch; a new album, Next and Previous start at 0.
+- Artists tab is the A-Z list (`Screen.artists`); Recently Added has its own screen; album and artist pages have a Back button to where they were opened from.
+- Songs table: 100 rows per page (all songs still load for sorting).
+- Covers for albums not in the library (Missing, New, Gap Radar) come from the Librarian's `/api/artwork` lookup.
+- Window below 1100x700 scrolls both ways instead of squeezing the layout (minimum window 480x360).
+- Pipeline dock moved to the bottom left; a finished Get (imported or failed) shows a note for 30 seconds, then fades.
+- Queue tabs no longer wrap onto two lines.

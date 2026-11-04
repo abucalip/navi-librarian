@@ -23,6 +23,7 @@ struct CupertinoArtistBanner: View {
         .frame(maxWidth: .infinity)
         .overlay(alignment: .topLeading) {
             VStack(alignment: .leading, spacing: 0) {
+                BackButton(title: AppState.title(of: state.artistBack), onDark: true) { state.screen = state.artistBack }.padding(.bottom, 14)
                 Text(state.selectedArtist.name).font(.system(size: 60, weight: .bold)).tracking(-1.5).lineLimit(1).minimumScaleFactor(0.5)
                 Text(lib.isLive ? "\(lib.artistOwnedCount) of \(lib.artistOwnedCount + lib.artistMissingCount) albums owned" : "3 of 5 albums owned · Post-rock, Synth-pop").opacity(0.85).padding(.top, 6).padding(.bottom, 12)
                 HStack(spacing: 8) {
@@ -35,7 +36,7 @@ struct CupertinoArtistBanner: View {
                 }
             }
             .foregroundStyle(.white)
-            .padding(.leading, 264).padding(.top, 150)       // 236 sidebar column + 28 margin
+            .padding(.leading, 264).padding(.top, 104)       // 236 sidebar column + 28 margin
         }
         .accessibilityElement(children: .contain)
     }

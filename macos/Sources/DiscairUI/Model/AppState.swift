@@ -23,6 +23,10 @@ public enum Screen: String, CaseIterable, Sendable {
     case smartPlaylists
     /// Days and a heatmap of when songs were last played (M6 slice 9; contract section 6.6).
     case history
+    /// The A-Z list of artists (the Artists tab). `.artist` is one artist's page.
+    case artists
+    /// Albums added to the library most recently (the Recently Added tab).
+    case recent
 }
 
 /// What a theme may ask the app to do. Themes call these; they never reach the network or the audio engine.
@@ -133,6 +137,7 @@ public final class AppState {
         guard let session, let navidrome = session.navidrome else { return }
         configureSavedPages()
         artwork.configure(navidrome.urls)
+        artwork.configure(librarian: session.librarian)
         acquisition.configure(librarian: session.librarian)
         discovery.configure(librarian: session.librarian)
         player.configure(urls: navidrome.urls, scrobbler: navidrome)
@@ -261,14 +266,47 @@ public final class AppState {
     /// Library lists without the albums the owner dismissed.
     public func visible(_ albums: [AlbumItem]) -> [AlbumItem] { albums.filter { !acquisition.isHidden($0) } }
 
-    public func open(album: AlbumItem) { selectedAlbum = album; screen = .album }
+    /// Where the Back button on an album page goes: the screen the album was opened from (Albums by default).
+    public private(set) var albumBack: Screen = .albums
+    /// Where the Back button on an artist page goes: the screen the artist was opened from (Artists by default).
+    public private(set) var artistBack: Screen = .artists
 
-    public func open(artist: ArtistItem) { selectedArtist = artist; selectedLetter = artist.letter; screen = .artist }
+    public func open(album: AlbumItem) {
+        if screen != .album && screen != .nowPlaying { albumBack = screen }
+        selectedAlbum = album; screen = .album
+    }
+
+    public func open(artist: ArtistItem) {
+        if screen != .artist && screen != .nowPlaying { artistBack = screen }
+        selectedArtist = artist; selectedLetter = artist.letter; screen = .artist
+    }
+
+    /// Name of a screen as the sidebar and Back buttons call it.
+    public static func title(of screen: Screen) -> String {
+        switch screen {
+        case .home: "Home"
+        case .album: "Album"
+        case .nowPlaying: "Now Playing"
+        case .queue: "Up Next"
+        case .library: "Songs"
+        case .artist: "Artist"
+        case .settings: "Settings"
+        case .albums: "Albums"
+        case .downloads: "Downloads"
+        case .discover: "New"
+        case .equalizer: "Equalizer"
+        case .gapRadar: "Gap Radar"
+        case .smartPlaylists: "Smart Playlists"
+        case .history: "History"
+        case .artists: "Artists"
+        case .recent: "Recently Added"
+        }
+    }
 
     /// Opens an artist by name when the library has them; otherwise nothing happens.
     public func openArtist(named name: String) {
         if let a = library.artist(named: name) { open(artist: a) }
-        else if !library.isLive { screen = .artist }
+        else if !library.isLive { open(artist: selectedArtist) }
     }
 }
 

@@ -43,7 +43,7 @@ struct CupertinoHome: View {
                 HStack {
                     Button { state.actions.resume() } label: { Label("Resume", systemImage: "play.fill") }
                         .buttonStyle(CapsuleButtonStyle(primary: true))
-                    Button("Open album") { state.selectedAlbum = a; state.screen = .album }
+                    Button("Open album") { state.open(album: a) }
                         .buttonStyle(CapsuleButtonStyle())
                 }
             }

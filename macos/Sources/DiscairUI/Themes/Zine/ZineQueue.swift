@@ -104,7 +104,7 @@ struct ZineQueue: View {
                 }
                 Spacer(minLength: 4)
                 }
-                .modifier(RowDragSource(id: index == nil ? nil : q.id.uuidString))
+                .modifier(RowDragSource(id: index == nil ? nil : q.id.uuidString, label: q.title))
                 Mono((playing ? "▶ playing · " : "") + PlayerModel.clock(q.duration))
                 if let i = index {
                     Button("Play") { p.jump(toUpNext: i) }.buttonStyle(ZineButtonStyle(small: true))

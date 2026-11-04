@@ -15,6 +15,7 @@ struct ZineArtist: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
+            BackButton(title: AppState.title(of: state.artistBack), zine: true) { state.screen = state.artistBack }.padding(.bottom, 8)
             ZStack(alignment: .topLeading) {
                 // The whole name is shown (owner review: the cropped version cut the letters off). The text box is placed
                 // from the font's own ascent so the baseline sits 10 pt above the rule.
@@ -86,7 +87,7 @@ struct ZineArtist: View {
     private func issue(_ a: AlbumItem) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             if a.owned {
-                Button { state.selectedAlbum = a; state.screen = .album } label: { ZineCover(album: a, width: 130) }
+                Button { state.open(album: a) } label: { ZineCover(album: a, width: 130) }
                     .buttonStyle(.plain).accessibilityLabel("Open \(a.title)")
             } else {
                 VStack(spacing: 4) {
@@ -100,7 +101,7 @@ struct ZineArtist: View {
                 .background(StripeFill())
                 .zBorder(3, dashed: true)
             }
-            Button { state.selectedAlbum = a; state.screen = .album } label: {
+            Button { state.open(album: a) } label: {
                 Text(a.title).font(Z.an(14)).textCase(.uppercase).lineLimit(2).lineSpacing(-2).frame(width: 130, alignment: .leading)
             }
             .buttonStyle(.plain).accessibilityLabel("Open \(a.title)")

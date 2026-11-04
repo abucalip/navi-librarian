@@ -183,6 +183,16 @@ public struct LibrarianClient: Sendable {
         return "artist=\(enc(String(artist.prefix(180))))&album=\(enc(String(album.prefix(180))))"
     }
 
+    /// A cover for an album the library does not hold (`GET /api/artwork`), found by the server from public sources.
+    /// Nil when the server has none. Only https addresses are returned.
+    public func artworkURL(artist: String, album: String) async throws -> URL? {
+        struct Lookup: Decodable { let artworkUrl: String?; enum CodingKeys: String, CodingKey { case artworkUrl = "artwork_url" } }
+        let (data, http) = try await authedSend("GET", "api/artwork?" + Self.query(artist, album), body: nil)
+        let found = try decode(Lookup.self, data, http).artworkUrl
+        guard let found, let url = URL(string: found), url.scheme == "https" else { return nil }
+        return url
+    }
+
     // MARK: Plumbing
 
     private func json(_ object: [String: Any]) throws -> Data {

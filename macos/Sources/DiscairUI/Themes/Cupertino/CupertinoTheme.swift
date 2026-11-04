@@ -83,6 +83,8 @@ struct CupertinoWindow: View {
         case .album: CupertinoAlbum(state: state)
         case .queue, .albums: CupertinoAlbumsGrid(state: state, inspector: state.screen == .queue)
         case .library: CupertinoLibrary(state: state)
+        case .artists: CupertinoArtistsIndex(state: state)
+        case .recent: CupertinoAlbumsGrid(state: state, recent: true)
         case .artist: CupertinoArtist(state: state)
         case .settings: CupertinoSettings(state: state)
         case .downloads: CupertinoDownloads(state: state)
@@ -103,7 +105,7 @@ struct CupertinoSidebar: View {
         case .home: "Home"
         case .queue, .library: "Songs"
         case .albums: "Albums"
-        case .artist: "Artists"
+        case .artist, .artists: "Artists"
         case .settings: "Settings"
         case .downloads: "Downloads"
         case .discover: "New"
@@ -111,12 +113,13 @@ struct CupertinoSidebar: View {
         case .gapRadar: "Gap Radar"
         case .smartPlaylists: "Smart Playlists"
         case .history: "History"
-        default: "Recently Added"
+        case .recent: "Recently Added"
+        default: "Home"
         }
     }
     /// Where each row goes. Rows without a screen yet do nothing (they are still real buttons, so keyboard and
     /// VoiceOver treat them like the rest).
-    private let target: [String: Screen] = ["Home": .home, "Songs": .library, "Albums": .albums, "Artists": .artist, "New": .discover, "Gap Radar": .gapRadar, "Smart Playlists": .smartPlaylists, "History": .history, "Downloads": .downloads, "Settings": .settings]
+    private let target: [String: Screen] = ["Home": .home, "Songs": .library, "Albums": .albums, "Artists": .artists, "Recently Added": .recent, "New": .discover, "Gap Radar": .gapRadar, "Smart Playlists": .smartPlaylists, "History": .history, "Downloads": .downloads, "Settings": .settings]
     private let nav: [(String, String)] = [
         ("house", "Home"), ("sparkles", "New"), ("clock", "Recently Added"), ("music.mic", "Artists"),
         ("square.stack", "Albums"), ("music.note", "Songs"), ("dot.radiowaves.left.and.right", "Gap Radar"), ("wand.and.stars", "Smart Playlists"),

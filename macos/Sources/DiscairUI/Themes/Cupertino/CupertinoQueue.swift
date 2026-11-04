@@ -7,15 +7,17 @@ struct CupertinoAlbumsGrid: View {
     let state: AppState
     /// True when the Up Next inspector is open and the grid must stay clear of it.
     var inspector = false
+    /// The Recently Added tab: the newest albums instead of the alphabetical grid.
+    var recent = false
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
-                Text("Albums").font(CU.title(34)).padding(.top, 4).padding(.bottom, 14)
+                Text(recent ? "Recently Added" : "Albums").font(CU.title(34)).padding(.top, 4).padding(.bottom, 14)
                 if state.library.phase == .loading { Text("Loading your library…").foregroundStyle(CU.muted).padding(.bottom, 8) }
                 if case .failed(let m) = state.library.phase { Text(m).foregroundStyle(CU.accent).padding(.bottom, 8) }
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 128, maximum: 128), spacing: 18, alignment: .top)], alignment: .leading, spacing: 18) {
-                    ForEach(state.library.albums) { a in
-                        Button { state.selectedAlbum = a; state.screen = .album } label: {
+                    ForEach(state.visible(recent ? state.library.recent : state.library.albums)) { a in
+                        Button { state.open(album: a) } label: {
                         VStack(alignment: .leading, spacing: 0) {
                             CoverView(album: a).frame(width: 128).clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
                                 .shadow(color: .black.opacity(0.2), radius: 7, y: 4).padding(.bottom, 9)
@@ -50,7 +52,7 @@ struct CupertinoQueueInspector: View {
             HStack {
                 segmented
                 Spacer()
-                Text(tab == .saved ? "\(state.savedQueues.queues.count) saved" : live ? liveSummary : "8 songs · 52 min").foregroundStyle(CU.muted).font(.system(size: 13))
+                Text(tab == .saved ? "\(state.savedQueues.queues.count) saved" : live ? liveSummary : "8 songs · 52 min").foregroundStyle(CU.muted).font(.system(size: 13)).lineLimit(1).minimumScaleFactor(0.8)
             }
             .padding(.bottom, 12)
 
@@ -185,7 +187,7 @@ struct CupertinoQueueInspector: View {
             }
             Spacer(minLength: 4)
             }
-            .modifier(RowDragSource(id: dragID))
+            .modifier(RowDragSource(id: dragID, label: q.title))
             HStack(spacing: 4) {
                 if playing { Image(systemName: "waveform").accessibilityLabel("Playing") }
                 Text(time).monospacedDigit()
@@ -209,7 +211,7 @@ struct CupertinoQueueInspector: View {
 
     private func seg(_ t: String, on: Bool, _ action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            Text(t).font(.system(size: 13, weight: on ? .semibold : .medium)).padding(.horizontal, 14).padding(.vertical, 3)
+            Text(t).font(.system(size: 13, weight: on ? .semibold : .medium)).lineLimit(1).fixedSize().padding(.horizontal, 14).padding(.vertical, 3)
                 .background(on ? Color.white : .clear, in: Capsule())
                 .shadow(color: .black.opacity(on ? 0.15 : 0), radius: 1.5, y: 1)
         }

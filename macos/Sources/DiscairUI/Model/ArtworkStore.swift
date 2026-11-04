@@ -1,6 +1,7 @@
 import AppKit
 import DiscairAudio
 import DiscairCore
+import DiscairLibrarian
 import DiscairNavidrome
 import Observation
 import SwiftUI
@@ -22,6 +23,33 @@ public final class ArtworkStore {
         self.transport = transport
         self.media = media
         cache.countLimit = 400
+    }
+
+    /// The Librarian finds covers for albums the library does not hold (recommendations, New, missing albums).
+    @ObservationIgnored private var librarian: LibrarianClient?
+    public func configure(librarian: LibrarianClient?) {
+        self.librarian = librarian
+        for k in failed where k.hasPrefix("lookup|") { failed.remove(k) }
+    }
+
+    /// The cover of an album that is not in the library, looked up by artist and title.
+    public func image(artist: String, album: String, px: Int) async -> NSImage? {
+        let key = "lookup|\(artist.lowercased())|\(album.lowercased())"
+        if let hit = cache.object(forKey: key as NSString) { return hit }
+        let diskKey = "cover|\(key)"
+        if let data = media?.data(for: diskKey, ext: "img"), let image = NSImage(data: data) {
+            cache.setObject(image, forKey: key as NSString); return image
+        }
+        guard !failed.contains(key), let librarian else { return nil }
+        guard let url = try? await librarian.artworkURL(artist: artist, album: album) else { failed.insert(key); return nil }
+        var request = URLRequest(url: url)
+        request.setValue("image/*", forHTTPHeaderField: "Accept")
+        guard let (data, http) = try? await transport.send(request), http.statusCode == 200, let image = NSImage(data: data) else {
+            failed.insert(key); return nil
+        }
+        cache.setObject(image, forKey: key as NSString)
+        media?.store(data: data, key: diskKey, ext: "img")
+        return image
     }
 
     public func configure(_ builder: StreamURLBuilder?) {
@@ -70,10 +98,11 @@ struct ArtworkImage: View {
         Color.clear
             .overlay { if let image { Image(nsImage: image).resizable().scaledToFill() } }
             .clipped()
-            .task(id: "\(album.coverArt ?? "")@\(px)") {
+            .task(id: "\(album.coverArt ?? "")@\(px)|\(album.owned ? "" : album.artist + "|" + album.title)") {
             image = nil
-            guard let id = album.coverArt, let store else { return }
-            image = await store.image(coverArt: id, px: px)
+            guard let store else { return }
+            if let id = album.coverArt { image = await store.image(coverArt: id, px: px) }
+            else if !album.owned, album.id >= 0 { image = await store.image(artist: album.artist, album: album.title, px: px) }
         }
     }
 }

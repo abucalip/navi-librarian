@@ -8,6 +8,7 @@ struct ZineAlbum: View {
     var body: some View {
         let a = state.selectedAlbum
         VStack(alignment: .leading, spacing: 0) {
+            BackButton(title: AppState.title(of: state.albumBack), zine: true) { state.screen = state.albumBack }.padding(.bottom, 8)
             Text(a.title).font(Z.an(118)).textCase(.uppercase).tracking(1.2).lineLimit(1).minimumScaleFactor(0.4)
                 .padding(.bottom, 4).accessibilityAddTraits(.isHeader)
             Rectangle().fill(Z.ink).frame(height: 4)

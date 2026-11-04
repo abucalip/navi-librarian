@@ -32,17 +32,13 @@ struct DragBar: View {
                 }
             }
             .frame(height: peaks?.isEmpty == false ? Self.waveformHeight : height).frame(maxHeight: .infinity)
-            .contentShape(Rectangle())
-            .gesture(DragGesture(minimumDistance: 0)
-                .onChanged { dragging = min(max($0.location.x / max(g.size.width, 1), 0), 1) }
-                .onEnded {
-                    let v = min(max($0.location.x / max(g.size.width, 1), 0), 1)
-                    dragging = nil
-                    onCommit(v)
-                })
         }
         .frame(height: max(peaks?.isEmpty == false ? Self.waveformHeight : height, 16))
-        .blocksWindowDrag()
+        // The AppKit surface takes the press, the drag and the release (a SwiftUI gesture under the window-drag guard never saw them).
+        .overlay(PointerSurface(
+            onDown: { p, s in dragging = Self.fraction(p, s) },
+            onDrag: { p, s in dragging = Self.fraction(p, s) },
+            onUp: { p, s in dragging = nil; onCommit(Self.fraction(p, s)) }))
         .focusable()
         .accessibilityElement()
         .accessibilityLabel(label)
@@ -57,6 +53,8 @@ struct DragBar: View {
         .onKeyPress(.rightArrow) { onCommit(min(value + 0.05, 1)); return .handled }
         .onKeyPress(.leftArrow) { onCommit(max(value - 0.05, 0)); return .handled }
     }
+
+    static func fraction(_ p: CGPoint, _ s: CGSize) -> Double { min(max(Double(p.x / max(s.width, 1)), 0), 1) }
 
     private var shape: AnyShape { rounded ? AnyShape(Capsule()) : AnyShape(Rectangle()) }
 }

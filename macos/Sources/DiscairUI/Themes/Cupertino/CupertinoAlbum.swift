@@ -11,6 +11,7 @@ struct CupertinoAlbum: View {
         let owned = tracks.filter(\.owned).count
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
+                BackButton(title: AppState.title(of: state.albumBack)) { state.screen = state.albumBack }
                 HStack(alignment: .top, spacing: 30) {
                     CoverView(album: a).frame(width: 250).clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                         .shadow(color: .black.opacity(0.2), radius: 7, y: 4)

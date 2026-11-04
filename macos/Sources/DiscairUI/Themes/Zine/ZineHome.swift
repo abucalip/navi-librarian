@@ -21,7 +21,7 @@ struct ZineHome: View {
         HStack(alignment: .top, spacing: 22) {
             VStack(alignment: .leading, spacing: 0) {
                 HStack(alignment: .top, spacing: 22) {
-                    Button { state.selectedAlbum = lead; state.screen = .album } label: { ZineCover(album: lead, width: 250) }
+                    Button { state.open(album: lead) } label: { ZineCover(album: lead, width: 250) }
                         .buttonStyle(.plain).accessibilityLabel("Open \(lead.title)")
                     VStack(alignment: .leading, spacing: 6) {
                         Mono("Lead story · Missing from your library")
@@ -56,7 +56,7 @@ struct ZineHome: View {
                     ForEach(fresh) { a in
                         ZineListRow {
                             HStack(spacing: 10) {
-                                Button { state.selectedAlbum = a; state.screen = .album } label: {
+                                Button { state.open(album: a) } label: {
                                     HStack(spacing: 10) {
                                         ZineCover(album: a, width: 44, border: 2, shadow: 3)
                                         VStack(alignment: .leading, spacing: 1) {

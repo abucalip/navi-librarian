@@ -14,30 +14,36 @@ struct DragTests {
         #expect(EQBandDrag.gain(y: -40, trackHeight: 120) == 12)      // dragging past the ends clamps
     }
 
-    @Test func blockedViewDoesNotMoveTheWindowButTheBackgroundDoes() {
-        let host = NSHostingView(rootView: ZStack(alignment: .topLeading) {
-            Color.clear
-            Color.clear.frame(width: 100, height: 100).blocksWindowDrag().padding(20)
-        }.frame(width: 400, height: 300))
-        let win = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 400, height: 300), styleMask: [.titled], backing: .buffered, defer: false)
-        win.contentView = host
-        host.layoutSubtreeIfNeeded()
-        let inside = host.hitTest(NSPoint(x: 70, y: 230))
-        let outside = host.hitTest(NSPoint(x: 350, y: 30))
-        #expect(inside?.mouseDownCanMoveWindow == false)
-        #expect(outside?.mouseDownCanMoveWindow != false)
+    @Test func theSurfaceNeverMovesTheWindowAndReportsPressDragRelease() throws {
+        let view = PointerNSView(frame: NSRect(x: 0, y: 0, width: 200, height: 20))
+        #expect(view.mouseDownCanMoveWindow == false)
+        #expect(view.acceptsFirstMouse(for: nil))
+        var log: [String] = []
+        view.onDown = { p, s in log.append("down \(Int(p.x))/\(Int(s.width))") }
+        view.onDrag = { p, _ in log.append("drag \(Int(p.x))") }
+        view.onUp = { p, _ in log.append("up \(Int(p.x))") }
+        let win = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 200, height: 20), styleMask: [.borderless], backing: .buffered, defer: false)
+        win.contentView = view
+        func event(_ type: NSEvent.EventType, x: CGFloat) throws -> NSEvent {
+            try #require(NSEvent.mouseEvent(with: type, location: NSPoint(x: x, y: 10), modifierFlags: [], timestamp: 0, windowNumber: win.windowNumber, context: nil, eventNumber: 0, clickCount: 1, pressure: 1))
+        }
+        view.mouseDown(with: try event(.leftMouseDown, x: 50))
+        view.mouseDragged(with: try event(.leftMouseDragged, x: 150))
+        view.mouseUp(with: try event(.leftMouseUp, x: 150))
+        #expect(log == ["down 50/200", "drag 150", "up 150"])
     }
 
-    /// A row that is also a drag source (`draggable`) has its own view on top: the window must still not move.
-    @Test func aDraggableRowDoesNotMoveTheWindow() {
-        let host = NSHostingView(rootView: ZStack(alignment: .topLeading) {
-            Color.clear
-            Text("row").frame(width: 200, height: 40).modifier(RowDragSource(id: "id")).dropDestination(for: String.self) { _, _ in true }.padding(20)
-        }.frame(width: 400, height: 300))
-        let win = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 400, height: 300), styleMask: [.titled], backing: .buffered, defer: false)
-        win.contentView = host
-        host.layoutSubtreeIfNeeded()
-        let inside = host.hitTest(NSPoint(x: 120, y: 260))
-        #expect(inside?.mouseDownCanMoveWindow == false, "hit \(String(describing: inside))")
+    @Test func aClickAtAPointOnTheBarMapsToThatFraction() {
+        #expect(DragBar.fraction(CGPoint(x: 50, y: 3), CGSize(width: 200, height: 10)) == 0.25)
+        #expect(DragBar.fraction(CGPoint(x: -30, y: 3), CGSize(width: 200, height: 10)) == 0)      // dragged past the ends
+        #expect(DragBar.fraction(CGPoint(x: 400, y: 3), CGSize(width: 200, height: 10)) == 1)
+    }
+
+    /// A draggable row is an AppKit drag source that is not a window-drag area, and its payload is plain text.
+    @Test func aDraggableRowCarriesItsIdAndNeverMovesTheWindow() {
+        let row = RowDragNSView(frame: NSRect(x: 0, y: 0, width: 200, height: 40))
+        row.payload = "abc"
+        #expect(row.mouseDownCanMoveWindow == false)
+        #expect(row.draggingSession(NSDraggingSession(), sourceOperationMaskFor: .withinApplication) == .move)
     }
 }
