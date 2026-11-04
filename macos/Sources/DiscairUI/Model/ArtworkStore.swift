@@ -1,11 +1,13 @@
 import AppKit
+import DiscairAudio
 import DiscairCore
 import DiscairNavidrome
 import Observation
 import SwiftUI
 
 /// Fetches and caches cover art through the active Navidrome profile. One request per cover and size; redirects are
-/// refused like every other call. Covers are in memory only (the optional disk cache is a later slice).
+/// refused like every other call. Covers are kept in memory; with the optional media cache on they are also kept on disk,
+/// so they still show offline.
 @MainActor
 @Observable
 public final class ArtworkStore {
@@ -14,8 +16,11 @@ public final class ArtworkStore {
     @ObservationIgnored private var failed = Set<String>()
     @ObservationIgnored private let transport: any HTTPTransport
 
-    public init(transport: any HTTPTransport = URLSessionTransport(keepCookies: false)) {
+    @ObservationIgnored private let media: MediaCache?
+
+    public init(transport: any HTTPTransport = URLSessionTransport(keepCookies: false), media: MediaCache? = nil) {
         self.transport = transport
+        self.media = media
         cache.countLimit = 400
     }
 
@@ -28,6 +33,10 @@ public final class ArtworkStore {
     public func image(coverArt: String, px: Int) async -> NSImage? {
         let key = "\(coverArt)@\(px)"
         if let hit = cache.object(forKey: key as NSString) { return hit }
+        let diskKey = "cover|\(key)"
+        if let data = media?.data(for: diskKey, ext: "img"), let image = NSImage(data: data) {
+            cache.setObject(image, forKey: key as NSString); return image
+        }
         guard !failed.contains(key), let builder, let url = try? builder.coverArtURL(coverArtID: coverArt, size: px) else { return nil }
         var request = URLRequest(url: url)
         request.setValue("image/*", forHTTPHeaderField: "Accept")
@@ -35,6 +44,7 @@ public final class ArtworkStore {
             failed.insert(key); return nil
         }
         cache.setObject(image, forKey: key as NSString)
+        media?.store(data: data, key: diskKey, ext: "img")
         return image
     }
 }

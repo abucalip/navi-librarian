@@ -63,7 +63,9 @@ public final class AppState {
     private let systemMedia: AnyObject?
     /// Sample data until a session connects, then the owner's library.
     public let library = LibraryModel()
-    public let artwork = ArtworkStore()
+    public let artwork: ArtworkStore
+    /// The optional on-disk copy of played songs and covers (off by default; Settings).
+    public let cache: CacheModel
     public var selectedArtist: ArtistItem = ArtistItem(id: 0, name: "Talk Talk", albumCount: 5)
     /// The letter shown in the Zine A-Z index.
     public var selectedLetter = "T"
@@ -76,7 +78,11 @@ public final class AppState {
         self.session = session
         self.themeID = themeID
         self.screen = screen
-        let player = PlayerModel(output: output ?? EngineOutput(), defaults: defaults)
+        // Previews and tests keep their cache in a throwaway folder, so they never touch the real one.
+        let media = MediaCache(root: session == nil ? FileManager.default.temporaryDirectory.appending(path: "discair-preview-media-\(UUID().uuidString)") : MediaCache.defaultRoot)
+        self.cache = CacheModel(media: media, defaults: defaults)
+        self.artwork = ArtworkStore(media: media)
+        let player = PlayerModel(output: output ?? EngineOutput(), fetcher: CachingFetcher(cache: media), defaults: defaults)
         self.player = player
         self.systemMedia = session != nil ? SystemMedia(player) : nil   // media keys only in the running app
         if let actions { self.actions = actions }
@@ -87,7 +93,7 @@ public final class AppState {
             live.onResume = { [weak self] in self?.player.togglePlayPause() }
         } else { self.actions = NoopActions() }
         session?.onConnected = { [weak self] in await self?.refreshLibrary() }
-        session?.onNavidromeSignOut = { [weak self] in self?.lyrics.clearAll(); self?.library.clearSavedPages() }
+        session?.onNavidromeSignOut = { [weak self] in self?.lyrics.clearAll(); self?.library.clearSavedPages(); self?.cache.media.clear() }
         session?.onConnectFailed = { [weak self] e in
             guard let self, session != nil, !self.library.isLive else { return }
             self.configureSavedPages()
@@ -115,7 +121,9 @@ public final class AppState {
     /// Saved pages are kept per Navidrome user. (They are not tied to the server address, so the LAN and Tailscale
     /// profiles of one library share them.)
     private func configureSavedPages() {
-        library.configureCache(scope: session?.navidromeUsername.map { "navidrome|\($0)" })
+        let scope = session?.navidromeUsername.map { "navidrome|\($0)" }
+        library.configureCache(scope: scope)
+        cache.media.setScope(scope)
     }
 
     /// One line for the offline banner, or nil when the screens show fresh data.

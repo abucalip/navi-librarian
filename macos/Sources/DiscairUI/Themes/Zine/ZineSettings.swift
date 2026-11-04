@@ -78,9 +78,24 @@ struct ZineSettings: View {
                 }
             }
             Text("Reports what you play to Navidrome, which feeds your listening history and so your recommendations. Off sends nothing from this Mac.").font(Z.serif(13))
+            Mono("Keep played songs and covers", bold: true).padding(.top, 6)
+            HStack(spacing: 8) {
+                ForEach([true, false], id: \.self) { on in
+                    let sel = state.cache.isEnabled == on
+                    Button(on ? "On" : "Off") { state.cache.isEnabled = on }
+                        .buttonStyle(ZineButtonStyle(kind: sel ? .yellow : .plain, small: true))
+                        .accessibilityLabel(on ? "Keep a copy of played songs on" : "Keep a copy of played songs off")
+                        .accessibilityAddTraits(sel ? .isSelected : [])
+                }
+                Mono(state.cache.readout, size: 10)
+                Button("Clear") { Task { await state.cache.clear() } }.buttonStyle(ZineButtonStyle(small: true))
+                    .accessibilityLabel("Clear the saved songs and covers")
+            }
+            Text("Off by default. Songs you play and their covers are kept on this Mac, up to 2 GB, oldest-used removed first, so they play and show without the server.").font(Z.serif(13))
             Button("Equalizer · \(state.player.eq.enabled ? state.player.eq.presetLabel : "Off")") { state.screen = .equalizer }
                 .buttonStyle(ZineButtonStyle(small: true))
         }
+        .task { await state.cache.refresh() }
     }
 
     private func connection(_ s: SessionModel) -> some View {

@@ -80,9 +80,24 @@ struct CupertinoSettings: View {
             }
             Text("Reports what you play to Navidrome, which feeds your listening history and so your recommendations. Off sends nothing from this Mac.")
                 .font(.system(size: 12)).foregroundStyle(CU.muted)
+            Text("Keep played songs and covers").fontWeight(.semibold).padding(.top, 6)
+            HStack(spacing: 8) {
+                ForEach([true, false], id: \.self) { on in
+                    Button(on ? "On" : "Off") { state.cache.isEnabled = on }
+                        .buttonStyle(CapsuleButtonStyle(primary: state.cache.isEnabled == on, small: true))
+                        .accessibilityLabel(on ? "Keep a copy of played songs on" : "Keep a copy of played songs off")
+                        .accessibilityAddTraits(state.cache.isEnabled == on ? .isSelected : [])
+                }
+                Text(state.cache.readout).font(.system(size: 12)).foregroundStyle(CU.muted)
+                Button("Clear") { Task { await state.cache.clear() } }.buttonStyle(CapsuleButtonStyle(small: true))
+                    .accessibilityLabel("Clear the saved songs and covers")
+            }
+            Text("Off by default. Songs you play and their covers are kept on this Mac, up to 2 GB, oldest-used removed first, so they play and show without the server.")
+                .font(.system(size: 12)).foregroundStyle(CU.muted)
             Button("Equalizer · \(state.player.eq.enabled ? state.player.eq.presetLabel : "Off")") { state.screen = .equalizer }
                 .buttonStyle(CapsuleButtonStyle(small: true))
         }
+        .task { await state.cache.refresh() }
     }
 
     private func connection(_ s: SessionModel) -> some View {
