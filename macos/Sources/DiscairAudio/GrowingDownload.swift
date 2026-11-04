@@ -24,7 +24,7 @@ public final class GrowingDownload: NSObject, URLSessionDataDelegate, @unchecked
     }
 
     /// Test seam: sets what the download reports, without a transfer.
-    func setState(bytes: Int64, complete: Bool) { lock.withLock { written = bytes; self.complete = complete } }
+    func setState(bytes: Int64, complete: Bool, failure: String? = nil) { lock.withLock { written = bytes; self.complete = complete; failed = failure } }
 
     public var bytesOnDisk: Int64 { lock.withLock { written } }
     public var isComplete: Bool { lock.withLock { complete } }

@@ -401,13 +401,21 @@ public final class EngineOutput: AudioOutput {
     public func play() {
         guard cur.file != nil else { return }
         if !engine.isRunning { try? engine.start() }
-        cur.node.play()
         cur.paused = false
+        // A stalled node has nothing scheduled: it starts again when more of the file is on disk (`resumeGrowth`).
+        if growth?.stalled != true { cur.node.play() }
         if let f = fade { f.to.node.play(); f.to.paused = false; f.from.node.play(); f.from.paused = false }
         startTicker()
     }
 
     public func pause() {
+        if growth?.stalled == true, !cur.paused {
+            // The node is stopped at the end of what was on disk, so there is nothing to pause; remember the wish so the
+            // song stays paused when the rest of the file arrives.
+            cur.pausedAt = cur.startOffset
+            cur.paused = true
+            return
+        }
         guard cur.node.isPlaying else { return }
         cur.pausedAt = position(of: cur)
         cur.node.pause(); cur.paused = true
