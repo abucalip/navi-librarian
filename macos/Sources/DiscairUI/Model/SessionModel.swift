@@ -33,7 +33,8 @@ public final class SessionModel {
     public var onConnected: (@MainActor () async -> Void)?
 
     private let store: ProfileStore
-    private let secrets: any SecretStore
+    /// Shared with the SMB model so the app reads the Keychain through one object.
+    public let secrets: any SecretStore
     private let resolver: ProfileResolver
     private let transport: (@Sendable () -> any HTTPTransport)?
 
