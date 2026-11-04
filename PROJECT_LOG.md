@@ -1,3 +1,12 @@
+## 2026-11-04 — macOS M5 SMB mount, Sparkle and Keychain fix merged (PRs #730, #731, #732)
+
+- **Merged (owner request):** #730 squash `de92c648c00d0fe91c04033beecfb4189b0f9a9f` (tested head `85ea3be717bed30d0759ed3306bd32c551144683`), #731 squash `6f84fca6cba46fabad89cebab48b6543e436aabc` (tested head `a7ca92794a67ed1d23191cb5aeb976a621a0a00c`), #732 squash `2fe4e98180a78aa0b0962488e8df7fffe93168ed` (tested head `9e9262683e75bf319dbac054fc55197f7d283eb3`). Required checks including `swift` passed on each tested head.
+- **What:** SMB mount (`ShareModel`, `LibraryShare.swift`, Settings card in both themes, `SongPathMapper`); Sparkle 2.10.1, `UpdateConfiguration`, `UpdaterModel`, `bundle.sh`, `appcast.sh`, CI bundle step, owner's public key; single Keychain item with migration and `make-signing-identity.sh`. Details: `macos/DESIGN.md` slices 10 to 12.
+- **Verification:** 23 + 6 + 1 new tests plus the earlier suite, 302 passed locally (`swift test`); `bundle.sh` run locally, `codesign --verify --deep --strict` passed, key present in Info.plist; openssl steps of the certificate script run in a temp folder.
+- **Incident:** a first full local run hung because `AppState` built the SMB model on the real Keychain; with the new migration that could have moved the owner's real logins. Fixed in #732 (the model uses the session's secret store); tests and previews never touch the real Keychain.
+- **Known limits:** `NetFSMountURLSync` not run against the real share; packaged app not launched; no appcast signed; no update offered or installed; the certificate was not created by me; prompts not yet seen to stop. Not published, not deployed.
+- **Next action:** the owner runs `macos/scripts/make-signing-identity.sh` and `bundle.sh` and reports the prompts; first release only on the owner's authorisation.
+
 ## 2026-11-04 — macOS M5 optional media cache merged (PR #729)
 
 - **Merged (owner request):** PR [#729](https://github.com/abucalip/navi-librarian/pull/729), squash `2eb51863a8690e199fef17960678087844dad33d`, from tested head `f2b19490bcef2a9c37a1477568818676e98a05ce`; compile, container-smoke, swift (macos-26), test-and-build and validate-container passed on that head.
