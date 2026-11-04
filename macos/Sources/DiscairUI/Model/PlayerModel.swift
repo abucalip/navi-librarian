@@ -27,6 +27,18 @@ public final class PlayerModel {
         }
     }
     public static let crossfadeChoices = [0, 2, 4, 6, 8, 10]
+    /// Match the output device's sample rate to each song (off by default: it changes the Mac's system output rate, which
+    /// is put back when this is switched off and when the app quits).
+    public var matchOutputRate: Bool {
+        didSet {
+            guard matchOutputRate != oldValue else { return }
+            defaults.set(matchOutputRate, forKey: Self.matchRateKey)
+            output.setMatchOutputRate(matchOutputRate)
+        }
+    }
+    private static let matchRateKey = "discair.matchOutputRate"
+    /// Called at quit.
+    public func restoreOutputRate() { output.restoreOutputRate() }
     /// Streaming quality: nil is the original file, else a maximum in kbps from the stream allowlist. Applies to songs
     /// started afterwards (remembered).
     public var qualityCap: Int? {
@@ -83,6 +95,9 @@ public final class PlayerModel {
         let scrobbling = defaults.object(forKey: Self.scrobbleKey) as? Bool ?? true
         self.scrobbling = scrobbling
         scrobbler = ScrobbleCoordinator(enabled: scrobbling)
+        let matchRate = defaults.bool(forKey: Self.matchRateKey)
+        matchOutputRate = matchRate
+        output.setMatchOutputRate(matchRate)
         let saved = defaults.integer(forKey: Self.crossfadeKey)
         crossfadeSeconds = Self.crossfadeChoices.contains(saved) ? saved : 0
         let q = defaults.integer(forKey: Self.qualityKey)

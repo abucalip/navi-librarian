@@ -30,6 +30,10 @@ private final class FakeOutput: AudioOutput {
     var volume: Float = 1
     var eqApplied: [(gains: [Double], preGain: Double)] = []
     func applyEQ(gains: [Double], preGain: Double) { eqApplied.append((gains, preGain)) }
+    var rateMatching: [Bool] = []
+    var restores = 0
+    func setMatchOutputRate(_ on: Bool) { rateMatching.append(on) }
+    func restoreOutputRate() { restores += 1 }
     func advance() { position = 0; onAdvanced?() }
     func finish() { isPlaying = false; onFinished?() }
 }
@@ -178,6 +182,16 @@ struct PlayerModelTests {
         p2.play(songs(2, album: "al1"))                           // tracks 1 and 2 of one album
         await until { !out2.preloads.isEmpty }
         #expect(out2.preloads == [.gapless])
+    }
+
+    @Test func rateMatchingIsOffByDefaultAndTellsTheOutput() throws {
+        let (p, out, _) = try make()
+        #expect(!p.matchOutputRate)
+        #expect(out.rateMatching == [false])
+        p.matchOutputRate = true
+        #expect(out.rateMatching == [false, true])
+        p.restoreOutputRate()
+        #expect(out.restores == 1)
     }
 
     @Test func changingWhatIsNextReplacesThePreload() async throws {

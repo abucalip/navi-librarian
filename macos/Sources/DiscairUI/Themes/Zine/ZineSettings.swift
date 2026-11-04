@@ -72,6 +72,17 @@ struct ZineSettings: View {
             }
             Text("Original plays the file as it is. A number is the most the server may send (kbps); it converts only files above it. Applies to songs started afterwards.").font(Z.serif(13))
             Text("Songs that follow each other on one album always play gapless, with no fade.").font(Z.serif(13))
+            Mono("Match the output sample rate", bold: true).padding(.top, 6)
+            HStack(spacing: 8) {
+                ForEach([true, false], id: \.self) { on in
+                    let sel = state.player.matchOutputRate == on
+                    Button(on ? "On" : "Off") { state.player.matchOutputRate = on }
+                        .buttonStyle(ZineButtonStyle(kind: sel ? .yellow : .plain, small: true))
+                        .accessibilityLabel(on ? "Sample rate matching on" : "Sample rate matching off")
+                        .accessibilityAddTraits(sel ? .isSelected : [])
+                }
+            }
+            Text("Switches your Mac's output device to each song's sample rate when the device offers it, so nothing is resampled. This changes the system output rate; it is put back when you switch this off or quit Discair. A short pause between songs of different rates is normal.").font(Z.serif(13))
             Mono("Scrobble plays", bold: true).padding(.top, 6)
             HStack(spacing: 8) {
                 ForEach([true, false], id: \.self) { on in
