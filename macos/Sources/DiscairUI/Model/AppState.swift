@@ -98,7 +98,7 @@ public final class AppState {
         artwork.configure(navidrome.urls)
         acquisition.configure(librarian: session.librarian)
         discovery.configure(librarian: session.librarian)
-        player.configure(urls: navidrome.urls)
+        player.configure(urls: navidrome.urls, scrobbler: navidrome)
         lyrics.configure(navidrome: navidrome, scope: "\(session.activeProfile?.navidromeURL.absoluteString ?? "")|\(session.navidromeUsername ?? "")")
         await library.load(navidrome: navidrome, librarian: session.librarian)
         await library.loadSongs(navidrome: navidrome)

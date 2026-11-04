@@ -67,6 +67,17 @@ struct ZineSettings: View {
             }
             Text("Original plays the file as it is. A number is the most the server may send (kbps); it converts only files above it. Applies to songs started afterwards.").font(Z.serif(13))
             Text("Songs that follow each other on one album always play gapless, with no fade.").font(Z.serif(13))
+            Mono("Scrobble plays", bold: true).padding(.top, 6)
+            HStack(spacing: 8) {
+                ForEach([true, false], id: \.self) { on in
+                    let sel = state.player.scrobbling == on
+                    Button(on ? "On" : "Off") { state.player.scrobbling = on }
+                        .buttonStyle(ZineButtonStyle(kind: sel ? .yellow : .plain, small: true))
+                        .accessibilityLabel(on ? "Scrobbling on" : "Scrobbling off")
+                        .accessibilityAddTraits(sel ? .isSelected : [])
+                }
+            }
+            Text("Reports what you play to Navidrome, which feeds your listening history and so your recommendations. Off sends nothing from this Mac.").font(Z.serif(13))
             Button("Equalizer · \(state.player.eq.enabled ? state.player.eq.presetLabel : "Off")") { state.screen = .equalizer }
                 .buttonStyle(ZineButtonStyle(small: true))
         }

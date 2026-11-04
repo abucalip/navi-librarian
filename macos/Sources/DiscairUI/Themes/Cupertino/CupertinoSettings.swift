@@ -69,6 +69,17 @@ struct CupertinoSettings: View {
             Text("Original plays the file as it is. A number is the most the server may send (kbps); it converts only files above it. Applies to songs started afterwards.")
                 .font(.system(size: 12)).foregroundStyle(CU.muted)
             Text("Songs that follow each other on one album always play gapless, with no fade.").font(.system(size: 12)).foregroundStyle(CU.muted)
+            Text("Scrobble plays").fontWeight(.semibold).padding(.top, 6)
+            HStack(spacing: 8) {
+                ForEach([true, false], id: \.self) { on in
+                    Button(on ? "On" : "Off") { state.player.scrobbling = on }
+                        .buttonStyle(CapsuleButtonStyle(primary: state.player.scrobbling == on, small: true))
+                        .accessibilityLabel(on ? "Scrobbling on" : "Scrobbling off")
+                        .accessibilityAddTraits(state.player.scrobbling == on ? .isSelected : [])
+                }
+            }
+            Text("Reports what you play to Navidrome, which feeds your listening history and so your recommendations. Off sends nothing from this Mac.")
+                .font(.system(size: 12)).foregroundStyle(CU.muted)
             Button("Equalizer · \(state.player.eq.enabled ? state.player.eq.presetLabel : "Off")") { state.screen = .equalizer }
                 .buttonStyle(CapsuleButtonStyle(small: true))
         }

@@ -47,6 +47,12 @@ public final class PlayerModel {
     }
     /// The equalizer (remembered). Change it through `updateEQ`.
     public private(set) var eq = EQSettings()
+    /// Report plays to Navidrome (per device, on by default). It feeds the listening history that discovery reads.
+    public var scrobbling: Bool {
+        didSet { defaults.set(scrobbling, forKey: Self.scrobbleKey); scrobbler.isEnabled = scrobbling }
+    }
+    private static let scrobbleKey = "discair.scrobbling"
+    @ObservationIgnored let scrobbler: ScrobbleCoordinator
     private static let volumeKey = "discair.volume"
     private static let eqKey = "discair.equalizer"
     private static let queueKey = "discair.queue"
@@ -74,6 +80,9 @@ public final class PlayerModel {
         self.output = output
         self.fetcher = fetcher
         self.defaults = defaults
+        let scrobbling = defaults.object(forKey: Self.scrobbleKey) as? Bool ?? true
+        self.scrobbling = scrobbling
+        scrobbler = ScrobbleCoordinator(enabled: scrobbling)
         let saved = defaults.integer(forKey: Self.crossfadeKey)
         crossfadeSeconds = Self.crossfadeChoices.contains(saved) ? saved : 0
         let q = defaults.integer(forKey: Self.qualityKey)
@@ -117,8 +126,9 @@ public final class PlayerModel {
         defaults.set(phase == .idle ? resumeAt : (output.position > 0 ? output.position : position), forKey: Self.positionKey)
     }
 
-    public func configure(urls: StreamURLBuilder?) {
+    public func configure(urls: StreamURLBuilder?, scrobbler client: (any Scrobbling)? = nil) {
         self.urls = urls
+        scrobbler.configure(client: client)
         if urls == nil { stop() }
     }
 
@@ -202,6 +212,7 @@ public final class PlayerModel {
         output.stop()
         stopTicking()
         phase = .idle; position = 0; duration = 0; resumeAt = 0
+        scrobbler.end()
         cleanUp()
     }
 
@@ -224,7 +235,7 @@ public final class PlayerModel {
         let mine = loadGeneration
         loadTask?.cancel()
         dropPreload()
-        output.stop(); stopTicking()
+        output.stop(); stopTicking(); scrobbler.end()
         let startAt = resumeAt; resumeAt = 0
         phase = .loading; position = startAt; duration = item.duration
         persist()
@@ -254,10 +265,12 @@ public final class PlayerModel {
                 if startAt > 3, startAt < self.duration - 3 { self.output.seek(to: startAt); self.position = startAt }
                 self.output.play()
                 self.phase = .playing
+                self.scrobbler.begin(songID: item.songID, duration: item.duration)
                 self.startTicking()
                 self.refreshPreload()
             } catch {
                 guard let self, self.loadGeneration == mine else { return }
+                self.scrobbler.end()
                 self.phase = .failed((error as? AudioError)?.description ?? "The song could not be played.")
             }
         }
@@ -267,7 +280,7 @@ public final class PlayerModel {
         stopTicking()
         pushHistory()
         if queue.advance(natural: true) != nil { startCurrent() }
-        else { dropPreload(); phase = .idle; position = 0; cleanUp() }
+        else { dropPreload(); phase = .idle; position = 0; scrobbler.end(); cleanUp() }
     }
 
     private func pushHistory() {
@@ -331,6 +344,7 @@ public final class PlayerModel {
         position = output.position
         duration = output.duration
         phase = output.isPlaying ? .playing : .paused
+        if let c = queue.current { scrobbler.begin(songID: c.songID, duration: c.duration) }
         refreshPreload()
         persist()
     }
@@ -345,6 +359,7 @@ public final class PlayerModel {
             var n = 0
             while !Task.isCancelled {
                 self?.position = self?.output.position ?? 0
+                if let self { self.scrobbler.update(position: self.output.position, playerDuration: self.output.duration, isPlaying: self.output.isPlaying) }
                 n += 1
                 if n % 20 == 0 { self?.persist() }
                 try? await Task.sleep(for: .milliseconds(250))

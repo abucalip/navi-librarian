@@ -138,7 +138,7 @@ public struct NavidromeClient: Sendable {
         guard isValidSongID(id) else { throw DiscairError.insecureOrInvalidAddress(reason: .notAURL) }
     }
 
-    private func call<P: Decodable>(_ endpoint: String, _ extra: [URLQueryItem], as: P.Type, timeout: TimeInterval? = nil, notFoundAs404: Bool = false) async throws -> P {
+    func call<P: Decodable>(_ endpoint: String, _ extra: [URLQueryItem], as: P.Type, timeout: TimeInterval? = nil, notFoundAs404: Bool = false, rawTransportErrors: Bool = false) async throws -> P {
         var comps = URLComponents(url: base, resolvingAgainstBaseURL: false)!
         comps.path = (comps.path.hasSuffix("/") ? comps.path : comps.path + "/") + "rest/" + endpoint
         comps.queryItems = auth.queryItems(json: true) + extra
@@ -149,7 +149,7 @@ public struct NavidromeClient: Sendable {
 
         let data: Data, http: HTTPURLResponse
         do { (data, http) = try await transport.send(request) }
-        catch { throw ErrorMapping.map(error, tailscaleHint: tailscaleHint()) }
+        catch { throw rawTransportErrors ? error : ErrorMapping.map(error, tailscaleHint: tailscaleHint()) }
 
         if let failure = ErrorMapping.map(status: http.statusCode) { throw failure }
         let envelope: SubsonicEnvelope<P>
