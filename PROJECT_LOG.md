@@ -1,3 +1,11 @@
+## 2026-11-04 — macOS M6 slice 7: Gap Radar merged (PR #745)
+
+- **Merged (owner request):** PR [#745](https://github.com/abucalip/navi-librarian/pull/745), squash `465ac8818e2fad637f991d03d23a9dfda18cca4e`. GitHub checks (compile, container-smoke, test-and-build, validate-container) passed; no Swift job runs on GitHub.
+- **What:** `Screen.gapRadar`, `GapRadar.build` (pure), `LibraryModel.loadGapRadar`, Cupertino and Zine views, palette entry. See `macos/DESIGN.md` M6 slice 7.
+- **Tests run (local, filtered):** GapRadarTests, CommandPaletteTests, LibraryModelTests, ScreenshotTests: 38 passed; both gapRadar renders checked by eye.
+- **Not verified:** real server, live look, owner approval; picks have no year; radar covers Librarian picks only.
+- **Next action:** remaining M6 section 6 features (history, smart playlists, Miller columns, queue workspace, album spread).
+
 ## 2026-11-04 — macOS M6 slice 4: command palette merged (PR #742)
 
 - **Merged (owner request):** PR [#742](https://github.com/abucalip/navi-librarian/pull/742), squash `aad52eb16b1d2fd286bc0cb871352940c0ad41db`, tested head `9b9978cb40c8b660e4de725078e48cbca547189b`. GitHub checks (compile, container-smoke, test-and-build, validate-container) passed; no Swift job runs on GitHub.
