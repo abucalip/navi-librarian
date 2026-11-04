@@ -47,3 +47,11 @@ jobs:
 
       - name: Test through xcodebuild
         run: xcodebuild -scheme Discair-Package -destination 'platform=macOS' test
+
+      - name: Bundle the app (ad-hoc signed, no update key)
+        run: |
+          set -euo pipefail
+          scripts/bundle.sh
+          codesign --verify --deep --strict .build/bundle/Discair.app
+          test -d .build/bundle/Discair.app/Contents/Frameworks/Sparkle.framework
+          test -f .build/bundle/Discair-0.1.0.zip
