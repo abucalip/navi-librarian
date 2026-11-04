@@ -268,3 +268,16 @@ The Keychain remembers which app made an item by its code signature. Ad-hoc sign
 `ProgressiveStart` (`DiscairAudio`, pure) says when a song that is still downloading may start: MP3 and Opus at 256 KiB, FLAC at 2 MiB, as measured in contract 12.2; M4A, Vorbis `ogg`, WMA and any unmeasured suffix wait for the whole file; a complete file always starts. This slice only adds the rule. The download still writes the whole file before `AVAudioFile` opens it, and the engine does not yet re-open a growing file, schedule past its end, or handle seeks into unread bytes. Those are the next slice and need a by-ear check on the owner's files before they are merged.
 
 **Tests run:** `swift test --filter ProgressiveStartTests` (6 tests, all passed). Nothing else was run.
+
+## M5 slice 15: growing-file playback (engine and download)
+
+A progressive song (MP3, Opus, FLAC, or their transcodes) now starts while it downloads, once `ProgressiveStart` allows it. Cached songs and formats that must wait for the whole file take the old whole-file path.
+
+- **Download:** `GrowingDownload` writes the body to a temporary file as bytes arrive (`URLSessionDataDelegate`, no per-byte loop). `CachingFetcher.beginGrowing` returns nil for a cached song and stores the finished file in the cache, so the cache still fills.
+- **Engine:** `EngineOutput.openGrowing` plays what is on disk. The ticker keeps the node about 4 s ahead: each newly decodable tail is appended to the same node as a gapless join, starting at the frame where the last one ended (segments now carry their start frame). When the download is behind the playhead, the node is stopped at that point and restarted from it once more bytes are readable; the song does not end early. When the download completes or fails, the last tail is played and the song ends normally.
+- **While growing:** no follower is preloaded (the ticker retries after the song is fully scheduled); `duration` reports the server's duration; a seek past what is on disk is pulled back to just before its end.
+- **Player:** `PlayerModel` waits for `ProgressiveStart`, opens the growing file, and cancels the download when the song changes. If the engine cannot open a partial file, it falls back to the whole-file path.
+
+**Known limits, for the by-ear check:** a stall is not a pause (the phase stays Playing and a Pause press during a stall has no effect until data returns); a failed download ends the song at what arrived, without a message; the restart after a stall may repeat up to one frame; MP3 and Opus lengths of a partial file are whatever `AVAudioFile` reports, not yet measured on real downloads.
+
+**Tests run (filtered):** `swift test --filter 'DiscairAudioTests|PlayerModelTests'` (88 tests in the audio target plus the player-model suite, all passed, including 6 `ProgressiveStart`, 2 `GrowingDownload` on a stub `URLProtocol`, and 2 engine tests: a song plays through as the rest arrives, and a starved song waits instead of ending). The engine tests run a real engine on this Mac and return early on a machine with no audio output. Not run: any real server, real MP3/Opus/FLAC downloads, any by-ear listening.
