@@ -1,3 +1,11 @@
+## 2026-11-04 — macOS M5 growing-file playback merged (PR #736)
+
+- **Merged (owner request):** PR [#736](https://github.com/abucalip/navi-librarian/pull/736), squash `7d7f50b1a5f90662d7e14231439da6dacb87c734`, tested head `815654ab2ccaa43c34a029da9acc9bf7cff6d352` (then merged with `origin/main`, one docs conflict in `macos/DESIGN.md` resolved). Follows #735 (start rule).
+- **What:** `GrowingDownload`, `EngineOutput.openGrowing`, `PlayerModel` start-while-downloading. Fix for the intermittent failures: the stall is detected by the node running dry in `segmentEnded`, so a starved main thread cannot end the song; the ticker-side stop and margin tuning were removed.
+- **Tests run (filtered only):** `swift test --filter 'DiscairAudioTests|DiscairUITests'`, twice in a row, 192 tests each, all passed. GitHub runs no Swift job.
+- **Not verified:** by-ear playback of real downloads; DAC or Bluetooth output. GitHub API and SSH timed out repeatedly; the merge went through on retry.
+- **Next action:** the owner's Keychain and signing check, then the first release when authorised; M5 open items in `docs/ACTIVE_WORK.md` 2j.
+
 ## 2026-11-04 — macOS M5 Now Playing artwork, sample-rate matching and selective CI merged (PRs #733, #734)
 
 - **Merged (owner request):** #733 squash `a2e45af9b3a6cf2bea1fcd5dd17d5fd8be9c0eca` (tested head `c99dbb1d3fed173b3106683ca2d9dc13660c3dcf`) and #734 squash `826d1f37e98ac2bf582971a723265915695fae1a` (tested head `11e57e729aa086a7942b60845cea48440c423078`); compile, container-smoke, test-and-build, validate-container and `swift` (macos-26) passed on both heads.
