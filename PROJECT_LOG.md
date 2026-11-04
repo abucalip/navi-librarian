@@ -1,3 +1,11 @@
+## 2026-11-04 — macOS M6 slice 3: Notification Center widget merged (PR #741)
+
+- **Merged (owner request):** PR [#741](https://github.com/abucalip/navi-librarian/pull/741), squash `f0dfbe862a7f083b019557f6d4f883a8e83de980`, tested head `af4505b78c806049e284f01cbb49b11b28c7851d`. GitHub checks (compile, container-smoke, test-and-build, validate-container) passed; no Swift job runs on GitHub.
+- **What:** `DiscairWidget` target (WidgetKit extension, small and medium, now playing only), `NowPlayingShare` and `NowPlayingSnapshot` (DiscairCore), `WidgetPublisher` (called from `SystemMedia.update()`), `bundle.sh` embeds and sandbox-signs the `.appex`. Shared folder instead of an app group because the app is ad-hoc signed. Details in `macos/DESIGN.md` M6 slice 3.
+- **Tests run (filtered only):** `swift test --filter 'NowPlayingShareTests|WidgetPublisherTests|SystemMediaTests'` passed (15); `scripts/bundle.sh` built the bundle and `codesign -d --entitlements` showed the sandbox and folder entitlements.
+- **Not verified:** the widget was never displayed. `pluginkit` did not list the extension from `.build/bundle`; discovery by WidgetKit, the sandboxed read of the folder, the provider and the views are untested; look not owner-approved. If macOS refuses the ad-hoc extension, a real signing identity is the fallback.
+- **Next action:** the owner copies the bundled app to /Applications, opens it once, and checks Edit Widgets shows Discair; then the next M6 feature (command palette, section 6 features).
+
 ## 2026-11-04 — macOS M6 slice 2: Get-finished notification merged (PR #740)
 
 - **Merged (owner request):** PR [#740](https://github.com/abucalip/navi-librarian/pull/740), squash `c60a1c65ce71cda6147a214701e551c4b8481e5d`, tested head `a29ab25e17d99adeddc227c34bc792ebcd529ce6`.
