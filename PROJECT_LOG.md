@@ -1,3 +1,12 @@
+## 2026-11-04 — macOS M5 Now Playing artwork, sample-rate matching and selective CI merged (PRs #733, #734)
+
+- **Merged (owner request):** #733 squash `a2e45af9b3a6cf2bea1fcd5dd17d5fd8be9c0eca` (tested head `c99dbb1d3fed173b3106683ca2d9dc13660c3dcf`) and #734 squash `826d1f37e98ac2bf582971a723265915695fae1a` (tested head `11e57e729aa086a7942b60845cea48440c423078`); compile, container-smoke, test-and-build, validate-container and `swift` (macos-26) passed on both heads.
+- **What:** #733: `SystemMedia` sends the cover (600 px through `ArtworkStore`, stale answers dropped); `OutputRate`, `RateMatcher`, `SystemOutputDevice` and the Settings > Playback switch (off by default; matches only between songs; restores the original rate when switched off and at quit). #734: on pull requests the macOS job runs `swift test --filter` for the test targets the diff touches (`macos/scripts/select-tests.sh`); unknown paths select the full suite; pushes to main and manual runs run everything.
+- **Owner rule recorded:** selective testing, in `docs/DEVELOPMENT_WORKFLOW.md`.
+- **Tests run (filtered only):** SystemMediaTests (2), OutputRateTests (6 incl. fake-device matcher), PlayerModelTests and ScreenshotTests (29 together), EngineOutputTests (10); the selector script on 7 path sets under bash 3.2; the target filter on DiscairLibrarianTests and DiscairCoreTests (85). The full suite was not run locally; CI ran it on both PRs.
+- **Not verified:** DAC or Bluetooth output, the artwork in Control Centre, and the selective CI path (first exercised by the next macOS PR). GitHub API and SSH timed out several times during the session; retries succeeded.
+- **Next action:** the owner's Keychain and signing check, then the first release when authorised; M5 open items in `docs/ACTIVE_WORK.md` 2j.
+
 ## 2026-11-04 — macOS M5 SMB mount, Sparkle and Keychain fix merged (PRs #730, #731, #732)
 
 - **Merged (owner request):** #730 squash `de92c648c00d0fe91c04033beecfb4189b0f9a9f` (tested head `85ea3be717bed30d0759ed3306bd32c551144683`), #731 squash `6f84fca6cba46fabad89cebab48b6543e436aabc` (tested head `a7ca92794a67ed1d23191cb5aeb976a621a0a00c`), #732 squash `2fe4e98180a78aa0b0962488e8df7fffe93168ed` (tested head `9e9262683e75bf319dbac054fc55197f7d283eb3`). Required checks including `swift` passed on each tested head.
