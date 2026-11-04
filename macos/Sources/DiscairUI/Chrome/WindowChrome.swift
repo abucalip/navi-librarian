@@ -37,7 +37,16 @@ struct NoWindowDrag: NSViewRepresentable {
 }
 extension View {
     /// A press and drag on this view acts on the view, never on the window.
-    func blocksWindowDrag() -> some View { background(NoWindowDrag()) }
+    func blocksWindowDrag() -> some View { overlay(NoWindowDrag()) }
+}
+
+/// The part of a row you grab to reorder it: a drag source that never moves the window. Only this part, not the whole
+/// row, so the buttons and menu in the row keep their own clicks (an overlay on top of a menu would take them).
+struct RowDragSource: ViewModifier {
+    let id: String?
+    func body(content: Content) -> some View {
+        if let id { content.contentShape(Rectangle()).draggable(id).blocksWindowDrag() } else { content }
+    }
 }
 
 /// The theme's own traffic lights (close, minimise, zoom). Labelled for VoiceOver.

@@ -112,7 +112,7 @@ struct CupertinoQueueInspector: View {
             else { Text("Nothing playing. Play a song and what follows shows here.").foregroundStyle(CU.muted).padding(8) }
             let up = p.queue.upNext
             ForEach(Array(up.enumerated()), id: \.element.id) { i, item in
-                songRow(item, time: PlayerModel.clock(item.duration), playing: false) {
+                songRow(item, time: PlayerModel.clock(item.duration), playing: false, dragID: item.id.uuidString) {
                     Menu {
                         Button("Play now") { p.jump(toUpNext: i) }
                         Button("Move up") { p.moveUpNext(from: i, to: i - 1) }.disabled(i == 0)
@@ -123,8 +123,6 @@ struct CupertinoQueueInspector: View {
                     .menuStyle(.borderlessButton).menuIndicator(.hidden).fixedSize()
                     .accessibilityLabel("Actions for \(item.title)")
                 }
-                .blocksWindowDrag()
-                .draggable(item.id.uuidString)
                 .dropDestination(for: String.self) { ids, _ in reorder(ids, to: i) }
             }
         }
@@ -138,8 +136,9 @@ struct CupertinoQueueInspector: View {
         return true
     }
 
-    private func songRow<T: View>(_ q: QueueItem, time: String, playing: Bool, @ViewBuilder trailing: () -> T = { EmptyView() }) -> some View {
+    private func songRow<T: View>(_ q: QueueItem, time: String, playing: Bool, dragID: String? = nil, @ViewBuilder trailing: () -> T = { EmptyView() }) -> some View {
         HStack(spacing: 11) {
+            HStack(spacing: 11) {
             CoverView(album: AlbumItem(id: -1, title: q.album, artist: q.artist, year: 0, genre: "", format: "", owned: true, hue: 200, coverArt: q.coverArt))
                 .frame(width: 40).clipShape(RoundedRectangle(cornerRadius: 5, style: .continuous)).accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 0) {
@@ -147,6 +146,8 @@ struct CupertinoQueueInspector: View {
                 Text(q.artist).font(.system(size: 12)).foregroundStyle(CU.muted).lineLimit(1)
             }
             Spacer(minLength: 4)
+            }
+            .modifier(RowDragSource(id: dragID))
             HStack(spacing: 4) {
                 if playing { Image(systemName: "waveform").accessibilityLabel("Playing") }
                 Text(time).monospacedDigit()

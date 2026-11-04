@@ -55,10 +55,12 @@ struct ArtworkImage: View {
     @State private var image: NSImage?
 
     var body: some View {
-        Group {
-            if let image { Image(nsImage: image).resizable().scaledToFill() }
-        }
-        .task(id: "\(album.coverArt ?? "")@\(px)") {
+        // A real (clear) view carries the task: a bare `Group` that is empty until the image arrives never starts it when
+        // the view stands alone, which left the blurred backdrops without their artwork.
+        Color.clear
+            .overlay { if let image { Image(nsImage: image).resizable().scaledToFill() } }
+            .clipped()
+            .task(id: "\(album.coverArt ?? "")@\(px)") {
             image = nil
             guard let id = album.coverArt, let store else { return }
             image = await store.image(coverArt: id, px: px)
