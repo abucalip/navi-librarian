@@ -31,6 +31,16 @@ public final class LibraryModel {
     public private(set) var artistOwnedCount = 3
     public private(set) var artistMissingCount = 2
 
+    /// The Gap radar: artists with albums missing from the library (sample data until live).
+    public private(set) var gapRadar: [GapArtist] = LibraryModel.sampleGap
+    public private(set) var gapLoading = false
+    static var sampleGap: [GapArtist] {
+        let sample = Fixtures.albums([12, 13, 11, 1, 0])
+        return GapRadar.build(owned: sample.filter(\.owned), missing: sample.filter { !$0.owned })
+    }
+    /// Most artists the radar reads from Navidrome (one request each).
+    static let gapArtistLimit = 12
+
     /// Why the Missing shelf is empty, when it is: no Librarian login, a failed read, or nothing to recommend.
     public private(set) var picksNote: String?
 
@@ -133,7 +143,7 @@ public final class LibraryModel {
     }
 
     private func fail(_ message: String) {
-        recent = []; missing = []; albums = []; artists = []; allPicks = []; picksNote = nil
+        recent = []; missing = []; albums = []; artists = []; allPicks = []; picksNote = nil; gapRadar = []
         songs = []; songsLoaded = false; songsHaveMore = false; songsError = nil
         phase = .failed(message)
     }
@@ -191,6 +201,26 @@ public final class LibraryModel {
         artistAlbums = owned + missingByArtist
         artistOwnedCount = owned.count
         artistMissingCount = missingByArtist.count
+    }
+
+    /// Reads the Gap radar: for each artist the Librarian has picks of that the library also holds, the artist's
+    /// albums from Navidrome (or the saved copy). Safe to call from `.task`.
+    public func loadGapRadar(navidrome: NavidromeClient?) async {
+        guard isLive, !gapLoading else { return }
+        gapLoading = true
+        defer { gapLoading = false }
+        var owned = albums + recent
+        let names = allPicks.reduce(into: [String]()) { acc, p in
+            if !acc.contains(where: { $0.caseInsensitiveCompare(p.artist) == .orderedSame }) { acc.append(p.artist) }
+        }
+        for name in names.prefix(Self.gapArtistLimit) {
+            guard let id = artist(named: name)?.remoteID, let navidrome else { continue }
+            var list: [NavidromeAlbum]?
+            if let detail = try? await navidrome.artist(id: id) { list = detail.albums; cache?.put("artist-\(id)", detail.albums) }
+            else if let hit = cache?.get("artist-\(id)", as: [NavidromeAlbum].self) { list = hit.value }
+            owned += (list ?? []).enumerated().map { Self.item($0.element, index: 3000 + $0.offset) }
+        }
+        gapRadar = GapRadar.build(owned: owned, missing: allPicks)
     }
 
     /// Other albums by the same artist among those already loaded.
