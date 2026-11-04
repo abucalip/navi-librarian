@@ -11,7 +11,7 @@ let onCI = ProcessInfo.processInfo.environment["CI"] != nil
 private func blockMainThread(_ seconds: Double) { Thread.sleep(forTimeInterval: seconds) }
 
 @MainActor
-@Suite("Engine output") struct EngineOutputTests {
+@Suite("Engine output", .serialized) struct EngineOutputTests {
     private func silentFile(seconds: Double, rate: Double = 44_100, channels: AVAudioChannelCount = 2) throws -> URL {
         let url = FileManager.default.temporaryDirectory.appending(path: "silence-\(UUID().uuidString).caf")
         let format = AVAudioFormat(commonFormat: .pcmFormatFloat32, sampleRate: rate, channels: channels, interleaved: false)!
@@ -116,7 +116,7 @@ private func blockMainThread(_ seconds: Double) { Thread.sleep(forTimeInterval: 
         var mid: (current: Float, other: Float)?
         for _ in 0..<400 {
             try await Task.sleep(for: .milliseconds(10))
-            if advanced == 1, mid == nil, out.levelsForTests.current > 0.3, out.levelsForTests.current < 0.95 { mid = out.levelsForTests }
+            if advanced == 1, mid == nil, out.levelsForTests.current > 0.45, out.levelsForTests.current < 0.9 { mid = out.levelsForTests }
         }
         #expect(advanced == 1)
         #expect(mid != nil, "the new song's level should pass through the middle of the fade")
@@ -140,7 +140,7 @@ private func blockMainThread(_ seconds: Double) { Thread.sleep(forTimeInterval: 
             try await Task.sleep(for: .milliseconds(10))
             if advanced == 1, !preloadedC { try out.preload(file: c, transition: .crossfade(1)); preloadedC = true }
             let l = out.levelsForTests
-            if advanced > 0, l.current > 0.3, l.current < 0.95, mids.count < advanced, l.other > 0.3, l.other < 0.95 { mids.append((l.current, l.other)) }
+            if advanced > 0, l.current > 0.45, l.current < 0.9, mids.count < advanced, l.other > 0.3, l.other < 0.95 { mids.append((l.current, l.other)) }
         }
         #expect(advanced == 2)
         #expect(mids.count == 2, "each fade should pass through its middle with both levels between 0.3 and 0.95: \(mids)")
