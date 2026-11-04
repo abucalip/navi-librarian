@@ -29,8 +29,8 @@ struct ZineNowPlaying: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             Rectangle().fill(Z.ink).frame(width: 6)
             VStack(alignment: .leading, spacing: 12) {
-                Mono("Lyrics").padding(.bottom, 2)
-                Text("Lyrics are not available yet.").font(Z.serif(22, italic: true)).opacity(0.6)
+                Mono(state.lyrics.state == .timed ? "Lyrics · synced" : "Lyrics").padding(.bottom, 2)
+                lyricsView
                 HStack(spacing: 10) {
                     Mono("Position", bold: true)
                     DragBar(value: p.fraction, height: 12, track: Z.white, fill: Z.yellow, rounded: false, label: "Position",
@@ -52,6 +52,63 @@ struct ZineNowPlaying: View {
                 .padding(.top, 4)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
+    @State private var following = true
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    /// Lyrics of the playing song as an article column; the current line is highlighted. Every state is written out.
+    private var lyricsView: some View {
+        let lyr = state.lyrics
+        let idx = lyr.currentIndex(positionSeconds: state.player.position)
+        return VStack(alignment: .leading, spacing: 8) {
+            switch lyr.state {
+            case .idle, .loading: Mono("Loading lyrics…")
+            case .none: Text("No lyrics for this song.").font(Z.serif(22, italic: true)).opacity(0.7)
+            case .unsupported: Text("Your Navidrome doesn't provide lyrics.").font(Z.serif(22, italic: true)).opacity(0.7)
+            case .failed(let m):
+                Text(m).font(Z.serif(18))
+                Button("Try again") { lyr.retry() }.buttonStyle(ZineButtonStyle(kind: .yellow, small: true))
+            case .timed, .plain:
+                if lyr.isSavedCopy { Mono("Saved copy", size: 10) }
+                if lyr.state == .plain { Mono("These lyrics are not timed.", size: 10) }
+                ScrollViewReader { proxy in
+                    ScrollView(showsIndicators: false) {
+                        VStack(alignment: .leading, spacing: 8) {
+                            ForEach(Array(lyr.lines.enumerated()), id: \.offset) { i, line in
+                                let now = i == idx
+                                Text(line.text.isEmpty ? " " : line.text).font(Z.serif(22, italic: true)).lineSpacing(2)
+                                    .padding(.horizontal, now ? 4 : 0).background(now ? Z.yellow : .clear)
+                                    .opacity(lyr.state == .plain || now || idx == nil ? 1 : 0.45)
+                                    .id(i)
+                                    .accessibilityAddTraits(now ? .isSelected : [])
+                                    .accessibilityHint(now ? "Current line" : "")
+                            }
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading).padding(.vertical, 40)
+                    }
+                    .onScrollPhaseChange { _, new in if new == .interacting { following = false } }
+                    .onChange(of: idx) { _, new in
+                        guard following, let new else { return }
+                        if reduceMotion { proxy.scrollTo(new, anchor: .center) } else { withAnimation(.easeInOut(duration: 0.3)) { proxy.scrollTo(new, anchor: .center) } }
+                    }
+                    .overlay(alignment: .bottomTrailing) {
+                        if !following && lyr.state == .timed {
+                            Button("Back to the current line") { following = true; if let idx { proxy.scrollTo(idx, anchor: .center) } }
+                                .buttonStyle(ZineButtonStyle(kind: .yellow, small: true))
+                        }
+                    }
+                }
+                .frame(height: 300)
+            }
+        }
+        .task(id: state.player.current?.songID) {
+            following = true
+            state.lyrics.show(songID: state.player.current?.songID)
+        }
+        .onChange(of: lyr.state) { _, s in
+            if s == .timed || s == .plain { state.lyrics.prefetch(songID: state.player.queue.peekNext?.songID) }
         }
     }
 

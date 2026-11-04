@@ -57,6 +57,7 @@ public final class AppState {
     /// Get, Save, Not for me and the job list. Live only once a session connects.
     public let acquisition: AcquisitionModel
     public let discovery = DiscoveryModel()
+    public let lyrics = LyricsModel()
     /// Playback: the queue, the audio engine and the controls.
     public let player: PlayerModel
     private let systemMedia: AnyObject?
@@ -86,6 +87,7 @@ public final class AppState {
             live.onResume = { [weak self] in self?.player.togglePlayPause() }
         } else { self.actions = NoopActions() }
         session?.onConnected = { [weak self] in await self?.refreshLibrary() }
+        session?.onNavidromeSignOut = { [weak self] in self?.lyrics.clearAll() }
     }
 
     // MARK: Library
@@ -97,6 +99,7 @@ public final class AppState {
         acquisition.configure(librarian: session.librarian)
         discovery.configure(librarian: session.librarian)
         player.configure(urls: navidrome.urls)
+        lyrics.configure(navidrome: navidrome, scope: "\(session.activeProfile?.navidromeURL.absoluteString ?? "")|\(session.navidromeUsername ?? "")")
         await library.load(navidrome: navidrome, librarian: session.librarian)
         await library.loadSongs(navidrome: navidrome)
         if library.isLive { selectedArtist = library.artists.first ?? selectedArtist; selectedLetter = selectedArtist.letter }
