@@ -29,6 +29,10 @@ struct CupertinoLibrary: View {
                 }
                 .padding(.top, 4).padding(.bottom, 12)
 
+                if viewMode == "Columns" {
+                    CupertinoMiller(state: state).frame(height: 460)
+                    footer
+                } else {
                 header
                 let shown = rows
                 ForEach(Array(shown.enumerated()), id: \.element.id) { i, r in
@@ -44,6 +48,7 @@ struct CupertinoLibrary: View {
                         }
                 }
                 footer
+                }
             }
             .padding(.horizontal, 28).padding(.bottom, 28)
         }
