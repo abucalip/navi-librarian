@@ -262,3 +262,9 @@ The Keychain remembers which app made an item by its code signature. Ad-hoc sign
 
 **Not verified:** nothing was heard or tried on a DAC or Bluetooth output; the real Core Audio change was only proven in the M2 spike on the built-in speakers. The artwork was not seen in Control Centre. Still open for M5: the growing-file reader, converted (Vorbis, WMA) streams against the owner's Navidrome, media keys from the bundled app, and the by-ear checks.
 
+
+## M5 slice 14: growing-file start rule (part of the growing-file reader)
+
+`ProgressiveStart` (`DiscairAudio`, pure) says when a song that is still downloading may start: MP3 and Opus at 256 KiB, FLAC at 2 MiB, as measured in contract 12.2; M4A, Vorbis `ogg`, WMA and any unmeasured suffix wait for the whole file; a complete file always starts. This slice only adds the rule. The download still writes the whole file before `AVAudioFile` opens it, and the engine does not yet re-open a growing file, schedule past its end, or handle seeks into unread bytes. Those are the next slice and need a by-ear check on the owner's files before they are merged.
+
+**Tests run:** `swift test --filter ProgressiveStartTests` (6 tests, all passed). Nothing else was run.
