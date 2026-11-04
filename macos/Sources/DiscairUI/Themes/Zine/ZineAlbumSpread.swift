@@ -18,6 +18,9 @@ struct ZineAlbumSpread: View {
                         if let notes = c.notes {
                             ZineH2("Liner notes", size: 20)
                             Text(notes).font(Z.serif(14.5)).textSelection(.enabled)
+                            if let src = c.notesSource, !src.isEmpty {
+                                if let u = c.notesURL { Link(destination: u) { Mono(src + " ↗") } } else { Mono(src) }
+                            }
                         }
                         if !c.similar.isEmpty {
                             ZineH2("Also in this issue", size: 20).padding(.top, 8)
@@ -59,7 +62,31 @@ struct ZineAlbumSpread: View {
                 Mono("Navidrome has no notes, credits or links for this album").padding(.top, 8)
             }
             ZineH2("Reviews", size: 20).padding(.top, 12)
-            Mono(AlbumSpread.reviewsNote)
+            reviews
         }
+    }
+
+    @ViewBuilder private var reviews: some View {
+        switch state.spread.reviews {
+        case .idle: Mono("Reviews need a Librarian sign-in")
+        case .loading: Mono("Loading reviews…")
+        case .failed: HStack { Mono("Reviews could not be loaded"); retryButton }
+        case .loaded(let list, let retryable):
+            VStack(alignment: .leading, spacing: 10) {
+                if list.isEmpty { Mono(retryable ? "No reviews found. Some sources did not answer" : "No reviews found for this album") }
+                ForEach(list) { r in
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("\u{201C}\(r.quote)\u{201D}").font(Z.serif(14.5, italic: true)).textSelection(.enabled)
+                        Link(destination: r.url) { Mono("Read the full review at \(r.source) ↗") }
+                    }
+                    .accessibilityElement(children: .combine)
+                }
+                if retryable { retryButton }
+            }
+        }
+    }
+
+    private var retryButton: some View {
+        Button("Try again") { Task { await state.retrySpreadReviews() } }.buttonStyle(ZineButtonStyle(small: true))
     }
 }

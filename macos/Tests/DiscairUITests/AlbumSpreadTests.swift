@@ -1,3 +1,4 @@
+import DiscairLibrarian
 import DiscairNavidrome
 import Foundation
 import Testing
@@ -61,5 +62,22 @@ struct AlbumSpreadTests {
         let pick = AlbumItem(id: 1, title: "T", artist: "A", year: 0, genre: "", format: "", owned: false, hue: 0)
         await m.load(album: pick, navidrome: nil, libraryArtists: [])
         #expect(m.content == AlbumSpread.sample && !m.isLive)
+    }
+
+    @Test func theLibrariansDescriptionFillsTheNotesOnlyWhenNavidromeHasNone() {
+        let d = AlbumDescription(paragraphs: ["First.", " ", "Second."], source: "Wikipedia", url: "https://en.wikipedia.org/wiki/X", license: "CC BY-SA")
+        let fill = AlbumSpread.build(facts: nil, info: nil, artist: nil, description: d, libraryArtists: [])
+        #expect(fill.notes == "First.\n\nSecond." && fill.notesSource == "Wikipedia · CC BY-SA" && fill.notesURL?.host == "en.wikipedia.org")
+        let own = AlbumSpread.build(facts: nil, info: NavidromeAlbumInfo(notes: "Mine"), artist: nil, description: d, libraryArtists: [])
+        #expect(own.notes == "Mine" && own.notesSource == nil)
+        let none = AlbumDescription(paragraphs: [], source: nil, url: nil, license: nil)
+        #expect(AlbumSpread.build(facts: nil, info: nil, artist: nil, description: none, libraryArtists: []).isEmpty)
+    }
+
+    @Test func reviewsKeepTextAndWebLinksOnlyAndAtMostThree() {
+        func r(_ q: String, _ u: String) -> AlbumReview { AlbumReview(source: "S", quote: q, url: u) }
+        let out = AlbumSpread.reviews([r("a", "https://x.example/1"), r("  ", "https://x.example/2"), r("b", "javascript:alert(1)"),
+                                       r("c", "file:///etc/passwd"), r("d", "http://x.example/4"), r("e", "https://x.example/5"), r("f", "https://x.example/6")])
+        #expect(out.map(\.quote) == ["a", "d", "e"])
     }
 }

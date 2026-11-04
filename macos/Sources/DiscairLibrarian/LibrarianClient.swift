@@ -48,6 +48,28 @@ public struct DiscoveryList: Decodable, Equatable, Sendable {
 /// Librarian client (ANDROID_CLIENT_CONTRACT 4.1 and 5.2): `GET /api/auth/status`, `POST /api/auth/login`,
 /// `GET /api/dashboard-picks`. The session cookie lives in the transport's in-memory jar.
 /// Any 401 triggers one re-login with the stored credential; a 429 is reported and never retried.
+public struct AlbumDescription: Decodable, Equatable, Sendable {
+    public let paragraphs: [String]
+    public let source: String?
+    public let url: String?
+    public let license: String?
+    public init(paragraphs: [String], source: String?, url: String?, license: String?) {
+        self.paragraphs = paragraphs; self.source = source; self.url = url; self.license = license
+    }
+}
+
+public struct AlbumReview: Decodable, Equatable, Sendable {
+    public let source: String
+    public let quote: String
+    public let url: String
+    public init(source: String, quote: String, url: String) { self.source = source; self.quote = quote; self.url = url }
+}
+
+public struct AlbumReviews: Decodable, Equatable, Sendable {
+    public let reviews: [AlbumReview]
+    public let retryable: Bool?
+}
+
 public struct LibrarianClient: Sendable {
     private let base: URL
     private let credential: Credential
@@ -138,6 +160,27 @@ public struct LibrarianClient: Sendable {
         let body = try json(["artist": artist, "album": album, "action": action.rawValue, "metadata": metadata])
         let (data, http) = try await authedSend("POST", "api/discovery/feedback", body: body)
         if let failure = failure(http, data) { throw failure }
+    }
+
+    // MARK: Album page text (the web album page's Info and Reviews tabs)
+
+    /// The album's description: Apple Music notes, else the Wikipedia lead, else no paragraphs.
+    public func albumDescription(artist: String, album: String) async throws -> AlbumDescription {
+        let (data, http) = try await authedSend("GET", "api/album-description?" + Self.query(artist, album), body: nil)
+        return try decode(AlbumDescription.self, data, http)
+    }
+
+    /// Up to three outlets' summary lines with links. `retryable` means an outlet failed or was slow.
+    public func albumReviews(artist: String, album: String) async throws -> AlbumReviews {
+        let (data, http) = try await authedSend("GET", "api/album-reviews?" + Self.query(artist, album), body: nil)
+        return try decode(AlbumReviews.self, data, http)
+    }
+
+    static func query(_ artist: String, _ album: String) -> String {
+        var allowed = CharacterSet.urlQueryAllowed
+        allowed.remove(charactersIn: "&+=#?/")
+        func enc(_ s: String) -> String { s.addingPercentEncoding(withAllowedCharacters: allowed) ?? "" }
+        return "artist=\(enc(String(artist.prefix(180))))&album=\(enc(String(album.prefix(180))))"
     }
 
     // MARK: Plumbing

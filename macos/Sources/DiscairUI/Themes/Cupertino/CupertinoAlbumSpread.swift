@@ -12,7 +12,15 @@ struct CupertinoAlbumSpread: View {
             if spread.loading {
                 Text("Loading…").foregroundStyle(CU.muted)
             } else if let c = spread.content, !c.isEmpty {
-                if let notes = c.notes { section("Liner notes") { Text(notes).font(.system(size: 13.5)).lineSpacing(3).textSelection(.enabled) } }
+                if let notes = c.notes {
+                    section("Liner notes") {
+                        Text(notes).font(.system(size: 13.5)).lineSpacing(3).textSelection(.enabled)
+                        if let src = c.notesSource, !src.isEmpty {
+                            if let u = c.notesURL { Link(src, destination: u).font(.system(size: 11.5)) }
+                            else { Text(src).font(.system(size: 11.5)).foregroundStyle(CU.muted) }
+                        }
+                    }
+                }
                 if !c.credits.isEmpty {
                     section("Credits") {
                         VStack(alignment: .leading, spacing: 6) {
@@ -62,8 +70,34 @@ struct CupertinoAlbumSpread: View {
             } else {
                 Text("Navidrome has no notes, credits or links for this album.").foregroundStyle(CU.muted)
             }
-            section("Reviews") { Text(AlbumSpread.reviewsNote).foregroundStyle(CU.muted) }
+            section("Reviews") { reviews }
         }
+    }
+
+    @ViewBuilder private var reviews: some View {
+        switch state.spread.reviews {
+        case .idle: Text("Reviews need a Librarian sign-in.").foregroundStyle(CU.muted)
+        case .loading: Text("Loading reviews…").foregroundStyle(CU.muted)
+        case .failed:
+            HStack { Text("Reviews could not be loaded.").foregroundStyle(CU.muted); retryButton }
+        case .loaded(let list, let retryable):
+            VStack(alignment: .leading, spacing: 10) {
+                if list.isEmpty { Text(retryable ? "No reviews found. Some sources did not answer." : "No reviews found for this album.").foregroundStyle(CU.muted) }
+                ForEach(list) { r in
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("\u{201C}\(r.quote)\u{201D}").font(.system(size: 13.5)).lineSpacing(3).textSelection(.enabled)
+                        Link("Read the full review at \(r.source)", destination: r.url).font(.system(size: 12))
+                    }
+                    .accessibilityElement(children: .combine)
+                }
+                if retryable && !list.isEmpty { Text("Some sources did not answer.").font(.system(size: 12)).foregroundStyle(CU.muted) }
+                if retryable { retryButton }
+            }
+        }
+    }
+
+    private var retryButton: some View {
+        Button("Try again") { Task { await state.retrySpreadReviews() } }.buttonStyle(CapsuleButtonStyle(small: true))
     }
 
     private func section<C: View>(_ title: String, @ViewBuilder _ body: () -> C) -> some View {
