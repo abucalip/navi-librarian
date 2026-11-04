@@ -11,7 +11,9 @@ public final class PlayerModel {
     public enum Phase: Equatable, Sendable { case idle, loading, playing, paused, failed(String) }
 
     public private(set) var queue = PlayQueue()
-    public private(set) var phase: Phase = .idle
+    public private(set) var phase: Phase = .idle { didSet { onNowPlayingChange?() } }
+    /// Told when the song or play state changes (the system Now Playing hook).
+    @ObservationIgnored public var onNowPlayingChange: (() -> Void)?
     public private(set) var position: Double = 0
     public private(set) var duration: Double = 0
     /// Songs finished or left this session, newest first (the queue's History).

@@ -55,6 +55,8 @@ struct ZineSettings: View {
                 }
             }
             Text("Songs that follow each other on one album always play gapless, with no fade.").font(Z.serif(13))
+            Button("Equalizer · \(state.player.eq.enabled ? state.player.eq.presetLabel : "Off")") { state.screen = .equalizer }
+                .buttonStyle(ZineButtonStyle(small: true))
         }
     }
 

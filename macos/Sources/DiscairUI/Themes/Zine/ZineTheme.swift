@@ -43,6 +43,7 @@ struct ZineWindow: View {
         case .settings: ZineSettings(state: state)
         case .downloads: ZineDownloads(state: state)
         case .discover: ZineDiscover(state: state)
+        case .equalizer: ZineEQ(state: state)
         }
     }
 }
@@ -56,6 +57,7 @@ private func activeSection(_ s: Screen) -> String {
     case .settings: "Settings"
     case .downloads: "Downloads"
     case .discover: "Discover"
+    case .equalizer: "Settings"
     }
 }
 
@@ -178,12 +180,18 @@ struct ZinePlayerStrip: View {
             .buttonStyle(.plain)
             .accessibilityLabel(idle ? "Nothing playing. Opens Now Playing" : (p.current.map { "Now playing: \($0.title), \($0.artist), \(PlayerModel.clock(p.position)) of \(PlayerModel.clock(p.duration)). Opens Now Playing" } ?? "Now playing: After the Flood, Talk Talk, 3:12 of 9:41. Opens Now Playing"))
 
-            ZStack(alignment: .leading) {
-                Rectangle().fill(Color(white: 0.267)).frame(height: 8)
-                GeometryReader { g in Rectangle().fill(Z.yellow).frame(width: g.size.width * (sample ? 0.33 : p.fraction), height: 8) }.frame(height: 8)
+            if sample {
+                ZStack(alignment: .leading) {
+                    Rectangle().fill(Color(white: 0.267)).frame(height: 8)
+                    GeometryReader { g in Rectangle().fill(Z.yellow).frame(width: g.size.width * 0.33, height: 8) }.frame(height: 8)
+                }
+                .frame(maxWidth: 360)
+                .accessibilityElement().accessibilityLabel("Position").accessibilityValue("33 percent")
+            } else {
+                DragBar(value: p.fraction, height: 8, track: Color(white: 0.267), fill: Z.yellow, rounded: false, label: "Position",
+                        valueText: { "\(PlayerModel.clock($0 * p.duration)) of \(PlayerModel.clock(p.duration))" }) { p.seek(toFraction: $0) }
+                    .frame(maxWidth: 360)
             }
-            .frame(maxWidth: 360)
-            .accessibilityElement().accessibilityLabel("Position").accessibilityValue("\(Int((sample ? 0.33 : p.fraction) * 100)) percent")
 
             Spacer(minLength: 0)
             HStack(spacing: 12) {

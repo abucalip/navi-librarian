@@ -14,6 +14,8 @@ public enum Screen: String, CaseIterable, Sendable {
     case downloads
     /// Discover lists: For you, Classics, New releases, Saved (M5 slice 3a; no mockup).
     case discover
+    /// The 10-band equalizer (M5 slice 5; no mockup, each theme draws it).
+    case equalizer
 }
 
 /// What a theme may ask the app to do. Themes call these; they never reach the network or the audio engine.
@@ -57,6 +59,7 @@ public final class AppState {
     public let discovery = DiscoveryModel()
     /// Playback: the queue, the audio engine and the controls.
     public let player: PlayerModel
+    private let systemMedia: AnyObject?
     /// Sample data until a session connects, then the owner's library.
     public let library = LibraryModel()
     public let artwork = ArtworkStore()
@@ -65,12 +68,16 @@ public final class AppState {
     public var selectedLetter = "T"
 
     public init(themeID: ThemeID = .cupertino, screen: Screen = .home, actions: DiscairActions? = nil, session: SessionModel? = nil, output: AudioOutput? = nil) {
-        let acquisition = AcquisitionModel()
+        // Previews and screenshot tests get their own throwaway settings, so they never read or write the real ones.
+        let defaults = session == nil ? (UserDefaults(suiteName: "discair-preview-\(UUID().uuidString)") ?? .standard) : UserDefaults.standard
+        let acquisition = AcquisitionModel(defaults: defaults)
         self.acquisition = acquisition
         self.session = session
         self.themeID = themeID
         self.screen = screen
-        self.player = PlayerModel(output: output ?? EngineOutput())
+        let player = PlayerModel(output: output ?? EngineOutput(), defaults: defaults)
+        self.player = player
+        self.systemMedia = session != nil ? SystemMedia(player) : nil   // media keys only in the running app
         if let actions { self.actions = actions }
         else if session != nil {
             let live = AcquisitionActions(acquisition)

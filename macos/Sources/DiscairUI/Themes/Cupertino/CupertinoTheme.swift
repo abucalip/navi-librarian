@@ -87,6 +87,7 @@ struct CupertinoWindow: View {
         case .settings: CupertinoSettings(state: state)
         case .downloads: CupertinoDownloads(state: state)
         case .discover: CupertinoDiscover(state: state)
+        case .equalizer: CupertinoEQ(state: state)
         default: Text("\(state.screen.rawValue): not built yet").foregroundStyle(CU.muted).padding(28)
         }
     }
@@ -103,6 +104,7 @@ struct CupertinoSidebar: View {
         case .settings: "Settings"
         case .downloads: "Downloads"
         case .discover: "New"
+        case .equalizer: "Settings"
         default: "Recently Added"
         }
     }

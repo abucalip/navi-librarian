@@ -55,6 +55,8 @@ struct CupertinoSettings: View {
                 }
             }
             Text("Songs that follow each other on one album always play gapless, with no fade.").font(.system(size: 12)).foregroundStyle(CU.muted)
+            Button("Equalizer · \(state.player.eq.enabled ? state.player.eq.presetLabel : "Off")") { state.screen = .equalizer }
+                .buttonStyle(CapsuleButtonStyle(small: true))
         }
     }
 

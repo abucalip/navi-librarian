@@ -9,7 +9,7 @@ import Testing
 /// Baseline comparison is added once the owner approves the look on the Mac (contract M4 gate).
 @MainActor
 struct ScreenshotTests {
-    @Test(arguments: ThemeID.allCases, [Screen.home, Screen.album, Screen.nowPlaying, Screen.queue, Screen.library, Screen.albums, Screen.artist, Screen.settings, Screen.downloads, Screen.discover])
+    @Test(arguments: ThemeID.allCases, [Screen.home, Screen.album, Screen.nowPlaying, Screen.queue, Screen.library, Screen.albums, Screen.artist, Screen.settings, Screen.downloads, Screen.discover, Screen.equalizer])
     func rendersWindow(theme: ThemeID, screen: Screen) throws {
         RenderMode.offscreenScreenshot = true
         // Settings needs a session; a throwaway one with a sample profile and an in-memory keychain.
@@ -24,7 +24,8 @@ struct ScreenshotTests {
         if screen == .downloads { state.acquisition.showJobs(AcquisitionModelTests.sampleJobs) }
         if screen == .discover { state.discovery.show(.personal, Fixtures.albums([7, 8, 9])) }
         if screen == .library && theme == .cupertino { state.library.apply(newest: [], first: [], artists: [], picks: []); state.library.showSongs(Fixtures.songs, more: true) }
-        if screen == .queue {
+        if screen == .equalizer { state.player.updateEQ { $0.enabled = true; $0.choose(preset: "rock") } }
+        if screen == .queue || screen == .nowPlaying {
             let q = (0..<6).map { QueueItem(songID: "s\($0)", title: ["After the Flood", "Glory Box", "Cloudbusting", "Maria También", "So What", "Such a Shame"][$0], artist: ["Talk Talk", "Portishead", "Kate Bush", "Khruangbin", "Miles Davis", "Talk Talk"][$0], album: "Album", duration: Double(180 + $0 * 37)) }
             state.player.play(q)
         }
