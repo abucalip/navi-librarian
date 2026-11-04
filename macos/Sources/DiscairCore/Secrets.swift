@@ -36,49 +36,106 @@ public enum SecretStoreError: Error, Equatable, Sendable {
     case corrupted
 }
 
-/// macOS Keychain, generic passwords, one item per login. Default access (only this app), this device only,
-/// no iCloud sync, no shared access group.
-public struct KeychainSecretStore: SecretStore {
+/// macOS Keychain. **All logins live in one generic-password item** (`<prefix>.logins`, a JSON object of kind to login), so the
+/// system asks about this app once, not once per login, and the answer is read once per run and kept in memory.
+/// Default access (only this app), this device only, no iCloud sync, no shared access group.
+/// Older builds kept one item per login (`<prefix>.navidrome`, `.librarian`, `.smb`); the first read moves them into the combined
+/// item and deletes them. If the move fails nothing is deleted.
+public final class KeychainSecretStore: SecretStore, @unchecked Sendable {
+    /// The one store the app shares, so every model sees the same cache.
+    public static let shared = KeychainSecretStore()
+
     private let servicePrefix: String
+    private let lock = NSLock()
+    private var cache: [String: Credential]?
 
     public init(servicePrefix: String = "app.discair") { self.servicePrefix = servicePrefix }
 
-    private func query(_ kind: SecretKind) -> [String: Any] {
+    private func query(service: String) -> [String: Any] {
         [kSecClass as String: kSecClassGenericPassword,
-         kSecAttrService as String: "\(servicePrefix).\(kind.rawValue)",
+         kSecAttrService as String: service,
          kSecAttrAccount as String: "login",
          kSecAttrSynchronizable as String: false]
     }
+    private var combinedService: String { "\(servicePrefix).logins" }
+    private func legacyService(_ kind: SecretKind) -> String { "\(servicePrefix).\(kind.rawValue)" }
 
-    public func credential(for kind: SecretKind) throws -> Credential? {
-        var q = query(kind)
+    private func readItem(service: String) throws -> Data? {
+        var q = query(service: service)
         q[kSecReturnData as String] = true
         q[kSecMatchLimit as String] = kSecMatchLimitOne
         var out: CFTypeRef?
         let status = SecItemCopyMatching(q as CFDictionary, &out)
         if status == errSecItemNotFound { return nil }
         guard status == errSecSuccess else { throw SecretStoreError.keychain(status: status) }
-        guard let data = out as? Data, let cred = try? JSONDecoder().decode(Credential.self, from: data) else {
-            throw SecretStoreError.corrupted
-        }
-        return cred
+        guard let data = out as? Data else { throw SecretStoreError.corrupted }
+        return data
     }
 
-    public func save(_ credential: Credential, for kind: SecretKind) throws {
-        let data = try JSONEncoder().encode(credential)
-        let update = SecItemUpdate(query(kind) as CFDictionary, [kSecValueData as String: data] as CFDictionary)
+    private func writeItem(_ data: Data, service: String) throws {
+        let update = SecItemUpdate(query(service: service) as CFDictionary, [kSecValueData as String: data] as CFDictionary)
         if update == errSecSuccess { return }
         guard update == errSecItemNotFound else { throw SecretStoreError.keychain(status: update) }
-        var add = query(kind)
+        var add = query(service: service)
         add[kSecValueData as String] = data
         add[kSecAttrAccessible as String] = kSecAttrAccessibleWhenUnlockedThisDeviceOnly
         let status = SecItemAdd(add as CFDictionary, nil)
         guard status == errSecSuccess else { throw SecretStoreError.keychain(status: status) }
     }
 
-    public func delete(_ kind: SecretKind) throws {
-        let status = SecItemDelete(query(kind) as CFDictionary)
+    private func deleteItem(service: String) throws {
+        let status = SecItemDelete(query(service: service) as CFDictionary)
         guard status == errSecSuccess || status == errSecItemNotFound else { throw SecretStoreError.keychain(status: status) }
+    }
+
+    /// Caller holds the lock.
+    private func loadAll() throws -> [String: Credential] {
+        if let cache { return cache }
+        var all: [String: Credential]
+        if let data = try readItem(service: combinedService) {
+            guard let decoded = try? JSONDecoder().decode([String: Credential].self, from: data) else { throw SecretStoreError.corrupted }
+            all = decoded
+        } else {
+            all = [:]
+            var migrated: [SecretKind] = []
+            for kind in SecretKind.allCases {
+                guard let data = try readItem(service: legacyService(kind)) else { continue }
+                guard let cred = try? JSONDecoder().decode(Credential.self, from: data) else { throw SecretStoreError.corrupted }
+                all[kind.rawValue] = cred; migrated.append(kind)
+            }
+            if !migrated.isEmpty {
+                try writeItem(JSONEncoder().encode(all), service: combinedService)   // written first: a failure below loses nothing
+                for kind in migrated { try? deleteItem(service: legacyService(kind)) }
+            }
+        }
+        cache = all
+        return all
+    }
+
+    private func persist(_ all: [String: Credential]) throws {
+        if all.isEmpty { try deleteItem(service: combinedService) }
+        else { try writeItem(JSONEncoder().encode(all), service: combinedService) }
+        cache = all
+    }
+
+    public func credential(for kind: SecretKind) throws -> Credential? {
+        try lock.withLock { try loadAll()[kind.rawValue] }
+    }
+
+    public func save(_ credential: Credential, for kind: SecretKind) throws {
+        try lock.withLock {
+            var all = try loadAll()
+            all[kind.rawValue] = credential
+            try persist(all)
+        }
+    }
+
+    public func delete(_ kind: SecretKind) throws {
+        try lock.withLock {
+            var all = try loadAll()
+            guard all.removeValue(forKey: kind.rawValue) != nil else { return }
+            try persist(all)
+        }
     }
 }
 

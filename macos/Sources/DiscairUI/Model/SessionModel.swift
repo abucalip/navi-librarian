@@ -37,7 +37,7 @@ public final class SessionModel {
     private let resolver: ProfileResolver
     private let transport: (@Sendable () -> any HTTPTransport)?
 
-    public init(store: ProfileStore, secrets: any SecretStore = KeychainSecretStore(),
+    public init(store: ProfileStore, secrets: any SecretStore = KeychainSecretStore.shared,
                 resolver: ProfileResolver = ProfileResolver(),
                 navidromeTransport: (@Sendable () -> any HTTPTransport)? = nil) {
         self.store = store

@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Builds Discair.app (release), embeds Sparkle, signs ad hoc (no Developer account: contract section 10) and zips it.
+# Builds Discair.app (release), embeds Sparkle, signs it (no Developer account, contract section 10: a local self-signed
+# identity if one exists, else ad hoc) and zips it.
 #
 #   scripts/bundle.sh                      # app without an update key: runs, but never accepts updates
 #   DISCAIR_SU_PUBLIC_KEY=<base64> scripts/bundle.sh
@@ -7,6 +8,7 @@
 # Environment (all optional):
 #   DISCAIR_SU_PUBLIC_KEY  Sparkle EdDSA public key (default: Packaging/SU_PUBLIC_KEY, the owner's public key; not secret).
 #   DISCAIR_FEED_URL       appcast address, https only (default: the macos-appcast release of this repository)
+#   DISCAIR_SIGN_IDENTITY  signing identity name (default: "Discair Local Signing" if scripts/make-signing-identity.sh made it, else ad hoc)
 #   DISCAIR_VERSION        shown version (default: Packaging/VERSION)
 #   DISCAIR_BUILD          build number Sparkle compares (default: number of commits)
 #   DISCAIR_OUT            output folder (default: .build/bundle)
@@ -42,13 +44,20 @@ if ! otool -l "$APP/Contents/MacOS/Discair" | grep -q "@executable_path/../Frame
     install_name_tool -add_rpath "@executable_path/../Frameworks" "$APP/Contents/MacOS/Discair"
 fi
 
-# Ad-hoc signing, inside out. No hardened runtime: an ad-hoc app has no team, so library validation would refuse Sparkle.
+# Signing identity: a stable self-signed one keeps the Keychain's trust in the app across rebuilds and updates; ad hoc changes every build.
+IDENTITY="${DISCAIR_SIGN_IDENTITY:-Discair Local Signing}"
+if ! security find-identity -p codesigning 2>/dev/null | grep -q "\"$IDENTITY\""; then
+    echo "note: no \"$IDENTITY\" identity (run scripts/make-signing-identity.sh); signing ad hoc, so the Keychain will ask again after each update" >&2
+    IDENTITY="-"
+fi
+
+# Signing, inside out. No hardened runtime: an ad-hoc app has no team, so library validation would refuse Sparkle.
 FW="$APP/Contents/Frameworks/Sparkle.framework/Versions/B"
 for item in "$FW/XPCServices/"*.xpc "$FW/Autoupdate" "$FW/Updater.app"; do
-    [ -e "$item" ] && codesign --force --sign - "$item"
+    [ -e "$item" ] && codesign --force --sign "$IDENTITY" "$item"
 done
-codesign --force --sign - "$APP/Contents/Frameworks/Sparkle.framework"
-codesign --force --sign - "$APP"
+codesign --force --sign "$IDENTITY" "$APP/Contents/Frameworks/Sparkle.framework"
+codesign --force --sign "$IDENTITY" "$APP"
 codesign --verify --deep --strict "$APP"
 
 ZIP="$OUT/Discair-$VERSION.zip"

@@ -11,6 +11,10 @@ Nothing here publishes by itself. Publication stays paused until the owner autho
 
 An app built without the key runs normally but refuses every update (`UpdateConfiguration`, "no update signing key").
 
+4. Make the local signing identity: `scripts/make-signing-identity.sh` (once; self-signed, stays in the login Keychain, no Apple account).
+   `bundle.sh` then signs with it, so the app keeps one identity across rebuilds and updates and the Keychain stops asking again.
+   Without it the build is ad hoc and the Keychain asks again after every update. Click Always Allow on the first prompts of a new identity.
+
 ## Each release
 
 1. Raise `Packaging/VERSION` (shown version). The build number Sparkle compares is the commit count, so it always goes up.
