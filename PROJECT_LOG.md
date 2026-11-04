@@ -1,3 +1,13 @@
+## 2026-11-04 — macOS M5 growing playback: partial MP3/FLAC length fix merged (PR #738)
+
+- **Merged (owner request):** PR [#738](https://github.com/abucalip/navi-librarian/pull/738), squash `4f4ef0f89615bd2acad2cd4f21d1e6276ff263f4`.
+- **Found by:** the growing-playback check with real encoded files behind a throttled stub download. A partial MP3 (33% on disk) reports the whole song's length; scheduling it raised `numberFrames > 0` and killed the process. FLAC reports the whole length the same way; Opus reports what is on disk.
+- **What:** `EngineOutput.readableFrames` (test reads find the decodable end; Opus and finished downloads taken as reported, because seeking a partial Opus file raises an uncatchable Objective-C exception); slot `limit`; no empty segment is handed to the node.
+- **Measured (local, 0.3x real time):** MP3 20 s, Opus 60 s, FLAC 40 s each played to the end once, position never went backwards, wall time matched download time.
+- **Tests run (filtered only):** new partial-FLAC test (made with `afconvert`) plus `swift test --filter 'DiscairAudioTests|DiscairUITests'` twice, 193 tests each, passed.
+- **Not verified:** real Navidrome streams, VBR MP3 with a Xing table, by ear.
+- **Next action:** the owner's Keychain and signing check, then the first release when authorised; M5 open items in `docs/ACTIVE_WORK.md` 2j.
+
 ## 2026-11-04 — macOS M5 growing-file playback merged (PR #736)
 
 - **Merged (owner request):** PR [#736](https://github.com/abucalip/navi-librarian/pull/736), squash `7d7f50b1a5f90662d7e14231439da6dacb87c734`, tested head `815654ab2ccaa43c34a029da9acc9bf7cff6d352` (then merged with `origin/main`, one docs conflict in `macos/DESIGN.md` resolved). Follows #735 (start rule).
