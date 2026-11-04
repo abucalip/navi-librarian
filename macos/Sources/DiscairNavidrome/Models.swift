@@ -3,7 +3,7 @@ import Foundation
 /// DTOs for the Subsonic calls used (shapes from `android/contract-fixtures/navidrome/`).
 /// Unknown fields are ignored; every field Navidrome may omit is optional.
 
-public struct NavidromeArtist: Decodable, Equatable, Sendable, Identifiable {
+public struct NavidromeArtist: Codable, Equatable, Sendable, Identifiable {
     public let id: String
     public let name: String
     public let albumCount: Int?
@@ -11,7 +11,7 @@ public struct NavidromeArtist: Decodable, Equatable, Sendable, Identifiable {
     public let musicBrainzId: String?
 }
 
-public struct NavidromeAlbum: Decodable, Equatable, Sendable, Identifiable {
+public struct NavidromeAlbum: Codable, Equatable, Sendable, Identifiable {
     public let id: String
     public let name: String
     public let artist: String?
@@ -25,7 +25,7 @@ public struct NavidromeAlbum: Decodable, Equatable, Sendable, Identifiable {
     public let musicBrainzId: String?
 }
 
-public struct NavidromeSong: Decodable, Equatable, Sendable, Identifiable {
+public struct NavidromeSong: Codable, Equatable, Sendable, Identifiable {
     public let id: String
     public let title: String
     public let album: String?

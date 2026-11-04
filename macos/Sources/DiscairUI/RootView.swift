@@ -8,6 +8,9 @@ public struct RootView: View {
     public var body: some View {
         let theme = ThemeRegistry.theme(state.themeID)
         theme.window(state: state)
+            .safeAreaInset(edge: .top, spacing: 0) {
+                if let notice = state.offlineNotice { OfflineBanner(state: state, text: notice) }
+            }
             .preferredColorScheme(theme.colorScheme)
             .environment(\.artwork, state.artwork)
             .frame(minWidth: 1100, minHeight: 700)

@@ -36,6 +36,18 @@ public final class LibraryModel {
 
     private var allPicks: [AlbumItem] = []
 
+    /// Set while the screens show a saved copy because the server could not be reached: when the copy was saved and why
+    /// the server was not used. Cleared by the next good read.
+    public private(set) var savedCopyDate: Date?
+    public private(set) var savedCopyReason: String?
+    @ObservationIgnored private var cache: PageCache?
+
+    /// Home data as saved: what `apply` needs.
+    struct HomeSnapshot: Codable {
+        var newest: [NavidromeAlbum]; var first: [NavidromeAlbum]; var artists: [NavidromeArtist]
+        var picks: [DashboardPick]; var picksNote: String?
+    }
+
     /// The Songs table: sample rows until live, then pages of the whole library read from Navidrome.
     public private(set) var songs: [SongRow] = Fixtures.songs
     public private(set) var songsLoading = false
@@ -45,6 +57,32 @@ public final class LibraryModel {
     static let songPage = 200
 
     public init() {}
+
+    /// Points the saved pages at one server and user (nil: none are kept or read).
+    func configureCache(scope: String?, root: URL = PageCache.defaultRoot, now: @escaping () -> Date = { .now }) {
+        cache = scope.map { PageCache(root: root, scope: $0, now: now) }
+    }
+
+    /// Sign-out: delete every saved page.
+    func clearSavedPages() { cache?.clear(); cache = nil; savedCopyDate = nil; savedCopyReason = nil }
+
+    /// Shows the saved Home data when there is some. Used when the connection failed before any read was tried.
+    @discardableResult
+    func showSavedCopy(reason: String) -> Bool {
+        guard let hit = cache?.get("home", as: HomeSnapshot.self) else { return false }
+        apply(hit.value)
+        markSaved(hit.savedAt, reason: reason)
+        return true
+    }
+
+    private func markSaved(_ date: Date, reason: String) {
+        if savedCopyDate == nil || date < savedCopyDate! { savedCopyDate = date }
+        savedCopyReason = reason
+    }
+
+    private func apply(_ h: HomeSnapshot) {
+        apply(newest: h.newest, first: h.first, artists: h.artists, picks: h.picks, picksNote: h.picksNote)
+    }
 
     /// Test hook: shows these songs on the album page without a server.
     func showTracks(_ songs: [TrackItem]) { tracks = songs }
@@ -72,12 +110,24 @@ public final class LibraryModel {
             } else {
                 note = "Add your Librarian login in Settings to see recommendations."
             }
-            apply(newest: n, first: f, artists: a, picks: picks, picksNote: note)
+            let snap = HomeSnapshot(newest: n, first: f, artists: a, picks: picks, picksNote: note)
+            apply(snap)
+            savedCopyDate = nil; savedCopyReason = nil
+            cache?.put("home", snap)
         } catch let e as DiscairError {
-            fail(e.summary)
+            fallBack(e)
         } catch {
-            fail(ErrorMapping.map(error).summary)
+            fallBack(ErrorMapping.map(error))
         }
+    }
+
+    /// A failed read keeps the owner's library on screen from the saved copy when there is one. A refused login is not
+    /// "offline", so it still fails (the Settings screen says what to do).
+    func fallBackForTest(_ e: DiscairError) { fallBack(e) }
+
+    private func fallBack(_ e: DiscairError) {
+        if case .unauthorised = e { fail(e.summary); return }
+        if !showSavedCopy(reason: e.summary) { fail(e.summary) }
     }
 
     private func fail(_ message: String) {
@@ -106,7 +156,12 @@ public final class LibraryModel {
         if let id = album.remoteID, let navidrome {
             tracksLoading = true
             defer { tracksLoading = false }
-            if let detail = try? await navidrome.album(id: id) { tracks = Self.tracks(detail.songs); return }
+            if let detail = try? await navidrome.album(id: id) {
+                tracks = Self.tracks(detail.songs); cache?.put("album-\(id)", detail.songs); return
+            }
+            if let hit = cache?.get("album-\(id)", as: [NavidromeSong].self) {
+                tracks = Self.tracks(hit.value); markSaved(hit.savedAt, reason: "The server did not answer."); return
+            }
             tracks = []
         } else {
             tracks = album.suggestedTracks.enumerated().map {
@@ -121,8 +176,13 @@ public final class LibraryModel {
             artistAlbums = Fixtures.albums([12, 13, 11, 1, 0]); artistOwnedCount = 3; artistMissingCount = 2; return
         }
         var owned: [AlbumItem] = []
-        if let id = artist.remoteID, let navidrome, let detail = try? await navidrome.artist(id: id) {
-            owned = detail.albums.enumerated().map { Self.item($0.element, index: 2000 + $0.offset) }
+        if let id = artist.remoteID, let navidrome {
+            var albums: [NavidromeAlbum]?
+            if let detail = try? await navidrome.artist(id: id) { albums = detail.albums; cache?.put("artist-\(id)", detail.albums) }
+            else if let hit = cache?.get("artist-\(id)", as: [NavidromeAlbum].self) {
+                albums = hit.value; markSaved(hit.savedAt, reason: "The server did not answer.")
+            }
+            owned = (albums ?? []).enumerated().map { Self.item($0.element, index: 2000 + $0.offset) }
                 .sorted { $0.year < $1.year }
         }
         let missingByArtist = allPicks.filter { $0.artist.caseInsensitiveCompare(artist.name) == .orderedSame }
@@ -178,9 +238,15 @@ public final class LibraryModel {
             songs = more ? songs + rows : rows
             songsHaveMore = page.count == Self.songPage
             songsLoaded = true
-        } catch let e as DiscairError {
-            songsError = AcquisitionModel.text(e)
-        } catch { songsError = ErrorMapping.map(error).summary }
+            if !more { cache?.put("songs-first", page) }
+        } catch {
+            let e = (error as? DiscairError) ?? ErrorMapping.map(error)
+            if !more, let hit = cache?.get("songs-first", as: [NavidromeSong].self) {
+                songs = hit.value.enumerated().map { Self.row($0.element, id: $0.offset) }
+                songsHaveMore = false; songsLoaded = false      // the next visit tries the server again
+                markSaved(hit.savedAt, reason: e.summary)
+            } else { songsError = (error as? DiscairError).map(AcquisitionModel.text) ?? e.summary }
+        }
     }
 
     /// Test hook: shows these song rows without a server.

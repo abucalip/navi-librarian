@@ -114,6 +114,14 @@ public final class SessionModel {
     /// Picks the profile (override, else LAN then Tailscale), checks the Navidrome login with `ping` and the Librarian
     /// login if one is saved. Errors keep their kind so the screen can name them and offer Retry.
     public func connect() async {
+        await attemptConnect()
+        if case .failed(let e) = status { await onConnectFailed?(e) }
+    }
+
+    /// Told when a connect attempt ends in failure (the app then shows the saved library, if there is one).
+    public var onConnectFailed: (@MainActor (DiscairError) async -> Void)?
+
+    private func attemptConnect() async {
         guard !profiles.profiles.isEmpty else { status = .notConfigured; return }
         status = .connecting
         navidrome = nil; librarian = nil; librarianNote = nil
