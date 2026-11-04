@@ -110,7 +110,7 @@ Queue (play next, add to queue, reorder), shuffle, repeat, gapless with next-tra
 | M3 | **Mockups:** done in two rounds (9 theme drawings, 6 screens each) | Owner picked: Cupertino and Zine first, Bento Block and Native Glass v2 later |
 | M4 | Window shell, theme layer, Cupertino and Zine Spread, all screens | Screenshot tests; owner approves the UI on the Mac. **Slice 1 done** (theme layer, Cupertino, all six screens, owner-approved live, PR #718); **slice 2 done** (Zine Spread, six screens, PR #719 and review fixes #720, owner-approved live); baselines open |
 | M5 | Parity: Discover, Downloads, Settings, EQ, lyrics, scrobbling, cache, Sparkle | Tests |
-| M6 | Desktop features (section 6), mini window, widget, notifications, command palette | Per-feature acceptance. **Started:** slice 1, the floating mini player, PR #739; slice 2, the Get-finished notification, PR #740; slice 3, the Notification Center widget; slice 4, the command palette, PR #742; slice 5, the Pipeline dock |
+| M6 | Desktop features (section 6), mini window, widget, notifications, command palette | Per-feature acceptance. **Started:** slice 1, the floating mini player, PR #739; slice 2, the Get-finished notification, PR #740; slice 3, the Notification Center widget; slice 4, the command palette, PR #742; slice 5, the Pipeline dock, PR #743 |
 | M7 | Bento Block, Native Glass v2, then remaining themes, one at a time | Owner approves each |
 
 Priorities when trade-offs appear (owner, 2026-11-03): the look, smooth browsing, getting new music.
