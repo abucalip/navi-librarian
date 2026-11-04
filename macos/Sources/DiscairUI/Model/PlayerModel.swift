@@ -85,6 +85,8 @@ public final class PlayerModel {
     @ObservationIgnored private var downloaded: URL?
     /// The current song while it streams to disk (contract 12.2); cancelled when the song changes.
     @ObservationIgnored private var growing: GrowingDownload?
+    /// The message for a song whose download broke while it played; shown now and again after the next song starts.
+    @ObservationIgnored private var cutShort: String?
     @ObservationIgnored private let defaults: UserDefaults
     @ObservationIgnored private var preloadTask: Task<Void, Never>?
     /// The song handed to the engine (or being fetched) as the follower, and its file once downloaded.
@@ -329,9 +331,20 @@ public final class PlayerModel {
 
     private func songEnded() {
         stopTicking()
+        noteBrokenDownload()
+        let cut = cutShort; cutShort = nil
         pushHistory()
         if queue.advance(natural: true) != nil { startCurrent() }
         else { dropPreload(); phase = .idle; position = 0; scrobbler.end(); cleanUp() }
+        if let cut { notice = cut }        // `startCurrent` clears the notice, so it is put back for the new song
+    }
+
+    /// A growing song whose download broke plays what arrived and then ends. Say so, instead of ending without a word.
+    private func noteBrokenDownload() {
+        guard cutShort == nil, let download = growing, !download.isComplete, download.failure != nil else { return }
+        let title = queue.current?.title ?? "The song"
+        cutShort = "“\(title)” stopped downloading, so it ended early."
+        notice = cutShort
     }
 
     private func pushHistory() {
@@ -413,6 +426,7 @@ public final class PlayerModel {
             var n = 0
             while !Task.isCancelled {
                 self?.position = self?.output.position ?? 0
+                self?.noteBrokenDownload()
                 if let self, !self.output.isGrowing, self.phase == .playing { self.refreshPreload() }
                 if let self { self.scrobbler.update(position: self.output.position, playerDuration: self.output.duration, isPlaying: self.output.isPlaying) }
                 n += 1

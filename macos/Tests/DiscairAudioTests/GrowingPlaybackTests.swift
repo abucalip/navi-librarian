@@ -136,6 +136,38 @@ private func stubConfiguration() -> URLSessionConfiguration {
         out.stop()
     }
 
+    @Test func pausingDuringAStallKeepsTheSongPausedWhenTheRestArrives() async throws {
+        let full = try silentFile(seconds: 2)
+        let partial = try silentFile(seconds: 1)
+        let growing = FileManager.default.temporaryDirectory.appending(path: "grow-\(UUID().uuidString).caf")
+        try FileManager.default.copyItem(at: partial, to: growing)
+        defer { for u in [full, partial, growing] { try? FileManager.default.removeItem(at: u) } }
+
+        let download = GrowingDownload(file: growing)
+        download.setState(bytes: 1, complete: false)
+        let out = EngineOutput()
+        do { try out.openGrowing(download, expectedDuration: 2) } catch let e as AudioError where e.description.contains("could not start") { return }
+        var finished = 0
+        out.onFinished = { finished += 1 }
+        out.play()
+        try await Task.sleep(for: .milliseconds(1_600))      // the first second has played: the node is stalled
+        #expect(!out.isPlaying)
+
+        out.pause()                                          // used to do nothing during a stall
+        let held = out.position
+        try grow(growing, to: full)
+        download.setState(bytes: 2, complete: true)
+        try await Task.sleep(for: .milliseconds(1_500))      // the rest has arrived, but the song was paused
+        #expect(finished == 0)
+        #expect(!out.isPlaying)
+        #expect(out.position == held)
+
+        out.play()
+        for _ in 0..<400 where finished == 0 { try await Task.sleep(for: .milliseconds(10)) }
+        #expect(finished == 1)
+        out.stop()
+    }
+
     /// A FLAC of random noise (so it does not compress to nothing), made with the system encoder. Nil when it cannot be made.
     private func noiseFLAC(seconds: Double) throws -> URL? {
         let caf = FileManager.default.temporaryDirectory.appending(path: "noise-\(UUID().uuidString).caf")

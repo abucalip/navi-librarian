@@ -3,6 +3,7 @@ import DiscairCore
 import DiscairNavidrome
 import Foundation
 import Testing
+@testable import DiscairAudio
 @testable import DiscairUI
 
 @MainActor
@@ -34,6 +35,9 @@ private final class FakeOutput: AudioOutput {
     var restores = 0
     func setMatchOutputRate(_ on: Bool) { rateMatching.append(on) }
     func restoreOutputRate() { restores += 1 }
+    var growingOpened = 0
+    var isGrowing = false
+    func openGrowing(_ download: GrowingDownload, expectedDuration: Double) throws { growingOpened += 1; isGrowing = true; position = 0 }
     func advance() { position = 0; onAdvanced?() }
     func finish() { isPlaying = false; onFinished?() }
 }
@@ -48,6 +52,13 @@ private final class FakeFetcher: AudioFetcher, @unchecked Sendable {
         try Data([0]).write(to: f)
         return f
     }
+}
+
+/// Hands out one growing download that the test controls.
+private final class GrowingFetcher: AudioFetcher, @unchecked Sendable {
+    let download = GrowingDownload(file: FileManager.default.temporaryDirectory.appending(path: "grow-\(UUID().uuidString).mp3"))
+    func fetch(_ url: URL, suffix: String?) async throws -> URL { throw AudioError("whole-file path not expected") }
+    func beginGrowing(_ url: URL, suffix: String?) -> GrowingDownload? { download }
 }
 
 private func streamBuilder() throws -> StreamURLBuilder {
@@ -69,6 +80,38 @@ private func make() throws -> (PlayerModel, FakeOutput, FakeFetcher) {
 @MainActor
 private func until(_ condition: () -> Bool) async {
     for _ in 0..<500 where !condition() { try? await Task.sleep(for: .milliseconds(10)) }
+}
+
+@MainActor
+struct GrowingFailureTests {
+    @Test func aBrokenDownloadSaysSoWhenItsSongEnds() async throws {
+        let out = FakeOutput(), fetch = GrowingFetcher()
+        let p = PlayerModel(output: out, fetcher: fetch, defaults: UserDefaults(suiteName: "discair-test-\(UUID().uuidString)")!)
+        p.configure(urls: try streamBuilder())
+        fetch.download.setState(bytes: 300_000, complete: false)        // enough to start an MP3
+        p.play(songs(2, suffix: "mp3"))
+        await until { p.phase == .playing }
+        #expect(out.growingOpened == 1 && p.notice == nil)
+
+        fetch.download.setState(bytes: 300_000, complete: false, failure: "The song could not be streamed.")
+        await until { p.notice != nil }
+        #expect(p.notice == "“T0” stopped downloading, so it ended early.")
+
+        out.finish()                                                   // the engine plays out what arrived, then ends the song
+        #expect(p.current?.title == "T1")
+        #expect(p.notice == "“T0” stopped downloading, so it ended early.")   // kept across the start of the next song
+    }
+
+    @Test func aCompleteDownloadSaysNothing() async throws {
+        let out = FakeOutput(), fetch = GrowingFetcher()
+        let p = PlayerModel(output: out, fetcher: fetch, defaults: UserDefaults(suiteName: "discair-test-\(UUID().uuidString)")!)
+        p.configure(urls: try streamBuilder())
+        fetch.download.setState(bytes: 300_000, complete: true)
+        p.play(songs(2, suffix: "mp3"))
+        await until { p.phase == .playing }
+        out.finish()
+        #expect(p.current?.title == "T1" && p.notice == nil)
+    }
 }
 
 @MainActor
