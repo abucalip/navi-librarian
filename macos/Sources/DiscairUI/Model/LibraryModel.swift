@@ -336,9 +336,13 @@ public final class LibraryModel {
     /// An ISO time as a date; nil when absent or Navidrome's "never" (year 0001).
     static func date(_ iso: String?) -> Date? {
         guard let iso, !iso.hasPrefix("0001") else { return nil }
-        let f = ISO8601DateFormatter(); f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        return f.date(from: iso) ?? ISO8601DateFormatter().date(from: iso)
+        return isoDate(iso)
     }
+
+    /// One formatter pair for every row: making them per row cost seconds on a 12,000-song library.
+    private static let isoFractional: ISO8601DateFormatter = { let f = ISO8601DateFormatter(); f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]; return f }()
+    private static let isoPlain = ISO8601DateFormatter()
+    static func isoDate(_ iso: String) -> Date? { isoFractional.date(from: iso) ?? isoPlain.date(from: iso) }
 
     /// "FLAC 16/44" when the bit depth and sample rate are known, else the short form ("MP3 320").
     static func rowFormat(_ s: NavidromeSong) -> String {
@@ -350,8 +354,7 @@ public final class LibraryModel {
     /// "Today", "Yesterday", else "Oct 30" (with the year when it is not this year); empty when unknown.
     static func shortDate(_ iso: String?, now: Date = .now) -> String {
         guard let iso, !iso.hasPrefix("0001") else { return "" }
-        let f = ISO8601DateFormatter(); f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        guard let d = f.date(from: iso) ?? ISO8601DateFormatter().date(from: iso) else { return "" }
+        guard let d = isoDate(iso) else { return "" }
         let cal = Calendar.current
         if cal.isDate(d, inSameDayAs: now) { return "Today" }
         if let y = cal.date(byAdding: .day, value: -1, to: now), cal.isDate(d, inSameDayAs: y) { return "Yesterday" }
