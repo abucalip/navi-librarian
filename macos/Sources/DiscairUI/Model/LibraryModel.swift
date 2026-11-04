@@ -290,7 +290,7 @@ public final class LibraryModel {
         return SongRow(id: id, album: 0, title: s.title, artist: s.artist ?? "Unknown artist", genre: s.genre ?? "",
                        format: rowFormat(s), bitrate: s.bitRate.map { "\($0) kb" } ?? "", lastPlayed: shortDate(s.played),
                        added: shortDate(s.created), year: s.year ?? 0, plays: s.playCount ?? 0, remoteID: s.id, cover: album,
-                       suffix: s.suffix, seconds: Double(s.duration ?? 0), track: s.track, disc: s.discNumber,
+                       suffix: s.suffix, seconds: Double(s.duration ?? 0), track: s.track, disc: s.discNumber, path: s.path,
                        rating: min(max(s.userRating ?? 0, 0), 5), bitrateKbps: s.bitRate ?? 0,
                        addedAt: date(s.created), playedAt: date(s.played), hasMBID: !(s.musicBrainzId ?? "").isEmpty)
     }

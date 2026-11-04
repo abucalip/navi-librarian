@@ -109,8 +109,9 @@ public final class AppState {
             notifier.onOpen = { [weak self] in self?.screen = .downloads }
             acquisition.notifier = notifier
         } else { self.actions = NoopActions() }
+        player.waveformFileURL = { [weak self] item in item.path.flatMap { self?.share.localURL(forServerPath: $0) } }
         session?.onConnected = { [weak self] in self?.share.startIfNeeded(); await self?.refreshLibrary() }
-        session?.onNavidromeSignOut = { [weak self] in self?.lyrics.clearAll(); self?.library.clearSavedPages(); self?.cache.media.clear() }
+        session?.onNavidromeSignOut = { [weak self] in self?.lyrics.clearAll(); self?.library.clearSavedPages(); self?.cache.media.clear(); self?.player.waveformCache.clear() }
         session?.onConnectFailed = { [weak self] e in
             guard let self, session != nil, !self.library.isLive else { return }
             self.configureSavedPages()
@@ -142,6 +143,7 @@ public final class AppState {
         let scope = session?.navidromeUsername.map { "navidrome|\($0)" }
         library.configureCache(scope: scope)
         cache.media.setScope(scope)
+        player.waveformCache.setScope(scope)
     }
 
     /// One line for the offline banner, or nil when the screens show fresh data.
