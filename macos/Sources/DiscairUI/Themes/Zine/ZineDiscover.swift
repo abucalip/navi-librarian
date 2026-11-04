@@ -67,7 +67,7 @@ struct ZineDiscover: View {
                         .help(state.acquisition.detail(for: a)).accessibilityHint(state.acquisition.detail(for: a))
                     Button(state.acquisition.isSaved(a) ? "Saved" : "Save") { state.actions.save(album: a) }
                         .buttonStyle(ZineButtonStyle(small: true)).disabled(state.acquisition.isSaved(a))
-                    Button("Not for me") { state.actions.notForMe(album: a) }.buttonStyle(ZineLinkStyle())
+                    Button("Not for me") { state.actions.notForMe(album: a) }.buttonStyle(ZineButtonStyle(small: true))
                 }
                 .padding(.top, 3)
             }
