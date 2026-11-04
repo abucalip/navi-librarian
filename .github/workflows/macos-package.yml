@@ -29,6 +29,24 @@ jobs:
     steps:
       - name: Check out source
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0      # the PR diff against its base picks the tests
+
+      # Pull requests run only the test targets whose code (or dependencies) changed; pushes to main and manual runs
+      # always run everything, as the backstop. Rules and the dependency map: macos/scripts/select-tests.sh.
+      - name: Choose tests
+        id: pick
+        working-directory: .
+        env:
+          EVENT: ${{ github.event_name }}
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT" = "pull_request" ]; then
+            git diff --name-only "origin/$BASE_REF...HEAD" | macos/scripts/select-tests.sh | tee -a "$GITHUB_OUTPUT"
+          else
+            printf 'tests=all\nbundle=true\n' | tee -a "$GITHUB_OUTPUT"
+          fi
 
       - name: Select Xcode 26
         run: |
@@ -42,13 +60,20 @@ jobs:
       - name: Build
         run: swift build
 
-      - name: Test
+      - name: Test (selected targets)
+        if: steps.pick.outputs.tests != 'all' && steps.pick.outputs.tests != 'none'
+        run: swift test --filter '${{ steps.pick.outputs.tests }}'
+
+      - name: Test (everything)
+        if: steps.pick.outputs.tests == 'all'
         run: swift test
 
-      - name: Test through xcodebuild
+      - name: Test through xcodebuild (everything)
+        if: steps.pick.outputs.tests == 'all'
         run: xcodebuild -scheme Discair-Package -destination 'platform=macOS' test
 
       - name: Bundle the app (ad-hoc signed, no update key)
+        if: steps.pick.outputs.bundle == 'true'
         run: |
           set -euo pipefail
           scripts/bundle.sh
