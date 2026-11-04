@@ -13,7 +13,11 @@ private final class FakeOutput: AudioOutput {
     var duration: Double = 200
     var opened: [URL] = []
     var seeks: [Double] = []
-    func open(file: URL) throws { opened.append(file); position = 0 }
+    var failNextOpen = false
+    func open(file: URL) throws {
+        if failNextOpen { failNextOpen = false; throw AudioError("This file could not be opened for playback.") }
+        opened.append(file); position = 0
+    }
     func play() { isPlaying = true }
     func pause() { isPlaying = false }
     func stop() { isPlaying = false }
@@ -263,6 +267,39 @@ struct PlayerModelTests {
         again.togglePlayPause()
         await until { again.isPlaying }
         #expect(out2.seeks == [42] && again.current?.title == "T1")
+    }
+
+    // MARK: Streaming quality
+
+    @Test func aCapIsAskedForAndVorbisUsesTheLowerOfTheCapAnd192() async throws {
+        #expect(PlayerModel.streamOptions(suffix: "flac", cap: 128).bitRate == 128 && PlayerModel.streamOptions(suffix: "flac", cap: 128).format == nil)
+        #expect(PlayerModel.streamOptions(suffix: "ogg", cap: 320).bitRate == 192 && PlayerModel.streamOptions(suffix: "ogg", cap: 96).bitRate == 96)
+        #expect(PlayerModel.streamOptions(suffix: "flac", cap: nil).bitRate == nil)
+        let (p, _, fetch) = try make()
+        p.qualityCap = 192
+        p.play(songs(1))
+        await until { !fetch.requested.isEmpty }
+        let q = URLComponents(url: fetch.requested[0], resolvingAgainstBaseURL: false)!.queryItems!
+        #expect(q.contains { $0.name == "maxBitRate" && $0.value == "192" } && !q.contains { $0.name == "format" })
+    }
+
+    @Test func theCapIsRememberedAndOnlyAllowedValuesAreKept() {
+        let suite = UserDefaults(suiteName: "discair-test-\(UUID().uuidString)")!
+        PlayerModel(output: FakeOutput(), fetcher: FakeFetcher(), defaults: suite).qualityCap = 96
+        #expect(PlayerModel(output: FakeOutput(), fetcher: FakeFetcher(), defaults: suite).qualityCap == 96)
+        suite.set(77, forKey: "discair.qualityCap")
+        #expect(PlayerModel(output: FakeOutput(), fetcher: FakeFetcher(), defaults: suite).qualityCap == nil)
+    }
+
+    @Test func aFileTheMacCannotDecodeIsRetriedOnceAsAnMP3AndTheOwnerIsTold() async throws {
+        let (p, out, fetch) = try make()
+        out.failNextOpen = true
+        p.play(songs(1))
+        await until { p.isPlaying }
+        #expect(p.isPlaying && fetch.requested.count >= 2 && p.notice?.contains("MP3") == true)
+        let q = URLComponents(url: fetch.requested[1], resolvingAgainstBaseURL: false)!.queryItems!
+        #expect(q.contains { $0.name == "format" && $0.value == "mp3" } && q.contains { $0.name == "maxBitRate" && $0.value == "320" })
+        #expect(p.qualityCap == nil)                                         // the saved quality is not changed
     }
 }
 

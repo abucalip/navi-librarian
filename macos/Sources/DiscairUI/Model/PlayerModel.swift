@@ -27,6 +27,19 @@ public final class PlayerModel {
         }
     }
     public static let crossfadeChoices = [0, 2, 4, 6, 8, 10]
+    /// Streaming quality: nil is the original file, else a maximum in kbps from the stream allowlist. Applies to songs
+    /// started afterwards (remembered).
+    public var qualityCap: Int? {
+        didSet {
+            guard qualityCap != oldValue else { return }
+            defaults.set(qualityCap ?? 0, forKey: Self.qualityKey)
+            dropPreload(); refreshPreload()
+        }
+    }
+    public static let qualityChoices: [Int?] = [nil, 320, 256, 192, 128, 96, 64]
+    private static let qualityKey = "discair.qualityCap"
+    /// Told to the owner when something was changed for them (an MP3 fallback); cleared when the next song starts.
+    public private(set) var notice: String?
     private static let crossfadeKey = "discair.crossfadeSeconds"
     /// App output level 0...1 (remembered).
     public var volume: Float {
@@ -63,6 +76,8 @@ public final class PlayerModel {
         self.defaults = defaults
         let saved = defaults.integer(forKey: Self.crossfadeKey)
         crossfadeSeconds = Self.crossfadeChoices.contains(saved) ? saved : 0
+        let q = defaults.integer(forKey: Self.qualityKey)
+        qualityCap = allowedBitRates.contains(q) ? q : nil
         let v = defaults.object(forKey: Self.volumeKey) as? Double
         volume = Float(min(max(v ?? 1, 0), 1))
         output.volume = volume
@@ -193,10 +208,12 @@ public final class PlayerModel {
     // MARK: Loading
 
     /// What to ask Navidrome for. Vorbis and WMA files go through the server as opus at 192 (owner decision, contract 12.8).
-    static func streamOptions(suffix: String?) -> (format: TranscodeFormat?, bitRate: Int?) {
+    /// With a quality cap, every song is asked for at most that bit rate (the server converts only when the file is above
+    /// it); Vorbis and WMA go as opus at the lower of 192 and the cap.
+    static func streamOptions(suffix: String?, cap: Int? = nil) -> (format: TranscodeFormat?, bitRate: Int?) {
         switch (suffix ?? "").lowercased() {
-        case "ogg", "oga", "wma": (.opus, 192)
-        default: (nil, nil)
+        case "ogg", "oga", "wma": (.opus, min(192, cap ?? 192))
+        default: (nil, cap)
         }
     }
 
@@ -211,15 +228,28 @@ public final class PlayerModel {
         let startAt = resumeAt; resumeAt = 0
         phase = .loading; position = startAt; duration = item.duration
         persist()
-        let opts = Self.streamOptions(suffix: item.suffix)
+        notice = nil
+        let cap = qualityCap
+        var opts = Self.streamOptions(suffix: item.suffix, cap: cap)
         loadTask = Task { [weak self, fetcher] in
             do {
-                let url = try urls.streamURL(songID: item.songID, maxBitRate: opts.bitRate, format: opts.format)
-                let file = try await fetcher.fetch(url, suffix: opts.format?.rawValue ?? item.suffix)
+                var url = try urls.streamURL(songID: item.songID, maxBitRate: opts.bitRate, format: opts.format)
+                var file = try await fetcher.fetch(url, suffix: opts.format?.rawValue ?? item.suffix)
                 guard let self, !Task.isCancelled, self.loadGeneration == mine else { try? FileManager.default.removeItem(at: file); return }
                 self.cleanUp()
                 self.downloaded = file
-                try self.output.open(file: file)
+                do { try self.output.open(file: file) }
+                catch let e as AudioError where opts.format == nil && e.description.contains("could not be opened") {
+                    // The Mac cannot decode this file: ask the server for an MP3 of it, once, and say so. The saved quality is unchanged.
+                    try? FileManager.default.removeItem(at: file)
+                    opts = (.mp3, cap ?? 320)
+                    url = try urls.streamURL(songID: item.songID, maxBitRate: opts.bitRate, format: opts.format)
+                    file = try await fetcher.fetch(url, suffix: "mp3")
+                    guard !Task.isCancelled, self.loadGeneration == mine else { try? FileManager.default.removeItem(at: file); return }
+                    self.downloaded = file
+                    try self.output.open(file: file)
+                    self.notice = "This file cannot be played as it is, so the server sent an MP3 of it."
+                }
                 self.duration = self.output.duration
                 if startAt > 3, startAt < self.duration - 3 { self.output.seek(to: startAt); self.position = startAt }
                 self.output.play()
@@ -266,7 +296,7 @@ public final class PlayerModel {
         if preloaded?.id == next.id { return }
         dropPreload()
         let transition = Self.transition(from: now, to: next, crossfade: crossfadeSeconds)
-        let opts = Self.streamOptions(suffix: next.suffix)
+        let opts = Self.streamOptions(suffix: next.suffix, cap: qualityCap)
         let mine = loadGeneration
         preloaded = (next.id, nil)
         preloadTask = Task { [weak self, fetcher] in

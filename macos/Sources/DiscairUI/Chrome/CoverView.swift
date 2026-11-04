@@ -19,3 +19,23 @@ public struct CoverView: View {
         .accessibilityLabel("\(album.title) cover")
     }
 }
+
+/// The cover, enlarged and heavily blurred, as a backdrop. Sits over a colour fallback, so while the image loads (or when
+/// there is none) the screen still has its gradient. Decorative: hidden from VoiceOver. Blur is skipped under
+/// `RenderMode.offscreenScreenshot`, where it does not render.
+struct BlurredArtwork: View {
+    let album: AlbumItem
+    var radius: CGFloat = 80
+    var body: some View {
+        GeometryReader { g in
+            ArtworkImage(album: album, px: 300)
+                .frame(width: g.size.width, height: g.size.height)
+                .scaleEffect(1.4)                                   // pushes the blurred edges out of view
+                .blur(radius: RenderMode.offscreenScreenshot ? 0 : radius)
+                .saturation(1.3)
+                .clipped()
+        }
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
+}

@@ -54,6 +54,18 @@ struct CupertinoSettings: View {
                         .accessibilityAddTraits(on ? .isSelected : [])
                 }
             }
+            Text("Streaming quality").fontWeight(.semibold).padding(.top, 6)
+            HStack(spacing: 8) {
+                ForEach(PlayerModel.qualityChoices, id: \.self) { q in
+                    let on = state.player.qualityCap == q
+                    Button(q.map { "\($0)" } ?? "Original") { state.player.qualityCap = q }
+                        .buttonStyle(CapsuleButtonStyle(primary: on, small: true))
+                        .accessibilityLabel(q.map { "\($0) kilobits per second" } ?? "Original quality")
+                        .accessibilityAddTraits(on ? .isSelected : [])
+                }
+            }
+            Text("Original plays the file as it is. A number is the most the server may send (kbps); it converts only files above it. Applies to songs started afterwards.")
+                .font(.system(size: 12)).foregroundStyle(CU.muted)
             Text("Songs that follow each other on one album always play gapless, with no fade.").font(.system(size: 12)).foregroundStyle(CU.muted)
             Button("Equalizer · \(state.player.eq.enabled ? state.player.eq.presetLabel : "Off")") { state.screen = .equalizer }
                 .buttonStyle(CapsuleButtonStyle(small: true))

@@ -48,6 +48,7 @@ struct CupertinoNowPlaying: View {
                     Button { state.screen = .equalizer } label: { chip("slider.horizontal.3", "EQ · \(state.player.eq.enabled ? state.player.eq.presetLabel : "Off")") }
                         .buttonStyle(.plain)
                     chip(nil, state.player.crossfadeSeconds == 0 ? "Crossfade off" : "Crossfade \(state.player.crossfadeSeconds) s")
+                    chip(nil, state.player.qualityCap.map { "Up to \($0) kbps" } ?? "Original quality")
                     if let sfx = state.player.current?.suffix, !sfx.isEmpty { chip(nil, sfx.uppercased(), strong: true) }
                 } else {
                     chip("slider.horizontal.3", "EQ · Custom")
@@ -65,8 +66,7 @@ struct CupertinoNowPlaying: View {
         .background(WindowConfigurator())
     }
 
-    /// Stand-in for the blurred artwork: soft radial colour fields from the cover's hues. Gradients render the same
-    /// live and in screenshots; a real blurred cover replaces this once artwork loads (M5).
+    /// Soft radial colour fields from the cover's hues; the real cover, blurred, is laid over them once it loads.
     private func backdrop(_ a: AlbumItem) -> some View {
         let h = a.hue / 360
         let warm = Color(hue: h, saturation: 0.6, brightness: 0.85)
@@ -75,6 +75,7 @@ struct CupertinoNowPlaying: View {
             Color(red: 0.227, green: 0.165, blue: 0.11)
             RadialGradient(colors: [warm.opacity(0.9), .clear], center: UnitPoint(x: 0.1, y: 0.1), startRadius: 0, endRadius: 900)
             RadialGradient(colors: [deep.opacity(0.9), .clear], center: UnitPoint(x: 0.85, y: 0.95), startRadius: 0, endRadius: 800)
+            if a.coverArt != nil { BlurredArtwork(album: a); Color.black.opacity(0.28) }   // the real cover, blurred, over the colour fields
             Color(red: 0.08, green: 0.06, blue: 0.04).opacity(0.35)
         }
         .accessibilityHidden(true)
@@ -174,6 +175,7 @@ struct CupertinoNowPlaying: View {
             Text(p.current?.title ?? "Nothing playing").font(.system(size: 24, weight: .bold)).lineLimit(2).padding(.top, 22)
             if let c = p.current { Text(c.album.isEmpty ? c.artist : "\(c.artist) — \(c.album)").font(.system(size: 18)).opacity(0.7).lineLimit(2) }
             if case .failed(let m) = p.phase { Text(m).font(.system(size: 13)).foregroundStyle(.white).padding(.top, 4) }
+            if let n = p.notice { Text(n).font(.system(size: 12)).opacity(0.8).padding(.top, 2) }
             HStack(spacing: 10) {
                 Text(PlayerModel.clock(p.position))
                 DragBar(value: p.fraction, label: "Position", valueText: { "\(PlayerModel.clock($0 * p.duration)) of \(PlayerModel.clock(p.duration))" }) { p.seek(toFraction: $0) }

@@ -25,6 +25,7 @@ struct ZineNowPlaying: View {
                     .padding(.top, 16).accessibilityAddTraits(.isHeader)
                 if let c { Mono([c.artist, c.album, c.suffix?.uppercased() ?? ""].filter { !$0.isEmpty }.joined(separator: " · ")) }
                 if case .failed(let m) = p.phase { Text(m).font(Z.serif(14)).padding(.top, 4) }
+                if let n = p.notice { Text(n).font(Z.serif(13)).padding(.top, 2) }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             Rectangle().fill(Z.ink).frame(width: 6)
@@ -47,6 +48,7 @@ struct ZineNowPlaying: View {
                 HStack(spacing: 10) {
                     Button("EQ · \(p.eq.enabled ? p.eq.presetLabel : "Off")") { state.screen = .equalizer }.buttonStyle(ZineButtonStyle())
                     Mono(p.crossfadeSeconds == 0 ? "Crossfade off" : "Crossfade \(p.crossfadeSeconds) s", bold: true)
+                    Mono(p.qualityCap.map { "Up to \($0) kbps" } ?? "Original quality", bold: true)
                     Button("Queue") { state.screen = .queue }.buttonStyle(ZineButtonStyle(kind: .yellow))
                 }
                 .padding(.top, 4)

@@ -1,6 +1,7 @@
 import AppKit
 import DiscairAudio
 import DiscairCore
+import DiscairNavidrome
 import SwiftUI
 import Testing
 @testable import DiscairUI
@@ -25,6 +26,9 @@ struct ScreenshotTests {
         if screen == .discover { state.discovery.show(.personal, Fixtures.albums([7, 8, 9])) }
         if screen == .library && theme == .cupertino { state.library.apply(newest: [], first: [], artists: [], picks: []); state.library.showSongs(Fixtures.songs, more: true) }
         if screen == .equalizer { state.player.updateEQ { $0.enabled = true; $0.choose(preset: "rock") } }
+        if screen == .nowPlaying {
+            state.lyrics.preview(Lyrics(timed: true, lines: ["A slow tide under the floorboards", "the lamp keeps counting what we left", "one long note, then the room agrees", "nobody here is in a hurry", "the water finds its level"].enumerated().map { LyricLine(startMs: $0.offset * 4000, text: $0.element) }))
+        }
         if screen == .queue || screen == .nowPlaying {
             let q = (0..<6).map { QueueItem(songID: "s\($0)", title: ["After the Flood", "Glory Box", "Cloudbusting", "Maria También", "So What", "Such a Shame"][$0], artist: ["Talk Talk", "Portishead", "Kate Bush", "Khruangbin", "Miles Davis", "Talk Talk"][$0], album: "Album", duration: Double(180 + $0 * 37)) }
             state.player.play(q)

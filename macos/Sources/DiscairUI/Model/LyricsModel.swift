@@ -117,6 +117,9 @@ public final class LyricsModel {
         inFlight = Task { [weak self] in await self?.load(id, mine, cached) }
     }
 
+    /// Test hook: shows these lyrics without a server.
+    func preview(_ l: Lyrics?) { apply(l); songID = "preview" }
+
     /// Try again after a failure.
     public func retry() { let id = songID; state = .idle; show(songID: id) }
 

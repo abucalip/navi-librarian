@@ -54,6 +54,17 @@ struct ZineSettings: View {
                         .accessibilityAddTraits(on ? .isSelected : [])
                 }
             }
+            Mono("Streaming quality", bold: true).padding(.top, 6)
+            HStack(spacing: 8) {
+                ForEach(PlayerModel.qualityChoices, id: \.self) { q in
+                    let on = state.player.qualityCap == q
+                    Button(q.map { "\($0)" } ?? "Original") { state.player.qualityCap = q }
+                        .buttonStyle(ZineButtonStyle(kind: on ? .yellow : .plain, small: true))
+                        .accessibilityLabel(q.map { "\($0) kilobits per second" } ?? "Original quality")
+                        .accessibilityAddTraits(on ? .isSelected : [])
+                }
+            }
+            Text("Original plays the file as it is. A number is the most the server may send (kbps); it converts only files above it. Applies to songs started afterwards.").font(Z.serif(13))
             Text("Songs that follow each other on one album always play gapless, with no fade.").font(Z.serif(13))
             Button("Equalizer · \(state.player.eq.enabled ? state.player.eq.presetLabel : "Off")") { state.screen = .equalizer }
                 .buttonStyle(ZineButtonStyle(small: true))
