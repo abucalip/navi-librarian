@@ -1,3 +1,11 @@
+## 2026-11-04 — macOS M6 slice 4: command palette merged (PR #742)
+
+- **Merged (owner request):** PR [#742](https://github.com/abucalip/navi-librarian/pull/742), squash `aad52eb16b1d2fd286bc0cb871352940c0ad41db`, tested head `9b9978cb40c8b660e4de725078e48cbca547189b`. GitHub checks (compile, container-smoke, test-and-build, validate-container) passed; no Swift job runs on GitHub.
+- **What:** Edit > Command Palette (⌘K): `PaletteCatalog` and `PaletteModel` (`DiscairUI/Model/CommandPalette.swift`, pure ranking), `CommandPaletteView` overlay in both themes, `AppState.perform`. Lines: Go to each screen, playback controls, Open or Play (owned) or Get (not owned) an album, Open an artist, from the albums and artists already loaded (`macos/DESIGN.md` M6 slice 4).
+- **Tests run (filtered only):** `swift test --filter CommandPaletteTests` passed (11, including a render in each theme that was looked at; a translucent-material ghosting in the Zine render was fixed by a solid background and a drawn hard shadow).
+- **Not verified:** not opened in a running app (⌘K focus, arrow keys in the field, Escape, VoiceOver); searches loaded albums and artists only, not songs or individual settings; look not owner-approved. GitHub API timed out a few times; retried.
+- **Next action:** the owner tries ⌘K live; then the next M6 feature (section 6: library table, Gap radar, Pipeline dock, history, smart playlists, Miller columns). Keychain and signing check and first release remain as in `docs/ACTIVE_WORK.md` 2j.
+
 ## 2026-11-04 — macOS M6 slice 3: Notification Center widget merged (PR #741)
 
 - **Merged (owner request):** PR [#741](https://github.com/abucalip/navi-librarian/pull/741), squash `f0dfbe862a7f083b019557f6d4f883a8e83de980`, tested head `af4505b78c806049e284f01cbb49b11b28c7851d`. GitHub checks (compile, container-smoke, test-and-build, validate-container) passed; no Swift job runs on GitHub.
