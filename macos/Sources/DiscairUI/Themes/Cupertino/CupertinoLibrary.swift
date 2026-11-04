@@ -53,7 +53,7 @@ struct CupertinoLibrary: View {
             .padding(.horizontal, 28).padding(.bottom, 28)
         }
         .scrollEdgeEffectStyle(.hard, for: .top)
-        .task(id: state.library.isLive) { await state.loadSongs() }
+        .task(id: state.library.isLive) { await state.loadAllSongs() }
     }
 
     /// Loading, failure and paging. Sorting only reorders the songs already loaded, and the footer says so.
@@ -61,13 +61,13 @@ struct CupertinoLibrary: View {
         let lib = state.library
         if lib.isLive {
             VStack(alignment: .leading, spacing: 8) {
-                if lib.songsLoading { HStack(spacing: 8) { ProgressView().controlSize(.small); Text("Loading songs…") }.foregroundStyle(CU.muted) }
+                if lib.songsLoading { HStack(spacing: 8) { ProgressView().controlSize(.small); Text("Loading songs… \(lib.songs.count) so far") }.foregroundStyle(CU.muted) }
                 if let e = lib.songsError {
                     Text(e).foregroundStyle(CU.muted)
-                    Button("Try again") { Task { await state.loadSongs(more: !lib.songs.isEmpty && lib.songsHaveMore) } }
+                    Button("Try again") { Task { await state.loadAllSongs() } }
                         .buttonStyle(CapsuleButtonStyle(primary: true, small: true))
                 } else if lib.songsHaveMore && !lib.songsLoading {
-                    Button("Load more songs") { Task { await state.loadSongs(more: true) } }.buttonStyle(CapsuleButtonStyle(small: true))
+                    Button("Load more songs") { Task { await state.loadAllSongs() } }.buttonStyle(CapsuleButtonStyle(small: true))
                 }
                 if !lib.songs.isEmpty {
                     Text("\(lib.songs.count) songs loaded" + (lib.songsHaveMore ? ". Sorting reorders only these." : "."))

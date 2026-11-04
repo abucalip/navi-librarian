@@ -281,6 +281,44 @@ public final class LibraryModel {
         }
     }
 
+    /// Reads the whole library: the first page as before (so the saved copy and the offline fallback still work), then
+    /// 500-song pages, four requests at a time, appended in order as each group arrives. Stops at the first short page.
+    /// An error keeps what is loaded and leaves `songsHaveMore` true, so "Load more songs" / "Try again" continue it.
+    public func loadAllSongs(navidrome: NavidromeClient?) async {
+        guard isLive, let navidrome else { return }
+        if !songsLoaded { await loadSongs(navidrome: navidrome) }
+        guard songsLoaded, songsHaveMore, !songsLoading else { return }
+        songsLoading = true; songsError = nil
+        defer { songsLoading = false }
+        let size = Self.bulkPage, width = Self.bulkWidth
+        do {
+            while songsHaveMore {
+                let start = songs.count
+                let pages = try await withThrowingTaskGroup(of: (Int, [NavidromeSong]).self) { group in
+                    for i in 0..<width { group.addTask { (i, try await navidrome.songs(offset: start + i * size, count: size)) } }
+                    var out: [Int: [NavidromeSong]] = [:]
+                    for try await (i, page) in group { out[i] = page }
+                    return out
+                }
+                var added: [SongRow] = []
+                var ended = false
+                for i in 0..<width {
+                    let page = pages[i] ?? []
+                    added += page.enumerated().map { Self.row($0.element, id: start + i * size + $0.offset) }
+                    songServerPaths += page.compactMap(\.path)
+                    if page.count < size { ended = true; break }
+                }
+                songs += added
+                if ended || added.isEmpty { songsHaveMore = false }
+            }
+        } catch {
+            let e = (error as? DiscairError) ?? ErrorMapping.map(error)
+            songsError = (error as? DiscairError).map(AcquisitionModel.text) ?? e.summary
+        }
+    }
+    static let bulkPage = 500
+    static let bulkWidth = 4
+
     /// Test hook: shows these song rows without a server.
     func showSongs(_ rows: [SongRow], more: Bool = false) { songs = rows; songsHaveMore = more; songsLoaded = true }
 
