@@ -76,9 +76,21 @@ final class SystemMedia {
         coverTask = Task { [weak self] in
             let image = await artwork.image(coverArt: id, px: Self.coverPixels)
             guard !Task.isCancelled, let self, self.coverID == id, let image else { return }
-            self.coverImage = image
+            self.coverImage = Self.squareCover(image) ?? image
             self.update()
         }
+    }
+
+    /// The cover cut to the largest centred square. The server scales a cover without cropping it, so a wide or tall one reached
+    /// Control Centre off-centre in its square tile. Nil when the image has no pixel data to cut (the caller keeps the original).
+    nonisolated static func squareCover(_ image: NSImage) -> NSImage? {
+        guard let rep = image.representations.first, rep.pixelsWide > 0, rep.pixelsHigh > 0,
+              let cg = image.cgImage(forProposedRect: nil, context: nil, hints: nil) else { return nil }
+        let w = cg.width, h = cg.height
+        if w == h { return image }
+        let side = min(w, h)
+        guard let cut = cg.cropping(to: CGRect(x: (w - side) / 2, y: (h - side) / 2, width: side, height: side)) else { return nil }
+        return NSImage(cgImage: cut, size: NSSize(width: side, height: side))
     }
 
     /// What the system is told about the playing song. Pure, so a test can check it without the system's shared center.
