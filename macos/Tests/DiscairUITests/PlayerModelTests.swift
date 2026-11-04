@@ -23,6 +23,9 @@ private final class FakeOutput: AudioOutput {
     var cancels = 0
     func preload(file: URL, transition: Transition) throws { preloads.append(transition) }
     func cancelPreload() { cancels += 1 }
+    var volume: Float = 1
+    var eqApplied: [(gains: [Double], preGain: Double)] = []
+    func applyEQ(gains: [Double], preGain: Double) { eqApplied.append((gains, preGain)) }
     func advance() { position = 0; onAdvanced?() }
     func finish() { isPlaying = false; onFinished?() }
 }
@@ -215,6 +218,51 @@ struct PlayerModelTests {
         #expect(!PlayerModel.isContinuous(item("a", 3), item("a", 5)))
         #expect(!PlayerModel.isContinuous(item("a", 3), item("b", 4)))
         #expect(!PlayerModel.isContinuous(item(nil, 3), item(nil, 4)))
+    }
+
+    // MARK: Volume, equalizer, saved queue
+
+    @Test func volumeIsAppliedAndRemembered() {
+        let suite = UserDefaults(suiteName: "discair-test-\(UUID().uuidString)")!
+        let out = FakeOutput()
+        let p = PlayerModel(output: out, fetcher: FakeFetcher(), defaults: suite)
+        #expect(p.volume == 1)
+        p.volume = 0.4
+        #expect(out.volume == 0.4)
+        let out2 = FakeOutput()
+        let again = PlayerModel(output: out2, fetcher: FakeFetcher(), defaults: suite)
+        #expect(again.volume == 0.4 && out2.volume == 0.4)
+    }
+
+    @Test func theEqualizerReachesTheEngineAndIsRemembered() {
+        let suite = UserDefaults(suiteName: "discair-test-\(UUID().uuidString)")!
+        let out = FakeOutput()
+        let p = PlayerModel(output: out, fetcher: FakeFetcher(), defaults: suite)
+        p.updateEQ { $0.enabled = true; $0.choose(preset: "bass_boost") }
+        #expect(out.eqApplied.last?.gains.first == 6 && out.eqApplied.last?.preGain == -6)
+        p.updateEQ { $0.enabled = false }
+        #expect(out.eqApplied.last?.gains.allSatisfy { $0 == 0 } == true && out.eqApplied.last?.preGain == 0)
+        let out2 = FakeOutput()
+        let again = PlayerModel(output: out2, fetcher: FakeFetcher(), defaults: suite)
+        #expect(again.eq.presetID == "bass_boost" && !again.eq.enabled && out2.eqApplied.count == 1)
+    }
+
+    @Test func theQueueAndPositionComeBackAfterARestartAndPlayFromThere() async throws {
+        let suite = UserDefaults(suiteName: "discair-test-\(UUID().uuidString)")!
+        let out = FakeOutput(), fetch = FakeFetcher()
+        let p = PlayerModel(output: out, fetcher: fetch, defaults: suite)
+        p.configure(urls: try streamBuilder())
+        p.play(songs(4), startAt: 1)
+        await until { p.isPlaying }
+        out.position = 42
+        p.togglePlayPause()                               // pausing saves the position
+        let out2 = FakeOutput()
+        let again = PlayerModel(output: out2, fetcher: fetch, defaults: suite)
+        #expect(again.current?.title == "T1" && again.queue.upNext.count == 2 && again.phase == .idle && again.position == 42)
+        again.configure(urls: try streamBuilder())
+        again.togglePlayPause()
+        await until { again.isPlaying }
+        #expect(out2.seeks == [42] && again.current?.title == "T1")
     }
 }
 

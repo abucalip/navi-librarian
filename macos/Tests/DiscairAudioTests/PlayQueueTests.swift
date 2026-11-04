@@ -95,5 +95,16 @@ private func titles(_ q: PlayQueue) -> [String] { ([q.current].compactMap { $0 }
         q.clearUpNext()
         #expect(q.current?.title == "T1" && q.upNext.isEmpty && q.items.count == 1)
     }
+
+    @Test func aSnapshotRestoresTheListTheCurrentSongAndTheModes() throws {
+        var q = PlayQueue(); q.set(songs(5), startAt: 2); q.repeatMode = .all
+        let back = try JSONDecoder().decode(PlayQueue.Snapshot.self, from: JSONEncoder().encode(q.snapshot))
+        let r = PlayQueue(snapshot: back)
+        #expect(r.current?.title == "T2" && r.upNext.map(\.title) == ["T3", "T4"] && r.repeatMode == .all && !r.shuffle)
+        #expect(PlayQueue(snapshot: .init(items: [], index: nil, shuffle: false, repeatMode: .off)).isEmpty)
+        var s = PlayQueue(); s.set(songs(6), startAt: 1); s.setShuffle(true)
+        let rs = PlayQueue(snapshot: s.snapshot)
+        #expect(rs.shuffle && rs.current?.title == "T1" && rs.upNext.count == 5)
+    }
 }
 

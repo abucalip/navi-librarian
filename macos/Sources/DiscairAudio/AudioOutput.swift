@@ -25,6 +25,11 @@ public protocol AudioOutput: AnyObject {
     /// Called when the engine has started the preloaded song: at the join for `gapless`, at the start of the fade for
     /// `crossfade`. After it, `position`, `duration` and `onFinished` refer to the new song.
     var onAdvanced: (() -> Void)? { get set }
+
+    /// Output level 0...1 of the app's own mixer (the system volume is separate).
+    var volume: Float { get set }
+    /// Applies the equalizer: ten band gains in dB and a pre-gain in dB. All zero is a true bypass.
+    func applyEQ(gains: [Double], preGain: Double)
 }
 
 public enum Transition: Equatable, Sendable {
@@ -65,6 +70,9 @@ public final class EngineOutput: AudioOutput {
     }
 
     private let engine = AVAudioEngine()
+    /// Ten peaking bands after the mixer, so files of different formats share one filter chain (measured in the M2 spike).
+    private let eq = AVAudioUnitEQ(numberOfBands: 10)
+    private var eqWired = false
     private let slots = [Slot(), Slot()]
     private var active = 0
     private var cur: Slot { slots[active] }
@@ -80,7 +88,44 @@ public final class EngineOutput: AudioOutput {
     public var onFinished: (() -> Void)?
     public var onAdvanced: (() -> Void)?
 
-    public init() {}
+    public init() {
+        for (i, band) in eq.bands.enumerated() {
+            band.filterType = .parametric
+            band.frequency = Float(eqBandHz[i])
+            band.bandwidth = 1.0                      // one octave
+            band.gain = 0
+            band.bypass = false
+        }
+    }
+
+    public var volume: Float {
+        get { engine.mainMixerNode.outputVolume }
+        set { engine.mainMixerNode.outputVolume = min(max(newValue, 0), 1) }
+    }
+
+    private var eqGains = [Double](repeating: 0, count: 10)
+    private var eqPreGain = 0.0
+
+    public func applyEQ(gains: [Double], preGain: Double) {
+        eqGains = gains; eqPreGain = preGain
+        for (i, band) in eq.bands.enumerated() where gains.indices.contains(i) {
+            band.gain = Float(gains[i])
+            band.bypass = gains[i] == 0
+        }
+        eq.globalGain = Float(preGain)
+        eq.bypass = preGain == 0 && gains.allSatisfy { $0 == 0 }     // off is a true bypass
+    }
+
+    /// mixer -> EQ -> output, wired once.
+    private func wireEQ() {
+        guard !eqWired else { return }
+        engine.attach(eq)
+        engine.disconnectNodeOutput(engine.mainMixerNode)
+        engine.connect(engine.mainMixerNode, to: eq, format: nil)
+        engine.connect(eq, to: engine.outputNode, format: nil)
+        eqWired = true
+        applyEQ(gains: eqGains, preGain: eqPreGain)
+    }
 
     // MARK: State
 
@@ -111,6 +156,7 @@ public final class EngineOutput: AudioOutput {
     }
 
     private func attach(_ slot: Slot, file: AVAudioFile) throws {
+        wireEQ()
         if !slot.attached { engine.attach(slot.node); slot.attached = true }
         engine.disconnectNodeOutput(slot.node)
         engine.connect(slot.node, to: engine.mainMixerNode, format: file.processingFormat)

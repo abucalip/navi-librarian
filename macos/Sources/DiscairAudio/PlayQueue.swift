@@ -1,7 +1,7 @@
 import Foundation
 
 /// One song in the queue: just what playback and the screens need.
-public struct QueueItem: Identifiable, Equatable, Sendable {
+public struct QueueItem: Identifiable, Equatable, Sendable, Codable {
     public let id: UUID
     public let songID: String
     public let title: String
@@ -24,7 +24,7 @@ public struct QueueItem: Identifiable, Equatable, Sendable {
     }
 }
 
-public enum RepeatMode: String, Sendable, CaseIterable { case off, all, one }
+public enum RepeatMode: String, Sendable, CaseIterable, Codable { case off, all, one }
 
 /// The play order, with shuffle, repeat, Play next, Add to queue and reorder. Pure logic: it never touches audio.
 /// `items` is the list as the owner arranged it; with shuffle on, `order` walks it in a random order that starts at the
@@ -39,6 +39,29 @@ public struct PlayQueue: Equatable, Sendable {
     public var repeatMode: RepeatMode = .off
 
     public init() {}
+
+    /// What is saved between launches: the list as arranged, which song is current, shuffle and repeat. A shuffled
+    /// order is not kept; shuffle starts a new one from the current song.
+    public struct Snapshot: Codable, Equatable, Sendable {
+        public var items: [QueueItem]
+        public var index: Int?
+        public var shuffle: Bool
+        public var repeatMode: RepeatMode
+        public init(items: [QueueItem], index: Int?, shuffle: Bool, repeatMode: RepeatMode) {
+            self.items = items; self.index = index; self.shuffle = shuffle; self.repeatMode = repeatMode
+        }
+    }
+
+    public var snapshot: Snapshot { Snapshot(items: items, index: currentIndex, shuffle: shuffle, repeatMode: repeatMode) }
+
+    public init(snapshot: Snapshot) {
+        var g = SystemRandomNumberGenerator()
+        self.init()
+        guard !snapshot.items.isEmpty else { return }
+        set(snapshot.items, startAt: snapshot.index ?? 0, using: &g)
+        repeatMode = snapshot.repeatMode
+        if snapshot.shuffle { setShuffle(true, using: &g) }
+    }
 
     public var current: QueueItem? { cursor.map { items[order[$0]] } }
     public var currentIndex: Int? { cursor.map { order[$0] } }

@@ -26,6 +26,16 @@ public final class PlayerModel {
     }
     public static let crossfadeChoices = [0, 2, 4, 6, 8, 10]
     private static let crossfadeKey = "discair.crossfadeSeconds"
+    /// App output level 0...1 (remembered).
+    public var volume: Float {
+        didSet { output.volume = volume; defaults.set(Double(volume), forKey: Self.volumeKey) }
+    }
+    /// The equalizer (remembered). Change it through `updateEQ`.
+    public private(set) var eq = EQSettings()
+    private static let volumeKey = "discair.volume"
+    private static let eqKey = "discair.equalizer"
+    private static let queueKey = "discair.queue"
+    public static let positionKey = "discair.queuePosition"
     public var current: QueueItem? { queue.current }
     public var isPlaying: Bool { phase == .playing }
     public var shuffle: Bool { queue.shuffle }
@@ -51,8 +61,43 @@ public final class PlayerModel {
         self.defaults = defaults
         let saved = defaults.integer(forKey: Self.crossfadeKey)
         crossfadeSeconds = Self.crossfadeChoices.contains(saved) ? saved : 0
+        let v = defaults.object(forKey: Self.volumeKey) as? Double
+        volume = Float(min(max(v ?? 1, 0), 1))
+        output.volume = volume
+        if let data = defaults.data(forKey: Self.eqKey), let saved = try? JSONDecoder().decode(EQSettings.self, from: data) { eq = saved }
+        output.applyEQ(gains: eq.effective.gains, preGain: eq.effective.preGain)
+        if let data = defaults.data(forKey: Self.queueKey), let snap = try? JSONDecoder().decode(PlayQueue.Snapshot.self, from: data), !snap.items.isEmpty {
+            queue = PlayQueue(snapshot: snap)
+            resumeAt = defaults.double(forKey: Self.positionKey)
+            position = resumeAt
+            duration = queue.current?.duration ?? 0
+        }
         output.onFinished = { [weak self] in self?.songEnded() }
         output.onAdvanced = { [weak self] in self?.advancedByEngine() }
+    }
+
+    /// Seconds to jump to when the restored song first starts (0 otherwise).
+    @ObservationIgnored private var resumeAt: Double = 0
+
+    // MARK: Equalizer
+
+    public func updateEQ(_ change: (inout EQSettings) -> Void) {
+        change(&eq)
+        defaults.set(try? JSONEncoder().encode(eq), forKey: Self.eqKey)
+        output.applyEQ(gains: eq.effective.gains, preGain: eq.effective.preGain)
+    }
+
+    // MARK: Saving the queue
+
+    /// Writes the queue and the position. Called when the queue changes, a song changes, playback pauses and every few
+    /// seconds while playing; the cost is one small JSON write.
+    public func persist() {
+        let snap = queue.snapshot
+        guard !snap.items.isEmpty else { defaults.removeObject(forKey: Self.queueKey); defaults.removeObject(forKey: Self.positionKey); return }
+        let capped = snap.items.count > 500 && snap.index.map({ $0 < 500 }) == true
+            ? PlayQueue.Snapshot(items: Array(snap.items.prefix(500)), index: snap.index, shuffle: snap.shuffle, repeatMode: snap.repeatMode) : snap
+        defaults.set(try? JSONEncoder().encode(capped), forKey: Self.queueKey)
+        defaults.set(phase == .idle ? resumeAt : (output.position > 0 ? output.position : position), forKey: Self.positionKey)
     }
 
     public func configure(urls: StreamURLBuilder?) {
@@ -71,20 +116,20 @@ public final class PlayerModel {
     public func playNext(_ song: QueueItem) {
         let wasEmpty = queue.isEmpty
         queue.playNext(song)
-        if wasEmpty { startCurrent() } else { refreshPreload() }
+        if wasEmpty { startCurrent() } else { refreshPreload(); persist() }
     }
 
     public func addToQueue(_ song: QueueItem) {
         let wasEmpty = queue.isEmpty
         queue.append(song)
-        if wasEmpty { startCurrent() } else { refreshPreload() }
+        if wasEmpty { startCurrent() } else { refreshPreload(); persist() }
     }
 
     // MARK: Controls
 
     public func togglePlayPause() {
         switch phase {
-        case .playing: output.pause(); phase = .paused; position = output.position; stopTicking()
+        case .playing: output.pause(); phase = .paused; position = output.position; stopTicking(); persist()
         case .paused: output.play(); phase = .playing; startTicking()
         case .idle, .failed: if current != nil { startCurrent() }
         case .loading: break
@@ -113,15 +158,15 @@ public final class PlayerModel {
         position = output.position
     }
 
-    public func toggleShuffle() { queue.setShuffle(!queue.shuffle); refreshPreload() }
+    public func toggleShuffle() { queue.setShuffle(!queue.shuffle); refreshPreload(); persist() }
 
     public func cycleRepeat() {
         queue.repeatMode = switch queue.repeatMode { case .off: .all; case .all: .one; case .one: .off }
-        refreshPreload()
+        refreshPreload(); persist()
     }
 
-    public func removeUpNext(at i: Int) { queue.removeUpNext(at: i); refreshPreload() }
-    public func moveUpNext(from: Int, to: Int) { queue.moveUpNext(from: from, to: to); refreshPreload() }
+    public func removeUpNext(at i: Int) { queue.removeUpNext(at: i); refreshPreload(); persist() }
+    public func moveUpNext(from: Int, to: Int) { queue.moveUpNext(from: from, to: to); refreshPreload(); persist() }
 
     /// Plays a song from Up Next now; the songs skipped over stay in the queue behind it.
     public func jump(toUpNext i: Int) {
@@ -131,7 +176,7 @@ public final class PlayerModel {
     }
 
     /// Empties Up Next; the current song keeps playing.
-    public func clearUpNext() { queue.clearUpNext(); refreshPreload() }
+    public func clearUpNext() { queue.clearUpNext(); refreshPreload(); persist() }
 
     public func stop() {
         loadGeneration += 1
@@ -139,7 +184,7 @@ public final class PlayerModel {
         dropPreload()
         output.stop()
         stopTicking()
-        phase = .idle; position = 0; duration = 0
+        phase = .idle; position = 0; duration = 0; resumeAt = 0
         cleanUp()
     }
 
@@ -161,7 +206,9 @@ public final class PlayerModel {
         loadTask?.cancel()
         dropPreload()
         output.stop(); stopTicking()
-        phase = .loading; position = 0; duration = item.duration
+        let startAt = resumeAt; resumeAt = 0
+        phase = .loading; position = startAt; duration = item.duration
+        persist()
         let opts = Self.streamOptions(suffix: item.suffix)
         loadTask = Task { [weak self, fetcher] in
             do {
@@ -172,6 +219,7 @@ public final class PlayerModel {
                 self.downloaded = file
                 try self.output.open(file: file)
                 self.duration = self.output.duration
+                if startAt > 3, startAt < self.duration - 3 { self.output.seek(to: startAt); self.position = startAt }
                 self.output.play()
                 self.phase = .playing
                 self.startTicking()
@@ -252,6 +300,7 @@ public final class PlayerModel {
         duration = output.duration
         phase = output.isPlaying ? .playing : .paused
         refreshPreload()
+        persist()
     }
 
     private func cleanUp() {
@@ -261,8 +310,11 @@ public final class PlayerModel {
     private func startTicking() {
         stopTicking()
         tickTask = Task { [weak self] in
+            var n = 0
             while !Task.isCancelled {
                 self?.position = self?.output.position ?? 0
+                n += 1
+                if n % 20 == 0 { self?.persist() }
                 try? await Task.sleep(for: .milliseconds(250))
             }
         }
