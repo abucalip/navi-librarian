@@ -167,6 +167,8 @@ public final class AppState {
         if session.isGood { await refreshLibrary() } else { await session.connect() }
     }
 
+    public func loadAllSongs() async { await library.loadAllSongs(navidrome: session?.navidrome) }
+
     public func loadSongs(more: Bool = false) async {
         await library.loadSongs(navidrome: session?.navidrome, more: more)
     }
@@ -231,28 +233,17 @@ public final class AppState {
 
     public func loadGapRadar() async { await library.loadGapRadar(navidrome: session?.navidrome) }
 
-    /// Reads every song (up to `smartSongLimit`) so rules see the whole library, then the playlists already on Navidrome.
+    /// Reads every song so rules see the whole library, then the playlists already on Navidrome.
     public func loadSmartPlaylists() async {
         let nav = session?.navidrome
-        await library.loadSongs(navidrome: nav)
-        while library.songsHaveMore, library.songs.count < Self.smartSongLimit {
-            let before = library.songs.count
-            await library.loadSongs(navidrome: nav, more: true)
-            if library.songs.count == before { break }
-        }
+        await library.loadAllSongs(navidrome: nav)
         await smart.loadRemote(navidrome: nav)
     }
-    static let smartSongLimit = 5000
 
-    /// Reads every song (up to `smartSongLimit`) so the history sees each song's latest play.
+    /// Reads every song so the history sees each song's latest play.
     public func loadHistory() async {
         let nav = session?.navidrome
-        await library.loadSongs(navidrome: nav)
-        while library.songsHaveMore, library.songs.count < Self.smartSongLimit {
-            let before = library.songs.count
-            await library.loadSongs(navidrome: nav, more: true)
-            if library.songs.count == before { break }
-        }
+        await library.loadAllSongs(navidrome: nav)
     }
 
     /// The songs a smart playlist holds right now.
