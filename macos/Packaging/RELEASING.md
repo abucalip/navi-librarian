@@ -5,9 +5,9 @@ Nothing here publishes by itself. Publication stays paused until the owner autho
 ## One-time setup (the owner, on the owner's Mac)
 
 1. Build once so Sparkle's tools exist: `swift package resolve`.
-2. Make the update signing key: `.build/artifacts/sparkle/Sparkle/bin/generate_keys`. The private key goes into the login Keychain
+2. Make the update signing key: `generate_keys` from inside the `macos` folder: `./.build/artifacts/sparkle/Sparkle/bin/generate_keys`. The private key goes into the login Keychain
    (back it up with `generate_keys -x <file>` and keep that file out of the repository). It prints the **public** key; that one is not secret.
-3. Put the public key where the build can read it: `export DISCAIR_SU_PUBLIC_KEY=<the printed public key>`.
+3. Put the public key in `Packaging/SU_PUBLIC_KEY` (done 2026-11-04; `bundle.sh` reads it, or `DISCAIR_SU_PUBLIC_KEY` overrides it).
 
 An app built without the key runs normally but refuses every update (`UpdateConfiguration`, "no update signing key").
 

@@ -5,7 +5,7 @@
 #   DISCAIR_SU_PUBLIC_KEY=<base64> scripts/bundle.sh
 #
 # Environment (all optional):
-#   DISCAIR_SU_PUBLIC_KEY  Sparkle EdDSA public key (from Sparkle's generate_keys). Empty means updates are off.
+#   DISCAIR_SU_PUBLIC_KEY  Sparkle EdDSA public key (default: Packaging/SU_PUBLIC_KEY, the owner's public key; not secret).
 #   DISCAIR_FEED_URL       appcast address, https only (default: the macos-appcast release of this repository)
 #   DISCAIR_VERSION        shown version (default: Packaging/VERSION)
 #   DISCAIR_BUILD          build number Sparkle compares (default: number of commits)
@@ -16,7 +16,7 @@ cd "$(dirname "$0")/.."
 VERSION="${DISCAIR_VERSION:-$(tr -d '[:space:]' < Packaging/VERSION)}"
 BUILD="${DISCAIR_BUILD:-$(git rev-list --count HEAD 2>/dev/null || echo 1)}"
 FEED="${DISCAIR_FEED_URL:-https://github.com/abucalip/navi-librarian/releases/download/macos-appcast/appcast.xml}"
-KEY="${DISCAIR_SU_PUBLIC_KEY:-}"
+KEY="${DISCAIR_SU_PUBLIC_KEY:-$(tr -d '[:space:]' < Packaging/SU_PUBLIC_KEY 2>/dev/null || true)}"
 OUT="${DISCAIR_OUT:-.build/bundle}"
 case "$FEED" in https://*) ;; *) echo "DISCAIR_FEED_URL must be https" >&2; exit 1 ;; esac
 [ -n "$KEY" ] || echo "note: DISCAIR_SU_PUBLIC_KEY is empty, so this app will not accept updates" >&2
