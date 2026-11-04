@@ -368,11 +368,14 @@ public final class AcquisitionModel {
 @MainActor
 public final class AcquisitionActions: DiscairActions {
     private let model: AcquisitionModel
+    /// Set by `AppState`, which owns the player.
+    public var onPlay: (AlbumItem) -> Void = { _ in }
+    public var onResume: () -> Void = {}
     public init(_ model: AcquisitionModel) { self.model = model }
-    public func play(album: AlbumItem) {}
+    public func play(album: AlbumItem) { onPlay(album) }
     public func get(album: AlbumItem) { Task { await model.get(album) } }
     public func getSong(album: AlbumItem, title: String, trackNumber: Int?) { Task { await model.getSong(album, title: title, trackNumber: trackNumber) } }
     public func save(album: AlbumItem) { Task { await model.save(album) } }
     public func notForMe(album: AlbumItem) { model.notForMe(album) }
-    public func resume() {}
+    public func resume() { onResume() }
 }

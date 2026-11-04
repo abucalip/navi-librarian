@@ -167,10 +167,19 @@ struct CupertinoToolbar: View {
     var body: some View {
         HStack(spacing: 12) {
             HStack(spacing: 16) {
-                ForEach(["shuffle", "backward.fill", "pause.fill", "forward.fill", "repeat"], id: \.self) { s in
-                    Image(systemName: s).font(.system(size: 15)).accessibilityLabel(s)
+                let p = state.player
+                Button { p.toggleShuffle() } label: { Image(systemName: "shuffle").foregroundStyle(p.shuffle ? CU.accent : CU.ink) }
+                    .accessibilityLabel(p.shuffle ? "Shuffle, on" : "Shuffle, off")
+                Button { p.previous() } label: { Image(systemName: "backward.fill") }.accessibilityLabel("Previous")
+                Button { p.togglePlayPause() } label: { Image(systemName: p.isPlaying ? "pause.fill" : "play.fill") }
+                    .accessibilityLabel(p.isPlaying ? "Pause" : "Play").disabled(p.current == nil)
+                Button { p.next() } label: { Image(systemName: "forward.fill") }.accessibilityLabel("Next").disabled(p.current == nil)
+                Button { p.cycleRepeat() } label: {
+                    Image(systemName: p.repeatMode == .one ? "repeat.1" : "repeat").foregroundStyle(p.repeatMode == .off ? CU.ink : CU.accent)
                 }
+                .accessibilityLabel("Repeat, \(p.repeatMode.rawValue)")
             }
+            .buttonStyle(.plain).font(.system(size: 15))
             .padding(.horizontal, 18).frame(height: 40)
             .glassEffect(CU.glass, in: Capsule())
 
@@ -188,11 +197,36 @@ struct CupertinoToolbar: View {
     }
 
     @ViewBuilder private var nowPlayingDisplay: some View {
-        if state.library.isLive {
-            Text("Nothing playing").font(.system(size: 12)).foregroundStyle(CU.muted)
-                .frame(maxWidth: .infinity).frame(height: 44)
-                .glassEffect(CU.glass, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-        } else { sampleDisplay }
+        if state.library.isLive || state.player.current != nil { liveDisplay } else { sampleDisplay }
+    }
+
+    private var liveDisplay: some View {
+        let p = state.player
+        return Group {
+            if let c = p.current {
+                HStack(spacing: 10) {
+                    CoverView(album: AlbumItem(id: -1, title: c.album, artist: c.artist, year: 0, genre: "", format: "", owned: true, hue: 200, coverArt: c.coverArt))
+                        .frame(width: 32).clipShape(RoundedRectangle(cornerRadius: 5)).accessibilityHidden(true)
+                    VStack(spacing: 1) {
+                        Text(c.title).fontWeight(.semibold).lineLimit(1)
+                        Text(p.phase == .loading ? "Loading…" : (c.album.isEmpty ? c.artist : "\(c.artist) — \(c.album)")).foregroundStyle(CU.muted).lineLimit(1)
+                        if case .failed(let m) = p.phase { Text(m).foregroundStyle(CU.accent).lineLimit(1) }
+                    }
+                    .font(.system(size: 12)).frame(maxWidth: .infinity)
+                    Text(PlayerModel.clock(p.position)).font(.system(size: 11)).monospacedDigit().foregroundStyle(CU.muted)
+                }
+                .padding(.horizontal, 10).frame(height: 44)
+                .overlay(alignment: .bottomLeading) {
+                    GeometryReader { g in Rectangle().fill(CU.accent).frame(width: g.size.width * p.fraction, height: 3) }.frame(height: 3)
+                }
+                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel("Now playing: \(c.title), \(c.artist), \(PlayerModel.clock(p.position)) of \(PlayerModel.clock(p.duration))")
+            } else {
+                Text("Nothing playing").font(.system(size: 12)).foregroundStyle(CU.muted).frame(maxWidth: .infinity).frame(height: 44)
+            }
+        }
+        .glassEffect(CU.glass, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 
     private var sampleDisplay: some View {

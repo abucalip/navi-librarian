@@ -191,7 +191,8 @@ public final class LibraryModel {
                               format: "", owned: true, hue: hue(for: s.album ?? s.title), remoteID: s.albumId, coverArt: s.coverArt ?? "")
         return SongRow(id: id, album: 0, title: s.title, artist: s.artist ?? "Unknown artist", genre: s.genre ?? "",
                        format: rowFormat(s), bitrate: s.bitRate.map { "\($0) kb" } ?? "", lastPlayed: shortDate(s.played),
-                       added: shortDate(s.created), year: s.year ?? 0, plays: s.playCount ?? 0, remoteID: s.id, cover: album)
+                       added: shortDate(s.created), year: s.year ?? 0, plays: s.playCount ?? 0, remoteID: s.id, cover: album,
+                       suffix: s.suffix, seconds: Double(s.duration ?? 0))
     }
 
     /// "FLAC 16/44" when the bit depth and sample rate are known, else the short form ("MP3 320").

@@ -32,14 +32,26 @@ struct CupertinoLibrary: View {
                     Text("Songs").font(CU.title(34))
                     CUSegmented(options: ["Songs", "Albums", "Artists", "Missing"], selection: $source)
                     Spacer()
+                    Button { let shown = rows; if let i = shown.firstIndex(where: { $0.id == selected }) { state.play(rows: shown, startAt: i) } } label: { Label("Play", systemImage: "play.fill") }
+                        .buttonStyle(CapsuleButtonStyle(primary: true, small: true)).disabled(!state.library.isLive)
+                        .help("Play the selected song, then the rows below it")
                     CUSegmented(options: ["Table", "Grid", "Columns"], selection: $viewMode)
                 }
                 .padding(.top, 4).padding(.bottom, 12)
 
                 header
-                ForEach(Array(rows.enumerated()), id: \.element.id) { i, r in
+                let shown = rows
+                ForEach(Array(shown.enumerated()), id: \.element.id) { i, r in
                     row(r, shaded: i % 2 == 0, on: r.id == selected)
+                        .onTapGesture(count: 2) { selected = r.id; state.play(rows: shown, startAt: i) }
                         .onTapGesture { selected = r.id }
+                        .contextMenu {
+                            Button("Play") { state.play(rows: shown, startAt: i) }
+                            if let item = PlayerModel.item(r) {
+                                Button("Play Next") { state.player.playNext(item) }
+                                Button("Add to Queue") { state.player.addToQueue(item) }
+                            }
+                        }
                 }
                 footer
             }

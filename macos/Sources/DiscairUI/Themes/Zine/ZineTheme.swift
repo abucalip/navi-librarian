@@ -153,13 +153,20 @@ struct ZineTicker: View {
 struct ZinePlayerStrip: View {
     let state: AppState
     var body: some View {
+        let p = state.player
+        let sample = !state.library.isLive && p.current == nil   // the mockup's sample strip
         let a = Fixtures.albums[0]
-        let idle = state.library.isLive   // no audio engine yet, so a live library shows nothing playing
+        let idle = !sample && p.current == nil
         HStack(spacing: 16) {
             Button { state.screen = .nowPlaying } label: {
                 HStack(spacing: 16) {
                     if idle {
                         Text("Nothing playing").font(Z.an(20)).textCase(.uppercase).foregroundStyle(Z.yellow)
+                    } else if let c = p.current {
+                        CoverView(album: AlbumItem(id: -1, title: c.album, artist: c.artist, year: 0, genre: "", format: "", owned: true, hue: 200, coverArt: c.coverArt))
+                            .frame(width: 34).overlay { Rectangle().strokeBorder(Z.paper, lineWidth: 2) }
+                        Text(c.title).font(Z.an(20)).textCase(.uppercase).foregroundStyle(Z.yellow).lineLimit(1)
+                        Mono(p.phase == .loading ? "Loading…" : "\(c.artist) · \(PlayerModel.clock(p.position)) / \(PlayerModel.clock(p.duration))").foregroundStyle(Z.paper)
                     } else {
                         CoverView(album: a).frame(width: 34).overlay { Rectangle().strokeBorder(Z.paper, lineWidth: 2) }
                         Text("After the Flood").font(Z.an(20)).textCase(.uppercase).foregroundStyle(Z.yellow)
@@ -169,24 +176,31 @@ struct ZinePlayerStrip: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("Now playing: After the Flood, Talk Talk, 3:12 of 9:41. Opens Now Playing")
+            .accessibilityLabel(idle ? "Nothing playing. Opens Now Playing" : (p.current.map { "Now playing: \($0.title), \($0.artist), \(PlayerModel.clock(p.position)) of \(PlayerModel.clock(p.duration)). Opens Now Playing" } ?? "Now playing: After the Flood, Talk Talk, 3:12 of 9:41. Opens Now Playing"))
 
             ZStack(alignment: .leading) {
                 Rectangle().fill(Color(white: 0.267)).frame(height: 8)
-                GeometryReader { g in Rectangle().fill(Z.yellow).frame(width: g.size.width * (idle ? 0 : 0.33), height: 8) }.frame(height: 8)
+                GeometryReader { g in Rectangle().fill(Z.yellow).frame(width: g.size.width * (sample ? 0.33 : p.fraction), height: 8) }.frame(height: 8)
             }
             .frame(maxWidth: 360)
-            .accessibilityElement().accessibilityLabel("Position").accessibilityValue("33 percent")
+            .accessibilityElement().accessibilityLabel("Position").accessibilityValue("\(Int((sample ? 0.33 : p.fraction) * 100)) percent")
 
             Spacer(minLength: 0)
             HStack(spacing: 12) {
-                ForEach(["shuffle", "backward.fill", "pause.fill", "forward.fill"], id: \.self) { s in
-                    Image(systemName: s).accessibilityLabel(s.replacingOccurrences(of: ".fill", with: ""))
+                Button { p.toggleShuffle() } label: { Image(systemName: "shuffle").foregroundStyle(p.shuffle ? Z.yellow : Z.paper) }
+                    .accessibilityLabel(p.shuffle ? "Shuffle, on" : "Shuffle, off")
+                Button { p.previous() } label: { Image(systemName: "backward.fill") }.accessibilityLabel("Previous")
+                Button { p.togglePlayPause() } label: { Image(systemName: p.isPlaying || sample ? "pause.fill" : "play.fill") }
+                    .accessibilityLabel(p.isPlaying ? "Pause" : "Play").disabled(p.current == nil && !sample)
+                Button { p.next() } label: { Image(systemName: "forward.fill") }.accessibilityLabel("Next").disabled(p.current == nil)
+                Button { p.cycleRepeat() } label: {
+                    Image(systemName: p.repeatMode == .one ? "repeat.1" : "repeat").foregroundStyle(p.repeatMode == .off ? Z.paper : Z.yellow)
                 }
-                Button { state.screen = .queue } label: { Image(systemName: "list.bullet") }
-                    .buttonStyle(.plain).accessibilityLabel("Up Next")
-                if !idle { Mono("· FLAC 16/44") }
+                .accessibilityLabel("Repeat, \(p.repeatMode.rawValue)")
+                Button { state.screen = .queue } label: { Image(systemName: "list.bullet") }.accessibilityLabel("Up Next")
+                if sample { Mono("· FLAC 16/44") }
             }
+            .buttonStyle(.plain)
             .font(.system(size: 14, weight: .bold)).foregroundStyle(Z.paper)
         }
         .padding(.horizontal, 22).frame(height: 54)
