@@ -19,6 +19,8 @@ public enum Screen: String, CaseIterable, Sendable {
     case equalizer
     /// Artists with albums missing from the library, on a year axis (M6 slice 7; contract section 6.4).
     case gapRadar
+    /// Rule-built playlists, saved to Navidrome (M6 slice 8; contract section 6.7).
+    case smartPlaylists
 }
 
 /// What a theme may ask the app to do. Themes call these; they never reach the network or the audio engine.
@@ -68,6 +70,7 @@ public final class AppState {
     private let systemMedia: AnyObject?
     /// Sample data until a session connects, then the owner's library.
     public let library = LibraryModel()
+    public let smart = SmartPlaylistModel()
     public let artwork: ArtworkStore
     /// The optional on-disk copy of played songs and covers (off by default; Settings).
     public let cache: CacheModel
@@ -185,6 +188,26 @@ public final class AppState {
     }
 
     public func loadGapRadar() async { await library.loadGapRadar(navidrome: session?.navidrome) }
+
+    /// Reads every song (up to `smartSongLimit`) so rules see the whole library, then the playlists already on Navidrome.
+    public func loadSmartPlaylists() async {
+        let nav = session?.navidrome
+        await library.loadSongs(navidrome: nav)
+        while library.songsHaveMore, library.songs.count < Self.smartSongLimit {
+            let before = library.songs.count
+            await library.loadSongs(navidrome: nav, more: true)
+            if library.songs.count == before { break }
+        }
+        await smart.loadRemote(navidrome: nav)
+    }
+    static let smartSongLimit = 5000
+
+    /// The songs a smart playlist holds right now.
+    public func smartSongs(_ p: SmartPlaylist) -> [SongRow] { SmartEngine.run(p, over: library.songs) }
+
+    public func saveSmart(_ p: SmartPlaylist, songs: [SongRow]) {
+        Task { await smart.save(p, songs: songs, navidrome: session?.navidrome) }
+    }
 
     /// Gets every missing album of one Gap radar artist that can be fetched now.
     public func getAllMissing(_ artist: GapArtist) {
