@@ -15,11 +15,14 @@ final class SystemMedia {
     private var coverID: String?
     private var coverImage: NSImage?
     private var coverTask: Task<Void, Never>?
+    /// The Notification Center widget gets the same song (nil in tests that don't ask for it).
+    private let widget: WidgetPublisher?
     /// Asked for at 600 px: Control Centre shows it at most a few hundred points wide.
     static let coverPixels = 600
 
-    init(_ player: PlayerModel, artwork: ArtworkStore? = nil) {
+    init(_ player: PlayerModel, artwork: ArtworkStore? = nil, widget: WidgetPublisher? = nil) {
         self.player = player
+        self.widget = widget
         self.artwork = artwork
         let c = MPRemoteCommandCenter.shared()
         add(c.playCommand) { p in if !p.isPlaying { p.togglePlayPause() } }
@@ -54,12 +57,14 @@ final class SystemMedia {
             coverTask?.cancel(); coverID = nil; coverImage = nil
             center.nowPlayingInfo = nil
             center.playbackState = .stopped
+            widget?.publish(item: nil, duration: 0, position: 0, playing: false, cover: nil)
             return
         }
         loadCoverIfNeeded(for: c)
         center.nowPlayingInfo = Self.info(for: c, duration: player.duration, position: player.position,
                                           playing: player.isPlaying, cover: coverImage)
         center.playbackState = player.isPlaying ? .playing : .paused
+        widget?.publish(item: c, duration: player.duration, position: player.position, playing: player.isPlaying, cover: coverImage)
     }
 
     /// Fetches the cover of a new song once; a late answer for a song that is no longer playing is dropped.

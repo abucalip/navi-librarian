@@ -18,7 +18,7 @@ while IFS= read -r f; do
     macos/Sources/DiscairLibrarian/*)  add Librarian UI ;;
     macos/Sources/DiscairAudio/*)      add Audio UI ;;
     macos/Sources/DiscairUI/*)         add UI ;;
-    macos/Sources/DiscairApp/*)        bundle=true ;;                 # no tests; the build step compiles it
+    macos/Sources/DiscairApp/*|macos/Sources/DiscairWidget/*)        bundle=true ;;                 # no tests; the build step compiles it
     macos/Sources/DiscairChecks/*|macos/Sources/AudioSpike/*) ;;     # tools; the build step compiles them
     macos/Tests/DiscairCoreTests/*)       add Core ;;
     macos/Tests/DiscairNavidromeTests/*)  add Navidrome ;;

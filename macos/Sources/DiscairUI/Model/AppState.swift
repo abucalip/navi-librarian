@@ -89,7 +89,7 @@ public final class AppState {
         self.artwork = ArtworkStore(media: media)
         let player = PlayerModel(output: output ?? EngineOutput(), fetcher: CachingFetcher(cache: media), defaults: defaults)
         self.player = player
-        self.systemMedia = session != nil ? SystemMedia(player, artwork: artwork) : nil   // media keys only in the running app
+        self.systemMedia = session != nil ? SystemMedia(player, artwork: artwork, widget: WidgetPublisher()) : nil   // media keys only in the running app
         if let actions { self.actions = actions }
         else if session != nil {
             let live = AcquisitionActions(acquisition)
