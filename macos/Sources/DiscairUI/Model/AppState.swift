@@ -87,7 +87,12 @@ public final class AppState {
             live.onResume = { [weak self] in self?.player.togglePlayPause() }
         } else { self.actions = NoopActions() }
         session?.onConnected = { [weak self] in await self?.refreshLibrary() }
-        session?.onNavidromeSignOut = { [weak self] in self?.lyrics.clearAll() }
+        session?.onNavidromeSignOut = { [weak self] in self?.lyrics.clearAll(); self?.library.clearSavedPages() }
+        session?.onConnectFailed = { [weak self] e in
+            guard let self, session != nil, !self.library.isLive else { return }
+            self.configureSavedPages()
+            self.library.showSavedCopy(reason: e.summary)
+        }
     }
 
     // MARK: Library
@@ -95,6 +100,7 @@ public final class AppState {
     /// Points artwork at the active profile and loads the home data.
     public func refreshLibrary() async {
         guard let session, let navidrome = session.navidrome else { return }
+        configureSavedPages()
         artwork.configure(navidrome.urls)
         acquisition.configure(librarian: session.librarian)
         discovery.configure(librarian: session.librarian)
@@ -104,6 +110,26 @@ public final class AppState {
         await library.loadSongs(navidrome: navidrome)
         if library.isLive { selectedArtist = library.artists.first ?? selectedArtist; selectedLetter = selectedArtist.letter }
         if library.isLive, let first = library.recent.first ?? library.albums.first { selectedAlbum = first }
+    }
+
+    /// Saved pages are kept per Navidrome user. (They are not tied to the server address, so the LAN and Tailscale
+    /// profiles of one library share them.)
+    private func configureSavedPages() {
+        library.configureCache(scope: session?.navidromeUsername.map { "navidrome|\($0)" })
+    }
+
+    /// One line for the offline banner, or nil when the screens show fresh data.
+    public var offlineNotice: String? {
+        guard let date = library.savedCopyDate else { return nil }
+        let when = date.formatted(.relative(presentation: .named, unitsStyle: .wide))
+        let why = library.savedCopyReason.map { $0 + " " } ?? ""
+        return "Offline. \(why)Showing your library as saved \(when). Get, Save and Not for me need the server."
+    }
+
+    /// The banner's Retry: connect again, or read the library again when the connection itself is fine.
+    public func retryConnection() async {
+        guard let session else { return }
+        if session.isGood { await refreshLibrary() } else { await session.connect() }
     }
 
     public func loadSongs(more: Bool = false) async {

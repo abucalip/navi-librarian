@@ -3,7 +3,7 @@ import Foundation
 
 /// A dashboard pick (`GET /api/dashboard-picks`). Only fields present in
 /// `android/contract-fixtures/librarian/dashboard_picks.json` are read; unknown fields are ignored.
-public struct DashboardPick: Decodable, Equatable, Sendable {
+public struct DashboardPick: Codable, Equatable, Sendable {
     public let artist: String
     public let album: String
     public let reason: String?
