@@ -36,6 +36,14 @@ public final class LibraryModel {
 
     private var allPicks: [AlbumItem] = []
 
+    /// The Songs table: sample rows until live, then pages of the whole library read from Navidrome.
+    public private(set) var songs: [SongRow] = Fixtures.songs
+    public private(set) var songsLoading = false
+    public private(set) var songsHaveMore = false
+    public private(set) var songsError: String?
+    private var songsLoaded = false
+    static let songPage = 200
+
     public init() {}
 
     /// Test hook: shows these songs on the album page without a server.
@@ -74,10 +82,12 @@ public final class LibraryModel {
 
     private func fail(_ message: String) {
         recent = []; missing = []; albums = []; artists = []; allPicks = []; picksNote = nil
+        songs = []; songsLoaded = false; songsHaveMore = false; songsError = nil
         phase = .failed(message)
     }
 
     func apply(newest: [NavidromeAlbum], first: [NavidromeAlbum], artists a: [NavidromeArtist], picks: [DashboardPick], picksNote: String? = nil) {
+        songs = []; songsLoaded = false; songsHaveMore = false; songsError = nil   // never show sample songs next to a live library
         recent = newest.enumerated().map { Self.item($0.element, index: $0.offset) }
         albums = first.enumerated().map { Self.item($0.element, index: 1000 + $0.offset) }
         artists = a.enumerated().map { ArtistItem(id: $0.offset, remoteID: $0.element.id, name: $0.element.name, albumCount: $0.element.albumCount ?? 0) }
@@ -153,6 +163,53 @@ public final class LibraryModel {
     static func item(_ p: DashboardPick, index: Int) -> AlbumItem {
         AlbumItem(id: index, title: p.album, artist: p.artist, year: 0, genre: p.genres?.first ?? "", format: "", owned: false,
                   hue: hue(for: p.album), reason: p.reason, suggestedTracks: p.suggestedTracks ?? [])
+    }
+
+    /// Reads the first page of songs, or the next one. Safe to call from `.task`; a loaded first page is not re-read.
+    public func loadSongs(navidrome: NavidromeClient?, more: Bool = false) async {
+        guard isLive, let navidrome, !songsLoading else { return }
+        if !more && songsLoaded { return }
+        songsLoading = true; songsError = nil
+        defer { songsLoading = false }
+        do {
+            let offset = more ? songs.count : 0
+            let page = try await navidrome.songs(offset: offset, count: Self.songPage)
+            let rows = page.enumerated().map { Self.row($0.element, id: offset + $0.offset) }
+            songs = more ? songs + rows : rows
+            songsHaveMore = page.count == Self.songPage
+            songsLoaded = true
+        } catch let e as DiscairError {
+            songsError = AcquisitionModel.text(e)
+        } catch { songsError = ErrorMapping.map(error).summary }
+    }
+
+    /// Test hook: shows these song rows without a server.
+    func showSongs(_ rows: [SongRow], more: Bool = false) { songs = rows; songsHaveMore = more; songsLoaded = true }
+
+    static func row(_ s: NavidromeSong, id: Int) -> SongRow {
+        let album = AlbumItem(id: id, title: s.album ?? "", artist: s.artist ?? "Unknown artist", year: s.year ?? 0, genre: s.genre ?? "",
+                              format: "", owned: true, hue: hue(for: s.album ?? s.title), remoteID: s.albumId, coverArt: s.coverArt ?? "")
+        return SongRow(id: id, album: 0, title: s.title, artist: s.artist ?? "Unknown artist", genre: s.genre ?? "",
+                       format: rowFormat(s), bitrate: s.bitRate.map { "\($0) kb" } ?? "", lastPlayed: shortDate(s.played),
+                       added: shortDate(s.created), year: s.year ?? 0, plays: s.playCount ?? 0, remoteID: s.id, cover: album)
+    }
+
+    /// "FLAC 16/44" when the bit depth and sample rate are known, else the short form ("MP3 320").
+    static func rowFormat(_ s: NavidromeSong) -> String {
+        let base = quality(s)
+        guard let depth = s.bitDepth, depth > 0, let rate = s.samplingRate, rate > 0 else { return base }
+        return "\((s.suffix ?? "").uppercased()) \(depth)/\(rate / 1000)"   // 44100 reads 44, as in the mockup
+    }
+
+    /// "Today", "Yesterday", else "Oct 30" (with the year when it is not this year); empty when unknown.
+    static func shortDate(_ iso: String?, now: Date = .now) -> String {
+        guard let iso, !iso.hasPrefix("0001") else { return "" }
+        let f = ISO8601DateFormatter(); f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        guard let d = f.date(from: iso) ?? ISO8601DateFormatter().date(from: iso) else { return "" }
+        let cal = Calendar.current
+        if cal.isDate(d, inSameDayAs: now) { return "Today" }
+        if let y = cal.date(byAdding: .day, value: -1, to: now), cal.isDate(d, inSameDayAs: y) { return "Yesterday" }
+        return cal.isDate(d, equalTo: now, toGranularity: .year) ? d.formatted(.dateTime.month(.abbreviated).day()) : d.formatted(.dateTime.month(.abbreviated).year())
     }
 
     static func tracks(_ songs: [NavidromeSong]) -> [TrackItem] {

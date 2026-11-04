@@ -12,7 +12,7 @@ struct CupertinoLibrary: View {
     @State private var viewMode = "Table"
 
     private var rows: [SongRow] {
-        let r = Fixtures.songs.sorted { a, b in
+        let r = state.library.songs.sorted { a, b in
             switch sortKey {
             case .title: a.title.localizedCaseInsensitiveCompare(b.title) == .orderedAscending
             case .artist: a.artist.localizedCaseInsensitiveCompare(b.artist) == .orderedAscending
@@ -41,10 +41,35 @@ struct CupertinoLibrary: View {
                     row(r, shaded: i % 2 == 0, on: r.id == selected)
                         .onTapGesture { selected = r.id }
                 }
+                footer
             }
             .padding(.horizontal, 28).padding(.bottom, 28)
         }
         .scrollEdgeEffectStyle(.hard, for: .top)
+        .task(id: state.library.isLive) { await state.loadSongs() }
+    }
+
+    /// Loading, failure and paging. Sorting only reorders the songs already loaded, and the footer says so.
+    @ViewBuilder private var footer: some View {
+        let lib = state.library
+        if lib.isLive {
+            VStack(alignment: .leading, spacing: 8) {
+                if lib.songsLoading { HStack(spacing: 8) { ProgressView().controlSize(.small); Text("Loading songs…") }.foregroundStyle(CU.muted) }
+                if let e = lib.songsError {
+                    Text(e).foregroundStyle(CU.muted)
+                    Button("Try again") { Task { await state.loadSongs(more: !lib.songs.isEmpty && lib.songsHaveMore) } }
+                        .buttonStyle(CapsuleButtonStyle(primary: true, small: true))
+                } else if lib.songsHaveMore && !lib.songsLoading {
+                    Button("Load more songs") { Task { await state.loadSongs(more: true) } }.buttonStyle(CapsuleButtonStyle(small: true))
+                }
+                if !lib.songs.isEmpty {
+                    Text("\(lib.songs.count) songs loaded" + (lib.songsHaveMore ? ". Sorting reorders only these." : "."))
+                        .font(.system(size: 12)).foregroundStyle(CU.muted)
+                }
+                if lib.songs.isEmpty && !lib.songsLoading && lib.songsError == nil { Text("No songs in the library yet.").foregroundStyle(CU.muted) }
+            }
+            .padding(.top, 14)
+        }
     }
 
     private let w: [CGFloat?] = [36, nil, 150, 52, 92, 108, 74, 52, 92, 70]
@@ -74,7 +99,7 @@ struct CupertinoLibrary: View {
 
     private func row(_ r: SongRow, shaded: Bool, on: Bool) -> some View {
         HStack(spacing: 0) {
-            cell(w[0]) { CoverView(album: Fixtures.albums[r.album]).frame(width: 24).clipShape(RoundedRectangle(cornerRadius: 4)) }
+            cell(w[0]) { CoverView(album: r.albumItem).frame(width: 24).clipShape(RoundedRectangle(cornerRadius: 4)) }
             cell(w[1]) { Text(r.title).lineLimit(1) }
             cell(w[2]) { Text(r.artist).lineLimit(1) }
             cell(w[3]) { Text(String(r.year)) }

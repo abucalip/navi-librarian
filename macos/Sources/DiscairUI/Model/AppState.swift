@@ -79,8 +79,13 @@ public final class AppState {
         acquisition.configure(librarian: session.librarian)
         discovery.configure(librarian: session.librarian)
         await library.load(navidrome: navidrome, librarian: session.librarian)
+        await library.loadSongs(navidrome: navidrome)
         if library.isLive { selectedArtist = library.artists.first ?? selectedArtist; selectedLetter = selectedArtist.letter }
         if library.isLive, let first = library.recent.first ?? library.albums.first { selectedAlbum = first }
+    }
+
+    public func loadSongs(more: Bool = false) async {
+        await library.loadSongs(navidrome: session?.navidrome, more: more)
     }
 
     public func loadSelectedAlbum() async {

@@ -73,6 +73,18 @@ public struct NavidromeClient: Sendable {
         return all
     }
 
+    /// A page of every song, by title. Navidrome answers `search3` with an empty query by listing the library, so no
+    /// artist or album is asked for. Short page = the end.
+    public func songs(offset: Int = 0, count: Int = 200) async throws -> [NavidromeSong] {
+        let q: [URLQueryItem] = [
+            .init(name: "query", value: ""),
+            .init(name: "artistCount", value: "0"), .init(name: "albumCount", value: "0"),
+            .init(name: "songCount", value: String(min(max(count, 1), 500))),
+            .init(name: "songOffset", value: String(max(offset, 0))),
+        ]
+        return try await call("search3", q, as: SongSearchPayload.self).searchResult3?.song ?? []
+    }
+
     // MARK: Playlists (contract section 6 item 7, check 6a)
 
     public func playlists() async throws -> [NavidromePlaylist] {

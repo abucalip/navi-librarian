@@ -22,6 +22,7 @@ struct ScreenshotTests {
         let window = NSWindow(contentRect: host.frame, styleMask: [.borderless], backing: .buffered, defer: false)
         if screen == .downloads { state.acquisition.showJobs(AcquisitionModelTests.sampleJobs) }
         if screen == .discover { state.discovery.show(.personal, Fixtures.albums([7, 8, 9])) }
+        if screen == .library && theme == .cupertino { state.library.apply(newest: [], first: [], artists: [], picks: []); state.library.showSongs(Fixtures.songs, more: true) }
         window.contentView = host
         window.orderBack(nil)
         host.layoutSubtreeIfNeeded()

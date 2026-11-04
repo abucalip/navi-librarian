@@ -57,6 +57,11 @@ public struct SongRow: Identifiable, Equatable, Sendable {
     public let album: Int
     public let title, artist, genre, format, bitrate, lastPlayed, added: String
     public let year, plays: Int
+    /// Live rows: the Navidrome song id and the album the cover comes from (nil for the sample rows).
+    public var remoteID: String? = nil
+    public var cover: AlbumItem? = nil
+    /// The album whose cover this row shows.
+    public var albumItem: AlbumItem { cover ?? Fixtures.albums[album] }
 }
 
 public enum Fixtures {
