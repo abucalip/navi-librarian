@@ -30,7 +30,16 @@ struct DiscairApp: App {
         }
         .windowStyle(.hiddenTitleBar)
         .defaultSize(width: 1280, height: 800)
+
+        // The floating mini player (contract section 10). Opened from Window > Mini Player.
+        Window("Mini Player", id: "mini") {
+            MiniPlayerView(state: state)
+        }
+        .windowStyle(.hiddenTitleBar)
+        .windowResizability(.contentSize)
+        .defaultSize(width: MiniPlayerView.size.width, height: MiniPlayerView.size.height)
         .commands {
+            MiniPlayerCommands()
             UpdateCommands(updater: updater)
             CommandMenu("Theme") {
                 ForEach(ThemeID.allCases) { id in
@@ -38,6 +47,17 @@ struct DiscairApp: App {
                         .keyboardShortcut(id == .cupertino ? "1" : "2", modifiers: [.command, .option])
                 }
             }
+        }
+    }
+}
+
+/// Window > Mini Player (⌥⌘M) opens the floating player.
+struct MiniPlayerCommands: Commands {
+    @Environment(\.openWindow) private var openWindow
+    var body: some Commands {
+        CommandGroup(after: .windowArrangement) {
+            Button("Mini Player") { openWindow(id: "mini") }
+                .keyboardShortcut("m", modifiers: [.command, .option])
         }
     }
 }
