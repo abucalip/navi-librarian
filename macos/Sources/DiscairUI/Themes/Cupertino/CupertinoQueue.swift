@@ -1,3 +1,4 @@
+import DiscairAudio
 import SwiftUI
 
 /// Queue: Up Next as a trailing inspector (glass, a control layer) over the Albums grid, with an Autoplay (radio)
@@ -46,10 +47,11 @@ struct CupertinoQueueInspector: View {
             HStack {
                 segmented
                 Spacer()
-                Text("8 songs · 52 min").foregroundStyle(CU.muted).font(.system(size: 13))
+                Text(live ? liveSummary : "8 songs · 52 min").foregroundStyle(CU.muted).font(.system(size: 13))
             }
             .padding(.bottom, 12)
 
+            if !live {
             HStack(spacing: 10) {
                 Image(systemName: "dot.radiowaves.left.and.right").font(.system(size: 16))
                 VStack(alignment: .leading, spacing: 1) {
@@ -62,10 +64,12 @@ struct CupertinoQueueInspector: View {
             .padding(.horizontal, 8).padding(.top, 8).padding(.bottom, 12)
             .overlay(alignment: .bottom) { Rectangle().fill(CU.ink.opacity(0.08)).frame(height: 1) }
             .padding(.bottom, 8)
+            }
 
             ScrollView {
                 VStack(spacing: 0) {
-                    if showHistory {
+                    if live { liveRows }
+                    else if showHistory {
                         Text("Earlier today: Glory Box · Roygbiv · Cloudbusting").foregroundStyle(CU.muted).padding(8)
                     } else {
                         ForEach(Array(Fixtures.queue.enumerated()), id: \.offset) { i, q in row(i, q) }
@@ -74,8 +78,9 @@ struct CupertinoQueueInspector: View {
             }
             Spacer(minLength: 0)
             HStack(spacing: 8) {
-                Button("Save queue") { }.buttonStyle(CapsuleButtonStyle())
-                Button("Clear") { }.buttonStyle(CapsuleButtonStyle())
+                if !live { Button("Save queue") { }.buttonStyle(CapsuleButtonStyle()) }
+                Button("Clear") { if live { state.player.clearUpNext() } }.buttonStyle(CapsuleButtonStyle())
+                    .disabled(live && state.player.queue.upNext.isEmpty)
             }
             .padding(.top, 10)
         }
@@ -86,6 +91,73 @@ struct CupertinoQueueInspector: View {
         .overlay(alignment: .leading) { Rectangle().fill(CU.ink.opacity(0.08)).frame(width: 1) }
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Up Next")
+    }
+
+    private var live: Bool { state.library.isLive || state.player.current != nil }
+
+    private var liveSummary: String {
+        let p = state.player
+        let up = p.queue.upNext
+        let minutes = Int(up.reduce(0) { $0 + $1.duration } / 60)
+        return up.isEmpty ? "Nothing queued" : "\(up.count) up next · \(minutes) min"
+    }
+
+    @ViewBuilder private var liveRows: some View {
+        let p = state.player
+        if showHistory {
+            if p.history.isEmpty { Text("Nothing played yet this session.").foregroundStyle(CU.muted).padding(8) }
+            ForEach(p.history) { h in songRow(h, time: PlayerModel.clock(h.duration), playing: false) }
+        } else {
+            if let c = p.current { songRow(c, time: PlayerModel.clock(c.duration), playing: true) }
+            else { Text("Nothing playing. Play a song and what follows shows here.").foregroundStyle(CU.muted).padding(8) }
+            let up = p.queue.upNext
+            ForEach(Array(up.enumerated()), id: \.element.id) { i, item in
+                songRow(item, time: PlayerModel.clock(item.duration), playing: false, dragID: item.id.uuidString) {
+                    Menu {
+                        Button("Play now") { p.jump(toUpNext: i) }
+                        Button("Move up") { p.moveUpNext(from: i, to: i - 1) }.disabled(i == 0)
+                        Button("Move down") { p.moveUpNext(from: i, to: i + 1) }.disabled(i == up.count - 1)
+                        Divider()
+                        Button("Remove from queue", role: .destructive) { p.removeUpNext(at: i) }
+                    } label: { Image(systemName: "ellipsis.circle") }
+                    .menuStyle(.borderlessButton).menuIndicator(.hidden).fixedSize()
+                    .accessibilityLabel("Actions for \(item.title)")
+                }
+                .dropDestination(for: String.self) { ids, _ in reorder(ids, to: i) }
+            }
+        }
+    }
+
+    /// A row dropped on another moves there (Move up and Move down in the menu do the same without dragging).
+    private func reorder(_ ids: [String], to i: Int) -> Bool {
+        let p = state.player
+        guard let id = ids.first, let from = p.queue.upNext.firstIndex(where: { $0.id.uuidString == id }) else { return false }
+        p.moveUpNext(from: from, to: i)
+        return true
+    }
+
+    private func songRow<T: View>(_ q: QueueItem, time: String, playing: Bool, dragID: String? = nil, @ViewBuilder trailing: () -> T = { EmptyView() }) -> some View {
+        HStack(spacing: 11) {
+            HStack(spacing: 11) {
+            CoverView(album: AlbumItem(id: -1, title: q.album, artist: q.artist, year: 0, genre: "", format: "", owned: true, hue: 200, coverArt: q.coverArt))
+                .frame(width: 40).clipShape(RoundedRectangle(cornerRadius: 5, style: .continuous)).accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 0) {
+                Text(q.title).fontWeight(.semibold).lineLimit(1)
+                Text(q.artist).font(.system(size: 12)).foregroundStyle(CU.muted).lineLimit(1)
+            }
+            Spacer(minLength: 4)
+            }
+            .modifier(RowDragSource(id: dragID))
+            HStack(spacing: 4) {
+                if playing { Image(systemName: "waveform").accessibilityLabel("Playing") }
+                Text(time).monospacedDigit()
+            }
+            .font(.system(size: 12)).foregroundStyle(CU.muted)
+            trailing()
+        }
+        .padding(.horizontal, 8).padding(.vertical, 6)
+        .background(playing ? CU.accent.opacity(0.12) : .clear, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+        .accessibilityElement(children: .combine)
     }
 
     private var segmented: some View {

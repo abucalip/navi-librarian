@@ -1,3 +1,5 @@
+import DiscairAudio
+import DiscairNavidrome
 import Observation
 import SwiftUI
 
@@ -8,6 +10,12 @@ public enum Screen: String, CaseIterable, Sendable {
     case settings
     /// The Albums grid on its own (the queue screen shows the same grid under the Up Next inspector).
     case albums
+    /// The job list: progress, retry, next source, dismiss (M5 slice 2b; no mockup, each theme draws it).
+    case downloads
+    /// Discover lists: For you, Classics, New releases, Saved (M5 slice 3a; no mockup).
+    case discover
+    /// The 10-band equalizer (M5 slice 5; no mockup, each theme draws it).
+    case equalizer
 }
 
 /// What a theme may ask the app to do. Themes call these; they never reach the network or the audio engine.
@@ -48,6 +56,11 @@ public final class AppState {
     public let actions: DiscairActions
     /// Get, Save, Not for me and the job list. Live only once a session connects.
     public let acquisition: AcquisitionModel
+    public let discovery = DiscoveryModel()
+    public let lyrics = LyricsModel()
+    /// Playback: the queue, the audio engine and the controls.
+    public let player: PlayerModel
+    private let systemMedia: AnyObject?
     /// Sample data until a session connects, then the owner's library.
     public let library = LibraryModel()
     public let artwork = ArtworkStore()
@@ -55,14 +68,26 @@ public final class AppState {
     /// The letter shown in the Zine A-Z index.
     public var selectedLetter = "T"
 
-    public init(themeID: ThemeID = .cupertino, screen: Screen = .home, actions: DiscairActions? = nil, session: SessionModel? = nil) {
-        let acquisition = AcquisitionModel()
+    public init(themeID: ThemeID = .cupertino, screen: Screen = .home, actions: DiscairActions? = nil, session: SessionModel? = nil, output: AudioOutput? = nil) {
+        // Previews and screenshot tests get their own throwaway settings, so they never read or write the real ones.
+        let defaults = session == nil ? (UserDefaults(suiteName: "discair-preview-\(UUID().uuidString)") ?? .standard) : UserDefaults.standard
+        let acquisition = AcquisitionModel(defaults: defaults)
         self.acquisition = acquisition
         self.session = session
         self.themeID = themeID
         self.screen = screen
-        self.actions = actions ?? (session != nil ? AcquisitionActions(acquisition) : NoopActions())
+        let player = PlayerModel(output: output ?? EngineOutput(), defaults: defaults)
+        self.player = player
+        self.systemMedia = session != nil ? SystemMedia(player) : nil   // media keys only in the running app
+        if let actions { self.actions = actions }
+        else if session != nil {
+            let live = AcquisitionActions(acquisition)
+            self.actions = live
+            live.onPlay = { [weak self] album in self?.playAlbum(album) }
+            live.onResume = { [weak self] in self?.player.togglePlayPause() }
+        } else { self.actions = NoopActions() }
         session?.onConnected = { [weak self] in await self?.refreshLibrary() }
+        session?.onNavidromeSignOut = { [weak self] in self?.lyrics.clearAll() }
     }
 
     // MARK: Library
@@ -72,9 +97,36 @@ public final class AppState {
         guard let session, let navidrome = session.navidrome else { return }
         artwork.configure(navidrome.urls)
         acquisition.configure(librarian: session.librarian)
+        discovery.configure(librarian: session.librarian)
+        player.configure(urls: navidrome.urls)
+        lyrics.configure(navidrome: navidrome, scope: "\(session.activeProfile?.navidromeURL.absoluteString ?? "")|\(session.navidromeUsername ?? "")")
         await library.load(navidrome: navidrome, librarian: session.librarian)
+        await library.loadSongs(navidrome: navidrome)
         if library.isLive { selectedArtist = library.artists.first ?? selectedArtist; selectedLetter = selectedArtist.letter }
         if library.isLive, let first = library.recent.first ?? library.albums.first { selectedAlbum = first }
+    }
+
+    public func loadSongs(more: Bool = false) async {
+        await library.loadSongs(navidrome: session?.navidrome, more: more)
+    }
+
+    // MARK: Playback
+
+    /// Plays an owned album from its first song. A recommendation the library does not hold cannot be played.
+    public func playAlbum(_ album: AlbumItem) {
+        guard let id = album.remoteID, album.owned, let navidrome = session?.navidrome else { return }
+        Task {
+            guard let detail = try? await navidrome.album(id: id), !detail.songs.isEmpty else { return }
+            player.play(detail.songs.map(PlayerModel.item), startAt: 0)
+        }
+    }
+
+    /// Plays the Songs table from a row; the queue is the table in the order shown.
+    public func play(rows: [SongRow], startAt index: Int) {
+        let items = rows.compactMap(PlayerModel.item)
+        guard !items.isEmpty else { return }
+        let id = rows.indices.contains(index) ? rows[index].remoteID : nil
+        player.play(items, startAt: items.firstIndex { $0.songID == id } ?? 0)
     }
 
     public func loadSelectedAlbum() async {

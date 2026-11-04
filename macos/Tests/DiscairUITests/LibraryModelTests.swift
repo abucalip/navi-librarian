@@ -146,4 +146,32 @@ struct ArtworkStoreTests {
         store.configure(try builder())
         #expect(await store.image(coverArt: "../../etc", px: 300) == nil && counter.all.isEmpty)
     }
+
+    // MARK: Songs table
+
+    @Test func aLiveLibraryNeverShowsSampleSongs() throws {
+        let m = LibraryModel()
+        #expect(m.songs.count == Fixtures.songs.count)
+        m.apply(newest: [], first: [], artists: [], picks: [])
+        #expect(m.songs.isEmpty)
+    }
+
+    @Test func songRowsReadTheServersFields() throws {
+        let song = try decode(NavidromeSong.self, #"{"id":"s1","title":"Roygbiv","album":"Music Has the Right to Children","albumId":"al-9","artist":"Boards of Canada","year":1998,"genre":"IDM","coverArt":"mf-1","suffix":"flac","bitRate":900,"bitDepth":16,"samplingRate":44100,"playCount":41,"created":"2020-10-12T13:44:03.224611619Z","played":"2020-10-13T10:00:00Z"}"#)
+        let r = LibraryModel.row(song, id: 3)
+        #expect(r.remoteID == "s1" && r.title == "Roygbiv" && r.artist == "Boards of Canada" && r.year == 1998 && r.plays == 41)
+        #expect(r.format == "FLAC 16/44" && r.bitrate == "900 kb")
+        #expect(r.albumItem.remoteID == "al-9" && r.albumItem.coverArt == "mf-1")
+        #expect(r.added.hasPrefix("Oct") && r.lastPlayed.hasPrefix("Oct"))
+        let mp3 = try decode(NavidromeSong.self, #"{"id":"s2","title":"X","suffix":"mp3","bitRate":320,"bitDepth":0,"samplingRate":44100}"#)
+        #expect(LibraryModel.row(mp3, id: 0).format == "MP3 320" && LibraryModel.row(mp3, id: 0).plays == 0)
+    }
+
+    @Test func dateWordsAreRelativeToNow() {
+        let now = ISO8601DateFormatter().date(from: "2026-11-04T12:00:00Z")!
+        #expect(LibraryModel.shortDate("2026-11-04T08:00:00Z", now: now) == "Today")
+        #expect(LibraryModel.shortDate("2026-11-03T12:00:00Z", now: now) == "Yesterday")
+        #expect(LibraryModel.shortDate(nil, now: now) == "" && LibraryModel.shortDate("0001-01-01T00:00:00Z", now: now) == "")
+    }
 }
+

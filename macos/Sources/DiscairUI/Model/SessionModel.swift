@@ -93,9 +93,13 @@ public final class SessionModel {
         refreshLogins()
     }
 
+    /// Told when the Navidrome login is removed (sign-out): the lyrics cache must go with it.
+    public var onNavidromeSignOut: (() -> Void)?
+
     public func removeLogin(_ kind: SecretKind) throws {
         try secrets.delete(kind)
         refreshLogins()
+        if kind == .navidrome { onNavidromeSignOut?() }
     }
 
     private func refreshLogins() {

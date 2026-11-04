@@ -169,4 +169,107 @@ struct AcquisitionModelTests {
         #expect(t.sent.filter { $0.path == "/api/discovery/feedback" }.count == 1)
         #expect(m.isHidden(album))
     }
+
+    // MARK: Downloads screen
+
+    static let sampleJobs: [Acquisition] = {
+        let json = """
+        {"acquisitions":[
+         {"artist":"Can","album":"Tago Mago","status":"downloading","updated_at":30,"details":{"kind":"album","album_name":"Tago Mago","live_progress":{"available":true,"total_tracks":11,"completed_tracks":3,"percent":27.5,"speed_bytes_per_second":1200000}}},
+         {"artist":"Neu!","album":"Neu! 75","status":"queued","updated_at":20,"details":{"kind":"album"}},
+         {"artist":"Faust","album":"Zamzam (song on Faust IV)","status":"no_matches","updated_at":10,"details":{"kind":"track","album_name":"Faust IV","track_title":"Zamzam","message":"No source found."}},
+         {"artist":"Talk Talk","album":"Laughing Stock","status":"imported","updated_at":5,"details":{"kind":"album"}}]}
+        """
+        struct P: Decodable { let acquisitions: [Acquisition] }
+        return try! JSONDecoder().decode(P.self, from: Data(json.utf8)).acquisitions
+    }()
+
+    @Test func downloadsAreOrderedMovingWaitingFailedImported() {
+        let m = AcquisitionModel()
+        m.showJobs(Self.sampleJobs.reversed())
+        #expect(m.sortedJobs.map(\.artist) == ["Can", "Neu!", "Faust", "Talk Talk"])
+        #expect(m.importedCount == 1)
+    }
+
+    @Test func progressIsWordsAndAFraction() {
+        let m = AcquisitionModel()
+        let can = Self.sampleJobs[0]
+        #expect(m.fraction(can) == 0.275)
+        #expect(m.progressLine(can).hasPrefix("3 of 11 tracks · "))
+        #expect(m.statusLine(can) == "Downloading 27%")
+        #expect(m.fraction(Self.sampleJobs[1]) == nil && m.progressLine(Self.sampleJobs[1]).isEmpty)
+        #expect(m.canSkip(can) && !m.canRetry(can))
+        #expect(m.canRetry(Self.sampleJobs[2]) && !m.canSkip(Self.sampleJobs[2]))
+    }
+
+    @Test func retryOfASongAsksForThatSongOnItsAlbum() async throws {
+        let (m, t) = try make(["/api/acquire/track": ok, "/api/acquisitions": jobsEmpty])
+        await m.retry(Self.sampleJobs[2])
+        let sent = try #require(t.sent.first { $0.path == "/api/acquire/track" })
+        #expect(sent.body["title"] as? String == "Zamzam" && sent.body["album"] as? String == "Faust IV")
+        #expect(m.notice == nil)
+    }
+
+    @Test func skipSourceSendsTheJob() async throws {
+        let (m, t) = try make(["/api/acquisitions/skip": fb, "/api/acquisitions": jobsEmpty])
+        await m.skipSource(Self.sampleJobs[0])
+        #expect(t.sent.contains { $0.path == "/api/acquisitions/skip" && $0.body["artist"] as? String == "Can" })
+    }
+
+    @Test func dismissOnlyHidesTheCardAndNeverCallsTheServer() async throws {
+        let suite = UserDefaults(suiteName: "discair-test-\(UUID().uuidString)")!
+        let t = RouteTransport([:])
+        let client = try LibrarianClient(baseURL: URL(string: "https://lib.example.ts.net")!, credential: Credential(username: "o", password: "pw"), transport: t)
+        let m = AcquisitionModel(defaults: suite)
+        m.configure(librarian: client)
+        m.showJobs(Self.sampleJobs)
+        m.dismiss(Self.sampleJobs[2])
+        #expect(m.visibleJobs.count == 3 && !m.visibleJobs.contains { $0.artist == "Faust" })
+        m.dismissImported()
+        #expect(m.visibleJobs.map(\.artist) == ["Can", "Neu!"])
+        #expect(t.sent.filter { $0.path.contains("dismiss") }.isEmpty)
+        // It stays hidden after a restart, and returns if the server changes the job.
+        let again = AcquisitionModel(defaults: suite)
+        again.showJobs(Self.sampleJobs)
+        #expect(again.visibleJobs.count == 2)
+    }
+
+    @Test func aClearedJobComesBackWhenItChanges() {
+        let m = AcquisitionModel(defaults: UserDefaults(suiteName: "discair-test-\(UUID().uuidString)")!)
+        m.showJobs(Self.sampleJobs)
+        m.dismiss(Self.sampleJobs[2])
+        let retried = Self.sampleJobs[2]
+        let json = #"{"artist":"Faust","album":"Zamzam (song on Faust IV)","status":"searching","updated_at":99,"details":{"kind":"track","track_title":"Zamzam"}}"#
+        let changed = try! JSONDecoder().decode(Acquisition.self, from: Data(json.utf8))
+        m.showJobs([Self.sampleJobs[0], changed])
+        #expect(m.visibleJobs.contains { $0.artist == "Faust" } && retried.updatedAt == 10)
+    }
+
+    // MARK: Discover
+
+    @Test func discoveryLoadsInServerOrderAndShowsTheServersEmptyMessage() async throws {
+        let list = #"{"list":"personal","items":[{"artist":"Can","album":"Ege Bamyasi","reason":"Because."},{"artist":"Neu!","album":"Neu! 2"}]}"#
+        let empty = #"{"list":"classics","items":[],"message":"No saved list yet."}"#
+        let t = RouteTransport(["/api/discovery/personal": (200, list), "/api/discovery/classics": (200, empty), "/api/discovery/new_releases": (500, #"{"detail":"boom"}"#)])
+        let client = try LibrarianClient(baseURL: URL(string: "https://lib.example.ts.net")!, credential: Credential(username: "o", password: "pw"), transport: t)
+        let d = DiscoveryModel()
+        d.configure(librarian: client)
+        await d.load(.personal)
+        #expect(d.page(.personal).albums.map(\.title) == ["Ege Bamyasi", "Neu! 2"] && d.page(.personal).albums[0].reason == "Because.")
+        await d.load(.classics)
+        #expect(d.page(.classics).albums.isEmpty && d.page(.classics).message == "No saved list yet.")
+        await d.load(.newReleases)
+        #expect(d.page(.newReleases).phase == .failed("boom"))
+    }
+
+    @Test func buildingAListReadsItAfterwards() async throws {
+        let t = RouteTransport(["/api/discovery/classics/refresh": fb, "/api/discovery/classics": (200, #"{"items":[{"artist":"Can","album":"Tago Mago"}]}"#)])
+        let client = try LibrarianClient(baseURL: URL(string: "https://lib.example.ts.net")!, credential: Credential(username: "o", password: "pw"), transport: t)
+        let d = DiscoveryModel()
+        d.configure(librarian: client)
+        await d.build(.classics)
+        #expect(d.page(.classics).albums.count == 1)
+        #expect(t.sent.map(\.path) == ["/api/discovery/classics/refresh", "/api/discovery/classics"])
+    }
 }
+

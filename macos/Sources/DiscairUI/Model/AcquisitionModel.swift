@@ -38,7 +38,17 @@ public final class AcquisitionModel {
     @ObservationIgnored private var commitTask: Task<Void, Never>?
     @ObservationIgnored private var pollTask: Task<Void, Never>?
 
-    public init(undoWindow: Duration = .seconds(6)) { self.undoWindow = undoWindow }
+    /// Jobs the owner cleared from the Downloads screen, with the `updated_at` they had. A cleared job comes back if the
+    /// server changes it (a retry, a new status). Clearing only hides the card; it never touches files on the server.
+    public private(set) var clearedJobs: [String: Double] = [:]
+    @ObservationIgnored private let defaults: UserDefaults
+    private static let clearedKey = "discair.clearedDownloads"
+
+    public init(undoWindow: Duration = .seconds(6), defaults: UserDefaults = .standard) {
+        self.undoWindow = undoWindow
+        self.defaults = defaults
+        clearedJobs = (defaults.dictionary(forKey: Self.clearedKey) as? [String: Double]) ?? [:]
+    }
 
     public func configure(librarian: LibrarianClient?) {
         self.librarian = librarian
@@ -125,12 +135,12 @@ public final class AcquisitionModel {
 
     /// The Zine ticker: what is moving, what waits, what arrived, how many failed.
     public var tickerText: String {
-        guard !jobs.isEmpty else { return "Pipeline: no downloads in progress" }
+        guard !visibleJobs.isEmpty else { return "Pipeline: no downloads in progress" }
         var parts: [String] = []
-        if let j = jobs.first(where: { $0.phase == .working }) { parts.append("▶ \(Self.statusText(j)): \(j.title)") }
-        if let j = jobs.first(where: { $0.phase == .queued }) { parts.append("Queued: \(j.title)") }
-        if let j = jobs.filter({ $0.phase == .imported }).max(by: { ($0.updatedAt ?? 0) < ($1.updatedAt ?? 0) }) { parts.append("Imported: \(j.title)") }
-        let failed = jobs.filter { $0.phase == .failed }.count
+        if let j = visibleJobs.first(where: { $0.phase == .working }) { parts.append("▶ \(Self.statusText(j)): \(j.title)") }
+        if let j = visibleJobs.first(where: { $0.phase == .queued }) { parts.append("Queued: \(j.title)") }
+        if let j = visibleJobs.filter({ $0.phase == .imported }).max(by: { ($0.updatedAt ?? 0) < ($1.updatedAt ?? 0) }) { parts.append("Imported: \(j.title)") }
+        let failed = visibleJobs.filter { $0.phase == .failed }.count
         parts.append("Failed: " + (failed == 0 ? "none" : String(failed)))
         return parts.joined(separator: "  ■  ")
     }
@@ -263,17 +273,109 @@ public final class AcquisitionModel {
         guard let librarian else { return }
         if let list = try? await librarian.acquisitions() { jobs = list }
     }
+
+    // MARK: Downloads screen
+
+    /// Screenshot tests and previews show sample jobs without a server.
+    func showJobs(_ list: [Acquisition]) { jobs = list }
+
+    /// Jobs not cleared from the screen.
+    public var visibleJobs: [Acquisition] {
+        jobs.filter { j in clearedJobs[j.id].map { $0 != (j.updatedAt ?? 0) } ?? true }
+    }
+
+    /// Newest activity first within each group: moving, waiting, failed, then what arrived.
+    public var sortedJobs: [Acquisition] {
+        func rank(_ j: Acquisition) -> Int {
+            switch j.phase { case .working: 0; case .queued: 1; case .failed: 2; case .other: 3; case .imported: 4 }
+        }
+        return visibleJobs.sorted { a, b in
+            rank(a) != rank(b) ? rank(a) < rank(b) : (a.updatedAt ?? 0) > (b.updatedAt ?? 0)
+        }
+    }
+
+    public var importedCount: Int { visibleJobs.filter { $0.phase == .imported }.count }
+
+    /// Words for the job's state, with the percent when the server reports one.
+    public func statusLine(_ j: Acquisition) -> String { Self.statusText(j) }
+
+    /// "3 of 11 tracks · 1.2 MB/s" when the server sends progress; empty otherwise.
+    public func progressLine(_ j: Acquisition) -> String {
+        guard let p = j.details?.liveProgress, p.available else { return "" }
+        var parts: [String] = []
+        if let done = p.completedTracks, let total = p.totalTracks, total > 0 { parts.append("\(done) of \(total) tracks") }
+        if let s = p.speedBytesPerSecond, s > 0 {
+            parts.append(ByteCountFormatter.string(fromByteCount: Int64(s), countStyle: .file) + "/s")
+        }
+        return parts.joined(separator: " · ")
+    }
+
+    /// 0...1 when the server reports a percent for a job that is downloading.
+    public func fraction(_ j: Acquisition) -> Double? {
+        guard j.status == "downloading", let p = j.details?.liveProgress?.percent else { return nil }
+        return min(max(p / 100, 0), 1)
+    }
+
+    /// Retry is offered for the failed states the web offers it for.
+    public func canRetry(_ j: Acquisition) -> Bool { j.phase == .failed }
+    /// A source can only be skipped while the job is downloading (the server answers 409 otherwise).
+    public func canSkip(_ j: Acquisition) -> Bool { j.status == "downloading" }
+
+    public func retry(_ j: Acquisition) async {
+        guard let librarian else { notice = "Not connected to the Librarian. Check Settings."; return }
+        do {
+            let r: AcquireResult
+            if j.isSong, let title = j.details?.trackTitle {
+                r = try await librarian.acquireTrack(artist: j.artist, album: j.details?.albumName ?? j.album, title: title,
+                                                     metadata: ["source": "discair-macos"])
+            } else {
+                r = try await librarian.acquire(artist: j.artist, album: j.album, metadata: ["source": "discair-macos"])
+            }
+            if !r.ok { notice = r.message ?? Self.refusal(r.status) }
+        } catch let e as DiscairError { notice = "Could not retry \(j.title): " + Self.text(e) }
+        catch { notice = "Could not retry \(j.title)." }
+        await refresh()
+    }
+
+    public func skipSource(_ j: Acquisition) async {
+        guard let librarian else { notice = "Not connected to the Librarian. Check Settings."; return }
+        do { try await librarian.skipSource(artist: j.artist, album: j.album) }
+        catch let e as DiscairError { notice = "Could not switch source: " + Self.text(e) }
+        catch { notice = "Could not switch source." }
+        await refresh()
+    }
+
+    /// Removes the card from the Downloads screen. Nothing is sent to the server and no files are deleted.
+    public func dismiss(_ j: Acquisition) {
+        clearedJobs[j.id] = j.updatedAt ?? 0
+        saveCleared()
+    }
+
+    /// Clears every imported card the same way.
+    public func dismissImported() {
+        for j in visibleJobs where j.phase == .imported { clearedJobs[j.id] = j.updatedAt ?? 0 }
+        saveCleared()
+    }
+
+    private func saveCleared() {
+        let live = Set(jobs.map(\.id))
+        if !live.isEmpty { clearedJobs = clearedJobs.filter { live.contains($0.key) } }   // forget jobs the server dropped
+        defaults.set(clearedJobs, forKey: Self.clearedKey)
+    }
 }
 
 /// `DiscairActions` backed by the model; the app uses it once a session exists.
 @MainActor
 public final class AcquisitionActions: DiscairActions {
     private let model: AcquisitionModel
+    /// Set by `AppState`, which owns the player.
+    public var onPlay: (AlbumItem) -> Void = { _ in }
+    public var onResume: () -> Void = {}
     public init(_ model: AcquisitionModel) { self.model = model }
-    public func play(album: AlbumItem) {}
+    public func play(album: AlbumItem) { onPlay(album) }
     public func get(album: AlbumItem) { Task { await model.get(album) } }
     public func getSong(album: AlbumItem, title: String, trackNumber: Int?) { Task { await model.getSong(album, title: title, trackNumber: trackNumber) } }
     public func save(album: AlbumItem) { Task { await model.save(album) } }
     public func notForMe(album: AlbumItem) { model.notForMe(album) }
-    public func resume() {}
+    public func resume() { onResume() }
 }

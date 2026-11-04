@@ -73,6 +73,36 @@ public struct NavidromeClient: Sendable {
         return all
     }
 
+    /// A page of every song, by title. Navidrome answers `search3` with an empty query by listing the library, so no
+    /// artist or album is asked for. Short page = the end.
+    public func songs(offset: Int = 0, count: Int = 200) async throws -> [NavidromeSong] {
+        let q: [URLQueryItem] = [
+            .init(name: "query", value: ""),
+            .init(name: "artistCount", value: "0"), .init(name: "albumCount", value: "0"),
+            .init(name: "songCount", value: String(min(max(count, 1), 500))),
+            .init(name: "songOffset", value: String(max(offset, 0))),
+        ]
+        return try await call("search3", q, as: SongSearchPayload.self).searchResult3?.song ?? []
+    }
+
+    /// Lyrics for a song, chosen and cleaned. nil means the song has none (an unknown id, code 70, is also "none").
+    /// Lookups can take 20 s or more for a song with no lyrics, so this call waits up to 45 s.
+    public func lyrics(songID: String, language: String? = nil) async throws -> Lyrics? {
+        try requireID(songID)
+        do {
+            let p = try await call("getLyricsBySongId", [.init(name: "id", value: songID)], as: LyricsPayload.self, timeout: 45, notFoundAs404: true)
+            return LyricsChooser.choose(p.lyricsList?.structuredLyrics ?? [], language: language)
+        } catch DiscairError.server(404, _) {
+            return nil                                   // Subsonic code 70: no such song, so no lyrics
+        }
+    }
+
+    /// Whether the server lists the `songLyrics` extension.
+    public func supportsLyrics() async throws -> Bool {
+        let p = try await call("getOpenSubsonicExtensions", [], as: ExtensionsPayload.self)
+        return (p.openSubsonicExtensions ?? []).contains { $0.name == "songLyrics" }
+    }
+
     // MARK: Playlists (contract section 6 item 7, check 6a)
 
     public func playlists() async throws -> [NavidromePlaylist] {
@@ -108,13 +138,14 @@ public struct NavidromeClient: Sendable {
         guard isValidSongID(id) else { throw DiscairError.insecureOrInvalidAddress(reason: .notAURL) }
     }
 
-    private func call<P: Decodable>(_ endpoint: String, _ extra: [URLQueryItem], as: P.Type) async throws -> P {
+    private func call<P: Decodable>(_ endpoint: String, _ extra: [URLQueryItem], as: P.Type, timeout: TimeInterval? = nil, notFoundAs404: Bool = false) async throws -> P {
         var comps = URLComponents(url: base, resolvingAgainstBaseURL: false)!
         comps.path = (comps.path.hasSuffix("/") ? comps.path : comps.path + "/") + "rest/" + endpoint
         comps.queryItems = auth.queryItems(json: true) + extra
         var request = URLRequest(url: comps.url!)
         request.httpMethod = "GET"
         request.setValue("application/json", forHTTPHeaderField: "Accept")
+        if let timeout { request.timeoutInterval = timeout }
 
         let data: Data, http: HTTPURLResponse
         do { (data, http) = try await transport.send(request) }
@@ -130,6 +161,7 @@ public struct NavidromeClient: Sendable {
         let code = inner.error?.code
         // Subsonic 40 and 41 are bad credentials / token auth unsupported, 44 bad API key, 50 not authorised.
         if let code, [40, 41, 44, 50].contains(code) { throw DiscairError.unauthorised(message: inner.error?.message) }
+        if notFoundAs404, code == 70 { throw DiscairError.server(status: 404, message: inner.error?.message) }   // data not found
         throw DiscairError.server(status: http.statusCode, message: inner.error?.message)
     }
 }

@@ -16,7 +16,8 @@ struct CupertinoArtistBanner: View {
                            center: UnitPoint(x: 0.2, y: 0.1), startRadius: 0, endRadius: 800)
             RadialGradient(colors: [Color(hue: (h + 0.1).truncatingRemainder(dividingBy: 1), saturation: 0.7, brightness: 0.6).opacity(0.9), .clear],
                            center: UnitPoint(x: 0.9, y: 0.9), startRadius: 0, endRadius: 700)
-            LinearGradient(colors: [.black.opacity(0.05), .black.opacity(0.45)], startPoint: .top, endPoint: .bottom)
+            if lib.isLive, let cover = lib.artistAlbums.first(where: { !($0.coverArt ?? "").isEmpty }) { BlurredArtwork(album: cover, radius: 24); Color.black.opacity(0.12) }
+            LinearGradient(colors: [.black.opacity(0.0), .black.opacity(0.4)], startPoint: .top, endPoint: .bottom)
         }
         .frame(height: CupertinoArtistLayout.bannerHeight)
         .frame(maxWidth: .infinity)

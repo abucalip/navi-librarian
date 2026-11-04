@@ -76,6 +76,14 @@ import DiscairCore
         #expect(queryValue(t.sent[1], "size") == "500" && queryValue(t.sent[1], "offset") == "0")
     }
 
+    @Test func songsReadsAPageOfTheWholeLibrary() async throws {
+        let t = fixtureServer(["search3": "search3"])
+        let songs = try await client(t).songs(offset: 400, count: 99999)
+        #expect(!songs.isEmpty && songs[0].title == "''Woo Hoo''" && songs[0].created != nil && songs[0].samplingRate == 44100)
+        #expect(queryValue(t.sent[0], "query") == "" && queryValue(t.sent[0], "songOffset") == "400")
+        #expect(queryValue(t.sent[0], "songCount") == "500" && queryValue(t.sent[0], "artistCount") == "0" && queryValue(t.sent[0], "albumCount") == "0")
+    }
+
     @Test func allAlbumsPagesUntilAShortPage() async throws {
         let page: @Sendable (Int) -> Data = { n in
             let albums = (0..<n).map { "{\"id\":\"a\($0)\",\"name\":\"A\($0)\"}" }.joined(separator: ",")

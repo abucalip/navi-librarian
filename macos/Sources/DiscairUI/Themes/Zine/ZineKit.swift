@@ -86,7 +86,7 @@ struct ZineButtonStyle: ButtonStyle {
     }
 }
 
-/// Underlined text action (`.u`), used for Not for me so it keeps a text label.
+/// Underlined text action (`.u`), used for low-emphasis text actions.
 struct ZineLinkStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label

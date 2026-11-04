@@ -116,7 +116,7 @@ struct CapsuleButtonStyle: ButtonStyle {
             .frame(minHeight: small ? 24 : (large ? 40 : 36))
             .foregroundStyle(primary || translucent ? Color.white : (outlined ? CU.muted : CU.ink))
             .background(primary ? CU.accent : (translucent ? Color.white.opacity(0.28) : (outlined ? Color.clear : CU.fill)), in: Capsule())
-            .overlay { if outlined { Capsule().strokeBorder(CU.muted, lineWidth: 1.5) } }
+            .overlay { if outlined { Capsule(style: .circular).inset(by: 0.75).stroke(CU.muted, lineWidth: 1.5) } }
             .opacity(configuration.isPressed ? 0.8 : 1)
     }
 }

@@ -21,6 +21,7 @@ struct CupertinoSettings: View {
                 Text("Settings").font(CU.title(34)).padding(.top, 4).accessibilityAddTraits(.isHeader)
                 if let s = state.session {
                     connection(s)
+                    playback
                     profiles(s)
                     logins(s)
                     if let message { Text(message).font(.system(size: 12)).foregroundStyle(CU.accent) }
@@ -40,6 +41,37 @@ struct CupertinoSettings: View {
         }
         .padding(18).frame(maxWidth: .infinity, alignment: .leading)
         .background(CU.card, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+    }
+
+    private var playback: some View {
+        card("Playback") {
+            Text("Crossfade between songs").fontWeight(.semibold)
+            HStack(spacing: 8) {
+                ForEach(PlayerModel.crossfadeChoices, id: \.self) { n in
+                    let on = state.player.crossfadeSeconds == n
+                    Button(n == 0 ? "Off" : "\(n) s") { state.player.crossfadeSeconds = n }
+                        .buttonStyle(CapsuleButtonStyle(primary: on, small: true))
+                        .accessibilityAddTraits(on ? .isSelected : [])
+                }
+            }
+            Text("Consecutive tracks of one album always play gapless, so the fade happens between unrelated songs.")
+                .font(.system(size: 12)).foregroundStyle(CU.muted)
+            Text("Streaming quality").fontWeight(.semibold).padding(.top, 6)
+            HStack(spacing: 8) {
+                ForEach(PlayerModel.qualityChoices, id: \.self) { q in
+                    let on = state.player.qualityCap == q
+                    Button(q.map { "\($0)" } ?? "Original") { state.player.qualityCap = q }
+                        .buttonStyle(CapsuleButtonStyle(primary: on, small: true))
+                        .accessibilityLabel(q.map { "\($0) kilobits per second" } ?? "Original quality")
+                        .accessibilityAddTraits(on ? .isSelected : [])
+                }
+            }
+            Text("Original plays the file as it is. A number is the most the server may send (kbps); it converts only files above it. Applies to songs started afterwards.")
+                .font(.system(size: 12)).foregroundStyle(CU.muted)
+            Text("Songs that follow each other on one album always play gapless, with no fade.").font(.system(size: 12)).foregroundStyle(CU.muted)
+            Button("Equalizer · \(state.player.eq.enabled ? state.player.eq.presetLabel : "Off")") { state.screen = .equalizer }
+                .buttonStyle(CapsuleButtonStyle(small: true))
+        }
     }
 
     private func connection(_ s: SessionModel) -> some View {

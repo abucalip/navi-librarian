@@ -43,6 +43,13 @@ public struct NavidromeSong: Decodable, Equatable, Sendable, Identifiable {
     public let contentType: String?
     public let size: Int?
     public let path: String?
+    public let playCount: Int?
+    /// ISO time of the last play, when Navidrome has one.
+    public let played: String?
+    /// ISO time the song was added.
+    public let created: String?
+    public let bitDepth: Int?
+    public let samplingRate: Int?
 }
 
 public struct NavidromeAlbumDetail: Equatable, Sendable {
@@ -127,6 +134,11 @@ struct AlbumPayload: Decodable {
 struct AlbumListPayload: Decodable {
     struct List: Decodable { let album: [NavidromeAlbum]? }
     let albumList2: List?
+}
+
+struct SongSearchPayload: Decodable {
+    struct Result: Decodable { let song: [NavidromeSong]? }
+    let searchResult3: Result?
 }
 
 struct PlaylistsPayload: Decodable {
