@@ -64,6 +64,13 @@ public struct SongRow: Identifiable, Equatable, Sendable {
     public var seconds: Double = 0
     public var track: Int? = nil
     public var disc: Int? = nil
+    /// Sortable values behind the table's text columns. 0 / nil = unknown (sorted last in either direction).
+    public var rating = 0
+    public var bitrateKbps = 0
+    public var addedAt: Date? = nil
+    public var playedAt: Date? = nil
+    /// False when the song has no MusicBrainz id (the Librarian cannot match it until the tag is fixed).
+    public var hasMBID = true
     /// The album whose cover this row shows.
     public var albumItem: AlbumItem { cover ?? Fixtures.albums[album] }
 }
@@ -114,7 +121,10 @@ public enum Fixtures {
         (6, "Blue in Green", "Miles Davis", 1959, "Jazz", "FLAC 24/192", "4.0 Mb", 77, "Oct 9", "Jun 2"),
         (5, "Evan Finds the Third Room", "Khruangbin", 2018, "Soul", "MP3 320", "320 kb", 24, "Oct 5", "Jul 21"),
     ].enumerated().map { i, r in
-        SongRow(id: i, album: r.0, title: r.1, artist: r.2, genre: r.4, format: r.5, bitrate: r.6, lastPlayed: r.8, added: r.9, year: r.3, plays: r.7)
+        var row = SongRow(id: i, album: r.0, title: r.1, artist: r.2, genre: r.4, format: r.5, bitrate: r.6, lastPlayed: r.8, added: r.9, year: r.3, plays: r.7)
+        row.rating = [5, 4, 5, 3, 5, 0, 4, 2, 0, 3, 5, 0][i]
+        row.hasMBID = ![5, 9].contains(i)
+        return row
     }
 
     /// Up Next sample (title, album index into `albums`, time), from the mockup.
