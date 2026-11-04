@@ -33,16 +33,17 @@ struct CrossfadeIntegrationTests {
         p.play(items)
         for _ in 0..<300 where !p.isPlaying { try await Task.sleep(for: .milliseconds(10)) }
         guard p.isPlaying else { return }                      // no audio output on this machine
-        var sawMiddle = false, started: Double?
+        var sawMiddle = false, titleStayedDuringFade = false
         for _ in 0..<900 {
             try await Task.sleep(for: .milliseconds(10))
             let l = out.levelsForTests
-            if p.current?.title == "T1" {
-                if started == nil { started = out.position }
-                if l.current > 0.45, l.current < 0.9, l.other > 0.3, l.other < 0.95 { sawMiddle = true }
+            if l.current > 0.45, l.current < 0.9, l.other > 0.3, l.other < 0.95 {
+                sawMiddle = true
+                if p.current?.title == "T0" { titleStayedDuringFade = true }     // the screen still shows the old song mid-fade
             }
         }
         #expect(p.current?.title == "T1")
+        #expect(titleStayedDuringFade, "the title must not switch to the next song before the fade ends")
         #expect(sawMiddle, "the model should hand the engine a crossfade, so both levels pass through the middle")
     }
 }

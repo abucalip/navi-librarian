@@ -85,7 +85,7 @@ private func blockMainThread(_ seconds: Double) { Thread.sleep(forTimeInterval: 
         out.play()
         for _ in 0..<500 where finished == 0 { try await Task.sleep(for: .milliseconds(10)) }
         #expect(advanced == 1 && finished == 1)
-        #expect(positionAtAdvance < 0.3)           // the position now belongs to the new song
+        #expect(positionAtAdvance < 0.6)           // the advance comes when the fade ends: the position belongs to the new song
     }
 
     @Test func cancellingAPreloadLeavesTheCurrentSongPlayingToItsEnd() async throws {
@@ -116,7 +116,7 @@ private func blockMainThread(_ seconds: Double) { Thread.sleep(forTimeInterval: 
         var mid: (current: Float, other: Float)?
         for _ in 0..<400 {
             try await Task.sleep(for: .milliseconds(10))
-            if advanced == 1, mid == nil, out.levelsForTests.current > 0.45, out.levelsForTests.current < 0.9 { mid = out.levelsForTests }
+            if mid == nil, out.levelsForTests.current > 0.45, out.levelsForTests.current < 0.9 { mid = out.levelsForTests }
         }
         #expect(advanced == 1)
         #expect(mid != nil, "the new song's level should pass through the middle of the fade")
@@ -140,7 +140,7 @@ private func blockMainThread(_ seconds: Double) { Thread.sleep(forTimeInterval: 
             try await Task.sleep(for: .milliseconds(10))
             if advanced == 1, !preloadedC { try out.preload(file: c, transition: .crossfade(1)); preloadedC = true }
             let l = out.levelsForTests
-            if advanced > 0, l.current > 0.45, l.current < 0.9, mids.count < advanced, l.other > 0.3, l.other < 0.95 { mids.append((l.current, l.other)) }
+            if l.current > 0.45, l.current < 0.9, mids.count < advanced + 1, l.other > 0.3, l.other < 0.95 { mids.append((l.current, l.other)) }
         }
         #expect(advanced == 2)
         #expect(mids.count == 2, "each fade should pass through its middle with both levels between 0.3 and 0.95: \(mids)")
@@ -164,5 +164,28 @@ private func blockMainThread(_ seconds: Double) { Thread.sleep(forTimeInterval: 
         blockMainThread(1.0)                                 // the main thread is busy
         try await Task.sleep(for: .milliseconds(1000))      // the new song has now played about 2.3 s of a 2 s fade
         #expect(out.levelsForTests.current > 0.99, "level \(out.levelsForTests.current)")
+    }
+
+    /// The screen keeps the old song until the fade is over: its position and length are reported, and the advance is
+    /// announced only at the end of the fade.
+    @Test func duringACrossfadeTheOldSongIsStillTheOneShown() async throws {
+        let a = try silentFile(seconds: 3), b = try silentFile(seconds: 5)
+        defer { try? FileManager.default.removeItem(at: a); try? FileManager.default.removeItem(at: b) }
+        let out = EngineOutput()
+        do { try out.open(file: a) } catch let e as AudioError where e.description.contains("could not start") { return }
+        var advanced = 0
+        out.onAdvanced = { advanced += 1 }
+        try out.preload(file: b, transition: .crossfade(2))
+        out.play()
+        var sawFadeWithOldShown = false
+        for _ in 0..<700 {
+            try await Task.sleep(for: .milliseconds(10))
+            let l = out.levelsForTests
+            if advanced == 0, l.current > 0.2, l.current < 0.9, out.duration == 3, out.position > 0.9 { sawFadeWithOldShown = true }
+            if advanced == 1 { break }
+        }
+        #expect(advanced == 1)
+        #expect(sawFadeWithOldShown, "during the fade the engine should still report the old song (3 s long, past 0.9 s)")
+        #expect(out.duration == 5 && out.position > 1.5 && out.position < 2.8)   // the new song has played the length of the fade
     }
 }

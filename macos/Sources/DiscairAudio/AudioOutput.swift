@@ -129,20 +129,24 @@ public final class EngineOutput: AudioOutput {
 
     // MARK: State
 
-    public var duration: Double { cur.file.map { Double($0.length) / $0.processingFormat.sampleRate } ?? 0 }
+    /// During a crossfade the song on screen is still the old one until the fade ends, so these describe the old song.
+    private var shown: Slot { fade?.from ?? cur }
+    public var duration: Double { duration(of: shown) }
+    private func duration(of slot: Slot) -> Double { slot.file.map { Double($0.length) / $0.processingFormat.sampleRate } ?? 0 }
     public var isPlaying: Bool { cur.node.isPlaying }
     /// Test hook: the level of the playing node and of the other one (during a fade, the new and the old song).
     var levelsForTests: (current: Float, other: Float) { (cur.node.volume, other.node.volume) }
 
-    public var position: Double {
-        let slot = cur
+    public var position: Double { position(of: shown) }
+
+    private func position(of slot: Slot) -> Double {
         guard let file = slot.file else { return 0 }
         if slot.paused { return slot.pausedAt }
         guard slot.node.isPlaying, let node = slot.node.lastRenderTime, let t = slot.node.playerTime(forNodeTime: node), t.sampleTime >= 0 else {
             return slot.startOffset
         }
         let played = Double(t.sampleTime - slot.baseSample) / file.processingFormat.sampleRate
-        return min(max(slot.startOffset + played, 0), duration)
+        return min(max(slot.startOffset + played, 0), duration(of: slot))
     }
 
     // MARK: Opening
@@ -224,15 +228,15 @@ public final class EngineOutput: AudioOutput {
         if !engine.isRunning { try? engine.start() }
         cur.node.play()
         cur.paused = false
-        if let f = fade { f.to.node.play(); f.to.paused = false; f.from.node.play() }
+        if let f = fade { f.to.node.play(); f.to.paused = false; f.from.node.play(); f.from.paused = false }
         startTicker()
     }
 
     public func pause() {
         guard cur.node.isPlaying else { return }
-        cur.pausedAt = position
+        cur.pausedAt = position(of: cur)
         cur.node.pause(); cur.paused = true
-        if let f = fade { f.from.node.pause() }
+        if let f = fade { f.from.pausedAt = position(of: f.from); f.from.node.pause(); f.from.paused = true }
     }
 
     public func stop() {
@@ -244,7 +248,7 @@ public final class EngineOutput: AudioOutput {
 
     public func seek(to seconds: Double) {
         guard cur.file != nil else { return }
-        endFade()
+        if fade != nil { endFade(); return }      // the bar belongs to the old song, which is now over: the new one carries on
         let wasPlaying = cur.node.isPlaying
         cur.node.stop()
         schedule(cur, from: seconds)
@@ -298,11 +302,11 @@ public final class EngineOutput: AudioOutput {
             guard cur.node.isPlaying else { return }
             // The audio clock decides how far the fade is, not the count of ticks: a busy main thread delays ticks, and a
             // fade that lags the audio would leave the old song to end before its level reached zero.
-            f.elapsed = max(f.elapsed + Self.tick, position)
+            f.elapsed = max(f.elapsed + Self.tick, position(of: f.to))
             let t = min(f.elapsed / max(f.length, 0.001), 1)
             f.from.node.volume = Float(cos(t * .pi / 2))
             f.to.node.volume = Float(sin(t * .pi / 2))
-            if t >= 1 { fade = nil; finish(old: f.from) } else { fade = f }
+            if t >= 1 { fade = nil; finish(old: f.from); onAdvanced?() } else { fade = f }
             return
         }
         guard let p = pending, !p.queuedOnNode, cur.node.isPlaying, cur.file != nil else { return }
@@ -329,8 +333,7 @@ public final class EngineOutput: AudioOutput {
         old.generation += 1                       // the old node's end must not report "finished"
         active = 1 - active
         pending = nil
-        if length > 0 { fade = Fade(from: old, to: new, elapsed: 0, length: length) } else { finish(old: old) }
-        onAdvanced?()
+        if length > 0 { fade = Fade(from: old, to: new, elapsed: 0, length: length) } else { finish(old: old); onAdvanced?() }
     }
 
     private func finish(old: Slot) {
@@ -342,5 +345,6 @@ public final class EngineOutput: AudioOutput {
         fade = nil
         f.to.node.volume = 1
         finish(old: f.from)
+        onAdvanced?()
     }
 }
