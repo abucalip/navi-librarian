@@ -17,6 +17,8 @@ public enum Screen: String, CaseIterable, Sendable {
     case discover
     /// The 10-band equalizer (M5 slice 5; no mockup, each theme draws it).
     case equalizer
+    /// Artists with albums missing from the library, on a year axis (M6 slice 7; contract section 6.4).
+    case gapRadar
 }
 
 /// What a theme may ask the app to do. Themes call these; they never reach the network or the audio engine.
@@ -180,6 +182,13 @@ public final class AppState {
 
     public func loadSelectedArtist() async {
         await library.loadArtist(selectedArtist, navidrome: session?.navidrome)
+    }
+
+    public func loadGapRadar() async { await library.loadGapRadar(navidrome: session?.navidrome) }
+
+    /// Gets every missing album of one Gap radar artist that can be fetched now.
+    public func getAllMissing(_ artist: GapArtist) {
+        for a in artist.missing where acquisition.canGet(a) { actions.get(album: a) }
     }
 
     /// Library lists without the albums the owner dismissed.

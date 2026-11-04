@@ -22,7 +22,7 @@ struct PaletteCommand: Identifiable {
 enum PaletteCatalog {
     static let screens: [(Screen, String)] = [
         (.home, "Home"), (.albums, "Albums"), (.library, "Songs"), (.queue, "Queue"), (.nowPlaying, "Now Playing"),
-        (.discover, "Discover"), (.downloads, "Downloads"), (.equalizer, "Equalizer"), (.settings, "Settings"),
+        (.discover, "Discover"), (.gapRadar, "Gap Radar"), (.downloads, "Downloads"), (.equalizer, "Equalizer"), (.settings, "Settings"),
     ]
 
     /// Commands that exist whatever you type.
