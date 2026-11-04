@@ -75,8 +75,11 @@ struct CupertinoNowPlaying: View {
             Color(red: 0.227, green: 0.165, blue: 0.11)
             RadialGradient(colors: [warm.opacity(0.9), .clear], center: UnitPoint(x: 0.1, y: 0.1), startRadius: 0, endRadius: 900)
             RadialGradient(colors: [deep.opacity(0.9), .clear], center: UnitPoint(x: 0.85, y: 0.95), startRadius: 0, endRadius: 800)
-            if a.coverArt != nil { BlurredArtwork(album: a); Color.black.opacity(0.28) }   // the real cover, blurred, over the colour fields
-            Color(red: 0.08, green: 0.06, blue: 0.04).opacity(0.35)
+            if let id = a.coverArt, !id.isEmpty {
+                BlurredArtwork(album: a); Color.black.opacity(0.22)                 // the real cover, blurred, over the colour fields
+            } else {
+                Color(red: 0.08, green: 0.06, blue: 0.04).opacity(0.35)
+            }
         }
         .accessibilityHidden(true)
     }

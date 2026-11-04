@@ -123,8 +123,19 @@ struct CupertinoQueueInspector: View {
                     .menuStyle(.borderlessButton).menuIndicator(.hidden).fixedSize()
                     .accessibilityLabel("Actions for \(item.title)")
                 }
+                .blocksWindowDrag()
+                .draggable(item.id.uuidString)
+                .dropDestination(for: String.self) { ids, _ in reorder(ids, to: i) }
             }
         }
+    }
+
+    /// A row dropped on another moves there (Move up and Move down in the menu do the same without dragging).
+    private func reorder(_ ids: [String], to i: Int) -> Bool {
+        let p = state.player
+        guard let id = ids.first, let from = p.queue.upNext.firstIndex(where: { $0.id.uuidString == id }) else { return false }
+        p.moveUpNext(from: from, to: i)
+        return true
     }
 
     private func songRow<T: View>(_ q: QueueItem, time: String, playing: Bool, @ViewBuilder trailing: () -> T = { EmptyView() }) -> some View {

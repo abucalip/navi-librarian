@@ -113,6 +113,12 @@ struct ZineQueue: View {
             }
         }
         .accessibilityElement(children: .contain)
+        .blocksWindowDrag()
+        .modifier(QueueReorder(enabled: index != nil, id: q.id.uuidString) { ids in
+            guard let i = index, let from = p.queue.upNext.firstIndex(where: { $0.id.uuidString == ids.first }) else { return false }
+            p.moveUpNext(from: from, to: i)
+            return true
+        })
     }
 
     @ViewBuilder private var liveSide: some View {
@@ -124,5 +130,15 @@ struct ZineQueue: View {
         }
         .padding(.horizontal, 12).padding(.vertical, 10).frame(maxWidth: .infinity, alignment: .leading)
         .zBorder(3, dashed: true)
+    }
+}
+
+/// Drag a Running Order row onto another to move it; rows that are not in Up Next (the one playing) do not take part.
+private struct QueueReorder: ViewModifier {
+    let enabled: Bool
+    let id: String
+    let drop: ([String]) -> Bool
+    func body(content: Content) -> some View {
+        if enabled { content.draggable(id).dropDestination(for: String.self) { ids, _ in drop(ids) } } else { content }
     }
 }

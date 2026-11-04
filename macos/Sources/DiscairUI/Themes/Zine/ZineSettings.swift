@@ -54,6 +54,7 @@ struct ZineSettings: View {
                         .accessibilityAddTraits(on ? .isSelected : [])
                 }
             }
+            Mono("Consecutive tracks of one album always play gapless, so the fade happens between unrelated songs.", size: 10)
             Mono("Streaming quality", bold: true).padding(.top, 6)
             HStack(spacing: 8) {
                 ForEach(PlayerModel.qualityChoices, id: \.self) { q in

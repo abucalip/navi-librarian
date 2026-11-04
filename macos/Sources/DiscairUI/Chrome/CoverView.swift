@@ -25,12 +25,12 @@ public struct CoverView: View {
 /// `RenderMode.offscreenScreenshot`, where it does not render.
 struct BlurredArtwork: View {
     let album: AlbumItem
-    var radius: CGFloat = 80
+    var radius: CGFloat = 28
     var body: some View {
         GeometryReader { g in
-            ArtworkImage(album: album, px: 300)
+            ArtworkImage(album: album, px: 600)
                 .frame(width: g.size.width, height: g.size.height)
-                .scaleEffect(1.4)                                   // pushes the blurred edges out of view
+                .scaleEffect(1.2)                                   // pushes the blurred edges out of view
                 .blur(radius: RenderMode.offscreenScreenshot ? 0 : radius)
                 .saturation(1.3)
                 .clipped()

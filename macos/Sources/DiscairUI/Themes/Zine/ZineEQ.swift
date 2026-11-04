@@ -66,14 +66,16 @@ struct ZineEQ: View {
         let hz = eqBandHz[i] >= 1000 ? "\(eqBandHz[i] / 1000) kHz" : "\(eqBandHz[i]) Hz"
         return VStack(spacing: 6) {
             Mono(String(format: "%+.1f", g), bold: true)
+            Button("+") { p.updateEQ { $0.nudge(band: i, steps: 1) } }.buttonStyle(ZineButtonStyle(small: true)).accessibilityLabel("Raise \(hz)")
             ZStack(alignment: .top) {
                 Rectangle().fill(Z.paper).frame(width: 14, height: 130).zBorder(2)
                 let h = max(g == 0 ? 0 : 2, 63 * abs(g) / eqMaxGainDB)      // the middle (0 dB) is at 65 pt
                 Rectangle().fill(Z.yellow).frame(width: 10, height: h).offset(y: g >= 0 ? 65 - h : 65)
                 Rectangle().fill(Z.ink).frame(width: 14, height: 2).offset(y: 64)
             }
-            .frame(height: 130).accessibilityHidden(true)
-            Button("+") { p.updateEQ { $0.nudge(band: i, steps: 1) } }.buttonStyle(ZineButtonStyle(small: true)).accessibilityLabel("Raise \(hz)")
+            .frame(height: 130)
+            .eqBandDrag(trackHeight: 130) { db in p.updateEQ { $0.set(band: i, db: db) } }
+            .accessibilityHidden(true)
             Button("−") { p.updateEQ { $0.nudge(band: i, steps: -1) } }.buttonStyle(ZineButtonStyle(small: true)).accessibilityLabel("Lower \(hz)")
             Mono(hz, size: 10)
         }

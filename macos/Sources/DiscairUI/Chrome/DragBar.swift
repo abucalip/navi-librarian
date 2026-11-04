@@ -33,6 +33,7 @@ struct DragBar: View {
                 })
         }
         .frame(height: max(height, 16))
+        .blocksWindowDrag()
         .focusable()
         .accessibilityElement()
         .accessibilityLabel(label)

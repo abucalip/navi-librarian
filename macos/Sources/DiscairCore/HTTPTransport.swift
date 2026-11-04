@@ -15,7 +15,8 @@ public struct URLSessionTransport: HTTPTransport {
         cfg.timeoutIntervalForRequest = requestTimeout
         cfg.urlCache = nil
         cfg.requestCachePolicy = .reloadIgnoringLocalCacheData
-        cfg.httpCookieStorage = keepCookies ? HTTPCookieStorage() : nil
+        // An ephemeral configuration already has its own in-memory jar; a bare `HTTPCookieStorage()` never stores anything.
+        if !keepCookies { cfg.httpCookieStorage = nil }
         cfg.httpShouldSetCookies = keepCookies
         session = URLSession(configuration: cfg, delegate: NoRedirectDelegate(), delegateQueue: nil)
     }

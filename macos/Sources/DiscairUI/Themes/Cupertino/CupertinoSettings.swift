@@ -54,6 +54,8 @@ struct CupertinoSettings: View {
                         .accessibilityAddTraits(on ? .isSelected : [])
                 }
             }
+            Text("Consecutive tracks of one album always play gapless, so the fade happens between unrelated songs.")
+                .font(.system(size: 12)).foregroundStyle(CU.muted)
             Text("Streaming quality").fontWeight(.semibold).padding(.top, 6)
             HStack(spacing: 8) {
                 ForEach(PlayerModel.qualityChoices, id: \.self) { q in

@@ -76,6 +76,8 @@ struct CupertinoEQ: View {
         let hz = eqBandHz[i] >= 1000 ? "\(eqBandHz[i] / 1000) kHz" : "\(eqBandHz[i]) Hz"
         return VStack(spacing: 6) {
             Text(String(format: "%+.1f", g)).font(.system(size: 12, weight: .semibold)).monospacedDigit()
+            Button("+") { p.updateEQ { $0.nudge(band: i, steps: 1) } }
+                .buttonStyle(CapsuleButtonStyle(small: true)).accessibilityLabel("Raise \(hz)")
             ZStack(alignment: .top) {
                 Capsule().fill(CU.fill).frame(width: 6, height: 120)
                 let h = max(g == 0 ? 0 : 2, 60 * abs(g) / eqMaxGainDB)      // the middle (0 dB) is at 60 pt
@@ -83,9 +85,8 @@ struct CupertinoEQ: View {
                 Rectangle().fill(CU.muted).frame(width: 12, height: 1.5).offset(y: 59)
             }
             .frame(height: 120)
+            .eqBandDrag(trackHeight: 120) { db in p.updateEQ { $0.set(band: i, db: db) } }
             .accessibilityHidden(true)
-            Button("+") { p.updateEQ { $0.nudge(band: i, steps: 1) } }
-                .buttonStyle(CapsuleButtonStyle(small: true)).accessibilityLabel("Raise \(hz)")
             Button("−") { p.updateEQ { $0.nudge(band: i, steps: -1) } }
                 .buttonStyle(CapsuleButtonStyle(small: true)).accessibilityLabel("Lower \(hz)")
             Text(hz).font(.system(size: 11)).foregroundStyle(CU.muted).lineLimit(1)
