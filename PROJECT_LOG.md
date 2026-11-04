@@ -1,3 +1,11 @@
+## 2026-11-04 — macOS M6 slice 8: Smart Playlists merged (PR #746)
+
+- **Merged (owner request):** PR [#746](https://github.com/abucalip/navi-librarian/pull/746), squash `f4ea0d1c8be9e9827f26e602112ec617af212c3f`. GitHub checks (compile, container-smoke, test-and-build, validate-container) passed; no Swift job runs on GitHub.
+- **What:** `Screen.smartPlaylists`, `SmartEngine` (pure rules), `SmartPlaylistModel` (local storage, Navidrome list and create), Cupertino and Zine views, sidebar and palette entries. See `macos/DESIGN.md` M6 slice 8.
+- **Tests run (local, filtered):** SmartPlaylistTests (9 new), ScreenshotTests, LibraryModelTests, GapRadarTests, CommandPaletteTests: all passed. Screenshots not inspected by eye.
+- **Not verified:** real server (`createPlaylist` only checked in M1), live look, owner approval; rules read at most 5000 songs; no edit or delete of server playlists.
+- **Next action:** remaining M6 section 6 features (history, Miller columns, queue workspace, album spread).
+
 ## 2026-11-04 — macOS M6 slice 7: Gap Radar merged (PR #745)
 
 - **Merged (owner request):** PR [#745](https://github.com/abucalip/navi-librarian/pull/745), squash `465ac8818e2fad637f991d03d23a9dfda18cca4e`. GitHub checks (compile, container-smoke, test-and-build, validate-container) passed; no Swift job runs on GitHub.
