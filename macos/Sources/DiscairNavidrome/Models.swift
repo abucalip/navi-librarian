@@ -9,6 +9,9 @@ public struct NavidromeArtist: Codable, Equatable, Sendable, Identifiable {
     public let albumCount: Int?
     public let coverArt: String?
     public let musicBrainzId: String?
+    public init(id: String, name: String, albumCount: Int?, coverArt: String?, musicBrainzId: String?) {
+        self.id = id; self.name = name; self.albumCount = albumCount; self.coverArt = coverArt; self.musicBrainzId = musicBrainzId
+    }
 }
 
 public struct NavidromeAlbum: Codable, Equatable, Sendable, Identifiable {
