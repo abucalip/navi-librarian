@@ -12,8 +12,11 @@ Nothing here publishes by itself. Publication stays paused until the owner autho
 An app built without the key runs normally but refuses every update (`UpdateConfiguration`, "no update signing key").
 
 4. Make the local signing identity: `scripts/make-signing-identity.sh` (once; self-signed, stays in the login Keychain, no Apple account).
-   `bundle.sh` then signs with it, so the app keeps one identity across rebuilds and updates and the Keychain stops asking again.
-   Without it the build is ad hoc and the Keychain asks again after every update. Click Always Allow on the first prompts of a new identity.
+   `bundle.sh` then signs with it, so the app's trusted-app entry on the Keychain item stays valid across rebuilds and updates.
+   It does **not** stop the prompt after an update: an app with no team ID is also checked by its per-build `cdhash` (the item's
+   partition list, the "XARA" check in the `securityd` log), and every build has a new one. Expect one Keychain prompt after each
+   update or rebuild and click **Always Allow** (plain Allow is not remembered, so it asks again on every launch). Ending the
+   prompt needs an Apple Developer ID (a stable team ID) or keeping logins outside the Keychain; neither is decided.
 
 ## Each release
 

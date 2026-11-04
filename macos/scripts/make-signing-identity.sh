@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # Makes a self-signed code-signing certificate named "Discair Local Signing" in the login Keychain, once.
-# Signing every build with it (scripts/bundle.sh does when it exists) keeps the app's identity the same across rebuilds and
-# updates, so the Keychain stops asking about the app again after each update. No Apple Developer account is involved, and the
-# certificate is only ever used on this Mac; it does not make the app trusted by Gatekeeper.
+# Signing every build with it (scripts/bundle.sh does when it exists) keeps the app's trusted-app entry on its Keychain item
+# valid across rebuilds and updates. It does NOT stop the prompt after each update: without a team ID macOS also checks the
+# build's cdhash, which changes every build, so click Always Allow once per new build. No Apple Developer account is involved,
+# and the certificate is only ever used on this Mac; it does not make the app trusted by Gatekeeper.
 set -euo pipefail
 NAME="${DISCAIR_SIGN_IDENTITY:-Discair Local Signing}"
 if security find-identity -p codesigning 2>/dev/null | grep -q "\"$NAME\""; then

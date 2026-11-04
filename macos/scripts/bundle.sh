@@ -52,10 +52,11 @@ if ! otool -l "$APP/Contents/MacOS/Discair" | grep -q "@executable_path/../Frame
     install_name_tool -add_rpath "@executable_path/../Frameworks" "$APP/Contents/MacOS/Discair"
 fi
 
-# Signing identity: a stable self-signed one keeps the Keychain's trust in the app across rebuilds and updates; ad hoc changes every build.
+# Signing identity: a stable self-signed one keeps the Keychain item's trusted-app entry valid across rebuilds; it does not remove the
+# per-build cdhash prompt (no team ID), so expect one Always Allow per build. Ad hoc also changes the trusted-app entry every build.
 IDENTITY="${DISCAIR_SIGN_IDENTITY:-Discair Local Signing}"
 if ! security find-identity -p codesigning 2>/dev/null | grep -q "\"$IDENTITY\""; then
-    echo "note: no \"$IDENTITY\" identity (run scripts/make-signing-identity.sh); signing ad hoc, so the Keychain will ask again after each update" >&2
+    echo "note: no \"$IDENTITY\" identity (run scripts/make-signing-identity.sh); signing ad hoc, so the Keychain will ask after each update" >&2
     IDENTITY="-"
 fi
 
