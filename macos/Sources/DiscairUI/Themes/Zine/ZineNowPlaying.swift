@@ -34,7 +34,7 @@ struct ZineNowPlaying: View {
                 lyricsView
                 HStack(spacing: 10) {
                     Mono("Position", bold: true)
-                    DragBar(value: p.fraction, height: 12, track: Z.white, fill: Z.yellow, rounded: false, label: "Position",
+                    DragBar(value: p.fraction, height: 12, track: Z.white, fill: Z.yellow, rounded: false, peaks: p.waveform, label: "Position",
                             valueText: { "\(PlayerModel.clock($0 * p.duration)) of \(PlayerModel.clock(p.duration))" }) { p.seek(toFraction: $0) }
                         .overlay { Rectangle().strokeBorder(Z.ink, lineWidth: 2).frame(height: 12).allowsHitTesting(false) }
                     Mono("\(PlayerModel.clock(p.position)) / \(PlayerModel.clock(p.duration))")

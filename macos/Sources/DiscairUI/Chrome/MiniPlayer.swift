@@ -45,7 +45,7 @@ public struct MiniPlayerView: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text(content.title).font(.system(size: 14, weight: .bold)).lineLimit(1)
                 Text(content.artist).font(.system(size: 12)).foregroundStyle(.white.opacity(0.7)).lineLimit(1)
-                DragBar(value: p.fraction, height: 4, label: "Position",
+                DragBar(value: p.fraction, height: 4, peaks: p.waveform, label: "Position",
                         valueText: { "\(PlayerModel.clock($0 * p.duration)) of \(PlayerModel.clock(p.duration))" }) { p.seek(toFraction: $0) }
                     .disabled(!content.hasSong)
                 HStack(spacing: 0) {

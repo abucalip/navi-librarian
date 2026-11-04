@@ -64,6 +64,8 @@ public struct SongRow: Identifiable, Equatable, Sendable {
     public var seconds: Double = 0
     public var track: Int? = nil
     public var disc: Int? = nil
+    /// The path Navidrome reports (used to find the file on the SMB mount).
+    public var path: String? = nil
     /// Sortable values behind the table's text columns. 0 / nil = unknown (sorted last in either direction).
     public var rating = 0
     public var bitrateKbps = 0

@@ -15,10 +15,12 @@ public struct QueueItem: Identifiable, Equatable, Sendable, Codable {
     /// Track and disc number on the album, used to tell a continuous album (gapless) from songs that merely follow each other.
     public let track: Int?
     public let disc: Int?
+    /// The path Navidrome reports for the file (the SMB waveform maps it to the Mac's mount). Nil when not known.
+    public let path: String?
 
     public init(id: UUID = UUID(), songID: String, title: String, artist: String, album: String = "", albumID: String? = nil,
-                coverArt: String? = nil, duration: Double = 0, suffix: String? = nil, track: Int? = nil, disc: Int? = nil) {
-        self.track = track; self.disc = disc
+                coverArt: String? = nil, duration: Double = 0, suffix: String? = nil, track: Int? = nil, disc: Int? = nil, path: String? = nil) {
+        self.track = track; self.disc = disc; self.path = path
         self.id = id; self.songID = songID; self.title = title; self.artist = artist; self.album = album
         self.albumID = albumID; self.coverArt = coverArt; self.duration = duration; self.suffix = suffix
     }

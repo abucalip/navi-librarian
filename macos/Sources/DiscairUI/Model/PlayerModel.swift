@@ -70,6 +70,45 @@ public final class PlayerModel {
     private static let queueKey = "discair.queue"
     public static let positionKey = "discair.queuePosition"
     public var current: QueueItem? { queue.current }
+
+    // MARK: Waveform (contract section 7)
+
+    /// 1000 peaks (0...1) for the playing song, or nil: the seek bar is then plain. Only ever read from the SMB mount.
+    public private(set) var waveform: [Float]?
+    /// Where a song's file is on this Mac, or nil when the share is off or the path is not usable.
+    @ObservationIgnored public var waveformFileURL: @MainActor (QueueItem) -> URL? = { _ in nil }
+    @ObservationIgnored public let waveformCache: WaveformCache
+    /// A waveform that is not ready this long after the song started is not shown for that song (it is still cached).
+    @ObservationIgnored var waveformBudget: Duration = .seconds(5)
+    /// Test hook: stands in for the decode.
+    @ObservationIgnored var waveformCompute: @Sendable (URL) -> [Float]? = { WaveformReader.peaks(of: $0) }
+    @ObservationIgnored private var waveformFor: UUID?
+    @ObservationIgnored private var waveformTask: Task<Void, Never>?
+    @ObservationIgnored private var waveformStarted = ContinuousClock.now
+
+    /// Called on every tick; does something only when the song changed.
+    private func syncWaveform() {
+        let item = queue.current
+        guard item?.id != waveformFor else { return }
+        waveformFor = item?.id
+        waveformTask?.cancel(); waveformTask = nil
+        waveform = nil
+        guard let item else { return }
+        if let cached = waveformCache.peaks(songID: item.songID) { waveform = cached; return }
+        guard let url = waveformFileURL(item) else { return }
+        waveformStarted = .now
+        let id = item.id, songID = item.songID, compute = waveformCompute, cache = waveformCache
+        waveformTask = Task { [weak self] in
+            let peaks = await Task.detached(priority: .utility) { () -> [Float]? in
+                guard !Task.isCancelled else { return nil }
+                let p = compute(url)
+                if let p, !Task.isCancelled { cache.put(p, songID: songID) }
+                return p
+            }.value
+            guard let self, let peaks, self.waveformFor == id else { return }
+            if ContinuousClock.now - self.waveformStarted <= self.waveformBudget { self.waveform = peaks }
+        }
+    }
     public var isPlaying: Bool { phase == .playing }
     public var shuffle: Bool { queue.shuffle }
     public var repeatMode: RepeatMode { queue.repeatMode }
@@ -92,7 +131,9 @@ public final class PlayerModel {
     /// The song handed to the engine (or being fetched) as the follower, and its file once downloaded.
     @ObservationIgnored private var preloaded: (id: UUID, file: URL?)?
 
-    public init(output: AudioOutput = EngineOutput(), fetcher: AudioFetcher = URLSessionFetcher(), defaults: UserDefaults = .standard) {
+    public init(output: AudioOutput = EngineOutput(), fetcher: AudioFetcher = URLSessionFetcher(), defaults: UserDefaults = .standard,
+                waveformCache: WaveformCache = WaveformCache()) {
+        self.waveformCache = waveformCache
         self.output = output
         self.fetcher = fetcher
         self.defaults = defaults
@@ -427,6 +468,7 @@ public final class PlayerModel {
             while !Task.isCancelled {
                 self?.position = self?.output.position ?? 0
                 self?.noteBrokenDownload()
+                self?.syncWaveform()
                 if let self, !self.output.isGrowing, self.phase == .playing { self.refreshPreload() }
                 if let self { self.scrobbler.update(position: self.output.position, playerDuration: self.output.duration, isPlaying: self.output.isPlaying) }
                 n += 1
@@ -442,14 +484,14 @@ public final class PlayerModel {
 extension PlayerModel {
     static func item(_ s: NavidromeSong) -> QueueItem {
         QueueItem(songID: s.id, title: s.title, artist: s.artist ?? "Unknown artist", album: s.album ?? "", albumID: s.albumId,
-                  coverArt: s.coverArt, duration: Double(s.duration ?? 0), suffix: s.suffix, track: s.track, disc: s.discNumber)
+                  coverArt: s.coverArt, duration: Double(s.duration ?? 0), suffix: s.suffix, track: s.track, disc: s.discNumber, path: s.path)
     }
 
     /// Sample rows (no server id) cannot be played.
     static func item(_ r: SongRow) -> QueueItem? {
         guard let id = r.remoteID else { return nil }
         return QueueItem(songID: id, title: r.title, artist: r.artist, album: r.cover?.title ?? "", albumID: r.cover?.remoteID,
-                         coverArt: r.cover?.coverArt, duration: r.seconds, suffix: r.suffix, track: r.track, disc: r.disc)
+                         coverArt: r.cover?.coverArt, duration: r.seconds, suffix: r.suffix, track: r.track, disc: r.disc, path: r.path)
     }
 
     /// "3:12" style clock for a number of seconds.
