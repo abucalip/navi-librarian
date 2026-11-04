@@ -1,3 +1,4 @@
+import DiscairLibrarian
 import DiscairNavidrome
 import Foundation
 import Observation
@@ -25,8 +26,18 @@ public struct SpreadSimilar: Identifiable, Equatable, Sendable {
     public let inLibrary: Bool
 }
 
+public struct SpreadReview: Identifiable, Equatable, Sendable {
+    public var id: String { url.absoluteString }
+    public let source: String
+    public let quote: String
+    public let url: URL
+}
+
 public struct AlbumSpreadContent: Equatable, Sendable {
     public var notes: String?
+    /// Where the notes came from when the Librarian supplied them ("Apple Music", "Wikipedia"), with the licence.
+    public var notesSource: String?
+    public var notesURL: URL?
     public var credits: [SpreadCreditGroup] = []
     public var facts: [SpreadFact] = []
     public var musicBrainzURL: URL?
@@ -37,13 +48,19 @@ public struct AlbumSpreadContent: Equatable, Sendable {
 }
 
 public enum AlbumSpread {
-    /// What the Reviews part says: no review source is connected to Navidrome or the Librarian.
-    public static let reviewsNote = "No review source is connected."
 
     public static func build(facts: NavidromeAlbumFacts?, info: NavidromeAlbumInfo?, artist: NavidromeArtistInfo?,
-                             libraryArtists: [String]) -> AlbumSpreadContent {
+                             description: AlbumDescription? = nil, libraryArtists: [String]) -> AlbumSpreadContent {
         var out = AlbumSpreadContent()
         out.notes = info?.notes.flatMap(cleanNotes)
+        if out.notes == nil, let d = description {
+            let paras = d.paragraphs.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }
+            if !paras.isEmpty {
+                out.notes = paras.joined(separator: "\n\n")
+                out.notesSource = [d.source, d.license].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " · ")
+                out.notesURL = d.url.flatMap(webURL)
+            }
+        }
         out.credits = credits(facts?.credits ?? [])
 
         var rows: [SpreadFact] = []
@@ -110,6 +127,20 @@ public enum AlbumSpread {
         return text.isEmpty ? nil : text
     }
 
+    /// Reviews from the Librarian: only entries with text and an http(s) link; at most three.
+    static func reviews(_ list: [AlbumReview]) -> [SpreadReview] {
+        list.compactMap { r in
+            let quote = r.quote.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !quote.isEmpty, let u = webURL(r.url) else { return nil }
+            return SpreadReview(source: r.source, quote: quote, url: u)
+        }.prefix(3).map { $0 }
+    }
+
+    static func webURL(_ s: String) -> URL? {
+        guard let u = URL(string: s), u.scheme == "https" || u.scheme == "http", u.host != nil else { return nil }
+        return u
+    }
+
     static func isUUID(_ s: String) -> Bool { UUID(uuidString: s) != nil }
 
     /// Only a Last.fm page over https is linked.
@@ -118,6 +149,8 @@ public enum AlbumSpread {
               host == "last.fm" || host.hasSuffix(".last.fm") else { return nil }
         return u
     }
+
+    static let sampleReviews = [SpreadReview(source: "Example Magazine", quote: "A record that rewards patience.", url: URL(string: "https://example.com/review")!)]
 
     /// The mockup's album, for previews and screenshot tests.
     static let sample = AlbumSpreadContent(
@@ -130,37 +163,56 @@ public enum AlbumSpread {
         similar: [SpreadSimilar(name: "Bark Psychosis", inLibrary: false), SpreadSimilar(name: "Mark Hollis", inLibrary: true)])
 }
 
-/// Loads the spread of the album last opened. The three Navidrome calls run side by side and fail on their own: a
-/// server without OpenSubsonic still gives liner notes and similar artists.
+/// Loads the spread of the album last opened. The Navidrome and Librarian calls run side by side and fail on their
+/// own: a server without OpenSubsonic still gives liner notes and similar artists. Reviews are slower (the Librarian
+/// asks outlets), so they load after the rest and have their own state.
 @MainActor
 @Observable
 public final class AlbumSpreadModel {
+    public enum ReviewsState: Equatable, Sendable { case idle, loading, loaded([SpreadReview], retryable: Bool), failed }
+
     public private(set) var content: AlbumSpreadContent? = AlbumSpread.sample
+    public private(set) var reviews: ReviewsState = .loaded(AlbumSpread.sampleReviews, retryable: false)
     public private(set) var loading = false
     public private(set) var isLive = false
     private var loadedFor: String?
 
     public init() {}
 
-    public func load(album: AlbumItem, navidrome: NavidromeClient?, libraryArtists: [String]) async {
-        guard let navidrome else { isLive = false; content = AlbumSpread.sample; loadedFor = nil; return }
+    public func load(album: AlbumItem, navidrome: NavidromeClient?, librarian: LibrarianClient? = nil, libraryArtists: [String]) async {
+        guard navidrome != nil || librarian != nil else {
+            isLive = false; content = AlbumSpread.sample; reviews = .loaded(AlbumSpread.sampleReviews, retryable: false); loadedFor = nil; return
+        }
         isLive = true
-        guard let albumID = album.remoteID else { content = nil; loadedFor = nil; return }   // a pick the library does not hold
-        if loadedFor == albumID, content != nil { return }
-        loading = true; content = nil
+        let key = album.remoteID ?? "pick:\(album.artist.lowercased())|\(album.title.lowercased())"
+        if loadedFor == key, content != nil { return }
+        loading = true; content = nil; reviews = .idle
         defer { loading = false }
-        let artistID = album.artistRemoteID
-        async let facts = try? navidrome.albumFacts(id: albumID)
-        async let info = try? navidrome.albumInfo(id: albumID)
-        async let artist: NavidromeArtistInfo? = {
-            guard let artistID else { return nil }
-            return (try? await navidrome.artistInfo(id: artistID)) ?? nil
-        }()
-        let (f, i, a) = await (facts, info ?? nil, artist)
+        let ids = (album: album.remoteID, artist: album.artistRemoteID)
+        async let facts: NavidromeAlbumFacts? = { guard let navidrome, let id = ids.album else { return nil }; return try? await navidrome.albumFacts(id: id) }()
+        async let info: NavidromeAlbumInfo? = { guard let navidrome, let id = ids.album else { return nil }; return (try? await navidrome.albumInfo(id: id)) ?? nil }()
+        async let artist: NavidromeArtistInfo? = { guard let navidrome, let id = ids.artist else { return nil }; return (try? await navidrome.artistInfo(id: id)) ?? nil }()
+        async let description: AlbumDescription? = { guard let librarian else { return nil }; return try? await librarian.albumDescription(artist: album.artist, album: album.title) }()
+        let (f, i, a, d) = await (facts, info, artist, description)
         guard !Task.isCancelled else { return }
-        content = AlbumSpread.build(facts: f, info: i, artist: a, libraryArtists: libraryArtists)
-        loadedFor = albumID
+        content = AlbumSpread.build(facts: f, info: i, artist: a, description: d, libraryArtists: libraryArtists)
+        loadedFor = key
+        loading = false
+        await loadReviews(album: album, librarian: librarian)
     }
 
-    public func reset() { content = nil; loadedFor = nil; isLive = false }
+    /// Asks the Librarian for reviews again (the Retry button, or an outlet that did not answer).
+    public func loadReviews(album: AlbumItem, librarian: LibrarianClient?) async {
+        guard let librarian else { reviews = .idle; return }
+        reviews = .loading
+        do {
+            let r = try await librarian.albumReviews(artist: album.artist, album: album.title)
+            guard !Task.isCancelled else { return }
+            reviews = .loaded(AlbumSpread.reviews(r.reviews), retryable: r.retryable ?? false)
+        } catch {
+            if !Task.isCancelled { reviews = .failed }
+        }
+    }
+
+    public func reset() { content = nil; reviews = .idle; loadedFor = nil; isLive = false }
 }

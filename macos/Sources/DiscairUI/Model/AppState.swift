@@ -186,8 +186,10 @@ public final class AppState {
 
     public func loadSelectedAlbum() async {
         await library.loadTracks(for: selectedAlbum, navidrome: session?.navidrome)
-        await spread.load(album: selectedAlbum, navidrome: session?.navidrome, libraryArtists: library.artists.map(\.name))
+        await spread.load(album: selectedAlbum, navidrome: session?.navidrome, librarian: session?.librarian, libraryArtists: library.artists.map(\.name))
     }
+
+    public func retrySpreadReviews() async { await spread.loadReviews(album: selectedAlbum, librarian: session?.librarian) }
 
     public func loadSelectedArtist() async {
         await library.loadArtist(selectedArtist, navidrome: session?.navidrome)
