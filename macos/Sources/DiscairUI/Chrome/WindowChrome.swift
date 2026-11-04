@@ -49,20 +49,32 @@ struct RowDragSource: ViewModifier {
     }
 }
 
-/// The theme's own traffic lights (close, minimise, zoom). Labelled for VoiceOver.
+/// The theme's own traffic lights (close, minimise, zoom). Like the system ones, the symbols (x, minus, arrows) show
+/// while the pointer is over the group. Labelled for VoiceOver.
 struct TrafficLights: View {
     var colors: [Color] = [Color(red: 1, green: 0.37, blue: 0.34), Color(red: 1, green: 0.74, blue: 0.18), Color(red: 0.16, green: 0.78, blue: 0.25)]
     var size: CGFloat = 12
+    /// Show the symbols without hovering (screenshot tests).
+    var showSymbols = false
+    @State private var hovering = false
     var body: some View {
         HStack(spacing: 8) {
-            light(colors[0], "Close") { NSApp.keyWindow?.close() }
-            light(colors[1], "Minimise") { NSApp.keyWindow?.miniaturize(nil) }
-            light(colors[2], "Zoom") { NSApp.keyWindow?.zoom(nil) }
+            light(colors[0], "Close", symbol: "xmark") { NSApp.keyWindow?.close() }
+            light(colors[1], "Minimise", symbol: "minus") { NSApp.keyWindow?.miniaturize(nil) }
+            light(colors[2], "Zoom", symbol: "arrow.up.left.and.arrow.down.right") { NSApp.keyWindow?.zoom(nil) }
         }
+        .onHover { hovering = $0 }
     }
-    private func light(_ c: Color, _ label: String, _ action: @escaping () -> Void) -> some View {
-        Button(action: action) { Circle().fill(c).frame(width: size, height: size) }
-            .buttonStyle(.plain)
-            .accessibilityLabel(label)
+    private func light(_ c: Color, _ label: String, symbol: String, _ action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Circle().fill(c).frame(width: size, height: size)
+                .overlay {
+                    Image(systemName: symbol).font(.system(size: size * 0.55, weight: .heavy)).foregroundStyle(.black.opacity(0.55))
+                        .opacity(hovering || showSymbols ? 1 : 0)
+                }
+                .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(label)
     }
 }
