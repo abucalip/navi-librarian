@@ -11,6 +11,7 @@ public struct RootView: View {
             .safeAreaInset(edge: .top, spacing: 0) {
                 if let notice = state.offlineNotice { OfflineBanner(state: state, text: notice) }
             }
+            .modifier(CommandPaletteOverlay(state: state))
             .preferredColorScheme(theme.colorScheme)
             .environment(\.artwork, state.artwork)
             .frame(minWidth: 1100, minHeight: 700)

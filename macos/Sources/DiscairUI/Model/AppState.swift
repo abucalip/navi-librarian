@@ -58,6 +58,8 @@ public final class AppState {
     /// Get, Save, Not for me and the job list. Live only once a session connects.
     public let acquisition: AcquisitionModel
     public let discovery = DiscoveryModel()
+    /// The ⌘K command palette.
+    public let palette = PaletteModel()
     public let lyrics = LyricsModel()
     /// Playback: the queue, the audio engine and the controls.
     public let player: PlayerModel
@@ -197,4 +199,31 @@ public final class AppState {
 /// A mounter that does nothing: previews and screenshot tests.
 struct NoMounter: ShareMounter {
     func mount(_ address: URL, credential: Credential?) async -> ShareMountOutcome { .failed(.unreachable) }
+}
+
+// MARK: Command palette
+
+extension AppState {
+    /// What the palette lists for what is typed, from the library as loaded now.
+    func paletteResults() -> [PaletteCommand] {
+        PaletteCatalog.results(query: palette.query, playing: player.isPlaying,
+                               albums: visible(library.albums + library.recent + library.missing), artists: library.artists)
+    }
+
+    /// Runs one palette line and closes the palette.
+    func perform(_ command: PaletteCommand) {
+        palette.close()
+        switch command.action {
+        case .go(let s): screen = s
+        case .playPause: player.togglePlayPause()
+        case .next: player.next()
+        case .previous: player.previous()
+        case .toggleShuffle: player.toggleShuffle()
+        case .cycleRepeat: player.cycleRepeat()
+        case .openAlbum(let a): open(album: a)
+        case .play(let a): actions.play(album: a)
+        case .get(let a): actions.get(album: a)
+        case .openArtist(let a): open(artist: a)
+        }
+    }
 }

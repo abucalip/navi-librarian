@@ -40,6 +40,7 @@ struct DiscairApp: App {
         .defaultSize(width: MiniPlayerView.size.width, height: MiniPlayerView.size.height)
         .commands {
             MiniPlayerCommands()
+            CommandPaletteCommands(state: state)
             UpdateCommands(updater: updater)
             CommandMenu("Theme") {
                 ForEach(ThemeID.allCases) { id in
@@ -58,6 +59,17 @@ struct MiniPlayerCommands: Commands {
         CommandGroup(after: .windowArrangement) {
             Button("Mini Player") { openWindow(id: "mini") }
                 .keyboardShortcut("m", modifiers: [.command, .option])
+        }
+    }
+}
+
+/// Edit > Command Palette (⌘K).
+struct CommandPaletteCommands: Commands {
+    let state: AppState
+    var body: some Commands {
+        CommandGroup(after: .textEditing) {
+            Button("Command Palette") { state.palette.toggle() }
+                .keyboardShortcut("k", modifiers: .command)
         }
     }
 }
