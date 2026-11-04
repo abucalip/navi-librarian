@@ -52,4 +52,50 @@ import Testing
         defer { try? FileManager.default.removeItem(at: url) }
         #expect(throws: AudioError.self) { try EngineOutput().open(file: url) }
     }
+
+    @Test func aPreloadedSongJoinsGaplesslyAndFinishesOnce() async throws {
+        let a = try silentFile(seconds: 0.6), b = try silentFile(seconds: 0.6)
+        defer { try? FileManager.default.removeItem(at: a); try? FileManager.default.removeItem(at: b) }
+        let out = EngineOutput()
+        do { try out.open(file: a) } catch let e as AudioError where e.description.contains("could not start") { return }
+        var advanced = 0, finished = 0
+        out.onAdvanced = { advanced += 1 }
+        out.onFinished = { finished += 1 }
+        try out.preload(file: b, transition: .gapless)
+        out.play()
+        for _ in 0..<400 where finished == 0 { try await Task.sleep(for: .milliseconds(10)) }
+        #expect(advanced == 1 && finished == 1)
+    }
+
+    @Test func aCrossfadeAdvancesAtTheStartOfTheFadeAndFinishesOnce() async throws {
+        let a = try silentFile(seconds: 0.8), b = try silentFile(seconds: 0.8)
+        defer { try? FileManager.default.removeItem(at: a); try? FileManager.default.removeItem(at: b) }
+        let out = EngineOutput()
+        do { try out.open(file: a) } catch let e as AudioError where e.description.contains("could not start") { return }
+        var advanced = 0, finished = 0
+        var positionAtAdvance = -1.0
+        out.onAdvanced = { advanced += 1; positionAtAdvance = out.position }
+        out.onFinished = { finished += 1 }
+        try out.preload(file: b, transition: .crossfade(0.3))
+        out.play()
+        for _ in 0..<500 where finished == 0 { try await Task.sleep(for: .milliseconds(10)) }
+        #expect(advanced == 1 && finished == 1)
+        #expect(positionAtAdvance < 0.3)           // the position now belongs to the new song
+    }
+
+    @Test func cancellingAPreloadLeavesTheCurrentSongPlayingToItsEnd() async throws {
+        let a = try silentFile(seconds: 0.5), b = try silentFile(seconds: 0.5)
+        defer { try? FileManager.default.removeItem(at: a); try? FileManager.default.removeItem(at: b) }
+        let out = EngineOutput()
+        do { try out.open(file: a) } catch let e as AudioError where e.description.contains("could not start") { return }
+        var advanced = 0, finished = 0
+        out.onAdvanced = { advanced += 1 }
+        out.onFinished = { finished += 1 }
+        try out.preload(file: b, transition: .gapless)
+        out.cancelPreload()
+        out.play()
+        for _ in 0..<300 where finished == 0 { try await Task.sleep(for: .milliseconds(10)) }
+        #expect(advanced == 0 && finished == 1)
+    }
 }
+

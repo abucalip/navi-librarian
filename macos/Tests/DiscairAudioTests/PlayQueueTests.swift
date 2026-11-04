@@ -72,4 +72,28 @@ private func titles(_ q: PlayQueue) -> [String] { ([q.current].compactMap { $0 }
         q.select(index: 2)
         #expect(q.current?.title == "T2" && q.upNext.map(\.title) == ["T3"])
     }
+
+    @Test func peekNextFollowsRepeatAndShuffleWithoutMoving() {
+        var q = PlayQueue(); q.set(songs(3), startAt: 1)
+        #expect(q.peekNext?.title == "T2" && q.current?.title == "T1")
+        q.set(songs(3), startAt: 2)
+        #expect(q.peekNext == nil)
+        q.repeatMode = .all
+        #expect(q.peekNext?.title == "T0")
+        q.repeatMode = .one
+        #expect(q.peekNext == nil)
+    }
+
+    @Test func jumpKeepsSkippedSongsBehindTheNewCurrentOne() {
+        var q = PlayQueue(); q.set(songs(5), startAt: 0)
+        q.jump(upNext: 2)
+        #expect(q.current?.title == "T3" && q.upNext.map(\.title) == ["T4"])
+    }
+
+    @Test func clearUpNextKeepsOnlyTheCurrentSong() {
+        var q = PlayQueue(); q.set(songs(4), startAt: 1)
+        q.clearUpNext()
+        #expect(q.current?.title == "T1" && q.upNext.isEmpty && q.items.count == 1)
+    }
 }
+

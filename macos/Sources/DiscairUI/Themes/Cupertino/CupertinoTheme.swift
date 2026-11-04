@@ -192,6 +192,12 @@ struct CupertinoToolbar: View {
             }
             .foregroundStyle(CU.muted).padding(.horizontal, 14).frame(width: 210, height: 36)
             .glassEffect(CU.glass, in: Capsule())
+
+            Button { state.screen = state.screen == .queue ? .albums : .queue } label: {
+                Image(systemName: "list.bullet").font(.system(size: 15)).foregroundStyle(state.screen == .queue ? CU.accent : CU.ink)
+                    .frame(width: 40, height: 40).glassEffect(CU.glass, in: Circle())
+            }
+            .buttonStyle(.plain).accessibilityLabel(state.screen == .queue ? "Close Up Next" : "Up Next")
         }
         .frame(height: 44)
     }

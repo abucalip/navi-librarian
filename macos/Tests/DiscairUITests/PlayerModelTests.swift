@@ -18,6 +18,12 @@ private final class FakeOutput: AudioOutput {
     func pause() { isPlaying = false }
     func stop() { isPlaying = false }
     func seek(to seconds: Double) { seeks.append(seconds); position = seconds }
+    var onAdvanced: (() -> Void)?
+    var preloads: [Transition] = []
+    var cancels = 0
+    func preload(file: URL, transition: Transition) throws { preloads.append(transition) }
+    func cancelPreload() { cancels += 1 }
+    func advance() { position = 0; onAdvanced?() }
     func finish() { isPlaying = false; onFinished?() }
 }
 
@@ -37,14 +43,14 @@ private func streamBuilder() throws -> StreamURLBuilder {
     try StreamURLBuilder(baseURL: URL(string: "https://navi.example.ts.net")!, auth: SubsonicAuth(credential: Credential(username: "o", password: "pw")))
 }
 
-private func songs(_ n: Int, suffix: String? = "flac") -> [QueueItem] {
-    (0..<n).map { QueueItem(songID: "s\($0)", title: "T\($0)", artist: "A", album: "Al", duration: 200, suffix: suffix) }
+private func songs(_ n: Int, suffix: String? = "flac", album: String? = nil) -> [QueueItem] {
+    (0..<n).map { QueueItem(songID: "s\($0)", title: "T\($0)", artist: "A", album: "Al", albumID: album, duration: 200, suffix: suffix, track: $0 + 1, disc: 1) }
 }
 
 @MainActor
 private func make() throws -> (PlayerModel, FakeOutput, FakeFetcher) {
     let out = FakeOutput(), fetch = FakeFetcher()
-    let p = PlayerModel(output: out, fetcher: fetch)
+    let p = PlayerModel(output: out, fetcher: fetch, defaults: UserDefaults(suiteName: "discair-test-\(UUID().uuidString)")!)
     p.configure(urls: try streamBuilder())
     return (p, out, fetch)
 }
@@ -139,4 +145,76 @@ struct PlayerModelTests {
         await until { p.isPlaying }
         #expect(p.current?.title == "T0")
     }
+
+    // MARK: Gapless and crossfade
+
+    @Test func theNextSongIsPreloadedGaplessByDefaultAndTheEngineAdvancesTheQueue() async throws {
+        let (p, out, _) = try make()
+        p.play(songs(3))
+        await until { !out.preloads.isEmpty }
+        #expect(out.preloads == [.gapless])
+        out.advance()
+        #expect(p.current?.title == "T1" && p.isPlaying && p.history.first?.title == "T0")
+        await until { out.preloads.count == 2 }
+        #expect(out.preloads.count == 2)          // T2 is handed over next
+        #expect(out.opened.count == 1)            // the join needed no new open
+    }
+
+    @Test func crossfadeAppliesToUnrelatedSongsButNotToAContinuousAlbum() async throws {
+        let (p, out, _) = try make()
+        p.crossfadeSeconds = 6
+        p.play(songs(2))                                          // no album ids: unrelated songs
+        await until { !out.preloads.isEmpty }
+        #expect(out.preloads == [.crossfade(6)])
+        let (p2, out2, _) = try make()
+        p2.crossfadeSeconds = 6
+        p2.play(songs(2, album: "al1"))                           // tracks 1 and 2 of one album
+        await until { !out2.preloads.isEmpty }
+        #expect(out2.preloads == [.gapless])
+    }
+
+    @Test func changingWhatIsNextReplacesThePreload() async throws {
+        let (p, out, _) = try make()
+        p.play(songs(3))
+        await until { out.preloads.count == 1 }
+        p.playNext(QueueItem(songID: "x", title: "X", artist: "A", duration: 100, suffix: "mp3"))
+        await until { out.preloads.count == 2 }
+        #expect(out.cancels >= 1 && out.preloads.count == 2)
+        out.advance()
+        #expect(p.current?.title == "X")
+    }
+
+    @Test func skippingDropsThePreloadAndClearUpNextRemovesIt() async throws {
+        let (p, out, _) = try make()
+        p.play(songs(4))
+        await until { out.preloads.count == 1 }
+        p.clearUpNext()
+        #expect(out.cancels >= 1 && p.queue.upNext.isEmpty)
+    }
+
+    @Test func jumpPlaysTheChosenSongAndRemembersTheOne() async throws {
+        let (p, _, _) = try make()
+        p.play(songs(4))
+        await until { p.isPlaying }
+        p.jump(toUpNext: 1)
+        #expect(p.current?.title == "T2" && p.history.first?.title == "T0")
+    }
+
+    @Test func theCrossfadeChoiceIsRemembered() {
+        let suite = UserDefaults(suiteName: "discair-test-\(UUID().uuidString)")!
+        let a = PlayerModel(output: FakeOutput(), fetcher: FakeFetcher(), defaults: suite)
+        #expect(a.crossfadeSeconds == 0)
+        a.crossfadeSeconds = 4
+        #expect(PlayerModel(output: FakeOutput(), fetcher: FakeFetcher(), defaults: suite).crossfadeSeconds == 4)
+    }
+
+    @Test func continuousMeansTheNextTrackOfTheSameAlbum() {
+        func item(_ album: String?, _ track: Int?, _ disc: Int? = 1) -> QueueItem { QueueItem(songID: "x", title: "t", artist: "a", albumID: album, track: track, disc: disc) }
+        #expect(PlayerModel.isContinuous(item("a", 3), item("a", 4)))
+        #expect(PlayerModel.isContinuous(item("a", 12), item("a", 1, 2)))     // next disc
+        #expect(!PlayerModel.isContinuous(item("a", 3), item("a", 5)))
+        #expect(!PlayerModel.isContinuous(item("a", 3), item("b", 4)))
+        #expect(!PlayerModel.isContinuous(item(nil, 3), item(nil, 4)))
+    }
 }
+

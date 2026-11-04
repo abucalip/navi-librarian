@@ -24,7 +24,7 @@ struct ZineSettings: View {
             .overlay(alignment: .bottom) { Rectangle().fill(Z.ink).frame(height: 4) }
             if let s = state.session {
                 HStack(alignment: .top, spacing: 22) {
-                    VStack(alignment: .leading, spacing: 14) { connection(s); profiles(s) }.frame(maxWidth: .infinity)
+                    VStack(alignment: .leading, spacing: 14) { connection(s); playback; profiles(s) }.frame(maxWidth: .infinity)
                     VStack(alignment: .leading, spacing: 14) { addProfile(s); logins(s) }.frame(maxWidth: .infinity)
                 }
                 if let message { Mono(message, bold: true).foregroundStyle(Z.red) }
@@ -41,6 +41,21 @@ struct ZineSettings: View {
         }
         .padding(.horizontal, 12).padding(.vertical, 10).frame(maxWidth: .infinity, alignment: .leading)
         .background(fill).zBorder(3, dashed: dashed)
+    }
+
+    private var playback: some View {
+        box("Playback") {
+            Mono("Crossfade between songs", bold: true)
+            HStack(spacing: 8) {
+                ForEach(PlayerModel.crossfadeChoices, id: \.self) { n in
+                    let on = state.player.crossfadeSeconds == n
+                    Button(n == 0 ? "Off" : "\(n) s") { state.player.crossfadeSeconds = n }
+                        .buttonStyle(ZineButtonStyle(kind: on ? .yellow : .plain, small: true))
+                        .accessibilityAddTraits(on ? .isSelected : [])
+                }
+            }
+            Text("Songs that follow each other on one album always play gapless, with no fade.").font(Z.serif(13))
+        }
     }
 
     private func connection(_ s: SessionModel) -> some View {

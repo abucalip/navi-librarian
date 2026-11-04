@@ -12,9 +12,13 @@ public struct QueueItem: Identifiable, Equatable, Sendable {
     public let duration: Double
     /// File suffix as Navidrome reports it (`flac`, `ogg`...), used to decide whether to ask for a transcode.
     public let suffix: String?
+    /// Track and disc number on the album, used to tell a continuous album (gapless) from songs that merely follow each other.
+    public let track: Int?
+    public let disc: Int?
 
     public init(id: UUID = UUID(), songID: String, title: String, artist: String, album: String = "", albumID: String? = nil,
-                coverArt: String? = nil, duration: Double = 0, suffix: String? = nil) {
+                coverArt: String? = nil, duration: Double = 0, suffix: String? = nil, track: Int? = nil, disc: Int? = nil) {
+        self.track = track; self.disc = disc
         self.id = id; self.songID = songID; self.title = title; self.artist = artist; self.album = album
         self.albumID = albumID; self.coverArt = coverArt; self.duration = duration; self.suffix = suffix
     }
@@ -146,6 +150,27 @@ public struct PlayQueue: Equatable, Sendable {
         guard let c = cursor else { return nil }
         if c > 0 { cursor = c - 1 } else if repeatMode == .all, order.count > 1 { cursor = order.count - 1 }
         return current
+    }
+
+    /// The song that follows the current one when it ends by itself (nil when the queue ends or Repeat one replays).
+    public var peekNext: QueueItem? {
+        guard let c = cursor, repeatMode != .one else { return nil }
+        if c + 1 < order.count { return items[order[c + 1]] }
+        if repeatMode == .all, order.count > 1 { return items[order[0]] }
+        return nil
+    }
+
+    /// Jumps to a song in Up Next by its position there.
+    public mutating func jump(upNext offset: Int) {
+        guard let c = cursor, upNext.indices.contains(offset) else { return }
+        cursor = c + 1 + offset
+    }
+
+    /// Empties Up Next; the current song stays.
+    public mutating func clearUpNext() {
+        guard let cur = currentIndex else { return }
+        let item = items[cur]
+        items = [item]; order = [0]; cursor = 0
     }
 
     /// Selects a song by its position in `items`.

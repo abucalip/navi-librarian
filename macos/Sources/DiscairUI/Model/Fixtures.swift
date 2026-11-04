@@ -62,6 +62,8 @@ public struct SongRow: Identifiable, Equatable, Sendable {
     public var cover: AlbumItem? = nil
     public var suffix: String? = nil
     public var seconds: Double = 0
+    public var track: Int? = nil
+    public var disc: Int? = nil
     /// The album whose cover this row shows.
     public var albumItem: AlbumItem { cover ?? Fixtures.albums[album] }
 }

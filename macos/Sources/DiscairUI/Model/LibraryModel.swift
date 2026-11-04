@@ -192,7 +192,7 @@ public final class LibraryModel {
         return SongRow(id: id, album: 0, title: s.title, artist: s.artist ?? "Unknown artist", genre: s.genre ?? "",
                        format: rowFormat(s), bitrate: s.bitRate.map { "\($0) kb" } ?? "", lastPlayed: shortDate(s.played),
                        added: shortDate(s.created), year: s.year ?? 0, plays: s.playCount ?? 0, remoteID: s.id, cover: album,
-                       suffix: s.suffix, seconds: Double(s.duration ?? 0))
+                       suffix: s.suffix, seconds: Double(s.duration ?? 0), track: s.track, disc: s.discNumber)
     }
 
     /// "FLAC 16/44" when the bit depth and sample rate are known, else the short form ("MP3 320").

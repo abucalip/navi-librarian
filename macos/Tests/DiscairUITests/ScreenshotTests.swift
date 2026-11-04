@@ -1,4 +1,5 @@
 import AppKit
+import DiscairAudio
 import DiscairCore
 import SwiftUI
 import Testing
@@ -23,6 +24,10 @@ struct ScreenshotTests {
         if screen == .downloads { state.acquisition.showJobs(AcquisitionModelTests.sampleJobs) }
         if screen == .discover { state.discovery.show(.personal, Fixtures.albums([7, 8, 9])) }
         if screen == .library && theme == .cupertino { state.library.apply(newest: [], first: [], artists: [], picks: []); state.library.showSongs(Fixtures.songs, more: true) }
+        if screen == .queue {
+            let q = (0..<6).map { QueueItem(songID: "s\($0)", title: ["After the Flood", "Glory Box", "Cloudbusting", "Maria También", "So What", "Such a Shame"][$0], artist: ["Talk Talk", "Portishead", "Kate Bush", "Khruangbin", "Miles Davis", "Talk Talk"][$0], album: "Album", duration: Double(180 + $0 * 37)) }
+            state.player.play(q)
+        }
         window.contentView = host
         window.orderBack(nil)
         host.layoutSubtreeIfNeeded()
