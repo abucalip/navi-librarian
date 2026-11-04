@@ -36,6 +36,17 @@ struct LibraryModelTests {
         #expect(m.totalAlbumsText == "Library 7 albums")
     }
 
+    @Test func saysWhyThereAreNoRecommendations() throws {
+        let m = LibraryModel()
+        let albums = try decode([NavidromeAlbum].self, newest)
+        m.apply(newest: albums, first: albums, artists: [], picks: [], picksNote: "Add your Librarian login in Settings to see recommendations.")
+        #expect(m.missing.isEmpty && m.picksNote?.contains("Settings") == true)
+        m.apply(newest: albums, first: albums, artists: [], picks: [])
+        #expect(m.picksNote == "The Librarian has no recommendations for you right now.")
+        m.apply(newest: albums, first: albums, artists: [], picks: try decode(DashboardPicks.self, picksJSON).items)
+        #expect(m.picksNote == nil && !m.missing.isEmpty)
+    }
+
     @Test func artistLettersFoldAccentsAndNumbers() throws {
         let m = LibraryModel()
         m.apply(newest: [], first: [], artists: try decode([NavidromeArtist].self, artistsJSON), picks: [])

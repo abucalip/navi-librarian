@@ -12,8 +12,15 @@ struct CupertinoHome: View {
                 if !state.library.isLive { continueCard }   // needs playback history, which arrives with the audio engine
                 if case .failed(let m) = state.library.phase { Text(m).foregroundStyle(CU.accent).padding(.bottom, 8) }
                 if state.library.phase == .loading { Text("Loading your library…").foregroundStyle(CU.muted).padding(.bottom, 8) }
-                if !state.library.missing.isEmpty || !state.library.isLive {
-                    sectionTitle("Missing from your library", sub: "Recommended for you")
+                sectionTitle("Missing from your library", sub: "Recommended for you")
+                if state.library.isLive, state.visible(state.library.missing).isEmpty, state.library.phase == .loaded {
+                    HStack(spacing: 12) {
+                        Text(state.library.picksNote ?? "Nothing is missing from your recommendations right now.").foregroundStyle(CU.muted)
+                        if state.library.picksNote?.contains("Settings") == true {
+                            Button("Open Settings") { state.screen = .settings }.buttonStyle(CapsuleButtonStyle(small: true))
+                        }
+                    }
+                } else {
                     shelf(state.visible(state.library.missing), missing: true)
                 }
                 sectionTitle("Recently added", sub: nil)

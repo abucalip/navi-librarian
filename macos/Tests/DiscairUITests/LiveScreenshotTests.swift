@@ -19,6 +19,27 @@ private struct OkTransport: HTTPTransport {
 
 @MainActor
 struct LiveScreenshotTests {
+    /// Album pages with two-digit track numbers (the Cupertino table used to wrap each digit onto its own line).
+    @Test(arguments: ThemeID.allCases)
+    func rendersTwoDigitTrackNumbers(theme: ThemeID) throws {
+        RenderMode.offscreenScreenshot = true
+        let state = try liveState(theme: theme, screen: .album)
+        state.library.showTracks((0..<14).map {
+            TrackItem(id: $0, title: "Track number \($0 + 1)", duration: "\($0 + 3):0\($0 % 10)", format: "FLAC", owned: $0 != 11, playing: false)
+        })
+        try render(state, theme, .album, suffix: "tracks")
+    }
+
+    /// Home when the Librarian has nothing to recommend (no sample lead story may appear).
+    @Test(arguments: ThemeID.allCases)
+    func rendersHomeWithoutRecommendations(theme: ThemeID) throws {
+        RenderMode.offscreenScreenshot = true
+        let state = try liveState(theme: theme, screen: .home)
+        let albums = try JSONDecoder().decode([NavidromeAlbum].self, from: Data(#"[{"id":"1","name":"Laughing Stock","artist":"Talk Talk"},{"id":"2","name":"Dummy","artist":"Portishead"}]"#.utf8))
+        state.library.apply(newest: albums, first: albums, artists: [], picks: [], picksNote: "Add your Librarian login in Settings to see recommendations.")
+        try render(state, theme, .home, suffix: "nopicks")
+    }
+
     /// Home with a job list (ticker, Requested button) and a Not for me waiting for its Undo.
     @Test(arguments: ThemeID.allCases)
     func rendersAcquisitionStates(theme: ThemeID) async throws {

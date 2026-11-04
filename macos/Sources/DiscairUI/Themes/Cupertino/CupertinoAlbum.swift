@@ -93,7 +93,7 @@ struct CupertinoAlbum: View {
         .accessibilityElement(children: .contain)
     }
 
-    private let cols: [CGFloat?] = [36, nil, 80, 130, 110]
+    private let cols: [CGFloat?] = [52, nil, 80, 130, 110]
 
     private func row(_ header: [String]?, header isHeader: Bool = false, track: TrackItem? = nil, index: Int = 0,
                      shaded: Bool, playing: Bool = false, missing: Bool = false) -> some View {
@@ -103,10 +103,10 @@ struct CupertinoAlbum: View {
             cell(width: cols[0]) {
                 if isHeader { Text("#") }
                 else if on { Image(systemName: "waveform").accessibilityLabel("Playing") }
-                else { Text("\(index + 1)") }
+                else { Text("\(index + 1)").lineLimit(1).fixedSize() }
             }
-            cell(width: cols[1]) { Text(isHeader ? "Song" : track!.title) }
-            cell(width: cols[2]) { Text(isHeader ? "Time" : track!.duration) }
+            cell(width: cols[1]) { Text(isHeader ? "Song" : track!.title).lineLimit(1) }
+            cell(width: cols[2]) { Text(isHeader ? "Time" : track!.duration).lineLimit(1).fixedSize() }
             cell(width: cols[3]) {
                 if isHeader { Text("Quality") }
                 else if track!.owned {

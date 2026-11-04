@@ -31,9 +31,15 @@ public final class LibraryModel {
     public private(set) var artistOwnedCount = 3
     public private(set) var artistMissingCount = 2
 
+    /// Why the Missing shelf is empty, when it is: no Librarian login, a failed read, or nothing to recommend.
+    public private(set) var picksNote: String?
+
     private var allPicks: [AlbumItem] = []
 
     public init() {}
+
+    /// Test hook: shows these songs on the album page without a server.
+    func showTracks(_ songs: [TrackItem]) { tracks = songs }
 
     static let sampleArtists: [ArtistItem] = ZineFixtures.artistIndex.enumerated().map {
         ArtistItem(id: $0.offset, name: $0.element.0, albumCount: $0.element.1)
@@ -50,8 +56,15 @@ public final class LibraryModel {
             async let artistList = navidrome.artists()
             let (n, f, a) = try await (newest, first, artistList)
             var picks: [DashboardPick] = []
-            if let librarian { picks = (try? await librarian.dashboardPicks(count: 12)) ?? [] }
-            apply(newest: n, first: f, artists: a, picks: picks)
+            var note: String?
+            if let librarian {
+                do { picks = try await librarian.dashboardPicks(count: 12) }
+                catch let e as DiscairError { note = "Recommendations are unavailable: " + e.summary }
+                catch { note = "Recommendations are unavailable." }
+            } else {
+                note = "Add your Librarian login in Settings to see recommendations."
+            }
+            apply(newest: n, first: f, artists: a, picks: picks, picksNote: note)
         } catch let e as DiscairError {
             fail(e.summary)
         } catch {
@@ -60,11 +73,11 @@ public final class LibraryModel {
     }
 
     private func fail(_ message: String) {
-        recent = []; missing = []; albums = []; artists = []; allPicks = []
+        recent = []; missing = []; albums = []; artists = []; allPicks = []; picksNote = nil
         phase = .failed(message)
     }
 
-    func apply(newest: [NavidromeAlbum], first: [NavidromeAlbum], artists a: [NavidromeArtist], picks: [DashboardPick]) {
+    func apply(newest: [NavidromeAlbum], first: [NavidromeAlbum], artists a: [NavidromeArtist], picks: [DashboardPick], picksNote: String? = nil) {
         recent = newest.enumerated().map { Self.item($0.element, index: $0.offset) }
         albums = first.enumerated().map { Self.item($0.element, index: 1000 + $0.offset) }
         artists = a.enumerated().map { ArtistItem(id: $0.offset, remoteID: $0.element.id, name: $0.element.name, albumCount: $0.element.albumCount ?? 0) }
@@ -72,6 +85,7 @@ public final class LibraryModel {
         allPicks = picks.enumerated().map { Self.item($0.element, index: 5000 + $0.offset) }
             .filter { !owned.contains(Self.key($0.artist, $0.title)) }
         missing = allPicks
+        self.picksNote = !missing.isEmpty ? nil : (picksNote ?? "The Librarian has no recommendations for you right now.")
         totalAlbumsText = "Library \(a.reduce(0) { $0 + ($1.albumCount ?? 0) }.formatted()) albums"
         phase = .loaded
     }
