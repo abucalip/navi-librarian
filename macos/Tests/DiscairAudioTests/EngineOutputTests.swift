@@ -5,13 +5,15 @@ import Testing
 
 /// Plays one second of digital silence through the real engine, so nothing is heard. A machine with no audio output
 /// (a CI runner) cannot start the engine; the test then ends without checking, since that is the machine's limit.
+private func blockMainThread(_ seconds: Double) { Thread.sleep(forTimeInterval: seconds) }
+
 @MainActor
 @Suite("Engine output") struct EngineOutputTests {
-    private func silentFile(seconds: Double) throws -> URL {
+    private func silentFile(seconds: Double, rate: Double = 44_100, channels: AVAudioChannelCount = 2) throws -> URL {
         let url = FileManager.default.temporaryDirectory.appending(path: "silence-\(UUID().uuidString).caf")
-        let format = AVAudioFormat(commonFormat: .pcmFormatFloat32, sampleRate: 44_100, channels: 2, interleaved: false)!
+        let format = AVAudioFormat(commonFormat: .pcmFormatFloat32, sampleRate: rate, channels: channels, interleaved: false)!
         let file = try AVAudioFile(forWriting: url, settings: format.settings)
-        let buf = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: AVAudioFrameCount(seconds * 44_100))!
+        let buf = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: AVAudioFrameCount(seconds * rate))!
         buf.frameLength = buf.frameCapacity
         try file.write(from: buf)
         return url
@@ -97,5 +99,64 @@ import Testing
         for _ in 0..<300 where finished == 0 { try await Task.sleep(for: .milliseconds(10)) }
         #expect(advanced == 0 && finished == 1)
     }
-}
 
+    @Test func aCrossfadeRampsBothLevelsAndEndsAtFullOnTheNewSong() async throws {
+        let a = try silentFile(seconds: 2), b = try silentFile(seconds: 2)
+        defer { try? FileManager.default.removeItem(at: a); try? FileManager.default.removeItem(at: b) }
+        let out = EngineOutput()
+        do { try out.open(file: a) } catch let e as AudioError where e.description.contains("could not start") { return }
+        var advanced = 0
+        out.onAdvanced = { advanced += 1 }
+        try out.preload(file: b, transition: .crossfade(1))
+        out.play()
+        var mid: (current: Float, other: Float)?
+        for _ in 0..<400 {
+            try await Task.sleep(for: .milliseconds(10))
+            if advanced == 1, mid == nil, out.levelsForTests.current > 0.6, out.levelsForTests.current < 0.8 { mid = out.levelsForTests }
+        }
+        #expect(advanced == 1)
+        #expect(mid != nil, "the new song's level should pass through the middle of the fade")
+        if let m = mid { #expect(m.other > 0.55 && m.other < 0.85) }
+    }
+
+    /// Three songs of different formats: two fades in a row, the second reusing the first node.
+    @Test func twoCrossfadesInARowAcrossFormatsEachRampTheLevels() async throws {
+        let a = try silentFile(seconds: 2, rate: 44_100), b = try silentFile(seconds: 2, rate: 48_000), c = try silentFile(seconds: 2, rate: 96_000, channels: 1)
+        defer { for u in [a, b, c] { try? FileManager.default.removeItem(at: u) } }
+        let out = EngineOutput()
+        do { try out.open(file: a) } catch let e as AudioError where e.description.contains("could not start") { return }
+        var advanced = 0
+        out.onAdvanced = { advanced += 1 }
+        try out.preload(file: b, transition: .crossfade(1))
+        out.play()
+        var mids: [(Float, Float)] = []
+        var preloadedC = false
+        for _ in 0..<1000 {
+            try await Task.sleep(for: .milliseconds(10))
+            if advanced == 1, !preloadedC { try out.preload(file: c, transition: .crossfade(1)); preloadedC = true }
+            let l = out.levelsForTests
+            if advanced > 0, l.current > 0.6, l.current < 0.8, mids.count < advanced, l.other > 0.55, l.other < 0.85 { mids.append((l.current, l.other)) }
+        }
+        #expect(advanced == 2)
+        #expect(mids.count == 2, "each fade should pass through its middle with both levels near 0.7: \(mids)")
+    }
+
+    /// A main thread stalled for a second must not leave the fade behind the audio: by the time the new song has played
+    /// as long as the fade, it is at full level.
+    @Test func aStalledMainThreadDoesNotLagTheFade() async throws {
+        let a = try silentFile(seconds: 4), b = try silentFile(seconds: 4)
+        defer { try? FileManager.default.removeItem(at: a); try? FileManager.default.removeItem(at: b) }
+        let out = EngineOutput()
+        do { try out.open(file: a) } catch let e as AudioError where e.description.contains("could not start") { return }
+        var advanced = 0
+        out.onAdvanced = { advanced += 1 }
+        try out.preload(file: b, transition: .crossfade(2))
+        out.play()
+        for _ in 0..<600 where advanced == 0 { try await Task.sleep(for: .milliseconds(10)) }
+        #expect(advanced == 1)
+        try await Task.sleep(for: .milliseconds(300))
+        blockMainThread(1.0)                                 // the main thread is busy
+        try await Task.sleep(for: .milliseconds(1000))      // the new song has now played about 2.3 s of a 2 s fade
+        #expect(out.levelsForTests.current > 0.99, "level \(out.levelsForTests.current)")
+    }
+}

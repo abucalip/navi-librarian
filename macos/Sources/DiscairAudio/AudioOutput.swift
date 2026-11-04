@@ -131,6 +131,8 @@ public final class EngineOutput: AudioOutput {
 
     public var duration: Double { cur.file.map { Double($0.length) / $0.processingFormat.sampleRate } ?? 0 }
     public var isPlaying: Bool { cur.node.isPlaying }
+    /// Test hook: the level of the playing node and of the other one (during a fade, the new and the old song).
+    var levelsForTests: (current: Float, other: Float) { (cur.node.volume, other.node.volume) }
 
     public var position: Double {
         let slot = cur
@@ -294,7 +296,9 @@ public final class EngineOutput: AudioOutput {
     private func step() {
         if var f = fade {
             guard cur.node.isPlaying else { return }
-            f.elapsed += Self.tick
+            // The audio clock decides how far the fade is, not the count of ticks: a busy main thread delays ticks, and a
+            // fade that lags the audio would leave the old song to end before its level reached zero.
+            f.elapsed = max(f.elapsed + Self.tick, position)
             let t = min(f.elapsed / max(f.length, 0.001), 1)
             f.from.node.volume = Float(cos(t * .pi / 2))
             f.to.node.volume = Float(sin(t * .pi / 2))
