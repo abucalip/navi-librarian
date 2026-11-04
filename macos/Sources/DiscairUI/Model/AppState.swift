@@ -73,6 +73,9 @@ public final class AppState {
     /// Sample data until a session connects, then the owner's library.
     public let library = LibraryModel()
     public let smart = SmartPlaylistModel()
+    /// Saved queues and Radio from this (M6 slice 12).
+    public let savedQueues: SavedQueueStore
+    public let radio: RadioModel
     public let spread = AlbumSpreadModel()
     public let artwork: ArtworkStore
     /// The optional on-disk copy of played songs and covers (off by default; Settings).
@@ -99,6 +102,8 @@ public final class AppState {
         self.artwork = ArtworkStore(media: media)
         let player = PlayerModel(output: output ?? EngineOutput(), fetcher: CachingFetcher(cache: media), defaults: defaults)
         self.player = player
+        self.savedQueues = SavedQueueStore(defaults: defaults)
+        self.radio = RadioModel(defaults: defaults)
         self.systemMedia = session != nil ? SystemMedia(player, artwork: artwork, widget: WidgetPublisher()) : nil   // media keys only in the running app
         if let actions { self.actions = actions }
         else if session != nil {
@@ -110,6 +115,7 @@ public final class AppState {
             notifier.onOpen = { [weak self] in self?.screen = .downloads }
             acquisition.notifier = notifier
         } else { self.actions = NoopActions() }
+        player.onUpNextLow = { [weak self] in if self?.radio.autoplay == true { self?.startRadio() } }
         player.waveformFileURL = { [weak self] item in item.path.flatMap { self?.share.localURL(forServerPath: $0) } }
         session?.onConnected = { [weak self] in self?.share.startIfNeeded(); await self?.refreshLibrary() }
         session?.onNavidromeSignOut = { [weak self] in self?.lyrics.clearAll(); self?.library.clearSavedPages(); self?.cache.media.clear(); self?.player.waveformCache.clear() }
@@ -175,6 +181,34 @@ public final class AppState {
             player.play(detail.songs.map(PlayerModel.item), startAt: 0)
         }
     }
+
+    // MARK: Queue workspace
+
+    /// Radio from this: adds songs by similar artists after what is queued, seeded by the song playing now.
+    public func startRadio() {
+        guard let seed = player.current, let navidrome = session?.navidrome else { return }
+        let queued = Set(player.queue.items.map(\.songID))
+        let source = RadioModel.liveCandidates(navidrome: navidrome, artists: library.artists)
+        Task {
+            let songs = await radio.songs(like: seed, queued: queued, candidates: source)
+            player.addToQueue(songs)
+        }
+    }
+
+    /// Saves the whole queue under `name` (a used name is replaced).
+    public func saveQueue(named name: String) {
+        savedQueues.save(name: name, items: player.queue.items)
+    }
+
+    /// Replaces the queue with a saved one and plays it from the top.
+    public func playSavedQueue(_ id: UUID) {
+        let songs = savedQueues.songs(of: id)
+        guard !songs.isEmpty else { return }
+        player.play(songs, startAt: 0)
+    }
+
+    /// Adds a saved queue after what is queued.
+    public func addSavedQueue(_ id: UUID) { player.addToQueue(savedQueues.songs(of: id)) }
 
     /// Plays the Songs table from a row; the queue is the table in the order shown.
     public func play(rows: [SongRow], startAt index: Int) {

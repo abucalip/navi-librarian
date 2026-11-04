@@ -39,36 +39,41 @@ struct CupertinoAlbumsGrid: View {
 struct CupertinoQueueInspector: View {
     let state: AppState
     static let width: CGFloat = 380
-    @State private var showHistory = false
-    @State private var autoplay = true
+    private enum Tab { case upNext, history, saved }
+    @State private var tab = Tab.upNext
+    @State private var saving = false
+    @State private var saveName = ""
+    private var showHistory: Bool { tab == .history }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack {
                 segmented
                 Spacer()
-                Text(live ? liveSummary : "8 songs · 52 min").foregroundStyle(CU.muted).font(.system(size: 13))
+                Text(tab == .saved ? "\(state.savedQueues.queues.count) saved" : live ? liveSummary : "8 songs · 52 min").foregroundStyle(CU.muted).font(.system(size: 13))
             }
             .padding(.bottom, 12)
 
-            if !live {
             HStack(spacing: 10) {
                 Image(systemName: "dot.radiowaves.left.and.right").font(.system(size: 16))
                 VStack(alignment: .leading, spacing: 1) {
                     Text("Autoplay").fontWeight(.semibold)
-                    Text("Radio from this, similar artists by Librarian").font(.system(size: 12)).foregroundStyle(CU.muted)
+                    Text(state.radio.status ?? "Radio from this, similar artists in your library").font(.system(size: 12)).foregroundStyle(CU.muted).lineLimit(2)
                 }
                 Spacer(minLength: 4)
-                Toggle("Autoplay", isOn: $autoplay).labelsHidden().toggleStyle(.switch).tint(.green)
+                Button("Radio") { state.startRadio() }.buttonStyle(CapsuleButtonStyle())
+                    .disabled(state.radio.busy || state.player.current == nil)
+                    .accessibilityLabel("Start radio from this song")
+                Toggle("Autoplay", isOn: Bindable(state.radio).autoplay).labelsHidden().toggleStyle(.switch).tint(.green)
             }
             .padding(.horizontal, 8).padding(.top, 8).padding(.bottom, 12)
             .overlay(alignment: .bottom) { Rectangle().fill(CU.ink.opacity(0.08)).frame(height: 1) }
             .padding(.bottom, 8)
-            }
 
             ScrollView {
                 VStack(spacing: 0) {
-                    if live { liveRows }
+                    if tab == .saved { savedRows }
+                    else if live { liveRows }
                     else if showHistory {
                         Text("Earlier today: Glory Box · Roygbiv · Cloudbusting").foregroundStyle(CU.muted).padding(8)
                     } else {
@@ -78,7 +83,14 @@ struct CupertinoQueueInspector: View {
             }
             Spacer(minLength: 0)
             HStack(spacing: 8) {
-                if !live { Button("Save queue") { }.buttonStyle(CapsuleButtonStyle()) }
+                if saving {
+                    TextField("Name", text: $saveName).textFieldStyle(.roundedBorder).onSubmit(commitSave).frame(maxWidth: 150)
+                    Button("Save", action: commitSave).buttonStyle(CapsuleButtonStyle())
+                    Button("Cancel") { saving = false }.buttonStyle(CapsuleButtonStyle())
+                } else {
+                    Button("Save queue") { saveName = ""; saving = true }.buttonStyle(CapsuleButtonStyle())
+                        .disabled(state.player.queue.isEmpty)
+                }
                 Button("Clear") { if live { state.player.clearUpNext() } }.buttonStyle(CapsuleButtonStyle())
                     .disabled(live && state.player.queue.upNext.isEmpty)
             }
@@ -91,6 +103,32 @@ struct CupertinoQueueInspector: View {
         .overlay(alignment: .leading) { Rectangle().fill(CU.ink.opacity(0.08)).frame(width: 1) }
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Up Next")
+    }
+
+    private func commitSave() { state.saveQueue(named: saveName); saving = false; tab = .saved }
+
+    @ViewBuilder private var savedRows: some View {
+        let list = state.savedQueues.queues
+        if list.isEmpty { Text("No saved queues yet. Save the queue to bring it back later.").foregroundStyle(CU.muted).padding(8) }
+        ForEach(list) { q in
+            HStack(spacing: 10) {
+                VStack(alignment: .leading, spacing: 0) {
+                    Text(q.name).fontWeight(.semibold).lineLimit(1)
+                    Text("\(q.items.count) songs · \(q.minutes) min").font(.system(size: 12)).foregroundStyle(CU.muted)
+                }
+                Spacer(minLength: 4)
+                Button("Play") { state.playSavedQueue(q.id) }.buttonStyle(CapsuleButtonStyle())
+                Menu {
+                    Button("Add to queue") { state.addSavedQueue(q.id) }
+                    Divider()
+                    Button("Delete", role: .destructive) { state.savedQueues.remove(q.id) }
+                } label: { Image(systemName: "ellipsis.circle") }
+                .menuStyle(.borderlessButton).menuIndicator(.hidden).fixedSize()
+                .accessibilityLabel("Actions for \(q.name)")
+            }
+            .padding(.horizontal, 8).padding(.vertical, 6)
+            .accessibilityElement(children: .contain)
+        }
     }
 
     private var live: Bool { state.library.isLive || state.player.current != nil }
@@ -162,8 +200,9 @@ struct CupertinoQueueInspector: View {
 
     private var segmented: some View {
         HStack(spacing: 0) {
-            seg("Up Next", on: !showHistory) { showHistory = false }
-            seg("History", on: showHistory) { showHistory = true }
+            seg("Up Next", on: tab == .upNext) { tab = .upNext }
+            seg("History", on: tab == .history) { tab = .history }
+            seg("Saved", on: tab == .saved) { tab = .saved }
         }
         .padding(3).background(Color(red: 0.47, green: 0.47, blue: 0.5).opacity(0.14), in: Capsule())
     }
