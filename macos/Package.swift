@@ -16,6 +16,10 @@ let package = Package(
         .executable(name: "discair-checks", targets: ["DiscairChecks"]),
         .executable(name: "discair-audio-spike", targets: ["AudioSpike"]),
     ],
+    dependencies: [
+        // Auto-update (contract section 10). Only the app target links it; the libraries stay dependency-free.
+        .package(url: "https://github.com/sparkle-project/Sparkle", exact: "2.10.1"),
+    ],
     targets: [
         .target(name: "DiscairCore"),
         .target(name: "DiscairNavidrome", dependencies: ["DiscairCore"]),
@@ -26,7 +30,7 @@ let package = Package(
             dependencies: ["DiscairCore", "DiscairNavidrome", "DiscairLibrarian", "DiscairAudio"],
             resources: [.copy("Resources/Fonts")]
         ),
-        .executableTarget(name: "DiscairApp", dependencies: ["DiscairUI", "DiscairCore", "DiscairNavidrome", "DiscairLibrarian"]),
+        .executableTarget(name: "DiscairApp", dependencies: ["DiscairUI", "DiscairCore", "DiscairNavidrome", "DiscairLibrarian", .product(name: "Sparkle", package: "Sparkle")]),
         .executableTarget(
             name: "DiscairChecks",
             dependencies: ["DiscairCore", "DiscairNavidrome", "DiscairLibrarian"]
