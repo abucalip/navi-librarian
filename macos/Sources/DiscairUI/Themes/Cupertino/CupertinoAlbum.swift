@@ -76,6 +76,7 @@ struct CupertinoAlbum: View {
                     }
                 }
                 }
+                CupertinoAlbumSpread(state: state)
             }
             .padding(.horizontal, 28).padding(.bottom, 28)
         }

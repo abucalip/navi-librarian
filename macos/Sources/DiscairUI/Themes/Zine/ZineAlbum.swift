@@ -32,6 +32,7 @@ struct ZineAlbum: View {
                 .font(Z.serif(14.5)).frame(maxWidth: .infinity, alignment: .topLeading)
                 contents(a).frame(maxWidth: .infinity)
             }
+            ZineAlbumSpread(state: state)
         }
         .task(id: a.id) { await state.loadSelectedAlbum() }
     }

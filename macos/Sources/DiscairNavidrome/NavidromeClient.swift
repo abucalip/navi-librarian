@@ -138,6 +138,8 @@ public struct NavidromeClient: Sendable {
         guard isValidSongID(id) else { throw DiscairError.insecureOrInvalidAddress(reason: .notAURL) }
     }
 
+    func requireSafeID(_ id: String) throws { try requireID(id) }
+
     func call<P: Decodable>(_ endpoint: String, _ extra: [URLQueryItem], as: P.Type, timeout: TimeInterval? = nil, notFoundAs404: Bool = false, rawTransportErrors: Bool = false) async throws -> P {
         var comps = URLComponents(url: base, resolvingAgainstBaseURL: false)!
         comps.path = (comps.path.hasSuffix("/") ? comps.path : comps.path + "/") + "rest/" + endpoint

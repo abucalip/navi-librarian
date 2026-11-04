@@ -73,6 +73,7 @@ public final class AppState {
     /// Sample data until a session connects, then the owner's library.
     public let library = LibraryModel()
     public let smart = SmartPlaylistModel()
+    public let spread = AlbumSpreadModel()
     public let artwork: ArtworkStore
     /// The optional on-disk copy of played songs and covers (off by default; Settings).
     public let cache: CacheModel
@@ -185,6 +186,7 @@ public final class AppState {
 
     public func loadSelectedAlbum() async {
         await library.loadTracks(for: selectedAlbum, navidrome: session?.navidrome)
+        await spread.load(album: selectedAlbum, navidrome: session?.navidrome, libraryArtists: library.artists.map(\.name))
     }
 
     public func loadSelectedArtist() async {
