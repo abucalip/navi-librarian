@@ -114,8 +114,12 @@ public final class EngineOutput: AudioOutput {
     /// How far ahead of the playhead (seconds) a growing song is kept scheduled, and how close to the playhead the node may
     /// run before it is stopped for lack of data.
     private static let growAhead = 4.0
-    private static let stallBelow = 0.5
+    /// The stall margin must cover a late ticker: under load a tick can come 0.25 s or more after the last one, so the node
+    /// is checked on every tick once the playhead is within `checkCloseBy` seconds of the end of what is scheduled.
+    private static let stallBelow = 1.0
+    private static let checkCloseBy = 2.0
     private static let growCheckEvery: TimeInterval = 0.25
+    private static let growCheckClose: TimeInterval = 0.02
     private var ticker: Task<Void, Never>?
     private static let tick = 0.02
 
@@ -281,6 +285,7 @@ public final class EngineOutput: AudioOutput {
             beginFade(into: p, length: 0)          // the ticker was late: join now rather than report the end
         } else {
             slot.paused = false
+            growth = nil                 // a growing song is over once its last segment has played
             onFinished?()
         }
     }
@@ -294,9 +299,9 @@ public final class EngineOutput: AudioOutput {
         guard var g = growth, let file = cur.file, fade == nil else { return }
         let now = Date()
         guard now >= g.nextCheck else { return }
-        g.nextCheck = now.addingTimeInterval(Self.growCheckEvery)
         let rate = file.processingFormat.sampleRate
         let remaining = Double(g.scheduledFrames) / rate - position(of: cur)
+        g.nextCheck = now.addingTimeInterval(remaining < Self.checkCloseBy ? Self.growCheckClose : Self.growCheckEvery)
         guard remaining < Self.growAhead else { growth = g; return }
         let ended = g.download.isComplete || g.download.failure != nil      // read before the file is opened
         let fresh = try? AVAudioFile(forReading: g.download.file)
