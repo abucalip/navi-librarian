@@ -314,3 +314,10 @@ Edit > Command Palette (⌘K) opens a search field over a short list (`CommandPa
 
 **Tests run (filtered):** `swift test --filter CommandPaletteTests` (11 passed: ranking, accents, multi-word, owned versus missing, running a line, highlight wrap, a render in each theme).
 **Not verified:** not opened in a running app (⌘K focus, arrow keys inside the field, Escape, VoiceOver); it searches only albums and artists already loaded (not the whole library or songs); it has no Settings sub-items yet (contract: "any setting"), no Miller/Gap radar targets because those screens do not exist yet; look not owner-approved.
+
+## M6 slice 5: Pipeline dock
+
+A small tray, bottom right over every screen except Downloads, lists the Gets that are moving or waiting while the owner listens (`PipelineDockView`, `DiscairUI/Chrome`; rules in `PipelineDockContent`, pure, `DiscairUI/Model`). Cupertino: rounded translucent card. Zine: square paper card with a hard shadow and mono type. It shows the 3 most active jobs (moving first, then newest), each with its title, status text ("Downloading 63%", "Searching", "Waiting · Queued") and a thin bar filled from the server's `live_progress.percent` (a short stub while the percentage is unknown), then "and N more". The header reads "N downloads" and "N failed" in words and opens Downloads; the chevron folds the tray to one line. A failed job keeps the tray visible until it is cleared on Downloads, so a failure is never hidden. Nothing shows when no job is active or failed. It reads `AcquisitionModel.visibleJobs`, so the existing polling (4 s while busy) drives it.
+
+**Tests run (filtered):** `swift test --filter PipelineDockTests` (6 passed: empty, ordering and percent, row cap and overflow count, failure keeps it open, percent clamp, a render in each theme).
+**Not verified:** not seen in a running app (placement over the player strips at other window sizes, fold state, VoiceOver); the fold state resets when the app restarts; look not owner-approved.
