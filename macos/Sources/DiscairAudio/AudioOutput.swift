@@ -86,6 +86,8 @@ public final class EngineOutput: AudioOutput {
         /// Segments handed to the node and not yet finished, oldest first: (frames, file).
         /// `start` is the frame of `file` where the segment begins (0 except for the tail of a growing song).
         var segments: [(frames: AVAudioFrameCount, file: AVAudioFile, start: AVAudioFramePosition)] = []
+        /// Frames that can really be decoded, when that is fewer than the file claims (a partial MP3 or FLAC reports the whole song).
+        var limit: AVAudioFramePosition?
     }
 
     private let engine = AVAudioEngine()
@@ -194,6 +196,7 @@ public final class EngineOutput: AudioOutput {
         try attach(cur, file: f)
         cur.file = f
         cur.startOffset = 0; cur.baseSample = 0; cur.paused = false; cur.pausedAt = 0
+        cur.limit = nil
         schedule(cur, from: 0)
     }
 
@@ -201,11 +204,13 @@ public final class EngineOutput: AudioOutput {
         stop()
         let f: AVAudioFile
         do { f = try AVAudioFile(forReading: download.file) } catch { throw AudioError("This file could not be opened for playback.") }
-        guard f.length > 0 else { throw AudioError("This file could not be opened for playback.") }
+        let readable = Self.readableFrames(f, download: download, known: 0)
+        guard readable > 0 else { throw AudioError("This file could not be opened for playback.") }
         try attach(cur, file: f)
         cur.file = f
         cur.startOffset = 0; cur.baseSample = 0; cur.paused = false; cur.pausedAt = 0
-        growth = Growth(download: download, expectedDuration: expectedDuration, scheduledFrames: f.length, nextCheck: .distantPast, stalled: false)
+        cur.limit = readable
+        growth = Growth(download: download, expectedDuration: expectedDuration, scheduledFrames: readable, nextCheck: .distantPast, stalled: false)
         schedule(cur, from: 0)
     }
 
@@ -234,14 +239,15 @@ public final class EngineOutput: AudioOutput {
     /// Hands `file` (from `seconds`) to the node as the next segment.
     private func enqueue(_ slot: Slot, file: AVAudioFile, from seconds: Double) {
         let rate = file.processingFormat.sampleRate
-        let start = AVAudioFramePosition(max(0, min(seconds, Double(file.length) / rate)) * rate)
+        let start = AVAudioFramePosition(max(0, min(seconds, Double(slot.limit ?? file.length) / rate)) * rate)
         enqueueFrames(slot, file: file, startFrame: start)
     }
 
     private func enqueueFrames(_ slot: Slot, file: AVAudioFile, startFrame start: AVAudioFramePosition) {
-        let frames = AVAudioFrameCount(max(0, file.length - start))
+        let frames = AVAudioFrameCount(max(0, (slot.limit ?? file.length) - start))
         let mine = slot.generation
         slot.segments.append((frames, file, start))
+        guard frames > 0 else { return }          // the node refuses an empty segment; the caller ends the song
         slot.node.scheduleSegment(file, startingFrame: start, frameCount: frames, at: nil, completionCallbackType: .dataPlayedBack) { [weak self, weak slot] _ in
             DispatchQueue.main.async {
                 MainActor.assumeIsolated {
@@ -257,7 +263,7 @@ public final class EngineOutput: AudioOutput {
         slot.segments = []
         guard let file = slot.file else { return }
         let rate = file.processingFormat.sampleRate
-        slot.startOffset = max(0, min(seconds, Double(file.length) / rate))
+        slot.startOffset = max(0, min(seconds, Double(slot.limit ?? file.length) / rate))
         slot.baseSample = 0
         enqueue(slot, file: file, from: slot.startOffset)
         if slot.segments.first?.frames == 0 { segmentEndedSoon(slot) }
@@ -280,7 +286,7 @@ public final class EngineOutput: AudioOutput {
             onAdvanced?()
         } else if let p = pending, !p.queuedOnNode {
             beginFade(into: p, length: 0)          // the ticker was late: join now rather than report the end
-        } else if var g = growth, !(g.download.isComplete || g.download.failure != nil) || g.scheduledFrames < (try? AVAudioFile(forReading: g.download.file))?.length ?? 0 {
+        } else if var g = growth, !(g.download.isComplete || g.download.failure != nil) || g.scheduledFrames < Self.readableNow(g.download, known: g.scheduledFrames) {
             // The node ran dry at the end of what was on disk. This is decided here, from the completion callback, not on the
             // ticker, so a starved main thread cannot turn a stall into the end of the song. The ticker resumes it.
             slot.node.stop()
@@ -311,28 +317,61 @@ public final class EngineOutput: AudioOutput {
         guard remaining < Self.growAhead else { growth = g; return }
         let ended = g.download.isComplete || g.download.failure != nil      // read before the file is opened
         let fresh = try? AVAudioFile(forReading: g.download.file)
-        if let fresh, fresh.length > g.scheduledFrames {
+        let readable = fresh.map { Self.readableFrames($0, download: g.download, known: g.scheduledFrames) } ?? 0
+        if let fresh, readable > g.scheduledFrames {
+            cur.limit = readable
             if g.stalled {
-                resumeGrowth(fresh, &g)
+                resumeGrowth(fresh, readable, &g)
             } else {
                 enqueueFrames(cur, file: fresh, startFrame: g.scheduledFrames)
-                g.scheduledFrames = fresh.length
+                g.scheduledFrames = readable
             }
         } else if ended {
             // Nothing more is coming. A stopped node plays out what it has, so it is restarted for the last part.
-            if g.stalled { resumeGrowth(file, &g) }
+            if g.stalled { resumeGrowth(file, g.scheduledFrames, &g) }
             growth = nil
             return
         }
         growth = g
     }
 
+    /// Frames of `file` that decode now. A partial MP3 or FLAC reports the length of the whole song from its header, and
+    /// scheduling that many frames makes the node read past the data. So the end is found by test reads (a read past the
+    /// data throws; `known` frames are known to be good). A finished download, and Ogg Opus (its length comes from the pages
+    /// on disk, and seeking a partial Opus file raises an Objective-C exception that Swift cannot catch), are taken as they are.
+    static func readableFrames(_ file: AVAudioFile, download: GrowingDownload, known: AVAudioFramePosition) -> AVAudioFramePosition {
+        if download.isComplete { return file.length }
+        let ext = download.file.pathExtension.lowercased()
+        if ext == "opus" || ext == "ogg" { return file.length }
+        guard let buffer = AVAudioPCMBuffer(pcmFormat: file.processingFormat, frameCapacity: 1) else { return known }
+        func decodes(_ frame: AVAudioFramePosition) -> Bool {
+            file.framePosition = frame - 1
+            buffer.frameLength = 0
+            return (try? file.read(into: buffer, frameCount: 1)) != nil && buffer.frameLength > 0
+        }
+        var hi = file.length
+        if hi <= known || decodes(hi) { return hi }
+        var lo = known
+        let step = AVAudioFramePosition(file.processingFormat.sampleRate / 10)
+        while hi - lo > step {
+            let mid = (lo + hi) / 2
+            if decodes(mid) { lo = mid } else { hi = mid }
+        }
+        return lo
+    }
+
+    static func readableNow(_ download: GrowingDownload, known: AVAudioFramePosition) -> AVAudioFramePosition {
+        guard let f = try? AVAudioFile(forReading: download.file) else { return known }
+        return readableFrames(f, download: download, known: known)
+    }
+
     /// Restarts a stalled node from where it stopped, on a file that now has more frames.
-    private func resumeGrowth(_ file: AVAudioFile, _ g: inout Growth) {
+    private func resumeGrowth(_ file: AVAudioFile, _ readable: AVAudioFramePosition, _ g: inout Growth) {
         let at = cur.startOffset
         cur.file = file
+        cur.limit = readable
         schedule(cur, from: at)
-        g.scheduledFrames = file.length
+        g.scheduledFrames = readable
         g.stalled = false
         if !cur.paused { cur.node.play() }
     }
@@ -340,14 +379,16 @@ public final class EngineOutput: AudioOutput {
     /// Seeks inside a growing song. A target past what is on disk is pulled back to just before its end.
     private func seekGrowing(to seconds: Double) {
         guard var g = growth, let old = cur.file else { return }
-        let fresh = (try? AVAudioFile(forReading: g.download.file)).flatMap { $0.length >= g.scheduledFrames ? $0 : nil } ?? old
+        let fresh = (try? AVAudioFile(forReading: g.download.file)) ?? old
+        let readable = max(g.scheduledFrames, Self.readableFrames(fresh, download: g.download, known: g.scheduledFrames))
         let rate = fresh.processingFormat.sampleRate
-        let at = min(max(0, seconds), max(0, Double(fresh.length) / rate - Self.stallBelow))
+        let at = min(max(0, seconds), max(0, Double(readable) / rate - Self.stallBelow))
         let wasPlaying = !cur.paused
         cur.node.stop()
         cur.file = fresh
+        cur.limit = readable
         schedule(cur, from: at)
-        g.scheduledFrames = fresh.length
+        g.scheduledFrames = readable
         g.stalled = false
         cur.pausedAt = cur.startOffset
         cur.paused = !wasPlaying
@@ -376,6 +417,7 @@ public final class EngineOutput: AudioOutput {
     public func stop() {
         for s in slots { s.generation += 1; s.node.stop(); s.node.volume = 1; s.file = nil; s.segments = []; s.paused = false; s.pausedAt = 0; s.startOffset = 0; s.baseSample = 0 }
         pending = nil; fade = nil; growth = nil
+        for s in slots { s.limit = nil }
         ticker?.cancel(); ticker = nil
         active = 0
     }
