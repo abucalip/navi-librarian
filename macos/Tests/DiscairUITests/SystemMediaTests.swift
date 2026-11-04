@@ -25,4 +25,27 @@ import Testing
         #expect(art.bounds.size == CGSize(width: 600, height: 600))
         #expect(art.image(at: CGSize(width: 100, height: 100)) === cover)
     }
+
+    private func picture(width: Int, height: Int) -> NSImage {
+        let rep = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: width, pixelsHigh: height, bitsPerSample: 8, samplesPerPixel: 4,
+                                   hasAlpha: true, isPlanar: false, colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0)!
+        let image = NSImage(size: NSSize(width: width, height: height))
+        image.addRepresentation(rep)
+        return image
+    }
+
+    @Test func aWideCoverIsCutToACentredSquare() throws {
+        let square = try #require(SystemMedia.squareCover(picture(width: 600, height: 450)))
+        #expect(square.size == NSSize(width: 450, height: 450))
+    }
+
+    @Test func aTallCoverIsCutToACentredSquare() throws {
+        let square = try #require(SystemMedia.squareCover(picture(width: 400, height: 600)))
+        #expect(square.size == NSSize(width: 400, height: 400))
+    }
+
+    @Test func aSquareCoverIsLeftAlone() throws {
+        let original = picture(width: 600, height: 600)
+        #expect(SystemMedia.squareCover(original) === original)
+    }
 }
