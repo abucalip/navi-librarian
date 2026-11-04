@@ -24,6 +24,7 @@ case "$FEED" in https://*) ;; *) echo "DISCAIR_FEED_URL must be https" >&2; exit
 [ -n "$KEY" ] || echo "note: DISCAIR_SU_PUBLIC_KEY is empty, so this app will not accept updates" >&2
 
 swift build -c release --product Discair
+swift build -c release --product DiscairWidget
 BIN="$(swift build -c release --show-bin-path)"
 SPARKLE="$(find .build/artifacts -type d -name Sparkle.framework -path '*macos-arm64_x86_64*' | head -n 1)"
 [ -d "$SPARKLE" ] || { echo "Sparkle.framework not found; run swift package resolve" >&2; exit 1; }
@@ -38,6 +39,13 @@ ditto "$SPARKLE" "$APP/Contents/Frameworks/Sparkle.framework"
 sed -e "s|@VERSION@|$VERSION|" -e "s|@BUILD@|$BUILD|" -e "s|@FEED_URL@|$FEED|" -e "s|@PUBLIC_KEY@|$KEY|" \
     Packaging/Info.plist.template > "$APP/Contents/Info.plist"
 plutil -lint "$APP/Contents/Info.plist" >/dev/null
+
+# The Notification Center widget: an app extension (contract section 10). Sandboxed, as WidgetKit requires.
+APPEX="$APP/Contents/PlugIns/DiscairWidget.appex"
+mkdir -p "$APPEX/Contents/MacOS"
+cp "$BIN/DiscairWidget" "$APPEX/Contents/MacOS/DiscairWidget"
+sed -e "s|@VERSION@|$VERSION|" -e "s|@BUILD@|$BUILD|" Packaging/DiscairWidget-Info.plist.template > "$APPEX/Contents/Info.plist"
+plutil -lint "$APPEX/Contents/Info.plist" >/dev/null
 
 # The executable finds Sparkle through @rpath.
 if ! otool -l "$APP/Contents/MacOS/Discair" | grep -q "@executable_path/../Frameworks"; then
@@ -57,6 +65,7 @@ for item in "$FW/XPCServices/"*.xpc "$FW/Autoupdate" "$FW/Updater.app"; do
     [ -e "$item" ] && codesign --force --sign "$IDENTITY" "$item"
 done
 codesign --force --sign "$IDENTITY" "$APP/Contents/Frameworks/Sparkle.framework"
+codesign --force --sign "$IDENTITY" --entitlements Packaging/DiscairWidget.entitlements "$APPEX"
 codesign --force --sign "$IDENTITY" "$APP"
 codesign --verify --deep --strict "$APP"
 

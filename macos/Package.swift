@@ -13,6 +13,7 @@ let package = Package(
         .library(name: "DiscairAudio", targets: ["DiscairAudio"]),
         .library(name: "DiscairUI", targets: ["DiscairUI"]),
         .executable(name: "Discair", targets: ["DiscairApp"]),
+        .executable(name: "DiscairWidget", targets: ["DiscairWidget"]),
         .executable(name: "discair-checks", targets: ["DiscairChecks"]),
         .executable(name: "discair-audio-spike", targets: ["AudioSpike"]),
     ],
@@ -31,6 +32,14 @@ let package = Package(
             resources: [.copy("Resources/Fonts")]
         ),
         .executableTarget(name: "DiscairApp", dependencies: ["DiscairUI", "DiscairCore", "DiscairNavidrome", "DiscairLibrarian", .product(name: "Sparkle", package: "Sparkle")]),
+        // The Notification Center widget (M6). Built as an app extension: `NSExtensionMain` is the entry point that WidgetKit
+        // starts, and `bundle.sh` puts the binary in Discair.app/Contents/PlugIns/DiscairWidget.appex. It reads only DiscairCore.
+        .executableTarget(
+            name: "DiscairWidget",
+            dependencies: ["DiscairCore"],
+            swiftSettings: [.unsafeFlags(["-application-extension"])],
+            linkerSettings: [.unsafeFlags(["-Xlinker", "-e", "-Xlinker", "_NSExtensionMain", "-Xlinker", "-application_extension"])]
+        ),
         .executableTarget(
             name: "DiscairChecks",
             dependencies: ["DiscairCore", "DiscairNavidrome", "DiscairLibrarian"]
