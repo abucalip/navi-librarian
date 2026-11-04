@@ -4,6 +4,8 @@ import SwiftUI
 /// Queue: a printed running order with dotted leaders; Radio from this is a classified ad. Mockup: `R.zine.queue`.
 struct ZineQueue: View {
     let state: AppState
+    @State private var saving = false
+    @State private var saveName = ""
     private var live: Bool { state.library.isLive || state.player.current != nil }
 
     private var liveSummary: String {
@@ -18,7 +20,7 @@ struct ZineQueue: View {
                 Mono(live ? liveSummary : "8 songs · 52 min").padding(.bottom, 8)
                 Spacer()
                 HStack(spacing: 10) {
-                    if !live { Button("Save queue") { }.buttonStyle(ZineButtonStyle()) }
+                    if live { saveControls }
                     Button("Clear") { if live { state.player.clearUpNext() } }.buttonStyle(ZineButtonStyle())
                         .disabled(live && state.player.queue.upNext.isEmpty)
                 }
@@ -123,8 +125,52 @@ struct ZineQueue: View {
         })
     }
 
+    @ViewBuilder private var saveControls: some View {
+        if saving {
+            TextField("Name", text: $saveName).textFieldStyle(.plain).font(Z.mono(12)).padding(6).frame(width: 150).zBorder(2)
+                .onSubmit(commitSave).accessibilityLabel("Name for the saved queue")
+            Button("Save", action: commitSave).buttonStyle(ZineButtonStyle())
+            Button("Cancel") { saving = false }.buttonStyle(ZineButtonStyle())
+        } else {
+            Button("Save queue") { saveName = ""; saving = true }.buttonStyle(ZineButtonStyle()).disabled(state.player.queue.isEmpty)
+        }
+    }
+
+    private func commitSave() { state.saveQueue(named: saveName); saving = false }
+
     @ViewBuilder private var liveSide: some View {
         let p = state.player
+        VStack(alignment: .leading, spacing: 14) {
+        VStack(alignment: .leading, spacing: 8) {
+            ZineH2("Classified · Radio", size: 20)
+            Text(state.radio.status ?? "Wanted: more like this. Adds songs by similar artists you own.").font(Z.serif(14))
+            HStack(spacing: 10) {
+                Button("Start radio from this") { state.startRadio() }.buttonStyle(ZineButtonStyle())
+                    .disabled(state.radio.busy || p.current == nil)
+                Toggle("Autoplay", isOn: Bindable(state.radio).autoplay).toggleStyle(.checkbox).font(Z.mono(12))
+            }
+        }
+        .padding(.horizontal, 12).padding(.vertical, 10).frame(maxWidth: .infinity, alignment: .leading)
+        .background(Z.yellow).zBorder(3)
+        VStack(alignment: .leading, spacing: 4) {
+            ZineH2("Saved queues", size: 20)
+            if state.savedQueues.queues.isEmpty { Mono("None yet. Save the running order to keep it") }
+            ForEach(state.savedQueues.queues) { q in
+                VStack(alignment: .leading, spacing: 4) {
+                    DotRow { Mono(q.name) } right: { Mono("\(q.items.count)") }
+                    HStack(spacing: 8) {
+                        Button("Play") { state.playSavedQueue(q.id) }.buttonStyle(ZineButtonStyle(small: true))
+                        Button("Add") { state.addSavedQueue(q.id) }.buttonStyle(ZineButtonStyle(small: true))
+                            .accessibilityLabel("Add \(q.name) to queue")
+                        Button("Delete") { state.savedQueues.remove(q.id) }.buttonStyle(ZineButtonStyle(small: true))
+                            .accessibilityLabel("Delete \(q.name)")
+                    }
+                }
+                .accessibilityElement(children: .contain)
+            }
+        }
+        .padding(.horizontal, 12).padding(.vertical, 10).frame(maxWidth: .infinity, alignment: .leading)
+        .background(Z.white).zBorder(3)
         VStack(alignment: .leading, spacing: 0) {
             ZineH2("Earlier today", size: 20)
             if p.history.isEmpty { Mono("Nothing played yet this session") }
@@ -132,6 +178,7 @@ struct ZineQueue: View {
         }
         .padding(.horizontal, 12).padding(.vertical, 10).frame(maxWidth: .infinity, alignment: .leading)
         .zBorder(3, dashed: true)
+        }
     }
 }
 

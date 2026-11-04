@@ -212,6 +212,17 @@ public final class PlayerModel {
         if wasEmpty { startCurrent() } else { refreshPreload(); persist() }
     }
 
+    /// Adds several songs at the end in order (Radio from this, a saved queue). With nothing queued the first one plays.
+    public func addToQueue(_ songs: [QueueItem]) {
+        guard !songs.isEmpty else { return }
+        let wasEmpty = queue.isEmpty
+        for s in songs { queue.append(s) }
+        if wasEmpty { startCurrent() } else { refreshPreload(); persist() }
+    }
+
+    /// Called when a song starts and fewer than three songs remain in Up Next (Autoplay uses it to top up).
+    @ObservationIgnored public var onUpNextLow: (@MainActor () -> Void)?
+
     // MARK: Controls
 
     public func togglePlayPause() {
@@ -299,6 +310,7 @@ public final class PlayerModel {
         let startAt = resumeAt; resumeAt = 0
         phase = .loading; position = startAt; duration = item.duration
         persist()
+        if queue.upNext.count < 3 { onUpNextLow?() }
         notice = nil
         let cap = qualityCap
         var opts = Self.streamOptions(suffix: item.suffix, cap: cap)
