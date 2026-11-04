@@ -1,3 +1,11 @@
+## 2026-11-04 — macOS M5 offline banner and saved pages merged (PR #728)
+
+- **Merged (owner request):** PR [#728](https://github.com/abucalip/navi-librarian/pull/728), squash `1083eacbb668abc3f684b231045eeb16c3c925c8`, from tested head `e418d0cae08db5e76b390ba6e8fddf64905b2979`; compile, container-smoke, swift (macos-26), test-and-build and validate-container passed on that head.
+- **What:** `PageCache` (hash-named JSON, per Navidrome user, 400 files / 20 MB, deleted at sign-out), saved-copy fallback in `LibraryModel` for Home, album, artist and the first Songs page, `SessionModel.onConnectFailed`, per-theme `OfflineBanner` with Retry.
+- **Verification:** 11 new tests; full macOS package suite 260 passed locally.
+- **Known limits:** banner not seen in a running window; covers memory-only; Discover and Downloads not saved; pages are keyed by username, not server address.
+- **Next action:** the optional 2 GB media cache (in progress), then the SMB mount, Sparkle last.
+
 ## 2026-11-04 — macOS M5 scrobbling merged (PR #727)
 
 - **Merged (owner request):** PR [#727](https://github.com/abucalip/navi-librarian/pull/727), squash `f68e8c4997473fc2f3887984c53fdef9d7a6c6dc`, from tested head `c2056a7051c4b99c3341ee5fa8edca7afbb094ec`; compile, container-smoke, swift (macos-26), test-and-build and validate-container passed on that head.
