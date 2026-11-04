@@ -30,6 +30,15 @@ public protocol AudioOutput: AnyObject {
     var volume: Float { get set }
     /// Applies the equalizer: ten band gains in dB and a pre-gain in dB. All zero is a true bypass.
     func applyEQ(gains: [Double], preGain: Double)
+    /// Switches the output device to each song's sample rate where it offers it (changes the system rate; off by default).
+    func setMatchOutputRate(_ on: Bool)
+    /// Puts the device rate back to what it was before matching. Called when matching is switched off and at quit.
+    func restoreOutputRate()
+}
+
+public extension AudioOutput {
+    func setMatchOutputRate(_ on: Bool) {}
+    func restoreOutputRate() {}
 }
 
 public enum Transition: Equatable, Sendable {
@@ -161,8 +170,21 @@ public final class EngineOutput: AudioOutput {
         schedule(cur, from: 0)
     }
 
+    private var matcher: RateMatcher?
+    public func setMatchOutputRate(_ on: Bool) {
+        if on { matcher = matcher ?? RateMatcher(device: SystemOutputDevice()) } else { matcher?.restore(); matcher = nil }
+    }
+    public func restoreOutputRate() { matcher?.restore() }
+
     private func attach(_ slot: Slot, file: AVAudioFile) throws {
         wireEQ()
+        // Only between songs: `open` has just stopped the nodes. A device rate change needs the engine stopped first.
+        if let matcher, !engine.isRunning || !slots.contains(where: { $0.node.isPlaying }) {
+            let wasRunning = engine.isRunning
+            if wasRunning { engine.stop() }
+            let changed = matcher.match(fileRate: file.processingFormat.sampleRate)
+            if changed { Thread.sleep(forTimeInterval: 0.15) }       // the device takes a moment to settle
+        }
         if !slot.attached { engine.attach(slot.node); slot.attached = true }
         engine.disconnectNodeOutput(slot.node)
         engine.connect(slot.node, to: engine.mainMixerNode, format: file.processingFormat)

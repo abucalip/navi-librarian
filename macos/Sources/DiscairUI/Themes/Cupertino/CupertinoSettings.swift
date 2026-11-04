@@ -75,6 +75,17 @@ struct CupertinoSettings: View {
             Text("Original plays the file as it is. A number is the most the server may send (kbps); it converts only files above it. Applies to songs started afterwards.")
                 .font(.system(size: 12)).foregroundStyle(CU.muted)
             Text("Songs that follow each other on one album always play gapless, with no fade.").font(.system(size: 12)).foregroundStyle(CU.muted)
+            Text("Match the output sample rate").fontWeight(.semibold).padding(.top, 6)
+            HStack(spacing: 8) {
+                ForEach([true, false], id: \.self) { on in
+                    Button(on ? "On" : "Off") { state.player.matchOutputRate = on }
+                        .buttonStyle(CapsuleButtonStyle(primary: state.player.matchOutputRate == on, small: true))
+                        .accessibilityLabel(on ? "Sample rate matching on" : "Sample rate matching off")
+                        .accessibilityAddTraits(state.player.matchOutputRate == on ? .isSelected : [])
+                }
+            }
+            Text("Switches your Mac's output device to each song's sample rate when the device offers it, so nothing is resampled. This changes the system output rate; it is put back when you switch this off or quit Discair. A short pause between songs of different rates is normal.")
+                .font(.system(size: 12)).foregroundStyle(CU.muted)
             Text("Scrobble plays").fontWeight(.semibold).padding(.top, 6)
             HStack(spacing: 8) {
                 ForEach([true, false], id: \.self) { on in

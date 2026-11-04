@@ -24,6 +24,7 @@ struct DiscairApp: App {
                 .task { state.share.start(); await state.session?.connect() }
                 // Best effort: a Not for me still inside its Undo window is sent before the app quits.
                 .onReceive(NotificationCenter.default.publisher(for: NSApplication.willTerminateNotification)) { _ in
+                    state.player.restoreOutputRate()
                     Task { await state.acquisition.flush() }
                 }
         }
