@@ -8,6 +8,8 @@ public enum Screen: String, CaseIterable, Sendable {
     case settings
     /// The Albums grid on its own (the queue screen shows the same grid under the Up Next inspector).
     case albums
+    /// The job list: progress, retry, next source, dismiss (M5 slice 2b; no mockup, each theme draws it).
+    case downloads
 }
 
 /// What a theme may ask the app to do. Themes call these; they never reach the network or the audio engine.

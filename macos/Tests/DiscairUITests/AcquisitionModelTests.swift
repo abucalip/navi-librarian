@@ -169,4 +169,60 @@ struct AcquisitionModelTests {
         #expect(t.sent.filter { $0.path == "/api/discovery/feedback" }.count == 1)
         #expect(m.isHidden(album))
     }
+
+    // MARK: Downloads screen
+
+    static let sampleJobs: [Acquisition] = {
+        let json = """
+        {"acquisitions":[
+         {"artist":"Can","album":"Tago Mago","status":"downloading","updated_at":30,"details":{"kind":"album","album_name":"Tago Mago","live_progress":{"available":true,"total_tracks":11,"completed_tracks":3,"percent":27.5,"speed_bytes_per_second":1200000}}},
+         {"artist":"Neu!","album":"Neu! 75","status":"queued","updated_at":20,"details":{"kind":"album"}},
+         {"artist":"Faust","album":"Zamzam (song on Faust IV)","status":"no_matches","updated_at":10,"details":{"kind":"track","album_name":"Faust IV","track_title":"Zamzam","message":"No source found."}},
+         {"artist":"Talk Talk","album":"Laughing Stock","status":"imported","updated_at":5,"details":{"kind":"album"}}]}
+        """
+        struct P: Decodable { let acquisitions: [Acquisition] }
+        return try! JSONDecoder().decode(P.self, from: Data(json.utf8)).acquisitions
+    }()
+
+    @Test func downloadsAreOrderedMovingWaitingFailedImported() {
+        let m = AcquisitionModel()
+        m.showJobs(Self.sampleJobs.reversed())
+        #expect(m.sortedJobs.map(\.artist) == ["Can", "Neu!", "Faust", "Talk Talk"])
+        #expect(m.importedCount == 1)
+    }
+
+    @Test func progressIsWordsAndAFraction() {
+        let m = AcquisitionModel()
+        let can = Self.sampleJobs[0]
+        #expect(m.fraction(can) == 0.275)
+        #expect(m.progressLine(can).hasPrefix("3 of 11 tracks · "))
+        #expect(m.statusLine(can) == "Downloading 27%")
+        #expect(m.fraction(Self.sampleJobs[1]) == nil && m.progressLine(Self.sampleJobs[1]).isEmpty)
+        #expect(m.canSkip(can) && !m.canRetry(can))
+        #expect(m.canRetry(Self.sampleJobs[2]) && !m.canSkip(Self.sampleJobs[2]))
+    }
+
+    @Test func retryOfASongAsksForThatSongOnItsAlbum() async throws {
+        let (m, t) = try make(["/api/acquire/track": ok, "/api/acquisitions": jobsEmpty])
+        await m.retry(Self.sampleJobs[2])
+        let sent = try #require(t.sent.first { $0.path == "/api/acquire/track" })
+        #expect(sent.body["title"] as? String == "Zamzam" && sent.body["album"] as? String == "Faust IV")
+        #expect(m.notice == nil)
+    }
+
+    @Test func skipSourceAndDismissSendTheJobAndDismissRemovesIt() async throws {
+        let (m, t) = try make(["/api/acquisitions/skip": fb, "/api/acquisitions/dismiss": ok, "/api/acquisitions": jobsEmpty])
+        await m.skipSource(Self.sampleJobs[0])
+        #expect(t.sent.contains { $0.path == "/api/acquisitions/skip" && $0.body["artist"] as? String == "Can" })
+        await m.dismiss(Self.sampleJobs[3])
+        #expect(t.sent.contains { $0.path == "/api/acquisitions/dismiss" && $0.body["album"] as? String == "Laughing Stock" })
+    }
+
+    @Test func aRefusedDismissKeepsTheJobAndShowsTheServersWords() async throws {
+        let (m, _) = try make(["/api/acquisitions/dismiss": (409, #"{"detail":"Files are in use."}"#), "/api/acquisitions": (200, #"{"ok":true,"acquisitions":[{"artist":"Talk Talk","album":"Laughing Stock","status":"imported"}]}"#)])
+        await m.refresh()
+        await m.dismiss(try #require(m.jobs.first))
+        #expect(m.jobs.count == 1)
+        #expect(m.notice?.contains("Files are in use.") == true)
+    }
 }

@@ -263,6 +263,96 @@ public final class AcquisitionModel {
         guard let librarian else { return }
         if let list = try? await librarian.acquisitions() { jobs = list }
     }
+
+    // MARK: Downloads screen
+
+    /// Screenshot tests and previews show sample jobs without a server.
+    func showJobs(_ list: [Acquisition]) { jobs = list }
+
+    /// Newest activity first within each group: moving, waiting, failed, then what arrived.
+    public var sortedJobs: [Acquisition] {
+        func rank(_ j: Acquisition) -> Int {
+            switch j.phase { case .working: 0; case .queued: 1; case .failed: 2; case .other: 3; case .imported: 4 }
+        }
+        return jobs.sorted { a, b in
+            rank(a) != rank(b) ? rank(a) < rank(b) : (a.updatedAt ?? 0) > (b.updatedAt ?? 0)
+        }
+    }
+
+    public var importedCount: Int { jobs.filter { $0.phase == .imported }.count }
+
+    /// Words for the job's state, with the percent when the server reports one.
+    public func statusLine(_ j: Acquisition) -> String { Self.statusText(j) }
+
+    /// "3 of 11 tracks · 1.2 MB/s" when the server sends progress; empty otherwise.
+    public func progressLine(_ j: Acquisition) -> String {
+        guard let p = j.details?.liveProgress, p.available else { return "" }
+        var parts: [String] = []
+        if let done = p.completedTracks, let total = p.totalTracks, total > 0 { parts.append("\(done) of \(total) tracks") }
+        if let s = p.speedBytesPerSecond, s > 0 {
+            parts.append(ByteCountFormatter.string(fromByteCount: Int64(s), countStyle: .file) + "/s")
+        }
+        return parts.joined(separator: " · ")
+    }
+
+    /// 0...1 when the server reports a percent for a job that is downloading.
+    public func fraction(_ j: Acquisition) -> Double? {
+        guard j.status == "downloading", let p = j.details?.liveProgress?.percent else { return nil }
+        return min(max(p / 100, 0), 1)
+    }
+
+    /// Retry is offered for the failed states the web offers it for.
+    public func canRetry(_ j: Acquisition) -> Bool { j.phase == .failed }
+    /// A source can only be skipped while the job is downloading (the server answers 409 otherwise).
+    public func canSkip(_ j: Acquisition) -> Bool { j.status == "downloading" }
+
+    public func retry(_ j: Acquisition) async {
+        guard let librarian else { notice = "Not connected to the Librarian. Check Settings."; return }
+        do {
+            let r: AcquireResult
+            if j.isSong, let title = j.details?.trackTitle {
+                r = try await librarian.acquireTrack(artist: j.artist, album: j.details?.albumName ?? j.album, title: title,
+                                                     metadata: ["source": "discair-macos"])
+            } else {
+                r = try await librarian.acquire(artist: j.artist, album: j.album, metadata: ["source": "discair-macos"])
+            }
+            if !r.ok { notice = r.message ?? Self.refusal(r.status) }
+        } catch let e as DiscairError { notice = "Could not retry \(j.title): " + Self.text(e) }
+        catch { notice = "Could not retry \(j.title)." }
+        await refresh()
+    }
+
+    public func skipSource(_ j: Acquisition) async {
+        guard let librarian else { notice = "Not connected to the Librarian. Check Settings."; return }
+        do { try await librarian.skipSource(artist: j.artist, album: j.album) }
+        catch let e as DiscairError { notice = "Could not switch source: " + Self.text(e) }
+        catch { notice = "Could not switch source." }
+        await refresh()
+    }
+
+    /// Deletes the job's files on the server. The screen asks first; the server may still refuse and says why.
+    public func dismiss(_ j: Acquisition) async {
+        guard let librarian else { notice = "Not connected to the Librarian. Check Settings."; return }
+        do {
+            _ = try await librarian.dismissAcquisition(artist: j.artist, album: j.album)
+            jobs.removeAll { $0.id == j.id }
+        } catch let e as DiscairError { notice = "Could not dismiss \(j.title): " + Self.text(e) }
+        catch { notice = "Could not dismiss \(j.title)." }
+        await refresh()
+    }
+
+    /// Clears every imported job one by one (the server has no bulk call); stops at the first refusal.
+    public func dismissImported() async {
+        for j in jobs.filter({ $0.phase == .imported }) {
+            guard let librarian else { return }
+            do {
+                _ = try await librarian.dismissAcquisition(artist: j.artist, album: j.album)
+                jobs.removeAll { $0.id == j.id }
+            } catch let e as DiscairError { notice = "Stopped at \(j.title): " + Self.text(e); break }
+            catch { notice = "Stopped at \(j.title)."; break }
+        }
+        await refresh()
+    }
 }
 
 /// `DiscairActions` backed by the model; the app uses it once a session exists.
