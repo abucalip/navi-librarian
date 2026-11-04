@@ -21,6 +21,8 @@ public enum Screen: String, CaseIterable, Sendable {
     case gapRadar
     /// Rule-built playlists, saved to Navidrome (M6 slice 8; contract section 6.7).
     case smartPlaylists
+    /// Days and a heatmap of when songs were last played (M6 slice 9; contract section 6.6).
+    case history
 }
 
 /// What a theme may ask the app to do. Themes call these; they never reach the network or the audio engine.
@@ -201,6 +203,17 @@ public final class AppState {
         await smart.loadRemote(navidrome: nav)
     }
     static let smartSongLimit = 5000
+
+    /// Reads every song (up to `smartSongLimit`) so the history sees each song's latest play.
+    public func loadHistory() async {
+        let nav = session?.navidrome
+        await library.loadSongs(navidrome: nav)
+        while library.songsHaveMore, library.songs.count < Self.smartSongLimit {
+            let before = library.songs.count
+            await library.loadSongs(navidrome: nav, more: true)
+            if library.songs.count == before { break }
+        }
+    }
 
     /// The songs a smart playlist holds right now.
     public func smartSongs(_ p: SmartPlaylist) -> [SongRow] { SmartEngine.run(p, over: library.songs) }
