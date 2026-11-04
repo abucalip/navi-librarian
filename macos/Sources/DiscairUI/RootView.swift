@@ -11,6 +11,7 @@ public struct RootView: View {
             .safeAreaInset(edge: .top, spacing: 0) {
                 if let notice = state.offlineNotice { OfflineBanner(state: state, text: notice) }
             }
+            .overlay { PipelineDockView(state: state) }
             .modifier(CommandPaletteOverlay(state: state))
             .preferredColorScheme(theme.colorScheme)
             .environment(\.artwork, state.artwork)
