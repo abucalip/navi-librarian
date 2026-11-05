@@ -1,8 +1,10 @@
 # Project status
 
-Last checked: 2026-11-05. GitHub `main` is authoritative.
+Last checked: 2026-11-06. GitHub `main` is authoritative.
 
 ## Current state
+
+- **External-provider batching audit documented (2026-11-06):** [`docs/batching.md`](batching.md), documentation commit `65129751dd3f0023b54f8149b71d8276fad50f68`, based on `main` `ece37e085f1c77f0e26ab507cf25cad6e2326a21`. Records current batch paths, remaining MusicBrainz ratings and tracklist opportunities, provider-specific limitations, and acceptance criteria. Documentation-only; no application code or provider traffic changed.
 
 - **Android insight cards merged (2026-11-05, owner request):** PR [#796](https://github.com/abucalip/navi-librarian/pull/796), squash `cd35c8af8c0c0e7b548970e197fc88bd3bcb1b1d`, tested head `675d2e49bba3dd9287c3027c7a529b1cac5949ed`; compile, container-smoke, test-and-build and validate-container passed. Insights tab in Discover; routes not served yet. Next action: server PR for `GET /api/insights` and the dismiss, restore and accept routes (new module, D-016).
 
