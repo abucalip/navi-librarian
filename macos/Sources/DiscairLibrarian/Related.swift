@@ -81,7 +81,63 @@ struct AlbumPageEnvelope: Decodable {
     }
 }
 
+/// One of an artist's most listened songs (`top_songs` on the artist page).
+public struct TopSongEntry: Decodable, Equatable, Sendable, Identifiable {
+    public var id: Int { rank }
+    public let rank: Int
+    public let name: String
+    public let listenCount: Int?
+    public let source: String?
+    public let owned: Bool
+    public let album: String?
+
+    enum CodingKeys: String, CodingKey { case rank, name, listenCount = "listen_count", source, owned, album }
+
+    public init(rank: Int, name: String, listenCount: Int? = nil, source: String? = nil, owned: Bool = false, album: String? = nil) {
+        self.rank = rank; self.name = name; self.listenCount = listenCount; self.source = source; self.owned = owned; self.album = album
+    }
+
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        rank = (try? c.decode(Int.self, forKey: .rank)) ?? 0
+        name = ((try? c.decode(String.self, forKey: .name)) ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        listenCount = try? c.decode(Int.self, forKey: .listenCount)
+        source = try? c.decode(String.self, forKey: .source)
+        owned = (try? c.decode(Bool.self, forKey: .owned)) ?? false
+        album = (try? c.decode(String.self, forKey: .album)).map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.flatMap { $0.isEmpty ? nil : $0 }
+    }
+
+    /// "7.6K", "1.2M", or the plain number; nil when the source gave no count.
+    public var listensText: String? {
+        guard let n = listenCount, n > 0 else { return nil }
+        if n >= 1_000_000 { return String(format: "%.1fM", Double(n) / 1_000_000) }
+        if n >= 1_000 { return String(format: "%.1fK", Double(n) / 1_000) }
+        return String(n)
+    }
+}
+
+/// The parts of an artist page the macOS app shows besides the library's own albums.
+public struct ArtistPageRelated: Equatable, Sendable {
+    public var similar: [SimilarArtistEntry] = []
+    public var bio: String?
+    public var bioSource: String?
+    public var topSongs: [TopSongEntry] = []
+}
+
 struct ArtistPageEnvelope: Decodable {
-    struct Sections: Decodable { let similar: Section<SimilarArtistEntry>? }
+    struct Bio: Decodable { let text: String?; let source: String? }
+    struct BioSection: Decodable { let bio: Bio? }
+    struct Sections: Decodable {
+        let similar: Section<SimilarArtistEntry>?
+        let bio: BioSection?
+        let topSongs: Section<TopSongEntry>?
+        enum CodingKeys: String, CodingKey { case similar, bio, topSongs = "top_songs" }
+    }
     let sections: Sections
+    var related: ArtistPageRelated {
+        let text = sections.bio?.bio?.text?.trimmingCharacters(in: .whitespacesAndNewlines)
+        return ArtistPageRelated(similar: sections.similar?.items ?? [], bio: (text?.isEmpty == false) ? text : nil,
+                                 bioSource: sections.bio?.bio?.source,
+                                 topSongs: (sections.topSongs?.items ?? []).filter { !$0.name.isEmpty }.sorted { $0.rank < $1.rank })
+    }
 }

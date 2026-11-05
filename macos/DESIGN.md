@@ -433,3 +433,7 @@ Completes contract section 6.3. In the Cupertino Library, the Columns switch (op
 - Up Next in Cupertino is an inspector over the current screen (`AppState.queueOpen`); the toolbar button and ⌘K "Queue" no longer change the screen.
 - Reordering uses a SwiftUI drag on the row's grab area (the AppKit overlay did not receive the press inside the scrolling list). `WindowConfigurator.canDragAt` is asked at each press: the window cannot be dragged from the Up Next inspector while it is open (Cupertino), nor from the Running Order page below the masthead (Zine).
 - The toolbar search field opens the command palette on click. Album and artist names on Now Playing open their pages. The Cupertino artist banner shows the artist's photo on the right.
+
+### Artist page: bio, top songs, similar artists (2026-11-05)
+
+Modelled on the web and Android artist pages (`bio` and `top_songs` sections of `GET /api/artists/{key}`): the bio sits below the header (four lines, "Read more"), the albums are on the left and a numbered Top songs list on the right (five shown, "All top songs"; listen counts shortened; a check for an owned song, Get for one the library lacks that names its album). Below the albums, one "Similar artists" row holds owned and unowned artists; an unowned one carries "Not in your library" under its name and does not open. Both themes. Not seen against the real Librarian.

@@ -53,12 +53,14 @@ struct ZineArtist: View {
 
             HStack(alignment: .top, spacing: 22) {
                 VStack(alignment: .leading, spacing: 0) {
+                    if state.library.isLive { ArtistBio(state: state).padding(.bottom, 10) }
                     ZineH2("Back issues", size: 20)
                     LazyVGrid(columns: [GridItem(.adaptive(minimum: 140, maximum: 140), spacing: 18, alignment: .top)], alignment: .leading, spacing: 16) {
                         ForEach(state.library.artistAlbums) { a in issue(a) }
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
+                if state.library.isLive { TopSongsPanel(state: state) }
                 if !state.library.isLive {   // similar artists and a bio need Librarian calls the client does not have yet
                     VStack(alignment: .leading, spacing: 8) {
                         ZineH2("Also in this issue", size: 18)
@@ -70,7 +72,7 @@ struct ZineArtist: View {
                     .frame(width: 250)
                 }
             }
-            RelatedSections(state: state)
+            if state.library.isLive { RelatedSections(state: state, mixed: true) }
         }
         .task(id: state.selectedArtist.id) { await state.loadSelectedArtist() }
     }

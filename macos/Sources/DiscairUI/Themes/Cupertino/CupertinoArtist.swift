@@ -64,11 +64,19 @@ struct CupertinoArtist: View {
                         ForEach(Array(top.enumerated()), id: \.offset) { _, t in songRow(t) }
                     }
                 }
-                Text("Albums").font(CU.title(20)).padding(.top, 22).padding(.bottom, 10).accessibilityAddTraits(.isHeader)
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 128, maximum: 128), spacing: 16, alignment: .top)], alignment: .leading, spacing: 18) {
-                    ForEach(state.library.artistAlbums) { a in albumTile(a) }
+                // The bio and the albums on the left; the numbered top songs on the right (the page is the web's, in this theme).
+                HStack(alignment: .top, spacing: 32) {
+                    VStack(alignment: .leading, spacing: 0) {
+                        if state.library.isLive { ArtistBio(state: state) }
+                        Text("Albums").font(CU.title(20)).padding(.top, 22).padding(.bottom, 10).accessibilityAddTraits(.isHeader)
+                        LazyVGrid(columns: [GridItem(.adaptive(minimum: 128, maximum: 128), spacing: 16, alignment: .top)], alignment: .leading, spacing: 18) {
+                            ForEach(state.library.artistAlbums) { a in albumTile(a) }
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    if state.library.isLive { TopSongsPanel(state: state).padding(.top, 18) }
                 }
-                RelatedSections(state: state)
+                if state.library.isLive { RelatedSections(state: state, mixed: true) }
             }
             .padding(.horizontal, 28).padding(.bottom, 28)
         }

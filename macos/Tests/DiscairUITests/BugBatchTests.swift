@@ -245,3 +245,29 @@ struct QueueAndNowPlayingTests {
         #expect(s.screen == .album && s.selectedAlbum.title == "Laughing Stock" && s.selectedAlbum.remoteID == "al1")
     }
 }
+
+struct ArtistPageDecodingTests {
+    private let json = #"""
+    {"sections":{
+      "bio":{"bio":{"text":"  Rapper and poet.  ","source":"Wikidata"}},
+      "top_songs":{"items":[
+        {"rank":2,"name":"Les Autres","listen_count":4963,"source":"listenbrainz","owned":true,"album":"Gibraltar"},
+        {"rank":1,"name":"Gibraltar","listen_count":7611,"source":"listenbrainz","owned":false,"album":"Gibraltar"},
+        {"rank":3,"name":"","listen_count":1}]},
+      "similar":{"items":[{"name":"Oxmo Puccino","key":"oxmo puccino","owned":false}]}}}
+    """#
+
+    @Test func bioTopSongsAndSimilarComeFromTheArtistPage() throws {
+        let page = try JSONDecoder().decode(ArtistPageEnvelope.self, from: Data(json.utf8)).related
+        #expect(page.bio == "Rapper and poet." && page.bioSource == "Wikidata")
+        #expect(page.topSongs.map(\.name) == ["Gibraltar", "Les Autres"])          // ranked, the nameless one dropped
+        #expect(page.topSongs[0].listensText == "7.6K" && page.topSongs[1].owned)
+        #expect(page.similar.map(\.name) == ["Oxmo Puccino"])
+    }
+
+    @Test func listenCountsAreShortened() {
+        #expect(TopSongEntry(rank: 1, name: "a", listenCount: 950).listensText == "950")
+        #expect(TopSongEntry(rank: 1, name: "a", listenCount: 1_250_000).listensText == "1.2M")
+        #expect(TopSongEntry(rank: 1, name: "a").listensText == nil)
+    }
+}

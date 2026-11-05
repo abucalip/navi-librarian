@@ -10,6 +10,10 @@ public final class RelatedModel {
     public private(set) var artists: [SimilarArtistEntry] = []
     public private(set) var albums: [AlbumItem] = []
     public private(set) var loading = false
+    /// Artist page: the biography and the most listened songs.
+    public private(set) var bio: String?
+    public private(set) var bioSource: String?
+    public private(set) var topSongs: [TopSongEntry] = []
     /// Tracks the server lists for an album the library lacks (used when the pick came with none).
     public private(set) var tracks: [RelatedTrack] = []
     @ObservationIgnored private var loadedFor: String?
@@ -39,11 +43,12 @@ public final class RelatedModel {
         if loadedFor == key { return }
         clear(); loading = true; loadedFor = key
         defer { loading = false }
-        guard let list = try? await librarian.artistSimilar(name: name, id: remoteID), !Task.isCancelled, loadedFor == key else { return }
-        artists = Self.cleaned(list)
+        guard let page = try? await librarian.artistPage(name: name, id: remoteID), !Task.isCancelled, loadedFor == key else { return }
+        artists = Self.cleaned(page.similar)
+        bio = page.bio; bioSource = page.bioSource; topSongs = page.topSongs
     }
 
-    public func clear() { artists = []; albums = []; tracks = []; loadedFor = nil }
+    public func clear() { artists = []; albums = []; tracks = []; bio = nil; bioSource = nil; topSongs = []; loadedFor = nil }
 
     /// Entries with a name, once each.
     static func cleaned(_ list: [SimilarArtistEntry]) -> [SimilarArtistEntry] {

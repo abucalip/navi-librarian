@@ -194,11 +194,11 @@ public struct LibrarianClient: Sendable {
     }
 
     /// Similar artists for an artist page (`GET /api/artists/{key}`, JSON form). The server marks which the library holds.
-    public func artistSimilar(name: String, id: String? = nil) async throws -> [SimilarArtistEntry] {
+    public func artistPage(name: String, id: String? = nil) async throws -> ArtistPageRelated {
         var q = Self.nameQuery(artist: nil, name: name)
         if let id { q += "&id=" + Self.enc(id) }
         let (data, http) = try await authedSend("GET", "api/artists/\(Self.key(name))?" + q, body: nil)
-        return try decode(ArtistPageEnvelope.self, data, http).sections.similar?.items ?? []
+        return try decode(ArtistPageEnvelope.self, data, http).related
     }
 
     /// An artist photo (`GET /api/artist-image`), found by the server from public sources. Only https addresses.

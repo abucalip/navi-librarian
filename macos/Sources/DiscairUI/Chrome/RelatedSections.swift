@@ -7,14 +7,20 @@ struct RelatedSections: View {
     let state: AppState
     /// The album page also shows similar albums.
     var albums = false
+    /// Artist page: one row with the artists you own and the ones you do not, the latter noted "Not in your library".
+    var mixed = false
 
     private var zine: Bool { state.themeID == .zine }
 
     var body: some View {
         let r = state.related
         VStack(alignment: .leading, spacing: 0) {
-            if !r.ownedArtists.isEmpty { artistRow("Similar artists in your library", r.ownedArtists, open: true) }
-            if !r.otherArtists.isEmpty { artistRow("Not in your library", r.otherArtists, open: false) }
+            if mixed {
+                if !r.artists.isEmpty { artistRow("Similar artists", r.artists, open: true) }
+            } else {
+                if !r.ownedArtists.isEmpty { artistRow("Similar artists in your library", r.ownedArtists, open: true) }
+                if !r.otherArtists.isEmpty { artistRow("Not in your library", r.otherArtists, open: false) }
+            }
             if albums && !r.albums.isEmpty { albumRow("Similar albums not in your library", r.albums) }
             if r.loading && r.artists.isEmpty && r.albums.isEmpty {
                 Text("Looking for similar artists…").font(zine ? Z.mono(11) : .system(size: 12)).foregroundStyle(zine ? Z.ink.opacity(0.6) : CU.muted).padding(.top, 14)
@@ -41,11 +47,15 @@ struct RelatedSections: View {
                             Text(a.name).font(zine ? Z.serif(12, bold: true) : .system(size: 12, weight: .medium)).lineLimit(2)
                                 .multilineTextAlignment(.center).frame(width: 90)
                         }
-                        if open {
+                        if open && a.owned || (open && !mixed) {
                             Button { state.openArtist(named: a.name) } label: { tile.contentShape(Rectangle()) }
                                 .buttonStyle(.plain).accessibilityLabel("Open artist \(a.name)")
                         } else {
-                            tile.accessibilityElement(children: .combine).accessibilityLabel("\(a.name), not in your library")
+                            VStack(spacing: 2) {
+                                tile
+                                Text("Not in your library").font(zine ? Z.mono(9) : .system(size: 10)).opacity(0.6)
+                            }
+                            .accessibilityElement(children: .combine).accessibilityLabel("\(a.name), not in your library")
                         }
                     }
                 }
