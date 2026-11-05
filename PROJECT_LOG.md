@@ -1,3 +1,11 @@
+## 2026-11-05 — Server V2 Phase 3 slice 2: Forgotten Gems persistence (PR #777)
+
+- **Merged via PR:** [#777](https://github.com/abucalip/navi-librarian/pull/777), squash `39c727edffc111b30570996da48624c1ceed2dd3`, tested head `9c4b4d72de87627e8bf888c94f382ecc9c0e6edc`; required CI (compile, container-smoke, test-and-build, validate-container) passed on that head. The first merge attempts hit GitHub 502 errors and were retried; the PR merged on the third try.
+- **Change:** `intelligence/insights/persistence.py` (+ exports, + `tests/test_intelligence_insights_persistence.py`). `save_gems` replaces live `forgotten_gem` rows each refresh and keeps dismissed rows; an empty result clears stale cards. `dismiss_gem`, `restore_gem`, `dismissed_keys` and `list_gem_cards` use the existing `insights` table (`subject_id` NULL, key in the payload, `dismissed_state = 'dismissed'`); dismissing a card that is already gone writes a tombstone row. Writes bump the `insights` data version. No migration, no `navidrome_server.py` change (D-016).
+- **Verification actually run:** `python3 -m unittest tests.test_intelligence_insights_persistence tests.test_intelligence_insights_forgotten_gems` (20 passed). Full suite not run by the agent (owner rule); CI ran it.
+- **Limitations:** unwired (no job, API route or client yet); still not run on the owner's real play data; starting weights untuned; not published or deployed.
+- **Next action:** Phase 3 item 2, blind spots and discography gaps (explicit comparison sets, wording "you own N of M", never "you should own").
+
 ## 2026-11-05 — Server V2 Phase 3 slice 1: Forgotten Gems scorer (PR #776)
 
 - **Merged via PR:** [#776](https://github.com/abucalip/navi-librarian/pull/776), squash `f74b8ec291489cc6b6d9a8e07ca396311dbd2609`, tested head `306e6b106729079840d742f8e698a07979d3ced2`; required CI (compile, container-smoke, test-and-build, validate-container) passed on that head.
