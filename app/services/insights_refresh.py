@@ -9,7 +9,7 @@ import logging
 import threading
 import time
 
-import requests
+import httpx
 
 from app.api.insights import STORE_FILE, enabled_lenses
 from discovery.library_snapshot import fetch_album_inventory
@@ -56,7 +56,7 @@ def _provider_get(librarian):
             token = str(librarian._discovery_settings_read().get("listenbrainz_token") or "")
             if token:
                 kwargs["headers"] = {**kwargs.get("headers", {}), "Authorization": f"Token {token}"}
-        return requests.get(url, **kwargs)
+        return httpx.get(url, **kwargs)
     return get
 
 

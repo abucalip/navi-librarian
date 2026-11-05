@@ -143,7 +143,7 @@ class ProviderWiring(unittest.TestCase):
             return Resp()
 
         env = {insight_routes.LENSES_ENV: "blind_spot"}
-        with mock.patch.object(insights_refresh.requests, "get", fake_get), \
+        with mock.patch.object(insights_refresh.httpx, "get", fake_get), \
                 mock.patch.object(insights_refresh.time, "sleep"):
             out = insights_refresh.refresh_once(lib, env)
         self.assertEqual(out, {"provider_lenses": "succeeded"})
