@@ -104,6 +104,12 @@ public struct LibrarianClient: Sendable {
         return try decode(DashboardPicks.self, data, http).items
     }
 
+    /// `GET /api/insights` (provisional route, not served yet; docs/SERVER_V2_CONTRACT.md). Only lenses the server marks enabled carry cards.
+    public func insights(limit: Int = 20) async throws -> InsightsResponse {
+        let (data, http) = try await authedSend("GET", "api/insights?limit=\(min(max(limit, 1), 100))", body: nil)
+        return try decode(InsightsResponse.self, data, http)
+    }
+
     /// A saved discovery list, in the order the server gives it (`personal`, `classics`, `new_releases`, `for_me`).
     public func discoveryList(_ list: String, count: Int = 20) async throws -> DiscoveryList {
         let (data, http) = try await authedSend("GET", "api/discovery/\(list)?count=\(min(max(count, 1), 150))", body: nil)
