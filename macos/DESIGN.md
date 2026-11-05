@@ -427,3 +427,9 @@ Completes contract section 6.3. In the Cupertino Library, the Columns switch (op
 - Album pages: double-click an owned song to play from it; the playing song shows animated bars (queue and album page).
 - Songs: Grid shows covers (Table is the list); Columns uses plain buttons in lazy stacks and computes its columns once per render.
 - Missing from your library and New covers and titles open the album page. Back from an album opened in the Up Next view goes to Albums. Artists and Recently Added are in the command palette.
+
+### Third batch (2026-11-05)
+
+- Up Next in Cupertino is an inspector over the current screen (`AppState.queueOpen`); the toolbar button and ⌘K "Queue" no longer change the screen.
+- Reordering uses a SwiftUI drag on the row's grab area (the AppKit overlay did not receive the press inside the scrolling list). `WindowConfigurator.canDragAt` is asked at each press: the window cannot be dragged from the Up Next inspector while it is open (Cupertino), nor from the Running Order page below the masthead (Zine).
+- The toolbar search field opens the command palette on click. Album and artist names on Now Playing open their pages. The Cupertino artist banner shows the artist's photo on the right.

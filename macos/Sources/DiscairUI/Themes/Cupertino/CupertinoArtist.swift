@@ -38,6 +38,12 @@ struct CupertinoArtistBanner: View {
             .foregroundStyle(.white)
             .padding(.leading, 264).padding(.top, 104)       // 236 sidebar column + 28 margin
         }
+        .overlay(alignment: .trailing) {
+            ArtistPhoto(name: state.selectedArtist.name, size: 210)
+                .overlay(Circle().stroke(.white.opacity(0.85), lineWidth: 4))
+                .shadow(color: .black.opacity(0.35), radius: 14, y: 6)
+                .padding(.trailing, state.queueOpen ? CupertinoQueueInspector.width + 40 : 40).padding(.top, 60)
+        }
         .accessibilityElement(children: .contain)
     }
 }

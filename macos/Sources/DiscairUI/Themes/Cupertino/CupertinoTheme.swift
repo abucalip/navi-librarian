@@ -46,6 +46,7 @@ struct CupertinoWindow: View {
 
             // Opaque content; flows under the floating sidebar and toolbar (content is never glass).
             content
+                .padding(.trailing, state.queueOpen && state.screen != .artist ? CupertinoQueueInspector.width : 0)
                 .padding(.leading, 236)
                 .padding(.top, state.screen == .artist ? CupertinoArtistLayout.bannerHeight : 66)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -56,8 +57,8 @@ struct CupertinoWindow: View {
 
             CupertinoSidebar(state: state)
             CupertinoToolbar(state: state)
-                .padding(.leading, 238).padding(.trailing, state.screen == .queue ? CupertinoQueueInspector.width + 16 : 16).padding(.top, 12)
-            if state.screen == .queue {
+                .padding(.leading, 238).padding(.trailing, state.queueOpen ? CupertinoQueueInspector.width + 16 : 16).padding(.top, 12)
+            if state.queueOpen {
                 CupertinoQueueInspector(state: state).frame(maxWidth: .infinity, alignment: .trailing)
             }
             // Top right under the search pill (owner decision), not at the bottom of the window or sidebar (HIG).
@@ -69,19 +70,19 @@ struct CupertinoWindow: View {
             .accessibilityElement(children: .combine)
             .accessibilityLabel("Connection: \(state.connectionLabel)")
             .frame(maxWidth: .infinity, alignment: .trailing)
-            .padding(.trailing, state.screen == .queue ? CupertinoQueueInspector.width + 20 : 20).padding(.top, 52)
+            .padding(.trailing, state.queueOpen ? CupertinoQueueInspector.width + 20 : 20).padding(.top, 52)
         }
         .overlay(alignment: .bottom) { CupertinoNotice(state: state).padding(.bottom, 22) }
         .foregroundStyle(CU.ink)
         .clipShape(RoundedRectangle(cornerRadius: CU.windowRadius, style: .continuous))
-        .background(WindowConfigurator())
+        .background(WindowConfigurator(canDragAt: { [state] p, size in !(state.queueOpen && p.x > size.width - CupertinoQueueInspector.width) }))
     }
 
     @ViewBuilder private var content: some View {
         switch state.screen {
         case .home: CupertinoHome(state: state)
         case .album: CupertinoAlbum(state: state)
-        case .queue, .albums: CupertinoAlbumsGrid(state: state, inspector: state.screen == .queue)
+        case .queue, .albums: CupertinoAlbumsGrid(state: state)
         case .library: CupertinoLibrary(state: state)
         case .artists: CupertinoArtistsIndex(state: state)
         case .recent: CupertinoAlbumsGrid(state: state, recent: true)
@@ -198,18 +199,23 @@ struct CupertinoToolbar: View {
             Button { state.screen = .nowPlaying } label: { nowPlayingDisplay }
                 .buttonStyle(.plain).frame(maxWidth: 470)
 
-            HStack(spacing: 8) {
-                Image(systemName: "magnifyingglass")
-                Text("Search  ⌘K")
+            Button { state.palette.open() } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: "magnifyingglass")
+                    Text("Search  ⌘K")
+                    Spacer(minLength: 0)
+                }
+                .foregroundStyle(CU.muted).padding(.horizontal, 14).frame(width: 210, height: 36)
+                .contentShape(Capsule())
+                .glassEffect(CU.glass, in: Capsule())
             }
-            .foregroundStyle(CU.muted).padding(.horizontal, 14).frame(width: 210, height: 36)
-            .glassEffect(CU.glass, in: Capsule())
+            .buttonStyle(.plain).accessibilityLabel("Search and commands").accessibilityHint("Opens the command palette, shortcut command K")
 
-            Button { state.screen = state.screen == .queue ? .albums : .queue } label: {
-                Image(systemName: "list.bullet").font(.system(size: 15)).foregroundStyle(state.screen == .queue ? CU.accent : CU.ink)
+            Button { state.queueOpen.toggle() } label: {
+                Image(systemName: "list.bullet").font(.system(size: 15)).foregroundStyle(state.queueOpen ? CU.accent : CU.ink)
                     .frame(width: 40, height: 40).glassEffect(CU.glass, in: Circle())
             }
-            .buttonStyle(.plain).accessibilityLabel(state.screen == .queue ? "Close Up Next" : "Up Next")
+            .buttonStyle(.plain).accessibilityLabel(state.queueOpen ? "Close Up Next" : "Up Next")
         }
         .frame(height: 44)
     }

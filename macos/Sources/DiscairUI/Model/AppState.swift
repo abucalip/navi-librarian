@@ -91,6 +91,8 @@ public final class AppState {
     public var selectedArtist: ArtistItem = ArtistItem(id: 0, name: "Talk Talk", albumCount: 5)
     /// The letter shown in the Zine A-Z index.
     public var selectedLetter = "T"
+    /// Cupertino's Up Next inspector. It sits over whatever screen is showing, so opening it never changes the screen.
+    public var queueOpen = false
 
     public init(themeID: ThemeID = .cupertino, screen: Screen = .home, actions: DiscairActions? = nil, session: SessionModel? = nil, output: AudioOutput? = nil) {
         // Previews and screenshot tests get their own throwaway settings, so they never read or write the real ones.
@@ -293,6 +295,28 @@ public final class AppState {
         selectedArtist = artist; selectedLetter = artist.letter; screen = .artist
     }
 
+    /// Goes to a screen. Up Next in Cupertino opens the inspector over the current screen instead.
+    public func go(_ s: Screen) {
+        if s == .queue && themeID == .cupertino {
+            queueOpen.toggle()
+            if screen == .nowPlaying { screen = .albums }
+        } else { screen = s }
+    }
+
+    /// Opens the album of the song playing now.
+    public func openCurrentAlbum() {
+        guard let c = player.current, !c.album.isEmpty else { return }
+        if let known = (library.albums + library.recent).first(where: { c.albumID != nil && $0.remoteID == c.albumID }) { open(album: known); return }
+        open(album: AlbumItem(id: 8000, title: c.album, artist: c.artist, year: 0, genre: "", format: "", owned: true,
+                              hue: LibraryModel.hue(for: c.album), remoteID: c.albumID, coverArt: c.coverArt))
+    }
+
+    /// Opens the artist of the song playing now, when the library has them.
+    public func openCurrentArtist() {
+        guard let c = player.current else { return }
+        openArtist(named: c.artist)
+    }
+
     /// The Up Next view is the Albums grid with the inspector open, so going back from it lands on Albums.
     static func listScreen(_ s: Screen) -> Screen { s == .queue ? .albums : s }
 
@@ -343,7 +367,7 @@ extension AppState {
     func perform(_ command: PaletteCommand) {
         palette.close()
         switch command.action {
-        case .go(let s): screen = s
+        case .go(let s): go(s)
         case .playPause: player.togglePlayPause()
         case .next: player.next()
         case .previous: player.previous()

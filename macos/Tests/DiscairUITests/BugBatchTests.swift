@@ -218,3 +218,30 @@ struct PaletteAndBackTests {
         #expect(!s.isCurrent(track))
     }
 }
+
+@MainActor
+struct QueueAndNowPlayingTests {
+    @Test func theQueueButtonOpensUpNextWithoutLeavingTheScreen() {
+        let s = AppState(themeID: .cupertino, screen: .library)
+        s.go(.queue)
+        #expect(s.queueOpen && s.screen == .library)
+        s.go(.queue)
+        #expect(!s.queueOpen && s.screen == .library)
+    }
+
+    @Test func zineKeepsUpNextAsItsOwnPage() {
+        let s = AppState(themeID: .zine, screen: .home)
+        s.go(.queue)
+        #expect(s.screen == .queue && !s.queueOpen)
+    }
+
+    @Test func theNowPlayingNamesOpenTheAlbumAndTheArtist() async throws {
+        let d = UserDefaults(suiteName: "discair-test-\(UUID().uuidString)")!
+        let (p, _) = try player(d)
+        p.play([QueueItem(songID: "s1", title: "T", artist: "Talk Talk", album: "Laughing Stock", albumID: "al1", duration: 200, suffix: "flac", track: 1, disc: 1)])
+        let s = AppState(screen: .nowPlaying)
+        s.player.play([QueueItem(songID: "s1", title: "T", artist: "Talk Talk", album: "Laughing Stock", albumID: "al1", duration: 200, suffix: "flac", track: 1, disc: 1)])
+        s.openCurrentAlbum()
+        #expect(s.screen == .album && s.selectedAlbum.title == "Laughing Stock" && s.selectedAlbum.remoteID == "al1")
+    }
+}

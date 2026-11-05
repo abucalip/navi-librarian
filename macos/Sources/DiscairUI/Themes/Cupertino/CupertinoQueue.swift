@@ -5,8 +5,6 @@ import SwiftUI
 /// switch, saved queue and history. Mockup: `R.cupertino.queue`.
 struct CupertinoAlbumsGrid: View {
     let state: AppState
-    /// True when the Up Next inspector is open and the grid must stay clear of it.
-    var inspector = false
     /// The Recently Added tab: the newest albums instead of the alphabetical grid.
     var recent = false
     var body: some View {
@@ -32,7 +30,7 @@ struct CupertinoAlbumsGrid: View {
                     }
                 }
             }
-            .padding(.leading, 28).padding(.trailing, 28 + (inspector ? CupertinoQueueInspector.width : 0)).padding(.bottom, 28)   // keeps content out from under the inspector
+            .padding(.horizontal, 28).padding(.bottom, 28)
         }
         .scrollEdgeEffectStyle(.hard, for: .top)
     }

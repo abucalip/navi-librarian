@@ -29,7 +29,7 @@ struct ZineWindow: View {
         .foregroundStyle(Z.ink)
         .background(Z.paper)
         .overlay { Rectangle().strokeBorder(Z.ink, lineWidth: 3).allowsHitTesting(false) }
-        .background(WindowConfigurator())
+        .background(WindowConfigurator(canDragAt: { [state] p, _ in !(state.screen == .queue && p.y > 100) }))
     }
 
     @ViewBuilder private var page: some View {
