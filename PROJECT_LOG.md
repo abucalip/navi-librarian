@@ -1,3 +1,11 @@
+## 2026-11-05 — Server V2 Phase 3 slice 13: real fetchers for the set job (PR #788)
+
+- **Merged via PR:** [#788](https://github.com/abucalip/navi-librarian/pull/788), squash `f8e4e4b7bf39feaecdc79f29532547ca7db0a5dd`, tested head `a1542c145ae3a61218c1845007abe372cbd5fe52`; required CI (compile, container-smoke, test-and-build, validate-container) passed on that head.
+- **Change:** `intelligence/insights/set_fetchers.py` (+ export, + `tests/test_intelligence_insights_set_fetchers.py`). `build_set_fetchers(get, headers=, sleep=)` returns the `SetFetchers` for MusicBrainz studio discography (browse, 100 per page, page cap, provider total kept), ListenBrainz top release groups (bare list wrapped to `payload.release_groups`) and MusicBrainz series (`inc=release-group-rels`). 404 gives none; any other status or transport error raises so the set job leaves saved cards untouched. Pacing 1.1 s (MusicBrainz) and 0.5 s (ListenBrainz) after each request, each counted with `record_provider_call`.
+- **Verification actually run:** `python -m unittest` on `tests.test_intelligence_insights_set_fetchers` (10) and `tests.test_intelligence_insights_set_job` (8) passed. Full suite not run by the agent (owner rule); CI ran it.
+- **Limitations:** unwired, nothing builds or runs the fetchers, so no provider traffic was added and no live call was made; the ListenBrainz response shape (bare list) and MusicBrainz paging are not checked against the live providers; not published or deployed.
+- **Next action:** run the scorecard on live lens output; Phase 3 exit verification.
+
 ## 2026-11-05 — Server V2 Phase 3 slice 12: accept recording (PR #787)
 
 - **Merged via PR:** [#787](https://github.com/abucalip/navi-librarian/pull/787), squash `f0d55d67aabb59a56c39438632d08e0f26f199f0`, tested head `3c6673a3d1fd616debf962a67ef2091492fbfda3`; required CI (compile, container-smoke, test-and-build, validate-container) passed on that head.
