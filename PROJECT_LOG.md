@@ -1,3 +1,12 @@
+## 2026-11-05 — macOS Insights dashboard (Server V2 Phase 3 client gate slice 2, PR #795)
+
+- **Merged via PR:** [#795](https://github.com/abucalip/navi-librarian/pull/795), squash `04c76b10aacd8ae61ef7a13ccbf8912e280d4aa4`, tested head `74088ccd61b215a09e22fb152c14846b17cff7b9`. Required CI (compile, container-smoke, test-and-build, validate-container) passed on that head.
+- **Owner decisions:** build both themes (Cupertino and Zine) with three lenses on, as a sidebar screen; "Why?" is a paragraph written from the card's data, not value rows; the insights routes (`GET /api/insights`, dismiss, restore, accept) are approved.
+- **Change:** `Screen.insights`; `CupertinoInsights` and `ZineInsights` (generic card, off and empty states, Get/Save/Play, Dismiss with Undo); `InsightsModel` (sample of the server's three-lens fixture until a session connects); `InsightNarrative` (pure Why paragraphs, generic fallback); `LibrarianClient.dismissInsight/restoreInsight/acceptInsight` on `POST /api/insights/*`; `InsightSubject.year` and missing-run labels; sidebar row and palette entry; mockups `docs/design/macos-insights/mockups.html`; `macos/DESIGN.md` section.
+- **Verification actually run:** `swift test --skip-update --filter "InsightNarrativeTests|InsightCardsTests|InsightsModelTests|CommandPaletteTests|ScreenshotTests"` passed locally; both renders checked by eye. Full Swift suite not run (owner rule); CI does not run Swift.
+- **Limitations:** the server does not serve the insights routes yet, so a live session shows the load error and keeps the sample; not seen in the live app; look not owner-approved; forgotten gem and blind spot paragraphs rest on evidence keys read from the server code, not live cards; Android cards not started; not published or deployed.
+- **Next action:** server PR serving `GET /api/insights` and the dismiss, restore and accept routes from a new module (D-016), enabling no lens by default; then Android cards and Phase 3 exit verification.
+
 ## 2026-11-05 — Server V2 Phase 3 slice 17 and macOS client gate slice 1 (PRs #793, #794)
 
 - **Merged via PR:** [#793](https://github.com/abucalip/navi-librarian/pull/793), squash `84d23c5f0dd18938d529f606b349e42927fe3168`, tested head `a7227722`; [#794](https://github.com/abucalip/navi-librarian/pull/794), squash `d16e3eb379b5311dc2efa084a77f2a59dfa5941d`, tested head `210c9eaab65b1b09d9eddd5735cbce384a9bcc06`. Required CI (compile, container-smoke, test-and-build, validate-container) passed on both heads.
