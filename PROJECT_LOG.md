@@ -1,3 +1,12 @@
+## 2026-11-05 — Server V2 Phase 3 slice 16: 40-artist live rerun; diversity failure was the sample
+
+- **Change:** `scripts/server_v2_phase3_live_lenses.py` only. Network errors (read timeouts) are retried and counted like 429/503 (the first 40-artist attempt died on a 30 s MusicBrainz read timeout); hidden canon cards and anniversary albums now carry the sampled artist's name (the script passed none, so diversity read null and anniversary `top_artist_share` read 1.0). No change to lens, scorer or card code.
+- **Live result (owner-approved bounded traffic, batched; temporary store):** 40 artists, 650 albums ingested, 344 owned release groups from 12,655 batched release documents. 284 MusicBrainz requests (15 retried), 40 ListenBrainz requests, 925 s. Blind spots: 80 sets, 20 cards, 20 distinct artists, diversity 1.0 (top artist share 0.05), 0 duplicates, 0 owned leaks. Series 2 cards, hidden canon 20 cards (7,542 pool), anniversaries 8 cards (diversity 1.0, 0 duplicates, 0 leaks). All four `insufficient_evidence` (no accept/dismiss outcomes), so none is enabled by default.
+- **Conclusion:** the slice 15 `fail` (diversity 0.55) came from 12 artists competing for 20 card slots with up to two sets each, not from the gate or the lens. The 0.6 gate is kept.
+- **Verification actually run:** the script was compiled and the full 40-artist run completed before the artist-name fix; the artist-name fix was compiled only and not re-run live (no extra provider traffic). No unit tests added; the full suite was not run by the agent (owner rule).
+- **Limitations:** hidden canon genres are still the artist's library genres (a proxy); cards not reviewed by the owner; not published or deployed.
+- **Next action:** Phase 3 exit verification needs the clients to render generic insight cards and real accept/dismiss history; owner to choose which client first.
+
 ## 2026-11-05 — Server V2 Phase 3 slice 15: live run of the four provider lenses (PR #790)
 
 - **Merged via PR:** [#790](https://github.com/abucalip/navi-librarian/pull/790), squash `b9441f1647a4aaae34c06972d03a5f6fbfe6a36b`, tested head `1f5e6f5478a853f936f6af52f11bb76a8571b943`; required CI passed on that head.
