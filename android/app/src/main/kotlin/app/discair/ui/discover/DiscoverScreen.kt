@@ -49,6 +49,8 @@ import app.discair.model.DiscoveryEntry
 import app.discair.model.DiscoveryList
 import app.discair.model.DiscoveryResult
 import app.discair.model.FeedbackAction
+import app.discair.model.InsightCard
+import app.discair.model.InsightVerb
 import app.discair.model.LensLists
 import app.discair.ui.Opener
 import app.discair.ui.common.Load
@@ -91,8 +93,38 @@ fun DiscoverScreen(open: Opener) {
     val hidden = remember { mutableStateMapOf<String, Boolean>() }
     var pending by remember { mutableStateOf<(suspend () -> Unit)?>(null) }
 
+    // Insights are not a discovery list: read live from their own route, and dismissals are sent at once (Undo restores).
+    val insights = rememberLoad(list == DiscoveryList.Insights) {
+        if (list == DiscoveryList.Insights) repo.insights(20) else null
+    }
+    val insightsHidden = remember { mutableStateMapOf<String, InsightCard>() }
+
+    fun dismissInsight(card: InsightCard) {
+        insightsHidden[card.id] = card
+        scope.launch {
+            try {
+                withContext(Dispatchers.IO) { repo.insightWrite(InsightVerb.Dismiss, card.kind, card.subject.key) }
+            } catch (e: Exception) {
+                // Stays hidden so a card never comes back by surprise; say that the dismissal was not saved.
+                statusLine = "Could not save the dismissal: " + (e.message ?: "the server did not answer.")
+                return@launch
+            }
+            val result = snackbar.showSnackbar("Dismissed ${card.title}.", actionLabel = "Undo", withDismissAction = false,
+                duration = androidx.compose.material3.SnackbarDuration.Short)
+            if (result == SnackbarResult.ActionPerformed) {
+                insightsHidden.remove(card.id)
+                try {
+                    withContext(Dispatchers.IO) { repo.insightWrite(InsightVerb.Restore, card.kind, card.subject.key) }
+                } catch (e: Exception) {
+                    statusLine = "Could not undo the dismissal: " + (e.message ?: "the server did not answer.")
+                }
+            }
+        }
+    }
+
     val loaded = rememberLoad(list) {
-        if (list == DiscoveryList.Daily) kotlinx.coroutines.runBlocking {
+        if (list == DiscoveryList.Insights) emptyList()
+        else if (list == DiscoveryList.Daily) kotlinx.coroutines.runBlocking {
             // The four lens lists are read together, not one after the other.
             val cacheOnly = app.discair.data.ReadMode.isCacheOnly
             LensLists.map { (path, title) ->
@@ -211,7 +243,19 @@ fun DiscoverScreen(open: Opener) {
                         .semantics { liveRegion = LiveRegionMode.Polite },
                 )
             }
-            when (val state = loaded.state) {
+            if (list == DiscoveryList.Insights) {
+                when (val state = insights.state) {
+                    Load.Loading -> Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally) {
+                        CircularProgressIndicator(Modifier.semantics { contentDescription = "Loading" })
+                    }
+                    is Load.Failed -> Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(state.failure.message, color = Ink.ChartRedText)
+                        OutlinedButton(onClick = insights.reload, Modifier.heightIn(min = Target)) { Text("Try again") }
+                    }
+                    is Load.Ready -> state.value?.let { InsightsPage(it, insightsHidden.keys, ::dismissInsight) }
+                }
+            } else when (val state = loaded.state) {
                 Load.Loading -> Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.Center,
                     horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally) {
                     CircularProgressIndicator(Modifier.semantics { contentDescription = "Loading" })

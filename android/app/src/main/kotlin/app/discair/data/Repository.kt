@@ -20,7 +20,11 @@ import app.discair.model.DiscoveryResult
 import app.discair.model.FeedbackAction
 import app.discair.model.FeedbackReply
 import app.discair.model.SearchEvent
+import app.discair.model.InsightVerb
+import app.discair.model.InsightsResponse
 import app.discair.model.feedbackBody
+import app.discair.model.insightWriteBody
+import app.discair.model.parseInsights
 import app.discair.model.parseDiscovery
 import app.discair.model.parseSearchEvent
 import kotlinx.serialization.json.JsonObject
@@ -122,6 +126,15 @@ interface LibraryRepository : AcquisitionApi {
 
     /** Asks the server to rebuild a list in the background (count 1-20). */
     fun refreshList(list: String)
+
+    /**
+     * Server V2 insight cards (`GET /api/insights`, provisional route). Read live, never from the saved copies: a card
+     * shown from an old copy could come back after it was dismissed.
+     */
+    fun insights(limit: Int = 20): InsightsResponse = throw UnsupportedOperationException()
+
+    /** Dismiss, restore or accept one card by its own kind and key; throws unless the server answers. */
+    fun insightWrite(verb: InsightVerb, kind: String, key: String): Unit = throw UnsupportedOperationException()
 
     /** Whether the server resyncs its library from Navidrome shortly after each import. Read live, never from the saved copies. */
     fun libraryResync(): Boolean = true
@@ -260,6 +273,16 @@ class LibrarianRepository(
         if (reply?.get("ok")?.jsonPrimitive?.booleanOrNull != true) {
             throw IllegalStateException("The server did not save this.")
         }
+    }
+
+    override fun insights(limit: Int): InsightsResponse {
+        // Never from the saved copies (see the interface), so the first paint from them is a miss.
+        if (ReadMode.isCacheOnly) throw CacheMiss()
+        return parseInsights(client.get(listOf("api", "insights"), mapOf("limit" to "${limit.coerceIn(1, 100)}")))
+    }
+
+    override fun insightWrite(verb: InsightVerb, kind: String, key: String) {
+        client.post(listOf("api", "insights", verb.wire), insightWriteBody(kind, key))
     }
 
     override fun refreshList(list: String) {
