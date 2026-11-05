@@ -1,0 +1,114 @@
+{
+  "request": "GET /api/library-health",
+  "response": {
+    "albums_checked": 2,
+    "counts": {
+      "disc_gap": 0,
+      "inconsistent_album_artist": 0,
+      "missing_album_mbid": 1,
+      "missing_artist_mbid": 1,
+      "missing_genre": 1,
+      "missing_track_mbid": 1,
+      "mixed_years": 0,
+      "replaygain_missing": 1,
+      "track_count_mismatch": 1,
+      "track_number_problem": 1
+    },
+    "data_version": 1,
+    "findings": [
+      {
+        "album_ids": [
+          "al-2"
+        ],
+        "check": "missing_album_mbid",
+        "detail": {},
+        "message": "Miles Davis - Kind of Blue: no MusicBrainz release id",
+        "severity": "info"
+      },
+      {
+        "album_ids": [
+          "al-2"
+        ],
+        "check": "missing_artist_mbid",
+        "detail": {},
+        "message": "Miles Davis - Kind of Blue: album artist has no MusicBrainz id",
+        "severity": "info"
+      },
+      {
+        "album_ids": [
+          "al-2"
+        ],
+        "check": "missing_genre",
+        "detail": {},
+        "message": "Miles Davis - Kind of Blue: no genre on the album or any track",
+        "severity": "info"
+      },
+      {
+        "album_ids": [
+          "al-2"
+        ],
+        "check": "missing_track_mbid",
+        "detail": {
+          "track_ids": [
+            "al-2-1",
+            "al-2-3"
+          ]
+        },
+        "message": "Miles Davis - Kind of Blue: 2 of 2 tracks have no MusicBrainz recording id",
+        "severity": "info"
+      },
+      {
+        "album_ids": [
+          "al-2"
+        ],
+        "check": "replaygain_missing",
+        "detail": {
+          "track_ids": [
+            "al-2-1",
+            "al-2-3"
+          ]
+        },
+        "message": "Miles Davis - Kind of Blue: 2 of 2 tracks have no ReplayGain",
+        "severity": "info"
+      },
+      {
+        "album_ids": [
+          "al-2"
+        ],
+        "check": "track_count_mismatch",
+        "detail": {
+          "expected": 5,
+          "found": 2
+        },
+        "message": "Miles Davis - Kind of Blue: album says 5 tracks, 2 found",
+        "severity": "warn"
+      },
+      {
+        "album_ids": [
+          "al-2"
+        ],
+        "check": "track_number_problem",
+        "detail": {
+          "discs": {
+            "1": {
+              "missing": [
+                2
+              ]
+            }
+          }
+        },
+        "message": "Miles Davis - Kind of Blue: track numbering problems on disc(s) 1",
+        "severity": "warn"
+      }
+    ],
+    "generation": 1,
+    "not_checked": [
+      "suspected_upsampled_or_transcoded",
+      "clipping",
+      "measured_loudness"
+    ]
+  },
+  "response_headers": {
+    "ETag": "W/\"health-1-1\""
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "request": "GET /api/changes",
+  "response": {
+    "changes": [
+      {
+        "changed_at": 1,
+        "data_version": 1,
+        "resource": "unresolved"
+      },
+      {
+        "changed_at": 2,
+        "data_version": 1,
+        "resource": "health"
+      }
+    ],
+    "cursor": 2,
+    "generation": 1,
+    "reset": false
+  }
+}
