@@ -12,6 +12,11 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
+# ffmpeg is used read-only by the optional Library Health audio checks (intelligence/health/audio.py).
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ffmpeg \
+    && rm -rf /var/lib/apt/lists/*
+
 RUN groupadd --gid 1000 librarian \
     && useradd --uid 1000 --gid 1000 --create-home librarian \
     && mkdir -p /data /music /downloads \
