@@ -1,0 +1,28 @@
+{
+  "request": "GET /api/capabilities",
+  "response": {
+    "contract_version": 1,
+    "cursor": 2,
+    "data_versions": {
+      "health": 1,
+      "unresolved": 1
+    },
+    "features": {
+      "library_health": {
+        "available": true,
+        "data_version": 1,
+        "resource": "health"
+      },
+      "unresolved_queue": {
+        "available": true,
+        "data_version": 1,
+        "resource": "unresolved"
+      }
+    },
+    "generation": 1,
+    "graph_coverage": "partial",
+    "listenbrainz_connected": true,
+    "schema_version": 1,
+    "sonic_available": false
+  }
+}

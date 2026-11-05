@@ -1,0 +1,9 @@
+{
+  "request": "GET /api/changes",
+  "response": {
+    "changes": [],
+    "cursor": 0,
+    "generation": 1,
+    "reset": false
+  }
+}

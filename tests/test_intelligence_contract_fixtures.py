@@ -1,0 +1,84 @@
+"""Server V2 contract fixtures match the builders and carry no secrets (docs/SERVER_V2_CONTRACT.md)."""
+import json
+import sys
+import tempfile
+import unittest
+from pathlib import Path
+
+from intelligence.api import build_unresolved_body
+from intelligence.api.fixture_set import build_fixtures
+from intelligence.resolution import unresolved
+from intelligence.store import open_store
+
+ROOT = Path(__file__).resolve().parent.parent
+FIXTURES = ROOT / "intelligence" / "contract-fixtures"
+sys.path.insert(0, str(ROOT / "scripts"))
+from write_intelligence_fixtures import render  # noqa: E402
+
+
+class FixtureFileTests(unittest.TestCase):
+    def test_files_match_the_builders(self):
+        built = build_fixtures()
+        self.assertEqual(sorted(p.name for p in FIXTURES.glob("*.json")), sorted(built))
+        for name, document in built.items():
+            with self.subTest(fixture=name):
+                self.assertEqual((FIXTURES / name).read_text(encoding="utf-8"), render(document),
+                                 "run scripts/write_intelligence_fixtures.py")
+
+    def test_building_twice_gives_the_same_result(self):
+        self.assertEqual(build_fixtures(), build_fixtures())
+
+    def test_no_paths_or_credentials(self):
+        for path in FIXTURES.glob("*.json"):
+            text = path.read_text(encoding="utf-8").lower()
+            with self.subTest(fixture=path.name):
+                for marker in ("/users/", "/music", "password", "token", "cookie", "http://", "https://"):
+                    self.assertNotIn(marker, text)
+
+    def test_empty_store_is_not_populated(self):
+        caps = json.loads((FIXTURES / "capabilities_empty.json").read_text())["response"]
+        for feature in caps["features"].values():
+            self.assertFalse(feature["available"])
+            self.assertEqual(feature["reason"], "not_populated")
+
+    def test_reset_lists_everything(self):
+        reset = json.loads((FIXTURES / "changes_reset.json").read_text())["response"]
+        caught_up = json.loads((FIXTURES / "changes_caught_up.json").read_text())["response"]
+        self.assertTrue(reset["reset"])
+        self.assertEqual(len(reset["changes"]), 2)
+        self.assertEqual(caught_up["changes"], [])
+
+
+class UnresolvedBodyTests(unittest.TestCase):
+    def setUp(self):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        self.db = open_store(Path(tmp.name) / "intelligence.sqlite3")
+        self.addCleanup(self.db.close)
+        for n in range(5):
+            unresolved.queue_unresolved(self.db, "album", f"al-{n}", [], "none", now=1.0)
+
+    def test_paging_walks_the_whole_queue_once(self):
+        seen, after = [], 0
+        while True:
+            body = build_unresolved_body(self.db, limit=2, after_id=after)
+            seen += [item["navidrome_ref"] for item in body["items"]]
+            if body["next_after_id"] is None:
+                break
+            after = body["next_after_id"]
+        self.assertEqual(seen, [f"al-{n}" for n in range(5)])
+
+    def test_limit_is_clamped(self):
+        self.assertEqual(len(build_unresolved_body(self.db, limit=0)["items"]), 1)
+        self.assertEqual(len(build_unresolved_body(self.db, limit=10_000)["items"]), 5)
+
+    def test_answered_items_leave_the_open_list(self):
+        unresolved.reject_all(self.db, 1)
+        body = build_unresolved_body(self.db)
+        self.assertEqual(body["open_count"], 4)
+        self.assertEqual(len(body["items"]), 4)
+        self.assertEqual(len(build_unresolved_body(self.db, status=None)["items"]), 5)
+
+
+if __name__ == "__main__":
+    unittest.main()

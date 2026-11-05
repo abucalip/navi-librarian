@@ -1,0 +1,33 @@
+{
+  "request": "GET /api/unresolved",
+  "response": {
+    "data_version": 1,
+    "generation": 1,
+    "items": [
+      {
+        "candidates": [
+          {
+            "artist": "Miles Davis",
+            "mbid": "22222222-2222-2222-2222-222222222222",
+            "score": 0.91,
+            "title": "Kind of Blue"
+          },
+          {
+            "artist": "Miles Davis",
+            "mbid": "33333333-3333-3333-3333-333333333333",
+            "score": 0.88,
+            "title": "Kind of Blue (Legacy Edition)"
+          }
+        ],
+        "first_seen": 1700000000.0,
+        "id": 1,
+        "kind": "album",
+        "navidrome_ref": "al-2",
+        "reason": "two_close_candidates",
+        "status": "open"
+      }
+    ],
+    "next_after_id": null,
+    "open_count": 1
+  }
+}
