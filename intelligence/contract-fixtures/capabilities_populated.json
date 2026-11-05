@@ -8,6 +8,12 @@
       "unresolved": 1
     },
     "features": {
+      "insights": {
+        "available": false,
+        "data_version": 0,
+        "reason": "not_populated",
+        "resource": "insights"
+      },
       "library_health": {
         "available": true,
         "data_version": 1,

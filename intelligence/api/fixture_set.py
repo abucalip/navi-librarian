@@ -11,11 +11,21 @@ import tempfile
 from pathlib import Path
 from typing import Any
 
+from datetime import date
+
 from ..health import build_report
+from ..insights import (
+    AnniversaryConfig, CanonConfig, ComparisonSet, DatedAlbum, SeriesConfig, SetItem, WorldAlbum,
+    find_anniversaries, find_hidden_canon, find_series_progress, save_anniversaries, save_canon, save_series,
+)
+from ..insights.anniversaries import CARD_KIND as ANNIVERSARY_KIND
+from ..insights.hidden_canon import CARD_KIND as CANON_KIND
+from ..insights.series_completion import CARD_KIND as SERIES_KIND
 from ..ingest.navidrome import normalize_album
 from ..resolution import unresolved
 from ..store import generations, open_store
 from .bodies import build_health_body, build_unresolved_body
+from .insights import build_insights_body
 from .capabilities import ServerFacts, build_capabilities
 from .changes import build_changes
 from .etag import etag_for
@@ -57,6 +67,33 @@ def build_fixtures() -> dict[str, dict[str, Any]]:
             db.close()
 
 
+def _insight_fixtures() -> dict[str, dict[str, Any]]:
+    """Cards for three lenses in a store of their own, so the Phase 1 fixtures stay as they were."""
+    with tempfile.TemporaryDirectory() as tmp:
+        db = open_store(Path(tmp) / "insights.sqlite3")
+        try:
+            series = ComparisonSet("fx-series", "series", "Example label catalogue",
+                                   tuple(SetItem(f"fx-{i}", f"Title {i}", 2000 + i) for i in range(4)))
+            save_series(db, find_series_progress([series], ["fx-0", "fx-1"], SeriesConfig()), now=1_700_000_000.0)
+            world = [WorldAlbum("fx-w1", "Loveless", "My Bloody Valentine", 1991, ("shoegaze", "dream pop"), 5000)]
+            save_canon(db, find_hidden_canon(world, [], ["shoegaze", "dream pop"], CanonConfig()),
+                       now=1_700_000_000.0)
+            albums = [DatedAlbum("fx-a1", "Example Album", "Example Artist", "2016-06-01")]
+            save_anniversaries(db, find_anniversaries(albums, [], date(2026, 6, 1), AnniversaryConfig()),
+                               now=1_700_000_000.0)
+            return {
+                "insights_all_off.json": {
+                    "request": "GET /api/insights", "response": build_insights_body(db),
+                },
+                "insights_three_on.json": {
+                    "request": "GET /api/insights?lenses=series_completion,hidden_canon,anniversary",
+                    "response": build_insights_body(db, enabled=(SERIES_KIND, CANON_KIND, ANNIVERSARY_KIND)),
+                },
+            }
+        finally:
+            db.close()
+
+
 def _build(db) -> dict[str, dict[str, Any]]:
     empty_caps = build_capabilities(db)
     empty_changes = build_changes(db, 0)
@@ -72,6 +109,7 @@ def _build(db) -> dict[str, dict[str, Any]]:
     version = generations.data_versions(db)["health"]
     tag = etag_for("health", version, generations.current_generation(db))
     return {
+        **_insight_fixtures(),
         "capabilities_empty.json": {"request": "GET /api/capabilities", "response": empty_caps},
         "capabilities_populated.json": {"request": "GET /api/capabilities", "response": caps},
         "changes_from_start.json": {"request": "GET /api/changes", "response": build_changes(db, 0)},

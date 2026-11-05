@@ -5,6 +5,12 @@
     "cursor": 0,
     "data_versions": {},
     "features": {
+      "insights": {
+        "available": false,
+        "data_version": 0,
+        "reason": "not_populated",
+        "resource": "insights"
+      },
       "library_health": {
         "available": false,
         "data_version": 0,
