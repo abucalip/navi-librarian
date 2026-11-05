@@ -1,6 +1,6 @@
 # Server V2: Music Intelligence Plan
 
-**Status:** Phase 0 complete (2026-11-05, see [`SERVER_V2_PHASE0_AUDIT.md`](SERVER_V2_PHASE0_AUDIT.md)); the owner accepted the recommended D-1 to D-6. D-7 to D-9 and the Phase 1 gate are open. Nothing here authorizes implementation, provider traffic beyond what already exists, audio analysis, deployment, or client UI work until the relevant phase gate is approved.
+**Status:** Phase 0 complete (2026-11-05, see [`SERVER_V2_PHASE0_AUDIT.md`](SERVER_V2_PHASE0_AUDIT.md)); the owner accepted the recommended D-1 to D-6. D-7 was decided on 2026-11-05 (new dedicated SQLite file, see D-026 in `DECISIONS.md`) and Phase 1 is approved and in progress; D-8 and D-9 are open. Nothing here authorizes implementation, provider traffic beyond what already exists, audio analysis, deployment, or client UI work until the relevant phase gate is approved.
 
 **Baseline:** GitHub main at e29ca45 (2026-11-05). Re-verify the repo, provider docs, and the installed Navidrome version at each phase gate.
 
@@ -316,7 +316,7 @@ Per phase, in addition to docs/TEST_PLAN.md:
 | D-4 | Acceptable sources and request budgets (MB, ListenBrainz, Wikidata, CAA, LRCLIB, Fanart/TheAudioDB, Discogs) | Approve first five, others later |
 | D-5 | Graph scope: owned-adjacent only, or plus a bounded set of discovery candidates | Owned-adjacent first |
 | D-6 | Sonic: proxy if a plugin exists; in-house experiment allowed or not | Proxy first; experiment only if proxy impossible |
-| D-7 | Where Server V2 data lives (existing DB vs new file) | Decide after Phase 0 inventory |
+| D-7 | Where Server V2 data lives (existing DB vs new file) | **Decided 2026-11-05: new dedicated file with its own migration runner** (D-026) |
 | D-8 | Whether ListenBrainz similar-users data may be used | Not by default |
 | D-9 | Which phases get Android surfaces | Phases 3 and 4 only initially |
 

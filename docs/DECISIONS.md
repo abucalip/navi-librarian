@@ -237,3 +237,10 @@ Record decisions here when they constrain future implementation. Add new entries
 
 **Consequence:** no Librarian backend change and no invented endpoint (gaps become contract proposals); the web UI stays "not a player" and the Android contracts stay the playback baseline. Mockups (`docs/design/macos-m3/`, `docs/design/macos-m4/`) are the spec for each theme and are built element by element. Each phase (M1 to M7) needs the owner's approval; only UI design is approved on the owner's Mac.
 
+## D-026 — Server V2 data lives in its own SQLite file with its own migrations (plan decision D-7)
+
+**Decision:** On 2026-11-05 the owner chose option 1 for Server V2 decision D-7 and approved Phase 1: Server V2 data (observations, entities, edges, unresolved matches, insights, snapshots, job runs) is stored in a new dedicated SQLite file, not in an existing database. Schema changes use a `PRAGMA user_version` migration runner in `intelligence/store/`; no existing store is migrated.
+
+**Reason:** the existing stores have no migration convention, and Server V2 needs append-only and rebuildable data. A separate file keeps rebuilds and bulk ingest from locking feedback, lists or acquisition data, and lets the file be backed up or wiped on its own.
+
+**Consequence:** (1) Code lives in `intelligence/`, reached through thin adapters; `navidrome_server.py` takes no additions (D-016). (2) Migrations are append-only and a database newer than the code is refused. (3) Existing stores keep `CREATE TABLE IF NOT EXISTS`; adopting the runner there would be a separate decision. (4) The file's path and backup handling are not yet wired; they are decided when the store is connected to the server. (5) D-8 and D-9 of the Server V2 plan stay open. Governing document: `docs/ServerV2.md`.
