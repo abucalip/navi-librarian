@@ -10,7 +10,7 @@ import Testing
 /// Baseline comparison is added once the owner approves the look on the Mac (contract M4 gate).
 @MainActor
 struct ScreenshotTests {
-    @Test(arguments: ThemeID.allCases, [Screen.home, Screen.album, Screen.nowPlaying, Screen.queue, Screen.library, Screen.albums, Screen.artist, Screen.settings, Screen.downloads, Screen.discover, Screen.equalizer, Screen.gapRadar, Screen.smartPlaylists, Screen.history])
+    @Test(arguments: ThemeID.allCases, [Screen.home, Screen.album, Screen.nowPlaying, Screen.queue, Screen.library, Screen.albums, Screen.artist, Screen.settings, Screen.downloads, Screen.discover, Screen.equalizer, Screen.gapRadar, Screen.smartPlaylists, Screen.history, Screen.insights])
     func rendersWindow(theme: ThemeID, screen: Screen) throws {
         RenderMode.offscreenScreenshot = true
         // Settings needs a session; a throwaway one with a sample profile and an in-memory keychain.

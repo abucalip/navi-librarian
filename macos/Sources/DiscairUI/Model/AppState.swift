@@ -24,6 +24,8 @@ public enum Screen: String, CaseIterable, Sendable {
     case smartPlaylists
     /// Days and a heatmap of when songs were last played (M6 slice 9; contract section 6.6).
     case history
+    /// Server V2 Phase 3 insight cards, one section per lens (client gate; the mockups are `docs/design/macos-insights/mockups.html`).
+    case insights
     /// The A-Z list of artists (the Artists tab). `.artist` is one artist's page.
     case artists
     /// Albums added to the library most recently (the Recently Added tab).
@@ -84,6 +86,7 @@ public final class AppState {
     public let spread = AlbumSpreadModel()
     /// Similar artists and albums from the Librarian, for the album and artist pages.
     public let related = RelatedModel()
+    public let insights = InsightsModel()
     public let artwork: ArtworkStore
     /// The optional on-disk copy of played songs and covers (off by default; Settings).
     public let cache: CacheModel
@@ -251,6 +254,8 @@ public final class AppState {
         await relatedLoad
     }
 
+    public func loadInsights() async { await insights.load(librarian: session?.librarian) }
+
     public func loadGapRadar() async { await library.loadGapRadar(navidrome: session?.navidrome) }
 
     /// Reads every song so rules see the whole library, then the playlists already on Navidrome.
@@ -338,6 +343,7 @@ public final class AppState {
         case .gapRadar: "Gap Radar"
         case .smartPlaylists: "Smart Playlists"
         case .history: "History"
+        case .insights: "Insights"
         case .artists: "Artists"
         case .recent: "Recently Added"
         }

@@ -110,6 +110,18 @@ public struct LibrarianClient: Sendable {
         return try decode(InsightsResponse.self, data, http)
     }
 
+    /// `POST /api/insights/dismiss`: the card stays gone and feeds the suppression memory. `kind` and `key` are the card's own.
+    public func dismissInsight(kind: String, key: String) async throws { try await insightWrite("dismiss", kind: kind, key: key) }
+    /// `POST /api/insights/restore`: undoes a dismissal.
+    public func restoreInsight(kind: String, key: String) async throws { try await insightWrite("restore", kind: kind, key: key) }
+    /// `POST /api/insights/accept`: records that the owner acted on a card (feeds the lens scorecard only).
+    public func acceptInsight(kind: String, key: String) async throws { try await insightWrite("accept", kind: kind, key: key) }
+
+    private func insightWrite(_ verb: String, kind: String, key: String) async throws {
+        let (data, http) = try await authedSend("POST", "api/insights/\(verb)", body: try json(["kind": kind, "key": key]))
+        if let failure = failure(http, data) { throw failure }
+    }
+
     /// A saved discovery list, in the order the server gives it (`personal`, `classics`, `new_releases`, `for_me`).
     public func discoveryList(_ list: String, count: Int = 20) async throws -> DiscoveryList {
         let (data, http) = try await authedSend("GET", "api/discovery/\(list)?count=\(min(max(count, 1), 150))", body: nil)
