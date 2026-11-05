@@ -15,6 +15,9 @@ from .series_completion import (
 from .hidden_canon import (
     CanonConfig, CanonPick, CanonResult, WorldAlbum, canon_card, find_hidden_canon,
 )
+from .anniversaries import (
+    Anniversary, AnniversaryConfig, AnniversaryResult, DatedAlbum, DatedArtist, anniversary_card, find_anniversaries,
+)
 from .persistence import dismiss_gem, dismissed_keys, list_gem_cards, restore_gem, save_gems
 
 __all__ = ["CARD_KIND", "Gem", "GemsConfig", "GemsResult", "PlayRecord", "find_forgotten_gems", "gem_card",
@@ -23,4 +26,6 @@ __all__ = ["CARD_KIND", "Gem", "GemsConfig", "GemsResult", "PlayRecord", "find_f
            "restore_blind_spot", "save_blind_spots", "dismiss_gem", "dismissed_keys", "list_gem_cards", "restore_gem", "save_gems",
            "MissingRun", "SeriesConfig", "SeriesProgress", "SeriesResult", "find_series_progress", "series_card",
            "CanonConfig", "CanonPick", "CanonResult", "WorldAlbum", "canon_card", "find_hidden_canon",
+           "Anniversary", "AnniversaryConfig", "AnniversaryResult", "DatedAlbum", "DatedArtist",
+           "anniversary_card", "find_anniversaries",
            "SetFetchers", "SetJobResult", "owned_group_mbids", "refresh_blind_spots"]
