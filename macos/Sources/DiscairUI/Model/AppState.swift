@@ -347,7 +347,24 @@ public final class AppState {
     public var selectedArtistIsUnowned: Bool { library.isLive && library.artist(named: selectedArtist.name) == nil }
 
     /// The albums the artist page lists: the library's own, or for an artist it lacks, the Librarian's list.
-    public var shownArtistAlbums: [AlbumItem] { selectedArtistIsUnowned ? related.artistAlbums : library.artistAlbums }
+    public var shownArtistAlbums: [AlbumItem] {
+        if selectedArtistIsUnowned { return related.artistAlbums }
+        guard library.isLive else { return library.artistAlbums }
+        // A partly owned artist: the library's albums, then every album the Librarian lists that the library lacks
+        // (picks by the artist included), each once.
+        var seen = Set(library.artistAlbums.map { Self.albumTitleKey($0.title) })
+        let lacking = related.artistAlbums.filter { seen.insert(Self.albumTitleKey($0.title)).inserted }
+        return library.artistAlbums + lacking
+    }
+    public var shownArtistOwnedCount: Int { library.isLive ? shownArtistAlbums.filter(\.owned).count : library.artistOwnedCount }
+    public var shownArtistMissingCount: Int { library.isLive ? shownArtistAlbums.filter { !$0.owned }.count : library.artistMissingCount }
+
+    /// Titles compared without case, punctuation or one trailing "(year)", as the server does.
+    static func albumTitleKey(_ title: String) -> String {
+        var t = title.lowercased()
+        if let r = t.range(of: #"\s*[\(\[]\s*(19|20)\d{2}\s*[\)\]]\s*$"#, options: .regularExpression) { t.removeSubrange(r) }
+        return String(t.filter { $0.isLetter || $0.isNumber })
+    }
 
     /// Opens a similar artist: their library page when owned, otherwise a page built from the Librarian's data.
     public func open(similar a: SimilarArtistEntry) {

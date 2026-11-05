@@ -35,8 +35,8 @@ struct ZineArtist: View {
             HStack(spacing: 20) {
                 let lib = state.library
                 if state.selectedArtistIsUnowned { Mono("Not in your library") } else {
-                    Mono("\(lib.artistOwnedCount) of \(lib.artistOwnedCount + lib.artistMissingCount) albums owned")
-                    Mono("\(lib.artistMissingCount) missing")
+                    Mono("\(state.shownArtistOwnedCount) of \(state.shownArtistOwnedCount + state.shownArtistMissingCount) albums owned")
+                    Mono("\(state.shownArtistMissingCount) missing")
                 }
                 Mono(lib.isLive ? genres : "Post-rock · Synth-pop")
                 Spacer()
@@ -45,9 +45,9 @@ struct ZineArtist: View {
                     Button("Play") { state.actions.play(album: state.library.artistAlbums.first ?? Fixtures.albums[0]) }.buttonStyle(ZineButtonStyle(kind: .yellow, small: true))
                     }
                     Button("Radio") { }.buttonStyle(ZineButtonStyle(small: true))
-                    if state.library.artistMissingCount > 0 || !state.library.isLive {
-                    Button(state.library.isLive ? "Get \(state.library.artistMissingCount) missing" : "Get both missing") {
-                        for a in state.library.artistAlbums where !a.owned { state.actions.get(album: a) }
+                    if state.shownArtistMissingCount > 0 || !state.library.isLive {
+                    Button(state.library.isLive ? "Get \(state.shownArtistMissingCount) missing" : "Get both missing") {
+                        for a in state.shownArtistAlbums where !a.owned { state.actions.get(album: a) }
                     }
                     .buttonStyle(ZineButtonStyle(small: true))
                     }

@@ -46,14 +46,15 @@ struct CupertinoWindow: View {
 
             // Opaque content; flows under the floating sidebar and toolbar (content is never glass).
             content
-                .padding(.trailing, state.queueOpen && state.screen != .artist ? CupertinoQueueInspector.width : 0)
+                .padding(.trailing, state.queueOpen && state.screen != .artist && state.screen != .album ? CupertinoQueueInspector.width : 0)
                 .padding(.leading, 236)
-                .padding(.top, state.screen == .artist ? CupertinoArtistLayout.bannerHeight : 66)
+                .padding(.top, state.screen == .artist || state.screen == .album ? CupertinoArtistLayout.bannerHeight : 66)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                 .background(Color.white)
                 .padding(.leading, 0)
 
-            if state.screen == .artist { CupertinoArtistBanner(state: state) }   // under the sidebar and toolbar
+            if state.screen == .artist { CupertinoArtistBanner(state: state) }
+            if state.screen == .album { CupertinoAlbumBanner(state: state) }   // under the sidebar and toolbar
 
             CupertinoSidebar(state: state)
             CupertinoToolbar(state: state)
@@ -66,7 +67,7 @@ struct CupertinoWindow: View {
                 Circle().fill(state.connectionIsGood ? Color.green : CU.accent).frame(width: 7, height: 7)
                 Text(state.connectionLabel)
             }
-            .font(.system(size: 11)).foregroundStyle(state.screen == .artist ? Color.white.opacity(0.9) : CU.muted)   // over the dark banner
+            .font(.system(size: 11)).foregroundStyle(state.screen == .artist || state.screen == .album ? Color.white.opacity(0.9) : CU.muted)   // over the dark banner
             .accessibilityElement(children: .combine)
             .accessibilityLabel("Connection: \(state.connectionLabel)")
             .frame(maxWidth: .infinity, alignment: .trailing)

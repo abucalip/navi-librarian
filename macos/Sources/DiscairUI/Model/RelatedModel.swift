@@ -80,9 +80,10 @@ public final class RelatedModel {
             if !page.similar.isEmpty { artists = Self.cleaned(page.similar) }
             if let b = page.bio { bio = b; bioSource = page.bioSource }
             if !page.topSongs.isEmpty { topSongs = page.topSongs }
-            let unowned = page.albums.filter { !$0.owned }
-            if !unowned.isEmpty || !page.albums.isEmpty {
-                artistAlbums = page.albums.enumerated().map { i, a in
+            // Albums the server does not mark as held: the whole list for an unowned artist, the missing ones for a partly owned one.
+            let notHeld = page.albums.filter { !$0.owned }
+            if !page.albums.isEmpty {
+                artistAlbums = notHeld.enumerated().map { i, a in
                     AlbumItem(id: 7500 + i, title: a.name, artist: name, year: a.year ?? 0, genre: "", format: "", owned: false, hue: LibraryModel.hue(for: a.name))
                 }
             }

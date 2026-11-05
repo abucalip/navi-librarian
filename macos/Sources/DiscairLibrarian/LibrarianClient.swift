@@ -261,7 +261,8 @@ public struct LibrarianClient: Sendable {
     private func send(_ method: String, _ path: String, body: Data?) async throws -> (Data, HTTPURLResponse) {
         let parts = path.split(separator: "?", maxSplits: 1).map(String.init)
         var comps = URLComponents(url: base, resolvingAgainstBaseURL: false)!
-        comps.path = (comps.path.hasSuffix("/") ? comps.path : comps.path + "/") + parts[0]
+        // The path is already percent-encoded (page keys carry %20); setting `path` would encode the % again.
+        comps.percentEncodedPath = (comps.percentEncodedPath.hasSuffix("/") ? comps.percentEncodedPath : comps.percentEncodedPath + "/") + parts[0]
         if parts.count > 1 { comps.percentEncodedQuery = parts[1] }
         var request = URLRequest(url: comps.url!)
         request.httpMethod = method
