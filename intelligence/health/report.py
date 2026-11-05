@@ -62,10 +62,11 @@ class HealthReport:
     albums_checked: int
     findings: tuple[Finding, ...]
     not_checked: tuple[str, ...] = NOT_CHECKED
+    extra_checks: tuple[str, ...] = ()  # checks added by the optional audio job
 
     @property
     def counts(self) -> dict[str, int]:
-        counts = {check: 0 for check in CHECKS}
+        counts = {check: 0 for check in (*CHECKS, *self.extra_checks)}
         for finding in self.findings:
             counts[finding.check] += 1
         return counts
