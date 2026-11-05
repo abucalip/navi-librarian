@@ -8,9 +8,11 @@ from .grouping import (
     Edition, TrackEntry, TracklistDiff, compare_tracklists, edition_labels, group_editions,
     release_relation, tracklist,
 )
+from .ownership import EditionMatch, edition_awareness_enabled, edition_match
 from .release_groups import LinkOutcome, SweepResult, link_release_group, parse_release, sweep_owned_releases
 
 __all__ = [
+    "EditionMatch", "edition_awareness_enabled", "edition_match",
     "AdviceReport", "EditionAdvice", "EditionComparison", "EditionMeasures", "MetricDelta", "advise",
     "edition_track_ids",
     "DuplicateAlbum", "DuplicateRecording", "DuplicateReport", "find_duplicate_albums",
