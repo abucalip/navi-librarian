@@ -1,3 +1,12 @@
+## 2026-11-05 — Server V2 Phase 3 slice 17 and macOS client gate slice 1 (PRs #793, #794)
+
+- **Merged via PR:** [#793](https://github.com/abucalip/navi-librarian/pull/793), squash `84d23c5f0dd18938d529f606b349e42927fe3168`, tested head `a7227722`; [#794](https://github.com/abucalip/navi-librarian/pull/794), squash `d16e3eb379b5311dc2efa084a77f2a59dfa5941d`, tested head `210c9eaab65b1b09d9eddd5735cbce384a9bcc06`. Required CI (compile, container-smoke, test-and-build, validate-container) passed on both heads.
+- **Change (#793):** `intelligence/api/insights.py` (`build_insights_body`: per-lens `{enabled, cards}`, cards only for enabled lenses, limit clamped 1 to 100), `insights` feature in `build_capabilities` (capabilities fixtures regenerated), fixtures `insights_all_off.json` and `insights_three_on.json`, `GET /api/insights` section in `docs/SERVER_V2_CONTRACT.md`, `tests/test_intelligence_api_insights.py` (includes the exit rules: no recommendation or server imports, no ownership writes in insight modules).
+- **Change (#794):** `macos/Sources/DiscairLibrarian/InsightCards.swift` (lenient models; a card with no key or no reasons is dropped) and `LibrarianClient.insights(limit:)`; `InsightCardsTests` read `intelligence/contract-fixtures` directly.
+- **Verification actually run:** focused Python tests (`test_intelligence_api_insights`, `test_intelligence_contract_fixtures`, `test_intelligence_api`: 31 pass); `swift test --filter DiscairLibrarianTests.InsightCardsTests` (6 pass, local). Swift UI tests and the full suites were not run (owner rule); CI does not run Swift.
+- **Limitations:** no route is served (D-016), so clients run on fixtures only; all lenses remain `insufficient_evidence` and off; no dashboard view, no Android work; not published or deployed.
+- **Next action:** owner chooses the macOS Insights dashboard layout (mockups first) and approves a served `/api/insights` route; accept/dismiss history is still needed before Phase 3 exit verification.
+
 ## 2026-11-05 — Server V2 Phase 3 slice 16: 40-artist live rerun; diversity failure was the sample (PR #791)
 
 - **Merged via PR:** [#791](https://github.com/abucalip/navi-librarian/pull/791), squash `1ebe392b77ceb037dce5e97de32630281ccb43a8`, tested head `4cc4928e46dd0a4188de4a7a8f9a3dc40b53eb4d`; required CI (compile, container-smoke, test-and-build, validate-container) passed on that head.
