@@ -1,3 +1,13 @@
+## 2026-11-05 — Server V2 Phase 2 exit verification passed; edition flag approved on
+
+- **Script:** `scripts/server_v2_phase2_exit.py` (this PR). Offline and read-only: it uses the MusicBrainz documents the Phase 0 capture already stored, so there is no Navidrome or provider traffic. The golden set stays outside the repository.
+- **Result on the owner's 50-album golden set:** 30 albums linked to the correct release group, 15 explicitly left unlinked (no library MBID), 5 linked by a tag MBID the owner could not verify (rows 34, 35, 45, 49, 50). Accuracy 90.0% strict, 100% if those five count as unresolved (target 90%). Wrong silent merges: 0; wrong groups: 0. A second sweep made 0 lookups.
+- **Ownership flag:** off by default; every golden album matches itself (50 of 50); no pair of different titles was reported as another edition; `owned` flags are never written.
+- **Verification actually run:** the script (exit 0) and `python3 -m unittest` on the five `tests.test_intelligence_editions_*` modules (59 passed). Full suite not run by the agent (owner rule).
+- **Limitations:** the golden set has no two editions of the same album, so the "other edition" path was not exercised on real data (unit tests only); no duplicates in the sample; original-versus-later labelling not checked because the captures lack the group's first release date; the 90% is exactly at the line in the strict count.
+- **Owner decisions (2026-11-05):** the owner accepted the result as enough to exit Phase 2 and approved turning `NAVI_EDITION_AWARE_OWNERSHIP` on. `compose.yaml` now passes it through and defaults it to on (`NAVI_EDITION_AWARE_OWNERSHIP=0` turns it off). Not published or deployed; the change takes effect when the owner next deploys.
+- **Next action:** Phase 3 gate is the owner's to open.
+
 ## 2026-11-05 — Server V2 Phase 2 slice 5: edition-aware ownership behind a flag (PR #774)
 
 - **Code merged via PR:** [#774](https://github.com/abucalip/navi-librarian/pull/774), squash `191f9abb79d742ef8e91e0e61268b7ec0a8f8648`, tested head `85a407d365cef16f867f6eb3b8ebed63bc9bce08`: `intelligence/editions/ownership.py` (`edition_match`: `same_edition`, `other_edition`, `not_owned`; flag `NAVI_EDITION_AWARE_OWNERSHIP`), wired into `album_catalog` in `discovery/search/artist_sections.py`, and `tests/test_intelligence_editions_ownership.py`.
