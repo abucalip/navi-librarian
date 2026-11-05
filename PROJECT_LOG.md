@@ -1,3 +1,11 @@
+## 2026-11-05 — Server V2 Phase 3 slice 7: series completion counters (PR #782)
+
+- **Merged via PR:** [#782](https://github.com/abucalip/navi-librarian/pull/782), squash `c1b741a7c6f8b5ec3646ddcd3a76b98597f40986`, tested head `36f1a9f49b108306751cfe36ca6549153ea6f927`; required CI (compile, container-smoke, test-and-build, validate-container) passed on that head.
+- **Change:** `intelligence/insights/series_completion.py` (+ exports, + `tests/test_intelligence_insights_series_completion.py`). `find_series_progress` counts owned against total for series comparison sets by release-group MBID, keeps the series' own order and reports missing chapters as runs of consecutive positions. Series under 3 members (`series_too_small`), series with none owned (`not_started`) and non-series sets (`not_a_series`) are left out with a reason; finished series go to `complete`; dismissed `series_completion:<set key>` keys are suppressed; ranking is share owned. `series_card` states "You own N of M in this series" and never advises; the only action is dismiss. No `navidrome_server.py` change (D-016).
+- **Verification actually run:** `python3 -m unittest tests.test_intelligence_insights_series_completion tests.test_intelligence_insights_blind_spots` (20 passed). Full suite not run by the agent (owner rule); CI ran it.
+- **Limitations:** unwired; no persistence yet for series cards and no real fetchers, so no live data and no provider traffic; thresholds untuned on the owner's library; not published or deployed.
+- **Next action:** hidden canon (taste vs world), then anniversaries and the lens scorecard; series persistence can follow the slice 4 pattern.
+
 ## 2026-11-05 — Server V2 Phase 3 slice 6: blind-spot set job (PR #781)
 
 - **Merged via PR:** [#781](https://github.com/abucalip/navi-librarian/pull/781), squash `15a137d3f504b1ddd8973130d8af4ff42807d829`, tested head `46e4669b99c29c93ceadbee94641ecc612bf8640`; required CI (compile, container-smoke, test-and-build, validate-container) passed on that head.
