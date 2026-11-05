@@ -23,6 +23,7 @@ from .card_persistence import (
     dismissed_series_keys, list_anniversary_cards, list_canon_cards, list_series_cards, restore_anniversary,
     restore_canon, restore_series, save_anniversaries, save_canon, save_series,
 )
+from .outcomes import accept_card, accepted_keys, lens_outcomes, unaccept_card
 from .scorecard import Scorecard, ScorecardConfig, score_lens
 from .persistence import dismiss_gem, dismissed_keys, list_gem_cards, restore_gem, save_gems
 
@@ -39,4 +40,5 @@ __all__ = ["CARD_KIND", "Gem", "GemsConfig", "GemsResult", "PlayRecord", "find_f
            "list_series_cards", "restore_anniversary", "restore_canon", "restore_series", "save_anniversaries",
            "save_canon", "save_series",
            "Scorecard", "ScorecardConfig", "score_lens",
+           "accept_card", "accepted_keys", "lens_outcomes", "unaccept_card",
            "SetFetchers", "SetJobResult", "owned_group_mbids", "refresh_blind_spots"]
