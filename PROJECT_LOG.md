@@ -1,3 +1,11 @@
+## 2026-11-05 — Server V2 Phase 3 slice 4: blind-spot persistence (PR #779)
+
+- **Merged via PR:** [#779](https://github.com/abucalip/navi-librarian/pull/779), squash `21ecf46586638544367b2cc24ac5d96f877ffdbd`, tested head `929852e10048e297ff9bb6b40415ce8b1e7cfc73`; required CI (compile, container-smoke, test-and-build, validate-container) passed on that head.
+- **Change:** `intelligence/insights/blind_spot_persistence.py` (+ exports, + `tests/test_intelligence_insights_blind_spot_persistence.py`). `save_blind_spots` replaces live `blind_spot` rows each refresh and keeps dismissed rows; an empty result clears stale cards. `dismiss_blind_spot`, `restore_blind_spot`, `dismissed_set_keys` and `list_blind_spot_cards` use the existing `insights` table (`subject_id` NULL, key `blind_spot:<set key>` in the payload); dismissing a set with no live card writes a tombstone row. Writes bump the `insights` data version. Other insight kinds are untouched. No migration, no `navidrome_server.py` change (D-016).
+- **Verification actually run:** `python3 -m unittest tests.test_intelligence_insights_blind_spot_persistence tests.test_intelligence_insights_persistence` (20 passed). Full suite not run by the agent (owner rule); CI ran it.
+- **Limitations:** unwired; no set builders yet, so no MusicBrainz or ListenBrainz data feeds it; not published or deployed.
+- **Next action:** comparison-set builders (MusicBrainz studio discographies, ListenBrainz top albums, series) with injected fetchers.
+
 ## 2026-11-05 — Server V2 Phase 3 slice 3: blind spots scorer (PR #778)
 
 - **Merged via PR:** [#778](https://github.com/abucalip/navi-librarian/pull/778), squash `d2a66216e5b85565ec702920905bb699de5e6c4a`, tested head `14a542b4f6d6d9e1498fa3bad53c8308bc319f6a`; required CI (compile, container-smoke, test-and-build, validate-container) passed on that head.
