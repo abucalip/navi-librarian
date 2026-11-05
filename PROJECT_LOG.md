@@ -1,3 +1,10 @@
+## 2026-11-05 — Server V2 Phase 3: scorecard now counts dismissals; exit script machinery check made real
+
+- **Change:** `lens_outcomes` (`intelligence/insights/outcomes.py`) returned only live cards, so a dismissed card left the list and `score_lens` never counted it: precision stayed near 100% however many cards the owner dismissed. It now returns live cards plus dismissed ones (once per key). `scripts/server_v2_phase3_exit.py` built its invented outcomes from the live cards, so with no live cards (Forgotten Gems returned `no_candidates`) it fed nothing and proved nothing; it now uses a synthetic 40-album library and fails the run unless accepted and dismissed are both counted.
+- **Verification actually run:** `test_intelligence_insights_outcomes`, `test_intelligence_insights_scorecard`, `test_intelligence_api_insights`, `test_api_insights_routes`, `test_insights_refresh`, `test_intelligence_insights_card_persistence`; the exit script against the live library (read-only): machinery check 20 cards, 13 accepted, 7 dismissed, `pass`; live Forgotten Gems 0 cards (37-day history span, nothing dormant 180 days), live verdict `insufficient_evidence`. Full suite not run (owner rule).
+- **Limitations:** Phase 3 exit is not passed: blind spots, series, hidden canon and anniversaries are unverified live, there is no real accept/dismiss history, and client rendering was not checked. Not published or deployed.
+- **Next action:** owner decision on provider traffic or sampled run for the other four lenses and on the 180-day gate, then Phase 3 exit verification.
+
 ## 2026-11-05 — Server V2 Phase 3: batch series discovery and minimum owned share (PRs #802, #803)
 
 - **Merged via PR:** [#802](https://github.com/abucalip/navi-librarian/pull/802), squash `0561eb5e7f3612df12c9ec97e557f6c58764fdda`, tested head `75b35bc4ea8fa8cc959ea64e4fb9637d639c133d`; and [#803](https://github.com/abucalip/navi-librarian/pull/803), squash `72ca16b17fd62c22e4d3174b6988580bb23e31b3`, tested head `4799499ddc13e8abfa0176418c44cb4ccde9524a`; compile, container-smoke, test-and-build and validate-container passed on each head.

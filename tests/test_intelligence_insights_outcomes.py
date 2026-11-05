@@ -53,7 +53,7 @@ class OutcomesTests(unittest.TestCase):
         dismiss_series(self.db, key)
         out = lens_outcomes(self.db, self.kind)
         card = score_lens("series", out["cards"], out["accepted"], out["dismissed"])
-        self.assertEqual((card.accepted, card.dismissed), (0, 0))  # the live card was dismissed away
+        self.assertEqual((card.cards, card.accepted, card.dismissed), (1, 0, 1))  # dismissed card still counted, once
         self.assertIn(key, out["dismissed"])
         self.assertIn(key, out["accepted"])
 
@@ -85,8 +85,9 @@ class OutcomesTests(unittest.TestCase):
         dismiss_series(self.db, keys[2])
         out = lens_outcomes(self.db, self.kind)
         card = score_lens("series", out["cards"], out["accepted"], out["dismissed"])
-        self.assertEqual(card.cards, 2)
-        self.assertEqual(card.accepted, 2)
+        self.assertEqual(card.cards, 3)
+        self.assertEqual((card.accepted, card.dismissed), (2, 1))
+        self.assertEqual(card.precision, round(2 / 3, 6))
         self.assertEqual(card.verdict, "insufficient_evidence")
 
 

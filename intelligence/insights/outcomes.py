@@ -80,14 +80,29 @@ def unaccept_card(db: sqlite3.Connection, kind: str, key: str) -> bool:
 
 
 def lens_outcomes(db: sqlite3.Connection, kind: str) -> dict[str, Any]:
-    """Live cards plus accepted and dismissed keys for ``kind``, ready for ``score_lens``."""
+    """Judged cards plus accepted and dismissed keys for ``kind``, ready for ``score_lens``.
+
+    ``cards`` is the live cards followed by the dismissed ones (once per key, the live listing never
+    holds a dismissed key). A dismissed card is no longer live, but the owner judged it, so
+    ``score_lens`` must still see it or dismissals would never lower precision.
+    """
     _check(kind)
-    rows = db.execute(
+    live = [json.loads(r["payload"]) for r in db.execute(
         "SELECT payload FROM insights WHERE kind = ? AND dismissed_state IS NULL "
         "ORDER BY json_extract(payload, '$.score') DESC, id", (kind,)
-    ).fetchall()
+    ).fetchall()]
+    seen = {c.get("subject", {}).get("key") for c in live}
+    dismissed_cards = []
+    for r in db.execute(
+        "SELECT payload FROM insights WHERE kind = ? AND dismissed_state = ? ORDER BY id", (kind, DISMISSED)
+    ).fetchall():
+        card = json.loads(r["payload"])
+        key = (card.get("subject") or {}).get("key")
+        if key and key not in seen:
+            seen.add(key)
+            dismissed_cards.append(card)
     return {
-        "cards": [json.loads(r["payload"]) for r in rows],
+        "cards": live + dismissed_cards,
         "accepted": sorted(_keys(db, kind, ACCEPTED)),
         "dismissed": sorted(_keys(db, kind, DISMISSED)),
     }
