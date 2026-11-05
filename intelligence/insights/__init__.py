@@ -18,6 +18,7 @@ from .hidden_canon import (
 from .anniversaries import (
     Anniversary, AnniversaryConfig, AnniversaryResult, DatedAlbum, DatedArtist, anniversary_card, find_anniversaries,
 )
+from .scorecard import Scorecard, ScorecardConfig, score_lens
 from .persistence import dismiss_gem, dismissed_keys, list_gem_cards, restore_gem, save_gems
 
 __all__ = ["CARD_KIND", "Gem", "GemsConfig", "GemsResult", "PlayRecord", "find_forgotten_gems", "gem_card",
@@ -28,4 +29,5 @@ __all__ = ["CARD_KIND", "Gem", "GemsConfig", "GemsResult", "PlayRecord", "find_f
            "CanonConfig", "CanonPick", "CanonResult", "WorldAlbum", "canon_card", "find_hidden_canon",
            "Anniversary", "AnniversaryConfig", "AnniversaryResult", "DatedAlbum", "DatedArtist",
            "anniversary_card", "find_anniversaries",
+           "Scorecard", "ScorecardConfig", "score_lens",
            "SetFetchers", "SetJobResult", "owned_group_mbids", "refresh_blind_spots"]
