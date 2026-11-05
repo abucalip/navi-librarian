@@ -1,3 +1,11 @@
+## 2026-11-05 — Server V2 Music Intelligence research proposal
+
+- **Documentation committed directly to main:** `docs/ServerV2.md`, commit `4582b468e254f8c67ba82150eb5e14817833dbc8`. Project status updated in commit `7faff85115e114bc26a21538a8b58a5a33e50eda`.
+- **Scope:** research and proposal only. The document records the current Librarian and client baseline, Navidrome/Subsonic/OpenSubsonic metadata opportunities, MusicBrainz and ListenBrainz data, Cover Art Archive and Discogs possibilities, and Roon/Plexamp/Essentia/AcousticBrainz inspiration. It proposes a shared entity/relationship/provenance layer and explores collection intelligence, album archaeology, session musicians, label discovery, musical geography, personal taste evolution, sonic analysis, versions/covers, and explainable discovery paths.
+- **Guardrails:** no implementation, API contract change, new provider traffic, audio-analysis job, deployment, or client UI work is authorized. The document calls for a read-only field-availability audit against the installed Navidrome version before implementation and preserves D-016, optional-provider behavior, client-neutral server-side intelligence, and existing safety boundaries.
+- **Verification:** confirmed the new file exists on GitHub and reviewed its returned content and length (48,603 characters). Documentation-only change; no application tests or CI run. The latest open PRs were inspected; the documentation-only workflow rule permits direct commits to main.
+- **Next action:** owner selects the first outcome and approves a read-only Navidrome metadata/capability audit before any implementation or additional provider requests.
+
 ## 2026-11-04 — macOS M6 slice 8: Smart Playlists merged (PR #746)
 
 - **Merged (owner request):** PR [#746](https://github.com/abucalip/navi-librarian/pull/746), squash `f4ea0d1c8be9e9827f26e602112ec617af212c3f`. GitHub checks (compile, container-smoke, test-and-build, validate-container) passed; no Swift job runs on GitHub.
