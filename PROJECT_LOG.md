@@ -1,3 +1,15 @@
+## 2026-11-05 — Server V2 Phase 1 exit verification: all four exit items met
+
+- **Code merged via PR:** [#768](https://github.com/abucalip/navi-librarian/pull/768), squash `44d23b5489063e686fece9491ba6d11c7016f0c7`: `scripts/server_v2_phase1_exit.py` (read-only Navidrome reads, temporary store, no provider traffic, aggregate output). Required checks (compile, container-smoke, test-and-build, validate-container) passed. The merge was done at the owner's instruction.
+- **Live run (owner's Navidrome 0.64.2, 1,792 albums, 2026-11-05):**
+  - Bounded sample (200 random albums, seed 1): 1,516 items; 105 releases and 1,176 recordings resolved, 235 queued as unresolved, 0 deferred; all accounted for; re-ingest changed no rows; ingest 0.4 s.
+  - Health report: identical across two independent full fetches and with shuffled input (fetch about 34 s). Counts: missing album MBID 840, missing artist MBID 1,792, missing track MBID 602, missing genre 200, track-number problems 907, ReplayGain missing 1,713, disc gaps 55, track-count mismatches 29, mixed years 23, inconsistent album-artist spelling 26.
+  - Provider failure: 20 simulated albums through an always-failing search left the health body unchanged.
+  - Existing endpoints: not timed. `navidrome_server.py`, `app`, `static` and `integrations` are unchanged since Phase 1 began and nothing outside `intelligence`, its tests and scripts imports it, so no regression is possible by construction.
+- **Documentation committed directly to main:** `docs/PROJECT_STATUS.md`, `docs/ACTIVE_WORK.md` and this log.
+- **Not done / limitations:** no album artist carries an MBID in Navidrome, so artist-level resolution did not run; audio checks not run on the library (ffmpeg not in the image, job unwired); no routes (D-016); no provider traffic, publication or deployment; the run used the system Python with the venv's site-packages because the venv has no interpreter.
+- **Next action:** the owner decides the Phase 2 gate (editions and duplicates) and whether ffmpeg goes into the image.
+
 ## 2026-11-05 — Server V2 Phase 1: optional audio health checks merged
 
 - **Code merged via PR:** [#767](https://github.com/abucalip/navi-librarian/pull/767), squash `5bf9f63acdd95b73e515613b16590e863fb2c423`: `intelligence/health/audio.py` (read-only ffmpeg decode measurements: peak and peak count, integrated loudness, loudness range, true peak, high-band RMS; path resolution refuses traversal, symlink escape and non-files; errors never include paths), `intelligence/health/audio_job.py` (bounded, resumable job; `with_audio` merges findings and moves the audio checks out of `not_checked`), `HealthReport.extra_checks` (default output unchanged).
