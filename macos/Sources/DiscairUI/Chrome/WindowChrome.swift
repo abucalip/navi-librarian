@@ -5,13 +5,36 @@ import SwiftUI
 /// the whole background drags the window. The window stays `.titled | .resizable` so macOS keeps resize, the
 /// shadow, full screen and keyboard handling; a truly borderless window would lose all of them.
 struct WindowConfigurator: NSViewRepresentable {
+    /// Whether a press at this point (from the top left of the window) may drag the window. Asked at every press, so an area
+    /// that reads drags itself (the Up Next list) can say no. Default: the whole window drags.
+    var canDragAt: (CGPoint, CGSize) -> Bool = { _, _ in true }
+
+    final class Coordinator {
+        var canDragAt: (CGPoint, CGSize) -> Bool = { _, _ in true }
+        var monitor: Any?
+        deinit { if let monitor { NSEvent.removeMonitor(monitor) } }
+    }
+    func makeCoordinator() -> Coordinator { Coordinator() }
     func makeNSView(context: Context) -> NSView {
         let v = NSView()
-        DispatchQueue.main.async { Self.configure(v.window) }
+        context.coordinator.canDragAt = canDragAt
+        DispatchQueue.main.async { Self.configure(v.window); install(on: v, context.coordinator) }
         return v
     }
     func updateNSView(_ nsView: NSView, context: Context) {
-        DispatchQueue.main.async { Self.configure(nsView.window) }
+        context.coordinator.canDragAt = canDragAt
+        DispatchQueue.main.async { Self.configure(nsView.window); install(on: nsView, context.coordinator) }
+    }
+    /// Before each press is dispatched, the window is made draggable or not for that press.
+    private func install(on view: NSView, _ c: Coordinator) {
+        guard c.monitor == nil, let window = view.window else { return }
+        c.monitor = NSEvent.addLocalMonitorForEvents(matching: .leftMouseDown) { [weak window, weak c] event in
+            guard let window, let c, event.window === window, let content = window.contentView else { return event }
+            let size = content.bounds.size
+            let p = CGPoint(x: event.locationInWindow.x, y: size.height - event.locationInWindow.y)
+            window.isMovableByWindowBackground = c.canDragAt(p, size)
+            return event
+        }
     }
     @MainActor static func configure(_ w: NSWindow?) {
         guard let w else { return }
@@ -26,26 +49,84 @@ struct WindowConfigurator: NSViewRepresentable {
     }
 }
 
-/// The window drags by its background, so a control that reads mouse drags (seek bar, EQ band, a draggable row) has to
-/// opt out: this puts a view under it whose `mouseDownCanMoveWindow` is false, so a press there never moves the window.
-final class NoWindowDragNSView: NSView {
+/// The window drags by its background, so a control that reads mouse drags (seek bar, volume, EQ band, a draggable row)
+/// must take the mouse itself: a SwiftUI gesture under an AppKit blocker never saw the press. These views are AppKit
+/// views laid over the control; they handle the mouse directly and are never a window-drag area.
+final class PointerNSView: NSView {
+    /// Position in the view, from the top left, and the view's size.
+    var onDown: (CGPoint, CGSize) -> Void = { _, _ in }
+    var onDrag: (CGPoint, CGSize) -> Void = { _, _ in }
+    var onUp: (CGPoint, CGSize) -> Void = { _, _ in }
+    override var isFlipped: Bool { true }
     override var mouseDownCanMoveWindow: Bool { false }
-}
-struct NoWindowDrag: NSViewRepresentable {
-    func makeNSView(context: Context) -> NSView { NoWindowDragNSView() }
-    func updateNSView(_ nsView: NSView, context: Context) {}
-}
-extension View {
-    /// A press and drag on this view acts on the view, never on the window.
-    func blocksWindowDrag() -> some View { overlay(NoWindowDrag()) }
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
+    private func point(_ e: NSEvent) -> CGPoint { convert(e.locationInWindow, from: nil) }
+    override func mouseDown(with event: NSEvent) { onDown(point(event), bounds.size) }
+    override func mouseDragged(with event: NSEvent) { onDrag(point(event), bounds.size) }
+    override func mouseUp(with event: NSEvent) { onUp(point(event), bounds.size) }
 }
 
-/// The part of a row you grab to reorder it: a drag source that never moves the window. Only this part, not the whole
-/// row, so the buttons and menu in the row keep their own clicks (an overlay on top of a menu would take them).
-struct RowDragSource: ViewModifier {
-    let id: String?
+/// Reports a press, a drag and the release on the view it covers (a click is a press and a release at one place).
+struct PointerSurface: NSViewRepresentable {
+    var onDown: (CGPoint, CGSize) -> Void = { _, _ in }
+    var onDrag: (CGPoint, CGSize) -> Void
+    var onUp: (CGPoint, CGSize) -> Void
+
+    func makeNSView(context: Context) -> PointerNSView { PointerNSView() }
+    func updateNSView(_ v: PointerNSView, context: Context) { v.onDown = onDown; v.onDrag = onDrag; v.onUp = onUp }
+}
+
+/// What a row's grab area needs to report a drag (see `ReorderRow`): a SwiftUI drag that starts after a few points, in
+/// window coordinates so it is not disturbed by the row moving under the pointer. The window itself is kept from moving
+/// over this area by `WindowConfigurator.canDragAt`.
+struct ReorderGrab: ViewModifier {
+    var onBegan: () -> Void = {}
+    var onMoved: (CGFloat) -> Void = { _ in }
+    var onEnded: (CGFloat) -> Void = { _ in }
+    @State private var begun = false
     func body(content: Content) -> some View {
-        if let id { content.contentShape(Rectangle()).draggable(id).blocksWindowDrag() } else { content }
+        content.contentShape(Rectangle())
+            .gesture(DragGesture(minimumDistance: 4, coordinateSpace: .global)
+                .onChanged { v in
+                    if !begun { begun = true; onBegan() }
+                    onMoved(v.translation.height)
+                }
+                .onEnded { v in begun = false; onEnded(v.translation.height) })
+    }
+}
+
+/// A list row that can be dragged up or down to a new place. The row follows the pointer; on release it moves by
+/// the whole rows it was dragged over. The grab area (the part that is not a button or menu) takes `grab`.
+struct ReorderRow<Content: View>: View {
+    let index: Int
+    let count: Int
+    var enabled = true
+    let move: (Int, Int) -> Void
+    @ViewBuilder let content: (ReorderGrab?) -> Content
+    @State private var dy: CGFloat = 0
+    @State private var active = false
+    @State private var height: CGFloat = 52
+
+    /// The place a drag of `dy` points ends at.
+    static func target(from index: Int, dy: CGFloat, rowHeight: CGFloat, count: Int) -> Int {
+        guard rowHeight > 0, count > 0 else { return index }
+        return min(max(index + Int((dy / rowHeight).rounded()), 0), count - 1)
+    }
+
+    var body: some View {
+        content(enabled ? ReorderGrab(
+            onBegan: { active = true },
+            onMoved: { dy = $0 },
+            onEnded: { final in
+                let to = Self.target(from: index, dy: final, rowHeight: height, count: count)
+                dy = 0; active = false
+                if to != index { move(index, to) }
+            }) : nil)
+            .offset(y: dy)
+            .zIndex(active ? 1 : 0)
+            .opacity(active ? 0.85 : 1)
+            .shadow(color: .black.opacity(active ? 0.2 : 0), radius: 6, y: 2)
+            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { height = $0 }
     }
 }
 

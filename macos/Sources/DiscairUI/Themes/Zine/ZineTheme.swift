@@ -29,7 +29,7 @@ struct ZineWindow: View {
         .foregroundStyle(Z.ink)
         .background(Z.paper)
         .overlay { Rectangle().strokeBorder(Z.ink, lineWidth: 3).allowsHitTesting(false) }
-        .background(WindowConfigurator())
+        .background(WindowConfigurator(canDragAt: { [state] p, _ in !(state.screen == .queue && p.y > 100) }))
     }
 
     @ViewBuilder private var page: some View {
@@ -38,7 +38,7 @@ struct ZineWindow: View {
         case .album: ZineAlbum(state: state)
         case .nowPlaying: ZineNowPlaying(state: state)
         case .queue, .albums: ZineQueue(state: state)
-        case .library: ZineLibrary(state: state)
+        case .library, .artists: ZineLibrary(state: state)
         case .artist: ZineArtist(state: state)
         case .settings: ZineSettings(state: state)
         case .downloads: ZineDownloads(state: state)
@@ -47,6 +47,7 @@ struct ZineWindow: View {
         case .gapRadar: ZineGapRadar(state: state)
         case .smartPlaylists: ZineSmartPlaylists(state: state)
         case .history: ZineHistory(state: state)
+        case .recent: ZineHome(state: state)
         }
     }
 }
@@ -56,21 +57,21 @@ private func activeSection(_ s: Screen) -> String {
     switch s {
     case .home, .nowPlaying, .queue: "Home"
     case .album, .library, .albums: "Library"
-    case .artist: "Artists"
+    case .artist, .artists: "Artists"
     case .settings: "Settings"
     case .downloads: "Downloads"
     case .discover: "Discover"
     case .equalizer: "Settings"
     case .gapRadar: "Artists"
     case .smartPlaylists: "Library"
-    case .history: "Library"
+    case .history, .recent: "Library"
     }
 }
 
 struct ZineMasthead: View {
     let state: AppState
     private let sections: [(String, Screen?)] = [
-        ("Home", .home), ("Library", .library), ("Artists", .artist),
+        ("Home", .home), ("Library", .library), ("Artists", .artists),
         ("Discover", .discover), ("Downloads", .downloads), ("Settings", .settings),
     ]
 

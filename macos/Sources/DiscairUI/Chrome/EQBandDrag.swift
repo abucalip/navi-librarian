@@ -7,10 +7,10 @@ extension View {
     func eqBandDrag(trackHeight: CGFloat, onChange: @escaping (Double) -> Void) -> some View {
         self.frame(width: 30, height: trackHeight)
             .contentShape(Rectangle())
-            .blocksWindowDrag()
-            .gesture(DragGesture(minimumDistance: 0, coordinateSpace: .local).onChanged {
-                onChange(EQBandDrag.gain(y: $0.location.y, trackHeight: trackHeight))
-            })
+            .overlay(PointerSurface(
+                onDown: { p, _ in onChange(EQBandDrag.gain(y: p.y, trackHeight: trackHeight)) },
+                onDrag: { p, _ in onChange(EQBandDrag.gain(y: p.y, trackHeight: trackHeight)) },
+                onUp: { _, _ in }))
     }
 }
 

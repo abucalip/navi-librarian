@@ -10,6 +10,9 @@ struct CupertinoLibrary: View {
     @State private var source = "Songs"
     @State private var viewMode = "Table"
     @State private var onlyMissingMBID = false
+    /// The table shows 100 songs at a time: drawing the whole library at once froze the window.
+    @State private var page = 0
+    static let pageSize = 100
 
     private var rows: [SongRow] { SongTable.sorted(state.library.songs, by: sortKey, ascending: ascending, onlyMissingMBID: onlyMissingMBID) }
 
@@ -33,27 +36,78 @@ struct CupertinoLibrary: View {
                     CupertinoMiller(state: state).frame(height: 460)
                     footer
                 } else {
+                let all = rows
+                let pages = Self.pageCount(all.count)
+                let current = min(page, pages - 1)
+                let first = current * Self.pageSize
+                if viewMode == "Grid" {
+                    // Covers, one tile per song (the table is the list view); double-click plays from that song.
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 128, maximum: 128), spacing: 18, alignment: .top)], alignment: .leading, spacing: 18) {
+                        ForEach(Array(all[first..<min(all.count, first + Self.pageSize)].enumerated()), id: \.element.id) { n, r in
+                            let i = first + n
+                            VStack(alignment: .leading, spacing: 0) {
+                                CoverView(album: r.albumItem).frame(width: 128).clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                                    .overlay { if r.id == selected { RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(CU.accent, lineWidth: 3) } }
+                                    .shadow(color: .black.opacity(0.2), radius: 7, y: 4).padding(.bottom, 9)
+                                Text(r.title).fontWeight(.semibold).lineLimit(1)
+                                Text(r.artist).foregroundStyle(CU.muted).lineLimit(1)
+                            }
+                            .font(.system(size: 13)).frame(width: 128, alignment: .leading).contentShape(Rectangle())
+                            .onTapGesture(count: 2) { selected = r.id; state.play(rows: all, startAt: i) }
+                            .onTapGesture { selected = r.id }
+                            .contextMenu {
+                                Button("Play") { state.play(rows: all, startAt: i) }
+                                if let item = PlayerModel.item(r) {
+                                    Button("Play Next") { state.player.playNext(item) }
+                                    Button("Add to Queue") { state.player.addToQueue(item) }
+                                }
+                            }
+                            .accessibilityElement(children: .combine)
+                            .accessibilityLabel("\(r.title), \(r.artist)")
+                        }
+                    }
+                } else {
                 header
-                let shown = rows
-                ForEach(Array(shown.enumerated()), id: \.element.id) { i, r in
-                    row(r, shaded: i % 2 == 0, on: r.id == selected)
-                        .onTapGesture(count: 2) { selected = r.id; state.play(rows: shown, startAt: i) }
+                ForEach(Array(all[first..<min(all.count, first + Self.pageSize)].enumerated()), id: \.element.id) { n, r in
+                    let i = first + n   // position in the whole sorted list: the queue is the table in the order shown
+                    row(r, shaded: n % 2 == 0, on: r.id == selected)
+                        .onTapGesture(count: 2) { selected = r.id; state.play(rows: all, startAt: i) }
                         .onTapGesture { selected = r.id }
                         .contextMenu {
-                            Button("Play") { state.play(rows: shown, startAt: i) }
+                            Button("Play") { state.play(rows: all, startAt: i) }
                             if let item = PlayerModel.item(r) {
                                 Button("Play Next") { state.player.playNext(item) }
                                 Button("Add to Queue") { state.player.addToQueue(item) }
                             }
                         }
                 }
+                }
+                pager(total: all.count, pages: pages, current: current)
                 footer
                 }
             }
             .padding(.horizontal, 28).padding(.bottom, 28)
         }
         .scrollEdgeEffectStyle(.hard, for: .top)
+        .onChange(of: sortKey) { _, _ in page = 0 }
+        .onChange(of: ascending) { _, _ in page = 0 }
+        .onChange(of: onlyMissingMBID) { _, _ in page = 0 }
+        .onChange(of: viewMode) { _, _ in page = 0 }
         .task(id: state.library.isLive) { await state.loadAllSongs() }
+    }
+
+    static func pageCount(_ rows: Int) -> Int { max(1, (rows + pageSize - 1) / pageSize) }
+
+    private func pager(total: Int, pages: Int, current: Int) -> some View {
+        HStack(spacing: 10) {
+            Button { page = max(0, current - 1) } label: { Image(systemName: "chevron.left") }
+                .buttonStyle(CapsuleButtonStyle(small: true)).disabled(current == 0).accessibilityLabel("Previous page")
+            Text(total == 0 ? "No songs" : "Songs \(current * Self.pageSize + 1)–\(min(total, (current + 1) * Self.pageSize)) of \(total) · Page \(current + 1) of \(pages)")
+                .font(.system(size: 12)).monospacedDigit().foregroundStyle(CU.muted)
+            Button { page = min(pages - 1, current + 1) } label: { Image(systemName: "chevron.right") }
+                .buttonStyle(CapsuleButtonStyle(small: true)).disabled(current >= pages - 1).accessibilityLabel("Next page")
+        }
+        .padding(.top, 12)
     }
 
     /// Loading, failure and paging. Sorting only reorders the songs already loaded, and the footer says so.

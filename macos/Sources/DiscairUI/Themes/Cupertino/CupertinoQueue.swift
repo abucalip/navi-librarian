@@ -5,17 +5,17 @@ import SwiftUI
 /// switch, saved queue and history. Mockup: `R.cupertino.queue`.
 struct CupertinoAlbumsGrid: View {
     let state: AppState
-    /// True when the Up Next inspector is open and the grid must stay clear of it.
-    var inspector = false
+    /// The Recently Added tab: the newest albums instead of the alphabetical grid.
+    var recent = false
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
-                Text("Albums").font(CU.title(34)).padding(.top, 4).padding(.bottom, 14)
+                Text(recent ? "Recently Added" : "Albums").font(CU.title(34)).padding(.top, 4).padding(.bottom, 14)
                 if state.library.phase == .loading { Text("Loading your library…").foregroundStyle(CU.muted).padding(.bottom, 8) }
                 if case .failed(let m) = state.library.phase { Text(m).foregroundStyle(CU.accent).padding(.bottom, 8) }
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 128, maximum: 128), spacing: 18, alignment: .top)], alignment: .leading, spacing: 18) {
-                    ForEach(state.library.albums) { a in
-                        Button { state.selectedAlbum = a; state.screen = .album } label: {
+                    ForEach(state.visible(recent ? state.library.recent : state.library.albums)) { a in
+                        Button { state.open(album: a) } label: {
                         VStack(alignment: .leading, spacing: 0) {
                             CoverView(album: a).frame(width: 128).clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
                                 .shadow(color: .black.opacity(0.2), radius: 7, y: 4).padding(.bottom, 9)
@@ -30,7 +30,7 @@ struct CupertinoAlbumsGrid: View {
                     }
                 }
             }
-            .padding(.leading, 28).padding(.trailing, 28 + (inspector ? CupertinoQueueInspector.width : 0)).padding(.bottom, 28)   // keeps content out from under the inspector
+            .padding(.horizontal, 28).padding(.bottom, 28)
         }
         .scrollEdgeEffectStyle(.hard, for: .top)
     }
@@ -50,7 +50,7 @@ struct CupertinoQueueInspector: View {
             HStack {
                 segmented
                 Spacer()
-                Text(tab == .saved ? "\(state.savedQueues.queues.count) saved" : live ? liveSummary : "8 songs · 52 min").foregroundStyle(CU.muted).font(.system(size: 13))
+                Text(tab == .saved ? "\(state.savedQueues.queues.count) saved" : live ? liveSummary : "8 songs · 52 min").foregroundStyle(CU.muted).font(.system(size: 13)).lineLimit(1).minimumScaleFactor(0.8)
             }
             .padding(.bottom, 12)
 
@@ -150,7 +150,8 @@ struct CupertinoQueueInspector: View {
             else { Text("Nothing playing. Play a song and what follows shows here.").foregroundStyle(CU.muted).padding(8) }
             let up = p.queue.upNext
             ForEach(Array(up.enumerated()), id: \.element.id) { i, item in
-                songRow(item, time: PlayerModel.clock(item.duration), playing: false, dragID: item.id.uuidString) {
+                ReorderRow(index: i, count: up.count, move: { p.moveUpNext(from: $0, to: $1) }) { grab in
+                songRow(item, time: PlayerModel.clock(item.duration), playing: false, grab: grab) {
                     Menu {
                         Button("Play now") { p.jump(toUpNext: i) }
                         Button("Move up") { p.moveUpNext(from: i, to: i - 1) }.disabled(i == 0)
@@ -161,20 +162,12 @@ struct CupertinoQueueInspector: View {
                     .menuStyle(.borderlessButton).menuIndicator(.hidden).fixedSize()
                     .accessibilityLabel("Actions for \(item.title)")
                 }
-                .dropDestination(for: String.self) { ids, _ in reorder(ids, to: i) }
+                }
             }
         }
     }
 
-    /// A row dropped on another moves there (Move up and Move down in the menu do the same without dragging).
-    private func reorder(_ ids: [String], to i: Int) -> Bool {
-        let p = state.player
-        guard let id = ids.first, let from = p.queue.upNext.firstIndex(where: { $0.id.uuidString == id }) else { return false }
-        p.moveUpNext(from: from, to: i)
-        return true
-    }
-
-    private func songRow<T: View>(_ q: QueueItem, time: String, playing: Bool, dragID: String? = nil, @ViewBuilder trailing: () -> T = { EmptyView() }) -> some View {
+    private func songRow<T: View>(_ q: QueueItem, time: String, playing: Bool, grab: ReorderGrab? = nil, @ViewBuilder trailing: () -> T = { EmptyView() }) -> some View {
         HStack(spacing: 11) {
             HStack(spacing: 11) {
             CoverView(album: AlbumItem(id: -1, title: q.album, artist: q.artist, year: 0, genre: "", format: "", owned: true, hue: 200, coverArt: q.coverArt))
@@ -185,9 +178,9 @@ struct CupertinoQueueInspector: View {
             }
             Spacer(minLength: 4)
             }
-            .modifier(RowDragSource(id: dragID))
+            .modifier(grab ?? ReorderGrab())
             HStack(spacing: 4) {
-                if playing { Image(systemName: "waveform").accessibilityLabel("Playing") }
+                if playing { PlayingBars(active: state.player.isPlaying) }
                 Text(time).monospacedDigit()
             }
             .font(.system(size: 12)).foregroundStyle(CU.muted)
@@ -209,7 +202,7 @@ struct CupertinoQueueInspector: View {
 
     private func seg(_ t: String, on: Bool, _ action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            Text(t).font(.system(size: 13, weight: on ? .semibold : .medium)).padding(.horizontal, 14).padding(.vertical, 3)
+            Text(t).font(.system(size: 13, weight: on ? .semibold : .medium)).lineLimit(1).fixedSize().padding(.horizontal, 14).padding(.vertical, 3)
                 .background(on ? Color.white : .clear, in: Capsule())
                 .shadow(color: .black.opacity(on ? 0.15 : 0), radius: 1.5, y: 1)
         }

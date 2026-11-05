@@ -183,6 +183,65 @@ public struct LibrarianClient: Sendable {
         return "artist=\(enc(String(artist.prefix(180))))&album=\(enc(String(album.prefix(180))))"
     }
 
+    // MARK: Related artists and albums (the web album and artist pages)
+
+    /// The related parts of an album page (`GET /api/albums/{artist_key}/{album_key}`, JSON form): similar artists, similar
+    /// albums the library lacks, and the track list for an album the library does not hold.
+    public func albumPage(artist: String, album: String) async throws -> AlbumPageRelated {
+        let path = "api/albums/\(Self.key(artist))/\(Self.key(album))?" + Self.nameQuery(artist: artist, name: album)
+        let (data, http) = try await authedSend("GET", path, body: nil)
+        return try decode(AlbumPageEnvelope.self, data, http).related
+    }
+
+    /// Similar artists for an artist page (`GET /api/artists/{key}`, JSON form). The server marks which the library holds.
+    public func artistPage(name: String, id: String? = nil) async throws -> ArtistPageRelated {
+        var q = Self.nameQuery(artist: nil, name: name)
+        if let id { q += "&id=" + Self.enc(id) }
+        let (data, http) = try await authedSend("GET", "api/artists/\(Self.key(name))?" + q, body: nil)
+        return try decode(ArtistPageEnvelope.self, data, http).related
+    }
+
+    /// An artist photo (`GET /api/artist-image`), found by the server from public sources. Only https addresses.
+    public func artistImageURL(name: String) async throws -> URL? {
+        struct Lookup: Decodable { let artworkUrl: String?; enum CodingKeys: String, CodingKey { case artworkUrl = "artwork_url" } }
+        let (data, http) = try await authedSend("GET", "api/artist-image?name=" + Self.enc(String(name.prefix(180))), body: nil)
+        guard let s = try decode(Lookup.self, data, http).artworkUrl, let u = URL(string: s), u.scheme == "https" else { return nil }
+        return u
+    }
+
+    /// The server's page key for a name: lower case, letters and digits, a leading "the" dropped ("The Beatles" is "beatles").
+    static func key(_ name: String) -> String {
+        var s = name.folding(options: .diacriticInsensitive, locale: nil).lowercased()
+        s = String(s.map { $0.isLetter || $0.isNumber ? $0 : " " })
+        var words = s.split(separator: " ").map(String.init)
+        if words.count > 1, words.first == "the" { words.removeFirst() }
+        let k = words.joined(separator: " ")
+        return k.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed.subtracting(CharacterSet(charactersIn: "/"))) ?? ""
+    }
+
+    static func enc(_ s: String) -> String {
+        var allowed = CharacterSet.urlQueryAllowed
+        allowed.remove(charactersIn: "&+=#?/")
+        return s.addingPercentEncoding(withAllowedCharacters: allowed) ?? ""
+    }
+
+    static func nameQuery(artist: String?, name: String) -> String {
+        var parts: [String] = []
+        if let artist { parts.append("artist=" + enc(String(artist.prefix(180)))) }
+        parts.append("name=" + enc(String(name.prefix(180))))
+        return parts.joined(separator: "&")
+    }
+
+    /// A cover for an album the library does not hold (`GET /api/artwork`), found by the server from public sources.
+    /// Nil when the server has none. Only https addresses are returned.
+    public func artworkURL(artist: String, album: String) async throws -> URL? {
+        struct Lookup: Decodable { let artworkUrl: String?; enum CodingKeys: String, CodingKey { case artworkUrl = "artwork_url" } }
+        let (data, http) = try await authedSend("GET", "api/artwork?" + Self.query(artist, album), body: nil)
+        let found = try decode(Lookup.self, data, http).artworkUrl
+        guard let found, let url = URL(string: found), url.scheme == "https" else { return nil }
+        return url
+    }
+
     // MARK: Plumbing
 
     private func json(_ object: [String: Any]) throws -> Data {
@@ -202,7 +261,8 @@ public struct LibrarianClient: Sendable {
     private func send(_ method: String, _ path: String, body: Data?) async throws -> (Data, HTTPURLResponse) {
         let parts = path.split(separator: "?", maxSplits: 1).map(String.init)
         var comps = URLComponents(url: base, resolvingAgainstBaseURL: false)!
-        comps.path = (comps.path.hasSuffix("/") ? comps.path : comps.path + "/") + parts[0]
+        // The path is already percent-encoded (page keys carry %20); setting `path` would encode the % again.
+        comps.percentEncodedPath = (comps.percentEncodedPath.hasSuffix("/") ? comps.percentEncodedPath : comps.percentEncodedPath + "/") + parts[0]
         if parts.count > 1 { comps.percentEncodedQuery = parts[1] }
         var request = URLRequest(url: comps.url!)
         request.httpMethod = method

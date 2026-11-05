@@ -15,6 +15,7 @@ struct ZineArtist: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
+            BackButton(title: AppState.title(of: state.artistBack), zine: true) { state.screen = state.artistBack }.padding(.bottom, 8)
             ZStack(alignment: .topLeading) {
                 // The whole name is shown (owner review: the cropped version cut the letters off). The text box is placed
                 // from the font's own ascent so the baseline sits 10 pt above the rule.
@@ -33,16 +34,20 @@ struct ZineArtist: View {
 
             HStack(spacing: 20) {
                 let lib = state.library
-                Mono("\(lib.artistOwnedCount) of \(lib.artistOwnedCount + lib.artistMissingCount) albums owned")
-                Mono("\(lib.artistMissingCount) missing")
+                if state.selectedArtistIsUnowned { Mono("Not in your library") } else {
+                    Mono("\(state.shownArtistOwnedCount) of \(state.shownArtistOwnedCount + state.shownArtistMissingCount) albums owned")
+                    Mono("\(state.shownArtistMissingCount) missing")
+                }
                 Mono(lib.isLive ? genres : "Post-rock · Synth-pop")
                 Spacer()
                 HStack(spacing: 10) {
+                    if !state.selectedArtistIsUnowned {
                     Button("Play") { state.actions.play(album: state.library.artistAlbums.first ?? Fixtures.albums[0]) }.buttonStyle(ZineButtonStyle(kind: .yellow, small: true))
+                    }
                     Button("Radio") { }.buttonStyle(ZineButtonStyle(small: true))
-                    if state.library.artistMissingCount > 0 || !state.library.isLive {
-                    Button(state.library.isLive ? "Get \(state.library.artistMissingCount) missing" : "Get both missing") {
-                        for a in state.library.artistAlbums where !a.owned { state.actions.get(album: a) }
+                    if state.shownArtistMissingCount > 0 || !state.library.isLive {
+                    Button(state.library.isLive ? "Get \(state.shownArtistMissingCount) missing" : "Get both missing") {
+                        for a in state.shownArtistAlbums where !a.owned { state.actions.get(album: a) }
                     }
                     .buttonStyle(ZineButtonStyle(small: true))
                     }
@@ -52,12 +57,17 @@ struct ZineArtist: View {
 
             HStack(alignment: .top, spacing: 22) {
                 VStack(alignment: .leading, spacing: 0) {
+                    if state.library.isLive { ArtistBio(state: state).padding(.bottom, 10) }
+                    if state.library.isLive, state.related.loading || state.related.incomplete {
+                        Mono(state.related.loading ? "Still looking for the biography and top songs…" : (state.related.lastError ?? "The Librarian had not finished.") + " Reopen the page to ask again.").padding(.bottom, 8)
+                    }
                     ZineH2("Back issues", size: 20)
                     LazyVGrid(columns: [GridItem(.adaptive(minimum: 140, maximum: 140), spacing: 18, alignment: .top)], alignment: .leading, spacing: 16) {
-                        ForEach(state.library.artistAlbums) { a in issue(a) }
+                        ForEach(state.shownArtistAlbums) { a in issue(a) }
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
+                if state.library.isLive { TopSongsPanel(state: state) }
                 if !state.library.isLive {   // similar artists and a bio need Librarian calls the client does not have yet
                     VStack(alignment: .leading, spacing: 8) {
                         ZineH2("Also in this issue", size: 18)
@@ -69,6 +79,7 @@ struct ZineArtist: View {
                     .frame(width: 250)
                 }
             }
+            if state.library.isLive { RelatedSections(state: state, mixed: true) }
         }
         .task(id: state.selectedArtist.id) { await state.loadSelectedArtist() }
     }
@@ -86,7 +97,7 @@ struct ZineArtist: View {
     private func issue(_ a: AlbumItem) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             if a.owned {
-                Button { state.selectedAlbum = a; state.screen = .album } label: { ZineCover(album: a, width: 130) }
+                Button { state.open(album: a) } label: { ZineCover(album: a, width: 130) }
                     .buttonStyle(.plain).accessibilityLabel("Open \(a.title)")
             } else {
                 VStack(spacing: 4) {
@@ -100,7 +111,7 @@ struct ZineArtist: View {
                 .background(StripeFill())
                 .zBorder(3, dashed: true)
             }
-            Button { state.selectedAlbum = a; state.screen = .album } label: {
+            Button { state.open(album: a) } label: {
                 Text(a.title).font(Z.an(14)).textCase(.uppercase).lineLimit(2).lineSpacing(-2).frame(width: 130, alignment: .leading)
             }
             .buttonStyle(.plain).accessibilityLabel("Open \(a.title)")

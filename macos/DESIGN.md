@@ -407,3 +407,45 @@ Completes contract section 6.3. In the Cupertino Library, the Columns switch (op
 
 **Tests run (filtered):** `swift test --skip-update --filter "BulkSongLoadTests|LibraryModelTests|SmartPlaylistTests|ListeningHistoryTests|ScreenshotTests|MillerColumnsTests|OfflineTests"` (56 passed; BulkSongLoadTests use a fake server: 4321 songs in order without gaps or repeats, an exact page multiple ends, a small library needs one request, a failure keeps and resumes). **Measured against the real server (2026-11-04, read-only `search3`, LAN):** library = 12,672 songs. One 500-song page 0.05 s (same at offset 0 and 12,000). Old way, 200 per page one after another: 4,000 songs in 0.47 s. Sequential 500 per page, whole library: 1.38 s. `loadAllSongs`: whole library in 1.66 s, all ids unique, no error. Its first run took 4.4 s because every row built three `ISO8601DateFormatter`s; one shared pair fixed that. Fetching four pages at once does not beat sequential here (the server answers quickly either way), so the width of 4 buys little on this LAN and may matter more over Tailscale.
 **Not verified:** memory use and scrolling on the real library, Tailscale speed, rows are not paged in the table (every loaded row is in memory and in the view).
+
+## Bug batch after the owner's live run (2026-11-05)
+
+- Seek, volume, EQ bands and queue-row drag: the SwiftUI gesture sat under an AppKit "no window drag" overlay and never saw the press. Controls now take the mouse through AppKit views (`PointerSurface`, `RowDragSurface` in `WindowChrome.swift`); a row drag is an AppKit drag session carrying the song's id as plain text. Unit-tested with synthetic events; not tried with a real mouse.
+- Restored position now applies only to Play on the queue restored at launch; a new album, Next and Previous start at 0.
+- Artists tab is the A-Z list (`Screen.artists`); Recently Added has its own screen; album and artist pages have a Back button to where they were opened from.
+- Songs table: 100 rows per page (all songs still load for sorting).
+- Covers for albums not in the library (Missing, New, Gap Radar) come from the Librarian's `/api/artwork` lookup.
+- Window below 1100x700 scrolls both ways instead of squeezing the layout (minimum window 480x360).
+- Pipeline dock moved to the bottom left; a finished Get (imported or failed) shows a note for 30 seconds, then fades.
+- Queue tabs no longer wrap onto two lines.
+
+### Second batch (2026-11-05)
+
+- Queue reordering no longer uses drag-and-drop: a row's grab area is an AppKit view (`RowDragNSView`) that reports how far the pointer moved, the row follows it, and on release it moves by the whole rows passed over (`ReorderRow`). The old drop target let the window move as well.
+- Album pages show "Similar artists in your library", "Not in your library" and "Similar albums not in your library"; artist pages show the two artist groups. Data: the Librarian's `/api/albums/{artist}/{album}` and `/api/artists/{artist}` (JSON form), photos from the page's https `artwork_url` or `/api/artist-image`. The old similar-artist pills (Navidrome) are no longer drawn.
+- A pick or similar album with no suggested songs lists the server's `tracks` section on its album page.
+- Album pages: double-click an owned song to play from it; the playing song shows animated bars (queue and album page).
+- Songs: Grid shows covers (Table is the list); Columns uses plain buttons in lazy stacks and computes its columns once per render.
+- Missing from your library and New covers and titles open the album page. Back from an album opened in the Up Next view goes to Albums. Artists and Recently Added are in the command palette.
+
+### Third batch (2026-11-05)
+
+- Up Next in Cupertino is an inspector over the current screen (`AppState.queueOpen`); the toolbar button and ⌘K "Queue" no longer change the screen.
+- Reordering uses a SwiftUI drag on the row's grab area (the AppKit overlay did not receive the press inside the scrolling list). `WindowConfigurator.canDragAt` is asked at each press: the window cannot be dragged from the Up Next inspector while it is open (Cupertino), nor from the Running Order page below the masthead (Zine).
+- The toolbar search field opens the command palette on click. Album and artist names on Now Playing open their pages. The Cupertino artist banner shows the artist's photo on the right.
+
+### Artist page: bio, top songs, similar artists (2026-11-05)
+
+Modelled on the web and Android artist pages (`bio` and `top_songs` sections of `GET /api/artists/{key}`): the bio sits below the header (four lines, "Read more"), the albums are on the left and a numbered Top songs list on the right (five shown, "All top songs"; listen counts shortened; a check for an owned song, Get for one the library lacks that names its album). Below the albums, one "Similar artists" row holds owned and unowned artists; an unowned one carries "Not in your library" under its name and does not open. Both themes. Not seen against the real Librarian.
+
+### Artist page: retries and unowned artists (2026-11-05)
+
+- The artist and album pages are read in the Librarian's JSON form, which ends slow sections at its deadline (`done.partial`, reasons `deadline` / `source_failed`) and keeps what finished in its cache. The app now asks again (up to four times, two seconds apart) while the page is partial, keeps what each ask brought, no longer remembers a failed or cancelled ask as done, and says on the page what the Librarian answered when a section stays missing. The earlier one-ask version showed the bio and top songs for only some artists.
+- Similar artists, owned or not, open. An artist the library lacks gets a page from the Librarian's `albums` section (covers by lookup, each album opens its own page), with the bio, top songs and similar artists; Play is hidden and the header says "Not in your library".
+
+### Artist page: owned artists, missing albums; album banner (2026-11-05)
+
+- **404 fix:** `LibrarianClient.send` set `URLComponents.path` to a path that was already percent-encoded, so a multi-word page key went out as `pink%2520floyd` and the server answered 404 `unknown_artist` (an owned page sends the Navidrome id, so the server never fell back to the name). It now sets `percentEncodedPath`. Single-word names and unowned pages had worked. Album pages used the same code. Test: `aPageKeyWithSpacesIsEncodedOnce`.
+- **Partly owned artists:** the page now lists the albums the Librarian knows that the library lacks (`albums` section, entries not marked owned), after the library's own and the picks, each title once (case, punctuation and one trailing "(year)" ignored). They are dashed with Get like an unowned artist's. "N of M owned" and "Get N missing" count them (`AppState.shownArtistAlbums`, `shownArtistOwnedCount`, `shownArtistMissingCount`). Both themes.
+- **Album banner (Cupertino):** `CupertinoAlbumBanner` is the artist page's fixed blurred-cover banner (356 pt, under the sidebar and toolbar) holding the back button, cover, title, artist, badges and Play / Shuffle / Get / Save; the songs and lists scroll below it. An album with no cover art keeps the colour gradient. Zine's album page is unchanged (its artist page has no blur).
+- **Tests run (filtered):** `BugBatchTests|RelatedModel|LibraryModelTests` (42 passed) and the Librarian client tests. **Not verified:** the missing-albums merge has no test of its own; the banner layout was run in the app by the owner only for the 404 fix, not yet for these two changes.

@@ -43,7 +43,7 @@ struct CupertinoHome: View {
                 HStack {
                     Button { state.actions.resume() } label: { Label("Resume", systemImage: "play.fill") }
                         .buttonStyle(CapsuleButtonStyle(primary: true))
-                    Button("Open album") { state.selectedAlbum = a; state.screen = .album }
+                    Button("Open album") { state.open(album: a) }
                         .buttonStyle(CapsuleButtonStyle())
                 }
             }
@@ -72,11 +72,11 @@ struct CupertinoHome: View {
 
     private func tile(_ a: AlbumItem, missing: Bool) -> some View {
         VStack(alignment: .leading, spacing: 0) {
-            Button { if a.owned { state.open(album: a) } } label: {
+            Button { state.open(album: a) } label: {
                 CoverView(album: a).frame(width: 156).clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
                     .shadow(color: .black.opacity(0.2), radius: 7, y: 4)
             }
-            .buttonStyle(.plain).padding(.bottom, 9).accessibilityLabel(a.owned ? "Open \(a.title)" : "\(a.title), not in your library")
+            .buttonStyle(.plain).padding(.bottom, 9).accessibilityLabel(a.owned ? "Open \(a.title)" : "Open \(a.title), not in your library")
             Text(a.title).fontWeight(.semibold).lineLimit(1)
             Text(missing ? a.line([a.artist, a.yearText]) : a.artist).foregroundStyle(CU.muted).lineLimit(1)
             if missing {

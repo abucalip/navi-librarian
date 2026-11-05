@@ -53,6 +53,25 @@ public final class AcquisitionModel {
     @ObservationIgnored public var notifier: GetNotifier?
     @ObservationIgnored private var detector = GetFinishedDetector()
 
+    /// In-app notes for Gets that just ended (imported or failed), shown above the Pipeline dock for 30 seconds, then
+    /// they fade away. Independent of the system-notification switch: this is the app's own signal.
+    public private(set) var toasts: [GetToast] = []
+    @ObservationIgnored var toastLifetime: Duration = .seconds(30)
+    static let maxToasts = 4
+
+    func post(_ event: GetFinishedEvent) {
+        let toast = GetToast(id: "\(event.id)-\(UUID().uuidString)", outcome: event.outcome, title: event.title, body: event.body)
+        toasts.append(toast)
+        if toasts.count > Self.maxToasts { toasts.removeFirst(toasts.count - Self.maxToasts) }
+        let life = toastLifetime
+        Task { [weak self] in
+            try? await Task.sleep(for: life)
+            self?.dismissToast(toast.id)
+        }
+    }
+
+    public func dismissToast(_ id: String) { toasts.removeAll { $0.id == id } }
+
     public init(undoWindow: Duration = .seconds(6), defaults: UserDefaults = .standard) {
         self.undoWindow = undoWindow
         self.defaults = defaults
@@ -286,6 +305,7 @@ public final class AcquisitionModel {
         jobs = list
         // Always run the detector so its picture of the jobs stays current, even while notifications are off.
         let finished = detector.events(for: list)
+        finished.forEach(post)
         if notifiesWhenFinished, let notifier { finished.forEach(notifier.deliver) }
     }
 

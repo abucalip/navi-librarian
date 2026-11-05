@@ -229,7 +229,7 @@ public final class PlayerModel {
         switch phase {
         case .playing: output.pause(); phase = .paused; position = output.position; stopTicking(); persist()
         case .paused: output.play(); phase = .playing; startTicking()
-        case .idle, .failed: if current != nil { startCurrent() }
+        case .idle, .failed: if current != nil { startCurrent(resume: true) }
         case .loading: break
         }
     }
@@ -299,7 +299,9 @@ public final class PlayerModel {
         }
     }
 
-    private func startCurrent() {
+    /// `resume` is true only for Play on the queue restored at launch; every other start (a new album, Next, Previous, a
+    /// jump) begins the song at 0, whatever place was saved.
+    private func startCurrent(resume: Bool = false) {
         guard let item = queue.current else { stop(); return }
         guard let urls else { phase = .failed("Not connected to Navidrome. Check Settings."); return }
         loadGeneration += 1
@@ -307,7 +309,7 @@ public final class PlayerModel {
         loadTask?.cancel()
         dropPreload()
         output.stop(); stopTicking(); scrobbler.end()
-        let startAt = resumeAt; resumeAt = 0
+        let startAt = resume ? resumeAt : 0; resumeAt = 0
         phase = .loading; position = startAt; duration = item.duration
         persist()
         if queue.upNext.count < 3 { onUpNextLow?() }

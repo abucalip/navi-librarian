@@ -34,7 +34,7 @@ struct CupertinoNowPlaying: View {
 
             HStack(spacing: 10) {
                 if !live { chip("text.quote", "Lyrics") }
-                Button { state.screen = .queue } label: { chip("list.bullet", "Up Next") }.buttonStyle(.plain)
+                Button { state.queueOpen = true; state.screen = .albums } label: { chip("list.bullet", "Up Next") }.buttonStyle(.plain)
             }
             .frame(maxWidth: .infinity, alignment: .trailing).padding(.trailing, 20).padding(.top, 14)
 
@@ -176,7 +176,18 @@ struct CupertinoNowPlaying: View {
             CoverView(album: a).clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
                 .shadow(color: .black.opacity(0.5), radius: 35, y: 30)
             Text(p.current?.title ?? "Nothing playing").font(.system(size: 24, weight: .bold)).lineLimit(2).padding(.top, 22)
-            if let c = p.current { Text(c.album.isEmpty ? c.artist : "\(c.artist) — \(c.album)").font(.system(size: 18)).opacity(0.7).lineLimit(2) }
+            if let c = p.current {
+                HStack(spacing: 0) {
+                    Button { state.openCurrentArtist() } label: { Text(c.artist).underline(false) }
+                        .buttonStyle(.plain).accessibilityLabel("Open artist \(c.artist)")
+                    if !c.album.isEmpty {
+                        Text(" — ")
+                        Button { state.openCurrentAlbum() } label: { Text(c.album) }
+                            .buttonStyle(.plain).accessibilityLabel("Open album \(c.album)")
+                    }
+                }
+                .font(.system(size: 18)).opacity(0.7).lineLimit(2)
+            }
             if case .failed(let m) = p.phase { Text(m).font(.system(size: 13)).foregroundStyle(.white).padding(.top, 4) }
             if let n = p.notice { Text(n).font(.system(size: 12)).opacity(0.8).padding(.top, 2) }
             HStack(spacing: 10) {

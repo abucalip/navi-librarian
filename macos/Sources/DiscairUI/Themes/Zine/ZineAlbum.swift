@@ -8,6 +8,7 @@ struct ZineAlbum: View {
     var body: some View {
         let a = state.selectedAlbum
         VStack(alignment: .leading, spacing: 0) {
+            BackButton(title: AppState.title(of: state.albumBack), zine: true) { state.screen = state.albumBack }.padding(.bottom, 8)
             Text(a.title).font(Z.an(118)).textCase(.uppercase).tracking(1.2).lineLimit(1).minimumScaleFactor(0.4)
                 .padding(.bottom, 4).accessibilityAddTraits(.isHeader)
             Rectangle().fill(Z.ink).frame(height: 4)
@@ -32,6 +33,7 @@ struct ZineAlbum: View {
                 .font(Z.serif(14.5)).frame(maxWidth: .infinity, alignment: .topLeading)
                 contents(a).frame(maxWidth: .infinity)
             }
+            RelatedSections(state: state, albums: true)
             ZineAlbumSpread(state: state)
         }
         .task(id: a.id) { await state.loadSelectedAlbum() }
@@ -77,9 +79,15 @@ struct ZineAlbum: View {
             ForEach(Array(state.library.tracks.enumerated()), id: \.element.id) { i, t in
                 if t.owned {
                     DotRow {
-                        HStack(spacing: 6) { Text("\(i + 1)").font(Z.an(15)); Text(t.title).font(Z.serif(14)) }
+                        HStack(spacing: 6) {
+                            if state.isCurrent(t) { PlayingBars(active: state.player.isPlaying) } else { Text("\(i + 1)").font(Z.an(15)) }
+                            Text(t.title).font(Z.serif(14))
+                        }
                     } right: { Text(t.duration).font(Z.serif(14)) }
                     .padding(.vertical, 3)
+                    .contentShape(Rectangle())
+                    .onTapGesture(count: 2) { state.playAlbum(a, startAt: i) }
+                    .help("Double-click to play")
                     .accessibilityElement(children: .combine)
                 } else {
                     HStack {

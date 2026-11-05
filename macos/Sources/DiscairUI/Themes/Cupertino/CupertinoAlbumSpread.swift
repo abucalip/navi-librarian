@@ -52,7 +52,7 @@ struct CupertinoAlbumSpread: View {
                         }
                     }
                 }
-                if !c.similar.isEmpty {
+                if false {
                     section("Similar artists") {
                         HStack(spacing: 8) {
                             ForEach(c.similar) { s in

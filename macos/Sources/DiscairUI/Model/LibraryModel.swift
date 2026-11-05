@@ -163,7 +163,7 @@ public final class LibraryModel {
     }
 
     /// Songs for an album. A live album reads Navidrome; a pick shows the Librarian's suggested tracks as not owned.
-    public func loadTracks(for album: AlbumItem, navidrome: NavidromeClient?) async {
+    public func loadTracks(for album: AlbumItem, navidrome: NavidromeClient?, librarian: LibrarianClient? = nil, related: RelatedModel? = nil) async {
         guard isLive else { tracks = Fixtures.tracks; return }
         if let id = album.remoteID, let navidrome {
             tracksLoading = true
@@ -178,6 +178,15 @@ public final class LibraryModel {
         } else {
             tracks = album.suggestedTracks.enumerated().map {
                 TrackItem(id: $0.offset, title: $0.element, duration: "", format: "", owned: false, playing: false)
+            }
+            // A pick (or a similar album) with no suggested songs: the server lists the album's songs from public sources.
+            if tracks.isEmpty, let librarian {
+                let listed: [RelatedTrack]
+                if let related, !related.tracks.isEmpty { listed = related.tracks }
+                else { listed = (try? await librarian.albumPage(artist: album.artist, album: album.title))?.tracks ?? [] }
+                tracks = listed.enumerated().map {
+                    TrackItem(id: $0.offset, title: $0.element.title, duration: Self.clock($0.element.durationSeconds), format: "", owned: false, playing: false)
+                }
             }
         }
     }

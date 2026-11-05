@@ -23,11 +23,14 @@ struct CupertinoArtistBanner: View {
         .frame(maxWidth: .infinity)
         .overlay(alignment: .topLeading) {
             VStack(alignment: .leading, spacing: 0) {
+                BackButton(title: AppState.title(of: state.artistBack), onDark: true) { state.screen = state.artistBack }.padding(.bottom, 14)
                 Text(state.selectedArtist.name).font(.system(size: 60, weight: .bold)).tracking(-1.5).lineLimit(1).minimumScaleFactor(0.5)
-                Text(lib.isLive ? "\(lib.artistOwnedCount) of \(lib.artistOwnedCount + lib.artistMissingCount) albums owned" : "3 of 5 albums owned · Post-rock, Synth-pop").opacity(0.85).padding(.top, 6).padding(.bottom, 12)
+                Text(state.selectedArtistIsUnowned ? "Not in your library" : lib.isLive ? "\(state.shownArtistOwnedCount) of \(state.shownArtistOwnedCount + state.shownArtistMissingCount) albums owned" : "3 of 5 albums owned · Post-rock, Synth-pop").opacity(0.85).padding(.top, 6).padding(.bottom, 12)
                 HStack(spacing: 8) {
+                    if !state.selectedArtistIsUnowned {
                     Button { state.actions.play(album: lib.artistAlbums.first ?? Fixtures.albums[1]) } label: { Label("Play", systemImage: "play.fill") }
                         .buttonStyle(CapsuleButtonStyle(primary: true))
+                    }
                     Button { } label: { Label("Shuffle", systemImage: "shuffle") }
                         .buttonStyle(CapsuleButtonStyle(translucent: true))
                     Button { } label: { Label("Radio", systemImage: "dot.radiowaves.left.and.right") }
@@ -35,7 +38,13 @@ struct CupertinoArtistBanner: View {
                 }
             }
             .foregroundStyle(.white)
-            .padding(.leading, 264).padding(.top, 150)       // 236 sidebar column + 28 margin
+            .padding(.leading, 264).padding(.top, 104)       // 236 sidebar column + 28 margin
+        }
+        .overlay(alignment: .trailing) {
+            ArtistPhoto(name: state.selectedArtist.name, size: 210)
+                .overlay(Circle().stroke(.white.opacity(0.85), lineWidth: 4))
+                .shadow(color: .black.opacity(0.35), radius: 14, y: 6)
+                .padding(.trailing, state.queueOpen ? CupertinoQueueInspector.width + 40 : 40).padding(.top, 60)
         }
         .accessibilityElement(children: .contain)
     }
@@ -57,14 +66,29 @@ struct CupertinoArtist: View {
                         ForEach(Array(top.enumerated()), id: \.offset) { _, t in songRow(t) }
                     }
                 }
-                Text("Albums").font(CU.title(20)).padding(.top, 22).padding(.bottom, 10).accessibilityAddTraits(.isHeader)
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 128, maximum: 128), spacing: 16, alignment: .top)], alignment: .leading, spacing: 18) {
-                    ForEach(state.library.artistAlbums) { a in albumTile(a) }
+                // The bio and the albums on the left; the numbered top songs on the right (the page is the web's, in this theme).
+                HStack(alignment: .top, spacing: 32) {
+                    VStack(alignment: .leading, spacing: 0) {
+                        if state.library.isLive { ArtistBio(state: state) }
+                        if state.library.isLive, state.related.loading || state.related.incomplete { relatedStatus }
+                        Text("Albums").font(CU.title(20)).padding(.top, 22).padding(.bottom, 10).accessibilityAddTraits(.isHeader)
+                        LazyVGrid(columns: [GridItem(.adaptive(minimum: 128, maximum: 128), spacing: 16, alignment: .top)], alignment: .leading, spacing: 18) {
+                            ForEach(state.shownArtistAlbums) { a in albumTile(a) }
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    if state.library.isLive { TopSongsPanel(state: state).padding(.top, 18) }
                 }
+                if state.library.isLive { RelatedSections(state: state, mixed: true) }
             }
             .padding(.horizontal, 28).padding(.bottom, 28)
         }
         .task(id: state.selectedArtist.id) { await state.loadSelectedArtist() }
+    }
+
+    @ViewBuilder private var relatedStatus: some View {
+        Text(state.related.loading ? "Still looking for the biography and top songs…" : (state.related.lastError ?? "The Librarian had not finished.") + " Reopen the page to ask again.")
+            .font(.system(size: 12)).foregroundStyle(CU.muted).padding(.top, 10)
     }
 
     private func songRow(_ t: (title: String, album: Int, sub: String, missing: Bool)) -> some View {
@@ -87,7 +111,7 @@ struct CupertinoArtist: View {
 
     private func albumTile(_ a: AlbumItem) -> some View {
         VStack(alignment: .leading, spacing: 0) {
-            Button { if a.owned { state.open(album: a) } } label: {
+            Button { state.open(album: a) } label: {
             CoverView(album: a).frame(width: 128).clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
                 .opacity(a.owned ? 1 : 0.35)
                 .overlay { if !a.owned { RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(Color(white: 0.53), style: StrokeStyle(lineWidth: 2, dash: [5, 4])).padding(-3) } }

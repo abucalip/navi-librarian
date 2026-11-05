@@ -12,6 +12,14 @@ public struct GetFinishedEvent: Equatable, Sendable {
     public let body: String
 }
 
+/// One in-app note about a finished Get (see `AcquisitionModel.toasts`).
+public struct GetToast: Identifiable, Equatable, Sendable {
+    public let id: String
+    public let outcome: GetFinishedEvent.Outcome
+    public let title: String
+    public let body: String
+}
+
 /// Decides which jobs to announce. A job is announced once, when a poll sees it end (imported or failed) after an earlier
 /// poll saw it still moving. The first poll after connecting only learns the starting state, so old jobs never notify.
 @MainActor

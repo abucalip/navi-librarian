@@ -23,7 +23,18 @@ struct ZineNowPlaying: View {
                 ZineCover(album: a, width: 350).overlay { Halftone().padding(3) }
                 Text(c?.title ?? "Nothing playing").font(Z.an(54)).textCase(.uppercase).tracking(0.5).lineLimit(1).minimumScaleFactor(0.5)
                     .padding(.top, 16).accessibilityAddTraits(.isHeader)
-                if let c { Mono([c.artist, c.album, c.suffix?.uppercased() ?? ""].filter { !$0.isEmpty }.joined(separator: " · ")) }
+                if let c {
+                    HStack(spacing: 6) {
+                        Button { state.openCurrentArtist() } label: { Mono(c.artist, bold: true) }.buttonStyle(ZineLinkStyle())
+                            .accessibilityLabel("Open artist \(c.artist)")
+                        if !c.album.isEmpty {
+                            Mono("·")
+                            Button { state.openCurrentAlbum() } label: { Mono(c.album, bold: true) }.buttonStyle(ZineLinkStyle())
+                                .accessibilityLabel("Open album \(c.album)")
+                        }
+                        if let f = c.suffix?.uppercased(), !f.isEmpty { Mono("· " + f) }
+                    }
+                }
                 if case .failed(let m) = p.phase { Text(m).font(Z.serif(14)).padding(.top, 4) }
                 if let n = p.notice { Text(n).font(Z.serif(13)).padding(.top, 2) }
             }

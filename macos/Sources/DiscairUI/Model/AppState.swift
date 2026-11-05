@@ -1,5 +1,6 @@
 import DiscairAudio
 import DiscairCore
+import DiscairLibrarian
 import DiscairNavidrome
 import Observation
 import SwiftUI
@@ -23,6 +24,10 @@ public enum Screen: String, CaseIterable, Sendable {
     case smartPlaylists
     /// Days and a heatmap of when songs were last played (M6 slice 9; contract section 6.6).
     case history
+    /// The A-Z list of artists (the Artists tab). `.artist` is one artist's page.
+    case artists
+    /// Albums added to the library most recently (the Recently Added tab).
+    case recent
 }
 
 /// What a theme may ask the app to do. Themes call these; they never reach the network or the audio engine.
@@ -77,6 +82,8 @@ public final class AppState {
     public let savedQueues: SavedQueueStore
     public let radio: RadioModel
     public let spread = AlbumSpreadModel()
+    /// Similar artists and albums from the Librarian, for the album and artist pages.
+    public let related = RelatedModel()
     public let artwork: ArtworkStore
     /// The optional on-disk copy of played songs and covers (off by default; Settings).
     public let cache: CacheModel
@@ -85,6 +92,8 @@ public final class AppState {
     public var selectedArtist: ArtistItem = ArtistItem(id: 0, name: "Talk Talk", albumCount: 5)
     /// The letter shown in the Zine A-Z index.
     public var selectedLetter = "T"
+    /// Cupertino's Up Next inspector. It sits over whatever screen is showing, so opening it never changes the screen.
+    public var queueOpen = false
 
     public init(themeID: ThemeID = .cupertino, screen: Screen = .home, actions: DiscairActions? = nil, session: SessionModel? = nil, output: AudioOutput? = nil) {
         // Previews and screenshot tests get their own throwaway settings, so they never read or write the real ones.
@@ -133,6 +142,7 @@ public final class AppState {
         guard let session, let navidrome = session.navidrome else { return }
         configureSavedPages()
         artwork.configure(navidrome.urls)
+        artwork.configure(librarian: session.librarian)
         acquisition.configure(librarian: session.librarian)
         discovery.configure(librarian: session.librarian)
         player.configure(urls: navidrome.urls, scrobbler: navidrome)
@@ -176,12 +186,18 @@ public final class AppState {
     // MARK: Playback
 
     /// Plays an owned album from its first song. A recommendation the library does not hold cannot be played.
-    public func playAlbum(_ album: AlbumItem) {
+    public func playAlbum(_ album: AlbumItem, startAt: Int = 0) {
         guard let id = album.remoteID, album.owned, let navidrome = session?.navidrome else { return }
         Task {
             guard let detail = try? await navidrome.album(id: id), !detail.songs.isEmpty else { return }
-            player.play(detail.songs.map(PlayerModel.item), startAt: 0)
+            player.play(detail.songs.map(PlayerModel.item), startAt: min(max(startAt, 0), detail.songs.count - 1))
         }
+    }
+
+    /// True when this track of the album on screen is the song loaded in the player.
+    public func isCurrent(_ track: TrackItem) -> Bool {
+        guard let c = player.current, c.title == track.title else { return false }
+        return c.albumID == selectedAlbum.remoteID || c.album == selectedAlbum.title
     }
 
     // MARK: Queue workspace
@@ -221,14 +237,18 @@ public final class AppState {
     }
 
     public func loadSelectedAlbum() async {
-        await library.loadTracks(for: selectedAlbum, navidrome: session?.navidrome)
+        async let relatedLoad: Void = related.loadAlbum(selectedAlbum, librarian: session?.librarian)
+        await library.loadTracks(for: selectedAlbum, navidrome: session?.navidrome, librarian: session?.librarian, related: related)
+        await relatedLoad
         await spread.load(album: selectedAlbum, navidrome: session?.navidrome, librarian: session?.librarian, libraryArtists: library.artists.map(\.name))
     }
 
     public func retrySpreadReviews() async { await spread.loadReviews(album: selectedAlbum, librarian: session?.librarian) }
 
     public func loadSelectedArtist() async {
+        async let relatedLoad: Void = related.loadArtist(name: selectedArtist.name, remoteID: selectedArtist.remoteID, librarian: session?.librarian)
         await library.loadArtist(selectedArtist, navidrome: session?.navidrome)
+        await relatedLoad
     }
 
     public func loadGapRadar() async { await library.loadGapRadar(navidrome: session?.navidrome) }
@@ -261,14 +281,101 @@ public final class AppState {
     /// Library lists without the albums the owner dismissed.
     public func visible(_ albums: [AlbumItem]) -> [AlbumItem] { albums.filter { !acquisition.isHidden($0) } }
 
-    public func open(album: AlbumItem) { selectedAlbum = album; screen = .album }
+    /// Where the Back button on an album page goes: the screen the album was opened from (Albums by default).
+    public private(set) var albumBack: Screen = .albums
+    /// Where the Back button on an artist page goes: the screen the artist was opened from (Artists by default).
+    public private(set) var artistBack: Screen = .artists
 
-    public func open(artist: ArtistItem) { selectedArtist = artist; selectedLetter = artist.letter; screen = .artist }
+    public func open(album: AlbumItem) {
+        if screen != .album && screen != .nowPlaying { albumBack = Self.listScreen(screen) }
+        selectedAlbum = album; screen = .album
+    }
+
+    public func open(artist: ArtistItem) {
+        if screen != .artist && screen != .nowPlaying { artistBack = Self.listScreen(screen) }
+        selectedArtist = artist; selectedLetter = artist.letter; screen = .artist
+    }
+
+    /// Goes to a screen. Up Next in Cupertino opens the inspector over the current screen instead.
+    public func go(_ s: Screen) {
+        if s == .queue && themeID == .cupertino {
+            queueOpen.toggle()
+            if screen == .nowPlaying { screen = .albums }
+        } else { screen = s }
+    }
+
+    /// Opens the album of the song playing now.
+    public func openCurrentAlbum() {
+        guard let c = player.current, !c.album.isEmpty else { return }
+        if let known = (library.albums + library.recent).first(where: { c.albumID != nil && $0.remoteID == c.albumID }) { open(album: known); return }
+        open(album: AlbumItem(id: 8000, title: c.album, artist: c.artist, year: 0, genre: "", format: "", owned: true,
+                              hue: LibraryModel.hue(for: c.album), remoteID: c.albumID, coverArt: c.coverArt))
+    }
+
+    /// Opens the artist of the song playing now, when the library has them.
+    public func openCurrentArtist() {
+        guard let c = player.current else { return }
+        openArtist(named: c.artist)
+    }
+
+    /// The Up Next view is the Albums grid with the inspector open, so going back from it lands on Albums.
+    static func listScreen(_ s: Screen) -> Screen { s == .queue ? .albums : s }
+
+    /// Name of a screen as the sidebar and Back buttons call it.
+    public static func title(of screen: Screen) -> String {
+        switch screen {
+        case .home: "Home"
+        case .album: "Album"
+        case .nowPlaying: "Now Playing"
+        case .queue: "Up Next"
+        case .library: "Songs"
+        case .artist: "Artist"
+        case .settings: "Settings"
+        case .albums: "Albums"
+        case .downloads: "Downloads"
+        case .discover: "New"
+        case .equalizer: "Equalizer"
+        case .gapRadar: "Gap Radar"
+        case .smartPlaylists: "Smart Playlists"
+        case .history: "History"
+        case .artists: "Artists"
+        case .recent: "Recently Added"
+        }
+    }
+
+    /// True when the artist on screen is one the library does not hold (reached from a similar-artists row).
+    public var selectedArtistIsUnowned: Bool { library.isLive && library.artist(named: selectedArtist.name) == nil }
+
+    /// The albums the artist page lists: the library's own, or for an artist it lacks, the Librarian's list.
+    public var shownArtistAlbums: [AlbumItem] {
+        if selectedArtistIsUnowned { return related.artistAlbums }
+        guard library.isLive else { return library.artistAlbums }
+        // A partly owned artist: the library's albums, then every album the Librarian lists that the library lacks
+        // (picks by the artist included), each once.
+        var seen = Set(library.artistAlbums.map { Self.albumTitleKey($0.title) })
+        let lacking = related.artistAlbums.filter { seen.insert(Self.albumTitleKey($0.title)).inserted }
+        return library.artistAlbums + lacking
+    }
+    public var shownArtistOwnedCount: Int { library.isLive ? shownArtistAlbums.filter(\.owned).count : library.artistOwnedCount }
+    public var shownArtistMissingCount: Int { library.isLive ? shownArtistAlbums.filter { !$0.owned }.count : library.artistMissingCount }
+
+    /// Titles compared without case, punctuation or one trailing "(year)", as the server does.
+    static func albumTitleKey(_ title: String) -> String {
+        var t = title.lowercased()
+        if let r = t.range(of: #"\s*[\(\[]\s*(19|20)\d{2}\s*[\)\]]\s*$"#, options: .regularExpression) { t.removeSubrange(r) }
+        return String(t.filter { $0.isLetter || $0.isNumber })
+    }
+
+    /// Opens a similar artist: their library page when owned, otherwise a page built from the Librarian's data.
+    public func open(similar a: SimilarArtistEntry) {
+        if let own = library.artist(named: a.name) { open(artist: own); return }
+        open(artist: ArtistItem(id: 100_000 + abs(a.name.lowercased().hashValue % 800_000), name: a.name, albumCount: 0))
+    }
 
     /// Opens an artist by name when the library has them; otherwise nothing happens.
     public func openArtist(named name: String) {
         if let a = library.artist(named: name) { open(artist: a) }
-        else if !library.isLive { screen = .artist }
+        else if !library.isLive { open(artist: selectedArtist) }
     }
 }
 
@@ -290,7 +397,7 @@ extension AppState {
     func perform(_ command: PaletteCommand) {
         palette.close()
         switch command.action {
-        case .go(let s): screen = s
+        case .go(let s): go(s)
         case .playPause: player.togglePlayPause()
         case .next: player.next()
         case .previous: player.previous()

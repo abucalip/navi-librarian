@@ -55,9 +55,11 @@ struct ZineDiscover: View {
 
     private func row(_ a: AlbumItem) -> some View {
         HStack(alignment: .top, spacing: 12) {
-            CoverView(album: a).frame(width: 84).zBorder(3).accessibilityHidden(true)
+            Button { state.open(album: a) } label: { CoverView(album: a).frame(width: 84).zBorder(3) }
+                .buttonStyle(.plain).accessibilityLabel("Open \(a.title)")
             VStack(alignment: .leading, spacing: 5) {
-                Text(a.title).font(Z.an(22)).textCase(.uppercase).lineLimit(1)
+                Button { state.open(album: a) } label: { Text(a.title).font(Z.an(22)).textCase(.uppercase).lineLimit(1) }
+                    .buttonStyle(.plain).accessibilityLabel("Open \(a.title)")
                 Button { state.openArtist(named: a.artist) } label: { Mono(a.artist, bold: true) }.buttonStyle(ZineLinkStyle())
                 if let r = a.reason { Text(r).font(Z.serif(13)).lineLimit(2) }
                 if !a.suggestedTracks.isEmpty { Mono("Try: " + a.suggestedTracks.prefix(3).joined(separator: ", "), size: 10).lineLimit(1) }

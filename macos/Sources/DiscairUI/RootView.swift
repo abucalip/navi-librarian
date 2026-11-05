@@ -5,16 +5,26 @@ public struct RootView: View {
     @Bindable var state: AppState
     public init(state: AppState) { self.state = state }
 
+    /// The smallest size the screens are drawn for. A window smaller than this scrolls instead of squeezing the layout.
+    static let designSize = CGSize(width: 1100, height: 700)
+
     public var body: some View {
         let theme = ThemeRegistry.theme(state.themeID)
-        theme.window(state: state)
-            .safeAreaInset(edge: .top, spacing: 0) {
-                if let notice = state.offlineNotice { OfflineBanner(state: state, text: notice) }
+        GeometryReader { g in
+            ScrollView([.horizontal, .vertical]) {
+                theme.window(state: state)
+                    .safeAreaInset(edge: .top, spacing: 0) {
+                        if let notice = state.offlineNotice { OfflineBanner(state: state, text: notice) }
+                    }
+                    .frame(width: max(g.size.width, Self.designSize.width), height: max(g.size.height, Self.designSize.height))
             }
-            .overlay { PipelineDockView(state: state) }
-            .modifier(CommandPaletteOverlay(state: state))
-            .preferredColorScheme(theme.colorScheme)
-            .environment(\.artwork, state.artwork)
-            .frame(minWidth: 1100, minHeight: 700)
+            .scrollBounceBehavior(.basedOnSize)
+        }
+        .ignoresSafeArea()
+        .overlay { PipelineDockView(state: state) }
+        .modifier(CommandPaletteOverlay(state: state))
+        .preferredColorScheme(theme.colorScheme)
+        .environment(\.artwork, state.artwork)
+        .frame(minWidth: 480, minHeight: 360)
     }
 }
