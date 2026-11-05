@@ -1,4 +1,5 @@
 """SQLite store for Server V2 data: its own file, versioned migrations, no network."""
+from . import generations, repositories
 from .db import connect, open_store
 from .migrations import (
     LATEST_VERSION,
@@ -12,6 +13,8 @@ __all__ = [
     "MigrationError",
     "connect",
     "current_version",
+    "generations",
     "migrate",
     "open_store",
+    "repositories",
 ]
