@@ -1,6 +1,7 @@
 ## 2026-11-05 — Server V2 Phase 2 exit verification passed; edition flag approved on
 
-- **Script:** `scripts/server_v2_phase2_exit.py` (this PR). Offline and read-only: it uses the MusicBrainz documents the Phase 0 capture already stored, so there is no Navidrome or provider traffic. The golden set stays outside the repository.
+- **Merged via PR:** [#775](https://github.com/abucalip/navi-librarian/pull/775), squash `be254fa40a3b97c745cca65926c9a8c163fcdaac`, tested head `a36aa6538e7fc67c1fe4eabcbcbb74e1ca20713e`; required CI (compile, container-smoke, test-and-build, validate-container) passed on that head.
+- **Script:** `scripts/server_v2_phase2_exit.py`. Offline and read-only: it uses the MusicBrainz documents the Phase 0 capture already stored, so there is no Navidrome or provider traffic. The golden set stays outside the repository.
 - **Result on the owner's 50-album golden set:** 30 albums linked to the correct release group, 15 explicitly left unlinked (no library MBID), 5 linked by a tag MBID the owner could not verify (rows 34, 35, 45, 49, 50). Accuracy 90.0% strict, 100% if those five count as unresolved (target 90%). Wrong silent merges: 0; wrong groups: 0. A second sweep made 0 lookups.
 - **Ownership flag:** off by default; every golden album matches itself (50 of 50); no pair of different titles was reported as another edition; `owned` flags are never written.
 - **Verification actually run:** the script (exit 0) and `python3 -m unittest` on the five `tests.test_intelligence_editions_*` modules (59 passed). Full suite not run by the agent (owner rule).
