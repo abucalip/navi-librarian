@@ -1,5 +1,6 @@
 import DiscairAudio
 import DiscairCore
+import DiscairLibrarian
 import DiscairNavidrome
 import Observation
 import SwiftUI
@@ -340,6 +341,18 @@ public final class AppState {
         case .artists: "Artists"
         case .recent: "Recently Added"
         }
+    }
+
+    /// True when the artist on screen is one the library does not hold (reached from a similar-artists row).
+    public var selectedArtistIsUnowned: Bool { library.isLive && library.artist(named: selectedArtist.name) == nil }
+
+    /// The albums the artist page lists: the library's own, or for an artist it lacks, the Librarian's list.
+    public var shownArtistAlbums: [AlbumItem] { selectedArtistIsUnowned ? related.artistAlbums : library.artistAlbums }
+
+    /// Opens a similar artist: their library page when owned, otherwise a page built from the Librarian's data.
+    public func open(similar a: SimilarArtistEntry) {
+        if let own = library.artist(named: a.name) { open(artist: own); return }
+        open(artist: ArtistItem(id: 100_000 + abs(a.name.lowercased().hashValue % 800_000), name: a.name, albumCount: 0))
     }
 
     /// Opens an artist by name when the library has them; otherwise nothing happens.

@@ -25,10 +25,12 @@ struct CupertinoArtistBanner: View {
             VStack(alignment: .leading, spacing: 0) {
                 BackButton(title: AppState.title(of: state.artistBack), onDark: true) { state.screen = state.artistBack }.padding(.bottom, 14)
                 Text(state.selectedArtist.name).font(.system(size: 60, weight: .bold)).tracking(-1.5).lineLimit(1).minimumScaleFactor(0.5)
-                Text(lib.isLive ? "\(lib.artistOwnedCount) of \(lib.artistOwnedCount + lib.artistMissingCount) albums owned" : "3 of 5 albums owned · Post-rock, Synth-pop").opacity(0.85).padding(.top, 6).padding(.bottom, 12)
+                Text(state.selectedArtistIsUnowned ? "Not in your library" : lib.isLive ? "\(lib.artistOwnedCount) of \(lib.artistOwnedCount + lib.artistMissingCount) albums owned" : "3 of 5 albums owned · Post-rock, Synth-pop").opacity(0.85).padding(.top, 6).padding(.bottom, 12)
                 HStack(spacing: 8) {
+                    if !state.selectedArtistIsUnowned {
                     Button { state.actions.play(album: lib.artistAlbums.first ?? Fixtures.albums[1]) } label: { Label("Play", systemImage: "play.fill") }
                         .buttonStyle(CapsuleButtonStyle(primary: true))
+                    }
                     Button { } label: { Label("Shuffle", systemImage: "shuffle") }
                         .buttonStyle(CapsuleButtonStyle(translucent: true))
                     Button { } label: { Label("Radio", systemImage: "dot.radiowaves.left.and.right") }
@@ -68,9 +70,10 @@ struct CupertinoArtist: View {
                 HStack(alignment: .top, spacing: 32) {
                     VStack(alignment: .leading, spacing: 0) {
                         if state.library.isLive { ArtistBio(state: state) }
+                        if state.library.isLive, state.related.loading || state.related.incomplete { relatedStatus }
                         Text("Albums").font(CU.title(20)).padding(.top, 22).padding(.bottom, 10).accessibilityAddTraits(.isHeader)
                         LazyVGrid(columns: [GridItem(.adaptive(minimum: 128, maximum: 128), spacing: 16, alignment: .top)], alignment: .leading, spacing: 18) {
-                            ForEach(state.library.artistAlbums) { a in albumTile(a) }
+                            ForEach(state.shownArtistAlbums) { a in albumTile(a) }
                         }
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -81,6 +84,11 @@ struct CupertinoArtist: View {
             .padding(.horizontal, 28).padding(.bottom, 28)
         }
         .task(id: state.selectedArtist.id) { await state.loadSelectedArtist() }
+    }
+
+    @ViewBuilder private var relatedStatus: some View {
+        Text(state.related.loading ? "Still looking for the biography and top songs…" : (state.related.lastError ?? "The Librarian had not finished.") + " Reopen the page to ask again.")
+            .font(.system(size: 12)).foregroundStyle(CU.muted).padding(.top, 10)
     }
 
     private func songRow(_ t: (title: String, album: Int, sub: String, missing: Bool)) -> some View {

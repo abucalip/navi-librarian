@@ -271,3 +271,35 @@ struct ArtistPageDecodingTests {
         #expect(TopSongEntry(rank: 1, name: "a").listensText == nil)
     }
 }
+
+@MainActor
+struct UnownedArtistAndRetryTests {
+    @Test func aSimilarArtistTheLibraryLacksOpensItsOwnPage() {
+        let s = AppState(screen: .album)
+        s.open(similar: SimilarArtistEntry(name: "Oxmo Puccino", owned: false))
+        #expect(s.screen == .artist && s.selectedArtist.name == "Oxmo Puccino")
+        #expect(s.artistBack == .album)
+    }
+
+    @Test func theArtistPageAlbumsComeFromTheLibrarianOnlyForAnArtistTheLibraryLacks() {
+        let s = AppState(screen: .artists)
+        #expect(!s.selectedArtistIsUnowned)      // sample data: nothing is "live", so the library's own list is used
+        #expect(s.shownArtistAlbums == s.library.artistAlbums)
+    }
+
+    @Test func aPartialPageIsDecodedAsPartial() throws {
+        let json = #"{"sections":{"bio":{"bio":null},"albums":{"items":[{"name":"Gibraltar","year":2006,"owned":false,"key":"abd al malik/gibraltar"}]}},"done":{"partial":true}}"#
+        let page = try JSONDecoder().decode(ArtistPageEnvelope.self, from: Data(json.utf8)).related
+        #expect(page.partial && page.bio == nil)
+        #expect(page.albums.map(\.name) == ["Gibraltar"] && page.albums[0].year == 2006)
+    }
+
+    @Test func aFailedAskIsNotRememberedSoTheNextVisitAsksAgain() async {
+        let r = RelatedModel()
+        r.retryPause = .milliseconds(1)
+        await r.loadArtist(name: "Nobody", remoteID: nil, librarian: nil)      // no Librarian: nothing is kept
+        #expect(r.artists.isEmpty && !r.loading)
+        await r.loadArtist(name: "Nobody", remoteID: nil, librarian: nil)
+        #expect(r.bio == nil)
+    }
+}

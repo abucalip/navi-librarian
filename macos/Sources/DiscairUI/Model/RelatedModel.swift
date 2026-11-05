@@ -1,3 +1,4 @@
+import DiscairCore
 import DiscairLibrarian
 import Foundation
 import Observation
@@ -23,32 +24,83 @@ public final class RelatedModel {
     public var ownedArtists: [SimilarArtistEntry] { artists.filter(\.owned) }
     public var otherArtists: [SimilarArtistEntry] { artists.filter { !$0.owned } }
 
+    /// Pauses between asks. The server ends a slow page at its deadline and keeps what finished in its cache, so asking
+    /// again a little later fills what was missing. Tests shorten it.
+    @ObservationIgnored var retryPause: Duration = .seconds(2)
+    static let attempts = 4
+    /// Set while a page is still partial after every ask.
+    public private(set) var incomplete = false
+    /// Albums of an artist the library does not hold (unowned artist page).
+    public private(set) var artistAlbums: [AlbumItem] = []
+
     public func loadAlbum(_ album: AlbumItem, librarian: LibrarianClient?) async {
         let key = "album|\(album.artist.lowercased())|\(album.title.lowercased())"
         guard let librarian else { clear(); return }
-        if loadedFor == key { return }
-        clear(); loading = true; loadedFor = key
-        defer { loading = false }
-        guard let page = try? await librarian.albumPage(artist: album.artist, album: album.title), !Task.isCancelled, loadedFor == key else { return }
-        artists = Self.cleaned(page.similarArtists)
-        albums = page.similarAlbums.enumerated().map { i, a in
-            AlbumItem(id: 7000 + i, title: a.name, artist: a.artist, year: a.year ?? 0, genre: "", format: "", owned: false, hue: LibraryModel.hue(for: a.name))
+        if loadedFor == key, !incomplete { return }
+        if loadedFor != key { clear() }
+        loadedFor = key; loading = true; incomplete = false
+        defer { loading = false; if Task.isCancelled { loadedFor = nil } }
+        for attempt in 1...Self.attempts {
+            guard let page = await ask({ try await librarian.albumPage(artist: album.artist, album: album.title) }) else {
+                if attempt == Self.attempts { incomplete = true }
+                else { try? await Task.sleep(for: retryPause) }
+                if Task.isCancelled { return }
+                continue
+            }
+            guard !Task.isCancelled, loadedFor == key else { return }
+            if !page.similarArtists.isEmpty { artists = Self.cleaned(page.similarArtists) }
+            if !page.similarAlbums.isEmpty {
+                albums = page.similarAlbums.enumerated().map { i, a in
+                    AlbumItem(id: 7000 + i, title: a.name, artist: a.artist, year: a.year ?? 0, genre: "", format: "", owned: false, hue: LibraryModel.hue(for: a.name))
+                }
+            }
+            if !page.tracks.isEmpty { tracks = page.tracks }
+            if !page.partial { incomplete = false; return }
+            incomplete = true
+            if attempt < Self.attempts { try? await Task.sleep(for: retryPause); if Task.isCancelled { return } }
         }
-        tracks = page.tracks
     }
 
     public func loadArtist(name: String, remoteID: String?, librarian: LibrarianClient?) async {
         let key = "artist|\(name.lowercased())"
         guard let librarian else { clear(); return }
-        if loadedFor == key { return }
-        clear(); loading = true; loadedFor = key
-        defer { loading = false }
-        guard let page = try? await librarian.artistPage(name: name, id: remoteID), !Task.isCancelled, loadedFor == key else { return }
-        artists = Self.cleaned(page.similar)
-        bio = page.bio; bioSource = page.bioSource; topSongs = page.topSongs
+        if loadedFor == key, !incomplete { return }
+        if loadedFor != key { clear() }
+        loadedFor = key; loading = true; incomplete = false
+        defer { loading = false; if Task.isCancelled { loadedFor = nil } }
+        for attempt in 1...Self.attempts {
+            guard let page = await ask({ try await librarian.artistPage(name: name, id: remoteID) }) else {
+                if attempt == Self.attempts { incomplete = true }
+                else { try? await Task.sleep(for: retryPause) }
+                if Task.isCancelled { return }
+                continue
+            }
+            guard !Task.isCancelled, loadedFor == key else { return }
+            // Keep what an earlier ask already brought; a later ask only adds.
+            if !page.similar.isEmpty { artists = Self.cleaned(page.similar) }
+            if let b = page.bio { bio = b; bioSource = page.bioSource }
+            if !page.topSongs.isEmpty { topSongs = page.topSongs }
+            let unowned = page.albums.filter { !$0.owned }
+            if !unowned.isEmpty || !page.albums.isEmpty {
+                artistAlbums = page.albums.enumerated().map { i, a in
+                    AlbumItem(id: 7500 + i, title: a.name, artist: name, year: a.year ?? 0, genre: "", format: "", owned: false, hue: LibraryModel.hue(for: a.name))
+                }
+            }
+            if !page.partial { incomplete = false; return }
+            incomplete = true
+            if attempt < Self.attempts { try? await Task.sleep(for: retryPause); if Task.isCancelled { return } }
+        }
     }
 
-    public func clear() { artists = []; albums = []; tracks = []; bio = nil; bioSource = nil; topSongs = []; loadedFor = nil }
+    /// What the Librarian said when the last ask failed (shown under the page so a missing section is explained).
+    public private(set) var lastError: String?
+
+    private func ask<T>(_ call: () async throws -> T) async -> T? {
+        do { let v = try await call(); lastError = nil; return v }
+        catch { lastError = ((error as? DiscairError)?.summary) ?? "The Librarian did not answer."; return nil }
+    }
+
+    public func clear() { artists = []; albums = []; tracks = []; bio = nil; bioSource = nil; topSongs = []; artistAlbums = []; incomplete = false; loadedFor = nil }
 
     /// Entries with a name, once each.
     static func cleaned(_ list: [SimilarArtistEntry]) -> [SimilarArtistEntry] {

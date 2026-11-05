@@ -59,7 +59,29 @@ public struct RelatedTrack: Decodable, Equatable, Sendable {
     enum CodingKeys: String, CodingKey { case title, number = "track_number", durationSeconds = "duration_seconds" }
 }
 
+/// One album on an artist page (`albums`: owned and not owned together, most listened first).
+public struct ArtistAlbumEntry: Decodable, Equatable, Sendable, Identifiable {
+    public var id: String { key.isEmpty ? name.lowercased() : key }
+    public let name: String
+    public let key: String
+    public let year: Int?
+    public let owned: Bool
+    enum CodingKeys: String, CodingKey { case name, key, year, owned }
+
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        name = ((try? c.decode(String.self, forKey: .name)) ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        key = (try? c.decode(String.self, forKey: .key)) ?? ""
+        year = try? c.decode(Int.self, forKey: .year)
+        owned = (try? c.decode(Bool.self, forKey: .owned)) ?? false
+    }
+}
+
+/// The server's `done` event: `partial` means a section ended early (its deadline) or failed, so asking again may fill it.
+struct PageDone: Decodable { let partial: Bool? }
+
 public struct AlbumPageRelated: Equatable, Sendable {
+    public var partial = false
     public var similarArtists: [SimilarArtistEntry] = []
     public var similarAlbums: [SimilarAlbumEntry] = []
     public var tracks: [RelatedTrack] = []
@@ -75,8 +97,9 @@ struct AlbumPageEnvelope: Decodable {
         enum CodingKeys: String, CodingKey { case similarArtists = "similar_artists", similarAlbums = "similar_albums", tracks }
     }
     let sections: Sections
+    let done: PageDone?
     var related: AlbumPageRelated {
-        AlbumPageRelated(similarArtists: sections.similarArtists?.items ?? [], similarAlbums: (sections.similarAlbums?.items ?? []).filter { !$0.owned && !$0.name.isEmpty },
+        AlbumPageRelated(partial: done?.partial ?? false, similarArtists: sections.similarArtists?.items ?? [], similarAlbums: (sections.similarAlbums?.items ?? []).filter { !$0.owned && !$0.name.isEmpty },
                          tracks: sections.tracks?.items ?? [])
     }
 }
@@ -118,6 +141,8 @@ public struct TopSongEntry: Decodable, Equatable, Sendable, Identifiable {
 
 /// The parts of an artist page the macOS app shows besides the library's own albums.
 public struct ArtistPageRelated: Equatable, Sendable {
+    public var partial = false
+    public var albums: [ArtistAlbumEntry] = []
     public var similar: [SimilarArtistEntry] = []
     public var bio: String?
     public var bioSource: String?
@@ -131,12 +156,14 @@ struct ArtistPageEnvelope: Decodable {
         let similar: Section<SimilarArtistEntry>?
         let bio: BioSection?
         let topSongs: Section<TopSongEntry>?
-        enum CodingKeys: String, CodingKey { case similar, bio, topSongs = "top_songs" }
+        let albums: Section<ArtistAlbumEntry>?
+        enum CodingKeys: String, CodingKey { case similar, bio, albums, topSongs = "top_songs" }
     }
     let sections: Sections
+    let done: PageDone?
     var related: ArtistPageRelated {
         let text = sections.bio?.bio?.text?.trimmingCharacters(in: .whitespacesAndNewlines)
-        return ArtistPageRelated(similar: sections.similar?.items ?? [], bio: (text?.isEmpty == false) ? text : nil,
+        return ArtistPageRelated(partial: done?.partial ?? false, albums: (sections.albums?.items ?? []).filter { !$0.name.isEmpty }, similar: sections.similar?.items ?? [], bio: (text?.isEmpty == false) ? text : nil,
                                  bioSource: sections.bio?.bio?.source,
                                  topSongs: (sections.topSongs?.items ?? []).filter { !$0.name.isEmpty }.sorted { $0.rank < $1.rank })
     }

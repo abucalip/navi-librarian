@@ -34,12 +34,16 @@ struct ZineArtist: View {
 
             HStack(spacing: 20) {
                 let lib = state.library
-                Mono("\(lib.artistOwnedCount) of \(lib.artistOwnedCount + lib.artistMissingCount) albums owned")
-                Mono("\(lib.artistMissingCount) missing")
+                if state.selectedArtistIsUnowned { Mono("Not in your library") } else {
+                    Mono("\(lib.artistOwnedCount) of \(lib.artistOwnedCount + lib.artistMissingCount) albums owned")
+                    Mono("\(lib.artistMissingCount) missing")
+                }
                 Mono(lib.isLive ? genres : "Post-rock · Synth-pop")
                 Spacer()
                 HStack(spacing: 10) {
+                    if !state.selectedArtistIsUnowned {
                     Button("Play") { state.actions.play(album: state.library.artistAlbums.first ?? Fixtures.albums[0]) }.buttonStyle(ZineButtonStyle(kind: .yellow, small: true))
+                    }
                     Button("Radio") { }.buttonStyle(ZineButtonStyle(small: true))
                     if state.library.artistMissingCount > 0 || !state.library.isLive {
                     Button(state.library.isLive ? "Get \(state.library.artistMissingCount) missing" : "Get both missing") {
@@ -54,9 +58,12 @@ struct ZineArtist: View {
             HStack(alignment: .top, spacing: 22) {
                 VStack(alignment: .leading, spacing: 0) {
                     if state.library.isLive { ArtistBio(state: state).padding(.bottom, 10) }
+                    if state.library.isLive, state.related.loading || state.related.incomplete {
+                        Mono(state.related.loading ? "Still looking for the biography and top songs…" : (state.related.lastError ?? "The Librarian had not finished.") + " Reopen the page to ask again.").padding(.bottom, 8)
+                    }
                     ZineH2("Back issues", size: 20)
                     LazyVGrid(columns: [GridItem(.adaptive(minimum: 140, maximum: 140), spacing: 18, alignment: .top)], alignment: .leading, spacing: 16) {
-                        ForEach(state.library.artistAlbums) { a in issue(a) }
+                        ForEach(state.shownArtistAlbums) { a in issue(a) }
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)

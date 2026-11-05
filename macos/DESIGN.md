@@ -437,3 +437,8 @@ Completes contract section 6.3. In the Cupertino Library, the Columns switch (op
 ### Artist page: bio, top songs, similar artists (2026-11-05)
 
 Modelled on the web and Android artist pages (`bio` and `top_songs` sections of `GET /api/artists/{key}`): the bio sits below the header (four lines, "Read more"), the albums are on the left and a numbered Top songs list on the right (five shown, "All top songs"; listen counts shortened; a check for an owned song, Get for one the library lacks that names its album). Below the albums, one "Similar artists" row holds owned and unowned artists; an unowned one carries "Not in your library" under its name and does not open. Both themes. Not seen against the real Librarian.
+
+### Artist page: retries and unowned artists (2026-11-05)
+
+- The artist and album pages are read in the Librarian's JSON form, which ends slow sections at its deadline (`done.partial`, reasons `deadline` / `source_failed`) and keeps what finished in its cache. The app now asks again (up to four times, two seconds apart) while the page is partial, keeps what each ask brought, no longer remembers a failed or cancelled ask as done, and says on the page what the Librarian answered when a section stays missing. The earlier one-ask version showed the bio and top songs for only some artists.
+- Similar artists, owned or not, open. An artist the library lacks gets a page from the Librarian's `albums` section (covers by lookup, each album opens its own page), with the bio, top songs and similar artists; Play is hidden and the header says "Not in your library".

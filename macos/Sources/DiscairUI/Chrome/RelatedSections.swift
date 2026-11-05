@@ -19,7 +19,7 @@ struct RelatedSections: View {
                 if !r.artists.isEmpty { artistRow("Similar artists", r.artists, open: true) }
             } else {
                 if !r.ownedArtists.isEmpty { artistRow("Similar artists in your library", r.ownedArtists, open: true) }
-                if !r.otherArtists.isEmpty { artistRow("Not in your library", r.otherArtists, open: false) }
+                if !r.otherArtists.isEmpty { artistRow("Not in your library", r.otherArtists, open: true) }
             }
             if albums && !r.albums.isEmpty { albumRow("Similar albums not in your library", r.albums) }
             if r.loading && r.artists.isEmpty && r.albums.isEmpty {
@@ -47,9 +47,15 @@ struct RelatedSections: View {
                             Text(a.name).font(zine ? Z.serif(12, bold: true) : .system(size: 12, weight: .medium)).lineLimit(2)
                                 .multilineTextAlignment(.center).frame(width: 90)
                         }
-                        if open && a.owned || (open && !mixed) {
-                            Button { state.openArtist(named: a.name) } label: { tile.contentShape(Rectangle()) }
-                                .buttonStyle(.plain).accessibilityLabel("Open artist \(a.name)")
+                        if open {
+                            Button { state.open(similar: a) } label: {
+                                VStack(spacing: 2) {
+                                    tile
+                                    if !a.owned { Text("Not in your library").font(zine ? Z.mono(9) : .system(size: 10)).opacity(0.6) }
+                                }
+                                .contentShape(Rectangle())
+                            }
+                            .buttonStyle(.plain).accessibilityLabel(a.owned ? "Open artist \(a.name)" : "Open artist \(a.name), not in your library")
                         } else {
                             VStack(spacing: 2) {
                                 tile
