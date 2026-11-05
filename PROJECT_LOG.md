@@ -1,3 +1,11 @@
+## 2026-11-05 — Server V2 Phase 3 slice 9: anniversary and on-this-day cards (PR #784)
+
+- **Merged via PR:** [#784](https://github.com/abucalip/navi-librarian/pull/784), squash `de2040e863ef6c411dc9150b944b46c820187a3f`, tested head `534dfecee39a945edb79d712d40821518fd449cc`; required CI (compile, container-smoke, test-and-build, validate-container) passed on that head.
+- **Change:** `intelligence/insights/anniversaries.py` (+ exports, + `tests/test_intelligence_insights_anniversaries.py`). `find_anniversaries` takes owned albums with a release date, owned artists with a MusicBrainz type and life-span, and today's date. Only full `YYYY-MM-DD` dates count; partial and future dates are dropped and counted; default milestone every 5 years; optional day window; Feb 29 is observed on Feb 28 in a non-leap year. Persons give born/died, groups formed/disbanded, other types are skipped and counted; deaths never use birthday wording. Dismiss keys include the anniversary year (`anniversary:<kind>:<mbid>:<year>`). `anniversary_card` states a dated fact, never advice; the only action is dismiss. No `navidrome_server.py` change (D-016).
+- **Verification actually run:** `python3 -m unittest tests.test_intelligence_insights_anniversaries tests.test_intelligence_insights_hidden_canon` (24 passed). Full suite not run by the agent (owner rule); CI ran it.
+- **Limitations:** unwired; no persistence and no fetcher, and the store holds no artist life-span dates yet, so no live data and no provider traffic; milestone default untuned; not published or deployed.
+- **Next action:** the lens scorecard (Phase 3 item 6); persistence and a date-feeding job for anniversaries, series and hidden canon.
+
 ## 2026-11-05 — Server V2 Phase 3 slice 8: hidden canon, taste vs world (PR #783)
 
 - **Merged via PR:** [#783](https://github.com/abucalip/navi-librarian/pull/783), squash `02524dbc53e04533a5ea046d4c4fcf7d8616677f`, tested head `8433aba86e21169d9d4231189164624c6e31de54`; required CI (compile, container-smoke, test-and-build, validate-container) passed on that head.
