@@ -1,3 +1,12 @@
+## 2026-11-05 — Server V2 Phase 2 slice 3: duplicate finder (PR #772)
+
+- **Code merged via PR:** [#772](https://github.com/abucalip/navi-librarian/pull/772), squash `51cd6e52e7b2253d55f1ffc85e9cf60eb56a20d4`, tested head `c095ec1a05f4512338171cd05895fb6a839b2643`: `intelligence/editions/duplicates.py` reports `duplicate_album` (two or more owned releases in one MusicBrainz release group, with tracklist differences against the first edition) and `duplicate_recording` (one recording MBID on two or more owned releases, marked `same_album` when the releases are editions of one album). Every suggestion carries `reasons[]` and `suggestion_only: true`.
+- **Behavior:** read-only (no writes, no network, nothing merged, hidden or deleted); recordings without an MBID are counted in `skipped_recordings` and not matched by title; deterministic order; optional per-list `limit` sets `truncated`. `navidrome_server.py` untouched (D-016); no migration.
+- **Verification actually run:** `python -m unittest tests.test_intelligence_editions_duplicates tests.test_intelligence_editions_grouping` (24 passed). Full suite not run by the agent (owner rule); compile, container-smoke, test-and-build and validate-container passed on the tested head.
+- **Not done / limitations:** unwired (no job, route or capability entry); never run against the real library; releases without a stored release group are not compared, and there is no album match by artist and title alone; recordings are compared only by MBID (track MBID coverage is 85%). Not published, not deployed.
+- **Documentation committed directly to main:** `docs/PROJECT_STATUS.md`, `docs/ACTIVE_WORK.md`, `docs/ServerV2.md` and this log.
+- **Next action:** Phase 2 slice 4, edition advisor (measured dynamic range, loudness and true peak per edition).
+
 ## 2026-11-05 — Server V2 Phase 2 slice 2: edition grouping and tracklist differences (PR #771)
 
 - **Code merged via PR:** [#771](https://github.com/abucalip/navi-librarian/pull/771), squash `52f39e6aaeeab144e3b8d9735d175ba76eec2b36`, tested head `d4195613a7da5381916946b27704477aeb843b82`: `intelligence/editions/grouping.py` groups owned releases by release group, classifies each as original issue, later edition or unknown (release date vs the group's first release date, at the coarser precision), derives edition labels from title, disambiguation and secondary types, and compares tracklists (shared, extra, missing, reordered, ambiguous repeated titles; pairing by recording MBID, then normalized title).
