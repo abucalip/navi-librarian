@@ -79,6 +79,17 @@ class InsightRoutes(unittest.TestCase):
         self.client.post(path + "/dismiss", json={"key": "s1"})
         self.assertFalse(self.client.post(path + "/accept", json={"key": "s1"}).json()["changed"])
 
+    def test_blind_spot_card_key_dismisses_the_live_card(self):
+        from intelligence.insights.blind_spots import CARD_KIND as BLIND
+        key = "blind_spot:artist:abc:studio"   # the form a saved card carries in subject.key
+        seed_card(self.db, BLIND, key)
+        path = f"/api/insights/{BLIND}"
+        self.assertTrue(self.client.post(path + "/dismiss", json={"key": key}).json()["changed"])
+        self.assertEqual(self.lenses(BLIND)[BLIND]["cards"], [])
+        self.assertEqual(self.db.execute(
+            "SELECT COUNT(*) FROM insights WHERE kind = ? AND dismissed_state = 'dismissed'", (BLIND,)).fetchone()[0], 1)
+        self.assertTrue(self.client.post(path + "/restore", json={"key": key}).json()["changed"])
+
     def test_unknown_kind_and_bad_body(self):
         self.assertEqual(self.client.post("/api/insights/nope/dismiss", json={"key": "a"}).status_code, 404)
         self.assertEqual(self.client.post(f"/api/insights/{SERIES_KIND}/dismiss", json={}).status_code, 422)

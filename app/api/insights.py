@@ -31,9 +31,15 @@ router = APIRouter()
 STORE_FILE = "intelligence.sqlite3"
 LENSES_ENV = "NAVI_INSIGHT_LENSES"
 
+def _set_key(key):
+    """Blind-spot card keys are ``blind_spot:<set key>``; the service functions add that prefix themselves."""
+    return key[len(BLIND_SPOT_KIND) + 1:] if key.startswith(BLIND_SPOT_KIND + ":") else key
+
+
 _ACTIONS = {
     GEM_KIND: (dismiss_gem, restore_gem),
-    BLIND_SPOT_KIND: (dismiss_blind_spot, restore_blind_spot),
+    BLIND_SPOT_KIND: (lambda db, key: dismiss_blind_spot(db, _set_key(key)),
+                      lambda db, key: restore_blind_spot(db, _set_key(key))),
     SERIES_KIND: (dismiss_series, restore_series),
     CANON_KIND: (dismiss_canon, restore_canon),
     ANNIVERSARY_KIND: (dismiss_anniversary, restore_anniversary),

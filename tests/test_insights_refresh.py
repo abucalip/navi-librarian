@@ -88,7 +88,7 @@ class Wiring(unittest.TestCase):
 
     def test_lens_on_fills_store_and_capabilities_show_it(self):
         env = {insight_routes.LENSES_ENV: "forgotten_gem"}
-        self.assertEqual(insights_refresh.refresh_once(self.lib, env), "succeeded")
+        self.assertEqual(insights_refresh.refresh_once(self.lib, env), {"forgotten_gem": "succeeded"})
         api = FastAPI()
         api.include_router(cap_routes.router)
         api.dependency_overrides[get_librarian] = lambda: self.lib
@@ -104,3 +104,50 @@ class Wiring(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class ProviderWiring(unittest.TestCase):
+    def test_provider_lenses_ingest_navidrome_then_use_the_budgeted_tick(self):
+        from unittest import mock
+
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+
+        class Lib(FakeLibrarian):
+            def api_call(self, method, **params):
+                self.calls += 1
+                if method == "getArtists":
+                    return {"artists": {"index": [{"artist": [
+                        {"id": "ar1", "name": "A", "musicBrainzId": "11111111-1111-4111-8111-111111111111"},
+                        {"id": "ar2", "name": "Various Artists", "musicBrainzId": "22222222-2222-4222-8222-222222222222"},
+                        {"id": "ar3", "name": "No Mbid"}]}]}}
+                if method == "getArtist":
+                    return {"artist": {"album": [{"id": "al1"}]}}
+                return {"album": {"id": "al1", "name": "X", "artistId": "ar1", "artist": "A",
+                                  "musicBrainzId": "aaaaaaaa-0000-4000-8000-000000000001", "song": []}}
+
+            def _discovery_settings_read(self):
+                return {"listenbrainz_token": "tok"}
+
+        lib = Lib(tmp.name, [])
+        seen = []
+
+        class Resp:
+            status_code = 404
+
+            def json(self):
+                return {}
+
+        def fake_get(url, **kw):
+            seen.append((url, kw.get("headers", {})))
+            return Resp()
+
+        env = {insight_routes.LENSES_ENV: "blind_spot"}
+        with mock.patch.object(insights_refresh.requests, "get", fake_get), \
+                mock.patch.object(insights_refresh.time, "sleep"):
+            out = insights_refresh.refresh_once(lib, env)
+        self.assertEqual(out, {"provider_lenses": "succeeded"})
+        self.assertTrue(seen)
+        self.assertTrue(all(h.get("User-Agent") for _, h in seen))
+        self.assertTrue(all(("Authorization" in h) == ("listenbrainz" in u) for u, h in seen))
+        self.assertLessEqual(len(seen), insights_refresh.PROVIDER_BUDGET)
