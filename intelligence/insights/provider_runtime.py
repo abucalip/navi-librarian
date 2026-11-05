@@ -20,10 +20,13 @@ resumes). Nothing here changes an ownership flag or a recommendation weight.
 Series (``series=True`` only, so a server without the series lens makes none of these requests) share
 the same budget and run after the artist documents:
 
-5. series-id discovery: each owned release group gets one MusicBrainz lookup with ``inc=series-rels``
-   (cache kind ``rgseries``, the series ids only), never-fetched groups first, then the stalest;
+5. series-id discovery, batched per artist (owner rule: batch lookups whenever possible): one paged
+   MusicBrainz release-group browse with ``inc=series-rels`` per owned artist (cache kind
+   ``artistseries``: series ids per release group), never-fetched artists first, then the stalest.
+   Owned groups under other artists (compilations) are not covered, and an artist with more than
+   ``BROWSE_PAGES`` x 100 groups is truncated and reported (``series_truncated``);
 6. each discovered series gets one lookup with ``inc=release-group-rels`` (cache kind ``series``);
-7. only when every artist is browsed (ownership fully linked), every owned group has been looked up
+7. only when every artist is browsed (ownership fully linked), every owned artist has been browsed for series
    and every discovered series is cached are the series cards recomputed and saved, so a half-linked
    library or a half-read series never shows chapters that are not really missing. Ids are never guessed.
 """
@@ -117,26 +120,41 @@ def _life_span(get: Get, artist_mbid: str, headers, sleep) -> Mapping[str, Any] 
     return {"name": body.get("name"), "type": body.get("type"), "begin": span.get("begin"), "end": span.get("end")}
 
 
-def _group_series(get: Get, group_mbid: str, headers, sleep) -> Mapping[str, Any]:
-    """The series ids an owned release group belongs to (one lookup); a 404 means none."""
-    body = _paced_json(get, f"{MUSICBRAINZ}/release-group/{group_mbid}",
-                       {"inc": "series-rels", "fmt": "json"}, headers, sleep)
-    ids: list[str] = []
-    relations = body.get("relations") if isinstance(body, Mapping) else None
-    for rel in relations if isinstance(relations, list) else []:
-        sid = ((rel.get("series") or {}) if isinstance(rel, Mapping) else {}).get("id")
-        if isinstance(sid, str) and sid.strip() and sid.lower() not in ids:
-            ids.append(sid.lower())
-    return {"series": ids}
+def _artist_series(get: Get, artist_mbid: str, headers, sleep) -> Mapping[str, Any]:
+    """Series ids per release group for one artist, from paged browses (not one lookup per group)."""
+    groups: dict[str, list[str]] = {}
+    total = None
+    for page in range(BROWSE_PAGES):
+        body = _paced_json(get, f"{MUSICBRAINZ}/release-group",
+                           {"artist": artist_mbid, "inc": "series-rels", "limit": 100,
+                            "offset": page * 100, "fmt": "json"}, headers, sleep)
+        batch = body.get("release-groups") if isinstance(body, Mapping) else None
+        if not isinstance(batch, list):
+            break
+        total = body.get("release-group-count", total)
+        for group in batch:
+            if not isinstance(group, Mapping) or not isinstance(group.get("id"), str):
+                continue
+            ids: list[str] = []
+            for rel in group.get("relations") or []:
+                sid = ((rel.get("series") or {}) if isinstance(rel, Mapping) else {}).get("id")
+                if isinstance(sid, str) and sid.strip() and sid.lower() not in ids:
+                    ids.append(sid.lower())
+            groups[group["id"].lower()] = ids
+        if len(batch) < 100 or (isinstance(total, int) and len(groups) >= total):
+            break
+    return {"groups": groups, "count": total if isinstance(total, int) else len(groups)}
 
 
-def discovered_series_ids(db: sqlite3.Connection, groups: Iterable[str]) -> list[str]:
-    """Sorted distinct series ids found for ``groups`` so far (from the document cache)."""
+def discovered_series_ids(db: sqlite3.Connection, artists: Iterable[str], owned: set[str]) -> list[str]:
+    """Sorted distinct series ids of owned groups found so far (from the document cache)."""
     found: set[str] = set()
-    for group in groups:
-        entry = cache.get(db, "rgseries", group)
-        if entry and isinstance(entry[1], Mapping):
-            found.update(entry[1].get("series") or [])
+    for artist in artists:
+        entry = cache.get(db, "artistseries", artist)
+        groups = entry[1].get("groups") if entry and isinstance(entry[1], Mapping) else None
+        for group, ids in (groups or {}).items():
+            if group in owned:
+                found.update(ids)
     return sorted(found)
 
 
@@ -204,7 +222,8 @@ def compute_and_save(db: sqlite3.Connection, today: date, now: float) -> dict[st
 def compute_series(db: sqlite3.Connection, now: float) -> int:
     """Recompute the series cards from cached series documents and save them."""
     owned = owned_group_mbids(db)
-    built = [set_builders.series_set(_docs(db, "series", sid)) for sid in discovered_series_ids(db, owned)]
+    ids = discovered_series_ids(db, [m for m, _ in owned_artists(db)], owned)
+    built = [set_builders.series_set(_docs(db, "series", sid)) for sid in ids]
     result = find_series_progress([b for b in built if b], owned, SeriesConfig(), dismissed_series_keys(db))
     return save_series(db, result, now=now)
 
@@ -220,13 +239,13 @@ def _needs(db: sqlite3.Connection, kind: str, mbid: str, now: float, ttl: float)
 
 def _series_steps(db, counting, fetchers, headers, sleep, now, ttl, progress) -> bool:
     """Steps 5 and 6. Returns True when the budget ran out."""
-    groups = sorted(owned_group_mbids(db))
-    todo = [g for g in groups if not cache.is_fresh(cache.get(db, "rgseries", g), now, ttl)]
-    todo.sort(key=lambda g: _needs(db, "rgseries", g, now, ttl))
+    artists = [m for m, _ in owned_artists(db)]
+    todo = [a for a in artists if not cache.is_fresh(cache.get(db, "artistseries", a), now, ttl)]
+    todo.sort(key=lambda a: _needs(db, "artistseries", a, now, ttl))
     try:
-        for group in todo:
-            cache.put(db, "rgseries", group, _group_series(counting, group, headers, sleep), now)
-        ids = discovered_series_ids(db, groups)
+        for artist in todo:
+            cache.put(db, "artistseries", artist, _artist_series(counting, artist, headers, sleep), now)
+        ids = discovered_series_ids(db, artists, owned_group_mbids(db))
         pending = [s for s in ids if not cache.is_fresh(cache.get(db, "series", s), now, ttl)]
         pending.sort(key=lambda s: _needs(db, "series", s, now, ttl))
         for sid in pending:
@@ -302,14 +321,15 @@ def refresh_provider_lenses(
         if complete:
             progress["saved"] = compute_and_save(db, today, now)
         if series:
+            owned = owned_group_mbids(db)
             browsed_all = bool(artists) and all(cache.get(db, "browse", m) is not None for m, _ in artists)
-            groups = sorted(owned_group_mbids(db))
-            ids = discovered_series_ids(db, groups)
-            progress["series_groups"] = len(groups)
+            docs = [cache.get(db, "artistseries", m) for m, _ in artists]
+            ids = discovered_series_ids(db, [m for m, _ in artists], owned)
             progress["series_ids"] = len(ids)
+            progress["series_truncated"] = sum(
+                1 for e in docs if e and isinstance(e[1], Mapping) and e[1].get("count", 0) > len(e[1].get("groups") or {}))
             progress["series_complete"] = bool(
-                browsed_all and groups
-                and all(cache.get(db, "rgseries", g) is not None for g in groups)
+                browsed_all and owned and all(e is not None for e in docs)
                 and all(cache.get(db, "series", sid) is not None for sid in ids))
             if progress["series_complete"]:
                 progress.setdefault("saved", {})["series_completion"] = compute_series(db, now)
