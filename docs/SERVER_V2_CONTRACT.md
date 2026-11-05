@@ -51,12 +51,12 @@ Fixture: `unresolved.json`.
 
 ## GET /api/insights
 
-Fixtures: `insights_all_off.json`, `insights_three_on.json` (Phase 3). Provisional route; **not served yet** (D-016). The builder is `intelligence/api/insights.py`.
+Fixtures: `insights_all_off.json`, `insights_three_on.json` (Phase 3). Served by `app/api/insights.py` (D-016: nothing added to `navidrome_server.py`); the body builder is `intelligence/api/insights.py`. The store is `intelligence.sqlite3` in the data directory (D-026). Query: `limit` (1 to 100, default 20, else `400`). Lenses are enabled only by the `NAVI_INSIGHT_LENSES` environment variable (comma separated lens kinds); none by default.
 
 - Body: `lenses` (map of lens kind to `{enabled, cards[]}`), `data_version`, `generation`. Lens kinds: `forgotten_gem`, `blind_spot`, `series_completion`, `hidden_canon`, `anniversary`.
 - A lens contributes cards only when it is enabled. A lens is enabled by default only when its scorecard verdict is `pass`; today none is (all four provider lenses are `insufficient_evidence`, Forgotten Gems has too little play history). A client shows "off" for `enabled: false` and an empty state for `enabled: true` with no cards; it never invents cards.
 - Card (all kinds): `kind`, `title`, `body`, `subject{key, type, title, ...}`, `reasons[]` (each `{kind, evidence{}}`), `actions[]` (`{kind: "dismiss"}`), `dismissible`, `score`, plus kind-specific counters (`owned`, `total`, `missing_runs`, and so on). Wording states a fact (a count, a date, a listen total), never "you should own".
-- `subject.key` is the dismissal and accept key. Dismiss, restore and accept exist as service functions only; their `POST` routes need owner approval.
+- `subject.key` is the dismissal and accept key. Actions: `POST /api/insights/{kind}/dismiss|restore|accept|unaccept` with JSON `{"key": "<subject.key>"}`, answering `{"changed": bool}` (`false` when nothing changed, for example a repeat dismiss or accepting a dismissed key); unknown kind `404`, missing key `422`. Restore lifts the suppression; the card returns at the next refresh.
 - `capabilities` gains the `insights` feature (`available` once any card row has been saved).
 
 ## Not in this contract
