@@ -1,3 +1,12 @@
+## 2026-11-05 — Server V2 Phase 3 slice 15: live run of the four provider lenses (PR #790)
+
+- **Merged via PR:** [#790](https://github.com/abucalip/navi-librarian/pull/790), squash `b9441f1647a4aaae34c06972d03a5f6fbfe6a36b`, tested head `1f5e6f5478a853f936f6af52f11bb76a8571b943`; required CI passed on that head.
+- **Change:** `scripts/server_v2_phase3_live_lenses.py`. Owner-approved provider traffic, bounded to 12 sampled artists (largest by album count with an MBID, Various Artists skipped). Batch: one MusicBrainz release browse per artist replaces per-release lookups (5,211 release documents). The ListenBrainz token from the local env file goes to ListenBrainz URLs only; MusicBrainz OAuth client credentials cannot sign read lookups, so MusicBrainz is identified by User-Agent. Backoff on 429/503. Temporary store; the owner's real outcomes are not read.
+- **Live result:** 334 albums ingested, 174 owned release groups linked (244 releases). 110 MusicBrainz requests (11 retried after throttling) and 12 ListenBrainz requests, 338 s. Blind spots: 24 sets, 20 cards, 0 owned leaks, 0 duplicates, diversity 0.55 (top artist share 0.1), verdict `fail` on `low_diversity`. Series: 3 ids found from owned groups' relations, 2 too small, 1 card. Hidden canon: 3,086 pooled, 137 owned excluded, 2,357 dropped, 20 cards. Anniversaries: 140 dated albums, 12 artists, 27 partial dates dropped, 3 cards. Series, canon and anniversaries `insufficient_evidence`. No lens enabled by default.
+- **Verification actually run:** script compiled and ran live; no unit tests added. Full suite not run by the agent (owner rule); CI ran it. Two earlier runs failed on a MusicBrainz 503 and on a sampling bug (Various Artists, no artist MBIDs in `getAlbum`), fixed before the recorded run.
+- **Limitations:** sample of 12 artists only; hidden canon genres are the artist's library genres (a proxy) and the pool is per-artist ListenBrainz, not sitewide; cards were not reviewed by the owner; the diversity failure is partly caused by the sample; not published or deployed.
+- **Next action:** owner review of the cards and a decision on the diversity gate or sample size, then Phase 3 exit verification.
+
 ## 2026-11-05 — Server V2 Phase 3 slice 14: live Forgotten Gems run and scorecard (PR #789)
 
 - **Merged via PR:** [#789](https://github.com/abucalip/navi-librarian/pull/789), squash `d601d89bc1406240b760341e8a2e1edbfae70736`, tested head `1a7974bc1dfd3a9d1020db6928bd2eddd00074f9`; required CI (compile, container-smoke, test-and-build, validate-container) passed on that head.
