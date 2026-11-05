@@ -1,10 +1,10 @@
 ## 2026-11-05 — Server V2 Phase 3: insight card routes served (PR #797)
 
-- **PR:** [#797](https://github.com/abucalip/navi-librarian/pull/797), open (not merged); required CI pending at the time of writing.
+- **Merged via PR:** [#797](https://github.com/abucalip/navi-librarian/pull/797), squash `5d2a3fb526fc3a0e89e3a9378410b88142ed83a2`, tested head `6c2db92424c33f41645fff5d2016acf3cce40cf9`. All required checks passed (test-and-build, validate-container, validate-release-workflow, compile, container-smoke).
 - **Change:** `app/api/insights.py` (registered in `app/main.py`; `navidrome_server.py` untouched, D-016): `GET /api/insights?limit=` and `POST /api/insights/{kind}/dismiss|restore|accept|unaccept` with `{"key": ...}` answering `{"changed": bool}`. The store is `intelligence.sqlite3` in the data directory (D-026). A lens returns cards only when listed in `NAVI_INSIGHT_LENSES` (none by default). `docs/SERVER_V2_CONTRACT.md` describes the served routes.
 - **Verification actually run:** `tests/test_api_insights_routes.py`, `test_intelligence_contract_fixtures.py` and `test_api_discovery_injection.py` (18 pass), and `scripts/check_server_size.py` (OK), locally. Not run: the full suite, a live server, the macOS or Android client against the routes.
 - **Limitations:** restore only lifts the suppression (the card returns at the next refresh, existing service behavior); `/api/capabilities` is still not served, so clients cannot read the `insights` feature; no job fills the store at runtime, so a live server returns empty lenses; no lens is enabled by default; not published or deployed.
-- **Next action:** merge #797 after CI, then decide how the store is filled at runtime and whether to serve `/api/capabilities`; then Phase 3 exit verification.
+- **Next action:** decide how the store is filled at runtime and whether to serve `/api/capabilities`; then Phase 3 exit verification.
 
 ## 2026-11-05 — Android insight cards (Server V2 Phase 3 client gate, PR #796)
 
