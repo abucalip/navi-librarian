@@ -1,3 +1,11 @@
+## 2026-11-05 — Server V2 Phase 1 slice 6: job framework wrapper merged
+
+- **Code merged via PR:** [#764](https://github.com/abucalip/navi-librarian/pull/764), squash `89c81532f21454b0470aa93da3d2f7305a96b5f8`, tested head `3404ccc904bd355374bfd16c2c3ffdb29f9541cf`: `intelligence/jobs/runner.py` over the existing `job_runs` table (one queued or running run per job and scope; item and time budgets; an early stop re-queues with saved progress and the next call resumes; `recover_stale` re-queues crashed runs; `status`, `list_runs`, `last_good`; `cancel`; `prune_finished` keeps the newest runs and every last-good run; only a success bumps the resource `data_version`, so a failed or cancelled run leaves the previous output visible) and `tests/test_intelligence_jobs.py`.
+- **Verification actually run:** `python3 -m unittest tests.test_intelligence_jobs` locally, 19 tests passing; `py_compile`. Full suite not run (owner rule). Required checks (compile, container-smoke, test-and-build, validate-container) passed on the tested head.
+- **Documentation committed directly to main:** `docs/PROJECT_STATUS.md`, `docs/ACTIVE_WORK.md` and this log.
+- **Not done / limitations:** nothing imports the wrapper; no scheduler, server wiring, endpoint, provider traffic, publication or deployment. Job functions must be written to be re-runnable; the wrapper does not roll back their writes on failure.
+- **Next action:** Phase 1 slice 7, `/api/capabilities` and `/changes` skeleton with ETag/data_version plumbing.
+
 ## 2026-11-05 — Server V2 Phase 1 slice 5 (part 1): Library Health report merged
 
 - **Code merged via PR:** [#763](https://github.com/abucalip/navi-librarian/pull/763), squash `f1d0de90d66dc949f9a065ad1c2291cdc0d22de1`, tested head `f1967f6fa990aefd7c6488dae9ec7b063dadf671`: `intelligence/health/report.py` (pure, deterministic, read-only report over normalized Navidrome albums; checks for missing album, artist and track MBIDs, missing genre, track-count mismatch, track-number gaps, duplicates and unnumbered tracks, disc gaps, mixed track years in non-compilations, missing ReplayGain, inconsistent album-artist spelling; output is a worklist, nothing is edited) and `tests/test_intelligence_health.py`.
