@@ -151,3 +151,21 @@ class ProviderWiring(unittest.TestCase):
         self.assertTrue(all(h.get("User-Agent") for _, h in seen))
         self.assertTrue(all(("Authorization" in h) == ("listenbrainz" in u) for u, h in seen))
         self.assertLessEqual(len(seen), insights_refresh.PROVIDER_BUDGET)
+
+
+class SeriesWiring(unittest.TestCase):
+    def test_series_lens_is_a_provider_lens_and_turns_series_on(self):
+        from unittest import mock
+        self.assertIn("series_completion", insights_refresh.PROVIDER_LENSES)
+        seen = {}
+
+        def fake_refresh(db, **kw):
+            seen.update(kw)
+            return type("R", (), {"state": "succeeded"})()
+
+        for lenses, expected in (("series_completion", True), ("blind_spot", False)):
+            tmp = tempfile.TemporaryDirectory()
+            self.addCleanup(tmp.cleanup)
+            with mock.patch.object(insights_refresh, "refresh_provider_lenses", fake_refresh):
+                insights_refresh.refresh_once(FakeLibrarian(tmp.name, []), {insight_routes.LENSES_ENV: lenses})
+            self.assertEqual(seen["series"], expected)
