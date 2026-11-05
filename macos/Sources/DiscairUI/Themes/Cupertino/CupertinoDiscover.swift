@@ -55,10 +55,14 @@ struct CupertinoDiscover: View {
 
     private func row(_ a: AlbumItem) -> some View {
         HStack(alignment: .top, spacing: 14) {
-            CoverView(album: a).frame(width: 84).clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-                .shadow(color: .black.opacity(0.15), radius: 5, y: 3).accessibilityHidden(true)
+            Button { state.open(album: a) } label: {
+                CoverView(album: a).frame(width: 84).clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                    .shadow(color: .black.opacity(0.15), radius: 5, y: 3)
+            }
+            .buttonStyle(.plain).accessibilityLabel("Open \(a.title)")
             VStack(alignment: .leading, spacing: 4) {
-                Text(a.title).font(.system(size: 16, weight: .semibold)).lineLimit(1)
+                Button { state.open(album: a) } label: { Text(a.title).font(.system(size: 16, weight: .semibold)).lineLimit(1) }
+                    .buttonStyle(.plain).accessibilityLabel("Open \(a.title)")
                 Button(a.artist) { state.openArtist(named: a.artist) }.buttonStyle(.plain).foregroundStyle(CU.muted)
                 if let r = a.reason { Text(r).font(.system(size: 12)).foregroundStyle(CU.muted).lineLimit(2) }
                 if !a.suggestedTracks.isEmpty {

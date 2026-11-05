@@ -93,7 +93,8 @@ struct ZineQueue: View {
         let a = AlbumItem(id: -1, title: q.album, artist: q.artist, year: 0, genre: "", format: "", owned: true, hue: 200, coverArt: q.coverArt)
         let p = state.player
         let count = p.queue.upNext.count
-        return ZineListRow(highlight: playing) {
+        return ReorderRow(index: index ?? 0, count: count, enabled: index != nil, move: { p.moveUpNext(from: $0, to: $1) }) { grab in
+        ZineListRow(highlight: playing) {
             HStack(spacing: 10) {
                 HStack(spacing: 10) {
                 Text("\(number)").font(Z.an(22)).lineLimit(1).fixedSize().frame(width: 36, alignment: .leading)
@@ -104,7 +105,7 @@ struct ZineQueue: View {
                 }
                 Spacer(minLength: 4)
                 }
-                .modifier(RowDragSource(id: index == nil ? nil : q.id.uuidString, label: q.title))
+                .modifier(grab ?? ReorderGrab())
                 Mono((playing ? "▶ playing · " : "") + PlayerModel.clock(q.duration))
                 if let i = index {
                     Button("Play") { p.jump(toUpNext: i) }.buttonStyle(ZineButtonStyle(small: true))
@@ -118,11 +119,7 @@ struct ZineQueue: View {
             }
         }
         .accessibilityElement(children: .contain)
-        .modifier(QueueReorder(enabled: index != nil) { ids in
-            guard let i = index, let from = p.queue.upNext.firstIndex(where: { $0.id.uuidString == ids.first }) else { return false }
-            p.moveUpNext(from: from, to: i)
-            return true
-        })
+        }
     }
 
     @ViewBuilder private var saveControls: some View {
@@ -182,11 +179,3 @@ struct ZineQueue: View {
     }
 }
 
-/// Drag a Running Order row onto another to move it; rows that are not in Up Next (the one playing) do not take part.
-private struct QueueReorder: ViewModifier {
-    let enabled: Bool
-    let drop: ([String]) -> Bool
-    func body(content: Content) -> some View {
-        if enabled { content.dropDestination(for: String.self) { ids, _ in drop(ids) } } else { content }
-    }
-}

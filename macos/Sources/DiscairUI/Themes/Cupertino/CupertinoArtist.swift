@@ -62,6 +62,7 @@ struct CupertinoArtist: View {
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 128, maximum: 128), spacing: 16, alignment: .top)], alignment: .leading, spacing: 18) {
                     ForEach(state.library.artistAlbums) { a in albumTile(a) }
                 }
+                RelatedSections(state: state)
             }
             .padding(.horizontal, 28).padding(.bottom, 28)
         }
@@ -88,7 +89,7 @@ struct CupertinoArtist: View {
 
     private func albumTile(_ a: AlbumItem) -> some View {
         VStack(alignment: .leading, spacing: 0) {
-            Button { if a.owned { state.open(album: a) } } label: {
+            Button { state.open(album: a) } label: {
             CoverView(album: a).frame(width: 128).clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
                 .opacity(a.owned ? 1 : 0.35)
                 .overlay { if !a.owned { RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(Color(white: 0.53), style: StrokeStyle(lineWidth: 2, dash: [5, 4])).padding(-3) } }

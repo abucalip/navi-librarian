@@ -152,7 +152,8 @@ struct CupertinoQueueInspector: View {
             else { Text("Nothing playing. Play a song and what follows shows here.").foregroundStyle(CU.muted).padding(8) }
             let up = p.queue.upNext
             ForEach(Array(up.enumerated()), id: \.element.id) { i, item in
-                songRow(item, time: PlayerModel.clock(item.duration), playing: false, dragID: item.id.uuidString) {
+                ReorderRow(index: i, count: up.count, move: { p.moveUpNext(from: $0, to: $1) }) { grab in
+                songRow(item, time: PlayerModel.clock(item.duration), playing: false, grab: grab) {
                     Menu {
                         Button("Play now") { p.jump(toUpNext: i) }
                         Button("Move up") { p.moveUpNext(from: i, to: i - 1) }.disabled(i == 0)
@@ -163,20 +164,12 @@ struct CupertinoQueueInspector: View {
                     .menuStyle(.borderlessButton).menuIndicator(.hidden).fixedSize()
                     .accessibilityLabel("Actions for \(item.title)")
                 }
-                .dropDestination(for: String.self) { ids, _ in reorder(ids, to: i) }
+                }
             }
         }
     }
 
-    /// A row dropped on another moves there (Move up and Move down in the menu do the same without dragging).
-    private func reorder(_ ids: [String], to i: Int) -> Bool {
-        let p = state.player
-        guard let id = ids.first, let from = p.queue.upNext.firstIndex(where: { $0.id.uuidString == id }) else { return false }
-        p.moveUpNext(from: from, to: i)
-        return true
-    }
-
-    private func songRow<T: View>(_ q: QueueItem, time: String, playing: Bool, dragID: String? = nil, @ViewBuilder trailing: () -> T = { EmptyView() }) -> some View {
+    private func songRow<T: View>(_ q: QueueItem, time: String, playing: Bool, grab: ReorderGrab? = nil, @ViewBuilder trailing: () -> T = { EmptyView() }) -> some View {
         HStack(spacing: 11) {
             HStack(spacing: 11) {
             CoverView(album: AlbumItem(id: -1, title: q.album, artist: q.artist, year: 0, genre: "", format: "", owned: true, hue: 200, coverArt: q.coverArt))
@@ -187,9 +180,9 @@ struct CupertinoQueueInspector: View {
             }
             Spacer(minLength: 4)
             }
-            .modifier(RowDragSource(id: dragID, label: q.title))
+            .modifier(grab ?? ReorderGrab())
             HStack(spacing: 4) {
-                if playing { Image(systemName: "waveform").accessibilityLabel("Playing") }
+                if playing { PlayingBars(active: state.player.isPlaying) }
                 Text(time).monospacedDigit()
             }
             .font(.system(size: 12)).foregroundStyle(CU.muted)

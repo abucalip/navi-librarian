@@ -418,3 +418,12 @@ Completes contract section 6.3. In the Cupertino Library, the Columns switch (op
 - Window below 1100x700 scrolls both ways instead of squeezing the layout (minimum window 480x360).
 - Pipeline dock moved to the bottom left; a finished Get (imported or failed) shows a note for 30 seconds, then fades.
 - Queue tabs no longer wrap onto two lines.
+
+### Second batch (2026-11-05)
+
+- Queue reordering no longer uses drag-and-drop: a row's grab area is an AppKit view (`RowDragNSView`) that reports how far the pointer moved, the row follows it, and on release it moves by the whole rows passed over (`ReorderRow`). The old drop target let the window move as well.
+- Album pages show "Similar artists in your library", "Not in your library" and "Similar albums not in your library"; artist pages show the two artist groups. Data: the Librarian's `/api/albums/{artist}/{album}` and `/api/artists/{artist}` (JSON form), photos from the page's https `artwork_url` or `/api/artist-image`. The old similar-artist pills (Navidrome) are no longer drawn.
+- A pick or similar album with no suggested songs lists the server's `tracks` section on its album page.
+- Album pages: double-click an owned song to play from it; the playing song shows animated bars (queue and album page).
+- Songs: Grid shows covers (Table is the list); Columns uses plain buttons in lazy stacks and computes its columns once per render.
+- Missing from your library and New covers and titles open the album page. Back from an album opened in the Up Next view goes to Albums. Artists and Recently Added are in the command palette.

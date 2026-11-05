@@ -53,51 +53,77 @@ struct PointerSurface: NSViewRepresentable {
     func updateNSView(_ v: PointerNSView, context: Context) { v.onDown = onDown; v.onDrag = onDrag; v.onUp = onUp }
 }
 
-/// The part of a row you grab to reorder it. Starts an AppKit drag of `id` (as plain text, which `dropDestination(for:
-/// String.self)` takes) once the pointer has moved a few points. Only this part, not the whole row, so the buttons and
-/// menu in the row keep their own clicks.
-final class RowDragNSView: NSView, NSDraggingSource {
-    var payload = ""
-    var label = ""
-    private var pressed: NSPoint?
+/// The part of a row you grab to reorder it. An AppKit view that is never a window-drag area: it reports how far (in
+/// points, down is positive) the pointer has moved since the press, once it has moved a few points. No drag-and-drop
+/// session is involved, so nothing else (a drop target, the window) takes part in the gesture.
+final class RowDragNSView: NSView {
+    var onBegan: () -> Void = {}
+    var onMoved: (CGFloat) -> Void = { _ in }
+    var onEnded: (CGFloat) -> Void = { _ in }
+    private var startY: CGFloat?
+    private var begun = false
     override var mouseDownCanMoveWindow: Bool { false }
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
-    override func mouseDown(with event: NSEvent) { pressed = event.locationInWindow }
-    override func mouseUp(with event: NSEvent) { pressed = nil }
+    override func mouseDown(with event: NSEvent) { startY = event.locationInWindow.y; begun = false }
     override func mouseDragged(with event: NSEvent) {
-        guard let start = pressed, hypot(event.locationInWindow.x - start.x, event.locationInWindow.y - start.y) > 4, !payload.isEmpty else { return }
-        pressed = nil
-        let item = NSPasteboardItem()
-        item.setString(payload, forType: .string)
-        let dragging = NSDraggingItem(pasteboardWriter: item)
-        dragging.setDraggingFrame(bounds, contents: dragImage())
-        beginDraggingSession(with: [dragging], event: event, source: self)
+        guard let startY else { return }
+        let dy = startY - event.locationInWindow.y      // window y grows upward
+        if !begun { guard abs(dy) > 3 else { return }; begun = true; onBegan() }
+        onMoved(dy)
     }
-    func draggingSession(_ session: NSDraggingSession, sourceOperationMaskFor context: NSDraggingContext) -> NSDragOperation { .move }
-
-    private func dragImage() -> NSImage {
-        let text = label
-        return NSImage(size: bounds.size, flipped: false) { r in
-            NSColor.black.withAlphaComponent(0.12).setFill()
-            NSBezierPath(roundedRect: r, xRadius: 9, yRadius: 9).fill()
-            (text as NSString).draw(at: NSPoint(x: 12, y: max(0, (r.height - 16) / 2)), withAttributes: [.font: NSFont.systemFont(ofSize: 13, weight: .semibold), .foregroundColor: NSColor.labelColor])
-            return true
-        }
+    override func mouseUp(with event: NSEvent) {
+        defer { startY = nil; begun = false }
+        guard let startY, begun else { return }
+        onEnded(startY - event.locationInWindow.y)
     }
 }
 
 struct RowDragSurface: NSViewRepresentable {
-    let id: String
-    let label: String
+    let grab: ReorderGrab
     func makeNSView(context: Context) -> RowDragNSView { RowDragNSView() }
-    func updateNSView(_ v: RowDragNSView, context: Context) { v.payload = id; v.label = label }
+    func updateNSView(_ v: RowDragNSView, context: Context) { v.onBegan = grab.onBegan; v.onMoved = grab.onMoved; v.onEnded = grab.onEnded }
 }
 
-struct RowDragSource: ViewModifier {
-    let id: String?
-    var label = ""
-    func body(content: Content) -> some View {
-        if let id { content.contentShape(Rectangle()).overlay(RowDragSurface(id: id, label: label)) } else { content }
+/// What a row's grab area needs to report a drag (see `ReorderRow`).
+struct ReorderGrab: ViewModifier {
+    var onBegan: () -> Void = {}
+    var onMoved: (CGFloat) -> Void = { _ in }
+    var onEnded: (CGFloat) -> Void = { _ in }
+    func body(content: Content) -> some View { content.contentShape(Rectangle()).overlay(RowDragSurface(grab: self)) }
+}
+
+/// A list row that can be dragged up or down to a new place. The row follows the pointer; on release it moves by
+/// the whole rows it was dragged over. The grab area (the part that is not a button or menu) takes `grab`.
+struct ReorderRow<Content: View>: View {
+    let index: Int
+    let count: Int
+    var enabled = true
+    let move: (Int, Int) -> Void
+    @ViewBuilder let content: (ReorderGrab?) -> Content
+    @State private var dy: CGFloat = 0
+    @State private var active = false
+    @State private var height: CGFloat = 52
+
+    /// The place a drag of `dy` points ends at.
+    static func target(from index: Int, dy: CGFloat, rowHeight: CGFloat, count: Int) -> Int {
+        guard rowHeight > 0, count > 0 else { return index }
+        return min(max(index + Int((dy / rowHeight).rounded()), 0), count - 1)
+    }
+
+    var body: some View {
+        content(enabled ? ReorderGrab(
+            onBegan: { active = true },
+            onMoved: { dy = $0 },
+            onEnded: { final in
+                let to = Self.target(from: index, dy: final, rowHeight: height, count: count)
+                dy = 0; active = false
+                if to != index { move(index, to) }
+            }) : nil)
+            .offset(y: dy)
+            .zIndex(active ? 1 : 0)
+            .opacity(active ? 0.85 : 1)
+            .shadow(color: .black.opacity(active ? 0.2 : 0), radius: 6, y: 2)
+            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { height = $0 }
     }
 }
 

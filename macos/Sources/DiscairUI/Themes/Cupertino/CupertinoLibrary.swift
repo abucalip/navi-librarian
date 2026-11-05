@@ -36,11 +36,38 @@ struct CupertinoLibrary: View {
                     CupertinoMiller(state: state).frame(height: 460)
                     footer
                 } else {
-                header
                 let all = rows
                 let pages = Self.pageCount(all.count)
                 let current = min(page, pages - 1)
                 let first = current * Self.pageSize
+                if viewMode == "Grid" {
+                    // Covers, one tile per song (the table is the list view); double-click plays from that song.
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 128, maximum: 128), spacing: 18, alignment: .top)], alignment: .leading, spacing: 18) {
+                        ForEach(Array(all[first..<min(all.count, first + Self.pageSize)].enumerated()), id: \.element.id) { n, r in
+                            let i = first + n
+                            VStack(alignment: .leading, spacing: 0) {
+                                CoverView(album: r.albumItem).frame(width: 128).clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                                    .overlay { if r.id == selected { RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(CU.accent, lineWidth: 3) } }
+                                    .shadow(color: .black.opacity(0.2), radius: 7, y: 4).padding(.bottom, 9)
+                                Text(r.title).fontWeight(.semibold).lineLimit(1)
+                                Text(r.artist).foregroundStyle(CU.muted).lineLimit(1)
+                            }
+                            .font(.system(size: 13)).frame(width: 128, alignment: .leading).contentShape(Rectangle())
+                            .onTapGesture(count: 2) { selected = r.id; state.play(rows: all, startAt: i) }
+                            .onTapGesture { selected = r.id }
+                            .contextMenu {
+                                Button("Play") { state.play(rows: all, startAt: i) }
+                                if let item = PlayerModel.item(r) {
+                                    Button("Play Next") { state.player.playNext(item) }
+                                    Button("Add to Queue") { state.player.addToQueue(item) }
+                                }
+                            }
+                            .accessibilityElement(children: .combine)
+                            .accessibilityLabel("\(r.title), \(r.artist)")
+                        }
+                    }
+                } else {
+                header
                 ForEach(Array(all[first..<min(all.count, first + Self.pageSize)].enumerated()), id: \.element.id) { n, r in
                     let i = first + n   // position in the whole sorted list: the queue is the table in the order shown
                     row(r, shaded: n % 2 == 0, on: r.id == selected)
@@ -54,6 +81,7 @@ struct CupertinoLibrary: View {
                             }
                         }
                 }
+                }
                 pager(total: all.count, pages: pages, current: current)
                 footer
                 }
@@ -64,6 +92,7 @@ struct CupertinoLibrary: View {
         .onChange(of: sortKey) { _, _ in page = 0 }
         .onChange(of: ascending) { _, _ in page = 0 }
         .onChange(of: onlyMissingMBID) { _, _ in page = 0 }
+        .onChange(of: viewMode) { _, _ in page = 0 }
         .task(id: state.library.isLive) { await state.loadAllSongs() }
     }
 

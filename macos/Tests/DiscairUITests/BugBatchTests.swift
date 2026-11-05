@@ -2,7 +2,9 @@ import DiscairAudio
 import DiscairCore
 import DiscairNavidrome
 import Foundation
+import DiscairLibrarian
 import Testing
+@testable import DiscairLibrarian
 @testable import DiscairAudio
 @testable import DiscairUI
 
@@ -151,5 +153,68 @@ struct SongPagingTests {
         #expect(CupertinoLibrary.pageSize == 100)
         #expect([0, 1, 100].map(CupertinoLibrary.pageCount) == [1, 1, 1])
         #expect([101, 200, 201, 12_672].map(CupertinoLibrary.pageCount) == [2, 2, 3, 127])
+    }
+}
+
+struct RelatedDecodingTests {
+    private let albumJSON = #"""
+    {"sections":{"similar_artists":{"items":[
+      {"name":"George Harrison","key":"george harrison","artwork_url":null,"owned":false,"id":null},
+      {"name":"Paul McCartney","key":"paul mccartney","artwork_url":"https://cdn.example/p.jpg","owned":true,"id":"ab12"},
+      {"name":"","key":"x","owned":false},
+      {"name":"Paul McCartney","key":"paul mccartney","owned":true}]},
+     "similar_albums":{"items":[
+      {"name":"All Things Must Pass","artist":"George Harrison","key":"george harrison/all things must pass","year":null,"owned":false},
+      {"name":"Owned One","artist":"A","key":"a/owned one","owned":true}]},
+     "tracks":{"items":[{"title":"Taxman","track_number":1,"duration_seconds":159}]}}}
+    """#
+
+    @Test func theAlbumPageGivesSimilarArtistsAlbumsAndTracks() throws {
+        let page = try JSONDecoder().decode(AlbumPageEnvelope.self, from: Data(albumJSON.utf8)).related
+        #expect(page.similarArtists.count == 4)
+        #expect(page.similarAlbums.map(\.name) == ["All Things Must Pass"])      // only albums the library lacks
+        #expect(page.tracks.map(\.title) == ["Taxman"])
+        #expect(page.similarArtists[1].artworkURL?.absoluteString == "https://cdn.example/p.jpg" && page.similarArtists[1].owned)
+    }
+
+    @MainActor @Test func emptyAndRepeatedNamesAreDroppedAndOwnedAreSplitOut() throws {
+        let page = try JSONDecoder().decode(AlbumPageEnvelope.self, from: Data(albumJSON.utf8)).related
+        let cleaned = RelatedModel.cleaned(page.similarArtists)
+        #expect(cleaned.map(\.name) == ["George Harrison", "Paul McCartney"])
+    }
+
+    @Test func pageKeysFollowTheServersForm() {
+        #expect(LibrarianClient.key("The Beatles") == "beatles")
+        #expect(LibrarianClient.key("Abd Al Malik") == "abd%20al%20malik")
+        #expect(LibrarianClient.key("All Things Must Pass (2014 Remaster)") == "all%20things%20must%20pass%202014%20remaster")
+        #expect(LibrarianClient.key("AC/DC") == "ac%20dc")
+    }
+
+    @Test func relativeArtworkAddressesAreNotUsed() throws {
+        let a = try JSONDecoder().decode(SimilarArtistEntry.self, from: Data(#"{"name":"X","artwork_url":"/api/owned/artwork/1"}"#.utf8))
+        #expect(a.artworkURL == nil)
+    }
+}
+
+@MainActor
+struct PaletteAndBackTests {
+    @Test func theArtistsAndRecentlyAddedScreensAreInThePalette() {
+        let titles = PaletteCatalog.results(query: "", playing: false, albums: [], artists: []).map(\.title)
+        #expect(titles.contains("Go to Artists") && titles.contains("Go to Recently Added"))
+    }
+
+    @Test func anAlbumOpenedFromTheUpNextViewGoesBackToAlbums() {
+        let s = AppState(screen: .queue)
+        s.open(album: Fixtures.albums[0])
+        #expect(s.albumBack == .albums && AppState.title(of: s.albumBack) == "Albums")
+        let t = AppState(screen: .queue)
+        t.open(artist: ArtistItem(id: 1, name: "Can", albumCount: 1))
+        #expect(t.artistBack == .albums)
+    }
+
+    @Test func aTrackIsCurrentWhenTheSongPlayingIsItsOwn() {
+        let s = AppState(screen: .album)
+        let track = TrackItem(id: 0, title: "T0", duration: "", format: "", owned: true, playing: false)
+        #expect(!s.isCurrent(track))
     }
 }

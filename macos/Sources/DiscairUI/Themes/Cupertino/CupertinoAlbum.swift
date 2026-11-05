@@ -77,6 +77,7 @@ struct CupertinoAlbum: View {
                     }
                 }
                 }
+                RelatedSections(state: state, albums: true)
                 CupertinoAlbumSpread(state: state)
             }
             .padding(.horizontal, 28).padding(.bottom, 28)
@@ -90,6 +91,9 @@ struct CupertinoAlbum: View {
             row(["#", "Song", "Time", "Quality", ""], header: true, shaded: false, playing: false, missing: false)
             ForEach(Array(state.library.tracks.enumerated()), id: \.element.id) { i, t in
                 row(nil, track: t, index: i, shaded: i % 2 == 0)
+                    .contentShape(Rectangle())
+                    .onTapGesture(count: 2) { if t.owned { state.playAlbum(state.selectedAlbum, startAt: i) } }
+                    .help(t.owned ? "Double-click to play" : "")
             }
         }
         .accessibilityElement(children: .contain)
@@ -99,12 +103,12 @@ struct CupertinoAlbum: View {
 
     private func row(_ header: [String]?, header isHeader: Bool = false, track: TrackItem? = nil, index: Int = 0,
                      shaded: Bool, playing: Bool = false, missing: Bool = false) -> some View {
-        let on = track?.playing ?? false
+        let on = track.map(state.isCurrent) ?? false
         let ms = track.map { !$0.owned } ?? false
         return HStack(spacing: 0) {
             cell(width: cols[0]) {
                 if isHeader { Text("#") }
-                else if on { Image(systemName: "waveform").accessibilityLabel("Playing") }
+                else if on { PlayingBars(active: state.player.isPlaying) }
                 else { Text("\(index + 1)").lineLimit(1).fixedSize() }
             }
             cell(width: cols[1]) { Text(isHeader ? "Song" : track!.title).lineLimit(1) }

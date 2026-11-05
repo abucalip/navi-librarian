@@ -21,7 +21,7 @@ struct PaletteCommand: Identifiable {
 /// Works out what the palette lists and in what order. Pure: no window, no player, so a test can drive it.
 enum PaletteCatalog {
     static let screens: [(Screen, String)] = [
-        (.home, "Home"), (.albums, "Albums"), (.library, "Songs"), (.queue, "Queue"), (.nowPlaying, "Now Playing"),
+        (.home, "Home"), (.recent, "Recently Added"), (.artists, "Artists"), (.albums, "Albums"), (.library, "Songs"), (.queue, "Queue"), (.nowPlaying, "Now Playing"),
         (.discover, "Discover"), (.gapRadar, "Gap Radar"), (.smartPlaylists, "Smart Playlists"), (.history, "History"), (.downloads, "Downloads"), (.equalizer, "Equalizer"), (.settings, "Settings"),
     ]
 

@@ -52,6 +52,28 @@ public final class ArtworkStore {
         return image
     }
 
+    /// An artist photo, from the address the server gave or else looked up by name.
+    public func image(artistName: String, url: URL?) async -> NSImage? {
+        let key = "artist|\(artistName.lowercased())"
+        if let hit = cache.object(forKey: key as NSString) { return hit }
+        let diskKey = "cover|\(key)"
+        if let data = media?.data(for: diskKey, ext: "img"), let image = NSImage(data: data) {
+            cache.setObject(image, forKey: key as NSString); return image
+        }
+        guard !failed.contains(key) else { return nil }
+        var source = url
+        if source == nil, let librarian { source = try? await librarian.artistImageURL(name: artistName) }
+        guard let source else { failed.insert(key); return nil }
+        var request = URLRequest(url: source)
+        request.setValue("image/*", forHTTPHeaderField: "Accept")
+        guard let (data, http) = try? await transport.send(request), http.statusCode == 200, let image = NSImage(data: data) else {
+            failed.insert(key); return nil
+        }
+        cache.setObject(image, forKey: key as NSString)
+        media?.store(data: data, key: diskKey, ext: "img")
+        return image
+    }
+
     public func configure(_ builder: StreamURLBuilder?) {
         self.builder = builder
         cache.removeAllObjects()
@@ -104,5 +126,30 @@ struct ArtworkImage: View {
             if let id = album.coverArt { image = await store.image(coverArt: id, px: px) }
             else if !album.owned, album.id >= 0 { image = await store.image(artist: album.artist, album: album.title, px: px) }
         }
+    }
+}
+
+/// A round artist photo with the first letter under it until (or unless) the photo arrives.
+struct ArtistPhoto: View {
+    let name: String
+    var url: URL?
+    var size: CGFloat = 72
+    @Environment(\.artwork) private var store
+    @State private var image: NSImage?
+
+    var body: some View {
+        ZStack {
+            Circle().fill(Color(hue: LibraryModel.hue(for: name) / 360, saturation: 0.35, brightness: 0.8))
+            Text(String(name.first.map(String.init) ?? "?")).font(.system(size: size * 0.4, weight: .bold)).foregroundStyle(.white.opacity(0.9))
+            if let image { Image(nsImage: image).resizable().scaledToFill() }
+        }
+        .frame(width: size, height: size)
+        .clipShape(Circle())
+        .task(id: name) {
+            image = nil
+            guard let store else { return }
+            image = await store.image(artistName: name, url: url)
+        }
+        .accessibilityHidden(true)
     }
 }

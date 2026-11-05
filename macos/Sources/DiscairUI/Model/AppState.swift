@@ -81,6 +81,8 @@ public final class AppState {
     public let savedQueues: SavedQueueStore
     public let radio: RadioModel
     public let spread = AlbumSpreadModel()
+    /// Similar artists and albums from the Librarian, for the album and artist pages.
+    public let related = RelatedModel()
     public let artwork: ArtworkStore
     /// The optional on-disk copy of played songs and covers (off by default; Settings).
     public let cache: CacheModel
@@ -181,12 +183,18 @@ public final class AppState {
     // MARK: Playback
 
     /// Plays an owned album from its first song. A recommendation the library does not hold cannot be played.
-    public func playAlbum(_ album: AlbumItem) {
+    public func playAlbum(_ album: AlbumItem, startAt: Int = 0) {
         guard let id = album.remoteID, album.owned, let navidrome = session?.navidrome else { return }
         Task {
             guard let detail = try? await navidrome.album(id: id), !detail.songs.isEmpty else { return }
-            player.play(detail.songs.map(PlayerModel.item), startAt: 0)
+            player.play(detail.songs.map(PlayerModel.item), startAt: min(max(startAt, 0), detail.songs.count - 1))
         }
+    }
+
+    /// True when this track of the album on screen is the song loaded in the player.
+    public func isCurrent(_ track: TrackItem) -> Bool {
+        guard let c = player.current, c.title == track.title else { return false }
+        return c.albumID == selectedAlbum.remoteID || c.album == selectedAlbum.title
     }
 
     // MARK: Queue workspace
@@ -226,14 +234,18 @@ public final class AppState {
     }
 
     public func loadSelectedAlbum() async {
-        await library.loadTracks(for: selectedAlbum, navidrome: session?.navidrome)
+        async let relatedLoad: Void = related.loadAlbum(selectedAlbum, librarian: session?.librarian)
+        await library.loadTracks(for: selectedAlbum, navidrome: session?.navidrome, librarian: session?.librarian, related: related)
+        await relatedLoad
         await spread.load(album: selectedAlbum, navidrome: session?.navidrome, librarian: session?.librarian, libraryArtists: library.artists.map(\.name))
     }
 
     public func retrySpreadReviews() async { await spread.loadReviews(album: selectedAlbum, librarian: session?.librarian) }
 
     public func loadSelectedArtist() async {
+        async let relatedLoad: Void = related.loadArtist(name: selectedArtist.name, remoteID: selectedArtist.remoteID, librarian: session?.librarian)
         await library.loadArtist(selectedArtist, navidrome: session?.navidrome)
+        await relatedLoad
     }
 
     public func loadGapRadar() async { await library.loadGapRadar(navidrome: session?.navidrome) }
@@ -272,14 +284,17 @@ public final class AppState {
     public private(set) var artistBack: Screen = .artists
 
     public func open(album: AlbumItem) {
-        if screen != .album && screen != .nowPlaying { albumBack = screen }
+        if screen != .album && screen != .nowPlaying { albumBack = Self.listScreen(screen) }
         selectedAlbum = album; screen = .album
     }
 
     public func open(artist: ArtistItem) {
-        if screen != .artist && screen != .nowPlaying { artistBack = screen }
+        if screen != .artist && screen != .nowPlaying { artistBack = Self.listScreen(screen) }
         selectedArtist = artist; selectedLetter = artist.letter; screen = .artist
     }
+
+    /// The Up Next view is the Albums grid with the inspector open, so going back from it lands on Albums.
+    static func listScreen(_ s: Screen) -> Screen { s == .queue ? .albums : s }
 
     /// Name of a screen as the sidebar and Back buttons call it.
     public static func title(of screen: Screen) -> String {

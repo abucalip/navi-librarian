@@ -70,6 +70,7 @@ struct ZineArtist: View {
                     .frame(width: 250)
                 }
             }
+            RelatedSections(state: state)
         }
         .task(id: state.selectedArtist.id) { await state.loadSelectedArtist() }
     }
