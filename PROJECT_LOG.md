@@ -1,3 +1,11 @@
+## 2026-11-05 — Server V2 Phase 3 slice 6: blind-spot set job (PR #781)
+
+- **Merged via PR:** [#781](https://github.com/abucalip/navi-librarian/pull/781), squash `15a137d3f504b1ddd8973130d8af4ff42807d829`, tested head `46e4669b99c29c93ceadbee94641ecc612bf8640`; required CI (compile, container-smoke, test-and-build, validate-container) passed on that head.
+- **Change:** `intelligence/insights/set_job.py` (+ `tests/test_intelligence_insights_set_job.py`). `refresh_blind_spots` takes injected fetchers for studio discography, ListenBrainz top and series, runs them for owned artists with an MBID (and caller-supplied series MBIDs), then the slice 5 builders, `find_blind_spots` and persistence. Owned release groups come only from owned releases linked by `member_of`. A per-run `max_lookups` bound applies; a provider failure or budget stop leaves saved cards unchanged. No `navidrome_server.py` change (D-016).
+- **Verification actually run:** `python -m unittest tests.test_intelligence_insights_set_job tests.test_intelligence_insights_set_builders tests.test_intelligence_insights_blind_spot_persistence` (23 passed). Full suite not run by the agent (owner rule); CI ran it.
+- **Limitations:** unwired; the real MusicBrainz and ListenBrainz fetchers are not written, so no live data and no provider traffic; not published or deployed.
+- **Next action:** series completion counters, then hidden canon, anniversaries and the lens scorecard; real fetchers need the owner's approval for provider traffic.
+
 ## 2026-11-05 — Server V2 Phase 3 slice 5: comparison-set builders (PR #780)
 
 - **Merged via PR:** [#780](https://github.com/abucalip/navi-librarian/pull/780), squash `f4b2b01e2d78bd191164d10dbf50f298c7e52a70`, tested head `556e2bd381105440e798986b4810d20ac7babfe0`; required CI (compile, container-smoke, test-and-build, validate-container) passed on that head.
