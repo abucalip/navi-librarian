@@ -1,3 +1,11 @@
+## 2026-11-05 — Server V2 Phase 3 slice 5: comparison-set builders (PR #780)
+
+- **Merged via PR:** [#780](https://github.com/abucalip/navi-librarian/pull/780), squash `f4b2b01e2d78bd191164d10dbf50f298c7e52a70`, tested head `556e2bd381105440e798986b4810d20ac7babfe0`; required CI (compile, container-smoke, test-and-build, validate-container) passed on that head.
+- **Change:** `intelligence/insights/set_builders.py` (+ `tests/test_intelligence_insights_set_builders.py`). `studio_discography_set` keeps release groups with primary type Album and no secondary type, oldest first; `listenbrainz_top_set` keeps provider order and entries with an MBID; `series_set` keeps the series' ordering. Malformed documents return `None`; bad entries are skipped; duplicates dropped by MBID. No `navidrome_server.py` change (D-016).
+- **Verification actually run:** `python -m unittest tests.test_intelligence_insights_set_builders tests.test_intelligence_insights_blind_spots` (14 passed). Full suite not run by the agent (owner rule); CI ran it.
+- **Limitations:** unwired; no fetchers or job yet, so no live MusicBrainz or ListenBrainz data; not published or deployed.
+- **Next action:** injected fetchers and the job that feeds the builders, then series completion.
+
 ## 2026-11-05 — Server V2 Phase 3 slice 4: blind-spot persistence (PR #779)
 
 - **Merged via PR:** [#779](https://github.com/abucalip/navi-librarian/pull/779), squash `21ecf46586638544367b2cc24ac5d96f877ffdbd`, tested head `929852e10048e297ff9bb6b40415ce8b1e7cfc73`; required CI (compile, container-smoke, test-and-build, validate-container) passed on that head.
