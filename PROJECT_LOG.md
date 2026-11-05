@@ -1,3 +1,11 @@
+## 2026-11-05 — Server V2 Phase 3 slice 8: hidden canon, taste vs world (PR #783)
+
+- **Merged via PR:** [#783](https://github.com/abucalip/navi-librarian/pull/783), squash `02524dbc53e04533a5ea046d4c4fcf7d8616677f`, tested head `8433aba86e21169d9d4231189164624c6e31de54`; required CI (compile, container-smoke, test-and-build, validate-container) passed on that head.
+- **Change:** `intelligence/insights/hidden_canon.py` (+ exports, + `tests/test_intelligence_insights_hidden_canon.py`). `find_hidden_canon` takes sitewide-popular release groups, the owner's top genres in rank order and owned release-group MBIDs. Owned groups (by MBID only), candidates with no MBID, repeats, too few listens or no matching top genre are left out and counted; fewer than 2 known genres is `sparse_taste` with an empty result. Score is popularity (`log1p(listens)` over the pool maximum) times genre weight (`1 - rank/n`), used only for ranking; at most 2 per artist; dismissed `hidden_canon:<mbid>` keys are suppressed. `canon_card` states the worldwide listen count, the matched genre and "not in your library", never advice; the only action is dismiss. No `navidrome_server.py` change (D-016).
+- **Verification actually run:** `python3 -m unittest tests.test_intelligence_insights_hidden_canon tests.test_intelligence_insights_series_completion` (22 passed). Full suite not run by the agent (owner rule); CI ran it.
+- **Limitations:** unwired; no persistence and no real ListenBrainz fetcher, so no live data and no provider traffic; genre source and thresholds untuned on the owner's library; not published or deployed.
+- **Next action:** anniversaries (release and life-span dates), then the lens scorecard; persistence for series and hidden canon can follow the slice 4 pattern.
+
 ## 2026-11-05 — Server V2 Phase 3 slice 7: series completion counters (PR #782)
 
 - **Merged via PR:** [#782](https://github.com/abucalip/navi-librarian/pull/782), squash `c1b741a7c6f8b5ec3646ddcd3a76b98597f40986`, tested head `36f1a9f49b108306751cfe36ca6549153ea6f927`; required CI (compile, container-smoke, test-and-build, validate-container) passed on that head.
