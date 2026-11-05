@@ -35,13 +35,23 @@ class SeriesCompletionTests(unittest.TestCase):
         r = find_series_progress([make_series("none")], owned())
         self.assertEqual(dict(r.left_out), {"none": "not_started"})
 
+    def test_barely_started_series_is_left_out_with_a_reason(self):
+        r = find_series_progress([make_series("list", 40), make_series("cat", 10)], owned(1, 2, 3, 4, 5, 6, 7, 8, 9))
+        self.assertEqual([p.set.key for p in r.progress], ["cat"])
+        self.assertEqual(dict(r.left_out), {"list": "barely_started"})
+        # exactly at the threshold stays; the threshold is configurable
+        edge = find_series_progress([make_series("e", 8)], owned(1, 2))
+        self.assertEqual(len(edge.progress), 1)
+        off = find_series_progress([make_series("list", 40)], owned(1), SeriesConfig(min_share_owned=0))
+        self.assertEqual(len(off.progress), 1)
+
     def test_complete_series_is_not_a_card(self):
         r = find_series_progress([make_series("done", 4)], owned(1, 2, 3, 4))
         self.assertEqual(r.complete, ("done",))
         self.assertEqual(r.progress, ())
 
     def test_dismissed_series_is_suppressed(self):
-        r = find_series_progress([make_series("a"), make_series("b")], owned(1, 2), dismissed=[dismiss_key("a")])
+        r = find_series_progress([make_series("a"), make_series("b")], owned(1, 2, 3), dismissed=[dismiss_key("a")])
         self.assertEqual([p.set.key for p in r.progress], ["b"])
         self.assertEqual(r.suppressed, 1)
 
@@ -54,7 +64,7 @@ class SeriesCompletionTests(unittest.TestCase):
     def test_ranks_closest_to_finished_first(self):
         r = find_series_progress([make_series("low"), make_series("high")], owned(1, 2, 3, 4, 5, 6, 7, 8, 9))
         self.assertEqual(len(r.progress), 2)
-        low = find_series_progress([make_series("low")], owned(1)).progress[0]
+        low = find_series_progress([make_series("low")], owned(1, 2, 3)).progress[0]
         high = find_series_progress([make_series("high")], owned(1, 2, 3, 4, 5, 6, 7, 8, 9)).progress[0]
         self.assertGreater(high.score, low.score)
 
@@ -76,7 +86,7 @@ class SeriesCompletionTests(unittest.TestCase):
 
     def test_limit_applies(self):
         sets = [make_series(f"s{i}") for i in range(5)]
-        r = find_series_progress(sets, owned(1, 2), SeriesConfig(limit=2))
+        r = find_series_progress(sets, owned(1, 2, 3), SeriesConfig(limit=2))
         self.assertEqual(len(r.progress), 2)
 
 
