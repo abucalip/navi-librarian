@@ -1,3 +1,12 @@
+## 2026-11-05 — Server V2 Phase 3: batch series discovery and minimum owned share (PRs #802, #803)
+
+- **Merged via PR:** [#802](https://github.com/abucalip/navi-librarian/pull/802), squash `0561eb5e7f3612df12c9ec97e557f6c58764fdda`, tested head `75b35bc4ea8fa8cc959ea64e4fb9637d639c133d`; and [#803](https://github.com/abucalip/navi-librarian/pull/803), squash `72ca16b17fd62c22e4d3174b6988580bb23e31b3`, tested head `4799499ddc13e8abfa0176418c44cb4ccde9524a`; compile, container-smoke, test-and-build and validate-container passed on each head.
+- **Change:** series-id discovery now uses one paged MusicBrainz `release-group?artist=…&inc=series-rels` browse per owned artist (cache kind `artistseries`) instead of one lookup per owned release group, per the new batch-lookup workflow rule; truncation beyond 5 pages is reported as `series_truncated`; groups under other artists (compilations) are not covered. `SeriesConfig.min_share_owned` (default 0.25) leaves out series where the library owns a smaller share (`barely_started`).
+- **Live run (owner-approved sample, 12 artists, 1,792-album library, temporary store, not the owner's server):** one tick, 199 requests (187 MusicBrainz, 12 ListenBrainz), 179 releases linked to 174 owned groups, 55 series ids (3 artists truncated), 20 series cards before the filter (about 15 were long editorial lists with 1 to 10 owned); the same tick saved 20 blind-spot, 16 hidden-canon and 3 anniversary cards. The first per-group version did not finish within 250 requests. An earlier four-tick attempt failed with unrecorded errors (suspected MusicBrainz 503s). Card positions were not verified against MusicBrainz.
+- **Verification actually run:** series-completion, provider-runtime, refresh, API-insights, card-persistence, outcomes and insight-route tests; full suite not run (owner rule).
+- **Limitations:** the lenses are not enabled on the owner's server; not published or deployed; no scorecard verdict (sample too small, no accept/dismiss outcomes).
+- **Next action:** owner enables the lenses and reviews cards, then Phase 3 exit verification.
+
 ## 2026-11-05 — Server V2 Phase 3: series-id discovery and refresh (PR #801)
 
 - **Merged via PR:** [#801](https://github.com/abucalip/navi-librarian/pull/801), squash `622b971bfdfff08fc23818d40d3385de976c6362`, tested head `e7c609079b2648f99b87a9be89b0a2c1b9229b10`; compile, container-smoke, test-and-build, validate-container and validate-release-workflow passed on that head.
