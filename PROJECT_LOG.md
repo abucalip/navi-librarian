@@ -1,3 +1,11 @@
+## 2026-11-05 — Android insight cards (Server V2 Phase 3 client gate, PR #796)
+
+- **Merged via PR:** [#796](https://github.com/abucalip/navi-librarian/pull/796), squash `cd35c8af8c0c0e7b548970e197fc88bd3bcb1b1d`, tested head `675d2e49bba3dd9287c3027c7a529b1cac5949ed`. Required CI (compile, container-smoke, test-and-build, validate-container) passed.
+- **Change:** `model/Insights.kt` (forgiving parser; a card with no key or no reasons is dropped), `model/InsightNarrative.kt` (Why paragraph, same wording as macOS), `LibrarianRepository.insights` and `insightWrite` (dismiss, restore, accept; never from saved copies), `DiscoveryList.Insights` and `ui/discover/InsightsPage.kt` (lens sections, off and empty states, Why, Dismiss with Undo). `app/build.gradle.kts` reads `intelligence/contract-fixtures` as test resources.
+- **Verification actually run:** `./gradlew testDebugUnitTest --tests app.discair.InsightsTest --tests app.discair.DiscoveryTest` (8 and 6 tests pass) and `compileDebugKotlin`, locally with JDK 17. Not run: full suite, lint, device check.
+- **Limitations:** the server does not serve the insights routes yet, so the tab shows a load error; Get/Save on hidden canon and blind spot cards and the accept call from the UI are not wired; no per-theme layout; not seen on a device; not published or deployed.
+- **Next action:** server PR serving `GET /api/insights` and the dismiss, restore and accept routes from a new module (D-016), enabling no lens by default; then Phase 3 exit verification.
+
 ## 2026-11-05 — macOS Insights dashboard (Server V2 Phase 3 client gate slice 2, PR #795)
 
 - **Merged via PR:** [#795](https://github.com/abucalip/navi-librarian/pull/795), squash `04c76b10aacd8ae61ef7a13ccbf8912e280d4aa4`, tested head `74088ccd61b215a09e22fb152c14846b17cff7b9`. Required CI (compile, container-smoke, test-and-build, validate-container) passed on that head.
