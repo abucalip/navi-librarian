@@ -1,0 +1,29 @@
+{
+  "request": "GET /api/insights",
+  "response": {
+    "data_version": 3,
+    "generation": 1,
+    "lenses": {
+      "anniversary": {
+        "cards": [],
+        "enabled": false
+      },
+      "blind_spot": {
+        "cards": [],
+        "enabled": false
+      },
+      "forgotten_gem": {
+        "cards": [],
+        "enabled": false
+      },
+      "hidden_canon": {
+        "cards": [],
+        "enabled": false
+      },
+      "series_completion": {
+        "cards": [],
+        "enabled": false
+      }
+    }
+  }
+}

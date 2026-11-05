@@ -1,4 +1,4 @@
-# Server V2 contract (Phase 1)
+# Server V2 contract (Phases 1 and 3)
 
 Status: draft for the owner's Phase 1 contract review. Route names are **provisional** (`ServerV2.md` section 8) and **no route is served yet**: `navidrome_server.py` takes no additions (D-016). This document fixes the response bodies the builders in `intelligence/api/` already produce; examples are the files in `intelligence/contract-fixtures/`, which `tests/test_intelligence_contract_fixtures.py` rebuilds and compares, so a body change fails CI until the fixtures are regenerated (`python scripts/write_intelligence_fixtures.py`).
 
@@ -49,6 +49,16 @@ Fixture: `unresolved.json`.
 - Item: `id`, `kind`, `navidrome_ref`, `status` (`open`, `user_confirmed`, `user_rejected`), `reason`, `first_seen`, `candidates[]` (the chosen one has `confirmed: true`).
 - Confirm, reject and reopen exist as service functions only. Their `POST` routes are a later slice and need owner approval of the wording before any client shows a confirm button.
 
+## GET /api/insights
+
+Fixtures: `insights_all_off.json`, `insights_three_on.json` (Phase 3). Provisional route; **not served yet** (D-016). The builder is `intelligence/api/insights.py`.
+
+- Body: `lenses` (map of lens kind to `{enabled, cards[]}`), `data_version`, `generation`. Lens kinds: `forgotten_gem`, `blind_spot`, `series_completion`, `hidden_canon`, `anniversary`.
+- A lens contributes cards only when it is enabled. A lens is enabled by default only when its scorecard verdict is `pass`; today none is (all four provider lenses are `insufficient_evidence`, Forgotten Gems has too little play history). A client shows "off" for `enabled: false` and an empty state for `enabled: true` with no cards; it never invents cards.
+- Card (all kinds): `kind`, `title`, `body`, `subject{key, type, title, ...}`, `reasons[]` (each `{kind, evidence{}}`), `actions[]` (`{kind: "dismiss"}`), `dismissible`, `score`, plus kind-specific counters (`owned`, `total`, `missing_runs`, and so on). Wording states a fact (a count, a date, a listen total), never "you should own".
+- `subject.key` is the dismissal and accept key. Dismiss, restore and accept exist as service functions only; their `POST` routes need owner approval.
+- `capabilities` gains the `insights` feature (`available` once any card row has been saved).
+
 ## Not in this contract
 
-Entity pages, insight cards and `reasons[]` (later phases); any scheduling or trigger route for the health job; macOS Swift fixtures (the macOS Health view is the Phase 1 client gate and will consume these JSON files directly).
+Entity pages and path `reasons[]` (later phases); any scheduling or trigger route for the health job; macOS Swift fixtures (the macOS Health view is the Phase 1 client gate and will consume these JSON files directly).

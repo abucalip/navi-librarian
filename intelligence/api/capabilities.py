@@ -19,6 +19,7 @@ CONTRACT_VERSION = 1
 FEATURES: dict[str, str] = {
     "library_health": "health",
     "unresolved_queue": "unresolved",
+    "insights": "insights",
 }
 
 

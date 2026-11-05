@@ -1,0 +1,143 @@
+{
+  "request": "GET /api/insights?lenses=series_completion,hidden_canon,anniversary",
+  "response": {
+    "data_version": 3,
+    "generation": 1,
+    "lenses": {
+      "anniversary": {
+        "cards": [
+          {
+            "actions": [
+              {
+                "kind": "dismiss"
+              }
+            ],
+            "body": "Released 10 years ago today (2016-06-01).",
+            "dismissible": true,
+            "kind": "anniversary",
+            "reasons": [
+              {
+                "evidence": {
+                  "date": "2016-06-01",
+                  "event": "album_release",
+                  "years": 10
+                },
+                "kind": "anniversary"
+              }
+            ],
+            "score": 10.0,
+            "subject": {
+              "artist": "Example Artist",
+              "event": "album_release",
+              "key": "anniversary:album_release:fx-a1:2026",
+              "mbid": "fx-a1",
+              "title": "Example Album",
+              "type": "release_group",
+              "years": 10
+            },
+            "title": "Example Album"
+          }
+        ],
+        "enabled": true
+      },
+      "blind_spot": {
+        "cards": [],
+        "enabled": false
+      },
+      "forgotten_gem": {
+        "cards": [],
+        "enabled": false
+      },
+      "hidden_canon": {
+        "cards": [
+          {
+            "actions": [
+              {
+                "kind": "dismiss"
+              }
+            ],
+            "body": "Heard 5,000 times worldwide; matches your top genre shoegaze; not in your library.",
+            "dismissible": true,
+            "kind": "hidden_canon",
+            "reasons": [
+              {
+                "evidence": {
+                  "genre_rank": 1,
+                  "listens": 5000,
+                  "matched_genre": "shoegaze",
+                  "source": "listenbrainz"
+                },
+                "kind": "taste_vs_world"
+              }
+            ],
+            "score": 1.0,
+            "subject": {
+              "artist": "My Bloody Valentine",
+              "group_mbid": "fx-w1",
+              "key": "hidden_canon:fx-w1",
+              "title": "Loveless",
+              "type": "release_group",
+              "year": 1991
+            },
+            "title": "Loveless"
+          }
+        ],
+        "enabled": true
+      },
+      "series_completion": {
+        "cards": [
+          {
+            "actions": [
+              {
+                "kind": "dismiss"
+              }
+            ],
+            "body": "You own 2 of 4 in this series; 2 not in your library.",
+            "dismissible": true,
+            "kind": "series_completion",
+            "missing_runs": [
+              {
+                "first_position": 3,
+                "items": [
+                  {
+                    "group_mbid": "fx-2",
+                    "title": "Title 2",
+                    "year": 2002
+                  },
+                  {
+                    "group_mbid": "fx-3",
+                    "title": "Title 3",
+                    "year": 2003
+                  }
+                ],
+                "last_position": 4
+              }
+            ],
+            "missing_total": 2,
+            "owned": 2,
+            "reasons": [
+              {
+                "evidence": {
+                  "missing_runs": 1,
+                  "owned": 2,
+                  "source": "musicbrainz",
+                  "total": 4
+                },
+                "kind": "series_progress"
+              }
+            ],
+            "score": 0.5,
+            "subject": {
+              "key": "series_completion:fx-series",
+              "title": "Example label catalogue",
+              "type": "series"
+            },
+            "title": "Example label catalogue",
+            "total": 4
+          }
+        ],
+        "enabled": true
+      }
+    }
+  }
+}
