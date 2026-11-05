@@ -1,3 +1,11 @@
+## 2026-11-05 — Server V2 Phase 3 slice 12: accept recording (PR #787)
+
+- **Merged via PR:** [#787](https://github.com/abucalip/navi-librarian/pull/787), squash `f0d55d67aabb59a56c39438632d08e0f26f199f0`, tested head `3c6673a3d1fd616debf962a67ef2091492fbfda3`; required CI (compile, container-smoke, test-and-build, validate-container) passed on that head.
+- **Change:** `intelligence/insights/outcomes.py` (+ exports, + `tests/test_intelligence_insights_outcomes.py`). `accept_card`, `unaccept_card`, `accepted_keys` and `lens_outcomes` for the gem, blind-spot, series, hidden-canon and anniversary kinds. An accept is its own `insights` row with state `accepted` (no migration); live cards, dismissals and refreshes are unchanged. One accept per (kind, key); a dismissed key cannot be accepted; a dismissal after an accept wins in the scorecard. `lens_outcomes` returns live cards plus accepted and dismissed keys for `score_lens`. No `navidrome_server.py` change (D-016).
+- **Verification actually run:** `python -m unittest` on `tests.test_intelligence_insights_outcomes`, `_card_persistence`, `_persistence` and `_blind_spot_persistence` (41 passed). Full suite not run by the agent (owner rule); CI ran it.
+- **Limitations:** unwired, so nothing calls `accept_card` yet and no lens has a real scorecard; no provider traffic; not published or deployed.
+- **Next action:** real fetchers; run the scorecard on live lens output; Phase 3 exit verification.
+
 ## 2026-11-05 — Server V2 Phase 3 slice 11: series, hidden canon and anniversary persistence (PR #786)
 
 - **Merged via PR:** [#786](https://github.com/abucalip/navi-librarian/pull/786), squash `ad1700454ce57520de3bd512e70cbb409ba684a1`, tested head `23a4ecb7abbad7d532e4f09d65b48ee4c7863630`; required CI (compile, container-smoke, test-and-build, validate-container) passed on that head.
