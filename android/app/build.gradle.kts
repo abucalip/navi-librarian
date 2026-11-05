@@ -57,6 +57,8 @@ android {
             kotlin.srcDir("src/test/kotlin")
             // Unit tests parse the recorded Phase 0 payloads directly.
             resources.srcDir("../contract-fixtures")
+            // Server V2 fixtures (intelligence/contract-fixtures) are read in place, so the app and the server cannot drift.
+            resources.srcDir("../../intelligence/contract-fixtures")
         }
     }
 }

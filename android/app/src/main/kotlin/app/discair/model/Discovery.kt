@@ -14,6 +14,8 @@ enum class DiscoveryList(val path: String, val label: String, val empty: String)
     Classics("classics", "Add to your collection", "No suggestions yet."),
     Personal("personal", "Personal discoveries", "No personal discoveries yet."),
     Saved("for_me", "Saved", "Nothing saved yet."),
+    /** Not a discovery list: Server V2 insight cards (`GET /api/insights`), shown by their own page. */
+    Insights("insights", "Insights", "No insights yet."),
 }
 
 /** The four daily lens lists, fetched one after the other for the Daily picks page. */
