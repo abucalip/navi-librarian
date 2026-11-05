@@ -23,6 +23,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY --chown=librarian:librarian app/ ./app/
 COPY --chown=librarian:librarian acquisition/ ./acquisition/
 COPY --chown=librarian:librarian discovery/ ./discovery/
+COPY --chown=librarian:librarian intelligence/ ./intelligence/
 COPY --chown=librarian:librarian integrations/ ./integrations/
 COPY --chown=librarian:librarian recommendation/ ./recommendation/
 COPY --chown=librarian:librarian settings/ ./settings/
