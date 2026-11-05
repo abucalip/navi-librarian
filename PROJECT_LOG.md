@@ -1,3 +1,11 @@
+## 2026-11-05 — Server V2 redrafted as a phased plan
+
+- **Documentation committed directly to main:** `docs/ServerV2.md` replaced; `docs/PROJECT_STATUS.md`, `docs/ACTIVE_WORK.md` and this log updated.
+- **What changed:** the research proposal became a plan with eight phases (0 audit, 1 foundation and Library Health, 2 editions and duplicates, 3 collection lenses, 4 releases/people/labels, 5 atlas and paths, 6 taste and time, 7 sonic), each with work items, exit criteria, kill criteria and a client gate. Added: storage design (SQLite observations, entities, edges, unresolved queue, generations), identity ladder, evidence classes with no numeric confidence, source precedence, provider strategy (MusicBrainz dump slice, ListenBrainz popularity and stats, Wikidata, optional others), capabilities endpoint and insight-card API direction, risks, and nine owner decisions. Critiques of the first draft are folded in: graph not the centre, Forgotten Gems as an Engine 2 lens, edition detection promoted, sonic proxy through Navidrome's `sonicSimilarity` extension before Essentia.
+- **Guardrails unchanged:** no implementation, API contract change, new provider traffic, audio-analysis job, deployment or client UI work is authorized. D-016 and D-007 still apply.
+- **Verification:** documentation only; no application tests or CI run. Web research for the added sources (Navidrome sonic endpoints via plugins, ListenBrainz popularity, Wikidata MBID properties, LRCLIB, Essentia model licence) was brief; ListenBrainz sitewide, similar-users, fresh-release and LB Radio endpoint paths came from a third-party wrapper and must be checked against official docs. Nothing was checked against the installed Navidrome.
+- **Next action:** owner answers the section 12 decisions and approves the read-only Phase 0 audit.
+
 ## 2026-11-05 — Server V2 Music Intelligence research proposal
 
 - **Documentation committed directly to main:** `docs/ServerV2.md`, commit `4582b468e254f8c67ba82150eb5e14817833dbc8`. Project status updated in commit `7faff85115e114bc26a21538a8b58a5a33e50eda`.
