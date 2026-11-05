@@ -1,8 +1,10 @@
 # Project status
 
-Last checked: 2026-11-04. GitHub `main` is authoritative.
+Last checked: 2026-11-05. GitHub `main` is authoritative.
 
 ## Current state
+
+- **Server V2 research proposal added (2026-11-05):** [`ServerV2.md`](ServerV2.md) documents a proposed Music Intelligence Layer, current Navidrome/Subsonic metadata opportunities, external inspiration, a knowledge-graph/provenance model, client directions, candidate features, phased delivery, and operational/testing constraints. Research baseline: `e29ca45b2021ca7ad3b158efc4dec8e9c7ae5414`. Proposal only; no implementation, new provider traffic, audio analysis, or client contract changes are authorized.
 
 - **macOS M6 slice 13 merged (2026-11-04, owner request):** Miller columns and whole-library load, PR [#755](https://github.com/abucalip/navi-librarian/pull/755) (squash `a44acfd0`); section 6 desktop features are all built. The whole 12,672-song library loads in 1.66 s on the LAN (was 200 songs plus paging). Not seen live; details in `ACTIVE_WORK.md` 2j.
 - **macOS M6 slices 1 to 4 merged (2026-11-04, owner request):** floating mini player #739, Get-finished notification #740, Notification Center widget #741 and command palette (⌘K) #742 (squash `aad52eb16b1d2fd286bc0cb871352940c0ad41db`, tested head `9b9978cb40c8b660e4de725078e48cbca547189b`). Filtered local Swift tests passed for each; none was seen in a running app and the widget's discovery by WidgetKit is unproven. Next action: the owner tries the mini player, widget and ⌘K live; then the next section 6 feature. Details in `ACTIVE_WORK.md` 2j.
