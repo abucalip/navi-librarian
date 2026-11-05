@@ -1,3 +1,11 @@
+## 2026-11-05 — Docker image: ffmpeg added for Library Health audio checks (PR #769)
+
+- **Code merged via PR:** [#769](https://github.com/abucalip/navi-librarian/pull/769), squash `89840af9735b1f83d4bb494a5acbc8a817c47015`: `Dockerfile` installs `ffmpeg` (`--no-install-recommends`, apt lists removed) before `USER librarian`. Owner decision; the merge was done at the owner's instruction. `Dockerfile-E` unchanged (it does not ship `intelligence/`).
+- **Verification actually run:** required checks (compile, container-smoke, test-and-build, validate-container, validate-release-workflow) passed on the tested head; `publish-release` was skipped. No local Docker build (Docker is not installed on the working machine).
+- **Documentation committed directly to main:** `docs/PROJECT_STATUS.md`, `docs/ACTIVE_WORK.md` and this log.
+- **Not done / limitations:** image size increase not measured; the audio job is still unwired (no route or trigger, D-016), so the checks do not run in the image yet; no publication or deployment.
+- **Next action:** the owner decides the Phase 2 gate (editions and duplicates); wiring the audio job needs its own slice and approval.
+
 ## 2026-11-05 — Server V2 Phase 1 exit verification: all four exit items met
 
 - **Code merged via PR:** [#768](https://github.com/abucalip/navi-librarian/pull/768), squash `44d23b5489063e686fece9491ba6d11c7016f0c7`: `scripts/server_v2_phase1_exit.py` (read-only Navidrome reads, temporary store, no provider traffic, aggregate output). Required checks (compile, container-smoke, test-and-build, validate-container) passed. The merge was done at the owner's instruction.
