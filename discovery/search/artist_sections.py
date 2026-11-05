@@ -24,6 +24,7 @@ from discovery.search.cache import SIMILAR_TTL_SECONDS, provider_cache_key, read
 from discovery.search.index import OwnedData
 from discovery.search.merge import OwnedKeys, same_entity
 from discovery.search.normalize import album_match_key, normalize_key
+from intelligence.editions.ownership import edition_awareness_enabled, edition_match
 from discovery.search.providers import DISCOGS_ATTRIBUTION, DiscogsSearch, LastFmSearch, ListenBrainzRadio, MusicBrainzSearch, ProviderError
 from discovery.search.runner import SEARCH_DEADLINE_SECONDS
 from discovery.search.similar import LASTFM, LISTENBRAINZ, SIMILAR_LIMIT, fuse_similar
@@ -200,10 +201,14 @@ def album_catalog(
 
     artist_key = normalize_key(name)
     seen_owned: set[str] = set()
+    edition_aware = edition_awareness_enabled()
     for album in unique:
         album["owned_flag"] = owned.owns(album)
         entry = _owned_match(album, owned_albums) if album["owned_flag"] else None
         album["owned_entry"] = entry
+        if edition_aware:
+            # Display only: the owned flag above is never changed by edition information.
+            album["owned_edition"] = edition_match(album, owned_albums).as_dict()
         if entry is not None:
             seen_owned.add(entry["key"])
     # Owned albums the providers do not list (live albums, compilations) still belong on the page.
@@ -294,6 +299,8 @@ def _shape_items(
             "id": entry.get("id") if entry else None,
             "artwork_url": entry.get("artwork_url") if entry else None,
         })
+        if "owned_edition" in album:
+            items[-1]["owned_edition"] = album["owned_edition"]
     items.sort(key=lambda i: (
         -(i["popularity"] if i["popularity"] is not None else -1),
         i["rank"] is None,
