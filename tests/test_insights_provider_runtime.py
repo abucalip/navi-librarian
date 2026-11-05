@@ -6,12 +6,13 @@ from pathlib import Path
 
 from intelligence.ingest.navidrome import ingest_album
 from intelligence.insights import (
-    list_anniversary_cards, list_blind_spot_cards, list_canon_cards, refresh_provider_lenses,
+    list_anniversary_cards, list_blind_spot_cards, list_canon_cards, list_series_cards, refresh_provider_lenses,
 )
 from intelligence.insights import provider_cache as cache
 from intelligence.store import open_store
 
 A1, A2 = "11111111-1111-4111-8111-111111111111", "22222222-2222-4222-8222-222222222222"
+SERIES_ID = "55555555-5555-4555-8555-555555555555"
 NOW = 1_800_000_000.0
 TODAY = date(2026, 6, 1)
 
@@ -46,6 +47,19 @@ class FakeProviders:
         if self.fail_after is not None and len(self.calls) > self.fail_after:
             return Resp(503, {})
         p = params or {}
+        if "/release-group/" in url and p.get("inc") == "series-rels":
+            group = url.rsplit("/", 1)[1]
+            if group == g(404):
+                return Resp(404, {})
+            sid = SERIES_ID if group in (g(1), g(2), g(11)) else None
+            rels = [{"target-type": "series", "series": {"id": sid.upper()}}] if sid else []
+            return Resp(200, {"id": group, "relations": rels})
+        if "/series/" in url:
+            members = [g(1), g(2), g(3), g(4)]  # owns 1 and 2
+            rels = [{"target-type": "release_group", "ordering-key": i + 1,
+                     "release_group": {"id": m, "title": f"RG {m[:8]}", "first-release-date": "1991"}}
+                    for i, m in enumerate(members)]
+            return Resp(200, {"id": SERIES_ID, "name": "The Series", "relations": rels})
         if url.endswith("/release"):
             base = 0 if p["artist"] == A1 else 10
             rels = [{"id": f"aaaaaaa{base + k}-0000-4000-8000-000000000000"[-36:],
@@ -82,6 +96,10 @@ class Runtime(unittest.TestCase):
     def tick(self, fake, budget, ttl=30 * 86400.0, now=NOW):
         return refresh_provider_lenses(self.db, get=fake, headers={"User-Agent": "t"}, sleep=None,
                                        budget=budget, ttl=ttl, now=now, today=TODAY)
+
+    def series_tick(self, fake, budget, now=NOW, ttl=30 * 86400.0):
+        return refresh_provider_lenses(self.db, get=fake, headers={"User-Agent": "t"}, sleep=None,
+                                       budget=budget, ttl=ttl, now=now, today=TODAY, series=True)
 
     def cards(self):
         return (len(list_blind_spot_cards(self.db, 50)), len(list_canon_cards(self.db, 50)),
@@ -144,6 +162,48 @@ class Runtime(unittest.TestCase):
         dismiss_blind_spot(self.db, key.removeprefix("blind_spot:"))
         self.tick(fake, budget=200, now=NOW + 31 * 86400.0)
         self.assertNotIn(key, {c["subject"]["key"] for c in list_blind_spot_cards(self.db, 50)})
+
+    def test_series_off_makes_no_series_requests(self):
+        fake = FakeProviders()
+        self.tick(fake, budget=200)
+        self.assertFalse([u for u in fake.calls if "/series/" in u or "/release-group/" in u])
+        self.assertEqual(list_series_cards(self.db, 50), [])
+
+    def test_series_ids_are_discovered_then_cards_saved_once_complete(self):
+        fake = FakeProviders()
+        for _ in range(20):
+            result = self.series_tick(fake, budget=5)
+            if result.progress.get("series_complete"):
+                break
+        self.assertTrue(result.progress["series_complete"])
+        self.assertEqual(result.progress["series_ids"], 1)
+        cards = list_series_cards(self.db, 50)
+        self.assertEqual(len(cards), 1)
+        self.assertEqual((cards[0]["owned"], cards[0]["total"]), (2, 4))
+        before = len(fake.calls)
+        again = self.series_tick(fake, budget=50)
+        self.assertEqual(len(fake.calls), before)    # all fresh: no provider traffic
+        self.assertTrue(again.progress["series_complete"])
+
+    def test_series_cards_wait_for_complete_discovery(self):
+        fake = FakeProviders()
+        result = self.series_tick(fake, budget=6)    # browse and artist documents use the budget first
+        self.assertEqual(result.progress["stopped"], "budget")
+        self.assertFalse(result.progress["series_complete"])
+        self.assertEqual(list_series_cards(self.db, 50), [])
+
+    def test_series_lookup_404_for_a_group_counts_as_no_series(self):
+        from intelligence.insights.provider_runtime import _group_series
+        self.assertEqual(_group_series(FakeProviders(), g(404), {}, None), {"series": []})
+        self.assertEqual(_group_series(FakeProviders(), g(1), {}, None), {"series": [SERIES_ID]})
+
+    def test_series_outage_fails_the_run_and_keeps_cards(self):
+        fake = FakeProviders()
+        self.series_tick(fake, budget=200)
+        saved = list_series_cards(self.db, 50)
+        result = self.series_tick(FakeProviders(fail_after=0), budget=200, now=NOW + 31 * 86400.0)
+        self.assertEqual(result.state, "failed")
+        self.assertEqual(list_series_cards(self.db, 50), saved)
 
 
 if __name__ == "__main__":

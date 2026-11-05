@@ -19,12 +19,13 @@ from intelligence.insights.forgotten_gems import CARD_KIND
 from intelligence.insights.anniversaries import CARD_KIND as ANNIVERSARY_KIND
 from intelligence.insights.blind_spots import CARD_KIND as BLIND_SPOT_KIND
 from intelligence.insights.hidden_canon import CARD_KIND as CANON_KIND
+from intelligence.insights.series_completion import CARD_KIND as SERIES_KIND
 from intelligence.store import open_store
 
 logger = logging.getLogger(__name__)
 
 CHECK_SECONDS = 6 * 3600
-PROVIDER_LENSES = (BLIND_SPOT_KIND, CANON_KIND, ANNIVERSARY_KIND)
+PROVIDER_LENSES = (BLIND_SPOT_KIND, CANON_KIND, ANNIVERSARY_KIND, SERIES_KIND)
 PROVIDER_BUDGET = 120            # provider requests per tick (owner-approved slow trickle)
 INGEST_ARTISTS_PER_TICK = 40     # Navidrome artists recorded per tick
 INGEST_TTL_SECONDS = 7 * 86400.0
@@ -78,6 +79,7 @@ def refresh_once(librarian, environ=None):
                 states["provider_lenses"] = refresh_provider_lenses(
                     db, get=_provider_get(librarian), headers={"User-Agent": USER_AGENT}, sleep=time.sleep,
                     ingest_step=lambda handle: _ingest_step(librarian, handle), budget=PROVIDER_BUDGET,
+                    series=SERIES_KIND in enabled,
                 ).state
         finally:
             db.close()

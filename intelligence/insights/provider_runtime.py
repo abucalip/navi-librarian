@@ -15,8 +15,17 @@ Owner-approved provider traffic (2026-11-05), bounded and slow. Each call is one
 Every HTTP call goes through a counting wrapper that raises :class:`BudgetSpent` before the call
 that would exceed the budget; the fetchers pace themselves (MusicBrainz 1.1 s, ListenBrainz 0.5 s).
 A provider failure stops the tick and fails the run (cached documents are kept, so the next tick
-resumes). Nothing here changes an ownership flag or a recommendation weight, and series are not
-refreshed (they need series-id discovery, a later slice).
+resumes). Nothing here changes an ownership flag or a recommendation weight.
+
+Series (``series=True`` only, so a server without the series lens makes none of these requests) share
+the same budget and run after the artist documents:
+
+5. series-id discovery: each owned release group gets one MusicBrainz lookup with ``inc=series-rels``
+   (cache kind ``rgseries``, the series ids only), never-fetched groups first, then the stalest;
+6. each discovered series gets one lookup with ``inc=release-group-rels`` (cache kind ``series``);
+7. only when every artist is browsed (ownership fully linked), every owned group has been looked up
+   and every discovered series is cached are the series cards recomputed and saved, so a half-linked
+   library or a half-read series never shows chapters that are not really missing. Ids are never guessed.
 """
 from __future__ import annotations
 
@@ -35,9 +44,11 @@ from .anniversaries import AnniversaryConfig, DatedAlbum, DatedArtist, find_anni
 from .blind_spots import BlindSpotsConfig, find_blind_spots
 from .blind_spot_persistence import dismissed_set_keys, save_blind_spots
 from .card_persistence import (
-    dismissed_anniversary_keys, dismissed_canon_keys, save_anniversaries, save_canon,
+    dismissed_anniversary_keys, dismissed_canon_keys, dismissed_series_keys, save_anniversaries, save_canon,
+    save_series,
 )
 from .hidden_canon import WorldAlbum, find_hidden_canon
+from .series_completion import SeriesConfig, find_series_progress
 from .set_fetchers import MUSICBRAINZ_SPACING_SECONDS, build_set_fetchers
 from .set_job import owned_artists, owned_group_mbids
 
@@ -106,6 +117,29 @@ def _life_span(get: Get, artist_mbid: str, headers, sleep) -> Mapping[str, Any] 
     return {"name": body.get("name"), "type": body.get("type"), "begin": span.get("begin"), "end": span.get("end")}
 
 
+def _group_series(get: Get, group_mbid: str, headers, sleep) -> Mapping[str, Any]:
+    """The series ids an owned release group belongs to (one lookup); a 404 means none."""
+    body = _paced_json(get, f"{MUSICBRAINZ}/release-group/{group_mbid}",
+                       {"inc": "series-rels", "fmt": "json"}, headers, sleep)
+    ids: list[str] = []
+    relations = body.get("relations") if isinstance(body, Mapping) else None
+    for rel in relations if isinstance(relations, list) else []:
+        sid = ((rel.get("series") or {}) if isinstance(rel, Mapping) else {}).get("id")
+        if isinstance(sid, str) and sid.strip() and sid.lower() not in ids:
+            ids.append(sid.lower())
+    return {"series": ids}
+
+
+def discovered_series_ids(db: sqlite3.Connection, groups: Iterable[str]) -> list[str]:
+    """Sorted distinct series ids found for ``groups`` so far (from the document cache)."""
+    found: set[str] = set()
+    for group in groups:
+        entry = cache.get(db, "rgseries", group)
+        if entry and isinstance(entry[1], Mapping):
+            found.update(entry[1].get("series") or [])
+    return sorted(found)
+
+
 # --------------------------------------------------------------------------- compute
 
 
@@ -167,6 +201,14 @@ def compute_and_save(db: sqlite3.Connection, today: date, now: float) -> dict[st
     }
 
 
+def compute_series(db: sqlite3.Connection, now: float) -> int:
+    """Recompute the series cards from cached series documents and save them."""
+    owned = owned_group_mbids(db)
+    built = [set_builders.series_set(_docs(db, "series", sid)) for sid in discovered_series_ids(db, owned)]
+    result = find_series_progress([b for b in built if b], owned, SeriesConfig(), dismissed_series_keys(db))
+    return save_series(db, result, now=now)
+
+
 # --------------------------------------------------------------------------- tick
 
 
@@ -174,6 +216,24 @@ def _needs(db: sqlite3.Connection, kind: str, mbid: str, now: float, ttl: float)
     """Sort key: 0 for never fetched, 1 for stale (oldest first); fresh entries are excluded by the caller."""
     entry = cache.get(db, kind, mbid)
     return (0, 0.0) if entry is None else (1, entry[0])
+
+
+def _series_steps(db, counting, fetchers, headers, sleep, now, ttl, progress) -> bool:
+    """Steps 5 and 6. Returns True when the budget ran out."""
+    groups = sorted(owned_group_mbids(db))
+    todo = [g for g in groups if not cache.is_fresh(cache.get(db, "rgseries", g), now, ttl)]
+    todo.sort(key=lambda g: _needs(db, "rgseries", g, now, ttl))
+    try:
+        for group in todo:
+            cache.put(db, "rgseries", group, _group_series(counting, group, headers, sleep), now)
+        ids = discovered_series_ids(db, groups)
+        pending = [s for s in ids if not cache.is_fresh(cache.get(db, "series", s), now, ttl)]
+        pending.sort(key=lambda s: _needs(db, "series", s, now, ttl))
+        for sid in pending:
+            cache.put(db, "series", sid, fetchers.series(sid), now)
+    except BudgetSpent:
+        return True
+    return False
 
 
 def refresh_provider_lenses(
@@ -187,6 +247,7 @@ def refresh_provider_lenses(
     ttl: float = DEFAULT_TTL,
     now: float | None = None,
     today: date | None = None,
+    series: bool = False,
 ) -> RunResult:
     if budget < 1:
         raise ValueError("budget must be at least 1")
@@ -229,6 +290,8 @@ def refresh_provider_lenses(
                     cache.put(db, kind, mbid, fetch[kind](mbid), now)
             except BudgetSpent:
                 spent = True
+        if series and not spent:
+            spent = _series_steps(db, counting, fetchers, headers, sleep, now, ttl, progress)
         progress["stopped"] = "budget" if spent else None
         progress["requests"] = counting.used
 
@@ -238,6 +301,18 @@ def refresh_provider_lenses(
         progress["complete"] = complete
         if complete:
             progress["saved"] = compute_and_save(db, today, now)
+        if series:
+            browsed_all = bool(artists) and all(cache.get(db, "browse", m) is not None for m, _ in artists)
+            groups = sorted(owned_group_mbids(db))
+            ids = discovered_series_ids(db, groups)
+            progress["series_groups"] = len(groups)
+            progress["series_ids"] = len(ids)
+            progress["series_complete"] = bool(
+                browsed_all and groups
+                and all(cache.get(db, "rgseries", g) is not None for g in groups)
+                and all(cache.get(db, "series", sid) is not None for sid in ids))
+            if progress["series_complete"]:
+                progress.setdefault("saved", {})["series_completion"] = compute_series(db, now)
         ctx.checkpoint(progress)
         return True
 
