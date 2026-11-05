@@ -1,6 +1,6 @@
 # Server V2: Music Intelligence Plan
 
-**Status:** Phase 0 complete (2026-11-05, see [`SERVER_V2_PHASE0_AUDIT.md`](SERVER_V2_PHASE0_AUDIT.md)); the owner accepted the recommended D-1 to D-6. D-7 was decided on 2026-11-05 (new dedicated SQLite file, see D-026 in `DECISIONS.md`) and Phase 1 is complete and the owner opened the Phase 2 gate on 2026-11-05 (slice 1, release-group linking, merged in PR #770); D-8 and D-9 are open. Nothing here authorizes implementation, provider traffic beyond what already exists, audio analysis, deployment, or client UI work until the relevant phase gate is approved.
+**Status:** Phase 0 complete (2026-11-05, see [`SERVER_V2_PHASE0_AUDIT.md`](SERVER_V2_PHASE0_AUDIT.md)); the owner accepted the recommended D-1 to D-6. D-7 was decided on 2026-11-05 (new dedicated SQLite file, see D-026 in `DECISIONS.md`) and Phase 1 is complete and the owner opened the Phase 2 gate on 2026-11-05 (slice 1, release-group linking, merged in PR #770; slice 2, edition grouping and tracklist differences, merged in PR #771); D-8 and D-9 are open. Nothing here authorizes implementation, provider traffic beyond what already exists, audio analysis, deployment, or client UI work until the relevant phase gate is approved.
 
 **Baseline:** GitHub main at e29ca45 (2026-11-05). Re-verify the repo, provider docs, and the installed Navidrome version at each phase gate.
 

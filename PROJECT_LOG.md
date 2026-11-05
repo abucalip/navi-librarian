@@ -1,3 +1,12 @@
+## 2026-11-05 — Server V2 Phase 2 slice 2: edition grouping and tracklist differences (PR #771)
+
+- **Code merged via PR:** [#771](https://github.com/abucalip/navi-librarian/pull/771), squash `52f39e6aaeeab144e3b8d9735d175ba76eec2b36`, tested head `d4195613a7da5381916946b27704477aeb843b82`: `intelligence/editions/grouping.py` groups owned releases by release group, classifies each as original issue, later edition or unknown (release date vs the group's first release date, at the coarser precision), derives edition labels from title, disambiguation and secondary types, and compares tracklists (shared, extra, missing, reordered, ambiguous repeated titles; pairing by recording MBID, then normalized title).
+- **Behavior:** read-only (no writes, no network, no merges or deletions); missing or inconsistent dates give `unknown`. `navidrome_server.py` untouched (D-016); no migration.
+- **Verification actually run:** `python3 -m unittest tests.test_intelligence_editions_grouping tests.test_intelligence_editions_release_groups` (31 passed). Full suite not run by the agent (owner rule); compile, container-smoke, test-and-build and validate-container passed on the tested head.
+- **Not done / limitations:** unwired (no job, route or capability entry); never run against the real library; track durations are not compared; golden-set accuracy needs the owner's private list. Not published, not deployed.
+- **Documentation committed directly to main:** `docs/PROJECT_STATUS.md`, `docs/ACTIVE_WORK.md`, `docs/ServerV2.md` and this log.
+- **Next action:** Phase 2 slice 3, duplicate finder (suggestions only, never deletion).
+
 ## 2026-11-05 — Server V2 Phase 2 slice 1: release-group linking (PR #770)
 
 - **Code merged via PR:** [#770](https://github.com/abucalip/navi-librarian/pull/770), squash `b1b000f8467a0ef7b1d3eb601a172445effb2f99`, tested head `aeb0bcf289cff214103e548c6de3bf93fd33e080`: `intelligence/editions/release_groups.py` links an owned, MBID-identified release to its MusicBrainz release group (`member_of` edge, `source_explicit`, `exact_mbid`) and keeps the fetched document as an observation. The fetch is injected, so no provider traffic was added.
