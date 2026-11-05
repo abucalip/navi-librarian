@@ -70,7 +70,13 @@ class Paced:
             kw["headers"] = {**kw.get("headers", {}), "Authorization": f"Token {token}"}
         for wait in (0, 5, 20):
             time.sleep(wait)
-            response = requests.get(url, **kw)
+            try:
+                response = requests.get(url, **kw)
+            except requests.RequestException:
+                CALLS["network_retries"] += 1
+                if wait == 20:
+                    raise
+                continue
             if response.status_code not in (429, 503):
                 break
             CALLS[f"{'listenbrainz' if lb else 'musicbrainz'}_retries"] += 1
@@ -87,7 +93,11 @@ def mb_json(path: str, **params):
     for wait in (0, 5, 15):
         time.sleep(wait)
         CALLS["musicbrainz"] += 1
-        r = requests.get(f"{MB}/{path}", params={"fmt": "json", **params}, headers=HEADERS, timeout=30)
+        try:
+            r = requests.get(f"{MB}/{path}", params={"fmt": "json", **params}, headers=HEADERS, timeout=30)
+        except requests.RequestException:
+            CALLS["network_retries"] += 1
+            continue
         time.sleep(1.1)
         if r.status_code == 404:
             return None
@@ -167,6 +177,7 @@ def main() -> int:
         result["ownership"] = {"releases_looked_up": sweep.looked_up, "release_docs_batched": len(release_docs), "owned_release_groups": len(owned),
                                "sweep_remaining": sweep.remaining, "notes": list(sweep.notes)}
 
+        artist_names = {m.lower(): n for m, n in owned_artists(db)}
         fetchers = build_set_fetchers(get, headers=HEADERS, sleep=time.sleep)
         # keep the documents for the lenses that reuse them
         docs: dict[str, dict] = {"studio": {}, "lb": {}}
@@ -219,7 +230,8 @@ def main() -> int:
         world = []
         for mbid, doc in docs["lb"].items():
             for rg in ((doc or {}).get("payload") or {}).get("release_groups") or []:
-                world.append(WorldAlbum(rg.get("release_group_mbid"), rg.get("release_group_name") or "", rg.get("artist_name"),
+                world.append(WorldAlbum(rg.get("release_group_mbid"), rg.get("release_group_name") or "",
+                                        rg.get("artist_name") or artist_names.get(mbid.lower()),
                                         genres=artist_genres.get(mbid.lower(), ()), listens=int(rg.get("total_listen_count") or 0)))
         canon = find_hidden_canon(world, owned, top_genres)
         save_canon(db, canon, now=5.0)
@@ -230,10 +242,11 @@ def main() -> int:
 
         # 4. anniversaries: owned groups' first-release dates and the sampled artists' life-span
         dated = []
-        for doc in docs["studio"].values():
+        for studio_mbid, doc in docs["studio"].items():
             for g in (doc or {}).get("release-groups") or []:
                 if (g.get("id") or "").lower() in owned:
-                    dated.append(DatedAlbum(g["id"], g.get("title") or "", None, g.get("first-release-date")))
+                    dated.append(DatedAlbum(g["id"], g.get("title") or "", artist_names.get(studio_mbid.lower()),
+                                            g.get("first-release-date")))
         artists = []
         for mbid in docs["studio"]:
             doc = mb_json(f"artist/{mbid}")
