@@ -1,3 +1,12 @@
+## 2026-11-05 — Server V2 Phase 2 slice 1: release-group linking (PR #770)
+
+- **Code merged via PR:** [#770](https://github.com/abucalip/navi-librarian/pull/770), squash `b1b000f8467a0ef7b1d3eb601a172445effb2f99`, tested head `aeb0bcf289cff214103e548c6de3bf93fd33e080`: `intelligence/editions/release_groups.py` links an owned, MBID-identified release to its MusicBrainz release group (`member_of` edge, `source_explicit`, `exact_mbid`) and keeps the fetched document as an observation. The fetch is injected, so no provider traffic was added.
+- **Behavior:** a conflicting group, failed lookup, 404 or mismatched document writes nothing; the sweep is bounded by a limit and stops early on a provider failure. `navidrome_server.py` untouched (D-016); no migration.
+- **Verification actually run:** `python3 -m unittest tests.test_intelligence_editions_release_groups` (16 passed). Full suite not run by the agent (owner rule); compile, container-smoke, test-and-build and validate-container passed on the tested head.
+- **Not done / limitations:** unwired (no job, route or capability entry); never run against the real library or MusicBrainz; the golden-set check needs the owner's private list. Not published, not deployed.
+- **Documentation committed directly to main:** `docs/PROJECT_STATUS.md`, `docs/ACTIVE_WORK.md`, `docs/ServerV2.md` and this log.
+- **Next action:** Phase 2 slice 2, edition grouping and tracklist differences.
+
 ## 2026-11-05 — Docker image: ffmpeg added for Library Health audio checks (PR #769)
 
 - **Code merged via PR:** [#769](https://github.com/abucalip/navi-librarian/pull/769), squash `89840af9735b1f83d4bb494a5acbc8a817c47015`: `Dockerfile` installs `ffmpeg` (`--no-install-recommends`, apt lists removed) before `USER librarian`. Owner decision; the merge was done at the owner's instruction. `Dockerfile-E` unchanged (it does not ship `intelligence/`).
