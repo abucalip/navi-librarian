@@ -1,3 +1,11 @@
+## 2026-11-05 — Server V2 Phase 3 slice 11: series, hidden canon and anniversary persistence (PR #786)
+
+- **Merged via PR:** [#786](https://github.com/abucalip/navi-librarian/pull/786), squash `ad1700454ce57520de3bd512e70cbb409ba684a1`, tested head `23a4ecb7abbad7d532e4f09d65b48ee4c7863630`; required CI (compile, container-smoke, test-and-build, validate-container) passed on that head.
+- **Change:** `intelligence/insights/card_persistence.py` (+ exports, + `tests/test_intelligence_insights_card_persistence.py`). Save, list, dismiss and restore for the `series_completion`, `hidden_canon` and `anniversary` kinds, same pattern as blind-spot persistence, in the existing `insights` table (no migration). A refresh replaces live cards and keeps dismissed rows; an empty result clears live cards; dismissing a key with no live card writes a tombstone; a card whose key was dismissed after the run is dropped at save. Anniversary keys include the year, so a dismissal hides only that year. No `navidrome_server.py` change (D-016).
+- **Verification actually run:** `python -m unittest tests.test_intelligence_insights_card_persistence` (13 passed). Full suite not run by the agent (owner rule); CI ran it.
+- **Limitations:** unwired; no provider traffic; no accept history recorded yet; store holds no artist life-span dates; not published or deployed.
+- **Next action:** record accepts; real fetchers; run the scorecard on live lens output; Phase 3 exit verification.
+
 ## 2026-11-05 — Server V2 Phase 3 slice 10: lens scorecard (PR #785)
 
 - **Merged via PR:** [#785](https://github.com/abucalip/navi-librarian/pull/785), squash `bc6fba8576312376952701b67826db0554c92722`, tested head `a5ee4cb1b1a3dbd67a1d6dbf205efafdb1c4db06`; required CI (compile, container-smoke, test-and-build, validate-container) passed on that head.
