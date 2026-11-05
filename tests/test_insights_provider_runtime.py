@@ -47,13 +47,14 @@ class FakeProviders:
         if self.fail_after is not None and len(self.calls) > self.fail_after:
             return Resp(503, {})
         p = params or {}
-        if "/release-group/" in url and p.get("inc") == "series-rels":
-            group = url.rsplit("/", 1)[1]
-            if group == g(404):
-                return Resp(404, {})
-            sid = SERIES_ID if group in (g(1), g(2), g(11)) else None
-            rels = [{"target-type": "series", "series": {"id": sid.upper()}}] if sid else []
-            return Resp(200, {"id": group, "relations": rels})
+        if url.endswith("/release-group") and p.get("inc") == "series-rels":
+            base = 0 if p["artist"] == A1 else 10
+            groups = []
+            for k in range(1, 8):
+                member = g(base + k) in (g(1), g(2), g(11))
+                rels = [{"target-type": "series", "series": {"id": SERIES_ID.upper()}}] if member else []
+                groups.append({"id": g(base + k), "title": f"RG {base + k}", "relations": rels})
+            return Resp(200, {"release-groups": groups, "release-group-count": 7})
         if "/series/" in url:
             members = [g(1), g(2), g(3), g(4)]  # owns 1 and 2
             rels = [{"target-type": "release_group", "ordering-key": i + 1,
@@ -75,6 +76,10 @@ class FakeProviders:
             return Resp(200, [{"release_group_mbid": g(base + k), "release_group_name": f"RG {base + k}",
                                "total_listen_count": 1000 * k} for k in range(1, 8)])
         return Resp(200, {"name": "X", "type": "Group", "life-span": {"begin": "1991-06-01"}})
+
+
+def cache_series_browses(db):
+    return [m for m in (A1, A2) if cache.get(db, "artistseries", m) is not None]
 
 
 def rel_mbid(base, k):
@@ -192,10 +197,20 @@ class Runtime(unittest.TestCase):
         self.assertFalse(result.progress["series_complete"])
         self.assertEqual(list_series_cards(self.db, 50), [])
 
-    def test_series_lookup_404_for_a_group_counts_as_no_series(self):
-        from intelligence.insights.provider_runtime import _group_series
-        self.assertEqual(_group_series(FakeProviders(), g(404), {}, None), {"series": []})
-        self.assertEqual(_group_series(FakeProviders(), g(1), {}, None), {"series": [SERIES_ID]})
+    def test_series_discovery_is_one_browse_per_artist(self):
+        fake = FakeProviders()
+        for _ in range(20):
+            if self.series_tick(fake, budget=6).progress.get("series_complete"):
+                break
+        self.assertFalse([u for u in fake.calls if "/release-group/" in u])   # no per-group lookups
+        self.assertEqual(len(cache_series_browses(self.db)), 2)
+
+    def test_artist_series_browse_maps_groups_to_ids(self):
+        from intelligence.insights.provider_runtime import _artist_series
+        doc = _artist_series(FakeProviders(), A1, {}, None)
+        self.assertEqual(doc["groups"][g(1)], [SERIES_ID])
+        self.assertEqual(doc["groups"][g(3)], [])
+        self.assertEqual(doc["count"], 7)
 
     def test_series_outage_fails_the_run_and_keeps_cards(self):
         fake = FakeProviders()
