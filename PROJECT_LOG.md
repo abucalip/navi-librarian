@@ -1,3 +1,12 @@
+## 2026-11-05 — Server V2 Phase 2 slice 5: edition-aware ownership behind a flag (PR #774)
+
+- **Code merged via PR:** [#774](https://github.com/abucalip/navi-librarian/pull/774), squash `191f9abb79d742ef8e91e0e61268b7ec0a8f8648`, tested head `85a407d365cef16f867f6eb3b8ebed63bc9bce08`: `intelligence/editions/ownership.py` (`edition_match`: `same_edition`, `other_edition`, `not_owned`; flag `NAVI_EDITION_AWARE_OWNERSHIP`), wired into `album_catalog` in `discovery/search/artist_sections.py`, and `tests/test_intelligence_editions_ownership.py`.
+- **Behavior:** off by default; when on, catalog items gain a display-only `owned_edition` object. `OwnedKeys`, `_owned_match` and every `owned` flag are unchanged (a test compares flag on and off), so edition information cannot merge albums. "Live" is never an edition. `navidrome_server.py` untouched (D-016); no provider traffic; no API shape change with the flag off.
+- **Verification actually run:** `python3 -m unittest tests.test_intelligence_editions_ownership tests.test_discovery_search_artist_sections` (48 passed) and `tests.test_intelligence_editions_grouping` (26 passed with the ownership tests). Full suite not run by the agent (owner rule); required CI (compile, container-smoke, test-and-build, validate-container) passed on the tested head. The repo `.venv` has no python binary, so system `python3` was used.
+- **Not done / limitations:** matching uses names and years only (owned album items carry no release-group MBID; adding it would change that API); only the artist album catalog is wired, not search, genre pages or recommendations; never run against the real library or the golden set; not published or deployed.
+- **Documentation committed directly to main:** `docs/PROJECT_STATUS.md`, `docs/ACTIVE_WORK.md`, `docs/ServerV2.md` and this log.
+- **Next action:** Phase 2 exit verification against the owner's golden set, then the owner decides on the flag.
+
 ## 2026-11-05 — Server V2 Phase 2 slice 4: edition advisor (PR #773)
 
 - **Code merged via PR:** [#773](https://github.com/abucalip/navi-librarian/pull/773), squash `4e6ee0e04bb98564824f4aff43c68d6331f1c3df`, tested head `79ee752f2261c36b7f80cf39ca40d5337b36b023`: `intelligence/editions/advisor.py` summarises, for each duplicate album (slice 3), what the audio job measured per edition (median integrated loudness, median loudness range, highest true peak, median peak-to-loudness ratio, clipped tracks) and compares each later edition with the first owned one. `edition_track_ids` lists the tracks the audio job would need to measure.
