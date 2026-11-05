@@ -18,6 +18,11 @@ from .hidden_canon import (
 from .anniversaries import (
     Anniversary, AnniversaryConfig, AnniversaryResult, DatedAlbum, DatedArtist, anniversary_card, find_anniversaries,
 )
+from .card_persistence import (
+    dismiss_anniversary, dismiss_canon, dismiss_series, dismissed_anniversary_keys, dismissed_canon_keys,
+    dismissed_series_keys, list_anniversary_cards, list_canon_cards, list_series_cards, restore_anniversary,
+    restore_canon, restore_series, save_anniversaries, save_canon, save_series,
+)
 from .scorecard import Scorecard, ScorecardConfig, score_lens
 from .persistence import dismiss_gem, dismissed_keys, list_gem_cards, restore_gem, save_gems
 
@@ -29,5 +34,9 @@ __all__ = ["CARD_KIND", "Gem", "GemsConfig", "GemsResult", "PlayRecord", "find_f
            "CanonConfig", "CanonPick", "CanonResult", "WorldAlbum", "canon_card", "find_hidden_canon",
            "Anniversary", "AnniversaryConfig", "AnniversaryResult", "DatedAlbum", "DatedArtist",
            "anniversary_card", "find_anniversaries",
+           "dismiss_anniversary", "dismiss_canon", "dismiss_series", "dismissed_anniversary_keys",
+           "dismissed_canon_keys", "dismissed_series_keys", "list_anniversary_cards", "list_canon_cards",
+           "list_series_cards", "restore_anniversary", "restore_canon", "restore_series", "save_anniversaries",
+           "save_canon", "save_series",
            "Scorecard", "ScorecardConfig", "score_lens",
            "SetFetchers", "SetJobResult", "owned_group_mbids", "refresh_blind_spots"]
