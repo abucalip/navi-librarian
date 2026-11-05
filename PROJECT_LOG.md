@@ -1,3 +1,10 @@
+## 2026-11-06 — External-provider batching audit
+
+- **Documentation:** added [`docs/batching.md`](docs/batching.md) in commit `65129751dd3f0023b54f8149b71d8276fad50f68`, based on `main` `ece37e085f1c77f0e26ab507cf25cad6e2326a21`.
+- **Findings:** the strongest remaining batching candidate is classics MusicBrainz ratings (up to 80 per-candidate release-group lookups can likely become paginated release-group browses per artist with `inc=ratings`). MusicBrainz tracklists may reduce two sequential calls to a release browse with recordings. ListenBrainz recording/release-group/artist batches, album-year batching, and Server V2 series browse are already implemented. Navidrome's per-album `getAlbum` ingestion calls are a separate first-party API investigation.
+- **Verification:** source and provider documentation reviewed; this was a documentation-only change. No application tests or live provider requests were run. The four required workflows were green on baseline `ece37e085f1c77f0e26ab507cf25cad6e2326a21`; they must be checked again for the final documentation commit(s).
+- **Next action:** implement and test the MusicBrainz ratings browse as a focused change, preserving the existing cache, shortlist, rating semantics, pacing, and bounded fallback.
+
 ## 2026-11-05 — Server V2 Phase 3: batch series discovery and minimum owned share (PRs #802, #803)
 
 - **Merged via PR:** [#802](https://github.com/abucalip/navi-librarian/pull/802), squash `0561eb5e7f3612df12c9ec97e557f6c58764fdda`, tested head `75b35bc4ea8fa8cc959ea64e4fb9637d639c133d`; and [#803](https://github.com/abucalip/navi-librarian/pull/803), squash `72ca16b17fd62c22e4d3174b6988580bb23e31b3`, tested head `4799499ddc13e8abfa0176418c44cb4ccde9524a`; compile, container-smoke, test-and-build and validate-container passed on each head.
