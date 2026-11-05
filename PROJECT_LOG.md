@@ -1,3 +1,12 @@
+## 2026-11-05 — Server V2 Phase 3 slice 14: live Forgotten Gems run and scorecard (PR #789)
+
+- **Merged via PR:** [#789](https://github.com/abucalip/navi-librarian/pull/789), squash `d601d89bc1406240b760341e8a2e1edbfae70736`, tested head `1a7974bc1dfd3a9d1020db6928bd2eddd00074f9`; required CI (compile, container-smoke, test-and-build, validate-container) passed on that head.
+- **Change:** `scripts/server_v2_phase3_exit.py` (+ `tests/test_server_v2_phase3_exit.py`). Read-only: Navidrome `getAlbumList2` only, temporary store deleted afterwards (the owner's real accept/dismiss history is not read), aggregate output only.
+- **Live result:** 1,792 albums, 245 with play history, 61 played 5 or more times, 1 rated, 0 starred. Play history spans 36.8 days; 0 albums are dormant 180 days or more, so Forgotten Gems returned no cards (`no_candidates`, correct). Identical across two runs and shuffled input; persistence round trip had nothing to store; scorecard verdict `insufficient_evidence` (lens stays off); recommendation package never imported. A labelled machinery check with invented outcomes needs cards and so also had none to feed.
+- **Verification actually run:** `tests.test_server_v2_phase3_exit` (4, helpers only) passed; the script ran once against the live Navidrome. Full suite not run by the agent (owner rule); CI ran it.
+- **Limitations:** the dormancy gate cannot be met until the play history is longer (or the owner changes the gate), so persistence, dismiss and the machinery check were not exercised on live cards; the other four lenses are unscored (need provider documents); the repo `.venv` has no python binary, so the run used system Python 3.12 with the venv's packages; not published or deployed.
+- **Next action:** owner decision on provider traffic for blind spots, series, hidden canon and anniversaries (and whether to change the 180-day gate), then Phase 3 exit verification.
+
 ## 2026-11-05 — Server V2 Phase 3 slice 13: real fetchers for the set job (PR #788)
 
 - **Merged via PR:** [#788](https://github.com/abucalip/navi-librarian/pull/788), squash `f8e4e4b7bf39feaecdc79f29532547ca7db0a5dd`, tested head `a1542c145ae3a61218c1845007abe372cbd5fe52`; required CI (compile, container-smoke, test-and-build, validate-container) passed on that head.
