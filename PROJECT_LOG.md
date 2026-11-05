@@ -2446,3 +2446,11 @@ All live runs were approved by the owner; slskd off; aggregate only; harnesses w
 - **Verification on exact PR head:** all four required workflows succeeded: Python syntax/acquisition safety (run `40259433709`), Docker packaging including the full unit suite and image build (`40259433731`), container runtime smoke (`40259433708`), and validation-only multi-architecture image validation (`40259433714`; publishing paused). The full suite was run by CI, not manually by the agent, per workflow policy. The PR author reports 136 focused tests passing; these were not independently rerun. The PR description reports a live six-search measurement; it was not independently repeated in this review.
 - **State:** merged only. No publication, deployment, or post-merge runtime verification. The broader P5 latency targets and live-provider checks remain open; no claim that the 3-second target is met.
 - **Next action:** continue the P5 measurement and provider-validation plan from current GitHub state; keep image publication and deployment paused unless explicitly authorized.
+
+
+## 2026-11-06 — Combined efficiency and runtime architecture plan
+
+- Replaced `docs/batching.md` with `docs/efficiency.md`, combining the provider batching audit with concrete recommendations for background-worker separation, external I/O efficiency, performance instrumentation, and multi-worker readiness.
+- The plan is grounded in the current FastAPI startup lifecycle, `app/services/insights_refresh.py`, `app/api/search.py`, `intelligence/jobs/runner.py`, Docker configuration, and provider lookup paths.
+- Decision: retain FastAPI, one Uvicorn worker, and SQLite for the current single-host deployment. Do not add Celery, Redis, PostgreSQL, or multiple web workers without a measured need and the safety gates in the plan.
+- Documentation-only. No application code, tests, live provider traffic, publication, deployment, or runtime verification performed. Main baseline before the documentation change: `9a4e717123175bca358faad29aa9deae0a324fdb`.
