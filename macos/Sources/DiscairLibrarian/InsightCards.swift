@@ -49,8 +49,9 @@ public struct InsightSubject: Decodable, Equatable, Sendable {
     public let title: String?
     public let artist: String?
     public let mbid: String?
+    public let year: Int?
 
-    enum CodingKeys: String, CodingKey { case key, type, title, artist, mbid }
+    enum CodingKeys: String, CodingKey { case key, type, title, artist, mbid, year }
     public init(from decoder: any Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         key = (try? c.decode(String.self, forKey: .key)) ?? ""
@@ -58,9 +59,10 @@ public struct InsightSubject: Decodable, Equatable, Sendable {
         title = try? c.decode(String.self, forKey: .title)
         artist = try? c.decode(String.self, forKey: .artist)
         mbid = try? c.decode(String.self, forKey: .mbid)
+        year = try? c.decode(Int.self, forKey: .year)
     }
-    public init(key: String, type: String = "", title: String? = nil, artist: String? = nil, mbid: String? = nil) {
-        self.key = key; self.type = type; self.title = title; self.artist = artist; self.mbid = mbid
+    public init(key: String, type: String = "", title: String? = nil, artist: String? = nil, mbid: String? = nil, year: Int? = nil) {
+        self.key = key; self.type = type; self.title = title; self.artist = artist; self.mbid = mbid; self.year = year
     }
 }
 
@@ -69,14 +71,18 @@ public struct InsightMissingRun: Decodable, Equatable, Sendable {
     public let firstPosition: Int
     public let lastPosition: Int
     public let titles: [String]
+    /// The titles with their year where the server gave one ("Title 2 (2002)").
+    public let labels: [String]
 
     enum CodingKeys: String, CodingKey { case firstPosition = "first_position", lastPosition = "last_position", items }
-    struct Item: Decodable { let title: String? }
+    struct Item: Decodable { let title: String?; let year: Int? }
     public init(from decoder: any Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         firstPosition = (try? c.decode(Int.self, forKey: .firstPosition)) ?? 0
         lastPosition = (try? c.decode(Int.self, forKey: .lastPosition)) ?? firstPosition
-        titles = ((try? c.decode([Item].self, forKey: .items)) ?? []).compactMap(\.title)
+        let items = ((try? c.decode([Item].self, forKey: .items)) ?? []).filter { $0.title != nil }
+        titles = items.compactMap(\.title)
+        labels = items.map { i in i.year.map { "\(i.title ?? "") (\($0))" } ?? (i.title ?? "") }
     }
 }
 

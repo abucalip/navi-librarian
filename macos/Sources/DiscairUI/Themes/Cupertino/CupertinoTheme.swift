@@ -95,6 +95,7 @@ struct CupertinoWindow: View {
         case .gapRadar: CupertinoGapRadar(state: state)
         case .smartPlaylists: CupertinoSmartPlaylists(state: state)
         case .history: CupertinoHistory(state: state)
+        case .insights: CupertinoInsights(state: state)
         default: Text("\(state.screen.rawValue): not built yet").foregroundStyle(CU.muted).padding(28)
         }
     }
@@ -115,17 +116,18 @@ struct CupertinoSidebar: View {
         case .gapRadar: "Gap Radar"
         case .smartPlaylists: "Smart Playlists"
         case .history: "History"
+        case .insights: "Insights"
         case .recent: "Recently Added"
         default: "Home"
         }
     }
     /// Where each row goes. Rows without a screen yet do nothing (they are still real buttons, so keyboard and
     /// VoiceOver treat them like the rest).
-    private let target: [String: Screen] = ["Home": .home, "Songs": .library, "Albums": .albums, "Artists": .artists, "Recently Added": .recent, "New": .discover, "Gap Radar": .gapRadar, "Smart Playlists": .smartPlaylists, "History": .history, "Downloads": .downloads, "Settings": .settings]
+    private let target: [String: Screen] = ["Home": .home, "Songs": .library, "Albums": .albums, "Artists": .artists, "Recently Added": .recent, "New": .discover, "Gap Radar": .gapRadar, "Smart Playlists": .smartPlaylists, "History": .history, "Insights": .insights, "Downloads": .downloads, "Settings": .settings]
     private let nav: [(String, String)] = [
         ("house", "Home"), ("sparkles", "New"), ("clock", "Recently Added"), ("music.mic", "Artists"),
         ("square.stack", "Albums"), ("music.note", "Songs"), ("dot.radiowaves.left.and.right", "Gap Radar"), ("wand.and.stars", "Smart Playlists"),
-        ("clock.arrow.circlepath", "History"), ("arrow.down.circle", "Downloads"), ("gearshape", "Settings"),
+        ("clock.arrow.circlepath", "History"), ("lightbulb", "Insights"), ("arrow.down.circle", "Downloads"), ("gearshape", "Settings"),
     ]
 
     var body: some View {

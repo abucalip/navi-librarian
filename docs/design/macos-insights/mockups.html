@@ -1,0 +1,201 @@
+<title>Discair Mac Insights Mockups</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Source+Serif+4:ital,wght@0,400;0,700;1,400&family=Space+Mono:wght@400;700&display=swap">
+<style>
+/* Layout: a page note, three controls (theme, data state, density), then one 1280x800 Mac window drawn per theme, scaled to fit. */
+:root{--bg:#ecebe8;--fg:#1b1a19;--mu:#5f5a55;--sf:#fff;--ln:#d3cec7;--ac:#e5334b}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#17161a;--fg:#f1eee9;--mu:#a9a39c;--sf:#222027;--ln:#3a3641;--ac:#ff6277;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#17161a;--fg:#f1eee9;--mu:#a9a39c;--sf:#222027;--ln:#3a3641;--ac:#ff6277;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 system-ui,-apple-system,sans-serif;padding-block:20px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.pg{max-width:1360px;margin:0 auto}
+h1{font-size:22px;margin:0}
+p.lead{color:var(--mu);margin:4px 0 12px;max-width:80ch}
+.bar{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0;align-items:center}
+.bar b{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--mu);margin-right:4px}
+.bar button{font:inherit;border:1.5px solid var(--ln);background:var(--sf);color:var(--fg);padding:6px 14px;border-radius:99px;cursor:pointer}
+.bar button[aria-pressed=true]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+button:focus-visible{outline:3px solid var(--ac);outline-offset:2px}
+.note{background:var(--sf);border:1.5px solid var(--ln);border-radius:12px;padding:10px 16px;margin:8px 0 14px;max-width:112ch}
+.note b{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--mu)}
+.note ul{margin:6px 0 0;padding-left:18px}
+#stage{width:100%;overflow:hidden;border-radius:14px;position:relative}
+#wrap{width:1280px;height:800px;transform-origin:0 0}
+.win{width:1280px;height:800px;position:relative;overflow:hidden}
+.toast{position:absolute;left:50%;bottom:22px;transform:translateX(-50%);background:#111;color:#fff;padding:8px 8px 8px 18px;border-radius:99px;font-size:13px;z-index:50;display:flex;gap:12px;align-items:center}
+.toast button{border:0;background:#fff3;color:#fff;border-radius:99px;padding:3px 12px;font:inherit;cursor:pointer}
+.cov{display:block;aspect-ratio:1;flex:none}
+button{font-family:inherit}
+.ev{display:grid;grid-template-columns:auto 1fr;gap:2px 14px}
+
+/* ===== Cupertino ===== */
+.cu{background:#f2f2f4;color:#1d1d1f;font-family:-apple-system,"SF Pro Display",system-ui,sans-serif;display:flex}
+.cu .sb{width:210px;background:rgba(255,255,255,.6);border-right:1px solid #0001;padding:46px 12px;font-size:14px;flex:none}
+.cu .sb div{padding:6px 12px;border-radius:8px;color:#444}.cu .sb .on{background:#0001;font-weight:600;color:#000}
+.cu .sb small{display:block;padding:14px 12px 4px;color:#888;font-size:11px;letter-spacing:.07em;text-transform:uppercase}
+.cu .main{flex:1;padding:30px 34px;overflow:hidden;min-width:0;display:flex;flex-direction:column;gap:16px}
+.cu h2.t{font-size:34px;margin:0;font-weight:800;letter-spacing:-.02em}
+.cu .sub{color:#777;font-size:13px;margin-top:2px}
+.cu .head{display:flex;justify-content:space-between;align-items:flex-end}
+.cu .lenses{display:flex;gap:8px}
+.cu .lp{border:0;background:#fff;border-radius:99px;padding:6px 14px;font-size:13px;font-weight:600;box-shadow:0 1px 2px #0002;display:flex;gap:7px;align-items:center;color:#1d1d1f}
+.cu .lp i{width:8px;height:8px;border-radius:50%;background:#2e9e5b}.cu .lp.off{color:#777;font-weight:500}.cu .lp.off i{background:none;border:1.5px solid #999}.cu .lp.em i{background:#e0a21a}
+.cu .grid{display:grid;grid-template-columns:1.25fr 1fr;gap:16px;flex:1;min-height:0}
+.cu .col{display:flex;flex-direction:column;gap:16px;min-width:0}
+.cu .pan{background:#fff;border-radius:20px;padding:16px 20px;position:relative}
+.cu .pan h3{margin:0;font-size:15px}.cu .pan .cnt{color:#999;font-weight:500;margin-left:6px}
+.cu .eyebrow{font:700 11px system-ui;letter-spacing:.08em;color:#e5334b;text-transform:uppercase}
+.cu .card{display:flex;gap:16px;padding:12px 0;border-top:1px solid #eee}.cu .card:first-of-type{border-top:0}
+.cu .card .cov{width:84px;border-radius:9px;box-shadow:0 5px 14px #0003}
+.cu .card h4{margin:0;font-size:19px;letter-spacing:-.01em;line-height:1.15}.cu .card .ar{color:#777;font-size:13px}
+.cu .card p{margin:6px 0 0;font-size:13.5px}
+.cu .acts{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;align-items:center}
+.cap{border:0;border-radius:99px;padding:6px 14px;font-weight:600;font-size:13px;background:#e9e9ec;color:#1d1d1f;cursor:pointer}
+.cap.p{background:#e5334b;color:#fff}.cap.o{background:none;border:1.5px solid #aaa;color:#666}.cap.l{background:none;color:#666;padding:6px 6px;text-decoration:underline}
+.cu .why{background:#f4f4f6;border-radius:12px;padding:8px 12px;margin-top:10px;font-size:12.5px;color:#444}
+.cu .why b{display:block;font-size:10.5px;letter-spacing:.07em;color:#999;text-transform:uppercase;margin-bottom:3px}
+.cu .why .ev span:nth-child(odd){color:#888}
+.cu .prog{height:8px;border-radius:4px;background:#e8e8ea;display:flex;gap:2px;overflow:hidden;margin:10px 0 6px}
+.cu .prog i{flex:1;background:#e5334b}.cu .prog i.m{background:repeating-linear-gradient(45deg,#e8e8ea 0 4px,#d4d4d8 4px 8px)}
+.cu .runs{display:flex;gap:6px;flex-wrap:wrap}
+.cu .run{border:1.5px dashed #bbb;border-radius:10px;padding:4px 10px;font-size:12.5px;color:#444}
+.cu .big{font:800 44px/1 system-ui;letter-spacing:-.04em;color:#e5334b;width:84px;text-align:center;flex:none}
+.cu .big small{display:block;font:600 11px system-ui;letter-spacing:.06em;color:#999;text-transform:uppercase;margin-top:4px}
+.cu .state{color:#777;font-size:13.5px;padding:12px 0 2px}
+.cu .state b{color:#1d1d1f}
+.cu .offrow{display:flex;justify-content:space-between;align-items:center;background:#ececef;border-radius:14px;padding:10px 16px;font-size:13px;color:#666}
+.cu .offrow b{color:#444}
+
+/* ===== Zine ===== */
+.zn{background:#f1e8d2;color:#17120d;font-family:"Source Serif 4",Georgia,serif;padding:20px 34px;display:flex;flex-direction:column}
+.zn .mh{border-top:6px solid #17120d;border-bottom:2px solid #17120d;display:flex;align-items:flex-end;justify-content:space-between;padding:6px 0}
+.zn .mh h1{font:400 78px/.9 Anton,Impact,sans-serif;margin:0;text-transform:uppercase}
+.mono{font:400 12px "Space Mono",monospace;text-transform:uppercase;letter-spacing:.04em}
+.zn .tick{background:#17120d;color:#f6d64a;padding:4px 10px;margin:8px 0;white-space:nowrap;overflow:hidden}
+.zn .grid{display:grid;grid-template-columns:1.5fr 1fr 1fr;flex:1;min-height:0}
+.zn .col{padding:0 20px;border-right:2px solid #17120d;min-width:0;overflow:hidden}.zn .col:first-child{padding-left:0}.zn .col:last-child{border:0;padding-right:0}
+.zn .hd{font:400 26px Anton,Impact;text-transform:uppercase;border-bottom:3px solid #17120d;margin:0 0 10px;display:flex;justify-content:space-between;align-items:baseline}
+.zn .hd span{font:400 11px "Space Mono",monospace;letter-spacing:.04em}
+.zn .tag{display:inline-block;background:#17120d;color:#f6d64a;padding:1px 8px}
+.zn .lead{display:flex;gap:20px;margin-top:6px}
+.zn .lead .cov{width:210px;border:3px solid #17120d;box-shadow:6px 6px 0 #17120d}
+.zn h2{font:400 58px/.92 Anton,Impact;text-transform:uppercase;margin:6px 0 4px}
+.zn .ar{font-style:italic;font-size:17px}
+.zn .cp{font-size:15px;line-height:1.4;margin:8px 0 0}
+.zn .stamps{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap}
+.st{font:700 12px "Space Mono",monospace;text-transform:uppercase;border:3px solid #17120d;background:#fff;padding:5px 11px;cursor:pointer;box-shadow:3px 3px 0 #17120d;color:#17120d}
+.st.r{background:#d4402a;color:#fff}.st:active{transform:translate(2px,2px);box-shadow:1px 1px 0 #17120d}
+.zn .why{border:2px solid #17120d;background:#fff8;padding:6px 10px;margin-top:10px;font-size:12px}
+.zn .why .ev{font-family:"Space Mono",monospace}.zn .why .ev span:nth-child(odd){opacity:.6}
+.zn .otd{border-bottom:1px dotted #17120d;padding:8px 0;display:flex;gap:12px;align-items:flex-start;font-size:14px}
+.zn .otd b{font:400 46px/.9 Anton,Impact;color:#d4402a;width:62px;flex:none}
+.zn .otd .cov{width:56px;border:2px solid #17120d;flex:none}
+.zn .serial{background:#f6d64a;border:3px solid #17120d;box-shadow:5px 5px 0 #17120d;padding:10px 12px;margin-bottom:16px}
+.zn .tape{display:flex;gap:3px;margin:8px 0}.zn .tape i{flex:1;height:16px;border:2px solid #17120d;background:#17120d}.zn .tape i.m{background:none;border-style:dashed}
+.zn .runs{font:400 12px "Space Mono",monospace;text-transform:uppercase}
+.zn .none{border:3px dashed #17120d;padding:10px 12px;margin-bottom:12px;font-size:14px}
+.zn .none b{font:400 20px Anton,Impact;text-transform:uppercase;display:block}
+.zn .none.off{opacity:.62}
+</style>
+
+<div class="pg">
+<h1>Discair for Mac: Insights dashboard</h1>
+<p class="lead">Layout options for the Server V2 Phase 3 client gate. Cards are the real shapes from the server's fixtures (<code>insights_three_on.json</code>); wording is the server's, shown as written. Nothing here is built.</p>
+<div class="bar" role="group" aria-label="Theme"><b>Theme</b><button data-t="cu" aria-pressed="true">Cupertino</button><button data-t="zn" aria-pressed="false">Zine Daily</button></div>
+<div class="bar" role="group" aria-label="Server state"><b>Server says</b><button data-s="three" aria-pressed="true">Three lenses on (fixture)</button><button data-s="off" aria-pressed="false">All lenses off (today)</button><button data-s="empty" aria-pressed="false">On, but no cards</button></div>
+<div class="note"><b>What to look at</b><ul>
+<li>One generic card renders every lens kind. Kind-specific parts are optional extras: a progress strip when <code>owned</code> and <code>total</code> exist, dashed runs for <code>missing_runs</code>, a year badge for anniversaries. Unknown kinds fall back to title, body and Why.</li>
+<li>Three honest states per lens: cards, "on but nothing to show" (an empty state, never made-up cards), and "off" (the server has not enabled it; today that is the real situation for all of them).</li>
+<li>Every card has a text Why (the server's <code>reasons</code> as label/value rows) and Dismiss with Undo. Hidden canon and Blind spot cards reuse the existing Get and Save actions; there is no "you should own" wording anywhere.</li>
+<li>Dismiss and Accept have no server route yet (they need owner approval), so in the real build those buttons stay hidden until the route exists. Here Dismiss works so the flow can be judged.</li>
+</ul></div>
+<div id="stage"><div id="wrap"><div class="win" id="win"></div></div></div>
+</div>
+
+<script>
+const COLORS=[["#c9a227","#2b2a33"],["#3a6ea5","#f2e9d8"],["#b5443a","#1d1a17"],["#5b8a72","#efe7d1"],["#7a4f9a","#f6d64a"],["#d98a3a","#22303c"]];
+function cover(seed,cls){const [a,b]=COLORS[seed%COLORS.length];
+ return `<svg class="cov ${cls||''}" viewBox="0 0 100 100" role="img" aria-label="Cover art placeholder"><rect width="100" height="100" fill="${a}"/><circle cx="${30+seed*9%40}" cy="${60-seed*7%30}" r="${22+seed*5%14}" fill="${b}"/><rect x="0" y="${70}" width="100" height="30" fill="${b}" opacity=".35"/></svg>`;}
+const DATA={
+ forgotten_gem:{label:"Forgotten Gems",zine:"Dust Jacket",cards:[]},
+ series_completion:{label:"Series",zine:"Serials",cards:[{id:"s1",title:"Example label catalogue",body:"You own 2 of 4 in this series; 2 not in your library.",owned:2,total:4,runs:[{a:3,b:4,t:["Title 2 (2002)","Title 3 (2003)"]}],ev:[["source","musicbrainz"],["owned","2"],["total","4"],["missing_runs","1"]]}]},
+ blind_spot:{label:"Blind Spots",zine:"Missing Chapters",cards:[]},
+ hidden_canon:{label:"Hidden Canon",zine:"Lead Story",cards:[{id:"h1",title:"Loveless",artist:"My Bloody Valentine",year:1991,body:"Heard 5,000 times worldwide; matches your top genre shoegaze; not in your library.",ev:[["source","listenbrainz"],["listens","5000"],["matched_genre","shoegaze"],["genre_rank","1"]]}]},
+ anniversary:{label:"Anniversaries",zine:"On This Day",cards:[{id:"a1",title:"Example Album",artist:"Example Artist",years:10,body:"Released 10 years ago today (2016-06-01).",ev:[["event","album_release"],["date","2016-06-01"],["years","10"]]}]}
+};
+const ORDER=["forgotten_gem","series_completion","blind_spot","hidden_canon","anniversary"];
+let theme="cu",state="three",dismissed=[],open=null,toast=null;
+function lens(k){ // returns {enabled,cards}
+ if(state==="off")return{enabled:false,cards:[]};
+ if(state==="empty")return{enabled:["series_completion","hidden_canon","anniversary"].includes(k),cards:[]};
+ const on=["series_completion","hidden_canon","anniversary"].includes(k);
+ return{enabled:on,cards:on?DATA[k].cards.filter(c=>!dismissed.includes(c.id)):[]};
+}
+const why=(c,cls)=>open===c.id?`<div class="why"><b>${cls==='zn'?'Why this ran':'Why you see this'}</b><div class="ev">${c.ev.map(e=>`<span>${e[0]}</span><span>${e[1]}</span>`).join("")}</div></div>`:"";
+const whyBtn=(c,k)=>`<button class="${k==='zn'?'st':'cap'}" data-why="${c.id}" aria-expanded="${open===c.id}">${open===c.id?'Hide why':'Why?'}</button>`;
+const disBtn=(c,k)=>`<button class="${k==='zn'?'st':'cap o'}" data-dis="${c.id}">Dismiss</button>`;
+function prog(c){let s="";for(let i=1;i<=c.total;i++){const m=c.runs.some(r=>i>=r.a&&i<=r.b);s+=`<i class="${m?'m':''}"></i>`}return s}
+
+/* ---------- Cupertino ---------- */
+function cuState(k,l){
+ if(!l.enabled)return`<div class="offrow"><span><b>${DATA[k].label}</b> is off</span><span>The server enables a lens only after it passes its check.</span></div>`;
+ return`<div class="state"><b>Nothing to show right now.</b> The lens is on and found no cards. It never fills the gap with guesses.</div>`;
+}
+function cuCard(k,c){
+ let left="",extra="",acts="";
+ if(k==="series_completion"){extra=`<div class="prog" aria-label="${c.owned} of ${c.total} owned">${prog(c)}</div><div class="runs">${c.runs.map(r=>`<span class="run">Missing ${r.a}–${r.b}: ${r.t.join(", ")}</span>`).join("")}</div>`;
+  left=`<div class="big">${c.owned}/${c.total}<small>owned</small></div>`;acts=`${whyBtn(c)}${disBtn(c)}`}
+ else if(k==="anniversary"){left=`<div class="big">${c.years}<small>years</small></div>`;acts=`<button class="cap p">Play</button>${whyBtn(c)}${disBtn(c)}`}
+ else{left=cover(4);acts=`<button class="cap p">Get</button><button class="cap">Save</button>${whyBtn(c)}${disBtn(c)}`}
+ return`<div class="card">${left}<div style="flex:1;min-width:0"><h4>${c.title}</h4>${c.artist?`<div class="ar">${c.artist}${c.year?' · '+c.year:''}</div>`:''}<p>${c.body}</p>${extra}<div class="acts">${acts}</div>${why(c,'cu')}</div></div>`;
+}
+function cuPanel(k){
+ const l=lens(k);
+ return`<section class="pan" aria-label="${DATA[k].label}"><div class="eyebrow">${DATA[k].label}</div>${l.cards.length?l.cards.map(c=>cuCard(k,c)).join(""):cuState(k,l)}</section>`;
+}
+function cuView(){
+ const pills=ORDER.map(k=>{const l=lens(k);const cls=!l.enabled?"off":(l.cards.length?"":"em");return`<span class="lp ${cls}"><i></i>${DATA[k].label}${l.enabled?` <span style="color:#999;font-weight:500">${l.cards.length}</span>`:' <span>off</span>'}</span>`}).join("");
+ const left=["hidden_canon","blind_spot","forgotten_gem"].map(cuPanel).join("");
+ const right=["series_completion","anniversary"].map(cuPanel).join("");
+ return`<div class="sb"><small>Library</small><div>Home</div><div>Library</div><div>Gap Radar</div><div class="on">Insights</div><div>History</div><small>Playlists</small><div>Smart Playlists</div></div>
+ <div class="main"><div class="head"><div><h2 class="t">Insights</h2><div class="sub">Generation 1 · data version 3 · every card says why it is here</div></div><div class="lenses">${pills}</div></div>
+ <div class="grid"><div class="col">${left}</div><div class="col">${right}</div></div></div>`;
+}
+
+/* ---------- Zine ---------- */
+function znNone(k,l){return l.enabled?`<div class="none"><b>${DATA[k].zine}</b>Nothing to print today.</div>`:`<div class="none off"><b>${DATA[k].zine}</b>Not printed. This lens is off.</div>`}
+function znView(){
+ const hc=lens("hidden_canon"),an=lens("anniversary"),sc=lens("series_completion");
+ let lead=znNone("hidden_canon",hc);
+ if(hc.cards.length){const c=hc.cards[0];lead=`<div class="lead">${cover(4)}<div style="flex:1;min-width:0"><span class="tag mono">Hidden canon</span><h2>${c.title}</h2><div class="ar">${c.artist} · ${c.year}</div><p class="cp">${c.body}</p><div class="stamps"><button class="st r">Get</button><button class="st">Save</button>${whyBtn(c,'zn')}${disBtn(c,'zn')}</div>${why(c,'zn')}</div></div>`}
+ let otd=znNone("anniversary",an);
+ if(an.cards.length)otd=an.cards.map(c=>`<div class="otd"><b>${c.years}</b><div style="flex:1"><div>${c.title}, ${c.artist}. ${c.body}</div><div class="stamps" style="margin-top:8px"><button class="st">Play</button>${whyBtn(c,'zn')}${disBtn(c,'zn')}</div>${why(c,'zn')}</div></div>`).join("");
+ let ser=znNone("series_completion",sc);
+ if(sc.cards.length)ser=sc.cards.map(c=>`<div class="serial"><span class="tag mono">${c.owned} of ${c.total}</span><div style="font:400 26px Anton,Impact;text-transform:uppercase;margin-top:6px">${c.title}</div><div class="tape" aria-label="${c.owned} of ${c.total} owned">${prog(c)}</div><div class="runs">${c.runs.map(r=>`Missing ${r.a}–${r.b}: ${r.t.join(", ")}`).join("")}</div><p class="cp" style="font-size:13.5px">${c.body}</p><div class="stamps">${whyBtn(c,'zn')}${disBtn(c,'zn')}</div>${why(c,'zn')}</div>`).join("");
+ const bs=znNone("blind_spot",lens("blind_spot")),fg=znNone("forgotten_gem",lens("forgotten_gem"));
+ const tick=ORDER.map(k=>{const l=lens(k);return`${DATA[k].zine}: ${l.enabled?l.cards.length+" printed":"not printed"}`}).join("  ///  ");
+ return`<div class="mh"><h1>The Insights</h1><div class="mono" style="text-align:right">Vol. 1 · Gen 1 · Data v3<br>Every item cites its source</div></div>
+ <div class="tick mono">${tick}</div>
+ <div class="grid"><div class="col"><div class="hd">Lead story<span>Hidden canon</span></div>${lead}<div style="height:16px"></div>${bs}</div>
+ <div class="col"><div class="hd">On this day<span>Anniversaries</span></div>${otd}</div>
+ <div class="col"><div class="hd">Serials<span>Series completion</span></div>${ser}${fg}</div></div>`;
+}
+
+function render(){
+ const w=document.getElementById("win");
+ w.className="win "+theme;
+ w.innerHTML=(theme==="cu"?cuView():znView())+(toast?`<div class="toast">${toast.t}<button data-undo>Undo</button></div>`:"");
+}
+function fit(){const s=document.getElementById("stage"),k=Math.min(1,s.clientWidth/1280);document.getElementById("wrap").style.transform=`scale(${k})`;s.style.height=800*k+"px"}
+document.addEventListener("click",e=>{
+ const t=e.target.closest("button");if(!t)return;
+ if(t.dataset.t){theme=t.dataset.t;document.querySelectorAll("[data-t]").forEach(b=>b.setAttribute("aria-pressed",b===t))}
+ else if(t.dataset.s){state=t.dataset.s;dismissed=[];open=null;toast=null;document.querySelectorAll("[data-s]").forEach(b=>b.setAttribute("aria-pressed",b===t))}
+ else if(t.dataset.why){open=open===t.dataset.why?null:t.dataset.why}
+ else if(t.dataset.dis){dismissed.push(t.dataset.dis);toast={t:"Dismissed. It will not come back.",id:t.dataset.dis};clearTimeout(window._t);window._t=setTimeout(()=>{toast=null;render()},4000)}
+ else if(t.dataset.undo!==undefined){dismissed=dismissed.filter(x=>x!==toast.id);toast=null}
+ else return;
+ render();
+});
+addEventListener("resize",fit);render();fit();
+</script>
