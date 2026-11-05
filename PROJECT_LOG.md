@@ -1,3 +1,11 @@
+## 2026-11-05 — Server V2 Phase 3 slice 1: Forgotten Gems scorer (PR #776)
+
+- **Merged via PR:** [#776](https://github.com/abucalip/navi-librarian/pull/776), squash `f74b8ec291489cc6b6d9a8e07ca396311dbd2609`, tested head `306e6b106729079840d742f8e698a07979d3ced2`; required CI (compile, container-smoke, test-and-build, validate-container) passed on that head.
+- **Change:** `intelligence/insights/forgotten_gems.py`. Rediscovery score = affinity (play count, star, rating) x dormancy (linear from 180 to 730 days since the last play); weights tunable through `GemsConfig`; sparse history gives an empty result with a reason; dismissed keys are suppressed; output is a generic insight card with `reasons[]`.
+- **Verification actually run:** `python3 -m unittest tests.test_intelligence_insights_forgotten_gems` (10 passed). Full suite not run by the agent (owner rule).
+- **Limitations:** unwired; not run on the owner's real play data, so the starting weights and thresholds are untuned; dismissals are passed in, not yet stored; not published or deployed.
+- **Next action:** slice 2, persist gems and dismissals in the `insights` table.
+
 ## 2026-11-05 — Server V2 Phase 2 exit verification passed; edition flag approved on
 
 - **Merged via PR:** [#775](https://github.com/abucalip/navi-librarian/pull/775), squash `be254fa40a3b97c745cca65926c9a8c163fcdaac`, tested head `a36aa6538e7fc67c1fe4eabcbcbb74e1ca20713e`; required CI (compile, container-smoke, test-and-build, validate-container) passed on that head.
