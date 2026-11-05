@@ -1,3 +1,11 @@
+## 2026-11-05 — Server V2 Phase 3: series-id discovery and refresh (PR #801)
+
+- **Merged via PR:** [#801](https://github.com/abucalip/navi-librarian/pull/801), squash `622b971bfdfff08fc23818d40d3385de976c6362`, tested head `e7c609079b2648f99b87a9be89b0a2c1b9229b10`; compile, container-smoke, test-and-build, validate-container and validate-release-workflow passed on that head.
+- **Change:** `refresh_provider_lenses(..., series=True)` (`intelligence/insights/provider_runtime.py`) adds series-id discovery (one MusicBrainz `release-group/{mbid}?inc=series-rels` lookup per owned release group, cached as `rgseries`) and one `series/{id}?inc=release-group-rels` lookup per discovered series (cached as `series`), sharing the 120-request tick budget and 30-day freshness. Series cards are saved only when every artist is browsed, every owned group is looked up and every discovered series is cached. `series_completion` joins `PROVIDER_LENSES` in `app/services/insights_refresh.py`; the series steps run only when that lens is listed in `NAVI_INSIGHT_LENSES`. `navidrome_server.py` untouched (D-016).
+- **Verification actually run:** `test_insights_provider_runtime`, `test_insights_refresh`, `test_intelligence_api_insights`, `test_api_insights_routes`, `test_intelligence_insights_series_completion` (all passed locally); full suite not run (owner rule).
+- **Limitations:** not run live; discovery costs one request per owned release group, so the first full pass on a large library takes many ticks; a lens shows cards only when listed in `NAVI_INSIGHT_LENSES`; not published or deployed.
+- **Next action:** owner enables lenses and reviews cards, then Phase 3 exit verification.
+
 ## 2026-11-05 — Server V2 Phase 3: runtime insights refresh, capabilities route, provider-backed lenses (PR #799)
 
 - **Merged via PR:** [#799](https://github.com/abucalip/navi-librarian/pull/799), squash `3ff28a90c60925ed8b79c067abe58341c0073045`, tested head `33182f1d64795b46b094055c094cf61c296814c2`. The first push failed `compile` and `test-and-build` (the new service imported `requests`, which is not a dependency); fixed by using `httpx`, then all required checks passed.
