@@ -1,3 +1,11 @@
+## 2026-11-05 — macOS bug batch from the owner's live run merged (PR #756)
+
+- **Merged (owner request):** PR [#756](https://github.com/abucalip/navi-librarian/pull/756), squash `e29ca45b2021ca7ad3b158efc4dec8e9c7ae5414`. GitHub checks (compile, container-smoke, test-and-build, validate-container) passed on the final head; no Swift job runs on GitHub.
+- **What:** the batch of macOS fixes (seek and drag, resume position, Artists and Recently Added tabs, queue inspector, artist page bio / top songs / similar artists with retries, unowned artist pages). Last commit: **owned artist pages returned 404** because `LibrarianClient.send` encoded the already-encoded page key twice (`pink%2520floyd`); fixed with `percentEncodedPath`. Partly owned artists now list every missing album with the dashed outline and Get, like unowned artists. The Cupertino album page has the artist page's fixed blurred-cover banner. See `macos/DESIGN.md`, "Artist page: owned artists, missing albums; album banner".
+- **Tests run (local, filtered):** `BugBatchTests|RelatedModel|LibraryModelTests` (42 passed), the Librarian client tests (17 passed, with the new `aPageKeyWithSpacesIsEncodedOnce`).
+- **Verified by the owner:** the 404 fix, in a bundled build (1713). **Not verified:** the missing-albums list and the album banner were built and launched but not checked by eye; the missing-albums merge has no test of its own; Zine album page has no blur.
+- **Next action:** owner review of the two unseen changes; then the first macOS release (Developer ID still undecided).
+
 ## 2026-11-04 — macOS M6 slice 8: Smart Playlists merged (PR #746)
 
 - **Merged (owner request):** PR [#746](https://github.com/abucalip/navi-librarian/pull/746), squash `f4ea0d1c8be9e9827f26e602112ec617af212c3f`. GitHub checks (compile, container-smoke, test-and-build, validate-container) passed; no Swift job runs on GitHub.
