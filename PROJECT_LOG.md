@@ -1,3 +1,11 @@
+## 2026-11-05 — Server V2 Phase 3 slice 10: lens scorecard (PR #785)
+
+- **Merged via PR:** [#785](https://github.com/abucalip/navi-librarian/pull/785), squash `bc6fba8576312376952701b67826db0554c92722`, tested head `a5ee4cb1b1a3dbd67a1d6dbf205efafdb1c4db06`; required CI (compile, container-smoke, test-and-build, validate-container) passed on that head.
+- **Change:** `intelligence/insights/scorecard.py` (+ exports, + `tests/test_intelligence_insights_scorecard.py`). `score_lens` takes a lens's generic cards plus accepted, dismissed and owned keys and reports precision (accepted / judged), diversity (distinct artists), duplicate rate and owned-leak rate, with a verdict: `pass`, `fail` (duplicates, owned leak, low diversity or low precision) or `insufficient_evidence` (fewer than 5 cards or 10 judged outcomes by default). Only `pass` sets `enable_by_default`; a dismissal wins over an accept. Thresholds are defaults, untuned.
+- **Verification actually run:** `python3 -m unittest tests.test_intelligence_insights_scorecard tests.test_intelligence_insights_hidden_canon` (21 passed). Full suite not run by the agent (owner rule); CI ran it.
+- **Limitations:** pure and unwired; no store access, no provider traffic; no accept history is recorded anywhere yet (only dismissals persist), so no lens has a real scorecard; thresholds untuned; not published or deployed.
+- **Next action:** persistence for series, hidden canon and anniversaries; record accepts; run the scorecard on live lens output; Phase 3 exit verification.
+
 ## 2026-11-05 — Server V2 Phase 3 slice 9: anniversary and on-this-day cards (PR #784)
 
 - **Merged via PR:** [#784](https://github.com/abucalip/navi-librarian/pull/784), squash `de2040e863ef6c411dc9150b944b46c820187a3f`, tested head `534dfecee39a945edb79d712d40821518fd449cc`; required CI (compile, container-smoke, test-and-build, validate-container) passed on that head.
