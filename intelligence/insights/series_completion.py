@@ -15,6 +15,8 @@ Rules:
 * items with no MBID or repeated in a series count once or not at all, and are reported as skipped;
 * a series with fewer than ``min_size`` members is left out (``series_too_small``), and a series where
   the library owns none is left out (``not_started``): both with a stated reason, never guessed at;
+* a series where the library owns less than ``min_share_owned`` of the members is left out
+  (``barely_started``), so long editorial lists with one or two owned albums do not fill the lens;
 * a finished series (nothing missing) is reported in ``complete``, not as a card;
 * sets of another kind are left out (``not_a_series``);
 * dismissed keys (``series_completion:<set key>``) are dropped before ranking (suppression memory).
@@ -33,6 +35,7 @@ CARD_KIND = "series_completion"
 class SeriesConfig:
     min_size: int = 3
     min_owned: int = 1
+    min_share_owned: float = 0.25   # editorial lists you barely touch are left out (``barely_started``)
     max_runs_listed: int = 10
     limit: int = 20
 
@@ -133,6 +136,9 @@ def find_series_progress(
             continue
         if have == len(members):
             complete.append(s.key)
+            continue
+        if have / len(members) < config.min_share_owned:
+            left_out.append((s.key, "barely_started"))
             continue
         if dismiss_key(s.key) in blocked:
             suppressed += 1
