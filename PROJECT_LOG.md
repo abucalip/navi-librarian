@@ -1,3 +1,11 @@
+## 2026-11-05 — Server V2 Phase 3 slice 3: blind spots scorer (PR #778)
+
+- **Merged via PR:** [#778](https://github.com/abucalip/navi-librarian/pull/778), squash `d2a66216e5b85565ec702920905bb699de5e6c4a`, tested head `14a542b4f6d6d9e1498fa3bad53c8308bc319f6a`; required CI (compile, container-smoke, test-and-build, validate-container) passed on that head.
+- **Change:** `intelligence/insights/blind_spots.py` (+ exports, + `tests/test_intelligence_insights_blind_spots.py`). `find_blind_spots` compares explicit sets (`studio_discography`, `listenbrainz_top`, `series`) with owned release-group MBIDs; membership is by MBID only; duplicates and items without an MBID are skipped and counted; sets under 5 members or with under 2 owned are left out with a reason; complete sets are listed as complete; dismissed `blind_spot:<set key>` keys are suppressed; ranking is share owned. `blind_spot_card` states "You own N of M in this set" and lists capped missing members; the only action is dismiss.
+- **Verification actually run:** `python3 -m unittest tests.test_intelligence_insights_blind_spots tests.test_intelligence_insights_forgotten_gems` (19 passed). Full suite not run by the agent (owner rule); CI ran it.
+- **Limitations:** unwired; no set builders yet, so no MusicBrainz or ListenBrainz data feeds it; no persistence; thresholds untuned on the owner's library; not published or deployed.
+- **Next action:** persist blind-spot cards and dismissals (as in slice 2), then the comparison-set builders.
+
 ## 2026-11-05 — Server V2 Phase 3 slice 2: Forgotten Gems persistence (PR #777)
 
 - **Merged via PR:** [#777](https://github.com/abucalip/navi-librarian/pull/777), squash `39c727edffc111b30570996da48624c1ceed2dd3`, tested head `9c4b4d72de87627e8bf888c94f382ecc9c0e6edc`; required CI (compile, container-smoke, test-and-build, validate-container) passed on that head. The first merge attempts hit GitHub 502 errors and were retried; the PR merged on the third try.
