@@ -12,6 +12,8 @@ Status: draft for the owner's Phase 1 contract review. Route names are **provisi
 
 ## GET /api/capabilities
 
+Served by `app/api/capabilities.py` (`Cache-Control: no-store`). `listenbrainz_connected` is true when a ListenBrainz username is saved; `sonic_available` and `graph_coverage` stay `false` and `none` until a later phase measures them. Reads only the Server V2 store (`intelligence.sqlite3`).
+
 Fixtures: `capabilities_empty.json`, `capabilities_populated.json`.
 
 | Field | Meaning |
@@ -58,6 +60,7 @@ Fixtures: `insights_all_off.json`, `insights_three_on.json` (Phase 3). Served by
 - Card (all kinds): `kind`, `title`, `body`, `subject{key, type, title, ...}`, `reasons[]` (each `{kind, evidence{}}`), `actions[]` (`{kind: "dismiss"}`), `dismissible`, `score`, plus kind-specific counters (`owned`, `total`, `missing_runs`, and so on). Wording states a fact (a count, a date, a listen total), never "you should own".
 - `subject.key` is the dismissal and accept key. Actions: `POST /api/insights/{kind}/dismiss|restore|accept|unaccept` with JSON `{"key": "<subject.key>"}`, answering `{"changed": bool}` (`false` when nothing changed, for example a repeat dismiss or accepting a dismissed key); unknown kind `404`, missing key `422`. Restore lifts the suppression; the card returns at the next refresh.
 - `capabilities` gains the `insights` feature (`available` once any card row has been saved).
+- Filling the store: `app/services/insights_refresh.py` runs `intelligence.insights.refresh_forgotten_gems` at startup and every 6 hours, only when `forgotten_gem` is listed in `NAVI_INSIGHT_LENSES`. It reads the Navidrome album list (play count, last played, star, rating) and nothing else; an empty album list is a failed run that keeps the saved cards, and a library with sparse history saves no cards. Blind spots, series, hidden canon and anniversaries are not refreshed at runtime: they need provider traffic the owner has not approved.
 
 ## Not in this contract
 

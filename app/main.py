@@ -29,6 +29,7 @@ from app.security.auth import (
 )
 from app.api.acquisitions import router as acquisitions_router
 from app.api.discovery import router as discovery_router
+from app.api.capabilities import router as capabilities_router
 from app.api.insights import router as insights_router
 from app.api.library import router as library_router
 from app.api.owned_artwork import router as owned_artwork_router
@@ -78,6 +79,9 @@ def _start_discovery_background():
     from app.api.search import start_similar_precompute
 
     start_similar_precompute(librarian)
+    from app.services import insights_refresh
+
+    insights_refresh.start(librarian)
 
 
 def _schedule_discovery_scheduler_startup():
@@ -207,6 +211,7 @@ app.include_router(discovery_router)
 app.include_router(search_router)
 app.include_router(library_router)
 app.include_router(insights_router)
+app.include_router(capabilities_router)
 app.include_router(owned_artwork_router)
 app.middleware("http")(add_cache_headers)
 app.include_router(metadata_router)
