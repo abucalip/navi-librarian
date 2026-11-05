@@ -3,9 +3,10 @@ import Foundation
 import DiscairCore
 @testable import DiscairLibrarian
 
-/// The fixtures are copies of `intelligence/contract-fixtures/insights_*.json` (server format: `request` and `response`).
+/// Reads the server's own `intelligence/contract-fixtures/insights_*.json` (format: `request` and `response`), so the app is tested
+/// against the exact files the server tests rebuild, with no copy to drift. Swift tests run locally from the repository.
 func insightsBody(_ name: String, file: String = #filePath) throws -> Data {
-    let root = URL(fileURLWithPath: file).deletingLastPathComponent().appending(path: "Fixtures/\(name).json")
+    let root = URL(fileURLWithPath: file).deletingLastPathComponent().appending(path: "../../../intelligence/contract-fixtures/\(name).json").standardized
     let object = try JSONSerialization.jsonObject(with: Data(contentsOf: root)) as! [String: Any]
     return try JSONSerialization.data(withJSONObject: object["response"]!)
 }
