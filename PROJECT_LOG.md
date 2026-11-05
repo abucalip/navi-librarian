@@ -1,3 +1,11 @@
+## 2026-11-05 — Server V2 Phase 1 slice 2: repositories and generations merged
+
+- **Code merged via PR:** [#760](https://github.com/abucalip/navi-librarian/pull/760), squash `0d86d8015b38f9d46f78c017159b8fb5b046b67d`, tested head `1d0494585ca1e060d15b02d4c3a2e304900c7f8d`: `intelligence/store/generations.py` (derivation generation, per-resource `data_version` counters in `meta`), `intelligence/store/repositories.py` (content-hash de-duplicated observations, idempotent entity upsert that never overwrites an existing identifier, aliases, idempotent edges, rebuild cleanup that keeps `user_confirmed` edges and all observations) and `tests/test_intelligence_repositories.py`.
+- **Verification actually run:** `python3 -m unittest tests.test_intelligence_repositories tests.test_intelligence_store` locally, 49 tests passing (25 new); `py_compile` on the new files. Full suite not run (owner rule). Required checks (compile, container-smoke, test-and-build, validate-container) passed on the tested head.
+- **Documentation committed directly to main:** `docs/PROJECT_STATUS.md`, `docs/ACTIVE_WORK.md` and this log.
+- **Not done / limitations:** nothing imports the repositories; no server wiring, endpoint, provider traffic, publication or deployment. Unresolved-queue and job-run repositories are left to the slices that use them.
+- **Next action:** Phase 1 slice 3, the resolution ladder with deterministic normalization helpers and the unresolved queue with confirm/reject service functions.
+
 ## 2026-11-05 — Server V2 Phase 1 slice 1: store foundation merged
 
 - **Owner decisions:** Phase 1 approved; D-7 option 1 (new dedicated SQLite file with its own migration runner), recorded as D-026 in `docs/DECISIONS.md`. D-8 and D-9 stay open.
