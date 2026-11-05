@@ -1,3 +1,14 @@
+## 2026-11-05 — Server V2 Phase 0 audit complete
+
+- **Code merged via PR:** [#758](https://github.com/abucalip/navi-librarian/pull/758), squash `d45abc87122ef8578a27f7a98a5fa9b854630a8b`: three read-only scripts (`scripts/server_v2_phase0_probe.py`, `_coverage.py`, `_golden.py`). Required checks passed on head `ecd20b80af4d17ed5265e43cd2d1896abec78cb0` (compile, test-and-build, container-smoke, validate-container).
+- **Documentation committed directly to main:** `docs/SERVER_V2_PHASE0_AUDIT.md` (new), `docs/ServerV2.md` status line, `docs/PROJECT_STATUS.md`, `docs/ACTIVE_WORK.md` and this log.
+- **Owner decisions:** D-1 to D-6 accepted as recommended (hybrid MusicBrainz, Library Health and Forgotten Gems first, Phase 0 read-only, first five sources, owned-adjacent graph, sonic via proxy first).
+- **Findings:** Navidrome 0.64.2, 1,792 albums, 12,683 tracks. MBID coverage: albums 53.1%, tracks 85.2%, artists 47.9%; release-group MBIDs are not exposed. MusicBrainz sample of 200 tagged albums: labels 94.5%, recording credits 77.5%, work links 85.0%. ListenBrainz: 81.2% of the 1,700 most recent listens (of 40,893) have a recording MBID; the read stopped on an HTTP 429. `getSonicSimilarTracks` and `findSonicPath` return 404 (no sonic plugin). The library holds 79 probable duplicate groups. Golden set: 50 albums verified by the owner (30 matched, 5 other candidate, 10 unresolved, 5 not in MusicBrainz); the 35 tagged albums had no wrong tags.
+- **Verification actually run:** the scripts against the owner's live Navidrome, MusicBrainz (roughly 500 paced requests in total: the 200-album coverage sample ran twice because the first run's output was lost to a ListenBrainz error, and the golden-set run needed 109 requests after one earlier crash) and ListenBrainz. `py_compile` on the scripts. No unit tests run locally (owner rule); CI ran on the PR.
+- **Not measured / limitations:** MusicBrainz ISRC coverage (the lookup did not request ISRCs); track-level artist MBIDs read 0% in Navidrome's `artists` entries (cause unverified); ListenBrainz rate covers recent listens only. The golden set lists library albums and is kept outside the public repository.
+- **Not done:** no server code, API, client contract, deployment or publication change.
+- **Next action:** the owner approves Phase 1 (foundation and Library Health) and decides D-7, the location of Server V2 data.
+
 ## 2026-11-05 — Server V2 redrafted as a phased plan
 
 - **Documentation committed directly to main:** `docs/ServerV2.md` replaced; `docs/PROJECT_STATUS.md`, `docs/ACTIVE_WORK.md` and this log updated.
