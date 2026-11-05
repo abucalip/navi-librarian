@@ -239,3 +239,34 @@ Proposed budget (section 7): a tag read must finish within 150 ms (measured 50 m
 Listen for: any click, pop or dropout at the join in 1 and 2 (there should be none; the join was measured as exact); in 3, whether the fade is smooth and whether the level dips or bumps in the middle. Also repeat 1 with another output (headphones, a DAC, Bluetooth) if available, and say which one was used. Add `--volume 0.3` for quieter, `--tail 40` to hear more of the first song. Report: "1 clean / click", "2 clean / click", "3 smooth / bumpy", and the output used.
 
 **Result (owner, 2026-11-03), on good headphones:** 1 clean, 2 clean (no click or gap at either gapless join), 3 smooth (the 4 s equal-power crossfade had no audible bump). This confirms the measurements of 12.4 and 12.5 by ear for the built-in decoder, `AVAudioPlayerNode` queueing and the timer-driven gain ramp. Not yet heard: a DAC or Bluetooth output, and the Opus or MP3 transcode path.
+
+## 13. Home dashboard rethink (2026-11-05, owner request): picked ideas
+
+Status: **proposal, nothing built.** The owner asked for a radically different Home from the web and Android dashboards (shelves of covers). Eleven ideas were proposed from the data Navidrome and Librarian already expose; the owner kept five. Mockups of three compositions are in `docs/design/macos-home/mockups.html` (sample data and generated covers; arrow keys and click-to-wipe work). No composition is chosen yet.
+
+### 13.1 Picked ideas
+
+| Id | Idea | What it is | Data |
+|---|---|---|---|
+| A | **Triage deck** | Home as inbox zero for recommendations. One large sleeve at a time, keyboard driven: → Get, ↓ Save, ← Not for me, Space plays a suggested track. The reason is shown in plain words ("because you have played X 212 times"); a counter shows picks left today. Replaces the Missing shelf. | `GET /api/dashboard-picks` (reason, suggested tracks), existing Get, Save and Not for me actions |
+| C | **Almanac** | "Today" in the collection: anniversaries of owned and missing albums ("Loveless turns 35 this week"), what was played on this day in earlier years, milestones ("4 plays from 100 on Third"), and an optional templated briefing line (no LLM). | Navidrome year, play count, last played; Last.fm or ListenBrainz for plays on a past date |
+| D | **Dust** | Albums never played since they were added, or untouched for years, gather visible dust that grows with time since last played; playing one wipes it. Headline count for the never-played pile. | Navidrome play count, last played, added date |
+| G | **Mailroom** | The acquisition pipeline as a scene: parcels in transit from the live acquisition stream, a "Heard on Radio, Get it" tape, and finished arrivals marked new and unplayed. | `GET /api/acquisitions/stream`, `GET /api/radio/plays` and its Get action |
+| J | **Pick up from phone** | A banner or card shows what the Android app was playing and resumes it on the Mac at the same position. | Subsonic `getPlayQueue` or `getNowPlaying` (see 13.3) |
+
+Not picked (kept for later): star map (B), tuner dial and lens batting average (E), colour of your month (F), library vitals (H), one-away completion rings (I), listening clock and tree rings (K).
+
+### 13.2 Compositions drawn
+
+1. **Cupertino Desk** (light): phone banner on top, triage deck as the hero, Almanac and Mailroom as side panels, Dust strip along the bottom.
+2. **Zine Daily**: triage pick as the lead story (the reason is the copy), Almanac as "On this day", Mailroom as classifieds, phone handoff as "Stop press", Dust as foxed sleeves.
+3. **Night Desk** (dark, Native Glass v2): Almanac as a year ruler with anniversary pins, Dust as a shelf of spines wiped by clicking, Mailroom as a conveyor belt, triage and phone handoff in a trailing inspector.
+
+Per the theme rule (each theme owns its screens), the data modules would be shared and each theme would render them its own way. An adaptive hero (phone handoff when playback was left mid-album, an arrival when a Get just finished, otherwise the triage deck) was suggested but not decided.
+
+### 13.3 Open items and caveats
+
+- **Navidrome keeps only the latest play of each song.** Anything about when the owner listens (Almanac's "on this day" in past years) needs Last.fm or ListenBrainz history; the Last.fm CSV in the owner's folder is not read by the app today.
+- **Pick up from phone** depends on the Android app saving its play queue to Navidrome (`savePlayQueue`). Not checked; needs a check before it is promised.
+- Dust thresholds and the anniversary window are untuned guesses. Anniversary dates need a release date; Navidrome holds a year, so day-level dates would come from MusicBrainz through Librarian (possible contract proposal).
+- Owner to choose a composition (or a mix), then a slice plan. Look is not owner-approved.
