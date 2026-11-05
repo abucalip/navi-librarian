@@ -11,6 +11,8 @@ import sqlite3
 
 GENERATION_KEY = "generation"
 DATA_VERSION_PREFIX = "data_version:"
+CHANGE_SEQ_KEY = "change_seq"
+CHANGED_AT_PREFIX = "changed_at:"
 
 
 def _read(db: sqlite3.Connection, key: str) -> int:
@@ -18,15 +20,20 @@ def _read(db: sqlite3.Connection, key: str) -> int:
     return int(row["value"]) if row else 0
 
 
+def _add_one(db: sqlite3.Connection, key: str, floor: int = 0) -> int:
+    """Add one to a counter inside the caller's transaction and return the new value."""
+    db.execute(
+        "INSERT INTO meta (key, value) VALUES (?, ?) "
+        "ON CONFLICT (key) DO UPDATE SET value = CAST(value AS INTEGER) + 1",
+        (key, str(floor + 1)),
+    )
+    return _read(db, key)
+
+
 def _increment(db: sqlite3.Connection, key: str, floor: int = 0) -> int:
     """Atomically add one to a counter and return the new value."""
     with db:
-        db.execute(
-            "INSERT INTO meta (key, value) VALUES (?, ?) "
-            "ON CONFLICT (key) DO UPDATE SET value = CAST(value AS INTEGER) + 1",
-            (key, str(floor + 1)),
-        )
-        return _read(db, key)
+        return _add_one(db, key, floor)
 
 
 def current_generation(db: sqlite3.Connection) -> int:
@@ -46,9 +53,33 @@ def data_version(db: sqlite3.Connection, resource: str) -> int:
 
 
 def bump_data_version(db: sqlite3.Connection, resource: str) -> int:
-    """Record that a resource changed; returns its new counter."""
+    """Record that a resource changed; returns its new counter.
+
+    The same transaction advances the global change sequence and stamps the resource
+    with it, which is what the ``/changes?since=`` feed reads.
+    """
     _check_resource(resource)
-    return _increment(db, DATA_VERSION_PREFIX + resource)
+    with db:
+        version = _add_one(db, DATA_VERSION_PREFIX + resource)
+        seq = _add_one(db, CHANGE_SEQ_KEY)
+        db.execute(
+            "INSERT INTO meta (key, value) VALUES (?, ?) "
+            "ON CONFLICT (key) DO UPDATE SET value = excluded.value",
+            (CHANGED_AT_PREFIX + resource, str(seq)),
+        )
+    return version
+
+
+def change_seq(db: sqlite3.Connection) -> int:
+    """The newest change sequence number (0 if nothing ever changed)."""
+    return _read(db, CHANGE_SEQ_KEY)
+
+
+def changed_since(db: sqlite3.Connection, since: int) -> dict[str, int]:
+    """Resources changed after sequence ``since``, mapped to their change sequence."""
+    rows = db.execute("SELECT key, value FROM meta WHERE key LIKE ?", (CHANGED_AT_PREFIX + "%",)).fetchall()
+    changed = {r["key"][len(CHANGED_AT_PREFIX):]: int(r["value"]) for r in rows}
+    return {name: seq for name, seq in changed.items() if seq > since}
 
 
 def data_versions(db: sqlite3.Connection) -> dict[str, int]:
