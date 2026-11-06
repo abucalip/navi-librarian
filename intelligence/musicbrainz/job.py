@@ -19,6 +19,9 @@ dump are removed). A dump that keeps too little of the previous slice is refused
 (``musicbrainz_dump``, ``slice_import``, ``core``): ``ok`` after a load, ``blocked`` after a
 budget fallback, ``error`` after a rejection.
 
+After a load, API-sourced edges the dump now states identically are dropped
+(:func:`api_fill.absorb_api_edges`; the API fill job covers the gap between imports).
+
 No provider traffic beyond the export download, no ``navidrome_server.py`` involvement, and
 nothing calls this yet: a manual trigger is a separate step.
 """
@@ -35,7 +38,7 @@ from typing import Callable
 from ..jobs import runner
 from ..store import source_state
 from ..store.generations import bump_data_version
-from . import download, dump, loader, neighbourhood
+from . import api_fill, download, dump, loader, neighbourhood
 from .neighbourhood import LINK_TABLES, SEED_TYPES
 
 EXTRACT_DIR = "extracted"
@@ -188,6 +191,7 @@ def run_slice_import(
                                ("loaded_at", clock())):
                 db.execute("INSERT OR REPLACE INTO meta (key, value) VALUES (?, ?)", (f"musicbrainz_slice.{key}", str(value)))
         _record(db, "ok", clock)
+        progress["api_edges_absorbed"] = api_fill.absorb_api_edges(db)
         bump_data_version(db, RESOURCE)
         if delete_archive:
             archive.unlink(missing_ok=True)
