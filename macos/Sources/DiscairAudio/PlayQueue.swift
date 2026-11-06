@@ -17,10 +17,13 @@ public struct QueueItem: Identifiable, Equatable, Sendable, Codable {
     public let disc: Int?
     /// The path Navidrome reports for the file (the SMB waveform maps it to the Mac's mount). Nil when not known.
     public let path: String?
+    /// The song's MusicBrainz recording id when Navidrome reports one. Optional, so queues saved before it existed still load.
+    public let mbid: String?
 
     public init(id: UUID = UUID(), songID: String, title: String, artist: String, album: String = "", albumID: String? = nil,
-                coverArt: String? = nil, duration: Double = 0, suffix: String? = nil, track: Int? = nil, disc: Int? = nil, path: String? = nil) {
-        self.track = track; self.disc = disc; self.path = path
+                coverArt: String? = nil, duration: Double = 0, suffix: String? = nil, track: Int? = nil, disc: Int? = nil, path: String? = nil,
+                mbid: String? = nil) {
+        self.track = track; self.disc = disc; self.path = path; self.mbid = mbid
         self.id = id; self.songID = songID; self.title = title; self.artist = artist; self.album = album
         self.albumID = albumID; self.coverArt = coverArt; self.duration = duration; self.suffix = suffix
     }

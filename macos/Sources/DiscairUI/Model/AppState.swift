@@ -76,6 +76,8 @@ public final class AppState {
     public let lyrics = LyricsModel()
     /// Playback: the queue, the audio engine and the controls.
     public let player: PlayerModel
+    /// Saved skip events; nil without a session (previews and tests).
+    @ObservationIgnored private var feedback: FeedbackOutbox?
     private let systemMedia: AnyObject?
     /// Sample data until a session connects, then the owner's library.
     public let library = LibraryModel()
@@ -127,6 +129,15 @@ public final class AppState {
             notifier.onOpen = { [weak self] in self?.screen = .downloads }
             acquisition.notifier = notifier
         } else { self.actions = NoopActions() }
+        // Skip events wait in a file until the Librarian takes them. Previews and tests have no session, so they record none.
+        if let session {
+            let outbox = FeedbackOutbox(fileURL: FeedbackOutbox.defaultURL, send: { [weak session] events in
+                guard let librarian = await MainActor.run(body: { session?.librarian }) else { throw FeedbackUnavailable() }
+                return try await librarian.reportFeedback(events)
+            })
+            player.configureFeedback(outbox)
+            feedback = outbox
+        }
         player.onUpNextLow = { [weak self] in if self?.radio.autoplay == true { self?.startRadio() } }
         player.waveformFileURL = { [weak self] item in item.path.flatMap { self?.share.localURL(forServerPath: $0) } }
         session?.onConnected = { [weak self] in self?.share.startIfNeeded(); await self?.refreshLibrary() }
@@ -149,6 +160,8 @@ public final class AppState {
         acquisition.configure(librarian: session.librarian)
         discovery.configure(librarian: session.librarian)
         player.configure(urls: navidrome.urls, scrobbler: navidrome)
+        // Skips saved while the Librarian was unreachable go out now that it is connected (in the background).
+        Task { await feedback?.flush() }
         lyrics.configure(navidrome: navidrome, scope: "\(session.activeProfile?.navidromeURL.absoluteString ?? "")|\(session.navidromeUsername ?? "")")
         await library.load(navidrome: navidrome, librarian: session.librarian)
         await library.loadSongs(navidrome: navidrome)

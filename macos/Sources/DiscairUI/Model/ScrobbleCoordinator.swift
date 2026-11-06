@@ -1,4 +1,5 @@
 import DiscairAudio
+import DiscairLibrarian
 import DiscairNavidrome
 import Foundation
 
@@ -16,6 +17,8 @@ public final class ScrobbleCoordinator {
     private struct Play {
         let id = UUID()
         let songID: String
+        /// The song's MusicBrainz id, only when it is already known and is a valid UUID.
+        let mbid: String?
         let startedAt: Date
         var tracker: ScrobbleTracker
     }
@@ -29,7 +32,9 @@ public final class ScrobbleCoordinator {
     /// Off sends nothing, cancels pending retries, and drops the current play. On mid-song starts counting from that moment.
     public var isEnabled: Bool { didSet { if isEnabled != oldValue { enabledChanged() } } }
     /// The song the current play belongs to (kept so turning the switch on mid-song can start a play for it).
-    private var currentSong: (id: String, duration: Double?)?
+    private var currentSong: (id: String, duration: Double?, mbid: String?)?
+    /// Told of each skip when a song the owner left early ends (see `end`). PlayerModel sends these to the feedback outbox.
+    public var onSkip: (@MainActor (FeedbackEvent) -> Void)?
 
     public init(enabled: Bool = true, now: @escaping () -> Date = Date.init, sleep: @escaping @Sendable (Duration) async -> Void = { try? await Task.sleep(for: $0) }) {
         isEnabled = enabled
@@ -43,13 +48,29 @@ public final class ScrobbleCoordinator {
     }
 
     /// A song started playing: a new play. Nothing is sent until `update` sees the player actually playing.
-    public func begin(songID: String, duration: Double?) {
-        currentSong = (songID, duration)
-        play = isEnabled ? Play(songID: songID, startedAt: now(), tracker: ScrobbleTracker(serverDuration: duration)) : nil
+    public func begin(songID: String, duration: Double?, mbid: String? = nil) {
+        currentSong = (songID, duration, mbid)
+        play = isEnabled ? Play(songID: songID, mbid: Self.validMBID(mbid), startedAt: now(), tracker: ScrobbleTracker(serverDuration: duration)) : nil
     }
 
-    /// The song stopped, or the queue ended.
-    public func end() { play = nil; currentSong = nil }
+    /// The song leaves. `leftByOwner` is true for Next, Previous, a jump to Up Next, or starting another list; false when the
+    /// song ended by itself or playback stopped. `wasLastInQueue` is true when nothing was queued after it. A song the owner
+    /// left before `SkipRule` allows counts as a skip and is passed to `onSkip`. Scrobbling is not affected.
+    public func end(leftByOwner: Bool = false, wasLastInQueue: Bool = false) {
+        if let p = play, SkipRule.isSkip(played: p.tracker.played, duration: p.tracker.serverDuration,
+                                         leftByOwner: leftByOwner, wasLastInQueue: wasLastInQueue) {
+            let length = p.tracker.serverDuration.flatMap { $0 > 0 ? $0 : nil }
+            onSkip?(FeedbackEvent(kind: .skip, subjectKind: .track, subjectID: p.songID, mbid: p.mbid,
+                                  occurredAt: now().timeIntervalSince1970, playedSeconds: p.tracker.played, durationSeconds: length))
+        }
+        play = nil; currentSong = nil
+    }
+
+    /// Only a real MusicBrainz UUID is reported; the server refuses anything else. Lower case, as the server stores it.
+    static func validMBID(_ raw: String?) -> String? {
+        guard let raw, UUID(uuidString: raw) != nil else { return nil }
+        return raw.lowercased()
+    }
 
     /// A reading of the player (about four times a second).
     public func update(position: Double, playerDuration: Double?, isPlaying: Bool) {
@@ -84,7 +105,7 @@ public final class ScrobbleCoordinator {
 
     private func enabledChanged() {
         if isEnabled {
-            if let s = currentSong { begin(songID: s.id, duration: s.duration) }   // from this moment, no backfill
+            if let s = currentSong { begin(songID: s.id, duration: s.duration, mbid: s.mbid) }   // from this moment, no backfill
         } else {
             cancelRetries(); play = nil
         }
