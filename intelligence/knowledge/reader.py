@@ -102,6 +102,13 @@ class KnowledgeReader:
     def slice_status(self) -> dict[str, Any]:
         return slice_status(self._db, self._clock())
 
+    def album_dossier(self, *, id: int | None = None, mbid: str | None = None, navidrome_id: str | None = None,
+                      type: str = "release", limit: int = 100) -> dict[str, Any] | None:
+        """Release family, credits and labels for a release (or release group); None when unknown."""
+        from .dossier import album_dossier
+        entity = self.entity(type, id=id, mbid=mbid, navidrome_id=navidrome_id)
+        return None if entity is None else album_dossier(self, entity, limit=limit)
+
     # ---------------------------------------------------------------- helpers
     def _hop(self, hop: Hop) -> dict[str, Any]:
         other = repo.get_entity(self._db, hop.entity_id) or {}
