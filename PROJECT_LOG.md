@@ -1,3 +1,11 @@
+## 2026-11-06 — Server V2 Phase 4 slice 2, part 2: MusicBrainz dump downloader (PR #811)
+
+- **Merged via PR:** [#811](https://github.com/abucalip/navi-librarian/pull/811), squash `a3cb9b42e2272bb53c203fbd728eefcb23fa9cec`, tested head `e91dca99404bba23d8fc049f36be4b40aa56095e`; compile, container-smoke, test-and-build and validate-container passed on that head.
+- **Change:** `intelligence/musicbrainz/download.py`: `latest_export`, `fetch_checksums`, `download_file`, `download_export` (core archive plus optional cover-art). Resumes `.part` files with `Range` (a server that ignores the range restarts from zero), retries dropped connections up to 5 attempts, checks free disk against remaining size plus a 2 GB reserve before writing, verifies SHA-256 and renames atomically. A wrong checksum deletes the partial file; an existing file with a wrong checksum is refused, never overwritten. Standard library only (CI has no `requests`); the opener is injected. No `navidrome_server.py` change.
+- **Verification actually run:** `tests.test_intelligence_musicbrainz_download` (16 passed locally, fake opener, no network); full suite not run (owner rule), CI ran it.
+- **Limitations:** never run against the real 7.7 GB export; no provider traffic made; nothing calls the module; not published, not deployed.
+- **Next action:** neighbourhood selector and loader (two hops from owned MBIDs into `entities`/`edges` with source and dump timestamp as provenance, multi-pass), then the server job that records real pass count, time and disk against the approved budgets.
+
 ## 2026-11-06 — Server V2 Phase 4 slice 2, part 1: MusicBrainz dump reader (PR #810)
 
 - **Merged via PR:** [#810](https://github.com/abucalip/navi-librarian/pull/810), squash `c2e05b8169dfcd0f34b85ff2b54975d15715a724`, tested head `3b2893a13be5fa67e974064196c1d117db019073`; compile, container-smoke, test-and-build and validate-container passed on that head.
