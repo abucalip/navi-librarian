@@ -1,3 +1,14 @@
+## 2026-11-07 — Server V2 Phase 6 slice 11c: macOS insight card dismissals (PR #860)
+
+- **PR:** [#860](https://github.com/abucalip/navi-librarian/pull/860), squash merge `8f15cb7dd8bdf13d6efe2f21d98b45882ec1c54e`, tested head `811847df209cf7cf79ea3a36741518789b6b1213`.
+- **Objective:** report insight card dismissals to the feedback outbox (D-027, record-only).
+- **Changes:** `AppState.swift`, `InsightsModel.swift`, `InsightsModelTests.swift`. A card dismissal queues `kind: dismiss`, `subject_kind: card`, `subject_id` = subject key; cards with no key or a key over 200 characters queue nothing. Album/artist acquisition dismissals unchanged.
+- **Owner decisions (2026-11-07):** dismissals are recorded regardless of the Scrobble switch; card-only event scope; Undo does not retract the event (acceptable); playback-suite check waived.
+- **Tests:** `swift test --filter InsightsModelTests` reported locally: 6 of 6 passed. Other mapped Swift targets and playback suites not run (waived). Full suite not run (owner rule).
+- **CI:** compile, container-smoke, test-and-build and validate-container succeeded on the exact head.
+- **Merge:** GitHub confirmed merged. Not published, deployed or runtime-verified.
+- **Next action:** owner to choose the next Phase 6 slice.
+
 ## 2026-11-06 — Server V2 Phase 6 slice 7: pure listening-context profiles (PR #853)
 
 - **PR:** [#853](https://github.com/abucalip/navi-librarian/pull/853), squash merge `48b84ee354e351989411824e1808e7dfdb229e2e`.
