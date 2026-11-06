@@ -1,3 +1,12 @@
+## 2026-11-06 — Efficiency plan revision 4 (PR #820)
+
+- **PR:** [#820](https://github.com/abucalip/navi-librarian/pull/820), branch `docs/efficiency-cold-start-refresh-merge`, based on current `main` at `7957c2a08bd6ea05bc06d6355f61cd0938880836`.
+- **Changes:** E1/E3 distinguish fresh, stale, pending/never-fetched, confirmed absent and failed/blocked data. Stale values are served immediately while refresh is queued; only explicit requests for genuinely missing Tier 3 data may wait up to the existing route deadline. Refresh eligibility uses source-specific freshness windows, while priority uses ownership, recent additions, listening relevance, recent access and age, with diminishing returns and starvation protection. Cold start is a staged product experience with local baseline, relevance-ordered enrichment, honest client states, coverage/progress reporting and evidence-based ETAs. E8 and the roadmap reflect merged MusicBrainz PRs #810–#819, including the manual trigger CLI, while retaining the distinction between a runnable job and an actual real-archive run.
+- **Repository facts:** the knowledge file is `intelligence.sqlite3`; owner decisions are in `intelligence.state.sqlite3` attached as schema `state`. PR #816 merged the `KnowledgeReader`, read-only web connection and MusicBrainz slice metadata/status. PR #819 merged the worker-side manual trigger CLI. User-facing route migration, profile tables, legacy-cache fallback/backfill and source-state ledger remain outstanding. The real archive import is not verified as run.
+- **Verification:** documentation-only. No application tests, full suite, provider calls, real MusicBrainz archive download, publication or deployment were performed. CI status for PR #820 will be checked on its exact final head.
+- **Superseded attempt:** PR #818 was not merged because GitHub reported it non-mergeable after `main` advanced with PR #819. Its changes are being reapplied to current `main` without overwriting the intervening commits.
+- **Next action:** review and merge PR #820 when approved. The real MusicBrainz import still requires the owner's explicit go-ahead for the large server-side download.
+
 ## 2026-11-06 — Server V2: manual trigger for the MusicBrainz slice import (PR #819)
 
 - **Merged via PR:** [#819](https://github.com/abucalip/navi-librarian/pull/819), squash `a8cdf6e721ae771dc84beacba72f93d407466902`, tested head `42a09586690ee756e25c2ab015424a3a87adf767`; compile, container-smoke, test-and-build and validate-container passed.
