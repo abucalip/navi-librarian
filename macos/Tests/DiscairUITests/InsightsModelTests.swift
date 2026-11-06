@@ -40,7 +40,7 @@ import DiscairLibrarian
         let m = InsightsModel()
         let box = localOutbox()
         m.configureFeedback(box)
-        let json = #"{\"kind\":\"hidden_canon\",\"title\":\"Untitled\",\"body\":\"\",\"subject\":{\"key\":\"\"},\"reasons\":[],\"dismissible\":true,\"score\":1}"#
+        let json = #"{"kind":"hidden_canon","title":"Untitled","body":"","subject":{"key":""},"reasons":[],"dismissible":true,"score":1}"#
         let card = try JSONDecoder().decode(InsightCard.self, from: Data(json.utf8))
 
         m.dismiss(card, librarian: nil)
