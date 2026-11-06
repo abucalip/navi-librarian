@@ -104,18 +104,18 @@ _QUERIES: dict[str, str] = {
         WITH own AS ({_OWN_REC}),
         wk AS (
             SELECT e.to_id AS work, o.rec AS anchor, NULL AS via, NULL AS e1, e.id AS e0, 'same_work' AS code
-              FROM own o JOIN edges e ON e.from_id = o.rec AND e.relation = 'performance'
+              FROM own o CROSS JOIN edges e INDEXED BY edges_from ON e.from_id = o.rec AND e.relation = 'performance'
                AND e.generation = :g AND {_cg('e')}
-              JOIN entities w ON w.id = e.to_id AND w.type = 'work'
+              CROSS JOIN entities w ON w.id = e.to_id AND w.type = 'work'
             UNION
             SELECT r.to_id, a.rec, a.work, r.id, a.e0, 'related_work'
-              FROM (SELECT o.rec, e.to_id AS work, e.id AS e0 FROM own o JOIN edges e ON e.from_id = o.rec
+              FROM (SELECT o.rec, e.to_id AS work, e.id AS e0 FROM own o CROSS JOIN edges e INDEXED BY edges_from ON e.from_id = o.rec
                      AND e.relation = 'performance' AND e.generation = :g AND {_cg('e')}) a
               JOIN edges r ON r.from_id = a.work AND r.generation = :g AND {_cg('r')}
               JOIN entities t ON t.id = r.to_id AND t.type = 'work'
             UNION
             SELECT r.from_id, a.rec, a.work, r.id, a.e0, 'related_work'
-              FROM (SELECT o.rec, e.to_id AS work, e.id AS e0 FROM own o JOIN edges e ON e.from_id = o.rec
+              FROM (SELECT o.rec, e.to_id AS work, e.id AS e0 FROM own o CROSS JOIN edges e INDEXED BY edges_from ON e.from_id = o.rec
                      AND e.relation = 'performance' AND e.generation = :g AND {_cg('e')}) a
               JOIN edges r ON r.to_id = a.work AND r.generation = :g AND {_cg('r')}
               JOIN entities t ON t.id = r.from_id AND t.type = 'work')
