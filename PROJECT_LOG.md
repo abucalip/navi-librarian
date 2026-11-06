@@ -1,3 +1,11 @@
+## 2026-11-06 — Server V2: KnowledgeReader facade and read-only store connection (PR #816)
+
+- **Merged via PR:** [#816](https://github.com/abucalip/navi-librarian/pull/816), squash `d28586e76206080803acf64745a2e04bd6a9e5db`, tested head `b49cbd1ea655bfecc8e8454a729ef42708ee517e`; compile, container-smoke, test-and-build and validate-container passed on that head.
+- **Change:** `intelligence/knowledge/reader.py`: `KnowledgeReader` (`entity`, `find_by_name`, `connections`, `profile`, `slice_status`) over the knowledge store, the facade of efficiency.md E5. Relationships carry source, evidence class, match quality and a `credit` flag (inferred or unmatched edges never are). A profile reports the MusicBrainz slice as `pending`, `loaded` or `no_relationships_in_slice`. `open_readonly` (`intelligence/store/db.py`) opens the knowledge and state files with `mode=ro` for the web process. The MusicBrainz import job now writes `musicbrainz_slice.dump_timestamp`, `.schema_sequence` and `.loaded_at` to `meta`. An import-boundary test fails if the `knowledge` package imports a provider client, web or recommendation module.
+- **Verification actually run:** `test_intelligence_knowledge_reader` (new, 10), `test_intelligence_musicbrainz_job`, `test_intelligence_store_state` and `test_intelligence_graph_traversal` (41 passed locally); full suite not run (owner rule), CI ran it.
+- **Limitations:** no route uses the reader yet; profile tables, the legacy-cache fallback and the `source_state` freshness ledger are not built; replacing slice data on a newer import (last-known-good swap) is not built; the web process does not yet open the store read-only. Not published, not deployed.
+- **Next action:** a manual trigger for the MusicBrainz import and a measured server run (needs the owner's go-ahead for the 7.7 GB download); then the album dossier read through the reader.
+
 ## 2026-11-06 — Server V2: owner-state file split from the knowledge file (PR #815)
 
 - **Merged via PR:** [#815](https://github.com/abucalip/navi-librarian/pull/815), squash `5f19805c73a95a13c2e8faf6f9d8ec690b5440f9`, tested head `2c77a47c0effbac6d1708c4b219c822b83c3c289`; compile, container-smoke, test-and-build and validate-container passed on that head.
