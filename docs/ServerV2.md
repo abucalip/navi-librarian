@@ -242,6 +242,15 @@ Work items:
 5. Work/cover/version links via MusicBrainz works; "a composition, five interpretations".
 6. Bounded graph queries with depth/row/time limits and cursors.
 
+**Knowledge-base alignment (added 2026-11-06, owner request; governing design: [`efficiency.md`](efficiency.md) section E and E8).** Phase 4 data is part of the one Server V2 knowledge store, never a second database. Rules for every Phase 4 slice:
+1. **Same store.** The MusicBrainz slice, dossiers, person and label pages read and write the existing `observations`, `entities`, `edges` and `meta` tables through `intelligence/store/`. No slice file, no parallel schema. Slice rows are `source = musicbrainz_dump` edges and entities with the dump date as provenance, so the slice can be removed or replaced by source.
+2. **Rebuildable, and no owner state in it.** The slice goes into the rebuildable knowledge file. Dismissals and feedback must not share a file with a 2 GB rebuildable slice (efficiency.md review item 7). The knowledge/state file split (efficiency.md roadmap slice 3) therefore comes before the first real import on the server, or the import waits.
+3. **Worker is the only writer.** `musicbrainz.job.run_slice_import` is a worker job (efficiency.md E8). It is not called from a web route; the web process reads only.
+4. **One read path.** Dossier, person and label pages (and `graph.explore`) are reached through the `KnowledgeReader` facade (efficiency.md E5), not by routes querying tables directly. Request handlers make no provider calls.
+5. **Freshness and last-known-good.** The import records a `source_state` ledger row (outcome `ok`, `not_found`, `error`, `blocked`) once that table exists, and the dump date in `meta`. A newer import must validate before it replaces the previous slice; the current loader is additive and removes nothing, so removal of entities and edges that left the dump is still to be built.
+6. **Growth follows the library.** Seeds come from owned MBIDs (`owned_seeds`); a new owned MBID is filled from the API by the worker first and absorbed by the next import (E8). Bulk dump data is preferred to per-entity API calls (owner batching rule).
+7. **Every field has a consumer.** Load only what a dossier, person or label view reads (efficiency.md E6).
+
 Exit: every factual edge has provenance; ambiguous entities show as such; unverified inference never displayed as credit; bounded traversal tested for cycles and duplicates.
 Kill: if the slice import exceeds agreed disk or time budgets on the real server, fall back to API-only with a tighter entity scope.
 Client gate: macOS full dossier and person/label pages; Android "Who played on this?" and compact connected-musicians list.
