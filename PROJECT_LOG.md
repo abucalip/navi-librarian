@@ -1,3 +1,14 @@
+## 2026-11-06 — Server V2 Phase 4 slice 2, part 1: MusicBrainz dump reader (PR #810)
+
+- **Merged via PR:** [#810](https://github.com/abucalip/navi-librarian/pull/810), squash `c2e05b8169dfcd0f34b85ff2b54975d15715a724`, tested head `3b2893a13be5fa67e974064196c1d117db019073`; compile, container-smoke, test-and-build and validate-container passed on that head.
+- **Owner decisions:** (1) measured download approved (listing plus one small sample); (2) budgets approved as proposed; (3) the import runs on the server, which has the space; (4) the loader will write into the existing Server V2 database (D-026), not a separate slice file.
+- **Measured (full export `20261104-002222`, schema sequence 31):** `mbdump.tar.bz2` 7,701,074,497 bytes (core entities, the only essential file); `mbdump-cover-art-archive.tar.bz2` 163 MB; `mbdump-derived` 503 MB, `mbdump-edit` 16 GB, `-editor`, `-stats`, `-cdstubs` not needed. Server accepts byte ranges. A 26 KB sample (`mbdump-documentation`) matched `SHA256SUMS`. Expanded size and table order inside the archive are not measured.
+- **Approved budgets:** download about 7.9 GB (core plus cover-art), resumable and checksum-verified, archive deleted after import; scratch ceiling 25 GB (streaming should keep real peak near the archive size); permanent slice under 2 GB; import under 2 hours as a one-off job; refresh manual or monthly at most; breach of any limit falls back to API-only with a tighter entity scope (Phase 4 kill criterion).
+- **Change:** `intelligence/musicbrainz/schema.py` (column order for 24 dump tables from musicbrainz-server `CreateTables.sql`, schema sequence 31) and `dump.py` (front-to-back streaming reader for the bz2 tar, COPY-text decoding, SHA-256 verification, refusal of any other schema sequence). No download code, store writes, provider traffic or `navidrome_server.py` change.
+- **Verification actually run:** `tests.test_intelligence_musicbrainz_dump` (9 passed locally) and a read of the real documentation sample (sequence 31); full suite not run (owner rule), CI ran it. The reader has not been run on the real 7.7 GB archive.
+- **Limitations:** nothing calls the reader; no MusicBrainz data is loaded; not published, not deployed.
+- **Next action:** slice 2 part 2, a resumable checksum-verified downloader with a free-disk check; then the neighbourhood selector and loader (two hops from owned MBIDs, into `entities`/`edges` with source and dump timestamp as provenance, multi-pass since the archive cannot be read out of order); then a server job that records real pass count, time and disk against the budgets.
+
 ## 2026-11-06 — Server V2 Phase 4 slice 1: bounded relationship graph queries (PR #809)
 
 - **Merged via PR:** [#809](https://github.com/abucalip/navi-librarian/pull/809), squash `992206db1ce2e4001907058539061544f7a5ce05`, tested head `4a9119e74bc329d9e14d6afe4f65fb20175b12dd`; compile, container-smoke, test-and-build and validate-container passed on that head.
