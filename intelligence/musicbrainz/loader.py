@@ -15,6 +15,12 @@ observation recording the dump timestamp and schema sequence. Existing entities 
 ones) are matched by MBID and never renamed or flipped to unowned. Nothing is inferred: the
 relation is MusicBrainz's own link type name and the role is its attributes, joined.
 
+Replacement: the ids of the dump edges this load created or matched are collected, so any
+``musicbrainz_dump`` edge this load did not see has left the dump and is removed in the same
+transaction, together with entities that only it connected (not owned, no other id, no edge, no
+insight). A load that keeps fewer than ``min_retained`` of the previous dump edges is refused with
+:class:`SliceValidationError` and rolls back, so the previous slice stays as the last known good.
+
 No network and no ``navidrome_server.py`` involvement; re-running is safe (edges are unique
 per endpoints, relation, role, source and generation).
 """
@@ -39,6 +45,13 @@ ARTIST_FACT_COLUMNS = ("begin_date_year", "begin_date_month", "begin_date_day",
 RELEASE_STATUSES = frozenset({"official", "promotion", "bootleg", "pseudo-release", "withdrawn", "expunged", "cancelled"})
 
 
+DEFAULT_MIN_RETAINED = 0.5
+
+
+class SliceValidationError(RuntimeError):
+    """The new dump keeps too little of the previous slice to be trusted; nothing was changed."""
+
+
 @dataclass
 class LoadResult:
     passes: int = 0
@@ -51,6 +64,8 @@ class LoadResult:
     links_dropped_no_entity: int = 0
     life_spans: int = 0
     release_facts: int = 0
+    edges_removed: int = 0
+    entities_removed: int = 0
     seconds: float = 0.0
     by_type: dict[str, int] = field(default_factory=dict)
 
@@ -94,6 +109,7 @@ def load_neighbourhood(
     dump_timestamp: str | None,
     schema_sequence: int,
     clock: Callable[[], float] = time.time,
+    min_retained: float = DEFAULT_MIN_RETAINED,
 ) -> LoadResult:
     started = clock()
     result = LoadResult()
@@ -129,6 +145,7 @@ def load_neighbourhood(
         }
     db.execute("BEGIN")
     try:
+        previous_edges = db.execute("SELECT COUNT(*) FROM edges WHERE source = ?", (SOURCE,)).fetchone()[0]
         scanned = scan_rows(read, {
             **entity_requests,
             **fact_requests,
@@ -221,6 +238,7 @@ def load_neighbourhood(
                     link_attrs.setdefault(int(lid), []).append(name)
             result.passes += 1
 
+        seen_edges: set[int] = set()
         for table, id0, id1, lid in pending:
             info = link_info.get(lid)
             relation = link_type_name.get(info[0]) if info else None
@@ -232,8 +250,7 @@ def load_neighbourhood(
                 result.links_dropped_no_entity += 1
                 continue
             role = ", ".join(sorted(set(link_attrs.get(lid, [])))) or None
-            before = db.total_changes
-            db.execute(
+            cur = db.execute(
                 "INSERT OR IGNORE INTO edges (from_id, to_id, relation, role, evidence_class, match_quality, "
                 "source, source_url, observation_id, valid_from, valid_to, generation) "
                 "VALUES (?, ?, ?, ?, 'source_explicit', 'exact_mbid', ?, ?, ?, ?, ?, ?)",
@@ -241,13 +258,42 @@ def load_neighbourhood(
                  f"https://musicbrainz.org/{type0.replace('_', '-')}/{gid_of[(type0, id0)]}",
                  observation_id, info[1], info[2], generation),
             )
-            if db.total_changes > before:
+            if cur.rowcount:
                 result.edges_created += 1
+                seen_edges.add(cur.lastrowid)
             else:
                 result.edges_existing += 1
+                seen_edges.add(db.execute(
+                    "SELECT id FROM edges WHERE from_id = ? AND to_id = ? AND relation = ? "
+                    "AND COALESCE(role, '') = ? AND source = ? AND generation = ?",
+                    (store_id[(type0, id0)], store_id[(type1, id1)], relation, role or "",
+                     SOURCE, generation)).fetchone()[0])
+        kept = result.edges_created + result.edges_existing
+        if previous_edges and kept < previous_edges * min_retained:
+            raise SliceValidationError(
+                f"new dump keeps {kept} of {previous_edges} previous edges (minimum share {min_retained})")
+        _remove_stale(db, seen_edges, result)
         db.execute("COMMIT")
     except BaseException:
         db.execute("ROLLBACK")
         raise
     result.seconds = clock() - started
     return result
+
+
+def _remove_stale(db: sqlite3.Connection, seen_edges: set[int], result: LoadResult) -> None:
+    """Drop dump edges the new load did not see, then the entities only those edges connected."""
+    stale = [r for r in db.execute("SELECT id, from_id, to_id FROM edges WHERE source = ?", (SOURCE,))
+             if r["id"] not in seen_edges]
+    if not stale:
+        return
+    candidates = {r["from_id"] for r in stale} | {r["to_id"] for r in stale}
+    db.executemany("DELETE FROM edges WHERE id = ?", [(r["id"],) for r in stale])
+    result.edges_removed = len(stale)
+    for entity_id in sorted(candidates):
+        removed = db.execute(
+            "DELETE FROM entities WHERE id = ? AND owned = 0 AND navidrome_id IS NULL AND discogs_id IS NULL "
+            "AND wikidata_id IS NULL "
+            "AND NOT EXISTS (SELECT 1 FROM edges WHERE from_id = entities.id OR to_id = entities.id) "
+            "AND NOT EXISTS (SELECT 1 FROM insights WHERE subject_id = entities.id)", (entity_id,)).rowcount
+        result.entities_removed += removed

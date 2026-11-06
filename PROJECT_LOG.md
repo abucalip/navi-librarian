@@ -1,3 +1,11 @@
+## 2026-11-06 — Server V2 Phase 4: slice replacement and import ledger
+
+- **Objective:** make a newer MusicBrainz dump replace the previous slice safely (ServerV2.md Phase 4 rule 5).
+- **Change:** `intelligence/musicbrainz/loader.py` collects the dump edges a load created or matched, then in the same transaction removes `musicbrainz_dump` edges it did not see and the entities only they connected (not owned, no navidrome/discogs/wikidata id, no remaining edge, no insight). A load keeping under `min_retained` (0.5) of the previous dump edges raises `SliceValidationError` and rolls back. `job.py` records `source_state` (`musicbrainz_dump`, `slice_import`, `core`): `ok`, `blocked` (budget fallback) or `error` (outcome `rejected`).
+- **Verification:** loader and job tests (34 passed, 5 new loader and 3 new job tests); `tests/test_intelligence_*.py` 520 passed, 1 skipped. `test_server_v2_mb_slice_import_script` ingest test errors locally (no `httpx` in this Python), not caused by the change. CI not yet run.
+- **Limitation:** not run on the real import; no provider traffic; not published or deployed. The 0.5 threshold is a default, not measured on real dumps.
+- **Next action:** owned-MBID API fill (needs the owner's approval for provider traffic).
+
 ## 2026-11-06 — Server V2 Phase 4: source freshness ledger (PR #831)
 
 - **Objective:** add the `source_state` ledger (efficiency.md E1 item 3) that slice replacement and the owned-MBID API fill need.

@@ -7,6 +7,7 @@ from intelligence.jobs import runner
 from intelligence.musicbrainz import job
 from intelligence.musicbrainz.dump import DumpInfo
 from intelligence.store import repositories as repo
+from intelligence.store import source_state
 from intelligence.store.generations import data_version
 from intelligence.store.db import open_store
 
@@ -154,6 +155,30 @@ class JobTests(unittest.TestCase):
         result = self.run_it()
         self.assertEqual(result.progress["outcome"], "loaded")
         self.assertEqual(self.downloads, 2)  # failed runs start fresh; the file check makes it a no-op
+
+    def state(self):
+        return source_state.get_state(self.db, "musicbrainz_dump", "slice_import", "core")
+
+    def test_load_records_ok_in_the_freshness_ledger(self):
+        self.seed()
+        self.assertIsNone(self.state())
+        self.run_it()
+        self.assertEqual(self.state()["outcome"], "ok")
+
+    def test_budget_fallback_records_blocked(self):
+        self.seed()
+        self.run_it(budgets=job.Budgets(max_entities=1))
+        self.assertEqual(self.state()["outcome"], "blocked")
+
+    def test_newer_dump_replaces_and_a_thin_one_is_rejected(self):
+        self.seed()
+        self.run_it()
+        self.source = FakeDump({**world().tables, "l_artist_artist": []})
+        self.source.tables["artist"] = [ent(1, "a-gid", "Alpha")]
+        result = self.run_it()
+        self.assertEqual(result.progress["outcome"], "rejected")
+        self.assertEqual(self.state()["outcome"], "error")
+        self.assertEqual(self.db.execute("SELECT COUNT(*) FROM edges").fetchone()[0], 1)
 
     def test_store_bytes_in_memory_is_zero(self):
         self.assertEqual(job.store_bytes(self.db), 0)
