@@ -43,7 +43,14 @@ class InsightRoutes(unittest.TestCase):
         with mock.patch.dict("os.environ", {routes.LENSES_ENV: env}):
             return self.client.get("/api/insights").json()["lenses"]
 
-    def test_all_off_by_default_even_with_saved_cards(self):
+    def test_unset_variable_turns_all_five_lenses_on(self):
+        env = {k: v for k, v in __import__("os").environ.items() if k != routes.LENSES_ENV}
+        self.assertEqual(routes.enabled_lenses(env), list(routes.DEFAULT_LENSES))
+        with mock.patch.dict("os.environ", env, clear=True):
+            lenses = self.client.get("/api/insights").json()["lenses"]
+        self.assertTrue(all(l["enabled"] for l in lenses.values()))
+
+    def test_empty_variable_turns_all_off_even_with_saved_cards(self):
         seed_card(self.db, SERIES_KIND, "s1")
         lenses = self.lenses()
         self.assertEqual(set(lenses), {"forgotten_gem", "blind_spot", "series_completion", "hidden_canon", "anniversary"})

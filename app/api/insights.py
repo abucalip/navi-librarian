@@ -4,8 +4,9 @@ HTTP adapters only: bodies come from ``intelligence.api.build_insights_body`` an
 restore and accept actions are the existing service functions in ``intelligence.insights``.
 Reads and writes touch only the dedicated Server V2 SQLite file (D-026); no provider traffic,
 no ownership flags, no recommendation weights. A lens returns cards only when listed in the
-``NAVI_INSIGHT_LENSES`` environment variable (comma separated lens kinds); none is on by default
-because no lens scorecard verdict is ``pass`` yet.
+``NAVI_INSIGHT_LENSES`` environment variable (comma separated lens kinds). All five lenses are on
+when the variable is unset (owner decision, 2026-11-06, Phase 3 exit); setting it to an empty
+string switches every lens off, and a list switches on only those kinds.
 """
 import os
 import threading
@@ -30,6 +31,7 @@ router = APIRouter()
 
 STORE_FILE = "intelligence.sqlite3"
 LENSES_ENV = "NAVI_INSIGHT_LENSES"
+DEFAULT_LENSES = (GEM_KIND, BLIND_SPOT_KIND, SERIES_KIND, CANON_KIND, ANNIVERSARY_KIND)
 
 def _set_key(key):
     """Blind-spot card keys are ``blind_spot:<set key>``; the service functions add that prefix themselves."""
@@ -52,8 +54,10 @@ class CardKey(BaseModel):
 
 
 def enabled_lenses(environ=None):
-    """Lens kinds the owner switched on; unknown names are ignored by the body builder."""
-    raw = (os.environ if environ is None else environ).get(LENSES_ENV, "")
+    """Lens kinds switched on: all five when the variable is unset, else the listed ones (unknown names are ignored)."""
+    raw = (os.environ if environ is None else environ).get(LENSES_ENV)
+    if raw is None:
+        return list(DEFAULT_LENSES)
     return [part.strip() for part in raw.split(",") if part.strip()]
 
 
