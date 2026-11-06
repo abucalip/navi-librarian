@@ -151,6 +151,72 @@ class DossierTests(unittest.TestCase):
             self.reader.album_dossier(type="artist", mbid="m-gid")
 
 
+class PageTests(unittest.TestCase):
+    def setUp(self):
+        self.db = open_store(":memory:")
+        c = dict(evidence_class="source_explicit", match_quality="exact_mbid", source="musicbrainz_dump")
+        e = lambda t, n, g, **k: repo.upsert_entity(self.db, t, n, mbid=g, **k)[0]
+        self.miles = e("artist", "Miles Davis", "m-gid")
+        self.trane = e("artist", "John Coltrane", "t-gid")
+        self.kob = e("release", "Kind of Blue", "kob-r", owned=True)
+        self.kob_g = e("release_group", "Kind of Blue", "kob-g")
+        self.sketches = e("release_group", "Sketches of Spain", "ss-g")
+        self.rec = e("recording", "So What", "rec-gid")
+        self.col = e("label", "Columbia", "col-gid")
+        self.cbs = e("label", "CBS", "cbs-gid")
+        repo.add_edge(self.db, self.kob, self.kob_g, "member_of", **{**c, "source": "musicbrainz"})
+        repo.add_edge(self.db, self.rec, self.kob, "appears_on", role="1/1", **{**c, "source": "musicbrainz"})
+        repo.add_edge(self.db, self.miles, self.rec, "instrument", role="trumpet", **c)
+        repo.add_edge(self.db, self.miles, self.kob, "producer", **c)
+        repo.add_edge(self.db, self.miles, self.sketches, "performer", **c)
+        repo.add_edge(self.db, self.miles, self.trane, "collaboration", source="derived", evidence_class="inferred", match_quality="exact_mbid")
+        repo.add_edge(self.db, self.col, self.kob, "publisher", **c)
+        repo.add_edge(self.db, self.col, self.sketches, "publisher", **c)
+        repo.add_edge(self.db, self.cbs, self.col, "label ownership", **c)
+        self.reader = KnowledgeReader(self.db, clock=lambda: 2000.0)
+
+    def load_slice(self):
+        with self.db:
+            for key, value in (("dump_timestamp", "2026-11-04"), ("schema_sequence", "31"), ("loaded_at", "1000")):
+                self.db.execute("INSERT INTO meta (key, value) VALUES (?, ?)", (f"musicbrainz_slice.{key}", value))
+
+    def test_person_page_splits_library_and_explains(self):
+        self.load_slice()
+        p = self.reader.person_page(mbid="m-gid")
+        self.assertEqual([r["album"]["canonical_name"] for r in p["in_library"]], ["Kind of Blue"])
+        self.assertEqual(p["in_library"][0]["album"]["type"], "release_group")  # editions fold into the group
+        self.assertEqual(p["in_library"][0]["why"], "credited as producer, trumpet on So What")
+        self.assertEqual([r["album"]["canonical_name"] for r in p["not_in_library"]], ["Sketches of Spain"])
+        self.assertEqual(p["related_people"], [])  # an inferred edge is never shown
+        self.assertEqual(p["sources"]["musicbrainz_dump"]["coverage"], "loaded")
+
+    def test_person_page_pending_unknown_and_wrong_type(self):
+        self.assertEqual(self.reader.person_page(mbid="m-gid")["sources"]["musicbrainz_dump"]["coverage"], "pending")
+        self.assertIsNone(self.reader.person_page(mbid="nope"))
+        with self.assertRaises(ValueError):
+            self.reader.person_page(type="label", mbid="col-gid")
+
+    def test_person_page_no_relationships(self):
+        self.load_slice()
+        p = self.reader.person_page(mbid="t-gid")
+        self.assertEqual(p["sources"]["musicbrainz_dump"]["coverage"], "no_relationships_in_slice")
+
+    def test_label_page(self):
+        self.load_slice()
+        page = self.reader.label_page(mbid="col-gid")
+        self.assertEqual([r["album"]["canonical_name"] for r in page["owned_catalogue"]], ["Kind of Blue"])
+        self.assertEqual([r["album"]["canonical_name"] for r in page["not_in_library"]], ["Sketches of Spain"])
+        self.assertEqual([r["entity"]["canonical_name"] for r in page["related_labels"]], ["CBS"])
+        self.assertEqual(page["related_labels"][0]["relations"][0]["relation"], "label ownership")
+        self.assertIn("notable_releases", page["not_loaded"])
+        self.assertIsNone(self.reader.label_page(mbid="nope"))
+        with self.assertRaises(ValueError):
+            self.reader.label_page(id=self.miles)
+
+    def test_bounded_by_limit(self):
+        self.assertTrue(self.reader.person_page(mbid="m-gid", limit=1)["truncated"])
+
+
 class BoundaryTests(unittest.TestCase):
     FORBIDDEN = ("integrations", "requests", "httpx", "urllib", "http", "socket", "discovery", "app",
                  "navidrome_client", "navidrome_server", "acquisition", "recommendation")

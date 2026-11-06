@@ -109,6 +109,19 @@ class KnowledgeReader:
         entity = self.entity(type, id=id, mbid=mbid, navidrome_id=navidrome_id)
         return None if entity is None else album_dossier(self, entity, limit=limit)
 
+    def person_page(self, *, id: int | None = None, mbid: str | None = None, navidrome_id: str | None = None,
+                    type: str = "artist", limit: int = 200) -> dict[str, Any] | None:
+        """Credits of an artist, person or group split into in-library and not; None when unknown."""
+        from .pages import person_page
+        entity = self.entity(type, id=id, mbid=mbid, navidrome_id=navidrome_id)
+        return None if entity is None else person_page(self, entity, limit=limit)
+
+    def label_page(self, *, id: int | None = None, mbid: str | None = None, limit: int = 200) -> dict[str, Any] | None:
+        """Related labels, owned catalogue and the rest of the slice for a label; None when unknown."""
+        from .pages import label_page
+        entity = self.entity("label", id=id, mbid=mbid)
+        return None if entity is None else label_page(self, entity, limit=limit)
+
     # ---------------------------------------------------------------- helpers
     def _hop(self, hop: Hop) -> dict[str, Any]:
         other = repo.get_entity(self._db, hop.entity_id) or {}
