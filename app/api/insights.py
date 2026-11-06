@@ -15,7 +15,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from app.api.dependencies import get_librarian
-from intelligence.api import INSIGHTS_DEFAULT_LIMIT, INSIGHTS_MAX_LIMIT, build_insights_body
+from intelligence.api import INSIGHTS_DEFAULT_LIMIT, INSIGHTS_MAX_LIMIT, build_insights_body, build_taste_body
 from intelligence.insights import (
     accept_card, dismiss_anniversary, dismiss_blind_spot, dismiss_canon, dismiss_gem, dismiss_series,
     restore_anniversary, restore_blind_spot, restore_canon, restore_gem, restore_series, unaccept_card,
@@ -83,6 +83,18 @@ def insights(limit: int = INSIGHTS_DEFAULT_LIMIT, librarian=Depends(get_libraria
             db.close()
     except Exception:
         raise HTTPException(status_code=502, detail="Could not read insights.")
+
+
+@router.get("/api/insights/taste")
+def insights_taste(librarian=Depends(get_librarian)):
+    try:
+        db = _store(librarian)
+        try:
+            return build_taste_body(db)
+        finally:
+            db.close()
+    except Exception:
+        raise HTTPException(status_code=502, detail="Could not read taste profiles.")
 
 
 def _change(librarian, kind, action):

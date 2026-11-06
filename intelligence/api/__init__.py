@@ -3,6 +3,7 @@ from .bodies import DEFAULT_PAGE, MAX_PAGE, build_health_body, build_unresolved_
 from .capabilities import CONTRACT_VERSION, FEATURES, ServerFacts, build_capabilities
 from .changes import ChangesError, build_changes, parse_since
 from .insights import DEFAULT_LIMIT as INSIGHTS_DEFAULT_LIMIT, LISTERS as INSIGHT_LISTERS, MAX_LIMIT as INSIGHTS_MAX_LIMIT, build_insights_body
+from .taste import build_taste_body
 from .etag import etag_for, not_modified
 
 __all__ = [
@@ -14,6 +15,7 @@ __all__ = [
     "INSIGHT_LISTERS",
     "build_health_body",
     "build_insights_body",
+    "build_taste_body",
     "build_unresolved_body",
     "ChangesError",
     "FEATURES",
