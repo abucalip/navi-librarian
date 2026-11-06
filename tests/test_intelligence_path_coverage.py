@@ -118,8 +118,8 @@ class PathCoverageTests(unittest.TestCase):
     def test_scene_path_needs_a_city_area_and_overlapping_start_years_never_a_country(self):
         anchor, _, _ = self.library()
         city, country = self.ent("area", "City"), self.ent("area", "Country")
-        self.db.execute("INSERT INTO area_facts (entity_id, kind) VALUES (?, 'City')", (city,))
-        self.db.execute("INSERT INTO area_facts (entity_id, kind) VALUES (?, 'Country')", (country,))
+        self.db.execute("INSERT INTO area_facts (entity_id, kind) VALUES (?, 'city')", (city,))
+        self.db.execute("INSERT INTO area_facts (entity_id, kind) VALUES (?, 'country')", (country,))
 
         def artist(name, year, area):
             a = anchor if name == "Anchor" else self.ent("artist", name)
@@ -139,8 +139,8 @@ class PathCoverageTests(unittest.TestCase):
         anchor, release, rec = self.library()
         self.db.execute("INSERT INTO release_facts (entity_id, date) VALUES (?, '1969-05-01')", (release,))
         studio = self.ent("place", "Studio A")
-        self.db.execute("INSERT INTO place_facts (entity_id, kind) VALUES (?, 'Studio')", (studio,))
-        self.edge(studio, rec, "recording location")
+        self.db.execute("INSERT INTO place_facts (entity_id, kind) VALUES (?, 'studio')", (studio,))
+        self.edge(studio, rec, "recorded at")
         later = self.ent("recording", "Later")
         same = self.ent("recording", "Same decade")
         undated = self.ent("recording", "Undated")
@@ -149,7 +149,7 @@ class PathCoverageTests(unittest.TestCase):
             self.db.execute("INSERT INTO release_facts (entity_id, date) VALUES (?, ?)", (rel, date))
             self.edge(r, rel, "appears_on")
         for r in (later, same, undated):
-            self.edge(studio, r, "recording location")
+            self.edge(studio, r, "recorded at")
         result = self.run_kind("same_studio_different_decade", min_stops=1)
         self.assertEqual(result["stops_max"], 1)
         self.assertEqual(result["candidates_without_a_confirmed_stop"], 2)

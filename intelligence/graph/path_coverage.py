@@ -143,7 +143,7 @@ def _scene(db: sqlite3.Connection) -> None:
     db.execute("CREATE TEMP TABLE cov_a_area AS SELECT DISTINCT an.id AS a, e.to_id AS area FROM cov_anchor an "
                "JOIN cov_edge e ON e.from_id = an.id AND e.relation IN ('area', 'begin area') "
                "JOIN entities ar ON ar.id = e.to_id AND ar.type = 'area' "
-               "LEFT JOIN area_facts f ON f.entity_id = ar.id WHERE COALESCE(f.kind, '') != 'Country'")
+               "LEFT JOIN area_facts f ON f.entity_id = ar.id WHERE LOWER(COALESCE(f.kind, '')) != 'country'")
     db.execute("INSERT INTO cov_in SELECT a, area FROM cov_a_area")
     db.execute(
         "INSERT INTO cov_stop SELECT DISTINCT aa.a, e.from_id, 1 FROM cov_a_area aa "
@@ -157,14 +157,14 @@ def _scene(db: sqlite3.Connection) -> None:
 
 def _studio(db: sqlite3.Connection) -> None:
     db.execute("CREATE TEMP TABLE cov_a_place AS SELECT DISTINCT r.a AS a, p.id AS place, r.rec AS rec FROM cov_a_rec r "
-               "JOIN cov_edge e ON e.to_id = r.rec "
+               "JOIN cov_edge e ON e.to_id = r.rec AND e.relation IN ('recorded at', 'mixed at', 'engineered at') "
                "JOIN entities p ON p.id = e.from_id AND p.type = 'place' "
-               "JOIN place_facts f ON f.entity_id = p.id AND f.kind = 'Studio'")
+               "JOIN place_facts f ON f.entity_id = p.id AND LOWER(f.kind) = 'studio'")
     db.execute("INSERT INTO cov_in SELECT a, place FROM cov_a_place")
     db.execute(
         "INSERT INTO cov_stop SELECT ap.a, q.id, CASE WHEN dq.decade IS NULL OR da.decade IS NULL THEN NULL "
         "WHEN dq.decade != da.decade THEN 1 ELSE 0 END FROM cov_a_place ap "
-        "JOIN cov_edge e ON e.from_id = ap.place "
+        "JOIN cov_edge e ON e.from_id = ap.place AND e.relation IN ('recorded at', 'mixed at', 'engineered at') "
         "JOIN entities q ON q.id = e.to_id AND q.type = 'recording' "
         "LEFT JOIN cov_rec_decade da ON da.rec = ap.rec LEFT JOIN cov_rec_decade dq ON dq.rec = q.id "
         f"WHERE {_not_own('ap', 'q.id')}")
@@ -243,7 +243,7 @@ def input_coverage(db: sqlite3.Connection) -> dict:
                                         "WHERE a.owned = 1 AND l.begin_date IS NOT NULL"),
         "slice_areas": q("SELECT COUNT(*) FROM entities WHERE type = 'area'"),
         "slice_places": q("SELECT COUNT(*) FROM entities WHERE type = 'place'"),
-        "slice_studios": q("SELECT COUNT(*) FROM place_facts WHERE kind = 'Studio'"),
+        "slice_studios": q("SELECT COUNT(*) FROM place_facts WHERE LOWER(kind) = 'studio'"),
         "slice_events": q("SELECT COUNT(*) FROM entities WHERE type = 'event'"),
         "slice_release_labels": q("SELECT COUNT(*) FROM release_labels"),
         "releases_with_a_date": q("SELECT COUNT(*) FROM release_facts WHERE date IS NOT NULL"),
