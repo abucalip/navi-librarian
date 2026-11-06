@@ -13,14 +13,44 @@ This is a proposal and implementation sequence, not permission to increase provi
 
 ## Executive summary
 
-The recommended target has four parts:
+The recommended target has five parts:
 
 1. **A — Separate web serving from background execution.** Keep FastAPI focused on HTTP requests. Move scheduled refreshes, provider enrichment, precomputation, and long-running work into a dedicated worker process. Build on `intelligence/jobs/`; do not introduce Celery or Redis by default.
 2. **B — Reduce and control external I/O.** Prefer documented batch/browse APIs, reuse HTTP connections, coalesce duplicate requests, cache carefully, and parallelize only independent work within provider limits.
 3. **C — Measure before tuning.** Extend the existing `Server-Timing` foundation into endpoint, provider, cache, database, queue, and job measurements. Compare request counts and elapsed time against repeatable fixtures before claiming gains.
 4. **D — Prepare for multiple web workers without enabling them prematurely.** First remove process-local ownership of background tasks and coordination. Keep one Uvicorn worker until multi-process correctness is demonstrated.
 
+5. **E — One knowledge store, one egress.** (Added in revision 2, see section E.) Consolidate the scattered metadata caches into the Server V2 store as a library-scoped music knowledge base that the worker builds and refreshes continuously. Every Discair service reads it; only the worker talks to external providers.
+
 The intended outcome is a simpler responsibility split, fewer unnecessary network calls, shorter and more predictable refreshes, better failure recovery, and a safe path to scale if real demand requires it.
+
+**Revision 2 changes the centre of gravity.** Parts A and E together do more for latency, provider load and reliability than any single batch optimisation in B, and they make several B items cheaper or moot. The roadmap is reordered accordingly (see the roadmap and the next section).
+
+## Review: assumptions and blind spots in revision 1
+
+These are corrections to the first version of this document. Each is checked against the repository unless marked "unverified".
+
+1. **The plan optimises request counts where the user feels request latency.** B1 to B6 target scheduled and discovery paths. The paths a person waits on (artist bio, artwork, reviews, Wikipedia, Deezer/Apple lookups, tracklists) are treated in B7 as "coalesce and reuse connections". Coalescing makes a slow external call cheaper to share; it does not remove it from the page request. The structural fix is that no page request waits on a provider, which is section E. Without it, B7 is polish on the wrong layer.
+
+2. **B1 (ratings browse) may cost more than it saves, and the document gives no break-even.** A browse returns every release group of an artist (singles, EPs, compilations) in pages of at most 100. For an artist with 300 release groups that is three or more requests to replace one lookup. The 80-candidate shortlist is chosen for variety, so it plausibly spans many distinct artists with one or two candidates each, where per-album lookup is already optimal. Browse only wins when candidates per artist exceed pages per artist. Before building B1: count distinct artists in a real shortlist and pages per artist (`type=album` filtering reduces pages). Also note ratings change slowly: with a long TTL the steady-state cost is already near zero and B1 only helps the cold start, which the worker (section E) absorbs off the request path. Priority downgraded from High to "Measure first".
+
+3. **The plan ignores an accepted decision.** The Phase 0 audit records that MusicBrainz has no multi-ID lookup and that the bulk route is the dump slice (D-1, hybrid: local dump slice for bulk, API for the rest, accepted by the owner). Release-group ratings, relationships and tracklists for owned entities are exactly what a local slice answers with SQL and zero API calls. B1 and B2 should be re-evaluated against D-1 before any code is written; if the slice is built they are mostly moot. **Owner decision (2026-11-06): the dump slice is in, and it grows with the library.** B1 and B2 are therefore deferred behind it (roadmap slice 4) and may be dropped; see section E8.
+
+4. **Pacing is process-local, so the two-process split would double MusicBrainz traffic.** `integrations/musicbrainz/rating_client.py` paces with an in-process `sleep` (and other clients are similar). MusicBrainz limits by client IP, not by process. A worker pacing at 1 request/s next to a web process still pacing at 1 request/s makes 2 requests/s during the whole migration. A5 says budgets must be "global to the worker", which is true only after every call has moved. Until then the limit must be shared through the database (a per-provider `next_allowed_at` row claimed atomically) or the web process must stop calling the provider before the worker starts. This is a hard prerequisite of slice 4, not a refinement.
+
+5. **Section D is over-weighted for this deployment.** The product is a single-owner home server with a handful of clients. Multiple Uvicorn workers answer a throughput problem nobody has measured; the real constraints are the 1 request/s provider budget and page latency. D1 to D5 are sound as a gate but should be demoted to "only if C shows API queueing". The part of D worth doing early is the process-local state inventory (D2), because the worker split already depends on it.
+
+6. **The existing cache is weaker than the document assumes.** `metadata_cache.py` opens a new SQLite connection and runs `CREATE TABLE IF NOT EXISTS` on every `get` and every `set`. It does not enable WAL (only `intelligence/store/db.py` does) and uses a 5 s busy timeout. It stores a bare value and timestamp with no source, operation, outcome class or provenance, so it cannot distinguish "never fetched" from "fetched and absent" from "failed", and B7's rule to keep those outcomes distinct is not expressible in it. Six more SQLite files hold overlapping state (`settings/persistence.py`, `discovery/store.py`, `acquisition/state.py`, `integrations/radio/store.py`, the Navidrome discovery DB and the metadata cache). "Persistent cache audit" understates the work: the cache needs replacing, not auditing.
+
+7. **User state and rebuildable data share a table.** In the Server V2 store, dismissals live in `insights.dismissed_state`, next to derived cards that a generation bump is designed to rebuild, and `persistence.py` deletes undismissed cards on refresh. Today that is correct, but it means the file cannot be wiped and rebuilt without losing the owner's choices, which contradicts the rationale recorded in D-026 (the file can be backed up or wiped on its own). A knowledge base that the worker may rebuild must not hold irreplaceable user decisions.
+
+8. **No cold-start estimate.** At 1 request/s the first fill of a large library is a multi-hour job, and this is the number that decides whether "only the worker calls out" is livable. With ~730 artists (the figure in the P3 follow-ups) and an assumed 10 provider calls per artist plus 2 per album, the artist side alone is about 2 hours of MusicBrainz time before albums. The plan should state the estimate, the order of fill (what the owner sees first), and what the UI shows while a fact is still pending.
+
+9. **Provider terms are not examined.** Storing provider data for the long term is a different act from caching it for a day. Last.fm, Deezer and Apple publish retention and caching terms, and review sites (Pitchfork, Guardian and others in `app/api/`) are copyrighted text. The document should state per provider what may be stored (facts and links versus full text), and the knowledge base should store review links and short attributed excerpts rather than articles. I have not read each provider's current terms (unverified); this is a pre-implementation check, not a conclusion.
+
+10. **Missing acceptance numbers.** "Reduction" and "bounded" appear throughout with no targets. ServerV2.md uses exit and kill criteria per phase; this plan should too (see section E acceptance).
+
+11. **Minor.** Slice 0 says to record baselines, but slices 1 to 2 are scheduled before the instrumentation slice 7 that would measure them. Pull the minimum (provider call counters, cache hit counters, per-route provider wait) forward into slice 0. Section A4 migrates the legacy scheduler last, but it is the most likely place for hidden provider calls; inventory it first (A1) even if it moves last.
 
 ## Current architecture: observed constraints
 
@@ -183,7 +213,7 @@ The web app's startup should be limited to web-owned resources: dependency setup
 - Use bounded retry with backoff for transient provider/network failures; do not retry permanent 4xx responses indefinitely.
 - Preserve last-known-good data on failed or incomplete runs.
 - Shut down gracefully: stop claiming new jobs, allow a bounded grace period for the active unit, checkpoint, and exit.
-- Keep provider pacing and request budgets global to the worker, not independently reset by each concurrent job.
+- Keep provider pacing and request budgets global, not independently reset by each concurrent job. While any provider call remains in the web process, "global" means shared through the database: a per-provider row holding `next_allowed_at` and a daily counter, claimed with an atomic update before each request. A process-local `sleep` is not enough once two processes exist (review item 4).
 
 ### A6. Deployment shape
 
@@ -219,7 +249,7 @@ Keep the individual lookup only as a bounded fallback when an artist MBID is abs
 
 Preserve the 80-candidate shortlist, ordering, first-30 year enrichment, rating/vote-count semantics, pacing, and non-fatal failure behavior.
 
-**Priority: High.** Expected request shape changes from up to 80 uncached album lookups to roughly one or more pages per distinct candidate artist. Measure the actual reduction on a fixed candidate fixture.
+**Priority: Measure first (revised from High).** Expected request shape changes from up to 80 uncached album lookups to one or more pages per distinct candidate artist, which is a reduction only when candidates per artist exceed pages per artist. Count both on a real shortlist before building, and re-check against the D-1 dump slice (see the review section, items 2 and 3).
 
 ### B2. MusicBrainz tracklists — likely two sequential calls to one browse
 
@@ -371,6 +401,8 @@ After the change, replay the same inputs and report the delta. A reduction in Py
 
 ## D. Prepare for multiple web workers safely
 
+**Scope note (revision 2):** this deployment is a single-owner home server. Treat D as a gate to pass only if part C shows API queueing, not as a planned slice. The process-local state inventory (D2) is the exception: the worker split depends on it, so do it early.
+
 Multiple Uvicorn workers are not the first optimization. Each process has separate memory and runs its own startup lifecycle. Today, that can duplicate background loops and create independent copies of process-local locks, caches, and the owned search index.
 
 ### D1. Keep the current one-worker setting for now
@@ -434,21 +466,109 @@ Only then compare one versus two web workers under representative concurrent req
 - **Celery/RQ/other queue:** consider only if the home-grown worker requirements outgrow the existing durable job framework (for example, multiple hosts, complex routing, high throughput, or mature operational tooling is needed). A queue migration has operational and failure-mode costs; it is not automatically more efficient.
 - **More Uvicorn workers:** use only after D1–D4 are satisfied and load tests show a benefit.
 
+## E. Music knowledge base: one store, one egress (v2)
+
+**Proposal.** A worker progressively builds a knowledge base for the owned library (artist and album facts, relationships, context), keeps it current as the library changes, and is the only component that calls external providers. Every other service, web routes included, reads the knowledge base. The existing scattered caches are folded into it.
+
+**Verdict: adopt, with four amendments.** The idea is the right direction and fits Server V2 principles 1, 3, 4 and 6 and the hard rule "never inside a page request". It also removes the root cause behind B7, A5's pacing problem and most of D. The Server V2 store is already its skeleton: `observations` (append-only fetched documents with `expires_at`), `entities`, `aliases`, `edges` with evidence class, `insights`, `job_runs`, `meta` data versions. Build on it; do not create a second database or a parallel schema.
+
+### E1. Amendments to the idea
+
+1. **"Only the worker makes external calls" needs a defined scope.** Three categories exist:
+   - *Knowledge fetches* (MusicBrainz, ListenBrainz, Last.fm, Wikipedia, Wikidata, Deezer, Apple, Discogs, review sources, artwork): worker only. Enforce with a test that fails if a web module imports a provider client (an import-boundary test), not by convention.
+   - *First-party and user-initiated control traffic*: Navidrome playback, streaming and cover proxying, slskd search and downloads, radio stream relay, Last.fm authentication and scrobbling, and the Settings "Test token" buttons stay in the web process. They are not knowledge, they are either first-party or an explicit user action.
+   - *Unbounded exploration* (global search for things not in the library, "not in your library" results, genre pages). The knowledge base cannot hold the world. Use three tiers. **Tier 1, owned library:** complete, worker-prefetched. **Tier 2, neighbourhood:** similar artists, recommendation and lens candidates, history artists, prefetched ahead of need. **Tier 3, long tail:** a web request enqueues an interactive-priority job, waits up to the route's existing deadline for the worker, and otherwise returns the existing partial/`incomplete` shape; the result is stored for next time. This keeps a single egress without making search unusable.
+
+2. **Separate rebuildable knowledge from irreplaceable state.** Two files: `knowledge.sqlite3` (observations, entities, edges, profiles, freshness ledger; the worker is the only writer; web opens it read-only; can be wiped and rebuilt) and a state file (dismissals, feedback, settings, acquisition state, radio, job history the owner cares about). **Owner decision (2026-11-06): dismissals move to the separate state file**, keyed by a stable card identity (not a row id), so a generation rebuild never costs the owner a decision (review item 7). Revisit D-026 consequence 4 (path and backup handling were left open) when wiring this.
+
+3. **Store the fetch outcome, not just the data.** Add a freshness ledger table, for example `source_state(source, operation, key, outcome, observation_id, attempts, last_attempt_at, next_refresh_at, etag, last_modified)`, where `outcome` is `ok`, `not_found`, `error`, `blocked`. This is what lets the worker choose what to refresh, back off on failures, and lets the API say "pending" versus "does not exist". Check the schema against the migration runner (append-only migrations, v2 for this addition).
+
+4. **Read models, not raw observations, on the request path.** Observations are provenance; they are too granular and too many to read per request. Add derived, generation-stamped profile tables (`artist_profile`, `album_profile`: bio and source, origin, active years, tags/genres, links, tracklist, ratings with counts, review links and short attributed excerpts, artwork references) rebuilt by derivation jobs. A request is then one indexed read. Facts, derivations and opinions stay in separate tables (Server V2 principle 4).
+
+### E2. What the knowledge base holds
+
+For each owned artist and album, plus the Tier 2 neighbourhood:
+
+- **Identity:** MBIDs, Navidrome id, Wikidata/Discogs ids, aliases, resolution state (reuse the resolution ladder and `unresolved` queue).
+- **Facts:** dates, tracklists with durations, editions, credits, area and lifespan, genres and tags with source.
+- **Relationships (edges):** members, collaborators, producers and labels, influences (Wikidata), similar artists with the shared-tag and listener evidence the search code computes today, series, scene/area. Every edge carries evidence class and match quality; nothing inferred is rendered as a credit.
+- **Context:** short bio with attribution, why-it-matters links (review links, anniversary and series context), popularity as "unknown" when absent.
+- **Artwork:** URLs and licence/attribution in the database; image bytes in a content-addressed directory on disk (hash name, a few size variants made once by the worker). Do not store blobs in SQLite.
+- **Coverage:** per entity and per field class, a state of `complete`, `pending`, `absent_at_source`, or `failed`, so completeness is measurable.
+
+### E3. Freshness policy
+
+Stale-while-revalidate everywhere: serve what exists, enqueue a refresh when stale, never block on it. Starting TTL classes (tune from measurement, do not treat as settled):
+
+| Class | Examples | Initial refresh |
+|---|---|---|
+| Stable | MB relationships, release dates, tracklists, MBIDs | 90 days, or on library change |
+| Slow | ratings, genres/tags, bios | 30 to 90 days |
+| Moving | listener and popularity counts, similar-artist lists | 7 days |
+| Daily | new releases, lens inputs | 1 day |
+| Negative | not found | 7 days, doubling to 90 on repeats |
+| Error | timeouts, 429, 5xx | short backoff with jitter, never treated as a miss |
+
+Library changes trigger targeted refresh: use Navidrome's change signals (`getIndexes` with `ifModifiedSince`, scan status) and the existing import-triggered resync hook to enqueue only new or changed albums, which should be filled first.
+
+### E4. Worker priority and fairness
+
+One shared provider budget (database-backed, see A5), four lanes in priority order: **interactive** (a person opened something missing), **new additions** (just-imported albums and artists), **stale refresh** (ordered by staleness weighted by play count and recency), **backfill** (the long tail). Each lane has a share of the daily per-provider budget so the backfill cannot starve interactive work and vice versa. Cold-start order for a new database: recently played artists first, then most played, then the rest.
+
+### E5. Migration, without a big bang
+
+1. **Facade first.** Introduce one read interface (for example `KnowledgeReader.get_artist_profile(...)`, `get_album_profile(...)`) in an importable package, not in `navidrome_server.py` (D-016). Initially it reads the legacy caches and falls back to the legacy provider path.
+2. **Backfill without refetching.** Import existing cache rows (`metadata_cache`, discovery and lens caches) as observations with `fetched_at` set to their original cached time. This removes most of the cold start for data already held.
+3. **Worker fills the gaps.** Route by route, switch the reader to the knowledge base and move that route's provider calls into a worker handler. Remove the legacy call and the cache key only after the route's output is verified identical on fixtures. Order by user-visible latency: artist page, album page, artwork, search enrichment, recommendation enrichment, then the lens and insight providers.
+4. **Retire the legacy caches** (`metadata_cache.py` and its callers) when nothing reads them. Adopting the migration runner for the remaining operational stores stays a separate decision.
+5. **Fail closed on the boundary.** Add the import-boundary test only when the last web-side provider import is gone, so it can be enforced rather than waived.
+
+### E6. Risks
+
+- **Stale or wrong facts served confidently.** Mitigated by showing source and fetch time in the API, keeping `not_found` distinct from `pending`, and the existing rule "explainable or absent".
+- **Single writer and SQLite.** One worker writer plus read-only web connections in WAL mode is a good fit; verify `busy_timeout`, short transactions, and that the worker never holds a write transaction across a network call. Plan for observation growth: add retention (keep the latest N observations per source/key; the append-only trigger blocks UPDATE, so retention is by DELETE and must be a deliberate, tested job).
+- **Worker down means no fresh data, not an outage.** Reads continue from the last good data; the API and logs report knowledge age and queue depth.
+- **Over-collecting.** A knowledge base invites fetching everything. Each field must have a consumer; collect only what a route, lens or insight reads (Server V2 principle 2: prove data exists before designing on it, and cut fields with low coverage).
+- **Provider terms** (review item 9). Resolve before storing any text beyond facts, links and short attributed excerpts.
+
+### E7. Acceptance and kill criteria
+
+Targets are placeholders until slice 0 supplies baselines; set the numbers there and record them.
+
+- Zero provider calls in web request handling for migrated routes, proven by the import-boundary test and by request-count assertions on route fixtures.
+- Artist and album page knowledge reads meet a latency target set from the Phase 0 baseline, with no dependence on provider speed.
+- Coverage report: percentage of owned artists and albums complete per field class, and age of the oldest stale-while-revalidate item, visible in the dashboard/logs.
+- A new album added to Navidrome is fully populated, or explicitly pending with a known queue position, within a stated time.
+- Wiping `knowledge.sqlite3` and rebuilding loses no owner decision.
+- Aggregate provider traffic after cutover is at or below the pre-migration level on the same fixtures, with the 1 request/s MusicBrainz limit never exceeded across processes.
+- **Kill or narrow** a field class if its coverage stays too low to be shown (Server V2 rule), or a route if the Tier 3 wait routinely exceeds its deadline and degrades the product.
+
+### E8. MusicBrainz dump slice (owner-approved, grows with the library)
+
+The slice is the bulk source for MusicBrainz facts about owned entities and their neighbourhood; the API is the fallback for gaps and for items newer than the last import (D-1, hybrid). It lives in the knowledge store and is read through the same `KnowledgeReader`.
+
+- **Membership is derived from the library.** The seed set is every owned MBID (artist, release group, release, recording). The slice holds the seed plus entities within one to two hops (members, labels, series, related artists), as set in ServerV2.md section 7. Hop depth is a setting with a recorded size cost.
+- **Growth is incremental.** When the worker sees a new or changed owned MBID, it adds that entity to the seed set at once and fills it from the API (interactive/new-addition lanes). The next dump import then absorbs it, after which the API fill is no longer needed for it. A library addition is never blocked on a dump.
+- **Import is a worker job.** Download the periodic dump, stream-filter it to the current seed neighbourhood, load into slice tables, bump the data version, and keep the previous slice until the new one validates (last-known-good). Track the dump's date in `meta`; report slice age in the coverage report.
+- **Tables are separate from fetched observations.** Slice rows are bulk-loaded source data with their dump date as provenance, not per-request API documents. Derivation jobs read both and stamp edges with the source.
+- **Open facts to verify before tooling.** Which dump format (JSON entity dumps versus the database dump) and which tables carry ratings, tags, relationships and tracklists; the actual download size and local disk and time cost on the owner's host; the dump cadence; and how many hops the real library needs. I have not checked these (unverified). Slice 0 produces the sizing.
+- **Acceptance.** For owned entities the slice answers ratings, release-group linking, tracklists and relationships with zero MusicBrainz API calls on route fixtures; API calls remain only for entities not yet in a dump. Kill or narrow if a hop depth makes the slice larger than its coverage gain justifies.
+
 ## Prioritized implementation roadmap
 
 The sequence below intentionally separates measurement, provider-call reduction, worker lifecycle, and horizontal scaling. It avoids a simultaneous framework, database, queue, and deployment migration.
 
 | Order | Slice | Concrete deliverable | Why this order |
 |---:|---|---|---|
-| 0 | Baseline and task inventory | Record current route/provider/job timings and inventory every startup thread/scheduler and process-local singleton | Gives a safe baseline and exposes duplicate-work risks before changes |
-| 1 | MusicBrainz ratings batch | Artist-grouped release-group browse with ratings, cache parity, bounded fallback | Highest-value remaining provider request reduction |
-| 2 | Tracklist browse prototype | Browse releases with recordings; prove exact tracklist equivalence before replacing the old path | Strong sequential-call reduction with bounded scope |
-| 3 | Provider transport and coalescing | Reusable provider clients, request coalescing, explicit timeout/pool/rate-limit policy where measurements justify it | Reduces connection setup and duplicate requests |
-| 4 | Worker foundation | Durable scheduler, registry, worker entry point, atomic claims, graceful shutdown and status | Separates runtime responsibilities without changing domain logic |
-| 5 | Migrate background jobs | Insights, similar-artist precompute, lens refresh, then legacy scheduler tasks one by one | Removes web-startup side effects and improves recovery |
-| 6 | Navidrome ingestion audit | Prove whether list endpoints replace per-album detail calls; implement only if equivalent | Reduces first-party API traffic without risking field loss |
-| 7 | Observability completion | Endpoint/provider/database/job metrics and repeatable before/after reports | Makes future tuning evidence-based |
-| 8 | Multi-process readiness | Shared-state audit, SQLite concurrency tests, two-web-worker verification | Enables scale only when correctness is demonstrated |
+| 0 | Baseline, inventories, decisions | Provider call counters, cache hit counters and per-route provider wait; inventory of startup threads, process-local state, every web-side provider call and the legacy scheduler; cold-start estimate; size the dump slice (E8) and decide its import tooling; read provider retention terms | Gives the baseline and settles the questions that change the rest |
+| 1 | Shared provider limiter | Database-backed per-provider `next_allowed_at` and daily budget used by every process | Prerequisite for any second process (review item 4) |
+| 2 | Worker foundation | Durable scheduler, registry, worker entry point, atomic claims, lanes, graceful shutdown and status | Separates runtime responsibilities without changing domain logic |
+| 3 | Knowledge store foundation | `knowledge.sqlite3` and state-file split, dismissals moved to the state file, freshness ledger, profile tables, `KnowledgeReader` facade over legacy caches, backfill from existing cache rows | Creates the single read path before any route moves |
+| 4 | Migrate background jobs | Insights, similar-artist precompute, lens refresh, then legacy scheduler tasks one by one, now writing to the knowledge store | Removes web-startup side effects and improves recovery |
+| 5 | Migrate user-facing routes | Artist page, album page, artwork, search enrichment, recommendation enrichment; each route switches reader, moves its provider calls into a handler, then drops the legacy call | Takes providers out of page requests (the main latency win) |
+| 6 | MusicBrainz slice and targeted batching | Dump slice import and library-driven growth (E8), then MusicBrainz ratings and tracklists API batching only for what the slice does not cover; Navidrome ingestion audit; connection reuse and coalescing inside the worker | Smaller wins once the structure is right |
+| 7 | Observability completion | Endpoint/provider/database/job metrics, coverage report, before/after reports | Makes tuning evidence-based |
+| 8 | Multi-process readiness | Only if measurements show API queueing | Gate, not a plan (see D) |
 
 This is a proposed order, not an instruction to run provider traffic or deploy. If new correctness, security, data-safety, or CI gaps appear, those take precedence.
 
@@ -492,3 +612,5 @@ Every implementation slice must:
 ## Change and evidence log
 
 - 2026-11-06: Replaces the provider-only audit in `docs/batching.md` with this combined efficiency and runtime architecture plan. Baseline: GitHub `main` at `9a4e717123175bca358faad29aa9deae0a324fdb`. Documentation only; no application code, tests, provider traffic, publication, or deployment changed.
+- 2026-11-06 (revision 3): Records the owner's decisions that the MusicBrainz dump slice is in and grows with the library (new section E8, B1/B2 deferred behind it) and that dismissals move to a separate state file. Documentation only.
+- 2026-11-06 (revision 2): Adds the review of revision 1 (assumptions and blind spots), section E (music knowledge base and single egress), a shared provider limiter requirement, a demoted section D, a downgraded B1, and a reordered roadmap. Documentation only; the repository facts cited (the metadata cache implementation, the process-local MusicBrainz pacing, `insights.dismissed_state`, D-1 and D-026) were read from the working tree at `ca72721d`, not from GitHub `main`; re-verify against `main` before acting. No application code, tests, provider traffic, publication, or deployment changed.
