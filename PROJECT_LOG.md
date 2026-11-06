@@ -1,3 +1,11 @@
+## 2026-11-06 — Server V2 Phase 4 slice 2, part 3: MusicBrainz neighbourhood selector (PR #812)
+
+- **Merged via PR:** [#812](https://github.com/abucalip/navi-librarian/pull/812), squash `49d668532a4e12597ab446c81d1a3acdf2a3576c`, tested head `38dfa72058bfea4657e096b4ca04e515b4e0bb0e`; compile, container-smoke, test-and-build and validate-container passed on that head.
+- **Change:** `intelligence/musicbrainz/neighbourhood.py`: `select_neighbourhood` walks one or two hops from owned MBIDs in a fixed number of passes (one to resolve owned gids to internal ids, one per hop over the nine relationship tables), with the table reader injected. Hub guard: at hop 2 only recordings, releases, release groups and works are expanded; artists and labels reached at hop 1 are kept but their catalogues are not pulled in. `max_entities` (default 3,000,000) stops the walk and reports `truncated="entity_cap"` so the job can fall back to API-only (Phase 4 kill criterion). `owned_seeds(db)` reads owned artist, release, release group and recording MBIDs from the store. Result carries pass count, per-type counts, seeds found and missing, and hop sizes for the budget record.
+- **Verification actually run:** `tests.test_intelligence_musicbrainz_neighbourhood` (11 passed locally, fake reader); full suite not run (owner rule), CI ran it.
+- **Limitations:** never run on the real 7.7 GB archive, so real pass time, entity count and slice size are unmeasured; hop-2 rules and the 3,000,000 cap are untested guesses until then; read-only, no store writes, no provider traffic, nothing calls it; not published, not deployed.
+- **Next action:** the loader (selected ids into `entities`/`edges` with source and dump timestamp as provenance, resolving link types and attributes; one more pass), then the server job that records real pass count, time and disk against the approved budgets.
+
 ## 2026-11-06 — Server V2 Phase 4 slice 2, part 2: MusicBrainz dump downloader (PR #811)
 
 - **Merged via PR:** [#811](https://github.com/abucalip/navi-librarian/pull/811), squash `a3cb9b42e2272bb53c203fbd728eefcb23fa9cec`, tested head `e91dca99404bba23d8fc049f36be4b40aa56095e`; compile, container-smoke, test-and-build and validate-container passed on that head.
