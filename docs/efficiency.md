@@ -499,7 +499,7 @@ For each owned artist and album, plus the Tier 2 neighbourhood:
 - **Relationships (edges):** members, collaborators, producers and labels, influences (Wikidata), similar artists with the shared-tag and listener evidence the search code computes today, series, scene/area. Every edge carries evidence class and match quality; nothing inferred is rendered as a credit.
 - **Context:** short bio with attribution, why-it-matters links (review links, anniversary and series context), popularity as "unknown" when absent.
 - **Artwork:** URLs and licence/attribution in the database; image bytes in a content-addressed directory on disk (hash name, a few size variants made once by the worker). Do not store blobs in SQLite.
-- **Coverage:** per entity and per field class, a state of `complete`, `pending`, `absent_at_source`, or `failed`, so completeness is measurable.
+- **Coverage:** per entity and per field class, a state of `complete`, `stale`, `pending`, `absent_at_source`, or `failed`, so completeness and freshness are measurable.
 
 ### E3. Freshness, absence and refresh policy
 
