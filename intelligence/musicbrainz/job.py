@@ -1,7 +1,9 @@
 """The one-off job that imports the MusicBrainz neighbourhood of the owned library.
 
 Stages, in order: seeds (owned MBIDs; no seeds means nothing is downloaded), download
-(resumable, checksum-verified), select (two hops, a fixed number of passes), load (one
+(resumable, checksum-verified), extract (one pass over the archive, on every core when indexed_bzip2
+is installed, writing only the tables the slice reads to plain files), select (two hops, a
+fixed number of passes over those plain files, so nothing is decompressed twice), load (one
 transaction). The wrapper in :mod:`intelligence.jobs.runner` supplies visible state and
 last-known-good behaviour; progress records each finished stage so a re-run skips the download.
 
@@ -17,6 +19,7 @@ nothing calls this yet: a manual trigger is a separate step.
 from __future__ import annotations
 
 import os
+import shutil
 import sqlite3
 import time
 from dataclasses import dataclass
@@ -26,6 +29,11 @@ from typing import Callable
 from ..jobs import runner
 from ..store.generations import bump_data_version
 from . import download, dump, loader, neighbourhood
+from .neighbourhood import LINK_TABLES, SEED_TYPES
+
+EXTRACT_DIR = "extracted"
+NEEDED_TABLES = tuple(sorted(set(SEED_TYPES) | set(loader.ENTITY_TABLES) | set(LINK_TABLES)
+                             | {"link", "link_attribute", "link_type", "link_attribute_type"}))
 
 JOB = "musicbrainz_slice"
 RESOURCE = "musicbrainz_slice"
@@ -62,13 +70,29 @@ def run_slice_import(
     export: str | None = None,
     include_cover_art: bool = False,
     delete_archive: bool = True,
+    keep_extracted: bool = False,
     hops: int = 2,
     clock: Callable[[], float] = time.time,
+    on_progress: Callable[[str, int], None] | None = None,
 ) -> runner.RunResult:
     """Run (or resume) the import as a job; see the module docstring for outcomes."""
 
     def work(ctx: runner.JobContext) -> bool:
         progress = dict(ctx.progress)
+        last = {}
+
+        def report(stage: str, fraction: float) -> None:
+            """Tell the caller each whole percent, and save every 5% so other tools can see it."""
+            percent = int(100 * min(1.0, max(0.0, fraction)))
+            if last.get(stage) == percent:
+                return
+            last[stage] = percent
+            if on_progress:
+                on_progress(stage, percent)
+            if percent % 5 == 0:
+                progress["current"] = {"stage": stage, "percent": percent}
+                ctx.checkpoint(progress)
+
         progress["budgets"] = {k: getattr(budgets, k) for k in Budgets.__dataclass_fields__}
         seeds = neighbourhood.owned_seeds(db)
         if not any(seeds.values()):
@@ -77,8 +101,10 @@ def run_slice_import(
             return True
 
         archive = Path(directory) / download.CORE_ARCHIVE
-        if progress.get("stage") not in ("downloaded", "selected"):
-            files = download.download_export(directory, include_cover_art, export, opener)
+        if progress.get("stage") not in ("downloaded", "extracted", "selected"):
+            files = download.download_export(
+                directory, include_cover_art, export, opener,
+                on_progress=lambda got, total: report("download", got / total if total else 0.0))
             archive = files[download.CORE_ARCHIVE]
             progress["stage"] = "downloaded"
             progress["archive_bytes"] = archive.stat().st_size
@@ -93,7 +119,20 @@ def run_slice_import(
         started = clock()
         info = dump.read_info(archive)
         dump.check_schema(info)
-        read = neighbourhood.archive_reader(archive)
+        extract_dir = Path(directory) / EXTRACT_DIR
+        parallel = dump.parallel_available()
+        progress["decompressor"] = "indexed_bzip2" if parallel else "python-bz2"
+        extracted = dump.extract_tables(archive, NEEDED_TABLES, extract_dir, parallel=parallel,
+                                        on_progress=lambda f: report("extract", f))
+        progress["extract_seconds"] = round(clock() - started, 3)
+        progress["extracted_bytes"] = sum(extracted.values())
+        progress["scratch_bytes"] = directory_bytes(directory) + directory_bytes(extract_dir)
+        if progress["scratch_bytes"] > budgets.scratch_bytes:
+            breaches.append("scratch_bytes")
+        progress["stage"] = "extracted"
+        ctx.checkpoint(progress)
+        phase = ["select"]
+        read = dump.extracted_reader(extract_dir, on_progress=lambda n, f: report(f"{phase[0]} pass {n}", f))
         selection = neighbourhood.select_neighbourhood(
             read, seeds, hops=hops, max_entities=budgets.max_entities)
         progress["selection"] = selection.summary()
@@ -109,6 +148,7 @@ def run_slice_import(
             return True
 
         before = store_bytes(db)
+        phase[0] = "load"
         result = loader.load_neighbourhood(
             db, read, selection, dump_timestamp=info.timestamp, schema_sequence=info.schema_sequence,
             clock=clock)
@@ -132,6 +172,9 @@ def run_slice_import(
         if delete_archive:
             archive.unlink(missing_ok=True)
             progress["archive_deleted"] = True
+        if not keep_extracted:
+            shutil.rmtree(extract_dir, ignore_errors=True)
+            progress["extracted_deleted"] = True
         ctx.checkpoint(progress)
         return True
 

@@ -40,6 +40,57 @@ class DecodeTests(unittest.TestCase):
             dump.decode_row("1\t2\n", ("a", "b", "c"))
 
 
+class ExtractTests(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.path = _archive(self.tmp.name, [
+            ("mbdump/area", "ignored\n"),
+            ("mbdump/label", _label_line() + _label_line(id="8", gid="g-8")),
+            ("mbdump/work", ""),
+        ])
+        self.dest = Path(self.tmp.name) / "out"
+
+    def read_labels(self):
+        return [r["gid"] for _, rows in dump.extracted_reader(self.dest)(["label"]) for r in rows]
+
+    def test_extracts_only_wanted_tables_and_reads_them_back(self):
+        written = dump.extract_tables(self.path, {"label", "work"}, self.dest, parallel=False)
+        self.assertEqual(set(written), {"label", "work"})
+        self.assertFalse((self.dest / "area").exists())
+        self.assertEqual(self.read_labels(), ["g-7", "g-8"])
+
+    def test_second_call_reuses_the_folder_without_opening_the_archive(self):
+        dump.extract_tables(self.path, {"label"}, self.dest, parallel=False)
+        self.path.write_bytes(self.path.read_bytes())  # same size, same content
+        again = dump.extract_tables(self.path, {"label"}, self.dest, parallel=False)
+        self.assertEqual(set(again), {"label"})
+        (self.dest / "label").unlink()
+        self.assertEqual(set(dump.extract_tables(self.path, {"label"}, self.dest, parallel=False)), {"label"})
+
+    def test_missing_table_is_an_error_and_leaves_no_marker(self):
+        with self.assertRaises(dump.DumpError):
+            dump.extract_tables(self.path, {"label", "recording"}, self.dest, parallel=False)
+        self.assertFalse((self.dest / dump.COMPLETE_MARKER).exists())
+
+    def test_wrong_schema_is_refused_before_writing(self):
+        bad = _archive(self.tmp.name, [("mbdump/label", _label_line())], schema="99")
+        with self.assertRaises(dump.DumpError):
+            dump.extract_tables(bad, {"label"}, self.dest, parallel=False)
+        self.assertFalse(self.dest.exists())
+
+    @unittest.skipUnless(dump.parallel_available(), "indexed_bzip2 not installed")
+    def test_parallel_decoder_gives_the_same_tables_and_progress(self):
+        seen = []
+        dump.extract_tables(self.path, {"label"}, self.dest, parallel=True, on_progress=seen.append)
+        self.assertEqual(self.read_labels(), ["g-7", "g-8"])
+        self.assertEqual(seen[-1], 1.0)
+
+    def test_unknown_table_rejected(self):
+        with self.assertRaises(KeyError):
+            dump.extract_tables(self.path, {"nope"}, self.dest, parallel=False)
+
+
 class ArchiveTests(unittest.TestCase):
     def test_reads_only_wanted_tables_in_order_with_named_columns(self):
         with tempfile.TemporaryDirectory() as d:

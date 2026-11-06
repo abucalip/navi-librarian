@@ -24,6 +24,7 @@ from os import PathLike
 from typing import Callable, Iterable, Iterator, Mapping
 
 from . import dump
+from .scan import RowFilter, scan_rows
 
 # Relationship table -> (type of entity0, type of entity1), using dump table names.
 LINK_TABLES: dict[str, tuple[str, str]] = {
@@ -123,15 +124,10 @@ def select_neighbourhood(
 
 
 def _resolve_seeds(read, wanted, result: Neighbourhood) -> dict[str, set[int]]:
+    requests = {t: RowFilter(("id", "gid"), strs=(("gid", frozenset(wanted[t])),)) for t in SEED_TYPES if wanted[t]}
     frontier: dict[str, set[int]] = {}
-    for table, rows in read(SEED_TYPES):
-        gids = wanted[table]
-        if not gids:
-            continue
-        found = frontier.setdefault(table, set())
-        for row in rows:
-            if row["gid"] and row["gid"].lower() in gids:
-                found.add(int(row["id"]))
+    for table, rows in scan_rows(read, requests).items():
+        frontier[table] = {int(row_id) for row_id, _ in rows}
     for table, ids in frontier.items():
         result.selected.setdefault(table, set()).update(ids)
         result.seeds_found += len(ids)
@@ -141,13 +137,18 @@ def _resolve_seeds(read, wanted, result: Neighbourhood) -> dict[str, set[int]]:
 def _expand(read, frontier, result: Neighbourhood, max_entities: int) -> dict[str, set[int]]:
     added: dict[str, set[int]] = {}
     total = result.count()
-    for table, rows in read(LINK_TABLES):
-        type0, type1 = LINK_TABLES[table]
+    requests = {}
+    for table, (type0, type1) in LINK_TABLES.items():
         from0, from1 = frontier.get(type0), frontier.get(type1)
         if not from0 and not from1:
             continue
+        conditions = tuple((column, frozenset(ids)) for column, ids in (("entity0", from0), ("entity1", from1)) if ids)
+        requests[table] = RowFilter(("entity0", "entity1"), ints=conditions, any_=True)
+    for table, rows in scan_rows(read, requests).items():
+        type0, type1 = LINK_TABLES[table]
+        from0, from1 = frontier.get(type0), frontier.get(type1)
         for row in rows:
-            id0, id1 = int(row["entity0"]), int(row["entity1"])
+            id0, id1 = int(row[0]), int(row[1])
             for here, there, there_type, source in ((id0, id1, type1, from0), (id1, id0, type0, from1)):
                 if not source or here not in source:
                     continue

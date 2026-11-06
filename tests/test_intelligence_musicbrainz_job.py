@@ -32,9 +32,10 @@ class JobTests(unittest.TestCase):
         self.addCleanup(self.dir.cleanup)
         self.archive = Path(self.dir.name) / "mbdump.tar.bz2"
         self.downloads = 0
+        self.extractions = 0
         self.info = DumpInfo(31, "2026-11-04 00:22:22+00")
 
-        def fake_download(directory, include_cover_art, export, opener):
+        def fake_download(directory, include_cover_art, export, opener, on_progress=None):
             self.downloads += 1
             self.archive.write_bytes(b"x" * 100)
             return {"mbdump.tar.bz2": self.archive}
@@ -42,12 +43,23 @@ class JobTests(unittest.TestCase):
         for target, new in (
             ("intelligence.musicbrainz.job.download.download_export", fake_download),
             ("intelligence.musicbrainz.job.dump.read_info", lambda p: self.info),
-            ("intelligence.musicbrainz.job.neighbourhood.archive_reader", lambda p: self.source),
+            ("intelligence.musicbrainz.job.dump.extract_tables", self.fake_extract),
+            ("intelligence.musicbrainz.job.dump.extracted_reader", lambda d, on_progress=None: self.source),
         ):
             patcher = mock.patch(target, new)
             patcher.start()
             self.addCleanup(patcher.stop)
         self.source = world()
+
+    def fake_extract(self, path, wanted, dest, parallel=None, on_progress=None):
+        self.extractions += 1
+        if on_progress:
+            on_progress(0.5)
+            on_progress(1.0)
+        Path(dest).mkdir(parents=True, exist_ok=True)
+        (Path(dest) / "artist").write_bytes(b"x" * 10)
+        self.extract_wanted = set(wanted)
+        return {"artist": 10}
 
     def seed(self):
         repo.upsert_entity(self.db, "artist", "Alpha", mbid="a-gid", owned=True)
@@ -75,6 +87,27 @@ class JobTests(unittest.TestCase):
         self.assertEqual(meta["musicbrainz_slice.dump_timestamp"], self.info.timestamp)
         self.assertEqual(meta["musicbrainz_slice.schema_sequence"], "31")
         self.assertIsNotNone(repo.find_entity(self.db, "artist", mbid="b-gid"))
+
+    def test_extracts_once_reads_plain_files_and_cleans_up(self):
+        self.seed()
+        result = self.run_it()
+        self.assertEqual(self.extractions, 1)
+        self.assertIn("l_artist_artist", self.extract_wanted)
+        self.assertIn("link_type", self.extract_wanted)
+        self.assertEqual(result.progress["extracted_bytes"], 10)
+        self.assertTrue(result.progress["extracted_deleted"])
+        self.assertFalse((Path(self.dir.name) / job.EXTRACT_DIR).exists())
+
+    def test_reports_percent_per_stage(self):
+        self.seed()
+        seen = []
+        self.run_it(on_progress=lambda stage, pct: seen.append((stage, pct)))
+        self.assertEqual([p for s, p in seen if s == "extract"], [50, 100])
+
+    def test_keep_extracted(self):
+        self.seed()
+        self.run_it(keep_extracted=True)
+        self.assertTrue((Path(self.dir.name) / job.EXTRACT_DIR / "artist").exists())
 
     def test_keep_archive(self):
         self.seed()
