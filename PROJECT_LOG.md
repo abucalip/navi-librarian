@@ -1,3 +1,11 @@
+## 2026-11-06 — Server V2 Phase 4 slice 2, part 5: MusicBrainz slice import job (PR #814)
+
+- **Merged via PR:** [#814](https://github.com/abucalip/navi-librarian/pull/814), squash `4d691225e8c1b6cb366b94cb60fee764cc5c9336`, tested head `9188bcd8ade0ac60d7fcaecb6fd72c26f78dfc5c`; compile, container-smoke, test-and-build and validate-container passed on that head.
+- **Change:** `intelligence/musicbrainz/job.py`: `run_slice_import` runs seeds, download, select and load as one job under `intelligence/jobs/runner.py`. No owned MBIDs means nothing is downloaded (`no_seeds`). The approved budgets (`Budgets`: download 7.9 GB, scratch 25 GB, slice 2 GB, import 2 hours, 3,000,000 entities) are measured and recorded in the run's progress. A breach before the load (entity cap, scratch, select time) writes nothing and gives `fallback_api_only` (Phase 4 kill criterion); a breach seen only after the load (slice size, import time) gives `over_budget` with the data kept, no automatic rollback. On success the archive is deleted and the `musicbrainz_slice` data version is bumped. A wrong schema sequence fails the run and leaves the previous output. Cover-art is not downloaded by default (the loader does not use it).
+- **Verification actually run:** `tests.test_intelligence_musicbrainz_job` (10 passed locally, fake dump and patched downloader); full suite not run (owner rule), CI ran it.
+- **Limitations:** never run on the real 7.7 GB archive, so real time, disk, pass count and edge counts are unmeasured; nothing calls the job (no route or trigger); no provider traffic; not published, not deployed.
+- **Next action:** a manual trigger for the job and a run on the server to record real figures against the budgets (needs the owner's go-ahead for the 7.7 GB download); then slice 3, the album dossier.
+
 ## 2026-11-06 — Server V2 Phase 4 slice 2, part 4: MusicBrainz neighbourhood loader (PR #813)
 
 - **Merged via PR:** [#813](https://github.com/abucalip/navi-librarian/pull/813), squash `1024fa5ab0eed913ece35caeceb0aa39076678fa`, tested head `bd25ab9ad42d73df44acb91baba75201227f7f1b`; compile, container-smoke, test-and-build and validate-container passed on that head.
