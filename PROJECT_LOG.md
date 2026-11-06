@@ -2604,3 +2604,11 @@ All live runs were approved by the owner; slskd off; aggregate only; harnesses w
 - **Verification:** `python -m unittest tests.test_intelligence_knowledge_reader` (24 passed, 5 new). Full suite not run by the agent (owner rule). Not run against the real store; not published or deployed.
 - **Limitation:** the recording's main artist credit is not in the slice, so a version lists only people with explicit credit links, not "who recorded it".
 - **Next action:** the routes for the dossier, person, label and work pages.
+
+## 2026-11-06 — Server V2 knowledge page routes (PR #826)
+
+- **PR:** [#826](https://github.com/abucalip/navi-librarian/pull/826), squash `c1caf355fe3cac7e6665e5ea7d9095bfb2e4325d`, tested head `4d0bdb9336cce5b9d747e5daa15804cd7ad02180`; compile, container-smoke, test-and-build, validate-container and validate-release-workflow passed.
+- **Changes:** `app/api/knowledge.py` serves `GET /api/knowledge/album`, `person`, `label`, `work` and `recording-works` through `KnowledgeReader`; registered in `app/main.py`; contract section added to `docs/SERVER_V2_CONTRACT.md`.
+- **Verification:** `python -m unittest tests.test_api_knowledge_routes tests.test_api_insights_routes` (15 passed, 7 new). Full suite not run by the agent (owner rule). Not run against the real store; not published or deployed.
+- **Limitation:** no fixtures yet and no client uses the routes; page shapes are whatever the reader returns until the owner approves them.
+- **Next action:** owner review of the page shapes, then fixtures and the client gate (macOS dossier and person/label pages; Android "Who played on this?").
