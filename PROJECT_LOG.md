@@ -1,3 +1,10 @@
+## 2026-11-06 — Server V2: Phase 5 closed, leftovers moved to Phase 7
+
+- **Objective:** close Phase 5 and have Phase 7 inherit its remaining tasks; refresh the Server V2 header.
+- **Change and evidence:** documentation only, committed directly to `main` (documentation-only owner rule). `docs/ServerV2.md`: Phase 5 marked closed; Phase 7 renamed "Sonic, plus Phase 5 carry-over" and given the client gate, wiring, path quality spot-check, sideman-to-leader and unlanded checks; milestone table updated; the header, which had grown into a PR-by-PR chronology, rewritten as a per-phase status. `docs/PROJECT_STATUS.md` updated. No code, test or deployment change.
+- **Limits:** Phase 6 and 7 gates are not opened by this change.
+- **Next action:** owner choice on which Phase 7 item to start.
+
 ## 2026-11-06 — Server V2 Phase 5: exit check and bounded paths (PR #846)
 
 - **Objective:** verify the Phase 5 exit (each stop explainable, no path without evidence, latency on the real library) and fix what it found.
