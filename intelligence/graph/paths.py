@@ -49,9 +49,11 @@ class PathLimits:
     max_reasons: int = 3        # reasons kept per stop (the count of all is kept as ``reason_count``)
     max_rows: int = 3000        # candidate rows read from the store
     max_seconds: float = 2.0
+    max_per_bridge: int = 200   # credits read per bridge musician (a session player cannot flood a path)
+    max_bridges: int = 300      # bridge musicians read, rarest first
 
     def __post_init__(self):
-        if min(self.max_stops, self.max_reasons, self.max_rows) < 1 or self.max_seconds <= 0:
+        if min(self.max_stops, self.max_reasons, self.max_rows, self.max_per_bridge, self.max_bridges) < 1 or self.max_seconds <= 0:
             raise ValueError("limits must be positive")
 
 
@@ -68,17 +70,6 @@ _OWN_REC = (f"SELECT DISTINCT e.from_id AS rec FROM edges e WHERE e.relation = '
             f"AND {_cg('e')} AND e.to_id IN ({_OWN_REL})")
 
 _QUERIES: dict[str, str] = {
-    "follow_the_musician": f"""
-        WITH own AS ({_OWN_REC})
-        SELECT q.id AS stop, p.id AS via, o.rec AS anchor, 0 AS rank, e1.id AS e1, e2.id AS e2,
-               NULL AS e3, 'shared_musician' AS code, NULL AS bridge
-        FROM own o
-        JOIN edges e1 ON e1.to_id = o.rec AND e1.generation = :g AND {_cg('e1')}
-        JOIN entities p ON p.id = e1.from_id AND p.type IN ('artist', 'person', 'group') AND p.id != :a
-        JOIN edges e2 ON e2.from_id = p.id AND e2.generation = :g AND {_cg('e2')}
-        JOIN entities q ON q.id = e2.to_id AND q.type = 'recording'
-        WHERE q.id NOT IN (SELECT rec FROM own)
-        ORDER BY q.id, p.id, o.rec LIMIT :n""",
     "label_path": f"""
         WITH own AS ({_OWN_REL}),
         lab AS (
@@ -100,31 +91,6 @@ _QUERIES: dict[str, str] = {
         FROM lab JOIN release_labels rl ON rl.label_id = lab.label
         WHERE rl.release_id NOT IN (SELECT rel FROM own)
         ORDER BY rank, rl.release_id, lab.label LIMIT :n""",
-    "composition_path": f"""
-        WITH own AS ({_OWN_REC}),
-        wk AS (
-            SELECT e.to_id AS work, o.rec AS anchor, NULL AS via, NULL AS e1, e.id AS e0, 'same_work' AS code
-              FROM own o CROSS JOIN edges e INDEXED BY edges_from ON e.from_id = o.rec AND e.relation = 'performance'
-               AND e.generation = :g AND {_cg('e')}
-              CROSS JOIN entities w ON w.id = e.to_id AND w.type = 'work'
-            UNION
-            SELECT r.to_id, a.rec, a.work, r.id, a.e0, 'related_work'
-              FROM (SELECT o.rec, e.to_id AS work, e.id AS e0 FROM own o CROSS JOIN edges e INDEXED BY edges_from ON e.from_id = o.rec
-                     AND e.relation = 'performance' AND e.generation = :g AND {_cg('e')}) a
-              JOIN edges r ON r.from_id = a.work AND r.generation = :g AND {_cg('r')}
-              JOIN entities t ON t.id = r.to_id AND t.type = 'work'
-            UNION
-            SELECT r.from_id, a.rec, a.work, r.id, a.e0, 'related_work'
-              FROM (SELECT o.rec, e.to_id AS work, e.id AS e0 FROM own o CROSS JOIN edges e INDEXED BY edges_from ON e.from_id = o.rec
-                     AND e.relation = 'performance' AND e.generation = :g AND {_cg('e')}) a
-              JOIN edges r ON r.to_id = a.work AND r.generation = :g AND {_cg('r')}
-              JOIN entities t ON t.id = r.from_id AND t.type = 'work')
-        SELECT p.from_id AS stop, wk.work AS via, wk.anchor AS anchor,
-               CASE wk.code WHEN 'same_work' THEN 0 ELSE 1 END AS rank,
-               p.id AS e1, wk.e1 AS e2, wk.e0 AS e3, wk.code AS code, wk.via AS bridge
-        FROM wk JOIN edges p ON p.to_id = wk.work AND p.relation = 'performance' AND p.generation = :g AND {_cg('p')}
-        WHERE p.from_id NOT IN (SELECT rec FROM own)
-        ORDER BY rank, p.from_id, wk.work LIMIT :n""",
     "scene_path": f"""
         WITH mine AS (
             SELECT e.to_id AS area, e.id AS e0, CAST(SUBSTR(la.begin_date, 1, 4) AS INTEGER) AS y
@@ -177,6 +143,105 @@ def _evidence(db: sqlite3.Connection, edge_ids: list[int]) -> list[dict[str, Any
     return out
 
 
+_MUSICIANS = f"""
+    WITH own AS ({_OWN_REC})
+    SELECT p.id AS via, o.rec AS anchor, e1.id AS e1
+    FROM own o
+    JOIN edges e1 ON e1.to_id = o.rec AND e1.generation = :g AND {_cg('e1')}
+    JOIN entities p ON p.id = e1.from_id AND p.type IN ('artist', 'person', 'group') AND p.id != :a
+    ORDER BY p.id, o.rec LIMIT :n"""
+_OWN_RECS = f"SELECT rec FROM ({_OWN_REC})"
+_CREDITS = f"""
+    SELECT e2.id AS e2, q.id AS stop FROM edges e2
+    JOIN entities q ON q.id = e2.to_id AND q.type = 'recording'
+    WHERE e2.from_id = :p AND e2.generation = :g AND {_cg('e2')} ORDER BY q.id LIMIT :k"""
+
+
+def _follow_the_musician_rows(db: sqlite3.Connection, start_id: int, gen: int, limits: PathLimits) -> tuple[list[dict[str, Any]], bool]:
+    """Recordings credited to a musician who is also credited on a recording of the start's.
+
+    Bounded per bridge: musicians are read rarest first (fewest credits) and each contributes at most
+    ``max_per_bridge`` credits, so a session player with thousands of credits costs one small read,
+    not a full expansion. Hitting either bound marks the path ``rows``-truncated.
+    """
+    own = {r["rec"] for r in db.execute(_OWN_RECS, {"a": start_id, "g": gen})}
+    bridges: dict[int, list[tuple[int, int]]] = {}
+    links = db.execute(_MUSICIANS, {"a": start_id, "g": gen, "n": limits.max_rows}).fetchall()
+    for r in links:
+        bridges.setdefault(r["via"], []).append((r["anchor"], r["e1"]))
+    size = {p: db.execute("SELECT COUNT(*) FROM (SELECT 1 FROM edges WHERE from_id = ? LIMIT ?)",
+                          (p, limits.max_per_bridge * 5)).fetchone()[0] for p in bridges}
+    order = sorted(bridges, key=lambda p: (size[p], p))
+    rows: list[dict[str, Any]] = []
+    capped = len(links) >= limits.max_rows or len(order) > limits.max_bridges
+    for p in order[:limits.max_bridges]:
+        credits = db.execute(_CREDITS, {"p": p, "g": gen, "k": limits.max_per_bridge}).fetchall()
+        capped = capped or len(credits) >= limits.max_per_bridge
+        for c in credits:
+            if c["stop"] in own:
+                continue
+            for anchor, e1 in bridges[p]:
+                rows.append({"stop": c["stop"], "via": p, "anchor": anchor, "rank": 0, "e1": e1, "e2": c["e2"], "e3": None,
+                             "code": "shared_musician", "bridge": None})
+        if len(rows) >= limits.max_rows:
+            return rows[:limits.max_rows], True
+    return rows, capped
+
+
+_OWN_WORKS = f"""
+    WITH own AS ({_OWN_REC})
+    SELECT e.to_id AS work, o.rec AS anchor, e.id AS e0
+    FROM own o CROSS JOIN edges e INDEXED BY edges_from ON e.from_id = o.rec AND e.relation = 'performance'
+     AND e.generation = :g AND {_cg('e')}
+    CROSS JOIN entities w ON w.id = e.to_id AND w.type = 'work'
+    ORDER BY e.to_id, o.rec LIMIT :n"""
+_RELATED_WORKS = f"""
+    SELECT CASE WHEN r.from_id = :w THEN r.to_id ELSE r.from_id END AS work, r.id AS e1
+    FROM edges r JOIN entities t ON t.id = CASE WHEN r.from_id = :w THEN r.to_id ELSE r.from_id END AND t.type = 'work'
+    WHERE (r.from_id = :w OR r.to_id = :w) AND r.generation = :g AND {_cg('r')} LIMIT :k"""
+_PERFORMANCES = f"""
+    SELECT p.id AS e, p.from_id AS stop FROM edges p
+    WHERE p.to_id = :w AND p.relation = 'performance' AND p.generation = :g AND {_cg('p')} ORDER BY p.from_id LIMIT :k"""
+
+
+def _composition_rows(db: sqlite3.Connection, start_id: int, gen: int, limits: PathLimits) -> tuple[list[dict[str, Any]], bool]:
+    """Other recordings of a work (or a related work) that the start's recordings perform.
+
+    Bounded like :func:`_follow_the_musician_rows`: works are read rarest first (fewest recordings),
+    each contributes at most ``max_per_bridge`` recordings, and at most ``max_bridges`` works are read.
+    """
+    own = {r["rec"] for r in db.execute(_OWN_RECS, {"a": start_id, "g": gen})}
+    links = db.execute(_OWN_WORKS, {"a": start_id, "g": gen, "n": limits.max_rows}).fetchall()
+    capped = len(links) >= limits.max_rows
+    # target work -> [(code, anchor recording, bridge work, relation edge, performance edge)]
+    targets: dict[int, list[tuple]] = {}
+    by_work: dict[int, list] = {}
+    for l in links:
+        by_work.setdefault(l["work"], []).append(l)
+        targets.setdefault(l["work"], []).append(("same_work", l["anchor"], None, None, l["e0"]))
+    for work, own_links in by_work.items():
+        for rel in db.execute(_RELATED_WORKS, {"w": work, "g": gen, "k": limits.max_per_bridge}):
+            for l in own_links:
+                targets.setdefault(rel["work"], []).append(("related_work", l["anchor"], work, rel["e1"], l["e0"]))
+    size = {w: db.execute("SELECT COUNT(*) FROM (SELECT 1 FROM edges WHERE to_id = ? AND relation = 'performance' LIMIT ?)",
+                          (w, limits.max_per_bridge * 5)).fetchone()[0] for w in targets}
+    order = sorted(targets, key=lambda w: (0 if any(t[0] == "same_work" for t in targets[w]) else 1, size[w], w))
+    capped = capped or len(order) > limits.max_bridges
+    rows: list[dict[str, Any]] = []
+    for w in order[:limits.max_bridges]:
+        perfs = db.execute(_PERFORMANCES, {"w": w, "g": gen, "k": limits.max_per_bridge}).fetchall()
+        capped = capped or len(perfs) >= limits.max_per_bridge
+        for perf in perfs:
+            if perf["stop"] in own:
+                continue
+            for code, anchor, bridge, e1, e0 in targets[w]:
+                rows.append({"stop": perf["stop"], "via": w, "anchor": anchor, "rank": 0 if code == "same_work" else 1,
+                             "e1": perf["e"], "e2": e1, "e3": e0, "code": code, "bridge": bridge})
+        if len(rows) >= limits.max_rows:
+            return rows[:limits.max_rows], True
+    return rows, capped
+
+
 def build_path(db: sqlite3.Connection, start_id: int, kind: str, *, limits: PathLimits = PathLimits(),
                generation: int | None = None, clock: Callable[[], float] = time.monotonic) -> dict[str, Any] | None:
     """The path of ``kind`` from an artist, built now from the store; None when the start is unknown.
@@ -195,15 +260,21 @@ def build_path(db: sqlite3.Connection, start_id: int, kind: str, *, limits: Path
     deadline = started + limits.max_seconds
     db.set_progress_handler(lambda: 1 if clock() > deadline else 0, PROGRESS_OPS)
     truncated: str | None = None
+    capped = False
     try:
-        rows = db.execute(_QUERIES[kind], {"a": start_id, "g": gen, "n": limits.max_rows}).fetchall()
+        if kind == "follow_the_musician":
+            rows, capped = _follow_the_musician_rows(db, start_id, gen, limits)
+        elif kind == "composition_path":
+            rows, capped = _composition_rows(db, start_id, gen, limits)
+        else:
+            rows = db.execute(_QUERIES[kind], {"a": start_id, "g": gen, "n": limits.max_rows}).fetchall()
     except sqlite3.OperationalError as exc:
         if "interrupted" not in str(exc):
             raise
         rows, truncated = [], "time"
     finally:
         db.set_progress_handler(None, 0)
-    if truncated is None and len(rows) >= limits.max_rows:
+    if truncated is None and (capped or len(rows) >= limits.max_rows):
         truncated = "rows"
 
     names = _Names(db)
