@@ -244,3 +244,11 @@ Record decisions here when they constrain future implementation. Add new entries
 **Reason:** the existing stores have no migration convention, and Server V2 needs append-only and rebuildable data. A separate file keeps rebuilds and bulk ingest from locking feedback, lists or acquisition data, and lets the file be backed up or wiped on its own.
 
 **Consequence:** (1) Code lives in `intelligence/`, reached through thin adapters; `navidrome_server.py` takes no additions (D-016). (2) Migrations are append-only and a database newer than the code is refused. (3) Existing stores keep `CREATE TABLE IF NOT EXISTS`; adopting the runner there would be a separate decision. (4) The file's path and backup handling are not yet wired; they are decided when the store is connected to the server. (5) D-8 and D-9 of the Server V2 plan stay open. Governing document: `docs/ServerV2.md`. **Update 2026-11-06 (PR #815):** consequence 4 is partly settled: owner decisions live in a second file, `intelligence.state.sqlite3`, beside the knowledge file and attached as schema `state`; backup handling is still open.
+
+## D-027 — Skip and dismissal suppression memory: client events, record-only, decaying (Server V2 Phase 6 item 5)
+
+**Decision:** On 2026-11-06 the owner chose, for Phase 6 item 5: (1) skip signals come from **client events** (the macOS and Android apps report them; nothing is inferred from scrobbles); (2) the memory is **record-only**: it is stored and readable, and no recommendation weight, lens, radio or insight card uses it until a separate owner decision; (3) a suppression **decays**, reusing the existing negative-feedback policy (14-day half-life, 60-day expiry from `recommendation_feedback.py`) rather than lasting forever.
+
+**Reason:** only a client knows that a track was skipped; Navidrome and ListenBrainz record plays that were started and finished, not abandoned ones. A record-only first step lets the owner look at real data before it changes any ranking, as the Phase 6 exit requires ("profile does not alter weights"). Decay stops one bad day from hiding music indefinitely.
+
+**Consequence:** see the Phase 6 slice 8 design in `docs/ServerV2.md`. Nothing is implemented by this decision; each slice still needs its own PR, and the client work needs the Phase 7 client gate or a separate owner approval.
