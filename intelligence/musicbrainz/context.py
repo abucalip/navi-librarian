@@ -68,7 +68,7 @@ CONTEXT_TABLES = (
     "artist_alias", "label_alias", "area_alias", "place_alias",
     "l_area_area", "l_area_event", "l_area_genre", "l_area_recording", "l_area_url", "l_artist_event",
     "l_artist_genre", "l_artist_place", "l_artist_url", "l_event_place", "l_event_recording",
-    "l_genre_genre", "l_label_label", "l_label_url", "l_place_recording", "l_place_url",
+    "l_genre_genre", "l_genre_url", "l_label_label", "l_label_url", "l_place_recording", "l_place_url",
     "l_recording_recording", "l_release_group_release_group", "l_release_group_url", "l_release_release",
 )
 
@@ -197,7 +197,7 @@ def load_context(
         "medium_format": RowFilter(("id", "name")),
         "l_area_area": RowFilter(LINK), "l_area_event": RowFilter(LINK), "l_area_genre": RowFilter(LINK),
         "l_artist_genre": RowFilter(LINK), "l_event_place": RowFilter(LINK), "l_genre_genre": RowFilter(LINK),
-        "l_area_url": RowFilter(PAIR), "l_place_url": RowFilter(PAIR), "l_label_url": RowFilter(PAIR),
+        "l_area_url": RowFilter(PAIR), "l_genre_url": RowFilter(PAIR), "l_place_url": RowFilter(PAIR), "l_label_url": RowFilter(PAIR),
         "area_alias": RowFilter(("area", "name")), "place_alias": RowFilter(("place", "name")),
         "label_alias": RowFilter(("label", "name")),
     }
@@ -256,7 +256,8 @@ def load_context(
     if late_labels:
         b_requests["label"] = RowFilter(("id", "gid", "name", "sort_name", "area"),
                                         ints=(("id", frozenset(late_labels)),), optional=("sort_name", "area"))
-    url_ids = {int(e1) for t in ("l_artist_url", "l_label_url", "l_area_url", "l_place_url", "l_release_group_url")
+    url_ids = {int(e1) for t in ("l_artist_url", "l_label_url", "l_area_url", "l_genre_url", "l_place_url",
+                         "l_release_group_url")
                for _, e1 in a.get(t, [])}
     if url_ids:
         b_requests["url"] = RowFilter(("id", "url"), ints=(("id", frozenset(url_ids)),))
@@ -431,7 +432,7 @@ def load_context(
         if discogs:
             refs.setdefault(int(url_id), []).append(("discogs", discogs[0], discogs[1]))
     for table, kind in (("l_artist_url", "artist"), ("l_label_url", "label"), ("l_area_url", "area"),
-                        ("l_place_url", "place"), ("l_release_group_url", "release_group")):
+                        ("l_genre_url", "genre"), ("l_place_url", "place"), ("l_release_group_url", "release_group")):
         best_wikidata: dict[int, str] = {}
         best_discogs: dict[int, str] = {}
         for e0, e1 in a.get(table, []):
