@@ -1,3 +1,12 @@
+## 2026-11-06 — Server V2 Phase 4: exit verification
+
+- **Objective:** verify the Phase 4 exit criteria (docs/ServerV2.md): provenance on every factual edge, ambiguous entities, no unverified inference as credit, bounded traversal over cycles and duplicates, and the import budgets.
+- **Change:** `scripts/server_v2_phase4_exit.py` and `tests/test_server_v2_phase4_exit.py` (5 tests).
+- **Result:** all 1,754,461 edges have a source and a stored observation of the same source, and all 1,744,255 slice edges carry the dump date; 4,052 same-name groups stay separate entities (200 sampled, every candidate returned by name lookup, no route resolves a bare name); no inferred or unmatched edge is shown as a credit (5,000 credit hops from 25 hubs on the real slice, which holds no such edges, plus a synthetic store through the walk, dossier and person page); bounded traversal holds on the 25 busiest entities (no duplicates, depth and row caps, cursor paging equals the unpaged walk, slowest 0.36 s) and on a synthetic cyclic graph; the recorded import stayed inside every budget (152 s, 1.1 GB, 752,342 entities). Phase 4 server work is complete. Limits: pages are addressed by MBID, so ambiguity is handled by never resolving a name (no 'shared name' flag in page bodies); the local store is schema v1 (life span, release facts and `source_state` need the slice re-import); the client gate (macOS dossier, person and label screens; Android) is not done; not published or deployed.
+- **Verification:** `python -m unittest tests.test_server_v2_phase4_exit` (5 passed; Homebrew Python 3.12 plus the venv's packages). Script run on a copy of `~/discair-mb-test/intelligence.sqlite3` with `run4.json`: exit passed. Required CI passed (compile, container-smoke, test-and-build, validate-container). Full suite not run by the agent.
+- **Merged (owner request):** PR [#838](https://github.com/abucalip/navi-librarian/pull/838), squash `3059568c85a3d17b2e6aa8908d28ebead5bada54`, tested head `a793cebe59ae7ac2917af1dacbfbea0ff2a69d00`.
+- **Next action:** owner choice: the client gate (macOS album dossier screen, then person and label pages; Android), or the owner steps (slice re-import on the Mac, then `--api-fill`).
+
 ## 2026-11-06 — Server V2 Phase 4: connections route fixtures
 
 - **Objective:** fixture the connections route (it was the one knowledge route without contract fixtures).
