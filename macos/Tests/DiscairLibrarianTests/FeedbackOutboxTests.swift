@@ -178,4 +178,79 @@ struct FeedbackOutboxTests {
         await second.flush()
         #expect(await outbox(file, Script { _, _ in throw Boom() }).pending.isEmpty)
     }
+
+    // MARK: Durability (corrective change before slice 11c)
+
+    /// A folder the test owns, with the queue file inside it.
+    private func ownFolder() throws -> (dir: URL, file: URL) {
+        let dir = FileManager.default.temporaryDirectory.appending(path: "feedback-outbox-tests-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        return (dir, dir.appending(path: "feedback-outbox.json"))
+    }
+
+    private func setMode(_ url: URL, _ mode: Int) throws {
+        try FileManager.default.setAttributes([.posixPermissions: mode], ofItemAtPath: url.path)
+    }
+
+    @Test func aFailedWriteIsReportedKeptInMemoryAndStillSent() async throws {
+        let folder = try ownFolder()
+        try setMode(folder.dir, 0o500)   // read-only folder: the queue file cannot be written
+        defer { try? setMode(folder.dir, 0o755) }
+        let script = Script { _, batch in acceptAll(batch) }
+        let box = outbox(folder.file, script)
+
+        await box.enqueue(event("write-fails"))
+        #expect(await box.storageError != nil)
+        #expect(await box.pending.map(\.eventID) == ["write-fails"])
+
+        await box.flush()
+        #expect(script.batches.map { $0.map(\.eventID) } == [["write-fails"]])
+        #expect(await box.pending.isEmpty)
+    }
+
+    @Test func aLaterSuccessfulWriteClearsTheErrorAndSavesEverything() async throws {
+        let folder = try ownFolder()
+        try setMode(folder.dir, 0o500)
+        let box = outbox(folder.file, Script { _, _ in throw Boom() })
+        await box.enqueue(event("a"))
+        #expect(await box.storageError != nil)
+
+        try setMode(folder.dir, 0o755)
+        await box.enqueue(event("b"))
+        #expect(await box.storageError == nil)
+        #expect(await outbox(folder.file, Script { _, _ in throw Boom() }).pending.map(\.eventID) == ["a", "b"])
+    }
+
+    @Test func anUnreadableSavedQueueIsMovedAsideAndNotOverwrittenAsEmpty() async throws {
+        let folder = try ownFolder()
+        let garbage = Data("not json {".utf8)
+        try garbage.write(to: folder.file)
+        let box = outbox(folder.file, Script { _, _ in throw Boom() })
+
+        #expect(await box.storageError != nil)
+        #expect(await box.pending.isEmpty)
+        let aside = try FileManager.default.contentsOfDirectory(atPath: folder.dir.path)
+            .first { $0.hasPrefix("feedback-outbox.unreadable-") }
+        let kept = try #require(aside)
+        #expect(try Data(contentsOf: folder.dir.appending(path: kept)) == garbage)
+
+        await box.enqueue(event("after-move"))
+        #expect(await box.storageError == nil)
+        #expect(await outbox(folder.file, Script { _, _ in throw Boom() }).pending.map(\.eventID) == ["after-move"])
+    }
+
+    @Test func anUnreadableSavedQueueThatCannotBeMovedIsLeftIntact() async throws {
+        let folder = try ownFolder()
+        let garbage = Data("not json {".utf8)
+        try garbage.write(to: folder.file)
+        try setMode(folder.dir, 0o500)   // read-only folder: the file cannot be moved aside either
+        defer { try? setMode(folder.dir, 0o755) }
+        let box = outbox(folder.file, Script { _, _ in throw Boom() })
+        #expect(await box.storageError != nil)
+
+        await box.enqueue(event("refused"))
+        #expect(await box.storageError != nil)
+        try setMode(folder.dir, 0o755)
+        #expect(try Data(contentsOf: folder.file) == garbage)
+    }
 }
