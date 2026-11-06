@@ -1,0 +1,71 @@
+{
+  "request": "GET /api/knowledge/connections?type=artist&mbid=00000001-0000-4000-8000-000000000000&depth=2&limit=2&cursor=<next_cursor of knowledge_connections_page1.json>",
+  "response": {
+    "hops": [
+      {
+        "credit": true,
+        "depth": 1,
+        "entity": {
+          "canonical_name": "Example Song",
+          "mbid": "00000008-0000-4000-8000-000000000000",
+          "owned": false,
+          "type": "recording"
+        },
+        "evidence": [
+          {
+            "direction": "out",
+            "evidence_class": "source_explicit",
+            "match_quality": "exact_mbid",
+            "relation": "instrument",
+            "role": "guitar",
+            "source": "musicbrainz_dump",
+            "source_url": null,
+            "valid_from": null,
+            "valid_to": null
+          }
+        ],
+        "via_entity_id": 1,
+        "via_mbid": "00000001-0000-4000-8000-000000000000"
+      },
+      {
+        "credit": true,
+        "depth": 2,
+        "entity": {
+          "canonical_name": "Example Guest",
+          "mbid": "00000002-0000-4000-8000-000000000000",
+          "owned": false,
+          "type": "artist"
+        },
+        "evidence": [
+          {
+            "direction": "in",
+            "evidence_class": "source_explicit",
+            "match_quality": "exact_mbid",
+            "relation": "vocal",
+            "role": "lead vocals",
+            "source": "musicbrainz_dump",
+            "source_url": null,
+            "valid_from": null,
+            "valid_to": null
+          }
+        ],
+        "via_entity_id": 8,
+        "via_mbid": "00000008-0000-4000-8000-000000000000"
+      }
+    ],
+    "next_cursor": "Mjoy",
+    "sources": {
+      "musicbrainz_dump": {
+        "coverage": "loaded",
+        "dump_timestamp": "2026-11-04"
+      }
+    },
+    "start": {
+      "canonical_name": "Example Artist",
+      "mbid": "00000001-0000-4000-8000-000000000000",
+      "owned": false,
+      "type": "artist"
+    },
+    "truncated": null
+  }
+}

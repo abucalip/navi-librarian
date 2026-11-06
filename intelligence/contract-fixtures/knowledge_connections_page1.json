@@ -1,0 +1,71 @@
+{
+  "request": "GET /api/knowledge/connections?type=artist&mbid=00000001-0000-4000-8000-000000000000&depth=2&limit=2",
+  "response": {
+    "hops": [
+      {
+        "credit": true,
+        "depth": 1,
+        "entity": {
+          "canonical_name": "Example Song",
+          "mbid": "00000004-0000-4000-8000-000000000000",
+          "owned": false,
+          "type": "work"
+        },
+        "evidence": [
+          {
+            "direction": "out",
+            "evidence_class": "source_explicit",
+            "match_quality": "exact_mbid",
+            "relation": "composer",
+            "role": null,
+            "source": "musicbrainz_dump",
+            "source_url": null,
+            "valid_from": null,
+            "valid_to": null
+          }
+        ],
+        "via_entity_id": 1,
+        "via_mbid": "00000001-0000-4000-8000-000000000000"
+      },
+      {
+        "credit": true,
+        "depth": 1,
+        "entity": {
+          "canonical_name": "Example Album",
+          "mbid": "00000006-0000-4000-8000-000000000000",
+          "owned": true,
+          "type": "release"
+        },
+        "evidence": [
+          {
+            "direction": "out",
+            "evidence_class": "source_explicit",
+            "match_quality": "exact_mbid",
+            "relation": "producer",
+            "role": "executive",
+            "source": "musicbrainz_dump",
+            "source_url": null,
+            "valid_from": null,
+            "valid_to": null
+          }
+        ],
+        "via_entity_id": 1,
+        "via_mbid": "00000001-0000-4000-8000-000000000000"
+      }
+    ],
+    "next_cursor": "MTo2",
+    "sources": {
+      "musicbrainz_dump": {
+        "coverage": "loaded",
+        "dump_timestamp": "2026-11-04"
+      }
+    },
+    "start": {
+      "canonical_name": "Example Artist",
+      "mbid": "00000001-0000-4000-8000-000000000000",
+      "owned": false,
+      "type": "artist"
+    },
+    "truncated": null
+  }
+}
