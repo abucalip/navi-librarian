@@ -12,7 +12,7 @@ How each lens is fed (no guessing):
   * owned artists/releases: Navidrome getAlbum for the sampled artists' albums, ingested with no search
   * owned release groups: MusicBrainz release lookup per owned release (``sweep_owned_releases``)
   * blind spots: studio discography + ListenBrainz top release groups per sampled artist
-  * series: series ids discovered from the owned groups' own MusicBrainz series relations
+  * series: series ids from one batched release-group browse (inc=series-rels) per artist; series documents one each
   * hidden canon: ListenBrainz top release groups of the sampled artists as the "world" pool, with the
     owner's top Navidrome genres; a candidate's genres are its artist's library genres (a proxy)
   * anniversaries: first-release dates from the discography documents for owned groups, and the
@@ -60,13 +60,22 @@ from intelligence.insights import (  # noqa: E402
     list_canon_cards, list_series_cards, owned_group_mbids, refresh_blind_spots, save_anniversaries, save_canon,
     save_series, score_lens, series_card,
 )
-from intelligence.insights import set_builders  # noqa: E402
+from intelligence.insights import provider_runtime, set_builders  # noqa: E402
 from intelligence.insights.set_job import owned_artists  # noqa: E402
 from intelligence.store import open_store  # noqa: E402
 
 HEADERS = {"User-Agent": "Discair/1.0 (personal music discovery)"}
 MB = "https://musicbrainz.org/ws/2"
 CALLS: Counter = Counter()
+STARTED = time.time()
+DEADLINE = float("inf")   # set from --max-seconds; the tail phases stop early once it passes
+
+
+def tick(provider: str) -> None:
+    CALLS[provider] += 1
+    n = CALLS["musicbrainz"] + CALLS["listenbrainz"]
+    if n % 25 == 0:
+        print(f"[{time.time() - STARTED:6.0f}s] {n} provider requests", file=sys.stderr, flush=True)
 
 
 class Paced:
@@ -74,7 +83,7 @@ class Paced:
 
     def __call__(self, url, **kw):
         lb = "listenbrainz" in url
-        CALLS["listenbrainz" if lb else "musicbrainz"] += 1
+        tick("listenbrainz" if lb else "musicbrainz")
         token = os.environ.get("LISTENBRAINZ_TOKEN")
         if lb and token:
             kw["headers"] = {**kw.get("headers", {}), "Authorization": f"Token {token}"}
@@ -102,7 +111,7 @@ def mb_json(path: str, **params):
     """MusicBrainz GET with backoff on 503/429; returns None on 404 or after repeated failure (counted)."""
     for wait in (0, 5, 15):
         time.sleep(wait)
-        CALLS["musicbrainz"] += 1
+        tick("musicbrainz")
         try:
             r = requests.get(f"{MB}/{path}", params={"fmt": "json", **params}, headers=HEADERS, timeout=30)
         except requests.RequestException:
@@ -210,12 +219,16 @@ def card_stats(lens: str, cards: list[dict], owned: set[str]) -> dict:
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--artists", type=int, default=12)
-    parser.add_argument("--series-lookups", type=int, default=3)
+    parser.add_argument("--series-lookups", type=int, default=400, help="cap on series documents fetched")
     parser.add_argument("--out")
+    parser.add_argument("--max-seconds", type=float, default=0, help="stop the series-document and life-span phases after this many seconds")
     parser.add_argument("--verify", action="store_true", help="check every card against its source documents; exit 1 on failure")
     parser.add_argument("--max-requests", type=int, default=250, help="provider request budget the run must stay within (--verify)")
     args = parser.parse_args()
     load_config_env()
+    global DEADLINE
+    if args.max_seconds:
+        DEADLINE = STARTED + args.max_seconds
     result: dict = {}
     t0 = time.time()
 
@@ -268,25 +281,39 @@ def main() -> int:
                                  "invalid": job.invalid, "remaining": job.remaining, "saved": job.saved, "notes": job.notes,
                                  "listed": len(spots), "scorecard": card_stats("blind_spot", spots, owned)}
 
-        # 2. series: ids discovered from the owned groups' own relations
+        # 2. series: ids discovered from the owned groups' own relations, by the batch form (one paged
+        # release-group browse per artist with inc=series-rels, the same function the runtime uses);
+        # there is no batch form for the series documents themselves, so those stay one lookup per series
         series_ids: list[str] = []
-        for group in sorted(owned)[:10]:
-            if len(series_ids) >= args.series_lookups:
-                break
-            doc = mb_json(f"release-group/{group}", inc="series-rels")
-            for rel in (doc or {}).get("relations") or []:
-                sid = (rel.get("series") or {}).get("id")
-                if sid and sid not in series_ids and len(series_ids) < args.series_lookups:
-                    series_ids.append(sid)
+        truncated = 0
+        for artist_mbid, _ in owned_artists(db):
+            try:
+                found = provider_runtime._artist_series(get, artist_mbid, HEADERS, time.sleep)
+            except (RuntimeError, requests.RequestException):
+                CALLS["series_browse_failed"] += 1
+                continue
+            if found["count"] > len(found["groups"]):
+                truncated += 1
+            for group, ids in found["groups"].items():
+                if group in owned:
+                    series_ids += [i for i in ids if i not in series_ids]
+        series_ids = sorted(series_ids)[: args.series_lookups]
         sets = []
         for sid in series_ids:
-            built = set_builders.series_set(fetchers.series(sid))
+            if time.time() > DEADLINE:
+                CALLS["time_limited_series_docs"] += 1
+                break
+            try:
+                built = set_builders.series_set(fetchers.series(sid))
+            except Exception:  # noqa: BLE001 - a failed document is counted, not fatal
+                CALLS["series_doc_failed"] += 1
+                continue
             if built:
                 sets.append(built)
         series = find_series_progress(sets, owned, SeriesConfig())
         save_series(db, series, now=4.0)
         series_cards = list_series_cards(db, limit=100)
-        result["series"] = {"discovered_ids": len(series_ids), "sets_built": len(sets), "progress": len(series.progress),
+        result["series"] = {"discovered_ids": len(series_ids), "artists_truncated": truncated, "sets_built": len(sets), "progress": len(series.progress),
                             "complete": len(series.complete), "left_out": [r for _, r in series.left_out],
                             "empty_reason": series.empty_reason, "listed": len(series_cards),
                             "scorecard": card_stats("series", series_cards, owned)}
@@ -301,9 +328,9 @@ def main() -> int:
         world = []
         for mbid, doc in docs["lb"].items():
             for rg in ((doc or {}).get("payload") or {}).get("release_groups") or []:
-                world.append(WorldAlbum(rg.get("release_group_mbid"), rg.get("release_group_name") or "",
-                                        rg.get("artist_name") or artist_names.get(mbid.lower()),
-                                        genres=artist_genres.get(mbid.lower(), ()), listens=int(rg.get("total_listen_count") or 0)))
+                info = set_builders.listenbrainz_group(rg)
+                world.append(WorldAlbum(info["mbid"], info["title"], info["artist"] or artist_names.get(mbid.lower()),
+                                        year=info["year"], genres=artist_genres.get(mbid.lower(), ()), listens=info["listens"]))
         canon = find_hidden_canon(world, owned, top_genres)
         save_canon(db, canon, now=5.0)
         canon_cards = list_canon_cards(db, limit=100)
@@ -320,10 +347,13 @@ def main() -> int:
                                             g.get("first-release-date")))
         artists = []
         for mbid in docs["studio"]:
+            if time.time() > DEADLINE:
+                CALLS["time_limited_life_spans"] += 1
+                break
             doc = mb_json(f"artist/{mbid}")
             if doc:
                 span = doc.get("life-span") or {}
-                artists.append(DatedArtist(mbid, doc.get("name") or "", doc.get("type", "").lower() or None,
+                artists.append(DatedArtist(mbid, doc.get("name") or "", (doc.get("type") or "").lower() or None,
                                            span.get("begin"), span.get("end")))
         today = date.today()
         ann = find_anniversaries(dated, artists, today, AnniversaryConfig(window_days=30))

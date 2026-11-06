@@ -78,6 +78,8 @@ def blind_spot_failures(cards: list[Mapping[str, Any]], sets: Iterable[Compariso
                 failures.append(f"{key}: lists owned group {mbid} as missing")
             if mbid not in set(ids):
                 failures.append(f"{key}: lists {mbid} which is not in the set")
+            if not (item.get("title") or "").strip():
+                failures.append(f"{key}: lists {mbid} without a title")
         if card.get("missing_total", 0) != len(ids) - sum(1 for i in ids if i in owned):
             failures.append(f"{key}: missing_total does not match the set")
     return failures
@@ -105,7 +107,11 @@ def series_failures(
             failures.append(f"{key}: below the minimum owned or size gate")
         if ids and real_owned / len(ids) < config.min_share_owned:
             failures.append(f"{key}: barely started series was not left out")
-        listed = [_norm(i.get("group_mbid")) for run in card.get("missing_runs") or [] for i in run.get("items") or []]
+        listed_items = [i for run in card.get("missing_runs") or [] for i in run.get("items") or []]
+        for item in listed_items:
+            if not (item.get("title") or "").strip():
+                failures.append(f"{key}: lists {item.get('group_mbid')} without a title")
+        listed = [_norm(i.get("group_mbid")) for i in listed_items]
         for mbid in listed:
             if mbid in owned:
                 failures.append(f"{key}: lists owned group {mbid} as missing")
@@ -126,6 +132,8 @@ def canon_failures(
         mbid = _norm(card["subject"].get("group_mbid"))
         if mbid in owned:
             failures.append(f"{key}: group {mbid} is owned")
+        if not (card["subject"].get("artist") or "").strip():
+            failures.append(f"{key}: no artist")
         album = pool.get(mbid)
         if album is None:
             failures.append(f"{key}: group {mbid} is not in the fetched world pool")
@@ -189,7 +197,7 @@ def run_integrity(calls: Mapping[str, int], max_requests: int, job_failures: int
     if total > max_requests:
         problems.append(f"{total} provider requests exceeded the budget of {max_requests}")
     for name in sorted(calls):
-        if name == "musicbrainz_gave_up" or name.startswith("status_") or (name == "network_retries" and calls[name] >= 5):
+        if name in ("musicbrainz_gave_up", "series_browse_failed", "series_doc_failed") or name.startswith("status_") or (name == "network_retries" and calls[name] >= 5):
             problems.append(f"{name}={calls[name]}")
     if job_failures:
         problems.append(f"{job_failures} document fetches failed")

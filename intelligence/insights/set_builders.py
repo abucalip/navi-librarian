@@ -79,6 +79,28 @@ def studio_discography_set(
     )
 
 
+def listenbrainz_group(entry: Mapping[str, Any]) -> dict[str, Any]:
+    """Normalise one top-release-groups entry (verified live 2026-11-06).
+
+    The endpoint nests the details: ``release_group.name`` / ``release_group.date`` and
+    ``artist.name``, next to ``release_group_mbid`` and ``total_listen_count``. The flat names
+    (``release_group_name``, ``artist_name``) are still read as a fallback.
+    """
+    group = entry.get("release_group") if isinstance(entry.get("release_group"), Mapping) else {}
+    artist = entry.get("artist") if isinstance(entry.get("artist"), Mapping) else {}
+    try:
+        listens = int(entry.get("total_listen_count") or 0)
+    except (TypeError, ValueError):
+        listens = 0
+    return {
+        "mbid": entry.get("release_group_mbid"),
+        "title": _text(group.get("name")) or _text(entry.get("release_group_name")),
+        "artist": _text(artist.get("name")) or _text(entry.get("artist_name")),
+        "year": _year(group.get("date")),
+        "listens": listens,
+    }
+
+
 def listenbrainz_top_set(
     artist_mbid: str, artist_name: str, document: Mapping[str, Any] | None,
 ) -> ComparisonSet | None:
@@ -94,10 +116,11 @@ def listenbrainz_top_set(
     for g in groups:
         if not isinstance(g, Mapping):
             continue
-        group = _mbid(g.get("release_group_mbid"))
+        info = listenbrainz_group(g)
+        group = _mbid(info["mbid"])
         if group is None:
             continue
-        items.append(SetItem(group, _text(g.get("release_group_name")), None))
+        items.append(SetItem(group, info["title"], info["year"]))
     name = _text(artist_name) or "this artist"
     return ComparisonSet(
         key=f"artist:{artist}:lb_top", kind="listenbrainz_top",

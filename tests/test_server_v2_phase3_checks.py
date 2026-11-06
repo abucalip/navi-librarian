@@ -105,6 +105,17 @@ class BrokenCardsFailTests(CheckFixtures):
         self.assertTrue(any("differs from the document" in f for f in checks.anniversary_failures(
             self.ann_cards, OWNED, TODAY, 30, {k: "1999-01-01" for k in dates})))
 
+    def test_untitled_missing_items_and_artistless_canon_fail(self):
+        spot = copy.deepcopy(self.spot_cards)
+        spot[0]["missing"][0]["title"] = ""
+        self.assertTrue(any("without a title" in f for f in checks.blind_spot_failures(spot, [self.studio], OWNED)))
+        ser = copy.deepcopy(self.series_cards)
+        ser[0]["missing_runs"][0]["items"][0]["title"] = " "
+        self.assertTrue(any("without a title" in f for f in checks.series_failures(ser, [self.series], OWNED)))
+        canon = copy.deepcopy(self.canon_cards)
+        canon[0]["subject"]["artist"] = None
+        self.assertTrue(any("no artist" in f for f in checks.canon_failures(canon, OWNED, self.world, GENRES)))
+
     def test_common_checks_catch_missing_reasons_and_duplicates(self):
         card = copy.deepcopy(self.canon_cards[0])
         card["reasons"] = []
