@@ -76,6 +76,9 @@ def album_dossier(reader, entity: dict[str, Any], *, limit: int = 100) -> dict[s
                 "status": e.info.status if e.info else None, "labels": list(e.labels), "relation": e.relation,
             })
 
+    if group_entity and any(e["release"]["owned"] for e in editions):
+        group_entity = {**group_entity, "owned": True}  # a group is owned when any edition is
+
     def ordered(bucket):
         return sorted(bucket.values(), key=lambda r: ((r["entity"]["canonical_name"] or "").casefold(), r["entity"]["id"]))
 

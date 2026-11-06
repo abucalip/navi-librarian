@@ -135,8 +135,8 @@ def _album_for(db, entity: dict[str, Any]) -> dict[str, Any]:
         link = next(iter(repo.edges_from(db, entity["id"], REL_MEMBER_OF)), None)
         group = repo.get_entity(db, link["to_id"]) if link else None
         if group is not None:
-            return _brief(group)
-    return _brief(entity)
+            return _with_owned(db, _brief(group))
+    return _with_owned(db, _brief(entity))
 
 
 def _owned(db, album: dict[str, Any]) -> bool:
@@ -145,6 +145,11 @@ def _owned(db, album: dict[str, Any]) -> bool:
     if album["type"] != "release_group":
         return False
     return any((repo.get_entity(db, e["from_id"]) or {}).get("owned") for e in repo.edges_to(db, album["id"], REL_MEMBER_OF))
+
+
+def _with_owned(db, album: dict[str, Any]) -> dict[str, Any]:
+    """The brief with ``owned`` true when the album, or any edition of its group, is owned."""
+    return {**album, "owned": _owned(db, album)}
 
 
 def _brief(e: dict[str, Any]) -> dict[str, Any]:
