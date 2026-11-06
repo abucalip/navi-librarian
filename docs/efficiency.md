@@ -505,7 +505,7 @@ For each owned artist and album, plus the Tier 2 neighbourhood:
 
 The default is **stale-while-revalidate**: if a usable value exists, return it immediately, even when stale, and enqueue a refresh. A stale value is not a missing value. A refresh must never delay a page request that can be answered from last-known-good data.
 
-Use these distinct states for each source, operation and entity/field key:
+Use these distinct states for each source, operation and entity/field key. They are **field-level states**, not one status for an entire artist or album: for example, an artist may have fresh identity data, a stale biography, pending credits and confirmed absence of an optional field at the same time.
 
 | State | Meaning | Request behaviour | Worker behaviour |
 |---|---|---|---|
