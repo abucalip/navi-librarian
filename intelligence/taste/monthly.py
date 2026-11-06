@@ -26,8 +26,9 @@ Honesty rules
 -------------
 * a month with fewer than ``ProfileConfig.min_listens`` listens is ``low_sample``, and an empty
   month is simply low-sample with zero listens;
-* a dimension with fewer than ``min_attributed`` listens carrying a value is ``low_sample``, and
-  its entries are empty, so missing metadata is not read as taste;
+* a dimension with fewer than ``min_attributed`` listens carrying a value is flagged
+  ``dimension_low_sample``; observed entries and counts remain visible, but the dimension is not
+  treated as reliable evidence (a dimension with no attributed listens has no entries);
 * obscurity shares are meaningful only when the window is not ``low_sample``; when no popularity
   figures are supplied the obscurity part is ``None`` ("not supplied"), never zero.
 * the snapshot states no shift; comparing months is left to a later, explicitly reviewed step.
