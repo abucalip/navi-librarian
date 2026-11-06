@@ -22,8 +22,10 @@ from ..insights.anniversaries import CARD_KIND as ANNIVERSARY_KIND
 from ..insights.hidden_canon import CARD_KIND as CANON_KIND
 from ..insights.series_completion import CARD_KIND as SERIES_KIND
 from ..ingest.navidrome import normalize_album
+from ..knowledge import KnowledgeReader
 from ..resolution import unresolved
 from ..store import generations, open_store
+from ..store import repositories as repo
 from .bodies import build_health_body, build_unresolved_body
 from .insights import build_insights_body
 from .capabilities import ServerFacts, build_capabilities
@@ -94,6 +96,63 @@ def _insight_fixtures() -> dict[str, dict[str, Any]]:
             db.close()
 
 
+_K = {name: f"{n:08d}-0000-4000-8000-000000000000" for n, name in enumerate(
+    ("artist", "second", "label", "work", "cover", "release", "group", "recording", "other"), start=1)}
+
+
+def _knowledge_fixtures() -> dict[str, dict[str, Any]]:
+    """Knowledge pages from a small store of their own (fixed ids and clock, no slice file needed)."""
+    with tempfile.TemporaryDirectory() as tmp:
+        db = open_store(Path(tmp) / "knowledge.sqlite3")
+        try:
+            return _knowledge(db)
+        finally:
+            db.close()
+
+
+def _knowledge(db) -> dict[str, dict[str, Any]]:
+    dump = dict(evidence_class="source_explicit", match_quality="exact_mbid", source="musicbrainz_dump")
+    mb = {**dump, "source": "musicbrainz"}
+    e = lambda kind, name, key, **kw: repo.upsert_entity(db, kind, name, mbid=_K[key], **kw)[0]
+    artist = e("artist", "Example Artist", "artist")
+    second = e("artist", "Example Guest", "second")
+    label = e("label", "Example Records", "label")
+    work = e("work", "Example Song", "work")
+    cover = e("recording", "Example Song (cover)", "cover")
+    release = e("release", "Example Album", "release", owned=True)
+    group = e("release_group", "Example Album", "group")
+    recording = e("recording", "Example Song", "recording")
+    repo.add_edge(db, release, group, "member_of", **mb)
+    repo.add_edge(db, recording, release, "appears_on", role="1/1", **mb)
+    repo.add_edge(db, artist, release, "producer", role="executive", **dump)
+    repo.add_edge(db, artist, recording, "instrument", role="guitar", **dump)
+    repo.add_edge(db, second, recording, "vocal", role="lead vocals", **dump)
+    repo.add_edge(db, label, release, "publisher", **dump)
+    repo.add_edge(db, recording, work, "performance", **dump)
+    repo.add_edge(db, cover, work, "performance", role="cover", **dump)
+    repo.add_edge(db, artist, work, "composer", **dump)
+    with db:
+        db.execute("INSERT INTO release_facts (entity_id, date, country, status) VALUES (?, '2001-05-01', 'GB', 'official')",
+                   (release,))
+        db.execute("INSERT INTO artist_life_span (entity_id, begin_date, end_date, ended) VALUES (?, '1970', NULL, 0)", (artist,))
+    pending = KnowledgeReader(db, clock=lambda: 2000.0)
+    before = {"knowledge_person_slice_pending.json": ("GET /api/knowledge/person?mbid=" + _K["artist"],
+                                                      pending.person_page(mbid=_K["artist"]))}
+    with db:
+        for key, value in (("dump_timestamp", "2026-11-04"), ("schema_sequence", "31"), ("loaded_at", "1000")):
+            db.execute("INSERT INTO meta (key, value) VALUES (?, ?)", (f"musicbrainz_slice.{key}", value))
+    r = KnowledgeReader(db, clock=lambda: 2000.0)
+    pages = {
+        "knowledge_album.json": (f"GET /api/knowledge/album?mbid={_K['release']}", r.album_dossier(mbid=_K["release"])),
+        "knowledge_person.json": (f"GET /api/knowledge/person?mbid={_K['artist']}", r.person_page(mbid=_K["artist"])),
+        "knowledge_label.json": (f"GET /api/knowledge/label?mbid={_K['label']}", r.label_page(mbid=_K["label"])),
+        "knowledge_work.json": (f"GET /api/knowledge/work?mbid={_K['work']}", r.work_page(mbid=_K["work"])),
+        "knowledge_recording_works.json": (f"GET /api/knowledge/recording-works?mbid={_K['recording']}",
+                                           r.works_of_recording(mbid=_K["recording"])),
+    }
+    return {name: {"request": req, "response": body} for name, (req, body) in {**before, **pages}.items()}
+
+
 def _build(db) -> dict[str, dict[str, Any]]:
     empty_caps = build_capabilities(db)
     empty_changes = build_changes(db, 0)
@@ -110,6 +169,7 @@ def _build(db) -> dict[str, dict[str, Any]]:
     tag = etag_for("health", version, generations.current_generation(db))
     return {
         **_insight_fixtures(),
+        **_knowledge_fixtures(),
         "capabilities_empty.json": {"request": "GET /api/capabilities", "response": empty_caps},
         "capabilities_populated.json": {"request": "GET /api/capabilities", "response": caps},
         "changes_from_start.json": {"request": "GET /api/changes", "response": build_changes(db, 0)},

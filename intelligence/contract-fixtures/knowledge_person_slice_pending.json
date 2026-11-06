@@ -1,0 +1,62 @@
+{
+  "request": "GET /api/knowledge/person?mbid=00000001-0000-4000-8000-000000000000",
+  "response": {
+    "aliases": [],
+    "in_library": [
+      {
+        "album": {
+          "canonical_name": "Example Album",
+          "mbid": "00000007-0000-4000-8000-000000000000",
+          "owned": true,
+          "type": "release_group"
+        },
+        "credits": [
+          {
+            "evidence_class": "source_explicit",
+            "match_quality": "exact_mbid",
+            "relation": "producer",
+            "role": "executive",
+            "source": "musicbrainz_dump",
+            "source_url": null,
+            "track": null
+          },
+          {
+            "evidence_class": "source_explicit",
+            "match_quality": "exact_mbid",
+            "relation": "instrument",
+            "role": "guitar",
+            "source": "musicbrainz_dump",
+            "source_url": null,
+            "track": "Example Song"
+          }
+        ],
+        "owned": true,
+        "why": "credited as executive, guitar on Example Song"
+      }
+    ],
+    "life_span": {
+      "begin": "1970",
+      "end": null,
+      "ended": false
+    },
+    "not_in_library": [],
+    "not_loaded": [
+      "instrument_per_track_for_unlinked_recordings"
+    ],
+    "person": {
+      "canonical_name": "Example Artist",
+      "mbid": "00000001-0000-4000-8000-000000000000",
+      "owned": false,
+      "sort_name": null,
+      "type": "artist"
+    },
+    "related_people": [],
+    "sources": {
+      "musicbrainz_dump": {
+        "coverage": "pending",
+        "dump_timestamp": null
+      }
+    },
+    "truncated": false
+  }
+}

@@ -1,0 +1,43 @@
+{
+  "request": "GET /api/knowledge/recording-works?mbid=00000008-0000-4000-8000-000000000000",
+  "response": {
+    "recording": {
+      "canonical_name": "Example Song",
+      "mbid": "00000008-0000-4000-8000-000000000000",
+      "owned": false,
+      "sort_name": null,
+      "type": "recording"
+    },
+    "sources": {
+      "musicbrainz_dump": {
+        "coverage": "loaded",
+        "dump_timestamp": "2026-11-04"
+      }
+    },
+    "truncated": false,
+    "works": [
+      {
+        "other_recordings": 1,
+        "relations": [
+          {
+            "direction": "out",
+            "evidence_class": "source_explicit",
+            "match_quality": "exact_mbid",
+            "relation": "performance",
+            "role": null,
+            "source": "musicbrainz_dump",
+            "source_url": null,
+            "valid_from": null,
+            "valid_to": null
+          }
+        ],
+        "work": {
+          "canonical_name": "Example Song",
+          "mbid": "00000004-0000-4000-8000-000000000000",
+          "owned": false,
+          "type": "work"
+        }
+      }
+    ]
+  }
+}
