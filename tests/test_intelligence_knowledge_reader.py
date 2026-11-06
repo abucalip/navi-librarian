@@ -94,6 +94,63 @@ class ReadOnlyTests(unittest.TestCase):
             ro.close()
 
 
+class DossierTests(unittest.TestCase):
+    def setUp(self):
+        self.db = open_store(":memory:")
+        self.release = repo.upsert_entity(self.db, "release", "Kind of Blue", mbid="r-gid", owned=True)[0]
+        self.group = repo.upsert_entity(self.db, "release_group", "Kind of Blue", mbid="g-gid")[0]
+        self.rec = repo.upsert_entity(self.db, "recording", "So What", mbid="rec-gid")[0]
+        self.miles = repo.upsert_entity(self.db, "artist", "Miles Davis", mbid="m-gid")[0]
+        self.label = repo.upsert_entity(self.db, "label", "Columbia", mbid="l-gid")[0]
+        common = dict(evidence_class="source_explicit", match_quality="exact_mbid", source="musicbrainz_dump")
+        repo.add_edge(self.db, self.release, self.group, "member_of", **{**common, "source": "musicbrainz"})
+        repo.add_edge(self.db, self.rec, self.release, "appears_on", role="1/1", **{**common, "source": "musicbrainz"})
+        repo.add_edge(self.db, self.miles, self.release, "producer", role="executive", **common)
+        repo.add_edge(self.db, self.miles, self.rec, "instrument", role="trumpet", **common)
+        repo.add_edge(self.db, self.label, self.release, "publisher", **common)
+        self.reader = KnowledgeReader(self.db, clock=lambda: 2000.0)
+
+    def load_slice(self):
+        with self.db:
+            for key, value in (("dump_timestamp", "2026-11-04"), ("schema_sequence", "31"), ("loaded_at", "1000")):
+                self.db.execute("INSERT INTO meta (key, value) VALUES (?, ?)", (f"musicbrainz_slice.{key}", value))
+
+    def test_unknown_album_is_none(self):
+        self.assertIsNone(self.reader.album_dossier(mbid="nope"))
+
+    def test_dossier_groups_credits_labels_and_family(self):
+        self.load_slice()
+        d = self.reader.album_dossier(mbid="r-gid")
+        self.assertEqual(d["release_group"]["canonical_name"], "Kind of Blue")
+        self.assertEqual(d["release_family"]["count"], 1)
+        self.assertEqual([t["title"] for t in d["tracks"]], ["So What"])
+        self.assertEqual([p["entity"]["canonical_name"] for p in d["people"]], ["Miles Davis"])
+        scopes = {(c["scope"], c["relation"], c["role"], c["track"]) for c in d["people"][0]["credits"]}
+        self.assertEqual(scopes, {("album", "producer", "executive", None), ("recording", "instrument", "trumpet", "So What")})
+        self.assertEqual(d["people"][0]["credits"][0]["source"], "musicbrainz_dump")
+        self.assertEqual([l["entity"]["canonical_name"] for l in d["labels"]], ["Columbia"])
+        self.assertEqual(d["sources"]["musicbrainz_dump"]["coverage"], "loaded")
+        self.assertIn("catalogue_numbers", d["not_loaded"])
+
+    def test_inferred_edge_is_never_a_credit(self):
+        other = repo.upsert_entity(self.db, "artist", "Guess", mbid="x-gid")[0]
+        repo.add_edge(self.db, other, self.release, "producer", evidence_class="inferred",
+                      match_quality="fuzzy_confirmed", source="derived")
+        names = [p["entity"]["canonical_name"] for p in self.reader.album_dossier(mbid="r-gid")["people"]]
+        self.assertEqual(names, ["Miles Davis"])
+
+    def test_pending_without_slice_and_group_dossier(self):
+        self.assertEqual(self.reader.album_dossier(mbid="r-gid")["sources"]["musicbrainz_dump"]["coverage"], "pending")
+        d = self.reader.album_dossier(type="release_group", mbid="g-gid")
+        self.assertEqual(d["album"]["mbid"], "g-gid")
+        self.assertEqual(d["tracks"], [])
+        self.assertEqual(d["release_family"]["count"], 1)
+
+    def test_wrong_type_is_refused(self):
+        with self.assertRaises(ValueError):
+            self.reader.album_dossier(type="artist", mbid="m-gid")
+
+
 class BoundaryTests(unittest.TestCase):
     FORBIDDEN = ("integrations", "requests", "httpx", "urllib", "http", "socket", "discovery", "app",
                  "navidrome_client", "navidrome_server", "acquisition", "recommendation")
