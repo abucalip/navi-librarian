@@ -1,3 +1,11 @@
+## 2026-11-06 — Server V2 Phase 5: catalogue numbers, formats and label parents (PR #843)
+
+- **Objective:** first context-reader slice: serve facts the dump import already stores.
+- **Change and evidence:** PR [#843](https://github.com/abucalip/navi-librarian/pull/843), squash `be3491440a809a18dc2167b2817796ca2cddfd4b`, tested head `f545e6ded6feb7006130b4d0c3e861365f1bafe8`; required CI passed (compile, container-smoke, test-and-build, validate-container). Album editions gain `formats` and `catalogue[]`; label pages gain `parents[]`, `sub_labels[]` and `catalogue_numbers[]` per row (additive keys; `related_labels` unchanged). `catalogue_numbers` and `formats` stay in `not_loaded` while the store holds none. Fixtures and `SERVER_V2_CONTRACT.md` updated. No provider traffic, nothing added to `navidrome_server.py`.
+- **Tests:** focused only: `test_intelligence_knowledge_reader`, `test_intelligence_contract_fixtures`, `test_api_knowledge_routes`, `test_api_knowledge_paths_route` (58 passed). Full suite not run (owner rule).
+- **Limits:** the local store has no release labels or formats until the slice is re-imported; no client uses the new keys; not published or deployed.
+- **Next action:** places and events readers and routes (owner's choice remains for the sideman_to_leader enrichment plan and the client gate).
+
 ## 2026-11-06 — Server V2 Phase 5: paths route and composition query plan (PR #842)
 
 - **Objective:** serve the path builders and check their latency on the real slice.
