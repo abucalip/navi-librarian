@@ -86,6 +86,7 @@ def run_slice_import(
     delete_archive: bool = True,
     keep_extracted: bool = False,
     hops: int = 2,
+    require_parallel: bool = False,
     clock: Callable[[], float] = time.time,
     on_progress: Callable[[str, int], None] | None = None,
 ) -> runner.RunResult:
@@ -136,6 +137,10 @@ def run_slice_import(
         extract_dir = Path(directory) / EXTRACT_DIR
         parallel = dump.parallel_available()
         progress["decompressor"] = "indexed_bzip2" if parallel else "python-bz2"
+        if require_parallel and not parallel and (os.cpu_count() or 1) > 1:
+            # Owner rule: extraction and import use every core. Single-threaded bz2 is ~4x slower.
+            raise dump.DumpError("indexed_bzip2 is not installed, so extraction would use one core; "
+                                 "install requirements.txt or pass --allow-single-core")
         extracted = dump.extract_tables(archive, NEEDED_TABLES, extract_dir, parallel=parallel,
                                         on_progress=lambda f: report("extract", f))
         progress["extract_seconds"] = round(clock() - started, 3)
