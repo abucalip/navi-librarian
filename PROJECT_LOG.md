@@ -1,3 +1,11 @@
+## 2026-11-06 — Server V2 Phase 4: bounded connections route
+
+- **Objective:** serve the bounded graph walk (Phase 4 work item 6) to clients; the traversal and `KnowledgeReader.connections` existed but no route used them.
+- **Change:** `GET /api/knowledge/connections` (`app/api/knowledge.py`) through `KnowledgeReader.connections_page`: public shape (`mbid` only, `via_mbid` per hop, boolean `owned`, `sources.musicbrainz_dump.coverage`), `depth` 1 to 3, `limit` 1 to 500, opaque `cursor`, `credits_only`, repeatable `relation`, `direction`. The traversal's own 200 row and 2 s caps apply. Bad cursor, direction, or missing identifier or type is `400`; depth or limit out of range `422`; unknown entity `404`. A `ValueError` from the reader now answers `400` on every knowledge route. Contract section added to `docs/SERVER_V2_CONTRACT.md`.
+- **Verification:** `test_api_knowledge_routes`, `test_intelligence_knowledge_reader`, `test_intelligence_graph_traversal`, `test_intelligence_contract_fixtures`: 65 passed (Homebrew Python 3.12 plus the venv's packages). Required CI passed (compile, container-smoke, test-and-build, validate-container, validate-release-workflow).
+- **Merged (owner request):** PR [#835](https://github.com/abucalip/navi-librarian/pull/835), squash `80dec251564a27f137d3f57695dc46de200697f3`, tested head `b139fce15fcc2297c81b77b63e4a84ec206bdbe1`. Read-only, no provider traffic, no existing API changed. Not published or deployed.
+- **Limitations:** no contract fixture yet; no client uses the route; not run against the owner's real slice.
+
 ## 2026-11-06 — Server V2 Phase 4: owned-MBID API fill
 
 - **Objective:** a newly owned MBID gets knowledge from the MusicBrainz API until a dump contains it (efficiency.md E8).
