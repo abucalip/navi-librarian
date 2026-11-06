@@ -576,7 +576,7 @@ Targets are placeholders until slice 0 supplies baselines; set the numbers there
 - Artist and album page knowledge reads meet a latency target set from the Phase 0 baseline, with no dependence on provider speed.
 - Coverage report: percentage of owned artists and albums complete per field class, and age of the oldest stale-while-revalidate item, visible in the dashboard/logs.
 - A new album added to Navidrome is fully populated, or explicitly pending with a known queue position, within a stated time.
-- Wiping `knowledge.sqlite3` and rebuilding loses no owner decision.
+- Wiping `intelligence.sqlite3` and rebuilding loses no owner decision; `intelligence.state.sqlite3` remains intact.
 - Aggregate provider traffic after cutover is at or below the pre-migration level on the same fixtures, with the 1 request/s MusicBrainz limit never exceeded across processes.
 - **Kill or narrow** a field class if its coverage stays too low to be shown (Server V2 rule), or a route if the Tier 3 wait routinely exceeds its deadline and degrades the product.
 
