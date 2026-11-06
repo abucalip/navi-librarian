@@ -165,6 +165,18 @@ class JobTests(unittest.TestCase):
         self.run_it()
         self.assertEqual(self.state()["outcome"], "ok")
 
+    def test_load_absorbs_api_edges_the_dump_now_states(self):
+        self.seed()
+        a = repo.find_entity(self.db, "artist", mbid="a-gid")["id"]
+        b = repo.upsert_entity(self.db, "artist", "Beta", mbid="b-gid")[0]
+        for rel in ("producer", "mentor"):
+            repo.add_edge(self.db, a, b, rel, evidence_class="source_explicit", match_quality="exact_mbid",
+                          source="musicbrainz_api")
+        result = self.run_it()
+        self.assertEqual(result.progress["api_edges_absorbed"], 1)  # the dump says producer, not mentor
+        left = [r["relation"] for r in self.db.execute("SELECT relation FROM edges WHERE source = 'musicbrainz_api'")]
+        self.assertEqual(left, ["mentor"])
+
     def test_budget_fallback_records_blocked(self):
         self.seed()
         self.run_it(budgets=job.Budgets(max_entities=1))

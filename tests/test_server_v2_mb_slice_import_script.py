@@ -62,6 +62,16 @@ class SliceImportScriptTests(unittest.TestCase):
         self.assertEqual(calls.count("getArtist"), 1)
         self.assertTrue(script.neighbourhood.owned_seeds(db)["artist"])
 
+    def test_api_fill_flag_runs_the_fill_not_the_import(self):
+        done = RunResult(1, "succeeded", {"requests": 0})
+        with mock.patch.object(script.api_fill, "run_api_fill", return_value=done) as fill, \
+                mock.patch.object(script.job, "run_slice_import") as imp:
+            code = script.main(["--data-dir", str(self.data), "--api-fill", "--max-requests", "7"])
+        self.assertEqual(code, 0)
+        fill.assert_called_once()
+        self.assertEqual(fill.call_args.kwargs["max_requests"], 7)
+        imp.assert_not_called()
+
     def test_main_exit_code_follows_job_state(self):
         failed = RunResult(1, "failed", {}, "boom")
         with mock.patch.object(script.job, "run_slice_import", return_value=failed):

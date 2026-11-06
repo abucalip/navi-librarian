@@ -28,7 +28,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from intelligence.musicbrainz import job, neighbourhood  # noqa: E402
+from intelligence.musicbrainz import api_fill, job, neighbourhood  # noqa: E402
 from intelligence.store import open_store  # noqa: E402
 from settings.data_directory import resolve_data_dir  # noqa: E402
 
@@ -76,11 +76,17 @@ def print_progress(stage: str, percent: int) -> None:
 
 
 def run(data_dir: Path, scratch: Path, *, plan_only: bool, export: str | None, cover_art: bool,
-        keep_archive: bool, hops: int, ingest: bool = False, keep_extracted: bool = False) -> dict:
+        keep_archive: bool, hops: int, ingest: bool = False, keep_extracted: bool = False,
+        fill: bool = False, max_requests: int = api_fill.DEFAULT_MAX_REQUESTS) -> dict:
     data_dir.mkdir(parents=True, exist_ok=True)
     db = open_store(data_dir / STORE_FILE)
     try:
         ingested = ingest_library(db) if ingest else None
+        if fill:
+            # Provider traffic: MusicBrainz API, paced at one request per 1.1 s, at most max_requests.
+            result = api_fill.run_api_fill(db, max_requests=max_requests)
+            return {"state": result.state, "error": result.error, "progress": result.progress,
+                    **({"ingest": ingested} if ingested else {})}
         if plan_only:
             return {**plan(db), **({"ingest": ingested} if ingested else {})}
         scratch.mkdir(parents=True, exist_ok=True)
@@ -109,12 +115,16 @@ def main(argv=None) -> int:
                         help="keep the decompressed tables so a re-run skips decompression")
     parser.add_argument("--ingest", action="store_true", help="first record the owned library from Navidrome (read-only)")
     parser.add_argument("--hops", type=int, default=2)
+    parser.add_argument("--api-fill", action="store_true",
+                        help="instead of the import, fill owned entities the loaded dump lacks from the MusicBrainz API "
+                             "(paced, bounded by --max-requests; needs a loaded dump)")
+    parser.add_argument("--max-requests", type=int, default=api_fill.DEFAULT_MAX_REQUESTS)
     parser.add_argument("--out", type=Path, default=None)
     args = parser.parse_args(argv)
     data_dir = args.data_dir or default_data_dir()
     report = run(data_dir, args.scratch or data_dir / "mb-scratch", plan_only=args.plan, export=args.export,
                  cover_art=args.include_cover_art, keep_archive=args.keep_archive, hops=args.hops, ingest=args.ingest,
-                 keep_extracted=args.keep_extracted)
+                 keep_extracted=args.keep_extracted, fill=args.api_fill, max_requests=args.max_requests)
     text = json.dumps(report, indent=2, sort_keys=True, default=str)
     if args.out:
         args.out.write_text(text + "\n")
