@@ -14,7 +14,8 @@ Checks (docs/ServerV2.md, Phase 3 exit and item 6):
   2. persistence: save, list, dismiss (suppressed on refresh) and restore round-trip
   3. scorecard on the live output with the temporary store's outcomes (none), so the verdict is
      `insufficient_evidence` and the lens stays off; a labelled machinery check then feeds
-     invented accept/dismiss rows through `lens_outcomes` into `score_lens` to prove the path
+     invented accept/dismiss rows for a synthetic library (so it runs even when the live lens
+     returns no cards) through `lens_outcomes` into `score_lens` to prove the path
   4. the recommendation package is never imported (weights cannot move)
 Blind spots, series, hidden canon and anniversaries need provider documents, which this
 script does not fetch; their scorecards wait for the owner to approve provider traffic.
@@ -75,6 +76,38 @@ def to_record(album: dict) -> PlayRecord:
 
 def cards_of(result) -> list[dict]:
     return [gem_card(g) for g in result.gems]
+
+
+def machinery_check(now: float) -> dict:
+    """Invented library and outcomes through save_gems, lens_outcomes and score_lens in a temporary store."""
+    day = 86400.0
+    records = [
+        PlayRecord(key=f"album:synthetic-{i}", kind="album", title=f"Synthetic {i}", artist=f"Artist {i}",
+                   play_count=20, last_played=now - 400 * day)
+        for i in range(40)
+    ]
+    synthetic = GemsConfig(now=now)
+    found = find_forgotten_gems(records, synthetic)
+    with tempfile.TemporaryDirectory() as tmp:
+        db = open_store(Path(tmp) / "machinery.sqlite3")
+        save_gems(db, found, now=1.0)
+        cards = lens_outcomes(db, CARD_KIND)["cards"]
+        for index, card in enumerate(cards):
+            key = card["subject"]["key"]
+            if index % 3 == 0:
+                dismiss_gem(db, key, now=5.0)
+            else:
+                accept_card(db, CARD_KIND, key, now=5.0)
+        fed = lens_outcomes(db, CARD_KIND)
+        card = score_lens(CARD_KIND, fed["cards"], fed["accepted"], fed["dismissed"])
+        db.close()
+    return {
+        "note": "synthetic library and invented accept/dismiss rows in a temporary store; says nothing about lens quality",
+        "cards": card.cards, "accepted": card.accepted, "dismissed": card.dismissed, "unjudged": card.unjudged,
+        "verdict": card.verdict,
+        "path_exercised": card.cards >= 5 and card.accepted > 0 and card.dismissed > 0
+        and card.accepted + card.dismissed == card.cards and card.verdict == "pass",
+    }
 
 
 def main() -> int:
@@ -138,21 +171,11 @@ def main() -> int:
         card = score_lens(CARD_KIND, live["cards"], live["accepted"], live["dismissed"])
         result["scorecard_live"] = card.as_dict()
 
-        # machinery check only: invented outcomes prove the path, not the lens quality
-        invented = [c["subject"]["key"] for c in live["cards"]]
-        for index, key in enumerate(invented):
-            if index % 3 == 0:
-                dismiss_gem(db, key, now=5.0)
-            else:
-                accept_card(db, CARD_KIND, key, now=5.0)
-        fed = lens_outcomes(db, CARD_KIND)
-        machinery = score_lens(CARD_KIND, live["cards"], fed["accepted"], fed["dismissed"])
-        result["scorecard_machinery_check"] = {
-            "note": "invented accept/dismiss rows in a temporary store; says nothing about lens quality",
-            "accepted": machinery.accepted, "dismissed": machinery.dismissed, "unjudged": machinery.unjudged,
-            "verdict": machinery.verdict,
-        }
         db.close()
+
+    # machinery check only: a fixed synthetic library (not the live one, which may yield no cards)
+    # with invented outcomes proves the save -> lens_outcomes -> score_lens path, not lens quality
+    result["scorecard_machinery_check"] = machinery_check(config.now)
 
     # 4. weights cannot move: nothing in this run imported the recommendation package
     result["recommendation_untouched"] = not any(m == "recommendation" or m.startswith("recommendation.") for m in sys.modules)
@@ -161,7 +184,7 @@ def main() -> int:
     print(text)
     if args.out:
         Path(args.out).write_text(text + "\n")
-    return 0
+    return 0 if result["scorecard_machinery_check"]["path_exercised"] else 1
 
 
 if __name__ == "__main__":
