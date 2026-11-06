@@ -1,3 +1,11 @@
+## 2026-11-06 — Server V2 Phase 4 slice 2, part 4: MusicBrainz neighbourhood loader (PR #813)
+
+- **Merged via PR:** [#813](https://github.com/abucalip/navi-librarian/pull/813), squash `1024fa5ab0eed913ece35caeceb0aa39076678fa`, tested head `bd25ab9ad42d73df44acb91baba75201227f7f1b`; compile, container-smoke, test-and-build and validate-container passed on that head.
+- **Change:** `intelligence/musicbrainz/loader.py`: `load_neighbourhood` loads the selected ids into `entities` and `edges` in three fixed passes with the same injected reader (1: entity tables plus `link_type` and `link_attribute_type`; 2: the nine relationship tables, keeping links with both ends selected; 3: `link` and `link_attribute` for just those links), in one transaction that rolls back on any error. Every edge is `source_explicit` / `exact_mbid`, source `musicbrainz_dump`, with the MusicBrainz page URL and an observation holding the dump timestamp and schema sequence. Relation is MusicBrainz's own link type name, role is its attributes joined, dates come from the link. Existing (owned) entities are matched by MBID and never renamed or unowned; links with no type or a missing endpoint are dropped and counted; re-runs add nothing.
+- **Verification actually run:** `tests.test_intelligence_musicbrainz_loader` (8 passed locally, fake reader); full suite not run (owner rule), CI ran it.
+- **Limitations:** never run on the real 7.7 GB archive, so real time, disk and edge counts are unmeasured; pass 2 keeps its pending links in memory; nothing calls the loader; no provider traffic; not published, not deployed.
+- **Next action:** the server job that runs download, selector and loader on the real archive and records pass count, time and disk against the approved budgets (falling back to API-only on a breach).
+
 ## 2026-11-06 — Server V2 Phase 4 slice 2, part 3: MusicBrainz neighbourhood selector (PR #812)
 
 - **Merged via PR:** [#812](https://github.com/abucalip/navi-librarian/pull/812), squash `49d668532a4e12597ab446c81d1a3acdf2a3576c`, tested head `38dfa72058bfea4657e096b4ca04e515b4e0bb0e`; compile, container-smoke, test-and-build and validate-container passed on that head.
