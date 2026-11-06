@@ -4,6 +4,8 @@ Last checked: 2026-11-06. GitHub `main` is authoritative.
 
 ## Current state
 
+- **macOS knowledge client slice 1 merged (2026-11-06, owner request):** PR [#830](https://github.com/abucalip/navi-librarian/pull/830), squash `17bc7567ca5874776b6219d81b1588aaaa887bfb`, tested head `b9a7daf1f70682846398e484db7bb13e97b6b6fc`; required CI passed. `macos/Sources/DiscairLibrarian/Knowledge.swift` and `LibrarianClient.knowledge*(mbid:)` read the five knowledge routes; no UI yet. `swift test --filter KnowledgeTests`: 8 passed against the server's contract fixtures; no other suites run, no macOS CI. Not published or deployed. **Next:** macOS album dossier screen, then person and label pages; Android afterwards.
+
 - **Server V2 knowledge page fixtures merged (2026-11-06, owner request):** PR [#829](https://github.com/abucalip/navi-librarian/pull/829), squash `72ebe2d950bc079307d0f843315dc917bdc6c8a1`, tested head `add2b4dcba3716be7f7afb445c47bade7436998f`; required CI passed; six fixtures in `intelligence/contract-fixtures` with public-shape tests; not published or deployed. Next action: the client gate (macOS dossier and person/label pages; Android "Who played on this?").
 
 - **Efficiency plan revised (2026-11-06; PR #820):** [docs/efficiency.md](efficiency.md) now defines relevance-aware refresh ordering, separates stale last-known-good data from missing Tier 3 data, adds progressive cold-start and measurable coverage requirements, and reflects MusicBrainz implementation through merged PR #819 (manual trigger CLI). Documentation-only; no application code, tests, provider traffic, archive download, publication or deployment changed. Exact revision and verification are recorded in PROJECT_LOG.md.

@@ -1,3 +1,11 @@
+## 2026-11-06 — Server V2 Phase 4: macOS knowledge client, slice 1 (PR #830)
+
+- **Objective:** start the Phase 4 client gate with the data layer for the knowledge pages.
+- **Changes:** `Knowledge.swift` (tolerant models for album, person, label, work, recording-works) and `LibrarianClient.knowledgeAlbum/Person/Label/Work/RecordingWorks(mbid:)`. Read-only; no UI.
+- **Verification:** `swift test --filter KnowledgeTests` (8 passed) against `intelligence/contract-fixtures/knowledge_*.json`. Required CI passed on head `b9a7daf1f70682846398e484db7bb13e97b6b6fc`; squash `17bc7567ca5874776b6219d81b1588aaaa887bfb`. Other suites not run (owner rule).
+- **Limitation:** no screen uses the models yet. Not published or deployed.
+- **Next action:** macOS album dossier screen, then person and label pages; Android "Who played on this?" after.
+
 ## 2026-11-06 — Server V2: artist life span and release facts (PR #828)
 
 - **Objective:** the owner's decision of 2026-11-06: keep artist life span and release date, country and status from the dump (option 1), with the owned file's year and track count as fallback (option 3).
