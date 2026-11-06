@@ -1,8 +1,10 @@
 # Project status
 
-Last checked: 2026-11-05. GitHub `main` is authoritative.
+Last checked: 2026-11-06. GitHub `main` is authoritative.
 
 ## Current state
+
+- **Efficiency plan documented (2026-11-06):** [`docs/efficiency.md`](efficiency.md) replaces the provider-only batching audit with a combined plan for background-worker separation, provider I/O efficiency, performance measurement, and multi-worker readiness. The plan retains the audited MusicBrainz, ListenBrainz, and Navidrome opportunities plus explicit provider-budget, testing, and deployment gates. Documentation-only; no application code, tests, provider traffic, publication, or deployment changed.
 
 - **Android insight cards merged (2026-11-05, owner request):** PR [#796](https://github.com/abucalip/navi-librarian/pull/796), squash `cd35c8af8c0c0e7b548970e197fc88bd3bcb1b1d`, tested head `675d2e49bba3dd9287c3027c7a529b1cac5949ed`; compile, container-smoke, test-and-build and validate-container passed. Insights tab in Discover; routes not served yet. Next action: server PR for `GET /api/insights` and the dismiss, restore and accept routes (new module, D-016).
 

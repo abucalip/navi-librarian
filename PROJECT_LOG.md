@@ -7,6 +7,13 @@
 - **Limitations:** a 12-artist sample, not the full library; correctness and explainability only, not usefulness (precision needs the owner's accept and dismiss history); hidden canon's genres are an artist-level proxy; artist life-span anniversary cards get only the common checks; clients were not checked for generic insight card rendering; not published or deployed.
 - **Next action:** owner decision on the blind-spots diversity gate (0.6) and on the 180-day Forgotten Gems gate, then owner review of cards and client rendering, then Phase 3 exit verification.
 
+## 2026-11-06 — External-provider batching audit
+
+- **Documentation:** added [`docs/batching.md`](docs/batching.md) in commit `65129751dd3f0023b54f8149b71d8276fad50f68`, based on `main` `ece37e085f1c77f0e26ab507cf25cad6e2326a21`.
+- **Findings:** the strongest remaining batching candidate is classics MusicBrainz ratings (up to 80 per-candidate release-group lookups can likely become paginated release-group browses per artist with `inc=ratings`). MusicBrainz tracklists may reduce two sequential calls to a release browse with recordings. ListenBrainz recording/release-group/artist batches, album-year batching, and Server V2 series browse are already implemented. Navidrome's per-album `getAlbum` ingestion calls are a separate first-party API investigation.
+- **Verification:** source and provider documentation reviewed; this was a documentation-only change. No application tests or live provider requests were run. The four required workflows were green on baseline `ece37e085f1c77f0e26ab507cf25cad6e2326a21`; they must be checked again for the final documentation commit(s).
+- **Next action:** implement and test the MusicBrainz ratings browse as a focused change, preserving the existing cache, shortlist, rating semantics, pacing, and bounded fallback.
+
 ## 2026-11-05 — Server V2 Phase 3: batch series discovery and minimum owned share (PRs #802, #803)
 
 - **Merged via PR:** [#802](https://github.com/abucalip/navi-librarian/pull/802), squash `0561eb5e7f3612df12c9ec97e557f6c58764fdda`, tested head `75b35bc4ea8fa8cc959ea64e4fb9637d639c133d`; and [#803](https://github.com/abucalip/navi-librarian/pull/803), squash `72ca16b17fd62c22e4d3174b6988580bb23e31b3`, tested head `4799499ddc13e8abfa0176418c44cb4ccde9524a`; compile, container-smoke, test-and-build and validate-container passed on each head.
@@ -2448,3 +2455,11 @@ All live runs were approved by the owner; slskd off; aggregate only; harnesses w
 - **Verification on exact PR head:** all four required workflows succeeded: Python syntax/acquisition safety (run `40259433709`), Docker packaging including the full unit suite and image build (`40259433731`), container runtime smoke (`40259433708`), and validation-only multi-architecture image validation (`40259433714`; publishing paused). The full suite was run by CI, not manually by the agent, per workflow policy. The PR author reports 136 focused tests passing; these were not independently rerun. The PR description reports a live six-search measurement; it was not independently repeated in this review.
 - **State:** merged only. No publication, deployment, or post-merge runtime verification. The broader P5 latency targets and live-provider checks remain open; no claim that the 3-second target is met.
 - **Next action:** continue the P5 measurement and provider-validation plan from current GitHub state; keep image publication and deployment paused unless explicitly authorized.
+
+
+## 2026-11-06 — Combined efficiency and runtime architecture plan
+
+- Replaced `docs/batching.md` with `docs/efficiency.md`, combining the provider batching audit with concrete recommendations for background-worker separation, external I/O efficiency, performance instrumentation, and multi-worker readiness.
+- The plan is grounded in the current FastAPI startup lifecycle, `app/services/insights_refresh.py`, `app/api/search.py`, `intelligence/jobs/runner.py`, Docker configuration, and provider lookup paths.
+- Decision: retain FastAPI, one Uvicorn worker, and SQLite for the current single-host deployment. Do not add Celery, Redis, PostgreSQL, or multiple web workers without a measured need and the safety gates in the plan.
+- Documentation-only. No application code, tests, live provider traffic, publication, deployment, or runtime verification performed. Main baseline before the documentation change: `9a4e717123175bca358faad29aa9deae0a324fdb`.
