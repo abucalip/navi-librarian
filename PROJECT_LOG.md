@@ -1,3 +1,14 @@
+## 2026-11-07 — Server V2 Phase 6 slice 12: pure smart playlist evaluator (PR #862)
+
+- **PR:** [#862](https://github.com/abucalip/navi-librarian/pull/862), squash merge `2937ab1f0413a6e0616ec82aed86981d7bfb553e`, tested head `3c74f29ba366e33e8247a5be8d81b5c0cd223c20`.
+- **Objective:** Phase 6 item 6 slice 12, pure rule validation and evaluation, unwired (owner-approved design in `docs/ServerV2.md`).
+- **Changes:** new `intelligence/taste/smart_playlist.py` (exported from `intelligence/taste/__init__.py`), new `tests/test_intelligence_taste_smart_playlist.py`, slice note in `docs/ServerV2.md`. Client semantics mirrored; stable id tie-break; seeded `random`; `obscurity_band` and `in_lens` read caller lookups and are unfinished when absent.
+- **Tests:** `tests.test_intelligence_taste_smart_playlist` (20) and `tests.test_intelligence_taste_suppression` run locally, 61 passed. Full suite not run (owner rule).
+- **CI:** compile, container-smoke, test-and-build and validate-container passed on the exact head.
+- **Limitations:** no shared Swift/Python fixtures yet (slice 14); the obscurity profile defines no bands, so band names are caller-defined.
+- **Merge:** GitHub confirmed merged. Not published, deployed or runtime-verified.
+- **Next action:** slice 13, migration 3 table and CRUD persistence.
+
 ## 2026-11-07 — Server V2 Phase 6 slice 11c: macOS insight card dismissals (PR #860)
 
 - **PR:** [#860](https://github.com/abucalip/navi-librarian/pull/860), squash merge `8f15cb7dd8bdf13d6efe2f21d98b45882ec1c54e`, tested head `811847df209cf7cf79ea3a36741518789b6b1213`.
