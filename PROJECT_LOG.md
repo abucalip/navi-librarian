@@ -1,3 +1,10 @@
+## 2026-11-06 — Server V2 Phase 6: time-windowed taste profiles (PR #847)
+
+- **Objective:** open Phase 6 with item 1: recent, mid and all-time profiles across genre, era, area, label and collaborator.
+- **Change and evidence:** PR [#847](https://github.com/abucalip/navi-librarian/pull/847), squash `1d8f5002498422d3a3ae902b89c44e67f4db7606`, tested head `b143c33226ad04cff254599b92315d6f76e11d05`; required CI passed (compile, container-smoke, test-and-build, validate-container). New pure module `intelligence/taste/profiles.py`: windows of 90 days, 365 days and all time; shares per value (a multi-value listen splits one unit); a window under 50 listens, or a dimension under 30 attributed listens, is `low_sample`; a shift against all-time is stated only when both sides are sound and the share moved by at least 5 points. No store access, provider traffic, `navidrome_server.py` change or effect on recommendation weights. Tests: focused only, `tests.test_intelligence_taste_profiles` (7); full suite not run (owner rule).
+- **Limits:** thresholds (90/365 days, 50, 30, 5 points) are starting values, not measured; no loader, persistence, route or client; not published or deployed. Phase 6 items 2 to 6 not started.
+- **Next action:** listens loader resolving ListenBrainz/Last.fm listens into attributes (may need provider-traffic approval), then persistence and an `/api/insights` route.
+
 ## 2026-11-06 — Server V2: Phase 5 closed, leftovers moved to Phase 7
 
 - **Objective:** close Phase 5 and have Phase 7 inherit its remaining tasks; refresh the Server V2 header.
