@@ -65,6 +65,39 @@ class PathTests(unittest.TestCase):
         self.assertEqual(len(reason["evidence"]), 2)
         self.assertEqual(reason["evidence"][0]["role"], "guitar")
 
+    def test_follow_the_musician_reads_a_bounded_slice_of_a_hub_players_credits(self):
+        a, _, rec = self.library()
+        hub, rare = self.ent("artist", "Hub"), self.ent("artist", "Rare")
+        self.edge(hub, rec, "instrument")
+        self.edge(rare, rec, "instrument")
+        keep = self.ent("recording", "RareOnly")
+        self.edge(rare, keep, "instrument")
+        for i in range(20):
+            self.edge(hub, self.ent("recording", f"Hub{i:02d}"), "instrument")
+        path = build_path(self.db, a, "follow_the_musician", limits=PathLimits(max_per_bridge=5))
+        names = [s["entity"]["canonical_name"] for s in path["stops"]]
+        self.assertIn("RareOnly", names)                       # the rare player is never crowded out
+        self.assertEqual(sum(n.startswith("Hub") for n in names), 4)  # hub: 5 credits read, one is the shared recording
+        self.assertEqual(path["truncated"], "rows")
+        full = build_path(self.db, a, "follow_the_musician")
+        self.assertEqual(len(full["stops"]), 21)
+        self.assertIsNone(full["truncated"])
+
+    def test_composition_path_reads_a_bounded_slice_of_a_much_recorded_work(self):
+        a, _, rec = self.library()
+        standard, rare = self.ent("work", "Standard"), self.ent("work", "Rare Piece")
+        self.edge(rec, standard, "performance")
+        for i in range(20):
+            self.edge(self.ent("recording", f"Take{i:02d}"), standard, "performance")
+        rare_rec = self.ent("recording", "RareTake")
+        self.edge(rec, rare, "performance")
+        self.edge(rare_rec, rare, "performance")
+        path = build_path(self.db, a, "composition_path", limits=PathLimits(max_per_bridge=5))
+        names = [s["entity"]["canonical_name"] for s in path["stops"]]
+        self.assertIn("RareTake", names)
+        self.assertEqual(sum(n.startswith("Take") for n in names), 4)
+        self.assertEqual(path["truncated"], "rows")
+
     def test_no_evidence_gives_an_empty_path(self):
         a, _, _ = self.library()
         for kind in PATH_KINDS:
