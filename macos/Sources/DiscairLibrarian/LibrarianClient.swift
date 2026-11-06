@@ -260,6 +260,19 @@ public struct LibrarianClient: Sendable {
         return url
     }
 
+    // MARK: Knowledge pages (read-only; the id is always a MusicBrainz id)
+
+    public func knowledgeAlbum(mbid: String) async throws -> KnowledgeAlbum { try await knowledge("album", mbid) }
+    public func knowledgePerson(mbid: String) async throws -> KnowledgePerson { try await knowledge("person", mbid) }
+    public func knowledgeLabel(mbid: String) async throws -> KnowledgeLabel { try await knowledge("label", mbid) }
+    public func knowledgeWork(mbid: String) async throws -> KnowledgeWork { try await knowledge("work", mbid) }
+    public func knowledgeRecordingWorks(mbid: String) async throws -> KnowledgeRecordingWorks { try await knowledge("recording-works", mbid) }
+
+    private func knowledge<T: Decodable>(_ page: String, _ mbid: String) async throws -> T {
+        let (data, http) = try await authedSend("GET", "api/knowledge/\(page)?mbid=\(Self.enc(mbid))", body: nil)
+        return try decode(T.self, data, http)
+    }
+
     // MARK: Plumbing
 
     private func json(_ object: [String: Any]) throws -> Data {
