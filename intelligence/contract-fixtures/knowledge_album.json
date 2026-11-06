@@ -1,0 +1,140 @@
+{
+  "request": "GET /api/knowledge/album?mbid=00000006-0000-4000-8000-000000000000",
+  "response": {
+    "album": {
+      "canonical_name": "Example Album",
+      "mbid": "00000006-0000-4000-8000-000000000000",
+      "owned": true,
+      "sort_name": null,
+      "type": "release"
+    },
+    "credits_truncated": false,
+    "labels": [
+      {
+        "credits": [
+          {
+            "evidence_class": "source_explicit",
+            "match_quality": "exact_mbid",
+            "relation": "publisher",
+            "role": null,
+            "scope": "album",
+            "source": "musicbrainz_dump",
+            "source_url": null,
+            "track": null,
+            "valid_from": null,
+            "valid_to": null
+          }
+        ],
+        "entity": {
+          "canonical_name": "Example Records",
+          "mbid": "00000003-0000-4000-8000-000000000000",
+          "owned": false,
+          "type": "label"
+        }
+      }
+    ],
+    "not_loaded": [
+      "catalogue_numbers",
+      "formats",
+      "recording_places_and_dates",
+      "cover_art_variants"
+    ],
+    "people": [
+      {
+        "credits": [
+          {
+            "evidence_class": "source_explicit",
+            "match_quality": "exact_mbid",
+            "relation": "producer",
+            "role": "executive",
+            "scope": "album",
+            "source": "musicbrainz_dump",
+            "source_url": null,
+            "track": null,
+            "valid_from": null,
+            "valid_to": null
+          },
+          {
+            "evidence_class": "source_explicit",
+            "match_quality": "exact_mbid",
+            "relation": "instrument",
+            "role": "guitar",
+            "scope": "recording",
+            "source": "musicbrainz_dump",
+            "source_url": null,
+            "track": "Example Song",
+            "valid_from": null,
+            "valid_to": null
+          }
+        ],
+        "entity": {
+          "canonical_name": "Example Artist",
+          "mbid": "00000001-0000-4000-8000-000000000000",
+          "owned": false,
+          "type": "artist"
+        }
+      },
+      {
+        "credits": [
+          {
+            "evidence_class": "source_explicit",
+            "match_quality": "exact_mbid",
+            "relation": "vocal",
+            "role": "lead vocals",
+            "scope": "recording",
+            "source": "musicbrainz_dump",
+            "source_url": null,
+            "track": "Example Song",
+            "valid_from": null,
+            "valid_to": null
+          }
+        ],
+        "entity": {
+          "canonical_name": "Example Guest",
+          "mbid": "00000002-0000-4000-8000-000000000000",
+          "owned": false,
+          "type": "artist"
+        }
+      }
+    ],
+    "release_family": {
+      "count": 1,
+      "editions": [
+        {
+          "country": "GB",
+          "date": "2001-05-01",
+          "facts_source": "musicbrainz_dump",
+          "labels": [],
+          "relation": "unknown",
+          "release": {
+            "mbid": "00000006-0000-4000-8000-000000000000",
+            "owned": true,
+            "title": "Example Album"
+          },
+          "status": "official",
+          "track_count": 1
+        }
+      ]
+    },
+    "release_group": {
+      "canonical_name": "Example Album",
+      "mbid": "00000007-0000-4000-8000-000000000000",
+      "owned": true,
+      "sort_name": null,
+      "type": "release_group"
+    },
+    "sources": {
+      "musicbrainz_dump": {
+        "coverage": "loaded",
+        "dump_timestamp": "2026-11-04"
+      }
+    },
+    "tracks": [
+      {
+        "position": "1/1",
+        "recording_mbid": "00000008-0000-4000-8000-000000000000",
+        "title": "Example Song"
+      }
+    ]
+  }
+}

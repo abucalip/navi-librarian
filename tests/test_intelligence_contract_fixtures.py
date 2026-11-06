@@ -48,6 +48,30 @@ class FixtureFileTests(unittest.TestCase):
         self.assertEqual(len(reset["changes"]), 2)
         self.assertEqual(caught_up["changes"], [])
 
+    def test_knowledge_fixtures_have_the_public_shape(self):
+        internal = {"id", "created_generation", "navidrome_id", "discogs_id", "wikidata_id"}
+
+        def walk(value):
+            if isinstance(value, dict):
+                for k, v in value.items():
+                    yield k, v
+                    yield from walk(v)
+            elif isinstance(value, list):
+                for v in value:
+                    yield from walk(v)
+
+        names = sorted(p.name for p in FIXTURES.glob("knowledge_*.json"))
+        self.assertEqual(len(names), 6)
+        for name in names:
+            with self.subTest(fixture=name):
+                pairs = list(walk(json.loads((FIXTURES / name).read_text())["response"]))
+                self.assertFalse({k for k, _ in pairs} & internal)
+                self.assertTrue(all(isinstance(v, bool) for k, v in pairs if k == "owned"))
+
+    def test_slice_pending_fixture_says_so(self):
+        body = json.loads((FIXTURES / "knowledge_person_slice_pending.json").read_text())["response"]
+        self.assertEqual(body["sources"]["musicbrainz_dump"]["coverage"], "pending")
+
 
 class UnresolvedBodyTests(unittest.TestCase):
     def setUp(self):

@@ -1,0 +1,50 @@
+{
+  "request": "GET /api/knowledge/label?mbid=00000003-0000-4000-8000-000000000000",
+  "response": {
+    "aliases": [],
+    "label": {
+      "canonical_name": "Example Records",
+      "mbid": "00000003-0000-4000-8000-000000000000",
+      "owned": false,
+      "sort_name": null,
+      "type": "label"
+    },
+    "not_in_library": [],
+    "not_loaded": [
+      "notable_releases",
+      "catalogue_numbers"
+    ],
+    "owned_catalogue": [
+      {
+        "album": {
+          "canonical_name": "Example Album",
+          "mbid": "00000007-0000-4000-8000-000000000000",
+          "owned": true,
+          "type": "release_group"
+        },
+        "owned": true,
+        "relations": [
+          {
+            "direction": "out",
+            "evidence_class": "source_explicit",
+            "match_quality": "exact_mbid",
+            "relation": "publisher",
+            "role": null,
+            "source": "musicbrainz_dump",
+            "source_url": null,
+            "valid_from": null,
+            "valid_to": null
+          }
+        ]
+      }
+    ],
+    "related_labels": [],
+    "sources": {
+      "musicbrainz_dump": {
+        "coverage": "loaded",
+        "dump_timestamp": "2026-11-04"
+      }
+    },
+    "truncated": false
+  }
+}
