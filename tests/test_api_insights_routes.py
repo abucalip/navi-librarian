@@ -94,7 +94,7 @@ class InsightRoutes(unittest.TestCase):
         self.assertTrue(self.client.post(path + "/dismiss", json={"key": key}).json()["changed"])
         self.assertEqual(self.lenses(BLIND)[BLIND]["cards"], [])
         self.assertEqual(self.db.execute(
-            "SELECT COUNT(*) FROM insights WHERE kind = ? AND dismissed_state = 'dismissed'", (BLIND,)).fetchone()[0], 1)
+            "SELECT COUNT(*) FROM state.card_decisions WHERE kind = ? AND state = 'dismissed'", (BLIND,)).fetchone()[0], 1)
         self.assertTrue(self.client.post(path + "/restore", json={"key": key}).json()["changed"])
 
     def test_unknown_kind_and_bad_body(self):
