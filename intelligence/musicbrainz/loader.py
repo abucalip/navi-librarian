@@ -1,12 +1,15 @@
 """Load the selected MusicBrainz neighbourhood into the Server V2 store.
 
 Input is the id sets chosen by :mod:`neighbourhood` and the same injected table reader.
-Three fixed passes over the archive, never a lookup per entity:
+A fixed number of passes over the archive (the context step adds two scans), never a lookup per entity:
 
 * pass 1 reads the entity tables (rows whose id was selected become ``entities``) plus the
   small ``link_type`` and ``link_attribute_type`` tables, and the facts kept beside an entity: an
   artist's life span, and a release's date, country and status (earliest dated row wins);
 * pass 2 reads the nine relationship tables and keeps links whose two ends are both selected;
+* between passes 2 and 3, :mod:`context` runs its own two scans (areas, places, events, genres,
+  release labels and formats, Wikidata and Discogs ids, ISRC/ISWC, aliases, artist kind) and adds
+  its link rows to the ones pass 3 types and dates;
 * pass 3 reads ``link`` (dates, type) and ``link_attribute`` for just those links.
 
 Provenance: every edge is ``source_explicit`` / ``exact_mbid`` from source
@@ -33,15 +36,17 @@ from typing import Callable
 
 from ..store import repositories as repo
 from ..store.generations import current_generation
+from . import context
 from .neighbourhood import LINK_TABLES, Neighbourhood, TableReader
 from .scan import RowFilter, scan_rows
 
 SOURCE = "musicbrainz_dump"
 ENTITY_TABLES = ("artist", "label", "recording", "release", "release_group", "work")
 # Tables read only for the facts above; the extraction step must unpack them too.
-FACT_TABLES = ("release_country", "release_unknown_country", "release_status", "iso_3166_1")
+FACT_TABLES = ("release_country", "release_unknown_country", "release_status", "iso_3166_1", *context.CONTEXT_TABLES)
 ARTIST_FACT_COLUMNS = ("begin_date_year", "begin_date_month", "begin_date_day",
-                       "end_date_year", "end_date_month", "end_date_day", "ended")
+                       "end_date_year", "end_date_month", "end_date_day", "ended", "area", "begin_area", "type")
+ALL_LINK_TABLES = {**LINK_TABLES, **context.CONTEXT_LINK_TABLES}
 RELEASE_STATUSES = frozenset({"official", "promotion", "bootleg", "pseudo-release", "withdrawn", "expunged", "cancelled"})
 
 
@@ -64,6 +69,7 @@ class LoadResult:
     links_dropped_no_entity: int = 0
     life_spans: int = 0
     release_facts: int = 0
+    context: dict[str, int] = field(default_factory=dict)
     edges_removed: int = 0
     entities_removed: int = 0
     seconds: float = 0.0
@@ -82,6 +88,13 @@ def _date(year, month, day) -> str | None:
         if day:
             text += f"-{int(day):02d}"
     return text
+
+
+def _int(value) -> int | None:
+    try:
+        return int(value) if value not in (None, "") else None
+    except ValueError:
+        return None
 
 
 def _truthy(value) -> bool:
@@ -126,7 +139,7 @@ def load_neighbourhood(
     gid_of: dict[tuple[str, int], str] = {}
     link_type_name: dict[int, str] = {}
     attribute_name: dict[int, str] = {}
-    extra = {"artist": ARTIST_FACT_COLUMNS, "release": ("status",)}
+    extra = {"artist": ARTIST_FACT_COLUMNS, "label": ("area",), "release": ("status",)}
     entity_requests = {
         t: RowFilter(("id", "gid", "name", "sort_name", *extra.get(t, ())), ints=(("id", frozenset(selected[t])),),
                      optional=("sort_name", *extra.get(t, ())))
@@ -143,6 +156,47 @@ def load_neighbourhood(
             "release_status": RowFilter(("id", "name")),
             "iso_3166_1": RowFilter(("area", "code")),
         }
+    def ensure_entity(table: str, internal: int, gid: str, name: str | None, sort_name: str | None = None) -> int:
+        found = db.execute("SELECT id FROM entities WHERE type = ? AND mbid = ?", (table, gid)).fetchone()
+        if found:
+            store_id[(table, internal)] = found["id"]
+            result.entities_existing += 1
+        else:
+            cur = db.execute(
+                "INSERT INTO entities (type, mbid, canonical_name, sort_name, owned, created_generation) "
+                "VALUES (?, ?, ?, ?, 0, ?)",
+                (table, gid, name or gid, sort_name, generation),
+            )
+            store_id[(table, internal)] = cur.lastrowid
+            result.entities_created += 1
+            result.by_type[table] = result.by_type.get(table, 0) + 1
+        gid_of[(table, internal)] = gid
+        return store_id[(table, internal)]
+
+    seen_edges: set[int] = set()
+    entity_area: dict[tuple[str, int], tuple[int | None, int | None]] = {}
+    artist_types: dict[int, int] = {}
+
+    def put_edge(from_store: int, to_store: int, relation: str, first_type: str, first_internal: int,
+                 role: str | None = None, valid_from: str | None = None, valid_to: str | None = None) -> None:
+        cur = db.execute(
+            "INSERT OR IGNORE INTO edges (from_id, to_id, relation, role, evidence_class, match_quality, "
+            "source, source_url, observation_id, valid_from, valid_to, generation) "
+            "VALUES (?, ?, ?, ?, 'source_explicit', 'exact_mbid', ?, ?, ?, ?, ?, ?)",
+            (from_store, to_store, relation, role, SOURCE,
+             f"https://musicbrainz.org/{first_type.replace('_', '-')}/{gid_of[(first_type, first_internal)]}",
+             observation_id, valid_from, valid_to, generation),
+        )
+        if cur.rowcount:
+            result.edges_created += 1
+            seen_edges.add(cur.lastrowid)
+        else:
+            result.edges_existing += 1
+            seen_edges.add(db.execute(
+                "SELECT id FROM edges WHERE from_id = ? AND to_id = ? AND relation = ? "
+                "AND COALESCE(role, '') = ? AND source = ? AND generation = ?",
+                (from_store, to_store, relation, role or "", SOURCE, generation)).fetchone()[0])
+
     db.execute("BEGIN")
     try:
         previous_edges = db.execute("SELECT COUNT(*) FROM edges WHERE source = ?", (SOURCE,)).fetchone()[0]
@@ -167,22 +221,14 @@ def load_neighbourhood(
                     continue
                 internal = int(internal)
                 gid = raw_gid.lower()
-                found = db.execute(
-                    "SELECT id FROM entities WHERE type = ? AND mbid = ?", (table, gid)
-                ).fetchone()
-                if found:
-                    store_id[(table, internal)] = found["id"]
-                    result.entities_existing += 1
-                else:
-                    cur = db.execute(
-                        "INSERT INTO entities (type, mbid, canonical_name, sort_name, owned, created_generation) "
-                        "VALUES (?, ?, ?, ?, 0, ?)",
-                        (table, gid, name or gid, sort_name, generation),
-                    )
-                    store_id[(table, internal)] = cur.lastrowid
-                    result.entities_created += 1
-                    result.by_type[table] = result.by_type.get(table, 0) + 1
+                ensure_entity(table, internal, gid, name, sort_name)
                 gid_of[(table, internal)] = gid
+                if table == "artist" and facts:
+                    entity_area[(table, internal)] = (_int(facts[7]), _int(facts[8]))
+                    if _int(facts[9]) is not None:
+                        artist_types[internal] = _int(facts[9])
+                elif table == "label" and facts:
+                    entity_area[(table, internal)] = (_int(facts[0]), None)
                 begin = end = None
                 if table == "artist" and facts:
                     begin, end = _date(*facts[0:3]), _date(*facts[3:6])
@@ -218,6 +264,10 @@ def load_neighbourhood(
         for table, rows in scan_rows(read, link_requests).items():
             pending.extend((table, int(e0), int(e1), int(lid)) for e0, e1, lid in rows)
         result.passes += 1
+        result.passes += 1
+        result.context = context.load_context(
+            db, read, selected, entity_area, artist_types, store_id, gid_of, pending,
+            ensure_entity=ensure_entity, put_edge=put_edge).summary()
         result.links_seen = len(pending)
 
         # --- pass 3: dates, type and attributes of just those links
@@ -238,36 +288,18 @@ def load_neighbourhood(
                     link_attrs.setdefault(int(lid), []).append(name)
             result.passes += 1
 
-        seen_edges: set[int] = set()
         for table, id0, id1, lid in pending:
             info = link_info.get(lid)
             relation = link_type_name.get(info[0]) if info else None
             if not relation:
                 result.links_dropped_no_type += 1
                 continue
-            type0, type1 = LINK_TABLES[table]
+            type0, type1 = ALL_LINK_TABLES[table]
             if (type0, id0) not in store_id or (type1, id1) not in store_id:
                 result.links_dropped_no_entity += 1
                 continue
             role = ", ".join(sorted(set(link_attrs.get(lid, [])))) or None
-            cur = db.execute(
-                "INSERT OR IGNORE INTO edges (from_id, to_id, relation, role, evidence_class, match_quality, "
-                "source, source_url, observation_id, valid_from, valid_to, generation) "
-                "VALUES (?, ?, ?, ?, 'source_explicit', 'exact_mbid', ?, ?, ?, ?, ?, ?)",
-                (store_id[(type0, id0)], store_id[(type1, id1)], relation, role, SOURCE,
-                 f"https://musicbrainz.org/{type0.replace('_', '-')}/{gid_of[(type0, id0)]}",
-                 observation_id, info[1], info[2], generation),
-            )
-            if cur.rowcount:
-                result.edges_created += 1
-                seen_edges.add(cur.lastrowid)
-            else:
-                result.edges_existing += 1
-                seen_edges.add(db.execute(
-                    "SELECT id FROM edges WHERE from_id = ? AND to_id = ? AND relation = ? "
-                    "AND COALESCE(role, '') = ? AND source = ? AND generation = ?",
-                    (store_id[(type0, id0)], store_id[(type1, id1)], relation, role or "",
-                     SOURCE, generation)).fetchone()[0])
+            put_edge(store_id[(type0, id0)], store_id[(type1, id1)], relation, type0, id0, role, info[1], info[2])
         kept = result.edges_created + result.edges_existing
         if previous_edges and kept < previous_edges * min_retained:
             raise SliceValidationError(

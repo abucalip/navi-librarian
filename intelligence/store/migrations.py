@@ -12,10 +12,11 @@ from typing import NamedTuple
 
 EVIDENCE_CLASSES = ("source_explicit", "library_tag", "user_confirmed", "derived", "inferred")
 MATCH_QUALITIES = ("exact_mbid", "isrc", "fuzzy_confirmed", "fuzzy_unconfirmed", "unresolved")
-ENTITY_TYPES = (
+_V1_ENTITY_TYPES = (
     "artist", "person", "group", "recording", "work", "release",
     "release_group", "label", "area", "place", "series", "genre",
 )
+ENTITY_TYPES = _V1_ENTITY_TYPES + ("event",)  # "event" arrives with migration 4
 UNRESOLVED_STATUSES = ("open", "user_confirmed", "user_rejected")
 JOB_STATES = ("queued", "running", "succeeded", "failed", "cancelled")
 
@@ -28,6 +29,10 @@ class Migration(NamedTuple):
     version: int
     name: str
     statements: tuple[str, ...]
+    # Rebuilds a table other tables point at (SQLite's documented 12-step change): foreign keys are
+    # switched off around the transaction so dropping the old table cascades nothing, and the
+    # result is checked with ``foreign_key_check`` before it commits.
+    rebuilds_tables: bool = False
 
 
 def _in(values: tuple[str, ...]) -> str:
@@ -56,7 +61,7 @@ _V1 = (
     f"""
     CREATE TABLE entities (
         id INTEGER PRIMARY KEY,
-        type TEXT NOT NULL CHECK (type IN ({_in(ENTITY_TYPES)})),
+        type TEXT NOT NULL CHECK (type IN ({_in(_V1_ENTITY_TYPES)})),
         mbid TEXT,
         navidrome_id TEXT,
         discogs_id TEXT,
@@ -207,10 +212,90 @@ _V3 = (
     "CREATE INDEX source_state_due ON source_state (source, operation, next_refresh_at)",
 )
 
+# Phase 5 context from the dump (areas, places, events, Wikidata and Discogs ids, aliases, ISRC and ISWC
+# codes, release formats and catalogue numbers, artist kind). Which area an entity belongs to, who
+# played at an event, and similar relationships are edges, never columns here. Dates are
+# ``YYYY[-MM[-DD]]``. Opinions such as community tags are deliberately not stored here.
+_V4 = (
+    f"""
+    CREATE TABLE entities_v4 (
+        id INTEGER PRIMARY KEY,
+        type TEXT NOT NULL CHECK (type IN ({_in(ENTITY_TYPES)})),
+        mbid TEXT,
+        navidrome_id TEXT,
+        discogs_id TEXT,
+        wikidata_id TEXT,
+        canonical_name TEXT NOT NULL,
+        sort_name TEXT,
+        owned INTEGER NOT NULL DEFAULT 0 CHECK (owned IN (0, 1)),
+        created_generation INTEGER NOT NULL DEFAULT 1
+    )
+    """,
+    "INSERT INTO entities_v4 SELECT id, type, mbid, navidrome_id, discogs_id, wikidata_id, canonical_name, "
+    "sort_name, owned, created_generation FROM entities",
+    "DROP TABLE entities",
+    "ALTER TABLE entities_v4 RENAME TO entities",
+    "CREATE UNIQUE INDEX entities_mbid ON entities (type, mbid) WHERE mbid IS NOT NULL",
+    "CREATE UNIQUE INDEX entities_navidrome ON entities (type, navidrome_id) WHERE navidrome_id IS NOT NULL",
+    "CREATE INDEX entities_name ON entities (type, canonical_name)",
+    """
+    CREATE TABLE area_facts (
+        entity_id INTEGER PRIMARY KEY REFERENCES entities (id) ON DELETE CASCADE,
+        kind TEXT,
+        iso_code TEXT
+    )
+    """,
+    """
+    CREATE TABLE place_facts (
+        entity_id INTEGER PRIMARY KEY REFERENCES entities (id) ON DELETE CASCADE,
+        kind TEXT,
+        latitude REAL,
+        longitude REAL,
+        begin_date TEXT,
+        end_date TEXT
+    )
+    """,
+    """
+    CREATE TABLE event_facts (
+        entity_id INTEGER PRIMARY KEY REFERENCES entities (id) ON DELETE CASCADE,
+        kind TEXT,
+        begin_date TEXT,
+        end_date TEXT,
+        cancelled INTEGER NOT NULL DEFAULT 0 CHECK (cancelled IN (0, 1))
+    )
+    """,
+    """
+    CREATE TABLE artist_facts (
+        entity_id INTEGER PRIMARY KEY REFERENCES entities (id) ON DELETE CASCADE,
+        kind TEXT
+    )
+    """,
+    """
+    CREATE TABLE release_labels (
+        release_id INTEGER NOT NULL REFERENCES entities (id) ON DELETE CASCADE,
+        label_id INTEGER REFERENCES entities (id) ON DELETE CASCADE,
+        catalogue_number TEXT
+    )
+    """,
+    "CREATE UNIQUE INDEX release_labels_unique ON release_labels "
+    "(release_id, COALESCE(label_id, 0), COALESCE(catalogue_number, ''))",
+    "ALTER TABLE release_facts ADD COLUMN formats TEXT",
+    """
+    CREATE TABLE entity_identifiers (
+        entity_id INTEGER NOT NULL REFERENCES entities (id) ON DELETE CASCADE,
+        scheme TEXT NOT NULL CHECK (scheme IN ('isrc', 'iswc')),
+        value TEXT NOT NULL,
+        PRIMARY KEY (entity_id, scheme, value)
+    )
+    """,
+    "CREATE INDEX entity_identifiers_value ON entity_identifiers (scheme, value)",
+)
+
 MIGRATIONS: tuple[Migration, ...] = (
     Migration(1, "initial schema", _V1),
     Migration(2, "artist life span and release facts", _V2),
     Migration(3, "source freshness ledger", _V3),
+    Migration(4, "context facts and the event entity type", _V4, rebuilds_tables=True),
 )
 LATEST_VERSION = MIGRATIONS[-1].version
 
@@ -237,6 +322,8 @@ def _apply(db: sqlite3.Connection, migration: Migration) -> None:
     # Python's sqlite3 does not open transactions before DDL, so manage one explicitly.
     previous_isolation = db.isolation_level
     db.isolation_level = None
+    if migration.rebuilds_tables:
+        db.execute("PRAGMA foreign_keys = OFF")  # a no-op inside a transaction, so it is set first
     try:
         db.execute("BEGIN IMMEDIATE")
         try:
@@ -246,6 +333,10 @@ def _apply(db: sqlite3.Connection, migration: Migration) -> None:
                 return
             for statement in migration.statements:
                 db.execute(statement)
+            if migration.rebuilds_tables:
+                broken = db.execute("PRAGMA foreign_key_check").fetchall()
+                if broken:
+                    raise MigrationError(f"migration {migration.version} left {len(broken)} broken references")
             db.execute(f"PRAGMA user_version = {int(migration.version)}")
             db.execute("COMMIT")
         except BaseException as exc:
@@ -255,4 +346,6 @@ def _apply(db: sqlite3.Connection, migration: Migration) -> None:
                 raise MigrationError(f"migration {migration.version} ({migration.name}) failed: {exc}") from exc
             raise
     finally:
+        if migration.rebuilds_tables:
+            db.execute("PRAGMA foreign_keys = ON")
         db.isolation_level = previous_isolation
