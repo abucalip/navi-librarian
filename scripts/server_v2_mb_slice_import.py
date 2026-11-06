@@ -23,6 +23,7 @@ import argparse
 import json
 import os
 import sys
+import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -68,8 +69,14 @@ def plan(db) -> dict:
             "budgets": {k: getattr(budgets, k) for k in job.Budgets.__dataclass_fields__}}
 
 
+def print_progress(stage: str, percent: int) -> None:
+    """One line per 5% (and at 100%), with the time, to stderr so the JSON report stays clean."""
+    if percent % 5 == 0:
+        print(f"[{time.strftime('%H:%M:%S')}] {stage} {percent}%", file=sys.stderr, flush=True)
+
+
 def run(data_dir: Path, scratch: Path, *, plan_only: bool, export: str | None, cover_art: bool,
-        keep_archive: bool, hops: int, ingest: bool = False) -> dict:
+        keep_archive: bool, hops: int, ingest: bool = False, keep_extracted: bool = False) -> dict:
     data_dir.mkdir(parents=True, exist_ok=True)
     db = open_store(data_dir / STORE_FILE)
     try:
@@ -78,7 +85,8 @@ def run(data_dir: Path, scratch: Path, *, plan_only: bool, export: str | None, c
             return {**plan(db), **({"ingest": ingested} if ingested else {})}
         scratch.mkdir(parents=True, exist_ok=True)
         result = job.run_slice_import(
-            db, scratch, export=export, include_cover_art=cover_art, delete_archive=not keep_archive, hops=hops)
+            db, scratch, export=export, include_cover_art=cover_art, delete_archive=not keep_archive,
+            keep_extracted=keep_extracted, hops=hops, on_progress=print_progress)
         return {"state": result.state, "error": result.error, "progress": result.progress,
                 **({"ingest": ingested} if ingested else {})}
     finally:
@@ -97,13 +105,16 @@ def main(argv=None) -> int:
     parser.add_argument("--export", default=None, help="export directory name (default: the newest)")
     parser.add_argument("--include-cover-art", action="store_true")
     parser.add_argument("--keep-archive", action="store_true", help="keep the downloaded archive after loading")
+    parser.add_argument("--keep-extracted", action="store_true",
+                        help="keep the decompressed tables so a re-run skips decompression")
     parser.add_argument("--ingest", action="store_true", help="first record the owned library from Navidrome (read-only)")
     parser.add_argument("--hops", type=int, default=2)
     parser.add_argument("--out", type=Path, default=None)
     args = parser.parse_args(argv)
     data_dir = args.data_dir or default_data_dir()
     report = run(data_dir, args.scratch or data_dir / "mb-scratch", plan_only=args.plan, export=args.export,
-                 cover_art=args.include_cover_art, keep_archive=args.keep_archive, hops=args.hops, ingest=args.ingest)
+                 cover_art=args.include_cover_art, keep_archive=args.keep_archive, hops=args.hops, ingest=args.ingest,
+                 keep_extracted=args.keep_extracted)
     text = json.dumps(report, indent=2, sort_keys=True, default=str)
     if args.out:
         args.out.write_text(text + "\n")

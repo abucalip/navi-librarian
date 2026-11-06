@@ -27,6 +27,7 @@ from typing import Callable
 from ..store import repositories as repo
 from ..store.generations import current_generation
 from .neighbourhood import LINK_TABLES, Neighbourhood, TableReader
+from .scan import RowFilter, scan_rows
 
 SOURCE = "musicbrainz_dump"
 ENTITY_TABLES = ("artist", "label", "recording", "release", "release_group", "work")
@@ -84,77 +85,73 @@ def load_neighbourhood(
     gid_of: dict[tuple[str, int], str] = {}
     link_type_name: dict[int, str] = {}
     attribute_name: dict[int, str] = {}
-    wanted = [t for t in ENTITY_TABLES if selected.get(t)] + ["link_type", "link_attribute_type"]
+    entity_requests = {
+        t: RowFilter(("id", "gid", "name", "sort_name"), ints=(("id", frozenset(selected[t])),), optional=("sort_name",))
+        for t in ENTITY_TABLES if selected.get(t)
+    }
     db.execute("BEGIN")
     try:
-        for table, rows in read(wanted):
-            if table == "link_type":
-                for row in rows:
-                    link_type_name[int(row["id"])] = row["name"] or ""
-            elif table == "link_attribute_type":
-                for row in rows:
-                    attribute_name[int(row["id"])] = row["name"] or ""
-            else:
-                ids = selected[table]
-                for row in rows:
-                    internal = int(row["id"])
-                    if internal not in ids or not row["gid"]:
-                        continue
-                    gid = row["gid"].lower()
-                    found = db.execute(
-                        "SELECT id FROM entities WHERE type = ? AND mbid = ?", (table, gid)
-                    ).fetchone()
-                    if found:
-                        store_id[(table, internal)] = found["id"]
-                        result.entities_existing += 1
-                    else:
-                        cur = db.execute(
-                            "INSERT INTO entities (type, mbid, canonical_name, sort_name, owned, created_generation) "
-                            "VALUES (?, ?, ?, ?, 0, ?)",
-                            (table, gid, row["name"] or gid, row.get("sort_name"), generation),
-                        )
-                        store_id[(table, internal)] = cur.lastrowid
-                        result.entities_created += 1
-                        result.by_type[table] = result.by_type.get(table, 0) + 1
-                    gid_of[(table, internal)] = gid
+        scanned = scan_rows(read, {
+            **entity_requests,
+            "link_type": RowFilter(("id", "name")), "link_attribute_type": RowFilter(("id", "name"))})
+        for table in ("link_type", "link_attribute_type"):
+            target = link_type_name if table == "link_type" else attribute_name
+            for row_id, name in scanned.pop(table):
+                target[int(row_id)] = name or ""
+        for table, rows in scanned.items():
+            for internal, raw_gid, name, sort_name in rows:
+                if not raw_gid:
+                    continue
+                internal = int(internal)
+                gid = raw_gid.lower()
+                found = db.execute(
+                    "SELECT id FROM entities WHERE type = ? AND mbid = ?", (table, gid)
+                ).fetchone()
+                if found:
+                    store_id[(table, internal)] = found["id"]
+                    result.entities_existing += 1
+                else:
+                    cur = db.execute(
+                        "INSERT INTO entities (type, mbid, canonical_name, sort_name, owned, created_generation) "
+                        "VALUES (?, ?, ?, ?, 0, ?)",
+                        (table, gid, name or gid, sort_name, generation),
+                    )
+                    store_id[(table, internal)] = cur.lastrowid
+                    result.entities_created += 1
+                    result.by_type[table] = result.by_type.get(table, 0) + 1
+                gid_of[(table, internal)] = gid
         result.passes += 1
 
         # --- pass 2: relationships with both ends selected
         pending: list[tuple[str, int, int, int]] = []  # table, entity0, entity1, link id
-        for table, rows in read(LINK_TABLES):
-            type0, type1 = LINK_TABLES[table]
+        link_requests = {}
+        for table, (type0, type1) in LINK_TABLES.items():
             have0, have1 = selected.get(type0), selected.get(type1)
-            if not have0 or not have1:
-                continue
-            for row in rows:
-                id0, id1 = int(row["entity0"]), int(row["entity1"])
-                if id0 in have0 and id1 in have1:
-                    pending.append((table, id0, id1, int(row["link"])))
+            if have0 and have1:
+                link_requests[table] = RowFilter(
+                    ("entity0", "entity1", "link"),
+                    ints=(("entity0", frozenset(have0)), ("entity1", frozenset(have1))))
+        for table, rows in scan_rows(read, link_requests).items():
+            pending.extend((table, int(e0), int(e1), int(lid)) for e0, e1, lid in rows)
         result.passes += 1
         result.links_seen = len(pending)
 
         # --- pass 3: dates, type and attributes of just those links
-        link_ids = {p[3] for p in pending}
+        link_ids = frozenset(p[3] for p in pending)
         link_info: dict[int, tuple[int, str | None, str | None]] = {}
         link_attrs: dict[int, list[str]] = {}
         if link_ids:
-            for table, rows in read(("link", "link_attribute")):
-                if table == "link":
-                    for row in rows:
-                        lid = int(row["id"])
-                        if lid in link_ids:
-                            link_info[lid] = (
-                                int(row["link_type"]),
-                                _date(row["begin_date_year"], row["begin_date_month"], row["begin_date_day"]),
-                                _date(row["end_date_year"], row["end_date_month"], row["end_date_day"]),
-                            )
-                else:
-                    for row in rows:
-                        lid = int(row["link"])
-                        if lid in link_ids:
-                            name = attribute_name.get(int(row["attribute_type"]))
-                            if name:
-                                link_attrs.setdefault(lid, []).append(name)
+            found = scan_rows(read, {
+                "link": RowFilter(("id", "link_type", "begin_date_year", "begin_date_month", "begin_date_day",
+                                   "end_date_year", "end_date_month", "end_date_day"), ints=(("id", link_ids),)),
+                "link_attribute": RowFilter(("link", "attribute_type"), ints=(("link", link_ids),)),
+            })
+            for lid, link_type, by, bm, bd, ey, em, ed in found["link"]:
+                link_info[int(lid)] = (int(link_type), _date(by, bm, bd), _date(ey, em, ed))
+            for lid, attribute_type in found["link_attribute"]:
+                name = attribute_name.get(int(attribute_type))
+                if name:
+                    link_attrs.setdefault(int(lid), []).append(name)
             result.passes += 1
 
         for table, id0, id1, lid in pending:
