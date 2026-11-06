@@ -1,3 +1,11 @@
+## 2026-11-06 — Server V2 album dossier (PR #823)
+
+- **PR:** [#823](https://github.com/abucalip/navi-librarian/pull/823), squash `fea4a19d89276f6f40e3420d45b802aeedcb00eb`, tested head `4117359f66ab84e13724f0e013df2be37fc6edc6`; compile, container-smoke, test-and-build and validate-container passed.
+- **Changes:** `KnowledgeReader.album_dossier` (`intelligence/knowledge/dossier.py`): editions, tracks, people credits and labels for a release or release group, each with source and evidence; `credits_only`, so inferred or unmatched edges are never credits; slice `coverage` and a `not_loaded` list (catalogue numbers, formats, recording places and dates, cover art variants). Store-only; no routes, provider calls or `navidrome_server.py` change.
+- **Verification:** `python -m unittest tests.test_intelligence_knowledge_reader` (14 passed, 5 new). Full suite not run by the agent (owner rule). Not run against the real store; not published or deployed.
+- **Limitation:** the slice loader does not read `release.release_group` or `release_label`, so release family and catalogue numbers come only from earlier API lookups until the loader is extended (needs a re-import and the owner's go-ahead).
+- **Next action:** person pages through the reader, then label pages; decide on the loader extension.
+
 ## 2026-11-06 — Efficiency plan revision 4 (PR #820)
 
 - **PR:** [#820](https://github.com/abucalip/navi-librarian/pull/820), branch `docs/efficiency-cold-start-refresh-merge`, based on current `main` at `7957c2a08bd6ea05bc06d6355f61cd0938880836`.
