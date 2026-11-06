@@ -1,3 +1,11 @@
+## 2026-11-06 — Server V2 Phase 4: source freshness ledger (PR #831)
+
+- **Objective:** add the `source_state` ledger (efficiency.md E1 item 3) that slice replacement and the owned-MBID API fill need.
+- **Change:** PR [#831](https://github.com/abucalip/navi-librarian/pull/831), squash `3602aa1f4d507468d82ab32aa2e6468c65c51735`, tested head `9361fe7bd161d8e318be45cfcb19bde87657321a`. Migration 3 adds `source_state` (outcome `ok`, `not_found`, `error`, `blocked`; attempts; next refresh time; etag; last-modified; last good observation). `intelligence/store/source_state.py` has `record_outcome`, `get_state`, `status` (`pending` when never tried) and `due`. Failures back off exponentially (error 5 min, blocked 1 h, cap 24 h) and keep the last good observation and validators. Capabilities fixtures regenerated for schema version 3.
+- **Verification:** `tests.test_intelligence_source_state`, `tests.test_intelligence_store`, `tests.test_intelligence_api`: 44 passed; fixture test passed after regeneration. Required CI passed on the final head (compile, test-and-build, container-smoke, validate-container). Full suite not run by the agent (owner rule).
+- **Limitation:** not wired to any job; no provider traffic; not published or deployed.
+- **Next action (not started):** slice replacement (remove entities and edges that left the dump, validated before swap), then the owned-MBID API fill (needs the owner's approval for provider traffic); macOS dossier screen continues in parallel.
+
 ## 2026-11-06 — Server V2 Phase 4: macOS knowledge client, slice 1 (PR #830)
 
 - **Objective:** start the Phase 4 client gate with the data layer for the knowledge pages.
