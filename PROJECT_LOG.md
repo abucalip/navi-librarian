@@ -1,3 +1,11 @@
+## 2026-11-06 — Server V2 Phase 5: path builders (PR #841)
+
+- **Objective:** build the on-demand discovery paths for the four path kinds kept after the coverage measurement.
+- **Change and evidence:** PR [#841](https://github.com/abucalip/navi-librarian/pull/841), squash `ed7da89f556f9a2dbd36d47154c2cb7b4a34f2fe`, tested head `281dbe3c39c32beec7b627b745267c28b8ecf5e0`; required CI passed. `intelligence/graph/paths.py`: follow_the_musician, label_path, composition_path, scene_path; stops with `reasons[]` and evidence, credit-grade edges only, bounded by rows, stops and time, optional cache in `insights` (`path:<kind>`, by start, kind and generation, stale on slice change). Dropped and parked kinds refused. No route, provider traffic or migration.
+- **Tests:** focused only: `tests.test_intelligence_paths` (11), `tests.test_intelligence_graph_traversal`, `tests.test_intelligence_path_coverage` (37 passed in total). Full suite not run (owner rule).
+- **Limits:** latency on the real library not measured; no route yet; not published or deployed.
+- **Next:** paths route and real-store latency check.
+
 ## 2026-11-06 — Server V2 Phase 5: path coverage and slice re-import (PR #840)
 
 - **Objective:** fill the new context tables with a slice re-import and measure which Phase 5 path kinds have usable evidence, so the kill rule runs on numbers.
