@@ -4,6 +4,8 @@ Last checked: 2026-11-06. GitHub `main` is authoritative.
 
 ## Current state
 
+- **Server V2 knowledge page fixtures merged (2026-11-06, owner request):** PR [#829](https://github.com/abucalip/navi-librarian/pull/829), squash `72ebe2d950bc079307d0f843315dc917bdc6c8a1`, tested head `add2b4dcba3716be7f7afb445c47bade7436998f`; required CI passed; six fixtures in `intelligence/contract-fixtures` with public-shape tests; not published or deployed. Next action: the client gate (macOS dossier and person/label pages; Android "Who played on this?").
+
 - **Efficiency plan revised (2026-11-06; PR #820):** [docs/efficiency.md](efficiency.md) now defines relevance-aware refresh ordering, separates stale last-known-good data from missing Tier 3 data, adds progressive cold-start and measurable coverage requirements, and reflects MusicBrainz implementation through merged PR #819 (manual trigger CLI). Documentation-only; no application code, tests, provider traffic, archive download, publication or deployment changed. Exact revision and verification are recorded in PROJECT_LOG.md.
 
 - **Efficiency plan documented (2026-11-06):** [`docs/efficiency.md`](efficiency.md) replaces the provider-only batching audit with a combined plan for background-worker separation, provider I/O efficiency, performance measurement, and multi-worker readiness. The plan retains the audited MusicBrainz, ListenBrainz, and Navidrome opportunities plus explicit provider-budget, testing, and deployment gates. Documentation-only; no application code, tests, provider traffic, publication, or deployment changed.

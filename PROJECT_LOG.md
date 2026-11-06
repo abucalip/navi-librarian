@@ -2629,3 +2629,10 @@ All live runs were approved by the owner; slskd off; aggregate only; harnesses w
 - **Verification:** `python -m unittest tests.test_intelligence_knowledge_reader tests.test_api_knowledge_routes` (34 passed, 3 new). Full suite not run by the agent (owner rule). Not run against the real store; not published or deployed.
 - **Limitation:** an entity with no `mbid` can no longer be referenced from a page body. The loader keeps no life span or release date, country or status yet, so the person header and edition rows are blank.
 - **Next action (not started):** loader migration for artist life span and release date, country and status, the `life_span` field and filled editions, then a re-import on the owner's Mac; then fixtures and the client gate.
+
+## 2026-11-06 - Server V2 knowledge page fixtures
+
+- **Change:** PR [#829](https://github.com/abucalip/navi-librarian/pull/829), squash `72ebe2d950bc079307d0f843315dc917bdc6c8a1`, tested head `add2b4dcba3716be7f7afb445c47bade7436998f`. `_knowledge_fixtures` in `intelligence/api/fixture_set.py` builds six fixtures (album, person, person with no slice loaded, label, work, recording-works) from a throwaway store with fixed ids and clock; contract note added.
+- **Verification:** `python -m unittest tests.test_intelligence_contract_fixtures` (10 passed, 2 new: public shape, pending coverage). Required CI passed (compile, test-and-build, container-smoke, validate-container). Full suite not run by the agent (owner rule); `tests.test_android_contract_fixtures` not run locally (no `fastapi` in the interpreter used).
+- **Limitation:** fixtures come from synthetic data, not the real slice; not published or deployed.
+- **Next action (not started):** client gate (macOS dossier and person/label pages; Android "Who played on this?").
