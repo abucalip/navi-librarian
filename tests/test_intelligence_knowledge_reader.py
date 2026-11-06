@@ -308,5 +308,58 @@ class BoundaryTests(unittest.TestCase):
                     self.assertNotIn(name.split(".")[0], self.FORBIDDEN, f"{path.name} imports {name}")
 
 
+
+class PublicShapeTests(unittest.TestCase):
+    """Owner decision 2026-11-06: mbid only, every owned flag a boolean, a group is owned when any edition is."""
+
+    def setUp(self):
+        self.db = open_store(":memory:")
+        c = dict(evidence_class="source_explicit", match_quality="exact_mbid", source="musicbrainz_dump")
+        e = lambda t, n, g, **k: repo.upsert_entity(self.db, t, n, mbid=g, **k)[0]
+        self.miles = e("artist", "Miles Davis", "m-gid")
+        self.rel = e("release", "Kind of Blue", "r-gid", owned=True)
+        self.group = e("release_group", "Kind of Blue", "g-gid")
+        self.rec = e("recording", "So What", "rec-gid")
+        self.work = e("work", "So What", "w-gid")
+        repo.add_edge(self.db, self.rel, self.group, "member_of", **{**c, "source": "musicbrainz"})
+        repo.add_edge(self.db, self.rec, self.rel, "appears_on", role="1/1", **{**c, "source": "musicbrainz"})
+        repo.add_edge(self.db, self.miles, self.rec, "instrument", role="trumpet", **c)
+        repo.add_edge(self.db, self.rec, self.work, "performance", **c)
+        self.reader = KnowledgeReader(self.db, clock=lambda: 2000.0)
+
+    def pages(self):
+        r = self.reader
+        return [r.album_dossier(mbid="r-gid"), r.album_dossier(mbid="g-gid", type="release_group"),
+                r.person_page(mbid="m-gid"), r.work_page(mbid="w-gid"), r.works_of_recording(mbid="rec-gid")]
+
+    def walk(self, value, found):
+        if isinstance(value, dict):
+            for k, v in value.items():
+                found.append((k, v))
+                self.walk(v, found)
+        elif isinstance(value, list):
+            for v in value:
+                self.walk(v, found)
+        return found
+
+    def test_no_internal_identifier_in_any_page(self):
+        for page in self.pages():
+            keys = {k for k, _ in self.walk(page, [])}
+            self.assertFalse(keys & {"id", "created_generation", "navidrome_id", "discogs_id", "wikidata_id"}, keys)
+
+    def test_every_owned_flag_is_a_boolean(self):
+        for page in self.pages():
+            flags = [v for k, v in self.walk(page, []) if k == "owned"]
+            self.assertTrue(flags)
+            self.assertTrue(all(isinstance(v, bool) for v in flags), flags)
+
+    def test_group_is_owned_when_any_edition_is(self):
+        self.assertIs(self.reader.album_dossier(mbid="r-gid")["release_group"]["owned"], True)
+        self.assertIs(self.reader.album_dossier(mbid="g-gid", type="release_group")["album"]["owned"], True)
+        person = self.reader.person_page(mbid="m-gid")
+        self.assertEqual([r["album"]["owned"] for r in person["in_library"]], [True])
+        work = self.reader.work_page(mbid="w-gid")
+        self.assertIs(work["versions"][0]["albums"][0]["album"]["owned"], True)
+
 if __name__ == "__main__":
     unittest.main()

@@ -71,7 +71,8 @@ Served by `app/api/knowledge.py` (D-016: nothing added to `navidrome_server.py`)
 - `label` and `work`: `mbid` (required, else `422`), `limit` 1 to 500 (default 200).
 - `recording-works`: `mbid` or `navidrome_id`, `limit` 1 to 500 (default 50).
 - Errors: neither identifier `400`; bad `type` `400`; `limit` out of range `422`; entity not in the store `404`; store unreadable `502`.
-- Not yet fixtured and no client uses these routes; no fixture JSON until the owner approves the page shapes.
+- Shape (owner decisions, 2026-11-06): the page shapes are approved. Bodies carry `mbid` and never a store `id`, `created_generation`, `navidrome_id`, `discogs_id` or `wikidata_id` (`intelligence/knowledge/public.py`). Every `owned` flag is a boolean, and a release group is owned when any of its editions is. Clients show at most ten credits per list and a "more" control for the rest (the body still carries up to `limit`).
+- Not yet fixtured and no client uses these routes; fixtures come next.
 
 ## Not in this contract
 
