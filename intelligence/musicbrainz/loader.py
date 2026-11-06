@@ -4,7 +4,8 @@ Input is the id sets chosen by :mod:`neighbourhood` and the same injected table 
 Three fixed passes over the archive, never a lookup per entity:
 
 * pass 1 reads the entity tables (rows whose id was selected become ``entities``) plus the
-  small ``link_type`` and ``link_attribute_type`` tables;
+  small ``link_type`` and ``link_attribute_type`` tables, and the facts kept beside an entity: an
+  artist's life span, and a release's date, country and status (earliest dated row wins);
 * pass 2 reads the nine relationship tables and keeps links whose two ends are both selected;
 * pass 3 reads ``link`` (dates, type) and ``link_attribute`` for just those links.
 
@@ -31,6 +32,11 @@ from .scan import RowFilter, scan_rows
 
 SOURCE = "musicbrainz_dump"
 ENTITY_TABLES = ("artist", "label", "recording", "release", "release_group", "work")
+# Tables read only for the facts above; the extraction step must unpack them too.
+FACT_TABLES = ("release_country", "release_unknown_country", "release_status", "iso_3166_1")
+ARTIST_FACT_COLUMNS = ("begin_date_year", "begin_date_month", "begin_date_day",
+                       "end_date_year", "end_date_month", "end_date_day", "ended")
+RELEASE_STATUSES = frozenset({"official", "promotion", "bootleg", "pseudo-release", "withdrawn", "expunged", "cancelled"})
 
 
 @dataclass
@@ -43,6 +49,8 @@ class LoadResult:
     links_seen: int = 0
     links_dropped_no_type: int = 0
     links_dropped_no_entity: int = 0
+    life_spans: int = 0
+    release_facts: int = 0
     seconds: float = 0.0
     by_type: dict[str, int] = field(default_factory=dict)
 
@@ -59,6 +67,23 @@ def _date(year, month, day) -> str | None:
         if day:
             text += f"-{int(day):02d}"
     return text
+
+
+def _truthy(value) -> bool:
+    return str(value).lower() in ("t", "true", "1")
+
+
+def _country_code(code) -> str | None:
+    code = (code or "").strip().upper()
+    return code if len(code) == 2 and code.isalpha() else None
+
+
+def _earliest(candidates: list[tuple[str, str | None]]) -> tuple[str | None, str | None]:
+    """``(date, country)`` of the earliest dated row; a dated row beats an undated one."""
+    dated = sorted((c for c in candidates if c[0]), key=lambda c: (c[0], c[1] or "~"))
+    if dated:
+        return dated[0]
+    return (None, candidates[0][1]) if candidates else (None, None)
 
 
 def load_neighbourhood(
@@ -85,21 +110,42 @@ def load_neighbourhood(
     gid_of: dict[tuple[str, int], str] = {}
     link_type_name: dict[int, str] = {}
     attribute_name: dict[int, str] = {}
+    extra = {"artist": ARTIST_FACT_COLUMNS, "release": ("status",)}
     entity_requests = {
-        t: RowFilter(("id", "gid", "name", "sort_name"), ints=(("id", frozenset(selected[t])),), optional=("sort_name",))
+        t: RowFilter(("id", "gid", "name", "sort_name", *extra.get(t, ())), ints=(("id", frozenset(selected[t])),),
+                     optional=("sort_name", *extra.get(t, ())))
         for t in ENTITY_TABLES if selected.get(t)
     }
+    fact_requests: dict[str, RowFilter] = {}
+    if selected.get("release"):
+        releases = frozenset(selected["release"])
+        fact_requests = {
+            "release_country": RowFilter(("release", "country", "date_year", "date_month", "date_day"),
+                                         ints=(("release", releases),), optional=("country",)),
+            "release_unknown_country": RowFilter(("release", "date_year", "date_month", "date_day"),
+                                                 ints=(("release", releases),)),
+            "release_status": RowFilter(("id", "name")),
+            "iso_3166_1": RowFilter(("area", "code")),
+        }
     db.execute("BEGIN")
     try:
         scanned = scan_rows(read, {
             **entity_requests,
+            **fact_requests,
             "link_type": RowFilter(("id", "name")), "link_attribute_type": RowFilter(("id", "name"))})
+        status_name = {int(i): (n or "").lower() for i, n in scanned.pop("release_status", [])}
+        iso = {int(a): _country_code(c) for a, c in scanned.pop("iso_3166_1", [])}
+        release_rows: dict[int, list[tuple[str, str | None]]] = {}
+        for rid, country, y, m, d in scanned.pop("release_country", []):
+            release_rows.setdefault(int(rid), []).append((_date(y, m, d), iso.get(int(country)) if country else None))
+        for rid, y, m, d in scanned.pop("release_unknown_country", []):
+            release_rows.setdefault(int(rid), []).append((_date(y, m, d), None))
         for table in ("link_type", "link_attribute_type"):
             target = link_type_name if table == "link_type" else attribute_name
             for row_id, name in scanned.pop(table):
                 target[int(row_id)] = name or ""
         for table, rows in scanned.items():
-            for internal, raw_gid, name, sort_name in rows:
+            for internal, raw_gid, name, sort_name, *facts in rows:
                 if not raw_gid:
                     continue
                 internal = int(internal)
@@ -120,6 +166,27 @@ def load_neighbourhood(
                     result.entities_created += 1
                     result.by_type[table] = result.by_type.get(table, 0) + 1
                 gid_of[(table, internal)] = gid
+                begin = end = None
+                if table == "artist" and facts:
+                    begin, end = _date(*facts[0:3]), _date(*facts[3:6])
+                if table == "artist" and facts and (begin or end or _truthy(facts[6])):
+                    db.execute(
+                        "INSERT INTO artist_life_span (entity_id, begin_date, end_date, ended) VALUES (?, ?, ?, ?) "
+                        "ON CONFLICT (entity_id) DO UPDATE SET begin_date = excluded.begin_date, "
+                        "end_date = excluded.end_date, ended = excluded.ended",
+                        (store_id[(table, internal)], begin, end, int(_truthy(facts[6]))))
+                    result.life_spans += 1
+                elif table == "release":
+                    date, country = _earliest(release_rows.get(internal, []))
+                    status = status_name.get(int(facts[0])) if facts and facts[0] else None
+                    status = status if status in RELEASE_STATUSES else None
+                    if date or country or status:
+                        db.execute(
+                            "INSERT INTO release_facts (entity_id, date, country, status) VALUES (?, ?, ?, ?) "
+                            "ON CONFLICT (entity_id) DO UPDATE SET date = excluded.date, "
+                            "country = excluded.country, status = excluded.status",
+                            (store_id[(table, internal)], date, country, status))
+                        result.release_facts += 1
         result.passes += 1
 
         # --- pass 2: relationships with both ends selected

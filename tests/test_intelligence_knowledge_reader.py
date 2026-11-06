@@ -132,6 +132,32 @@ class DossierTests(unittest.TestCase):
         self.assertEqual(d["sources"]["musicbrainz_dump"]["coverage"], "loaded")
         self.assertIn("catalogue_numbers", d["not_loaded"])
 
+    def test_edition_facts_fall_back_from_dump_to_library_file(self):
+        self.assertEqual(self.reader.album_dossier(mbid="r-gid")["release_family"]["editions"][0]["facts_source"], None)
+        self.db.execute("UPDATE entities SET navidrome_id = 'nd-1' WHERE id = ?", (self.release,))
+        repo.add_observation(self.db, "navidrome", {"year": 1959, "song_count": 5}, fetched_at=1.0, entity_hint="album:nd-1")
+        library = self.reader.album_dossier(mbid="r-gid")["release_family"]["editions"][0]
+        self.assertEqual((library["date"], library["country"], library["status"], library["track_count"], library["facts_source"]),
+                         ("1959", None, None, 1, "library_file"))  # track count prefers the tracklist the store holds
+        self.db.execute("INSERT INTO release_facts (entity_id, date, country, status) VALUES (?, '1959-08-17', 'US', 'official')",
+                        (self.release,))
+        dump = self.reader.album_dossier(mbid="r-gid")["release_family"]["editions"][0]
+        self.assertEqual((dump["date"], dump["country"], dump["status"], dump["facts_source"]),
+                         ("1959-08-17", "US", "official", "musicbrainz_dump"))
+
+    def test_stored_release_document_wins_over_the_dump(self):
+        self.db.execute("INSERT INTO release_facts (entity_id, date, country, status) VALUES (?, '1960', 'GB', 'bootleg')",
+                        (self.release,))
+        mbid = "11111111-1111-4111-8111-111111111111"
+        self.db.execute("UPDATE entities SET mbid = ? WHERE id = ?", (mbid, self.release))
+        repo.add_observation(self.db, "musicbrainz", {
+            "id": mbid, "title": "Kind of Blue", "date": "1959-08-17", "country": "US", "status": "Official",
+            "release-group": {"id": "22222222-2222-4222-8222-222222222222", "title": "Kind of Blue"}},
+            fetched_at=1.0, entity_hint=f"release:{mbid}")
+        edition = self.reader.album_dossier(mbid=mbid)["release_family"]["editions"][0]
+        self.assertEqual((edition["date"], edition["country"], edition["facts_source"]),
+                         ("1959-08-17", "US", "musicbrainz_release"))
+
     def test_inferred_edge_is_never_a_credit(self):
         other = repo.upsert_entity(self.db, "artist", "Guess", mbid="x-gid")[0]
         repo.add_edge(self.db, other, self.release, "producer", evidence_class="inferred",
@@ -189,6 +215,13 @@ class PageTests(unittest.TestCase):
         self.assertEqual([r["album"]["canonical_name"] for r in p["not_in_library"]], ["Sketches of Spain"])
         self.assertEqual(p["related_people"], [])  # an inferred edge is never shown
         self.assertEqual(p["sources"]["musicbrainz_dump"]["coverage"], "loaded")
+
+    def test_person_page_life_span(self):
+        self.assertIsNone(self.reader.person_page(mbid="m-gid")["life_span"])  # nothing stated is null, not "alive"
+        self.db.execute("INSERT INTO artist_life_span (entity_id, begin_date, end_date, ended) VALUES (?, '1926-05-26', '1991-09-28', 1)",
+                        (self.miles,))
+        self.assertEqual(self.reader.person_page(mbid="m-gid")["life_span"],
+                         {"begin": "1926-05-26", "end": "1991-09-28", "ended": True})
 
     def test_person_page_pending_unknown_and_wrong_type(self):
         self.assertEqual(self.reader.person_page(mbid="m-gid")["sources"]["musicbrainz_dump"]["coverage"], "pending")
