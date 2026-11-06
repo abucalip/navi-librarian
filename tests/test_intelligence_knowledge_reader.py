@@ -217,6 +217,84 @@ class PageTests(unittest.TestCase):
         self.assertTrue(self.reader.person_page(mbid="m-gid", limit=1)["truncated"])
 
 
+class WorkTests(unittest.TestCase):
+    def setUp(self):
+        self.db = open_store(":memory:")
+        c = dict(evidence_class="source_explicit", match_quality="exact_mbid", source="musicbrainz_dump")
+        e = lambda t, n, g, **k: repo.upsert_entity(self.db, t, n, mbid=g, **k)[0]
+        self.work = e("work", "My Favorite Things", "w-gid")
+        self.arr = e("work", "My Favorite Things (arr.)", "w2-gid")
+        self.rodgers = e("artist", "Richard Rodgers", "r-gid")
+        self.trane = e("artist", "John Coltrane", "t-gid")
+        self.live = e("recording", "My Favorite Things (live)", "r1-gid")
+        self.studio = e("recording", "My Favorite Things", "r2-gid")
+        self.cover = e("recording", "My Favorite Things (cover)", "r3-gid", owned=True)
+        self.rel = e("release", "My Favorite Things", "rel-gid", owned=True)
+        self.rel_g = e("release_group", "My Favorite Things", "rg-gid")
+        self.other = e("release_group", "Live in Japan", "lj-gid")
+        mb = {**c, "source": "musicbrainz"}
+        repo.add_edge(self.db, self.rel, self.rel_g, "member_of", **mb)
+        repo.add_edge(self.db, self.studio, self.rel, "appears_on", **mb)
+        repo.add_edge(self.db, self.live, self.other, "appears_on", **mb)
+        repo.add_edge(self.db, self.live, self.work, "performance", role="live", **c)
+        repo.add_edge(self.db, self.studio, self.work, "performance", **c)
+        repo.add_edge(self.db, self.cover, self.work, "performance", role="cover, live", **c)
+        repo.add_edge(self.db, self.rodgers, self.work, "composer", **c)
+        repo.add_edge(self.db, self.arr, self.work, "arrangement", **c)
+        repo.add_edge(self.db, self.trane, self.studio, "instrument", role="soprano saxophone", **c)
+        repo.add_edge(self.db, self.trane, self.work, "collaboration", source="derived", evidence_class="inferred", match_quality="exact_mbid")
+        self.reader = KnowledgeReader(self.db, clock=lambda: 2000.0)
+
+    def load_slice(self):
+        with self.db:
+            for key, value in (("dump_timestamp", "2026-11-04"), ("schema_sequence", "31"), ("loaded_at", "1000")):
+                self.db.execute("INSERT INTO meta (key, value) VALUES (?, ?)", (f"musicbrainz_slice.{key}", value))
+
+    def test_work_page_lists_versions_with_ownership_and_attributes(self):
+        self.load_slice()
+        page = self.reader.work_page(mbid="w-gid")
+        self.assertEqual(page["summary"], {"recordings": 3, "in_library": 2, "covers": 1})
+        by_title = {v["recording"]["canonical_name"]: v for v in page["versions"]}
+        studio = by_title["My Favorite Things"]
+        self.assertTrue(studio["owned"])  # owned through its release
+        self.assertEqual(studio["albums"][0]["album"]["type"], "release_group")
+        self.assertEqual([p["entity"]["canonical_name"] for p in studio["performers"]], ["John Coltrane"])
+        self.assertEqual(by_title["My Favorite Things (live)"]["attributes"], ["live"])
+        self.assertFalse(by_title["My Favorite Things (live)"]["owned"])
+        self.assertEqual(by_title["My Favorite Things (cover)"]["attributes"], ["cover", "live"])
+        self.assertEqual(page["sources"]["musicbrainz_dump"]["coverage"], "loaded")
+
+    def test_work_page_writers_related_and_no_inferred_edge(self):
+        self.load_slice()
+        page = self.reader.work_page(mbid="w-gid")
+        self.assertEqual([w["entity"]["canonical_name"] for w in page["written_by"]], ["Richard Rodgers"])
+        self.assertEqual(page["written_by"][0]["relations"][0]["relation"], "composer")  # the inferred Coltrane edge is absent
+        self.assertEqual(page["related_works"][0]["relations"][0]["relation"], "arrangement")
+        self.assertIn("recording_artist_credit", page["not_loaded"])
+
+    def test_work_page_pending_unknown_and_wrong_type(self):
+        self.assertEqual(self.reader.work_page(mbid="w-gid")["sources"]["musicbrainz_dump"]["coverage"], "pending")
+        self.assertIsNone(self.reader.work_page(mbid="nope"))
+        with self.assertRaises(ValueError):
+            self.reader.work_page(id=self.live)
+
+    def test_work_page_no_relationships_and_bounded(self):
+        self.load_slice()
+        lonely = repo.upsert_entity(self.db, "work", "Lonely", mbid="l-gid")[0]
+        self.assertEqual(self.reader.work_page(id=lonely)["sources"]["musicbrainz_dump"]["coverage"], "no_relationships_in_slice")
+        self.assertTrue(self.reader.work_page(mbid="w-gid", limit=1)["truncated"])
+
+    def test_works_of_recording_counts_other_recordings(self):
+        self.load_slice()
+        r = self.reader.works_of_recording(mbid="r2-gid")
+        self.assertEqual([w["work"]["canonical_name"] for w in r["works"]], ["My Favorite Things"])
+        self.assertEqual(r["works"][0]["other_recordings"], 2)
+        self.assertEqual(self.reader.works_of_recording(mbid="r3-gid")["works"][0]["other_recordings"], 2)
+        self.assertIsNone(self.reader.works_of_recording(mbid="nope"))
+        with self.assertRaises(ValueError):
+            self.reader.works_of_recording(id=self.work)
+
+
 class BoundaryTests(unittest.TestCase):
     FORBIDDEN = ("integrations", "requests", "httpx", "urllib", "http", "socket", "discovery", "app",
                  "navidrome_client", "navidrome_server", "acquisition", "recommendation")

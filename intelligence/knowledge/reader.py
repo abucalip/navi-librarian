@@ -122,6 +122,19 @@ class KnowledgeReader:
         entity = self.entity("label", id=id, mbid=mbid)
         return None if entity is None else label_page(self, entity, limit=limit)
 
+    def work_page(self, *, id: int | None = None, mbid: str | None = None, limit: int = 200) -> dict[str, Any] | None:
+        """One composition with its recordings, writers and related works; None when unknown."""
+        from .works import work_page
+        entity = self.entity("work", id=id, mbid=mbid)
+        return None if entity is None else work_page(self, entity, limit=limit)
+
+    def works_of_recording(self, *, id: int | None = None, mbid: str | None = None,
+                           navidrome_id: str | None = None, limit: int = 50) -> dict[str, Any] | None:
+        """The works a recording is a performance of, with counts of other recordings; None when unknown."""
+        from .works import works_of_recording
+        entity = self.entity("recording", id=id, mbid=mbid, navidrome_id=navidrome_id)
+        return None if entity is None else works_of_recording(self, entity, limit=limit)
+
     # ---------------------------------------------------------------- helpers
     def _hop(self, hop: Hop) -> dict[str, Any]:
         other = repo.get_entity(self._db, hop.entity_id) or {}
