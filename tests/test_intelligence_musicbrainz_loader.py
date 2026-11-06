@@ -174,6 +174,52 @@ class LoaderTests(unittest.TestCase):
         result = self.run_load(source, selection(artist={3}))
         self.assertEqual((result.passes, source.reads, result.edges_created), (2, 2, 0))
 
+    def counts(self):
+        return tuple(self.db.execute(f"SELECT COUNT(*) FROM {t}").fetchone()[0] for t in ("entities", "edges"))
+
+    def without_artist_link(self):
+        source = world()
+        source.tables["l_artist_artist"] = []
+        return source
+
+    def test_replacement_removes_edges_and_orphans_that_left_the_dump(self):
+        self.run_load()
+        result = self.run_load(self.without_artist_link())
+        self.assertEqual((result.edges_removed, result.entities_removed, result.edges_existing), (1, 1, 3))
+        self.assertEqual(self.counts(), (3, 3))
+        self.assertIsNone(repo.find_entity(self.db, "artist", mbid="a-gid"))
+        self.assertIsNotNone(repo.find_entity(self.db, "artist", mbid="b-gid"))
+
+    def test_replacement_keeps_owned_entities(self):
+        repo.upsert_entity(self.db, "artist", "My Alpha", mbid="a-gid", owned=True)
+        self.run_load()
+        result = self.run_load(self.without_artist_link())
+        self.assertEqual((result.edges_removed, result.entities_removed), (1, 0))
+        self.assertIsNotNone(repo.find_entity(self.db, "artist", mbid="a-gid"))
+
+    def test_replacement_keeps_other_sources_edges(self):
+        self.run_load()
+        a = repo.find_entity(self.db, "artist", mbid="a-gid")["id"]
+        b = repo.find_entity(self.db, "artist", mbid="b-gid")["id"]
+        repo.add_edge(self.db, a, b, "mentor", source="user", evidence_class="user_confirmed",
+                      match_quality="exact_mbid")
+        result = self.run_load(self.without_artist_link())
+        self.assertEqual((result.edges_removed, result.entities_removed), (1, 0))
+        self.assertIsNotNone(repo.find_entity(self.db, "artist", mbid="a-gid"))
+
+    def test_too_small_new_dump_is_refused_and_changes_nothing(self):
+        self.run_load()
+        before = self.counts()
+        thin = world()
+        thin.tables["l_artist_recording"] = [lnk(2, 20, 7)]
+        thin.tables["l_artist_artist"] = []
+        with self.assertRaises(loader.SliceValidationError):
+            self.run_load(thin)
+        self.assertEqual(self.counts(), before)
+
+    def test_first_load_is_never_refused(self):
+        self.assertEqual(self.run_load().edges_removed, 0)
+
 
 if __name__ == "__main__":
     unittest.main()

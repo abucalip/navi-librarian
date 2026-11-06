@@ -13,6 +13,12 @@ scratch ceiling passed) stops without writing, outcome ``fallback_api_only``, wh
 Phase 4 kill criterion. A breach seen only after the load (slice size, import time) is recorded
 as ``over_budget`` with the data in place; nothing is rolled back automatically.
 
+A newer import replaces the previous slice in the load's own transaction (edges that left the
+dump are removed). A dump that keeps too little of the previous slice is refused, outcome
+``rejected``, with the previous slice untouched. Each run records a ``source_state`` row
+(``musicbrainz_dump``, ``slice_import``, ``core``): ``ok`` after a load, ``blocked`` after a
+budget fallback, ``error`` after a rejection.
+
 No provider traffic beyond the export download, no ``navidrome_server.py`` involvement, and
 nothing calls this yet: a manual trigger is a separate step.
 """
@@ -27,6 +33,7 @@ from pathlib import Path
 from typing import Callable
 
 from ..jobs import runner
+from ..store import source_state
 from ..store.generations import bump_data_version
 from . import download, dump, loader, neighbourhood
 from .neighbourhood import LINK_TABLES, SEED_TYPES
@@ -59,6 +66,10 @@ def store_bytes(db: sqlite3.Connection) -> int:
 
 def directory_bytes(directory) -> int:
     return sum(p.stat().st_size for p in Path(directory).glob("*") if p.is_file())
+
+
+def _record(db: sqlite3.Connection, outcome: str, clock: Callable[[], float]) -> None:
+    source_state.record_outcome(db, loader.SOURCE, "slice_import", "core", outcome, now=clock())
 
 
 def run_slice_import(
@@ -144,14 +155,22 @@ def run_slice_import(
         if breaches:
             progress["outcome"] = "fallback_api_only"
             progress["breaches"] = sorted(set(breaches))
+            _record(db, "blocked", clock)
             ctx.checkpoint(progress)
             return True
 
         before = store_bytes(db)
         phase[0] = "load"
-        result = loader.load_neighbourhood(
-            db, read, selection, dump_timestamp=info.timestamp, schema_sequence=info.schema_sequence,
-            clock=clock)
+        try:
+            result = loader.load_neighbourhood(
+                db, read, selection, dump_timestamp=info.timestamp, schema_sequence=info.schema_sequence,
+                clock=clock)
+        except loader.SliceValidationError as exc:
+            progress["outcome"] = "rejected"
+            progress["rejected_reason"] = str(exc)
+            _record(db, "error", clock)
+            ctx.checkpoint(progress)
+            return True
         progress["load"] = result.summary()
         progress["import_seconds"] = round(clock() - started, 3)
         progress["slice_bytes"] = max(0, store_bytes(db) - before)
@@ -168,6 +187,7 @@ def run_slice_import(
             for key, value in (("dump_timestamp", info.timestamp or ""), ("schema_sequence", info.schema_sequence),
                                ("loaded_at", clock())):
                 db.execute("INSERT OR REPLACE INTO meta (key, value) VALUES (?, ?)", (f"musicbrainz_slice.{key}", str(value)))
+        _record(db, "ok", clock)
         bump_data_version(db, RESOURCE)
         if delete_archive:
             archive.unlink(missing_ok=True)
