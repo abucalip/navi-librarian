@@ -2612,3 +2612,12 @@ All live runs were approved by the owner; slskd off; aggregate only; harnesses w
 - **Verification:** `python -m unittest tests.test_api_knowledge_routes tests.test_api_insights_routes` (15 passed, 7 new). Full suite not run by the agent (owner rule). Not run against the real store; not published or deployed.
 - **Limitation:** no fixtures yet and no client uses the routes; page shapes are whatever the reader returns until the owner approves them.
 - **Next action:** owner review of the page shapes, then fixtures and the client gate (macOS dossier and person/label pages; Android "Who played on this?").
+
+## 2026-11-06 — Server V2 knowledge page shapes approved, public shape (PR #827)
+
+- **PR:** [#827](https://github.com/abucalip/navi-librarian/pull/827), squash `97b6537728b20bf913a450c5db9880a2353e1336`, tested head `3b63f7f695ef5ffb9bc60b9c27c0f968074ea204`; compile, container-smoke, test-and-build and validate-container passed.
+- **Owner review:** the owner reviewed mockups drawn from real reader output and approved the page shapes. Decisions: every identifier is `mbid` only; every `owned` flag is a boolean and a release group is owned when any edition is; the client shows up to ten credits per list and a "more" control; life span means dates of birth and death (formation and disbanding for groups) and must be loaded; release family uses option 1 (dates, country, status from the dump) with option 3 (the owned file's year and track count from Navidrome) as fallback.
+- **Changes:** `intelligence/knowledge/public.py` removes `id`, `created_generation`, `navidrome_id`, `discogs_id` and `wikidata_id` and makes `owned` a boolean in the five page bodies; the dossier and page briefs compute group ownership; contract text updated.
+- **Verification:** `python -m unittest tests.test_intelligence_knowledge_reader tests.test_api_knowledge_routes` (34 passed, 3 new). Full suite not run by the agent (owner rule). Not run against the real store; not published or deployed.
+- **Limitation:** an entity with no `mbid` can no longer be referenced from a page body. The loader keeps no life span or release date, country or status yet, so the person header and edition rows are blank.
+- **Next action (not started):** loader migration for artist life span and release date, country and status, the `life_span` field and filled editions, then a re-import on the owner's Mac; then fixtures and the client gate.
