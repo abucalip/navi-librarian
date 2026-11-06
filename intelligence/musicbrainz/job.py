@@ -124,6 +124,10 @@ def run_slice_import(
         if breaches:
             progress["breaches"] = sorted(set(breaches))
         progress["stage"] = "loaded"
+        with db:
+            for key, value in (("dump_timestamp", info.timestamp or ""), ("schema_sequence", info.schema_sequence),
+                               ("loaded_at", clock())):
+                db.execute("INSERT OR REPLACE INTO meta (key, value) VALUES (?, ?)", (f"musicbrainz_slice.{key}", str(value)))
         bump_data_version(db, RESOURCE)
         if delete_archive:
             archive.unlink(missing_ok=True)
