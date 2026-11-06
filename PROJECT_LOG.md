@@ -1,3 +1,14 @@
+## 2026-11-06 — Server V2 Phase 6 slice 7: pure listening-context profiles (PR #853)
+
+- **PR:** [#853](https://github.com/abucalip/navi-librarian/pull/853), squash merge `48b84ee354e351989411824e1808e7dfdb229e2e`.
+- **Objective:** Phase 6 item 4: time-of-day and weekday/weekend profiles from caller-supplied listens, without wiring.
+- **Changes:** adds `intelligence/taste/context.py` (`build_context_profiles`). Listens are grouped by local time in a named IANA timezone (UTC by default) into two lenses: time of day (night 00-05, morning 06-11, afternoon 12-17, evening 18-23) and day type (weekday, weekend). Each context reuses `profile_window` with every value kept. All contexts of both lenses are always present; thin or empty ones are `low_sample`. No shifts or cross-context comparisons are stated. Hour boundaries are fixed starting values, not measured clusters.
+- **Tests:** `python3 -m unittest tests.test_intelligence_taste_context tests.test_intelligence_taste_monthly` ran locally: 36 passed. Full unit suite not run (owner rule).
+- **CI:** all four required workflows passed on the PR head: compile, test-and-build, container-smoke, validate-container.
+- **Merge:** squash merge `48b84ee354e351989411824e1808e7dfdb229e2e`; GitHub confirmed merged.
+- **Limits:** unwired: no persistence, job, route, client, provider request or weight change. Not published, deployed or runtime-verified.
+- **Next action:** Phase 6 item 5 (skip/dismissal suppression memory) needs a client-event input and likely an owner decision; wiring/persistence of the obscurity, monthly and context builders stays owner-gated.
+
 ## 2026-11-06 — Server V2 Phase 6 slice 6: pure monthly taste snapshot builder (PR #852)
 
 - **PR:** [#852](https://github.com/abucalip/navi-librarian/pull/852), squash merge `21ce1952fbd09747143df21b07593009e11933f5`, final reviewed head `c57226cada08c3ee6708c9f3ce8bb7abb432e11c`.
