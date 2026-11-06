@@ -1,3 +1,11 @@
+## 2026-11-06 — Server V2: manual trigger for the MusicBrainz slice import (PR #819)
+
+- **Merged via PR:** [#819](https://github.com/abucalip/navi-librarian/pull/819), squash `a8cdf6e721ae771dc84beacba72f93d407466902`, tested head `42a09586690ee756e25c2ab015424a3a87adf767`; compile, container-smoke, test-and-build and validate-container passed.
+- **Change:** `scripts/server_v2_mb_slice_import.py`, a worker-side CLI for `musicbrainz.job.run_slice_import` (no web route, no server-module change). `--plan` prints owned seed counts and the approved budgets with no network; a real run takes `--scratch`, `--export`, `--keep-archive`, `--hops`, `--include-cover-art`, prints aggregate numbers only and exits non-zero unless the job succeeded.
+- **Verification actually run:** `test_server_v2_mb_slice_import_script` (new, 3) and `test_intelligence_musicbrainz_job` (13 passed locally); full suite not run (owner rule).
+- **Limitations:** never run against the real archive; no download or provider traffic; not published or deployed.
+- **Next action:** the owner runs `--plan` on the server and approves the roughly 7.9 GB download for the measured run; then the album dossier read through `KnowledgeReader`.
+
 ## 2026-11-06 — Server V2: KnowledgeReader facade and read-only store connection (PR #816)
 
 - **Merged via PR:** [#816](https://github.com/abucalip/navi-librarian/pull/816), squash `d28586e76206080803acf64745a2e04bd6a9e5db`, tested head `b49cbd1ea655bfecc8e8454a729ef42708ee517e`; compile, container-smoke, test-and-build and validate-container passed on that head.
