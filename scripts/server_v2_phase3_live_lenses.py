@@ -152,65 +152,6 @@ def sample_albums(count: int) -> tuple[list[dict], list[str], list[dict]]:
     return albums, [g for g, _ in genres.most_common(8)], full
 
 
-def verify_lenses(db, owned, docs, artist_names, series_sets, world, top_genres, dated, today, window, cards, job_failed):
-    """Independent checks of each lens's cards against the documents they were built from (no network)."""
-    owned = {m.lower() for m in owned}
-    spot_sets = []
-    for mbid, doc in docs["studio"].items():
-        built = set_builders.studio_discography_set(mbid, artist_names.get(mbid.lower(), ""), doc)
-        if built:
-            spot_sets.append(built)
-    for mbid, doc in docs["lb"].items():
-        built = set_builders.listenbrainz_top_set(mbid, artist_names.get(mbid.lower(), ""), doc)
-        if built:
-            spot_sets.append(built)
-    album_dates = {(d.group_mbid or "").lower(): d.release_date for d in dated}
-
-    def determinism(name, make):
-        first, second = make(False), make(True)  # second run sees the inputs in reverse order
-        return [] if first == second else [f"{name}: a second run over the same documents gave different cards"]
-
-    def spots(reverse):
-        found = find_blind_spots(reversed(spot_sets) if reverse else spot_sets, owned, BlindSpotsConfig())
-        return sorted((blind_spot_card(x) for x in found.spots), key=lambda c: c["subject"]["key"])
-
-    def series(reverse):
-        found = find_series_progress(reversed(series_sets) if reverse else series_sets, owned, SeriesConfig())
-        return sorted((series_card(x) for x in found.progress), key=lambda c: c["subject"]["key"])
-
-    def canon(reverse):
-        found = find_hidden_canon(reversed(world) if reverse else world, owned, top_genres)
-        return sorted((canon_card(x) for x in found.picks), key=lambda c: c["subject"]["key"])
-
-    def anniversaries(reverse):
-        found = find_anniversaries(reversed(dated) if reverse else dated, [], today, AnniversaryConfig(window_days=window))
-        return sorted((anniversary_card(x) for x in found.items if x.kind == "album_release"), key=lambda c: c["subject"]["key"])
-
-    def stored_matches(name, listed, recomputed):
-        stored = sorted(c["subject"]["key"] for c in listed)
-        again = sorted(c["subject"]["key"] for c in recomputed)
-        # the store keeps at most its listing limit, so compare only when nothing was cut off
-        return [] if stored == again or len(listed) >= 100 else [f"{name}: stored cards differ from a recomputation"]
-
-    lenses = {}
-    per_lens = {
-        "blind_spots": (checks.blind_spot_failures(cards["blind_spots"], spot_sets, owned), spots),
-        "series": (checks.series_failures(cards["series"], series_sets, owned), series),
-        "hidden_canon": (checks.canon_failures(cards["hidden_canon"], owned, world, top_genres), canon),
-        "anniversaries": (checks.anniversary_failures(
-            [c for c in cards["anniversaries"] if c["subject"].get("event") == "album_release"], owned, today, window, album_dates),
-            anniversaries),
-    }
-    for name, (failures, make) in per_lens.items():
-        failures = checks.common_failures(cards[name]) + failures + determinism(name, make)
-        if name != "anniversaries":
-            failures += stored_matches(name, cards[name], make(False))
-        lenses[name] = {"cards": len(cards[name]), "verdict": checks.verdict(cards[name], failures), "failures": failures[:20],
-                        "failure_count": len(failures)}
-    lenses["anniversaries"]["note"] = "album release cards checked against owned groups and document dates; artist cards (life-span) get only the common checks"
-    return {"lenses": lenses, "_job_failed": job_failed}
-
-
 def card_stats(lens: str, cards: list[dict], owned: set[str]) -> dict:
     s = score_lens(lens, cards, owned=owned).as_dict()
     return {k: s[k] for k in ("cards", "diversity", "top_artist_share", "duplicate_rate", "owned_leak_rate", "verdict", "failures", "enable_by_default")}
@@ -365,7 +306,7 @@ def main() -> int:
                                    "listed": len(ann_cards), "scorecard": card_stats("anniversary", ann_cards, owned)}
 
         if args.verify:
-            result["verification"] = verify_lenses(
+            result["verification"] = checks.verify_lenses(
                 db, owned, docs, artist_names, sets, world, top_genres, dated, today, window=30,
                 cards={"blind_spots": spots, "series": series_cards, "hidden_canon": canon_cards, "anniversaries": ann_cards},
                 job_failed=job.failed,

@@ -7,7 +7,6 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
 
 import server_v2_phase3_checks as checks  # noqa: E402
-import server_v2_phase3_live_lenses as live  # noqa: E402
 from intelligence.insights import (  # noqa: E402
     AnniversaryConfig, BlindSpotsConfig, CanonConfig, DatedAlbum, SeriesConfig, WorldAlbum, anniversary_card,
     blind_spot_card, canon_card, find_anniversaries, find_blind_spots, find_hidden_canon, find_series_progress,
@@ -143,7 +142,7 @@ class VerdictAndIntegrityTests(unittest.TestCase):
 class VerifyLensesEndToEndTests(CheckFixtures):
     def run_verify(self, cards):
         docs = {"studio": {ARTIST: studio_doc()}, "lb": {}}
-        return live.verify_lenses(
+        return checks.verify_lenses(
             None, OWNED, docs, {ARTIST: "Artist"}, [self.series], self.world, GENRES, self.dated, TODAY, 30,
             cards={"blind_spots": cards[0], "series": cards[1], "hidden_canon": cards[2], "anniversaries": cards[3]},
             job_failed=0)
