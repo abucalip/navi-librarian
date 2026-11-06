@@ -4,6 +4,11 @@ Built on the :class:`KnowledgeReader` walk, so every credit carries its source, 
 match quality, and an inferred or unmatched edge never appears as a credit (``credits_only``).
 Nothing is inferred and no provider is called.
 
+An edition's date, country and status come from the first source that has them: the stored MusicBrainz
+release document, then the dump's own release facts, then (owner decision, 2026-11-06, option 3) the owned
+file's year and track count from Navidrome, marked ``facts_source: "library_file"`` so a client never
+shows a tag year as a MusicBrainz date. ``facts_source`` is null when nothing is known.
+
 What the store holds today is what is shown: editions (from the release-group link and the stored
 MusicBrainz release document), people and labels related to the release, its release group or its
 recordings, and the slice's dump date. Fields no loader fills yet (catalogue numbers, formats,
@@ -17,6 +22,7 @@ from __future__ import annotations
 from typing import Any
 
 from ..editions.grouping import group_editions, tracklist
+from ..ingest.navidrome import SOURCE as NAVIDROME_SOURCE
 from ..editions.release_groups import REL_MEMBER_OF
 from ..graph import Limits
 from ..store import repositories as repo
@@ -70,10 +76,10 @@ def album_dossier(reader, entity: dict[str, Any], *, limit: int = 100) -> dict[s
     editions = []
     if group_entity:
         for e in group_editions(db, group_entity["id"], owned_only=False):
+            facts = _edition_facts(db, e)
             editions.append({
                 "release": {"id": e.release_id, "mbid": e.mbid, "title": e.title, "owned": e.owned},
-                "date": e.info.date if e.info else None, "country": e.info.country if e.info else None,
-                "status": e.info.status if e.info else None, "labels": list(e.labels), "relation": e.relation,
+                **facts, "labels": list(e.labels), "relation": e.relation,
             })
 
     if group_entity and any(e["release"]["owned"] for e in editions):
@@ -93,3 +99,25 @@ def album_dossier(reader, entity: dict[str, Any], *, limit: int = 100) -> dict[s
         "sources": {"musicbrainz_dump": {"coverage": coverage, "dump_timestamp": status["dump_timestamp"]}},
         "not_loaded": list(NOT_LOADED),
     }
+
+
+def _edition_facts(db, edition) -> dict[str, Any]:
+    """``date``, ``country``, ``status``, ``track_count`` and ``facts_source`` for one edition."""
+    track_count = len(edition.tracks) or None
+    info = edition.info
+    if info and (info.date or info.country or info.status):
+        return {"date": info.date, "country": info.country, "status": info.status,
+                "track_count": track_count, "facts_source": "musicbrainz_release"}
+    row = db.execute("SELECT date, country, status FROM release_facts WHERE entity_id = ?", (edition.release_id,)).fetchone()
+    if row and (row["date"] or row["country"] or row["status"]):
+        return {"date": row["date"], "country": row["country"], "status": row["status"],
+                "track_count": track_count, "facts_source": "musicbrainz_dump"}
+    entity = repo.get_entity(db, edition.release_id) or {}
+    observation = repo.latest_observation(db, NAVIDROME_SOURCE, f"album:{entity['navidrome_id']}") if entity.get("navidrome_id") else None
+    payload = observation["payload"] if observation and isinstance(observation["payload"], dict) else {}
+    year = payload.get("year")
+    date = payload.get("release_date") or (f"{int(year):04d}" if isinstance(year, int) and year > 0 else None)
+    count = track_count or (payload.get("song_count") if isinstance(payload.get("song_count"), int) else None)
+    if payload and (date or count):
+        return {"date": date, "country": None, "status": None, "track_count": count, "facts_source": "library_file"}
+    return {"date": None, "country": None, "status": None, "track_count": track_count, "facts_source": None}

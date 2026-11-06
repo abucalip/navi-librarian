@@ -27,7 +27,7 @@
     "generation": 1,
     "graph_coverage": "none",
     "listenbrainz_connected": false,
-    "schema_version": 1,
+    "schema_version": 2,
     "sonic_available": false
   }
 }

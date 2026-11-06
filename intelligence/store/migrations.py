@@ -163,7 +163,28 @@ _V1 = (
     "INSERT INTO meta (key, value) VALUES ('generation', '1')",
 )
 
-MIGRATIONS: tuple[Migration, ...] = (Migration(1, "initial schema", _V1),)
+# Facts the MusicBrainz dump states about one entity, kept beside it rather than in ``edges``.
+# Dates are ``YYYY[-MM[-DD]]``; a missing date stays NULL. Re-importing the slice overwrites them.
+_V2 = (
+    """
+    CREATE TABLE artist_life_span (
+        entity_id INTEGER PRIMARY KEY REFERENCES entities (id) ON DELETE CASCADE,
+        begin_date TEXT,
+        end_date TEXT,
+        ended INTEGER NOT NULL DEFAULT 0 CHECK (ended IN (0, 1))
+    )
+    """,
+    """
+    CREATE TABLE release_facts (
+        entity_id INTEGER PRIMARY KEY REFERENCES entities (id) ON DELETE CASCADE,
+        date TEXT,
+        country TEXT,
+        status TEXT
+    )
+    """,
+)
+
+MIGRATIONS: tuple[Migration, ...] = (Migration(1, "initial schema", _V1), Migration(2, "artist life span and release facts", _V2))
 LATEST_VERSION = MIGRATIONS[-1].version
 
 assert [m.version for m in MIGRATIONS] == list(range(1, LATEST_VERSION + 1)), "versions must be contiguous"

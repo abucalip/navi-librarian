@@ -49,6 +49,69 @@ def selection(**kw):
     return n
 
 
+def facts_world():
+    return FakeDump({
+        "artist": [
+            ent(1, "A-GID", "Alpha", begin_date_year="1926", begin_date_month="5", begin_date_day="26",
+                end_date_year="1991", end_date_month="9", end_date_day="28", ended="t"),
+            ent(2, "B-GID", "Beta", begin_date_year="1969", ended="f"),
+            ent(3, "C-GID", "Gamma", ended="f"),
+        ],
+        "release": [ent(30, "REL-1", "First", status="1"), ent(31, "REL-2", "Second", status="9"),
+                    ent(32, "REL-3", "Third")],
+        "release_status": [{"id": "1", "name": "Official"}, {"id": "9", "name": "Surprise"}],
+        "iso_3166_1": [{"area": "222", "code": "US"}, {"area": "221", "code": "GB"}, {"area": "5", "code": "XYZ"}],
+        "release_country": [
+            {"release": "30", "country": "222", "date_year": "1959", "date_month": "8", "date_day": "17"},
+            {"release": "30", "country": "221", "date_year": "1959", "date_month": "8", "date_day": "10"},
+            {"release": "31", "country": "5", "date_year": None, "date_month": None, "date_day": None},
+        ],
+        "release_unknown_country": [{"release": "32", "date_year": "1971", "date_month": None, "date_day": None}],
+        "link_type": [], "link_attribute_type": [],
+    })
+
+
+class FactsTests(unittest.TestCase):
+    def setUp(self):
+        self.db = open_store(":memory:")
+        self.result = loader.load_neighbourhood(
+            self.db, facts_world(), selection(artist={1, 2, 3}, release={30, 31, 32}),
+            dump_timestamp="2026-11-04", schema_sequence=31)
+
+    def span(self, mbid):
+        entity = repo.find_entity(self.db, "artist", mbid=mbid)
+        row = self.db.execute("SELECT * FROM artist_life_span WHERE entity_id = ?", (entity["id"],)).fetchone()
+        return None if row is None else (row["begin_date"], row["end_date"], row["ended"])
+
+    def release(self, mbid):
+        entity = repo.find_entity(self.db, "release", mbid=mbid)
+        row = self.db.execute("SELECT * FROM release_facts WHERE entity_id = ?", (entity["id"],)).fetchone()
+        return None if row is None else (row["date"], row["country"], row["status"])
+
+    def test_artist_life_span_keeps_partial_dates_and_ended(self):
+        self.assertEqual(self.span("a-gid"), ("1926-05-26", "1991-09-28", 1))
+        self.assertEqual(self.span("b-gid"), ("1969", None, 0))
+        self.assertIsNone(self.span("c-gid"))  # nothing stated, nothing stored
+        self.assertEqual(self.result.life_spans, 2)
+
+    def test_release_takes_earliest_dated_row_with_its_country_and_status(self):
+        self.assertEqual(self.release("rel-1"), ("1959-08-10", "GB", "official"))
+
+    def test_unknown_country_and_unreadable_values_are_dropped_not_guessed(self):
+        self.assertEqual(self.release("rel-3"), ("1971", None, None))
+        self.assertIsNone(self.release("rel-2"))  # undated, bad country code, status not in MusicBrainz's list
+        self.assertEqual(self.result.release_facts, 2)
+
+    def test_rerun_overwrites_and_keeps_one_row(self):
+        loader.load_neighbourhood(self.db, facts_world(), selection(artist={1, 2, 3}, release={30, 31, 32}),
+                                  dump_timestamp="2026-11-04", schema_sequence=31)
+        self.assertEqual(self.db.execute("SELECT COUNT(*) FROM artist_life_span").fetchone()[0], 2)
+        self.assertEqual(self.db.execute("SELECT COUNT(*) FROM release_facts").fetchone()[0], 2)
+
+    def test_fact_tables_add_no_pass(self):
+        self.assertEqual(self.result.passes, 2)  # the entity pass and the (empty) link pass, as before
+
+
 class LoaderTests(unittest.TestCase):
     def setUp(self):
         self.db = open_store(":memory:")

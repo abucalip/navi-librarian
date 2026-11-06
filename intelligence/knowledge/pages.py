@@ -24,7 +24,7 @@ from ..store import repositories as repo
 
 PERSON_TYPES = ("artist", "person", "group")
 ALBUM_TYPES = ("release", "release_group")
-PERSON_NOT_LOADED = ("instrument_per_track_for_unlinked_recordings",)
+PERSON_NOT_LOADED = ("instrument_per_track_for_unlinked_recordings",)  # life span is loaded since schema 2
 LABEL_NOT_LOADED = ("notable_releases", "catalogue_numbers")
 
 
@@ -64,6 +64,7 @@ def person_page(reader, entity: dict[str, Any], *, limit: int = 200) -> dict[str
     status = reader.slice_status()
     return {
         "person": entity,
+        "life_span": _life_span(db, entity["id"]),
         "aliases": [{"alias": a, "kind": k} for a, k in repo.aliases(db, entity["id"])],
         "in_library": [r for r in rows if r["owned"]],
         "not_in_library": [r for r in rows if not r["owned"]],
@@ -111,6 +112,14 @@ def _coverage(status: dict[str, Any], any_rows: bool) -> str:
     if not status["loaded"]:
         return "pending"
     return "loaded" if any_rows else "no_relationships_in_slice"
+
+
+def _life_span(db, entity_id: int) -> dict[str, Any] | None:
+    """Birth or formation, death or disbanding, as MusicBrainz states them; null when it states none."""
+    row = db.execute("SELECT begin_date, end_date, ended FROM artist_life_span WHERE entity_id = ?", (entity_id,)).fetchone()
+    if row is None:
+        return None
+    return {"begin": row["begin_date"], "end": row["end_date"], "ended": bool(row["ended"])}
 
 
 def _relations(hop: dict[str, Any]) -> list[dict[str, Any]]:

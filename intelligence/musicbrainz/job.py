@@ -32,7 +32,7 @@ from . import download, dump, loader, neighbourhood
 from .neighbourhood import LINK_TABLES, SEED_TYPES
 
 EXTRACT_DIR = "extracted"
-NEEDED_TABLES = tuple(sorted(set(SEED_TYPES) | set(loader.ENTITY_TABLES) | set(LINK_TABLES)
+NEEDED_TABLES = tuple(sorted(set(SEED_TYPES) | set(loader.ENTITY_TABLES) | set(LINK_TABLES) | set(loader.FACT_TABLES)
                              | {"link", "link_attribute", "link_type", "link_attribute_type"}))
 
 JOB = "musicbrainz_slice"
