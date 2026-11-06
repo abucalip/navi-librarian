@@ -11,7 +11,9 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from app.api.dependencies import get_librarian
 from app.api.insights import STORE_FILE
 from intelligence.graph import Limits
+from intelligence.graph.paths import PATH_KINDS
 from intelligence.knowledge import KnowledgeReader
+from intelligence.knowledge.path_pages import path_page
 from intelligence.store import open_store
 
 router = APIRouter()
@@ -100,3 +102,27 @@ def connections(mbid: str | None = None, navidrome_id: str | None = None, type: 
     return _read(librarian, lambda r: r.connections_page(
         mbid=mbid, navidrome_id=navidrome_id, type=type, credits_only=credits_only, relations=relation,
         direction=direction, limits=limits, cursor=cursor))
+
+
+@router.get("/api/knowledge/paths")
+def paths(kind: str, mbid: str | None = None, navidrome_id: str | None = None, type: str | None = None,
+          librarian=Depends(get_librarian)):
+    """Discovery path from one artist: ordered stops, each with its reasons and evidence (built on demand, cached)."""
+    _need_id(mbid, navidrome_id)
+    if not type:
+        raise HTTPException(status_code=400, detail="give the entity type")
+    if type not in PERSON_TYPES:
+        raise HTTPException(status_code=400, detail=f"type must be one of {', '.join(PERSON_TYPES)}")
+    try:
+        db = open_store(librarian.DATA_DIR / STORE_FILE)
+        try:
+            page = path_page(db, kind=kind, mbid=mbid, navidrome_id=navidrome_id, type=type)
+        finally:
+            db.close()
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    except Exception:
+        raise HTTPException(status_code=502, detail="Could not read the knowledge store.")
+    if page is None:
+        raise HTTPException(status_code=404, detail="Unknown entity.")
+    return page
