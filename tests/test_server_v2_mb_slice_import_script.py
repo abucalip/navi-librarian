@@ -41,6 +41,27 @@ class SliceImportScriptTests(unittest.TestCase):
         self.assertEqual(report, {"state": "succeeded", "error": None, "progress": {"outcome": "loaded"}})
         self.assertTrue((self.data / "s").is_dir())
 
+    def test_ingest_library_records_owned_artists_with_mbid_only(self):
+        calls = []
+
+        def fake_nd(method, **params):
+            calls.append(method)
+            if method == "getArtists":
+                return {"artists": {"index": [{"artist": [
+                    {"id": "1", "name": "Alpha", "musicBrainzId": "11111111-1111-4111-8111-111111111111"},
+                    {"id": "2", "name": "No Mbid"},
+                    {"id": "3", "name": "Various Artists", "musicBrainzId": "22222222-2222-4222-8222-222222222222"}]}]}}
+            if method == "getArtist":
+                return {"artist": {"album": [{"id": "10"}]}}
+            return {"album": {"id": "10", "name": "First", "artist": "Alpha", "artistId": "1",
+                              "musicBrainzId": "33333333-3333-4333-8333-333333333333", "song": []}}
+
+        db = open_store(":memory:")
+        report = script.ingest_library(db, now=1.0, nd=fake_nd, log=lambda *a, **k: None)
+        self.assertEqual(report, {"artists_with_mbid": 1, "albums_ingested": 1})
+        self.assertEqual(calls.count("getArtist"), 1)
+        self.assertTrue(script.neighbourhood.owned_seeds(db)["artist"])
+
     def test_main_exit_code_follows_job_state(self):
         failed = RunResult(1, "failed", {}, "boom")
         with mock.patch.object(script.job, "run_slice_import", return_value=failed):
