@@ -1,3 +1,12 @@
+## 2026-11-06 — Server V2 Phase 3 closed: lenses on by default (PR #808)
+
+- **Merged via PR:** [#808](https://github.com/abucalip/navi-librarian/pull/808), squash `119c9950d91c425fec07b51558ec8477b5356710`, tested head `901489b824104b72978ad7ce8be48761d70d6f68`; compile, container-smoke, test-and-build, validate-container and validate-release-workflow passed.
+- **Owner decisions:** the blind-spots diversity gate stands and the 12-artist sample was the cause (no more tests this phase); the 180-day Forgotten Gems gate stays and the lens fills when history exists; card review waived; all lenses on by default, adjusted later if needed; further live runs waived.
+- **Change:** `enabled_lenses` (`app/api/insights.py`) returns all five lens kinds when `NAVI_INSIGHT_LENSES` is unset; an empty value turns every lens off, a list turns on only those. The runtime refresh (`app/services/insights_refresh.py`) uses the same function, so the owner-approved provider traffic (at most 120 requests per 6-hour tick) starts with the default. `navidrome_server.py` untouched (D-016).
+- **Verification actually run:** `tests/test_api_insights_routes.py`, `tests/test_insights_refresh.py`, `tests/test_intelligence_api_insights.py`, `tests/test_insights_provider_runtime.py` (36 passed, 35 subtests); the full suite was not run (owner rule). `scripts/server_v2_phase3_exit.py` against the live library, read-only, temporary store, no provider traffic: 1,793 albums, 246 with history, Forgotten Gems 0 cards (`no_candidates`, 37.4 days of history), identical across runs and shuffled input, persistence round-trip ok, recommendation package not imported, live scorecard `insufficient_evidence`, synthetic machinery check `pass`.
+- **Limitations:** not run on a deployed server; client rendering against real served cards, Android Get/Save and the accept call, card review and a full-library run were not done (waived); the venv's interpreter links were missing, so the script ran with Homebrew Python 3.12 and the venv's site-packages. Not published or deployed.
+- **Next action:** none queued. Phase 4 starts only when the owner opens its gate.
+
 ## 2026-11-06 — Server V2 Phase 3: scorecard now counts dismissals; exit script machinery check made real
 
 - **Merged via PR:** [#804](https://github.com/abucalip/navi-librarian/pull/804), squash `39af7e0614e3cff38054bfd9c2c301b2fd845988`, tested head `4dd8a12eb457c9453125ca58141232893243feea`; compile, container-smoke, test-and-build and validate-container passed.
