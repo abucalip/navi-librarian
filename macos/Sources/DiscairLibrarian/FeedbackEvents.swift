@@ -2,13 +2,14 @@ import Foundation
 
 /// One skip or dismissal reported to the Librarian (`docs/SERVER_V2_CONTRACT.md`, `POST /api/feedback/events`, D-027).
 /// Record-only: the server stores it and nothing ranks with it. Carries no path, token, device name or free text.
-public struct FeedbackEvent: Encodable, Equatable, Sendable {
-    public enum Kind: String, Encodable, Sendable { case skip, dismiss }
-    public enum Subject: String, Encodable, Sendable { case track, album, artist, card }
+public struct FeedbackEvent: Codable, Equatable, Sendable {
+    public enum Kind: String, Codable, Sendable { case skip, dismiss }
+    public enum Subject: String, Codable, Sendable { case track, album, artist, card }
 
     /// Client-generated; a retry of the same event must reuse it so the server can treat the replay as a duplicate.
     public let eventID: String
-    public let client = "macos"
+    /// Always `macos` from this client; stored as a property so a saved event can be decoded again (see `FeedbackOutbox`).
+    public let client: String
     public let kind: Kind
     public let subjectKind: Subject
     public let subjectID: String
@@ -24,7 +25,7 @@ public struct FeedbackEvent: Encodable, Equatable, Sendable {
 
     public init(eventID: String = UUID().uuidString.lowercased(), kind: Kind, subjectKind: Subject, subjectID: String,
                 mbid: String? = nil, occurredAt: Double, playedSeconds: Double? = nil, durationSeconds: Double? = nil) {
-        self.eventID = eventID; self.kind = kind; self.subjectKind = subjectKind; self.subjectID = subjectID
+        self.eventID = eventID; self.client = "macos"; self.kind = kind; self.subjectKind = subjectKind; self.subjectID = subjectID
         self.mbid = mbid; self.occurredAt = occurredAt; self.playedSeconds = playedSeconds; self.durationSeconds = durationSeconds
     }
 

@@ -1,4 +1,5 @@
 import DiscairAudio
+import DiscairLibrarian
 import DiscairNavidrome
 import Foundation
 import Observation
@@ -186,6 +187,13 @@ public final class PlayerModel {
         defaults.set(phase == .idle ? resumeAt : (output.position > 0 ? output.position : position), forKey: Self.positionKey)
     }
 
+    /// Sends each skip to the feedback outbox, then flushes in the background. Playback does not wait for either.
+    public func configureFeedback(_ outbox: FeedbackOutbox) {
+        scrobbler.onSkip = { event in
+            Task { await outbox.enqueue(event); await outbox.flush() }
+        }
+    }
+
     public func configure(urls: StreamURLBuilder?, scrobbler client: (any Scrobbling)? = nil) {
         self.urls = urls
         scrobbler.configure(client: client)
@@ -196,6 +204,7 @@ public final class PlayerModel {
 
     /// Plays `songs` from `startAt`, replacing the queue.
     public func play(_ songs: [QueueItem], startAt: Int = 0) {
+        leaveByOwner()
         queue.set(songs, startAt: startAt)
         startCurrent()
     }
@@ -235,6 +244,7 @@ public final class PlayerModel {
     }
 
     public func next() {
+        leaveByOwner()
         pushHistory()
         guard queue.advance(natural: false) != nil else { stop(); return }
         startCurrent()
@@ -243,7 +253,10 @@ public final class PlayerModel {
     /// Past three seconds, Previous restarts the song; otherwise it goes back one.
     public func previous() {
         if phase == .playing || phase == .paused, output.position > 3 { seek(toSeconds: 0); return }
+        let before = queue.current?.id, lastInQueue = queue.upNext.isEmpty
         guard queue.back() != nil else { return }
+        // At the first song Previous only restarts it, which is not leaving it.
+        if queue.current?.id != before { scrobbler.end(leftByOwner: true, wasLastInQueue: lastInQueue) }
         if !history.isEmpty { history.removeFirst() }
         startCurrent()
     }
@@ -268,6 +281,7 @@ public final class PlayerModel {
 
     /// Plays a song from Up Next now; the songs skipped over stay in the queue behind it.
     public func jump(toUpNext i: Int) {
+        if queue.upNext.indices.contains(i) { leaveByOwner() }
         pushHistory()
         queue.jump(upNext: i)
         startCurrent()
@@ -369,7 +383,7 @@ public final class PlayerModel {
         if startAt > 3, startAt < duration - 3 { output.seek(to: startAt); position = startAt }
         output.play()
         phase = .playing
-        scrobbler.begin(songID: item.songID, duration: item.duration)
+        scrobbler.begin(songID: item.songID, duration: item.duration, mbid: item.mbid)
         startTicking()
         refreshPreload()
     }
@@ -400,6 +414,12 @@ public final class PlayerModel {
         let title = queue.current?.title ?? "The song"
         cutShort = "“\(title)” stopped downloading, so it ended early."
         notice = cutShort
+    }
+
+    /// The owner moves off the current song (Next, Previous, a jump, or another list). Runs before the queue moves, because
+    /// it needs to know whether anything is queued after the song.
+    private func leaveByOwner() {
+        scrobbler.end(leftByOwner: true, wasLastInQueue: queue.upNext.isEmpty)
     }
 
     private func pushHistory() {
@@ -465,7 +485,7 @@ public final class PlayerModel {
         position = output.position
         duration = output.duration
         phase = output.isPlaying ? .playing : .paused
-        if let c = queue.current { scrobbler.begin(songID: c.songID, duration: c.duration) }
+        if let c = queue.current { scrobbler.begin(songID: c.songID, duration: c.duration, mbid: c.mbid) }
         refreshPreload()
         persist()
     }
@@ -498,7 +518,8 @@ public final class PlayerModel {
 extension PlayerModel {
     static func item(_ s: NavidromeSong) -> QueueItem {
         QueueItem(songID: s.id, title: s.title, artist: s.artist ?? "Unknown artist", album: s.album ?? "", albumID: s.albumId,
-                  coverArt: s.coverArt, duration: Double(s.duration ?? 0), suffix: s.suffix, track: s.track, disc: s.discNumber, path: s.path)
+                  coverArt: s.coverArt, duration: Double(s.duration ?? 0), suffix: s.suffix, track: s.track, disc: s.discNumber, path: s.path,
+                  mbid: s.musicBrainzId)
     }
 
     /// Sample rows (no server id) cannot be played.
