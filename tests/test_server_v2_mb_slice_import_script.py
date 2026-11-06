@@ -36,6 +36,7 @@ class SliceImportScriptTests(unittest.TestCase):
             report = script.run(self.data, self.data / "s", plan_only=False, export="2026-11-04", cover_art=True,
                                 keep_archive=True, hops=1)
         kwargs = run_job.call_args.kwargs
+        self.assertTrue(kwargs["require_parallel"])
         self.assertEqual((kwargs["export"], kwargs["include_cover_art"], kwargs["delete_archive"], kwargs["hops"]),
                          ("2026-11-04", True, False, 1))
         self.assertEqual(report, {"state": "succeeded", "error": None, "progress": {"outcome": "loaded"}})

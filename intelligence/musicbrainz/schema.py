@@ -79,6 +79,7 @@ TABLES: dict[str, tuple[str, ...]] = {
     "l_area_url": _LINK,
     "l_artist_place": _LINK,
     "l_artist_url": _LINK,
+    "l_genre_url": _LINK,
     "l_label_url": _LINK,
     "l_place_recording": _LINK,
     "l_place_url": _LINK,

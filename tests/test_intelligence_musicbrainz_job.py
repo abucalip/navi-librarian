@@ -105,6 +105,16 @@ class JobTests(unittest.TestCase):
         self.run_it(on_progress=lambda stage, pct: seen.append((stage, pct)))
         self.assertEqual([p for s, p in seen if s == "extract"], [50, 100])
 
+    def test_single_core_decompression_is_refused_when_required(self):
+        self.seed()
+        with mock.patch.object(job.dump, "parallel_available", return_value=False), \
+                mock.patch.object(job.os, "cpu_count", return_value=8):
+            result = self.run_it(require_parallel=True)
+            allowed = self.run_it()
+        self.assertEqual(result.state, "failed")
+        self.assertIn("indexed_bzip2", result.error)
+        self.assertEqual(allowed.state, "succeeded")
+
     def test_keep_extracted(self):
         self.seed()
         self.run_it(keep_extracted=True)

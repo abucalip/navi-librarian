@@ -46,12 +46,14 @@ def world():
                          {"entity0": "2", "entity1": "803"}, {"entity0": "1", "entity1": "808"}],
         "l_label_url": [{"entity0": "5", "entity1": "804"}],
         "l_area_url": [{"entity0": "4434", "entity1": "805"}],
+        "l_genre_url": [{"entity0": "500", "entity1": "809"}],
         "l_place_url": [{"entity0": "70", "entity1": "806"}],
         "url": [{"id": "801", "url": "https://www.wikidata.org/wiki/Q42"},
                 {"id": "802", "url": "https://www.wikidata.org/wiki/Q7"},
                 {"id": "803", "url": "https://www.wikidata.org/wiki/Q9"},
                 {"id": "804", "url": "https://www.wikidata.org/wiki/Q11"},
                 {"id": "805", "url": "https://www.wikidata.org/wiki/Q90"},
+                {"id": "809", "url": "https://www.wikidata.org/wiki/Q8"},
                 {"id": "806", "url": "https://www.wikidata.org/entity/Q5"},
                 {"id": "808", "url": "https://www.discogs.com/artist/777-Alpha"},
                 {"id": "807", "url": "https://www.discogs.com/master/12345-Album"}],
@@ -225,8 +227,9 @@ class ContextTests(unittest.TestCase):
         self.assertEqual(self.find("artist", "a-gid")["wikidata_id"], "Q7")  # lowest of Q42 and Q7 by number
         self.assertEqual(self.find("label", "l-gid")["wikidata_id"], "Q11")
         self.assertEqual(self.find("area", "area-paris")["wikidata_id"], "Q90")
+        self.assertEqual(self.find("genre", "g-jazz")["wikidata_id"], "Q8")
         self.assertIsNone(self.find("place", "place-studio")["wikidata_id"])  # /entity/ form is not a page link
-        self.assertEqual(self.result.context["wikidata_ids"], 3)
+        self.assertEqual(self.result.context["wikidata_ids"], 4)
 
     def test_rerun_is_stable_and_counts_no_new_ids(self):
         before = tuple(self.db.execute(f"SELECT COUNT(*) FROM {t}").fetchone()[0] for t in ("entities", "edges"))
