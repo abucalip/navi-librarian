@@ -1,3 +1,12 @@
+## 2026-11-06 — Server V2 Phase 4: owned-MBID API fill
+
+- **Objective:** a newly owned MBID gets knowledge from the MusicBrainz API until a dump contains it (efficiency.md E8).
+- **Change:** `intelligence/musicbrainz/api_fill.py`. Owned artists without a life span: one search request per 25 (`arid:(A OR B ...)`). Owned releases no dump edge touches: one lookup (release, track and work relationships, date, country, status), because MusicBrainz has no multi-id lookup. Edges are `musicbrainz_api`, `source_explicit`/`exact_mbid`, oriented like the dump tables, with an observation; facts never overwrite dump values. Limits: needs a loaded dump (`musicbrainz_slice.loaded_at`), 1.1 s between requests with one retry on 429/503, `--max-requests` (default 150), `source_state` skip until refresh (30 days; back-off after errors), stop after 3 failed requests in a row. `job.py` calls `absorb_api_edges` after a load. Trigger: `scripts/server_v2_mb_slice_import.py --api-fill`.
+- **Verification:** `test_intelligence_musicbrainz_api_fill` (14 new), `_job`, `_loader`, `test_server_v2_mb_slice_import_script`: 54 passed (run with Homebrew Python 3.12 plus the venv's packages; the venv's own interpreter link is broken). Live: 3 MusicBrainz requests (release search, release lookup, artist search) parsed as expected (61 links on one release). Required CI passed.
+- **Merged (owner request, provider traffic authorized by the owner):** PR [#834](https://github.com/abucalip/navi-librarian/pull/834), squash `acf686c86c40ffc72be5cf71bc55e02bb5c6c030`, tested head `f55192dc6ae195d2ea37e1239ff3b82e6f0af335`. Not published or deployed.
+- **Limitations:** not run on the owner's store; owned release groups and bare recordings are not filled by the API; the 1 request/s limit is enforced per process, and the job runner allows one active run.
+- **Next action:** run `--api-fill` on the server store once a dump is loaded there.
+
 ## 2026-11-06 — Server V2 Phase 4: slice replacement and import ledger
 
 - **Objective:** make a newer MusicBrainz dump replace the previous slice safely (ServerV2.md Phase 4 rule 5).
