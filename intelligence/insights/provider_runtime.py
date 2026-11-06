@@ -198,9 +198,9 @@ def compute_and_save(db: sqlite3.Connection, today: date, now: float) -> dict[st
             if built:
                 sets.append(built)
         for rg in ((lb or {}).get("payload") or {}).get("release_groups") or []:
-            world.append(WorldAlbum(rg.get("release_group_mbid"), rg.get("release_group_name") or "",
-                                    rg.get("artist_name") or name, genres=artist_genres.get(mbid.lower(), ()),
-                                    listens=int(rg.get("total_listen_count") or 0)))
+            info = set_builders.listenbrainz_group(rg)
+            world.append(WorldAlbum(info["mbid"], info["title"], info["artist"] or name, year=info["year"],
+                                    genres=artist_genres.get(mbid.lower(), ()), listens=info["listens"]))
         for g in (studio or {}).get("release-groups") or []:
             if (g.get("id") or "").lower() in owned:
                 dated_albums.append(DatedAlbum(g["id"], g.get("title") or "", name, g.get("first-release-date")))

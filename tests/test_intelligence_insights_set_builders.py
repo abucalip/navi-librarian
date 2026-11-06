@@ -43,6 +43,24 @@ class ListenBrainzTests(unittest.TestCase):
         self.assertEqual(s.source, "listenbrainz")
         self.assertIsNone(sb.listenbrainz_top_set(A, "X", {"payload": {}}))
 
+    def test_live_nested_shape_gives_title_year_artist_listens(self):
+        # shape of GET /1/popularity/top-release-groups-for-artist/<mbid>, checked live on 2026-11-06
+        entry = {"release_group_mbid": G[0], "total_listen_count": 27057653, "total_user_count": 277665,
+                 "artist": {"name": "Radiohead", "artists": [{"name": "Radiohead"}]},
+                 "release": {"name": "In Rainbows", "date": "2007-10-10"},
+                 "release_group": {"name": "In Rainbows", "date": "2007-10-10", "type": "Album", "caa_id": 1}}
+        info = sb.listenbrainz_group(entry)
+        self.assertEqual((info["mbid"], info["title"], info["artist"], info["year"], info["listens"]),
+                         (G[0], "In Rainbows", "Radiohead", 2007, 27057653))
+        s = sb.listenbrainz_top_set(A, "Radiohead", {"payload": {"release_groups": [entry]}})
+        self.assertEqual([(i.title, i.year) for i in s.items], [("In Rainbows", 2007)])
+
+    def test_flat_names_still_read_and_missing_fields_are_empty(self):
+        info = sb.listenbrainz_group({"release_group_mbid": G[1], "release_group_name": "A", "artist_name": "Z"})
+        self.assertEqual((info["title"], info["artist"], info["year"], info["listens"]), ("A", "Z", None, 0))
+        bare = sb.listenbrainz_group({"release_group_mbid": G[1], "total_listen_count": "x"})
+        self.assertEqual((bare["title"], bare["artist"], bare["listens"]), ("", "", 0))
+
 
 class SeriesTests(unittest.TestCase):
     def rel(self, i, key=None, number=None):
