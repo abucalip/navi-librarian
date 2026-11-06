@@ -1,3 +1,15 @@
+## 2026-11-06 — Server V2 Phase 6 slice 6: pure monthly taste snapshot builder (PR #852)
+
+- **PR:** [#852](https://github.com/abucalip/navi-librarian/pull/852), squash merge `21ce1952fbd09747143df21b07593009e11933f5`, final reviewed head `c57226cada08c3ee6708c9f3ce8bb7abb432e11c`.
+- **Objective:** build a deterministic monthly snapshot from caller-supplied listens, without wiring persistence, scheduling, routes, clients or provider traffic.
+- **Changes:** adds `intelligence/taste/monthly.py`; defines calendar months as timezone-aware half-open intervals in a named IANA timezone (UTC by default), handles DST and invalid/nonexistent local boundaries, and reuses the existing `profile_window` and `obscurity_window` helpers. Full dimension values are retained so months remain comparable; low-sample dimensions are flagged `dimension_low_sample` while observed entries/counts remain visible, and a dimension with no attributed listens has no entries. The module is pure and does not mutate caller inputs.
+- **Review:** no blocking code issue found. Before merge, corrected the module documentation so it accurately describes low-sample behavior (observed values remain visible but are not reliable evidence). No behavior change was made for that correction.
+- **Tests:** PR reports 25 monthly tests covering month boundaries, leap years, DST/timezones, invalid inputs, sparse/missing dimensions, complete values, deterministic ordering, input isolation and obscurity. PR reports 60 tests across the taste test modules. Reviewer did not rerun these locally. Full unit suite not run locally (owner rule).
+- **CI:** all four required workflows passed on exact final head `c57226cada08c3ee6708c9f3ce8bb7abb432e11c`: Python syntax check, container runtime smoke test, Docker packaging validation, and Docker image validation (publishing paused).
+- **Merge:** squash merge commit `21ce1952fbd09747143df21b07593009e11933f5`; GitHub confirmed merged.
+- **Limits:** builder remains unwired; no persistence, scheduled job, API route, client change, provider request, publication, deployment or runtime verification. No full local unit suite was run.
+- **Next action:** proceed only with the next owner-approved Phase 6 slice/gate, using `docs/ServerV2.md` as the plan.
+
 ## 2026-11-06 — Server V2 Phase 6 slice 5: batch ListenBrainz popularity fetch (PR #851)
 
 - **PR:** [#851](https://github.com/abucalip/navi-librarian/pull/851), squash merge `dd3572028c2c98b99ecc43848b7364393bcb0f34`, reviewed head `4c95a43b20ca5525b5a83fc8e8fa1f4f0e731f93`.
