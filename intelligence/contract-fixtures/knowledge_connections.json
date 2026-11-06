@@ -1,0 +1,196 @@
+{
+  "request": "GET /api/knowledge/connections?type=artist&mbid=00000001-0000-4000-8000-000000000000&depth=2&limit=50",
+  "response": {
+    "hops": [
+      {
+        "credit": true,
+        "depth": 1,
+        "entity": {
+          "canonical_name": "Example Song",
+          "mbid": "00000004-0000-4000-8000-000000000000",
+          "owned": false,
+          "type": "work"
+        },
+        "evidence": [
+          {
+            "direction": "out",
+            "evidence_class": "source_explicit",
+            "match_quality": "exact_mbid",
+            "relation": "composer",
+            "role": null,
+            "source": "musicbrainz_dump",
+            "source_url": null,
+            "valid_from": null,
+            "valid_to": null
+          }
+        ],
+        "via_entity_id": 1,
+        "via_mbid": "00000001-0000-4000-8000-000000000000"
+      },
+      {
+        "credit": true,
+        "depth": 1,
+        "entity": {
+          "canonical_name": "Example Album",
+          "mbid": "00000006-0000-4000-8000-000000000000",
+          "owned": true,
+          "type": "release"
+        },
+        "evidence": [
+          {
+            "direction": "out",
+            "evidence_class": "source_explicit",
+            "match_quality": "exact_mbid",
+            "relation": "producer",
+            "role": "executive",
+            "source": "musicbrainz_dump",
+            "source_url": null,
+            "valid_from": null,
+            "valid_to": null
+          }
+        ],
+        "via_entity_id": 1,
+        "via_mbid": "00000001-0000-4000-8000-000000000000"
+      },
+      {
+        "credit": true,
+        "depth": 1,
+        "entity": {
+          "canonical_name": "Example Song",
+          "mbid": "00000008-0000-4000-8000-000000000000",
+          "owned": false,
+          "type": "recording"
+        },
+        "evidence": [
+          {
+            "direction": "out",
+            "evidence_class": "source_explicit",
+            "match_quality": "exact_mbid",
+            "relation": "instrument",
+            "role": "guitar",
+            "source": "musicbrainz_dump",
+            "source_url": null,
+            "valid_from": null,
+            "valid_to": null
+          }
+        ],
+        "via_entity_id": 1,
+        "via_mbid": "00000001-0000-4000-8000-000000000000"
+      },
+      {
+        "credit": true,
+        "depth": 2,
+        "entity": {
+          "canonical_name": "Example Guest",
+          "mbid": "00000002-0000-4000-8000-000000000000",
+          "owned": false,
+          "type": "artist"
+        },
+        "evidence": [
+          {
+            "direction": "in",
+            "evidence_class": "source_explicit",
+            "match_quality": "exact_mbid",
+            "relation": "vocal",
+            "role": "lead vocals",
+            "source": "musicbrainz_dump",
+            "source_url": null,
+            "valid_from": null,
+            "valid_to": null
+          }
+        ],
+        "via_entity_id": 8,
+        "via_mbid": "00000008-0000-4000-8000-000000000000"
+      },
+      {
+        "credit": true,
+        "depth": 2,
+        "entity": {
+          "canonical_name": "Example Records",
+          "mbid": "00000003-0000-4000-8000-000000000000",
+          "owned": false,
+          "type": "label"
+        },
+        "evidence": [
+          {
+            "direction": "in",
+            "evidence_class": "source_explicit",
+            "match_quality": "exact_mbid",
+            "relation": "publisher",
+            "role": null,
+            "source": "musicbrainz_dump",
+            "source_url": null,
+            "valid_from": null,
+            "valid_to": null
+          }
+        ],
+        "via_entity_id": 6,
+        "via_mbid": "00000006-0000-4000-8000-000000000000"
+      },
+      {
+        "credit": true,
+        "depth": 2,
+        "entity": {
+          "canonical_name": "Example Song (cover)",
+          "mbid": "00000005-0000-4000-8000-000000000000",
+          "owned": false,
+          "type": "recording"
+        },
+        "evidence": [
+          {
+            "direction": "in",
+            "evidence_class": "source_explicit",
+            "match_quality": "exact_mbid",
+            "relation": "performance",
+            "role": "cover",
+            "source": "musicbrainz_dump",
+            "source_url": null,
+            "valid_from": null,
+            "valid_to": null
+          }
+        ],
+        "via_entity_id": 4,
+        "via_mbid": "00000004-0000-4000-8000-000000000000"
+      },
+      {
+        "credit": true,
+        "depth": 2,
+        "entity": {
+          "canonical_name": "Example Album",
+          "mbid": "00000007-0000-4000-8000-000000000000",
+          "owned": false,
+          "type": "release_group"
+        },
+        "evidence": [
+          {
+            "direction": "out",
+            "evidence_class": "source_explicit",
+            "match_quality": "exact_mbid",
+            "relation": "member_of",
+            "role": null,
+            "source": "musicbrainz",
+            "source_url": null,
+            "valid_from": null,
+            "valid_to": null
+          }
+        ],
+        "via_entity_id": 6,
+        "via_mbid": "00000006-0000-4000-8000-000000000000"
+      }
+    ],
+    "next_cursor": null,
+    "sources": {
+      "musicbrainz_dump": {
+        "coverage": "loaded",
+        "dump_timestamp": "2026-11-04"
+      }
+    },
+    "start": {
+      "canonical_name": "Example Artist",
+      "mbid": "00000001-0000-4000-8000-000000000000",
+      "owned": false,
+      "type": "artist"
+    },
+    "truncated": null
+  }
+}

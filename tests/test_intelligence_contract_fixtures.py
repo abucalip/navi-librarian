@@ -61,12 +61,25 @@ class FixtureFileTests(unittest.TestCase):
                     yield from walk(v)
 
         names = sorted(p.name for p in FIXTURES.glob("knowledge_*.json"))
-        self.assertEqual(len(names), 6)
+        self.assertEqual(len(names), 9)
         for name in names:
             with self.subTest(fixture=name):
                 pairs = list(walk(json.loads((FIXTURES / name).read_text())["response"]))
                 self.assertFalse({k for k, _ in pairs} & internal)
                 self.assertTrue(all(isinstance(v, bool) for k, v in pairs if k == "owned"))
+
+    def test_connections_fixtures_page_and_stay_bounded(self):
+        full, one, two = (json.loads((FIXTURES / f"knowledge_connections{n}.json").read_text())["response"]
+                          for n in ("", "_page1", "_page2"))
+        self.assertIsNone(full["next_cursor"])
+        self.assertIsNotNone(one["next_cursor"])
+        self.assertEqual(len(one["hops"]), 2)
+        paged = [h["entity"]["mbid"] for h in one["hops"] + two["hops"]]
+        self.assertEqual(len(paged), len(set(paged)), "an entity appears once across pages")
+        self.assertEqual(paged, [h["entity"]["mbid"] for h in full["hops"]][:len(paged)])
+        for hop in full["hops"]:
+            self.assertTrue(1 <= hop["depth"] <= 2)
+            self.assertIn("via_mbid", hop)
 
     def test_slice_pending_fixture_says_so(self):
         body = json.loads((FIXTURES / "knowledge_person_slice_pending.json").read_text())["response"]

@@ -23,6 +23,7 @@ from ..insights.hidden_canon import CARD_KIND as CANON_KIND
 from ..insights.series_completion import CARD_KIND as SERIES_KIND
 from ..ingest.navidrome import normalize_album
 from ..knowledge import KnowledgeReader
+from ..graph import Limits
 from ..resolution import unresolved
 from ..store import generations, open_store
 from ..store import repositories as repo
@@ -150,6 +151,16 @@ def _knowledge(db) -> dict[str, dict[str, Any]]:
         "knowledge_recording_works.json": (f"GET /api/knowledge/recording-works?mbid={_K['recording']}",
                                            r.works_of_recording(mbid=_K["recording"])),
     }
+    start = f"type=artist&mbid={_K['artist']}"
+    first = r.connections_page(mbid=_K["artist"], type="artist", limits=Limits(max_depth=2, max_rows=200, page_size=2))
+    pages["knowledge_connections.json"] = (f"GET /api/knowledge/connections?{start}&depth=2&limit=50",
+                                           r.connections_page(mbid=_K["artist"], type="artist",
+                                                              limits=Limits(max_depth=2, max_rows=200, page_size=50)))
+    pages["knowledge_connections_page1.json"] = (f"GET /api/knowledge/connections?{start}&depth=2&limit=2", first)
+    pages["knowledge_connections_page2.json"] = (
+        f"GET /api/knowledge/connections?{start}&depth=2&limit=2&cursor=<next_cursor of knowledge_connections_page1.json>",
+        r.connections_page(mbid=_K["artist"], type="artist", cursor=first["next_cursor"],
+                           limits=Limits(max_depth=2, max_rows=200, page_size=2)))
     return {name: {"request": req, "response": body} for name, (req, body) in {**before, **pages}.items()}
 
 
