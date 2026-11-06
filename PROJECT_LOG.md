@@ -1,3 +1,10 @@
+## 2026-11-06 — Server V2 Phase 6: taste profile persistence and route (PR #849)
+
+- **Objective:** Phase 6 item 1, slice 3: save computed taste profiles and serve them.
+- **Change and evidence:** PR [#849](https://github.com/abucalip/navi-librarian/pull/849), squash `719b4b4e689bdb857df72fd9c0b363c7ec5db2f2`, tested head `af8a1d0b6b36b0f50546adb386231954a3017212`; required CI passed (compile, container-smoke, test-and-build, validate-container, validate-release-workflow). New `intelligence/taste/persistence.py` (one `taste_profile` row in `insights`; an unchanged payload is not rewritten and keeps `data_version`), pure builder `intelligence/api/taste.py`, read-only `GET /api/insights/taste` in `app/api/insights.py` (`profiles` is null until saved), contract section in `docs/SERVER_V2_CONTRACT.md`. `GET /api/insights` unchanged. Tests run locally (focused only): `test_intelligence_taste_persistence` (new), `test_api_insights_routes`, `test_intelligence_api_insights`, `test_intelligence_taste_loader`, `test_intelligence_taste_profiles` (37 passed); full suite not run (owner rule). The repo `.venv` has no Python binary, so a temporary venv from `requirements.txt` was used. `navidrome_server.py` untouched (D-016).
+- **Limits:** nothing fills the store (no listens fetch, no scheduled job); no fixture for the new route; no client; not published or deployed.
+- **Next action:** Phase 6 item 2 (obscurity/mainstream profile versus ListenBrainz sitewide stats; may need provider-traffic approval) or the listens fetch and scheduled job.
+
 ## 2026-11-06 — Server V2 Phase 6: listens loader (PR #848)
 
 - **Objective:** Phase 6 item 1, slice 2: resolve raw listens into the attributes `build_profiles` reads.

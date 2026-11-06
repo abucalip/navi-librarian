@@ -1,6 +1,6 @@
 # Development and Git workflow
 
-Last updated: 2026-10-24.
+Last updated: 2026-11-06.
 
 ## Authority and responsibilities
 
@@ -16,6 +16,7 @@ Last updated: 2026-10-24.
 - **Every successful PR merge must be followed by a beginner-friendly `Did you know?` section in the agent's final response to the owner.** This is required even when the merge is documentation-only; if a task merges multiple PRs, include a learning section after reporting the merges (one lesson per merged PR is ideal, and do not omit the section).
 - Teach one basic Python idea per lesson, using plain language for someone with no coding background. Prefer a concept connected to the merged change when possible, but the lesson itself must be about Python.
 - Keep each lesson short and concrete: explain the idea in everyday terms, show a tiny Python example when useful, and explain what the example does. Avoid unexplained jargon, assume no prior knowledge, and vary topics over time rather than repeating the same lesson.
+- **Model-cost notice (owner rule, 2026-11-06):** after the `Did you know?` section, the final response must also say whether the next slice or task could be done by Haiku, and at which effort (low, medium or high), or that it needs a stronger model, with one line of reasoning, so the owner can save usage.
 - Only claim a merge occurred when GitHub confirms it. If no PR was successfully merged, this post-merge requirement is not triggered.
 
 ## Normal change cycle
