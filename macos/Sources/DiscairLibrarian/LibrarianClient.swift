@@ -122,6 +122,19 @@ public struct LibrarianClient: Sendable {
         if let failure = failure(http, data) { throw failure }
     }
 
+    /// `POST /api/feedback/events` (D-027, record-only): 1 to 100 skip or dismiss events. A rejected item in the answer must not be
+    /// retried unchanged; an accepted duplicate means an earlier try already arrived.
+    public func reportFeedback(_ events: [FeedbackEvent]) async throws -> FeedbackEventsResponse {
+        guard !events.isEmpty, events.count <= FeedbackEvent.batchLimit else {
+            throw DiscairError.server(status: 400, message: "A feedback batch holds 1 to \(FeedbackEvent.batchLimit) events.")
+        }
+        struct Body: Encodable { let events: [FeedbackEvent] }
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys]
+        let (data, http) = try await authedSend("POST", "api/feedback/events", body: try encoder.encode(Body(events: events)))
+        return try decode(FeedbackEventsResponse.self, data, http)
+    }
+
     /// A saved discovery list, in the order the server gives it (`personal`, `classics`, `new_releases`, `for_me`).
     public func discoveryList(_ list: String, count: Int = 20) async throws -> DiscoveryList {
         let (data, http) = try await authedSend("GET", "api/discovery/\(list)?count=\(min(max(count, 1), 150))", body: nil)
