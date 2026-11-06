@@ -62,6 +62,17 @@ Fixtures: `insights_all_off.json`, `insights_three_on.json` (Phase 3). Served by
 - `capabilities` gains the `insights` feature (`available` once any card row has been saved).
 - Filling the store: `app/services/insights_refresh.py` runs `intelligence.insights.refresh_forgotten_gems` at startup and every 6 hours, only when `forgotten_gem` is listed in `NAVI_INSIGHT_LENSES`. It reads the Navidrome album list (play count, last played, star, rating) and nothing else; an empty album list is a failed run that keeps the saved cards, and a library with sparse history saves no cards. With `blind_spot`, `hidden_canon` or `anniversary` listed, the same loop also runs `intelligence.insights.refresh_provider_lenses` (owner-approved provider traffic, 2026-11-05): per 6-hour tick it records up to 40 Navidrome artists (those with an MBID), then spends at most 120 MusicBrainz and ListenBrainz requests (paced 1.1 s and 0.5 s) on release browses (linking owned releases to release groups), studio discographies, ListenBrainz top release groups and artist life-spans, cached in the store (30-day freshness, never-fetched first). The three lenses are recomputed and saved only once every owned artist has been browsed and has all three documents, so a half-linked library never shows false gaps; until then saved cards stay as they were. A provider failure fails the run and keeps the cache. Series are refreshed too (PR #801): series ids are discovered from the owned release groups' own MusicBrainz series relations, within the same tick budget, only when `series_completion` is listed.
 
+## GET /api/knowledge/{album,person,label,work,recording-works} (Phase 4)
+
+Served by `app/api/knowledge.py` (D-016: nothing added to `navidrome_server.py`). Every body is built by `KnowledgeReader` (`album_dossier`, `person_page`, `label_page`, `work_page`, `works_of_recording`) from `intelligence.sqlite3`; no provider traffic, no writes, no ownership flags. The page shapes are those the reader returns, with provenance on every credit and a `coverage` field (`pending`, `loaded`, `no_relationships_in_slice`) instead of a silent empty list.
+
+- `album`: `mbid` or `navidrome_id`, `type` = `release` (default) or `release_group`, `limit` 1 to 500 (default 100).
+- `person`: `mbid` or `navidrome_id`, `type` = `artist` (default), `person` or `group`, `limit` 1 to 500 (default 200).
+- `label` and `work`: `mbid` (required, else `422`), `limit` 1 to 500 (default 200).
+- `recording-works`: `mbid` or `navidrome_id`, `limit` 1 to 500 (default 50).
+- Errors: neither identifier `400`; bad `type` `400`; `limit` out of range `422`; entity not in the store `404`; store unreadable `502`.
+- Not yet fixtured and no client uses these routes; no fixture JSON until the owner approves the page shapes.
+
 ## Not in this contract
 
 Entity pages and path `reasons[]` (later phases); any scheduling or trigger route for the health job; macOS Swift fixtures (the macOS Health view is the Phase 1 client gate and will consume these JSON files directly).
