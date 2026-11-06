@@ -1,3 +1,12 @@
+## 2026-11-06 — Server V2 Phase 4: connections route fixtures
+
+- **Objective:** fixture the connections route (it was the one knowledge route without contract fixtures).
+- **Change:** `intelligence/api/fixture_set.py` adds `knowledge_connections.json` (depth 2, one page), `knowledge_connections_page1.json` and `knowledge_connections_page2.json` (page size 2; the second request carries the first body's `next_cursor`). `docs/SERVER_V2_CONTRACT.md` lists them. A new test checks that each entity appears once across pages, paged order matches the unpaged walk, and depth stays within 1 to 2. No route, API, store or provider change.
+- **Verification:** `python -m unittest tests.test_intelligence_contract_fixtures tests.test_api_knowledge_routes` (21 passed). Required CI passed on tested head `c33c68a8061aca7075adc761b8f9c6963d20bf95` (compile, container-smoke, test-and-build, validate-container). Full suite not run by the agent (owner rule). Run with the system Python 3.12 plus the venv `site-packages` (the venv has no `python` binary).
+- **Merged (owner request):** PR [#837](https://github.com/abucalip/navi-librarian/pull/837), squash `30a944edd0718faeb86590b4471a96d1d3e05080`.
+- **Limitations:** synthetic data, not the real slice; no client uses the route; not published or deployed.
+- **Next action:** owner choice: Phase 4 exit verification script (provenance on every factual edge, ambiguous entities, bounded traversal over cycles and duplicates), or the owner steps (slice re-import on the Mac, then `--api-fill`).
+
 ## 2026-11-06 — Server V2 Phase 4: bounded connections route
 
 - **Objective:** serve the bounded graph walk (Phase 4 work item 6) to clients; the traversal and `KnowledgeReader.connections` existed but no route used them.
