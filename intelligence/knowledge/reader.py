@@ -166,6 +166,18 @@ class KnowledgeReader:
         entity = self.entity("work", id=id, mbid=mbid)
         return None if entity is None else public(work_page(self, entity, limit=limit))
 
+    def place_page(self, *, id: int | None = None, mbid: str | None = None, limit: int = 200) -> dict[str, Any] | None:
+        """A place with its stated area chain, recordings, people and events; None when unknown."""
+        from .context_pages import place_page
+        entity = self.entity("place", id=id, mbid=mbid)
+        return None if entity is None else public(place_page(self, entity, limit=limit))
+
+    def event_page(self, *, id: int | None = None, mbid: str | None = None, limit: int = 200) -> dict[str, Any] | None:
+        """An event with its stated places and area, people and recordings; None when unknown."""
+        from .context_pages import event_page
+        entity = self.entity("event", id=id, mbid=mbid)
+        return None if entity is None else public(event_page(self, entity, limit=limit))
+
     def works_of_recording(self, *, id: int | None = None, mbid: str | None = None,
                            navidrome_id: str | None = None, limit: int = 50) -> dict[str, Any] | None:
         """The works a recording is a performance of, with counts of other recordings; None when unknown."""

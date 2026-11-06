@@ -33,6 +33,8 @@ class KnowledgeRoutes(unittest.TestCase):
         self.work = repo.upsert_entity(db, "work", "Song", mbid="w-gid")[0]
         self.group = repo.upsert_entity(db, "release_group", "Record", mbid="rg-gid", owned=True)[0]
         self.recording = repo.upsert_entity(db, "recording", "Take", mbid="r-gid")[0]
+        repo.upsert_entity(db, "place", "Studio", mbid="p-gid")
+        repo.upsert_entity(db, "event", "Night", mbid="e-gid")
         db.close()
 
     def test_each_page_answers_for_a_known_entity(self):
@@ -42,13 +44,15 @@ class KnowledgeRoutes(unittest.TestCase):
             ("/api/knowledge/work", {"mbid": "w-gid"}),
             ("/api/knowledge/album", {"mbid": "rg-gid", "type": "release_group"}),
             ("/api/knowledge/recording-works", {"mbid": "r-gid"}),
+            ("/api/knowledge/place", {"mbid": "p-gid"}),
+            ("/api/knowledge/event", {"mbid": "e-gid"}),
         ):
             with self.subTest(path=path):
                 response = self.client.get(path, params=params)
                 self.assertEqual(response.status_code, 200, response.text)
 
     def test_unknown_entity_is_404(self):
-        for path in ("person", "label", "work", "album", "recording-works"):
+        for path in ("person", "label", "work", "album", "recording-works", "place", "event"):
             with self.subTest(path=path):
                 self.assertEqual(self.client.get(f"/api/knowledge/{path}", params={"mbid": "nope"}).status_code, 404)
 
@@ -58,8 +62,12 @@ class KnowledgeRoutes(unittest.TestCase):
                 self.assertEqual(self.client.get(f"/api/knowledge/{path}").status_code, 400)
 
     def test_label_and_work_need_an_mbid(self):
-        for path in ("label", "work"):
+        for path in ("label", "work", "place", "event"):
             self.assertEqual(self.client.get(f"/api/knowledge/{path}").status_code, 422)
+
+    def test_place_and_event_are_not_interchangeable(self):
+        self.assertEqual(self.client.get("/api/knowledge/place", params={"mbid": "e-gid"}).status_code, 404)
+        self.assertEqual(self.client.get("/api/knowledge/event", params={"mbid": "p-gid"}).status_code, 404)
 
     def test_bad_type_and_limit_are_400_or_422(self):
         self.assertEqual(self.client.get("/api/knowledge/album", params={"mbid": "x", "type": "track"}).status_code, 400)

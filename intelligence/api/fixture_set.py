@@ -98,7 +98,8 @@ def _insight_fixtures() -> dict[str, dict[str, Any]]:
 
 
 _K = {name: f"{n:08d}-0000-4000-8000-000000000000" for n, name in enumerate(
-    ("artist", "second", "label", "work", "cover", "release", "group", "recording", "other"), start=1)}
+    ("artist", "second", "label", "work", "cover", "release", "group", "recording", "other",
+     "country", "city", "place", "event"), start=1)}
 
 
 def _knowledge_fixtures() -> dict[str, dict[str, Any]]:
@@ -132,7 +133,25 @@ def _knowledge(db) -> dict[str, dict[str, Any]]:
     repo.add_edge(db, recording, work, "performance", **dump)
     repo.add_edge(db, cover, work, "performance", role="cover", **dump)
     repo.add_edge(db, artist, work, "composer", **dump)
+    # Context (Phase 5): kept off the first artist's two-hop neighbourhood so the connections fixtures hold.
+    country = e("area", "Exampleland", "country")
+    city = e("area", "Example City", "city")
+    place = e("place", "Example Studio", "place")
+    event = e("event", "Example Festival", "event")
+    repo.add_edge(db, city, country, "part of", **dump)
+    repo.add_edge(db, place, city, "area", **dump)
+    repo.add_edge(db, place, cover, "recording location", **dump)
+    repo.add_edge(db, second, place, "owner", **dump)
+    repo.add_edge(db, event, place, "held at", **dump)
+    repo.add_edge(db, second, event, "main performer", **dump)
+    repo.add_edge(db, event, cover, "recorded in", **dump)
     with db:
+        db.execute("INSERT INTO area_facts (entity_id, kind, iso_code) VALUES (?, 'country', 'XX')", (country,))
+        db.execute("INSERT INTO area_facts (entity_id, kind, iso_code) VALUES (?, 'city', NULL)", (city,))
+        db.execute("INSERT INTO place_facts (entity_id, kind, latitude, longitude, begin_date, end_date) "
+                   "VALUES (?, 'studio', 48.85, 2.41, '1970', NULL)", (place,))
+        db.execute("INSERT INTO event_facts (entity_id, kind, begin_date, end_date, cancelled) "
+                   "VALUES (?, 'festival', '1971-06', '1971-06', 0)", (event,))
         db.execute("INSERT INTO release_facts (entity_id, date, country, status) VALUES (?, '2001-05-01', 'GB', 'official')",
                    (release,))
         db.execute("INSERT INTO artist_life_span (entity_id, begin_date, end_date, ended) VALUES (?, '1970', NULL, 0)", (artist,))
@@ -148,6 +167,8 @@ def _knowledge(db) -> dict[str, dict[str, Any]]:
         "knowledge_person.json": (f"GET /api/knowledge/person?mbid={_K['artist']}", r.person_page(mbid=_K["artist"])),
         "knowledge_label.json": (f"GET /api/knowledge/label?mbid={_K['label']}", r.label_page(mbid=_K["label"])),
         "knowledge_work.json": (f"GET /api/knowledge/work?mbid={_K['work']}", r.work_page(mbid=_K["work"])),
+        "knowledge_place.json": (f"GET /api/knowledge/place?mbid={_K['place']}", r.place_page(mbid=_K["place"])),
+        "knowledge_event.json": (f"GET /api/knowledge/event?mbid={_K['event']}", r.event_page(mbid=_K["event"])),
         "knowledge_recording_works.json": (f"GET /api/knowledge/recording-works?mbid={_K['recording']}",
                                            r.works_of_recording(mbid=_K["recording"])),
     }
