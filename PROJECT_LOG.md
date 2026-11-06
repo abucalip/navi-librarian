@@ -2847,3 +2847,11 @@ All live runs were approved by the owner; slskd off; aggregate only; harnesses w
 - **State:** merged. Record-only per D-027: no ranking, lens, job, provider traffic or client change. No publication, deployment or runtime verification. No app-level login-gate test for the new routes.
 - **Next action:** slice 11, client reporting, waits for the client gate or a separate owner approval.
 
+
+## 2026-11-06 — Server V2 Phase 6 slice 11a: macOS feedback client and skip rule (PR #857)
+
+- **Merged:** PR [#857](https://github.com/abucalip/navi-librarian/pull/857), squash commit `4b02b9faab968bc62443a343905b103e8d59a142`, from exact tested head `f92d468a7de2d04e2f01c35d076818610fc82fff`. Started on the owner's instruction to do slice 11 now.
+- **Changes:** `macos/Sources/DiscairAudio/SkipRule.swift` (skip = left by the owner, not last in queue, played under `min(30 s, 50 % of length)`; 30 s when length unknown); `macos/Sources/DiscairLibrarian/FeedbackEvents.swift` (`FeedbackEvent`, per-item result and response decoding); `LibrarianClient.reportFeedback(_:)` for `POST /api/feedback/events` (1 to 100 events, refused before sending otherwise; one re-login on 401).
+- **Verification:** `swift test --filter "SkipRuleTests|FeedbackEventsTests"` ran locally: 8 passed, including decoding of `feedback_events_first.json` and `feedback_events_replay.json`. Full suite not run (owner rule). Compile, test-and-build, container-smoke and validate-container passed on the exact head; they do not run Swift.
+- **State:** merged. Nothing is wired: no player hook, no retry queue, no dismiss reporting for insight cards, no Android. Not run against a real server; no publication or deployment. Record-only per D-027.
+- **Next action:** macOS slice 11b: report skips from playback and keep an on-disk retry queue with stable event IDs; then card dismissals; then Android.
