@@ -208,3 +208,4 @@ The owner checks the song-only Get against a live slskd (a missing track on an a
 - Requirements and test gates: [REQUIREMENTS.md](REQUIREMENTS.md), [TEST_PLAN.md](TEST_PLAN.md)
 - Current architecture and decisions: [ARCHITECTURE.md](ARCHITECTURE.md), [DECISIONS.md](DECISIONS.md)
 - Historical implementation evidence: root [PROJECT_LOG.md](../PROJECT_LOG.md)
+- **Server V2 person and label pages merged (2026-11-06, owner request):** PR [#824](https://github.com/abucalip/navi-librarian/pull/824), squash `51818d405762756f592c4f861debd3add6fabc0f`, tested head `7756f97b72da2a0025266d77c07e22844f68a665`; required CI passed. `KnowledgeReader.person_page` and `label_page`: in-library vs not, reasons, related labels and people, honest coverage and `not_loaded`; 19 filtered tests run locally; store-only, no route uses them yet; not published or deployed. Next: work, cover and version links.

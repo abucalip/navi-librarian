@@ -2586,3 +2586,12 @@ All live runs were approved by the owner; slskd off; aggregate only; harnesses w
 - The plan is grounded in the current FastAPI startup lifecycle, `app/services/insights_refresh.py`, `app/api/search.py`, `intelligence/jobs/runner.py`, Docker configuration, and provider lookup paths.
 - Decision: retain FastAPI, one Uvicorn worker, and SQLite for the current single-host deployment. Do not add Celery, Redis, PostgreSQL, or multiple web workers without a measured need and the safety gates in the plan.
 - Documentation-only. No application code, tests, live provider traffic, publication, deployment, or runtime verification performed. Main baseline before the documentation change: `9a4e717123175bca358faad29aa9deae0a324fdb`.
+
+
+## 2026-11-06 — Server V2 person and label pages (PR #824)
+
+- **PR:** [#824](https://github.com/abucalip/navi-librarian/pull/824), squash `51818d405762756f592c4f861debd3add6fabc0f`, tested head `7756f97b72da2a0025266d77c07e22844f68a665`; compile, container-smoke, test-and-build and validate-container passed.
+- **Changes:** `KnowledgeReader.person_page` and `label_page` (`intelligence/knowledge/pages.py`). Person page: credited albums split into in the library and not, recording credits lifted to their release group, a "credited as" reason per album, related people. Label page: related labels, owned catalogue, the rest of the slice for the label. `credits_only` (inferred or unmatched edges are never shown), slice `coverage` and `not_loaded` (notable releases, catalogue numbers); bounded by `limit` with a `truncated` flag. Store-only; no routes, provider calls or `navidrome_server.py` change.
+- **Verification:** `python -m unittest tests.test_intelligence_knowledge_reader` (19 passed, 5 new). Full suite not run by the agent (owner rule). Not run against the real store; not published or deployed.
+- **Limitation:** the slice loader does not fill release group links, so an album credited only through the slice shows as its release, not folded into a group, until the loader is extended (needs a re-import and the owner's go-ahead). Ambiguous names are not handled here; callers look up by id or MBID.
+- **Next action:** work, cover and version links (MusicBrainz works), then the routes.
