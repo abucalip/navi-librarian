@@ -1,3 +1,11 @@
+## 2026-11-06 — Server V2: artist life span and release facts (PR #828)
+
+- **Objective:** the owner's decision of 2026-11-06: keep artist life span and release date, country and status from the dump (option 1), with the owned file's year and track count as fallback (option 3).
+- **Changes:** store migration 2 adds `artist_life_span` and `release_facts`. The loader reads them in its first pass (no extra pass): begin and end dates and `ended` for artists; for releases the earliest dated row of `release_country` and `release_unknown_country`, its ISO country (`iso_3166_1`) and the status name (`release_status`, only the seven MusicBrainz names). `NEEDED_TABLES` extracts those four tables. `person_page` gains `life_span` (null when nothing is stated). Dossier editions use the stored release document, then the dump facts, then Navidrome's year and song count, and carry `facts_source` and `track_count`. Capabilities fixtures regenerated (`schema_version` 2).
+- **Verification:** the four new table layouts, and the widths of `release` (14) and `artist` (19), were checked against the real export on 2026-11-06 (extraction on all 8 cores with `indexed_bzip2`, about 2 minutes); `ended` is `t`/`f`. Focused tests: `tests.test_intelligence_musicbrainz_loader`, `tests.test_intelligence_knowledge_reader`, `tests.test_intelligence_store`, `tests.test_intelligence_contract_fixtures`, `tests.test_intelligence_api`, and the job, dump and scan tests. Required CI passed on the final head. The loader was not run against the real archive.
+- **Limitation:** the owner's existing slice has none of these fields until the import is re-run on the Mac. Not published or deployed.
+- **Next action:** knowledge page fixtures, then the client gate.
+
 ## 2026-11-06 — Server V2 album dossier (PR #823)
 
 - **PR:** [#823](https://github.com/abucalip/navi-librarian/pull/823), squash `fea4a19d89276f6f40e3420d45b802aeedcb00eb`, tested head `4117359f66ab84e13724f0e013df2be37fc6edc6`; compile, container-smoke, test-and-build and validate-container passed.
