@@ -184,7 +184,34 @@ _V2 = (
     """,
 )
 
-MIGRATIONS: tuple[Migration, ...] = (Migration(1, "initial schema", _V1), Migration(2, "artist life span and release facts", _V2))
+SOURCE_OUTCOMES = ("ok", "not_found", "error", "blocked")
+
+# Freshness ledger (efficiency.md E1 item 3): what the worker last did for one source, operation
+# and key, so it can pick what to refresh, back off on failures, and tell "pending" from "absent".
+_V3 = (
+    f"""
+    CREATE TABLE source_state (
+        source TEXT NOT NULL,
+        operation TEXT NOT NULL,
+        key TEXT NOT NULL,
+        outcome TEXT NOT NULL CHECK (outcome IN ({_in(SOURCE_OUTCOMES)})),
+        observation_id INTEGER REFERENCES observations (id) ON DELETE SET NULL,
+        attempts INTEGER NOT NULL DEFAULT 0,
+        last_attempt_at REAL NOT NULL,
+        next_refresh_at REAL,
+        etag TEXT,
+        last_modified TEXT,
+        PRIMARY KEY (source, operation, key)
+    )
+    """,
+    "CREATE INDEX source_state_due ON source_state (source, operation, next_refresh_at)",
+)
+
+MIGRATIONS: tuple[Migration, ...] = (
+    Migration(1, "initial schema", _V1),
+    Migration(2, "artist life span and release facts", _V2),
+    Migration(3, "source freshness ledger", _V3),
+)
 LATEST_VERSION = MIGRATIONS[-1].version
 
 assert [m.version for m in MIGRATIONS] == list(range(1, LATEST_VERSION + 1)), "versions must be contiguous"
