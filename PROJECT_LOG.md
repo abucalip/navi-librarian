@@ -2837,3 +2837,13 @@ All live runs were approved by the owner; slskd off; aggregate only; harnesses w
 - **Verification:** PR-reported focused tests: 126 passed across the related suppression/store modules; not independently rerun. All four required workflows passed on exact head `773858c173a2cdfdbab6039b724bd6b181149906`: Python syntax check (run `42303082880`), container runtime smoke test (`42303082772`), Docker packaging/full unit suite (`42303083057`), and validation-only Docker image validation (`42303082711`; publishing paused). The full suite ran in CI, not locally, per owner rule. No separate local test execution.
 - **State:** merged. No publication, deployment or runtime verification. The event memory remains record-only and has no effect on ranking or lenses.
 - **Next action:** Phase 6 slice 10 — add the authenticated event intake/read routes, API contract and cross-client fixtures; keep runtime activation and any ranking effect separately owner-gated.
+
+
+## 2026-11-06 — Review and merge Server V2 Phase 6 slice 10 (PR #856)
+
+- **Merged:** PR [#856](https://github.com/abucalip/navi-librarian/pull/856), squash commit `33e887f619efa5d0f8006e89ddfde765bb9f3d75`, from exact tested head `22e523b5ac808601e475e1dda985724ed1bd507b`.
+- **Changes:** `POST /api/feedback/events` validates and stores a client event batch in the owner-state file with one result per input item (duplicates accepted, `event_id_conflict` and malformed items rejected, over 100 refused whole); `GET /api/insights/suppression` returns the decaying suppression view with `limit`/`offset` paging. New modules `app/api/feedback.py` and `intelligence/api/feedback.py`, router registered in `app/main.py`, `list_active_events` added to `suppression_persistence.py`. Contract section and fixtures `feedback_events_first.json`, `feedback_events_replay.json`, `suppression.json` added.
+- **Verification:** focused local run `tests.test_api_feedback_routes`, `tests.test_intelligence_suppression_persistence`, `tests.test_intelligence_contract_fixtures` (48 passed); earlier 69 passed across those plus `tests.test_api_insights_routes` and `tests.test_intelligence_api`. All required workflows passed on the exact head, including the full suite in CI; the full suite was not run locally (owner rule). The project `.venv` had lost its `python` links and was repaired with `venv --upgrade` (git-ignored).
+- **State:** merged. Record-only per D-027: no ranking, lens, job, provider traffic or client change. No publication, deployment or runtime verification. No app-level login-gate test for the new routes.
+- **Next action:** slice 11, client reporting, waits for the client gate or a separate owner approval.
+
