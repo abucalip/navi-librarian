@@ -1,3 +1,10 @@
+## 2026-11-06 — Server V2 Phase 6: obscurity profile (PR #850)
+
+- **Objective:** Phase 6 item 2, slice 4: obscurity/mainstream profile versus ListenBrainz sitewide popularity.
+- **Change and evidence:** PR [#850](https://github.com/abucalip/navi-librarian/pull/850), squash `4e34c359b9d32e28be09c2bfd5e4c18312c1b53e`, tested head `b57a7022730625f2f3c11f36c54a59fd8d79e34a`; required CI passed (compile, container-smoke, test-and-build, validate-container). New pure module `intelligence/taste/obscurity.py`: recent, mid and all-time windows; listens bucketed (mainstream, known, niche, obscure) by the sitewide listen count of the primary artist; listens without a figure kept out of the shares; low-sample flag per window; an obscure-share shift stated only when both sides are sound and the change is at least 5 points. Helpers for one batch `POST /1/popularity/artist` request (batch form exists, per the provider rule). Focused tests run locally: `tests.test_intelligence_taste_obscurity` (9) and `tests.test_intelligence_taste_profiles`; full suite not run (owner rule), CI ran it.
+- **Limits:** unwired: no fetcher, persistence, route, fixture or client; no provider traffic; bucket thresholds (1,000,000 / 100,000 / 10,000) and the shift size are unmeasured starting values; only the primary artist is used; the batch size limit of the endpoint is undocumented and unhandled; not published or deployed.
+- **Next action:** batch popularity fetcher, then persistence and route for the obscurity profile (or the listens fetch and scheduled job that fills the store).
+
 ## 2026-11-06 — Server V2 Phase 6: taste profile persistence and route (PR #849)
 
 - **Objective:** Phase 6 item 1, slice 3: save computed taste profiles and serve them.
