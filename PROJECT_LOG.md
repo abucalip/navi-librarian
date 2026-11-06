@@ -1,3 +1,12 @@
+## 2026-11-06 — Server V2: owner-state file split from the knowledge file (PR #815)
+
+- **Merged via PR:** [#815](https://github.com/abucalip/navi-librarian/pull/815), squash `5f19805c73a95a13c2e8faf6f9d8ec690b5440f9`, tested head `2c77a47c0effbac6d1708c4b219c822b83c3c289`; compile, container-smoke, test-and-build and validate-container passed on that head.
+- **Owner decision:** the owner asked for the facade and the knowledge/state split before the real MusicBrainz import, so Phase 4 data lands in the one knowledge store (efficiency.md section E, review item 7).
+- **Change:** `intelligence/store/state.py` adds `intelligence.state.sqlite3` beside the knowledge file, attached to the same connection as schema `state` with its own append-only migrations (`PRAGMA state.user_version`; a newer file is refused). `state.card_decisions(kind, key, state, payload, decided_at)` holds dismissed and accepted decisions keyed by the card's own key. `intelligence/insights/decisions.py` is the shared core used by `persistence`, `blind_spot_persistence`, `card_persistence` and `outcomes`; public signatures are unchanged. A dismissal removes the live card from the knowledge file and keeps a snapshot for the scorecard; listings also hide dismissed keys. `open_store` migrates and attaches the state file and moves legacy `dismissed`/`accepted` rows out of `insights` once (the `dismissed_state` column stays, unused).
+- **Verification actually run:** `test_intelligence_store_state` (new, 7) plus insights persistence, outcomes, scorecard, routes, refresh, provider runtime, store and phase 3 exit suites (117 passed locally); full suite not run (owner rule), CI ran it. A test deletes the knowledge file and shows every decision survives.
+- **Limitations:** not run against the real data directory; backup handling for the state file and a read-only web connection to the knowledge file are not done; only card decisions are in the state file (feedback, settings, acquisition and radio state remain in their own files). Not published, not deployed.
+- **Next action:** the `KnowledgeReader` facade, then the real MusicBrainz slice import into the knowledge file.
+
 ## 2026-11-06 — Server V2 Phase 4 slice 2, part 5: MusicBrainz slice import job (PR #814)
 
 - **Merged via PR:** [#814](https://github.com/abucalip/navi-librarian/pull/814), squash `4d691225e8c1b6cb366b94cb60fee764cc5c9336`, tested head `9188bcd8ade0ac60d7fcaecb6fd72c26f78dfc5c`; compile, container-smoke, test-and-build and validate-container passed on that head.
