@@ -1,3 +1,12 @@
+## 2026-11-06 — Server V2 Phase 4 slice 1: bounded relationship graph queries (PR #809)
+
+- **Merged via PR:** [#809](https://github.com/abucalip/navi-librarian/pull/809), squash `992206db1ce2e4001907058539061544f7a5ce05`, tested head `4a9119e74bc329d9e14d6afe4f65fb20175b12dd`; compile, container-smoke, test-and-build and validate-container passed on that head.
+- **Owner decision:** the owner asked to start Phase 4, which opens its gate.
+- **Change:** `intelligence/graph/traversal.py` (`explore`, `Limits`, `Hop`, `Evidence`, `Page`, `is_credit`): breadth-first walk over `edges` capped by depth, rows and time (a cut-short walk reports `rows` or `time`); each entity once at its shortest depth; parallel edges collapse into one hop that keeps every edge's relation, role, source, evidence class and match quality; deterministic order with an opaque cursor; inferred and `fuzzy_unconfirmed`/`unresolved` edges are never credits and `credits_only` drops them before the walk. Reads the current generation by default. No routes, schema change, provider traffic or `navidrome_server.py` change.
+- **Verification actually run:** `tests.test_intelligence_graph_traversal` (15 passed locally) and `py_compile` on the new modules; full suite not run (owner rule), CI ran it.
+- **Limitations:** nothing calls the module yet; no MusicBrainz data is loaded; not published, not deployed.
+- **Next action:** owner decision on the MusicBrainz dump slice (format, size, disk and time cost need a measured download; `efficiency.md` E8) or, meanwhile, the album dossier and person pages from API data for entities that already have an MBID.
+
 ## 2026-11-06 — Server V2 Phase 3 closed: lenses on by default (PR #808)
 
 - **Merged via PR:** [#808](https://github.com/abucalip/navi-librarian/pull/808), squash `119c9950d91c425fec07b51558ec8477b5356710`, tested head `901489b824104b72978ad7ce8be48761d70d6f68`; compile, container-smoke, test-and-build, validate-container and validate-release-workflow passed.
