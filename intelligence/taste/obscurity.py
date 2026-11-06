@@ -82,8 +82,10 @@ def _count(popularity: Mapping[str, int | None], mbid: str | None) -> int | None
     return value if isinstance(value, int) and not isinstance(value, bool) and value >= 0 else None
 
 
-def _window(name: str, listens: list[ArtistListen], popularity: Mapping[str, int | None],
-            c: ObscurityConfig) -> ObscurityWindow:
+def obscurity_window(name: str, listens: Iterable[ArtistListen], popularity: Mapping[str, int | None],
+                     c: ObscurityConfig) -> ObscurityWindow:
+    """One window's obscurity shares over the given listens. Shares are meaningful only when not low_sample."""
+    listens = list(listens)
     counts = [n for n in (_count(popularity, l.artist_mbid) for l in listens) if n is not None]
     tally = {b: 0 for b in BUCKETS}
     for n in counts:
@@ -107,7 +109,7 @@ def build_obscurity(listens: Iterable[ArtistListen], popularity: Mapping[str, in
         "mid": [l for l in everything if l.ts > config.now - config.mid_days * DAY],
         "all_time": everything,
     }
-    windows = {name: _window(name, groups[name], popularity, config) for name in WINDOWS}
+    windows = {name: obscurity_window(name, groups[name], popularity, config) for name in WINDOWS}
     base = windows["all_time"]
     shifts: list[ObscurityShift] = []
     if not base.low_sample:

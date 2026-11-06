@@ -42,7 +42,7 @@ class ProfileConfig:
     min_listens: int = 50          # listens in a window before it counts as sound
     min_attributed: int = 30       # listens carrying a value before a dimension counts as sound
     min_shift: float = 0.05        # absolute share change worth stating
-    top: int = 10
+    top: int | None = 10          # None keeps every value (used for snapshots)
 
 
 @dataclass(frozen=True)
@@ -79,7 +79,9 @@ class TasteProfiles:
     config: ProfileConfig
 
 
-def _profile(name: str, listens: list[Listen], c: ProfileConfig) -> WindowProfile:
+def profile_window(name: str, listens: Iterable[Listen], c: ProfileConfig) -> WindowProfile:
+    """One window's profile over the given listens, as used for every window (no windowing applied here)."""
+    listens = list(listens)
     dims: dict[str, tuple[ProfileEntry, ...]] = {}
     attributed: dict[str, int] = {}
     dim_low: dict[str, bool] = {}
@@ -96,7 +98,9 @@ def _profile(name: str, listens: list[Listen], c: ProfileConfig) -> WindowProfil
                 mass[v] += 1.0 / len(values)
                 counts[v] += 1
         total = sum(mass.values())
-        ranked = sorted(mass, key=lambda v: (-mass[v], v))[: max(c.top, 0)]
+        ranked = sorted(mass, key=lambda v: (-mass[v], v))
+        if c.top is not None:
+            ranked = ranked[: max(c.top, 0)]
         dims[dim] = tuple(ProfileEntry(v, counts[v], round(mass[v] / total, 6)) for v in ranked) if total else ()
         attributed[dim] = n
         dim_low[dim] = n < c.min_attributed
@@ -122,7 +126,7 @@ def build_profiles(listens: Iterable[Listen], config: ProfileConfig) -> TastePro
         "mid": [l for l in everything if l.ts > cut["mid"]],
         "all_time": everything,
     }
-    windows = {name: _profile(name, groups[name], config) for name in WINDOWS}
+    windows = {name: profile_window(name, groups[name], config) for name in WINDOWS}
     baseline = windows["all_time"]
     shifts: list[Shift] = []
     if not baseline.low_sample:
