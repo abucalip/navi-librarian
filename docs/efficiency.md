@@ -1,7 +1,7 @@
 # Efficiency and runtime architecture plan
 
 Last reviewed: 2026-11-06  
-Repository baseline: `main` at `9a4e717123175bca358faad29aa9deae0a324fdb`.
+Repository baseline for this revision: `main` at `db88d995bf1355a443209aedb7c5163cc119d7a9`.
 
 ## Purpose and decision
 
@@ -476,8 +476,13 @@ Only then compare one versus two web workers under representative concurrent req
 
 1. **"Only the worker makes external calls" needs a defined scope.** Three categories exist:
    - *Knowledge fetches* (MusicBrainz, ListenBrainz, Last.fm, Wikipedia, Wikidata, Deezer, Apple, Discogs, review sources, artwork): worker only. Enforce with a test that fails if a web module imports a provider client (an import-boundary test), not by convention.
-   - *First-party and user-initiated control traffic*: Navidrome playback, streaming and cover proxying, slskd search and downloads, radio stream relay, Last.fm authentication and scrobbling, and the Settings "Test token" buttons stay in the web process. They are not knowledge, they are either first-party or an explicit user action.
-   - *Unbounded exploration* (global search for things not in the library, "not in your library" results, genre pages). The knowledge base cannot hold the world. Use three tiers. **Tier 1, owned library:** complete, worker-prefetched. **Tier 2, neighbourhood:** similar artists, recommendation and lens candidates, history artists, prefetched ahead of need. **Tier 3, long tail:** a web request enqueues an interactive-priority job, waits up to the route's existing deadline for the worker, and otherwise returns the existing partial/`incomplete` shape; the result is stored for next time. This keeps a single egress without making search unusable.
+   - *First-party and user-initiated control traffic*: Navidrome playback, streaming and cover proxying, slskd search and downloads, radio stream relay, Last.fm authentication and scrobbling, and the Settings "Test token" buttons stay in the web process. They are not knowledge; they are either first-party or an explicit user action.
+   - *Unbounded exploration* (global search for things not in the library, "not in your library" results, genre pages). The knowledge base cannot hold the world. Use three tiers, but apply the request rule by data state:
+     - **Tier 1, owned library:** worker-prefetched; build useful coverage progressively during cold start.
+     - **Tier 2, neighbourhood:** similar artists, recommendation and lens candidates, and history artists; prefetch ahead of need.
+     - **Tier 3, long tail:** when a requested entity or field has never been fetched, the web request may enqueue an interactive-priority job and wait only up to that route's existing deadline. If it is still unavailable, return the existing partial or incomplete response with an explicit pending state. Store the result for next time.
+   - **Critical distinction:** if a usable value already exists but is stale, serve that last-known-good value immediately and enqueue refresh in the background. Do not make a user wait for a refresh merely because a TTL expired. The bounded Tier 3 wait is only for a genuinely missing or unfetched value requested interactively; it is not a stale-while-revalidate exception. Cached negative results and provider failures follow the separate rules in E3.
+   - This keeps a single egress without turning every metadata miss into a blocking provider call or making search unusable.
 
 2. **Separate rebuildable knowledge from irreplaceable state.** Two files: `knowledge.sqlite3` (observations, entities, edges, profiles, freshness ledger; the worker is the only writer; web opens it read-only; can be wiped and rebuilt) and a state file (dismissals, feedback, settings, acquisition state, radio, job history the owner cares about). **Owner decision (2026-11-06): dismissals move to the separate state file**, keyed by a stable card identity (not a row id), so a generation rebuild never costs the owner a decision (review item 7). Revisit D-026 consequence 4 (path and backup handling were left open) when wiring this.
 
@@ -496,24 +501,56 @@ For each owned artist and album, plus the Tier 2 neighbourhood:
 - **Artwork:** URLs and licence/attribution in the database; image bytes in a content-addressed directory on disk (hash name, a few size variants made once by the worker). Do not store blobs in SQLite.
 - **Coverage:** per entity and per field class, a state of `complete`, `pending`, `absent_at_source`, or `failed`, so completeness is measurable.
 
-### E3. Freshness policy
+### E3. Freshness, absence and refresh policy
 
-Stale-while-revalidate everywhere: serve what exists, enqueue a refresh when stale, never block on it. Starting TTL classes (tune from measurement, do not treat as settled):
+The default is **stale-while-revalidate**: if a usable value exists, return it immediately, even when stale, and enqueue a refresh. A stale value is not a missing value. A refresh must never delay a page request that can be answered from last-known-good data.
 
-| Class | Examples | Initial refresh |
+Use these distinct states for each source, operation and entity/field key:
+
+| State | Meaning | Request behaviour | Worker behaviour |
+|---|---|---|---|
+| Fresh | A usable observation is within its freshness window | Serve it | No work |
+| Stale | A usable observation exists but is past its refresh time | Serve last-known-good immediately | Enqueue refresh; do not block the request |
+| Pending / never fetched | No usable observation and no authoritative negative result exists | Return partial data with an explicit pending state; for an explicit Tier 3 lookup only, allow the bounded interactive wait in E1 | Fetch in the appropriate priority lane |
+| Not found / absent at source | The provider was queried successfully and confirmed no result for this key | Report absence, not pending; do not retry until the negative TTL expires | Retry after the negative TTL, or sooner only when identity/input changes |
+| Error / blocked | A request failed, was rate-limited, or cannot currently be made | Preserve and serve any last-known-good value; otherwise report unavailable, not absent | Apply provider-specific backoff; do not turn an error into a negative cache entry |
+
+The proposed source-state ledger in E1 should retain the outcome, attempt count, last attempt, next refresh time and observation reference. Not-found must remain distinct from error, blocked and never-fetched. Entity-level coverage such as pending, absent-at-source and failed is a read model of these outcomes, not a substitute for the source ledger.
+
+Starting freshness windows (tune from measured change rates and provider limits; these are initial maximum ages, not a promise to refresh every row exactly on schedule):
+
+| Class | Examples | Initial refresh window |
 |---|---|---|
-| Stable | MB relationships, release dates, tracklists, MBIDs | 90 days, or on library change |
-| Slow | ratings, genres/tags, bios | 30 to 90 days |
-| Moving | listener and popularity counts, similar-artist lists | 7 days |
-| Daily | new releases, lens inputs | 1 day |
-| Negative | not found | 7 days, doubling to 90 on repeats |
-| Error | timeouts, 429, 5xx | short backoff with jitter, never treated as a miss |
+| Stable | MB relationships, release dates, tracklists, MBIDs | 90 days, or on a relevant library/identity change |
+| Slow | Ratings, genres/tags, bios | 30–90 days |
+| Moving | Listener and popularity counts, similar-artist lists | 7 days |
+| Daily | New releases, daily lens inputs | 1 day |
+| Negative | Confirmed not found | 7 days, doubling to 90 days on repeated confirmed misses |
+| Error / blocked | Timeouts, 429, 5xx, policy or authentication blocks | Provider-specific short backoff with jitter; never treated as a miss |
 
-Library changes trigger targeted refresh: use Navidrome's change signals (`getIndexes` with `ifModifiedSince`, scan status) and the existing import-triggered resync hook to enqueue only new or changed albums, which should be filled first.
+**Freshness determines eligibility; relevance determines order.** Among eligible stale records, schedule refreshes using a bounded relevance score based on:
+- library ownership (owned entities before unowned neighbourhood entities);
+- recent additions or identity changes;
+- listening relevance (recency and play count, with diminishing returns so one heavily played artist cannot consume the whole budget);
+- recent user access or an explicit interactive request;
+- age beyond the class freshness window.
+
+Do not let this score change recommendation ranking or infer musical preference. It only decides which metadata to refresh first. Apply a maximum-age/ageing rule and reserved budget shares so low-relevance owned entities eventually refresh rather than starving forever. Record the policy inputs and queue age so the ordering can be inspected.
+
+Library changes trigger targeted refresh: use Navidrome's change signals (getIndexes with ifModifiedSince, scan status) and the existing import-triggered resync hook to enqueue only new or changed albums, which should be filled first. An identity change invalidates only dependent observations/read models, not unrelated metadata.
 
 ### E4. Worker priority and fairness
 
-One shared provider budget (database-backed, see A5), four lanes in priority order: **interactive** (a person opened something missing), **new additions** (just-imported albums and artists), **stale refresh** (ordered by staleness weighted by play count and recency), **backfill** (the long tail). Each lane has a share of the daily per-provider budget so the backfill cannot starve interactive work and vice versa. Cold-start order for a new database: recently played artists first, then most played, then the rest.
+Use one shared provider budget (database-backed, see A5) and four lanes:
+
+1. **Interactive missing data:** an explicit request for a Tier 3 value that has never been fetched or has no usable observation. Only this lane may use the route's bounded wait; stale refreshes never do.
+2. **New additions and identity changes:** newly imported albums/artists and changed MBIDs, so the library becomes useful quickly.
+3. **Stale owned knowledge:** order by the relevance policy in E3 (recency, play count with diminishing returns, recent access and age beyond freshness).
+4. **Neighbourhood and backfill:** Tier 2 expansion first, then the remaining long tail.
+
+Each lane has a reserved share of the daily per-provider budget, with controlled borrowing when a lane is empty. A maximum queue-age/ageing rule prevents backfill from being starved indefinitely. The interactive lane is bounded per user/request and must not become a way to bypass provider limits.
+
+**Cold-start ordering:** first create the local owned-entity/identity baseline without external calls; then enrich artists and albums in recent-listening order, followed by most-played entities not already covered, then the remaining owned library. New additions arriving during the backfill retain the second lane's priority. The order is a metadata scheduling policy only; it must not alter recommendation weights or visible recommendation order.
 
 ### E5. Migration, without a big bang
 
@@ -545,32 +582,74 @@ Targets are placeholders until slice 0 supplies baselines; set the numbers there
 
 ### E8. MusicBrainz dump slice (owner-approved, grows with the library)
 
-The slice is the bulk source for MusicBrainz facts about owned entities and their neighbourhood; the API is the fallback for gaps and for items newer than the last import (D-1, hybrid). It lives in the knowledge store and is read through the same `KnowledgeReader`.
+The MusicBrainz database dump is the bulk source for facts about owned entities and their neighbourhood; the MusicBrainz API remains the fallback for gaps and entities newer than the last imported dump (D-1, hybrid). The import writes directly into the **existing Server V2 knowledge database**. There is no separate slice database or parallel entity/edge schema.
 
-- **Membership is derived from the library.** The seed set is every owned MBID (artist, release group, release, recording). The slice holds the seed plus entities within one to two hops (members, labels, series, related artists), as set in ServerV2.md section 7. Hop depth is a setting with a recorded size cost.
-- **Growth is incremental.** When the worker sees a new or changed owned MBID, it adds that entity to the seed set at once and fills it from the API (interactive/new-addition lanes). The next dump import then absorbs it, after which the API fill is no longer needed for it. A library addition is never blocked on a dump.
-- **Import is a worker job.** Download the periodic dump, stream-filter it to the current seed neighbourhood, load into slice tables, bump the data version, and keep the previous slice until the new one validates (last-known-good). Track the dump's date in `meta`; report slice age in the coverage report.
-- **Tables are separate from fetched observations.** Slice rows are bulk-loaded source data with their dump date as provenance, not per-request API documents. Derivation jobs read both and stamp edges with the source.
-- **Open facts to verify before tooling.** Which dump format (JSON entity dumps versus the database dump) and which tables carry ratings, tags, relationships and tracklists; the actual download size and local disk and time cost on the owner's host; the dump cadence; and how many hops the real library needs. I have not checked these (unverified). Slice 0 produces the sizing.
-- **Acceptance.** For owned entities the slice answers ratings, release-group linking, tracklists and relationships with zero MusicBrainz API calls on route fixtures; API calls remain only for entities not yet in a dump. Kill or narrow if a hop depth makes the slice larger than its coverage gain justifies.
+**Repository implementation status at the baseline of this revision (2026-11-06):**
+- **PR #810 merged:** streaming reader for the MusicBrainz database dump, pinned to schema sequence 31, with checksum verification. The measured core mbdump archive is 7,701,074,497 bytes; the optional cover-art archive is about 163 MB. Other large derived/edit exports are not required by the current loader.
+- **PR #811 merged:** resumable, checksum-verified downloader with free-disk reserve checks and safe partial-file handling.
+- **PR #812 merged:** bounded one-to-two-hop neighbourhood selector seeded from owned artist, release-group, release and recording MBIDs. At hop two it expands only recordings, releases, release groups and works; artists and labels reached at hop one are retained but not expanded into their catalogues. The selector enforces the entity cap and reports truncation.
+- **PR #813 merged:** three-pass loader into the existing entities and edges tables, with source and dump-timestamp provenance, in a transaction that rolls back on loader failure.
+- **PR #814 merged:** run_slice_import composes seed discovery, download, selection and load as one resumable job and records the approved budget measurements in job progress. No seeds means no download. A pre-load budget breach falls back to API-only without loading. A breach discovered only after loading is reported as over_budget; the loaded data is retained and is not automatically rolled back.
+- **PR #815 merged:** card decisions are stored in the separate intelligence.state.sqlite3 file/schema, so rebuilding the knowledge database does not erase those decisions.
+- **PR #816 merged:** it adds the KnowledgeReader facade, read-only web connections to both files, and slice metadata/status reporting. No user-facing route uses the reader yet; profile tables, legacy-cache fallback and the source-state ledger are still outstanding. The four required CI workflows passed on tested head `b49cbd1ea655bfecc8e8454a729ef42708ee517e`.
+
+**Approved limits and what is still unverified:**
+- Download budget: about 7.9 GB (core plus optional cover-art allowance); the current import job does not download cover art by default.
+- Scratch ceiling: 25 GB.
+- Permanent imported slice: under 2 GB.
+- Import time: under 2 hours.
+- Neighbourhood cap: 3,000,000 entities.
+- The import is intended to run on the server, not on a client machine. Refresh cadence is manual or monthly at most until real resource use is known.
+- The real 7.7 GB archive has not yet been downloaded and imported by this job. Actual download duration, peak scratch use, selector pass time, selected entity counts, edge counts, final database growth and total import time therefore remain unmeasured. Passing fixture tests and CI does not validate these real-world budgets.
+
+**Operational and data rules:**
+- **Membership is library-derived.** Seeds are owned MBIDs (artist, release group, release, recording). The current selector's hop and hub rules above are the starting policy; adjust them only from measured coverage gain versus size cost.
+- **Library growth is incremental.** A new owned MBID must not wait for the next full dump. The worker should use the API fallback for that entity until a later dump contains it; this event-driven fill path still needs wiring and request-budget tests.
+- **One store, one model.** The loader writes source-tagged facts into Server V2 entities and edges, with observations/provenance. Do not create separate dump-only tables or a second knowledge database. PR #816 adds the musicbrainz_slice metadata keys and slice_status for dump timestamp, schema sequence, load time, age and edge count.
+- **Refresh safely.** The current loader is additive and idempotent; it does not yet remove entities/edges that disappear from a later dump. Before enabling recurring imports, define and test replacement/pruning semantics that preserve last-known-good data on failure. Do not describe the current loader as an atomic whole-slice swap.
+- **Keep the fallback honest.** A missing relationship in a loaded slice is not proof that the relationship does not exist in MusicBrainz. Distinguish pending, no_relationships_in_slice, confirmed API not_found, and import failed/over_budget.
+- **Measure the real run.** With the owner's explicit go-ahead for the large download, run the job on the server and record archive bytes/time, free and peak scratch, selector passes and per-type counts, selected IDs, edges loaded, final database growth, import duration, budget breaches and job outcome. Preserve the logs and exact code revision. If a pre-load limit is exceeded, do not load and use the documented API-only fallback; if a post-load limit is exceeded, stop further expansion and inspect the retained result before deciding whether to keep or narrow it.
+
+**Acceptance:** the server job completes on the real archive within the approved budgets; reruns are safe; the slice answers owned-entity relationships without per-entity MusicBrainz API calls on deterministic fixtures; new library additions have a bounded API fallback until the next dump; and the reader reports dump age and honest coverage. If the real slice exceeds disk/time limits or adds little coverage, reduce hop scope or use API-only for the affected data rather than weakening the safety limits.
+
+## Cold-start experience and progressive coverage
+
+Cold start is a product state, not merely a worker performance concern. A new or rebuilt knowledge database must become useful before the full library is enriched, and clients must never imply that partial coverage is complete.
+
+1. **Immediate local baseline:** ingest owned Navidrome identities and locally available metadata first. This stage makes the library browsable from local data and must not require external calls.
+2. **High-value enrichment:** process the recently played artists/albums first, then the most-played entities, then the rest of the owned library. Deduplicate entities reached through multiple albums. New additions and explicit interactive missing-data requests use the higher-priority lanes in E4.
+3. **Neighbourhood expansion:** only after owned-entity coverage is progressing, enrich the bounded Tier 2 neighbourhood. Keep long-tail exploration as queued work, not a full-world crawl.
+4. **Progressive usefulness:** publish each entity/field group as soon as its own bounded job succeeds; do not hold all results until a whole artist, album or library batch completes. Keep last-known-good values visible during refresh.
+5. **Honest client states:** expose whether knowledge is ready, partial, pending or unavailable. At entity/field level distinguish known, stale, pending, absent at source and failed. A missing value must not be silently rendered as a negative fact. Clients may show partial dossiers and a concise "still enriching" state rather than a blank page or a global spinner.
+6. **Coverage and progress report:** provide counts and percentages for owned artists/albums by field group (identity, relationships/credits, tracklist/editions, biography/context, artwork), plus pending, stale, confirmed absent and failed counts; show queue depth/oldest age, last successful job, last dump date/age and any budget breach. Report per-group denominators so a field that is not applicable is not counted as missing. Keep provider errors and raw identifiers out of client-facing diagnostics.
+7. **Completion estimates:** show an estimated remaining time only after enough real jobs have completed to calculate a stable throughput estimate. Label it approximate and derive it from eligible queued work and observed processing rate; otherwise show counts and "estimate not available". Never infer an ETA from the 1 request/second MusicBrainz limit alone.
+8. **Recovery:** after restart, resume from durable checkpoints; after a database rebuild, preserve the separate owner-state file and show the same staged progress. A failed provider or stopped worker must leave existing knowledge usable and make the paused/pending state visible.
+
+Cold-start acceptance:
+- A fresh store exposes the local owned-entity baseline before external enrichment completes.
+- Recently played and most-played entities are measurably enriched before the long tail, without starvation of the rest of the owned library.
+- Progress counts reconcile with eligible work and field applicability; no entity is reported complete while required fields remain pending/failed.
+- The client can distinguish partial, stale, pending, absent-at-source and failed states without claiming absence from a failed lookup.
+- Restart/cancel/retry tests prove progress resumes without duplicate or destructive writes.
+- The real-library cold-start duration and coverage curve are measured before setting a completion-time promise.
 
 ## Prioritized implementation roadmap
 
-The sequence below intentionally separates measurement, provider-call reduction, worker lifecycle, and horizontal scaling. It avoids a simultaneous framework, database, queue, and deployment migration.
+The sequence separates remaining measurement, worker lifecycle, route migration and horizontal scaling. It also records which MusicBrainz groundwork is already merged so the plan does not schedule the same implementation twice.
 
-| Order | Slice | Concrete deliverable | Why this order |
+| Order | Slice | Current state and next deliverable | Why this order |
 |---:|---|---|---|
-| 0 | Baseline, inventories, decisions | Provider call counters, cache hit counters and per-route provider wait; inventory of startup threads, process-local state, every web-side provider call and the legacy scheduler; cold-start estimate; size the dump slice (E8) and decide its import tooling; read provider retention terms | Gives the baseline and settles the questions that change the rest |
-| 1 | Shared provider limiter | Database-backed per-provider `next_allowed_at` and daily budget used by every process | Prerequisite for any second process (review item 4) |
-| 2 | Worker foundation | Durable scheduler, registry, worker entry point, atomic claims, lanes, graceful shutdown and status | Separates runtime responsibilities without changing domain logic |
-| 3 | Knowledge store foundation | `knowledge.sqlite3` and state-file split, dismissals moved to the state file, freshness ledger, profile tables, `KnowledgeReader` facade over legacy caches, backfill from existing cache rows | Creates the single read path before any route moves |
-| 4 | Migrate background jobs | Insights, similar-artist precompute, lens refresh, then legacy scheduler tasks one by one, now writing to the knowledge store | Removes web-startup side effects and improves recovery |
-| 5 | Migrate user-facing routes | Artist page, album page, artwork, search enrichment, recommendation enrichment; each route switches reader, moves its provider calls into a handler, then drops the legacy call | Takes providers out of page requests (the main latency win) |
-| 6 | MusicBrainz slice and targeted batching | Dump slice import and library-driven growth (E8), then MusicBrainz ratings and tracklists API batching only for what the slice does not cover; Navidrome ingestion audit; connection reuse and coalescing inside the worker | Smaller wins once the structure is right |
-| 7 | Observability completion | Endpoint/provider/database/job metrics, coverage report, before/after reports | Makes tuning evidence-based |
-| 8 | Multi-process readiness | Only if measurements show API queueing | Gate, not a plan (see D) |
+| 0 | Baseline, inventories, decisions | **Partly complete.** Server V2 Phase 0 audit and MusicBrainz dump sizing are recorded. Still establish provider-call/cache counters, per-route provider wait, cold-start coverage/throughput baseline, background-task inventory and provider retention decisions. | Keeps remaining work evidence-led; the minimum counters and coverage measures are needed before tuning. |
+| 1 | Shared provider limiter | **Not complete.** Implement a database-backed per-provider next_allowed_at and daily budget shared by every process; audit all provider call paths before starting a second process. | Prevents the web/worker split from multiplying provider traffic. |
+| 2 | Worker foundation | **Partly complete.** intelligence/jobs has the execution runner; still add the durable dispatcher/scheduler, registry, worker entry point, atomic claims, fairness lanes, graceful shutdown and operational status. | Separates runtime responsibilities without duplicating domain logic. |
+| 3 | Knowledge-store foundation | **Partly complete.** Server V2 store and entities/edges model exist; PR #815 split card decisions into intelligence.state.sqlite3. PR #816 merged the KnowledgeReader and read-only web connection; user-facing route integration remains outstanding. Still add the source-state ledger, profile/read models, legacy-cache fallback/backfill and verified backup handling for both files. | Creates one safe read path and preserves owner decisions before routes migrate. |
+| 4 | Migrate background jobs | **Not complete.** Move insights, similar-artist precompute, lens refresh and legacy scheduler tasks into registered worker jobs one at a time; preserve their budgets and last-known-good semantics. | Removes web-startup side effects and improves recovery. |
+| 5 | Migrate user-facing routes | **Not complete.** Migrate artist page, album page, artwork, search enrichment and recommendation enrichment to read through KnowledgeReader; move their knowledge fetches to worker handlers and remove legacy request-time provider calls only after fixture equivalence. | Takes provider latency out of page requests. |
+| 6 | MusicBrainz slice and targeted batching | **Pipeline implemented; real run pending.** PRs #810–#814 merged the dump reader, downloader, neighbourhood selector, loader and orchestration job. Next: owner-authorized server run on the real archive, record all budget measurements, fix any real-data defects, define safe recurring-refresh/pruning semantics, and wire incremental API fallback for new library MBIDs. Re-evaluate B1/B2 only after measured slice coverage shows what remains uncovered. | Avoids rebuilding completed tooling and makes the remaining risk measurable. |
+| 7 | Observability completion | **Not complete.** Add endpoint/provider/database/job metrics and a coverage/progress view. Pull the minimum provider counters, queue age, field coverage and cold-start measurements into slice 0 rather than waiting for this later slice. | Supports tuning, operational diagnosis and honest client progress. |
+| 8 | Multi-process readiness | **Deferred gate.** Only consider additional Uvicorn workers after the shared limiter, worker ownership, read-only connections and cross-process coordination are proven and measurements show API queueing. | No demonstrated need yet; avoid premature concurrency. |
 
-This is a proposed order, not an instruction to run provider traffic or deploy. If new correctness, security, data-safety, or CI gaps appear, those take precedence.
+This is a proposed order, not an instruction to run provider traffic or deploy. The real MusicBrainz archive run requires the owner's explicit go-ahead. If new correctness, security, data-safety, or CI gaps appear, those take precedence.
 
 ## What should not change as part of this plan
 
@@ -614,3 +693,5 @@ Every implementation slice must:
 - 2026-11-06: Replaces the provider-only audit in `docs/batching.md` with this combined efficiency and runtime architecture plan. Baseline: GitHub `main` at `9a4e717123175bca358faad29aa9deae0a324fdb`. Documentation only; no application code, tests, provider traffic, publication, or deployment changed.
 - 2026-11-06 (revision 3): Records the owner's decisions that the MusicBrainz dump slice is in and grows with the library (new section E8, B1/B2 deferred behind it) and that dismissals move to a separate state file. Documentation only.
 - 2026-11-06 (revision 2): Adds the review of revision 1 (assumptions and blind spots), section E (music knowledge base and single egress), a shared provider limiter requirement, a demoted section D, a downgraded B1, and a reordered roadmap. Documentation only; the repository facts cited (the metadata cache implementation, the process-local MusicBrainz pacing, `insights.dismissed_state`, D-1 and D-026) were read from the working tree at `ca72721d`, not from GitHub `main`; re-verify against `main` before acting. No application code, tests, provider traffic, publication, or deployment changed.
+
+- 2026-11-06 (revision 4): Clarifies the stale-versus-missing request rule; makes refresh scheduling relevance-aware without changing recommendation ranking; adds progressive cold-start and measurable coverage/progress requirements; updates E8 and the roadmap to reflect merged MusicBrainz PRs #810–#816, including the still-unverified real archive run. Documentation revision only; no provider traffic, real archive download, publication or deployment.
