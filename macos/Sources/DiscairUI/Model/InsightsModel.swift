@@ -36,8 +36,12 @@ public final class InsightsModel {
     public private(set) var hidden: Set<String> = []
     public private(set) var lastDismissed: InsightCard?
     public var openWhy: String?
+    @ObservationIgnored private var feedback: FeedbackOutbox?
 
     public init() {}
+
+    /// Sends each card dismissal to the feedback outbox (record-only, D-027). Set once the session is connected.
+    public func configureFeedback(_ outbox: FeedbackOutbox) { feedback = outbox }
 
     public func load(librarian: LibrarianClient?) async {
         guard let librarian else { return }
@@ -65,11 +69,21 @@ public final class InsightsModel {
     public func dismiss(_ card: InsightCard, librarian: LibrarianClient?) {
         hidden.insert(card.id); lastDismissed = card
         if openWhy == card.id { openWhy = nil }
+        recordDismissal(card)
         guard let librarian, isLive else { return }
         Task {
             do { try await librarian.dismissInsight(kind: card.kind, key: card.subject.key) }
             catch { self.error = "Could not save the dismissal: " + Self.message(error) }
         }
+    }
+
+    /// Queues a `dismiss` event for the card, keyed by its subject key (`docs/SERVER_V2_CONTRACT.md`, `POST /api/feedback/events`).
+    /// Queued even when the server is offline, so the outbox sends it later. Nothing is sent for a card without a key.
+    private func recordDismissal(_ card: InsightCard) {
+        let key = card.subject.key
+        guard let feedback, !key.isEmpty, key.count <= 200 else { return }
+        let event = FeedbackEvent(kind: .dismiss, subjectKind: .card, subjectID: key, occurredAt: Date().timeIntervalSince1970)
+        Task { await feedback.enqueue(event); await feedback.flush() }
     }
 
     public func undoDismiss(librarian: LibrarianClient?) {

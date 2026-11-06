@@ -136,6 +136,7 @@ public final class AppState {
                 return try await librarian.reportFeedback(events)
             })
             player.configureFeedback(outbox)
+            insights.configureFeedback(outbox)
             feedback = outbox
         }
         player.onUpNextLow = { [weak self] in if self?.radio.autoplay == true { self?.startRadio() } }
