@@ -71,6 +71,9 @@ class JobTests(unittest.TestCase):
         self.assertTrue(result.progress["archive_deleted"])
         self.assertFalse(self.archive.exists())
         self.assertEqual(data_version(self.db, job.RESOURCE), 1)
+        meta = dict(self.db.execute("SELECT key, value FROM meta WHERE key LIKE 'musicbrainz_slice.%'").fetchall())
+        self.assertEqual(meta["musicbrainz_slice.dump_timestamp"], self.info.timestamp)
+        self.assertEqual(meta["musicbrainz_slice.schema_sequence"], "31")
         self.assertIsNotNone(repo.find_entity(self.db, "artist", mbid="b-gid"))
 
     def test_keep_archive(self):

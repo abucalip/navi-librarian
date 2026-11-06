@@ -41,3 +41,20 @@ def open_store(
         db.close()
         raise
     return db
+
+
+def open_readonly(
+    database_path: str | PathLike[str], state_path: str | PathLike[str] | None = None
+) -> sqlite3.Connection:
+    """Open the knowledge file and the state file read-only (for the web process).
+
+    Does not migrate or create anything; the files must exist and be at the current version.
+    Any write on this connection fails.
+    """
+    from pathlib import Path
+
+    db = sqlite3.connect(f"file:{Path(database_path).resolve()}?mode=ro", uri=True, timeout=BUSY_TIMEOUT_SECONDS)
+    db.row_factory = sqlite3.Row
+    state = state_path if state_path is not None else default_state_path(database_path)
+    db.execute("ATTACH DATABASE ? AS state", (f"file:{Path(state).resolve()}?mode=ro",))
+    return db
