@@ -2884,3 +2884,11 @@ All live runs were approved by the owner; slskd off; aggregate only; harnesses w
 - **Open owner decisions:** (1) the Scrobble switch gates skip events but not dismissal events; dismissals are recorded regardless; (2) card dismissals send card events only, not album or artist events; (3) whether `storageError` is shown in the UI; (4) undo does not retract the queued dismissal, because the contract has no restore event kind.
 - **State:** neither PR is merged, published or deployed. Not run against a real server; no runtime verification.
 - **Next action:** the owner runs the playback suites listed above, merges #859, retargets #860 to `main` (CI then runs on it), and decides the open items.
+
+## 2026-11-07 — Review fix on PR #859 (outbox sends only once the queue is saved)
+
+- **Review finding (blocking, PR #859):** `enqueue()` recorded `storageError` on a failed write, but `flush()` still sent and removed events, so events added during a storage failure could be lost on restart.
+- **Fix (`fix/feedback-outbox-durability`, head `ef039f74`):** `FeedbackOutbox` tracks whether the in-memory queue is safely on disk. `flush()` retries the save first and sends nothing while it is not. After each batch, the removal must be saved before the next batch is sent. Events stay pending until a save succeeds.
+- **Tests:** `swift test --filter FeedbackOutboxTests` passed 15 of 15 (macOS, Swift 6.3.3). The test that asserted the old behaviour now asserts that the sender is not called while the save fails. A new test checks that a failed save after a send stops the flush before the next batch.
+- **Surfacing:** `storageError` is still only a property. It is not shown to the owner in the UI; that remains an open decision.
+- **#860:** merged #859 into the 11c branch so the stack stays current. Its code is unchanged by this review. Its CI gap and the Scrobble-switch decision are still open.
