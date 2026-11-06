@@ -2818,3 +2818,13 @@ All live runs were approved by the owner; slskd off; aggregate only; harnesses w
 - **Verification:** `python -m unittest tests.test_intelligence_contract_fixtures` (10 passed, 2 new: public shape, pending coverage). Required CI passed (compile, test-and-build, container-smoke, validate-container). Full suite not run by the agent (owner rule); `tests.test_android_contract_fixtures` not run locally (no `fastapi` in the interpreter used).
 - **Limitation:** fixtures come from synthetic data, not the real slice; not published or deployed.
 - **Next action (not started):** client gate (macOS dossier and person/label pages; Android "Who played on this?").
+
+
+## 2026-11-06 — Server V2 Phase 6 suppression builder (PR #854)
+
+- **PR:** [#854](https://github.com/abucalip/navi-librarian/pull/854), squash `904427c5a93359dfffb37f0e22243849dd1b38d8`, tested final head `cc131c72e60b1f5cf4896daf797aada36843b6ac`.
+- **Changes:** `intelligence/taste/suppression.py` adds pure event validation and a deterministic per-subject suppression view. It accepts only UUID-shaped event IDs, normalizes them to lowercase, rejects malformed items independently, rejects batches over 100 as a whole, ignores duplicate IDs idempotently, and keeps track/album/artist/card subjects isolated. Active event weights use the 14-day half-life, 60-day expiry and 1.0 cap; the builder is deterministic and does no I/O. Public helpers and dataclasses are exported from `intelligence.taste`.
+- **Review correction:** the initial PR head accepted arbitrary short event IDs despite D-027 requiring client-generated UUIDs. The updated head added UUID-shape validation, lowercase normalization and regression tests for malformed IDs and case-insensitive deduplication. Re-review found the contract mismatch corrected; no further blocking issue found.
+- **Verification:** PR-reported focused run: `python3 -m unittest tests.test_intelligence_taste_suppression tests.test_intelligence_taste_context` (52 passed); `py_compile` on the changed files passed. All four required CI workflows passed on the exact final head: compile, test-and-build, container-smoke and validate-container. Full suite was not run manually (owner rule).
+- **Scope and limits:** unwired and record-only per D-027. No persistence, route, job, client, provider traffic or recommendation-ranking effect. No publication, deployment or runtime verification.
+- **Next action:** slice 9 — add the append-only event table to the owner-state Server V2 SQLite file, with idempotent insert and bounded 180-day retention, preserving the no-ranking-effect rule.
