@@ -18,6 +18,7 @@ import time
 from typing import Any, Iterable
 
 from ..store import generations
+from . import decisions
 from .anniversaries import CARD_KIND as ANNIVERSARY_KIND, AnniversaryResult, anniversary_card
 from .hidden_canon import CARD_KIND as CANON_KIND, CanonResult, canon_card
 from .series_completion import CARD_KIND as SERIES_KIND, SeriesResult, series_card
@@ -29,10 +30,7 @@ _ORDER = "json_extract(payload, '$.score') DESC, json_extract(payload, '$.subjec
 
 
 def _dismissed(db: sqlite3.Connection, kind: str) -> set[str]:
-    rows = db.execute(
-        f"SELECT {_KEY} AS key FROM insights WHERE kind = ? AND dismissed_state = ?", (kind, DISMISSED)
-    ).fetchall()
-    return {r["key"] for r in rows if r["key"]}
+    return decisions.keys(db, kind, DISMISSED)
 
 
 def _save(db: sqlite3.Connection, kind: str, cards: Iterable[dict[str, Any]], now: float | None) -> int:
@@ -53,40 +51,26 @@ def _save(db: sqlite3.Connection, kind: str, cards: Iterable[dict[str, Any]], no
 
 
 def _list(db: sqlite3.Connection, kind: str, limit: int) -> list[dict[str, Any]]:
+    blocked = _dismissed(db, kind)
     rows = db.execute(
-        f"SELECT payload FROM insights WHERE kind = ? AND dismissed_state IS NULL ORDER BY {_ORDER} LIMIT ?",
-        (kind, max(limit, 0)),
+        f"SELECT payload FROM insights WHERE kind = ? AND dismissed_state IS NULL ORDER BY {_ORDER}", (kind,)
     ).fetchall()
-    return [json.loads(r["payload"]) for r in rows]
+    cards = [json.loads(r["payload"]) for r in rows]
+    return [c for c in cards if c["subject"]["key"] not in blocked][: max(limit, 0)]
 
 
 def _dismiss(db: sqlite3.Connection, kind: str, key: str, now: float | None) -> bool:
-    now = time.time() if now is None else now
-    if key in _dismissed(db, kind):
+    if not decisions.record(db, kind, key, DISMISSED, now, hide_live=True):
         return False
-    with db:
-        cur = db.execute(
-            f"UPDATE insights SET dismissed_state = ? WHERE kind = ? AND dismissed_state IS NULL AND {_KEY} = ?",
-            (DISMISSED, kind, key),
-        )
-        if not cur.rowcount:
-            db.execute(
-                "INSERT INTO insights (kind, subject_id, payload, reasons_json, generation, computed_at, dismissed_state) "
-                "VALUES (?, NULL, ?, '[]', ?, ?, ?)",
-                (kind, json.dumps({"subject": {"key": key}}), generations.current_generation(db), now, DISMISSED),
-            )
     generations.bump_data_version(db, RESOURCE)
     return True
 
 
 def _restore(db: sqlite3.Connection, kind: str, key: str) -> bool:
-    with db:
-        cur = db.execute(
-            f"DELETE FROM insights WHERE kind = ? AND dismissed_state = ? AND {_KEY} = ?", (kind, DISMISSED, key)
-        )
-    if cur.rowcount:
-        generations.bump_data_version(db, RESOURCE)
-    return bool(cur.rowcount)
+    if not decisions.remove(db, kind, key, DISMISSED):
+        return False
+    generations.bump_data_version(db, RESOURCE)
+    return True
 
 
 # Series completion ------------------------------------------------------------------------------

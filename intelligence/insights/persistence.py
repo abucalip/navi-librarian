@@ -14,6 +14,7 @@ import time
 from typing import Any
 
 from ..store import generations
+from . import decisions
 from .forgotten_gems import CARD_KIND, GemsResult, gem_card
 
 DISMISSED = "dismissed"
@@ -22,10 +23,7 @@ _KEY = "json_extract(payload, '$.subject.key')"
 
 
 def dismissed_keys(db: sqlite3.Connection) -> set[str]:
-    rows = db.execute(
-        f"SELECT {_KEY} AS key FROM insights WHERE kind = ? AND dismissed_state = ?", (CARD_KIND, DISMISSED)
-    ).fetchall()
-    return {r["key"] for r in rows if r["key"]}
+    return decisions.keys(db, CARD_KIND, DISMISSED)
 
 
 def save_gems(db: sqlite3.Connection, result: GemsResult, now: float | None = None) -> int:
@@ -51,44 +49,31 @@ def save_gems(db: sqlite3.Connection, result: GemsResult, now: float | None = No
 
 
 def list_gem_cards(db: sqlite3.Connection, limit: int = 20) -> list[dict[str, Any]]:
+    blocked = dismissed_keys(db)
     rows = db.execute(
         "SELECT payload FROM insights WHERE kind = ? AND dismissed_state IS NULL "
-        "ORDER BY json_extract(payload, '$.score') DESC, id LIMIT ?",
-        (CARD_KIND, max(limit, 0)),
+        "ORDER BY json_extract(payload, '$.score') DESC, id",
+        (CARD_KIND,),
     ).fetchall()
-    return [json.loads(r["payload"]) for r in rows]
+    cards = [json.loads(r["payload"]) for r in rows]
+    return [c for c in cards if c["subject"]["key"] not in blocked][: max(limit, 0)]
 
 
 def dismiss_gem(db: sqlite3.Connection, key: str, now: float | None = None) -> bool:
     """Dismiss a gem by key. Returns False if it was already dismissed.
 
-    If the card is no longer live a tombstone row is written, so the dismissal still
-    suppresses the key on later refreshes.
+    The decision is stored in the owner-state file (a tombstone if the card is no longer live), so
+    it suppresses the key on later refreshes and survives a rebuild of the knowledge file.
     """
-    now = time.time() if now is None else now
-    if key in dismissed_keys(db):
+    if not decisions.record(db, CARD_KIND, key, DISMISSED, now, hide_live=True):
         return False
-    with db:
-        cur = db.execute(
-            f"UPDATE insights SET dismissed_state = ? WHERE kind = ? AND dismissed_state IS NULL AND {_KEY} = ?",
-            (DISMISSED, CARD_KIND, key),
-        )
-        if not cur.rowcount:
-            db.execute(
-                "INSERT INTO insights (kind, subject_id, payload, reasons_json, generation, computed_at, dismissed_state) "
-                "VALUES (?, NULL, ?, '[]', ?, ?, ?)",
-                (CARD_KIND, json.dumps({"subject": {"key": key}}), generations.current_generation(db), now, DISMISSED),
-            )
     generations.bump_data_version(db, RESOURCE)
     return True
 
 
 def restore_gem(db: sqlite3.Connection, key: str) -> bool:
     """Undo a dismissal; the gem returns at the next refresh. Returns False if it was not dismissed."""
-    with db:
-        cur = db.execute(
-            f"DELETE FROM insights WHERE kind = ? AND dismissed_state = ? AND {_KEY} = ?", (CARD_KIND, DISMISSED, key)
-        )
-    if cur.rowcount:
-        generations.bump_data_version(db, RESOURCE)
-    return bool(cur.rowcount)
+    if not decisions.remove(db, CARD_KIND, key, DISMISSED):
+        return False
+    generations.bump_data_version(db, RESOURCE)
+    return True

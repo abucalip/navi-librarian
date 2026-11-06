@@ -1,11 +1,10 @@
 """Record accepted cards for every insight kind, and gather outcomes for the lens scorecard.
 
-An accept is stored as its own ``insights`` row with ``dismissed_state = 'accepted'`` (no
-migration), next to any live card. It never edits or removes the live card, so refreshes and the
-existing dismissal logic are unchanged: live listings only read rows with a NULL state, and the
-finders' ``dismissed_*_keys`` helpers only read ``'dismissed'`` rows. Rules:
+An accept is stored in the owner-state file (``state.card_decisions``), next to any live card. It
+never edits or removes the live card, so refreshes and the existing dismissal logic are unchanged.
+The finders' ``dismissed_*_keys`` helpers only read ``'dismissed'`` decisions. Rules:
 
-* one accepted row per (kind, key); accepting twice returns False;
+* one accepted decision per (kind, key); accepting twice returns False;
 * a key already dismissed cannot be accepted (False); dismissing after an accept is allowed and
   wins in the scorecard, because :func:`score_lens` counts dismissed before accepted;
 * unknown kinds raise ``ValueError``.
@@ -20,6 +19,7 @@ import time
 from typing import Any
 
 from ..store import generations
+from . import decisions
 from .anniversaries import CARD_KIND as ANNIVERSARY_KIND
 from .blind_spots import CARD_KIND as BLIND_SPOT_KIND
 from .forgotten_gems import CARD_KIND as GEM_KIND
@@ -40,10 +40,7 @@ def _check(kind: str) -> None:
 
 def _keys(db: sqlite3.Connection, kind: str, state: str) -> set[str]:
     _check(kind)
-    rows = db.execute(
-        f"SELECT {_KEY} AS key FROM insights WHERE kind = ? AND dismissed_state = ?", (kind, state)
-    ).fetchall()
-    return {r["key"] for r in rows if r["key"]}
+    return decisions.keys(db, kind, state)
 
 
 def accepted_keys(db: sqlite3.Connection, kind: str) -> set[str]:
@@ -54,15 +51,10 @@ def accepted_keys(db: sqlite3.Connection, kind: str) -> set[str]:
 def accept_card(db: sqlite3.Connection, kind: str, key: str, now: float | None = None) -> bool:
     """Record that the owner accepted the card with subject ``key``. False if already accepted or dismissed."""
     _check(kind)
-    if not key or key in _keys(db, kind, ACCEPTED) or key in _keys(db, kind, DISMISSED):
+    if not key or key in _keys(db, kind, DISMISSED):
         return False
-    now = time.time() if now is None else now
-    with db:
-        db.execute(
-            "INSERT INTO insights (kind, subject_id, payload, reasons_json, generation, computed_at, dismissed_state) "
-            "VALUES (?, NULL, ?, '[]', ?, ?, ?)",
-            (kind, json.dumps({"subject": {"key": key}}), generations.current_generation(db), now, ACCEPTED),
-        )
+    if not decisions.record(db, kind, key, ACCEPTED, now, hide_live=False):
+        return False
     generations.bump_data_version(db, RESOURCE)
     return True
 
@@ -70,13 +62,10 @@ def accept_card(db: sqlite3.Connection, kind: str, key: str, now: float | None =
 def unaccept_card(db: sqlite3.Connection, kind: str, key: str) -> bool:
     """Undo an accept. False if the key was not accepted."""
     _check(kind)
-    with db:
-        cur = db.execute(
-            f"DELETE FROM insights WHERE kind = ? AND dismissed_state = ? AND {_KEY} = ?", (kind, ACCEPTED, key)
-        )
-    if cur.rowcount:
-        generations.bump_data_version(db, RESOURCE)
-    return bool(cur.rowcount)
+    if not decisions.remove(db, kind, key, ACCEPTED):
+        return False
+    generations.bump_data_version(db, RESOURCE)
+    return True
 
 
 def lens_outcomes(db: sqlite3.Connection, kind: str) -> dict[str, Any]:
@@ -93,10 +82,7 @@ def lens_outcomes(db: sqlite3.Connection, kind: str) -> dict[str, Any]:
     ).fetchall()]
     seen = {c.get("subject", {}).get("key") for c in live}
     dismissed_cards = []
-    for r in db.execute(
-        "SELECT payload FROM insights WHERE kind = ? AND dismissed_state = ? ORDER BY id", (kind, DISMISSED)
-    ).fetchall():
-        card = json.loads(r["payload"])
+    for card in decisions.payloads(db, kind, DISMISSED):
         key = (card.get("subject") or {}).get("key")
         if key and key not in seen:
             seen.add(key)
