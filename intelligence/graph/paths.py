@@ -1,0 +1,287 @@
+"""Phase 5 discovery paths: ordered stops from an owned artist, each with the evidence that put it there.
+
+A path starts at an artist and has a *kind* (the rules match ``path_coverage``, which measured them
+on the owner's real store). Every stop carries ``reasons[]``; each reason names what links the stop
+to the start (``code``), the entity in between (``via``), the start's own entity it hangs on
+(``anchor``) and the stored facts behind it (``evidence``). A stop without at least one reason is
+never produced, and a start with no stops yields ``status: "empty"``, not a padded list.
+
+Evidence is credit-grade only: an ``inferred`` edge, or one whose other end is ``fuzzy_unconfirmed``
+or ``unresolved``, is never used (not even as a bridge). Nothing is inferred here: a scene is a
+stated non-country area, never a nationality read from names, labels or recording places.
+
+Paths are built on demand from the knowledge store: no provider traffic and no write, except the
+optional cache (:func:`cached_path`), which stores the answer in ``insights`` under the kind
+``path:<kind>`` keyed by (start, kind, generation) and is stale when the MusicBrainz slice changes.
+Builds are bounded by candidate rows and time (a hub label, area or session player cannot turn one
+request into a full scan); ``truncated`` says which bound was hit.
+
+``same_studio_different_decade`` is dropped (Phase 5 kill rule) and ``sideman_to_leader`` is parked
+until its data is enriched (owner decision, 2026-11-06); neither has a builder.
+"""
+from __future__ import annotations
+
+import json
+import sqlite3
+import time
+from dataclasses import dataclass
+from typing import Any, Callable
+
+from ..store import generations
+from ..store import repositories as repo
+
+PATH_KINDS = ("follow_the_musician", "label_path", "composition_path", "scene_path")
+NOT_BUILT = {
+    "same_studio_different_decade": "dropped: mostly empty on the owner's library (Phase 5 kill rule)",
+    "sideman_to_leader": "parked: too little data until the store is enriched",
+}
+CACHE_PREFIX = "path:"
+SLICE_RESOURCE = "musicbrainz_slice"
+SCENE_YEARS = 10
+PROGRESS_OPS = 5000  # how many SQLite steps pass between deadline checks
+
+_CG = "{a}.evidence_class != 'inferred' AND {a}.match_quality NOT IN ('fuzzy_unconfirmed', 'unresolved')"
+
+
+@dataclass(frozen=True)
+class PathLimits:
+    max_stops: int = 30
+    max_reasons: int = 3        # reasons kept per stop (the count of all is kept as ``reason_count``)
+    max_rows: int = 3000        # candidate rows read from the store
+    max_seconds: float = 2.0
+
+    def __post_init__(self):
+        if min(self.max_stops, self.max_reasons, self.max_rows) < 1 or self.max_seconds <= 0:
+            raise ValueError("limits must be positive")
+
+
+def _cg(*aliases: str) -> str:
+    return " AND ".join(_CG.format(a=a) for a in aliases)
+
+
+# Each query yields rows: stop, via, anchor, rank (smaller = nearer), e1, e2 (edge ids or NULL),
+# plus ``code``. ``:a`` is the start, ``:g`` the generation. The anchor's own recordings and
+# releases are the owned releases credited to it and the recordings on them.
+_OWN_REL = (f"SELECT DISTINCT e.from_id AS rel FROM edges e JOIN entities r ON r.id = e.from_id AND r.type = 'release' "
+            f"WHERE e.to_id = :a AND e.relation = 'credited_to' AND e.generation = :g AND {_cg('e')}")
+_OWN_REC = (f"SELECT DISTINCT e.from_id AS rec FROM edges e WHERE e.relation = 'appears_on' AND e.generation = :g "
+            f"AND {_cg('e')} AND e.to_id IN ({_OWN_REL})")
+
+_QUERIES: dict[str, str] = {
+    "follow_the_musician": f"""
+        WITH own AS ({_OWN_REC})
+        SELECT q.id AS stop, p.id AS via, o.rec AS anchor, 0 AS rank, e1.id AS e1, e2.id AS e2,
+               NULL AS e3, 'shared_musician' AS code, NULL AS bridge
+        FROM own o
+        JOIN edges e1 ON e1.to_id = o.rec AND e1.generation = :g AND {_cg('e1')}
+        JOIN entities p ON p.id = e1.from_id AND p.type IN ('artist', 'person', 'group') AND p.id != :a
+        JOIN edges e2 ON e2.from_id = p.id AND e2.generation = :g AND {_cg('e2')}
+        JOIN entities q ON q.id = e2.to_id AND q.type = 'recording'
+        WHERE q.id NOT IN (SELECT rec FROM own)
+        ORDER BY q.id, p.id, o.rec LIMIT :n""",
+    "label_path": f"""
+        WITH own AS ({_OWN_REL}),
+        lab AS (
+            SELECT rl.label_id AS label, rl.release_id AS anchor, NULL AS via, NULL AS e1, 'same_label' AS code
+              FROM release_labels rl WHERE rl.label_id IS NOT NULL AND rl.release_id IN (SELECT rel FROM own)
+            UNION
+            SELECT e.to_id, l.release_id, l.label_id, e.id, 'related_label'
+              FROM release_labels l JOIN edges e ON e.from_id = l.label_id AND e.generation = :g AND {_cg('e')}
+              JOIN entities t ON t.id = e.to_id AND t.type = 'label'
+             WHERE l.label_id IS NOT NULL AND l.release_id IN (SELECT rel FROM own)
+            UNION
+            SELECT e.from_id, l.release_id, l.label_id, e.id, 'related_label'
+              FROM release_labels l JOIN edges e ON e.to_id = l.label_id AND e.generation = :g AND {_cg('e')}
+              JOIN entities t ON t.id = e.from_id AND t.type = 'label'
+             WHERE l.label_id IS NOT NULL AND l.release_id IN (SELECT rel FROM own))
+        SELECT rl.release_id AS stop, lab.label AS via, lab.anchor AS anchor,
+               CASE lab.code WHEN 'same_label' THEN 0 ELSE 1 END AS rank,
+               lab.e1 AS e1, NULL AS e2, NULL AS e3, lab.code AS code, lab.via AS bridge
+        FROM lab JOIN release_labels rl ON rl.label_id = lab.label
+        WHERE rl.release_id NOT IN (SELECT rel FROM own)
+        ORDER BY rank, rl.release_id, lab.label LIMIT :n""",
+    "composition_path": f"""
+        WITH own AS ({_OWN_REC}),
+        wk AS (
+            SELECT e.to_id AS work, o.rec AS anchor, NULL AS via, NULL AS e1, e.id AS e0, 'same_work' AS code
+              FROM own o JOIN edges e ON e.from_id = o.rec AND e.relation = 'performance'
+               AND e.generation = :g AND {_cg('e')}
+              JOIN entities w ON w.id = e.to_id AND w.type = 'work'
+            UNION
+            SELECT r.to_id, a.rec, a.work, r.id, a.e0, 'related_work'
+              FROM (SELECT o.rec, e.to_id AS work, e.id AS e0 FROM own o JOIN edges e ON e.from_id = o.rec
+                     AND e.relation = 'performance' AND e.generation = :g AND {_cg('e')}) a
+              JOIN edges r ON r.from_id = a.work AND r.generation = :g AND {_cg('r')}
+              JOIN entities t ON t.id = r.to_id AND t.type = 'work'
+            UNION
+            SELECT r.from_id, a.rec, a.work, r.id, a.e0, 'related_work'
+              FROM (SELECT o.rec, e.to_id AS work, e.id AS e0 FROM own o JOIN edges e ON e.from_id = o.rec
+                     AND e.relation = 'performance' AND e.generation = :g AND {_cg('e')}) a
+              JOIN edges r ON r.to_id = a.work AND r.generation = :g AND {_cg('r')}
+              JOIN entities t ON t.id = r.from_id AND t.type = 'work')
+        SELECT p.from_id AS stop, wk.work AS via, wk.anchor AS anchor,
+               CASE wk.code WHEN 'same_work' THEN 0 ELSE 1 END AS rank,
+               p.id AS e1, wk.e1 AS e2, wk.e0 AS e3, wk.code AS code, wk.via AS bridge
+        FROM wk JOIN edges p ON p.to_id = wk.work AND p.relation = 'performance' AND p.generation = :g AND {_cg('p')}
+        WHERE p.from_id NOT IN (SELECT rec FROM own)
+        ORDER BY rank, p.from_id, wk.work LIMIT :n""",
+    "scene_path": f"""
+        WITH mine AS (
+            SELECT e.to_id AS area, e.id AS e0, CAST(SUBSTR(la.begin_date, 1, 4) AS INTEGER) AS y
+              FROM edges e JOIN entities ar ON ar.id = e.to_id AND ar.type = 'area'
+              LEFT JOIN area_facts f ON f.entity_id = ar.id
+              JOIN artist_life_span la ON la.entity_id = :a AND la.begin_date IS NOT NULL
+             WHERE e.from_id = :a AND e.relation IN ('area', 'begin area') AND e.generation = :g AND {_cg('e')}
+               AND LOWER(COALESCE(f.kind, '')) != 'country')
+        SELECT b.id AS stop, m.area AS via, :a AS anchor,
+               ABS(m.y - CAST(SUBSTR(lb.begin_date, 1, 4) AS INTEGER)) AS rank,
+               m.e0 AS e1, e.id AS e2, NULL AS e3, 'same_area' AS code, NULL AS bridge
+        FROM mine m
+        JOIN edges e ON e.to_id = m.area AND e.relation IN ('area', 'begin area') AND e.generation = :g AND {_cg('e')}
+        JOIN entities b ON b.id = e.from_id AND b.type IN ('artist', 'person', 'group') AND b.id != :a
+        JOIN artist_life_span lb ON lb.entity_id = b.id AND lb.begin_date IS NOT NULL
+        WHERE ABS(m.y - CAST(SUBSTR(lb.begin_date, 1, 4) AS INTEGER)) <= {SCENE_YEARS}
+        ORDER BY rank, b.id, m.area LIMIT :n""",
+}
+
+_REASON_TEXT = {
+    "shared_musician": "{via} is credited on {anchor} from your library and on this recording",
+    "same_label": "released on {via}, the label of {anchor} from your library",
+    "related_label": "released on {via}, a label related to the label of {anchor} from your library",
+    "same_work": "another recording of the work that {anchor} from your library performs",
+    "related_work": "a recording of {via}, a work related to a work that {anchor} from your library performs",
+    "same_area": "from {via}, where {anchor} is also from, starting within %d years" % SCENE_YEARS,
+}
+
+
+class _Names:
+    def __init__(self, db: sqlite3.Connection):
+        self._db, self._memo = db, {}
+
+    def get(self, entity_id: int | None) -> dict[str, Any] | None:
+        if entity_id is None:
+            return None
+        if entity_id not in self._memo:
+            e = repo.get_entity(self._db, entity_id) or {}
+            self._memo[entity_id] = {k: e.get(k) for k in ("id", "type", "mbid", "canonical_name", "owned")}
+        return self._memo[entity_id]
+
+
+def _evidence(db: sqlite3.Connection, edge_ids: list[int]) -> list[dict[str, Any]]:
+    out = []
+    for edge_id in edge_ids:
+        r = db.execute("SELECT relation, role, evidence_class, match_quality, source, source_url, valid_from, valid_to "
+                       "FROM edges WHERE id = ?", (edge_id,)).fetchone()
+        if r:
+            out.append({k: r[k] for k in r.keys()})
+    return out
+
+
+def build_path(db: sqlite3.Connection, start_id: int, kind: str, *, limits: PathLimits = PathLimits(),
+               generation: int | None = None, clock: Callable[[], float] = time.monotonic) -> dict[str, Any] | None:
+    """The path of ``kind`` from an artist, built now from the store; None when the start is unknown.
+
+    Raises ``ValueError`` for a kind with no builder or a start that is not an artist, person or group.
+    """
+    if kind not in PATH_KINDS:
+        raise ValueError(NOT_BUILT.get(kind) or f"unknown path kind: {kind!r}")
+    start = repo.get_entity(db, start_id)
+    if start is None:
+        return None
+    if start["type"] not in ("artist", "person", "group"):
+        raise ValueError("a path starts at an artist, person or group")
+    gen = generation if generation is not None else generations.current_generation(db)
+    started = clock()
+    deadline = started + limits.max_seconds
+    db.set_progress_handler(lambda: 1 if clock() > deadline else 0, PROGRESS_OPS)
+    truncated: str | None = None
+    try:
+        rows = db.execute(_QUERIES[kind], {"a": start_id, "g": gen, "n": limits.max_rows}).fetchall()
+    except sqlite3.OperationalError as exc:
+        if "interrupted" not in str(exc):
+            raise
+        rows, truncated = [], "time"
+    finally:
+        db.set_progress_handler(None, 0)
+    if truncated is None and len(rows) >= limits.max_rows:
+        truncated = "rows"
+
+    names = _Names(db)
+    stops: dict[int, dict[str, Any]] = {}
+    for r in rows:
+        stop = stops.setdefault(r["stop"], {"rank": r["rank"], "reasons": [], "seen": set()})
+        stop["rank"] = min(stop["rank"], r["rank"])
+        key = (r["code"], r["via"], r["anchor"])
+        if key in stop["seen"]:
+            continue
+        stop["seen"].add(key)
+        stop["reasons"].append(r)
+
+    ordered = sorted(stops.items(), key=lambda kv: (-len(kv[1]["reasons"]), kv[1]["rank"], kv[0]))
+    result_stops = []
+    for stop_id, info in ordered[:limits.max_stops]:
+        reasons = []
+        for r in info["reasons"][:limits.max_reasons]:
+            via, anchor = names.get(r["via"]), names.get(r["anchor"])
+            edge_ids = [e for e in (r["e1"], r["e2"], r["e3"]) if e is not None]
+            reasons.append({
+                "code": r["code"],
+                "text": _REASON_TEXT[r["code"]].format(via=(via or {}).get("canonical_name", "?"),
+                                                       anchor=(anchor or {}).get("canonical_name", "?")),
+                "via": via, "anchor": anchor,
+                "evidence": _evidence(db, edge_ids) + _label_evidence(db, r),
+            })
+        result_stops.append({"entity": names.get(stop_id), "reason_count": len(info["reasons"]), "reasons": reasons})
+    if len(ordered) > limits.max_stops and truncated is None:
+        truncated = "stops"
+    return {
+        "kind": kind,
+        "start": names.get(start_id),
+        "generation": gen,
+        "status": "ok" if result_stops else "empty",
+        "stops": result_stops,
+        "truncated": truncated,
+        "built_from": {SLICE_RESOURCE: generations.data_version(db, SLICE_RESOURCE)},
+    }
+
+
+def _label_evidence(db: sqlite3.Connection, r: sqlite3.Row) -> list[dict[str, Any]]:
+    """Label paths rest on ``release_labels`` rows (a release issued on a label), not only on edges."""
+    if r["code"] not in ("same_label", "related_label"):
+        return []
+    bridge = r["bridge"] if r["bridge"] is not None else r["via"]
+    rows = db.execute("SELECT release_id, label_id, catalogue_number FROM release_labels "
+                      "WHERE (label_id = ? AND release_id = ?) OR (label_id = ? AND release_id = ?)",
+                      (r["via"], r["stop"], bridge, r["anchor"])).fetchall()
+    return [{"relation": "released_on", "catalogue_number": x["catalogue_number"], "source": "musicbrainz_dump"}
+            for x in rows]
+
+
+def cached_path(db: sqlite3.Connection, start_id: int, kind: str, *, limits: PathLimits = PathLimits(),
+                refresh: bool = False, clock: Callable[[], float] = time.monotonic,
+                now: Callable[[], float] = time.time) -> dict[str, Any] | None:
+    """The cached path for (start, kind, generation), building and saving it when missing or stale.
+
+    Needs a writable connection. A path cut short by time is returned but not saved, so a later
+    request with more room can complete it.
+    """
+    if kind not in PATH_KINDS:
+        raise ValueError(NOT_BUILT.get(kind) or f"unknown path kind: {kind!r}")
+    gen = generations.current_generation(db)
+    version = {SLICE_RESOURCE: generations.data_version(db, SLICE_RESOURCE)}
+    if not refresh:
+        row = db.execute("SELECT payload FROM insights WHERE kind = ? AND subject_id = ? AND generation = ?",
+                         (CACHE_PREFIX + kind, start_id, gen)).fetchone()
+        if row:
+            cached = json.loads(row["payload"])
+            if cached.get("built_from") == version:
+                return cached
+    path = build_path(db, start_id, kind, limits=limits, generation=gen, clock=clock)
+    if path is None or path["truncated"] == "time":
+        return path
+    with db:
+        db.execute("DELETE FROM insights WHERE kind = ? AND subject_id = ?", (CACHE_PREFIX + kind, start_id))
+        db.execute("INSERT INTO insights (kind, subject_id, payload, reasons_json, generation, computed_at) "
+                   "VALUES (?, ?, ?, '[]', ?, ?)",
+                   (CACHE_PREFIX + kind, start_id, json.dumps(path, sort_keys=True), gen, now()))
+    return path
