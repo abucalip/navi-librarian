@@ -2882,3 +2882,11 @@ All live runs were approved by the owner; slskd off; aggregate only; harnesses w
 - **Merge:** GitHub confirmed PR [#859](https://github.com/abucalip/navi-librarian/pull/859) merged by squash as `3d8a6b2381db44f7cdec676b73dbff6ce37f87a7`.
 - **Limitations:** `storageError` remains an internal property, not surfaced in the UI. Existing playback suites remain unrun by the agent under the selective-testing rule; no real-server, publication, deployment or runtime verification.
 - **PR #860:** retargeted to `main` after #859 merged. Current head is `064f765a1e67a9cac0e7a7d086daf9f5b20c028e`; no required workflow runs are yet reported for that exact head. The owner decisions about Scrobble-switch gating and card-only versus additional subject events remain open. The outstanding playback-suite check also remains a prerequisite recorded in the phase plan. PR #860 is not merged.
+
+
+## 2026-11-07 — PR #860 re-review after retargeting
+
+- **Code review:** no new code-level defect found in the card-only dismissal event mapping, 200-character key bound, `AppState` outbox wiring, or the two new `InsightsModelTests` (PR-reported 6/6 locally). No real-server or runtime check.
+- **Integration finding:** after retargeting #860 to `main`, GitHub reports `mergeable: false`; compare `main...feat/macos-card-dismiss-feedback` is diverged (ahead 6, behind 4; merge base `23a320c909583730edb600be19cd51e461f26f90`). The branch still carries #859's outbox source/test changes and stale documentation changes despite #859's squash merge and subsequent main documentation commits. Do not merge in this state. Reconcile the #860-specific code/test changes onto current `main`, preserving the current main documentation; do not force-push or overwrite unrelated work.
+- **Verification gap:** no required workflow runs are reported for current PR head `064f765a1e67a9cac0e7a7d086daf9f5b20c028e`; all four required workflows must pass on the reconciled final head. macOS Swift CI does not exist.
+- **Owner gates:** the outstanding playback-suite check remains a prerequisite recorded in Phase 6 documentation. The owner has not yet confirmed whether dismissal events should be recorded with Scrobble off or whether the event should be card-only versus also track/album/artist. PR #860 remains open and unmerged.
