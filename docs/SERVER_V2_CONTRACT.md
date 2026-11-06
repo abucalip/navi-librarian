@@ -64,6 +64,26 @@ Knowledge pages (Phase 4): fixtures `knowledge_album.json`, `knowledge_person.js
 - `capabilities` gains the `insights` feature (`available` once any card row has been saved).
 - Filling the store: `app/services/insights_refresh.py` runs `intelligence.insights.refresh_forgotten_gems` at startup and every 6 hours, only when `forgotten_gem` is listed in `NAVI_INSIGHT_LENSES`. It reads the Navidrome album list (play count, last played, star, rating) and nothing else; an empty album list is a failed run that keeps the saved cards, and a library with sparse history saves no cards. With `blind_spot`, `hidden_canon` or `anniversary` listed, the same loop also runs `intelligence.insights.refresh_provider_lenses` (owner-approved provider traffic, 2026-11-05): per 6-hour tick it records up to 40 Navidrome artists (those with an MBID), then spends at most 120 MusicBrainz and ListenBrainz requests (paced 1.1 s and 0.5 s) on release browses (linking owned releases to release groups), studio discographies, ListenBrainz top release groups and artist life-spans, cached in the store (30-day freshness, never-fetched first). The three lenses are recomputed and saved only once every owned artist has been browsed and has all three documents, so a half-linked library never shows false gaps; until then saved cards stay as they were. A provider failure fails the run and keeps the cache. Series are refreshed too (PR #801): series ids are discovered from the owned release groups' own MusicBrainz series relations, within the same tick budget, only when `series_completion` is listed.
 
+## POST /api/feedback/events (Phase 6 item 5, D-027)
+
+Served by `app/api/feedback.py`; body builder `intelligence/api/feedback.py`. Fixtures: `feedback_events_first.json` and `feedback_events_replay.json` (same request body, so the replay shows nothing new is stored), built with a fixed clock; both clients decode them. Authenticated like every `/api` route. Record-only: nothing reads the stored events for ranking, lenses, radio, cards or playlists. Events stay on the server, are never sent to a provider, and are not logged beyond counts.
+
+- Request: `{"events": [...]}`, at most 100 events. Over 100 is refused whole with `400` and nothing is stored; a missing or non-list `events` is `422`.
+- Event: `event_id` (client-generated UUID; the server lowercases it, so retries are idempotent), `client` (`macos` or `android`), `kind` (`skip` or `dismiss`), `subject_kind` (`track`, `album`, `artist` or `card`), `subject_id` (non-empty, at most 200 characters; the Navidrome id, or the card key for `card`), optional `mbid` (UUID), `occurred_at` (epoch seconds, more than 0 and at most 300 s in the future), and for tracks only optional `played_seconds` and `duration_seconds` (0 or more). A `skip` must be a `track`. No file paths, tokens, device names or free text.
+- What counts as a skip is decided by the client: a track abandoned before 30 s or before 50 percent of its length, whichever comes first, and not at the end of a queue. These are starting values, not measured; the server stores what the client reports and never re-derives it.
+- Response `200`: `received`, `inserted` (new rows), `accepted`, `rejected`, and `results[]`, one per input item in order: `{index, status: "accepted", duplicate}` or `{index, status: "rejected", reason}`. A replay of a stored event, or a repeated id inside the batch, is `accepted` with `duplicate: true` and changes nothing. A malformed item is rejected without losing the rest.
+- Rejection reasons: `not_a_mapping`, `bad_event_id`, `bad_client`, `bad_kind`, `bad_subject_kind`, `bad_subject_id`, `skip_needs_track`, `bad_mbid`, `bad_occurred_at`, `future`, `bad_played_seconds`, `bad_duration_seconds`, and `event_id_conflict` (the id is already stored with a different payload; the stored row is kept). A client must not retry a rejected item unchanged.
+- A storage failure is `502` with a fixed message that never echoes event content.
+
+## GET /api/insights/suppression (Phase 6 item 5, D-027)
+
+Fixture: `suppression.json`. Query: `limit` (1 to 200, default 50) and `offset` (0 or more), else `400`.
+
+- Body: `entries[]`, `total`, `next_offset` (`null` on the last page), `as_of` (server clock used), `record_only` (always `true`), `config`.
+- Entry: `subject_kind`, `subject_id`, `weight` (0 to 1: the sum of active event weights, each `2 ** (-age / 14 days)`, zero after 60 days, capped at 1.0), `events` and `skips` (active counts), `last_event_at`. Newest `last_event_at` first.
+- A subject is judged only by its own events: a skipped track never creates an album or artist entry. Sparse or empty memory is an empty list, never an error. Weights are derived on each read; the 14-day, 60-day and 100-event values are starting values reused from the negative-feedback policy, not measured. Events older than 180 days are removed by a retention sweep that nothing runs yet.
+- A client may show these entries but must not treat them as an instruction to hide anything: no ranking uses them.
+
 ## GET /api/insights/taste (Phase 6)
 
 Served by `app/api/insights.py`; body builder `intelligence/api/taste.py`; no fixture yet. Read-only: it returns the last saved taste profiles and never computes, fetches or changes anything.

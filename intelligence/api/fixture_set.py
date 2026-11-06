@@ -31,6 +31,7 @@ from .bodies import build_health_body, build_unresolved_body
 from .insights import build_insights_body
 from .capabilities import ServerFacts, build_capabilities
 from .changes import build_changes
+from .feedback import build_intake_body, build_suppression_body
 from .etag import etag_for
 
 _MB_A = "11111111-1111-1111-1111-111111111111"
@@ -185,6 +186,46 @@ def _knowledge(db) -> dict[str, dict[str, Any]]:
     return {name: {"request": req, "response": body} for name, (req, body) in {**before, **pages}.items()}
 
 
+_FB_NOW = 1_700_000_000.0
+_FB_DAY = 86400.0
+
+
+def _feedback_fixtures() -> dict[str, dict[str, Any]]:
+    """Client event intake and the suppression view, in a store of their own with a fixed clock."""
+    uid = lambda n: f"{n:08d}-0000-4000-8000-00000000f00d"  # noqa: E731
+    skip = {"event_id": uid(1), "client": "macos", "kind": "skip", "subject_kind": "track",
+            "subject_id": "tr-1", "mbid": _MB_A, "occurred_at": _FB_NOW - 2 * _FB_DAY,
+            "played_seconds": 12, "duration_seconds": 240}
+    dismiss = {"event_id": uid(2), "client": "android", "kind": "dismiss", "subject_kind": "card",
+               "subject_id": "gem:al-9", "occurred_at": _FB_NOW - 20 * _FB_DAY}
+    batch = [
+        skip,
+        dismiss,
+        {**skip},                                         # replay of an item in the same batch
+        {**skip, "event_id": uid(3), "kind": "dismiss", "subject_kind": "album", "subject_id": "al-1",
+         "played_seconds": 5},                            # durations belong to tracks only
+        {**skip, "event_id": "not-a-uuid"},
+    ]
+    with tempfile.TemporaryDirectory() as tmp:
+        db = open_store(Path(tmp) / "feedback.sqlite3")
+        try:
+            first = build_intake_body(db, batch, _FB_NOW)
+            replay = build_intake_body(db, batch, _FB_NOW)
+            view = build_suppression_body(db, _FB_NOW)
+        finally:
+            db.close()
+    return {
+        "feedback_events_first.json": {
+            "request": "POST /api/feedback/events", "request_body": {"events": batch}, "response": first,
+        },
+        "feedback_events_replay.json": {
+            "request": "POST /api/feedback/events (same body again)", "request_body": {"events": batch},
+            "response": replay,
+        },
+        "suppression.json": {"request": "GET /api/insights/suppression", "response": view},
+    }
+
+
 def _build(db) -> dict[str, dict[str, Any]]:
     empty_caps = build_capabilities(db)
     empty_changes = build_changes(db, 0)
@@ -202,6 +243,7 @@ def _build(db) -> dict[str, dict[str, Any]]:
     return {
         **_insight_fixtures(),
         **_knowledge_fixtures(),
+        **_feedback_fixtures(),
         "capabilities_empty.json": {"request": "GET /api/capabilities", "response": empty_caps},
         "capabilities_populated.json": {"request": "GET /api/capabilities", "response": caps},
         "changes_from_start.json": {"request": "GET /api/changes", "response": build_changes(db, 0)},
