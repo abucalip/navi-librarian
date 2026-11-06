@@ -12,6 +12,11 @@ public struct FeedbackUnavailable: Error, Sendable {
 /// dropped, never retried unchanged. A network error, a 5xx or any other failure of the whole request keeps every event for
 /// the next flush. Each event keeps the `event_id` it was created with, so a retry is recognised as a replay.
 ///
+/// A write that fails is recorded in `storageError`; the events stay in memory and are not sent until a later save succeeds,
+/// so nothing is sent that is not safely on disk and nothing is dropped for a disk error. A
+/// saved file that cannot be read is moved aside, not treated as an empty queue, so pending events are never overwritten.
+/// A re-sent event that was already settled on disk is a server duplicate, so a failed save at worst causes a harmless replay.
+///
 /// The outbox holds at most `capacity` events and drops the oldest. An event whose `occurred_at` is more than 300 s ahead
 /// of this clock is held rather than sent, because the server would reject it as `future`; it goes out once the clock
 /// catches up.
@@ -33,12 +38,24 @@ public actor FeedbackOutbox {
     private let clock: @Sendable () -> Date
     private var events: [FeedbackEvent]
     private var isFlushing = false
+    /// True when an unreadable queue file could not be moved aside. Saving is then refused, so that file is never overwritten.
+    private var preserveExistingFile = false
+    /// True when the in-memory queue is safely recorded on disk. While false, `flush()` sends nothing.
+    private var durable: Bool
+
+    /// Why the queue could not be read or written, in plain words. Nil after a clean load and a successful save.
+    /// Events stay in memory while this is set and are not sent until a save succeeds; they are not dropped.
+    public private(set) var storageError: String?
 
     public init(fileURL: URL, send: @escaping Sender, clock: @escaping @Sendable () -> Date = Date.init) {
         self.fileURL = fileURL
         self.send = send
         self.clock = clock
-        events = Self.load(fileURL)
+        let loaded = Self.load(fileURL)
+        events = loaded.events
+        storageError = loaded.problem
+        preserveExistingFile = loaded.mustPreserve
+        durable = !loaded.mustPreserve
     }
 
     /// Events not yet settled, oldest first.
@@ -53,10 +70,12 @@ public actor FeedbackOutbox {
 
     /// Sends what is due, batch by batch, until nothing is due or a request fails. Only one flush runs at a time; a call
     /// made during a flush returns at once, and the running flush picks up anything newly queued.
+    /// Nothing is sent while the queue is not safely on disk: the flush retries the save first and returns if it still fails.
     public func flush() async {
         guard !isFlushing else { return }
         isFlushing = true
         defer { isFlushing = false }
+        guard durable || save() else { return }
         while true {
             let limit = clock().timeIntervalSince1970 + Self.maxFutureSeconds
             let batch = Array(events.lazy.filter { $0.occurredAt <= limit }.prefix(FeedbackEvent.batchLimit))
@@ -69,21 +88,51 @@ public actor FeedbackOutbox {
             // A reply that settles nothing (no per-item answers) stops here instead of resending the same batch forever.
             guard !settled.isEmpty else { return }
             events.removeAll { settled.contains($0.eventID) }
-            save()
+            // Going on to the next batch needs the removal recorded. If the save fails, stop here; the next flush retries it.
+            guard save() else { return }
         }
     }
 
     // MARK: Disk
 
-    private static func load(_ url: URL) -> [FeedbackEvent] {
-        guard let data = try? Data(contentsOf: url),
-              let saved = try? JSONDecoder().decode([FeedbackEvent].self, from: data) else { return [] }
-        return Array(saved.suffix(capacity))
+    /// A missing file is an empty queue. A file that cannot be read or decoded is moved aside, never treated as empty and
+    /// overwritten; if it cannot be moved either, it is left alone and saving is refused.
+    private static func load(_ url: URL) -> (events: [FeedbackEvent], problem: String?, mustPreserve: Bool) {
+        guard FileManager.default.fileExists(atPath: url.path) else { return ([], nil, false) }
+        do {
+            let saved = try JSONDecoder().decode([FeedbackEvent].self, from: Data(contentsOf: url))
+            return (Array(saved.suffix(capacity)), nil, false)
+        } catch {
+            let aside = url.deletingLastPathComponent()
+                .appending(path: "feedback-outbox.unreadable-\(UUID().uuidString.lowercased().prefix(8)).json")
+            do {
+                try FileManager.default.moveItem(at: url, to: aside)
+                return ([], "The saved feedback queue could not be read and was moved aside; it is not sent again.", false)
+            } catch {
+                return ([], "The saved feedback queue could not be read or moved aside, so it will not be overwritten.", true)
+            }
+        }
     }
 
-    /// Writes the whole queue. A failed write leaves the queue in memory, and the next change tries again.
-    private func save() {
-        try? FileManager.default.createDirectory(at: fileURL.deletingLastPathComponent(), withIntermediateDirectories: true)
-        try? JSONEncoder().encode(events).write(to: fileURL, options: .atomic)
+    /// Writes the whole queue and returns whether it is now safely on disk. A failed write keeps the queue in memory,
+    /// records `storageError`, and leaves `durable` false until a later save succeeds.
+    @discardableResult
+    private func save() -> Bool {
+        guard !preserveExistingFile else {
+            durable = false
+            storageError = "The saved feedback queue could not be read or moved aside, so it will not be overwritten."
+            return false
+        }
+        do {
+            try FileManager.default.createDirectory(at: fileURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+            try JSONEncoder().encode(events).write(to: fileURL, options: .atomic)
+            durable = true
+            storageError = nil
+            return true
+        } catch {
+            durable = false
+            storageError = "The feedback queue could not be saved; events are kept in memory and not sent until a later save succeeds."
+            return false
+        }
     }
 }
