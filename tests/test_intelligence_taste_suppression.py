@@ -1,6 +1,7 @@
 import copy
 import math
 import unittest
+import uuid
 
 import recommendation_feedback
 from intelligence.taste import Rejection, SuppressionEntry, build_suppression, validate_events
@@ -11,12 +12,17 @@ from intelligence.taste.suppression import (
 
 NOW = 1_800_000_000.0
 DAY = 86400
+def U(name):
+    """Deterministic valid client UUID for a readable name."""
+    return str(uuid.uuid5(uuid.NAMESPACE_URL, str(name)))
+
+
 MBID = "ABCDEF01-2345-6789-ABCD-EF0123456789"
 
 
 def raw(**overrides):
     base = {
-        "event_id": "e1",
+        "event_id": U("e1"),
         "client": "macos",
         "kind": "dismiss",
         "subject_kind": "album",
@@ -29,7 +35,7 @@ def raw(**overrides):
 
 def ev(**overrides):
     base = dict(
-        event_id="e1", client="macos", kind="dismiss", subject_kind="album", subject_id="al-1",
+        event_id=U("e1"), client="macos", kind="dismiss", subject_kind="album", subject_id="al-1",
         mbid=None, occurred_at=NOW, played_seconds=None, duration_seconds=None,
     )
     base.update(overrides)
@@ -61,11 +67,25 @@ class ValidateTests(unittest.TestCase):
         self.assertEqual(accepted[0].subject_id, "al-1")
 
     def test_bad_event_id(self):
-        for value in (None, "", "x" * 65, 7):
+        malformed = [
+            None, 7, "", "e1", "not-a-uuid", U("x") + "0", U("x").replace("-", "", 1),
+            "{" + U("x") + "}", "urn:uuid:" + U("x"), "g" * 8 + U("x")[8:],
+        ]
+        for value in malformed:
             with self.subTest(value=value):
-                got, _ = reasons([raw(event_id=value)])
-                self.assertEqual(got, ["bad_event_id"])
+                self.assertEqual(reasons([raw(event_id=value)])[0], ["bad_event_id"])
         self.assertEqual(reasons([{k: v for k, v in raw().items() if k != "event_id"}])[0], ["bad_event_id"])
+
+    def test_event_id_is_normalised_to_lowercase(self):
+        upper = U("up").upper()
+        accepted = validate_events([raw(event_id=upper)], NOW)[0]
+        self.assertEqual(accepted[0].event_id, upper.lower())
+
+    def test_same_uuid_in_either_case_is_one_event(self):
+        batch = [raw(event_id=U("same")), raw(event_id=U("same").upper(), subject_id="second")]
+        accepted, rejections = validate_events(batch, NOW)
+        self.assertEqual(rejections, ())
+        self.assertEqual([e.subject_id for e in accepted], ["al-1"])
 
     def test_bad_client(self):
         self.assertEqual(reasons([raw(client="ios")])[0], ["bad_client"])
@@ -128,27 +148,27 @@ class ValidateTests(unittest.TestCase):
         self.assertEqual(reasons([None])[0], ["not_a_mapping"])
 
     def test_batch_over_limit_is_rejected_whole(self):
-        batch = [raw(event_id=f"e{i}") for i in range(MAX_BATCH + 1)]
+        batch = [raw(event_id=U(f"e{i}")) for i in range(MAX_BATCH + 1)]
         accepted, rejections = validate_events(batch, NOW)
         self.assertEqual(accepted, ())
         self.assertEqual(rejections, (Rejection(-1, "batch_too_large"),))
 
     def test_batch_at_limit_is_accepted(self):
-        batch = [raw(event_id=f"e{i}") for i in range(MAX_BATCH)]
+        batch = [raw(event_id=U(f"e{i}")) for i in range(MAX_BATCH)]
         accepted, rejections = validate_events(batch, NOW)
         self.assertEqual((len(accepted), rejections), (MAX_BATCH, ()))
 
     def test_bad_item_does_not_affect_good_ones(self):
-        batch = [raw(event_id="a"), raw(event_id="b", client="ios"), raw(event_id="c")]
+        batch = [raw(event_id=U("a")), raw(event_id=U("b"), client="ios"), raw(event_id=U("c"))]
         accepted, rejections = validate_events(batch, NOW)
-        self.assertEqual([e.event_id for e in accepted], ["a", "c"])
+        self.assertEqual([e.event_id for e in accepted], [U("a"), U("c")])
         self.assertEqual(rejections, (Rejection(1, "bad_client"),))
 
     def test_duplicate_event_id_in_batch_keeps_first_without_rejection(self):
-        batch = [raw(event_id="dup", subject_id="first"), raw(event_id="dup", subject_id="second")]
+        batch = [raw(event_id=U("dup"), subject_id="first"), raw(event_id=U("dup"), subject_id="second")]
         accepted, rejections = validate_events(batch, NOW)
         self.assertEqual(rejections, ())
-        self.assertEqual([(e.event_id, e.subject_id) for e in accepted], [("dup", "first")])
+        self.assertEqual([(e.event_id, e.subject_id) for e in accepted], [(U("dup"), "first")])
 
     def test_extra_fields_are_ignored_and_not_stored(self):
         event = validate_events([raw(path="/music/x.flac", token="secret", device="Hamdi's Mac")], NOW)[0][0]
@@ -160,7 +180,7 @@ class ValidateTests(unittest.TestCase):
         })
 
     def test_inputs_are_not_mutated(self):
-        batch = [raw(), raw(event_id="x", client="ios")]
+        batch = [raw(), raw(event_id=U("x"), client="ios")]
         before = copy.deepcopy(batch)
         validate_events(batch, NOW)
         self.assertEqual(batch, before)
@@ -191,7 +211,7 @@ class BuildTests(unittest.TestCase):
         self.assertEqual(build_suppression([ev(occurred_at=NOW + 1)], NOW), ())
 
     def test_weight_caps_at_one_with_many_events(self):
-        events = [ev(event_id=f"e{i}", occurred_at=NOW - i) for i in range(10)]
+        events = [ev(event_id=U(f"e{i}"), occurred_at=NOW - i) for i in range(10)]
         (entry,) = build_suppression(events, NOW)
         self.assertEqual(entry.weight, MAX_WEIGHT)
         self.assertEqual(entry.events, 10)
@@ -201,53 +221,53 @@ class BuildTests(unittest.TestCase):
         self.assertEqual(entry.weight, round(entry.weight, 6))
 
     def test_duplicate_event_id_counted_once_with_earliest_time(self):
-        events = [ev(event_id="same", occurred_at=NOW - 1), ev(event_id="same", occurred_at=NOW - 100)]
+        events = [ev(event_id=U("same"), occurred_at=NOW - 1), ev(event_id=U("same"), occurred_at=NOW - 100)]
         (entry,) = build_suppression(events, NOW)
         self.assertEqual(entry.events, 1)
         self.assertEqual(entry.last_event_at, NOW - 100)
 
     def test_skipped_track_does_not_create_album_or_artist_entries(self):
-        events = [ev(event_id="s", kind="skip", subject_kind="track", subject_id="t-1", mbid=MBID.lower(), occurred_at=NOW)]
+        events = [ev(event_id=U("s"), kind="skip", subject_kind="track", subject_id="t-1", mbid=MBID.lower(), occurred_at=NOW)]
         entries = build_suppression(events, NOW)
         self.assertEqual([(e.subject_kind, e.subject_id) for e in entries], [("track", "t-1")])
         self.assertEqual(entries[0].skips, 1)
 
     def test_separate_subjects_do_not_interact(self):
         events = [
-            ev(event_id="a", subject_kind="album", subject_id="al-1", occurred_at=NOW),
-            ev(event_id="b", subject_kind="album", subject_id="al-2", occurred_at=NOW - 14 * DAY),
+            ev(event_id=U("a"), subject_kind="album", subject_id="al-1", occurred_at=NOW),
+            ev(event_id=U("b"), subject_kind="album", subject_id="al-2", occurred_at=NOW - 14 * DAY),
         ]
         by_id = {e.subject_id: e for e in build_suppression(events, NOW)}
         self.assertEqual(by_id["al-1"].weight, 1.0)
         self.assertEqual(by_id["al-2"].weight, 0.5)
 
     def test_same_id_different_kind_are_separate_subjects(self):
-        events = [ev(event_id="a", subject_kind="artist", subject_id="x"), ev(event_id="b", subject_kind="album", subject_id="x")]
+        events = [ev(event_id=U("a"), subject_kind="artist", subject_id="x"), ev(event_id=U("b"), subject_kind="album", subject_id="x")]
         self.assertEqual(len(build_suppression(events, NOW)), 2)
 
     def test_tie_breaks_by_subject_kind_then_subject_id(self):
         events = [
-            ev(event_id="a", subject_kind="track", subject_id="t-b", occurred_at=NOW),
-            ev(event_id="b", subject_kind="track", subject_id="t-a", occurred_at=NOW),
+            ev(event_id=U("a"), subject_kind="track", subject_id="t-b", occurred_at=NOW),
+            ev(event_id=U("b"), subject_kind="track", subject_id="t-a", occurred_at=NOW),
         ]
         self.assertEqual([e.subject_id for e in build_suppression(events, NOW)], ["t-a", "t-b"])
 
     def test_output_is_newest_first(self):
         events = [
-            ev(event_id="old", subject_id="old", occurred_at=NOW - 2 * DAY),
-            ev(event_id="new", subject_id="new", occurred_at=NOW - 1),
+            ev(event_id=U("old"), subject_id="old", occurred_at=NOW - 2 * DAY),
+            ev(event_id=U("new"), subject_id="new", occurred_at=NOW - 1),
         ]
         self.assertEqual([e.subject_id for e in build_suppression(events, NOW)], ["new", "old"])
 
     def test_input_order_does_not_change_output(self):
         events = [
-            ev(event_id=f"e{i}", subject_id=f"s{i % 3}", occurred_at=NOW - (i * 7919) % (30 * DAY), kind="dismiss")
+            ev(event_id=U(f"e{i}"), subject_id=f"s{i % 3}", occurred_at=NOW - (i * 7919) % (30 * DAY), kind="dismiss")
             for i in range(40)
         ]
         self.assertEqual(build_suppression(events, NOW), build_suppression(list(reversed(events)), NOW))
 
     def test_inputs_are_not_mutated(self):
-        events = [ev(event_id="a"), ev(event_id="b", occurred_at=NOW - 5)]
+        events = [ev(event_id=U("a")), ev(event_id=U("b"), occurred_at=NOW - 5)]
         before = list(events)
         build_suppression(events, NOW)
         self.assertEqual(events, before)

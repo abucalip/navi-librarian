@@ -12,6 +12,8 @@ Honesty rules
 * a subject is judged only by its own events: a track skip never creates an album or artist entry;
 * a malformed event is rejected with a reason and never stops the rest of its batch, except a batch
   larger than ``MAX_BATCH``, which is rejected as a whole;
+* ``event_id`` is a client-generated UUID (docs/ServerV2.md, D-027). Anything else is ``bad_event_id``.
+  It is normalised to lowercase, as ``mbid`` is, so the same UUID in either case is one event;
 * duplicate ``event_id`` values are idempotent: the first accepted copy is kept, so replaying a batch
   changes nothing;
 * decay and thresholds (14-day half-life, 60-day expiry, 1.0 cap, 100-event batch, 300 s future
@@ -45,14 +47,14 @@ CLIENTS = ("macos", "android")
 KINDS = ("skip", "dismiss")
 SUBJECT_KINDS = ("track", "album", "artist", "card")
 
-MAX_EVENT_ID_LENGTH = 64
 MAX_SUBJECT_ID_LENGTH = 200
 FUTURE_TOLERANCE_SECONDS = 300
 WEIGHT_PLACES = 6
 
 _SKIP = "skip"
 _TRACK = "track"
-_MBID_RE = re.compile(r"[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}")
+_UUID_RE = re.compile(r"[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}")
+_MBID_RE = _UUID_RE
 
 
 @dataclass(frozen=True)
@@ -115,9 +117,10 @@ def _parse(index: int, raw: Any, now: float) -> SuppressionEvent | Rejection:
     if not isinstance(raw, Mapping):
         return reject("not_a_mapping")
 
-    event_id = raw.get("event_id")
-    if not isinstance(event_id, str) or not 0 < len(event_id) <= MAX_EVENT_ID_LENGTH:
+    event_id_raw = raw.get("event_id")
+    if not isinstance(event_id_raw, str) or not _UUID_RE.fullmatch(event_id_raw):
         return reject("bad_event_id")
+    event_id = event_id_raw.lower()
 
     client = raw.get("client")
     if client not in CLIENTS:
