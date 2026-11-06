@@ -1,3 +1,14 @@
+## 2026-11-06 — Server V2 Phase 6 slice 5: batch ListenBrainz popularity fetch (PR #851)
+
+- **PR:** [#851](https://github.com/abucalip/navi-librarian/pull/851), squash merge `dd3572028c2c98b99ecc43848b7364393bcb0f34`, reviewed head `4c95a43b20ca5525b5a83fc8e8fa1f4f0e731f93`.
+- **Objective:** add the network-side batch fetcher for the pure obscurity profile builder from Phase 6 slice 4.
+- **Changes:** `intelligence/taste/popularity_fetch.py` exports `fetch_artist_popularity`. It POSTs to ListenBrainz `/1/popularity/artist` in chunks of 100 distinct MBIDs, preserves first-seen order, passes injected headers/timeout/callable, pauses 0.5 s when a sleep callable is supplied, and records each provider call. A 404 or empty 200 body maps the chunk to unknown (`None`); non-200, transport, JSON and unexpected-body errors raise. The existing `popularity_from_response` parser is reused. Exported from `intelligence/taste/__init__.py`.
+- **Review:** no blocking issues found. Diff limited to the fetcher, package export and its tests. No route, scheduled job, persistence write, client or `navidrome_server.py` change; no provider traffic occurs merely by importing the module.
+- **Tests:** PR reports `tests/test_intelligence_taste_popularity_fetch.py` (14) and `tests/test_intelligence_taste_obscurity.py` (9) passed. The reviewer did not rerun these locally. Full unit suite was not run separately by the reviewer (owner approval required).
+- **CI:** all four required workflows passed on exact PR head `4c95a43b20ca5525b5a83fc8e8fa1f4f0e731f93`: Python syntax check, Docker packaging (including CI full suite), container runtime smoke test, and validation-only Docker image validation. No local or live provider test is claimed.
+- **Limits:** the fetcher is not wired into a job, route or persistence flow. Chunk size 100 is a conservative starting value because the provider batch limit is undocumented. Runtime provider behavior and real-library coverage remain unverified. Not published, deployed or runtime-verified.
+- **Next action:** owner-gated choice of the Phase 6 wiring/persistence path versus proceeding to the monthly snapshot slice.
+
 ## 2026-11-06 — Server V2 Phase 6: obscurity profile (PR #850)
 
 - **Objective:** Phase 6 item 2, slice 4: obscurity/mainstream profile versus ListenBrainz sitewide popularity.
