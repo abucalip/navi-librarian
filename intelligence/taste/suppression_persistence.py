@@ -28,7 +28,7 @@ import sqlite3
 from collections.abc import Sequence
 from dataclasses import dataclass
 
-from .suppression import MAX_BATCH, SuppressionEvent
+from .suppression import EXPIRY_SECONDS, MAX_BATCH, SuppressionEvent
 
 RETENTION_DAYS = 180
 RETENTION_SECONDS = RETENTION_DAYS * 86400
@@ -122,3 +122,19 @@ def sweep_expired(db: sqlite3.Connection, now: float, limit: int) -> int:
             (cutoff, limit),
         )
     return max(cursor.rowcount, 0)
+
+
+def list_active_events(db: sqlite3.Connection, now: float) -> tuple[SuppressionEvent, ...]:
+    """Stored events young enough to count toward the suppression view at ``now``, oldest first.
+
+    "Young enough" is ``occurred_at >= now - EXPIRY_SECONDS``; the view itself still decides which of
+    these are active. Read-only, and bounded by the 60-day window rather than by the 180-day retention.
+    """
+    if isinstance(now, bool) or not isinstance(now, (int, float)) or not math.isfinite(now):
+        raise ValueError("now must be a finite number of epoch seconds")
+    rows = db.execute(
+        f"SELECT {', '.join(_COLUMNS)} FROM state.suppression_events WHERE occurred_at >= ? "
+        "ORDER BY occurred_at, event_id",
+        (float(now) - EXPIRY_SECONDS,),
+    ).fetchall()
+    return tuple(SuppressionEvent(**{column: row[column] for column in _COLUMNS}) for row in rows)

@@ -1,0 +1,47 @@
+{
+  "request": "GET /api/insights/suppression",
+  "response": {
+    "as_of": 1700000000.0,
+    "config": {
+      "clients": [
+        "macos",
+        "android"
+      ],
+      "expiry_days": 60,
+      "half_life_days": 14,
+      "kinds": [
+        "skip",
+        "dismiss"
+      ],
+      "max_batch": 100,
+      "max_weight": 1.0,
+      "subject_kinds": [
+        "track",
+        "album",
+        "artist",
+        "card"
+      ]
+    },
+    "entries": [
+      {
+        "events": 1,
+        "last_event_at": 1699827200.0,
+        "skips": 1,
+        "subject_id": "tr-1",
+        "subject_kind": "track",
+        "weight": 0.905724
+      },
+      {
+        "events": 1,
+        "last_event_at": 1698272000.0,
+        "skips": 0,
+        "subject_id": "gem:al-9",
+        "subject_kind": "card",
+        "weight": 0.371499
+      }
+    ],
+    "next_offset": null,
+    "record_only": true,
+    "total": 2
+  }
+}

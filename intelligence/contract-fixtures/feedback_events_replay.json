@@ -1,0 +1,92 @@
+{
+  "request": "POST /api/feedback/events (same body again)",
+  "request_body": {
+    "events": [
+      {
+        "client": "macos",
+        "duration_seconds": 240,
+        "event_id": "00000001-0000-4000-8000-00000000f00d",
+        "kind": "skip",
+        "mbid": "11111111-1111-1111-1111-111111111111",
+        "occurred_at": 1699827200.0,
+        "played_seconds": 12,
+        "subject_id": "tr-1",
+        "subject_kind": "track"
+      },
+      {
+        "client": "android",
+        "event_id": "00000002-0000-4000-8000-00000000f00d",
+        "kind": "dismiss",
+        "occurred_at": 1698272000.0,
+        "subject_id": "gem:al-9",
+        "subject_kind": "card"
+      },
+      {
+        "client": "macos",
+        "duration_seconds": 240,
+        "event_id": "00000001-0000-4000-8000-00000000f00d",
+        "kind": "skip",
+        "mbid": "11111111-1111-1111-1111-111111111111",
+        "occurred_at": 1699827200.0,
+        "played_seconds": 12,
+        "subject_id": "tr-1",
+        "subject_kind": "track"
+      },
+      {
+        "client": "macos",
+        "duration_seconds": 240,
+        "event_id": "00000003-0000-4000-8000-00000000f00d",
+        "kind": "dismiss",
+        "mbid": "11111111-1111-1111-1111-111111111111",
+        "occurred_at": 1699827200.0,
+        "played_seconds": 5,
+        "subject_id": "al-1",
+        "subject_kind": "album"
+      },
+      {
+        "client": "macos",
+        "duration_seconds": 240,
+        "event_id": "not-a-uuid",
+        "kind": "skip",
+        "mbid": "11111111-1111-1111-1111-111111111111",
+        "occurred_at": 1699827200.0,
+        "played_seconds": 12,
+        "subject_id": "tr-1",
+        "subject_kind": "track"
+      }
+    ]
+  },
+  "response": {
+    "accepted": 3,
+    "inserted": 0,
+    "received": 5,
+    "rejected": 2,
+    "results": [
+      {
+        "duplicate": true,
+        "index": 0,
+        "status": "accepted"
+      },
+      {
+        "duplicate": true,
+        "index": 1,
+        "status": "accepted"
+      },
+      {
+        "duplicate": true,
+        "index": 2,
+        "status": "accepted"
+      },
+      {
+        "index": 3,
+        "reason": "bad_played_seconds",
+        "status": "rejected"
+      },
+      {
+        "index": 4,
+        "reason": "bad_event_id",
+        "status": "rejected"
+      }
+    ]
+  }
+}

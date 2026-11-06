@@ -10,7 +10,7 @@ from intelligence.store.state import STATE_LATEST, STATE_MIGRATIONS, StateError,
 from intelligence.taste.suppression import SuppressionEvent
 from intelligence.taste.suppression_persistence import (
     CONFLICT, DUPLICATE, INSERTED, RETENTION_SECONDS, SWEEP_LIMIT_MAX, InsertOutcome, get_event,
-    insert_events, retention_cutoff, sweep_expired,
+    insert_events, list_active_events, retention_cutoff, sweep_expired,
 )
 
 NOW = 1_800_000_000.0
@@ -274,6 +274,22 @@ class UnsafeStateTests(unittest.TestCase):
             self.assertEqual(db.execute("SELECT COUNT(*) FROM state.card_decisions").fetchone()[0], 1)
             db.close()
             raw.close()
+
+
+class ListActiveTests(StoreTestCase):
+    def test_returns_only_events_inside_the_60_day_window_oldest_first(self):
+        insert_events(self.db, [
+            ev("new", occurred_at=NOW - DAY), ev("old", occurred_at=NOW - 61 * DAY),
+            ev("edge", occurred_at=NOW - 60 * DAY), ev("future", occurred_at=NOW + 100),
+        ])
+        got = list_active_events(self.db, NOW)
+        self.assertEqual([e.event_id for e in got], [U("edge"), U("new"), U("future")])
+        self.assertEqual(count(self.db), 4)
+
+    def test_rejects_a_bad_clock(self):
+        for bad in (float("nan"), True, "1"):
+            with self.assertRaises(ValueError):
+                list_active_events(self.db, bad)
 
 
 if __name__ == "__main__":
