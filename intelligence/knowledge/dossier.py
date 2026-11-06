@@ -11,8 +11,9 @@ shows a tag year as a MusicBrainz date. ``facts_source`` is null when nothing is
 
 What the store holds today is what is shown: editions (from the release-group link and the stored
 MusicBrainz release document), people and labels related to the release, its release group or its
-recordings, and the slice's dump date. Fields no loader fills yet (catalogue numbers, formats,
-recording places and dates, Cover Art Archive variants) are listed in ``not_loaded`` instead of
+recordings, and the slice's dump date. Catalogue numbers and formats come from the dump's release facts (``release_labels``,
+``release_facts.formats``); they stay in ``not_loaded`` while the store holds none (a slice imported before
+schema 4), so a client says "not loaded" and not "none". Fields no loader fills yet (recording places and dates, Cover Art Archive variants) are listed in ``not_loaded`` instead of
 being left out silently, so a client can say "not loaded" rather than "none". A missing credit list
 is reported as ``coverage`` (``pending``, ``loaded`` or ``no_relationships_in_slice``), never as a
 fact about the album.
@@ -29,7 +30,7 @@ from ..store import repositories as repo
 
 PERSON_TYPES = ("artist", "person", "group")
 MAX_RECORDINGS = 100
-NOT_LOADED = ("catalogue_numbers", "formats", "recording_places_and_dates", "cover_art_variants")
+NOT_LOADED = ("recording_places_and_dates", "cover_art_variants")
 
 
 def album_dossier(reader, entity: dict[str, Any], *, limit: int = 100) -> dict[str, Any]:
@@ -79,7 +80,8 @@ def album_dossier(reader, entity: dict[str, Any], *, limit: int = 100) -> dict[s
             facts = _edition_facts(db, e)
             editions.append({
                 "release": {"id": e.release_id, "mbid": e.mbid, "title": e.title, "owned": e.owned},
-                **facts, "labels": list(e.labels), "relation": e.relation,
+                **facts, "formats": _formats(db, e.release_id), "catalogue": _catalogue(db, e.release_id),
+                "labels": list(e.labels), "relation": e.relation,
             })
 
     if group_entity and any(e["release"]["owned"] for e in editions):
@@ -97,8 +99,34 @@ def album_dossier(reader, entity: dict[str, Any], *, limit: int = 100) -> dict[s
         "labels": ordered(labels),
         "credits_truncated": truncated or len(tracks) > MAX_RECORDINGS,
         "sources": {"musicbrainz_dump": {"coverage": coverage, "dump_timestamp": status["dump_timestamp"]}},
-        "not_loaded": list(NOT_LOADED),
+        "not_loaded": list(NOT_LOADED) + _missing_release_facts(db),
     }
+
+
+def _formats(db, release_id: int) -> str | None:
+    """Medium formats as MusicBrainz states them ("CD", "2×Vinyl"); null when the dump gave none."""
+    row = db.execute("SELECT formats FROM release_facts WHERE entity_id = ?", (release_id,)).fetchone()
+    return row["formats"] if row and row["formats"] else None
+
+
+def _catalogue(db, release_id: int) -> list[dict[str, Any]]:
+    """Label and catalogue number pairs of one release; either part is null when the dump states none."""
+    rows = db.execute(
+        "SELECT l.mbid AS mbid, l.canonical_name AS name, rl.catalogue_number AS number "
+        "FROM release_labels rl LEFT JOIN entities l ON l.id = rl.label_id "
+        "WHERE rl.release_id = ? ORDER BY COALESCE(l.canonical_name, '') COLLATE NOCASE, l.mbid, rl.catalogue_number",
+        (release_id,)).fetchall()
+    return [{"label": {"mbid": r["mbid"], "name": r["name"]} if r["name"] is not None else None,
+             "catalogue_number": r["number"], "source": "musicbrainz_dump"} for r in rows]
+
+
+def _missing_release_facts(db) -> list[str]:
+    missing = []
+    if db.execute("SELECT 1 FROM release_labels LIMIT 1").fetchone() is None:
+        missing.append("catalogue_numbers")
+    if db.execute("SELECT 1 FROM release_facts WHERE formats IS NOT NULL LIMIT 1").fetchone() is None:
+        missing.append("formats")
+    return missing
 
 
 def _edition_facts(db, edition) -> dict[str, Any]:

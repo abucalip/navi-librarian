@@ -22,6 +22,7 @@
           "owned": true,
           "type": "release_group"
         },
+        "catalogue_numbers": [],
         "owned": true,
         "relations": [
           {
@@ -38,6 +39,7 @@
         ]
       }
     ],
+    "parents": [],
     "related_labels": [],
     "sources": {
       "musicbrainz_dump": {
@@ -45,6 +47,7 @@
         "dump_timestamp": "2026-11-04"
       }
     },
+    "sub_labels": [],
     "truncated": false
   }
 }

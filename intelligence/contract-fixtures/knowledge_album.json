@@ -34,10 +34,10 @@
       }
     ],
     "not_loaded": [
-      "catalogue_numbers",
-      "formats",
       "recording_places_and_dates",
-      "cover_art_variants"
+      "cover_art_variants",
+      "catalogue_numbers",
+      "formats"
     ],
     "people": [
       {
@@ -101,9 +101,11 @@
       "count": 1,
       "editions": [
         {
+          "catalogue": [],
           "country": "GB",
           "date": "2001-05-01",
           "facts_source": "musicbrainz_dump",
+          "formats": null,
           "labels": [],
           "relation": "unknown",
           "release": {

@@ -130,7 +130,22 @@ class DossierTests(unittest.TestCase):
         self.assertEqual(d["people"][0]["credits"][0]["source"], "musicbrainz_dump")
         self.assertEqual([l["entity"]["canonical_name"] for l in d["labels"]], ["Columbia"])
         self.assertEqual(d["sources"]["musicbrainz_dump"]["coverage"], "loaded")
-        self.assertIn("catalogue_numbers", d["not_loaded"])
+        self.assertEqual(d["not_loaded"], ["recording_places_and_dates", "cover_art_variants", "catalogue_numbers", "formats"])
+
+    def test_dossier_catalogue_numbers_and_formats(self):
+        self.load_slice()
+        other = repo.upsert_entity(self.db, "label", "Other", mbid="o-gid")[0]
+        for label, number in ((self.label, "CL 1355"), (other, None), (None, "ORPHAN-1")):
+            self.db.execute("INSERT INTO release_labels (release_id, label_id, catalogue_number) VALUES (?, ?, ?)",
+                            (self.release, label, number))
+        self.db.execute("INSERT INTO release_facts (entity_id, formats) VALUES (?, '2×Vinyl')", (self.release,))
+        d = self.reader.album_dossier(mbid="r-gid")
+        edition = d["release_family"]["editions"][0]
+        self.assertEqual(edition["formats"], "2×Vinyl")
+        self.assertEqual([(c["label"] and c["label"]["name"], c["catalogue_number"]) for c in edition["catalogue"]],
+                         [(None, "ORPHAN-1"), ("Columbia", "CL 1355"), ("Other", None)])
+        self.assertEqual(edition["catalogue"][1]["label"], {"mbid": "l-gid", "name": "Columbia"})
+        self.assertEqual(d["not_loaded"], ["recording_places_and_dates", "cover_art_variants"])
 
     def test_edition_facts_fall_back_from_dump_to_library_file(self):
         self.assertEqual(self.reader.album_dossier(mbid="r-gid")["release_family"]["editions"][0]["facts_source"], None)
@@ -245,6 +260,26 @@ class PageTests(unittest.TestCase):
         self.assertIsNone(self.reader.label_page(mbid="nope"))
         with self.assertRaises(ValueError):
             self.reader.label_page(id=self.miles)
+
+    def test_label_page_parents_sub_labels_and_catalogue_numbers(self):
+        self.load_slice()
+        for number in ("CL 1355", "CS 8163", None):
+            self.db.execute("INSERT INTO release_labels (release_id, label_id, catalogue_number) VALUES (?, ?, ?)",
+                            (self.kob, self.col, number))
+        self.db.execute("INSERT INTO release_labels (release_id, label_id, catalogue_number) VALUES (?, ?, 'X-9')",
+                        (self.kob, self.cbs))  # another label's number on the same release is not this label's
+        page = self.reader.label_page(mbid="col-gid")
+        self.assertEqual([r["entity"]["canonical_name"] for r in page["parents"]], ["CBS"])
+        self.assertEqual(page["sub_labels"], [])
+        self.assertEqual(page["owned_catalogue"][0]["catalogue_numbers"], ["CL 1355", "CS 8163"])
+        self.assertEqual(page["not_in_library"][0]["catalogue_numbers"], [])
+        self.assertEqual(page["not_loaded"], ["notable_releases"])
+        parent = self.reader.label_page(mbid="cbs-gid")
+        self.assertEqual([r["entity"]["canonical_name"] for r in parent["sub_labels"]], ["Columbia"])
+        self.assertEqual(parent["parents"], [])
+
+    def test_label_page_catalogue_numbers_not_loaded_without_rows(self):
+        self.assertEqual(self.reader.label_page(mbid="col-gid")["not_loaded"], ["notable_releases", "catalogue_numbers"])
 
     def test_bounded_by_limit(self):
         self.assertTrue(self.reader.person_page(mbid="m-gid", limit=1)["truncated"])

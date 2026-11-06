@@ -25,7 +25,7 @@ from ..store import repositories as repo
 PERSON_TYPES = ("artist", "person", "group")
 ALBUM_TYPES = ("release", "release_group")
 PERSON_NOT_LOADED = ("instrument_per_track_for_unlinked_recordings",)  # life span is loaded since schema 2
-LABEL_NOT_LOADED = ("notable_releases", "catalogue_numbers")
+LABEL_NOT_LOADED = ("notable_releases",)
 
 
 def person_page(reader, entity: dict[str, Any], *, limit: int = 200) -> dict[str, Any]:
@@ -90,24 +90,47 @@ def label_page(reader, entity: dict[str, Any], *, limit: int = 200) -> dict[str,
             labels[other["id"]] = {"entity": other, "relations": _relations(hop)}
         elif other["type"] in ALBUM_TYPES:
             album = _album_for(db, repo.get_entity(db, other["id"]))
-            row = albums.setdefault(album["id"], {"album": album, "owned": _owned(db, album), "relations": []})
+            row = albums.setdefault(album["id"], {"album": album, "owned": _owned(db, album), "relations": [],
+                                                  "catalogue_numbers": []})
             row["relations"].extend(r for r in _relations(hop) if r not in row["relations"])
+            if other["type"] == "release":
+                for number in _catalogue_numbers(db, other["id"], entity["id"]):
+                    if number not in row["catalogue_numbers"]:
+                        row["catalogue_numbers"].append(number)
     rows = _ordered(albums.values(), key=lambda r: r["album"])
     status = reader.slice_status()
     return {
         "label": entity,
         "aliases": [{"alias": a, "kind": k} for a, k in repo.aliases(db, entity["id"])],
         "related_labels": _ordered(labels.values(), key=lambda r: r["entity"]),
+        "parents": _ordered((r for r in labels.values() if _ownership(r, "in")), key=lambda r: r["entity"]),
+        "sub_labels": _ordered((r for r in labels.values() if _ownership(r, "out")), key=lambda r: r["entity"]),
         "owned_catalogue": [r for r in rows if r["owned"]],
         "not_in_library": [r for r in rows if not r["owned"]],
         "truncated": walk["truncated"] is not None or walk["next_cursor"] is not None,
         "sources": {"musicbrainz_dump": {"coverage": _coverage(status, bool(albums or labels)),
                                          "dump_timestamp": status["dump_timestamp"]}},
-        "not_loaded": list(LABEL_NOT_LOADED),
+        "not_loaded": list(LABEL_NOT_LOADED) + _label_missing(db),
     }
 
 
 # ---------------------------------------------------------------- helpers
+def _ownership(row: dict[str, Any], direction: str) -> bool:
+    """MusicBrainz "label ownership" states the owner as the source: "in" means the owner is this label's parent."""
+    return any(r["relation"] == "label ownership" and r["direction"] == direction for r in row["relations"])
+
+
+def _catalogue_numbers(db, release_id: int, label_id: int) -> list[str]:
+    rows = db.execute("SELECT catalogue_number FROM release_labels WHERE release_id = ? AND label_id = ? "
+                      "AND catalogue_number IS NOT NULL ORDER BY catalogue_number", (release_id, label_id))
+    return [r[0] for r in rows]
+
+
+def _label_missing(db) -> list[str]:
+    """Catalogue numbers stay "not loaded" until the store holds any (a slice imported before schema 4)."""
+    return [] if db.execute("SELECT 1 FROM release_labels LIMIT 1").fetchone() else ["catalogue_numbers"]
+
+
 def _coverage(status: dict[str, Any], any_rows: bool) -> str:
     if not status["loaded"]:
         return "pending"
