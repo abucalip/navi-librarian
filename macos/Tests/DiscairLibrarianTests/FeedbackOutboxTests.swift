@@ -192,7 +192,7 @@ struct FeedbackOutboxTests {
         try FileManager.default.setAttributes([.posixPermissions: mode], ofItemAtPath: url.path)
     }
 
-    @Test func aFailedWriteIsReportedKeptInMemoryAndStillSent() async throws {
+    @Test func aFailedWriteBlocksSendingUntilALaterSaveSucceeds() async throws {
         let folder = try ownFolder()
         try setMode(folder.dir, 0o500)   // read-only folder: the queue file cannot be written
         defer { try? setMode(folder.dir, 0o755) }
@@ -203,9 +203,38 @@ struct FeedbackOutboxTests {
         #expect(await box.storageError != nil)
         #expect(await box.pending.map(\.eventID) == ["write-fails"])
 
+        // The sender is never called while the queue is not on disk, and the event stays pending.
+        await box.flush()
+        #expect(script.batches.isEmpty)
+        #expect(await box.pending.map(\.eventID) == ["write-fails"])
+        #expect(await box.storageError != nil)
+
+        // Once the folder is writable again, the flush saves first and then sends.
+        try setMode(folder.dir, 0o755)
         await box.flush()
         #expect(script.batches.map { $0.map(\.eventID) } == [["write-fails"]])
         #expect(await box.pending.isEmpty)
+        #expect(await box.storageError == nil)
+    }
+
+    @Test func aFailedSaveAfterASendStopsTheFlushBeforeTheNextBatch() async throws {
+        let folder = try ownFolder()
+        let seed = outbox(folder.file, Script { _, _ in throw Boom() })
+        for index in 0..<(FeedbackEvent.batchLimit + 1) { await seed.enqueue(event("bulk-\(index)")) }
+        defer { try? setMode(folder.dir, 0o755) }
+
+        // The first batch is accepted, then the folder becomes read-only, so removing the settled events cannot be saved.
+        // The second batch must not be sent while the queue is not on disk.
+        let script = Script { call, batch in
+            if call == 0 { try setMode(folder.dir, 0o500) }
+            return acceptAll(batch)
+        }
+        let box = outbox(folder.file, script)
+        await box.flush()
+
+        #expect(script.batches.count == 1)
+        #expect(await box.storageError != nil)
+        #expect(await box.pending.count == 1)   // the 101st event was never sent
     }
 
     @Test func aLaterSuccessfulWriteClearsTheErrorAndSavesEverything() async throws {
