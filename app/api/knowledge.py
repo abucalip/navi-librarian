@@ -1,7 +1,7 @@
 """Knowledge page routes (Server V2 Phase 4, docs/SERVER_V2_CONTRACT.md).
 
 HTTP adapters only: every body comes from ``intelligence.knowledge.KnowledgeReader`` (dossier,
-person, label and work pages), which reads the Server V2 SQLite file (D-026) and nothing else.
+person, label, work, place and event pages), which reads the Server V2 SQLite file (D-026) and nothing else.
 No provider traffic, no writes, no ownership flags. An entity the store does not know answers
 ``404``; a store with no MusicBrainz slice loaded still answers for known entities and says so in
 the page's own coverage field.
@@ -77,6 +77,16 @@ def label(mbid: str, limit: int = Query(200, ge=1, le=MAX_LIMIT), librarian=Depe
 @router.get("/api/knowledge/work")
 def work(mbid: str, limit: int = Query(200, ge=1, le=MAX_LIMIT), librarian=Depends(get_librarian)):
     return _read(librarian, lambda r: r.work_page(mbid=mbid, limit=limit))
+
+
+@router.get("/api/knowledge/place")
+def place(mbid: str, limit: int = Query(200, ge=1, le=MAX_LIMIT), librarian=Depends(get_librarian)):
+    return _read(librarian, lambda r: r.place_page(mbid=mbid, limit=limit))
+
+
+@router.get("/api/knowledge/event")
+def event(mbid: str, limit: int = Query(200, ge=1, le=MAX_LIMIT), librarian=Depends(get_librarian)):
+    return _read(librarian, lambda r: r.event_page(mbid=mbid, limit=limit))
 
 
 @router.get("/api/knowledge/recording-works")

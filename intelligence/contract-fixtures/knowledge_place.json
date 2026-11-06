@@ -1,0 +1,143 @@
+{
+  "request": "GET /api/knowledge/place?mbid=00000012-0000-4000-8000-000000000000",
+  "response": {
+    "aliases": [],
+    "area": [
+      {
+        "contained_in": [
+          {
+            "canonical_name": "Exampleland",
+            "iso_code": "XX",
+            "kind": "country",
+            "mbid": "00000010-0000-4000-8000-000000000000",
+            "owned": false,
+            "type": "area"
+          }
+        ],
+        "entity": {
+          "canonical_name": "Example City",
+          "mbid": "00000011-0000-4000-8000-000000000000",
+          "owned": false,
+          "type": "area"
+        },
+        "iso_code": null,
+        "kind": "city",
+        "relations": [
+          {
+            "direction": "out",
+            "evidence_class": "source_explicit",
+            "match_quality": "exact_mbid",
+            "relation": "area",
+            "role": null,
+            "source": "musicbrainz_dump",
+            "source_url": null,
+            "valid_from": null,
+            "valid_to": null
+          }
+        ]
+      }
+    ],
+    "events": [
+      {
+        "entity": {
+          "canonical_name": "Example Festival",
+          "mbid": "00000013-0000-4000-8000-000000000000",
+          "owned": false,
+          "type": "event"
+        },
+        "facts": {
+          "begin": "1971-06",
+          "cancelled": false,
+          "end": "1971-06",
+          "kind": "festival"
+        },
+        "relations": [
+          {
+            "direction": "in",
+            "evidence_class": "source_explicit",
+            "match_quality": "exact_mbid",
+            "relation": "held at",
+            "role": null,
+            "source": "musicbrainz_dump",
+            "source_url": null,
+            "valid_from": null,
+            "valid_to": null
+          }
+        ]
+      }
+    ],
+    "facts": {
+      "begin": "1970",
+      "end": null,
+      "kind": "studio",
+      "latitude": 48.85,
+      "longitude": 2.41
+    },
+    "not_loaded": [
+      "address",
+      "capacity"
+    ],
+    "people": [
+      {
+        "entity": {
+          "canonical_name": "Example Guest",
+          "mbid": "00000002-0000-4000-8000-000000000000",
+          "owned": false,
+          "type": "artist"
+        },
+        "relations": [
+          {
+            "direction": "in",
+            "evidence_class": "source_explicit",
+            "match_quality": "exact_mbid",
+            "relation": "owner",
+            "role": null,
+            "source": "musicbrainz_dump",
+            "source_url": null,
+            "valid_from": null,
+            "valid_to": null
+          }
+        ]
+      }
+    ],
+    "place": {
+      "canonical_name": "Example Studio",
+      "mbid": "00000012-0000-4000-8000-000000000000",
+      "owned": false,
+      "sort_name": null,
+      "type": "place"
+    },
+    "recordings": [
+      {
+        "albums": [],
+        "owned": false,
+        "recording": {
+          "canonical_name": "Example Song (cover)",
+          "mbid": "00000005-0000-4000-8000-000000000000",
+          "owned": false,
+          "type": "recording"
+        },
+        "relations": [
+          {
+            "direction": "out",
+            "evidence_class": "source_explicit",
+            "match_quality": "exact_mbid",
+            "relation": "recording location",
+            "role": null,
+            "source": "musicbrainz_dump",
+            "source_url": null,
+            "valid_from": null,
+            "valid_to": null
+          }
+        ]
+      }
+    ],
+    "sources": {
+      "musicbrainz_dump": {
+        "coverage": "loaded",
+        "dump_timestamp": "2026-11-04"
+      }
+    },
+    "truncated": false
+  }
+}

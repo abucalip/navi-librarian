@@ -1,4 +1,5 @@
 import ast
+import json
 import sqlite3
 import tempfile
 import unittest
@@ -361,6 +362,114 @@ class WorkTests(unittest.TestCase):
         self.assertIsNone(self.reader.works_of_recording(mbid="nope"))
         with self.assertRaises(ValueError):
             self.reader.works_of_recording(id=self.work)
+
+
+class ContextPageTests(unittest.TestCase):
+    """Place and event pages (Phase 5): stated area chain, recordings, people, events; nothing inferred."""
+
+    def setUp(self):
+        self.db = open_store(":memory:")
+        c = dict(evidence_class="source_explicit", match_quality="exact_mbid", source="musicbrainz_dump")
+        e = lambda t, n, g, **k: repo.upsert_entity(self.db, t, n, mbid=g, **k)[0]
+        self.fr = e("area", "France", "fr-gid")
+        self.idf = e("area", "Ile-de-France", "idf-gid")
+        self.paris = e("area", "Paris", "paris-gid")
+        self.place = e("place", "Studio Davout", "pl-gid")
+        self.event = e("event", "Jazz Night", "ev-gid")
+        self.miles = e("artist", "Miles Davis", "m-gid")
+        self.rec = e("recording", "So What", "rec-gid")
+        self.rel = e("release", "Kind of Blue", "rel-gid", owned=True)
+        self.grp = e("release_group", "Kind of Blue", "grp-gid")
+        repo.add_edge(self.db, self.paris, self.idf, "part of", **c)
+        repo.add_edge(self.db, self.idf, self.fr, "part of", **c)
+        repo.add_edge(self.db, self.place, self.paris, "area", **c)
+        repo.add_edge(self.db, self.place, self.rec, "recording location", **c)
+        repo.add_edge(self.db, self.miles, self.place, "owner", valid_from="1969", **c)
+        repo.add_edge(self.db, self.event, self.place, "held at", **c)
+        repo.add_edge(self.db, self.miles, self.event, "main performer", **c)
+        repo.add_edge(self.db, self.paris, self.event, "recorded in", **c)
+        repo.add_edge(self.db, self.event, self.rec, "recorded in", **c)
+        repo.add_edge(self.db, self.rec, self.rel, "appears_on", **{**c, "source": "musicbrainz"})
+        repo.add_edge(self.db, self.rel, self.grp, "member_of", **{**c, "source": "musicbrainz"})
+        repo.add_edge(self.db, self.miles, self.place, "collaboration", source="derived",
+                      evidence_class="inferred", match_quality="exact_mbid")
+        with self.db:
+            self.db.execute("INSERT INTO area_facts (entity_id, kind, iso_code) VALUES (?, 'country', 'FR')", (self.fr,))
+            self.db.execute("INSERT INTO area_facts (entity_id, kind, iso_code) VALUES (?, 'city', NULL)", (self.paris,))
+            self.db.execute("INSERT INTO place_facts (entity_id, kind, latitude, longitude, begin_date, end_date) "
+                            "VALUES (?, 'studio', 48.85, 2.41, '1970', NULL)", (self.place,))
+            self.db.execute("INSERT INTO event_facts (entity_id, kind, begin_date, end_date, cancelled) "
+                            "VALUES (?, 'festival', '1971-06', NULL, 1)", (self.event,))
+        self.reader = KnowledgeReader(self.db, clock=lambda: 2000.0)
+
+    def load_slice(self):
+        with self.db:
+            for key, value in (("dump_timestamp", "2026-11-04"), ("schema_sequence", "31"), ("loaded_at", "1000")):
+                self.db.execute("INSERT INTO meta (key, value) VALUES (?, ?)", (f"musicbrainz_slice.{key}", value))
+
+    def test_place_page_facts_area_chain_and_recordings(self):
+        self.load_slice()
+        page = self.reader.place_page(mbid="pl-gid")
+        self.assertEqual(page["facts"], {"kind": "studio", "latitude": 48.85, "longitude": 2.41, "begin": "1970", "end": None})
+        self.assertEqual([a["entity"]["canonical_name"] for a in page["area"]], ["Paris"])
+        chain = page["area"][0]["contained_in"]
+        self.assertEqual([(a["canonical_name"], a["kind"], a["iso_code"]) for a in chain],
+                         [("Ile-de-France", None, None), ("France", "country", "FR")])
+        rec = page["recordings"][0]
+        self.assertTrue(rec["owned"])
+        self.assertEqual(rec["albums"][0]["album"]["type"], "release_group")
+        self.assertEqual([p["entity"]["canonical_name"] for p in page["people"]], ["Miles Davis"])
+        self.assertEqual([r["relation"] for r in page["people"][0]["relations"]], ["owner"])  # inferred edge dropped
+        self.assertEqual(page["events"][0]["facts"]["kind"], "festival")
+        self.assertEqual(page["sources"]["musicbrainz_dump"]["coverage"], "loaded")
+
+    def test_only_the_stated_area_is_the_place_area(self):
+        # An area that merely links to the place's event is not the place's area.
+        page = self.reader.place_page(mbid="pl-gid")
+        self.assertEqual(len(page["area"]), 1)
+
+    def test_event_page(self):
+        self.load_slice()
+        page = self.reader.event_page(mbid="ev-gid")
+        self.assertEqual(page["facts"], {"kind": "festival", "begin": "1971-06", "end": None, "cancelled": True})
+        self.assertEqual([p["entity"]["canonical_name"] for p in page["places"]], ["Studio Davout"])
+        self.assertEqual(page["places"][0]["facts"]["kind"], "studio")
+        self.assertEqual([a["entity"]["canonical_name"] for a in page["area"]], ["Paris"])
+        self.assertEqual(page["area"][0]["contained_in"][-1]["iso_code"], "FR")
+        self.assertEqual([p["entity"]["canonical_name"] for p in page["people"]], ["Miles Davis"])
+        self.assertEqual([r["recording"]["canonical_name"] for r in page["recordings"]], ["So What"])
+
+    def test_unknown_wrong_type_and_pending(self):
+        self.assertIsNone(self.reader.place_page(mbid="nope"))
+        self.assertIsNone(self.reader.event_page(mbid="nope"))
+        self.assertIsNone(self.reader.place_page(mbid="ev-gid"))  # an event is not a place
+        from intelligence.knowledge.context_pages import event_page, place_page
+        with self.assertRaises(ValueError):
+            place_page(self.reader, repo.get_entity(self.db, self.event))
+        with self.assertRaises(ValueError):
+            event_page(self.reader, repo.get_entity(self.db, self.place))
+        self.assertEqual(self.reader.place_page(mbid="pl-gid")["sources"]["musicbrainz_dump"]["coverage"], "pending")
+
+    def test_no_relationships_and_bounded(self):
+        self.load_slice()
+        lone = repo.upsert_entity(self.db, "place", "Lone", mbid="lone-gid")[0]
+        page = self.reader.place_page(mbid="lone-gid")
+        self.assertEqual(page["sources"]["musicbrainz_dump"]["coverage"], "no_relationships_in_slice")
+        self.assertIsNone(page["facts"])
+        self.assertEqual(page["area"], [])
+        self.assertTrue(self.reader.place_page(mbid="pl-gid", limit=1)["truncated"])
+
+    def test_containment_loop_ends(self):
+        c = dict(evidence_class="source_explicit", match_quality="exact_mbid", source="musicbrainz_dump")
+        repo.add_edge(self.db, self.fr, self.paris, "part of", **c)
+        page = self.reader.place_page(mbid="pl-gid")
+        self.assertEqual([a["canonical_name"] for a in page["area"][0]["contained_in"]], ["Ile-de-France", "France"])
+
+    def test_public_shape(self):
+        for page in (self.reader.place_page(mbid="pl-gid"), self.reader.event_page(mbid="ev-gid")):
+            text = json.dumps(page)
+            self.assertNotIn('"id"', text)
+            self.assertNotIn('"owned": 1', text)
 
 
 class BoundaryTests(unittest.TestCase):

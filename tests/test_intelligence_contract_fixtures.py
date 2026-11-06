@@ -61,7 +61,7 @@ class FixtureFileTests(unittest.TestCase):
                     yield from walk(v)
 
         names = sorted(p.name for p in FIXTURES.glob("knowledge_*.json"))
-        self.assertEqual(len(names), 9)
+        self.assertEqual(len(names), 11)
         for name in names:
             with self.subTest(fixture=name):
                 pairs = list(walk(json.loads((FIXTURES / name).read_text())["response"]))
