@@ -82,7 +82,7 @@ class Wiring(unittest.TestCase):
         self.lib = FakeLibrarian(self.tmp.name, albums())
 
     def test_lens_off_touches_nothing(self):
-        self.assertIsNone(insights_refresh.refresh_once(self.lib, {}))
+        self.assertIsNone(insights_refresh.refresh_once(self.lib, {insight_routes.LENSES_ENV: ""}))
         self.assertEqual(self.lib.calls, 0)
         self.assertFalse((Path(self.tmp.name) / insight_routes.STORE_FILE).exists())
 
