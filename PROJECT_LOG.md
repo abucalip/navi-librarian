@@ -2594,4 +2594,13 @@ All live runs were approved by the owner; slskd off; aggregate only; harnesses w
 - **Changes:** `KnowledgeReader.person_page` and `label_page` (`intelligence/knowledge/pages.py`). Person page: credited albums split into in the library and not, recording credits lifted to their release group, a "credited as" reason per album, related people. Label page: related labels, owned catalogue, the rest of the slice for the label. `credits_only` (inferred or unmatched edges are never shown), slice `coverage` and `not_loaded` (notable releases, catalogue numbers); bounded by `limit` with a `truncated` flag. Store-only; no routes, provider calls or `navidrome_server.py` change.
 - **Verification:** `python -m unittest tests.test_intelligence_knowledge_reader` (19 passed, 5 new). Full suite not run by the agent (owner rule). Not run against the real store; not published or deployed.
 - **Limitation:** the slice loader does not fill release group links, so an album credited only through the slice shows as its release, not folded into a group, until the loader is extended (needs a re-import and the owner's go-ahead). Ambiguous names are not handled here; callers look up by id or MBID.
-- **Next action:** work, cover and version links (MusicBrainz works), then the routes.
+- **Next action:** superseded by the PR #825 entry below.
+
+
+## 2026-11-06 — Server V2 work, cover and version links (PR #825)
+
+- **PR:** [#825](https://github.com/abucalip/navi-librarian/pull/825), squash `3de39656fe2fa7daaf128bab9c715b5bad364ff0`, tested head `a0682a7bce530a2ac3991248e9337e45c0fc5a0d`; compile, container-smoke, test-and-build and validate-container passed.
+- **Changes:** `KnowledgeReader.work_page` and `works_of_recording` (`intelligence/knowledge/works.py`). Work page: recordings linked by `performance` with albums (folded into release groups), in-library flag, MusicBrainz's own link attributes (cover, live, ...), credited performers, writers, related works, and a count summary. `works_of_recording` gives the reverse link with other-recording counts. `credits_only` (inferred edges never shown), slice `coverage` and `not_loaded` (recording artist credit, work languages, ISWC); versions bounded to 100. Store-only; no routes, provider calls or `navidrome_server.py` change.
+- **Verification:** `python -m unittest tests.test_intelligence_knowledge_reader` (24 passed, 5 new). Full suite not run by the agent (owner rule). Not run against the real store; not published or deployed.
+- **Limitation:** the recording's main artist credit is not in the slice, so a version lists only people with explicit credit links, not "who recorded it".
+- **Next action:** the routes for the dossier, person, label and work pages.
