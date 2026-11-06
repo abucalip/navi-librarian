@@ -67,6 +67,53 @@ class KnowledgeRoutes(unittest.TestCase):
         self.assertEqual(self.client.get("/api/knowledge/person", params={"mbid": "a-gid", "limit": 0}).status_code, 422)
         self.assertEqual(self.client.get("/api/knowledge/person", params={"mbid": "a-gid", "limit": 501}).status_code, 422)
 
+    def _link(self):
+        db = open_store(Path(self.tmp.name) / STORE_FILE)
+        for rel, role in (("producer", "exec"), ("instrument", "guitar")):
+            repo.add_edge(db, self.artist, self.recording, rel, role=role, source="musicbrainz_dump",
+                          evidence_class="source_explicit", match_quality="exact_mbid")
+        db.close()
+
+    def test_connections_lists_public_hops_with_via_mbid(self):
+        self._link()
+        r = self.client.get("/api/knowledge/connections", params={"mbid": "a-gid", "type": "artist"})
+        self.assertEqual(r.status_code, 200, r.text)
+        body = r.json()
+        self.assertEqual(body["start"]["mbid"], "a-gid")
+        self.assertEqual([h["entity"]["mbid"] for h in body["hops"]], ["r-gid"])
+        self.assertEqual(body["hops"][0]["via_mbid"], "a-gid")
+        self.assertEqual(len(body["hops"][0]["evidence"]), 2)
+        self.assertNotIn('"id"', r.text)
+        self.assertIs(body["start"]["owned"], True)
+
+    def test_connections_pages_with_a_cursor(self):
+        self._link()
+        db = open_store(Path(self.tmp.name) / STORE_FILE)
+        repo.add_edge(db, self.artist, self.work, "composer", source="musicbrainz_dump",
+                      evidence_class="source_explicit", match_quality="exact_mbid")
+        db.close()
+        first = self.client.get("/api/knowledge/connections", params={"mbid": "a-gid", "type": "artist", "limit": 1}).json()
+        self.assertEqual(len(first["hops"]), 1)
+        self.assertTrue(first["next_cursor"])
+        second = self.client.get("/api/knowledge/connections", params={
+            "mbid": "a-gid", "type": "artist", "limit": 1, "cursor": first["next_cursor"]}).json()
+        self.assertEqual(len(second["hops"]), 1)
+        self.assertNotEqual(first["hops"][0]["entity"]["mbid"], second["hops"][0]["entity"]["mbid"])
+
+    def test_connections_filters_and_validation(self):
+        self._link()
+        only = self.client.get("/api/knowledge/connections",
+                               params={"mbid": "a-gid", "type": "artist", "relation": "composer"}).json()
+        self.assertEqual(only["hops"], [])
+        get = self.client.get
+        base = {"mbid": "a-gid", "type": "artist"}
+        self.assertEqual(get("/api/knowledge/connections", params={**base, "cursor": "!!"}).status_code, 400)
+        self.assertEqual(get("/api/knowledge/connections", params={**base, "direction": "up"}).status_code, 400)
+        self.assertEqual(get("/api/knowledge/connections", params={"mbid": "a-gid"}).status_code, 400)
+        self.assertEqual(get("/api/knowledge/connections", params={"type": "artist"}).status_code, 400)
+        self.assertEqual(get("/api/knowledge/connections", params={**base, "depth": 4}).status_code, 422)
+        self.assertEqual(get("/api/knowledge/connections", params={"mbid": "nope", "type": "artist"}).status_code, 404)
+
     def test_store_failure_is_502(self):
         with mock.patch.object(routes, "open_store", side_effect=OSError("boom")):
             self.assertEqual(self.client.get("/api/knowledge/label", params={"mbid": "l-gid"}).status_code, 502)

@@ -10,6 +10,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 
 from app.api.dependencies import get_librarian
 from app.api.insights import STORE_FILE
+from intelligence.graph import Limits
 from intelligence.knowledge import KnowledgeReader
 from intelligence.store import open_store
 
@@ -20,6 +21,10 @@ ALBUM_TYPES = ("release", "release_group")
 PERSON_TYPES = ("artist", "person", "group")
 
 
+MAX_DEPTH = 3
+DIRECTIONS = ("out", "in", "both")
+
+
 def _read(librarian, call):
     """Run ``call(reader)`` against the store; unknown entity is 404, any other failure 502."""
     try:
@@ -28,6 +33,8 @@ def _read(librarian, call):
             page = call(KnowledgeReader(db))
         finally:
             db.close()
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
     except Exception:
         raise HTTPException(status_code=502, detail="Could not read the knowledge store.")
     if page is None:
@@ -75,3 +82,21 @@ def recording_works(mbid: str | None = None, navidrome_id: str | None = None,
                     limit: int = Query(50, ge=1, le=MAX_LIMIT), librarian=Depends(get_librarian)):
     _need_id(mbid, navidrome_id)
     return _read(librarian, lambda r: r.works_of_recording(mbid=mbid, navidrome_id=navidrome_id, limit=limit))
+
+
+@router.get("/api/knowledge/connections")
+def connections(mbid: str | None = None, navidrome_id: str | None = None, type: str | None = None,
+                credits_only: bool = False, relation: list[str] | None = Query(None),
+                direction: str = Query("both"), depth: int = Query(1, ge=1, le=MAX_DEPTH),
+                limit: int = Query(50, ge=1, le=MAX_LIMIT), cursor: str | None = None,
+                librarian=Depends(get_librarian)):
+    """Bounded walk (depth, rows, time) from one entity, paged with an opaque cursor."""
+    _need_id(mbid, navidrome_id)
+    if direction not in DIRECTIONS:
+        raise HTTPException(status_code=400, detail=f"direction must be one of {', '.join(DIRECTIONS)}")
+    if not type:
+        raise HTTPException(status_code=400, detail="give the entity type")
+    limits = Limits(max_depth=depth, max_rows=MAX_LIMIT, page_size=limit)
+    return _read(librarian, lambda r: r.connections_page(
+        mbid=mbid, navidrome_id=navidrome_id, type=type, credits_only=credits_only, relations=relation,
+        direction=direction, limits=limits, cursor=cursor))

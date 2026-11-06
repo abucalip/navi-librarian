@@ -79,6 +79,43 @@ class KnowledgeReader:
             "truncated": page.truncated,
         }
 
+    def connections_page(self, *, id: int | None = None, mbid: str | None = None, navidrome_id: str | None = None,
+                         type: str | None = None, credits_only: bool = False, relations: Iterable[str] | None = None,
+                         direction: str = "both", limits: Limits = Limits(), cursor: str | None = None
+                         ) -> dict[str, Any] | None:
+        """Public bounded walk from one entity; each hop names the entity one step closer by ``via_mbid``.
+
+        None when the start is unknown. A bad cursor or direction raises ``ValueError``.
+        """
+        start = self.entity(type, id=id, mbid=mbid, navidrome_id=navidrome_id)
+        if start is None:
+            return None
+        walk = self.connections(start["id"], credits_only=credits_only, relations=relations, direction=direction,
+                                limits=limits, cursor=cursor)
+        mbids = {start["id"]: start.get("mbid")}
+        hops = []
+        for hop in walk["hops"]:
+            via = hop["via_entity_id"]
+            if via not in mbids:
+                mbids[via] = (repo.get_entity(self._db, via) or {}).get("mbid")
+            hops.append({**hop, "via_mbid": mbids[via]})
+        return public({
+            "start": {k: start.get(k) for k in ("id", "type", "mbid", "canonical_name", "owned")},
+            "hops": hops,
+            "next_cursor": walk["next_cursor"],
+            "truncated": walk["truncated"],
+            "sources": {SLICE_SOURCE: self._coverage_of(hops)},
+        })
+
+    def _coverage_of(self, hops: list[dict[str, Any]]) -> dict[str, Any]:
+        status = slice_status(self._db, self._clock())
+        if not status["loaded"]:
+            coverage = "pending"
+        else:
+            from_slice = any(e["source"] == SLICE_SOURCE for h in hops for e in h["evidence"])
+            coverage = "loaded" if from_slice else "no_relationships_in_slice"
+        return {"coverage": coverage, "dump_timestamp": status["dump_timestamp"]}
+
     def profile(self, type: str, *, id: int | None = None, mbid: str | None = None,
                 navidrome_id: str | None = None, limit: int = PROFILE_RELATIONSHIPS) -> dict[str, Any] | None:
         """An entity with aliases, its direct relationships and where its facts come from."""
