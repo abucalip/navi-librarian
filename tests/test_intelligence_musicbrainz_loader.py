@@ -109,7 +109,7 @@ class FactsTests(unittest.TestCase):
         self.assertEqual(self.db.execute("SELECT COUNT(*) FROM release_facts").fetchone()[0], 2)
 
     def test_fact_tables_add_no_pass(self):
-        self.assertEqual(self.result.passes, 2)  # the entity pass and the (empty) link pass, as before
+        self.assertEqual(self.result.passes, 3)  # entities, (empty) links, and the context pass
 
 
 class LoaderTests(unittest.TestCase):
@@ -121,7 +121,7 @@ class LoaderTests(unittest.TestCase):
 
     def test_creates_entities_and_edges_with_provenance(self):
         result = self.run_load()
-        self.assertEqual((result.entities_created, result.edges_created, result.passes), (4, 4, 3))
+        self.assertEqual((result.entities_created, result.edges_created, result.passes), (4, 4, 4))
         rec = repo.find_entity(self.db, "recording", mbid="r-gid")
         edges = repo.edges_to(self.db, rec["id"])
         by_role = {e["role"]: e for e in edges if e["relation"] == "instrument"}
@@ -167,12 +167,12 @@ class LoaderTests(unittest.TestCase):
     def test_fixed_passes(self):
         source = world()
         self.run_load(source)
-        self.assertEqual(source.reads, 3)
+        self.assertEqual(source.reads, 4)
 
-    def test_no_pass_three_without_links(self):
+    def test_no_link_detail_pass_without_links(self):
         source = world()
         result = self.run_load(source, selection(artist={3}))
-        self.assertEqual((result.passes, source.reads, result.edges_created), (2, 2, 0))
+        self.assertEqual((result.passes, source.reads, result.edges_created), (3, 3, 0))
 
     def counts(self):
         return tuple(self.db.execute(f"SELECT COUNT(*) FROM {t}").fetchone()[0] for t in ("entities", "edges"))
