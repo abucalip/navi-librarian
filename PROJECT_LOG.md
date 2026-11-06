@@ -1,3 +1,10 @@
+## 2026-11-06 — Server V2 Phase 6: listens loader (PR #848)
+
+- **Objective:** Phase 6 item 1, slice 2: resolve raw listens into the attributes `build_profiles` reads.
+- **Change and evidence:** PR [#848](https://github.com/abucalip/navi-librarian/pull/848), squash `8b5a238565c81961dc38fc5947869e636be5acc6`, tested head `d8e396dc8b8cc610806d1d23b55cde4826eed9fc`; required CI passed (compile, container-smoke, test-and-build, validate-container). New `intelligence/taste/loader.py` (read-only): area from the artist `area` edge, era (decade) from release dates the recording appears on, label from linked label entities, collaborators from linked people other than the listened artists; genre only from a caller-supplied map (the store keeps no genres). Unplaced and undated listens are counted in the result. Tests run: `test_intelligence_taste_loader`, `test_intelligence_taste_profiles` (passed locally); full suite not run (owner rule). `navidrome_server.py` untouched (D-016).
+- **Limits:** collaborators are chosen by entity type, not by named credit relation; not run against the real store; no fetching of listens, persistence, route or client; not published or deployed.
+- **Next action:** persistence of computed profiles and an `/api/insights` route (slice 3), then Phase 6 item 2.
+
 ## 2026-11-06 — Server V2 Phase 6: time-windowed taste profiles (PR #847)
 
 - **Objective:** open Phase 6 with item 1: recent, mid and all-time profiles across genre, era, area, label and collaborator.
