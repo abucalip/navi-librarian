@@ -1,3 +1,11 @@
+## 2026-11-06 — Server V2 Phase 5: place and event pages and routes (PR #844)
+
+- **Objective:** second context-reader slice: serve the places and events the dump import already stores.
+- **Change and evidence:** PR [#844](https://github.com/abucalip/navi-librarian/pull/844), squash `2c62fcbe35bac4522c82a8d910bafec7d3e9e518`, tested head `235b4bcba05f856555056c303898346144df7c62`; required CI passed (compile, container-smoke, test-and-build, validate-container, validate-release-workflow). `KnowledgeReader.place_page` and `event_page` (`intelligence/knowledge/context_pages.py`) and `GET /api/knowledge/place|event` (`mbid` required, `limit` 1 to 500). A place page gives facts, the stated area with its containment chain (kind, ISO code), recordings with albums and `owned`, people and events; an event page gives facts (including `cancelled`), places, area, people and recordings. Credit-grade edges only; nothing derived from names, labels or one recording location. Contract note and fixtures `knowledge_place.json` and `knowledge_event.json` added; existing fixtures unchanged.
+- **Tests:** focused only: `test_intelligence_knowledge_reader`, `test_api_knowledge_routes`, `test_intelligence_contract_fixtures`, `test_api_knowledge_paths_route` (66 passed). Full suite not run (owner rule).
+- **Limits:** address and capacity (places) and setlist and attendance (events) are listed in `not_loaded`; no client uses the pages; not published or deployed.
+- **Next action:** owner choice between the sideman_to_leader enrichment plan, the client gate and the owner steps.
+
 ## 2026-11-06 — Server V2 Phase 5: catalogue numbers, formats and label parents (PR #843)
 
 - **Objective:** first context-reader slice: serve facts the dump import already stores.
