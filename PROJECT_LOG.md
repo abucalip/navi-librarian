@@ -5,6 +5,7 @@
 - Requests send a User-Agent and `LISTENBRAINZ_TOKEN` from `config.env` in the working folder (never logged or returned). Deviation: `httpx.post` is used, not `requests.post`, because `requests` is not a project dependency and importing it would break startup.
 - Tests (fake post, no network): `test_api_popularity_routes.py`, 8 passed; `test_intelligence_taste_popularity_fill.py`, 9 passed. Full unit suite not run by the agent (CI ran it on the head).
 - No live ListenBrainz request was made. A live run needs the owner's approval.
+- **Review finding after merge:** `GET /api/insights/popularity/status` currently sets `running` from the module-local `_LOCK`. With multiple app worker processes, a request handled by another worker can report `false` while the shared SQLite `taste_popularity` job row is `running`; the job runner's SQLite claim still prevents duplicate provider work. A review comment identified the issue, but the PR was merged before it was corrected. Follow-up: derive `running` from `runner.status(db, JOB)` and add a regression test with a persisted running job and an unlocked local lock.
 
 ## 2026-11-07 — Server V2 Phase 6 slice 17: artist popularity table, fill job and obscurity lookups (PR #871)
 
