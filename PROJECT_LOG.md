@@ -3160,3 +3160,15 @@ All live runs were approved by the owner; slskd off; aggregate only; harnesses w
 - **Commits:** `docs/ServerV2.md` — `7bcaea8dabc1b973a6f0928ecd25b255312b30af`; `docs/PROJECT_STATUS.md` — `b83fe2af99e3ba5674fb28825f8e4a5da4cd4c86`, followed by wording correction `c2fb2ced44b67baff6e9fdcd5396945afb3d3432`. This log entry is committed on top of those documentation commits.
 - **Tests:** documentation-only; no application tests run. Reviewed the changed Phase 7 sections and current-state summary against merged PR records and the existing verification log.
 - **Next action:** complete the real-store path warm-up measurement, live sonic-route integration check, and macOS/Android sonic path visual checks before closing Phase 7.
+
+
+## 2026-11-07 — Android artist Paths: slice 3 path-specific context (PR #893)
+
+- **Branch:** `android/interactive-path-evidence`; extends PR [#893](https://github.com/abucalip/navi-librarian/pull/893), preserving slices 1 and 2.
+- **Server:** `intelligence/graph/paths.py` now attaches additive `details[]` facts to each returned reason. Follow-the-musician includes recording titles and connecting credit roles; sideman-to-leader includes recording, release, leader and available release date/country/status; label paths include release, shared label and catalogue numbers; composition paths include recording, shared work and explicitly credited performers; scene paths include shared area/type and stated artist active dates.
+- **Bounds and provenance:** details are read from the existing local MusicBrainz SQLite store, for only the already-returned reasons (maximum three per stop, 30 stops); no provider requests, new tables, writes, inference or extra client requests. Unknown facts are omitted. The path presentation cache version was bumped to invalidate older cached response bodies.
+- **Android:** parser retains the optional detail label/value pairs and expanded reason UI displays them alongside the existing evidence and navigation actions. Old fixtures without `details[]` remain valid.
+- **Regression coverage added:** server path-builder assertions for all five kinds; public API route assertions; Android parser test for details and absent optional data.
+- **Commits:** server implementation `e375d99a4c9940b1f937607448c397f4d56445df`; Android parser `23d15575526da709b09c0b9a58bd6c7803db5761`; Android display `6c21a587e3cda9b8f21623932c70af0516b9c7c0`; server builder tests `7a707a5a7be3458ee4c7e75a2b0515c4b7b41c04`; Android parser test `f0705f848cb486fe5750774afb6f05d362e414ac`; API route test `a422a2d49099ec6bcbbf8492949d34316e5aa600`; contract `b2547d22a928d7e765ffa299c3c940505830e43a`; status `775fd3e11f90d31fc4d241f640543bc7675c02ad`; test plan `97d655f240d46242e16b899e6295d17394399c2d`.
+- **Verification:** tests have not yet been executed in this environment. The final PR-head CI must pass before slice 3 can be called tested. Manual Android device verification remains pending. No merge, publication or deployment.
+- **Next action:** run the focused Python path-builder and API-route tests, Android `PathsTest`, then verify all required CI workflows on the exact final PR-head SHA.
