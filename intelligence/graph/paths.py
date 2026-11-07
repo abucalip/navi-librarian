@@ -40,7 +40,7 @@ CACHE_PREFIX = "path:"
 SLICE_RESOURCE = "musicbrainz_slice"
 SCENE_YEARS = 10
 PROGRESS_OPS = 5000  # how many SQLite steps pass between deadline checks
-PRESENTATION_VERSION = 1
+PRESENTATION_VERSION = 2
 
 _CG = "{a}.evidence_class != 'inferred' AND {a}.match_quality NOT IN ('fuzzy_unconfirmed', 'unresolved')"
 
@@ -318,6 +318,87 @@ def _path_presentation(
     return {"title": title, "context": context}
 
 
+
+def _path_details(
+    db: sqlite3.Connection, kind: str, start_id: int, stop_id: int,
+    row: sqlite3.Row, generation: int,
+) -> list[dict[str, str]]:
+    """Small, path-specific facts from the local store; bounded to one reason's entities."""
+    details: list[dict[str, str]] = []
+
+    def add(label: str, value: object | None) -> None:
+        if value is not None and str(value).strip():
+            details.append({"label": label, "value": str(value).strip()})
+
+    via_id, anchor_id = row["via"], row["anchor"]
+    ids = [value for value in (stop_id, via_id, anchor_id) if value is not None]
+    names = {int(r["id"]): r["canonical_name"] for r in db.execute(
+        f"SELECT id, canonical_name FROM entities WHERE id IN ({', '.join('?' for _ in ids)})", ids
+    )} if ids else {}
+
+    if kind == "follow_the_musician":
+        add("Recording", names.get(anchor_id))
+        add("Other recording", names.get(stop_id))
+        if via_id is not None:
+            roles = db.execute(
+                "SELECT DISTINCT role FROM edges WHERE from_id = ? AND to_id IN (?, ?) "
+                "AND relation IN ('instrument','vocal','main performer','performer','performing orchestra') "
+                "AND generation = ? AND role IS NOT NULL ORDER BY role LIMIT 8",
+                (via_id, anchor_id, stop_id, generation),
+            ).fetchall()
+            add("Connecting credit", ", ".join(r["role"] for r in roles if r["role"]))
+    elif kind == "sideman_to_leader":
+        add("Recording", names.get(anchor_id))
+        add("Release", names.get(via_id))
+        if via_id is not None:
+            facts = db.execute(
+                "SELECT date, country, status FROM release_facts WHERE entity_id = ?", (via_id,)
+            ).fetchone()
+            if facts:
+                add("Release date", facts["date"])
+                add("Release country", facts["country"])
+                add("Release status", facts["status"])
+        add("Release leader", names.get(stop_id))
+    elif kind == "label_path":
+        add("Release", names.get(stop_id))
+        add("Shared label", names.get(via_id))
+        if anchor_id is not None and via_id is not None:
+            rows = db.execute(
+                "SELECT catalogue_number FROM release_labels WHERE release_id IN (?, ?) "
+                "AND label_id = ? AND catalogue_number IS NOT NULL "
+                "ORDER BY release_id, catalogue_number LIMIT 8",
+                (stop_id, anchor_id, via_id),
+            ).fetchall()
+            add("Catalogue numbers", ", ".join(dict.fromkeys(r["catalogue_number"] for r in rows)))
+    elif kind == "composition_path":
+        add("Recording", names.get(stop_id))
+        add("Shared work", names.get(via_id))
+        if stop_id is not None:
+            credits = db.execute(
+                "SELECT DISTINCT a.canonical_name, e.role FROM edges e "
+                "JOIN entities a ON a.id = e.from_id AND a.type IN ('artist','person','group') "
+                "WHERE e.to_id = ? AND e.relation IN ('instrument','vocal','main performer','performer','performing orchestra') "
+                "AND e.generation = ? AND " + _cg("e") +
+                " ORDER BY a.canonical_name COLLATE NOCASE LIMIT 12",
+                (stop_id, generation),
+            ).fetchall()
+            add("Credited performers", ", ".join(
+                f"{r['canonical_name']} ({r['role']})" if r["role"] else r["canonical_name"] for r in credits
+            ))
+    elif kind == "scene_path":
+        add("Shared place", names.get(via_id))
+        add("Area type", (lambda r: r["kind"] if r else None)(
+            db.execute("SELECT kind FROM area_facts WHERE entity_id = ?", (via_id,)).fetchone()
+        ) if via_id is not None else None)
+        for entity_id, label in ((start_id, "Starting artist"), (stop_id, "Related artist")):
+            span = db.execute(
+                "SELECT begin_date, end_date FROM artist_life_span WHERE entity_id = ?", (entity_id,)
+            ).fetchone()
+            if span:
+                add(label + " active dates", " – ".join(v for v in (span["begin_date"], span["end_date"]) if v))
+    return details
+
+
 def build_path(db: sqlite3.Connection, start_id: int, kind: str, *, limits: PathLimits = PathLimits(),
                generation: int | None = None, clock: Callable[[], float] = time.monotonic) -> dict[str, Any] | None:
     """The path of ``kind`` from an artist, built now from the store; None when the start is unknown.
@@ -376,7 +457,7 @@ def build_path(db: sqlite3.Connection, start_id: int, kind: str, *, limits: Path
                 "text": _REASON_TEXT[r["code"]].format(via=(via or {}).get("canonical_name", "?"),
                                                        anchor=(anchor or {}).get("canonical_name", "?")),
                 "via": via, "anchor": anchor,
-                "evidence": _evidence(db, edge_ids) + _label_evidence(db, r),
+                "evidence": _evidence(db, edge_ids) + _label_evidence(db, r),\n                "details": _path_details(db, kind, start_id, stop_id, r, gen),
             })
         result_stops.append({
             "entity": names.get(stop_id),
