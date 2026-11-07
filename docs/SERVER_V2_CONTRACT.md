@@ -130,6 +130,25 @@ Served by `app/api/knowledge.py` (D-016: nothing added to `navidrome_server.py`)
 - Shape (owner decisions, 2026-11-06): the page shapes are approved. Bodies carry `mbid` and never a store `id`, `created_generation`, `navidrome_id`, `discogs_id` or `wikidata_id` (`intelligence/knowledge/public.py`). Every `owned` flag is a boolean, and a release group is owned when any of its editions is. Clients show at most ten credits per list and a "more" control for the rest (the body still carries up to `limit`).
 - Not yet fixtured and no client uses these routes; fixtures come next.
 
+## GET /api/sonic/similar and GET /api/sonic/path (Phase 7)
+
+Served by `app/api/sonic.py` over `intelligence/sonic/proxy.py`: Navidrome's `getSonicSimilarTracks` and `findSonicPath` with Librarian's rules. Read-only, no store access, no provider traffic; answers are kept for an hour. Clients show the feature only when `GET /api/capabilities` says `sonic_available: true`.
+
+- `similar`: `id` (required, a Navidrome song id), `count` (1 to 50, default 10). Up to `count` owned tracks in Navidrome's order. Near-duplicates of the seed (same recording or same title by the same artist) are dropped, and at most 2 matches may be by the seed's own artist (`dropped.artist_cap` counts the rest).
+- `path`: `start` and `end` (required, different songs, else `400`), `count` (2 to 50, default 10). Ordered steps from the start song to the end song; the first step is the start song.
+- Body: `status` (`ok` or `empty`; `empty` means the song has no analysis data, 2 of 250 sampled), `seed` (the seed song, `null` on a path), `tracks[]`, `dropped` (`same_recording`, `repeat`, `artist_cap`). A track has `navidrome_id`, `title`, `artist`, `artist_id`, `album`, `album_id`, `duration`, `year`, `mbid`, `cover_art`, `owned` (always `true`) and `similarity`. **Do not threshold or sort on `similarity`**: it sits in a narrow band (median 0.92), is informational, and is `null` on every path step.
+- Errors: `404` unknown song; `502` sonic similarity unavailable or Navidrome did not answer (fixed text, never Navidrome's); `422` for a missing parameter or a count out of range.
+
+Fixtures (recorded from the owner's Navidrome, read-only, 2026-11-07): `sonic_similar.json`, `sonic_similar_empty.json`, `sonic_path.json`, `sonic_error_not_found.json`, `sonic_error_unavailable.json`.
+
+## POST /api/knowledge/paths/warm and GET /api/knowledge/paths/warm/status (Phase 7)
+
+Served by `app/api/paths_warm.py`. A manual trigger that builds the missing or stale cached paths for every owned artist, so the first `GET /api/knowledge/paths` from a client is a cache read. No scheduler, no startup hook, no provider traffic. Clients do not call it.
+
+- Optional JSON body: `max_seconds` (positive number, default 300, capped at 1800) and `kinds` (non-empty list of path kinds, default all five). Anything else is `422`.
+- Answer: `run_id`, `state` (`succeeded`, or `queued` when the time budget ended first: call again to resume), `progress` (`built`, `skipped` for current caches, `empty`, `timed_out`, `pending`), `error`, `max_seconds`, `kinds`. `409` while another warm-up is running; `502` when it could not run.
+- Status: `status` (the latest run), `last_good`, `running`.
+
 ## Not in this contract
 
 Entity pages and path `reasons[]` (later phases); any scheduling or trigger route for the health job; macOS Swift fixtures (the macOS Health view is the Phase 1 client gate and will consume these JSON files directly).

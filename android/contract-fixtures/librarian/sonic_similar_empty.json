@@ -1,0 +1,23 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/api/sonic/similar",
+    "query": {
+      "id": "2Lfvk2yMF5nET5X6jgFN0u",
+      "count": 6
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "content_type": "application/json",
+    "elapsed_seconds": 0.0,
+    "body": {
+      "status": "empty",
+      "seed": null,
+      "tracks": [],
+      "dropped": {}
+    }
+  },
+  "captured_at": "2026-11-07T15:19:48Z"
+}

@@ -1,5 +1,6 @@
 import DiscairAudio
 import DiscairCore
+import DiscairLibrarian
 import DiscairNavidrome
 import Foundation
 import Observation
@@ -101,6 +102,41 @@ public final class RadioModel {
     private static let autoplayKey = "radio.autoplay"
     static let batch = 20
     static let maxArtists = 6
+    /// Songs asked of the server for one sonic radio batch (the server already caps the seed's own artist at 2).
+    static let sonicBatch = 20
+    /// Whether the server reports sonic similarity (`sonic_available`); the Sounds-like controls show only when true.
+    public private(set) var sonicAvailable = false
+
+    public func setSonicAvailable(_ value: Bool) { sonicAvailable = value }
+
+    /// A queue entry for a sonic match (every match is a song in the owner's Navidrome).
+    static func item(_ t: SonicTrack) -> QueueItem {
+        QueueItem(songID: t.songID, title: t.title, artist: t.artist.isEmpty ? "Unknown artist" : t.artist, album: t.album,
+                  albumID: t.albumID, coverArt: t.coverArt, duration: t.duration, mbid: t.mbid)
+    }
+
+    /// Songs that sound like `seed`, in the server's order, minus anything already queued (not yet queued here).
+    /// `fetch` asks the server for the seed's matches; the order is kept because the score is not meaningful.
+    public func sonicSongs(like seed: QueueItem, queued: Set<String>,
+                           fetch: (String, Int) async throws -> SonicResponse) async -> [QueueItem] {
+        guard !busy else { return [] }
+        busy = true; defer { busy = false }
+        do {
+            let response = try await fetch(seed.songID, Self.sonicBatch)
+            let exclude = queued.union([seed.songID])
+            var seen = Set<String>()
+            let picked = response.tracks.filter { !exclude.contains($0.songID) && seen.insert($0.songID).inserted }.map(Self.item)
+            if picked.isEmpty {
+                status = response.status == "empty" ? "No sound matches for \u{201C}\(seed.title)\u{201D} yet." : "Nothing new that sounds like \u{201C}\(seed.title)\u{201D}."
+            } else {
+                status = "Added \(picked.count) songs that sound like \u{201C}\(seed.title)\u{201D}."
+            }
+            return picked
+        } catch {
+            status = (error as? DiscairError).map(AcquisitionModel.text) ?? "Could not find songs that sound alike."
+            return []
+        }
+    }
 
     public init(defaults: UserDefaults = .standard) {
         self.defaults = defaults

@@ -60,6 +60,7 @@ struct CupertinoLibrary: View {
                                 if let item = PlayerModel.item(r) {
                                     Button("Play Next") { state.player.playNext(item) }
                                     Button("Add to Queue") { state.player.addToQueue(item) }
+                    if state.radio.sonicAvailable { Button("Songs That Sound Like This") { state.startSonicRadio(seed: item) } }
                                 }
                             }
                             .accessibilityElement(children: .combine)
@@ -78,6 +79,7 @@ struct CupertinoLibrary: View {
                             if let item = PlayerModel.item(r) {
                                 Button("Play Next") { state.player.playNext(item) }
                                 Button("Add to Queue") { state.player.addToQueue(item) }
+                    if state.radio.sonicAvailable { Button("Songs That Sound Like This") { state.startSonicRadio(seed: item) } }
                             }
                         }
                 }

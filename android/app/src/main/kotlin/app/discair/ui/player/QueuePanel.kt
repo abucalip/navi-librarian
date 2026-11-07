@@ -38,13 +38,23 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import app.discair.player.PlayerController
 import app.discair.player.PlayerUiState
+import app.discair.ui.common.LocalRepository
+import app.discair.ui.common.OutlinedButton
 import app.discair.ui.common.Target
+import androidx.compose.runtime.produceState
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import app.discair.ui.common.RowDivider
 
 /** The queue: tap a row to play it; the menu has Move up, Move down and Remove (no drag-only reordering). */
 @Composable
 fun QueuePanel(state: PlayerUiState, controller: PlayerController, modifier: Modifier = Modifier) {
     val items = state.queue.items
+    val repo = LocalRepository.current
+    val play = LocalPlayActions.current
+    // Sounds-like shows only when the server says it has sonic similarity; read live, false when unknown.
+    val sonic by produceState(false, repo) { value = withContext(Dispatchers.IO) { repo.sonicAvailable() } }
+    val queuedIds = items.mapTo(HashSet()) { it.songId }
     Column(modifier.fillMaxWidth()) {
         Text(
             "Queue · ${items.size} ${if (items.size == 1) "song" else "songs"}",
@@ -53,6 +63,13 @@ fun QueuePanel(state: PlayerUiState, controller: PlayerController, modifier: Mod
         )
         if (state.status != null) {
             Text(state.status, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(bottom = 8.dp))
+        }
+        val playing = state.current
+        if (sonic && playing != null) {
+            OutlinedButton(
+                onClick = { play.soundsLike(playing.songId, queuedIds) },
+                Modifier.heightIn(min = Target).padding(bottom = 8.dp),
+            ) { Text("Add songs that sound like this") }
         }
         val list = rememberLazyListState()
         // Opening the queue brings the playing song into view when it is not already on screen.
@@ -97,6 +114,7 @@ fun QueuePanel(state: PlayerUiState, controller: PlayerController, modifier: Mod
                         DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
                             DropdownMenuItem(text = { Text("Move up") }, enabled = index > 0, onClick = { menu = false; controller.move(index, index - 1) })
                             DropdownMenuItem(text = { Text("Move down") }, enabled = index < items.lastIndex, onClick = { menu = false; controller.move(index, index + 1) })
+                            if (sonic) DropdownMenuItem(text = { Text("Add songs that sound like this") }, onClick = { menu = false; play.soundsLike(item.songId, queuedIds) })
                             DropdownMenuItem(text = { Text("Remove from queue") }, onClick = { menu = false; controller.remove(index) })
                         }
                     }

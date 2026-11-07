@@ -1,0 +1,125 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/api/sonic/similar",
+    "query": {
+      "id": "2Lfvk2yMF5nET5X6jgFN0u",
+      "count": 6
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "content_type": "application/json",
+    "elapsed_seconds": 0.0,
+    "body": {
+      "status": "ok",
+      "seed": {
+        "navidrome_id": "2Lfvk2yMF5nET5X6jgFN0u",
+        "title": "Track 1",
+        "artist": "Reda Taliani",
+        "artist_id": "2WpdPGffvcg44Xc9uh0MR6",
+        "album": "2007",
+        "album_id": "7jSFxe5tY1eD7PTliFYWUI",
+        "duration": 273,
+        "year": 2007,
+        "mbid": null,
+        "cover_art": "al-7jSFxe5tY1eD7PTliFYWUI_5c264a170595bb52",
+        "owned": true,
+        "similarity": null
+      },
+      "tracks": [
+        {
+          "navidrome_id": "37SYF6BoP7WLb66p76engd",
+          "title": "Wach dani anwalfou",
+          "artist": "Cheb Azzedine",
+          "artist_id": "1NrsUvI0wdTJMtXGeWHsYf",
+          "album": "D'hake alia",
+          "album_id": "1HmHzV313s50W1g0faTH1i",
+          "duration": 281,
+          "year": 2026,
+          "mbid": null,
+          "cover_art": "mf-37SYF6BoP7WLb66p76engd",
+          "owned": true,
+          "similarity": 0.9613
+        },
+        {
+          "navidrome_id": "4VcIqwzrXNyCUCo6oC7VH2",
+          "title": "Track 2",
+          "artist": "Reda Taliani",
+          "artist_id": "2WpdPGffvcg44Xc9uh0MR6",
+          "album": "2007",
+          "album_id": "7jSFxe5tY1eD7PTliFYWUI",
+          "duration": 291,
+          "year": 2007,
+          "mbid": null,
+          "cover_art": "al-7jSFxe5tY1eD7PTliFYWUI_5c264a170595bb52",
+          "owned": true,
+          "similarity": 0.956
+        },
+        {
+          "navidrome_id": "6ZpOfKq0XBitpS44XyWEie",
+          "title": "00.30",
+          "artist": "Cheb Redouane",
+          "artist_id": "1X4YPOit2tq80Zu6MTrGOW",
+          "album": "[Unknown Album]",
+          "album_id": "3brke3hSk72n5Pq8dLVYKS",
+          "duration": 235,
+          "year": null,
+          "mbid": null,
+          "cover_art": null,
+          "owned": true,
+          "similarity": 0.9527
+        },
+        {
+          "navidrome_id": "7bXTTioGm7OuLiGXrVpM9m",
+          "title": "Ya hbibi el galb win daini",
+          "artist": "Zahouania",
+          "artist_id": "2nd6ncdJ8m23t9lQhtLYwI",
+          "album": "[Unknown Album]",
+          "album_id": "4EucCZlyrTnXedfKgT5HLh",
+          "duration": 312,
+          "year": null,
+          "mbid": null,
+          "cover_art": "al-4EucCZlyrTnXedfKgT5HLh_120c33f87da889f9",
+          "owned": true,
+          "similarity": 0.9447
+        },
+        {
+          "navidrome_id": "0UuaQLcsmfk1VnyqxmHwdX",
+          "title": "Track 4",
+          "artist": "Unknown Artist",
+          "artist_id": "47eq8KjQLi2JFL4lFfVrFz",
+          "album": "Unknown Album (14-08-04 15:49:05)",
+          "album_id": "3YKtfAGuJROceWiLdZaKXI",
+          "duration": 141,
+          "year": null,
+          "mbid": null,
+          "cover_art": "al-3YKtfAGuJROceWiLdZaKXI_43953f2cfc77e867",
+          "owned": true,
+          "similarity": 0.9418
+        },
+        {
+          "navidrome_id": "13kE0bkJaOxQZClF2Ifyza",
+          "title": "Fatima Malek",
+          "artist": "Cheb mami",
+          "artist_id": "6mNGnFPOm3ZI30CRdLUlhm",
+          "album": "Dup zahouani et Hocine chabati",
+          "album_id": "2hws0s4nPXaps653nZwE24",
+          "duration": 338,
+          "year": null,
+          "mbid": null,
+          "cover_art": "al-2hws0s4nPXaps653nZwE24_2fc7b5fc407f1fcb",
+          "owned": true,
+          "similarity": 0.9064
+        }
+      ],
+      "dropped": {
+        "same_recording": 0,
+        "repeat": 0,
+        "artist_cap": 0
+      }
+    }
+  },
+  "captured_at": "2026-11-07T15:19:48Z"
+}

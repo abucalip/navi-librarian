@@ -144,6 +144,10 @@ struct ZineQueue: View {
             HStack(spacing: 10) {
                 Button("Start radio from this") { state.startRadio() }.buttonStyle(ZineButtonStyle())
                     .disabled(state.radio.busy || p.current == nil)
+                if state.radio.sonicAvailable {
+                    Button("Sounds like this") { state.startSonicRadio() }.buttonStyle(ZineButtonStyle())
+                        .disabled(state.radio.busy || p.current == nil)
+                }
                 Toggle("Autoplay", isOn: Bindable(state.radio).autoplay).toggleStyle(.checkbox).font(Z.mono(12))
             }
         }

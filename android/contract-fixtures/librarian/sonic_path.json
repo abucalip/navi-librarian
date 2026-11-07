@@ -1,0 +1,122 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/api/sonic/path",
+    "query": {
+      "start": "67kyxn1W9LwkPhTfa1hBPP",
+      "end": "5tEOd3By1n6w2FXqpKSClh",
+      "count": 6
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "content_type": "application/json",
+    "elapsed_seconds": 0.0,
+    "body": {
+      "status": "ok",
+      "seed": {
+        "navidrome_id": "67kyxn1W9LwkPhTfa1hBPP",
+        "title": "Flying In A Blue Dream",
+        "artist": "Joe Satriani",
+        "artist_id": "4KWMqTNOFvCO8dAUEfwMeP",
+        "album": "Flying In A Blue Dream",
+        "album_id": "6KHhg8m86HYi2a1NyGaXfr",
+        "duration": 322,
+        "year": 1989,
+        "mbid": "56b34cd9-ed3a-4c17-8ca0-497cd55830e2",
+        "cover_art": "al-6KHhg8m86HYi2a1NyGaXfr_d6c67d9031c925fa",
+        "owned": true,
+        "similarity": null
+      },
+      "tracks": [
+        {
+          "navidrome_id": "67kyxn1W9LwkPhTfa1hBPP",
+          "title": "Flying In A Blue Dream",
+          "artist": "Joe Satriani",
+          "artist_id": "4KWMqTNOFvCO8dAUEfwMeP",
+          "album": "Flying In A Blue Dream",
+          "album_id": "6KHhg8m86HYi2a1NyGaXfr",
+          "duration": 322,
+          "year": 1989,
+          "mbid": "56b34cd9-ed3a-4c17-8ca0-497cd55830e2",
+          "cover_art": "al-6KHhg8m86HYi2a1NyGaXfr_d6c67d9031c925fa",
+          "owned": true,
+          "similarity": null
+        },
+        {
+          "navidrome_id": "0qgnm8DRHQnmuGjpnFt46p",
+          "title": "Impromptu",
+          "artist": "Queen",
+          "artist_id": "3Ip9OhiD4x1NDAKaSF7NQW",
+          "album": "Live at Wembley / Back to the Light",
+          "album_id": "6WxAoj2a5D3JK82xrNHA3A",
+          "duration": 176,
+          "year": 2000,
+          "mbid": "91da5a62-561c-409e-bd57-fc87e311b22e",
+          "cover_art": "mf-0qgnm8DRHQnmuGjpnFt46p",
+          "owned": true,
+          "similarity": null
+        },
+        {
+          "navidrome_id": "1PtXT3F6ouKPiSTNRc2u8Q",
+          "title": "Skins",
+          "artist": "Pink Floyd",
+          "artist_id": "4BQIzkDUP0iOQ97lxsLjZU",
+          "album": "The Endless River",
+          "album_id": "1j8t4P0WxX2GMGSkZuPr61",
+          "duration": 157,
+          "year": 2014,
+          "mbid": "e52a5405-eec0-4f2a-9f3c-0f800e1164e3",
+          "cover_art": "mf-1PtXT3F6ouKPiSTNRc2u8Q_88a2dc6a867576ed",
+          "owned": true,
+          "similarity": null
+        },
+        {
+          "navidrome_id": "5v3YDIaWUA8139TFXmtIXI",
+          "title": "It Will Rain for a Million Years",
+          "artist": "Porcupine Tree",
+          "artist_id": "5SGOKrcF0zidHn9Ufz8SyQ",
+          "album": "On the Sunday of Life…",
+          "album_id": "7BkoLitkGb9b8kKhQfXIWo",
+          "duration": 648,
+          "year": 1992,
+          "mbid": "c358ee5c-df5a-4841-bf8a-e032fe165d4b",
+          "cover_art": "dc-7BkoLitkGb9b8kKhQfXIWo:1",
+          "owned": true,
+          "similarity": null
+        },
+        {
+          "navidrome_id": "6luk56BLrSLI5H7LK3OYay",
+          "title": "Thunderstorm",
+          "artist": "[Unknown Artist]",
+          "artist_id": "6QiT23Pg8GAJHZop58uMKH",
+          "album": "Salsa Africa - Afro-Cuban Salsa Music",
+          "album_id": "2DCAwy7vBfLBPUtEmGxSVY",
+          "duration": 322,
+          "year": null,
+          "mbid": null,
+          "cover_art": null,
+          "owned": true,
+          "similarity": null
+        },
+        {
+          "navidrome_id": "5tEOd3By1n6w2FXqpKSClh",
+          "title": "Start",
+          "artist": "Frank Ocean",
+          "artist_id": "1rKAz74D9JhWJigpeqL1ZM",
+          "album": "channel ORANGE",
+          "album_id": "5qJoJ61vMRgMYXcuxz4PGt",
+          "duration": 45,
+          "year": 2012,
+          "mbid": "b4f22410-ef06-4d44-b789-f32c185acbad",
+          "cover_art": "mf-5tEOd3By1n6w2FXqpKSClh",
+          "owned": true,
+          "similarity": null
+        }
+      ],
+      "dropped": {}
+    }
+  },
+  "captured_at": "2026-11-07T15:19:48Z"
+}

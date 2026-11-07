@@ -41,6 +41,8 @@ class PlayActions(
     private val random: kotlin.random.Random = kotlin.random.Random,
     /** Where "Download to device" saves songs; null in tests that don't need it. */
     private val offline: OfflineSongs? = null,
+    /** Asks the server for songs that sound like one song (`/api/sonic/similar`); null when the app has no Librarian. */
+    private val sonic: ((songId: String, count: Int) -> app.discair.model.SonicResponse)? = null,
 ) {
     private val _messages = MutableSharedFlow<String>(extraBufferCapacity = 4, onBufferOverflow = BufferOverflow.DROP_OLDEST)
     val messages: SharedFlow<String> = _messages.asSharedFlow()
@@ -123,6 +125,36 @@ class PlayActions(
         }
     }
 
+    /**
+     * Adds songs that sound like [seedId] after what is queued, in the server's order (the score is not used).
+     * Songs already queued and the seed itself are skipped; a song the server has no analysis for says so.
+     */
+    fun soundsLike(seedId: String, queuedIds: Set<String>) {
+        val ask = sonic ?: return
+        if (job?.isActive == true) { _messages.tryEmit("Still loading songs."); return }
+        job = scope.launch {
+            try {
+                val response = withContext(io) { ask(seedId, SONIC_BATCH) }
+                val exclude = queuedIds + seedId
+                val seen = mutableSetOf<String>()
+                val items = response.tracks.filter { it.songId !in exclude && seen.add(it.songId) }.map {
+                    QueueItem(
+                        songId = it.songId, title = it.title, artist = it.artist, album = it.album, albumId = it.albumId,
+                        coverId = it.albumId, coverUrl = if (it.albumId.isBlank()) "" else coverUrl(it.albumId),
+                        durationSec = it.durationSec, year = it.year,
+                    )
+                }
+                if (items.isEmpty()) {
+                    _messages.tryEmit(if (response.status == "empty") "No sound matches for this song yet." else "Nothing new sounds like this song.")
+                    return@launch
+                }
+                controller.enqueue(items)
+                _messages.tryEmit("Added ${items.size} songs that sound like this one.")
+            } catch (e: kotlinx.coroutines.CancellationException) { throw e }
+            catch (e: Exception) { _messages.tryEmit(app.discair.model.sonicFailure(e).message) }
+        }
+    }
+
     fun queueArtist(artistId: String, next: Boolean) = launch {
         _messages.tryEmit("Loading songs…")
         val items = artistItems(artistId)
@@ -152,5 +184,10 @@ class PlayActions(
             if (next) controller.playNext(listOf(item)) else controller.enqueue(listOf(item))
             _messages.tryEmit(if (next) "\"${item.title}\" will play next." else "Added \"${item.title}\" to the queue.")
         }
+    }
+
+    private companion object {
+        /** Songs asked of the server for one Sounds-like batch (the server already caps the seed's own artist at 2). */
+        const val SONIC_BATCH = 20
     }
 }
