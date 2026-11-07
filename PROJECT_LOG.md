@@ -1,5 +1,6 @@
 ## 2026-11-07 — Server V2 Phase 6 slice 18 follow-up: popularity status `running` from persisted state
 
+- **PR:** [#873](https://github.com/abucalip/navi-librarian/pull/873), merged 2026-11-07 as `4cb32d63266298f643e1d2940a6929af3e0f6994` (squash) from head `1290de5b414fb25bf8e8a174e25d13a416f62fc9`; compile, container-smoke, test-and-build, validate-container and validate-release-workflow passed; publish-release skipped.
 - **Change:** `GET /api/insights/popularity/status` now reports `running` as true when the newest `taste_popularity` job run has state `running`, instead of reading the process-local `_LOCK`. The lock still refuses overlapping fills in one process (409). Fixes the multi-worker review finding on PR #872.
 - **Tests:** new `test_status_running_comes_from_persisted_job_state`; `python -m unittest tests.test_api_popularity_routes`: 9 passed. Full suite not run by the agent (owner rule).
 - **Limitations:** a run stuck `running` after a crash reads `running: true` until `recover_stale` is called (nothing calls it on a schedule). Not run against a real server; not published or deployed.
