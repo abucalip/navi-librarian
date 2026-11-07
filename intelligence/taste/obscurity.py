@@ -77,6 +77,22 @@ def bucket_of(count: int, c: ObscurityConfig) -> str:
     return "obscure"
 
 
+def song_bands(song_artists: Mapping[str, str | None], popularity: Mapping[str, int | None],
+               c: ObscurityConfig | None = None) -> dict[str, str]:
+    """Band per song id from its primary artist's sitewide count; for smart playlist rules.
+
+    A song whose artist has no figure gets no entry, so missing data is never read as ``obscure``.
+    The bands are the profile's buckets, with the same unmeasured thresholds.
+    """
+    c = c or ObscurityConfig()
+    out: dict[str, str] = {}
+    for song_id, mbid in song_artists.items():
+        n = _count(popularity, mbid)
+        if n is not None:
+            out[song_id] = bucket_of(n, c)
+    return out
+
+
 def _count(popularity: Mapping[str, int | None], mbid: str | None) -> int | None:
     value = popularity.get(mbid) if mbid else None
     return value if isinstance(value, int) and not isinstance(value, bool) and value >= 0 else None

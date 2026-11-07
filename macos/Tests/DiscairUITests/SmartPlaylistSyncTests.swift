@@ -147,6 +147,15 @@ struct SmartPlaylistSyncTests {
         #expect(SmartField.inLens.operators == [.equals, .notEquals] && SmartField.inLens.isInsight && !SmartField.year.isInsight)
     }
 
+    @Test func insightFieldsOfferTheServersChoices() {
+        #expect(SmartField.obscurityBand.choices?.map(\.value) == ["mainstream", "known", "niche", "obscure"])
+        #expect(SmartField.inLens.choices?.map(\.value) == ["forgotten_gems"])
+        #expect(SmartField.artist.choices == nil)
+        // A value set elsewhere stays visible and selectable.
+        #expect(SmartField.inLens.choices(including: "future_lens").map(\.value) == ["forgotten_gems", "future_lens"])
+        #expect(SmartField.inLens.choices(including: "forgotten_gems").count == 1 && SmartField.inLens.choices(including: "").count == 1)
+    }
+
     @Test func serverSetsThisClientCannotReadAreCountedAndNeverOverwritten() async throws {
         let server = FakeServer(), d = defaults()
         server.seed(ServerSmartPlaylist(ruleID: "00000001-0000-4000-8000-00000005ba18", name: "Future", match: "all",

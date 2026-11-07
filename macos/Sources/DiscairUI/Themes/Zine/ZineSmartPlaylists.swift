@@ -59,16 +59,26 @@ struct ZineSmartPlaylists: View {
                 HStack(spacing: 8) {
                     Picker("Field", selection: $rule.field) { ForEach(SmartField.allCases) { Text($0.label).tag($0) } }
                         .labelsHidden().fixedSize()
-                        .onChange(of: rule.field) { _, f in if !f.operators.contains(rule.op) { rule.op = f.operators[0] } }
+                        .onChange(of: rule.field) { _, f in
+                            if !f.operators.contains(rule.op) { rule.op = f.operators[0] }
+                            if f.isInsight, f.choices?.contains(where: { $0.value == rule.value }) != true { rule.value = "" }
+                        }
                     Picker("Condition", selection: $rule.op) { ForEach(rule.field.operators) { Text($0.label).tag($0) } }
                         .labelsHidden().fixedSize()
-                    TextField(rule.field.valueHint, text: $rule.value).textFieldStyle(.plain).font(Z.mono(12))
-                        .padding(.horizontal, 6).padding(.vertical, 3).frame(maxWidth: 180).background(Z.white).zBorder(2)
+                    if rule.field.isInsight {
+                        Picker("Value", selection: $rule.value) {
+                            Text("Choose…").tag("")
+                            ForEach(rule.field.choices(including: rule.value)) { Text($0.label).tag($0.value) }
+                        }.labelsHidden().fixedSize()
+                    } else {
+                        TextField(rule.field.valueHint, text: $rule.value).textFieldStyle(.plain).font(Z.mono(12))
+                            .padding(.horizontal, 6).padding(.vertical, 3).frame(maxWidth: 180).background(Z.white).zBorder(2)
+                    }
                     Button { b.wrappedValue.rules.removeAll { $0.id == rule.id } } label: { Text("×").font(Z.mono(14, bold: true)) }
                         .buttonStyle(.plain).accessibilityLabel("Remove rule")
                 }
             }
-            if b.wrappedValue.rules.contains(where: { $0.field.isInsight }) { Mono("Insight rules have no data yet, so they match every song until the server supplies it.", size: 10) }
+            if b.wrappedValue.rules.contains(where: { $0.field.isInsight }) { Mono("Insight rules are worked out by the server. This app lists every song for them.", size: 10) }
             HStack(spacing: 12) {
                 Button("Add rule") { b.wrappedValue.rules.append(SmartRule(field: .artist, op: .contains, value: "")) }
                     .buttonStyle(ZineButtonStyle(small: true))
