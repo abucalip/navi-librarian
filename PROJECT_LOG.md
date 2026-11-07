@@ -1,3 +1,11 @@
+## 2026-11-07 — Server V2 Phase 7: macOS graph explorer
+
+- **PR:** [#882](https://github.com/abucalip/navi-librarian/pull/882), merged 2026-11-07 as `57f8e8001db8a15ccac4647d01f4ef1f4142b91e` (squash); all four required workflows passed.
+- New `macos/Sources/DiscairLibrarian/KnowledgeGraph.swift` (models for connections, paths, place, event) and `LibrarianClient` calls; `GraphExplorerModel` and `GraphLayout` (`DiscairUI/Model/GraphExplorer.swift`); `GraphExplorerView` shared by Cupertino and Zine; new `Screen.connections` (sidebar row, ⌘K).
+- Owner decisions: artist nodes show the artist photo, album nodes the artwork; unowned nodes are black and white with a dashed border.
+- Tests (filtered, local): KnowledgeGraphTests, GraphLayoutTests, GraphExplorerModelTests, ScreenshotTests, CommandPaletteTests; 21 pass. Full suite not run (owner rule).
+- **Not verified:** not run against the real server; grayscale not visible in offscreen screenshots; look not owner-approved. Atlas and timeline not built.
+
 ## 2026-11-07 — Server V2 Phase 7 slice 2: sonic routes with TTL cache
 
 - **PR:** [#876](https://github.com/abucalip/navi-librarian/pull/876), merged 2026-11-07 as `924a3ffeff42e7264adcfc458e3131f6c1230f7d` (squash) from head `bf125e15263cd440ee6035d79d6a7a380184d206`; compile, container-smoke, test-and-build, validate-container and validate-release-workflow all passed on that head.

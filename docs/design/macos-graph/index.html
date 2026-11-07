@@ -1,0 +1,63 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Discair graph mockups</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root{--acc:#ff2d55;--ink:#1d1d1f;--mut:#6e6e73;--line:#e5e5ea;--bg:#f2f2f7;--own:#1d1d1f;--miss:#aeaeb2}
+*{box-sizing:border-box}body{margin:0;background:#d8d8de;font:14px -apple-system,BlinkMacSystemFont,"SF Pro Text",sans-serif;color:var(--ink);padding:24px}
+h1{font:700 22px -apple-system;margin:0 0 4px}p.n{color:var(--mut);margin:0 0 24px;max-width:760px}
+nav{display:flex;gap:8px;margin-bottom:20px}nav button{border:0;background:#fff;padding:8px 16px;border-radius:999px;font:600 13px inherit;cursor:pointer}nav button.on{background:var(--acc);color:#fff}
+.win{display:none;background:#fff;border-radius:12px;box-shadow:0 20px 60px #0004;overflow:hidden;max-width:1180px;height:720px;grid-template-columns:200px 1fr 280px}
+.win.on{display:grid}
+.side{background:#ececf1;padding:44px 12px 12px;font-size:13px}.side div{padding:6px 10px;border-radius:7px;margin-bottom:2px}.side .a{background:#fff;font-weight:600}.side b{color:var(--acc)}
+.main{position:relative;overflow:hidden;display:flex;flex-direction:column}
+.bar{padding:14px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:12px}.bar h2{margin:0;font:700 20px -apple-system}
+.seg{display:flex;background:var(--bg);border-radius:8px;padding:2px;margin-left:auto}.seg span{padding:4px 12px;border-radius:6px;font-size:12px}.seg .on{background:#fff;box-shadow:0 1px 2px #0002;font-weight:600}
+.insp{border-left:1px solid var(--line);padding:20px;background:#fafafc;overflow:auto}.insp h3{margin:0 0 2px;font:700 18px -apple-system}.insp small{color:var(--mut)}
+.ev{margin:12px 0;padding:10px;border-radius:8px;background:#fff;border:1px solid var(--line);font-size:12px}.ev i{color:var(--mut);font-style:normal;display:block;margin-top:4px}
+.btn{display:inline-block;background:var(--acc);color:#fff;border-radius:7px;padding:5px 12px;font-size:12px;font-weight:600;margin-right:6px}.btn.o{background:none;border:1px dashed var(--acc);color:var(--acc)}
+.chip{display:inline-block;font-size:11px;padding:2px 8px;border-radius:99px;background:var(--bg);color:var(--mut);margin-right:4px}
+.legend{position:absolute;left:16px;bottom:14px;font-size:11px;color:var(--mut);background:#fffd;padding:6px 10px;border-radius:8px}
+svg text{font:12px -apple-system}.trunc{position:absolute;right:16px;bottom:14px;font-size:11px;background:#fff3cd;padding:6px 10px;border-radius:8px}
+.tl{padding:20px;overflow:auto;flex:1}.row{display:grid;grid-template-columns:64px 1fr;gap:14px;margin-bottom:16px}.yr{font:700 15px -apple-system;text-align:right;color:var(--mut)}
+.card{border:1px solid var(--line);border-radius:10px;padding:10px 12px;position:relative}.card.m{border-style:dashed;color:var(--mut)}
+.map{flex:1;background:#e8eef5;position:relative}
+</style></head><body>
+<h1>Discair graph screens: mockups (Cupertino)</h1>
+<p class="n">Static mockups with invented data, not wired to the server. Every node and line carries its evidence; owned items solid, not-owned dashed; nothing is drawn unless MusicBrainz states it. Click a tab to switch.</p>
+<nav><button class="on" onclick="s(0,this)">Graph explorer</button><button onclick="s(1,this)">Atlas</button><button onclick="s(2,this)">Timeline</button></nav>
+
+<div class="win on"><div class="side"><div>Home</div><div>Library</div><div class="a"><b>◉</b> Connections</div><div>Atlas</div><div>Timeline</div><div>Gap Radar</div><div>History</div></div>
+<div class="main"><div class="bar"><h2>Mulatu Astatke</h2><span class="chip">artist · owned</span><div class="seg"><span class="on">Depth 1</span><span>2</span><span>3</span></div><div class="seg" style="margin-left:8px"><span class="on">Credits only</span><span>All</span></div></div>
+<svg viewBox="0 0 700 600" style="flex:1">
+<g stroke="#c7c7cc" stroke-width="1.5" fill="none"><line x1="350" y1="300" x2="180" y2="150"/><line x1="350" y1="300" x2="520" y2="140"/><line x1="350" y1="300" x2="560" y2="330"/><line x1="350" y1="300" x2="470" y2="500"/><line x1="350" y1="300" x2="200" y2="470"/><line x1="350" y1="300" x2="110" y2="320"/>
+<line x1="180" y1="150" x2="90" y2="70" stroke-dasharray="4"/><line x1="520" y1="140" x2="620" y2="70" stroke-dasharray="4"/><line x1="560" y1="330" x2="650" y2="420" stroke-dasharray="4"/></g>
+<g stroke="var(--acc)" stroke-width="3"><line x1="350" y1="300" x2="520" y2="140"/></g>
+<g fill="#fff" stroke="var(--own)" stroke-width="2"><circle cx="350" cy="300" r="34" fill="var(--acc)" stroke="none"/><circle cx="180" cy="150" r="22"/><circle cx="520" cy="140" r="22"/><circle cx="560" cy="330" r="22"/><circle cx="110" cy="320" r="22"/></g>
+<g fill="#fff" stroke="var(--miss)" stroke-width="2" stroke-dasharray="4"><circle cx="470" cy="500" r="22"/><circle cx="200" cy="470" r="22"/><circle cx="90" cy="70" r="16"/><circle cx="620" cy="70" r="16"/><circle cx="650" cy="420" r="16"/></g>
+<g fill="var(--ink)" text-anchor="middle"><text x="350" y="350" font-weight="700">Mulatu Astatke</text><text x="180" y="188">Yekatit (album)</text><text x="520" y="178" font-weight="700">Alèmayèhu Eshèté</text><text x="560" y="368">Amha Records</text><text x="110" y="358">Tezeta (work)</text><text x="470" y="538" fill="#6e6e73">Woghenei</text><text x="200" y="508" fill="#6e6e73">Dèwèl</text></g></svg>
+<div class="legend">● owned &nbsp; ◌ not in library &nbsp; ━ stated credit &nbsp; ┄ unconfirmed (never a credit)</div><div class="trunc">Showing 50 of more · walk stopped at 200 rows <u>Load more</u></div></div>
+<div class="insp"><h3>Alèmayèhu Eshèté</h3><small>artist · owned · depth 1</small><p><span class="btn">Open artist</span><span class="btn o">Re-centre here</span></p>
+<div class="ev"><b>Credit</b> · producer<i>musicbrainz_dump · source_explicit · exact_mbid</i><i>musicbrainz.org/artist/ee74058b…</i></div><div class="ev"><b>Credit</b> · vocals on 3 tracks<i>musicbrainz_dump · source_explicit</i></div><small>Connected via Yekatit. Coverage: loaded (dump 2026-11-04).</small></div></div>
+
+<div class="win"><div class="side"><div>Home</div><div>Library</div><div>Connections</div><div class="a"><b>◉</b> Atlas</div><div>Timeline</div><div>Gap Radar</div><div>History</div></div>
+<div class="main"><div class="bar"><h2>Atlas</h2><span class="chip">places &amp; scenes</span><div class="seg"><span class="on">Map</span><span>List</span></div></div>
+<div class="map"><svg viewBox="0 0 700 560" width="100%" height="100%"><g fill="#d3dde8" stroke="#fff" stroke-width="2"><path d="M60 200 Q120 120 220 150 T330 230 T260 330 T110 320Z"/><path d="M360 110 Q470 70 560 130 T640 250 T520 330 T400 280Z"/><path d="M300 380 Q380 350 440 400 T420 500 T320 480Z"/></g>
+<g fill="var(--acc)" stroke="#fff" stroke-width="2"><circle cx="190" cy="200" r="9"/><circle cx="470" cy="190" r="14"/><circle cx="380" cy="440" r="7"/><circle cx="560" cy="260" r="6"/></g><g fill="#fff" stroke="var(--miss)" stroke-dasharray="3" stroke-width="2"><circle cx="130" cy="270" r="6"/><circle cx="500" cy="300" r="6"/></g>
+<g text-anchor="middle" fill="var(--ink)"><text x="190" y="182">Addis Ababa · 12</text><text x="470" y="166" font-weight="700">Paris · 41</text><text x="380" y="424">Jimma · 3</text></g></svg>
+<div class="legend">Pin size = recordings you own made there · only places with stated coordinates are pinned</div></div></div>
+<div class="insp"><h3>Example Studio, Paris</h3><small>studio · 1970 – · coordinates stated</small>
+<div class="ev"><b>Contained in</b><br>Paris → Île-de-France → France<i>stated chain, nearest first; nothing inferred</i></div>
+<div class="ev"><b>Recordings (7, 4 owned)</b><br>Example Song (cover) · recorded in<i>musicbrainz_dump · source_explicit</i></div><div class="ev"><b>Events</b><br>Example Festival, 1971-06</div><p><span class="btn">Show albums</span></p><small>Not loaded: catalogue_numbers</small></div></div>
+
+<div class="win"><div class="side"><div>Home</div><div>Library</div><div>Connections</div><div>Atlas</div><div class="a"><b>◉</b> Timeline</div><div>Gap Radar</div><div>History</div></div>
+<div class="main"><div class="bar"><h2>Timeline</h2><span class="chip">Mulatu Astatke &amp; scene</span><div class="seg"><span class="on">By year</span><span>By decade</span></div></div>
+<div class="tl">
+<div class="row"><div class="yr">1966</div><div class="card"><b>New York, Mulatu's Ethio-jazz sessions begin</b><br><span class="chip">event</span><span class="chip">begin area: Jimma</span></div></div>
+<div class="row"><div class="yr">1972</div><div class="card"><b>Mulatu of Ethiopia</b> · album · owned<br><span class="chip">Amha Records</span><span class="chip">label path</span></div></div>
+<div class="row"><div class="yr">1971–06</div><div class="card"><b>Example Festival</b> · festival · Example Studio<br><span class="chip">held at</span></div></div>
+<div class="row"><div class="yr">1974</div><div class="card m"><b>Tezeta</b> · album · not in library &nbsp;<span class="btn o">Get</span></div></div>
+<div class="row"><div class="yr">1998</div><div class="card"><b>Ethiopiques 4</b> · album · owned<br><span class="chip">reissue</span></div></div>
+<div class="row"><div class="yr">?</div><div class="card m">3 items with no stated date <u>show</u></div></div></div></div>
+<div class="insp"><h3>Mulatu of Ethiopia</h3><small>1972 · owned · Amha Records</small>
+<div class="ev"><b>Why here</b><br>Same label as Alèmayèhu Eshèté<i>label_path · musicbrainz_dump · exact_mbid</i></div><p><span class="btn">Play</span><span class="btn o">Open album</span></p></div></div>
+<script>function s(i,b){document.querySelectorAll('.win').forEach((w,j)=>w.classList.toggle('on',i==j));document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('on',x==b))}</script>
+</body></html>
