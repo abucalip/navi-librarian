@@ -1,3 +1,11 @@
+## 2026-11-07 — Server V2 Phase 6 slice 18: manual popularity fill route (PR #872)
+
+- Merged as `e968a8fd9ebe228e330e7ddc074f4b146dd955d1` (squash) from head `1b48bbecdeb20cecb3075ec6a174149ff23cd4e2`. All required workflows passed on that head: compile, container-smoke, test-and-build, validate-container, validate-release-workflow; publish-release skipped.
+- New `app/api/popularity.py`: `POST /api/insights/popularity/fill` (optional `max_requests`, default 5, cap 20, 422 for non-positive or non-integer, 409 on overlap via a process lock) and `GET /api/insights/popularity/status`. One line added to `app/main.py`; `navidrome_server.py` unchanged (D-016).
+- Requests send a User-Agent and `LISTENBRAINZ_TOKEN` from `config.env` in the working folder (never logged or returned). Deviation: `httpx.post` is used, not `requests.post`, because `requests` is not a project dependency and importing it would break startup.
+- Tests (fake post, no network): `test_api_popularity_routes.py`, 8 passed; `test_intelligence_taste_popularity_fill.py`, 9 passed. Full unit suite not run by the agent (CI ran it on the head).
+- No live ListenBrainz request was made. A live run needs the owner's approval.
+
 ## 2026-11-07 — Server V2 Phase 6 slice 17: artist popularity table, fill job and obscurity lookups (PR #871)
 
 - **PR:** [#871](https://github.com/abucalip/navi-librarian/pull/871), squash merge `235ee8caef812f470d970a07631a8b7351407a4f`. The first head failed `compile` and `test-and-build` because `tests/test_intelligence_suppression_persistence.py` pinned the state version at 3; the final head fixed that and all four required workflows passed on it.
