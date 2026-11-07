@@ -343,7 +343,7 @@ def _path_details(
             roles = db.execute(
                 "SELECT DISTINCT role FROM edges WHERE from_id = ? AND to_id IN (?, ?) "
                 "AND relation IN ('instrument','vocal','main performer','performer','performing orchestra') "
-                "AND generation = ? AND role IS NOT NULL ORDER BY role LIMIT 8",
+                "AND generation = ? AND role IS NOT NULL AND " + _cg("edges") + " ORDER BY role LIMIT 8",
                 (via_id, anchor_id, stop_id, generation),
             ).fetchall()
             add("Connecting credit", ", ".join(r["role"] for r in roles if r["role"]))
