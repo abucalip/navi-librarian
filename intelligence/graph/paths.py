@@ -262,7 +262,9 @@ def _composition_rows(db: sqlite3.Connection, start_id: int, gen: int, limits: P
 
 
 
-def _credited_names(db: sqlite3.Connection, entity_id: int, *, direction: str, relations: tuple[str, ...], generation: int) -> list[str]:
+def _credited_names(
+    db: sqlite3.Connection, entity_id: int, *, direction: str, relations: tuple[str, ...], generation: int
+) -> list[str]:
     """Names of explicitly credited artists on a recording or release, in stable order."""
     join = "e.from_id = a.id AND e.to_id = ?" if direction == "recording" else "e.from_id = ? AND e.to_id = a.id"
     marks = ", ".join("?" for _ in relations)
@@ -275,8 +277,10 @@ def _credited_names(db: sqlite3.Connection, entity_id: int, *, direction: str, r
     return [r["canonical_name"] for r in rows if r["canonical_name"]]
 
 
-def _path_presentation(db: sqlite3.Connection, kind: str, stop_id: int, reasons: list[dict[str, Any]],
-                       names: _Names, generation: int) -> dict[str, str | None]:
+def _path_presentation(
+    db: sqlite3.Connection, kind: str, stop_id: int, reasons: list[dict[str, Any]],
+    names: _Names, generation: int,
+) -> dict[str, str | None]:
     """Separate the artist from the recording/release title for the Android Paths sheet."""
     stop = names.get(stop_id) or {}
     stop_name = stop.get("canonical_name") or ""
@@ -299,8 +303,9 @@ def _path_presentation(db: sqlite3.Connection, kind: str, stop_id: int, reasons:
         title = ", ".join(musicians) or "Musician credit unavailable"
         context = ", ".join(albums) or None
     elif kind == "label_path":
-        artists = _credited_names(db, stop_id, direction="release",
-                                  relations=("release_artist", "credited_to"), generation=generation)
+        artists = _credited_names(
+            db, stop_id, direction="release", relations=("release_artist", "credited_to"), generation=generation,
+        )
         context = ", ".join(artists) or "Artist credit unavailable"
     elif kind == "composition_path":
         artists = _credited_names(
@@ -373,7 +378,12 @@ def build_path(db: sqlite3.Connection, start_id: int, kind: str, *, limits: Path
                 "via": via, "anchor": anchor,
                 "evidence": _evidence(db, edge_ids) + _label_evidence(db, r),
             })
-        result_stops.append({"entity": names.get(stop_id), "presentation": _path_presentation(db, kind, stop_id, info["reasons"], names, gen), "reason_count": len(info["reasons"]), "reasons": reasons})
+        result_stops.append({
+            "entity": names.get(stop_id),
+            "presentation": _path_presentation(db, kind, stop_id, info["reasons"], names, gen),
+            "reason_count": len(info["reasons"]),
+            "reasons": reasons,
+        })
     if len(ordered) > limits.max_stops and truncated is None:
         truncated = "stops"
     return {
@@ -417,7 +427,10 @@ def cached_path(db: sqlite3.Connection, start_id: int, kind: str, *, limits: Pat
                          (CACHE_PREFIX + kind, start_id, gen)).fetchone()
         if row:
             cached = json.loads(row["payload"])
-            if cached.get("built_from") == version and cached.get("presentation_version") == PRESENTATION_VERSION:
+            if (
+                cached.get("built_from") == version
+                and cached.get("presentation_version") == PRESENTATION_VERSION
+            ):
                 return cached
     path = build_path(db, start_id, kind, limits=limits, generation=gen, clock=clock)
     if path is None or path["truncated"] == "time":

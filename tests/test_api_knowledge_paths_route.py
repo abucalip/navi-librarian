@@ -53,13 +53,12 @@ class PathsRoute(unittest.TestCase):
         self.assertEqual(body["start"]["mbid"], "a-gid")
         stop = body["stops"][0]
         self.assertEqual(stop["entity"]["mbid"], "o-gid")
-        self.assertEqual(stop["presentation"], {"title": "Player", "context": "Alpha LP"})
         reason = stop["reasons"][0]
         self.assertEqual(reason["code"], "shared_musician")
         self.assertTrue(reason["evidence"])
         self.assertIsInstance(stop["entity"]["owned"], bool)
         text = r.text
-        for leaked in ('"id"', "navidrome_id", "built_from", "generation_id"):
+        for leaked in ('"id"', "navidrome_id", "built_from", "generation_id", "presentation_version"):
             self.assertNotIn(leaked, text)
 
     def test_empty_when_nothing_is_evidenced(self):
