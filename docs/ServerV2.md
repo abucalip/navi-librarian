@@ -313,6 +313,7 @@ Client gate: macOS taste views and snapshots; Android a compact taste card.
 - **Quality spot-check:** the bounded follow-the-musician and composition paths (credits per bridge and bridges per path are capped, reported as `truncated: "rows"`) have not been reviewed by hand as suggestions.
 - **Sideman-to-leader:** parked; the route answers `400`. Improve with other data sources, by owner decision.
 - **Sonic probe:** done 2026-11-07, proxy route confirmed viable; details under the sonic work items below. **Slice 1 (proxy module, unwired) merged in PR #875**; **Slice 2 (routes and caching) merged in PR #876**; **slice 3 (`sonic_available` in `/api/capabilities`) merged in PR #877**.
+- **Sonic by-ear check, done 2026-11-07:** 14 of 20 seeds and 4 of 5 paths judged good, 5 seeds bad and 1 odd; every bad seed was "mostly same artist". Proposed (owner decision pending): an optional per-artist cap on radio results. Proxy kept.
 - **Unlanded checks:** the paths route test was not run locally (no fastapi), the full suite was not run (owner rule), and nothing is published or deployed.
 
 Sonic work items:
