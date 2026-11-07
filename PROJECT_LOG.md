@@ -3106,3 +3106,8 @@ All live runs were approved by the owner; slskd off; aggregate only; harnesses w
 - **Built:** path cache warm-up (manual route pair, job `paths_warm`); sonic client contract section and fixtures; macOS Sonic client, Sounds-like controls and `RadioModel.sonicSongs`; Android `Sonic.kt`, `PlayActions.soundsLike` and queue-panel controls. Details and limits: `docs/ServerV2.md` Phase 7 and `docs/SERVER_V2_CONTRACT.md`.
 - **Focused tests:** Python 12 pass (`.venv`); macOS 16 pass; Android `SonicTest`, `PlayActionsTest`, `PathsTest` pass. Full suites not run (owner rule).
 - **Not verified:** warm-up timing on the real store; sonic end to end through the Librarian; any screen or device. No publication or deployment.
+
+## 2026-11-07 — Server V2 Phase 7: PR #888 merged
+
+- **Merged:** PR [#888](https://github.com/abucalip/navi-librarian/pull/888), squash `12366799`, at the owner's request. Required workflows passed (compile, container-smoke, test-and-build, validate-container); the non-required `validate-release-workflow` was still pending at merge.
+- **State:** path warm-up routes and sonic clients are on `main`. Nothing published or deployed.
