@@ -29,6 +29,7 @@ from dataclasses import dataclass
 from typing import Any, Callable
 
 from ..store import generations
+from ..musicbrainz.release_links import CREDIT_ROLES
 from ..store import repositories as repo
 
 PATH_KINDS = ("follow_the_musician", "sideman_to_leader", "label_path", "composition_path", "scene_path")
@@ -69,6 +70,8 @@ _OWN_REL = (f"SELECT DISTINCT e.from_id AS rel FROM edges e JOIN entities r ON r
 _OWN_REC = (f"SELECT DISTINCT e.from_id AS rec FROM edges e WHERE e.relation = 'appears_on' AND e.generation = :g "
             f"AND {_cg('e')} AND e.to_id IN ({_OWN_REL})")
 
+_ROLES = ", ".join("'%s'" % r for r in CREDIT_ROLES)  # constants, not input
+
 _QUERIES: dict[str, str] = {
     # The start's credited recordings -> the release that carries each (``track_on``) -> that release's
     # leader (``release_artist``). Releases the start leads itself are skipped: that is not a sideman link.
@@ -80,9 +83,9 @@ _QUERIES: dict[str, str] = {
         JOIN edges t ON t.from_id = c.to_id AND t.relation = 'track_on' AND t.generation = :g AND {_cg('t')}
         JOIN edges l ON l.from_id = t.to_id AND l.relation = 'release_artist' AND l.generation = :g AND {_cg('l')}
         JOIN entities lead ON lead.id = l.to_id AND lead.type IN ('artist', 'person', 'group') AND lead.id != :a
-        WHERE c.from_id = :a AND c.relation NOT IN ('track_on', 'appears_on') AND c.generation = :g AND {_cg('c')}
+        WHERE c.from_id = :a AND c.relation IN ({_ROLES}) AND c.generation = :g AND {_cg('c')}
           AND NOT EXISTS (SELECT 1 FROM edges m WHERE m.from_id = t.to_id AND m.to_id = :a
-                          AND m.relation = 'release_artist' AND m.generation = :g)
+                          AND m.relation = 'release_artist' AND m.generation = :g AND {_cg('m')})
         ORDER BY l.to_id, t.to_id, c.to_id LIMIT :n""",
     "label_path": f"""
         WITH own AS ({_OWN_REL}),

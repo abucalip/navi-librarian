@@ -69,6 +69,29 @@ class PathTests(unittest.TestCase):
         self.edge(rel, other, "release_artist", src="musicbrainz_dump_releases")
         self.assertEqual(build_path(self.db, a, "sideman_to_leader")["status"], "empty")
 
+    def test_sideman_to_leader_only_uses_performer_and_producer_credits(self):
+        a, _, _ = self.library()
+        leader = self.ent("artist", "Leader")
+        rel = self.ent("release", "LP")
+        for role, expect in (("producer", "ok"), ("writer", "empty"), ("mix", "empty")):
+            with self.subTest(role=role):
+                rec = self.ent("recording", "Take " + role)
+                self.edge(a, rec, role)
+                self.edge(rec, rel, "track_on", src="musicbrainz_dump_releases")
+                self.edge(rel, leader, "release_artist", src="musicbrainz_dump_releases")
+                self.assertEqual(build_path(self.db, a, "sideman_to_leader")["status"], expect)
+                self.db.execute("DELETE FROM edges WHERE from_id = ?", (a,)); self.db.execute("DELETE FROM edges WHERE from_id = ?", (rec,))
+                self.db.commit()
+
+    def test_low_quality_self_credit_does_not_veto_a_leader(self):
+        a, _, _ = self.library()
+        rec, rel, leader = self.ent("recording", "Take"), self.ent("release", "LP"), self.ent("artist", "Leader")
+        self.edge(a, rec, "instrument")
+        self.edge(rec, rel, "track_on", src="musicbrainz_dump_releases")
+        self.edge(rel, leader, "release_artist", src="musicbrainz_dump_releases")
+        self.edge(rel, a, "release_artist", ec="inferred", src="musicbrainz_dump_releases")
+        self.assertEqual([s["entity"]["id"] for s in build_path(self.db, a, "sideman_to_leader")["stops"]], [leader])
+
     def test_unknown_start_is_none_and_non_artist_start_is_refused(self):
         a, release, _ = self.library()
         self.assertIsNone(build_path(self.db, 9999, "scene_path"))
