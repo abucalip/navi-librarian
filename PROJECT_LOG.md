@@ -2974,3 +2974,10 @@ All live runs were approved by the owner; slskd off; aggregate only; harnesses w
 - **Not done, needs the next slice:** obscurity lookups are not fed to the route. There is no stored artist popularity, no job to fill it and no song-to-artist MBID map, so `obscurity_band` rules still report `missing_data`. Agreed design (owner): owner-state table of artist MBID to listen count, filled by a bounded job on the existing runner, song to artist MBID from the knowledge store. Other card kinds (hidden canon, series, blind spot, anniversary) are keyed by MBID or set, not owned song, so they are not lenses; the owner asked for all kinds, so this needs a decision on a song mapping.
 - **Choices are fixed in the client** to the server's current lists rather than read from the list config.
 - **Tests (focused):** new `tests.test_intelligence_smart_playlist_lookups`, plus smart playlist, obscurity, route and fixture suites: all OK. `swift test --filter SmartPlaylistSyncTests` 10 passed. Full suites not run. Not published, deployed or checked by eye.
+
+
+## 2026-11-07 — Merge of PR #869 (Phase 6 slice 16)
+
+- **Merged:** PR [#869](https://github.com/abucalip/navi-librarian/pull/869), squash `51f1e5a0ca6f31f610e65e5b62fc94b8515a67ad`, from head `1344fabc5268856ebe1f16394653410ef0e25527`, at the owner's request; all five workflows passed on that head (none runs Swift).
+- **Owner decision:** other insight card kinds (hidden canon, series, blind spot, anniversary) are dropped as lenses; only `forgotten_gems` is a lens.
+- **Open:** obscurity lookups (owner-state popularity table, bounded fill job, song-to-artist MBID map). Not published or deployed.
