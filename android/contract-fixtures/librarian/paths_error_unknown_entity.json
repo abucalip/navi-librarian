@@ -1,0 +1,21 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/api/knowledge/paths",
+    "query": {
+      "kind": "follow_the_musician",
+      "mbid": "00000000-0000-0000-0000-000000000000",
+      "type": "artist"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 404,
+    "content_type": "application/json",
+    "elapsed_seconds": 0.0,
+    "body": {
+      "detail": "Unknown entity."
+    }
+  },
+  "captured_at": "2026-11-07T11:45:22Z"
+}

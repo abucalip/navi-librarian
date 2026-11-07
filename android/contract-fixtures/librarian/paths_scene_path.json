@@ -1,0 +1,86 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/api/knowledge/paths",
+    "query": {
+      "kind": "scene_path",
+      "mbid": "67f0c7ca-14e8-47a3-be0e-bd2f2ffe25bb",
+      "type": "artist"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "content_type": "application/json",
+    "elapsed_seconds": 0.0,
+    "body": {
+      "generation": 1,
+      "kind": "scene_path",
+      "start": {
+        "canonical_name": "ሙላቱ አስታጥቄ",
+        "mbid": "67f0c7ca-14e8-47a3-be0e-bd2f2ffe25bb",
+        "owned": true,
+        "type": "artist"
+      },
+      "status": "ok",
+      "stops": [
+        {
+          "entity": {
+            "canonical_name": "Alèmayèhu Eshèté",
+            "mbid": "ee74058b-5335-4dac-a672-a364faaa03d2",
+            "owned": true,
+            "type": "artist"
+          },
+          "reason_count": 1,
+          "reasons": [
+            {
+              "anchor": {
+                "canonical_name": "ሙላቱ አስታጥቄ",
+                "mbid": "67f0c7ca-14e8-47a3-be0e-bd2f2ffe25bb",
+                "owned": true,
+                "type": "artist"
+              },
+              "code": "same_area",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "begin area",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/67f0c7ca-14e8-47a3-be0e-bd2f2ffe25bb",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "begin area",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/ee74058b-5335-4dac-a672-a364faaa03d2",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "from Jimma, where ሙላቱ አስታጥቄ is also from, starting within 10 years",
+              "via": {
+                "canonical_name": "Jimma",
+                "mbid": "ce3436d8-5e70-4476-8f58-b57044dc04e5",
+                "owned": false,
+                "type": "area"
+              }
+            }
+          ]
+        }
+      ],
+      "truncated": null,
+      "sources": {
+        "musicbrainz_dump": {
+          "data_version": 3
+        }
+      }
+    }
+  },
+  "captured_at": "2026-11-07T11:45:22Z"
+}

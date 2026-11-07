@@ -24,6 +24,7 @@ import androidx.compose.material3.MaterialTheme
 import app.discair.ui.common.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -58,6 +59,8 @@ import app.discair.ui.common.ReadMore
 import app.discair.ui.common.RowDivider
 import app.discair.ui.common.SimilarArtistsRow
 import app.discair.ui.common.Target
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import app.discair.ui.common.TintedPage
 import app.discair.ui.common.abbreviate
 import app.discair.ui.common.aspectSquare
@@ -77,8 +80,11 @@ fun ArtistScreen(route: ArtistRoute, open: Opener) {
     val loaded = rememberStreamLoad<ArtistPage>(route) { show -> repo.artistPageStream(route.key, route.id, route.name, route.mbid, show) }
     var tint by remember(route) { mutableStateOf<Color?>(null) }
     val list = androidx.compose.foundation.lazy.rememberLazyListState()
+    // The paths entry shows only when the server reports the feature (live, never from the saved copies).
+    var pathsOn by remember(route) { mutableStateOf(false) }
+    LaunchedEffect(route) { pathsOn = withContext(Dispatchers.IO) { repo.pathsAvailable() } }
     TintedPage(tint, list) {
-        LoadView(loaded) { page -> ArtistContent(route, page, open, list, onTint = { tint = it }) }
+        LoadView(loaded) { page -> ArtistContent(route, page, open, list, onTint = { tint = it }, pathsOn = pathsOn) }
         // Back stays reachable while the page loads or fails.
         if (loaded.state !is app.discair.ui.common.Load.Ready) {
             OverlayBack(open.back, Modifier.statusBarsPadding().padding(12.dp))
@@ -87,18 +93,22 @@ fun ArtistScreen(route: ArtistRoute, open: Opener) {
 }
 
 @Composable
-private fun ArtistContent(route: ArtistRoute, page: ArtistPage, open: Opener, list: androidx.compose.foundation.lazy.LazyListState, onTint: (Color) -> Unit) {
+private fun ArtistContent(route: ArtistRoute, page: ArtistPage, open: Opener, list: androidx.compose.foundation.lazy.LazyListState, onTint: (Color) -> Unit, pathsOn: Boolean) {
     val sections = page.sections
     val info = sections.artist.artist
     val name = info?.name?.ifBlank { null } ?: route.name
     var showAllAlbums by remember { mutableStateOf(false) }
     var showAllMissing by remember { mutableStateOf(false) }
     var showAllSongs by remember { mutableStateOf(false) }
+    var showPaths by remember { mutableStateOf(false) }
+    val pathsMbid = (route.mbid ?: info?.mbid)?.takeIf { it.isNotBlank() }
     // LIB-05: five similar artists chosen at random on each page load. Variety only; the server's list is the source.
     val similar = remember(page) { sections.similar.items.shuffled().take(SIMILAR_SHOWN) }
     val owned = sections.ownedAlbums.items
     val artistId = (info?.id ?: route.id)?.takeIf { it.isNotBlank() && owned.isNotEmpty() }
     val play = app.discair.ui.player.LocalPlayActions.current
+
+    if (showPaths && pathsMbid != null) ArtistPathsSheet(name, pathsMbid) { showPaths = false }
 
     LazyColumn(Modifier.fillMaxSize(), state = list, contentPadding = PaddingValues(bottom = 32.dp + app.discair.ui.LocalBottomClearance.current)) {
         item {
@@ -139,6 +149,12 @@ private fun ArtistContent(route: ArtistRoute, page: ArtistPage, open: Opener, li
                 onPlay = { play.playArtist(artistId, shuffle = false) }, onShuffle = { play.playArtist(artistId, shuffle = true) },
                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
             )
+        }
+        if (pathsOn && pathsMbid != null) item {
+            OutlinedButton(
+                onClick = { showPaths = true },
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp).fillMaxWidth().heightIn(min = Target),
+            ) { Text("Paths from $name") }
         }
         val allSongs = sections.topSongs.items
         val songs = if (showAllSongs) allSongs else allSongs.take(SONGS_SHOWN)

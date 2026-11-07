@@ -1,0 +1,21 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/api/knowledge/paths",
+    "query": {
+      "kind": "same_studio_different_decade",
+      "mbid": "c51e4392-7ff6-41ae-9933-cf344c331cd5",
+      "type": "artist"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 400,
+    "content_type": "application/json",
+    "elapsed_seconds": 0.0,
+    "body": {
+      "detail": "dropped: mostly empty on the owner's library (Phase 5 kill rule)"
+    }
+  },
+  "captured_at": "2026-11-07T11:45:22Z"
+}

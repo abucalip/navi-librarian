@@ -25,6 +25,10 @@ import app.discair.model.InsightsResponse
 import app.discair.model.feedbackBody
 import app.discair.model.insightWriteBody
 import app.discair.model.parseInsights
+import app.discair.model.PathKind
+import app.discair.model.PathsResponse
+import app.discair.model.parsePaths
+import app.discair.model.pathsAvailableFrom
 import app.discair.model.parseDiscovery
 import app.discair.model.parseSearchEvent
 import kotlinx.serialization.json.JsonObject
@@ -135,6 +139,15 @@ interface LibraryRepository : AcquisitionApi {
 
     /** Dismiss, restore or accept one card by its own kind and key; throws unless the server answers. */
     fun insightWrite(verb: InsightVerb, kind: String, key: String): Unit = throw UnsupportedOperationException()
+
+    /**
+     * One discovery path from an artist (`GET /api/knowledge/paths`). Built on demand by the server and cached there;
+     * asked only when the user opens the paths view. Never from the saved copies.
+     */
+    fun paths(kind: PathKind, mbid: String): PathsResponse = throw UnsupportedOperationException()
+
+    /** Whether the server reports the paths feature (`features.paths` in `/api/capabilities`). Read live; false when unknown. */
+    fun pathsAvailable(): Boolean = false
 
     /** Whether the server resyncs its library from Navidrome shortly after each import. Read live, never from the saved copies. */
     fun libraryResync(): Boolean = true
@@ -283,6 +296,20 @@ class LibrarianRepository(
 
     override fun insightWrite(verb: InsightVerb, kind: String, key: String) {
         client.post(listOf("api", "insights", verb.wire), insightWriteBody(kind, key))
+    }
+
+    override fun paths(kind: PathKind, mbid: String): PathsResponse {
+        if (ReadMode.isCacheOnly) throw CacheMiss()
+        return parsePaths(client.get(listOf("api", "knowledge", "paths"), mapOf("kind" to kind.wire, "mbid" to mbid, "type" to "artist")))
+    }
+
+    override fun pathsAvailable(): Boolean {
+        if (ReadMode.isCacheOnly) return false
+        return try {
+            pathsAvailableFrom(client.get(listOf("api", "capabilities")))
+        } catch (e: Exception) {
+            false
+        }
     }
 
     override fun refreshList(list: String) {
