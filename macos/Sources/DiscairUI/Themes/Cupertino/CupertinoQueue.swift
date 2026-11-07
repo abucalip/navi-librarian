@@ -161,6 +161,7 @@ struct CupertinoQueueInspector: View {
                         Button("Play now") { p.jump(toUpNext: i) }
                         Button("Move up") { p.moveUpNext(from: i, to: i - 1) }.disabled(i == 0)
                         Button("Move down") { p.moveUpNext(from: i, to: i + 1) }.disabled(i == up.count - 1)
+                        if state.radio.sonicAvailable { Button("Sonic path from playing song") { state.showSonicPath(to: item) } }
                         Divider()
                         Button("Remove from queue", role: .destructive) { p.removeUpNext(at: i) }
                     } label: { Image(systemName: "ellipsis.circle") }

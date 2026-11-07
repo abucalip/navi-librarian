@@ -113,6 +113,10 @@ struct ZineQueue: View {
                         .accessibilityLabel("Move \(q.title) up")
                     Button("Down") { p.moveUpNext(from: i, to: i + 1) }.buttonStyle(ZineButtonStyle(small: true)).disabled(i == count - 1)
                         .accessibilityLabel("Move \(q.title) down")
+                    if state.radio.sonicAvailable {
+                        Button("Path") { state.showSonicPath(to: q) }.buttonStyle(ZineButtonStyle(small: true))
+                            .accessibilityLabel("Sonic path from the playing song to \(q.title)")
+                    }
                     Button("Remove") { p.removeUpNext(at: i) }.buttonStyle(ZineButtonStyle(small: true))
                         .accessibilityLabel("Remove \(q.title)")
                 }

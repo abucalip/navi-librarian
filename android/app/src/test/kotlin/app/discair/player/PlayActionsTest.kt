@@ -191,4 +191,33 @@ class PlayActionsTest {
         assertTrue(r.controller.state.value.queue.isEmpty)
         assertEquals(listOf("Sound matching isn't available right now. Try again later."), r.messages)
     }
+
+    private fun pathRig(scope: TestScope, answer: (String, String, Int) -> app.discair.model.SonicResponse): Rig {
+        val port = FakePort()
+        val controller = PlayerController(port, MemoryStorage(), ScrobbleCoordinator(RecordingApi(), scope.backgroundScope), scope.backgroundScope)
+        val actions = PlayActions(FakeSource(emptyMap()), controller, scope, StandardTestDispatcher(scope.testScheduler),
+            { "https://lib/api/owned/artwork/$it" }, sonicPath = answer)
+        val messages = mutableListOf<String>()
+        scope.backgroundScope.launch(UnconfinedTestDispatcher(scope.testScheduler)) { messages.clear(); actions.messages.collect { messages += it } }
+        return Rig(actions, controller, port, FakeSource(emptyMap()), messages)
+    }
+
+    @Test fun sonicPathItemsKeepTheServersOrderAndAskForTenSteps() = runTest {
+        val r = pathRig(this) { s, e, n -> assertEquals("a", s); assertEquals("z", e); assertEquals(10, n); sonicTracks("a", "m", "z") }
+        assertEquals(listOf("a", "m", "z"), r.actions.sonicPathItems("a", "z").map { it.songId })
+    }
+
+    @Test fun addingASonicPathQueuesEveryStepAfterTheStartSong() = runTest {
+        val r = pathRig(this) { _, _, _ -> sonicTracks("a", "m", "z") }
+        val steps = r.actions.sonicPathItems("a", "z")
+        r.actions.useSonicPath(steps, playNow = false); advanceUntilIdle()
+        assertEquals(listOf("m", "z"), r.controller.state.value.queue.items.map { it.songId })
+        assertEquals(listOf("Added 2 songs along the sonic path."), r.messages)
+    }
+
+    @Test fun playingASonicPathReplacesTheQueueWithAllSteps() = runTest {
+        val r = pathRig(this) { _, _, _ -> sonicTracks("a", "m", "z") }
+        r.actions.useSonicPath(r.actions.sonicPathItems("a", "z"), playNow = true); advanceUntilIdle()
+        assertEquals(listOf("a", "m", "z"), r.controller.state.value.queue.items.map { it.songId })
+    }
 }
