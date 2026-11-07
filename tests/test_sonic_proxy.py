@@ -46,13 +46,25 @@ class SimilarTracks(unittest.TestCase):
                    match(song("x", "Other", "B")), match(song("y", "other!", "B"))]
         result = similar_tracks(FakeNavidrome([seed], matches), "s", count=10)
         self.assertEqual([t["navidrome_id"] for t in result.tracks], ["k", "x"])
-        self.assertEqual(result.dropped, {"same_recording": 2, "repeat": 1})
+        self.assertEqual(result.dropped, {"same_recording": 2, "repeat": 1, "artist_cap": 0})
 
     def test_asks_for_extra_and_trims_to_count(self):
         nav = FakeNavidrome([song("s")], [match(song(str(n), f"T{n}", f"X{n}")) for n in range(8)])
         result = similar_tracks(nav, "s", count=3)
         self.assertEqual(len(result.tracks), 3)
-        self.assertEqual(nav.calls[1][1]["count"], 6)
+        self.assertEqual(nav.calls[1][1]["count"], 9)
+
+    def test_caps_matches_by_the_seed_artist(self):
+        own = [match(song(f"a{n}", f"Own{n}", "A")) for n in range(4)]
+        other = [match(song(f"b{n}", f"Other{n}", "B")) for n in range(4)]
+        result = similar_tracks(FakeNavidrome([song("s")], own + other), "s", count=6)
+        self.assertEqual([t["navidrome_id"] for t in result.tracks], ["a0", "a1", "b0", "b1", "b2", "b3"])
+        self.assertEqual(result.dropped["artist_cap"], 2)
+
+    def test_cap_can_be_turned_off(self):
+        own = [match(song(f"a{n}", f"Own{n}", "A")) for n in range(4)]
+        result = similar_tracks(FakeNavidrome([song("s")], own), "s", count=4, max_same_artist=None)
+        self.assertEqual(len(result.tracks), 4)
 
     def test_count_is_clamped(self):
         nav = FakeNavidrome([song("s")], [])

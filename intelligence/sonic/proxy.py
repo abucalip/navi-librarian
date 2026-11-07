@@ -8,6 +8,8 @@ Rules measured by the 2026-11-07 probe (docs/ServerV2.md, Phase 7):
   informational only; callers must not threshold on it.
 - Near-duplicates of the seed (another edition or language version of the same recording) appear among
   the matches and are dropped here: same MusicBrainz recording id, or same normalised title by the same artist.
+- At most ``SAME_ARTIST_CAP`` matches may be by the seed's own artist; the by-ear check found radio
+  lists dominated by the seed's artist. Later matches by other artists fill the gap (counted as ``artist_cap``).
 - Path steps carry ``similarity: -1`` (every step on the owner's server, re-checked 2026-11-07; the probe
   note said only the first); that means "no score" and becomes ``None``.
 - A song the sonic plugin has not analysed (2 of 250 sampled, 2026-11-07: error 0, "AudioMuse-AI returned
@@ -22,7 +24,8 @@ from dataclasses import dataclass, field
 from typing import Any, Callable
 
 MAX_COUNT = 50
-OVERFETCH = 2  # ask for extra matches so dropping duplicates still leaves ``count``
+OVERFETCH = 3  # ask for extra matches so dropping duplicates and capped artists still leaves ``count``
+SAME_ARTIST_CAP = 2  # owner decision 2026-11-07 (by-ear check): at most this many matches by the seed's own artist
 
 _ERROR_CODE = re.compile(r"API error (\d+)")
 _BRACKETS = re.compile(r"[\(\[][^)\]]*[\)\]]")
@@ -105,8 +108,12 @@ def _call(api_call: Callable[..., dict], method: str, **params) -> tuple[dict | 
         raise
 
 
-def similar_tracks(api_call: Callable[..., dict], song_id: str, *, count: int = 10) -> SonicResult:
-    """Up to ``count`` sonically similar owned tracks for one song, near-duplicates of the seed removed."""
+def similar_tracks(api_call: Callable[..., dict], song_id: str, *, count: int = 10,
+                   max_same_artist: int | None = SAME_ARTIST_CAP) -> SonicResult:
+    """Up to ``count`` sonically similar owned tracks for one song, near-duplicates of the seed removed.
+
+    ``max_same_artist`` limits matches by the seed's artist (``None`` turns the cap off).
+    """
     count = _clamp(count)
     song, status = _call(api_call, "getSong", id=song_id)
     if status:
@@ -117,7 +124,8 @@ def similar_tracks(api_call: Callable[..., dict], song_id: str, *, count: int = 
     root, status = _call(api_call, "getSonicSimilarTracks", id=song_id, count=_clamp(count * OVERFETCH))
     if status:
         return SonicResult(status, seed=public_track(seed))
-    tracks, seen, dropped = [], set(), {"same_recording": 0, "repeat": 0}
+    tracks, seen, dropped = [], set(), {"same_recording": 0, "repeat": 0, "artist_cap": 0}
+    seed_artist, same_artist = _artist_key(seed), 0
     for match in (root or {}).get("sonicMatch") or []:
         entry = match.get("entry") or {}
         if not entry.get("id"):
@@ -129,6 +137,11 @@ def similar_tracks(api_call: Callable[..., dict], song_id: str, *, count: int = 
         if key in seen:
             dropped["repeat"] += 1
             continue
+        if max_same_artist is not None and seed_artist and key[1] == seed_artist:
+            if same_artist >= max_same_artist:
+                dropped["artist_cap"] += 1
+                continue
+            same_artist += 1
         seen.add(key)
         if len(tracks) < count:
             tracks.append(public_track(entry, _score(match.get("similarity"))))
