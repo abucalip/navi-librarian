@@ -53,12 +53,16 @@ class PathTests(unittest.TestCase):
         self.edge(rel, leader, "release_artist", src="musicbrainz_dump_releases")
         self.edge(rec, own_lp, "track_on", src="musicbrainz_dump_releases")
         self.edge(own_lp, a, "release_artist", src="musicbrainz_dump_releases")
+        self.db.execute("INSERT INTO release_facts (entity_id, date, country, status) VALUES (?, '1964-05', 'US', 'official')", (rel,))
+        self.db.commit()
         r = build_path(self.db, a, "sideman_to_leader")
         self.assertEqual(r["status"], "ok")
         self.assertEqual([s["entity"]["id"] for s in r["stops"]], [leader])
         reason = r["stops"][0]["reasons"][0]
         self.assertEqual((reason["code"], reason["via"]["id"], reason["anchor"]["id"]), ("sideman_on", rel, rec))
         self.assertEqual(len(reason["evidence"]), 3)
+        self.assertIn({"label": "Release date", "value": "1964-05"}, reason["details"])
+        self.assertIn({"label": "Release leader", "value": "Leader"}, reason["details"])
 
     def test_sideman_to_leader_skips_the_start_a_release_it_leads_and_uncertain_links(self):
         a, _, _ = self.library()
@@ -117,6 +121,8 @@ class PathTests(unittest.TestCase):
         self.assertEqual(reason["anchor"]["canonical_name"], "Anchor Song")
         self.assertEqual(len(reason["evidence"]), 2)
         self.assertEqual(reason["evidence"][0]["role"], "guitar")
+        self.assertIn({"label": "Recording", "value": "Anchor Song"}, reason["details"])
+        self.assertIn({"label": "Connecting credit", "value": "guitar"}, reason["details"])
 
     def test_follow_the_musician_reads_a_bounded_slice_of_a_hub_players_credits(self):
         a, _, rec = self.library()
@@ -189,6 +195,7 @@ class PathTests(unittest.TestCase):
         self.assertEqual(by_name["Related"]["reasons"][0]["code"], "related_label")
         self.assertTrue(by_name["Same"]["reasons"][0]["evidence"])
         self.assertEqual(by_name["Same"]["presentation"], {"title": "Same", "context": "Same Release Artist"})
+        self.assertIn({"label": "Catalogue numbers", "value": "C-1"}, by_name["Same"]["reasons"][0]["details"])
         self.assertEqual(path["stops"][0]["entity"]["canonical_name"], "Same")
 
     def test_composition_path_other_recordings_of_the_same_work(self):
@@ -202,9 +209,11 @@ class PathTests(unittest.TestCase):
         self.assertEqual((reason["code"], reason["via"]["canonical_name"]), ("same_work", "Song"))
         self.assertEqual(len(reason["evidence"]), 2)
         performer = self.ent("artist", "Cover artist")
-        self.edge(performer, rec2, "performer")
+        self.edge(performer, rec2, "performer", role="vocals")
         path = build_path(self.db, a, "composition_path")
         self.assertEqual(path["stops"][0]["presentation"], {"title": "Cover artist", "context": "Cover"})
+        self.assertIn({"label": "Shared work", "value": "Song"}, path["stops"][0]["reasons"][0]["details"])
+        self.assertIn({"label": "Credited performers", "value": "Cover artist (vocals)"}, path["stops"][0]["reasons"][0]["details"])
 
     def test_scene_path_needs_a_stated_non_country_area_and_close_start(self):
         a, _, _ = self.library()
@@ -216,12 +225,16 @@ class PathTests(unittest.TestCase):
             self.db.execute("INSERT INTO artist_life_span (entity_id, begin_date) VALUES (?, ?)", (who, year))
         for who in (a, near, far):
             self.edge(who, city, "area")
+        self.db.execute("UPDATE artist_life_span SET end_date = '1980' WHERE entity_id = ?", (a,))
+        self.db.commit()
         for who in (a, other_country):
             self.edge(who, country, "area")
         self.db.commit()
         path = build_path(self.db, a, "scene_path")
         self.assertEqual([s["entity"]["canonical_name"] for s in path["stops"]], ["Near"])
         self.assertEqual(path["stops"][0]["reasons"][0]["via"]["canonical_name"], "City")
+        self.assertIn({"label": "Shared place", "value": "City"}, path["stops"][0]["reasons"][0]["details"])
+        self.assertIn({"label": "Starting artist active dates", "value": "1970 – 1980"}, path["stops"][0]["reasons"][0]["details"])
 
     def test_row_limit_truncates_and_stop_limit_truncates(self):
         a, _, rec = self.library()
