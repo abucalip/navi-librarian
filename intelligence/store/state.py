@@ -78,6 +78,18 @@ STATE_MIGRATIONS: tuple[tuple[int, str, tuple[str, ...]], ...] = (
         )
         """,
     )),
+    # Sitewide artist popularity (Phase 6 item 2, slice 17). One row per artist MBID: the ListenBrainz
+    # total listen count, or NULL when the provider had no figure (kept so it is not asked again at once).
+    # Owner state, not rebuildable knowledge, so a bad run never loses the last good figures.
+    (4, "artist popularity", (
+        """
+        CREATE TABLE state.artist_popularity (
+            artist_mbid TEXT PRIMARY KEY CHECK (length(artist_mbid) = 36 AND artist_mbid = lower(artist_mbid)),
+            listen_count INTEGER CHECK (listen_count IS NULL OR listen_count >= 0),
+            fetched_at REAL NOT NULL CHECK (fetched_at > 0)
+        )
+        """,
+    )),
 )
 STATE_LATEST = STATE_MIGRATIONS[-1][0]
 

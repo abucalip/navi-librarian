@@ -15,6 +15,7 @@ from typing import Any
 from ..insights import persistence as gem_store
 from ..taste import smart_playlist as engine
 from ..taste.obscurity import BUCKETS, song_bands
+from ..taste.popularity_persistence import artist_mbids_by_navidrome_id, load_popularity
 from ..taste import smart_playlist_persistence as store
 
 CREATED, REPLACED, UNCHANGED = store.CREATED, store.REPLACED, store.UNCHANGED
@@ -89,7 +90,8 @@ def build_insights(
     ``lens_members``: ``forgotten_gems`` holds the song ids of the live, non-dismissed gem cards
     (a ``track:`` key names a song, an ``album:`` key names every song with that ``album_id``). A lens
     with no live cards is left out, so a rule on it is unfinished, not an empty match.
-    ``obscurity_band``: present only when both ``song_artists`` and ``popularity`` are supplied.
+    ``obscurity_band``: from the supplied maps, or else from the saved popularity figures and the store's
+    artist ids; absent when no figure is saved.
     Other card kinds are keyed by MusicBrainz id or set, not by owned song, so they are not lenses here.
     """
     insights: dict[str, Any] = {}
@@ -99,7 +101,13 @@ def build_insights(
         albums = {k.split(":", 1)[1] for k in keys if k.startswith("album:")}
         members = {s["id"] for s in songs if s["id"] in tracks or str(s.get("album_id") or "") in albums}
         insights["lens_members"] = {LENS_FORGOTTEN_GEMS: members}
-    if song_artists is not None and popularity is not None:
+    if song_artists is None and popularity is None:
+        # Local owner-state figures only. With none saved the lookup stays absent, so a rule on it is
+        # reported as missing data and never read as "obscure".
+        popularity = load_popularity(db)
+        by_artist = artist_mbids_by_navidrome_id(db) if popularity else {}
+        song_artists = {s["id"]: by_artist.get(s.get("artist_id")) for s in songs}
+    if song_artists is not None and popularity:
         insights["obscurity_band"] = song_bands(song_artists, popularity)
     return insights
 
@@ -138,6 +146,8 @@ def songs_from_subsonic(items: Sequence[Mapping[str, Any]]) -> list[dict[str, An
         if not isinstance(item, Mapping) or not isinstance(item.get("id"), str) or not item["id"]:
             continue
         row: dict[str, Any] = {"id": item["id"]}
+        if isinstance(item.get("artistId"), str) and item["artistId"]:
+            row["artist_id"] = item["artistId"]
         for src, dst in (("artist", "artist"), ("title", "title"), ("genre", "genre"), ("suffix", "format"),
                          ("year", "year"), ("playCount", "plays"), ("userRating", "rating"), ("bitRate", "bitrate")):
             if item.get(src) is not None:
