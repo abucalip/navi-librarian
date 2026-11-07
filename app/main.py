@@ -35,6 +35,7 @@ from app.api.smart_playlists import router as smart_playlists_router
 from app.api.insights import router as insights_router
 from app.api.popularity import router as popularity_router
 from app.api.knowledge import router as knowledge_router
+from app.api.sonic import router as sonic_router
 from app.api.library import router as library_router
 from app.api.owned_artwork import router as owned_artwork_router
 from app.api.radio import router as radio_router
@@ -219,6 +220,7 @@ app.include_router(smart_playlists_router)
 app.include_router(insights_router)
 app.include_router(popularity_router)
 app.include_router(knowledge_router)
+app.include_router(sonic_router)
 app.include_router(capabilities_router)
 app.include_router(owned_artwork_router)
 app.middleware("http")(add_cache_headers)
