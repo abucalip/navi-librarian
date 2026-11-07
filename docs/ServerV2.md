@@ -309,6 +309,7 @@ Client gate: macOS taste views and snapshots; Android a compact taste card.
 
 **Inherited from Phase 5 (closed 2026-11-06).** These stay owner-gated and run in whatever order the owner picks:
 - **Client gate:** macOS graph explorer, atlas and timeline; Android paths as short lists (consuming `GET /api/knowledge/paths`, `place` and `event`).
+  - **Android paths (merged):** capability gate in PR #880 (`362d8ea5`, `features.paths` on `musicbrainz_slice`); the artist page entry and the short-list sheet in PR #881 (`697c7e5f`), with recorded fixtures under `android/contract-fixtures/librarian/paths_*.json`. Not device-tested; `truncated` and `502` examples not yet captured. `place` and `event` stay out of the paths view (separate routes).
 - **Wiring:** nothing calls the paths route yet. Paths are on demand and cached, so a client is the trigger; a scheduled or post-import cache warm-up is optional and unplanned (exit check projects about 10 minutes per kind for 10,000 artists).
 - **Quality spot-check:** the bounded follow-the-musician and composition paths (credits per bridge and bridges per path are capped, reported as `truncated: "rows"`) have not been reviewed by hand as suggestions.
 - **Sideman-to-leader:** parked; the route answers `400`. Improve with other data sources, by owner decision.
