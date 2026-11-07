@@ -173,6 +173,7 @@ public final class AppState {
         // Skips saved while the Librarian was unreachable go out now that it is connected (in the background).
         Task { await feedback?.flush() }
         lyrics.configure(navidrome: navidrome, scope: "\(session.activeProfile?.navidromeURL.absoluteString ?? "")|\(session.navidromeUsername ?? "")")
+        if let librarian = session.librarian { radio.setSonicAvailable(await librarian.sonicAvailable()) }
         await library.load(navidrome: navidrome, librarian: session.librarian)
         await library.loadSongs(navidrome: navidrome)
         share.noteServerPaths(library.songServerPaths)
@@ -236,6 +237,17 @@ public final class AppState {
         Task {
             let songs = await radio.songs(like: seed, queued: queued, candidates: source)
             player.addToQueue(songs)
+        }
+    }
+
+    /// Sounds like this: adds songs that sound like `seed` (default the song playing) after what is queued. A seed that is not
+    /// the playing song is played first when nothing is queued. Needs the Librarian and `sonic_available`.
+    public func startSonicRadio(seed: QueueItem? = nil) {
+        guard radio.sonicAvailable, let librarian = session?.librarian, let seed = seed ?? player.current else { return }
+        let queued = Set(player.queue.items.map(\.songID))
+        Task {
+            let songs = await radio.sonicSongs(like: seed, queued: queued) { id, count in try await librarian.sonicSimilar(songID: id, count: count) }
+            if player.current == nil || player.queue.isEmpty { player.play([seed] + songs) } else { player.addToQueue(songs) }
         }
     }
 

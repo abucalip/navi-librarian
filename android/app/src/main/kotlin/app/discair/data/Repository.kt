@@ -27,6 +27,9 @@ import app.discair.model.insightWriteBody
 import app.discair.model.parseInsights
 import app.discair.model.PathKind
 import app.discair.model.PathsResponse
+import app.discair.model.SonicResponse
+import app.discair.model.parseSonic
+import app.discair.model.sonicAvailableFrom
 import app.discair.model.parsePaths
 import app.discair.model.pathsAvailableFrom
 import app.discair.model.parseDiscovery
@@ -148,6 +151,12 @@ interface LibraryRepository : AcquisitionApi {
 
     /** Whether the server reports the paths feature (`features.paths` in `/api/capabilities`). Read live; false when unknown. */
     fun pathsAvailable(): Boolean = false
+
+    /** Songs that sound like one song (`GET /api/sonic/similar`), in the server's order. Never from the saved copies. */
+    fun sonicSimilar(songId: String, count: Int): SonicResponse = throw UnsupportedOperationException()
+
+    /** Whether the server reports sonic similarity (`sonic_available` in `/api/capabilities`). Read live; false when unknown. */
+    fun sonicAvailable(): Boolean = false
 
     /** Whether the server resyncs its library from Navidrome shortly after each import. Read live, never from the saved copies. */
     fun libraryResync(): Boolean = true
@@ -307,6 +316,20 @@ class LibrarianRepository(
         if (ReadMode.isCacheOnly) return false
         return try {
             pathsAvailableFrom(client.get(listOf("api", "capabilities")))
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    override fun sonicSimilar(songId: String, count: Int): SonicResponse {
+        if (ReadMode.isCacheOnly) throw CacheMiss()
+        return parseSonic(client.get(listOf("api", "sonic", "similar"), mapOf("id" to songId, "count" to count.toString())))
+    }
+
+    override fun sonicAvailable(): Boolean {
+        if (ReadMode.isCacheOnly) return false
+        return try {
+            sonicAvailableFrom(client.get(listOf("api", "capabilities")))
         } catch (e: Exception) {
             false
         }

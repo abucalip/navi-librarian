@@ -156,4 +156,39 @@ class PlayActionsTest {
         assertEquals(13, r.controller.state.value.queue.items.size)
         assertTrue(r.messages.contains("Added 5 songs to the queue."))
     }
+
+    private fun sonicRig(scope: TestScope, answer: (String, Int) -> app.discair.model.SonicResponse): Rig {
+        val port = FakePort()
+        val controller = PlayerController(port, MemoryStorage(), ScrobbleCoordinator(RecordingApi(), scope.backgroundScope), scope.backgroundScope)
+        val actions = PlayActions(FakeSource(emptyMap()), controller, scope, StandardTestDispatcher(scope.testScheduler),
+            { "https://lib/api/owned/artwork/$it" }, sonic = answer)
+        val messages = mutableListOf<String>()
+        scope.backgroundScope.launch(UnconfinedTestDispatcher(scope.testScheduler)) { actions.messages.collect { messages += it } }
+        return Rig(actions, controller, port, FakeSource(emptyMap()), messages)
+    }
+
+    private fun sonicTracks(vararg ids: String) =
+        app.discair.model.SonicResponse("ok", ids.map { app.discair.model.SonicTrack(it, "T$it", "Art", "Alb", "alb$it", 200, 2001, 0.9) })
+
+    @Test fun soundsLikeQueuesMatchesInServerOrderSkippingTheSeedAndQueuedSongs() = runTest {
+        val r = sonicRig(this) { id, count -> assertEquals("seed", id); assertEquals(20, count); sonicTracks("n2", "seed", "q1", "n1", "n2") }
+        r.actions.soundsLike("seed", setOf("q1")); advanceUntilIdle()
+        assertEquals(listOf("n2", "n1"), r.controller.state.value.queue.items.map { it.songId })
+        assertEquals("https://lib/api/owned/artwork/albn2", r.controller.state.value.queue.items[0].coverUrl)
+        assertEquals(listOf("Added 2 songs that sound like this one."), r.messages)
+    }
+
+    @Test fun soundsLikeSaysSoWhenTheSongHasNoAnalysisData() = runTest {
+        val r = sonicRig(this) { _, _ -> app.discair.model.SonicResponse("empty", emptyList()) }
+        r.actions.soundsLike("seed", emptySet()); advanceUntilIdle()
+        assertTrue(r.controller.state.value.queue.isEmpty)
+        assertEquals(listOf("No sound matches for this song yet."), r.messages)
+    }
+
+    @Test fun soundsLikeReportsAServerFailureInWordsAndLeavesTheQueueAlone() = runTest {
+        val r = sonicRig(this) { _, _ -> throw app.discair.net.ConnectionException(app.discair.net.ConnectionFailure.Server(502, "x")) }
+        r.actions.soundsLike("seed", emptySet()); advanceUntilIdle()
+        assertTrue(r.controller.state.value.queue.isEmpty)
+        assertEquals(listOf("Sound matching isn't available right now. Try again later."), r.messages)
+    }
 }

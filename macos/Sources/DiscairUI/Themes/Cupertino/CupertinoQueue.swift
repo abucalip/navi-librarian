@@ -64,6 +64,11 @@ struct CupertinoQueueInspector: View {
                 Button("Radio") { state.startRadio() }.buttonStyle(CapsuleButtonStyle())
                     .disabled(state.radio.busy || state.player.current == nil)
                     .accessibilityLabel("Start radio from this song")
+                if state.radio.sonicAvailable {
+                    Button("Sounds like") { state.startSonicRadio() }.buttonStyle(CapsuleButtonStyle())
+                        .disabled(state.radio.busy || state.player.current == nil)
+                        .accessibilityLabel("Add songs that sound like this song")
+                }
                 Toggle("Autoplay", isOn: Bindable(state.radio).autoplay).labelsHidden().toggleStyle(.switch).tint(.green)
             }
             .padding(.horizontal, 8).padding(.top, 8).padding(.bottom, 12)

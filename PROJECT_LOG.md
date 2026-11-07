@@ -3099,3 +3099,10 @@ All live runs were approved by the owner; slskd off; aggregate only; harnesses w
 - **CI on exact head `33ffffc754fbcc7e150735788df85e7de957870a`:** Container runtime smoke test (run 42384728872), Python syntax check (42384728842), Validate Docker image (publishing paused; run 42384728947), and Validate Docker packaging (run 42384728915) all completed successfully. The packaging workflow runs the Python unit suite; none of these workflows runs Swift. macOS CI remains intentionally absent by owner decision.
 - **State:** merged. No publication, deployment or runtime verification. No new macOS screen was added; only the model enum was extended.
 - **Next action:** owner smoke-checks the Android artist Paths sheet on a device/emulator against a server with the re-imported MusicBrainz slice, including the new result and empty/truncated states.
+
+## 2026-11-07 — Server V2 Phase 7: path warm-up and sonic clients (uncommitted work on main `4b76a852`)
+
+- **Verified first:** sideman_to_leader is merged on server and clients (#885, #886, #887) and its three recorded fixtures exist; the owner reported the re-import and the Android paths work done, and waived the paths quality check, the macOS screen review and the sonic re-listen.
+- **Built:** path cache warm-up (manual route pair, job `paths_warm`); sonic client contract section and fixtures; macOS Sonic client, Sounds-like controls and `RadioModel.sonicSongs`; Android `Sonic.kt`, `PlayActions.soundsLike` and queue-panel controls. Details and limits: `docs/ServerV2.md` Phase 7 and `docs/SERVER_V2_CONTRACT.md`.
+- **Focused tests:** Python 12 pass (`.venv`); macOS 16 pass; Android `SonicTest`, `PlayActionsTest`, `PathsTest` pass. Full suites not run (owner rule).
+- **Not verified:** warm-up timing on the real store; sonic end to end through the Librarian; any screen or device. No publication or deployment.

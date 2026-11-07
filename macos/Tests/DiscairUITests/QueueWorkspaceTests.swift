@@ -1,4 +1,5 @@
 import DiscairAudio
+import DiscairLibrarian
 import Foundation
 import Testing
 @testable import DiscairUI
@@ -111,5 +112,43 @@ struct RadioPlannerTests {
         store.remove(saved.id)
         #expect(store.queues.isEmpty)
         #expect(store.songs(of: saved.id).isEmpty)
+    }
+}
+
+@MainActor struct SonicRadioModelTests {
+    private func response(_ status: String, _ ids: [String]) throws -> SonicResponse {
+        let tracks = ids.map { #"{"navidrome_id":"\#($0)","title":"T\#($0)","artist":"Art","album":"Alb","duration":200,"similarity":0.9}"# }
+        return try JSONDecoder().decode(SonicResponse.self, from: Data(#"{"status":"\#(status)","seed":null,"tracks":[\#(tracks.joined(separator: ","))]}"#.utf8))
+    }
+
+    @Test func keepsServerOrderAndDropsQueuedSeedAndRepeats() async throws {
+        let radio = RadioModel(defaults: defaults())
+        let out = await radio.sonicSongs(like: song("seed"), queued: ["q1"]) { id, count in
+            #expect(id == "seed" && count == RadioModel.sonicBatch)
+            return try response("ok", ["n2", "seed", "q1", "n1", "n2"])
+        }
+        #expect(out.map(\.songID) == ["n2", "n1"])
+        #expect(out.first?.title == "Tn2" && out.first?.duration == 200)
+        #expect(radio.status?.hasPrefix("Added 2 songs") == true && !radio.busy)
+    }
+
+    @Test func emptyAnswerSaysTheSongHasNoMatches() async throws {
+        let radio = RadioModel(defaults: defaults())
+        let out = await radio.sonicSongs(like: song("seed"), queued: []) { _, _ in try response("empty", []) }
+        #expect(out.isEmpty && radio.status?.hasPrefix("No sound matches") == true)
+    }
+
+    @Test func failureLeavesTheQueueAloneAndSaysSo() async {
+        let radio = RadioModel(defaults: defaults())
+        struct Boom: Error {}
+        let out = await radio.sonicSongs(like: song("seed"), queued: []) { _, _ in throw Boom() }
+        #expect(out.isEmpty && radio.status == "Could not find songs that sound alike." && !radio.busy)
+    }
+
+    @Test func availabilityStartsOffUntilTheServerSaysSo() {
+        let radio = RadioModel(defaults: defaults())
+        #expect(!radio.sonicAvailable)
+        radio.setSonicAvailable(true)
+        #expect(radio.sonicAvailable)
     }
 }
