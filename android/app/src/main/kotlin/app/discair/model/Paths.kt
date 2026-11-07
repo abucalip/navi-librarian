@@ -50,7 +50,10 @@ data class PathEvidence(
 )
 
 /** One independent explanation for why a stop belongs in a path. */
-data class PathReason(val code: String, val text: String, val via: PathEntity?, val anchor: PathEntity?, val evidence: List<PathEvidence>)
+data class PathDetail(val label: String, val value: String)
+
+/** Local catalogue context specific to the path kind; absent facts are omitted, never guessed. */
+data class PathReason(val code: String, val text: String, val via: PathEntity?, val anchor: PathEntity?, val evidence: List<PathEvidence>, val details: List<PathDetail> = emptyList())
 
 /** One step: the entity the server reached and all bounded reasons/evidence for why. */
 data class PathStop(
@@ -81,7 +84,13 @@ fun parsePaths(body: String): PathsResponse {
             val evidence = (item["evidence"] as? JsonArray).orEmpty().mapNotNull { raw ->
                 (raw as? JsonObject)?.pathEvidence()
             }
-            PathReason(item.string("code").orEmpty(), text, item.pathEntity("via"), item.pathEntity("anchor"), evidence)
+            val details = (item["details"] as? JsonArray).orEmpty().mapNotNull { raw ->
+                val detail = raw as? JsonObject ?: return@mapNotNull null
+                val label = detail.string("label")?.trim()?.takeIf { it.isNotEmpty() } ?: return@mapNotNull null
+                val value = detail.string("value")?.trim()?.takeIf { it.isNotEmpty() } ?: return@mapNotNull null
+                PathDetail(label, value)
+            }
+            PathReason(item.string("code").orEmpty(), text, item.pathEntity("via"), item.pathEntity("anchor"), evidence, details)
         }
         val reason = reasons.firstOrNull()?.text
         if (name.isEmpty() || reason == null) return@mapNotNull null
