@@ -1,3 +1,13 @@
+## 2026-11-07 — Server V2 Phase 7: macOS atlas on Apple Maps
+
+- **PR:** [#883](https://github.com/abucalip/navi-librarian/pull/883), merged 2026-11-07 as `7ecc36e26c09b87d88b05dc4c231aae1898fd3e5` (squash) from head `75b84f640eed6c2440e55315813916800c51c49d`; all required workflows passed (compile, container-smoke, test-and-build, validate-container, validate-release-workflow; publish-release skipped).
+- Provider choice: Apple MapKit (no key, no tile hosting, no third party sees listening places). Alternatives kept as fallback: bundled Natural Earth outlines (offline), MapLibre with self-hosted Protomaps.
+- Server: new `intelligence/knowledge/atlas.py`, `KnowledgeReader.atlas_page`, route `GET /api/knowledge/atlas` (`limit` 1 to 2000, default 500). A place is listed only with both coordinates stated and at least one non-inferred, firmly matched place-to-recording edge; a recording is owned when owned itself or on an owned release or group. `navidrome_server.py` untouched (D-016). Contract in `docs/SERVER_V2_CONTRACT.md`.
+- macOS: `AtlasModel`, `AtlasGeometry`, `AtlasView`, `AtlasPlace`/`KnowledgeAtlas`, `LibrarianClient.knowledgeAtlas`; Screen `.atlas` in both themes, sidebar and ⌘K. Pins that cannot be placed (missing or out-of-range coordinates) are dropped.
+- Tests actually run: `python -m unittest tests.test_intelligence_atlas tests.test_api_knowledge_routes` (13 pass); `swift test --filter` AtlasGeometryTests, AtlasModelTests, KnowledgeTests, ScreenshotTests (41 pass). Full suite not run (owner rule).
+- **Not verified:** the map and pins on screen (offscreen screenshots show only the placeholder grid), a run against the real server or store, query time on the owner's library, how many real places have coordinates, owner approval of the look.
+- Next action: owner reviews the Atlas screen on the Mac; then the timeline view.
+
 ## 2026-11-07 — Server V2 Phase 7: macOS graph explorer
 
 - **PR:** [#882](https://github.com/abucalip/navi-librarian/pull/882), merged 2026-11-07 as `57f8e8001db8a15ccac4647d01f4ef1f4142b91e` (squash); all four required workflows passed.
