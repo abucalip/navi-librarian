@@ -1,6 +1,6 @@
 # Product requirements
 
-Last updated: 2026-10-17 (MCP retirement)
+Last updated: 2026-11-07
 
 This is the user-facing behavior ledger. If implementation and this document disagree, do not silently assume either is correct: clarify the intended behavior, update this ledger, and add a regression test.
 
@@ -45,6 +45,7 @@ This is the user-facing behavior ledger. If implementation and this document dis
 | LIB-07 | An album cover is never an artist photo. When no source has the album, `/api/artwork` returns no cover and the UI shows its placeholder, so one picture is never repeated across an artist's albums. Covers come from Deezer, then Apple Music, then Qobuz, and a fallback source is used only for an exact artist and album match (case, punctuation and a trailing "- Single" or "- EP" ignored). The artist photo is returned only for an artist-only request. | Merged in PR #683; focused tests; browser check pending |
 | LIB-08 | Each owned song on an album page shows a small rounded tag with its file quality, such as `FLAC 16/44` or `MP3 320k`, built from the file's suffix, bit rate, bit depth and sampling rate. Songs the library lacks, and files with no known format, show no tag. | Merged in PR #683; focused tests; browser check pending |
 | LIB-09 | An album page for an album whose library songs span several discs lists each disc separately under a "Disc N" heading, with track numbers counted within the disc, so no two tracks of one list share a number. Single-disc albums look as before. | Web merged in PR #684; Android in PR #685 (merged); focused tests; browser and device checks pending the server update |
+| LIB-10 | Android artist Paths results expand in place to show all path reasons returned by the server, the `via` and library-anchor entities, and their stored evidence (credit roles, relations, catalogue numbers, source and stated dates). Expansion must use the already-fetched response only; it must not trigger provider calls or navigate away from the sheet. | Implemented in PR #893 code commit `e1773e7c72a25265a11bbf2adca0e747cdaac91d`; focused Android test, required CI and manual device verification pending |
 | SET-01 | Provide configuration for Navidrome, slskd, Last.fm, and ListenBrainz as applicable to the current UI. | Implemented in development history; verify secrets are not returned to clients |
 | SET-02 | A blank secret submitted while editing settings must not accidentally erase an existing secret unless the user explicitly requests clearing it. | Verify with tests |
 | SET-03 | slskd audio-quality preferences contain MP3 320, MP3 193–319, MP3 192, FLAC CD/unverified, FLAC 16-bit/44.1 kHz, and FLAC Hi-Res (24-bit or above 44.1 kHz) exactly once; the user can reorder them by dragging, with move buttons as a non-drag alternative, and the order persists. Existing four- and five-tier settings append newly supported FLAC tiers without changing the saved order. | Implemented on fix branch; automated CI and UI smoke test pending |

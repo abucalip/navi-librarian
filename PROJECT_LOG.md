@@ -1,3 +1,12 @@
+## 2026-11-07 — Android artist Paths: expandable evidence (PR #893)
+
+- **Branch:** `android/interactive-path-evidence`; implementation commit `e1773e7c72a25265a11bbf2adca0e747cdaac91d` (PR head may advance for documentation or review fixes).
+- Android now retains the bounded `reasons[]`, each reason's `via` and `anchor`, and the public evidence fields (relation, role, source, catalogue number and stated dates). A result row expands in place; one row is open at a time. The expanded view explains how many connections are shown when the server's `reason_count` exceeds the returned reasons.
+- No backend changes, provider calls, additional requests on expansion, or navigation actions. This is slice 1 only; artist/album navigation remains a later slice.
+- Added fixture-backed Android parser assertions for Follow the musician, Sideman, Label, Composition and Scene.
+- **Verification:** focused Android test not yet run; required GitHub Actions pending on the final PR head; manual Android device check not run. Full suite not run (owner rule). No merge, publication, deployment or runtime verification.
+- **Next action:** run the focused `PathsTest`, resolve any CI failures, then perform the manual device check against the exact passing PR-head SHA.
+
 ## 2026-11-07 — Server V2 Phase 7: release links for sideman-to-leader
 
 - **PR:** [#885](https://github.com/abucalip/navi-librarian/pull/885), merged 2026-11-07 as `cf156876244e5076975afc2713586305febf0e1f` (squash) from head `cdde9c5a5497e287d13557f837c5a5a16e292787`; all required workflows passed (compile, container-smoke, test-and-build, validate-container).
