@@ -89,6 +89,49 @@ class JobTests(unittest.TestCase):
         self.assertEqual(meta["musicbrainz_slice.schema_sequence"], "31")
         self.assertIsNotNone(repo.find_entity(self.db, "artist", mbid="b-gid"))
 
+    def release_link_world(self):
+        from tests import test_intelligence_musicbrainz_release_links as rlt
+        self.seed()
+        rec, _ = repo.upsert_entity(self.db, "recording", "r-1", mbid="r-1")
+        repo.add_edge(self.db, repo.find_entity(self.db, "artist", mbid="a-gid")["id"], rec, "instrument", **{**rlt.MB, "source": "seeded"})  # not a dump edge: the main load would replace it
+        tables = dict(world().tables)
+        for name, rows in rlt.tables().items():
+            tables[name] = tables.get(name, []) + rows
+        self.source = FakeDump(tables)
+        return rlt.stream()
+
+    def test_release_links_run_after_the_load_and_before_the_archive_goes(self):
+        fake = self.release_link_world()
+        seen = []
+
+        def filter_table(path, table, key, keep, take, **kw):
+            seen.append(self.archive.exists())
+            return fake(table, key, keep, take)
+
+        with mock.patch("intelligence.musicbrainz.job.archive_filter.filter_table", filter_table):
+            result = self.run_it()
+        self.assertEqual(result.progress["outcome"], "loaded")
+        self.assertEqual(result.progress["release_links"]["edges_created"], 2)
+        self.assertEqual(seen, [True, True])  # track and artist_credit_name, both read from the archive
+        self.assertFalse(self.archive.exists())
+        self.assertIsNotNone(repo.find_entity(self.db, "release", mbid="rel-30"))
+
+    def test_a_release_link_failure_leaves_the_main_slice_loaded(self):
+        self.release_link_world()
+        with mock.patch("intelligence.musicbrainz.job.archive_filter.filter_table",
+                        side_effect=job.dump.DumpError("archive lacks table: track")):
+            result = self.run_it()
+        self.assertEqual(result.progress["outcome"], "loaded")
+        self.assertEqual(result.progress["release_links"]["outcome"], "failed")
+        self.assertIsNotNone(repo.find_entity(self.db, "artist", mbid="b-gid"))
+        self.assertEqual(data_version(self.db, job.RESOURCE), 1)
+
+    def test_release_links_can_be_switched_off(self):
+        fake = self.release_link_world()
+        with mock.patch("intelligence.musicbrainz.job.archive_filter.filter_table", side_effect=AssertionError):
+            result = self.run_it(release_links_step=False)
+        self.assertNotIn("release_links", result.progress)
+
     def test_extracts_once_reads_plain_files_and_cleans_up(self):
         self.seed()
         result = self.run_it()
