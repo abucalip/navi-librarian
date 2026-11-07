@@ -277,6 +277,7 @@ public final class AppState {
         let nav = session?.navidrome
         await library.loadAllSongs(navidrome: nav)
         await smart.loadRemote(navidrome: nav)
+        await smart.sync(librarian: session?.librarian)
     }
 
     /// Reads every song so the history sees each song's latest play.

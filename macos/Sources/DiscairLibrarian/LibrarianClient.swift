@@ -293,6 +293,11 @@ public struct LibrarianClient: Sendable {
     }
 
     /// One send with a single re-login on 401 (the session cookie lives in memory only).
+    // Same-module access for extensions in other files (private members are not visible there).
+    func authedSendPublic(_ method: String, _ path: String, body: Data?) async throws -> (Data, HTTPURLResponse) { try await authedSend(method, path, body: body) }
+    func failurePublic(_ http: HTTPURLResponse, _ data: Data) -> DiscairError? { failure(http, data) }
+    func decodePublic<T: Decodable>(_ type: T.Type, _ data: Data, _ http: HTTPURLResponse) throws -> T { try decode(type, data, http) }
+
     private func authedSend(_ method: String, _ path: String, body: Data?) async throws -> (Data, HTTPURLResponse) {
         var (data, http) = try await send(method, path, body: body)
         if http.statusCode == 401 {

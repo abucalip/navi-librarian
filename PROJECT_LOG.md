@@ -1,3 +1,10 @@
+## 2026-11-07 — Server V2 Phase 6 slice 15: macOS smart playlists sync with the server
+
+- **Objective:** Phase 6 item 6 slice 15 (owner decision b: rule sets live on the server, local storage becomes a cache).
+- **Changes:** `macos/Sources/DiscairLibrarian/SmartPlaylists.swift` (wire types, `smartPlaylists()`, `putSmartPlaylist`, `deleteSmartPlaylist`; `limit` sent as explicit null; ids lowercased; delete of a missing set counts as done). `SmartPlaylistModel` now syncs on opening the screen: server copies win unless this Mac holds an unsent edit; sets only on this Mac are uploaded (first-run migration of the old `UserDefaults` sets); sets deleted elsewhere are dropped; pending deletes are retried; edits are pushed after an 800 ms pause. `UserDefaults` stays as the offline cache. An untouched example list is not uploaded next to the owner's real sets. Server sets that use insight fields (`obscurity_band`, `in_lens`) are counted, shown nowhere yet, and never overwritten or deleted. Evaluation stays local; the server result route is not used.
+- **Tests run locally (selective):** `swift test --filter 'DiscairLibrarianTests|DiscairUITests'`: 355 tests passed, including 4 new client tests (decode `smart_playlists_list` and `smart_playlists_empty` contract fixtures, PUT shape) and 7 new sync tests against a fake server (8 repeat runs of the sync suite stable). Not run: Android, Python, real server.
+- **Limitations:** not run against a real server; the screen does not yet show `unsupportedOnServer`; no UI for sync errors beyond the existing status line; not published.
+
 ## 2026-11-07 — Server V2 Phase 6 slice 14: smart playlist routes, contract and fixtures (PR #864)
 
 - **PR:** [#864](https://github.com/abucalip/navi-librarian/pull/864), squash merge `77e0895c04bb0022b8144f8d7120af02cdb37d2e`, tested head `8be9fd475fe502aac23ffab7a959c71789330c53`; compile, container-smoke, test-and-build, validate-container and validate-release-workflow passed.
