@@ -65,4 +65,4 @@ At meaningful session closeout, update `PROJECT_STATUS.md` and root `PROJECT_LOG
 
 ## Local toolchain notes
 
-- **Android Gradle needs JDK 17.** The system default JDK on the owner's Mac (27) fails the build. Use the Homebrew `openjdk@17`: `JAVA_HOME=/opt/homebrew/opt/openjdk@17 ./gradlew testDebugUnitTest --tests '<filter>'` from `android/`.
+- **Android Gradle needs JDK 17.** The system default JDK on the owner's Mac (27) fails the build. Use the Homebrew `openjdk@17`: `JAVA_HOME=/opt/homebrew/opt/openjdk@17 ./gradlew testDebugUnitTest --tests '<filter>'` from `android/`. The `Android Paths tests` GitHub Actions workflow uses JDK 17 to assemble the debug app and run the focused `PathsTest`; it does not replace manual device verification or authorize running the full Android suite.

@@ -158,6 +158,12 @@ python scripts/search_latency.py --network --network-queries 5 --network-gap 5  
 
 Focused tests: `python -m unittest discover -s tests -p 'test_search_latency_script.py' -v`. A stub run does not count for the index build time. Record each result against its target in `PROJECT_LOG.md`, and say which targets were not measured (browser-side targets need a real browser). The script prints aggregate timings only, so reports can be kept in the repository.
 
+## Android artist Paths focused checks (LIB-10 and LIB-11)
+
+- Run from `android/`: `./gradlew :app:assembleDebug` and `./gradlew :app:testDebugUnitTest --tests app.discair.PathsTest` (JDK 17). The `Android Paths tests` GitHub Actions workflow runs these focused checks on Android source PRs; it does not run the full Android test suite.
+- Parser/model: recorded Follow the musician, Sideman, Label, Composition and Scene fixtures; all returned reasons, via/anchor entities and evidence fields; bounded reason counts; result MBID retention; artist/person/group and release/release-group navigation mapping; unsupported recording/work/label/area types produce no page destination.
+- Device (owner): open an artist Paths sheet; expand a result; follow artist actions from result/via/anchor entities and album actions from supported release entities; verify the existing page's Back behavior, no duplicate or misdirected destinations, and that merely expanding the row makes no extra network/provider request. Also check a Composition row so a recording/work is not mistaken for an artist or album. Record the exact application SHA and device/Android version. Unit tests and CI do not substitute for this check.
+
 ## Android player focused checks (PLAYER-01 to PLAYER-04)
 
 Contract: `docs/ANDROID_PLAYER_CONTRACT.md`. Unit tests in `android/app/src/test`; focused runs only, the owner runs the full suite.
