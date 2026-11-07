@@ -107,6 +107,7 @@ class PathTests(unittest.TestCase):
         a, _, rec = self.library()
         player, guessed = self.ent("artist", "Player"), self.ent("artist", "Guessed")
         self.edge(player, rec, "instrument", role="guitar")
+        self.edge(player, rec, "instrument", role="unverified drums", ec="inferred")
         self.edge(guessed, rec, "instrument", ec="inferred")
         other, never = self.ent("recording", "Other"), self.ent("recording", "Never")
         self.edge(player, other, "instrument")
@@ -123,6 +124,7 @@ class PathTests(unittest.TestCase):
         self.assertEqual(reason["evidence"][0]["role"], "guitar")
         self.assertIn({"label": "Recording", "value": "Anchor Song"}, reason["details"])
         self.assertIn({"label": "Connecting credit", "value": "guitar"}, reason["details"])
+        self.assertNotIn({"label": "Connecting credit", "value": "unverified drums"}, reason["details"])
 
     def test_follow_the_musician_reads_a_bounded_slice_of_a_hub_players_credits(self):
         a, _, rec = self.library()
