@@ -457,7 +457,8 @@ def build_path(db: sqlite3.Connection, start_id: int, kind: str, *, limits: Path
                 "text": _REASON_TEXT[r["code"]].format(via=(via or {}).get("canonical_name", "?"),
                                                        anchor=(anchor or {}).get("canonical_name", "?")),
                 "via": via, "anchor": anchor,
-                "evidence": _evidence(db, edge_ids) + _label_evidence(db, r),\n                "details": _path_details(db, kind, start_id, stop_id, r, gen),
+                "evidence": _evidence(db, edge_ids) + _label_evidence(db, r),
+                "details": _path_details(db, kind, start_id, stop_id, r, gen),
             })
         result_stops.append({
             "entity": names.get(stop_id),
