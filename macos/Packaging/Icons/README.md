@@ -9,4 +9,4 @@ One icon per theme (see `macos/DESIGN.md`). Both are built from the Discair word
 
 `.svg` is the source (1024 x 1024, tile inset to 824 as macOS expects), `.png` is the 1024 render with transparent corners, `.icns` is the full set for the bundle.
 
-Not wired yet: the bundle has no `CFBundleIconFile` and the app does not switch its Dock icon with the theme. That is a follow-up.
+Wired: `bundle.sh` copies them into the app, `Info.plist` uses the Cupertino icon for Finder, and the app swaps the Dock icon when the theme changes (`AppIcon` in `DiscairApp.swift`). A bare `swift run` has no bundle, so it keeps the default icon.

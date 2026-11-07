@@ -34,6 +34,9 @@ rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Frameworks" "$APP/Contents/Resources"
 cp "$BIN/Discair" "$APP/Contents/MacOS/Discair"
 for b in "$BIN"/*.bundle; do [ -e "$b" ] && cp -R "$b" "$APP/Contents/Resources/"; done
+# App icons: Finder uses Discair.icns (Cupertino); the app swaps the Dock icon with the theme from the per-theme files.
+cp Packaging/Icons/Discair-Cupertino.icns "$APP/Contents/Resources/Discair.icns"
+cp Packaging/Icons/Discair-*.icns "$APP/Contents/Resources/"
 ditto "$SPARKLE" "$APP/Contents/Frameworks/Sparkle.framework"
 
 sed -e "s|@VERSION@|$VERSION|" -e "s|@BUILD@|$BUILD|" -e "s|@FEED_URL@|$FEED|" -e "s|@PUBLIC_KEY@|$KEY|" \
