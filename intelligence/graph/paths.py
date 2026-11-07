@@ -40,6 +40,7 @@ CACHE_PREFIX = "path:"
 SLICE_RESOURCE = "musicbrainz_slice"
 SCENE_YEARS = 10
 PROGRESS_OPS = 5000  # how many SQLite steps pass between deadline checks
+PRESENTATION_VERSION = 1
 
 _CG = "{a}.evidence_class != 'inferred' AND {a}.match_quality NOT IN ('fuzzy_unconfirmed', 'unresolved')"
 
@@ -260,6 +261,58 @@ def _composition_rows(db: sqlite3.Connection, start_id: int, gen: int, limits: P
     return rows, capped
 
 
+
+def _credited_names(db: sqlite3.Connection, entity_id: int, *, direction: str, relations: tuple[str, ...], generation: int) -> list[str]:
+    """Names of explicitly credited artists on a recording or release, in stable order."""
+    join = "e.from_id = a.id AND e.to_id = ?" if direction == "recording" else "e.from_id = ? AND e.to_id = a.id"
+    marks = ", ".join("?" for _ in relations)
+    rows = db.execute(
+        f"SELECT DISTINCT a.canonical_name FROM edges e JOIN entities a ON a.type IN ('artist', 'person', 'group') "
+        f"AND {join} WHERE e.relation IN ({marks}) AND e.generation = ? AND {_cg('e')} "
+        "ORDER BY a.canonical_name COLLATE NOCASE",
+        (entity_id, *relations, generation),
+    )
+    return [r["canonical_name"] for r in rows if r["canonical_name"]]
+
+
+def _path_presentation(db: sqlite3.Connection, kind: str, stop_id: int, reasons: list[dict[str, Any]],
+                       names: _Names, generation: int) -> dict[str, str | None]:
+    """Separate the artist from the recording/release title for the Android Paths sheet."""
+    stop = names.get(stop_id) or {}
+    stop_name = stop.get("canonical_name") or ""
+    title, context = stop_name, None
+    if kind == "follow_the_musician":
+        musicians, albums = [], []
+        for reason in reasons:
+            via = names.get(reason["via"]) or {}
+            if via.get("type") in ("artist", "person", "group") and via.get("canonical_name") not in musicians:
+                musicians.append(via["canonical_name"])
+            if reason["anchor"] is not None:
+                row = db.execute(
+                    "SELECT r.canonical_name FROM edges e JOIN entities r ON r.id = e.to_id AND r.type = 'release' "
+                    "WHERE e.from_id = ? AND e.relation = 'appears_on' AND e.generation = ? "
+                    f"AND {_cg('e')} ORDER BY r.canonical_name COLLATE NOCASE LIMIT 1",
+                    (reason["anchor"], generation),
+                ).fetchone()
+                if row and row["canonical_name"] and row["canonical_name"] not in albums:
+                    albums.append(row["canonical_name"])
+        title = ", ".join(musicians) or "Musician credit unavailable"
+        context = ", ".join(albums) or None
+    elif kind == "label_path":
+        artists = _credited_names(db, stop_id, direction="release",
+                                  relations=("release_artist", "credited_to"), generation=generation)
+        context = ", ".join(artists) or "Artist credit unavailable"
+    elif kind == "composition_path":
+        artists = _credited_names(
+            db, stop_id, direction="recording",
+            relations=("instrument", "vocal", "main performer", "performer", "performing orchestra"),
+            generation=generation,
+        )
+        title = ", ".join(artists) or "Performing artist not credited"
+        context = stop_name or None
+    return {"title": title, "context": context}
+
+
 def build_path(db: sqlite3.Connection, start_id: int, kind: str, *, limits: PathLimits = PathLimits(),
                generation: int | None = None, clock: Callable[[], float] = time.monotonic) -> dict[str, Any] | None:
     """The path of ``kind`` from an artist, built now from the store; None when the start is unknown.
@@ -320,7 +373,7 @@ def build_path(db: sqlite3.Connection, start_id: int, kind: str, *, limits: Path
                 "via": via, "anchor": anchor,
                 "evidence": _evidence(db, edge_ids) + _label_evidence(db, r),
             })
-        result_stops.append({"entity": names.get(stop_id), "reason_count": len(info["reasons"]), "reasons": reasons})
+        result_stops.append({"entity": names.get(stop_id), "presentation": _path_presentation(db, kind, stop_id, info["reasons"], names, gen), "reason_count": len(info["reasons"]), "reasons": reasons})
     if len(ordered) > limits.max_stops and truncated is None:
         truncated = "stops"
     return {
@@ -331,6 +384,7 @@ def build_path(db: sqlite3.Connection, start_id: int, kind: str, *, limits: Path
         "stops": result_stops,
         "truncated": truncated,
         "built_from": {SLICE_RESOURCE: generations.data_version(db, SLICE_RESOURCE)},
+        "presentation_version": PRESENTATION_VERSION,
     }
 
 
@@ -363,7 +417,7 @@ def cached_path(db: sqlite3.Connection, start_id: int, kind: str, *, limits: Pat
                          (CACHE_PREFIX + kind, start_id, gen)).fetchone()
         if row:
             cached = json.loads(row["payload"])
-            if cached.get("built_from") == version:
+            if cached.get("built_from") == version and cached.get("presentation_version") == PRESENTATION_VERSION:
                 return cached
     path = build_path(db, start_id, kind, limits=limits, generation=gen, clock=clock)
     if path is None or path["truncated"] == "time":

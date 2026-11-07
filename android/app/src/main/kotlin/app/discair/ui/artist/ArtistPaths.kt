@@ -32,6 +32,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import app.discair.model.PathKind
 import app.discair.model.PathStop
@@ -51,10 +52,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 /** Body height: a fixed box, so the list scrolls inside the sheet and a failure never fills an unbounded space. */
-private val BodyHeight = 360.dp
+private val BodyHeight = 300.dp
 
 /**
- * The paths view, opened from the artist page: pick one of the four kinds and see the server's path as a short list.
+ * The paths view, opened from the artist page: pick one of the five kinds and see the server's path as a short list.
  * The server is asked only when the sheet is open and a kind is chosen; nothing is saved on the phone.
  */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -77,8 +78,16 @@ fun ArtistPathsSheet(artistName: String, mbid: String, onDismiss: () -> Unit) {
     }
 
     ModalBottomSheet(onDismissRequest = onDismiss) {
-        Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text("Paths from $artistName", style = MaterialTheme.typography.titleLarge, modifier = Modifier.semantics { heading() })
+        Column(
+            Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(top = 2.dp, bottom = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Text(
+                "Paths from $artistName",
+                style = MaterialTheme.typography.titleLarge,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth().semantics { heading() },
+            )
             LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 items(PathKind.entries, key = { it.wire }) { option ->
                     FilterChip(
@@ -88,6 +97,16 @@ fun ArtistPathsSheet(artistName: String, mbid: String, onDismiss: () -> Unit) {
                         modifier = Modifier.heightIn(min = Target),
                     )
                 }
+            }
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(3.dp),
+            ) {
+                PathDescription("Follow the musician", "Songs by musicians who played with $artistName, not in your library.")
+                PathDescription("Sideman", "Band members and helping hands.")
+                PathDescription("Label", "Records under the same publishers.")
+                PathDescription("Composition", "Other recordings of the same composition, including covers and live versions.")
+                PathDescription("Scene", "Other artists from the same place and era.")
             }
             Box(Modifier.fillMaxWidth().height(BodyHeight)) {
                 when (val s = state) {
@@ -131,13 +150,27 @@ private fun PathBody(artistName: String, kind: PathKind, response: PathsResponse
     }
 }
 
+@Composable
+private fun PathDescription(label: String, description: String) {
+    Text(
+        "$label: $description",
+        style = MaterialTheme.typography.bodySmall,
+        color = Ink.TextMuted,
+        textAlign = TextAlign.Start,
+        modifier = Modifier.fillMaxWidth(),
+    )
+}
+
 /** One step: its place in the path, the entity, and the server's one-line reason. */
 @Composable
 private fun StepRow(number: Int, stop: PathStop) {
     Row(Modifier.fillMaxWidth().semantics(mergeDescendants = true) {}, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         Text("$number", style = MaterialTheme.typography.labelLarge, color = Ink.TextMuted, modifier = Modifier.padding(top = 2.dp))
         Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text(stop.name, style = MaterialTheme.typography.bodyLarge, maxLines = 2)
+            Text(stop.displayTitle ?: stop.name, style = MaterialTheme.typography.bodyLarge, maxLines = 2)
+            stop.displayContext?.let { context ->
+                Text("($context)", style = MaterialTheme.typography.bodySmall, color = Ink.TextMuted, maxLines = 2)
+            }
             Text(stop.reason, style = MaterialTheme.typography.bodySmall, color = Ink.TextMuted, maxLines = 2)
         }
     }

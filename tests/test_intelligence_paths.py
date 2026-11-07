@@ -1,3 +1,4 @@
+import json
 import tempfile
 import unittest
 from unittest import mock
@@ -232,6 +233,26 @@ class PathTests(unittest.TestCase):
         with mock.patch("intelligence.graph.paths.PROGRESS_OPS", 1):
             path = build_path(self.db, a, "follow_the_musician", clock=lambda: next(ticks))
         self.assertEqual((path["truncated"], path["status"]), ("time", "empty"))
+
+    def test_cache_rebuilds_when_presentation_schema_changes(self):
+        a, _, rec = self.library()
+        player, other = self.ent("artist", "Player"), self.ent("recording", "Other")
+        self.edge(player, rec, "instrument")
+        self.edge(player, other, "instrument")
+        cached_path(self.db, a, "follow_the_musician")
+        row = self.db.execute(
+            "SELECT payload FROM insights WHERE kind = 'path:follow_the_musician' AND subject_id = ?", (a,)
+        ).fetchone()
+        payload = json.loads(row["payload"])
+        payload.pop("presentation_version")
+        self.db.execute(
+            "UPDATE insights SET payload = ? WHERE kind = 'path:follow_the_musician' AND subject_id = ?",
+            (json.dumps(payload), a),
+        )
+        self.db.commit()
+        rebuilt = cached_path(self.db, a, "follow_the_musician")
+        self.assertEqual(rebuilt["presentation_version"], 1)
+        self.assertEqual(rebuilt["stops"][0]["presentation"]["title"], "Player")
 
     def test_cache_hit_refresh_and_staleness(self):
         a, _, rec = self.library()

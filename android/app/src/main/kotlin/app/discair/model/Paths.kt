@@ -26,7 +26,10 @@ enum class PathKind(val wire: String, val label: String) {
 }
 
 /** One step: the entity the server reached and the server's own sentence for why (at least one reason). */
-data class PathStop(val name: String, val type: String, val owned: Boolean, val reasonCount: Int, val reason: String)
+data class PathStop(
+    val name: String, val type: String, val owned: Boolean, val reasonCount: Int, val reason: String,
+    val displayTitle: String? = null, val displayContext: String? = null,
+)
 
 /** A parsed body. [status] is the server's `ok` or `empty`; [truncated] is `rows`, `time`, `stops` or null. */
 data class PathsResponse(val kind: String, val status: String, val stops: List<PathStop>, val truncated: String?)
@@ -55,6 +58,8 @@ fun parsePaths(body: String): PathsResponse {
             owned = (entity["owned"] as? JsonPrimitive)?.booleanOrNull ?: false,
             reasonCount = stop.int("reason_count") ?: 1,
             reason = reason,
+            displayTitle = stop.obj("presentation")?.string("title")?.trim()?.takeIf { it.isNotEmpty() },
+            displayContext = stop.obj("presentation")?.string("context")?.trim()?.takeIf { it.isNotEmpty() },
         )
     }
     return PathsResponse(

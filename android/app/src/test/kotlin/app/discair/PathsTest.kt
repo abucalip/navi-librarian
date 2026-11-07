@@ -70,6 +70,17 @@ class PathsTest {
         }
     }
 
+    @Test fun presentationKeepsArtistsSeparateFromAlbumAndRecordingTitles() {
+        val json = """{"kind":"composition_path","status":"ok","stops":[
+            {"entity":{"canonical_name":"Cover title","type":"recording","owned":false},
+             "presentation":{"title":"Cover artist","context":"Cover title"},
+             "reason_count":1,"reasons":[{"code":"same_work","text":"another recording of the same work"}]}]}"""
+        val stop = parsePaths(json).stops.single()
+        assertEquals("Cover title", stop.name)
+        assertEquals("Cover artist", stop.displayTitle)
+        assertEquals("Cover title", stop.displayContext)
+    }
+
     @Test fun truncatedRowsIsKeptForTheNote() {
         val json = """{"kind":"scene_path","status":"ok","truncated":"rows","stops":[
             {"entity":{"canonical_name":"A","type":"artist","owned":true},"reason_count":1,

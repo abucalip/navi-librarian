@@ -53,6 +53,7 @@ class PathsRoute(unittest.TestCase):
         self.assertEqual(body["start"]["mbid"], "a-gid")
         stop = body["stops"][0]
         self.assertEqual(stop["entity"]["mbid"], "o-gid")
+        self.assertEqual(stop["presentation"], {"title": "Player", "context": "Alpha LP"})
         reason = stop["reasons"][0]
         self.assertEqual(reason["code"], "shared_musician")
         self.assertTrue(reason["evidence"])
