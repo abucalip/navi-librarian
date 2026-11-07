@@ -3175,3 +3175,5 @@ All live runs were approved by the owner; slskd off; aggregate only; harnesses w
 
 
 - **Follow-up corrections before verification:** fixed the response-object line break in `intelligence/graph/paths.py` (`525f2c767eac5379126c84f697473d341e892a1d`), placed the additive details definition in the path route's contract paragraph and removed the stale exclusion (`68142e776eb3167a4b187b5315fd2ede40c4fc0d`, `856d7b50bbecfcb0fd118f7b7311521b41ee30d7`). These are part of the current unverified PR head.
+
+- **Evidence-quality correction:** the connecting-role lookup now applies the same evidence-grade filter as path construction; a regression asserts inferred roles do not appear in details. Commits: `8dff90b9bf48d2a02abf7b77527e46ed2c6890cf` (regression), `c74f26b452c4e3f675eeea059716e8e4f8aeb45a` (qualified SQL and grade filter). The exact resulting PR head still requires CI verification.
