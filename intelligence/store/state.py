@@ -7,7 +7,7 @@ Server V2 data is split in two (docs/efficiency.md section E, D-026 consequence 
 * the **state file** (``intelligence.state.sqlite3`` beside it): what the owner decided. Today that is
   card decisions (dismissed, accepted), keyed by a stable card identity (``kind`` plus the card's own
   key), never by a row id, so a generation rebuild cannot lose one; and skip/dismiss suppression
-  events (append-only, D-027).
+  events (append-only, D-027); and smart playlist rule sets (mutable, explicit delete only).
 
 The state file is attached to the same connection as schema ``state``, so queries read
 ``state.card_decisions`` and existing function signatures keep working. It has its own
@@ -56,6 +56,26 @@ STATE_MIGRATIONS: tuple[tuple[int, str, tuple[str, ...]], ...] = (
         """
         CREATE TRIGGER state.suppression_events_no_update BEFORE UPDATE ON suppression_events
         BEGIN SELECT RAISE(ABORT, 'suppression events are append-only'); END
+        """,
+    )),
+    # Smart playlist rule sets (Phase 6 item 6, slice 13). A normal mutable table: rule sets are owner
+    # configuration, with no retention and explicit delete only (see intelligence.taste.smart_playlist_persistence).
+    # The CHECKs are the contract's shape only; intelligence.taste.smart_playlist decides what is accepted.
+    # "order" and "limit" are SQL keywords, so they are quoted. There is no refresh flag and no stored result.
+    (3, "smart playlist rule sets", (
+        """
+        CREATE TABLE state.smart_playlists (
+            rule_id TEXT PRIMARY KEY CHECK (length(rule_id) = 36 AND rule_id = lower(rule_id)),
+            name TEXT NOT NULL CHECK (length(name) BETWEEN 1 AND 100),
+            "match" TEXT NOT NULL CHECK ("match" IN ('all', 'any')),
+            rules TEXT NOT NULL CHECK (json_valid(rules) AND json_type(rules) = 'array'
+                AND json_array_length(rules) <= 20),
+            "order" TEXT NOT NULL CHECK ("order" IN (
+                'random', 'newest_added', 'most_played', 'least_played', 'highest_rated', 'title')),
+            "limit" INTEGER CHECK ("limit" IS NULL OR "limit" BETWEEN 25 AND 250),
+            created_at REAL NOT NULL CHECK (created_at > 0),
+            updated_at REAL NOT NULL CHECK (updated_at > 0)
+        )
         """,
     )),
 )
