@@ -177,6 +177,13 @@ class KnowledgeReader:
         from .atlas import atlas_page
         return public(atlas_page(self, limit=limit))
 
+    def timeline_page(self, *, id: int | None = None, mbid: str | None = None, navidrome_id: str | None = None,
+                      type: str = "artist", limit: int = 200) -> dict[str, Any] | None:
+        """Dated albums and events of an artist, person or group, undated ones last; None when unknown."""
+        from .timeline import timeline_page
+        entity = self.entity(type, id=id, mbid=mbid, navidrome_id=navidrome_id)
+        return None if entity is None else public(timeline_page(self, entity, limit=limit))
+
     def event_page(self, *, id: int | None = None, mbid: str | None = None, limit: int = 200) -> dict[str, Any] | None:
         """An event with its stated places and area, people and recordings; None when unknown."""
         from .context_pages import event_page

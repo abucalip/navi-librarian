@@ -281,3 +281,66 @@ public struct KnowledgeAtlas: Decodable, Equatable, Sendable {
         sources = c.sources(.sources)
     }
 }
+
+/// Where one timeline item's date and link come from (source, evidence class, match quality).
+public struct TimelineEvidence: Decodable, Equatable, Sendable {
+    public let source: String
+    public let evidenceClass: String
+    public let matchQuality: String
+    enum CodingKeys: String, CodingKey { case source, evidence_class, match_quality }
+    public init(from decoder: any Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        source = c.text(.source) ?? ""; evidenceClass = c.text(.evidence_class) ?? ""; matchQuality = c.text(.match_quality) ?? ""
+    }
+}
+
+/// One dated (or undated) album or event on an artist's timeline.
+public struct TimelineItem: Decodable, Equatable, Sendable, Identifiable {
+    public var id: String { "\(kind):\(entity.mbid)" }
+    public let kind: String
+    public let entity: KnowledgeEntity
+    public let owned: Bool
+    /// As MusicBrainz states it: "1972", "1972-06" or "1972-06-02". Nil when no date is stated.
+    public let date: String?
+    public let eventKind: String?
+    public let cancelled: Bool
+    public let why: String
+    public let evidence: [TimelineEvidence]
+    enum CodingKeys: String, CodingKey { case kind, entity, owned, date, event_kind, cancelled, why, evidence }
+    public init(from decoder: any Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        kind = c.text(.kind) ?? "album"
+        entity = try c.decode(KnowledgeEntity.self, forKey: .entity)
+        owned = c.flag(.owned)
+        date = c.text(.date).flatMap { $0.isEmpty ? nil : $0 }
+        eventKind = c.text(.event_kind)
+        cancelled = c.flag(.cancelled)
+        why = c.text(.why) ?? ""
+        evidence = c.list(.evidence, TimelineEvidence.self)
+    }
+    /// The four-digit year of the stated date, or nil when there is no usable one.
+    public var year: Int? {
+        guard let date, date.count >= 4, let y = Int(date.prefix(4)), y > 0 else { return nil }
+        return y
+    }
+}
+
+/// `GET /api/knowledge/timeline?mbid=&type=`: dated items in order, then the undated ones.
+public struct KnowledgeTimeline: Decodable, Equatable, Sendable {
+    public let person: KnowledgeEntity
+    public let items: [TimelineItem]
+    public let undated: Int
+    public let truncated: Bool
+    public let notLoaded: [String]
+    public let sources: [String: KnowledgeSource]
+    enum CodingKeys: String, CodingKey { case person, items, undated, truncated, not_loaded, sources }
+    public init(from decoder: any Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        person = try c.decode(KnowledgeEntity.self, forKey: .person)
+        items = c.list(.items, TimelineItem.self)
+        undated = c.number(.undated)
+        truncated = c.flag(.truncated)
+        notLoaded = c.list(.not_loaded, String.self)
+        sources = c.sources(.sources)
+    }
+}

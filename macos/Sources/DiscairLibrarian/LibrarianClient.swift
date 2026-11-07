@@ -287,6 +287,11 @@ public struct LibrarianClient: Sendable {
         let (data, http) = try await authedSend("GET", "api/knowledge/atlas?limit=\(limit)", body: nil)
         return try decode(KnowledgeAtlas.self, data, http)
     }
+    /// Dated albums and events of an artist, person or group, undated ones last.
+    public func knowledgeTimeline(mbid: String, type: String = "artist", limit: Int = 200) async throws -> KnowledgeTimeline {
+        let (data, http) = try await authedSend("GET", "api/knowledge/timeline?mbid=\(Self.enc(mbid))&type=\(Self.enc(type))&limit=\(limit)", body: nil)
+        return try decode(KnowledgeTimeline.self, data, http)
+    }
     public func knowledgeEvent(mbid: String) async throws -> KnowledgeEvent { try await knowledge("event", mbid) }
 
     /// One page of the bounded walk. `type` is the start entity's type (artist, person, group, ...).

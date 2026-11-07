@@ -47,13 +47,14 @@ class KnowledgeRoutes(unittest.TestCase):
             ("/api/knowledge/place", {"mbid": "p-gid"}),
             ("/api/knowledge/event", {"mbid": "e-gid"}),
             ("/api/knowledge/atlas", {}),
+            ("/api/knowledge/timeline", {"mbid": "a-gid"}),
         ):
             with self.subTest(path=path):
                 response = self.client.get(path, params=params)
                 self.assertEqual(response.status_code, 200, response.text)
 
     def test_unknown_entity_is_404(self):
-        for path in ("person", "label", "work", "album", "recording-works", "place", "event"):
+        for path in ("person", "timeline", "label", "work", "album", "recording-works", "place", "event"):
             with self.subTest(path=path):
                 self.assertEqual(self.client.get(f"/api/knowledge/{path}", params={"mbid": "nope"}).status_code, 404)
 
