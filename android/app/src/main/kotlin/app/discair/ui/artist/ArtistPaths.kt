@@ -215,6 +215,9 @@ private fun PathReasonDetails(reason: PathReason, artistName: String, open: Open
     val albumArtist = listOfNotNull(reason.anchor, reason.via).firstOrNull { it.page() == PathEntityPage.Artist }?.name ?: artistName
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Text(reason.text, style = MaterialTheme.typography.bodySmall)
+        reason.details.forEach { detail ->
+            Text("${detail.label}: ${detail.value}", style = MaterialTheme.typography.bodySmall, color = Ink.TextMuted)
+        }
         PathEntityDetails("Via", reason.via, albumArtist, open)
         PathEntityDetails("Anchor", reason.anchor, albumArtist, open)
         if (reason.evidence.isNotEmpty()) {
