@@ -1,3 +1,14 @@
+## 2026-11-07 — Server V2 Phase 7 slice 2: sonic routes with TTL cache
+
+- **PR:** [#876](https://github.com/abucalip/navi-librarian/pull/876), merged 2026-11-07 as `924a3ffeff42e7264adcfc458e3131f6c1230f7d` (squash) from head `bf125e15263cd440ee6035d79d6a7a380184d206`; compile, container-smoke, test-and-build, validate-container and validate-release-workflow all passed on that head.
+- **Review on the first head (`8e913c16`):** the shared cache was unlocked while sync routes run in FastAPI's thread pool, so a concurrent `move_to_end` or `del` could raise `KeyError`. Fixed in `bf125e15` with a `threading.Lock` around every cache access, plus a concurrency test (8 threads, 2000 operations each).
+- New `app/api/sonic.py`: `GET /api/sonic/similar` (count 1..50, default 10) and `GET /api/sonic/path` (count 2..50, default 10), both over `intelligence/sonic/proxy.py`. `ok` and `empty` return 200; `not_found` returns 404; `unavailable` and any other Navidrome `RuntimeError` return 502 with a fixed message (the Navidrome text is not sent); `start == end` returns 400.
+- New `intelligence/sonic/cache.py`: in-memory TTL cache, 1 hour, 256 entries, LRU eviction, injectable clock. Only `ok` and `empty` are stored.
+- Router registered in `app/main.py` beside the knowledge router. `navidrome_server.py` untouched (D-016); the capabilities flag untouched (slice 3).
+- Tests actually run: `python -m unittest tests.test_api_sonic_routes tests.test_sonic_cache` (43 pass, on the final head). Full suite not run locally (owner rule); CI test-and-build passed on the final head.
+- Limits: no by-ear review of routes, no live Navidrome run of the routes, no client wiring, capabilities flag not yet set. Not published or deployed.
+- Next action: slice 3 (capabilities flag).
+
 ## 2026-11-07 — Server V2 Phase 7 slice 1: sonic proxy module (unwired)
 
 - **PR:** [#875](https://github.com/abucalip/navi-librarian/pull/875), merged 2026-11-07 as `53f047b728adc9e2fae65dd9cd93ededfcd30411` (squash) from head `50f2f709460fa5e0bc67229e25150638da9f426f`; compile, container-smoke, test-and-build and validate-container passed.
