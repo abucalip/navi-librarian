@@ -110,6 +110,7 @@ class PathTests(unittest.TestCase):
         path = build_path(self.db, a, "follow_the_musician")
         self.assertEqual(path["status"], "ok")
         self.assertEqual([s["entity"]["canonical_name"] for s in path["stops"]], ["Other"])
+        self.assertEqual(path["stops"][0]["presentation"], {"title": "Player", "context": "Anchor LP"})
         reason = path["stops"][0]["reasons"][0]
         self.assertEqual(reason["code"], "shared_musician")
         self.assertEqual(reason["via"]["canonical_name"], "Player")
@@ -175,6 +176,8 @@ class PathTests(unittest.TestCase):
         self.edge(label, parent, "label ownership")
         self.edge(parent, sibling, "label ownership")
         same, related, own2 = self.ent("release", "Same"), self.ent("release", "Related"), self.ent("release", "Own2")
+        release_artist = self.ent("artist", "Same Release Artist")
+        self.edge(same, release_artist, "release_artist", src="musicbrainz_dump_releases")
         for rel_id, lab in ((release, label), (same, label), (related, parent)):
             self.db.execute("INSERT INTO release_labels (release_id, label_id, catalogue_number) VALUES (?, ?, ?)",
                             (rel_id, lab, "C-1"))
@@ -185,6 +188,7 @@ class PathTests(unittest.TestCase):
         self.assertEqual(by_name["Same"]["reasons"][0]["code"], "same_label")
         self.assertEqual(by_name["Related"]["reasons"][0]["code"], "related_label")
         self.assertTrue(by_name["Same"]["reasons"][0]["evidence"])
+        self.assertEqual(by_name["Same"]["presentation"], {"title": "Same", "context": "Same Release Artist"})
         self.assertEqual(path["stops"][0]["entity"]["canonical_name"], "Same")
 
     def test_composition_path_other_recordings_of_the_same_work(self):
@@ -197,6 +201,10 @@ class PathTests(unittest.TestCase):
         reason = path["stops"][0]["reasons"][0]
         self.assertEqual((reason["code"], reason["via"]["canonical_name"]), ("same_work", "Song"))
         self.assertEqual(len(reason["evidence"]), 2)
+        performer = self.ent("artist", "Cover artist")
+        self.edge(performer, rec2, "performer")
+        path = build_path(self.db, a, "composition_path")
+        self.assertEqual(path["stops"][0]["presentation"], {"title": "Cover artist", "context": "Cover"})
 
     def test_scene_path_needs_a_stated_non_country_area_and_close_start(self):
         a, _, _ = self.library()
