@@ -1,3 +1,11 @@
+## 2026-11-07 — Server V2 Phase 6 slice 14: smart playlist routes, contract and fixtures
+
+- **Objective:** Phase 6 item 6 slice 14 (owner-approved design in `docs/ServerV2.md`).
+- **Changes:** `app/api/smart_playlists.py` (list, PUT, GET, DELETE, result), `intelligence/api/smart_playlists.py` (bodies, Subsonic song mapping), six contract fixtures, contract section, `tests/test_api_smart_playlist_routes.py`. Result is evaluated on request and not stored; no Navidrome write, provider call or refresh.
+- **Tests:** `tests.test_api_smart_playlist_routes` and `tests.test_intelligence_contract_fixtures` run locally, 19 passed. Full suite not run (owner rule).
+- **Limitations:** insight lookups (`obscurity_band`, `in_lens`) are not wired, so those rules report `missing_data`; no Swift decode test yet; real Navidrome `search3` paging with an empty query not run against the owner's server. Not published or deployed.
+- **Next action:** slice 15, macOS migration of local rule sets to the server (client gate).
+
 ## 2026-11-07 — Server V2 Phase 6 slice 12: pure smart playlist evaluator (PR #862)
 
 - **PR:** [#862](https://github.com/abucalip/navi-librarian/pull/862), squash merge `2937ab1f0413a6e0616ec82aed86981d7bfb553e`, tested head `3c74f29ba366e33e8247a5be8d81b5c0cd223c20`.

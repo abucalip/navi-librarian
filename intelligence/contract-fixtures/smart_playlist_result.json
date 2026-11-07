@@ -1,0 +1,23 @@
+{
+  "note": "songs considered: tr-1..tr-3 (not part of the response)",
+  "request": "GET /api/playlists/smart/00000001-0000-4000-8000-00000005ba17/result?seed=1",
+  "response": {
+    "evaluated_at": 1700000000.0,
+    "matched": 2,
+    "missing_data": [
+      "obscurity_band"
+    ],
+    "returned": 2,
+    "rule_id": "00000001-0000-4000-8000-00000005ba17",
+    "song_ids": [
+      "tr-2",
+      "tr-1"
+    ],
+    "songs_considered": 3,
+    "stored": false,
+    "unfinished": [
+      2,
+      3
+    ]
+  }
+}

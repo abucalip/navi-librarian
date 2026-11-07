@@ -1,0 +1,26 @@
+{
+  "request": "PUT /api/playlists/smart/00000001-0000-4000-8000-00000005ba17",
+  "request_body": {
+    "limit": 3,
+    "match": "some",
+    "name": ""
+  },
+  "response": {
+    "errors": [
+      {
+        "path": "name",
+        "reason": "bad_name"
+      },
+      {
+        "path": "match",
+        "reason": "bad_match"
+      },
+      {
+        "path": "limit",
+        "reason": "bad_limit"
+      }
+    ],
+    "status": "rejected"
+  },
+  "response_status": 400
+}
