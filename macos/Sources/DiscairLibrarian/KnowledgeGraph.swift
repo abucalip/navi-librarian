@@ -79,9 +79,11 @@ public struct PathStop: Decodable, Equatable, Sendable {
     }
 }
 
-/// The four path kinds the server computes (sideman-to-leader and same-studio answer 400).
+/// The five path kinds the server computes. `same_studio_different_decade` was dropped and answers 400.
+/// `sideman_to_leader` stops are artists, each explained by `sideman_on` (via the release, anchor the recording).
 public enum PathKind: String, Sendable, CaseIterable {
     case followTheMusician = "follow_the_musician"
+    case sidemanToLeader = "sideman_to_leader"
     case labelPath = "label_path"
     case compositionPath = "composition_path"
     case scenePath = "scene_path"

@@ -1,0 +1,2959 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/api/knowledge/paths",
+    "query": {
+      "kind": "sideman_to_leader",
+      "mbid": "2f9ecbed-27be-40e6-abca-6de49d50299e",
+      "type": "artist"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "content_type": "application/json",
+    "elapsed_seconds": 0.096,
+    "body": {
+      "kind": "sideman_to_leader",
+      "start": {
+        "type": "artist",
+        "mbid": "2f9ecbed-27be-40e6-abca-6de49d50299e",
+        "canonical_name": "aretha franklin",
+        "owned": true
+      },
+      "generation": 1,
+      "status": "ok",
+      "stops": [
+        {
+          "entity": {
+            "type": "artist",
+            "mbid": "7252abc2-dfc8-4aa6-889f-2d168b265403",
+            "canonical_name": "Blues Brothers",
+            "owned": false
+          },
+          "reason_count": 7,
+          "reasons": [
+            {
+              "code": "sideman_on",
+              "text": "led The Blues Brothers Complete, a release that carries Think, a recording the artist you started from played on",
+              "via": {
+                "type": "release",
+                "mbid": "3b4c2b4b-f10e-4222-8fd4-fede88633f0e",
+                "canonical_name": "The Blues Brothers Complete",
+                "owned": false
+              },
+              "anchor": {
+                "type": "recording",
+                "mbid": "3d0cf245-5f29-4b37-89b1-8f3a6f749189",
+                "canonical_name": "Think",
+                "owned": false
+              },
+              "evidence": [
+                {
+                  "relation": "performer",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/2f9ecbed-27be-40e6-abca-6de49d50299e",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "relation": "track_on",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/3b4c2b4b-f10e-4222-8fd4-fede88633f0e",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "relation": "release_artist",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/3b4c2b4b-f10e-4222-8fd4-fede88633f0e",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ]
+            },
+            {
+              "code": "sideman_on",
+              "text": "led The Definitive Collection, a release that carries Think, a recording the artist you started from played on",
+              "via": {
+                "type": "release",
+                "mbid": "8603f0e0-41f1-4f54-8b97-ea1a9a47c912",
+                "canonical_name": "The Definitive Collection",
+                "owned": false
+              },
+              "anchor": {
+                "type": "recording",
+                "mbid": "3d0cf245-5f29-4b37-89b1-8f3a6f749189",
+                "canonical_name": "Think",
+                "owned": false
+              },
+              "evidence": [
+                {
+                  "relation": "performer",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/2f9ecbed-27be-40e6-abca-6de49d50299e",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "relation": "track_on",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/8603f0e0-41f1-4f54-8b97-ea1a9a47c912",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "relation": "release_artist",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/8603f0e0-41f1-4f54-8b97-ea1a9a47c912",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ]
+            },
+            {
+              "code": "sideman_on",
+              "text": "led Think, a release that carries Think, a recording the artist you started from played on",
+              "via": {
+                "type": "release",
+                "mbid": "9b063f29-4b2f-4d1e-bdd5-d912584c99cc",
+                "canonical_name": "Think",
+                "owned": false
+              },
+              "anchor": {
+                "type": "recording",
+                "mbid": "3d0cf245-5f29-4b37-89b1-8f3a6f749189",
+                "canonical_name": "Think",
+                "owned": false
+              },
+              "evidence": [
+                {
+                  "relation": "performer",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/2f9ecbed-27be-40e6-abca-6de49d50299e",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "relation": "track_on",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/9b063f29-4b2f-4d1e-bdd5-d912584c99cc",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "relation": "release_artist",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/9b063f29-4b2f-4d1e-bdd5-d912584c99cc",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "entity": {
+            "type": "artist",
+            "mbid": "20ff3303-4fe2-4a47-a1b6-291e26aa3438",
+            "canonical_name": "James Brown",
+            "owned": false
+          },
+          "reason_count": 7,
+          "reasons": [
+            {
+              "code": "sideman_on",
+              "text": "led I Feel Good, a release that carries Gimme Your Love, a recording the artist you started from played on",
+              "via": {
+                "type": "release",
+                "mbid": "2a4ac0f2-aed6-4574-b0d7-0cd79a752ed6",
+                "canonical_name": "I Feel Good",
+                "owned": false
+              },
+              "anchor": {
+                "type": "recording",
+                "mbid": "942900be-c416-4e82-bbc9-adc9e0d10942",
+                "canonical_name": "Gimme Your Love",
+                "owned": false
+              },
+              "evidence": [
+                {
+                  "relation": "vocal",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/2f9ecbed-27be-40e6-abca-6de49d50299e",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "relation": "track_on",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/2a4ac0f2-aed6-4574-b0d7-0cd79a752ed6",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "relation": "release_artist",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/2a4ac0f2-aed6-4574-b0d7-0cd79a752ed6",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ]
+            },
+            {
+              "code": "sideman_on",
+              "text": "led Duets, a release that carries Gimme Your Love, a recording the artist you started from played on",
+              "via": {
+                "type": "release",
+                "mbid": "55b46cd1-2d8c-488a-b743-e43d7e9adde9",
+                "canonical_name": "Duets",
+                "owned": false
+              },
+              "anchor": {
+                "type": "recording",
+                "mbid": "942900be-c416-4e82-bbc9-adc9e0d10942",
+                "canonical_name": "Gimme Your Love",
+                "owned": false
+              },
+              "evidence": [
+                {
+                  "relation": "vocal",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/2f9ecbed-27be-40e6-abca-6de49d50299e",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "relation": "track_on",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/55b46cd1-2d8c-488a-b743-e43d7e9adde9",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "relation": "release_artist",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/55b46cd1-2d8c-488a-b743-e43d7e9adde9",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ]
+            },
+            {
+              "code": "sideman_on",
+              "text": "led Doing the James Brown: In the Footsteps of the Godfather of Funk, a release that carries Money Won’t Change You, a recording the artist you started from played on",
+              "via": {
+                "type": "release",
+                "mbid": "69d42e8f-cec8-4c29-9b6b-4c6a5579f657",
+                "canonical_name": "Doing the James Brown: In the Footsteps of the Godfather of Funk",
+                "owned": false
+              },
+              "anchor": {
+                "type": "recording",
+                "mbid": "c652db9d-16a9-4f96-8710-e711bcad7ecf",
+                "canonical_name": "Money Won’t Change You",
+                "owned": false
+              },
+              "evidence": [
+                {
+                  "relation": "instrument",
+                  "role": "piano",
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/2f9ecbed-27be-40e6-abca-6de49d50299e",
+                  "valid_from": "1967-12-19",
+                  "valid_to": "1967-12-20"
+                },
+                {
+                  "relation": "track_on",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/69d42e8f-cec8-4c29-9b6b-4c6a5579f657",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "relation": "release_artist",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/69d42e8f-cec8-4c29-9b6b-4c6a5579f657",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "entity": {
+            "type": "artist",
+            "mbid": "467f69b6-8d6d-4d2c-bfad-e89adf2806ff",
+            "canonical_name": "George Benson",
+            "owned": true
+          },
+          "reason_count": 6,
+          "reasons": [
+            {
+              "code": "sideman_on",
+              "text": "led The Very Best of George Benson: The Greatest Hits of All, a release that carries Love All The Hurt Away, a recording the artist you started from played on",
+              "via": {
+                "type": "release",
+                "mbid": "292e30c3-3326-4ebc-8c70-c94e12dad15f",
+                "canonical_name": "The Very Best of George Benson: The Greatest Hits of All",
+                "owned": false
+              },
+              "anchor": {
+                "type": "recording",
+                "mbid": "823bd63f-7c58-4c15-986e-8000d488816c",
+                "canonical_name": "Love All The Hurt Away",
+                "owned": true
+              },
+              "evidence": [
+                {
+                  "relation": "vocal",
+                  "role": "lead vocals",
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/2f9ecbed-27be-40e6-abca-6de49d50299e",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "relation": "track_on",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/292e30c3-3326-4ebc-8c70-c94e12dad15f",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "relation": "release_artist",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/292e30c3-3326-4ebc-8c70-c94e12dad15f",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ]
+            },
+            {
+              "code": "sideman_on",
+              "text": "led Classic Love Songs, a release that carries Love All The Hurt Away, a recording the artist you started from played on",
+              "via": {
+                "type": "release",
+                "mbid": "428d1505-e04d-4fb3-b4e6-7a4e52a7f655",
+                "canonical_name": "Classic Love Songs",
+                "owned": false
+              },
+              "anchor": {
+                "type": "recording",
+                "mbid": "823bd63f-7c58-4c15-986e-8000d488816c",
+                "canonical_name": "Love All The Hurt Away",
+                "owned": true
+              },
+              "evidence": [
+                {
+                  "relation": "vocal",
+                  "role": "lead vocals",
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/2f9ecbed-27be-40e6-abca-6de49d50299e",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "relation": "track_on",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/428d1505-e04d-4fb3-b4e6-7a4e52a7f655",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "relation": "release_artist",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/428d1505-e04d-4fb3-b4e6-7a4e52a7f655",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ]
+            },
+            {
+              "code": "sideman_on",
+              "text": "led Anthology, a release that carries Love All The Hurt Away, a recording the artist you started from played on",
+              "via": {
+                "type": "release",
+                "mbid": "7c43980f-5498-481a-9526-f5d7c8c84016",
+                "canonical_name": "Anthology",
+                "owned": false
+              },
+              "anchor": {
+                "type": "recording",
+                "mbid": "823bd63f-7c58-4c15-986e-8000d488816c",
+                "canonical_name": "Love All The Hurt Away",
+                "owned": true
+              },
+              "evidence": [
+                {
+                  "relation": "vocal",
+                  "role": "lead vocals",
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/2f9ecbed-27be-40e6-abca-6de49d50299e",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "relation": "track_on",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/7c43980f-5498-481a-9526-f5d7c8c84016",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "relation": "release_artist",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/7c43980f-5498-481a-9526-f5d7c8c84016",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "entity": {
+            "type": "artist",
+            "mbid": "2882ffa3-dec9-4055-a842-a950728bcb02",
+            "canonical_name": "Burt Bacharach",
+            "owned": false
+          },
+          "reason_count": 6,
+          "reasons": [
+            {
+              "code": "sideman_on",
+              "text": "led The Look of Love: The Classic Songs of Burt Bacharach, a release that carries I Say A Little Prayer, a recording the artist you started from played on",
+              "via": {
+                "type": "release",
+                "mbid": "0cd84954-62cf-4ae4-b3a9-c980ab2d1819",
+                "canonical_name": "The Look of Love: The Classic Songs of Burt Bacharach",
+                "owned": false
+              },
+              "anchor": {
+                "type": "recording",
+                "mbid": "b67ad252-5ddf-4519-aeca-5dcaac86934f",
+                "canonical_name": "I Say A Little Prayer",
+                "owned": true
+              },
+              "evidence": [
+                {
+                  "relation": "instrument",
+                  "role": "piano",
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/2f9ecbed-27be-40e6-abca-6de49d50299e",
+                  "valid_from": "1968-04-17",
+                  "valid_to": "1968-04-17"
+                },
+                {
+                  "relation": "track_on",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/0cd84954-62cf-4ae4-b3a9-c980ab2d1819",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "relation": "release_artist",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/0cd84954-62cf-4ae4-b3a9-c980ab2d1819",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ]
+            },
+            {
+              "code": "sideman_on",
+              "text": "led The Definitive Burt Bacharach Songbook, a release that carries I Say A Little Prayer, a recording the artist you started from played on",
+              "via": {
+                "type": "release",
+                "mbid": "68f3ad46-109e-4f43-ac06-f4841f2d42a6",
+                "canonical_name": "The Definitive Burt Bacharach Songbook",
+                "owned": false
+              },
+              "anchor": {
+                "type": "recording",
+                "mbid": "b67ad252-5ddf-4519-aeca-5dcaac86934f",
+                "canonical_name": "I Say A Little Prayer",
+                "owned": true
+              },
+              "evidence": [
+                {
+                  "relation": "instrument",
+                  "role": "piano",
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/2f9ecbed-27be-40e6-abca-6de49d50299e",
+                  "valid_from": "1968-04-17",
+                  "valid_to": "1968-04-17"
+                },
+                {
+                  "relation": "track_on",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/68f3ad46-109e-4f43-ac06-f4841f2d42a6",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "relation": "release_artist",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/68f3ad46-109e-4f43-ac06-f4841f2d42a6",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ]
+            },
+            {
+              "code": "sideman_on",
+              "text": "led The Look of Love: The Burt Bacharach Collection, a release that carries I Say A Little Prayer, a recording the artist you started from played on",
+              "via": {
+                "type": "release",
+                "mbid": "d4dc745e-cde8-3ea1-9d2c-50277ab4243a",
+                "canonical_name": "The Look of Love: The Burt Bacharach Collection",
+                "owned": false
+              },
+              "anchor": {
+                "type": "recording",
+                "mbid": "b67ad252-5ddf-4519-aeca-5dcaac86934f",
+                "canonical_name": "I Say A Little Prayer",
+                "owned": true
+              },
+              "evidence": [
+                {
+                  "relation": "instrument",
+                  "role": "piano",
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/2f9ecbed-27be-40e6-abca-6de49d50299e",
+                  "valid_from": "1968-04-17",
+                  "valid_to": "1968-04-17"
+                },
+                {
+                  "relation": "track_on",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/d4dc745e-cde8-3ea1-9d2c-50277ab4243a",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "relation": "release_artist",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/d4dc745e-cde8-3ea1-9d2c-50277ab4243a",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "entity": {
+            "type": "artist",
+            "mbid": "197450cd-0124-4164-b723-3c22dd16494d",
+            "canonical_name": "Frank Sinatra",
+            "owned": true
+          },
+          "reason_count": 4,
+          "reasons": [
+            {
+              "code": "sideman_on",
+              "text": "led Duets, a release that carries What Now, My Love?, a recording the artist you started from played on",
+              "via": {
+                "type": "release",
+                "mbid": "3aca19e0-7380-4427-b149-bffba2b958de",
+                "canonical_name": "Duets",
+                "owned": false
+              },
+              "anchor": {
+                "type": "recording",
+                "mbid": "891af241-4218-4d0e-b94d-530e1d785419",
+                "canonical_name": "What Now, My Love?",
+                "owned": false
+              },
+              "evidence": [
+                {
+                  "relation": "performer",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/2f9ecbed-27be-40e6-abca-6de49d50299e",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "relation": "track_on",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/3aca19e0-7380-4427-b149-bffba2b958de",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "relation": "release_artist",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/3aca19e0-7380-4427-b149-bffba2b958de",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ]
+            },
+            {
+              "code": "sideman_on",
+              "text": "led Best of Duets, a release that carries What Now, My Love?, a recording the artist you started from played on",
+              "via": {
+                "type": "release",
+                "mbid": "7a2008e6-93c6-44e5-a61f-5b797480254c",
+                "canonical_name": "Best of Duets",
+                "owned": false
+              },
+              "anchor": {
+                "type": "recording",
+                "mbid": "891af241-4218-4d0e-b94d-530e1d785419",
+                "canonical_name": "What Now, My Love?",
+                "owned": false
+              },
+              "evidence": [
+                {
+                  "relation": "performer",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/2f9ecbed-27be-40e6-abca-6de49d50299e",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "relation": "track_on",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/7a2008e6-93c6-44e5-a61f-5b797480254c",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "relation": "release_artist",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/7a2008e6-93c6-44e5-a61f-5b797480254c",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ]
+            },
+            {
+              "code": "sideman_on",
+              "text": "led The Best Duets, a release that carries What Now, My Love?, a recording the artist you started from played on",
+              "via": {
+                "type": "release",
+                "mbid": "a2689b63-f587-4e62-9b37-13e247f06713",
+                "canonical_name": "The Best Duets",
+                "owned": false
+              },
+              "anchor": {
+                "type": "recording",
+                "mbid": "891af241-4218-4d0e-b94d-530e1d785419",
+                "canonical_name": "What Now, My Love?",
+                "owned": false
+              },
+              "evidence": [
+                {
+                  "relation": "performer",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/2f9ecbed-27be-40e6-abca-6de49d50299e",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "relation": "track_on",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/a2689b63-f587-4e62-9b37-13e247f06713",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "relation": "release_artist",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/a2689b63-f587-4e62-9b37-13e247f06713",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "entity": {
+            "type": "artist",
+            "mbid": "bb45bbe4-172e-4d1d-9d43-9708504f150f",
+            "canonical_name": "Duane Allman",
+            "owned": false
+          },
+          "reason_count": 4,
+          "reasons": [
+            {
+              "code": "sideman_on",
+              "text": "led An Anthology, a release that carries The Weight, a recording the artist you started from played on",
+              "via": {
+                "type": "release",
+                "mbid": "554613c0-62c2-4222-bee4-97deab8858b4",
+                "canonical_name": "An Anthology",
+                "owned": false
+              },
+              "anchor": {
+                "type": "recording",
+                "mbid": "514513e0-fb7a-4688-9e0b-51b61f247598",
+                "canonical_name": "The Weight",
+                "owned": false
+              },
+              "evidence": [
+                {
+                  "relation": "instrument",
+                  "role": "piano",
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/2f9ecbed-27be-40e6-abca-6de49d50299e",
+                  "valid_from": "1969-01-08",
+                  "valid_to": "1969-01-08"
+                },
+                {
+                  "relation": "track_on",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/554613c0-62c2-4222-bee4-97deab8858b4",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "relation": "release_artist",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/554613c0-62c2-4222-bee4-97deab8858b4",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ]
+            },
+            {
+              "code": "sideman_on",
+              "text": "led Duane Allman: An Anthology, Volume II, a release that carries It Ain’t Fair, a recording the artist you started from played on",
+              "via": {
+                "type": "release",
+                "mbid": "9e75c292-d6c1-4479-bbc8-e2f4ead1cfdc",
+                "canonical_name": "Duane Allman: An Anthology, Volume II",
+                "owned": false
+              },
+              "anchor": {
+                "type": "recording",
+                "mbid": "0376e211-5e28-414b-9ebe-0774e60f60f3",
+                "canonical_name": "It Ain’t Fair",
+                "owned": false
+              },
+              "evidence": [
+                {
+                  "relation": "instrument",
+                  "role": "piano",
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/2f9ecbed-27be-40e6-abca-6de49d50299e",
+                  "valid_from": "1969-01-08",
+                  "valid_to": "1969-01-08"
+                },
+                {
+                  "relation": "track_on",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/9e75c292-d6c1-4479-bbc8-e2f4ead1cfdc",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "relation": "release_artist",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/9e75c292-d6c1-4479-bbc8-e2f4ead1cfdc",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ]
+            },
+            {
+              "code": "sideman_on",
+              "text": "led Skydog: The Duane Allman Retrospective, a release that carries It Ain’t Fair, a recording the artist you started from played on",
+              "via": {
+                "type": "release",
+                "mbid": "bccece63-a042-42fe-81d7-36a7225ce33e",
+                "canonical_name": "Skydog: The Duane Allman Retrospective",
+                "owned": false
+              },
+              "anchor": {
+                "type": "recording",
+                "mbid": "0376e211-5e28-414b-9ebe-0774e60f60f3",
+                "canonical_name": "It Ain’t Fair",
+                "owned": false
+              },
+              "evidence": [
+                {
+                  "relation": "instrument",
+                  "role": "piano",
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/2f9ecbed-27be-40e6-abca-6de49d50299e",
+                  "valid_from": "1969-01-08",
+                  "valid_to": "1969-01-08"
+                },
+                {
+                  "relation": "track_on",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/bccece63-a042-42fe-81d7-36a7225ce33e",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "relation": "release_artist",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/bccece63-a042-42fe-81d7-36a7225ce33e",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "entity": {
+            "type": "artist",
+            "mbid": "0d21b01f-21f2-419b-8d98-4158ba0c0aa4",
+            "canonical_name": "Four Tops",
+            "owned": false
+          },
+          "reason_count": 4,
+          "reasons": [
+            {
+              "code": "sideman_on",
+              "text": "led Indestructible, a release that carries If Ever a Love There Was, a recording the artist you started from played on",
+              "via": {
+                "type": "release",
+                "mbid": "34816a18-ddb1-4c9d-aea1-22f38c4b6b8a",
+                "canonical_name": "Indestructible",
+                "owned": false
+              },
+              "anchor": {
+                "type": "recording",
+                "mbid": "779cff72-b6dc-4cb6-821b-b3eb0401eebe",
+                "canonical_name": "If Ever a Love There Was",
+                "owned": false
+              },
+              "evidence": [
+                {
+                  "relation": "vocal",
+                  "role": "guest, lead vocals",
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/2f9ecbed-27be-40e6-abca-6de49d50299e",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "relation": "track_on",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/34816a18-ddb1-4c9d-aea1-22f38c4b6b8a",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "relation": "release_artist",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/34816a18-ddb1-4c9d-aea1-22f38c4b6b8a",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ]
+            },
+            {
+              "code": "sideman_on",
+              "text": "led Indestructible, a release that carries Change of Heart, a recording the artist you started from played on",
+              "via": {
+                "type": "release",
+                "mbid": "34816a18-ddb1-4c9d-aea1-22f38c4b6b8a",
+                "canonical_name": "Indestructible",
+                "owned": false
+              },
+              "anchor": {
+                "type": "recording",
+                "mbid": "e557a0ea-aca1-44cd-98c2-484143150664",
+                "canonical_name": "Change of Heart",
+                "owned": false
+              },
+              "evidence": [
+                {
+                  "relation": "vocal",
+                  "role": "guest, lead vocals",
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/2f9ecbed-27be-40e6-abca-6de49d50299e",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "relation": "track_on",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/34816a18-ddb1-4c9d-aea1-22f38c4b6b8a",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "relation": "release_artist",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/34816a18-ddb1-4c9d-aea1-22f38c4b6b8a",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ]
+            },
+            {
+              "code": "sideman_on",
+              "text": "led Christmas Here With You, a release that carries Christmas Here With You, a recording the artist you started from played on",
+              "via": {
+                "type": "release",
+                "mbid": "64da5765-1ebd-4964-ac5a-0bb3ee0eda9b",
+                "canonical_name": "Christmas Here With You",
+                "owned": false
+              },
+              "anchor": {
+                "type": "recording",
+                "mbid": "ebe5d000-71b8-40a1-b259-84d800721f67",
+                "canonical_name": "Christmas Here With You",
+                "owned": false
+              },
+              "evidence": [
+                {
+                  "relation": "performer",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/2f9ecbed-27be-40e6-abca-6de49d50299e",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "relation": "track_on",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/64da5765-1ebd-4964-ac5a-0bb3ee0eda9b",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "relation": "release_artist",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/64da5765-1ebd-4964-ac5a-0bb3ee0eda9b",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "entity": {
+            "type": "artist",
+            "mbid": "65744963-191a-44ef-a3c7-b693a808a158",
+            "canonical_name": "George Gershwin",
+            "owned": false
+          },
+          "reason_count": 3,
+          "reasons": [
+            {
+              "code": "sideman_on",
+              "text": "led The Best of Gershwin, a release that carries It Ain’t Necessarily So, a recording the artist you started from played on",
+              "via": {
+                "type": "release",
+                "mbid": "0051f2d7-574d-4901-bb58-1bd36508b2ea",
+                "canonical_name": "The Best of Gershwin",
+                "owned": false
+              },
+              "anchor": {
+                "type": "recording",
+                "mbid": "7deeb8fa-6158-43df-b061-46a6933188b6",
+                "canonical_name": "It Ain’t Necessarily So",
+                "owned": false
+              },
+              "evidence": [
+                {
+                  "relation": "vocal",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/2f9ecbed-27be-40e6-abca-6de49d50299e",
+                  "valid_from": "1960-12-19",
+                  "valid_to": "1960-12-19"
+                },
+                {
+                  "relation": "track_on",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/0051f2d7-574d-4901-bb58-1bd36508b2ea",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "relation": "release_artist",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/0051f2d7-574d-4901-bb58-1bd36508b2ea",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ]
+            },
+            {
+              "code": "sideman_on",
+              "text": "led Enjoy Gershwin, a release that carries Porgy and Bess, It ain't necessarily so (Aretha Flanklin), a recording the artist you started from played on",
+              "via": {
+                "type": "release",
+                "mbid": "1843edec-ba4d-4f5d-af8d-bb246a8002ef",
+                "canonical_name": "Enjoy Gershwin",
+                "owned": false
+              },
+              "anchor": {
+                "type": "recording",
+                "mbid": "7fe550fe-22af-42aa-b262-3371d7c2c383",
+                "canonical_name": "Porgy and Bess, It ain't necessarily so (Aretha Flanklin)",
+                "owned": false
+              },
+              "evidence": [
+                {
+                  "relation": "vocal",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/2f9ecbed-27be-40e6-abca-6de49d50299e",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "relation": "track_on",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/1843edec-ba4d-4f5d-af8d-bb246a8002ef",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "relation": "release_artist",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/1843edec-ba4d-4f5d-af8d-bb246a8002ef",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ]
+            },
+            {
+              "code": "sideman_on",
+              "text": "led The Essential George Gershwin, a release that carries It Ain’t Necessarily So, a recording the artist you started from played on",
+              "via": {
+                "type": "release",
+                "mbid": "1fa7c818-f79b-3862-b885-dbd07c05abe1",
+                "canonical_name": "The Essential George Gershwin",
+                "owned": false
+              },
+              "anchor": {
+                "type": "recording",
+                "mbid": "8f9f1263-d51d-4f29-bc3f-8c5a776dcd2b",
+                "canonical_name": "It Ain’t Necessarily So",
+                "owned": false
+              },
+              "evidence": [
+                {
+                  "relation": "vocal",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/2f9ecbed-27be-40e6-abca-6de49d50299e",
+                  "valid_from": "1960-12-19",
+                  "valid_to": "1960-12-19"
+                },
+                {
+                  "relation": "track_on",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/1fa7c818-f79b-3862-b885-dbd07c05abe1",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "relation": "release_artist",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/1fa7c818-f79b-3862-b885-dbd07c05abe1",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "entity": {
+            "type": "artist",
+            "mbid": "0307edfc-437c-4b48-8700-80680e66a228",
+            "canonical_name": "Whitney Houston",
+            "owned": false
+          },
+          "reason_count": 3,
+          "reasons": [
+            {
+              "code": "sideman_on",
+              "text": "led Exhale (Shoop Shoop), a release that carries It Isn’t, It Wasn’t, It Ain’t Never Gonna Be, a recording the artist you started from played on",
+              "via": {
+                "type": "release",
+                "mbid": "408bb18f-4283-409c-973e-08770a8db9c0",
+                "canonical_name": "Exhale (Shoop Shoop)",
+                "owned": false
+              },
+              "anchor": {
+                "type": "recording",
+                "mbid": "fff572ae-8de6-42eb-ba3f-7bdc2f545b03",
+                "canonical_name": "It Isn’t, It Wasn’t, It Ain’t Never Gonna Be",
+                "owned": false
+              },
+              "evidence": [
+                {
+                  "relation": "performer",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/2f9ecbed-27be-40e6-abca-6de49d50299e",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "relation": "track_on",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/408bb18f-4283-409c-973e-08770a8db9c0",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "relation": "release_artist",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/408bb18f-4283-409c-973e-08770a8db9c0",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ]
+            },
+            {
+              "code": "sideman_on",
+              "text": "led I Will Always Love You: The Best of Whitney Houston, a release that carries It Isn’t, It Wasn’t, It Ain’t Never Gonna Be, a recording the artist you started from played on",
+              "via": {
+                "type": "release",
+                "mbid": "b5f9fdbc-a4dd-4ea1-8905-6dce64e87a41",
+                "canonical_name": "I Will Always Love You: The Best of Whitney Houston",
+                "owned": false
+              },
+              "anchor": {
+                "type": "recording",
+                "mbid": "fff572ae-8de6-42eb-ba3f-7bdc2f545b03",
+                "canonical_name": "It Isn’t, It Wasn’t, It Ain’t Never Gonna Be",
+                "owned": false
+              },
+              "evidence": [
+                {
+                  "relation": "performer",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/2f9ecbed-27be-40e6-abca-6de49d50299e",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "relation": "track_on",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/b5f9fdbc-a4dd-4ea1-8905-6dce64e87a41",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "relation": "release_artist",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/b5f9fdbc-a4dd-4ea1-8905-6dce64e87a41",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ]
+            },
+            {
+              "code": "sideman_on",
+              "text": "led Exhale, a release that carries It Isn’t, It Wasn’t, It Ain’t Never Gonna Be, a recording the artist you started from played on",
+              "via": {
+                "type": "release",
+                "mbid": "cdd93ff4-2dba-4383-b72f-10fd0c4cae7a",
+                "canonical_name": "Exhale",
+                "owned": false
+              },
+              "anchor": {
+                "type": "recording",
+                "mbid": "fff572ae-8de6-42eb-ba3f-7bdc2f545b03",
+                "canonical_name": "It Isn’t, It Wasn’t, It Ain’t Never Gonna Be",
+                "owned": false
+              },
+              "evidence": [
+                {
+                  "relation": "performer",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/2f9ecbed-27be-40e6-abca-6de49d50299e",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "relation": "track_on",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/cdd93ff4-2dba-4383-b72f-10fd0c4cae7a",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "relation": "release_artist",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/cdd93ff4-2dba-4383-b72f-10fd0c4cae7a",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "entity": {
+            "type": "artist",
+            "mbid": "b4d32cff-f19e-455f-86c4-f347d824ca61",
+            "canonical_name": "Eurythmics",
+            "owned": false
+          },
+          "reason_count": 3,
+          "reasons": [
+            {
+              "code": "sideman_on",
+              "text": "led Be Yourself Tonight, a release that carries Sisters Are Doin’ It for Themselves, a recording the artist you started from played on",
+              "via": {
+                "type": "release",
+                "mbid": "11787d0e-37c7-4ee0-b606-1606282e6eca",
+                "canonical_name": "Be Yourself Tonight",
+                "owned": false
+              },
+              "anchor": {
+                "type": "recording",
+                "mbid": "0f57ed9c-168d-40ba-b665-95a9b3606f83",
+                "canonical_name": "Sisters Are Doin’ It for Themselves",
+                "owned": false
+              },
+              "evidence": [
+                {
+                  "relation": "vocal",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/2f9ecbed-27be-40e6-abca-6de49d50299e",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "relation": "track_on",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/11787d0e-37c7-4ee0-b606-1606282e6eca",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "relation": "release_artist",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/11787d0e-37c7-4ee0-b606-1606282e6eca",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ]
+            },
+            {
+              "code": "sideman_on",
+              "text": "led Sweet Dreams / Be Yourself Tonight / Touch, a release that carries Sisters Are Doin’ It for Themselves, a recording the artist you started from played on",
+              "via": {
+                "type": "release",
+                "mbid": "c6501d70-a08c-4922-aecc-2623c900387d",
+                "canonical_name": "Sweet Dreams / Be Yourself Tonight / Touch",
+                "owned": false
+              },
+              "anchor": {
+                "type": "recording",
+                "mbid": "0f57ed9c-168d-40ba-b665-95a9b3606f83",
+                "canonical_name": "Sisters Are Doin’ It for Themselves",
+                "owned": false
+              },
+              "evidence": [
+                {
+                  "relation": "vocal",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/2f9ecbed-27be-40e6-abca-6de49d50299e",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "relation": "track_on",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/c6501d70-a08c-4922-aecc-2623c900387d",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "relation": "release_artist",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/c6501d70-a08c-4922-aecc-2623c900387d",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ]
+            },
+            {
+              "code": "sideman_on",
+              "text": "led Greatest Hits, a release that carries Sisters Are Doin’ It for Themselves, a recording the artist you started from played on",
+              "via": {
+                "type": "release",
+                "mbid": "e3e93a2e-161d-4c01-a6cf-d1549ce0a288",
+                "canonical_name": "Greatest Hits",
+                "owned": false
+              },
+              "anchor": {
+                "type": "recording",
+                "mbid": "0f57ed9c-168d-40ba-b665-95a9b3606f83",
+                "canonical_name": "Sisters Are Doin’ It for Themselves",
+                "owned": false
+              },
+              "evidence": [
+                {
+                  "relation": "vocal",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/2f9ecbed-27be-40e6-abca-6de49d50299e",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "relation": "track_on",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/e3e93a2e-161d-4c01-a6cf-d1549ce0a288",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "relation": "release_artist",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/e3e93a2e-161d-4c01-a6cf-d1549ce0a288",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "entity": {
+            "type": "artist",
+            "mbid": "5803c81e-739a-4057-9a5c-cf84e55db630",
+            "canonical_name": "Quincy Jones",
+            "owned": true
+          },
+          "reason_count": 2,
+          "reasons": [
+            {
+              "code": "sideman_on",
+              "text": "led From Q, With Love, a release that carries Somewhere, a recording the artist you started from played on",
+              "via": {
+                "type": "release",
+                "mbid": "adea453b-0e4e-4d43-a281-fcbf85e18b57",
+                "canonical_name": "From Q, With Love",
+                "owned": false
+              },
+              "anchor": {
+                "type": "recording",
+                "mbid": "ae00558d-ac04-4273-9524-17c42f209d47",
+                "canonical_name": "Somewhere",
+                "owned": false
+              },
+              "evidence": [
+                {
+                  "relation": "instrument",
+                  "role": "piano",
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/2f9ecbed-27be-40e6-abca-6de49d50299e",
+                  "valid_from": "1972-04",
+                  "valid_to": "1972-04"
+                },
+                {
+                  "relation": "track_on",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/adea453b-0e4e-4d43-a281-fcbf85e18b57",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "relation": "release_artist",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/adea453b-0e4e-4d43-a281-fcbf85e18b57",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ]
+            },
+            {
+              "code": "sideman_on",
+              "text": "led Listen Up: The Lives of Quincy Jones, a release that carries Somewhere, a recording the artist you started from played on",
+              "via": {
+                "type": "release",
+                "mbid": "dc63a900-ae49-4ac8-8d95-e18b01a8a7a3",
+                "canonical_name": "Listen Up: The Lives of Quincy Jones",
+                "owned": false
+              },
+              "anchor": {
+                "type": "recording",
+                "mbid": "ae00558d-ac04-4273-9524-17c42f209d47",
+                "canonical_name": "Somewhere",
+                "owned": false
+              },
+              "evidence": [
+                {
+                  "relation": "instrument",
+                  "role": "piano",
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/2f9ecbed-27be-40e6-abca-6de49d50299e",
+                  "valid_from": "1972-04",
+                  "valid_to": "1972-04"
+                },
+                {
+                  "relation": "track_on",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/dc63a900-ae49-4ac8-8d95-e18b01a8a7a3",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "relation": "release_artist",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/dc63a900-ae49-4ac8-8d95-e18b01a8a7a3",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "entity": {
+            "type": "artist",
+            "mbid": "ccb8f30e-4d71-40c4-8b1d-846dafe73e2c",
+            "canonical_name": "George Michael",
+            "owned": false
+          },
+          "reason_count": 2,
+          "reasons": [
+            {
+              "code": "sideman_on",
+              "text": "led The Very Best, a release that carries I Knew You Were Waiting (For Me), a recording the artist you started from played on",
+              "via": {
+                "type": "release",
+                "mbid": "504b6ec5-32b1-4e93-8d20-a36540044f00",
+                "canonical_name": "The Very Best",
+                "owned": false
+              },
+              "anchor": {
+                "type": "recording",
+                "mbid": "c44dc5d0-7c4a-4629-8d1e-f5268a8f7bae",
+                "canonical_name": "I Knew You Were Waiting (For Me)",
+                "owned": true
+              },
+              "evidence": [
+                {
+                  "relation": "vocal",
+                  "role": "lead vocals",
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/2f9ecbed-27be-40e6-abca-6de49d50299e",
+                  "valid_from": "1986",
+                  "valid_to": "1986"
+                },
+                {
+                  "relation": "track_on",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/504b6ec5-32b1-4e93-8d20-a36540044f00",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "relation": "release_artist",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/504b6ec5-32b1-4e93-8d20-a36540044f00",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ]
+            },
+            {
+              "code": "sideman_on",
+              "text": "led Ladies & Gentlemen: The Best of George Michael, a release that carries I Knew You Were Waiting (For Me), a recording the artist you started from played on",
+              "via": {
+                "type": "release",
+                "mbid": "68fadd93-a09b-4bfd-83d9-655143248fca",
+                "canonical_name": "Ladies & Gentlemen: The Best of George Michael",
+                "owned": false
+              },
+              "anchor": {
+                "type": "recording",
+                "mbid": "c44dc5d0-7c4a-4629-8d1e-f5268a8f7bae",
+                "canonical_name": "I Knew You Were Waiting (For Me)",
+                "owned": true
+              },
+              "evidence": [
+                {
+                  "relation": "vocal",
+                  "role": "lead vocals",
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/2f9ecbed-27be-40e6-abca-6de49d50299e",
+                  "valid_from": "1986",
+                  "valid_to": "1986"
+                },
+                {
+                  "relation": "track_on",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/68fadd93-a09b-4bfd-83d9-655143248fca",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "relation": "release_artist",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/68fadd93-a09b-4bfd-83d9-655143248fca",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "entity": {
+            "type": "artist",
+            "mbid": "8be0594f-8c13-46bb-ab06-f93ffba5c776",
+            "canonical_name": "Tony Bennett",
+            "owned": false
+          },
+          "reason_count": 2,
+          "reasons": [
+            {
+              "code": "sideman_on",
+              "text": "led Duets II, a release that carries How Do You Keep the Music Playing, a recording the artist you started from played on",
+              "via": {
+                "type": "release",
+                "mbid": "48e873c9-3d37-4835-a4ce-0fe7ba4e8faf",
+                "canonical_name": "Duets II",
+                "owned": false
+              },
+              "anchor": {
+                "type": "recording",
+                "mbid": "33354991-0d50-4c18-aacd-ad36feaa7a94",
+                "canonical_name": "How Do You Keep the Music Playing",
+                "owned": false
+              },
+              "evidence": [
+                {
+                  "relation": "vocal",
+                  "role": "lead vocals",
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/2f9ecbed-27be-40e6-abca-6de49d50299e",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "relation": "track_on",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/48e873c9-3d37-4835-a4ce-0fe7ba4e8faf",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "relation": "release_artist",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/48e873c9-3d37-4835-a4ce-0fe7ba4e8faf",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ]
+            },
+            {
+              "code": "sideman_on",
+              "text": "led The Complete Collection, a release that carries How Do You Keep the Music Playing, a recording the artist you started from played on",
+              "via": {
+                "type": "release",
+                "mbid": "baeb7e5b-6862-4b73-84f9-6ce32a2886a8",
+                "canonical_name": "The Complete Collection",
+                "owned": false
+              },
+              "anchor": {
+                "type": "recording",
+                "mbid": "33354991-0d50-4c18-aacd-ad36feaa7a94",
+                "canonical_name": "How Do You Keep the Music Playing",
+                "owned": false
+              },
+              "evidence": [
+                {
+                  "relation": "vocal",
+                  "role": "lead vocals",
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/2f9ecbed-27be-40e6-abca-6de49d50299e",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "relation": "track_on",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/baeb7e5b-6862-4b73-84f9-6ce32a2886a8",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "relation": "release_artist",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/baeb7e5b-6862-4b73-84f9-6ce32a2886a8",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "entity": {
+            "type": "artist",
+            "mbid": "cb606c37-f715-40d4-b525-f5b67b6911c9",
+            "canonical_name": "Raven‐Symoné",
+            "owned": false
+          },
+          "reason_count": 2,
+          "reasons": [
+            {
+              "code": "sideman_on",
+              "text": "led That’s So Raven Too!, a release that carries Respect, a recording the artist you started from played on",
+              "via": {
+                "type": "release",
+                "mbid": "3f8e4810-0cbb-4e43-9367-9f6442dc69fe",
+                "canonical_name": "That’s So Raven Too!",
+                "owned": false
+              },
+              "anchor": {
+                "type": "recording",
+                "mbid": "04bb8880-4c81-4d23-8b09-f294f7222921",
+                "canonical_name": "Respect",
+                "owned": false
+              },
+              "evidence": [
+                {
+                  "relation": "vocal",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/2f9ecbed-27be-40e6-abca-6de49d50299e",
+                  "valid_from": "1967-02-14",
+                  "valid_to": "1967-02-14"
+                },
+                {
+                  "relation": "track_on",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/3f8e4810-0cbb-4e43-9367-9f6442dc69fe",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "relation": "release_artist",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/3f8e4810-0cbb-4e43-9367-9f6442dc69fe",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ]
+            },
+            {
+              "code": "sideman_on",
+              "text": "led That's So Raven Too!, a release that carries Respect, a recording the artist you started from played on",
+              "via": {
+                "type": "release",
+                "mbid": "64622bca-5fa0-4faa-a85d-d3a9d2179532",
+                "canonical_name": "That's So Raven Too!",
+                "owned": false
+              },
+              "anchor": {
+                "type": "recording",
+                "mbid": "4855f9bc-1189-4915-aeba-1871cf6016c9",
+                "canonical_name": "Respect",
+                "owned": true
+              },
+              "evidence": [
+                {
+                  "relation": "instrument",
+                  "role": "piano",
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/2f9ecbed-27be-40e6-abca-6de49d50299e",
+                  "valid_from": "1967-02-14",
+                  "valid_to": "1967-02-14"
+                },
+                {
+                  "relation": "track_on",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/64622bca-5fa0-4faa-a85d-d3a9d2179532",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "relation": "release_artist",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/64622bca-5fa0-4faa-a85d-d3a9d2179532",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "entity": {
+            "type": "artist",
+            "mbid": "07e748f1-075e-428d-85dc-ce3be434e906",
+            "canonical_name": "Dave Matthews Band",
+            "owned": true
+          },
+          "reason_count": 1,
+          "reasons": [
+            {
+              "code": "sideman_on",
+              "text": "led Spotlight Influences, a release that carries Respect, a recording the artist you started from played on",
+              "via": {
+                "type": "release",
+                "mbid": "1f5a9988-c6b1-401a-8c89-f7e7c10e8c93",
+                "canonical_name": "Spotlight Influences",
+                "owned": false
+              },
+              "anchor": {
+                "type": "recording",
+                "mbid": "4855f9bc-1189-4915-aeba-1871cf6016c9",
+                "canonical_name": "Respect",
+                "owned": true
+              },
+              "evidence": [
+                {
+                  "relation": "instrument",
+                  "role": "piano",
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/2f9ecbed-27be-40e6-abca-6de49d50299e",
+                  "valid_from": "1967-02-14",
+                  "valid_to": "1967-02-14"
+                },
+                {
+                  "relation": "track_on",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/1f5a9988-c6b1-401a-8c89-f7e7c10e8c93",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "relation": "release_artist",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/1f5a9988-c6b1-401a-8c89-f7e7c10e8c93",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "entity": {
+            "type": "artist",
+            "mbid": "618b6900-0618-4f1e-b835-bccb17f84294",
+            "canonical_name": "Eric Clapton",
+            "owned": true
+          },
+          "reason_count": 1,
+          "reasons": [
+            {
+              "code": "sideman_on",
+              "text": "led Life in 12 Bars, a release that carries Good to Me as I Am to You, a recording the artist you started from played on",
+              "via": {
+                "type": "release",
+                "mbid": "7be46a6a-9b10-4571-b805-a31aa4454155",
+                "canonical_name": "Life in 12 Bars",
+                "owned": false
+              },
+              "anchor": {
+                "type": "recording",
+                "mbid": "202539a5-8376-4da3-9f4c-3fd5320eb2de",
+                "canonical_name": "Good to Me as I Am to You",
+                "owned": false
+              },
+              "evidence": [
+                {
+                  "relation": "instrument",
+                  "role": "piano",
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/2f9ecbed-27be-40e6-abca-6de49d50299e",
+                  "valid_from": "1967-12-16",
+                  "valid_to": "1967-12-17"
+                },
+                {
+                  "relation": "track_on",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/7be46a6a-9b10-4571-b805-a31aa4454155",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "relation": "release_artist",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/7be46a6a-9b10-4571-b805-a31aa4454155",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "entity": {
+            "type": "artist",
+            "mbid": "db76c5ca-d555-4f09-b1db-baa1b713d875",
+            "canonical_name": "Mary J. Blige",
+            "owned": true
+          },
+          "reason_count": 1,
+          "reasons": [
+            {
+              "code": "sideman_on",
+              "text": "led Mary, a release that carries Don’t Waste Your Time, a recording the artist you started from played on",
+              "via": {
+                "type": "release",
+                "mbid": "535b2ef7-6551-44b7-a954-fd9f8388d55f",
+                "canonical_name": "Mary",
+                "owned": false
+              },
+              "anchor": {
+                "type": "recording",
+                "mbid": "5b17e075-6540-41dd-b656-54e5f20242a3",
+                "canonical_name": "Don’t Waste Your Time",
+                "owned": false
+              },
+              "evidence": [
+                {
+                  "relation": "vocal",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/2f9ecbed-27be-40e6-abca-6de49d50299e",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "relation": "track_on",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/535b2ef7-6551-44b7-a954-fd9f8388d55f",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "relation": "release_artist",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/535b2ef7-6551-44b7-a954-fd9f8388d55f",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "entity": {
+            "type": "artist",
+            "mbid": "6d072aa8-c851-49c5-92f9-cbca05f4bed9",
+            "canonical_name": "Orchestral Manoeuvres in the Dark",
+            "owned": false
+          },
+          "reason_count": 1,
+          "reasons": [
+            {
+              "code": "sideman_on",
+              "text": "led History of Modern, a release that carries Save Me, a recording the artist you started from played on",
+              "via": {
+                "type": "release",
+                "mbid": "7a00d42b-5618-4cf3-810f-255ac6747a6a",
+                "canonical_name": "History of Modern",
+                "owned": false
+              },
+              "anchor": {
+                "type": "recording",
+                "mbid": "136cefac-9cbd-4354-951c-dd8316e4bb10",
+                "canonical_name": "Save Me",
+                "owned": false
+              },
+              "evidence": [
+                {
+                  "relation": "vocal",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/2f9ecbed-27be-40e6-abca-6de49d50299e",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "relation": "track_on",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/7a00d42b-5618-4cf3-810f-255ac6747a6a",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "relation": "release_artist",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/7a00d42b-5618-4cf3-810f-255ac6747a6a",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "entity": {
+            "type": "artist",
+            "mbid": "cad43f86-226e-4e6a-84f9-3219b48ad242",
+            "canonical_name": "Jerry Wexler",
+            "owned": false
+          },
+          "reason_count": 1,
+          "reasons": [
+            {
+              "code": "sideman_on",
+              "text": "led Wex on Wax: A Tribute to Jerry Wexler, a release that carries I Never Loved A Man (The Way I Love You), a recording the artist you started from played on",
+              "via": {
+                "type": "release",
+                "mbid": "295b60df-8a78-4ac5-935a-3e966ff44eb7",
+                "canonical_name": "Wex on Wax: A Tribute to Jerry Wexler",
+                "owned": false
+              },
+              "anchor": {
+                "type": "recording",
+                "mbid": "a0d90e97-442d-4bb6-86fc-b0af8b572846",
+                "canonical_name": "I Never Loved A Man (The Way I Love You)",
+                "owned": true
+              },
+              "evidence": [
+                {
+                  "relation": "instrument",
+                  "role": "piano",
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/2f9ecbed-27be-40e6-abca-6de49d50299e",
+                  "valid_from": "1967-01-24",
+                  "valid_to": "1967-01-24"
+                },
+                {
+                  "relation": "track_on",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/295b60df-8a78-4ac5-935a-3e966ff44eb7",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "relation": "release_artist",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/295b60df-8a78-4ac5-935a-3e966ff44eb7",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "entity": {
+            "type": "artist",
+            "mbid": "348f3a5f-5112-4d72-b33b-11c60b4f9af2",
+            "canonical_name": "Thomas Newman",
+            "owned": false
+          },
+          "reason_count": 1,
+          "reasons": [
+            {
+              "code": "sideman_on",
+              "text": "led The War, a release that carries Think, a recording the artist you started from played on",
+              "via": {
+                "type": "release",
+                "mbid": "598ff64f-ad1c-451e-be71-e7ee899f3c80",
+                "canonical_name": "The War",
+                "owned": false
+              },
+              "anchor": {
+                "type": "recording",
+                "mbid": "7226f991-081a-4774-adf4-3dab0e63e344",
+                "canonical_name": "Think",
+                "owned": true
+              },
+              "evidence": [
+                {
+                  "relation": "instrument",
+                  "role": "piano",
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/2f9ecbed-27be-40e6-abca-6de49d50299e",
+                  "valid_from": "1968-04-15",
+                  "valid_to": "1968-04-15"
+                },
+                {
+                  "relation": "track_on",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/598ff64f-ad1c-451e-be71-e7ee899f3c80",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "relation": "release_artist",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/598ff64f-ad1c-451e-be71-e7ee899f3c80",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "entity": {
+            "type": "artist",
+            "mbid": "b7c4125d-2867-4e29-ba44-b19a69309c68",
+            "canonical_name": "Jim James",
+            "owned": false
+          },
+          "reason_count": 1,
+          "reasons": [
+            {
+              "code": "sideman_on",
+              "text": "led Hot Burrito #1, a release that carries Dark End Of The Street, a recording the artist you started from played on",
+              "via": {
+                "type": "release",
+                "mbid": "648a7f16-24d3-4d36-a42c-ee99cdd54df3",
+                "canonical_name": "Hot Burrito #1",
+                "owned": false
+              },
+              "anchor": {
+                "type": "recording",
+                "mbid": "7ce4b2ac-feef-4bef-a062-a6d1891aff00",
+                "canonical_name": "Dark End Of The Street",
+                "owned": true
+              },
+              "evidence": [
+                {
+                  "relation": "instrument",
+                  "role": "piano",
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/2f9ecbed-27be-40e6-abca-6de49d50299e",
+                  "valid_from": "1969-10-03",
+                  "valid_to": "1969-10-03"
+                },
+                {
+                  "relation": "track_on",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/648a7f16-24d3-4d36-a42c-ee99cdd54df3",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "relation": "release_artist",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/648a7f16-24d3-4d36-a42c-ee99cdd54df3",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "entity": {
+            "type": "artist",
+            "mbid": "cacbe57b-02d0-4d21-be86-c8a3a5ea6e1e",
+            "canonical_name": "Michael McDonald",
+            "owned": false
+          },
+          "reason_count": 1,
+          "reasons": [
+            {
+              "code": "sideman_on",
+              "text": "led The Voice of Michael McDonald, a release that carries Ever Changing Times, a recording the artist you started from played on",
+              "via": {
+                "type": "release",
+                "mbid": "82e12072-0023-497d-8e15-6f0c9921986e",
+                "canonical_name": "The Voice of Michael McDonald",
+                "owned": false
+              },
+              "anchor": {
+                "type": "recording",
+                "mbid": "81c5842e-1b58-49f9-9ace-76d227d75ad6",
+                "canonical_name": "Ever Changing Times",
+                "owned": false
+              },
+              "evidence": [
+                {
+                  "relation": "vocal",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/2f9ecbed-27be-40e6-abca-6de49d50299e",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "relation": "track_on",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/82e12072-0023-497d-8e15-6f0c9921986e",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "relation": "release_artist",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/82e12072-0023-497d-8e15-6f0c9921986e",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "entity": {
+            "type": "artist",
+            "mbid": "e8414012-4a1c-4ad4-be5e-fc55294e28cc",
+            "canonical_name": "Ms. Lauryn Hill",
+            "owned": false
+          },
+          "reason_count": 1,
+          "reasons": [
+            {
+              "code": "sideman_on",
+              "text": "led Ultimate Collection, a release that carries A Rose Is Still a Rose, a recording the artist you started from played on",
+              "via": {
+                "type": "release",
+                "mbid": "c6e02e1b-12db-4107-852a-9569d96fda3e",
+                "canonical_name": "Ultimate Collection",
+                "owned": false
+              },
+              "anchor": {
+                "type": "recording",
+                "mbid": "c50e0007-292c-4c30-8379-83b61c7a25e4",
+                "canonical_name": "A Rose Is Still a Rose",
+                "owned": false
+              },
+              "evidence": [
+                {
+                  "relation": "performer",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/2f9ecbed-27be-40e6-abca-6de49d50299e",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "relation": "track_on",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/c6e02e1b-12db-4107-852a-9569d96fda3e",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "relation": "release_artist",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/c6e02e1b-12db-4107-852a-9569d96fda3e",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "entity": {
+            "type": "artist",
+            "mbid": "bf6c29f5-b69f-4842-9031-37f9645d365d",
+            "canonical_name": "Carole King",
+            "owned": false
+          },
+          "reason_count": 1,
+          "reasons": [
+            {
+              "code": "sideman_on",
+              "text": "led The Essential Carole King, a release that carries (You Make Me Feel Like) A Natural Woman, a recording the artist you started from played on",
+              "via": {
+                "type": "release",
+                "mbid": "ca75230e-a3c7-4541-b4c6-7887dbb123a9",
+                "canonical_name": "The Essential Carole King",
+                "owned": false
+              },
+              "anchor": {
+                "type": "recording",
+                "mbid": "47f96d6e-227e-44b8-b6f7-62c25e7857a7",
+                "canonical_name": "(You Make Me Feel Like) A Natural Woman",
+                "owned": true
+              },
+              "evidence": [
+                {
+                  "relation": "vocal",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/2f9ecbed-27be-40e6-abca-6de49d50299e",
+                  "valid_from": "1967-02-16",
+                  "valid_to": "1967-02-16"
+                },
+                {
+                  "relation": "track_on",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/ca75230e-a3c7-4541-b4c6-7887dbb123a9",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "relation": "release_artist",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/ca75230e-a3c7-4541-b4c6-7887dbb123a9",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "entity": {
+            "type": "artist",
+            "mbid": "125ec42a-7229-4250-afc5-e057484327fe",
+            "canonical_name": "[unknown]",
+            "owned": false
+          },
+          "reason_count": 1,
+          "reasons": [
+            {
+              "code": "sideman_on",
+              "text": "led Musik und Bildung: 1995 04 Hit-Box, a release that carries The House That Jack Built, a recording the artist you started from played on",
+              "via": {
+                "type": "release",
+                "mbid": "a8faf79b-12c8-4505-8b7a-0a2853c00d8c",
+                "canonical_name": "Musik und Bildung: 1995 04 Hit-Box",
+                "owned": false
+              },
+              "anchor": {
+                "type": "recording",
+                "mbid": "26ac503b-3de3-4062-819d-8bd5fcbd0151",
+                "canonical_name": "The House That Jack Built",
+                "owned": false
+              },
+              "evidence": [
+                {
+                  "relation": "performer",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/2f9ecbed-27be-40e6-abca-6de49d50299e",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "relation": "track_on",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/a8faf79b-12c8-4505-8b7a-0a2853c00d8c",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "relation": "release_artist",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/a8faf79b-12c8-4505-8b7a-0a2853c00d8c",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "entity": {
+            "type": "artist",
+            "mbid": "1c6bb329-0b00-42d0-b838-94341420b642",
+            "canonical_name": "49ers",
+            "owned": false
+          },
+          "reason_count": 1,
+          "reasons": [
+            {
+              "code": "sideman_on",
+              "text": "led Touch Me, a release that carries Touch Me (Sexual version), a recording the artist you started from played on",
+              "via": {
+                "type": "release",
+                "mbid": "cf03dbf1-4f5c-4414-9d24-5ad2a06e3f27",
+                "canonical_name": "Touch Me",
+                "owned": false
+              },
+              "anchor": {
+                "type": "recording",
+                "mbid": "ffdc816c-66fb-4f56-89d2-7754df9db706",
+                "canonical_name": "Touch Me (Sexual version)",
+                "owned": false
+              },
+              "evidence": [
+                {
+                  "relation": "vocal",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/2f9ecbed-27be-40e6-abca-6de49d50299e",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "relation": "track_on",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/cf03dbf1-4f5c-4414-9d24-5ad2a06e3f27",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "relation": "release_artist",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/cf03dbf1-4f5c-4414-9d24-5ad2a06e3f27",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "entity": {
+            "type": "artist",
+            "mbid": "39211611-9744-4c83-a0c4-5bcd2f480b61",
+            "canonical_name": "David Newman",
+            "owned": false
+          },
+          "reason_count": 1,
+          "reasons": [
+            {
+              "code": "sideman_on",
+              "text": "led Operation Dumbo Drop, a release that carries Think, a recording the artist you started from played on",
+              "via": {
+                "type": "release",
+                "mbid": "7312fb90-15e7-4427-b127-f42d36c77682",
+                "canonical_name": "Operation Dumbo Drop",
+                "owned": false
+              },
+              "anchor": {
+                "type": "recording",
+                "mbid": "7226f991-081a-4774-adf4-3dab0e63e344",
+                "canonical_name": "Think",
+                "owned": true
+              },
+              "evidence": [
+                {
+                  "relation": "instrument",
+                  "role": "piano",
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/2f9ecbed-27be-40e6-abca-6de49d50299e",
+                  "valid_from": "1968-04-15",
+                  "valid_to": "1968-04-15"
+                },
+                {
+                  "relation": "track_on",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/7312fb90-15e7-4427-b127-f42d36c77682",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "relation": "release_artist",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/7312fb90-15e7-4427-b127-f42d36c77682",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "entity": {
+            "type": "artist",
+            "mbid": "52f418b5-784b-4cf9-86b0-0ebe7906b4c0",
+            "canonical_name": "Laurent Perez Del Mar",
+            "owned": false
+          },
+          "reason_count": 1,
+          "reasons": [
+            {
+              "code": "sideman_on",
+              "text": "led Pourquoi j'ai pas mangé mon père, a release that carries Think, a recording the artist you started from played on",
+              "via": {
+                "type": "release",
+                "mbid": "67c2f5f3-d1a7-4aa0-8c25-5f794f22668b",
+                "canonical_name": "Pourquoi j'ai pas mangé mon père",
+                "owned": false
+              },
+              "anchor": {
+                "type": "recording",
+                "mbid": "3d0cf245-5f29-4b37-89b1-8f3a6f749189",
+                "canonical_name": "Think",
+                "owned": false
+              },
+              "evidence": [
+                {
+                  "relation": "performer",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/2f9ecbed-27be-40e6-abca-6de49d50299e",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "relation": "track_on",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/67c2f5f3-d1a7-4aa0-8c25-5f794f22668b",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "relation": "release_artist",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/67c2f5f3-d1a7-4aa0-8c25-5f794f22668b",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "entity": {
+            "type": "artist",
+            "mbid": "7a37ff9a-96a3-4059-ac62-9cb2d2cb17e0",
+            "canonical_name": "Norman Jay",
+            "owned": false
+          },
+          "reason_count": 1,
+          "reasons": [
+            {
+              "code": "sideman_on",
+              "text": "led Giant 45, a release that carries I Say A Little Prayer, a recording the artist you started from played on",
+              "via": {
+                "type": "release",
+                "mbid": "7b47e61b-573d-442b-b0a6-14c1718baec0",
+                "canonical_name": "Giant 45",
+                "owned": false
+              },
+              "anchor": {
+                "type": "recording",
+                "mbid": "b67ad252-5ddf-4519-aeca-5dcaac86934f",
+                "canonical_name": "I Say A Little Prayer",
+                "owned": true
+              },
+              "evidence": [
+                {
+                  "relation": "instrument",
+                  "role": "piano",
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/2f9ecbed-27be-40e6-abca-6de49d50299e",
+                  "valid_from": "1968-04-17",
+                  "valid_to": "1968-04-17"
+                },
+                {
+                  "relation": "track_on",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/7b47e61b-573d-442b-b0a6-14c1718baec0",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "relation": "release_artist",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/7b47e61b-573d-442b-b0a6-14c1718baec0",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "entity": {
+            "type": "artist",
+            "mbid": "82eb8936-7bf6-4577-8320-a2639465206d",
+            "canonical_name": "Jason Mraz",
+            "owned": false
+          },
+          "reason_count": 1,
+          "reasons": [
+            {
+              "code": "sideman_on",
+              "text": "led Jason Mraz: Influences, a release that carries Respect, a recording the artist you started from played on",
+              "via": {
+                "type": "release",
+                "mbid": "ef4f79bd-876f-42e0-b280-e51ea81d1f9a",
+                "canonical_name": "Jason Mraz: Influences",
+                "owned": false
+              },
+              "anchor": {
+                "type": "recording",
+                "mbid": "4855f9bc-1189-4915-aeba-1871cf6016c9",
+                "canonical_name": "Respect",
+                "owned": true
+              },
+              "evidence": [
+                {
+                  "relation": "instrument",
+                  "role": "piano",
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/2f9ecbed-27be-40e6-abca-6de49d50299e",
+                  "valid_from": "1967-02-14",
+                  "valid_to": "1967-02-14"
+                },
+                {
+                  "relation": "track_on",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/ef4f79bd-876f-42e0-b280-e51ea81d1f9a",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "relation": "release_artist",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/ef4f79bd-876f-42e0-b280-e51ea81d1f9a",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "truncated": "stops",
+      "sources": {
+        "musicbrainz_dump": {
+          "data_version": 4
+        }
+      }
+    }
+  },
+  "captured_at": "2026-11-07T14:59:13Z"
+}

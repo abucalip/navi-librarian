@@ -101,6 +101,22 @@ import DiscairCore
         #expect(p.stops.allSatisfy { $0.reasonCount >= $0.reasons.count })
     }
 
+    @Test func sidemanToLeaderStopsAreArtistsExplainedBySidemanOn() throws {
+        let p = try JSONDecoder().decode(KnowledgePaths.self, from: pathsBody("paths_sideman_to_leader"))
+        #expect(p.status == "ok" && p.kind == "sideman_to_leader" && p.truncated == nil && p.start.owned)
+        #expect(!p.stops.isEmpty && p.stops.allSatisfy { $0.entity.type == "artist" })
+        let reason = try #require(p.stops.first?.reasons.first)
+        #expect(reason.code == "sideman_on" && !reason.text.isEmpty)
+        #expect(reason.via?.type == "release" && reason.anchor?.type == "recording")
+        #expect(reason.evidence.contains { $0.source == "musicbrainz_dump_releases" })
+    }
+
+    @Test func sidemanToLeaderTruncatedKeepsTheStopsNote() throws {
+        let p = try JSONDecoder().decode(KnowledgePaths.self, from: pathsBody("paths_sideman_to_leader_truncated"))
+        #expect(p.status == "ok" && p.truncated == "stops" && p.stops.count == 30)
+        #expect(p.stops.allSatisfy { $0.entity.type == "artist" && !$0.reasons.isEmpty })
+    }
+
     @Test func emptyPathHasNoStops() throws {
         for kind in PathKind.allCases {
             let p = try JSONDecoder().decode(KnowledgePaths.self, from: pathsBody("paths_\(kind.rawValue)_empty"))
