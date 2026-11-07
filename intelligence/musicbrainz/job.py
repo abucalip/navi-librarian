@@ -38,11 +38,12 @@ from typing import Callable
 from ..jobs import runner
 from ..store import source_state
 from ..store.generations import bump_data_version
-from . import api_fill, download, dump, loader, neighbourhood
+from . import api_fill, archive_filter, download, dump, loader, neighbourhood, release_links
 from .neighbourhood import LINK_TABLES, SEED_TYPES
 
 EXTRACT_DIR = "extracted"
 NEEDED_TABLES = tuple(sorted(set(SEED_TYPES) | set(loader.ENTITY_TABLES) | set(LINK_TABLES) | set(loader.FACT_TABLES)
+                             | set(release_links.READ_TABLES)
                              | {"link", "link_attribute", "link_type", "link_attribute_type"}))
 
 JOB = "musicbrainz_slice"
@@ -75,6 +76,21 @@ def _record(db: sqlite3.Connection, outcome: str, clock: Callable[[], float]) ->
     source_state.record_outcome(db, loader.SOURCE, "slice_import", "core", outcome, now=clock())
 
 
+def _release_links(db, read, archive, info, clock, report) -> dict:
+    """Link credited recordings to their releases and leaders (see :mod:`release_links`).
+
+    Optional enrichment: a failure here is recorded and leaves the main slice loaded.
+    """
+    def stream(table, key, keep, take):
+        return archive_filter.filter_table(archive, table, key, keep, take, on_progress=lambda f: report("release links", f))
+
+    try:
+        return release_links.build_release_links(
+            db, read, stream, dump_timestamp=info.timestamp, schema_sequence=info.schema_sequence, clock=clock).summary()
+    except (dump.DumpError, loader.SliceValidationError) as exc:
+        return {"outcome": "failed", "reason": str(exc)}
+
+
 def run_slice_import(
     db: sqlite3.Connection,
     directory,
@@ -86,6 +102,7 @@ def run_slice_import(
     delete_archive: bool = True,
     keep_extracted: bool = False,
     hops: int = 2,
+    release_links_step: bool = True,
     require_parallel: bool = False,
     clock: Callable[[], float] = time.time,
     on_progress: Callable[[str, int], None] | None = None,
@@ -180,6 +197,9 @@ def run_slice_import(
             ctx.checkpoint(progress)
             return True
         progress["load"] = result.summary()
+        if release_links_step:
+            phase[0] = "release links"
+            progress["release_links"] = _release_links(db, read, archive, info, clock, report)
         progress["import_seconds"] = round(clock() - started, 3)
         progress["slice_bytes"] = max(0, store_bytes(db) - before)
         progress["dump_timestamp"] = info.timestamp
