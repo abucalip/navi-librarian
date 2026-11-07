@@ -29,6 +29,8 @@ class PathsTest {
         assertEquals("ok", r.status)
         assertEquals("Woghenei", r.stops.first().name)
         assertTrue(r.stops.first().reason.contains("credited"))
+        assertEquals(27, r.stops.first().reasonCount)
+        assertEquals(3, r.stops.first().reasons.size)
         val reason = r.stops.first().reasons.first()
         assertEquals("Temare Haregu", reason.via?.name)
         assertEquals("Dèwèl", reason.anchor?.name)
