@@ -1,6 +1,7 @@
 import AppKit
 import DiscairAudio
 import DiscairCore
+import DiscairLibrarian
 import DiscairNavidrome
 import SwiftUI
 import Testing
@@ -10,7 +11,7 @@ import Testing
 /// Baseline comparison is added once the owner approves the look on the Mac (contract M4 gate).
 @MainActor
 struct ScreenshotTests {
-    @Test(arguments: ThemeID.allCases, [Screen.home, Screen.album, Screen.nowPlaying, Screen.queue, Screen.library, Screen.albums, Screen.artist, Screen.settings, Screen.downloads, Screen.discover, Screen.equalizer, Screen.gapRadar, Screen.smartPlaylists, Screen.history, Screen.insights])
+    @Test(arguments: ThemeID.allCases, [Screen.home, Screen.album, Screen.nowPlaying, Screen.queue, Screen.library, Screen.albums, Screen.artist, Screen.settings, Screen.downloads, Screen.discover, Screen.equalizer, Screen.gapRadar, Screen.smartPlaylists, Screen.history, Screen.insights, Screen.connections])
     func rendersWindow(theme: ThemeID, screen: Screen) throws {
         RenderMode.offscreenScreenshot = true
         // Settings needs a session; a throwaway one with a sample profile and an in-memory keychain.
@@ -25,6 +26,7 @@ struct ScreenshotTests {
         if screen == .downloads { state.acquisition.showJobs(AcquisitionModelTests.sampleJobs) }
         if screen == .discover { state.discovery.show(.personal, Fixtures.albums([7, 8, 9])) }
         if screen == .library && theme == .cupertino { state.library.apply(newest: [], first: [], artists: [], picks: []); state.library.showSongs(Fixtures.songs, more: true) }
+        if screen == .connections { state.graph.preview(centre: GraphPreview.centre, nodes: GraphPreview.nodes); state.graph.selectedID = "b1" }
         if screen == .equalizer { state.player.updateEQ { $0.enabled = true; $0.choose(preset: "rock") } }
         if screen == .nowPlaying {
             state.lyrics.preview(Lyrics(timed: true, lines: ["A slow tide under the floorboards", "the lamp keeps counting what we left", "one long note, then the room agrees", "nobody here is in a hurry", "the water finds its level"].enumerated().map { LyricLine(startMs: $0.offset * 4000, text: $0.element) }))
@@ -59,4 +61,18 @@ struct ScreenshotTests {
     @Test func everyThemeIDResolves() {
         for id in ThemeID.allCases { #expect(ThemeRegistry.theme(id).id == id) }
     }
+}
+
+/// A small made-up walk for the explorer screenshot: owned and unowned artists and albums, credits and plain links.
+enum GraphPreview {
+    private static func entity(_ id: String, _ name: String, _ type: String, owned: Bool) -> KnowledgeEntity {
+        try! JSONDecoder().decode(KnowledgeEntity.self, from: Data(#"{"mbid":"\#(id)","canonical_name":"\#(name)","type":"\#(type)","owned":\#(owned)}"#.utf8))
+    }
+    static let centre = entity("c", "Talk Talk", "artist", owned: true)
+    static let nodes: [GraphNode] = [
+        ("a1", "Spirit of Eden", "release", true, 1, "c", true), ("a2", "Laughing Stock", "release", true, 1, "c", true),
+        ("a3", "Mark Hollis", "artist", false, 1, "c", true), ("b1", "Tim Friese-Greene", "artist", true, 1, "c", true),
+        ("a4", "It's My Life", "release", false, 1, "c", true), ("a5", "EMI", "label", false, 1, "c", false),
+        ("d1", "Phil Brown", "artist", false, 2, "b1", true), ("d2", "Colour of Spring", "release", false, 2, "b1", false),
+    ].map { GraphNode(entity: entity($0.0, $0.1, $0.2, owned: $0.3), depth: $0.4, via: $0.5, credit: $0.6, evidence: []) }
 }
