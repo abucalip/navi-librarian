@@ -329,7 +329,8 @@ Work items:
 - Matches are not tag lookalikes: 14% were by the same artist and 26% in the same genre. Sensible examples exist (jazz guitar to jazz trio, same-artist neighbours); odd ones exist too (a Tool track to a Frank Ocean track at 0.955, a Devin Townsend track to a Massive Attack track at 0.98). Not yet judged by ear.
 - Near-duplicates of the seed appear among the matches (another edition or language version of the same recording at about 0.96). The proxy must drop same-recording and same-title matches, probably via the Phase 2 editions data.
 - `findSonicPath` (startSongId, endSongId, count): 10 random pairs, all returned exactly 10 steps, starting on the start song and ending on the end song. Every path step carries `similarity: -1` (re-checked 2026-11-07; first read as start only); the proxy treats that as "no score".
-- Not tested: the response for a song with no analysis data (all 60 sampled songs were analysed, so coverage looks near complete but a gap would not show in this sample); a hand review of paths as suggestions; load or latency.
+- Songs with no analysis data (checked 2026-11-07, 250 songs): 2 had none; Navidrome answers error 0 "AudioMuse-AI returned status 404", and the proxy returns `empty` (PR #878). Coverage is about 99%.
+- Not tested: a hand review of paths as suggestions; load or latency.
 - Authentication note: resolved 2026-11-07. Token auth works with the repo client; the earlier error 40 came from reading the quoted `NAVIDROME_PASSWORD` in `config.env` raw.
 
 Exit: proceed/stop decision documented with evidence. Audio never leaves the server.
