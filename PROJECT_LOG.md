@@ -3118,3 +3118,9 @@ All live runs were approved by the owner; slskd off; aggregate only; harnesses w
 - **Focused tests:** Android `PlayActionsTest`, `SonicTest` pass (JDK 17); macOS `SonicPathModelTests`, `SonicRadioModelTests` pass. Full suites not run (owner rule).
 - **Not verified:** not run against the live server, not seen on screen or on a device. No commit, publication or deployment.
 - **Toolchain:** Android Gradle needs the Homebrew `openjdk@17` (noted in `docs/DEVELOPMENT_WORKFLOW.md`).
+
+## 2026-11-07 — Server V2 Phase 7: PR #889 merged
+
+- **Merged:** PR [#889](https://github.com/abucalip/navi-librarian/pull/889), squash `8dd5075e`, at the owner's request. Required workflows passed (compile, container-smoke, test-and-build, validate-container).
+- **State:** sonic path screens are on `main` for Android and macOS. Nothing published or deployed. Still not seen on screen or on a device, and not run against the live server.
+- **Next action:** owner checks the sonic path sheet on a device and in the Mac app against the live server.
