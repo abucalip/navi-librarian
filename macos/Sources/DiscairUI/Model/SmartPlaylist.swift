@@ -1,4 +1,5 @@
 import DiscairCore
+import DiscairLibrarian
 import DiscairNavidrome
 import Foundation
 import Observation
@@ -137,7 +138,51 @@ public enum SmartEngine {
     }
 }
 
-/// The owner's smart playlists, kept on this Mac (Navidrome has no rule storage), plus the playlists on the server.
+/// Rule sets in the server's wire form (snake_case names, `match`, null limit) and back.
+extension SmartPlaylist {
+    static func snake(_ s: String) -> String {
+        s.reduce(into: "") { out, c in if c.isUppercase { out += "_" + c.lowercased() } else { out.append(c) } }
+    }
+    static func camel(_ s: String) -> String {
+        let parts = s.split(separator: "_").map(String.init)
+        return (parts.first ?? "") + parts.dropFirst().map { $0.prefix(1).uppercased() + $0.dropFirst() }.joined()
+    }
+
+    /// The wire form. The id is lowercase, as the server wants.
+    public var wire: ServerSmartPlaylist {
+        ServerSmartPlaylist(ruleID: id.uuidString.lowercased(), name: name, match: matchAll ? "all" : "any",
+                            rules: rules.map { ServerSmartRule(field: Self.snake($0.field.rawValue), op: Self.snake($0.op.rawValue), value: $0.value) },
+                            order: Self.snake(order.rawValue), limit: limit > 0 ? limit : nil)
+    }
+
+    /// nil when the rule set uses something this client cannot show (an insight field, an unknown order or operator, a bad id).
+    public init?(wire w: ServerSmartPlaylist) {
+        guard let id = UUID(uuidString: w.ruleID), let order = SmartOrder(rawValue: Self.camel(w.order)), w.match == "all" || w.match == "any" else { return nil }
+        var rules: [SmartRule] = []
+        for r in w.rules {
+            guard let f = SmartField(rawValue: Self.camel(r.field)), let o = SmartOp(rawValue: Self.camel(r.op)) else { return nil }
+            rules.append(SmartRule(field: f, op: o, value: r.value))
+        }
+        self.init(name: w.name, matchAll: w.match == "all", rules: rules, order: order, limit: w.limit ?? 0)
+        self.id = id
+    }
+
+    /// Same rule set, ignoring the local-only rule ids.
+    func sameContent(as other: SmartPlaylist) -> Bool { wire == other.wire }
+}
+
+/// What has not reached the server yet, kept so a restart or a failed call loses nothing.
+struct SmartSyncState: Codable, Equatable {
+    /// Rule sets the server is known to hold. A local set missing from the server and listed here was deleted elsewhere.
+    var synced: Set<String> = []
+    /// Local edits not yet accepted by the server; these win over the server copy.
+    var dirty: Set<String> = []
+    /// Deletes not yet accepted by the server.
+    var deleted: Set<String> = []
+}
+
+/// The owner's smart playlists. The Librarian holds the rule sets (shared by both clients); this Mac keeps a copy in
+/// `UserDefaults` so the screen works offline, plus the playlists already on Navidrome.
 @MainActor @Observable
 public final class SmartPlaylistModel {
     public private(set) var lists: [SmartPlaylist]
@@ -146,32 +191,138 @@ public final class SmartPlaylistModel {
     public private(set) var remote: [NavidromePlaylistInfo] = []
     public private(set) var status: String?
     public private(set) var saving = false
+    /// Rule sets on the server that use insight fields this screen cannot edit yet. They are left untouched.
+    public private(set) var unsupportedOnServer = 0
     private let defaults: UserDefaults
+    private var librarian: LibrarianClient?
+    private var sync: SmartSyncState
+    private var pushTasks: [UUID: Task<Void, Never>] = [:]
+    private let debounce: Duration
     private static let key = "smartPlaylists.v1"
+    private static let syncKey = "smartPlaylists.sync.v1"
 
-    public init(defaults: UserDefaults = .standard) {
+    public init(defaults: UserDefaults = .standard, debounce: Duration = .milliseconds(800)) {
         self.defaults = defaults
+        self.debounce = debounce
+        if let data = defaults.data(forKey: Self.syncKey), let s = try? JSONDecoder().decode(SmartSyncState.self, from: data) { sync = s } else { sync = SmartSyncState() }
         if let data = defaults.data(forKey: Self.key), let saved = try? JSONDecoder().decode([SmartPlaylist].self, from: data) { lists = saved }
-        else { lists = [SmartPlaylist(name: "Forgotten favourites", rules: [SmartRule(field: .rating, op: .atLeast, value: "4"), SmartRule(field: .playedDaysAgo, op: .atLeast, value: "90")], order: .random, limit: 50)] }
+        else { lists = [Self.seed()] }
         selectedID = lists.first?.id
+    }
+
+    private static func seed() -> SmartPlaylist {
+        SmartPlaylist(name: "Forgotten favourites", rules: [SmartRule(field: .rating, op: .atLeast, value: "4"), SmartRule(field: .playedDaysAgo, op: .atLeast, value: "90")], order: .random, limit: 50)
     }
 
     public var selected: SmartPlaylist? { lists.first { $0.id == selectedID } }
 
     public func add() {
         let p = SmartPlaylist(name: "New playlist", rules: [SmartRule(field: .genre, op: .contains, value: "")])
-        lists.append(p); selectedID = p.id; persist()
+        lists.append(p); selectedID = p.id; changed(p.id)
     }
     public func update(_ p: SmartPlaylist) {
         guard let i = lists.firstIndex(where: { $0.id == p.id }) else { return }
-        lists[i] = p; persist()
+        lists[i] = p; changed(p.id)
     }
     public func remove(_ id: UUID) {
         lists.removeAll { $0.id == id }
         if selectedID == id { selectedID = lists.first?.id }
+        pushTasks[id]?.cancel(); pushTasks[id] = nil
+        let key = id.uuidString.lowercased()
+        sync.dirty.remove(key)
+        if sync.synced.contains(key) { sync.deleted.insert(key) }
         persist()
+        if sync.deleted.contains(key), let librarian { Task { await self.flushDeletes(librarian) } }
     }
-    private func persist() { if let d = try? JSONEncoder().encode(lists) { defaults.set(d, forKey: Self.key) } }
+
+    private func changed(_ id: UUID) {
+        sync.dirty.insert(id.uuidString.lowercased())
+        persist()
+        guard let librarian else { return }
+        pushTasks[id]?.cancel()
+        let wait = debounce
+        pushTasks[id] = Task { [weak self] in
+            try? await Task.sleep(for: wait)
+            guard !Task.isCancelled else { return }
+            await self?.push(id, librarian)
+        }
+    }
+
+    private func persist() {
+        if let d = try? JSONEncoder().encode(lists) { defaults.set(d, forKey: Self.key) }
+        if let d = try? JSONEncoder().encode(sync) { defaults.set(d, forKey: Self.syncKey) }
+    }
+
+    /// Sends one rule set. A failure leaves it marked unsent for the next sync.
+    func push(_ id: UUID, _ librarian: LibrarianClient) async {
+        guard let p = lists.first(where: { $0.id == id }) else { return }
+        let key = id.uuidString.lowercased()
+        do {
+            try await librarian.putSmartPlaylist(p.wire)
+            sync.dirty.remove(key); sync.synced.insert(key)
+            persist()
+        } catch {
+            status = (error as? DiscairError).map(AcquisitionModel.text) ?? "Could not send the playlist to the server."
+        }
+    }
+
+    private func flushDeletes(_ librarian: LibrarianClient) async {
+        for key in sync.deleted {
+            do { try await librarian.deleteSmartPlaylist(id: key); sync.deleted.remove(key); sync.synced.remove(key); persist() }
+            catch { status = (error as? DiscairError).map(AcquisitionModel.text) ?? "Could not delete the playlist on the server." }
+        }
+    }
+
+    /// Brings this Mac and the server together. Server copies win unless this Mac holds an unsent edit; rule sets only
+    /// here are uploaded (first run: the old local sets move up); sets deleted elsewhere are dropped here. Offline, nothing changes.
+    public func sync(librarian: LibrarianClient?) async {
+        guard let librarian else { return }
+        self.librarian = librarian
+        await flushDeletes(librarian)
+        let server: [ServerSmartPlaylist]
+        do { server = try await librarian.smartPlaylists() }
+        catch { status = "Showing playlists saved on this Mac; the server could not be reached."; return }
+
+        var usable: [UUID: SmartPlaylist] = [:]
+        var serverKeys = Set<String>()
+        var unsupported = 0
+        for w in server {
+            serverKeys.insert(w.ruleID.lowercased())
+            if let p = SmartPlaylist(wire: w) { usable[p.id] = p } else { unsupported += 1 }
+        }
+        unsupportedOnServer = unsupported
+
+        // A fresh Mac holding only the untouched example list should not add it next to the owner's real ones.
+        if sync.synced.isEmpty, !server.isEmpty, lists.count == 1, lists[0].sameContent(as: Self.seed().with(id: lists[0].id)) { lists = [] }
+
+        var merged: [SmartPlaylist] = []
+        var toPush: [UUID] = []
+        for local in lists {
+            let key = local.id.uuidString.lowercased()
+            if sync.deleted.contains(key) { continue }
+            if let theirs = usable[local.id] {
+                if sync.dirty.contains(key) { merged.append(local); if !local.sameContent(as: theirs) { toPush.append(local.id) } else { sync.dirty.remove(key) } }
+                else { merged.append(theirs) }
+                usable[local.id] = nil
+            } else if serverKeys.contains(key) {
+                merged.append(local)   // on the server but unreadable here: keep the local copy, do not overwrite
+            } else if sync.synced.contains(key) && !sync.dirty.contains(key) {
+                continue               // deleted on another client
+            } else {
+                merged.append(local); toPush.append(local.id)
+            }
+        }
+        // Sets only the server holds are new here, unless a delete of theirs is still on its way.
+        for (_, p) in usable.sorted(by: { $0.value.name < $1.value.name }) where !sync.deleted.contains(p.id.uuidString.lowercased()) { merged.append(p) }
+        lists = merged
+        for p in merged where serverKeys.contains(p.id.uuidString.lowercased()) && !sync.dirty.contains(p.id.uuidString.lowercased()) {
+            sync.synced.insert(p.id.uuidString.lowercased())
+        }
+        if selectedID == nil || !lists.contains(where: { $0.id == selectedID }) { selectedID = lists.first?.id }
+        persist()
+        for id in toPush { await push(id, librarian) }
+        if status?.hasPrefix("Showing playlists") == true { status = nil }
+    }
 
     public func loadRemote(navidrome: NavidromeClient?) async {
         guard let navidrome, let list = try? await navidrome.playlists() else { return }
@@ -207,4 +358,8 @@ public struct NavidromePlaylistInfo: Identifiable, Equatable, Sendable {
     public let id: String
     public let name: String
     public let songCount: Int
+}
+
+extension SmartPlaylist {
+    func with(id: UUID) -> SmartPlaylist { var c = self; c.id = id; return c }
 }
