@@ -62,3 +62,7 @@ Keep one canonical home for each kind of information:
 - historical or completed plans: [`archive/`](archive/).
 
 At meaningful session closeout, update `PROJECT_STATUS.md` and root `PROJECT_LOG.md`, plus only the relevant requirements, test, workflow, architecture, or deployment documents. Record facts only: exact PR/commit, tests actually run, CI evidence, UI results when applicable, merge/publication/deployment/runtime state, limitations, and one next action. Do not duplicate long PR/CI narratives across the active queue and status snapshot.
+
+## Local toolchain notes
+
+- **Android Gradle needs JDK 17.** The system default JDK on the owner's Mac (27) fails the build. Use the Homebrew `openjdk@17`: `JAVA_HOME=/opt/homebrew/opt/openjdk@17 ./gradlew testDebugUnitTest --tests '<filter>'` from `android/`.

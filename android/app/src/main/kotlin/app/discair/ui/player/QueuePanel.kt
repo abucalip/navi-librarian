@@ -55,6 +55,8 @@ fun QueuePanel(state: PlayerUiState, controller: PlayerController, modifier: Mod
     // Sounds-like shows only when the server says it has sonic similarity; read live, false when unknown.
     val sonic by produceState(false, repo) { value = withContext(Dispatchers.IO) { repo.sonicAvailable() } }
     val queuedIds = items.mapTo(HashSet()) { it.songId }
+    var pathTo by remember { mutableStateOf<app.discair.player.QueueItem?>(null) }
+    pathTo?.let { target -> state.current?.let { SonicPathSheet(it, target) { pathTo = null } } }
     Column(modifier.fillMaxWidth()) {
         Text(
             "Queue · ${items.size} ${if (items.size == 1) "song" else "songs"}",
@@ -115,6 +117,7 @@ fun QueuePanel(state: PlayerUiState, controller: PlayerController, modifier: Mod
                             DropdownMenuItem(text = { Text("Move up") }, enabled = index > 0, onClick = { menu = false; controller.move(index, index - 1) })
                             DropdownMenuItem(text = { Text("Move down") }, enabled = index < items.lastIndex, onClick = { menu = false; controller.move(index, index + 1) })
                             if (sonic) DropdownMenuItem(text = { Text("Add songs that sound like this") }, onClick = { menu = false; play.soundsLike(item.songId, queuedIds) })
+                            if (sonic && state.current != null && !current) DropdownMenuItem(text = { Text("Sonic path from playing song to this one") }, onClick = { menu = false; pathTo = item })
                             DropdownMenuItem(text = { Text("Remove from queue") }, onClick = { menu = false; controller.remove(index) })
                         }
                     }

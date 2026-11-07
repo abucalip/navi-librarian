@@ -251,6 +251,23 @@ public final class AppState {
         }
     }
 
+    /// The sonic path sheet, when one is open.
+    public var sonicPath: SonicPathModel?
+
+    /// Opens the sonic path from the playing song to `target`. Needs the Librarian, `sonic_available` and a different playing song.
+    public func showSonicPath(to target: QueueItem) {
+        guard radio.sonicAvailable, let librarian = session?.librarian, let start = player.current, start.songID != target.songID else { return }
+        let model = SonicPathModel(start: start, target: target)
+        sonicPath = model
+        Task { await model.load { s, e, n in try await librarian.sonicPath(start: s, end: e, count: n) } }
+    }
+
+    /// Adds the path's steps after the queue (the start song is already playing), or plays the whole path now.
+    public func useSonicPath(_ steps: [QueueItem], playNow: Bool) {
+        if playNow { player.play(steps) } else { player.addToQueue(Array(steps.dropFirst())) }
+        sonicPath = nil
+    }
+
     /// Saves the whole queue under `name` (a used name is replaced).
     public func saveQueue(named name: String) {
         savedQueues.save(name: name, items: player.queue.items)

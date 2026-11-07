@@ -3111,3 +3111,10 @@ All live runs were approved by the owner; slskd off; aggregate only; harnesses w
 
 - **Merged:** PR [#888](https://github.com/abucalip/navi-librarian/pull/888), squash `12366799`, at the owner's request. Required workflows passed (compile, container-smoke, test-and-build, validate-container); the non-required `validate-release-workflow` was still pending at merge.
 - **State:** path warm-up routes and sonic clients are on `main`. Nothing published or deployed.
+
+## 2026-11-07 — Server V2 Phase 7: sonic path screens (uncommitted work on main `5aeb3253`)
+
+- **Built:** Android `Repository.sonicPath`, `PlayActions.sonicPathItems`/`useSonicPath`, `SonicPathSheet` opened from the queue row menu ("Sonic path from playing song to this one"). macOS `SonicPathModel`, `AppState.showSonicPath`/`useSonicPath`, a system-styled `SonicPathSheet` in `RootView`, opened from Cupertino queue and song-list menus and a Zine queue "Path" button. Each shows the server's ordered steps with Add to queue and Play now; shown only when `sonic_available`. The score is not used.
+- **Focused tests:** Android `PlayActionsTest`, `SonicTest` pass (JDK 17); macOS `SonicPathModelTests`, `SonicRadioModelTests` pass. Full suites not run (owner rule).
+- **Not verified:** not run against the live server, not seen on screen or on a device. No commit, publication or deployment.
+- **Toolchain:** Android Gradle needs the Homebrew `openjdk@17` (noted in `docs/DEVELOPMENT_WORKFLOW.md`).

@@ -43,6 +43,8 @@ class PlayActions(
     private val offline: OfflineSongs? = null,
     /** Asks the server for songs that sound like one song (`/api/sonic/similar`); null when the app has no Librarian. */
     private val sonic: ((songId: String, count: Int) -> app.discair.model.SonicResponse)? = null,
+    /** Asks the server for the sonic path between two songs (`/api/sonic/path`); null when the app has no Librarian. */
+    private val sonicPath: ((startId: String, endId: String, count: Int) -> app.discair.model.SonicResponse)? = null,
 ) {
     private val _messages = MutableSharedFlow<String>(extraBufferCapacity = 4, onBufferOverflow = BufferOverflow.DROP_OLDEST)
     val messages: SharedFlow<String> = _messages.asSharedFlow()
@@ -155,6 +157,26 @@ class PlayActions(
         }
     }
 
+    /** A sonic path as queue items, start song first; [SonicResponse.status] `empty` means no analysis data. Throws on failure. */
+    suspend fun sonicPathItems(startId: String, endId: String): List<QueueItem> {
+        val ask = sonicPath ?: return emptyList()
+        return withContext(io) { ask(startId, endId, PATH_STEPS) }.tracks.map {
+            QueueItem(
+                songId = it.songId, title = it.title, artist = it.artist, album = it.album, albumId = it.albumId,
+                coverId = it.albumId, coverUrl = if (it.albumId.isBlank()) "" else coverUrl(it.albumId),
+                durationSec = it.durationSec, year = it.year,
+            )
+        }
+    }
+
+    /** Adds the path's steps (not the start song, which is already playing) after the queue, or plays the whole path now. */
+    fun useSonicPath(steps: List<QueueItem>, playNow: Boolean) {
+        scope.launch {
+            if (playNow) controller.playItems(steps) else controller.enqueue(steps.drop(1))
+            _messages.tryEmit(if (playNow) "Playing a sonic path of ${steps.size} songs." else "Added ${steps.size - 1} songs along the sonic path.")
+        }
+    }
+
     fun queueArtist(artistId: String, next: Boolean) = launch {
         _messages.tryEmit("Loading songs…")
         val items = artistItems(artistId)
@@ -189,5 +211,7 @@ class PlayActions(
     private companion object {
         /** Songs asked of the server for one Sounds-like batch (the server already caps the seed's own artist at 2). */
         const val SONIC_BATCH = 20
+        /** Steps asked for one path, start and end included. */
+        const val PATH_STEPS = 10
     }
 }

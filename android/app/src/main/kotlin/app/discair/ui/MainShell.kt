@@ -153,6 +153,7 @@ fun MainShell(state: UiState, model: AppViewModel, container: AppContainer) {
             player, scope, Dispatchers.IO, { id -> repo.absolute("/api/owned/artwork/$id") },
             offline = container.offline,
             sonic = { id, count -> repo.sonicSimilar(id, count) },
+            sonicPath = { start, end, count -> repo.sonicPath(start, end, count) },
         )
     }
     LaunchedEffect(playActions) { playActions.messages.collect { snackbar.showSnackbar(it) } }

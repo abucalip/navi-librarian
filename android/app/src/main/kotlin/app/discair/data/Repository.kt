@@ -155,6 +155,9 @@ interface LibraryRepository : AcquisitionApi {
     /** Songs that sound like one song (`GET /api/sonic/similar`), in the server's order. Never from the saved copies. */
     fun sonicSimilar(songId: String, count: Int): SonicResponse = throw UnsupportedOperationException()
 
+    /** Ordered steps from one song to another through sound (`GET /api/sonic/path`); the first step is the start song. Never from the saved copies. */
+    fun sonicPath(startId: String, endId: String, count: Int): SonicResponse = throw UnsupportedOperationException()
+
     /** Whether the server reports sonic similarity (`sonic_available` in `/api/capabilities`). Read live; false when unknown. */
     fun sonicAvailable(): Boolean = false
 
@@ -324,6 +327,11 @@ class LibrarianRepository(
     override fun sonicSimilar(songId: String, count: Int): SonicResponse {
         if (ReadMode.isCacheOnly) throw CacheMiss()
         return parseSonic(client.get(listOf("api", "sonic", "similar"), mapOf("id" to songId, "count" to count.toString())))
+    }
+
+    override fun sonicPath(startId: String, endId: String, count: Int): SonicResponse {
+        if (ReadMode.isCacheOnly) throw CacheMiss()
+        return parseSonic(client.get(listOf("api", "sonic", "path"), mapOf("start" to startId, "end" to endId, "count" to count.toString())))
     }
 
     override fun sonicAvailable(): Boolean {
