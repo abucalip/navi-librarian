@@ -2,6 +2,9 @@ package app.discair
 
 import app.discair.data.CacheMiss
 import app.discair.model.PathKind
+import app.discair.model.PathEntity
+import app.discair.model.PathEntityPage
+import app.discair.model.page
 import app.discair.model.PathsView
 import app.discair.model.parsePaths
 import app.discair.model.pathsAvailableFrom
@@ -97,6 +100,26 @@ class PathsTest {
         val scene = parsePaths(body("paths_scene_path")).stops.first().reasons.first()
         assertEquals("Jimma", scene.via?.name)
         assertEquals("begin area", scene.evidence.first().relation)
+    }
+
+    @Test fun pathEntityNavigationOnlyTargetsArtistAndAlbumPages() {
+        assertEquals(PathEntityPage.Artist, PathEntity("Artist", "artist", "artist-mbid", false).page())
+        assertEquals(PathEntityPage.Artist, PathEntity("Person", "person", null, false).page())
+        assertEquals(PathEntityPage.Artist, PathEntity("Group", "group", null, false).page())
+        assertEquals(PathEntityPage.Album, PathEntity("Album", "release_group", "release-mbid", false).page())
+        assertEquals(PathEntityPage.Album, PathEntity("Edition", "release", null, false).page())
+        for (type in listOf("recording", "work", "label", "area", "unknown")) {
+            assertEquals(type, null, PathEntity("Entity", type, null, false).page())
+        }
+    }
+
+    @Test fun stopKeepsItsMusicBrainzIdForArtistNavigation() {
+        val response = parsePaths("""{"kind":"scene_path","status":"ok","stops":[
+            {"entity":{"canonical_name":"Artist","type":"artist","mbid":"artist-mbid","owned":false},
+             "reason_count":1,"reasons":[{"code":"shared_scene","text":"Shares a scene"}]}
+        ]}""")
+        assertEquals("artist-mbid", response.stops.single().mbid)
+        assertEquals(PathEntityPage.Artist, PathEntity(response.stops.single().name, response.stops.single().type, response.stops.single().mbid, false).page())
     }
 
     @Test fun presentationKeepsArtistsSeparateFromAlbumAndRecordingTitles() {

@@ -28,6 +28,15 @@ enum class PathKind(val wire: String, val label: String) {
 /** A named graph entity included in a path explanation. */
 data class PathEntity(val name: String, val type: String, val mbid: String?, val owned: Boolean)
 
+enum class PathEntityPage { Artist, Album }
+
+/** Only graph entities with a matching in-app detail page are navigable from Paths. */
+fun PathEntity.page(): PathEntityPage? = when (type.lowercase()) {
+    "artist", "person", "group" -> PathEntityPage.Artist
+    "release", "release_group" -> PathEntityPage.Album
+    else -> null
+}
+
 /** One stored fact supporting a relationship. */
 data class PathEvidence(
     val relation: String,
@@ -46,7 +55,7 @@ data class PathReason(val code: String, val text: String, val via: PathEntity?, 
 /** One step: the entity the server reached and all bounded reasons/evidence for why. */
 data class PathStop(
     val name: String, val type: String, val owned: Boolean, val reasonCount: Int, val reason: String,
-    val displayTitle: String? = null, val displayContext: String? = null, val reasons: List<PathReason> = emptyList(),
+    val displayTitle: String? = null, val displayContext: String? = null, val reasons: List<PathReason> = emptyList(), val mbid: String? = null,
 )
 
 /** A parsed body. [status] is the server's `ok` or `empty`; [truncated] is `rows`, `time`, `stops` or null. */
@@ -85,6 +94,7 @@ fun parsePaths(body: String): PathsResponse {
             displayTitle = stop.obj("presentation")?.string("title")?.trim()?.takeIf { it.isNotEmpty() },
             displayContext = stop.obj("presentation")?.string("context")?.trim()?.takeIf { it.isNotEmpty() },
             reasons = reasons,
+            mbid = entity.string("mbid")?.takeIf { it.isNotBlank() },
         )
     }
     return PathsResponse(

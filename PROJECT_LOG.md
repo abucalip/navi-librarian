@@ -1,8 +1,17 @@
-## 2026-11-07 — Android artist Paths: expandable evidence (PR #893)
+## 2026-11-07 — Android artist Paths: slice 2 navigation actions (PR #893)
+
+- **Branch:** `android/interactive-path-evidence`; this extends PR [#893](https://github.com/abucalip/navi-librarian/pull/893), preserving slice 1.
+- Expanded result rows now offer an artist or album page action for the result, `via` or anchor entity only when its graph type maps to an existing page. Artist routes use the returned MusicBrainz MBID where available. Album routes reuse the existing `Opener.album` route with the nearest artist entity in the explanation, falling back to the artist whose Paths sheet is open.
+- Recordings, works/compositions, labels and areas/places remain explanatory evidence and are not presented as artist or album links. No backend/API changes and no additional requests merely to display or select these actions.
+- Added model tests for artist/person/group and release/release-group mapping, unsupported entity types, and retaining the stop MBID.
+- **Verification:** GitHub Actions and Android focused tests/device check are pending on the updated PR head. No merge, publication, deployment or runtime verification.
+- **Next action:** verify the final PR-head CI, run `./gradlew :app:testDebugUnitTest --tests 'app.discair.PathsTest'` in the Android environment, then check artist and album navigation on a device.
+
+## 2026-11-07 — Android artist Paths: expandable evidence and navigation (PR #893)
 
 - **Branch:** `android/interactive-path-evidence`; implementation commits `e1773e7c72a25265a11bbf2adca0e747cdaac91d` and `91369c4fcaf51dea5d22b5b654a4ae9b74d8b898` (PR head may advance for documentation or review fixes).
 - Android now retains the bounded `reasons[]`, each reason's `via` and `anchor`, and the public evidence fields (relation, role, source, catalogue number, stated dates, evidence class and match quality). A result row expands in place; one row is open at a time. The expanded view explains how many connections are shown when the server's `reason_count` exceeds the returned reasons.
-- No backend changes, provider calls, additional requests on expansion, or navigation actions. This is slice 1 only; artist/album navigation remains a later slice.
+- No backend/API changes or extra request when a row expands or its navigation actions are rendered. Slice 1 deliberately added no navigation; slice 2 is recorded below.
 - Added fixture-backed Android parser assertions for Follow the musician, Sideman, Label, Composition and Scene.
 - **Verification:** all four required GitHub Actions workflows passed on exact PR head `ca6fb6837784b1bd67bffb9ff4341e25fba367db`: Python syntax, container smoke, Docker packaging (`test-and-build`, including the Python unit-test step), and non-publishing multi-architecture image validation. Android `PathsTest` was not run (the repository has no Android Gradle CI workflow and no local Android test execution was available here); manual Android device check not run. No merge, publication, deployment or runtime verification.
 - **Next action:** run the focused `PathsTest`, resolve any CI failures, then perform the manual device check against the exact passing PR-head SHA.

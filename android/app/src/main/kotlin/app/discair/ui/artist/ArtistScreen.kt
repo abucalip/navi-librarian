@@ -108,7 +108,7 @@ private fun ArtistContent(route: ArtistRoute, page: ArtistPage, open: Opener, li
     val artistId = (info?.id ?: route.id)?.takeIf { it.isNotBlank() && owned.isNotEmpty() }
     val play = app.discair.ui.player.LocalPlayActions.current
 
-    if (showPaths && pathsMbid != null) ArtistPathsSheet(name, pathsMbid) { showPaths = false }
+    if (showPaths && pathsMbid != null) ArtistPathsSheet(name, pathsMbid, open) { showPaths = false }
 
     LazyColumn(Modifier.fillMaxSize(), state = list, contentPadding = PaddingValues(bottom = 32.dp + app.discair.ui.LocalBottomClearance.current)) {
         item {

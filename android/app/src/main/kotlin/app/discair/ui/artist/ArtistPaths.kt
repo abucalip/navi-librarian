@@ -37,6 +37,9 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import app.discair.model.PathKind
+import app.discair.model.PathEntity
+import app.discair.model.PathEntityPage
+import app.discair.model.page
 import app.discair.model.PathStop
 import app.discair.model.PathReason
 import app.discair.model.PathEvidence
@@ -50,6 +53,8 @@ import app.discair.ui.common.Load
 import app.discair.ui.common.ModalBottomSheet
 import app.discair.ui.common.OutlinedButton
 import app.discair.ui.common.Target
+import app.discair.ui.common.routeKey
+import app.discair.ui.Opener
 import app.discair.ui.theme.Ink
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -64,7 +69,7 @@ private val BodyHeight = 300.dp
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ArtistPathsSheet(artistName: String, mbid: String, onDismiss: () -> Unit) {
+fun ArtistPathsSheet(artistName: String, mbid: String, open: Opener, onDismiss: () -> Unit) {
     val repo = LocalRepository.current
     var kind by remember { mutableStateOf(PathKind.FollowTheMusician) }
     var attempt by remember { mutableIntStateOf(0) }
@@ -122,7 +127,7 @@ fun ArtistPathsSheet(artistName: String, mbid: String, onDismiss: () -> Unit) {
                         Spacer(Modifier.size(12.dp))
                         OutlinedButton(onClick = { attempt++ }, Modifier.heightIn(min = Target)) { Text("Try again") }
                     }
-                    is Load.Ready -> PathBody(artistName, kind, s.value)
+                    is Load.Ready -> PathBody(artistName, kind, s.value, open)
                 }
             }
         }
@@ -130,7 +135,7 @@ fun ArtistPathsSheet(artistName: String, mbid: String, onDismiss: () -> Unit) {
 }
 
 @Composable
-private fun PathBody(artistName: String, kind: PathKind, response: PathsResponse) {
+private fun PathBody(artistName: String, kind: PathKind, response: PathsResponse, open: Opener) {
     when (val view = response.view()) {
         is PathsView.Stops -> {
             var expandedStop by remember(response) { mutableStateOf<String?>(null) }
@@ -142,7 +147,7 @@ private fun PathBody(artistName: String, kind: PathKind, response: PathsResponse
                 itemsIndexed(view.response.stops, key = { index, stop -> "$index:${stop.name}" }) { index, stop ->
                     val key = "$index:${stop.name}"
                     val expanded = expandedStop == key
-                    StepRow(index + 1, stop, expanded) { expandedStop = if (expanded) null else key }
+                    StepRow(index + 1, stop, expanded, artistName, open) { expandedStop = if (expanded) null else key }
                 }
                 response.truncated?.let { reason ->
                     item {
@@ -174,7 +179,7 @@ private fun PathDescription(label: String, description: String) {
 
 /** One step expands in place to show every reason and the stored facts behind it. */
 @Composable
-private fun StepRow(number: Int, stop: PathStop, expanded: Boolean, onToggle: () -> Unit) {
+private fun StepRow(number: Int, stop: PathStop, expanded: Boolean, artistName: String, open: Opener, onToggle: () -> Unit) {
     Column(Modifier.fillMaxWidth()) {
         Row(
             Modifier.fillMaxWidth().clickable(role = Role.Button, onClick = onToggle)
@@ -196,24 +201,43 @@ private fun StepRow(number: Int, stop: PathStop, expanded: Boolean, onToggle: ()
                 if (stop.reasonCount > stop.reasons.size) "Showing ${stop.reasons.size} of ${stop.reasonCount} connections" else "${stop.reasons.size} connections",
                 style = MaterialTheme.typography.labelMedium, color = Ink.TextMuted,
             )
+            PathEntityDetails("Result", PathEntity(stop.name, stop.type, stop.mbid, stop.owned), artistName, open)
             stop.reasons.forEachIndexed { index, reason ->
                 if (index > 0) androidx.compose.material3.HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                PathReasonDetails(reason)
+                PathReasonDetails(reason, artistName, open)
             }
         }
     }
 }
 
 @Composable
-private fun PathReasonDetails(reason: PathReason) {
+private fun PathReasonDetails(reason: PathReason, artistName: String, open: Opener) {
+    val albumArtist = listOfNotNull(reason.anchor, reason.via).firstOrNull { it.page() == PathEntityPage.Artist }?.name ?: artistName
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Text(reason.text, style = MaterialTheme.typography.bodySmall)
-        reason.via?.let { Text("Via: ${it.name} · ${entityTypeLabel(it.type)}", style = MaterialTheme.typography.bodySmall, color = Ink.TextMuted) }
-        reason.anchor?.let { Text("Anchor: ${it.name} · ${entityTypeLabel(it.type)}", style = MaterialTheme.typography.bodySmall, color = Ink.TextMuted) }
+        PathEntityDetails("Via", reason.via, albumArtist, open)
+        PathEntityDetails("Anchor", reason.anchor, albumArtist, open)
         if (reason.evidence.isNotEmpty()) {
             Text("EVIDENCE", style = MaterialTheme.typography.labelSmall, color = Ink.TextMuted)
             reason.evidence.forEach { PathEvidenceLine(it) }
         }
+    }
+}
+
+@Composable
+private fun PathEntityDetails(label: String, entity: PathEntity?, artistContext: String, open: Opener) {
+    if (entity == null) return
+    Text("$label: ${entity.name} · ${entityTypeLabel(entity.type)}", style = MaterialTheme.typography.bodySmall, color = Ink.TextMuted)
+    when (entity.page()) {
+        PathEntityPage.Artist -> OutlinedButton(
+            onClick = { open.artist(entity.name, null, null, entity.mbid) },
+            modifier = Modifier.heightIn(min = Target),
+        ) { Text("Open artist") }
+        PathEntityPage.Album -> OutlinedButton(
+            onClick = { open.album(routeKey(artistContext, entity.name), artistContext, entity.name, null, null) },
+            modifier = Modifier.heightIn(min = Target),
+        ) { Text("Open album") }
+        null -> Unit
     }
 }
 
