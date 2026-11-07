@@ -312,7 +312,7 @@ Client gate: macOS taste views and snapshots; Android a compact taste card.
 - **Wiring:** nothing calls the paths route yet. Paths are on demand and cached, so a client is the trigger; a scheduled or post-import cache warm-up is optional and unplanned (exit check projects about 10 minutes per kind for 10,000 artists).
 - **Quality spot-check:** the bounded follow-the-musician and composition paths (credits per bridge and bridges per path are capped, reported as `truncated: "rows"`) have not been reviewed by hand as suggestions.
 - **Sideman-to-leader:** parked; the route answers `400`. Improve with other data sources, by owner decision.
-- **Sonic probe:** done 2026-11-07, proxy route confirmed viable; details under the sonic work items below. **Slice 1 (proxy module, unwired) merged in PR #875**; **Slice 2 (routes and caching) merged in PR #876**; **slice 3 (`sonic_available` in `/api/capabilities`) is PR #877**.
+- **Sonic probe:** done 2026-11-07, proxy route confirmed viable; details under the sonic work items below. **Slice 1 (proxy module, unwired) merged in PR #875**; **Slice 2 (routes and caching) merged in PR #876**; **slice 3 (`sonic_available` in `/api/capabilities`) merged in PR #877**.
 - **Unlanded checks:** the paths route test was not run locally (no fastapi), the full suite was not run (owner rule), and nothing is published or deployed.
 
 Sonic work items:
