@@ -8,6 +8,7 @@ seconds and the cache holds at most ``max_entries``; the least recently used ent
 """
 from __future__ import annotations
 
+import threading
 import time
 from collections import OrderedDict
 from typing import Any, Callable, Hashable
@@ -24,28 +25,33 @@ class TTLCache:
             raise ValueError("ttl must be positive and max_entries at least 1")
         self._ttl, self._max, self._clock = ttl, max_entries, clock
         self._items: OrderedDict[Hashable, tuple[float, Any]] = OrderedDict()
+        # FastAPI runs sync routes in a thread pool, so every access to _items holds this lock.
+        self._lock = threading.Lock()
 
     def __len__(self) -> int:
-        return len(self._items)
+        with self._lock:
+            return len(self._items)
 
     def get(self, key: Hashable) -> Any | None:
         """The stored value, or ``None`` when the key is missing or expired (expired entries are removed)."""
-        entry = self._items.get(key)
-        if entry is None:
-            return None
-        stored_at, value = entry
-        if self._clock() - stored_at >= self._ttl:
-            del self._items[key]
-            return None
-        self._items.move_to_end(key)
-        return value
+        with self._lock:
+            entry = self._items.get(key)
+            if entry is None:
+                return None
+            stored_at, value = entry
+            if self._clock() - stored_at >= self._ttl:
+                del self._items[key]
+                return None
+            self._items.move_to_end(key)
+            return value
 
     def offer(self, key: Hashable, status: str, value: Any) -> bool:
         """Store ``value`` only when ``status`` is cacheable. Returns whether it was stored."""
         if status not in CACHEABLE_STATUSES:
             return False
-        self._items[key] = (self._clock(), value)
-        self._items.move_to_end(key)
-        while len(self._items) > self._max:
-            self._items.popitem(last=False)
+        with self._lock:
+            self._items[key] = (self._clock(), value)
+            self._items.move_to_end(key)
+            while len(self._items) > self._max:
+                self._items.popitem(last=False)
         return True

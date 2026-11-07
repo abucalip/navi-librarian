@@ -1,4 +1,5 @@
 """Direct-import tests for the sonic TTL cache (Server V2 Phase 7, slice 2): hits, expiry, bounds, status rule."""
+import threading
 import unittest
 
 from intelligence.sonic.cache import CACHEABLE_STATUSES, MAX_ENTRIES, TTL_SECONDS, TTLCache
@@ -109,6 +110,32 @@ class StatusRule(unittest.TestCase):
         self.cache.offer("k", "ok", "good")
         self.assertFalse(self.cache.offer("k", "unavailable", "bad"))
         self.assertEqual(self.cache.get("k"), "good")
+
+
+class Concurrency(unittest.TestCase):
+    """Routes run in a thread pool; hammering one small cache from many threads must not raise or overfill."""
+
+    def test_parallel_reads_writes_and_evictions_stay_consistent(self):
+        cache = TTLCache(ttl=60, max_entries=8, clock=Clock())
+        errors = []
+
+        def worker(seed):
+            try:
+                for n in range(2000):
+                    key = (seed * 31 + n) % 40
+                    cache.offer(key, "ok", n)
+                    cache.get((key + 1) % 40)
+                    cache.get(key)
+            except Exception as exc:  # any KeyError from an unlocked move_to_end/del would land here
+                errors.append(exc)
+
+        threads = [threading.Thread(target=worker, args=(s,)) for s in range(8)]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+        self.assertEqual(errors, [])
+        self.assertLessEqual(len(cache), 8)
 
 
 class Construction(unittest.TestCase):
