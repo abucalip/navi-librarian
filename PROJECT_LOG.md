@@ -1,3 +1,11 @@
+## 2026-11-07 — Server V2 Phase 6 slice 17: artist popularity table, fill job and obscurity lookups (PR #871)
+
+- **PR:** [#871](https://github.com/abucalip/navi-librarian/pull/871), squash merge `235ee8caef812f470d970a07631a8b7351407a4f`. The first head failed `compile` and `test-and-build` because `tests/test_intelligence_suppression_persistence.py` pinned the state version at 3; the final head fixed that and all four required workflows passed on it.
+- **Changes:** owner-state migration 4 (`state.artist_popularity`); `intelligence/taste/popularity_persistence.py` (save/load, pending list with 30-day and 7-day refresh, owned artist MBIDs, Navidrome artist id to MBID map); `intelligence/taste/popularity_job.py` (bounded resumable fill job, one saved batch at a time); `build_insights` derives `obscurity_band` from saved figures, and song rows keep `artist_id`. Two older test files now follow `STATE_LATEST`.
+- **Tests run locally (focused):** popularity fill (new), smart playlist lookups, store state, smart playlist routes, popularity fetch, smart playlist persistence, obscurity, suppression: 115 passed. Full suite not run by the agent (owner rule); CI ran it.
+- **Limitations:** the fill job is unwired (no route, scheduler or startup path), so no provider traffic and no figures are saved until a caller runs it; `obscurity_band` rules stay `missing_data` until then. Not run against a real server; not published or deployed.
+- **Next:** owner decision on how the fill job is triggered (manual route first), then a real-server check.
+
 ## 2026-11-07 — Server V2 Phase 6 slice 15b: insight rules in the macOS smart playlist editor
 
 - **Context:** slice 15 merged as PR #866 (`5e4a4dbead6546d1ebf9ffc5d8f54130ffb7616a`, four required workflows passed). The owner chose the full editor now, knowing the server cannot supply insight data yet (no lookups wired, no obscurity bands defined), which departs from the design note "insight field only if its data is populated".
