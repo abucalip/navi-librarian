@@ -4,7 +4,7 @@
 - Android now retains the bounded `reasons[]`, each reason's `via` and `anchor`, and the public evidence fields (relation, role, source, catalogue number, stated dates, evidence class and match quality). A result row expands in place; one row is open at a time. The expanded view explains how many connections are shown when the server's `reason_count` exceeds the returned reasons.
 - No backend changes, provider calls, additional requests on expansion, or navigation actions. This is slice 1 only; artist/album navigation remains a later slice.
 - Added fixture-backed Android parser assertions for Follow the musician, Sideman, Label, Composition and Scene.
-- **Verification:** focused Android test not yet run; required GitHub Actions pending on the final PR head; manual Android device check not run. Full suite not run (owner rule). No merge, publication, deployment or runtime verification.
+- **Verification:** all four required GitHub Actions workflows passed on exact PR head `ca6fb6837784b1bd67bffb9ff4341e25fba367db`: Python syntax, container smoke, Docker packaging (`test-and-build`, including the Python unit-test step), and non-publishing multi-architecture image validation. Android `PathsTest` was not run (the repository has no Android Gradle CI workflow and no local Android test execution was available here); manual Android device check not run. No merge, publication, deployment or runtime verification.
 - **Next action:** run the focused `PathsTest`, resolve any CI failures, then perform the manual device check against the exact passing PR-head SHA.
 
 ## 2026-11-07 — Server V2 Phase 7: release links for sideman-to-leader
