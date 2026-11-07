@@ -281,6 +281,26 @@ public struct LibrarianClient: Sendable {
     public func knowledgeWork(mbid: String) async throws -> KnowledgeWork { try await knowledge("work", mbid) }
     public func knowledgeRecordingWorks(mbid: String) async throws -> KnowledgeRecordingWorks { try await knowledge("recording-works", mbid) }
 
+    public func knowledgePlace(mbid: String) async throws -> KnowledgePlace { try await knowledge("place", mbid) }
+    public func knowledgeEvent(mbid: String) async throws -> KnowledgeEvent { try await knowledge("event", mbid) }
+
+    /// One page of the bounded walk. `type` is the start entity's type (artist, person, group, ...).
+    public func knowledgeConnections(mbid: String, type: String, depth: Int = 1, limit: Int = 50, creditsOnly: Bool = false,
+                                     cursor: String? = nil) async throws -> KnowledgeConnections {
+        var q = "mbid=\(Self.enc(mbid))&type=\(Self.enc(type))&depth=\(depth)&limit=\(limit)"
+        if creditsOnly { q += "&credits_only=true" }
+        if let cursor { q += "&cursor=\(Self.enc(cursor))" }
+        let (data, http) = try await authedSend("GET", "api/knowledge/connections?\(q)", body: nil)
+        return try decode(KnowledgeConnections.self, data, http)
+    }
+
+    /// A discovery path from an artist. Computed on demand by the server and cached there.
+    public func knowledgePaths(mbid: String, type: String = "artist", kind: PathKind) async throws -> KnowledgePaths {
+        let q = "kind=\(kind.rawValue)&mbid=\(Self.enc(mbid))&type=\(Self.enc(type))"
+        let (data, http) = try await authedSend("GET", "api/knowledge/paths?\(q)", body: nil)
+        return try decode(KnowledgePaths.self, data, http)
+    }
+
     private func knowledge<T: Decodable>(_ page: String, _ mbid: String) async throws -> T {
         let (data, http) = try await authedSend("GET", "api/knowledge/\(page)?mbid=\(Self.enc(mbid))", body: nil)
         return try decode(T.self, data, http)

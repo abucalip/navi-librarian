@@ -68,3 +68,71 @@ import DiscairCore
         #expect(t.sent[0].url!.query == "mbid=00000001-0000-4000-8000-000000000000")
     }
 }
+
+@Suite("Knowledge graph data") struct KnowledgeGraphTests {
+    let base = URL(string: "https://lib.example.ts.net")!
+    let cred = Credential(username: "owner", password: "s3cret-pw-1234")
+    func pathsBody(_ name: String, file: String = #filePath) throws -> Data {
+        let url = URL(fileURLWithPath: file).deletingLastPathComponent().appending(path: "Fixtures/\(name).json")
+        let object = try JSONSerialization.jsonObject(with: Data(contentsOf: url)) as! [String: Any]
+        return try JSONSerialization.data(withJSONObject: (object["response"] as! [String: Any])["body"]!)
+    }
+
+    @Test func connectionsKeepDepthCreditAndEvidence() throws {
+        let c = try JSONDecoder().decode(KnowledgeConnections.self, from: insightsBody("knowledge_connections"))
+        #expect(c.start.name == "Example Artist" && c.truncated == nil && c.nextCursor == nil)
+        let first = try #require(c.hops.first)
+        #expect(first.depth == 1 && first.credit && first.entity.type == "work")
+        #expect(first.evidence.first?.relation == "composer" && first.evidence.first?.direction == "out")
+        #expect(c.sources["musicbrainz_dump"]?.coverage == "loaded")
+    }
+
+    @Test func connectionsPagesCarryACursor() throws {
+        let p1 = try JSONDecoder().decode(KnowledgeConnections.self, from: insightsBody("knowledge_connections_page1"))
+        #expect(p1.nextCursor != nil)
+    }
+
+    @Test func okPathHasStopsWithReasonsAndEvidence() throws {
+        let p = try JSONDecoder().decode(KnowledgePaths.self, from: pathsBody("paths_scene_path"))
+        #expect(p.status == "ok" && p.kind == "scene_path" && p.start.owned)
+        let reason = try #require(p.stops.first?.reasons.first)
+        #expect(reason.code == "same_area" && !reason.text.isEmpty && reason.via?.type == "area" && reason.anchor?.owned == true)
+        #expect(reason.evidence.first?.source == "musicbrainz_dump")
+        #expect(p.stops.allSatisfy { $0.reasonCount >= $0.reasons.count })
+    }
+
+    @Test func emptyPathHasNoStops() throws {
+        for kind in PathKind.allCases {
+            let p = try JSONDecoder().decode(KnowledgePaths.self, from: pathsBody("paths_\(kind.rawValue)_empty"))
+            #expect(p.status == "empty" && p.stops.isEmpty)
+        }
+    }
+
+    @Test func placeHasCoordinatesAreaChainAndRecordings() throws {
+        let p = try JSONDecoder().decode(KnowledgePlace.self, from: insightsBody("knowledge_place"))
+        #expect(p.facts?.kind == "studio" && p.facts?.hasCoordinates == true && p.facts?.latitude == 48.85)
+        #expect(p.area.first?.area.kind == "city" && p.area.first?.containedIn.first?.isoCode == "XX")
+        #expect(p.recordings.first?.recording.name == "Example Song (cover)" && p.recordings.first?.credits.first?.relation == "recording location")
+        #expect(p.events.first?.facts?.begin == "1971-06" && p.events.first?.facts?.cancelled == false)
+        #expect(p.people.first?.credits.first?.relation == "owner")
+    }
+
+    @Test func eventHasPlacesAndDates() throws {
+        let e = try JSONDecoder().decode(KnowledgeEvent.self, from: insightsBody("knowledge_event"))
+        #expect(e.facts?.kind == "festival" && e.facts?.end == "1971-06")
+        #expect(e.places.first?.facts?.hasCoordinates == true && e.places.first?.credits.first?.relation == "held at")
+        #expect(e.notLoaded.count == 2)
+    }
+
+    @Test func clientSendsConnectionsAndPathsQueries() async throws {
+        let t = MockTransport { req, _ in
+            req.url!.path.hasSuffix("paths") ? (200, try pathsBody("paths_label_path")) : (200, try insightsBody("knowledge_connections"))
+        }
+        let c = try LibrarianClient(baseURL: base, credential: cred, transport: t)
+        _ = try await c.knowledgeConnections(mbid: "m1", type: "artist", depth: 2, limit: 25, creditsOnly: true, cursor: "abc")
+        _ = try await c.knowledgePaths(mbid: "m1", kind: .labelPath)
+        #expect(t.sent[0].url!.path == "/api/knowledge/connections")
+        #expect(t.sent[0].url!.query == "mbid=m1&type=artist&depth=2&limit=25&credits_only=true&cursor=abc")
+        #expect(t.sent[1].url!.query == "kind=label_path&mbid=m1&type=artist")
+    }
+}
