@@ -1,3 +1,11 @@
+## 2026-11-07 — PR #893 Python syntax workflow duration diagnosis
+
+- **PR:** [#893](https://github.com/abucalip/navi-librarian/pull/893), branch `android/interactive-path-evidence`.
+- **Finding:** the `Python syntax check` job's compile step passed in about one second; the static checks and dependency-map artifact completed in about four more seconds. The delay was the final step, labelled `Run acquisition safety regressions`, which actually ran `python -m unittest discover -s tests -v` (the full unit suite). It had run for over 15 minutes in two overlapping PR workflow runs. The separate Docker packaging workflow's full-suite step passed on the same head `6d7f7a97539368aba249d1daab89aacde9a9eba6` in its normal short run. GitHub's in-progress job log endpoint returned a missing log object, so the exact test/process where those two runs stalled could not be determined; no syntax failure was observed.
+- **Change:** narrow the Python syntax workflow's final step to all `test_acquisition_*.py` modules plus `test_discovery_store_prefix_delete.py`, retain compilation/static/dependency-map checks, and add a 10-minute job timeout. The Docker packaging workflow remains the single full Python suite CI gate. This removes redundant full-suite work without dropping acquisition/deletion regression coverage.
+- Updated `docs/DEVELOPMENT_WORKFLOW.md`, `docs/TEST_PLAN.md` and `docs/PROJECT_STATUS.md` to state the distinction accurately.
+- **Verification:** prior exact head `6d7f7a97539368aba249d1daab89aacde9a9eba6`: Docker packaging/full unit suite passed; Python syntax compile and static steps passed, but its redundant full-suite step was still running. The revised workflow and documentation now need verification on the new PR head. No merge, publication or deployment.
+
 ## 2026-11-07 — Android artist Paths: slice 2 navigation actions (PR #893)
 
 - **Branch:** `android/interactive-path-evidence`; this extends PR [#893](https://github.com/abucalip/navi-librarian/pull/893), preserving slice 1.
