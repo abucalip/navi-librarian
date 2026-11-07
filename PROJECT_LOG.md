@@ -1,3 +1,12 @@
+## 2026-11-07 — Server V2 Phase 7 slice 1: sonic proxy module (unwired)
+
+- **PR:** [#875](https://github.com/abucalip/navi-librarian/pull/875), merged 2026-11-07 as `53f047b728adc9e2fae65dd9cd93ededfcd30411` (squash) from head `50f2f709460fa5e0bc67229e25150638da9f426f`; compile, container-smoke, test-and-build and validate-container passed.
+- New `intelligence/sonic/` (pure, injected Navidrome call; `navidrome_server.py` untouched). Drops same-recording and repeat matches, keeps Navidrome's order, `-1` scores become none, errors 70 and 0/30 become statuses, a refused login still raises.
+- Tests actually run: `python -m unittest tests.test_sonic_proxy` (12 pass). Full suite not run (owner rule). Read-only live run: 20 random songs all ok, 200 tracks, 1 same-recording and 1 repeat dropped; one 6-step path ok.
+- Corrections to the probe entry: every path step has `similarity: -1`; the error 40 was the quoted password read raw, token auth works.
+- Limits: no route, caching or `sonic_available` flag; no by-ear review, latency measure or unanalysed-song test. Not published or deployed.
+- Next action: slice 2, `/api/sonic/*` routes with caching.
+
 ## 2026-11-07 — Server V2 Phase 7: Navidrome sonic endpoints probed
 
 - Documentation only, committed directly to `main` (owner rule). No code changed; nothing published or deployed.

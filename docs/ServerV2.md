@@ -312,7 +312,7 @@ Client gate: macOS taste views and snapshots; Android a compact taste card.
 - **Wiring:** nothing calls the paths route yet. Paths are on demand and cached, so a client is the trigger; a scheduled or post-import cache warm-up is optional and unplanned (exit check projects about 10 minutes per kind for 10,000 artists).
 - **Quality spot-check:** the bounded follow-the-musician and composition paths (credits per bridge and bridges per path are capped, reported as `truncated: "rows"`) have not been reviewed by hand as suggestions.
 - **Sideman-to-leader:** parked; the route answers `400`. Improve with other data sources, by owner decision.
-- **Sonic probe:** done 2026-11-07, proxy route confirmed viable; details under the sonic work items below.
+- **Sonic probe:** done 2026-11-07, proxy route confirmed viable; details under the sonic work items below. **Slice 1 (proxy module, unwired) merged in PR #875**; slice 2 is the routes and caching.
 - **Unlanded checks:** the paths route test was not run locally (no fastapi), the full suite was not run (owner rule), and nothing is published or deployed.
 
 Sonic work items:
@@ -328,9 +328,9 @@ Work items:
 - Similarity ranges 0.78 to 0.99, median 0.92. The band is narrow, so rank by order and do not threshold on the score.
 - Matches are not tag lookalikes: 14% were by the same artist and 26% in the same genre. Sensible examples exist (jazz guitar to jazz trio, same-artist neighbours); odd ones exist too (a Tool track to a Frank Ocean track at 0.955, a Devin Townsend track to a Massive Attack track at 0.98). Not yet judged by ear.
 - Near-duplicates of the seed appear among the matches (another edition or language version of the same recording at about 0.96). The proxy must drop same-recording and same-title matches, probably via the Phase 2 editions data.
-- `findSonicPath` (startSongId, endSongId, count): 10 random pairs, all returned exactly 10 steps, starting on the start song and ending on the end song. The start entry carries `similarity: -1`; the proxy treats that as "no score".
+- `findSonicPath` (startSongId, endSongId, count): 10 random pairs, all returned exactly 10 steps, starting on the start song and ending on the end song. Every path step carries `similarity: -1` (re-checked 2026-11-07; first read as start only); the proxy treats that as "no score".
 - Not tested: the response for a song with no analysis data (all 60 sampled songs were analysed, so coverage looks near complete but a gap would not show in this sample); a hand review of paths as suggestions; load or latency.
-- Authentication note: Subsonic token auth (`t`/`s`) with the password from the local `config.env` was refused (error 40) while plain `p=` auth worked. The repo client uses token auth. Cause not investigated; check before the proxy goes live.
+- Authentication note: resolved 2026-11-07. Token auth works with the repo client; the earlier error 40 came from reading the quoted `NAVIDROME_PASSWORD` in `config.env` raw.
 
 Exit: proceed/stop decision documented with evidence. Audio never leaves the server.
 Kill: stop if quality is unconvincing or the server hardware cannot sustain it.
