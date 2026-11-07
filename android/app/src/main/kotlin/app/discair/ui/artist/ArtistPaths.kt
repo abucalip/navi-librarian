@@ -18,6 +18,8 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import app.discair.ui.player.PlayerIcons
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -30,6 +32,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
@@ -111,11 +114,7 @@ fun ArtistPathsSheet(artistName: String, mbid: String, open: Opener, onDismiss: 
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(3.dp),
             ) {
-                PathDescription("Follow the musician", "Songs by musicians who played with $artistName, not in your library.")
-                PathDescription("Sideman", "$artistName also performed with:")
-                PathDescription("Label", "Records under the same publishers.")
-                PathDescription("Composition", "Other recordings of the same composition, including covers and live versions.")
-                PathDescription("Scene", "Other artists from the same place and era.")
+                PathDescription(pathDescription(kind, artistName))
             }
             Box(Modifier.fillMaxWidth().height(BodyHeight)) {
                 when (val s = state) {
@@ -147,7 +146,7 @@ private fun PathBody(artistName: String, kind: PathKind, response: PathsResponse
                 itemsIndexed(view.response.stops, key = { index, stop -> "$index:${stop.name}" }) { index, stop ->
                     val key = "$index:${stop.name}"
                     val expanded = expandedStop == key
-                    StepRow(index + 1, stop, expanded, artistName, open) { expandedStop = if (expanded) null else key }
+                    StepRow(index + 1, stop, kind, expanded, artistName, open) { expandedStop = if (expanded) null else key }
                 }
                 response.truncated?.let { reason ->
                     item {
@@ -166,10 +165,19 @@ private fun PathBody(artistName: String, kind: PathKind, response: PathsResponse
     }
 }
 
+/** The one line that explains the chosen kind; each tab shows only its own. */
+private fun pathDescription(kind: PathKind, artistName: String): String = when (kind) {
+    PathKind.FollowTheMusician -> "Tracks by musicians who played with $artistName, not on your library."
+    PathKind.SidemanToLeader -> "$artistName also performed with:"
+    PathKind.LabelPath -> "Records under the same publishers."
+    PathKind.CompositionPath -> "Other recordings of the same composition, including covers and live versions."
+    PathKind.ScenePath -> "Other artists from the same place and era."
+}
+
 @Composable
-private fun PathDescription(label: String, description: String) {
+private fun PathDescription(description: String) {
     Text(
-        "$label: $description",
+        description,
         style = MaterialTheme.typography.bodySmall,
         color = Ink.TextMuted,
         textAlign = TextAlign.Start,
@@ -179,7 +187,7 @@ private fun PathDescription(label: String, description: String) {
 
 /** One step expands in place to show every reason and the stored facts behind it. */
 @Composable
-private fun StepRow(number: Int, stop: PathStop, expanded: Boolean, artistName: String, open: Opener, onToggle: () -> Unit) {
+private fun StepRow(number: Int, stop: PathStop, kind: PathKind, expanded: Boolean, artistName: String, open: Opener, onToggle: () -> Unit) {
     Column(Modifier.fillMaxWidth()) {
         Row(
             Modifier.fillMaxWidth().clickable(role = Role.Button, onClick = onToggle)
@@ -194,7 +202,12 @@ private fun StepRow(number: Int, stop: PathStop, expanded: Boolean, artistName: 
                 stop.displayContext?.let { context -> Text("($context)", style = MaterialTheme.typography.bodySmall, color = Ink.TextMuted, maxLines = 2) }
                 Text(stop.reason, style = MaterialTheme.typography.bodySmall, color = Ink.TextMuted, maxLines = 2)
             }
-            Text(if (expanded) "Hide" else "Details", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+            Icon(
+                PlayerIcons.Down,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(24.dp).rotate(if (expanded) 180f else 0f),
+            )
         }
         if (expanded) Column(Modifier.fillMaxWidth().padding(start = 28.dp, top = 6.dp, bottom = 4.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             if (stop.reasons.size > 1 || stop.reasonCount > 1) Text(
@@ -204,14 +217,14 @@ private fun StepRow(number: Int, stop: PathStop, expanded: Boolean, artistName: 
             PathEntityDetails("Result", PathEntity(stop.name, stop.type, stop.mbid, stop.owned), artistName, open)
             stop.reasons.forEachIndexed { index, reason ->
                 if (index > 0) androidx.compose.material3.HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                PathReasonDetails(reason, artistName, open)
+                PathReasonDetails(reason, kind, artistName, open)
             }
         }
     }
 }
 
 @Composable
-private fun PathReasonDetails(reason: PathReason, artistName: String, open: Opener) {
+private fun PathReasonDetails(reason: PathReason, kind: PathKind, artistName: String, open: Opener) {
     val albumArtist = listOfNotNull(reason.anchor, reason.via).firstOrNull { it.page() == PathEntityPage.Artist }?.name ?: artistName
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Text(reason.text, style = MaterialTheme.typography.bodySmall)
@@ -220,9 +233,16 @@ private fun PathReasonDetails(reason: PathReason, artistName: String, open: Open
         }
         PathEntityDetails("Via", reason.via, albumArtist, open)
         PathEntityDetails("Anchor", reason.anchor, albumArtist, open)
-        if (reason.evidence.isNotEmpty()) {
+        // Only the fact that matters per tab: the instrument (role) for the musician and sideman paths,
+        // the recording relation (performance, cover, instrumental, medley) for composition.
+        val evidenceFacts = when (kind) {
+            PathKind.FollowTheMusician, PathKind.SidemanToLeader -> reason.evidence.mapNotNull { it.role?.takeIf(String::isNotBlank) }
+            PathKind.CompositionPath -> reason.evidence.map { it.relation.replace('_', ' ') }.filter(String::isNotBlank)
+            else -> emptyList()
+        }.distinct()
+        if (evidenceFacts.isNotEmpty()) {
             Text("EVIDENCE", style = MaterialTheme.typography.labelSmall, color = Ink.TextMuted)
-            reason.evidence.forEach { PathEvidenceLine(it) }
+            Text(evidenceFacts.joinToString(", "), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }
@@ -242,25 +262,6 @@ private fun PathEntityDetails(label: String, entity: PathEntity?, artistContext:
         ) { Text("Open album") }
         null -> Unit
     }
-}
-
-@Composable
-private fun PathEvidenceLine(evidence: PathEvidence) {
-    val details = listOfNotNull(
-        evidence.relation.takeIf { it.isNotBlank() }?.replace('_', ' '),
-        evidence.role,
-        evidence.catalogueNumber?.let { "Catalogue $it" },
-    )
-    if (details.isNotEmpty()) Text(details.joinToString(" · "), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-    val source = evidence.source?.let(::evidenceSourceLabel)
-    val dates = when {
-        evidence.validFrom != null && evidence.validTo != null -> "${evidence.validFrom}–${evidence.validTo}"
-        evidence.validFrom != null -> "from ${evidence.validFrom}"
-        evidence.validTo != null -> "until ${evidence.validTo}"
-        else -> null
-    }
-    val provenance = listOfNotNull(source, dates, evidence.evidenceClass?.let(::evidenceClassLabel), evidence.matchQuality?.let(::matchQualityLabel))
-    provenance.takeIf { it.isNotEmpty() }?.let { Text(it.joinToString(" · "), style = MaterialTheme.typography.labelSmall, color = Ink.TextMuted) }
 }
 
 private fun entityTypeLabel(type: String): String = when (type) {
