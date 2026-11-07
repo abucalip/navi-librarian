@@ -172,6 +172,11 @@ class KnowledgeReader:
         entity = self.entity("place", id=id, mbid=mbid)
         return None if entity is None else public(place_page(self, entity, limit=limit))
 
+    def atlas_page(self, *, limit: int = 500) -> dict[str, Any]:
+        """Places with stated coordinates and their recording counts, for the atlas map."""
+        from .atlas import atlas_page
+        return public(atlas_page(self, limit=limit))
+
     def event_page(self, *, id: int | None = None, mbid: str | None = None, limit: int = 200) -> dict[str, Any] | None:
         """An event with its stated places and area, people and recordings; None when unknown."""
         from .context_pages import event_page

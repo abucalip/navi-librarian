@@ -46,6 +46,7 @@ struct ZineWindow: View {
         case .equalizer: ZineEQ(state: state)
         case .gapRadar: ZineGapRadar(state: state)
         case .connections: GraphExplorerView(state: state, style: .zine)
+        case .atlas: AtlasView(state: state, style: .zine)
         case .smartPlaylists: ZineSmartPlaylists(state: state)
         case .history: ZineHistory(state: state)
         case .insights: ZineInsights(state: state)
@@ -64,7 +65,7 @@ private func activeSection(_ s: Screen) -> String {
     case .downloads: "Downloads"
     case .discover, .insights: "Discover"
     case .equalizer: "Settings"
-    case .gapRadar, .connections: "Artists"
+    case .gapRadar, .connections, .atlas: "Artists"
     case .smartPlaylists: "Library"
     case .history, .recent: "Library"
     }

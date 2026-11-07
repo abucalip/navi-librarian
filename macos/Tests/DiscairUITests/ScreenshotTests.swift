@@ -11,7 +11,7 @@ import Testing
 /// Baseline comparison is added once the owner approves the look on the Mac (contract M4 gate).
 @MainActor
 struct ScreenshotTests {
-    @Test(arguments: ThemeID.allCases, [Screen.home, Screen.album, Screen.nowPlaying, Screen.queue, Screen.library, Screen.albums, Screen.artist, Screen.settings, Screen.downloads, Screen.discover, Screen.equalizer, Screen.gapRadar, Screen.smartPlaylists, Screen.history, Screen.insights, Screen.connections])
+    @Test(arguments: ThemeID.allCases, [Screen.home, Screen.album, Screen.nowPlaying, Screen.queue, Screen.library, Screen.albums, Screen.artist, Screen.settings, Screen.downloads, Screen.discover, Screen.equalizer, Screen.gapRadar, Screen.atlas, Screen.smartPlaylists, Screen.history, Screen.insights, Screen.connections])
     func rendersWindow(theme: ThemeID, screen: Screen) throws {
         RenderMode.offscreenScreenshot = true
         // Settings needs a session; a throwaway one with a sample profile and an in-memory keychain.
@@ -27,6 +27,7 @@ struct ScreenshotTests {
         if screen == .discover { state.discovery.show(.personal, Fixtures.albums([7, 8, 9])) }
         if screen == .library && theme == .cupertino { state.library.apply(newest: [], first: [], artists: [], picks: []); state.library.showSongs(Fixtures.songs, more: true) }
         if screen == .connections { state.graph.preview(centre: GraphPreview.centre, nodes: GraphPreview.nodes); state.graph.selectedID = "b1" }
+        if screen == .atlas { state.atlas.preview(places: [AtlasPreview.paris, AtlasPreview.addis]); state.atlas.selectedID = "p1" }
         if screen == .equalizer { state.player.updateEQ { $0.enabled = true; $0.choose(preset: "rock") } }
         if screen == .nowPlaying {
             state.lyrics.preview(Lyrics(timed: true, lines: ["A slow tide under the floorboards", "the lamp keeps counting what we left", "one long note, then the room agrees", "nobody here is in a hurry", "the water finds its level"].enumerated().map { LyricLine(startMs: $0.offset * 4000, text: $0.element) }))
@@ -75,4 +76,13 @@ enum GraphPreview {
         ("a4", "It's My Life", "release", false, 1, "c", true), ("a5", "EMI", "label", false, 1, "c", false),
         ("d1", "Phil Brown", "artist", false, 2, "b1", true), ("d2", "Colour of Spring", "release", false, 2, "b1", false),
     ].map { GraphNode(entity: entity($0.0, $0.1, $0.2, owned: $0.3), depth: $0.4, via: $0.5, credit: $0.6, evidence: []) }
+}
+
+/// Two sample places for the atlas screenshot.
+@MainActor enum AtlasPreview {
+    static func make(_ id: String, _ name: String, _ lat: Double, _ lon: Double, _ owned: Int) -> AtlasPlace {
+        try! JSONDecoder().decode(AtlasPlace.self, from: Data(#"{"entity":{"mbid":"\#(id)","canonical_name":"\#(name)","type":"place"},"kind":"studio","latitude":\#(lat),"longitude":\#(lon),"recordings":9,"owned_recordings":\#(owned)}"#.utf8))
+    }
+    static let paris = make("p1", "Example Studio, Paris", 48.85, 2.41, 7)
+    static let addis = make("p2", "Addis Hall", 9.03, 38.74, 0)
 }
