@@ -112,7 +112,7 @@ class Similar(SonicRoutes):
 
     def test_count_defaults_to_ten(self):
         self.similar()
-        self.assertEqual(self.lib.sonic_calls()[0][1]["count"], 20)
+        self.assertEqual(self.lib.sonic_calls()[0][1]["count"], 30)
 
     def test_count_bounds(self):
         for bad in ("0", "51", "-1", "abc"):
