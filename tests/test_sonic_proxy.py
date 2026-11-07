@@ -71,6 +71,11 @@ class SimilarTracks(unittest.TestCase):
         r = similar_tracks(FakeNavidrome([seed], error={"getSonicSimilarTracks": "Navidrome API error 0: plugin call failed"}), "s")
         self.assertEqual(r.status, "unavailable")
 
+    def test_unanalysed_song_is_empty_not_unavailable(self):
+        err = "Navidrome API error 0: Internal Server Error: plugin call failed: AudioMuse-AI returned status 404"
+        r = similar_tracks(FakeNavidrome([song("s")], error={"getSonicSimilarTracks": err}), "s")
+        self.assertEqual((r.status, r.tracks, r.seed["navidrome_id"]), ("empty", [], "s"))
+
     def test_refused_login_is_not_hidden(self):
         nav = FakeNavidrome([song("s")], error={"getSong": "Navidrome API error 40: Wrong username or password"})
         with self.assertRaises(RuntimeError):
