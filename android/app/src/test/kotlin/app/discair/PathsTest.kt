@@ -32,6 +32,26 @@ class PathsTest {
         assertTrue(r.view() is PathsView.Stops)
     }
 
+    @Test fun sidemanToLeaderOkFixtureListsArtistStepsWithSidemanReason() {
+        val r = parsePaths(body("paths_sideman_to_leader"))
+        assertEquals("sideman_to_leader", r.kind)
+        assertEquals("ok", r.status)
+        assertEquals(null, r.truncated)
+        assertEquals(listOf("محمد القصبجي"), r.stops.map { it.name })
+        assertTrue(r.stops.all { it.type == "artist" })
+        assertTrue(r.stops.first().reason.contains("recording"))
+        assertEquals(21, r.stops.first().reasonCount)
+        assertTrue(r.view() is PathsView.Stops)
+    }
+
+    @Test fun sidemanToLeaderTruncatedFixtureKeepsTheStopsNote() {
+        val r = parsePaths(body("paths_sideman_to_leader_truncated"))
+        assertEquals("ok", r.status)
+        assertEquals("stops", r.truncated)
+        assertEquals(30, r.stops.size)
+        assertTrue(r.stops.all { it.type == "artist" && it.reason.isNotBlank() })
+    }
+
     @Test fun labelCompositionAndSceneOkFixturesAllHaveSteps() {
         for (name in listOf("paths_label_path", "paths_composition_path", "paths_scene_path")) {
             val r = parsePaths(body(name))
@@ -42,7 +62,7 @@ class PathsTest {
     }
 
     @Test fun emptyFixturesSayNothingToShow() {
-        for (name in listOf("paths_follow_the_musician_empty", "paths_label_path_empty", "paths_composition_path_empty", "paths_scene_path_empty")) {
+        for (name in listOf("paths_follow_the_musician_empty", "paths_sideman_to_leader_empty", "paths_label_path_empty", "paths_composition_path_empty", "paths_scene_path_empty")) {
             val r = parsePaths(body(name))
             assertEquals(name, "empty", r.status)
             assertTrue(name, r.stops.isEmpty())
@@ -77,9 +97,9 @@ class PathsTest {
         assertEquals(PathsView.Empty, r.view())
     }
 
-    @Test fun exactlyTheFourPathKindsAreOffered() {
+    @Test fun exactlyTheFivePathKindsAreOffered() {
         assertEquals(
-            listOf("follow_the_musician", "label_path", "composition_path", "scene_path"),
+            listOf("follow_the_musician", "sideman_to_leader", "label_path", "composition_path", "scene_path"),
             PathKind.entries.map { it.wire },
         )
     }

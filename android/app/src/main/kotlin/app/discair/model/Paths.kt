@@ -13,11 +13,13 @@ import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.doubleOrNull
 
 /**
- * Server V2 discovery paths (`GET /api/knowledge/paths`, Phase 7 client gate). The four kinds the server builds;
- * `place`, `event` and the dropped or parked kinds are not paths, so they are not offered.
+ * Server V2 discovery paths (`GET /api/knowledge/paths`, Phase 7 client gate). The five kinds the server builds;
+ * `place`, `event` and the dropped kind (`same_studio_different_decade`) are not paths, so they are not offered.
+ * Stops for `sideman_to_leader` are artists, each explained by `sideman_on` (via the release, anchor the recording).
  */
 enum class PathKind(val wire: String, val label: String) {
     FollowTheMusician("follow_the_musician", "Follow the musician"),
+    SidemanToLeader("sideman_to_leader", "Sideman"),
     LabelPath("label_path", "Label"),
     CompositionPath("composition_path", "Composition"),
     ScenePath("scene_path", "Scene"),
