@@ -1,3 +1,12 @@
+## 2026-11-07 — Server V2 Phase 7: Navidrome sonic endpoints probed
+
+- Documentation only, committed directly to `main` (owner rule). No code changed; nothing published or deployed.
+- Read-only probe of the owner's Navidrome 0.64.2 after Audiomuse was installed: `sonicSimilarity` v1 is listed; `getSonicSimilarTracks` and `findSonicPath` return data.
+- Sample: 60 random songs x 10 matches (574 matches, 0 errors, 0 empty); 10 random pairs (all 10 steps, correct start and end). Similarity median 0.92 (min 0.78, max 0.99); 14% same-artist, 26% same-genre matches.
+- Findings: near-duplicate editions of the seed appear and must be filtered; the path start entry has `similarity: -1`; some matches look odd and need a by-ear check.
+- Limitations: songs without analysis data not tested; paths not hand-reviewed; no load or latency measure; token auth was refused (error 40) with the local password while plain-password auth worked, cause not investigated.
+- Outcome: Phase 7 work item 1 (proxy) applies; item 2 (Essentia experiment) not needed. Next action is the owner's choice.
+
 ## 2026-11-07 — Server V2 Phase 6 slice 18 follow-up: popularity status `running` from persisted state
 
 - **PR:** [#873](https://github.com/abucalip/navi-librarian/pull/873), merged 2026-11-07 as `4cb32d63266298f643e1d2940a6929af3e0f6994` (squash) from head `1290de5b414fb25bf8e8a174e25d13a416f62fc9`; compile, container-smoke, test-and-build, validate-container and validate-release-workflow passed; publish-release skipped.

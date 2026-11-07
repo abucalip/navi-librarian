@@ -312,6 +312,7 @@ Client gate: macOS taste views and snapshots; Android a compact taste card.
 - **Wiring:** nothing calls the paths route yet. Paths are on demand and cached, so a client is the trigger; a scheduled or post-import cache warm-up is optional and unplanned (exit check projects about 10 minutes per kind for 10,000 artists).
 - **Quality spot-check:** the bounded follow-the-musician and composition paths (credits per bridge and bridges per path are capped, reported as `truncated: "rows"`) have not been reviewed by hand as suggestions.
 - **Sideman-to-leader:** parked; the route answers `400`. Improve with other data sources, by owner decision.
+- **Sonic probe:** done 2026-11-07, proxy route confirmed viable; details under the sonic work items below.
 - **Unlanded checks:** the paths route test was not run locally (no fastapi), the full suite was not run (owner rule), and nothing is published or deployed.
 
 Sonic work items:
@@ -320,6 +321,16 @@ Work items:
 1. If Phase 0 found a working sonic extension: proxy `getSonicSimilarTracks` and `findSonicPath` through Librarian with ownership overlay, caching, and graceful 404 handling; expose track/album radio and sonic paths. No analysis of our own.
 2. Else: time-boxed experiment with Essentia on an owner-approved sample (document CC BY-NC-SA on model weights for personal use); measure CPU, wall time, memory, disk, stability; compare with human judgment across genres and recording quality.
 3. Only after a successful experiment: resumable throttled jobs, newest-first, cancel/progress visible, disabled by default.
+
+**Phase 0 sonic check, result (2026-11-07, read-only probe by the agent, nothing changed in the repo):** Audiomuse is installed and Navidrome 0.64.2 now serves the sonic endpoints, so work item 1 (proxy) applies and the Essentia experiment (item 2) is not needed.
+- `getOpenSubsonicExtensions` lists `sonicSimilarity` version 1.
+- `getSonicSimilarTracks` (id, count): 60 random songs, 10 matches requested each. All 60 returned `ok` with matches (574 in total); no 404s, empty results or errors. Each match is `sonicMatch[]` with a full song `entry` plus `similarity`.
+- Similarity ranges 0.78 to 0.99, median 0.92. The band is narrow, so rank by order and do not threshold on the score.
+- Matches are not tag lookalikes: 14% were by the same artist and 26% in the same genre. Sensible examples exist (jazz guitar to jazz trio, same-artist neighbours); odd ones exist too (a Tool track to a Frank Ocean track at 0.955, a Devin Townsend track to a Massive Attack track at 0.98). Not yet judged by ear.
+- Near-duplicates of the seed appear among the matches (another edition or language version of the same recording at about 0.96). The proxy must drop same-recording and same-title matches, probably via the Phase 2 editions data.
+- `findSonicPath` (startSongId, endSongId, count): 10 random pairs, all returned exactly 10 steps, starting on the start song and ending on the end song. The start entry carries `similarity: -1`; the proxy treats that as "no score".
+- Not tested: the response for a song with no analysis data (all 60 sampled songs were analysed, so coverage looks near complete but a gap would not show in this sample); a hand review of paths as suggestions; load or latency.
+- Authentication note: Subsonic token auth (`t`/`s`) with the password from the local `config.env` was refused (error 40) while plain `p=` auth worked. The repo client uses token auth. Cause not investigated; check before the proxy goes live.
 
 Exit: proceed/stop decision documented with evidence. Audio never leaves the server.
 Kill: stop if quality is unconvincing or the server hardware cannot sustain it.
