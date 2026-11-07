@@ -134,6 +134,16 @@ class PopularityRoutes(unittest.TestCase):
         self.assertEqual(body["last_good"]["state"], "succeeded")
         self.assertFalse(body["running"])
 
+    def test_status_running_comes_from_persisted_job_state(self):
+        self.add_artists(1)
+        self.fill(ok_post([]))
+        self.assertFalse(routes._LOCK.locked())
+        self.db.execute("UPDATE job_runs SET state = 'running' WHERE job = ?", (routes.JOB,))
+        self.db.commit()
+        body = self.client.get("/api/insights/popularity/status").json()
+        self.assertTrue(body["running"])
+        self.assertEqual(body["status"]["state"], "running")
+
 
 if __name__ == "__main__":
     unittest.main()

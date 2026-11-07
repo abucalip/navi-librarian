@@ -1,3 +1,9 @@
+## 2026-11-07 — Server V2 Phase 6 slice 18 follow-up: popularity status `running` from persisted state
+
+- **Change:** `GET /api/insights/popularity/status` now reports `running` as true when the newest `taste_popularity` job run has state `running`, instead of reading the process-local `_LOCK`. The lock still refuses overlapping fills in one process (409). Fixes the multi-worker review finding on PR #872.
+- **Tests:** new `test_status_running_comes_from_persisted_job_state`; `python -m unittest tests.test_api_popularity_routes`: 9 passed. Full suite not run by the agent (owner rule).
+- **Limitations:** a run stuck `running` after a crash reads `running: true` until `recover_stale` is called (nothing calls it on a schedule). Not run against a real server; not published or deployed.
+
 ## 2026-11-07 — Server V2 Phase 6 slice 18: manual popularity fill route (PR #872)
 
 - Merged as `e968a8fd9ebe228e330e7ddc074f4b146dd955d1` (squash) from head `1b48bbecdeb20cecb3075ec6a174149ff23cd4e2`. All required workflows passed on that head: compile, container-smoke, test-and-build, validate-container, validate-release-workflow; publish-release skipped.

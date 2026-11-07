@@ -95,10 +95,12 @@ def popularity_status(librarian=Depends(get_librarian)):
     try:
         db = _store(librarian)
         try:
+            status = runner.status(db, JOB)
+            # Persisted job state, so the flag is right across app workers (the lock is per process).
             return {
-                "status": runner.status(db, JOB),
+                "status": status,
                 "last_good": runner.last_good(db, JOB),
-                "running": _LOCK.locked(),
+                "running": bool(status and status["state"] == "running"),
             }
         finally:
             db.close()
