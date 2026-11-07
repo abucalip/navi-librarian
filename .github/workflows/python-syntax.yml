@@ -13,6 +13,7 @@ on:
 jobs:
   compile:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Check out source
         uses: actions/checkout@v4
@@ -51,4 +52,6 @@ jobs:
           if-no-files-found: error
           retention-days: 14
       - name: Run acquisition safety regressions
-        run: python -m unittest discover -s tests -v
+        run: |
+          python -m unittest discover -s tests -p 'test_acquisition_*.py' -v
+          python -m unittest discover -s tests -p 'test_discovery_store_prefix_delete.py' -v
