@@ -2958,3 +2958,11 @@ All live runs were approved by the owner; slskd off; aggregate only; harnesses w
 - **Changes:** migration 3 (`state.smart_playlists`, shape CHECKs, mutable, explicit delete) in `intelligence/store/state.py`; new `intelligence/taste/smart_playlist_persistence.py`; new `tests/test_intelligence_taste_smart_playlist_persistence.py`; `tests/test_intelligence_suppression_persistence.py` state-version assertions moved from 2 to 3.
 - **Tests run locally (focused only):** `tests.test_intelligence_taste_smart_playlist_persistence`, `tests.test_intelligence_suppression_persistence`, `tests.test_intelligence_store_state`: 48 tests OK. Full suite not run (owner rule).
 - **Not done:** no route, job, client, provider traffic or Navidrome write. Not published, deployed or runtime-verified.
+
+
+## 2026-11-07 — Server V2 Phase 6 slice 15b merged (PR #867)
+
+- **Merged:** PR [#867](https://github.com/abucalip/navi-librarian/pull/867), squash `fb7767a6f01f504ce61f62bd48748b52c0fe1bcd`, from head `d1dcf79409c8b9a443b11b70a3093a34ca98e60b`, at the owner's request. All four required workflows passed on that head; none runs Swift.
+- **Changes:** `obscurity_band` and `in_lens` rules (is / is not) in the macOS smart playlist editor, both themes. Such rules match every song until the server supplies data. Server sets with unknown fields (for example `bpm`) are still preserved untouched.
+- **Verification:** the PR reports 357 filtered Swift tests passing locally; not rerun here. No real-server or visual check; not published or deployed.
+- **State:** Phase 6 item 6 (smart playlists) is complete apart from wiring insight data into evaluation, which is an owner decision.
