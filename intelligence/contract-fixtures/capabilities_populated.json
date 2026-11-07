@@ -19,6 +19,12 @@
         "data_version": 1,
         "resource": "health"
       },
+      "paths": {
+        "available": false,
+        "data_version": 0,
+        "reason": "not_populated",
+        "resource": "musicbrainz_slice"
+      },
       "unresolved_queue": {
         "available": true,
         "data_version": 1,

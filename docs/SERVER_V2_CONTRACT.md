@@ -24,7 +24,7 @@ Fixtures: `capabilities_empty.json`, `capabilities_populated.json`.
 | `cursor` | Current change sequence; store it and send it as `since` to `/changes`. |
 | `graph_coverage` | `none`, `partial` or `broad`. |
 | `sonic_available`, `listenbrainz_connected` | Booleans; unknown means `false`. |
-| `features` | Map of feature name to `{available, resource, data_version}`; when `available` is `false` it also has `reason` (`not_populated`). Phase 1 features: `library_health`, `unresolved_queue`. |
+| `features` | Map of feature name to `{available, resource, data_version}`; when `available` is `false` it also has `reason` (`not_populated`). Phase 1 features: `library_health`, `unresolved_queue`. Phase 7 adds `paths`: `resource` `musicbrainz_slice`, available once the MusicBrainz slice is loaded (an available feature can still return an `empty` path for a given artist). |
 | `data_versions` | Map of resource to counter. |
 
 ## GET /api/changes?since=\<cursor\>

@@ -17,6 +17,12 @@
         "reason": "not_populated",
         "resource": "health"
       },
+      "paths": {
+        "available": false,
+        "data_version": 0,
+        "reason": "not_populated",
+        "resource": "musicbrainz_slice"
+      },
       "unresolved_queue": {
         "available": false,
         "data_version": 0,

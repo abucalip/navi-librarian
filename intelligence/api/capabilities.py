@@ -11,6 +11,7 @@ import sqlite3
 from dataclasses import dataclass
 from typing import Any
 
+from ..graph.paths import SLICE_RESOURCE as PATHS_RESOURCE
 from ..store import LATEST_VERSION, generations
 
 CONTRACT_VERSION = 1
@@ -20,6 +21,8 @@ FEATURES: dict[str, str] = {
     "library_health": "health",
     "unresolved_queue": "unresolved",
     "insights": "insights",
+    # Discovery paths are built from the MusicBrainz slice; "available" means the slice is loaded.
+    "paths": PATHS_RESOURCE,
 }
 
 
