@@ -3088,3 +3088,14 @@ All live runs were approved by the owner; slskd off; aggregate only; harnesses w
 - **Evidence:** `tests.test_intelligence_paths` (17 pass); CI compile, container-smoke, test-and-build, validate-container passed on the head. Review comments (credit roles, credit-grade self-release check) fixed with tests. Not run: route test, full suite, real store.
 - **State:** builder and contract merged; clients do not call the kind. Not published or deployed.
 - **Next action:** owner re-import, then fixture and quality spot-check.
+
+
+## 2026-11-07 — Server V2 Phase 7 sideman_to_leader client gate (PR #887)
+
+- **Merged:** PR [#887](https://github.com/abucalip/navi-librarian/pull/887), squash commit `23ee0f35f5ce067539abd5af79e40cab0d8863bb`, from exact head `33ffffc754fbcc7e150735788df85e7de957870a`.
+- **Changes:** Android adds `SidemanToLeader` to `PathKind`; the existing artist Paths sheet enumerates the kinds and remains hidden unless the live `/api/capabilities` response reports paths available. macOS adds `sideman_to_leader` to the `PathKind` wire enum. The Server V2 contract now points to the new `ok`, `empty` and `truncated: stops` fixtures (30 stops), captured from a copy of the owner's store after the MusicBrainz slice re-import.
+- **Review:** inspected all eight changed files, both client model/test paths, the Android artist-page caller and capability gate, the Server V2 contract, fixtures, current `main`, recent commits, open PR search and PR discussion/review state. No blocking code issue found. Minor non-blocking stale wording remains in `android/app/src/main/kotlin/app/discair/ui/artist/ArtistPaths.kt` (comment says "four kinds" although the enum now has five).
+- **Focused tests (PR-reported, not independently rerun here):** Android `./gradlew testDebugUnitTest --tests app.discair.PathsTest` — 15 passed; macOS `swift test --filter 'DiscairLibrarianTests|DiscairUITests'` — 389 tests in 67 suites passed on rerun. One earlier macOS run reported an unidentified issue that did not recur; the cause was not investigated. Full suites and device/emulator checks were not run.
+- **CI on exact head `33ffffc754fbcc7e150735788df85e7de957870a`:** Container runtime smoke test (run 42384728872), Python syntax check (42384728842), Validate Docker image (publishing paused; run 42384728947), and Validate Docker packaging (run 42384728915) all completed successfully. The packaging workflow runs the Python unit suite; none of these workflows runs Swift. macOS CI remains intentionally absent by owner decision.
+- **State:** merged. No publication, deployment or runtime verification. No new macOS screen was added; only the model enum was extended.
+- **Next action:** owner smoke-checks the Android artist Paths sheet on a device/emulator against a server with the re-imported MusicBrainz slice, including the new result and empty/truncated states.
