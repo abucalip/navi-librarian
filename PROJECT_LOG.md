@@ -3124,3 +3124,13 @@ All live runs were approved by the owner; slskd off; aggregate only; harnesses w
 - **Merged:** PR [#889](https://github.com/abucalip/navi-librarian/pull/889), squash `8dd5075e`, at the owner's request. Required workflows passed (compile, container-smoke, test-and-build, validate-container).
 - **State:** sonic path screens are on `main` for Android and macOS. Nothing published or deployed. Still not seen on screen or on a device, and not run against the live server.
 - **Next action:** owner checks the sonic path sheet on a device and in the Mac app against the live server.
+
+
+## 2026-11-07 — Server V2 documentation reconciliation after PR #889
+
+- **Direct-to-main documentation update:** reconciled `docs/ServerV2.md` and `docs/PROJECT_STATUS.md` with the merged Phase 7 implementation through PR #889. Per `docs/DEVELOPMENT_WORKFLOW.md`, documentation-only changes are committed directly to `main`, not through a PR.
+- **Current implementation recorded:** Phase 5 client carry-over (Connections #882, Atlas #883, Timeline #884, Android paths #880/#881 and sideman-to-leader #885–#887); Phase 7 path-cache warm-up and sonic radio clients (#888); song-to-song sonic path preview screens on Android and macOS (#889). PR #888's four required workflows passed; its non-required `validate-release-workflow` was pending at merge. PR #889's four required workflows passed.
+- **Verification gaps kept explicit:** no bounded path-cache warm-up has been timed/completed on a copy of the real store; sonic routes have not been exercised end to end through the live Librarian; sonic path preview screens have not been visually checked on macOS or Android. Full suites were not run (owner rule). The owner's waivers for the Phase 5 screen review, discovery-path quality spot-check and sonic re-listen remain recorded. Nothing is published or deployed.
+- **Commits:** `docs/ServerV2.md` — `7bcaea8dabc1b973a6f0928ecd25b255312b30af`; `docs/PROJECT_STATUS.md` — `b83fe2af99e3ba5674fb28825f8e4a5da4cd4c86`. This log entry is committed on top of those documentation commits.
+- **Tests:** documentation-only; no application tests run. Reviewed the changed Phase 7 sections and current-state summary against merged PR records and the existing verification log.
+- **Next action:** complete the real-store path warm-up measurement, live sonic-route integration check, and macOS/Android sonic path visual checks before closing Phase 7.
