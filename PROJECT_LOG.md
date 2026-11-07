@@ -3005,3 +3005,11 @@ All live runs were approved by the owner; slskd off; aggregate only; harnesses w
 - **Merged:** PR [#869](https://github.com/abucalip/navi-librarian/pull/869), squash `51f1e5a0ca6f31f610e65e5b62fc94b8515a67ad`, from head `1344fabc5268856ebe1f16394653410ef0e25527`, at the owner's request; all five workflows passed on that head (none runs Swift).
 - **Owner decision:** other insight card kinds (hidden canon, series, blind spot, anniversary) are dropped as lenses; only `forgotten_gems` is a lens.
 - **Open:** obscurity lookups (owner-state popularity table, bounded fill job, song-to-artist MBID map). Not published or deployed.
+
+
+## 2026-11-07 — Server V2 Phase 6 exit check and closeout
+
+- **Merged:** PR [#874](https://github.com/abucalip/navi-librarian/pull/874), squash `38eb5acb287b5986ef864dfe1d8aabb000c69847`, from head `899819695abb437e36460d8dd6c5d399fdf566df`, at the owner's request.
+- **Evidence:** `scripts/server_v2_phase6_exit.py` (offline, read-only, runs on a copy of the store and owner-state file, no provider traffic) passed all five gated checks on a copy of the owner's store (300 owned artists): profiles, monthly, context and obscurity are identical on repeat and shuffled input and an unchanged save writes nothing; empty, tiny, below-threshold and unattributed inputs are low-sample with no shift; no module outside the taste package, its routes and the store imports taste (no weight effect); suppression replay changes nothing and a malformed event keeps the rest; smart playlist PUT replay is unchanged, missing insight data is unfinished, no refresh column, no Navidrome playlist write. Limits: the copy held no saved popularity figures (0 of 300; the live fill ran on another copy) and the synthetic listens carry no artist ids, so the area and genre dimensions were not exercised. Focused tests: `tests.test_server_v2_phase6_exit` 4 passed; full suite not run (owner rule); all four required workflows passed on the head.
+- **State:** Phase 6 closed on the server side by the owner. Client gate (macOS taste views and snapshots; Android compact taste card) carries to the client work. Not published or deployed.
+- **Next action:** owner choice of Phase 7 (sonic) start or the Phase 5 and 6 client gates.
