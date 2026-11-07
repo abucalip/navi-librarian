@@ -10,6 +10,8 @@ Rules measured by the 2026-11-07 probe (docs/ServerV2.md, Phase 7):
   the matches and are dropped here: same MusicBrainz recording id, or same normalised title by the same artist.
 - Path steps carry ``similarity: -1`` (every step on the owner's server, re-checked 2026-11-07; the probe
   note said only the first); that means "no score" and becomes ``None``.
+- A song the sonic plugin has not analysed (2 of 250 sampled, 2026-11-07: error 0, "AudioMuse-AI returned
+  status 404") is ``empty``, not ``unavailable``: the feature works, this song has no matches.
 - Navidrome answers error 70 for an unknown song and error 0 when the sonic plugin fails; neither is
   an exception to the caller, each is a ``status`` the client can hide or retry.
 """
@@ -26,6 +28,7 @@ _ERROR_CODE = re.compile(r"API error (\d+)")
 _BRACKETS = re.compile(r"[\(\[][^)\]]*[\)\]]")
 _SUFFIX = re.compile(r"\s+-\s+.*$")
 _NON_WORD = re.compile(r"[^\w]+")
+_NOT_ANALYSED = re.compile(r"AudioMuse-AI returned status 404")
 
 STATUSES = ("ok", "empty", "not_found", "unavailable")
 
@@ -95,6 +98,8 @@ def _call(api_call: Callable[..., dict], method: str, **params) -> tuple[dict | 
         code = _error_code(exc)
         if code == 70:
             return None, "not_found"
+        if code == 0 and _NOT_ANALYSED.search(str(exc)):  # song has no analysis data: nothing to match, not a failure
+            return None, "empty"
         if code in (0, 30):  # plugin failure or unsupported method: hide the feature (a refused login still raises)
             return None, "unavailable"
         raise
