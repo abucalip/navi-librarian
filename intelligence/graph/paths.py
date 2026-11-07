@@ -341,9 +341,9 @@ def _path_details(
         add("Other recording", names.get(stop_id))
         if via_id is not None:
             roles = db.execute(
-                "SELECT DISTINCT role FROM edges WHERE from_id = ? AND to_id IN (?, ?) "
+                "SELECT DISTINCT e.role FROM edges e WHERE e.from_id = ? AND e.to_id IN (?, ?) "
                 "AND relation IN ('instrument','vocal','main performer','performer','performing orchestra') "
-                "AND generation = ? AND role IS NOT NULL AND " + _cg("edges") + " ORDER BY role LIMIT 8",
+                "AND e.generation = ? AND e.role IS NOT NULL AND " + _cg("e") + " ORDER BY e.role LIMIT 8",
                 (via_id, anchor_id, stop_id, generation),
             ).fetchall()
             add("Connecting credit", ", ".join(r["role"] for r in roles if r["role"]))
