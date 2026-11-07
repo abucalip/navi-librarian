@@ -22,6 +22,8 @@ public enum Screen: String, CaseIterable, Sendable {
     case gapRadar
     /// The connection graph around an artist (Server V2 Phase 7 client gate; mockup `docs/design/macos-graph/index.html`).
     case connections
+    /// A map of the places recordings were made, with stated coordinates only (Server V2 Phase 7 client gate; mockup `docs/design/macos-graph/index.html`).
+    case atlas
     /// Rule-built playlists, saved to Navidrome (M6 slice 8; contract section 6.7).
     case smartPlaylists
     /// Days and a heatmap of when songs were last played (M6 slice 9; contract section 6.6).
@@ -92,6 +94,7 @@ public final class AppState {
     public let related = RelatedModel()
     public let insights = InsightsModel()
     public let graph = GraphExplorerModel()
+    public let atlas = AtlasModel()
     public let artwork: ArtworkStore
     /// The optional on-disk copy of played songs and covers (off by default; Settings).
     public let cache: CacheModel
@@ -279,6 +282,8 @@ public final class AppState {
         await graph.start(artistRemoteID: library.isLive ? a.remoteID : nil, name: a.name, navidrome: session?.navidrome, librarian: session?.librarian)
     }
 
+    public func loadAtlas() async { await atlas.load(librarian: session?.librarian) }
+
     public func loadGapRadar() async { await library.loadGapRadar(navidrome: session?.navidrome) }
 
     /// Reads every song so rules see the whole library, then the playlists already on Navidrome.
@@ -366,6 +371,7 @@ public final class AppState {
         case .equalizer: "Equalizer"
         case .gapRadar: "Gap Radar"
         case .connections: "Connections"
+        case .atlas: "Atlas"
         case .smartPlaylists: "Smart Playlists"
         case .history: "History"
         case .insights: "Insights"

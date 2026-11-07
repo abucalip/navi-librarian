@@ -282,6 +282,11 @@ public struct LibrarianClient: Sendable {
     public func knowledgeRecordingWorks(mbid: String) async throws -> KnowledgeRecordingWorks { try await knowledge("recording-works", mbid) }
 
     public func knowledgePlace(mbid: String) async throws -> KnowledgePlace { try await knowledge("place", mbid) }
+    /// Every place with stated coordinates and its recording counts, for the atlas map.
+    public func knowledgeAtlas(limit: Int = 500) async throws -> KnowledgeAtlas {
+        let (data, http) = try await authedSend("GET", "api/knowledge/atlas?limit=\(limit)", body: nil)
+        return try decode(KnowledgeAtlas.self, data, http)
+    }
     public func knowledgeEvent(mbid: String) async throws -> KnowledgeEvent { try await knowledge("event", mbid) }
 
     /// One page of the bounded walk. `type` is the start entity's type (artist, person, group, ...).

@@ -135,4 +135,25 @@ import DiscairCore
         #expect(t.sent[0].url!.query == "mbid=m1&type=artist&depth=2&limit=25&credits_only=true&cursor=abc")
         #expect(t.sent[1].url!.query == "kind=label_path&mbid=m1&type=artist")
     }
+
+    @Test func atlasKeepsPinnableOwnedFirstPlacesAndDropsTheRest() throws {
+        let json = #"""
+        {"places":[
+          {"entity":{"mbid":"p1","canonical_name":"Paris Studio","type":"place","owned":false},"kind":"studio","latitude":48.85,"longitude":2.41,"recordings":4,"owned_recordings":3},
+          {"entity":{"mbid":"p2","canonical_name":"Off the map","type":"place","owned":false},"latitude":123.0,"longitude":2.0,"recordings":1,"owned_recordings":0},
+          {"entity":{"mbid":"p3","canonical_name":"No coordinates","type":"place","owned":false},"recordings":1,"owned_recordings":0}],
+         "truncated":true,"sources":{"musicbrainz_dump":{"coverage":"loaded"}}}
+        """#
+        let a = try JSONDecoder().decode(KnowledgeAtlas.self, from: Data(json.utf8))
+        #expect(a.places.map(\.id) == ["p1"] && a.truncated)
+        #expect(a.places[0].ownedRecordings == 3 && a.places[0].recordings == 4 && a.places[0].kind == "studio")
+    }
+
+    @Test func clientAsksForTheAtlasWithALimit() async throws {
+        let t = MockTransport { _, _ in (200, Data(#"{"places":[],"truncated":false}"#.utf8)) }
+        let c = try LibrarianClient(baseURL: base, credential: cred, transport: t)
+        let a = try await c.knowledgeAtlas(limit: 200)
+        #expect(a.places.isEmpty)
+        #expect(t.sent[0].url!.path == "/api/knowledge/atlas" && t.sent[0].url!.query == "limit=200")
+    }
 }

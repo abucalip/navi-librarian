@@ -240,3 +240,44 @@ public struct KnowledgeEvent: Decodable, Equatable, Sendable {
         truncated = c.flag(.truncated)
     }
 }
+
+/// One pin of the atlas: a place with both coordinates stated, and how many recordings were made there.
+public struct AtlasPlace: Decodable, Equatable, Sendable, Identifiable {
+    public var id: String { entity.mbid }
+    public let entity: KnowledgeEntity
+    public let kind: String?
+    public let latitude: Double
+    public let longitude: Double
+    public let recordings: Int
+    public let ownedRecordings: Int
+    enum CodingKeys: String, CodingKey { case entity, kind, latitude, longitude, recordings, owned_recordings }
+    public init(from decoder: any Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        entity = try c.decode(KnowledgeEntity.self, forKey: .entity)
+        kind = c.text(.kind)
+        latitude = try c.decode(Double.self, forKey: .latitude)
+        longitude = try c.decode(Double.self, forKey: .longitude)
+        recordings = c.number(.recordings)
+        ownedRecordings = c.number(.owned_recordings)
+        // A pin the map cannot place is not a pin: the atlas never guesses a position.
+        guard (-90...90).contains(latitude), (-180...180).contains(longitude), !entity.mbid.isEmpty else {
+            throw DecodingError.dataCorruptedError(forKey: .latitude, in: c, debugDescription: "coordinates out of range")
+        }
+    }
+}
+
+/// `GET /api/knowledge/atlas`: every place with stated coordinates, most owned recordings first. A place the client
+/// cannot pin (missing or out-of-range coordinates) is dropped rather than failing the page.
+public struct KnowledgeAtlas: Decodable, Equatable, Sendable {
+    public let places: [AtlasPlace]
+    public let truncated: Bool
+    public let sources: [String: KnowledgeSource]
+    enum CodingKeys: String, CodingKey { case places, truncated, sources }
+    private struct Lossy: Decodable { let place: AtlasPlace?; init(from d: any Decoder) throws { place = try? AtlasPlace(from: d) } }
+    public init(from decoder: any Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        places = c.list(.places, Lossy.self).compactMap(\.place)
+        truncated = c.flag(.truncated)
+        sources = c.sources(.sources)
+    }
+}

@@ -46,6 +46,7 @@ class KnowledgeRoutes(unittest.TestCase):
             ("/api/knowledge/recording-works", {"mbid": "r-gid"}),
             ("/api/knowledge/place", {"mbid": "p-gid"}),
             ("/api/knowledge/event", {"mbid": "e-gid"}),
+            ("/api/knowledge/atlas", {}),
         ):
             with self.subTest(path=path):
                 response = self.client.get(path, params=params)

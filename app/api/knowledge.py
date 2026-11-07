@@ -84,6 +84,11 @@ def place(mbid: str, limit: int = Query(200, ge=1, le=MAX_LIMIT), librarian=Depe
     return _read(librarian, lambda r: r.place_page(mbid=mbid, limit=limit))
 
 
+@router.get("/api/knowledge/atlas")
+def atlas(limit: int = Query(500, ge=1, le=2000), librarian=Depends(get_librarian)):
+    return _read(librarian, lambda r: r.atlas_page(limit=limit))
+
+
 @router.get("/api/knowledge/event")
 def event(mbid: str, limit: int = Query(200, ge=1, le=MAX_LIMIT), librarian=Depends(get_librarian)):
     return _read(librarian, lambda r: r.event_page(mbid=mbid, limit=limit))
