@@ -45,8 +45,8 @@ class StoreTestCase(unittest.TestCase):
 
 class MigrationThreeTests(StoreTestCase):
     def test_fresh_store_gets_table_in_owner_state_file_at_version_three(self):
-        self.assertEqual(STATE_LATEST, 3)
-        self.assertEqual(self.db.execute("PRAGMA state.user_version").fetchone()[0], 3)
+        self.assertGreaterEqual(STATE_LATEST, 3)
+        self.assertEqual(self.db.execute("PRAGMA state.user_version").fetchone()[0], STATE_LATEST)
         state_tables = {r[0] for r in self.db.execute("SELECT name FROM state.sqlite_master WHERE type = 'table'")}
         self.assertIn("smart_playlists", state_tables)
         main_tables = {r[0] for r in self.db.execute("SELECT name FROM main.sqlite_master WHERE type = 'table'")}
@@ -77,7 +77,7 @@ class MigrationThreeTests(StoreTestCase):
         self.db.close()
         reopened = open_store(self.path)
         self.addCleanup(reopened.close)
-        self.assertEqual(reopened.execute("PRAGMA state.user_version").fetchone()[0], 3)
+        self.assertEqual(reopened.execute("PRAGMA state.user_version").fetchone()[0], STATE_LATEST)
         self.assertEqual(get(reopened, rid("keep")).name, "Late 80s")
 
     def test_version_two_state_file_migrates_to_three_and_keeps_its_rows(self):
@@ -94,7 +94,7 @@ class MigrationThreeTests(StoreTestCase):
 
         db = open_store(knowledge)
         self.addCleanup(db.close)
-        self.assertEqual(db.execute("PRAGMA state.user_version").fetchone()[0], 3)
+        self.assertEqual(db.execute("PRAGMA state.user_version").fetchone()[0], STATE_LATEST)
         self.assertEqual(put(db, rid("after"), raw_set(), NOW).status, CREATED)
 
 
