@@ -56,6 +56,8 @@ class PathsRoute(unittest.TestCase):
         reason = stop["reasons"][0]
         self.assertEqual(reason["code"], "shared_musician")
         self.assertTrue(reason["evidence"])
+        self.assertIn({"label": "Recording", "value": "Alpha Song"}, reason["details"])
+        self.assertIn({"label": "Connecting credit", "value": "guitar"}, reason["details"])
         self.assertIsInstance(stop["entity"]["owned"], bool)
         text = r.text
         for leaked in ('"id"', "navidrome_id", "built_from", "generation_id", "presentation_version"):
