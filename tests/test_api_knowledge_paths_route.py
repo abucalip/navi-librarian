@@ -75,7 +75,7 @@ class PathsRoute(unittest.TestCase):
         self.assertEqual(self.get().json(), first)
 
     def test_validation(self):
-        for over, code in (({"kind": "sideman_to_leader"}, 400), ({"kind": "same_studio_different_decade"}, 400),
+        for over, code in (({"kind": "same_studio_different_decade"}, 400),
                            ({"kind": "nope"}, 400), ({"type": "label"}, 400), ({"type": None}, 400),
                            ({"mbid": "nope"}, 404)):
             with self.subTest(over=over):

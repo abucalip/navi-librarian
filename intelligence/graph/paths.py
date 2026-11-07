@@ -16,8 +16,9 @@ optional cache (:func:`cached_path`), which stores the answer in ``insights`` un
 Builds are bounded by candidate rows and time (a hub label, area or session player cannot turn one
 request into a full scan); ``truncated`` says which bound was hit.
 
-``same_studio_different_decade`` is dropped (Phase 5 kill rule) and ``sideman_to_leader`` is parked
-until its data is enriched (owner decision, 2026-11-06); neither has a builder.
+``same_studio_different_decade`` is dropped (Phase 5 kill rule) and has no builder.
+``sideman_to_leader`` reads the ``track_on`` / ``release_artist`` links of the Phase 7 release-links
+import step: the stops are artists who lead a release carrying a recording the start is credited on.
 """
 from __future__ import annotations
 
@@ -30,10 +31,9 @@ from typing import Any, Callable
 from ..store import generations
 from ..store import repositories as repo
 
-PATH_KINDS = ("follow_the_musician", "label_path", "composition_path", "scene_path")
+PATH_KINDS = ("follow_the_musician", "sideman_to_leader", "label_path", "composition_path", "scene_path")
 NOT_BUILT = {
     "same_studio_different_decade": "dropped: mostly empty on the owner's library (Phase 5 kill rule)",
-    "sideman_to_leader": "parked: too little data until the store is enriched",
 }
 CACHE_PREFIX = "path:"
 SLICE_RESOURCE = "musicbrainz_slice"
@@ -70,6 +70,20 @@ _OWN_REC = (f"SELECT DISTINCT e.from_id AS rec FROM edges e WHERE e.relation = '
             f"AND {_cg('e')} AND e.to_id IN ({_OWN_REL})")
 
 _QUERIES: dict[str, str] = {
+    # The start's credited recordings -> the release that carries each (``track_on``) -> that release's
+    # leader (``release_artist``). Releases the start leads itself are skipped: that is not a sideman link.
+    "sideman_to_leader": f"""
+        SELECT l.to_id AS stop, t.to_id AS via, c.to_id AS anchor, 0 AS rank,
+               c.id AS e1, t.id AS e2, l.id AS e3, 'sideman_on' AS code, NULL AS bridge
+        FROM edges c
+        JOIN entities q ON q.id = c.to_id AND q.type = 'recording'
+        JOIN edges t ON t.from_id = c.to_id AND t.relation = 'track_on' AND t.generation = :g AND {_cg('t')}
+        JOIN edges l ON l.from_id = t.to_id AND l.relation = 'release_artist' AND l.generation = :g AND {_cg('l')}
+        JOIN entities lead ON lead.id = l.to_id AND lead.type IN ('artist', 'person', 'group') AND lead.id != :a
+        WHERE c.from_id = :a AND c.relation NOT IN ('track_on', 'appears_on') AND c.generation = :g AND {_cg('c')}
+          AND NOT EXISTS (SELECT 1 FROM edges m WHERE m.from_id = t.to_id AND m.to_id = :a
+                          AND m.relation = 'release_artist' AND m.generation = :g)
+        ORDER BY l.to_id, t.to_id, c.to_id LIMIT :n""",
     "label_path": f"""
         WITH own AS ({_OWN_REL}),
         lab AS (
@@ -112,6 +126,7 @@ _QUERIES: dict[str, str] = {
 
 _REASON_TEXT = {
     "shared_musician": "{via} is credited on {anchor} from your library and on this recording",
+    "sideman_on": "led {via}, a release that carries {anchor}, a recording the artist you started from played on",
     "same_label": "released on {via}, the label of {anchor} from your library",
     "related_label": "released on {via}, a label related to the label of {anchor} from your library",
     "same_work": "another recording of the work that {anchor} from your library performs",
