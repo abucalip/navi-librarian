@@ -93,6 +93,7 @@ struct CupertinoWindow: View {
         case .discover: CupertinoDiscover(state: state)
         case .equalizer: CupertinoEQ(state: state)
         case .gapRadar: CupertinoGapRadar(state: state)
+        case .connections: GraphExplorerView(state: state, style: .cupertino)
         case .smartPlaylists: CupertinoSmartPlaylists(state: state)
         case .history: CupertinoHistory(state: state)
         case .insights: CupertinoInsights(state: state)
@@ -114,6 +115,7 @@ struct CupertinoSidebar: View {
         case .discover: "New"
         case .equalizer: "Settings"
         case .gapRadar: "Gap Radar"
+        case .connections: "Connections"
         case .smartPlaylists: "Smart Playlists"
         case .history: "History"
         case .insights: "Insights"
@@ -123,10 +125,10 @@ struct CupertinoSidebar: View {
     }
     /// Where each row goes. Rows without a screen yet do nothing (they are still real buttons, so keyboard and
     /// VoiceOver treat them like the rest).
-    private let target: [String: Screen] = ["Home": .home, "Songs": .library, "Albums": .albums, "Artists": .artists, "Recently Added": .recent, "New": .discover, "Gap Radar": .gapRadar, "Smart Playlists": .smartPlaylists, "History": .history, "Insights": .insights, "Downloads": .downloads, "Settings": .settings]
+    private let target: [String: Screen] = ["Home": .home, "Songs": .library, "Albums": .albums, "Artists": .artists, "Recently Added": .recent, "New": .discover, "Gap Radar": .gapRadar, "Connections": .connections, "Smart Playlists": .smartPlaylists, "History": .history, "Insights": .insights, "Downloads": .downloads, "Settings": .settings]
     private let nav: [(String, String)] = [
         ("house", "Home"), ("sparkles", "New"), ("clock", "Recently Added"), ("music.mic", "Artists"),
-        ("square.stack", "Albums"), ("music.note", "Songs"), ("dot.radiowaves.left.and.right", "Gap Radar"), ("wand.and.stars", "Smart Playlists"),
+        ("square.stack", "Albums"), ("music.note", "Songs"), ("dot.radiowaves.left.and.right", "Gap Radar"), ("point.3.connected.trianglepath.dotted", "Connections"), ("wand.and.stars", "Smart Playlists"),
         ("clock.arrow.circlepath", "History"), ("lightbulb", "Insights"), ("arrow.down.circle", "Downloads"), ("gearshape", "Settings"),
     ]
 
