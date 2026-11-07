@@ -4,6 +4,7 @@ import app.discair.data.CacheMiss
 import app.discair.model.PathKind
 import app.discair.model.PathEntity
 import app.discair.model.PathEntityPage
+import app.discair.model.PathDetail
 import app.discair.model.page
 import app.discair.model.PathsView
 import app.discair.model.parsePaths
@@ -100,6 +101,20 @@ class PathsTest {
         val scene = parsePaths(body("paths_scene_path")).stops.first().reasons.first()
         assertEquals("Jimma", scene.via?.name)
         assertEquals("begin area", scene.evidence.first().relation)
+    }
+
+    @Test fun pathSpecificDetailsAreParsedAndMissingFactsStayAbsent() {
+        val json = """{"kind":"sideman_to_leader","status":"ok","stops":[
+            {"entity":{"canonical_name":"Leader","type":"artist","owned":false},"reason_count":1,
+             "reasons":[{"code":"sideman_on","text":"Played on the release","details":[
+                 {"label":"Recording","value":"Session Take"},
+                 {"label":"Release date","value":"1964-05"}
+             ]}]}]}"""
+        val reason = parsePaths(json).stops.single().reasons.single()
+        assertEquals(listOf(PathDetail("Recording", "Session Take"), PathDetail("Release date", "1964-05")), reason.details)
+        assertTrue(parsePaths("""{"kind":"scene_path","status":"ok","stops":[
+            {"entity":{"canonical_name":"Artist","type":"artist"},"reason_count":1,
+             "reasons":[{"code":"same_area","text":"Shares a place"}]}]}""").stops.single().reasons.single().details.isEmpty())
     }
 
     @Test fun pathEntityNavigationOnlyTargetsArtistAndAlbumPages() {
