@@ -1,6 +1,6 @@
 # Project status
 
-Last checked: 2026-11-07. GitHub `main` is authoritative (latest verified commit `5e4a4dbead6546d1ebf9ffc5d8f54130ffb7616a`).
+Last checked: 2026-11-07. GitHub `main` is authoritative (latest verified commit `75e7f3335fd05a34019edc196ded720a63b26a2d`).
 
 ## Current state
 
