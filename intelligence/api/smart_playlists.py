@@ -12,12 +12,17 @@ from collections.abc import Mapping, Sequence
 from datetime import datetime, timezone
 from typing import Any
 
+from ..insights import persistence as gem_store
 from ..taste import smart_playlist as engine
+from ..taste.obscurity import BUCKETS, song_bands
 from ..taste import smart_playlist_persistence as store
 
 CREATED, REPLACED, UNCHANGED = store.CREATED, store.REPLACED, store.UNCHANGED
 REJECTED = store.REJECTED
 BAD_ID_REASON = "bad_rule_id"
+LENS_FORGOTTEN_GEMS = "forgotten_gems"
+LENS_KEYS = (LENS_FORGOTTEN_GEMS,)
+OBSCURITY_BANDS = BUCKETS
 
 
 def playlist_body(p: store.SmartPlaylist) -> dict[str, Any]:
@@ -52,6 +57,8 @@ def build_config() -> dict[str, Any]:
         "max_rules": engine.MAX_RULES,
         "max_name_length": engine.MAX_NAME_LENGTH,
         "max_value_length": engine.MAX_VALUE_LENGTH,
+        "obscurity_bands": list(OBSCURITY_BANDS),
+        "lens_keys": list(LENS_KEYS),
     }
 
 
@@ -73,19 +80,44 @@ def delete_playlist(db: sqlite3.Connection, rule_id: str) -> bool:
     return store.delete(db, rule_id)
 
 
+def build_insights(
+    db: sqlite3.Connection, songs: Sequence[Mapping[str, Any]],
+    song_artists: Mapping[str, str | None] | None = None, popularity: Mapping[str, int | None] | None = None,
+) -> dict[str, Any]:
+    """Insight lookups for the evaluator, read from local data only (no provider call).
+
+    ``lens_members``: ``forgotten_gems`` holds the song ids of the live, non-dismissed gem cards
+    (a ``track:`` key names a song, an ``album:`` key names every song with that ``album_id``). A lens
+    with no live cards is left out, so a rule on it is unfinished, not an empty match.
+    ``obscurity_band``: present only when both ``song_artists`` and ``popularity`` are supplied.
+    Other card kinds are keyed by MusicBrainz id or set, not by owned song, so they are not lenses here.
+    """
+    insights: dict[str, Any] = {}
+    keys = {c["subject"]["key"] for c in gem_store.list_gem_cards(db, limit=10_000)}
+    if keys:
+        tracks = {k.split(":", 1)[1] for k in keys if k.startswith("track:")}
+        albums = {k.split(":", 1)[1] for k in keys if k.startswith("album:")}
+        members = {s["id"] for s in songs if s["id"] in tracks or str(s.get("album_id") or "") in albums}
+        insights["lens_members"] = {LENS_FORGOTTEN_GEMS: members}
+    if song_artists is not None and popularity is not None:
+        insights["obscurity_band"] = song_bands(song_artists, popularity)
+    return insights
+
+
 def build_result_body(
     db: sqlite3.Connection, rule_id: str, songs: Sequence[Mapping[str, Any]], now: float, seed: int = 0,
+    insights: Mapping[str, Any] | None = None,
 ) -> dict[str, Any] | None:
     """Evaluate one stored rule set now over ``songs``. ``None`` when the id is not stored.
 
-    No insight lookups are wired yet, so ``obscurity_band`` and ``in_lens`` rules come back unfinished
-    and listed in ``missing_data``. That is a report, never an error.
+    A rule whose insight lookup is absent comes back unfinished and listed in ``missing_data``.
+    That is a report, never an error.
     """
     stored = store.get(db, rule_id)
     if stored is None:
         return None
     rule_set = engine.RuleSet(stored.name, stored.match, stored.rules, stored.order, stored.limit)
-    result = engine.evaluate(rule_set, songs, now=now, insights=None, seed=seed)
+    result = engine.evaluate(rule_set, songs, now=now, insights=insights, seed=seed)
     return {
         "rule_id": rule_id,
         "song_ids": list(result.song_ids),
@@ -110,6 +142,8 @@ def songs_from_subsonic(items: Sequence[Mapping[str, Any]]) -> list[dict[str, An
                          ("year", "year"), ("playCount", "plays"), ("userRating", "rating"), ("bitRate", "bitrate")):
             if item.get(src) is not None:
                 row[dst] = item[src]
+        if isinstance(item.get("albumId"), str) and item["albumId"]:
+            row["album_id"] = item["albumId"]
         for src, dst in (("created", "added_at"), ("played", "played_at")):
             stamp = _epoch(item.get(src))
             if stamp is not None:

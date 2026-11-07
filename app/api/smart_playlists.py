@@ -14,7 +14,7 @@ from fastapi.responses import JSONResponse
 
 from app.api.dependencies import get_librarian
 from intelligence.api.smart_playlists import (
-    build_get_body, build_list_body, build_put_body, build_result_body, delete_playlist, songs_from_subsonic,
+    build_get_body, build_insights, build_list_body, build_put_body, build_result_body, delete_playlist, songs_from_subsonic,
 )
 from intelligence.store import open_store
 from intelligence.taste.smart_playlist_persistence import valid_rule_id
@@ -129,7 +129,7 @@ def result_smart(rule_id: str, seed: int = 0, librarian=Depends(get_librarian)):
                 songs = _fetch_songs(librarian)
             except Exception:
                 raise HTTPException(status_code=502, detail="Could not read the Navidrome song list.")
-            return build_result_body(db, rule_id, songs, _now(), seed)
+            return build_result_body(db, rule_id, songs, _now(), seed, insights=build_insights(db, songs))
         finally:
             db.close()
     except HTTPException:

@@ -20,6 +20,9 @@
         "equals",
         "not_equals"
       ],
+      "lens_keys": [
+        "forgotten_gems"
+      ],
       "matches": [
         "all",
         "any"
@@ -33,6 +36,12 @@
         "at_least",
         "at_most",
         "equals"
+      ],
+      "obscurity_bands": [
+        "mainstream",
+        "known",
+        "niche",
+        "obscure"
       ],
       "orders": [
         "random",

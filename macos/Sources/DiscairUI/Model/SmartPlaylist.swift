@@ -28,9 +28,28 @@ public enum SmartField: String, Codable, CaseIterable, Sendable, Identifiable {
     }
     public var isText: Bool { [.artist, .title, .genre, .format].contains(self) }
     public var isInsight: Bool { self == .obscurityBand || self == .inLens }
+    /// The values the server accepts for an insight field (`obscurity_bands` and `lens_keys` in the list config); nil for other fields.
+    public var choices: [SmartChoice]? {
+        switch self {
+        case .obscurityBand: [SmartChoice("mainstream", "Mainstream"), SmartChoice("known", "Known"), SmartChoice("niche", "Niche"), SmartChoice("obscure", "Obscure")]
+        case .inLens: [SmartChoice("forgotten_gems", "Forgotten Gems")]
+        default: nil
+        }
+    }
+    /// The choices plus the rule's current value when it is none of them, so a value set elsewhere is shown, not lost.
+    public func choices(including current: String) -> [SmartChoice] {
+        let base = choices ?? []
+        return current.isEmpty || base.contains { $0.value == current } ? base : base + [SmartChoice(current, current)]
+    }
     /// What the value box asks for.
     public var valueHint: String { isInsight ? (self == .inLens ? "lens key" : "band name") : (isText ? "text" : "number") }
     public var operators: [SmartOp] { isInsight ? [.equals, .notEquals] : isText ? [.contains, .equals, .notContains] : [.atLeast, .atMost, .equals] }
+}
+
+public struct SmartChoice: Hashable, Sendable, Identifiable {
+    public let value: String, label: String
+    public var id: String { value }
+    public init(_ value: String, _ label: String) { self.value = value; self.label = label }
 }
 
 public enum SmartOp: String, Codable, CaseIterable, Sendable, Identifiable {
