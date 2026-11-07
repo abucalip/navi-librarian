@@ -64,10 +64,13 @@ struct CupertinoSmartPlaylists: View {
                         .onChange(of: rule.field) { _, f in if !f.operators.contains(rule.op) { rule.op = f.operators[0] } }
                     Picker("Condition", selection: $rule.op) { ForEach(rule.field.operators) { Text($0.label).tag($0) } }
                         .labelsHidden().fixedSize()
-                    TextField(rule.field.isText ? "text" : "number", text: $rule.value).textFieldStyle(.roundedBorder).frame(maxWidth: 180)
+                    TextField(rule.field.valueHint, text: $rule.value).textFieldStyle(.roundedBorder).frame(maxWidth: 180)
                     Button { b.wrappedValue.rules.removeAll { $0.id == rule.id } } label: { Image(systemName: "minus.circle") }
                         .buttonStyle(.plain).foregroundStyle(CU.muted).accessibilityLabel("Remove rule")
                 }
+            }
+            if b.wrappedValue.rules.contains(where: { $0.field.isInsight }) {
+                Text("Insight rules have no data yet, so they match every song until the server supplies it.").font(.caption).foregroundStyle(CU.muted)
             }
             HStack(spacing: 12) {
                 Button("Add rule") { b.wrappedValue.rules.append(SmartRule(field: .artist, op: .contains, value: "")) }

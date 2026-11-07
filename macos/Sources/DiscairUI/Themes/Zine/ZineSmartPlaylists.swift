@@ -62,12 +62,13 @@ struct ZineSmartPlaylists: View {
                         .onChange(of: rule.field) { _, f in if !f.operators.contains(rule.op) { rule.op = f.operators[0] } }
                     Picker("Condition", selection: $rule.op) { ForEach(rule.field.operators) { Text($0.label).tag($0) } }
                         .labelsHidden().fixedSize()
-                    TextField(rule.field.isText ? "text" : "number", text: $rule.value).textFieldStyle(.plain).font(Z.mono(12))
+                    TextField(rule.field.valueHint, text: $rule.value).textFieldStyle(.plain).font(Z.mono(12))
                         .padding(.horizontal, 6).padding(.vertical, 3).frame(maxWidth: 180).background(Z.white).zBorder(2)
                     Button { b.wrappedValue.rules.removeAll { $0.id == rule.id } } label: { Text("×").font(Z.mono(14, bold: true)) }
                         .buttonStyle(.plain).accessibilityLabel("Remove rule")
                 }
             }
+            if b.wrappedValue.rules.contains(where: { $0.field.isInsight }) { Mono("Insight rules have no data yet, so they match every song until the server supplies it.", size: 10) }
             HStack(spacing: 12) {
                 Button("Add rule") { b.wrappedValue.rules.append(SmartRule(field: .artist, op: .contains, value: "")) }
                     .buttonStyle(ZineButtonStyle(small: true))

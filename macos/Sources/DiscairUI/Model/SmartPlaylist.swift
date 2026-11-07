@@ -7,6 +7,8 @@ import Observation
 /// What a smart playlist rule looks at (contract section 6.7).
 public enum SmartField: String, Codable, CaseIterable, Sendable, Identifiable {
     case artist, title, genre, format, year, plays, rating, bitrate, addedDaysAgo, playedDaysAgo
+    /// Insight-backed fields (server only). The server cannot supply their data yet, so such a rule matches every song.
+    case obscurityBand, inLens
     public var id: String { rawValue }
     public var label: String {
         switch self {
@@ -20,20 +22,26 @@ public enum SmartField: String, Codable, CaseIterable, Sendable, Identifiable {
         case .bitrate: "Bitrate (kb/s)"
         case .addedDaysAgo: "Added (days ago)"
         case .playedDaysAgo: "Last played (days ago)"
+        case .obscurityBand: "Obscurity band (insight)"
+        case .inLens: "In lens (insight)"
         }
     }
     public var isText: Bool { [.artist, .title, .genre, .format].contains(self) }
-    public var operators: [SmartOp] { isText ? [.contains, .equals, .notContains] : [.atLeast, .atMost, .equals] }
+    public var isInsight: Bool { self == .obscurityBand || self == .inLens }
+    /// What the value box asks for.
+    public var valueHint: String { isInsight ? (self == .inLens ? "lens key" : "band name") : (isText ? "text" : "number") }
+    public var operators: [SmartOp] { isInsight ? [.equals, .notEquals] : isText ? [.contains, .equals, .notContains] : [.atLeast, .atMost, .equals] }
 }
 
 public enum SmartOp: String, Codable, CaseIterable, Sendable, Identifiable {
-    case contains, notContains, equals, atLeast, atMost
+    case contains, notContains, equals, notEquals, atLeast, atMost
     public var id: String { rawValue }
     public var label: String {
         switch self {
         case .contains: "contains"
         case .notContains: "does not contain"
         case .equals: "is"
+        case .notEquals: "is not"
         case .atLeast: "at least"
         case .atMost: "at most"
         }
@@ -83,6 +91,8 @@ public enum SmartEngine {
     public static func matches(_ rule: SmartRule, _ s: SongRow, now: Date = Date()) -> Bool {
         let v = rule.value.trimmingCharacters(in: .whitespaces)
         if v.isEmpty { return true }
+        // Insight data is not available to this client or the server yet: an insight rule is unfinished and matches everything.
+        if rule.field.isInsight { return true }
         if rule.field.isText {
             let text: String
             switch rule.field {

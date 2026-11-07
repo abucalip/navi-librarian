@@ -53,13 +53,13 @@ struct SmartPlaylistSyncTests {
     private func model(_ d: UserDefaults) -> SmartPlaylistModel { SmartPlaylistModel(defaults: d, debounce: .milliseconds(1)) }
     private func list(_ name: String) -> SmartPlaylist { SmartPlaylist(name: name, rules: [SmartRule(field: .playedDaysAgo, op: .atLeast, value: "30")], order: .mostPlayed, limit: 25) }
 
-    @Test func wireFormRoundTripsAndRejectsInsightFields() {
+    @Test func wireFormRoundTripsAndRejectsUnknownFields() {
         let p = list("A")
         let w = p.wire
         #expect(w.ruleID == p.id.uuidString.lowercased() && w.order == "most_played" && w.rules[0].field == "played_days_ago" && w.rules[0].op == "at_least")
         #expect(SmartPlaylist(wire: w)?.sameContent(as: p) == true)
         var unknown = w
-        unknown = ServerSmartPlaylist(ruleID: w.ruleID, name: "x", match: "all", rules: [ServerSmartRule(field: "obscurity_band", op: "equals", value: "deep_cut")], order: "random", limit: nil)
+        unknown = ServerSmartPlaylist(ruleID: w.ruleID, name: "x", match: "all", rules: [ServerSmartRule(field: "bpm", op: "equals", value: "120")], order: "random", limit: nil)
         #expect(SmartPlaylist(wire: unknown) == nil)
         #expect(SmartPlaylist(name: "n", rules: [], limit: 0).wire.limit == nil)
     }
@@ -126,14 +126,35 @@ struct SmartPlaylistSyncTests {
         #expect(m.lists == before && m.status != nil)
     }
 
-    @Test func insightRuleSetsOnTheServerAreCountedAndNeverOverwritten() async throws {
+    @Test func insightRuleSetsRoundTripAndAreEditableHere() async throws {
         let server = FakeServer(), d = defaults()
         server.seed(ServerSmartPlaylist(ruleID: "00000001-0000-4000-8000-00000005ba17", name: "Deep cuts", match: "all",
-                                        rules: [ServerSmartRule(field: "obscurity_band", op: "equals", value: "deep_cut")], order: "random", limit: nil))
+                                        rules: [ServerSmartRule(field: "obscurity_band", op: "not_equals", value: "deep_cut"),
+                                                ServerSmartRule(field: "in_lens", op: "equals", value: "forgotten_gems")], order: "random", limit: nil))
+        let m = model(d)
+        await m.sync(librarian: try librarian(server))
+        #expect(m.unsupportedOnServer == 0 && m.lists.map(\.name) == ["Deep cuts"])
+        #expect(m.lists[0].rules.map(\.field) == [.obscurityBand, .inLens] && m.lists[0].rules[0].op == .notEquals)
+        #expect(m.lists[0].wire.rules[0] == ServerSmartRule(field: "obscurity_band", op: "not_equals", value: "deep_cut"))
+        #expect(!server.calls.contains { $0.hasPrefix("PUT") })
+    }
+
+    @Test func insightRulesMatchEverythingUntilTheirDataExists() {
+        var s = SongRow(id: 1, album: 0, title: "T", artist: "A", genre: "", format: "", bitrate: "", lastPlayed: "", added: "", year: 1990, plays: 0)
+        s.remoteID = "s1"
+        let p = SmartPlaylist(name: "x", rules: [SmartRule(field: .obscurityBand, op: .equals, value: "deep_cut")], order: .title)
+        #expect(SmartEngine.run(p, over: [s]).count == 1)
+        #expect(SmartField.inLens.operators == [.equals, .notEquals] && SmartField.inLens.isInsight && !SmartField.year.isInsight)
+    }
+
+    @Test func serverSetsThisClientCannotReadAreCountedAndNeverOverwritten() async throws {
+        let server = FakeServer(), d = defaults()
+        server.seed(ServerSmartPlaylist(ruleID: "00000001-0000-4000-8000-00000005ba18", name: "Future", match: "all",
+                                        rules: [ServerSmartRule(field: "bpm", op: "equals", value: "120")], order: "random", limit: nil))
         let m = model(d)
         await m.sync(librarian: try librarian(server))
         #expect(m.unsupportedOnServer == 1)
-        #expect(!server.calls.contains { $0.hasPrefix("PUT") || $0.hasPrefix("DELETE") } || m.lists.count == 1)
-        #expect(server.ids.contains("00000001-0000-4000-8000-00000005ba17"))
+        #expect(server.ids.contains("00000001-0000-4000-8000-00000005ba18"))
+        #expect(!server.calls.contains { $0.hasPrefix("DELETE") })
     }
 }
