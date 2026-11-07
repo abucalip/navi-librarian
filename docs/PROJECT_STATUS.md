@@ -1,6 +1,6 @@
 # Project status
 
-Last checked: 2026-11-07. GitHub `main` is authoritative; PR #866 and the documentation closeout are recorded below.
+Last checked: 2026-11-07. GitHub `main` is authoritative; PR #872 and its review finding are recorded below.
 
 ## Current state
 
