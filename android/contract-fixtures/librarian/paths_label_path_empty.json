@@ -1,0 +1,36 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/api/knowledge/paths",
+    "query": {
+      "kind": "label_path",
+      "mbid": "2d4e41b7-9b69-45ef-beb6-7e428ed9044f",
+      "type": "artist"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "content_type": "application/json",
+    "elapsed_seconds": 0.0,
+    "body": {
+      "generation": 1,
+      "kind": "label_path",
+      "start": {
+        "canonical_name": "Ahmad Sham Sufi Qawwali Group",
+        "mbid": "2d4e41b7-9b69-45ef-beb6-7e428ed9044f",
+        "owned": true,
+        "type": "artist"
+      },
+      "status": "empty",
+      "stops": [],
+      "truncated": null,
+      "sources": {
+        "musicbrainz_dump": {
+          "data_version": 3
+        }
+      }
+    }
+  },
+  "captured_at": "2026-11-07T11:45:22Z"
+}

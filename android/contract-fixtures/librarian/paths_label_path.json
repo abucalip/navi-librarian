@@ -1,0 +1,76 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/api/knowledge/paths",
+    "query": {
+      "kind": "label_path",
+      "mbid": "c51e4392-7ff6-41ae-9933-cf344c331cd5",
+      "type": "artist"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "content_type": "application/json",
+    "elapsed_seconds": 0.0,
+    "body": {
+      "generation": 1,
+      "kind": "label_path",
+      "start": {
+        "canonical_name": "آمال ماهر",
+        "mbid": "c51e4392-7ff6-41ae-9933-cf344c331cd5",
+        "owned": true,
+        "type": "artist"
+      },
+      "status": "ok",
+      "stops": [
+        {
+          "entity": {
+            "canonical_name": "طعم البيوت",
+            "mbid": "d9533c6f-3362-410d-b92a-903825040abf",
+            "owned": true,
+            "type": "release"
+          },
+          "reason_count": 1,
+          "reasons": [
+            {
+              "anchor": {
+                "canonical_name": "Aref Menen",
+                "mbid": "092541b2-eefd-4b73-bd6f-dc14bdb0e014",
+                "owned": true,
+                "type": "release"
+              },
+              "code": "same_label",
+              "evidence": [
+                {
+                  "catalogue_number": "MAZ CD 137",
+                  "relation": "released_on",
+                  "source": "musicbrainz_dump"
+                },
+                {
+                  "catalogue_number": "Maz CD 209",
+                  "relation": "released_on",
+                  "source": "musicbrainz_dump"
+                }
+              ],
+              "text": "released on Mazzika, the label of Aref Menen from your library",
+              "via": {
+                "canonical_name": "Mazzika",
+                "mbid": "24f26dad-1a82-4ed1-9977-77f97e536840",
+                "owned": false,
+                "type": "label"
+              }
+            }
+          ]
+        }
+      ],
+      "truncated": null,
+      "sources": {
+        "musicbrainz_dump": {
+          "data_version": 3
+        }
+      }
+    }
+  },
+  "captured_at": "2026-11-07T11:45:22Z"
+}
