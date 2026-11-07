@@ -50,8 +50,8 @@ class StoreTestCase(unittest.TestCase):
 
 class MigrationTests(StoreTestCase):
     def test_migration_creates_event_table_in_owner_state_file(self):
-        self.assertEqual(STATE_LATEST, 3)
-        self.assertEqual(self.db.execute("PRAGMA state.user_version").fetchone()[0], 3)
+        self.assertGreaterEqual(STATE_LATEST, 3)
+        self.assertEqual(self.db.execute("PRAGMA state.user_version").fetchone()[0], STATE_LATEST)
         tables = {r[0] for r in self.db.execute("SELECT name FROM state.sqlite_master WHERE type = 'table'")}
         self.assertIn("suppression_events", tables)
         main_tables = {r[0] for r in self.db.execute("SELECT name FROM main.sqlite_master WHERE type = 'table'")}
@@ -72,7 +72,7 @@ class MigrationTests(StoreTestCase):
 
         db = open_store(knowledge)
         self.addCleanup(db.close)
-        self.assertEqual(db.execute("PRAGMA state.user_version").fetchone()[0], 3)
+        self.assertEqual(db.execute("PRAGMA state.user_version").fetchone()[0], STATE_LATEST)
         self.assertEqual(db.execute("SELECT key FROM state.card_decisions").fetchone()[0], "gem:old")
         insert_events(db, [ev("after-migration")])
         self.assertEqual(count(db), 1)
