@@ -1,7 +1,7 @@
 ## 2026-11-07 — Android artist Paths: expandable evidence (PR #893)
 
-- **Branch:** `android/interactive-path-evidence`; implementation commit `e1773e7c72a25265a11bbf2adca0e747cdaac91d` (PR head may advance for documentation or review fixes).
-- Android now retains the bounded `reasons[]`, each reason's `via` and `anchor`, and the public evidence fields (relation, role, source, catalogue number and stated dates). A result row expands in place; one row is open at a time. The expanded view explains how many connections are shown when the server's `reason_count` exceeds the returned reasons.
+- **Branch:** `android/interactive-path-evidence`; implementation commits `e1773e7c72a25265a11bbf2adca0e747cdaac91d` and `91369c4fcaf51dea5d22b5b654a4ae9b74d8b898` (PR head may advance for documentation or review fixes).
+- Android now retains the bounded `reasons[]`, each reason's `via` and `anchor`, and the public evidence fields (relation, role, source, catalogue number, stated dates, evidence class and match quality). A result row expands in place; one row is open at a time. The expanded view explains how many connections are shown when the server's `reason_count` exceeds the returned reasons.
 - No backend changes, provider calls, additional requests on expansion, or navigation actions. This is slice 1 only; artist/album navigation remains a later slice.
 - Added fixture-backed Android parser assertions for Follow the musician, Sideman, Label, Composition and Scene.
 - **Verification:** focused Android test not yet run; required GitHub Actions pending on the final PR head; manual Android device check not run. Full suite not run (owner rule). No merge, publication, deployment or runtime verification.
