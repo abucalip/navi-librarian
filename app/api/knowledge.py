@@ -89,6 +89,16 @@ def atlas(limit: int = Query(500, ge=1, le=2000), librarian=Depends(get_libraria
     return _read(librarian, lambda r: r.atlas_page(limit=limit))
 
 
+@router.get("/api/knowledge/timeline")
+def timeline(mbid: str | None = None, navidrome_id: str | None = None,
+             type: str = Query("artist"), limit: int = Query(200, ge=1, le=MAX_LIMIT),
+             librarian=Depends(get_librarian)):
+    _need_id(mbid, navidrome_id)
+    if type not in PERSON_TYPES:
+        raise HTTPException(status_code=400, detail=f"type must be one of {', '.join(PERSON_TYPES)}")
+    return _read(librarian, lambda r: r.timeline_page(mbid=mbid, navidrome_id=navidrome_id, type=type, limit=limit))
+
+
 @router.get("/api/knowledge/event")
 def event(mbid: str, limit: int = Query(200, ge=1, le=MAX_LIMIT), librarian=Depends(get_librarian)):
     return _read(librarian, lambda r: r.event_page(mbid=mbid, limit=limit))

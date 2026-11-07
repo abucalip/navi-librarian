@@ -11,7 +11,7 @@ import Testing
 /// Baseline comparison is added once the owner approves the look on the Mac (contract M4 gate).
 @MainActor
 struct ScreenshotTests {
-    @Test(arguments: ThemeID.allCases, [Screen.home, Screen.album, Screen.nowPlaying, Screen.queue, Screen.library, Screen.albums, Screen.artist, Screen.settings, Screen.downloads, Screen.discover, Screen.equalizer, Screen.gapRadar, Screen.atlas, Screen.smartPlaylists, Screen.history, Screen.insights, Screen.connections])
+    @Test(arguments: ThemeID.allCases, [Screen.home, Screen.album, Screen.nowPlaying, Screen.queue, Screen.library, Screen.albums, Screen.artist, Screen.settings, Screen.downloads, Screen.discover, Screen.equalizer, Screen.gapRadar, Screen.atlas, Screen.timeline, Screen.smartPlaylists, Screen.history, Screen.insights, Screen.connections])
     func rendersWindow(theme: ThemeID, screen: Screen) throws {
         RenderMode.offscreenScreenshot = true
         // Settings needs a session; a throwaway one with a sample profile and an in-memory keychain.
@@ -27,6 +27,7 @@ struct ScreenshotTests {
         if screen == .discover { state.discovery.show(.personal, Fixtures.albums([7, 8, 9])) }
         if screen == .library && theme == .cupertino { state.library.apply(newest: [], first: [], artists: [], picks: []); state.library.showSongs(Fixtures.songs, more: true) }
         if screen == .connections { state.graph.preview(centre: GraphPreview.centre, nodes: GraphPreview.nodes); state.graph.selectedID = "b1" }
+        if screen == .timeline { state.timeline.preview(person: TimelinePreview.person, items: TimelinePreview.items, undated: 1); state.timeline.selectedID = "album:g2" }
         if screen == .atlas { state.atlas.preview(places: [AtlasPreview.paris, AtlasPreview.addis]); state.atlas.selectedID = "p1" }
         if screen == .equalizer { state.player.updateEQ { $0.enabled = true; $0.choose(preset: "rock") } }
         if screen == .nowPlaying {
@@ -85,4 +86,16 @@ enum GraphPreview {
     }
     static let paris = make("p1", "Example Studio, Paris", 48.85, 2.41, 7)
     static let addis = make("p2", "Addis Hall", 9.03, 38.74, 0)
+}
+
+/// A few sample items for the timeline screenshot.
+@MainActor enum TimelinePreview {
+    static let person = try! JSONDecoder().decode(KnowledgeEntity.self, from: Data(#"{"mbid":"a1","canonical_name":"Example Artist","type":"artist"}"#.utf8))
+    static func make(_ id: String, _ kind: String, _ name: String, _ date: String?, owned: Bool) -> TimelineItem {
+        let d = date.map { #""\#($0)""# } ?? "null"
+        return try! JSONDecoder().decode(TimelineItem.self, from: Data(#"{"kind":"\#(kind)","entity":{"mbid":"\#(id)","canonical_name":"\#(name)","type":"release_group"},"owned":\#(owned),"date":\#(d),"why":"credited as trumpet","evidence":[{"source":"musicbrainz_dump","evidence_class":"source_explicit","match_quality":"exact_mbid"}]}"#.utf8))
+    }
+    static let items = [make("v1", "event", "Example Session", "1966-03", owned: false), make("g2", "album", "Example LP", "1972", owned: true),
+                        make("g3", "album", "Lost Album", "1974", owned: false), make("g4", "album", "Example Reissue", "1998", owned: true),
+                        make("g5", "album", "Undated Single", nil, owned: false)]
 }
