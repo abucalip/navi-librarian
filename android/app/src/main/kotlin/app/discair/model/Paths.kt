@@ -25,10 +25,19 @@ enum class PathKind(val wire: String, val label: String) {
     ScenePath("scene_path", "Scene"),
 }
 
-/** One step: the entity the server reached and the server's own sentence for why (at least one reason). */
+/** A named graph entity included in a path explanation. */
+data class PathEntity(val name: String, val type: String, val mbid: String?, val owned: Boolean)
+
+/** One stored fact supporting a relationship. */
+data class PathEvidence(val relation: String, val role: String?, val source: String?, val catalogueNumber: String?, val validFrom: String?, val validTo: String?)
+
+/** One independent explanation for why a stop belongs in a path. */
+data class PathReason(val code: String, val text: String, val via: PathEntity?, val anchor: PathEntity?, val evidence: List<PathEvidence>)
+
+/** One step: the entity the server reached and all bounded reasons/evidence for why. */
 data class PathStop(
     val name: String, val type: String, val owned: Boolean, val reasonCount: Int, val reason: String,
-    val displayTitle: String? = null, val displayContext: String? = null,
+    val displayTitle: String? = null, val displayContext: String? = null, val reasons: List<PathReason> = emptyList(),
 )
 
 /** A parsed body. [status] is the server's `ok` or `empty`; [truncated] is `rows`, `time`, `stops` or null. */
@@ -48,18 +57,25 @@ fun parsePaths(body: String): PathsResponse {
         val stop = element as? JsonObject ?: return@mapNotNull null
         val entity = stop.obj("entity") ?: return@mapNotNull null
         val name = entity.string("canonical_name")?.trim().orEmpty()
-        val reason = (stop["reasons"] as? JsonArray).orEmpty().firstNotNullOfOrNull { r ->
-            (r as? JsonObject)?.string("text")?.trim()?.takeIf { it.isNotEmpty() }
+        val reasons = (stop["reasons"] as? JsonArray).orEmpty().mapNotNull { r ->
+            val item = r as? JsonObject ?: return@mapNotNull null
+            val text = item.string("text")?.trim()?.takeIf { it.isNotEmpty() } ?: return@mapNotNull null
+            val evidence = (item["evidence"] as? JsonArray).orEmpty().mapNotNull { raw ->
+                (raw as? JsonObject)?.pathEvidence()
+            }
+            PathReason(item.string("code").orEmpty(), text, item.pathEntity("via"), item.pathEntity("anchor"), evidence)
         }
+        val reason = reasons.firstOrNull()?.text
         if (name.isEmpty() || reason == null) return@mapNotNull null
         PathStop(
             name = name,
             type = entity.string("type").orEmpty(),
             owned = (entity["owned"] as? JsonPrimitive)?.booleanOrNull ?: false,
-            reasonCount = stop.int("reason_count") ?: 1,
+            reasonCount = stop.int("reason_count") ?: reasons.size.coerceAtLeast(1),
             reason = reason,
             displayTitle = stop.obj("presentation")?.string("title")?.trim()?.takeIf { it.isNotEmpty() },
             displayContext = stop.obj("presentation")?.string("context")?.trim()?.takeIf { it.isNotEmpty() },
+            reasons = reasons,
         )
     }
     return PathsResponse(
@@ -104,6 +120,26 @@ private fun objectOrNull(body: String): JsonObject? = try {
     ApiJson.parseToJsonElement(body) as? JsonObject
 } catch (e: kotlinx.serialization.SerializationException) {
     null
+}
+
+private fun JsonObject.pathEntity(name: String): PathEntity? {
+    val entity = obj(name) ?: return null
+    val canonicalName = entity.string("canonical_name")?.trim()?.takeIf { it.isNotEmpty() } ?: return null
+    return PathEntity(
+        canonicalName, entity.string("type").orEmpty(), entity.string("mbid")?.takeIf { it.isNotBlank() },
+        (entity["owned"] as? JsonPrimitive)?.booleanOrNull ?: false,
+    )
+}
+
+private fun JsonObject.pathEvidence(): PathEvidence? {
+    val relation = string("relation").orEmpty()
+    val role = string("role")?.takeIf { it.isNotBlank() }
+    val catalogueNumber = string("catalogue_number")?.takeIf { it.isNotBlank() }
+    if (relation.isBlank() && role == null && catalogueNumber == null) return null
+    return PathEvidence(
+        relation, role, string("source")?.takeIf { it.isNotBlank() }, catalogueNumber,
+        string("valid_from")?.takeIf { it.isNotBlank() }, string("valid_to")?.takeIf { it.isNotBlank() },
+    )
 }
 
 private fun JsonObject.string(name: String) = (this[name] as? JsonPrimitive)?.takeIf { it.isString }?.contentOrNull

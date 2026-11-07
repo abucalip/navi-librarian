@@ -29,6 +29,11 @@ class PathsTest {
         assertEquals("ok", r.status)
         assertEquals("Woghenei", r.stops.first().name)
         assertTrue(r.stops.first().reason.contains("credited"))
+        val reason = r.stops.first().reasons.first()
+        assertEquals("Temare Haregu", reason.via?.name)
+        assertEquals("Dèwèl", reason.anchor?.name)
+        assertEquals("instrument", reason.evidence.first().relation)
+        assertEquals("drums (drum set)", reason.evidence.first().role)
         assertTrue(r.view() is PathsView.Stops)
     }
 
@@ -68,6 +73,26 @@ class PathsTest {
             assertTrue(name, r.stops.isEmpty())
             assertEquals(name, PathsView.Empty, r.view())
         }
+    }
+
+    @Test fun pathFixturesRetainAllReasonsAndTheirEvidence() {
+        val sideman = parsePaths(body("paths_sideman_to_leader")).stops.first().reasons.first()
+        assertEquals("release", sideman.via?.type)
+        assertEquals("recording", sideman.anchor?.type)
+        assertEquals(listOf("performer", "track_on", "release_artist"), sideman.evidence.map { it.relation })
+
+        val label = parsePaths(body("paths_label_path")).stops.first().reasons.first()
+        assertEquals("Mazzika", label.via?.name)
+        assertEquals("Aref Menen", label.anchor?.name)
+        assertEquals("MAZ CD 137", label.evidence.first().catalogueNumber)
+
+        val composition = parsePaths(body("paths_composition_path")).stops.first().reasons.first()
+        assertEquals("work", composition.via?.type)
+        assertTrue(composition.evidence.any { it.role == "cover, live" })
+
+        val scene = parsePaths(body("paths_scene_path")).stops.first().reasons.first()
+        assertEquals("Jimma", scene.via?.name)
+        assertEquals("begin area", scene.evidence.first().relation)
     }
 
     @Test fun presentationKeepsArtistsSeparateFromAlbumAndRecordingTitles() {
