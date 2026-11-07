@@ -1,3 +1,14 @@
+## 2026-11-07 — Server V2 Phase 7: release links for sideman-to-leader
+
+- **PR:** [#885](https://github.com/abucalip/navi-librarian/pull/885), merged 2026-11-07 as `cf156876244e5076975afc2713586305febf0e1f` (squash) from head `cdde9c5a5497e287d13557f837c5a5a16e292787`; all required workflows passed (compile, container-smoke, test-and-build, validate-container).
+- Added `intelligence/musicbrainz/archive_filter.py` (filter one archive table on every core, nothing written to disk), `intelligence/musicbrainz/release_links.py` (plan and store `track_on` and `release_artist` edges, source `musicbrainz_dump_releases`, `source_explicit` / `exact_mbid`) and a step in `job.py` after the main load and before the archive is deleted (`release_links_step`, on by default).
+- Rules: credited = performer or producer links from owned artists; one official release per recording and release group (earliest date, lowest id); Various Artists-only releases skipped; existing entities matched by MBID and kept; re-run replaces only this step's edges, refuses a run that keeps under half.
+- Why new relation names: `appears_on` / `credited_to` are read by ownership, editions, taste, knowledge pages and the atlas as library facts.
+- Evidence (scratch copy of the store, real dump, read-only): performer+producer recordings 71,675 of 78,741 all-role; candidate releases 98,810; sideman reach with one release per group 201 of 300 (1+ leader) and 158 (3+), median 10; real-data plan 181,732 `track_on`, 27,807 `release_artist`, 24,260 releases, 3,527 leaders, 214 s; size estimate about 60 MB (270 B per edge, 184 B per entity from the current store).
+- Tests actually run: `tests.test_intelligence_musicbrainz_release_links` (23), `tests.test_intelligence_musicbrainz_job`, `tests.test_intelligence_musicbrainz_loader`, `tests.test_server_v2_mb_slice_import_script` (67 pass). Full suite and a real import not run.
+- **Not verified:** the stored result and real reach on the owner's store (needs a re-import); the `sideman_to_leader` route still answers `400`. Not published or deployed.
+- Next action: build `sideman_to_leader` (builder with `reasons[]`, Various Artists and anchor exclusions, offered only for artists the store has data for) and its contract change; the owner re-imports the slice.
+
 ## 2026-11-07 — Server V2 Phase 7: macOS timeline
 
 - **PR:** [#884](https://github.com/abucalip/navi-librarian/pull/884), merged 2026-11-07 as `9ac0478ad602c160a1ba35dadfc08e3e640f5631` (squash); all required workflows passed (compile, container-smoke, test-and-build, validate-container, validate-release-workflow; publish-release skipped).
