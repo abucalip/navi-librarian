@@ -5,6 +5,7 @@
     <key>CFBundleDevelopmentRegion</key><string>en</string>
     <key>CFBundleExecutable</key><string>Discair</string>
     <key>CFBundleIdentifier</key><string>app.discair.mac</string>
+    <key>CFBundleIconFile</key><string>Discair</string>
     <key>CFBundleName</key><string>Discair</string>
     <key>CFBundleDisplayName</key><string>Discair</string>
     <key>CFBundlePackageType</key><string>APPL</string>

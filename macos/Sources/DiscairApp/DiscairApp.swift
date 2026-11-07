@@ -22,6 +22,8 @@ struct DiscairApp: App {
         Window("Discair", id: "main") {
             RootView(state: state)
                 .task { state.share.start(); await state.session?.connect() }
+                .onAppear { AppIcon.apply(state.themeID) }
+                .onChange(of: state.themeID) { _, id in AppIcon.apply(id) }
                 // Best effort: a Not for me still inside its Undo window is sent before the app quits.
                 .onReceive(NotificationCenter.default.publisher(for: NSApplication.willTerminateNotification)) { _ in
                     state.player.restoreOutputRate()
@@ -49,6 +51,16 @@ struct DiscairApp: App {
                 }
             }
         }
+    }
+}
+
+/// The Dock icon follows the theme. The icons ship in the app bundle (`Packaging/Icons`); a bare `swift run` has none, so the
+/// default icon stays.
+enum AppIcon {
+    @MainActor static func apply(_ id: ThemeID) {
+        let name = "Discair-" + id.rawValue.capitalized
+        guard let url = Bundle.main.url(forResource: name, withExtension: "icns"), let image = NSImage(contentsOf: url) else { return }
+        NSApplication.shared.applicationIconImage = image
     }
 }
 
