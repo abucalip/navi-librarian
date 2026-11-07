@@ -2926,3 +2926,10 @@ All live runs were approved by the owner; slskd off; aggregate only; harnesses w
 
 
 - **Final documentation sync for the reconciliation:** after the first clean rebase-equivalent merge, `main` advanced with the documentation commits. The branch was merged forward again using main `358120150658166ae85a3e5f212710054016a199`; code-bearing sync commit `67c58ffcc437dfdd6eb3e6bc1cc32e7179681af8` has that main commit as its second parent. The PR remains a three-file-only diff. Four required workflows were triggered on `67c58ff` and were queued at the time of this entry. The documentation commits recording this state are on `main`; the PR branch must include those latest docs commits before its final exact-head checks are considered authoritative.
+
+## 2026-11-07 — Server V2 Phase 6 slice 13: smart playlist rule set persistence
+
+- **PR [#863](https://github.com/abucalip/navi-librarian/pull/863) squash-merged to `main` as `892d423085244fc2a1fe3fa31df92e3ab620605d`** from exact tested head `4f9bd1899313838b7bbe07b08db7c5b3a10a143f`, after the owner asked for the merge once all four required workflows passed (`compile`, `container-smoke`, `test-and-build`, `validate-container`).
+- **Changes:** migration 3 (`state.smart_playlists`, shape CHECKs, mutable, explicit delete) in `intelligence/store/state.py`; new `intelligence/taste/smart_playlist_persistence.py`; new `tests/test_intelligence_taste_smart_playlist_persistence.py`; `tests/test_intelligence_suppression_persistence.py` state-version assertions moved from 2 to 3.
+- **Tests run locally (focused only):** `tests.test_intelligence_taste_smart_playlist_persistence`, `tests.test_intelligence_suppression_persistence`, `tests.test_intelligence_store_state`: 48 tests OK. Full suite not run (owner rule).
+- **Not done:** no route, job, client, provider traffic or Navidrome write. Not published, deployed or runtime-verified.
