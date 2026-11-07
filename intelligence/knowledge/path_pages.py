@@ -34,4 +34,5 @@ def path_page(db: sqlite3.Connection, *, kind: str, mbid: str | None = None, nav
         return None
     path = dict(path)
     built = path.pop("built_from", {})
+    path.pop("presentation_version", None)  # cache invalidation detail, not part of the public response
     return public({**path, "sources": {SLICE_SOURCE: {"data_version": built.get(paths.SLICE_RESOURCE)}}})

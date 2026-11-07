@@ -58,7 +58,7 @@ class PathsRoute(unittest.TestCase):
         self.assertTrue(reason["evidence"])
         self.assertIsInstance(stop["entity"]["owned"], bool)
         text = r.text
-        for leaked in ('"id"', "navidrome_id", "built_from", "generation_id"):
+        for leaked in ('"id"', "navidrome_id", "built_from", "generation_id", "presentation_version"):
             self.assertNotIn(leaked, text)
 
     def test_empty_when_nothing_is_evidenced(self):
