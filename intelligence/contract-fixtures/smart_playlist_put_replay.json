@@ -1,0 +1,65 @@
+{
+  "request": "PUT /api/playlists/smart/00000001-0000-4000-8000-00000005ba17 (same body again, a day later)",
+  "request_body": {
+    "limit": 25,
+    "match": "all",
+    "name": "Old favourites",
+    "order": "most_played",
+    "rules": [
+      {
+        "field": "genre",
+        "op": "contains",
+        "value": "rock"
+      },
+      {
+        "field": "played_days_ago",
+        "op": "at_least",
+        "value": "30"
+      },
+      {
+        "field": "obscurity_band",
+        "op": "equals",
+        "value": "deep_cut"
+      },
+      {
+        "field": "year",
+        "op": "at_least",
+        "value": ""
+      }
+    ]
+  },
+  "response": {
+    "playlist": {
+      "created_at": 1700000000.0,
+      "limit": 25,
+      "match": "all",
+      "name": "Old favourites",
+      "order": "most_played",
+      "rule_id": "00000001-0000-4000-8000-00000005ba17",
+      "rules": [
+        {
+          "field": "genre",
+          "op": "contains",
+          "value": "rock"
+        },
+        {
+          "field": "played_days_ago",
+          "op": "at_least",
+          "value": "30"
+        },
+        {
+          "field": "obscurity_band",
+          "op": "equals",
+          "value": "deep_cut"
+        },
+        {
+          "field": "year",
+          "op": "at_least",
+          "value": ""
+        }
+      ],
+      "updated_at": 1700000000.0
+    },
+    "status": "unchanged"
+  }
+}

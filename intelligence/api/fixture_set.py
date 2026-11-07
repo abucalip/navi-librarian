@@ -32,6 +32,7 @@ from .insights import build_insights_body
 from .capabilities import ServerFacts, build_capabilities
 from .changes import build_changes
 from .feedback import build_intake_body, build_suppression_body
+from .smart_playlists import build_list_body as build_smart_list, build_put_body, build_result_body
 from .etag import etag_for
 
 _MB_A = "11111111-1111-1111-1111-111111111111"
@@ -226,6 +227,63 @@ def _feedback_fixtures() -> dict[str, dict[str, Any]]:
     }
 
 
+_SP_ID = "00000001-0000-4000-8000-00000005ba17"
+
+
+def _smart_playlist_fixtures() -> dict[str, dict[str, Any]]:
+    """Smart playlist rule sets and one evaluation, in a store of their own with a fixed clock."""
+    rule_set = {
+        "name": "Old favourites", "match": "all", "order": "most_played", "limit": 25,
+        "rules": [
+            {"field": "genre", "op": "contains", "value": "rock"},
+            {"field": "played_days_ago", "op": "at_least", "value": "30"},
+            {"field": "obscurity_band", "op": "equals", "value": "deep_cut"},
+            {"field": "year", "op": "at_least", "value": ""},
+        ],
+    }
+    day = 86400
+    songs = [
+        {"id": "tr-1", "artist": "Fleetwood Mac", "title": "Dreams", "genre": "Rock", "format": "flac",
+         "year": 1977, "plays": 40, "rating": 5, "bitrate": 900, "added_at": _FB_NOW - 900 * day,
+         "played_at": _FB_NOW - 60 * day},
+        {"id": "tr-2", "artist": "Fleetwood Mac", "title": "Go Your Own Way", "genre": "Rock", "format": "flac",
+         "year": 1977, "plays": 55, "rating": 4, "bitrate": 900, "added_at": _FB_NOW - 900 * day},
+        {"id": "tr-3", "artist": "Miles Davis", "title": "So What", "genre": "Jazz", "format": "mp3",
+         "year": 1959, "plays": 12, "bitrate": 320, "added_at": _FB_NOW - 100 * day,
+         "played_at": _FB_NOW - 2 * day},
+    ]
+    with tempfile.TemporaryDirectory() as tmp:
+        db = open_store(Path(tmp) / "smart.sqlite3")
+        try:
+            empty = build_smart_list(db)
+            _, first = build_put_body(db, _SP_ID, rule_set, _FB_NOW)
+            _, replay = build_put_body(db, _SP_ID, rule_set, _FB_NOW + day)
+            _, rejected = build_put_body(db, _SP_ID, {"name": "", "match": "some", "limit": 3}, _FB_NOW)
+            listed = build_smart_list(db)
+            result = build_result_body(db, _SP_ID, songs, _FB_NOW, seed=1)
+        finally:
+            db.close()
+    return {
+        "smart_playlists_empty.json": {"request": "GET /api/playlists/smart", "response": empty},
+        "smart_playlist_put_first.json": {
+            "request": f"PUT /api/playlists/smart/{_SP_ID}", "request_body": rule_set, "response": first,
+        },
+        "smart_playlist_put_replay.json": {
+            "request": f"PUT /api/playlists/smart/{_SP_ID} (same body again, a day later)", "request_body": rule_set,
+            "response": replay,
+        },
+        "smart_playlist_put_rejected.json": {
+            "request": f"PUT /api/playlists/smart/{_SP_ID}", "request_body": {"name": "", "match": "some", "limit": 3},
+            "response_status": 400, "response": rejected,
+        },
+        "smart_playlists_list.json": {"request": "GET /api/playlists/smart", "response": listed},
+        "smart_playlist_result.json": {
+            "request": f"GET /api/playlists/smart/{_SP_ID}/result?seed=1", "response": result,
+            "note": "songs considered: tr-1..tr-3 (not part of the response)",
+        },
+    }
+
+
 def _build(db) -> dict[str, dict[str, Any]]:
     empty_caps = build_capabilities(db)
     empty_changes = build_changes(db, 0)
@@ -244,6 +302,7 @@ def _build(db) -> dict[str, dict[str, Any]]:
         **_insight_fixtures(),
         **_knowledge_fixtures(),
         **_feedback_fixtures(),
+        **_smart_playlist_fixtures(),
         "capabilities_empty.json": {"request": "GET /api/capabilities", "response": empty_caps},
         "capabilities_populated.json": {"request": "GET /api/capabilities", "response": caps},
         "changes_from_start.json": {"request": "GET /api/changes", "response": build_changes(db, 0)},

@@ -1,0 +1,86 @@
+{
+  "request": "GET /api/playlists/smart",
+  "response": {
+    "config": {
+      "fields": [
+        "artist",
+        "title",
+        "genre",
+        "format",
+        "year",
+        "plays",
+        "rating",
+        "bitrate",
+        "added_days_ago",
+        "played_days_ago",
+        "obscurity_band",
+        "in_lens"
+      ],
+      "insight_ops": [
+        "equals",
+        "not_equals"
+      ],
+      "matches": [
+        "all",
+        "any"
+      ],
+      "max_limit": 250,
+      "max_name_length": 100,
+      "max_rules": 20,
+      "max_value_length": 200,
+      "min_limit": 25,
+      "numeric_ops": [
+        "at_least",
+        "at_most",
+        "equals"
+      ],
+      "orders": [
+        "random",
+        "newest_added",
+        "most_played",
+        "least_played",
+        "highest_rated",
+        "title"
+      ],
+      "text_ops": [
+        "contains",
+        "not_contains",
+        "equals"
+      ]
+    },
+    "playlists": [
+      {
+        "created_at": 1700000000.0,
+        "limit": 25,
+        "match": "all",
+        "name": "Old favourites",
+        "order": "most_played",
+        "rule_id": "00000001-0000-4000-8000-00000005ba17",
+        "rules": [
+          {
+            "field": "genre",
+            "op": "contains",
+            "value": "rock"
+          },
+          {
+            "field": "played_days_ago",
+            "op": "at_least",
+            "value": "30"
+          },
+          {
+            "field": "obscurity_band",
+            "op": "equals",
+            "value": "deep_cut"
+          },
+          {
+            "field": "year",
+            "op": "at_least",
+            "value": ""
+          }
+        ],
+        "updated_at": 1700000000.0
+      }
+    ],
+    "total": 1
+  }
+}

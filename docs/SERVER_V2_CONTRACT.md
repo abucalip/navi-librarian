@@ -84,6 +84,17 @@ Fixture: `suppression.json`. Query: `limit` (1 to 200, default 50) and `offset` 
 - A subject is judged only by its own events: a skipped track never creates an album or artist entry. Sparse or empty memory is an empty list, never an error. Weights are derived on each read; the 14-day, 60-day and 100-event values are starting values reused from the negative-feedback policy, not measured. Events older than 180 days are removed by a retention sweep that nothing runs yet.
 - A client may show these entries but must not treat them as an instruction to hide anything: no ranking uses them.
 
+## Smart playlists: `/api/playlists/smart` (Phase 6 item 6, slice 14)
+
+Served by `app/api/smart_playlists.py`; body builders `intelligence/api/smart_playlists.py`; rules in `intelligence/taste/smart_playlist.py`, storage in the owner-state file (`state.smart_playlists`). Fixtures: `smart_playlists_empty.json`, `smart_playlist_put_first.json`, `smart_playlist_put_replay.json`, `smart_playlist_put_rejected.json`, `smart_playlists_list.json`, `smart_playlist_result.json` (fixed clock). Authenticated like every `/api` route. Rule sets are owner configuration. The server never writes a playlist to Navidrome and makes no provider call; there is no scheduled refresh.
+
+- `GET /api/playlists/smart`: `{playlists[], total, config}`, oldest first. `config` lists the accepted fields, operators, orders, matches and limits so a client need not hard-code them. No rule sets is an empty list.
+- `PUT /api/playlists/smart/{rule_id}`: create or replace. `rule_id` is a client-chosen lowercase UUID, so a retry is idempotent. Body: `name` (1 to 100 characters), `match` (`all` or `any`, default `all`), `rules[]` of `{field, op, value}` (at most 20), `order` (default `random`), `limit` (25 to 250 or `null`). Answers `200 {status: created|replaced|unchanged, playlist}`; `unchanged` leaves `updated_at` alone. Invalid content is `400 {status: "rejected", errors: [{path, reason}]}` and nothing is stored; a bad id is `400`; a body that is not an object is `422`.
+- `GET /api/playlists/smart/{rule_id}`: one rule set, `404` if absent. `DELETE` answers `{deleted: true}`, `404` if absent.
+- `GET /api/playlists/smart/{rule_id}/result?seed=<int>`: evaluates now over the whole Navidrome song list (paged `search3`, up to 50,000 songs) and returns `{rule_id, song_ids[], matched, returned, unfinished[], missing_data[], evaluated_at, songs_considered, stored: false}`. `unfinished` holds rule indexes that match every song (empty or non-numeric value, or missing insight data); `missing_data` names the missing lookups. Neither is an error. `seed` fixes the `random` order. A Navidrome failure is `502` with a fixed message.
+- Insight fields: no obscurity bands or lens members are wired yet, so `obscurity_band` and `in_lens` rules are unfinished and reported in `missing_data`. `suppressed` is not offered.
+- Semantics match the macOS engine (unfinished rules match everything, unknown numbers never match, never-played matches "last played at least N days ago"); ties break on the Navidrome id.
+
 ## GET /api/insights/taste (Phase 6)
 
 Served by `app/api/insights.py`; body builder `intelligence/api/taste.py`; no fixture yet. Read-only: it returns the last saved taste profiles and never computes, fetches or changes anything.
