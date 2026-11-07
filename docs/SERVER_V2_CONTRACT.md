@@ -103,6 +103,16 @@ Served by `app/api/insights.py`; body builder `intelligence/api/taste.py`; no fi
 - `profiles`: `windows` (`recent`, `mid`, `all_time`, each with `listens`, `low_sample`, `attributed` and `dimension_low_sample` per dimension, and `dimensions` mapping genre, era, area, label and collaborator to ranked `{value, count, share}`), `shifts[]` (`{window, dimension, value, direction, from_share, to_share}`, stated only when both sides are sound), `config` (the thresholds used), `load` (`total`, `unusable`, `unmatched`, `attributed`, when the loader ran), `computed_at`, `generation`. A client must show `low_sample` windows and dimensions as such and must not state a shift that is not listed.
 - Stored as one `taste_profile` row in `insights`; an unchanged recompute writes nothing and keeps `data_version`. The profiles do not change recommendation weights.
 
+## POST /api/insights/popularity/fill and GET /api/insights/popularity/status (Phase 6 item 2, slice 18)
+
+Served by `app/api/popularity.py` (D-016: nothing added to `navidrome_server.py`); job logic in `intelligence/taste/popularity_job.py`. The owner triggers the fill by hand only: there is no scheduler and no startup hook. No fixture yet.
+
+- Fill body: optional JSON `{"max_requests": n}`, a positive integer, default 5, capped at 20 (a larger value is applied as 20 and the body reports `max_requests`). Anything else is `422`. Each run makes at most that many ListenBrainz batch requests (100 MBIDs each) and then stops; a run with artists still pending answers `queued` and the next run resumes it.
+- Fill answer: `run_id`, `state` (`succeeded`, `queued`, `failed`), `progress` (`requests`, `filled`, `absent`, `pending`), `error` (null unless failed) and `max_requests` (the applied value). A failed run keeps every figure saved before it and the last good figures of other artists. A run refused because another is in progress is `409`.
+- Status answer: `status` (the newest run of job `taste_popularity`), `last_good` (the newest succeeded run) and `running` (true while a fill holds the process lock). The status route makes no provider call.
+- Requests carry a `User-Agent` of `Discair/1.0 (...)` and `Authorization: Token <LISTENBRAINZ_TOKEN>`, the token read only from `config.env` in the working folder (key `LISTENBRAINZ_TOKEN`). The token is never logged, returned or stored.
+- Figures are saved in `state.artist_popularity` and are the only write. Obscurity-band smart-playlist rules stay `missing_data` until figures are saved.
+
 ## GET /api/knowledge/{album,person,label,work,recording-works} (Phase 4)
 
 Served by `app/api/knowledge.py` (D-016: nothing added to `navidrome_server.py`). Every body is built by `KnowledgeReader` (`album_dossier`, `person_page`, `label_page`, `work_page`, `works_of_recording`) from `intelligence.sqlite3`; no provider traffic, no writes, no ownership flags. The page shapes are those the reader returns, with provenance on every credit and a `coverage` field (`pending`, `loaded`, `no_relationships_in_slice`) instead of a silent empty list.

@@ -33,6 +33,7 @@ from app.api.capabilities import router as capabilities_router
 from app.api.feedback import router as feedback_router
 from app.api.smart_playlists import router as smart_playlists_router
 from app.api.insights import router as insights_router
+from app.api.popularity import router as popularity_router
 from app.api.knowledge import router as knowledge_router
 from app.api.library import router as library_router
 from app.api.owned_artwork import router as owned_artwork_router
@@ -216,6 +217,7 @@ app.include_router(library_router)
 app.include_router(feedback_router)
 app.include_router(smart_playlists_router)
 app.include_router(insights_router)
+app.include_router(popularity_router)
 app.include_router(knowledge_router)
 app.include_router(capabilities_router)
 app.include_router(owned_artwork_router)
