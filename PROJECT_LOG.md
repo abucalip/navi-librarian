@@ -1,5 +1,6 @@
-## 2026-11-07 — Server V2 Phase 6 slice 14: smart playlist routes, contract and fixtures
+## 2026-11-07 — Server V2 Phase 6 slice 14: smart playlist routes, contract and fixtures (PR #864)
 
+- **PR:** [#864](https://github.com/abucalip/navi-librarian/pull/864), squash merge `77e0895c04bb0022b8144f8d7120af02cdb37d2e`, tested head `8be9fd475fe502aac23ffab7a959c71789330c53`; compile, container-smoke, test-and-build, validate-container and validate-release-workflow passed.
 - **Objective:** Phase 6 item 6 slice 14 (owner-approved design in `docs/ServerV2.md`).
 - **Changes:** `app/api/smart_playlists.py` (list, PUT, GET, DELETE, result), `intelligence/api/smart_playlists.py` (bodies, Subsonic song mapping), six contract fixtures, contract section, `tests/test_api_smart_playlist_routes.py`. Result is evaluated on request and not stored; no Navidrome write, provider call or refresh.
 - **Tests:** `tests.test_api_smart_playlist_routes` and `tests.test_intelligence_contract_fixtures` run locally, 19 passed. Full suite not run (owner rule).
