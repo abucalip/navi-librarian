@@ -1,3 +1,12 @@
+## 2026-11-07 — Server V2 Phase 7: macOS timeline
+
+- **PR:** [#884](https://github.com/abucalip/navi-librarian/pull/884), merged 2026-11-07 as `9ac0478ad602c160a1ba35dadfc08e3e640f5631` (squash); all required workflows passed (compile, container-smoke, test-and-build, validate-container, validate-release-workflow; publish-release skipped).
+- Server: `intelligence/knowledge/timeline.py`, `KnowledgeReader.timeline_page`, route `GET /api/knowledge/timeline` (`mbid` or `navidrome_id`, `type` artist/person/group, `limit` 1 to 500). Album date = earliest `release_facts` date over the release group's editions; event date = stated begin date. `navidrome_server.py` untouched (D-016). Contract in `docs/SERVER_V2_CONTRACT.md`.
+- macOS: `TimelineModel`, `TimelineGrouping`, `TimelineView`, `TimelineItem`/`KnowledgeTimeline`, `LibrarianClient.knowledgeTimeline`; Screen `.timeline` in both themes, sidebar and ⌘K.
+- Tests actually run: `python3 -m unittest tests.test_intelligence_timeline` (3 pass); `swift test --filter` TimelineGroupingTests, TimelineModelTests, KnowledgeTests, ScreenshotTests (28 pass). `tests.test_api_knowledge_routes` not run locally (no fastapi); full suite not run (owner rule).
+- **Not verified:** a run against the real server or store, date coverage on the owner's library, owner approval of the look. No contract fixture recorded.
+- Next action: owner reviews Connections, Atlas and Timeline on the Mac.
+
 ## 2026-11-07 — Server V2 Phase 7: macOS atlas on Apple Maps
 
 - **PR:** [#883](https://github.com/abucalip/navi-librarian/pull/883), merged 2026-11-07 as `7ecc36e26c09b87d88b05dc4c231aae1898fd3e5` (squash) from head `75b84f640eed6c2440e55315813916800c51c49d`; all required workflows passed (compile, container-smoke, test-and-build, validate-container, validate-release-workflow; publish-release skipped).
