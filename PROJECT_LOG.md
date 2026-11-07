@@ -3080,3 +3080,11 @@ All live runs were approved by the owner; slskd off; aggregate only; harnesses w
 - **Evidence:** `scripts/server_v2_phase6_exit.py` (offline, read-only, runs on a copy of the store and owner-state file, no provider traffic) passed all five gated checks on a copy of the owner's store (300 owned artists): profiles, monthly, context and obscurity are identical on repeat and shuffled input and an unchanged save writes nothing; empty, tiny, below-threshold and unattributed inputs are low-sample with no shift; no module outside the taste package, its routes and the store imports taste (no weight effect); suppression replay changes nothing and a malformed event keeps the rest; smart playlist PUT replay is unchanged, missing insight data is unfinished, no refresh column, no Navidrome playlist write. Limits: the copy held no saved popularity figures (0 of 300; the live fill ran on another copy) and the synthetic listens carry no artist ids, so the area and genre dimensions were not exercised. Focused tests: `tests.test_server_v2_phase6_exit` 4 passed; full suite not run (owner rule); all four required workflows passed on the head.
 - **State:** Phase 6 closed on the server side by the owner. Client gate (macOS taste views and snapshots; Android compact taste card) carries to the client work. Not published or deployed.
 - **Next action:** owner choice of Phase 7 (sonic) start or the Phase 5 and 6 client gates.
+
+
+## 2026-11-07 Server V2 Phase 7: sideman_to_leader builder
+
+- **Merged:** PR [#886](https://github.com/abucalip/navi-librarian/pull/886), squash `e4cd6306`, from head `d8558af62fac204ccb57e05f4f45a017126d689d`, at the owner's request.
+- **Evidence:** `tests.test_intelligence_paths` (17 pass); CI compile, container-smoke, test-and-build, validate-container passed on the head. Review comments (credit roles, credit-grade self-release check) fixed with tests. Not run: route test, full suite, real store.
+- **State:** builder and contract merged; clients do not call the kind. Not published or deployed.
+- **Next action:** owner re-import, then fixture and quality spot-check.
