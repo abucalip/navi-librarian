@@ -103,7 +103,7 @@ fun ArtistPathsSheet(artistName: String, mbid: String, onDismiss: () -> Unit) {
                 verticalArrangement = Arrangement.spacedBy(3.dp),
             ) {
                 PathDescription("Follow the musician", "Songs by musicians who played with $artistName, not in your library.")
-                PathDescription("Sideman", "Band members and helping hands.")
+                PathDescription("Sideman", "$artistName also performed with:")
                 PathDescription("Label", "Records under the same publishers.")
                 PathDescription("Composition", "Other recordings of the same composition, including covers and live versions.")
                 PathDescription("Scene", "Other artists from the same place and era.")
