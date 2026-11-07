@@ -1,3 +1,10 @@
+## 2026-11-07 — Server V2 Phase 6 slice 15b: insight rules in the macOS smart playlist editor
+
+- **Context:** slice 15 merged as PR #866 (`5e4a4dbead6546d1ebf9ffc5d8f54130ffb7616a`, four required workflows passed). The owner chose the full editor now, knowing the server cannot supply insight data yet (no lookups wired, no obscurity bands defined), which departs from the design note "insight field only if its data is populated".
+- **Changes:** `SmartField` gains `obscurityBand` and `inLens` (operators `is` / `is not`, free-text value); both themes show a note while a rule uses one: they match every song until the server supplies data. The local engine treats them as unfinished. Server sets with insight rules now load and round-trip instead of being counted as unreadable; sets with unknown fields are still counted and left untouched.
+- **Tests (local, selective):** `swift test --filter 'DiscairLibrarianTests|DiscairUITests'`: 357 passed. Not run against a real server or by eye in the app.
+- **Next:** server side must define bands and feed obscurity and lens lookups into the result route, then the editor can offer real band and lens choices.
+
 ## 2026-11-07 — Server V2 Phase 6 slice 15: macOS smart playlists sync with the server
 
 - **PR and merge:** [#866](https://github.com/abucalip/navi-librarian/pull/866), merged 2026-11-07 as `5e4a4dbead6546d1ebf9ffc5d8f54130ffb7616a` from exact PR head `697ece92d4b0fcfebc53c6038d5d6bca56819c54` (base before merge `d2b2f37cb4d08d7043e86c1dd27163cd7a2eed5e`).
