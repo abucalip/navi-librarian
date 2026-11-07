@@ -4,7 +4,8 @@ HTTP adapter over ``intelligence.api.build_capabilities``. Never cached, so a cl
 to decide which sections to show. ``listenbrainz_connected`` reflects whether a ListenBrainz
 username is saved; ``graph_coverage`` stays at its unknown value until a later phase measures it.
 ``sonic_available`` is true when Navidrome lists the ``sonicSimilarity`` extension (checked at most every
-five minutes; any failure reads as false). Reads only the Server V2 store; no provider traffic.
+five minutes; any failure reads as false), so this route makes one cached Navidrome call besides reading
+the Server V2 store; no provider traffic.
 """
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import JSONResponse
