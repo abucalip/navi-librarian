@@ -209,7 +209,7 @@ private fun PathReasonDetails(reason: PathReason) {
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Text(reason.text, style = MaterialTheme.typography.bodySmall)
         reason.via?.let { Text("Via: ${it.name} · ${entityTypeLabel(it.type)}", style = MaterialTheme.typography.bodySmall, color = Ink.TextMuted) }
-        reason.anchor?.let { Text("Library connection: ${it.name} · ${entityTypeLabel(it.type)}", style = MaterialTheme.typography.bodySmall, color = Ink.TextMuted) }
+        reason.anchor?.let { Text("Anchor: ${it.name} · ${entityTypeLabel(it.type)}", style = MaterialTheme.typography.bodySmall, color = Ink.TextMuted) }
         if (reason.evidence.isNotEmpty()) {
             Text("EVIDENCE", style = MaterialTheme.typography.labelSmall, color = Ink.TextMuted)
             reason.evidence.forEach { PathEvidenceLine(it) }
@@ -232,7 +232,8 @@ private fun PathEvidenceLine(evidence: PathEvidence) {
         evidence.validTo != null -> "until ${evidence.validTo}"
         else -> null
     }
-    listOfNotNull(source, dates).takeIf { it.isNotEmpty() }?.let { Text(it.joinToString(" · "), style = MaterialTheme.typography.labelSmall, color = Ink.TextMuted) }
+    val provenance = listOfNotNull(source, dates, evidence.evidenceClass?.let(::evidenceClassLabel), evidence.matchQuality?.let(::matchQualityLabel))
+    provenance.takeIf { it.isNotEmpty() }?.let { Text(it.joinToString(" · "), style = MaterialTheme.typography.labelSmall, color = Ink.TextMuted) }
 }
 
 private fun entityTypeLabel(type: String): String = when (type) {
@@ -243,6 +244,17 @@ private fun entityTypeLabel(type: String): String = when (type) {
     "label" -> "label"
     "area" -> "place"
     else -> type.ifBlank { "entity" }
+}
+
+private fun evidenceClassLabel(value: String): String = when (value) {
+    "source_explicit" -> "Explicit source evidence"
+    "library_tag" -> "Library tag"
+    else -> value.replace('_', ' ')
+}
+
+private fun matchQualityLabel(value: String): String = when (value) {
+    "exact_mbid" -> "Exact MusicBrainz ID match"
+    else -> value.replace('_', ' ')
 }
 
 private fun evidenceSourceLabel(source: String): String = when {

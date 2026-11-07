@@ -29,7 +29,7 @@ enum class PathKind(val wire: String, val label: String) {
 data class PathEntity(val name: String, val type: String, val mbid: String?, val owned: Boolean)
 
 /** One stored fact supporting a relationship. */
-data class PathEvidence(val relation: String, val role: String?, val source: String?, val catalogueNumber: String?, val validFrom: String?, val validTo: String?)
+data class PathEvidence(val relation: String, val role: String?, val source: String?, val catalogueNumber: String?, val validFrom: String?, val validTo: String?, val evidenceClass: String?, val matchQuality: String?)
 
 /** One independent explanation for why a stop belongs in a path. */
 data class PathReason(val code: String, val text: String, val via: PathEntity?, val anchor: PathEntity?, val evidence: List<PathEvidence>)
@@ -139,6 +139,7 @@ private fun JsonObject.pathEvidence(): PathEvidence? {
     return PathEvidence(
         relation, role, string("source")?.takeIf { it.isNotBlank() }, catalogueNumber,
         string("valid_from")?.takeIf { it.isNotBlank() }, string("valid_to")?.takeIf { it.isNotBlank() },
+        string("evidence_class")?.takeIf { it.isNotBlank() }, string("match_quality")?.takeIf { it.isNotBlank() },
     )
 }
 

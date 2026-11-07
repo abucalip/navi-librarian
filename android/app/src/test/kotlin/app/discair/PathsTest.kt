@@ -34,6 +34,8 @@ class PathsTest {
         assertEquals("Dèwèl", reason.anchor?.name)
         assertEquals("instrument", reason.evidence.first().relation)
         assertEquals("drums (drum set)", reason.evidence.first().role)
+        assertEquals("source_explicit", reason.evidence.first().evidenceClass)
+        assertEquals("exact_mbid", reason.evidence.first().matchQuality)
         assertTrue(r.view() is PathsView.Stops)
     }
 
