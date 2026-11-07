@@ -1,6 +1,6 @@
 # App and Dock icons
 
-One icon per theme (see `macos/DESIGN.md`). Both are built from the Discair wordmark: black "Di", yellow dot, a mint-to-sky gradient and one large, faint, blurred ring.
+One icon per theme (see `macos/DESIGN.md`). Both are built from the Discair wordmark: black Discair wordmark, yellow dots, a mint-to-sky gradient and one large, faint, blurred ring.
 
 | Theme | Files | Look |
 |---|---|---|
