@@ -126,6 +126,17 @@ class CapabilitiesTests(ApiTestCase):
         self.assertEqual(body["data_versions"], {"health": 1})
         self.assertEqual(body["cursor"], 1)
 
+    def test_paths_feature_follows_the_musicbrainz_slice(self):
+        self.assertEqual(
+            build_capabilities(self.db)["features"]["paths"],
+            {"available": False, "resource": "musicbrainz_slice", "data_version": 0, "reason": "not_populated"},
+        )
+        generations.bump_data_version(self.db, "musicbrainz_slice")
+        self.assertEqual(
+            build_capabilities(self.db)["features"]["paths"],
+            {"available": True, "resource": "musicbrainz_slice", "data_version": 1},
+        )
+
     def test_server_facts_are_passed_through_and_coverage_is_validated(self):
         body = build_capabilities(
             self.db, ServerFacts(sonic_available=True, listenbrainz_connected=True, graph_coverage="partial")
@@ -135,9 +146,10 @@ class CapabilitiesTests(ApiTestCase):
         self.assertEqual(body["graph_coverage"], "partial")
         self.assertEqual(build_capabilities(self.db, ServerFacts(graph_coverage="huge"))["graph_coverage"], "none")
 
-    def test_body_exposes_no_paths_or_secrets(self):
+    def test_body_exposes_no_file_paths_or_secrets(self):
+        # The feature name "paths" is a route concept, not a file path: only separators are refused.
         text = str(build_capabilities(self.db)).lower()
-        for word in ("path", "token", "password", "sqlite"):
+        for word in ("/", "\\", "token", "password", "sqlite"):
             self.assertNotIn(word, text)
 
 
