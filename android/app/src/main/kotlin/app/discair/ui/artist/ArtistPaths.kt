@@ -94,7 +94,7 @@ fun ArtistPathsSheet(artistName: String, mbid: String, open: Opener, onDismiss: 
 
     ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(
-            Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(top = 2.dp, bottom = 8.dp),
+            Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(top = 4.dp, bottom = 8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Text(
@@ -126,7 +126,7 @@ fun ArtistPathsSheet(artistName: String, mbid: String, open: Opener, onDismiss: 
                     }
                     is Load.Failed -> Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.Center) {
                         Text(s.failure.message, style = MaterialTheme.typography.bodyLarge, color = Ink.ChartRedText)
-                        Spacer(Modifier.size(12.dp))
+                        Spacer(Modifier.size(16.dp))
                         OutlinedButton(onClick = { attempt++ }, Modifier.heightIn(min = Target)) { Text("Try again") }
                     }
                     is Load.Ready -> PathBody(artistName, kind, s.value, open, onDismiss)
@@ -144,7 +144,7 @@ private fun PathBody(artistName: String, kind: PathKind, response: PathsResponse
         is PathsView.Stops -> LazyColumn(
             Modifier.fillMaxSize(),
             contentPadding = PaddingValues(bottom = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             itemsIndexed(view.response.stops) { index, stop ->
                 StepRow(
@@ -193,11 +193,11 @@ private fun StepRow(number: Int, kind: PathKind, stop: PathStop, expanded: Boole
                     role = Role.Button
                     stateDescription = if (expanded) "Expanded" else "Collapsed"
                 },
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
             verticalAlignment = Alignment.Top,
         ) {
-            Text("$number", style = MaterialTheme.typography.labelLarge, color = Ink.TextMuted, modifier = Modifier.padding(top = 2.dp))
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text("$number", style = MaterialTheme.typography.labelLarge, color = Ink.TextMuted, modifier = Modifier.padding(top = 4.dp))
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(
                     buildString {
                         append(heading.title)
@@ -221,7 +221,7 @@ private fun StepRow(number: Int, kind: PathKind, stop: PathStop, expanded: Boole
 @Composable
 private fun StepDetails(kind: PathKind, stop: PathStop, detail: String?, open: Opener, onDismiss: () -> Unit) {
     val targets = pathTargets(kind, stop)
-    Column(Modifier.fillMaxWidth().padding(start = 26.dp, top = 4.dp, bottom = 4.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+    Column(Modifier.fillMaxWidth().padding(start = 24.dp, top = 4.dp, bottom = 4.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         val reasons: List<PathReason> = stop.reasons.ifEmpty { listOf(PathReason(stop.reason, "", null, null)) }
         reasons.take(3).forEach { Text(it.sentence(), style = MaterialTheme.typography.bodyMedium) }
         if (stop.reasonCount > 3) {

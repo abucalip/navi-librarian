@@ -159,7 +159,7 @@ fun DiscoverCard(
             CardMenu(entry, saveState, onSave, onDismiss, Modifier.align(Alignment.TopEnd))
             if (item.acquired) Box(Modifier.align(Alignment.BottomEnd).padding(8.dp)) { OwnedMark(true) }
         }
-        Column(Modifier.padding(start = 12.dp, end = 12.dp, top = 8.dp, bottom = 12.dp)) {
+        Column(Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 16.dp)) {
             FitTitle(item.album, Modifier.fillMaxWidth().clickable(role = Role.Button, onClick = openAlbum))
             Text(
                 artist, style = MaterialTheme.typography.bodyMedium, color = Ink.Text,

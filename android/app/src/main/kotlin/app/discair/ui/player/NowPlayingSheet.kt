@@ -115,7 +115,7 @@ private val ViewTabs = listOf(
 private fun ViewIcons(selected: Int, onSelect: (Int) -> Unit) {
     if (app.discair.ui.theme.LocalPalette.current.brutal) {
         // Neobrut: three square icon buttons; the open view is filled with the accent and announced as selected.
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             ViewTabs.forEach { tab ->
                 val active = tab.view == selected
                 app.discair.ui.common.BrutalIconButton(
@@ -219,7 +219,7 @@ fun NowPlayingSheet(state: PlayerUiState, controller: PlayerController, lyrics: 
                 Spacer(Modifier.weight(1f))
                 Spacer(Modifier.size(Target)) // balances the close button so the tabs sit in the middle
             }
-            Spacer(Modifier.height(12.dp)) // the tabs must not touch the cover, the lyrics note or the queue title
+            Spacer(Modifier.height(16.dp)) // the tabs must not touch the cover, the lyrics note or the queue title
             if (sticker) StickerPlayer(
                 state, controller, view, onView = { view = it; lastView = it },
                 onSignIn = onSignIn, onEqualizer = { eqOpen = true }, onCrossfade = { crossfadeOpen = true },
@@ -272,10 +272,10 @@ fun NowPlayingSheet(state: PlayerUiState, controller: PlayerController, lyrics: 
                             LyricsPanel(
                                 if (lyricsState.songIdOrNull() == songId) lyricsState else LyricsUiState.Idle,
                                 currentLine, songId.orEmpty(), onTryAgain = { if (songId != null) lyrics.retry(songId, nextId) },
-                                Modifier.fillMaxSize().padding(12.dp),
+                                Modifier.fillMaxSize().padding(16.dp),
                             )
                         },
-                        queueFace = { QueuePanel(state, controller, Modifier.fillMaxSize().padding(horizontal = 12.dp)) },
+                        queueFace = { QueuePanel(state, controller, Modifier.fillMaxSize().padding(horizontal = 16.dp)) },
                     )
                 },
             )
@@ -367,7 +367,7 @@ private fun Player(state: PlayerUiState, controller: PlayerController, onSignIn:
             Row(Modifier.fillMaxWidth().padding(bottom = 8.dp), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
                 if (label.isNotEmpty()) {
                     Text(label, style = MaterialTheme.typography.labelMedium.copy(fontFamily = app.discair.ui.theme.LocalFontPair.current.mono), color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Spacer(Modifier.size(12.dp))
+                    Spacer(Modifier.size(16.dp))
                 }
                 app.discair.ui.common.TapeMeter(
                     5, app.discair.ui.common.TapeDeckRules.meterMoves(state.isPlaying, state.buffering, reduced), MaterialTheme.colorScheme.onSurface, size = 20.dp,
@@ -396,7 +396,7 @@ private fun Player(state: PlayerUiState, controller: PlayerController, onSignIn:
         item.year?.let {
             Text(
                 "$it", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(top = 2.dp),
+                textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
             )
         }
         Spacer(Modifier.height(24.dp))
@@ -421,10 +421,10 @@ private fun Player(state: PlayerUiState, controller: PlayerController, onSignIn:
                     quality, style = timeStyle, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1,
                     modifier = Modifier.align(Alignment.TopCenter)
                         .border(1.dp, Ink.Edge, RoundedCornerShape(4.dp))
-                        .padding(horizontal = 6.dp, vertical = 1.dp),
+                        .padding(horizontal = 8.dp, vertical = 1.dp),
                 )
             }
-            Row(Modifier.fillMaxWidth().padding(top = if (quality != null) 14.dp else 0.dp), verticalAlignment = Alignment.CenterVertically) {
+            Row(Modifier.fillMaxWidth().padding(top = if (quality != null) 16.dp else 0.dp), verticalAlignment = Alignment.CenterVertically) {
                 Text(formatTime(shown), style = timeStyle, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(end = 8.dp))
                 SeekBar(
                     fraction = fraction, enabled = duration > 0,

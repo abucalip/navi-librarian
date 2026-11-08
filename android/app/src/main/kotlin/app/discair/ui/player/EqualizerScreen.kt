@@ -87,7 +87,7 @@ fun EqualizerScreen(container: AppContainer, onBack: (() -> Unit)?) {
                 .toggleable(value = on, role = Role.Switch, onValueChange = editor::setEnabled),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Column(Modifier.weight(1f).padding(end = 12.dp)) {
+            Column(Modifier.weight(1f).padding(end = 16.dp)) {
                 Text("Equalizer", style = MaterialTheme.typography.titleMedium)
                 Text(
                     if (on) "On. The curve below shapes everything you play here."
@@ -124,7 +124,7 @@ fun EqualizerScreen(container: AppContainer, onBack: (() -> Unit)?) {
                 .toggleable(value = auto, enabled = on, role = Role.Switch, onValueChange = editor::setPreGainAuto),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Column(Modifier.weight(1f).padding(end = 12.dp)) {
+            Column(Modifier.weight(1f).padding(end = 16.dp)) {
                 Text("Automatic", style = MaterialTheme.typography.titleMedium)
                 Text(
                     if (auto) "On. The volume is lowered by ${formatDb(-settings.config.effectivePreGainDb()).removePrefix("+")} when you boost a band, so loud songs do not distort."

@@ -2,6 +2,7 @@ package app.discair.ui.common
 
 import androidx.compose.foundation.clickable
 import androidx.compose.ui.semantics.Role
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -101,7 +102,7 @@ fun RankedRow(
                 open.album(routeKey(model.artist, model.album), model.artist, model.album, null, model.year)
             },
         )
-        Column(Modifier.weight(1f).padding(start = 12.dp)) {
+        Column(Modifier.weight(1f).padding(start = 16.dp)) {
             Text(
                 model.album, style = MaterialTheme.typography.titleLarge,
                 maxLines = 2, overflow = TextOverflow.Ellipsis,
@@ -113,7 +114,7 @@ fun RankedRow(
                 model.artist, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary,
                 maxLines = 1, overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.heightIn(min = Target).clickable(role = Role.Button) { open.artist(model.artist, null, null, null) }
-                    .padding(vertical = 12.dp),
+                    .padding(vertical = 16.dp),
             )
             model.meta.forEach {
                 Text(
@@ -123,7 +124,7 @@ fun RankedRow(
             }
             if (model.bio) ArtistBio(model.artist)
         }
-        Column {
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             if (model.owned) Box(Modifier.size(Target), contentAlignment = Alignment.Center) { OwnedMark(true) }
             else GetAlbumButton(model.artist, model.album, model.metadata)
             SaveButton(model.album, saveState, onSave)
@@ -145,13 +146,13 @@ fun ArtistBio(artist: String, reserveLines: Int = 0, expandable: Boolean = true)
             it, style = style, color = MaterialTheme.colorScheme.onSurfaceVariant,
             minLines = reserveLines, maxLines = if (expanded && expandable) Int.MAX_VALUE else if (reserveLines > 0) reserveLines else 3,
             overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.padding(top = 2.dp).then(
+            modifier = Modifier.padding(top = 4.dp).then(
                 if (expandable) Modifier.clickable(role = Role.Button) { expanded = !expanded }.semantics {
                     stateDescription = if (expanded) "Expanded" else "Collapsed"
                 } else Modifier,
             ),
         )
-    } ?: if (reserveLines > 0) Text("", style = style, minLines = reserveLines, modifier = Modifier.padding(top = 2.dp)) else Unit
+    } ?: if (reserveLines > 0) Text("", style = style, minLines = reserveLines, modifier = Modifier.padding(top = 4.dp)) else Unit
 }
 
 /** Save is a bookmark. The four states differ by icon and spoken state, not by colour alone. */

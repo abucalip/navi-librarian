@@ -315,7 +315,7 @@ fun NameLink(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, m
         maxLines = maxLines,
         overflow = TextOverflow.Ellipsis,
         modifier = modifier.defaultMinSize(minHeight = Target).clickable(role = Role.Button, onClick = onClick)
-            .padding(vertical = 12.dp),
+            .padding(vertical = 16.dp),
     )
 }
 
@@ -357,7 +357,7 @@ fun ReadMore(text: String, modifier: Modifier = Modifier, lines: Int = 3) {
                 androidx.compose.ui.text.Placeholder(
                     0.5.em, 0.5.em, androidx.compose.ui.text.PlaceholderVerticalAlign.AboveBaseline,
                 ),
-            ) { Box(Modifier.padding(start = 2.dp).fillMaxSize().background(Ink.Accent)) },
+            ) { Box(Modifier.padding(start = 4.dp).fillMaxSize().background(Ink.Accent)) },
         )
         Text(
             shown,
@@ -393,7 +393,7 @@ fun ArtistCircle(
         ArtistPhoto(name, ownedPath, Modifier.fillMaxWidth().aspectSquare(), circle = true)
         Text(
             name, style = MaterialTheme.typography.labelLarge, textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-            modifier = Modifier.padding(top = 6.dp),
+            modifier = Modifier.padding(top = 8.dp),
         )
         if (owned) Text("In your library", style = MaterialTheme.typography.bodySmall, color = Ink.Ok)
     }
@@ -416,7 +416,7 @@ fun AlbumCard(
         Box {
             AlbumCover(artist, title, ownedPath, Modifier.fillMaxWidth().aspectSquare())
         }
-        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 6.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 8.dp)) {
             Text(
                 title, style = MaterialTheme.typography.labelLarge, maxLines = 2,
                 overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false),
@@ -455,8 +455,8 @@ fun routeKey(artist: String, album: String) = "${routePart(artist)}/${routePart(
 @Composable
 fun SimilarArtistsRow(content: androidx.compose.foundation.lazy.LazyListScope.() -> Unit) {
     androidx.compose.foundation.lazy.LazyRow(
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 12.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 16.dp),
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
         content = content,
     )
 }
@@ -468,7 +468,7 @@ fun SimilarArtistsRow(content: androidx.compose.foundation.lazy.LazyListScope.()
 fun PageHeading(text: String, modifier: Modifier = Modifier, large: Boolean = false) {
     Column(modifier.semantics { heading() }) {
         Text(text, style = if (large) MaterialTheme.typography.headlineLarge else MaterialTheme.typography.headlineMedium)
-        Box(Modifier.padding(top = 4.dp).size(width = 40.dp, height = 3.dp).background(Ink.ChartRed))
+        Box(Modifier.padding(top = 4.dp).size(width = 40.dp, height = 4.dp).background(Ink.ChartRed))
     }
 }
 

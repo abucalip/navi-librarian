@@ -87,7 +87,7 @@ fun ArtistScreen(route: ArtistRoute, open: Opener) {
         LoadView(loaded) { page -> ArtistContent(route, page, open, list, onTint = { tint = it }, pathsOn = pathsOn) }
         // Back stays reachable while the page loads or fails.
         if (loaded.state !is app.discair.ui.common.Load.Ready) {
-            OverlayBack(open.back, Modifier.statusBarsPadding().padding(12.dp))
+            OverlayBack(open.back, Modifier.statusBarsPadding().padding(16.dp))
         }
     }
 }
@@ -113,7 +113,7 @@ private fun ArtistContent(route: ArtistRoute, page: ArtistPage, open: Opener, li
     LazyColumn(Modifier.fillMaxSize(), state = list, contentPadding = PaddingValues(bottom = 32.dp + app.discair.ui.LocalBottomClearance.current)) {
         item {
             Box(
-                Modifier.statusBarsPadding().padding(12.dp).fillMaxWidth().height(300.dp)
+                Modifier.statusBarsPadding().padding(16.dp).fillMaxWidth().height(300.dp)
                     .clip(RoundedCornerShape(12.dp)),
             ) {
                 ArtistPhoto(name, owned.firstOrNull()?.artworkUrl, Modifier.fillMaxSize(), onColor = onTint)
@@ -122,7 +122,7 @@ private fun ArtistContent(route: ArtistRoute, page: ArtistPage, open: Opener, li
                         Brush.verticalGradient(listOf(Color.Transparent, Ink.Ink.copy(alpha = 0.92f)), startY = 120f),
                     ),
                 )
-                OverlayBack(open.back, Modifier.align(Alignment.TopStart).padding(12.dp), onPhoto = true)
+                OverlayBack(open.back, Modifier.align(Alignment.TopStart).padding(16.dp), onPhoto = true)
                 Column(Modifier.align(Alignment.BottomStart).padding(16.dp)) {
                     Text(
                         name, style = MaterialTheme.typography.headlineLarge,
@@ -133,7 +133,7 @@ private fun ArtistContent(route: ArtistRoute, page: ArtistPage, open: Opener, li
                         genres.forEach { g ->
                             Text(
                                 g, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.heightIn(min = Target).clickable(role = Role.Button) { open.genre(g.lowercase(), g) }.padding(vertical = 12.dp),
+                                modifier = Modifier.heightIn(min = Target).clickable(role = Role.Button) { open.genre(g.lowercase(), g) }.padding(vertical = 16.dp),
                             )
                         }
                     }
@@ -147,11 +147,11 @@ private fun ArtistContent(route: ArtistRoute, page: ArtistPage, open: Opener, li
         if (artistId != null) item {
             app.discair.ui.player.PlayRow(
                 onPlay = { play.playArtist(artistId, shuffle = false) }, onShuffle = { play.playArtist(artistId, shuffle = true) },
-                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
             )
         }
         if (pathsOn && pathsMbid != null) item {
-            Box(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp), contentAlignment = Alignment.Center) {
+            Box(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp), contentAlignment = Alignment.Center) {
                 OutlinedButton(onClick = { showPaths = true }, modifier = Modifier.heightIn(min = Target)) { Text("Paths from $name") }
             }
         }
@@ -159,7 +159,7 @@ private fun ArtistContent(route: ArtistRoute, page: ArtistPage, open: Opener, li
         val songs = if (showAllSongs) allSongs else allSongs.take(SONGS_SHOWN)
         if (songs.isNotEmpty()) {
             item {
-                Panel(Modifier.padding(horizontal = 12.dp, vertical = 4.dp).fillMaxWidth()) {
+                Panel(Modifier.padding(horizontal = 16.dp, vertical = 4.dp).fillMaxWidth()) {
                     Column(Modifier.padding(16.dp)) {
                         Text(
                             "Top songs", style = MaterialTheme.typography.headlineMedium,
@@ -209,12 +209,12 @@ private fun ArtistContent(route: ArtistRoute, page: ArtistPage, open: Opener, li
             }
         }
         val bio = sections.bio.bio?.text.orEmpty()
-        if (bio.isNotBlank()) item { ReadMore(bio, Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) }
+        if (bio.isNotBlank()) item { ReadMore(bio, Modifier.padding(horizontal = 16.dp, vertical = 16.dp)) }
         if (owned.isNotEmpty()) {
             item { Heading("In your library", Modifier.padding(horizontal = 16.dp)) }
             val shown = if (showAllAlbums) owned else owned.take(ALBUMS_SHOWN)
             items(shown.chunked(2)) { row ->
-                Row(Modifier.padding(horizontal = 12.dp)) {
+                Row(Modifier.padding(horizontal = 16.dp)) {
                     row.forEach { album ->
                         Column(
                             Modifier.weight(1f).padding(4.dp).clickable(role = Role.Button) { open.album(album.key, name, album.name, album.id, album.year) },
@@ -227,7 +227,7 @@ private fun ArtistContent(route: ArtistRoute, page: ArtistPage, open: Opener, li
                                     label = album.name,
                                 )
                             }
-                            Text(album.name, style = MaterialTheme.typography.bodyLarge, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 6.dp))
+                            Text(album.name, style = MaterialTheme.typography.bodyLarge, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 8.dp))
                             album.year?.let { Text("$it", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
                         }
                     }
@@ -256,7 +256,7 @@ private fun ArtistContent(route: ArtistRoute, page: ArtistPage, open: Opener, li
                     ) {
                         RankNumeral(i + 1)
                         AlbumCover(name, album.name, null, Modifier.size(48.dp))
-                        Column(Modifier.weight(1f).padding(start = 12.dp)) {
+                        Column(Modifier.weight(1f).padding(start = 16.dp)) {
                             Text(album.name, style = MaterialTheme.typography.bodyLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
                             val sub = listOfNotNull(album.year?.toString(), if (album.popularity > 0) abbreviate(album.popularity) + " listens" else null).joinToString(" · ")
                             if (sub.isNotEmpty()) Text(sub, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)

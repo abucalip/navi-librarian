@@ -110,10 +110,10 @@ fun StickerPill(
 ) {
     val pill = CircleShape
     val outline = (palette.shape?.outline ?: 3).dp
-    Box(modifier.fillMaxWidth().navigationBarsPadding().padding(bottom = 14.dp), contentAlignment = Alignment.BottomCenter) {
+    Box(modifier.fillMaxWidth().navigationBarsPadding().padding(bottom = 16.dp), contentAlignment = Alignment.BottomCenter) {
         Row(
-            Modifier.brutalShadow(pill).clip(pill).background(palette.surface).border(outline, palette.edgeStrong, pill).padding(horizontal = 8.dp, vertical = 6.dp),
-            horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically,
+            Modifier.brutalShadow(pill).clip(pill).background(palette.surface).border(outline, palette.edgeStrong, pill).padding(horizontal = 8.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically,
         ) {
             PillCell(palette, "Search", "Search", false, onSearch) { searchIcon(it) }
             PillCell(palette, "Home", "Home", homeSelected, onHome) { homeIcon(it) }
@@ -145,7 +145,7 @@ fun StickerBadge(sticker: Sticker, palette: Palette, tilt: Float, modifier: Modi
         sticker.word, style = MaterialTheme.typography.labelMedium.copy(fontFamily = LocalFontPair.current.mono, fontWeight = FontWeight.ExtraBold),
         color = palette.text, maxLines = 1,
         modifier = modifier.graphicsLayer { rotationZ = tilt }.clip(themeShape(8.dp)).background(fill)
-            .border((palette.shape?.outline ?: 3).dp, palette.edgeStrong, themeShape(8.dp)).padding(horizontal = 8.dp, vertical = 2.dp)
+            .border((palette.shape?.outline ?: 3).dp, palette.edgeStrong, themeShape(8.dp)).padding(horizontal = 8.dp, vertical = 4.dp)
             .clearAndSetSemantics { },
     )
 }
@@ -162,7 +162,7 @@ fun StickerTile(
 ) {
     val shape = themeShape(18.dp)
     val tilt = StickerWallRules.tiltFor(index)
-    Box(modifier.graphicsLayer { rotationZ = tilt }.padding(end = 6.dp, bottom = 6.dp)) {
+    Box(modifier.graphicsLayer { rotationZ = tilt }.padding(end = 8.dp, bottom = 8.dp)) {
         Column(
             Modifier.fillMaxWidth().brutalShadow(shape).clip(shape).background(palette.surface).border((palette.shape?.outline ?: 3).dp, palette.edgeStrong, shape)
                 .clickable(role = Role.Button, onClick = onClick)
@@ -172,21 +172,21 @@ fun StickerTile(
                 Box(Modifier.fillMaxWidth().clearAndSetSemantics { }) { cover() }
                 StickerBadge(sticker, palette, -tilt * 2 - 4f, Modifier.align(Alignment.TopStart).padding(8.dp))
             }
-            Column(Modifier.padding(horizontal = 10.dp, vertical = 8.dp)) {
+            Column(Modifier.padding(horizontal = 8.dp, vertical = 8.dp)) {
                 Text(album, style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold), maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Text(artist, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
         }
-        action?.let { Box(Modifier.matchParentSize().padding(end = 6.dp, bottom = 6.dp)) { it() } }
+        action?.let { Box(Modifier.matchParentSize().padding(end = 8.dp, bottom = 8.dp)) { it() } }
     }
 }
 
 /** Two columns of tiles, the right column dropped a little so the wall looks stuck up by hand. Not lazy: a Home wall is short. */
 @Composable
 fun <T> StickerWall(items: List<T>, modifier: Modifier = Modifier, tile: @Composable (item: T, index: Int) -> Unit) {
-    Row(modifier.fillMaxWidth().padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+    Row(modifier.fillMaxWidth().padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         for (column in 0..1) {
-            Column(Modifier.weight(1f).padding(top = if (column == 1) 18.dp else 0.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Column(Modifier.weight(1f).padding(top = if (column == 1) 16.dp else 0.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 items.forEachIndexed { index, item -> if (index % 2 == column) tile(item, index) }
             }
         }

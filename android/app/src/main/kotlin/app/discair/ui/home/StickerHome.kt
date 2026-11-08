@@ -30,7 +30,7 @@ fun StickerPicksWall(items: List<Pick>, open: Opener) {
             pick.album, pick.artist, Sticker.Missing, index, p,
             onClick = { open.album(routeKey(pick.artist, pick.album), pick.artist, pick.album, null, pick.year) },
             action = {
-                GetAlbumButton(pick.artist, pick.album, pageMetadata(pick.artist, pick.album, pick.year), Modifier.align(Alignment.TopEnd).padding(6.dp), overlay = true)
+                GetAlbumButton(pick.artist, pick.album, pageMetadata(pick.artist, pick.album, pick.year), Modifier.align(Alignment.TopEnd).padding(8.dp), overlay = true)
             },
         ) { AlbumCover(pick.artist, pick.album, null, Modifier.fillMaxWidth().aspectSquare(), rect = true) }
     }

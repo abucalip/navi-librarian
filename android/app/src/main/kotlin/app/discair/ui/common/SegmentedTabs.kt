@@ -81,7 +81,7 @@ fun SegmentedTabs(
         modifier.brutalShadow(TrackShape).clip(TrackShape).background(if (brutal) Ink.Surface else Ink.Raised)
             .border(themeBorder(BorderStroke(0.5.dp, Ink.Edge)), TrackShape),
     ) {
-        Box(Modifier.horizontalScroll(scroll).padding(2.dp)) {
+        Box(Modifier.horizontalScroll(scroll).padding(4.dp)) {
             if (widths[selectedIndex] != null) Box(
                 Modifier.offset(x = thumbX).width(thumbW).height(Target - 4.dp)
                     .then(if (brutal) Modifier else Modifier.shadow(3.dp, ThumbShape)).clip(ThumbShape).background(thumb)
@@ -103,7 +103,7 @@ fun SegmentedTabs(
                                 onClick = { onSelect(index) },
                             )
                             .semantics { selected = on }
-                            .padding(horizontal = 12.dp),
+                            .padding(horizontal = 16.dp),
                         contentAlignment = Alignment.Center,
                     ) {
                         Text(

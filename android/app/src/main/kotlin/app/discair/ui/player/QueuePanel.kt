@@ -93,9 +93,9 @@ fun QueuePanel(state: PlayerUiState, controller: PlayerController, modifier: Mod
                     // The song's place in the queue.
                     Text(
                         "${index + 1}", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = TextAlign.End, maxLines = 1, modifier = Modifier.width(28.dp).padding(end = 8.dp),
+                        textAlign = TextAlign.End, maxLines = 1, modifier = Modifier.width(32.dp).padding(end = 8.dp),
                     )
-                    app.discair.ui.common.Cover(item.coverUrl.ifBlank { null }, Modifier.padding(end = 12.dp).size(40.dp))
+                    app.discair.ui.common.Cover(item.coverUrl.ifBlank { null }, Modifier.padding(end = 16.dp).size(40.dp))
                     Column(Modifier.weight(1f).padding(vertical = 8.dp)) {
                         // The state is a moving icon beside the title (still when paused, spoken as words) or the word Unavailable; never colour alone.
                         if (unavailable) Text("Unavailable", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)

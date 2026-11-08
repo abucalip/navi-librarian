@@ -91,7 +91,7 @@ fun LibraryScreen(open: Opener) {
             singleLine = true,
             shape = RoundedCornerShape(28.dp),
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp)
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 16.dp)
                 .semantics { contentDescription = "Search your library" },
         )
         Row(
@@ -185,14 +185,14 @@ private fun SortRow(state: LibraryState, model: LibraryViewModel) {
     Row(
         Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.End),
+        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
     ) {
         Text("Sort by", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Box {
             Row(
                 Modifier.height(32.dp).clip(RoundedCornerShape(16.dp))
                     .background(MaterialTheme.colorScheme.surface).clickable(role = Role.Button) { open = true }
-                    .padding(horizontal = 10.dp),
+                    .padding(horizontal = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
             ) {
@@ -232,11 +232,11 @@ private fun Rows(state: LibraryState, model: LibraryViewModel, open: Opener, lis
                 Row(
                     Modifier.fillMaxWidth().heightIn(min = 68.dp)
                         .clickable(role = Role.Button) { open.artist(artist.name, artist.key, artist.id, null) }
-                        .padding(horizontal = 16.dp, vertical = 6.dp),
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Cover(artist.artworkUrl?.let { LocalRepository.current.absolute(it) }, Modifier.size(48.dp))
-                    Column(Modifier.weight(1f).padding(start = 12.dp)) {
+                    Column(Modifier.weight(1f).padding(start = 16.dp)) {
                         Text(artist.name, style = MaterialTheme.typography.bodyLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         Text(
                             plural(artist.albumCount, "album"),
@@ -260,11 +260,11 @@ private fun Rows(state: LibraryState, model: LibraryViewModel, open: Opener, lis
                 Row(
                     Modifier.fillMaxWidth().heightIn(min = 64.dp)
                         .clickable(role = Role.Button) { open.album(album.key, album.artist, album.name, album.id, album.year) }
-                        .padding(horizontal = 16.dp, vertical = 6.dp),
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Cover(album.artworkUrl?.let { LocalRepository.current.absolute(it) }, Modifier.size(48.dp))
-                    Column(Modifier.weight(1f).padding(start = 12.dp)) {
+                    Column(Modifier.weight(1f).padding(start = 16.dp)) {
                         Text(album.name, style = MaterialTheme.typography.bodyLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         Text(
                             listOfNotNull(album.artist, album.year?.toString(), plural(album.songCount, "song")).joinToString(" · "),
@@ -310,15 +310,15 @@ private fun GridRows(state: LibraryState, model: LibraryViewModel, open: Opener,
         columns = androidx.compose.foundation.lazy.grid.GridCells.Adaptive(cell),
         state = grid,
         modifier = Modifier.fillMaxSize(),
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(start = 12.dp, end = 12.dp, top = 4.dp, bottom = app.discair.ui.LocalBottomClearance.current),
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp),
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = app.discair.ui.LocalBottomClearance.current),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         if (state.tab == LibraryTab.Artists) {
             gridItems(state.artists, key = { it.id }) { artist ->
                 Column(Modifier.clickable(role = Role.Button) { open.artist(artist.name, artist.key, artist.id, null) }) {
                     Cover(artist.artworkUrl?.let { repo.absolute(it) }, Modifier.fillMaxWidth().aspectRatio(1f), circle = true)
-                    Text(artist.name, style = MaterialTheme.typography.bodyMedium, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 6.dp))
+                    Text(artist.name, style = MaterialTheme.typography.bodyMedium, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 8.dp))
                     Text(plural(artist.albumCount, "album"), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
                 }
             }
@@ -326,7 +326,7 @@ private fun GridRows(state: LibraryState, model: LibraryViewModel, open: Opener,
             gridItems(state.albums, key = { it.id }) { album ->
                 Column(Modifier.clickable(role = Role.Button) { open.album(album.key, album.artist, album.name, album.id, album.year) }) {
                     Cover(album.artworkUrl?.let { repo.absolute(it) }, Modifier.fillMaxWidth().aspectRatio(1f))
-                    Text(album.name, style = MaterialTheme.typography.bodyMedium, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 6.dp))
+                    Text(album.name, style = MaterialTheme.typography.bodyMedium, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 8.dp))
                     Text(
                         listOfNotNull(album.artist, album.year?.toString()).joinToString(" · "),
                         style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,

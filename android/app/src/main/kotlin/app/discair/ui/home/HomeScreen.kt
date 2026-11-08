@@ -87,7 +87,7 @@ fun HomeScreen(open: Opener, onDiscover: () -> Unit, onLibrary: () -> Unit, onSe
     val sheetStack = app.discair.ui.theme.currentLayout() == app.discair.ui.theme.Layout.SheetStack
     // Sticker Wall: the picks and the recently added albums are walls of tilted, stickered tiles.
     val stickerWall = app.discair.ui.theme.currentLayout() == app.discair.ui.theme.Layout.StickerWall
-    LazyColumn(Modifier.fillMaxWidth(), contentPadding = PaddingValues(top = 12.dp, bottom = 24.dp + app.discair.ui.LocalBottomClearance.current)) {
+    LazyColumn(Modifier.fillMaxWidth(), contentPadding = PaddingValues(top = 16.dp, bottom = 24.dp + app.discair.ui.LocalBottomClearance.current)) {
         // Sheet Stack: the picks are "Today", with the newest requests (and their status words) under them.
         item { PageHeading(if (sheetStack) "Today" else "For you", Modifier.padding(start = 16.dp, end = 16.dp, bottom = 8.dp)) }
         item {
@@ -202,7 +202,7 @@ private fun TagChip(text: String) {
                 lineHeightStyle = LineHeightStyle(LineHeightStyle.Alignment.Center, LineHeightStyle.Trim.Both),
                 platformStyle = PlatformTextStyle(includeFontPadding = false),
             ),
-            modifier = Modifier.padding(horizontal = 6.dp),
+            modifier = Modifier.padding(horizontal = 8.dp),
         )
     }
 }
@@ -215,7 +215,7 @@ private fun TagChip(text: String) {
 @Composable
 private fun Recommended(items: List<Pick>, open: Opener) {
     val pager = rememberPagerState { items.size }
-    HorizontalPager(pager, Modifier.fillMaxWidth(), contentPadding = PaddingValues(horizontal = 12.dp), pageSpacing = 8.dp) { page ->
+    HorizontalPager(pager, Modifier.fillMaxWidth(), contentPadding = PaddingValues(horizontal = 16.dp), pageSpacing = 8.dp) { page ->
         val pick = items[page]
         var tint by remember(pick) { mutableStateOf<Color?>(null) }
         Box(
@@ -237,13 +237,13 @@ private fun Recommended(items: List<Pick>, open: Opener) {
                 val tags = pick.genres.filter { it.isNotBlank() }.take(2).joinToString(" · ")
                 if (tags.isNotEmpty()) Text(
                     tags, style = MaterialTheme.typography.labelSmall, color = Ink.TextMuted,
-                    maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 6.dp),
+                    maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 8.dp),
                 )
                 Spacer(Modifier.size(8.dp))
                 TagChip(pickTag(pick.dashboardCategory))
                 Text(
                     pick.album, style = MaterialTheme.typography.headlineMedium, textAlign = TextAlign.Center,
-                    maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 6.dp),
+                    maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 8.dp),
                 )
                 Text(
                     pick.artist, style = MaterialTheme.typography.bodyLarge,
@@ -259,7 +259,7 @@ private fun Recommended(items: List<Pick>, open: Opener) {
             }
             Text(
                 "${page + 1}/${items.size}", style = MaterialTheme.typography.labelSmall, color = Ink.TextMuted,
-                modifier = Modifier.align(Alignment.TopEnd).padding(end = 12.dp, top = 10.dp)
+                modifier = Modifier.align(Alignment.TopEnd).padding(end = 16.dp, top = 8.dp)
                     .semantics { contentDescription = "Album ${page + 1} of ${items.size}" },
             )
         }
@@ -289,7 +289,7 @@ private fun GenreRow(all: List<GenreTile>, open: Opener) {
                 Text(
                     genre.name, style = if (brutal) MaterialTheme.typography.bodyMedium.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold) else MaterialTheme.typography.bodyMedium,
                     color = if (brutal) Color.Black else MaterialTheme.colorScheme.onSurface, maxLines = 1,
-                    overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(horizontal = 12.dp),
+                    overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(horizontal = 16.dp),
                 )
             }
         }
@@ -305,7 +305,7 @@ private fun ShelfRow(shelf: String, title: String, open: Opener, load: () -> Lis
         is Load.Failed -> Inline(state.failure.message, loaded.reload)
         is Load.Ready -> if (state.value.isEmpty()) Muted("Nothing here yet.") else LazyRow(
             contentPadding = PaddingValues(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             items(state.value, key = { it.id.ifBlank { it.artist + '/' + it.name } }) { album: ShelfAlbum ->
                 Panel(Modifier.width(208.dp).clickable(role = Role.Button) {
@@ -324,7 +324,7 @@ private fun ShelfRow(shelf: String, title: String, open: Opener, load: () -> Lis
                                 )
                             }
                         }
-                        Column(Modifier.padding(12.dp).heightIn(min = 76.dp)) {
+                        Column(Modifier.padding(16.dp).heightIn(min = 76.dp)) {
                             Text(
                                 album.name, style = MaterialTheme.typography.titleLarge,
                                 maxLines = 2, overflow = TextOverflow.Ellipsis,

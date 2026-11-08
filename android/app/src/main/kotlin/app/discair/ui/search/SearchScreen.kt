@@ -114,7 +114,7 @@ fun SearchScreen(open: Opener, text: String, onText: (String) -> Unit) {
     LaunchedEffect(Unit) { if (text.isEmpty()) focus.requestFocus() }
 
     Column(Modifier.fillMaxSize()) {
-        PageHeading("Search", Modifier.padding(start = 16.dp, top = 12.dp, end = 16.dp), large = true)
+        PageHeading("Search", Modifier.padding(start = 16.dp, top = 16.dp, end = 16.dp), large = true)
         OutlinedTextField(
             value = text, onValueChange = { onText(it.take(200)) }, singleLine = true,
             label = { Text("Artists, albums, songs, genres") },
@@ -171,7 +171,7 @@ private fun Results(results: List<SearchResult>, open: Opener) {
 private fun GroupHeading(text: String) {
     Text(
         text, style = MaterialTheme.typography.titleMedium,
-        modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 20.dp, bottom = 4.dp).semantics { heading() },
+        modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 24.dp, bottom = 4.dp).semantics { heading() },
     )
 }
 
@@ -212,7 +212,7 @@ private fun ResultRow(r: SearchResult, open: Opener, showType: Boolean = false) 
             Modifier.fillMaxWidth().heightIn(min = 64.dp).let { if (go != null) it.clickable(role = Role.Button, onClick = go) else it }
                 .padding(horizontal = 16.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             if (r.type != "genre") Cover(r.artworkUrl?.let(repo::absolute), Modifier.size(48.dp), circle = r.type == "artist")
             Column(Modifier.weight(1f)) {

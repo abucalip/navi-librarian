@@ -86,7 +86,7 @@ fun AlbumScreen(route: AlbumRoute, open: Opener) {
     val list = androidx.compose.foundation.lazy.rememberLazyListState()
     TintedPage(tint, list) {
         LoadView(loaded) { page -> AlbumContent(route, page, open, list, onTint = { tint = it }) }
-        if (loaded.state !is Load.Ready) OverlayBack(open.back, Modifier.statusBarsPadding().padding(12.dp))
+        if (loaded.state !is Load.Ready) OverlayBack(open.back, Modifier.statusBarsPadding().padding(16.dp))
     }
 }
 
@@ -107,7 +107,7 @@ private fun AlbumContent(route: AlbumRoute, page: AlbumPage, open: Opener, list:
 
     LazyColumn(Modifier.fillMaxSize(), state = list, contentPadding = PaddingValues(bottom = 32.dp + app.discair.ui.LocalBottomClearance.current)) {
         item {
-            Box(Modifier.statusBarsPadding().fillMaxWidth().padding(12.dp)) {
+            Box(Modifier.statusBarsPadding().fillMaxWidth().padding(16.dp)) {
                 OverlayBack(open.back, Modifier.align(Alignment.TopStart))
                 Box(Modifier.align(Alignment.TopCenter).size(240.dp)) {
                     AlbumCover(
@@ -130,7 +130,7 @@ private fun AlbumContent(route: AlbumRoute, page: AlbumPage, open: Opener, list:
                     artist, style = MaterialTheme.typography.titleMedium, textAlign = TextAlign.Center,
                     modifier = Modifier.heightIn(min = Target)
                         .clickable(role = Role.Button) { open.artist(artist, info?.artistKey?.ifBlank { null }, info?.artistId, null) }
-                        .padding(vertical = 12.dp),
+                        .padding(vertical = 16.dp),
                 )
                 val genre = s.genre.genre
                 // The artist's 48dp tap box leaves 12dp below its text and this row 14dp above its own, so pull the row up
@@ -138,7 +138,7 @@ private fun AlbumContent(route: AlbumRoute, page: AlbumPage, open: Opener, list:
                 Row(Modifier.offset(y = (-14).dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     if (!genre.isNullOrBlank()) Text(
                         genre.lowercase(), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.heightIn(min = Target).clickable(role = Role.Button) { open.genre(genre.lowercase(), genre) }.padding(vertical = 14.dp),
+                        modifier = Modifier.heightIn(min = Target).clickable(role = Role.Button) { open.genre(genre.lowercase(), genre) }.padding(vertical = 16.dp),
                     )
                     if (!genre.isNullOrBlank() && year != null) Text("·", color = MaterialTheme.colorScheme.onSurfaceVariant)
                     if (year != null) Text("$year", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -157,7 +157,7 @@ private fun AlbumContent(route: AlbumRoute, page: AlbumPage, open: Opener, list:
         }
         item { InfoReviewsTabs(artist, title, s.description.description, finished = page.done != Done()) }
         if (tracks.isNotEmpty()) {
-            item { RowDivider(Modifier.padding(horizontal = 12.dp).padding(top = 12.dp)) }
+            item { RowDivider(Modifier.padding(horizontal = 16.dp).padding(top = 16.dp)) }
             for (i in tracks.indices) {
                 if (startsDisc(tracks, i)) item(key = "disc-${tracks[i].disc}") { DiscHeading(tracks[i].disc ?: 1) }
                 item {
@@ -199,7 +199,7 @@ private fun AlbumContent(route: AlbumRoute, page: AlbumPage, open: Opener, list:
                             ),
                         )
                     }
-                    RowDivider(Modifier.padding(horizontal = 12.dp))
+                    RowDivider(Modifier.padding(horizontal = 16.dp))
                 }
                 }
             }
@@ -221,7 +221,7 @@ private fun AlbumContent(route: AlbumRoute, page: AlbumPage, open: Opener, list:
                     ) {
                         RankNumeral(i + 1)
                         AlbumCover(album.artist, album.name, null, Modifier.size(48.dp))
-                        Column(Modifier.weight(1f).padding(start = 12.dp)) {
+                        Column(Modifier.weight(1f).padding(start = 16.dp)) {
                             Text(album.name, style = MaterialTheme.typography.bodyLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
                             Text(
                                 listOfNotNull(album.artist.ifBlank { null }, album.year?.toString()).joinToString(" · "),
@@ -286,7 +286,7 @@ private fun QualityTag(text: String, modifier: Modifier = Modifier) {
         modifier = modifier
             .clip(shape)
             .background(Color.Black.copy(alpha = 0.78f))
-            .padding(start = 12.dp, end = 11.dp, top = 5.dp, bottom = 5.dp)
+            .padding(start = 16.dp, end = 8.dp, top = 4.dp, bottom = 4.dp)
             .semantics { contentDescription = "File quality $text" },
     )
 }
@@ -328,7 +328,7 @@ private fun ServiceLinks(artist: String, album: String, mbid: String?) {
         SERVICES.forEach { service ->
             val target = exact?.let(service.exact) ?: (service.search + query)
             Box(
-                Modifier.padding(horizontal = 4.dp).size(Target).clip(RoundedCornerShape(6.dp))
+                Modifier.padding(horizontal = 4.dp).size(Target).clip(RoundedCornerShape(8.dp))
                     .border(1.dp, Ink.EdgeStrong, RoundedCornerShape(6.dp))
                     .clickable(role = Role.Button) { uri.openUri(target) }
                     .semantics { contentDescription = "Open ${service.name}" },
@@ -348,10 +348,10 @@ private fun InfoReviewsTabs(artist: String, album: String, description: Descript
     val paragraphs = description?.paragraphs.orEmpty()
     var chosen by remember(artist, album) { mutableStateOf<Int?>(null) }
     val tab = chosen ?: if (finished && paragraphs.isEmpty()) 1 else 0
-    Column(Modifier.fillMaxWidth().padding(top = 12.dp)) {
+    Column(Modifier.fillMaxWidth().padding(top = 16.dp)) {
         TabRow(
             selectedTabIndex = tab, containerColor = Color.Transparent, contentColor = Ink.Accent,
-            divider = { RowDivider(Modifier.padding(horizontal = 12.dp)) },
+            divider = { RowDivider(Modifier.padding(horizontal = 16.dp)) },
         ) {
             listOf("Info", "Reviews").forEachIndexed { i, label ->
                 Tab(
@@ -368,7 +368,7 @@ private fun InfoReviewsTabs(artist: String, album: String, description: Descript
 @Composable
 private fun InfoTab(description: Description?, paragraphs: List<String>, finished: Boolean) {
     val uri = LocalUriHandler.current
-    Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
+    Column(Modifier.padding(horizontal = 16.dp, vertical = 16.dp)) {
         if (paragraphs.isEmpty()) {
             Text(
                 if (finished) "No description found for this album." else "Loading description…",
@@ -385,7 +385,7 @@ private fun InfoTab(description: Description?, paragraphs: List<String>, finishe
             color = if (link != null) Ink.Accent else MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.heightIn(min = Target).then(
                 if (link != null) Modifier.clickable(role = Role.Button) { uri.openUri(link) } else Modifier,
-            ).padding(vertical = 14.dp),
+            ).padding(vertical = 16.dp),
         )
     }
 }
@@ -395,7 +395,7 @@ private fun ReviewsTab(artist: String, album: String) {
     val repo = LocalRepository.current
     val uri = LocalUriHandler.current
     val loaded = rememberLoad(artist, album) { repo.albumReviews(artist, album) }
-    Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
+    Column(Modifier.padding(horizontal = 16.dp, vertical = 16.dp)) {
         when (val state = loaded.state) {
             Load.Loading -> Text("Loading reviews…", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             is Load.Failed -> {
@@ -409,7 +409,7 @@ private fun ReviewsTab(artist: String, album: String) {
                         Text("\u201c${review.quote}\u201d", style = MaterialTheme.typography.bodyMedium)
                         Text(
                             "Read the full review at ${review.source}", style = MaterialTheme.typography.bodySmall, color = Ink.Accent,
-                            modifier = Modifier.heightIn(min = Target).clickable(role = Role.Button) { uri.openUri(review.url) }.padding(vertical = 14.dp),
+                            modifier = Modifier.heightIn(min = Target).clickable(role = Role.Button) { uri.openUri(review.url) }.padding(vertical = 16.dp),
                         )
                     }
                 }

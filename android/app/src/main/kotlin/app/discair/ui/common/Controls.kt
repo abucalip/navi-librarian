@@ -160,7 +160,7 @@ fun ActionGroupButton(
                 if (description != null) contentDescription = description
                 if (selected != null) this.selected = selected
             }
-            .padding(horizontal = 12.dp),
+            .padding(horizontal = 16.dp),
         contentAlignment = Alignment.Center,
     ) { content() }
 }
@@ -192,7 +192,7 @@ fun GlassCard(modifier: Modifier = Modifier, content: @Composable androidx.compo
     androidx.compose.foundation.layout.Column(
         modifier.brutalShadow(shape).clip(shape).background(Ink.Surface)
             .border(themeBorder(BorderStroke(1.dp, if (LocalPalette.current.light) Ink.Edge else Color(0x14FFFFFF))), shape).padding(8.dp),
-        verticalArrangement = Arrangement.spacedBy(6.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
         content = content,
     )
 }
@@ -223,13 +223,13 @@ fun GlassBand(
     labelWidth: Dp = 48.dp,
 ) {
     Row(
-        Modifier.fillMaxWidth().heightIn(min = 44.dp).clip(RoundedCornerShape(8.dp)).background(GlassFill).padding(horizontal = 2.dp),
+        Modifier.fillMaxWidth().heightIn(min = 44.dp).clip(RoundedCornerShape(8.dp)).background(GlassFill).padding(horizontal = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         BandNudge(app.discair.ui.player.PlayerIcons.Remove, lowerLabel, enabled && canLower) { onNudge(-1) }
         Text(
             label, style = MaterialTheme.typography.labelMedium, color = Ink.TextMuted,
-            maxLines = 1, modifier = Modifier.widthIn(min = labelWidth).padding(horizontal = 2.dp),
+            maxLines = 1, modifier = Modifier.widthIn(min = labelWidth).padding(horizontal = 4.dp),
         )
         Slider(
             value = sliderValue, onValueChange = onSlide, valueRange = min..max, steps = steps, enabled = enabled,
@@ -252,7 +252,7 @@ fun GlassBand(
                 }
             },
         )
-        Box(Modifier.padding(horizontal = 6.dp).width(1.dp).height(16.dp).background(if (LocalPalette.current.light) Ink.EdgeStrong else Color(0x77CCCCCC)))
+        Box(Modifier.padding(horizontal = 8.dp).width(1.dp).height(16.dp).background(if (LocalPalette.current.light) Ink.EdgeStrong else Color(0x77CCCCCC)))
         Text(
             value, style = MaterialTheme.typography.labelMedium.copy(fontFamily = app.discair.ui.theme.LocalFontPair.current.mono, fontWeight = FontWeight.SemiBold),
             color = Ink.TextMuted, maxLines = 1, textAlign = TextAlign.End,
@@ -281,7 +281,7 @@ private fun BrutalSwitch(checked: Boolean, shape: androidx.compose.ui.graphics.S
             .background(if (checked) Ink.Accent else Ink.Surface).border(line, shape),
     ) {
         Box(
-            Modifier.padding(3.dp).align(Alignment.CenterStart).offset(x = knobX).size(22.dp)
+            Modifier.padding(4.dp).align(Alignment.CenterStart).offset(x = knobX).size(24.dp)
                 .background(if (checked) Color.White else Ink.Text, knobShape).border(line, knobShape),
         )
     }

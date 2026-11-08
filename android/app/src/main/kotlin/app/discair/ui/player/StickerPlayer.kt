@@ -94,12 +94,12 @@ fun StickerPlayer(
 
     Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(bottom = 24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         // The poster: the cover, leaning, in a round hard-shadowed frame.
-        Box(Modifier.widthIn(max = 340.dp).fillMaxWidth(0.82f).graphicsLayer { rotationZ = -2f }.padding(end = 6.dp, bottom = 6.dp)) {
+        Box(Modifier.widthIn(max = 340.dp).fillMaxWidth(0.82f).graphicsLayer { rotationZ = -2f }.padding(end = 8.dp, bottom = 8.dp)) {
             Box(Modifier.fillMaxWidth().brutalShadow(shape).clip(shape).border(rule, p.edgeStrong, shape).background(p.raised)) {
                 Cover(playerArtworkUrl(item.coverUrl), Modifier.fillMaxWidth().height(300.dp), rect = true, onColor = onCoverColor)
             }
         }
-        Spacer(Modifier.height(14.dp))
+        Spacer(Modifier.height(16.dp))
         // The title, stacked in large letters. It is one heading for a screen reader, spoken whole.
         val stack = StickerWallRules.stackTitle(item.title)
         Column(
@@ -172,14 +172,14 @@ fun StickerPlayer(
         StickerEqualizer(onEqualizer)
         CrossfadeSwitchRow(onCrossfade)
         // The queue and the lyrics, from two pill buttons.
-        Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             PillToggle("Queue", view == SHEET_VIEW_QUEUE, Modifier.weight(1f)) { onView(SheetStackRules.toggleView(view, SHEET_VIEW_QUEUE)) }
             PillToggle("Lyrics", view == SHEET_VIEW_LYRICS, Modifier.weight(1f)) { onView(SheetStackRules.toggleView(view, SHEET_VIEW_LYRICS)) }
         }
         if (view == SHEET_VIEW_QUEUE || view == SHEET_VIEW_LYRICS) {
             Box(
-                Modifier.padding(start = 16.dp, end = 22.dp, bottom = 6.dp).fillMaxWidth().height(PanelHeight).brutalShadow(shape).clip(shape)
-                    .background(p.surface).border(rule, p.edgeStrong, shape).padding(horizontal = 12.dp),
+                Modifier.padding(start = 16.dp, end = 24.dp, bottom = 8.dp).fillMaxWidth().height(PanelHeight).brutalShadow(shape).clip(shape)
+                    .background(p.surface).border(rule, p.edgeStrong, shape).padding(horizontal = 16.dp),
             ) {
                 if (view == SHEET_VIEW_QUEUE) QueuePanel(state, controller, Modifier.fillMaxSize()) else lyricsPanel()
             }
@@ -233,16 +233,16 @@ private fun StickerEqualizer(onOpen: () -> Unit) {
     val spoken = if (!config.enabled) "Equalizer: off. Open the equalizer"
     else bars.joinToString(", ", prefix = "Equalizer: ") { StickerWallRules.barSpoken(it, StickerWallRules.barGainDb(config.bandGainsDb, it)) } + ". Open the equalizer"
     Column(
-        Modifier.padding(horizontal = 16.dp, vertical = 6.dp).fillMaxWidth().clip(themeShape(18.dp)).clickable(role = Role.Button, onClick = onOpen)
+        Modifier.padding(horizontal = 16.dp, vertical = 8.dp).fillMaxWidth().clip(themeShape(16.dp)).clickable(role = Role.Button, onClick = onOpen)
             .semantics(mergeDescendants = true) { contentDescription = spoken },
-        verticalArrangement = Arrangement.spacedBy(6.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         bars.forEach { bar ->
             val level = if (config.enabled) StickerWallRules.barFraction(StickerWallRules.barGainDb(config.bandGainsDb, bar), EQ_MAX_GAIN_DB) else 0.5f
             Row(Modifier.heightIn(min = 44.dp), verticalAlignment = Alignment.CenterVertically) {
                 Text(bar.label, style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold), modifier = Modifier.widthIn(min = 56.dp).clearAndSetSemantics { })
                 Box(Modifier.weight(1f).height(26.dp).clip(CircleShape).background(p.surface).border((p.shape?.outline ?: 3).dp, p.edgeStrong, CircleShape).clearAndSetSemantics { }) {
-                    Box(Modifier.fillMaxSize().padding(2.dp)) {
+                    Box(Modifier.fillMaxSize().padding(4.dp)) {
                         Box(Modifier.fillMaxWidth(level).fillMaxSize().clip(CircleShape).background(if (config.enabled) p.accent else p.raised))
                     }
                 }

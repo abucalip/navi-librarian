@@ -103,7 +103,7 @@ fun SheetPlayer(
                 Box(Modifier.size(cover).brutalShadow(shape).clip(shape).border(rule, p.edgeStrong, shape)) {
                     Cover(playerArtworkUrl(item.coverUrl), Modifier.fillMaxSize(), rect = true, onColor = onCoverColor)
                 }
-                Spacer(Modifier.width(12.dp))
+                Spacer(Modifier.width(16.dp))
                 VerticalVolumeSlider(state.queue.volume, controller::setVolume, p, Modifier.fillMaxHeight())
             }
         }
@@ -136,7 +136,7 @@ fun SheetPlayer(
         if (state.signInRequired) TextButton(onClick = { controller.dismissSignIn(); onSignIn() }, Modifier.heightIn(min = Target)) { Text("Sign in again") }
         if (state.waitingForNetwork) TextButton(onClick = controller::retryNow, Modifier.heightIn(min = Target)) { Text("Retry now") }
         qualityLabel(item)?.let {
-            Text(it, style = timeStyle, color = muted, maxLines = 1, modifier = Modifier.padding(top = 4.dp).border(1.dp, p.edgeStrong, themeShape(4.dp)).padding(horizontal = 6.dp, vertical = 1.dp))
+            Text(it, style = timeStyle, color = muted, maxLines = 1, modifier = Modifier.padding(top = 4.dp).border(1.dp, p.edgeStrong, themeShape(4.dp)).padding(horizontal = 8.dp, vertical = 1.dp))
         }
         Row(Modifier.fillMaxWidth().padding(top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
             Text(formatTime(shown), style = timeStyle, color = muted, modifier = Modifier.padding(end = 8.dp))
@@ -169,30 +169,30 @@ fun SheetPlayer(
             }
         }
         // The lyrics strip: the line being sung, or the same "no lyrics" words as the Lyrics view. Tapping opens the lyrics under it.
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(16.dp))
         Row(
             Modifier.padding(end = 4.dp, bottom = 4.dp).fillMaxWidth().heightIn(min = 56.dp).brutalShadow(shape).clip(shape)
                 .background(if (view == SHEET_VIEW_LYRICS) p.accentDim else p.surface).border(rule, p.edgeStrong, shape)
                 .clickable(onClickLabel = if (view == SHEET_VIEW_LYRICS) "Hide lyrics" else "Show lyrics", role = Role.Button) { onView(SheetStackRules.toggleView(view, SHEET_VIEW_LYRICS)) }
-                .padding(horizontal = 14.dp, vertical = 8.dp),
+                .padding(horizontal = 16.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(PlayerIcons.Quote, contentDescription = null, modifier = Modifier.size(20.dp))
             Text(
                 SheetStackRules.lyricsStripText(lyricsState, currentLine), style = MaterialTheme.typography.bodyMedium, maxLines = 2, overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f).padding(start = 12.dp).semantics { stateDescription = if (view == SHEET_VIEW_LYRICS) "Lyrics open" else "Lyrics closed" },
+                modifier = Modifier.weight(1f).padding(start = 16.dp).semantics { stateDescription = if (view == SHEET_VIEW_LYRICS) "Lyrics open" else "Lyrics closed" },
             )
         }
         if (view == SHEET_VIEW_QUEUE || view == SHEET_VIEW_LYRICS) {
-            Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(16.dp))
             Box(
                 Modifier.padding(end = 4.dp, bottom = 4.dp).fillMaxWidth().height(PanelHeight).brutalShadow(shape).clip(shape)
-                    .background(p.surface).border(rule, p.edgeStrong, shape).padding(horizontal = 12.dp),
+                    .background(p.surface).border(rule, p.edgeStrong, shape).padding(horizontal = 16.dp),
             ) {
                 if (view == SHEET_VIEW_QUEUE) QueuePanel(state, controller, Modifier.fillMaxSize()) else lyricsPanel()
             }
         }
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(16.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
             EqualizerLink(onEqualizer)
             Spacer(Modifier.size(16.dp))
