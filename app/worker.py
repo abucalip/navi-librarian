@@ -22,7 +22,10 @@ def main(librarian=None, stop=None) -> int:
             signal.signal(sig, lambda *_: stop.set())
     librarian = librarian or get_librarian()
     insights_refresh.start(librarian)   # six-hourly loop on its own daemon thread, same process
-    library_enrich.run_forever(librarian, stop)
+    # Auto fill runs on its own thread too: switching it off must not end the worker or the other jobs.
+    threading.Thread(target=library_enrich.run_forever, args=(librarian, stop), name="library-enrich",
+                     daemon=True).start()
+    stop.wait()
     return 0
 
 

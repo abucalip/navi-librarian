@@ -264,7 +264,8 @@ class WorkerTests(unittest.TestCase):
         import app.worker as worker
         stop = threading.Event()
         stop.set()
-        self.assertEqual(worker.main(librarian=object(), stop=stop), 0)
+        with __import__("unittest").mock.patch.object(worker.insights_refresh, "start"):
+            self.assertEqual(worker.main(librarian=object(), stop=stop), 0)
 
     def test_web_startup_starts_no_knowledge_store_writer(self):
         from pathlib import Path
@@ -277,12 +278,32 @@ class WorkerTests(unittest.TestCase):
         import threading
         import app.worker as worker
         stop = threading.Event()
+        stop.set()                      # main() returns as soon as both jobs are started
+        started = threading.Event()
         lib = object()
         with mock.patch.object(worker.insights_refresh, "start") as insights, \
-                mock.patch.object(worker.library_enrich, "run_forever") as fill:
+                mock.patch.object(worker.library_enrich, "run_forever", side_effect=lambda *a: started.set()) as fill:
             worker.main(librarian=lib, stop=stop)
+            self.assertTrue(started.wait(2))
         insights.assert_called_once_with(lib)
         fill.assert_called_once_with(lib, stop)
+
+    def test_switching_auto_fill_off_keeps_the_worker_and_insights_running(self):
+        import threading
+        from unittest import mock
+        import app.worker as worker
+        stop = threading.Event()
+        result = []
+        with mock.patch.object(worker.insights_refresh, "start") as insights, \
+                mock.patch.dict("os.environ", {library_enrich.POLL_ENV: "off"}):
+            thread = threading.Thread(target=lambda: result.append(worker.main(librarian=object(), stop=stop)))
+            thread.start()
+            thread.join(0.5)
+            self.assertTrue(thread.is_alive())      # auto fill returned at once; the worker did not exit
+            insights.assert_called_once()
+            stop.set()
+            thread.join(2)
+        self.assertEqual(result, [0])
 
 
 class PollTests(unittest.TestCase):
