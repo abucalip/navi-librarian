@@ -40,7 +40,7 @@ CACHE_PREFIX = "path:"
 SLICE_RESOURCE = "musicbrainz_slice"
 SCENE_YEARS = 10
 PROGRESS_OPS = 5000  # how many SQLite steps pass between deadline checks
-PRESENTATION_VERSION = 2
+PRESENTATION_VERSION = 3
 
 _CG = "{a}.evidence_class != 'inferred' AND {a}.match_quality NOT IN ('fuzzy_unconfirmed', 'unresolved')"
 
@@ -133,8 +133,8 @@ _REASON_TEXT = {
     "sideman_on": "led {via}, a release that carries {anchor}, a recording the artist you started from played on",
     "same_label": "released on {via}, the label of {anchor} from your library",
     "related_label": "released on {via}, a label related to the label of {anchor} from your library",
-    "same_work": "another recording of the work that {anchor} from your library performs",
-    "related_work": "a recording of {via}, a work related to a work that {anchor} from your library performs",
+    "same_work": "another recording of {via}, the same work as {anchor}, a recording in your library",
+    "related_work": "a recording of {via}, a work related to the work of {anchor}, a recording in your library",
     "same_area": "from {via}, where {anchor} is also from, starting within %d years" % SCENE_YEARS,
 }
 

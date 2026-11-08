@@ -41,6 +41,22 @@ data class PathRef(val name: String, val type: String, val mbid: String?)
 /** One reason the server gives for a stop: its sentence plus the entities it names. */
 data class PathReason(val text: String, val code: String, val via: PathRef?, val anchor: PathRef?)
 
+/**
+ * The sentence shown for a reason. The server's composition wording ("the work that X performs") reads as if X were a
+ * performer, but X is a recording in the library and the work is [PathReason.via]; those two are said with their roles.
+ */
+fun PathReason.sentence(): String {
+    val work = via?.name
+    val mine = anchor?.name
+    return when {
+        code == "same_work" && work != null && mine != null ->
+            "Another recording of $work, the same work as $mine, a recording in your library."
+        code == "related_work" && work != null && mine != null ->
+            "A recording of $work, a work related to the work of $mine, a recording in your library."
+        else -> text
+    }
+}
+
 val PathRef.isArtist get() = type == "artist" || type == "person" || type == "group"
 
 /** The two lines of a row: the main name and the bracketed detail, per kind. A server without presentation never puts a track in the artist slot. */
