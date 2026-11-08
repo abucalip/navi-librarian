@@ -53,7 +53,7 @@ public struct MiniPlayerView: View {
                     control(p.isPlaying ? "pause.fill" : "play.fill", p.isPlaying ? "Pause" : "Play", size: 20) { p.togglePlayPause() }
                     control("forward.fill", "Next") { p.next() }
                     Spacer(minLength: 0)
-                    Text(PlayerModel.clock(p.position)).font(.system(size: 11).monospacedDigit()).foregroundStyle(.white.opacity(0.6))
+                    PlaybackClock(player: p) { Text(PlayerModel.clock($0)).font(.system(size: 11).monospacedDigit()).foregroundStyle(.white.opacity(0.6)) }
                 }
                 Text(content.next.map { "Next: \($0)" } ?? "Nothing queued next")
                     .font(.system(size: 11)).foregroundStyle(.white.opacity(0.55)).lineLimit(1)

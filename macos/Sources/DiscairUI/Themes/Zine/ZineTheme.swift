@@ -179,7 +179,7 @@ struct ZinePlayerStrip: View {
                         CoverView(album: AlbumItem(id: -1, title: c.album, artist: c.artist, year: 0, genre: "", format: "", owned: true, hue: 200, coverArt: c.coverArt))
                             .frame(width: 34).overlay { Rectangle().strokeBorder(Z.paper, lineWidth: 2) }
                         Text(c.title).font(Z.an(20)).textCase(.uppercase).foregroundStyle(Z.yellow).lineLimit(1)
-                        Mono(p.phase == .loading ? "Loading…" : "\(c.artist) · \(PlayerModel.clock(p.position)) / \(PlayerModel.clock(p.duration))").foregroundStyle(Z.paper)
+                        PlaybackClock(player: p) { pos in Mono(p.phase == .loading ? "Loading…" : "\(c.artist) · \(PlayerModel.clock(pos)) / \(PlayerModel.clock(p.duration))").foregroundStyle(Z.paper) }
                     } else {
                         CoverView(album: a).frame(width: 34).overlay { Rectangle().strokeBorder(Z.paper, lineWidth: 2) }
                         Text("After the Flood").font(Z.an(20)).textCase(.uppercase).foregroundStyle(Z.yellow)

@@ -102,6 +102,28 @@ struct GrowingFailureTests {
         #expect(p.notice == "“T0” stopped downloading, so it ended early.")   // kept across the start of the next song
     }
 
+    @Test func aSongThatEndsWellBeforeItsLengthSaysSo() async throws {
+        let (p, out, _) = try make()
+        p.play(songs(2))
+        await until { p.phase == .playing }
+        out.position = 60
+        await until { p.position == 60 }
+        out.finish()
+        #expect(p.current?.title == "T1" && p.notice == "“T0” ended at 1:00 of 3:20.")
+    }
+
+    @Test func theClockCarriesOnBetweenTicksAndNeverRunsBack() async throws {
+        let (p, out, _) = try make()
+        p.play(songs(1))
+        await until { p.phase == .playing }
+        out.position = 30
+        await until { p.position == 30 }
+        let now = Date()
+        #expect(p.displayPosition(at: now.addingTimeInterval(0.5)) >= 30.4)
+        #expect(p.displayPosition(at: now.addingTimeInterval(60)) <= 32.1)      // a stalled tick is carried at most 2 s
+        #expect(p.displayPosition(at: now.addingTimeInterval(-5)) >= 30)
+    }
+
     @Test func aCompleteDownloadSaysNothing() async throws {
         let out = FakeOutput(), fetch = GrowingFetcher()
         let p = PlayerModel(output: out, fetcher: fetch, defaults: UserDefaults(suiteName: "discair-test-\(UUID().uuidString)")!)
