@@ -83,7 +83,7 @@ fun AppearanceRow(appearance: Appearance, onClick: () -> Unit) {
     Row(
         Modifier.fillMaxWidth().heightIn(min = Target).clickable(role = Role.Button, onClick = onClick)
             .semantics(mergeDescendants = true) { contentDescription = "Appearance, $summary" }
-            .padding(top = 12.dp),
+            .padding(top = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(Modifier.weight(1f)) {
@@ -117,7 +117,7 @@ fun AppearanceScreen(appearance: Appearance, onBack: () -> Unit) {
         Column(
             Modifier.widthIn(max = 560.dp).fillMaxSize().verticalScroll(rememberScrollState())
                 .padding(start = 16.dp, top = 24.dp, end = 16.dp, bottom = 24.dp + LocalBottomClearance.current),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             val slot = picking
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -145,7 +145,7 @@ private fun AppearanceHome(appearance: Appearance, open: (String) -> Unit) {
         },
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Column(Modifier.weight(1f).padding(end = 12.dp)) {
+        Column(Modifier.weight(1f).padding(end = 16.dp)) {
             Text("Follow phone light/dark", style = MaterialTheme.typography.titleMedium)
             Text(
                 if (following) "Uses your day theme in light mode and your night theme in dark mode."
@@ -162,7 +162,7 @@ private fun AppearanceHome(appearance: Appearance, open: (String) -> Unit) {
         Palettes.byId(appearance.themeChoice)?.let { ThemeSlot("Theme", it) { open(SLOT_THEME) } }
     }
 
-    Text("Font", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 12.dp))
+    Text("Font", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 16.dp))
     ChoiceDropdown(
         title = "Font",
         current = "${appearance.fonts.label} · ${appearance.fonts.titleName} and ${appearance.fonts.bodyName}",
@@ -184,8 +184,8 @@ private fun ThemeSlot(title: String, p: Palette, onClick: () -> Unit) {
         Modifier.fillMaxWidth().heightIn(min = Target + 8.dp).clip(shape).border(BorderStroke(1.dp, Ink.Edge), shape)
             .background(Ink.Surface).clickable(role = Role.Button, onClick = onClick)
             .semantics(mergeDescendants = true) { contentDescription = "$title, ${p.label}" }
-            .padding(horizontal = 12.dp, vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp),
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         Swatch(p)
         Column(Modifier.weight(1f)) {
@@ -224,7 +224,7 @@ private fun ThemeGrid(appearance: Appearance, slot: String, filter: String, onFi
     }
     Text("${shown.size} themes", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     shown.chunked(2).forEach { pair ->
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
             pair.forEach { p ->
                 ThemeTile(p, p.id == selectedId, Modifier.weight(1f)) {
                     when (slot) { SLOT_DAY -> appearance.chooseDay(p.id); SLOT_NIGHT -> appearance.chooseNight(p.id); else -> appearance.chooseTheme(p.id) }
@@ -265,7 +265,7 @@ private fun ThemeTile(p: Palette, selected: Boolean, modifier: Modifier, onClick
                     .clip(shape).background(p.ink).border(BorderStroke(outline, edge), shape)
                     .let { if (selected) it.border(BorderStroke(3.dp, Ink.Text), shape) else it }
                     .padding(8.dp),
-                verticalArrangement = Arrangement.spacedBy(5.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
                 repeat(2) { Box(Modifier.fillMaxWidth().size(width = 0.dp, height = 18.dp).background(p.surface, inner).border(BorderStroke(outline, edge), inner)) }
                 Box(Modifier.fillMaxWidth(0.55f).size(width = 0.dp, height = 16.dp).background(p.accent, inner).border(BorderStroke(outline, edge), inner))
@@ -301,7 +301,7 @@ private fun ChoiceDropdown(title: String, current: String, options: List<FontOpt
                 val on = option.id == selectedId
                 DropdownMenuItem(
                     text = {
-                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                             Column {
                                 Text(
                                     option.label, fontFamily = option.font.title, fontWeight = option.font.titleWeight,
@@ -327,9 +327,9 @@ private fun ChoiceDropdown(title: String, current: String, options: List<FontOpt
 private fun Swatch(p: Palette) {
     Row(
         Modifier.background(p.ink, RoundedCornerShape(50)).border(BorderStroke(1.dp, p.edgeStrong), RoundedCornerShape(50))
-            .padding(horizontal = 6.dp, vertical = 5.dp),
-        horizontalArrangement = Arrangement.spacedBy(3.dp),
+            .padding(horizontal = 8.dp, vertical = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        listOf(p.surface, p.text, p.accent).forEach { Spacer(Modifier.size(12.dp).background(it, CircleShape).border(BorderStroke(0.5.dp, p.edge), CircleShape)) }
+        listOf(p.surface, p.text, p.accent).forEach { Spacer(Modifier.size(16.dp).background(it, CircleShape).border(BorderStroke(0.5.dp, p.edge), CircleShape)) }
     }
 }

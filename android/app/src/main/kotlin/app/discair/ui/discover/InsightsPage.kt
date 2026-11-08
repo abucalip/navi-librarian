@@ -60,7 +60,7 @@ fun InsightsPage(
     LazyColumn(
         Modifier.fillMaxSize(),
         contentPadding = PaddingValues(start = 16.dp, top = 8.dp, end = 16.dp, bottom = 16.dp + app.discair.ui.LocalBottomClearance.current),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         for (kind in lensKinds(response)) {
             val lens = response.lenses[kind]
@@ -96,8 +96,8 @@ fun InsightsPage(
 private fun InsightCardView(card: InsightCard, onDismiss: (InsightCard) -> Unit) {
     var why by remember(card.id) { mutableStateOf(false) }
     Column(
-        Modifier.fillMaxWidth().clip(themeShape(12.dp)).background(MaterialTheme.colorScheme.surface).padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(6.dp),
+        Modifier.fillMaxWidth().clip(themeShape(16.dp)).background(MaterialTheme.colorScheme.surface).padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Text(card.title, style = MaterialTheme.typography.titleMedium)
         card.subject.artist?.let { Text(it, color = Ink.TextMuted, style = MaterialTheme.typography.bodyMedium) }

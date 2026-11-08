@@ -128,11 +128,11 @@ private fun Lines(state: LyricsUiState.Ready, currentLine: Int, songId: String, 
 
     // The list fills the flip card it sits in and scrolls inside it.
     Box(modifier.fillMaxWidth()) {
-        LazyColumn(Modifier.fillMaxSize(), state = list, verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        LazyColumn(Modifier.fillMaxSize(), state = list, verticalArrangement = Arrangement.spacedBy(8.dp)) {
             itemsIndexed(state.lyrics.lines) { index, line ->
                 val current = timed && index == currentLine
                 if (line.text.isBlank()) {
-                    Spacer(Modifier.height(14.dp).fillMaxWidth().clearAndSetSemantics { })
+                    Spacer(Modifier.height(16.dp).fillMaxWidth().clearAndSetSemantics { })
                 } else {
                     if (timed) TimedLine(line.text, current, anyActive = currentLine >= 0, reduceMotion = reduceMotion)
                     else Text(line.text, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.fillMaxWidth())

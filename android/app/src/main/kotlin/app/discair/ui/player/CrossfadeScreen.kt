@@ -80,7 +80,7 @@ fun CrossfadeScreen(container: AppContainer, onBack: (() -> Unit)?) {
                 .toggleable(value = on, role = Role.Switch, onValueChange = { settings.crossfadeEnabled = it }),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Column(Modifier.weight(1f).padding(end = 12.dp)) {
+            Column(Modifier.weight(1f).padding(end = 16.dp)) {
                 Text("Crossfade", style = MaterialTheme.typography.titleMedium)
                 Text(
                     CrossfadeText.switchHelp(on),
@@ -113,7 +113,7 @@ fun CrossfadeScreen(container: AppContainer, onBack: (() -> Unit)?) {
                 .toggleable(value = keep, enabled = on, role = Role.Switch, onValueChange = { settings.crossfadeSkipSameAlbum = it }),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Column(Modifier.weight(1f).padding(end = 12.dp)) {
+            Column(Modifier.weight(1f).padding(end = 16.dp)) {
                 Text("Keep albums gapless", style = MaterialTheme.typography.titleMedium)
                 Text(
                     CrossfadeText.keepAlbumsHelp(keep),

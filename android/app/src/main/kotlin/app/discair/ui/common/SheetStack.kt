@@ -99,7 +99,7 @@ fun SheetNavGroup(
 ) {
     val shape = themeShape(14.dp)
     val seam = (palette.shape?.outline ?: 2).dp
-    Box(modifier.fillMaxWidth().navigationBarsPadding().padding(start = 16.dp, end = 20.dp, bottom = 16.dp, top = 6.dp)) {
+    Box(modifier.fillMaxWidth().navigationBarsPadding().padding(start = 16.dp, end = 24.dp, bottom = 16.dp, top = 8.dp)) {
         Row(
             Modifier.fillMaxWidth().height(56.dp).brutalShadow(shape).clip(shape).background(palette.surface)
                 .border(seam, palette.edgeStrong, shape),

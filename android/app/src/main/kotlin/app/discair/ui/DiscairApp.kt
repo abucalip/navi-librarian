@@ -105,7 +105,7 @@ private fun Page(scroll: Boolean = false, content: @Composable ColumnScope.() ->
                 .fillMaxSize()
                 .then(if (scroll) Modifier.verticalScroll(rememberScrollState()) else Modifier)
                 .padding(start = 16.dp, top = 24.dp, end = 16.dp, bottom = 24.dp + app.discair.ui.LocalBottomClearance.current),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
             content = content,
         )
     }
@@ -322,7 +322,7 @@ private fun LibrarySettings() {
         ),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Column(Modifier.weight(1f).padding(end = 12.dp)) {
+        Column(Modifier.weight(1f).padding(end = 16.dp)) {
             Text("Resync after import", style = MaterialTheme.typography.titleMedium)
             Text(
                 when {
@@ -380,7 +380,7 @@ private fun PlaybackSettings(container: AppContainer, onEqualizer: () -> Unit, o
             .toggleable(value = scrobble, role = Role.Switch, onValueChange = { scrobble = it; container.setScrobbling(it) }),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Column(Modifier.weight(1f).padding(end = 12.dp)) {
+        Column(Modifier.weight(1f).padding(end = 16.dp)) {
             Text("Scrobble", style = MaterialTheme.typography.titleMedium)
             Text(
                 if (scrobble) "On. Songs you play here are added to your listening history, which also shapes your recommendations."
@@ -396,7 +396,7 @@ private fun PlaybackSettings(container: AppContainer, onEqualizer: () -> Unit, o
     val savedCount = offlineStatus.count { it.value == app.discair.player.OfflineStatus.Done }
     val offlineScope = androidx.compose.runtime.rememberCoroutineScope()
     Row(Modifier.fillMaxWidth().heightIn(min = Target), verticalAlignment = Alignment.CenterVertically) {
-        Column(Modifier.weight(1f).padding(end = 12.dp)) {
+        Column(Modifier.weight(1f).padding(end = 16.dp)) {
             Text("Downloaded songs", style = MaterialTheme.typography.titleMedium)
             Text(
                 if (savedCount == 0) "None. Use a song's menu and choose Download to device to play it without a connection."
@@ -419,7 +419,7 @@ private fun PlaybackSettings(container: AppContainer, onEqualizer: () -> Unit, o
         Modifier.fillMaxWidth().heightIn(min = Target).clickable(role = Role.Button, onClick = onEqualizer),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Column(Modifier.weight(1f).padding(end = 12.dp)) {
+        Column(Modifier.weight(1f).padding(end = 16.dp)) {
             Text("Equalizer", style = MaterialTheme.typography.titleMedium)
             Text(
                 app.discair.player.eq.eqSummary(eqNow).removePrefix("Equalizer: ").replaceFirstChar { it.uppercase() },
@@ -438,7 +438,7 @@ private fun PlaybackSettings(container: AppContainer, onEqualizer: () -> Unit, o
         Modifier.fillMaxWidth().heightIn(min = Target).clickable(role = Role.Button, onClick = onCrossfade),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Column(Modifier.weight(1f).padding(end = 12.dp)) {
+        Column(Modifier.weight(1f).padding(end = 16.dp)) {
             Text("Crossfade", style = MaterialTheme.typography.titleMedium)
             Text(
                 app.discair.player.crossfade.CrossfadeText.summary(xfNow),
@@ -457,7 +457,7 @@ private fun Section(title: String, bold: Boolean = false) {
         style = if (bold) MaterialTheme.typography.titleLarge.copy(
             fontFamily = MaterialTheme.typography.bodyLarge.fontFamily, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold, letterSpacing = androidx.compose.ui.unit.TextUnit.Unspecified,
         ) else MaterialTheme.typography.titleLarge,
-        modifier = Modifier.padding(top = 12.dp).semantics { heading() },
+        modifier = Modifier.padding(top = 16.dp).semantics { heading() },
     )
 }
 

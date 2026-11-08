@@ -246,7 +246,7 @@ fun OutlinedTextField(
     // The label sits above the box: a floating label would land on the thick outline and vanish into it. The caller's
     // modifier (padding, focus requester) goes on the column; a focus request reaches the field inside it.
     Column(modifier) {
-        if (label != null) Box(Modifier.padding(bottom = 6.dp)) {
+        if (label != null) Box(Modifier.padding(bottom = 8.dp)) {
             CompositionLocalProvider(LocalContentColor provides p.text) {
                 androidx.compose.material3.ProvideTextStyle(MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold), label)
             }
@@ -318,14 +318,14 @@ fun AlertDialog(
     androidx.compose.ui.window.Dialog(onDismissRequest = onDismissRequest, properties = properties) {
         Box(modifier.padding(end = sh, bottom = sh)) {
             Column(Modifier.widthIn(max = 360.dp).brutalShadow(s).clip(s).background(containerColor ?: p.surface).border(brutalOutline(), s)) {
-                Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Column(Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     icon?.invoke()
                     title?.let { ProvideTextStyle(MaterialTheme.typography.titleLarge) { CompositionLocalProvider(LocalContentColor provides p.text) { it() } } }
                     text?.let { ProvideTextStyle(MaterialTheme.typography.bodyMedium) { CompositionLocalProvider(LocalContentColor provides p.textMuted) { it() } } }
                 }
                 // The footer band: a rule, then the actions on the raised ground (neobrutalism.com's border-t-2 bg-muted/50).
                 Box(Modifier.fillMaxWidth().height((p.shape?.outline ?: 2).dp).background(p.edgeStrong))
-                Row(Modifier.fillMaxWidth().background(p.raised).padding(horizontal = 12.dp, vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End), verticalAlignment = Alignment.CenterVertically) {
+                Row(Modifier.fillMaxWidth().background(p.raised).padding(horizontal = 16.dp, vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End), verticalAlignment = Alignment.CenterVertically) {
                     dismissButton?.invoke()
                     confirmButton()
                 }
@@ -438,10 +438,10 @@ private fun BrutalSnackbar(data: SnackbarData) {
     val p = LocalPalette.current
     val s = themeShape(8.dp)
     val sh = ((p.shape?.shadow ?: 0)).dp
-    Box(Modifier.padding(start = 12.dp, top = 12.dp, end = 12.dp + sh, bottom = 12.dp + sh)) {
+    Box(Modifier.padding(start = 16.dp, top = 16.dp, end = 16.dp + sh, bottom = 16.dp + sh)) {
         Row(
             Modifier.fillMaxWidth().brutalShadow(s).clip(s).background(p.surface).border(brutalOutline(), s).padding(start = 16.dp, top = 8.dp, bottom = 8.dp, end = 8.dp),
-            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             Text(data.visuals.message, Modifier.weight(1f), color = p.text, style = MaterialTheme.typography.bodyMedium)
             data.visuals.actionLabel?.let { label -> Button(onClick = { data.performAction() }) { Text(label, fontWeight = FontWeight.Bold) } }
@@ -474,7 +474,7 @@ fun ModalBottomSheet(
         dragHandle = {
             Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
                 Box(Modifier.fillMaxWidth().height((p.shape?.outline ?: 2).dp).background(p.edgeStrong))
-                Box(Modifier.padding(vertical = 10.dp).size(width = 40.dp, height = 8.dp).clip(smallShape(2)).background(p.text))
+                Box(Modifier.padding(vertical = 8.dp).size(width = 40.dp, height = 8.dp).clip(smallShape(2)).background(p.text))
             }
         },
         content = content,
@@ -507,8 +507,8 @@ fun FilterChip(
             .then(if (drop == 0.dp) Modifier.brutalShadow(s, 0.5f) else Modifier)
             .clip(s).background(if (selected) p.accent else p.surface).border(brutalOutline(), s)
             .clickable(enabled = enabled, interactionSource = source, indication = null, role = Role.Checkbox, onClick = onClick)
-            .padding(horizontal = 12.dp, vertical = 6.dp),
-        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp),
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         leadingIcon?.invoke()
         CompositionLocalProvider(LocalContentColor provides if (selected) p.onAccent else p.text) {
@@ -525,7 +525,7 @@ fun BrutalTag(modifier: Modifier = Modifier, primary: Boolean = true, content: @
     val s = themeShape(4.dp)
     Box(
         modifier.brutalShadow(s, 0.4f).clip(s).background(if (primary) p.accent else p.raised).border(brutalOutline(), s)
-            .padding(horizontal = 8.dp, vertical = 2.dp),
+            .padding(horizontal = 8.dp, vertical = 4.dp),
         contentAlignment = Alignment.Center,
     ) { CompositionLocalProvider(LocalContentColor provides if (primary) p.onAccent else p.text) { content() } }
 }

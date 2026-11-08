@@ -63,7 +63,7 @@ fun SonicPathSheet(start: QueueItem, target: QueueItem, onDismiss: () -> Unit) {
         }
     }
     ModalBottomSheet(onDismissRequest = onDismiss) {
-        Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Text("Sonic path", style = MaterialTheme.typography.titleLarge, modifier = Modifier.semantics { heading() })
             Text("${start.title} to ${target.title}", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Box(Modifier.fillMaxWidth().height(BodyHeight)) {
@@ -73,7 +73,7 @@ fun SonicPathSheet(start: QueueItem, target: QueueItem, onDismiss: () -> Unit) {
                     }
                     is Load.Failed -> Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.Center) {
                         Text(s.failure.message, style = MaterialTheme.typography.bodyLarge, color = Ink.ChartRedText)
-                        OutlinedButton(onClick = { attempt++ }, Modifier.heightIn(min = Target).padding(top = 12.dp)) { Text("Try again") }
+                        OutlinedButton(onClick = { attempt++ }, Modifier.heightIn(min = Target).padding(top = 16.dp)) { Text("Try again") }
                     }
                     is Load.Ready -> if (s.value.size < 2) {
                         Text("No sonic path between these songs yet.", style = MaterialTheme.typography.bodyLarge)
@@ -81,7 +81,7 @@ fun SonicPathSheet(start: QueueItem, target: QueueItem, onDismiss: () -> Unit) {
                         itemsIndexed(s.value) { index, step ->
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Text("${index + 1}", style = MaterialTheme.typography.labelMedium, textAlign = TextAlign.End, modifier = Modifier.padding(end = 8.dp).size(24.dp))
-                                Cover(step.coverUrl.ifBlank { null }, Modifier.padding(end = 12.dp).size(40.dp))
+                                Cover(step.coverUrl.ifBlank { null }, Modifier.padding(end = 16.dp).size(40.dp))
                                 Column(Modifier.weight(1f)) {
                                     Text(step.title, style = MaterialTheme.typography.bodyMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
                                     Text(step.artist, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)

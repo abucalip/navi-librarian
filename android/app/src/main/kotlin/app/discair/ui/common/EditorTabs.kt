@@ -69,7 +69,7 @@ fun EditorTabs(labels: List<String>, selectedIndex: Int, onSelect: (Int) -> Unit
                         }
                         .clickable(source, indication = null, role = Role.Tab) { onSelect(index) }
                         .semantics { selected = on }
-                        .padding(horizontal = 18.dp),
+                        .padding(horizontal = 16.dp),
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(label, color = if (on || pressed) labelOn else labelOn.copy(alpha = 0.7f), fontSize = 13.sp, maxLines = 1)

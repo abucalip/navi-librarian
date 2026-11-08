@@ -55,7 +55,7 @@ fun SheetRequestsSection(open: Opener) {
         jobs == null -> Muted("Connecting to acquisition status…")
         shown.isEmpty() -> Muted("No requests yet. Albums you get appear here.")
         else -> Column(
-            Modifier.padding(start = 16.dp, end = 20.dp, bottom = 4.dp).fillMaxWidth().brutalShadow(shape).clip(shape)
+            Modifier.padding(start = 16.dp, end = 24.dp, bottom = 4.dp).fillMaxWidth().brutalShadow(shape).clip(shape)
                 .background(p.surface).border(rule, p.edgeStrong, shape),
         ) {
             shown.forEachIndexed { index, job ->
@@ -73,10 +73,10 @@ private fun RequestRow(job: AcquisitionJob, open: Opener) {
     Row(
         Modifier.fillMaxWidth().heightIn(min = 64.dp)
             .clickable(role = Role.Button) { open.album(routeKey(job.artist, job.albumName), job.artist, job.albumName, null, job.year) }
-            .padding(horizontal = 14.dp, vertical = 8.dp),
+            .padding(horizontal = 16.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Column(Modifier.weight(1f).padding(end = 12.dp)) {
+        Column(Modifier.weight(1f).padding(end = 16.dp)) {
             Text(job.title, style = MaterialTheme.typography.bodyLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Text(
                 job.artistName, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -95,7 +95,7 @@ private fun RequestRow(job: AcquisitionJob, open: Opener) {
             word, style = MaterialTheme.typography.labelMedium.copy(fontFamily = LocalFontPair.current.mono, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold),
             color = ink, maxLines = 1,
             modifier = Modifier.clip(themeShape(6.dp)).background(fill).border((p.shape?.outline ?: 2).dp, p.edgeStrong, themeShape(6.dp))
-                .padding(horizontal = 8.dp, vertical = 3.dp),
+                .padding(horizontal = 8.dp, vertical = 4.dp),
         )
     }
 }

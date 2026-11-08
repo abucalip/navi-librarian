@@ -229,7 +229,7 @@ fun DiscoverScreen(open: Opener) {
                 onDragEnd = { switchBy(if (total < -swipeThreshold) 1 else if (total > swipeThreshold) -1 else 0) },
             ) { _, delta -> total += delta }
         }) {
-            PageHeading("Discover", Modifier.padding(start = 16.dp, top = 12.dp, end = 16.dp), large = true)
+            PageHeading("Discover", Modifier.padding(start = 16.dp, top = 16.dp, end = 16.dp), large = true)
             val options = DiscoveryList.entries
             SegmentedTabs(
                 options.map { it.label }, options.indexOf(list),
@@ -395,9 +395,9 @@ private fun CardGrid(
 ) {
     LazyVerticalGrid(
         GridCells.Fixed(2), Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(start = 12.dp, top = 12.dp, end = 12.dp, bottom = 12.dp + app.discair.ui.LocalBottomClearance.current),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+        contentPadding = PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 16.dp + app.discair.ui.LocalBottomClearance.current),
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         gridItems(entries, key = { it.key }) { entry ->
             DiscoverCard(

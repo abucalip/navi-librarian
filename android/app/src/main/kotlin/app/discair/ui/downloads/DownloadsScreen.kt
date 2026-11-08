@@ -102,7 +102,7 @@ fun DownloadsScreen(open: Opener) {
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(app.discair.ui.player.PlayerIcons.Close, contentDescription = null, tint = Ink.Text, modifier = Modifier.size(24.dp))
-            Text("Dismiss all successful imports", color = Ink.Text, modifier = Modifier.padding(start = 12.dp))
+            Text("Dismiss all successful imports", color = Ink.Text, modifier = Modifier.padding(start = 16.dp))
         }
         when {
             jobs == null && hub.listProblem == null -> Column(
@@ -184,12 +184,12 @@ private fun StatusLine(hub: AcquisitionHub, jobs: List<AcquisitionJob>?) {
 private fun JobRow(job: AcquisitionJob, hub: AcquisitionHub, now: Double, open: Opener, onDismiss: () -> Unit) {
     val busy = hub.busy(job)
     Box(Modifier.fillMaxWidth()) {
-    Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp)) {
+    Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 16.dp)) {
         AlbumCover(
             job.artistName, job.albumName, null,
             Modifier.size(64.dp).clickable(role = Role.Button) { open.album(routeKey(job.artist, job.albumName), job.artist, job.albumName, null, job.year) },
         )
-        Column(Modifier.weight(1f).padding(start = 12.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        Column(Modifier.weight(1f).padding(start = 16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             // Room on the right for the icons in the card's corner.
             val iconRoom = if (!job.canDismiss) 0.dp else if (job.canRetry) 96.dp else 48.dp
             Text(
@@ -205,14 +205,14 @@ private fun JobRow(job: AcquisitionJob, hub: AcquisitionHub, now: Double, open: 
                 job.artistName, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary,
                 maxLines = 1, overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.heightIn(min = Target).clickable(role = Role.Button) { open.artist(job.artistName, null, null, null) }
-                    .padding(vertical = 12.dp),
+                    .padding(vertical = 16.dp),
             )
             if (job.isSong) Text(
                 "Song on ${job.albumName}", style = MaterialTheme.typography.bodyMedium,
                 maxLines = 1, overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.heightIn(min = Target).clickable(role = Role.Button) {
                     open.album(routeKey(job.artist, job.albumName), job.artist, job.albumName, null, job.year)
-                }.padding(vertical = 12.dp),
+                }.padding(vertical = 16.dp),
             )
             Text(
                 "Quality profile: ${job.qualityProfile}", style = MaterialTheme.typography.bodySmall,
@@ -220,7 +220,7 @@ private fun JobRow(job: AcquisitionJob, hub: AcquisitionHub, now: Double, open: 
             )
             // The icon and the words are the status; the colour only adds emphasis (rule 4).
             val info = job.info
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Icon(statusIcon(job), contentDescription = null, tint = toneColor(info.tone), modifier = Modifier.size(18.dp))
                 Text(info.label, style = MaterialTheme.typography.titleMedium, color = toneColor(info.tone))
             }
@@ -246,7 +246,7 @@ private fun JobRow(job: AcquisitionJob, hub: AcquisitionHub, now: Double, open: 
                                 left > 0 -> "Use next source (${left}s)"
                                 else -> "Switching source…"
                             },
-                            Modifier.padding(start = 6.dp),
+                            Modifier.padding(start = 8.dp),
                         )
                     }
                 }
@@ -273,7 +273,7 @@ private fun JobRow(job: AcquisitionJob, hub: AcquisitionHub, now: Double, open: 
 @Composable
 private fun Progress(p: app.discair.model.LiveProgress) {
     val percent = p.percent
-    Column(Modifier.padding(top = 4.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+    Column(Modifier.padding(top = 4.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
         if (percent == null) LinearProgressIndicator(
             progress = { 0f }, modifier = Modifier.fillMaxWidth().semantics { contentDescription = "Download progress unavailable" },
             color = Ink.Accent, trackColor = Ink.Edge,

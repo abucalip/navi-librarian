@@ -87,8 +87,8 @@ fun TapePlayer(
     Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(bottom = 24.dp)) {
         // The player card: a framed box with a hard shadow.
         Column(
-            Modifier.padding(end = 6.dp, bottom = 6.dp).fillMaxWidth().brutalShadow(RectangleShape)
-                .background(p.surface).border(rule, p.edgeStrong).padding(12.dp),
+            Modifier.padding(end = 8.dp, bottom = 8.dp).fillMaxWidth().brutalShadow(RectangleShape)
+                .background(p.surface).border(rule, p.edgeStrong).padding(16.dp),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(Modifier.size(68.dp).brutalShadow(RectangleShape).border(rule, p.edgeStrong)) {
@@ -98,7 +98,7 @@ fun TapePlayer(
                     val label = TapeDeckRules.trackLabel(state.queue.index, state.queue.items.size)
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         if (label.isNotEmpty()) Text(label, style = timeStyle, color = muted, modifier = Modifier.weight(1f, fill = false))
-                        Spacer(Modifier.size(10.dp))
+                        Spacer(Modifier.size(8.dp))
                         TapeMeter(5, TapeDeckRules.meterMoves(state.isPlaying, state.buffering, reduced), p.text, size = 18.dp)
                     }
                     Text(
@@ -130,7 +130,7 @@ fun TapePlayer(
             if (state.waitingForNetwork) TextButton(onClick = controller::retryNow, Modifier.heightIn(min = Target)) { Text("Retry now") }
 
             qualityLabel(item)?.let {
-                Text(it, style = timeStyle, color = muted, maxLines = 1, modifier = Modifier.padding(top = 4.dp).border(1.dp, p.edgeStrong).padding(horizontal = 6.dp, vertical = 1.dp))
+                Text(it, style = timeStyle, color = muted, maxLines = 1, modifier = Modifier.padding(top = 4.dp).border(1.dp, p.edgeStrong).padding(horizontal = 8.dp, vertical = 1.dp))
             }
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Text(formatTime(shown), style = timeStyle, color = muted, modifier = Modifier.padding(end = 8.dp))
@@ -168,15 +168,15 @@ fun TapePlayer(
                 ) { Icon(PlayerIcons.Quote, contentDescription = if (showLyrics) "Hide lyrics, show the queue" else "Show lyrics") }
             }
         }
-        Spacer(Modifier.height(18.dp))
+        Spacer(Modifier.height(16.dp))
         // The playlist (or the lyrics) under the card, in its own ruled box.
         Box(
-            Modifier.padding(end = 6.dp, bottom = 6.dp).fillMaxWidth().height(PanelHeight).brutalShadow(RectangleShape)
-                .background(p.surface).border(rule, p.edgeStrong).padding(horizontal = 12.dp),
+            Modifier.padding(end = 8.dp, bottom = 8.dp).fillMaxWidth().height(PanelHeight).brutalShadow(RectangleShape)
+                .background(p.surface).border(rule, p.edgeStrong).padding(horizontal = 16.dp),
         ) {
             if (showLyrics) lyricsPanel() else QueuePanel(state, controller, Modifier.fillMaxSize())
         }
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(16.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
             EqualizerLink(onEqualizer)
             Spacer(Modifier.size(16.dp))

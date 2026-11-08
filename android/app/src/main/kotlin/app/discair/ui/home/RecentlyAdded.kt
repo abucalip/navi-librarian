@@ -151,7 +151,7 @@ private fun RecentlyAddedSheet(albums: List<LibraryAlbum>, open: Opener, onDismi
             Text(
                 "Last $RECENT_DAYS days · " + plural(albums.size, "album"),
                 style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 2.dp, bottom = 8.dp),
+                modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 8.dp),
             )
             LazyColumn(Modifier.fillMaxWidth()) {
                 items(albums, key = { it.id.ifBlank { it.key } }) { album ->
@@ -165,7 +165,7 @@ private fun RecentlyAddedSheet(albums: List<LibraryAlbum>, open: Opener, onDismi
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         AlbumCover(album.artist, album.name, album.artworkUrl, Modifier.size(56.dp))
-                        Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
+                        Column(Modifier.weight(1f).padding(horizontal = 16.dp)) {
                             Text(album.name, style = MaterialTheme.typography.bodyLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
                             Text(
                                 listOfNotNull(album.artist.ifBlank { null }, album.year?.toString()).joinToString(" · "),
@@ -198,7 +198,7 @@ private fun TapeRecentList(albums: List<LibraryAlbum>, open: Opener) {
     val rule = (p.shape?.outline ?: 2).dp
     val mono = app.discair.ui.theme.LocalFontPair.current.mono
     Column(
-        Modifier.padding(start = 16.dp, end = 21.dp, top = 8.dp, bottom = 6.dp).fillMaxWidth()
+        Modifier.padding(start = 16.dp, end = 24.dp, top = 8.dp, bottom = 8.dp).fillMaxWidth()
             .brutalShadow(androidx.compose.ui.graphics.RectangleShape)
             .background(p.surface).border(rule, p.edgeStrong),
     ) {
@@ -219,7 +219,7 @@ private fun TapeRecentList(albums: List<LibraryAlbum>, open: Opener) {
                     else Text("%02d".format(index + 1), style = MaterialTheme.typography.labelMedium.copy(fontFamily = mono), color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 AlbumCover(album.artist, album.name, album.artworkUrl, Modifier.size(48.dp).border(rule, p.edgeStrong), rect = true)
-                Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
+                Column(Modifier.weight(1f).padding(horizontal = 16.dp)) {
                     Text(album.name, style = MaterialTheme.typography.bodyLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     Text(
                         album.artist, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant,

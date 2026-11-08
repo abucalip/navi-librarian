@@ -70,7 +70,7 @@ fun NewReleasesSection(open: Opener) {
                 contentPadding = PaddingValues(start = 16.dp, end = 32.dp), pageSpacing = 16.dp,
                 verticalAlignment = Alignment.Top,
             ) { page ->
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                     pages[page].forEach { entry -> ReleaseTile(entry, open) }
                 }
             }
@@ -88,7 +88,7 @@ private fun ReleaseTile(entry: DiscoveryEntry, open: Opener) {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         AlbumCover(artist, item.album, null, Modifier.size(72.dp).clip(RoundedCornerShape(12.dp)), rect = true)
-        Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
+        Column(Modifier.weight(1f).padding(horizontal = 16.dp)) {
             Text(item.album, style = MaterialTheme.typography.titleMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
             Text(
                 artist, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant,

@@ -112,7 +112,7 @@ fun NavIsland(
         )
         return
     }
-    Box(modifier.fillMaxWidth().navigationBarsPadding().padding(bottom = 12.dp), contentAlignment = Alignment.BottomCenter) {
+    Box(modifier.fillMaxWidth().navigationBarsPadding().padding(bottom = 16.dp), contentAlignment = Alignment.BottomCenter) {
         val card = RoundedCornerShape(50.dp)
         val fill by animateColorAsState(tint ?: Ink.Raised, animationSpec = tween(500), label = "islandTint")
         // Neobrut: the outline and hard shadow of the theme the owner chose (the island itself may sit on the dark artwork palette).
@@ -122,9 +122,9 @@ fun NavIsland(
             Modifier.brutalShadowOf(card, chosen).background(fill, card).border(outline, chosen.edgeStrong, card)
         } else Modifier.shadow(10.dp, card).background(fill, card).border(1.dp, Color.White.copy(alpha = 0.12f), card)
         Row(
-            frame.padding(horizontal = 14.dp, vertical = 6.dp),
+            frame.padding(horizontal = 16.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(14.dp),
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             IslandButton(onClick = onSearch, label = "Search") {
                 Icon(Icons.Default.Search, contentDescription = null, tint = Ink.Text, modifier = Modifier.size(24.dp))

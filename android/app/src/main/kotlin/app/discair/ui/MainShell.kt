@@ -346,7 +346,7 @@ private fun AppHeader(active: Int, onDownloads: () -> Unit) {
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(app.discair.ui.player.PlayerIcons.Cloud, contentDescription = null, tint = app.discair.ui.theme.Ink.TextMuted, modifier = Modifier.size(20.dp))
-                if (active > 0) Badge(Modifier.align(Alignment.TopEnd).padding(top = 3.dp, end = 3.dp)) { Text("$active") }
+                if (active > 0) Badge(Modifier.align(Alignment.TopEnd).padding(top = 4.dp, end = 4.dp)) { Text("$active") }
             }
         }
         RowDivider()
