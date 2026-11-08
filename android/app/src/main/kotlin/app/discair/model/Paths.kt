@@ -71,7 +71,11 @@ fun PathStop.heading(kind: PathKind): PathHeading = when (kind) {
 }
 
 /** A parsed body. [status] is the server's `ok` or `empty`; [truncated] is `rows`, `time`, `stops` or null. */
-data class PathsResponse(val kind: String, val status: String, val stops: List<PathStop>, val truncated: String?)
+data class PathsResponse(
+    val kind: String, val status: String, val stops: List<PathStop>, val truncated: String?,
+    /** The start's entity type (`group`, `person` or `artist`), so wording can fit a band or a single musician. */
+    val startType: String = "",
+)
 
 /** What the sheet shows for a read: the server's stops, or nothing it can honestly list. */
 sealed interface PathsView {
@@ -83,6 +87,7 @@ sealed interface PathsView {
 fun parsePaths(body: String): PathsResponse {
     val root = objectOrNull(body)
         ?: return PathsResponse(kind = "", status = "", stops = emptyList(), truncated = null)
+    val kind = root.string("kind").orEmpty()
     val stops = (root["stops"] as? JsonArray).orEmpty().mapNotNull { element ->
         val stop = element as? JsonObject ?: return@mapNotNull null
         val entity = stop.obj("entity") ?: return@mapNotNull null
@@ -91,6 +96,8 @@ fun parsePaths(body: String): PathsResponse {
             (r as? JsonObject)?.string("text")?.trim()?.takeIf { it.isNotEmpty() }
         }
         if (name.isEmpty() || reason == null) return@mapNotNull null
+        // A placeholder credit ("[unknown]", "[anonymous]") is not an artist the owner can follow.
+        if (kind == PathKind.SidemanToLeader.wire && name.isPlaceholderName()) return@mapNotNull null
         PathStop(
             name = name,
             type = entity.string("type").orEmpty(),
@@ -111,11 +118,28 @@ fun parsePaths(body: String): PathsResponse {
         )
     }
     return PathsResponse(
-        kind = root.string("kind").orEmpty(),
+        kind = kind,
         status = root.string("status").orEmpty(),
-        stops = stops,
+        stops = stops.dropRepeats(kind),
         truncated = root.string("truncated")?.takeIf { it.isNotBlank() },
+        startType = root.obj("start")?.string("type").orEmpty(),
     )
+}
+
+private fun String.isPlaceholderName() = startsWith("[") && endsWith("]")
+
+/**
+ * One row per place a row leads to: songs that open the same artist (or are the same song) and labels'
+ * albums by the same artist collapse to the first. The server does this too; this guards older answers.
+ */
+private fun List<PathStop>.dropRepeats(kind: String): List<PathStop> {
+    if (kind != PathKind.FollowTheMusician.wire && kind != PathKind.LabelPath.wire) return this
+    val seen = mutableSetOf<String>()
+    return filter { stop ->
+        val key = (stop.albumArtist ?: if (kind == PathKind.FollowTheMusician.wire) "song:" + stop.name else null)
+            ?.lowercase() ?: return@filter true
+        seen.add(key)
+    }
 }
 
 /** Turns a parsed path into what the sheet shows. An `empty` status or no usable stop is said in words, never blank. */

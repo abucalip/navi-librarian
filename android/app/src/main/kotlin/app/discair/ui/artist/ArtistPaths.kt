@@ -114,7 +114,7 @@ fun ArtistPathsSheet(artistName: String, mbid: String, open: Opener, onDismiss: 
                 }
             }
             Text(
-                kindDescription(kind, artistName),
+                kindDescription(kind, artistName, (state as? Load.Ready)?.value?.startType.orEmpty()),
                 style = MaterialTheme.typography.bodySmall,
                 color = Ink.TextMuted,
                 modifier = Modifier.fillMaxWidth(),
@@ -169,9 +169,13 @@ private fun PathBody(artistName: String, kind: PathKind, response: PathsResponse
     }
 }
 
-private fun kindDescription(kind: PathKind, artist: String) = when (kind) {
+private fun kindDescription(kind: PathKind, artist: String, startType: String) = when (kind) {
     PathKind.FollowTheMusician -> "Songs, not in your library, by musicians who also played with $artist."
-    PathKind.SidemanToLeader -> "Artists whose records $artist played on as a sideman."
+    PathKind.SidemanToLeader -> when (startType) {
+        "group" -> "Artists whose records $artist appeared on as guests."
+        "person" -> "Artists whose records $artist played on as a sideman."
+        else -> "Artists whose records $artist played on as a guest."
+    }
     PathKind.LabelPath -> "Albums released on the same labels as $artist's records."
     PathKind.CompositionPath -> "Other recordings of the same compositions as $artist's, covers and live versions included."
     PathKind.ScenePath -> "Artists from the same place and era as $artist."

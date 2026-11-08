@@ -50,7 +50,7 @@ class PathsTest {
         val r = parsePaths(body("paths_sideman_to_leader_truncated"))
         assertEquals("ok", r.status)
         assertEquals("stops", r.truncated)
-        assertEquals(30, r.stops.size)
+        assertEquals(29, r.stops.size) // 30 from the server, one of them the placeholder "[unknown]"
         assertTrue(r.stops.all { it.type == "artist" && it.reason.isNotBlank() })
     }
 
@@ -191,5 +191,22 @@ class PathsTest {
               "via":{"canonical_name":"Aranjuez","type":"work"},"anchor":{"canonical_name":"Aranjuez (Adagio)","type":"recording"}}]}]}""")
             .stops.single().reasons.single()
         assertEquals("Another recording of Aranjuez, the same work as Aranjuez (Adagio), a recording in your library.", r.sentence())
+    }
+
+    @Test fun sidemanNeverListsPlaceholderArtists() {
+        val r = parsePaths("""{"kind":"sideman_to_leader","status":"ok","start":{"type":"group"},"stops":[
+            {"entity":{"canonical_name":"[unknown]","type":"artist"},"reasons":[{"text":"x","code":"sideman_on"}]},
+            {"entity":{"canonical_name":"Leader","type":"artist"},"reasons":[{"text":"x","code":"sideman_on"}]}]}""")
+        assertEquals(listOf("Leader"), r.stops.map { it.name })
+        assertEquals("group", r.startType)
+    }
+
+    @Test fun followTheMusicianKeepsOneRowPerArtistAndPerSong() {
+        val r = parsePaths("""{"kind":"follow_the_musician","status":"ok","stops":[
+            {"entity":{"canonical_name":"A","type":"recording"},"presentation":{"album_artist":"Band"},"reasons":[{"text":"x","code":"shared_musician"}]},
+            {"entity":{"canonical_name":"B","type":"recording"},"presentation":{"album_artist":"band"},"reasons":[{"text":"x","code":"shared_musician"}]},
+            {"entity":{"canonical_name":"Hush","type":"recording"},"reasons":[{"text":"x","code":"shared_musician"}]},
+            {"entity":{"canonical_name":"hush","type":"recording"},"reasons":[{"text":"x","code":"shared_musician"}]}]}""")
+        assertEquals(listOf("A", "Hush"), r.stops.map { it.name })
     }
 }

@@ -140,9 +140,12 @@ class PathTests(unittest.TestCase):
         a, _, rec = self.library()
         standard, rare = self.ent("work", "Standard"), self.ent("work", "Rare Piece")
         self.edge(rec, standard, "performance")
+        who = self.ent("artist", "Cover band")
         for i in range(20):
-            self.edge(self.ent("recording", f"Take{i:02d}"), standard, "performance")
+            t = self.ent("recording", f"Take{i:02d}")
+            self.edge(t, standard, "performance"); self.edge(who, t, "performer")
         rare_rec = self.ent("recording", "RareTake")
+        self.edge(who, rare_rec, "performer")
         self.edge(rec, rare, "performance")
         self.edge(rare_rec, rare, "performance")
         path = build_path(self.db, a, "composition_path", limits=PathLimits(max_per_bridge=5))
@@ -207,16 +210,57 @@ class PathTests(unittest.TestCase):
         work, rec2 = self.ent("work", "Song"), self.ent("recording", "Cover")
         self.edge(rec, work, "performance")
         self.edge(rec2, work, "performance")
+        self.assertEqual(build_path(self.db, a, "composition_path")["status"], "empty")  # no credited performer: dropped
+        self.edge(self.ent("artist", "Cover artist"), rec2, "performer")
         path = build_path(self.db, a, "composition_path")
         self.assertEqual([s["entity"]["canonical_name"] for s in path["stops"]], ["Cover"])
         reason = path["stops"][0]["reasons"][0]
         self.assertEqual((reason["code"], reason["via"]["canonical_name"]), ("same_work", "Song"))
         self.assertEqual(len(reason["evidence"]), 2)
         self.assertEqual(reason["text"], "another recording of Song, the same work as Anchor Song, a recording in your library")
-        performer = self.ent("artist", "Cover artist")
-        self.edge(performer, rec2, "performer")
-        path = build_path(self.db, a, "composition_path")
         self.assertEqual(path["stops"][0]["presentation"], {"title": "Cover artist", "context": "Cover", "album": None, "album_artist": None, "artist": "Cover artist"})
+
+    def test_follow_the_musician_ignores_producers_and_collapses_one_artist(self):
+        a, _, rec = self.library()
+        player, producer = self.ent("artist", "Player"), self.ent("artist", "Producer")
+        self.edge(player, rec, "instrument"); self.edge(producer, rec, "producer")
+        lp, lead = self.ent("release", "Their LP"), self.ent("artist", "Their Band")
+        for n in ("One", "Two"):
+            t = self.ent("recording", n)
+            self.edge(player, t, "instrument"); self.edge(producer, t, "producer")
+            self.edge(t, lp, "appears_on")
+        self.edge(lp, lead, "release_artist", src="musicbrainz_dump_releases")
+        only_prod = self.ent("recording", "ProducedOnly"); self.edge(producer, only_prod, "producer")
+        path = build_path(self.db, a, "follow_the_musician")
+        names = [s["entity"]["canonical_name"] for s in path["stops"]]
+        self.assertEqual(len(names), 1)  # One and Two lead to the same artist; ProducedOnly is no performer credit
+        self.assertNotIn("ProducedOnly", names)
+        self.assertEqual({r["via"]["canonical_name"] for r in path["stops"][0]["reasons"]}, {"Player"})
+
+    def test_sideman_never_lists_unknown_artists(self):
+        a, _, _ = self.library()
+        rec, rel = self.ent("recording", "Take"), self.ent("release", "LP")
+        self.edge(a, rec, "instrument"); self.edge(rec, rel, "track_on", src="musicbrainz_dump_releases")
+        self.edge(rel, self.ent("artist", "[unknown]"), "release_artist", src="musicbrainz_dump_releases")
+        self.assertEqual(build_path(self.db, a, "sideman_to_leader")["status"], "empty")
+
+    def test_label_path_one_row_per_artist_and_credit_from_the_owned_twin(self):
+        a, _, _ = self.library()
+        label = self.ent("label", "Lab")
+        own = self.db.execute("SELECT id FROM entities WHERE type='release' AND owned=1").fetchone()["id"]
+        self.db.execute("INSERT INTO release_labels (release_id, label_id, catalogue_number) VALUES (?, ?, 'x')", (own, label))
+        band = self.ent("artist", "Band")
+        for title in ("B1", "B2"):
+            r = self.ent("release", title); self.edge(r, band, "release_artist", src="musicbrainz_dump_releases")
+            self.db.execute("INSERT INTO release_labels (release_id, label_id, catalogue_number) VALUES (?, ?, 'y')", (r, label))
+        twin_artist = self.ent("artist", "Floyd")
+        twin = self.ent("release", "Moon", owned=True); self.edge(twin, twin_artist, "credited_to", ec="library_tag", src="navidrome")
+        other = self.ent("release", "Moon")  # an edition with no credit of its own
+        self.db.execute("INSERT INTO release_labels (release_id, label_id, catalogue_number) VALUES (?, ?, 'z')", (other, label))
+        self.db.commit()
+        path = build_path(self.db, a, "label_path")
+        credits = sorted(s["presentation"]["album_artist"] for s in path["stops"])
+        self.assertEqual(credits, ["Band", "Floyd"])
 
     def test_scene_path_needs_a_stated_non_country_area_and_close_start(self):
         a, _, _ = self.library()
@@ -271,7 +315,7 @@ class PathTests(unittest.TestCase):
         )
         self.db.commit()
         rebuilt = cached_path(self.db, a, "follow_the_musician")
-        self.assertEqual(rebuilt["presentation_version"], 3)
+        self.assertEqual(rebuilt["presentation_version"], 4)
         self.assertEqual(rebuilt["stops"][0]["presentation"]["title"], "Player")
 
     def test_cache_hit_refresh_and_staleness(self):
