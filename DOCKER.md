@@ -26,6 +26,10 @@ docker compose logs -f discair
 
 Open `http://<docker-host>:8080` (or the port set with `WEB_PORT`). Complete the first-run owner account setup in the web UI.
 
+## Background worker
+
+`docker compose up -d` also starts `discair-worker` (same image and data volume, command `python -m app.worker`). It is the only process that writes the Server V2 knowledge store and calls MusicBrainz for it: it polls Navidrome's scan status every 5 seconds and enriches newly added albums. Set `NAVI_AUTO_FILL_POLL_SECONDS=off` in `.env` to switch it off. The web container never runs it.
+
 ## Persistent data and upgrades
 
 The named volume `librarian_data` stores the app's database and authentication key. Keep this volume when upgrading; deleting it resets the app's persistent state and authentication.

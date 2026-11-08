@@ -88,9 +88,6 @@ def _start_discovery_background():
     from app.services import insights_refresh
 
     insights_refresh.start(librarian)
-    from app.services import library_enrich
-
-    library_enrich.start(librarian)
 
 
 def _schedule_discovery_scheduler_startup():

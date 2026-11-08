@@ -159,6 +159,39 @@ class AutoFillCycleTests(unittest.TestCase):
         self.nd.get_album = broken
         self.assertEqual(self.poll()["ingested"], 1)
 
+    def test_burst_over_the_per_poll_cap_is_fully_ingested_without_the_daily_pass(self):
+        self.poll()
+        self.nd.calls.clear()
+        ids = [f"n{i:02d}" for i in range(60)]
+        for album_id in ids:
+            self.nd.albums[album_id] = ""
+        self.nd.scan = {**self.nd.scan, "lastScan": "burst"}
+        total = 0
+        for _ in range(5):
+            total += self.poll().get("ingested", 0)
+            self.t += 6
+        self.assertEqual(total, 60)
+        seen = auto_fill._get(self.db, auto_fill.SEEN_KEY, {})
+        self.assertTrue(all(i in seen for i in ids))
+        self.assertEqual(auto_fill._get(self.db, auto_fill.PENDING_KEY, None), [])
+        self.assertNotIn("full", self.nd.calls)
+        self.assertEqual(self.poll(), {"idle": True})
+
+    def test_failed_getalbum_in_a_burst_does_not_lose_the_rest(self):
+        self.poll()
+        for i in range(30):
+            self.nd.albums[f"n{i:02d}"] = ""
+        self.nd.scan = {**self.nd.scan, "lastScan": "burst"}
+        real = self.nd.get_album
+        self.nd.get_album = lambda i: None if i == "n29" else real(i)   # n29 is the newest
+        self.poll()
+        self.nd.get_album = real
+        self.t += auto_fill.RETRY_SECONDS + 1
+        total = self.poll()["ingested"]
+        total += self.poll().get("ingested", 0)
+        self.assertEqual(total, 30 - 25 + 1)  # the 5 beyond the cap, plus the one that failed
+        self.assertEqual(auto_fill._get(self.db, auto_fill.PENDING_KEY, None), [])
+
     def test_daily_full_pass_removes_deleted_and_picks_up_new_tags(self):
         self.nd.albums = {"a1": REL, "a2": ""}
         self.poll()
@@ -225,6 +258,19 @@ class AutoFillCycleTests(unittest.TestCase):
         self.assertEqual(self.poll()["resolved_by_search"], 1)
 
 
+class WorkerTests(unittest.TestCase):
+    def test_worker_runs_the_loop_in_its_own_process_and_stops(self):
+        import threading
+        import app.worker as worker
+        stop = threading.Event()
+        stop.set()
+        self.assertEqual(worker.main(librarian=object(), stop=stop), 0)
+
+    def test_web_startup_no_longer_starts_the_loop(self):
+        from pathlib import Path
+        self.assertNotIn("library_enrich", (Path(__file__).parent.parent / "app" / "main.py").read_text())
+
+
 class PollTests(unittest.TestCase):
     def test_on_by_default_clamped_and_switchable_off(self):
         self.assertEqual(library_enrich.poll_seconds({}), 5.0)
@@ -232,7 +278,6 @@ class PollTests(unittest.TestCase):
         self.assertIsNone(library_enrich.poll_seconds({library_enrich.POLL_ENV: "0"}))
         self.assertEqual(library_enrich.poll_seconds({library_enrich.POLL_ENV: "1"}), library_enrich.MIN_POLL)
         self.assertEqual(library_enrich.poll_seconds({library_enrich.POLL_ENV: "5"}), 5.0)
-        self.assertIsNone(library_enrich.start(object(), {library_enrich.POLL_ENV: "off"}))
 
 
 if __name__ == "__main__":

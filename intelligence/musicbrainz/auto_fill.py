@@ -49,6 +49,7 @@ FULL_KEY = "auto_fill.last_full_at"
 QUEUE_KEY = "auto_fill.queue"
 LAST_KEY = "auto_fill.last_cycle"
 RETRY_KEY = "auto_fill.retry_after"
+PENDING_KEY = "auto_fill.pending_albums"  # detected additions not ingested yet, kept across polls
 UNTAGGED_KEY = "auto_fill.untagged"    # {album id: first seen} added without a release MBID
 OP_SEARCH = "release_search"
 SEARCH_TTL = 30 * 86400.0
@@ -187,9 +188,12 @@ def run_cycle(
     seen_raw = _get(db, SEEN_KEY, None)
     last_full = _get(db, FULL_KEY, 0.0)
     do_full = seen_raw is None or datetime.fromtimestamp(now).date() > datetime.fromtimestamp(last_full).date()
-    changed = marker != _get(db, MARKER_KEY, None) and now >= _get(db, RETRY_KEY, 0.0)
+    retry_ok = now >= _get(db, RETRY_KEY, 0.0)
+    changed = marker != _get(db, MARKER_KEY, None)
+    pending: list[dict[str, Any]] = _get(db, PENDING_KEY, [])
     fill_due = bool(_due_queue(db, releases, artists, now))
-    if not (do_full or changed or fill_due):
+    detect = do_full or (changed and retry_ok)
+    if not (detect or (pending and retry_ok) or fill_due):
         return {"idle": True}
 
     summary: dict[str, Any] = {"mode": "full" if do_full else "incremental", "new": 0, "ingested": 0,
@@ -209,23 +213,28 @@ def run_cycle(
             fresh = [a for a in everything if a.get("id") and (
                 str(a["id"]) not in seen or (not seen[str(a["id"])] and a.get("musicBrainzId")))]
         _put(db, FULL_KEY, now)
-    elif changed:
+    elif detect:
         for page in range(MAX_NEWEST_PAGES):
             stubs = newest(page * NEWEST_PAGE, NEWEST_PAGE)
             fresh += [a for a in stubs if a.get("id") and str(a["id"]) not in seen]
             if len(stubs) < NEWEST_PAGE or any(str(a.get("id")) in seen for a in stubs):
                 break
+    if retry_ok or do_full:   # additions found earlier but not ingested yet come first
+        known = {str(a["id"]) for a in fresh}
+        fresh = [a for a in pending if str(a["id"]) not in known] + fresh
     summary["new"] = len(fresh)
 
     touched_artists: set[int] = set()
     untagged: dict[str, float] = dict(_get(db, UNTAGGED_KEY, {}))
     artist_cache: dict[str, Mapping[str, Any] | None] = {}
     failed = False
+    done: set[str] = set()
     for stub in fresh[:max_new]:
         album = get_album(str(stub["id"]))
         if not album:
             failed = True
             continue
+        done.add(str(stub["id"]))
         album = dict(album)
         artist_id = str(stub.get("artistId") or album.get("artistId") or "")
         if artist_id not in artist_cache:
@@ -250,7 +259,10 @@ def run_cycle(
                 bucket.add(entity["mbid"].lower())
         if result.artist_entity_id:
             touched_artists.add(result.artist_entity_id)
-    summary["deferred"] = max(len(fresh) - max_new, 0)
+    leftover = [{"id": str(a["id"]), "artistId": a.get("artistId"), "musicBrainzId": a.get("musicBrainzId")}
+                for a in fresh if str(a["id"]) not in done]
+    summary["deferred"] = len(leftover)
+    _put(db, PENDING_KEY, leftover)
     summary["searched"] = summary["resolved_by_search"] = 0
     if do_full and seen_raw is not None:
         _search_sweep(db, summary, seen, untagged, releases, artists, touched_artists, get_album, get_artist, paced, now)
@@ -258,10 +270,10 @@ def run_cycle(
         untagged.pop(gone)
     _put(db, SEEN_KEY, seen)
     _put(db, UNTAGGED_KEY, untagged)
-    if failed or summary["deferred"]:
-        _put(db, RETRY_KEY, now + RETRY_SECONDS)   # leave the marker: the next poll finds the rest
-    else:
-        _put(db, MARKER_KEY, marker)
+    if failed:
+        _put(db, RETRY_KEY, now + RETRY_SECONDS)   # the failed albums stay in the pending list
+    if detect:
+        _put(db, MARKER_KEY, marker)               # every detected addition is ingested or pending
 
     # Coverage check: drop what the loaded dump already answers, or the API already settled.
     open_releases = [m for m in _unfilled_releases(db, sorted(releases)) if not _is_final(db, api_fill.OP_RELEASE, m)]

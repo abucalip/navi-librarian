@@ -1,10 +1,12 @@
-"""Background loop that enriches newly added owned albums (Server V2, automatic API fill).
+"""Loop that enriches newly added owned albums (Server V2, automatic API fill).
 
-Wiring only: the work is ``intelligence.musicbrainz.auto_fill.run_cycle``. On by default (owner
-approved): polls every ``DEFAULT_POLL`` seconds; ``NAVI_AUTO_FILL_POLL_SECONDS`` changes the interval and
-``0`` or ``off`` switches the loop off. Each poll costs one
-``getScanStatus`` call (about 300 bytes); Navidrome is read further, and MusicBrainz asked, only when
-the scan marker changed. A full album inventory is read daily after midnight (server local time) as a safety net.
+Runs only in the dedicated worker process (``python -m app.worker``): the worker is the single writer
+of the knowledge store and the single MusicBrainz egress, the web process only reads (docs/ServerV2.md,
+docs/efficiency.md A/E). The work is ``intelligence.musicbrainz.auto_fill.run_cycle``. On by default
+(owner approved): polls every ``DEFAULT_POLL`` seconds; ``NAVI_AUTO_FILL_POLL_SECONDS`` changes the
+interval and ``0`` or ``off`` switches it off. Each poll costs one ``getScanStatus`` call (about 300
+bytes); Navidrome is read further, and MusicBrainz asked, only when the scan marker changed. A full
+album inventory is read daily after midnight (server local time) as a safety net.
 """
 import logging
 import os
@@ -54,10 +56,15 @@ def poll_once(librarian, db):
     )
 
 
-def _loop(librarian, interval):
+def run_forever(librarian, stop, environ=None):
+    """Poll until ``stop`` (a ``threading.Event``) is set; returns at once when the loop is switched off."""
+    interval = poll_seconds(environ)
+    if interval is None:
+        logger.info("Auto fill is switched off (%s)", POLL_ENV)
+        return
     db = None
     last_error = None
-    while True:
+    while not stop.is_set():
         try:
             with _LOCK:
                 if db is None:
@@ -74,14 +81,6 @@ def _loop(librarian, interval):
             if db is not None:
                 db.close()
                 db = None
-        threading.Event().wait(interval)
-
-
-def start(librarian, environ=None):
-    """Start the loop when a poll interval is configured; returns the thread or None."""
-    interval = poll_seconds(environ)
-    if interval is None:
-        return None
-    thread = threading.Thread(target=_loop, args=(librarian, interval), name="library-enrich", daemon=True)
-    thread.start()
-    return thread
+        stop.wait(interval)
+    if db is not None:
+        db.close()
