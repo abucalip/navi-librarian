@@ -141,6 +141,27 @@ private func stubConfiguration() -> URLSessionConfiguration {
         out.stop()
     }
 
+    @Test func onceTheDownloadIsCompleteTheNextSongCanBePreloaded() async throws {
+        let full = try silentFile(seconds: 3)
+        let partial = try silentFile(seconds: 1)
+        let growing = FileManager.default.temporaryDirectory.appending(path: "grow-\(UUID().uuidString).caf")
+        try FileManager.default.copyItem(at: partial, to: growing)
+        defer { for u in [full, partial, growing] { try? FileManager.default.removeItem(at: u) } }
+        let download = GrowingDownload(file: growing)
+        download.setState(bytes: 1, complete: false)
+        let out = EngineOutput()
+        do { try out.openGrowing(download, expectedDuration: 3) } catch let e as AudioError where e.description.contains("could not start") { return }
+        try grow(growing, to: full)
+        download.setState(bytes: 2, complete: true)
+        out.play()
+        for _ in 0..<100 where out.isGrowing { try await Task.sleep(for: .milliseconds(10)) }
+        #expect(!out.isGrowing)                       // long before the last seconds of the song
+        #expect(out.position < 2)
+        #expect(abs(out.duration - 3) < 0.01)
+        try out.preload(file: full, transition: .gapless)
+        out.stop()
+    }
+
     @Test func aStarvedSongWaitsInsteadOfEndingEarly() async throws {
         let full = try silentFile(seconds: 2)
         let partial = try silentFile(seconds: 1)

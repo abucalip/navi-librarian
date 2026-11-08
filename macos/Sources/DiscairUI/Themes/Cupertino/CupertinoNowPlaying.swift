@@ -191,9 +191,9 @@ struct CupertinoNowPlaying: View {
             if case .failed(let m) = p.phase { Text(m).font(.system(size: 13)).foregroundStyle(.white).padding(.top, 4) }
             if let n = p.notice { Text(n).font(.system(size: 12)).opacity(0.8).padding(.top, 2) }
             HStack(spacing: 10) {
-                Text(PlayerModel.clock(p.position))
+                PlaybackClock(player: p) { Text(PlayerModel.clock($0)) }
                 DragBar(value: p.fraction, peaks: p.waveform, label: "Position", valueText: { "\(PlayerModel.clock($0 * p.duration)) of \(PlayerModel.clock(p.duration))" }) { p.seek(toFraction: $0) }
-                Text("-" + PlayerModel.clock(max(0, p.duration - p.position)))
+                PlaybackClock(player: p) { Text("-" + PlayerModel.clock(max(0, p.duration - $0))) }
             }
             .font(.system(size: 11)).monospacedDigit().opacity(0.85).padding(.top, 16)
             HStack(spacing: 34) {

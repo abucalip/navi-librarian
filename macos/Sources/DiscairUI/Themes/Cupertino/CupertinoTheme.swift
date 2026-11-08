@@ -246,7 +246,7 @@ struct CupertinoToolbar: View {
                         if case .failed(let m) = p.phase { Text(m).foregroundStyle(CU.accent).lineLimit(1) }
                     }
                     .font(.system(size: 12)).frame(maxWidth: .infinity)
-                    Text(PlayerModel.clock(p.position)).font(.system(size: 11)).monospacedDigit().foregroundStyle(CU.muted)
+                    PlaybackClock(player: p) { Text(PlayerModel.clock($0)).font(.system(size: 11)).monospacedDigit().foregroundStyle(CU.muted) }
                 }
                 .padding(.horizontal, 10).frame(height: 44)
                 .overlay(alignment: .bottomLeading) {

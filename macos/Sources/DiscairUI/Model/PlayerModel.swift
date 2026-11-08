@@ -15,7 +15,16 @@ public final class PlayerModel {
     public private(set) var phase: Phase = .idle { didSet { onNowPlayingChange?() } }
     /// Told when the song or play state changes (the system Now Playing hook).
     @ObservationIgnored public var onNowPlayingChange: (() -> Void)?
-    public private(set) var position: Double = 0
+    public private(set) var position: Double = 0 { didSet { positionAnchor = Date() } }
+    @ObservationIgnored private var positionAnchor = Date()
+    /// The position for a clock on screen: the last reading carried forward by the time since it was taken (at most 2 s), so
+    /// the clock keeps moving smoothly when a tick is late. Never behind `position`, never past the song's end.
+    public func displayPosition(at date: Date = Date()) -> Double {
+        guard phase == .playing else { return position }
+        let ahead = min(max(date.timeIntervalSince(positionAnchor), 0), 2)
+        let value = position + ahead
+        return duration > 0 ? min(value, duration) : value
+    }
     public private(set) var duration: Double = 0
     /// Songs finished or left this session, newest first (the queue's History).
     public private(set) var history: [QueueItem] = []
@@ -401,7 +410,11 @@ public final class PlayerModel {
     private func songEnded() {
         stopTicking()
         noteBrokenDownload()
-        let cut = cutShort; cutShort = nil
+        var cut = cutShort; cutShort = nil
+        // Say so when a song ends well before its length, so an early end is never silent.
+        if cut == nil, duration > 10, position > 0, position < duration - 5, let c = queue.current {
+            cut = "“\(c.title)” ended at \(Self.clock(position)) of \(Self.clock(duration))."
+        }
         pushHistory()
         if queue.advance(natural: true) != nil { startCurrent() }
         else { dropPreload(); phase = .idle; position = 0; scrobbler.end(); cleanUp() }
