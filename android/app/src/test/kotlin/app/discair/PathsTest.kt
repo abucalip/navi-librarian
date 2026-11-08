@@ -3,6 +3,7 @@ package app.discair
 import app.discair.data.CacheMiss
 import app.discair.model.PathKind
 import app.discair.model.PathsView
+import app.discair.model.heading
 import app.discair.model.parsePaths
 import app.discair.model.pathsAvailableFrom
 import app.discair.model.pathsFailure
@@ -152,5 +153,33 @@ class PathsTest {
 
     @Test fun unreachableServerKeepsTheConnectionMessage() {
         assertEquals(ConnectionFailure.Unreachable.message, pathsFailure(ConnectionException(ConnectionFailure.Unreachable)).message)
+    }
+
+    @Test fun compositionNeverShowsATrackAsTheArtist() {
+        val old = parsePaths("""{"kind":"composition_path","status":"ok","stops":[
+            {"entity":{"canonical_name":"Cover title","type":"recording"},"reason_count":1,
+             "reasons":[{"code":"same_work","text":"same work"}]}]}""").stops.single()
+        assertEquals("Artist not listed", old.heading(PathKind.CompositionPath).title)
+        assertEquals("Cover title", old.heading(PathKind.CompositionPath).detail)
+        val new = parsePaths("""{"kind":"composition_path","status":"ok","stops":[
+            {"entity":{"canonical_name":"Cover title","type":"recording"},"reason_count":1,
+             "presentation":{"title":"Cover artist","context":"Cover title","artist":"Cover artist"},
+             "reasons":[{"code":"same_work","text":"same work"}]}]}""").stops.single()
+        assertEquals("Cover artist", new.heading(PathKind.CompositionPath).title)
+    }
+
+    @Test fun songsShowTheirAlbumAndAlbumsShowTheirArtist() {
+        val song = parsePaths("""{"kind":"follow_the_musician","status":"ok","stops":[
+            {"entity":{"canonical_name":"Song","type":"recording"},"reason_count":1,
+             "presentation":{"title":"Player","context":"Anchor LP","album":"Song LP","album_artist":"The Band"},
+             "reasons":[{"code":"shared_musician","text":"x","via":{"canonical_name":"Player","type":"artist","mbid":"m1"}}]}]}""").stops.single()
+        assertEquals("Song", song.heading(PathKind.FollowTheMusician).title)
+        assertEquals("Song LP", song.heading(PathKind.FollowTheMusician).detail)
+        assertEquals("Player", song.reasons.single().via?.name)
+        val album = parsePaths("""{"kind":"label_path","status":"ok","stops":[
+            {"entity":{"canonical_name":"Album","type":"release"},"reason_count":1,
+             "presentation":{"title":"Album","context":"A, B","album_artist":"A"},
+             "reasons":[{"code":"same_label","text":"x"}]}]}""").stops.single()
+        assertEquals("A", album.heading(PathKind.LabelPath).detail)
     }
 }

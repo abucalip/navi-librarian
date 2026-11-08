@@ -40,7 +40,7 @@ CACHE_PREFIX = "path:"
 SLICE_RESOURCE = "musicbrainz_slice"
 SCENE_YEARS = 10
 PROGRESS_OPS = 5000  # how many SQLite steps pass between deadline checks
-PRESENTATION_VERSION = 1
+PRESENTATION_VERSION = 2
 
 _CG = "{a}.evidence_class != 'inferred' AND {a}.match_quality NOT IN ('fuzzy_unconfirmed', 'unresolved')"
 
@@ -285,7 +285,21 @@ def _path_presentation(
     stop = names.get(stop_id) or {}
     stop_name = stop.get("canonical_name") or ""
     title, context = stop_name, None
+    album = album_artist = artist = None
     if kind == "follow_the_musician":
+        # The song's own album (and its credited artist), so the sheet can write "Song (Album)" and open the album.
+        row = db.execute(
+            "SELECT r.id, r.canonical_name FROM edges e JOIN entities r ON r.id = e.to_id AND r.type = 'release' "
+            "WHERE e.from_id = ? AND e.relation IN ('track_on', 'appears_on') AND e.generation = ? "
+            f"AND {_cg('e')} ORDER BY r.canonical_name COLLATE NOCASE LIMIT 1",
+            (stop_id, generation),
+        ).fetchone()
+        if row and row["canonical_name"]:
+            album = row["canonical_name"]
+            credited = _credited_names(
+                db, row["id"], direction="release", relations=("release_artist", "credited_to"), generation=generation,
+            )
+            album_artist = credited[0] if credited else None
         musicians, albums = [], []
         for reason in reasons:
             via = names.get(reason["via"]) or {}
@@ -307,6 +321,7 @@ def _path_presentation(
             db, stop_id, direction="release", relations=("release_artist", "credited_to"), generation=generation,
         )
         context = ", ".join(artists) or "Artist credit unavailable"
+        album, album_artist = stop_name, (artists[0] if artists else None)
     elif kind == "composition_path":
         artists = _credited_names(
             db, stop_id, direction="recording",
@@ -315,7 +330,8 @@ def _path_presentation(
         )
         title = ", ".join(artists) or "Performing artist not credited"
         context = stop_name or None
-    return {"title": title, "context": context}
+        artist = artists[0] if artists else None
+    return {"title": title, "context": context, "album": album, "album_artist": album_artist, "artist": artist}
 
 
 def build_path(db: sqlite3.Connection, start_id: int, kind: str, *, limits: PathLimits = PathLimits(),
