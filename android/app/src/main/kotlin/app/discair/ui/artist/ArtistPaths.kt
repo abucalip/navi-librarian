@@ -91,8 +91,8 @@ fun ArtistPathsSheet(artistName: String, mbid: String, open: Opener, onDismiss: 
 
     ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(
-            Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(top = 2.dp, bottom = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(top = 0.dp, bottom = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             Text(
                 "Paths from $artistName",
@@ -114,7 +114,7 @@ fun ArtistPathsSheet(artistName: String, mbid: String, open: Opener, onDismiss: 
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(3.dp),
             ) {
-                PathDescription(pathDescription(kind, artistName))
+                PathLegend(artistName)
             }
             Box(Modifier.fillMaxWidth().height(BodyHeight)) {
                 when (val s = state) {
@@ -165,24 +165,29 @@ private fun PathBody(artistName: String, kind: PathKind, response: PathsResponse
     }
 }
 
-/** The one line that explains the chosen kind; each tab shows only its own. */
-private fun pathDescription(kind: PathKind, artistName: String): String = when (kind) {
-    PathKind.FollowTheMusician -> "Tracks by musicians who played with $artistName, not on your library."
-    PathKind.SidemanToLeader -> "$artistName also performed with:"
-    PathKind.LabelPath -> "Records under the same publishers."
-    PathKind.CompositionPath -> "Other recordings of the same composition, including covers and live versions."
-    PathKind.ScenePath -> "Other artists from the same place and era."
+/** One line per path under the buttons: what each kind of relationship means. Regular weight, left aligned. */
+@Composable
+private fun PathLegend(artistName: String) {
+    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        PathKind.entries.forEach { kind ->
+            Text(
+                "${kind.label}: ${pathMeaning(kind, artistName)}",
+                style = MaterialTheme.typography.bodySmall,
+                color = Ink.TextMuted,
+                textAlign = TextAlign.Start,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+    }
 }
 
-@Composable
-private fun PathDescription(description: String) {
-    Text(
-        description,
-        style = MaterialTheme.typography.bodySmall,
-        color = Ink.TextMuted,
-        textAlign = TextAlign.Start,
-        modifier = Modifier.fillMaxWidth(),
-    )
+/** What a path of each kind means, shown in the legend. */
+private fun pathMeaning(kind: PathKind, artistName: String): String = when (kind) {
+    PathKind.FollowTheMusician -> "Songs by $artistName not in your library."
+    PathKind.SidemanToLeader -> "Band members and helping hands."
+    PathKind.LabelPath -> "Records released on the same label."
+    PathKind.CompositionPath -> "Other recordings of the same composition."
+    PathKind.ScenePath -> "Other artists from the same place and era."
 }
 
 /** One step expands in place to show every reason and the stored facts behind it. */

@@ -40,7 +40,7 @@ CACHE_PREFIX = "path:"
 SLICE_RESOURCE = "musicbrainz_slice"
 SCENE_YEARS = 10
 PROGRESS_OPS = 5000  # how many SQLite steps pass between deadline checks
-PRESENTATION_VERSION = 2
+PRESENTATION_VERSION = 3
 
 _CG = "{a}.evidence_class != 'inferred' AND {a}.match_quality NOT IN ('fuzzy_unconfirmed', 'unresolved')"
 
@@ -130,11 +130,11 @@ _QUERIES: dict[str, str] = {
 
 _REASON_TEXT = {
     "shared_musician": "{via} is credited on {anchor} from your library and on this recording",
-    "sideman_on": "led {via}, a release that carries {anchor}, a recording the artist you started from played on",
+    "sideman_on": "led {via}, a release that includes {anchor}, a recording {start} played on",
     "same_label": "released on {via}, the label of {anchor} from your library",
     "related_label": "released on {via}, a label related to the label of {anchor} from your library",
     "same_work": "another recording of the work that {anchor} from your library performs",
-    "related_work": "a recording of {via}, a work related to a work that {anchor} from your library performs",
+    "related_work": "a recording of {via}, a work related to one that {anchor} from your library performs",
     "same_area": "from {via}, where {anchor} is also from, starting within %d years" % SCENE_YEARS,
 }
 
@@ -308,13 +308,14 @@ def _path_presentation(
         )
         context = ", ".join(artists) or "Artist credit unavailable"
     elif kind == "composition_path":
+        # The stop is a recording: its title is the track, the credited performers go in brackets.
         artists = _credited_names(
             db, stop_id, direction="recording",
             relations=("instrument", "vocal", "main performer", "performer", "performing orchestra"),
             generation=generation,
         )
-        title = ", ".join(artists) or "Performing artist not credited"
-        context = stop_name or None
+        title = stop_name or "Recording"
+        context = ", ".join(artists) or None
     return {"title": title, "context": context}
 
 
@@ -435,6 +436,7 @@ def build_path(db: sqlite3.Connection, start_id: int, kind: str, *, limits: Path
         truncated = "rows"
 
     names = _Names(db)
+    start = names.get(start_id)
     stops: dict[int, dict[str, Any]] = {}
     for r in rows:
         stop = stops.setdefault(r["stop"], {"rank": r["rank"], "reasons": [], "seen": set()})
@@ -454,8 +456,11 @@ def build_path(db: sqlite3.Connection, start_id: int, kind: str, *, limits: Path
             edge_ids = [e for e in (r["e1"], r["e2"], r["e3"]) if e is not None]
             reasons.append({
                 "code": r["code"],
-                "text": _REASON_TEXT[r["code"]].format(via=(via or {}).get("canonical_name", "?"),
-                                                       anchor=(anchor or {}).get("canonical_name", "?")),
+                "text": _REASON_TEXT[r["code"]].format(
+                    via=(via or {}).get("canonical_name", "?"),
+                    anchor=(anchor or {}).get("canonical_name", "?"),
+                    start=(start or {}).get("canonical_name", "the artist"),
+                ),
                 "via": via, "anchor": anchor,
                 "evidence": _evidence(db, edge_ids) + _label_evidence(db, r),
                 "details": _path_details(db, kind, start_id, stop_id, r, gen),

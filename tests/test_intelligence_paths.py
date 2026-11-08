@@ -4,7 +4,7 @@ import unittest
 from unittest import mock
 from pathlib import Path
 
-from intelligence.graph.paths import PATH_KINDS, PathLimits, build_path, cached_path
+from intelligence.graph.paths import PATH_KINDS, PRESENTATION_VERSION, PathLimits, build_path, cached_path
 from intelligence.store import generations, open_store
 from intelligence.store import repositories as repo
 
@@ -213,7 +213,7 @@ class PathTests(unittest.TestCase):
         performer = self.ent("artist", "Cover artist")
         self.edge(performer, rec2, "performer", role="vocals")
         path = build_path(self.db, a, "composition_path")
-        self.assertEqual(path["stops"][0]["presentation"], {"title": "Cover artist", "context": "Cover"})
+        self.assertEqual(path["stops"][0]["presentation"], {"title": "Cover", "context": "Cover artist"})
         self.assertIn({"label": "Shared work", "value": "Song"}, path["stops"][0]["reasons"][0]["details"])
         self.assertIn({"label": "Credited performers", "value": "Cover artist (vocals)"}, path["stops"][0]["reasons"][0]["details"])
 
@@ -274,7 +274,7 @@ class PathTests(unittest.TestCase):
         )
         self.db.commit()
         rebuilt = cached_path(self.db, a, "follow_the_musician")
-        self.assertEqual(rebuilt["presentation_version"], 1)
+        self.assertEqual(rebuilt["presentation_version"], PRESENTATION_VERSION)
         self.assertEqual(rebuilt["stops"][0]["presentation"]["title"], "Player")
 
     def test_cache_hit_refresh_and_staleness(self):
