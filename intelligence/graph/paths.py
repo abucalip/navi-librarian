@@ -40,7 +40,7 @@ CACHE_PREFIX = "path:"
 SLICE_RESOURCE = "musicbrainz_slice"
 SCENE_YEARS = 10
 PROGRESS_OPS = 5000  # how many SQLite steps pass between deadline checks
-PRESENTATION_VERSION = 4
+PRESENTATION_VERSION = 5
 # Performer credits only: a producer is not a musician on the record, so it never bridges two recordings.
 PERFORMER_ROLES = tuple(r for r in CREDIT_ROLES if r != "producer")
 UNKNOWN_ARTIST_MBID = "125ec42a-7229-4250-afc5-e057484327fe"
@@ -301,6 +301,48 @@ def _owned_twin_artists(db: sqlite3.Connection, title: str, generation: int) -> 
                            generation=generation)
 
 
+def _recording_album(
+    db: sqlite3.Connection, recording_id: int, generation: int, *, prefer_owned: bool = False
+) -> tuple[str | None, str | None]:
+    """A recording's release and that release's credited artist, so the Android pane can look up a cover.
+
+    Several releases can carry one recording; the alphabetically first is taken (an owned one first when asked), the same
+    pick the Follow the musician presentation makes.
+    """
+    order = "r.owned DESC, " if prefer_owned else ""
+    row = db.execute(
+        "SELECT r.id, r.canonical_name FROM edges e JOIN entities r ON r.id = e.to_id AND r.type = 'release' "
+        "WHERE e.from_id = ? AND e.relation IN ('track_on', 'appears_on') AND e.generation = ? "
+        f"AND {_cg('e')} ORDER BY {order}r.canonical_name COLLATE NOCASE LIMIT 1",
+        (recording_id, generation),
+    ).fetchone()
+    if not row or not row["canonical_name"]:
+        return None, None
+    credited = _credited_names(db, row["id"], direction="release", relations=("release_artist", "credited_to"), generation=generation)
+    return row["canonical_name"], (credited[0] if credited else None)
+
+
+def _anchor_presentation(
+    db: sqlite3.Connection, kind: str, anchor_id: int | None, names: _Names, generation: int
+) -> dict[str, str | None] | None:
+    """The album and artist of a reason's library anchor, for the paths whose pane shows it with a cover.
+
+    Label path: the anchor is a release (the album itself). Composition path: the anchor is a recording (its release).
+    """
+    anchor = names.get(anchor_id)
+    if not anchor:
+        return None
+    if kind == "label_path":
+        name = anchor.get("canonical_name")
+        artists = _credited_names(db, anchor_id, direction="release", relations=("release_artist", "credited_to"), generation=generation) \
+            or _owned_twin_artists(db, name or "", generation)
+        return {"album": name, "album_artist": artists[0] if artists else None}
+    if kind == "composition_path":
+        album, album_artist = _recording_album(db, anchor_id, generation, prefer_owned=True)
+        return {"album": album, "album_artist": album_artist}
+    return None
+
+
 def _path_presentation(
     db: sqlite3.Connection, kind: str, stop_id: int, reasons: list[dict[str, Any]],
     names: _Names, generation: int,
@@ -355,6 +397,7 @@ def _path_presentation(
         title = ", ".join(artists)
         context = stop_name or None
         artist = artists[0] if artists else None
+        album, album_artist = _recording_album(db, stop_id, generation)
     return {"title": title, "context": context, "album": album, "album_artist": album_artist, "artist": artist}
 
 
@@ -441,6 +484,9 @@ def build_path(db: sqlite3.Connection, start_id: int, kind: str, *, limits: Path
                 "via": via, "anchor": anchor,
                 "evidence": _evidence(db, edge_ids) + _label_evidence(db, r),
             })
+            anchor_presentation = _anchor_presentation(db, kind, r["anchor"], names, gen)
+            if anchor_presentation is not None:
+                reasons[-1]["anchor_presentation"] = anchor_presentation
         result_stops.append({
             "entity": names.get(stop_id),
             "presentation": presentation,

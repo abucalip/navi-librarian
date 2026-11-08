@@ -1,0 +1,229 @@
+<title>Paths Sheet B Mockups</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Layout: a tab per path kind; two phone frames each (list, then that kind's detail pane). Phones use the app's Brut Cream Pop light theme at 1px = 1dp. */
+:root{
+  --bg:#f3f1ee;--fg:#1c1b1f;--mu:#5a5560;--card:#ffffff;--line:#1c1b1f;--mark:#5b3fd0;
+  /* app theme: Brut · Cream Pop (Palette.kt BrutCream) */
+  --a-bg:#fbf0e6;--a-surface:#ffffff;--a-raised:#f6dfcf;--a-text:#000000;--a-muted:#5a4636;--a-accent:#ee6f6a;--a-on:#000000;--a-ok:#1b6b33;
+  --a-2:#a48fe8;--a-3:#6fcbbf;--a-4:#f8df72;
+  --ui:Roboto,system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#17161a;--fg:#ece9f1;--mu:#aaa4b4;--card:#201f25;--line:#ece9f1;--mark:#b9a8ff;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#17161a;--fg:#ece9f1;--mu:#aaa4b4;--card:#201f25;--line:#ece9f1;--mark:#b9a8ff;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 var(--ui);padding-block:24px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:1180px;margin:0 auto}
+h1{font:800 clamp(26px,4vw,36px)/1.1 var(--ui);letter-spacing:-.02em;margin:0 0 8px}
+.lede{color:var(--mu);margin:0 0 16px;max-width:75ch}
+.tabs{display:flex;gap:8px;overflow-x:auto;padding:4px 4px 16px 0}
+.tabs button{flex:none;font:600 14px var(--ui);padding:8px 16px;min-height:48px;border:2px solid var(--line);background:var(--card);color:var(--fg);border-radius:8px;cursor:pointer;text-align:left}
+.tabs button small{display:block;font:400 12px var(--ui);color:var(--mu)}
+.tabs button[aria-selected=true]{background:var(--fg);color:var(--bg)}
+.tabs button[aria-selected=true] small{color:inherit;opacity:.8}
+button:focus-visible{outline:3px solid var(--mark);outline-offset:2px}
+.flow{display:flex;gap:24px;overflow-x:auto;padding:8px 4px 16px;align-items:flex-start}
+.step{flex:none;width:376px}
+.cap{font:600 13px var(--ui);color:var(--mu);margin:0 0 8px}
+.arrow{flex:none;align-self:center;font:700 24px var(--ui);color:var(--mu)}
+.notes{background:var(--card);border:2px solid var(--line);border-radius:8px;padding:16px;margin-top:8px;display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:8px 24px}
+.notes h2{grid-column:1/-1;margin:0;font:800 20px/1.2 var(--ui)}
+.notes h3{font:700 14px var(--ui);margin:8px 0 4px}
+.notes ul{margin:0;padding-left:16px}.notes li{margin:4px 0;font-size:14px;line-height:1.5}
+.rec{border:2px solid var(--line);border-radius:8px;padding:16px;background:var(--card);margin-top:16px;font-size:14px}
+code{font:13px ui-monospace,Menlo,monospace}
+
+/* ------------ phone: 360 x 720 dp ------------ */
+.phone{width:376px;height:736px;border-radius:32px;border:8px solid #0a0a0a;overflow:hidden;position:relative;background:var(--a-bg);color:var(--a-text);font:400 14px/1.45 var(--ui);color-scheme:light}
+.sb{height:24px;display:flex;justify-content:space-between;padding:4px 16px 0;font:500 12px var(--ui);color:var(--a-muted)}
+.behind{padding:16px;display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.behind .cover{height:120px}
+.nav3{position:absolute;bottom:0;left:0;right:0;height:16px;display:flex;justify-content:center;align-items:center;z-index:5}
+.nav3 i{width:96px;height:4px;border-radius:2px;background:#000;opacity:.5}
+.scrim{position:absolute;inset:0;background:rgba(0,0,0,.45)}
+.sheet{position:absolute;left:0;right:0;bottom:0;top:40px;background:var(--a-surface);border-radius:16px 16px 0 0;display:flex;flex-direction:column;overflow:hidden}
+.rule{height:3px;background:#000;flex:none}
+.handle{width:40px;height:8px;border-radius:2px;background:#000;margin:8px auto;flex:none}
+.pad{padding:0 16px}
+.sheet-body{flex:1;min-height:0;overflow:hidden;display:flex;flex-direction:column}
+.title{font:800 22px/1.2 var(--ui);letter-spacing:-.01em;margin:0}
+.sub{font-size:14px;line-height:1.45;color:var(--a-muted)}
+.stack{display:flex;flex-direction:column;gap:16px}
+.stack8{display:flex;flex-direction:column;gap:8px}
+.row{display:flex;align-items:center;gap:16px}.row8{display:flex;align-items:center;gap:8px}
+.grow{flex:1;min-width:0}
+/* app components */
+.chips{display:flex;gap:8px;overflow:hidden}
+.chip{flex:none;min-height:48px;padding:0 16px;display:inline-flex;align-items:center;border:3px solid #000;border-radius:8px;background:var(--a-surface);font:700 14px var(--ui);box-shadow:2px 2px 0 #000;white-space:nowrap}
+.chip.on{background:var(--a-accent);color:var(--a-on)}
+.btn{min-height:48px;padding:0 16px;display:flex;align-items:center;justify-content:center;gap:8px;border:3px solid #000;border-radius:8px;background:var(--a-surface);color:#000;font:700 14px var(--ui);box-shadow:5px 5px 0 #000;text-align:left}
+.btn.pri{background:var(--a-accent);color:var(--a-on)}
+.btn.block{width:100%;justify-content:flex-start}
+.btn svg{flex:none}
+.ibtn{width:48px;height:48px;flex:none;display:flex;align-items:center;justify-content:center;border:3px solid #000;border-radius:10px;background:var(--a-surface);box-shadow:5px 5px 0 #000}
+.ibtn.plain{border:0;box-shadow:none;background:none;border-radius:0}
+.tag{display:inline-flex;align-items:center;gap:4px;padding:4px 8px;border:3px solid #000;border-radius:4px;background:var(--a-raised);font:700 12px/1.3 var(--ui);box-shadow:2px 2px 0 #000;width:fit-content}
+.tag.ok{color:var(--a-ok)}
+.card{border:3px solid #000;border-radius:8px;background:var(--a-surface);padding:16px}
+.card.raised{background:var(--a-raised)}
+.link{color:#1a3fa0;text-decoration:underline;text-underline-offset:2px;font-weight:700}
+.h3{font:800 16px/1.3 var(--ui);margin:0}
+.cover{display:block;border:3px solid #000;flex:none;position:relative}
+.cover.sq{border-radius:0}
+.avatar{border:3px solid #000;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center}
+.li{display:flex;align-items:center;gap:16px;min-height:64px;padding:8px 0;border-bottom:1px solid rgba(0,0,0,.25)}
+.li .n{width:16px;font:700 14px var(--ui);color:var(--a-muted);text-align:right}
+.li .t{font:700 16px/1.3 var(--ui)}
+.li .d{font-size:14px;line-height:1.4;color:var(--a-muted)}
+.mark{outline:3px dashed var(--mark);outline-offset:-3px;border-radius:8px}
+.bar{flex:none;border-top:3px solid #000;padding:16px 16px 24px;background:var(--a-surface);display:flex;flex-direction:column;gap:8px}
+.hdr{display:flex;align-items:center;gap:8px;padding:0 8px 16px 16px}
+.hdr .k{font:800 16px/1.2 var(--ui)}
+.hdr .s{font-size:12px;line-height:1.3;color:var(--a-muted)}
+svg.i{fill:currentColor;display:block}
+.more{font-size:12px;line-height:1.4;color:var(--a-muted)}
+.eyebrow{font:700 12px/1.3 var(--ui);letter-spacing:.06em;text-transform:uppercase;color:var(--a-muted)}
+.rel{display:flex;align-items:center;gap:8px;margin-left:24px;font-size:12px;color:var(--a-muted)}
+.vline{width:3px;height:16px;background:#000;margin-left:24px}
+</style>
+
+<div class="wrap">
+<h1>Paths sheet, concept B, one pane per path</h1>
+<p class="lede">The layout is the approved B mockup: a list, then a detail pane inside the same sheet. Buttons, chips, tags, icons and the bottom sheet are the app's own, drawn in the light Brut Cream Pop theme. Each path's pane shows only what the server returns for that path. The dashed purple outline marks the tap in the first frame.</p>
+<div class="tabs" role="tablist" id="tabs"></div>
+<div id="stage"></div>
+<div class="rec">
+<b>Back, for all five.</b> Opening an album or artist from a pane navigates on top of a Paths destination (route <code>PathsRoute(mbid, name)</code>), so system back, the swipe back and the page's Back button return to the pane. The selected kind, answer, list scroll, open step and the up/down position live in a view model scoped to that route. From a pane, the ← button returns to the list, and the sheet's own close (drag down or tap the scrim) leaves Paths for the artist page.
+</div>
+</div>
+
+<script>
+const I={
+ left:'M15.41,16.59L10.83,12l4.58,-4.59L14,6l-6,6 6,6 1.41,-1.41z',
+ right:'M8.59,16.59L13.17,12 8.59,7.41 10,6l6,6 -6,6 -1.41,-1.41z',
+ down:'M7.41,8.59L12,13.17l4.59,-4.58L18,10l-6,6 -6,-6 1.41,-1.41z',
+ up:'M7.41,15.41L12,10.83l4.59,4.58L18,14l-6,-6 -6,6z',
+ album:'M12,2C6.48,2 2,6.48 2,12s4.48,10 10,10 10,-4.48 10,-10S17.52,2 12,2zM12,16.5c-2.49,0 -4.5,-2.01 -4.5,-4.5S9.51,7.5 12,7.5s4.5,2.01 4.5,4.5 -2.01,4.5 -4.5,4.5zM12,10.5c-0.83,0 -1.5,0.67 -1.5,1.5s0.67,1.5 1.5,1.5 1.5,-0.67 1.5,-1.5 -0.67,-1.5 -1.5,-1.5z',
+ person:'M12,12c2.21,0 4,-1.79 4,-4s-1.79,-4 -4,-4 -4,1.79 -4,4 1.79,4 4,4zM12,14c-2.67,0 -8,1.34 -8,4v2h16v-2c0,-2.66 -5.33,-4 -8,-4z',
+ note:'M12,3v10.55c-0.59,-0.34 -1.27,-0.55 -2,-0.55 -2.21,0 -4,1.79 -4,4s1.79,4 4,4 4,-1.79 4,-4V7h4V3h-6z',
+ check:'M9,16.17L4.83,12l-1.42,1.41L9,19 21,7l-1.41,-1.41z',
+ place:'M12,2C8.13,2 5,5.13 5,9c0,5.25 7,13 7,13s7,-7.75 7,-13c0,-3.87 -3.13,-7 -7,-7zM12,11.5c-1.38,0 -2.5,-1.12 -2.5,-2.5s1.12,-2.5 2.5,-2.5 2.5,1.12 2.5,2.5 -1.12,2.5 -2.5,2.5z',
+ swap:'M6.99,11L3,15l3.99,4v-3H14v-2H6.99v-3zM21,9l-3.99,-4v3H10v2h7.01v3L21,9z'
+};
+const ic=(n,s=24)=>`<svg class="i" width="${s}" height="${s}" viewBox="0 0 24 24" aria-hidden="true"><path d="${I[n]}"/></svg>`;
+const COL=['#a48fe8','#6fcbbf','#f8df72','#ee6f6a','#f6dfcf'];
+const cover=(i,s)=>`<span class="cover sq" style="width:${s}px;height:${s}px;background:${COL[i%5]}"></span>`;
+const avatar=(i,s)=>`<span class="avatar" style="width:${s}px;height:${s}px;background:${COL[i%5]}">${ic('person',Math.round(s*.5))}</span>`;
+const tile=(i,n,s)=>`<span class="cover sq" style="width:${s}px;height:${s}px;background:${COL[i%5]};display:flex;align-items:center;justify-content:center">${ic(n,Math.round(s*.5))}</span>`;
+const arrow='<div class="arrow" aria-hidden="true">→</div>';
+const phone=(inner,cap)=>`<div class="step"><p class="cap">${cap}</p><div class="phone"><div class="sb"><span>9:41</span><span>5G ▮▮▮</span></div>${inner}<div class="nav3"><i></i></div></div></div>`;
+const behind=`<div class="behind">${[0,1,2,3].map(i=>`<div><span class="cover sq" style="height:120px;width:100%;background:${COL[i%5]}"></span><div style="font-weight:700;margin-top:8px">Album ${i+1}</div></div>`).join('')}</div><div class="scrim"></div>`;
+const KINDS=['Follow the musician','Sideman','Label','Composition','Scene'];
+const chips=on=>`<div class="chips">${KINDS.map((k,i)=>`<span class="chip ${i===on?'on':''}">${k}</span>`).join('')}</div>`;
+const sheet=(body)=>`${behind}<div class="sheet"><div class="rule"></div><div class="handle"></div>${body}</div>`;
+const hdr=(kind,step)=>`<div class="hdr"><div class="ibtn" role="img" aria-label="Back to the list">${ic('left')}</div><div class="grow"><div class="k">${kind}</div><div class="s">Step ${step} of 12</div></div><div class="ibtn plain" role="img" aria-label="Previous step">${ic('up')}</div><div class="ibtn plain" role="img" aria-label="Next step">${ic('down')}</div></div>`;
+const bar=(label,icon)=>`<div class="bar"><div class="btn pri block">${ic(icon)}<span>${label}</span></div></div>`;
+const listFrame=(kindIx,desc,rows)=>sheet(`<div class="sheet-body"><div class="pad stack" style="padding-bottom:8px"><h2 class="title">Paths from Herbie Hancock</h2>${chips(kindIx)}<div class="sub">${desc}</div></div><div class="pad" style="flex:1;overflow:hidden">${rows.map((r,i)=>`<div class="li ${i===1?'mark':''}"><span class="n">${i+1}</span>${r.lead}<div class="grow"><div class="t">${r.t}</div><div class="d">${r.d}</div></div><span class="ibtn plain" aria-hidden="true">${ic('right')}</span></div>`).join('')}</div></div>`);
+const reasons=(arr,more)=>arr.map(h=>`<div class="card"><div class="row8" style="align-items:flex-start">${h.icon?ic(h.icon):''}<div class="grow">${h.html}</div></div></div>`).join('')+(more?`<div class="more">${more}</div>`:'');
+
+const concepts=[
+/* ---------------- Follow the musician ---------------- */
+{k:'Follow the musician',sub:'a song you do not own',
+ build(){
+  const rows=[['Footprints','Adam\'s Apple · Wayne Shorter'],['Eye of the Hurricane','Red Clay · Freddie Hubbard'],['Nefertiti','Nefertiti · Miles Davis Quintet'],['Sing Me a Song','Lifetime · Tony Williams'],['Mr. P.C.','Giant Steps · John Coltrane'],['Song for My Father','Horace Silver']].map((r,i)=>({lead:cover(i,48),t:r[0],d:r[1]}));
+  const list=listFrame(0,'Songs, not in your library, by musicians who also played with Herbie Hancock.',rows);
+  const detail=sheet(`<div class="sheet-body">${hdr('Follow the musician',2)}<div class="pad stack" style="flex:1;overflow:hidden">
+    <div class="row" style="align-items:flex-start">${cover(1,96)}<div class="stack8 grow"><h2 class="title">Eye of the Hurricane</h2><div class="sub">on Red Clay<br>by Freddie Hubbard</div><span class="tag">Not in your library</span></div></div>
+    <h3 class="h3">Why it's here</h3>
+    <div class="stack8">${reasons([
+      {icon:'person',html:`<span class="link">Wayne Shorter</span> is credited on Maiden Voyage from your library and on this recording.`},
+      {icon:'person',html:`<span class="link">Ron Carter</span> is credited on Speak No Evil from your library and on this recording.`}],'1 more reason on the server.')}</div>
+    <div class="btn block">${ic('person')}<span>Artist: Freddie Hubbard</span></div>
+  </div>${bar('Open album: Red Clay','album')}</div>`);
+  return `<div class="flow">${phone(list,'1 · Tap a step')}${arrow}${phone(detail,'2 · Song pane: the song, the album it is on, and who connects it to your library')}</div>`;
+ },
+ notes:[['What this pane shows',['The song as the hero: album cover, song title, the album and the credited artist, and whether you own it.','Why it is here, as one card per reason. The musician named in each reason is a link to their artist page.','Reasons are capped at three, with "N more reasons on the server" under them, as today.']],
+  ['Actions',['Primary: open the album (the song lives on it). Neutral: the album artist.','The musicians in the reasons open their pages when tapped, up to the two the app offers today.']],
+  ['Not on this pane',['No label, no work, no place: the server does not send them for this path.']]]},
+
+/* ---------------- Sideman ---------------- */
+{k:'Sideman',sub:'an artist who led records you played on',
+ build(){
+  const rows=[['Miles Davis','Led Kind of Blue'],['Wayne Shorter','Led Speak No Evil'],['Freddie Hubbard','Led Red Clay'],['Tony Williams','Led Spring'],['Donald Byrd','Led Free Form'],['Joe Henderson','Led Mode for Joe']].map((r,i)=>({lead:avatar(i,48),t:r[0],d:r[1]}));
+  const list=listFrame(1,'Artists whose records Herbie Hancock played on as a sideman.',rows);
+  const detail=sheet(`<div class="sheet-body">${hdr('Sideman',1)}<div class="pad stack" style="flex:1;overflow:hidden">
+    <div class="row">${avatar(0,72)}<div class="stack8 grow"><h2 class="title">Miles Davis</h2><div class="sub">Person</div><span class="tag ok">${ic('check',16)} In your library</span></div></div>
+    <h3 class="h3">Records he led that Herbie played on</h3>
+    <div class="stack8">
+      ${[['Kind of Blue','carries So What'],['E.S.P.','carries Eighty-One'],['Miles Smiles','carries Orbits']].map((r,i)=>`<div class="btn block" style="min-height:64px;box-shadow:3px 3px 0 #000">${tile(i+1,'album',40)}<span class="grow"><span style="display:block;font-size:16px">${r[0]}</span><span style="display:block;font-weight:400;font-size:12px;color:var(--a-muted)">${r[1]}, a recording Herbie played on</span></span>${ic('right')}</div>`).join('')}
+      <div class="more">1 more reason on the server.</div>
+    </div>
+  </div>${bar('Open artist: Miles Davis','person')}</div>`);
+  return `<div class="flow">${phone(list,'1 · Tap an artist')}${arrow}${phone(detail,'2 · Artist pane: who they are and the records that link you')}</div>`;
+ },
+ notes:[['What this pane shows',['The leader as a profile: photo, name, type (person or group) and library state.','The records that link you, each its own tappable row with the recording it carries. Every reason of this path is a record, so the list is the reason.','Wording follows the start: "as a sideman" for a person, "as guests" for a group.']],
+  ['Actions',['Primary: open the artist.','Each record opens its album page, replacing the single optional album button of today.']],
+  ['Not on this pane',['No song title, label or place.']]]},
+
+/* ---------------- Label ---------------- */
+{k:'Label',sub:'an album from a label you share',
+ build(){
+  const rows=[['Song for My Father','Horace Silver'],['Out to Lunch!','Eric Dolphy'],['Somethin\' Else','Cannonball Adderley'],['Speak No Evil','Wayne Shorter'],['The Sidewinder','Lee Morgan'],['Idle Moments','Grant Green']].map((r,i)=>({lead:cover(i,48),t:r[0],d:r[1]}));
+  const list=listFrame(2,'Albums released on the same labels as Herbie Hancock\'s records.',rows);
+  const detail=sheet(`<div class="sheet-body">${hdr('Label',5)}<div class="pad stack" style="flex:1;overflow:hidden">
+    <div class="row" style="align-items:flex-end"><span class="cover sq" style="width:144px;height:144px;background:${COL[3]}"></span><div class="stack8 grow"><h2 class="title">The Sidewinder</h2><div class="sub">Lee Morgan · 1964</div><span class="tag">Not in your library</span></div></div>
+    <div class="card raised"><div class="eyebrow">Released on</div><div class="row8" style="margin-top:8px">${ic('album',32)}<div class="title" style="font-size:22px">Blue Note</div></div></div>
+    <div class="card"><div class="eyebrow">Same label as your record</div><div class="row" style="margin-top:8px">${cover(0,48)}<div class="grow"><div class="t" style="font:700 16px var(--ui)">Maiden Voyage</div><div class="sub">Herbie Hancock · in your library</div></div></div></div>
+    <div class="btn block">${ic('person')}<span>Artist: Lee Morgan</span></div>
+  </div>${bar('Open album: The Sidewinder','album')}</div>`);
+  return `<div class="flow">${phone(list,'1 · Tap an album')}${arrow}${phone(detail,'2 · Album pane: the label is the reason, your record is the proof')}</div>`;
+ },
+ notes:[['What this pane shows',['A large cover, because this path is about an album.','A label card that names the label in its own right, then your record that shares it. "Related label" is shown when the server says the label is related and not the same.','Library state on the album, and on your record.']],
+  ['Actions',['Primary: open the album. Neutral: the album artist.','Your own record is shown, not linked: the app has no target for it from this path today.']],
+  ['Not on this pane',['No song, no musician credits.']]]},
+
+/* ---------------- Composition ---------------- */
+{k:'Composition',sub:'another recording of the same work',
+ build(){
+  const rows=[['John Coltrane','Maiden Voyage (live)'],['Kenny Burrell','Maiden Voyage'],['Hubert Laws','Maiden Voyage'],['Wynton Marsalis','Dolphin Dance'],['Stan Getz','Dolphin Dance'],['Keith Jarrett','Cantaloupe Island']].map((r,i)=>({lead:tile(i,'note',48),t:r[0],d:r[1]}));
+  const list=listFrame(3,'Other recordings of the same compositions as Herbie Hancock\'s, covers and live versions included.',rows);
+  const detail=sheet(`<div class="sheet-body">${hdr('Composition',1)}<div class="pad stack" style="flex:1;overflow:hidden">
+    <div class="card raised"><div class="eyebrow">The work</div><div class="row8" style="margin-top:8px">${ic('note',32)}<div class="title" style="font-size:22px">Maiden Voyage</div></div><span class="tag" style="margin-top:8px">Same work</span></div>
+    <div class="stack8">
+      <div class="card"><div class="eyebrow">Your recording</div><div class="row" style="margin-top:8px">${tile(0,'album',48)}<div class="grow"><div class="t" style="font:700 16px var(--ui)">Maiden Voyage</div><div class="sub">Herbie Hancock · Maiden Voyage</div></div><span class="tag ok" aria-label="In your library">${ic('check',16)}</span></div></div>
+      <div class="row8" style="justify-content:center;color:var(--a-muted)">${ic('swap',24)}<span class="sub">is the same work as</span></div>
+      <div class="card"><div class="eyebrow">This recording</div><div class="row" style="margin-top:8px">${tile(1,'note',48)}<div class="grow"><div class="t" style="font:700 16px var(--ui)">Maiden Voyage (live)</div><div class="sub">John Coltrane</div></div></div><span class="tag" style="margin-top:8px">Not in your library</span></div>
+    </div>
+  </div>${bar('Open artist: John Coltrane','person')}</div>`);
+  return `<div class="flow">${phone(list,'1 · Tap a recording')}${arrow}${phone(detail,'2 · Work pane: your recording on one side, this one on the other')}</div>`;
+ },
+ notes:[['What this pane shows',['The work first, because the work is the reason. Then two cards that compare your recording with this one. A related work shows "Related work" in place of "Same work", and says how in the card.','The recording is credited to its performer, with the track named under it, as the list does today.']],
+  ['Actions',['Primary and only target: open the performer\'s page. The server gives no album for these recordings, so none is offered.']],
+  ['Not on this pane',['No label, no album, no place.']]]},
+
+/* ---------------- Scene ---------------- */
+{k:'Scene',sub:'an artist from the same place and era',
+ build(){
+  const rows=[['Ramsey Lewis','Chicago'],['Eddie Harris','Chicago'],['Ahmad Jamal','Pittsburgh'],['Roy Ayers','Los Angeles'],['Les McCann','Los Angeles'],['Lonnie Liston Smith','Richmond']].map((r,i)=>({lead:avatar(i,48),t:r[0],d:r[1]}));
+  const list=listFrame(4,'Artists from the same place and era as Herbie Hancock.',rows);
+  const detail=sheet(`<div class="sheet-body">${hdr('Scene',1)}<div class="pad stack" style="flex:1;overflow:hidden">
+    <div class="row">${avatar(0,72)}<div class="stack8 grow"><h2 class="title">Ramsey Lewis</h2><div class="sub">Person</div><span class="tag">Not in your library</span></div></div>
+    <div class="card raised"><div class="eyebrow">Same place</div><div class="row8" style="margin-top:8px">${ic('place',32)}<div class="title" style="font-size:22px">Chicago</div></div><p class="sub" style="margin:8px 0 0">Herbie Hancock is also from Chicago.</p></div>
+    <div class="card"><div class="eyebrow">Same era</div><p style="margin:8px 0 0;font-size:14px;line-height:1.5">Started within 5 years of Herbie Hancock.</p></div>
+  </div>${bar('Open artist: Ramsey Lewis','person')}</div>`);
+  return `<div class="flow">${phone(list,'1 · Tap an artist')}${arrow}${phone(detail,'2 · Scene pane: the place and the era that link you')}</div>`;
+ },
+ notes:[['What this pane shows',['The artist as a short profile, then the place and the era as two separate cards. Place is the reason\'s named place; era is the reason\'s "within N years" wording.','The shortest pane, on purpose: this path has one reason and nothing else to add.']],
+  ['Actions',['Primary and only target: open the artist.']],
+  ['Open question',['The server\'s reason is one sentence. Splitting it into a Place card and an Era card relies on its fixed wording ("from X, where Y is also from, starting within N years"). If you would rather not parse it, the two cards become one card with the sentence as it is.']]]},
+];
+
+const tabs=document.getElementById('tabs'),stage=document.getElementById('stage');
+function show(i){
+  [...tabs.children].forEach((b,j)=>b.setAttribute('aria-selected',j===i));
+  const c=concepts[i];
+  stage.innerHTML=c.build()+`<div class="notes"><h2>${c.k}</h2>${c.notes.map(n=>`<div><h3>${n[0]}</h3><ul>${n[1].map(x=>`<li>${x}</li>`).join('')}</ul></div>`).join('')}</div>`;
+}
+concepts.forEach((c,i)=>{const b=document.createElement('button');b.setAttribute('role','tab');b.innerHTML=`${c.k}<small>${c.sub}</small>`;b.onclick=()=>show(i);tabs.appendChild(b)});
+show(0);
+</script>

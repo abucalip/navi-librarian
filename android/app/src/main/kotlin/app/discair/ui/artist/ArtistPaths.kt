@@ -1,6 +1,7 @@
 package app.discair.ui.artist
 
-import androidx.compose.animation.animateContentSize
+import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -8,80 +9,117 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.produceState
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.role
-import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
 import app.discair.model.PathKind
-import app.discair.model.PathReason
-import app.discair.model.heading
-import app.discair.model.sentence
-import app.discair.model.isArtist
+import app.discair.model.PathLink
 import app.discair.model.PathStop
 import app.discair.model.PathsResponse
 import app.discair.model.PathsView
+import app.discair.model.heading
+import app.discair.model.pane
 import app.discair.model.pathsFailure
+import app.discair.model.sentence
 import app.discair.model.view
+import app.discair.ui.Opener
+import app.discair.ui.common.AlbumCover
+import app.discair.ui.common.ArtistPhoto
 import app.discair.ui.common.FilterChip
-import app.discair.ui.common.LocalRepository
 import app.discair.ui.common.Load
+import app.discair.ui.common.LocalRepository
 import app.discair.ui.common.ModalBottomSheet
 import app.discair.ui.common.OutlinedButton
+import app.discair.ui.common.OutlinedIconButton
+import app.discair.ui.common.RowDivider
 import app.discair.ui.common.Target
 import app.discair.ui.common.routeKey
-import app.discair.ui.Opener
+import app.discair.ui.player.PlayerIcons
 import app.discair.ui.theme.Ink
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-/** Body height: a fixed box, so the list scrolls inside the sheet and a failure never fills an unbounded space. */
-private val BodyHeight = 300.dp
+/** The sheet's height as a share of the window: tall enough for a pane and its bottom button without scrolling away the header. */
+private const val SheetHeight = 0.92f
 
 /**
- * The paths view, opened from the artist page: pick one of the five kinds and see the server's path as a short list.
- * The server is asked only when the sheet is open and a kind is chosen; nothing is saved on the phone.
+ * The answers the paths sheet has read, kept with the artist's page on the back stack. Opening an album or artist from the
+ * sheet leaves the page, and Back returns to it: the sheet comes back with its answers, so nothing is asked again.
+ */
+class PathsModel : ViewModel() {
+    val answers = mutableStateMapOf<PathKind, Load<PathsResponse>>()
+}
+
+/**
+ * The paths view, opened from the artist page: pick one of the five kinds, see the server's path as a list, and open a step to
+ * read it in its own pane. The server is asked only when the sheet is open and a kind is chosen; nothing is saved on the phone.
+ *
+ * Opening an album or artist closes the sheet's window but not its state (the kind, the open step and each list's scroll are
+ * saved with the page), so Back and the swipe back return to the sheet at the same step, not to the page it belongs to.
+ * Only the sheet's own close (drag down, tap outside) goes to the artist page.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ArtistPathsSheet(artistName: String, mbid: String, open: Opener, onDismiss: () -> Unit) {
     val repo = LocalRepository.current
-    var kind by remember { mutableStateOf(PathKind.FollowTheMusician) }
+    val model = viewModel<PathsModel>(key = "paths:$mbid")
+    var kindWire by rememberSaveable { mutableStateOf(PathKind.FollowTheMusician.wire) }
+    var step by rememberSaveable { mutableIntStateOf(-1) }
     var attempt by remember { mutableIntStateOf(0) }
-    val state by produceState<Load<PathsResponse>>(Load.Loading, kind, mbid, attempt) {
-        value = Load.Loading
-        value = withContext(Dispatchers.IO) {
+    // True from the tap that leaves for another page: the sheet's window goes at once instead of riding over the next page.
+    var away by remember { mutableStateOf(false) }
+    val kind = PathKind.entries.firstOrNull { it.wire == kindWire } ?: PathKind.FollowTheMusician
+    val lists = PathKind.entries.associateWith { rememberLazyListState() }
+
+    LaunchedEffect(kind, mbid, attempt) {
+        if (model.answers[kind] is Load.Ready) return@LaunchedEffect
+        model.answers[kind] = Load.Loading
+        model.answers[kind] = withContext(Dispatchers.IO) {
             try {
                 Load.Ready(repo.paths(kind, mbid))
             } catch (e: CancellationException) {
@@ -92,80 +130,157 @@ fun ArtistPathsSheet(artistName: String, mbid: String, open: Opener, onDismiss: 
         }
     }
 
-    ModalBottomSheet(onDismissRequest = onDismiss) {
-        Column(
-            Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(top = 4.dp, bottom = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            Text(
-                "Paths from $artistName",
-                style = MaterialTheme.typography.titleLarge,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth().semantics { heading() },
-            )
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(PathKind.entries, key = { it.wire }) { option ->
-                    FilterChip(
-                        selected = option == kind,
-                        onClick = { kind = option },
-                        label = { Text(option.label) },
-                        modifier = Modifier.heightIn(min = Target),
-                    )
-                }
+    if (away) return
+    val go: (PathLink) -> Unit = { link -> away = true; link.go(open) }
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+    ) {
+        val state = model.answers[kind] ?: Load.Loading
+        val response = (state as? Load.Ready)?.value
+        val stops = (response?.view() as? PathsView.Stops)?.response?.stops.orEmpty()
+        // Back from a pane goes to the list first; Back from the list closes the sheet.
+        BackHandler(enabled = step in stops.indices) { step = -1 }
+        Box(Modifier.fillMaxWidth().fillMaxHeight(SheetHeight)) {
+            if (step in stops.indices) {
+                PathDetail(
+                    artistName, kind, stops, step, response?.startType.orEmpty(),
+                    onBack = { step = -1 }, onStep = { step = it }, go = go,
+                )
+            } else {
+                PathList(
+                    artistName, kind, state, lists.getValue(kind),
+                    onKind = { step = -1; kindWire = it.wire },
+                    onStep = { step = it }, onRetry = { attempt++ },
+                )
             }
-            Text(
-                kindDescription(kind, artistName, (state as? Load.Ready)?.value?.startType.orEmpty()),
-                style = MaterialTheme.typography.bodySmall,
-                color = Ink.TextMuted,
-                modifier = Modifier.fillMaxWidth(),
-            )
-            Box(Modifier.fillMaxWidth().height(BodyHeight)) {
-                when (val s = state) {
-                    Load.Loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator(Modifier.semantics { contentDescription = "Loading paths" })
+        }
+    }
+}
+
+private fun PathLink.go(open: Opener) {
+    if (album) open.album(routeKey(by.orEmpty(), name), by.orEmpty(), name, null, null) else open.artist(name, null, null, mbid)
+}
+
+// ---------------------------------------------------------------- the list
+
+@Composable
+private fun PathList(
+    artistName: String, kind: PathKind, state: Load<PathsResponse>, list: LazyListState,
+    onKind: (PathKind) -> Unit, onStep: (Int) -> Unit, onRetry: () -> Unit,
+) {
+    Column(Modifier.fillMaxSize().padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(
+            "Paths from $artistName",
+            style = MaterialTheme.typography.titleLarge,
+            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp).semantics { heading() },
+        )
+        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            items(PathKind.entries, key = { it.wire }) { option ->
+                FilterChip(
+                    selected = option == kind,
+                    onClick = { onKind(option) },
+                    label = { Text(option.label) },
+                    modifier = Modifier.heightIn(min = Target),
+                )
+            }
+        }
+        Text(
+            kindDescription(kind, artistName, (state as? Load.Ready)?.value?.startType.orEmpty()),
+            style = MaterialTheme.typography.bodyMedium,
+            color = Ink.TextMuted,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Box(Modifier.fillMaxWidth().weight(1f)) {
+            when (state) {
+                Load.Loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(Modifier.semantics { contentDescription = "Loading paths" })
+                }
+                is Load.Failed -> Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.Center) {
+                    Text(state.failure.message, style = MaterialTheme.typography.bodyLarge, color = Ink.ChartRedText)
+                    Spacer(Modifier.size(16.dp))
+                    OutlinedButton(onClick = onRetry, Modifier.heightIn(min = Target)) { Text("Try again") }
+                }
+                is Load.Ready -> when (val view = state.value.view()) {
+                    is PathsView.Stops -> LazyColumn(Modifier.fillMaxSize(), state = list, contentPadding = PaddingValues(bottom = 32.dp)) {
+                        itemsIndexed(view.response.stops) { index, stop ->
+                            PathRow(index + 1, kind, stop) { onStep(index) }
+                            RowDivider()
+                        }
+                        state.value.truncated?.let { reason ->
+                            item {
+                                Text(
+                                    "The server stopped this path early (${truncatedWords(reason)}), so later steps may be missing.",
+                                    style = MaterialTheme.typography.bodySmall, color = Ink.TextMuted,
+                                    modifier = Modifier.padding(top = 16.dp),
+                                )
+                            }
+                        }
                     }
-                    is Load.Failed -> Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.Center) {
-                        Text(s.failure.message, style = MaterialTheme.typography.bodyLarge, color = Ink.ChartRedText)
-                        Spacer(Modifier.size(16.dp))
-                        OutlinedButton(onClick = { attempt++ }, Modifier.heightIn(min = Target)) { Text("Try again") }
-                    }
-                    is Load.Ready -> PathBody(artistName, kind, s.value, open, onDismiss)
+                    PathsView.Empty -> Text(
+                        "No ${kind.label.lowercase()} path from $artistName yet. A path appears only when every step has evidence.",
+                        style = MaterialTheme.typography.bodyMedium, color = Ink.TextMuted,
+                    )
                 }
             }
         }
     }
 }
 
+/** One step of the list: its number, a picture, the main name with one line of detail, and a chevron. One tap opens its pane. */
 @Composable
-private fun PathBody(artistName: String, kind: PathKind, response: PathsResponse, open: Opener, onDismiss: () -> Unit) {
-    // Only one row is open at a time; a new kind or a new answer starts closed.
-    var expanded by remember(response) { mutableIntStateOf(-1) }
-    when (val view = response.view()) {
-        is PathsView.Stops -> LazyColumn(
-            Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(bottom = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-        ) {
-            itemsIndexed(view.response.stops) { index, stop ->
-                StepRow(
-                    index + 1, kind, stop, expanded == index,
-                    onToggle = { expanded = if (expanded == index) -1 else index },
-                    open = open, onDismiss = onDismiss,
-                )
-            }
-            response.truncated?.let { reason ->
-                item {
-                    Text(
-                        "The server stopped this path early (${truncatedWords(reason)}), so later steps may be missing.",
-                        style = MaterialTheme.typography.bodySmall, color = Ink.TextMuted,
-                    )
-                }
-            }
-        }
-        PathsView.Empty -> Text(
-            "No ${kind.label.lowercase()} path from $artistName yet. A path appears only when every step has evidence.",
-            style = MaterialTheme.typography.bodyMedium, color = Ink.TextMuted,
+private fun PathRow(number: Int, kind: PathKind, stop: PathStop, onClick: () -> Unit) {
+    val heading = stop.heading(kind)
+    val detail = rowDetail(kind, stop)
+    Row(
+        Modifier.fillMaxWidth().heightIn(min = 64.dp)
+            .clickable(onClickLabel = "Open step $number", role = Role.Button, onClick = onClick)
+            .padding(vertical = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            "$number", style = MaterialTheme.typography.labelLarge, color = Ink.TextMuted,
+            textAlign = TextAlign.End, modifier = Modifier.width(24.dp),
         )
+        PathThumb(kind, stop, 48)
+        Column(Modifier.weight(1f)) {
+            Text(heading.title, style = MaterialTheme.typography.titleMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            Text(detail, style = MaterialTheme.typography.bodyMedium, color = Ink.TextMuted, maxLines = 2, overflow = TextOverflow.Ellipsis)
+        }
+        Icon(PlayerIcons.Right, contentDescription = null, modifier = Modifier.size(24.dp))
+    }
+}
+
+/** The second line of a row, per kind: what the server sent for it, and the first reason when it sent nothing better. */
+internal fun rowDetail(kind: PathKind, stop: PathStop): String {
+    val firstReason = stop.reasons.firstOrNull()
+    val line = when (kind) {
+        PathKind.FollowTheMusician -> listOfNotNull(stop.album, stop.albumArtist).joinToString(" · ")
+        PathKind.SidemanToLeader -> firstReason?.via?.takeIf { it.type == "release" }?.let { "Led ${it.name}" }.orEmpty()
+        PathKind.LabelPath -> stop.albumArtist ?: stop.displayContext.orEmpty()
+        PathKind.CompositionPath -> stop.heading(kind).detail.orEmpty()
+        PathKind.ScenePath -> firstReason?.via?.name?.let { "From $it" }.orEmpty()
+    }
+    return line.ifBlank { firstReason?.sentence() ?: stop.reason }
+}
+
+/** The picture beside a step: the album cover or the artist's photo where the step has one to look up, else a plain tile. */
+@Composable
+internal fun PathThumb(kind: PathKind, stop: PathStop, size: Int) {
+    val modifier = Modifier.size(size.dp)
+    when (kind) {
+        PathKind.FollowTheMusician, PathKind.LabelPath -> {
+            val album = if (kind == PathKind.LabelPath) stop.name else stop.album
+            if (album != null && stop.albumArtist != null) AlbumCover(stop.albumArtist, album, null, modifier)
+            else PathTile(if (kind == PathKind.LabelPath) PlayerIcons.Album else PlayerIcons.MusicNote, size)
+        }
+        PathKind.SidemanToLeader, PathKind.ScenePath -> ArtistPhoto(stop.name, null, modifier, circle = true)
+        PathKind.CompositionPath -> {
+            // A recording's cover is its album's, when the server named the album.
+            val by = stop.albumArtist ?: stop.artist
+            if (stop.album != null && by != null) AlbumCover(by, stop.album, null, modifier) else PathTile(PlayerIcons.MusicNote, size)
+        }
     }
 }
 
@@ -181,99 +296,70 @@ private fun kindDescription(kind: PathKind, artist: String, startType: String) =
     PathKind.ScenePath -> "Artists from the same place and era as $artist."
 }
 
-/** One step: its place in the path, the main name with its bracketed detail, and a chevron that opens the relationship. */
-@Composable
-private fun StepRow(number: Int, kind: PathKind, stop: PathStop, expanded: Boolean, onToggle: () -> Unit, open: Opener, onDismiss: () -> Unit) {
-    val heading = stop.heading(kind)
-    Column(Modifier.fillMaxWidth().animateContentSize()) {
-        Row(
-            Modifier.fillMaxWidth().heightIn(min = Target)
-                .clickable(onClick = onToggle)
-                .semantics(mergeDescendants = true) {
-                    role = Role.Button
-                    stateDescription = if (expanded) "Expanded" else "Collapsed"
-                },
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
-            verticalAlignment = Alignment.Top,
-        ) {
-            Text("$number", style = MaterialTheme.typography.labelLarge, color = Ink.TextMuted, modifier = Modifier.padding(top = 4.dp))
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(
-                    buildString {
-                        append(heading.title)
-                        heading.detail?.let { append(" ($it)") }
-                    },
-                    style = MaterialTheme.typography.bodyLarge, maxLines = if (expanded) Int.MAX_VALUE else 2,
-                )
-                if (!expanded) Text(stop.reasons.firstOrNull()?.sentence() ?: stop.reason, style = MaterialTheme.typography.bodySmall, color = Ink.TextMuted, maxLines = 2)
-            }
-            Icon(
-                if (expanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                contentDescription = if (expanded) "Collapse" else "Expand",
-                modifier = Modifier.size(24.dp),
-            )
-        }
-        if (expanded) StepDetails(kind, stop, heading.detail, open, onDismiss)
-    }
-}
-
-/** What the row opens to: every reason the server gave, the library state, and buttons to the pages involved. */
-@Composable
-private fun StepDetails(kind: PathKind, stop: PathStop, detail: String?, open: Opener, onDismiss: () -> Unit) {
-    val targets = pathTargets(kind, stop)
-    Column(Modifier.fillMaxWidth().padding(start = 24.dp, top = 4.dp, bottom = 4.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        val reasons: List<PathReason> = stop.reasons.ifEmpty { listOf(PathReason(stop.reason, "", null, null)) }
-        reasons.take(3).forEach { Text(it.sentence(), style = MaterialTheme.typography.bodyMedium) }
-        if (stop.reasonCount > 3) {
-            Text(if (stop.reasonCount - 3 == 1) "1 more reason on the server." else "${stop.reasonCount - 3} more reasons on the server.", style = MaterialTheme.typography.bodySmall, color = Ink.TextMuted)
-        }
-        Text(
-            if (stop.owned) "In your library" else "Not in your library",
-            style = MaterialTheme.typography.bodySmall, color = Ink.TextMuted,
-        )
-        targets.forEach { target ->
-            OutlinedButton(
-                onClick = { onDismiss(); target.go(open) },
-                Modifier.fillMaxWidth().heightIn(min = Target),
-            ) { Text(target.label, maxLines = 1) }
-        }
-    }
-}
-
-private class PathTarget(val label: String, val go: (Opener) -> Unit)
-
-/** The artist and album pages a row can open. An album needs its artist's name to be opened, so one without is not offered. */
-private fun pathTargets(kind: PathKind, stop: PathStop): List<PathTarget> {
-    val out = mutableListOf<PathTarget>()
-    fun artist(name: String, mbid: String?) {
-        if (out.none { it.label == "Artist: $name" }) out += PathTarget("Artist: $name") { it.artist(name, null, null, mbid) }
-    }
-    fun album(name: String, by: String?) {
-        if (by != null) out += PathTarget("Album: $name") { it.album(routeKey(by, name), by, name, null, null) }
-    }
-    when (kind) {
-        PathKind.FollowTheMusician -> {
-            stop.reasons.mapNotNull { it.via }.filter { it.isArtist }.distinctBy { it.name }.take(2).forEach { artist(it.name, it.mbid) }
-            stop.album?.let { album(it, stop.albumArtist) }
-            stop.albumArtist?.let { artist(it, null) }
-        }
-        PathKind.SidemanToLeader -> {
-            artist(stop.name, stop.mbid)
-            stop.reasons.firstNotNullOfOrNull { it.via?.takeIf { v -> v.type == "release" } }?.let { album(it.name, stop.name) }
-        }
-        PathKind.LabelPath -> {
-            album(stop.name, stop.albumArtist)
-            stop.albumArtist?.let { artist(it, null) }
-        }
-        PathKind.CompositionPath -> stop.artist?.let { artist(it, null) }
-        PathKind.ScenePath -> artist(stop.name, stop.mbid)
-    }
-    return out
-}
-
 private fun truncatedWords(reason: String) = when (reason) {
     "rows" -> "row limit"
     "time" -> "time limit"
     "stops" -> "stop limit"
     else -> "limit"
+}
+
+// ---------------------------------------------------------------- the pane
+
+/** A step's pane: a header that goes back to the list or on to the next step, the pane for this kind, and its main button. */
+@Composable
+private fun PathDetail(
+    artistName: String, kind: PathKind, stops: List<PathStop>, index: Int, startType: String,
+    onBack: () -> Unit, onStep: (Int) -> Unit, go: (PathLink) -> Unit,
+) {
+    val stop = stops[index]
+    val pane = remember(stop, kind) { stop.pane(kind) }
+    Column(Modifier.fillMaxSize()) {
+        Row(
+            Modifier.fillMaxWidth().padding(start = 16.dp, end = 8.dp, bottom = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            OutlinedIconButton(onClick = onBack, Modifier.size(Target)) {
+                Icon(PlayerIcons.Left, contentDescription = "Back to the list")
+            }
+            Column(Modifier.weight(1f).padding(start = 8.dp)) {
+                Text(kind.label, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text("Step ${index + 1} of ${stops.size}", style = MaterialTheme.typography.bodySmall, color = Ink.TextMuted)
+            }
+            IconButton(onClick = { onStep(index - 1) }, Modifier.size(Target), enabled = index > 0) {
+                Icon(Icons.Default.KeyboardArrowUp, contentDescription = "Previous step")
+            }
+            IconButton(onClick = { onStep(index + 1) }, Modifier.size(Target), enabled = index < stops.lastIndex) {
+                Icon(Icons.Default.KeyboardArrowDown, contentDescription = "Next step")
+            }
+        }
+        // A new step starts at the top of its pane.
+        key(index) {
+            Column(
+                Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+            ) {
+                PaneBody(pane, stop, kind, artistName, startType, go)
+                Spacer(Modifier.size(8.dp))
+            }
+        }
+        PaneBar(pane.primary, go)
+    }
+}
+
+/** The pane's main button, at the bottom where the thumb rests. A step with nothing to open has no button and no bar. */
+@Composable
+private fun PaneBar(primary: PathLink?, go: (PathLink) -> Unit) {
+    if (primary == null) return
+    Box(Modifier.fillMaxWidth().height(2.dp).background(Ink.EdgeStrong))
+    Column(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 24.dp)) {
+        app.discair.ui.common.Button(onClick = { go(primary) }, Modifier.fillMaxWidth().heightIn(min = Target)) {
+            Icon(if (primary.album) PlayerIcons.Album else PlayerIcons.Person, contentDescription = null, modifier = Modifier.size(24.dp))
+            Spacer(Modifier.width(8.dp))
+            Text(
+                "Open ${if (primary.album) "album" else "artist"}: ${primary.name}",
+                maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false),
+            )
+        }
+    }
 }

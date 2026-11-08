@@ -39,7 +39,11 @@ data class PathStop(
 data class PathRef(val name: String, val type: String, val mbid: String?)
 
 /** One reason the server gives for a stop: its sentence plus the entities it names. */
-data class PathReason(val text: String, val code: String, val via: PathRef?, val anchor: PathRef?)
+data class PathReason(
+    val text: String, val code: String, val via: PathRef?, val anchor: PathRef?,
+    /** The anchor's album and that album's artist, when the server sends them (label and composition paths), to look up a cover. */
+    val anchorAlbum: String? = null, val anchorAlbumArtist: String? = null,
+)
 
 /**
  * The sentence shown for a reason. The server's composition wording ("the work that X performs") reads as if X were a
@@ -68,6 +72,163 @@ fun PathStop.heading(kind: PathKind): PathHeading = when (kind) {
     // The stop is a recording: the artist is the credited performer, the track goes in brackets.
     PathKind.CompositionPath -> PathHeading(artist ?: displayTitle?.takeIf { it != name } ?: "Artist not listed", name)
     PathKind.SidemanToLeader, PathKind.ScenePath -> PathHeading(name, null)
+}
+
+/** A page a step can open: an album (needs its artist's name) or an artist (an MBID helps when the server gave one). */
+data class PathLink(val album: Boolean, val name: String, val by: String? = null, val mbid: String? = null)
+
+/** One reason on a Follow the musician pane: the server's sentence, and the musician it names, when it names one. */
+data class PathCredit(val text: String, val who: PathLink?)
+
+/** One record on a Sideman pane: the release the leader led, and the recording on it the start artist played on. */
+data class PathRecord(val release: String, val carries: String?)
+
+/** One label reason on a Label pane: the label, whether it is only a related one, and the library album that shares it. */
+data class PathLabelReason(val label: String, val related: Boolean, val anchor: String?, val anchorArtist: String?, val text: String)
+
+/**
+ * What a step's detail pane shows. Each path has its own shape because the server sends different facts for each:
+ * a song with its credits, a leader with records, an album with a label, a recording with a work, an artist with a place.
+ * Nothing here is invented: a fact the server did not send is null or absent, and the pane leaves it out.
+ */
+sealed interface PathPane {
+    /** Where the step opens: the main page first, then the neutral ones. */
+    val primary: PathLink?
+    val secondary: List<PathLink>
+    /** Reasons the server counted but this pane does not list. */
+    val moreReasons: Int
+
+    data class Song(
+        val title: String, val album: String?, val artist: String?, val credits: List<PathCredit>,
+        override val primary: PathLink?, override val secondary: List<PathLink>, override val moreReasons: Int,
+    ) : PathPane
+
+    data class Leader(
+        val name: String, val typeLabel: String, val records: List<PathRecord>, val otherReasons: List<String>,
+        override val primary: PathLink?, override val secondary: List<PathLink>, override val moreReasons: Int,
+    ) : PathPane
+
+    data class LabelAlbum(
+        val album: String, val artist: String?, val reasons: List<PathLabelReason>,
+        override val primary: PathLink?, override val secondary: List<PathLink>, override val moreReasons: Int,
+    ) : PathPane
+
+    data class Recording(
+        val work: String?, val related: Boolean, val yours: String?, val yoursAlbum: String?, val yoursArtist: String?,
+        val track: String, val performer: String?, val album: String?, val albumArtist: String?, val sentence: String,
+        override val primary: PathLink?, override val secondary: List<PathLink>, override val moreReasons: Int,
+    ) : PathPane
+
+    data class Place(
+        val name: String, val typeLabel: String, val place: String?, val anchor: String?, val years: Int?, val sentence: String,
+        override val primary: PathLink?, override val secondary: List<PathLink>, override val moreReasons: Int,
+    ) : PathPane
+}
+
+private const val PANE_REASONS = 3
+private const val LABEL_REASONS = 2
+private val WITHIN_YEARS = Regex("""within (\d+) years""")
+
+/** The pane label for a stop's entity type ("person" and "group" keep their name; anything else is "Artist"). */
+fun typeLabel(type: String) = when (type) {
+    "person" -> "Person"
+    "group" -> "Group"
+    else -> "Artist"
+}
+
+/**
+ * The pages a step can open, in the order the sheet has always offered them. An album needs its artist's name to be
+ * opened, so one without is not offered.
+ */
+fun PathStop.links(kind: PathKind): List<PathLink> {
+    val out = mutableListOf<PathLink>()
+    fun artist(name: String, mbid: String?) {
+        if (out.none { !it.album && it.name == name }) out += PathLink(false, name, null, mbid)
+    }
+    fun album(name: String, by: String?) {
+        if (by != null) out += PathLink(true, name, by)
+    }
+    when (kind) {
+        PathKind.FollowTheMusician -> {
+            reasons.mapNotNull { it.via }.filter { it.isArtist }.distinctBy { it.name }.take(2).forEach { artist(it.name, it.mbid) }
+            this.album?.let { album(it, albumArtist) }
+            albumArtist?.let { artist(it, null) }
+        }
+        PathKind.SidemanToLeader -> {
+            artist(name, mbid)
+            reasons.firstNotNullOfOrNull { it.via?.takeIf { v -> v.type == "release" } }?.let { album(it.name, name) }
+        }
+        PathKind.LabelPath -> {
+            album(name, albumArtist)
+            albumArtist?.let { artist(it, null) }
+        }
+        PathKind.CompositionPath -> artist?.let { artist(it, null) }
+        PathKind.ScenePath -> artist(name, mbid)
+    }
+    return out
+}
+
+/** The pane for one step of a path of this kind. */
+fun PathStop.pane(kind: PathKind): PathPane {
+    val list = reasons.ifEmpty { listOf(PathReason(reason, "", null, null)) }
+    return when (kind) {
+        PathKind.FollowTheMusician -> {
+            val shown = list.take(PANE_REASONS)
+            val credited = list.firstNotNullOfOrNull { r -> r.via?.takeIf { it.isArtist }?.let { PathLink(false, it.name, null, it.mbid) } }
+            // The album when the server named one, else the album's artist, else the first musician the reasons name.
+            val primary = this.album?.takeIf { albumArtist != null }?.let { PathLink(true, it, albumArtist) }
+                ?: albumArtist?.let { PathLink(false, it) }
+                ?: credited
+            PathPane.Song(
+                title = name, album = this.album, artist = albumArtist,
+                credits = shown.map { r -> PathCredit(r.sentence(), r.via?.takeIf { it.isArtist }?.let { PathLink(false, it.name, null, it.mbid) }) },
+                primary = primary,
+                secondary = if (primary?.album == true) albumArtist?.let { listOf(PathLink(false, it)) }.orEmpty() else emptyList(),
+                moreReasons = (reasonCount - shown.size).coerceAtLeast(0),
+            )
+        }
+        PathKind.SidemanToLeader -> {
+            val records = list.mapNotNull { r -> r.via?.takeIf { it.type == "release" }?.let { PathRecord(it.name, r.anchor?.name) } }
+                .distinctBy { it.release }.take(PANE_REASONS)
+            val others = if (records.isEmpty()) list.take(PANE_REASONS).map { it.sentence() } else emptyList()
+            PathPane.Leader(
+                name = name, typeLabel = typeLabel(type), records = records, otherReasons = others,
+                primary = PathLink(false, name, null, mbid), secondary = emptyList(),
+                // Several reasons can name the same release, so the count is of reasons the server sent, not of rows shown.
+                moreReasons = (reasonCount - list.size).coerceAtLeast(0),
+            )
+        }
+        PathKind.LabelPath -> {
+            val shown = list.take(LABEL_REASONS)
+            val primary = albumArtist?.let { PathLink(true, name, it) }
+            PathPane.LabelAlbum(
+                album = name, artist = albumArtist ?: displayContext,
+                reasons = shown.map { r -> PathLabelReason(r.via?.name.orEmpty(), r.code.startsWith("related"), r.anchor?.name, r.anchorAlbumArtist, r.sentence()) },
+                primary = primary ?: albumArtist?.let { PathLink(false, it) },
+                secondary = if (primary != null) listOf(PathLink(false, albumArtist!!)) else emptyList(),
+                moreReasons = (reasonCount - shown.size).coerceAtLeast(0),
+            )
+        }
+        PathKind.CompositionPath -> {
+            val r = list.first()
+            PathPane.Recording(
+                work = r.via?.name, related = r.code.startsWith("related"), yours = r.anchor?.name,
+                yoursAlbum = r.anchorAlbum, yoursArtist = r.anchorAlbumArtist,
+                track = name, performer = artist, album = this.album, albumArtist = albumArtist, sentence = r.sentence(),
+                primary = artist?.let { PathLink(false, it) }, secondary = emptyList(),
+                moreReasons = (reasonCount - 1).coerceAtLeast(0),
+            )
+        }
+        PathKind.ScenePath -> {
+            val r = list.first()
+            PathPane.Place(
+                name = name, typeLabel = typeLabel(type), place = r.via?.name, anchor = r.anchor?.name,
+                years = WITHIN_YEARS.find(r.text)?.groupValues?.get(1)?.toIntOrNull(), sentence = r.sentence(),
+                primary = PathLink(false, name, null, mbid), secondary = emptyList(),
+                moreReasons = (reasonCount - 1).coerceAtLeast(0),
+            )
+        }
+    }
 }
 
 /** A parsed body. [status] is the server's `ok` or `empty`; [truncated] is `rows`, `time`, `stops` or null. */
@@ -113,7 +274,12 @@ fun parsePaths(body: String): PathsResponse {
             reasons = (stop["reasons"] as? JsonArray).orEmpty().mapNotNull { r ->
                 val o = r as? JsonObject ?: return@mapNotNull null
                 val text = o.string("text")?.trim()?.takeIf { it.isNotEmpty() } ?: return@mapNotNull null
-                PathReason(text, o.string("code").orEmpty(), o.obj("via")?.ref(), o.obj("anchor")?.ref())
+                val anchored = o.obj("anchor_presentation")
+                PathReason(
+                    text, o.string("code").orEmpty(), o.obj("via")?.ref(), o.obj("anchor")?.ref(),
+                    anchored?.string("album")?.trim()?.takeIf { it.isNotEmpty() },
+                    anchored?.string("album_artist")?.trim()?.takeIf { it.isNotEmpty() },
+                )
             },
         )
     }
