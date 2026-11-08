@@ -3146,3 +3146,17 @@ All live runs were approved by the owner; slskd off; aggregate only; harnesses w
 - **Device:** a signed release APK was built from `main` and installed on the owner's phone (after #894, and again with the #895 app changes before merge). The owner saw the Composition sheet on the v0.5.1 build and the wording problem above; the final wording has not been checked on screen.
 - **Tests run:** Android `PathsTest` (JDK 17); `tests/test_intelligence_paths.py`, `tests/test_api_knowledge_paths_route.py` (and `tests/test_intelligence_path_coverage.py` for #895). Full suite not run (owner rule).
 - **Next action:** publish a new release from `main` (it would include #895), deploy it, and have the owner confirm the Paths sheet on the phone against it. Optional: decide how to treat uncredited Composition rows (hide, or label "Artist unknown").
+
+## 2026-11-08 — Paths sheet quality fixes: PR #896, release v0.5.2, deployed
+
+- **Merged:** PR [#896](https://github.com/abucalip/navi-librarian/pull/896), squash `781f55f0`, at the owner's request. Required workflows passed on its head (compile, container-smoke, test-and-build, validate-container).
+- **Sideman:** wording for a band ("appeared on as guests") versus a person ("played on as a sideman"), from the response's `start.type`; `[unknown]`-style names and Various Artists are dropped on the server and in the app.
+- **Follow the musician:** bridges use performer credits only (producers excluded); one row per album artist, or per song when the album artist is unknown.
+- **Label:** one row per recording artist before the 30-row cap. The store holds no release artist for about 4,100 of 5,800 label releases (for example the unowned edition of Dark Side of the Moon); the artist is now taken from the single owned release with the same title (an ambiguous title gives nothing). Rows still without an artist are capped at 3.
+- **Composition:** recordings with no credited performer are dropped. `PRESENTATION_VERSION` is 4 (cached paths rebuild).
+- **Real-store check (read-only copy, `discair-mb-test`):** Sideman has a path for 201 of 300 owned artists; Pink Floyd and Deep Purple paths looked right. Not a check of the live server's store.
+- **Published:** tag `v0.5.2` on `781f55f0`; the Docker release workflow succeeded.
+- **Deployed:** `discair` in `/opt/media-stack` (container 121 on prox) pulled `:latest` and recreated, 2026-11-08. New digest `sha256:37f26111b71e5456eafe51e6702371326733cc6626fc5c739b1c451684cd49b4`; previous (rollback) `sha256:4c2d6445d9babb29f96973b067f786d697e287ba618248511b7d3552f7e13e70`. Startup clean, `PRESENTATION_VERSION = 4` confirmed in the running container.
+- **Tests run:** Android `PathsTest` (JDK 17); `tests/test_intelligence_paths.py`, `tests/test_api_knowledge_paths_route.py`, `tests/test_intelligence_path_coverage.py`. Full suite not run (owner rule).
+- **Not verified:** the Paths sheet on a device against the deployed server; label credits that need a title the store does not have.
+- **Next action:** the owner checks the five tabs on the phone against v0.5.2. If Label still shows many uncredited rows, import release artist credits for label releases in the MusicBrainz slice step.
