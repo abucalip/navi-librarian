@@ -156,7 +156,7 @@ Initial inventory from the current source:
 | Legacy discovery scheduler | `app/main.py` calls `librarian._start_discovery_scheduler()` | Worker |
 | Daily lens-list refresh | `discovery/lens_service.py`, started from web startup | Worker |
 | Similar-artist precompute | `app/api/search.py`, `start_similar_precompute()` | Worker |
-| Insights refresh and Navidrome inventory ingest | `app/services/insights_refresh.py`, `start()` | Worker |
+| Insights refresh and Navidrome inventory ingest | `app/services/insights_refresh.py`, `start()`; started by `app/worker.py` (no longer by web startup, PR #898) | Worker (done) |
 | Automatic API fill (new in PR #898): scan-status poll, additions ingest, MusicBrainz fill, Paths publish | `app/worker.py` (`python -m app.worker`, compose service `worker`), `app/services/library_enrich.py` | Worker (done; first job of the worker, no dispatcher yet) |
 | Import-triggered library resync hook | `app/library_resync.py`, installed at startup | Remains web-integrated unless its request lifecycle proves otherwise |
 | Search owned-index build | `discovery/search/index.py`, lazy/single-flight in-process build | Initially remains an on-demand web read model; make its process ownership explicit before multi-worker mode |

@@ -266,9 +266,23 @@ class WorkerTests(unittest.TestCase):
         stop.set()
         self.assertEqual(worker.main(librarian=object(), stop=stop), 0)
 
-    def test_web_startup_no_longer_starts_the_loop(self):
+    def test_web_startup_starts_no_knowledge_store_writer(self):
         from pathlib import Path
-        self.assertNotIn("library_enrich", (Path(__file__).parent.parent / "app" / "main.py").read_text())
+        source = (Path(__file__).parent.parent / "app" / "main.py").read_text()
+        self.assertNotIn("library_enrich", source)
+        self.assertNotIn("insights_refresh", source)
+
+    def test_worker_owns_the_insights_refresh_and_the_auto_fill(self):
+        from unittest import mock
+        import threading
+        import app.worker as worker
+        stop = threading.Event()
+        lib = object()
+        with mock.patch.object(worker.insights_refresh, "start") as insights, \
+                mock.patch.object(worker.library_enrich, "run_forever") as fill:
+            worker.main(librarian=lib, stop=stop)
+        insights.assert_called_once_with(lib)
+        fill.assert_called_once_with(lib, stop)
 
 
 class PollTests(unittest.TestCase):

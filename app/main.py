@@ -85,9 +85,6 @@ def _start_discovery_background():
     from app.api.search import start_similar_precompute
 
     start_similar_precompute(librarian)
-    from app.services import insights_refresh
-
-    insights_refresh.start(librarian)
 
 
 def _schedule_discovery_scheduler_startup():

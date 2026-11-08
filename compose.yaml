@@ -27,7 +27,7 @@ services:
 
   worker:
     # Background worker: the only process that writes the Server V2 knowledge store and calls
-    # MusicBrainz for it (automatic API fill). Same image, configuration and data volume.
+    # MusicBrainz for it (automatic API fill, insights refresh). Same image, configuration and data volume.
     image: ghcr.io/abucalip/navi-librarian:latest
     container_name: discair-worker
     restart: unless-stopped
@@ -40,6 +40,8 @@ services:
       NAVIDROME_USER: ${NAVIDROME_USER:-}
       NAVIDROME_PASSWORD: ${NAVIDROME_PASSWORD:-}
       NAVI_AUTO_FILL_POLL_SECONDS: ${NAVI_AUTO_FILL_POLL_SECONDS:-}
+      LISTENBRAINZ_USERNAME: ${LISTENBRAINZ_USERNAME:-}
+      NAVI_INSIGHT_LENSES: ${NAVI_INSIGHT_LENSES:-}
     volumes:
       - librarian_data:/data
 
