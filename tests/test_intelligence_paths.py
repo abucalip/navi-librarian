@@ -212,6 +212,7 @@ class PathTests(unittest.TestCase):
         reason = path["stops"][0]["reasons"][0]
         self.assertEqual((reason["code"], reason["via"]["canonical_name"]), ("same_work", "Song"))
         self.assertEqual(len(reason["evidence"]), 2)
+        self.assertEqual(reason["text"], "another recording of Song, the same work as Anchor Song, a recording in your library")
         performer = self.ent("artist", "Cover artist")
         self.edge(performer, rec2, "performer")
         path = build_path(self.db, a, "composition_path")
@@ -270,7 +271,7 @@ class PathTests(unittest.TestCase):
         )
         self.db.commit()
         rebuilt = cached_path(self.db, a, "follow_the_musician")
-        self.assertEqual(rebuilt["presentation_version"], 2)
+        self.assertEqual(rebuilt["presentation_version"], 3)
         self.assertEqual(rebuilt["stops"][0]["presentation"]["title"], "Player")
 
     def test_cache_hit_refresh_and_staleness(self):

@@ -4,6 +4,7 @@ import app.discair.data.CacheMiss
 import app.discair.model.PathKind
 import app.discair.model.PathsView
 import app.discair.model.heading
+import app.discair.model.sentence
 import app.discair.model.parsePaths
 import app.discair.model.pathsAvailableFrom
 import app.discair.model.pathsFailure
@@ -181,5 +182,14 @@ class PathsTest {
              "presentation":{"title":"Album","context":"A, B","album_artist":"A"},
              "reasons":[{"code":"same_label","text":"x"}]}]}""").stops.single()
         assertEquals("A", album.heading(PathKind.LabelPath).detail)
+    }
+
+    @Test fun compositionReasonNamesTheWorkAndTheLibraryRecording() {
+        val r = parsePaths("""{"kind":"composition_path","status":"ok","stops":[
+            {"entity":{"canonical_name":"Cover","type":"recording"},"reason_count":1,"reasons":[
+             {"code":"same_work","text":"server text",
+              "via":{"canonical_name":"Aranjuez","type":"work"},"anchor":{"canonical_name":"Aranjuez (Adagio)","type":"recording"}}]}]}""")
+            .stops.single().reasons.single()
+        assertEquals("Another recording of Aranjuez, the same work as Aranjuez (Adagio), a recording in your library.", r.sentence())
     }
 }

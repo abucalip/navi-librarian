@@ -46,6 +46,7 @@ import androidx.compose.ui.unit.dp
 import app.discair.model.PathKind
 import app.discair.model.PathReason
 import app.discair.model.heading
+import app.discair.model.sentence
 import app.discair.model.isArtist
 import app.discair.model.PathStop
 import app.discair.model.PathsResponse
@@ -200,7 +201,7 @@ private fun StepRow(number: Int, kind: PathKind, stop: PathStop, expanded: Boole
                     },
                     style = MaterialTheme.typography.bodyLarge, maxLines = if (expanded) Int.MAX_VALUE else 2,
                 )
-                if (!expanded) Text(stop.reason, style = MaterialTheme.typography.bodySmall, color = Ink.TextMuted, maxLines = 2)
+                if (!expanded) Text(stop.reasons.firstOrNull()?.sentence() ?: stop.reason, style = MaterialTheme.typography.bodySmall, color = Ink.TextMuted, maxLines = 2)
             }
             Icon(
                 if (expanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
@@ -218,9 +219,9 @@ private fun StepDetails(kind: PathKind, stop: PathStop, detail: String?, open: O
     val targets = pathTargets(kind, stop)
     Column(Modifier.fillMaxWidth().padding(start = 26.dp, top = 4.dp, bottom = 4.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
         val reasons: List<PathReason> = stop.reasons.ifEmpty { listOf(PathReason(stop.reason, "", null, null)) }
-        reasons.take(3).forEach { Text(it.text, style = MaterialTheme.typography.bodyMedium) }
+        reasons.take(3).forEach { Text(it.sentence(), style = MaterialTheme.typography.bodyMedium) }
         if (stop.reasonCount > 3) {
-            Text("${stop.reasonCount - 3} more reasons on the server.", style = MaterialTheme.typography.bodySmall, color = Ink.TextMuted)
+            Text(if (stop.reasonCount - 3 == 1) "1 more reason on the server." else "${stop.reasonCount - 3} more reasons on the server.", style = MaterialTheme.typography.bodySmall, color = Ink.TextMuted)
         }
         Text(
             if (stop.owned) "In your library" else "Not in your library",
