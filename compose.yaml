@@ -25,5 +25,24 @@ services:
       - ${MUSIC_LIBRARY_HOST_PATH:-/media/library/music}:/music
       - ${SLSKD_DOWNLOADS_HOST_PATH:-/media/downloads/slskd/complete}:/downloads
 
+  worker:
+    # Background worker: the only process that writes the Server V2 knowledge store and calls
+    # MusicBrainz for it (automatic API fill, insights refresh). Same image, configuration and data volume.
+    image: ghcr.io/abucalip/navi-librarian:latest
+    container_name: discair-worker
+    restart: unless-stopped
+    command: ["python", "-m", "app.worker"]
+    depends_on:
+      - discair
+    environment:
+      DISCAIR_DATA_DIR: /data
+      NAVIDROME_URL: ${NAVIDROME_URL:-}
+      NAVIDROME_USER: ${NAVIDROME_USER:-}
+      NAVIDROME_PASSWORD: ${NAVIDROME_PASSWORD:-}
+      NAVI_AUTO_FILL_POLL_SECONDS: ${NAVI_AUTO_FILL_POLL_SECONDS:-}
+      LISTENBRAINZ_USERNAME: ${LISTENBRAINZ_USERNAME:-}
+    volumes:
+      - librarian_data:/data
+
 volumes:
   librarian_data:

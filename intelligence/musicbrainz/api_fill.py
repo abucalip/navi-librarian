@@ -270,9 +270,14 @@ def run_api_fill(
     fetch: Fetch | None = None,
     max_requests: int = DEFAULT_MAX_REQUESTS,
     require_slice: bool = True,
+    only: frozenset[str] | None = None,
     clock: Callable[[], float] = time.time,
 ) -> runner.RunResult:
-    """Fill what is missing for owned entities, within ``max_requests``; safe to repeat."""
+    """Fill what is missing for owned entities, within ``max_requests``; safe to repeat.
+
+    ``only`` (lowercase MBIDs) limits the run to those entities, so a caller that knows which
+    albums are new spends no requests on the rest of the library.
+    """
     paced = fetch if isinstance(fetch, Paced) else Paced(fetch or http_fetch)
 
     def work(ctx: runner.JobContext) -> bool:
@@ -281,7 +286,10 @@ def run_api_fill(
             result.stopped = "no_slice"
             ctx.checkpoint(result.summary())
             return True
-        artists, releases = pending_artists(db, clock()), pending_releases(db, clock())
+        def wanted(rows):
+            return rows if only is None else [r for r in rows if r[1] in only]
+
+        artists, releases = wanted(pending_artists(db, clock())), wanted(pending_releases(db, clock()))
         failures = 0  # consecutive failed requests
 
         def spent() -> bool:
@@ -336,8 +344,8 @@ def run_api_fill(
             ctx.checkpoint(result.summary(), items=1)
 
         result.requests = paced.requests
-        result.pending_artists = len(pending_artists(db, clock()))
-        result.pending_releases = len(pending_releases(db, clock()))
+        result.pending_artists = len(wanted(pending_artists(db, clock())))
+        result.pending_releases = len(wanted(pending_releases(db, clock())))
         if failures >= MAX_FAILURES_IN_A_ROW:
             result.stopped = "failures"
         elif paced.requests >= max_requests and (result.pending_artists or result.pending_releases):
