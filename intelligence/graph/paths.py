@@ -40,7 +40,14 @@ CACHE_PREFIX = "path:"
 SLICE_RESOURCE = "musicbrainz_slice"
 SCENE_YEARS = 10
 PROGRESS_OPS = 5000  # how many SQLite steps pass between deadline checks
-PRESENTATION_VERSION = 3
+PRESENTATION_VERSION = 4
+# Performer credits only: a producer is not a musician on the record, so it never bridges two recordings.
+PERFORMER_ROLES = tuple(r for r in CREDIT_ROLES if r != "producer")
+UNKNOWN_ARTIST_MBID = "125ec42a-7229-4250-afc5-e057484327fe"
+UNRESOLVED_LABEL_ROWS = 3  # label rows whose recording artist cannot be found are capped, not listed in full
+# Placeholder artists ("[unknown]", "[anonymous]", Various Artists) are never a stop or a bridge.
+_REAL = ("({a}.canonical_name NOT LIKE '[%]' AND COALESCE({a}.mbid, '') NOT IN ('" + UNKNOWN_ARTIST_MBID
+         + "', '89ad4ac3-39f7-470e-963a-56509c546377'))")
 
 _CG = "{a}.evidence_class != 'inferred' AND {a}.match_quality NOT IN ('fuzzy_unconfirmed', 'unresolved')"
 
@@ -72,6 +79,7 @@ _OWN_REC = (f"SELECT DISTINCT e.from_id AS rec FROM edges e WHERE e.relation = '
             f"AND {_cg('e')} AND e.to_id IN ({_OWN_REL})")
 
 _ROLES = ", ".join("'%s'" % r for r in CREDIT_ROLES)  # constants, not input
+_PERFORMERS = ", ".join("'%s'" % r for r in PERFORMER_ROLES)
 
 _QUERIES: dict[str, str] = {
     # The start's credited recordings -> the release that carries each (``track_on``) -> that release's
@@ -83,7 +91,7 @@ _QUERIES: dict[str, str] = {
         JOIN entities q ON q.id = c.to_id AND q.type = 'recording'
         JOIN edges t ON t.from_id = c.to_id AND t.relation = 'track_on' AND t.generation = :g AND {_cg('t')}
         JOIN edges l ON l.from_id = t.to_id AND l.relation = 'release_artist' AND l.generation = :g AND {_cg('l')}
-        JOIN entities lead ON lead.id = l.to_id AND lead.type IN ('artist', 'person', 'group') AND lead.id != :a
+        JOIN entities lead ON lead.id = l.to_id AND lead.type IN ('artist', 'person', 'group') AND lead.id != :a AND {_REAL.format(a='lead')}
         WHERE c.from_id = :a AND c.relation IN ({_ROLES}) AND c.generation = :g AND {_cg('c')}
           AND NOT EXISTS (SELECT 1 FROM edges m WHERE m.from_id = t.to_id AND m.to_id = :a
                           AND m.relation = 'release_artist' AND m.generation = :g AND {_cg('m')})
@@ -122,7 +130,7 @@ _QUERIES: dict[str, str] = {
                m.e0 AS e1, e.id AS e2, NULL AS e3, 'same_area' AS code, NULL AS bridge
         FROM mine m
         JOIN edges e ON e.to_id = m.area AND e.relation IN ('area', 'begin area') AND e.generation = :g AND {_cg('e')}
-        JOIN entities b ON b.id = e.from_id AND b.type IN ('artist', 'person', 'group') AND b.id != :a
+        JOIN entities b ON b.id = e.from_id AND b.type IN ('artist', 'person', 'group') AND b.id != :a AND {_REAL.format(a='b')}
         JOIN artist_life_span lb ON lb.entity_id = b.id AND lb.begin_date IS NOT NULL
         WHERE ABS(m.y - CAST(SUBSTR(lb.begin_date, 1, 4) AS INTEGER)) <= {SCENE_YEARS}
         ORDER BY rank, b.id, m.area LIMIT :n""",
@@ -166,14 +174,14 @@ _MUSICIANS = f"""
     WITH own AS ({_OWN_REC})
     SELECT p.id AS via, o.rec AS anchor, e1.id AS e1
     FROM own o
-    JOIN edges e1 ON e1.to_id = o.rec AND e1.generation = :g AND {_cg('e1')}
-    JOIN entities p ON p.id = e1.from_id AND p.type IN ('artist', 'person', 'group') AND p.id != :a
+    JOIN edges e1 ON e1.to_id = o.rec AND e1.generation = :g AND e1.relation IN ({_PERFORMERS}) AND {_cg('e1')}
+    JOIN entities p ON p.id = e1.from_id AND p.type IN ('artist', 'person', 'group') AND p.id != :a AND {_REAL.format(a='p')}
     ORDER BY p.id, o.rec LIMIT :n"""
 _OWN_RECS = f"SELECT rec FROM ({_OWN_REC})"
 _CREDITS = f"""
     SELECT e2.id AS e2, q.id AS stop FROM edges e2
     JOIN entities q ON q.id = e2.to_id AND q.type = 'recording'
-    WHERE e2.from_id = :p AND e2.generation = :g AND {_cg('e2')} ORDER BY q.id LIMIT :k"""
+    WHERE e2.from_id = :p AND e2.generation = :g AND e2.relation IN ({_PERFORMERS}) AND {_cg('e2')} ORDER BY q.id LIMIT :k"""
 
 
 def _follow_the_musician_rows(db: sqlite3.Connection, start_id: int, gen: int, limits: PathLimits) -> tuple[list[dict[str, Any]], bool]:
@@ -277,6 +285,22 @@ def _credited_names(
     return [r["canonical_name"] for r in rows if r["canonical_name"]]
 
 
+def _owned_twin_artists(db: sqlite3.Connection, title: str, generation: int) -> list[str]:
+    """Credit for a release the store holds no artist for: the one owned release with the same title.
+
+    Other editions of a library album carry label rows but no ``release_artist`` edge. A title that matches
+    more than one owned release ("Greatest Hits") is ambiguous and gives nothing.
+    """
+    if not title:
+        return []
+    twins = db.execute("SELECT id FROM entities WHERE type = 'release' AND owned = 1 AND canonical_name = ? COLLATE NOCASE LIMIT 2",
+                       (title,)).fetchall()
+    if len(twins) != 1:
+        return []
+    return _credited_names(db, twins[0]["id"], direction="release", relations=("release_artist", "credited_to"),
+                           generation=generation)
+
+
 def _path_presentation(
     db: sqlite3.Connection, kind: str, stop_id: int, reasons: list[dict[str, Any]],
     names: _Names, generation: int,
@@ -319,7 +343,7 @@ def _path_presentation(
     elif kind == "label_path":
         artists = _credited_names(
             db, stop_id, direction="release", relations=("release_artist", "credited_to"), generation=generation,
-        )
+        ) or _owned_twin_artists(db, stop_name, generation)
         context = ", ".join(artists) or "Artist credit unavailable"
         album, album_artist = stop_name, (artists[0] if artists else None)
     elif kind == "composition_path":
@@ -328,7 +352,7 @@ def _path_presentation(
             relations=("instrument", "vocal", "main performer", "performer", "performing orchestra"),
             generation=generation,
         )
-        title = ", ".join(artists) or "Performing artist not credited"
+        title = ", ".join(artists)
         context = stop_name or None
         artist = artists[0] if artists else None
     return {"title": title, "context": context, "album": album, "album_artist": album_artist, "artist": artist}
@@ -382,7 +406,30 @@ def build_path(db: sqlite3.Connection, start_id: int, kind: str, *, limits: Path
 
     ordered = sorted(stops.items(), key=lambda kv: (-len(kv[1]["reasons"]), kv[1]["rank"], kv[0]))
     result_stops = []
-    for stop_id, info in ordered[:limits.max_stops]:
+    seen_groups: set[str] = set()
+    unresolved = 0
+    examined = 0
+    for stop_id, info in ordered:
+        if len(result_stops) >= limits.max_stops:
+            break
+        examined += 1
+        if examined > limits.max_stops * 20:
+            break
+        presentation = _path_presentation(db, kind, stop_id, info["reasons"], names, gen)
+        if kind == "composition_path" and not presentation["artist"]:
+            continue  # "performing artist not credited" tells the owner nothing
+        if kind in ("follow_the_musician", "label_path"):
+            who = (presentation["album_artist"] or "").casefold()
+            if not who and kind == "follow_the_musician":
+                who = "song:" + ((names.get(stop_id) or {}).get("canonical_name") or "").casefold()
+            if who:
+                if who in seen_groups:
+                    continue  # one row per artist the row leads to
+                seen_groups.add(who)
+            elif kind == "label_path":
+                if unresolved >= UNRESOLVED_LABEL_ROWS:
+                    continue
+                unresolved += 1
         reasons = []
         for r in info["reasons"][:limits.max_reasons]:
             via, anchor = names.get(r["via"]), names.get(r["anchor"])
@@ -396,11 +443,11 @@ def build_path(db: sqlite3.Connection, start_id: int, kind: str, *, limits: Path
             })
         result_stops.append({
             "entity": names.get(stop_id),
-            "presentation": _path_presentation(db, kind, stop_id, info["reasons"], names, gen),
+            "presentation": presentation,
             "reason_count": len(info["reasons"]),
             "reasons": reasons,
         })
-    if len(ordered) > limits.max_stops and truncated is None:
+    if len(result_stops) >= limits.max_stops and examined < len(ordered) and truncated is None:
         truncated = "stops"
     return {
         "kind": kind,
