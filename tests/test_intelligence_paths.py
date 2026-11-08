@@ -110,7 +110,7 @@ class PathTests(unittest.TestCase):
         path = build_path(self.db, a, "follow_the_musician")
         self.assertEqual(path["status"], "ok")
         self.assertEqual([s["entity"]["canonical_name"] for s in path["stops"]], ["Other"])
-        self.assertEqual(path["stops"][0]["presentation"], {"title": "Player", "context": "Anchor LP"})
+        self.assertEqual(path["stops"][0]["presentation"], {"title": "Player", "context": "Anchor LP", "album": None, "album_artist": None, "artist": None})
         reason = path["stops"][0]["reasons"][0]
         self.assertEqual(reason["code"], "shared_musician")
         self.assertEqual(reason["via"]["canonical_name"], "Player")
@@ -188,8 +188,19 @@ class PathTests(unittest.TestCase):
         self.assertEqual(by_name["Same"]["reasons"][0]["code"], "same_label")
         self.assertEqual(by_name["Related"]["reasons"][0]["code"], "related_label")
         self.assertTrue(by_name["Same"]["reasons"][0]["evidence"])
-        self.assertEqual(by_name["Same"]["presentation"], {"title": "Same", "context": "Same Release Artist"})
+        self.assertEqual(by_name["Same"]["presentation"], {"title": "Same", "context": "Same Release Artist", "album": "Same", "album_artist": "Same Release Artist", "artist": None})
         self.assertEqual(path["stops"][0]["entity"]["canonical_name"], "Same")
+
+    def test_follow_the_musician_presentation_names_the_songs_own_album(self):
+        a, _, rec = self.library()
+        player, other = self.ent("artist", "Player"), self.ent("recording", "Other")
+        album, band = self.ent("release", "Other LP"), self.ent("artist", "The Band")
+        self.edge(player, rec, "instrument")
+        self.edge(player, other, "instrument")
+        self.edge(other, album, "track_on", src="musicbrainz_dump_releases")
+        self.edge(album, band, "release_artist", src="musicbrainz_dump_releases")
+        presentation = build_path(self.db, a, "follow_the_musician")["stops"][0]["presentation"]
+        self.assertEqual((presentation["album"], presentation["album_artist"]), ("Other LP", "The Band"))
 
     def test_composition_path_other_recordings_of_the_same_work(self):
         a, _, rec = self.library()
@@ -204,7 +215,7 @@ class PathTests(unittest.TestCase):
         performer = self.ent("artist", "Cover artist")
         self.edge(performer, rec2, "performer")
         path = build_path(self.db, a, "composition_path")
-        self.assertEqual(path["stops"][0]["presentation"], {"title": "Cover artist", "context": "Cover"})
+        self.assertEqual(path["stops"][0]["presentation"], {"title": "Cover artist", "context": "Cover", "album": None, "album_artist": None, "artist": "Cover artist"})
 
     def test_scene_path_needs_a_stated_non_country_area_and_close_start(self):
         a, _, _ = self.library()
@@ -259,7 +270,7 @@ class PathTests(unittest.TestCase):
         )
         self.db.commit()
         rebuilt = cached_path(self.db, a, "follow_the_musician")
-        self.assertEqual(rebuilt["presentation_version"], 1)
+        self.assertEqual(rebuilt["presentation_version"], 2)
         self.assertEqual(rebuilt["stops"][0]["presentation"]["title"], "Player")
 
     def test_cache_hit_refresh_and_staleness(self):

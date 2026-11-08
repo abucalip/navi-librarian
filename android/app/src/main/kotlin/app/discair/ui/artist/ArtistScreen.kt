@@ -108,7 +108,7 @@ private fun ArtistContent(route: ArtistRoute, page: ArtistPage, open: Opener, li
     val artistId = (info?.id ?: route.id)?.takeIf { it.isNotBlank() && owned.isNotEmpty() }
     val play = app.discair.ui.player.LocalPlayActions.current
 
-    if (showPaths && pathsMbid != null) ArtistPathsSheet(name, pathsMbid) { showPaths = false }
+    if (showPaths && pathsMbid != null) ArtistPathsSheet(name, pathsMbid, open) { showPaths = false }
 
     LazyColumn(Modifier.fillMaxSize(), state = list, contentPadding = PaddingValues(bottom = 32.dp + app.discair.ui.LocalBottomClearance.current)) {
         item {
@@ -151,10 +151,9 @@ private fun ArtistContent(route: ArtistRoute, page: ArtistPage, open: Opener, li
             )
         }
         if (pathsOn && pathsMbid != null) item {
-            OutlinedButton(
-                onClick = { showPaths = true },
-                modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp).fillMaxWidth().heightIn(min = Target),
-            ) { Text("Paths from $name") }
+            Box(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp), contentAlignment = Alignment.Center) {
+                OutlinedButton(onClick = { showPaths = true }, modifier = Modifier.heightIn(min = Target)) { Text("Paths from $name") }
+            }
         }
         val allSongs = sections.topSongs.items
         val songs = if (showAllSongs) allSongs else allSongs.take(SONGS_SHOWN)

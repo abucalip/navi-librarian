@@ -29,7 +29,30 @@ enum class PathKind(val wire: String, val label: String) {
 data class PathStop(
     val name: String, val type: String, val owned: Boolean, val reasonCount: Int, val reason: String,
     val displayTitle: String? = null, val displayContext: String? = null,
+    val mbid: String? = null,
+    /** The server's presentation extras: the song's/label release's album, its artist, and the credited performer. */
+    val album: String? = null, val albumArtist: String? = null, val artist: String? = null,
+    val reasons: List<PathReason> = emptyList(),
 )
+
+/** An entity named inside a reason: the entity it goes through (`via`) or the library item it starts from (`anchor`). */
+data class PathRef(val name: String, val type: String, val mbid: String?)
+
+/** One reason the server gives for a stop: its sentence plus the entities it names. */
+data class PathReason(val text: String, val code: String, val via: PathRef?, val anchor: PathRef?)
+
+val PathRef.isArtist get() = type == "artist" || type == "person" || type == "group"
+
+/** The two lines of a row: the main name and the bracketed detail, per kind. A server without presentation never puts a track in the artist slot. */
+data class PathHeading(val title: String, val detail: String?)
+
+fun PathStop.heading(kind: PathKind): PathHeading = when (kind) {
+    PathKind.FollowTheMusician -> PathHeading(name, album)
+    PathKind.LabelPath -> PathHeading(name, albumArtist ?: displayContext)
+    // The stop is a recording: the artist is the credited performer, the track goes in brackets.
+    PathKind.CompositionPath -> PathHeading(artist ?: displayTitle?.takeIf { it != name } ?: "Artist not listed", name)
+    PathKind.SidemanToLeader, PathKind.ScenePath -> PathHeading(name, null)
+}
 
 /** A parsed body. [status] is the server's `ok` or `empty`; [truncated] is `rows`, `time`, `stops` or null. */
 data class PathsResponse(val kind: String, val status: String, val stops: List<PathStop>, val truncated: String?)
@@ -60,6 +83,15 @@ fun parsePaths(body: String): PathsResponse {
             reason = reason,
             displayTitle = stop.obj("presentation")?.string("title")?.trim()?.takeIf { it.isNotEmpty() },
             displayContext = stop.obj("presentation")?.string("context")?.trim()?.takeIf { it.isNotEmpty() },
+            mbid = entity.string("mbid")?.takeIf { it.isNotBlank() },
+            album = stop.obj("presentation")?.string("album")?.trim()?.takeIf { it.isNotEmpty() },
+            albumArtist = stop.obj("presentation")?.string("album_artist")?.trim()?.takeIf { it.isNotEmpty() },
+            artist = stop.obj("presentation")?.string("artist")?.trim()?.takeIf { it.isNotEmpty() },
+            reasons = (stop["reasons"] as? JsonArray).orEmpty().mapNotNull { r ->
+                val o = r as? JsonObject ?: return@mapNotNull null
+                val text = o.string("text")?.trim()?.takeIf { it.isNotEmpty() } ?: return@mapNotNull null
+                PathReason(text, o.string("code").orEmpty(), o.obj("via")?.ref(), o.obj("anchor")?.ref())
+            },
         )
     }
     return PathsResponse(
@@ -106,6 +138,10 @@ private fun objectOrNull(body: String): JsonObject? = try {
     null
 }
 
+private fun JsonObject.ref(): PathRef? {
+    val name = string("canonical_name")?.trim()?.takeIf { it.isNotEmpty() } ?: return null
+    return PathRef(name, string("type").orEmpty(), string("mbid")?.takeIf { it.isNotBlank() })
+}
 private fun JsonObject.string(name: String) = (this[name] as? JsonPrimitive)?.takeIf { it.isString }?.contentOrNull
 private fun JsonObject.int(name: String) = (this[name] as? JsonPrimitive)?.let { it.intOrNull ?: it.doubleOrNull?.toInt() }
 private fun JsonObject.obj(name: String) = this[name] as? JsonObject
