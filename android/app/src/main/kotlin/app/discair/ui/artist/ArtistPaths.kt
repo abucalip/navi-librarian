@@ -114,7 +114,7 @@ fun ArtistPathsSheet(artistName: String, mbid: String, open: Opener, onDismiss: 
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(3.dp),
             ) {
-                PathLegend(artistName)
+                PathLegend(kind, artistName)
             }
             Box(Modifier.fillMaxWidth().height(BodyHeight)) {
                 when (val s = state) {
@@ -165,20 +165,16 @@ private fun PathBody(artistName: String, kind: PathKind, response: PathsResponse
     }
 }
 
-/** One line per path under the buttons: what each kind of relationship means. Regular weight, left aligned. */
+/** The one line under the buttons that explains the chosen path. Regular weight, left aligned. */
 @Composable
-private fun PathLegend(artistName: String) {
-    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-        PathKind.entries.forEach { kind ->
-            Text(
-                "${kind.label}: ${pathMeaning(kind, artistName)}",
-                style = MaterialTheme.typography.bodySmall,
-                color = Ink.TextMuted,
-                textAlign = TextAlign.Start,
-                modifier = Modifier.fillMaxWidth(),
-            )
-        }
-    }
+private fun PathLegend(kind: PathKind, artistName: String) {
+    Text(
+        "${kind.label}: ${pathMeaning(kind, artistName)}",
+        style = MaterialTheme.typography.bodySmall,
+        color = Ink.TextMuted,
+        textAlign = TextAlign.Start,
+        modifier = Modifier.fillMaxWidth(),
+    )
 }
 
 /** What a path of each kind means, shown in the legend. */

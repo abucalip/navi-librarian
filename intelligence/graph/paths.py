@@ -40,7 +40,7 @@ CACHE_PREFIX = "path:"
 SLICE_RESOURCE = "musicbrainz_slice"
 SCENE_YEARS = 10
 PROGRESS_OPS = 5000  # how many SQLite steps pass between deadline checks
-PRESENTATION_VERSION = 3
+PRESENTATION_VERSION = 4
 
 _CG = "{a}.evidence_class != 'inferred' AND {a}.match_quality NOT IN ('fuzzy_unconfirmed', 'unresolved')"
 
@@ -308,14 +308,15 @@ def _path_presentation(
         )
         context = ", ".join(artists) or "Artist credit unavailable"
     elif kind == "composition_path":
-        # The stop is a recording: its title is the track, the credited performers go in brackets.
+        # The stop is a recording: the credited performer is the title and the track goes in brackets.
+        # Most recordings in the store only link to a work, so an uncredited track never fills the artist line.
         artists = _credited_names(
             db, stop_id, direction="recording",
             relations=("instrument", "vocal", "main performer", "performer", "performing orchestra"),
             generation=generation,
         )
-        title = stop_name or "Recording"
-        context = ", ".join(artists) or None
+        title = ", ".join(artists) or "Artist credit unavailable"
+        context = stop_name or None
     return {"title": title, "context": context}
 
 

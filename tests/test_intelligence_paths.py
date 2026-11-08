@@ -213,8 +213,9 @@ class PathTests(unittest.TestCase):
         performer = self.ent("artist", "Cover artist")
         self.edge(performer, rec2, "performer", role="vocals")
         path = build_path(self.db, a, "composition_path")
-        self.assertEqual(path["stops"][0]["presentation"], {"title": "Cover", "context": "Cover artist"})
+        self.assertEqual(path["stops"][0]["presentation"], {"title": "Cover artist", "context": "Cover"})
         self.assertIn({"label": "Shared work", "value": "Song"}, path["stops"][0]["reasons"][0]["details"])
+        self.assertEqual(path["stops"][0]["presentation"]["title"], "Cover artist")
         self.assertIn({"label": "Credited performers", "value": "Cover artist (vocals)"}, path["stops"][0]["reasons"][0]["details"])
 
     def test_scene_path_needs_a_stated_non_country_area_and_close_start(self):
