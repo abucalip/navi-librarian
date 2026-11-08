@@ -100,7 +100,8 @@ private fun ArtistContent(route: ArtistRoute, page: ArtistPage, open: Opener, li
     var showAllAlbums by remember { mutableStateOf(false) }
     var showAllMissing by remember { mutableStateOf(false) }
     var showAllSongs by remember { mutableStateOf(false) }
-    var showPaths by remember { mutableStateOf(false) }
+    // Saved with the page: opening an album from the sheet leaves this page, and Back must find the sheet open again.
+    var showPaths by androidx.compose.runtime.saveable.rememberSaveable(route) { mutableStateOf(false) }
     val pathsMbid = (route.mbid ?: info?.mbid)?.takeIf { it.isNotBlank() }
     // LIB-05: five similar artists chosen at random on each page load. Variety only; the server's list is the source.
     val similar = remember(page) { sections.similar.items.shuffled().take(SIMILAR_SHOWN) }

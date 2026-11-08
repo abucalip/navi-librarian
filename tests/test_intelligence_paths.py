@@ -298,6 +298,29 @@ class PathTests(unittest.TestCase):
             path = build_path(self.db, a, "follow_the_musician", clock=lambda: next(ticks))
         self.assertEqual((path["truncated"], path["status"]), ("time", "empty"))
 
+    def test_composition_path_presents_each_recordings_album_and_its_anchors(self):
+        a, _, rec = self.library()
+        work, rec2 = self.ent("work", "Song"), self.ent("recording", "Cover")
+        self.edge(rec, work, "performance")
+        self.edge(rec2, work, "performance")
+        self.edge(self.ent("artist", "Cover artist"), rec2, "performer")
+        cover_lp, cover_artist = self.ent("release", "Cover LP"), self.ent("artist", "Cover LP Artist")
+        self.edge(rec2, cover_lp, "track_on", src="musicbrainz_dump_releases")
+        self.edge(cover_lp, cover_artist, "release_artist", src="musicbrainz_dump_releases")
+        stop = build_path(self.db, a, "composition_path")["stops"][0]
+        self.assertEqual((stop["presentation"]["album"], stop["presentation"]["album_artist"]), ("Cover LP", "Cover LP Artist"))
+        # The library anchor is the owned recording on the owned album; its album comes with the reason.
+        self.assertEqual(stop["reasons"][0]["anchor_presentation"]["album"], "Anchor LP")
+
+    def test_label_path_presents_the_anchor_albums_artist(self):
+        a, release, _ = self.library()
+        label, same = self.ent("label", "L"), self.ent("release", "Same")
+        for rel_id in (release, same):
+            self.db.execute("INSERT INTO release_labels (release_id, label_id, catalogue_number) VALUES (?, ?, ?)", (rel_id, label, "C-1"))
+        self.db.commit()
+        stop = build_path(self.db, a, "label_path")["stops"][0]
+        self.assertEqual(stop["reasons"][0]["anchor_presentation"], {"album": "Anchor LP", "album_artist": "Anchor"})
+
     def test_cache_rebuilds_when_presentation_schema_changes(self):
         a, _, rec = self.library()
         player, other = self.ent("artist", "Player"), self.ent("recording", "Other")
@@ -315,7 +338,7 @@ class PathTests(unittest.TestCase):
         )
         self.db.commit()
         rebuilt = cached_path(self.db, a, "follow_the_musician")
-        self.assertEqual(rebuilt["presentation_version"], 4)
+        self.assertEqual(rebuilt["presentation_version"], 5)
         self.assertEqual(rebuilt["stops"][0]["presentation"]["title"], "Player")
 
     def test_cache_hit_refresh_and_staleness(self):

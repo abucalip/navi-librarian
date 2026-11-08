@@ -2,6 +2,13 @@ package app.discair
 
 import app.discair.data.CacheMiss
 import app.discair.model.PathKind
+import app.discair.model.PathLink
+import app.discair.model.PathPane
+import app.discair.model.PathReason
+import app.discair.model.PathRef
+import app.discair.model.PathStop
+import app.discair.model.links
+import app.discair.model.pane
 import app.discair.model.PathsView
 import app.discair.model.heading
 import app.discair.model.sentence
@@ -208,5 +215,116 @@ class PathsTest {
             {"entity":{"canonical_name":"Hush","type":"recording"},"reasons":[{"text":"x","code":"shared_musician"}]},
             {"entity":{"canonical_name":"hush","type":"recording"},"reasons":[{"text":"x","code":"shared_musician"}]}]}""")
         assertEquals(listOf("A", "Hush"), r.stops.map { it.name })
+    }
+
+    // ---- detail panes: each path shows its own shape, from the fields the server sent
+
+    private fun firstPane(fixture: String, kind: PathKind) = parsePaths(body(fixture)).stops.first().pane(kind)
+
+    @Test fun followPaneNamesTheMusicianInEachReasonAndCountsTheRest() {
+        val pane = firstPane("paths_follow_the_musician", PathKind.FollowTheMusician) as PathPane.Song
+        assertEquals("Woghenei", pane.title)
+        assertEquals(3, pane.credits.size)
+        assertEquals("Temare Haregu", pane.credits.first().who?.name)
+        assertTrue(pane.credits.first().text.startsWith("Temare Haregu"))
+        assertEquals(24, pane.moreReasons) // 27 reasons, 3 shown
+    }
+
+    @Test fun followPaneOpensTheAlbumFirstAndKeepsTheAlbumArtistNeutral() {
+        val stop = PathStop("Song", "recording", false, 1, "r", album = "Red Clay", albumArtist = "Freddie Hubbard")
+        val pane = stop.pane(PathKind.FollowTheMusician) as PathPane.Song
+        assertEquals(PathLink(true, "Red Clay", "Freddie Hubbard"), pane.primary)
+        assertEquals(listOf(PathLink(false, "Freddie Hubbard")), pane.secondary)
+        // No album: the artist is the main button, and nothing repeats under it.
+        val bare = PathStop("Song", "recording", false, 1, "r", albumArtist = "Freddie Hubbard").pane(PathKind.FollowTheMusician)
+        assertEquals(PathLink(false, "Freddie Hubbard"), bare.primary)
+        assertTrue(bare.secondary.isEmpty())
+    }
+
+    @Test fun sidemanPaneListsTheRecordsWithTheirRecording() {
+        val pane = firstPane("paths_sideman_to_leader", PathKind.SidemanToLeader) as PathPane.Leader
+        assertEquals("Artist", pane.typeLabel)
+        assertEquals(1, pane.records.size) // three reasons, all on one release
+        assertEquals("محمد القصبجي", pane.records.first().release)
+        assertEquals("أيقظت في عواطفي", pane.records.first().carries)
+        assertEquals(PathLink(false, "محمد القصبجي", null, "4b2d8124-1b45-48ee-8b84-da106b7f5eba"), pane.primary)
+        assertEquals(18, pane.moreReasons) // 21 reasons, 3 sent
+    }
+
+    @Test fun labelPaneNamesTheLabelAndTheLibraryAlbumThatSharesIt() {
+        val pane = firstPane("paths_label_path", PathKind.LabelPath) as PathPane.LabelAlbum
+        assertEquals("Mazzika", pane.reasons.single().label)
+        assertEquals("Aref Menen", pane.reasons.single().anchor)
+        assertFalse(pane.reasons.single().related)
+        assertEquals(0, pane.moreReasons)
+    }
+
+    @Test fun labelPaneKeepsAnAlbumWithoutItsArtistUnopened() {
+        val stop = PathStop("Album", "release", false, 1, "r", reasons = listOf(PathReason("t", "related_label", PathRef("Blue Note", "label", null), PathRef("Mine", "release", null))))
+        val pane = stop.pane(PathKind.LabelPath) as PathPane.LabelAlbum
+        assertEquals(null, pane.primary)
+        assertTrue(pane.reasons.single().related)
+    }
+
+    @Test fun compositionPaneSetsTheWorkBetweenYourRecordingAndThisOne() {
+        val stop = parsePaths(body("paths_composition_path")).stops.first()
+        val pane = stop.pane(PathKind.CompositionPath) as PathPane.Recording
+        assertEquals("Yègellé tezeta", pane.work)
+        assertEquals("Yègellé tezeta", pane.yours)
+        assertEquals("Ethanopium (live at Snowy's)", pane.track)
+        assertFalse(pane.related)
+        assertEquals(1, pane.moreReasons)
+        // The server gives no album for a recording, so only the performer can be opened.
+        assertTrue(stop.links(PathKind.CompositionPath).none { it.album })
+    }
+
+    @Test fun scenePaneSplitsThePlaceAndTheEra() {
+        val pane = firstPane("paths_scene_path", PathKind.ScenePath) as PathPane.Place
+        assertEquals("Jimma", pane.place)
+        assertEquals("ሙላቱ አስታጥቄ", pane.anchor)
+        assertEquals(10, pane.years)
+    }
+
+    @Test fun scenePaneWithUnfamiliarWordingKeepsTheServerSentence() {
+        val stop = PathStop("Artist", "artist", false, 1, "r", reasons = listOf(PathReason("from Jimma, a town", "same_area", PathRef("Jimma", "area", null), PathRef("Start", "artist", null))))
+        val pane = stop.pane(PathKind.ScenePath) as PathPane.Place
+        assertEquals(null, pane.years)
+        assertEquals("from Jimma, a town", pane.sentence)
+    }
+
+    @Test fun linksKeepTheOrderTheSheetAlwaysOffered() {
+        val stop = PathStop(
+            "Song", "recording", false, 2, "r", album = "Red Clay", albumArtist = "Freddie Hubbard",
+            reasons = listOf(
+                PathReason("t", "shared_musician", PathRef("Ron Carter", "artist", "m1"), null),
+                PathReason("t", "shared_musician", PathRef("Ron Carter", "artist", "m1"), null),
+            ),
+        )
+        assertEquals(
+            listOf(PathLink(false, "Ron Carter", null, "m1"), PathLink(true, "Red Clay", "Freddie Hubbard"), PathLink(false, "Freddie Hubbard")),
+            stop.links(PathKind.FollowTheMusician),
+        )
+    }
+
+    @Test fun followPaneWithoutAnAlbumOpensTheFirstMusicianTheReasonsName() {
+        val pane = firstPane("paths_follow_the_musician", PathKind.FollowTheMusician) as PathPane.Song
+        assertEquals(PathLink(false, "Temare Haregu", null, pane.credits.first().who?.mbid), pane.primary)
+        assertTrue(pane.secondary.isEmpty())
+    }
+
+    @Test fun anchorAlbumAndArtistComeFromTheServerWhenItSendsThem() {
+        val body = """{"kind":"composition_path","status":"ok","stops":[{"entity":{"canonical_name":"Cover","type":"recording","owned":false},
+            "reason_count":1,"presentation":{"title":"X","artist":"Cover artist","album":"Cover LP","album_artist":"Cover LP Artist"},
+            "reasons":[{"code":"same_work","text":"another recording of Song","via":{"canonical_name":"Song","type":"work"},
+            "anchor":{"canonical_name":"Mine","type":"recording"},"anchor_presentation":{"album":"Mine LP","album_artist":"Me"}}]}]}"""
+        val pane = parsePaths(body).stops.first().pane(PathKind.CompositionPath) as PathPane.Recording
+        assertEquals("Mine LP", pane.yoursAlbum)
+        assertEquals("Me", pane.yoursArtist)
+        assertEquals("Cover LP", pane.album)
+        assertEquals("Cover LP Artist", pane.albumArtist)
+        // An older server sends neither: the pane has no album to look a cover up by.
+        val old = firstPane("paths_composition_path", PathKind.CompositionPath) as PathPane.Recording
+        assertEquals(null, old.yoursAlbum)
+        assertEquals(null, old.album)
     }
 }
