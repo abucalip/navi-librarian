@@ -16,6 +16,8 @@
 
 ### Completed slices
 
+7. **macOS taste card actions (PR [#909](https://github.com/abucalip/navi-librarian/pull/909), merged 2026-11-09):** adds genre/decade actions to the Cupertino shift and window cards. The owner can create a prefilled smart playlist and edit it, or open the Library Songs tab with a clearable taste filter. Area, label and collaborator deliberately have no action because they do not map to a Library song field. No playlist is saved to Navidrome until the owner saves it; recommendation ranking is unchanged. Seven filtered Swift tests were reported passing (`TasteActionTests`, `TasteModelTests`); all four required GitHub workflows passed on exact PR head `e0ae1c3d6b8bd1519e11900b6e336d314032f0af`. Squash commit: `872ad8c8ae9a1c5412f92c54484eba5efa3be874`. No manual visual Mac or live-server check; not published or deployed.
+
 5. **macOS taste cards (PR [#907](https://github.com/abucalip/navi-librarian/pull/907), merged 2026-11-09):** decodes the taste response, refreshes once per app launch in the background, and presents the Cupertino Insights cards for lately-vs-always, selectable windows and dimensions, decades, low-sample progress and empty states. The server-authored headline and shifts are displayed without client-invented claims. Sixteen filtered Swift tests were reported passing; all four required GitHub workflows passed on the exact PR head. No live-server or visual/manual Mac check; not published or deployed.
 
 8. **Android taste card and sheet (PR [#908](https://github.com/abucalip/navi-librarian/pull/908), merged 2026-11-09):** adds the taste response decoder and repository calls, once-per-app-launch background refresh, compact Insights card, and bottom sheet with recent, past-year (`mid`) and all-time windows, dimensions, listed movers, and honest low-sample/empty states. The app displays the server-authored headline and does not invent shifts or affect recommendation ranking. Seventeen focused Android tests were reported passing (`TasteTest`, `InsightsTest`); all four required GitHub workflows passed on exact PR head `598ac7c2f8e73b14ad63f4645e568b621b5c0927`. No device/emulator, accessibility or live-server check; the shared HTTP client's 30-second read timeout may expire before a long refresh completes (saved profiles remain). Not published or deployed.
@@ -23,10 +25,9 @@
 ### Remaining slices
 
 6. macOS: the other Insights themes (Zine and the rest) draw their own versions, one follow-up PR per theme.
-7. macOS actions: smart-playlist rule prefill and library filter. **Implemented on branch `feat/macos-taste-actions`, not yet a PR:** the shift and window cards offer "Make a smart playlist from X" and "Open in Library" for genre and decade values only (area, label and collaborator have no library field, so no action). Seven filtered Swift tests pass locally (`TasteActionTests`, `TasteModelTests`); no CI run, visual check or live-server check yet.
 9. Close-out: confirm profiles change no ranking output, complete visual and runtime checks, and reconcile docs/log.
 
-**Order:** 7; then 6; then 9.
+**Order:** 6; then 9.
 
 **Acceptance:** both clients render the same server-authored headline; thin/empty data is represented honestly; launch refresh is safe and idempotent; no recommendation output changes.
 
