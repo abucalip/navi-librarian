@@ -30,7 +30,7 @@ struct ZineSettings: View {
             if let s = state.session {
                 HStack(alignment: .top, spacing: 22) {
                     VStack(alignment: .leading, spacing: 14) { connection(s); playback; profiles(s) }.frame(maxWidth: .infinity)
-                    VStack(alignment: .leading, spacing: 14) { addProfile(s); musicFolder(s); logins(s) }.frame(maxWidth: .infinity)
+                    VStack(alignment: .leading, spacing: 14) { addProfile(s); musicFolder(s); listenBrainz(); logins(s) }.frame(maxWidth: .infinity)
                 }
                 if let message { Mono(message, bold: true).foregroundStyle(Z.red) }
             } else {
@@ -216,6 +216,24 @@ struct ZineSettings: View {
             .buttonStyle(ZineButtonStyle())
             Text("Plain http is accepted only for home-network addresses, .local names and Tailscale addresses.").font(Z.serif(12.5, italic: true))
         }
+    }
+
+    private func listenBrainz() -> some View {
+        let lb = state.listenBrainz
+        return box("ListenBrainz") {
+            Mono(lb.isConnected ? "Connected as \(lb.settings?.username ?? "")\(lb.settings?.tokenConfigured == true ? " (token saved)" : "")" : "Not connected", bold: true)
+            HStack {
+                TextField("ListenBrainz username", text: Bindable(lb).username).frame(width: 220)
+                SecureField(lb.settings?.tokenConfigured == true ? "Token (saved)" : "Token (optional)", text: Bindable(lb).token).frame(width: 220)
+                Button(lb.isConnected ? "Update" : "Connect") { Task { await state.connectListenBrainz() } }
+                    .buttonStyle(ZineButtonStyle(kind: .yellow, small: true)).disabled(!lb.canSave)
+                Spacer(minLength: 0)
+            }
+            .textFieldStyle(.roundedBorder).autocorrectionDisabled()
+            if let note = lb.note { Mono(note, bold: true).foregroundStyle(Z.red) }
+            Mono("The server reads your listens from ListenBrainz to describe your taste. The username is enough for public listens; the token is only needed for private profiles and is never shown again.")
+        }
+        .task { await lb.load(librarian: state.session?.librarian) }
     }
 
     private func logins(_ s: SessionModel) -> some View {

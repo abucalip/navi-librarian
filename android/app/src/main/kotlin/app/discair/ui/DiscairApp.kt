@@ -242,6 +242,7 @@ fun SettingsScreen(state: UiState, model: AppViewModel, onBack: () -> Unit, onEq
         app.discair.ui.settings.AppearanceRow(container.appearance, onAppearance)
         PlaybackSettings(container, onEqualizer, onCrossfade)
         LibrarySettings()
+        app.discair.ui.settings.ListenBrainzSettings()
         Spacer(Modifier.size(24.dp))
         // One joined group on one line, like the web's action groups.
         app.discair.ui.common.ActionGroup(Modifier.fillMaxWidth()) {

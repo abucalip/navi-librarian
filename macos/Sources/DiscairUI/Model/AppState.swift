@@ -97,6 +97,8 @@ public final class AppState {
     public let insights = InsightsModel()
     /// "Your taste" cards inside Insights; refreshed once per launch from the connected session.
     public let taste = TasteModel()
+    /// Settings > ListenBrainz: the server-side account taste and popularity read.
+    public let listenBrainz = ListenBrainzModel()
     public let graph = GraphExplorerModel()
     public let atlas = AtlasModel()
     public let timeline = TimelineModel()
@@ -334,6 +336,13 @@ public final class AppState {
         librarySearch = ""; tasteFilter = action; libraryTab = .songs; screen = .library
     }
     public func refreshTaste() async { await taste.refreshOnLaunch(librarian: session?.librarian) }
+    /// Saves the ListenBrainz account on the server, then reloads taste so "connect ListenBrainz" clears without a relaunch.
+    public func connectListenBrainz() async {
+        let librarian = session?.librarian
+        await listenBrainz.connect(librarian: librarian) { [taste] in
+            await taste.refreshNow(librarian: librarian)
+        }
+    }
 
     /// Starts the connection explorer from the artist on screen (the page itself keeps the centre once the owner re-centres).
     public func loadConnections() async {
