@@ -14,15 +14,18 @@
 - Sparse and empty data must remain honest. Taste profiles and context do not affect recommendation ranking.
 - Design references: [macOS mockups](design/macos-taste/mockups.html) · [Android mockups](design/android-taste/mockups.html).
 
+### Completed slices
+
+5. **macOS taste cards (PR [#907](https://github.com/abucalip/navi-librarian/pull/907), merged 2026-11-09):** decodes the taste response, refreshes once per app launch in the background, and presents the Cupertino Insights cards for lately-vs-always, selectable windows and dimensions, decades, low-sample progress and empty states. The server-authored headline and shifts are displayed without client-invented claims. Sixteen filtered Swift tests were reported passing; all four required GitHub workflows passed on the exact PR head. No live-server or visual/manual Mac check; not published or deployed.
+
 ### Remaining slices
 
-5. macOS: decode the taste body, call refresh on launch, Cupertino taste cards (lately-vs-always, window card with dimension picker, decades), low-sample and empty states. Filtered tests only.
 6. macOS: the other Insights themes (Zine and the rest) draw their own versions, one follow-up PR per theme.
 7. macOS actions: smart-playlist rule prefill and library filter.
 8. Android: decode, refresh on launch, compact card and bottom sheet, `InsightsTest` cases.
 9. Close-out: confirm profiles change no ranking output, visual and runtime checks, docs and log.
 
-**Order:** 5; then 8 and 7; then 6; then 9.
+**Order:** 8 and 7; then 6; then 9.
 
 **Acceptance:** both clients render the same server-authored headline; thin/empty data is represented honestly; launch refresh is safe and idempotent; no recommendation output changes.
 
