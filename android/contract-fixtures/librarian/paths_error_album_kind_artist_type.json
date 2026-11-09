@@ -1,0 +1,21 @@
+{
+  "captured_at": "2026-11-09T22:18:02Z",
+  "request": {
+    "body": null,
+    "method": "GET",
+    "path": "/api/knowledge/paths",
+    "query": {
+      "kind": "album_crew",
+      "mbid": "ec68bede-98ef-4f0e-9a77-1dc5c3a5575f",
+      "type": "artist"
+    }
+  },
+  "response": {
+    "body": {
+      "detail": "kind 'album_crew' does not start at type 'artist'"
+    },
+    "content_type": "application/json",
+    "elapsed_seconds": 0.0,
+    "status": 400
+  }
+}

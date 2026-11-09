@@ -1,0 +1,285 @@
+{
+  "captured_at": "2026-11-09T22:18:02Z",
+  "request": {
+    "body": null,
+    "method": "GET",
+    "path": "/api/knowledge/paths",
+    "query": {
+      "kind": "album_guests",
+      "mbid": "261f4553-69ed-4567-becb-e38d795b857e",
+      "type": "release"
+    }
+  },
+  "response": {
+    "body": {
+      "capped": [],
+      "generation": 1,
+      "kind": "album_guests",
+      "overlap_dropped": 0,
+      "sources": {
+        "musicbrainz_dump": {
+          "data_version": 4
+        }
+      },
+      "start": {
+        "canonical_name": "Mulatu of Ethiopia",
+        "mbid": "261f4553-69ed-4567-becb-e38d795b857e",
+        "owned": true,
+        "type": "release"
+      },
+      "status": "ok",
+      "stops": [
+        {
+          "entity": {
+            "canonical_name": "Ethiopiques 4: Ethio Jazz & Musique Instrumentale, 1969-1974",
+            "mbid": "f85a03b1-efb8-4558-86ac-f23945a94853",
+            "owned": true,
+            "type": "release"
+          },
+          "presentation": {
+            "album": "Ethiopiques 4: Ethio Jazz & Musique Instrumentale, 1969-1974",
+            "album_artist": "ሙላቱ አስታጥቄ",
+            "artist": null,
+            "context": "ሙላቱ አስታጥቄ",
+            "title": "Ethiopiques 4: Ethio Jazz & Musique Instrumentale, 1969-1974"
+          },
+          "reason_count": 6,
+          "reasons": [
+            {
+              "anchor": {
+                "canonical_name": "Dèwèl",
+                "mbid": "1f140c0d-8596-46ff-bee7-25a8e4ef688f",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "guest_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "instrument",
+                  "role": "saxophone",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/93f39b70-e795-4bcd-8973-0a0407dedd4f",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "instrument",
+                  "role": "flute",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/93f39b70-e795-4bcd-8973-0a0407dedd4f",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "Fèqadu Amdè‐Mesqel is credited on Dèwèl, from the album you started from, as a guest, and appears on this album",
+              "via": {
+                "canonical_name": "Fèqadu Amdè‐Mesqel",
+                "mbid": "93f39b70-e795-4bcd-8973-0a0407dedd4f",
+                "owned": false,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "Dèwèl",
+                "mbid": "1f140c0d-8596-46ff-bee7-25a8e4ef688f",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "guest_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "instrument",
+                  "role": "drums (drum set)",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/89d316ee-acc4-4b08-bb94-7e0c5b721f3c",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "instrument",
+                  "role": "drums (drum set)",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/89d316ee-acc4-4b08-bb94-7e0c5b721f3c",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "Temare Haregu is credited on Dèwèl, from the album you started from, as a guest, and appears on this album",
+              "via": {
+                "canonical_name": "Temare Haregu",
+                "mbid": "89d316ee-acc4-4b08-bb94-7e0c5b721f3c",
+                "owned": false,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "Dèwèl",
+                "mbid": "1f140c0d-8596-46ff-bee7-25a8e4ef688f",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "guest_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "instrument",
+                  "role": "guitar",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/7455c812-3c39-4fca-8310-b7de11d03f1f",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "instrument",
+                  "role": "guitar",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/7455c812-3c39-4fca-8310-b7de11d03f1f",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "Andrew Wilson is credited on Dèwèl, from the album you started from, as a guest, and appears on this album",
+              "via": {
+                "canonical_name": "Andrew Wilson",
+                "mbid": "7455c812-3c39-4fca-8310-b7de11d03f1f",
+                "owned": false,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "Dèwèl",
+                "mbid": "1f140c0d-8596-46ff-bee7-25a8e4ef688f",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "guest_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "instrument",
+                  "role": "saxophone",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/f7e5eecf-b6df-4e75-a09a-b1db653550ee",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "instrument",
+                  "role": "saxophone",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/f7e5eecf-b6df-4e75-a09a-b1db653550ee",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "Mogès Habté is credited on Dèwèl, from the album you started from, as a guest, and appears on this album",
+              "via": {
+                "canonical_name": "Mogès Habté",
+                "mbid": "f7e5eecf-b6df-4e75-a09a-b1db653550ee",
+                "owned": false,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "Dèwèl",
+                "mbid": "1f140c0d-8596-46ff-bee7-25a8e4ef688f",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "guest_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "instrument",
+                  "role": "trumpet",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/d3fce4fa-5f87-4465-9585-2c879f82f8a2",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "instrument",
+                  "role": "trumpet",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/d3fce4fa-5f87-4465-9585-2c879f82f8a2",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "Yohannes Tekola is credited on Dèwèl, from the album you started from, as a guest, and appears on this album",
+              "via": {
+                "canonical_name": "Yohannes Tekola",
+                "mbid": "d3fce4fa-5f87-4465-9585-2c879f82f8a2",
+                "owned": false,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "Dèwèl",
+                "mbid": "1f140c0d-8596-46ff-bee7-25a8e4ef688f",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "guest_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "instrument",
+                  "role": "electric bass guitar",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/dce85174-0425-485c-9d85-97084ff18410",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "instrument",
+                  "role": "electric bass guitar",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/dce85174-0425-485c-9d85-97084ff18410",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "Giovanni Rico is credited on Dèwèl, from the album you started from, as a guest, and appears on this album",
+              "via": {
+                "canonical_name": "Giovanni Rico",
+                "mbid": "dce85174-0425-485c-9d85-97084ff18410",
+                "owned": false,
+                "type": "artist"
+              }
+            }
+          ]
+        }
+      ],
+      "truncated": null
+    },
+    "content_type": "application/json",
+    "elapsed_seconds": 0.0,
+    "status": 200
+  }
+}

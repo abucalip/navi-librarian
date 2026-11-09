@@ -1,0 +1,21 @@
+{
+  "captured_at": "2026-11-09T22:18:02Z",
+  "request": {
+    "body": null,
+    "method": "GET",
+    "path": "/api/knowledge/paths",
+    "query": {
+      "kind": "album_crew",
+      "mbid": "00000000-0000-0000-0000-000000000000",
+      "type": "release"
+    }
+  },
+  "response": {
+    "body": {
+      "detail": "Unknown entity."
+    },
+    "content_type": "application/json",
+    "elapsed_seconds": 0.0,
+    "status": 404
+  }
+}

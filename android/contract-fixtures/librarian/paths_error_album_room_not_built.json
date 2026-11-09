@@ -1,0 +1,21 @@
+{
+  "captured_at": "2026-11-09T22:18:02Z",
+  "request": {
+    "body": null,
+    "method": "GET",
+    "path": "/api/knowledge/paths",
+    "query": {
+      "kind": "album_room",
+      "mbid": "65489a0f-ae8e-459f-9203-92fdd7e074bf",
+      "type": "release"
+    }
+  },
+  "response": {
+    "body": {
+      "detail": "Same Room is not built yet."
+    },
+    "content_type": "application/json",
+    "elapsed_seconds": 0.0,
+    "status": 501
+  }
+}

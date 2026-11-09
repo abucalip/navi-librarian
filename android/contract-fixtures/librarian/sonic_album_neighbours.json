@@ -1,0 +1,762 @@
+{
+  "captured_at": "2026-11-09T22:20:41Z",
+  "request": {
+    "body": null,
+    "method": "GET",
+    "path": "/api/sonic/album-neighbours",
+    "query": {
+      "album_id": "55o30LbumfEMwDlKctbZpI"
+    }
+  },
+  "response": {
+    "body": {
+      "seeds": [
+        {
+          "navidrome_id": "4MlEe4s2OVvvSOn2L6lFSQ",
+          "title": "Douha Alia"
+        },
+        {
+          "navidrome_id": "0A09z3YPHZJVmo7EGXcTBF",
+          "title": "Douha Alia"
+        },
+        {
+          "navidrome_id": "0DbyCwalDOtdi3uBinJNEP",
+          "title": "Douha Alia"
+        },
+        {
+          "navidrome_id": "2Po712RiyxHoAlOkbjuRVG",
+          "title": "Douha Alia"
+        }
+      ],
+      "skipped": [],
+      "start": {
+        "album": "100% Arabica",
+        "album_id": "55o30LbumfEMwDlKctbZpI",
+        "artist": "Various Artists",
+        "tracks": 4,
+        "year": 1997
+      },
+      "status": "ok",
+      "stops": [
+        {
+          "album": "Yalil",
+          "album_id": "7srjH9lonbhUvfrymfIcHC",
+          "artist": "Amina",
+          "artist_id": "2igy77ipE52S6zunRbsJYW",
+          "cover_art": "mf-1I6WVKRzON9Vfu4qIILyVh_d631ec02777614e5",
+          "match_count": 4,
+          "matches": [
+            {
+              "seed": {
+                "navidrome_id": "4MlEe4s2OVvvSOn2L6lFSQ",
+                "title": "Douha Alia"
+              },
+              "tracks": [
+                {
+                  "navidrome_id": "1I6WVKRzON9Vfu4qIILyVh",
+                  "title": "Le Dernier qui a parlé..."
+                }
+              ]
+            },
+            {
+              "seed": {
+                "navidrome_id": "0A09z3YPHZJVmo7EGXcTBF",
+                "title": "Douha Alia"
+              },
+              "tracks": [
+                {
+                  "navidrome_id": "1I6WVKRzON9Vfu4qIILyVh",
+                  "title": "Le Dernier qui a parlé..."
+                },
+                {
+                  "navidrome_id": "6aPbxmP0x6n1KRygKrJQjV",
+                  "title": "Le Cercle rouge"
+                }
+              ]
+            },
+            {
+              "seed": {
+                "navidrome_id": "0DbyCwalDOtdi3uBinJNEP",
+                "title": "Douha Alia"
+              },
+              "tracks": [
+                {
+                  "navidrome_id": "1I6WVKRzON9Vfu4qIILyVh",
+                  "title": "Le Dernier qui a parlé..."
+                },
+                {
+                  "navidrome_id": "6aPbxmP0x6n1KRygKrJQjV",
+                  "title": "Le Cercle rouge"
+                }
+              ]
+            },
+            {
+              "seed": {
+                "navidrome_id": "2Po712RiyxHoAlOkbjuRVG",
+                "title": "Douha Alia"
+              },
+              "tracks": [
+                {
+                  "navidrome_id": "1I6WVKRzON9Vfu4qIILyVh",
+                  "title": "Le Dernier qui a parlé..."
+                }
+              ]
+            }
+          ],
+          "owned": true,
+          "reasons": [
+            {
+              "code": "sonic_neighbour",
+              "count": 4,
+              "text": "Sounds like 4 of this album's tracks"
+            }
+          ],
+          "year": 1991
+        },
+        {
+          "album": "!ممكن؟",
+          "album_id": "63tDxgAiPELT9ksAtN2HPq",
+          "artist": "محمد منير",
+          "artist_id": "4fd8duBCA8x0pQh6s6OE00",
+          "cover_art": "mf-3IlGfTRTlNxYn6zlBAKpV9_c5637160172c777f",
+          "match_count": 4,
+          "matches": [
+            {
+              "seed": {
+                "navidrome_id": "4MlEe4s2OVvvSOn2L6lFSQ",
+                "title": "Douha Alia"
+              },
+              "tracks": [
+                {
+                  "navidrome_id": "3IlGfTRTlNxYn6zlBAKpV9",
+                  "title": "ممكن"
+                }
+              ]
+            },
+            {
+              "seed": {
+                "navidrome_id": "0A09z3YPHZJVmo7EGXcTBF",
+                "title": "Douha Alia"
+              },
+              "tracks": [
+                {
+                  "navidrome_id": "3IlGfTRTlNxYn6zlBAKpV9",
+                  "title": "ممكن"
+                }
+              ]
+            },
+            {
+              "seed": {
+                "navidrome_id": "0DbyCwalDOtdi3uBinJNEP",
+                "title": "Douha Alia"
+              },
+              "tracks": [
+                {
+                  "navidrome_id": "3IlGfTRTlNxYn6zlBAKpV9",
+                  "title": "ممكن"
+                }
+              ]
+            },
+            {
+              "seed": {
+                "navidrome_id": "2Po712RiyxHoAlOkbjuRVG",
+                "title": "Douha Alia"
+              },
+              "tracks": [
+                {
+                  "navidrome_id": "3IlGfTRTlNxYn6zlBAKpV9",
+                  "title": "ممكن"
+                }
+              ]
+            }
+          ],
+          "owned": true,
+          "reasons": [
+            {
+              "code": "sonic_neighbour",
+              "count": 4,
+              "text": "Sounds like 4 of this album's tracks"
+            }
+          ],
+          "year": 1998
+        },
+        {
+          "album": "Greatest Hits III",
+          "album_id": "5Nuaz7PuAUgiOPjJI35fcy",
+          "artist": "Queen",
+          "artist_id": "3Ip9OhiD4x1NDAKaSF7NQW",
+          "cover_art": "al-5Nuaz7PuAUgiOPjJI35fcy_b685285e97079aff",
+          "match_count": 4,
+          "matches": [
+            {
+              "seed": {
+                "navidrome_id": "4MlEe4s2OVvvSOn2L6lFSQ",
+                "title": "Douha Alia"
+              },
+              "tracks": [
+                {
+                  "navidrome_id": "1cswZeYtUKwTGkMju2MQ5q",
+                  "title": "These Are The Days Of Our Live"
+                },
+                {
+                  "navidrome_id": "4HvfycxuSZcqMB4fDc1YF3",
+                  "title": "You Don't Fool Me"
+                }
+              ]
+            },
+            {
+              "seed": {
+                "navidrome_id": "0A09z3YPHZJVmo7EGXcTBF",
+                "title": "Douha Alia"
+              },
+              "tracks": [
+                {
+                  "navidrome_id": "1cswZeYtUKwTGkMju2MQ5q",
+                  "title": "These Are The Days Of Our Live"
+                }
+              ]
+            },
+            {
+              "seed": {
+                "navidrome_id": "0DbyCwalDOtdi3uBinJNEP",
+                "title": "Douha Alia"
+              },
+              "tracks": [
+                {
+                  "navidrome_id": "1cswZeYtUKwTGkMju2MQ5q",
+                  "title": "These Are The Days Of Our Live"
+                }
+              ]
+            },
+            {
+              "seed": {
+                "navidrome_id": "2Po712RiyxHoAlOkbjuRVG",
+                "title": "Douha Alia"
+              },
+              "tracks": [
+                {
+                  "navidrome_id": "1cswZeYtUKwTGkMju2MQ5q",
+                  "title": "These Are The Days Of Our Live"
+                },
+                {
+                  "navidrome_id": "4HvfycxuSZcqMB4fDc1YF3",
+                  "title": "You Don't Fool Me"
+                }
+              ]
+            }
+          ],
+          "owned": true,
+          "reasons": [
+            {
+              "code": "sonic_neighbour",
+              "count": 4,
+              "text": "Sounds like 4 of this album's tracks"
+            }
+          ],
+          "year": 1999
+        },
+        {
+          "album": "[Unknown Album]",
+          "album_id": "5sgOtyVkZ3dnXBZixaReDK",
+          "artist": "Cheb Mami",
+          "artist_id": "6mNGnFPOm3ZI30CRdLUlhm",
+          "cover_art": "al-5sgOtyVkZ3dnXBZixaReDK_0eae9dae92b12fe3",
+          "match_count": 4,
+          "matches": [
+            {
+              "seed": {
+                "navidrome_id": "4MlEe4s2OVvvSOn2L6lFSQ",
+                "title": "Douha Alia"
+              },
+              "tracks": [
+                {
+                  "navidrome_id": "2hNcoqV25G72KbW9AXi9g5",
+                  "title": "00.1"
+                }
+              ]
+            },
+            {
+              "seed": {
+                "navidrome_id": "0A09z3YPHZJVmo7EGXcTBF",
+                "title": "Douha Alia"
+              },
+              "tracks": [
+                {
+                  "navidrome_id": "6f1YD33puGkEge5x1GD6Az",
+                  "title": "00.18"
+                }
+              ]
+            },
+            {
+              "seed": {
+                "navidrome_id": "0DbyCwalDOtdi3uBinJNEP",
+                "title": "Douha Alia"
+              },
+              "tracks": [
+                {
+                  "navidrome_id": "6f1YD33puGkEge5x1GD6Az",
+                  "title": "00.18"
+                }
+              ]
+            },
+            {
+              "seed": {
+                "navidrome_id": "2Po712RiyxHoAlOkbjuRVG",
+                "title": "Douha Alia"
+              },
+              "tracks": [
+                {
+                  "navidrome_id": "2hNcoqV25G72KbW9AXi9g5",
+                  "title": "00.1"
+                }
+              ]
+            }
+          ],
+          "owned": true,
+          "reasons": [
+            {
+              "code": "sonic_neighbour",
+              "count": 4,
+              "text": "Sounds like 4 of this album's tracks"
+            }
+          ],
+          "year": null
+        },
+        {
+          "album": "Compositions",
+          "album_id": "4rFhHfCRwfSfOtvv0Ov24e",
+          "artist": "Anita Baker",
+          "artist_id": "7MA56y4GcYX6HpjI8oReVD",
+          "cover_art": "dc-4rFhHfCRwfSfOtvv0Ov24e:1",
+          "match_count": 2,
+          "matches": [
+            {
+              "seed": {
+                "navidrome_id": "0A09z3YPHZJVmo7EGXcTBF",
+                "title": "Douha Alia"
+              },
+              "tracks": [
+                {
+                  "navidrome_id": "0N72KJeT9OF07C7bltISdg",
+                  "title": "More Than You Know"
+                }
+              ]
+            },
+            {
+              "seed": {
+                "navidrome_id": "0DbyCwalDOtdi3uBinJNEP",
+                "title": "Douha Alia"
+              },
+              "tracks": [
+                {
+                  "navidrome_id": "0N72KJeT9OF07C7bltISdg",
+                  "title": "More Than You Know"
+                }
+              ]
+            }
+          ],
+          "owned": true,
+          "reasons": [
+            {
+              "code": "sonic_neighbour",
+              "count": 2,
+              "text": "Sounds like 2 of this album's tracks"
+            }
+          ],
+          "year": 1990
+        },
+        {
+          "album": "Venus Isle",
+          "album_id": "0BdRDGzqda1nz0FwuU0754",
+          "artist": "Eric Johnson",
+          "artist_id": "3ZuAHGqmb2rvFOsO8Vf0sB",
+          "cover_art": "al-0BdRDGzqda1nz0FwuU0754_13e54d3e5c38c201",
+          "match_count": 2,
+          "matches": [
+            {
+              "seed": {
+                "navidrome_id": "4MlEe4s2OVvvSOn2L6lFSQ",
+                "title": "Douha Alia"
+              },
+              "tracks": [
+                {
+                  "navidrome_id": "1bLt9zZnXTpqsWNKdonIFs",
+                  "title": "Battle We Have Won"
+                }
+              ]
+            },
+            {
+              "seed": {
+                "navidrome_id": "2Po712RiyxHoAlOkbjuRVG",
+                "title": "Douha Alia"
+              },
+              "tracks": [
+                {
+                  "navidrome_id": "1bLt9zZnXTpqsWNKdonIFs",
+                  "title": "Battle We Have Won"
+                }
+              ]
+            }
+          ],
+          "owned": true,
+          "reasons": [
+            {
+              "code": "sonic_neighbour",
+              "count": 2,
+              "text": "Sounds like 2 of this album's tracks"
+            }
+          ],
+          "year": 1996
+        },
+        {
+          "album": "No Angel",
+          "album_id": "1PK3foFnFIObn0oRyuWEPE",
+          "artist": "Dido",
+          "artist_id": "07y5MDdeZayAeycfUa7h5s",
+          "cover_art": "mf-7pZy9mlmjgSbbDlmR8TmG9",
+          "match_count": 2,
+          "matches": [
+            {
+              "seed": {
+                "navidrome_id": "0A09z3YPHZJVmo7EGXcTBF",
+                "title": "Douha Alia"
+              },
+              "tracks": [
+                {
+                  "navidrome_id": "7pZy9mlmjgSbbDlmR8TmG9",
+                  "title": "Here with Me"
+                }
+              ]
+            },
+            {
+              "seed": {
+                "navidrome_id": "0DbyCwalDOtdi3uBinJNEP",
+                "title": "Douha Alia"
+              },
+              "tracks": [
+                {
+                  "navidrome_id": "7pZy9mlmjgSbbDlmR8TmG9",
+                  "title": "Here with Me"
+                }
+              ]
+            }
+          ],
+          "owned": true,
+          "reasons": [
+            {
+              "code": "sonic_neighbour",
+              "count": 2,
+              "text": "Sounds like 2 of this album's tracks"
+            }
+          ],
+          "year": 1999
+        },
+        {
+          "album": "Kenza",
+          "album_id": "6DxX4RI2AVIee5zXEzYfUO",
+          "artist": "Khaled featuring Noa",
+          "artist_id": "58X3rkJ5YwozEBEi1jS3Uf",
+          "cover_art": "mf-3M3H0Atw5vzbzy9dsdKV2M",
+          "match_count": 2,
+          "matches": [
+            {
+              "seed": {
+                "navidrome_id": "0A09z3YPHZJVmo7EGXcTBF",
+                "title": "Douha Alia"
+              },
+              "tracks": [
+                {
+                  "navidrome_id": "3M3H0Atw5vzbzy9dsdKV2M",
+                  "title": "Imagine"
+                }
+              ]
+            },
+            {
+              "seed": {
+                "navidrome_id": "0DbyCwalDOtdi3uBinJNEP",
+                "title": "Douha Alia"
+              },
+              "tracks": [
+                {
+                  "navidrome_id": "3M3H0Atw5vzbzy9dsdKV2M",
+                  "title": "Imagine"
+                }
+              ]
+            }
+          ],
+          "owned": true,
+          "reasons": [
+            {
+              "code": "sonic_neighbour",
+              "count": 2,
+              "text": "Sounds like 2 of this album's tracks"
+            }
+          ],
+          "year": 1999
+        },
+        {
+          "album": "Cowboy Bebop: Knockin’ on Heaven’s Door: O.S.T. Future Blues",
+          "album_id": "4m4btuvY17ho0RkOnnnFyA",
+          "artist": "シートベルツ",
+          "artist_id": "6cHuX4TM0vPxkxbTfyXsBY",
+          "cover_art": "mf-5o5x3DukKap7nBufPmEcKD",
+          "match_count": 2,
+          "matches": [
+            {
+              "seed": {
+                "navidrome_id": "4MlEe4s2OVvvSOn2L6lFSQ",
+                "title": "Douha Alia"
+              },
+              "tracks": [
+                {
+                  "navidrome_id": "5o5x3DukKap7nBufPmEcKD",
+                  "title": "Rain (demo)"
+                }
+              ]
+            },
+            {
+              "seed": {
+                "navidrome_id": "2Po712RiyxHoAlOkbjuRVG",
+                "title": "Douha Alia"
+              },
+              "tracks": [
+                {
+                  "navidrome_id": "5o5x3DukKap7nBufPmEcKD",
+                  "title": "Rain (demo)"
+                }
+              ]
+            }
+          ],
+          "owned": true,
+          "reasons": [
+            {
+              "code": "sonic_neighbour",
+              "count": 2,
+              "text": "Sounds like 2 of this album's tracks"
+            }
+          ],
+          "year": 2001
+        },
+        {
+          "album": "Have Some Moore: The Best Of",
+          "album_id": "0Jt7HluG0BgI8cMS3WspBn",
+          "artist": "Gary Moore",
+          "artist_id": "4waKLDg0W1M2aqi4fg14Nw",
+          "cover_art": "dc-0Jt7HluG0BgI8cMS3WspBn:1",
+          "match_count": 2,
+          "matches": [
+            {
+              "seed": {
+                "navidrome_id": "0A09z3YPHZJVmo7EGXcTBF",
+                "title": "Douha Alia"
+              },
+              "tracks": [
+                {
+                  "navidrome_id": "24HKOfuCb9Hm88VpVy33rp",
+                  "title": "Separate Ways"
+                }
+              ]
+            },
+            {
+              "seed": {
+                "navidrome_id": "0DbyCwalDOtdi3uBinJNEP",
+                "title": "Douha Alia"
+              },
+              "tracks": [
+                {
+                  "navidrome_id": "24HKOfuCb9Hm88VpVy33rp",
+                  "title": "Separate Ways"
+                }
+              ]
+            }
+          ],
+          "owned": true,
+          "reasons": [
+            {
+              "code": "sonic_neighbour",
+              "count": 2,
+              "text": "Sounds like 2 of this album's tracks"
+            }
+          ],
+          "year": 2002
+        },
+        {
+          "album": "Hotel",
+          "album_id": "5RfvAdArptwR6blgz8i8lr",
+          "artist": "Moby",
+          "artist_id": "6OTvJrdGrlNk2tjfTglnmO",
+          "cover_art": "mf-6bAPSyUvbRwfAPp9RF3aaA",
+          "match_count": 2,
+          "matches": [
+            {
+              "seed": {
+                "navidrome_id": "0A09z3YPHZJVmo7EGXcTBF",
+                "title": "Douha Alia"
+              },
+              "tracks": [
+                {
+                  "navidrome_id": "6bAPSyUvbRwfAPp9RF3aaA",
+                  "title": "Dream About Me"
+                }
+              ]
+            },
+            {
+              "seed": {
+                "navidrome_id": "0DbyCwalDOtdi3uBinJNEP",
+                "title": "Douha Alia"
+              },
+              "tracks": [
+                {
+                  "navidrome_id": "6bAPSyUvbRwfAPp9RF3aaA",
+                  "title": "Dream About Me"
+                }
+              ]
+            }
+          ],
+          "owned": true,
+          "reasons": [
+            {
+              "code": "sonic_neighbour",
+              "count": 2,
+              "text": "Sounds like 2 of this album's tracks"
+            }
+          ],
+          "year": 2005
+        },
+        {
+          "album": "Wishsides",
+          "album_id": "7mORGIyCr1F1P2oQYhRjJ1",
+          "artist": "Nightwish",
+          "artist_id": "5FZ0MfhanR5wiCs5XNKLXB",
+          "cover_art": "dc-7mORGIyCr1F1P2oQYhRjJ1:1",
+          "match_count": 2,
+          "matches": [
+            {
+              "seed": {
+                "navidrome_id": "4MlEe4s2OVvvSOn2L6lFSQ",
+                "title": "Douha Alia"
+              },
+              "tracks": [
+                {
+                  "navidrome_id": "1xCzAacL7hirAvBeV6yqGY",
+                  "title": "Nightwish"
+                }
+              ]
+            },
+            {
+              "seed": {
+                "navidrome_id": "2Po712RiyxHoAlOkbjuRVG",
+                "title": "Douha Alia"
+              },
+              "tracks": [
+                {
+                  "navidrome_id": "1xCzAacL7hirAvBeV6yqGY",
+                  "title": "Nightwish"
+                }
+              ]
+            }
+          ],
+          "owned": true,
+          "reasons": [
+            {
+              "code": "sonic_neighbour",
+              "count": 2,
+              "text": "Sounds like 2 of this album's tracks"
+            }
+          ],
+          "year": 2005
+        },
+        {
+          "album": "Taken By Force Blackout - Deluxe 50TH Anniversary - Japan BSCD (SICX-30010)",
+          "album_id": "2iykZBu3KrrTTUdQIXMYT2",
+          "artist": "SCORPIONS",
+          "artist_id": "1Swb9F3di4Yn0xVmNpPmSg",
+          "cover_art": "mf-61ALvVkRFbrSXnEDCfyFmP",
+          "match_count": 2,
+          "matches": [
+            {
+              "seed": {
+                "navidrome_id": "4MlEe4s2OVvvSOn2L6lFSQ",
+                "title": "Douha Alia"
+              },
+              "tracks": [
+                {
+                  "navidrome_id": "61ALvVkRFbrSXnEDCfyFmP",
+                  "title": "Born To Touch Your Feelings"
+                }
+              ]
+            },
+            {
+              "seed": {
+                "navidrome_id": "2Po712RiyxHoAlOkbjuRVG",
+                "title": "Douha Alia"
+              },
+              "tracks": [
+                {
+                  "navidrome_id": "61ALvVkRFbrSXnEDCfyFmP",
+                  "title": "Born To Touch Your Feelings"
+                }
+              ]
+            }
+          ],
+          "owned": true,
+          "reasons": [
+            {
+              "code": "sonic_neighbour",
+              "count": 2,
+              "text": "Sounds like 2 of this album's tracks"
+            }
+          ],
+          "year": 2015
+        },
+        {
+          "album": "Wahran wahran",
+          "album_id": "5TfjOyheQYyMp7ltvFVD0y",
+          "artist": "Cheb mami",
+          "artist_id": "6mNGnFPOm3ZI30CRdLUlhm",
+          "cover_art": "al-5TfjOyheQYyMp7ltvFVD0y_ac868b748772e52c",
+          "match_count": 2,
+          "matches": [
+            {
+              "seed": {
+                "navidrome_id": "4MlEe4s2OVvvSOn2L6lFSQ",
+                "title": "Douha Alia"
+              },
+              "tracks": [
+                {
+                  "navidrome_id": "2CiZJ9jqboy7St8zmAtsYr",
+                  "title": "Piste 1 - douniamusic.com"
+                }
+              ]
+            },
+            {
+              "seed": {
+                "navidrome_id": "2Po712RiyxHoAlOkbjuRVG",
+                "title": "Douha Alia"
+              },
+              "tracks": [
+                {
+                  "navidrome_id": "2CiZJ9jqboy7St8zmAtsYr",
+                  "title": "Piste 1 - douniamusic.com"
+                }
+              ]
+            }
+          ],
+          "owned": true,
+          "reasons": [
+            {
+              "code": "sonic_neighbour",
+              "count": 2,
+              "text": "Sounds like 2 of this album's tracks"
+            }
+          ],
+          "year": null
+        }
+      ],
+      "truncated": null
+    },
+    "content_type": "application/json",
+    "elapsed_seconds": 0.0,
+    "status": 200
+  }
+}

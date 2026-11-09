@@ -1,0 +1,36 @@
+{
+  "captured_at": "2026-11-09T22:20:41Z",
+  "request": {
+    "body": null,
+    "method": "GET",
+    "path": "/api/sonic/album-neighbours",
+    "query": {
+      "album_id": "7kljZIEGD1oNroTzbNGKNV"
+    }
+  },
+  "response": {
+    "body": {
+      "seeds": [],
+      "skipped": [
+        {
+          "navidrome_id": "0UXXPra31BF3l6aVnVFfw6",
+          "reason": "no_analysis",
+          "title": "Love Me"
+        }
+      ],
+      "start": {
+        "album": "8 Mile",
+        "album_id": "7kljZIEGD1oNroTzbNGKNV",
+        "artist": "Eminem",
+        "tracks": 1,
+        "year": 2002
+      },
+      "status": "empty",
+      "stops": [],
+      "truncated": null
+    },
+    "content_type": "application/json",
+    "elapsed_seconds": 0.0,
+    "status": 200
+  }
+}

@@ -85,5 +85,37 @@ class PathsRoute(unittest.TestCase):
         self.assertEqual(self.client.get("/api/knowledge/paths", params={"mbid": "a-gid", "type": "artist"}).status_code, 422)
 
 
+class AlbumPathsRoute(PathsRoute):
+    """Album kinds on the same route (docs/SERVER_V2_CONTRACT.md, "Album paths")."""
+
+    def setUp(self):
+        super().setUp()
+        self.album = {"mbid": "rel-gid", "type": "release", "kind": "album_crew"}
+
+    def get_album(self, **over):
+        return self.client.get("/api/knowledge/paths", params={k: v for k, v in {**self.album, **over}.items() if v is not None})
+
+    def test_album_kind_with_no_evidence_is_empty_and_public(self):
+        r = self.get_album()
+        self.assertEqual(r.status_code, 200, r.text)
+        body = r.json()
+        self.assertEqual((body["kind"], body["status"], body["stops"]), ("album_crew", "empty", []))
+        self.assertEqual(body["start"]["type"], "release")
+        for leaked in ("navidrome_id", "built_from", "generation_id", "presentation_version"):
+            self.assertNotIn(leaked, r.text)
+
+    def test_kind_and_type_must_match(self):
+        self.assertEqual(self.get_album(kind="label_path").status_code, 400)
+        self.assertEqual(self.get_album(type="artist", mbid="a-gid").status_code, 400)
+
+    def test_unserved_album_kinds_answer_501(self):
+        for kind in ("album_room", "album_gaps"):
+            self.assertEqual(self.get_album(kind=kind).status_code, 501, kind)
+
+    def test_release_group_start_and_unknown_start(self):
+        self.assertEqual(self.get_album(type="release_group").status_code, 404)
+        self.assertEqual(self.get_album(mbid="nope").status_code, 404)
+
+
 if __name__ == "__main__":
     unittest.main()
