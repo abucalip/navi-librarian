@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Discair Mac Player Refinements</title>
+<style>
+:root{--bg:#ecebe8;--fg:#1b1a19;--mu:#6a6560;--sf:#fff;--ln:#d9d4cd}
+@media (prefers-color-scheme:dark){:root{--bg:#17161a;--fg:#f1eee9;--mu:#a29c95;--sf:#222027;--ln:#34313a}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 system-ui,-apple-system,sans-serif;padding:20px 16px 60px}
+.pg{max-width:1100px;margin:0 auto}h1{font-size:22px;margin:0}h2{font-size:17px;margin:34px 0 4px}p.lead{color:var(--mu);margin:4px 0 12px;max-width:80ch}
+.note{background:var(--sf);border:1.5px solid var(--ln);border-radius:12px;padding:10px 16px;margin:8px 0 14px;max-width:100ch;font-size:14px}
+.bar{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0;align-items:center}.bar span{color:var(--mu);font-size:13px;margin-right:2px}
+.bar button{font:inherit;font-size:13px;border:1.5px solid var(--ln);background:var(--sf);color:var(--fg);padding:5px 14px;border-radius:99px;cursor:pointer}
+.bar button[aria-pressed=true]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.frame{border-radius:14px;overflow:hidden;position:relative;background:#f2f2f4;color:#1d1d1f;font-family:-apple-system,"SF Pro Display",system-ui,sans-serif}
+/* artist banner */
+.banner{height:250px;position:relative;color:#fff;overflow:hidden;background:#3b2a58}
+.banner .blur{position:absolute;inset:-30px;background:radial-gradient(circle at 25% 30%,#e86a8a,transparent 55%),radial-gradient(circle at 80% 80%,#4f6fe0,transparent 60%),#40305c;filter:blur(24px) saturate(1.3);transform:scale(1.2)}
+.banner .shade{position:absolute;inset:0;background:linear-gradient(rgba(0,0,0,.1),rgba(0,0,0,.4))}
+.banner .in{position:absolute;left:28px;top:44px}
+.banner h3{font-size:56px;line-height:1;margin:0;letter-spacing:-1.5px;font-weight:700;display:flex;align-items:center;gap:14px}
+.banner .sub{opacity:.85;margin:6px 0 12px}
+.pill{display:inline-block;border-radius:99px;padding:5px 16px;font-size:13px;background:rgba(255,255,255,.25);margin-right:6px}.pill.pr{background:#fff;color:#c2305a}
+.dots{width:38px;height:38px;border-radius:50%;border:0;background:rgba(255,255,255,.22);color:#fff;font-size:20px;line-height:1;cursor:pointer;backdrop-filter:blur(10px);position:relative;top:4px}
+.dots:hover,.dots[aria-expanded=true]{background:rgba(255,255,255,.4)}
+.menu{position:absolute;left:0;top:48px;min-width:200px;background:rgba(250,250,252,.92);backdrop-filter:blur(24px);border-radius:12px;box-shadow:0 8px 30px #0004,0 0 0 .5px #0003;padding:5px;display:none;z-index:5;font-size:14px;font-weight:400;letter-spacing:0;color:#1d1d1f;text-align:left}
+.menu.on{display:block}.menu div{padding:6px 10px;border-radius:7px;display:flex;gap:10px;align-items:center;cursor:default}.menu div:hover{background:#c2305a;color:#fff}.menu hr{border:0;border-top:1px solid #0001;margin:4px 6px}
+.wrapm{position:relative;display:inline-block}
+.ph{position:absolute;right:30px;top:36px;width:170px;height:170px;border-radius:50%;border:4px solid #fffd;background:linear-gradient(135deg,#d99,#557)}
+.rows{padding:14px 28px;font-size:14px;color:#555;height:70px}
+.toast{position:absolute;left:50%;bottom:10px;transform:translateX(-50%);background:#111;color:#fff;padding:5px 14px;border-radius:99px;font-size:12px;opacity:0;transition:.3s}.toast.on{opacity:1}
+/* player */
+.stage{height:210px;background:#f2f2f4;position:relative}
+.stage .fake{position:absolute;left:20px;right:20px;top:18px;font-size:13px;color:#999}
+.pb{position:absolute;left:20px;right:20px;bottom:20px;height:92px;border-radius:16px;overflow:hidden;color:#fff;background:#2a2433;box-shadow:0 6px 24px #0003}
+.pb .tint{position:absolute;inset:0;background:linear-gradient(#5a3f78,#3f2a58)}
+.pb .art{position:absolute;inset:-40px;background:radial-gradient(circle at 20% 40%,#e0668a,transparent 50%),radial-gradient(circle at 85% 70%,#4f7be0,transparent 55%),radial-gradient(circle at 50% 10%,#f0b060,transparent 40%),#3a2c52;filter:blur(24px) saturate(1.3);transform:scale(1.2);opacity:0}
+.pb .dim{position:absolute;inset:0;background:rgba(0,0,0,.22);opacity:0}
+.pb[data-bg=blur] .art,.pb[data-bg=blur] .dim{opacity:1}.pb[data-bg=blur] .tint{opacity:0}
+.wf{position:absolute;inset:0;display:none}
+.pb[data-wf=mirror] .wf.m,.pb[data-wf=bars] .wf.b,.pb[data-wf=env] .wf.e{display:block}
+.wf svg{width:100%;height:100%;display:block}
+.wf .base{fill:#fff;opacity:.16}.wf .done{fill:#fff;opacity:.38}
+.pb .content{position:absolute;inset:0;display:flex;align-items:center;gap:14px;padding:0 16px 4px}
+.cv{width:50px;height:50px;border-radius:7px;background:linear-gradient(135deg,#e0668a,#4f7be0);flex:none;box-shadow:0 2px 8px #0004}
+.meta{flex:1;min-width:0;font-size:12.5px}.meta b{font-size:14px;display:block;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.meta span{opacity:.72;white-space:nowrap;display:block;overflow:hidden;text-overflow:ellipsis}
+.tick{height:19px;overflow:hidden;position:relative;margin-top:3px;display:none}
+.pb[data-ly=on] .tick{display:block}.pb[data-ly=on] .meta span.sec{display:none}
+.tick .ln{position:absolute;left:0;right:0;font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:transform .45s cubic-bezier(.3,.8,.3,1),opacity .45s;opacity:0;transform:translateY(100%)}
+.tick .ln.cur{opacity:1;transform:none}.tick .ln.out{opacity:0;transform:translateY(-100%)}
+.tx{display:flex;gap:12px;font-size:15px;align-items:center}.tx .pp{font-size:22px}
+.tm{font-size:12px;opacity:.72;font-variant-numeric:tabular-nums}
+.prog{position:absolute;left:0;right:0;bottom:0;height:4px;background:rgba(255,255,255,.18)}.prog i{display:block;height:100%;background:#fff;width:0}
+.pb[data-wf=env] .prog,.pb[data-wf=mirror] .prog{height:3px}
+/* ideas */
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px}
+.card{background:var(--sf);border:1.5px solid var(--ln);border-radius:12px;padding:12px 16px}.card h4{margin:0 0 6px;font-size:14px}
+.card ul{margin:0;padding-left:18px;font-size:13.5px}.card li{margin:3px 0}.card li i{color:var(--mu)}
+.live{margin-top:10px;border-radius:12px;padding:16px 20px;background:#2a2433;color:#fff;font-size:15px;min-height:56px;display:flex;align-items:center;gap:12px}
+.live em{font-style:normal;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;opacity:.6;flex:none}
+.live span{transition:opacity .5s}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style></head><body><div class="pg">
+<h1>Discair Mac · player refinements</h1>
+<p class="lead">Mockups for the Cupertino theme. Sample data; everything is clickable. Nothing here is built.</p>
+
+<h2>1 · Artist page: the three dots</h2>
+<p class="lead">A round glass button sits to the right of the name, same height as the Play capsule row text baseline. It opens a system-style menu. Click it.</p>
+<div class="frame" id="artist">
+  <div class="banner"><div class="blur"></div><div class="shade"></div>
+    <div class="in">
+      <h3>Talk Talk <span class="wrapm"><button class="dots" id="dots" aria-label="More about this artist" aria-haspopup="menu" aria-expanded="false">⋯</button>
+        <div class="menu" id="menu" role="menu"><div role="menuitem" data-go="Connections">⇄&nbsp; Connections</div><div role="menuitem" data-go="Timeline">⏱&nbsp; Timeline</div><hr><div role="menuitem" data-go="Radio">◉&nbsp; Start artist radio</div></div></span></h3>
+      <div class="sub">3 of 5 albums owned · Post-rock, Synth-pop</div>
+      <span class="pill pr">▶ Play</span><span class="pill">⤮ Shuffle</span><span class="pill">◉ Radio</span>
+    </div><div class="ph"></div></div>
+  <div class="rows">Top Songs · Albums …</div><div class="toast" id="toast"></div>
+</div>
+<div class="note">Menu items: <b>Connections</b> opens the Connections screen on this artist; <b>Timeline</b> opens the Timeline for them (reads their MusicBrainz id, as today). The two are the only required items; "Start artist radio" is optional and duplicates the Radio button, so I would drop it. Keyboard: the button is focusable, Space/Return opens, arrows move, Esc closes. VoiceOver label "More about this artist".</div>
+
+<h2>2 · Player bar: lyric ticker, artwork blur, sound graph</h2>
+<p class="lead">One interactive bar. Playback is simulated; the lyric lines are placeholder text, not real lyrics. Try the toggles.</p>
+<div class="bar" id="ctl-ly"><span>Lyric ticker</span><button data-v="on" aria-pressed="true">On</button><button data-v="off" aria-pressed="false">Off</button></div>
+<div class="bar" id="ctl-bg"><span>Backdrop</span><button data-v="blur" aria-pressed="true">Artwork blur (new)</button><button data-v="tint" aria-pressed="false">Tint (today)</button></div>
+<div class="bar" id="ctl-wf"><span>Sound graph</span><button data-v="off" aria-pressed="false">Off</button><button data-v="mirror" aria-pressed="true">A · Mirrored</button><button data-v="bars" aria-pressed="false">B · Bars from floor</button><button data-v="env" aria-pressed="false">C · Envelope line</button></div>
+<div class="frame"><div class="stage"><div class="fake">Window content scrolls above the bar</div>
+  <div class="pb" id="pb" data-ly="on" data-bg="blur" data-wf="mirror">
+    <div class="tint"></div><div class="art"></div><div class="dim"></div>
+    <div class="wf m"><svg id="svgM" preserveAspectRatio="none"></svg></div>
+    <div class="wf b"><svg id="svgB" preserveAspectRatio="none"></svg></div>
+    <div class="wf e"><svg id="svgE" preserveAspectRatio="none"></svg></div>
+    <div class="content"><div class="cv"></div>
+      <div class="meta"><b>Life's What You Make It</b><span>Talk Talk — The Colour of Spring</span><div class="tick" id="tick"></div></div>
+      <div class="tx"><span>⤮</span><span>⏮</span><span class="pp" id="pp">⏸</span><span>⏭</span><span>🔁</span></div>
+      <div class="tm" id="tm">0:00 / 4:28</div></div>
+    <div class="prog"><i id="pg"></i></div>
+  </div></div></div>
+<div class="note"><b>Lyric ticker.</b> Shown only when the song has synced lyrics (a time-stamped lyric file). It replaces the second line (artist — album) so the bar keeps its height; the current line slides up and the old one leaves, 0.45 s, no animation under Reduce Motion (the line just swaps). Plain lyrics without time stamps never show. Setting: <i>Settings › Player › Show lyrics in the player bar</i>, default on, also a View menu item. Clicking the line opens Now Playing on the full lyrics. Instrumental parts and gaps show the artist — album line again.<br><br>
+<b>Artwork blur.</b> The same <code>BlurredArtwork</code> used on the album and artist pages (cover enlarged 1.2×, blur 24, saturation 1.3) with a 22% black layer so white text keeps its contrast. It replaces the flat tint; while the cover loads or is missing, the tint is the fallback. Contrast check needed on bright covers; the dim layer rises to 35% when the cover is bright, as the design notes already say for chips over artwork.<br><br>
+<b>Sound graph.</b> The app already computes 1000 peaks per song (the seek-bar waveform, read from the SMB mount), so no new data. Three ways to lay it behind the bar: <b>A Mirrored</b> centred on the bar's middle line, played part brighter; <b>B Bars from floor</b> like a skyline, the most legible against text; <b>C Envelope line</b> a thin smooth outline, least busy. All are drawn at 16–38% white so text stays readable; the 4 px progress line stays. My pick is <b>A</b> for the look and <b>C</b> as the quiet option; the choice could be a setting. When peaks are missing (not on the mount, or over budget) the bar is plain, as the seek bar is today. Under Reduce Motion nothing animates anyway: the graph is static and only the played part grows.</div>
+
+<h2>3 · Ideas: one-line facts while a song plays</h2>
+<p class="lead">A single line that rotates every ~20 s under the title (or in the ticker slot when there are no synced lyrics). Click a category to preview a line. Every line would carry a small source and tap through to the page that proves it.</p>
+<div class="bar" id="ctl-id"></div>
+<div class="live"><em id="ik">Song</em><span id="il"></span></div>
+<div class="cols" id="ideas"></div>
+</div>
+<script>
+const $=s=>document.querySelector(s);
+/* 1 menu */
+const dots=$('#dots'),menu=$('#menu'),toast=$('#toast');
+dots.onclick=e=>{e.stopPropagation();const o=menu.classList.toggle('on');dots.setAttribute('aria-expanded',o)};
+document.addEventListener('click',()=>{menu.classList.remove('on');dots.setAttribute('aria-expanded',false)});
+menu.querySelectorAll('[data-go]').forEach(m=>m.onclick=()=>{toast.textContent='→ opens '+m.dataset.go+' for Talk Talk';toast.classList.add('on');setTimeout(()=>toast.classList.remove('on'),1800)});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){menu.classList.remove('on')}});
+/* 2 toggles */
+const pb=$('#pb');
+[['ly','data-ly'],['bg','data-bg'],['wf','data-wf']].forEach(([id,attr])=>{const g=$('#ctl-'+id);g.querySelectorAll('button').forEach(b=>b.onclick=()=>{g.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b));pb.setAttribute(attr,b.dataset.v)})});
+/* fake peaks */
+const N=160;let seed=7;const rnd=()=>(seed=(seed*16807)%2147483647)/2147483647;
+const peaks=Array.from({length:N},(_,i)=>{const sec=i/N;const env=.35+.5*Math.sin(sec*9)**2*(sec>.1?1:.4)+(sec>.7?.1:0);return Math.min(1,env*(.55+.5*rnd()))});
+const W=1000,H=100;
+function build(){
+ const bw=W/N;let m='',b='',e='';
+ peaks.forEach((p,i)=>{const h=p*H*.85;m+=`<rect data-i="${i}" x="${i*bw}" y="${(H-h)/2}" width="${bw*.7}" height="${h}" rx="2"/>`;const h2=p*H*.8;b+=`<rect data-i="${i}" x="${i*bw}" y="${H-h2}" width="${bw*.72}" height="${h2}"/>`});
+ let top=peaks.map((p,i)=>`${i*bw},${H-p*H*.8}`).join(' L');
+ e=`<path class="base" d="M0,${H} L${top} L${W},${H}Z" style="opacity:.14"/><path d="M${top}" fill="none" stroke="#fff" stroke-opacity=".5" stroke-width="2" vector-effect="non-scaling-stroke"/><clipPath id="cl"><rect id="clr" x="0" y="0" width="0" height="${H}"/></clipPath><path class="done" clip-path="url(#cl)" d="M0,${H} L${top} L${W},${H}Z" style="opacity:.3"/>`;
+ [['#svgM',m],['#svgB',b],['#svgE',e]].forEach(([s,h])=>{$(s).setAttribute('viewBox',`0 0 ${W} ${H}`);$(s).innerHTML=h});
+ $('#svgM').querySelectorAll('rect').forEach(r=>r.setAttribute('class','base'));$('#svgB').querySelectorAll('rect').forEach(r=>r.setAttribute('class','base'));
+}
+build();
+/* lyrics (placeholder text, not real lyrics) */
+const lines=[[0,'♪'],[6,'First line of the verse appears here'],[11,'Second line follows a few seconds later'],[17,'A third line, a little longer than the others to show truncation'],[23,'Chorus line one'],[28,'Chorus line two'],[34,'♪'],[40,'Second verse starts']];
+const total=268;let t=0,playing=true,cur=-1;const tick=$('#tick');
+function fmt(s){return Math.floor(s/60)+':'+String(Math.floor(s%60)).padStart(2,'0')}
+function step(){
+ if(playing)t=(t+.25)%45;
+ const f=t/total,k=Math.floor(f*N);
+ $('#pg').style.width=(f*100)+'%';$('#tm').textContent=fmt(t)+' / '+fmt(total);
+ $('#clr')&&$('#clr').setAttribute('width',f*W);
+ [...$('#svgM').children].forEach((r,i)=>r.setAttribute('class',i<=k?'done':'base'));
+ [...$('#svgB').children].forEach((r,i)=>r.setAttribute('class',i<=k?'done':'base'));
+ let idx=0;lines.forEach((l,i)=>{if(t>=l[0])idx=i});
+ if(idx!==cur){const old=tick.querySelector('.cur');if(old){old.className='ln out';setTimeout(()=>old.remove(),500)}
+  const d=document.createElement('div');d.className='ln';d.textContent=lines[idx][1];tick.appendChild(d);requestAnimationFrame(()=>requestAnimationFrame(()=>d.className='ln cur'));cur=idx}
+}
+setInterval(step,250);step();
+$('#pp').onclick=()=>{playing=!playing;$('#pp').textContent=playing?'⏸':'▶'};
+/* 3 ideas */
+const IDEAS=[
+['Song',[['Recorded in 11 days at Wessex Studios, London','recording session'],['Mark Hollis wrote this on piano, then the band rebuilt it around the bass','credits'],['The first of 3 songs on this album that were cut from a longer take','facts'],['Played by 412 listeners in your Last.fm circle this month','scrobbles']]],
+['Album',[['Released 14 years after the band formed, on the second try at a label','release dates'],['Produced by Tim Friese-Greene, who also produced the next two albums','credits'],['Has 2 pressings in your library: FLAC 24-bit and a 1986 CD rip','your library'],['Track 4 of 8; the album runs 42 minutes, you are 11 minutes in','position']]],
+['Artist',[['Formed in London in 1981, active until 1992, one reunion mention in 2010','MusicBrainz'],['Mark Hollis stepped away from music after 1998; this was nine years earlier','timeline'],['Members now play in 3 other bands in your library','connections'],['You have owned 3 of 5 studio albums; the missing two are the later ones','your library']]],
+['Connections',[['Sampled in 14 other songs, the earliest in 1994','samples'],['Covered by 9 artists; one of them is in your library','covers'],['Shares a producer with the band you played yesterday','connections'],['Sonically closest song you own: a 1983 track from a different genre','sonic path']]],
+['Your history',[['You first played this artist 6 years ago, on a Tuesday night in March','history'],['This is your 18th play; the last one was 41 days ago','history'],['Your most played song by them is not this one','history'],['You skipped the intro 3 of 4 times','history']]],
+['Time and place',[['Released the same week as 2 other albums you own','release dates'],['Recorded 2 km from where the previous song on this queue was made','studios'],['Number 1 in the UK the week the song came out was something very different','charts'],['The song is as old as 62% of your library','library stats']]],
+['Sound',[['The loudest passage is at 3:12; a quiet bridge comes first','sound graph'],['Tempo 96 BPM, key of E-flat, 5 beats of lead-in before the voice','analysis'],['Dynamic range is 14 dB: this is a version before the loudness wars','analysis'],['This file is 24-bit; the CD pressing would clip here','file info']]],
+['Playful',[['Every title on this album is a single word except two','titles'],['If this song were a place it would be a long coastal train ride (by genre tags)','tags'],['Another listener-tag for this song: "rainy bus window"','Last.fm tags'],['Name the instrument that enters at 1:02, then check the credits','credits']]]
+];
+const cb=$('#ctl-id'),gr=$('#ideas');let ci=0,li=0,paused=false;
+IDEAS.forEach(([n,l],i)=>{const b=document.createElement('button');b.textContent=n;b.setAttribute('aria-pressed',i===0);b.onclick=()=>{ci=i;li=0;show();cb.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b))};cb.appendChild(b);
+ const c=document.createElement('div');c.className='card';c.innerHTML='<h4>'+n+'</h4><ul>'+l.map(x=>`<li>${x[0]} <i>· ${x[1]}</i></li>`).join('')+'</ul>';gr.appendChild(c)});
+function show(){const [n,l]=IDEAS[ci];const x=l[li%l.length];const s=$('#il');s.style.opacity=0;setTimeout(()=>{$('#ik').textContent=n;s.textContent=x[0]+'  ·  '+x[1];s.style.opacity=1},300)}
+show();setInterval(()=>{li++;show()},5000);
+</script></body></html>

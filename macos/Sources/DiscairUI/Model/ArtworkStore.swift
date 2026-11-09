@@ -15,6 +15,9 @@ public final class ArtworkStore {
     private var builder: StreamURLBuilder?
     @ObservationIgnored private let cache = NSCache<NSString, NSImage>()
     @ObservationIgnored private var failed = Set<String>()
+    /// Counts connections made. A cover asked for before the connection existed (a restored queue at launch) got nothing and is
+    /// never asked again by itself, so views include this in their task id and ask again once it changes.
+    public private(set) var generation = 0
     @ObservationIgnored private let transport: any HTTPTransport
 
     @ObservationIgnored private let media: MediaCache?
@@ -30,6 +33,7 @@ public final class ArtworkStore {
     public func configure(librarian: LibrarianClient?) {
         self.librarian = librarian
         for k in failed where k.hasPrefix("lookup|") { failed.remove(k) }
+        generation += 1
     }
 
     /// The cover of an album that is not in the library, looked up by artist and title.
@@ -78,6 +82,7 @@ public final class ArtworkStore {
         self.builder = builder
         cache.removeAllObjects()
         failed.removeAll()
+        generation += 1
     }
 
     public func image(coverArt: String, px: Int) async -> NSImage? {
@@ -120,7 +125,7 @@ struct ArtworkImage: View {
         Color.clear
             .overlay { if let image { Image(nsImage: image).resizable().scaledToFill() } }
             .clipped()
-            .task(id: "\(album.coverArt ?? "")@\(px)|\(album.owned ? "" : album.artist + "|" + album.title)") {
+            .task(id: "\(album.coverArt ?? "")@\(px)|\(album.owned ? "" : album.artist + "|" + album.title)|\(store?.generation ?? 0)") {
             image = nil
             guard let store else { return }
             if let id = album.coverArt { image = await store.image(coverArt: id, px: px) }
@@ -145,7 +150,7 @@ struct ArtistPhoto: View {
         }
         .frame(width: size, height: size)
         .clipShape(Circle())
-        .task(id: name) {
+        .task(id: "\(name)|\(store?.generation ?? 0)") {
             image = nil
             guard let store else { return }
             image = await store.image(artistName: name, url: url)

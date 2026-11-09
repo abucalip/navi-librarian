@@ -292,6 +292,14 @@ public struct LibrarianClient: Sendable {
         let (data, http) = try await authedSend("GET", "api/knowledge/timeline?mbid=\(Self.enc(mbid))&type=\(Self.enc(type))&limit=\(limit)", body: nil)
         return try decode(KnowledgeTimeline.self, data, http)
     }
+    /// One-line facts for the song that is playing; the album and artist ids are optional and add their own lines.
+    public func knowledgeSongFacts(mbid: String, albumMbid: String? = nil, artistMbid: String? = nil) async throws -> KnowledgeSongFacts {
+        var q = "mbid=\(Self.enc(mbid))"
+        if let albumMbid, !albumMbid.isEmpty { q += "&album_mbid=\(Self.enc(albumMbid))" }
+        if let artistMbid, !artistMbid.isEmpty { q += "&artist_mbid=\(Self.enc(artistMbid))" }
+        let (data, http) = try await authedSend("GET", "api/knowledge/song-facts?\(q)", body: nil)
+        return try decode(KnowledgeSongFacts.self, data, http)
+    }
     public func knowledgeEvent(mbid: String) async throws -> KnowledgeEvent { try await knowledge("event", mbid) }
 
     /// One page of the bounded walk. `type` is the start entity's type (artist, person, group, ...).

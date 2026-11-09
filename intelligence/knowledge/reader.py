@@ -197,6 +197,20 @@ class KnowledgeReader:
         entity = self.entity("recording", id=id, mbid=mbid, navidrome_id=navidrome_id)
         return None if entity is None else public(works_of_recording(self, entity, limit=limit))
 
+    def song_facts(self, *, mbid: str | None = None, navidrome_id: str | None = None, album_mbid: str | None = None,
+                   album_type: str = "release", artist_mbid: str | None = None, artist_type: str = "artist",
+                   limit: int = 200) -> dict[str, Any] | None:
+        """One-line facts about a recording, its album and its artist; None when the recording is unknown.
+
+        An album or artist the store does not know is left out rather than failing the call."""
+        from .song_facts import song_facts_page
+        recording = self.entity("recording", mbid=mbid, navidrome_id=navidrome_id)
+        if recording is None:
+            return None
+        album = self.entity(album_type, mbid=album_mbid) if album_mbid else None
+        artist = self.entity(artist_type, mbid=artist_mbid) if artist_mbid else None
+        return public(song_facts_page(self, recording, album=album, artist=artist, limit=limit))
+
     # ---------------------------------------------------------------- helpers
     def _hop(self, hop: Hop) -> dict[str, Any]:
         other = repo.get_entity(self._db, hop.entity_id) or {}

@@ -293,3 +293,46 @@ public struct KnowledgeRecordingWorks: Decodable, Equatable, Sendable {
         truncated = c.flag(.truncated)
     }
 }
+
+/// One line of `GET /api/knowledge/song-facts`: a statement MusicBrainz makes, with its source and the page that backs it.
+public struct KnowledgeSongFact: Decodable, Equatable, Sendable {
+    public struct Link: Decodable, Equatable, Sendable { public let type: String; public let mbid: String }
+    public let kind: String
+    /// `song`, `album` or `artist`.
+    public let scope: String
+    public let text: String
+    public let source: String
+    public let sourceURL: String?
+    public let link: Link?
+    enum CodingKeys: String, CodingKey { case kind, scope, text, source, source_url, link }
+    public init(from decoder: any Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        kind = c.text(.kind) ?? ""
+        scope = c.text(.scope) ?? "song"
+        text = c.text(.text) ?? ""
+        source = c.text(.source) ?? "MusicBrainz"
+        sourceURL = c.text(.source_url)
+        link = try? c.decodeIfPresent(Link.self, forKey: .link)
+    }
+    public init(kind: String, scope: String, text: String, source: String = "MusicBrainz", sourceURL: String? = nil, link: Link? = nil) {
+        self.kind = kind; self.scope = scope; self.text = text; self.source = source; self.sourceURL = sourceURL; self.link = link
+    }
+}
+
+public struct KnowledgeSongFacts: Decodable, Equatable, Sendable {
+    public let facts: [KnowledgeSongFact]
+    public let sources: [String: KnowledgeSource]
+    enum CodingKeys: String, CodingKey { case facts, sources }
+    public init(from decoder: any Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        // One bad line is dropped, not the whole answer.
+        facts = ((try? c.decodeIfPresent([Lossy<KnowledgeSongFact>].self, forKey: .facts)) ?? []).compactMap(\.value).filter { !$0.text.isEmpty }
+        sources = (try? c.decodeIfPresent([String: KnowledgeSource].self, forKey: .sources)) ?? [:]
+    }
+    public init(facts: [KnowledgeSongFact], sources: [String: KnowledgeSource] = [:]) { self.facts = facts; self.sources = sources }
+}
+
+private struct Lossy<T: Decodable>: Decodable {
+    let value: T?
+    init(from decoder: any Decoder) throws { value = try? T(from: decoder) }
+}

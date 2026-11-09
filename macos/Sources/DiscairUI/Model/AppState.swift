@@ -82,6 +82,9 @@ public final class AppState {
     /// Songs the server found for the text being searched (the palette and the Library search), whole library.
     public private(set) var songHits: [SongRow] = []
     public let lyrics = LyricsModel()
+    /// Facts about the playing song, album and artist for the player bar, and the two switches that show them.
+    public let facts = FactsModel()
+    public let barOptions: PlayerBarOptions
     /// Playback: the queue, the audio engine and the controls.
     public let player: PlayerModel
     /// Saved skip events; nil without a session (previews and tests).
@@ -138,6 +141,7 @@ public final class AppState {
         // Previews and tests never touch the Keychain or mount anything.
         self.share = session == nil ? ShareModel(defaults: defaults, secrets: InMemorySecretStore(), mounter: NoMounter()) : ShareModel(defaults: defaults, secrets: session?.secrets ?? InMemorySecretStore())
         self.artwork = ArtworkStore(media: media)
+        self.barOptions = PlayerBarOptions(defaults: defaults)
         let player = PlayerModel(output: output ?? EngineOutput(), fetcher: CachingFetcher(cache: media), defaults: defaults)
         self.player = player
         self.savedQueues = SavedQueueStore(defaults: defaults)
@@ -171,7 +175,7 @@ public final class AppState {
             Task { [weak self] in await self?.refreshTaste() }
             await self?.refreshLibrary()
         }
-        session?.onNavidromeSignOut = { [weak self] in self?.lyrics.clearAll(); self?.library.clearSavedPages(); self?.cache.media.clear(); self?.player.waveformCache.clear() }
+        session?.onNavidromeSignOut = { [weak self] in self?.lyrics.clearAll(); self?.facts.reset(); self?.library.clearSavedPages(); self?.cache.media.clear(); self?.player.waveformCache.clear() }
         session?.onConnectFailed = { [weak self] e in
             guard let self, session != nil, !self.library.isLive else { return }
             self.configureSavedPages()
