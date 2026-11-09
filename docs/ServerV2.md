@@ -1,7 +1,7 @@
 # Server V2 — remaining work
 
 **Updated:** 2026-11-09  
-**Current state:** Server-side Phases 0–6 are closed. Phase 7 implementation is merged. Remaining work is client integration and explicitly listed runtime/visual verification; no Server V2 work is currently published or deployed. See [Project Status](PROJECT_STATUS.md), the [API contract](SERVER_V2_CONTRACT.md), and the [historical plan archive](archive/ServerV2_HISTORY_2026-11-09.md).
+**Current state:** Server-side Phases 0–6 are closed. Phase 7 implementation is merged. Phase 6 taste presentation slices 5–8 are merged across macOS Cupertino, macOS Zine and Android. Remaining work is explicitly listed runtime/client verification; no Server V2 work is currently published or deployed. See [Project Status](PROJECT_STATUS.md), the [API contract](SERVER_V2_CONTRACT.md), and the [historical plan archive](archive/ServerV2_HISTORY_2026-11-09.md).
 
 ## Phase 6 — Taste presentation
 
@@ -16,6 +16,8 @@
 
 ### Completed slices
 
+- **macOS Zine taste cards (PR [#910](https://github.com/abucalip/navi-librarian/pull/910), merged 2026-11-09; slice 6):** adds `ZineTaste` to the Zine Insights screen, with the editorial lead-story layout, selectable time windows and dimensions, decade comparison, genre/decade playlist and Library actions, and honest low-sample/empty states. It reuses `TasteModel` and the shared actions; server-authored content remains authoritative and recommendation ranking is unchanged. All four required GitHub workflows passed on exact PR head `e36bf7d03e226edb33688bb85ac9de7e106071cd`. Squash commit: `4052f96533bc427e82b6e5dfa5a0159f0ba29142`. The owner waived manual macOS visual verification; it was not performed. No live-server check; not published or deployed.
+
 7. **macOS taste card actions (PR [#909](https://github.com/abucalip/navi-librarian/pull/909), merged 2026-11-09):** adds genre/decade actions to the Cupertino shift and window cards. The owner can create a prefilled smart playlist and edit it, or open the Library Songs tab with a clearable taste filter. Area, label and collaborator deliberately have no action because they do not map to a Library song field. No playlist is saved to Navidrome until the owner saves it; recommendation ranking is unchanged. Seven filtered Swift tests were reported passing (`TasteActionTests`, `TasteModelTests`); all four required GitHub workflows passed on exact PR head `e0ae1c3d6b8bd1519e11900b6e336d314032f0af`. Squash commit: `872ad8c8ae9a1c5412f92c54484eba5efa3be874`. No manual visual Mac or live-server check; not published or deployed.
 
 5. **macOS taste cards (PR [#907](https://github.com/abucalip/navi-librarian/pull/907), merged 2026-11-09):** decodes the taste response, refreshes once per app launch in the background, and presents the Cupertino Insights cards for lately-vs-always, selectable windows and dimensions, decades, low-sample progress and empty states. The server-authored headline and shifts are displayed without client-invented claims. Sixteen filtered Swift tests were reported passing; all four required GitHub workflows passed on the exact PR head. No live-server or visual/manual Mac check; not published or deployed.
@@ -24,10 +26,9 @@
 
 ### Remaining slices
 
-6. macOS: the other Insights themes (Zine and the rest) draw their own versions, one follow-up PR per theme.
-9. Close-out: confirm profiles change no ranking output, complete visual and runtime checks, and reconcile docs/log.
+9. Close-out: confirm profiles change no ranking output, complete the remaining visual and runtime checks, and reconcile docs/log. The Zine visual review for slice 6 was explicitly waived by the owner; it was not performed.
 
-**Order:** 6; then 9.
+**Order:** 9.
 
 **Acceptance:** both clients render the same server-authored headline; thin/empty data is represented honestly; launch refresh is safe and idempotent; no recommendation output changes.
 
