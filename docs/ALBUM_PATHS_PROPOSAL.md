@@ -283,7 +283,7 @@ For usage efficiency, give Haiku the mechanical, self-checking steps: a spelled-
 | ~~Path builders for Studio Crew, Guest List, Covers and Sources~~ **Done** (PR #924) | Sonnet | high | Evidence rules, hub caps, de-duplication of people across paths; a mistake breaks the credit-grade guarantee. |
 | ~~Same Year Same Scene builder~~ **Done** (PR #925, see "Same Year, Same Scene builder") | Sonnet | medium | Strict-rule logic on top of existing readers. |
 | ~~Neighbours by Ear composition~~ **Done** (PR #926) | Sonnet | medium | Groups similar-track results; must never sort or threshold on `similarity`. |
-| Listen-through Gaps filter | Sonnet | high | Must stay within the taste rule; a leak into ranking is a contract violation. |
+| ~~Listen-through Gaps filter~~ **Built** (`intelligence/graph/album_gaps.py`, not yet merged) | Sonnet | high | Must stay within the taste rule; a leak into ranking is a contract violation. |
 | Write the contract section | Sonnet | medium | Needs consistent wording with the existing paths contract. |
 | Record fixtures from a store copy | Haiku | low | Same capture steps as the artist path fixtures; tests diff the result. |
 | Fixture-based filtered server tests | Haiku | low | Copy the artist-path tests; the fixtures define the assertions. |
