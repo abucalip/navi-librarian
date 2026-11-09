@@ -18,7 +18,9 @@ struct ZineInsights: View {
     var body: some View {
         let extra = model.kinds.filter { Self.heads[$0] == nil }
         ZStack(alignment: .bottom) {
+            ScrollView {
             VStack(alignment: .leading, spacing: 14) {
+                ZineTaste(model: state.taste, state: state).padding(.bottom, 10)
                 HStack(alignment: .bottom, spacing: 20) {
                     Text("The Insights").font(Z.an(78)).textCase(.uppercase).tracking(0.8).accessibilityAddTraits(.isHeader)
                     Mono("Gen \(model.response.generation) · data v\(model.response.dataVersion) · every item cites its source").padding(.bottom, 8)
@@ -33,9 +35,11 @@ struct ZineInsights: View {
                     column(["series_completion", "forgotten_gem"] + extra, rule: true)
                 }
             }
+            .padding(.bottom, 60)
+            }
             if model.lastDismissed != nil { undoBar }
         }
-        .task { await state.loadInsights() }
+        .task { await state.loadInsights(); await state.taste.load(librarian: state.session?.librarian) }
     }
 
     private var ticker: some View {
