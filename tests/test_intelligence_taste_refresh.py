@@ -68,6 +68,17 @@ class RefreshTests(unittest.TestCase):
         self.assertEqual((r.state, r.changed), ("unchanged", False))
         self.assertEqual(generations.data_versions(self.db)["insights"], version)
 
+    def test_genres_arriving_after_a_genreless_run_skip_the_interval(self):
+        self.go(listens(5))
+        self.clock.t += 30
+        genres = {"m": ("Rock",)}
+        self.assertEqual(refresh_taste(self.db, read_listens=listens(5), genres_by_recording=genres,
+                                       min_interval=100, clock=self.clock).state, "unchanged")
+        self.clock.t += 1
+        again = refresh_taste(self.db, read_listens=listens(5), genres_by_recording=genres,
+                              min_interval=100, clock=self.clock)
+        self.assertEqual(again.state, "too_soon")
+
     def test_failure_keeps_saved_profiles_and_does_not_start_interval(self):
         self.go(listens(5))
         self.clock.t += 101

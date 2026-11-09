@@ -53,6 +53,14 @@ def _next_allowed(db: sqlite3.Connection, min_interval: float) -> float | None:
     return float(good["finished_at"]) + min_interval
 
 
+def _genres_arrived(db: sqlite3.Connection, genres: Mapping[str, Iterable[str]] | None) -> bool:
+    """True when genre data exists now but the last good run had none, so the interval must not hide it."""
+    if not genres:
+        return False
+    good = runner.last_good(db, JOB)
+    return bool(good) and not (good.get("progress") or {}).get("genre_tracks")
+
+
 def refresh_taste(
     db: sqlite3.Connection,
     *,
@@ -65,7 +73,7 @@ def refresh_taste(
     now = clock()
     runner.recover_stale(db, now, STALE_AFTER)
     allowed = _next_allowed(db, min_interval)
-    if allowed is not None and now < allowed:
+    if allowed is not None and now < allowed and not _genres_arrived(db, genres_by_recording):
         return RefreshResult("too_soon", retry_after=round(allowed - now, 3))
 
     def work(ctx: runner.JobContext) -> bool:
@@ -76,7 +84,7 @@ def refresh_taste(
         changed = save_profiles(db, profiles, loaded, now=now)
         context = build_context_profiles(loaded.listens, config=base)
         changed = save_context_profiles(db, context, base, now=now) or changed
-        ctx.checkpoint({"changed": changed, "listens": loaded.total, "unusable": loaded.unusable,
+        ctx.checkpoint({"changed": changed, "genre_tracks": len(genres_by_recording or ()), "listens": loaded.total, "unusable": loaded.unusable,
                         "unmatched": loaded.unmatched}, items=1)
         return True
 
