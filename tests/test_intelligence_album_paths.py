@@ -2,7 +2,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from intelligence.graph.album_paths import PERSON_CAP, build_album_path, cached_album_path
+from intelligence.graph.album_paths import PERSON_CAP, ROOM_CAP, build_album_path, cached_album_path
 from intelligence.graph.paths import PathLimits
 from intelligence.store import generations, open_store
 from intelligence.store import repositories as repo
@@ -344,11 +344,77 @@ class AlbumPathTests(unittest.TestCase):
         r = self.stops(a1, "album_moment")
         self.assertEqual((r["status"], r["overlap_dropped"]), ("empty", 1))
 
+    # --- Same Room ---
+
+    def room(self, name, kind="place"):
+        return self.ent(kind, name)
+
+    def test_room_links_albums_with_a_recording_made_at_the_same_place(self):
+        a1, (r1,), _ = self.album("A1")
+        a2, (r2,), _ = self.album("A2")
+        a3, (r3,), _ = self.album("A3")
+        studio = self.room("Studio One")
+        self.edge(studio, r1, "recorded at")
+        self.edge(studio, r2, "mixed at")
+        r = self.stops(a1, "album_room")
+        self.assertEqual(r["status"], "ok")
+        self.assertEqual([s["entity"]["id"] for s in r["stops"]], [a2])
+        reason = r["stops"][0]["reasons"][0]
+        self.assertEqual((reason["code"], reason["via"]["id"], reason["anchor"]["id"]), ("recorded_at", studio, r1))
+        self.assertEqual(len(reason["evidence"]), 2)
+        self.assertNotIn("?", reason["text"])
+
+    def test_room_accepts_an_event_but_never_an_area(self):
+        a1, (r1,), _ = self.album("A1")
+        a2, (r2,), _ = self.album("A2")
+        a3, (r3,), _ = self.album("A3")
+        festival, city = self.room("Festival", "event"), self.room("Paris", "area")
+        self.edge(festival, r1, "recorded at")
+        self.edge(festival, r2, "recorded at")
+        self.edge(city, r1, "recorded in")
+        self.edge(city, r3, "recorded in")
+        r = self.stops(a1, "album_room")
+        self.assertEqual({s["entity"]["id"] for s in r["stops"]}, {a2})
+
+    def test_room_ignores_unowned_albums_the_start_itself_and_uncertain_edges(self):
+        a1, (r1,), _ = self.album("A1")
+        a2, (r2,), _ = self.album("A2")
+        a3, (r3,), _ = self.album("A3")
+        other = self.ent("release", "Not Owned")
+        rec = self.ent("recording", "Elsewhere")
+        self.edge(rec, other, "appears_on")
+        studio, shaky = self.room("Studio"), self.room("Shaky")
+        self.edge(studio, r1, "recorded at")
+        self.edge(studio, rec, "recorded at")        # only an unowned album
+        self.edge(shaky, r1, "recorded at")
+        self.edge(shaky, r2, "recorded at", ec="inferred")
+        self.edge(shaky, r3, "recorded at", mq="fuzzy_unconfirmed")
+        r = self.stops(a1, "album_room")
+        self.assertEqual((r["status"], r["stops"]), ("empty", []))
+
+    def test_room_merges_places_into_one_stop_and_caps_a_hub_place(self):
+        a1, (r1, r1b), _ = self.album("A1", tracks=("T", "U"))
+        a2, (r2,), _ = self.album("A2")
+        one, two = self.room("One"), self.room("Two")
+        for place in (one, two):
+            self.edge(place, r1, "recorded at")
+            self.edge(place, r2, "recorded at")
+        r = self.stops(a1, "album_room")
+        self.assertEqual(len(r["stops"]), 1)
+        self.assertEqual({x["via"]["id"] for x in r["stops"][0]["reasons"]}, {one, two})
+        hub = self.room("Hub")
+        self.edge(hub, r1b, "recorded at")
+        for i in range(ROOM_CAP + 5):
+            _, (rx,), _ = self.album(f"X{i}")
+            self.edge(hub, rx, "recorded at")
+        r = self.stops(a1, "album_room", limits=PathLimits(max_stops=500, max_rows=5000))
+        self.assertEqual([(c["via"]["id"], c["more"]) for c in r["capped"]], [(hub, 5)])
+
     # --- shape, errors, cache ---
 
     def test_unbuilt_kinds_and_non_release_starts_are_refused(self):
         a1, _, artist = self.album("A1")
-        for kind in ("album_room", "nonsense"):
+        for kind in ("album_sonic_neighbours", "nonsense"):
             with self.assertRaises(ValueError):
                 build_album_path(self.db, a1, kind)
         with self.assertRaises(ValueError):

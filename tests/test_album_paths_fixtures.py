@@ -14,6 +14,7 @@ ALBUM_CODES = {
     "album_crew": {"crew_on"},
     "album_guests": {"guest_on"},
     "album_works": {"same_work", "derived_work"},
+    "album_room": {"recorded_at"},
     "album_moment": {"same_period_label", "same_period_area", "same_period_credit"},
 }
 ARTIST_KINDS = {"follow_the_musician", "sideman_to_leader", "label_path", "composition_path", "scene_path"}
@@ -98,7 +99,6 @@ class AlbumPathErrorFixtures(unittest.TestCase):
         expected = {
             "paths_error_album_kind_artist_type.json": 400,
             "paths_error_artist_kind_album_type.json": 400,
-            "paths_error_album_room_not_built.json": 501,
             "paths_error_album_unknown_entity.json": 404,
             "sonic_album_neighbours_error_not_found.json": 404,
         }

@@ -109,7 +109,7 @@ class AlbumPathsRoute(PathsRoute):
         self.assertEqual(self.get_album(type="artist", mbid="a-gid").status_code, 400)
 
     def test_unserved_album_kinds_answer_501(self):
-        for kind in ("album_room", "album_gaps"):
+        for kind in ("album_gaps",):
             self.assertEqual(self.get_album(kind=kind).status_code, 501, kind)
 
     def test_release_group_start_and_unknown_start(self):

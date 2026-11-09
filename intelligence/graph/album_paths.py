@@ -1,7 +1,8 @@
 """Album paths: ordered stops from an owned album, each with the credit that puts it there.
 
 Kinds built here (docs/ALBUM_PATHS_PROPOSAL.md): ``album_crew`` (Studio Crew), ``album_guests``
-(Guest List), ``album_works`` (Covers and Sources) and ``album_moment`` (Same Year, Same Scene). A stop
+(Guest List), ``album_works`` (Covers and Sources), ``album_room`` (Same Room) and ``album_moment``
+(Same Year, Same Scene). A stop
 is an owned album other than the start.
 
 The rules are the artist paths' (see :mod:`intelligence.graph.paths`): credit-grade evidence only (an
@@ -32,9 +33,8 @@ from ..store import repositories as repo
 from . import paths as artist_paths
 from .paths import PathLimits, _REAL, _Names, _cg, _credited_names, _evidence
 
-ALBUM_PATH_KINDS = ("album_crew", "album_guests", "album_works", "album_moment")
+ALBUM_PATH_KINDS = ("album_crew", "album_guests", "album_works", "album_room", "album_moment")
 NOT_BUILT = {
-    "album_room": "not built yet",
     "album_sonic_neighbours": "composed from the Sonic routes, not a graph path",
     "album_gaps": "built in intelligence.graph.album_gaps; it needs play records",
 }
@@ -42,10 +42,13 @@ CACHE_PREFIX = "path:"
 PRESENTATION_VERSION = 1
 PERSON_CAP = 50   # albums kept per hub person
 WORK_CAP = 20     # albums kept per work
+ROOM_CAP = 50     # albums kept per place or event
 MOMENT_YEARS = 2  # Same Year, Same Scene: how many calendar years apart two albums may be
 # The relations the coverage probe measured; the thresholds were fixed on these.
 CREW_ROLES = ("producer", "engineer", "mix", "mastering")
 GUEST_ROLES = ("instrument", "vocal", "performer")
+# The relations the coverage probe measured for Same Room. A place or event only, never an area (too broad).
+ROOM_RELATIONS = ("recorded at", "mixed at", "engineered at")
 WORK_RELATIONS = ("parts", "other version", "arrangement", "based on")
 _PEOPLE = "('artist', 'person', 'group')"
 
@@ -54,6 +57,7 @@ _REASON_TEXT = {
     "guest_on": "{via} is credited on {anchor}, from the album you started from, as a guest, and appears on this album",
     "same_work": "this album has another recording of {via}, the work behind {anchor} on the album you started from",
     "derived_work": "this album has a recording of {via}, a work related to the work behind {anchor} on the album you started from",
+    "recorded_at": "{via} is stated as a place where {anchor}, from the album you started from, was made (recorded, mixed or engineered), and where a recording on this album was made",
     "same_period_label": "{via} released both this album ({year}) and {anchor} ({start_year}), the album you started from, within {gap} of each other",
     "same_period_credit": "{via} is the credited artist of both this album ({year}) and {anchor} ({start_year}), the album you started from, released within {gap} of each other",
     "same_period_area": "{via} is a stated area of artists credited on this album ({year}) and on {anchor} ({start_year}), the album you started from, released within {gap} of each other",
@@ -217,6 +221,46 @@ def _work_rows(b: _Build) -> None:
                       rank=0 if code == "same_work" else 1, bridge=source)
 
 
+_START_ROOMS = (f"SELECT p.id AS via, e.to_id AS anchor, MIN(e.id) AS e1 FROM edges e "
+                f"JOIN entities p ON p.id = e.from_id AND p.type IN ('place', 'event') AND {_REAL.format(a='p')} "
+                f"WHERE e.relation IN ({_in(ROOM_RELATIONS)}) AND e.generation = :g AND {_cg('e')} "
+                f"AND e.to_id IN ({_START_RECS}) GROUP BY p.id, e.to_id ORDER BY p.id, e.to_id LIMIT :n")
+_MADE_ON_OWNED = (
+    f"SELECT ap.to_id AS stop, e.to_id AS hit, e.id AS e FROM edges e "
+    f"JOIN edges ap ON ap.from_id = e.to_id AND ap.relation = 'appears_on' AND ap.generation = :g AND {_cg('ap')} "
+    f"JOIN entities r ON r.id = ap.to_id AND r.type = 'release' AND r.owned = 1 "
+    f"WHERE e.from_id = :p AND e.relation IN ({_in(ROOM_RELATIONS)}) AND e.generation = :g AND {_cg('e')} AND ap.to_id != :a")
+
+
+def _room_rows(b: _Build) -> None:
+    """Owned albums with a recording made at a place or event that also holds a recording of the start.
+
+    Recording scope only (the stated place or event of a recording); an area is never a link. Hub places
+    keep ``ROOM_CAP`` albums, ranked by shared recordings then release date, and report what was left out.
+    """
+    rows = b.db.execute(_START_ROOMS, {"a": b.start, "g": b.gen, "n": b.limits.max_rows}).fetchall()
+    if len(rows) >= b.limits.max_rows:
+        b.truncated = "rows"
+    places: dict[int, list[sqlite3.Row]] = {}
+    for r in rows:
+        places.setdefault(r["via"], []).append(r)
+    if len(places) > b.limits.max_bridges:
+        b.truncated = b.truncated or "rows"
+    for place in sorted(places)[:b.limits.max_bridges]:
+        if b.out_of_time() or b.full():
+            return
+        hits: dict[int, list[sqlite3.Row]] = {}
+        for t in b.db.execute(_MADE_ON_OWNED, {"p": place, "g": b.gen, "a": b.start}):
+            hits.setdefault(t["stop"], []).append(t)
+        ranked = sorted(hits, key=lambda s: (-len({t["hit"] for t in hits[s]}), b.dates.get(s), s))
+        if len(ranked) > ROOM_CAP:
+            b.capped.append((place, len(ranked) - ROOM_CAP))
+        for stop in ranked[:ROOM_CAP]:
+            target_edge = min(t["e"] for t in hits[stop])
+            for r in places[place]:
+                b.add(stop=stop, via=place, anchor=r["anchor"], e1=r["e1"], e2=target_edge, code="recorded_at")
+
+
 def _year_gap(n: int) -> str:
     return "the same year" if n == 0 else ("1 year" if n == 1 else f"{n} years")
 
@@ -364,6 +408,8 @@ def build_album_path(db: sqlite3.Connection, start_id: int, kind: str, *, limits
             _person_rows(b, GUEST_ROLES, "guest_on", album_scope=False, exclude_own_artists=True)
         elif kind == "album_moment":
             _moment_rows(b)
+        elif kind == "album_room":
+            _room_rows(b)
         else:
             _work_rows(b)
     except sqlite3.OperationalError as exc:
