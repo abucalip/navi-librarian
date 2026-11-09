@@ -1,6 +1,6 @@
 # Album paths proposal
 
-**Status:** owner decisions recorded 2026-11-09 (see "Decisions recorded"). Approved for build in slices. Built and merged so far: the probe script (PR #921), the recording-places audit (PR #922), the builders for Studio Crew, Guest List and Covers and Sources (PR #924, squash `3901673d599079e80cfa41319d4e6d2fe55751fe`) the Same Year, Same Scene builder (PR #925, squash `adf7454da321543e78aff8d3526f0987b7e7c497`) and the Neighbours by Ear composition (PR #926, squash `934a1c0786f78f4daa2ce257888ee6b189278e3b`) and the Listen-through Gaps filter (PR #927, squash `b257a07db070e7f1086732015bedc6d90d6723de`) and the contract section (PR #928, squash `646a0dd93e03ecc22056f45f6aada05f241e85cb`) and the route wiring with recorded fixtures (PR #929, squash `cca08807bc93267f784bdffdbafe851c66e905ca`). The Same Room builder, route and fixtures are in the PR described under "Same Room builder". Nothing is published or deployed.
+**Status:** owner decisions recorded 2026-11-09 (see "Decisions recorded"). Approved for build in slices. Built and merged so far: the probe script (PR #921), the recording-places audit (PR #922), the builders for Studio Crew, Guest List and Covers and Sources (PR #924, squash `3901673d599079e80cfa41319d4e6d2fe55751fe`) the Same Year, Same Scene builder (PR #925, squash `adf7454da321543e78aff8d3526f0987b7e7c497`) and the Neighbours by Ear composition (PR #926, squash `934a1c0786f78f4daa2ce257888ee6b189278e3b`) and the Listen-through Gaps filter (PR #927, squash `b257a07db070e7f1086732015bedc6d90d6723de`) and the contract section (PR #928, squash `646a0dd93e03ecc22056f45f6aada05f241e85cb`) and the route wiring with recorded fixtures (PR #929, squash `cca08807bc93267f784bdffdbafe851c66e905ca`). The Same Room builder, route and fixtures merged in PR #933 (see "Same Room builder"). Nothing is published or deployed.
 **Date:** 2026-11-09
 **Context:** The Paths button on an album page. Contract context: [Server V2 contract](SERVER_V2_CONTRACT.md) (`GET /api/knowledge/paths`), [Server V2 remaining work](ServerV2.md), builders in `intelligence/graph/paths.py`.
 
@@ -259,7 +259,9 @@ Run on the store copy, all 884 owned albums, after overlap dropping:
 
 Median 3 is at the threshold. Filtered tests in `tests/test_intelligence_album_paths.py` pin the strict rules (the 2-year edge, no date match alone, undated start, unowned, uncertain edges, non-country area, ordering, overlap drop). Not done: contract section, route extension, fixtures, clients.
 
-## Same Room builder (2026-11-10)
+## Same Room builder (PR #933, 2026-11-10)
+
+Merged to `main` as `96053809ed55dce79a6c0324dcb3afd44aea7dd5`.
 
 `album_room` is built in `intelligence/graph/album_paths.py` (`_room_rows`) and served by `GET /api/knowledge/paths?type=release&kind=album_room`. A stop is an owned album, other than the start, with a recording made at a place or event that also holds a recording of the start. Links are the `recorded at`, `mixed at` and `engineered at` relations (the ones the probe measured), from a `place` or `event` entity to a recording, credit-grade only; an area is never a link (too broad for a "same room" claim). Reason `recorded_at` (via the place or event, anchor the start's track), with both edges as evidence. A hub place keeps 50 albums (`ROOM_CAP`), ranked by shared recordings then release date, never by popularity or similarity; the count left out is in `capped[]`. Overlap with the artist paths is dropped as for the other kinds.
 
