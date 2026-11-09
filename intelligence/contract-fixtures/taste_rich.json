@@ -1,0 +1,173 @@
+{
+  "note": "recent window sound; genre pair shift; headline window recent",
+  "request": "GET /api/insights/taste",
+  "response": {
+    "data_version": 1,
+    "generation": 1,
+    "profiles": {
+      "computed_at": 1700000000.0,
+      "config": {
+        "mid_days": 365.0,
+        "min_attributed": 3,
+        "min_listens": 4,
+        "min_shift": 0.05,
+        "now": 1700000000.0,
+        "recent_days": 90.0,
+        "top": 10
+      },
+      "generation": 1,
+      "headline": {
+        "kind": "pair",
+        "subjects": [
+          {
+            "dimension": "genre",
+            "direction": "up",
+            "value": "jazz"
+          },
+          {
+            "dimension": "genre",
+            "direction": "down",
+            "value": "rock"
+          }
+        ],
+        "text": "More jazz, less rock lately.",
+        "window": "recent"
+      },
+      "kind": "taste_profile",
+      "shifts": [
+        {
+          "dimension": "genre",
+          "direction": "up",
+          "from_share": 0.3,
+          "to_share": 1.0,
+          "value": "jazz",
+          "window": "mid"
+        },
+        {
+          "dimension": "genre",
+          "direction": "down",
+          "from_share": 0.7,
+          "to_share": 0.0,
+          "value": "rock",
+          "window": "mid"
+        },
+        {
+          "dimension": "genre",
+          "direction": "up",
+          "from_share": 0.3,
+          "to_share": 1.0,
+          "value": "jazz",
+          "window": "recent"
+        },
+        {
+          "dimension": "genre",
+          "direction": "down",
+          "from_share": 0.7,
+          "to_share": 0.0,
+          "value": "rock",
+          "window": "recent"
+        }
+      ],
+      "windows": {
+        "all_time": {
+          "attributed": {
+            "area": 0,
+            "collaborator": 0,
+            "era": 0,
+            "genre": 20,
+            "label": 0
+          },
+          "dimension_low_sample": {
+            "area": true,
+            "collaborator": true,
+            "era": true,
+            "genre": false,
+            "label": true
+          },
+          "dimensions": {
+            "area": [],
+            "collaborator": [],
+            "era": [],
+            "genre": [
+              {
+                "count": 14,
+                "share": 0.7,
+                "value": "rock"
+              },
+              {
+                "count": 6,
+                "share": 0.3,
+                "value": "jazz"
+              }
+            ],
+            "label": []
+          },
+          "listens": 20,
+          "low_sample": false
+        },
+        "mid": {
+          "attributed": {
+            "area": 0,
+            "collaborator": 0,
+            "era": 0,
+            "genre": 6,
+            "label": 0
+          },
+          "dimension_low_sample": {
+            "area": true,
+            "collaborator": true,
+            "era": true,
+            "genre": false,
+            "label": true
+          },
+          "dimensions": {
+            "area": [],
+            "collaborator": [],
+            "era": [],
+            "genre": [
+              {
+                "count": 6,
+                "share": 1.0,
+                "value": "jazz"
+              }
+            ],
+            "label": []
+          },
+          "listens": 6,
+          "low_sample": false
+        },
+        "recent": {
+          "attributed": {
+            "area": 0,
+            "collaborator": 0,
+            "era": 0,
+            "genre": 6,
+            "label": 0
+          },
+          "dimension_low_sample": {
+            "area": true,
+            "collaborator": true,
+            "era": true,
+            "genre": false,
+            "label": true
+          },
+          "dimensions": {
+            "area": [],
+            "collaborator": [],
+            "era": [],
+            "genre": [
+              {
+                "count": 6,
+                "share": 1.0,
+                "value": "jazz"
+              }
+            ],
+            "label": []
+          },
+          "listens": 6,
+          "low_sample": false
+        }
+      }
+    }
+  }
+}

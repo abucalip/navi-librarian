@@ -12,10 +12,10 @@ from intelligence.api import build_taste_body
 from intelligence.insights import list_gem_cards
 from intelligence.store import generations, open_store
 from intelligence.taste import (
-    Listen, ProfileConfig, build_profiles, load_saved_profiles, save_profiles,
+    Listen, ProfileConfig, build_headline, build_profiles, load_saved_profiles, save_profiles,
 )
 from intelligence.taste.loader import LoadResult
-from intelligence.taste.persistence import CARD_KIND
+from intelligence.taste.persistence import CARD_KIND, profiles_payload
 
 DAY = 86400.0
 
@@ -65,6 +65,19 @@ class PersistenceTests(unittest.TestCase):
         rows = self.db.execute("SELECT COUNT(*) FROM insights WHERE kind = ?", (CARD_KIND,)).fetchone()[0]
         self.assertEqual(rows, 1)
         self.assertEqual(generations.data_versions(self.db)["insights"], before + 1)
+
+    def test_saved_body_carries_the_headline_or_null(self):
+        # One area value over a sound window: no stated shift, so the headline is the steady sentence.
+        save_profiles(self.db, profiles(60), now=1.0)
+        self.assertEqual(load_saved_profiles(self.db)["headline"]["kind"], "steady")
+        self.assertIsNone(profiles_payload(profiles(5))["headline"])  # nothing sound: null
+
+    def test_headline_in_payload_matches_the_builder(self):
+        listens = [Listen(1000.0 - i * DAY, {"genre": ("jazz",)}) for i in range(6)] + [
+            Listen(1000.0 - (400 + i) * DAY, {"genre": ("rock",)}) for i in range(14)]
+        built = build_profiles(listens, ProfileConfig(now=1000.0, min_listens=4, min_attributed=3))
+        self.assertEqual(profiles_payload(built)["headline"], build_headline(built).as_dict())
+        self.assertEqual(profiles_payload(built)["headline"]["text"], "More jazz, less rock lately.")
 
     def test_taste_row_is_not_a_lens_card(self):
         save_profiles(self.db, profiles(), now=1.0)
