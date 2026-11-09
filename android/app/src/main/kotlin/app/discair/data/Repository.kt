@@ -21,6 +21,10 @@ import app.discair.model.FeedbackAction
 import app.discair.model.FeedbackReply
 import app.discair.model.SearchEvent
 import app.discair.model.InsightVerb
+import app.discair.model.TasteRefreshResult
+import app.discair.model.TasteResponse
+import app.discair.model.parseTaste
+import app.discair.model.parseTasteRefresh
 import app.discair.model.InsightsResponse
 import app.discair.model.feedbackBody
 import app.discair.model.insightWriteBody
@@ -142,6 +146,15 @@ interface LibraryRepository : AcquisitionApi {
 
     /** Dismiss, restore or accept one card by its own kind and key; throws unless the server answers. */
     fun insightWrite(verb: InsightVerb, kind: String, key: String): Unit = throw UnsupportedOperationException()
+
+    /** The saved taste profiles (`GET /api/insights/taste`). Read live; computes and fetches nothing. */
+    fun taste(): TasteResponse = throw UnsupportedOperationException()
+
+    /**
+     * Asks the server to rebuild the taste profiles from the owner's listens (`POST /api/insights/taste/refresh`). It can
+     * take about a minute, answers `too_soon` inside the one-hour interval and is refused while another run is going.
+     */
+    fun refreshTaste(): TasteRefreshResult = throw UnsupportedOperationException()
 
     /**
      * One discovery path from an artist (`GET /api/knowledge/paths`). Built on demand by the server and cached there;
@@ -309,6 +322,13 @@ class LibrarianRepository(
     override fun insightWrite(verb: InsightVerb, kind: String, key: String) {
         client.post(listOf("api", "insights", verb.wire), insightWriteBody(kind, key))
     }
+
+    override fun taste(): TasteResponse {
+        if (ReadMode.isCacheOnly) throw CacheMiss()
+        return parseTaste(client.get(listOf("api", "insights", "taste")))
+    }
+
+    override fun refreshTaste(): TasteRefreshResult = parseTasteRefresh(client.post(listOf("api", "insights", "taste", "refresh"), "{}"))
 
     override fun paths(kind: PathKind, mbid: String): PathsResponse {
         if (ReadMode.isCacheOnly) throw CacheMiss()

@@ -22,6 +22,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateMapOf
@@ -98,6 +99,24 @@ fun DiscoverScreen(open: Opener) {
         if (list == DiscoveryList.Insights) repo.insights(20) else null
     }
     val insightsHidden = remember { mutableStateMapOf<String, InsightCard>() }
+
+    // The taste card reads the saved profiles. The first time Insights opens in this app launch, one background refresh
+    // asks the server to rebuild them (it answers too_soon inside its one-hour interval); a failure leaves the saved ones.
+    val taste = rememberLoad(list == DiscoveryList.Insights) {
+        if (list == DiscoveryList.Insights) repo.taste() else null
+    }
+    var tasteShown by remember { mutableStateOf<app.discair.model.TasteResponse?>(null) }
+    (taste.state as? Load.Ready)?.value?.let { tasteShown = it }
+    LaunchedEffect(list) {
+        if (list == DiscoveryList.Insights && TasteLaunch.claim()) {
+            val result = try {
+                withContext(Dispatchers.IO) { repo.refreshTaste() }
+            } catch (e: Exception) {
+                null
+            }
+            if (result?.changed == true) taste.reload()
+        }
+    }
 
     fun dismissInsight(card: InsightCard) {
         insightsHidden[card.id] = card
@@ -253,7 +272,12 @@ fun DiscoverScreen(open: Opener) {
                         Text(state.failure.message, color = Ink.ChartRedText)
                         OutlinedButton(onClick = insights.reload, Modifier.heightIn(min = Target)) { Text("Try again") }
                     }
-                    is Load.Ready -> state.value?.let { InsightsPage(it, insightsHidden.keys, ::dismissInsight) }
+                    is Load.Ready -> state.value?.let {
+                        InsightsPage(
+                            it, insightsHidden.keys, ::dismissInsight, tasteShown, tasteLoaded = taste.state is Load.Ready || tasteShown != null,
+                            showTaste = taste.state !is Load.Failed || tasteShown != null,
+                        )
+                    }
                 }
             } else when (val state = loaded.state) {
                 Load.Loading -> Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.Center,
@@ -408,4 +432,11 @@ private fun CardGrid(
             )
         }
     }
+}
+
+
+/** One taste refresh per app launch: the first caller wins, so reopening Insights never asks the server again. */
+internal object TasteLaunch {
+    private val claimed = java.util.concurrent.atomic.AtomicBoolean(false)
+    fun claim() = claimed.compareAndSet(false, true)
 }

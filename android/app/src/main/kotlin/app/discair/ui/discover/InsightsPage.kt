@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.dp
 import app.discair.model.InsightCard
 import app.discair.model.InsightNarrative
 import app.discair.model.InsightsResponse
+import app.discair.model.TasteResponse
 import app.discair.ui.common.Target
 import app.discair.ui.theme.Ink
 import app.discair.ui.theme.themeShape
@@ -56,12 +57,16 @@ fun InsightsPage(
     response: InsightsResponse,
     hidden: Set<String>,
     onDismiss: (InsightCard) -> Unit,
+    taste: TasteResponse? = null,
+    tasteLoaded: Boolean = false,
+    showTaste: Boolean = false,
 ) {
     LazyColumn(
         Modifier.fillMaxSize(),
         contentPadding = PaddingValues(start = 16.dp, top = 8.dp, end = 16.dp, bottom = 16.dp + app.discair.ui.LocalBottomClearance.current),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
+        if (showTaste) item(key = "taste") { TasteCardView(taste?.profiles, tasteLoaded) }
         for (kind in lensKinds(response)) {
             val lens = response.lenses[kind]
             val enabled = lens?.enabled == true
