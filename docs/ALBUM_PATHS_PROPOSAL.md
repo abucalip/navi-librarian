@@ -259,6 +259,10 @@ Run on the store copy, all 884 owned albums, after overlap dropping:
 
 Median 3 is at the threshold. Filtered tests in `tests/test_intelligence_album_paths.py` pin the strict rules (the 2-year edge, no date match alone, undated start, unowned, uncertain edges, non-country area, ordering, overlap drop). Not done: contract section, route extension, fixtures, clients.
 
+## Neighbours by Ear composition (2026-11-09, not yet merged)
+
+`intelligence/sonic/neighbours.py` (`album_neighbours`) and `GET /api/sonic/album-neighbours?album_id=` in `app/api/sonic.py`. Rules as decided: up to 8 seeds, evenly spaced with first and last always included, deterministic; an unanalysed seed is skipped, reported in `skipped` and replaced by the next unused track (max 16 calls); matches on the album itself dropped; albums ranked by distinct seeds matched, ties by earliest track year then album id; `similarity` is never read. 5 s time bound gives `truncated: "time"` (such answers are not cached). Answers are cached for an hour with the other sonic routes. Filtered tests: `tests/test_sonic_neighbours.py` (9) and `tests/test_api_sonic_routes.py` pass. Not done: route test for the new endpoint, wider-sample coverage re-measure (build-time requirement), contract section, fixtures, clients. Year comes from the matched tracks, not release facts.
+
 ## Work split by model and effort
 
 For usage efficiency, give Haiku the mechanical, self-checking steps: a spelled-out spec, an existing pattern to copy, and a test or diff that proves the result. Keep design, evidence rules and judgment on a stronger model. Effort is relative to the model's default. These are planning estimates, not measurements.

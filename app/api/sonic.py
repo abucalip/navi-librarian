@@ -10,7 +10,7 @@ failure answer 502 with a fixed message (the Navidrome error text is never sent 
 from fastapi import APIRouter, Depends, HTTPException, Query
 
 from app.api.dependencies import get_librarian
-from intelligence.sonic import sonic_path, similar_tracks
+from intelligence.sonic import album_neighbours, sonic_path, similar_tracks
 from intelligence.sonic.cache import TTLCache
 
 router = APIRouter()
@@ -54,3 +54,23 @@ def path(start: str = Query(..., min_length=1), end: str = Query(..., min_length
     """Ordered steps from one song to another through sound; the first step is the start song."""
     return _answer(("path", start, end, count),
                    lambda: sonic_path(librarian.api_call, start, end, count=count))
+
+
+@router.get("/api/sonic/album-neighbours")
+def neighbours(album_id: str = Query(..., min_length=1), librarian=Depends(get_librarian)):
+    """Owned albums that sound like this one (Neighbours by Ear): up to 8 seeds, ranked by matching tracks."""
+    key = ("album_neighbours", album_id)
+    cached = CACHE.get(key)
+    if cached is not None:
+        return cached
+    try:
+        result = album_neighbours(librarian.api_call, album_id)
+    except RuntimeError:
+        raise HTTPException(status_code=502, detail="Navidrome did not answer the sonic request.")
+    if result["status"] == "not_found":
+        raise HTTPException(status_code=404, detail="Unknown album.")
+    if result["status"] == "unavailable":
+        raise HTTPException(status_code=502, detail="Sonic similarity is unavailable.")
+    if not result["truncated"]:
+        CACHE.offer(key, result["status"], result)
+    return result
