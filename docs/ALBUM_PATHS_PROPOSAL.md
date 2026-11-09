@@ -296,9 +296,9 @@ Merged to `main` as `4b69308f1982f0558600d0f193c11e7e541c0411`. Filtered tests o
 - **Same PR, three fixes:** the macOS lyric and fact line scrolls right to left when it does not fit, cut off at its own left edge (Reduce Motion: ellipsis); only the playing version of a repeated title is marked on the album page (macOS by song id, Android by track and disc added to the queue item); restored macOS queue songs saved without a cover id show their album's cover (queue decoding now applies the same fallback as a new item).
 - **Tests run:** Android `AlbumPathStepsTest`, `AlbumPathsTest`, `PathsTest`, `PlayingNowTest`; macOS `PathsModelTests`, `AlbumPathsTests`, `KnowledgeTests`, `QueueItemDecodingTests`, `SameTitleHighlightTests`.
 
-## Gaps route wiring (2026-11-10, not yet merged)
+## Gaps route wiring (PR #934, 2026-11-10)
 
-`GET /api/knowledge/paths?kind=album_gaps&type=release` is served (`gaps_page` in `intelligence/knowledge/path_pages.py`, `_play_records` in `app/api/knowledge.py`). Play records come from the Navidrome album inventory on each request, so the result is not cached; if Navidrome cannot be read the path answers `history.state` `unavailable` with the unfiltered stops. Same public shape as the other album kinds; `release_group` and artist starts are `400`/`404`. Filtered tests: `test_api_knowledge_paths_route.py`, `test_intelligence_album_gaps.py`. Still open: a recorded `album_gaps` fixture and the client tab.
+Merged to `main` as `54be6438dda91b20e9795c88df601ced5f18475f`. `GET /api/knowledge/paths?kind=album_gaps&type=release` is served (`gaps_page` in `intelligence/knowledge/path_pages.py`, `_play_records` in `app/api/knowledge.py`). Play records come from the Navidrome album inventory on each request, so the result is not cached; if Navidrome cannot be read the path answers `history.state` `unavailable` with the unfiltered stops. Same public shape as the other album kinds; `release_group` and artist starts are `400`/`404`. Filtered tests: `test_api_knowledge_paths_route.py`, `test_intelligence_album_gaps.py`. Still open: a recorded `album_gaps` fixture and the client tab.
 
 ## Work split by model and effort
 
