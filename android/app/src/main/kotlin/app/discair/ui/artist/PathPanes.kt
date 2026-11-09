@@ -280,7 +280,7 @@ private fun PlacePane(pane: PathPane.Place, stop: PathStop, go: (PathLink) -> Un
 // ---------------------------------------------------------------- shared pieces
 
 /** A sentence made of plain pieces and italic titles. */
-private fun story(spans: List<Span>) = buildAnnotatedString {
+internal fun story(spans: List<Span>) = buildAnnotatedString {
     spans.forEach { span ->
         if (span.title) withStyle(SpanStyle(fontStyle = FontStyle.Italic, fontWeight = FontWeight.Medium)) { append(span.text) } else append(span.text)
     }
@@ -288,7 +288,7 @@ private fun story(spans: List<Span>) = buildAnnotatedString {
 
 /** The musician as a circle on the left and the album as a square on the right, each with its name below and each opening its page. */
 @Composable
-private fun FindRow(person: Pair<String, PathLink>?, album: Triple<String, PathLink, List<PathAlbum>>?, go: (PathLink) -> Unit) {
+internal fun FindRow(person: Pair<String, PathLink>?, album: Triple<String, PathLink, List<PathAlbum>>?, go: (PathLink) -> Unit) {
     if (person == null && album == null) return
     // Close together and centred; a lone circle (or square) sits in the middle.
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally), verticalAlignment = Alignment.Top) {
@@ -303,7 +303,7 @@ private fun FindRow(person: Pair<String, PathLink>?, album: Triple<String, PathL
 
 /** A picture with its name below, as one button. The name is not underlined: the picture says it opens. */
 @Composable
-private fun LinkTile(label: String, link: PathLink, go: (PathLink) -> Unit, picture: @Composable () -> Unit) {
+internal fun LinkTile(label: String, link: PathLink, go: (PathLink) -> Unit, picture: @Composable () -> Unit) {
     Column(
         Modifier.width(128.dp).heightIn(min = Target).clickable(onClickLabel = "Open $label", role = Role.Button) { go(link) },
         horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -328,25 +328,25 @@ internal fun CandidateCover(candidates: List<PathAlbum>, modifier: Modifier, non
 }
 
 @Composable
-private fun SectionTitle(text: String) {
+internal fun SectionTitle(text: String) {
     Text(text, style = MaterialTheme.typography.titleMedium, modifier = Modifier.semantics { heading() })
 }
 
 /** A short label above a card's content. Small capitals are kept for labels like this one. */
 @Composable
-private fun Eyebrow(text: String) {
+internal fun Eyebrow(text: String) {
     Text(text.uppercase(), style = MaterialTheme.typography.labelMedium.copy(letterSpacing = 0.6.sp), color = Ink.TextMuted)
 }
 
 /** Library state as a plain line of words. */
 @Composable
-private fun LibraryLine(owned: Boolean) {
+internal fun LibraryLine(owned: Boolean) {
     Text(if (owned) "In your library" else "Not in your library", style = MaterialTheme.typography.bodyMedium, color = Ink.TextMuted)
 }
 
 /** A card: padded 16, the app's panel. [raised] sets it on the raised ground. */
 @Composable
-private fun InfoCard(modifier: Modifier = Modifier, raised: Boolean = false, fill: Boolean = false, content: @Composable ColumnScope.() -> Unit) {
+internal fun InfoCard(modifier: Modifier = Modifier, raised: Boolean = false, fill: Boolean = false, content: @Composable ColumnScope.() -> Unit) {
     Panel(modifier.fillMaxWidth()) {
         Column(
             Modifier.fillMaxWidth().then(if (fill) Modifier.fillMaxHeight() else Modifier).then(if (raised) Modifier.background(Ink.Raised) else Modifier).padding(16.dp),

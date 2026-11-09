@@ -23,6 +23,9 @@ data class QueueItem(
     val suffix: String = "",
     val bitDepth: Int? = null,
     val samplingRateHz: Int? = null,
+    /** Track and disc on the album, so two versions of one title on an album can be told apart. */
+    val track: Int? = null,
+    val disc: Int? = null,
 )
 
 /** Result of an add: the new state and whether the 500-song cap cut the request short. */

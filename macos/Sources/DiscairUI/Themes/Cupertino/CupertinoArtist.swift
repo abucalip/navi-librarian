@@ -60,6 +60,11 @@ struct CupertinoArtistBanner: View {
                         .buttonStyle(CapsuleButtonStyle(translucent: true))
                     Button { } label: { Label("Radio", systemImage: "dot.radiowaves.left.and.right") }
                         .buttonStyle(CapsuleButtonStyle(translucent: true))
+                    if state.canShowArtistPaths {
+                        Button { state.showArtistPaths() } label: { Label("Paths", systemImage: "point.topleft.down.to.point.bottomright.curvepath") }
+                            .buttonStyle(CapsuleButtonStyle(translucent: true))
+                            .help("Songs, albums and artists linked to this artist by credits, labels, compositions and scene")
+                    }
                 }
             }
             .foregroundStyle(.white)

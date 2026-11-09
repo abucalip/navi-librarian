@@ -116,3 +116,16 @@ private func titles(_ q: PlayQueue) -> [String] { ([q.current].compactMap { $0 }
     }
 }
 
+
+@Suite struct QueueItemDecodingTests {
+    @Test func aSongSavedWithoutACoverShowsItsAlbumsCover() throws {
+        // A queue saved before songs carried a cover id: no `coverArt` key at all.
+        let json = #"{"id":"6F0C1B7E-0000-4000-8000-000000000001","songID":"s1","title":"T","artist":"A","album":"B","albumID":"alb9","duration":10}"#
+        let item = try JSONDecoder().decode(QueueItem.self, from: Data(json.utf8))
+        #expect(item.coverArt == "al-alb9")
+        let own = #"{"id":"6F0C1B7E-0000-4000-8000-000000000002","songID":"s2","title":"T","artist":"A","coverArt":"mf-1","albumID":"alb9"}"#
+        #expect(try JSONDecoder().decode(QueueItem.self, from: Data(own.utf8)).coverArt == "mf-1")
+        let round = try JSONDecoder().decode(QueueItem.self, from: JSONEncoder().encode(item))
+        #expect(round == item)
+    }
+}

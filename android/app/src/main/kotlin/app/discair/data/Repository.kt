@@ -35,7 +35,10 @@ import app.discair.model.feedbackBody
 import app.discair.model.insightWriteBody
 import app.discair.model.parseInsights
 import app.discair.model.PathKind
+import app.discair.model.AlbumPathKind
 import app.discair.model.PathsResponse
+import app.discair.model.SonicAlbumNeighbours
+import app.discair.model.parseSonicAlbumNeighbours
 import app.discair.model.SonicResponse
 import app.discair.model.PeaksResult
 import app.discair.model.PlayerFact
@@ -170,6 +173,12 @@ interface LibraryRepository : AcquisitionApi {
      * asked only when the user opens the paths view. Never from the saved copies.
      */
     fun paths(kind: PathKind, mbid: String): PathsResponse = throw UnsupportedOperationException()
+
+    /** One album path from an owned album (`GET /api/knowledge/paths?type=release`, by the Navidrome album id). Never from the saved copies. */
+    fun albumPaths(kind: AlbumPathKind, albumId: String): PathsResponse = throw UnsupportedOperationException()
+
+    /** Albums that sound like an owned album (`GET /api/sonic/album-neighbours`). Never from the saved copies. */
+    fun sonicAlbumNeighbours(albumId: String): SonicAlbumNeighbours = throw UnsupportedOperationException()
 
     /** Whether the server reports the paths feature (`features.paths` in `/api/capabilities`). Read live; false when unknown. */
     fun pathsAvailable(): Boolean = false
@@ -364,6 +373,16 @@ class LibrarianRepository(
     override fun paths(kind: PathKind, mbid: String): PathsResponse {
         if (ReadMode.isCacheOnly) throw CacheMiss()
         return parsePaths(client.get(listOf("api", "knowledge", "paths"), mapOf("kind" to kind.wire, "mbid" to mbid, "type" to "artist")))
+    }
+
+    override fun albumPaths(kind: AlbumPathKind, albumId: String): PathsResponse {
+        if (ReadMode.isCacheOnly) throw CacheMiss()
+        return parsePaths(client.get(listOf("api", "knowledge", "paths"), mapOf("kind" to kind.wire, "navidrome_id" to albumId, "type" to "release")))
+    }
+
+    override fun sonicAlbumNeighbours(albumId: String): SonicAlbumNeighbours {
+        if (ReadMode.isCacheOnly) throw CacheMiss()
+        return parseSonicAlbumNeighbours(client.get(listOf("api", "sonic", "album-neighbours"), mapOf("album_id" to albumId)))
     }
 
     override fun pathsAvailable(): Boolean {

@@ -25,6 +25,7 @@ public struct RootView: View {
         .overlay { PipelineDockView(state: state) }
         .modifier(CommandPaletteOverlay(state: state))
         .sheet(item: $state.sonicPath) { SonicPathSheet(state: state, model: $0) }
+        .sheet(item: $state.paths) { PathsSheet(state: state, model: $0) }
         .preferredColorScheme(theme.colorScheme)
         .environment(\.artwork, state.artwork)
         .frame(minWidth: 480, minHeight: 360)

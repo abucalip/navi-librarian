@@ -128,7 +128,11 @@ struct ArtworkImage: View {
             .task(id: "\(album.coverArt ?? "")@\(px)|\(album.owned ? "" : album.artist + "|" + album.title)|\(store?.generation ?? 0)") {
             image = nil
             guard let store else { return }
-            if let id = album.coverArt { image = await store.image(coverArt: id, px: px) }
+            if let id = album.coverArt {
+                image = await store.image(coverArt: id, px: px)
+                // A song's own cover id that Navidrome no longer serves: its album's cover stands in.
+                if image == nil, let albumID = album.remoteID, !albumID.isEmpty, id != "al-\(albumID)" { image = await store.image(coverArt: "al-\(albumID)", px: px) }
+            }
             else if !album.owned, album.id >= 0 { image = await store.image(artist: album.artist, album: album.title, px: px) }
         }
     }

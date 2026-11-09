@@ -176,7 +176,7 @@ struct ZinePlayerStrip: View {
                     if idle {
                         Text("Nothing playing").font(Z.an(20)).textCase(.uppercase).foregroundStyle(Z.yellow)
                     } else if let c = p.current {
-                        CoverView(album: AlbumItem(id: -1, title: c.album, artist: c.artist, year: 0, genre: "", format: "", owned: true, hue: 200, coverArt: c.coverArt))
+                        CoverView(album: AlbumItem(id: -1, title: c.album, artist: c.artist, year: 0, genre: "", format: "", owned: true, hue: 200, remoteID: c.albumID, coverArt: c.coverArt))
                             .frame(width: 34).overlay { Rectangle().strokeBorder(Z.paper, lineWidth: 2) }
                         Text(c.title).font(Z.an(20)).textCase(.uppercase).foregroundStyle(Z.yellow).lineLimit(1)
                         PlaybackClock(player: p) { pos in Mono(p.phase == .loading ? "Loading…" : "\(c.artist) · \(PlayerModel.clock(pos)) / \(PlayerModel.clock(p.duration))").foregroundStyle(Z.paper) }

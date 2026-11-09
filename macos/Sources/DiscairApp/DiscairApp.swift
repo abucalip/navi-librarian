@@ -46,6 +46,7 @@ struct DiscairApp: App {
             // Discair has no documents or text editing, so the Edit menu keeps only the command palette.
             CommandGroup(replacing: .undoRedo) {}
             CommandGroup(replacing: .pasteboard) {}
+            PathsCommands(state: state)
             UpdateCommands(updater: updater)
             CommandMenu("Theme") {
                 ForEach(ThemeID.allCases) { id in
@@ -85,6 +86,21 @@ struct CommandPaletteCommands: Commands {
         CommandGroup(replacing: .textEditing) {
             Button("Command Palette") { state.palette.toggle() }
                 .keyboardShortcut("k", modifiers: .command)
+        }
+    }
+}
+
+/// Paths > Album Paths… (⌥⌘P) and Artist Paths… (⇧⌥⌘P): the same actions as the Paths buttons on the album and artist pages.
+struct PathsCommands: Commands {
+    let state: AppState
+    var body: some Commands {
+        CommandMenu("Paths") {
+            Button("Album Paths…") { state.showAlbumPaths() }
+                .keyboardShortcut("p", modifiers: [.command, .option])
+                .disabled(!state.canShowAlbumPaths)
+            Button("Artist Paths…") { state.showArtistPaths() }
+                .keyboardShortcut("p", modifiers: [.command, .option, .shift])
+                .disabled(!state.canShowArtistPaths)
         }
     }
 }

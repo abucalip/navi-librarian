@@ -112,3 +112,30 @@ public struct SonicAlbumNeighbours: Decodable, Equatable, Sendable {
         truncated = try? c.decodeIfPresent(String.self, forKey: .truncated)
     }
 }
+
+private struct PathsFeatureFlags: Decodable {
+    struct Features: Decodable { struct Paths: Decodable { let available: Bool? }; let paths: Paths? }
+    let features: Features?
+}
+
+extension LibrarianClient {
+    /// One album path from an owned album, by its Navidrome album id (`GET /api/knowledge/paths?type=release`).
+    public func albumPaths(albumID: String, kind: AlbumPathKind) async throws -> KnowledgePaths {
+        let q = "kind=\(kind.rawValue)&navidrome_id=\(Self.enc(albumID))&type=release"
+        let (data, http) = try await authedSendPublic("GET", "api/knowledge/paths?\(q)", body: nil)
+        return try decodePublic(KnowledgePaths.self, data, http)
+    }
+
+    /// Albums that sound like an owned album (`GET /api/sonic/album-neighbours`).
+    public func sonicAlbumNeighbours(albumID: String) async throws -> SonicAlbumNeighbours {
+        let (data, http) = try await authedSendPublic("GET", "api/sonic/album-neighbours?album_id=\(Self.enc(albumID))", body: nil)
+        return try decodePublic(SonicAlbumNeighbours.self, data, http)
+    }
+
+    /// Whether the server reports the paths feature (`features.paths.available` in `/api/capabilities`); false when unknown or unreachable.
+    public func pathsAvailable() async -> Bool {
+        guard let (data, http) = try? await authedSendPublic("GET", "api/capabilities", body: nil), http.statusCode == 200,
+              let flags = try? JSONDecoder().decode(PathsFeatureFlags.self, from: data) else { return false }
+        return flags.features?.paths?.available ?? false
+    }
+}

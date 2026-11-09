@@ -50,7 +50,7 @@ struct CupertinoPlayerBar: View {
 
     private var coverItem: AlbumItem? {
         guard let c = p.current, !(c.coverArt ?? "").isEmpty else { return nil }
-        return AlbumItem(id: -1, title: c.album, artist: c.artist, year: 0, genre: "", format: "", owned: true, hue: 200, coverArt: c.coverArt)
+        return AlbumItem(id: -1, title: c.album, artist: c.artist, year: 0, genre: "", format: "", owned: true, hue: 200, remoteID: c.albumID, coverArt: c.coverArt)
     }
 
     /// A painted rectangle, not glass: glass drops its tint when the window is not the active one. The cover's colour is the
@@ -125,7 +125,7 @@ struct CupertinoPlayerBar: View {
             if let c = p.current {
                 Button { state.screen = .nowPlaying } label: {
                     HStack(spacing: 14) {
-                        CoverView(album: AlbumItem(id: -1, title: c.album, artist: c.artist, year: 0, genre: "", format: "", owned: true, hue: 200, coverArt: c.coverArt))
+                        CoverView(album: AlbumItem(id: -1, title: c.album, artist: c.artist, year: 0, genre: "", format: "", owned: true, hue: 200, remoteID: c.albumID, coverArt: c.coverArt))
                             .frame(width: 50).clipShape(RoundedRectangle(cornerRadius: 7, style: .continuous)).accessibilityHidden(true)
                         VStack(alignment: .leading, spacing: 2) {
                             Text(c.title).font(.system(size: 14, weight: .semibold)).lineLimit(1)
@@ -172,10 +172,10 @@ struct CupertinoPlayerBar: View {
             ZStack {
                 switch now {
                 case .lyric(let i, let text):
-                    Text(text).font(.system(size: 13.5, weight: .semibold)).id("l\(i)")
-                        .transition(slide).accessibilityLabel("Lyric: \(text)")
+                    MarqueeLine(reduceMotion: reduceMotion) { Text(text).font(.system(size: 13.5, weight: .semibold)) }
+                        .id("l\(i)").transition(slide).accessibilityElement(children: .ignore).accessibilityLabel("Lyric: \(text)")
                 case .fact(let fact):
-                    factText(fact).id(fact.id).transition(slide)
+                    MarqueeLine(reduceMotion: reduceMotion) { factText(fact) }.id(fact.id).transition(slide)
                 case .none: Color.clear
                 }
             }
@@ -262,5 +262,51 @@ struct PlayerBarGraph: View {
             }
         }
         .allowsHitTesting(false).accessibilityHidden(true)
+    }
+}
+
+
+/// One line that fits stays centred; one that does not fit scrolls from right to left, over and over with a gap between the
+/// two passes, and is cut off cleanly at the left edge of its own frame, so it never runs under the song, artist and album text
+/// beside it. With Reduce Motion it stays put and is cut with an ellipsis.
+private struct MarqueeWidthKey: PreferenceKey {
+    static let defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) { value = max(value, nextValue()) }
+}
+
+private struct MarqueeLine<Content: View>: View {
+    let reduceMotion: Bool
+    @ViewBuilder var content: Content
+    @State private var textWidth: CGFloat = 0
+    @State private var start = Date()
+    private let gap: CGFloat = 48
+    private let speed: Double = 38
+    private let pause: Double = 1.4
+
+    var body: some View {
+        GeometryReader { g in
+            let overflow = textWidth > g.size.width + 0.5 && !reduceMotion
+            Group {
+                if overflow {
+                    SwiftUI.TimelineView(.animation) { tl in
+                        let cycle = Double(textWidth + gap)
+                        let t = max(0, tl.date.timeIntervalSince(start) - pause)
+                        HStack(spacing: gap) { content.fixedSize(); content.fixedSize() }
+                            .offset(x: -CGFloat((t * speed).truncatingRemainder(dividingBy: cycle)))
+                    }
+                    .frame(width: g.size.width, height: g.size.height, alignment: .leading)
+                } else {
+                    content.lineLimit(1).truncationMode(.tail)
+                        .frame(width: g.size.width, height: g.size.height, alignment: reduceMotion ? .leading : .center)
+                }
+            }
+            .frame(width: g.size.width, height: g.size.height, alignment: .leading)
+            .clipped()
+        }
+        .background(
+            content.fixedSize().background(GeometryReader { Color.clear.preference(key: MarqueeWidthKey.self, value: $0.size.width) }).hidden()
+        )
+        .onPreferenceChange(MarqueeWidthKey.self) { textWidth = $0; start = Date() }
+        .frame(height: 22)
     }
 }

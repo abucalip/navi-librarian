@@ -50,6 +50,8 @@ public struct TrackItem: Identifiable, Equatable, Sendable {
     public let format: String
     public let owned: Bool
     public let playing: Bool
+    /// Live tracks: the Navidrome song id, so two versions of one title on an album are told apart.
+    public var songID: String? = nil
 }
 
 public struct SongRow: Identifiable, Equatable, Sendable {

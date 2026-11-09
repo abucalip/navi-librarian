@@ -27,10 +27,15 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
 /** The song that is playing now, for lists that mark it (the album page). Null when nothing is queued. */
-data class PlayingNow(val albumId: String, val title: String, val isPlaying: Boolean) {
-    /** True for the track of an album page: same album, same title (case aside). */
-    fun matches(albumId: String?, title: String) =
-        albumId != null && this.albumId == albumId && this.title.trim().equals(title.trim(), ignoreCase = true)
+data class PlayingNow(val albumId: String, val title: String, val isPlaying: Boolean, val track: Int? = null, val disc: Int? = null) {
+    /**
+     * True for the track of an album page: same album, same title (case aside), and, when both sides know them, the same track
+     * and disc. An album can hold several versions of one title (takes of the same song); only the one playing is marked.
+     */
+    fun matches(albumId: String?, title: String, number: Int? = null, disc: Int? = null) =
+        albumId != null && this.albumId == albumId && this.title.trim().equals(title.trim(), ignoreCase = true) &&
+            (track == null || number == null || track == number) &&
+            (this.disc == null || disc == null || (this.disc ?: 1) == disc)
 }
 
 val LocalPlayingNow = compositionLocalOf<PlayingNow?> { null }

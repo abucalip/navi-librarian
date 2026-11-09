@@ -196,7 +196,7 @@ fun MainShell(state: UiState, model: AppViewModel, container: AppContainer) {
         LocalBottomClearance provides clearance, LocalRepository provides repo, LocalImageLoader provides container.imageLoader, LocalAcquisitions provides hub,
         app.discair.ui.player.LocalPlayActions provides playActions,
         app.discair.ui.player.LocalPlayingNow provides playerState.current?.let {
-            app.discair.ui.player.PlayingNow(it.albumId, it.title, playerState.isPlaying)
+            app.discair.ui.player.PlayingNow(it.albumId, it.title, playerState.isPlaying, it.track, it.disc)
         },
     ) {
         // Inside the provider: the sheet's cover needs the image loader, which only exists here.

@@ -45,6 +45,11 @@ struct ZineArtist: View {
                     Button("Play") { state.actions.play(album: state.library.artistAlbums.first ?? Fixtures.albums[0]) }.buttonStyle(ZineButtonStyle(kind: .yellow, small: true))
                     }
                     Button("Radio") { }.buttonStyle(ZineButtonStyle(small: true))
+                    if state.canShowArtistPaths {
+                        Button { state.showArtistPaths() } label: { Label("Paths", systemImage: "point.topleft.down.to.point.bottomright.curvepath") }
+                            .buttonStyle(ZineButtonStyle(small: true))
+                            .help("Songs, albums and artists linked to this artist by credits, labels, compositions and scene")
+                    }
                     if state.shownArtistMissingCount > 0 || !state.library.isLive {
                     Button(state.library.isLive ? "Get \(state.shownArtistMissingCount) missing" : "Get both missing") {
                         for a in state.shownArtistAlbums where !a.owned { state.actions.get(album: a) }
