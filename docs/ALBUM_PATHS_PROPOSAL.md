@@ -115,7 +115,7 @@ A path that fails its thresholds is cut or gets a new slice (see the contingency
 ## Contingency: new import slice
 
 If a path lacks data, build a slice for it instead of loosening the evidence rules. Likely candidates:
-- **Same Room:** recording place and date links (listed in `not_loaded`). **Approved 2026-11-09**; this is the one new slice.
+- **Same Room:** recording place and date links (listed in `not_loaded`). **Approved 2026-11-09**; this is the one new slice. **Audit result (2026-11-09): no new import step needed**, see "Slice audit" below.
 - **Studio Crew:** production-credit relations at recording scope, if the current slice keeps only album-scope ones.
 - **Covers and Sources:** work-to-work relations, if not currently imported.
 
@@ -164,6 +164,18 @@ Sample: 40 of 748 owned albums with at least three tracks that have Navidrome ID
 - Per-artist cap of 2 per seed is applied, matching the app's current setting.
 - The cap stays at 8 seeds unless the owner makes a new decision. These results are recorded for that decision, not used to change the cap.
 
+## Slice audit (2026-11-09)
+
+`scripts/album_slice_audit.py` unpacks only the recording, link, link-type and recording-link tables from the export (on every core with `indexed_bzip2`; 6.8 GB in 85 s on 8 cores) and compares, for the owned recordings, the distinct (recording, other end, relation) triples in the dump with the store copy. Counts only; read-only on both.
+
+- 9,611 of 9,614 owned recordings are in the dump.
+- **Place and event links:** `recorded at` 5,230 of 5,230 place links present; `mixed at`, `engineered at`, `edited at`, `produced at`, `remixed at`, `recorded in` (area) all complete. Event `recorded at`: 185 of 207 present (22 events missing).
+- **Production credits at recording scope:** `producer` 8,123, `engineer` 6,825, `mix` 4,652, `recording` 2,960, plus arranger, conductor, instrument, vocal and the rest: every one complete.
+- **Work links:** `performance` 7,454 of 7,454 complete. Work-to-work relations (`based on`, `arrangement`, `other version`) are loaded by the main import at the second hop.
+- **Only gaps:** recording-to-recording relations whose other end is not an owned recording (for example `mashes up` 29 of 1,097, `samples material` 107 of 788). No path uses them, and the 22 missing event links are 0.3% of Same Room's source.
+
+Decision: the main import already holds everything the three paths need, so no separate import step, schema bump or data-version change is added. The one real defect was the album dossier: it listed `recording_places_and_dates` in `not_loaded` and never showed the place links it held. It now returns `recording_places[]` (recording scope only: `entity`, `relation`, `role`, `track`, `valid_from`, `valid_to` and the evidence fields) and drops that `not_loaded` key once the store holds any place, event or area link to a recording. Builders read the same edges.
+
 ## Decisions recorded (owner, 2026-11-09)
 
 Made after the probe results above; thresholds were fixed before the probe and are not changed.
@@ -209,7 +221,7 @@ Status as of 2026-11-09 (merged work is on `main`; PR #921 merged):
 1. ~~Owner reviews this proposal and answers the open decisions.~~ Done 2026-11-09 (see "Decisions recorded").
 2. ~~Write the probe (`scripts/album_path_coverage.py`, filtered tests) and run it on a copy of the real store.~~ Done: script and filtered tests merged in PR #921; run on a copy of the store. Neighbours by Ear was measured separately (40-album sample, live sonic routes).
 3. ~~Record results in this document~~ Done (see "Probe results"). Keep, cut or add a slice per path: decided 2026-11-09 (see "Decisions recorded"). The exact overlap measurement is done (see "Probe results"): all four paths pass the overlap gate.
-4. Contract, builders, fixtures, then clients, each as its own slice with filtered tests and required CI. Not started. Suggested order: recording-places import slice (unblocks Same Room); contract section; builders for paths 1, 2, 4, 6, then 3 once its data lands; Neighbours by Ear (own tab); Listen-through Gaps; fixtures and decoders; client screens.
+4. Contract, builders, fixtures, then clients, each as its own slice with filtered tests and required CI. Not started. The recording-places import slice was audited and is not needed (see "Slice audit"). Suggested order: contract section; builders for paths 1, 2, 4, 6, then 3 once its data lands; Neighbours by Ear (own tab); Listen-through Gaps; fixtures and decoders; client screens.
 
 ## Work split by model and effort
 

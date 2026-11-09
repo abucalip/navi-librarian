@@ -34,7 +34,6 @@
       }
     ],
     "not_loaded": [
-      "recording_places_and_dates",
       "cover_art_variants",
       "catalogue_numbers",
       "formats"
@@ -97,6 +96,7 @@
         }
       }
     ],
+    "recording_places": [],
     "release_family": {
       "count": 1,
       "editions": [

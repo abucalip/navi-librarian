@@ -29,6 +29,7 @@ from ..graph import Limits
 from ..store import repositories as repo
 
 PERSON_TYPES = ("artist", "person", "group")
+PLACE_TYPES = ("place", "event", "area")  # where a recording was made, as MusicBrainz states it
 MAX_RECORDINGS = 100
 NOT_LOADED = ("recording_places_and_dates", "cover_art_variants")
 
@@ -51,12 +52,22 @@ def album_dossier(reader, entity: dict[str, Any], *, limit: int = 100) -> dict[s
 
     people: dict[int, dict[str, Any]] = {}
     labels: dict[int, dict[str, Any]] = {}
+    places: list[dict[str, Any]] = []
     truncated = False
     for scope, track_title, target in targets:
         walk = reader.connections(target["id"], credits_only=True, limits=Limits(max_depth=1, max_rows=limit, page_size=limit))
         truncated = truncated or walk["truncated"] is not None or walk["next_cursor"] is not None
         for hop in walk["hops"]:
             other = hop["entity"]
+            if other["type"] in PLACE_TYPES and scope == "recording":
+                for ev in hop["evidence"]:
+                    row = {"entity": other, "relation": ev["relation"], "role": ev["role"], "track": track_title,
+                           "valid_from": ev["valid_from"], "valid_to": ev["valid_to"], "source": ev["source"],
+                           "source_url": ev["source_url"], "evidence_class": ev["evidence_class"],
+                           "match_quality": ev["match_quality"]}
+                    if row not in places:
+                        places.append(row)
+                continue
             bucket = people if other["type"] in PERSON_TYPES else labels if other["type"] == "label" else None
             if bucket is None:
                 continue
@@ -97,10 +108,22 @@ def album_dossier(reader, entity: dict[str, Any], *, limit: int = 100) -> dict[s
         "tracks": [{"position": t.position, "title": t.title, "recording_mbid": t.recording_mbid} for t in tracks],
         "people": ordered(people),
         "labels": ordered(labels),
+        "recording_places": sorted(places, key=lambda p: (p["track"] or "", (p["entity"]["canonical_name"] or "").casefold(),
+                                                          p["relation"], p["entity"]["id"])),
         "credits_truncated": truncated or len(tracks) > MAX_RECORDINGS,
         "sources": {"musicbrainz_dump": {"coverage": coverage, "dump_timestamp": status["dump_timestamp"]}},
-        "not_loaded": list(NOT_LOADED) + _missing_release_facts(db),
+        "not_loaded": [k for k in NOT_LOADED if k != "recording_places_and_dates" or not _has_recording_places(db)]
+                      + _missing_release_facts(db),
     }
+
+
+def _has_recording_places(db) -> bool:
+    """True once the store holds any place, event or area link to a recording (a slice imported with context)."""
+    marks = ", ".join("?" * len(PLACE_TYPES))
+    return db.execute(
+        f"SELECT 1 FROM edges g JOIN entities f ON f.id = g.from_id JOIN entities t ON t.id = g.to_id "
+        f"WHERE t.type = 'recording' AND f.type IN ({marks}) AND g.source = 'musicbrainz_dump' LIMIT 1",
+        PLACE_TYPES).fetchone() is not None
 
 
 def _formats(db, release_id: int) -> str | None:
