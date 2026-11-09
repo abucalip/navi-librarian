@@ -26,7 +26,7 @@
 
 ### Remaining slices
 
-9. Close-out: confirm profiles change no ranking output, complete the remaining visual and runtime checks, and reconcile docs/log. The Zine visual review for slice 6 was explicitly waived by the owner; it was not performed.
+9. Close-out (2026-11-09, partial): **ranking independence confirmed.** The `check_no_weight_effect` guard in `scripts/server_v2_phase6_exit.py` was re-run on current `main` (`2fec5809`) and passed: no module outside `intelligence/taste/`, `intelligence/api/`, `app/api/`, `intelligence/store/`, `scripts/` and `tests/` imports the taste package, so no discovery, insight, edition or sonic ranking code can read a taste profile. Still open, and not performed by an agent: the owner's visual checks (macOS Cupertino, Zine; Android device/emulator and accessibility) and a live-server refresh, including the Android 30-second read timeout against a long refresh. The Zine visual review for slice 6 was explicitly waived by the owner.
 
 **Order:** 9.
 
