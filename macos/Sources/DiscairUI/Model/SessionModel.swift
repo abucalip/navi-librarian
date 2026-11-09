@@ -63,10 +63,18 @@ public final class SessionModel {
         return nil
     }
 
-    public func addProfile(name: String, librarianURL: String, navidromeURL: String) throws {
-        let profile = try Profile(name: name, librarianURL: librarianURL, navidromeURL: navidromeURL)
+    public func addProfile(name: String, librarianURL: String, navidromeURL: String, listenBrainzUsername: String = "") throws {
+        let profile = try Profile(name: name, librarianURL: librarianURL, navidromeURL: navidromeURL, listenBrainzUsername: listenBrainzUsername)
         var list = profiles
         try list.add(profile)
+        try store.save(list)
+        profiles = list
+    }
+
+    /// Remembers the ListenBrainz username on a profile (Settings > ListenBrainz does this for the active one).
+    public func setListenBrainzUsername(_ value: String, forProfile id: UUID) throws {
+        var list = profiles
+        list.setListenBrainzUsername(value, for: id)
         try store.save(list)
         profiles = list
     }
@@ -147,7 +155,7 @@ public final class SessionModel {
             navidrome = client
             if let lib = try secrets.credential(for: .librarian) {
                 let l = try LibrarianClient(baseURL: selection.profile.librarianURL, credential: lib, tailscaleHint: hint)
-                do { try await l.login(); librarian = l; await syncListenBrainz(l) }
+                do { try await l.login(); librarian = l; await syncListenBrainz(l, profile: selection.profile) }
                 catch let e as DiscairError { librarianNote = "Librarian: \(e.summary)" }
             } else {
                 librarianNote = "No Librarian login is saved, so recommendations and Get are off."
@@ -163,14 +171,17 @@ public final class SessionModel {
         }
     }
 
-    /// The saved ListenBrainz login is pushed to the server at startup when the server holds a different username, or has no
-    /// token while one is saved here. Failures are not fatal: the Settings card shows what the server holds.
-    func syncListenBrainz(_ l: LibrarianClient) async {
-        guard let lb = (try? secrets.credential(for: .listenbrainz)) ?? nil, let server = try? await l.listenBrainzSettings() else { return }
-        let token = lb.withPassword { $0 }
-        guard server.username != lb.username || (!token.isEmpty && !server.tokenConfigured) else { return }
-        do { try await l.saveListenBrainz(username: lb.username, token: token) }
-        catch { librarianNote = "ListenBrainz: could not send the saved account to the server." }
+    /// The connected profile's ListenBrainz username (else the Keychain one) is pushed to the server at startup when the server
+    /// holds a different one, or has no token while one is saved. The token is the Keychain one and is used only with the
+    /// username it was saved for. Failures are not fatal: the Settings card shows what the server holds.
+    func syncListenBrainz(_ l: LibrarianClient, profile: Profile) async {
+        let saved = (try? secrets.credential(for: .listenbrainz)) ?? nil
+        let username = !profile.listenBrainzUsername.isEmpty ? profile.listenBrainzUsername : (saved?.username ?? "")
+        guard !username.isEmpty, let server = try? await l.listenBrainzSettings() else { return }
+        let token = saved?.username == username ? (saved?.withPassword { $0 } ?? "") : ""
+        guard server.username != username || (!token.isEmpty && !server.tokenConfigured) else { return }
+        do { try await l.saveListenBrainz(username: username, token: token) }
+        catch { librarianNote = "ListenBrainz: could not send the account to the server." }
     }
 
     // MARK: Presentation
@@ -230,6 +241,7 @@ public extension Error {
             case .emptyName: return "Give the profile a name."
             case .duplicateName: return "A profile with that name already exists."
             case .notFound: return "That profile no longer exists."
+            case .invalidListenBrainzUsername: return "A ListenBrainz username uses letters, numbers, dot, underscore or hyphen."
             }
         }
         if self is SettingsError { return "Enter a username and a password." }

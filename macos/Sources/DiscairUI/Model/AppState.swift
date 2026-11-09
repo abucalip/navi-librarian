@@ -343,6 +343,7 @@ public final class AppState {
             await taste.refreshNow(librarian: librarian)
         }
         // Kept with the other logins so every launch sends it to the server again.
+        if let accepted, let id = session?.activeProfile?.id { try? session?.setListenBrainzUsername(accepted.username, forProfile: id) }
         if let accepted { try? session?.saveLogin(.listenbrainz, username: accepted.username, password: accepted.token) }
     }
 

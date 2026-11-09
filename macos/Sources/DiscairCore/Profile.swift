@@ -24,13 +24,23 @@ public struct Profile: Codable, Equatable, Identifiable, Sendable {
     public var network: ProfileNetwork
     public let librarianURL: URL
     public let navidromeURL: URL
+    /// The public ListenBrainz username the server reads for this profile ("" when none). Not a secret; the token is in the Keychain.
+    public var listenBrainzUsername: String
+
+    /// Letters, digits, dot, underscore and hyphen, 1 to 80: the same rule the server applies.
+    public static func isValidListenBrainzUsername(_ value: String) -> Bool {
+        value.range(of: #"^[A-Za-z0-9_.-]{1,80}$"#, options: .regularExpression) != nil
+    }
 
     public init(id: UUID = UUID(), name: String, network: ProfileNetwork? = nil,
-                librarianURL: String, navidromeURL: String) throws {
+                librarianURL: String, navidromeURL: String, listenBrainzUsername: String = "") throws {
         let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { throw ProfileError.emptyName }
         let lib = try AddressPolicy.validate(librarianURL)
         let navi = try AddressPolicy.validate(navidromeURL)
+        let lb = listenBrainzUsername.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard lb.isEmpty || Self.isValidListenBrainzUsername(lb) else { throw ProfileError.invalidListenBrainzUsername }
+        self.listenBrainzUsername = lb
         self.id = id
         self.name = trimmed
         self.librarianURL = lib
@@ -46,7 +56,8 @@ public struct Profile: Codable, Equatable, Identifiable, Sendable {
             name: c.decode(String.self, forKey: .name),
             network: c.decode(ProfileNetwork.self, forKey: .network),
             librarianURL: c.decode(URL.self, forKey: .librarianURL).absoluteString,
-            navidromeURL: c.decode(URL.self, forKey: .navidromeURL).absoluteString
+            navidromeURL: c.decode(URL.self, forKey: .navidromeURL).absoluteString,
+            listenBrainzUsername: (try? c.decodeIfPresent(String.self, forKey: .listenBrainzUsername)) ?? ""
         )
     }
 
@@ -65,6 +76,7 @@ public enum ProfileError: Error, Equatable, Sendable {
     case emptyName
     case duplicateName
     case notFound
+    case invalidListenBrainzUsername
 }
 
 /// The stored list plus the manual override. Plain JSON, no secrets.
@@ -83,6 +95,11 @@ public struct ProfileList: Codable, Equatable, Sendable {
             throw ProfileError.duplicateName
         }
         profiles.append(profile)
+    }
+
+    public mutating func setListenBrainzUsername(_ value: String, for id: UUID) {
+        guard let i = profiles.firstIndex(where: { $0.id == id }) else { return }
+        profiles[i].listenBrainzUsername = value
     }
 
     public mutating func remove(id: UUID) {
