@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Discair Mac Taste Cards Mockups</title>
+<style>
+/* Layout: page note, three controls (data state, theme, window), then one Mac window showing the Insights page with the Taste cards.
+   Data is a fixture shaped like intelligence/taste/persistence.profiles_payload. Not real owner data. */
+:root{--bg:#ecebe8;--fg:#1b1a19;--mu:#6a655f;--sf:#fff;--ln:#d9d5ce;--ac:#e5334b;--up:#1f8a53;--dn:#c2410c;--bar:#e5334b;--ghost:#cfcac3;--win:#f2f2f4}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#121115;--fg:#f1eee9;--mu:#a9a39c;--sf:#222027;--ln:#3a3641;--ac:#ff6277;--up:#4cc58a;--dn:#ff9a63;--bar:#ff6277;--ghost:#4a4551;--win:#19181c;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#121115;--fg:#f1eee9;--mu:#a9a39c;--sf:#222027;--ln:#3a3641;--ac:#ff6277;--up:#4cc58a;--dn:#ff9a63;--bar:#ff6277;--ghost:#4a4551;--win:#19181c;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 system-ui,-apple-system,sans-serif;padding:20px max(16px,env(safe-area-inset-left,0px))}
+.pg{max-width:1180px;margin:0 auto}
+h1{font-size:22px;margin:0}
+.lead{color:var(--mu);margin:4px 0 12px;max-width:80ch}
+.bar{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0;align-items:center}
+.bar b{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--mu);margin-right:4px}
+button{font:inherit;color:inherit;cursor:pointer}
+.bar button{border:1.5px solid var(--ln);background:var(--sf);padding:6px 14px;border-radius:99px}
+.bar button[aria-pressed=true]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+button:focus-visible{outline:3px solid var(--ac);outline-offset:2px}
+.note{background:var(--sf);border:1.5px solid var(--ln);border-radius:12px;padding:10px 16px;margin:8px 0 14px}
+.note b{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--mu)}
+.note ul{margin:6px 0 0;padding-left:18px}
+.win{background:var(--win);border:1px solid var(--ln);border-radius:14px;overflow:hidden;display:flex;min-height:680px}
+.sb{width:190px;padding:18px 12px;border-right:1px solid var(--ln);font-size:14px;flex:none}
+.sb div{padding:6px 12px;border-radius:8px;color:var(--mu)}.sb .on{background:var(--ln);color:var(--fg);font-weight:600}
+.sb small{display:block;padding:14px 12px 4px;font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--mu)}
+.main{flex:1;padding:26px 30px;min-width:0}
+h2.t{font-size:32px;margin:0;letter-spacing:-.02em}
+.sub{color:var(--mu);font-size:13px;margin:2px 0 18px}
+.sec{display:flex;align-items:baseline;justify-content:space-between;margin:6px 0 10px}
+.sec h3{margin:0;font-size:12px;letter-spacing:.09em;text-transform:uppercase;color:var(--mu)}
+.sec span{font-size:12px;color:var(--mu)}
+.grid{display:grid;grid-template-columns:1.2fr 1fr;gap:16px}
+.card{background:var(--sf);border-radius:20px;padding:18px 20px;min-width:0}
+.card.wide{grid-column:1/-1}
+.eyebrow{font:700 11px system-ui;letter-spacing:.08em;color:var(--ac);text-transform:uppercase}
+.card h4{margin:4px 0 4px;font-size:24px;line-height:1.15;letter-spacing:-.015em;font-family:Georgia,"Source Serif 4",serif;font-weight:700}
+.card p{margin:0 0 10px;color:var(--mu);font-size:13.5px}
+.mv{display:grid;grid-template-columns:110px 1fr 84px;gap:10px;align-items:center;margin:8px 0;font-size:13.5px}
+.mv .tr{position:relative;height:12px;border-radius:6px;background:color-mix(in srgb,var(--ghost) 35%,transparent)}
+.mv .from{position:absolute;left:0;top:0;bottom:0;border-radius:6px;background:var(--ghost)}
+.mv .to{position:absolute;left:0;top:3px;bottom:3px;border-radius:3px;background:var(--bar)}
+.mv .num{font-variant-numeric:tabular-nums;text-align:right;font-weight:600}
+.up{color:var(--up)}.dn{color:var(--dn)}
+.leg{display:flex;gap:14px;font-size:11.5px;color:var(--mu);margin-top:6px}
+.leg i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+.seg{display:inline-flex;background:color-mix(in srgb,var(--ln) 55%,transparent);border-radius:99px;padding:3px;gap:2px}
+.seg button{border:0;background:none;padding:4px 12px;border-radius:99px;font-size:12.5px;font-weight:600;color:var(--mu)}
+.seg button[aria-pressed=true]{background:var(--sf);color:var(--fg);box-shadow:0 1px 2px #0003}
+.row{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px}
+.bl{display:grid;grid-template-columns:120px 1fr 44px;gap:10px;align-items:center;margin:6px 0;font-size:13.5px}
+.bl .t{height:10px;border-radius:5px;background:color-mix(in srgb,var(--ghost) 35%,transparent);position:relative}
+.bl .f{position:absolute;inset:0 auto 0 0;border-radius:5px;background:var(--bar)}
+.bl .g{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--fg);opacity:.55;border-radius:1px}
+.bl .n{text-align:right;color:var(--mu);font-variant-numeric:tabular-nums}
+.hatch .f{background:repeating-linear-gradient(45deg,var(--ghost) 0 4px,transparent 4px 8px)}
+.chip{display:inline-block;border:1.5px dashed var(--ghost);border-radius:10px;padding:3px 10px;font-size:12.5px;color:var(--mu)}
+.acts{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.cap{border:0;border-radius:99px;padding:6px 14px;font-weight:600;font-size:13px;background:color-mix(in srgb,var(--ln) 70%,transparent)}
+.cap.p{background:var(--ac);color:#fff}
+.era{display:flex;align-items:flex-end;gap:10px;height:110px;margin-top:8px}
+.era div{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;height:100%;font-size:11.5px;color:var(--mu);gap:4px}
+.era .col{position:relative;width:100%;flex:1;display:flex;align-items:flex-end}
+.era .o{position:absolute;inset:auto 0 0;border:1.5px solid var(--ghost);border-radius:4px 4px 0 0;background:none}
+.era .f{position:relative;width:100%;background:var(--bar);border-radius:4px 4px 0 0;opacity:.9}
+.prog{height:8px;border-radius:4px;background:color-mix(in srgb,var(--ghost) 40%,transparent);overflow:hidden;margin:10px 0 6px}
+.prog i{display:block;height:100%;background:var(--ac)}
+.empty{text-align:center;padding:28px 10px;color:var(--mu)}
+.empty b{display:block;color:var(--fg);font-size:18px;font-family:Georgia,serif;margin-bottom:4px}
+.fx{margin-top:12px;font-size:12px;color:var(--mu)}
+@media (max-width:860px){.sb{display:none}.grid{grid-template-columns:1fr}.mv{grid-template-columns:90px 1fr 70px}}
+</style></head><body>
+<div class="pg">
+<h1>Mac Insights: Taste cards</h1>
+<p class="lead">A "Your taste" section inside Insights. Editorial headline first, charts as evidence. Every claim comes from a server-stated shift; thin data degrades to a progress state. Fixture data in the shape of <code>/api/insights/taste</code>, not real listening.</p>
+<div class="bar"><b>Data</b>
+<button data-d="rich" aria-pressed="true">Rich</button><button data-d="thin" aria-pressed="false">Thin window</button><button data-d="sparse" aria-pressed="false">Sparse dimension</button><button data-d="empty" aria-pressed="false">Empty</button></div>
+<div class="bar"><b>Theme</b><button data-t="auto" aria-pressed="true">Auto</button><button data-t="light" aria-pressed="false">Light</button><button data-t="dark" aria-pressed="false">Dark</button></div>
+<div class="note"><b>What to judge</b><ul>
+<li><b style="text-transform:none;letter-spacing:0">Shift card</b>: sentence from the stated shifts, ghost bar = all-time share, solid bar = recent.</li>
+<li><b style="text-transform:none;letter-spacing:0">Window card</b>: Recent / Year / All-time and a dimension picker; the tick on each bar marks the all-time share.</li>
+<li><b style="text-transform:none;letter-spacing:0">Honesty</b>: use the Data buttons to see low-sample hatching, the "needs N more listens" ring and the empty state.</li>
+<li>Actions only create a smart-playlist rule or open the library filtered; nothing touches ranking.</li></ul></div>
+<div class="win"><nav class="sb"><small>Library</small><div>Home</div><div>Library</div><small>Discover</small><div class="on">Insights</div><div>Radio</div><div>Search</div></nav>
+<div class="main"><h2 class="t">Insights</h2><div class="sub">Updated from your last 365 days of listening</div>
+<div class="sec"><h3>Your taste</h3><span id="meta"></span></div>
+<div id="out"></div>
+<div class="fx">Dismiss and "why am I seeing this" follow the existing Insights card pattern.</div>
+</div></div></div>
+<script>
+// Fixture in the shape of profiles_payload; shares per dimension sum to 1 (top 10 shown here only partially).
+const F={rich:{windows:{recent:{listens:412,low:false},mid:{listens:1630,low:false},all_time:{listens:6120,low:false}},
+ dims:{genre:{recent:[["Shoegaze",.15],["Post-punk",.14],["Ambient",.11],["Jazz",.07],["Hip hop",.06]],mid:[["Post-punk",.13],["Shoegaze",.09],["Jazz",.1],["Ambient",.1],["Hip hop",.08]],all_time:[["Jazz",.13],["Post-punk",.12],["Hip hop",.1],["Ambient",.09],["Shoegaze",.04]]},
+ era:{recent:[["60s",.03],["70s",.12],["80s",.24],["90s",.3],["00s",.18],["10s+",.13]],all_time:[["60s",.08],["70s",.17],["80s",.2],["90s",.24],["00s",.17],["10s+",.14]]},
+ area:{recent:[["UK",.31],["US",.28],["Japan",.1],["Germany",.07],["France",.05]],all_time:[["US",.36],["UK",.24],["Japan",.06],["Germany",.07],["France",.06]]},
+ label:{recent:[["4AD",.09],["Factory",.07],["Warp",.06],["Creation",.06],["Blue Note",.04]],all_time:[["Blue Note",.08],["4AD",.05],["Warp",.05],["Factory",.04],["Creation",.02]]},
+ collaborator:{recent:[["Robin Guthrie",.05],["Alan Moulder",.04],["Steve Albini",.03],["Flood",.03],["Kramer",.02]],all_time:[["Rudy Van Gelder",.05],["Alan Moulder",.03],["Steve Albini",.03],["Flood",.02],["Robin Guthrie",.02]]}},
+ shifts:[["Shoegaze","genre","up",.04,.15],["Jazz","genre","down",.13,.07],["US","area","down",.36,.28],["UK","area","up",.24,.31]]},
+ sparse:null,thin:null};
+F.thin=JSON.parse(JSON.stringify(F.rich));F.thin.windows.recent={listens:34,low:true};F.thin.shifts=[];
+F.sparse=JSON.parse(JSON.stringify(F.rich));F.sparse.lowdim={label:{attr:12,need:30},collaborator:{attr:9,need:30}};
+const S={d:"rich",w:"recent",dim:"genre"};
+const WN={recent:"Last 90 days",mid:"Last year",all_time:"All time"};
+const pc=x=>Math.round(x*100)+"%";
+const sentence=sh=>{const ups=sh.filter(s=>s[2]=="up"),dns=sh.filter(s=>s[2]=="down");
+ const g=sh.filter(s=>s[1]=="genre");const u=g.find(s=>s[2]=="up"),d=g.find(s=>s[2]=="down");
+ return u&&d?`More ${u[0].toLowerCase()}, less ${d[0].toLowerCase()} lately.`:u?`You have been leaning into ${u[0].toLowerCase()}.`:"Your taste has held steady."};
+function shiftCard(D){
+ const sh=D.shifts;
+ if(!sh.length) return `<div class="card"><div class="eyebrow">Lately vs. always</div><h4>No clear shift yet.</h4><p>I only call a change when both the recent window and your history are solid, and it moved at least 5 points.</p>${D.windows.recent.low?ringBlock(D.windows.recent.listens,50):""}</div>`;
+ const rows=sh.map(s=>{const dl=Math.round((s[4]-s[3])*100);return `<div class="mv"><span>${s[0]} <span style="color:var(--mu);font-size:11.5px">${s[1]}</span></span><div class="tr"><div class="from" style="width:${s[3]*100*2.4}%"></div><div class="to" style="width:${s[4]*100*2.4}%"></div></div><span class="num ${s[2]}">${pc(s[3])} → ${pc(s[4])}</span></div>`}).join("");
+ return `<div class="card"><div class="eyebrow">Lately vs. always</div><h4>${sentence(sh)}</h4><p>Based on ${D.windows.recent.listens} listens in the last 90 days against ${D.windows.all_time.listens.toLocaleString()} overall.</p>${rows}<div class="leg"><span><i style="background:var(--ghost)"></i>All time</span><span><i style="background:var(--bar)"></i>Last 90 days</span></div><div class="acts"><button class="cap p">Make a smart playlist from ${sh.find(s=>s[2]=="up")[0]}</button><button class="cap">Open in Library</button></div></div>`}
+function ringBlock(n,need){return `<div class="prog"><i style="width:${Math.min(100,n/need*100)}%"></i></div><span class="chip">${n} of ${need} listens needed before I'll call a shift</span>`}
+function windowCard(D){
+ const w=D.windows[S.w],low=w.low,ld=D.lowdim&&D.lowdim[S.dim];
+ const ent=D.dims[S.dim][S.w==="mid"?(D.dims[S.dim].mid?"mid":"all_time"):S.w]||[],all=D.dims[S.dim].all_time||[];
+ const gm=Object.fromEntries(all.map(e=>[e[0],e[1]]));
+ const max=Math.max(...ent.map(e=>e[1]),.01)*1.15;
+ const body=ld?`<div class="empty"><b>Not enough ${S.dim} data.</b>Only ${ld.attr} listens carry a ${S.dim}. I won't read missing tags as taste.${ringBlock(ld.attr,ld.need)}</div>`:
+  ent.map(e=>`<div class="bl ${low?"hatch":""}"><span>${e[0]}</span><div class="t"><div class="f" style="width:${e[1]/max*100}%"></div>${S.w!=="all_time"&&gm[e[0]]!=null?`<div class="g" style="left:${gm[e[0]]/max*100}%"></div>`:""}</div><span class="n">${pc(e[1])}</span></div>`).join("");
+ return `<div class="card"><div class="row"><div><div class="eyebrow">The shape of it</div></div><div class="seg" role="group" aria-label="Window">${["recent","mid","all_time"].map(k=>`<button data-w="${k}" aria-pressed="${S.w===k}">${k=="recent"?"90 days":k=="mid"?"Year":"All time"}</button>`).join("")}</div></div>
+ <div class="seg" role="group" aria-label="Dimension" style="margin-bottom:8px">${["genre","era","area","label","collaborator"].map(k=>`<button data-dim="${k}" aria-pressed="${S.dim===k}">${k[0].toUpperCase()+k.slice(1)}</button>`).join("")}</div>
+ ${low?`<p>${WN[S.w]}: only ${w.listens} listens, so this is a sketch, not a verdict.</p>`:`<p>${WN[S.w]} · ${w.listens.toLocaleString()} listens${S.w!=="all_time"?" · tick = your all-time share":""}</p>`}${body}</div>`}
+function eraCard(D){
+ const r=D.dims.era.recent,a=D.dims.era.all_time,m=Math.max(...r.map(e=>e[1]),...a.map(e=>e[1]));
+ return `<div class="card"><div class="eyebrow">Decades</div><h4>Skewing 80s and 90s.</h4><p>Outline is all time, fill is the last 90 days.</p><div class="era">${r.map((e,i)=>`<div><div class="col"><div class="o" style="height:${a[i][1]/m*100}%"></div><div class="f" style="height:${e[1]/m*100}%"></div></div>${e[0]}</div>`).join("")}</div></div>`}
+function render(){
+ const o=document.getElementById("out"),meta=document.getElementById("meta");
+ if(S.d==="empty"){meta.textContent="";o.innerHTML=`<div class="card empty"><b>Taste needs listening history.</b>Connect ListenBrainz or play more; once a window has 50 listens I'll start describing it. ${ringBlock(0,50)}</div>`;return}
+ const D=F[S.d];meta.textContent=`${D.windows.all_time.listens.toLocaleString()} listens analysed`;
+ o.innerHTML=`<div class="grid">${shiftCard(D)}${windowCard(D)}${S.d==="rich"?eraCard(D):""}${S.d==="rich"?`<div class="card"><div class="eyebrow">Morning you vs. night you</div><h4>Mornings are jazz, nights are post-punk.</h4><p>From time of day, in your timezone. Hour cut-offs are starting values.</p><div class="acts"><button class="cap">Mornings lens</button><button class="cap">Nights lens</button></div></div>`:""}</div>`}
+document.addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;
+ if(b.dataset.d){S.d=b.dataset.d;document.querySelectorAll("[data-d]").forEach(x=>x.setAttribute("aria-pressed",x===b))}
+ else if(b.dataset.t){const r=document.documentElement;b.dataset.t==="auto"?r.removeAttribute("data-theme"):r.setAttribute("data-theme",b.dataset.t);document.querySelectorAll("[data-t]").forEach(x=>x.setAttribute("aria-pressed",x===b))}
+ else if(b.dataset.w)S.w=b.dataset.w;else if(b.dataset.dim)S.dim=b.dataset.dim;else return;render()});
+render();
+</script></body></html>

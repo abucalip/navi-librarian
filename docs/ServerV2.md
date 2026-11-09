@@ -305,6 +305,27 @@ Work items:
 Exit: profiles reproducible; sparse data shows honest low-sample states; profile does not alter weights.
 Client gate: macOS taste views and snapshots; Android a compact taste card.
 
+**Client presentation of taste profiles (owner decisions 2026-11-09; planned, nothing below is built).** Cards inside Insights with an editorial tone. Mockups: `docs/design/macos-taste/mockups.html` (macOS) and `docs/design/android-taste/mockups.html` (Android compact card plus bottom sheet), both on fixture data in the shape of `profiles_payload`.
+
+- **Finding that shapes the plan:** nothing in production code computes taste profiles. `build_profiles` and `save_profiles` are called only from tests, so `GET /api/insights/taste` reads a row no job writes. A compute trigger is therefore part of the work.
+- **Headline is server-side.** The client draws `headline.text` and never composes prose, so macOS and Android show the same sentence. Approved rules: rank stated shifts by absolute share change, genre first, ties broken by value name (reproducible); a genre pair that moved both ways reads "More X, less Y lately."; a single mover reads "Leaning into X lately." (up) or "Drifting from Y lately." (down); sound windows with no stated shift read "Your taste has held steady."; the recent window is preferred and the mid window is used ("this past year") when recent is low-sample; no sound window gives a null headline and the client shows its progress state. Body shape: `headline: {text, kind, window, subjects: [{dimension, value, direction}]} | null`. Wording is a starting value, not measured.
+- **Refresh runs when the app opens (owner decision).** Read here as: a client calls `POST /api/insights/taste/refresh` on launch; the server enforces a minimum interval and a lock against overlap, so repeated launches do nothing. No server scheduler or startup hook. The refresh reads the listens loader and writes the saved row; it makes no provider calls, and an unchanged payload writes nothing and keeps `data_version`. This supersedes the popularity fill's manual-only rule for this route only; the popularity fill stays manual. First live run goes on a copy of the owner's store.
+- **Sample honesty is kept:** a window under `min_listens` and a dimension under `min_attributed` show a progress state, never a stated shift. Profiles change no recommendation weight.
+- **Actions** only prefill a smart-playlist rule or open the library filtered. No ranking effect.
+
+**Slices (taste presentation):**
+1. Pure headline builder `intelligence/taste/headline.py` with the rules above; unit-tested, unwired.
+2. Add `headline` to `profiles_payload`, contract text and fixtures (rich, thin window, sparse dimension, empty). The first save after deploy rewrites the row once.
+3. Refresh route and status (`app/api/insights.py` stays thin; new module per D-016), minimum interval, lock, tests with a fake loader.
+4. Optional, deferred: persist the listening-context profiles and a stated "morning vs night" contrast with its own minimum. The context card is not built until this exists.
+5. macOS: decode the taste body, call refresh on launch, Cupertino taste cards (lately-vs-always, window card with dimension picker, decades), low-sample and empty states. Filtered tests only.
+6. macOS: the other Insights themes (Zine and the rest) draw their own versions, one follow-up PR per theme.
+7. macOS actions: smart-playlist rule prefill and library filter.
+8. Android: decode, refresh on launch, compact card and bottom sheet, `InsightsTest` cases.
+9. Close-out: confirm profiles change no ranking output, visual and runtime checks, docs and log.
+
+Order: 1, 2, 3 first; 5 may start after 2 on fixtures; then 8 and 7, then 6, then 9. Exit: the same body renders the same headline on both clients; thin and empty data show honest states; a replayed refresh changes nothing; no recommendation output moves.
+
 ### Phase 7: Sonic, plus Phase 5 carry-over
 
 **Inherited from Phase 5 (server closed 2026-11-06; client work carried into Phase 7).** The client implementations are now merged; the remaining visual and runtime checks are recorded separately below.

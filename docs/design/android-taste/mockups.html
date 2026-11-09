@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Discair Android Taste Card</title>
+<style>
+/* Layout: page note, theme control, then four phone frames side by side (wrap on narrow screens):
+   Insights with the compact card, the expanded sheet, the thin-data state, the empty state.
+   Headline text is served by the server (headline.text); the client draws it and never composes prose. Fixture data, not real listening. */
+:root{--bg:#eceae6;--fg:#16151a;--mu:#5d5a66;--card:#fbfaf8;--line:#d8d4cc;--acc:#c4233a;--up:#1f7a4d;--dn:#b8460c;--ghost:#cdc8c0;--ph:#f4f2ee;--chip:#ebe8e2}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#121115;--fg:#f0eef6;--mu:#a29eb3;--card:#25232d;--line:#3a3743;--acc:#ff6b81;--up:#4cc58a;--dn:#ff9a63;--ghost:#4b4756;--ph:#1a1920;--chip:#2e2b37;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#121115;--fg:#f0eef6;--mu:#a29eb3;--card:#25232d;--line:#3a3743;--acc:#ff6b81;--up:#4cc58a;--dn:#ff9a63;--ghost:#4b4756;--ph:#1a1920;--chip:#2e2b37;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 system-ui,Roboto,sans-serif;padding-block:20px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:1300px;margin:0 auto}
+h1{font-size:22px;margin:0}
+.lead{color:var(--mu);margin:4px 0 12px;max-width:78ch}
+.bar{display:flex;gap:8px;align-items:center;margin:8px 0 14px;flex-wrap:wrap}
+.bar b{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--mu)}
+.bar button{font:inherit;color:inherit;cursor:pointer;border:1.5px solid var(--line);background:var(--card);padding:6px 14px;border-radius:99px}
+.bar button[aria-pressed=true]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+button:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+.note{background:var(--card);border:1.5px solid var(--line);border-radius:12px;padding:10px 16px;margin:0 0 18px}
+.note ul{margin:4px 0 0;padding-left:18px}
+.frames{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:22px;justify-items:center}
+figure{margin:0;width:100%;max-width:340px}
+figcaption{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--mu);margin:0 0 8px;text-align:center}
+.ph{height:700px;border-radius:30px;border:2px solid var(--line);background:var(--ph);overflow:hidden;position:relative;display:flex;flex-direction:column}
+.st{display:flex;justify-content:space-between;padding:10px 20px 4px;font-size:12px;font-weight:600}
+.top{padding:6px 18px 10px}
+.top h2{margin:0;font-size:26px;letter-spacing:-.02em}
+.top small{color:var(--mu)}
+.scroll{flex:1;overflow:hidden;padding:0 14px;display:flex;flex-direction:column;gap:12px}
+.card{background:var(--card);border-radius:22px;padding:16px 16px 14px;border:1px solid var(--line)}
+.ey{font:700 10.5px system-ui;letter-spacing:.09em;text-transform:uppercase;color:var(--acc)}
+.card h3{margin:4px 0 2px;font:700 21px/1.18 Georgia,"Source Serif 4",serif;letter-spacing:-.01em;text-wrap:balance}
+.card p{margin:0 0 8px;color:var(--mu);font-size:12.5px}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 4px}
+.chip{display:inline-flex;gap:5px;align-items:center;border-radius:99px;background:var(--chip);padding:4px 10px;font-size:12.5px;font-weight:600}
+.chip.up b{color:var(--up)}.chip.dn b{color:var(--dn)}
+.chip.dash{background:none;border:1.5px dashed var(--ghost);color:var(--mu);font-weight:500}
+.tg{display:inline-flex;background:var(--chip);border-radius:99px;padding:3px;gap:2px;margin-top:6px}
+.tg button{border:0;background:none;color:var(--mu);font:inherit;font-size:12px;font-weight:600;padding:4px 12px;border-radius:99px;cursor:pointer}
+.tg button[aria-pressed=true]{background:var(--card);color:var(--fg);box-shadow:0 1px 2px #0003}
+.more{display:flex;justify-content:space-between;align-items:center;margin-top:10px;font-size:13px;font-weight:600;color:var(--acc)}
+.dim{background:var(--card);border-radius:22px;padding:14px 16px;border:1px solid var(--line);opacity:.55}
+.mv{display:grid;grid-template-columns:84px 1fr 78px;gap:8px;align-items:center;margin:9px 0;font-size:13px}
+.mv .tr{position:relative;height:10px;border-radius:5px;background:color-mix(in srgb,var(--ghost) 35%,transparent)}
+.mv .f{position:absolute;inset:0 auto 0 0;border-radius:5px;background:var(--ghost)}
+.mv .t{position:absolute;inset:2.5px auto 2.5px 0;border-radius:3px;background:var(--acc)}
+.mv .n{text-align:right;font-variant-numeric:tabular-nums;font-weight:600;font-size:12px}
+.up{color:var(--up)}.dn{color:var(--dn)}
+.sheet{position:absolute;inset:auto 0 0 0;top:96px;background:var(--card);border-radius:28px 28px 0 0;border-top:1px solid var(--line);padding:10px 18px 18px;box-shadow:0 -10px 30px #0004;display:flex;flex-direction:column;gap:8px}
+.grab{width:36px;height:4px;border-radius:2px;background:var(--ghost);margin:0 auto 6px}
+.scrim{position:absolute;inset:0;background:#0006}
+.bl{display:grid;grid-template-columns:90px 1fr 36px;gap:8px;align-items:center;font-size:13px;margin:5px 0}
+.bl .t{position:relative;height:9px;border-radius:5px;background:color-mix(in srgb,var(--ghost) 35%,transparent)}
+.bl .f{position:absolute;inset:0 auto 0 0;border-radius:5px;background:var(--acc)}
+.bl .g{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--fg);opacity:.55}
+.bl .n{text-align:right;color:var(--mu);font-size:12px;font-variant-numeric:tabular-nums}
+.hatch .f{background:repeating-linear-gradient(45deg,var(--ghost) 0 4px,transparent 4px 8px)}
+.dims{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px}
+.dims span{flex:none;border-radius:99px;border:1.5px solid var(--line);padding:3px 11px;font-size:12px;font-weight:600;color:var(--mu)}
+.dims .on{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.prog{height:8px;border-radius:4px;background:color-mix(in srgb,var(--ghost) 40%,transparent);overflow:hidden;margin:8px 0 6px}
+.prog i{display:block;height:100%;background:var(--acc)}
+.nav{margin-top:auto;display:flex;justify-content:space-around;padding:10px 0 14px;border-top:1px solid var(--line);font-size:11px;color:var(--mu)}
+.nav .on{color:var(--fg);font-weight:700}
+.nav div{text-align:center}.nav i{display:block;width:44px;height:22px;border-radius:11px;margin:0 auto 2px}.nav .on i{background:var(--chip)}
+</style></head><body>
+<div class="wrap">
+<h1>Android Insights: Taste card</h1>
+<p class="lead">One compact card in the Insights list. It shows the server's headline, the top three movers as chips, and a Recent / All-time toggle. Tapping opens a bottom sheet with the full bars. Fixture data, not real listening.</p>
+<div class="bar"><b>Theme</b><button data-t="auto" aria-pressed="true">Auto</button><button data-t="light" aria-pressed="false">Light</button><button data-t="dark" aria-pressed="false">Dark</button></div>
+<div class="note"><b>What to judge</b><ul>
+<li>The card stays one screen-third tall, so it sits among the other Insights cards without taking over.</li>
+<li>The headline comes from the server as <code>headline.text</code>. The client only draws it and never builds sentences.</li>
+<li>The sheet repeats the macOS cards in a smaller form: ghost bar = all-time share, solid bar = recent, tick = all-time share.</li>
+<li>Thin and empty states match the Mac wording, so one string set can serve both.</li></ul></div>
+
+<div class="frames">
+<figure><figcaption>Insights, rich data</figcaption><div class="ph">
+<div class="st"><span>9:41</span><span>5G 87%</span></div>
+<div class="top"><h2>Insights</h2><small>Updated today</small></div>
+<div class="scroll">
+<div class="card" id="c1"><div class="ey">Your taste</div><h3 id="hl">More shoegaze, less jazz lately.</h3><p>412 listens in 90 days vs 6,120 overall</p>
+<div class="chips"><span class="chip up">Shoegaze <b>+11</b></span><span class="chip dn">Jazz <b>−6</b></span><span class="chip up">UK <b>+7</b></span></div>
+<div class="tg" role="group" aria-label="Window"><button aria-pressed="true">90 days</button><button aria-pressed="false">All time</button></div>
+<div class="more"><span>See the full picture</span><span>›</span></div></div>
+<div class="dim"><div class="ey" style="color:var(--mu)">Hidden canon</div><div style="font-size:15px;font-weight:600;margin-top:2px">Three records your listening points to</div></div>
+<div class="dim"><div class="ey" style="color:var(--mu)">Fresh from your artists</div><div style="font-size:15px;font-weight:600;margin-top:2px">Two new releases this month</div></div>
+</div>
+<div class="nav"><div><i></i>Home</div><div class="on"><i></i>Insights</div><div><i></i>Library</div><div><i></i>Search</div></div></div></figure>
+
+<figure><figcaption>Sheet open</figcaption><div class="ph">
+<div class="st"><span>9:41</span><span>5G 87%</span></div><div class="scrim"></div>
+<div class="sheet"><div class="grab"></div>
+<div class="ey">Your taste</div><h3 style="margin:2px 0 0;font:700 21px/1.18 Georgia,serif">More shoegaze, less jazz lately.</h3>
+<div class="mv"><span>Shoegaze</span><div class="tr"><div class="f" style="width:10%"></div><div class="t" style="width:36%"></div></div><span class="n up">4% → 15%</span></div>
+<div class="mv"><span>Jazz</span><div class="tr"><div class="f" style="width:31%"></div><div class="t" style="width:17%"></div></div><span class="n dn">13% → 7%</span></div>
+<div class="mv"><span>UK</span><div class="tr"><div class="f" style="width:58%"></div><div class="t" style="width:74%"></div></div><span class="n up">24% → 31%</span></div>
+<div class="dims"><span class="on">Genre</span><span>Era</span><span>Area</span><span>Label</span><span>Collaborator</span></div>
+<div class="bl"><span>Shoegaze</span><div class="t"><div class="f" style="width:75%"></div><div class="g" style="left:20%"></div></div><span class="n">15%</span></div>
+<div class="bl"><span>Post-punk</span><div class="t"><div class="f" style="width:70%"></div><div class="g" style="left:60%"></div></div><span class="n">14%</span></div>
+<div class="bl"><span>Ambient</span><div class="t"><div class="f" style="width:55%"></div><div class="g" style="left:45%"></div></div><span class="n">11%</span></div>
+<div class="bl"><span>Jazz</span><div class="t"><div class="f" style="width:35%"></div><div class="g" style="left:65%"></div></div><span class="n">7%</span></div>
+<div class="chips"><span class="chip" style="background:var(--acc);color:#fff">Make a smart playlist</span><span class="chip">Open in Library</span></div>
+<p style="font-size:11.5px;color:var(--mu);margin:2px 0 0">Tick = your all-time share. Based on the last 90 days.</p></div></div></figure>
+
+<figure><figcaption>Thin window</figcaption><div class="ph">
+<div class="st"><span>9:41</span><span>5G 87%</span></div>
+<div class="top"><h2>Insights</h2><small>Updated today</small></div>
+<div class="scroll"><div class="card"><div class="ey">Your taste</div><h3>Still getting to know you.</h3><p>Only 34 listens in the last 90 days. I won't call a shift until there are 50.</p><div class="prog"><i style="width:68%"></i></div><span class="chip dash">34 of 50 listens needed</span>
+<div class="tg" role="group" aria-label="Window" style="display:flex;width:max-content;margin-top:10px"><button aria-pressed="false">90 days</button><button aria-pressed="true">All time</button></div></div>
+<div class="dim"><div class="ey" style="color:var(--mu)">Hidden canon</div><div style="font-size:15px;font-weight:600;margin-top:2px">Three records your listening points to</div></div></div>
+<div class="nav"><div><i></i>Home</div><div class="on"><i></i>Insights</div><div><i></i>Library</div><div><i></i>Search</div></div></div></figure>
+
+<figure><figcaption>Empty</figcaption><div class="ph">
+<div class="st"><span>9:41</span><span>5G 87%</span></div>
+<div class="top"><h2>Insights</h2><small>Updated today</small></div>
+<div class="scroll"><div class="card"><div class="ey">Your taste</div><h3>Taste needs listening history.</h3><p>Connect ListenBrainz or keep playing. Once there are 50 listens in a window I'll start describing it.</p><div class="prog"><i style="width:0"></i></div><span class="chip dash">0 of 50 listens</span></div>
+<div class="dim"><div class="ey" style="color:var(--mu)">Hidden canon</div><div style="font-size:15px;font-weight:600;margin-top:2px">Three records your listening points to</div></div></div>
+<div class="nav"><div><i></i>Home</div><div class="on"><i></i>Insights</div><div><i></i>Library</div><div><i></i>Search</div></div></div></figure>
+</div></div>
+<script>
+document.addEventListener("click",function(e){var b=e.target.closest("button");if(!b)return;
+if(b.dataset.t){var r=document.documentElement;b.dataset.t==="auto"?r.removeAttribute("data-theme"):r.setAttribute("data-theme",b.dataset.t);document.querySelectorAll("[data-t]").forEach(function(x){x.setAttribute("aria-pressed",x===b)})}
+else if(b.parentElement.classList.contains("tg")){b.parentElement.querySelectorAll("button").forEach(function(x){x.setAttribute("aria-pressed",x===b)})}});
+</script></body></html>
