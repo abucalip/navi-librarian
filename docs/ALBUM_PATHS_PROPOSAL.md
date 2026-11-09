@@ -1,6 +1,6 @@
 # Album paths proposal
 
-**Status:** owner decisions recorded 2026-11-09 (see "Decisions recorded"). Approved for build in slices. Built and merged so far: the probe script (PR #921), the recording-places audit (PR #922) and the builders for Studio Crew, Guest List and Covers and Sources (PR #924, squash `3901673d599079e80cfa41319d4e6d2fe55751fe`). Nothing is published or deployed.
+**Status:** owner decisions recorded 2026-11-09 (see "Decisions recorded"). Approved for build in slices. Built and merged so far: the probe script (PR #921), the recording-places audit (PR #922), the builders for Studio Crew, Guest List and Covers and Sources (PR #924, squash `3901673d599079e80cfa41319d4e6d2fe55751fe`) and the Same Year, Same Scene builder (PR #925, squash `adf7454da321543e78aff8d3526f0987b7e7c497`). Nothing is published or deployed.
 **Date:** 2026-11-09
 **Context:** The Paths button on an album page. Contract context: [Server V2 contract](SERVER_V2_CONTRACT.md) (`GET /api/knowledge/paths`), [Server V2 remaining work](ServerV2.md), builders in `intelligence/graph/paths.py`.
 
@@ -188,7 +188,7 @@ Made after the probe results above; thresholds were fixed before the probe and a
 | 2. Guest List (`album_guests`) | Keep. |
 | 3. Same Room (`album_room`) | Keep, and add the recording-places import slice (see the contingency section). ~~Import slice~~ Not needed after the audit (PR #922); the builder is unblocked. |
 | 4. Covers and Sources (`album_works`) | Keep. No work-relations slice for now; margins are narrow (median 3, coverage 39.4% after dropping overlap), so revisit only if the built path feels thin. |
-| 6. Same Year, Same Scene (`album_moment`) | Keep. |
+| 6. Same Year, Same Scene (`album_moment`) | Keep. ~~Builder~~ Done (PR #925). |
 | 8. Neighbours by Ear (`album_sonic_neighbours`) | Keep at 8 seeds per album. The wider-sample check noted below is a build-time requirement, not a change to the cap. |
 | 9. Listen-through Gaps (`album_gaps`) | Keep, with the constraint below recorded. |
 
@@ -221,7 +221,7 @@ Status as of 2026-11-09 (merged work is on `main`; PR #921 merged):
 1. ~~Owner reviews this proposal and answers the open decisions.~~ Done 2026-11-09 (see "Decisions recorded").
 2. ~~Write the probe (`scripts/album_path_coverage.py`, filtered tests) and run it on a copy of the real store.~~ Done: script and filtered tests merged in PR #921; run on a copy of the store. Neighbours by Ear was measured separately (40-album sample, live sonic routes).
 3. ~~Record results in this document~~ Done (see "Probe results"). Keep, cut or add a slice per path: decided 2026-11-09 (see "Decisions recorded"). The exact overlap measurement is done (see "Probe results"): all four paths pass the overlap gate.
-4. Contract, builders, fixtures, then clients, each as its own slice with filtered tests and required CI. ~~Recording-places import slice~~ Done as an audit and dossier fix, merged in PR #922 (no import step needed; see "Slice audit"). Builders for paths 1, 2 and 4 are done (PR #924, see "Builders built" below). Builder for path 6 is done (see "Same Year, Same Scene builder"). Remaining, not started. Suggested order: contract section; builder for path 3 (its data is already in the store); Neighbours by Ear (own tab); Listen-through Gaps; fixtures and decoders; client screens.
+4. Contract, builders, fixtures, then clients, each as its own slice with filtered tests and required CI. ~~Recording-places import slice~~ Done as an audit and dossier fix, merged in PR #922 (no import step needed; see "Slice audit"). Builders for paths 1, 2 and 4 are done (PR #924, see "Builders built" below). ~~Builder for path 6~~ Done, merged in PR #925 (see "Same Year, Same Scene builder"). Remaining, not started. Suggested order: contract section; builder for path 3 (its data is already in the store); Neighbours by Ear (own tab); Listen-through Gaps; fixtures and decoders; client screens.
 
 ## Builders built (PR #924, 2026-11-09)
 
@@ -237,7 +237,9 @@ Run on a read-only copy of the owner's store, all 884 owned albums, after overla
 
 All pass the Balanced thresholds; Covers and Sources has the thinnest margin. Slowest build 2.0 s. Not done: contract section, route extension, fixtures, clients.
 
-## Same Year, Same Scene builder (2026-11-09)
+## Same Year, Same Scene builder (PR #925, 2026-11-09)
+
+Merged to `main` as `adf7454da321543e78aff8d3526f0987b7e7c497`. Filtered tests only; full suite and required CI ran on the PR.
 
 `album_moment` is built in `intelligence/graph/album_paths.py` (`_moment_rows`). Rules as proposed: the start's earliest stored `release_facts` date, owned albums whose earliest date is within 2 calendar years (inclusive, by year), and at least one stated link. A date match alone, an undated start and an undated candidate give no stop. Links and reason codes:
 - `same_period_label`: a shared `release_labels` row (no edge, so no edge evidence, as in the label path).
@@ -273,7 +275,7 @@ For usage efficiency, give Haiku the mechanical, self-checking steps: a spelled-
 | Set the Neighbours by Ear call cap | Owner | — | Decided: 8 seeds per album (2026-11-09). |
 | ~~New import slice (recording places, production credits, work relations)~~ **Done** as an audit plus dossier fix (PR #922); no import needed | Sonnet | high | Schema bump, resumable import, cache invalidation; follows the release-links precedent. |
 | ~~Path builders for Studio Crew, Guest List, Covers and Sources~~ **Done** (PR #924) | Sonnet | high | Evidence rules, hub caps, de-duplication of people across paths; a mistake breaks the credit-grade guarantee. |
-| ~~Same Year Same Scene builder~~ **Done** (branch, see "Same Year, Same Scene builder") | Sonnet | medium | Strict-rule logic on top of existing readers. |
+| ~~Same Year Same Scene builder~~ **Done** (PR #925, see "Same Year, Same Scene builder") | Sonnet | medium | Strict-rule logic on top of existing readers. |
 | Neighbours by Ear composition | Sonnet | medium | Groups similar-track results; must never sort or threshold on `similarity`. |
 | Listen-through Gaps filter | Sonnet | high | Must stay within the taste rule; a leak into ranking is a contract violation. |
 | Write the contract section | Sonnet | medium | Needs consistent wording with the existing paths contract. |

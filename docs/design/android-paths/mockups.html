@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Paths Sheet Mockups</title>
+<style>
+:root{--bg:#eceae6;--fg:#16151a;--mu:#5d5a66;--card:#fbfaf8;--line:#16151a;--acc:#b8860b}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#15141a;--fg:#f0eef6;--mu:#a29eb3;--card:#1f1d27;--line:#f0eef6;--acc:#f5d33f;color-scheme:dark}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 system-ui,Roboto,sans-serif;padding:20px max(16px,env(safe-area-inset-right)) 48px max(16px,env(safe-area-inset-left))}
+.wrap{max-width:1180px;margin:0 auto}
+h1{font:800 clamp(26px,4vw,38px)/1.05 system-ui;margin:0 0 6px}
+.lede{color:var(--mu);margin:0 0 14px;max-width:80ch}
+.tabs{display:flex;gap:6px;overflow-x:auto;padding:4px 0 10px}
+.tabs button{flex:none;font:600 13px system-ui;padding:8px 12px;min-height:48px;border:2px solid var(--line);background:var(--card);color:var(--fg);border-radius:8px;cursor:pointer;text-align:left}
+.tabs button small{display:block;font:500 11px ui-monospace,monospace;color:var(--mu)}
+.tabs button[aria-selected=true]{background:var(--acc);color:#141211;box-shadow:3px 3px 0 var(--line)}
+.tabs button[aria-selected=true] small{color:inherit}
+button:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+.flow{display:flex;gap:14px;overflow-x:auto;padding:8px 2px 14px;align-items:flex-start}
+.step{flex:none;width:300px}
+.cap{font:600 11px ui-monospace,monospace;letter-spacing:.06em;text-transform:uppercase;color:var(--mu);margin:0 0 6px}
+.cap b{color:var(--fg)}
+.arrow{flex:none;align-self:center;font:700 22px system-ui;color:var(--mu)}
+.notes{background:var(--card);border:2px solid var(--line);border-radius:10px;padding:14px 16px;font-size:14px;margin-top:6px;display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:6px 24px}
+.notes h2{grid-column:1/-1;margin:0;font:800 18px system-ui}
+.notes h3{font:600 11px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--mu);margin:8px 0 4px}
+.notes ul{margin:0;padding-left:18px}.notes li{margin:3px 0}
+.rec{border:2px solid var(--line);border-radius:10px;padding:12px 16px;background:var(--card);margin-top:14px}
+/* phone */
+.phone{width:300px;height:600px;border-radius:30px;border:7px solid #0a0a0a;overflow:hidden;position:relative;background:#141211;color:#f4efe6;font-size:12px;line-height:1.35;box-shadow:0 8px 24px rgba(0,0,0,.25)}
+.sb{height:18px;display:flex;justify-content:space-between;padding:3px 14px 0;font:600 9px ui-monospace,monospace;opacity:.7}
+.nav3{position:absolute;bottom:0;left:0;right:0;height:16px;display:flex;justify-content:center;align-items:center}
+.nav3 i{width:90px;height:4px;border-radius:2px;background:#f4efe6;opacity:.5}
+.scrim{position:absolute;inset:0;background:rgba(0,0,0,.55)}
+.sheet{position:absolute;left:0;right:0;bottom:0;background:#1c1a18;border:2px solid #f4efe6;border-bottom:0;border-radius:24px 24px 0 0;padding:6px 14px 20px;display:flex;flex-direction:column;gap:8px}
+.grab{width:36px;height:4px;border-radius:2px;background:#f4efe6;opacity:.55;margin:2px auto 2px}
+.ttl{font:800 17px/1.1 system-ui;text-align:left;letter-spacing:-.01em}
+.mut{color:#b9b2a5}
+.chip{flex:none;border:1.5px solid #f4efe6;border-radius:99px;padding:0 11px;height:34px;display:inline-flex;align-items:center;font:600 11px system-ui;white-space:nowrap;color:#f4efe6;background:transparent}
+.chip.on{background:#f5d33f;color:#141211;border-color:#f5d33f;box-shadow:2px 2px 0 #f4efe6}
+.row{display:flex;gap:10px;align-items:center}
+.cover{flex:none;width:40px;height:40px;border:1.5px solid #f4efe6;border-radius:6px}
+.btn{border:2px solid #f4efe6;border-radius:8px;padding:0 12px;min-height:44px;display:flex;align-items:center;justify-content:center;font:700 12px system-ui;color:#f4efe6;background:transparent}
+.btn.pri{background:#f5d33f;color:#141211;border-color:#f5d33f;box-shadow:3px 3px 0 #f4efe6}
+.pill{display:inline-block;border:1.5px solid #86d39b;color:#86d39b;border-radius:99px;padding:0 7px;font:600 9px ui-monospace,monospace}
+.pill.no{border-color:#b9b2a5;color:#b9b2a5}
+.ico{width:24px;height:24px;border:1.5px solid currentColor;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font:700 11px system-ui;flex:none}
+.hl{outline:2px dashed #ff5a3c;outline-offset:2px}
+.tag-new{position:absolute;right:8px;top:6px;font:700 9px ui-monospace,monospace;background:#ff5a3c;color:#141211;padding:1px 6px;border-radius:99px}
+.rail{position:relative;padding-left:26px}
+.rail::before{content:"";position:absolute;left:9px;top:8px;bottom:8px;width:2px;background:#f4efe6;opacity:.35}
+.node{position:absolute;left:3px;top:2px;width:14px;height:14px;border-radius:50%;border:2px solid #f4efe6;background:#141211}
+.node.cur{background:#f5d33f;border-color:#f5d33f}
+.item{position:relative;padding:5px 0 9px 0}
+.item .t{font:700 13px/1.2 system-ui}
+.item .s{color:#b9b2a5;font-size:11px}
+.page-hero{height:150px;background:linear-gradient(160deg,#5a3a2a,#141211);padding:34px 14px 0;position:relative}
+.page-hero .ttl{font-size:22px}
+.back{position:absolute;left:8px;top:22px;width:44px;height:44px;border:2px solid #f4efe6;border-radius:50%;display:flex;align-items:center;justify-content:center;font:700 16px system-ui;background:#141211}
+.crumb{position:absolute;left:10px;right:10px;bottom:24px;border:2px solid #f5d33f;border-radius:12px;background:#252220;padding:0 12px;min-height:52px;display:flex;align-items:center;gap:10px;box-shadow:3px 3px 0 #f4efe6}
+.sub-nav{position:absolute;left:0;right:0;bottom:16px;height:56px;border-top:2px solid #f4efe6;background:#1c1a18;display:flex}
+.sub-nav div{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;font:600 9px system-ui;gap:2px}
+.sub-nav div.on{color:#f5d33f}
+.cardbig{border:2px solid #f4efe6;border-radius:14px;background:#252220;padding:12px;box-shadow:4px 4px 0 #f4efe6}
+.dots{display:flex;gap:6px;justify-content:center}.dots i{width:8px;height:8px;border-radius:50%;background:#f4efe6;opacity:.3}.dots i.on{opacity:1;background:#f5d33f}
+.kcard{border:2px solid #f4efe6;border-radius:12px;background:#252220;padding:10px 12px;display:flex;gap:10px;align-items:center;min-height:62px}
+.kcard .n{margin-left:auto;font:700 10px ui-monospace,monospace;color:#b9b2a5;text-align:right}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>Paths sheet — five redesigns</h1>
+<p class="lede">Android (Compose, Material 3, Night theme). Every concept answers the same rule: <b>open an artist or album from Paths, press Back or swipe back, and you land on Paths again</b>, with the same kind, scroll position and open step, never on the artist the sheet belongs to. Sample data only. The dashed red outline marks the tap that leaves Paths.</p>
+<div class="tabs" role="tablist" id="tabs"></div>
+<div id="stage"></div>
+
+<div class="rec">
+<b>The Back behaviour, once, for all five.</b> Today the sheet calls <code>onDismiss()</code> and then navigates, so the artist page is the next thing on the back stack. The fix is the same under every look: Paths becomes a destination in the navigation stack (<code>PathsRoute(mbid, name, kind)</code>) or, if you keep a true sheet, the sheet is hosted above the artist page and hidden while another page is on top of it. Selected kind, the loaded answer, scroll offset and the open step live in the view model keyed to that route, so Back restores them without a refetch. System back, the predictive-back swipe and the in-app Back button all pop one entry. The sheet's own close (X, drag down, scrim tap) is the only thing that returns to the artist.
+</div>
+</div>
+
+<script>
+const C=['#7a4b32','#3b5d63','#6b3f5e','#58603a','#8a5a2b','#35507a','#7a3a3a','#4a4a6a'];
+const cv=(i,s=40)=>`<span class="cover" style="width:${s}px;height:${s}px;background:${C[i%C.length]}"></span>`;
+const sb='<div class="sb"><span>9:41</span><span>5G ▮▮▮</span></div>';
+const home='<div class="nav3"><i></i></div>';
+const phone=(inner,label)=>`<div class="step"><p class="cap">${label}</p><div class="phone">${sb}${inner}${home}</div></div>`;
+const arrow='<div class="arrow" aria-hidden="true">→</div>';
+const KINDS=['Follow the musician','Sideman','Label','Composition','Scene'];
+const artistPage=(extra='')=>`<div class="page-hero"><div class="back">←</div><div class="ttl">Herbie Hancock</div><div class="mut">Jazz · 1940 · 38 albums</div></div>
+<div style="padding:12px 14px;display:grid;gap:8px"><div class="btn" style="justify-content:flex-start">▶  Top songs</div><div class="btn" style="justify-content:flex-start;opacity:.7">Albums  ·  Similar artists</div></div>${extra}`;
+const pageOf=(name,sub)=>`<div class="page-hero" style="background:linear-gradient(160deg,#2f4a55,#141211)"><div class="back hl">←</div><div class="ttl">${name}</div><div class="mut">${sub}</div></div><div style="padding:12px 14px;display:grid;gap:8px"><div class="btn">▶  Play</div><div class="mut">Tracks, credits, similar…</div></div>`;
+const behind=(inner)=>`<div style="position:absolute;inset:18px 0 0 0;overflow:hidden">${inner}</div>`;
+
+const items=[
+ ['Chameleon','Headhunters · 1973','Bennie Maupin also played with Herbie',1,1],
+ ['Maiden Voyage','Herbie Hancock · 1965','Ron Carter played on both',2,0],
+ ['So What','Miles Davis · 1959','Paul Chambers played on both',3,0],
+ ['Footprints','Wayne Shorter · 1966','Tony Williams played on both',4,1],
+ ['Naima','John Coltrane · 1960','Jimmy Garrison played on both',5,0],
+];
+
+const concepts=[
+{k:'A',name:'Timeline sheet',sub:'tall sheet · rail',
+ build(){
+  const rows=(sel)=>items.map((it,i)=>`<div class="item ${sel===i?'':''}"><span class="node ${i===sel?'cur':''}"></span><div class="row" style="align-items:flex-start">${cv(it[3],38)}<div style="flex:1;min-width:0"><div class="t">${it[0]}</div><div class="s">${it[1]}</div>${i===sel?`<div style="margin:4px 0 6px">${it[2]}.</div><div class="row" style="gap:8px"><span class="btn hl" style="flex:1;min-height:48px">Album: ${it[1].split(' · ')[0]}</span><span class="btn hl" style="flex:1;min-height:48px">Artist</span></div>`:`<div class="s">${it[2]}</div>`}</div><span class="pill ${it[4]?'':'no'}">${it[4]?'owned':'new'}</span></div></div>`).join('');
+  const sheet=(sel,open)=>`<div class="scrim"></div><div class="sheet" style="top:46px"><div class="grab"></div>
+   <div class="row"><div style="flex:1"><div class="ttl">Paths from Herbie Hancock</div></div><span class="ico" style="width:48px;height:48px;border:0">✕</span></div>
+   <div class="row" style="overflow:hidden;gap:6px">${KINDS.map((k,i)=>`<span class="chip ${i===0?'on':''}">${k}</span>`).join('')}</div>
+   <div class="mut" style="font-size:11px">Songs, not in your library, by musicians who also played with Herbie Hancock.</div>
+   <div class="rail" style="overflow:hidden;flex:1">${rows(sel)}</div></div>`;
+  return `<div class="flow">${phone(behind(artistPage())+sheet(1),'1 · Tap a step, it opens in place')}${arrow}${phone(pageOf('Maiden Voyage','Album · Herbie Hancock · 1965'),'2 · Open the album')}${arrow}${phone(behind(artistPage())+sheet(1),'3 · Back → same sheet, same step')}</div>`;
+ },
+ notes:[['What changes',['Tall sheet (about 90% height) so five or six steps show at once; today it is a 300dp box.','A vertical rail turns the list into a path: node, line, node. The tapped step is the filled node.','Kind chips stay, but the description is one line under them and the sheet never jumps height.','Two big 48dp buttons replace the full-width stack of outlined buttons.']],['Back',['Paths is a route; the sheet look is a transition. Restored with kind, scroll and open node.']],['Trade-off',['Closest to today, lowest build cost. Still a sheet, so the 5 kinds scroll sideways and the last chips hide.']]]},
+
+{k:'B',name:'Full-screen Paths',sub:'route · kind bar at bottom',
+ build(){
+  const list=(sel)=>items.map((it,i)=>`<div class="row" style="padding:8px 0;border-bottom:1px solid #3a3632;align-items:flex-start"><div style="width:18px" class="mut"><b>${i+1}</b></div>${cv(it[3],44)}<div style="flex:1;min-width:0"><div style="font:700 13px system-ui">${it[0]}</div><div class="mut">${it[1]}</div><div class="mut" style="font-size:11px">${it[2]}</div></div><span class="ico ${i===sel?'hl':''}">›</span></div>`).join('');
+  const scr=(sel)=>`<div style="position:absolute;inset:18px 0 16px 0;display:flex;flex-direction:column"><div class="row" style="padding:6px 8px"><span class="ico" style="width:48px;height:48px;border:0;font-size:18px">←</span><div><div class="ttl">Paths</div><div class="mut" style="font-size:11px">from Herbie Hancock</div></div></div>
+   <div style="padding:0 14px;flex:1;overflow:hidden"><div class="mut" style="font-size:11px;margin-bottom:4px">Songs not in your library by musicians who also played with him · 12 steps</div>${list(sel)}</div>
+   <div class="sub-nav" style="position:relative;bottom:auto;height:60px">${KINDS.map((k,i)=>`<div class="${i===0?'on':''}"><span class="ico" style="border-width:1.5px">${'♪◐▤♬◎'[i]}</span>${['Musician','Sideman','Label','Song','Scene'][i]}</div>`).join('')}</div></div>`;
+  return `<div class="flow">${phone(scr(1),'1 · Paths is its own screen')}${arrow}${phone(pageOf('Maiden Voyage','Album · Herbie Hancock · 1965'),'2 · Open the album')}${arrow}${phone(scr(1),'3 · Back → Paths, scroll kept')}</div>`;
+ },
+ notes:[['What changes',['Leaves the sheet entirely: Paths is a stack screen, so predictive back, the shared transition and the Back button come for free.','The five kinds become a bottom bar (thumb zone), each with an icon and a short label that survives 200% text because the labels are one word.','Whole screen for the list: nine to ten steps visible, 48dp-plus rows, one tap opens the page directly.']],['Back',['Most natural: it is just a pushed screen. Nothing custom beyond saving the list state.']],['Trade-off',['Loses the "quick look" feel of a sheet. A fifth tab bar competes with the app\'s own bottom bar, so it would replace it while Paths is open.']]]},
+
+{k:'C',name:'Kind picker first',sub:'two levels in one sheet',
+ build(){
+  const pick=`<div class="scrim"></div><div class="sheet" style="top:150px"><div class="grab"></div><div class="ttl">Paths from Herbie Hancock</div><div class="mut" style="font-size:11px">Pick a way to explore</div>
+   ${[['Follow the musician','Songs by people he played with','12'],['Sideman','Records he played on','7'],['Label','Same labels, other albums','20'],['Composition','Covers and live versions','4'],['Scene','Same place and era','9']].map((r,i)=>`<div class="kcard"><span class="ico">${'♪◐▤♬◎'[i]}</span><div><div style="font:700 13px system-ui">${r[0]}</div><div class="mut" style="font-size:11px">${r[1]}</div></div><div class="n">${r[2]}<br>steps</div></div>`).join('')}</div>`;
+  const inside=(sel)=>`<div class="scrim"></div><div class="sheet" style="top:46px"><div class="grab"></div><div class="row"><span class="ico" style="width:48px;height:48px;border:0;font-size:16px">←</span><div><div class="ttl">Follow the musician</div><div class="mut" style="font-size:11px">Herbie Hancock · 12 steps</div></div></div>
+   <div style="overflow:hidden;flex:1;display:grid;gap:8px;align-content:start">${items.map((it,i)=>`<div class="row ${i===sel?'hl':''}" style="min-height:56px;border-bottom:1px solid #3a3632">${cv(it[3],44)}<div style="flex:1"><div style="font:700 13px system-ui">${it[0]}</div><div class="mut">${it[1]}</div></div><span>›</span></div>`).join('')}</div></div>`;
+  return `<div class="flow">${phone(behind(artistPage())+pick,'1 · Level one: kinds with counts')}${arrow}${phone(behind(artistPage())+inside(1),'2 · Level two: the path (sheet ← goes up a level)')}${arrow}${phone(pageOf('Maiden Voyage','Album · Herbie Hancock · 1965'),'3 · Tap → page. Back returns to level two')}</div>`;
+ },
+ notes:[['What changes',['Drops the sideways chip row. Five full-width cards show what each kind means and how many steps it has (counts come from the same response, fetched lazily as today).','Level two shows one path with a ← that goes back to the picker, so there is no confusion between "sheet back" and "page back".','Empty kinds are visibly greyed with "none yet" instead of a blank sheet after a tap.']],['Back',['Stack is: Artist → Sheet(picker) → Sheet(path) → Page. System back from the page returns to the path level; one more back returns to the picker; one more closes.']],['Trade-off',['Best explanation for newcomers, but one extra tap per visit and a request per kind to fill counts.']]]},
+
+{k:'D',name:'Step cards',sub:'pager · one step at a time',
+ build(){
+  const card=(i,own)=>{const it=items[i];return `<div class="cardbig"><div style="height:130px;border-radius:8px;border:1.5px solid #f4efe6;background:${C[it[3]]};margin-bottom:10px"></div><div class="row"><div style="flex:1"><div class="ttl">${it[0]}</div><div class="mut">${it[1]}</div></div><span class="pill ${it[4]?'':'no'}">${it[4]?'owned':'new'}</span></div><div style="margin-top:8px">${it[2]}.</div></div>`;};
+  const pager=(i)=>`<div class="scrim"></div><div class="sheet" style="top:70px"><div class="grab"></div>
+   <div class="row"><div style="flex:1"><div class="mut" style="font:600 10px ui-monospace,monospace;text-transform:uppercase">Paths from Herbie Hancock</div><div style="font:700 13px system-ui">Follow the musician ▾</div></div><span class="ico" style="width:48px;height:48px;border:0">✕</span></div>
+   <div class="mut" style="font:600 11px ui-monospace,monospace">Step ${i+1} of 12</div>
+   ${card(i)}<div class="dots">${[0,1,2,3,4,5,6].map(d=>`<i class="${d===i?'on':''}"></i>`).join('')}</div>
+   <div class="row"><span class="btn" style="flex:1">‹ Prev</span><span class="btn pri hl" style="flex:2">Open album</span><span class="btn" style="flex:1">Next ›</span></div></div>`;
+  return `<div class="flow">${phone(behind(artistPage())+pager(1),'1 · Swipe or tap Next through the path')}${arrow}${phone(pageOf('Maiden Voyage','Album · Herbie Hancock · 1965'),'2 · Open album')}${arrow}${phone(behind(artistPage())+pager(1),'3 · Back → still on step 2')}</div>`;
+ },
+ notes:[['What changes',['A path is a journey, so show it as one: a card per step with artwork, why it is here and one primary button in the thumb zone.','Kind lives in a dropdown in the header (a menu, five entries, 48dp each) instead of a chip row, which frees height for the artwork.','Prev and Next buttons, so swiping is never the only route.']],['Back',['The pager index is saved with the route, so Back lands on the same card.']],['Trade-off',['Only one step visible, so scanning twelve steps is slow. Good for browsing, poor for comparing. Fits a few high-evidence steps better than a long list.']]]},
+
+{k:'E',name:'Sheet that parks',sub:'docked "Back to Paths" bar',
+ build(){
+  const list=items.map((it,i)=>`<div class="row" style="min-height:52px;border-bottom:1px solid #3a3632">${cv(it[3],40)}<div style="flex:1"><div style="font:700 13px system-ui">${it[0]}</div><div class="mut">${it[1]}</div></div><span class="${i===1?'hl':''}" style="font-size:16px;padding:8px">›</span></div>`).join('');
+  const sheet=`<div class="scrim"></div><div class="sheet" style="top:92px"><div class="grab"></div><div class="row"><div class="ttl" style="flex:1">Paths from Herbie Hancock</div><span class="chip on" style="height:32px">Musician ▾</span></div><div style="overflow:hidden;flex:1">${list}</div></div>`;
+  const parked=behind(pageOf('Maiden Voyage','Album · Herbie Hancock · 1965'))+`<div class="crumb"><span class="ico" style="color:#f5d33f">‹</span><div style="flex:1;min-width:0"><div style="font:700 12px system-ui">Back to Paths</div><div class="mut" style="font-size:10px">Follow the musician · step 2 of 12</div></div><span class="mut" style="font-size:16px;padding:8px">✕</span></div>`;
+  return `<div class="flow">${phone(behind(artistPage())+sheet,'1 · Half sheet, drag up for full')}${arrow}${phone(parked,'2 · Page opens; the path parks as a bar')}${arrow}${phone(behind(artistPage())+sheet,'3 · Bar, Back or swipe → sheet again')}</div>`;
+ },
+ notes:[['What changes',['Keeps the quick-look sheet at half height and lets you drag to full.','When you open a page, the path is not hidden and forgotten: a docked bar shows where you came from. Tap the bar, press Back or swipe back to return to the sheet. Tap ✕ on the bar to discard the path.','You can follow several steps in a row (open, bar, back, next step) with one thumb, bar at the bottom.']],['Back',['Same stack rule as the others, plus the bar makes the return visible, so nobody wonders why Back skipped the artist.']],['Trade-off',['Most new UI: a bar that must sit above the app\'s bottom navigation and the mini player. Check it against the player on small phones before choosing.']]]},
+];
+
+const tabs=document.getElementById('tabs'),stage=document.getElementById('stage');
+function show(i){
+  [...tabs.children].forEach((b,j)=>b.setAttribute('aria-selected',j===i));
+  const c=concepts[i];
+  stage.innerHTML=c.build()+`<div class="notes"><h2>${c.k} · ${c.name}</h2>${c.notes.map(n=>`<div><h3>${n[0]}</h3><ul>${n[1].map(x=>`<li>${x}</li>`).join('')}</ul></div>`).join('')}</div>`;
+}
+concepts.forEach((c,i)=>{const b=document.createElement('button');b.setAttribute('role','tab');b.innerHTML=`${c.k} · ${c.name}<small>${c.sub}</small>`;b.onclick=()=>show(i);tabs.appendChild(b)});
+show(0);
+</script>
+</body>
+</html>

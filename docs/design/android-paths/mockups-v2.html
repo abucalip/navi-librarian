@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Paths Redesign v2</title>
+<style>
+:root{--bg:#eceae6;--fg:#16151a;--mu:#5d5a66;--card:#fbfaf8;--line:#16151a;--acc:#b8860b}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#15141a;--fg:#f0eef6;--mu:#a29eb3;--card:#1f1d27;--line:#f0eef6;--acc:#f5d33f;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#15141a;--fg:#f0eef6;--mu:#a29eb3;--card:#1f1d27;--line:#f0eef6;--acc:#f5d33f;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 system-ui,Roboto,sans-serif;padding:20px max(16px,env(safe-area-inset-right)) 48px max(16px,env(safe-area-inset-left))}
+.wrap{max-width:1240px;margin:0 auto}
+h1{font:800 clamp(26px,4vw,38px)/1.05 system-ui;margin:0 0 6px}
+.lede{color:var(--mu);margin:0 0 14px;max-width:84ch}
+.tabs{display:flex;gap:6px;overflow-x:auto;padding:4px 0 10px}
+.tabs button{flex:none;font:600 13px system-ui;padding:8px 12px;min-height:48px;border:2px solid var(--line);background:var(--card);color:var(--fg);border-radius:8px;cursor:pointer;text-align:left}
+.tabs button small{display:block;font:500 11px ui-monospace,monospace;color:var(--mu)}
+.tabs button[aria-selected=true]{background:var(--acc);color:#141211;box-shadow:3px 3px 0 var(--line)}
+.tabs button[aria-selected=true] small{color:inherit}
+button:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+.flow{display:flex;gap:12px;overflow-x:auto;padding:8px 2px 14px;align-items:flex-start}
+.step{flex:none;width:300px}
+.cap{font:600 11px ui-monospace,monospace;letter-spacing:.06em;text-transform:uppercase;color:var(--mu);margin:0 0 6px}
+.arrow{flex:none;align-self:center;font:700 22px system-ui;color:var(--mu)}
+.notes{background:var(--card);border:2px solid var(--line);border-radius:10px;padding:14px 16px;font-size:14px;margin-top:6px;display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:6px 24px}
+.notes h2{grid-column:1/-1;margin:0;font:800 18px system-ui}
+.notes h3{font:600 11px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--mu);margin:8px 0 4px}
+.notes ul{margin:0;padding-left:18px}.notes li{margin:3px 0}
+.rec{border:2px solid var(--line);border-radius:10px;padding:12px 16px;background:var(--card);margin-top:14px}
+code{font:12px ui-monospace,monospace}
+/* phone (1px ≈ 1.2dp; targets drawn at 42px ≈ 50dp) */
+.phone{width:300px;height:600px;border-radius:30px;border:7px solid #0a0a0a;overflow:hidden;position:relative;background:#141211;color:#f4efe6;font-size:12px;line-height:1.35;box-shadow:0 8px 24px rgba(0,0,0,.25)}
+.sb{height:18px;display:flex;justify-content:space-between;padding:3px 14px 0;font:600 9px ui-monospace,monospace;opacity:.7}
+.nav3{position:absolute;bottom:0;left:0;right:0;height:16px;display:flex;justify-content:center;align-items:center}
+.nav3 i{width:90px;height:4px;border-radius:2px;background:#f4efe6;opacity:.5}
+.scrim{position:absolute;inset:0;background:rgba(0,0,0,.55)}
+.sheet{position:absolute;left:0;right:0;bottom:0;background:#1c1a18;border:2px solid #f4efe6;border-bottom:0;border-radius:24px 24px 0 0;padding:6px 14px 20px;display:flex;flex-direction:column;gap:8px;overflow:hidden}
+.grab{width:36px;height:4px;border-radius:2px;background:#f4efe6;opacity:.55;margin:2px auto}
+.ttl{font:800 17px/1.1 system-ui;letter-spacing:-.01em}
+.mut{color:#b9b2a5}.tiny{font-size:10px}
+.row{display:flex;align-items:center;gap:10px}
+.chip{flex:none;border:1.5px solid #f4efe6;border-radius:99px;padding:0 11px;height:34px;display:inline-flex;align-items:center;font:600 11px system-ui;white-space:nowrap}
+.chip.on{background:#f5d33f;color:#141211;border-color:#f5d33f;box-shadow:2px 2px 0 #f4efe6}
+.btn{border:2px solid #f4efe6;border-radius:8px;padding:0 12px;min-height:42px;display:flex;align-items:center;justify-content:center;font:700 12px system-ui;white-space:nowrap}
+.btn.pri{background:#f5d33f;color:#141211;border-color:#f5d33f;box-shadow:3px 3px 0 #f4efe6}
+.btn.sm{min-height:42px;padding:0 10px;font-size:11px}
+.cover{flex:none;border:1.5px solid #f4efe6;border-radius:6px;display:block}
+.li{display:flex;gap:10px;align-items:center;min-height:54px;padding:6px 0;border-bottom:1px solid rgba(244,239,230,.18)}
+.li .t{font:700 13px system-ui}
+.li.seen .t,.li.seen .mut{opacity:.55}
+.hl{outline:2px dashed #ff5a3c;outline-offset:2px;border-radius:8px}
+.tag{display:inline-block;font:700 9px ui-monospace,monospace;border:1.5px solid #f4efe6;border-radius:99px;padding:0 6px}
+.tag.ok{background:#4ade80;color:#141211;border-color:#4ade80}
+.page-hero{height:150px;background:linear-gradient(160deg,#5a3a2a,#141211);padding:34px 14px 0;position:relative;display:flex;flex-direction:column;justify-content:flex-end;padding-bottom:12px}
+.back{position:absolute;left:8px;top:22px;width:42px;height:42px;border:2px solid #f4efe6;border-radius:50%;display:flex;align-items:center;justify-content:center;font:700 16px system-ui;background:#141211}
+.pagetabs{display:flex;border-bottom:2px solid #f4efe6}
+.pagetabs div{flex:1;text-align:center;padding:12px 0;font:700 12px system-ui;min-height:42px}
+.pagetabs .on{background:#f5d33f;color:#141211}
+.dim{opacity:.55}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>Paths — five new redesigns</h1>
+<p class="lede">Android, Compose, Material 3, Night theme. Sample data from Herbie Hancock. Every concept ends with the same test: <b>open an artist or album from Paths, press Back or swipe back, and you are in Paths again</b>, same kind, same scroll position, same open step. The dashed red outline marks the tap that leaves Paths. Touch targets are drawn at 42px, about 50dp on a real phone.</p>
+<div class="tabs" role="tablist" id="tabs"></div>
+<div id="stage"></div>
+<div class="rec">
+<b>The Back behaviour, for all five.</b> Today <code>ArtistPaths.kt</code> closes the sheet (<code>onDismiss()</code>) and then navigates, so the artist page is the next entry on the back stack. Fix, in one sentence per look: <b>A</b> needs no fix because Paths is part of the artist page itself; <b>B–E</b> host Paths as a destination in the NavHost (a bottom-sheet or full-height destination with a route like <code>PathsRoute(mbid, name, kind)</code>) so the album or artist opens on top of it and Back pops to it. Kind, loaded answer, scroll offset, open step and visited steps live in a view model scoped to that route, so Back restores them without a new request. System back, the swipe-back gesture and the in-app Back button each pop exactly one entry. Only the sheet's own close (X, drag down, tap outside) goes to the artist.
+</div>
+</div>
+<script>
+const C=['#7a4a3a','#3b5f6b','#6b5a2e','#4a3b6b','#2f6b4a','#6b3b52'];
+const cv=(i,s=40)=>`<span class="cover" style="width:${s}px;height:${s}px;background:${C[i%C.length]}"></span>`;
+const arrow='<div class="arrow">→</div>';
+const status='<div class="sb"><span>9:41</span><span>▮▮▮</span></div>';
+const phone=(inner,cap)=>`<div class="step"><p class="cap">${cap}</p><div class="phone">${status}${inner}<div class="nav3"><i></i></div></div></div>`;
+
+/* path data: [title, detail, why, owned, album-artist] */
+const S=[
+ ['Footprints','Wayne Shorter · Adam\'s Apple','Wayne Shorter also played on Maiden Voyage',0],
+ ['Eye of the Hurricane','Freddie Hubbard · Red Clay','Freddie Hubbard played on Maiden Voyage',0],
+ ['Nefertiti','Miles Davis Quintet','Ron Carter played on Maiden Voyage',1],
+ ['Sing Me a Song','Tony Williams · Lifetime','Tony Williams drummed on Maiden Voyage',0],
+ ['Mr. P.C.','John Coltrane · Giant Steps','Paul Chambers played on Maiden Voyage',0],
+ ['Song for My Father','Horace Silver','Blue Note rhythm section, 3 shared records',0],
+];
+const artistBehind=()=>`<div class="page-hero"><div class="back">←</div><div class="ttl">Herbie Hancock</div><div class="mut">Jazz · 1940 · 38 albums</div></div><div style="padding:12px 14px;display:grid;grid-template-columns:1fr 1fr;gap:8px">${[0,1,2,3].map(i=>`<div>${cv(i,'100%'.length&&118)}<div class="t" style="font-weight:700;margin-top:4px">Album ${i+1}</div></div>`).join('')}</div>`;
+const albumPage=()=>`<div class="page-hero" style="background:linear-gradient(160deg,#2f4a55,#141211)"><div class="back hl">←</div><div class="ttl">Maiden Voyage</div><div class="mut">Album · Herbie Hancock · 1965</div></div><div style="padding:12px 14px;display:grid;gap:6px">${['Maiden Voyage','The Eye of the Hurricane','Little One','Survival of the Fittest','Dolphin Dance'].map((t,i)=>`<div class="li"><span class="mut">${i+1}</span><span class="t">${t}</span></div>`).join('')}</div>`;
+const rows=(seen=[],opts={})=>S.map((s,i)=>`<div class="li ${seen.includes(i)?'seen':''}"><span class="mut" style="width:14px">${i+1}</span>${cv(i,38)}<div style="flex:1;min-width:0"><div class="t">${s[0]}</div><div class="mut tiny">${opts.why?s[2]:s[1]}</div></div>${seen.includes(i)?'<span class="tag">SEEN</span>':''}${opts.chev?'<span style="font-size:18px;padding:8px">›</span>':''}</div>`).join('');
+const chips=(on=0)=>`<div class="row" style="overflow:hidden">${['Musician','Sideman','Label','Composition','Scene'].map((k,i)=>`<span class="chip ${i===on?'on':''}">${k}</span>`).join('')}</div>`;
+
+const concepts=[
+/* A */
+{k:'A',name:'Paths tab on the artist page',sub:'no sheet at all',
+ build(){
+  const tab=(seen,scroll)=>`<div class="page-hero" style="height:96px"><div class="back">←</div><div class="ttl">Herbie Hancock</div><div class="mut tiny">Jazz · 1940 · 38 albums</div></div><div class="pagetabs"><div>Albums</div><div class="on">Paths</div><div>About</div></div><div style="padding:8px 14px;display:grid;gap:6px">${chips(0)}<div class="mut tiny">Songs not in your library, by musicians who also played with Herbie Hancock.</div><div style="margin-top:${scroll}px">${rows(seen,{why:1})}</div></div>`;
+  return `<div class="flow">${phone(tab([],0).replace('class="li "','class="li hl"'),'1 · Paths is a tab; tap a step')}${arrow}${phone(albumPage(),'2 · Album opens on top')}${arrow}${phone(tab([0],0),'3 · Back → same tab, step marked seen')}</div>`;
+ },
+ notes:[['What changes',['"Paths from artist" stops being a button that opens a sheet. It becomes a third tab on the artist page beside Albums and About, and the old button just jumps to that tab.','Full page height: eight rows visible instead of the 300dp box. Normal page scroll, so the top bar and gestures behave like everywhere else.','Kind chips stay a single row under the tabs; the description line becomes the first line of the list.']],['Back',['Nothing special to build: Paths is not a layer, so Back from an album simply returns to the artist page. The selected tab and kind are saved with <code>rememberSaveable</code>.','This is the only concept where "go back to the sheet" is true by construction.']],['Trade-off',['Paths no longer floats over the artist, so you cannot glance at the artist page and the path together. The tab strip is new UI on a page that has none today.']]]},
+
+/* B */
+{k:'B',name:'Master–detail sheet',sub:'list → step detail, inside the sheet',
+ build(){
+  const list=`<div class="scrim"></div><div class="sheet" style="top:70px"><div class="grab"></div><div class="row"><div class="ttl" style="flex:1">Paths from Herbie Hancock</div></div>${chips(0)}<div style="overflow:hidden;flex:1">${rows([],{chev:1})}</div></div>`;
+  const detail=(seen)=>`<div class="scrim"></div><div class="sheet" style="top:70px"><div class="grab"></div><div class="row"><div class="btn sm" style="width:42px;padding:0">←</div><div style="flex:1"><div class="ttl" style="font-size:15px">Eye of the Hurricane</div><div class="mut tiny">Step 2 of 12 · Follow the musician</div></div></div><div class="row" style="gap:12px">${cv(1,96)}<div style="flex:1"><div class="t" style="font-weight:700">Freddie Hubbard</div><div class="mut tiny">Red Clay · 1970</div><div style="margin-top:6px"><span class="tag">NOT IN LIBRARY</span></div></div></div><div style="border:2px solid #f4efe6;border-radius:10px;padding:10px"><div class="tiny mut" style="letter-spacing:.08em">WHY IT IS HERE</div><div style="margin-top:4px">Freddie Hubbard played on <b>Maiden Voyage</b>.</div><div style="margin-top:4px">Also played with Herbie Hancock on <b>Empyrean Isles</b>.</div></div><div class="row"><div class="btn pri hl" style="flex:1">Open album</div><div class="btn" style="flex:1">Open artist</div></div><div class="row" style="justify-content:space-between"><div class="btn sm">‹ Previous</div><div class="btn sm">Next ›</div></div></div>`;
+  return `<div class="flow">${phone(artistBehind()+list,'1 · List; tap a step')}${arrow}${phone(artistBehind()+detail(),'2 · Detail slides in, inside the sheet')}${arrow}${phone(albumPage(),'3 · Open album')}${arrow}${phone(artistBehind()+detail(),'4 · Back → the detail, not the artist')}</div>`;
+ },
+ notes:[['What changes',['Rows stop expanding in place. A row is one tap: it slides a detail pane over the list (inside the sheet). The detail has the artwork, the library state, every reason, and the two open buttons in the thumb zone.','Previous and Next step through the path without going back to the list, so a path reads as a journey.','The list gets calmer: title, one line, chevron. The 3-reason cap and the "N more reasons on the server" line move to the detail.']],['Back',['Two levels, both restored. Back from a page lands on the detail; Back again goes to the list; Back again closes to the artist. The sheet destination keeps the selected step index.']],['Trade-off',['A tap per step to read the reason, where today one chevron reveals it in the list. Worth it if the reasons matter more than scanning speed.']]]},
+
+/* C */
+{k:'C',name:'Kind rail + list',sub:'full-height sheet, vertical rail',
+ build(){
+  const rail=(on)=>`<div style="width:62px;flex:none;border-right:2px solid #f4efe6;display:flex;flex-direction:column">${[['♪','Musician'],['⇄','Sideman'],['◉','Label'],['♫','Work'],['⌖','Scene']].map((k,i)=>`<div style="min-height:66px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;${i===on?'background:#f5d33f;color:#141211':''}"><span style="font-size:18px">${k[0]}</span><span style="font:700 9px system-ui">${k[1]}</span></div>`).join('')}</div>`;
+  const sheet=(seen)=>`<div class="scrim"></div><div class="sheet" style="top:46px;padding:0"><div class="grab" style="margin:6px auto"></div><div class="row" style="padding:0 14px 6px"><div class="ttl" style="flex:1">Paths from Herbie Hancock</div><div class="btn sm" style="width:42px;padding:0">✕</div></div><div style="display:flex;flex:1;border-top:2px solid #f4efe6;overflow:hidden">${rail(0)}<div style="flex:1;padding:6px 10px;overflow:hidden"><div class="mut tiny" style="margin-bottom:4px">Songs not in your library, by musicians who also played with Herbie.</div>${S.map((s,i)=>`<div class="li ${seen.includes(i)?'seen':''}" ${i===1&&!seen.length?'':''}><div style="flex:1;min-width:0"><div class="t">${i+1} · ${s[0]}</div><div class="mut tiny">${s[1]}</div></div>${seen.includes(i)?'<span class="tag">SEEN</span>':''}</div>`).join('').replace('class="li "','class="li hl"')}</div></div></div>`;
+  return `<div class="flow">${phone(artistBehind()+sheet([]),'1 · Rail switches kind; tap a step')}${arrow}${phone(albumPage(),'2 · Album opens')}${arrow}${phone(artistBehind()+sheet([0]),'3 · Back → same kind, same row')}</div>`;
+ },
+ notes:[['What changes',['The five kinds move from a sideways chip row (some hidden off-screen today) to a left rail with icon and label. All five are visible at once and the current one is obvious.','Switching kind is a single tap that never moves the list: it just swaps the right pane. The rail stays put while scrolling.','Sheet is taller (about 92%): a short rail plus a list that actually fills the screen.']],['Back',['The route stores kind and scroll offset, so Back restores the rail selection and the exact row. Opening a step marks it SEEN in the list.']],['Trade-off',['The rail costs 62px of width, so row text is tighter and the reason line must be trimmed (the reason moves to a long-press or an info tap).']]]},
+
+/* D */
+{k:'D',name:'Digest of all five',sub:'answer-first overview, "See all" per kind',
+ build(){
+  const sec=(name,desc,n,items)=>`<div style="border-bottom:2px solid #f4efe6;padding:4px 0 8px"><div class="row"><div style="flex:1"><div class="t" style="font-weight:800;font-size:13px">${name}</div><div class="mut tiny">${desc}</div></div><div class="btn sm">All ${n} ›</div></div>${items}</div>`;
+  const three=(a,b)=>S.slice(a,b).map((s,i)=>`<div class="li" style="min-height:46px;padding:2px 0"><div style="flex:1;min-width:0"><div class="t">${s[0]}</div><div class="mut tiny">${s[1]}</div></div></div>`).join('');
+  const sheet=(seen)=>`<div class="scrim"></div><div class="sheet" style="top:46px"><div class="grab"></div><div class="row"><div class="ttl" style="flex:1">Paths from Herbie Hancock</div></div><div style="overflow:hidden;flex:1;display:grid;gap:6px">${sec('Follow the musician','Songs you do not own',12,three(0,2).replace('class="li"','class="li hl"'))}${sec('Sideman','Records Herbie played on',7,three(2,4))}${sec('Label','Same labels',9,three(4,6))}</div></div>`;
+  const kindOpen=`<div class="scrim"></div><div class="sheet" style="top:46px"><div class="grab"></div><div class="row"><div class="btn sm" style="width:42px;padding:0">←</div><div class="ttl" style="flex:1;font-size:15px">Follow the musician · 12</div></div><div style="overflow:hidden;flex:1">${rows([],{})}</div></div>`;
+  return `<div class="flow">${phone(artistBehind()+sheet(),'1 · Three kinds in one scroll; tap a step')}${arrow}${phone(albumPage(),'2 · Open album')}${arrow}${phone(artistBehind()+sheet(),'3 · Back → digest, scroll kept')}${arrow}${phone(artistBehind()+kindOpen,'"All 12 ›" opens the full kind (← returns to the digest)')}</div>`;
+ },
+ notes:[['What changes',['No chips to choose first. The sheet opens on a scrollable digest: each kind shows its two best steps and a count. You see what Paths can offer before choosing anything, and a kind with nothing says so in one line instead of an empty box.','"All N" opens the whole kind as a second level with a ← back to the digest.','Fetch: the five requests run when the sheet opens and fill in as they arrive; each section has its own loading and "try again" state, so one failure never blanks the sheet.']],['Back',['Same stack rule. The route keeps the digest scroll and which kind (if any) is open.']],['Trade-off',['Five requests on open instead of one per chosen kind. Fine on Wi-Fi, heavier on mobile data, so it would load the sections lazily as they scroll into view.']]]},
+
+/* E */
+{k:'E',name:'Quick-action rows + resume',sub:'one tap to the page, seen trail',
+ build(){
+  const r=(seen)=>S.map((s,i)=>`<div style="padding:6px 0;border-bottom:1px solid rgba(244,239,230,.18)" class="${seen.includes(i)?'seen':''}"><div class="row">${cv(i,38)}<div style="flex:1;min-width:0"><div class="t" style="font:700 13px system-ui;${seen.includes(i)?'opacity:.55':''}">${i+1} · ${s[0]} ${seen.includes(i)?'<span class="tag ok">SEEN</span>':''}</div><div class="mut tiny" style="${seen.includes(i)?'opacity:.55':''}">${s[2]}</div></div><div class="btn sm" style="width:42px;padding:0">ⓘ</div></div>${i<3?`<div class="row" style="margin-top:4px;padding-left:48px"><div class="btn sm ${i===1&&!seen.length?'hl':''}" style="flex:1">Album</div><div class="btn sm" style="flex:1">Artist</div></div>`:''}</div>`).join('');
+  const sheet=(seen,resume)=>`<div class="scrim"></div><div class="sheet" style="top:46px"><div class="grab"></div><div class="row"><div class="ttl" style="flex:1">Paths from Herbie Hancock</div></div>${chips(0)}${resume?`<div class="btn pri" style="justify-content:space-between;min-height:42px"><span>Continue at step ${resume}</span><span>↓</span></div>`:''}<div style="overflow:hidden;flex:1">${r(seen)}</div></div>`;
+  return `<div class="flow">${phone(artistBehind()+sheet([]),'1 · Open straight from the row')}${arrow}${phone(albumPage(),'2 · Album opens')}${arrow}${phone(artistBehind()+sheet([1],3),'3 · Back → sheet, step 2 seen, Continue chip')}</div>`;
+ },
+ notes:[['What changes',['Each row carries its destinations as two small buttons (Album, Artist), so reaching a page is one tap instead of expand, scroll to the buttons, tap. Only the first rows show buttons in the frame to keep the mock short; all rows would.','The reason line stays on the row (one line), and ⓘ expands the full reasons and the library state.','Steps you opened are marked SEEN, and a Continue chip jumps to the first unseen one. The seen list lives in memory for this route only (nothing saved on the phone, as today).']],['Back',['Same stack rule. Back lands on the same row, now marked SEEN, so you always know where you were.']],['Trade-off',['Busier rows, and two buttons per row repeats a label. Only the targets the server returned are shown, as today (an album without an artist name is not offered).']]]},
+];
+const tabs=document.getElementById('tabs'),stage=document.getElementById('stage');
+function show(i){
+  [...tabs.children].forEach((b,j)=>b.setAttribute('aria-selected',j===i));
+  const c=concepts[i];
+  stage.innerHTML=c.build()+`<div class="notes"><h2>${c.k} · ${c.name}</h2>${c.notes.map(n=>`<div><h3>${n[0]}</h3><ul>${n[1].map(x=>`<li>${x}</li>`).join('')}</ul></div>`).join('')}</div>`;
+}
+concepts.forEach((c,i)=>{const b=document.createElement('button');b.setAttribute('role','tab');b.innerHTML=`${c.k} · ${c.name}<small>${c.sub}</small>`;b.onclick=()=>show(i);tabs.appendChild(b)});
+show(0);
+</script>
+</body>
+</html>
