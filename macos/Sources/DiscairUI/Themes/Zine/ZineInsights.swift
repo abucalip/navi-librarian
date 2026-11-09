@@ -39,7 +39,11 @@ struct ZineInsights: View {
             }
             if model.lastDismissed != nil { undoBar }
         }
-        .task { await state.loadInsights(); await state.taste.load(librarian: state.session?.librarian) }
+        .task {
+            await state.loadInsights()
+            await state.taste.load(librarian: state.session?.librarian)
+            await state.taste.refreshIfEmpty(librarian: state.session?.librarian)
+        }
     }
 
     private var ticker: some View {

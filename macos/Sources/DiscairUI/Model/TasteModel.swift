@@ -58,6 +58,13 @@ public final class TasteModel {
         await refreshOnLaunch(librarian: librarian)
     }
 
+    /// Opening Insights with nothing saved asks for a refresh even if one already ran this launch (the account may have been
+    /// connected since). The server answers `too_soon` after a good run, so this cannot hammer ListenBrainz.
+    public func refreshIfEmpty(librarian: LibrarianClient?) async {
+        guard loaded, profiles?.headline == nil, !refreshing else { return }
+        await refreshNow(librarian: librarian)
+    }
+
     /// Test and preview seam: replaces the saved profiles without a server.
     func set(_ p: TasteProfiles?) { profiles = p; loaded = true }
 

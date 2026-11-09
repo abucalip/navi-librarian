@@ -117,8 +117,8 @@ struct ZineTaste: View {
     // MARK: Empty
 
     private var emptyNotice: some View {
-        notice(model.loaded ? "Taste needs listening history." : "Reading your saved profile.",
-               model.loaded ? "Connect ListenBrainz or play more; once a window has \(model.minListens) listens I will start describing it." : "",
+        notice(model.refreshing ? "Reading your listens." : model.loaded ? "Taste needs listening history." : "Reading your saved profile.",
+               model.refreshing ? "This can take about a minute the first time." : model.note ?? (model.loaded ? "Connect ListenBrainz in Settings or play more; once a window has \(model.minListens) listens I will start describing it." : ""),
                chip: model.loaded ? (0, model.minListens, "0 of \(model.minListens) listens needed before I will describe a window") : nil)
     }
 
