@@ -22,6 +22,7 @@ class FakeLibrarian:
 
 class PathsRoute(unittest.TestCase):
     def setUp(self):
+        self._orig_records = routes._play_records
         self.tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
         api = FastAPI()
@@ -108,9 +109,18 @@ class AlbumPathsRoute(PathsRoute):
         self.assertEqual(self.get_album(kind="label_path").status_code, 400)
         self.assertEqual(self.get_album(type="artist", mbid="a-gid").status_code, 400)
 
-    def test_unserved_album_kinds_answer_501(self):
-        for kind in ("album_gaps",):
-            self.assertEqual(self.get_album(kind=kind).status_code, 501, kind)
+    def test_gaps_without_play_data_is_unavailable_and_public(self):
+        routes._play_records = lambda librarian: None
+        self.addCleanup(lambda: setattr(routes, "_play_records", self._orig_records))
+        r = self.get_album(kind="album_gaps")
+        self.assertEqual(r.status_code, 200, r.text)
+        body = r.json()
+        self.assertEqual((body["kind"], body["history"]["state"]), ("album_gaps", "unavailable"))
+        for leaked in ("navidrome_id", "built_from", "generation_id", "presentation_version"):
+            self.assertNotIn(leaked, r.text)
+
+    def test_gaps_kind_needs_a_release_start(self):
+        self.assertEqual(self.get_album(kind="album_gaps", type="artist", mbid="a-gid").status_code, 400)
 
     def test_release_group_start_and_unknown_start(self):
         self.assertEqual(self.get_album(type="release_group").status_code, 404)
