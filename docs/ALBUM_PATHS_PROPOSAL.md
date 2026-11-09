@@ -115,7 +115,7 @@ A path that fails its thresholds is cut or gets a new slice (see the contingency
 ## Contingency: new import slice
 
 If a path lacks data, build a slice for it instead of loosening the evidence rules. Likely candidates:
-- **Same Room:** recording place and date links (listed in `not_loaded`). **Approved 2026-11-09**; this is the one new slice. **Audit result (2026-11-09): no new import step needed**, see "Slice audit" below.
+- ~~**Same Room:** recording place and date links (listed in `not_loaded`). **Approved 2026-11-09**; this is the one new slice.~~ **Done as an audit (2026-11-09, PR #922): no new import step needed**, the store already holds the links; see "Slice audit" below.
 - **Studio Crew:** production-credit relations at recording scope, if the current slice keeps only album-scope ones.
 - **Covers and Sources:** work-to-work relations, if not currently imported.
 
@@ -174,7 +174,7 @@ Sample: 40 of 748 owned albums with at least three tracks that have Navidrome ID
 - **Work links:** `performance` 7,454 of 7,454 complete. Work-to-work relations (`based on`, `arrangement`, `other version`) are loaded by the main import at the second hop.
 - **Only gaps:** recording-to-recording relations whose other end is not an owned recording (for example `mashes up` 29 of 1,097, `samples material` 107 of 788). No path uses them, and the 22 missing event links are 0.3% of Same Room's source.
 
-Decision: the main import already holds everything the three paths need, so no separate import step, schema bump or data-version change is added. The one real defect was the album dossier: it listed `recording_places_and_dates` in `not_loaded` and never showed the place links it held. It now returns `recording_places[]` (recording scope only: `entity`, `relation`, `role`, `track`, `valid_from`, `valid_to` and the evidence fields) and drops that `not_loaded` key once the store holds any place, event or area link to a recording. Builders read the same edges.
+Merged in PR #922 (script, filtered test, dossier `recording_places[]`, re-recorded `knowledge_album.json`). Decision: the main import already holds everything the three paths need, so no separate import step, schema bump or data-version change is added. The one real defect was the album dossier: it listed `recording_places_and_dates` in `not_loaded` and never showed the place links it held. It now returns `recording_places[]` (recording scope only: `entity`, `relation`, `role`, `track`, `valid_from`, `valid_to` and the evidence fields) and drops that `not_loaded` key once the store holds any place, event or area link to a recording. Builders read the same edges.
 
 ## Decisions recorded (owner, 2026-11-09)
 
@@ -186,7 +186,7 @@ Made after the probe results above; thresholds were fixed before the probe and a
 |---|---|
 | 1. Studio Crew (`album_crew`) | Keep. |
 | 2. Guest List (`album_guests`) | Keep. |
-| 3. Same Room (`album_room`) | Keep, and add the recording-places import slice (see the contingency section). |
+| 3. Same Room (`album_room`) | Keep, and add the recording-places import slice (see the contingency section). ~~Import slice~~ Not needed after the audit (PR #922); the builder is unblocked. |
 | 4. Covers and Sources (`album_works`) | Keep. No work-relations slice for now; margins are narrow (median 3, coverage 39.4% after dropping overlap), so revisit only if the built path feels thin. |
 | 6. Same Year, Same Scene (`album_moment`) | Keep. |
 | 8. Neighbours by Ear (`album_sonic_neighbours`) | Keep at 8 seeds per album. The wider-sample check noted below is a build-time requirement, not a change to the cap. |
@@ -221,7 +221,7 @@ Status as of 2026-11-09 (merged work is on `main`; PR #921 merged):
 1. ~~Owner reviews this proposal and answers the open decisions.~~ Done 2026-11-09 (see "Decisions recorded").
 2. ~~Write the probe (`scripts/album_path_coverage.py`, filtered tests) and run it on a copy of the real store.~~ Done: script and filtered tests merged in PR #921; run on a copy of the store. Neighbours by Ear was measured separately (40-album sample, live sonic routes).
 3. ~~Record results in this document~~ Done (see "Probe results"). Keep, cut or add a slice per path: decided 2026-11-09 (see "Decisions recorded"). The exact overlap measurement is done (see "Probe results"): all four paths pass the overlap gate.
-4. Contract, builders, fixtures, then clients, each as its own slice with filtered tests and required CI. Not started. The recording-places import slice was audited and is not needed (see "Slice audit"). Suggested order: contract section; builders for paths 1, 2, 4, 6, then 3 once its data lands; Neighbours by Ear (own tab); Listen-through Gaps; fixtures and decoders; client screens.
+4. Contract, builders, fixtures, then clients, each as its own slice with filtered tests and required CI. ~~Recording-places import slice~~ Done as an audit and dossier fix, merged in PR #922 (no import step needed; see "Slice audit"). Remaining, not started. Suggested order: contract section; builders for paths 1, 2, 4, 6, then 3 (its data is already in the store); Neighbours by Ear (own tab); Listen-through Gaps; fixtures and decoders; client screens.
 
 ## Work split by model and effort
 
@@ -237,7 +237,7 @@ For usage efficiency, give Haiku the mechanical, self-checking steps: a spelled-
 | ~~Fill the results table in this document and apply the thresholds~~ **Done** | Haiku | low | Compare numbers to the fixed table; no judgment, and a non-passing path is flagged, not argued. |
 | ~~Decide keep, cut or add a slice per path~~ **Done** 2026-11-09 | Owner / main model | high | Judgment against thresholds, with a decision recorded. |
 | Set the Neighbours by Ear call cap | Owner | — | Decided: 8 seeds per album (2026-11-09). |
-| New import slice (recording places, production credits, work relations) | Sonnet | high | Schema bump, resumable import, cache invalidation; follows the release-links precedent. |
+| ~~New import slice (recording places, production credits, work relations)~~ **Done** as an audit plus dossier fix (PR #922); no import needed | Sonnet | high | Schema bump, resumable import, cache invalidation; follows the release-links precedent. |
 | Path builders for Studio Crew, Guest List, Covers and Sources | Sonnet | high | Evidence rules, hub caps, de-duplication of people across paths; a mistake breaks the credit-grade guarantee. |
 | Same Year Same Scene builder | Sonnet | medium | Strict-rule logic on top of existing readers. |
 | Neighbours by Ear composition | Sonnet | medium | Groups similar-track results; must never sort or threshold on `similarity`. |
