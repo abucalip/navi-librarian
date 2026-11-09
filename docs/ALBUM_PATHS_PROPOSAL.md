@@ -1,6 +1,6 @@
 # Album paths proposal
 
-**Status:** owner decisions recorded 2026-11-09 (see "Decisions recorded"). Approved for build in slices. Built and merged so far: the probe script (PR #921), the recording-places audit (PR #922), the builders for Studio Crew, Guest List and Covers and Sources (PR #924, squash `3901673d599079e80cfa41319d4e6d2fe55751fe`) and the Same Year, Same Scene builder (PR #925, squash `adf7454da321543e78aff8d3526f0987b7e7c497`). Nothing is published or deployed.
+**Status:** owner decisions recorded 2026-11-09 (see "Decisions recorded"). Approved for build in slices. Built and merged so far: the probe script (PR #921), the recording-places audit (PR #922), the builders for Studio Crew, Guest List and Covers and Sources (PR #924, squash `3901673d599079e80cfa41319d4e6d2fe55751fe`) the Same Year, Same Scene builder (PR #925, squash `adf7454da321543e78aff8d3526f0987b7e7c497`) and the Neighbours by Ear composition (PR #926, squash `934a1c0786f78f4daa2ce257888ee6b189278e3b`). Nothing is published or deployed.
 **Date:** 2026-11-09
 **Context:** The Paths button on an album page. Contract context: [Server V2 contract](SERVER_V2_CONTRACT.md) (`GET /api/knowledge/paths`), [Server V2 remaining work](ServerV2.md), builders in `intelligence/graph/paths.py`.
 
@@ -221,7 +221,7 @@ Status as of 2026-11-09 (merged work is on `main`; PR #921 merged):
 1. ~~Owner reviews this proposal and answers the open decisions.~~ Done 2026-11-09 (see "Decisions recorded").
 2. ~~Write the probe (`scripts/album_path_coverage.py`, filtered tests) and run it on a copy of the real store.~~ Done: script and filtered tests merged in PR #921; run on a copy of the store. Neighbours by Ear was measured separately (40-album sample, live sonic routes).
 3. ~~Record results in this document~~ Done (see "Probe results"). Keep, cut or add a slice per path: decided 2026-11-09 (see "Decisions recorded"). The exact overlap measurement is done (see "Probe results"): all four paths pass the overlap gate.
-4. Contract, builders, fixtures, then clients, each as its own slice with filtered tests and required CI. ~~Recording-places import slice~~ Done as an audit and dossier fix, merged in PR #922 (no import step needed; see "Slice audit"). Builders for paths 1, 2 and 4 are done (PR #924, see "Builders built" below). ~~Builder for path 6~~ Done, merged in PR #925 (see "Same Year, Same Scene builder"). Remaining, not started. Suggested order: contract section; builder for path 3 (its data is already in the store); Neighbours by Ear (own tab); Listen-through Gaps; fixtures and decoders; client screens.
+4. Contract, builders, fixtures, then clients, each as its own slice with filtered tests and required CI. ~~Recording-places import slice~~ Done as an audit and dossier fix, merged in PR #922 (no import step needed; see "Slice audit"). Builders for paths 1, 2 and 4 are done (PR #924, see "Builders built" below). ~~Builder for path 6~~ Done, merged in PR #925 (see "Same Year, Same Scene builder"). ~~Neighbours by Ear composition~~ Done, merged in PR #926 (see "Neighbours by Ear composition"). Remaining, not started. Suggested order: contract section; builder for path 3 (its data is already in the store); Listen-through Gaps; fixtures and decoders; client screens.
 
 ## Builders built (PR #924, 2026-11-09)
 
@@ -259,7 +259,9 @@ Run on the store copy, all 884 owned albums, after overlap dropping:
 
 Median 3 is at the threshold. Filtered tests in `tests/test_intelligence_album_paths.py` pin the strict rules (the 2-year edge, no date match alone, undated start, unowned, uncertain edges, non-country area, ordering, overlap drop). Not done: contract section, route extension, fixtures, clients.
 
-## Neighbours by Ear composition (2026-11-09, not yet merged)
+## Neighbours by Ear composition (PR #926, 2026-11-09)
+
+Merged to `main` as `934a1c0786f78f4daa2ce257888ee6b189278e3b`.
 
 `intelligence/sonic/neighbours.py` (`album_neighbours`) and `GET /api/sonic/album-neighbours?album_id=` in `app/api/sonic.py`. Rules as decided: up to 8 seeds, evenly spaced with first and last always included, deterministic; an unanalysed seed is skipped, reported in `skipped` and replaced by the next unused track (max 16 calls); matches on the album itself dropped; albums ranked by distinct seeds matched, ties by earliest track year then album id; `similarity` is never read. 5 s time bound gives `truncated: "time"` (such answers are not cached). Answers are cached for an hour with the other sonic routes. Filtered tests: `tests/test_sonic_neighbours.py` (9) and `tests/test_api_sonic_routes.py` pass. Not done: route test for the new endpoint, wider-sample coverage re-measure (build-time requirement), contract section, fixtures, clients. Year comes from the matched tracks, not release facts.
 
@@ -280,7 +282,7 @@ For usage efficiency, give Haiku the mechanical, self-checking steps: a spelled-
 | ~~New import slice (recording places, production credits, work relations)~~ **Done** as an audit plus dossier fix (PR #922); no import needed | Sonnet | high | Schema bump, resumable import, cache invalidation; follows the release-links precedent. |
 | ~~Path builders for Studio Crew, Guest List, Covers and Sources~~ **Done** (PR #924) | Sonnet | high | Evidence rules, hub caps, de-duplication of people across paths; a mistake breaks the credit-grade guarantee. |
 | ~~Same Year Same Scene builder~~ **Done** (PR #925, see "Same Year, Same Scene builder") | Sonnet | medium | Strict-rule logic on top of existing readers. |
-| Neighbours by Ear composition | Sonnet | medium | Groups similar-track results; must never sort or threshold on `similarity`. |
+| ~~Neighbours by Ear composition~~ **Done** (PR #926) | Sonnet | medium | Groups similar-track results; must never sort or threshold on `similarity`. |
 | Listen-through Gaps filter | Sonnet | high | Must stay within the taste rule; a leak into ranking is a contract violation. |
 | Write the contract section | Sonnet | medium | Needs consistent wording with the existing paths contract. |
 | Record fixtures from a store copy | Haiku | low | Same capture steps as the artist path fixtures; tests diff the result. |
