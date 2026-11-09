@@ -23,6 +23,8 @@ from ..insights.hidden_canon import CARD_KIND as CANON_KIND
 from ..insights.series_completion import CARD_KIND as SERIES_KIND
 from ..ingest.navidrome import normalize_album
 from ..knowledge import KnowledgeReader
+from ..taste import Listen, ProfileConfig, build_profiles, save_profiles
+from .taste import build_taste_body
 from ..graph import Limits
 from ..resolution import unresolved
 from ..store import generations, open_store
@@ -284,6 +286,51 @@ def _smart_playlist_fixtures() -> dict[str, dict[str, Any]]:
     }
 
 
+_TASTE_NOW = 1_700_000_000.0
+_DAY = 86400.0
+# Small fixture thresholds so each case fits in a few listens; the saved config shows them.
+_TASTE_CONFIG = ProfileConfig(now=_TASTE_NOW, min_listens=4, min_attributed=3, min_shift=0.05)
+
+
+def _listen(days: float, **attrs: tuple[str, ...]) -> Listen:
+    return Listen(_TASTE_NOW - days * _DAY, {k: tuple(v) for k, v in attrs.items()})
+
+
+def _taste_case(listens: list[Listen]) -> dict[str, Any]:
+    """Save profiles built from these listens in a store of their own and return the taste body."""
+    with tempfile.TemporaryDirectory() as tmp:
+        db = open_store(Path(tmp) / "taste.sqlite3")
+        try:
+            save_profiles(db, build_profiles(listens, _TASTE_CONFIG), now=_TASTE_NOW)
+            return build_taste_body(db)
+        finally:
+            db.close()
+
+
+def _taste_fixtures() -> dict[str, dict[str, Any]]:
+    """Taste bodies with a headline: rich, thin recent window, sparse genre, and empty (nothing sound)."""
+    rich = [_listen(10 + i, genre=("jazz",)) for i in range(6)] + [_listen(500 + i, genre=("rock",)) for i in range(14)]
+    # Recent has one listen (low sample); the mid window is sound and carries the shift.
+    thin = ([_listen(10, genre=("jazz",))] + [_listen(150 + i, genre=("jazz",)) for i in range(8)]
+            + [_listen(500 + i, genre=("rock",)) for i in range(12)])
+    # Genre is attributed on two listens only (low sample); era carries the stated shift.
+    sparse = ([_listen(10 + i, era=("2020s",)) for i in range(6)]
+              + [_listen(500 + i, era=("1970s",)) for i in range(14)]
+              + [_listen(520, genre=("rock",)), _listen(521, genre=("rock",))])
+    empty = [_listen(10, genre=("jazz",)), _listen(20, genre=("jazz",)), _listen(500, genre=("rock",))]
+    request = "GET /api/insights/taste"
+    return {
+        "taste_rich.json": {"request": request, "response": _taste_case(rich),
+                            "note": "recent window sound; genre pair shift; headline window recent"},
+        "taste_thin_window.json": {"request": request, "response": _taste_case(thin),
+                                   "note": "recent low_sample (1 listen); headline falls back to mid"},
+        "taste_sparse_dimension.json": {"request": request, "response": _taste_case(sparse),
+                                        "note": "genre low_sample (2 attributed); headline uses era"},
+        "taste_empty.json": {"request": request, "response": _taste_case(empty),
+                             "note": "saved but no sound window; headline is null"},
+    }
+
+
 def _build(db) -> dict[str, dict[str, Any]]:
     empty_caps = build_capabilities(db)
     empty_changes = build_changes(db, 0)
@@ -303,6 +350,7 @@ def _build(db) -> dict[str, dict[str, Any]]:
         **_knowledge_fixtures(),
         **_feedback_fixtures(),
         **_smart_playlist_fixtures(),
+        **_taste_fixtures(),
         "capabilities_empty.json": {"request": "GET /api/capabilities", "response": empty_caps},
         "capabilities_populated.json": {"request": "GET /api/capabilities", "response": caps},
         "changes_from_start.json": {"request": "GET /api/changes", "response": build_changes(db, 0)},

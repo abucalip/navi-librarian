@@ -1,0 +1,124 @@
+{
+  "note": "saved but no sound window; headline is null",
+  "request": "GET /api/insights/taste",
+  "response": {
+    "data_version": 1,
+    "generation": 1,
+    "profiles": {
+      "computed_at": 1700000000.0,
+      "config": {
+        "mid_days": 365.0,
+        "min_attributed": 3,
+        "min_listens": 4,
+        "min_shift": 0.05,
+        "now": 1700000000.0,
+        "recent_days": 90.0,
+        "top": 10
+      },
+      "generation": 1,
+      "headline": null,
+      "kind": "taste_profile",
+      "shifts": [],
+      "windows": {
+        "all_time": {
+          "attributed": {
+            "area": 0,
+            "collaborator": 0,
+            "era": 0,
+            "genre": 3,
+            "label": 0
+          },
+          "dimension_low_sample": {
+            "area": true,
+            "collaborator": true,
+            "era": true,
+            "genre": false,
+            "label": true
+          },
+          "dimensions": {
+            "area": [],
+            "collaborator": [],
+            "era": [],
+            "genre": [
+              {
+                "count": 2,
+                "share": 0.666667,
+                "value": "jazz"
+              },
+              {
+                "count": 1,
+                "share": 0.333333,
+                "value": "rock"
+              }
+            ],
+            "label": []
+          },
+          "listens": 3,
+          "low_sample": true
+        },
+        "mid": {
+          "attributed": {
+            "area": 0,
+            "collaborator": 0,
+            "era": 0,
+            "genre": 2,
+            "label": 0
+          },
+          "dimension_low_sample": {
+            "area": true,
+            "collaborator": true,
+            "era": true,
+            "genre": true,
+            "label": true
+          },
+          "dimensions": {
+            "area": [],
+            "collaborator": [],
+            "era": [],
+            "genre": [
+              {
+                "count": 2,
+                "share": 1.0,
+                "value": "jazz"
+              }
+            ],
+            "label": []
+          },
+          "listens": 2,
+          "low_sample": true
+        },
+        "recent": {
+          "attributed": {
+            "area": 0,
+            "collaborator": 0,
+            "era": 0,
+            "genre": 2,
+            "label": 0
+          },
+          "dimension_low_sample": {
+            "area": true,
+            "collaborator": true,
+            "era": true,
+            "genre": true,
+            "label": true
+          },
+          "dimensions": {
+            "area": [],
+            "collaborator": [],
+            "era": [],
+            "genre": [
+              {
+                "count": 2,
+                "share": 1.0,
+                "value": "jazz"
+              }
+            ],
+            "label": []
+          },
+          "listens": 2,
+          "low_sample": true
+        }
+      }
+    }
+  }
+}

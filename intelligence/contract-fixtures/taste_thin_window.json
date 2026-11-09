@@ -1,0 +1,157 @@
+{
+  "note": "recent low_sample (1 listen); headline falls back to mid",
+  "request": "GET /api/insights/taste",
+  "response": {
+    "data_version": 1,
+    "generation": 1,
+    "profiles": {
+      "computed_at": 1700000000.0,
+      "config": {
+        "mid_days": 365.0,
+        "min_attributed": 3,
+        "min_listens": 4,
+        "min_shift": 0.05,
+        "now": 1700000000.0,
+        "recent_days": 90.0,
+        "top": 10
+      },
+      "generation": 1,
+      "headline": {
+        "kind": "pair",
+        "subjects": [
+          {
+            "dimension": "genre",
+            "direction": "up",
+            "value": "jazz"
+          },
+          {
+            "dimension": "genre",
+            "direction": "down",
+            "value": "rock"
+          }
+        ],
+        "text": "More jazz, less rock this past year.",
+        "window": "mid"
+      },
+      "kind": "taste_profile",
+      "shifts": [
+        {
+          "dimension": "genre",
+          "direction": "up",
+          "from_share": 0.428571,
+          "to_share": 1.0,
+          "value": "jazz",
+          "window": "mid"
+        },
+        {
+          "dimension": "genre",
+          "direction": "down",
+          "from_share": 0.571429,
+          "to_share": 0.0,
+          "value": "rock",
+          "window": "mid"
+        }
+      ],
+      "windows": {
+        "all_time": {
+          "attributed": {
+            "area": 0,
+            "collaborator": 0,
+            "era": 0,
+            "genre": 21,
+            "label": 0
+          },
+          "dimension_low_sample": {
+            "area": true,
+            "collaborator": true,
+            "era": true,
+            "genre": false,
+            "label": true
+          },
+          "dimensions": {
+            "area": [],
+            "collaborator": [],
+            "era": [],
+            "genre": [
+              {
+                "count": 12,
+                "share": 0.571429,
+                "value": "rock"
+              },
+              {
+                "count": 9,
+                "share": 0.428571,
+                "value": "jazz"
+              }
+            ],
+            "label": []
+          },
+          "listens": 21,
+          "low_sample": false
+        },
+        "mid": {
+          "attributed": {
+            "area": 0,
+            "collaborator": 0,
+            "era": 0,
+            "genre": 9,
+            "label": 0
+          },
+          "dimension_low_sample": {
+            "area": true,
+            "collaborator": true,
+            "era": true,
+            "genre": false,
+            "label": true
+          },
+          "dimensions": {
+            "area": [],
+            "collaborator": [],
+            "era": [],
+            "genre": [
+              {
+                "count": 9,
+                "share": 1.0,
+                "value": "jazz"
+              }
+            ],
+            "label": []
+          },
+          "listens": 9,
+          "low_sample": false
+        },
+        "recent": {
+          "attributed": {
+            "area": 0,
+            "collaborator": 0,
+            "era": 0,
+            "genre": 1,
+            "label": 0
+          },
+          "dimension_low_sample": {
+            "area": true,
+            "collaborator": true,
+            "era": true,
+            "genre": true,
+            "label": true
+          },
+          "dimensions": {
+            "area": [],
+            "collaborator": [],
+            "era": [],
+            "genre": [
+              {
+                "count": 1,
+                "share": 1.0,
+                "value": "jazz"
+              }
+            ],
+            "label": []
+          },
+          "listens": 1,
+          "low_sample": true
+        }
+      }
+    }
+  }
+}

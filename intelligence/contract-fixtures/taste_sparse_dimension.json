@@ -1,0 +1,179 @@
+{
+  "note": "genre low_sample (2 attributed); headline uses era",
+  "request": "GET /api/insights/taste",
+  "response": {
+    "data_version": 1,
+    "generation": 1,
+    "profiles": {
+      "computed_at": 1700000000.0,
+      "config": {
+        "mid_days": 365.0,
+        "min_attributed": 3,
+        "min_listens": 4,
+        "min_shift": 0.05,
+        "now": 1700000000.0,
+        "recent_days": 90.0,
+        "top": 10
+      },
+      "generation": 1,
+      "headline": {
+        "kind": "pair",
+        "subjects": [
+          {
+            "dimension": "era",
+            "direction": "up",
+            "value": "2020s"
+          },
+          {
+            "dimension": "era",
+            "direction": "down",
+            "value": "1970s"
+          }
+        ],
+        "text": "More 2020s, less 1970s lately.",
+        "window": "recent"
+      },
+      "kind": "taste_profile",
+      "shifts": [
+        {
+          "dimension": "era",
+          "direction": "down",
+          "from_share": 0.7,
+          "to_share": 0.0,
+          "value": "1970s",
+          "window": "mid"
+        },
+        {
+          "dimension": "era",
+          "direction": "up",
+          "from_share": 0.3,
+          "to_share": 1.0,
+          "value": "2020s",
+          "window": "mid"
+        },
+        {
+          "dimension": "era",
+          "direction": "down",
+          "from_share": 0.7,
+          "to_share": 0.0,
+          "value": "1970s",
+          "window": "recent"
+        },
+        {
+          "dimension": "era",
+          "direction": "up",
+          "from_share": 0.3,
+          "to_share": 1.0,
+          "value": "2020s",
+          "window": "recent"
+        }
+      ],
+      "windows": {
+        "all_time": {
+          "attributed": {
+            "area": 0,
+            "collaborator": 0,
+            "era": 20,
+            "genre": 2,
+            "label": 0
+          },
+          "dimension_low_sample": {
+            "area": true,
+            "collaborator": true,
+            "era": false,
+            "genre": true,
+            "label": true
+          },
+          "dimensions": {
+            "area": [],
+            "collaborator": [],
+            "era": [
+              {
+                "count": 14,
+                "share": 0.7,
+                "value": "1970s"
+              },
+              {
+                "count": 6,
+                "share": 0.3,
+                "value": "2020s"
+              }
+            ],
+            "genre": [
+              {
+                "count": 2,
+                "share": 1.0,
+                "value": "rock"
+              }
+            ],
+            "label": []
+          },
+          "listens": 22,
+          "low_sample": false
+        },
+        "mid": {
+          "attributed": {
+            "area": 0,
+            "collaborator": 0,
+            "era": 6,
+            "genre": 0,
+            "label": 0
+          },
+          "dimension_low_sample": {
+            "area": true,
+            "collaborator": true,
+            "era": false,
+            "genre": true,
+            "label": true
+          },
+          "dimensions": {
+            "area": [],
+            "collaborator": [],
+            "era": [
+              {
+                "count": 6,
+                "share": 1.0,
+                "value": "2020s"
+              }
+            ],
+            "genre": [],
+            "label": []
+          },
+          "listens": 6,
+          "low_sample": false
+        },
+        "recent": {
+          "attributed": {
+            "area": 0,
+            "collaborator": 0,
+            "era": 6,
+            "genre": 0,
+            "label": 0
+          },
+          "dimension_low_sample": {
+            "area": true,
+            "collaborator": true,
+            "era": false,
+            "genre": true,
+            "label": true
+          },
+          "dimensions": {
+            "area": [],
+            "collaborator": [],
+            "era": [
+              {
+                "count": 6,
+                "share": 1.0,
+                "value": "2020s"
+              }
+            ],
+            "genre": [],
+            "label": []
+          },
+          "listens": 6,
+          "low_sample": false
+        }
+      }
+    }
+  }
+}

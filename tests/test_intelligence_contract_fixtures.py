@@ -41,6 +41,15 @@ class FixtureFileTests(unittest.TestCase):
             self.assertFalse(feature["available"])
             self.assertEqual(feature["reason"], "not_populated")
 
+    def test_taste_fixtures_show_the_headline_states(self):
+        def headline(name):
+            return json.loads((FIXTURES / name).read_text())["response"]["profiles"]["headline"]
+
+        self.assertEqual(headline("taste_rich.json")["window"], "recent")
+        self.assertEqual(headline("taste_thin_window.json")["window"], "mid")
+        self.assertEqual(headline("taste_sparse_dimension.json")["subjects"][0]["dimension"], "era")
+        self.assertIsNone(headline("taste_empty.json"))
+
     def test_reset_lists_everything(self):
         reset = json.loads((FIXTURES / "changes_reset.json").read_text())["response"]
         caught_up = json.loads((FIXTURES / "changes_caught_up.json").read_text())["response"]

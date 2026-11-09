@@ -15,6 +15,7 @@ from dataclasses import asdict
 from typing import Any
 
 from ..store import generations
+from .headline import build_headline
 from .loader import LoadResult
 from .profiles import TasteProfiles
 
@@ -23,9 +24,11 @@ RESOURCE = "insights"
 
 
 def profiles_payload(profiles: TasteProfiles, load: LoadResult | None = None) -> dict[str, Any]:
-    """Plain JSON body for the profiles: windows, stated shifts, thresholds and (optionally) loader counts."""
+    """Plain JSON body for the profiles: windows, stated shifts, the headline, thresholds and (optionally) loader counts."""
+    headline = build_headline(profiles)
     body: dict[str, Any] = {
         "kind": CARD_KIND,
+        "headline": headline.as_dict() if headline is not None else None,
         "windows": {
             name: {
                 "listens": w.listens,
