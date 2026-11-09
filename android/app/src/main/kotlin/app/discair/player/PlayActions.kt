@@ -54,6 +54,7 @@ class PlayActions(
         songId = s.id, title = s.title, artist = s.artist, album = s.album, albumId = s.albumId,
         coverId = s.albumId, coverUrl = coverUrl(s.albumId), durationSec = s.durationSec,
         year = s.year, bitRateKbps = s.bitRateKbps, suffix = s.suffix, bitDepth = s.bitDepth, samplingRateHz = s.samplingRateHz,
+        track = s.track, disc = s.disc,
     )
 
     private fun launch(block: suspend () -> Unit) {

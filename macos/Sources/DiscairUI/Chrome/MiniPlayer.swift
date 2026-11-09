@@ -31,7 +31,7 @@ public struct MiniPlayerView: View {
     private var album: AlbumItem {
         guard let c = p.current else { return Fixtures.albums[0] }
         return AlbumItem(id: -1, title: c.album, artist: c.artist, year: 0, genre: "", format: "", owned: true,
-                         hue: LibraryModel.hue(for: c.album.isEmpty ? c.title : c.album), coverArt: c.coverArt)
+                         hue: LibraryModel.hue(for: c.album.isEmpty ? c.title : c.album), remoteID: c.albumID, coverArt: c.coverArt)
     }
 
     public var body: some View {

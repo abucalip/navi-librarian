@@ -383,7 +383,7 @@ public final class LibraryModel {
 
     static func tracks(_ songs: [NavidromeSong]) -> [TrackItem] {
         songs.enumerated().map { i, s in
-            TrackItem(id: i, title: s.title, duration: clock(s.duration), format: quality(s), owned: true, playing: false)
+            TrackItem(id: i, title: s.title, duration: clock(s.duration), format: quality(s), owned: true, playing: false, songID: s.id)
         }
     }
 

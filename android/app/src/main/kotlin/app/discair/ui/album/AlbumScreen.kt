@@ -84,14 +84,20 @@ fun AlbumScreen(route: AlbumRoute, open: Opener) {
     val loaded = rememberStreamLoad<AlbumPage>(route) { show -> repo.albumPageStream(route.key, route.id, route.artist, route.name, route.year, show) }
     var tint by remember(route) { mutableStateOf<Color?>(null) }
     val list = androidx.compose.foundation.lazy.rememberLazyListState()
+    // The Paths button shows whenever the server reports the feature (live, never from the saved copies); Neighbours by ear only with sonic.
+    var pathsOn by remember(route) { mutableStateOf(false) }
+    var sonicOn by remember(route) { mutableStateOf(false) }
+    androidx.compose.runtime.LaunchedEffect(route) {
+        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { pathsOn = repo.pathsAvailable(); sonicOn = repo.sonicAvailable() }
+    }
     TintedPage(tint, list) {
-        LoadView(loaded) { page -> AlbumContent(route, page, open, list, onTint = { tint = it }) }
+        LoadView(loaded) { page -> AlbumContent(route, page, open, list, onTint = { tint = it }, pathsOn = pathsOn, sonicOn = sonicOn) }
         if (loaded.state !is Load.Ready) OverlayBack(open.back, Modifier.statusBarsPadding().padding(16.dp))
     }
 }
 
 @Composable
-private fun AlbumContent(route: AlbumRoute, page: AlbumPage, open: Opener, list: androidx.compose.foundation.lazy.LazyListState, onTint: (Color) -> Unit) {
+private fun AlbumContent(route: AlbumRoute, page: AlbumPage, open: Opener, list: androidx.compose.foundation.lazy.LazyListState, onTint: (Color) -> Unit, pathsOn: Boolean, sonicOn: Boolean) {
     val s = page.sections
     val info = s.album.album
     val title = info?.name?.ifBlank { null } ?: route.name
@@ -104,6 +110,10 @@ private fun AlbumContent(route: AlbumRoute, page: AlbumPage, open: Opener, list:
     // Playback is for albums in the library only; the id is the Navidrome album id the page already carries.
     val albumId = (info?.id ?: route.id)?.takeIf { owned && it.isNotBlank() }
     val play = app.discair.ui.player.LocalPlayActions.current
+    // Saved with the page: opening an album from the sheet leaves this page, and Back must find the sheet open again.
+    var showPaths by androidx.compose.runtime.saveable.rememberSaveable(route) { mutableStateOf(false) }
+    // The server builds album paths from an album in the library, by its Navidrome id.
+    if (showPaths && albumId != null) AlbumPathsSheet(title, artist, albumId, sonicOn, open) { showPaths = false }
 
     LazyColumn(Modifier.fillMaxSize(), state = list, contentPadding = PaddingValues(bottom = 32.dp + app.discair.ui.LocalBottomClearance.current)) {
         item {
@@ -148,6 +158,7 @@ private fun AlbumContent(route: AlbumRoute, page: AlbumPage, open: Opener, list:
                     onPlay = { play.playAlbum(albumId) }, onShuffle = { play.playAlbum(albumId, shuffle = true) },
                     modifier = Modifier.padding(top = 8.dp),
                     onPlayNext = { play.queueAlbum(albumId, next = true) }, onAddToQueue = { play.queueAlbum(albumId, next = false) },
+                    onPaths = if (pathsOn) ({ showPaths = true }) else null,
                 )
                 // The album-level Get stays until every track is in the library (ACQ-08).
                 if (!owned || tracks.any { !it.owned }) GetAlbumButton(
@@ -176,7 +187,7 @@ private fun AlbumContent(route: AlbumRoute, page: AlbumPage, open: Opener, list:
                         )
                         Row(Modifier.weight(1f).padding(end = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                             val playingNow = app.discair.ui.player.LocalPlayingNow.current
-                            val isCurrent = t.owned && playingNow?.matches(albumId, t.title) == true
+                            val isCurrent = t.owned && playingNow?.matches(albumId, t.title, t.number, t.disc ?: 1) == true
                             Text(
                                 t.title, style = MaterialTheme.typography.bodyLarge, fontWeight = if (isCurrent) FontWeight.Bold else FontWeight.Normal,
                                 maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false),

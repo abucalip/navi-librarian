@@ -303,3 +303,15 @@ struct UnownedArtistAndRetryTests {
         #expect(r.bio == nil)
     }
 }
+
+@Suite @MainActor struct SameTitleHighlightTests {
+    @Test func onlyTheVersionPlayingIsMarked() {
+        let s = AppState(screen: .albums)
+        s.player.play([QueueItem(songID: "v2", title: "Impressions", artist: "Coltrane", album: "Village", albumID: nil)])
+        let first = TrackItem(id: 0, title: "Impressions", duration: "", format: "", owned: true, playing: false, songID: "v1")
+        let second = TrackItem(id: 1, title: "Impressions", duration: "", format: "", owned: true, playing: false, songID: "v2")
+        s.selectedAlbum = AlbumItem(id: 1, title: "Village", artist: "Coltrane", year: 1961, genre: "", format: "", owned: true, hue: 1)
+        #expect(!s.isCurrent(first))
+        #expect(s.isCurrent(second))
+    }
+}

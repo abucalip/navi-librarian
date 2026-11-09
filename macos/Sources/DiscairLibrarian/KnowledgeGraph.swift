@@ -66,14 +66,33 @@ public struct PathReason: Decodable, Equatable, Sendable {
     }
 }
 
+private struct PathPresentation: Decodable {
+    let albumArtist: String?
+    let context: String?
+    let album: String?
+    let artist: String?
+    enum CodingKeys: String, CodingKey { case albumArtist = "album_artist", context, album, artist }
+}
+
+extension String { fileprivate var nilIfEmpty: String? { isEmpty ? nil : self } }
+
 public struct PathStop: Decodable, Equatable, Sendable {
     public let entity: KnowledgeEntity
     public let reasonCount: Int
     public let reasons: [PathReason]
-    enum CodingKeys: String, CodingKey { case entity, reason_count, reasons }
+    /// Album paths: the album's credited artist (`presentation.album_artist`, else `presentation.context`), for the row's second line.
+    public let albumArtist: String?
+    /// Artist paths: the song's album and the credited performer (`presentation.album`, `presentation.artist`).
+    public let album: String?
+    public let artist: String?
+    enum CodingKeys: String, CodingKey { case entity, reason_count, reasons, presentation }
     public init(from decoder: any Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         entity = try c.decode(KnowledgeEntity.self, forKey: .entity)
+        let presentation = try? c.decodeIfPresent(PathPresentation.self, forKey: .presentation)
+        albumArtist = (presentation?.albumArtist ?? presentation?.context)?.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty
+        album = presentation?.album?.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty
+        artist = presentation?.artist?.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty
         reasons = c.list(.reasons, PathReason.self)
         reasonCount = (try? c.decodeIfPresent(Int.self, forKey: .reason_count)) ?? reasons.count
     }

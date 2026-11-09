@@ -197,7 +197,10 @@ public final class AppState {
         // Skips saved while the Librarian was unreachable go out now that it is connected (in the background).
         Task { await feedback?.flush() }
         lyrics.configure(navidrome: navidrome, scope: "\(session.activeProfile?.navidromeURL.absoluteString ?? "")|\(session.navidromeUsername ?? "")")
-        if let librarian = session.librarian { radio.setSonicAvailable(await librarian.sonicAvailable()) }
+        if let librarian = session.librarian {
+            radio.setSonicAvailable(await librarian.sonicAvailable())
+            pathsAvailable = await librarian.pathsAvailable()
+        }
         await library.load(navidrome: navidrome, librarian: session.librarian)
         await library.loadSongs(navidrome: navidrome)
         Task { await library.loadAllAlbums(navidrome: navidrome) }
@@ -248,7 +251,10 @@ public final class AppState {
 
     /// True when this track of the album on screen is the song loaded in the player.
     public func isCurrent(_ track: TrackItem) -> Bool {
-        guard let c = player.current, c.title == track.title else { return false }
+        guard let c = player.current else { return false }
+        // The song id tells two versions of one title on an album apart; sample and suggested tracks have none.
+        if let id = track.songID { return c.songID == id }
+        guard c.title == track.title else { return false }
         return c.albumID == selectedAlbum.remoteID || c.album == selectedAlbum.title
     }
 
@@ -274,6 +280,44 @@ public final class AppState {
             let songs = await radio.sonicSongs(like: seed, queued: queued) { id, count in try await librarian.sonicSimilar(songID: id, count: count) }
             if player.current == nil || player.queue.isEmpty { player.play([seed] + songs) } else { player.addToQueue(songs) }
         }
+    }
+
+    /// Whether the server reports the paths feature (`features.paths`); the album Paths button shows whenever it does.
+    public private(set) var pathsAvailable = false
+
+    /// The album Paths sheet, when one is open.
+    public var paths: PathsSheetModel?
+
+    /// The server builds album paths from an album in the library, by its Navidrome id, so an album outside it has none.
+    public var canShowAlbumPaths: Bool { pathsAvailable && library.isLive && selectedAlbum.owned && selectedAlbum.remoteID != nil }
+
+    /// Opens the Paths sheet for the album on screen and reads its first tab.
+    public func showAlbumPaths() {
+        guard canShowAlbumPaths, let id = selectedAlbum.remoteID else { return }
+        let a = selectedAlbum
+        let model = PathsSheetModel(albumTitle: a.title, artist: a.artist, albumID: id, sonicAvailable: radio.sonicAvailable)
+        paths = model
+        let librarian = session?.librarian
+        Task { await model.load(librarian: librarian) }
+    }
+
+    /// The artist's Paths button: the server builds artist paths by MusicBrainz id, which Navidrome holds on the artist record.
+    public var canShowArtistPaths: Bool { pathsAvailable && library.isLive && selectedArtist.remoteID != nil }
+
+    /// Opens the Paths sheet for the artist on screen and reads its first tab.
+    public func showArtistPaths() {
+        guard canShowArtistPaths, let id = selectedArtist.remoteID, let navidrome = session?.navidrome else { return }
+        let model = PathsSheetModel(artistName: selectedArtist.name) { try await navidrome.artist(id: id).artist.musicBrainzId }
+        paths = model
+        let librarian = session?.librarian
+        Task { await model.load(librarian: librarian) }
+    }
+
+    /// Reads the chosen tab of the open Paths sheet (once; `retry` asks again after a failure).
+    public func loadPathsTab(retry: Bool = false) {
+        guard let model = paths else { return }
+        let librarian = session?.librarian
+        Task { await model.load(librarian: librarian, retry: retry) }
     }
 
     /// The sonic path sheet, when one is open.

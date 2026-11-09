@@ -49,6 +49,11 @@ struct CupertinoAlbumBanner: View {
                                 .buttonStyle(CapsuleButtonStyle(primary: true))
                             Button { } label: { Label("Shuffle", systemImage: "shuffle") }
                                 .buttonStyle(CapsuleButtonStyle(translucent: true))
+                            if state.canShowAlbumPaths {
+                                Button { state.showAlbumPaths() } label: { Label("Paths", systemImage: "point.topleft.down.to.point.bottomright.curvepath") }
+                                    .buttonStyle(CapsuleButtonStyle(translucent: true))
+                                    .help("Albums in your library linked to this one by credits, works, years and sound")
+                            }
                             if !a.owned {
                                 Button { state.actions.get(album: a) } label: { Label(state.acquisition.buttonLabel(for: a) == "Get" ? "Get album" : state.acquisition.buttonLabel(for: a), systemImage: "plus") }
                                     .buttonStyle(CapsuleButtonStyle(translucent: true)).disabled(!state.acquisition.canGet(a))

@@ -257,7 +257,7 @@ struct CupertinoArtworkSlot: View {
     var body: some View {
         if let c = state.player.current {
             Button { state.screen = .nowPlaying } label: {
-                CoverView(album: AlbumItem(id: -1, title: c.album, artist: c.artist, year: 0, genre: "", format: "", owned: true, hue: 200, coverArt: c.coverArt), px: 600)
+                CoverView(album: AlbumItem(id: -1, title: c.album, artist: c.artist, year: 0, genre: "", format: "", owned: true, hue: 200, remoteID: c.albumID, coverArt: c.coverArt), px: 600)
                     .frame(width: Self.side, height: Self.side)
                     .clipShape(RoundedRectangle(cornerRadius: CU.sidebarRadius, style: .continuous))
                     .shadow(color: .black.opacity(0.28), radius: 10, y: 4)

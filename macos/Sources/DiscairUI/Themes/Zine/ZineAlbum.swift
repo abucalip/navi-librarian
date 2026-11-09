@@ -59,6 +59,11 @@ struct ZineAlbum: View {
             HStack(spacing: 10) {
                 Button { state.actions.play(album: a) } label: { Label("Play", systemImage: "play.fill") }
                     .buttonStyle(ZineButtonStyle(kind: .yellow, small: true))
+                if state.canShowAlbumPaths {
+                    Button { state.showAlbumPaths() } label: { Label("Paths", systemImage: "point.topleft.down.to.point.bottomright.curvepath") }
+                        .buttonStyle(ZineButtonStyle(small: true))
+                        .help("Albums in your library linked to this one by credits, works, years and sound")
+                }
                 Button(state.acquisition.isSaved(a) ? "Saved" : "Save") { state.actions.save(album: a) }
                     .buttonStyle(ZineButtonStyle(small: true)).disabled(state.acquisition.isSaved(a))
                 if !a.owned || !state.library.isLive {

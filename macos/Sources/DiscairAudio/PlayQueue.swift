@@ -29,6 +29,21 @@ public struct QueueItem: Identifiable, Equatable, Sendable, Codable {
         return s.isEmpty ? nil : s
     }
 
+    /// Queues saved by earlier versions are read through the same rules as a new item: a song saved without its own cover id (or with
+    /// an empty one) shows its album's cover. The synthesized decoder skips `init`, which left those songs without artwork.
+    public init(from decoder: any Decoder) throws {
+        enum K: String, CodingKey { case id, songID, title, artist, album, albumID, coverArt, duration, suffix, track, disc, path, mbid, quality }
+        let c = try decoder.container(keyedBy: K.self)
+        self.init(
+            id: try c.decode(UUID.self, forKey: .id), songID: try c.decode(String.self, forKey: .songID),
+            title: try c.decode(String.self, forKey: .title), artist: try c.decode(String.self, forKey: .artist),
+            album: (try c.decodeIfPresent(String.self, forKey: .album)) ?? "", albumID: try c.decodeIfPresent(String.self, forKey: .albumID),
+            coverArt: try c.decodeIfPresent(String.self, forKey: .coverArt), duration: (try c.decodeIfPresent(Double.self, forKey: .duration)) ?? 0,
+            suffix: try c.decodeIfPresent(String.self, forKey: .suffix), track: try c.decodeIfPresent(Int.self, forKey: .track),
+            disc: try c.decodeIfPresent(Int.self, forKey: .disc), path: try c.decodeIfPresent(String.self, forKey: .path),
+            mbid: try c.decodeIfPresent(String.self, forKey: .mbid), quality: try c.decodeIfPresent(String.self, forKey: .quality))
+    }
+
     public init(id: UUID = UUID(), songID: String, title: String, artist: String, album: String = "", albumID: String? = nil,
                 coverArt: String? = nil, duration: Double = 0, suffix: String? = nil, track: Int? = nil, disc: Int? = nil, path: String? = nil,
                 mbid: String? = nil, quality: String? = nil) {
