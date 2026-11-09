@@ -104,8 +104,13 @@ class RefreshTests(unittest.TestCase):
 
 
 class FakeLibrarian:
+    username = ""
+
     def __init__(self, d):
         self.DATA_DIR = Path(d)
+
+    def _listenbrainz_username(self):
+        return self.username
 
 
 class RouteTests(unittest.TestCase):
@@ -121,6 +126,14 @@ class RouteTests(unittest.TestCase):
     def test_no_source_answers_without_writing(self):
         body = self.client.post("/api/insights/taste/refresh").json()
         self.assertEqual(body["state"], "no_listens_source")
+
+    def test_username_builds_a_listenbrainz_reader(self):
+        lib = FakeLibrarian("x")
+        lib.username = "someone"
+        with mock.patch.object(routes, "listenbrainz_reader", return_value="reader") as make:
+            self.assertEqual(routes.listens_source(lib), "reader")
+        self.assertEqual(make.call_args.args, ("someone",))
+        self.assertIsNone(routes.listens_source(FakeLibrarian("x")))
 
     def test_refresh_then_too_soon_then_status(self):
         with mock.patch.object(routes, "listens_source", return_value=lambda: [

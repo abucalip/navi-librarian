@@ -1,10 +1,10 @@
 """Taste refresh routes (Server V2 Phase 6 presentation slice 3).
 
 HTTP adapters only; logic is ``intelligence.taste.refresh``. A client calls ``POST /api/insights/taste/refresh``
-when the app opens. There is no scheduler and no startup hook, and the route makes no provider call: raw
-listens come from ``listens_source(librarian)``, which returns a reader of already-held listens, or ``None``
-when the server holds none (the answer is then ``no_listens_source`` and nothing is written). A process
-lock refuses an overlapping call (409); the persisted job state covers other workers.
+when the app opens. There is no scheduler and no startup hook. Raw listens come from the owner's ListenBrainz
+history (owner decision 2026-11-09), read only after the minimum interval has passed. With no ListenBrainz
+username configured the answer is ``no_listens_source`` and nothing is written. A process lock refuses an
+overlapping call (409); the persisted job state covers other workers.
 """
 import threading
 
@@ -12,6 +12,7 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from app.api.dependencies import get_librarian
 from intelligence.store import open_store
+from intelligence.taste.listenbrainz_listens import listenbrainz_reader
 from intelligence.taste.refresh import DEFAULT_MIN_INTERVAL, refresh_status, refresh_taste
 
 router = APIRouter()
@@ -21,8 +22,14 @@ _LOCK = threading.Lock()
 
 
 def listens_source(librarian):
-    """A zero-argument reader of raw listens held locally, or None. No local listen store exists yet."""
-    return None
+    """A zero-argument reader of the owner's ListenBrainz history, or None without a configured username."""
+    import httpx
+    from integrations.listenbrainz.client import request_headers
+
+    username = str(librarian._listenbrainz_username() or "").strip()
+    if not username:
+        return None
+    return listenbrainz_reader(username, get=httpx.get, headers=request_headers())
 
 
 def _store(librarian):

@@ -106,7 +106,7 @@ Served by `app/api/insights.py`; body builder `intelligence/api/taste.py`; headl
 
 ## POST /api/insights/taste/refresh and GET /api/insights/taste/refresh/status (Phase 6 presentation slice 3)
 
-Served by `app/api/taste_refresh.py`; logic in `intelligence/taste/refresh.py` (D-016). Clients call the refresh on launch; there is no scheduler or startup hook and no provider call.
+Served by `app/api/taste_refresh.py`; logic in `intelligence/taste/refresh.py` (D-016). Clients call the refresh on launch; there is no scheduler or startup hook. Raw listens are read from the owner's ListenBrainz history (read-only; token from the saved Settings or `LISTENBRAINZ_TOKEN`) only after the interval has passed; an unanswered window fails the run and keeps the saved profiles. No ListenBrainz username: `no_listens_source`.
 
 - Refresh answer: `state` (`refreshed`, `unchanged`, `too_soon`, `failed`, `no_listens_source`), `run_id`, `changed`, `retry_after` (seconds, `too_soon` only), `progress` (`changed`, `listens`, `unusable`, `unmatched`) and `error`. Minimum interval one hour after the last success; failed attempts do not start it. An overlapping call is `409`.
 - Status answer: `status` (newest run of job `taste_refresh`), `last_good`, `running`, `min_interval`, `retry_after`.
