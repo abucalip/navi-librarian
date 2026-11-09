@@ -37,6 +37,10 @@ This is the short queue of unfinished or explicitly parked work. GitHub `main` i
 
 The plan in [HARDCODE_REPLACEMENT.md](HARDCODE_REPLACEMENT.md) is over; no phases remain and nothing from it is queued. Derived is the only taste-profile mode and the fixed taste tables and mode switch are removed (PRs #561-#572). Evidence and limits are in `PROJECT_LOG.md`.
 
+## 2d. Album paths (Paths button on album pages) — in progress
+
+Built on the server: `album_crew`, `album_guests`, `album_works`, `album_moment` (route PR #929, builders #924, fixtures #930). Client decoders merged in PR [#931](https://github.com/abucalip/navi-librarian/pull/931), squash `e190f6709f1d31b03a86b4a2aadf29f26bc2ea0e` (Android and macOS). **Still open:** the Paths button and screens on Android and macOS (Sonnet, medium; see the work split in [ALBUM_PATHS_PROPOSAL.md](ALBUM_PATHS_PROPOSAL.md)), and the server builders for `album_room` and `album_gaps`. Design: [ALBUM_PATHS_PROPOSAL.md](ALBUM_PATHS_PROPOSAL.md). Not published or deployed.
+
 ## 2c. Engine 2 — next priority (draft roadmap: [engine2.md](engine2.md))
 
 **Phase 4 status (2026-10-24):** built and merged (slices 1 to 4, PRs #590 to #598); PR #605 makes `engine2_lens_lists_enabled` default to on, with explicit `False` still supported. The owner approved enabling daily lens lists and deferred remaining browser checks (keyboard/focus, Get, Save/dismiss, reduced motion and screen readers). A Last.fm account Settings control remains parked; empty artwork and quality measurement are not active follow-ups. Phase 5 feedback loop is closed (PRs #600 to #603; see `engine2.md`). Play/download attribution and a UI display were dropped by the owner. Publication and deployment are separate decisions.
