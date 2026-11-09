@@ -1,6 +1,5 @@
 """ListenBrainz listens reader for the taste refresh. Fake get, no network."""
 import unittest
-from unittest import mock
 
 from intelligence.taste.listenbrainz_listens import listenbrainz_reader
 
@@ -45,19 +44,19 @@ class ReaderTests(unittest.TestCase):
         self.assertTrue(all("/user/someone/listens" in c[0] for c in get.calls))
         self.assertTrue(all(c[2] == {"User-Agent": "t"} for c in get.calls))
 
-    def test_unanswered_window_fails_instead_of_returning_a_gap(self):
-        listens = [{"listened_at": NOW - 86400, "track_metadata": {}}]
+    def test_failed_batch_fails_instead_of_returning_a_gap(self):
+        listens = [{"listened_at": NOW - 86400 * d, "track_metadata": {"track_name": str(d)}} for d in (1, 2)]
         with self.assertRaises(RuntimeError):
-            self.read(fake_get(listens, fail=lambda p: p["max_ts"] < NOW - 400 * 86400))
+            self.read(fake_get(listens, fail=lambda p: p["max_ts"] < NOW - 86400 // 2))
 
-    def test_page_capped_window_fails_instead_of_returning_partial_history(self):
-        capped = {"listens": [{"listened_at": NOW, "track_metadata": {}}],
-                  "windows": [{"source": "listenbrainz", "count": 5000, "truncated": True}],
-                  "unanswered": 0, "stopped": "floor_reached"}
-        with mock.patch("intelligence.taste.listenbrainz_listens.history_fetch.fetch_lens_history",
-                        return_value=capped):
-            with self.assertRaisesRegex(RuntimeError, "page limit"):
-                self.read(fake_get([]))
+    def test_heavy_history_is_read_in_full_in_large_batches(self):
+        listens = [{"listened_at": NOW - i * 60, "track_metadata": {"track_name": str(i)}} for i in range(12_345)]
+        listens += [{"listened_at": NOW - 3000 * 86400 - i, "track_metadata": {"track_name": f"old{i}"}} for i in range(50)]
+        get = fake_get(listens)
+        out = self.read(get)
+        self.assertEqual(len(out), len(listens))
+        self.assertTrue(all(c[1]["count"] == 1000 for c in get.calls))
+        self.assertLess(len(get.calls), 20)
 
     def test_all_windows_failing_raises(self):
         with self.assertRaises(RuntimeError):
