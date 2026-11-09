@@ -16,6 +16,10 @@ interface PlayerSettings {
     var crossfadeSeconds: Int
     var crossfadeSkipSameAlbum: Boolean
 
+    /** The quote and i switches of the player line (the synced lyric, and facts). Both on by default, as on the Mac. */
+    var showLyricLine: Boolean
+    var showFacts: Boolean
+
     /** Called after any setting is saved; close the result to stop. */
     fun onChange(listener: () -> Unit): AutoCloseable
 }
@@ -48,6 +52,14 @@ class PrefsPlayerSettings(private val prefs: SharedPreferences) : PlayerSettings
         get() = prefs.getBoolean(KEY_XFADE_ALBUM, true)
         set(value) { prefs.edit().putBoolean(KEY_XFADE_ALBUM, value).apply() }
 
+    override var showLyricLine: Boolean
+        get() = prefs.getBoolean(KEY_LINE_LYRICS, true)
+        set(value) { prefs.edit().putBoolean(KEY_LINE_LYRICS, value).apply() }
+
+    override var showFacts: Boolean
+        get() = prefs.getBoolean(KEY_LINE_FACTS, true)
+        set(value) { prefs.edit().putBoolean(KEY_LINE_FACTS, value).apply() }
+
     override fun onChange(listener: () -> Unit): AutoCloseable {
         val l = SharedPreferences.OnSharedPreferenceChangeListener { _, _ -> listener() }
         prefs.registerOnSharedPreferenceChangeListener(l)
@@ -60,6 +72,8 @@ class PrefsPlayerSettings(private val prefs: SharedPreferences) : PlayerSettings
         const val KEY_XFADE = "crossfade_enabled"
         const val KEY_XFADE_SECONDS = "crossfade_seconds"
         const val KEY_XFADE_ALBUM = "crossfade_skip_same_album"
+        const val KEY_LINE_LYRICS = "player_line_lyrics"
+        const val KEY_LINE_FACTS = "player_line_facts"
     }
 }
 
@@ -78,6 +92,10 @@ class MemoryPlayerSettings(
     override var crossfadeSeconds: Int = CrossfadeSettings.sanitizeSeconds(crossfadeSeconds)
         set(value) { field = CrossfadeSettings.sanitizeSeconds(value); changed() }
     override var crossfadeSkipSameAlbum: Boolean = crossfadeSkipSameAlbum
+        set(value) { field = value; changed() }
+    override var showLyricLine: Boolean = true
+        set(value) { field = value; changed() }
+    override var showFacts: Boolean = true
         set(value) { field = value; changed() }
 
     override fun onChange(listener: () -> Unit): AutoCloseable {
