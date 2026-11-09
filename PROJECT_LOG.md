@@ -1,3 +1,13 @@
+## 2026-11-09 — Server V2 Phase 6 taste presentation: listening-context profiles (slice 4)
+
+- **PR:** [#906](https://github.com/abucalip/navi-librarian/pull/906), merged as squash `c94fa16bf17a261e82df2005cbfd037870fc3612` from exact final head `d1afb09a139a9070e12302247d74e294f3bff29e`; base `main` at `85c574461a2de8a75db1c5e80d74573024176961`.
+- **Implementation:** `intelligence/taste/context.py` builds time-of-day (night/morning/afternoon/evening) and day-type (weekday/weekend) profiles using UTC wall-clock context. `intelligence/taste/context_persistence.py` stores one `taste_context` row in `insights` (no migration), and `intelligence/api/taste.py` exposes it as `context` from `GET /api/insights/taste`. The refresh computes and saves both profile and context rows; unchanged context payloads do not rewrite or bump the insights data version.
+- **Contrast honesty:** the morning-vs-night contrast requires at least 100 listens in each context, then only compares dimensions sound on both sides and lists values whose share differs by at least the configured `min_shift`. It reports `low_sample`, `no_difference` or `stated`; clients must not compose a contrast unless the state is `stated`. Threshold is a starting value, not a measured optimum. No recommendation-ranking effect.
+- **Contract:** `GET /api/insights/taste` now documents `context` as null until refresh, with lenses, sample/attribution flags, contrast, computed time and generation. The four taste fixtures explicitly include `context: null` until a refresh populates it.
+- **Verification on exact final head:** all four required workflows passed — Python syntax, Docker packaging (including full unit suite), container runtime smoke, and non-publishing multi-architecture image validation. The PR reports 56 focused tests passing. No manual local full suite was run (owner rule).
+- **Not done:** macOS/Android still need to decode and present context, and call refresh on launch. No release publication, deployment or production runtime verification occurred.
+- **Next action:** proceed with the macOS taste-view integration, including context lenses and an honest morning-vs-night contrast presentation.
+
 ## 2026-11-09 — Server V2 Phase 6 taste presentation: refresh route (slice 3)
 
 - **PR:** [#905](https://github.com/abucalip/navi-librarian/pull/905), merged as squash `f9c04be3284de4c15cc01074209b72dd1d20e909` from exact final head `29f04f55b4c1544e27e7072dfba38e9b95cb2f24`; base `main` at `76422392c98d8dc91b37687c67768ca2b9ba0dfa`.
