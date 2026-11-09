@@ -2,6 +2,7 @@
   "note": "saved but no sound window; headline is null",
   "request": "GET /api/insights/taste",
   "response": {
+    "context": null,
     "data_version": 1,
     "generation": 1,
     "profiles": {

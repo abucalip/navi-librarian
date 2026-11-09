@@ -20,6 +20,8 @@ from dataclasses import dataclass
 from typing import Any, Callable, Iterable, Mapping
 
 from ..jobs import runner
+from .context import build_context_profiles
+from .context_persistence import save_context_profiles
 from .loader import load_listens
 from .persistence import save_profiles
 from .profiles import ProfileConfig, build_profiles
@@ -72,6 +74,8 @@ def refresh_taste(
         day_start = now - now % DAY   # windows move by whole days, so a same-day replay is byte-identical
         profiles = build_profiles(loaded.listens, ProfileConfig(**{**base.__dict__, "now": day_start}))
         changed = save_profiles(db, profiles, loaded, now=now)
+        context = build_context_profiles(loaded.listens, config=base)
+        changed = save_context_profiles(db, context, base, now=now) or changed
         ctx.checkpoint({"changed": changed, "listens": loaded.total, "unusable": loaded.unusable,
                         "unmatched": loaded.unmatched}, items=1)
         return True

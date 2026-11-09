@@ -10,12 +10,14 @@ import sqlite3
 from typing import Any
 
 from ..store import generations
+from ..taste.context_persistence import load_saved_context
 from ..taste.persistence import load_saved_profiles
 
 
 def build_taste_body(db: sqlite3.Connection) -> dict[str, Any]:
     return {
         "profiles": load_saved_profiles(db),
+        "context": load_saved_context(db),
         "data_version": generations.data_versions(db).get("insights", 0),
         "generation": generations.current_generation(db),
     }
