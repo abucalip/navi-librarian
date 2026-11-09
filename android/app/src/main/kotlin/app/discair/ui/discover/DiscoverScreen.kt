@@ -107,8 +107,10 @@ fun DiscoverScreen(open: Opener) {
     }
     var tasteShown by remember { mutableStateOf<app.discair.model.TasteResponse?>(null) }
     (taste.state as? Load.Ready)?.value?.let { tasteShown = it }
-    LaunchedEffect(list) {
-        if (list == DiscoveryList.Insights && TasteLaunch.claim()) {
+    // Also re-asks once when the saved profiles arrive empty, so connecting ListenBrainz in Settings shows up on the next visit.
+    val tasteEmpty = tasteShown != null && tasteShown?.profiles == null
+    LaunchedEffect(list, tasteEmpty) {
+        if (list == DiscoveryList.Insights && (TasteLaunch.claim() || tasteEmpty)) {
             val result = try {
                 withContext(Dispatchers.IO) { repo.refreshTaste() }
             } catch (e: Exception) {

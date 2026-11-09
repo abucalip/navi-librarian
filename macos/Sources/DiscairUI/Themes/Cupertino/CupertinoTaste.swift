@@ -114,10 +114,13 @@ struct CupertinoTaste: View {
     private var emptyCard: some View {
         card {
             VStack(spacing: 4) {
-                Text(model.loaded ? "Taste needs listening history." : "Reading your saved profile.")
+                Text(model.refreshing ? "Reading your listens." : model.loaded ? "Taste needs listening history." : "Reading your saved profile.")
                     .font(.system(size: 18, weight: .bold, design: .serif)).foregroundStyle(CU.ink)
-                if model.loaded {
-                    Text("Connect ListenBrainz or play more; once a window has \(model.minListens) listens I will start describing it.")
+                if model.refreshing {
+                    Text("This can take about a minute the first time.").font(.system(size: 14)).foregroundStyle(CU.muted)
+                } else if model.loaded {
+                    if let note = model.note { Text(note).font(.system(size: 14)).foregroundStyle(CU.muted).multilineTextAlignment(.center) }
+                    Text("Connect ListenBrainz in Settings or play more; once a window has \(model.minListens) listens I will start describing it.")
                         .font(.system(size: 14)).foregroundStyle(CU.muted).multilineTextAlignment(.center)
                     progress(0, model.minListens, chip: "0 of \(model.minListens) listens needed before I will describe a window")
                 }
