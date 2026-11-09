@@ -465,3 +465,10 @@ New screen `Screen.insights`, reached from the Cupertino sidebar row "Insights",
 ## Player bar refinements (2026-11-09)
 
 Mockups: `docs/design/macos-player-refinements/mockups.html`. Owner choices: artwork blur backdrop (album page's `BlurredArtwork` plus a 28% dim layer over the tint, which stays as the loading fallback); sound graph as quiet bars from the floor (under 25% white, at most half the bar's height); a one-line middle field that shows the synced lyric line, or a fact when the song has no synced lyrics; two switches right of the quality tag, the Android quote mark (lyrics) and the circled i (facts), both on by default and kept in `UserDefaults`. Between lines of timed lyrics the field stays empty. Facts rotate every 14 s while playing and mix the library's own facts (Navidrome tags and plays) with `GET /api/knowledge/song-facts` lines, each naming its source. Artist page: a small vertical-dots menu beside the name opens Connections or Timeline for that artist. Restart fix: covers asked for before the connection exists are asked again when it arrives (`ArtworkStore.generation`).
+
+## Paths sheet (album and artist, PR [#932](https://github.com/abucalip/navi-librarian/pull/932), squash `4b69308f1982f0558600d0f193c11e7e541c0411`)
+
+- One sheet for both, plain system styling so it reads the same under every theme (like the sonic path sheet): segmented control of paths, table in server order (never sorted), trailing inspector with the selected step's reasons, Close (cancel), Play Album (album only) and one prominent Open button; arrow keys move between steps, Return opens.
+- Buttons: a neutral Paths button beside Radio or Shuffle in the Cupertino and Zine headers, shown when the server reports paths and the album or artist is in the library; the Paths menu has Album Paths (⌥⌘P) and Artist Paths (⇧⌥⌘P).
+- Honest states: loading, empty (the rule, never a fact about the album), error naming the kind with Try Again, and notes for `capped[]`, truncation and skipped seeds.
+- Player bar: a lyric or fact line that does not fit scrolls right to left and is cut at its own left edge; Reduce Motion keeps it still with an ellipsis.

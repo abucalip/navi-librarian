@@ -39,7 +39,7 @@ The plan in [HARDCODE_REPLACEMENT.md](HARDCODE_REPLACEMENT.md) is over; no phase
 
 ## 2d. Album paths (Paths button on album pages) — in progress
 
-Built on the server: `album_crew`, `album_guests`, `album_works`, `album_moment` (route PR #929, builders #924, fixtures #930). Client decoders merged in PR [#931](https://github.com/abucalip/navi-librarian/pull/931), squash `e190f6709f1d31b03a86b4a2aadf29f26bc2ea0e` (Android and macOS). **Still open:** the Paths button and screens on Android and macOS (Sonnet, medium; see the work split in [ALBUM_PATHS_PROPOSAL.md](ALBUM_PATHS_PROPOSAL.md)), and the server builders for `album_room` and `album_gaps`. Design: [ALBUM_PATHS_PROPOSAL.md](ALBUM_PATHS_PROPOSAL.md). Not published or deployed.
+Built on the server: `album_crew`, `album_guests`, `album_works`, `album_moment` (route PR #929, builders #924, fixtures #930). Client decoders merged in PR [#931](https://github.com/abucalip/navi-librarian/pull/931), squash `e190f6709f1d31b03a86b4a2aadf29f26bc2ea0e` (Android and macOS). Paths button and screens on Android and macOS merged in PR [#932](https://github.com/abucalip/navi-librarian/pull/932), squash `4b69308f1982f0558600d0f193c11e7e541c0411` (also an Artist Paths sheet on macOS). **Still open:** the server builders and route wiring for `album_room` and `album_gaps` (the clients do not offer them yet), the Neighbours by Ear wider-sample re-measure, and a look at the new screens on a device and in a window. Design: [ALBUM_PATHS_PROPOSAL.md](ALBUM_PATHS_PROPOSAL.md). Not published or deployed.
 
 ## 2c. Engine 2 — next priority (draft roadmap: [engine2.md](engine2.md))
 
