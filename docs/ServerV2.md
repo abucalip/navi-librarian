@@ -23,7 +23,7 @@
 ### Remaining slices
 
 6. macOS: the other Insights themes (Zine and the rest) draw their own versions, one follow-up PR per theme.
-7. macOS actions: smart-playlist rule prefill and library filter.
+7. macOS actions: smart-playlist rule prefill and library filter. **Implemented on branch `feat/macos-taste-actions`, not yet a PR:** the shift and window cards offer "Make a smart playlist from X" and "Open in Library" for genre and decade values only (area, label and collaborator have no library field, so no action). Seven filtered Swift tests pass locally (`TasteActionTests`, `TasteModelTests`); no CI run, visual check or live-server check yet.
 9. Close-out: confirm profiles change no ranking output, complete visual and runtime checks, and reconcile docs/log.
 
 **Order:** 7; then 6; then 9.

@@ -18,7 +18,7 @@ struct CupertinoLibrary: View {
     @State private var page = 0
     static let pageSize = 100
 
-    private var rows: [SongRow] { SongTable.sorted(LibrarySearch.songs(state.library.songs, query: query), by: sortKey, ascending: ascending, onlyMissingMBID: onlyMissingMBID) }
+    private var rows: [SongRow] { SongTable.sorted(LibrarySearch.songs(state.library.songs, query: query).filter { state.tasteFilter?.matches($0) ?? true }, by: sortKey, ascending: ascending, onlyMissingMBID: onlyMissingMBID) }
 
     var body: some View {
         ScrollView {
@@ -37,6 +37,11 @@ struct CupertinoLibrary: View {
                     CUSegmented(options: ["Table", "Grid", "Columns"], selection: $viewMode)
                 }
                 .padding(.top, 4).padding(.bottom, 12)
+                if let f = state.tasteFilter {
+                    Button { state.tasteFilter = nil } label: { Label("From your taste: \(f.label)", systemImage: "xmark.circle.fill") }
+                        .buttonStyle(CapsuleButtonStyle(small: true, outlined: true)).padding(.bottom, 10)
+                        .accessibilityLabel("Clear the \(f.label) filter from your taste")
+                }
 
                 if viewMode == "Columns" {
                     CupertinoMiller(state: state).frame(height: 460)

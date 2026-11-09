@@ -76,6 +76,17 @@ public final class TasteModel {
         return labels.map { ($0, rs[$0] ?? 0, ts[$0] ?? 0) }
     }
 
+    /// Actions for the cards (slice 7). The shift card offers the first listed rise that is a genre or decade; the window card
+    /// offers its top entry, never from a low-sample window or dimension.
+    public var shiftAction: TasteAction? {
+        shifts.first { $0.direction == "up" && TasteAction(dimension: $0.dimension, value: $0.value) != nil }
+            .flatMap { TasteAction(dimension: $0.dimension, value: $0.value) }
+    }
+    public var windowAction: TasteAction? {
+        guard let w = selectedWindow, !w.lowSample, !w.isLowSample(dimension), let top = w.entries(dimension).first else { return nil }
+        return TasteAction(dimension: dimension, value: top.value)
+    }
+
     /// Share of the `min_listens` bar a window has reached, for progress states.
     public func progress(listens: Int, need: Int) -> Double { need > 0 ? min(1, Double(listens) / Double(need)) : 1 }
 
