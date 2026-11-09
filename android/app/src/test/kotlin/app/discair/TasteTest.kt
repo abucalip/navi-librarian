@@ -85,6 +85,13 @@ class TasteTest {
         assertEquals(50, profiles.minListens)
     }
 
+    @Test fun sheetOffersRecentPastYearAndAllTime() {
+        val p = parseTaste(body("taste_rich")).profiles!!
+        assertEquals(listOf("recent", "mid", "all_time"), app.discair.model.TasteProfiles.WindowNames)
+        assertEquals(listOf("90 days", "Past year", "All time"), app.discair.model.TasteProfiles.WindowNames.map { TasteCard.windowLabel(it, p.recentDays) })
+        assertEquals(6, p.window("mid")!!.listens)
+    }
+
     @Test fun progressAndPercentStayInRange() {
         assertEquals(1.0, TasteCard.progress(80, 50), 0.0)
         assertEquals(0.0, TasteCard.progress(-5, 50), 0.0)

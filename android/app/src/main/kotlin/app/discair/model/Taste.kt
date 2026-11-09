@@ -55,7 +55,7 @@ data class TasteProfiles(
     fun shifts(window: String) = shifts.filter { it.window == window }.sortedByDescending { abs(it.toShare - it.fromShare) }
 
     companion object {
-        val WindowNames = listOf("recent", "all_time")
+        val WindowNames = listOf("recent", "mid", "all_time")
         val Dimensions = listOf("genre", "era", "area", "label", "collaborator")
     }
 }
