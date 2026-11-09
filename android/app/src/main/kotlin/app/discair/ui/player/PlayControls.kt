@@ -32,18 +32,23 @@ val LocalPlayActions = compositionLocalOf<PlayActions> { error("No play actions"
 /** Play, Shuffle and (optionally) a menu with Play next and Add to queue. Shown only for owned albums and artists. */
 @Composable
 fun PlayRow(
-    onPlay: () -> Unit,
-    onShuffle: () -> Unit,
+    onPlay: (() -> Unit)?,
+    onShuffle: (() -> Unit)?,
     modifier: Modifier = Modifier,
     onPlayNext: (() -> Unit)? = null,
     onAddToQueue: (() -> Unit)? = null,
+    /** An optional third button beside Shuffle, for an artist's discovery paths. */
+    onPaths: (() -> Unit)? = null,
 ) {
     Row(modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally), verticalAlignment = Alignment.CenterVertically) {
-        Button(onClick = onPlay, Modifier.heightIn(min = Target)) {
+        if (onPlay != null) Button(onClick = onPlay, Modifier.heightIn(min = Target)) {
             Icon(PlayerIcons.Play, contentDescription = null, Modifier.size(20.dp)); Text(" Play")
         }
-        OutlinedButton(onClick = onShuffle, Modifier.heightIn(min = Target)) {
+        if (onShuffle != null) OutlinedButton(onClick = onShuffle, Modifier.heightIn(min = Target)) {
             Icon(PlayerIcons.Shuffle, contentDescription = null, Modifier.size(20.dp)); Text(" Shuffle")
+        }
+        if (onPaths != null) OutlinedButton(onClick = onPaths, Modifier.heightIn(min = Target)) {
+            Icon(PlayerIcons.Timeline, contentDescription = null, Modifier.size(20.dp)); Text(" Paths")
         }
         if (onPlayNext != null && onAddToQueue != null) {
             var menu by remember { mutableStateOf(false) }

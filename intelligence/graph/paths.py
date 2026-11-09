@@ -40,7 +40,9 @@ CACHE_PREFIX = "path:"
 SLICE_RESOURCE = "musicbrainz_slice"
 SCENE_YEARS = 10
 PROGRESS_OPS = 5000  # how many SQLite steps pass between deadline checks
-PRESENTATION_VERSION = 5
+PRESENTATION_VERSION = 6
+COVER_CANDIDATES = 5  # releases offered per recording, so the app can try each for a cover
+VARIOUS_NAMES = ("various artists", "various")
 # Performer credits only: a producer is not a musician on the record, so it never bridges two recordings.
 PERFORMER_ROLES = tuple(r for r in CREDIT_ROLES if r != "producer")
 UNKNOWN_ARTIST_MBID = "125ec42a-7229-4250-afc5-e057484327fe"
@@ -55,7 +57,7 @@ _CG = "{a}.evidence_class != 'inferred' AND {a}.match_quality NOT IN ('fuzzy_unc
 @dataclass(frozen=True)
 class PathLimits:
     max_stops: int = 30
-    max_reasons: int = 3        # reasons kept per stop (the count of all is kept as ``reason_count``)
+    max_reasons: int = 10       # reasons kept per stop (the count of all is kept as ``reason_count``)
     max_rows: int = 3000        # candidate rows read from the store
     max_seconds: float = 2.0
     max_per_bridge: int = 200   # credits read per bridge musician (a session player cannot flood a path)
@@ -301,25 +303,42 @@ def _owned_twin_artists(db: sqlite3.Connection, title: str, generation: int) -> 
                            generation=generation)
 
 
+def _release_candidates(
+    db: sqlite3.Connection, recording_id: int, generation: int, *, prefer_owned: bool = False
+) -> list[tuple[str, str]]:
+    """The releases that carry a recording, best cover guess first, as (album, credited artist) pairs.
+
+    The cover lookup matches the artist and the album exactly, so a release credited to one real artist comes first;
+    compilations ("Various Artists") and releases with several credited names, which rarely match, come last.
+    """
+    rows = db.execute(
+        "SELECT DISTINCT r.id, r.canonical_name, r.owned FROM edges e JOIN entities r ON r.id = e.to_id AND r.type = 'release' "
+        "WHERE e.from_id = ? AND e.relation IN ('track_on', 'appears_on') AND e.generation = ? "
+        f"AND {_cg('e')} AND r.canonical_name != '' LIMIT 40",
+        (recording_id, generation),
+    ).fetchall()
+    ranked = []
+    for row in rows:
+        credited = _credited_names(db, row["id"], direction="release", relations=("release_artist", "credited_to"), generation=generation)
+        if not credited:
+            continue
+        various = any(n.casefold() in VARIOUS_NAMES for n in credited)
+        ranked.append(((various, len(credited) != 1, not (prefer_owned and row["owned"]),
+                        row["canonical_name"].casefold(), credited[0].casefold()), (row["canonical_name"], credited[0])))
+    ranked.sort(key=lambda item: item[0])
+    out: list[tuple[str, str]] = []
+    for _, pair in ranked:
+        if pair not in out:
+            out.append(pair)
+    return out[:COVER_CANDIDATES]
+
+
 def _recording_album(
     db: sqlite3.Connection, recording_id: int, generation: int, *, prefer_owned: bool = False
 ) -> tuple[str | None, str | None]:
-    """A recording's release and that release's credited artist, so the Android pane can look up a cover.
-
-    Several releases can carry one recording; the alphabetically first is taken (an owned one first when asked), the same
-    pick the Follow the musician presentation makes.
-    """
-    order = "r.owned DESC, " if prefer_owned else ""
-    row = db.execute(
-        "SELECT r.id, r.canonical_name FROM edges e JOIN entities r ON r.id = e.to_id AND r.type = 'release' "
-        "WHERE e.from_id = ? AND e.relation IN ('track_on', 'appears_on') AND e.generation = ? "
-        f"AND {_cg('e')} ORDER BY {order}r.canonical_name COLLATE NOCASE LIMIT 1",
-        (recording_id, generation),
-    ).fetchone()
-    if not row or not row["canonical_name"]:
-        return None, None
-    credited = _credited_names(db, row["id"], direction="release", relations=("release_artist", "credited_to"), generation=generation)
-    return row["canonical_name"], (credited[0] if credited else None)
+    """A recording's best release and that release's credited artist, so the Android pane can look up a cover."""
+    found = _release_candidates(db, recording_id, generation, prefer_owned=prefer_owned)
+    return found[0] if found else (None, None)
 
 
 def _anchor_presentation(
@@ -346,26 +365,21 @@ def _anchor_presentation(
 def _path_presentation(
     db: sqlite3.Connection, kind: str, stop_id: int, reasons: list[dict[str, Any]],
     names: _Names, generation: int,
-) -> dict[str, str | None]:
+) -> dict[str, Any]:
     """Separate the artist from the recording/release title for the Android Paths sheet."""
     stop = names.get(stop_id) or {}
     stop_name = stop.get("canonical_name") or ""
     title, context = stop_name, None
     album = album_artist = artist = None
+    albums_out: list[dict[str, str]] = []
+    begin_year = None
     if kind == "follow_the_musician":
-        # The song's own album (and its credited artist), so the sheet can write "Song (Album)" and open the album.
-        row = db.execute(
-            "SELECT r.id, r.canonical_name FROM edges e JOIN entities r ON r.id = e.to_id AND r.type = 'release' "
-            "WHERE e.from_id = ? AND e.relation IN ('track_on', 'appears_on') AND e.generation = ? "
-            f"AND {_cg('e')} ORDER BY r.canonical_name COLLATE NOCASE LIMIT 1",
-            (stop_id, generation),
-        ).fetchone()
-        if row and row["canonical_name"]:
-            album = row["canonical_name"]
-            credited = _credited_names(
-                db, row["id"], direction="release", relations=("release_artist", "credited_to"), generation=generation,
-            )
-            album_artist = credited[0] if credited else None
+        # The song's own album (and its credited artist), so the sheet can write "Song (Album)" and open the album;
+        # more releases follow so the app can try each for a cover.
+        candidates = _release_candidates(db, stop_id, generation)
+        if candidates:
+            album, album_artist = candidates[0]
+            albums_out = [{"album": a, "album_artist": b} for a, b in candidates]
         musicians, albums = [], []
         for reason in reasons:
             via = names.get(reason["via"]) or {}
@@ -398,7 +412,25 @@ def _path_presentation(
         context = stop_name or None
         artist = artists[0] if artists else None
         album, album_artist = _recording_album(db, stop_id, generation)
-    return {"title": title, "context": context, "album": album, "album_artist": album_artist, "artist": artist}
+    elif kind == "scene_path":
+        begin_year = _begin_year(db, stop_id)
+    out = {"title": title, "context": context, "album": album, "album_artist": album_artist, "artist": artist}
+    if albums_out:
+        out["albums"] = albums_out
+    if begin_year:
+        out["begin_year"] = begin_year
+        anchors = [r["anchor"] for r in reasons if r["anchor"] is not None]
+        anchor_year = _begin_year(db, anchors[0]) if anchors else None
+        if anchor_year:
+            out["anchor_begin_year"] = anchor_year
+    return out
+
+
+def _begin_year(db: sqlite3.Connection, entity_id: int) -> int | None:
+    """The year an artist's career began, from the stored life span."""
+    row = db.execute("SELECT begin_date FROM artist_life_span WHERE entity_id = ?", (entity_id,)).fetchone()
+    text = (row["begin_date"] or "")[:4] if row else ""
+    return int(text) if text.isdigit() else None
 
 
 def build_path(db: sqlite3.Connection, start_id: int, kind: str, *, limits: PathLimits = PathLimits(),

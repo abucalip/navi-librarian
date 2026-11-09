@@ -8,20 +8,25 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -32,53 +37,44 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import app.discair.model.PathCredit
+import app.discair.model.PathAlbum
+import app.discair.model.Span
+import app.discair.model.creditPhrase
 import app.discair.model.PathKind
 import app.discair.model.PathLink
 import app.discair.model.PathPane
 import app.discair.model.PathStop
 import app.discair.ui.common.AlbumCover
 import app.discair.ui.common.ArtistPhoto
-import app.discair.ui.common.BrutalTag
+import app.discair.ui.common.Cover
+import app.discair.ui.common.LocalRepository
+import app.discair.ui.common.LookupDispatcher
 import app.discair.ui.common.OutlinedButton
+import kotlinx.coroutines.withContext
 import app.discair.ui.common.Panel
 import app.discair.ui.common.Target
 import app.discair.ui.player.PlayerIcons
 import app.discair.ui.theme.Ink
 
 /**
- * One pane per path. Each shows only what the server sends for that path: a song with its credits, a leader with the records that
- * link you, an album with its label, a recording beside the work it shares, an artist with a place. A fact the server did not send
- * is left out, never filled in.
+ * One pane per path. Each shows only what the server sends for that path: a song with its credit, a leader with the records
+ * that link you, an album with its label, a recording with its work, an artist with a place and an era. A fact the server did
+ * not send is left out, never filled in. The server's extra reasons are not counted aloud: a pane picks among them at random.
  */
 @Composable
-internal fun ColumnScope.PaneBody(
-    pane: PathPane, stop: PathStop, kind: PathKind, startName: String, startType: String, go: (PathLink) -> Unit,
-) {
+internal fun ColumnScope.PaneBody(pane: PathPane, stop: PathStop, startName: String, go: (PathLink) -> Unit) {
     when (pane) {
         is PathPane.Song -> SongPane(pane, stop, go)
-        is PathPane.Leader -> LeaderPane(pane, stop, startName, startType, go)
-        is PathPane.LabelAlbum -> LabelPane(pane, stop)
-        is PathPane.Recording -> RecordingPane(pane, stop)
-        is PathPane.Place -> PlacePane(pane, stop)
-    }
-    pane.secondary.forEach { link ->
-        OutlinedButton(onClick = { go(link) }, Modifier.fillMaxWidth().heightIn(min = Target)) {
-            Icon(if (link.album) PlayerIcons.Album else PlayerIcons.Person, contentDescription = null, modifier = Modifier.size(24.dp))
-            Spacer(Modifier.width(8.dp))
-            Text("${if (link.album) "Album" else "Artist"}: ${link.name}", maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
-        }
-    }
-    if (pane.moreReasons > 0) {
-        Text(
-            if (pane.moreReasons == 1) "1 more reason on the server." else "${pane.moreReasons} more reasons on the server.",
-            style = MaterialTheme.typography.bodySmall, color = Ink.TextMuted,
-        )
+        is PathPane.Leader -> LeaderPane(pane, stop, startName, go)
+        is PathPane.LabelAlbum -> LabelPane(pane, stop, go)
+        is PathPane.Recording -> RecordingPane(pane, stop, startName, go)
+        is PathPane.Place -> PlacePane(pane, stop, go)
     }
 }
 
@@ -88,54 +84,41 @@ internal fun ColumnScope.PaneBody(
 private fun SongPane(pane: PathPane.Song, stop: PathStop, go: (PathLink) -> Unit) {
     Row(horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.Top) {
         PathThumb(PathKind.FollowTheMusician, stop, 96)
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(pane.title, style = MaterialTheme.typography.titleLarge, modifier = Modifier.semantics { heading() })
-            Column {
-                pane.album?.let { Text("on $it", style = MaterialTheme.typography.bodyMedium, color = Ink.TextMuted) }
-                pane.artist?.let { Text("by $it", style = MaterialTheme.typography.bodyMedium, color = Ink.TextMuted) }
-            }
-            LibraryTag(stop.owned)
+            pane.album?.let { Text("on $it", style = MaterialTheme.typography.bodyMedium, color = Ink.TextMuted) }
+            pane.artist?.let { Text("by $it", style = MaterialTheme.typography.bodyMedium, color = Ink.TextMuted) }
+            LibraryLine(stop.owned)
         }
     }
-    SectionTitle("Why it's here")
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        pane.credits.forEach { CreditCard(it, go) }
-    }
-}
-
-/** One reason as a card. When it names a musician the whole card opens their page, and the name is underlined to say so. */
-@Composable
-private fun CreditCard(credit: PathCredit, go: (PathLink) -> Unit) {
-    val who = credit.who
-    val text = buildAnnotatedString {
-        if (who != null && credit.text.startsWith(who.name)) {
-            withStyle(SpanStyle(textDecoration = TextDecoration.Underline, fontWeight = FontWeight.Bold)) { append(who.name) }
-            append(credit.text.removePrefix(who.name))
-        } else append(credit.text)
-    }
-    InfoCard(onClick = who?.let { { go(it) } }, onClickLabel = who?.let { "Open ${it.name}" }) {
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Top) {
-            Icon(PlayerIcons.Person, contentDescription = null, modifier = Modifier.size(24.dp))
-            Text(text, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
-        }
-    }
+    Text(story(pane.story), style = MaterialTheme.typography.bodyLarge)
+    FindRow(
+        person = pane.musician?.let { it.name to it },
+        album = pane.album?.let { a -> pane.artist?.let { by -> Triple(a, PathLink(true, a, by), pane.covers) } },
+        go = go,
+    )
 }
 
 // ---------------------------------------------------------------- Sideman: a leader and the records
 
 @Composable
-private fun LeaderPane(pane: PathPane.Leader, stop: PathStop, startName: String, startType: String, go: (PathLink) -> Unit) {
-    Row(horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
+private fun LeaderPane(pane: PathPane.Leader, stop: PathStop, startName: String, go: (PathLink) -> Unit) {
+    // The picture and the name open the leader's page.
+    val open = PathLink(false, pane.name, null, pane.mbid)
+    Row(
+        Modifier.fillMaxWidth().heightIn(min = Target)
+            .clickable(onClickLabel = "Open ${pane.name}", role = Role.Button) { go(open) },
+        horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically,
+    ) {
         PathThumb(PathKind.SidemanToLeader, stop, 72)
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(pane.name, style = MaterialTheme.typography.titleLarge, modifier = Modifier.semantics { heading() })
             Text(pane.typeLabel, style = MaterialTheme.typography.bodyMedium, color = Ink.TextMuted)
-            LibraryTag(stop.owned)
+            LibraryLine(stop.owned)
         }
     }
-    val verb = if (startType == "group") "appeared on" else "played on"
     if (pane.records.isNotEmpty()) {
-        SectionTitle("Records ${pane.name} led that $startName $verb")
+        SectionTitle("Records ${pane.name} led")
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             pane.records.forEach { record ->
                 OutlinedButton(
@@ -148,7 +131,10 @@ private fun LeaderPane(pane: PathPane.Leader, stop: PathStop, startName: String,
                     Column(Modifier.weight(1f).padding(horizontal = 16.dp)) {
                         Text(record.release, style = MaterialTheme.typography.titleMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
                         record.carries?.let {
-                            Text("carries $it, a recording $startName $verb", style = MaterialTheme.typography.bodySmall, color = Ink.TextMuted)
+                            Text(
+                                story(listOf(Span("carries "), Span(it, true), Span(", a recording $startName ${creditPhrase(record.credit, past = true)}."))),
+                                style = MaterialTheme.typography.bodySmall, color = Ink.TextMuted,
+                            )
                         }
                     }
                     Icon(PlayerIcons.Right, contentDescription = null, modifier = Modifier.size(24.dp))
@@ -164,129 +150,182 @@ private fun LeaderPane(pane: PathPane.Leader, stop: PathStop, startName: String,
 // ---------------------------------------------------------------- Label: an album and its label
 
 @Composable
-private fun LabelPane(pane: PathPane.LabelAlbum, stop: PathStop) {
+private fun LabelPane(pane: PathPane.LabelAlbum, stop: PathStop, go: (PathLink) -> Unit) {
     Row(horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.Bottom) {
         PathThumb(PathKind.LabelPath, stop, 144)
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(pane.album, style = MaterialTheme.typography.titleLarge, modifier = Modifier.semantics { heading() })
             pane.artist?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = Ink.TextMuted) }
-            LibraryTag(stop.owned)
+            LibraryLine(stop.owned)
         }
     }
-    pane.reasons.forEach { reason ->
-        if (reason.label.isBlank()) {
-            InfoCard { Text(reason.text, style = MaterialTheme.typography.bodyMedium) }
-            return@forEach
-        }
+    val reason = pane.reason
+    if (reason == null || reason.label.isBlank()) {
+        InfoCard { Text(pane.sentence, style = MaterialTheme.typography.bodyMedium) }
+    } else {
         InfoCard(raised = true) {
-            Eyebrow(if (reason.related) "Released on a related label" else "Released on")
-            Row(Modifier.padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                Icon(PlayerIcons.Album, contentDescription = null, modifier = Modifier.size(32.dp))
-                Text(reason.label, style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
-            }
-        }
-        reason.anchor?.let { anchor ->
-            InfoCard {
-                Eyebrow("Same label as your album")
-                Row(Modifier.padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                    if (reason.anchorArtist != null) AlbumCover(reason.anchorArtist, anchor, null, Modifier.size(48.dp)) else PathTile(PlayerIcons.Album, 48)
-                    Column(Modifier.weight(1f)) {
-                        Text(anchor, style = MaterialTheme.typography.titleMedium)
-                        Text("in your library", style = MaterialTheme.typography.bodyMedium, color = Ink.TextMuted)
+            Row(horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                Row(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(PlayerIcons.Album, contentDescription = null, modifier = Modifier.size(32.dp))
+                    Text(reason.label, style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
+                }
+                reason.anchor?.let { anchor ->
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text(
+                            if (reason.related) "Related label of:" else "Same label as:",
+                            style = MaterialTheme.typography.bodySmall, color = Ink.TextMuted,
+                        )
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                            if (reason.anchorArtist != null) AlbumCover(reason.anchorArtist, anchor, null, Modifier.size(40.dp)) else PathTile(PlayerIcons.Album, 40)
+                            Text(anchor, style = MaterialTheme.typography.titleMedium, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+                        }
                     }
                 }
             }
         }
     }
+    FindRow(
+        person = pane.artist?.let { it to PathLink(false, it) },
+        album = pane.artist?.let { by -> Triple(pane.album, PathLink(true, pane.album, by), pane.covers) },
+        go = go,
+    )
 }
 
 // ---------------------------------------------------------------- Composition: a recording and the work
 
 @Composable
-private fun RecordingPane(pane: PathPane.Recording, stop: PathStop) {
+private fun RecordingPane(pane: PathPane.Recording, stop: PathStop, startName: String, go: (PathLink) -> Unit) {
     val work = pane.work
     if (work == null) {
         InfoCard { Text(pane.sentence, style = MaterialTheme.typography.bodyMedium) }
     } else {
         InfoCard(raised = true) {
-            Eyebrow("The work")
-            Row(Modifier.padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                Icon(PlayerIcons.MusicNote, contentDescription = null, modifier = Modifier.size(32.dp))
-                Text(work, style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f).semantics { heading() })
-            }
-            Box(Modifier.padding(top = 8.dp)) { BrutalTag(primary = false) { Text(if (pane.related) "Related work" else "Same work", style = MaterialTheme.typography.labelMedium) } }
-        }
-    }
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        pane.yours?.let { yours ->
-            InfoCard {
-                Eyebrow("Your recording")
-                Row(Modifier.padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                    if (pane.yoursAlbum != null && pane.yoursArtist != null) AlbumCover(pane.yoursArtist, pane.yoursAlbum, null, Modifier.size(48.dp))
-                    else PathTile(PlayerIcons.MusicNote, 48)
-                    Column(Modifier.weight(1f)) {
-                        Text(yours, style = MaterialTheme.typography.titleMedium)
-                        Text("in your library", style = MaterialTheme.typography.bodyMedium, color = Ink.TextMuted)
-                    }
-                    Icon(Icons.Default.Check, contentDescription = "In your library", tint = Ink.Ok, modifier = Modifier.size(24.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.Top) {
+                if (pane.yoursAlbum != null && pane.yoursArtist != null) AlbumCover(pane.yoursArtist, pane.yoursAlbum, null, Modifier.size(64.dp))
+                else PathTile(PlayerIcons.MusicNote, 64)
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(work, style = MaterialTheme.typography.titleLarge, modifier = Modifier.semantics { heading() })
+                    Text(
+                        if (pane.related) "related to a work by $startName" else "composed by $startName",
+                        style = MaterialTheme.typography.bodyMedium, color = Ink.TextMuted,
+                    )
+                    // The library recording this work was found from is always one the owner has.
+                    LibraryLine(true)
                 }
             }
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
-                Icon(PlayerIcons.Swap, contentDescription = null, modifier = Modifier.size(24.dp))
-                Text(
-                    if (pane.related) "is a work related to" else "is the same work as",
-                    style = MaterialTheme.typography.bodyMedium, color = Ink.TextMuted, modifier = Modifier.padding(start = 8.dp),
-                )
-            }
-        }
-        InfoCard {
-            Eyebrow("This recording")
-            Row(Modifier.padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                PathThumb(PathKind.CompositionPath, stop, 48)
-                Column(Modifier.weight(1f)) {
-                    Text(pane.track, style = MaterialTheme.typography.titleMedium)
-                    Text(pane.performer ?: "Artist not listed", style = MaterialTheme.typography.bodyMedium, color = Ink.TextMuted)
-                }
-            }
-            Box(Modifier.padding(top = 8.dp)) { LibraryTag(stop.owned) }
         }
     }
+    val who = pane.performer
+    val on = pane.album?.let { " on $it" }.orEmpty()
+    val library = if (stop.owned) "In your library" else "Not in your library"
+    Text(
+        story(
+            if (who != null) listOf(Span(who), Span(" also recorded "), Span(pane.track, true), Span("$on. $library"))
+            else listOf(Span("Also recorded as "), Span(pane.track, true), Span("$on. $library")),
+        ),
+        style = MaterialTheme.typography.bodyLarge,
+    )
+    FindRow(
+        person = who?.let { it to PathLink(false, it) },
+        album = pane.album?.let { a -> (pane.albumArtist ?: who)?.let { by -> Triple(a, PathLink(true, a, by), pane.covers) } },
+        go = go,
+    )
 }
 
 // ---------------------------------------------------------------- Scene: an artist, a place and an era
 
 @Composable
-private fun PlacePane(pane: PathPane.Place, stop: PathStop) {
-    Row(horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
+private fun PlacePane(pane: PathPane.Place, stop: PathStop, go: (PathLink) -> Unit) {
+    val open = PathLink(false, pane.name, null, pane.mbid)
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
         PathThumb(PathKind.ScenePath, stop, 72)
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(pane.name, style = MaterialTheme.typography.titleLarge, modifier = Modifier.semantics { heading() })
             Text(pane.typeLabel, style = MaterialTheme.typography.bodyMedium, color = Ink.TextMuted)
-            LibraryTag(stop.owned)
+            LibraryLine(stop.owned)
         }
     }
     val place = pane.place
     val anchor = pane.anchor
-    // The place and the era come out of the server's fixed wording; if either is missing the sentence is shown as the server wrote it.
-    if (place == null || anchor == null || pane.years == null) {
+    // The place comes out of the server's fixed wording; if it is missing the sentence is shown as the server wrote it.
+    val era = pane.era ?: pane.years?.let { "Within $it years" }
+    if (place == null || anchor == null || era == null) {
         InfoCard { Text(pane.sentence, style = MaterialTheme.typography.bodyMedium) }
         return
     }
-    InfoCard(raised = true) {
-        Eyebrow("Same place")
-        Row(Modifier.padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-            Icon(Icons.Default.Place, contentDescription = null, modifier = Modifier.size(32.dp))
-            Text(place, style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
+    Row(Modifier.fillMaxWidth().height(IntrinsicSize.Max), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        InfoCard(Modifier.weight(1f).fillMaxHeight(), raised = true, fill = true) {
+            Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically)) {
+                Eyebrow("Same place")
+                Icon(Icons.Default.Place, contentDescription = null, modifier = Modifier.size(32.dp))
+                Text(place, style = MaterialTheme.typography.titleLarge, textAlign = TextAlign.Center)
+            }
         }
-        Text("$anchor is also from $place.", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 8.dp))
+        InfoCard(Modifier.weight(1f).fillMaxHeight(), raised = true, fill = true) {
+            Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically)) {
+                Eyebrow("Same era")
+                Text(era, style = MaterialTheme.typography.titleLarge, textAlign = TextAlign.Center)
+            }
+        }
     }
-    InfoCard {
-        Eyebrow("Same era")
-        Text("Started within ${pane.years} years of $anchor.", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 8.dp))
+    Text(
+        "${pane.name} is from $place, just like $anchor. They both started their careers in the same era.",
+        style = MaterialTheme.typography.bodyLarge,
+    )
+    Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+        LinkTile(pane.name, open, go) { ArtistPhoto(pane.name, null, Modifier.size(80.dp), circle = true) }
     }
 }
 
 // ---------------------------------------------------------------- shared pieces
+
+/** A sentence made of plain pieces and italic titles. */
+private fun story(spans: List<Span>) = buildAnnotatedString {
+    spans.forEach { span ->
+        if (span.title) withStyle(SpanStyle(fontStyle = FontStyle.Italic, fontWeight = FontWeight.Medium)) { append(span.text) } else append(span.text)
+    }
+}
+
+/** The musician as a circle on the left and the album as a square on the right, each with its name below and each opening its page. */
+@Composable
+private fun FindRow(person: Pair<String, PathLink>?, album: Triple<String, PathLink, List<PathAlbum>>?, go: (PathLink) -> Unit) {
+    if (person == null && album == null) return
+    // Close together and centred; a lone circle (or square) sits in the middle.
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally), verticalAlignment = Alignment.Top) {
+        if (person != null) {
+            LinkTile(person.first, person.second, go) { ArtistPhoto(person.first, null, Modifier.size(96.dp), circle = true) }
+        }
+        if (album != null) {
+            LinkTile(album.first, album.second, go) { CandidateCover(album.third, Modifier.size(96.dp)) { PathTile(PlayerIcons.Album, 96) } }
+        }
+    }
+}
+
+/** A picture with its name below, as one button. The name is not underlined: the picture says it opens. */
+@Composable
+private fun LinkTile(label: String, link: PathLink, go: (PathLink) -> Unit, picture: @Composable () -> Unit) {
+    Column(
+        Modifier.width(128.dp).heightIn(min = Target).clickable(onClickLabel = "Open $label", role = Role.Button) { go(link) },
+        horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        picture()
+        Text(label, style = MaterialTheme.typography.bodyMedium, textAlign = TextAlign.Center, maxLines = 2, overflow = TextOverflow.Ellipsis)
+    }
+}
+
+/**
+ * A cover for one of several releases: each is asked for in turn until one has a picture, so a release the cover lookup does
+ * not know does not leave the square empty. Nothing to try gives [none].
+ */
+@Composable
+internal fun CandidateCover(candidates: List<PathAlbum>, modifier: Modifier, none: @Composable () -> Unit) {
+    if (candidates.isEmpty()) return none()
+    val repo = LocalRepository.current
+    val url by produceState<String?>(null, candidates) {
+        value = withContext(LookupDispatcher) { candidates.firstNotNullOfOrNull { repo.albumImage(it.artist, it.album) } }
+    }
+    Cover(url, modifier)
+}
 
 @Composable
 private fun SectionTitle(text: String) {
@@ -299,28 +338,18 @@ private fun Eyebrow(text: String) {
     Text(text.uppercase(), style = MaterialTheme.typography.labelMedium.copy(letterSpacing = 0.6.sp), color = Ink.TextMuted)
 }
 
-/** Library state in words and an icon, never colour alone. */
+/** Library state as a plain line of words. */
 @Composable
-private fun LibraryTag(owned: Boolean) {
-    BrutalTag(primary = false) {
-        Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
-            if (owned) Icon(Icons.Default.Check, contentDescription = null, tint = Ink.Ok, modifier = Modifier.size(16.dp))
-            Text(if (owned) "In your library" else "Not in your library", style = MaterialTheme.typography.labelMedium)
-        }
-    }
+private fun LibraryLine(owned: Boolean) {
+    Text(if (owned) "In your library" else "Not in your library", style = MaterialTheme.typography.bodyMedium, color = Ink.TextMuted)
 }
 
-/** A card: padded 16, the app's panel. [raised] sets it on the raised ground; [onClick] makes the whole card one button. */
+/** A card: padded 16, the app's panel. [raised] sets it on the raised ground. */
 @Composable
-private fun InfoCard(
-    raised: Boolean = false, onClick: (() -> Unit)? = null, onClickLabel: String? = null, content: @Composable ColumnScope.() -> Unit,
-) {
-    Panel(Modifier.fillMaxWidth()) {
+private fun InfoCard(modifier: Modifier = Modifier, raised: Boolean = false, fill: Boolean = false, content: @Composable ColumnScope.() -> Unit) {
+    Panel(modifier.fillMaxWidth()) {
         Column(
-            Modifier.fillMaxWidth()
-                .then(if (raised) Modifier.background(Ink.Raised) else Modifier)
-                .then(if (onClick != null) Modifier.heightIn(min = Target).clickable(onClickLabel = onClickLabel, role = Role.Button, onClick = onClick) else Modifier)
-                .padding(16.dp),
+            Modifier.fillMaxWidth().then(if (fill) Modifier.fillMaxHeight() else Modifier).then(if (raised) Modifier.background(Ink.Raised) else Modifier).padding(16.dp),
             content = content,
         )
     }

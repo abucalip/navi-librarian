@@ -42,6 +42,31 @@ class PathTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 build_path(self.db, a, kind)
 
+    def test_follow_the_musician_offers_releases_with_one_real_artist_first(self):
+        a, _, rec = self.library()
+        player, song = self.ent("artist", "Player"), self.ent("recording", "Their Song")
+        self.edge(player, rec, "instrument", role="guitar")
+        self.edge(player, song, "instrument", role="guitar")
+        va, band = self.ent("artist", "Various Artists"), self.ent("artist", "Zed Band")
+        compilation, album = self.ent("release", "Aaa Hits"), self.ent("release", "Zed LP")
+        for release, who in ((compilation, va), (album, band)):
+            self.edge(song, release, "track_on", src="musicbrainz_dump_releases")
+            self.edge(release, who, "release_artist", src="musicbrainz_dump_releases")
+        presentation = build_path(self.db, a, "follow_the_musician")["stops"][0]["presentation"]
+        self.assertEqual((presentation["album"], presentation["album_artist"]), ("Zed LP", "Zed Band"))
+        self.assertEqual([x["album"] for x in presentation["albums"]], ["Zed LP", "Aaa Hits"])
+        reason = build_path(self.db, a, "follow_the_musician")["stops"][0]["reasons"][0]
+        self.assertEqual([e["role"] for e in reason["evidence"]], ["guitar", "guitar"])
+
+    def test_scene_presentation_carries_both_start_years(self):
+        a = self.ent("artist", "Start", owned=True)
+        b, place = self.ent("artist", "Other"), self.ent("area", "Jimma")
+        for who, year in ((a, "1961-01-01"), (b, "1965")):
+            self.db.execute("INSERT INTO artist_life_span (entity_id, begin_date) VALUES (?, ?)", (who, year))
+            self.edge(who, place, "area")
+        stop = build_path(self.db, a, "scene_path")["stops"][0]
+        self.assertEqual((stop["presentation"]["begin_year"], stop["presentation"]["anchor_begin_year"]), (1965, 1961))
+
     def test_sideman_to_leader_links_credited_recordings_to_release_leaders(self):
         a, _, _ = self.library()
         rec = self.ent("recording", "Session Take")
@@ -338,7 +363,7 @@ class PathTests(unittest.TestCase):
         )
         self.db.commit()
         rebuilt = cached_path(self.db, a, "follow_the_musician")
-        self.assertEqual(rebuilt["presentation_version"], 5)
+        self.assertEqual(rebuilt["presentation_version"], 6)
         self.assertEqual(rebuilt["stops"][0]["presentation"]["title"], "Player")
 
     def test_cache_hit_refresh_and_staleness(self):
