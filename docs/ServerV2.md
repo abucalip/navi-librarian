@@ -1,7 +1,7 @@
 # Server V2 — remaining work
 
 **Updated:** 2026-11-09  
-**Current state:** Server-side Phases 0–6 are closed. Phase 7 implementation is merged. Phase 6 taste presentation slices 5–8 are merged across macOS Cupertino, macOS Zine and Android. Remaining work is explicitly listed runtime/client verification; no Server V2 work is currently published or deployed. See [Project Status](PROJECT_STATUS.md), the [API contract](SERVER_V2_CONTRACT.md), and the [historical plan archive](archive/ServerV2_HISTORY_2026-11-09.md).
+**Current state:** Server-side Phases 0–6 are closed. Phase 7 implementation is merged. Phase 6 taste presentation is closed: slices 5–8 are merged across macOS Cupertino, macOS Zine and Android, and the slice 9 close-out is done. Remaining work is explicitly listed runtime/client verification; no Server V2 work is currently published or deployed. See [Project Status](PROJECT_STATUS.md), the [API contract](SERVER_V2_CONTRACT.md), and the [historical plan archive](archive/ServerV2_HISTORY_2026-11-09.md).
 
 ## Phase 6 — Taste presentation
 
@@ -26,7 +26,7 @@
 
 ### Remaining slices
 
-9. Close-out (2026-11-09, partial): **ranking independence confirmed.** The `check_no_weight_effect` guard in `scripts/server_v2_phase6_exit.py` was re-run on current `main` (`2fec5809`) and passed: no module outside `intelligence/taste/`, `intelligence/api/`, `app/api/`, `intelligence/store/`, `scripts/` and `tests/` imports the taste package, so no discovery, insight, edition or sonic ranking code can read a taste profile. Still open, and not performed by an agent: the owner's visual checks (macOS Cupertino, Zine; Android device/emulator and accessibility) and a live-server refresh, including the Android 30-second read timeout against a long refresh. The Zine visual review for slice 6 was explicitly waived by the owner.
+9. **Closed 2026-11-09.** **Ranking independence confirmed.** The `check_no_weight_effect` guard in `scripts/server_v2_phase6_exit.py` was re-run on current `main` (`2fec5809`) and passed: no module outside `intelligence/taste/`, `intelligence/api/`, `app/api/`, `intelligence/store/`, `scripts/` and `tests/` imports the taste package, so no discovery, insight, edition or sonic ranking code can read a taste profile. The owner waived the remaining visual checks (macOS Cupertino, Zine; Android device/emulator and accessibility) and the live-server refresh, including the Android 30-second read timeout against a long refresh; none was performed.
 
 **Order:** 9.
 

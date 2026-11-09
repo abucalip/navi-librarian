@@ -1,6 +1,6 @@
 # Project status
 
-Last checked: 2026-11-09. GitHub `main` is authoritative; Server V2 Phase 6 taste presentation slices 5–8 are merged (macOS Cupertino and Zine, Android); Phase 7 implementation is merged through PR #889, with runtime and client verification remaining. PR #898 is merged; publication as `v0.5.3` is authorized but not yet completed.
+Last checked: 2026-11-09. GitHub `main` is authoritative; Server V2 Phase 6 taste presentation is closed (slices 5–8 merged; slice 9 close-out done 2026-11-09 with the visual and runtime checks waived by the owner); Phase 7 implementation is merged through PR #889, with runtime and client verification remaining. PR #898 is merged; publication as `v0.5.3` is authorized but not yet completed.
 
 **Server V2 work queue:** `docs/ServerV2.md` now contains only remaining client slices and verification; the former full plan and completed-work history is preserved in `docs/archive/ServerV2_HISTORY_2026-11-09.md`.
 
