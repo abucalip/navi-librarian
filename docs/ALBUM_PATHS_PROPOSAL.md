@@ -1,6 +1,6 @@
 # Album paths proposal
 
-**Status:** owner decisions recorded 2026-11-09 (see "Decisions recorded"). Approved for build in slices; nothing is built, merged or published yet beyond the probe script.
+**Status:** owner decisions recorded 2026-11-09 (see "Decisions recorded"). Approved for build in slices. Built and merged so far: the probe script (PR #921), the recording-places audit (PR #922) and the builders for Studio Crew, Guest List and Covers and Sources (PR #924, squash `3901673d599079e80cfa41319d4e6d2fe55751fe`). Nothing is published or deployed.
 **Date:** 2026-11-09
 **Context:** The Paths button on an album page. Contract context: [Server V2 contract](SERVER_V2_CONTRACT.md) (`GET /api/knowledge/paths`), [Server V2 remaining work](ServerV2.md), builders in `intelligence/graph/paths.py`.
 
@@ -221,7 +221,21 @@ Status as of 2026-11-09 (merged work is on `main`; PR #921 merged):
 1. ~~Owner reviews this proposal and answers the open decisions.~~ Done 2026-11-09 (see "Decisions recorded").
 2. ~~Write the probe (`scripts/album_path_coverage.py`, filtered tests) and run it on a copy of the real store.~~ Done: script and filtered tests merged in PR #921; run on a copy of the store. Neighbours by Ear was measured separately (40-album sample, live sonic routes).
 3. ~~Record results in this document~~ Done (see "Probe results"). Keep, cut or add a slice per path: decided 2026-11-09 (see "Decisions recorded"). The exact overlap measurement is done (see "Probe results"): all four paths pass the overlap gate.
-4. Contract, builders, fixtures, then clients, each as its own slice with filtered tests and required CI. ~~Recording-places import slice~~ Done as an audit and dossier fix, merged in PR #922 (no import step needed; see "Slice audit"). Remaining, not started. Suggested order: contract section; builders for paths 1, 2, 4, 6, then 3 (its data is already in the store); Neighbours by Ear (own tab); Listen-through Gaps; fixtures and decoders; client screens.
+4. Contract, builders, fixtures, then clients, each as its own slice with filtered tests and required CI. ~~Recording-places import slice~~ Done as an audit and dossier fix, merged in PR #922 (no import step needed; see "Slice audit"). Builders for paths 1, 2 and 4 are done (PR #924, see "Builders built" below). Remaining, not started. Suggested order: contract section; builders for path 6, then 3 (its data is already in the store); Neighbours by Ear (own tab); Listen-through Gaps; fixtures and decoders; client screens.
+
+## Builders built (PR #924, 2026-11-09)
+
+`intelligence/graph/album_paths.py`: `build_album_path` and `cached_album_path` for `album_crew`, `album_guests` and `album_works`; `paths.py` exposes `kind_rows()` for the overlap check. Relation sets are the ones the probe measured. Caps: 50 albums per person, 20 per work, ranked by shared credits then earliest release date; the count left out is reported in `capped[]`. Stops the credited artists' five artist paths reach are dropped (decision 4) and counted in `overlap_dropped`; a build that runs out of time during that check is `truncated: "time"`. Filtered tests: `tests/test_intelligence_album_paths.py` (18) and the existing paths tests passed; full suite left to CI.
+
+Run on a read-only copy of the owner's store, all 884 owned albums, after overlap dropping:
+
+| Path | Coverage (≥35%) | Median stops where any (≥3) | No `truncated: time` (≥95%) |
+|---|---|---|---|
+| Studio Crew | 54.5% | 7 | 100% |
+| Guest List | 48.8% | 11 | 99.8% |
+| Covers and Sources | 36.7% | 3 | 100% |
+
+All pass the Balanced thresholds; Covers and Sources has the thinnest margin. Slowest build 2.0 s. Not done: contract section, route extension, fixtures, clients.
 
 ## Work split by model and effort
 
@@ -238,7 +252,7 @@ For usage efficiency, give Haiku the mechanical, self-checking steps: a spelled-
 | ~~Decide keep, cut or add a slice per path~~ **Done** 2026-11-09 | Owner / main model | high | Judgment against thresholds, with a decision recorded. |
 | Set the Neighbours by Ear call cap | Owner | — | Decided: 8 seeds per album (2026-11-09). |
 | ~~New import slice (recording places, production credits, work relations)~~ **Done** as an audit plus dossier fix (PR #922); no import needed | Sonnet | high | Schema bump, resumable import, cache invalidation; follows the release-links precedent. |
-| Path builders for Studio Crew, Guest List, Covers and Sources | Sonnet | high | Evidence rules, hub caps, de-duplication of people across paths; a mistake breaks the credit-grade guarantee. |
+| ~~Path builders for Studio Crew, Guest List, Covers and Sources~~ **Done** (PR #924) | Sonnet | high | Evidence rules, hub caps, de-duplication of people across paths; a mistake breaks the credit-grade guarantee. |
 | Same Year Same Scene builder | Sonnet | medium | Strict-rule logic on top of existing readers. |
 | Neighbours by Ear composition | Sonnet | medium | Groups similar-track results; must never sort or threshold on `similarity`. |
 | Listen-through Gaps filter | Sonnet | high | Must stay within the taste rule; a leak into ranking is a contract violation. |
