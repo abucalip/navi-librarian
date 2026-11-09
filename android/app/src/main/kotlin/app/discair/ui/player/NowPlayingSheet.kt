@@ -197,8 +197,21 @@ fun NowPlayingSheet(state: PlayerUiState, controller: PlayerController, lyrics: 
         val brutal = app.discair.ui.theme.LocalPalette.current.brutal
         val wash by animateColorAsState(if (brutal) ground else tint ?: ground, animationSpec = tween(500), label = "artworkTint")
         LaunchedEffect(item.coverUrl) { if (item.coverUrl.isBlank()) tint = null }
+        // The line, the graph and the switches (S2, T1, B). Both switches are kept on the phone.
+        var showLyrics by remember { mutableStateOf(settings.showLyricLine) }
+        var showFacts by remember { mutableStateOf(settings.showFacts) }
+        val lineUi = LineUi(
+            rememberPlayerLine(extras, item, if (lyricsState.songIdOrNull() == songId) lyricsState else LyricsUiState.Idle, currentLine, state.isPlaying, showLyrics, showFacts),
+            rememberPeaks(extras, songId, enabled = true),
+            showLyrics, showFacts,
+            { showLyrics = !showLyrics; settings.showLyricLine = showLyrics }, { showFacts = !showFacts; settings.showFacts = showFacts },
+        )
+        val blurred = canBlur && !sticker && item.coverUrl.isNotBlank()
+        Box {
+        if (blurred) ArtworkBackdrop(playerArtworkUrl(item.coverUrl))
         Column(
             Modifier.fillMaxWidth().drawBehind {
+                if (blurred) return@drawBehind
                 // Starts above the content so the drag handle sits on the tint too.
                 val top = -48.dp.toPx()
                 drawRect(Brush.verticalGradient(listOf(wash, ground), startY = top, endY = size.height * 0.9f), topLeft = androidx.compose.ui.geometry.Offset(0f, top), size = androidx.compose.ui.geometry.Size(size.width, size.height - top))
@@ -235,7 +248,7 @@ fun NowPlayingSheet(state: PlayerUiState, controller: PlayerController, lyrics: 
                 state, controller, view, onView = { view = it; lastView = it },
                 lyricsState = if (lyricsState.songIdOrNull() == songId) lyricsState else LyricsUiState.Idle, currentLine = currentLine,
                 onSignIn = onSignIn, onEqualizer = { eqOpen = true }, onCrossfade = { crossfadeOpen = true },
-                onOpenArtist = onOpenArtist, onOpenAlbum = onOpenAlbum, onCoverColor = { tint = it },
+                onOpenArtist = onOpenArtist, onOpenAlbum = onOpenAlbum, onCoverColor = { tint = it }, line = lineUi,
                 lyricsPanel = {
                     LyricsPanel(
                         if (lyricsState.songIdOrNull() == songId) lyricsState else LyricsUiState.Idle,
@@ -246,7 +259,7 @@ fun NowPlayingSheet(state: PlayerUiState, controller: PlayerController, lyrics: 
             ) else if (tape) TapePlayer(
                 state, controller, showLyrics = view == 1, onToggleLyrics = { view = app.discair.ui.common.TapeDeckRules.toggleLyrics(view); lastView = view },
                 onSignIn = onSignIn, onEqualizer = { eqOpen = true }, onCrossfade = { crossfadeOpen = true },
-                onOpenArtist = onOpenArtist, onOpenAlbum = onOpenAlbum, onCoverColor = { tint = it },
+                onOpenArtist = onOpenArtist, onOpenAlbum = onOpenAlbum, onCoverColor = { tint = it }, line = lineUi,
                 lyricsPanel = {
                     LyricsPanel(
                         if (lyricsState.songIdOrNull() == songId) lyricsState else LyricsUiState.Idle,
@@ -255,7 +268,7 @@ fun NowPlayingSheet(state: PlayerUiState, controller: PlayerController, lyrics: 
                     )
                 },
             ) else Player(
-                state, controller, onSignIn, { eqOpen = true }, { crossfadeOpen = true }, onOpenArtist, onOpenAlbum,
+                state, controller, onSignIn, { eqOpen = true }, { crossfadeOpen = true }, onOpenArtist, onOpenAlbum, lineUi,
                 card = {
                     FlipCard(
                         progress = flip.value,
@@ -279,6 +292,7 @@ fun NowPlayingSheet(state: PlayerUiState, controller: PlayerController, lyrics: 
                     )
                 },
             )
+        }
         }
         // Settings come up from the bottom over the player, each in its own sheet.
         if (eqOpen) SettingsSheet({ eqOpen = false }) { EqualizerScreen(container, onBack = null) }
@@ -351,7 +365,7 @@ private fun FlipCard(
 
 @Composable
 private fun Player(state: PlayerUiState, controller: PlayerController, onSignIn: () -> Unit, onEqualizer: () -> Unit, onCrossfade: () -> Unit,
-    onOpenArtist: (QueueItem) -> Unit, onOpenAlbum: (QueueItem) -> Unit, card: @Composable () -> Unit,
+    onOpenArtist: (QueueItem) -> Unit, onOpenAlbum: (QueueItem) -> Unit, line: LineUi, card: @Composable () -> Unit,
 ) {
     val item = state.current ?: return
     var dragging by remember { mutableStateOf<Float?>(null) }
@@ -399,7 +413,8 @@ private fun Player(state: PlayerUiState, controller: PlayerController, onSignIn:
                 textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
             )
         }
-        Spacer(Modifier.height(24.dp))
+        PlayerLineText(line.line, Modifier.padding(top = 8.dp))
+        Spacer(Modifier.height(8.dp))
         // Status in words: loading, buffering, lost connection, unavailable, queue full.
         val subtitle = playerSubtitle(state)
         if (state.status != null || state.buffering) {
@@ -416,15 +431,17 @@ private fun Player(state: PlayerUiState, controller: PlayerController, onSignIn:
         val timeStyle = MaterialTheme.typography.labelSmall.copy(fontFamily = app.discair.ui.theme.LocalFontPair.current.mono)
         val quality = qualityLabel(item)
         Box(Modifier.fillMaxWidth().padding(top = 8.dp)) {
-            if (quality != null) {
-                Text(
-                    quality, style = timeStyle, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1,
-                    modifier = Modifier.align(Alignment.TopCenter)
-                        .border(1.dp, Ink.Edge, RoundedCornerShape(4.dp))
-                        .padding(horizontal = 8.dp, vertical = 1.dp),
-                )
+            Row(Modifier.align(Alignment.TopCenter), verticalAlignment = Alignment.CenterVertically) {
+                if (quality != null) {
+                    Text(
+                        quality, style = timeStyle, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1,
+                        modifier = Modifier.border(1.dp, Ink.Edge, RoundedCornerShape(4.dp)).padding(horizontal = 8.dp, vertical = 1.dp),
+                    )
+                    Spacer(Modifier.size(8.dp))
+                }
+                LineSwitches(line)
             }
-            Row(Modifier.fillMaxWidth().padding(top = if (quality != null) 16.dp else 0.dp), verticalAlignment = Alignment.CenterVertically) {
+            Row(Modifier.fillMaxWidth().padding(top = Target), verticalAlignment = Alignment.CenterVertically) {
                 Text(formatTime(shown), style = timeStyle, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(end = 8.dp))
                 SeekBar(
                     fraction = fraction, enabled = duration > 0,
@@ -434,6 +451,7 @@ private fun Player(state: PlayerUiState, controller: PlayerController, onSignIn:
                         contentDescription = "Seek"
                         stateDescription = seekDescription(shown, duration)
                     },
+                    peaks = line.peaks,
                 )
                 Text(if (duration > 0) formatTime(duration) else "--:--", style = timeStyle, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(start = 8.dp))
             }
