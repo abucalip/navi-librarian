@@ -134,16 +134,19 @@ Run on a copy of the owner's store (`discair-mb-test/intelligence.sqlite3`, open
 
 ### Offline kinds (884 owned albums)
 
-| Path | Coverage (≥35%) | Median stops where any (≥3) | Overlap proxy (≤35%) | Within 2 s | Result |
-|---|---|---|---|---|---|
-| Studio Crew (`album_crew`) | 56.7% | 9 | 63% | 100% | Overlap fails |
-| Guest List (`album_guests`) | 56.6% | 11 | 72% | 100% | Overlap fails |
-| Covers and Sources (`album_works`) | 44.1% | 3 | 78% | 100% | Overlap fails |
-| Same Year, Same Scene (`album_moment`) | 74.2% | 4 | 78% | 100% | Overlap fails; label-only share 28.7% (≤50% passes) |
-| Same Room (`album_room`) | 38.7% | 6 | 46% | 100% | No gate; judged on its own result |
+| Path | Coverage (≥35%) | Median stops where any (≥3) | Overlap proxy (superseded) | Exact overlap, as shown / uncapped (≤35%) | Within 2 s | Result |
+|---|---|---|---|---|---|---|
+| Studio Crew (`album_crew`) | 56.7% | 9 | 63% | 8.8% / 10.7% | 100% | Passes |
+| Guest List (`album_guests`) | 56.6% | 11 | 72% | 12.0% / 19.3% | 100% | Passes |
+| Covers and Sources (`album_works`) | 44.1% | 3 | 78% | 9.2% / 15.7% | 100% | Passes |
+| Same Year, Same Scene (`album_moment`) | 74.2% | 4 | 78% | 22.4% / 29.6% | 100% | Passes; label-only share 28.7% (≤50% passes) |
+| Same Room (`album_room`) | 38.7% | 6 | 46% | 8.5% / 13.1% | 100% | No gate; judged on its own result |
 
 - No album reached the 200-stop cap. Maximum stops per album: crew 54, guests 79, works 22, room 58, moment 22.
-- **Overlap figure is a proxy, not the measured overlap.** A stop counts as overlap when it shares a credited artist with the album or a label with it. This probably overstates overlap. The exact overlap with the artist's five kinds has not been measured, so the four overlap failures are not verdicts yet.
+- **Overlap, exact (2026-11-09).** Measured against the real artist-path builder (`build_path`, all five kinds) for each album's credited artists, run read-only on the store copy. Each artist-path stop is mapped to owned releases (recording stops via the releases carrying them, label stops directly, artist stops via the releases credited to them); an album-path stop counts as overlap when the artist paths reach that release. "As shown" uses the default limits (30 stops); "uncapped" lifts the stop and row limits and is the worst case. It is still a slight undercount: 95 `follow_the_musician` and 90 `composition_path` artist builds hit the row bound even uncapped. The earlier proxy overstated overlap about 4 to 7 times, so the four proxy failures are void and all four paths pass the overlap gate.
+- **After dropping overlapping stops** (decision 4, uncapped worst case): coverage and median stay above the thresholds. Studio Crew 55.5% / 8, Guest List 51.6% / 9.5, Covers and Sources 39.4% / 3, Same Year Same Scene 63.5% / 3, Same Room 37.4% / 5.
+- **Label-only share** (Same Year, Same Scene): 28.7% of all stops; 17.9% (as shown) or 19.2% (uncapped) once stops the artist paths already reach are dropped. Passes the 50% limit.
+- **Overlap by artist kind:** mostly `label_path` and `sideman_to_leader`; for Covers and Sources it is `composition_path` (129 of 173 overlapping stops).
 
 ### Neighbours by Ear (40 sampled albums)
 
@@ -175,7 +178,7 @@ Status as of 2026-11-09 (merged work is on `main`; PR #921 merged):
 
 1. ~~Owner reviews this proposal and answers the open decisions.~~ Not done: the open decisions below are still pending the owner.
 2. ~~Write the probe (`scripts/album_path_coverage.py`, filtered tests) and run it on a copy of the real store.~~ Done: script and filtered tests merged in PR #921; run on a copy of the store. Neighbours by Ear was measured separately (40-album sample, live sonic routes).
-3. ~~Record results in this document~~ Done (see "Probe results"). Keep, cut or add a slice per path: pending the owner. The exact overlap measurement (Sonnet step) is also still open, so the four overlap results are not verdicts.
+3. ~~Record results in this document~~ Done (see "Probe results"). Keep, cut or add a slice per path: pending the owner. The exact overlap measurement is done (see "Probe results"): all four paths pass the overlap gate.
 4. Contract, builders, fixtures, then clients, each as its own slice with filtered tests and required CI. Not started.
 
 ## Work split by model and effort
@@ -186,7 +189,7 @@ For usage efficiency, give Haiku the mechanical, self-checking steps: a spelled-
 |---|---|---|---|
 | ~~Copy the real store and run the probe script~~ **Done** | Haiku | low | Mechanical; output is numbers. |
 | ~~Write the probe measurements for paths 1, 2, 4 (counts, coverage, stop distribution, timing)~~ **Done** (offline kinds) | Haiku | low | Queries are fully specified above and copy `path_coverage.py`. |
-| Probe overlap with the artist's five kinds, and the label-only share for path 6 | Sonnet | medium | **Open**: label-only share done (28.7%); exact overlap still a proxy. | Needs care to compare stops correctly; a wrong join gives plausible but wrong numbers. |
+| ~~Probe overlap with the artist's five kinds, and the label-only share for path 6~~ **Done** (exact overlap 8.8% to 29.6%; label-only 28.7%) | Sonnet | medium | Needs care to compare stops correctly; a wrong join gives plausible but wrong numbers. |
 | ~~Probe for Same Room and Covers and Sources (place and work link coverage)~~ **Done** | Haiku | low | Counting queries against known tables. |
 | ~~Probe for Neighbours by Ear (analysed tracks, call cost)~~ **Done** (40-album sample) | Haiku | low | Calls the live sonic routes and counts. |
 | ~~Fill the results table in this document and apply the thresholds~~ **Done** | Haiku | low | Compare numbers to the fixed table; no judgment, and a non-passing path is flagged, not argued. |
