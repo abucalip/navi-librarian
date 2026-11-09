@@ -150,7 +150,7 @@ fun playerArtworkUrl(url: String): String? =
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun NowPlayingSheet(state: PlayerUiState, controller: PlayerController, lyrics: LyricsController, onDismiss: () -> Unit, onSignIn: () -> Unit,
+fun NowPlayingSheet(state: PlayerUiState, controller: PlayerController, lyrics: LyricsController, extras: PlayerExtras?, settings: app.discair.player.PlayerSettings, onDismiss: () -> Unit, onSignIn: () -> Unit,
     onOpenArtist: (QueueItem) -> Unit, onOpenAlbum: (QueueItem) -> Unit,
 ) {
     val sheet = rememberModalBottomSheetState(skipPartiallyExpanded = true)

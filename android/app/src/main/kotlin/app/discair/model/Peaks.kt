@@ -4,6 +4,7 @@ import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.intOrNull
 
 /**
@@ -19,13 +20,28 @@ sealed interface PeaksResult {
 
 const val PEAK_MAX = 65535f
 
-fun parsePeaks(code: Int, body: String): PeaksResult {
-    if (code == 202) return PeaksResult.Pending
-    if (code != 200) return PeaksResult.None
+/** The client hands over bodies of successful answers only (200 and 202 both are), so pending is told by its body; a 404 never gets here. */
+fun parsePeaks(body: String): PeaksResult {
     val root = try { ApiJson.parseToJsonElement(body) as? JsonObject } catch (e: SerializationException) { null } ?: return PeaksResult.None
+    if ((root["status"] as? JsonPrimitive)?.contentOrNull == "pending") return PeaksResult.Pending
     val raw = (root["peaks"] as? JsonArray).orEmpty().mapNotNull { (it as? JsonPrimitive)?.intOrNull }
     if (raw.size < 2) return PeaksResult.None
     return PeaksResult.Ready(FloatArray(raw.size) { (raw[it] / PEAK_MAX).coerceIn(0f, 1f) })
+}
+
+/**
+ * Asks for the peaks until they are ready: the server answers pending while it decodes the song. Gives up after [tries]
+ * pending answers (the seek bar stays plain). A failure of [ask] is no graph, never an error shown.
+ */
+suspend fun loadPeaks(tries: Int = 12, waitMs: Long = 5000, ask: suspend () -> PeaksResult): FloatArray? {
+    repeat(tries) {
+        when (val r = try { ask() } catch (e: kotlinx.coroutines.CancellationException) { throw e } catch (e: Exception) { PeaksResult.None }) {
+            is PeaksResult.Ready -> return r.peaks
+            PeaksResult.None -> return null
+            PeaksResult.Pending -> kotlinx.coroutines.delay(waitMs)
+        }
+    }
+    return null
 }
 
 /** The graph is drawn with fewer bars than the server sends: each bar is the loudest of its slice. */

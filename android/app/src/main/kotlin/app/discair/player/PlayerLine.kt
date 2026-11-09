@@ -29,3 +29,20 @@ object PlayerLineRules {
     /** Facts rotate every 14 s while the song plays. */
     const val FACT_SECONDS = 14L
 }
+
+/** Facts the phone already knows from the queue item (no request). Every line is a statement about data the item has. */
+object LibraryFacts {
+    const val SOURCE = "Your library"
+
+    fun make(item: QueueItem, thisYear: Int): List<PlayerFact> {
+        val out = mutableListOf<PlayerFact>()
+        fun add(kind: String, text: String) { out += PlayerFact(kind, text, SOURCE, fromServer = false) }
+        val year = item.year
+        if (year != null && year > 1000 && item.album.isNotBlank()) {
+            val age = thisYear - year
+            add("album_year", if (age > 0) "${item.album} came out in $year, $age year${if (age == 1) "" else "s"} ago" else "${item.album} came out in $year")
+        }
+        qualityLabel(item)?.let { add("file", "This file is $it") }
+        return out
+    }
+}

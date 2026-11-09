@@ -4,6 +4,7 @@ import app.discair.model.PEAK_MAX
 import app.discair.model.PeaksResult
 import app.discair.model.PlayerFact
 import app.discair.model.fold
+import app.discair.model.loadPeaks
 import app.discair.model.mixFacts
 import app.discair.model.parsePeaks
 import app.discair.model.parseSongFacts
@@ -57,12 +58,32 @@ class PlayerLineTest {
     }
 
     @Test fun peaksByStatus() {
-        assertEquals(PeaksResult.Pending, parsePeaks(202, """{"status":"pending"}"""))
-        assertEquals(PeaksResult.None, parsePeaks(404, ""))
-        assertEquals(PeaksResult.None, parsePeaks(200, "oops"))
-        val ready = parsePeaks(200, """{"bins":3,"peaks":[0,32767,65535]}""") as PeaksResult.Ready
+        assertEquals(PeaksResult.Pending, parsePeaks("""{"status":"pending"}"""))
+        assertEquals(PeaksResult.None, parsePeaks("oops"))
+        val ready = parsePeaks("""{"bins":3,"peaks":[0,32767,65535]}""") as PeaksResult.Ready
         assertEquals(1f, ready.peaks[2], 0f)
         assertEquals(32767 / PEAK_MAX, ready.peaks[1], 0.0001f)
+    }
+
+    @Test fun loadPeaksWaitsWhilePendingThenReturnsThem() = kotlinx.coroutines.test.runTest {
+        var calls = 0
+        val got = loadPeaks(tries = 5, waitMs = 1) { if (++calls < 3) PeaksResult.Pending else PeaksResult.Ready(floatArrayOf(1f, 2f)) }
+        assertEquals(3, calls)
+        assertEquals(2, got!!.size)
+    }
+
+    @Test fun loadPeaksStopsOnNoneAndOnFailureAndGivesUp() = kotlinx.coroutines.test.runTest {
+        assertEquals(null, loadPeaks(waitMs = 1) { PeaksResult.None })
+        assertEquals(null, loadPeaks(waitMs = 1) { error("network") })
+        var calls = 0
+        assertEquals(null, loadPeaks(tries = 3, waitMs = 1) { calls++; PeaksResult.Pending })
+        assertEquals(3, calls)
+    }
+
+    @Test fun libraryFactsUseOnlyWhatTheItemHas() {
+        val item = app.discair.player.QueueItem("1", "T", "A", "Album X", year = 1986, suffix = "flac", bitDepth = 24, samplingRateHz = 96000)
+        assertEquals(listOf("Album X came out in 1986, 40 years ago", "This file is FLAC 24/96"), app.discair.player.LibraryFacts.make(item, 2026).map { it.text })
+        assertTrue(app.discair.player.LibraryFacts.make(app.discair.player.QueueItem("2", "T", "A", ""), 2026).isEmpty())
     }
 
     @Test fun foldKeepsTheLoudestOfEachSlice() {
