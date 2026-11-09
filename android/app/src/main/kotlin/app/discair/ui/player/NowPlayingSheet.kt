@@ -175,7 +175,7 @@ fun NowPlayingSheet(state: PlayerUiState, controller: PlayerController, lyrics: 
     val lyricsState by lyrics.state.collectAsState()
     val songId = state.current?.songId
     val nextId = state.queue.nextIndex()?.let { state.queue.items.getOrNull(it)?.songId }?.takeIf { it != songId }
-    val lyricsOpen = view == 1 || flip.value > 0.5f || sheetStack
+    val lyricsOpen = view == 1 || flip.value > 0.5f || sheetStack || settings.showLyricLine // the line under the title needs them while the sheet is open
     // Fetch only while the Lyrics view is open for the song that is playing; close stops everything.
     LaunchedEffect(lyricsOpen, songId, nextId) {
         if (lyricsOpen && songId != null) lyrics.open(songId, nextId) else lyrics.close()
