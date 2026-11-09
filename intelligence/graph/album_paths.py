@@ -1,7 +1,8 @@
 """Album paths: ordered stops from an owned album, each with the credit that puts it there.
 
 Kinds built here (docs/ALBUM_PATHS_PROPOSAL.md): ``album_crew`` (Studio Crew), ``album_guests``
-(Guest List) and ``album_works`` (Covers and Sources). A stop is an owned album other than the start.
+(Guest List), ``album_works`` (Covers and Sources) and ``album_moment`` (Same Year, Same Scene). A stop
+is an owned album other than the start.
 
 The rules are the artist paths' (see :mod:`intelligence.graph.paths`): credit-grade evidence only (an
 ``inferred`` edge, or one whose other end is ``fuzzy_unconfirmed`` or ``unresolved``, is never used, not
@@ -31,10 +32,9 @@ from ..store import repositories as repo
 from . import paths as artist_paths
 from .paths import PathLimits, _REAL, _Names, _cg, _credited_names, _evidence
 
-ALBUM_PATH_KINDS = ("album_crew", "album_guests", "album_works")
+ALBUM_PATH_KINDS = ("album_crew", "album_guests", "album_works", "album_moment")
 NOT_BUILT = {
     "album_room": "not built yet",
-    "album_moment": "not built yet",
     "album_sonic_neighbours": "composed from the Sonic routes, not a graph path",
     "album_gaps": "not built yet",
 }
@@ -42,6 +42,7 @@ CACHE_PREFIX = "path:"
 PRESENTATION_VERSION = 1
 PERSON_CAP = 50   # albums kept per hub person
 WORK_CAP = 20     # albums kept per work
+MOMENT_YEARS = 2  # Same Year, Same Scene: how many calendar years apart two albums may be
 # The relations the coverage probe measured; the thresholds were fixed on these.
 CREW_ROLES = ("producer", "engineer", "mix", "mastering")
 GUEST_ROLES = ("instrument", "vocal", "performer")
@@ -53,6 +54,9 @@ _REASON_TEXT = {
     "guest_on": "{via} is credited on {anchor}, from the album you started from, as a guest, and appears on this album",
     "same_work": "this album has another recording of {via}, the work behind {anchor} on the album you started from",
     "derived_work": "this album has a recording of {via}, a work related to the work behind {anchor} on the album you started from",
+    "same_period_label": "{via} released both this album ({year}) and {anchor} ({start_year}), the album you started from, within {gap} of each other",
+    "same_period_credit": "{via} is the credited artist of both this album ({year}) and {anchor} ({start_year}), the album you started from, released within {gap} of each other",
+    "same_period_area": "{via} is a stated area of artists credited on this album ({year}) and on {anchor} ({start_year}), the album you started from, released within {gap} of each other",
 }
 
 
@@ -109,6 +113,7 @@ class _Build:
         self.truncated: str | None = None
         self.capped: list[tuple[int, int]] = []   # (via entity id, albums the cap left out)
         self.dates = _Dates(db)
+        self.start_year: int | None = None
 
     def out_of_time(self) -> bool:
         if self.clock() > self.deadline:
@@ -212,6 +217,69 @@ def _work_rows(b: _Build) -> None:
                       rank=0 if code == "same_work" else 1, bridge=source)
 
 
+def _year_gap(n: int) -> str:
+    return "the same year" if n == 0 else ("1 year" if n == 1 else f"{n} years")
+
+
+_YEARS = ("SELECT entity_id AS id, CAST(SUBSTR(MIN(date), 1, 4) AS INTEGER) AS y FROM release_facts "
+          "WHERE date IS NOT NULL AND LENGTH(date) >= 4 AND SUBSTR(date, 1, 4) GLOB '[0-9][0-9][0-9][0-9]' GROUP BY entity_id")
+# Owned albums, other than the start, whose earliest stored date is within MOMENT_YEARS of the start's.
+_NEAR = (f"near AS (SELECT r.id AS id, f.y AS y, ABS(f.y - :y) AS gap FROM ({_YEARS}) f "
+         f"JOIN entities r ON r.id = f.id AND r.type = 'release' AND r.owned = 1 WHERE r.id != :a AND ABS(f.y - :y) <= {MOMENT_YEARS})")
+_OWN_CREDIT = (f"SELECT c.id AS e, c.to_id AS artist FROM edges c JOIN entities p ON p.id = c.to_id AND p.type IN {_PEOPLE} "
+               f"AND {_REAL.format(a='p')} WHERE c.from_id = :a AND c.relation IN ('credited_to', 'release_artist') "
+               f"AND c.generation = :g AND {_cg('c')}")
+_MOMENT = {
+    # A stated label link is a release_labels row, not an edge: it has no edge evidence, as in the label path.
+    "same_period_label": f"""
+        WITH {_NEAR}
+        SELECT n.id AS stop, n.y AS y, n.gap AS gap, a.label_id AS via, NULL AS e1, NULL AS e2
+        FROM release_labels a JOIN release_labels c ON c.label_id = a.label_id JOIN near n ON n.id = c.release_id
+        WHERE a.release_id = :a AND a.label_id IS NOT NULL
+        GROUP BY n.id, a.label_id ORDER BY n.gap, n.id, a.label_id LIMIT :n""",
+    "same_period_credit": f"""
+        WITH {_NEAR}, own AS ({_OWN_CREDIT})
+        SELECT n.id AS stop, n.y AS y, n.gap AS gap, o.artist AS via, o.e AS e1, MIN(c.id) AS e2
+        FROM own o JOIN edges c ON c.to_id = o.artist AND c.relation IN ('credited_to', 'release_artist')
+                    AND c.generation = :g AND {_cg('c')}
+        JOIN near n ON n.id = c.from_id
+        GROUP BY n.id, o.artist ORDER BY n.gap, n.id, o.artist LIMIT :n""",
+    # Only a stated non-country area, and only through a different credited artist (the same artist is the credit link).
+    "same_period_area": f"""
+        WITH {_NEAR}, own AS ({_OWN_CREDIT}),
+        mine AS (SELECT o.artist AS artist, a0.to_id AS area, MIN(a0.id) AS e1 FROM own o
+                 JOIN edges a0 ON a0.from_id = o.artist AND a0.relation IN ('area', 'begin area') AND a0.generation = :g AND {_cg('a0')}
+                 JOIN area_facts f ON f.entity_id = a0.to_id AND LOWER(COALESCE(f.kind, '')) != 'country'
+                 GROUP BY o.artist, a0.to_id)
+        SELECT n.id AS stop, n.y AS y, n.gap AS gap, m.area AS via, m.e1 AS e1, MIN(a1.id) AS e2
+        FROM mine m
+        JOIN edges a1 ON a1.to_id = m.area AND a1.relation IN ('area', 'begin area') AND a1.generation = :g AND {_cg('a1')}
+             AND a1.from_id != m.artist
+        JOIN edges c ON c.to_id = a1.from_id AND c.relation IN ('credited_to', 'release_artist') AND c.generation = :g AND {_cg('c')}
+        JOIN near n ON n.id = c.from_id
+        JOIN entities q ON q.id = a1.from_id AND q.type IN {_PEOPLE} AND {_REAL.format(a='q')}
+        GROUP BY n.id, m.area ORDER BY n.gap, n.id, m.area LIMIT :n""",
+}
+
+
+def _moment_rows(b: _Build) -> None:
+    """Albums within ``MOMENT_YEARS`` of the start that share a stated label, credited artist or non-country area.
+
+    A date match alone never makes a stop. The start's date is its earliest stored ``release_facts`` date
+    (file-tag years are not used); a start with no date has no stops.
+    """
+    row = b.db.execute(f"SELECT y FROM ({_YEARS}) WHERE id = ?", (b.start,)).fetchone()
+    if row is None:
+        return
+    b.start_year = row["y"]
+    for code, sql in _MOMENT.items():
+        for r in b.db.execute(sql, {"a": b.start, "g": b.gen, "y": b.start_year, "n": b.limits.max_rows}):
+            if b.out_of_time() or b.full():
+                return
+            b.add(stop=r["stop"], via=r["via"], anchor=b.start, e1=r["e1"], e2=r["e2"], code=code, rank=r["gap"],
+                  year=r["y"], gap=r["gap"])
+
+
 def _artist_reach(b: _Build, candidates: set[int]) -> set[int]:
     """The candidate albums the album's credited artists already reach with their five artist paths."""
     artists = [r[0] for r in b.db.execute(
@@ -294,6 +362,8 @@ def build_album_path(db: sqlite3.Connection, start_id: int, kind: str, *, limits
             _person_rows(b, CREW_ROLES, "crew_on", album_scope=True, exclude_own_artists=False)
         elif kind == "album_guests":
             _person_rows(b, GUEST_ROLES, "guest_on", album_scope=False, exclude_own_artists=True)
+        elif kind == "album_moment":
+            _moment_rows(b)
         else:
             _work_rows(b)
     except sqlite3.OperationalError as exc:
@@ -329,8 +399,9 @@ def build_album_path(db: sqlite3.Connection, start_id: int, kind: str, *, limits
             via, anchor = names.get(r["via"]), names.get(r["anchor"])
             reasons.append({
                 "code": r["code"],
-                "text": _REASON_TEXT[r["code"]].format(via=(via or {}).get("canonical_name", "?"),
-                                                       anchor=(anchor or {}).get("canonical_name", "?")),
+                "text": _REASON_TEXT[r["code"]].format(
+                    via=(via or {}).get("canonical_name", "?"), anchor=(anchor or {}).get("canonical_name", "?"),
+                    year=r.get("year"), start_year=b.start_year, gap=_year_gap(r.get("gap", 0))),
                 "via": via, "anchor": anchor,
                 "evidence": _evidence(db, [e for e in (r["e1"], r["e2"], r["e3"]) if e is not None]),
             })

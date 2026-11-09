@@ -221,7 +221,7 @@ Status as of 2026-11-09 (merged work is on `main`; PR #921 merged):
 1. ~~Owner reviews this proposal and answers the open decisions.~~ Done 2026-11-09 (see "Decisions recorded").
 2. ~~Write the probe (`scripts/album_path_coverage.py`, filtered tests) and run it on a copy of the real store.~~ Done: script and filtered tests merged in PR #921; run on a copy of the store. Neighbours by Ear was measured separately (40-album sample, live sonic routes).
 3. ~~Record results in this document~~ Done (see "Probe results"). Keep, cut or add a slice per path: decided 2026-11-09 (see "Decisions recorded"). The exact overlap measurement is done (see "Probe results"): all four paths pass the overlap gate.
-4. Contract, builders, fixtures, then clients, each as its own slice with filtered tests and required CI. ~~Recording-places import slice~~ Done as an audit and dossier fix, merged in PR #922 (no import step needed; see "Slice audit"). Builders for paths 1, 2 and 4 are done (PR #924, see "Builders built" below). Remaining, not started. Suggested order: contract section; builders for path 6, then 3 (its data is already in the store); Neighbours by Ear (own tab); Listen-through Gaps; fixtures and decoders; client screens.
+4. Contract, builders, fixtures, then clients, each as its own slice with filtered tests and required CI. ~~Recording-places import slice~~ Done as an audit and dossier fix, merged in PR #922 (no import step needed; see "Slice audit"). Builders for paths 1, 2 and 4 are done (PR #924, see "Builders built" below). Builder for path 6 is done (see "Same Year, Same Scene builder"). Remaining, not started. Suggested order: contract section; builder for path 3 (its data is already in the store); Neighbours by Ear (own tab); Listen-through Gaps; fixtures and decoders; client screens.
 
 ## Builders built (PR #924, 2026-11-09)
 
@@ -236,6 +236,26 @@ Run on a read-only copy of the owner's store, all 884 owned albums, after overla
 | Covers and Sources | 36.7% | 3 | 100% |
 
 All pass the Balanced thresholds; Covers and Sources has the thinnest margin. Slowest build 2.0 s. Not done: contract section, route extension, fixtures, clients.
+
+## Same Year, Same Scene builder (2026-11-09)
+
+`album_moment` is built in `intelligence/graph/album_paths.py` (`_moment_rows`). Rules as proposed: the start's earliest stored `release_facts` date, owned albums whose earliest date is within 2 calendar years (inclusive, by year), and at least one stated link. A date match alone, an undated start and an undated candidate give no stop. Links and reason codes:
+- `same_period_label`: a shared `release_labels` row (no edge, so no edge evidence, as in the label path).
+- `same_period_credit`: a shared credited artist (`credited_to` or `release_artist`, credit-grade, placeholder artists excluded), with both edges as evidence.
+- `same_period_area`: a stated non-country area (`area` or `begin area`, kind not `country`) of two different credited artists. A stricter reading than the probe, which also let the same artist count; the same artist is already the credit link.
+
+Ranking: most distinct links first, then the nearer year, then the earlier release; no similarity or play data. Overlap with the artist paths is dropped as for the other kinds. Because the artist's label path reaches every other album on a shared label, label links from a credited start are always dropped; label-only stops survive only for an album with no credited artist.
+
+Run on the store copy, all 884 owned albums, after overlap dropping:
+
+| Measure | Result | Pass |
+|---|---|---|
+| Coverage | 58.4% | at least 35% |
+| Median stops where any | 3 | at least 3 |
+| No `truncated: time` | 100% (slowest 1.3 s) | at least 95% |
+| Label-only share of stops | 0% | at most 50% |
+
+Median 3 is at the threshold. Filtered tests in `tests/test_intelligence_album_paths.py` pin the strict rules (the 2-year edge, no date match alone, undated start, unowned, uncertain edges, non-country area, ordering, overlap drop). Not done: contract section, route extension, fixtures, clients.
 
 ## Work split by model and effort
 
@@ -253,7 +273,7 @@ For usage efficiency, give Haiku the mechanical, self-checking steps: a spelled-
 | Set the Neighbours by Ear call cap | Owner | — | Decided: 8 seeds per album (2026-11-09). |
 | ~~New import slice (recording places, production credits, work relations)~~ **Done** as an audit plus dossier fix (PR #922); no import needed | Sonnet | high | Schema bump, resumable import, cache invalidation; follows the release-links precedent. |
 | ~~Path builders for Studio Crew, Guest List, Covers and Sources~~ **Done** (PR #924) | Sonnet | high | Evidence rules, hub caps, de-duplication of people across paths; a mistake breaks the credit-grade guarantee. |
-| Same Year Same Scene builder | Sonnet | medium | Strict-rule logic on top of existing readers. |
+| ~~Same Year Same Scene builder~~ **Done** (branch, see "Same Year, Same Scene builder") | Sonnet | medium | Strict-rule logic on top of existing readers. |
 | Neighbours by Ear composition | Sonnet | medium | Groups similar-track results; must never sort or threshold on `similarity`. |
 | Listen-through Gaps filter | Sonnet | high | Must stay within the taste rule; a leak into ranking is a contract violation. |
 | Write the contract section | Sonnet | medium | Needs consistent wording with the existing paths contract. |
