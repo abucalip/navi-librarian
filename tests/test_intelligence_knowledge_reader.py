@@ -133,6 +133,21 @@ class DossierTests(unittest.TestCase):
         self.assertEqual(d["sources"]["musicbrainz_dump"]["coverage"], "loaded")
         self.assertEqual(d["not_loaded"], ["recording_places_and_dates", "cover_art_variants", "catalogue_numbers", "formats"])
 
+    def test_dossier_recording_places_and_dates(self):
+        self.load_slice()
+        self.assertEqual(self.reader.album_dossier(mbid="r-gid")["recording_places"], [])
+        studio = repo.upsert_entity(self.db, "place", "30th Street Studio", mbid="p-gid")[0]
+        repo.add_edge(self.db, studio, self.rec, "recorded at", valid_from="1959-03-02", valid_to="1959-04-22",
+                      evidence_class="source_explicit", match_quality="exact_mbid", source="musicbrainz_dump")
+        repo.add_edge(self.db, studio, self.release, "recorded at", evidence_class="source_explicit",
+                      match_quality="exact_mbid", source="musicbrainz_dump")  # album scope: not a recording place
+        d = self.reader.album_dossier(mbid="r-gid")
+        self.assertEqual([(p["entity"]["canonical_name"], p["relation"], p["track"], p["valid_from"], p["valid_to"],
+                           p["evidence_class"]) for p in d["recording_places"]],
+                         [("30th Street Studio", "recorded at", "So What", "1959-03-02", "1959-04-22", "source_explicit")])
+        self.assertNotIn("recording_places_and_dates", d["not_loaded"])
+        self.assertEqual([p["entity"]["canonical_name"] for p in d["people"]], ["Miles Davis"])
+
     def test_dossier_catalogue_numbers_and_formats(self):
         self.load_slice()
         other = repo.upsert_entity(self.db, "label", "Other", mbid="o-gid")[0]
