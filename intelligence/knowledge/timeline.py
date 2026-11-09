@@ -7,6 +7,7 @@ year or guessed: an item with no stated date is counted in ``undated`` and liste
 """
 from __future__ import annotations
 
+import json
 from typing import Any
 
 from ..editions.release_groups import REL_MEMBER_OF
@@ -28,6 +29,7 @@ def timeline_page(reader, entity: dict[str, Any], *, limit: int = 200) -> dict[s
     for row in page["in_library"] + page["not_in_library"]:
         album = row["album"]
         items.append({"kind": "album", "entity": _brief(album), "owned": row["owned"], "date": _album_date(db, album),
+                      "release_type": _release_type(db, album),
                       "why": row["why"], "relations": [c["relation"] for c in row["credits"]],
                       "evidence": _evidence(row["credits"])})
     walk = reader.connections(entity["id"], credits_only=True, limits=Limits(max_depth=1, max_rows=limit, page_size=limit))
@@ -53,6 +55,18 @@ def timeline_page(reader, entity: dict[str, Any], *, limit: int = 200) -> dict[s
                                          "dump_timestamp": status["dump_timestamp"]}},
         "not_loaded": list(NOT_LOADED),
     }
+
+
+def _release_type(db, album: dict[str, Any]) -> dict[str, Any] | None:
+    """MusicBrainz primary and secondary type of the album's release group, or None when none is stored."""
+    ids = [album["id"]]
+    if album["type"] != "release_group":
+        ids = [e["to_id"] for e in repo.edges_from(db, album["id"], REL_MEMBER_OF)]
+    for entity_id in ids:
+        row = db.execute("SELECT primary_type, secondary_types FROM release_group_facts WHERE entity_id = ?", (entity_id,)).fetchone()
+        if row and (row["primary_type"] or row["secondary_types"] != "[]"):
+            return {"primary": row["primary_type"], "secondary": json.loads(row["secondary_types"] or "[]")}
+    return None
 
 
 def _album_date(db, album: dict[str, Any]) -> str | None:

@@ -308,7 +308,11 @@ public struct TimelineItem: Decodable, Equatable, Sendable, Identifiable {
     public let cancelled: Bool
     public let why: String
     public let evidence: [TimelineEvidence]
-    enum CodingKeys: String, CodingKey { case kind, entity, owned, date, event_kind, cancelled, why, evidence }
+    /// MusicBrainz's own release type of an album ("Album", "EP"...) and its secondary types ("Live", "Compilation"...); nil when the server holds none.
+    public let primaryType: String?
+    public let secondaryTypes: [String]
+    enum CodingKeys: String, CodingKey { case kind, entity, owned, date, event_kind, cancelled, why, evidence, release_type }
+    private struct ReleaseType: Decodable { let primary: String?; let secondary: [String]? }
     public init(from decoder: any Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         kind = c.text(.kind) ?? "album"
@@ -316,6 +320,9 @@ public struct TimelineItem: Decodable, Equatable, Sendable, Identifiable {
         owned = c.flag(.owned)
         date = c.text(.date).flatMap { $0.isEmpty ? nil : $0 }
         eventKind = c.text(.event_kind)
+        let type = try? c.decodeIfPresent(ReleaseType.self, forKey: .release_type)
+        primaryType = type?.primary
+        secondaryTypes = type?.secondary ?? []
         cancelled = c.flag(.cancelled)
         why = c.text(.why) ?? ""
         evidence = c.list(.evidence, TimelineEvidence.self)

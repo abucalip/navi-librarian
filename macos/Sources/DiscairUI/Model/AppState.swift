@@ -79,6 +79,8 @@ public final class AppState {
     public let discovery = DiscoveryModel()
     /// The ⌘K command palette.
     public let palette = PaletteModel()
+    /// Songs the server found for the text being searched (the palette and the Library search), whole library.
+    public private(set) var songHits: [SongRow] = []
     public let lyrics = LyricsModel()
     /// Playback: the queue, the audio engine and the controls.
     public let player: PlayerModel
@@ -194,6 +196,7 @@ public final class AppState {
         if let librarian = session.librarian { radio.setSonicAvailable(await librarian.sonicAvailable()) }
         await library.load(navidrome: navidrome, librarian: session.librarian)
         await library.loadSongs(navidrome: navidrome)
+        Task { await library.loadAllAlbums(navidrome: navidrome) }
         share.noteServerPaths(library.songServerPaths)
         if library.isLive { selectedArtist = library.artists.first ?? selectedArtist; selectedLetter = selectedArtist.letter }
         if library.isLive, let first = library.recent.first ?? library.albums.first { selectedAlbum = first }
@@ -347,15 +350,13 @@ public final class AppState {
         if let accepted { try? session?.saveLogin(.listenbrainz, username: accepted.username, password: accepted.token) }
     }
 
-    /// Starts the connection explorer from the artist on screen (the page itself keeps the centre once the owner re-centres).
-    public func loadConnections() async {
-        let a = selectedArtist
+    /// Starts the connection explorer from the artist the owner picked in its search field.
+    public func loadConnections(for a: ArtistItem) async {
         await graph.start(artistRemoteID: library.isLive ? a.remoteID : nil, name: a.name, navidrome: session?.navidrome, librarian: session?.librarian)
     }
 
-    /// Reads the timeline of the artist on screen (the page keeps it until another artist is opened).
-    public func loadTimeline() async {
-        let a = selectedArtist
+    /// Reads the timeline of the artist the owner picked in its search field.
+    public func loadTimeline(for a: ArtistItem) async {
         await timeline.start(artistRemoteID: library.isLive ? a.remoteID : nil, name: a.name, navidrome: session?.navidrome, librarian: session?.librarian)
     }
 
@@ -515,7 +516,18 @@ extension AppState {
     /// What the palette lists for what is typed, from the library as loaded now.
     func paletteResults() -> [PaletteCommand] {
         PaletteCatalog.results(query: palette.query, playing: player.isPlaying,
-                               albums: visible(library.albums + library.recent + library.missing), artists: library.artists)
+                               albums: visible(library.searchableAlbums + library.missing), artists: library.artists, songs: songHits)
+    }
+
+    /// Asks the server for songs matching `query` after a short pause; a newer query cancels this one (call it from `.task(id:)`).
+    func searchSongHits(_ query: String) async {
+        let q = LibrarySearch.fold(query)
+        guard q.count >= 2, library.isLive, let nav = session?.navidrome else { songHits = []; return }
+        try? await Task.sleep(for: .milliseconds(250))
+        guard !Task.isCancelled else { return }
+        if let found = try? await nav.searchSongs(q, count: 8), !Task.isCancelled {
+            songHits = found.enumerated().map { LibraryModel.row($0.element, id: 2_000_000 + $0.offset) }
+        }
     }
 
     /// Runs one palette line and closes the palette.
@@ -532,6 +544,8 @@ extension AppState {
         case .play(let a): actions.play(album: a)
         case .get(let a): actions.get(album: a)
         case .openArtist(let a): open(artist: a)
+        case .openSong(let s): open(album: s.albumItem, highlighting: s.title)
+        case .playSong(let s): play(rows: [s], startAt: 0)
         }
     }
 }

@@ -163,7 +163,7 @@ struct CupertinoNowPlaying: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .task(id: state.player.current?.songID) {
             following = true
-            state.lyrics.show(songID: state.player.current?.songID)
+            state.lyrics.show(songID: state.player.current?.songID, title: state.player.current?.title)
         }
         .onChange(of: lyr.state) { _, s in
             if s == .timed || s == .plain { state.lyrics.prefetch(songID: state.player.queue.peekNext?.songID) }

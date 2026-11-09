@@ -2,7 +2,7 @@ import DiscairLibrarian
 import SwiftUI
 
 /// "Your taste" section of Insights (Server V2 Phase 6 presentation slice 5), drawn from the owner's mockup
-/// (`docs/design/macos-taste/mockups.html`): an editorial serif headline first, bars as evidence. Every sentence is the
+/// (`docs/design/macos-taste/mockups.html`): an bold sans headline first, bars as evidence. Every sentence is the
 /// server's. A window or dimension it flagged low-sample shows as a sketch or as progress, and nothing is stated that the
 /// server did not list. The morning-vs-night card is a later slice; the smart-playlist and library actions (slice 7) cover genre and decade only.
 struct CupertinoTaste: View {
@@ -48,7 +48,7 @@ struct CupertinoTaste: View {
         Text(s).font(.system(size: 11, weight: .bold)).textCase(.uppercase).tracking(0.9).foregroundStyle(CU.accent)
     }
     private func headline(_ s: String) -> some View {
-        Text(s).font(.system(size: 24, weight: .bold, design: .serif)).fixedSize(horizontal: false, vertical: true).padding(.top, 2)
+        Text(s).font(.system(size: 24, weight: .bold)).fixedSize(horizontal: false, vertical: true).padding(.top, 2)
     }
     private func caption(_ s: String) -> some View {
         Text(s).font(.system(size: 13.5)).foregroundStyle(CU.muted).fixedSize(horizontal: false, vertical: true).padding(.bottom, 6)
@@ -115,7 +115,7 @@ struct CupertinoTaste: View {
         card {
             VStack(spacing: 4) {
                 Text(model.refreshing ? "Reading your listens." : model.loaded ? "Taste needs listening history." : "Reading your saved profile.")
-                    .font(.system(size: 18, weight: .bold, design: .serif)).foregroundStyle(CU.ink)
+                    .font(.system(size: 18, weight: .bold)).foregroundStyle(CU.ink)
                 if model.refreshing {
                     Text("This can take about a minute the first time.").font(.system(size: 14)).foregroundStyle(CU.muted)
                 } else if model.loaded {
@@ -221,7 +221,7 @@ struct CupertinoTaste: View {
     @ViewBuilder private func body(for w: TasteWindow) -> some View {
         if w.isLowSample(model.dimension) && !w.lowSample {
             VStack(spacing: 4) {
-                Text("Not enough \(model.dimension) data.").font(.system(size: 18, weight: .bold, design: .serif)).foregroundStyle(CU.ink)
+                Text("Not enough \(model.dimension) data.").font(.system(size: 18, weight: .bold)).foregroundStyle(CU.ink)
                 Text("Only \(w.attributed[model.dimension] ?? 0) listens carry a \(model.dimension). I won't read missing tags as taste.")
                     .font(.system(size: 14)).foregroundStyle(CU.muted).multilineTextAlignment(.center)
                 progress(w.attributed[model.dimension] ?? 0, model.minAttributed,

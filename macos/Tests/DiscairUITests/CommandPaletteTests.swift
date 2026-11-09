@@ -29,14 +29,23 @@ struct CommandPaletteTests {
         #expect(PaletteCatalog.fixed(playing: false).first { $0.id == "playpause" }?.title == "Play")
     }
 
-    @Test func ownedAlbumOffersPlayAndMissingOffersGet() {
+    @Test func anAlbumIsOneRowWithAPlayOrGetIconBeside() {
         let owned = album(1, "Spirit of Eden", "Talk Talk")
         let missing = album(2, "Dummy", "Portishead", owned: false)
-        let t = titles("o", albums: [owned, missing])
-        #expect(titles("eden", albums: [owned, missing]).contains("Play Spirit of Eden · Talk Talk"))
-        #expect(!titles("eden", albums: [owned, missing]).contains("Get Spirit of Eden · Talk Talk"))
-        #expect(titles("dummy", albums: [owned, missing]).contains("Get Dummy · Portishead"))
-        #expect(!t.isEmpty)
+        let rows = PaletteCatalog.results(query: "eden", playing: false, albums: [owned, missing], artists: [])
+        #expect(rows.filter { $0.kind == .album }.count == 1)
+        #expect(rows.first { $0.kind == .album }?.secondary == .play(owned))
+        let dummy = PaletteCatalog.results(query: "dummy", playing: false, albums: [owned, missing], artists: [])
+        #expect(dummy.first { $0.kind == .album }?.secondary == .get(missing))
+        #expect(!rows.contains { $0.title.hasPrefix("Play ") || $0.title.hasPrefix("Get ") })
+    }
+
+    @Test func resultsAreGroupedArtistsThenAlbumsThenSongsThenPages() {
+        let a = album(7, "Settings", "Some Band")
+        let artist = ArtistItem(id: 1, name: "Setting Sun", albumCount: 2)
+        let rows = PaletteCatalog.results(query: "setting", playing: false, albums: [a], artists: [artist])
+        #expect(rows.map(\.kind) == [.artist, .album, .screen])
+        #expect(rows.map(\.section) == ["Artists", "Albums", "Pages and settings"])
     }
 
     @Test func matchingIgnoresCaseAndAccents() {
@@ -48,6 +57,13 @@ struct CommandPaletteTests {
         let a = album(4, "Dummy", "Portishead")
         #expect(titles("dummy portis", albums: [a]).contains("Open Dummy · Portishead"))
         #expect(!titles("dummy zzz", albums: [a]).contains("Open Dummy · Portishead"))
+    }
+
+    @Test func anApostropheInTheTitleDoesNotHideTheAlbum() {
+        let a = album(8, "Somethin’ Else", "Cannonball Adderley")
+        #expect(titles("somethin else", albums: [a]).contains("Open Somethin’ Else · Cannonball Adderley"))
+        #expect(titles("somethin' else", albums: [a]).contains("Open Somethin’ Else · Cannonball Adderley"))
+        #expect(titles("somethin’ else adderley", albums: [a]).contains("Open Somethin’ Else · Cannonball Adderley"))
     }
 
     @Test func noMatchGivesNothing() { #expect(titles("qqqqqq").isEmpty) }

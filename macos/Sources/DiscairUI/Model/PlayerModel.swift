@@ -541,14 +541,15 @@ extension PlayerModel {
     static func item(_ s: NavidromeSong) -> QueueItem {
         QueueItem(songID: s.id, title: s.title, artist: s.artist ?? "Unknown artist", album: s.album ?? "", albumID: s.albumId,
                   coverArt: s.coverArt, duration: Double(s.duration ?? 0), suffix: s.suffix, track: s.track, disc: s.discNumber, path: s.path,
-                  mbid: s.musicBrainzId)
+                  mbid: s.musicBrainzId, quality: LibraryModel.rowFormat(s))
     }
 
     /// Sample rows (no server id) cannot be played.
     static func item(_ r: SongRow) -> QueueItem? {
         guard let id = r.remoteID else { return nil }
         return QueueItem(songID: id, title: r.title, artist: r.artist, album: r.cover?.title ?? "", albumID: r.cover?.remoteID,
-                         coverArt: r.cover?.coverArt, duration: r.seconds, suffix: r.suffix, track: r.track, disc: r.disc, path: r.path)
+                         coverArt: r.cover?.coverArt, duration: r.seconds, suffix: r.suffix, track: r.track, disc: r.disc, path: r.path,
+                         quality: r.format.isEmpty ? nil : r.format)
     }
 
     /// "3:12" style clock for a number of seconds.

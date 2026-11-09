@@ -85,6 +85,17 @@ public struct NavidromeClient: Sendable {
         return try await call("search3", q, as: SongSearchPayload.self).searchResult3?.song ?? []
     }
 
+    /// Songs whose title, artist or album match `query`, asked of the server so the whole library is searched, not only the
+    /// pages loaded here. Navidrome ignores punctuation, so "somethin else" finds "Somethin' Else".
+    public func searchSongs(_ query: String, count: Int = 8) async throws -> [NavidromeSong] {
+        let q: [URLQueryItem] = [
+            .init(name: "query", value: query),
+            .init(name: "artistCount", value: "0"), .init(name: "albumCount", value: "0"),
+            .init(name: "songCount", value: String(min(max(count, 1), 50))),
+        ]
+        return try await call("search3", q, as: SongSearchPayload.self).searchResult3?.song ?? []
+    }
+
     /// Lyrics for a song, chosen and cleaned. nil means the song has none (an unknown id, code 70, is also "none").
     /// Lookups can take 20 s or more for a song with no lyrics, so this call waits up to 45 s.
     public func lyrics(songID: String, language: String? = nil) async throws -> Lyrics? {

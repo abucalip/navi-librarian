@@ -46,6 +46,9 @@ TABLES: dict[str, tuple[str, ...]] = {
                 "last_updated"),
     "release_group": ("id", "gid", "name", "artist_credit", "type", "comment",
                       "edits_pending", "last_updated"),
+    "release_group_primary_type": ("id", "name", "parent", "child_order", "description", "gid"),
+    "release_group_secondary_type": ("id", "name", "parent", "child_order", "description", "gid"),
+    "release_group_secondary_type_join": ("release_group", "secondary_type", "created"),
     # Release dates live in these two tables, not in ``release``: one row per country the release
     # came out in, and one for a release with no known country. ``country`` is an area id; the
     # two-letter code comes from ``iso_3166_1``. ``status`` in ``release`` is a ``release_status`` id.

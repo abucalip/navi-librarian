@@ -223,3 +223,26 @@ class LoaderTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class ReleaseGroupTypeTests(unittest.TestCase):
+    def test_primary_and_secondary_types_are_stored_for_selected_groups(self):
+        dump = FakeDump({
+            "artist": [ent(1, "A-GID", "Alpha")],
+            "release_group": [ent(40, "RG-1", "Studio LP", type="1"), ent(41, "RG-2", "Live LP", type="1"), ent(42, "RG-3", "Untyped")],
+            "release_group_primary_type": [{"id": "1", "name": "Album"}],
+            "release_group_secondary_type": [{"id": "6", "name": "Live"}],
+            "release_group_secondary_type_join": [{"release_group": "41", "secondary_type": "6"}],
+            "link_type": [], "link_attribute_type": [],
+        })
+        db = open_store(":memory:")
+        loader.load_neighbourhood(db, dump, selection(artist={1}, release_group={40, 41, 42}), dump_timestamp="2026-11-04", schema_sequence=31)
+
+        def facts(mbid):
+            e = repo.find_entity(db, "release_group", mbid=mbid)
+            row = db.execute("SELECT primary_type, secondary_types FROM release_group_facts WHERE entity_id = ?", (e["id"],)).fetchone()
+            return None if row is None else (row["primary_type"], row["secondary_types"])
+
+        self.assertEqual(facts("rg-1"), ("Album", "[]"))
+        self.assertEqual(facts("rg-2"), ("Album", '["Live"]'))
+        self.assertIsNone(facts("rg-3"))       # nothing stated, nothing stored

@@ -20,6 +20,9 @@ struct GraphExplorerView: View {
         HStack(spacing: 0) {
             VStack(alignment: .leading, spacing: 10) {
                 header
+                if graph.centre == nil, graph.note == nil, !graph.loading {
+                    Text("Search an artist to explore their connections.").foregroundStyle(style.muted).padding(.top, 4)
+                }
                 if let note = graph.note { Text(note).foregroundStyle(style.muted).padding(.top, 4) }
                 canvas
                 footer
@@ -27,7 +30,6 @@ struct GraphExplorerView: View {
             .padding(.horizontal, 28).padding(.bottom, 20)
             inspector.frame(width: 290)
         }
-        .task { await state.loadConnections() }
         .onChange(of: graph.depth) { _, _ in Task { await graph.reload(librarian: state.session?.librarian) } }
         .onChange(of: graph.creditsOnly) { _, _ in Task { await graph.reload(librarian: state.session?.librarian) } }
     }
@@ -45,6 +47,8 @@ struct GraphExplorerView: View {
                 Spacer()
                 if graph.loading { ProgressView().controlSize(.small) }
             }
+            ArtistPickerField(state: state, style: style) { a in Task { await state.loadConnections(for: a) } }
+                .zIndex(3)
             HStack(spacing: 14) {
                 Picker("Depth", selection: $g.depth) { ForEach(1...3, id: \.self) { Text("Depth \($0)").tag($0) } }
                     .pickerStyle(.segmented).frame(width: 240).labelsHidden()

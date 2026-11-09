@@ -29,6 +29,7 @@ per endpoints, relation, role, source and generation).
 """
 from __future__ import annotations
 
+import json
 import sqlite3
 import time
 from dataclasses import dataclass, field
@@ -43,7 +44,9 @@ from .scan import RowFilter, scan_rows
 SOURCE = "musicbrainz_dump"
 ENTITY_TABLES = ("artist", "label", "recording", "release", "release_group", "work")
 # Tables read only for the facts above; the extraction step must unpack them too.
-FACT_TABLES = ("release_country", "release_unknown_country", "release_status", "iso_3166_1", *context.CONTEXT_TABLES)
+FACT_TABLES = ("release_country", "release_unknown_country", "release_status", "iso_3166_1",
+               "release_group_primary_type", "release_group_secondary_type", "release_group_secondary_type_join",
+               *context.CONTEXT_TABLES)
 ARTIST_FACT_COLUMNS = ("begin_date_year", "begin_date_month", "begin_date_day",
                        "end_date_year", "end_date_month", "end_date_day", "ended", "area", "begin_area", "type")
 ALL_LINK_TABLES = {**LINK_TABLES, **context.CONTEXT_LINK_TABLES}
@@ -139,7 +142,7 @@ def load_neighbourhood(
     gid_of: dict[tuple[str, int], str] = {}
     link_type_name: dict[int, str] = {}
     attribute_name: dict[int, str] = {}
-    extra = {"artist": ARTIST_FACT_COLUMNS, "label": ("area",), "release": ("status",)}
+    extra = {"artist": ARTIST_FACT_COLUMNS, "label": ("area",), "release": ("status",), "release_group": ("type",)}
     entity_requests = {
         t: RowFilter(("id", "gid", "name", "sort_name", *extra.get(t, ())), ints=(("id", frozenset(selected[t])),),
                      optional=("sort_name", *extra.get(t, ())))
@@ -156,6 +159,13 @@ def load_neighbourhood(
             "release_status": RowFilter(("id", "name")),
             "iso_3166_1": RowFilter(("area", "code")),
         }
+    if selected.get("release_group"):
+        fact_requests.update({
+            "release_group_primary_type": RowFilter(("id", "name")),
+            "release_group_secondary_type": RowFilter(("id", "name")),
+            "release_group_secondary_type_join": RowFilter(
+                ("release_group", "secondary_type"), ints=(("release_group", frozenset(selected["release_group"])),)),
+        })
     def ensure_entity(table: str, internal: int, gid: str, name: str | None, sort_name: str | None = None) -> int:
         found = db.execute("SELECT id FROM entities WHERE type = ? AND mbid = ?", (table, gid)).fetchone()
         if found:
@@ -211,6 +221,12 @@ def load_neighbourhood(
             release_rows.setdefault(int(rid), []).append((_date(y, m, d), iso.get(int(country)) if country else None))
         for rid, y, m, d in scanned.pop("release_unknown_country", []):
             release_rows.setdefault(int(rid), []).append((_date(y, m, d), None))
+        primary_name = {int(i): n or "" for i, n in scanned.pop("release_group_primary_type", [])}
+        secondary_name = {int(i): n or "" for i, n in scanned.pop("release_group_secondary_type", [])}
+        secondary_of: dict[int, list[str]] = {}
+        for gid_internal, type_id in scanned.pop("release_group_secondary_type_join", []):
+            if secondary_name.get(int(type_id)):
+                secondary_of.setdefault(int(gid_internal), []).append(secondary_name[int(type_id)])
         for table in ("link_type", "link_attribute_type"):
             target = link_type_name if table == "link_type" else attribute_name
             for row_id, name in scanned.pop(table):
@@ -239,6 +255,14 @@ def load_neighbourhood(
                         "end_date = excluded.end_date, ended = excluded.ended",
                         (store_id[(table, internal)], begin, end, int(_truthy(facts[6]))))
                     result.life_spans += 1
+                elif table == "release_group":
+                    primary = primary_name.get(int(facts[0])) if facts and facts[0] else None
+                    if primary or internal in secondary_of:
+                        db.execute(
+                            "INSERT INTO release_group_facts (entity_id, primary_type, secondary_types) VALUES (?, ?, ?) "
+                            "ON CONFLICT (entity_id) DO UPDATE SET primary_type = excluded.primary_type, "
+                            "secondary_types = excluded.secondary_types",
+                            (store_id[(table, internal)], primary or None, json.dumps(sorted(secondary_of.get(internal, [])))))
                 elif table == "release":
                     date, country = _earliest(release_rows.get(internal, []))
                     status = status_name.get(int(facts[0])) if facts and facts[0] else None

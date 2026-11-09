@@ -54,6 +54,11 @@ class ParseTests(unittest.TestCase):
 
 
 class LinkTests(Base):
+    def test_linking_stores_the_group_type(self):
+        out = link_release_group(self.db, self.release(), fetch=lambda m: doc(), now=1.0)
+        row = self.db.execute("SELECT primary_type, secondary_types FROM release_group_facts WHERE entity_id = ?", (out.group_entity_id,)).fetchone()
+        self.assertEqual((row["primary_type"], row["secondary_types"]), ("Album", '["Live"]'))
+
     def test_links_and_records_evidence(self):
         rid = self.release()
         out = link_release_group(self.db, rid, fetch=lambda m: doc(), now=1.0)

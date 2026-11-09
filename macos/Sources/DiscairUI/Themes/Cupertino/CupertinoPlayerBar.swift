@@ -76,6 +76,12 @@ struct CupertinoPlayerBar: View {
             } else {
                 Text("Nothing playing").font(.system(size: 12.5)).foregroundStyle(secondary).frame(maxWidth: .infinity, alignment: .leading)
             }
+            if let q = p.current?.qualityLabel {
+                Text(q).font(.system(size: 10, weight: .semibold, design: .monospaced)).foregroundStyle(secondary)
+                    .padding(.horizontal, 6).padding(.vertical, 2)
+                    .overlay(RoundedRectangle(cornerRadius: 4, style: .continuous).stroke(secondary.opacity(0.6), lineWidth: 1))
+                    .fixedSize().accessibilityLabel("Quality \(q)")
+            }
             transport
             PlaybackClock(player: p) { Text("\(PlayerModel.clock($0)) / \(PlayerModel.clock(p.duration))").font(.system(size: 12)).monospacedDigit().foregroundStyle(secondary) }
                 .padding(.leading, 6)

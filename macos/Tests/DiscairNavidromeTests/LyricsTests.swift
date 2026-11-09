@@ -13,6 +13,19 @@ import DiscairCore
         return (try NavidromeClient(baseURL: URL(string: "https://navi.example.ts.net")!, credential: Credential(username: "o", password: "pw"), transport: t), t)
     }
 
+    @Test func aPlaceholderIsNotLyrics() {
+        #expect(LyricsChooser.choose([entry(synced: false, [(nil, "[Instrumental]")])]) == nil)
+        #expect(LyricsChooser.choose([entry(synced: true, [(1000, "♪"), (5000, "♪")])]) == nil)
+        #expect(LyricsChooser.choose([entry(synced: true, [(1000, "Instrumental")])]) == nil)
+        #expect(LyricsChooser.choose([entry(synced: false, [(nil, "a line"), (nil, "[Instrumental]")])]) != nil)
+    }
+
+    @Test func aTitleThatSaysInstrumentalHasNoLyrics() {
+        #expect(LyricsChooser.titleSaysInstrumental("Blue in Green (Instrumental)"))
+        #expect(!LyricsChooser.titleSaysInstrumental("Blue in Green"))
+        #expect(!LyricsChooser.titleSaysInstrumental(nil))
+    }
+
     @Test func prefersTimedThenPlainAndTheLanguage() {
         let timed = entry(synced: true, lang: "xxx", [(1000, "a"), (2000, "b")])
         let plain = entry(synced: false, lang: "xxx", [(nil, "p")])

@@ -55,6 +55,16 @@ class TimelinePage(unittest.TestCase):
         self.assertNotIn("id", items["g1"]["entity"])
         self.assertEqual(items["g1"]["evidence"][0]["match_quality"], "exact_mbid")
 
+    def test_release_type_comes_from_the_release_group_or_its_edition(self):
+        with self.db:
+            self.db.execute("INSERT INTO release_group_facts (entity_id, primary_type, secondary_types) VALUES (?, 'Album', '[]')", (self.early,))
+            self.db.execute("INSERT INTO release_group_facts (entity_id, primary_type, secondary_types) VALUES (?, 'Album', '[\"Live\"]')", (self.late,))
+        items = {i["entity"]["mbid"]: i for i in self.page()["items"]}
+        self.assertEqual(items["g2"]["release_type"], {"primary": "Album", "secondary": []})
+        self.assertEqual(items["g1"]["release_type"], {"primary": "Album", "secondary": ["Live"]})
+        self.assertIsNone(items["g3"]["release_type"])
+        self.assertIsNone(items["v1"].get("release_type"))
+
     def test_unknown_is_none_and_wrong_type_raises(self):
         self.assertIsNone(KnowledgeReader(self.db).timeline_page(mbid="nope"))
         with self.assertRaises(ValueError):

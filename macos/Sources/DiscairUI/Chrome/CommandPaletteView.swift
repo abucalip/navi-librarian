@@ -15,7 +15,7 @@ struct CommandPaletteView: View {
         VStack(spacing: 0) {
             HStack(spacing: 8) {
                 Image(systemName: "magnifyingglass").foregroundStyle(.secondary).accessibilityHidden(true)
-                TextField("Type a command, album or artist", text: query)
+                TextField("Search artists, albums, songs and pages", text: query)
                     .textFieldStyle(.plain)
                     .font(.system(size: 16))
                     .focused($focused)
@@ -30,13 +30,20 @@ struct CommandPaletteView: View {
             if results.isEmpty {
                 Text("Nothing matches “\(state.palette.query)”").foregroundStyle(.secondary).padding(20)
             } else {
-                VStack(spacing: 0) {
-                    ForEach(Array(results.enumerated()), id: \.element.id) { i, c in
-                        row(c, selected: i == state.palette.highlight, zine: zine)
-                            .onTapGesture { state.perform(c) }
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 0) {
+                        ForEach(Array(results.enumerated()), id: \.element.id) { i, c in
+                            if i == 0 || results[i - 1].section != c.section {
+                                Text(c.section).font(.system(size: 11, weight: .bold)).textCase(.uppercase).tracking(0.8).foregroundStyle(.secondary)
+                                    .padding(.horizontal, 10).padding(.top, i == 0 ? 2 : 10).padding(.bottom, 3)
+                                    .accessibilityAddTraits(.isHeader)
+                            }
+                            row(c, selected: i == state.palette.highlight, zine: zine)
+                        }
                     }
+                    .padding(6)
                 }
-                .padding(6)
+                .frame(maxHeight: 460).fixedSize(horizontal: false, vertical: true)
             }
         }
         .frame(width: 560)
@@ -46,6 +53,7 @@ struct CommandPaletteView: View {
         .background { if zine { Rectangle().fill(Color.black).offset(x: 6, y: 6) } }
         .shadow(color: .black.opacity(zine ? 0 : 0.25), radius: zine ? 0 : 24, x: 0, y: zine ? 0 : 10)
         .onAppear { focused = true }
+        .task(id: state.palette.query) { await state.searchSongHits(state.palette.query) }
         .accessibilityElement(children: .contain)
         .accessibilityAddTraits(.isModal)
     }
@@ -56,17 +64,48 @@ struct CommandPaletteView: View {
     }
 
     private func row(_ c: PaletteCommand, selected: Bool, zine: Bool) -> some View {
-        HStack {
-            Text(c.title).lineLimit(1)
+        let primary: Color = selected ? .white : .primary
+        let quiet: Color = selected ? .white.opacity(0.78) : .secondary
+        return HStack(spacing: 10) {
+            leading(c, zine: zine)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(c.name.isEmpty ? c.title : c.name).font(.system(size: 14, weight: .medium)).lineLimit(1)
+                if !c.detail.isEmpty { Text(c.detail).font(.system(size: 11.5)).foregroundStyle(quiet).lineLimit(1) }
+            }
             Spacer(minLength: 12)
-            Text(c.hint).font(.system(size: 11)).foregroundStyle(selected ? .white.opacity(0.8) : .secondary)
+            if let second = c.secondary {
+                Button { state.perform(PaletteCommand(id: c.id + "-2", title: c.title, hint: c.hint, kind: c.kind, action: second)) } label: {
+                    Image(systemName: c.secondaryLabel == "Get" ? "arrow.down.circle" : "play.fill")
+                        .font(.system(size: 12, weight: .bold)).foregroundStyle(primary)
+                        .frame(width: 26, height: 26).background(primary.opacity(0.14), in: Circle()).contentShape(Circle())
+                }
+                .buttonStyle(.plain).accessibilityLabel("\(c.secondaryLabel) \(c.name)").help(c.secondaryLabel)
+            }
         }
-        .padding(.horizontal, 10).padding(.vertical, 7)
-        .foregroundStyle(selected ? Color.white : Color.primary)
+        .padding(.horizontal, 10).padding(.vertical, 5)
+        .foregroundStyle(primary)
         .background(selected ? Color.accentColor : .clear, in: RoundedRectangle(cornerRadius: zine ? 0 : 8, style: .continuous))
         .contentShape(Rectangle())
-        .accessibilityElement(children: .combine)
+        .onTapGesture { state.perform(c) }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel(c.title)
         .accessibilityAddTraits(selected ? [.isButton, .isSelected] : .isButton)
+    }
+
+    /// Artwork for albums and songs, the photo for an artist, a small icon for pages and playback.
+    @ViewBuilder private func leading(_ c: PaletteCommand, zine: Bool) -> some View {
+        let size: CGFloat = 36
+        switch c.kind {
+        case .album, .song:
+            if let a = c.album ?? c.song?.albumItem {
+                CoverView(album: a).frame(width: size, height: size).clipShape(RoundedRectangle(cornerRadius: zine ? 0 : 5, style: .continuous))
+            }
+        case .artist:
+            ArtistPhoto(name: c.name, size: size)
+        case .screen, .playback:
+            Image(systemName: c.kind == .playback ? "playpause" : "arrow.turn.down.right").font(.system(size: 13))
+                .frame(width: size, height: size).background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: zine ? 0 : 5, style: .continuous))
+        }
     }
 }
 

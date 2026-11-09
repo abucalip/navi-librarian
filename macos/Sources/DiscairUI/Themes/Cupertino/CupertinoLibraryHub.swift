@@ -9,8 +9,8 @@ struct CupertinoLibraryHub: View {
 
     private var query: String { state.librarySearch }
     private var results: LibrarySearchResults {
-        LibrarySearch.results(query: query, artists: state.library.artists, albums: state.visible(state.library.albums + state.library.recent),
-                              songs: state.library.songs)
+        LibrarySearch.results(query: query, artists: state.library.artists, albums: state.visible(state.library.searchableAlbums),
+                              songs: state.library.songs, serverSongs: state.songHits)
     }
 
     var body: some View {

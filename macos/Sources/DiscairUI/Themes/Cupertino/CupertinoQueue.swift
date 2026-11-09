@@ -17,7 +17,7 @@ struct CupertinoAlbumsGrid: View {
                 if showHeader { Text(recent ? "Recently Added" : "Albums").font(CU.title(34)).padding(.top, 4).padding(.bottom, 14) }
                 if state.library.phase == .loading { Text("Loading your library…").foregroundStyle(CU.muted).padding(.bottom, 8) }
                 if case .failed(let m) = state.library.phase { Text(m).foregroundStyle(CU.accent).padding(.bottom, 8) }
-                let shown = LibrarySearch.albums(state.visible(recent ? state.library.recent : state.library.albums), query: query)
+                let shown = LibrarySearch.albums(state.visible(recent ? state.library.recent : state.library.searchableAlbums), query: query)
                 if shown.isEmpty, !query.isEmpty { Text("No albums match.").foregroundStyle(CU.muted) }
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 128, maximum: 128), spacing: 18, alignment: .top)], alignment: .leading, spacing: 18) {
                     ForEach(shown) { a in AlbumTile(state: state, album: a) }
@@ -155,7 +155,7 @@ struct CupertinoQueueInspector: View {
         let up = p.queue.upNext
         ForEach(Array(up.enumerated()), id: \.element.id) { i, item in
             ReorderRow(index: i, count: up.count, move: { p.moveUpNext(from: $0, to: $1) }) { grab in
-            songRow(item, time: PlayerModel.clock(item.duration), playing: false, grab: grab) {
+            songRow(item, time: PlayerModel.clock(item.duration), playing: false, grab: grab, onDouble: { p.jump(toUpNext: i) }) {
                 Menu {
                     Button("Play now") { p.jump(toUpNext: i) }
                     Button("Move up") { p.moveUpNext(from: i, to: i - 1) }.disabled(i == 0)
@@ -171,7 +171,7 @@ struct CupertinoQueueInspector: View {
         }
     }
 
-    private func songRow<T: View>(_ q: QueueItem, time: String, playing: Bool, grab: ReorderGrab? = nil, @ViewBuilder trailing: () -> T = { EmptyView() }) -> some View {
+    private func songRow<T: View>(_ q: QueueItem, time: String, playing: Bool, grab: ReorderGrab? = nil, onDouble: (() -> Void)? = nil, @ViewBuilder trailing: () -> T = { EmptyView() }) -> some View {
         HStack(spacing: 11) {
             HStack(spacing: 11) {
             CoverView(album: AlbumItem(id: -1, title: q.album, artist: q.artist, year: 0, genre: "", format: "", owned: true, hue: 200, coverArt: q.coverArt))
@@ -192,6 +192,8 @@ struct CupertinoQueueInspector: View {
         }
         .padding(.horizontal, 8).padding(.vertical, 6)
         .background(playing ? CU.accent.opacity(0.12) : .clear, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+        .contentShape(Rectangle())
+        .onTapGesture(count: 2) { onDouble?() }
         .accessibilityElement(children: .combine)
     }
 

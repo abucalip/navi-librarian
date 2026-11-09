@@ -32,6 +32,11 @@ public final class InsightsModel {
     public private(set) var isLive = false
     public private(set) var loading = false
     public private(set) var error: String?
+    /// When the cards on screen were last read from the server (nil for the sample).
+    public private(set) var loadedAt: Date?
+    /// How often an open Insights page reads again.
+    public static let refreshSeconds = 300
+    public var updatedText: String? { loadedAt.map { "Updated " + $0.formatted(date: .omitted, time: .shortened) + "." } }
     /// Card ids hidden now. Kept after a failed write too, so the owner never sees a card come back by surprise.
     public private(set) var hidden: Set<String> = []
     public private(set) var lastDismissed: InsightCard?
@@ -48,7 +53,7 @@ public final class InsightsModel {
         loading = true; defer { loading = false }
         do {
             response = try await librarian.insights(limit: 20)
-            isLive = true; error = nil
+            isLive = true; error = nil; loadedAt = Date()
         } catch {
             // Keep what is on screen; say plainly that the server could not be read.
             self.error = Self.message(error)

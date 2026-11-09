@@ -162,6 +162,39 @@ private func stubConfiguration() -> URLSessionConfiguration {
         out.stop()
     }
 
+    /// The tail of a song that finished downloading is part of the same song, not the next one: the next song is announced
+    /// when it really starts, and it plays to its own length, not to the length of the song before it.
+    @Test func theTailOfAGrowingSongIsNotMistakenForTheNextSong() async throws {
+        let full = try silentFile(seconds: 3)
+        let partial = try silentFile(seconds: 1)
+        let next = try silentFile(seconds: 2)
+        let growing = FileManager.default.temporaryDirectory.appending(path: "grow-\(UUID().uuidString).caf")
+        try FileManager.default.copyItem(at: partial, to: growing)
+        defer { for u in [full, partial, next, growing] { try? FileManager.default.removeItem(at: u) } }
+        let download = GrowingDownload(file: growing)
+        download.setState(bytes: 1, complete: false)
+        let out = EngineOutput()
+        do { try out.openGrowing(download, expectedDuration: 3) } catch let e as AudioError where e.description.contains("could not start") { return }
+        try grow(growing, to: full)
+        download.setState(bytes: 2, complete: true)
+        let started = Date()
+        var advancedAfter: Double?
+        var finishedAfter: Double?
+        var advances = 0
+        out.onAdvanced = { advances += 1; if advancedAfter == nil { advancedAfter = Date().timeIntervalSince(started) } }
+        out.onFinished = { finishedAfter = Date().timeIntervalSince(started) }
+        out.play()
+        for _ in 0..<100 where out.isGrowing { try await Task.sleep(for: .milliseconds(10)) }
+        try out.preload(file: next, transition: .gapless)
+        for _ in 0..<900 where finishedAfter == nil { try await Task.sleep(for: .milliseconds(10)) }
+        let joined = try #require(advancedAfter)
+        let ended = try #require(finishedAfter)
+        #expect(advances == 1)
+        #expect(joined > 2.6)                  // the first second's end is not a song change
+        #expect(ended - joined > 1.7)          // the next song plays its own two seconds, not the first song's three
+        out.stop()
+    }
+
     @Test func aStarvedSongWaitsInsteadOfEndingEarly() async throws {
         let full = try silentFile(seconds: 2)
         let partial = try silentFile(seconds: 1)

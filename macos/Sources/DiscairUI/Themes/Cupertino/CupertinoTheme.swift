@@ -118,8 +118,8 @@ struct CupertinoSidebar: View {
     }
     private let discover: [(String, String, Screen)] = [
         ("sparkles", "New", .discover), ("dot.radiowaves.left.and.right", "Gap Radar", .gapRadar),
-        ("point.3.connected.trianglepath.dotted", "Connections", .connections), ("map", "Atlas", .atlas),
-        ("calendar.day.timeline.left", "Timeline", .timeline), ("lightbulb", "Insights", .insights),
+        ("point.3.connected.trianglepath.dotted", "Connections", .connections), ("calendar.day.timeline.left", "Timeline", .timeline),
+        ("map", "Atlas", .atlas), ("lightbulb", "Insights", .insights),
     ]
 
     var body: some View {
@@ -259,10 +259,11 @@ struct CupertinoArtworkSlot: View {
             Button { state.screen = .nowPlaying } label: {
                 CoverView(album: AlbumItem(id: -1, title: c.album, artist: c.artist, year: 0, genre: "", format: "", owned: true, hue: 200, coverArt: c.coverArt), px: 600)
                     .frame(width: Self.side, height: Self.side)
-                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    .clipShape(RoundedRectangle(cornerRadius: CU.sidebarRadius, style: .continuous))
                     .shadow(color: .black.opacity(0.28), radius: 10, y: 4)
             }
-            .buttonStyle(.plain).padding(.leading, 20).padding(.bottom, 10)
+            // The sidebar's glass starts 10 points in and is 216 wide: the cover takes the same column.
+            .buttonStyle(.plain).padding(.leading, 10).padding(.bottom, 10)
             .accessibilityLabel("Now playing artwork: \(c.album.isEmpty ? c.title : c.album). Opens Now Playing")
         } else {
             HStack(spacing: 5) {
