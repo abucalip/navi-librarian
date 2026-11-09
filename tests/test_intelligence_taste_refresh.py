@@ -44,7 +44,12 @@ class RefreshTests(unittest.TestCase):
         r = self.go(listens(5))
         self.assertEqual((r.state, r.changed), ("refreshed", True))
         self.assertEqual(load_saved_profiles(self.db)["windows"]["all_time"]["listens"], 5)
-        self.assertEqual(generations.data_versions(self.db)["insights"], before + 1)
+        self.assertEqual(generations.data_versions(self.db)["insights"], before + 2)  # profiles row and context row
+
+    def test_refresh_also_saves_context_profiles(self):
+        from intelligence.taste.context_persistence import load_saved_context
+        self.go(listens(5))
+        self.assertEqual(load_saved_context(self.db)["listens"], 5)
 
     def test_within_interval_is_too_soon_and_reads_nothing(self):
         self.go(listens(5))
@@ -100,7 +105,7 @@ class RefreshTests(unittest.TestCase):
     def test_profiles_leave_recommendation_state_alone(self):
         self.go(listens(5))
         tables = {r[0] for r in self.db.execute("SELECT DISTINCT kind FROM insights")}
-        self.assertEqual(tables, {"taste_profile"})
+        self.assertEqual(tables, {"taste_profile", "taste_context"})
 
 
 class FakeLibrarian:
