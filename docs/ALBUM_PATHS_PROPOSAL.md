@@ -128,6 +128,39 @@ A new slice follows the Phase 7 release-links precedent: a bounded, resumable im
 - Clients hide the Paths button when the album has no kind with stops, and show Neighbours by Ear only when `sonic_available`.
 - Album paths must not list the artist's own paths again; the button lists only the album kinds.
 
+## Probe results (2026-11-09)
+
+Run on a copy of the owner's store (`discair-mb-test/intelligence.sqlite3`, opened read-only). Raw outputs are in the scratchpad, not the repo. Scripts: `scripts/album_path_coverage.py` (offline kinds) and a sonic probe that calls `/api/sonic/similar`-equivalent logic through the app's Sonic path (read-only Navidrome calls).
+
+### Offline kinds (884 owned albums)
+
+| Path | Coverage (≥35%) | Median stops where any (≥3) | Overlap proxy (≤35%) | Within 2 s | Result |
+|---|---|---|---|---|---|
+| Studio Crew (`album_crew`) | 56.7% | 9 | 63% | 100% | Overlap fails |
+| Guest List (`album_guests`) | 56.6% | 11 | 72% | 100% | Overlap fails |
+| Covers and Sources (`album_works`) | 44.1% | 3 | 78% | 100% | Overlap fails |
+| Same Year, Same Scene (`album_moment`) | 74.2% | 4 | 78% | 100% | Overlap fails; label-only share 28.7% (≤50% passes) |
+| Same Room (`album_room`) | 38.7% | 6 | 46% | 100% | No gate; judged on its own result |
+
+- No album reached the 200-stop cap. Maximum stops per album: crew 54, guests 79, works 22, room 58, moment 22.
+- **Overlap figure is a proxy, not the measured overlap.** A stop counts as overlap when it shares a credited artist with the album or a label with it. This probably overstates overlap. The exact overlap with the artist's five kinds has not been measured, so the four overlap failures are not verdicts yet.
+
+### Neighbours by Ear (40 sampled albums)
+
+Sample: 40 of 748 owned albums with at least three tracks that have Navidrome IDs, chosen at even intervals by album ID. Seeds are the sample's tracks spaced evenly by ID order, not by track number.
+
+| Seeds per album | Similar-track calls | Coverage (≥60%) | Call latency median / p90 | Album time median / max |
+|---|---|---|---|---|
+| 5 | 193 | 100% | 0.135 s / 0.209 s | 0.74 s / 0.87 s |
+| 8 | 297 | 100% | 0.122 s / 0.187 s | 0.98 s / 1.22 s |
+| 12 | 394 | 100% | 0.084 s / 0.164 s | 1.02 s / 1.82 s |
+
+- Ranking stability: median Jaccard overlap of the top-5 neighbour albums between 5 and 12 seeds is 0.43. The ranking moves a lot with the seed count.
+- Unmapped tracks: 360 (5 seeds), 581 (8), 754 (12) returned tracks had no matching owned recording in the store copy. They are dropped from the counts, so the figures are a lower bound. The cause is unverified (possibly the copy is older than the live library).
+- No seed came back without analysis data in this sample, so the skip-and-report rule was not exercised.
+- Per-artist cap of 2 per seed is applied, matching the app's current setting.
+- The cap stays at 8 seeds unless the owner makes a new decision. These results are recorded for that decision, not used to change the cap.
+
 ## Open decisions for the owner
 
 1. Extend the existing paths route or add a separate album route.
