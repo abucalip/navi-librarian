@@ -12,8 +12,10 @@ from typing import Any
 
 from .public import public
 from .reader import KnowledgeReader, SLICE_SOURCE
-from ..graph import paths
+from ..graph import album_paths, paths
 from ..graph.paths import PATH_KINDS, PathLimits
+
+ALBUM_TYPES = ("release", "release_group")
 
 
 def path_page(db: sqlite3.Connection, *, kind: str, mbid: str | None = None, navidrome_id: str | None = None,
@@ -24,12 +26,16 @@ def path_page(db: sqlite3.Connection, *, kind: str, mbid: str | None = None, nav
     ``ValueError`` for a kind with no builder (dropped or parked kinds say why), a missing identifier or
     a start of the wrong type.
     """
-    if kind not in PATH_KINDS:
-        raise ValueError(paths.NOT_BUILT.get(kind) or f"unknown path kind: {kind!r}")
+    album = kind in album_paths.ALBUM_PATH_KINDS
+    if not album and kind not in PATH_KINDS:
+        raise ValueError(paths.NOT_BUILT.get(kind) or album_paths.NOT_BUILT.get(kind) or f"unknown path kind: {kind!r}")
+    if album != (type in ALBUM_TYPES):
+        raise ValueError(f"kind {kind!r} does not start at type {type!r}")
     start = KnowledgeReader(db).entity(type, mbid=mbid, navidrome_id=navidrome_id)
     if start is None:
         return None
-    path = paths.cached_path(db, start["id"], kind, limits=limits, refresh=refresh)
+    build = album_paths.cached_album_path if album else paths.cached_path
+    path = build(db, start["id"], kind, limits=limits, refresh=refresh)
     if path is None:
         return None
     path = dict(path)

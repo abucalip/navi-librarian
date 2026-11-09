@@ -1,0 +1,19 @@
+{
+  "captured_at": "2026-11-09T22:20:41Z",
+  "request": {
+    "body": null,
+    "method": "GET",
+    "path": "/api/sonic/album-neighbours",
+    "query": {
+      "album_id": "doesnotexist0000"
+    }
+  },
+  "response": {
+    "body": {
+      "detail": "Unknown album."
+    },
+    "content_type": "application/json",
+    "elapsed_seconds": 0.0,
+    "status": 404
+  }
+}

@@ -21,6 +21,10 @@ router = APIRouter()
 MAX_LIMIT = 500
 ALBUM_TYPES = ("release", "release_group")
 PERSON_TYPES = ("artist", "person", "group")
+UNSERVED_ALBUM_KINDS = {
+    "album_room": "Same Room is not built yet.",
+    "album_gaps": "Listen-through Gaps needs play history and is not served by this route yet.",
+}
 
 
 MAX_DEPTH = 3
@@ -147,12 +151,14 @@ def connections(mbid: str | None = None, navidrome_id: str | None = None, type: 
 @router.get("/api/knowledge/paths")
 def paths(kind: str, mbid: str | None = None, navidrome_id: str | None = None, type: str | None = None,
           librarian=Depends(get_librarian)):
-    """Discovery path from one artist: ordered stops, each with its reasons and evidence (built on demand, cached)."""
+    """Discovery path from one artist or album: ordered stops, each with its reasons and evidence (built on demand, cached)."""
     _need_id(mbid, navidrome_id)
     if not type:
         raise HTTPException(status_code=400, detail="give the entity type")
-    if type not in PERSON_TYPES:
-        raise HTTPException(status_code=400, detail=f"type must be one of {', '.join(PERSON_TYPES)}")
+    if type not in PERSON_TYPES + ALBUM_TYPES:
+        raise HTTPException(status_code=400, detail=f"type must be one of {', '.join(PERSON_TYPES + ALBUM_TYPES)}")
+    if kind in UNSERVED_ALBUM_KINDS:
+        raise HTTPException(status_code=501, detail=UNSERVED_ALBUM_KINDS[kind])
     try:
         db = open_store(librarian.DATA_DIR / STORE_FILE)
         try:
