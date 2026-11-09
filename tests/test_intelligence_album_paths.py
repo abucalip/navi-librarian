@@ -227,11 +227,128 @@ class AlbumPathTests(unittest.TestCase):
         self.edge(song, source, "medley of")  # not a relation the path uses
         self.assertEqual(self.stops(a1, "album_works")["status"], "empty")
 
+    # --- Same Year, Same Scene ---
+
+    def dated(self, rel, date):
+        self.db.execute("INSERT INTO release_facts (entity_id, date) VALUES (?, ?)", (rel, date))
+
+    def label(self, name, *releases):
+        label = self.ent("label", name)
+        for rel in releases:
+            self.db.execute("INSERT INTO release_labels (release_id, label_id) VALUES (?, ?)", (rel, label))
+        return label
+
+    def test_moment_needs_a_stated_link_a_date_match_alone_is_nothing(self):
+        a1, _, _ = self.album("A1", credit=False)
+        a2, _, _ = self.album("A2", credit=False)
+        self.dated(a1, "1970-03-01")
+        self.dated(a2, "1970-05-01")
+        self.assertEqual(self.stops(a1, "album_moment")["status"], "empty")
+
+    def test_moment_label_within_two_years_inclusive_and_not_three(self):
+        a1, _, _ = self.album("A1", credit=False)
+        near, _, _ = self.album("Near", credit=False)
+        edge, _, _ = self.album("Edge", credit=False)
+        far, _, _ = self.album("Far", credit=False)
+        undated, _, _ = self.album("Undated", credit=False)
+        lab = self.label("Lab", a1, near, edge, far, undated)
+        for rel, date in ((a1, "1970-06-01"), (near, "1969"), (edge, "1972-12-31"), (far, "1973-01-01")):
+            self.dated(rel, date)
+        r = self.stops(a1, "album_moment")
+        self.assertEqual([s["entity"]["id"] for s in r["stops"]], [near, edge])   # nearer year first
+        reason = r["stops"][0]["reasons"][0]
+        self.assertEqual((reason["code"], reason["via"]["id"], reason["anchor"]["id"], reason["evidence"]),
+                         ("same_period_label", lab, a1, []))
+        self.assertIn("1969", reason["text"])
+        self.assertIn("1970", reason["text"])
+        self.assertNotIn("?", reason["text"])
+
+    def test_moment_uses_the_earliest_stored_date_and_skips_a_start_without_one(self):
+        a1, _, _ = self.album("A1", credit=False)
+        a2, _, _ = self.album("A2", credit=False)
+        self.label("Lab", a1, a2)
+        self.dated(a2, "1970")
+        self.assertEqual(self.stops(a1, "album_moment")["status"], "empty")    # the start has no date
+        self.dated(a1, "1990")
+        self.assertEqual(self.stops(a1, "album_moment")["status"], "empty")    # the dates are 20 years apart
+
+    def test_moment_ignores_unowned_albums(self):
+        a1, _, _ = self.album("A1", credit=False)
+        other = self.ent("release", "Not Owned")
+        self.label("Lab", a1, other)
+        self.dated(a1, "1970")
+        self.dated(other, "1970")
+        self.assertEqual(self.stops(a1, "album_moment")["status"], "empty")
+
+    def test_moment_shared_credited_artist_is_a_credit_link_with_both_edges(self):
+        lead = self.ent("artist", "Lead", owned=True)
+        a1, _, _ = self.album("A1", lead)
+        a2, _, _ = self.album("A2", lead)
+        self.dated(a1, "1970")
+        self.dated(a2, "1971")
+        stop = self.stops(a1, "album_moment")["stops"][0]
+        reason = stop["reasons"][0]
+        self.assertEqual((stop["entity"]["id"], reason["code"], reason["via"]["id"]), (a2, "same_period_credit", lead))
+        self.assertEqual(len(reason["evidence"]), 2)
+
+    def test_moment_credit_link_of_an_uncertain_edge_or_placeholder_artist_is_not_used(self):
+        shaky = self.ent("artist", "Shaky")
+        unknown = self.ent("artist", "[unknown]")
+        a1, _, _ = self.album("A1", credit=False)
+        a2, _, _ = self.album("A2", credit=False)
+        for rel in (a1, a2):
+            self.edge(rel, unknown, "credited_to")
+        self.edge(a1, shaky, "credited_to")
+        self.edge(a2, shaky, "credited_to", mq="fuzzy_unconfirmed")
+        self.dated(a1, "1970")
+        self.dated(a2, "1970")
+        self.assertEqual(self.stops(a1, "album_moment")["status"], "empty")
+
+    def test_moment_area_must_be_a_non_country_area_through_a_different_artist(self):
+        x, y, z = (self.ent("artist", n) for n in "XYZ")
+        a1, _, _ = self.album("A1", x)
+        a2, _, _ = self.album("A2", y)
+        a3, _, _ = self.album("A3", z)
+        city, country = self.ent("area", "Chicago"), self.ent("area", "United States")
+        self.db.execute("INSERT INTO area_facts (entity_id, kind) VALUES (?, 'city')", (city,))
+        self.db.execute("INSERT INTO area_facts (entity_id, kind) VALUES (?, 'Country')", (country,))
+        for who in (x, y):
+            self.edge(who, city, "area")
+        self.edge(x, country, "area")
+        self.edge(z, country, "area")
+        for rel in (a1, a2, a3):
+            self.dated(rel, "1970")
+        r = self.stops(a1, "album_moment")
+        self.assertEqual([s["entity"]["id"] for s in r["stops"]], [a2])   # the shared city; not the shared country
+        reason = r["stops"][0]["reasons"][0]
+        self.assertEqual((reason["code"], reason["via"]["id"], len(reason["evidence"])), ("same_period_area", city, 2))
+
+    def test_moment_more_distinct_links_first_then_the_nearer_year(self):
+        a1, _, _ = self.album("A1", credit=False)
+        both, _, _ = self.album("Both", credit=False)
+        near, _, _ = self.album("Near", credit=False)
+        far, _, _ = self.album("Far", credit=False)
+        self.label("One", a1, both, near, far)
+        self.label("Two", a1, both)
+        for rel, d in ((a1, "1970"), (both, "1972"), (near, "1970"), (far, "1971")):
+            self.dated(rel, d)
+        self.assertEqual([s["entity"]["id"] for s in self.stops(a1, "album_moment")["stops"]], [both, near, far])
+
+    def test_moment_label_stops_the_artists_label_path_reaches_are_dropped(self):
+        lead = self.ent("artist", "Lead", owned=True)
+        a1, _, _ = self.album("A1", lead)
+        a2, _, _ = self.album("A2")
+        self.label("Lab", a1, a2)
+        self.dated(a1, "1970")
+        self.dated(a2, "1970")
+        r = self.stops(a1, "album_moment")
+        self.assertEqual((r["status"], r["overlap_dropped"]), ("empty", 1))
+
     # --- shape, errors, cache ---
 
     def test_unbuilt_kinds_and_non_release_starts_are_refused(self):
         a1, _, artist = self.album("A1")
-        for kind in ("album_room", "album_moment", "nonsense"):
+        for kind in ("album_room", "nonsense"):
             with self.assertRaises(ValueError):
                 build_album_path(self.db, a1, kind)
         with self.assertRaises(ValueError):
