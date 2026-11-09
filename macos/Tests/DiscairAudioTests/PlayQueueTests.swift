@@ -90,10 +90,18 @@ private func titles(_ q: PlayQueue) -> [String] { ([q.current].compactMap { $0 }
         #expect(q.current?.title == "T3" && q.upNext.map(\.title) == ["T4"])
     }
 
-    @Test func clearUpNextKeepsOnlyTheCurrentSong() {
+    @Test func clearUpNextKeepsTheCurrentSongAndTheOnesAlreadyPlayed() {
         var q = PlayQueue(); q.set(songs(4), startAt: 1)
         q.clearUpNext()
-        #expect(q.current?.title == "T1" && q.upNext.isEmpty && q.items.count == 1)
+        #expect(q.current?.title == "T1" && q.upNext.isEmpty && q.items.count == 2 && q.played.map(\.title) == ["T0"])
+    }
+
+    @Test func playedSongsStayInTheQueueAndCanBePlayedAgain() {
+        var q = PlayQueue(); q.set(songs(4), startAt: 0)
+        q.advance(natural: true); q.advance(natural: true)
+        #expect(q.played.map(\.title) == ["T0", "T1"] && q.current?.title == "T2" && q.items.count == 4)
+        q.jump(played: 0)
+        #expect(q.current?.title == "T0" && q.played.isEmpty && q.upNext.map(\.title) == ["T1", "T2", "T3"])
     }
 
     @Test func aSnapshotRestoresTheListTheCurrentSongAndTheModes() throws {

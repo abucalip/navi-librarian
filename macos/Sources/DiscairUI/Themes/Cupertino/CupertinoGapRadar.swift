@@ -16,7 +16,11 @@ struct CupertinoGapRadar: View {
                     Text(lib.gapLoading ? "Reading your artists…" : (lib.picksNote ?? "No gaps found: every recommended album by your artists is already here."))
                         .foregroundStyle(CU.muted).padding(.top, 8)
                 }
-                ForEach(lib.gapRadar) { artist in card(artist) }
+                // Cards are only as wide as their albums need, so small ones sit side by side and only artists with many
+                // albums take (up to) the whole row.
+                GapFlowLayout(spacing: 14) {
+                    ForEach(lib.gapRadar) { artist in card(artist).frame(minWidth: 0, idealWidth: GapCardWidth.width(albums: artist.total, undatedDivider: !artist.undatedOwned.isEmpty || !artist.undatedMissing.isEmpty), maxWidth: GapCardWidth.width(albums: artist.total, undatedDivider: !artist.undatedOwned.isEmpty || !artist.undatedMissing.isEmpty)) }
+                }
             }
             .padding(.horizontal, 28).padding(.bottom, 28)
         }
@@ -26,12 +30,14 @@ struct CupertinoGapRadar: View {
 
     private func card(_ g: GapArtist) -> some View {
         VStack(alignment: .leading, spacing: 12) {
-            HStack(alignment: .firstTextBaseline, spacing: 12) {
-                Button { state.openArtist(named: g.name) } label: { Text(g.name).font(CU.title(22)).lineLimit(1) }
+            VStack(alignment: .leading, spacing: 6) {
+                Button { state.openArtist(named: g.name) } label: { Text(g.name).font(CU.title(20)).lineLimit(1) }
                     .buttonStyle(.plain).accessibilityLabel("Open \(g.name)")
-                Text(g.summary).foregroundStyle(CU.muted)
-                Spacer(minLength: 8)
-                ProgressView(value: g.completeness).frame(width: 90).tint(CU.accent).accessibilityHidden(true)
+                HStack(spacing: 10) {
+                    Text(g.summary).font(.system(size: 12)).foregroundStyle(CU.muted).lineLimit(1)
+                    Spacer(minLength: 4)
+                    ProgressView(value: g.completeness).frame(width: 60).tint(CU.accent).accessibilityHidden(true)
+                }
                 if g.missing.count > 1 {
                     Button("Get \(g.missing.count) missing") { state.getAllMissing(g) }.buttonStyle(CapsuleButtonStyle(primary: true, small: true))
                 }
@@ -71,5 +77,55 @@ struct CupertinoGapRadar: View {
             }
         }
         .frame(width: 96, alignment: .leading)
+    }
+}
+
+/// How wide a Gap Radar card is: room for each album tile, never narrower than the heading needs.
+enum GapCardWidth {
+    static let tile: CGFloat = 96, gap: CGFloat = 14, padding: CGFloat = 16, minimum: CGFloat = 250
+
+    static func width(albums: Int, undatedDivider: Bool = false) -> CGFloat {
+        let n = CGFloat(max(albums, 1))
+        let tiles = n * tile + (n - 1) * gap + (undatedDivider ? 9 + gap : 0)
+        return max(minimum, tiles + padding * 2)
+    }
+}
+
+/// Lays cards out left to right and starts a new row when the next card does not fit. A card wider than the row is
+/// squeezed to the row (its albums scroll inside it). Rows are as tall as their tallest card.
+struct GapFlowLayout: Layout {
+    var spacing: CGFloat = 14
+
+    private func rows(_ subviews: Subviews, width: CGFloat) -> [[(index: Int, size: CGSize)]] {
+        var rows: [[(Int, CGSize)]] = [[]]
+        var x: CGFloat = 0
+        for (i, v) in subviews.enumerated() {
+            let ideal = v.sizeThatFits(.unspecified)
+            let w = min(ideal.width, width)
+            let size = v.sizeThatFits(ProposedViewSize(width: w, height: nil))
+            if x > 0, x + w > width + 0.5 { rows.append([]); x = 0 }
+            rows[rows.count - 1].append((i, CGSize(width: w, height: size.height)))
+            x += w + spacing
+        }
+        return rows.filter { !$0.isEmpty }
+    }
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let width = proposal.width ?? 800
+        let r = rows(subviews, width: width)
+        let h = r.map { $0.map(\.size.height).max() ?? 0 }.reduce(0, +) + CGFloat(max(r.count - 1, 0)) * spacing
+        return CGSize(width: width, height: h)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        var y = bounds.minY
+        for row in rows(subviews, width: bounds.width) {
+            var x = bounds.minX
+            for (i, size) in row {
+                subviews[i].place(at: CGPoint(x: x, y: y), anchor: .topLeading, proposal: ProposedViewSize(size))
+                x += size.width + spacing
+            }
+            y += (row.map(\.size.height).max() ?? 0) + spacing
+        }
     }
 }

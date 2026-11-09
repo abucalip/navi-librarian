@@ -43,6 +43,9 @@ struct DiscairApp: App {
         .commands {
             MiniPlayerCommands()
             CommandPaletteCommands(state: state)
+            // Discair has no documents or text editing, so the Edit menu keeps only the command palette.
+            CommandGroup(replacing: .undoRedo) {}
+            CommandGroup(replacing: .pasteboard) {}
             UpdateCommands(updater: updater)
             CommandMenu("Theme") {
                 ForEach(ThemeID.allCases) { id in
@@ -79,7 +82,7 @@ struct MiniPlayerCommands: Commands {
 struct CommandPaletteCommands: Commands {
     let state: AppState
     var body: some Commands {
-        CommandGroup(after: .textEditing) {
+        CommandGroup(replacing: .textEditing) {
             Button("Command Palette") { state.palette.toggle() }
                 .keyboardShortcut("k", modifiers: .command)
         }

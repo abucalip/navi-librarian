@@ -41,52 +41,44 @@ struct CupertinoWindow: View {
     }
 
     private var library: some View {
-        ZStack(alignment: .topLeading) {
-            LinearGradient(colors: [Color(red: 0.937, green: 0.914, blue: 0.969), Color(red: 0.969, green: 0.925, blue: 0.918), Color(red: 0.918, green: 0.945, blue: 0.969)], startPoint: .topLeading, endPoint: .bottomTrailing)
+        VStack(spacing: 0) {
+            ZStack(alignment: .topLeading) {
+                // Opaque content; flows under the floating sidebar and toolbar (content is never glass).
+                content
+                    .padding(.trailing, state.queueOpen && state.screen != .artist && state.screen != .album ? CupertinoQueueInspector.width : 0)
+                    .padding(.leading, 236)
+                    .padding(.top, state.screen == .artist || state.screen == .album ? CupertinoArtistLayout.bannerHeight : 66)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                    .background(Color.white)
 
-            // Opaque content; flows under the floating sidebar and toolbar (content is never glass).
-            content
-                .padding(.trailing, state.queueOpen && state.screen != .artist && state.screen != .album ? CupertinoQueueInspector.width : 0)
-                .padding(.leading, 236)
-                .padding(.top, state.screen == .artist || state.screen == .album ? CupertinoArtistLayout.bannerHeight : 66)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-                .background(Color.white)
-                .padding(.leading, 0)
+                if state.screen == .artist { CupertinoArtistBanner(state: state) }
+                if state.screen == .album { CupertinoAlbumBanner(state: state) }   // under the sidebar and toolbar
 
-            if state.screen == .artist { CupertinoArtistBanner(state: state) }
-            if state.screen == .album { CupertinoAlbumBanner(state: state) }   // under the sidebar and toolbar
-
-            CupertinoSidebar(state: state)
-            CupertinoToolbar(state: state)
-                .padding(.leading, 238).padding(.trailing, state.queueOpen ? CupertinoQueueInspector.width + 16 : 16).padding(.top, 12)
-            if state.queueOpen {
-                CupertinoQueueInspector(state: state).frame(maxWidth: .infinity, alignment: .trailing)
+                CupertinoSidebar(state: state)
+                    .padding(.bottom, state.player.current != nil ? CupertinoArtworkSlot.side + 20 - CupertinoPlayerBar.height : 0)
+                CupertinoToolbar(state: state)
+                    .padding(.leading, 238).padding(.trailing, state.queueOpen ? CupertinoQueueInspector.width + 16 : 16).padding(.top, 12)
+                if state.queueOpen {
+                    CupertinoQueueInspector(state: state).frame(maxWidth: .infinity, alignment: .trailing)
+                }
             }
-            // Top right under the search pill (owner decision), not at the bottom of the window or sidebar (HIG).
-            HStack(spacing: 5) {
-                Circle().fill(state.connectionIsGood ? Color.green : CU.accent).frame(width: 7, height: 7)
-                Text(state.connectionLabel)
-            }
-            .font(.system(size: 11)).foregroundStyle(state.screen == .artist || state.screen == .album ? Color.white.opacity(0.9) : CU.muted)   // over the dark banner
-            .accessibilityElement(children: .combine)
-            .accessibilityLabel("Connection: \(state.connectionLabel)")
-            .frame(maxWidth: .infinity, alignment: .trailing)
-            .padding(.trailing, state.queueOpen ? CupertinoQueueInspector.width + 20 : 20).padding(.top, 52)
+            .overlay(alignment: .bottom) { CupertinoNotice(state: state).padding(.bottom, 22) }
+            // The player runs along the bottom of the window (owner decision; Apple's guidance puts it at the top).
+            CupertinoPlayerBar(state: state)
         }
-        .overlay(alignment: .bottom) { CupertinoNotice(state: state).padding(.bottom, 22) }
+        // Left of the player, under the sidebar: the playing cover as a large square, or the connection when nothing plays.
+        .overlay(alignment: .bottomLeading) { CupertinoArtworkSlot(state: state) }
+        .background(LinearGradient(colors: [Color(red: 0.937, green: 0.914, blue: 0.969), Color(red: 0.969, green: 0.925, blue: 0.918), Color(red: 0.918, green: 0.945, blue: 0.969)], startPoint: .topLeading, endPoint: .bottomTrailing))
         .foregroundStyle(CU.ink)
         .clipShape(RoundedRectangle(cornerRadius: CU.windowRadius, style: .continuous))
-        .background(WindowConfigurator(canDragAt: { [state] p, size in !(state.queueOpen && p.x > size.width - CupertinoQueueInspector.width) }))
+        .background(WindowConfigurator(canDragAt: { [state] p, size in !(state.queueOpen && p.x > size.width - CupertinoQueueInspector.width && p.y < size.height - CupertinoPlayerBar.height) }))
     }
 
     @ViewBuilder private var content: some View {
         switch state.screen {
         case .home: CupertinoHome(state: state)
         case .album: CupertinoAlbum(state: state)
-        case .queue, .albums: CupertinoAlbumsGrid(state: state)
-        case .library: CupertinoLibrary(state: state)
-        case .artists: CupertinoArtistsIndex(state: state)
-        case .recent: CupertinoAlbumsGrid(state: state, recent: true)
+        case .queue, .albums, .library, .artists, .recent: CupertinoLibraryHub(state: state)
         case .artist: CupertinoArtist(state: state)
         case .settings: CupertinoSettings(state: state)
         case .downloads: CupertinoDownloads(state: state)
@@ -104,110 +96,110 @@ struct CupertinoWindow: View {
     }
 }
 
+/// Owned music first (Home, Library), then the Discover group, then the tools. Playlists stay below.
 struct CupertinoSidebar: View {
     let state: AppState
     private var selected: String {
         switch state.screen {
         case .home: "Home"
-        case .queue, .library: "Songs"
-        case .albums: "Albums"
-        case .artist, .artists: "Artists"
-        case .settings: "Settings"
+        case .queue, .library, .albums, .artists, .recent, .artist, .album: "Library"
+        case .settings, .equalizer: "Settings"
         case .downloads: "Downloads"
         case .discover: "New"
-        case .equalizer: "Settings"
         case .gapRadar: "Gap Radar"
         case .connections: "Connections"
         case .atlas: "Atlas"
         case .timeline: "Timeline"
         case .smartPlaylists: "Smart Playlists"
-        case .history: "History"
+        case .history: "Library"
         case .insights: "Insights"
-        case .recent: "Recently Added"
         default: "Home"
         }
     }
-    /// Where each row goes. Rows without a screen yet do nothing (they are still real buttons, so keyboard and
-    /// VoiceOver treat them like the rest).
-    private let target: [String: Screen] = ["Home": .home, "Songs": .library, "Albums": .albums, "Artists": .artists, "Recently Added": .recent, "New": .discover, "Gap Radar": .gapRadar, "Connections": .connections, "Atlas": .atlas, "Timeline": .timeline, "Smart Playlists": .smartPlaylists, "History": .history, "Insights": .insights, "Downloads": .downloads, "Settings": .settings]
-    private let nav: [(String, String)] = [
-        ("house", "Home"), ("sparkles", "New"), ("clock", "Recently Added"), ("music.mic", "Artists"),
-        ("square.stack", "Albums"), ("music.note", "Songs"), ("dot.radiowaves.left.and.right", "Gap Radar"), ("point.3.connected.trianglepath.dotted", "Connections"), ("map", "Atlas"), ("calendar.day.timeline.left", "Timeline"), ("wand.and.stars", "Smart Playlists"),
-        ("clock.arrow.circlepath", "History"), ("lightbulb", "Insights"), ("arrow.down.circle", "Downloads"), ("gearshape", "Settings"),
+    private let discover: [(String, String, Screen)] = [
+        ("sparkles", "New", .discover), ("dot.radiowaves.left.and.right", "Gap Radar", .gapRadar),
+        ("point.3.connected.trianglepath.dotted", "Connections", .connections), ("map", "Atlas", .atlas),
+        ("calendar.day.timeline.left", "Timeline", .timeline), ("lightbulb", "Insights", .insights),
     ]
 
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
             TrafficLights().padding(.leading, 6).padding(.bottom, 20)
-            ForEach(nav, id: \.1) { icon, label in
-                let on = label == selected
-                Button {
-                    if let t = target[label] { state.screen = t }
-                } label: {
-                HStack(spacing: 9) {
-                    Image(systemName: icon).foregroundStyle(CU.accent).frame(width: 18)
-                    Text(label).fontWeight(on ? .semibold : .regular)
-                    Spacer()
-                    if label == "Downloads", !state.library.isLive || state.acquisition.activeCount > 0 {
-                        Text(state.library.isLive ? String(state.acquisition.activeCount) : "2").font(.system(size: 11, weight: .bold)).foregroundStyle(.white)
-                            .padding(.horizontal, 7).background(CU.accent, in: Capsule())
+            ScrollView {
+                VStack(alignment: .leading, spacing: 2) {
+                    row("house", "Home", .home)
+                    row("books.vertical", "Library", .library)
+                    Color.clear.frame(height: 12)
+                    Button { state.discoverOpen.toggle() } label: {
+                        HStack(spacing: 6) {
+                            Image(systemName: state.discoverOpen ? "chevron.down" : "chevron.right").font(.system(size: 10, weight: .bold)).frame(width: 18)
+                            Text("Discover").font(.system(size: 11, weight: .bold))
+                            Spacer()
+                        }
+                        .foregroundStyle(CU.muted).padding(.horizontal, 10).padding(.top, 2).padding(.bottom, 2)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Discover").accessibilityValue(state.discoverOpen ? "expanded" : "collapsed")
+                    .accessibilityHint("Shows or hides the discovery pages")
+                    if state.discoverOpen {
+                        ForEach(discover, id: \.1) { icon, label, screen in row(icon, label, screen).padding(.leading, 16) }
+                    }
+                    Color.clear.frame(height: 12)
+                    row("wand.and.stars", "Smart Playlists", .smartPlaylists)
+                    row("arrow.down.circle", "Downloads", .downloads)
+                    row("gearshape", "Settings", .settings)
+                    Text("Playlists").font(.system(size: 11, weight: .bold)).foregroundStyle(CU.muted).padding(.leading, 10).padding(.top, 14)
+                    ForEach(state.smart.lists) { list in
+                        Button { state.smart.selectedID = list.id; state.screen = .smartPlaylists } label: {
+                            HStack(spacing: 9) {
+                                Image(systemName: "music.note.list").foregroundStyle(CU.accent).frame(width: 18)
+                                Text(list.name).lineLimit(1)
+                            }
+                            .font(.system(size: 13.5)).padding(.horizontal, 10).padding(.vertical, 6)
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
                     }
                 }
-                .font(.system(size: 13.5))
-                .foregroundStyle(on ? CU.accent : CU.ink)
-                .padding(.horizontal, 10).padding(.vertical, 6)
-                .background(on ? CU.accent.opacity(0.13) : .clear, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
-                .contentShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
-                }
-                .buttonStyle(.plain)
-                .accessibilityAddTraits(on ? .isSelected : [])
             }
-            Text("Playlists").font(.system(size: 11, weight: .bold)).foregroundStyle(CU.muted).padding(.leading, 10).padding(.top, 14)
-            ForEach(state.smart.lists) { list in
-                let p = list.name
-                Button { state.smart.selectedID = list.id; state.screen = .smartPlaylists } label: {
-                    HStack(spacing: 9) {
-                        Image(systemName: "music.note.list").foregroundStyle(CU.accent).frame(width: 18)
-                        Text(p).lineLimit(1)
-                    }
-                    .font(.system(size: 13.5)).padding(.horizontal, 10).padding(.vertical, 6)
-                    .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-            }
-            Spacer()
+            .scrollIndicators(.hidden)
         }
         .padding(10).padding(.top, 6)
         .frame(width: 216)
         .glassEffect(CU.glass, in: RoundedRectangle(cornerRadius: CU.sidebarRadius, style: .continuous))
         .padding(10)
     }
+
+    private func row(_ icon: String, _ label: String, _ screen: Screen) -> some View {
+        let on = label == selected
+        return Button { state.screen = screen } label: {
+            HStack(spacing: 9) {
+                Image(systemName: icon).foregroundStyle(CU.accent).frame(width: 18)
+                Text(label).fontWeight(on ? .semibold : .regular)
+                Spacer()
+                if label == "Downloads", !state.library.isLive || state.acquisition.activeCount > 0 {
+                    Text(state.library.isLive ? String(state.acquisition.activeCount) : "2").font(.system(size: 11, weight: .bold)).foregroundStyle(.white)
+                        .padding(.horizontal, 7).background(CU.accent, in: Capsule())
+                }
+            }
+            .font(.system(size: 13.5))
+            .foregroundStyle(on ? CU.accent : CU.ink)
+            .padding(.horizontal, 10).padding(.vertical, 6)
+            .background(on ? CU.accent.opacity(0.13) : .clear, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+            .contentShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(on ? .isSelected : [])
+    }
 }
 
+/// Search and the Queue button, top right. The player itself is `CupertinoPlayerBar`, along the bottom.
 struct CupertinoToolbar: View {
     let state: AppState
     var body: some View {
         HStack(spacing: 12) {
-            HStack(spacing: 16) {
-                let p = state.player
-                Button { p.toggleShuffle() } label: { Image(systemName: "shuffle").foregroundStyle(p.shuffle ? CU.accent : CU.ink) }
-                    .accessibilityLabel(p.shuffle ? "Shuffle, on" : "Shuffle, off")
-                Button { p.previous() } label: { Image(systemName: "backward.fill") }.accessibilityLabel("Previous")
-                Button { p.togglePlayPause() } label: { Image(systemName: p.isPlaying ? "pause.fill" : "play.fill") }
-                    .accessibilityLabel(p.isPlaying ? "Pause" : "Play").disabled(p.current == nil)
-                Button { p.next() } label: { Image(systemName: "forward.fill") }.accessibilityLabel("Next").disabled(p.current == nil)
-                Button { p.cycleRepeat() } label: {
-                    Image(systemName: p.repeatMode == .one ? "repeat.1" : "repeat").foregroundStyle(p.repeatMode == .off ? CU.ink : CU.accent)
-                }
-                .accessibilityLabel("Repeat, \(p.repeatMode.rawValue)")
-            }
-            .buttonStyle(.plain).font(.system(size: 15))
-            .padding(.horizontal, 18).frame(height: 40)
-            .glassEffect(CU.glass, in: Capsule())
-
-            Button { state.screen = .nowPlaying } label: { nowPlayingDisplay }
-                .buttonStyle(.plain).frame(maxWidth: 470)
-
+            Spacer(minLength: 0)
             Button { state.palette.open() } label: {
                 HStack(spacing: 8) {
                     Image(systemName: "magnifyingglass")
@@ -220,68 +212,14 @@ struct CupertinoToolbar: View {
             }
             .buttonStyle(.plain).accessibilityLabel("Search and commands").accessibilityHint("Opens the command palette, shortcut command K")
 
+            // The whole circle is the button, not just the icon.
             Button { state.queueOpen.toggle() } label: {
                 Image(systemName: "list.bullet").font(.system(size: 15)).foregroundStyle(state.queueOpen ? CU.accent : CU.ink)
-                    .frame(width: 40, height: 40).glassEffect(CU.glass, in: Circle())
+                    .frame(width: 40, height: 40).contentShape(Circle()).glassEffect(CU.glass, in: Circle())
             }
-            .buttonStyle(.plain).accessibilityLabel(state.queueOpen ? "Close Up Next" : "Up Next")
+            .buttonStyle(.plain).contentShape(Circle()).accessibilityLabel(state.queueOpen ? "Close Queue" : "Queue")
         }
         .frame(height: 44)
-    }
-
-    @ViewBuilder private var nowPlayingDisplay: some View {
-        if state.library.isLive || state.player.current != nil { liveDisplay } else { sampleDisplay }
-    }
-
-    private var liveDisplay: some View {
-        let p = state.player
-        return Group {
-            if let c = p.current {
-                HStack(spacing: 10) {
-                    CoverView(album: AlbumItem(id: -1, title: c.album, artist: c.artist, year: 0, genre: "", format: "", owned: true, hue: 200, coverArt: c.coverArt))
-                        .frame(width: 32).clipShape(RoundedRectangle(cornerRadius: 5)).accessibilityHidden(true)
-                    VStack(spacing: 1) {
-                        Text(c.title).fontWeight(.semibold).lineLimit(1)
-                        Text(p.phase == .loading ? "Loading…" : (c.album.isEmpty ? c.artist : "\(c.artist) — \(c.album)")).foregroundStyle(CU.muted).lineLimit(1)
-                        if case .failed(let m) = p.phase { Text(m).foregroundStyle(CU.accent).lineLimit(1) }
-                    }
-                    .font(.system(size: 12)).frame(maxWidth: .infinity)
-                    PlaybackClock(player: p) { Text(PlayerModel.clock($0)).font(.system(size: 11)).monospacedDigit().foregroundStyle(CU.muted) }
-                }
-                .padding(.horizontal, 10).frame(height: 44)
-                .overlay(alignment: .bottomLeading) {
-                    GeometryReader { g in Rectangle().fill(CU.accent).frame(width: g.size.width * p.fraction, height: 3) }.frame(height: 3)
-                }
-                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                .accessibilityElement(children: .combine)
-                .accessibilityLabel("Now playing: \(c.title), \(c.artist), \(PlayerModel.clock(p.position)) of \(PlayerModel.clock(p.duration))")
-            } else {
-                Text("Nothing playing").font(.system(size: 12)).foregroundStyle(CU.muted).frame(maxWidth: .infinity).frame(height: 44)
-            }
-        }
-        .glassEffect(CU.glass, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-    }
-
-    private var sampleDisplay: some View {
-        let a = Fixtures.albums[0]
-        return HStack(spacing: 10) {
-            CoverView(album: a).frame(width: 32).clipShape(RoundedRectangle(cornerRadius: 5))
-            VStack(spacing: 1) {
-                Text("After the Flood").fontWeight(.semibold)
-                Text("Talk Talk — Laughing Stock").foregroundStyle(CU.muted)
-            }
-            .font(.system(size: 12)).frame(maxWidth: .infinity)
-            Text("3:12").font(.system(size: 11)).foregroundStyle(CU.muted)
-        }
-        .padding(.horizontal, 10).frame(height: 44)
-        .overlay(alignment: .bottomLeading) {
-            GeometryReader { g in Rectangle().fill(CU.accent).frame(width: g.size.width * 0.33, height: 3) }
-                .frame(height: 3)
-        }
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .glassEffect(CU.glass, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("Now playing: After the Flood, Talk Talk, 3:12 of 9:41")
     }
 }
 
@@ -306,6 +244,35 @@ struct CupertinoNotice: View {
             }
             .font(.system(size: 13)).padding(.horizontal, 16).padding(.vertical, 10)
             .glassEffect(CU.glass, in: Capsule())
+        }
+    }
+}
+
+/// Bottom left of the window, in the space the travel buttons used to take: the large cover of the song playing (it covers the
+/// connection text), or that text when nothing is playing.
+struct CupertinoArtworkSlot: View {
+    let state: AppState
+    static let side: CGFloat = 216
+
+    var body: some View {
+        if let c = state.player.current {
+            Button { state.screen = .nowPlaying } label: {
+                CoverView(album: AlbumItem(id: -1, title: c.album, artist: c.artist, year: 0, genre: "", format: "", owned: true, hue: 200, coverArt: c.coverArt), px: 600)
+                    .frame(width: Self.side, height: Self.side)
+                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    .shadow(color: .black.opacity(0.28), radius: 10, y: 4)
+            }
+            .buttonStyle(.plain).padding(.leading, 20).padding(.bottom, 10)
+            .accessibilityLabel("Now playing artwork: \(c.album.isEmpty ? c.title : c.album). Opens Now Playing")
+        } else {
+            HStack(spacing: 5) {
+                Circle().fill(state.connectionIsGood ? Color.green : CU.accent).frame(width: 7, height: 7)
+                Text(state.connectionLabel).lineLimit(1).minimumScaleFactor(0.8)
+            }
+            .font(.system(size: 11)).foregroundStyle(CU.muted)
+            .frame(width: Self.side, alignment: .leading).padding(.leading, 26).padding(.bottom, (CupertinoPlayerBar.height - 14) / 2)
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("Connection: \(state.connectionLabel)")
         }
     }
 }

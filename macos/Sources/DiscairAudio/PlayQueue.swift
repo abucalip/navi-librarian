@@ -78,6 +78,18 @@ public struct PlayQueue: Equatable, Sendable {
         return order[(c + 1)...].map { items[$0] }
     }
 
+    /// Songs before the current one, in play order. They stay in the queue after they have played.
+    public var played: [QueueItem] {
+        guard let c = cursor else { return [] }
+        return order[..<c].map { items[$0] }
+    }
+
+    /// Goes back to a song that has played, by its position in `played`.
+    public mutating func jump(played offset: Int) {
+        guard let c = cursor, offset >= 0, offset < c else { return }
+        cursor = offset
+    }
+
     /// Replaces the queue and selects `startAt` (an index into `songs`).
     public mutating func set(_ songs: [QueueItem], startAt: Int = 0, using rng: inout some RandomNumberGenerator) {
         items = songs
@@ -194,11 +206,11 @@ public struct PlayQueue: Equatable, Sendable {
         cursor = c + 1 + offset
     }
 
-    /// Empties Up Next; the current song stays.
+    /// Empties Up Next; the current song and the songs already played stay.
     public mutating func clearUpNext() {
-        guard let cur = currentIndex else { return }
-        let item = items[cur]
-        items = [item]; order = [0]; cursor = 0
+        guard let c = cursor else { return }
+        let keep = order[...c].map { items[$0] }
+        items = keep; order = Array(keep.indices); cursor = keep.count - 1
     }
 
     /// Selects a song by its position in `items`.

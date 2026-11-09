@@ -4,6 +4,10 @@ import SwiftUI
 /// Columns (opt-in, contract section 6). Mockup: `R.cupertino.library`. Zebra rows, selection in the accent colour.
 struct CupertinoLibrary: View {
     let state: AppState
+    /// Text from the Library search field; only matching songs show.
+    var query = ""
+    /// Inside the Library page: no heading or source switch of its own.
+    var embedded = false
     @State private var sortKey: SongColumn = .title
     @State private var ascending = true
     @State private var selected = 1
@@ -14,14 +18,16 @@ struct CupertinoLibrary: View {
     @State private var page = 0
     static let pageSize = 100
 
-    private var rows: [SongRow] { SongTable.sorted(state.library.songs, by: sortKey, ascending: ascending, onlyMissingMBID: onlyMissingMBID) }
+    private var rows: [SongRow] { SongTable.sorted(LibrarySearch.songs(state.library.songs, query: query), by: sortKey, ascending: ascending, onlyMissingMBID: onlyMissingMBID) }
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
                 HStack(spacing: 14) {
-                    Text("Songs").font(CU.title(34))
-                    CUSegmented(options: ["Songs", "Albums", "Artists", "Missing"], selection: $source)
+                    if !embedded {
+                        Text("Songs").font(CU.title(34))
+                        CUSegmented(options: ["Songs", "Albums", "Artists", "Missing"], selection: $source)
+                    }
                     Spacer()
                     Button { let shown = rows; if let i = shown.firstIndex(where: { $0.id == selected }) { state.play(rows: shown, startAt: i) } } label: { Label("Play", systemImage: "play.fill") }
                         .buttonStyle(CapsuleButtonStyle(primary: true, small: true)).disabled(!state.library.isLive)
@@ -100,6 +106,7 @@ struct CupertinoLibrary: View {
         .onChange(of: sortKey) { _, _ in page = 0 }
         .onChange(of: ascending) { _, _ in page = 0 }
         .onChange(of: onlyMissingMBID) { _, _ in page = 0 }
+        .onChange(of: query) { _, _ in page = 0 }
         .onChange(of: viewMode) { _, _ in page = 0 }
         .task(id: state.library.isLive) { await state.loadAllSongs() }
     }

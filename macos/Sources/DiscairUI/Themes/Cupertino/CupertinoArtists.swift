@@ -4,9 +4,12 @@ import SwiftUI
 /// own Back button to this list.
 struct CupertinoArtistsIndex: View {
     let state: AppState
+    /// Text from the Library search field; only matching artists show.
+    var query = ""
+    var showHeader = true
 
     private var groups: [(letter: String, artists: [ArtistItem])] {
-        let by = Dictionary(grouping: state.library.artists, by: \.letter)
+        let by = Dictionary(grouping: LibrarySearch.artists(state.library.artists, query: query), by: \.letter)
         return by.keys.sorted { a, b in a == "#" ? false : (b == "#" ? true : a < b) }.map { k in
             (k, (by[k] ?? []).sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending })
         }
@@ -15,7 +18,7 @@ struct CupertinoArtistsIndex: View {
     var body: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 0) {
-                Text("Artists").font(CU.title(34)).padding(.top, 4).padding(.bottom, 6)
+                if showHeader { Text("Artists").font(CU.title(34)).padding(.top, 4).padding(.bottom, 6) }
                 if state.library.phase == .loading { Text("Loading your library…").foregroundStyle(CU.muted).padding(.bottom, 8) }
                 if case .failed(let m) = state.library.phase { Text(m).foregroundStyle(CU.accent).padding(.bottom, 8) }
                 ForEach(groups, id: \.letter) { g in
