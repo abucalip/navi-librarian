@@ -2,6 +2,8 @@
 
 Last checked: 2026-11-09. GitHub `main` is authoritative; Server V2 Phases 0–6 are closed on the server side. Phase 7 implementation is merged through PR #889; runtime and client verification remain. PR #898 is now merged; publication as `v0.5.3` is authorized but not yet completed.
 
+**Server V2 work queue:** `docs/ServerV2.md` now contains only remaining client slices and verification; the former full plan and completed-work history is preserved in `docs/archive/ServerV2_HISTORY_2026-11-09.md`.
+
 ## Current state
 
 - **Server V2 Phase 6 taste presentation, server slices 1–4 merged (2026-11-09):** PR [#906](https://github.com/abucalip/navi-librarian/pull/906), squash commit `c94fa16bf17a261e82df2005cbfd037870fc3612`, from exact head `d1afb09a139a9070e12302247d74e294f3bff29e`, extends the saved taste response with `context`: time-of-day and weekday/weekend profiles plus a morning-vs-night contrast. The context is persisted as a separate `taste_context` insights row without a schema migration; it is `null` until refresh. The contrast requires at least 100 listens in both morning and night and sufficiently attributed dimensions; otherwise it reports `low_sample` or `no_difference`. An unchanged replay writes nothing. No recommendation-ranking effect. **CI on the exact final head:** all four required workflows passed, including Docker packaging with the full unit suite, container runtime smoke and non-publishing multi-architecture image validation. PR reports 56 focused tests passing. No publication, deployment or runtime verification. macOS/Android launch wiring and presentation remain pending. Details in `ServerV2.md` and `PROJECT_LOG.md`.
