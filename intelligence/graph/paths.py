@@ -433,6 +433,15 @@ def _begin_year(db: sqlite3.Connection, entity_id: int) -> int | None:
     return int(text) if text.isdigit() else None
 
 
+def kind_rows(db: sqlite3.Connection, start_id: int, kind: str, gen: int, limits: PathLimits) -> tuple[list[Any], bool]:
+    """The candidate rows of an artist path kind, before grouping and presentation; ``capped`` when a bound cut them."""
+    if kind == "follow_the_musician":
+        return _follow_the_musician_rows(db, start_id, gen, limits)
+    if kind == "composition_path":
+        return _composition_rows(db, start_id, gen, limits)
+    return db.execute(_QUERIES[kind], {"a": start_id, "g": gen, "n": limits.max_rows}).fetchall(), False
+
+
 def build_path(db: sqlite3.Connection, start_id: int, kind: str, *, limits: PathLimits = PathLimits(),
                generation: int | None = None, clock: Callable[[], float] = time.monotonic) -> dict[str, Any] | None:
     """The path of ``kind`` from an artist, built now from the store; None when the start is unknown.
@@ -453,12 +462,7 @@ def build_path(db: sqlite3.Connection, start_id: int, kind: str, *, limits: Path
     truncated: str | None = None
     capped = False
     try:
-        if kind == "follow_the_musician":
-            rows, capped = _follow_the_musician_rows(db, start_id, gen, limits)
-        elif kind == "composition_path":
-            rows, capped = _composition_rows(db, start_id, gen, limits)
-        else:
-            rows = db.execute(_QUERIES[kind], {"a": start_id, "g": gen, "n": limits.max_rows}).fetchall()
+        rows, capped = kind_rows(db, start_id, kind, gen, limits)
     except sqlite3.OperationalError as exc:
         if "interrupted" not in str(exc):
             raise
