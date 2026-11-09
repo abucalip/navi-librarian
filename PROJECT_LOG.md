@@ -3170,3 +3170,15 @@ All live runs were approved by the owner; slskd off; aggregate only; harnesses w
 - **Documentation:** PR updated `DOCKER.md`, `docs/SERVER_V2_CONTRACT.md` and the worker inventory in `docs/efficiency.md`. The worker is the sole Server V2 knowledge-store writer for the migrated jobs; other web-started background loops are still awaiting migration. Global provider pacing remains a separate efficiency-plan task.
 - **Release state:** publication of `v0.5.3` was explicitly authorized by the owner. It is not yet published in this entry; the release tag must point to the exact current `main` commit after this documentation closeout. No deployment or runtime verification is claimed.
 - **Next action:** publish `v0.5.3` from the exact current `main` SHA, then verify the release workflow and image digest.
+
+
+## 2026-11-09 — Server V2 Phase 6 taste presentation: PR #903 merged
+
+- **Merged:** PR [#903](https://github.com/abucalip/navi-librarian/pull/903), squash commit `17dc337d61cc8cce03c1a5db3d7728cff84a759e`, from exact head `2149d117559d28cb28c571bf3c41584e3f77d6c7` on branch `taste-headline-builder`.
+- **Changes:** adds `intelligence/taste/headline.py` with the pure `Headline` value and `build_headline(TasteProfiles)`, exported from `intelligence.taste`. It selects the recent window or mid fallback, ranks shifts deterministically (genre first, then absolute change and value name), and returns pair/up/down/steady copy or `None`. It is deliberately unwired: no payload, API, job, client, persistence or recommendation-ranking behavior changed.
+- **Regression tests (PR-reported):** `tests.test_intelligence_taste_headline` (8) and `tests.test_intelligence_taste_profiles` (7) passed locally. Full suite not run (owner rule); the PR notes that the persistence test could not run under the local system Python because FastAPI is absent and is untouched by this change.
+- **CI on exact head `2149d117559d28cb28c571bf3c41584e3f77d6c7`:** Python syntax check, container runtime smoke test, Docker packaging validation, and Docker image validation (publishing paused) all completed successfully.
+- **Review:** no submitted reviews or inline review threads were present at merge. The diff is limited to the pure builder, package exports and its focused test module.
+- **State:** merged; not published, deployed or runtime-verified. No client can display the headline until slice 2 adds it to `profiles_payload` and slice 3 supplies the production refresh path.
+- **Documentation:** `docs/ServerV2.md` updated in commit `cdf4e2f555ce25e6f47e81aa7e1567abb1f7fd94`; `docs/PROJECT_STATUS.md` updated in commit `952b277da3d41bc783ee1dad76c8b9c33a578fd4`.
+- **Next action:** implement slice 2 (payload, contract and fixtures), then slice 3 (on-app-open refresh route with interval/overlap protection).
