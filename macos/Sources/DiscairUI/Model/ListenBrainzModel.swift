@@ -29,17 +29,23 @@ public final class ListenBrainzModel {
     }
 
     /// Saves, checks that the server can read the profile, then asks for a taste refresh so the answer shows without a relaunch.
-    public func connect(librarian: LibrarianClient?, afterConnect: @escaping () async -> Void = {}) async {
-        guard let librarian, canSave else { return }
+    /// Returns the username and token that the server accepted, so the caller can keep them in the Keychain; nil when not saved.
+    @discardableResult
+    public func connect(librarian: LibrarianClient?, afterConnect: @escaping () async -> Void = {}) async -> (username: String, token: String)? {
+        guard let librarian, canSave else { return nil }
         busy = true; defer { busy = false }
+        var accepted: (username: String, token: String)?
         do {
-            try await librarian.saveListenBrainz(username: username.trimmingCharacters(in: .whitespaces), token: token.trimmingCharacters(in: .whitespaces))
+            let sent = (username: username.trimmingCharacters(in: .whitespaces), token: token.trimmingCharacters(in: .whitespaces))
+            try await librarian.saveListenBrainz(username: sent.username, token: sent.token)
+            accepted = sent
             token = ""
             settings = try await librarian.listenBrainzSettings()
             let test = try await librarian.testListenBrainz()
             note = test.ok ? "Connected as \(settings?.username ?? username)." : "Saved, but \(test.message.lowercasedFirst)"
             if test.ok { await afterConnect() }
         } catch { note = Self.message(error) }
+        return accepted
     }
 
     static func message(_ error: Error) -> String { (error as? LocalizedError)?.errorDescription ?? "the server did not answer." }

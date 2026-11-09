@@ -9,6 +9,7 @@ struct CupertinoSettings: View {
     @State private var name = ""
     @State private var librarianURL = ""
     @State private var navidromeURL = ""
+    @State private var lbUser = ""
     @State private var naviUser = ""
     @State private var naviPass = ""
     @State private var libUser = ""
@@ -201,7 +202,7 @@ struct CupertinoSettings: View {
                         .accessibilityHidden(true)
                     VStack(alignment: .leading, spacing: 1) {
                         Text(p.name).fontWeight(.semibold)
-                        Text("\(p.network.displayName) · \(p.librarianURL.absoluteString) · \(p.navidromeURL.absoluteString)")
+                        Text("\(p.network.displayName) · \(p.librarianURL.absoluteString) · \(p.navidromeURL.absoluteString)\(p.listenBrainzUsername.isEmpty ? "" : " · ListenBrainz \(p.listenBrainzUsername)")")
                             .font(.system(size: 11)).foregroundStyle(CU.muted).lineLimit(1)
                     }
                     Spacer()
@@ -221,12 +222,13 @@ struct CupertinoSettings: View {
                 TextField("Name (Home)", text: $name)
                 TextField("Librarian address", text: $librarianURL)
                 TextField("Navidrome address", text: $navidromeURL)
+                TextField("ListenBrainz username (optional)", text: $lbUser)
             }
             .textFieldStyle(.roundedBorder).autocorrectionDisabled()
             Button("Add profile") {
                 run {
-                    try s.addProfile(name: name, librarianURL: librarianURL, navidromeURL: navidromeURL)
-                    name = ""; librarianURL = ""; navidromeURL = ""
+                    try s.addProfile(name: name, librarianURL: librarianURL, navidromeURL: navidromeURL, listenBrainzUsername: lbUser)
+                    name = ""; librarianURL = ""; navidromeURL = ""; lbUser = ""
                 }
             }
             .buttonStyle(CapsuleButtonStyle(primary: true))
@@ -249,7 +251,7 @@ struct CupertinoSettings: View {
             }
             .textFieldStyle(.roundedBorder).autocorrectionDisabled()
             if let note = lb.note { Text(note).font(.system(size: 12)).foregroundStyle(CU.accent) }
-            Text("The server reads your listens from ListenBrainz to describe your taste. The username is enough for public listens; the token is only needed for private profiles and is never shown again.")
+            Text("The server reads your listens from ListenBrainz to describe your taste. The username is enough for public listens; the token is only for private profiles. Both are kept in the macOS Keychain and sent to the server at every startup; the token is never shown again.")
                 .font(.system(size: 11)).foregroundStyle(CU.muted)
         }
         .task { await lb.load(librarian: state.session?.librarian) }

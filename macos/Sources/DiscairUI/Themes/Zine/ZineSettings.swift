@@ -8,6 +8,7 @@ struct ZineSettings: View {
     @State private var name = ""
     @State private var librarianURL = ""
     @State private var navidromeURL = ""
+    @State private var lbUser = ""
     @State private var naviUser = ""
     @State private var naviPass = ""
     @State private var libUser = ""
@@ -195,7 +196,7 @@ struct ZineSettings: View {
                             .buttonStyle(ZineButtonStyle(small: true))
                         Button("Remove") { run { try s.removeProfile(id: p.id) } }.buttonStyle(ZineButtonStyle(small: true))
                     }
-                    Mono("\(p.network.rawValue) · \(p.librarianURL.absoluteString) · \(p.navidromeURL.absoluteString)", size: 10).lineLimit(1)
+                    Mono("\(p.network.rawValue) · \(p.librarianURL.absoluteString) · \(p.navidromeURL.absoluteString)\(p.listenBrainzUsername.isEmpty ? "" : " · ListenBrainz \(p.listenBrainzUsername)")", size: 10).lineLimit(1)
                 }
                 .padding(.vertical, 5).overlay(alignment: .bottom) { DottedLine() }
             }
@@ -207,10 +208,11 @@ struct ZineSettings: View {
             field("Name (Home)", $name)
             field("Librarian address", $librarianURL)
             field("Navidrome address", $navidromeURL)
+            field("ListenBrainz username (optional)", $lbUser)
             Button("Add profile") {
                 run {
-                    try s.addProfile(name: name, librarianURL: librarianURL, navidromeURL: navidromeURL)
-                    name = ""; librarianURL = ""; navidromeURL = ""
+                    try s.addProfile(name: name, librarianURL: librarianURL, navidromeURL: navidromeURL, listenBrainzUsername: lbUser)
+                    name = ""; librarianURL = ""; navidromeURL = ""; lbUser = ""
                 }
             }
             .buttonStyle(ZineButtonStyle())
@@ -231,7 +233,7 @@ struct ZineSettings: View {
             }
             .textFieldStyle(.roundedBorder).autocorrectionDisabled()
             if let note = lb.note { Mono(note, bold: true).foregroundStyle(Z.red) }
-            Mono("The server reads your listens from ListenBrainz to describe your taste. The username is enough for public listens; the token is only needed for private profiles and is never shown again.")
+            Mono("The server reads your listens from ListenBrainz to describe your taste. The username is enough for public listens; the token is only for private profiles. Both are kept in the macOS Keychain and sent to the server at every startup; the token is never shown again.")
         }
         .task { await lb.load(librarian: state.session?.librarian) }
     }

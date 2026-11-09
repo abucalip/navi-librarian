@@ -71,3 +71,24 @@ import Foundation
         #expect(!text.contains("password") && !text.contains("token"))
     }
 }
+
+@Suite("Profile ListenBrainz username") struct ProfileListenBrainzTests {
+    @Test func storesAndRoundTripsTheUsername() throws {
+        let p = try Profile(name: "Home", librarianURL: "http://192.168.1.5:8000", navidromeURL: "http://192.168.1.5:4533", listenBrainzUsername: " abc ")
+        #expect(p.listenBrainzUsername == "abc")
+        let back = try JSONDecoder().decode(Profile.self, from: JSONEncoder().encode(p))
+        #expect(back.listenBrainzUsername == "abc")
+    }
+    @Test func olderStoredProfilesHaveNone() throws {
+        let p = try Profile(name: "Home", librarianURL: "http://192.168.1.5:8000", navidromeURL: "http://192.168.1.5:4533")
+        var o = try JSONSerialization.jsonObject(with: JSONEncoder().encode(p)) as! [String: Any]
+        o.removeValue(forKey: "listenBrainzUsername")
+        let back = try JSONDecoder().decode(Profile.self, from: JSONSerialization.data(withJSONObject: o))
+        #expect(back.listenBrainzUsername == "")
+    }
+    @Test func rejectsAnInvalidUsername() {
+        #expect(throws: ProfileError.invalidListenBrainzUsername) {
+            _ = try Profile(name: "Home", librarianURL: "http://192.168.1.5:8000", navidromeURL: "http://192.168.1.5:4533", listenBrainzUsername: "a b")
+        }
+    }
+}
