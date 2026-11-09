@@ -231,7 +231,7 @@ struct ZineSettings: View {
             }
             .textFieldStyle(.roundedBorder).autocorrectionDisabled()
             if let note = lb.note { Mono(note, bold: true).foregroundStyle(Z.red) }
-            Mono("The server reads your listens from ListenBrainz to describe your taste. The username is enough for public listens; the token is only needed for private profiles and is never shown again.")
+            Mono("The server reads your listens from ListenBrainz to describe your taste. The username is enough for public listens; the token is only for private profiles. Both are kept in the macOS Keychain and sent to the server at every startup; the token is never shown again.")
         }
         .task { await lb.load(librarian: state.session?.librarian) }
     }

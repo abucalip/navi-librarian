@@ -23,6 +23,8 @@ public final class SessionModel {
     public private(set) var hasLibrarianLogin = false
     public private(set) var navidromeUsername: String?
     public private(set) var librarianUsername: String?
+    /// The ListenBrainz account saved in the Keychain (sent to the server at startup); nil when none.
+    public private(set) var listenBrainzUsername: String?
     /// The Navidrome and Librarian clients of the active profile, set on a successful connect (used by the data layer).
     public private(set) var navidrome: NavidromeClient?
     public private(set) var librarian: LibrarianClient?
@@ -89,7 +91,8 @@ public final class SessionModel {
 
     public func saveLogin(_ kind: SecretKind, username: String, password: String) throws {
         let user = username.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !user.isEmpty, !password.isEmpty else { throw SettingsError.emptyLogin }
+        // A ListenBrainz login is a username with an optional token; the others need a password.
+        guard !user.isEmpty, !password.isEmpty || kind == .listenbrainz else { throw SettingsError.emptyLogin }
         try secrets.save(Credential(username: user, password: password), for: kind)
         refreshLogins()
     }
@@ -108,6 +111,8 @@ public final class SessionModel {
         let lib = (try? secrets.credential(for: .librarian)) ?? nil
         hasNavidromeLogin = nav != nil; navidromeUsername = nav?.username
         hasLibrarianLogin = lib != nil; librarianUsername = lib?.username
+        let lb = (try? secrets.credential(for: .listenbrainz)) ?? nil
+        listenBrainzUsername = lb?.username
     }
 
     // MARK: Connection
@@ -142,7 +147,7 @@ public final class SessionModel {
             navidrome = client
             if let lib = try secrets.credential(for: .librarian) {
                 let l = try LibrarianClient(baseURL: selection.profile.librarianURL, credential: lib, tailscaleHint: hint)
-                do { try await l.login(); librarian = l }
+                do { try await l.login(); librarian = l; await syncListenBrainz(l) }
                 catch let e as DiscairError { librarianNote = "Librarian: \(e.summary)" }
             } else {
                 librarianNote = "No Librarian login is saved, so recommendations and Get are off."
@@ -156,6 +161,16 @@ public final class SessionModel {
         } catch {
             status = .failed(ErrorMapping.map(error))
         }
+    }
+
+    /// The saved ListenBrainz login is pushed to the server at startup when the server holds a different username, or has no
+    /// token while one is saved here. Failures are not fatal: the Settings card shows what the server holds.
+    func syncListenBrainz(_ l: LibrarianClient) async {
+        guard let lb = (try? secrets.credential(for: .listenbrainz)) ?? nil, let server = try? await l.listenBrainzSettings() else { return }
+        let token = lb.withPassword { $0 }
+        guard server.username != lb.username || (!token.isEmpty && !server.tokenConfigured) else { return }
+        do { try await l.saveListenBrainz(username: lb.username, token: token) }
+        catch { librarianNote = "ListenBrainz: could not send the saved account to the server." }
     }
 
     // MARK: Presentation

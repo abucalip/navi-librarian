@@ -249,7 +249,7 @@ struct CupertinoSettings: View {
             }
             .textFieldStyle(.roundedBorder).autocorrectionDisabled()
             if let note = lb.note { Text(note).font(.system(size: 12)).foregroundStyle(CU.accent) }
-            Text("The server reads your listens from ListenBrainz to describe your taste. The username is enough for public listens; the token is only needed for private profiles and is never shown again.")
+            Text("The server reads your listens from ListenBrainz to describe your taste. The username is enough for public listens; the token is only for private profiles. Both are kept in the macOS Keychain and sent to the server at every startup; the token is never shown again.")
                 .font(.system(size: 11)).foregroundStyle(CU.muted)
         }
         .task { await lb.load(librarian: state.session?.librarian) }

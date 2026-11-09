@@ -339,9 +339,11 @@ public final class AppState {
     /// Saves the ListenBrainz account on the server, then reloads taste so "connect ListenBrainz" clears without a relaunch.
     public func connectListenBrainz() async {
         let librarian = session?.librarian
-        await listenBrainz.connect(librarian: librarian) { [taste] in
+        let accepted = await listenBrainz.connect(librarian: librarian) { [taste] in
             await taste.refreshNow(librarian: librarian)
         }
+        // Kept with the other logins so every launch sends it to the server again.
+        if let accepted { try? session?.saveLogin(.listenbrainz, username: accepted.username, password: accepted.token) }
     }
 
     /// Starts the connection explorer from the artist on screen (the page itself keeps the centre once the owner re-centres).

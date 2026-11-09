@@ -350,6 +350,8 @@ public struct LibrarianClient: Sendable {
             request.httpBody = body
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         }
+        // A taste refresh reads the whole listening history and can take about a minute; the 30 s default cut it off.
+        if parts[0].hasSuffix("taste/refresh") || parts[0].hasSuffix("settings/listenbrainz/test") { request.timeoutInterval = 150 }
         do { return try await transport.send(request) }
         catch { throw ErrorMapping.map(error, tailscaleHint: tailscaleHint()) }
     }

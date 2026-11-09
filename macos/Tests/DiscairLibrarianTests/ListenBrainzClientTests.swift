@@ -37,3 +37,12 @@ import DiscairCore
         #expect(t.sent[0].httpMethod == "POST" && t.sent[0].url!.path == "/api/settings/listenbrainz/test")
     }
 }
+
+@Suite("Long taste calls") struct LongCallTests {
+    @Test func refreshAllowsMoreThanTheDefaultTimeout() async throws {
+        let t = MockTransport { _, _ in (200, Data(#"{"state":"unchanged"}"#.utf8)) }
+        let c = try LibrarianClient(baseURL: URL(string: "https://lib.example.ts.net")!, credential: Credential(username: "o", password: "p"), transport: t)
+        _ = try? await c.refreshTaste()
+        #expect(t.sent[0].timeoutInterval > 60)
+    }
+}
