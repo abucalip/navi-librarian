@@ -165,8 +165,8 @@ public final class SessionModel {
         switch status {
         case .notConfigured: "No profile set up"
         case .connecting: "Connecting…"
-        case .connected(let p, let manual):
-            "\(p.name) · \(p.isUnencrypted ? "http (unencrypted)" : "https")\(manual ? " · chosen by hand" : "")"
+        case .connected(let p, _):
+            "\(p.name) · \(p.isUnencrypted ? "http (unencrypted)" : "https")"
         case .failed(let e): "Not connected · \(e.summary)"
         }
     }

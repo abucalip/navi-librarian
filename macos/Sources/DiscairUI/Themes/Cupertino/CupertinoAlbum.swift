@@ -78,6 +78,7 @@ struct CupertinoAlbum: View {
 
     var body: some View {
         let a = state.selectedAlbum
+        ScrollViewReader { proxy in
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
                 trackTable.padding(.top, 18)
@@ -106,6 +107,16 @@ struct CupertinoAlbum: View {
         }
         .scrollEdgeEffectStyle(.hard, for: .top)
         .task(id: a.id) { await state.loadSelectedAlbum() }
+        // A song opened from a Library search is marked and scrolled into view once the tracks arrive.
+        .onChange(of: state.library.tracks) { _, tracks in
+            if let t = tracks.first(where: { isHighlighted($0) }) { withAnimation { proxy.scrollTo(t.id, anchor: .center) } }
+        }
+        }
+    }
+
+    private func isHighlighted(_ t: TrackItem) -> Bool {
+        guard let h = state.highlightedSong else { return false }
+        return LibrarySearch.fold(t.title) == LibrarySearch.fold(h)
     }
 
     private var trackTable: some View {
@@ -113,6 +124,9 @@ struct CupertinoAlbum: View {
             row(["#", "Song", "Time", "Quality", ""], header: true, shaded: false, playing: false, missing: false)
             ForEach(Array(state.library.tracks.enumerated()), id: \.element.id) { i, t in
                 row(nil, track: t, index: i, shaded: i % 2 == 0)
+                    .overlay { if isHighlighted(t) { RoundedRectangle(cornerRadius: 7, style: .continuous).stroke(CU.accent, lineWidth: 2) } }
+                    .background { if isHighlighted(t) { RoundedRectangle(cornerRadius: 7, style: .continuous).fill(CU.accent.opacity(0.14)) } }
+                    .id(t.id)
                     .contentShape(Rectangle())
                     .onTapGesture(count: 2) { if t.owned { state.playAlbum(state.selectedAlbum, startAt: i) } }
                     .help(t.owned ? "Double-click to play" : "")

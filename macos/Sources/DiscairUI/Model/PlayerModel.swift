@@ -296,6 +296,15 @@ public final class PlayerModel {
         startCurrent()
     }
 
+    /// Plays a song that has already played (it stays in the queue, above the current song).
+    public func jump(toPlayed i: Int) {
+        guard queue.played.indices.contains(i) else { return }
+        leaveByOwner()
+        pushHistory()
+        queue.jump(played: i)
+        startCurrent()
+    }
+
     /// Empties Up Next; the current song keeps playing.
     public func clearUpNext() { queue.clearUpNext(); refreshPreload(); persist() }
 

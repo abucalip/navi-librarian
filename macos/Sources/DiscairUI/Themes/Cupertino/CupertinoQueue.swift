@@ -7,27 +7,20 @@ struct CupertinoAlbumsGrid: View {
     let state: AppState
     /// The Recently Added tab: the newest albums instead of the alphabetical grid.
     var recent = false
+    /// Text from the Library search field; only matching albums show.
+    var query = ""
+    /// False inside the Library page, which has its own heading.
+    var showHeader = true
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
-                Text(recent ? "Recently Added" : "Albums").font(CU.title(34)).padding(.top, 4).padding(.bottom, 14)
+                if showHeader { Text(recent ? "Recently Added" : "Albums").font(CU.title(34)).padding(.top, 4).padding(.bottom, 14) }
                 if state.library.phase == .loading { Text("Loading your library…").foregroundStyle(CU.muted).padding(.bottom, 8) }
                 if case .failed(let m) = state.library.phase { Text(m).foregroundStyle(CU.accent).padding(.bottom, 8) }
+                let shown = LibrarySearch.albums(state.visible(recent ? state.library.recent : state.library.albums), query: query)
+                if shown.isEmpty, !query.isEmpty { Text("No albums match.").foregroundStyle(CU.muted) }
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 128, maximum: 128), spacing: 18, alignment: .top)], alignment: .leading, spacing: 18) {
-                    ForEach(state.visible(recent ? state.library.recent : state.library.albums)) { a in
-                        Button { state.open(album: a) } label: {
-                        VStack(alignment: .leading, spacing: 0) {
-                            CoverView(album: a).frame(width: 128).clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-                                .shadow(color: .black.opacity(0.2), radius: 7, y: 4).padding(.bottom, 9)
-                            Text(a.title).fontWeight(.semibold).lineLimit(1)
-                            Text(a.artist).foregroundStyle(CU.muted).lineLimit(1)
-                        }
-                        .font(.system(size: 13)).frame(width: 128, alignment: .leading)
-                        .contentShape(Rectangle())
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel("\(a.title), \(a.artist)")
-                    }
+                    ForEach(shown) { a in AlbumTile(state: state, album: a) }
                 }
             }
             .padding(.horizontal, 28).padding(.bottom, 28)
@@ -39,11 +32,10 @@ struct CupertinoAlbumsGrid: View {
 struct CupertinoQueueInspector: View {
     let state: AppState
     static let width: CGFloat = 380
-    private enum Tab { case upNext, history, saved }
-    @State private var tab = Tab.upNext
+    private enum Tab { case queue, saved }
+    @State private var tab = Tab.queue
     @State private var saving = false
     @State private var saveName = ""
-    private var showHistory: Bool { tab == .history }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -75,16 +67,18 @@ struct CupertinoQueueInspector: View {
             .overlay(alignment: .bottom) { Rectangle().fill(CU.ink.opacity(0.08)).frame(height: 1) }
             .padding(.bottom, 8)
 
+            ScrollViewReader { proxy in
             ScrollView {
                 VStack(spacing: 0) {
                     if tab == .saved { savedRows }
                     else if live { liveRows }
-                    else if showHistory {
-                        Text("Earlier today: Glory Box · Roygbiv · Cloudbusting").foregroundStyle(CU.muted).padding(8)
-                    } else {
+                    else {
                         ForEach(Array(Fixtures.queue.enumerated()), id: \.offset) { i, q in row(i, q) }
                     }
                 }
+            }
+            .onChange(of: state.player.current?.id) { _, id in if id != nil { withAnimation { proxy.scrollTo("current-song", anchor: .center) } } }
+            .onAppear { proxy.scrollTo("current-song", anchor: .center) }
             }
             Spacer(minLength: 0)
             HStack(spacing: 8) {
@@ -107,7 +101,7 @@ struct CupertinoQueueInspector: View {
         .glassEffect(CU.glass, in: Rectangle())
         .overlay(alignment: .leading) { Rectangle().fill(CU.ink.opacity(0.08)).frame(width: 1) }
         .accessibilityElement(children: .contain)
-        .accessibilityLabel("Up Next")
+        .accessibilityLabel("Queue")
     }
 
     private func commitSave() { state.saveQueue(named: saveName); saving = false; tab = .saved }
@@ -142,33 +136,37 @@ struct CupertinoQueueInspector: View {
         let p = state.player
         let up = p.queue.upNext
         let minutes = Int(up.reduce(0) { $0 + $1.duration } / 60)
-        return up.isEmpty ? "Nothing queued" : "\(up.count) up next · \(minutes) min"
+        return up.isEmpty ? "Nothing queued" : "\(up.count) to come · \(minutes) min"
     }
 
     @ViewBuilder private var liveRows: some View {
         let p = state.player
-        if showHistory {
-            if p.history.isEmpty { Text("Nothing played yet this session.").foregroundStyle(CU.muted).padding(8) }
-            ForEach(p.history) { h in songRow(h, time: PlayerModel.clock(h.duration), playing: false) }
-        } else {
-            if let c = p.current { songRow(c, time: PlayerModel.clock(c.duration), playing: true) }
-            else { Text("Nothing playing. Play a song and what follows shows here.").foregroundStyle(CU.muted).padding(8) }
-            let up = p.queue.upNext
-            ForEach(Array(up.enumerated()), id: \.element.id) { i, item in
-                ReorderRow(index: i, count: up.count, move: { p.moveUpNext(from: $0, to: $1) }) { grab in
-                songRow(item, time: PlayerModel.clock(item.duration), playing: false, grab: grab) {
-                    Menu {
-                        Button("Play now") { p.jump(toUpNext: i) }
-                        Button("Move up") { p.moveUpNext(from: i, to: i - 1) }.disabled(i == 0)
-                        Button("Move down") { p.moveUpNext(from: i, to: i + 1) }.disabled(i == up.count - 1)
-                        if state.radio.sonicAvailable { Button("Sonic path from playing song") { state.showSonicPath(to: item) } }
-                        Divider()
-                        Button("Remove from queue", role: .destructive) { p.removeUpNext(at: i) }
-                    } label: { Image(systemName: "ellipsis.circle") }
-                    .menuStyle(.borderlessButton).menuIndicator(.hidden).fixedSize()
-                    .accessibilityLabel("Actions for \(item.title)")
-                }
-                }
+        // Played songs stay in the list above the current one, dimmed; choosing one plays it again.
+        let played = p.queue.played
+        ForEach(Array(played.enumerated()), id: \.element.id) { i, item in
+            Button { p.jump(toPlayed: i) } label: {
+                songRow(item, time: PlayerModel.clock(item.duration), playing: false).opacity(0.5)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Played: \(item.title), \(item.artist). Play again")
+        }
+        if let c = p.current { songRow(c, time: PlayerModel.clock(c.duration), playing: true).id("current-song") }
+        else { Text("Nothing playing. Play a song and what follows shows here.").foregroundStyle(CU.muted).padding(8) }
+        let up = p.queue.upNext
+        ForEach(Array(up.enumerated()), id: \.element.id) { i, item in
+            ReorderRow(index: i, count: up.count, move: { p.moveUpNext(from: $0, to: $1) }) { grab in
+            songRow(item, time: PlayerModel.clock(item.duration), playing: false, grab: grab) {
+                Menu {
+                    Button("Play now") { p.jump(toUpNext: i) }
+                    Button("Move up") { p.moveUpNext(from: i, to: i - 1) }.disabled(i == 0)
+                    Button("Move down") { p.moveUpNext(from: i, to: i + 1) }.disabled(i == up.count - 1)
+                    if state.radio.sonicAvailable { Button("Sonic path from playing song") { state.showSonicPath(to: item) } }
+                    Divider()
+                    Button("Remove from queue", role: .destructive) { p.removeUpNext(at: i) }
+                } label: { Image(systemName: "ellipsis.circle") }
+                .menuStyle(.borderlessButton).menuIndicator(.hidden).fixedSize()
+                .accessibilityLabel("Actions for \(item.title)")
+            }
             }
         }
     }
@@ -199,8 +197,7 @@ struct CupertinoQueueInspector: View {
 
     private var segmented: some View {
         HStack(spacing: 0) {
-            seg("Up Next", on: tab == .upNext) { tab = .upNext }
-            seg("History", on: tab == .history) { tab = .history }
+            seg("Queue", on: tab == .queue) { tab = .queue }
             seg("Saved", on: tab == .saved) { tab = .saved }
         }
         .padding(3).background(Color(red: 0.47, green: 0.47, blue: 0.5).opacity(0.14), in: Capsule())

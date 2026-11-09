@@ -108,6 +108,13 @@ public final class AppState {
     public var selectedLetter = "T"
     /// Cupertino's Up Next inspector. It sits over whatever screen is showing, so opening it never changes the screen.
     public var queueOpen = false
+    /// The Library page's tab, and the text in its search field (it stays when the tab changes).
+    public var libraryTab: LibraryTab = .overview
+    public var librarySearch = ""
+    /// The song to mark on the album page after a Library search result opened it (matched by title).
+    public var highlightedSong: String?
+    /// The Discover group of the Cupertino sidebar is folded or open.
+    public var discoverOpen = true
 
     public init(themeID: ThemeID = .cupertino, screen: Screen = .home, actions: DiscairActions? = nil, session: SessionModel? = nil, output: AudioOutput? = nil) {
         // Previews and screenshot tests get their own throwaway settings, so they never read or write the real ones.
@@ -358,7 +365,17 @@ public final class AppState {
     /// Where the Back button on an artist page goes: the screen the artist was opened from (Artists by default).
     public private(set) var artistBack: Screen = .artists
 
+    /// The 20 songs played most recently, from what Navidrome keeps per song.
+    public var recentlyPlayed: [SongRow] { LibrarySearch.recentlyPlayed(library.songs) }
+
+    /// Opens an album and marks one of its songs (a Library search result for a song).
+    public func open(album: AlbumItem, highlighting song: String) {
+        open(album: album)
+        highlightedSong = song
+    }
+
     public func open(album: AlbumItem) {
+        highlightedSong = nil
         if screen != .album && screen != .nowPlaying { albumBack = Self.listScreen(screen) }
         selectedAlbum = album; screen = .album
     }
@@ -399,8 +416,8 @@ public final class AppState {
         case .home: "Home"
         case .album: "Album"
         case .nowPlaying: "Now Playing"
-        case .queue: "Up Next"
-        case .library: "Songs"
+        case .queue: "Queue"
+        case .library: "Library"
         case .artist: "Artist"
         case .settings: "Settings"
         case .albums: "Albums"
