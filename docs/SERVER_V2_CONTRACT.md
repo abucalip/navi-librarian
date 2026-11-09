@@ -104,6 +104,14 @@ Served by `app/api/insights.py`; body builder `intelligence/api/taste.py`; headl
 - `headline`: `null` when no window is sound enough to say anything (the client shows its progress state), else `{text, kind, window, subjects: [{dimension, value, direction}]}`. `kind` is `pair` ("More X, less Y lately."), `up` ("Leaning into X lately."), `down` ("Drifting from X lately.") or `steady` ("Your taste has held steady.", no subjects). `window` is `recent`, or `mid` ("this past year") when recent is low-sample. The client draws `text` as given and never composes prose. Wording is a starting value, not measured.
 - Stored as one `taste_profile` row in `insights`; an unchanged recompute writes nothing and keeps `data_version`. Rows saved before `headline` existed are rewritten once by the first save after the change. The profiles do not change recommendation weights.
 
+## POST /api/insights/taste/refresh and GET /api/insights/taste/refresh/status (Phase 6 presentation slice 3)
+
+Served by `app/api/taste_refresh.py`; logic in `intelligence/taste/refresh.py` (D-016). Clients call the refresh on launch; there is no scheduler or startup hook and no provider call.
+
+- Refresh answer: `state` (`refreshed`, `unchanged`, `too_soon`, `failed`, `no_listens_source`), `run_id`, `changed`, `retry_after` (seconds, `too_soon` only), `progress` (`changed`, `listens`, `unusable`, `unmatched`) and `error`. Minimum interval one hour after the last success; failed attempts do not start it. An overlapping call is `409`.
+- Status answer: `status` (newest run of job `taste_refresh`), `last_good`, `running`, `min_interval`, `retry_after`.
+- Windows end at the start of the current UTC day, so an unchanged replay writes nothing and keeps `data_version`. Profiles change no recommendation weight.
+
 ## POST /api/insights/popularity/fill and GET /api/insights/popularity/status (Phase 6 item 2, slice 18)
 
 Served by `app/api/popularity.py` (D-016: nothing added to `navidrome_server.py`); job logic in `intelligence/taste/popularity_job.py`. The owner triggers the fill by hand only: there is no scheduler and no startup hook. No fixture yet.
