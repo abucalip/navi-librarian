@@ -1,6 +1,6 @@
 # Album paths proposal
 
-**Status:** proposal, not approved for build. Nothing here is implemented, tested, merged or published.
+**Status:** owner decisions recorded 2026-11-09 (see "Decisions recorded"). Approved for build in slices; nothing is built, merged or published yet beyond the probe script.
 **Date:** 2026-11-09
 **Context:** The Paths button on an album page. Contract context: [Server V2 contract](SERVER_V2_CONTRACT.md) (`GET /api/knowledge/paths`), [Server V2 remaining work](ServerV2.md), builders in `intelligence/graph/paths.py`.
 
@@ -115,7 +115,7 @@ A path that fails its thresholds is cut or gets a new slice (see the contingency
 ## Contingency: new import slice
 
 If a path lacks data, build a slice for it instead of loosening the evidence rules. Likely candidates:
-- **Same Room:** recording place and date links (listed in `not_loaded`).
+- **Same Room:** recording place and date links (listed in `not_loaded`). **Approved 2026-11-09**; this is the one new slice.
 - **Studio Crew:** production-credit relations at recording scope, if the current slice keeps only album-scope ones.
 - **Covers and Sources:** work-to-work relations, if not currently imported.
 
@@ -123,9 +123,9 @@ A new slice follows the Phase 7 release-links precedent: a bounded, resumable im
 
 ## API and client shape (proposed, for review)
 
-- Extend `GET /api/knowledge/paths` to accept `type=release` or `release_group` with the new `kind` values, or add `GET /api/knowledge/album-paths`. Prefer extending, so clients reuse the existing decoder; owner to decide.
+- Extend `GET /api/knowledge/paths` to accept `type=release` or `release_group` with the new `kind` values, so clients reuse the existing decoder. Decided 2026-11-09; no separate album route.
 - `GET /api/knowledge/paths/warm` is per owned artist today; album paths are cheaper to build on demand and probably need no warm-up. Confirm after the probe's timings.
-- Clients hide the Paths button when the album has no kind with stops, and show Neighbours by Ear only when `sonic_available`.
+- Clients hide the Paths button when the album has no kind with stops, and show Neighbours by Ear, in its own tab, only when `sonic_available`.
 - Album paths must not list the artist's own paths again; the button lists only the album kinds.
 
 ## Probe results (2026-11-09)
@@ -164,7 +164,37 @@ Sample: 40 of 748 owned albums with at least three tracks that have Navidrome ID
 - Per-artist cap of 2 per seed is applied, matching the app's current setting.
 - The cap stays at 8 seeds unless the owner makes a new decision. These results are recorded for that decision, not used to change the cap.
 
-## Open decisions for the owner
+## Decisions recorded (owner, 2026-11-09)
+
+Made after the probe results above; thresholds were fixed before the probe and are not changed.
+
+**Per path**
+
+| Path | Decision |
+|---|---|
+| 1. Studio Crew (`album_crew`) | Keep. |
+| 2. Guest List (`album_guests`) | Keep. |
+| 3. Same Room (`album_room`) | Keep, and add the recording-places import slice (see the contingency section). |
+| 4. Covers and Sources (`album_works`) | Keep. No work-relations slice for now; margins are narrow (median 3, coverage 39.4% after dropping overlap), so revisit only if the built path feels thin. |
+| 6. Same Year, Same Scene (`album_moment`) | Keep. |
+| 8. Neighbours by Ear (`album_sonic_neighbours`) | Keep at 8 seeds per album. The wider-sample check noted below is a build-time requirement, not a change to the cap. |
+| 9. Listen-through Gaps (`album_gaps`) | Keep, with the constraint below recorded. |
+
+**Open decisions resolved**
+
+1. **Route:** extend `GET /api/knowledge/paths` (`type=release` or `release_group` with the new `kind` values). No separate album route.
+2. Thresholds: already decided (Balanced).
+3. **Play-history filter (path 9):** acceptable under the taste rule with this constraint: play history only selects and labels stops that already have a credit-grade reason; it never adds a stop and never reorders by affinity. Thin or unavailable history returns the unfiltered stops marked as such, never an empty "unplayed" claim.
+4. **Overlap with artist paths:** a stop that the artist's five kinds already reach is dropped, even when its reason differs. The "after dropping overlapping stops" figures above are the ones that apply.
+5. **Neighbours by Ear placement:** its own tab, separate from the credit-based paths, in the same way Sideman and Composition have separate tabs on artist paths. It is shown only when `sonic_available` is true.
+
+**Carried into the build**
+- Neighbours by Ear: the probe sample was 40 of 748 albums and the counts are lower bounds (unmapped tracks), so the build slice re-measures coverage on a wider sample before release. The 60% gate and the 8-seed cap stay as decided.
+- Same Year, Same Scene and Covers and Sources pass with thin margins; their builders get fixtures that pin the strict rules.
+
+## Open decisions for the owner (historical)
+
+All resolved above on 2026-11-09. Kept for the record.
 
 1. Extend the existing paths route or add a separate album route.
 2. ~~The "enough data" thresholds for the probe.~~ Decided 2026-11-09 (Balanced; see Probe plan).
@@ -176,10 +206,10 @@ Sample: 40 of 748 owned albums with at least three tracks that have Navidrome ID
 
 Status as of 2026-11-09 (merged work is on `main`; PR #921 merged):
 
-1. ~~Owner reviews this proposal and answers the open decisions.~~ Not done: the open decisions below are still pending the owner.
+1. ~~Owner reviews this proposal and answers the open decisions.~~ Done 2026-11-09 (see "Decisions recorded").
 2. ~~Write the probe (`scripts/album_path_coverage.py`, filtered tests) and run it on a copy of the real store.~~ Done: script and filtered tests merged in PR #921; run on a copy of the store. Neighbours by Ear was measured separately (40-album sample, live sonic routes).
-3. ~~Record results in this document~~ Done (see "Probe results"). Keep, cut or add a slice per path: pending the owner. The exact overlap measurement is done (see "Probe results"): all four paths pass the overlap gate.
-4. Contract, builders, fixtures, then clients, each as its own slice with filtered tests and required CI. Not started.
+3. ~~Record results in this document~~ Done (see "Probe results"). Keep, cut or add a slice per path: decided 2026-11-09 (see "Decisions recorded"). The exact overlap measurement is done (see "Probe results"): all four paths pass the overlap gate.
+4. Contract, builders, fixtures, then clients, each as its own slice with filtered tests and required CI. Not started. Suggested order: recording-places import slice (unblocks Same Room); contract section; builders for paths 1, 2, 4, 6, then 3 once its data lands; Neighbours by Ear (own tab); Listen-through Gaps; fixtures and decoders; client screens.
 
 ## Work split by model and effort
 
@@ -193,7 +223,7 @@ For usage efficiency, give Haiku the mechanical, self-checking steps: a spelled-
 | ~~Probe for Same Room and Covers and Sources (place and work link coverage)~~ **Done** | Haiku | low | Counting queries against known tables. |
 | ~~Probe for Neighbours by Ear (analysed tracks, call cost)~~ **Done** (40-album sample) | Haiku | low | Calls the live sonic routes and counts. |
 | ~~Fill the results table in this document and apply the thresholds~~ **Done** | Haiku | low | Compare numbers to the fixed table; no judgment, and a non-passing path is flagged, not argued. |
-| Decide keep, cut or add a slice per path | Owner / main model | high | Judgment against thresholds, with a decision recorded. |
+| ~~Decide keep, cut or add a slice per path~~ **Done** 2026-11-09 | Owner / main model | high | Judgment against thresholds, with a decision recorded. |
 | Set the Neighbours by Ear call cap | Owner | — | Decided: 8 seeds per album (2026-11-09). |
 | New import slice (recording places, production credits, work relations) | Sonnet | high | Schema bump, resumable import, cache invalidation; follows the release-links precedent. |
 | Path builders for Studio Crew, Guest List, Covers and Sources | Sonnet | high | Evidence rules, hub caps, de-duplication of people across paths; a mistake breaks the credit-grade guarantee. |
