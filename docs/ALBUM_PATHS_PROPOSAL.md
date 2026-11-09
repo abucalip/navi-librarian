@@ -136,3 +136,35 @@ A new slice follows the Phase 7 release-links precedent: a bounded, resumable im
 2. Write the probe (`scripts/album_path_coverage.py`, filtered tests) and run it on a copy of the real store.
 3. Record results in this document; keep, cut or add a slice per path.
 4. Contract, builders, fixtures, then clients, each as its own slice with filtered tests and required CI.
+
+## Work split by model and effort
+
+For usage efficiency, give Haiku the mechanical, self-checking steps: a spelled-out spec, an existing pattern to copy, and a test or diff that proves the result. Keep design, evidence rules and judgment on a stronger model. Effort is relative to the model's default. These are planning estimates, not measurements.
+
+| Step | Model | Effort | Why |
+|---|---|---|---|
+| Copy the real store and run the probe script | Haiku | low | Mechanical; output is numbers. |
+| Write the probe measurements for paths 1, 2, 4 (counts, coverage, stop distribution, timing) | Haiku | low | Queries are fully specified above and copy `path_coverage.py`. |
+| Probe overlap with the artist's five kinds, and the label-only share for path 6 | Sonnet | medium | Needs care to compare stops correctly; a wrong join gives plausible but wrong numbers. |
+| Probe for Same Room and Covers and Sources (place and work link coverage) | Haiku | low | Counting queries against known tables. |
+| Probe for Neighbours by Ear (analysed tracks, call cost) | Haiku | low | Calls the live sonic routes and counts. |
+| Fill the results table in this document and apply the thresholds | Haiku | low | Compare numbers to the fixed table; no judgment, and a non-passing path is flagged, not argued. |
+| Decide keep, cut or add a slice per path | Owner / main model | high | Judgment against thresholds, with a decision recorded. |
+| Set the Neighbours by Ear call cap | Owner | — | Open before the probe. |
+| New import slice (recording places, production credits, work relations) | Sonnet | high | Schema bump, resumable import, cache invalidation; follows the release-links precedent. |
+| Path builders for Studio Crew, Guest List, Covers and Sources | Sonnet | high | Evidence rules, hub caps, de-duplication of people across paths; a mistake breaks the credit-grade guarantee. |
+| Same Year Same Scene builder | Sonnet | medium | Strict-rule logic on top of existing readers. |
+| Neighbours by Ear composition | Sonnet | medium | Groups similar-track results; must never sort or threshold on `similarity`. |
+| Listen-through Gaps filter | Sonnet | high | Must stay within the taste rule; a leak into ranking is a contract violation. |
+| Write the contract section | Sonnet | medium | Needs consistent wording with the existing paths contract. |
+| Record fixtures from a store copy | Haiku | low | Same capture steps as the artist path fixtures; tests diff the result. |
+| Fixture-based filtered server tests | Haiku | low | Copy the artist-path tests; the fixtures define the assertions. |
+| Android and macOS decoders plus filtered tests | Haiku | low | Copy the existing paths decoder and tests; fixtures define the result. |
+| Android and macOS Paths button and screens | Sonnet | medium | UI design choices, shared actions, honest empty states. |
+| Update status docs (`ACTIVE_WORK.md`, `PROJECT_STATUS.md`) after merges | Haiku | low | Templated edits from merged PR facts. |
+
+### Rules for delegating to Haiku
+- Give it the spec, the file to copy and the exact filtered test command. Do not ask it to choose a design.
+- Review its output against the fixtures or the threshold table before anything is merged.
+- Haiku work that touches evidence rules, the taste rule or the contract is out of scope; escalate it to Sonnet.
+- Required CI on the exact PR head applies to every slice, whichever model wrote it.
