@@ -12,7 +12,7 @@ from typing import Any
 
 from .public import public
 from .reader import KnowledgeReader, SLICE_SOURCE
-from ..graph import album_paths, paths
+from ..graph import album_gaps, album_paths, paths
 from ..graph.paths import PATH_KINDS, PathLimits
 
 ALBUM_TYPES = ("release", "release_group")
@@ -41,4 +41,25 @@ def path_page(db: sqlite3.Connection, *, kind: str, mbid: str | None = None, nav
     path = dict(path)
     built = path.pop("built_from", {})
     path.pop("presentation_version", None)  # cache invalidation detail, not part of the public response
+    return public({**path, "sources": {SLICE_SOURCE: {"data_version": built.get(paths.SLICE_RESOURCE)}}})
+
+
+def gaps_page(db: sqlite3.Connection, records, *, mbid: str | None = None, navidrome_id: str | None = None,
+              type: str | None = None, limits: PathLimits = PathLimits()) -> dict[str, Any] | None:
+    """Listen-through Gaps from one release in the public shape; None when the start is unknown.
+
+    ``records`` are the caller's album play records (None when play data could not be read). Not cached:
+    the result depends on play history, which changes without a new store generation.
+    """
+    if type not in ALBUM_TYPES:
+        raise ValueError(f"kind {album_gaps.GAPS_KIND!r} does not start at type {type!r}")
+    start = KnowledgeReader(db).entity(type, mbid=mbid, navidrome_id=navidrome_id)
+    if start is None:
+        return None
+    path = album_gaps.build_gaps_path(db, start["id"], records, limits=limits)
+    if path is None:
+        return None
+    path = dict(path)
+    built = path.pop("built_from", {})
+    path.pop("presentation_version", None)
     return public({**path, "sources": {SLICE_SOURCE: {"data_version": built.get(paths.SLICE_RESOURCE)}}})

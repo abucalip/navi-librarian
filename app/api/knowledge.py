@@ -10,10 +10,12 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 
 from app.api.dependencies import get_librarian
 from app.api.insights import STORE_FILE
+from discovery.library_snapshot import fetch_album_inventory
 from intelligence.graph import Limits
 from intelligence.graph.paths import PATH_KINDS
 from intelligence.knowledge import KnowledgeReader
-from intelligence.knowledge.path_pages import path_page
+from intelligence.insights import album_to_record
+from intelligence.knowledge.path_pages import gaps_page, path_page
 from intelligence.store import open_store
 
 router = APIRouter()
@@ -21,9 +23,7 @@ router = APIRouter()
 MAX_LIMIT = 500
 ALBUM_TYPES = ("release", "release_group")
 PERSON_TYPES = ("artist", "person", "group")
-UNSERVED_ALBUM_KINDS = {
-    "album_gaps": "Listen-through Gaps needs play history and is not served by this route yet.",
-}
+GAPS_KIND = "album_gaps"
 
 
 MAX_DEPTH = 3
@@ -147,6 +147,15 @@ def connections(mbid: str | None = None, navidrome_id: str | None = None, type: 
         direction=direction, limits=limits, cursor=cursor))
 
 
+def _play_records(librarian):
+    """Album play records from Navidrome, or None when they cannot be read (the path then says so)."""
+    try:
+        albums = fetch_album_inventory(librarian.api_call, librarian.items)
+    except Exception:
+        return None
+    return [r for r in (album_to_record(a) for a in albums) if r is not None]
+
+
 @router.get("/api/knowledge/paths")
 def paths(kind: str, mbid: str | None = None, navidrome_id: str | None = None, type: str | None = None,
           librarian=Depends(get_librarian)):
@@ -156,12 +165,14 @@ def paths(kind: str, mbid: str | None = None, navidrome_id: str | None = None, t
         raise HTTPException(status_code=400, detail="give the entity type")
     if type not in PERSON_TYPES + ALBUM_TYPES:
         raise HTTPException(status_code=400, detail=f"type must be one of {', '.join(PERSON_TYPES + ALBUM_TYPES)}")
-    if kind in UNSERVED_ALBUM_KINDS:
-        raise HTTPException(status_code=501, detail=UNSERVED_ALBUM_KINDS[kind])
+    records = _play_records(librarian) if kind == GAPS_KIND else None
     try:
         db = open_store(librarian.DATA_DIR / STORE_FILE)
         try:
-            page = path_page(db, kind=kind, mbid=mbid, navidrome_id=navidrome_id, type=type)
+            if kind == GAPS_KIND:
+                page = gaps_page(db, records, mbid=mbid, navidrome_id=navidrome_id, type=type)
+            else:
+                page = path_page(db, kind=kind, mbid=mbid, navidrome_id=navidrome_id, type=type)
         finally:
             db.close()
     except ValueError as exc:
