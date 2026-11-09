@@ -12,6 +12,7 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from app.api.dependencies import get_librarian
 from intelligence.store import open_store
+from intelligence.taste.library_genres import genres_by_recording
 from intelligence.taste.listenbrainz_listens import listenbrainz_reader
 from intelligence.taste.refresh import DEFAULT_MIN_INTERVAL, refresh_status, refresh_taste
 
@@ -47,7 +48,8 @@ def refresh(librarian=Depends(get_librarian)):
                     "retry_after": 0.0, "progress": {}, "error": None}
         db = _store(librarian)
         try:
-            result = refresh_taste(db, read_listens=read, min_interval=DEFAULT_MIN_INTERVAL)
+            result = refresh_taste(db, read_listens=read, genres_by_recording=genres_by_recording(db),
+                                  min_interval=DEFAULT_MIN_INTERVAL)
         finally:
             db.close()
     except Exception:
