@@ -95,6 +95,8 @@ public final class AppState {
     /// Similar artists and albums from the Librarian, for the album and artist pages.
     public let related = RelatedModel()
     public let insights = InsightsModel()
+    /// "Your taste" cards inside Insights; refreshed once per launch from the connected session.
+    public let taste = TasteModel()
     public let graph = GraphExplorerModel()
     public let atlas = AtlasModel()
     public let timeline = TimelineModel()
@@ -157,7 +159,12 @@ public final class AppState {
         }
         player.onUpNextLow = { [weak self] in if self?.radio.autoplay == true { self?.startRadio() } }
         player.waveformFileURL = { [weak self] item in item.path.flatMap { self?.share.localURL(forServerPath: $0) } }
-        session?.onConnected = { [weak self] in self?.share.startIfNeeded(); await self?.refreshLibrary() }
+        session?.onConnected = { [weak self] in
+            self?.share.startIfNeeded()
+            // The refresh can take about a minute on a long history, so it never holds up the library load.
+            Task { [weak self] in await self?.refreshTaste() }
+            await self?.refreshLibrary()
+        }
         session?.onNavidromeSignOut = { [weak self] in self?.lyrics.clearAll(); self?.library.clearSavedPages(); self?.cache.media.clear(); self?.player.waveformCache.clear() }
         session?.onConnectFailed = { [weak self] e in
             guard let self, session != nil, !self.library.isLive else { return }
@@ -314,6 +321,7 @@ public final class AppState {
     }
 
     public func loadInsights() async { await insights.load(librarian: session?.librarian) }
+    public func refreshTaste() async { await taste.refreshOnLaunch(librarian: session?.librarian) }
 
     /// Starts the connection explorer from the artist on screen (the page itself keeps the centre once the owner re-centres).
     public func loadConnections() async {
