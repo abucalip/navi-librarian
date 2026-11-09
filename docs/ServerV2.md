@@ -16,11 +16,11 @@
 
 ### Remaining slices
 
-5. **macOS taste view:** decode the taste response; refresh on launch; implement the Cupertino taste cards (lately-vs-always, window card with dimension picker, decades); show low-sample and empty states. Add focused tests.
-6. **macOS other Insights themes:** each remaining theme (Zine and the rest) gets its own presentation, delivered as one follow-up PR per theme.
-7. **macOS actions:** smart-playlist rule prefill and library-filter actions.
-8. **Android taste view:** decode the response; refresh on launch; implement the compact card and bottom sheet; add `InsightsTest` coverage.
-9. **Close-out:** verify that profiles do not change recommendation output; complete visual and runtime checks; update the contract, status and log with evidence.
+5. macOS: decode the taste body, call refresh on launch, Cupertino taste cards (lately-vs-always, window card with dimension picker, decades), low-sample and empty states. Filtered tests only.
+6. macOS: the other Insights themes (Zine and the rest) draw their own versions, one follow-up PR per theme.
+7. macOS actions: smart-playlist rule prefill and library filter.
+8. Android: decode, refresh on launch, compact card and bottom sheet, `InsightsTest` cases.
+9. Close-out: confirm profiles change no ranking output, visual and runtime checks, docs and log.
 
 **Order:** 5; then 8 and 7; then 6; then 9.
 
