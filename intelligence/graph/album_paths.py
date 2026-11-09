@@ -36,7 +36,7 @@ ALBUM_PATH_KINDS = ("album_crew", "album_guests", "album_works", "album_moment")
 NOT_BUILT = {
     "album_room": "not built yet",
     "album_sonic_neighbours": "composed from the Sonic routes, not a graph path",
-    "album_gaps": "not built yet",
+    "album_gaps": "built in intelligence.graph.album_gaps; it needs play records",
 }
 CACHE_PREFIX = "path:"
 PRESENTATION_VERSION = 1
