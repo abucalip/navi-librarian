@@ -171,10 +171,12 @@ Sample: 40 of 748 owned albums with at least three tracks that have Navidrome ID
 
 ## Next steps
 
-1. Owner reviews this proposal and answers the open decisions.
-2. Write the probe (`scripts/album_path_coverage.py`, filtered tests) and run it on a copy of the real store.
-3. Record results in this document; keep, cut or add a slice per path.
-4. Contract, builders, fixtures, then clients, each as its own slice with filtered tests and required CI.
+Status as of 2026-11-09 (merged work is on `main`; PR #921 merged):
+
+1. ~~Owner reviews this proposal and answers the open decisions.~~ Not done: the open decisions below are still pending the owner.
+2. ~~Write the probe (`scripts/album_path_coverage.py`, filtered tests) and run it on a copy of the real store.~~ Done: script and filtered tests merged in PR #921; run on a copy of the store. Neighbours by Ear was measured separately (40-album sample, live sonic routes).
+3. ~~Record results in this document~~ Done (see "Probe results"). Keep, cut or add a slice per path: pending the owner. The exact overlap measurement (Sonnet step) is also still open, so the four overlap results are not verdicts.
+4. Contract, builders, fixtures, then clients, each as its own slice with filtered tests and required CI. Not started.
 
 ## Work split by model and effort
 
@@ -182,12 +184,12 @@ For usage efficiency, give Haiku the mechanical, self-checking steps: a spelled-
 
 | Step | Model | Effort | Why |
 |---|---|---|---|
-| Copy the real store and run the probe script | Haiku | low | Mechanical; output is numbers. |
-| Write the probe measurements for paths 1, 2, 4 (counts, coverage, stop distribution, timing) | Haiku | low | Queries are fully specified above and copy `path_coverage.py`. |
-| Probe overlap with the artist's five kinds, and the label-only share for path 6 | Sonnet | medium | Needs care to compare stops correctly; a wrong join gives plausible but wrong numbers. |
-| Probe for Same Room and Covers and Sources (place and work link coverage) | Haiku | low | Counting queries against known tables. |
-| Probe for Neighbours by Ear (analysed tracks, call cost) | Haiku | low | Calls the live sonic routes and counts. |
-| Fill the results table in this document and apply the thresholds | Haiku | low | Compare numbers to the fixed table; no judgment, and a non-passing path is flagged, not argued. |
+| ~~Copy the real store and run the probe script~~ **Done** | Haiku | low | Mechanical; output is numbers. |
+| ~~Write the probe measurements for paths 1, 2, 4 (counts, coverage, stop distribution, timing)~~ **Done** (offline kinds) | Haiku | low | Queries are fully specified above and copy `path_coverage.py`. |
+| Probe overlap with the artist's five kinds, and the label-only share for path 6 | Sonnet | medium | **Open**: label-only share done (28.7%); exact overlap still a proxy. | Needs care to compare stops correctly; a wrong join gives plausible but wrong numbers. |
+| ~~Probe for Same Room and Covers and Sources (place and work link coverage)~~ **Done** | Haiku | low | Counting queries against known tables. |
+| ~~Probe for Neighbours by Ear (analysed tracks, call cost)~~ **Done** (40-album sample) | Haiku | low | Calls the live sonic routes and counts. |
+| ~~Fill the results table in this document and apply the thresholds~~ **Done** | Haiku | low | Compare numbers to the fixed table; no judgment, and a non-passing path is flagged, not argued. |
 | Decide keep, cut or add a slice per path | Owner / main model | high | Judgment against thresholds, with a decision recorded. |
 | Set the Neighbours by Ear call cap | Owner | — | Decided: 8 seeds per album (2026-11-09). |
 | New import slice (recording places, production credits, work relations) | Sonnet | high | Schema bump, resumable import, cache invalidation; follows the release-links precedent. |
