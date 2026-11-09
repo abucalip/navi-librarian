@@ -52,6 +52,12 @@ public final class TasteModel {
         }
     }
 
+    /// Forces one refresh now (after the ListenBrainz account changes), ignoring the once-per-launch guard.
+    public func refreshNow(librarian: LibrarianClient?) async {
+        launched = false
+        await refreshOnLaunch(librarian: librarian)
+    }
+
     /// Test and preview seam: replaces the saved profiles without a server.
     func set(_ p: TasteProfiles?) { profiles = p; loaded = true }
 

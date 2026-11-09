@@ -29,6 +29,7 @@ struct CupertinoSettings: View {
                     playback
                     musicFolder(s)
                     profiles(s)
+                    listenBrainz()
                     logins(s)
                     if let message { Text(message).font(.system(size: 12)).foregroundStyle(CU.accent) }
                 } else {
@@ -232,6 +233,26 @@ struct CupertinoSettings: View {
             Text("Plain http is accepted only for home-network addresses, .local names and Tailscale addresses.")
                 .font(.system(size: 11)).foregroundStyle(CU.muted)
         }
+    }
+
+    private func listenBrainz() -> some View {
+        let lb = state.listenBrainz
+        return card("ListenBrainz") {
+            Text(lb.isConnected ? "Connected as \(lb.settings?.username ?? "")\(lb.settings?.tokenConfigured == true ? " (token saved)" : "")" : "Not connected")
+                .fontWeight(.semibold)
+            HStack {
+                TextField("ListenBrainz username", text: Bindable(lb).username).frame(width: 220)
+                SecureField(lb.settings?.tokenConfigured == true ? "Token (saved)" : "Token (optional)", text: Bindable(lb).token).frame(width: 220)
+                Button(lb.isConnected ? "Update" : "Connect") { Task { await state.connectListenBrainz() } }
+                    .buttonStyle(CapsuleButtonStyle(small: true)).disabled(!lb.canSave)
+                Spacer(minLength: 0)
+            }
+            .textFieldStyle(.roundedBorder).autocorrectionDisabled()
+            if let note = lb.note { Text(note).font(.system(size: 12)).foregroundStyle(CU.accent) }
+            Text("The server reads your listens from ListenBrainz to describe your taste. The username is enough for public listens; the token is only needed for private profiles and is never shown again.")
+                .font(.system(size: 11)).foregroundStyle(CU.muted)
+        }
+        .task { await lb.load(librarian: state.session?.librarian) }
     }
 
     private func logins(_ s: SessionModel) -> some View {

@@ -21,6 +21,11 @@ import app.discair.model.FeedbackAction
 import app.discair.model.FeedbackReply
 import app.discair.model.SearchEvent
 import app.discair.model.InsightVerb
+import app.discair.model.ListenBrainzAccount
+import app.discair.model.ListenBrainzCheck
+import app.discair.model.listenBrainzBody
+import app.discair.model.parseListenBrainzAccount
+import app.discair.model.parseListenBrainzCheck
 import app.discair.model.TasteRefreshResult
 import app.discair.model.TasteResponse
 import app.discair.model.parseTaste
@@ -180,6 +185,15 @@ interface LibraryRepository : AcquisitionApi {
     /** Turns that server option on or off; throws unless the server saved it. */
     fun setLibraryResync(on: Boolean): Unit = throw UnsupportedOperationException()
 
+    /** The ListenBrainz account the server reads (`GET /api/settings/listenbrainz`): the public username (blank when none) and whether a token is saved. Live. */
+    fun listenBrainz(): ListenBrainzAccount = ListenBrainzAccount("", false)
+
+    /**
+     * Saves the ListenBrainz account on the server, then asks it to read the profile. A blank [token] keeps the one already saved.
+     * Throws with the server's own sentence when it refuses the username or token; returns the server's check of the profile.
+     */
+    fun connectListenBrainz(username: String, token: String): ListenBrainzCheck = throw UnsupportedOperationException()
+
     /** Artist biography text, or null when none is available. */
     fun artistBio(artist: String): String?
 
@@ -311,6 +325,13 @@ class LibrarianRepository(
         if (reply?.get("ok")?.jsonPrimitive?.booleanOrNull != true) {
             throw IllegalStateException("The server did not save this.")
         }
+    }
+
+    override fun listenBrainz(): ListenBrainzAccount = parseListenBrainzAccount(client.get(listOf("api", "settings", "listenbrainz")))
+
+    override fun connectListenBrainz(username: String, token: String): ListenBrainzCheck {
+        client.put(listOf("api", "settings", "listenbrainz"), listenBrainzBody(username, token))
+        return parseListenBrainzCheck(client.post(listOf("api", "settings", "listenbrainz", "test"), "{}"))
     }
 
     override fun insights(limit: Int): InsightsResponse {
