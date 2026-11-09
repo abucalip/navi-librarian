@@ -39,6 +39,9 @@ def listenbrainz_reader(
         if result["unanswered"]:
             # A hole in the history would read as a taste change; fail so the saved profiles stay as they were.
             raise RuntimeError(f"ListenBrainz left {result['unanswered']} window(s) unanswered")
+        if any(window.get("truncated") for window in windows):
+            # The shared reader caps a window at 50 pages; never present that partial year as full history.
+            raise RuntimeError("ListenBrainz history window reached the page limit")
         return result["listens"]
 
     return read
