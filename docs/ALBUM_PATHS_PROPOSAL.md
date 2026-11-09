@@ -1,6 +1,6 @@
 # Album paths proposal
 
-**Status:** owner decisions recorded 2026-11-09 (see "Decisions recorded"). Approved for build in slices. Built and merged so far: the probe script (PR #921), the recording-places audit (PR #922), the builders for Studio Crew, Guest List and Covers and Sources (PR #924, squash `3901673d599079e80cfa41319d4e6d2fe55751fe`) the Same Year, Same Scene builder (PR #925, squash `adf7454da321543e78aff8d3526f0987b7e7c497`) and the Neighbours by Ear composition (PR #926, squash `934a1c0786f78f4daa2ce257888ee6b189278e3b`) and the Listen-through Gaps filter (PR #927, squash `b257a07db070e7f1086732015bedc6d90d6723de`) and the contract section (PR #928, squash `646a0dd93e03ecc22056f45f6aada05f241e85cb`). Nothing is published or deployed.
+**Status:** owner decisions recorded 2026-11-09 (see "Decisions recorded"). Approved for build in slices. Built and merged so far: the probe script (PR #921), the recording-places audit (PR #922), the builders for Studio Crew, Guest List and Covers and Sources (PR #924, squash `3901673d599079e80cfa41319d4e6d2fe55751fe`) the Same Year, Same Scene builder (PR #925, squash `adf7454da321543e78aff8d3526f0987b7e7c497`) and the Neighbours by Ear composition (PR #926, squash `934a1c0786f78f4daa2ce257888ee6b189278e3b`) and the Listen-through Gaps filter (PR #927, squash `b257a07db070e7f1086732015bedc6d90d6723de`) and the contract section (PR #928, squash `646a0dd93e03ecc22056f45f6aada05f241e85cb`) and the route wiring with recorded fixtures (PR #929, squash `cca08807bc93267f784bdffdbafe851c66e905ca`). Nothing is published or deployed.
 **Date:** 2026-11-09
 **Context:** The Paths button on an album page. Contract context: [Server V2 contract](SERVER_V2_CONTRACT.md) (`GET /api/knowledge/paths`), [Server V2 remaining work](ServerV2.md), builders in `intelligence/graph/paths.py`.
 
@@ -221,7 +221,7 @@ Status as of 2026-11-09 (merged work is on `main`; PR #921 merged):
 1. ~~Owner reviews this proposal and answers the open decisions.~~ Done 2026-11-09 (see "Decisions recorded").
 2. ~~Write the probe (`scripts/album_path_coverage.py`, filtered tests) and run it on a copy of the real store.~~ Done: script and filtered tests merged in PR #921; run on a copy of the store. Neighbours by Ear was measured separately (40-album sample, live sonic routes).
 3. ~~Record results in this document~~ Done (see "Probe results"). Keep, cut or add a slice per path: decided 2026-11-09 (see "Decisions recorded"). The exact overlap measurement is done (see "Probe results"): all four paths pass the overlap gate.
-4. Contract, builders, fixtures, then clients, each as its own slice with filtered tests and required CI. ~~Recording-places import slice~~ Done as an audit and dossier fix, merged in PR #922 (no import step needed; see "Slice audit"). Builders for paths 1, 2 and 4 are done (PR #924, see "Builders built" below). ~~Builder for path 6~~ Done, merged in PR #925 (see "Same Year, Same Scene builder"). ~~Neighbours by Ear composition~~ Done, merged in PR #926 (see "Neighbours by Ear composition"). ~~Listen-through Gaps~~ Done, merged in PR #927 (see "Listen-through Gaps filter"). ~~Contract section~~ Done, merged in PR #928 (see "Album paths" in `SERVER_V2_CONTRACT.md`). Remaining, not started. Suggested order: builder for path 3 (its data is already in the store); route wiring for Gaps; fixtures and decoders; client screens.
+4. Contract, builders, fixtures, then clients, each as its own slice with filtered tests and required CI. ~~Recording-places import slice~~ Done as an audit and dossier fix, merged in PR #922 (no import step needed; see "Slice audit"). Builders for paths 1, 2 and 4 are done (PR #924, see "Builders built" below). ~~Builder for path 6~~ Done, merged in PR #925 (see "Same Year, Same Scene builder"). ~~Neighbours by Ear composition~~ Done, merged in PR #926 (see "Neighbours by Ear composition"). ~~Listen-through Gaps~~ Done, merged in PR #927 (see "Listen-through Gaps filter"). ~~Contract section~~ Done, merged in PR #928 (see "Album paths" in `SERVER_V2_CONTRACT.md`). ~~Route wiring and fixtures~~ Done for the four graph kinds and Neighbours by Ear, merged in PR #929 (see "Route and fixtures"). Remaining, not started. Suggested order: builder for path 3 (its data is already in the store); route wiring and fixtures for Gaps; fixture-based server tests; decoders; client screens.
 
 ## Builders built (PR #924, 2026-11-09)
 
@@ -271,6 +271,12 @@ Merged to `main` as `b257a07db070e7f1086732015bedc6d90d6723de`.
 
 `intelligence/graph/album_gaps.py` (`build_gaps_path`): merges the `album_crew` and `album_guests` stops and keeps those with fewer than 2 plays (`LITTLE_PLAYS`), labelled in a separate `play` field so `reasons[]` stay credit-only. Play history only selects and labels: no stop is added, order is the base order, never play count. Play records come from the caller (Navidrome album records, as Forgotten Gems). Fewer than 20 played albums (`MIN_PLAYED_ALBUMS`) is `thin`, missing records is `unavailable`; both return the unfiltered stops marked as such. An album with no record in a usable history is counted in `history.unknown`, not treated as unplayed. Base stops are read up to 500 before filtering so the base cap cannot hide a gap. The cutoff of 2 and the minimum of 20 are provisional picks. Not wired to the route or contract, not cached; filtered tests only; not published or deployed.
 
+## Route and fixtures (PR #929, 2026-11-09)
+
+Merged to `main` as `cca08807bc93267f784bdffdbafe851c66e905ca`. Filtered tests only; full suite and required CI ran on the PR.
+
+`GET /api/knowledge/paths` accepts `type=release` with `album_crew`, `album_guests`, `album_works` and `album_moment` (`intelligence/knowledge/path_pages.py`, `app/api/knowledge.py`), in the public shape. `album_room` and `album_gaps` answer `501`; a kind and type that do not match are `400`; `release_group` answers `404` or `400` because the builders start at a release. Fixtures in `android/contract-fixtures/librarian/`, recorded through the route on a store copy and the owner's Navidrome (read-only): `paths_album_{crew,guests,works,moment}` and `_empty`, `paths_error_album_*` and `paths_error_artist_kind_album_type`, `sonic_album_neighbours`, `_empty` (one unanalysed seed skipped and reported) and `_error_not_found`. Not recorded: `album_gaps`, `album_room`, a `502`. Fixtures hold real library titles, like the existing ones. Not done: fixture-based server tests, decoders, client screens.
+
 ## Work split by model and effort
 
 For usage efficiency, give Haiku the mechanical, self-checking steps: a spelled-out spec, an existing pattern to copy, and a test or diff that proves the result. Keep design, evidence rules and judgment on a stronger model. Effort is relative to the model's default. These are planning estimates, not measurements.
@@ -291,13 +297,13 @@ For usage efficiency, give Haiku the mechanical, self-checking steps: a spelled-
 | ~~Neighbours by Ear composition~~ **Done** (PR #926) | Sonnet | medium | Groups similar-track results; must never sort or threshold on `similarity`. |
 | ~~Listen-through Gaps filter~~ **Done** (PR #927, see "Listen-through Gaps filter") | Sonnet | high | Must stay within the taste rule; a leak into ranking is a contract violation. |
 | ~~Write the contract section~~ **Done** (PR #928) | Sonnet | medium | Needs consistent wording with the existing paths contract. |
-| Record fixtures from a store copy | Haiku | low | Same capture steps as the artist path fixtures; tests diff the result. |
+| ~~Record fixtures from a store copy~~ **Done** (PR #929; path and Sonic fixtures, Gaps and Same Room not yet) | Haiku | low | Same capture steps as the artist path fixtures; tests diff the result. |
 | Fixture-based filtered server tests | Haiku | low | Copy the artist-path tests; the fixtures define the assertions. |
 | Android and macOS decoders plus filtered tests | Haiku | low | Copy the existing paths decoder and tests; fixtures define the result. |
 | Android and macOS Paths button and screens | Sonnet | medium | UI design choices, shared actions, honest empty states. |
 | Update status docs (`ACTIVE_WORK.md`, `PROJECT_STATUS.md`) after merges | Haiku | low | Templated edits from merged PR facts. |
 
-### Rules for delegating to Haiku
+
 - Give it the spec, the file to copy and the exact filtered test command. Do not ask it to choose a design.
 - Review its output against the fixtures or the threshold table before anything is merged.
 - Haiku work that touches evidence rules, the taste rule or the contract is out of scope; escalate it to Sonnet.
