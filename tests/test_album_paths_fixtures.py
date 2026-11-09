@@ -134,3 +134,49 @@ class AlbumNeighbourFixtures(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class AlbumGapsFixtures(unittest.TestCase):
+    """album_gaps: the other album kinds' stops, kept only when not yet played (recorded 2026-11-10)."""
+
+    ALL_CODES = set().union(*ALBUM_CODES.values())
+
+    def test_ok_stops_are_unplayed_owned_albums_with_credit_grade_reasons(self):
+        doc = body("paths_album_gaps.json")
+        self.assertEqual((doc["kind"], doc["status"]), ("album_gaps", "ok"))
+        self.assertEqual(doc["history"]["state"], "ok")
+        self.assertTrue(doc["history"]["filtered"])
+        self.assertTrue(doc["stops"])
+        for stop in doc["stops"]:
+            self.assertTrue(stop["entity"]["owned"])
+            self.assertEqual(stop["play"]["state"], "never")
+            self.assertEqual(stop["play"]["play_count"], 0)
+            self.assertTrue(stop["reasons"])
+            for reason in stop["reasons"]:
+                self.assertIn(reason["code"], self.ALL_CODES)
+                self.assertNotIn(reason["code"], ARTIST_KINDS)
+
+    def test_no_stop_is_the_start_and_stops_are_unique(self):
+        doc = body("paths_album_gaps.json")
+        mbids = [s["entity"]["mbid"] for s in doc["stops"]]
+        self.assertNotIn(doc["start"]["mbid"], mbids)
+        self.assertEqual(len(mbids), len(set(mbids)))
+
+    def test_empty_means_everything_was_filtered_not_padded(self):
+        doc = body("paths_album_gaps_empty.json")
+        self.assertEqual((doc["status"], doc["stops"]), ("empty", []))
+        self.assertGreater(doc["history"]["filtered_out"], 0)
+
+    def test_unreadable_history_returns_unfiltered_stops_and_says_so(self):
+        doc = body("paths_album_gaps_unavailable.json")
+        self.assertEqual(doc["history"]["state"], "unavailable")
+        self.assertFalse(doc["history"]["filtered"])
+        self.assertIsNone(doc["history"]["played_albums"])
+        self.assertTrue(doc["stops"])
+
+    def test_public_shape_has_no_internal_fields(self):
+        for name in ("paths_album_gaps.json", "paths_album_gaps_empty.json", "paths_album_gaps_unavailable.json"):
+            text = (FIXTURES / name).read_text(encoding="utf-8")
+            for leak in LEAKS:
+                with self.subTest(fixture=name, leak=leak):
+                    self.assertNotIn(f'"{leak}"', text)

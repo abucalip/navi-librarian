@@ -298,7 +298,11 @@ Merged to `main` as `4b69308f1982f0558600d0f193c11e7e541c0411`. Filtered tests o
 
 ## Gaps route wiring (PR #934, 2026-11-10)
 
-Merged to `main` as `54be6438dda91b20e9795c88df601ced5f18475f`. `GET /api/knowledge/paths?kind=album_gaps&type=release` is served (`gaps_page` in `intelligence/knowledge/path_pages.py`, `_play_records` in `app/api/knowledge.py`). Play records come from the Navidrome album inventory on each request, so the result is not cached; if Navidrome cannot be read the path answers `history.state` `unavailable` with the unfiltered stops. Same public shape as the other album kinds; `release_group` and artist starts are `400`/`404`. Filtered tests: `test_api_knowledge_paths_route.py`, `test_intelligence_album_gaps.py`. Still open: a recorded `album_gaps` fixture and the client tab.
+Merged to `main` as `54be6438dda91b20e9795c88df601ced5f18475f`. `GET /api/knowledge/paths?kind=album_gaps&type=release` is served (`gaps_page` in `intelligence/knowledge/path_pages.py`, `_play_records` in `app/api/knowledge.py`). Play records come from the Navidrome album inventory on each request, so the result is not cached; if Navidrome cannot be read the path answers `history.state` `unavailable` with the unfiltered stops. Same public shape as the other album kinds; `release_group` and artist starts are `400`/`404`. Filtered tests: `test_api_knowledge_paths_route.py`, `test_intelligence_album_gaps.py`. Fixtures recorded 2026-11-10 (see "Gaps fixtures"). Still open: the client tab.
+
+## Gaps fixtures (2026-11-10)
+
+`paths_album_gaps.json` (*Still Life*, 11 unplayed stops, history `ok`, 274 played albums), `paths_album_gaps_empty.json` (*Mulatu of Ethiopia*: its one stop was filtered out as already played, `filtered_out` 1) and `paths_album_gaps_unavailable.json` (Navidrome unreachable: unfiltered stops, history `unavailable`, `played_albums` null). Recorded through the route on a copy of the store with the owner's Navidrome read-only; nothing written to the owner's copy. Filtered tests: `tests/test_album_paths_fixtures.py` (`AlbumGapsFixtures`). Not done: the Gaps and Same Room client tabs.
 
 ## Work split by model and effort
 

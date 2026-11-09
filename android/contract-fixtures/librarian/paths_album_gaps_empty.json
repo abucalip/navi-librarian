@@ -1,0 +1,46 @@
+{
+  "captured_at": "2026-11-09T23:56:27Z",
+  "request": {
+    "body": null,
+    "method": "GET",
+    "path": "/api/knowledge/paths",
+    "query": {
+      "kind": "album_gaps",
+      "mbid": "261f4553-69ed-4567-becb-e38d795b857e",
+      "type": "release"
+    }
+  },
+  "response": {
+    "body": {
+      "capped": [],
+      "generation": 1,
+      "history": {
+        "filtered": true,
+        "filtered_out": 1,
+        "little_plays_below": 2,
+        "played_albums": 274,
+        "state": "ok",
+        "unknown": 0
+      },
+      "kind": "album_gaps",
+      "overlap_dropped": 0,
+      "sources": {
+        "musicbrainz_dump": {
+          "data_version": 4
+        }
+      },
+      "start": {
+        "canonical_name": "Mulatu of Ethiopia",
+        "mbid": "261f4553-69ed-4567-becb-e38d795b857e",
+        "owned": true,
+        "type": "release"
+      },
+      "status": "empty",
+      "stops": [],
+      "truncated": null
+    },
+    "content_type": "application/json",
+    "elapsed_seconds": 0.0,
+    "status": 200
+  }
+}
