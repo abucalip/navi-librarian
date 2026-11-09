@@ -22,7 +22,6 @@ MAX_LIMIT = 500
 ALBUM_TYPES = ("release", "release_group")
 PERSON_TYPES = ("artist", "person", "group")
 UNSERVED_ALBUM_KINDS = {
-    "album_room": "Same Room is not built yet.",
     "album_gaps": "Listen-through Gaps needs play history and is not served by this route yet.",
 }
 
