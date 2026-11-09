@@ -37,6 +37,7 @@ from app.api.paths_warm import router as paths_warm_router
 from app.api.popularity import router as popularity_router
 from app.api.taste_refresh import router as taste_refresh_router
 from app.api.knowledge import router as knowledge_router
+from app.api.waveform import router as waveform_router
 from app.api.sonic import router as sonic_router
 from app.api.library import router as library_router
 from app.api.owned_artwork import router as owned_artwork_router
@@ -222,6 +223,7 @@ app.include_router(taste_refresh_router)
 app.include_router(paths_warm_router)
 app.include_router(knowledge_router)
 app.include_router(sonic_router)
+app.include_router(waveform_router)
 app.include_router(capabilities_router)
 app.include_router(owned_artwork_router)
 app.middleware("http")(add_cache_headers)
