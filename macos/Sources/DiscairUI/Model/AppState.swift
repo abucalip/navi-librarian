@@ -113,6 +113,8 @@ public final class AppState {
     /// The Library page's tab, and the text in its search field (it stays when the tab changes).
     public var libraryTab: LibraryTab = .overview
     public var librarySearch = ""
+    /// A genre or decade a taste card asked the Songs tab to show (slice 7); the owner clears it with the chip on the tab.
+    public var tasteFilter: TasteAction?
     /// The song to mark on the album page after a Library search result opened it (matched by title).
     public var highlightedSong: String?
     /// The Discover group of the Cupertino sidebar is folded or open.
@@ -321,6 +323,16 @@ public final class AppState {
     }
 
     public func loadInsights() async { await insights.load(librarian: session?.librarian) }
+    /// Taste card action: starts a smart playlist from a listed genre or decade and opens it for editing. Nothing is saved to
+    /// Navidrome until the owner saves it, and no ranking is touched.
+    public func makeSmartPlaylist(from action: TasteAction) {
+        smart.add(action.playlist)
+        screen = .smartPlaylists
+    }
+    /// Taste card action: opens the Library's Songs tab showing only that genre or decade.
+    public func openLibrary(filteredBy action: TasteAction) {
+        librarySearch = ""; tasteFilter = action; libraryTab = .songs; screen = .library
+    }
     public func refreshTaste() async { await taste.refreshOnLaunch(librarian: session?.librarian) }
 
     /// Starts the connection explorer from the artist on screen (the page itself keeps the centre once the owner re-centres).

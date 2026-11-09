@@ -20,7 +20,7 @@ struct CupertinoInsights: View {
                 VStack(alignment: .leading, spacing: 16) {
                     header
                     if let e = model.error { Text(e).font(.system(size: 13)).foregroundStyle(CU.accent).accessibilityLabel("Problem: \(e)") }
-                    CupertinoTaste(model: state.taste)
+                    CupertinoTaste(model: state.taste, state: state)
                     HStack(alignment: .top, spacing: 16) {
                         VStack(spacing: 16) { ForEach(left, id: \.self) { panel($0) } }.frame(maxWidth: .infinity)
                         VStack(spacing: 16) { ForEach(right, id: \.self) { panel($0) } }.frame(maxWidth: .infinity)

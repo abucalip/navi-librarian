@@ -4,9 +4,10 @@ import SwiftUI
 /// "Your taste" section of Insights (Server V2 Phase 6 presentation slice 5), drawn from the owner's mockup
 /// (`docs/design/macos-taste/mockups.html`): an editorial serif headline first, bars as evidence. Every sentence is the
 /// server's. A window or dimension it flagged low-sample shows as a sketch or as progress, and nothing is stated that the
-/// server did not list. The mockup's morning-vs-night card and its smart-playlist/library actions are later slices.
+/// server did not list. The morning-vs-night card is a later slice; the smart-playlist and library actions (slice 7) cover genre and decade only.
 struct CupertinoTaste: View {
     let model: TasteModel
+    let state: AppState
 
     private static let up = Color(red: 0.122, green: 0.541, blue: 0.325)     // #1f8a53
     private static let down = Color(red: 0.761, green: 0.255, blue: 0.047)   // #c2410c
@@ -140,6 +141,7 @@ struct CupertinoTaste: View {
                 HStack(spacing: 14) {
                     legend("All time", Self.ghost); legend(mid ? "Past year" : "Last \(model.profiles?.config.recentDays ?? 90) days", CU.accent)
                 }.padding(.top, 6)
+                actions(model.shiftAction)
             } else {
                 headline("No clear shift yet.")
                 caption("I only call a change when both the recent window and your history are solid, and it moved at least \(Int(((model.profiles?.config.minShift ?? 0.05) * 100).rounded())) points.")
@@ -147,6 +149,18 @@ struct CupertinoTaste: View {
                     progress(r.listens, model.minListens, chip: "\(r.listens) of \(model.minListens) listens needed before I'll call a shift")
                 }
             }
+        }
+    }
+
+    /// The mockup's two buttons. They start a smart playlist or open the Library filtered; neither changes ranking.
+    @ViewBuilder private func actions(_ a: TasteAction?) -> some View {
+        if let a {
+            HStack(spacing: 10) {
+                Button("Make a smart playlist from \(a.label)") { state.makeSmartPlaylist(from: a) }
+                    .buttonStyle(CapsuleButtonStyle(primary: true, small: true))
+                Button("Open in Library") { state.openLibrary(filteredBy: a) }
+                    .buttonStyle(CapsuleButtonStyle(small: true, outlined: true))
+            }.padding(.top, 10)
         }
     }
 
@@ -194,6 +208,7 @@ struct CupertinoTaste: View {
                     caption("\(name) · \(w.listens.formatted()) listens" + (model.window != "all_time" ? " · tick = your all-time share" : ""))
                 }
                 body(for: w)
+                actions(model.windowAction)
             } else {
                 caption("No \(Self.windowNames[model.window] ?? model.window) window yet.")
             }

@@ -249,6 +249,8 @@ public final class SmartPlaylistModel {
         let p = SmartPlaylist(name: "New playlist", rules: [SmartRule(field: .genre, op: .contains, value: "")])
         lists.append(p); selectedID = p.id; changed(p.id)
     }
+    /// Adds a ready-made playlist (for example from a taste card) and selects it.
+    public func add(_ p: SmartPlaylist) { lists.append(p); selectedID = p.id; changed(p.id) }
     public func update(_ p: SmartPlaylist) {
         guard let i = lists.firstIndex(where: { $0.id == p.id }) else { return }
         lists[i] = p; changed(p.id)
