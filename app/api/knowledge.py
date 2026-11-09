@@ -111,6 +111,21 @@ def recording_works(mbid: str | None = None, navidrome_id: str | None = None,
     return _read(librarian, lambda r: r.works_of_recording(mbid=mbid, navidrome_id=navidrome_id, limit=limit))
 
 
+@router.get("/api/knowledge/song-facts")
+def song_facts(mbid: str | None = None, navidrome_id: str | None = None, album_mbid: str | None = None,
+               album_type: str = Query("release"), artist_mbid: str | None = None, artist_type: str = Query("artist"),
+               limit: int = Query(200, ge=1, le=MAX_LIMIT), librarian=Depends(get_librarian)):
+    """One-line facts for the song that is playing, its album and its artist (store only, each with its source)."""
+    _need_id(mbid, navidrome_id)
+    if album_type not in ALBUM_TYPES:
+        raise HTTPException(status_code=400, detail=f"album_type must be one of {', '.join(ALBUM_TYPES)}")
+    if artist_type not in PERSON_TYPES:
+        raise HTTPException(status_code=400, detail=f"artist_type must be one of {', '.join(PERSON_TYPES)}")
+    return _read(librarian, lambda r: r.song_facts(mbid=mbid, navidrome_id=navidrome_id, album_mbid=album_mbid,
+                                                    album_type=album_type, artist_mbid=artist_mbid,
+                                                    artist_type=artist_type, limit=limit))
+
+
 @router.get("/api/knowledge/connections")
 def connections(mbid: str | None = None, navidrome_id: str | None = None, type: str | None = None,
                 credits_only: bool = False, relation: list[str] | None = Query(None),

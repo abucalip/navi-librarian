@@ -173,3 +173,19 @@ import DiscairCore
         #expect(t.sent[0].url!.path == "/api/knowledge/atlas" && t.sent[0].url!.query == "limit=200")
     }
 }
+
+@Suite("Song facts") struct SongFactsTests {
+    @Test func linesDecodeWithTheirSourceAndOneBadLineIsDropped() throws {
+        let json = #"""
+        {"facts":[{"kind":"producer","scope":"song","text":"Produced by Pat","source":"MusicBrainz","source_url":"https://musicbrainz.org/recording/x","link":{"type":"artist","mbid":"p1"}},
+                  {"kind":7,"scope":"song"},
+                  {"kind":"life_span","scope":"artist","text":"Together since 1981","source":"MusicBrainz","source_url":null,"link":null}],
+         "sources":{"musicbrainz_dump":{"coverage":"loaded","dump_timestamp":"2026-11-01"}}}
+        """#
+        let page = try JSONDecoder().decode(KnowledgeSongFacts.self, from: Data(json.utf8))
+        #expect(page.facts.map(\.text) == ["Produced by Pat", "Together since 1981"])
+        #expect(page.facts[0].link?.mbid == "p1" && page.facts[1].link == nil && page.facts[1].scope == "artist")
+        #expect(page.sources["musicbrainz_dump"]?.coverage == "loaded")
+        #expect(try JSONDecoder().decode(KnowledgeSongFacts.self, from: Data("{}".utf8)).facts.isEmpty)
+    }
+}

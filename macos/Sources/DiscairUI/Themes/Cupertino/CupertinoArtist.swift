@@ -7,6 +7,28 @@ enum CupertinoArtistLayout { static let bannerHeight: CGFloat = 356 }
 
 struct CupertinoArtistBanner: View {
     let state: AppState
+
+    /// Three dots beside the name: Connections and Timeline of this artist. Small, round and centred on the name's line.
+    private var artistMenu: some View {
+        Menu {
+            Button { open(.connections) } label: { Label("Connections", systemImage: "point.3.connected.trianglepath.dotted") }
+            Button { open(.timeline) } label: { Label("Timeline", systemImage: "clock") }
+        } label: {
+            Image(systemName: "ellipsis").font(.system(size: 13, weight: .bold)).rotationEffect(.degrees(90))
+                .frame(width: 28, height: 28)
+                .background(Circle().fill(.white.opacity(0.22)))
+                .contentShape(Circle())
+        }
+        .menuStyle(.button).buttonStyle(.plain).menuIndicator(.hidden).fixedSize()
+        .help("Connections and Timeline of \(state.selectedArtist.name)")
+        .accessibilityLabel("More about \(state.selectedArtist.name)")
+    }
+
+    private func open(_ screen: Screen) {
+        let artist = state.selectedArtist
+        state.screen = screen
+        Task { if screen == .connections { await state.loadConnections(for: artist) } else { await state.loadTimeline(for: artist) } }
+    }
     var body: some View {
         let lib = state.library
         let h = (lib.isLive ? LibraryModel.hue(for: state.selectedArtist.name) : Fixtures.albums[1].hue) / 360
@@ -24,7 +46,10 @@ struct CupertinoArtistBanner: View {
         .overlay(alignment: .topLeading) {
             VStack(alignment: .leading, spacing: 0) {
                 BackButton(title: AppState.title(of: state.artistBack), onDark: true) { state.screen = state.artistBack }.padding(.bottom, 14)
-                Text(state.selectedArtist.name).font(.system(size: 60, weight: .bold)).tracking(-1.5).lineLimit(1).minimumScaleFactor(0.5)
+                HStack(alignment: .center, spacing: 12) {
+                    Text(state.selectedArtist.name).font(.system(size: 60, weight: .bold)).tracking(-1.5).lineLimit(1).minimumScaleFactor(0.5)
+                    artistMenu
+                }
                 Text(state.selectedArtistIsUnowned ? "Not in your library" : lib.isLive ? "\(state.shownArtistOwnedCount) of \(state.shownArtistOwnedCount + state.shownArtistMissingCount) albums owned" : "3 of 5 albums owned · Post-rock, Synth-pop").opacity(0.85).padding(.top, 6).padding(.bottom, 12)
                 HStack(spacing: 8) {
                     if !state.selectedArtistIsUnowned {
