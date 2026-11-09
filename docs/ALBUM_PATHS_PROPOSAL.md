@@ -15,6 +15,7 @@ An album page gets a Paths button. Its paths start from the album, not the artis
 - Built on demand within bounds (rows, time, stops) with a `truncated` flag; cached by (start, kind, generation); no provider traffic.
 - Missing data is reported as `not_loaded` or `empty`, never as a fact about the album.
 - Taste data must not affect recommendation ranking (see path 7).
+- Design sheets and pages according to the artist paths ones, use the same layout, rules and dynamic text templates. Adapt the latter to contexts if need be.
 
 ## Kept paths
 
