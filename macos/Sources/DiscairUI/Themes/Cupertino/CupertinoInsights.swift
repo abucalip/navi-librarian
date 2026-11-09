@@ -21,6 +21,7 @@ struct CupertinoInsights: View {
                     header
                     if let e = model.error { Text(e).font(.system(size: 13)).foregroundStyle(CU.accent).accessibilityLabel("Problem: \(e)") }
                     CupertinoTaste(model: state.taste, state: state)
+                    lensIndicators
                     HStack(alignment: .top, spacing: 16) {
                         VStack(spacing: 16) { ForEach(left, id: \.self) { panel($0) } }.frame(maxWidth: .infinity)
                         VStack(spacing: 16) { ForEach(right, id: \.self) { panel($0) } }.frame(maxWidth: .infinity)
@@ -36,12 +37,25 @@ struct CupertinoInsights: View {
             await state.taste.load(librarian: state.session?.librarian)
             await state.taste.refreshIfEmpty(librarian: state.session?.librarian)
         }
+        // The server refreshes its cards every few hours; reading again while the page is open keeps this one current.
+        .task {
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(InsightsModel.refreshSeconds))
+                guard !Task.isCancelled else { return }
+                await state.loadInsights()
+            }
+        }
     }
 
     private var header: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Insights").font(CU.title(34)).padding(.top, 4).accessibilityAddTraits(.isHeader)
-            Text("Every card says why it is here. Generation \(model.response.generation) · data version \(model.response.dataVersion)").foregroundStyle(CU.muted)
+            Text("Every card says why it is here." + (model.updatedText.map { " \($0)" } ?? "")).foregroundStyle(CU.muted)
+        }
+    }
+
+    private var lensIndicators: some View {
+        VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 8) {
                 ForEach(model.kinds, id: \.self) { k in
                     let on = model.isEnabled(k)

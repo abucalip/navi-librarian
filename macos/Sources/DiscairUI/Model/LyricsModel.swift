@@ -101,8 +101,11 @@ public final class LyricsModel {
     }
 
     /// Shows the lyrics of this song. Call when a screen that shows lyrics appears or the song changes.
-    public func show(songID id: String?) {
+    public func show(songID id: String?, title: String? = nil) {
         guard let id else { songID = nil; state = .idle; lines = []; return }
+        if LyricsChooser.titleSaysInstrumental(title) {
+            generation += 1; inFlight?.cancel(); songID = id; apply(nil); return
+        }
         guard id != songID || state == .idle || { if case .failed = state { true } else { false } }() else { return }
         generation += 1
         let mine = generation

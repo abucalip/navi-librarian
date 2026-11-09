@@ -20,6 +20,7 @@ Rules kept here:
 """
 from __future__ import annotations
 
+import json
 import sqlite3
 from dataclasses import dataclass, field
 from typing import Any, Callable, Mapping
@@ -134,6 +135,10 @@ def link_release_group(
 
     obs_id, _ = repo.add_observation(db, SOURCE, dict(document), fetched_at=now, entity_hint=f"release:{mbid}")
     group_id, _ = repo.upsert_entity(db, "release_group", info.group_title, mbid=info.group_mbid)
+    db.execute(
+        "INSERT INTO release_group_facts (entity_id, primary_type, secondary_types) VALUES (?, ?, ?) "
+        "ON CONFLICT (entity_id) DO UPDATE SET primary_type = excluded.primary_type, secondary_types = excluded.secondary_types",
+        (group_id, info.primary_type, json.dumps(sorted(info.secondary_types))))
     _, created = repo.add_edge(
         db, release_entity_id, group_id, REL_MEMBER_OF,
         evidence_class="source_explicit", match_quality="exact_mbid", source=SOURCE,

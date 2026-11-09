@@ -19,13 +19,26 @@ public struct QueueItem: Identifiable, Equatable, Sendable, Codable {
     public let path: String?
     /// The song's MusicBrainz recording id when Navidrome reports one. Optional, so queues saved before it existed still load.
     public let mbid: String?
+    /// "FLAC 16/44" or "MP3 320": what the file is, for the player bar. Optional, so queues saved before it existed still load.
+    public let quality: String?
+
+    /// What the player bar shows: the stated quality, else the file suffix in capitals, else nothing.
+    public var qualityLabel: String? {
+        if let quality, !quality.isEmpty { return quality }
+        let s = (suffix ?? "").uppercased()
+        return s.isEmpty ? nil : s
+    }
 
     public init(id: UUID = UUID(), songID: String, title: String, artist: String, album: String = "", albumID: String? = nil,
                 coverArt: String? = nil, duration: Double = 0, suffix: String? = nil, track: Int? = nil, disc: Int? = nil, path: String? = nil,
-                mbid: String? = nil) {
+                mbid: String? = nil, quality: String? = nil) {
+        self.quality = quality
         self.track = track; self.disc = disc; self.path = path; self.mbid = mbid
         self.id = id; self.songID = songID; self.title = title; self.artist = artist; self.album = album
-        self.albumID = albumID; self.coverArt = coverArt; self.duration = duration; self.suffix = suffix
+        self.albumID = albumID
+        // A song without its own cover id shows its album's (Navidrome serves an album's cover as `al-<album id>`).
+        self.coverArt = (coverArt?.isEmpty == false) ? coverArt : albumID.flatMap { $0.isEmpty ? nil : "al-\($0)" }
+        self.duration = duration; self.suffix = suffix
     }
 }
 

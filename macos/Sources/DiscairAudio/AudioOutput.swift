@@ -88,7 +88,8 @@ public final class EngineOutput: AudioOutput {
         var lastKnown: Double = 0
         /// Segments handed to the node and not yet finished, oldest first: (frames, file).
         /// `start` is the frame of `file` where the segment begins (0 except for the tail of a growing song).
-        var segments: [(frames: AVAudioFrameCount, file: AVAudioFile, start: AVAudioFramePosition)] = []
+        /// `follower` marks the first segment of the next song; a later part of the same song is not one.
+        var segments: [(frames: AVAudioFrameCount, file: AVAudioFile, start: AVAudioFramePosition, follower: Bool)] = []
         /// Frames that can really be decoded, when that is fewer than the file claims (a partial MP3 or FLAC reports the whole song).
         var limit: AVAudioFramePosition?
     }
@@ -242,16 +243,17 @@ public final class EngineOutput: AudioOutput {
     }
 
     /// Hands `file` (from `seconds`) to the node as the next segment.
-    private func enqueue(_ slot: Slot, file: AVAudioFile, from seconds: Double) {
+    private func enqueue(_ slot: Slot, file: AVAudioFile, from seconds: Double, follower: Bool = false) {
         let rate = file.processingFormat.sampleRate
-        let start = AVAudioFramePosition(max(0, min(seconds, Double(slot.limit ?? file.length) / rate)) * rate)
-        enqueueFrames(slot, file: file, startFrame: start)
+        let start = AVAudioFramePosition(max(0, min(seconds, Double((follower ? nil : slot.limit) ?? file.length) / rate)) * rate)
+        enqueueFrames(slot, file: file, startFrame: start, follower: follower)
     }
 
-    private func enqueueFrames(_ slot: Slot, file: AVAudioFile, startFrame start: AVAudioFramePosition) {
-        let frames = AVAudioFrameCount(max(0, (slot.limit ?? file.length) - start))
+    /// `slot.limit` belongs to the song on the slot; the next song is a whole file, so it never uses it.
+    private func enqueueFrames(_ slot: Slot, file: AVAudioFile, startFrame start: AVAudioFramePosition, follower: Bool = false) {
+        let frames = AVAudioFrameCount(max(0, ((follower ? nil : slot.limit) ?? file.length) - start))
         let mine = slot.generation
-        slot.segments.append((frames, file, start))
+        slot.segments.append((frames, file, start, follower))
         guard frames > 0 else { return }          // the node refuses an empty segment; the caller ends the song
         slot.node.scheduleSegment(file, startingFrame: start, frameCount: frames, at: nil, completionCallbackType: .dataPlayedBack) { [weak self, weak slot] _ in
             DispatchQueue.main.async {
@@ -289,8 +291,12 @@ public final class EngineOutput: AudioOutput {
             slot.startOffset = Double(next.start) / next.file.processingFormat.sampleRate
             slot.baseSample += Int64(done.frames)
             slot.lastKnown = slot.startOffset
-            pending = nil
-            onAdvanced?()
+            // A later part of the same song (a growing file's tail) is not the next song: nothing advances.
+            if next.follower {
+                slot.limit = nil
+                pending = nil
+                onAdvanced?()
+            }
         } else if let p = pending, !p.queuedOnNode {
             beginFade(into: p, length: 0)          // the ticker was late: join now rather than report the end
         } else if var g = growth, !(g.download.isComplete || g.download.failure != nil) || g.scheduledFrames < Self.readableNow(g.download, known: g.scheduledFrames) {
@@ -454,7 +460,7 @@ public final class EngineOutput: AudioOutput {
         cur.node.stop()
         schedule(cur, from: seconds)
         cur.pausedAt = cur.startOffset
-        if let p = pending, p.queuedOnNode { enqueue(cur, file: p.file, from: 0) }   // seeking dropped the queued follower
+        if let p = pending, p.queuedOnNode { enqueue(cur, file: p.file, from: 0, follower: true) }   // seeking dropped the queued follower
         if wasPlaying { cur.node.play(); cur.paused = false } else { cur.paused = true }
     }
 
@@ -469,7 +475,7 @@ public final class EngineOutput: AudioOutput {
         let sameFormat = next.processingFormat.sampleRate == now.processingFormat.sampleRate
             && next.processingFormat.channelCount == now.processingFormat.channelCount
         if transition == .gapless, sameFormat {
-            enqueue(cur, file: next, from: 0)
+            enqueue(cur, file: next, from: 0, follower: true)
             pending = Pending(file: next, transition: transition, queuedOnNode: true)
         } else {
             pending = Pending(file: next, transition: transition, queuedOnNode: false)
@@ -529,7 +535,7 @@ public final class EngineOutput: AudioOutput {
         do { try attach(new, file: p.file) } catch { pending = nil; return }
         new.generation += 1
         new.file = p.file; new.startOffset = 0; new.baseSample = 0; new.lastKnown = 0; new.paused = false; new.pausedAt = 0
-        new.segments = []
+        new.segments = []; new.limit = nil
         new.node.volume = length > 0 ? 0 : 1
         enqueue(new, file: p.file, from: 0)
         new.node.play()

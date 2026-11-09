@@ -13,6 +13,10 @@ struct TimelineView: View {
         HStack(spacing: 0) {
             VStack(alignment: .leading, spacing: 10) {
                 header
+                ArtistPickerField(state: state, style: style) { a in Task { await state.loadTimeline(for: a) } }.zIndex(3)
+                if timeline.person == nil, timeline.note == nil, !timeline.loading {
+                    Text("Search an artist to see their studio albums by year.").foregroundStyle(style.muted).padding(.top, 4)
+                }
                 if let note = timeline.note { Text(note).foregroundStyle(style.muted).padding(.top, 4) }
                 rail
                 footer
@@ -20,7 +24,6 @@ struct TimelineView: View {
             .padding(.horizontal, 28).padding(.bottom, 20)
             inspector.frame(width: 290)
         }
-        .task { await state.loadTimeline() }
     }
 
     // MARK: Header and footer
@@ -42,7 +45,7 @@ struct TimelineView: View {
         HStack(spacing: 14) {
             Label("In library: colour", systemImage: "circle.fill")
             Label("Not in library: dashed", systemImage: "circle.dashed")
-            Text("Dates are as MusicBrainz states them · nothing is dated from a file tag")
+            Text("Studio albums only, judged from titles · dates as MusicBrainz states them")
             Spacer()
             if timeline.truncated { Text("Showing the first items only.") }
         }

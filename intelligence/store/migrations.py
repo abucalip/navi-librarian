@@ -291,11 +291,24 @@ _V4 = (
     "CREATE INDEX entity_identifiers_value ON entity_identifiers (scheme, value)",
 )
 
+# Release group type (timeline studio-album filter): MusicBrainz's primary type ("Album", "Single", "EP"...) and secondary
+# types ("Live", "Compilation"...), JSON list text, from the dump or from a release lookup.
+_V5 = (
+    """
+    CREATE TABLE release_group_facts (
+        entity_id INTEGER PRIMARY KEY REFERENCES entities (id) ON DELETE CASCADE,
+        primary_type TEXT,
+        secondary_types TEXT NOT NULL DEFAULT '[]'
+    )
+    """,
+)
+
 MIGRATIONS: tuple[Migration, ...] = (
     Migration(1, "initial schema", _V1),
     Migration(2, "artist life span and release facts", _V2),
     Migration(3, "source freshness ledger", _V3),
     Migration(4, "context facts and the event entity type", _V4, rebuilds_tables=True),
+    Migration(5, "release group types", _V5),
 )
 LATEST_VERSION = MIGRATIONS[-1].version
 

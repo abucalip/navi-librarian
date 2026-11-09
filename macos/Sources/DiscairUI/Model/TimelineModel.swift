@@ -23,6 +23,27 @@ public enum TimelineGrouping {
         return order.map { TimelineGroup(id: "\($0)", label: byDecade ? "\($0)s" : "\($0)", items: buckets[$0] ?? []) }
     }
 
+    /// Studio albums only. An album is one when MusicBrainz types it "Album" with no secondary type (no live, compilation,
+    /// soundtrack...). Where the server holds no type for an album, the title decides: live, compilation or reissue wording
+    /// leaves it out. Events are never shown.
+    public static func studioAlbums(_ items: [TimelineItem]) -> [TimelineItem] {
+        items.filter { item in
+            guard item.kind == "album" else { return false }
+            if let primary = item.primaryType { return primary.lowercased() == "album" && item.secondaryTypes.isEmpty }
+            if !item.secondaryTypes.isEmpty { return false }
+            return isStudioTitle(item.entity.name)
+        }
+    }
+
+    static let nonStudioWords = ["live", "greatest hits", "best of", "the best", "anthology", "collection", "compilation", "complete", "box set",
+                                 "boxset", "sessions", "soundtrack", "remaster", "deluxe", "bootleg", "unplugged", "in concert", "essential",
+                                 "gold", "hits", "singles", "rarities", "outtakes", "demos", "alternate takes", "tribute", "karaoke", "radio"]
+    static func isStudioTitle(_ title: String) -> Bool {
+        let words = title.lowercased().split(whereSeparator: { !$0.isLetter && !$0.isNumber }).map(String.init)
+        let joined = " " + words.joined(separator: " ") + " "
+        return !nonStudioWords.contains { joined.contains(" \($0) ") }
+    }
+
     /// The date as MusicBrainz states it, never padded: "1972", "June 1972" or "2 June 1972".
     public static func display(_ date: String?) -> String {
         guard let date, date.count >= 4 else { return "No stated date" }
@@ -79,7 +100,7 @@ public final class TimelineModel {
         startedFor = artistRemoteID
         do {
             let page = try await librarian.knowledgeTimeline(mbid: mbid)
-            person = page.person; items = page.items; undatedCount = page.undated; truncated = page.truncated
+            person = page.person; items = TimelineGrouping.studioAlbums(page.items); undatedCount = items.filter { $0.year == nil }.count; truncated = page.truncated
             notLoaded = page.notLoaded
             coverage = page.sources["musicbrainz_dump"]?.coverage
             selectedID = nil

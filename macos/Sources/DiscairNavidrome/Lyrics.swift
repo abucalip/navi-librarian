@@ -60,6 +60,18 @@ public enum LyricsChooser {
         return nil
     }
 
+    /// Lyrics that only say the song has none ("[Instrumental]", "♪", "No lyrics"): an instrumental song shows no lyrics.
+    static func isPlaceholder(_ lines: [LyricLine]) -> Bool {
+        let words = lines.map { $0.text.lowercased().filter { $0.isLetter || $0.isNumber || $0 == " " }.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
+        let markers: Set<String> = ["instrumental", "instrumental music", "no lyrics", "music", "inst", "instrumental interlude", "solo", "intro", "outro"]
+        return words.isEmpty ? lines.allSatisfy { $0.text.unicodeScalars.allSatisfy { !CharacterSet.alphanumerics.contains($0) } } : words.allSatisfy { markers.contains($0) }
+    }
+
+    /// A song whose title says it is instrumental has no lyrics, whatever a lyrics service matched to it.
+    public static func titleSaysInstrumental(_ title: String?) -> Bool {
+        title?.range(of: "instrumental", options: [.caseInsensitive, .diacriticInsensitive]) != nil
+    }
+
     static func text(_ raw: String?) -> String {
         let cleaned = String(String.UnicodeScalarView((raw ?? "").unicodeScalars.filter { !CharacterSet.controlCharacters.contains($0) }))
         return cleaned.count > maxLineLength ? String(cleaned.prefix(maxLineLength)) : cleaned
@@ -79,12 +91,12 @@ public enum LyricsChooser {
                 }
                 .sorted { ($0.startMs ?? 0) < ($1.startMs ?? 0) }
                 .prefix(maxLines)
-                if !lines.isEmpty { return Lyrics(timed: true, lines: Array(lines)) }
+                if !lines.isEmpty, !isPlaceholder(Array(lines)) { return Lyrics(timed: true, lines: Array(lines)) }
             }
         }
         // Plain, or timed lyrics that do not follow the music.
         let lines = raw.prefix(maxLines).map { LyricLine(startMs: nil, text: text($0.value)) }
-        guard lines.contains(where: { !$0.text.isEmpty }) else { return nil }
+        guard lines.contains(where: { !$0.text.isEmpty }), !isPlaceholder(lines) else { return nil }
         return Lyrics(timed: false, lines: Array(lines))
     }
 }

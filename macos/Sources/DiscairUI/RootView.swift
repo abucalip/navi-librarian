@@ -21,6 +21,7 @@ public struct RootView: View {
             .scrollBounceBehavior(.basedOnSize)
         }
         .ignoresSafeArea()
+        .background(SpaceBarPlayPause { [state] in state.player.togglePlayPause() })
         .overlay { PipelineDockView(state: state) }
         .modifier(CommandPaletteOverlay(state: state))
         .sheet(item: $state.sonicPath) { SonicPathSheet(state: state, model: $0) }
