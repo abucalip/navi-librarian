@@ -1,3 +1,12 @@
+## 2026-11-09 — Server V2 Phase 6 taste presentation: headline payload (slice 2)
+
+- **PR:** [#904](https://github.com/abucalip/navi-librarian/pull/904), merged 2026-11-09 as squash `6e552d74d596b60b9e49d607eb030165fe8753e2` from exact head `69ce54a275f667d430af535b48b65a91802d5643`; base `main` at `2d7b5b806b774908f6c2dce1802012da300479f1`.
+- `intelligence/taste/persistence.py` now adds the pure `build_headline` result to `profiles_payload` as `headline`, or `null` when no window is sound. The server contract records the object shape and `pair`, `up`, `down`, `steady` kinds; recent is preferred and mid is the fallback when recent is low-sample.
+- Four generated contract fixtures: `taste_rich`, `taste_thin_window`, `taste_sparse_dimension`, `taste_empty`. The first save after deployment rewrites an existing stored taste row once to add the new field. No refresh route/job/client wiring was added and recommendation weights are unchanged.
+- **Tests:** the PR description reports 104 focused tests plus 2 Android fixture tests passing. These were not independently rerun in this documentation session; the full suite was not run (owner approval required).
+- **CI evidence:** a check of the exact PR head returned no PR workflow runs and no commit status checks. The PR is merged, but this session cannot independently attest that required CI passed.
+- **Next action:** implement slice 3, the owner-approved on-app-open taste refresh route with minimum interval, overlap lock and fake-loader tests. Keep the handler thin and avoid provider calls.
+
 ## 2026-11-07 — Server V2 Phase 7: release links for sideman-to-leader
 
 - **PR:** [#885](https://github.com/abucalip/navi-librarian/pull/885), merged 2026-11-07 as `cf156876244e5076975afc2713586305febf0e1f` (squash) from head `cdde9c5a5497e287d13557f837c5a5a16e292787`; all required workflows passed (compile, container-smoke, test-and-build, validate-container).
