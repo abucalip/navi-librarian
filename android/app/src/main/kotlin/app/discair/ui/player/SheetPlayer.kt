@@ -81,7 +81,7 @@ fun SheetPlayer(
     lyricsState: LyricsUiState, currentLine: Int,
     onSignIn: () -> Unit, onEqualizer: () -> Unit, onCrossfade: () -> Unit,
     onOpenArtist: (QueueItem) -> Unit, onOpenAlbum: (QueueItem) -> Unit,
-    onCoverColor: (Color) -> Unit, lyricsPanel: @Composable () -> Unit,
+    onCoverColor: (Color) -> Unit, line: LineUi, lyricsPanel: @Composable () -> Unit,
 ) {
     val item = state.current ?: return
     val p = LocalPalette.current
@@ -148,6 +148,7 @@ fun SheetPlayer(
                     contentDescription = "Seek"
                     stateDescription = seekDescription(shown, duration)
                 },
+                peaks = line.peaks,
             )
             Text(if (duration > 0) formatTime(duration) else "--:--", style = timeStyle, color = muted, modifier = Modifier.padding(start = 8.dp))
         }
@@ -178,10 +179,14 @@ fun SheetPlayer(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(PlayerIcons.Quote, contentDescription = null, modifier = Modifier.size(20.dp))
-            Text(
-                SheetStackRules.lyricsStripText(lyricsState, currentLine), style = MaterialTheme.typography.bodyMedium, maxLines = 2, overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f).padding(start = 16.dp).semantics { stateDescription = if (view == SHEET_VIEW_LYRICS) "Lyrics open" else "Lyrics closed" },
-            )
+            // The line when there is one (lyric, or a fact with its small label); otherwise the strip's own words (loading, none, tap to read).
+            val l = line.line
+            Column(Modifier.weight(1f).padding(start = 16.dp).semantics { stateDescription = if (view == SHEET_VIEW_LYRICS) "Lyrics open" else "Lyrics closed" }) {
+                if (l is app.discair.player.PlayerLine.Fact) Text("Fact", style = MaterialTheme.typography.labelSmall.copy(fontFamily = mono), color = muted)
+                if (l is app.discair.player.PlayerLine.Empty) Text(SheetStackRules.lyricsStripText(lyricsState, currentLine), style = MaterialTheme.typography.bodyMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                else PlayerLineText(l, Modifier, TextAlign.Start)
+            }
+            LineSwitches(line)
         }
         if (view == SHEET_VIEW_QUEUE || view == SHEET_VIEW_LYRICS) {
             Spacer(Modifier.height(16.dp))

@@ -37,6 +37,10 @@ import app.discair.model.parseInsights
 import app.discair.model.PathKind
 import app.discair.model.PathsResponse
 import app.discair.model.SonicResponse
+import app.discair.model.PeaksResult
+import app.discair.model.PlayerFact
+import app.discair.model.parsePeaks
+import app.discair.model.parseSongFacts
 import app.discair.model.parseSonic
 import app.discair.model.sonicAvailableFrom
 import app.discair.model.parsePaths
@@ -175,6 +179,12 @@ interface LibraryRepository : AcquisitionApi {
 
     /** Ordered steps from one song to another through sound (`GET /api/sonic/path`); the first step is the start song. Never from the saved copies. */
     fun sonicPath(startId: String, endId: String, count: Int): SonicResponse = throw UnsupportedOperationException()
+
+    /** Peaks for the sound graph (`GET /api/songs/{id}/peaks`): ready, still being decoded, or none (a 404, offline, or an older server). */
+    fun songPeaks(songId: String): PeaksResult = PeaksResult.None
+
+    /** One-line facts about a song from the server's knowledge store (`GET /api/knowledge/song-facts`); empty when there are none or the server cannot say. */
+    fun songFacts(songId: String): List<PlayerFact> = emptyList()
 
     /** Whether the server reports sonic similarity (`sonic_available` in `/api/capabilities`). Read live; false when unknown. */
     fun sonicAvailable(): Boolean = false
@@ -373,6 +383,24 @@ class LibrarianRepository(
     override fun sonicPath(startId: String, endId: String, count: Int): SonicResponse {
         if (ReadMode.isCacheOnly) throw CacheMiss()
         return parseSonic(client.get(listOf("api", "sonic", "path"), mapOf("start" to startId, "end" to endId, "count" to count.toString())))
+    }
+
+    override fun songPeaks(songId: String): PeaksResult {
+        if (ReadMode.isCacheOnly) return PeaksResult.None
+        return try {
+            parsePeaks(client.get(listOf("api", "songs", songId, "peaks")))
+        } catch (e: ConnectionException) {
+            PeaksResult.None // 404 (no file, silent, no ffmpeg) or an older server without the route
+        }
+    }
+
+    override fun songFacts(songId: String): List<PlayerFact> {
+        if (ReadMode.isCacheOnly) return emptyList()
+        return try {
+            parseSongFacts(client.get(listOf("api", "knowledge", "song-facts"), mapOf("navidrome_id" to songId)))
+        } catch (e: ConnectionException) {
+            emptyList()
+        }
     }
 
     override fun sonicAvailable(): Boolean {

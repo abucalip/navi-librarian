@@ -19,6 +19,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.semantics.disabled
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import app.discair.model.fold
 import app.discair.ui.theme.Ink
 
 private val Thumb = 4.dp
@@ -29,7 +30,7 @@ private val ThumbActive = 12.dp
  * shrinks back afterwards. The touch area stays 48dp tall so the bar is still easy to hit.
  */
 @Composable
-fun SeekBar(fraction: Float, enabled: Boolean, onChange: (Float) -> Unit, onFinish: () -> Unit, modifier: Modifier = Modifier) {
+fun SeekBar(fraction: Float, enabled: Boolean, onChange: (Float) -> Unit, onFinish: () -> Unit, modifier: Modifier = Modifier, peaks: FloatArray? = null) {
     var active by remember { mutableStateOf(false) }
     val radius by animateDpAsState(if (active) ThumbActive else Thumb, label = "seekThumb")
     val pad = ThumbActive
@@ -57,6 +58,22 @@ fun SeekBar(fraction: Float, enabled: Boolean, onChange: (Float) -> Unit, onFini
     ) {
         val inset = pad.toPx()
         val y = size.height / 2
+        if (peaks != null && peaks.size > 1) {
+            // The sound graph is the track: quiet bars from the middle line, the played part in the accent, a thin marker at the position.
+            val width = size.width - 2 * inset
+            val count = (width / 4.dp.toPx()).toInt().coerceIn(20, peaks.size)
+            val bars = peaks.fold(count)
+            val slot = width / count
+            val x = inset + width * fraction.coerceIn(0f, 1f)
+            val maxHalf = size.height * 0.42f
+            for (i in 0 until count) {
+                val cx = inset + slot * (i + 0.5f)
+                val half = (bars[i] * maxHalf).coerceAtLeast(1.5.dp.toPx())
+                drawLine(if (cx <= x) fill.copy(alpha = 0.95f) else trackColor, Offset(cx, y - half), Offset(cx, y + half), strokeWidth = slot * 0.62f, cap = StrokeCap.Round)
+            }
+            drawLine(dot, Offset(x, y - maxHalf - 2.dp.toPx()), Offset(x, y + maxHalf + 2.dp.toPx()), strokeWidth = (if (active) 4.dp else 2.dp).toPx(), cap = StrokeCap.Round)
+            return@Canvas
+        }
         if (palette.layout == app.discair.ui.theme.Layout.TapeDeck) {
             // Cassette Deck: a ruled track with a mark every tenth, the played part filled with the accent, and a tall bar as the thumb.
             val outline = (palette.shape?.outline ?: 2).dp.toPx()

@@ -39,6 +39,7 @@ import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import app.discair.player.PlayerController
@@ -70,7 +71,7 @@ fun TapePlayer(
     state: PlayerUiState, controller: PlayerController, showLyrics: Boolean, onToggleLyrics: () -> Unit,
     onSignIn: () -> Unit, onEqualizer: () -> Unit, onCrossfade: () -> Unit,
     onOpenArtist: (QueueItem) -> Unit, onOpenAlbum: (QueueItem) -> Unit,
-    onCoverColor: (Color) -> Unit, lyricsPanel: @Composable () -> Unit,
+    onCoverColor: (Color) -> Unit, line: LineUi, lyricsPanel: @Composable () -> Unit,
 ) {
     val item = state.current ?: return
     val p = LocalPalette.current
@@ -119,6 +120,14 @@ fun TapePlayer(
                 modifier = Modifier.fillMaxWidth().heightIn(min = Target).clickable(onClickLabel = "Open album", role = Role.Button) { onOpenAlbum(item) }
                     .wrapContentHeight(Alignment.CenterVertically),
             )
+            // The line (synced lyric or a fact) in a ruled row with its two switches.
+            Row(
+                Modifier.fillMaxWidth().padding(vertical = 4.dp).border(rule, p.edgeStrong).padding(start = 12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                PlayerLineText(line.line, Modifier.weight(1f), TextAlign.Start)
+                LineSwitches(line)
+            }
             // Status in words: loading, buffering, lost connection, unavailable, queue full.
             if (state.status != null || state.buffering) {
                 Text(
@@ -142,6 +151,7 @@ fun TapePlayer(
                         contentDescription = "Seek"
                         stateDescription = seekDescription(shown, duration)
                     },
+                    peaks = line.peaks,
                 )
                 Text(if (duration > 0) formatTime(duration) else "--:--", style = timeStyle, color = muted, modifier = Modifier.padding(start = 8.dp))
             }

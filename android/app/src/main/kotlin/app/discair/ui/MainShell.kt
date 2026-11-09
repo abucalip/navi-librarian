@@ -156,6 +156,7 @@ fun MainShell(state: UiState, model: AppViewModel, container: AppContainer) {
             sonicPath = { start, end, count -> repo.sonicPath(start, end, count) },
         )
     }
+    val playerExtras = remember(repo) { app.discair.ui.player.PlayerExtras(peaks = { repo.songPeaks(it) }, facts = { repo.songFacts(it) }) }
     LaunchedEffect(playActions) { playActions.messages.collect { snackbar.showSnackbar(it) } }
     var islandPx by remember { mutableStateOf(0) }
     var islandTint by remember { mutableStateOf<Color?>(null) }
@@ -203,7 +204,7 @@ fun MainShell(state: UiState, model: AppViewModel, container: AppContainer) {
             // The sheet is drawn over an artwork tint, which is dark whatever the theme: it keeps light text.
             app.discair.ui.theme.OnArtwork(keepBrutal = true) {
                 NowPlayingSheet(
-                    playerState, player, container.lyrics, onDismiss = { nowPlayingOpen = false }, onSignIn = { nowPlayingOpen = false; model.sessionExpired() },
+                    playerState, player, container.lyrics, extras = playerExtras, settings = container.playerSettings, onDismiss = { nowPlayingOpen = false }, onSignIn = { nowPlayingOpen = false; model.sessionExpired() },
                     onOpenArtist = { song -> nowPlayingOpen = false; open.artist(song.artist, null, null, null) },
                     onOpenAlbum = { song ->
                         nowPlayingOpen = false
