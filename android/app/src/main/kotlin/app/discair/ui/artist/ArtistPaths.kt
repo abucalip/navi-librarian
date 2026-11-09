@@ -56,6 +56,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
+import app.discair.model.PathAlbum
 import app.discair.model.PathKind
 import app.discair.model.PathLink
 import app.discair.model.PathStop
@@ -144,7 +145,7 @@ fun ArtistPathsSheet(artistName: String, mbid: String, open: Opener, onDismiss: 
         Box(Modifier.fillMaxWidth().fillMaxHeight(SheetHeight)) {
             if (step in stops.indices) {
                 PathDetail(
-                    artistName, kind, stops, step, response?.startType.orEmpty(),
+                    artistName, kind, stops, step,
                     onBack = { step = -1 }, onStep = { step = it }, go = go,
                 )
             } else {
@@ -270,10 +271,12 @@ internal fun rowDetail(kind: PathKind, stop: PathStop): String {
 internal fun PathThumb(kind: PathKind, stop: PathStop, size: Int) {
     val modifier = Modifier.size(size.dp)
     when (kind) {
-        PathKind.FollowTheMusician, PathKind.LabelPath -> {
-            val album = if (kind == PathKind.LabelPath) stop.name else stop.album
-            if (album != null && stop.albumArtist != null) AlbumCover(stop.albumArtist, album, null, modifier)
-            else PathTile(if (kind == PathKind.LabelPath) PlayerIcons.Album else PlayerIcons.MusicNote, size)
+        PathKind.FollowTheMusician -> {
+            val covers = stop.albums.ifEmpty { if (stop.album != null && stop.albumArtist != null) listOf(PathAlbum(stop.album, stop.albumArtist)) else emptyList() }
+            CandidateCover(covers, modifier) { PathTile(PlayerIcons.MusicNote, size) }
+        }
+        PathKind.LabelPath -> {
+            if (stop.albumArtist != null) AlbumCover(stop.albumArtist, stop.name, null, modifier) else PathTile(PlayerIcons.Album, size)
         }
         PathKind.SidemanToLeader, PathKind.ScenePath -> ArtistPhoto(stop.name, null, modifier, circle = true)
         PathKind.CompositionPath -> {
@@ -305,24 +308,41 @@ private fun truncatedWords(reason: String) = when (reason) {
 
 // ---------------------------------------------------------------- the pane
 
-/** A step's pane: a header that goes back to the list or on to the next step, the pane for this kind, and its main button. */
+/**
+ * A step's pane. The top has only the way back to the list; the bottom, below a line, has the path and step on the left and
+ * the arrows to the previous and next step on the right. The pane's own pictures open the pages.
+ */
 @Composable
 private fun PathDetail(
-    artistName: String, kind: PathKind, stops: List<PathStop>, index: Int, startType: String,
+    artistName: String, kind: PathKind, stops: List<PathStop>, index: Int,
     onBack: () -> Unit, onStep: (Int) -> Unit, go: (PathLink) -> Unit,
 ) {
     val stop = stops[index]
-    val pane = remember(stop, kind) { stop.pane(kind) }
+    // Each time a step opens, the pane picks again among the reasons the server sent.
+    val pane = remember(stop, kind) { stop.pane(kind, artistName) }
     Column(Modifier.fillMaxSize()) {
-        Row(
-            Modifier.fillMaxWidth().padding(start = 16.dp, end = 8.dp, bottom = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
+        Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, bottom = 16.dp)) {
             OutlinedIconButton(onClick = onBack, Modifier.size(Target)) {
                 Icon(PlayerIcons.Left, contentDescription = "Back to the list")
             }
-            Column(Modifier.weight(1f).padding(start = 8.dp)) {
+        }
+        // A new step starts at the top of its pane.
+        key(index) {
+            Column(
+                Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+            ) {
+                PaneBody(pane, stop, artistName, go)
+                Spacer(Modifier.size(8.dp))
+            }
+        }
+        Box(Modifier.fillMaxWidth().height(2.dp).background(Ink.EdgeStrong))
+        Row(
+            Modifier.fillMaxWidth().padding(start = 16.dp, end = 8.dp, top = 8.dp, bottom = 24.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(Modifier.weight(1f)) {
                 Text(kind.label, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Text("Step ${index + 1} of ${stops.size}", style = MaterialTheme.typography.bodySmall, color = Ink.TextMuted)
             }
@@ -332,34 +352,6 @@ private fun PathDetail(
             IconButton(onClick = { onStep(index + 1) }, Modifier.size(Target), enabled = index < stops.lastIndex) {
                 Icon(Icons.Default.KeyboardArrowDown, contentDescription = "Next step")
             }
-        }
-        // A new step starts at the top of its pane.
-        key(index) {
-            Column(
-                Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-            ) {
-                PaneBody(pane, stop, kind, artistName, startType, go)
-                Spacer(Modifier.size(8.dp))
-            }
-        }
-        PaneBar(pane.primary, go)
-    }
-}
-
-/** The pane's main button, at the bottom where the thumb rests. A step with nothing to open has no button and no bar. */
-@Composable
-private fun PaneBar(primary: PathLink?, go: (PathLink) -> Unit) {
-    if (primary == null) return
-    Box(Modifier.fillMaxWidth().height(2.dp).background(Ink.EdgeStrong))
-    Column(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 24.dp)) {
-        app.discair.ui.common.Button(onClick = { go(primary) }, Modifier.fillMaxWidth().heightIn(min = Target)) {
-            Icon(if (primary.album) PlayerIcons.Album else PlayerIcons.Person, contentDescription = null, modifier = Modifier.size(24.dp))
-            Spacer(Modifier.width(8.dp))
-            Text(
-                "Open ${if (primary.album) "album" else "artist"}: ${primary.name}",
-                maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false),
-            )
         }
     }
 }

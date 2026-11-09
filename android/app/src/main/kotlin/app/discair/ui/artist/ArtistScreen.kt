@@ -145,16 +145,14 @@ private fun ArtistContent(route: ArtistRoute, page: ArtistPage, open: Opener, li
                 }
             }
         }
-        if (artistId != null) item {
+        val canPaths = pathsOn && pathsMbid != null
+        if (artistId != null || canPaths) item {
             app.discair.ui.player.PlayRow(
-                onPlay = { play.playArtist(artistId, shuffle = false) }, onShuffle = { play.playArtist(artistId, shuffle = true) },
+                onPlay = artistId?.let { id -> { play.playArtist(id, shuffle = false) } },
+                onShuffle = artistId?.let { id -> { play.playArtist(id, shuffle = true) } },
+                onPaths = if (canPaths) ({ showPaths = true }) else null,
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
             )
-        }
-        if (pathsOn && pathsMbid != null) item {
-            Box(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp), contentAlignment = Alignment.Center) {
-                OutlinedButton(onClick = { showPaths = true }, modifier = Modifier.heightIn(min = Target)) { Text("Paths from $name") }
-            }
         }
         val allSongs = sections.topSongs.items
         val songs = if (showAllSongs) allSongs else allSongs.take(SONGS_SHOWN)
