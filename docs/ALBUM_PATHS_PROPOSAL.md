@@ -101,7 +101,12 @@ The **Balanced** preset applies to Studio Crew, Guest List, Covers and Sources, 
 Additional and special rules:
 - **Same Year Same Scene:** at most 50% of its stops may be label-only, since `label_path` already covers that ground.
 - **Same Room:** judged on its probe result to decide whether a recording-place slice is needed; failing the preset does not cut it.
-- **Neighbours by Ear:** coverage held to the stricter 60%, plus a stated maximum number of similar-track calls per album, set before the probe.
+- **Neighbours by Ear:** coverage held to the stricter 60%, plus a cap of **8 seeds (similar-track calls) per album** (owner decision, 2026-11-09, option B). Rules that go with it:
+  - Seeds are evenly spaced across the tracklist and always include the first and last track. Selection is deterministic, so the one-hour cache still applies; no random sampling.
+  - A seed with no analysis data is skipped and reported; it does not count against the cap.
+  - Ties in the album ranking break by earliest release date, never by `similarity`.
+  - A total time bound applies, like the 2-second path limit; if hit, the response returns `truncated`.
+  - The number is provisional: the probe records latency and result quality at 5, 8 and 12 seeds on a sample of albums. The cap is changed only by a new owner decision, not loosened after seeing results.
 - **Listen-through Gaps:** no coverage threshold of its own, since it inherits stops from Studio Crew and Guest List. Rule: thin or unavailable play history returns the unfiltered stops marked as such, never an empty "unplayed" claim.
 
 A path that fails its thresholds is cut or gets a new slice (see the contingency below); the numbers are not loosened after seeing the result.
@@ -150,7 +155,7 @@ For usage efficiency, give Haiku the mechanical, self-checking steps: a spelled-
 | Probe for Neighbours by Ear (analysed tracks, call cost) | Haiku | low | Calls the live sonic routes and counts. |
 | Fill the results table in this document and apply the thresholds | Haiku | low | Compare numbers to the fixed table; no judgment, and a non-passing path is flagged, not argued. |
 | Decide keep, cut or add a slice per path | Owner / main model | high | Judgment against thresholds, with a decision recorded. |
-| Set the Neighbours by Ear call cap | Owner | — | Open before the probe. |
+| Set the Neighbours by Ear call cap | Owner | — | Decided: 8 seeds per album (2026-11-09). |
 | New import slice (recording places, production credits, work relations) | Sonnet | high | Schema bump, resumable import, cache invalidation; follows the release-links precedent. |
 | Path builders for Studio Crew, Guest List, Covers and Sources | Sonnet | high | Evidence rules, hub caps, de-duplication of people across paths; a mistake breaks the credit-grade guarantee. |
 | Same Year Same Scene builder | Sonnet | medium | Strict-rule logic on top of existing readers. |
