@@ -159,6 +159,69 @@ Served by `app/api/paths_warm.py`. A manual trigger that builds the missing or s
 - Answer: `run_id`, `state` (`succeeded`, or `queued` when the time budget ended first: call again to resume), `progress` (`built`, `skipped` for current caches, `empty`, `timed_out`, `pending`), `error`, `max_seconds`, `kinds`. `409` while another warm-up is running; `502` when it could not run.
 - Status: `status` (the latest run), `last_good`, `running`.
 
+## Album paths: `GET /api/knowledge/paths` with `type=release` or `release_group`, and `GET /api/sonic/album-neighbours` (Phase 7, album Paths button)
+
+Decided in [ALBUM_PATHS_PROPOSAL.md](ALBUM_PATHS_PROPOSAL.md) (owner, 2026-11-09). **Status: builders merged, route wiring not done.** `GET /api/knowledge/paths` does not yet accept `type=release`, `release_group` or the album kinds, and Same Room (`album_room`) has no builder; `GET /api/sonic/album-neighbours` is served (PR #926). Bodies below are what the builders return today (`intelligence/graph/album_paths.py`, `album_gaps.py`, `intelligence/sonic/neighbours.py`). Fixtures are not recorded; until they are, a client must not treat this section as final. Everything in "Rules for every endpoint" applies, and so do the artist-path rules: credit-grade evidence only (an inferred edge, or one whose other end is unconfirmed or unresolved, is never used, not even as a bridge), no stop without a `reasons[]` entry, nothing padded in, no provider traffic.
+
+### Request
+
+Same route and decoder as artist paths. Differences:
+
+- `type`: `release` or `release_group` selects an album start. `mbid` or `navidrome_id` identifies it (else `400`). A start that is not a release or release group is `400`; an unknown start is `404`.
+- `kind` (required, else `422`): one of `album_crew`, `album_guests`, `album_works`, `album_moment`, `album_room`, `album_gaps`. An artist kind with an album `type`, or an album kind with an artist `type`, is `400`. `album_sonic_neighbours` is not a `kind` here; it has its own route (below).
+- The button lists only album kinds. Album paths never repeat the artist's own five kinds (see `overlap_dropped`).
+
+### Body
+
+As artist paths: `kind`, `start`, `generation`, `status` (`ok` or `empty`), `stops`, `truncated` (`rows`, `time`, `stops` or null), `built_from.musicbrainz_dump` (data version) and `presentation_version`. Each stop is `{entity, presentation, reason_count, reasons[]}` with at most three reasons, each `{code, text, via, anchor, evidence}`. A stop is always an owned album. Additions:
+
+- `overlap_dropped`: count of stops removed because the credited artists' five artist paths already reach that album (owner decision 4: dropped even when the reason differs). A build that runs out of time during that check is `truncated: "time"`.
+- `capped[]`: `{via, more}` for each person or work whose albums were cut at the per-person cap (50) or per-work cap (20); `more` is the count left out. A client shows "and N more", never hides it.
+- Ranking: most distinct people (or works) first, then the nearer link, then the earlier release date. Similarity and play data are never a sort key.
+- Built on demand within the artist-path bounds (3,000 rows, 30 stops, 2 seconds), cached by (start, kind, generation) with the paths cache; a path cut short by time is returned but not cached. No warm-up: `POST /api/knowledge/paths/warm` stays per owned artist.
+
+### Kinds and reason codes
+
+| Kind | Stops follow | Reason codes (`via`, `anchor`) |
+|---|---|---|
+| `album_crew` (Studio Crew) | producer, engineer, mix and mastering credits on this album to other owned albums with the same person | `crew_on` (the person, the credited album) |
+| `album_guests` (Guest List) | instrument, vocal and performer credits on this album, minus its own credited artists | `guest_on` (the person, the credited track) |
+| `album_works` (Covers and Sources) | the work behind each track to other owned recordings of it, and to works linked by `parts`, `other version`, `arrangement` or `based on` | `same_work`, `derived_work` (the work, the track) |
+| `album_moment` (Same Year, Same Scene) | owned albums whose earliest `release_facts` date is within 2 calendar years of this album's, **and** a stated link | `same_period_label` (label), `same_period_credit` (shared credited artist), `same_period_area` (stated non-country area of two different credited artists); `via` is the label, artist or area, `anchor` the start album |
+| `album_room` (Same Room) | recordings with a stated place or event to other owned recordings made there | `recorded_at` (the place or event, the track). **Not built yet**; answers `501` until it is. |
+| `album_gaps` (Listen-through Gaps) | the `album_crew` and `album_guests` stops with fewer than 2 plays | the base stop's own `crew_on` and `guest_on` reasons; nothing added |
+
+- A date match alone never produces a `album_moment` stop; an undated start or candidate gives none. File-tag years are never used.
+- A person with both crew and guest credits is one stop with both reasons, not two stops.
+- `reasons[]` text templates follow the artist-path pattern: name the person, work or place, name the credit, name both albums.
+
+### `album_gaps` additions
+
+Play history only selects and labels; it never adds a stop and never reorders by affinity (taste rule). Order is the base order: crew stops first, then guest-only stops. Each stop has `play`: `{state, play_count, text}` with `state` `never` or `little`, or `null` when the history is not usable. The body adds:
+
+- `history`: `{state, played_albums, filtered_out, unknown, little_plays_below, filtered}`. `state` is `ok`, `thin` (fewer than 20 albums with any play) or `unavailable` (play records could not be read).
+- On `thin` or `unavailable` every base stop is returned unfiltered with `play: null` and `filtered: false`. A client says the history is not enough; it never shows an empty "not played" claim.
+- An album with no record in a usable history is counted in `history.unknown` and left out; absence of a record is not "never played".
+- The cutoff of 2 and the minimum of 20 are provisional. This kind is not cached (it depends on play data that changes).
+
+### `GET /api/sonic/album-neighbours?album_id=` (Neighbours by Ear)
+
+Served by `app/api/sonic.py` (PR #926). `album_id` is a Navidrome album id (required, else `422`). Clients show it, in its own tab, only when `GET /api/capabilities` says `sonic_available: true`.
+
+- Method: up to 8 seeds, evenly spaced over the tracklist, first and last always included, deterministic. One similar-track call per seed. Matches on the start album are dropped; the per-artist cap of 2 per seed applies. An unanalysed seed is skipped, reported in `skipped` and replaced by the next unused track (at most 16 calls). `similarity` is never read, sorted or thresholded.
+- Body: `status` (`ok` or `empty`), `start` (`album_id`, `album`, `artist`, `year`, `tracks`), `stops[]`, `seeds[]` (`navidrome_id`, `title`), `skipped[]` (`navidrome_id`, `title`, `reason` `no_analysis`), `truncated` (`time` or null).
+- Stop: `album_id`, `album`, `artist`, `artist_id`, `cover_art`, `year` (from the matched tracks, not release facts), `match_count`, `matches[]` (`seed` and the matched `tracks`), `owned` (always `true`) and `reasons[]` with one `{code: "sonic_neighbour", count, text}`. Ranked by `match_count`, ties by earliest year then album id. This is not a graph path, so there is no `evidence`; it is composed from Navidrome's analysis.
+- Bounded at 5 seconds; an answer cut short by time has `truncated: "time"` and is not cached. Otherwise cached for an hour with the other sonic routes.
+- Errors: `404` unknown album; `502` sonic similarity unavailable or Navidrome did not answer (fixed text); `422` missing `album_id`.
+- Provisional: counts are lower bounds because some returned tracks have no matching owned recording. The wider-sample coverage re-measure (60% gate) is a build-time requirement and is still open.
+
+### Client rules
+
+- Hide the Paths button when the album has no album kind with stops. Hide Neighbours by Ear unless `sonic_available`.
+- Say `empty` as "nothing found", and a missing slice as "not loaded"; never turn either into a fact about the album.
+- Show at most the three reasons the body carries; show `capped[]` and `overlap_dropped` only as plain counts.
+- Fixtures: none recorded for album paths yet. They will be captured from a store copy as `paths_album_*.json` and `sonic_album_neighbours*.json`, one `ok` and one `empty` per kind plus the error cases above.
+
 ## Not in this contract
 
 Entity pages and path `reasons[]` (later phases); any scheduling or trigger route for the health job; macOS Swift fixtures (the macOS Health view is the Phase 1 client gate and will consume these JSON files directly).
