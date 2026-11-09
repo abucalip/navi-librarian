@@ -283,6 +283,10 @@ data class PathsResponse(
     val kind: String, val status: String, val stops: List<PathStop>, val truncated: String?,
     /** The start's entity type (`group`, `person` or `artist`), so wording can fit a band or a single musician. */
     val startType: String = "",
+    /** Album paths: stops left out because the artist paths already reach them (never hidden from the count). */
+    val overlapDropped: Int = 0,
+    /** Album paths: people or works whose albums were cut at the cap, with how many were left out. */
+    val capped: List<PathCapped> = emptyList(),
 )
 
 /** What the sheet shows for a read: the server's stops, or nothing it can honestly list. */
@@ -347,6 +351,8 @@ fun parsePaths(body: String): PathsResponse {
         stops = stops.dropRepeats(kind),
         truncated = root.string("truncated")?.takeIf { it.isNotBlank() },
         startType = root.obj("start")?.string("type").orEmpty(),
+        overlapDropped = root.int("overlap_dropped") ?: 0,
+        capped = parseCapped(root),
     )
 }
 

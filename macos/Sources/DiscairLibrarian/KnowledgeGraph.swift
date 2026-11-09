@@ -98,7 +98,11 @@ public struct KnowledgePaths: Decodable, Equatable, Sendable {
     /// "rows", "time", "stops" or nil.
     public let truncated: String?
     public let sources: [String: KnowledgeSource]
-    enum CodingKeys: String, CodingKey { case kind, status, start, stops, truncated, sources }
+    /// Album paths: stops left out because the artist paths already reach them.
+    public let overlapDropped: Int
+    /// Album paths: people or works whose albums were cut at the cap, with how many were left out.
+    public let capped: [PathCapped]
+    enum CodingKeys: String, CodingKey { case kind, status, start, stops, truncated, sources, overlap_dropped, capped }
     public init(from decoder: any Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         kind = c.text(.kind) ?? ""
@@ -107,6 +111,8 @@ public struct KnowledgePaths: Decodable, Equatable, Sendable {
         stops = c.list(.stops, PathStop.self)
         truncated = c.text(.truncated)
         sources = (try? c.decodeIfPresent([String: KnowledgeSource].self, forKey: .sources)) ?? [:]
+        overlapDropped = c.number(.overlap_dropped)
+        capped = ((try? c.decodeIfPresent([LenientEntry<PathCapped>].self, forKey: .capped)) ?? []).compactMap { $0.value }
     }
 }
 
