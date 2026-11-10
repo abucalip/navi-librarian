@@ -31,6 +31,8 @@ public final class ArtworkStore {
     @ObservationIgnored private var indexes: [String: ArtworkIndex] = [:]
     /// The owner's cover picks (docs/artwork.md, idea 7), library album id to artwork image id. Views read it, so a new pick redraws.
     public private(set) var choices: [String: Int] = [:]
+    /// Release group of an album by artist and title, found once per album (Now Playing has no album page to read it from).
+    @ObservationIgnored private var releaseGroups: [String: String] = [:]
 
     private final class AlbumLoad: @unchecked Sendable {
         let task: Task<NSImage?, Never>
@@ -50,6 +52,7 @@ public final class ArtworkStore {
         self.librarian = librarian
         albumCache.removeAllObjects()
         indexes.removeAll()
+        releaseGroups.removeAll()
         for k in failed where k.hasPrefix("lookup|") || k.hasPrefix("owned|") { failed.remove(k) }
         choices = [:]
         generation += 1
@@ -148,6 +151,49 @@ public final class ArtworkStore {
         let result = await ArtworkIndexResult.load { try await librarian.artworkIndex(rgid: rgid, release: release) }
         if case .ready(let index) = result { indexes[rgid] = index }
         return result
+    }
+
+    /// The artwork index of the album playing now. The release group comes from the Librarian's album page (once per album; a failed
+    /// ask is not remembered). nil when the album has no title, the group is unknown or the index is empty, unavailable or still
+    /// building: Now Playing then shows nothing extra.
+    public func nowPlayingIndex(artist: String, album: String) async -> ArtworkIndex? {
+        guard !album.isEmpty, let librarian else { return nil }
+        let key = "\(artist.lowercased())|\(album.lowercased())"
+        var rgid = releaseGroups[key]
+        if rgid == nil {
+            guard let page = try? await librarian.albumPage(artist: artist, album: album), let found = page.releaseGroupMBID, !found.isEmpty,
+                  !Task.isCancelled else { return nil }
+            releaseGroups[key] = found
+            rgid = found
+        }
+        guard let rgid, case .ready(let index) = await artworkIndex(rgid: rgid, release: nil), !Task.isCancelled else { return nil }
+        return index
+    }
+
+    /// An owned album's cover as every screen shows it: the owner's pick (docs/artwork.md, idea 7), else the library cover (the song's
+    /// own cover id, then the album's), with the server's best front when the library has none or only a small one.
+    public func libraryCover(albumID: String?, coverArt: String?, px: Int) async -> NSImage? {
+        var image: NSImage?
+        let id = albumID.flatMap { $0.isEmpty ? nil : $0 }
+        if let id, choices[id] != nil {
+            image = await ownedCover(albumID: id, px: px)
+            if image != nil { return image }
+        }
+        if let coverArt {
+            image = await self.image(coverArt: coverArt, px: px)
+            // A song's own cover id that Navidrome no longer serves: its album's cover stands in.
+            if image == nil, let id, coverArt != "al-\(id)" { image = await self.image(coverArt: "al-\(id)", px: px) }
+        }
+        if let id, image == nil || (px >= 300 && Self.isSmall(image)) {
+            if let better = await ownedCover(albumID: id, px: px) { image = better }
+        }
+        return image
+    }
+
+    /// A library cover whose longer side is under 300 px (the server uses the same limit).
+    static func isSmall(_ image: NSImage?) -> Bool {
+        guard let rep = image?.representations.first, rep.pixelsWide > 0 else { return false }
+        return max(rep.pixelsWide, rep.pixelsHigh) < 300
     }
 
     /// One album image as a bitmap. A PDF original (`size == .full`) is not a bitmap and gives nil: the PDF viewer fetches it whole.
@@ -257,12 +303,6 @@ struct ArtworkImage: View {
 
     private var pick: Int? { album.remoteID.flatMap { store?.choices[$0] } }
 
-    /// A library cover whose longer side is under 300 px (the server uses the same limit).
-    private static func isSmall(_ image: NSImage?) -> Bool {
-        guard let rep = image?.representations.first, rep.pixelsWide > 0 else { return false }
-        return max(rep.pixelsWide, rep.pixelsHigh) < 300
-    }
-
     var body: some View {
         // A real (clear) view carries the task: a bare `Group` that is empty until the image arrives never starts it when
         // the view stands alone, which left the blurred backdrops without their artwork.
@@ -272,19 +312,13 @@ struct ArtworkImage: View {
             .task(id: "\(album.coverArt ?? "")@\(px)|\(album.owned ? "" : album.artist + "|" + album.title)|\(store?.generation ?? 0)|\(pick ?? 0)") {
             image = nil
             guard let store else { return }
-            // The owner's pick wins on every screen; the server serves it (docs/artwork.md, idea 7).
-            if album.owned, let albumID = album.remoteID, !albumID.isEmpty, pick != nil {
-                image = await store.ownedCover(albumID: albumID, px: px)
-                if image != nil { return }
-            }
-            if let id = album.coverArt {
+            if album.owned {
+                // The owner's pick wins on every screen, and a missing or small cover falls back to the best front (never an artist photo).
+                image = await store.libraryCover(albumID: album.remoteID, coverArt: album.coverArt, px: px)
+            } else if let id = album.coverArt {
                 image = await store.image(coverArt: id, px: px)
-                // A song's own cover id that Navidrome no longer serves: its album's cover stands in.
-                if image == nil, let albumID = album.remoteID, !albumID.isEmpty, id != "al-\(albumID)" { image = await store.image(coverArt: "al-\(albumID)", px: px) }
-            } else if !album.owned, album.id >= 0 { image = await store.image(artist: album.artist, album: album.title, px: px) }
-            // Grid fallback: no library cover, or a small one, uses the best front the server found (never an artist photo).
-            if album.owned, let albumID = album.remoteID, !albumID.isEmpty, image == nil || (px >= 300 && Self.isSmall(image)) {
-                if let better = await store.ownedCover(albumID: albumID, px: px) { image = better }
+            } else if album.id >= 0 {
+                image = await store.image(artist: album.artist, album: album.title, px: px)
             }
         }
     }

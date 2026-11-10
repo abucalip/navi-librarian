@@ -1,4 +1,5 @@
 import DiscairAudio
+import DiscairLibrarian
 import SwiftUI
 
 /// Now Playing: a centre spread. Halftone cover on the left page, synced lyrics set as article columns on the
@@ -6,10 +7,18 @@ import SwiftUI
 struct ZineNowPlaying: View {
     let state: AppState
 
+    @Environment(\.artwork) private var artwork
+    @State private var albumArt: ArtworkIndex?
+
     private var live: Bool { state.library.isLive || state.player.current != nil }
 
     var body: some View {
-        if live { liveBody } else { sampleBody }
+        Group { if live { liveBody } else { sampleBody } }
+            .task(id: "\(state.player.current?.artist ?? "")|\(state.player.current?.album ?? "")|\(artwork?.generation ?? 0)") {
+                albumArt = nil
+                guard live, let c = state.player.current, let artwork else { return }
+                albumArt = await artwork.nowPlayingIndex(artist: c.artist, album: c.album)
+            }
     }
 
     private var liveBody: some View {
@@ -21,6 +30,7 @@ struct ZineNowPlaying: View {
             VStack(alignment: .leading, spacing: 0) {
                 Mono("Centre spread · Now playing").padding(.bottom, 6)
                 ZineCover(album: a, width: 350).overlay { Halftone().padding(3) }
+                    .overlay(alignment: .topTrailing) { zineDisc(albumArt?.discImage(disc: c?.disc), spinning: p.isPlaying) }
                 Text(c?.title ?? "Nothing playing").font(Z.an(54)).textCase(.uppercase).tracking(0.5).lineLimit(1).minimumScaleFactor(0.5)
                     .padding(.top, 16).accessibilityAddTraits(.isHeader)
                 if let c {
@@ -65,6 +75,20 @@ struct ZineNowPlaying: View {
                 .padding(.top, 4)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
+    /// The record as a cut-out on the cover's top corner: ink border, hard shadow, turning while the song plays (Zine owns its own look).
+    @ViewBuilder private func zineDisc(_ picture: ArtworkPicture?, spinning: Bool) -> some View {
+        if let picture {
+            let d: CGFloat = 130
+            ZStack {
+                Circle().fill(Z.ink).offset(x: 5, y: 5)
+                DiscView(picture: picture, diameter: d, spinning: spinning)
+                Circle().strokeBorder(Z.ink, lineWidth: 3)
+            }
+            .frame(width: d, height: d)
+            .offset(x: d * 0.3, y: -d * 0.3)
         }
     }
 
