@@ -279,6 +279,16 @@ fun AlbumCover(
     Cover(url, modifier, rect = rect, onColor = onColor)
 }
 
+/** A path step's album cover: the library's own when it holds the album, else the artwork lookup. Steps carry only title and artist. */
+@Composable
+fun PathAlbumCover(artist: String, album: String, modifier: Modifier = Modifier) {
+    val repo = LocalRepository.current
+    val url by produceState<String?>(null, artist, album) {
+        value = withContext(LookupDispatcher) { repo.ownedAlbumArtwork(artist, album) ?: repo.albumImage(artist, album) }
+    }
+    Cover(url, modifier)
+}
+
 @Composable
 fun ArtistPhoto(
     name: String,

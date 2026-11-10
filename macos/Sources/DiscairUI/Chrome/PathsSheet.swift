@@ -136,9 +136,22 @@ struct PathsSheet: View {
         }
     }
 
+    /// The cover's album item. A step the server names only by title and artist borrows its Navidrome ids from the library
+    /// album of that name; one outside the library is marked not owned so its cover is looked up by artist and title.
     private func item(_ c: PathStep.AlbumCover) -> AlbumItem {
-        AlbumItem(id: -1, title: c.title, artist: c.artist, year: 0, genre: "", format: "", owned: true,
-                  hue: Double(abs(c.title.hashValue % 360)), remoteID: c.albumID, coverArt: c.coverArt)
+        let hue = Double(abs(c.title.hashValue % 360))
+        if c.coverArt != nil || c.albumID != nil {
+            return AlbumItem(id: -1, title: c.title, artist: c.artist, year: 0, genre: "", format: "", owned: true, hue: hue, remoteID: c.albumID, coverArt: c.coverArt)
+        }
+        if let a = library(title: c.title, artist: c.artist) {
+            return AlbumItem(id: -1, title: c.title, artist: c.artist, year: 0, genre: "", format: "", owned: true, hue: hue,
+                             remoteID: a.remoteID, coverArt: a.coverArt ?? a.remoteID.map { "al-\($0)" })
+        }
+        return AlbumItem(id: 0, title: c.title, artist: c.artist, year: 0, genre: "", format: "", owned: false, hue: hue)
+    }
+
+    private func library(title: String, artist: String) -> AlbumItem? {
+        state.library.albums.first { LibrarySearch.fold($0.title) == LibrarySearch.fold(title) && LibrarySearch.fold($0.artist) == LibrarySearch.fold(artist) }
     }
 
     /// The step's album in the library, by Navidrome id or by title and artist.

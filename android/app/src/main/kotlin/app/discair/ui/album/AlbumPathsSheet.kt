@@ -75,7 +75,7 @@ import app.discair.ui.artist.Eyebrow
 import app.discair.ui.artist.FindRow
 import app.discair.ui.artist.InfoCard
 import app.discair.ui.artist.LibraryLine
-import app.discair.ui.common.AlbumCover
+import app.discair.ui.common.PathAlbumCover
 import app.discair.ui.common.FilterChip
 import app.discair.ui.common.Load
 import app.discair.ui.common.LocalRepository
@@ -220,7 +220,7 @@ private fun AlbumPathRow(number: Int, step: AlbumStep, onClick: () -> Unit) {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text("$number", style = MaterialTheme.typography.labelLarge, color = Ink.TextMuted, textAlign = TextAlign.End, modifier = Modifier.width(24.dp))
-        AlbumCover(step.artist, step.album, null, Modifier.size(48.dp))
+        PathAlbumCover(step.artist, step.album, Modifier.size(48.dp))
         Column(Modifier.weight(1f)) {
             Text(step.album, style = MaterialTheme.typography.titleMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
             Text(step.detail, style = MaterialTheme.typography.bodyMedium, color = Ink.TextMuted, maxLines = 2, overflow = TextOverflow.Ellipsis)
@@ -277,7 +277,7 @@ private fun AlbumPathDetail(
 @Composable
 private fun AlbumPaneBody(tab: AlbumTab, step: AlbumStep, startName: String, go: (PathLink) -> Unit) {
     Row(horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.Bottom) {
-        AlbumCover(step.artist, step.album, null, Modifier.size(144.dp))
+        PathAlbumCover(step.artist, step.album, Modifier.size(144.dp))
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(step.album, style = MaterialTheme.typography.titleLarge, modifier = Modifier.semantics { heading() })
             if (step.artist.isNotBlank()) Text(step.artist, style = MaterialTheme.typography.bodyMedium, color = Ink.TextMuted)

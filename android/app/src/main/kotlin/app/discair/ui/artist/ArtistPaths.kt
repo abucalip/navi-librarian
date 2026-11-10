@@ -68,7 +68,7 @@ import app.discair.model.pathsFailure
 import app.discair.model.sentence
 import app.discair.model.view
 import app.discair.ui.Opener
-import app.discair.ui.common.AlbumCover
+import app.discair.ui.common.PathAlbumCover
 import app.discair.ui.common.ArtistPhoto
 import app.discair.ui.common.FilterChip
 import app.discair.ui.common.Load
@@ -276,13 +276,13 @@ internal fun PathThumb(kind: PathKind, stop: PathStop, size: Int) {
             CandidateCover(covers, modifier) { PathTile(PlayerIcons.MusicNote, size) }
         }
         PathKind.LabelPath -> {
-            if (stop.albumArtist != null) AlbumCover(stop.albumArtist, stop.name, null, modifier) else PathTile(PlayerIcons.Album, size)
+            if (stop.albumArtist != null) PathAlbumCover(stop.albumArtist, stop.name, modifier) else PathTile(PlayerIcons.Album, size)
         }
         PathKind.SidemanToLeader, PathKind.ScenePath -> ArtistPhoto(stop.name, null, modifier, circle = true)
         PathKind.CompositionPath -> {
             // A recording's cover is its album's, when the server named the album.
             val by = stop.albumArtist ?: stop.artist
-            if (stop.album != null && by != null) AlbumCover(by, stop.album, null, modifier) else PathTile(PlayerIcons.MusicNote, size)
+            if (stop.album != null && by != null) PathAlbumCover(by, stop.album, modifier) else PathTile(PlayerIcons.MusicNote, size)
         }
     }
 }
