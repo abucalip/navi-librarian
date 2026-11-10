@@ -205,6 +205,27 @@ extension ArtworkIndex {
     }
 }
 
+/// Timeline filmstrip and Atlas disc nodes (docs/artwork.md, idea 11). Chosen by type only; taste and play data play no part.
+extension ArtworkIndex {
+    /// The most pictures a Timeline filmstrip holds.
+    public static let filmstripLimit = 16
+
+    /// The pictures of a Timeline entry's filmstrip: the Front, Back, Medium, Tray, Spine and Obi slots first, then the booklet pages,
+    /// then every other image, each once, never a PDF, at most `filmstripLimit`. Fewer than two is not a strip (empty).
+    public var filmstrip: [ArtworkPicture] {
+        var seen = Set<Int>(), out: [ArtworkPicture] = []
+        let slots = ["Front", "Back", "Medium", "Tray", "Spine", "Obi"].compactMap { slotImage($0) }
+        for picture in slots + bookletImages + images where !picture.isPDF && seen.insert(picture.imageID).inserted { out.append(picture) }
+        return out.count >= 2 ? Array(out.prefix(Self.filmstripLimit)) : []
+    }
+}
+
+/// A release group id is used for an artwork lookup only when it is a UUID (the server rejects anything else).
+public func artworkGroupID(_ raw: String?) -> String? {
+    guard let raw, UUID(uuidString: raw.trimmingCharacters(in: .whitespaces)) != nil else { return nil }
+    return raw.trimmingCharacters(in: .whitespaces)
+}
+
 /// The most session photos shown for one album in Same Room.
 public let roomPhotoLimit = 3
 

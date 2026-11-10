@@ -151,6 +151,9 @@ struct TimelineView: View {
             .padding(10).frame(maxWidth: .infinity, alignment: .leading)
             .background(.background, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
         }
+        if item.kind == "album", item.entity.type == "release_group", let rgid = artworkGroupID(item.entity.mbid) {
+            TimelineFilmstrip(rgid: rgid, title: item.entity.name).id(rgid)
+        }
         if item.kind == "album", item.owned, let album = GraphNodeFace.ownedAlbum(item.entity.name, library: state.library) {
             Button("Open album") { state.open(album: album) }.buttonStyle(CapsuleButtonStyle(primary: true, small: true))
         }

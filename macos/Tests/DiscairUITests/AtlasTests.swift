@@ -70,3 +70,18 @@ private func place(_ id: String, _ lat: Double, _ lon: Double, owned: Int = 0) -
         #expect(model.selected == nil && model.detail == nil)
     }
 }
+
+@Suite("Atlas discs") struct AtlasDiscTests {
+    private func link(_ mbid: String, _ type: String) -> KnowledgeAlbumLink {
+        let json = #"{"album":{"mbid":"\#(mbid)","canonical_name":"A","type":"\#(type)"},"owned":true}"#
+        return try! JSONDecoder().decode(KnowledgeAlbumLink.self, from: Data(json.utf8))
+    }
+
+    @Test func discComesFromTheFirstReleaseGroupWithAValidId() {
+        let good = "2c4b6c2e-1c43-4d1d-a1f0-5f0e6f4b9a11"
+        #expect(AtlasGeometry.discGroup([link("x", "release_group"), link(good, "release"), link(good, "release_group")]) == good)
+        #expect(AtlasGeometry.discGroup([link("x", "release_group")]) == nil && AtlasGeometry.discGroup([]) == nil)
+    }
+
+    @MainActor @Test func discsAreOffUntilTurnedOn() { #expect(AtlasModel().showsDiscs == false) }
+}

@@ -147,11 +147,22 @@ struct AtlasView: View {
         }
         if let begin = d.facts?.begin { block("Opened", [begin, d.facts?.end].compactMap { $0 }.joined(separator: " – "), note: nil) }
         if !d.recordings.isEmpty {
-            Text("Recordings (\(d.recordings.count), \(d.recordings.filter(\.owned).count) owned)").font(.system(size: 12, weight: .semibold))
+            @Bindable var a = atlas
+            HStack {
+                Text("Recordings (\(d.recordings.count), \(d.recordings.filter(\.owned).count) owned)").font(.system(size: 12, weight: .semibold))
+                Spacer()
+                Toggle("Discs", isOn: $a.showsDiscs).toggleStyle(.switch).controlSize(.mini)
+                    .accessibilityHint("Shows each album's disc image next to its recordings")
+            }
             ForEach(d.recordings.prefix(12), id: \.recording.mbid) { r in
                 VStack(alignment: .leading, spacing: 3) {
-                    Text(r.recording.name).font(.system(size: 12, weight: .semibold))
-                    Text(r.albums.map(\.album.name).joined(separator: " · ")).font(.system(size: 11)).foregroundStyle(style.muted).lineLimit(2)
+                    HStack(alignment: .center, spacing: 8) {
+                        if atlas.showsDiscs, let rgid = AtlasGeometry.discGroup(r.albums) { AlbumDisc(rgid: rgid, diameter: 34) }
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text(r.recording.name).font(.system(size: 12, weight: .semibold))
+                            Text(r.albums.map(\.album.name).joined(separator: " · ")).font(.system(size: 11)).foregroundStyle(style.muted).lineLimit(2)
+                        }
+                    }
                     if let c = r.credits.first { Text("\(c.source) · \(c.evidenceClass) · \(c.matchQuality)").font(.system(size: 10)).foregroundStyle(style.muted) }
                     if let album = r.albums.first(where: \.owned), let item = GraphNodeFace.ownedAlbum(album.album.name, library: state.library) {
                         Button("Open album") { state.open(album: item) }.buttonStyle(CapsuleButtonStyle(primary: true, small: true))

@@ -141,6 +141,26 @@ import Testing
         #expect(try peekIndex(images: [(7, ["Front"], "jpg")], slots: ["Front": 7], booklet: nil).discoverPeek.isEmpty)
     }
 
+    // MARK: Timeline filmstrip and Atlas discs (idea 11)
+
+    @Test func filmstripIsSlotsThenBookletThenTheRestOnceWithoutPDFs() throws {
+        let index = try peekIndex(
+            images: [(1, ["Other"], "jpg"), (2, ["Front"], "jpg"), (3, ["Booklet"], "jpg"), (4, ["Medium"], "jpg"), (5, ["Booklet"], "pdf"), (6, ["Back"], "jpg")],
+            slots: ["Front": 2, "Back": 6, "Medium": 4], booklet: [3, 5])
+        #expect(index.filmstrip.map(\.imageID) == [2, 6, 4, 3, 1])
+    }
+
+    @Test func filmstripNeedsTwoPicturesAndIsCapped() throws {
+        #expect(try peekIndex(images: [(1, ["Front"], "jpg")], slots: ["Front": 1], booklet: nil).filmstrip.isEmpty)
+        let many = try peekIndex(images: (1...40).map { ($0, ["Other"], "jpg") }, slots: [:], booklet: nil)
+        #expect(many.filmstrip.count == ArtworkIndex.filmstripLimit)
+    }
+
+    @Test func groupIDMustBeAUUID() {
+        #expect(artworkGroupID("2c4b6c2e-1c43-4d1d-a1f0-5f0e6f4b9a11") != nil)
+        #expect(artworkGroupID("not-a-uuid") == nil && artworkGroupID(nil) == nil && artworkGroupID("") == nil)
+    }
+
     @Test func pathCoversAreFrontImagesWithoutPDFsAndNeedTwo() throws {
         let two = try peekIndex(images: [(1, ["Front"], "jpg"), (2, ["Back"], "jpg"), (3, ["Front"], "jpg"), (4, ["Front"], "pdf")], slots: [:], booklet: nil)
         #expect(two.pathCoverFaces.map(\.imageID) == [1, 3])
