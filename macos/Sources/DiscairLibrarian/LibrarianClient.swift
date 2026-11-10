@@ -12,6 +12,10 @@ public struct DashboardPick: Codable, Equatable, Sendable {
     public let similarTo: [String]?
     public let dashboardCategory: String?
     public let discoveryCategory: String?
+    /// The album's MusicBrainz release group, when the server sent `release_group_mbid` (docs/artwork.md, idea 9).
+    public var releaseGroupMBID: String?
+    /// The new-releases list sends its release group as `mbid`; other lists do not use this field for it.
+    public var mbid: String?
 
     enum CodingKeys: String, CodingKey {
         case artist, album, reason, genres
@@ -19,6 +23,8 @@ public struct DashboardPick: Codable, Equatable, Sendable {
         case similarTo = "similar_to"
         case dashboardCategory = "dashboard_category"
         case discoveryCategory = "discovery_category"
+        case releaseGroupMBID = "release_group_mbid"
+        case mbid
     }
 }
 

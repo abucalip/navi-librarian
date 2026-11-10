@@ -33,6 +33,8 @@ public final class DiscoveryModel {
 
     public private(set) var pages: [Kind: Page] = [:]
     public var selected: Kind = .personal
+    /// The row under the pointer (Discover's covers peek opens while it is hovered).
+    public var hoveredAlbum: Int?
     private var librarian: LibrarianClient?
 
     public init() {}
@@ -56,13 +58,25 @@ public final class DiscoveryModel {
         var p = page(k); p.phase = .loading; pages[k] = p
         do {
             let list = try await librarian.discoveryList(k.rawValue)
-            let albums = list.items.enumerated().map { LibraryModel.item($0.element, index: 8000 + $0.offset) }
+            let albums = list.items.enumerated().map { entry -> AlbumItem in
+                var album = LibraryModel.item(entry.element, index: 8000 + entry.offset)
+                album.releaseGroupMBID = Self.peekReleaseGroup(k, entry.element)
+                return album
+            }
             pages[k] = Page(phase: .loaded, albums: albums, message: albums.isEmpty ? (list.message ?? k.emptyText) : nil)
         } catch let e as DiscairError {
             pages[k] = Page(phase: .failed(AcquisitionModel.text(e)))
         } catch {
             pages[k] = Page(phase: .failed(ErrorMapping.map(error).summary))
         }
+    }
+
+    /// The release group a row's covers are looked up by (idea 9): `mbid` on new releases, `release_group_mbid` elsewhere.
+    /// Only a well-formed UUID is kept, so nothing else reaches the server.
+    static func peekReleaseGroup(_ k: Kind, _ pick: DashboardPick) -> String? {
+        let raw = pick.releaseGroupMBID ?? (k == .newReleases ? pick.mbid : nil)
+        guard let raw, let id = UUID(uuidString: raw.trimmingCharacters(in: .whitespaces)) else { return nil }
+        return id.uuidString.lowercased()
     }
 
     /// "Build this list": asks the Librarian to make it, then reads it. Not offered for Saved.

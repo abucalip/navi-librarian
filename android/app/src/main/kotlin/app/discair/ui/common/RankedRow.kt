@@ -66,6 +66,8 @@ data class RowModel(
     val metadata: kotlinx.serialization.json.JsonObject = kotlinx.serialization.json.JsonObject(emptyMap()),
     /** The server says the album is already in the library: show the check instead of Get. */
     val owned: Boolean = false,
+    /** The album's MusicBrainz release group, when the server sent one; the row's "Covers" control needs it. */
+    val releaseGroup: String? = null,
 )
 
 /**
@@ -123,6 +125,7 @@ fun RankedRow(
                 )
             }
             if (model.bio) ArtistBio(model.artist)
+            model.releaseGroup?.let { CoversPeek(it) }
         }
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             if (model.owned) Box(Modifier.size(Target), contentAlignment = Alignment.Center) { OwnedMark(true) }
@@ -131,6 +134,24 @@ fun RankedRow(
             DismissMenu(model.album, model.artist, onDismiss)
         }
     }
+}
+
+/**
+ * "Covers": opens a row's peek of up to three pictures (docs/artwork.md, idea 9). Closed by default; the lookup starts only when
+ * the reader opens it. Shows nothing for an album with no such pictures.
+ */
+@Composable
+private fun CoversPeek(releaseGroup: String) {
+    var open by remember(releaseGroup) { mutableStateOf(false) }
+    Text(
+        if (open) "Hide covers" else "Covers",
+        style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary,
+        modifier = Modifier.heightIn(min = Target).clickable(role = Role.Button) { open = !open }
+            .padding(vertical = 12.dp).semantics {
+                stateDescription = if (open) "Expanded" else "Collapsed"
+            },
+    )
+    if (open) DiscoverPeek(releaseGroup)
 }
 
 /** The artist biography, three lines until tapped. Fetched when the row first appears. */

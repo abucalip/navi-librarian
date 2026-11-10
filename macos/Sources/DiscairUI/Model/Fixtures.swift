@@ -24,6 +24,8 @@ public struct AlbumItem: Identifiable, Equatable, Sendable {
     public var artistRemoteID: String? = nil
     public var songCount: Int? = nil
     public var durationSeconds: Int? = nil
+    /// The album's MusicBrainz release group, when a discovery row carries one: the Discover peek looks its covers up (idea 9).
+    public var releaseGroupMBID: String? = nil
 
     /// "Artist · 1991 · Genre" without empty parts (live data may not know a year or genre).
     public func line(_ parts: [String]) -> String { parts.filter { !$0.isEmpty }.joined(separator: " · ") }
