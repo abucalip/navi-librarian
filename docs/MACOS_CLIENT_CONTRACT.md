@@ -88,8 +88,8 @@ Queue (play next, add to queue, reorder), shuffle, repeat, gapless with next-tra
 
 ## 7. Local library over SMB
 
-- The app may read the music folder over SMB for fast tag reads and waveforms only. Never download whole files over HTTP for a waveform.
-- Waveforms are produced only when the SMB file is reachable and the read is quick (time budget set in M2); otherwise the seek bar is plain. No waveform is invented.
+- The app may read the music folder over SMB for fast tag reads only. Never download whole files over HTTP for a waveform.
+- Waveforms come from the Librarian (`GET /api/songs/{id}/peaks`: 200 peaks, 202 pending and asked again every 5 s, 404 none), cached per song on the Mac; the app never decodes audio for a waveform. When the server has none, the seek bar is plain. No waveform is invented.
 - SMB use is optional, off when the share is unmounted, and never required for playback. Playback stays on `stream.view`.
 - Mount point `/Volumes/media/library/music`; the app auto-mounts the share (section 10). Path mapping from Navidrome paths to the mount is a setting, confirmed in the M2 spike.
 

@@ -83,18 +83,16 @@ public final class PlayerModel {
 
     // MARK: Waveform (contract section 7)
 
-    /// 1000 peaks (0...1) for the playing song, or nil: the seek bar is then plain. Only ever read from the SMB mount.
+    /// 1000 peaks (0...1) for the playing song, or nil: the seek bar is then plain. Always the server's peaks, never a local decode.
     public private(set) var waveform: [Float]?
-    /// Where a song's file is on this Mac, or nil when the share is off or the path is not usable.
-    @ObservationIgnored public var waveformFileURL: @MainActor (QueueItem) -> URL? = { _ in nil }
+    /// Asks the Librarian for a song's peaks. Wired by `AppState`; the default has no server, so the bar stays plain.
+    @ObservationIgnored public var waveformFetch: @Sendable (String) async -> SongPeaks = { _ in .unavailable }
     @ObservationIgnored public let waveformCache: WaveformCache
-    /// A waveform that is not ready this long after the song started is not shown for that song (it is still cached).
-    @ObservationIgnored var waveformBudget: Duration = .seconds(5)
-    /// Test hook: stands in for the decode.
-    @ObservationIgnored var waveformCompute: @Sendable (URL) -> [Float]? = { WaveformReader.peaks(of: $0) }
+    /// How long to wait between asks while the server is still decoding the song, and how many times to ask.
+    @ObservationIgnored var waveformRetry: Duration = .seconds(5)
+    @ObservationIgnored var waveformAttempts = 12
     @ObservationIgnored private var waveformFor: UUID?
     @ObservationIgnored private var waveformTask: Task<Void, Never>?
-    @ObservationIgnored private var waveformStarted = ContinuousClock.now
 
     /// Called on every tick; does something only when the song changed.
     private func syncWaveform() {
@@ -105,18 +103,21 @@ public final class PlayerModel {
         waveform = nil
         guard let item else { return }
         if let cached = waveformCache.peaks(songID: item.songID) { waveform = cached; return }
-        guard let url = waveformFileURL(item) else { return }
-        waveformStarted = .now
-        let id = item.id, songID = item.songID, compute = waveformCompute, cache = waveformCache
+        let id = item.id, songID = item.songID, cache = waveformCache
         waveformTask = Task { [weak self] in
-            let peaks = await Task.detached(priority: .utility) { () -> [Float]? in
-                guard !Task.isCancelled else { return nil }
-                let p = compute(url)
-                if let p, !Task.isCancelled { cache.put(p, songID: songID) }
-                return p
-            }.value
-            guard let self, let peaks, self.waveformFor == id else { return }
-            if ContinuousClock.now - self.waveformStarted <= self.waveformBudget { self.waveform = peaks }
+            for attempt in 0..<(self?.waveformAttempts ?? 0) {
+                guard let self, !Task.isCancelled, self.waveformFor == id else { return }
+                switch await self.waveformFetch(songID) {
+                case .ready(let peaks):
+                    guard !Task.isCancelled, self.waveformFor == id else { return }
+                    cache.put(peaks, songID: songID)
+                    self.waveform = peaks
+                    return
+                case .unavailable: return
+                case .pending:
+                    if attempt + 1 < self.waveformAttempts { try? await Task.sleep(for: self.waveformRetry) }
+                }
+            }
         }
     }
     public var isPlaying: Bool { phase == .playing }

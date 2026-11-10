@@ -168,7 +168,10 @@ public final class AppState {
             feedback = outbox
         }
         player.onUpNextLow = { [weak self] in if self?.radio.autoplay == true { self?.startRadio() } }
-        player.waveformFileURL = { [weak self] item in item.path.flatMap { self?.share.localURL(forServerPath: $0) } }
+        player.waveformFetch = { [weak session] songID in
+            guard let librarian = await MainActor.run(body: { session?.librarian }) else { return .unavailable }
+            return (try? await librarian.songPeaks(id: songID)) ?? .unavailable
+        }
         session?.onConnected = { [weak self] in
             self?.share.startIfNeeded()
             // The refresh can take about a minute on a long history, so it never holds up the library load.

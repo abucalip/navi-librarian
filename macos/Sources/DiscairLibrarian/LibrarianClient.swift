@@ -70,6 +70,15 @@ public struct AlbumReviews: Decodable, Equatable, Sendable {
     public let retryable: Bool?
 }
 
+/// The answer to `GET /api/songs/{id}/peaks`: the server decodes each song once and keeps 1000 peaks.
+public enum SongPeaks: Equatable, Sendable {
+    case ready([Float])
+    /// 202: the server is decoding the song; ask again in a few seconds.
+    case pending
+    /// 404 or an unreadable answer: no waveform for this song, and none is invented.
+    case unavailable
+}
+
 public struct LibrarianClient: Sendable {
     private let base: URL
     private let credential: Credential
@@ -205,6 +214,21 @@ public struct LibrarianClient: Sendable {
     public func albumReviews(artist: String, album: String) async throws -> AlbumReviews {
         let (data, http) = try await authedSend("GET", "api/album-reviews?" + Self.query(artist, album), body: nil)
         return try decode(AlbumReviews.self, data, http)
+    }
+
+    /// Waveform peaks for one song (`GET /api/songs/{id}/peaks`): 200 `{"bins", "peaks": [0...65535]}`, 202 pending, 404 none.
+    public func songPeaks(id: String) async throws -> SongPeaks {
+        struct Body: Decodable { let bins: Int?; let peaks: [Int]? }
+        let (data, http) = try await authedSend("GET", "api/songs/\(Self.enc(id))/peaks", body: nil)
+        switch http.statusCode {
+        case 202: return .pending
+        case 404: return .unavailable
+        default:
+            if let failure = failure(http, data) { throw failure }
+            guard let peaks = try? JSONDecoder().decode(Body.self, from: data).peaks, !peaks.isEmpty, peaks.contains(where: { $0 > 0 })
+            else { return .unavailable }
+            return .ready(peaks.map { Float(min(max($0, 0), 65_535)) / 65_535 })
+        }
     }
 
     static func query(_ artist: String, _ album: String) -> String {

@@ -148,7 +148,7 @@ public final class ShareModel {
         case .off: return "Off. Playback never needs the share."
         case .needsAddress: return "Enter the share address, then save."
         case .mounting: return "Connecting to the share…"
-        case .ready: return "Connected. Waveforms and quick tag reads can use the music folder."
+        case .ready: return "Connected. Quick tag reads can use the music folder."
         case .unavailable(let why): return "Not connected. \(why) Playback is not affected."
         }
     }
