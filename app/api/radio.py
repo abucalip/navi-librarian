@@ -10,8 +10,10 @@ from fastapi.responses import StreamingResponse
 
 from acquisition import track_service
 from app.api.dependencies import get_librarian
+from discovery.search.query import artwork_url
 from integrations.musicbrainz.recording_album import lookup_recording_album
-from integrations.radio import logos, relay, stations
+from integrations.radio import library_match, logos, relay, stations
+from integrations.radio import now as radio_now
 from integrations.radio.listening import ListenTracker
 from integrations.radio.store import RadioStore
 
@@ -129,6 +131,43 @@ def radio_delete_logo(station_id: str, librarian=Depends(get_librarian), store=D
     return {"ok": True, "logo_url": stations.logo_path(station_id)}
 
 
+def _library_lookup(librarian, station_id: str):
+    """Looks a parsed song up in the library once per song; a failed lookup is not kept, so it is retried."""
+    def lookup(raw: str, artist: str, title: str):
+        cached = radio_now.NOW.library(station_id, raw)
+        if cached is not None:
+            return cached
+        try:
+            song = library_match.find_song(librarian.api_call, artist, title)
+        except Exception:
+            return None
+        result = {"in_library": song is not None,
+                  "cover_url": artwork_url(song.get("coverArt")) if song else None}
+        radio_now.NOW.remember_library(station_id, raw, result)
+        return result
+    return lookup
+
+
+def _now_for(librarian, store, station_id: str) -> dict:
+    local = store.get_station(station_id)
+    return radio_now.view(
+        radio_now.NOW.live(station_id), _library_lookup(librarian, station_id),
+        proxied=bool(local and local["enabled"]), unreachable=radio_now.NOW.unreachable(station_id))
+
+
+@router.get("/api/radio/stations/{station_id}/now")
+def radio_station_now(station_id: str, librarian=Depends(get_librarian), store=Depends(get_store)):
+    """The song a station is playing right now, from the relay's in-memory holder (no upstream call)."""
+    return _now_for(librarian, store, station_id)
+
+
+@router.get("/api/radio/now")
+def radio_now_all(librarian=Depends(get_librarian), store=Depends(get_store)):
+    """The live song of every relayed station; a station nobody is listening to is 'idle'."""
+    return {"items": [{"id": local["station_id"], **_now_for(librarian, store, local["station_id"])}
+                      for local in store.enabled_stations()]}
+
+
 @router.get("/api/radio/plays")
 def radio_plays(limit: int = 100, store=Depends(get_store)):
     if not 1 <= limit <= 500:
@@ -190,11 +229,13 @@ async def radio_stream(token: str, request: Request, store=Depends(get_store)):
             stream=True)
     except Exception:
         await client.aclose()
+        radio_now.NOW.mark_unreachable(station["station_id"])
         raise HTTPException(status_code=502, detail="The station is unreachable.")
     content_type = upstream.headers.get("content-type", "")
     if upstream.status_code != 200 or not relay.stream_is_audio(content_type):
         await upstream.aclose()
         await client.aclose()
+        radio_now.NOW.mark_unreachable(station["station_id"])
         raise HTTPException(status_code=502, detail="The station did not return an audio stream.")
 
     metaint = relay.metaint_of(upstream.headers)
@@ -203,7 +244,8 @@ async def radio_stream(token: str, request: Request, store=Depends(get_store)):
         headers["icy-name"] = upstream.headers["icy-name"]
     if wants_metadata and metaint:
         headers["icy-metaint"] = str(metaint)
-    tracker = ListenTracker(store, station["station_id"], station["name"])
+    tracker = ListenTracker(store, station["station_id"], station["name"],
+                            holder=radio_now.NOW, has_metadata=bool(metaint))
 
     async def body():
         try:

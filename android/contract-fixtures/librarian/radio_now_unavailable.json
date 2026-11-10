@@ -1,0 +1,22 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/api/radio/stations/12/now",
+    "query": {}
+  },
+  "response": {
+    "status": 200,
+    "content_type": "application/json",
+    "elapsed_seconds": 0.0,
+    "body": {
+      "state": "unavailable",
+      "raw_title": null,
+      "artist": null,
+      "title": null,
+      "play_id": null,
+      "in_library": false,
+      "cover_url": null
+    }
+  },
+  "captured_at": "2026-11-10T17:59:27Z"
+}

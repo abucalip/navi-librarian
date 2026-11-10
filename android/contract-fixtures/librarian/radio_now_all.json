@@ -1,0 +1,37 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/api/radio/now",
+    "query": {}
+  },
+  "response": {
+    "status": 200,
+    "content_type": "application/json",
+    "elapsed_seconds": 0.0,
+    "body": {
+      "items": [
+        {
+          "id": "11",
+          "state": "ok",
+          "raw_title": "Pink Floyd - Time",
+          "artist": "Pink Floyd",
+          "title": "Time",
+          "play_id": 1,
+          "in_library": true,
+          "cover_url": "/api/owned/artwork/al-42"
+        },
+        {
+          "id": "12",
+          "state": "idle",
+          "raw_title": null,
+          "artist": null,
+          "title": null,
+          "play_id": null,
+          "in_library": false,
+          "cover_url": null
+        }
+      ]
+    }
+  },
+  "captured_at": "2026-11-10T17:59:27Z"
+}

@@ -9,10 +9,21 @@ from fastapi.testclient import TestClient
 
 from app.api import radio
 from integrations.radio import logos
+from integrations.radio import now as radio_now
+from integrations.radio.listening import ListenTracker
+from integrations.radio.now import NowHolder
 from integrations.radio.tile import tile_png
 from app.api.dependencies import get_librarian
 from app.security.app_login_middleware import create_app_login_middleware
 from tests.test_radio_icy import block
+
+
+class Clock:
+    def __init__(self, start=1000.0):
+        self.now = start
+
+    def __call__(self):
+        return self.now
 
 
 class FakeLibrarian:
@@ -40,6 +51,9 @@ class RadioRouteTests(unittest.TestCase):
     def setUp(self):
         self.dir = tempfile.TemporaryDirectory()
         radio._STORES.clear()
+        self.now = NowHolder()
+        self.now_patch = mock.patch.object(radio_now, "NOW", self.now)
+        self.now_patch.start()
         self.librarian = FakeLibrarian(self.dir.name)
         self.client = self.make_client(gated=False)
         self.gated = self.make_client(gated=True)
@@ -65,6 +79,7 @@ class RadioRouteTests(unittest.TestCase):
     def tearDown(self):
         radio.client_factory = httpx.AsyncClient
         radio._STORES.clear()
+        self.now_patch.stop()
         self.dir.cleanup()
 
     def serve(self, handler):
@@ -85,10 +100,15 @@ class RadioRouteTests(unittest.TestCase):
 
     def test_client_without_metadata_gets_audio_only_and_the_title_is_logged(self):
         self.serve(self.ok_handler)
-        times = iter([100.0, 200.0, 200.0, 200.0])
+        calls = []
+
+        def clock():
+            # The song starts at 100 s; every later reading is 200 s (a 100 s listen).
+            calls.append(None)
+            return 100.0 if len(calls) == 1 else 200.0
         real = radio.ListenTracker
         with mock.patch.object(radio, "ListenTracker",
-                               lambda *a: real(*a, clock=lambda: next(times))):
+                               lambda *a, **kw: real(*a, clock=clock, **kw)):
             response = self.client.get("/radio/stream/tok")
         self.assertEqual(response.content, b"A" * 8 + b"B" * 8)
         self.assertNotIn("icy-metaint", response.headers)
@@ -226,6 +246,116 @@ class StationFieldRouteTests(unittest.TestCase):
         too_big = b"\x89PNG\r\n\x1a\n" + b"0" * (logos.MAX_UPLOAD_BYTES + 1)
         self.assertEqual(self.client.put("/api/radio/stations/1/logo", content=too_big).status_code, 413)
         self.assertIsNone(self.store.get_logo_state("1"))
+
+
+class NowRouteTests(unittest.TestCase):
+    """GET /api/radio/stations/{id}/now and GET /api/radio/now (contract sections 3.2 and 3.3)."""
+
+    def setUp(self):
+        self.dir = tempfile.TemporaryDirectory()
+        radio._STORES.clear()
+        self.now = NowHolder(clock=lambda: 0.0)
+        self.now_patch = mock.patch.object(radio_now, "NOW", self.now)
+        self.now_patch.start()
+        self.librarian = FakeLibrarian(self.dir.name)
+        self.client = TestClient(self.make_app())
+        self.store = radio.get_store(self.librarian)
+        self.store.save_station("1", "tok", "Rock FM", "http://rock.example/live")
+        self.clock = Clock()
+
+    def tearDown(self):
+        radio.client_factory = httpx.AsyncClient
+        radio._STORES.clear()
+        self.now_patch.stop()
+        self.dir.cleanup()
+
+    def make_app(self):
+        app = FastAPI()
+        app.include_router(radio.router)
+        app.dependency_overrides[get_librarian] = lambda: self.librarian
+        return app
+
+    def listen(self, raw, seconds, has_metadata=True):
+        tracker = ListenTracker(self.store, "1", "Rock FM", clock=self.clock,
+                                holder=self.now, has_metadata=has_metadata)
+        tracker.set_title(raw if has_metadata else None)
+        self.clock.now += seconds
+        tracker.tick()
+        return tracker
+
+    def library_has(self, *songs):
+        self.librarian.api_call.side_effect = None
+        self.librarian.api_call.return_value = {"searchResult3": {"song": list(songs)}}
+
+    def test_nobody_listening_is_idle_and_makes_no_library_call(self):
+        body = self.client.get("/api/radio/stations/1/now").json()
+        self.assertEqual(body["state"], "idle")
+        self.assertIsNone(body["play_id"])
+        self.librarian.api_call.assert_not_called()
+
+    def test_disabled_or_unknown_station_is_not_proxied(self):
+        self.assertEqual(self.client.get("/api/radio/stations/9/now").json()["state"], "not_proxied")
+        self.store.disable_station("1")
+        self.assertEqual(self.client.get("/api/radio/stations/1/now").json()["state"], "not_proxied")
+
+    def test_live_song_gets_a_play_id_after_thirty_seconds_and_a_library_match(self):
+        self.library_has({"id": "s1", "artist": "Pink Floyd", "title": "Time", "coverArt": "al-42"})
+        tracker = self.listen("Pink Floyd - Time", 29)
+        self.assertIsNone(self.client.get("/api/radio/stations/1/now").json()["play_id"])
+        self.clock.now += 1
+        tracker.tick()
+        body = self.client.get("/api/radio/stations/1/now").json()
+        play = self.store.list_plays()[0]
+        self.assertEqual(body, {"state": "ok", "raw_title": "Pink Floyd - Time", "artist": "Pink Floyd",
+                                "title": "Time", "play_id": play["id"], "in_library": True,
+                                "cover_url": "/api/owned/artwork/al-42"})
+
+    def test_library_is_asked_once_per_song_not_per_request(self):
+        self.library_has()
+        self.listen("A - Song", 5)
+        self.client.get("/api/radio/stations/1/now")
+        self.client.get("/api/radio/stations/1/now")
+        self.assertEqual(self.librarian.api_call.call_count, 1)
+        self.assertEqual(self.librarian.api_call.call_args.args[0], "search3")
+
+    def test_failed_library_lookup_is_not_in_library_and_is_retried(self):
+        self.librarian.api_call.side_effect = RuntimeError("navidrome down")
+        self.listen("A - Song", 5)
+        first = self.client.get("/api/radio/stations/1/now").json()
+        self.assertEqual((first["state"], first["in_library"], first["cover_url"]), ("ok", False, None))
+        self.library_has({"id": "s1", "artist": "A", "title": "Song", "coverArt": "al-1"})
+        second = self.client.get("/api/radio/stations/1/now").json()
+        self.assertTrue(second["in_library"])
+
+    def test_station_without_icy_titles_is_no_metadata(self):
+        self.listen(None, 40, has_metadata=False)
+        self.assertEqual(self.client.get("/api/radio/stations/1/now").json()["state"], "no_metadata")
+
+    def test_title_without_artist_and_title_is_unparsed_and_not_looked_up(self):
+        self.listen("Station jingle", 40)
+        body = self.client.get("/api/radio/stations/1/now").json()
+        self.assertEqual((body["state"], body["raw_title"], body["artist"]), ("unparsed", "Station jingle", None))
+        self.librarian.api_call.assert_not_called()
+
+    def test_relay_that_could_not_reach_the_station_says_unavailable(self):
+        def boom(request):
+            raise httpx.ConnectError("down")
+        radio.client_factory = lambda **kw: httpx.AsyncClient(transport=httpx.MockTransport(boom), **kw)
+        app = self.make_app()
+        self.assertEqual(TestClient(app).get("/radio/stream/tok").status_code, 502)
+        self.assertEqual(self.client.get("/api/radio/stations/1/now").json()["state"], "unavailable")
+
+    def test_all_stations_endpoint_lists_every_relayed_station(self):
+        self.store.save_station("2", "tok2", "Jazz FM", "http://jazz.example/live")
+        self.listen("A - Song", 35)
+        items = self.client.get("/api/radio/now").json()["items"]
+        by_id = {item["id"]: item for item in items}
+        self.assertEqual(set(by_id), {"1", "2"})
+        self.assertEqual(by_id["1"]["state"], "ok")
+        self.assertIsNotNone(by_id["1"]["play_id"])
+        self.assertEqual(by_id["2"]["state"], "idle")
+        self.assertEqual(set(by_id["2"]), {"id", "state", "raw_title", "artist", "title", "play_id",
+                                           "in_library", "cover_url"})
 
 
 if __name__ == "__main__":
