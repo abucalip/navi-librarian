@@ -181,7 +181,8 @@ public enum ArtworkIndexResult: Equatable, Sendable {
             // An "ok" with nothing to show is not an error and not a statement either: show nothing extra.
             return index.images.isEmpty ? .empty : .ready(index)
         case "empty": return .empty
-        case "not_loaded": return .notLoaded(retryAfter: min(max(head.retryAfter ?? 5, 1), 60))
+        // "pending" is the knowledge-base name for the same state (docs/efficiency.md, E1): a fetch is queued, ask again.
+        case "not_loaded", "pending": return .notLoaded(retryAfter: min(max(head.retryAfter ?? 5, 1), 60))
         default: return .unavailable
         }
     }

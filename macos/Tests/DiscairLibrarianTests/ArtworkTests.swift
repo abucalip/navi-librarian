@@ -45,6 +45,10 @@ import Testing
         #expect((1...60).contains(seconds))
     }
 
+    @Test func pendingIsReadAsNotLoaded() {
+        #expect(ArtworkIndexResult.decode(Data(#"{"status":"pending"}"#.utf8)) == .notLoaded(retryAfter: 5))
+    }
+
     @Test func truncatedFixturesStillShowWhatWasServedAndSayWhy() throws {
         #expect(try ready("artwork_index_truncated").truncatedReason == "partial")
         #expect(try ready("artwork_index_truncated_release_cap").truncatedReason == "release_cap")

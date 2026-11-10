@@ -56,6 +56,10 @@ class ArtworkIndexTest {
         assertTrue(r.retryAfterSeconds in 1..60)
     }
 
+    @Test fun pendingIsReadAsNotLoaded() {
+        assertEquals(ArtworkIndexResult.NotLoaded(5), parseArtworkIndex("""{"status":"pending"}"""))
+    }
+
     @Test fun truncatedFixturesStillShowWhatWasServedAndSayWhy() {
         assertEquals("partial", ready("artwork_index_truncated").truncatedReason)
         assertEquals("release_cap", ready("artwork_index_truncated_release_cap").truncatedReason)

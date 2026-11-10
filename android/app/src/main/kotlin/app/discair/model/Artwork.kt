@@ -113,7 +113,8 @@ fun parseArtworkIndex(body: String): ArtworkIndexResult {
             if (index.images.isEmpty()) ArtworkIndexResult.Empty else ArtworkIndexResult.Ready(index)
         }
         "empty" -> ArtworkIndexResult.Empty
-        "not_loaded" -> ArtworkIndexResult.NotLoaded((root.num("retry_after") ?: DEFAULT_RETRY_SECONDS).coerceIn(1, MAX_RETRY_SECONDS))
+        // "pending" is the knowledge-base name for the same state (docs/efficiency.md, E1): a fetch is queued, ask again.
+        "not_loaded", "pending" -> ArtworkIndexResult.NotLoaded((root.num("retry_after") ?: DEFAULT_RETRY_SECONDS).coerceIn(1, MAX_RETRY_SECONDS))
         else -> ArtworkIndexResult.Unavailable
     }
 }
