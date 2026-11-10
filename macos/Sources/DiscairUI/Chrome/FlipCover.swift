@@ -55,6 +55,11 @@ struct FlipCover<Front: View>: View {
     var spineStrip = false
     /// The library album id: when set, the cover carries the edition picker button (owned albums only).
     var albumID: String?
+    /// An index the caller already holds (Now Playing finds the playing album's index by artist and title, so it has no group id
+    /// to give). It is used instead of asking by `rgid`.
+    var index: ArtworkIndex?
+    /// Names the face in a small caption under the card while a back face shows (Now Playing).
+    var caption = false
     let front: () -> Front
 
     @Environment(\.artwork) private var store
@@ -78,7 +83,15 @@ struct FlipCover<Front: View>: View {
         .overlay(alignment: .leading) {
             if spineStrip, let spine { SpineStrip(picture: spine).offset(x: -SpineStrip.width) }
         }
-        .task(id: "\(rgid ?? "")|\(store?.generation ?? 0)") { await loadFaces() }
+        .overlay(alignment: .bottom) {
+            if caption, face != 0, backs.indices.contains(face - 1) {
+                Text(backs[face - 1].label).font(.system(size: 11, weight: .medium)).lineLimit(1)
+                    .padding(.horizontal, 8).padding(.vertical, 3)
+                    .background(.black.opacity(0.6), in: Capsule()).foregroundStyle(.white)
+                    .padding(.bottom, 8).allowsHitTesting(false).accessibilityHidden(true)
+            }
+        }
+        .task(id: "\(rgid ?? "")|\(index?.faceKey ?? "")|\(store?.generation ?? 0)") { await loadFaces() }
     }
 
     private var face: Int { coverFace(afterSteps: steps, backs: backs.count) }
@@ -124,11 +137,15 @@ struct FlipCover<Front: View>: View {
 
     private func loadFaces() async {
         steps = 0; angle = 0; backs = []; spine = nil
-        guard let rgid, !rgid.isEmpty, let store else { return }
-        guard case .ready(let index) = await store.artworkIndex(rgid: rgid, release: nil), !Task.isCancelled else { return }
-        let faces = index.coverBackFaces
+        guard let store else { return }
+        let found: ArtworkIndex
+        if let index { found = index } else {
+            guard let rgid, !rgid.isEmpty, case .ready(let ready) = await store.artworkIndex(rgid: rgid, release: nil), !Task.isCancelled else { return }
+            found = ready
+        }
+        let faces = found.coverBackFaces
         backs = faces
-        spine = index.slotImage("Spine")
+        spine = found.slotImage("Spine")
         // Warm the display size so the first flip shows the image, not an empty card.
         for picture in faces { _ = await store.albumImage(picture, size: .display) }
     }
