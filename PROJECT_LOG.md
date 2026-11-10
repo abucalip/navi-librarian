@@ -1,5 +1,13 @@
 # Project log
 
+## 2026-11-10 — Internet radio playback, stage 1 slice 5 (Android playback, live Now Playing, Download and Heard states)
+
+- PR [#969](https://github.com/abucalip/navi-librarian/pull/969) merged as `71ee8602b59005a534be39ee6a9bd77fa319d17d`. Owner merged it; docs closeout follows on `main`.
+- Built: a station plays through the existing Media3 service as a live item (`QueueItem.liveUrl`, not saved with the queue; no seek, Navidrome scrobble or duration); `RadioPlayback` asks `/now` every 5 s only while sounding or buffering and updates the title and picture in place (also in the notification and lock screen); Download states (Download, Downloading, Downloaded, Owned, Try again) follow the contract rule, one request per song; new Heard screen; radio Now Playing built like the song sheet (neutral layout for every theme); station tap opens it.
+- Tests (focused, JDK 17): `RadioTest` (11), `RadioPlaybackTest` (8, new), `PlayerControllerTest` (22), `QueueCodecTest` (6), `RadioScreenTest` (3). Full suite not run by the agent.
+- Open: not seen on a device; in-place notification update relies on Media3 updating the item without a restart; a non-relayed station that redirects may fail (the service client does not follow redirects); `GET /api/radio/plays` does not send `in_library`, so Owned does not show in the Heard list; the `/mobile-design` pass in `android/DESIGN.md` is pending.
+- Next: slice 6 (reconnect, sleep timer, settings).
+
 ## 2026-11-10 — Internet radio playback, stage 1 slice 4 (Android decoders, Radio page, logos, favourites)
 
 - PR [#968](https://github.com/abucalip/navi-librarian/pull/968) merged as `65ed988b1397002477f38c259eb779ced871b8e0`. Owner merged it; docs closeout follows on `main`.
