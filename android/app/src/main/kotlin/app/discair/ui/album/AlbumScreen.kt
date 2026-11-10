@@ -107,6 +107,17 @@ private fun AlbumContent(route: AlbumRoute, page: AlbumPage, open: Opener, list:
     var showAllSimilar by remember { mutableStateOf(false) }
     val similarArtists = remember(page) { s.similarArtists.items.shuffled().take(SIMILAR_ARTISTS_SHOWN) }
     val tracks = s.tracks.items
+    // The Back image (and Tray, Spine) the cover flips to. Nothing is shown, and nothing flips, until the index says there is one.
+    val repoForArt = LocalRepository.current
+    val rgid = info?.releaseGroupMbid?.takeIf { it.isNotBlank() }
+    val backs by androidx.compose.runtime.produceState<List<app.discair.model.ArtworkImage>>(emptyList(), rgid) {
+        value = if (rgid == null) emptyList() else kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            val result = try {
+                app.discair.model.loadArtworkIndex { repoForArt.artworkIndex(rgid, null) }
+            } catch (e: kotlinx.coroutines.CancellationException) { throw e } catch (e: Exception) { null }
+            app.discair.model.coverBackFaces((result as? app.discair.model.ArtworkIndexResult.Ready)?.index)
+        }
+    }
     // Playback is for albums in the library only; the id is the Navidrome album id the page already carries.
     val albumId = (info?.id ?: route.id)?.takeIf { owned && it.isNotBlank() }
     val play = app.discair.ui.player.LocalPlayActions.current
@@ -120,13 +131,17 @@ private fun AlbumContent(route: AlbumRoute, page: AlbumPage, open: Opener, list:
             Box(Modifier.statusBarsPadding().fillMaxWidth().padding(16.dp)) {
                 OverlayBack(open.back, Modifier.align(Alignment.TopStart))
                 Box(Modifier.align(Alignment.TopCenter).size(240.dp)) {
-                    AlbumCover(
-                        artist, title, info?.artworkUrl,
-                        Modifier.size(240.dp).aspectSquare(),
-                        onColor = onTint,
-                    )
-                    // The album's file quality, as a label on the lower right corner of the artwork.
-                    info?.quality?.takeIf { it.isNotBlank() }?.let { QualityTag(it, Modifier.align(Alignment.BottomEnd)) }
+                    FlipCover(backs, 240.dp) {
+                        Box(Modifier.size(240.dp)) {
+                            AlbumCover(
+                                artist, title, info?.artworkUrl,
+                                Modifier.size(240.dp).aspectSquare(),
+                                onColor = onTint,
+                            )
+                            // The album's file quality, as a label on the lower right corner of the artwork.
+                            info?.quality?.takeIf { it.isNotBlank() }?.let { QualityTag(it, Modifier.align(Alignment.BottomEnd)) }
+                        }
+                    }
                 }
             }
         }

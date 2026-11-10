@@ -17,6 +17,8 @@ public final class RelatedModel {
     public private(set) var topSongs: [TopSongEntry] = []
     /// Tracks the server lists for an album the library lacks (used when the pick came with none).
     public private(set) var tracks: [RelatedTrack] = []
+    /// The album's MusicBrainz release group (album pages), which keys its artwork index; nil until the page says.
+    public private(set) var releaseGroupMBID: String?
     @ObservationIgnored private var loadedFor: String?
 
     public init() {}
@@ -55,6 +57,7 @@ public final class RelatedModel {
                 }
             }
             if !page.tracks.isEmpty { tracks = page.tracks }
+            if let rg = page.releaseGroupMBID { releaseGroupMBID = rg }
             if !page.partial { incomplete = false; return }
             incomplete = true
             if attempt < Self.attempts { try? await Task.sleep(for: retryPause); if Task.isCancelled { return } }
@@ -101,7 +104,7 @@ public final class RelatedModel {
         catch { lastError = ((error as? DiscairError)?.summary) ?? "The Librarian did not answer."; return nil }
     }
 
-    public func clear() { artists = []; albums = []; tracks = []; bio = nil; bioSource = nil; topSongs = []; artistAlbums = []; incomplete = false; loadedFor = nil }
+    public func clear() { releaseGroupMBID = nil; artists = []; albums = []; tracks = []; bio = nil; bioSource = nil; topSongs = []; artistAlbums = []; incomplete = false; loadedFor = nil }
 
     /// Entries with a name, once each.
     static func cleaned(_ list: [SimilarArtistEntry]) -> [SimilarArtistEntry] {
