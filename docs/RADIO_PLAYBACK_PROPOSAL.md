@@ -1,6 +1,6 @@
 # Internet radio playback proposal
 
-**Status:** owner decisions recorded 2026-11-10 (see "Decisions recorded"). Approved for build in two stages: server and Android first, then deployment, then macOS and the remaining polish. No code is written yet.
+**Status:** owner decisions recorded 2026-11-10 (see "Decisions recorded"). Approved for build in two stages. Stage 1 slices 0 and 1 are done (slice 1 merged as PR #965, 2026-11-10); struck-through items below are built. Slice 2 is next.
 **Date:** 2026-11-10
 **Context:** RADIO-01 ("Grab the radio", PR #637) already relays Navidrome radio stations through `/radio/stream/<token>`, reads ICY titles and logs songs heard for 30 seconds or more in `radio.sqlite3` (`integrations/radio/`, `app/api/radio.py`). This proposal adds playback in the clients on top of it. Related: [Android player contract](ANDROID_PLAYER_CONTRACT.md), [macOS client contract](MACOS_CLIENT_CONTRACT.md).
 
@@ -21,8 +21,8 @@ Three documents list radio as out of scope: `PRODUCT.md` (line 27), `ANDROID_PLA
 
 ## Server work (stage 1)
 
-### Stations list
-`GET /api/radio/stations` gains per station: `logo_url` (a server path, never a third-party URL), `homepage_url`, `favourite`, `sort_key` data (last played), and a `playable_url` (the relay URL when proxied, else the original). Stations that are not proxied are still returned and playable, but have no live title and no Download.
+### ~~Stations list~~ — done, PR #965 (merged 2026-11-10)
+~~`GET /api/radio/stations` gains per station: `logo_url` (a server path, never a third-party URL), `homepage_url`, `favourite`, `sort_key` data (last played), and a `playable_url` (the relay URL when proxied, else the original). Stations that are not proxied are still returned and playable, but have no live title and no Download.~~ — done, PR #965 (merged 2026-11-10)
 
 ### Live song: `GET /api/radio/stations/{id}/now`
 Returns `{state, raw_title, artist, title, play_id, in_library, cover_url}`.
@@ -32,18 +32,18 @@ Returns `{state, raw_title, artist, title, play_id, in_library, cover_url}`.
 - `cover_url` is a server artwork path for the live song, from the existing artwork pipeline (idea 6); null when none is found.
 - Requires the relay to keep the current title per station in memory (a small per-station "now" holder fed by `ListenTracker`/`relay`), so `/now` is cheap and makes no provider call per request.
 
-### Logos
-Resolved once per station, cached on disk in the data directory, served at `GET /api/radio/stations/{id}/logo?size=` in one or two resized sizes. Order:
-1. **Owner override** (idea: upload or pick in settings; `PUT /api/radio/stations/{id}/logo`, `DELETE` to clear).
-2. **Radio Browser API** (radio-browser.info, approved by the owner 2026-11-10): one search by stream URL, falling back to name; use the returned `favicon`. Use the batch form where the API offers one (provider rule).
-3. **Homepage icon:** `apple-touch-icon`, then `og:image`, then `/favicon.ico`, parsed from `homepage_url`.
-4. **Generated tile:** station initials on a colour hashed from the name, so a station never shows a plain icon.
+### ~~Logos~~ — done, PR #965 (merged 2026-11-10)
+~~Resolved once per station, cached on disk in the data directory, served at `GET /api/radio/stations/{id}/logo?size=` in one or two resized sizes. Order:~~
+1. ~~**Owner override** (idea: upload or pick in settings; `PUT /api/radio/stations/{id}/logo`, `DELETE` to clear).~~
+2. ~~**Radio Browser API** (radio-browser.info, approved by the owner 2026-11-10): one search by stream URL, falling back to name; use the returned `favicon`. Use the batch form where the API offers one (provider rule).~~
+3. ~~**Homepage icon:** `apple-touch-icon`, then `og:image`, then `/favicon.ico`, parsed from `homepage_url`.~~
+4. ~~**Generated tile:** station initials on a colour hashed from the name, so a station never shows a plain icon.~~
 
-Fetch rules: http(s) only, no private or loopback addresses (SSRF guard, also after redirects), content type must be an image, size cap, timeout, no credentials sent, negative results cached with an expiry so a dead logo is not retried on every list call. Failures fall through to the next source, never to an error.
+~~Fetch rules: http(s) only, no private or loopback addresses (SSRF guard, also after redirects), content type must be an image, size cap, timeout, no credentials sent, negative results cached with an expiry so a dead logo is not retried on every list call. Failures fall through to the next source, never to an error.~~
 
-### Favourites, order and "now" strip (idea 1 and 2)
-- `PUT /api/radio/stations/{id}/favourite`; the list sorts favourites first, then by last played.
-- Optional per-station tags (free text, owner-set) for grouping.
+### ~~Favourites, order and "now" strip (idea 1 and 2)~~ — favourites and tags done (PR #965); the `/now` strip is still open
+- ~~`PUT /api/radio/stations/{id}/favourite`; the list sorts favourites first, then by last played.~~ — done, PR #965 (merged 2026-11-10)
+- ~~Optional per-station tags (free text, owner-set) for grouping.~~ — done, PR #965 (merged 2026-11-10)
 - `GET /api/radio/now` returns the live title for every proxied station that currently has a listener, so a client can show what is on without tuning in. Stations nobody is connected to report `idle`, because the relay does not hold a connection with no listener (it must not open upstream connections just to show titles).
 
 ### Heard list in clients (idea 3)
@@ -68,8 +68,8 @@ Fixtures for each `/now` state, the stations list with and without logos, and th
 
 ## Stage 1 slices
 
-0. Contract and doc edits (docs only, directly on `main`).
-1. Server: stations list fields, favourites, logo resolver and cache, with tests and fixtures.
+0. ~~Contract and doc edits (docs only, directly on `main`).~~ — done 2026-11-10 (docs on `main`)
+1. ~~Server: stations list fields, favourites, logo resolver and cache, with tests and fixtures.~~ — done, PR #965 (merged 2026-11-10)
 2. Server: live "now" holder, `/now`, `/api/radio/now`, `in_library`, `cover_url`.
 3. Server: scrobble on threshold (off by default) and love.
 4. Android: decoders, Radio section, logos, favourites.

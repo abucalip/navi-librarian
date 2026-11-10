@@ -1,5 +1,14 @@
 # Project log
 
+## 2026-11-10 — Internet radio playback, stage 1 slice 1 (server stations list, favourites, tags, logos)
+
+- PR [#965](https://github.com/abucalip/navi-librarian/pull/965) merged as `b3eef2a35eedf57c99b762cd85865e2f5f3499ff` (head `d5f652d0`). Owner merged it; docs closeout follows on `main`.
+- Built: stations list fields (`logo_url`, `homepage_url`, `favourite`, `tags`, `last_played_at`, `playable_url`) with favourites-first order; `PUT .../favourite`, `PUT .../tags`; logo resolver (`GET/PUT/DELETE .../logo`: owner override, Radio Browser favicon, homepage icon, generated PNG tile) with on-disk cache and 7-day negative cache; `integrations/radio/safe_fetch.py` (public http(s) only, redirects re-checked, image sniffing, size cap). Additive tables `radio_station_prefs` and `radio_logo_state`.
+- Fixtures: five `android/contract-fixtures/librarian/radio_*` files, recorded from a fake Navidrome in a sandbox folder. `test_android_contract_fixtures` now allows PUT.
+- Tests run (focused, 92, all passing): `tests.test_radio_stations_contract`, `tests.test_android_contract_fixtures`, `tests.test_api_radio_routes`, `tests.test_radio_stations`, `tests.test_radio_logos`, `tests.test_radio_icy`, `tests.test_radio_log`, `tests.test_radio_ui_contract`, `tests.test_discovery_daily_radio_scope`. Full suite not run (owner rule).
+- Open from this slice: Radio Browser endpoint paths are unverified against the live API; logos are not resized (no image library, Pillow not approved); the fetch guard has a DNS-rebinding window.
+- Next: slice 2 (live "now" holder, `/now`, `/api/radio/now`, `in_library`, `cover_url`).
+
 ## 2026-11-10 — Internet radio playback contract (stage 1, slice 0)
 
 - Docs only, committed directly to `main` per the documentation rule. New `docs/RADIO_PLAYBACK_CONTRACT.md` turns `docs/RADIO_PLAYBACK_PROPOSAL.md` (owner decisions of 2026-11-10) into the server, Android and macOS rules, the slice list and the deployment gate.

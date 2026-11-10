@@ -1,6 +1,6 @@
 # Internet radio playback contract (Discair)
 
-Status: **approved by the owner on 2026-11-10 (contract slice 0). No code is written under this document yet.** Stage 1 (server, then Android) is next, one PR per slice as listed in section 9. Stage 2 (macOS) starts only after deployment is authorized and verified.
+Status: **approved by the owner on 2026-11-10. Stage 1 slice 0 (contract) and slice 1 (server stations list, favourites, tags, logos) are merged (slice 1: PR #965, 2026-11-10). Slice 2 is next. Stage 2 (macOS) starts only after deployment is authorized and verified.**
 
 This contract turns [`RADIO_PLAYBACK_PROPOSAL.md`](RADIO_PLAYBACK_PROPOSAL.md) into the rules the server and clients build against. Where the proposal and this contract disagree, this contract governs. Builds on RADIO-01 ("Grab the radio", PR [#637](https://github.com/abucalip/navi-librarian/pull/637)): the relay at `GET /radio/stream/{token}`, ICY title reading, the 30-second play log in `radio.sqlite3`, and `POST /api/radio/plays/{play_id}/get` as the Download action. Related: [`ANDROID_PLAYER_CONTRACT.md`](ANDROID_PLAYER_CONTRACT.md), [`MACOS_CLIENT_CONTRACT.md`](MACOS_CLIENT_CONTRACT.md).
 
@@ -154,8 +154,8 @@ Each slice is its own PR with focused tests only (owner rule). The owner runs th
 
 ## 9. Slices
 
-0. **Contract and doc edits** (this document; docs only, committed directly to `main`). Edits to `PRODUCT.md`, `ANDROID_PLAYER_CONTRACT.md` and `MACOS_CLIENT_CONTRACT.md` point their radio lines here.
-1. **Server:** stations list fields, favourites, tags, logo resolver and cache, with tests and fixtures.
+0. ~~**Contract and doc edits** (this document; docs only, committed directly to `main`). Edits to `PRODUCT.md`, `ANDROID_PLAYER_CONTRACT.md` and `MACOS_CLIENT_CONTRACT.md` point their radio lines here.~~ — done 2026-11-10 (docs on `main`)
+1. ~~**Server:** stations list fields, favourites, tags, logo resolver and cache, with tests and fixtures.~~ — done, PR #965 (merged 2026-11-10)
 2. **Server:** live "now" holder, `/now`, `/api/radio/now`, `in_library`, `cover_url`.
 3. **Server:** scrobble on threshold (off by default) and love.
 4. **Android:** decoders, Radio section, logos, favourites.
