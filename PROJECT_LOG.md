@@ -1,5 +1,12 @@
 # Project log
 
+## 2026-11-10 — Artwork Timeline filmstrip and Atlas disc nodes on macOS (slice 6, idea 11)
+
+- Merged as PR [#958](https://github.com/abucalip/navi-librarian/pull/958), squash `ca38227d0a76788b51dde1b201795ff5da171b95`, and PR [#959](https://github.com/abucalip/navi-librarian/pull/959), squash `a4b3217832ec27101da7b9e1f4f9002e1a7246b2`. macOS only; no server change.
+- New: Timeline "Pictures" filmstrip on the selected album card (`ArtworkIndex.filmstrip`, `Chrome/TimelineFilmstrip.swift`); a Discs switch (off by default) for the Atlas place inspector and for album nodes on the Connections graph (`AlbumDisc`, `GraphNodeFace.discs`). Only UUID release groups are asked; nothing is drawn for an album without the pictures.
+- Tests actually run, filtered: `swift test --filter` on `ArtworkTests`, `AtlasDiscTests`, `AtlasGeometryTests`, `TimelineGroupingTests`, `ScreenshotTests` (35 pass) and `GraphDiscTests`, `GraphExplorerTests`, `ScreenshotTests` (16 pass). Not run: the full suites. CI: #959 `validate-container` failed once on a Docker Hub 502 (not the change) and passed on re-run. Not seen in a window or against the real server.
+- Next: ideas 12 and 13 (liner note of the day, edition check in Get).
+
 ## 2026-11-10 — Artwork Paths covers and Same Room on Android and macOS (slice 6, idea 10)
 
 - Merged as PR [#957](https://github.com/abucalip/navi-librarian/pull/957), squash `e84d3327a422a5a1bd422c682c62488d683bbc5a`.
