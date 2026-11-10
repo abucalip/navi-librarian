@@ -112,11 +112,11 @@ struct CupertinoArtist: View {
                         LazyVGrid(columns: [GridItem(.adaptive(minimum: 128, maximum: 128), spacing: 16, alignment: .top)], alignment: .leading, spacing: 18) {
                             ForEach(state.shownArtistAlbums) { a in albumTile(a) }
                         }
+                        if state.library.isLive { ArtistSimilarRow(state: state) }
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     if state.library.isLive { TopSongsPanel(state: state).padding(.top, 18) }
                 }
-                if state.library.isLive { RelatedSections(state: state, mixed: true) }
             }
             .padding(.horizontal, 28).padding(.bottom, 28)
         }

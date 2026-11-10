@@ -177,6 +177,10 @@ struct PlayerBarCover<Cover: View>: View {
     let side: CGFloat
     var cornerRadius: CGFloat = 0
     var border: Color?
+    /// Hover turns the cover to its Back and a click opens the booklet. Off: the cover only shows the disc and a click is `fallback`.
+    var flipsAndOpensBooklet = true
+    /// The disc sliding out from behind the cover.
+    var showsDisc = true
     let fallback: () -> Void
     @ViewBuilder let cover: () -> Cover
 
@@ -184,14 +188,17 @@ struct PlayerBarCover<Cover: View>: View {
     @State private var index: ArtworkIndex?
     @State private var showing = false
 
-    private var booklet: BookletView? { index?.bookletView }
-    private var discPicture: ArtworkPicture? { index?.discImage(disc: disc) }
+    private var booklet: BookletView? { flipsAndOpensBooklet ? index?.bookletView : nil }
+    private var discPicture: ArtworkPicture? { showsDisc ? index?.discImage(disc: disc) : nil }
 
     var body: some View {
         Button {
             if booklet != nil { showing = true } else { fallback() }
         } label: {
-            FlipCover(rgid: nil, cornerRadius: cornerRadius, index: index, hover: true) { cover() }
+            Group {
+                if flipsAndOpensBooklet { FlipCover(rgid: nil, cornerRadius: cornerRadius, index: index, hover: true) { cover() } }
+                else { cover() }
+            }
                 .frame(width: side, height: side)
                 .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
                 .overlay { if let border { RoundedRectangle(cornerRadius: cornerRadius, style: .continuous).strokeBorder(border, lineWidth: 2) } }

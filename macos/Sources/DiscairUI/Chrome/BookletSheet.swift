@@ -36,7 +36,6 @@ struct BookletSheet: View {
     let booklet: BookletView
     let close: () -> Void
     @State private var spread = 0
-    @State private var lens = true
     @FocusState private var focused: Bool
 
     private var spreads: [[ArtworkPicture]] { booklet.spreads }
@@ -50,6 +49,10 @@ struct BookletSheet: View {
             }
         }
         .frame(minWidth: 760, idealWidth: 980, minHeight: 600, idealHeight: 760)
+        .background(Color(white: 0.09))
+        .foregroundStyle(.white)
+        .tint(CU.accent)
+        .preferredColorScheme(.dark)
         .focusable()
         .focused($focused)
         .focusEffectDisabled()
@@ -64,10 +67,10 @@ struct BookletSheet: View {
             Text(booklet.edition.isEmpty ? "Booklet" : "Booklet · \(booklet.edition)").font(.headline).accessibilityAddTraits(.isHeader)
             Spacer()
             if !spreads.isEmpty {
-                Text(position).font(.callout).foregroundStyle(.secondary).monospacedDigit()
-                Toggle("Zoom lens", isOn: $lens).toggleStyle(.checkbox).help("Hover a page to magnify it")
+                Text(position).font(.callout).foregroundStyle(.white.opacity(0.7)).monospacedDigit()
+                Text("Pinch to zoom").font(.callout).foregroundStyle(.white.opacity(0.55))
             }
-            Button("Close", action: close).keyboardShortcut(.cancelAction)
+            Button("Close", action: close).keyboardShortcut(.cancelAction).buttonStyle(CapsuleButtonStyle(small: true))
         }
         .padding(.horizontal, 16).padding(.vertical, 10)
     }
@@ -86,7 +89,7 @@ struct BookletSheet: View {
                 .buttonStyle(.borderless).disabled(spread == 0).accessibilityLabel("Previous pages").help("Previous pages (left arrow)")
             if spreads.indices.contains(spread) {
                 HStack(alignment: .top, spacing: 2) {
-                    ForEach(spreads[spread]) { BookletPage(picture: $0, lens: lens) }
+                    ForEach(spreads[spread]) { BookletPage(picture: $0) }
                 }
             }
             Button { turn(1) } label: { Image(systemName: "chevron.right") }
@@ -98,42 +101,45 @@ struct BookletSheet: View {
     private func turn(_ by: Int) { spread = min(max(spread + by, 0), max(spreads.count - 1, 0)) }
 }
 
-/// One page at display size with its caption and the zoom lens.
+/// One page at display size with its caption. Spreading two fingers zooms in (loading the full-resolution file the first time),
+/// pinching zooms out; a zoomed page is dragged to move around it, and a double click puts it back.
 private struct BookletPage: View {
     let picture: ArtworkPicture
-    let lens: Bool
-    static let lensRadius: CGFloat = 110
-    static let lensZoom: CGFloat = 3
     @Environment(\.artwork) private var store
     @State private var image: NSImage?
     @State private var full: NSImage?
-    @State private var hover: CGPoint?
+    @State private var zoom: CGFloat = 1
+    @GestureState private var pinch: CGFloat = 1
+    @State private var offset: CGSize = .zero
+    @GestureState private var drag: CGSize = .zero
+
+    private var scale: CGFloat { min(max(zoom * pinch, 1), 6) }
 
     var body: some View {
         VStack(spacing: 6) {
             GeometryReader { g in
-                let box = image.map { fittedRect(image: $0.size, in: g.size) } ?? .zero
                 ZStack {
-                    if let image { Image(nsImage: image).resizable().scaledToFit() }
-                    if lens, let image, let hover, let u = lensUnitPoint(hover, in: box), box.contains(hover) {
-                        lensView(image: full ?? image, unit: u, box: box).position(hover).allowsHitTesting(false)
+                    if let shown = full ?? image {
+                        Image(nsImage: shown).resizable().scaledToFit()
+                            .scaleEffect(scale)
+                            .offset(x: (offset.width + drag.width) * (scale > 1 ? 1 : 0), y: (offset.height + drag.height) * (scale > 1 ? 1 : 0))
                     }
                 }
                 .frame(width: g.size.width, height: g.size.height)
+                .clipped()
                 .contentShape(Rectangle())
-                .onContinuousHover { phase in
-                    switch phase {
-                    case .active(let p): hover = p
-                    case .ended: hover = nil
-                    }
-                }
-                .task(id: hover != nil && lens) {
-                    // The original is asked for the first time the lens is used, never before.
-                    guard hover != nil, lens, full == nil, let store else { return }
+                .gesture(MagnifyGesture().updating($pinch) { v, state, _ in state = v.magnification }
+                    .onEnded { v in zoom = min(max(zoom * v.magnification, 1), 6); if zoom == 1 { offset = .zero } })
+                .simultaneousGesture(DragGesture().updating($drag) { v, state, _ in if scale > 1 { state = v.translation } }
+                    .onEnded { v in if scale > 1 { offset.width += v.translation.width; offset.height += v.translation.height } })
+                .onTapGesture(count: 2) { withAnimation(.easeOut(duration: 0.2)) { zoom = 1; offset = .zero } }
+                .task(id: scale > 1) {
+                    // The original is asked for the first time a page is zoomed, never before.
+                    guard scale > 1, full == nil, let store else { return }
                     full = await store.albumImage(picture, size: .full)
                 }
             }
-            Text(picture.label).font(.caption).foregroundStyle(.secondary).lineLimit(2).multilineTextAlignment(.center)
+            Text(picture.label).font(.caption).foregroundStyle(.white.opacity(0.6)).lineLimit(2).multilineTextAlignment(.center)
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(picture.label)
@@ -141,17 +147,6 @@ private struct BookletPage: View {
             guard let store else { return }
             image = await store.albumImage(picture, size: .display)
         }
-    }
-
-    private func lensView(image: NSImage, unit: CGPoint, box: CGRect) -> some View {
-        let r = Self.lensRadius, z = Self.lensZoom
-        return Image(nsImage: image).resizable()
-            .frame(width: box.width * z, height: box.height * z)
-            .offset(x: r - unit.x * box.width * z, y: r - unit.y * box.height * z)
-            .frame(width: r * 2, height: r * 2, alignment: .topLeading)
-            .clipShape(Circle())
-            .overlay(Circle().stroke(.white.opacity(0.9), lineWidth: 2))
-            .shadow(radius: 6)
     }
 }
 
