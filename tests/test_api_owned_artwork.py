@@ -1,10 +1,15 @@
+import tempfile
 import unittest
+from pathlib import Path
 from unittest import mock
 
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
+import app.api.artwork as artwork_routes
 from app.api.dependencies import get_librarian
+from intelligence.artwork import ArtworkService, ArtworkStore
+from tests.test_intelligence_artwork_cache import FakeFetchers
 from app.api.owned_artwork import router
 from integrations.navidrome import client as navidrome_client
 
@@ -19,6 +24,11 @@ class OwnedArtworkRouteTests(unittest.TestCase):
         app = FastAPI()
         app.include_router(router)
         app.dependency_overrides[get_librarian] = lambda: FakeLibrarian()
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        self.service = ArtworkService(ArtworkStore(Path(tmp.name)), FakeFetchers())
+        self.addCleanup(self.service._pool.shutdown)
+        app.dependency_overrides[artwork_routes.get_service] = lambda: self.service
         self.client = TestClient(app)
 
     def test_serves_the_image_with_private_cache_headers(self):

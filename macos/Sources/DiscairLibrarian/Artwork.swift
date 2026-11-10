@@ -166,7 +166,17 @@ extension ArtworkIndex {
         var seen = Set<Int>()
         return [back, slotImage("Tray"), slotImage("Spine")].compactMap { $0 }.filter { seen.insert($0.imageID).inserted }
     }
+
+    /// The covers an owner can pick from (docs/artwork.md, idea 7): Front images of the release group, best first, never a PDF.
+    /// The server checks the same rule on `PUT /api/artwork/choice`, so a pick it would refuse is never offered.
+    public var coverEditions: [ArtworkPicture] {
+        var seen = Set<Int>()
+        return images.filter { $0.types.contains("Front") && !$0.isPDF && seen.insert($0.imageID).inserted }
+    }
 }
+
+/// The picker needs a real choice: one cover or none is nothing to pick from.
+public func hasEditionChoice(_ editions: [ArtworkPicture]) -> Bool { editions.count >= 2 }
 
 /// Which face shows after `steps` flips on a card with `backs` back faces: 0 is the front. Negative steps (the other direction) wrap.
 public func coverFace(afterSteps steps: Int, backs: Int) -> Int {
@@ -248,6 +258,42 @@ extension LibrarianClient {
     /// temporarily unavailable: ask again later). The caller decides whether the bytes can be a bitmap by `isPDF`.
     public func artworkImage(id: Int, size: ArtworkSize) async throws -> ArtworkImageData {
         let (data, http) = try await authedSendPublic("GET", "api/artwork/image/\(id)?size=\(size.rawValue)", body: nil)
+        guard http.statusCode == 200 else {
+            if let failure = failurePublic(http, data) { throw failure }
+            throw DiscairError.server(status: http.statusCode, message: nil)
+        }
+        return ArtworkImageData(data: data, contentType: http.value(forHTTPHeaderField: "Content-Type") ?? "")
+    }
+
+    /// `GET /api/artwork/choices`: the owner's cover picks, library album id to artwork image id.
+    public func artworkChoices() async throws -> [String: Int] {
+        struct Body: Decodable { let choices: [String: Int]? }
+        let (data, http) = try await authedSendPublic("GET", "api/artwork/choices", body: nil)
+        guard http.statusCode == 200 else {
+            if let failure = failurePublic(http, data) { throw failure }
+            return [:]
+        }
+        return (try? JSONDecoder().decode(Body.self, from: data))?.choices ?? [:]
+    }
+
+    /// `PUT /api/artwork/choice/{album_id}`. The server refuses an image that is not a Front of the album's release group (404)
+    /// and answers 409 while the index is still being built.
+    public func setArtworkChoice(albumID: String, rgid: String, imageID: Int) async throws {
+        let body = try JSONSerialization.data(withJSONObject: ["rgid": rgid, "image_id": imageID])
+        let (data, http) = try await authedSendPublic("PUT", "api/artwork/choice/\(Self.enc(albumID))", body: body)
+        if let failure = failurePublic(http, data) { throw failure }
+    }
+
+    /// `DELETE /api/artwork/choice/{album_id}`: the automatic cover is used again.
+    public func clearArtworkChoice(albumID: String) async throws {
+        let (data, http) = try await authedSendPublic("DELETE", "api/artwork/choice/\(Self.enc(albumID))", body: nil)
+        if let failure = failurePublic(http, data) { throw failure }
+    }
+
+    /// `GET /api/owned/artwork/{album_id}?size=`: the library cover as the server resolves it, so the owner's pick, or the best
+    /// front when the library has no cover or only a small one. Throws on 404.
+    public func ownedCover(albumID: String, px: Int) async throws -> ArtworkImageData {
+        let (data, http) = try await authedSendPublic("GET", "api/owned/artwork/\(Self.enc(albumID))?size=\(px)", body: nil)
         guard http.statusCode == 200 else {
             if let failure = failurePublic(http, data) { throw failure }
             throw DiscairError.server(status: http.statusCode, message: nil)

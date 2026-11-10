@@ -53,6 +53,8 @@ struct FlipCover<Front: View>: View {
     var dressBack: (AnyView) -> AnyView = { $0 }
     /// Draws the album's Spine image as a thin strip on the cover's left edge, when it has one (Cupertino and Zine headers).
     var spineStrip = false
+    /// The library album id: when set, the cover carries the edition picker button (owned albums only).
+    var albumID: String?
     let front: () -> Front
 
     @Environment(\.artwork) private var store
@@ -69,6 +71,9 @@ struct FlipCover<Front: View>: View {
             } else {
                 card
             }
+        }
+        .overlay(alignment: .bottomLeading) {
+            if let albumID, !albumID.isEmpty { EditionPickerButton(albumID: albumID, rgid: rgid) }
         }
         .overlay(alignment: .leading) {
             if spineStrip, let spine { SpineStrip(picture: spine).offset(x: -SpineStrip.width) }

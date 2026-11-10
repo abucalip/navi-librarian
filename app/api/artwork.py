@@ -13,9 +13,11 @@ import re
 import threading
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from pydantic import BaseModel
 from fastapi.responses import Response
 
 from app.api.dependencies import get_librarian
+from intelligence.artwork import cover
 from intelligence.artwork.fetchers import ArtworkFetchers
 from intelligence.artwork.service import ArtworkService
 from intelligence.artwork.store import SIZES, ArtworkStore
@@ -63,6 +65,42 @@ def artwork_image(image_id: int, size: str = Query("display"), service: ArtworkS
     if state == "unavailable":
         raise HTTPException(status_code=503, detail="Artwork is temporarily unavailable.")
     raise HTTPException(status_code=404, detail="No such image.")
+
+
+class ChoiceBody(BaseModel):
+    rgid: str
+    image_id: int
+
+
+_ALBUM_ID = re.compile(r"[A-Za-z0-9_-]{1,64}")
+
+
+@router.get("/api/artwork/choices")
+def artwork_choices(service: ArtworkService = Depends(get_service)):
+    """Every owner pick, ``{album_id: image_id}``, for clients that load library covers themselves."""
+    return Response(content=_json({"choices": service.store.all_choices()}), media_type="application/json",
+                    headers={"Cache-Control": "no-store"})
+
+
+@router.put("/api/artwork/choice/{album_id}")
+def set_choice(album_id: str, body: ChoiceBody, service: ArtworkService = Depends(get_service)):
+    """The owner's cover pick for an owned album. The image must be a Front image of the album's release group."""
+    if not _ALBUM_ID.fullmatch(album_id) or not _UUID.fullmatch(body.rgid) or body.image_id <= 0:
+        raise HTTPException(status_code=400, detail="album id, rgid or image id is not valid.")
+    outcome = cover.choose(service, album_id, body.rgid.lower(), body.image_id)
+    if outcome == "not_loaded":
+        raise HTTPException(status_code=409, detail="The artwork index is not built yet; try again shortly.")
+    if outcome != "ok":
+        raise HTTPException(status_code=404, detail="That image is not a front cover of this album.")
+    return {"album_id": album_id, "image_id": body.image_id}
+
+
+@router.delete("/api/artwork/choice/{album_id}")
+def clear_choice(album_id: str, service: ArtworkService = Depends(get_service)):
+    if not _ALBUM_ID.fullmatch(album_id):
+        raise HTTPException(status_code=400, detail="album id is not valid.")
+    service.store.clear_choice(album_id)
+    return {"album_id": album_id, "image_id": None}
 
 
 def _json(body: dict) -> bytes:

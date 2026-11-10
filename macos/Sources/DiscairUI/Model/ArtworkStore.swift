@@ -29,6 +29,8 @@ public final class ArtworkStore {
     }()
     @ObservationIgnored private var albumLoads: [String: AlbumLoad] = [:]
     @ObservationIgnored private var indexes: [String: ArtworkIndex] = [:]
+    /// The owner's cover picks (docs/artwork.md, idea 7), library album id to artwork image id. Views read it, so a new pick redraws.
+    public private(set) var choices: [String: Int] = [:]
 
     private final class AlbumLoad: @unchecked Sendable {
         let task: Task<NSImage?, Never>
@@ -48,8 +50,49 @@ public final class ArtworkStore {
         self.librarian = librarian
         albumCache.removeAllObjects()
         indexes.removeAll()
-        for k in failed where k.hasPrefix("lookup|") { failed.remove(k) }
+        for k in failed where k.hasPrefix("lookup|") || k.hasPrefix("owned|") { failed.remove(k) }
+        choices = [:]
         generation += 1
+        if let librarian { let connection = generation; Task { [weak self] in await self?.loadChoices(librarian, connection: connection) } }
+    }
+
+    /// `connection` is the generation this was asked for; an answer that arrives after a newer connection is dropped.
+    private func loadChoices(_ client: LibrarianClient, connection: Int) async {
+        guard let found = try? await client.artworkChoices(), connection == generation else { return }
+        choices = found
+    }
+
+    /// Stores the owner's pick for an owned album; the server then serves it on every screen. False when the server refused or
+    /// could not be reached: nothing changes then.
+    public func setChoice(albumID: String, rgid: String, imageID: Int) async -> Bool {
+        guard let librarian else { return false }
+        do { try await librarian.setArtworkChoice(albumID: albumID, rgid: rgid, imageID: imageID) } catch { return false }
+        choices[albumID] = imageID
+        return true
+    }
+
+    /// Removes the pick: the automatic cover is used again.
+    public func clearChoice(albumID: String) async -> Bool {
+        guard let librarian else { return false }
+        do { try await librarian.clearArtworkChoice(albumID: albumID) } catch { return false }
+        choices.removeValue(forKey: albumID)
+        return true
+    }
+
+    /// An owned album's cover as the Librarian resolves it: the owner's pick, or the best front when the library has no cover or a
+    /// small one. nil when the server has nothing better (404) or cannot be reached.
+    public func ownedCover(albumID: String, px: Int) async -> NSImage? {
+        let key = "owned|\(albumID)|\(choices[albumID] ?? 0)|\(px)"
+        if let hit = cache.object(forKey: key as NSString) { return hit }
+        guard !failed.contains(key), let librarian else { return nil }
+        do {
+            let got = try await librarian.ownedCover(albumID: albumID, px: px)
+            guard !got.isPDF, let image = NSImage(data: got.data) else { failed.insert(key); return nil }
+            cache.setObject(image, forKey: key as NSString)
+            return image
+        } catch DiscairError.server(let status, _) where status == 404 {
+            failed.insert(key); return nil
+        } catch { return nil }
     }
 
     /// The cover of an album that is not in the library, looked up by artist and title.
@@ -212,21 +255,37 @@ struct ArtworkImage: View {
     @Environment(\.artwork) private var store
     @State private var image: NSImage?
 
+    private var pick: Int? { album.remoteID.flatMap { store?.choices[$0] } }
+
+    /// A library cover whose longer side is under 300 px (the server uses the same limit).
+    private static func isSmall(_ image: NSImage?) -> Bool {
+        guard let rep = image?.representations.first, rep.pixelsWide > 0 else { return false }
+        return max(rep.pixelsWide, rep.pixelsHigh) < 300
+    }
+
     var body: some View {
         // A real (clear) view carries the task: a bare `Group` that is empty until the image arrives never starts it when
         // the view stands alone, which left the blurred backdrops without their artwork.
         Color.clear
             .overlay { if let image { Image(nsImage: image).resizable().scaledToFill() } }
             .clipped()
-            .task(id: "\(album.coverArt ?? "")@\(px)|\(album.owned ? "" : album.artist + "|" + album.title)|\(store?.generation ?? 0)") {
+            .task(id: "\(album.coverArt ?? "")@\(px)|\(album.owned ? "" : album.artist + "|" + album.title)|\(store?.generation ?? 0)|\(pick ?? 0)") {
             image = nil
             guard let store else { return }
+            // The owner's pick wins on every screen; the server serves it (docs/artwork.md, idea 7).
+            if album.owned, let albumID = album.remoteID, !albumID.isEmpty, pick != nil {
+                image = await store.ownedCover(albumID: albumID, px: px)
+                if image != nil { return }
+            }
             if let id = album.coverArt {
                 image = await store.image(coverArt: id, px: px)
                 // A song's own cover id that Navidrome no longer serves: its album's cover stands in.
                 if image == nil, let albumID = album.remoteID, !albumID.isEmpty, id != "al-\(albumID)" { image = await store.image(coverArt: "al-\(albumID)", px: px) }
+            } else if !album.owned, album.id >= 0 { image = await store.image(artist: album.artist, album: album.title, px: px) }
+            // Grid fallback: no library cover, or a small one, uses the best front the server found (never an artist photo).
+            if album.owned, let albumID = album.remoteID, !albumID.isEmpty, image == nil || (px >= 300 && Self.isSmall(image)) {
+                if let better = await store.ownedCover(albumID: albumID, px: px) { image = better }
             }
-            else if !album.owned, album.id >= 0 { image = await store.image(artist: album.artist, album: album.title, px: px) }
         }
     }
 }

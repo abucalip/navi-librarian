@@ -100,6 +100,12 @@ class LibrarianClient(
         return get(Request.Builder().url(url).put(json.toRequestBody(JSON)).build())
     }
 
+    /** DELETE [segments]. Same one-time re-login on 401; an error status throws. */
+    fun delete(segments: List<String>): String {
+        val url = baseUrl.toHttpUrl().newBuilder().apply { segments.forEach { addPathSegment(it) } }.build()
+        return get(Request.Builder().url(url).delete().build())
+    }
+
     /**
      * Reads a server-sent event stream, calling [onEvent] with each event's name and data line.
      * Blocks until the stream ends; cancelling the calling coroutine's thread work closes the call.

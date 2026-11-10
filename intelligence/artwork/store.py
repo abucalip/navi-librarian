@@ -44,6 +44,8 @@ CREATE TABLE IF NOT EXISTS image_ref (
     image_id INTEGER NOT NULL, release TEXT NOT NULL, ext TEXT NOT NULL, seq INTEGER NOT NULL,
     PRIMARY KEY (image_id, release));
 CREATE TABLE IF NOT EXISTS protected_image (image_id INTEGER PRIMARY KEY);
+CREATE TABLE IF NOT EXISTS album_choice (
+    album_id TEXT PRIMARY KEY, rgid TEXT NOT NULL, image_id INTEGER NOT NULL, chosen_at REAL NOT NULL);
 CREATE TABLE IF NOT EXISTS image_file (
     image_id INTEGER NOT NULL, size TEXT NOT NULL, ext TEXT NOT NULL, bytes INTEGER NOT NULL,
     last_access REAL NOT NULL, protected INTEGER NOT NULL DEFAULT 0,
@@ -143,6 +145,31 @@ class ArtworkStore:
             rows = self._db.execute(
                 "SELECT release, ext FROM image_ref WHERE image_id=? ORDER BY seq, release", (image_id,)).fetchall()
         return [(r[0], r[1]) for r in rows]
+
+    # ---- owner's cover choice (edition picker) -----------------------------------------------
+    def set_choice(self, album_id: str, rgid: str, image_id: int) -> None:
+        """Remember the owner's pick for an owned album; the picked image is protected from eviction."""
+        with self._lock:
+            self._db.execute("INSERT OR REPLACE INTO album_choice VALUES (?,?,?,?)",
+                             (album_id, rgid, int(image_id), self._clock()))
+            self._db.commit()
+        self.protect([int(image_id)])
+
+    def get_choice(self, album_id: str) -> int | None:
+        with self._lock:
+            row = self._db.execute("SELECT image_id FROM album_choice WHERE album_id=?", (album_id,)).fetchone()
+        return row[0] if row else None
+
+    def all_choices(self) -> dict[str, int]:
+        """Every pick, album id to image id, so a client can apply them to covers it loads itself."""
+        with self._lock:
+            return {a: i for a, i in self._db.execute("SELECT album_id, image_id FROM album_choice")}
+
+    def clear_choice(self, album_id: str) -> bool:
+        with self._lock:
+            cur = self._db.execute("DELETE FROM album_choice WHERE album_id=?", (album_id,))
+            self._db.commit()
+        return cur.rowcount > 0
 
     # ---- image files -------------------------------------------------------------------------
     def _path(self, image_id: int, size: str, ext: str) -> Path:
