@@ -140,6 +140,52 @@ class LibrarianClient(
         }
     }
 
+    /**
+     * Saves a GET body to [dest] (a whole PDF booklet can be tens of MB), reporting bytes read and the total (-1 when unknown).
+     * Same one-time re-login on 401. Stops with a [kotlinx.coroutines.CancellationException] when [shouldStop] turns true, and
+     * leaves no partial file: the bytes go to a temporary file that replaces [dest] only when complete.
+     */
+    fun download(
+        segments: List<String>, query: Map<String, String?>, dest: java.io.File,
+        shouldStop: () -> Boolean = { false }, onProgress: (Long, Long) -> Unit = { _, _ -> },
+    ) {
+        val url = baseUrl.toHttpUrl().newBuilder().apply {
+            segments.forEach { addPathSegment(it) }
+            query.forEach { (key, value) -> if (value != null) addQueryParameter(key, value) }
+        }.build()
+        val request = Request.Builder().url(url).get().build()
+        val response = try {
+            open(request)
+        } catch (e: ConnectionException) {
+            if (e.failure !is ConnectionFailure.Unauthorised) throw e
+            relogin()
+            open(request)
+        }
+        val part = java.io.File(dest.parentFile, dest.name + ".part")
+        try {
+            response.use { r ->
+                val body = r.body ?: throw java.io.IOException("empty body")
+                val total = body.contentLength()
+                part.outputStream().use { out ->
+                    val buffer = ByteArray(64 * 1024)
+                    var done = 0L
+                    val input = body.byteStream()
+                    while (true) {
+                        if (shouldStop()) throw kotlinx.coroutines.CancellationException("download stopped")
+                        val n = input.read(buffer)
+                        if (n < 0) break
+                        out.write(buffer, 0, n)
+                        done += n
+                        onProgress(done, total)
+                    }
+                }
+            }
+            if (!part.renameTo(dest)) throw java.io.IOException("could not save the file")
+        } finally {
+            part.delete()
+        }
+    }
+
     private fun open(request: Request): Response {
         val response = http.newCall(request).execute()
         val failure = if (response.isSuccessful) null else {
