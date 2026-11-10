@@ -41,7 +41,7 @@ class RadioPlaybackTest {
         r.radio.play(station); runCurrent()
         val item = r.c.state.value.current!!
         assertTrue(item.isRadio); assertEquals("Rock FM", item.title); assertEquals("https://relay.example/radio/stream/tok", item.liveUrl)
-        assertTrue(item.coverUrl.endsWith("/logo?size=512"))
+        assertTrue(item.coverUrl.contains("/logo?size=512"))
         assertTrue(r.c.state.value.isPlaying)
         assertEquals(null, r.storage.text) // the relay token is never saved
         assertTrue(r.api.calls.isEmpty()) // Navidrome never hears about a radio song
@@ -113,5 +113,95 @@ class RadioPlaybackTest {
     @Test fun liveUrlIsNotWrittenIntoASavedQueue() {
         val saved = QueueCodec.encode(QueueState().replace(listOf(QueueItem("radio:1", "R", "", "Radio", liveUrl = "https://x/y")), 0).state)
         assertFalse(saved.contains("https://x/y"))
+    }
+
+    // ---- Slice 6: reconnect
+
+    private fun TestScope.reconnectRig(foreground: () -> Boolean = { true }): Rig {
+        val port = FakePort(); val storage = MemoryStorage(); val api = RecordingApi()
+        val c = PlayerController(port, storage, ScrobbleCoordinator(api, backgroundScope), backgroundScope, clock = { 1L })
+        val radio = RadioPlayback(
+            c, backgroundScope, StandardTestDispatcher(testScheduler),
+            nowFor = { now(null) }, getPlay = { RadioGetResult(true, "") },
+            absolute = { if (it.startsWith("http")) it else "https://lib.example$it" },
+            pollMs = 5_000, backoffMs = listOf(2_000L, 4_000L), stallMs = 10_000, watchTickMs = 1_000, inForeground = foreground,
+        )
+        return Rig(radio, c, port, storage, RecordingApi(), mutableListOf(), mutableListOf())
+    }
+
+    private fun Rig.drop() { port.isPlaying = false; c.onIsPlaying(false); c.onError(PlaybackFailure.Network(), 0) }
+    private fun Rig.retries() = port.log.count { it == "retry" }
+
+    @Test fun droppedStreamRetriesWithBackoffThenSaysUnreachable() = runTest {
+        val r = reconnectRig()
+        r.radio.play(station); runCurrent()
+        r.drop(); runCurrent()
+        assertTrue(r.c.state.value.waitingForNetwork)
+        advanceTimeBy(2_100); runCurrent()
+        assertEquals(1, r.retries()); assertEquals(1, r.radio.state.value.reconnectAttempt)
+        r.drop(); advanceTimeBy(4_100); runCurrent()
+        assertEquals(2, r.retries())
+        r.drop(); advanceTimeBy(1_100); runCurrent()
+        assertTrue(r.radio.state.value.unreachable)
+        advanceTimeBy(60_000); runCurrent()
+        assertEquals(2, r.retries()) // bounded: no loop after the last try
+        assertEquals("Station unreachable.", r.c.state.value.status)
+    }
+
+    @Test fun soundReturningClearsTheCountAndTheUnreachableState() = runTest {
+        val r = reconnectRig()
+        r.radio.play(station); runCurrent()
+        r.drop(); advanceTimeBy(2_100); runCurrent()
+        r.port.isPlaying = true; r.c.onIsPlaying(true); advanceTimeBy(1_100); runCurrent()
+        assertEquals(0, r.radio.state.value.reconnectAttempt); assertFalse(r.radio.state.value.unreachable)
+        r.drop(); advanceTimeBy(2_100); runCurrent()
+        assertEquals(2, r.retries()) // the count started again from the first wait
+    }
+
+    @Test fun retryActionRestartsTheTriesAtOnce() = runTest {
+        val r = reconnectRig()
+        r.radio.play(station); runCurrent()
+        r.drop(); advanceTimeBy(2_100); r.drop(); advanceTimeBy(4_100); r.drop(); advanceTimeBy(1_100); runCurrent()
+        assertTrue(r.radio.state.value.unreachable)
+        r.radio.retry(); runCurrent()
+        assertFalse(r.radio.state.value.unreachable)
+        assertEquals(3, r.retries())
+    }
+
+    @Test fun noRetryWhileTheAppIsInTheBackground() = runTest {
+        var shown = false
+        val r = reconnectRig { shown }
+        r.radio.play(station); runCurrent()
+        r.drop(); advanceTimeBy(30_000); runCurrent()
+        assertEquals(0, r.retries())
+        shown = true; advanceTimeBy(2_100); runCurrent()
+        assertEquals(1, r.retries()) // back on screen: the tries begin
+    }
+
+    @Test fun aPauseEndsTheWaitSoNothingRetriesAfterwards() = runTest {
+        val r = reconnectRig()
+        r.radio.play(station); runCurrent()
+        r.drop(); runCurrent()
+        r.c.pause(); advanceTimeBy(30_000); runCurrent()
+        assertEquals(0, r.retries())
+        assertFalse(r.c.state.value.waitingForNetwork)
+    }
+
+    @Test fun aStreamThatStaysBufferingCountsAsDropped() = runTest {
+        val r = reconnectRig()
+        r.radio.play(station); runCurrent()
+        r.port.isPlaying = false; r.c.onIsPlaying(false); r.c.onBuffering(true)
+        advanceTimeBy(9_000); runCurrent(); assertEquals(0, r.retries())
+        advanceTimeBy(4_000); runCurrent()
+        assertEquals(1, r.retries())
+    }
+
+    @Test fun aServerErrorOnAStationReadsAsUnreachableNotAsASkippedSong() = runTest {
+        val r = reconnectRig()
+        r.radio.play(station); runCurrent()
+        r.c.onError(PlaybackFailure.Server("The server answered 502."), 0)
+        assertTrue(r.c.state.value.waitingForNetwork)
+        assertEquals("Station unreachable.", r.c.state.value.status)
+        assertFalse(r.port.log.contains("skipPastFailure"))
     }
 }

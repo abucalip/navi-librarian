@@ -157,7 +157,7 @@ private fun StationRow(station: RadioStation, favourite: Boolean, now: RadioNow?
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Cover(repo.absolute(station.logoUrl) + "?size=128", Modifier.size(56.dp), rect = false)
+        Cover(app.discair.model.radioLogoRequest(repo.absolute(station.logoUrl), 128), Modifier.size(56.dp), rect = false)
         Column(Modifier.weight(1f)) {
             Text(if (onAir) "${station.name} · On air" else station.name, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Text(

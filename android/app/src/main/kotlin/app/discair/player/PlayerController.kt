@@ -29,6 +29,9 @@ data class PlayerUiState(
     val current: QueueItem? get() = queue.current
 }
 
+/** What a failed station shows (also the radio screens' words for the same state). */
+const val STATION_UNREACHABLE = "Station unreachable."
+
 /**
  * The player's brain: it keeps the queue, mirrors it into the player, saves it, classifies failures and
  * feeds the scrobble coordinator. It holds no Android types, so it is tested with a fake [PlayerPort].
@@ -136,6 +139,13 @@ class PlayerController(
     // ---- Transport
 
     fun playPause() = if (_state.value.isPlaying) port.pause() else { _state.update { it.copy(waitingForNetwork = false) }; port.play() }
+
+    /** Stops sound and any wait to resume: the sleep timer and "do not play" use this, so nothing retries afterwards. */
+    fun pause() {
+        _state.update { it.copy(waitingForNetwork = false, buffering = false) }
+        port.pause()
+    }
+
     fun next() = port.next()
     fun previous() = port.previous()
 
@@ -251,6 +261,16 @@ class PlayerController(
     override fun onError(failure: PlaybackFailure, index: Int) {
         val queue = _state.value.queue
         val item = queue.items.getOrNull(index) ?: return
+        if (item.isRadio && failure !is PlaybackFailure.SignInAgain) {
+            // A station has no next song and no mp3 copy. A dropped stream, a relay or station that answers with an error, or a
+            // gone address all read as "Station unreachable"; the radio reconnect policy decides when to try again (and when to stop).
+            if (failure is PlaybackFailure.UnsupportedFormat) {
+                _state.update { it.copy(buffering = false, isPlaying = false, status = "This station's audio format is not supported on this phone.") }
+            } else {
+                _state.update { it.copy(waitingForNetwork = true, buffering = false, isPlaying = false, status = STATION_UNREACHABLE) }
+            }
+            return
+        }
         when (failure) {
             is PlaybackFailure.UnsupportedFormat -> {
                 if (fallbackTried.add(item.songId)) {
