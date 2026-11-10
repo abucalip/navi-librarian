@@ -1,6 +1,6 @@
 # Internet radio playback proposal
 
-**Status:** owner decisions recorded 2026-11-10 (see "Decisions recorded"). Approved for build in two stages. Stage 1 slices 0, 1, 2 and 3 are done (slice 1 merged as PR #965, slice 2 as PR #966, slice 3 as PR #967, all 2026-11-10); struck-through items below are built. Slice 4 (Android) is next.
+**Status:** owner decisions recorded 2026-11-10 (see "Decisions recorded"). Approved for build in two stages. Stage 1 slices 0, 1, 2, 3 and 4 are done (slice 1 merged as PR #965, slice 2 as PR #966, slice 3 as PR #967, slice 4 as PR #968, all 2026-11-10); struck-through items below are built. Slice 5 (Android playback) is next.
 **Date:** 2026-11-10
 **Context:** RADIO-01 ("Grab the radio", PR #637) already relays Navidrome radio stations through `/radio/stream/<token>`, reads ICY titles and logs songs heard for 30 seconds or more in `radio.sqlite3` (`integrations/radio/`, `app/api/radio.py`). This proposal adds playback in the clients on top of it. Related: [Android player contract](ANDROID_PLAYER_CONTRACT.md), [macOS client contract](MACOS_CLIENT_CONTRACT.md).
 
@@ -57,7 +57,7 @@ Fixtures for each `/now` state, the stations list with and without logos, and th
 
 ## Android work (stage 1)
 
-- A Radio section: station list with logos, favourites first, the live title strip (from `/api/radio/now`).
+- ~~A Radio section: station list with logos, favourites first, the live title strip (from `/api/radio/now`).~~ — done, PR #968 (a Radio row on Home opens the page; the favourite toggle is there; tapping a station plays nothing until slice 5)
 - Playback through the existing Media3 service as a live stream: no seek bar, no duration, no gapless or crossfade, notification and lock-screen showing the station logo and the live title (cover when `cover_url` exists).
 - Now Playing for radio: live title, cover or logo, favourite toggle, Download button (enabled by the rule above, with Downloaded and Owned states), Get result messages from the existing endpoint.
 - Heard list screen with the same states.
@@ -72,7 +72,7 @@ Fixtures for each `/now` state, the stations list with and without logos, and th
 1. ~~Server: stations list fields, favourites, logo resolver and cache, with tests and fixtures.~~ — done, PR #965 (merged 2026-11-10)
 2. ~~Server: live "now" holder, `/now`, `/api/radio/now`, `in_library`, `cover_url`.~~ — done, PR #966 (merged 2026-11-10)
 3. ~~Server: scrobble on threshold (off by default) and love.~~ — done, PR #967 (merged 2026-11-10)
-4. **Android:** decoders, Radio section, logos, favourites. (next)
+4. ~~**Android:** decoders, Radio section, logos, favourites.~~ — done, PR #968 (merged 2026-11-10)
 5. Android: playback service, live Now Playing, Download and Heard states.
 6. Android: reconnect, sleep timer, settings.
 

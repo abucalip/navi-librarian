@@ -1,5 +1,13 @@
 # Project log
 
+## 2026-11-10 — Internet radio playback, stage 1 slice 4 (Android decoders, Radio page, logos, favourites)
+
+- PR [#968](https://github.com/abucalip/navi-librarian/pull/968) merged as `65ed988b1397002477f38c259eb779ced871b8e0`. Owner merged it; docs closeout follows on `main`.
+- Built: `model/Radio.kt` decoders (stations, `/now`, `/api/radio/now`, favourite) read against the shared contract fixtures; repository calls; `ui/radio/RadioScreen.kt` (server logos, favourites first in the server's order, live title strip refreshed every 15 s only while visible, favourite toggle with rollback and message); a Radio row on Home opens it. An unknown `/now` state reads as unreachable.
+- Tests (focused, JDK 17): `RadioTest` (8), `RadioScreenTest` (3), `TapeDeckTest`; build passed. Full suite not run by the agent.
+- Open: not seen on a device or any theme; the `/mobile-design` pass in `android/DESIGN.md` is pending; not run against the real server. Tapping a station does nothing until slice 5.
+- Next: slice 5 (playback service, live Now Playing, Download and Heard states).
+
 ## 2026-11-10 — Internet radio playback, stage 1 slice 3 (scrobble on threshold, love)
 
 - PR [#967](https://github.com/abucalip/navi-librarian/pull/967) merged as `ae69fcf0` (head `9f5c9ba3`). Owner merged it; docs closeout follows on `main`.

@@ -1,6 +1,6 @@
 # Internet radio playback contract (Discair)
 
-Status: **approved by the owner on 2026-11-10. Stage 1 slice 0 (contract), slice 1 (server stations list, favourites, tags, logos; PR #965) slice 2 (server live "now" holder, `/now`, `/api/radio/now`; PR #966) and slice 3 (server scrobble and love; PR #967) are merged (2026-11-10). Slice 4 (Android) is next. Stage 2 (macOS) starts only after deployment is authorized and verified.**
+Status: **approved by the owner on 2026-11-10. Stage 1 slice 0 (contract), slice 1 (server stations list, favourites, tags, logos; PR #965) slice 2 (server live "now" holder, `/now`, `/api/radio/now`; PR #966) slice 3 (server scrobble and love; PR #967) and slice 4 (Android decoders, Radio page, logos, favourites; PR #968) are merged (2026-11-10). Slice 5 (Android playback) is next. Stage 2 (macOS) starts only after deployment is authorized and verified.**
 
 This contract turns [`RADIO_PLAYBACK_PROPOSAL.md`](RADIO_PLAYBACK_PROPOSAL.md) into the rules the server and clients build against. Where the proposal and this contract disagree, this contract governs. Builds on RADIO-01 ("Grab the radio", PR [#637](https://github.com/abucalip/navi-librarian/pull/637)): the relay at `GET /radio/stream/{token}`, ICY title reading, the 30-second play log in `radio.sqlite3`, and `POST /api/radio/plays/{play_id}/get` as the Download action. Related: [`ANDROID_PLAYER_CONTRACT.md`](ANDROID_PLAYER_CONTRACT.md), [`MACOS_CLIENT_CONTRACT.md`](MACOS_CLIENT_CONTRACT.md).
 
@@ -162,7 +162,7 @@ Each slice is its own PR with focused tests only (owner rule). The owner runs th
 1. ~~**Server:** stations list fields, favourites, tags, logo resolver and cache, with tests and fixtures.~~ — done, PR #965 (merged 2026-11-10)
 2. ~~**Server:** live "now" holder, `/now`, `/api/radio/now`, `in_library`, `cover_url`.~~ — done, PR #966 (merged 2026-11-10)
 3. ~~**Server:** scrobble on threshold (off by default) and love.~~ — done, PR #967 (merged 2026-11-10)
-4. **Android:** decoders, Radio section, logos, favourites. (next)
+4. ~~**Android:** decoders, Radio section, logos, favourites.~~ — done, PR #968 (merged 2026-11-10)
 5. **Android:** playback service, live Now Playing, Download and Heard states.
 6. **Android:** reconnect, sleep timer, settings.
 
