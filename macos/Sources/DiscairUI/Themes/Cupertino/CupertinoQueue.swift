@@ -67,6 +67,8 @@ struct CupertinoQueueInspector: View {
             .overlay(alignment: .bottom) { Rectangle().fill(CU.ink.opacity(0.08)).frame(height: 1) }
             .padding(.bottom, 8)
 
+            // The playing album's Track images (idea 6): shown only when the album has some.
+            TrackSheetCards(state: state).padding(.bottom, 10)
             ScrollViewReader { proxy in
             ScrollView {
                 VStack(spacing: 0) {

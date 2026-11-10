@@ -29,6 +29,8 @@ struct ZineQueue: View {
             .overlay(alignment: .bottom) { Rectangle().fill(Z.ink).frame(height: 4) }
             HStack(alignment: .top, spacing: 26) {
                 VStack(spacing: 0) {
+                    // The playing album's Track images (idea 6): shown only when the album has some.
+                    if live { TrackSheetCards(state: state).padding(.bottom, 12) }
                     if live { liveOrder }
                     else { ForEach(Array(ZineFixtures.runningOrder.enumerated()), id: \.offset) { i, row in
                         let on = i == ZineFixtures.playingIndex

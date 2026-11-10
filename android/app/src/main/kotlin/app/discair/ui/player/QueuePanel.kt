@@ -45,6 +45,39 @@ import androidx.compose.runtime.produceState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import app.discair.ui.common.RowDivider
+import app.discair.model.ArtworkImage
+import app.discair.model.ArtworkSize
+import app.discair.model.trackImages
+import app.discair.ui.common.LocalImageLoader
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import coil3.compose.AsyncImage
+
+/**
+ * The Track images of the playing album (idea 6): each a card with its type and edition as the caption (plain text). Nothing is drawn
+ * for an empty list. The picture is read by its label, so the caption is hidden from screen readers to avoid saying it twice.
+ */
+@Composable
+fun TrackImageCards(tracks: List<ArtworkImage>, modifier: Modifier = Modifier) {
+    if (tracks.isEmpty()) return
+    val repo = LocalRepository.current
+    Column(modifier.fillMaxWidth()) {
+        tracks.forEach { image ->
+            val url = remember(image) { repo.artworkImageUrl(image, ArtworkSize.Display) } ?: return@forEach
+            Column(Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
+                AsyncImage(
+                    model = url, contentDescription = image.label(), imageLoader = LocalImageLoader.current,
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier.fillMaxWidth().heightIn(max = 180.dp),
+                )
+                Text(
+                    image.label(), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 4.dp).clearAndSetSemantics {},
+                )
+            }
+        }
+    }
+}
 
 /** The queue: tap a row to play it; the menu has Move up, Move down and Remove (no drag-only reordering). */
 @Composable
@@ -73,6 +106,8 @@ fun QueuePanel(state: PlayerUiState, controller: PlayerController, modifier: Mod
                 Modifier.heightIn(min = Target).padding(bottom = 8.dp),
             ) { Text("Add songs that sound like this") }
         }
+        // The playing album's Track images (docs/artwork.md, idea 6): a card each, shown only when the album has some.
+        TrackImageCards(trackImages(rememberAlbumArtIndex(playing)), Modifier.padding(bottom = 8.dp))
         val list = rememberLazyListState()
         // Opening the queue brings the playing song into view when it is not already on screen.
         LaunchedEffect(Unit) {
