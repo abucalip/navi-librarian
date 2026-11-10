@@ -48,7 +48,7 @@ These are the numbers slice 1 builds to. They come from a 30-group sample, so ea
 | Images stored per group (full index) | **400** | Max seen 341; p90 133. Entries are small JSON, so storing them all costs little. Replaces the placeholder 80, which cut 9 of 30. |
 | Images served in the index response | **250**, with `truncated: true` and `truncated_reason: "served_cap"` past that | Above p90 (133) with room; only the heaviest groups trim. Kept in this order: slot winners, booklet pages, then the rest by approved, larger side, date, image id. |
 | Booklet pages shown | **100** from the single best release | Booklet is the biggest type (564 of about 1,900 unique images) but pages per release were not measured; slice 1 records the real maximum. |
-| Index build time bound | **180 s** per group, then stop with `truncated_reason: "time"` and keep what was fetched | Max seen 120 s at 1 request per second, p90 71 s. A time-stopped build resumes from the per-release cache, not from zero. |
+| Index build time bound | **180 s** per group, then stop and keep what was fetched (the route serves that as `truncated_reason: "partial"`) | Max seen 120 s at 1 request per second, p90 71 s. A time-stopped build resumes from the per-release cache, not from zero. |
 | Releases per group that are skipped | Releases MusicBrainz reports with no cover art, if the release-group response carries that count; otherwise none | 21.5% of release indexes were 404. Checked in slice 1 (2026-11-10): the release browse rejects `inc=cover-art-archive`, so the count is not available and no request is skipped; every release is asked of the CAA. |
 
 **Fetching.** Index builds run as a background job, never inside a client request. A request for an album whose index is not built returns `not_loaded` and starts (or joins) the job; the client asks again. The release list comes from one MusicBrainz release-group lookup (a batch form, per the provider-request rule). The CAA has no batch form for release indexes, so there is one request per release; that is the only single-lookup fallback here.
@@ -82,7 +82,7 @@ For a release group, the server builds a single list: one entry per image, each 
 - `types[]`, `comment`, `approved`, `width` and `height` if known, and `rank`.
 - Duplicate collapse: the same scan attached to several releases appears once, with the list of releases it is on.
 
-Bounds, cadence and TTLs are set in "Limits (set from the probe)": 60 releases fetched, 400 images stored, 250 served, a 180 s build bound, and a `truncated` flag with a reason (`served_cap` or `time`). Fetch cadence is 1 request per second per host. Results are cached per release, with shorter TTLs for empty and failed results.
+Bounds, cadence and TTLs are set in "Limits (set from the probe)": 60 releases fetched, 400 images stored, 250 served, a 180 s build bound, and a `truncated` flag with a reason (`release_cap`, `served_cap` or `partial`). Fetch cadence is 1 request per second per host. Results are cached per release, with shorter TTLs for empty and failed results.
 
 ### Choosing the "best front"
 Deterministic order: approved, Front type, larger side, then release date. This feeds idea 7 (grid fallback) and replaces the fallback problem that PR #683 worked around: **never fall back to an artist photo**.
@@ -176,7 +176,7 @@ In Get and Downloads, the pipeline dock shows the covers of the release being fe
 ## Slices
 
 0. ~~**Probe (no UI):** a script that fetches the index for 30 owned release groups (Somethin' Else first) and reports releases per group, images per group, type mix, size distribution and failure rates. It sets the caps and TTLs above. No cache writes beyond the scratch folder.~~ **Done 2026-11-10, script merged in PR #944**; caps, TTLs and rate limits set from the results in "Limits (set from the probe)".
-1. **Server index and cache:** ~~index builder~~, ~~image cache with the 1.5 GB budget, endpoints~~, fixtures, tests. **Index builder done 2026-11-10 (PR #945, `intelligence/artwork/`). Cache and endpoints done 2026-11-10 (PR #946; PDF originals kept; `display` is 500 px; no warm-up).** Still to do: fixtures, contract section, `format` on index entries.
+1. **Server index and cache:** ~~index builder~~, ~~image cache with the 1.5 GB budget, endpoints~~, fixtures, tests. **Index builder done 2026-11-10 (PR #945, `intelligence/artwork/`). Cache and endpoints done 2026-11-10 (PR #946; PDF originals kept; `display` is 500 px; no warm-up).** Fixtures done (not yet merged): `android/contract-fixtures/librarian/artwork_index*.json` (`ok`, `empty`, `unavailable`, `truncated` as a failed release with reason `partial`, `not_loaded`, a 400), written by `scripts/write_artwork_fixtures.py` through the real route with canned provider answers (invented ids; shapes exact, values not real), tested in `tests/test_artwork_fixtures.py`. Contract section written in `SERVER_V2_CONTRACT.md`; `format` added to index entries; `release_cap` and `served_cap` fixtures added (lowered caps). A time-bounded build is served as `partial`, so there is no separate time reason or fixture.
 2. **Client decoders and the image store:** Android and macOS decode the index and load images through the Librarian.
 3. **Flip cover, booklet, zoom:** ideas 1 and 2.
 4. **Edition picker and grid fallback:** idea 7 (includes the server choice store).

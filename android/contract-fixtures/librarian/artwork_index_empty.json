@@ -1,0 +1,33 @@
+{
+  "captured_at": "2026-11-10T00:00:00Z",
+  "request": {
+    "body": null,
+    "method": "GET",
+    "path": "/api/artwork/index",
+    "query": {
+      "release": "11111111-1111-4111-8111-111111111111",
+      "rgid": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
+    }
+  },
+  "response": {
+    "body": {
+      "best_front": null,
+      "booklet": null,
+      "images": [],
+      "releases": {
+        "empty": 1,
+        "failed": 0,
+        "fetched": 1,
+        "total": 1
+      },
+      "rgid": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      "slots": {},
+      "status": "empty",
+      "truncated": false,
+      "truncated_reason": null
+    },
+    "content_type": "application/json",
+    "elapsed_seconds": 0.0,
+    "status": 200
+  }
+}
