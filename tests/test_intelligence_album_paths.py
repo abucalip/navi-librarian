@@ -63,14 +63,13 @@ class AlbumPathTests(unittest.TestCase):
         self.assertEqual(len(by[a2]["evidence"]), 2)
         self.assertNotIn("?", by[a2]["text"])
 
-    def test_crew_ignores_performers_unowned_albums_and_the_start_itself(self):
+    def test_crew_ignores_performers_and_the_start_itself(self):
         a1, (r1,), _ = self.album("A1")
         other = self.ent("release", "Not Owned")
         rec = self.ent("recording", "Elsewhere")
         self.edge(rec, other, "appears_on")
         p, player = self.ent("artist", "P"), self.ent("artist", "Player")
         self.edge(p, r1, "mix")
-        self.edge(p, rec, "mix")            # only an unowned album
         self.edge(player, r1, "instrument")
         a2, (r2,), _ = self.album("A2")
         self.edge(player, r2, "instrument")  # a performer is not crew
@@ -272,13 +271,17 @@ class AlbumPathTests(unittest.TestCase):
         self.dated(a1, "1990")
         self.assertEqual(self.stops(a1, "album_moment")["status"], "empty")    # the dates are 20 years apart
 
-    def test_moment_ignores_unowned_albums(self):
+    def test_moment_reaches_unowned_albums_and_lists_them_first(self):
         a1, _, _ = self.album("A1", credit=False)
         other = self.ent("release", "Not Owned")
-        self.label("Lab", a1, other)
+        a2, _, _ = self.album("A2", credit=False)
+        self.label("Lab", a1, other, a2)
         self.dated(a1, "1970")
         self.dated(other, "1970")
-        self.assertEqual(self.stops(a1, "album_moment")["status"], "empty")
+        self.dated(a2, "1970")
+        r = self.stops(a1, "album_moment")
+        self.assertEqual([(s["entity"]["id"], s["entity"]["owned"]) for s in r["stops"]], [(other, 0), (a2, 1)])
+        self.assertEqual(self.stops(a1, "album_moment", owned_only=True)["stops"][0]["entity"]["id"], a2)
 
     def test_moment_shared_credited_artist_is_a_credit_link_with_both_edges(self):
         lead = self.ent("artist", "Lead", owned=True)
@@ -376,7 +379,7 @@ class AlbumPathTests(unittest.TestCase):
         r = self.stops(a1, "album_room")
         self.assertEqual({s["entity"]["id"] for s in r["stops"]}, {a2})
 
-    def test_room_ignores_unowned_albums_the_start_itself_and_uncertain_edges(self):
+    def test_room_reaches_unowned_albums_first_and_ignores_the_start_and_uncertain_edges(self):
         a1, (r1,), _ = self.album("A1")
         a2, (r2,), _ = self.album("A2")
         a3, (r3,), _ = self.album("A3")
@@ -385,12 +388,45 @@ class AlbumPathTests(unittest.TestCase):
         self.edge(rec, other, "appears_on")
         studio, shaky = self.room("Studio"), self.room("Shaky")
         self.edge(studio, r1, "recorded at")
-        self.edge(studio, rec, "recorded at")        # only an unowned album
+        self.edge(studio, rec, "recorded at")        # an album outside the library
         self.edge(shaky, r1, "recorded at")
         self.edge(shaky, r2, "recorded at", ec="inferred")
         self.edge(shaky, r3, "recorded at", mq="fuzzy_unconfirmed")
         r = self.stops(a1, "album_room")
-        self.assertEqual((r["status"], r["stops"]), ("empty", []))
+        self.assertEqual([(s["entity"]["id"], s["entity"]["owned"]) for s in r["stops"]], [(other, 0)])
+        reason = r["stops"][0]["reasons"][0]
+        self.assertEqual(reason["target"]["id"], rec)
+        self.assertEqual(reason["text"], "Studio is where A1: T from A1 was made (recorded, mixed or engineered), and where Elsewhere from Not Owned was made")
+        self.assertEqual(self.stops(a1, "album_room", owned_only=True)["status"], "empty")
+
+    def test_texts_name_albums_and_tracks_and_never_point_at_this_album(self):
+        a1, (r1,), _ = self.album("A1")
+        other = self.ent("release", "Elsewhere LP")
+        rec = self.ent("recording", "Far Track")
+        self.edge(rec, other, "appears_on")
+        eng = self.ent("artist", "Engineer")
+        self.edge(eng, r1, "engineer")
+        self.edge(eng, rec, "engineer")
+        text = self.stops(a1, "album_crew")["stops"][0]["reasons"][0]["text"]
+        self.assertEqual(text, "Engineer has a production credit on A1: T from A1 and on Far Track from Elsewhere LP")
+        for banned in ("this album", "started from", "a recording"):
+            self.assertNotIn(banned, text)
+
+    def test_one_stop_per_album_and_a_library_twin_is_not_a_discovery(self):
+        a1, (r1,), _ = self.album("A1")
+        twin, _, _ = self.album("Twin")
+        pressing = self.ent("release", "Twin")          # the same title outside the library
+        other = self.ent("release", "Fresh")
+        again = self.ent("release", "Fresh")            # a second release of the same album
+        eng = self.ent("artist", "Engineer")
+        self.edge(eng, r1, "engineer")
+        for rel in (pressing, other, again):
+            rec = self.ent("recording", "x")
+            self.edge(rec, rel, "appears_on")
+            self.edge(eng, rec, "engineer")
+        r = self.stops(a1, "album_crew")
+        names = [(s["entity"]["canonical_name"], s["entity"]["owned"]) for s in r["stops"]]
+        self.assertEqual(names, [("Fresh", 0), ("Twin", 1)])
 
     def test_room_merges_places_into_one_stop_and_caps_a_hub_place(self):
         a1, (r1, r1b), _ = self.album("A1", tracks=("T", "U"))

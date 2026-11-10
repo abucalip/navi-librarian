@@ -12,6 +12,42 @@ import DiscairLibrarian
         return try JSONSerialization.data(withJSONObject: (object["response"] as! [String: Any])["body"]!)
     }
 
+    @Test func tabsHaveOneWordTitles() {
+        #expect(AlbumPathTab.available(sonic: true).map(\.label) == ["Crew", "Guests", "Covers", "Scene", "Room", "Gaps", "Sonic"])
+    }
+
+    private func story(_ json: String) throws -> String {
+        let p = try JSONDecoder().decode(KnowledgePaths.self, from: Data(json.utf8))
+        return PathAnswer(album: p).steps[0].story.map { $0.map(\.text).joined() }.joined(separator: "\n")
+    }
+
+    private func path(_ reasons: String, owned: Bool = false) -> String {
+        #"{"kind":"album_room","status":"ok","start":{"mbid":"s","canonical_name":"Round About Midnight","type":"release","owned":true},"stops":[{"entity":{"mbid":"t","canonical_name":"Bags and Trane","type":"release","owned":\#(owned)},"presentation":{"album_artist":"Milt Jackson"},"reasons":\#(reasons)}]}"#
+    }
+
+    @Test func roomStoryListsTheTracksOnceAndNamesTheStopsTrack() throws {
+        func r(_ track: String) -> String {
+            #"{"code":"recorded_at","text":"x","via":{"mbid":"v","canonical_name":"CBS 30th Street Studio","type":"place"},"anchor":{"mbid":"a","canonical_name":"\#(track)","type":"recording"},"target":{"mbid":"g","canonical_name":"Dead Old Stockholm","type":"recording"}}"#
+        }
+        let text = try story(path("[" + ["Round Midnight", "All of You", "Tadd's Delight"].map(r).joined(separator: ",") + "]"))
+        #expect(text == "CBS 30th Street Studio is where Round Midnight, All of You and Tadd's Delight from Round About Midnight were made (recorded, mixed or engineered) and where Dead Old Stockholm from Bags and Trane was made.")
+    }
+
+    @Test func crewStoryAndTheForbiddenWords() throws {
+        let one = #"[{"code":"crew_on","text":"x","via":{"mbid":"v","canonical_name":"Rudy van Gelder","type":"artist"},"anchor":{"mbid":"s","canonical_name":"Round About Midnight","type":"release"}}]"#
+        let text = try story(path(one))
+        #expect(text == "Rudy van Gelder has a production credit on Round About Midnight and on Bags and Trane.")
+        for banned in ["this album", "a recording", "started from"] { #expect(!text.contains(banned)) }
+    }
+
+    @Test func stopsOutsideTheLibraryAreMarkedNotOwned() throws {
+        let one = #"[{"code":"crew_on","text":"x","via":{"mbid":"v","canonical_name":"R","type":"artist"},"anchor":{"mbid":"s","canonical_name":"Round About Midnight","type":"release"}}]"#
+        let a = PathAnswer(album: try JSONDecoder().decode(KnowledgePaths.self, from: Data(path(one).utf8)))
+        #expect(a.steps[0].owned == false)
+        let b = PathAnswer(album: try JSONDecoder().decode(KnowledgePaths.self, from: Data(path(one, owned: true).utf8)))
+        #expect(b.steps[0].owned)
+    }
+
     @Test func neighboursByEarIsOfferedOnlyWithSonic() {
         #expect(!AlbumPathTab.available(sonic: false).contains(.neighboursByEar))
         #expect(AlbumPathTab.available(sonic: true).count == 7)
