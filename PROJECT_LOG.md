@@ -1,5 +1,12 @@
 # Project log
 
+## 2026-11-10 — Artwork Paths covers and Same Room on Android and macOS (slice 6, idea 10)
+
+- Merged as PR [#957](https://github.com/abucalip/navi-librarian/pull/957), squash `e84d3327a422a5a1bd422c682c62488d683bbc5a`.
+- New: path rows cycle through the album's alternate Front covers (never a PDF, at least two): macOS hover (`Chrome/PathArtwork.swift`, `PathRowThumb`; held still under Reduce Motion), Android long press and a TalkBack action (`ui/common/PathArtwork.kt`, `PathRowCover`), on the album and artist Paths sheets. Same Room (`SameRoomPhotos`) shows the start album's and the step's session photos side by side. Rules in `ArtworkIndex.pathCoverFaces` / `roomPhotos` (macOS) and `model/PathArtwork.kt` (Android). The release group comes from the Librarian album page; no server change.
+- Tests actually run, filtered: Android `PathArtworkTest` (5 pass, JDK 17); macOS `swift test --filter ArtworkTests` (30 pass, four new). Not run: the full suites. Not checked on a device or in a window.
+- Next: Timeline filmstrip and Atlas disc nodes (rest of slice 6).
+
 ## 2026-11-10 — Artwork Discover covers peek on Android and macOS (slice 6, idea 9)
 
 - Merged as PR [#956](https://github.com/abucalip/navi-librarian/pull/956), merge commit `b311115d92839ff9f555ffa52181dadb65d1d9d6` (tested head `7c6942e45be9181a3febfe7ca76564c1d2fa2c92`).
