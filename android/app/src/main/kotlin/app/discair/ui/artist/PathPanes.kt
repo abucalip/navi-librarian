@@ -50,7 +50,7 @@ import app.discair.model.PathKind
 import app.discair.model.PathLink
 import app.discair.model.PathPane
 import app.discair.model.PathStop
-import app.discair.ui.common.AlbumCover
+import app.discair.ui.common.PathAlbumCover
 import app.discair.ui.common.ArtistPhoto
 import app.discair.ui.common.Cover
 import app.discair.ui.common.LocalRepository
@@ -127,7 +127,7 @@ private fun LeaderPane(pane: PathPane.Leader, stop: PathStop, startName: String,
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
                 ) {
                     // The release is the leader's own, so its cover is looked up under the leader's name.
-                    AlbumCover(pane.name, record.release, null, Modifier.size(40.dp))
+                    PathAlbumCover(pane.name, record.release, Modifier.size(40.dp))
                     Column(Modifier.weight(1f).padding(horizontal = 16.dp)) {
                         Text(record.release, style = MaterialTheme.typography.titleMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
                         record.carries?.let {
@@ -176,7 +176,7 @@ private fun LabelPane(pane: PathPane.LabelAlbum, stop: PathStop, go: (PathLink) 
                             style = MaterialTheme.typography.bodySmall, color = Ink.TextMuted,
                         )
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                            if (reason.anchorArtist != null) AlbumCover(reason.anchorArtist, anchor, null, Modifier.size(40.dp)) else PathTile(PlayerIcons.Album, 40)
+                            if (reason.anchorArtist != null) PathAlbumCover(reason.anchorArtist, anchor, Modifier.size(40.dp)) else PathTile(PlayerIcons.Album, 40)
                             Text(anchor, style = MaterialTheme.typography.titleMedium, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
                         }
                     }
@@ -201,7 +201,7 @@ private fun RecordingPane(pane: PathPane.Recording, stop: PathStop, startName: S
     } else {
         InfoCard(raised = true) {
             Row(horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.Top) {
-                if (pane.yoursAlbum != null && pane.yoursArtist != null) AlbumCover(pane.yoursArtist, pane.yoursAlbum, null, Modifier.size(64.dp))
+                if (pane.yoursAlbum != null && pane.yoursArtist != null) PathAlbumCover(pane.yoursArtist, pane.yoursAlbum, Modifier.size(64.dp))
                 else PathTile(PlayerIcons.MusicNote, 64)
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(work, style = MaterialTheme.typography.titleLarge, modifier = Modifier.semantics { heading() })
@@ -322,7 +322,7 @@ internal fun CandidateCover(candidates: List<PathAlbum>, modifier: Modifier, non
     if (candidates.isEmpty()) return none()
     val repo = LocalRepository.current
     val url by produceState<String?>(null, candidates) {
-        value = withContext(LookupDispatcher) { candidates.firstNotNullOfOrNull { repo.albumImage(it.artist, it.album) } }
+        value = withContext(LookupDispatcher) { candidates.firstNotNullOfOrNull { repo.ownedAlbumArtwork(it.artist, it.album) ?: repo.albumImage(it.artist, it.album) } }
     }
     Cover(url, modifier)
 }

@@ -222,6 +222,12 @@ interface LibraryRepository : AcquisitionApi {
     /** Cover for an album the library does not own; null when no source has one. */
     fun albumImage(artist: String, album: String): String?
 
+    /**
+     * The library's own cover for an album it holds, found by artist and title; null when the library has no such album
+     * (or no cover for it). Path steps name albums only by title and artist.
+     */
+    fun ownedAlbumArtwork(artist: String, album: String): String? = null
+
     /** The year of an album the list did not date, or null when the catalogue has no exact match. */
     fun albumYear(artist: String, album: String): Int? = null
     fun artistImage(name: String): String?
@@ -236,6 +242,7 @@ class LibrarianRepository(
     override val staleSince: Long? get() = stale
 
     private val images = ConcurrentHashMap<String, String>()
+    private val owned = ConcurrentHashMap<String, java.util.Optional<String>>()
     private val years = ConcurrentHashMap<String, Int>()
     private val noImage = ConcurrentHashMap.newKeySet<String>()
 
@@ -476,6 +483,20 @@ class LibrarianRepository(
 
     override fun dismissAcquisition(artist: String, album: String) =
         replyMessage(client.post(listOf("api", "acquisitions", "dismiss"), identityBody(artist, album)))
+
+    override fun ownedAlbumArtwork(artist: String, album: String): String? {
+        val key = "${artist.trim().lowercase()}|${album.trim().lowercase()}"
+        owned[key]?.let { return it.orElse(null) }
+        val found = try {
+            albums(album, AlbumSort.Name, null, null).items.firstOrNull {
+                it.name.trim().equals(album.trim(), ignoreCase = true) && it.artist.trim().equals(artist.trim(), ignoreCase = true)
+            }?.artworkUrl?.takeIf { it.isNotBlank() }?.let(::absolute)
+        } catch (e: Exception) {
+            return null // not remembered, so a later visit can try again
+        }
+        owned[key] = java.util.Optional.ofNullable(found)
+        return found
+    }
 
     override fun albumImage(artist: String, album: String) =
         lookup("album|$artist|$album", listOf("api", "artwork"), mapOf("artist" to artist, "album" to album))
