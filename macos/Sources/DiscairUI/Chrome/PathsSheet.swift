@@ -79,7 +79,15 @@ struct PathsSheet: View {
         case .failed(let message):
             VStack(spacing: 12) {
                 Text(message).foregroundStyle(.red).multilineTextAlignment(.center)
-                Button("Try Again") { state.loadPathsTab(retry: true) }.buttonStyle(SheetButtonStyle(accent: accent))
+                HStack(spacing: 12) {
+                    Button("Try Again") { state.loadPathsTab(retry: true) }.buttonStyle(SheetButtonStyle(accent: accent))
+                    if model.canRequestUpdate {
+                        let librarian = state.session?.librarian
+                        Button("Request update") { Task { await model.requestUpdate(librarian: librarian) } }
+                            .buttonStyle(SheetButtonStyle(accent: accent)).disabled(model.updating)
+                    }
+                }
+                if let note = model.updateNote { Text(note).font(.caption).foregroundStyle(.secondary) }
             }
             .padding(.horizontal, 32)
         case .ready(let answer):

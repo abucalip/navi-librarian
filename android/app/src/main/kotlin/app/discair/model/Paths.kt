@@ -429,3 +429,16 @@ private fun JsonObject.ref(): PathRef? {
 private fun JsonObject.string(name: String) = (this[name] as? JsonPrimitive)?.takeIf { it.isString }?.contentOrNull
 private fun JsonObject.int(name: String) = (this[name] as? JsonPrimitive)?.let { it.intOrNull ?: it.doubleOrNull?.toInt() }
 private fun JsonObject.obj(name: String) = this[name] as? JsonObject
+
+/** A "Request update" ask the server has queued for its worker: `state` is queued, running, done, failed or none. */
+data class StoreUpdate(val state: String, val message: String?) {
+    val finished get() = state == "done" || state == "failed"
+}
+
+fun parseStoreUpdate(body: String): StoreUpdate {
+    val o = runCatching { ApiJson.parseToJsonElement(body) }.getOrNull() as? JsonObject
+    return StoreUpdate(
+        (o?.get("state") as? JsonPrimitive)?.contentOrNull ?: "failed",
+        (o?.get("message") as? JsonPrimitive)?.contentOrNull,
+    )
+}

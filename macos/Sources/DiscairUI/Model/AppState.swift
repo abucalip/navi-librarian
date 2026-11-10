@@ -311,6 +311,7 @@ public final class AppState {
     public func showArtistPaths() {
         guard canShowArtistPaths, let id = selectedArtist.remoteID, let navidrome = session?.navidrome else { return }
         let model = PathsSheetModel(artistName: selectedArtist.name) { try await navidrome.artist(id: id).artist.musicBrainzId }
+        model.subjectID = id
         paths = model
         let librarian = session?.librarian
         Task { await model.load(librarian: librarian) }
