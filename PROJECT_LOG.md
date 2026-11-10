@@ -1,5 +1,12 @@
 # Project log
 
+## 2026-11-10 — Artwork Discover covers peek on Android and macOS (slice 6, idea 9)
+
+- Merged as PR [#956](https://github.com/abucalip/navi-librarian/pull/956), merge commit `b311115d92839ff9f555ffa52181dadb65d1d9d6` (tested head `7c6942e45be9181a3febfe7ca76564c1d2fa2c92`).
+- New: rows show up to three covers (Back, first booklet page never a PDF, Medium) at thumb size. Android: `model/DiscoverPeek.kt`, `ui/common/DiscoverPeek.kt`, a "Covers" control in `RankedRow`. macOS: `Chrome/DiscoverPeek.swift` (hover plus a "Covers" button) in the Cupertino and Zine Discover rows, `ArtworkIndex.discoverPeek`, `DashboardPick` release group fields, `DiscoveryModel` hover state. Release group: `release_group_mbid`, or `mbid` on new releases; non-UUID values are ignored.
+- Tests actually run, filtered: Android `DiscoverPeekTest` (6 pass, JDK 17); macOS `swift test --filter ArtworkTests` (26 pass, two new peek cases); `swift build` compiled the whole package. Required CI on the tested head passed: compile, container-smoke, test-and-build, validate-container. Not run: the full suites. Not checked on a device or in a window; Home new-release tiles have no peek.
+- Next: Paths covers and Same Room, Timeline filmstrip and Atlas disc nodes (rest of slice 6).
+
 ## 2026-11-10 — Artwork artist photo strip on Android (slice 6, idea 8)
 
 - Merged as PR [#955](https://github.com/abucalip/navi-librarian/pull/955), squash `74964145d1dbee98076cc76f19bb143ea28ab49e` (Android only, plus `docs/artwork.md`).
