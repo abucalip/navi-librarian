@@ -113,4 +113,31 @@ import Testing
         let index = try ready("artwork_index")
         #expect(index.coverBackFaces.isEmpty == (index.slotImage("Back") == nil))
     }
+
+    // MARK: Discover peek (idea 9)
+
+    private func peekIndex(images: [(id: Int, types: [String], format: String)], slots: [String: Int], booklet: [Int]?) throws -> ArtworkIndex {
+        var json: [String: Any] = [
+            "status": "ok", "rgid": "rg", "releases": ["total": 1, "fetched": 1, "empty": 0, "failed": 0],
+            "slots": slots.mapValues { ["image_id": $0, "release": "r", "edition": "", "from_owned": true] as [String: Any] },
+            "images": images.map { ["image_id": $0.id, "types": $0.types, "format": $0.format] as [String: Any] },
+        ]
+        if let booklet { json["booklet"] = ["release": "r", "edition": "", "image_ids": booklet] as [String: Any] }
+        return try JSONDecoder().decode(ArtworkIndex.self, from: JSONSerialization.data(withJSONObject: json))
+    }
+
+    @Test func discoverPeekIsBackThenFirstPageThenMedium() throws {
+        let index = try peekIndex(
+            images: [(1, ["Front"], "jpg"), (2, ["Back"], "jpg"), (3, ["Booklet"], "jpg"), (4, ["Medium"], "jpg")],
+            slots: ["Front": 1, "Back": 2, "Medium": 4], booklet: [3])
+        #expect(index.discoverPeek.map(\.imageID) == [2, 3, 4])
+    }
+
+    @Test func discoverPeekSkipsPDFPagesAndMissingTypes() throws {
+        let index = try peekIndex(
+            images: [(5, ["Booklet"], "pdf"), (6, ["Medium"], "jpg")],
+            slots: ["Medium": 6], booklet: [5])
+        #expect(index.discoverPeek.map(\.imageID) == [6])
+        #expect(try peekIndex(images: [(7, ["Front"], "jpg")], slots: ["Front": 7], booklet: nil).discoverPeek.isEmpty)
+    }
 }

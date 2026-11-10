@@ -63,6 +63,7 @@ struct ZineDiscover: View {
                 Button { state.openArtist(named: a.artist) } label: { Mono(a.artist, bold: true) }.buttonStyle(ZineLinkStyle())
                 if let r = a.reason { Text(r).font(Z.serif(13)).lineLimit(2) }
                 if !a.suggestedTracks.isEmpty { Mono("Try: " + a.suggestedTracks.prefix(3).joined(separator: ", "), size: 10).lineLimit(1) }
+                DiscoverPeek(album: a, hovered: state.discovery.hoveredAlbum == a.id)
                 HStack(spacing: 8) {
                     Button(state.acquisition.buttonLabel(for: a)) { state.actions.get(album: a) }
                         .buttonStyle(ZineButtonStyle(kind: .yellow, small: true)).disabled(!state.acquisition.canGet(a))
@@ -77,6 +78,10 @@ struct ZineDiscover: View {
         }
         .padding(.horizontal, 12).padding(.vertical, 10).frame(maxWidth: .infinity, alignment: .leading)
         .background(Z.white).zBorder(3)
+        .onHover { on in
+            let model = state.discovery
+            if on { model.hoveredAlbum = a.id } else if model.hoveredAlbum == a.id { model.hoveredAlbum = nil }
+        }
         .accessibilityElement(children: .contain)
     }
 }

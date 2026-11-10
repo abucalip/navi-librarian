@@ -2,6 +2,7 @@ package app.discair.ui.discover
 
 import app.discair.model.DiscoveryEntry
 import app.discair.model.DiscoveryList
+import app.discair.model.peekReleaseGroup
 import app.discair.ui.common.RowLead
 import app.discair.ui.common.RowModel
 import java.text.DateFormat
@@ -23,6 +24,7 @@ fun releaseDateLead(value: String?): RowLead.Date? {
 fun rowModel(list: DiscoveryList, entry: DiscoveryEntry, position: Int): RowModel {
     val item = entry.item
     return withServerData(buildRow(list, item, position), entry)
+        .copy(releaseGroup = peekReleaseGroup(list, entry.raw))
 }
 
 private fun withServerData(row: RowModel, entry: DiscoveryEntry) =

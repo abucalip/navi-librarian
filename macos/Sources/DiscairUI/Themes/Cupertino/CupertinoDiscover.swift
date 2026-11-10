@@ -68,6 +68,7 @@ struct CupertinoDiscover: View {
                 if !a.suggestedTracks.isEmpty {
                     Text("Try: " + a.suggestedTracks.prefix(3).joined(separator: ", ")).font(.system(size: 12)).foregroundStyle(CU.muted).lineLimit(1)
                 }
+                DiscoverPeek(album: a, hovered: state.discovery.hoveredAlbum == a.id)
                 HStack(spacing: 6) {
                     Button(state.acquisition.buttonLabel(for: a)) { state.actions.get(album: a) }
                         .buttonStyle(CapsuleButtonStyle(primary: true, small: true)).disabled(!state.acquisition.canGet(a))
@@ -82,6 +83,10 @@ struct CupertinoDiscover: View {
         }
         .padding(14).frame(maxWidth: .infinity, alignment: .leading)
         .background(CU.card, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .onHover { on in
+            let model = state.discovery
+            if on { model.hoveredAlbum = a.id } else if model.hoveredAlbum == a.id { model.hoveredAlbum = nil }
+        }
         .accessibilityElement(children: .contain)
     }
 }

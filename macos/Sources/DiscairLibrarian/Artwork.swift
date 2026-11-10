@@ -176,6 +176,19 @@ extension ArtworkIndex {
 }
 
 /// The picker needs a real choice: one cover or none is nothing to pick from.
+extension ArtworkIndex {
+    /// The Discover peek (docs/artwork.md, idea 9): the Back, the first booklet page (never a PDF) and the Medium, in that order,
+    /// at most three. Chosen by type only; empty when the album has none of them.
+    public var discoverPeek: [ArtworkPicture] {
+        let firstPage = bookletImages.first { !$0.isPDF }
+        var out: [ArtworkPicture] = []
+        for picture in [slotImage("Back"), firstPage, slotImage("Medium")].compactMap({ $0 }) where !out.contains(picture) {
+            out.append(picture)
+        }
+        return Array(out.prefix(3))
+    }
+}
+
 public func hasEditionChoice(_ editions: [ArtworkPicture]) -> Bool { editions.count >= 2 }
 
 /// Which face shows after `steps` flips on a card with `backs` back faces: 0 is the front. Negative steps (the other direction) wrap.
