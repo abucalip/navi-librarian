@@ -1,5 +1,13 @@
 # Project log
 
+## 2026-11-10 — Internet radio playback, stage 1 slice 6 (Android reconnect, sleep timer, settings)
+
+- PR [#970](https://github.com/abucalip/navi-librarian/pull/970) merged as `99e33671aa0067ee2f19905dde521e91c25f36cb`. Stage 1 is complete; the deployment gate is next.
+- Built: reconnect policy in `RadioPlayback` (drop or 20 s stall, retries after 2, 5, 10, 20, 30 s, then "Station unreachable" with Retry; none in the background or after a pause; relay/station error statuses count as a drop); new generic `SleepTimer` (no timer existed) on the radio Now Playing sheet; Radio settings (scrobbling switch, per-station logo Change/Reset up to 2 MB, app address read only).
+- Tests (focused, JDK 17): `RadioPlaybackTest`, `SleepTimerTest`, `RadioTest`, `PlayerControllerTest`, `RadioScreenTest`, all passing. Full suite not run by the agent.
+- Open: not seen on a device; a pause during buffering is invisible to the stall watcher and may retry after 20 s; the Heard list still lacks `in_library` from the server; `/mobile-design` pass in `android/DESIGN.md` pending.
+- Next: record the deployment gate items (image tag, new `radio.sqlite3` tables, logo cache folder, rollback reference) and wait for the owner's authorization.
+
 ## 2026-11-10 — Internet radio playback, stage 1 slice 5 (Android playback, live Now Playing, Download and Heard states)
 
 - PR [#969](https://github.com/abucalip/navi-librarian/pull/969) merged as `71ee8602b59005a534be39ee6a9bd77fa319d17d`. Owner merged it; docs closeout follows on `main`.

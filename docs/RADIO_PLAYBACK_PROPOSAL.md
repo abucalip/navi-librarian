@@ -1,6 +1,6 @@
 # Internet radio playback proposal
 
-**Status:** owner decisions recorded 2026-11-10 (see "Decisions recorded"). Approved for build in two stages. Stage 1 slices 0, 1, 2, 3, 4 and 5 are done (slice 1 merged as PR #965, slice 2 as PR #966, slice 3 as PR #967, slice 4 as PR #968, slice 5 as PR #969, all 2026-11-10); struck-through items below are built. Slice 6 (Android reconnect, sleep timer, settings) is built and in review.
+**Status:** owner decisions recorded 2026-11-10 (see "Decisions recorded"). Approved for build in two stages. Stage 1 slices 0 to 6 are done (slice 1 merged as PR #965, slice 2 as PR #966, slice 3 as PR #967, slice 4 as PR #968, slice 5 as PR #969, slice 6 as PR #970, all 2026-11-10); struck-through items below are built. Stage 1 is complete; the deployment gate is next.
 **Date:** 2026-11-10
 **Context:** RADIO-01 ("Grab the radio", PR #637) already relays Navidrome radio stations through `/radio/stream/<token>`, reads ICY titles and logs songs heard for 30 seconds or more in `radio.sqlite3` (`integrations/radio/`, `app/api/radio.py`). This proposal adds playback in the clients on top of it. Related: [Android player contract](ANDROID_PLAYER_CONTRACT.md), [macOS client contract](MACOS_CLIENT_CONTRACT.md).
 
@@ -61,10 +61,10 @@ Fixtures for each `/now` state, the stations list with and without logos, and th
 ~~- Playback through the existing Media3 service as a live stream: no seek bar, no duration, no gapless or crossfade, notification and lock-screen showing the station logo and the live title (cover when `cover_url` exists).~~ — done, PR #969 (live item with no seek, scrobble or saved queue; notification and lock screen carry the live title and picture, updated in place, not yet seen on a device)
 ~~- Now Playing for radio: live title, cover or logo, favourite toggle, Download button (enabled by the rule above, with Downloaded and Owned states), Get result messages from the existing endpoint.~~ — done, PR #969 (built like the song sheet; one neutral layout for all themes; Owned shows from `/now`)
 ~~- Heard list screen with the same states.~~ — done, PR #969 (Owned shows in the Heard list only once the server's `/api/radio/plays` returns `in_library`, which it does not yet)
-- Reconnect policy (idea 7): automatic retry with backoff when the stream drops or stalls, a clear "station unreachable" state after a bounded number of attempts, and no retry loop while the app is in the background without playback.
-- Sleep timer (idea 8) for radio, reusing the existing Android timer if there is one.
-- Settings: radio scrobbling switch, logo override picker.
-- Android also needs the app address set (already stored in `radio_settings`), because the relay URL must be reachable from the phone (Tailscale address).
+- ~~Reconnect policy (idea 7): automatic retry with backoff when the stream drops or stalls, a clear "station unreachable" state after a bounded number of attempts, and no retry loop while the app is in the background without playback.~~ — done, PR #970 (2, 5, 10, 20, 30 s backoff, then Station unreachable with Retry; none in background or after a pause)
+- ~~Sleep timer (idea 8) for radio, reusing the existing Android timer if there is one.~~ — done, PR #970 (the app had no timer, so a new generic one: 15 to 90 min)
+- ~~Settings: radio scrobbling switch, logo override picker.~~ — done, PR #970 (scrobbling switch, per-station logo Change/Reset)
+- ~~Android also needs the app address set (already stored in `radio_settings`), because the relay URL must be reachable from the phone (Tailscale address).~~ — done, PR #970 (shown read only in Settings; edited on the web Radio page)
 
 ## Stage 1 slices
 
@@ -74,7 +74,7 @@ Fixtures for each `/now` state, the stations list with and without logos, and th
 3. ~~Server: scrobble on threshold (off by default) and love.~~ — done, PR #967 (merged 2026-11-10)
 4. ~~**Android:** decoders, Radio section, logos, favourites.~~ — done, PR #968 (merged 2026-11-10)
 5. ~~Android: playback service, live Now Playing, Download and Heard states.~~ — done, PR #969 (merged 2026-11-10)
-6. Android: reconnect, sleep timer, settings. — built, PR open
+6. ~~Android: reconnect, sleep timer, settings.~~ — done, PR #970 (merged 2026-11-10)
 
 Each slice is its own PR with focused tests only (owner rule); the owner runs the full suite.
 
