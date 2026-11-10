@@ -49,12 +49,32 @@ public struct Acquisition: Decodable, Equatable, Sendable, Identifiable {
         public let trackTitle: String?
         public let message: String?
         public let liveProgress: LiveProgress?
+        /// The MusicBrainz release group the Get was made for, when the request carried one (docs/artwork.md, idea 13).
+        public let releaseGroupMBID: String?
 
         enum CodingKeys: String, CodingKey {
-            case kind, message
+            case kind, message, metadata
             case albumName = "album_name"
             case trackTitle = "track_title"
             case liveProgress = "live_progress"
+        }
+
+        /// The stored request metadata. Only the release group is read; other keys (the year is a number) are not decoded, so an
+        /// unexpected value can never fail the whole job list.
+        private struct StoredMetadata: Decodable {
+            let releaseGroupMBID: String?
+            enum CodingKeys: String, CodingKey { case releaseGroupMBID = "release_group_mbid" }
+        }
+
+        public init(from decoder: any Decoder) throws {
+            let c = try decoder.container(keyedBy: CodingKeys.self)
+            kind = try c.decodeIfPresent(String.self, forKey: .kind)
+            message = try c.decodeIfPresent(String.self, forKey: .message)
+            albumName = try c.decodeIfPresent(String.self, forKey: .albumName)
+            trackTitle = try c.decodeIfPresent(String.self, forKey: .trackTitle)
+            liveProgress = try c.decodeIfPresent(LiveProgress.self, forKey: .liveProgress)
+            let stored = try? c.decodeIfPresent(StoredMetadata.self, forKey: .metadata)
+            releaseGroupMBID = artworkGroupID(stored?.releaseGroupMBID)
         }
     }
 

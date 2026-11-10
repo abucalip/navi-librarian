@@ -13,7 +13,7 @@ import kotlinx.serialization.json.contentOrNull
 /** The most thumbnails in one peek. */
 const val PEEK_LIMIT = 3
 
-private val MBID = Regex("[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}")
+internal val MBID = Regex("[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}")
 
 /**
  * The MusicBrainz release group a row's album is looked up by, or null when the row does not carry one. The new-releases list
