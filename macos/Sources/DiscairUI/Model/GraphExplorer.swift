@@ -76,6 +76,8 @@ public final class GraphExplorerModel {
     public private(set) var updateNote: String?
     public var depth = 1
     public var creditsOnly = true
+    /// Off until the owner turns it on: each album disc asks the server for one artwork index.
+    public var showsDiscs = false
     /// Navidrome artist id the explorer last started from, so opening the screen again does not reload it.
     public private(set) var startedFor: String?
     private(set) var trail: [KnowledgeEntity] = []

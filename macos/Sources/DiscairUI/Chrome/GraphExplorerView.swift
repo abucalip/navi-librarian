@@ -59,6 +59,8 @@ struct GraphExplorerView: View {
                 Picker("Depth", selection: $g.depth) { ForEach(1...3, id: \.self) { Text("Depth \($0)").tag($0) } }
                     .pickerStyle(.segmented).frame(width: 240).labelsHidden()
                 Toggle("Credits only", isOn: $g.creditsOnly).toggleStyle(.switch).tint(style.accent)
+                Toggle("Discs", isOn: $g.showsDiscs).toggleStyle(.switch).tint(style.accent)
+                    .accessibilityHint("Shows each album's disc image behind its cover")
             }
         }
         .padding(.top, 4)
@@ -136,7 +138,7 @@ struct GraphExplorerView: View {
     private func nodeButton(_ n: GraphNode, size: CGFloat) -> some View {
         Button { graph.selectedID = n.id } label: {
             VStack(spacing: 2) {
-                GraphNodeFace(entity: n.entity, size: size, library: state.library, hintArtist: graph.centre?.name ?? "", forceOwned: false, ink: style.ink)
+                GraphNodeFace(entity: n.entity, size: size, library: state.library, hintArtist: graph.centre?.name ?? "", forceOwned: false, ink: style.ink, discs: graph.showsDiscs)
                     .overlay { if n.id == graph.selectedID { Circle().strokeBorder(style.accent, lineWidth: 3).padding(-4) } }
                 if size >= 44 { Text(n.entity.name).font(.system(size: 10, weight: .semibold)).lineLimit(1).frame(width: 90) }
             }
@@ -204,6 +206,13 @@ struct GraphNodeFace: View {
     let hintArtist: String
     let forceOwned: Bool
     let ink: Color
+    /// Album nodes: the Medium disc peeks out behind the cover (docs/artwork.md, idea 11). Only when the owner turns it on.
+    var discs = false
+
+    /// The release group whose disc is shown: a valid id on an album node, nil for anything else or when discs are off.
+    static func discGroup(_ entity: KnowledgeEntity, on: Bool) -> String? {
+        on && ["release", "release_group"].contains(entity.type) ? artworkGroupID(entity.mbid) : nil
+    }
 
     private var owned: Bool { forceOwned || entity.owned }
     private var isPerson: Bool { ["artist", "person", "group"].contains(entity.type) }
@@ -236,6 +245,9 @@ struct GraphNodeFace: View {
                 Image(systemName: symbol).font(.system(size: size * 0.42)).foregroundStyle(owned ? ink : ink.opacity(0.7))
                     .frame(width: size, height: size).background(.white, in: Circle())
             }
+        }
+        .background(alignment: .center) {
+            if let rgid = Self.discGroup(entity, on: discs) { AlbumDisc(rgid: rgid, diameter: size * 0.9).offset(x: size * 0.36) }
         }
         .grayscale(owned ? 0 : 1)
         .overlay {

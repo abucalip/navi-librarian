@@ -93,3 +93,19 @@ private func fixture(_ name: String, file: String = #filePath) throws -> Data {
         #expect(m.note == "The Librarian is not connected.")
     }
 }
+
+@Suite("Graph discs") struct GraphDiscTests {
+    private func entity(_ type: String, _ mbid: String) -> KnowledgeEntity {
+        try! JSONDecoder().decode(KnowledgeEntity.self, from: Data(#"{"mbid":"\#(mbid)","canonical_name":"X","type":"\#(type)"}"#.utf8))
+    }
+
+    @Test func discOnlyForAlbumNodesWithAValidIdAndOnlyWhenOn() {
+        let id = "2c4b6c2e-1c43-4d1d-a1f0-5f0e6f4b9a11"
+        #expect(GraphNodeFace.discGroup(entity("release_group", id), on: true) == id)
+        #expect(GraphNodeFace.discGroup(entity("release_group", id), on: false) == nil)
+        #expect(GraphNodeFace.discGroup(entity("artist", id), on: true) == nil)
+        #expect(GraphNodeFace.discGroup(entity("release", "nope"), on: true) == nil)
+    }
+
+    @MainActor @Test func discsAreOffByDefault() { #expect(GraphExplorerModel().showsDiscs == false) }
+}
