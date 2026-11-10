@@ -151,6 +151,34 @@ class RadioRouteTests(unittest.TestCase):
             "Pink Floyd", "The Dark Side of the Moon", "Time", None, 1973, None))
         self.assertEqual(self.store.get_play(play)["grabbed"], 1)
 
+    def test_heard_list_marks_songs_already_in_the_library_once_per_song(self):
+        from integrations.radio import library_match
+        owned_cache = library_match.OwnedCache()
+        play = self.logged_play()
+        self.store.record_play("1", "Rock FM", "Jingle", None, "Jingle", 90)
+        self.librarian.api_call.return_value = {"searchResult3": {"song": [
+            {"artist": "Pink Floyd", "title": "Time", "coverArt": "x"}]}}
+        with mock.patch.object(library_match, "OWNED", owned_cache):
+            first = self.client.get("/api/radio/plays").json()["items"]
+            self.client.get("/api/radio/plays")
+        by_title = {row["title"]: row for row in first}
+        self.assertTrue(by_title["Time"]["in_library"])
+        self.assertEqual(by_title["Time"]["id"], play)
+        self.assertFalse(by_title["Jingle"]["in_library"])
+        self.assertEqual(self.librarian.api_call.call_count, 1)
+
+    def test_heard_list_survives_a_failed_library_search_and_retries_it(self):
+        from integrations.radio import library_match
+        owned_cache = library_match.OwnedCache()
+        self.logged_play()
+        self.librarian.api_call.side_effect = RuntimeError("down")
+        with mock.patch.object(library_match, "OWNED", owned_cache):
+            self.assertFalse(self.client.get("/api/radio/plays").json()["items"][0]["in_library"])
+            self.librarian.api_call.side_effect = None
+            self.librarian.api_call.return_value = {"searchResult3": {"song": [
+                {"artist": "Pink Floyd", "title": "Time"}]}}
+            self.assertTrue(self.client.get("/api/radio/plays").json()["items"][0]["in_library"])
+
     def test_clear_all_empties_the_log(self):
         self.logged_play()
         self.store.record_play("1", "Rock FM", "Jingle", None, "Jingle", 90)

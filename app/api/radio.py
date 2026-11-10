@@ -169,10 +169,13 @@ def radio_now_all(librarian=Depends(get_librarian), store=Depends(get_store)):
 
 
 @router.get("/api/radio/plays")
-def radio_plays(limit: int = 100, store=Depends(get_store)):
+def radio_plays(limit: int = 100, librarian=Depends(get_librarian), store=Depends(get_store)):
+    """The Heard list: each logged play plus ``in_library`` (cached per song, one search the first time)."""
     if not 1 <= limit <= 500:
         raise HTTPException(status_code=400, detail="limit must be between 1 and 500")
-    return {"items": store.list_plays(limit)}
+    return {"items": [{**play, "in_library": library_match.OWNED.owned(librarian.api_call, play.get("artist"),
+                                                                    play.get("title"))}
+                      for play in store.list_plays(limit)]}
 
 
 @router.delete("/api/radio/plays")
