@@ -9,6 +9,7 @@ struct CupertinoHome: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
                 Text("Home").font(CU.title(34)).padding(.top, 4).padding(.bottom, 14)
+                if state.library.isLive { LinerNoteCard(albums: state.visible(state.library.missing)) }
                 if !state.library.isLive { continueCard }   // needs playback history, which arrives with the audio engine
                 if case .failed(let m) = state.library.phase { Text(m).foregroundStyle(CU.accent).padding(.bottom, 8) }
                 if state.library.phase == .loading { Text("Loading your library…").foregroundStyle(CU.muted).padding(.bottom, 8) }

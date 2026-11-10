@@ -90,6 +90,7 @@ fun HomeScreen(open: Opener, onDiscover: () -> Unit, onLibrary: () -> Unit, onSe
     LazyColumn(Modifier.fillMaxWidth(), contentPadding = PaddingValues(top = 16.dp, bottom = 24.dp + app.discair.ui.LocalBottomClearance.current)) {
         // Sheet Stack: the picks are "Today", with the newest requests (and their status words) under them.
         item { PageHeading(if (sheetStack) "Today" else "For you", Modifier.padding(start = 16.dp, end = 16.dp, bottom = 8.dp)) }
+        (picks.state as? Load.Ready)?.let { ready -> item(key = "liner_note") { LinerNoteCard(ready.value) } }
         item {
             Box(Modifier.heightIn(min = 120.dp)) {
                 when (val state = picks.state) {
