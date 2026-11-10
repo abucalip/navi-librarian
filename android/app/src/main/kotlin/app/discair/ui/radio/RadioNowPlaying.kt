@@ -63,6 +63,9 @@ import app.discair.model.radioNowText
 import app.discair.player.PlayerController
 import app.discair.player.PlayerUiState
 import app.discair.player.RadioPlayback
+import app.discair.player.SLEEP_TIMER_MINUTES
+import app.discair.player.SleepTimer
+import app.discair.player.sleepTimerText
 import app.discair.ui.common.Cover
 import app.discair.ui.common.FilledIconButton
 import app.discair.ui.common.ModalBottomSheet
@@ -74,7 +77,7 @@ import app.discair.ui.theme.Ink
 
 /** The station logo is served at 128 or 512 only; the song cover goes through the player's usual large request. */
 private fun radioArtworkUrl(url: String): String? =
-    if ("/logo" in url) url.takeIf { it.isNotBlank() }?.let { if ("size=" in it) it else it + (if ('?' in it) "&" else "?") + "size=512" }
+    if ("/logo" in url) url.takeIf { it.isNotBlank() }?.let { if ("size=" in it) it else app.discair.model.radioLogoRequest(it, 512) }
     else playerArtworkUrl(url)
 
 /**
@@ -89,6 +92,7 @@ fun RadioNowPlayingSheet(
     state: PlayerUiState,
     controller: PlayerController,
     radio: RadioPlayback,
+    sleep: SleepTimer,
     onDismiss: () -> Unit,
     onOpenHeard: () -> Unit,
 ) {
@@ -141,18 +145,13 @@ fun RadioNowPlayingSheet(
                     live.now?.let { Note(it, live.proxied) }
                     Spacer(Modifier.height(8.dp))
                     // Status in words: buffering, lost connection, unavailable.
-                    val status = when {
-                        state.status != null -> state.status
-                        state.waitingForNetwork -> "Station unreachable."
-                        state.buffering -> "Buffering…"
-                        else -> null
-                    }
+                    val status = radioStatusText(state, live)
                     if (status != null) Text(
                         status, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary, textAlign = TextAlign.Center,
                         modifier = Modifier.fillMaxWidth().padding(top = 8.dp).semantics { liveRegion = LiveRegionMode.Polite },
                     )
                     if (state.signInRequired) TextButton(onClick = { controller.dismissSignIn(); onDismiss() }, Modifier.heightIn(min = Target)) { Text("Sign in again") }
-                    if (state.waitingForNetwork) TextButton(onClick = controller::retryNow, Modifier.heightIn(min = Target)) { Text("Retry now") }
+                    if (state.waitingForNetwork || live.unreachable) TextButton(onClick = radio::retry, Modifier.heightIn(min = Target)) { Text("Retry now") }
                     Row(Modifier.fillMaxWidth().padding(vertical = 16.dp), horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically) {
                         val buttonSize = if (palette.brutal) 48.dp else Target
                         PlayerIconButton(
@@ -171,6 +170,7 @@ fun RadioNowPlayingSheet(
                         }
                         PlayerIconButton(onClick = onOpenHeard, Modifier.size(buttonSize)) { Icon(PlayerIcons.List, contentDescription = "Heard on radio") }
                     }
+                    SleepTimerControl(sleep)
                     if (live.proxied) DownloadControl(live.download, onClick = { live.now?.playId?.let(radio::download) })
                     live.message?.let {
                         Text(it, Modifier.fillMaxWidth().padding(top = 8.dp).semantics { liveRegion = LiveRegionMode.Polite }, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
@@ -180,6 +180,41 @@ fun RadioNowPlayingSheet(
             }
         }
     }
+}
+
+/** The words for the stream's trouble, or null when there is none: reconnect progress, "Station unreachable", buffering. */
+internal fun radioStatusText(state: PlayerUiState, live: app.discair.player.RadioLive): String? = when {
+    live.unreachable -> "Station unreachable. Tried $RECONNECT_TRIES times. Check the connection, then retry."
+    state.signInRequired -> state.status
+    state.waitingForNetwork && live.reconnectAttempt > 0 -> "Station unreachable. Reconnecting (try ${live.reconnectAttempt} of $RECONNECT_TRIES)…"
+    state.waitingForNetwork -> "Station unreachable. Reconnecting soon…"
+    state.status != null -> state.status
+    state.buffering -> "Buffering…"
+    else -> null
+}
+
+private val RECONNECT_TRIES get() = app.discair.player.DEFAULT_BACKOFF_MS.size
+
+/** The sleep timer: a button that says what is set and opens the lengths (and Off while one runs). Reads aloud as a button with its state. */
+@Composable
+private fun SleepTimerControl(sleep: SleepTimer) {
+    val left by sleep.remainingMs.collectAsState()
+    var open by remember { mutableStateOf(false) }
+    val text = sleepTimerText(left)
+    Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+        OutlinedButton(onClick = { open = true }, Modifier.heightIn(min = Target).semantics { contentDescription = "$text. Change" }) { Text(text) }
+        androidx.compose.material3.DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+            SLEEP_TIMER_MINUTES.forEach { minutes ->
+                androidx.compose.material3.DropdownMenuItem(
+                    text = { Text("$minutes minutes") },
+                    onClick = { sleep.start(minutes); open = false },
+                    modifier = Modifier.heightIn(min = Target),
+                )
+            }
+            if (left != null) androidx.compose.material3.DropdownMenuItem(text = { Text("Turn off") }, onClick = { sleep.cancel(); open = false }, modifier = Modifier.heightIn(min = Target))
+        }
+    }
+    Spacer(Modifier.height(8.dp))
 }
 
 /** The explanation under the song when there is no Download: no titles, unmatched title, relay off, unreachable (contract section 6). */

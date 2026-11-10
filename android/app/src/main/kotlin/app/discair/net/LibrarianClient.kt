@@ -100,6 +100,12 @@ class LibrarianClient(
         return get(Request.Builder().url(url).put(json.toRequestBody(JSON)).build())
     }
 
+    /** PUT raw [bytes] (an image, for a station logo) to [segments]. Same one-time re-login on 401; an error status throws. */
+    fun putBytes(segments: List<String>, bytes: ByteArray): String {
+        val url = baseUrl.toHttpUrl().newBuilder().apply { segments.forEach { addPathSegment(it) } }.build()
+        return get(Request.Builder().url(url).put(bytes.toRequestBody("application/octet-stream".toMediaType())).build())
+    }
+
     /** DELETE [segments]. Same one-time re-login on 401; an error status throws. */
     fun delete(segments: List<String>): String {
         val url = baseUrl.toHttpUrl().newBuilder().apply { segments.forEach { addPathSegment(it) } }.build()

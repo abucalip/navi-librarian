@@ -33,6 +33,10 @@ data class RadioLive(
     val failed: Map<Long, String> = emptyMap(),
     /** The last Get outcome, as text for a live region. */
     val message: String? = null,
+    /** The stream dropped and a reconnect try is under way (1 for the first try). 0 when the stream is fine. */
+    val reconnectAttempt: Int = 0,
+    /** Every bounded try failed: the screen says "Station unreachable" and offers Retry. Cleared when sound returns or Retry is used. */
+    val unreachable: Boolean = false,
 ) {
     val active: Boolean get() = stationId != null
 
@@ -47,6 +51,9 @@ data class RadioLive(
     fun downloadFor(playId: Long, grabbed: Boolean, inLibrary: Boolean): RadioDownload =
         radioDownloadState(playId, inLibrary, grabbed || playId in requested, playId in working, playId in failed)
 }
+
+/** Waits before each reconnect try: 2, 5, 10, 20 and 30 seconds, then "Station unreachable". */
+val DEFAULT_BACKOFF_MS = listOf(2_000L, 5_000L, 10_000L, 20_000L, 30_000L)
 
 /** The line shown under the station name everywhere a song would show its artist (mini player, island, lock screen). */
 fun radioLiveLine(now: RadioNow?): String = when {
@@ -73,19 +80,30 @@ class RadioPlayback(
     /** The bytes of a picture for the notification and lock screen; null when it cannot be loaded. */
     private val artwork: suspend (String) -> ByteArray? = { null },
     private val pollMs: Long = 5_000,
+    /** Waits before each reconnect try after a drop; the list's length is the bound on tries (contract section 4). */
+    private val backoffMs: List<Long> = DEFAULT_BACKOFF_MS,
+    /** A stream that stays buffering this long counts as dropped. */
+    private val stallMs: Long = 20_000,
+    private val watchTickMs: Long = 1_000,
+    /** False while the app is in the background; a dropped stream is then not retried until the app is shown again. */
+    private val inForeground: () -> Boolean = { true },
 ) {
     private val _state = MutableStateFlow(RadioLive())
     val state: StateFlow<RadioLive> = _state.asStateFlow()
     private var poll: Job? = null
+    private var watch: Job? = null
+    private var tries = 0
     private var shownLine: String? = null
     private var shownCover: String? = null
 
     /** Starts [station], replacing whatever was playing. */
     fun play(station: RadioStation) {
         poll?.cancel()
+        watch?.cancel()
+        tries = 0
         shownLine = null
         shownCover = null
-        val logo = absolute(station.logoUrl) + "?size=512" // the logo route serves 128 or 512 only
+        val logo = app.discair.model.radioLogoRequest(absolute(station.logoUrl), 512) // the logo route serves 128 or 512 only
         controller.playItems(
             listOf(
                 QueueItem(
@@ -95,6 +113,7 @@ class RadioPlayback(
             ),
         )
         _state.update { RadioLive(station.id, station.name, station.proxied, logo, favourite = station.favourite, requested = it.requested, working = it.working, failed = it.failed) }
+        watch = scope.launch { watchLoop(station.id) }
         // A station that is not relayed has no live title (contract section 6): nothing to ask.
         if (station.proxied) poll = scope.launch { pollLoop(station.id, logo) } else _state.update { it.copy(now = RadioNow.Unknown.copy(state = RadioNowState.NotProxied)) }
     }
@@ -110,6 +129,55 @@ class RadioPlayback(
             if (s.isPlaying || s.buffering) refresh(stationId, logo)
             delay(pollMs)
         }
+    }
+
+    /**
+     * The reconnect policy (idea 7). While a station is on air: when the stream drops (the controller reports a wait to resume)
+     * or stays buffering for [stallMs], try again after the next wait in [backoffMs]; sound resets the count. After the last try
+     * fails the state becomes [RadioLive.unreachable] and nothing more is tried until [retry]. Nothing is tried while the app is
+     * in the background, and nothing is tried after a pause (a pause clears the wait and the buffering flag).
+     */
+    private suspend fun watchLoop(stationId: String) {
+        var waited = 0L
+        var stalled = 0L
+        var dropped = false // a stall that lasted [stallMs] waits for its backoff like a reported drop
+        while (true) {
+            if (!onAir(stationId)) return
+            val s = controller.state.value
+            when {
+                s.isPlaying && !s.buffering -> {
+                    waited = 0; stalled = 0; tries = 0; dropped = false
+                    if (_state.value.unreachable || _state.value.reconnectAttempt != 0) _state.update { it.copy(unreachable = false, reconnectAttempt = 0) }
+                }
+                s.waitingForNetwork || dropped || (s.buffering && stalled >= stallMs) -> {
+                    dropped = true
+                    when {
+                        _state.value.unreachable -> Unit
+                        tries >= backoffMs.size -> _state.update { it.copy(unreachable = true, reconnectAttempt = 0) }
+                        !inForeground() -> Unit // no retry loop in the background without playback
+                        else -> {
+                            waited += watchTickMs
+                            if (waited >= backoffMs[tries]) {
+                                waited = 0; stalled = 0; dropped = false
+                                tries++
+                                _state.update { it.copy(reconnectAttempt = tries) }
+                                controller.retryNow()
+                            }
+                        }
+                    }
+                }
+                s.buffering -> stalled += watchTickMs
+                else -> { waited = 0; stalled = 0; dropped = false } // paused or stopped: nothing to bring back
+            }
+            delay(watchTickMs)
+        }
+    }
+
+    /** The Retry action after "Station unreachable": starts the bounded tries again, at once. */
+    fun retry() {
+        tries = 0
+        _state.update { it.copy(unreachable = false, reconnectAttempt = 0) }
+        controller.retryNow()
     }
 
     private suspend fun refresh(stationId: String, logo: String) {
@@ -173,6 +241,9 @@ class RadioPlayback(
     fun stop() {
         poll?.cancel()
         poll = null
+        watch?.cancel()
+        watch = null
+        tries = 0
         _state.update { RadioLive(requested = it.requested, working = it.working, failed = it.failed) }
     }
 }

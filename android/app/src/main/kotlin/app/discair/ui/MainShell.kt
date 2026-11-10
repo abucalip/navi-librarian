@@ -120,6 +120,7 @@ fun MainShell(state: UiState, model: AppViewModel, container: AppContainer) {
     val repo = remember(state.saved) { container.repository(state.saved, onSessionLost = model::sessionExpired) }
     val nav = rememberNavController()
     val scope = rememberCoroutineScope()
+    val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
     val hub = remember(repo) { AcquisitionHub({ repo }, scope, Dispatchers.IO) }
     val snackbar = remember { SnackbarHostState() }
     DisposableEffect(hub) {
@@ -165,8 +166,11 @@ fun MainShell(state: UiState, model: AppViewModel, container: AppContainer) {
             saveFavourite = { id, wanted -> repo.setRadioFavourite(id, wanted) },
             absolute = { repo.absolute(it) },
             artwork = { url -> radioArtworkBytes(context, container.imageLoader, url) },
+            inForeground = { lifecycleOwner.lifecycle.currentState.isAtLeast(androidx.lifecycle.Lifecycle.State.STARTED) },
         )
     }
+    val sleepTimer = remember(player) { app.discair.player.SleepTimer(scope, onExpire = { player.pause() }) }
+    LaunchedEffect(playerState.current?.isRadio) { if (playerState.current?.isRadio != true) sleepTimer.cancel() }
     val playerExtras = remember(repo) { app.discair.ui.player.PlayerExtras(peaks = { repo.songPeaks(it) }, facts = { repo.songFacts(it) }) }
     LaunchedEffect(playActions) { playActions.messages.collect { snackbar.showSnackbar(it) } }
     var islandPx by remember { mutableStateOf(0) }
@@ -216,7 +220,7 @@ fun MainShell(state: UiState, model: AppViewModel, container: AppContainer) {
             // The sheet is drawn over an artwork tint, which is dark whatever the theme: it keeps light text.
             app.discair.ui.theme.OnArtwork(keepBrutal = true) {
                 if (playerState.current?.isRadio == true) app.discair.ui.radio.RadioNowPlayingSheet(
-                    playerState, player, radio, onDismiss = { nowPlayingOpen = false },
+                    playerState, player, radio, sleepTimer, onDismiss = { nowPlayingOpen = false },
                     onOpenHeard = { nowPlayingOpen = false; nav.navigate(HeardRoute) { launchSingleTop = true } },
                 ) else NowPlayingSheet(
                     playerState, player, container.lyrics, extras = playerExtras, settings = container.playerSettings, onDismiss = { nowPlayingOpen = false }, onSignIn = { nowPlayingOpen = false; model.sessionExpired() },

@@ -45,6 +45,9 @@ import app.discair.model.RadioGetResult
 import app.discair.model.RadioNow
 import app.discair.model.RadioNowItem
 import app.discair.model.RadioPlay
+import app.discair.model.RadioScrobbling
+import app.discair.model.parseRadioAppUrl
+import app.discair.model.parseRadioScrobbling
 import app.discair.model.parseRadioGet
 import app.discair.model.parseRadioNow
 import app.discair.model.parseRadioPlays
@@ -104,6 +107,9 @@ enum class AlbumSort(val param: String, val label: String, val startsDescending:
 }
 
 /** The acquisition calls (contract 5.3). The server decides everything; nothing here assumes success. */
+/** The server refuses a station logo over 2 MB; the app checks first so the owner gets a plain message. */
+const val RADIO_LOGO_MAX_BYTES = 2 * 1024 * 1024
+
 interface AcquisitionApi {
     /** Launches an album with automatic source choice. The outcome reads the reply's `ok` and `status`, not the HTTP code. */
     fun acquireAlbum(artist: String, album: String, metadata: JsonObject): GetState
@@ -266,6 +272,21 @@ interface LibraryRepository : AcquisitionApi {
 
     /** Sets or clears a station's favourite flag (`PUT /api/radio/stations/{id}/favourite`); returns the value the server saved. */
     fun setRadioFavourite(stationId: String, favourite: Boolean): Boolean = throw UnsupportedOperationException()
+
+    /** Whether the server scrobbles radio songs to Last.fm, and whether Last.fm is set up there (`GET /api/radio/scrobbling`). Live. */
+    fun radioScrobbling(): RadioScrobbling = throw UnsupportedOperationException()
+
+    /** Switches radio scrobbling (`PUT /api/radio/scrobbling`); the server refuses with a message when Last.fm is not set up. */
+    fun setRadioScrobbling(enabled: Boolean): RadioScrobbling = throw UnsupportedOperationException()
+
+    /** The address the phone reaches the relay at (`GET /api/radio/settings`), blank when none is saved. Read only here. */
+    fun radioAppUrl(): String = throw UnsupportedOperationException()
+
+    /** Uploads the owner's own logo for a station (`PUT /api/radio/stations/{id}/logo`, up to [RADIO_LOGO_MAX_BYTES]). */
+    fun setRadioLogo(stationId: String, image: ByteArray): Unit = throw UnsupportedOperationException()
+
+    /** Clears the owner's logo so the server resolves one again (`DELETE /api/radio/stations/{id}/logo`). */
+    fun clearRadioLogo(stationId: String): Unit = throw UnsupportedOperationException()
 
     /** Whether the server resyncs its library from Navidrome shortly after each import. Read live, never from the saved copies. */
     fun libraryResync(): Boolean = true
@@ -573,6 +594,22 @@ class LibrarianRepository(
         if (ReadMode.isCacheOnly) throw CacheMiss()
         val body = client.put(listOf("api", "radio", "stations", stationId, "favourite"), "{\"favourite\":$favourite}")
         return parseRadioFavourite(body) ?: favourite
+    }
+
+    override fun radioScrobbling(): RadioScrobbling = parseRadioScrobbling(client.get(listOf("api", "radio", "scrobbling")))
+
+    override fun setRadioScrobbling(enabled: Boolean): RadioScrobbling =
+        parseRadioScrobbling(client.put(listOf("api", "radio", "scrobbling"), "{\"enabled\":$enabled}"))
+
+    override fun radioAppUrl(): String = parseRadioAppUrl(client.get(listOf("api", "radio", "settings")))
+
+    override fun setRadioLogo(stationId: String, image: ByteArray) {
+        require(image.size <= RADIO_LOGO_MAX_BYTES) { "The image is too large. Pick one under 2 MB." }
+        client.putBytes(listOf("api", "radio", "stations", stationId, "logo"), image)
+    }
+
+    override fun clearRadioLogo(stationId: String) {
+        client.delete(listOf("api", "radio", "stations", stationId, "logo"))
     }
 
     override fun refreshList(list: String) {

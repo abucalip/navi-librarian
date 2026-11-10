@@ -127,4 +127,36 @@ class RadioTest {
         assertEquals(app.discair.model.RadioDownload.Owned, s(3, true, true, false, false))
         assertFalse(app.discair.model.RadioDownload.Waiting.enabled || app.discair.model.RadioDownload.Owned.enabled)
     }
+
+    @Test fun scrobblingAnswerReadsSwitchAndSetup() {
+        val on = app.discair.model.parseRadioScrobbling("""{"enabled":true,"configured":true}""")
+        assertTrue(on.enabled && on.configured)
+        val off = app.discair.model.parseRadioScrobbling("""{"enabled":false,"configured":false}""")
+        assertFalse(off.enabled || off.configured)
+        val bad = app.discair.model.parseRadioScrobbling("nope") // unreadable never reads as on
+        assertFalse(bad.enabled || bad.configured)
+    }
+
+    @Test fun appAddressIsReadOrBlank() {
+        assertEquals("http://100.64.0.1:8080", app.discair.model.parseRadioAppUrl("""{"app_url":"http://100.64.0.1:8080"}"""))
+        assertEquals("", app.discair.model.parseRadioAppUrl("""{"app_url":null}"""))
+        assertEquals("", app.discair.model.parseRadioAppUrl("garbage"))
+    }
+
+    @Test fun logoRequestCarriesTheChangeMarkerOnlyAfterAChange() {
+        app.discair.model.RadioLogoVersion.bump()
+        assertTrue(app.discair.model.radioLogoRequest("https://x/logo", 512).startsWith("https://x/logo?size=512&v="))
+    }
+
+    @Test fun scrobblingWordsAreHonestWhenLastFmIsNotSetUp() {
+        assertTrue(app.discair.ui.settings.scrobblingText(app.discair.model.RadioScrobbling(false, false), null).contains("not set up"))
+        assertTrue(app.discair.ui.settings.scrobblingText(app.discair.model.RadioScrobbling(true, true), null).startsWith("On."))
+        assertEquals("boom", app.discair.ui.settings.scrobblingText(null, "boom"))
+    }
+
+    @Test fun logoReaderStopsOneByteOverTheCap() {
+        val big = java.io.ByteArrayInputStream(ByteArray(app.discair.data.RADIO_LOGO_MAX_BYTES + 500))
+        assertEquals(app.discair.data.RADIO_LOGO_MAX_BYTES + 1, app.discair.ui.settings.readLogo { big }!!.size)
+        assertEquals(null, app.discair.ui.settings.readLogo { null })
+    }
 }

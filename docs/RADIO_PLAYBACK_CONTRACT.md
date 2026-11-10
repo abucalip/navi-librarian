@@ -1,6 +1,6 @@
 # Internet radio playback contract (Discair)
 
-Status: **approved by the owner on 2026-11-10. Stage 1 slice 0 (contract), slice 1 (server stations list, favourites, tags, logos; PR #965) slice 2 (server live "now" holder, `/now`, `/api/radio/now`; PR #966) slice 3 (server scrobble and love; PR #967) slice 4 (Android decoders, Radio page, logos, favourites; PR #968) and slice 5 (Android playback, live Now Playing, Download and Heard states; PR #969) are merged (2026-11-10). Slice 6 (reconnect, sleep timer, settings) is next. Stage 2 (macOS) starts only after deployment is authorized and verified.**
+Status: **approved by the owner on 2026-11-10. Stage 1 slice 0 (contract), slice 1 (server stations list, favourites, tags, logos; PR #965) slice 2 (server live "now" holder, `/now`, `/api/radio/now`; PR #966) slice 3 (server scrobble and love; PR #967) slice 4 (Android decoders, Radio page, logos, favourites; PR #968) and slice 5 (Android playback, live Now Playing, Download and Heard states; PR #969) are merged (2026-11-10). Slice 6 (reconnect, sleep timer, settings) is built (PR open). Stage 2 (macOS) starts only after deployment is authorized and verified.**
 
 This contract turns [`RADIO_PLAYBACK_PROPOSAL.md`](RADIO_PLAYBACK_PROPOSAL.md) into the rules the server and clients build against. Where the proposal and this contract disagree, this contract governs. Builds on RADIO-01 ("Grab the radio", PR [#637](https://github.com/abucalip/navi-librarian/pull/637)): the relay at `GET /radio/stream/{token}`, ICY title reading, the 30-second play log in `radio.sqlite3`, and `POST /api/radio/plays/{play_id}/get` as the Download action. Related: [`ANDROID_PLAYER_CONTRACT.md`](ANDROID_PLAYER_CONTRACT.md), [`MACOS_CLIENT_CONTRACT.md`](MACOS_CLIENT_CONTRACT.md).
 
@@ -119,6 +119,7 @@ Additive only. New columns or tables are created when missing, so a rollback to 
 - **Reconnect (idea 7):** automatic retry with backoff when the stream drops or stalls. After a bounded number of attempts, show "Station unreachable" with a retry action. No retry loop while the app is in the background without playback.
 - **Sleep timer (idea 8):** reuses the existing Android timer for radio.
 - **Settings:** radio scrobbling switch (default off), logo override picker, and the app address already stored in `radio_settings`. The address must be reachable from the phone (for example the Tailscale address).
+- **Slice 6 note:** (a) Reconnect: after a drop or a stall of 20 seconds the client tries again after 2, 5, 10, 20 and 30 seconds, then shows "Station unreachable" with Retry; sound resets the count; nothing is tried while the app is in the background or after a pause. A relay or station that answers with an error status counts as a drop for a station (a song would be skipped). (b) The app had no sleep timer, so "reuses the existing timer" became a new generic `SleepTimer` (15, 30, 45, 60 or 90 minutes, pause on expiry), offered on the radio Now Playing sheet and cancelled when a station is no longer playing. (c) Settings: the scrobbling switch (disabled with an explanation when the server says Last.fm is not set up), a per-station logo picker (Change uploads up to 2 MB, Reset clears the override), and the app address shown read only: changing it rewrites the stations in Navidrome, so it stays on the web Radio page. Not seen on a device.
 - Everything in `ANDROID_CLIENT_CONTRACT.md` section 2 applies: 48dp targets, TalkBack labels, no third-party SDKs or analytics, bundled assets, honest states, and the `/mobile-design` pass recorded in `android/DESIGN.md`.
 
 ## 5. macOS client (stage 2, not started)
@@ -166,7 +167,7 @@ Each slice is its own PR with focused tests only (owner rule). The owner runs th
 3. ~~**Server:** scrobble on threshold (off by default) and love.~~ — done, PR #967 (merged 2026-11-10)
 4. ~~**Android:** decoders, Radio section, logos, favourites.~~ — done, PR #968 (merged 2026-11-10)
 5. ~~**Android:** playback service, live Now Playing, Download and Heard states.~~ — done, PR #969 (merged 2026-11-10)
-6. **Android:** reconnect, sleep timer, settings.
+6. **Android:** reconnect, sleep timer, settings. — built, PR open (see the slice 6 note in section 4)
 
 After slice 6, work stops. Publication and deployment are separate decisions and need the owner's explicit authorization (`DEVELOPMENT_WORKFLOW.md`).
 

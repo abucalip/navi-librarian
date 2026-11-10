@@ -221,3 +221,32 @@ fun radioDownloadState(playId: Long?, inLibrary: Boolean, requested: Boolean, wo
     playId == null -> RadioDownload.Waiting
     else -> RadioDownload.Ready
 }
+
+/** Radio scrobbling as the server reports it (`GET`/`PUT /api/radio/scrobbling`): the switch, and whether Last.fm is set up there. */
+data class RadioScrobbling(val enabled: Boolean, val configured: Boolean)
+
+/** Parses the scrobbling answer. An unreadable body reads as off and not set up, never as on. */
+fun parseRadioScrobbling(body: String): RadioScrobbling {
+    val o = parseObject(body) ?: return RadioScrobbling(enabled = false, configured = false)
+    return RadioScrobbling(enabled = o.flag("enabled") ?: false, configured = o.flag("configured") ?: false)
+}
+
+/** Reads `app_url` from `GET /api/radio/settings`: the address the phone reaches the relay at; blank when none is saved. */
+fun parseRadioAppUrl(body: String): String = parseObject(body)?.text("app_url").orEmpty()
+
+/**
+ * A station logo changed on this device. The logo address stays the same, so the picture loader would keep the old one;
+ * this number is added to the address so the new one is fetched. It lives for the process only.
+ */
+object RadioLogoVersion {
+    @Volatile var value: Long = 0
+        private set
+
+    fun bump() { value = System.currentTimeMillis() }
+}
+
+/** The request address of a station logo at [size] (the route serves 128 or 512), with the change marker when the owner set a new one. */
+fun radioLogoRequest(absoluteLogo: String, size: Int): String {
+    val v = RadioLogoVersion.value
+    return "$absoluteLogo?size=$size" + if (v > 0) "&v=$v" else ""
+}
