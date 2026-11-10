@@ -1,6 +1,6 @@
 # Artwork proposal: the album as a physical object
 
-**Status:** draft for owner review. Slice 0 (probe, then the caps, TTLs and rate limits) and slice 1 (index and merge, fetchers, cache, endpoints, fixtures, contract section; PRs #944 to #947) are done and merged, server only. No client uses the routes yet. Next: slice 2 (client decoders and image store).
+**Status:** draft for owner review. Slice 0 (probe, then the caps, TTLs and rate limits) and slice 1 (index and merge, fetchers, cache, endpoints, fixtures, contract section; PRs #944 to #947) are done and merged, server only. No client uses the routes yet. Slice 2 (client decoders and image store, PR #948) is done and merged; no screen uses them yet. Next: slice 3 (flip cover, booklet, zoom).
 **Date:** 2026-11-10
 **Context:** MusicBrainz and the Cover Art Archive (CAA) hold more than a front cover for many releases: backs, booklet scans, disc labels, trays, spines, obi strips, posters and studio photos. Example: <https://musicbrainz.org/release/1edd139d-4779-4057-8e12-13c783674f0d/cover-art> (Somethin' Else). This proposal adds those images to the Android and macOS clients through the Librarian server. Related: [Album paths proposal](ALBUM_PATHS_PROPOSAL.md) (path rows, Same Room), [macOS design](../macos/DESIGN.md), [Android design](../android/DESIGN.md).
 
@@ -17,6 +17,7 @@
 - Missing data is `not_loaded` or `empty`, never a statement about the album. An album with no images shows nothing extra (no placeholders, no empty tabs).
 - Taste or play data must not influence which image is chosen.
 - Image text (comments, types) is third-party data: show as plain text, never as markup.
+- **Clients treat `image_id` as an integer taken from the index, and never build one.** The server's [efficiency plan](efficiency.md) (part E) may move image storage to content-addressed files; any change to the id's type is a contract change that must be announced before screens depend on it. Clients read `status: "pending"` as `not_loaded` (the plan's name for a queued fetch), and ignore unknown keys.
 - Pick the artwork by explicit rules (tag, size, approval), not by similarity or popularity.
 
 ## Data source
@@ -177,7 +178,7 @@ In Get and Downloads, the pipeline dock shows the covers of the release being fe
 
 0. ~~**Probe (no UI):** a script that fetches the index for 30 owned release groups (Somethin' Else first) and reports releases per group, images per group, type mix, size distribution and failure rates. It sets the caps and TTLs above. No cache writes beyond the scratch folder.~~ **Done 2026-11-10, script merged in PR #944**; caps, TTLs and rate limits set from the results in "Limits (set from the probe)".
 1. ~~**Server index and cache:** index builder, image cache with the 1.5 GB budget, endpoints, fixtures, tests.~~ **Done 2026-11-10: index builder PR #945, cache and endpoints PR #946 (PDF originals kept; `display` is 500 px; no warm-up), fixtures, contract section and `format` on index entries PR #947.** Fixtures are `android/contract-fixtures/librarian/artwork_index*.json` (`ok`, `empty`, `unavailable`, `not_loaded`, `truncated` as `partial`, `release_cap`, `served_cap`, a 400), written by `scripts/write_artwork_fixtures.py` through the real route with canned provider answers (invented ids; shapes exact, values not real) and tested in `tests/test_artwork_fixtures.py`. A time-bounded build is served as `partial`, so there is no separate time reason or fixture. The contract is in `SERVER_V2_CONTRACT.md`.
-2. **Client decoders and the image store:** Android and macOS decode the index and load images through the Librarian.
+2. ~~**Client decoders and the image store:** Android and macOS decode the index and load images through the Librarian.~~ **Done 2026-11-10, PR #948.** Android: `model/Artwork.kt`, `Repository.artworkIndex` and `artworkImageUrl` (Coil on the shared Librarian session; a PDF at `full` is not a bitmap), `loadArtworkIndex` polling. macOS: `DiscairLibrarian/Artwork.swift`, `LibrarianClient.artworkIndex` and `artworkImage`, and `ArtworkStore` album images (own memory cache, optional disk cache, joined in-flight requests, cancel when the last waiter leaves, 404 remembered, 503 retried). The macOS model type is `ArtworkPicture` because `ArtworkImage` is an existing view. Tests: Android `ArtworkIndexTest` (11), macOS `ArtworkTests` (8), on the `artwork_index*.json` fixtures; the macOS image store has no unit test and nothing was checked on a device or in a window.
 3. **Flip cover, booklet, zoom:** ideas 1 and 2.
 4. **Edition picker and grid fallback:** idea 7 (includes the server choice store).
 5. **Now Playing:** ideas 3, 4 and 5.
@@ -197,8 +198,8 @@ Models: Fable 5.1, Opus 5.5, Sonnet 5.5, Haiku 5.5. Effort: low, medium, high, x
 | ~~1. Server cache and endpoints~~ (done, PR #946) | ~~1.5 GB budget, eviction, protected fronts, redirect host check, byte validation, auth~~ | Opus 5.5 | xhigh | Security-sensitive (fetching third-party bytes) and concurrency-sensitive. Review with Fable 5.1 at high. |
 | ~~1. Fixtures and server tests~~ (done, PR #947) | ~~`ok`, `empty`, `unavailable`, `truncated` fixtures; unit tests~~ | Sonnet 5.5 | medium | Mechanical once the contract is fixed. |
 | ~~Contract section~~ (done, PR #947) | ~~Endpoint shapes and fields in the contract docs~~ | Opus 5.5 | high | Both clients depend on it. |
-| 2. Client decoders | Android and macOS decoding of the index | Sonnet 5.5 | medium | Follows the album paths decoder pattern (PR #931). |
-| 2. Image store | Loading, memory and disk behavior on each client | Sonnet 5.5 | high | Scrolling performance and cancellation matter. |
+| ~~2. Client decoders~~ (done, PR #948) | ~~Android and macOS decoding of the index~~ | Sonnet 5.5 | medium | Follows the album paths decoder pattern (PR #931). |
+| ~~2. Image store~~ (done, PR #948) | ~~Loading, memory and disk behavior on each client~~ | Sonnet 5.5 | high | Scrolling performance and cancellation matter. |
 | 3. Flip cover (A, M) | 3D flip, reduced-motion fallback | Sonnet 5.5 | high | Animation and gesture detail; check on device and in a window. |
 | 3. Booklet (A, M) | Pager and spread, zoom with on-demand full resolution | Sonnet 5.5 | high | Gesture and memory handling. |
 | 4. Edition picker, grid fallback | Server choice store plus both clients | Opus 5.5 | high | Touches the server, the data model and every screen that shows a cover. |

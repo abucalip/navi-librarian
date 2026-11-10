@@ -1,5 +1,14 @@
 # Project log
 
+## 2026-11-10 — Artwork client decoders and image store (slice 2)
+
+- Merged as PR [#948](https://github.com/abucalip/navi-librarian/pull/948), squash `d1ac2f79a6a4b5dddaa79b333c811dac9ae2be6e`, tested head `a3755269862a3d13492707ffbaf458a1ce79494f`; required CI passed (compile, container-smoke, test-and-build, validate-container). Not published or deployed. Clients only; server untouched; no screen uses the new code yet.
+- New: Android `model/Artwork.kt` (`parseArtworkIndex`, `loadArtworkIndex`), `Repository.artworkIndex` and `artworkImageUrl`; macOS `DiscairLibrarian/Artwork.swift` (`ArtworkIndexResult`, `ArtworkPicture`, `LibrarianClient.artworkIndex` and `artworkImage`) and `ArtworkStore` album images. `unavailable` is never read as `empty`; one bad entry never drops the rest; comments stay plain text; `pending` is read as `not_loaded` to stay compatible with [`efficiency.md`](docs/efficiency.md) part E.
+- Tests actually run, filtered: Android `app.discair.ArtworkIndexTest` (11 pass), macOS `ArtworkTests` (8 pass). Not run: the full suites (owner rule). Not covered: the macOS image store has no unit test; nothing checked on a device or in a window.
+- Environment note: Gradle needs JDK 17 here (the default JDK 27 breaks the Kotlin compiler) and a copied `android/local.properties` in a worktree.
+- Open risk: the contract types `image_id` as an integer while the efficiency plan may move to content-addressed storage; recorded as a rule in `docs/artwork.md`.
+- Next: slice 3, flip cover, booklet and zoom (ideas 1 and 2).
+
 ## 2026-11-10 — Artwork fixtures, contract section and `format` (slice 1, third step)
 
 - Merged as PR [#947](https://github.com/abucalip/navi-librarian/pull/947), squash `2de5b2931ecdff17a89f07f0e0f48382d15b57e4`, tested head `f78284cad98e2769d11c9b24a085a319b97a7f7e`; required CI passed (compile, container-smoke, test-and-build, validate-container). Not published or deployed. Server and docs only; no client uses the routes yet.
