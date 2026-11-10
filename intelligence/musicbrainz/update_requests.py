@@ -109,6 +109,7 @@ def _run(db, subject, navidrome_id, get_album, get_artist, find_artist, fetch, c
     mbids: set[str] = set()
     artist_ids: set[int] = set()
     ingested = 0
+    owners: dict[str, Mapping[str, Any] | None] = {}
     skipped: Exception | None = None
     for album_id in album_ids:
         try:
@@ -119,12 +120,15 @@ def _run(db, subject, navidrome_id, get_album, get_artist, find_artist, fetch, c
         if not album:
             continue
         album = dict(album)
-        owner = artist
-        if owner is None and album.get("artistId"):
-            owner = get_artist(str(album["artistId"]))
+        # The album's own artist, which for an artist's page is not always the artist asked about
+        # (compilations, features), so the credit is never forced onto the wrong artist.
+        owner_id = str(album.get("artistId") or "")
+        if owner_id not in owners:
+            owners[owner_id] = artist if (artist is not None and owner_id == navidrome_id) else (
+                get_artist(owner_id) if owner_id else None)
+        owner = owners[owner_id]
         if owner and owner.get("musicBrainzId"):
-            album["artists"] = [{"id": str(album.get("artistId") or navidrome_id), "name": owner.get("name", ""),
-                                 "musicBrainzId": owner["musicBrainzId"]}]
+            album["artists"] = [{"id": owner_id, "name": owner.get("name", ""), "musicBrainzId": owner["musicBrainzId"]}]
         result = ingest_album(db, album, now=now, search=None)
         ingested += 1
         for entity_id in (result.release_entity_id, result.artist_entity_id):
@@ -133,6 +137,11 @@ def _run(db, subject, navidrome_id, get_album, get_artist, find_artist, fetch, c
                 mbids.add(entity["mbid"].lower())
         if result.artist_entity_id:
             artist_ids.add(result.artist_entity_id)
+    if artist is not None and artist.get("musicBrainzId"):   # the artist asked about, even when only credited on others' albums
+        known = repo.find_entity(db, "artist", mbid=str(artist["musicBrainzId"]).lower())
+        if known:
+            artist_ids.add(known["id"])
+            mbids.add(str(known["mbid"]).lower())
     if not ingested:
         if skipped is not None:
             raise skipped
