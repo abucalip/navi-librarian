@@ -175,3 +175,11 @@ Earlier project log entries are preserved verbatim in [PROJECT_LOG_HISTORY.md](d
 - Tests actually run, filtered: Android `BookletTest`, `CoverFacesTest`; macOS `BookletTests`, `ArtworkTests`, `FlipCoverTests` (21 pass). Not run: full suites, lint, release build. Not checked on a device or in a window; the PDF paths and the lens have no test beyond the pure helpers.
 - Open: Android Brut themes share one Booklet tab; macOS has only Cupertino and Zine.
 - Next: slice 4, edition picker and grid fallback.
+
+## 2026-11-10 — Artwork edition picker and grid fallback (slice 4)
+
+- Merged as PR [#951](https://github.com/abucalip/navi-librarian/pull/951), squash `641888e64c1f091912597aa611ea52a4391363a9`. The first CI run failed (Python syntax and Docker packaging, two `test_api_search_routes` album tests: a fake librarian without `DATA_DIR`); the album page now treats an unreadable pick as no pick, and all required workflows then passed.
+- New: server `album_choice` table (`intelligence/artwork/store.py`), `intelligence/artwork/cover.py` (JPEG/PNG size from the header, Front-only pick rule, best-front fallback), routes in `app/api/artwork.py`, pick and fallback in `app/api/owned_artwork.py`, `artwork_choice` on the album page; contract section in `SERVER_V2_CONTRACT.md`. Android `model/EditionPicker.kt`, `ui/album/EditionPicker.kt`, `LibrarianClient.delete`, `setArtworkChoice`/`clearArtworkChoice`. macOS `Chrome/EditionPicker.swift`, `ArtworkStore` choices, `ownedCover` and the grid fallback in `ArtworkImage`, client calls in `Artwork.swift`.
+- Tests actually run, filtered: pytest `test_artwork_choice`, `test_api_owned_artwork`, `test_api_artwork_routes`, `test_artwork_fixtures`, `test_discovery_search_album_page`, `test_discovery_search_query`, `test_api_search_routes`; Android `EditionPickerTest`, `CoverFacesTest`; macOS `EditionPickerTests`, `ArtworkTests`, `FlipCoverTests`. Not run: full suites, lint, release build. Not checked on a device or in a window.
+- Open: the small-cover rule assumes Navidrome does not upscale; other lists can show the old cover for up to 5 minutes after a pick; the owned release is still not passed to the index lookup; macOS reads picks from `/choices`, not the album page.
+- Next: slice 5 (Now Playing: disc, slideshow, system artwork).
