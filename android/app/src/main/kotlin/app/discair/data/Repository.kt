@@ -9,6 +9,8 @@ import javax.net.ssl.SSLException
 import app.discair.model.AcquisitionJob
 import app.discair.model.AlbumLinks
 import app.discair.model.AlbumReviews
+import app.discair.model.StoreUpdate
+import app.discair.model.parseStoreUpdate
 import app.discair.model.GetState
 import app.discair.model.albumLaunchBody
 import app.discair.model.identityBody
@@ -173,6 +175,15 @@ interface LibraryRepository : AcquisitionApi {
      * asked only when the user opens the paths view. Never from the saved copies.
      */
     fun paths(kind: PathKind, mbid: String): PathsResponse = throw UnsupportedOperationException()
+
+    /**
+     * Asks the server's worker to add an artist or album to its knowledge store (`POST /api/knowledge/update-store`).
+     * [subject] is "artist" or "album"; [byMbid] says the id is a MusicBrainz id rather than the Navidrome id.
+     */
+    fun requestStoreUpdate(subject: String, id: String, byMbid: Boolean): StoreUpdate = throw UnsupportedOperationException()
+
+    /** Where that request stands (`GET /api/knowledge/update-store`). */
+    fun storeUpdateStatus(subject: String, id: String, byMbid: Boolean): StoreUpdate = throw UnsupportedOperationException()
 
     /** One album path from an owned album (`GET /api/knowledge/paths?type=release`, by the Navidrome album id). Never from the saved copies. */
     fun albumPaths(kind: AlbumPathKind, albumId: String): PathsResponse = throw UnsupportedOperationException()
@@ -380,6 +391,17 @@ class LibrarianRepository(
     override fun paths(kind: PathKind, mbid: String): PathsResponse {
         if (ReadMode.isCacheOnly) throw CacheMiss()
         return parsePaths(client.get(listOf("api", "knowledge", "paths"), mapOf("kind" to kind.wire, "mbid" to mbid, "type" to "artist")))
+    }
+
+    override fun requestStoreUpdate(subject: String, id: String, byMbid: Boolean): StoreUpdate {
+        if (ReadMode.isCacheOnly) throw CacheMiss()
+        val key = if (byMbid) "mbid" else "navidrome_id"
+        return parseStoreUpdate(client.post(listOf("api", "knowledge", "update-store"), """{"subject":"$subject","$key":${kotlinx.serialization.json.JsonPrimitive(id)}}"""))
+    }
+
+    override fun storeUpdateStatus(subject: String, id: String, byMbid: Boolean): StoreUpdate {
+        if (ReadMode.isCacheOnly) throw CacheMiss()
+        return parseStoreUpdate(client.get(listOf("api", "knowledge", "update-store"), mapOf("subject" to subject, (if (byMbid) "mbid" else "navidrome_id") to id)))
     }
 
     override fun albumPaths(kind: AlbumPathKind, albumId: String): PathsResponse {

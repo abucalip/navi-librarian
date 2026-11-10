@@ -303,12 +303,28 @@ _V5 = (
     """,
 )
 
+_V6 = (
+    """
+    CREATE TABLE update_requests (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        subject TEXT NOT NULL CHECK (subject IN ('artist', 'album')),
+        navidrome_id TEXT NOT NULL,
+        state TEXT NOT NULL CHECK (state IN ('queued', 'running', 'done', 'failed')),
+        requested_at REAL NOT NULL,
+        finished_at REAL,
+        message TEXT,
+        UNIQUE (subject, navidrome_id)
+    )
+    """,
+)
+
 MIGRATIONS: tuple[Migration, ...] = (
     Migration(1, "initial schema", _V1),
     Migration(2, "artist life span and release facts", _V2),
     Migration(3, "source freshness ledger", _V3),
     Migration(4, "context facts and the event entity type", _V4, rebuilds_tables=True),
     Migration(5, "release group types", _V5),
+    Migration(6, "manual update requests", _V6),
 )
 LATEST_VERSION = MIGRATIONS[-1].version
 

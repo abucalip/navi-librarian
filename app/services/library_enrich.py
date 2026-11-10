@@ -14,7 +14,7 @@ import threading
 
 from app.api.insights import STORE_FILE
 from discovery.library_snapshot import fetch_album_inventory
-from intelligence.musicbrainz import auto_fill
+from intelligence.musicbrainz import auto_fill, update_requests
 from intelligence.store import open_store
 
 logger = logging.getLogger(__name__)
@@ -56,6 +56,26 @@ def poll_once(librarian, db):
     )
 
 
+def handle_requests(librarian, db):
+    """Process queued manual update requests (the "Request update" button); returns how many ran."""
+    def find_artist(mbid):
+        for index in librarian.api_call("getArtists").get("artists", {}).get("index", []):
+            for artist in librarian.items(index.get("artist")):
+                if str(artist.get("musicBrainzId") or "").lower() == mbid:
+                    return artist.get("id")
+        return None
+
+    ran = 0
+    while update_requests.process_next(
+        db,
+        get_album=lambda album_id: librarian.api_call("getAlbum", id=album_id).get("album"),
+        get_artist=lambda artist_id: librarian.api_call("getArtist", id=artist_id).get("artist"),
+        find_artist=find_artist,
+    ):
+        ran += 1
+    return ran
+
+
 def run_forever(librarian, stop, environ=None):
     """Poll until ``stop`` (a ``threading.Event``) is set; returns at once when the loop is switched off."""
     interval = poll_seconds(environ)
@@ -69,6 +89,8 @@ def run_forever(librarian, stop, environ=None):
             with _LOCK:
                 if db is None:
                     db = open_store(librarian.DATA_DIR / STORE_FILE)
+                    update_requests.recover_running(db)
+                handle_requests(librarian, db)
                 summary = poll_once(librarian, db)
             last_error = None
             if not summary.get("idle"):

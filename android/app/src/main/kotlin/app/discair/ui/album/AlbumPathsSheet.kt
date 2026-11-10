@@ -152,7 +152,7 @@ fun AlbumPathsSheet(albumName: String, artistName: String, albumId: String, soni
             } else {
                 val seeds = (model.answers[AlbumTab.NeighboursByEar] as? Load.Ready)?.value?.seeds ?: 0
                 AlbumPathList(
-                    albumName, tab, tabs, state, seeds, lists.getValue(tab),
+                    albumName, albumId, tab, tabs, state, seeds, lists.getValue(tab),
                     onTab = { step = -1; tabName = it.name }, onStep = { step = it }, onRetry = { attempt++ },
                 )
             }
@@ -164,7 +164,7 @@ fun AlbumPathsSheet(albumName: String, artistName: String, albumId: String, soni
 
 @Composable
 private fun AlbumPathList(
-    albumName: String, tab: AlbumTab, tabs: List<AlbumTab>, state: Load<AlbumAnswer>, seeds: Int, list: LazyListState,
+    albumName: String, albumId: String, tab: AlbumTab, tabs: List<AlbumTab>, state: Load<AlbumAnswer>, seeds: Int, list: LazyListState,
     onTab: (AlbumTab) -> Unit, onStep: (Int) -> Unit, onRetry: () -> Unit,
 ) {
     Column(Modifier.fillMaxSize().padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -187,6 +187,10 @@ private fun AlbumPathList(
                     Text(state.failure.message, style = MaterialTheme.typography.bodyLarge, color = Ink.ChartRedText)
                     Spacer(Modifier.size(16.dp))
                     OutlinedButton(onClick = onRetry, Modifier.heightIn(min = Target)) { Text("Try again") }
+                    if ((state.failure as? app.discair.net.ConnectionFailure.Server)?.code == 404) {
+                        Spacer(Modifier.size(8.dp))
+                        app.discair.ui.common.RequestUpdateButton("album", albumId, byMbid = false, onDone = onRetry)
+                    }
                 }
                 is Load.Ready -> {
                     val answer = state.value

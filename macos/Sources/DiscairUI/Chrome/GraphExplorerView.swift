@@ -24,6 +24,12 @@ struct GraphExplorerView: View {
                     Text("Search an artist to explore their connections.").foregroundStyle(style.muted).padding(.top, 4)
                 }
                 if let note = graph.note { Text(note).foregroundStyle(style.muted).padding(.top, 4) }
+                if graph.canRequestUpdate {
+                    let librarian = state.session?.librarian
+                    Button("Request update") { Task { await state.graph.requestUpdate(name: state.selectedArtist.name, librarian: librarian) } }
+                        .disabled(graph.updating)
+                    if let note = graph.updateNote { Text(note).font(.caption).foregroundStyle(style.muted) }
+                }
                 canvas
                 footer
             }

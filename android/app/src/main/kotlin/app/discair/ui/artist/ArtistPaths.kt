@@ -150,7 +150,7 @@ fun ArtistPathsSheet(artistName: String, mbid: String, open: Opener, onDismiss: 
                 )
             } else {
                 PathList(
-                    artistName, kind, state, lists.getValue(kind),
+                    artistName, mbid, kind, state, lists.getValue(kind),
                     onKind = { step = -1; kindWire = it.wire },
                     onStep = { step = it }, onRetry = { attempt++ },
                 )
@@ -167,7 +167,7 @@ private fun PathLink.go(open: Opener) {
 
 @Composable
 private fun PathList(
-    artistName: String, kind: PathKind, state: Load<PathsResponse>, list: LazyListState,
+    artistName: String, mbid: String, kind: PathKind, state: Load<PathsResponse>, list: LazyListState,
     onKind: (PathKind) -> Unit, onStep: (Int) -> Unit, onRetry: () -> Unit,
 ) {
     Column(Modifier.fillMaxSize().padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -201,6 +201,10 @@ private fun PathList(
                     Text(state.failure.message, style = MaterialTheme.typography.bodyLarge, color = Ink.ChartRedText)
                     Spacer(Modifier.size(16.dp))
                     OutlinedButton(onClick = onRetry, Modifier.heightIn(min = Target)) { Text("Try again") }
+                    if ((state.failure as? app.discair.net.ConnectionFailure.Server)?.code == 404) {
+                        Spacer(Modifier.size(8.dp))
+                        app.discair.ui.common.RequestUpdateButton("artist", mbid, byMbid = true, onDone = onRetry)
+                    }
                 }
                 is Load.Ready -> when (val view = state.value.view()) {
                     is PathsView.Stops -> LazyColumn(Modifier.fillMaxSize(), state = list, contentPadding = PaddingValues(bottom = 32.dp)) {

@@ -70,6 +70,10 @@ public final class GraphExplorerModel {
     public private(set) var coverage: String?
     public private(set) var nextCursor: String?
     public var selectedID: String?
+    /// True when the library artist the explorer started from is not in the knowledge store yet (404), so "Request update" is offered.
+    public private(set) var canRequestUpdate = false
+    public private(set) var updating = false
+    public private(set) var updateNote: String?
     public var depth = 1
     public var creditsOnly = true
     /// Navidrome artist id the explorer last started from, so opening the screen again does not reload it.
@@ -109,9 +113,35 @@ public final class GraphExplorerModel {
             note = "\(name) has no MusicBrainz id in Navidrome, so there is nothing to connect yet."; return
         }
         startedFor = artistRemoteID
+        mbidForRetry = mbid
         trail = []
         await walk(mbid: mbid, type: "artist", name: name, librarian: librarian)
     }
+
+    /// Asks the server's worker to add the starting artist to the store, waits for it, then walks again.
+    public func requestUpdate(name: String, librarian: LibrarianClient?) async {
+        guard let librarian, let id = startedFor, !updating else { return }
+        updating = true; updateNote = "Asking the server…"
+        defer { updating = false }
+        do {
+            var result = try await librarian.requestStoreUpdate(subject: "artist", id: id)
+            var polls = 0
+            while !result.finished, polls < 60 {
+                updateNote = "The server is updating its store…"
+                try await Task.sleep(for: .seconds(3))
+                result = try await librarian.storeUpdateStatus(subject: "artist", id: id)
+                polls += 1
+            }
+            switch result.state {
+            case "done":
+                updateNote = nil
+                if let centreMBID = mbidForRetry { await walk(mbid: centreMBID, type: "artist", name: name, librarian: librarian) }
+            case "failed": updateNote = result.message ?? "The server could not add this."
+            default: updateNote = "The server is still working on it. Try again in a minute."
+            }
+        } catch { updateNote = "The server could not be reached. Try again." }
+    }
+    private var mbidForRetry: String?
 
     /// Makes a node the new centre. The old centre goes on the trail for Back.
     public func recentre(on node: GraphNode, librarian: LibrarianClient?) async {
@@ -144,7 +174,7 @@ public final class GraphExplorerModel {
         loading = true; defer { loading = false }
         do {
             let page = try await librarian.knowledgeConnections(mbid: mbid, type: type, depth: depth, limit: 50, creditsOnly: creditsOnly, cursor: cursor)
-            note = nil
+            note = nil; canRequestUpdate = false
             let fresh = page.hops.map { GraphNode(entity: $0.entity, depth: $0.depth, via: $0.viaMBID, credit: $0.credit, evidence: $0.evidence) }
             if replace { centre = page.start; nodes = fresh; selectedID = nil }
             else { let have = Set(nodes.map(\.id)); nodes += fresh.filter { !have.contains($0.id) } }
@@ -152,7 +182,10 @@ public final class GraphExplorerModel {
             coverage = page.sources["musicbrainz_dump"]?.coverage
             if replace, fresh.isEmpty { note = coverage == "pending" ? "The MusicBrainz data for this artist is not on the server yet." : "No connections are stated for \(page.start.name)." }
         } catch let e as DiscairError {
-            if case .server(let status, _) = e, status == 404 { note = "This artist is not in the knowledge store yet." }
+            if case .server(let status, _) = e, status == 404 {
+                note = "This artist is not in the knowledge store yet."
+                canRequestUpdate = trail.isEmpty && mbid == mbidForRetry
+            }
             else { note = e.summary }
             if replace { nodes = []; nextCursor = nil }
         } catch { note = "Could not read connections."; if replace { nodes = []; nextCursor = nil } }

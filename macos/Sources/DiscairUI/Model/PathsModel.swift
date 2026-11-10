@@ -295,10 +295,43 @@ public final class PathsSheetModel: Identifiable {
     public var tabID: String
     public var selected: Int?
     public private(set) var phases: [String: Phase] = [:]
+    /// The Navidrome id of the artist or album, for "Request update".
+    public var subjectID: String?
+    /// Tabs whose last failure was "not in the knowledge store yet" (404).
+    public private(set) var notInStore: Set<String> = []
+    /// What the "Request update" button is doing: nil when idle.
+    public private(set) var updateNote: String?
+    public private(set) var updating = false
 
     init(subject: Subject, title: String, artist: String, albumID: String?, tabs: [PathTabSpec]) {
         self.subject = subject; self.title = title; self.artist = artist; self.albumID = albumID; self.tabs = tabs
+        subjectID = albumID
         tabID = tabs[0].id
+    }
+
+    public var canRequestUpdate: Bool { notInStore.contains(tabID) && subjectID != nil }
+
+    /// Asks the worker to add this artist or album to the store, waits for it, then reads the tab again.
+    public func requestUpdate(librarian: LibrarianClient?) async {
+        guard let librarian, let id = subjectID, !updating else { return }
+        let name = subject == .album ? "album" : "artist"
+        updating = true; updateNote = "Asking the server…"
+        defer { updating = false }
+        do {
+            var result = try await librarian.requestStoreUpdate(subject: name, id: id)
+            var polls = 0
+            while !result.finished, polls < 60 {
+                updateNote = "The server is updating its store…"
+                try await Task.sleep(for: .seconds(3))
+                result = try await librarian.storeUpdateStatus(subject: name, id: id)
+                polls += 1
+            }
+            switch result.state {
+            case "done": updateNote = nil; await load(librarian: librarian, retry: true)
+            case "failed": updateNote = result.message ?? "The server could not add this."
+            default: updateNote = "The server is still working on it. Try again in a minute."
+            }
+        } catch { updateNote = "The server could not be reached. Try again." }
     }
 
     /// An album's sheet: Neighbours by Ear only when sonic similarity is reported.
@@ -367,12 +400,16 @@ public final class PathsSheetModel: Identifiable {
         let id = tabID, spec = tab
         if !retry, case .ready? = phases[id] { return }
         phases[id] = .loading
+        notInStore.remove(id)
         guard let librarian else { phases[id] = .failed("Paths need the server."); return }
         do {
             let answer = try await spec.load(librarian)
             phases[id] = .ready(answer)
             // The first step is selected, so the pane and the buttons are never empty.
             if tabID == id, selected == nil, !answer.steps.isEmpty { selected = 0 }
-        } catch { phases[id] = .failed(Self.failure(error, subject: subject)) }
+        } catch {
+            if case DiscairError.server(404, _) = error { notInStore.insert(id) }
+            phases[id] = .failed(Self.failure(error, subject: subject))
+        }
     }
 }
