@@ -66,6 +66,7 @@ class ImageEntry:
     height: int | None
     date: str                         # release date of `release`, "" when unknown
     positions: dict[str, int] = field(default_factory=dict)   # release -> place in that release's CAA list
+    format: str = "jpg"               # file type of the original: jpg, png, gif, webp or pdf
 
     @property
     def side(self) -> int:
@@ -74,7 +75,8 @@ class ImageEntry:
     def to_dict(self) -> dict:
         return {"image_id": self.image_id, "release": self.release, "releases": list(self.releases),
                 "edition": self.edition, "types": list(self.types), "comment": self.comment,
-                "approved": self.approved, "width": self.width, "height": self.height}
+                "approved": self.approved, "width": self.width, "height": self.height,
+                "format": self.format}
 
 
 @dataclass
@@ -149,12 +151,23 @@ def _merge(infos: list[ReleaseInfo], results: dict[str, ReleaseIndex]) -> list[I
                 entry = by_id[image_id] = ImageEntry(
                     image_id=image_id, release=info.mbid, releases=[], edition=info.label, types=types,
                     comment=str(raw.get("comment") or ""), approved=bool(raw.get("approved")),
-                    width=_dim(raw.get("width")), height=_dim(raw.get("height")), date=info.date)
+                    width=_dim(raw.get("width")), height=_dim(raw.get("height")), date=info.date,
+                    format=_format_of(raw))
                 order.append(image_id)
             if info.mbid not in entry.releases:
                 entry.releases.append(info.mbid)
                 entry.positions[info.mbid] = pos
     return [by_id[i] for i in order]
+
+
+FORMATS = ("jpg", "png", "gif", "webp", "pdf")
+
+
+def _format_of(raw: Mapping) -> str:
+    """Type of the original file from the CAA ``image`` URL; ``jpg`` when it is missing or odd (as the store does)."""
+    name = str(raw.get("image") or "").rsplit("/", 1)[-1]
+    ext = name.rsplit(".", 1)[-1].lower() if "." in name else ""
+    return ext if ext in FORMATS else "jpg"
 
 
 def _dim(value) -> int | None:

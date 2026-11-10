@@ -1,0 +1,196 @@
+{
+  "captured_at": "2026-11-10T00:00:00Z",
+  "request": {
+    "body": null,
+    "method": "GET",
+    "path": "/api/artwork/index",
+    "query": {
+      "release": "11111111-1111-4111-8111-111111111111",
+      "rgid": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
+    }
+  },
+  "response": {
+    "body": {
+      "best_front": 2001,
+      "booklet": {
+        "edition": "1999 JP CD",
+        "image_ids": [
+          2002,
+          2003,
+          2005
+        ],
+        "release": "22222222-2222-4222-8222-222222222222"
+      },
+      "images": [
+        {
+          "approved": true,
+          "comment": "",
+          "edition": "1999 JP CD",
+          "format": "jpg",
+          "height": 1500,
+          "image_id": 2001,
+          "release": "22222222-2222-4222-8222-222222222222",
+          "releases": [
+            "22222222-2222-4222-8222-222222222222"
+          ],
+          "types": [
+            "Front"
+          ],
+          "width": 1500
+        },
+        {
+          "approved": true,
+          "comment": "",
+          "edition": "1958 US Vinyl",
+          "format": "jpg",
+          "height": 1200,
+          "image_id": 1001,
+          "release": "11111111-1111-4111-8111-111111111111",
+          "releases": [
+            "11111111-1111-4111-8111-111111111111",
+            "22222222-2222-4222-8222-222222222222"
+          ],
+          "types": [
+            "Front"
+          ],
+          "width": 1200
+        },
+        {
+          "approved": true,
+          "comment": "",
+          "edition": "1958 US Vinyl",
+          "format": "jpg",
+          "height": 1200,
+          "image_id": 1002,
+          "release": "11111111-1111-4111-8111-111111111111",
+          "releases": [
+            "11111111-1111-4111-8111-111111111111"
+          ],
+          "types": [
+            "Back"
+          ],
+          "width": 1200
+        },
+        {
+          "approved": true,
+          "comment": "Side A label",
+          "edition": "1958 US Vinyl",
+          "format": "jpg",
+          "height": 1200,
+          "image_id": 1003,
+          "release": "11111111-1111-4111-8111-111111111111",
+          "releases": [
+            "11111111-1111-4111-8111-111111111111"
+          ],
+          "types": [
+            "Medium"
+          ],
+          "width": 1200
+        },
+        {
+          "approved": true,
+          "comment": "Page 1",
+          "edition": "1999 JP CD",
+          "format": "jpg",
+          "height": 1200,
+          "image_id": 2002,
+          "release": "22222222-2222-4222-8222-222222222222",
+          "releases": [
+            "22222222-2222-4222-8222-222222222222"
+          ],
+          "types": [
+            "Booklet"
+          ],
+          "width": 1200
+        },
+        {
+          "approved": true,
+          "comment": "Page 2",
+          "edition": "1999 JP CD",
+          "format": "jpg",
+          "height": 1200,
+          "image_id": 2003,
+          "release": "22222222-2222-4222-8222-222222222222",
+          "releases": [
+            "22222222-2222-4222-8222-222222222222"
+          ],
+          "types": [
+            "Booklet"
+          ],
+          "width": 1200
+        },
+        {
+          "approved": true,
+          "comment": "Booklet scan (PDF)",
+          "edition": "1999 JP CD",
+          "format": "pdf",
+          "height": 1200,
+          "image_id": 2005,
+          "release": "22222222-2222-4222-8222-222222222222",
+          "releases": [
+            "22222222-2222-4222-8222-222222222222"
+          ],
+          "types": [
+            "Booklet"
+          ],
+          "width": 1200
+        },
+        {
+          "approved": false,
+          "comment": "",
+          "edition": "1999 JP CD",
+          "format": "jpg",
+          "height": 1200,
+          "image_id": 2004,
+          "release": "22222222-2222-4222-8222-222222222222",
+          "releases": [
+            "22222222-2222-4222-8222-222222222222"
+          ],
+          "types": [
+            "Obi"
+          ],
+          "width": 1200
+        }
+      ],
+      "releases": {
+        "empty": 0,
+        "failed": 0,
+        "fetched": 2,
+        "total": 3
+      },
+      "rgid": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      "slots": {
+        "Back": {
+          "edition": "1958 US Vinyl",
+          "from_owned": true,
+          "image_id": 1002,
+          "release": "11111111-1111-4111-8111-111111111111"
+        },
+        "Front": {
+          "edition": "1958 US Vinyl",
+          "from_owned": true,
+          "image_id": 1001,
+          "release": "11111111-1111-4111-8111-111111111111"
+        },
+        "Medium": {
+          "edition": "1958 US Vinyl",
+          "from_owned": true,
+          "image_id": 1003,
+          "release": "11111111-1111-4111-8111-111111111111"
+        },
+        "Obi": {
+          "edition": "1999 JP CD",
+          "from_owned": false,
+          "image_id": 2004,
+          "release": "22222222-2222-4222-8222-222222222222"
+        }
+      },
+      "status": "ok",
+      "truncated": true,
+      "truncated_reason": "release_cap"
+    },
+    "content_type": "application/json",
+    "elapsed_seconds": 0.0,
+    "status": 200
+  }
+}
