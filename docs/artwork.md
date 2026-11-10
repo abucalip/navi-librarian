@@ -1,6 +1,6 @@
 # Artwork proposal: the album as a physical object
 
-**Status:** draft for owner review. Slice 0 (probe, then the caps, TTLs and rate limits) is done and recorded below; nothing else is built.
+**Status:** draft for owner review. Slice 0 (probe, then the caps, TTLs and rate limits) is done. Slice 1 is partly built: the index and merge and the provider fetchers are merged (PR #945, server only, not wired to any endpoint); the cache, endpoints, fixtures and contract section are not.
 **Date:** 2026-11-10
 **Context:** MusicBrainz and the Cover Art Archive (CAA) hold more than a front cover for many releases: backs, booklet scans, disc labels, trays, spines, obi strips, posters and studio photos. Example: <https://musicbrainz.org/release/1edd139d-4779-4057-8e12-13c783674f0d/cover-art> (Somethin' Else). This proposal adds those images to the Android and macOS clients through the Librarian server. Related: [Album paths proposal](ALBUM_PATHS_PROPOSAL.md) (path rows, Same Room), [macOS design](../macos/DESIGN.md), [Android design](../android/DESIGN.md).
 
@@ -173,7 +173,7 @@ In Get and Downloads, the pipeline dock shows the covers of the release being fe
 ## Slices
 
 0. ~~**Probe (no UI):** a script that fetches the index for 30 owned release groups (Somethin' Else first) and reports releases per group, images per group, type mix, size distribution and failure rates. It sets the caps and TTLs above. No cache writes beyond the scratch folder.~~ **Done 2026-11-10, script merged in PR #944**; caps, TTLs and rate limits set from the results in "Limits (set from the probe)".
-1. **Server index and cache:** index builder, image cache with the 1.5 GB budget, endpoints, fixtures, tests.
+1. **Server index and cache:** ~~index builder~~, image cache with the 1.5 GB budget, endpoints, fixtures, tests. **Index builder done 2026-11-10 (PR #945, `intelligence/artwork/`).**
 2. **Client decoders and the image store:** Android and macOS decode the index and load images through the Librarian.
 3. **Flip cover, booklet, zoom:** ideas 1 and 2.
 4. **Edition picker and grid fallback:** idea 7 (includes the server choice store).
@@ -190,7 +190,7 @@ Models: Fable 5.1, Opus 5.5, Sonnet 5.5, Haiku 5.5. Effort: low, medium, high, x
 | Owner decisions | Four open decisions above | Owner | n/a | Policy, not code. |
 | ~~0. Probe~~ | ~~Script that samples about 30 release groups and prints counts~~ (done 2026-11-10) | Sonnet 5.5 | medium | One script, no UI, easy to check by reading its output. |
 | ~~0. Probe~~ | ~~Reading the results and setting caps, TTLs, rate limits~~ (done 2026-11-10) | Opus 5.5 | high | Judgment from data; the numbers drive every later slice. |
-| 1. Server index and merge | Release-group to releases, dedupe, best-front rule, caps, `truncated` | Opus 5.5 | high | Rate limits, partial failure and ordering rules are easy to get subtly wrong. |
+| ~~1. Server index and merge~~ | ~~Release-group to releases, dedupe, best-front rule, caps, `truncated`~~ **Done, PR #945 (with the MusicBrainz and CAA fetchers, pacing and back-off).** | Opus 5.5 | high | Rate limits, partial failure and ordering rules are easy to get subtly wrong. |
 | 1. Server cache and endpoints | 1.5 GB budget, eviction, protected fronts, redirect host check, byte validation, auth | Opus 5.5 | xhigh | Security-sensitive (fetching third-party bytes) and concurrency-sensitive. Review with Fable 5.1 at high. |
 | 1. Fixtures and server tests | `ok`, `empty`, `unavailable`, `truncated` fixtures; unit tests | Sonnet 5.5 | medium | Mechanical once the contract is fixed. |
 | Contract section | Endpoint shapes and fields in the contract docs | Opus 5.5 | high | Both clients depend on it. |
