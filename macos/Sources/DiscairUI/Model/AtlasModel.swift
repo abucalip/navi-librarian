@@ -24,6 +24,13 @@ public enum AtlasGeometry {
     }
 }
 
+extension AtlasGeometry {
+    /// The release group whose disc stands for a recording: the first album that is a release group with a valid id.
+    public static func discGroup(_ albums: [KnowledgeAlbumLink]) -> String? {
+        albums.lazy.filter { $0.album.type == "release_group" }.compactMap { artworkGroupID($0.album.mbid) }.first
+    }
+}
+
 /// State of the atlas (Server V2 Phase 7 client gate): places with stated coordinates and the place on show. It only
 /// reads `GET /api/knowledge/atlas` and `/place`; nothing is geocoded or inferred on the Mac.
 @MainActor
@@ -40,6 +47,8 @@ public final class AtlasModel {
     public private(set) var detailNote: String?
     public var selectedID: String?
     public var showsList = false
+    /// Off until the owner turns it on: discs ask the server for one artwork index per album.
+    public var showsDiscs = false
 
     public init() {}
 
