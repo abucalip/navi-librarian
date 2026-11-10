@@ -1,5 +1,13 @@
 # Project log
 
+## 2026-11-10 — Artwork flip cover and spine strip (slice 3, first step)
+
+- Merged as PR [#949](https://github.com/abucalip/navi-librarian/pull/949), squash `2c29e6986a41cd8ee6b8b34ec0f50612a372fb3e`.
+- New: Android `model/CoverFaces.kt` and `ui/album/FlipCover.kt` (swipe or tap, TalkBack action, cross-fade when animations are off); macOS `Chrome/FlipCover.swift` (click, Reduce Motion cross-fade, Cupertino and Zine headers, 12 pt Spine strip), `ArtworkIndex.coverBackFaces`, and `release_group_mbid` read from the album page into `RelatedModel`. No Back image means no flip.
+- Tests actually run, filtered: Android `CoverFacesTest`, `ArtworkIndexTest`; macOS `ArtworkTests`, `FlipCoverTests`, `BugBatchTests`. Not run: full suites, lint, release build. Not checked on a device or in a window; the strip has no test.
+- Open: the owned release is not passed to the index lookup, so a Back from another edition can win over the owned one.
+- Next: booklet and zoom.
+
 ## 2026-11-10 — Artwork client decoders and image store (slice 2)
 
 - Merged as PR [#948](https://github.com/abucalip/navi-librarian/pull/948), squash `d1ac2f79a6a4b5dddaa79b333c811dac9ae2be6e`, tested head `a3755269862a3d13492707ffbaf458a1ce79494f`; required CI passed (compile, container-smoke, test-and-build, validate-container). Not published or deployed. Clients only; server untouched; no screen uses the new code yet.
