@@ -8,6 +8,8 @@ import SwiftUI
 /// The theme draws its own button through `button`.
 struct BookletOpener<Button: View>: View {
     let rgid: String?
+    /// An index the caller already holds; used instead of asking by `rgid`.
+    var index: ArtworkIndex?
     @ViewBuilder let button: (@escaping () -> Void) -> Button
     @Environment(\.artwork) private var store
     @State private var booklet: BookletView?
@@ -17,8 +19,9 @@ struct BookletOpener<Button: View>: View {
         Group {
             if booklet != nil { button { showing = true } }
         }
-        .task(id: "\(rgid ?? "")|\(store?.generation ?? 0)") {
+        .task(id: "\(rgid ?? "")|\(index?.faceKey ?? "")|\(store?.generation ?? 0)") {
             booklet = nil
+            if let index { booklet = index.bookletView; return }
             guard let rgid, !rgid.isEmpty, let store else { return }
             if case .ready(let index) = await store.artworkIndex(rgid: rgid, release: nil), !Task.isCancelled { booklet = index.bookletView }
         }

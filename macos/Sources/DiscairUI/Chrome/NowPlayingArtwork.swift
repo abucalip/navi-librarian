@@ -140,3 +140,27 @@ struct SlideshowBackdrop: View {
         }
     }
 }
+
+/// A small badge on the Now Playing cover that opens the album's booklet (docs/artwork.md, idea 2). Shown only when the playing
+/// album has booklet pages; nothing otherwise. The cover's click still flips it (idea 1); this badge is a separate control.
+struct NowPlayingBookletBadge: View {
+    let index: ArtworkIndex?
+    var dark = true
+
+    var body: some View {
+        BookletOpener(rgid: nil, index: index) { open in
+            if let text = index?.bookletView?.badgeText {
+                Button(action: open) {
+                    Label(text, systemImage: "book.closed.fill").font(.system(size: 11, weight: .semibold))
+                        .padding(.horizontal, 8).padding(.vertical, 4)
+                        .background(dark ? Color.black.opacity(0.62) : Color.white, in: Capsule())
+                        .foregroundStyle(dark ? Color.white : Color.black)
+                        .overlay(Capsule().strokeBorder(dark ? Color.white.opacity(0.25) : Color.black, lineWidth: dark ? 0.5 : 2))
+                }
+                .buttonStyle(.plain).padding(8)
+                .help("Open the album's booklet")
+                .accessibilityLabel("Open booklet, \(text)")
+            }
+        }
+    }
+}

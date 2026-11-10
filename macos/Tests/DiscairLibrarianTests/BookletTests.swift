@@ -61,4 +61,16 @@ import Testing
         #expect(lensUnitPoint(CGPoint(x: 0, y: 900), in: frame) == CGPoint(x: 0, y: 1))
         #expect(lensUnitPoint(CGPoint(x: 5, y: 5), in: .zero) == nil)
     }
+
+    @Test func badgeTextIsThePageCountOrPdf() throws {
+        #expect(try index(pages: [pic(1, "Booklet")]).bookletView?.badgeText == "1 page")
+        #expect(try index(pages: [pic(1, "Booklet"), pic(2, "Booklet"), pic(3, "Booklet")], extras: [pic(9, "Poster")]).bookletView?.badgeText == "3 pages")
+        #expect(try index(pages: [pic(4, "Booklet", format: "pdf")]).bookletView?.badgeText == "PDF")
+    }
+
+    @Test func faceKeyChangesWithTheAlbumAndItsImages() throws {
+        let a = try index(pages: [pic(1, "Booklet")])
+        let b = try index(pages: [pic(1, "Booklet"), pic(2, "Booklet")])
+        #expect(a.faceKey != b.faceKey)
+    }
 }

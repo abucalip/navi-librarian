@@ -29,7 +29,9 @@ struct ZineNowPlaying: View {
         return HStack(alignment: .top, spacing: 26) {
             VStack(alignment: .leading, spacing: 0) {
                 Mono("Centre spread · Now playing").padding(.bottom, 6)
-                ZineCover(album: a, width: 350).overlay { Halftone().padding(3) }
+                FlipCover(rgid: nil, dressBack: { AnyView($0.zBorder(3).zShadow(6)) }, index: albumArt, caption: true) { ZineCover(album: a, width: 350).overlay { Halftone().padding(3) } }
+                    .frame(width: 350, height: 350)
+                    .overlay(alignment: .bottomTrailing) { NowPlayingBookletBadge(index: albumArt, dark: false) }
                     .overlay(alignment: .topTrailing) { zineDisc(albumArt?.discImage(disc: c?.disc), spinning: p.isPlaying) }
                 Text(c?.title ?? "Nothing playing").font(Z.an(54)).textCase(.uppercase).tracking(0.5).lineLimit(1).minimumScaleFactor(0.5)
                     .padding(.top, 16).accessibilityAddTraits(.isHeader)

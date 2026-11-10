@@ -379,7 +379,19 @@ public struct BookletView: Equatable, Sendable {
     }
 }
 
+extension BookletView {
+    /// The corner badge on the Now Playing cover: the page count, or "PDF" for a one-file booklet. Plain text, no claim beyond the count.
+    public var badgeText: String {
+        if pdf != nil, pages.allSatisfy(\.isPDF) { return "PDF" }
+        let n = pages.filter { !$0.isPDF }.count
+        return n == 1 ? "1 page" : "\(n) pages"
+    }
+}
+
 extension ArtworkIndex {
+    /// Changes when the index changes, so a view can restart its work for a new album or a rebuilt index.
+    public var faceKey: String { "\(rgid)|\(images.count)" }
+
     public var bookletView: BookletView? {
         let pages = bookletImages
         guard !pages.isEmpty else { return nil }
