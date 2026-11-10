@@ -1,6 +1,6 @@
 # Internet radio playback proposal
 
-**Status:** owner decisions recorded 2026-11-10 (see "Decisions recorded"). Approved for build in two stages. Stage 1 slices 0, 1 and 2 are done (slice 1 merged as PR #965, slice 2 as PR #966, both 2026-11-10); struck-through items below are built. Slice 3 is next.
+**Status:** owner decisions recorded 2026-11-10 (see "Decisions recorded"). Approved for build in two stages. Stage 1 slices 0, 1, 2 and 3 are done (slice 1 merged as PR #965, slice 2 as PR #966, slice 3 as PR #967, all 2026-11-10); struck-through items below are built. Slice 4 (Android) is next.
 **Date:** 2026-11-10
 **Context:** RADIO-01 ("Grab the radio", PR #637) already relays Navidrome radio stations through `/radio/stream/<token>`, reads ICY titles and logs songs heard for 30 seconds or more in `radio.sqlite3` (`integrations/radio/`, `app/api/radio.py`). This proposal adds playback in the clients on top of it. Related: [Android player contract](ANDROID_PLAYER_CONTRACT.md), [macOS client contract](MACOS_CLIENT_CONTRACT.md).
 
@@ -49,8 +49,8 @@ Returns `{state, raw_title, artist, title, play_id, in_library, cover_url}`.
 ### Heard list in clients (idea 3)
 No new endpoint beyond the existing `/api/radio/plays`, with `grabbed` and `in_library` exposed so a client can show Download, Downloaded and Owned states.
 
-### Scrobbling and love (idea 5)
-`POST /api/radio/plays/{id}/scrobble`, called by the server itself once a song crosses the 30-second threshold when the owner has switched radio scrobbling on (Settings, default off). It reuses the existing Last.fm scrobbling code; a song is scrobbled once per play entry. A "love" action on a play is a separate request. Needs a check that scrobbling does not double-count with Navidrome's own scrobbling, which does not see radio plays.
+### ~~Scrobbling and love (idea 5)~~ — done, PR #967 (merged 2026-11-10); deviations are in the contract, section 3.7
+~~The server scrobbles a song to Last.fm once it crosses the 30-second threshold, when the owner has switched radio scrobbling on (`GET`/`PUT /api/radio/scrobbling`, default off). A play is scrobbled at most once. `POST /api/radio/plays/{id}/love` loves a play on Last.fm.~~ Deviation: the repository had no Last.fm write code, so the slice added it (`integrations/radio/scrobble.py`) rather than reusing it. The scrobble is sent by the server directly, not by a `POST .../scrobble` endpoint. The double-count check is by design only (radio songs never pass through Navidrome); a live check against the owner's account is still open.
 
 ### Contract fixtures
 Fixtures for each `/now` state, the stations list with and without logos, and the empty and unavailable cases, in the existing contract-fixtures layout so Android and macOS decoders are tested against the same files.
@@ -71,8 +71,8 @@ Fixtures for each `/now` state, the stations list with and without logos, and th
 0. ~~Contract and doc edits (docs only, directly on `main`).~~ — done 2026-11-10 (docs on `main`)
 1. ~~Server: stations list fields, favourites, logo resolver and cache, with tests and fixtures.~~ — done, PR #965 (merged 2026-11-10)
 2. ~~Server: live "now" holder, `/now`, `/api/radio/now`, `in_library`, `cover_url`.~~ — done, PR #966 (merged 2026-11-10)
-3. Server: scrobble on threshold (off by default) and love.
-4. Android: decoders, Radio section, logos, favourites.
+3. ~~Server: scrobble on threshold (off by default) and love.~~ — done, PR #967 (merged 2026-11-10)
+4. **Android:** decoders, Radio section, logos, favourites. (next)
 5. Android: playback service, live Now Playing, Download and Heard states.
 6. Android: reconnect, sleep timer, settings.
 

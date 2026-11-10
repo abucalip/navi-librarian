@@ -1,6 +1,6 @@
 # Internet radio playback contract (Discair)
 
-Status: **approved by the owner on 2026-11-10. Stage 1 slice 0 (contract), slice 1 (server stations list, favourites, tags, logos; PR #965) and slice 2 (server live "now" holder, `/now`, `/api/radio/now`; PR #966) are merged (2026-11-10). Slice 3 is next. Stage 2 (macOS) starts only after deployment is authorized and verified.**
+Status: **approved by the owner on 2026-11-10. Stage 1 slice 0 (contract), slice 1 (server stations list, favourites, tags, logos; PR #965) slice 2 (server live "now" holder, `/now`, `/api/radio/now`; PR #966) and slice 3 (server scrobble and love; PR #967) are merged (2026-11-10). Slice 4 (Android) is next. Stage 2 (macOS) starts only after deployment is authorized and verified.**
 
 This contract turns [`RADIO_PLAYBACK_PROPOSAL.md`](RADIO_PLAYBACK_PROPOSAL.md) into the rules the server and clients build against. Where the proposal and this contract disagree, this contract governs. Builds on RADIO-01 ("Grab the radio", PR [#637](https://github.com/abucalip/navi-librarian/pull/637)): the relay at `GET /radio/stream/{token}`, ICY title reading, the 30-second play log in `radio.sqlite3`, and `POST /api/radio/plays/{play_id}/get` as the Download action. Related: [`ANDROID_PLAYER_CONTRACT.md`](ANDROID_PLAYER_CONTRACT.md), [`MACOS_CLIENT_CONTRACT.md`](MACOS_CLIENT_CONTRACT.md).
 
@@ -97,7 +97,7 @@ No new endpoint. `GET /api/radio/plays` exposes `grabbed` and `in_library` so a 
 - A "love" action on a play is a separate request.
 - Before slice 3 ships, the change must show that radio scrobbles do not double-count with Navidrome's own scrobbling, which does not see radio plays.
 
-Slice 3 implementation note (PR, not merged): the repository had no Last.fm write code, so this slice adds `integrations/radio/scrobble.py` that calls Last.fm `track.scrobble` and `track.love` directly, signed with `LASTFM_SHARED_SECRET` and a `LASTFM_SESSION_KEY` (both from the configuration; no password is asked for). Without a session key, switching scrobbling on is refused. A play is claimed before the call (`scrobbled`), so it is sent at most once and a failed request is never retried. Routes: `GET`/`PUT /api/radio/scrobbling` (default off) and `POST /api/radio/plays/{id}/love`. The double-count check is by design only: radio songs never pass through Navidrome, so the server's Last.fm call is the only scrobble for them; a live check against the owner's account is still needed.
+Slice 3 note (PR #967, merged 2026-11-10 as `ae69fcf0`): the repository had no Last.fm write code, so this slice adds `integrations/radio/scrobble.py` that calls Last.fm `track.scrobble` and `track.love` directly, signed with `LASTFM_SHARED_SECRET` and a `LASTFM_SESSION_KEY` (both from the configuration; no password is asked for). Without a session key, switching scrobbling on is refused. A play is claimed before the call (`scrobbled`), so it is sent at most once and a failed request is never retried. Routes: `GET`/`PUT /api/radio/scrobbling` (default off) and `POST /api/radio/plays/{id}/love`. The scrobble has no `POST .../scrobble` route: the server sends it itself from the threshold, so the route named in the first bullet above was not built. The double-count check is by design only: radio songs never pass through Navidrome, so the server's Last.fm call is the only scrobble for them; a live check against the owner's account is still needed.
 
 ### 3.8 Relay and "now" holder
 
@@ -161,8 +161,8 @@ Each slice is its own PR with focused tests only (owner rule). The owner runs th
 0. ~~**Contract and doc edits** (this document; docs only, committed directly to `main`). Edits to `PRODUCT.md`, `ANDROID_PLAYER_CONTRACT.md` and `MACOS_CLIENT_CONTRACT.md` point their radio lines here.~~ — done 2026-11-10 (docs on `main`)
 1. ~~**Server:** stations list fields, favourites, tags, logo resolver and cache, with tests and fixtures.~~ — done, PR #965 (merged 2026-11-10)
 2. ~~**Server:** live "now" holder, `/now`, `/api/radio/now`, `in_library`, `cover_url`.~~ — done, PR #966 (merged 2026-11-10)
-3. **Server:** scrobble on threshold (off by default) and love. — PR open (not merged).
-4. **Android:** decoders, Radio section, logos, favourites.
+3. ~~**Server:** scrobble on threshold (off by default) and love.~~ — done, PR #967 (merged 2026-11-10)
+4. **Android:** decoders, Radio section, logos, favourites. (next)
 5. **Android:** playback service, live Now Playing, Download and Heard states.
 6. **Android:** reconnect, sleep timer, settings.
 

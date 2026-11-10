@@ -1,5 +1,15 @@
 # Project log
 
+## 2026-11-10 — Internet radio playback, stage 1 slice 3 (scrobble on threshold, love)
+
+- PR [#967](https://github.com/abucalip/navi-librarian/pull/967) merged as `ae69fcf0` (head `9f5c9ba3`). Owner merged it; docs closeout follows on `main`.
+- Built: `integrations/radio/scrobble.py` sends Last.fm `track.scrobble` and `track.love` directly, signed with `LASTFM_SHARED_SECRET` and `LASTFM_SESSION_KEY`. Scrobbling is off by default (`GET`/`PUT /api/radio/scrobbling`) and cannot be switched on without both keys. `POST /api/radio/plays/{id}/love` works whether or not scrobbling is on. The `ListenTracker` reports each logged play through `on_logged`; the relay hands it to a background thread.
+- Once per play: the `scrobbled` flag is claimed before the request, and a failed request is not retried. `radio_plays` gains `scrobbled` and `loved`, added to existing databases with `ALTER TABLE`.
+- Deviation: the repository had no Last.fm write code, so the slice added it rather than reusing existing code. Recorded in the contract, section 3.7.
+- Tests (focused, run on the branch): `tests/test_radio_scrobble.py` 15 passed; `tests/test_radio_*.py` and `tests/test_api_radio_routes.py` 128 passed in total. Full suite not run by the agent; CI on the PR head.
+- Open: `LASTFM_SESSION_KEY` is not in the owner's `config.env`, so scrobble and love cannot run until it is added. The double-count check with Navidrome is by design only; a live check is still needed. Last.fm's guideline (half the track or four minutes) is not applied to radio, which has no length; the owner's 30-second rule stands.
+- Not checked: live Last.fm, Docker image, browser.
+
 ## 2026-11-10 — Internet radio playback, stage 1 slice 2 (live now holder, /now, /api/radio/now)
 
 - PR [#966](https://github.com/abucalip/navi-librarian/pull/966) merged as `f3a5a2d756ad98d67e0b2b27c72b5b9140e4e093` (head `e12258ef`). Owner merged it; docs closeout follows on `main`.
