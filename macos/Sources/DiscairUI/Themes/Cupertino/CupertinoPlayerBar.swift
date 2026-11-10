@@ -87,6 +87,14 @@ struct CupertinoPlayerBar: View {
     }
 
     private var display: some View {
+        barRow
+            // Anywhere on the bar that is not a control opens Now Playing; the controls and links keep their own clicks.
+            .contentShape(Rectangle())
+            .onTapGesture { if p.current != nil { state.screen = .nowPlaying } }
+            .accessibilityAction(named: "Open Now Playing") { if p.current != nil { state.screen = .nowPlaying } }
+    }
+
+    private var barRow: some View {
         HStack(spacing: 14) {
             nowPlayingButton
             middle
@@ -123,21 +131,32 @@ struct CupertinoPlayerBar: View {
     private var nowPlayingButton: some View {
         Group {
             if let c = p.current {
-                Button { state.screen = .nowPlaying } label: {
-                    HStack(spacing: 14) {
+                HStack(spacing: 14) {
+                    PlayerBarCover(artist: c.artist, album: c.album, disc: c.disc, spinning: p.isPlaying, side: 50, cornerRadius: 7,
+                                   fallback: { state.screen = .nowPlaying }) {
                         CoverView(album: AlbumItem(id: -1, title: c.album, artist: c.artist, year: 0, genre: "", format: "", owned: true, hue: 200, remoteID: c.albumID, coverArt: c.coverArt))
-                            .frame(width: 50).clipShape(RoundedRectangle(cornerRadius: 7, style: .continuous)).accessibilityHidden(true)
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(c.title).font(.system(size: 14, weight: .semibold)).lineLimit(1)
-                            Text(p.phase == .loading ? "Loading…" : (c.album.isEmpty ? c.artist : "\(c.artist) — \(c.album)")).foregroundStyle(secondary).lineLimit(1)
-                            if case .failed(let m) = p.phase { Text(m).foregroundStyle(CU.accent).lineLimit(1) }
-                        }
-                        .font(.system(size: 12.5)).frame(maxWidth: .infinity, alignment: .leading)
                     }
-                    .contentShape(Rectangle())
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(c.title).font(.system(size: 14, weight: .semibold)).lineLimit(1)
+                        if p.phase == .loading {
+                            Text("Loading…").foregroundStyle(secondary).lineLimit(1)
+                        } else {
+                            // The artist and the album each open their own page; the rest of the bar opens Now Playing.
+                            HStack(spacing: 0) {
+                                Button { state.openCurrentArtist() } label: { Text(c.artist).lineLimit(1) }
+                                    .buttonStyle(.plain).accessibilityLabel("Open artist \(c.artist)")
+                                if !c.album.isEmpty {
+                                    Text(" — ")
+                                    Button { state.openCurrentAlbum() } label: { Text(c.album).lineLimit(1) }
+                                        .buttonStyle(.plain).accessibilityLabel("Open album \(c.album)")
+                                }
+                            }
+                            .foregroundStyle(secondary)
+                        }
+                        if case .failed(let m) = p.phase { Text(m).foregroundStyle(CU.accent).lineLimit(1) }
+                    }
+                    .font(.system(size: 12.5)).frame(maxWidth: .infinity, alignment: .leading)
                 }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Now playing: \(c.title), \(c.artist). Opens Now Playing")
             } else {
                 Text("Nothing playing").font(.system(size: 12.5)).foregroundStyle(secondary).frame(maxWidth: .infinity, alignment: .leading)
             }
