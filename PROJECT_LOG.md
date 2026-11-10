@@ -1,5 +1,12 @@
 # Project log
 
+## 2026-11-10 — Artwork artist photo strip on Android (slice 6, idea 8)
+
+- Merged as PR [#955](https://github.com/abucalip/navi-librarian/pull/955), squash `74964145d1dbee98076cc76f19bb143ea28ab49e` (Android only, plus `docs/artwork.md`).
+- New: `model/ArtistCollage.kt` (`qualifiesForCollage`, `artistCollage`: the macOS picture rules and round-robin, at most 8 owned albums, 3 per album, 12 in all, nothing under 4), `OwnedAlbum.releaseGroupMbid` (`model/Dto.kt`), `ui/artist/ArtistPhotoStrip.kt` (per-album index lookups in parallel, a row under the bio, each picture opens its album), one line in `ui/artist/ArtistScreen.kt`.
+- Tests actually run, filtered, Android with JDK 17: `ArtistCollageTest` (8), `DtoFixtureTest` (8), `ArtworkIndexTest` (11), all pass. Required CI on the PR head passed: compile, container-smoke, test-and-build, validate-container. Not run: the full Android suite (owner runs it). Not checked on a device; not deployed.
+- Next: Discover peeks, Paths covers and Same Room, Timeline filmstrip and Atlas disc nodes (rest of slice 6).
+
 ## 2026-11-10 — Artwork artist collage on macOS (slice 6, first step)
 
 - Merged as PR [#953](https://github.com/abucalip/navi-librarian/pull/953), squash `caccc9746f133c12e1946e8826a4f44ca3c9f481` (server), and PR [#954](https://github.com/abucalip/navi-librarian/pull/954), squash `cfd674c3ac5b9530bbb8103ac1b1385f33c1be2d` (macOS).
