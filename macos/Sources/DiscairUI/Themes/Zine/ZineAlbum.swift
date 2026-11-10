@@ -15,7 +15,8 @@ struct ZineAlbum: View {
             byline(a)
             HStack(alignment: .top, spacing: 22) {
                 VStack(alignment: .leading, spacing: 0) {
-                    ZineCover(album: a, width: 260)
+                    FlipCover(rgid: state.related.releaseGroupMBID, dressBack: { AnyView($0.zBorder(3).zShadow(6)) }, spineStrip: true) { ZineCover(album: a, width: 260) }
+                        .frame(width: 260, height: 260)
                     if !state.library.isLive {
                         Rectangle().fill(Z.ink).frame(height: 4).padding(.top, 20)
                         Text(ZineFixtures.albumPull).font(Z.serif(19, italic: true)).padding(.top, 6)

@@ -81,4 +81,36 @@ import Testing
         let failed = await ArtworkIndexResult.load(wait: { _ in }) { throw Offline() }
         #expect(failed == .unavailable)
     }
+
+    // MARK: Flip cover faces
+
+    private func picture(_ id: Int, _ type: String) -> ArtworkPicture { ArtworkPicture(imageID: id, types: [type]) }
+    private func index(_ types: [String]) throws -> ArtworkIndex {
+        let pics = types.enumerated().map { picture(10 + $0.offset, $0.element) }
+        let slots = Dictionary(uniqueKeysWithValues: pics.map { ($0.types[0], ["image_id": $0.imageID, "release": "r", "edition": "", "from_owned": true] as [String: Any]) })
+        let json: [String: Any] = ["status": "ok", "rgid": "rg", "releases": ["total": 1, "fetched": 1, "empty": 0, "failed": 0], "slots": slots,
+                                   "images": pics.map { ["image_id": $0.imageID, "types": $0.types, "format": "jpg"] as [String: Any] }]
+        return try JSONDecoder().decode(ArtworkIndex.self, from: JSONSerialization.data(withJSONObject: json))
+    }
+
+    @Test func noBackMeansNoFlip() throws {
+        #expect(try index(["Front"]).coverBackFaces.isEmpty)
+        #expect(try index(["Front", "Spine", "Tray"]).coverBackFaces.isEmpty, "a spine alone is not a reason to flip")
+    }
+
+    @Test func backThenTrayThenSpine() throws {
+        #expect(try index(["Back", "Front"]).coverBackFaces.map(\.imageID) == [10])
+        #expect(try index(["Back", "Spine", "Tray"]).coverBackFaces.map(\.imageID) == [10, 12, 11])
+    }
+
+    @Test func flipsWrapInBothDirections() {
+        #expect(coverFace(afterSteps: 5, backs: 0) == 0)
+        #expect(coverFace(afterSteps: 1, backs: 1) == 1 && coverFace(afterSteps: 2, backs: 1) == 0 && coverFace(afterSteps: -1, backs: 1) == 1)
+        #expect(coverFace(afterSteps: -1, backs: 3) == 3 && coverFace(afterSteps: 4, backs: 3) == 0)
+    }
+
+    @Test func recordedFixtureFlipsOnlyWithABack() throws {
+        let index = try ready("artwork_index")
+        #expect(index.coverBackFaces.isEmpty == (index.slotImage("Back") == nil))
+    }
 }

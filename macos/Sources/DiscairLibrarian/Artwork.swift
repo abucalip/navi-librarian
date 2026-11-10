@@ -156,6 +156,24 @@ public struct ArtworkIndex: Decodable, Equatable, Sendable {
     public var bookletImages: [ArtworkPicture] { (booklet?.imageIDs ?? []).compactMap { image($0) } }
 }
 
+extension ArtworkIndex {
+    /// The faces behind the cover that it can flip to (docs/artwork.md, idea 1): the best Back, then Tray, then Spine. The front is
+    /// the cover the page already shows. An album with no Back image does not flip, even with a Tray or Spine: those are extras on
+    /// a flipped cover, not a cover of their own. Chosen by type only, never by taste or play data.
+    public var coverBackFaces: [ArtworkPicture] {
+        guard let back = slotImage("Back") else { return [] }
+        var seen = Set<Int>()
+        return [back, slotImage("Tray"), slotImage("Spine")].compactMap { $0 }.filter { seen.insert($0.imageID).inserted }
+    }
+}
+
+/// Which face shows after `steps` flips on a card with `backs` back faces: 0 is the front. Negative steps (the other direction) wrap.
+public func coverFace(afterSteps steps: Int, backs: Int) -> Int {
+    guard backs > 0 else { return 0 }
+    let n = backs + 1
+    return ((steps % n) + n) % n
+}
+
 /// What the Librarian said about an album's images.
 public enum ArtworkIndexResult: Equatable, Sendable {
     /// `ok`: the index, possibly truncated.

@@ -85,6 +85,8 @@ public struct AlbumPageRelated: Equatable, Sendable {
     public var similarArtists: [SimilarArtistEntry] = []
     public var similarAlbums: [SimilarAlbumEntry] = []
     public var tracks: [RelatedTrack] = []
+    /// The album's MusicBrainz release group, which keys its artwork index. nil when the server did not say.
+    public var releaseGroupMBID: String?
 }
 
 struct Section<T: Decodable>: Decodable { let items: [T]? }
@@ -94,13 +96,26 @@ struct AlbumPageEnvelope: Decodable {
         let similarArtists: Section<SimilarArtistEntry>?
         let similarAlbums: Section<SimilarAlbumEntry>?
         let tracks: Section<RelatedTrack>?
-        enum CodingKeys: String, CodingKey { case similarArtists = "similar_artists", similarAlbums = "similar_albums", tracks }
+        struct AlbumBlock: Decodable {
+            struct Info: Decodable {
+                let releaseGroupMBID: String?
+                enum CodingKeys: String, CodingKey { case releaseGroupMBID = "release_group_mbid" }
+                init(from decoder: Decoder) throws {
+                    let c = try decoder.container(keyedBy: CodingKeys.self)
+                    releaseGroupMBID = try? c.decodeIfPresent(String.self, forKey: .releaseGroupMBID)
+                }
+            }
+            let album: Info?
+        }
+        let album: AlbumBlock?
+        enum CodingKeys: String, CodingKey { case album, similarArtists = "similar_artists", similarAlbums = "similar_albums", tracks }
     }
     let sections: Sections
     let done: PageDone?
     var related: AlbumPageRelated {
         AlbumPageRelated(partial: done?.partial ?? false, similarArtists: sections.similarArtists?.items ?? [], similarAlbums: (sections.similarAlbums?.items ?? []).filter { !$0.owned && !$0.name.isEmpty },
-                         tracks: sections.tracks?.items ?? [])
+                         tracks: sections.tracks?.items ?? [],
+                         releaseGroupMBID: sections.album?.album?.releaseGroupMBID.flatMap { $0.isEmpty ? nil : $0 })
     }
 }
 
