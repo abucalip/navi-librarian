@@ -1,5 +1,13 @@
 # Project log
 
+## 2026-11-10 — Artwork artist collage on macOS (slice 6, first step)
+
+- Merged as PR [#953](https://github.com/abucalip/navi-librarian/pull/953), squash `caccc9746f133c12e1946e8826a4f44ca3c9f481` (server), and PR [#954](https://github.com/abucalip/navi-librarian/pull/954), squash `cfd674c3ac5b9530bbb8103ac1b1385f33c1be2d` (macOS).
+- New: `release_group_mbid` on artist-page `owned_albums` items (`discovery/search/query.py`, contract line in `SEARCH_CONTRACT.md`); macOS `ArtistAlbumEntry` reads `id` and `release_group_mbid`, `RelatedModel.ownedGroups`, `ArtworkStore.artistCollage`, `qualifiesForCollage` and `artistCollage` in `DiscairLibrarian/Artwork.swift`, `Chrome/ArtistCollage.swift` (Zine contact sheet, Cupertino banner that rotates and holds still under Reduce Motion).
+- Finding: the artist page `albums` section already carries the album id and release group for owned albums, so the Mac does not need the #953 field; it stays for owned albums missing from `albums`.
+- Tests actually run, filtered: `tests.test_discovery_search_query`, `tests.test_api_search_routes` (82 pass); macOS `DiscairLibrarianTests` (155 pass, 7 new in `ArtistCollageTests`), `DiscairUITests` (366 pass). Not run: full suites. Not checked in a window; not deployed.
+- Next: Android photo strip, Discover peeks, Paths, Timeline and Atlas (rest of slice 6).
+
 ## 2026-11-10 — Artwork flip cover and spine strip (slice 3, first step)
 
 - Merged as PR [#949](https://github.com/abucalip/navi-librarian/pull/949), squash `2c29e6986a41cd8ee6b8b34ec0f50612a372fb3e`.
