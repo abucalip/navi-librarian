@@ -106,6 +106,7 @@ private fun ArtistContent(route: ArtistRoute, page: ArtistPage, open: Opener, li
     // LIB-05: five similar artists chosen at random on each page load. Variety only; the server's list is the source.
     val similar = remember(page) { sections.similar.items.shuffled().take(SIMILAR_SHOWN) }
     val owned = sections.ownedAlbums.items
+    val collage by rememberArtistCollage(owned)
     val artistId = (info?.id ?: route.id)?.takeIf { it.isNotBlank() && owned.isNotEmpty() }
     val play = app.discair.ui.player.LocalPlayActions.current
 
@@ -209,6 +210,7 @@ private fun ArtistContent(route: ArtistRoute, page: ArtistPage, open: Opener, li
         }
         val bio = sections.bio.bio?.text.orEmpty()
         if (bio.isNotBlank()) item { ReadMore(bio, Modifier.padding(horizontal = 16.dp, vertical = 16.dp)) }
+        if (collage.isNotEmpty()) item { ArtistPhotoStrip(collage, name, open) }
         if (owned.isNotEmpty()) {
             item { Heading("In your library", Modifier.padding(horizontal = 16.dp)) }
             val shown = if (showAllAlbums) owned else owned.take(ALBUMS_SHOWN)

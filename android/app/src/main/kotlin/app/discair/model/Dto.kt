@@ -144,6 +144,8 @@ data class OwnedAlbum(
     val key: String = "",
     val id: String = "",
     @SerialName("artwork_url") val artworkUrl: String? = null,
+    /** MusicBrainz release group (SEARCH_CONTRACT.md 3.3); `null` when unknown. The photo strip looks pictures up by it. */
+    @SerialName("release_group_mbid") val releaseGroupMbid: String? = null,
 )
 
 @Serializable
