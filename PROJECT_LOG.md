@@ -167,3 +167,11 @@ PR #927, squash `b257a07db070e7f1086732015bedc6d90d6723de`. `intelligence/graph/
 ## Historical entries
 
 Earlier project log entries are preserved verbatim in [PROJECT_LOG_HISTORY.md](docs/archive/PROJECT_LOG_HISTORY.md).
+
+## 2026-11-10 — Artwork booklet and zoom (slice 3, second step)
+
+- Merged as PR [#950](https://github.com/abucalip/navi-librarian/pull/950), squash `d76ce6ea1dc29a8ad6922aece19390fc5cfd957b`.
+- New: Android `model/Booklet.kt`, `ui/album/Booklet.kt` (Booklet tab, pager, pinch and double-tap zoom with the full file asked for after the first zoom, TalkBack zoom actions, `PdfRenderer` viewer), `LibrarianClient.download`, `artworkDownload`; macOS `Chrome/BookletSheet.swift` (two-page spread, arrow keys, hover zoom lens, PDFKit for PDF booklets, links never opened), `BookletView`, `ArtworkStore.albumPDF`, Booklet button on the Cupertino and Zine headers. Sticker, Obi and Poster follow the pages.
+- Tests actually run, filtered: Android `BookletTest`, `CoverFacesTest`; macOS `BookletTests`, `ArtworkTests`, `FlipCoverTests` (21 pass). Not run: full suites, lint, release build. Not checked on a device or in a window; the PDF paths and the lens have no test beyond the pure helpers.
+- Open: Android Brut themes share one Booklet tab; macOS has only Cupertino and Zine.
+- Next: slice 4, edition picker and grid fallback.
