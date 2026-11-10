@@ -221,7 +221,7 @@ class ArtistLookupTests(unittest.TestCase):
                          ["Airbag", "Pablo Honey", "Kid A", "Amnesiac"])
         self.assertIsNone(albums[-1]["year"])
         self.assertEqual(albums[0]["key"], "radiohead/airbag")
-        self.assertEqual(set(albums[0]), {"name", "year", "song_count", "key", "id", "artwork_url"})
+        self.assertEqual(set(albums[0]), {"name", "year", "song_count", "key", "id", "artwork_url", "release_group_mbid"})
 
 
 class ArtistPageTests(unittest.TestCase):
@@ -292,3 +292,19 @@ class ArtistGenreResultTests(unittest.TestCase):
         self.assertEqual(found["ar1"]["genre"], "Rock")
         self.assertIsNone(found["ar2"]["genre"])
 
+
+
+class OwnedAlbumsReleaseGroupTests(unittest.TestCase):
+    """The artist page's owned albums carry the release group so clients can look up artwork without another call."""
+
+    def test_owned_album_items_carry_the_release_group_or_null(self):
+        albums = [
+            {"id": "a1", "artist": "Radiohead", "artist_id": "r", "album": "Kid A", "year": 2000, "song_count": 10},
+            {"id": "a2", "artist": "Radiohead", "artist_id": "r", "album": "Amnesiac", "year": 2001, "song_count": 9},
+        ]
+        data = build_owned_data(
+            generation="g", built_at=0, artists=[{"id": "r", "name": "Radiohead", "album_count": 2}], albums=albums, songs=[],
+            identities={"album:a1": {"release_group_mbid": "b1a9c0e9-d987-4042-ae91-78d6a3267d69"}},
+        )
+        items = owned_albums(data, "r")
+        self.assertEqual([i["release_group_mbid"] for i in items], ["b1a9c0e9-d987-4042-ae91-78d6a3267d69", None])

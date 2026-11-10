@@ -291,6 +291,7 @@ def owned_albums(data: OwnedData, artist_id: str) -> list[dict[str, Any]]:
     )
     return [
         {"name": a["name"], "year": a["year"], "song_count": a["song_count"], "key": a["key"],
-         "id": a["id"], "artwork_url": artwork_url(a["id"])}
+         "id": a["id"], "artwork_url": artwork_url(a["id"]),
+         "release_group_mbid": a.get("release_group_mbid") or None}
         for a in albums
     ]

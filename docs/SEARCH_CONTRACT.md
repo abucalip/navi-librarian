@@ -182,6 +182,7 @@ Each entry under `sections` is the same object as the stream's `section` event (
 | `year` | int or null | Four-digit year. `null` when unknown. |
 | `song_count` | int | Songs in the album. `0` only if Navidrome reports none. |
 | `key` | string | Normalized album key (section 4.1), the same `key` used by album `result` events. |
+| `release_group_mbid` | string or null | MusicBrainz release group of the album from the owned index; `null` when unknown. Added 2026-11-10 for the artist collage (docs/artwork.md, idea 8); clients that ignore unknown keys are unaffected. |
 
 Items are sorted by `year` ascending with `null` years last, then by `name`.
 
