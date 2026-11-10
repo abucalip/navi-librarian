@@ -97,6 +97,8 @@ No new endpoint. `GET /api/radio/plays` exposes `grabbed` and `in_library` so a 
 - A "love" action on a play is a separate request.
 - Before slice 3 ships, the change must show that radio scrobbles do not double-count with Navidrome's own scrobbling, which does not see radio plays.
 
+Slice 3 implementation note (PR, not merged): the repository had no Last.fm write code, so this slice adds `integrations/radio/scrobble.py` that calls Last.fm `track.scrobble` and `track.love` directly, signed with `LASTFM_SHARED_SECRET` and a `LASTFM_SESSION_KEY` (both from the configuration; no password is asked for). Without a session key, switching scrobbling on is refused. A play is claimed before the call (`scrobbled`), so it is sent at most once and a failed request is never retried. Routes: `GET`/`PUT /api/radio/scrobbling` (default off) and `POST /api/radio/plays/{id}/love`. The double-count check is by design only: radio songs never pass through Navidrome, so the server's Last.fm call is the only scrobble for them; a live check against the owner's account is still needed.
+
 ### 3.8 Relay and "now" holder
 
 - The relay must not be a single point of silence: a relay outage stops the station, and the stations list must make it easy to switch the relay off (restoring the original address).
@@ -159,7 +161,7 @@ Each slice is its own PR with focused tests only (owner rule). The owner runs th
 0. ~~**Contract and doc edits** (this document; docs only, committed directly to `main`). Edits to `PRODUCT.md`, `ANDROID_PLAYER_CONTRACT.md` and `MACOS_CLIENT_CONTRACT.md` point their radio lines here.~~ — done 2026-11-10 (docs on `main`)
 1. ~~**Server:** stations list fields, favourites, tags, logo resolver and cache, with tests and fixtures.~~ — done, PR #965 (merged 2026-11-10)
 2. ~~**Server:** live "now" holder, `/now`, `/api/radio/now`, `in_library`, `cover_url`.~~ — done, PR #966 (merged 2026-11-10)
-3. **Server:** scrobble on threshold (off by default) and love.
+3. **Server:** scrobble on threshold (off by default) and love. — PR open (not merged).
 4. **Android:** decoders, Radio section, logos, favourites.
 5. **Android:** playback service, live Now Playing, Download and Heard states.
 6. **Android:** reconnect, sleep timer, settings.

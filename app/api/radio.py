@@ -12,7 +12,7 @@ from acquisition import track_service
 from app.api.dependencies import get_librarian
 from discovery.search.query import artwork_url
 from integrations.musicbrainz.recording_album import lookup_recording_album
-from integrations.radio import library_match, logos, relay, stations
+from integrations.radio import library_match, logos, relay, scrobble, stations
 from integrations.radio import now as radio_now
 from integrations.radio.listening import ListenTracker
 from integrations.radio.store import RadioStore
@@ -214,6 +214,44 @@ def radio_get_play(play_id: int, librarian=Depends(get_librarian), store=Depends
     return {**result, "album": album}
 
 
+def _scrobble_in_background(store, play_id: int) -> None:
+    """Scrobbling is a network call, so it runs on its own thread and never on the audio path."""
+    threading.Thread(target=scrobble.submit_quietly, args=(store, play_id), daemon=True).start()
+
+
+@router.get("/api/radio/scrobbling")
+def radio_scrobbling(store=Depends(get_store)):
+    """Whether radio songs are scrobbled to Last.fm (default off), and whether Last.fm is set up."""
+    return {"enabled": scrobble.enabled(store), "configured": scrobble.credentials_from_env().ready}
+
+
+@router.put("/api/radio/scrobbling")
+def radio_set_scrobbling(payload: dict, store=Depends(get_store)):
+    on = payload.get("enabled")
+    if not isinstance(on, bool):
+        raise HTTPException(status_code=400, detail="enabled must be true or false")
+    creds = scrobble.credentials_from_env()
+    try:
+        scrobble.set_enabled(store, creds, on)
+    except scrobble.ScrobbleError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    return {"enabled": on, "configured": creds.ready}
+
+
+@router.post("/api/radio/plays/{play_id}/love")
+def radio_love(play_id: int, store=Depends(get_store)):
+    """Love a logged song on Last.fm. An explicit request, so it works whether or not scrobbling is on."""
+    try:
+        scrobble.love(store, play_id, creds=scrobble.credentials_from_env())
+    except LookupError:
+        raise HTTPException(status_code=404, detail="No such song in the radio log.")
+    except scrobble.ScrobbleError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    except scrobble.ScrobbleFailed as exc:
+        raise HTTPException(status_code=502, detail=str(exc))
+    return {"ok": True, "loved": True}
+
+
 @router.get("/radio/stream/{token}")
 async def radio_stream(token: str, request: Request, store=Depends(get_store)):
     """The relay a station's Navidrome address points at. The token is the credential: Subsonic
@@ -245,7 +283,8 @@ async def radio_stream(token: str, request: Request, store=Depends(get_store)):
     if wants_metadata and metaint:
         headers["icy-metaint"] = str(metaint)
     tracker = ListenTracker(store, station["station_id"], station["name"],
-                            holder=radio_now.NOW, has_metadata=bool(metaint))
+                            holder=radio_now.NOW, has_metadata=bool(metaint),
+                            on_logged=lambda play_id: _scrobble_in_background(store, play_id))
 
     async def body():
         try:

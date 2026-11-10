@@ -22,7 +22,7 @@ class ListenTracker:
     def __init__(
         self, store, station_id: str, station_name: str, *,
         clock: Callable[[], float] = time.time, min_seconds: int = MIN_LISTEN_SECONDS,
-        holder=None, has_metadata: bool = True,
+        holder=None, has_metadata: bool = True, on_logged: Callable[[int], None] | None = None,
     ):
         self.store = store
         self.station_id = station_id
@@ -31,6 +31,9 @@ class ListenTracker:
         self.min_seconds = min_seconds
         self.holder = holder
         self.has_metadata = has_metadata
+        # Told each play id when a song is logged (at the threshold, or at the end of a short-enough
+        # listen). It may be told the same id again after a reconnect; the caller must be idempotent.
+        self.on_logged = on_logged
         self._raw: str | None = None
         self._since = 0.0
         self._play_id: int | None = None
@@ -54,9 +57,7 @@ class ListenTracker:
         if self._raw is not None and self._play_id is None:
             elapsed = int(self.clock() - self._since)
             if elapsed >= self.min_seconds:
-                artist, title = split_artist_title(self._raw)
-                self._play_id = self.store.record_play(
-                    self.station_id, self.station_name, self._raw, artist, title, elapsed, now=self.clock())
+                self._play_id = self._record(self._raw, elapsed)
                 self._logged_seconds = elapsed
                 self._publish()
                 return
@@ -78,10 +79,19 @@ class ListenTracker:
             if extra > 0:
                 self.store.add_listened(self._play_id, extra, now=self.clock())
         elif seconds >= self.min_seconds:
-            artist, title = split_artist_title(raw)
-            self.store.record_play(self.station_id, self.station_name, raw, artist, title, seconds,
-                                   now=self.clock())
+            self._record(raw, seconds)
         self._play_id, self._logged_seconds = None, 0
+
+    def _record(self, raw: str, seconds: int) -> int:
+        artist, title = split_artist_title(raw)
+        play_id = self.store.record_play(
+            self.station_id, self.station_name, raw, artist, title, seconds, now=self.clock())
+        if self.on_logged is not None:
+            try:
+                self.on_logged(play_id)
+            except Exception:  # a follow-up (scrobbling) must never stop the audio relay
+                pass
+        return play_id
 
     def _publish(self) -> None:
         if self.holder is None:

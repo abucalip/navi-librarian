@@ -31,7 +31,9 @@ CREATE TABLE IF NOT EXISTS radio_plays (
     listened_seconds INTEGER NOT NULL,
     heard_at REAL NOT NULL,
     last_heard_at REAL NOT NULL,
-    grabbed INTEGER NOT NULL DEFAULT 0
+    grabbed INTEGER NOT NULL DEFAULT 0,
+    scrobbled INTEGER NOT NULL DEFAULT 0,
+    loved INTEGER NOT NULL DEFAULT 0
 );
 CREATE TABLE IF NOT EXISTS radio_settings (
     key TEXT PRIMARY KEY,
@@ -54,11 +56,23 @@ CREATE TABLE IF NOT EXISTS radio_logo_state (
 """
 
 
+# Columns added after the first release. A database made before them gets each one with ALTER
+# TABLE; the change is additive, so an older image still opens the file.
+_ADDED_PLAY_COLUMNS = {
+    "scrobbled": "INTEGER NOT NULL DEFAULT 0",
+    "loved": "INTEGER NOT NULL DEFAULT 0",
+}
+
+
 class RadioStore:
     def __init__(self, path: Path | str):
         self.path = str(path)
         with self._connect() as db:
             db.executescript(_SCHEMA)
+            present = {row["name"] for row in db.execute("PRAGMA table_info(radio_plays)").fetchall()}
+            for column, declaration in _ADDED_PLAY_COLUMNS.items():
+                if column not in present:
+                    db.execute(f"ALTER TABLE radio_plays ADD COLUMN {column} {declaration}")
 
     def _connect(self):
         db = sqlite3.connect(self.path, timeout=10)
@@ -215,6 +229,17 @@ class RadioStore:
     def mark_grabbed(self, play_id: int) -> None:
         with self._connect() as db:
             db.execute("UPDATE radio_plays SET grabbed = 1 WHERE id = ?", (play_id,))
+
+    def claim_scrobble(self, play_id: int) -> bool:
+        """Mark a play as scrobbled. True only for the call that made the change, so a play is
+        scrobbled at most once even when the same song is logged again after a reconnect."""
+        with self._connect() as db:
+            return db.execute(
+                "UPDATE radio_plays SET scrobbled = 1 WHERE id = ? AND scrobbled = 0", (play_id,)).rowcount > 0
+
+    def set_loved(self, play_id: int) -> None:
+        with self._connect() as db:
+            db.execute("UPDATE radio_plays SET loved = 1 WHERE id = ?", (play_id,))
 
 
 class _Managed:
