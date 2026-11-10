@@ -64,6 +64,8 @@ class StoreTests(unittest.TestCase):
         store.put_release(R1, ReleaseIndex(OK, (image(7, ext="png"), {"id": 8})))
         self.assertEqual(store.image_refs(7), [(R1, "png")])
         self.assertEqual(store.image_refs(8), [(R1, "jpg")])
+        store.put_release(R2, ReleaseIndex(OK, (image(9, ext="pdf"),)))
+        self.assertEqual(store.image_refs(9), [(R2, "pdf")])
 
     def test_eviction_drops_full_first_then_least_recent_and_keeps_protected(self):
         store, clock = make_store(self.tmp.name, budget=1000)
@@ -123,7 +125,8 @@ class FetchImageTests(unittest.TestCase):
         self.assertTrue(image_url(R1, 5, "thumb").endswith(f"/release/{R1}/5-250.jpg"))
         self.assertTrue(image_url(R1, 5, "display").endswith("/5-500.jpg"))
         self.assertTrue(image_url(R1, 5, "full", "png").endswith("/5.png"))
-        self.assertTrue(image_url(R1, 5, "full", "pdf").endswith("/5.jpg"))       # odd extension falls back
+        self.assertTrue(image_url(R1, 5, "full", "pdf").endswith("/5.pdf"))
+        self.assertTrue(image_url(R1, 5, "full", "exe").endswith("/5.jpg"))       # odd extension falls back
         self.assertIsNone(image_url(R1, 5, "huge"))
 
     def test_good_bytes_are_ok_and_use_the_size_limit(self):
@@ -131,10 +134,18 @@ class FetchImageTests(unittest.TestCase):
         self.assertEqual(f.fetch_image(R1, 5, "full", "png"), ("ok", PNG, "png"))
         self.assertEqual(urls[0][1], MAX_IMAGE_BYTES["full"])
 
-    def test_non_image_and_pdf_bytes_are_rejected(self):
-        for body in (b"<html>not an image</html>", b"%PDF-1.4 ...", b""):
+    def test_non_image_bytes_are_rejected(self):
+        for body in (b"<html>not an image</html>", b"PK\x03\x04zip", b""):
             f, _ = self.fetchers((200, body, None))
             self.assertEqual(f.fetch_image(R1, 5, "thumb")[0], "missing")
+
+    def test_pdf_original_is_kept_but_never_as_a_thumbnail(self):
+        pdf = b"%PDF-1.6\n" + b"p" * 100
+        f, urls = self.fetchers((200, pdf, None))
+        self.assertEqual(f.fetch_image(R1, 5, "full", "pdf"), ("ok", pdf, "pdf"))
+        self.assertTrue(urls[0][0].endswith("/5.pdf"))
+        self.assertEqual(f.fetch_image(R1, 5, "thumb")[0], "missing")
+        self.assertEqual(sniff_image(pdf), ("application/pdf", "pdf"))
 
     def test_oversize_is_unavailable_and_404_is_missing(self):
         f, _ = self.fetchers((200, JPEG + b"z" * MAX_IMAGE_BYTES["thumb"], None))

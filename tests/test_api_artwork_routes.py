@@ -54,6 +54,14 @@ class ArtworkRoutes(unittest.TestCase):
         self.fetch.fetch_image = lambda *a, **k: ("unavailable", b"", "")
         self.assertEqual(self.client.get("/api/artwork/image/11", params={"size": "full"}).status_code, 503)
 
+    def test_pdf_is_served_sandboxed(self):
+        pdf = b"%PDF-1.6\n" + b"p" * 50
+        self.service.build_now(RG)
+        self.fetch.image_answer = ("ok", pdf, "pdf")
+        r = self.client.get("/api/artwork/image/10", params={"size": "full"})
+        self.assertEqual((r.status_code, r.headers["content-type"]), (200, "application/pdf"))
+        self.assertIn("sandbox", r.headers["content-security-policy"])
+
     def test_both_routes_need_the_session(self):
         self.api.middleware("http")(create_app_login_middleware(
             auth_configured=lambda: True, session_username=lambda token: None, cookie_name="c"))

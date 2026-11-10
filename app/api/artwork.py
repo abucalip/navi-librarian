@@ -5,7 +5,7 @@ group. ``status`` is ``ok``, ``empty``, ``unavailable`` or ``not_loaded`` (a bac
 ask again after ``retry_after`` seconds). ``release`` is the owned release MBID (optional): it makes the
 owned edition win the slots and protects that album's best front in the cache.
 
-``GET /api/artwork/image/{image_id}?size=thumb|display|full``: cached bytes of one image. The image id
+``GET /api/artwork/image/{image_id}?size=thumb|display|full``: cached bytes of one image (JPEG, PNG, GIF, WebP, or a PDF original with ``size=full``). The image id
 must appear in an index the server has built. Session auth applies (app login middleware); the bytes are
 never public. Clients never contact MusicBrainz or the CAA.
 """
@@ -56,8 +56,10 @@ def artwork_image(image_id: int, size: str = Query("display"), service: ArtworkS
         raise HTTPException(status_code=400, detail="image id is not valid.")
     state, body, content_type = service.image(image_id, size)
     if state == "ok":
-        return Response(content=body, media_type=content_type, headers={
-            "Cache-Control": "private, max-age=86400", "X-Content-Type-Options": "nosniff"})
+        headers = {"Cache-Control": "private, max-age=86400", "X-Content-Type-Options": "nosniff"}
+        if content_type == "application/pdf":      # third-party PDF: never let a browser run it with our origin
+            headers["Content-Security-Policy"] = "sandbox; default-src 'none'"
+        return Response(content=body, media_type=content_type, headers=headers)
     if state == "unavailable":
         raise HTTPException(status_code=503, detail="Artwork is temporarily unavailable.")
     raise HTTPException(status_code=404, detail="No such image.")

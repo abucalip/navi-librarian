@@ -32,9 +32,9 @@ BACKOFF_START, BACKOFF_MAX = 60.0, 900.0
 PAGE = 100
 MAX_PAGES = 5               # 500 releases; the group cap is 60, so this only stops a runaway loop
 MAX_BYTES = 8 * 1024 * 1024
-MAX_IMAGE_BYTES = {"thumb": 2 * 1024 * 1024, "display": 4 * 1024 * 1024, "full": 40 * 1024 * 1024}
+MAX_IMAGE_BYTES = {"thumb": 2 * 1024 * 1024, "display": 4 * 1024 * 1024, "full": 100 * 1024 * 1024}
 SIZE_SUFFIX = {"thumb": "-250.jpg", "display": "-500.jpg", "full": None}   # CAA serves 250, 500, 1200 and the original
-IMAGE_EXTENSIONS = ("jpg", "png", "gif", "webp")
+IMAGE_EXTENSIONS = ("jpg", "png", "gif", "webp", "pdf")
 TIMEOUT = 30
 ALLOWED_REDIRECT_HOSTS = ("coverartarchive.org", "archive.org")
 
@@ -119,8 +119,11 @@ def _urllib_open_image(req: Request, limit: int) -> tuple[int, bytes, float | No
 def sniff_image(body: bytes) -> tuple[str, str] | None:
     """(content type, extension) from the file's own signature; ``None`` when it is not a supported image.
 
-    The upstream Content-Type is never trusted. PDF and every other format are rejected.
+    PDF is kept (booklet scans are often PDFs); every other format is rejected. The upstream
+    Content-Type is never trusted.
     """
+    if body[:5] == b"%PDF-":
+        return "application/pdf", "pdf"
     if body[:3] == b"\xff\xd8\xff":
         return "image/jpeg", "jpg"
     if body[:8] == b"\x89PNG\r\n\x1a\n":
@@ -172,7 +175,7 @@ class ArtworkFetchers:
         if len(body) > limit:
             return UNAVAILABLE, b"", ""
         kind = sniff_image(body)
-        if kind is None:
+        if kind is None or (kind[1] == "pdf" and size != "full"):     # a PDF is only ever the original file
             return "missing", b"", ""
         return OK, body, kind[1]
 

@@ -219,4 +219,4 @@ def _ext_of(raw: dict) -> str:
     """File extension of the original, from the CAA ``image`` URL; ``jpg`` when it is missing or odd."""
     url = str(raw.get("image") or "")
     ext = url.rsplit(".", 1)[-1].lower() if "." in url.rsplit("/", 1)[-1] else ""
-    return ext if ext in ("jpg", "png", "gif", "webp") else "jpg"
+    return ext if ext in ("jpg", "png", "gif", "webp", "pdf") else "jpg"
