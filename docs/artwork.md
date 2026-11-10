@@ -1,6 +1,6 @@
 # Artwork proposal: the album as a physical object
 
-**Status:** draft for owner review. Slice 0 (probe) is done and its results are recorded below; nothing else is built.
+**Status:** draft for owner review. Slice 0 (probe, then the caps, TTLs and rate limits) is done and recorded below; nothing else is built.
 **Date:** 2026-11-10
 **Context:** MusicBrainz and the Cover Art Archive (CAA) hold more than a front cover for many releases: backs, booklet scans, disc labels, trays, spines, obi strips, posters and studio photos. Example: <https://musicbrainz.org/release/1edd139d-4779-4057-8e12-13c783674f0d/cover-art> (Somethin' Else). This proposal adds those images to the Android and macOS clients through the Librarian server. Related: [Album paths proposal](ALBUM_PATHS_PROPOSAL.md) (path rows, Same Room), [macOS design](../macos/DESIGN.md), [Android design](../android/DESIGN.md).
 
@@ -24,7 +24,7 @@
 - **Release group to releases:** a MusicBrainz release-group lookup with its releases gives every edition (original, reissue, Japan, vinyl, deluxe).
 - **Per release:** the CAA release index lists images with `types[]` (Front, Back, Booklet, Medium, Tray, Obi, Spine, Liner, Sticker, Poster, Track, Other, Raw/Unedited, Watermark), `comment`, `approved`, `front`, `back`, and thumbnails at 250, 500 and 1200 px, plus the original file.
 - The CAA release-group endpoint returns only one release's images, so the aggregate is built by the server: one index fetch per release, merged.
-- ~~**Not verified yet:** index completeness, size distribution, and the Somethin' Else group.~~ Measured by the probe, see "Probe results (slice 0)". The caps below stay placeholders until the numbers are set from those results.
+- ~~**Not verified yet:** index completeness, size distribution, and the Somethin' Else group.~~ Measured by the probe, see "Probe results (slice 0)". The caps, TTLs and rate limits are set from those results in "Limits (set from the probe)".
 
 ### Probe results (slice 0, 2026-11-10)
 Sample: 30 release groups (Somethin' Else first, the rest a seeded random sample of owned releases resolved to their group). Index JSON only; no image bytes downloaded; 1 request per second per host. Probe cap of 60 releases per group never triggered. The probe script is `scripts/artwork_probe.py` (PR #944, merged).
@@ -35,7 +35,44 @@ Sample: 30 release groups (Somethin' Else first, the rest a seeded random sample
 - **Time to index a group at 1 request per second:** median 10 s, p90 71 s, max 120 s.
 - **Type mix (unique images, all groups):** Booklet 564, Front 322, Medium 210, Back 167, untyped 130 (about 8%), Spine 79, Other 47, Obi 45, Tray 44, Raw/Unedited 42, Sticker 21, Matrix/Runout 19, Liner 14, Track 5, Watermark 5, Poster 4, Top 1, Bottom 1. Booklet pages are the largest share.
 - **Failures:** 21.5% of release indexes were empty (404), 0.3% errored; MusicBrainz had no failures.
-- **Reading:** the placeholder caps (20 releases, 80 images) would truncate about 3 of 30 groups on releases and 9 of 30 on images. Because the median group is small and the tail is large, caps should limit what is served and shown, not stop the index fetch for heavy groups. Empty results are common, so they need the shorter TTL. Untyped images must be handled by clients. The sample is small (30 groups). Setting the final caps, TTLs and rate limits is the next step (Opus 5.5, high).
+- **Reading:** the placeholder caps (20 releases, 80 images) would truncate about 3 of 30 groups on releases and 9 of 30 on images. Because the median group is small and the tail is large, caps should limit what is served and shown, not stop the index fetch for heavy groups. Empty results are common, so they need the shorter TTL. Untyped images must be handled by clients. The sample is small (30 groups). The final numbers are set in the next section.
+
+### Limits (set from the probe, 2026-11-10)
+These are the numbers slice 1 builds to. They come from a 30-group sample, so each is a starting value with the evidence beside it; slice 1 records real numbers in `PROJECT_LOG.md` and may move them with owner approval.
+
+**Principle:** caps limit what is *stored and served*, never whether the index is fetched. The median group is small and the tail is large, so a heavy group is indexed in full and then trimmed on the way out.
+
+| Limit | Value | Evidence |
+|---|---|---|
+| Releases fetched per group | **60** (hard ceiling, owned release first, then newest first) | Max seen 59; the probe's 60 cap never triggered. Replaces the placeholder 20, which would have cut about 3 of 30 groups. |
+| Images stored per group (full index) | **400** | Max seen 341; p90 133. Entries are small JSON, so storing them all costs little. Replaces the placeholder 80, which cut 9 of 30. |
+| Images served in the index response | **250**, with `truncated: true` and `truncated_reason: "served_cap"` past that | Above p90 (133) with room; only the heaviest groups trim. Kept in this order: slot winners, booklet pages, then the rest by approved, larger side, date, image id. |
+| Booklet pages shown | **100** from the single best release | Booklet is the biggest type (564 of about 1,900 unique images) but pages per release were not measured; slice 1 records the real maximum. |
+| Index build time bound | **180 s** per group, then stop with `truncated_reason: "time"` and keep what was fetched | Max seen 120 s at 1 request per second, p90 71 s. A time-stopped build resumes from the per-release cache, not from zero. |
+| Releases per group that are skipped | Releases MusicBrainz reports with no cover art, if the release-group response carries that count; otherwise none | 21.5% of release indexes were 404. Slice 1 checks whether the batch lookup exposes the count; if it does, those requests are never sent. |
+
+**Fetching.** Index builds run as a background job, never inside a client request. A request for an album whose index is not built returns `not_loaded` and starts (or joins) the job; the client asks again. The release list comes from one MusicBrainz release-group lookup (a batch form, per the provider-request rule). The CAA has no batch form for release indexes, so there is one request per release; that is the only single-lookup fallback here.
+
+**Cache TTLs.** The unit cached is the per-release index, so a group rebuild after a TTL expiry or a time stop re-fetches only what is stale. The group view is derived from those.
+
+| Result | TTL | Why |
+|---|---|---|
+| Release index with images | **30 days** | Uploads to existing releases are rare. |
+| Release index empty (404) | **7 days** | Common (21.5%) and cheap to repeat; short enough that a new upload appears within a week. |
+| Group with no images at all | **7 days** | Same reason; the group view follows its releases. |
+| Time-stopped or partial group | **1 day** | Finishes on the next build from the per-release cache. |
+| Error or `unavailable` (timeout, 5xx, 429) | **15 minutes**, then 1 hour after a second failure in a row | Never stored as `empty` (0.3% errored); a failure must not read as "this album has no images". |
+
+Add up to 10% random jitter to each TTL so a first warm-up does not expire all at once.
+
+**Rate limits.**
+- **One shared queue per host at 1 request per second**, covering MusicBrainz, the CAA index host and the image hosts, and all artwork work (foreground, warm-up and zoom). This matches the existing MusicBrainz client and the probe, which ran clean at that rate (no MusicBrainz failures).
+- **Priority:** an album the owner has just opened goes ahead of any warm-up work. Warm-up never delays a foreground request by more than the request in flight.
+- **Image bytes:** one download at a time per host, with the same 1 request per second start rate. The probe did not download images, so this is a conservative start, not a measured limit.
+- **Warm-up budget:** at most **600 provider requests per day** (about 60 median-sized groups at 10 s each, or about 8 of the p90 groups). It indexes and fetches thumbs of slot winners only; display and full sizes load on open. It stops at the 1.5 GB budget and pauses on any `unavailable` result.
+- **Backoff:** on 429 or 503, honour `Retry-After` when present, otherwise wait 60 s, doubling to a 15-minute ceiling.
+
+**Size budget (estimate, not measured).** Typical sizes are about 15 KB for a 250 px thumb and about 80 KB for a 640 px display image, so a median group (7.5 images) at display size is under 1 MB and 1.5 GB holds on the order of 2,000 such groups. Full-resolution files are much larger and are the main pressure on the budget, which is why they are fetched only on zoom and evicted first. Slice 1 measures real byte sizes and records them.
 
 ## Server design
 
@@ -45,7 +82,7 @@ For a release group, the server builds a single list: one entry per image, each 
 - `types[]`, `comment`, `approved`, `width` and `height` if known, and `rank`.
 - Duplicate collapse: the same scan attached to several releases appears once, with the list of releases it is on.
 
-Bounds: a cap on releases per group (placeholder 20, newest and best-documented first), a cap on images per group (placeholder 80), a time bound, and a `truncated` flag. Fetch cadence follows the existing MusicBrainz client rate limit (1 request per second). Index results are cached per release group (placeholder TTL 30 days; a "no images" result is cached for a shorter time so new uploads appear).
+Bounds, cadence and TTLs are set in "Limits (set from the probe)": 60 releases fetched, 400 images stored, 250 served, a 180 s build bound, and a `truncated` flag with a reason (`served_cap` or `time`). Fetch cadence is 1 request per second per host. Results are cached per release, with shorter TTLs for empty and failed results.
 
 ### Choosing the "best front"
 Deterministic order: approved, Front type, larger side, then release date. This feeds idea 7 (grid fallback) and replaces the fallback problem that PR #683 worked around: **never fall back to an artist photo**.
@@ -59,7 +96,7 @@ A derived view over the merged index (not a replacement for it). For each type t
 - Slot choice never uses taste or play data.
 
 ### Image cache and endpoints
-- Resized per-album images (placeholder sizes: 250 px thumb, 640 px display) live in a disk cache with a **1.5 GB** budget shared with full-resolution images. Eviction is least-recently-used, with the front cover of each owned album protected from eviction until nothing else is left.
+- Resized per-album images (sizes: 250 px thumb, 640 px display; the CAA serves 250, 500 and 1200 px, so slice 1 checks whether 640 is resized by the server or the nearest CAA size is used) live in a disk cache with a **1.5 GB** budget shared with full-resolution images. Eviction is least-recently-used, with the front cover of each owned album protected from eviction until nothing else is left.
 - Endpoints (names to be settled in the contract): `GET /api/artwork/index?rgid=` and `GET /api/artwork/image/{image_id}?size=thumb|display|full`. `full` is fetched on first zoom and stored; later requests are served from disk.
 - The server validates the image bytes, rejects non-images and oversize responses, and never follows a redirect to a host other than the CAA and the archive.org hosts that serve its files.
 - Access to the endpoints follows the existing session auth; image URLs are not public.
@@ -135,7 +172,7 @@ In Get and Downloads, the pipeline dock shows the covers of the release being fe
 
 ## Slices
 
-0. ~~**Probe (no UI):** a script that fetches the index for 30 owned release groups (Somethin' Else first) and reports releases per group, images per group, type mix, size distribution and failure rates. It sets the caps and TTLs above. No cache writes beyond the scratch folder.~~ **Done 2026-11-10, script merged in PR #944** (results above; caps and TTLs still to be set from them).
+0. ~~**Probe (no UI):** a script that fetches the index for 30 owned release groups (Somethin' Else first) and reports releases per group, images per group, type mix, size distribution and failure rates. It sets the caps and TTLs above. No cache writes beyond the scratch folder.~~ **Done 2026-11-10, script merged in PR #944**; caps, TTLs and rate limits set from the results in "Limits (set from the probe)".
 1. **Server index and cache:** index builder, image cache with the 1.5 GB budget, endpoints, fixtures, tests.
 2. **Client decoders and the image store:** Android and macOS decode the index and load images through the Librarian.
 3. **Flip cover, booklet, zoom:** ideas 1 and 2.
@@ -152,7 +189,7 @@ Models: Fable 5.1, Opus 5.5, Sonnet 5.5, Haiku 5.5. Effort: low, medium, high, x
 |---|---|---|---|---|
 | Owner decisions | Four open decisions above | Owner | n/a | Policy, not code. |
 | ~~0. Probe~~ | ~~Script that samples about 30 release groups and prints counts~~ (done 2026-11-10) | Sonnet 5.5 | medium | One script, no UI, easy to check by reading its output. |
-| 0. Probe | Reading the results and setting caps, TTLs, rate limits | Opus 5.5 | high | Judgment from data; the numbers drive every later slice. |
+| ~~0. Probe~~ | ~~Reading the results and setting caps, TTLs, rate limits~~ (done 2026-11-10) | Opus 5.5 | high | Judgment from data; the numbers drive every later slice. |
 | 1. Server index and merge | Release-group to releases, dedupe, best-front rule, caps, `truncated` | Opus 5.5 | high | Rate limits, partial failure and ordering rules are easy to get subtly wrong. |
 | 1. Server cache and endpoints | 1.5 GB budget, eviction, protected fronts, redirect host check, byte validation, auth | Opus 5.5 | xhigh | Security-sensitive (fetching third-party bytes) and concurrency-sensitive. Review with Fable 5.1 at high. |
 | 1. Fixtures and server tests | `ok`, `empty`, `unavailable`, `truncated` fixtures; unit tests | Sonnet 5.5 | medium | Mechanical once the contract is fixed. |

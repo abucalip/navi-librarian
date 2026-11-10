@@ -1,5 +1,11 @@
 # Project log
 
+## 2026-11-10 — Artwork caps, TTLs and rate limits set from the probe (slice 0 closed)
+
+- Documentation only, committed directly to `main`; no code, tests or CI. Set in [`docs/artwork.md`](docs/artwork.md), section "Limits (set from the probe)": 60 releases fetched per group (probe max 59), 400 images stored and 250 served (probe max 341, p90 133) with `truncated_reason`, a 180 s build bound (probe max 120 s), 100 booklet pages shown. TTLs: 30 days with images, 7 days empty, 1 day partial, 15 minutes then 1 hour for errors (never stored as empty). One shared 1 request per second queue per host, foreground before warm-up, warm-up capped at 600 requests per day, 429/503 backoff. Caps limit what is served, not what is fetched.
+- Limits: from a 30-group sample. Booklet pages per release, image byte sizes, the 640 px source and whether the MusicBrainz batch lookup exposes cover-art counts (would skip the 21.5% empty releases) were not measured; slice 1 records them. Not published or deployed.
+- Next: slice 1 (server index and cache), Opus 5.5.
+
 ## 2026-11-10 — Artwork probe (slice 0) merged (PR #944)
 
 - Merged as `42f118f4b084b860af36fcf152adf9f161f9a14e` from tested head `96493c41e95541a3b9b2e579db2e60ea353ac4ea`; required CI passed (compile, container-smoke, test-and-build, validate-container). Adds `scripts/artwork_probe.py` for slice 0 of [`docs/artwork.md`](docs/artwork.md). Not wired into the server or any client; `navidrome_server.py` untouched.
