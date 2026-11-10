@@ -7,6 +7,8 @@ enum CupertinoArtistLayout { static let bannerHeight: CGFloat = 356 }
 
 struct CupertinoArtistBanner: View {
     let state: AppState
+    @State private var collage = ArtistCollageModel()
+    @Environment(\.artwork) private var artwork
 
     /// Three dots beside the name: Connections and Timeline of this artist. Small, round and centred on the name's line.
     private var artistMenu: some View {
@@ -39,6 +41,8 @@ struct CupertinoArtistBanner: View {
             RadialGradient(colors: [Color(hue: (h + 0.1).truncatingRemainder(dividingBy: 1), saturation: 0.7, brightness: 0.6).opacity(0.9), .clear],
                            center: UnitPoint(x: 0.9, y: 0.9), startRadius: 0, endRadius: 700)
             if lib.isLive, let cover = lib.artistAlbums.first(where: { !($0.coverArt ?? "").isEmpty }) { BlurredArtwork(album: cover, radius: 24); Color.black.opacity(0.12) }
+            // Session and band pictures from the artist's albums, when there are enough; else the usual banner stays.
+            if lib.isLive, !collage.entries.isEmpty { CollageHeroBackdrop(entries: collage.entries).transition(.opacity); Color.black.opacity(0.18) }
             LinearGradient(colors: [.black.opacity(0.0), .black.opacity(0.4)], startPoint: .top, endPoint: .bottom)
         }
         .frame(height: CupertinoArtistLayout.bannerHeight)
@@ -77,6 +81,9 @@ struct CupertinoArtistBanner: View {
                 .padding(.trailing, state.queueOpen ? CupertinoQueueInspector.width + 40 : 40).padding(.top, 60)
         }
         .accessibilityElement(children: .contain)
+        .task(id: "\(state.related.ownedGroups.map(\.rgid))|\(artwork?.generation ?? 0)") {
+            await collage.load(sources: state.related.ownedGroups, store: artwork)
+        }
     }
 }
 
