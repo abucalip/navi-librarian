@@ -91,7 +91,7 @@ Fetch rules for every external fetch:
 
 No new endpoint. `GET /api/radio/plays` exposes `grabbed` and `in_library` so a client can show the Download, Downloaded and Owned states.
 
-Slice 5 note (PR #969): the route returns the raw table rows, so `in_library` is not sent yet and the Heard list cannot show Owned. The Android decoder reads the field and defaults to false. A server change is needed.
+Slice 5 note (PR #969): the route returned the raw table rows, so `in_library` was not sent and the Heard list could not show Owned. Fixed in PR #971 (merged 2026-11-10, `5aee5fbd`): every play carries `in_library`, an exact artist and title match against the library, cached per song (found songs kept, misses re-checked after 5 minutes, failed searches retried). A play without an artist is always false. The Android decoder already reads the field.
 
 ### 3.7 Scrobbling and love
 
