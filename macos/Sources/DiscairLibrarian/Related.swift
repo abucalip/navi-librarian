@@ -66,10 +66,15 @@ public struct ArtistAlbumEntry: Decodable, Equatable, Sendable, Identifiable {
     public let key: String
     public let year: Int?
     public let owned: Bool
-    enum CodingKeys: String, CodingKey { case name, key, year, owned }
+    /// The library's album id for an owned album, and the MusicBrainz release group when the server knows it (artwork lookups).
+    public let albumID: String?
+    public let releaseGroupMBID: String?
+    enum CodingKeys: String, CodingKey { case name, key, year, owned, albumID = "id", releaseGroupMBID = "release_group_mbid" }
 
     public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
+        albumID = (try? c.decodeIfPresent(String.self, forKey: .albumID)).flatMap { $0.isEmpty ? nil : $0 }
+        releaseGroupMBID = (try? c.decodeIfPresent(String.self, forKey: .releaseGroupMBID)).flatMap { $0.isEmpty ? nil : $0 }
         name = ((try? c.decode(String.self, forKey: .name)) ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         key = (try? c.decode(String.self, forKey: .key)) ?? ""
         year = try? c.decode(Int.self, forKey: .year)

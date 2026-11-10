@@ -19,6 +19,8 @@ public final class RelatedModel {
     public private(set) var tracks: [RelatedTrack] = []
     /// The album's MusicBrainz release group (album pages), which keys its artwork index; nil until the page says.
     public private(set) var releaseGroupMBID: String?
+    /// The artist's owned albums that have a MusicBrainz release group, in the server's order: what the artist collage looks up.
+    public private(set) var ownedGroups: [CollageSource] = []
     @ObservationIgnored private var loadedFor: String?
 
     public init() {}
@@ -84,6 +86,11 @@ public final class RelatedModel {
             if let b = page.bio { bio = b; bioSource = page.bioSource }
             if !page.topSongs.isEmpty { topSongs = page.topSongs }
             // Albums the server does not mark as held: the whole list for an unowned artist, the missing ones for a partly owned one.
+            let groups = page.albums.compactMap { a -> CollageSource? in
+                guard a.owned, let rg = a.releaseGroupMBID else { return nil }
+                return CollageSource(title: a.name, rgid: rg)
+            }
+            if !groups.isEmpty { ownedGroups = groups }
             let notHeld = page.albums.filter { !$0.owned }
             if !page.albums.isEmpty {
                 artistAlbums = notHeld.enumerated().map { i, a in
@@ -104,7 +111,7 @@ public final class RelatedModel {
         catch { lastError = ((error as? DiscairError)?.summary) ?? "The Librarian did not answer."; return nil }
     }
 
-    public func clear() { releaseGroupMBID = nil; artists = []; albums = []; tracks = []; bio = nil; bioSource = nil; topSongs = []; artistAlbums = []; incomplete = false; loadedFor = nil }
+    public func clear() { releaseGroupMBID = nil; ownedGroups = []; artists = []; albums = []; tracks = []; bio = nil; bioSource = nil; topSongs = []; artistAlbums = []; incomplete = false; loadedFor = nil }
 
     /// Entries with a name, once each.
     static func cleaned(_ list: [SimilarArtistEntry]) -> [SimilarArtistEntry] {

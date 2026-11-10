@@ -435,3 +435,68 @@ public func discAngle(base: Double, since: Double?, now: Double, rpm: Double) ->
     guard let since else { return base.truncatingRemainder(dividingBy: 360) }
     return (base + max(0, now - since) * rpm * 6).truncatingRemainder(dividingBy: 360)
 }
+
+// MARK: Artist collage (docs/artwork.md, idea 8)
+
+/// An owned album to look pictures up for: its title and MusicBrainz release group.
+public struct CollageSource: Equatable, Sendable {
+    public let title: String
+    public let rgid: String
+    public init(title: String, rgid: String) { self.title = title; self.rgid = rgid }
+}
+
+/// One picture in an artist collage, with the album it is from. Shown as plain text and never read for anything else.
+public struct CollageEntry: Equatable, Sendable, Identifiable {
+    public let picture: ArtworkPicture
+    public let albumTitle: String
+    public let rgid: String
+    public var id: Int { picture.imageID }
+    public init(picture: ArtworkPicture, albumTitle: String, rgid: String) { self.picture = picture; self.albumTitle = albumTitle; self.rgid = rgid }
+    /// For VoiceOver: the picture's own label, then the album it is from.
+    public var label: String { albumTitle.isEmpty ? picture.label : "\(picture.label), from \(albumTitle)" }
+}
+
+extension ArtworkPicture {
+    static let collageTypes: Set<String> = ["Other", "Raw/Unedited", "Liner", "Poster"]
+    /// Packaging types are never collage pictures through their comment: "studio version" on a Front image is not a studio photo.
+    static let packagingTypes: Set<String> = ["Front", "Back", "Medium", "Tray", "Spine", "Obi", "Sticker"]
+    static let collageWords = ["session", "studio", "band"]
+
+    /// Session and band photos: the Other, Raw, Liner and Poster types, or a comment with "session", "studio" or "band" (plain,
+    /// case-insensitive string match; no recognition of what the picture shows). Never a PDF, never packaging. Taste and play data play no part.
+    public var qualifiesForCollage: Bool {
+        guard !isPDF else { return false }
+        if types.contains(where: { Self.collageTypes.contains($0) }) { return true }
+        guard Set(types).isDisjoint(with: Self.packagingTypes), !types.contains("Booklet") else { return false }
+        let note = comment.lowercased()
+        return Self.collageWords.contains { note.contains($0) }
+    }
+}
+
+/// The fewest pictures worth a collage; below this the artist page keeps its usual hero.
+public let collageMinimum = 4
+/// The most pictures in one collage.
+public let collageLimit = 12
+/// The most pictures taken from one album, so a big session set does not fill the sheet.
+public let collagePerAlbum = 3
+
+/// Builds the collage from the artist's albums, in the order given: the qualifying pictures of each album (the server's quality order),
+/// taken round-robin so every album shows before any shows twice. The same image id appears once. Returns [] under `collageMinimum`.
+public func artistCollage(from albums: [(title: String, rgid: String, index: ArtworkIndex)],
+                          limit: Int = collageLimit, perAlbum: Int = collagePerAlbum) -> [CollageEntry] {
+    var seen = Set<Int>()
+    let lists: [[CollageEntry]] = albums.map { a in
+        var taken: [CollageEntry] = []
+        for p in a.index.images where p.qualifiesForCollage && taken.count < perAlbum && seen.insert(p.imageID).inserted {
+            taken.append(CollageEntry(picture: p, albumTitle: a.title, rgid: a.rgid))
+        }
+        return taken
+    }
+    var out: [CollageEntry] = []
+    var round = 0
+    while out.count < limit, lists.contains(where: { round < $0.count }) {
+        for l in lists where round < l.count && out.count < limit { out.append(l[round]) }
+        round += 1
+    }
+    return out.count >= collageMinimum ? out : []
+}

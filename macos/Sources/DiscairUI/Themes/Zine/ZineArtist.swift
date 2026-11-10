@@ -5,6 +5,8 @@ import SwiftUI
 /// and missing dashed. Mockup: `R.zine.artist`.
 struct ZineArtist: View {
     let state: AppState
+    @State private var collage = ArtistCollageModel()
+    @Environment(\.artwork) private var artwork
     static let bannerHeight: CGFloat = 215
     /// 240 pt for short names; longer names shrink so the whole name still fits the width (about 0.38 em per capital).
     var nameSize: CGFloat { min(240, 1000 / (0.38 * CGFloat(max(state.selectedArtist.name.count, 1)))) }
@@ -60,6 +62,8 @@ struct ZineArtist: View {
             }
             .padding(.vertical, 6)
 
+            if state.library.isLive, !collage.entries.isEmpty { ZineContactSheet(entries: collage.entries) }
+
             HStack(alignment: .top, spacing: 22) {
                 VStack(alignment: .leading, spacing: 0) {
                     if state.library.isLive { ArtistBio(state: state).padding(.bottom, 10) }
@@ -87,6 +91,9 @@ struct ZineArtist: View {
             if state.library.isLive { RelatedSections(state: state, mixed: true) }
         }
         .task(id: state.selectedArtist.id) { await state.loadSelectedArtist() }
+        .task(id: "\(state.related.ownedGroups.map(\.rgid))|\(artwork?.generation ?? 0)") {
+            await collage.load(sources: state.related.ownedGroups, store: artwork)
+        }
     }
 
     private var coverLines: [String] {

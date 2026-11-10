@@ -153,6 +153,19 @@ public final class ArtworkStore {
         return result
     }
 
+    /// The artist collage (docs/artwork.md, idea 8): the session and band pictures of up to `collageAlbumLimit` of the artist's albums.
+    /// Indexes are asked one at a time (the server paces its own provider calls). An album whose index is empty, unavailable or still
+    /// building after the usual waits adds nothing. Empty when there are too few pictures, so the page keeps its usual hero.
+    public func artistCollage(_ sources: [CollageSource]) async -> [CollageEntry] {
+        var found: [(title: String, rgid: String, index: ArtworkIndex)] = []
+        for source in sources.prefix(Self.collageAlbumLimit) {
+            guard !Task.isCancelled else { return [] }
+            if case .ready(let index) = await artworkIndex(rgid: source.rgid, release: nil) { found.append((source.title, source.rgid, index)) }
+        }
+        return DiscairLibrarian.artistCollage(from: found)
+    }
+    static let collageAlbumLimit = 8
+
     /// The artwork index of the album playing now. The release group comes from the Librarian's album page (once per album; a failed
     /// ask is not remembered). nil when the album has no title, the group is unknown or the index is empty, unavailable or still
     /// building: Now Playing then shows nothing extra.
