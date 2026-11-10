@@ -97,7 +97,7 @@ A derived view over the merged index (not a replacement for it). For each type t
 
 ### Image cache and endpoints
 - Resized per-album images (sizes: 250 px thumb, 640 px display; the CAA serves 250, 500 and 1200 px, so slice 1 checks whether 640 is resized by the server or the nearest CAA size is used) live in a disk cache with a **1.5 GB** budget shared with full-resolution images. Eviction is least-recently-used, with the front cover of each owned album protected from eviction until nothing else is left.
-- Endpoints (names to be settled in the contract): `GET /api/artwork/index?rgid=` and `GET /api/artwork/image/{image_id}?size=thumb|display|full`. `full` is fetched on first zoom and stored; later requests are served from disk.
+- Endpoints (built, PR pending; the contract section is still to write): `GET /api/artwork/index?rgid=&release=` (`release` = owned release, optional) and `GET /api/artwork/image/{image_id}?size=thumb|display|full`. Built with the CAA 250 px file as `thumb` and the 500 px file as `display` because no image library is installed; 640 px needs Pillow (owner decision). `full` is fetched on first zoom and stored; later requests are served from disk.
 - The server validates the image bytes, rejects non-images and oversize responses, and never follows a redirect to a host other than the CAA and the archive.org hosts that serve its files.
 - Access to the endpoints follows the existing session auth; image URLs are not public.
 - A background warm-up fills the display size for owned albums slowly, in order of recent listening, and stops at the budget. Nothing is fetched for albums the owner has never opened if the budget is full.
@@ -121,6 +121,9 @@ The album-page cover is a 3D card. Click (M) or swipe (A) flips it to the Back i
 - **M:** a sheet with a two-page spread, arrow-key paging and a zoom lens.
 - Pages are shown in CAA order, grouped by edition when more than one edition has a booklet.
 - No OCR, no credit linking, no per-page captions beyond the CAA comment.
+- **PDF booklets (owner, 2026-11-10):** some booklets are one PDF scan, not page images (Somethin' Else has an excellent one). The server keeps PDF originals and serves them only as `size=full` (`application/pdf`, sandboxed). The archive makes JPEG thumbnails of PDFs, so `thumb` and `display` give a first-page preview that every list, tab label and the pager's first frame can use with no PDF code.
+- **Clients need a PDF viewer for `full` only:** macOS uses PDFKit (`PDFView`: two-page spread, continuous scroll, zoom, arrow-key paging, VoiceOver); Android renders pages with `PdfRenderer` (API 21+; pages drawn to bitmaps in the pager, pinch-zoom on the bitmap, one page in memory at a time) and needs no new dependency. A client tells a PDF by the image's file type (the index does not yet carry it: add `format` to each index entry before slice 2 so clients do not have to guess from the first bytes). The PDF is downloaded whole on first open (can be tens of MB, shares the 1.5 GB budget, is evicted first with other full files); show a progress state and keep it cancellable.
+- A PDF booklet is one entry, so the pager shows its pages from the PDF and the CAA-order rule applies only to page-image booklets. Per-theme booklet screens must cover both shapes.
 
 ### 3. The disc (A, M)
 Medium images (vinyl label, CD face) become the Now Playing record. On the Cassette Deck and Tape Deck themes, the label spins; on Cupertino Now Playing the disc slides out from behind the sleeve. Disc label by disc number when the comment or edition identifies it; otherwise the first Medium image.

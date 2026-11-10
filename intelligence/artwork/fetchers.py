@@ -32,6 +32,9 @@ BACKOFF_START, BACKOFF_MAX = 60.0, 900.0
 PAGE = 100
 MAX_PAGES = 5               # 500 releases; the group cap is 60, so this only stops a runaway loop
 MAX_BYTES = 8 * 1024 * 1024
+MAX_IMAGE_BYTES = {"thumb": 2 * 1024 * 1024, "display": 4 * 1024 * 1024, "full": 100 * 1024 * 1024}
+SIZE_SUFFIX = {"thumb": "-250.jpg", "display": "-500.jpg", "full": None}   # CAA serves 250, 500, 1200 and the original
+IMAGE_EXTENSIONS = ("jpg", "png", "gif", "webp", "pdf")
 TIMEOUT = 30
 ALLOWED_REDIRECT_HOSTS = ("coverartarchive.org", "archive.org")
 
@@ -98,10 +101,83 @@ def _urllib_open(req: Request) -> tuple[int, bytes, float | None]:
         return 0, b"", None
 
 
+ImageOpener = Callable[[Request, int], tuple[int, bytes, float | None]]
+
+
+def _urllib_open_image(req: Request, limit: int) -> tuple[int, bytes, float | None]:
+    """Like ``_urllib_open`` but reads at most ``limit + 1`` bytes, so an oversize body is detectable."""
+    try:
+        with build_opener(_SafeRedirect).open(req, timeout=TIMEOUT) as resp:
+            return resp.status, resp.read(limit + 1), None
+    except HTTPError as exc:
+        retry = exc.headers.get("Retry-After") if exc.headers else None
+        return exc.code, b"", float(retry) if retry and retry.strip().isdigit() else None
+    except (URLError, TimeoutError, OSError):
+        return 0, b"", None
+
+
+def sniff_image(body: bytes) -> tuple[str, str] | None:
+    """(content type, extension) from the file's own signature; ``None`` when it is not a supported image.
+
+    PDF is kept (booklet scans are often PDFs); every other format is rejected. The upstream
+    Content-Type is never trusted.
+    """
+    if body[:5] == b"%PDF-":
+        return "application/pdf", "pdf"
+    if body[:3] == b"\xff\xd8\xff":
+        return "image/jpeg", "jpg"
+    if body[:8] == b"\x89PNG\r\n\x1a\n":
+        return "image/png", "png"
+    if body[:6] in (b"GIF87a", b"GIF89a"):
+        return "image/gif", "gif"
+    if body[:4] == b"RIFF" and body[8:12] == b"WEBP":
+        return "image/webp", "webp"
+    return None
+
+
+def image_url(release: str, image_id: int, size: str, ext: str = "jpg") -> str | None:
+    if size not in SIZE_SUFFIX:
+        return None
+    suffix = SIZE_SUFFIX[size] or "." + (ext if ext in IMAGE_EXTENSIONS else "jpg")
+    return f"{CAA_BASE}/release/{release}/{int(image_id)}{suffix}"
+
+
 class ArtworkFetchers:
-    def __init__(self, *, pacer: HostPacer | None = None, opener: Opener = _urllib_open):
+    def __init__(self, *, pacer: HostPacer | None = None, opener: Opener = _urllib_open,
+                 image_opener: ImageOpener = _urllib_open_image):
         self.pacer = pacer or HostPacer()
         self._open = opener
+        self._open_image = image_opener
+
+    def fetch_image(self, release: str, image_id: int, size: str, ext: str = "jpg") -> tuple[str, bytes, str]:
+        """(state, bytes, extension). State is ``ok``, ``missing`` (404 or not an image) or ``unavailable``.
+
+        Only the CAA URL is built here and redirects may only go to the CAA and archive.org hosts. The body
+        must be within the size's byte limit and must sniff as an image, otherwise it is ``missing`` (bad
+        bytes) or ``unavailable`` (too large: not stored).
+        """
+        url = image_url(release, image_id, size, ext)
+        if url is None:
+            return "missing", b"", ""
+        host = urlparse(url).hostname or ""
+        if not self.pacer.acquire(host):
+            return UNAVAILABLE, b"", ""
+        limit = MAX_IMAGE_BYTES[size]
+        status, body, retry = self._open_image(Request(url, headers={"User-Agent": USER_AGENT, "Accept": "image/*"}), limit)
+        if status in (429, 503):
+            self.pacer.throttled(host, retry)
+            return UNAVAILABLE, b"", ""
+        if status == 0 or status >= 500:
+            return UNAVAILABLE, b"", ""
+        self.pacer.succeeded(host)
+        if status != 200:
+            return "missing", b"", ""
+        if len(body) > limit:
+            return UNAVAILABLE, b"", ""
+        kind = sniff_image(body)
+        if kind is None or (kind[1] == "pdf" and size != "full"):     # a PDF is only ever the original file
+            return "missing", b"", ""
+        return OK, body, kind[1]
 
     def _json(self, url: str) -> tuple[int, dict | None]:
         host = urlparse(url).hostname or ""
