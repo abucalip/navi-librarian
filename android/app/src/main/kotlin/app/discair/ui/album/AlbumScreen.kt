@@ -30,6 +30,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.foundation.background
@@ -124,6 +125,34 @@ private fun AlbumContent(route: AlbumRoute, page: AlbumPage, open: Opener, list:
     // Playback is for albums in the library only; the id is the Navidrome album id the page already carries.
     val albumId = (info?.id ?: route.id)?.takeIf { owned && it.isNotBlank() }
     val play = app.discair.ui.player.LocalPlayActions.current
+    // Edition picker (docs/artwork.md, idea 7): the owner's pick is stored on the server, which serves it on every screen.
+    val editions = remember(artIndex) { app.discair.model.coverEditions(artIndex) }
+    var choice by remember(info?.artworkChoice) { mutableStateOf(info?.artworkChoice) }
+    var showEditions by androidx.compose.runtime.saveable.rememberSaveable(route) { mutableStateOf(false) }
+    val pickScope = androidx.compose.runtime.rememberCoroutineScope()
+    val canPick = albumId != null && rgid != null && app.discair.model.hasEditionChoice(editions)
+    if (showEditions && canPick) EditionPickerSheet(
+        editions, choice,
+        onPick = { image ->
+            showEditions = false
+            pickScope.launch {
+                val saved = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                    try { repoForArt.setArtworkChoice(albumId!!, rgid!!, image.imageId); true } catch (e: kotlinx.coroutines.CancellationException) { throw e } catch (e: Exception) { false }
+                }
+                if (saved) choice = image.imageId
+            }
+        },
+        onAutomatic = {
+            showEditions = false
+            pickScope.launch {
+                val cleared = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                    try { repoForArt.clearArtworkChoice(albumId!!); true } catch (e: kotlinx.coroutines.CancellationException) { throw e } catch (e: Exception) { false }
+                }
+                if (cleared) choice = null
+            }
+        },
+        onDismiss = { showEditions = false },
+    )
     // Saved with the page: opening an album from the sheet leaves this page, and Back must find the sheet open again.
     var showPaths by androidx.compose.runtime.saveable.rememberSaveable(route) { mutableStateOf(false) }
     // The server builds album paths from an album in the library, by its Navidrome id.
@@ -137,12 +166,13 @@ private fun AlbumContent(route: AlbumRoute, page: AlbumPage, open: Opener, list:
                     FlipCover(backs, 240.dp) {
                         Box(Modifier.size(240.dp)) {
                             AlbumCover(
-                                artist, title, info?.artworkUrl,
+                                artist, title, app.discair.model.coverUrlFor(info?.artworkUrl, choice),
                                 Modifier.size(240.dp).aspectSquare(),
                                 onColor = onTint,
                             )
                             // The album's file quality, as a label on the lower right corner of the artwork.
                             info?.quality?.takeIf { it.isNotBlank() }?.let { QualityTag(it, Modifier.align(Alignment.BottomEnd)) }
+                            if (canPick) EditionStack(editions.size, { showEditions = true }, Modifier.align(Alignment.BottomStart))
                         }
                     }
                 }

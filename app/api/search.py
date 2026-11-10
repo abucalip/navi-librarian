@@ -209,6 +209,17 @@ def owned_index_for(librarian) -> OwnedIndex:
         return _owned_index
 
 
+def _artwork_choice(librarian, album) -> int | None:
+    """The owner's picked cover for this owned album (docs/artwork.md slice 4), or None."""
+    if not album:
+        return None
+    from app.api.artwork import get_service
+    try:
+        return get_service(librarian).store.get_choice(album["id"])
+    except Exception:
+        return None                      # a pick that cannot be read must never break the album page
+
+
 def owned_view(librarian):
     """Trigger a background refresh if needed, then read the last known-good state."""
     index = owned_index_for(librarian)
@@ -552,6 +563,7 @@ def album(
     sections_iter = album_sections(
         network, data, album=owned_entry, artist=shown_artist, artist_key=artist_key,
         name=shown_name, year=year, release_group_mbid=mbid,
+        artwork_choice=_artwork_choice(librarian, owned_entry),
     )
 
     def finish(partial: bool) -> dict:

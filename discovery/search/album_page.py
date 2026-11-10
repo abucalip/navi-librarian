@@ -219,6 +219,7 @@ def album_sections(
     name: str,
     year: int | None,
     release_group_mbid: str | None,
+    artwork_choice: int | None = None,
 ) -> Iterator[dict[str, Any]]:
     """Yield each section object as it completes. ``album`` is the owned index entry, if any."""
     owned = OwnedKeys(data)
@@ -240,6 +241,8 @@ def album_sections(
         "owned": album is not None,
         "id": album["id"] if album else None,
         "artwork_url": artwork_url(album["id"]) if album else None,
+        # The owner's picked cover (an artwork ``image_id``), or null; the picked image is what ``artwork_url`` serves.
+        "artwork_choice": artwork_choice if album else None,
         "release_group_mbid": (album or {}).get("release_group_mbid") or release_group_mbid,
         "song_count": album["song_count"] if album else None,
         # One file-quality tag for the whole album (``FLAC``, ``lossless``, ``320k``); null when unknown.

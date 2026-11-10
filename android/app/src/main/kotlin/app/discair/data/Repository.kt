@@ -59,6 +59,7 @@ import app.discair.model.pathsAvailableFrom
 import app.discair.model.parseDiscovery
 import app.discair.model.parseSearchEvent
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import app.discair.model.AlbumPage
 import app.discair.model.ApiJson
 import kotlinx.serialization.json.booleanOrNull
@@ -212,6 +213,12 @@ interface LibraryRepository : AcquisitionApi {
      */
     fun artworkDownload(image: ArtworkImage, dest: java.io.File, shouldStop: () -> Boolean, onProgress: (Long, Long) -> Unit): Unit =
         throw UnsupportedOperationException()
+
+    /** Stores the owner's cover pick for an owned album (`PUT /api/artwork/choice/{album_id}`); the server then serves it on every screen. */
+    fun setArtworkChoice(albumId: String, rgid: String, imageId: Long): Unit = throw UnsupportedOperationException()
+
+    /** Removes the pick (`DELETE /api/artwork/choice/{album_id}`): the automatic cover is used again. */
+    fun clearArtworkChoice(albumId: String): Unit = throw UnsupportedOperationException()
 
     /** Whether the server reports the paths feature (`features.paths` in `/api/capabilities`). Read live; false when unknown. */
     fun pathsAvailable(): Boolean = false
@@ -445,6 +452,16 @@ class LibrarianRepository(
         if (image.isPdf && size == ArtworkSize.Full) return null // a PDF is not a bitmap: the viewer fetches it whole
         return baseUrl.toHttpUrl().newBuilder().apply { artworkImageSegments(image.imageId).forEach { addPathSegment(it) } }
             .addQueryParameter("size", size.wire).build().toString()
+    }
+
+    override fun setArtworkChoice(albumId: String, rgid: String, imageId: Long) {
+        if (ReadMode.isCacheOnly) throw CacheMiss()
+        client.put(listOf("api", "artwork", "choice", albumId), """{"rgid":${JsonPrimitive(rgid)},"image_id":$imageId}""")
+    }
+
+    override fun clearArtworkChoice(albumId: String) {
+        if (ReadMode.isCacheOnly) throw CacheMiss()
+        client.delete(listOf("api", "artwork", "choice", albumId))
     }
 
     override fun artworkDownload(image: ArtworkImage, dest: java.io.File, shouldStop: () -> Boolean, onProgress: (Long, Long) -> Unit) {

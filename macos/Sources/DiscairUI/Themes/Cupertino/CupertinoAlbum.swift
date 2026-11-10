@@ -27,7 +27,7 @@ struct CupertinoAlbumBanner: View {
             VStack(alignment: .leading, spacing: 0) {
                 BackButton(title: AppState.title(of: state.albumBack), onDark: true) { state.screen = state.albumBack }.padding(.bottom, 10)
                 HStack(alignment: .top, spacing: 26) {
-                    FlipCover(rgid: state.related.releaseGroupMBID, cornerRadius: 12, spineStrip: true) { CoverView(album: a).clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous)) }
+                    FlipCover(rgid: state.related.releaseGroupMBID, cornerRadius: 12, spineStrip: true, albumID: a.owned ? a.remoteID : nil) { CoverView(album: a).clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous)) }
                         .frame(width: 170, height: 170)
                         .shadow(color: .black.opacity(0.35), radius: 10, y: 5)
                     VStack(alignment: .leading, spacing: 0) {

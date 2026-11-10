@@ -196,6 +196,8 @@ data class AlbumInfo(
     @SerialName("artwork_url") val artworkUrl: String? = null,
     @SerialName("song_count") val songCount: Int = 0,
     @SerialName("release_group_mbid") val releaseGroupMbid: String? = null,
+    /** The owner's picked cover (an artwork `image_id`); the album's `artwork_url` already serves it. Absent when none. */
+    @SerialName("artwork_choice") val artworkChoice: Long? = null,
     /** One file-quality tag for the whole album ("FLAC", "lossless", "320k"); absent when unknown. */
     val quality: String? = null,
 )
