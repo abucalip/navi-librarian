@@ -14,6 +14,8 @@ enum class AlbumTab(val label: String, val graph: AlbumPathKind?) {
     GuestList("Guest list", AlbumPathKind.GuestList),
     CoversAndSources("Covers and sources", AlbumPathKind.CoversAndSources),
     SameYearSameScene("Same year, same scene", AlbumPathKind.SameYearSameScene),
+    SameRoom("Same room", AlbumPathKind.SameRoom),
+    ListenThroughGaps("Listen-through gaps", AlbumPathKind.ListenThroughGaps),
     NeighboursByEar("Neighbours by ear", null),
 }
 
@@ -27,10 +29,30 @@ data class AlbumStepReason(val code: String, val text: String, val via: PathRef?
 data class AlbumStep(
     val album: String, val artist: String, val year: Int?, val albumId: String?,
     val detail: String, val reasons: List<AlbumStepReason>, val matchCount: Int = 0,
+    /** Listen-through gaps: the server's play label ("Not played"); null elsewhere. */
+    val play: String? = null,
 )
 
 /** The steps of one tab and the honest notes under them (what was cut, what was skipped). */
-data class AlbumAnswer(val steps: List<AlbumStep>, val notes: List<String>, val seeds: Int = 0)
+data class AlbumAnswer(
+    val steps: List<AlbumStep>, val notes: List<String>, val seeds: Int = 0,
+    /** Said instead of the generic empty line when the server's own figures explain why nothing is listed. */
+    val empty: String? = null,
+)
+
+/** What the play history of a Listen-through gaps answer means for the list, in words. Never reads a count as taste. */
+internal fun historyNotes(history: PathHistory?): List<String> {
+    history ?: return emptyList()
+    fun albums(n: Int) = "$n ${if (n == 1) "album" else "albums"}"
+    return when (history.state) {
+        "thin" -> listOf("Your play history is too short to tell which albums you have not played, so every album these credits reach is listed, played or not.")
+        "unavailable" -> listOf("Your play history could not be read, so every album these credits reach is listed, played or not.")
+        else -> buildList {
+            if (history.filteredOut > 0) add("${albums(history.filteredOut)} reached by these credits left out because you have played ${if (history.filteredOut == 1) "it" else "them"} more than ${history.littlePlaysBelow - 1} ${if (history.littlePlaysBelow - 1 == 1) "time" else "times"}.")
+            if (history.unknown > 0) add("${albums(history.unknown)} left out because ${if (history.unknown == 1) "it has" else "they have"} no play record.")
+        }
+    }
+}
 
 internal fun truncationNote(reason: String): String {
     val words = when (reason) {
@@ -49,15 +71,20 @@ fun PathsResponse.toAlbumAnswer(): AlbumAnswer {
         val via = stop.reasons.firstOrNull()?.via?.name
         AlbumStep(
             album = stop.name, artist = by, year = null, albumId = null,
-            detail = listOfNotNull(by.ifBlank { null }, via).joinToString(" · ").ifBlank { stop.reason },
+            detail = listOfNotNull(by.ifBlank { null }, stop.play ?: via).joinToString(" · ").ifBlank { stop.reason },
             reasons = stop.reasons.map { AlbumStepReason(it.code, it.text, it.via, it.anchor) },
+            play = stop.play,
         )
     }
     val notes = buildList {
+        addAll(historyNotes(history))
         capped.forEach { add("${it.more} more ${if (it.more == 1) "album" else "albums"} with ${it.via} ${if (it.more == 1) "is" else "are"} not shown.") }
         truncated?.let { add(truncationNote(it)) }
     }
-    return AlbumAnswer(steps, notes)
+    val empty = history?.takeIf { it.state == "ok" && steps.isEmpty() && it.filteredOut > 0 }?.let {
+        "Every album these credits reach is one you have already played more than ${it.littlePlaysBelow - 1} ${if (it.littlePlaysBelow - 1 == 1) "time" else "times"}, so there is no gap to list."
+    }
+    return AlbumAnswer(steps, notes, empty = empty)
 }
 
 /** Steps of Neighbours by ear. The count of matched tracks is the only measure shown; `similarity` is never read. */
@@ -85,6 +112,8 @@ fun albumTabDescription(tab: AlbumTab, album: String, seeds: Int = 0): String = 
     AlbumTab.GuestList -> "Albums in your library where the guests credited on $album also appear."
     AlbumTab.CoversAndSources -> "Other albums in your library with a recording of a song on $album, and the works they come from."
     AlbumTab.SameYearSameScene -> "Albums in your library from the same years as $album, linked by a label, an area or a shared artist."
+    AlbumTab.SameRoom -> "Albums in your library with a recording made in the same studio or at the same event as a recording on $album."
+    AlbumTab.ListenThroughGaps -> "Albums in your library that share a credit with $album and that you have played little or never."
     AlbumTab.NeighboursByEar -> if (seeds > 0) "Albums in your library that sound like $album, found from $seeds of its tracks." else "Albums in your library that sound like $album."
 }
 
@@ -121,6 +150,7 @@ internal fun reasonEyebrow(code: String): String = when (code) {
     "same_period_label" -> "Same label"
     "same_period_credit" -> "Shared artist"
     "same_period_area" -> "Same area"
+    "recorded_at" -> "Recorded at"
     "sonic_neighbour" -> "Sounds alike"
     else -> "Why it's here"
 }

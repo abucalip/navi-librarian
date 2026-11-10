@@ -66,6 +66,29 @@ public struct PathReason: Decodable, Equatable, Sendable {
     }
 }
 
+private struct PathPlay: Decodable { let text: String? }
+
+/// `history` of a Listen-through Gaps body: `state` is "ok", "thin" or "unavailable"; the counts are albums left out.
+public struct PathHistory: Decodable, Equatable, Sendable {
+    public let state: String
+    public let playedAlbums: Int?
+    public let filteredOut: Int
+    public let unknown: Int
+    public let littlePlaysBelow: Int
+    public init(state: String, playedAlbums: Int?, filteredOut: Int, unknown: Int, littlePlaysBelow: Int) {
+        self.state = state; self.playedAlbums = playedAlbums; self.filteredOut = filteredOut; self.unknown = unknown; self.littlePlaysBelow = littlePlaysBelow
+    }
+    enum CodingKeys: String, CodingKey { case state, playedAlbums = "played_albums", filteredOut = "filtered_out", unknown, littlePlaysBelow = "little_plays_below" }
+    public init(from decoder: any Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        state = (try? c.decodeIfPresent(String.self, forKey: .state)) ?? ""
+        playedAlbums = try? c.decodeIfPresent(Int.self, forKey: .playedAlbums)
+        filteredOut = (try? c.decodeIfPresent(Int.self, forKey: .filteredOut)) ?? 0
+        unknown = (try? c.decodeIfPresent(Int.self, forKey: .unknown)) ?? 0
+        littlePlaysBelow = (try? c.decodeIfPresent(Int.self, forKey: .littlePlaysBelow)) ?? 2
+    }
+}
+
 private struct PathPresentation: Decodable {
     let albumArtist: String?
     let context: String?
@@ -85,7 +108,9 @@ public struct PathStop: Decodable, Equatable, Sendable {
     /// Artist paths: the song's album and the credited performer (`presentation.album`, `presentation.artist`).
     public let album: String?
     public let artist: String?
-    enum CodingKeys: String, CodingKey { case entity, reason_count, reasons, presentation }
+    /// Listen-through Gaps: the server's play label ("Not played"); nil elsewhere and when the history is not usable.
+    public let play: String?
+    enum CodingKeys: String, CodingKey { case entity, reason_count, reasons, presentation, play }
     public init(from decoder: any Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         entity = try c.decode(KnowledgeEntity.self, forKey: .entity)
@@ -93,6 +118,7 @@ public struct PathStop: Decodable, Equatable, Sendable {
         albumArtist = (presentation?.albumArtist ?? presentation?.context)?.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty
         album = presentation?.album?.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty
         artist = presentation?.artist?.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty
+        play = (try? c.decodeIfPresent(PathPlay.self, forKey: .play))?.text?.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty
         reasons = c.list(.reasons, PathReason.self)
         reasonCount = (try? c.decodeIfPresent(Int.self, forKey: .reason_count)) ?? reasons.count
     }
@@ -121,7 +147,9 @@ public struct KnowledgePaths: Decodable, Equatable, Sendable {
     public let overlapDropped: Int
     /// Album paths: people or works whose albums were cut at the cap, with how many were left out.
     public let capped: [PathCapped]
-    enum CodingKeys: String, CodingKey { case kind, status, start, stops, truncated, sources, overlap_dropped, capped }
+    /// Listen-through Gaps: how usable the play history was. Nil on every other path.
+    public let history: PathHistory?
+    enum CodingKeys: String, CodingKey { case kind, status, start, stops, truncated, sources, overlap_dropped, capped, history }
     public init(from decoder: any Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         kind = c.text(.kind) ?? ""
@@ -132,6 +160,7 @@ public struct KnowledgePaths: Decodable, Equatable, Sendable {
         sources = (try? c.decodeIfPresent([String: KnowledgeSource].self, forKey: .sources)) ?? [:]
         overlapDropped = c.number(.overlap_dropped)
         capped = ((try? c.decodeIfPresent([LenientEntry<PathCapped>].self, forKey: .capped)) ?? []).compactMap { $0.value }
+        history = (try? c.decodeIfPresent(PathHistory.self, forKey: .history)).flatMap { $0.state.isEmpty ? nil : $0 }
     }
 }
 

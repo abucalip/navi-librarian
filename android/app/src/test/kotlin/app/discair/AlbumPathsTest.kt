@@ -21,17 +21,32 @@ class AlbumPathsTest {
         javaClass.classLoader!!.getResource("librarian/$name.json")!!.readText(),
     ).jsonObject["response"]!!.jsonObject["body"].toString()
 
-    @Test fun exactlyTheFourBuiltAlbumKindsAreOffered() {
+    @Test fun exactlyTheSixGraphAlbumKindsAreOffered() {
         assertEquals(
-            listOf("album_crew", "album_guests", "album_works", "album_moment"),
+            listOf("album_crew", "album_guests", "album_works", "album_moment", "album_room", "album_gaps"),
             AlbumPathKind.entries.map { it.wire },
         )
     }
 
-    @Test fun albumKindsNotBuiltYetAreNotOffered() {
-        val wires = AlbumPathKind.entries.map { it.wire }
-        assertFalse("album_room" in wires)
-        assertFalse("album_gaps" in wires)
+    @Test fun gapsFixtureReadsPlayLabelsAndTheHistory() {
+        val r = parsePaths(body("paths_album_gaps"))
+        assertTrue(r.stops.all { it.play == "Not played" || it.play?.startsWith("Played") == true })
+        val h = r.history!!
+        assertEquals("ok", h.state)
+        assertEquals(274, h.playedAlbums)
+        assertEquals(2, h.littlePlaysBelow)
+    }
+
+    @Test fun gapsUnavailableFixtureHasNoPlayLabelsAndSaysSo() {
+        val r = parsePaths(body("paths_album_gaps_unavailable"))
+        assertTrue(r.stops.isNotEmpty())
+        assertTrue(r.stops.all { it.play == null })
+        assertEquals("unavailable", r.history!!.state)
+        assertNull(r.history!!.playedAlbums)
+    }
+
+    @Test fun otherKindsHaveNoHistory() {
+        assertNull(parsePaths(body("paths_album_room")).history)
     }
 
     @Test fun okAlbumFixturesListStepsWithReasonsAndOwnedAlbums() {
@@ -77,7 +92,7 @@ class AlbumPathsTest {
     }
 
     @Test fun errorBodiesAreEmptyNotBlankForAlbumPaths() {
-        val r = parsePaths(body("paths_error_album_room_not_built"))
+        val r = parsePaths(body("paths_error_album_unknown_entity"))
         assertEquals(PathsView.Empty, r.view())
         assertEquals(0, r.overlapDropped)
     }

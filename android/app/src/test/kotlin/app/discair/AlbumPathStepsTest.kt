@@ -2,6 +2,9 @@ package app.discair
 
 import app.discair.model.AlbumTab
 import app.discair.model.PathCapped
+import app.discair.model.PathHistory
+import app.discair.model.historyNotes
+import app.discair.model.reasonEyebrow
 import app.discair.model.albumPathsEmpty
 import app.discair.model.albumTabDescription
 import app.discair.model.albumTabs
@@ -24,8 +27,8 @@ class AlbumPathStepsTest {
 
     @Test fun neighboursByEarIsOfferedOnlyWithSonic() {
         assertFalse(AlbumTab.NeighboursByEar in albumTabs(false))
-        assertEquals(5, albumTabs(true).size)
-        assertEquals(4, albumTabs(false).size)
+        assertEquals(7, albumTabs(true).size)
+        assertEquals(6, albumTabs(false).size)
     }
 
     @Test fun graphStepsKeepServerOrderAndNameThePersonInTheDetailLine() {
@@ -34,6 +37,41 @@ class AlbumPathStepsTest {
         assertEquals(r.stops.map { it.name }, a.steps.map { it.album })
         assertEquals("Cannonball Adderley · Rudy van Gelder", a.steps.first().detail)
         assertTrue(a.steps.all { it.reasons.isNotEmpty() })
+    }
+
+    @Test fun sameRoomNamesThePlaceAndLabelsItRecordedAt() {
+        val a = parsePaths(body("paths_album_room")).toAlbumAnswer()
+        assertEquals("Herbie Hancock · Van Gelder Studio", a.steps.first().detail)
+        assertEquals("Recorded at", reasonEyebrow(a.steps.first().reasons.first().code))
+        assertTrue(a.steps.all { it.play == null })
+    }
+
+    @Test fun gapsShowThePlayLabelAndStayInServerOrder() {
+        val r = parsePaths(body("paths_album_gaps"))
+        val a = r.toAlbumAnswer()
+        assertEquals(r.stops.map { it.name }, a.steps.map { it.album })
+        assertEquals("Opeth · Not played", a.steps.first().detail)
+        assertEquals("Not played", a.steps.first().play)
+        assertTrue(a.notes.isEmpty())
+    }
+
+    @Test fun gapsWithUnavailableHistorySayEveryAlbumIsListed() {
+        val a = parsePaths(body("paths_album_gaps_unavailable")).toAlbumAnswer()
+        assertTrue(a.steps.isNotEmpty())
+        assertTrue(a.steps.all { it.play == null })
+        assertTrue(a.notes.single().contains("could not be read"))
+        assertTrue(a.notes.single().contains("played or not"))
+    }
+
+    @Test fun gapsThinHistoryIsNeverAnUnplayedClaim() {
+        val notes = historyNotes(PathHistory("thin", 5, 0, 0, 2))
+        assertTrue(notes.single().contains("too short"))
+    }
+
+    @Test fun gapsEmptyBecauseEverythingWasPlayedSaysSo() {
+        val a = parsePaths(body("paths_album_gaps_empty")).toAlbumAnswer()
+        assertTrue(a.steps.isEmpty())
+        assertTrue(a.empty!!.startsWith("Every album these credits reach is one you have already played"))
     }
 
     @Test fun emptyAnswerHasNoStepsAndStatesTheRule() {

@@ -4,9 +4,9 @@ import DiscairNavidrome
 import Foundation
 import Observation
 
-/// The tabs of the album Paths sheet: the four graph kinds plus Neighbours by Ear (only when the server reports sonic similarity).
+/// The tabs of the album Paths sheet: the six graph kinds plus Neighbours by Ear (only when the server reports sonic similarity).
 public enum AlbumPathTab: String, CaseIterable, Identifiable, Sendable {
-    case studioCrew, guestList, coversAndSources, sameYearSameScene, neighboursByEar
+    case studioCrew, guestList, coversAndSources, sameYearSameScene, sameRoom, listenThroughGaps, neighboursByEar
     public var id: String { rawValue }
     public var label: String {
         switch self {
@@ -14,6 +14,8 @@ public enum AlbumPathTab: String, CaseIterable, Identifiable, Sendable {
         case .guestList: "Guest List"
         case .coversAndSources: "Covers and Sources"
         case .sameYearSameScene: "Same Year, Same Scene"
+        case .sameRoom: "Same Room"
+        case .listenThroughGaps: "Listen-through Gaps"
         case .neighboursByEar: "Neighbours by Ear"
         }
     }
@@ -23,6 +25,8 @@ public enum AlbumPathTab: String, CaseIterable, Identifiable, Sendable {
         case .guestList: .guestList
         case .coversAndSources: .coversAndSources
         case .sameYearSameScene: .sameYearSameScene
+        case .sameRoom: .sameRoom
+        case .listenThroughGaps: .listenThroughGaps
         case .neighboursByEar: nil
         }
     }
@@ -35,6 +39,8 @@ public enum AlbumPathTab: String, CaseIterable, Identifiable, Sendable {
         case .guestList: "Albums in your library where the guests credited on \(album) also appear."
         case .coversAndSources: "Other albums in your library with a recording of a song on \(album), and the works they come from."
         case .sameYearSameScene: "Albums in your library from the same years as \(album), linked by a label, an area or a shared artist."
+        case .sameRoom: "Albums in your library with a recording made in the same studio or at the same event as a recording on \(album)."
+        case .listenThroughGaps: "Albums in your library that share a credit with \(album) and that you have played little or never."
         case .neighboursByEar: seeds > 0 ? "Albums in your library that sound like \(album), found from \(seeds) of its tracks." : "Albums in your library that sound like \(album)."
         }
     }
@@ -83,6 +89,7 @@ public struct PathStepReason: Equatable, Sendable {
         case "same_period_label": "Same label"
         case "same_period_credit": "Shared artist"
         case "same_period_area": "Same area"
+        case "recorded_at": "Recorded at"
         case "sonic_neighbour": "Sounds alike"
         case "sideman_on": "Sideman"
         default: "Why it's here"
@@ -112,6 +119,8 @@ public struct PathStep: Identifiable, Equatable, Sendable {
     public let target: PathTarget?
     public let artistName: String?
     public let owned: Bool
+    /// Listen-through Gaps: the server's play label ("Not played"); nil elsewhere.
+    public var play: String? = nil
     public struct AlbumCover: Equatable, Sendable { public let title: String; public let artist: String; public let albumID: String?; public let coverArt: String? }
 }
 
@@ -121,14 +130,32 @@ public struct PathAnswer: Equatable, Sendable {
     public var notes: [String]
     public var seeds: Int = 0
     public var startType: String = ""
+    /// Said instead of the generic empty line when the server's own figures explain why nothing is listed.
+    public var empty: String?
+
+    /// What a Gaps answer's play history means for the list, in words. Never reads a count as taste.
+    static func historyNotes(_ h: PathHistory?) -> [String] {
+        guard let h else { return [] }
+        func albums(_ n: Int) -> String { "\(n) \(n == 1 ? "album" : "albums")" }
+        switch h.state {
+        case "thin": return ["Your play history is too short to tell which albums you have not played, so every album these credits reach is listed, played or not."]
+        case "unavailable": return ["Your play history could not be read, so every album these credits reach is listed, played or not."]
+        default:
+            var n: [String] = []
+            let most = h.littlePlaysBelow - 1
+            if h.filteredOut > 0 { n.append("\(albums(h.filteredOut)) reached by these credits left out because you have played \(h.filteredOut == 1 ? "it" : "them") more than \(most) \(most == 1 ? "time" : "times").") }
+            if h.unknown > 0 { n.append("\(albums(h.unknown)) left out because \(h.unknown == 1 ? "it has" : "they have") no play record.") }
+            return n
+        }
+    }
 
     static func truncation(_ reason: String) -> String {
         let words = switch reason { case "rows": "row limit"; case "time": "time limit"; case "stops": "stop limit"; default: "limit" }
         return "The server stopped this path early (\(words)), so later steps may be missing."
     }
 
-    public init(steps: [PathStep], notes: [String], seeds: Int = 0, startType: String = "") {
-        self.steps = steps; self.notes = notes; self.seeds = seeds; self.startType = startType
+    public init(steps: [PathStep], notes: [String], seeds: Int = 0, startType: String = "", empty: String? = nil) {
+        self.steps = steps; self.notes = notes; self.seeds = seeds; self.startType = startType; self.empty = empty
     }
 
     static func evidence(_ r: PathReason?) -> String? {
@@ -142,13 +169,17 @@ public struct PathAnswer: Equatable, Sendable {
             let by = stop.albumArtist ?? ""
             let first = stop.reasons.first
             return PathStep(
-                id: i, name: stop.entity.name, detail: by, why: first?.via?.name ?? first?.text ?? "", year: nil,
+                id: i, name: stop.entity.name, detail: by, why: stop.play ?? first?.via?.name ?? first?.text ?? "", year: nil,
                 cover: .init(title: stop.entity.name, artist: by, albumID: nil, coverArt: nil), symbol: "opticaldisc",
                 reasons: stop.reasons.map { PathStepReason(code: $0.code, text: $0.text, via: $0.via?.name) },
                 evidence: Self.evidence(first), target: .album(title: stop.entity.name, artist: by, albumID: nil),
-                artistName: by.isEmpty ? nil : by, owned: true)
+                artistName: by.isEmpty ? nil : by, owned: true, play: stop.play)
         }
-        var n = p.capped.map { "\($0.more) more \($0.more == 1 ? "album" : "albums") with \($0.via) \($0.more == 1 ? "is" : "are") not shown." }
+        if let h = p.history, h.state == "ok", steps.isEmpty, h.filteredOut > 0 {
+            let most = h.littlePlaysBelow - 1
+            empty = "Every album these credits reach is one you have already played more than \(most) \(most == 1 ? "time" : "times"), so there is no gap to list."
+        }
+        var n = Self.historyNotes(p.history) + p.capped.map { "\($0.more) more \($0.more == 1 ? "album" : "albums") with \($0.via) \($0.more == 1 ? "is" : "are") not shown." }
         if let t = p.truncated { n.append(Self.truncation(t)) }
         notes = n
         startType = p.start.type
@@ -286,7 +317,7 @@ public final class PathsSheetModel: Identifiable {
     public var tabLabels: [(id: String, label: String)] { tabs.map { ($0.id, $0.label) } }
     var tab: PathTabSpec { tabs.first { $0.id == tabID } ?? tabs[0] }
     public var tabLabel: String { tab.label }
-    public var emptyText: String { tab.empty }
+    public var emptyText: String { answer?.empty ?? tab.empty }
     public var phase: Phase { phases[tabID] ?? .loading }
     public var answer: PathAnswer? { if case .ready(let a) = phase { a } else { nil } }
     public var summary: String { tab.summary(answer) }

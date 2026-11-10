@@ -11,8 +11,19 @@ import Testing
         return try JSONSerialization.data(withJSONObject: (object["response"] as! [String: Any])["body"]!)
     }
 
-    @Test func exactlyTheFourBuiltAlbumKindsAreOffered() {
-        #expect(AlbumPathKind.allCases.map(\.rawValue) == ["album_crew", "album_guests", "album_works", "album_moment"])
+    @Test func exactlyTheSixGraphAlbumKindsAreOffered() {
+        #expect(AlbumPathKind.allCases.map(\.rawValue) == ["album_crew", "album_guests", "album_works", "album_moment", "album_room", "album_gaps"])
+    }
+
+    @Test func gapsFixtureReadsPlayLabelsAndHistory() throws {
+        let p = try JSONDecoder().decode(KnowledgePaths.self, from: body("paths_album_gaps"))
+        #expect(p.stops.allSatisfy { $0.play == "Not played" || $0.play?.hasPrefix("Played") == true })
+        #expect(p.history == PathHistory(state: "ok", playedAlbums: 274, filteredOut: 0, unknown: 0, littlePlaysBelow: 2))
+        let u = try JSONDecoder().decode(KnowledgePaths.self, from: body("paths_album_gaps_unavailable"))
+        #expect(u.history?.state == "unavailable" && u.history?.playedAlbums == nil)
+        #expect(!u.stops.isEmpty && u.stops.allSatisfy { $0.play == nil })
+        let r = try JSONDecoder().decode(KnowledgePaths.self, from: body("paths_album_room"))
+        #expect(r.history == nil)
     }
 
     @Test func okAlbumFixturesListStepsWithReasonsAndOwnedAlbums() throws {
