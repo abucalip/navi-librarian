@@ -1,5 +1,14 @@
 # Project log
 
+## 2026-11-10 — Artwork fixtures, contract section and `format` (slice 1, third step)
+
+- Merged as PR [#947](https://github.com/abucalip/navi-librarian/pull/947), squash `2de5b2931ecdff17a89f07f0e0f48382d15b57e4`, tested head `f78284cad98e2769d11c9b24a085a319b97a7f7e`; required CI passed (compile, container-smoke, test-and-build, validate-container). Not published or deployed. Server and docs only; no client uses the routes yet.
+- New: `format` (`jpg`, `png`, `gif`, `webp`, `pdf`) on each index entry, read from the CAA image URL (default `jpg`, as the store does); fixtures `android/contract-fixtures/librarian/artwork_index*.json` (`ok`, `empty`, `unavailable`, `not_loaded`, `truncated` as `partial`, `release_cap`, `served_cap`, and a `400`), written by `scripts/write_artwork_fixtures.py` through the real route with canned provider answers; `tests/test_artwork_fixtures.py`, which rebuilds them to catch drift; and the "Album artwork" section of `docs/SERVER_V2_CONTRACT.md`.
+- The fixtures are synthetic: invented ids, dates and comments, no provider traffic and no owner data, so shapes are exact and values are not real. The two cap fixtures use lowered caps (2 releases, 3 images) to stay small. They should be replaced by recorded ones only if the owner approves a live capture.
+- Finding: the route rebuilds the index from the per-release cache, where a release the build did not reach counts as failed, so a build that stopped on its time bound is served as `partial`; `time` never reaches clients. Decided with the owner: drop `time` from the docs rather than change the route. The service still sets `time` internally. No `time` fixture.
+- Tests actually run, filtered: `tests.test_artwork_fixtures`, `tests.test_android_contract_fixtures`, `tests.test_api_artwork_routes`, `tests.test_intelligence_artwork_index`, `tests.test_intelligence_artwork_cache` (71 pass). Not run locally: the full suite (owner rule; CI ran it).
+- Next: slice 2, Android and macOS decoders for the index and the image store, following the album paths decoder pattern (PR #931).
+
 ## 2026-11-10 — Artwork cache and endpoints (slice 1, second step)
 
 - Merged as PR [#946](https://github.com/abucalip/navi-librarian/pull/946), squash `f5ea0f6c9ba52c949739cd6dc0c1f50432807cde`, tested head `d1fc1a91963917ae17e9747dd17623abd77fbcee`; required CI passed (compile, container-smoke, test-and-build, validate-container, validate-release-workflow). Not published or deployed. New: `intelligence/artwork/store.py` (SQLite plus `images/` under `DATA_DIR/artwork`), `service.py`, `fetchers.fetch_image`, and `app/api/artwork.py` (`GET /api/artwork/index?rgid=&release=`, `GET /api/artwork/image/{image_id}?size=thumb|display|full`). Session auth comes from the app login middleware (tested: both routes answer 401 without a session). No client uses them yet.
