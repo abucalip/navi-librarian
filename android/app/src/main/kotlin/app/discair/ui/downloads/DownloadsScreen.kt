@@ -56,6 +56,7 @@ import app.discair.model.formatBytes
 import app.discair.model.formatSpeed
 import app.discair.ui.Opener
 import app.discair.ui.common.AlbumCover
+import app.discair.ui.common.ReleaseEditionCovers
 import app.discair.ui.common.BackBar
 import app.discair.ui.common.LocalAcquisitions
 import app.discair.ui.common.PageHeading
@@ -218,6 +219,7 @@ private fun JobRow(job: AcquisitionJob, hub: AcquisitionHub, now: Double, open: 
                 "Quality profile: ${job.qualityProfile}", style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+            job.releaseGroup?.let { ReleaseEditionCovers(it) }
             // The icon and the words are the status; the colour only adds emphasis (rule 4).
             val info = job.info
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {

@@ -179,14 +179,14 @@ public final class AcquisitionModel {
 
     public func get(_ a: AlbumItem) async {
         await request(key: Self.key(a)) { l in
-            try await l.acquire(artist: a.artist, album: a.title, metadata: Self.metadata(a))
+            try await l.acquire(artist: a.artist, album: a.title, metadata: Self.getMetadata(a))
         }
     }
 
     public func getSong(_ a: AlbumItem, title: String, trackNumber: Int?) async {
         await request(key: Self.key(artist: a.artist, title: "\(title)|\(a.title)")) { l in
             try await l.acquireTrack(artist: a.artist, album: a.title, title: title, trackNumber: trackNumber,
-                                     year: a.year > 0 ? a.year : nil, metadata: Self.metadata(a))
+                                     year: a.year > 0 ? a.year : nil, metadata: Self.getMetadata(a))
         }
     }
 
@@ -225,6 +225,14 @@ public final class AcquisitionModel {
     static func metadata(_ a: AlbumItem) -> [String: String] {
         var m = ["source": "discair-macos"]
         if a.year > 0 { m["year"] = String(a.year) }
+        return m
+    }
+
+    /// The metadata a Get sends: `metadata(_:)` plus the album's release group when it is known, so the Downloads row can show
+    /// its covers (docs/artwork.md, idea 13). Feedback keeps the plain metadata.
+    static func getMetadata(_ a: AlbumItem) -> [String: String] {
+        var m = metadata(a)
+        if let rgid = artworkGroupID(a.releaseGroupMBID) { m["release_group_mbid"] = rgid }
         return m
     }
 
@@ -360,11 +368,13 @@ public final class AcquisitionModel {
         guard let librarian else { notice = "Not connected to the Librarian. Check Settings."; return }
         do {
             let r: AcquireResult
+            var retryMetadata = ["source": "discair-macos"]
+            if let rgid = j.details?.releaseGroupMBID { retryMetadata["release_group_mbid"] = rgid }
             if j.isSong, let title = j.details?.trackTitle {
                 r = try await librarian.acquireTrack(artist: j.artist, album: j.details?.albumName ?? j.album, title: title,
-                                                     metadata: ["source": "discair-macos"])
+                                                     metadata: retryMetadata)
             } else {
-                r = try await librarian.acquire(artist: j.artist, album: j.album, metadata: ["source": "discair-macos"])
+                r = try await librarian.acquire(artist: j.artist, album: j.album, metadata: retryMetadata)
             }
             if !r.ok { notice = r.message ?? Self.refusal(r.status) }
         } catch let e as DiscairError { notice = "Could not retry \(j.title): " + Self.text(e) }

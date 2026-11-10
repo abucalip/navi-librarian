@@ -134,6 +134,13 @@ data class AcquisitionJob(
     /** The metadata the server stored for this request; sent back unchanged on Try again. */
     val metadata: JsonObject get() = details["metadata"] as? JsonObject ?: JsonObject(emptyMap())
 
+    /**
+     * The MusicBrainz release group the Get carried in its metadata (docs/artwork.md, idea 13), or null when it carried none.
+     * Only a real MusicBrainz id is used, so a bad value never reaches the artwork lookup.
+     */
+    val releaseGroup: String? get() = (metadata["release_group_mbid"] as? JsonPrimitive)?.contentOrNull
+        ?.trim()?.takeIf { MBID.matches(it) }?.lowercase()
+
     val progress: LiveProgress? get() {
         if (status.lowercase() !in setOf("downloading", "download_complete_waiting_for_folder")) return null
         val p = details["live_progress"] as? JsonObject ?: return null

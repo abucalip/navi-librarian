@@ -49,6 +49,7 @@ struct ZineDownloads: View {
             }
             let line = acq.progressLine(j)
             if !line.isEmpty { Mono(line, size: 11) }
+            if let rgid = j.details?.releaseGroupMBID { EditionCoverStrip(rgid: rgid) }
             if j.phase == .failed, let m = j.details?.message { Text(m).font(Z.serif(13)) }
             HStack(spacing: 8) {
                 if acq.canRetry(j) { Button("Try again") { Task { await acq.retry(j) } }.buttonStyle(ZineButtonStyle(kind: .yellow, small: true)) }

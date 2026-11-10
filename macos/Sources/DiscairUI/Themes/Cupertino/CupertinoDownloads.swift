@@ -62,6 +62,7 @@ struct CupertinoDownloads: View {
             }
             let line = acq.progressLine(j)
             if !line.isEmpty { Text(line).font(.system(size: 12)).foregroundStyle(CU.muted) }
+            if let rgid = j.details?.releaseGroupMBID { EditionCoverStrip(rgid: rgid) }
             if j.phase == .failed, let m = j.details?.message { Text(m).font(.system(size: 12)).foregroundStyle(CU.muted) }
             HStack(spacing: 8) {
                 if acq.canRetry(j) { Button("Try again") { Task { await acq.retry(j) } }.buttonStyle(CapsuleButtonStyle(primary: true, small: true)) }
