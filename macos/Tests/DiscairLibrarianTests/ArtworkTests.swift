@@ -140,4 +140,32 @@ import Testing
         #expect(index.discoverPeek.map(\.imageID) == [6])
         #expect(try peekIndex(images: [(7, ["Front"], "jpg")], slots: ["Front": 7], booklet: nil).discoverPeek.isEmpty)
     }
+
+    @Test func pathCoversAreFrontImagesWithoutPDFsAndNeedTwo() throws {
+        let two = try peekIndex(images: [(1, ["Front"], "jpg"), (2, ["Back"], "jpg"), (3, ["Front"], "jpg"), (4, ["Front"], "pdf")], slots: [:], booklet: nil)
+        #expect(two.pathCoverFaces.map(\.imageID) == [1, 3])
+        let one = try peekIndex(images: [(1, ["Front"], "jpg"), (2, ["Back"], "jpg")], slots: [:], booklet: nil)
+        #expect(one.pathCoverFaces.isEmpty)
+    }
+
+    @Test func pathCoverCyclingWraps() {
+        #expect(nextPathCover(after: 0, count: 3) == 1)
+        #expect(nextPathCover(after: 2, count: 3) == 0)
+        #expect(nextPathCover(after: 4, count: 0) == 0)
+    }
+
+    @Test func roomPhotosAreSessionPicturesOnlyAndCapped() throws {
+        let index = try peekIndex(
+            images: [(1, ["Front"], "jpg"), (2, ["Other"], "jpg"), (3, ["Liner"], "jpg"), (4, ["Poster"], "jpg"), (5, ["Raw/Unedited"], "jpg"), (6, ["Poster"], "pdf")],
+            slots: [:], booklet: nil)
+        #expect(index.roomPhotos.map(\.imageID) == [2, 3, 4])
+        #expect(roomPhotoLimit == 3)
+    }
+
+    @Test func sameRoomNeedsAPhotoOnEitherSide() throws {
+        let one = try peekIndex(images: [(2, ["Other"], "jpg")], slots: [:], booklet: nil).roomPhotos
+        #expect(hasRoomPhotos(one, []))
+        #expect(hasRoomPhotos([], one))
+        #expect(!hasRoomPhotos([], []))
+    }
 }

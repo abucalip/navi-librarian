@@ -2,7 +2,9 @@ package app.discair.ui.artist
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -69,6 +71,7 @@ import app.discair.model.sentence
 import app.discair.model.view
 import app.discair.ui.Opener
 import app.discair.ui.common.PathAlbumCover
+import app.discair.ui.common.PathRowCover
 import app.discair.ui.common.ArtistPhoto
 import app.discair.ui.common.FilterChip
 import app.discair.ui.common.Load
@@ -232,14 +235,22 @@ private fun PathList(
     }
 }
 
-/** One step of the list: its number, a picture, the main name with one line of detail, and a chevron. One tap opens its pane. */
+/**
+ * One step of the list: its number, a picture, the main name with one line of detail, and a chevron. One tap opens its pane. A long
+ * press (also a TalkBack action) turns an album cover to the album's next alternate cover, when it has more than one.
+ */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun PathRow(number: Int, kind: PathKind, stop: PathStop, onClick: () -> Unit) {
     val heading = stop.heading(kind)
     val detail = rowDetail(kind, stop)
+    var cover by androidx.compose.runtime.remember { androidx.compose.runtime.mutableIntStateOf(0) }
     Row(
         Modifier.fillMaxWidth().heightIn(min = 64.dp)
-            .clickable(onClickLabel = "Open step $number", role = Role.Button, onClick = onClick)
+            .combinedClickable(
+                onClickLabel = "Open step $number", role = Role.Button, onClick = onClick,
+                onLongClickLabel = "Show next cover", onLongClick = { cover++ },
+            )
             .padding(vertical = 8.dp),
         horizontalArrangement = Arrangement.spacedBy(16.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -248,7 +259,7 @@ private fun PathRow(number: Int, kind: PathKind, stop: PathStop, onClick: () -> 
             "$number", style = MaterialTheme.typography.labelLarge, color = Ink.TextMuted,
             textAlign = TextAlign.End, modifier = Modifier.width(24.dp),
         )
-        PathThumb(kind, stop, 48)
+        PathThumb(kind, stop, 48, cover)
         Column(Modifier.weight(1f)) {
             Text(heading.title, style = MaterialTheme.typography.titleMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
             Text(detail, style = MaterialTheme.typography.bodyMedium, color = Ink.TextMuted, maxLines = 2, overflow = TextOverflow.Ellipsis)
@@ -272,21 +283,23 @@ internal fun rowDetail(kind: PathKind, stop: PathStop): String {
 
 /** The picture beside a step: the album cover or the artist's photo where the step has one to look up, else a plain tile. */
 @Composable
-internal fun PathThumb(kind: PathKind, stop: PathStop, size: Int) {
+internal fun PathThumb(kind: PathKind, stop: PathStop, size: Int, cover: Int = 0) {
     val modifier = Modifier.size(size.dp)
     when (kind) {
         PathKind.FollowTheMusician -> {
             val covers = stop.albums.ifEmpty { if (stop.album != null && stop.albumArtist != null) listOf(PathAlbum(stop.album, stop.albumArtist)) else emptyList() }
-            CandidateCover(covers, modifier) { PathTile(PlayerIcons.MusicNote, size) }
+            val first = covers.firstOrNull()
+            if (cover > 0 && first != null) PathRowCover(first.artist, first.album, cover, modifier)
+            else CandidateCover(covers, modifier) { PathTile(PlayerIcons.MusicNote, size) }
         }
         PathKind.LabelPath -> {
-            if (stop.albumArtist != null) PathAlbumCover(stop.albumArtist, stop.name, modifier) else PathTile(PlayerIcons.Album, size)
+            if (stop.albumArtist != null) PathRowCover(stop.albumArtist, stop.name, cover, modifier) else PathTile(PlayerIcons.Album, size)
         }
         PathKind.SidemanToLeader, PathKind.ScenePath -> ArtistPhoto(stop.name, null, modifier, circle = true)
         PathKind.CompositionPath -> {
             // A recording's cover is its album's, when the server named the album.
             val by = stop.albumArtist ?: stop.artist
-            if (stop.album != null && by != null) PathAlbumCover(by, stop.album, modifier) else PathTile(PlayerIcons.MusicNote, size)
+            if (stop.album != null && by != null) PathRowCover(by, stop.album, cover, modifier) else PathTile(PlayerIcons.MusicNote, size)
         }
     }
 }

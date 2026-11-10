@@ -144,7 +144,7 @@ struct PathsSheet: View {
         return HStack(spacing: 8) {
             Text("\(s.id + 1)").monospacedDigit().foregroundStyle(.secondary).frame(width: 22, alignment: .trailing)
             HStack(spacing: 8) {
-                thumb(s, 28)
+                PathRowThumb(step: s, size: 28) { thumb(s, 28) }
                 Text(s.name).lineLimit(1).truncationMode(.tail)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -176,6 +176,9 @@ struct PathsSheet: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 8) {
                     thumb(s, 104)
+                    if model.tabID == AlbumPathTab.sameRoom.id, model.subject == .album, let cover = s.cover {
+                        SameRoomPhotos(startTitle: model.title, startArtist: model.artist, otherTitle: cover.title, otherArtist: cover.artist)
+                    }
                     Text(s.name).font(.headline).lineLimit(2).fixedSize(horizontal: false, vertical: true)
                     Text([s.detail, s.year.map(String.init) ?? "", s.owned ? "In your library" : "Not in your library"].filter { !$0.isEmpty }.joined(separator: " · "))
                         .foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
