@@ -69,16 +69,24 @@ final class SystemMedia {
 
     /// Fetches the cover of a new song once; a late answer for a song that is no longer playing is dropped.
     private func loadCoverIfNeeded(for item: QueueItem) {
-        guard item.coverArt != coverID else { return }
+        // The owner's chosen cover (docs/artwork.md, idea 7) is what the system shows, so a new pick is a new cover. One cover per song:
+        // alternate sleeves per play are not built (open decision 2, off by default).
+        let key = Self.coverKey(item, pick: item.albumID.flatMap { artwork?.choices[$0] })
+        guard key != coverID else { return }
         coverTask?.cancel()
-        coverID = item.coverArt; coverImage = nil
-        guard let id = item.coverArt, let artwork else { return }
+        coverID = key; coverImage = nil
+        guard item.coverArt != nil || item.albumID != nil, let artwork else { return }
         coverTask = Task { [weak self] in
-            let image = await artwork.image(coverArt: id, px: Self.coverPixels)
-            guard !Task.isCancelled, let self, self.coverID == id, let image else { return }
+            let image = await artwork.libraryCover(albumID: item.albumID, coverArt: item.coverArt, px: Self.coverPixels)
+            guard !Task.isCancelled, let self, self.coverID == key, let image else { return }
             self.coverImage = Self.squareCover(image) ?? image
             self.update()
         }
+    }
+
+    /// What identifies the cover being shown: the song's cover id, its album and the owner's pick.
+    nonisolated static func coverKey(_ item: QueueItem, pick: Int?) -> String {
+        "\(item.coverArt ?? "")|\(item.albumID ?? "")|\(pick ?? 0)"
     }
 
     /// The cover cut to the largest centred square. The server scales a cover without cropping it, so a wide or tall one reached

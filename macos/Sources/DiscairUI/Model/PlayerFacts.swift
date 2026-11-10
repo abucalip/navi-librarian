@@ -27,6 +27,7 @@ public struct PlayerFact: Equatable, Sendable, Identifiable {
 public final class PlayerBarOptions {
     public static let lyricsKey = "discair.playerBar.lyricTicker"
     public static let factsKey = "discair.playerBar.facts"
+    public static let slideshowKey = "discair.nowPlaying.slideshow"
     @ObservationIgnored private let defaults: UserDefaults
 
     /// A one-line synced lyric in the middle of the bar when the song has timed lyrics.
@@ -34,8 +35,12 @@ public final class PlayerBarOptions {
     /// Facts about the song, album and artist, in the same place when no lyric line is showing.
     public var showFacts: Bool { didSet { defaults.set(showFacts, forKey: Self.factsKey) } }
 
+    /// The session and booklet photos drifting behind the lyrics on Now Playing (docs/artwork.md, idea 4); on until turned off.
+    public var showSlideshow: Bool { didSet { defaults.set(showSlideshow, forKey: Self.slideshowKey) } }
+
     public init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
+        showSlideshow = defaults.object(forKey: Self.slideshowKey) as? Bool ?? true
         showLyrics = defaults.object(forKey: Self.lyricsKey) as? Bool ?? true
         showFacts = defaults.object(forKey: Self.factsKey) as? Bool ?? true
     }

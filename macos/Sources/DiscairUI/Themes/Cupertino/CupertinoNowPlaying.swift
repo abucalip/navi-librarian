@@ -1,4 +1,5 @@
 import DiscairAudio
+import DiscairLibrarian
 import SwiftUI
 
 /// Now Playing: full-window blurred artwork, left-aligned bold lyrics beside the cover, EQ / crossfade / quality as
@@ -10,6 +11,13 @@ struct CupertinoNowPlaying: View {
         "A slow tide under the floorboards", "the lamp keeps counting what we left", "one long note, then the room agrees",
         "nobody here is in a hurry", "the water finds its level", "and the level finds us",
     ]
+
+    @Environment(\.artwork) private var artwork
+    /// The playing album's images (disc and slideshow); nil until found, and when the album has none.
+    @State private var albumArt: ArtworkIndex?
+
+    private var slides: [ArtworkPicture] { albumArt?.slideshowImages ?? [] }
+    private var slideshowOn: Bool { state.barOptions.showSlideshow && !slides.isEmpty }
 
     private var live: Bool { state.library.isLive || state.player.current != nil }
 
@@ -33,6 +41,14 @@ struct CupertinoNowPlaying: View {
             .padding(18)
 
             HStack(spacing: 10) {
+                if !slides.isEmpty {
+                    Button { state.barOptions.showSlideshow.toggle() } label: {
+                        chip("photo.on.rectangle.angled", state.barOptions.showSlideshow ? "Photos on" : "Photos off")
+                    }
+                    .buttonStyle(.plain).help("Session and booklet photos behind the lyrics")
+                    .accessibilityLabel("Photos behind the lyrics").accessibilityValue(state.barOptions.showSlideshow ? "On" : "Off")
+                    .accessibilityAddTraits(.isToggle)
+                }
                 if !live { chip("text.quote", "Lyrics") }
                 Button { state.queueOpen = true; state.screen = .albums } label: { chip("list.bullet", "Up Next") }.buttonStyle(.plain)
             }
@@ -64,6 +80,11 @@ struct CupertinoNowPlaying: View {
         .foregroundStyle(.white)
         .clipShape(RoundedRectangle(cornerRadius: CU.windowRadius, style: .continuous))
         .background(WindowConfigurator())
+        .task(id: "\(state.player.current?.artist ?? "")|\(state.player.current?.album ?? "")|\(artwork?.generation ?? 0)") {
+            albumArt = nil
+            guard live, let c = state.player.current, let artwork else { return }
+            albumArt = await artwork.nowPlayingIndex(artist: c.artist, album: c.album)
+        }
     }
 
     /// Soft radial colour fields from the cover's hues; the real cover, blurred, is laid over them once it loads.
@@ -76,7 +97,9 @@ struct CupertinoNowPlaying: View {
             RadialGradient(colors: [warm.opacity(0.9), .clear], center: UnitPoint(x: 0.1, y: 0.1), startRadius: 0, endRadius: 900)
             RadialGradient(colors: [deep.opacity(0.9), .clear], center: UnitPoint(x: 0.85, y: 0.95), startRadius: 0, endRadius: 800)
             if let id = a.coverArt, !id.isEmpty {
-                BlurredArtwork(album: a); Color.black.opacity(0.22)                 // the real cover, blurred, over the colour fields
+                BlurredArtwork(album: a)                                              // the real cover, blurred, over the colour fields
+                if slideshowOn { SlideshowBackdrop(slides: slides, playing: state.player.isPlaying) }
+                Color.black.opacity(slideshowOn ? 0.38 : 0.22)
             } else {
                 Color(red: 0.08, green: 0.06, blue: 0.04).opacity(0.35)
             }
@@ -175,6 +198,7 @@ struct CupertinoNowPlaying: View {
         return VStack(alignment: .leading, spacing: 0) {
             CoverView(album: a).clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
                 .shadow(color: .black.opacity(0.5), radius: 35, y: 30)
+                .discSleeve(albumArt?.discImage(disc: p.current?.disc), spinning: p.isPlaying)
             Text(p.current?.title ?? "Nothing playing").font(.system(size: 24, weight: .bold)).lineLimit(2).padding(.top, 22)
             if let c = p.current {
                 HStack(spacing: 0) {

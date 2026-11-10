@@ -355,3 +355,83 @@ public func fittedRect(image: CGSize, in frame: CGSize) -> CGRect {
     let size = CGSize(width: image.width * k, height: image.height * k)
     return CGRect(x: (frame.width - size.width) / 2, y: (frame.height - size.height) / 2, width: size.width, height: size.height)
 }
+
+// MARK: Now Playing (docs/artwork.md, ideas 3 and 4)
+
+/// The disc number a Medium image names in its comment or edition ("Disc 2", "CD2", "disk 02"), or nil when it names none.
+/// Plain string matching, no recognition of the picture itself.
+public func namedDisc(_ text: String) -> Int? {
+    guard let regex = try? NSRegularExpression(pattern: #"\b(?:disc|disk|cd)\s*(?:no\.?\s*)?0*(\d{1,2})\b"#, options: [.caseInsensitive]) else { return nil }
+    let whole = NSRange(text.startIndex..., in: text)
+    guard let hit = regex.firstMatch(in: text, range: whole), let r = Range(hit.range(at: 1), in: text) else { return nil }
+    return Int(text[r])
+}
+
+extension ArtworkIndex {
+    /// Medium images (vinyl label, CD face) that are bitmaps, in the server's order.
+    public var discImages: [ArtworkPicture] { images.filter { $0.types.contains("Medium") && !$0.isPDF } }
+
+    /// The record that Now Playing shows for the playing song. The Medium image whose comment or edition names the song's disc wins;
+    /// otherwise the album's Medium slot, else the first Medium image, but never one that names a different disc (a "Disc 1" label
+    /// is not shown while disc 2 plays). nil when the album has no Medium image. Chosen by type, comment and disc number only.
+    public func discImage(disc: Int?) -> ArtworkPicture? {
+        let media = discImages
+        guard !media.isEmpty else { return nil }
+        func named(_ p: ArtworkPicture) -> Int? { namedDisc(p.comment) ?? namedDisc(p.edition) }
+        if let disc, disc > 0, let match = media.first(where: { named($0) == disc }) { return match }
+        let usable = media.filter { picture in
+            guard let disc, disc > 0, let other = named(picture) else { return true }
+            return other == disc
+        }
+        if let slot = slotImage("Medium"), usable.contains(where: { $0.imageID == slot.imageID }) { return slot }
+        return usable.first
+    }
+
+    /// How many session and booklet photos the slideshow keeps: it drifts slowly, so a dozen is a long loop.
+    public static let slideshowLimit = 12
+    /// Images smaller than this on their longer side (when the index says) are labels or thumbnails, not photos for a backdrop.
+    static let slideshowMinimumSide = 400
+
+    /// The images the Now Playing backdrop drifts through behind the lyrics (idea 4): the booklet pages, then Other, Liner and Poster
+    /// images, each once, never a PDF. Fewer than two is not a slideshow; the blurred cover stays then (`slideshowImages` is empty).
+    public var slideshowImages: [ArtworkPicture] {
+        var seen = Set<Int>()
+        let extras = images.filter { !$0.types.isDisjoint(with: ["Other", "Liner", "Poster"]) }
+        let found = (bookletImages + extras).filter { picture in
+            guard !picture.isPDF, seen.insert(picture.imageID).inserted else { return false }
+            if let w = picture.width, let h = picture.height, max(w, h) < Self.slideshowMinimumSide { return false }
+            return true
+        }
+        return found.count >= 2 ? Array(found.prefix(Self.slideshowLimit)) : []
+    }
+}
+
+private extension Array where Element == String {
+    func isDisjoint(with other: [String]) -> Bool { Set(self).isDisjoint(with: other) }
+}
+
+/// Where the slideshow is at `elapsed` seconds of running time: slide `index` is shown, cross-fading into `next` over the last
+/// `fade` seconds of its `hold`; `progress` (0...1) is how far through its time the slide is, for the slow drift.
+public struct SlideshowFrame: Equatable, Sendable {
+    public let index: Int
+    public let next: Int
+    public let mix: Double
+    public let progress: Double
+}
+
+public func slideshowFrame(elapsed: Double, count: Int, hold: Double = 14, fade: Double = 3) -> SlideshowFrame? {
+    guard count > 0, hold > 0 else { return nil }
+    let t = max(0, elapsed)
+    let slot = Int(t / hold)
+    let within = t - Double(slot) * hold
+    let fadeStart = max(0, hold - fade)
+    let mix = (fade > 0 && within > fadeStart) ? min(1, (within - fadeStart) / fade) : 0
+    return SlideshowFrame(index: slot % count, next: (slot + 1) % count, mix: mix, progress: within / hold)
+}
+
+/// The record's angle in degrees: `base` when it stopped, plus the turn since `since` (seconds) while it runs (`since` is nil when
+/// stopped). `rpm` revolutions per minute.
+public func discAngle(base: Double, since: Double?, now: Double, rpm: Double) -> Double {
+    guard let since else { return base.truncatingRemainder(dividingBy: 360) }
+    return (base + max(0, now - since) * rpm * 6).truncatingRemainder(dividingBy: 360)
+}
