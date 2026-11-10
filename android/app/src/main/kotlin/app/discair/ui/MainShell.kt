@@ -271,11 +271,12 @@ fun MainShell(state: UiState, model: AppViewModel, container: AppContainer) {
                 },
             ) {
                 composable<HomeRoute> {
-                    Opaque { HomeScreen(open, onDiscover = { goPage(DiscoverRoute) }, onLibrary = { goPage(LibraryRoute) }, onSettings = { goPage(SettingsRoute) }) }
+                    Opaque { HomeScreen(open, onDiscover = { goPage(DiscoverRoute) }, onLibrary = { goPage(LibraryRoute) }, onSettings = { goPage(SettingsRoute) }, onRadio = { nav.navigate(RadioRoute) { launchSingleTop = true } }) }
                 }
                 composable<DiscoverRoute> { Opaque { DiscoverScreen(open) } }
                 composable<LibraryRoute> { Opaque { LibraryScreen(open) } }
                 composable<DownloadsRoute> { Opaque { DownloadsScreen(open) } }
+                composable<RadioRoute> { Opaque { app.discair.ui.radio.RadioScreen(onBack = { nav.popBackStack() }) } }
                 composable<SettingsRoute> { Opaque { SettingsScreen(state, model, onBack = { nav.popBackStack() }, onEqualizer = { nav.navigate(EqualizerRoute) { launchSingleTop = true } }, onCrossfade = { nav.navigate(CrossfadeRoute) { launchSingleTop = true } }, onAppearance = { nav.navigate(AppearanceRoute) { launchSingleTop = true } }) } }
                 composable<AppearanceRoute> { Opaque { app.discair.ui.settings.AppearanceScreen(container.appearance, onBack = { nav.popBackStack() }) } }
                 composable<EqualizerRoute> { Opaque { app.discair.ui.player.EqualizerScreen(container, onBack = { nav.popBackStack() }) } }
