@@ -1,7 +1,7 @@
 import Foundation
 import NetFS
 
-/// The music folder over SMB (contract sections 7 and 10). Optional: waveforms and quick tag reads only, never playback.
+/// The music folder over SMB (contract sections 7 and 10). Optional: quick tag reads only, never playback (waveforms come from the Librarian).
 
 // MARK: Address
 

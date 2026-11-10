@@ -158,7 +158,7 @@ struct ZineSettings: View {
             }
             Mono(share.username.map { "Login saved for \($0)" } ?? "No share login saved", size: 10)
             if let e = share.settingsError { Mono(e, bold: true).foregroundStyle(Z.red) }
-            Text("Optional. Mounted by the app, read only for waveforms and quick tag reads (coming later). Playback never needs it. Login kept in the Keychain.").font(Z.serif(12.5, italic: true))
+            Text("Optional. Mounted by the app, read only for quick tag reads (coming later). Playback never needs it. Login kept in the Keychain.").font(Z.serif(12.5, italic: true))
         }
         .onAppear {
             shareAddress = share.settings.address; shareServerRoot = share.settings.serverRoot; shareLocalRoot = share.settings.localRoot

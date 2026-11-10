@@ -1,5 +1,6 @@
 import DiscairAudio
 import DiscairCore
+import DiscairLibrarian
 import DiscairNavidrome
 import Foundation
 import Testing
@@ -391,70 +392,61 @@ struct WaveformPlaybackTests {
         return c
     }
 
-    private func make(cache: WaveformCache, url: URL?, compute: @escaping @Sendable (URL) -> [Float]?) throws -> PlayerModel {
+    private func make(cache: WaveformCache, fetch: @escaping @Sendable (String) async -> SongPeaks) throws -> PlayerModel {
         let p = PlayerModel(output: FakeOutput(), fetcher: FakeFetcher(), defaults: UserDefaults(suiteName: "discair-test-\(UUID().uuidString)")!, waveformCache: cache)
         p.configure(urls: try streamBuilder())
-        p.waveformFileURL = { _ in url }
-        p.waveformCompute = compute
+        p.waveformFetch = fetch
+        p.waveformRetry = .milliseconds(50)
         return p
     }
 
     private let peaks = [Float](repeating: 0.5, count: 1000)
 
-    @Test func aReadableFileGivesAWaveformAndItIsCached() async throws {
+    @Test func serverPeaksGiveAWaveformAndItIsCached() async throws {
         let c = cache()
-        let p = try make(cache: c, url: URL(fileURLWithPath: "/x/a.flac")) { [peaks] _ in peaks }
+        let p = try make(cache: c) { [peaks] _ in .ready(peaks) }
         p.play(songs(1))
         await until { p.waveform != nil }
         #expect(p.waveform?.count == 1000)
-        await until { c.peaks(songID: "s0") != nil }
         #expect(c.peaks(songID: "s0")?.count == 1000)
     }
 
-    @Test func noFileOnTheMountMeansNoWaveform() async throws {
-        let p = try make(cache: cache(), url: nil) { [peaks] _ in peaks }
+    @Test func noPeaksOnTheServerMeansNoWaveform() async throws {
+        let p = try make(cache: cache()) { _ in .unavailable }
         p.play(songs(1))
         await until { p.phase == .playing }
-        try await Task.sleep(for: .milliseconds(600))
+        try await Task.sleep(for: .milliseconds(300))
         #expect(p.waveform == nil)
     }
 
-    @Test func aFailedReadMeansNoWaveformNotAMadeUpOne() async throws {
-        let p = try make(cache: cache(), url: URL(fileURLWithPath: "/x/a.flac")) { _ in nil }
-        p.play(songs(1))
-        await until { p.phase == .playing }
-        try await Task.sleep(for: .milliseconds(600))
-        #expect(p.waveform == nil)
-    }
-
-    @Test func aCachedWaveformShowsAtOnceWithoutTheShare() async throws {
+    @Test func aCachedWaveformShowsAtOnceWithoutAsking() async throws {
         let c = cache()
         c.put(peaks, songID: "s0")
-        let p = try make(cache: c, url: nil) { _ in nil }
+        let p = try make(cache: c) { _ in .unavailable }
         p.play(songs(1))
         await until { p.waveform != nil }
         #expect(p.waveform?.count == 1000)
     }
 
-    @Test func aLateWaveformIsCachedButNotShown() async throws {
-        let c = cache()
-        let p = try make(cache: c, url: URL(fileURLWithPath: "/x/a.flac")) { [peaks] _ in Thread.sleep(forTimeInterval: 0.4); return peaks }
-        p.waveformBudget = .milliseconds(100)
+    @Test func aPendingAnswerIsAskedAgainUntilReady() async throws {
+        let calls = PeakCallCounter()
+        let p = try make(cache: cache()) { [peaks] _ in await calls.next() < 3 ? .pending : .ready(peaks) }
         p.play(songs(1))
-        await until { c.peaks(songID: "s0") != nil }
-        try await Task.sleep(for: .milliseconds(300))
-        #expect(c.peaks(songID: "s0") != nil)
-        #expect(p.waveform == nil)
+        await until { p.waveform != nil }
+        #expect(p.waveform?.count == 1000)
     }
 
     @Test func theWaveformIsDroppedWhenTheSongChanges() async throws {
-        let c = cache()
-        let p = try make(cache: c, url: URL(fileURLWithPath: "/x/a.flac")) { [peaks] _ in peaks }
+        let p = try make(cache: cache()) { [peaks] id in id == "s0" ? .ready(peaks) : .unavailable }
         p.play(songs(2))
         await until { p.waveform != nil }
-        p.waveformFileURL = { _ in nil }
         p.next()
         await until { p.current?.title == "T1" && p.waveform == nil }
         #expect(p.waveform == nil)
     }
+}
+
+private actor PeakCallCounter {
+    private var n = 0
+    func next() -> Int { n += 1; return n }
 }

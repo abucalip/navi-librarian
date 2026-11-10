@@ -160,7 +160,7 @@ struct CupertinoSettings: View {
             Text(share.username.map { "Login saved for \($0)." } ?? "No share login saved.").font(.system(size: 12)).foregroundStyle(CU.muted)
             Button("Save folder settings") { saveShare() }.buttonStyle(CapsuleButtonStyle(small: true))
             if let e = share.settingsError { Text(e).font(.system(size: 12)).foregroundStyle(CU.accent) }
-            Text("Optional. The app mounts the share itself, like Finder's Connect to Server, and only reads from it (waveforms and quick tag reads, coming later). Playback never needs it. The login is kept in the Keychain on this Mac.")
+            Text("Optional. The app mounts the share itself, like Finder's Connect to Server, and only reads from it (quick tag reads, coming later). Playback never needs it. The login is kept in the Keychain on this Mac.")
                 .font(.system(size: 12)).foregroundStyle(CU.muted)
         }
         .textFieldStyle(.roundedBorder).autocorrectionDisabled()
