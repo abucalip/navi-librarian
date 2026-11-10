@@ -182,6 +182,13 @@ class RadioStore:
                 (station_id, station_name, raw_title, artist, title, seconds, now - seconds, now))
             return cursor.lastrowid
 
+    def add_listened(self, play_id: int, seconds: int, now: float) -> None:
+        """Extend a logged play by the seconds heard after it was logged (the threshold part)."""
+        with self._connect() as db:
+            db.execute(
+                "UPDATE radio_plays SET listened_seconds = listened_seconds + ?, last_heard_at = ? "
+                "WHERE id = ?", (seconds, now, play_id))
+
     def list_plays(self, limit: int = 100) -> list[dict[str, Any]]:
         with self._connect() as db:
             rows = db.execute("SELECT * FROM radio_plays ORDER BY heard_at DESC, id DESC LIMIT ?",

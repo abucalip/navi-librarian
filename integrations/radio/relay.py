@@ -32,12 +32,14 @@ async def relay_body(upstream, metaint: int, client_wants_metadata: bool, tracke
     try:
         async for chunk in upstream.aiter_raw():
             if parser is None:
+                tracker.tick()
                 yield chunk
                 continue
             events = parser.feed(chunk)
             for kind, data in events:
                 if kind == "meta":
                     tracker.set_title(stream_title(data))
+            tracker.tick()
             if client_wants_metadata:
                 yield chunk
             else:
