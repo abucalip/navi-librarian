@@ -15,6 +15,9 @@ import com.google.common.util.concurrent.MoreExecutors
 /** Key in a media item's request extras that asks the service for the MP3 fallback for that item only. */
 const val EXTRA_FORMAT = "discair.format"
 
+/** Key in a media item's request extras that carries a radio stream address to the service. */
+const val EXTRA_LIVE_URL = "discair.live_url"
+
 /**
  * Talks to [PlaybackService] through a [MediaController]. Commands given before the connection is up
  * wait in order and run once it connects. Items carry only the song id (as the media id) and display
@@ -81,8 +84,11 @@ class Media3Port(context: Context) : PlayerPort {
         if (c != null) block(c) else waiting.addLast(block)
     }
 
-    private fun mediaItem(item: QueueItem, mp3: Boolean = false): MediaItem {
-        val extras = Bundle().apply { if (mp3) putString(EXTRA_FORMAT, TranscodeFormat.Mp3.wire) }
+    private fun mediaItem(item: QueueItem, mp3: Boolean = false, artwork: ByteArray? = null): MediaItem {
+        val extras = Bundle().apply {
+            if (mp3) putString(EXTRA_FORMAT, TranscodeFormat.Mp3.wire)
+            if (item.isRadio && item.liveUrl.isNotBlank()) putString(EXTRA_LIVE_URL, item.liveUrl)
+        }
         // The album id and the server's length let the service apply the crossfade rules without a server call.
         val meta = Bundle().apply { if (item.albumId.isNotBlank()) putString(EXTRA_ALBUM_ID, item.albumId) }
         return MediaItem.Builder()
@@ -90,7 +96,10 @@ class Media3Port(context: Context) : PlayerPort {
             .setRequestMetadata(MediaItem.RequestMetadata.Builder().setExtras(extras).build())
             .setMediaMetadata(
                 MediaMetadata.Builder().setTitle(item.title).setArtist(item.artist).setAlbumTitle(item.album)
-                    .setExtras(meta).apply { if (item.durationSec > 0) setDurationMs(item.durationSec * 1000L) }.build(),
+                    .setExtras(meta).apply {
+                        if (item.durationSec > 0) setDurationMs(item.durationSec * 1000L)
+                        if (artwork != null) setArtworkData(artwork, MediaMetadata.PICTURE_TYPE_FRONT_COVER)
+                    }.build(),
             )
             .build()
     }
@@ -120,6 +129,11 @@ class Media3Port(context: Context) : PlayerPort {
         c.prepare()
         c.play()
         return true
+    }
+
+    override fun updateItem(index: Int, item: QueueItem, artwork: ByteArray?) = run { c ->
+        // Same address and id, new words: the player updates the item in place and the stream keeps playing.
+        if (index in 0 until c.mediaItemCount) c.replaceMediaItem(index, mediaItem(item, artwork = artwork))
     }
 
     override fun retry() = run { it.prepare(); it.play() }

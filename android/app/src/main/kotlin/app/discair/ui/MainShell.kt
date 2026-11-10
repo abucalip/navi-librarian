@@ -1,5 +1,6 @@
 package app.discair.ui
 
+import coil3.toBitmap
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.ui.graphics.Color
@@ -156,6 +157,16 @@ fun MainShell(state: UiState, model: AppViewModel, container: AppContainer) {
             sonicPath = { start, end, count -> repo.sonicPath(start, end, count) },
         )
     }
+    val radio = remember(repo) {
+        app.discair.player.RadioPlayback(
+            player, scope, Dispatchers.IO,
+            nowFor = { id -> repo.radioNowFor(id) },
+            getPlay = { id -> repo.radioGetPlay(id) },
+            saveFavourite = { id, wanted -> repo.setRadioFavourite(id, wanted) },
+            absolute = { repo.absolute(it) },
+            artwork = { url -> radioArtworkBytes(context, container.imageLoader, url) },
+        )
+    }
     val playerExtras = remember(repo) { app.discair.ui.player.PlayerExtras(peaks = { repo.songPeaks(it) }, facts = { repo.songFacts(it) }) }
     LaunchedEffect(playActions) { playActions.messages.collect { snackbar.showSnackbar(it) } }
     var islandPx by remember { mutableStateOf(0) }
@@ -195,6 +206,7 @@ fun MainShell(state: UiState, model: AppViewModel, container: AppContainer) {
     CompositionLocalProvider(
         LocalBottomClearance provides clearance, LocalRepository provides repo, LocalImageLoader provides container.imageLoader, LocalAcquisitions provides hub,
         app.discair.ui.player.LocalPlayActions provides playActions,
+        app.discair.ui.radio.LocalRadio provides radio,
         app.discair.ui.player.LocalPlayingNow provides playerState.current?.let {
             app.discair.ui.player.PlayingNow(it.albumId, it.title, playerState.isPlaying, it.track, it.disc)
         },
@@ -203,7 +215,10 @@ fun MainShell(state: UiState, model: AppViewModel, container: AppContainer) {
         if (nowPlayingOpen && playerState.visible) {
             // The sheet is drawn over an artwork tint, which is dark whatever the theme: it keeps light text.
             app.discair.ui.theme.OnArtwork(keepBrutal = true) {
-                NowPlayingSheet(
+                if (playerState.current?.isRadio == true) app.discair.ui.radio.RadioNowPlayingSheet(
+                    playerState, player, radio, onDismiss = { nowPlayingOpen = false },
+                    onOpenHeard = { nowPlayingOpen = false; nav.navigate(HeardRoute) { launchSingleTop = true } },
+                ) else NowPlayingSheet(
                     playerState, player, container.lyrics, extras = playerExtras, settings = container.playerSettings, onDismiss = { nowPlayingOpen = false }, onSignIn = { nowPlayingOpen = false; model.sessionExpired() },
                     onOpenArtist = { song -> nowPlayingOpen = false; open.artist(song.artist, null, null, null) },
                     onOpenAlbum = { song ->
@@ -276,7 +291,8 @@ fun MainShell(state: UiState, model: AppViewModel, container: AppContainer) {
                 composable<DiscoverRoute> { Opaque { DiscoverScreen(open) } }
                 composable<LibraryRoute> { Opaque { LibraryScreen(open) } }
                 composable<DownloadsRoute> { Opaque { DownloadsScreen(open) } }
-                composable<RadioRoute> { Opaque { app.discair.ui.radio.RadioScreen(onBack = { nav.popBackStack() }) } }
+                composable<RadioRoute> { Opaque { app.discair.ui.radio.RadioScreen(onBack = { nav.popBackStack() }, onOpenHeard = { nav.navigate(HeardRoute) { launchSingleTop = true } }, onOpenPlayer = { nowPlayingOpen = true }) } }
+                composable<HeardRoute> { Opaque { app.discair.ui.radio.HeardScreen(radio, onBack = { nav.popBackStack() }) } }
                 composable<SettingsRoute> { Opaque { SettingsScreen(state, model, onBack = { nav.popBackStack() }, onEqualizer = { nav.navigate(EqualizerRoute) { launchSingleTop = true } }, onCrossfade = { nav.navigate(CrossfadeRoute) { launchSingleTop = true } }, onAppearance = { nav.navigate(AppearanceRoute) { launchSingleTop = true } }) } }
                 composable<AppearanceRoute> { Opaque { app.discair.ui.settings.AppearanceScreen(container.appearance, onBack = { nav.popBackStack() }) } }
                 composable<EqualizerRoute> { Opaque { app.discair.ui.player.EqualizerScreen(container, onBack = { nav.popBackStack() }) } }
@@ -391,4 +407,11 @@ private fun SearchSheet(text: String, onText: (String) -> Unit, open: Opener, on
         app.discair.ui.common.TransparentNavigationBar()
         CompositionLocalProvider(LocalBottomClearance provides 0.dp) { SearchScreen(open, text, onText) }
     }
+}
+
+/** A station logo or song cover as JPEG bytes for the notification and lock screen; null when it cannot be loaded. Kept small: it crosses the session. */
+private suspend fun radioArtworkBytes(context: android.content.Context, loader: coil3.ImageLoader, url: String): ByteArray? {
+    val result = loader.execute(coil3.request.ImageRequest.Builder(context).data(url).size(512).build())
+    val bitmap = (result as? coil3.request.SuccessResult)?.image?.toBitmap() ?: return null
+    return java.io.ByteArrayOutputStream().also { bitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 85, it) }.toByteArray()
 }

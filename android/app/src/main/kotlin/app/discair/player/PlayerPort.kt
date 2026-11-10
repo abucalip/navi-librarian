@@ -20,6 +20,9 @@ interface PlayerPort {
     /** After a dropped connection: prepare again and resume from the current position. */
     fun retry()
 
+    /** Radio: changes the shown title, artist and picture of the item at [index] without restarting the stream. */
+    fun updateItem(index: Int, item: QueueItem, artwork: ByteArray?) {}
+
     fun play()
     fun pause()
     fun seekTo(ms: Long)

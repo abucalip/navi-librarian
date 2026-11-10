@@ -150,6 +150,7 @@ class PlayerController(
     fun livePositionMs(): Long = port.positionMs
 
     fun seekTo(ms: Long) {
+        if (_state.value.current?.isRadio == true) return // a live stream has no position to move
         val target = ms.coerceIn(0, _state.value.durationMs.takeIf { it > 0 } ?: Long.MAX_VALUE)
         port.seekTo(target)
         scrobbler.onSeek(target)
@@ -226,7 +227,23 @@ class PlayerController(
         persist()
     }
 
+    /**
+     * Radio: shows the live song under the station name and swaps the picture (station logo, or the song's cover), without
+     * restarting the stream. [artwork] is the picture's bytes for the notification and lock screen, when the caller has them.
+     */
+    fun updateLive(stationId: String, songLine: String?, coverUrl: String, artwork: ByteArray?) {
+        val queue = _state.value.queue
+        val index = queue.items.indexOfFirst { it.songId == RADIO_ID_PREFIX + stationId }
+        if (index < 0) return
+        val old = queue.items[index]
+        val item = old.copy(artist = songLine.orEmpty(), coverUrl = coverUrl)
+        if (item == old && artwork == null) return
+        _state.update { it.copy(queue = it.queue.copy(items = it.queue.items.toMutableList().also { list -> list[index] = item })) }
+        port.updateItem(index, item, artwork)
+    }
+
     override fun onDuration(durationMs: Long) {
+        if (_state.value.current?.isRadio == true) return
         _state.update { it.copy(durationMs = durationMs) }
         if (durationMs > 0) scrobbler.onPlayerDuration((durationMs / 1000).toInt())
     }
@@ -275,6 +292,7 @@ class PlayerController(
         if (!pendingStart) return
         val item = _state.value.current ?: return
         pendingStart = false
+        if (item.isRadio) { scrobbler.endPlay(); return } // radio songs are scrobbled by the server, never by this app
         scrobbler.startPlay(item.songId, item.durationSec, clock())
         scrobbler.onPlaying()
     }
@@ -286,7 +304,7 @@ class PlayerController(
                 delay(tickMs)
                 val pos = port.positionMs
                 scrobbler.onTick(pos, advancing = port.isPlaying && !_state.value.buffering)
-                val duration = port.durationMs.takeIf { it > 0 }
+                val duration = port.durationMs.takeIf { it > 0 && _state.value.current?.isRadio != true }
                 _state.update { it.copy(positionMs = pos, durationMs = duration ?: it.durationMs) }
                 duration?.let { scrobbler.onPlayerDuration((it / 1000).toInt()) }
                 if (++ticks % saveEveryTicks == 0) persist()
@@ -306,7 +324,7 @@ class PlayerController(
     private fun persist() {
         val s = _state.value
         val q = s.queue.withPosition(s.positionMs)
-        if (q.isEmpty) return
+        if (q.isEmpty || q.current?.isRadio == true) return // a station is not saved: its address holds a relay token
         try { storage.write(QueueCodec.encode(q)) } catch (e: Exception) { /* never blocks playback */ }
     }
 }

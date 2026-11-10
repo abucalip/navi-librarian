@@ -33,6 +33,7 @@ internal class FakePort : PlayerPort {
     override fun setRepeat(mode: RepeatMode) { log += "repeat $mode" }
     override fun setVolume(volume: Float) { log += "volume $volume" }
     override fun clear() { log += "clear"; items = emptyList(); isPlaying = false }
+    override fun updateItem(index: Int, item: QueueItem, artwork: ByteArray?) { log += "update $index ${item.artist} art=${artwork != null}" }
     override fun release() { released = true }
 }
 

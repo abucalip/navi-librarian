@@ -26,7 +26,15 @@ data class QueueItem(
     /** Track and disc on the album, so two versions of one title on an album can be told apart. */
     val track: Int? = null,
     val disc: Int? = null,
-)
+    /** A live radio stream address. Never saved with the queue (a relay token is not stored) and never logged. Empty for a song. */
+    @kotlinx.serialization.Transient val liveUrl: String = "",
+) {
+    /** A radio station, not a song: no seek bar, no scrobble to Navidrome, no saved queue (docs/RADIO_PLAYBACK_CONTRACT.md section 4). */
+    val isRadio: Boolean get() = songId.startsWith(RADIO_ID_PREFIX)
+}
+
+/** Ids of radio items start with this; a song id can never contain a colon (see `isValidSongId`). */
+const val RADIO_ID_PREFIX = "radio:"
 
 /** Result of an add: the new state and whether the 500-song cap cut the request short. */
 data class AddResult(val state: QueueState, val capped: Boolean)
