@@ -227,3 +227,11 @@ Earlier project log entries are preserved verbatim in [PROJECT_LOG_HISTORY.md](d
 - Tests actually run, filtered: macOS `NowPlayingArtworkTests` (12), `NowPlayingArtworkUITests` (4), `SystemMediaTests`, `ArtworkBackdropTests`, `FlipCoverTests`, `EditionPickerTests`, `PlayerBarRefinementTests`; Android `NowPlayingArtworkTest` (10), `CoverFacesTest`, `PlayerSettingsTest`, `PlayerLineTest`. Not run: full suites, lint, release build. Not checked on a device or in a window.
 - Open: disc motion, the blurred drift, the button placement and TalkBack wording are owner checks; the Mac's system tile picks up a new cover pick at the next Now Playing update; no disc on Android Sheet Stack or Sticker Wall; alternate sleeves per play not built (open decision 2).
 - Next: slice 6 (artist collage, Discover peeks, Paths, Timeline).
+
+## 2026-11-10 — Artwork liner note of the day and edition covers (slice 7); artwork plan closed
+
+- Merged as PR [#962](https://github.com/abucalip/navi-librarian/pull/962) (idea 12), squash `0b80701f55d60ffcf515bdd1abd0a2090ab4686c`, and PR [#961](https://github.com/abucalip/navi-librarian/pull/961) (idea 13), squash `7eba84257a07a66a2b8ab24150617982ab627d2d`; required CI passed on both heads.
+- Review before merge: both diffs read in full; both PRs mergeable with no conflicts (they make the same one-line `MBID` visibility change); Android Get already sends the release group through `pageMetadata`. No defects found.
+- Tests actually run, filtered: macOS `swift test --filter LinerNote` (5 pass) and `--filter EditionCover` (6 pass), re-run during review; the authors report Android `LinerNoteTest`, `EditionCoversTest`, `PathArtworkTest` passing. Not run: full suites, anything on a device or in a window.
+- Open: the Sticker Wall peel-off look for the liner note is not built; the Downloads covers show the album's editions, not the fetched pressing (the server does not record it); open decisions 1 to 4 in `artwork.md` stay with the owner.
+- `docs/artwork.md` marked complete: every slice and client idea is merged. Next: the owner's manual checks; no artwork code is left to build.
