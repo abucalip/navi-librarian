@@ -207,8 +207,15 @@ fun NowPlayingSheet(state: PlayerUiState, controller: PlayerController, lyrics: 
             { showLyrics = !showLyrics; settings.showLyricLine = showLyrics }, { showFacts = !showFacts; settings.showFacts = showFacts },
         )
         val blurred = canBlur && !sticker && item.coverUrl.isNotBlank()
+        // The playing album's disc and session photos (docs/artwork.md, ideas 3 and 4); nothing extra while they load or when there are none.
+        val artIndex = rememberAlbumArtIndex(item)
+        val slides = remember(artIndex) { app.discair.model.slideshowImages(artIndex) }
+        val disc = remember(artIndex, item.disc) { app.discair.model.discImage(artIndex, item.disc) }
+        var showSlides by remember { mutableStateOf(settings.showSlideshow) }
+        val slideshowOn = blurred && showSlides && slides.isNotEmpty()
         Box {
         if (blurred) ArtworkBackdrop(playerArtworkUrl(item.coverUrl))
+        if (slideshowOn) SlideshowBackdrop(slides, state.isPlaying)
         Column(
             Modifier.fillMaxWidth().drawBehind {
                 if (blurred) return@drawBehind
@@ -230,7 +237,17 @@ fun NowPlayingSheet(state: PlayerUiState, controller: PlayerController, lyrics: 
                     ViewIcons(view) { view = it; lastView = it }
                 }
                 Spacer(Modifier.weight(1f))
-                Spacer(Modifier.size(Target)) // balances the close button so the tabs sit in the middle
+                if (blurred && slides.isNotEmpty()) {
+                    // Photos behind the lyrics: on or off, kept on the phone.
+                    app.discair.ui.common.PlayerIconButton(
+                        onClick = { showSlides = !showSlides; settings.showSlideshow = showSlides }, Modifier.size(Target), selected = showSlides,
+                    ) {
+                        Icon(
+                            PlayerIcons.Photos, contentDescription = "Photos behind the lyrics",
+                            modifier = Modifier.semantics { stateDescription = if (showSlides) "On" else "Off" },
+                        )
+                    }
+                } else Spacer(Modifier.size(Target)) // balances the close button so the tabs sit in the middle
             }
             Spacer(Modifier.height(16.dp)) // the tabs must not touch the cover, the lyrics note or the queue title
             if (sticker) StickerPlayer(
@@ -259,7 +276,7 @@ fun NowPlayingSheet(state: PlayerUiState, controller: PlayerController, lyrics: 
             ) else if (tape) TapePlayer(
                 state, controller, showLyrics = view == 1, onToggleLyrics = { view = app.discair.ui.common.TapeDeckRules.toggleLyrics(view); lastView = view },
                 onSignIn = onSignIn, onEqualizer = { eqOpen = true }, onCrossfade = { crossfadeOpen = true },
-                onOpenArtist = onOpenArtist, onOpenAlbum = onOpenAlbum, onCoverColor = { tint = it }, line = lineUi,
+                onOpenArtist = onOpenArtist, onOpenAlbum = onOpenAlbum, onCoverColor = { tint = it }, line = lineUi, disc = disc,
                 lyricsPanel = {
                     LyricsPanel(
                         if (lyricsState.songIdOrNull() == songId) lyricsState else LyricsUiState.Idle,
@@ -270,6 +287,7 @@ fun NowPlayingSheet(state: PlayerUiState, controller: PlayerController, lyrics: 
             ) else Player(
                 state, controller, onSignIn, { eqOpen = true }, { crossfadeOpen = true }, onOpenArtist, onOpenAlbum, lineUi,
                 card = {
+                    DiscSleeve(disc, state.isPlaying) {
                     FlipCard(
                         progress = flip.value,
                         onDrag = { next -> scope.launch { flip.snapTo(next) } },
@@ -290,6 +308,7 @@ fun NowPlayingSheet(state: PlayerUiState, controller: PlayerController, lyrics: 
                         },
                         queueFace = { QueuePanel(state, controller, Modifier.fillMaxSize().padding(horizontal = 16.dp)) },
                     )
+                    }
                 },
             )
         }

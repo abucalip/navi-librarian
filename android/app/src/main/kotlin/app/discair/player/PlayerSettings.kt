@@ -20,6 +20,9 @@ interface PlayerSettings {
     var showLyricLine: Boolean
     var showFacts: Boolean
 
+    /** The session and booklet photos drifting behind the lyrics on Now Playing (docs/artwork.md, idea 4). On by default. */
+    var showSlideshow: Boolean
+
     /** Called after any setting is saved; close the result to stop. */
     fun onChange(listener: () -> Unit): AutoCloseable
 }
@@ -60,6 +63,10 @@ class PrefsPlayerSettings(private val prefs: SharedPreferences) : PlayerSettings
         get() = prefs.getBoolean(KEY_LINE_FACTS, true)
         set(value) { prefs.edit().putBoolean(KEY_LINE_FACTS, value).apply() }
 
+    override var showSlideshow: Boolean
+        get() = prefs.getBoolean(KEY_SLIDESHOW, true)
+        set(value) { prefs.edit().putBoolean(KEY_SLIDESHOW, value).apply() }
+
     override fun onChange(listener: () -> Unit): AutoCloseable {
         val l = SharedPreferences.OnSharedPreferenceChangeListener { _, _ -> listener() }
         prefs.registerOnSharedPreferenceChangeListener(l)
@@ -74,6 +81,7 @@ class PrefsPlayerSettings(private val prefs: SharedPreferences) : PlayerSettings
         const val KEY_XFADE_ALBUM = "crossfade_skip_same_album"
         const val KEY_LINE_LYRICS = "player_line_lyrics"
         const val KEY_LINE_FACTS = "player_line_facts"
+        const val KEY_SLIDESHOW = "player_slideshow"
     }
 }
 
@@ -96,6 +104,8 @@ class MemoryPlayerSettings(
     override var showLyricLine: Boolean = true
         set(value) { field = value; changed() }
     override var showFacts: Boolean = true
+        set(value) { field = value; changed() }
+    override var showSlideshow: Boolean = true
         set(value) { field = value; changed() }
 
     override fun onChange(listener: () -> Unit): AutoCloseable {

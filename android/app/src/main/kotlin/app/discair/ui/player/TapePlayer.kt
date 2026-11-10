@@ -71,7 +71,7 @@ fun TapePlayer(
     state: PlayerUiState, controller: PlayerController, showLyrics: Boolean, onToggleLyrics: () -> Unit,
     onSignIn: () -> Unit, onEqualizer: () -> Unit, onCrossfade: () -> Unit,
     onOpenArtist: (QueueItem) -> Unit, onOpenAlbum: (QueueItem) -> Unit,
-    onCoverColor: (Color) -> Unit, line: LineUi, lyricsPanel: @Composable () -> Unit,
+    onCoverColor: (Color) -> Unit, line: LineUi, lyricsPanel: @Composable () -> Unit, disc: app.discair.model.ArtworkImage? = null,
 ) {
     val item = state.current ?: return
     val p = LocalPalette.current
@@ -113,6 +113,8 @@ fun TapePlayer(
                             .wrapContentHeight(Alignment.CenterVertically),
                     )
                 }
+                // The disc label (docs/artwork.md, idea 3): it turns while the song plays and stands still otherwise.
+                if (disc != null) DiscImage(disc, 56.dp, state.isPlaying, Modifier.padding(start = 8.dp))
             }
             if (item.album.isNotBlank()) Text(
                 listOfNotNull(item.album, item.year?.toString()).joinToString(" · "), style = MaterialTheme.typography.bodySmall, color = muted,
