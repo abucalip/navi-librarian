@@ -1,3 +1,4 @@
+import CoreGraphics
 import DiscairCore
 import Foundation
 
@@ -253,4 +254,58 @@ extension LibrarianClient {
         }
         return ArtworkImageData(data: data, contentType: http.value(forHTTPHeaderField: "Content-Type") ?? "")
     }
+}
+
+/// What the album's Booklet sheet shows (docs/artwork.md, idea 2): the pages of the one release with the most booklet pages, in the
+/// server's order (never mixed across editions), then the album's Sticker, Obi and Poster, each once. An album with no booklet has
+/// no sheet, even when it has a Poster: those follow the pages, they are not a booklet of their own. Chosen by type only.
+public struct BookletView: Equatable, Sendable {
+    public let edition: String
+    public let pages: [ArtworkPicture]
+    public let extras: [ArtworkPicture]
+
+    /// Pages then extras, each image once.
+    public var items: [ArtworkPicture] { pages + extras }
+    /// A PDF booklet is one entry that holds many pages; it opens in the PDF viewer, not the spread.
+    public var pdf: ArtworkPicture? { items.first { $0.isPDF } }
+    /// The spreads of the bitmap pages: the first page alone (the cover), then pairs, a last odd page alone, then each extra alone.
+    public var spreads: [[ArtworkPicture]] {
+        bookletSpreads(pages.filter { !$0.isPDF }) + extras.filter { !$0.isPDF }.map { [$0] }
+    }
+}
+
+extension ArtworkIndex {
+    public var bookletView: BookletView? {
+        let pages = bookletImages
+        guard !pages.isEmpty else { return nil }
+        var seen = Set(pages.map(\.imageID))
+        let extras = ["Sticker", "Obi", "Poster"].compactMap { slotImage($0) }.filter { seen.insert($0.imageID).inserted }
+        return BookletView(edition: booklet?.edition ?? "", pages: pages, extras: extras)
+    }
+}
+
+/// Two-page spreads like an opened booklet: page 1 alone, then (2, 3), (4, 5) and so on; an odd last page stands alone.
+public func bookletSpreads<T>(_ pages: [T]) -> [[T]] {
+    guard !pages.isEmpty else { return [] }
+    var out: [[T]] = [[pages[0]]]
+    var i = 1
+    while i < pages.count {
+        out.append(Array(pages[i..<min(i + 2, pages.count)]))
+        i += 2
+    }
+    return out
+}
+
+/// Where the pointer is on a page as a 0...1 point of the page's fitted picture, clamped to its edges. nil for an empty frame.
+public func lensUnitPoint(_ point: CGPoint, in frame: CGRect) -> CGPoint? {
+    guard frame.width > 0, frame.height > 0 else { return nil }
+    return CGPoint(x: min(max((point.x - frame.minX) / frame.width, 0), 1), y: min(max((point.y - frame.minY) / frame.height, 0), 1))
+}
+
+/// The rectangle a picture of `image` size takes when fitted into `frame` and centred (what `scaledToFit` draws).
+public func fittedRect(image: CGSize, in frame: CGSize) -> CGRect {
+    guard image.width > 0, image.height > 0, frame.width > 0, frame.height > 0 else { return .zero }
+    let k = min(frame.width / image.width, frame.height / image.height)
+    let size = CGSize(width: image.width * k, height: image.height * k)
+    return CGRect(x: (frame.width - size.width) / 2, y: (frame.height - size.height) / 2, width: size.width, height: size.height)
 }

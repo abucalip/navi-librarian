@@ -150,6 +150,19 @@ public final class ArtworkStore {
         return value
     }
 
+    /// A PDF booklet's bytes (`size=full`), whole: it can be tens of MB, so only the last one is kept in memory (the media cache, when
+    /// on, keeps it on disk). nil on any failure; cancelling the caller cancels the download. Never a bitmap: the PDF viewer reads it.
+    public func albumPDF(_ image: ArtworkPicture) async -> Data? {
+        let diskKey = "cover|album|\(image.imageID)|pdf"
+        if let hit = lastPDF, hit.id == image.imageID { return hit.data }
+        if let data = media?.data(for: diskKey, ext: "pdf") { lastPDF = (image.imageID, data); return data }
+        guard let librarian, let got = try? await librarian.artworkImage(id: image.imageID, size: .full), got.isPDF, !Task.isCancelled else { return nil }
+        lastPDF = (image.imageID, got.data)
+        media?.store(data: got.data, key: diskKey, ext: "pdf")
+        return got.data
+    }
+    @ObservationIgnored private var lastPDF: (id: Int, data: Data)?
+
     private func markFailed(_ key: String) { failed.insert(key) }
     private func keep(_ image: NSImage, data: Data, key: String, diskKey: String) {
         albumCache.setObject(image, forKey: key as NSString, cost: data.count)

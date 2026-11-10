@@ -110,14 +110,17 @@ private fun AlbumContent(route: AlbumRoute, page: AlbumPage, open: Opener, list:
     // The Back image (and Tray, Spine) the cover flips to. Nothing is shown, and nothing flips, until the index says there is one.
     val repoForArt = LocalRepository.current
     val rgid = info?.releaseGroupMbid?.takeIf { it.isNotBlank() }
-    val backs by androidx.compose.runtime.produceState<List<app.discair.model.ArtworkImage>>(emptyList(), rgid) {
-        value = if (rgid == null) emptyList() else kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+    val artIndex by androidx.compose.runtime.produceState<app.discair.model.ArtworkIndex?>(null, rgid) {
+        value = if (rgid == null) null else kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
             val result = try {
                 app.discair.model.loadArtworkIndex { repoForArt.artworkIndex(rgid, null) }
             } catch (e: kotlinx.coroutines.CancellationException) { throw e } catch (e: Exception) { null }
-            app.discair.model.coverBackFaces((result as? app.discair.model.ArtworkIndexResult.Ready)?.index)
+            (result as? app.discair.model.ArtworkIndexResult.Ready)?.index
         }
     }
+    val backs = remember(artIndex) { app.discair.model.coverBackFaces(artIndex) }
+    // The Booklet tab exists only when the index has booklet pages: no placeholder, no empty tab.
+    val booklet = remember(artIndex) { app.discair.model.bookletView(artIndex) }
     // Playback is for albums in the library only; the id is the Navidrome album id the page already carries.
     val albumId = (info?.id ?: route.id)?.takeIf { owned && it.isNotBlank() }
     val play = app.discair.ui.player.LocalPlayActions.current
@@ -181,7 +184,7 @@ private fun AlbumContent(route: AlbumRoute, page: AlbumPage, open: Opener, list:
                 )
             }
         }
-        item { InfoReviewsTabs(artist, title, s.description.description, finished = page.done != Done()) }
+        item { InfoReviewsTabs(artist, title, s.description.description, finished = page.done != Done(), booklet = booklet) }
         if (tracks.isNotEmpty()) {
             item { RowDivider(Modifier.padding(horizontal = 16.dp).padding(top = 16.dp)) }
             for (i in tracks.indices) {
@@ -370,16 +373,17 @@ private fun ServiceLinks(artist: String, album: String, mbid: String?) {
  * itself, unless the reader has already picked a tab.
  */
 @Composable
-private fun InfoReviewsTabs(artist: String, album: String, description: Description?, finished: Boolean) {
+private fun InfoReviewsTabs(artist: String, album: String, description: Description?, finished: Boolean, booklet: app.discair.model.BookletView?) {
     val paragraphs = description?.paragraphs.orEmpty()
     var chosen by remember(artist, album) { mutableStateOf<Int?>(null) }
-    val tab = chosen ?: if (finished && paragraphs.isEmpty()) 1 else 0
+    val labels = if (booklet != null) listOf("Info", "Reviews", "Booklet") else listOf("Info", "Reviews")
+    val tab = (chosen ?: if (finished && paragraphs.isEmpty()) 1 else 0).coerceAtMost(labels.size - 1)
     Column(Modifier.fillMaxWidth().padding(top = 16.dp)) {
         TabRow(
             selectedTabIndex = tab, containerColor = Color.Transparent, contentColor = Ink.Accent,
             divider = { RowDivider(Modifier.padding(horizontal = 16.dp)) },
         ) {
-            listOf("Info", "Reviews").forEachIndexed { i, label ->
+            labels.forEachIndexed { i, label ->
                 Tab(
                     selected = tab == i, onClick = { chosen = i }, modifier = Modifier.heightIn(min = Target),
                     selectedContentColor = Ink.Accent, unselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -387,7 +391,11 @@ private fun InfoReviewsTabs(artist: String, album: String, description: Descript
                 )
             }
         }
-        if (tab == 0) InfoTab(description, paragraphs, finished) else ReviewsTab(artist, album)
+        when {
+            tab == 0 -> InfoTab(description, paragraphs, finished)
+            tab == 1 -> ReviewsTab(artist, album)
+            booklet != null -> BookletTab(booklet)
+        }
     }
 }
 

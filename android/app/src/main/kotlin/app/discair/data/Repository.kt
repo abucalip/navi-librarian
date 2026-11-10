@@ -206,6 +206,13 @@ interface LibraryRepository : AcquisitionApi {
      */
     fun artworkImageUrl(image: ArtworkImage, size: ArtworkSize): String? = throw UnsupportedOperationException()
 
+    /**
+     * Saves a PDF original (`size=full`) to [dest], whole. Throws on a failed or stopped download and leaves no partial file;
+     * [shouldStop] is polled while bytes arrive. The PDF shares the server's artwork budget; the app keeps it in its cache folder.
+     */
+    fun artworkDownload(image: ArtworkImage, dest: java.io.File, shouldStop: () -> Boolean, onProgress: (Long, Long) -> Unit): Unit =
+        throw UnsupportedOperationException()
+
     /** Whether the server reports the paths feature (`features.paths` in `/api/capabilities`). Read live; false when unknown. */
     fun pathsAvailable(): Boolean = false
 
@@ -438,6 +445,11 @@ class LibrarianRepository(
         if (image.isPdf && size == ArtworkSize.Full) return null // a PDF is not a bitmap: the viewer fetches it whole
         return baseUrl.toHttpUrl().newBuilder().apply { artworkImageSegments(image.imageId).forEach { addPathSegment(it) } }
             .addQueryParameter("size", size.wire).build().toString()
+    }
+
+    override fun artworkDownload(image: ArtworkImage, dest: java.io.File, shouldStop: () -> Boolean, onProgress: (Long, Long) -> Unit) {
+        if (ReadMode.isCacheOnly) throw CacheMiss()
+        client.download(artworkImageSegments(image.imageId), mapOf("size" to ArtworkSize.Full.wire), dest, shouldStop, onProgress)
     }
 
     override fun pathsAvailable(): Boolean {

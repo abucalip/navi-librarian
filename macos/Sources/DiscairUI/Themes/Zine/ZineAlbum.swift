@@ -60,6 +60,10 @@ struct ZineAlbum: View {
             HStack(spacing: 10) {
                 Button { state.actions.play(album: a) } label: { Label("Play", systemImage: "play.fill") }
                     .buttonStyle(ZineButtonStyle(kind: .yellow, small: true))
+                BookletOpener(rgid: state.related.releaseGroupMBID) { open in
+                    Button(action: open) { Label("Booklet", systemImage: "book") }
+                        .buttonStyle(ZineButtonStyle(small: true))
+                }
                 if state.canShowAlbumPaths {
                     Button { state.showAlbumPaths() } label: { Label("Paths", systemImage: "point.topleft.down.to.point.bottomright.curvepath") }
                         .buttonStyle(ZineButtonStyle(small: true))
