@@ -2,7 +2,9 @@ package app.discair.ui.album
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -76,6 +78,8 @@ import app.discair.ui.artist.FindRow
 import app.discair.ui.artist.InfoCard
 import app.discair.ui.artist.LibraryLine
 import app.discair.ui.common.PathAlbumCover
+import app.discair.ui.common.PathRowCover
+import app.discair.ui.common.SameRoomPhotos
 import app.discair.ui.common.FilterChip
 import app.discair.ui.common.Load
 import app.discair.ui.common.LocalRepository
@@ -148,7 +152,7 @@ fun AlbumPathsSheet(albumName: String, artistName: String, albumId: String, soni
         BackHandler(enabled = step in steps.indices) { step = -1 }
         Box(Modifier.fillMaxWidth().fillMaxHeight(SheetHeight)) {
             if (step in steps.indices) {
-                AlbumPathDetail(albumName, tab, steps, step, onBack = { step = -1 }, onStep = { step = it }, go = go)
+                AlbumPathDetail(albumName, artistName, tab, steps, step, onBack = { step = -1 }, onStep = { step = it }, go = go)
             } else {
                 val seeds = (model.answers[AlbumTab.NeighboursByEar] as? Load.Ready)?.value?.seeds ?: 0
                 AlbumPathList(
@@ -213,18 +217,26 @@ private fun AlbumPathList(
     }
 }
 
-/** One step: its number, the album's cover, the album with one line of detail, and a chevron. One tap opens its pane. */
+/**
+ * One step: its number, the album's cover, the album with one line of detail, and a chevron. One tap opens its pane. A long press
+ * (also offered to TalkBack as "Show next cover") turns the cover to the album's next alternate cover, when it has more than one.
+ */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun AlbumPathRow(number: Int, step: AlbumStep, onClick: () -> Unit) {
+    var cover by remember { mutableIntStateOf(0) }
     Row(
         Modifier.fillMaxWidth().heightIn(min = 64.dp)
-            .clickable(onClickLabel = "Open step $number", role = Role.Button, onClick = onClick)
+            .combinedClickable(
+                onClickLabel = "Open step $number", role = Role.Button, onClick = onClick,
+                onLongClickLabel = "Show next cover", onLongClick = { cover++ },
+            )
             .padding(vertical = 8.dp),
         horizontalArrangement = Arrangement.spacedBy(16.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text("$number", style = MaterialTheme.typography.labelLarge, color = Ink.TextMuted, textAlign = TextAlign.End, modifier = Modifier.width(24.dp))
-        PathAlbumCover(step.artist, step.album, Modifier.size(48.dp))
+        PathRowCover(step.artist, step.album, cover, Modifier.size(48.dp))
         Column(Modifier.weight(1f)) {
             Text(step.album, style = MaterialTheme.typography.titleMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
             Text(step.detail, style = MaterialTheme.typography.bodyMedium, color = Ink.TextMuted, maxLines = 2, overflow = TextOverflow.Ellipsis)
@@ -238,7 +250,7 @@ private fun AlbumPathRow(number: Int, step: AlbumStep, onClick: () -> Unit) {
 /** A step's pane: back to the list at the top, the path and step with the arrows at the bottom, as the artist sheet. */
 @Composable
 private fun AlbumPathDetail(
-    startName: String, tab: AlbumTab, steps: List<AlbumStep>, index: Int,
+    startName: String, startArtist: String, tab: AlbumTab, steps: List<AlbumStep>, index: Int,
     onBack: () -> Unit, onStep: (Int) -> Unit, go: (PathLink) -> Unit,
 ) {
     val step = steps[index]
@@ -251,7 +263,7 @@ private fun AlbumPathDetail(
                 Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
-                AlbumPaneBody(tab, step, startName, go)
+                AlbumPaneBody(tab, step, startName, startArtist, go)
                 Spacer(Modifier.size(8.dp))
             }
         }
@@ -279,7 +291,7 @@ private fun AlbumPathDetail(
  * (the first three), and the person and album to open. The sentence is the server's own; a fact it did not send is left out.
  */
 @Composable
-private fun AlbumPaneBody(tab: AlbumTab, step: AlbumStep, startName: String, go: (PathLink) -> Unit) {
+private fun AlbumPaneBody(tab: AlbumTab, step: AlbumStep, startName: String, startArtist: String, go: (PathLink) -> Unit) {
     Row(horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.Bottom) {
         PathAlbumCover(step.artist, step.album, Modifier.size(144.dp))
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -296,6 +308,7 @@ private fun AlbumPaneBody(tab: AlbumTab, step: AlbumStep, startName: String, go:
             Text(play, style = MaterialTheme.typography.titleLarge)
         }
     }
+    if (tab == AlbumTab.SameRoom) SameRoomPhotos(startArtist, startName, step.artist, step.album)
     val reasons = step.reasons.take(PaneReasons)
     reasons.forEach { ReasonCard(tab, it) }
     if (reasons.isEmpty()) InfoCard { Text("In your library.", style = MaterialTheme.typography.bodyMedium) }

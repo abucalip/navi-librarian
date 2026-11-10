@@ -189,6 +189,31 @@ extension ArtworkIndex {
     }
 }
 
+/// Paths covers and Same Room (docs/artwork.md, idea 10). Chosen by type and comment words only; taste and play data play no part.
+extension ArtworkIndex {
+    /// The covers a path row can cycle through on hover: the Front images, best first, never a PDF. One cover (or none) is nothing to
+    /// cycle, so the row keeps its usual cover.
+    public var pathCoverFaces: [ArtworkPicture] {
+        let faces = coverEditions
+        return faces.count >= 2 ? faces : []
+    }
+
+    /// One album's session and band photos for Same Room, in the server's quality order, at most `roomPhotoLimit`.
+    public var roomPhotos: [ArtworkPicture] {
+        var seen = Set<Int>()
+        return Array(images.filter { $0.qualifiesForCollage && seen.insert($0.imageID).inserted }.prefix(roomPhotoLimit))
+    }
+}
+
+/// The most session photos shown for one album in Same Room.
+public let roomPhotoLimit = 3
+
+/// The face after `current` among `count` faces; wraps to the first.
+public func nextPathCover(after current: Int, count: Int) -> Int { count <= 0 ? 0 : (current + 1) % count }
+
+/// Same Room is drawn only when at least one of the two albums has a session photo.
+public func hasRoomPhotos(_ start: [ArtworkPicture], _ other: [ArtworkPicture]) -> Bool { !start.isEmpty || !other.isEmpty }
+
 public func hasEditionChoice(_ editions: [ArtworkPicture]) -> Bool { editions.count >= 2 }
 
 /// Which face shows after `steps` flips on a card with `backs` back faces: 0 is the front. Negative steps (the other direction) wrap.
