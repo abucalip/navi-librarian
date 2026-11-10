@@ -42,6 +42,12 @@ import app.discair.model.PathsResponse
 import app.discair.model.SonicAlbumNeighbours
 import app.discair.model.parseSonicAlbumNeighbours
 import app.discair.model.SonicResponse
+import okhttp3.HttpUrl.Companion.toHttpUrl
+import app.discair.model.ArtworkImage
+import app.discair.model.ArtworkIndexResult
+import app.discair.model.ArtworkSize
+import app.discair.model.artworkImageSegments
+import app.discair.model.parseArtworkIndex
 import app.discair.model.PeaksResult
 import app.discair.model.PlayerFact
 import app.discair.model.parsePeaks
@@ -190,6 +196,15 @@ interface LibraryRepository : AcquisitionApi {
 
     /** Albums that sound like an owned album (`GET /api/sonic/album-neighbours`). Never from the saved copies. */
     fun sonicAlbumNeighbours(albumId: String): SonicAlbumNeighbours = throw UnsupportedOperationException()
+
+    /** An album's images (`GET /api/artwork/index`), by MusicBrainz release group; [release] is the owned release. Read live, never from the saved copies. */
+    fun artworkIndex(rgid: String, release: String?): ArtworkIndexResult = throw UnsupportedOperationException()
+
+    /**
+     * The address of one image (`GET /api/artwork/image/{id}?size=`), for the image loader, which shares the Librarian session.
+     * `null` for a PDF at `full`: a PDF is not a bitmap, so the viewer fetches it whole. A PDF's thumb and display are first-page preview images.
+     */
+    fun artworkImageUrl(image: ArtworkImage, size: ArtworkSize): String? = throw UnsupportedOperationException()
 
     /** Whether the server reports the paths feature (`features.paths` in `/api/capabilities`). Read live; false when unknown. */
     fun pathsAvailable(): Boolean = false
@@ -412,6 +427,17 @@ class LibrarianRepository(
     override fun sonicAlbumNeighbours(albumId: String): SonicAlbumNeighbours {
         if (ReadMode.isCacheOnly) throw CacheMiss()
         return parseSonicAlbumNeighbours(client.get(listOf("api", "sonic", "album-neighbours"), mapOf("album_id" to albumId)))
+    }
+
+    override fun artworkIndex(rgid: String, release: String?): ArtworkIndexResult {
+        if (ReadMode.isCacheOnly) throw CacheMiss()
+        return parseArtworkIndex(client.get(listOf("api", "artwork", "index"), mapOf("rgid" to rgid, "release" to release)))
+    }
+
+    override fun artworkImageUrl(image: ArtworkImage, size: ArtworkSize): String? {
+        if (image.isPdf && size == ArtworkSize.Full) return null // a PDF is not a bitmap: the viewer fetches it whole
+        return baseUrl.toHttpUrl().newBuilder().apply { artworkImageSegments(image.imageId).forEach { addPathSegment(it) } }
+            .addQueryParameter("size", size.wire).build().toString()
     }
 
     override fun pathsAvailable(): Boolean {

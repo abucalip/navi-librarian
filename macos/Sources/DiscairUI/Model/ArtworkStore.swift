@@ -22,6 +22,20 @@ public final class ArtworkStore {
 
     @ObservationIgnored private let media: MediaCache?
 
+    /// Album images from the Librarian's artwork routes (docs/artwork.md, slice 2). Own memory cache, so a long booklet
+    /// never pushes the covers out; a request for the same image already under way is joined, not repeated.
+    @ObservationIgnored private let albumCache: NSCache<NSString, NSImage> = {
+        let c = NSCache<NSString, NSImage>(); c.countLimit = 120; c.totalCostLimit = 96 * 1024 * 1024; return c
+    }()
+    @ObservationIgnored private var albumLoads: [String: AlbumLoad] = [:]
+    @ObservationIgnored private var indexes: [String: ArtworkIndex] = [:]
+
+    private final class AlbumLoad: @unchecked Sendable {
+        let task: Task<NSImage?, Never>
+        var waiters = 0
+        init(task: Task<NSImage?, Never>) { self.task = task }
+    }
+
     public init(transport: any HTTPTransport = URLSessionTransport(keepCookies: false), media: MediaCache? = nil) {
         self.transport = transport
         self.media = media
@@ -32,6 +46,8 @@ public final class ArtworkStore {
     @ObservationIgnored private var librarian: LibrarianClient?
     public func configure(librarian: LibrarianClient?) {
         self.librarian = librarian
+        albumCache.removeAllObjects()
+        indexes.removeAll()
         for k in failed where k.hasPrefix("lookup|") { failed.remove(k) }
         generation += 1
     }
@@ -78,9 +94,73 @@ public final class ArtworkStore {
         return image
     }
 
+    // MARK: Album images (artwork index)
+
+    /// An album's images by MusicBrainz release group. Asks again while the server builds the index (`not_loaded`); a failure or
+    /// a build that does not finish is `unavailable`, never `empty`. A built index is kept for the session. Nothing is shown
+    /// for `empty` or `unavailable`: the caller draws nothing extra.
+    public func artworkIndex(rgid: String, release: String?) async -> ArtworkIndexResult {
+        if let hit = indexes[rgid] { return .ready(hit) }
+        guard let librarian else { return .unavailable }
+        let result = await ArtworkIndexResult.load { try await librarian.artworkIndex(rgid: rgid, release: release) }
+        if case .ready(let index) = result { indexes[rgid] = index }
+        return result
+    }
+
+    /// One album image as a bitmap. A PDF original (`size == .full`) is not a bitmap and gives nil: the PDF viewer fetches it whole.
+    /// A 404 is remembered for the session; a 503 or a network error is not, so the next ask tries again. Cancelling the caller
+    /// cancels the download once nobody else is waiting for it.
+    public func albumImage(_ image: ArtworkPicture, size: ArtworkSize) async -> NSImage? {
+        if image.isPDF && size == .full { return nil }
+        let key = "album|\(image.imageID)|\(size.rawValue)"
+        if let hit = albumCache.object(forKey: key as NSString) { return hit }
+        let diskKey = "cover|\(key)"
+        if let data = media?.data(for: diskKey, ext: "img"), let decoded = NSImage(data: data) {
+            albumCache.setObject(decoded, forKey: key as NSString, cost: data.count); return decoded
+        }
+        guard !failed.contains(key), let librarian else { return nil }
+        let load: AlbumLoad
+        if let running = albumLoads[key] { load = running } else {
+            let task = Task<NSImage?, Never> { [weak self] in
+                do {
+                    let got = try await librarian.artworkImage(id: image.imageID, size: size)
+                    guard !got.isPDF, let decoded = NSImage(data: got.data) else { await self?.markFailed(key); return nil }
+                    await self?.keep(decoded, data: got.data, key: key, diskKey: diskKey)
+                    return decoded
+                } catch DiscairError.server(let status, _) where status == 404 {
+                    await self?.markFailed(key); return nil
+                } catch {
+                    return nil
+                }
+            }
+            load = AlbumLoad(task: task)
+            albumLoads[key] = load
+        }
+        load.waiters += 1
+        let value = await withTaskCancellationHandler {
+            await load.task.value
+        } onCancel: {
+            Task { @MainActor in
+                load.waiters -= 1
+                if load.waiters <= 0 { load.task.cancel() }
+            }
+        }
+        if !Task.isCancelled { load.waiters -= 1 }
+        if load.waiters <= 0, albumLoads[key] === load { albumLoads[key] = nil }
+        return value
+    }
+
+    private func markFailed(_ key: String) { failed.insert(key) }
+    private func keep(_ image: NSImage, data: Data, key: String, diskKey: String) {
+        albumCache.setObject(image, forKey: key as NSString, cost: data.count)
+        media?.store(data: data, key: diskKey, ext: "img")
+    }
+
     public func configure(_ builder: StreamURLBuilder?) {
         self.builder = builder
         cache.removeAllObjects()
+        albumCache.removeAllObjects()
+        indexes.removeAll()
         failed.removeAll()
         generation += 1
     }
