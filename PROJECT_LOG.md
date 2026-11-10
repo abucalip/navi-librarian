@@ -1,5 +1,12 @@
 # Project log
 
+## 2026-11-10 — Internet radio playback contract (stage 1, slice 0)
+
+- Docs only, committed directly to `main` per the documentation rule. New `docs/RADIO_PLAYBACK_CONTRACT.md` turns `docs/RADIO_PLAYBACK_PROPOSAL.md` (owner decisions of 2026-11-10) into the server, Android and macOS rules, the slice list and the deployment gate.
+- Scope lines lifted to point at the contract: `PRODUCT.md`, `docs/ANDROID_PLAYER_CONTRACT.md`. `docs/MACOS_CLIENT_CONTRACT.md` keeps radio out of scope until stage 2 starts.
+- No code, no endpoint, no migration. Checks: link targets exist; no personal names in the new text. No tests run (docs only).
+- Next: slice 1 (server stations list fields, favourites, tags, logo resolver and cache).
+
 ## 2026-11-10 — Artwork Timeline filmstrip and Atlas disc nodes on macOS (slice 6, idea 11)
 
 - Merged as PR [#958](https://github.com/abucalip/navi-librarian/pull/958), squash `ca38227d0a76788b51dde1b201795ff5da171b95`, and PR [#959](https://github.com/abucalip/navi-librarian/pull/959), squash `a4b3217832ec27101da7b9e1f4f9002e1a7246b2`. macOS only; no server change.

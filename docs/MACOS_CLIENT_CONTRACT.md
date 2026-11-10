@@ -6,7 +6,7 @@ Status: **approved by the owner and merged (PR [#713](https://github.com/abucali
 
 A native macOS app named **Discair** for the owner: a full Navidrome player and a Librarian discovery and acquisition client, reimagined for the desktop rather than ported from the web UI. It has **everything the Android app has** (Home, Library, Artist, Album, Search, Discover lists, Downloads, Settings, Now Playing, queue, gapless, crossfade, EQ, lyrics, scrobbling, quality cap, resume paused) plus the desktop features in section 6. Nothing on Android is left out.
 
-Out of scope: App Store distribution, Intel Macs, macOS before 26, multi-user, internet radio, a terminal/TUI theme, a Mac Catalyst or web wrapper, technical audio analysis beyond a bitrate and format badge, tag-audit view, sleep timer, AirPlay picker, per-device EQ.
+Out of scope: App Store distribution, Intel Macs, macOS before 26, multi-user, internet radio until stage 2 of [`RADIO_PLAYBACK_CONTRACT.md`](RADIO_PLAYBACK_CONTRACT.md) starts (approved 2026-11-10, not before the server API is deployed and verified), a terminal/TUI theme, a Mac Catalyst or web wrapper, technical audio analysis beyond a bitrate and format badge, tag-audit view, sleep timer, AirPlay picker, per-device EQ.
 
 ## 2. Decisions taken
 

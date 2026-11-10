@@ -24,7 +24,7 @@ Discair is an acquisition-aware discovery tool. The web UI is not a player. The 
 
 ## Capabilities and Constraints
 - The existing API is authoritative. No endpoint or field may be invented; needs are written up as contract proposals.
-- The web UI has no playback; a now-playing or streaming bar there is out of scope unless separately approved with an API contract. Android playback is approved as a contract (D-018) and is not implemented until its phases land. Radio playback is out of scope.
+- The web UI has no playback; a now-playing or streaming bar there is out of scope unless separately approved with an API contract. Android playback is approved as a contract (D-018) and is not implemented until its phases land. Radio playback in the Android and macOS clients is approved under [`docs/RADIO_PLAYBACK_CONTRACT.md`](docs/RADIO_PLAYBACK_CONTRACT.md) (2026-11-10); the web UI still has no playback.
 - Fonts and icons are self-hosted; do not introduce third-party runtime asset requests without explicit approval.
 - Acquisition information (quality, progress, status, actions) must stay coherent and scannable.
 - The current front-end redesign is complete. Historical design decisions and phase evidence are preserved in `docs/archive/redesign/`; permanent interaction, accessibility, safety, and testing rules live in `docs/DEVELOPMENT_WORKFLOW.md` and `docs/TEST_PLAN.md`.

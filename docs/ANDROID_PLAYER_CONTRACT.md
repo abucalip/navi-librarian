@@ -15,7 +15,7 @@ This contract adapts the web proposal in [`PLAYER_PROPOSAL.md`](PLAYER_PROPOSAL.
 | Entry points | Album page, Artist page, Library rows, song search results. Owned items only. |
 | Scrobbling | Yes, per-device toggle in Settings, on by default. |
 | Format | Original file by default; optional maximum bitrate in Settings. |
-| Out of scope | Radio, live titles, gapless, crossfade, EQ, lyrics (each needs its own contract), any change to the web UI. |
+| Out of scope | Gapless, crossfade, EQ, lyrics (each needs its own contract), any change to the web UI. Radio playback and live titles are approved under [`RADIO_PLAYBACK_CONTRACT.md`](RADIO_PLAYBACK_CONTRACT.md) (2026-11-10), not this contract. |
 
 ## 2. Rules this contract inherits
 
