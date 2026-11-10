@@ -18,6 +18,7 @@ struct ZineHome: View {
         VStack(alignment: .leading, spacing: 10) {
         if case .failed(let m) = lib.phase { Mono(m, bold: true).foregroundStyle(Z.red) }
         if lib.phase == .loading { Mono("Loading your library…") }
+        if lib.isLive { LinerNoteCard(albums: picks) }
         HStack(alignment: .top, spacing: 22) {
             VStack(alignment: .leading, spacing: 0) {
                 HStack(alignment: .top, spacing: 22) {
