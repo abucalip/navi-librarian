@@ -97,7 +97,7 @@ A derived view over the merged index (not a replacement for it). For each type t
 
 ### Image cache and endpoints
 - Resized per-album images (sizes: 250 px thumb, 640 px display; the CAA serves 250, 500 and 1200 px, so slice 1 checks whether 640 is resized by the server or the nearest CAA size is used) live in a disk cache with a **1.5 GB** budget shared with full-resolution images. Eviction is least-recently-used, with the front cover of each owned album protected from eviction until nothing else is left.
-- Endpoints (built, PR pending; the contract section is still to write): `GET /api/artwork/index?rgid=&release=` (`release` = owned release, optional) and `GET /api/artwork/image/{image_id}?size=thumb|display|full`. Built with the CAA 250 px file as `thumb` and the 500 px file as `display` because no image library is installed; 640 px needs Pillow (owner decision). `full` is fetched on first zoom and stored; later requests are served from disk.
+- Endpoints (built, PR #946 merged; the contract section is still to write): `GET /api/artwork/index?rgid=&release=` (`release` = owned release, optional) and `GET /api/artwork/image/{image_id}?size=thumb|display|full`. Built with the CAA 250 px file as `thumb` and the 500 px file as `display` because no image library is installed; 640 px needs Pillow (owner decision). `full` is fetched on first zoom and stored; later requests are served from disk.
 - The server validates the image bytes, rejects non-images and oversize responses, and never follows a redirect to a host other than the CAA and the archive.org hosts that serve its files.
 - Access to the endpoints follows the existing session auth; image URLs are not public.
 - A background warm-up fills the display size for owned albums slowly, in order of recent listening, and stops at the budget. Nothing is fetched for albums the owner has never opened if the budget is full.
@@ -176,7 +176,7 @@ In Get and Downloads, the pipeline dock shows the covers of the release being fe
 ## Slices
 
 0. ~~**Probe (no UI):** a script that fetches the index for 30 owned release groups (Somethin' Else first) and reports releases per group, images per group, type mix, size distribution and failure rates. It sets the caps and TTLs above. No cache writes beyond the scratch folder.~~ **Done 2026-11-10, script merged in PR #944**; caps, TTLs and rate limits set from the results in "Limits (set from the probe)".
-1. **Server index and cache:** ~~index builder~~, image cache with the 1.5 GB budget, endpoints, fixtures, tests. **Index builder done 2026-11-10 (PR #945, `intelligence/artwork/`).**
+1. **Server index and cache:** ~~index builder~~, ~~image cache with the 1.5 GB budget, endpoints~~, fixtures, tests. **Index builder done 2026-11-10 (PR #945, `intelligence/artwork/`). Cache and endpoints done 2026-11-10 (PR #946; PDF originals kept; `display` is 500 px; no warm-up).** Still to do: fixtures, contract section, `format` on index entries.
 2. **Client decoders and the image store:** Android and macOS decode the index and load images through the Librarian.
 3. **Flip cover, booklet, zoom:** ideas 1 and 2.
 4. **Edition picker and grid fallback:** idea 7 (includes the server choice store).
@@ -194,7 +194,7 @@ Models: Fable 5.1, Opus 5.5, Sonnet 5.5, Haiku 5.5. Effort: low, medium, high, x
 | ~~0. Probe~~ | ~~Script that samples about 30 release groups and prints counts~~ (done 2026-11-10) | Sonnet 5.5 | medium | One script, no UI, easy to check by reading its output. |
 | ~~0. Probe~~ | ~~Reading the results and setting caps, TTLs, rate limits~~ (done 2026-11-10) | Opus 5.5 | high | Judgment from data; the numbers drive every later slice. |
 | ~~1. Server index and merge~~ | ~~Release-group to releases, dedupe, best-front rule, caps, `truncated`~~ **Done, PR #945 (with the MusicBrainz and CAA fetchers, pacing and back-off).** | Opus 5.5 | high | Rate limits, partial failure and ordering rules are easy to get subtly wrong. |
-| 1. Server cache and endpoints | 1.5 GB budget, eviction, protected fronts, redirect host check, byte validation, auth | Opus 5.5 | xhigh | Security-sensitive (fetching third-party bytes) and concurrency-sensitive. Review with Fable 5.1 at high. |
+| ~~1. Server cache and endpoints~~ (done, PR #946) | ~~1.5 GB budget, eviction, protected fronts, redirect host check, byte validation, auth~~ | Opus 5.5 | xhigh | Security-sensitive (fetching third-party bytes) and concurrency-sensitive. Review with Fable 5.1 at high. |
 | 1. Fixtures and server tests | `ok`, `empty`, `unavailable`, `truncated` fixtures; unit tests | Sonnet 5.5 | medium | Mechanical once the contract is fixed. |
 | Contract section | Endpoint shapes and fields in the contract docs | Opus 5.5 | high | Both clients depend on it. |
 | 2. Client decoders | Android and macOS decoding of the index | Sonnet 5.5 | medium | Follows the album paths decoder pattern (PR #931). |
