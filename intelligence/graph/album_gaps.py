@@ -56,7 +56,7 @@ def build_gaps_path(db: sqlite3.Connection, start_id: int, records: Iterable[Pla
     wide = replace(limits, max_stops=max(limits.max_stops, SOURCE_STOP_CAP))
     bases = []
     for kind in SOURCE_KINDS:
-        base = album_paths.build_album_path(db, start_id, kind, limits=wide, generation=gen, clock=clock)
+        base = album_paths.build_album_path(db, start_id, kind, limits=wide, generation=gen, clock=clock, owned_only=True)
         if base is None:
             return None
         bases.append(base)

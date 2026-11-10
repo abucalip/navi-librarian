@@ -10,6 +10,18 @@ public enum AlbumPathTab: String, CaseIterable, Identifiable, Sendable {
     public var id: String { rawValue }
     public var label: String {
         switch self {
+        case .studioCrew: "Crew"
+        case .guestList: "Guests"
+        case .coversAndSources: "Covers"
+        case .sameYearSameScene: "Scene"
+        case .sameRoom: "Room"
+        case .listenThroughGaps: "Gaps"
+        case .neighboursByEar: "Sonic"
+        }
+    }
+    /// The path's full name, for sentences ("No Guest List path from ...").
+    public var fullName: String {
+        switch self {
         case .studioCrew: "Studio Crew"
         case .guestList: "Guest List"
         case .coversAndSources: "Covers and Sources"
@@ -35,11 +47,11 @@ public enum AlbumPathTab: String, CaseIterable, Identifiable, Sendable {
     /// The line under the segmented control. `seeds` is how many tracks Neighbours by Ear used, once known.
     public func summary(album: String, seeds: Int = 0) -> String {
         switch self {
-        case .studioCrew: "Albums in your library that share a producer, engineer or mixer credit with \(album)."
-        case .guestList: "Albums in your library where the guests credited on \(album) also appear."
-        case .coversAndSources: "Other albums in your library with a recording of a song on \(album), and the works they come from."
-        case .sameYearSameScene: "Albums in your library from the same years as \(album), linked by a label, an area or a shared artist."
-        case .sameRoom: "Albums in your library with a recording made in the same studio or at the same event as a recording on \(album)."
+        case .studioCrew: "Albums that share a producer, engineer or mixer credit with \(album), those not in your library first."
+        case .guestList: "Albums where the guests credited on \(album) also appear, those not in your library first."
+        case .coversAndSources: "Albums with another recording of a song on \(album), or of a work it comes from, those not in your library first."
+        case .sameYearSameScene: "Albums from the same years as \(album), linked by a label, an area or a shared artist, those not in your library first."
+        case .sameRoom: "Albums with a track made in the same studio or at the same event as a track on \(album), those not in your library first."
         case .listenThroughGaps: "Albums in your library that share a credit with \(album) and that you have played little or never."
         case .neighboursByEar: seeds > 0 ? "Albums in your library that sound like \(album), found from \(seeds) of its tracks." : "Albums in your library that sound like \(album)."
         }
@@ -121,6 +133,8 @@ public struct PathStep: Identifiable, Equatable, Sendable {
     public let owned: Bool
     /// Listen-through Gaps: the server's play label ("Not played"); nil elsewhere.
     public var play: String? = nil
+    /// Album paths: the story of why the step is here, one paragraph per person, place or work.
+    public var story: [[StorySpan]] = []
     public struct AlbumCover: Equatable, Sendable { public let title: String; public let artist: String; public let albumID: String?; public let coverArt: String? }
 }
 
@@ -163,7 +177,7 @@ public struct PathAnswer: Equatable, Sendable {
         return ([c.relation, c.role].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: ", ")) + " · MusicBrainz"
     }
 
-    /// An album path: every stop is an owned album.
+    /// An album path: a stop is an album in or out of the library (`entity.owned`), those out of it first.
     public init(album p: KnowledgePaths) {
         steps = p.stops.enumerated().map { i, stop in
             let by = stop.albumArtist ?? ""
@@ -173,7 +187,8 @@ public struct PathAnswer: Equatable, Sendable {
                 cover: .init(title: stop.entity.name, artist: by, albumID: nil, coverArt: nil), symbol: "opticaldisc",
                 reasons: stop.reasons.map { PathStepReason(code: $0.code, text: $0.text, via: $0.via?.name) },
                 evidence: Self.evidence(first), target: .album(title: stop.entity.name, artist: by, albumID: nil),
-                artistName: by.isEmpty ? nil : by, owned: true, play: stop.play)
+                artistName: by.isEmpty ? nil : by, owned: stop.entity.owned, play: stop.play,
+                story: PathStory.compose(stop.reasons, start: p.start.name, stop: stop.entity.name))
         }
         if let h = p.history, h.state == "ok", steps.isEmpty, h.filteredOut > 0 {
             let most = h.littlePlaysBelow - 1
@@ -291,7 +306,7 @@ public final class PathsSheetModel: Identifiable {
         let tabs = AlbumPathTab.available(sonic: sonicAvailable).map { t in
             PathTabSpec(
                 id: t.id, label: t.label, summary: { t.summary(album: albumTitle, seeds: $0?.seeds ?? 0) },
-                empty: "No \(t.label) path from \(albumTitle) yet. A path appears only when every step has evidence.",
+                empty: "No \(t.fullName) path from \(albumTitle) yet. A path appears only when every step has evidence.",
                 load: { lib in
                     if let kind = t.graph { return PathAnswer(album: try await lib.albumPaths(albumID: albumID, kind: kind)) }
                     return PathAnswer(album: try await lib.sonicAlbumNeighbours(albumID: albumID))
@@ -353,6 +368,11 @@ public final class PathsSheetModel: Identifiable {
         if !retry, case .ready? = phases[id] { return }
         phases[id] = .loading
         guard let librarian else { phases[id] = .failed("Paths need the server."); return }
-        do { phases[id] = .ready(try await spec.load(librarian)) } catch { phases[id] = .failed(Self.failure(error, subject: subject)) }
+        do {
+            let answer = try await spec.load(librarian)
+            phases[id] = .ready(answer)
+            // The first step is selected, so the pane and the buttons are never empty.
+            if tabID == id, selected == nil, !answer.steps.isEmpty { selected = 0 }
+        } catch { phases[id] = .failed(Self.failure(error, subject: subject)) }
     }
 }

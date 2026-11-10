@@ -54,14 +54,17 @@ public struct PathReason: Decodable, Equatable, Sendable {
     public let text: String
     public let via: KnowledgeEntity?
     public let anchor: KnowledgeEntity?
+    /// Album paths: what the stop holds that the credit reaches (a track, or the album itself), when the server names it.
+    public let target: KnowledgeEntity?
     public let evidence: [KnowledgeCredit]
-    enum CodingKeys: String, CodingKey { case code, text, via, anchor, evidence }
+    enum CodingKeys: String, CodingKey { case code, text, via, anchor, target, evidence }
     public init(from decoder: any Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         code = c.text(.code) ?? ""
         text = c.text(.text) ?? ""
         via = try? c.decodeIfPresent(KnowledgeEntity.self, forKey: .via)
         anchor = try? c.decodeIfPresent(KnowledgeEntity.self, forKey: .anchor)
+        target = try? c.decodeIfPresent(KnowledgeEntity.self, forKey: .target)
         evidence = c.list(.evidence, KnowledgeCredit.self)
     }
 }
