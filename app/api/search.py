@@ -214,7 +214,10 @@ def _artwork_choice(librarian, album) -> int | None:
     if not album:
         return None
     from app.api.artwork import get_service
-    return get_service(librarian).store.get_choice(album["id"])
+    try:
+        return get_service(librarian).store.get_choice(album["id"])
+    except Exception:
+        return None                      # a pick that cannot be read must never break the album page
 
 
 def owned_view(librarian):
