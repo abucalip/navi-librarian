@@ -1,6 +1,6 @@
 # Internet radio playback contract (Discair)
 
-Status: **approved by the owner on 2026-11-10. Stage 1 slice 0 (contract) and slice 1 (server stations list, favourites, tags, logos) are merged (slice 1: PR #965, 2026-11-10). Slice 2 is next. Stage 2 (macOS) starts only after deployment is authorized and verified.**
+Status: **approved by the owner on 2026-11-10. Stage 1 slice 0 (contract), slice 1 (server stations list, favourites, tags, logos; PR #965) and slice 2 (server live "now" holder, `/now`, `/api/radio/now`; PR #966) are merged (2026-11-10). Slice 3 is next. Stage 2 (macOS) starts only after deployment is authorized and verified.**
 
 This contract turns [`RADIO_PLAYBACK_PROPOSAL.md`](RADIO_PLAYBACK_PROPOSAL.md) into the rules the server and clients build against. Where the proposal and this contract disagree, this contract governs. Builds on RADIO-01 ("Grab the radio", PR [#637](https://github.com/abucalip/navi-librarian/pull/637)): the relay at `GET /radio/stream/{token}`, ICY title reading, the 30-second play log in `radio.sqlite3`, and `POST /api/radio/plays/{play_id}/get` as the Download action. Related: [`ANDROID_PLAYER_CONTRACT.md`](ANDROID_PLAYER_CONTRACT.md), [`MACOS_CLIENT_CONTRACT.md`](MACOS_CLIENT_CONTRACT.md).
 
@@ -54,6 +54,8 @@ Returns `{state, raw_title, artist, title, play_id, in_library, cover_url}`.
 - `cover_url` is a server artwork path for the live song from the existing artwork pipeline, or null.
 - **Download is enabled only when `state` is `ok` and `play_id` is set.** Clients apply this rule.
 - The server keeps the current title per station in memory, fed by the relay (`ListenTracker`). `/now` makes no provider call and no upstream connection.
+
+Slice 2 note (PR #966, merged 2026-11-10): `/now` also returns `idle` when nobody is listening, and `unavailable` when the relay could not reach the station in the last 20 seconds (the five states above did not cover these two cases). A station that is not relayed, or is unknown, returns `not_proxied` without a Navidrome call. `cover_url` is set only for songs found in the library (the Navidrome cover of that song, served through the owned-artwork route); other songs get `null`. The library answer is looked up once per song and kept until the song changes.
 
 ### 3.3 Live titles for all stations: `GET /api/radio/now`
 
@@ -156,7 +158,7 @@ Each slice is its own PR with focused tests only (owner rule). The owner runs th
 
 0. ~~**Contract and doc edits** (this document; docs only, committed directly to `main`). Edits to `PRODUCT.md`, `ANDROID_PLAYER_CONTRACT.md` and `MACOS_CLIENT_CONTRACT.md` point their radio lines here.~~ — done 2026-11-10 (docs on `main`)
 1. ~~**Server:** stations list fields, favourites, tags, logo resolver and cache, with tests and fixtures.~~ — done, PR #965 (merged 2026-11-10)
-2. **Server:** live "now" holder, `/now`, `/api/radio/now`, `in_library`, `cover_url`.
+2. ~~**Server:** live "now" holder, `/now`, `/api/radio/now`, `in_library`, `cover_url`.~~ — done, PR #966 (merged 2026-11-10)
 3. **Server:** scrobble on threshold (off by default) and love.
 4. **Android:** decoders, Radio section, logos, favourites.
 5. **Android:** playback service, live Now Playing, Download and Heard states.

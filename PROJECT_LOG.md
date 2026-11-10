@@ -1,5 +1,15 @@
 # Project log
 
+## 2026-11-10 — Internet radio playback, stage 1 slice 2 (live now holder, /now, /api/radio/now)
+
+- PR [#966](https://github.com/abucalip/navi-librarian/pull/966) merged as `f3a5a2d756ad98d67e0b2b27c72b5b9140e4e093` (head `e12258ef`). Owner merged it; docs closeout follows on `main`.
+- Built: in-memory "now" holder (`integrations/radio/now.py`) fed by the relay's `ListenTracker`; `GET /api/radio/stations/{id}/now` and `GET /api/radio/now`, states `ok`, `no_metadata`, `unparsed`, `not_proxied`, `unavailable`, `idle`. A song is logged at 30 seconds of listening, so `play_id` exists while it plays; the rest of the listen is added on change or close (`store.add_listened`). `in_library` and `cover_url` from one Navidrome search per song (`integrations/radio/library_match.py`), cached per song; a failed lookup is retried.
+- Decisions recorded in the contract (section 3.2 slice 2 note): `idle` and `unavailable` added to `/now`; `cover_url` only for library songs; `/api/radio/now` items carry `id`.
+- Fixtures: eight `android/contract-fixtures/librarian/radio_now_*` files, generated from the real router with a temporary store (not captured from a live server); `captured_at` is the generation time.
+- Tests run (focused): `test_radio_*.py` (88, OK), `test_api_radio_routes.py` (25, OK), `test_android_contract_fixtures.py` (6, OK, run after the fixture fix). CI on the final head `e12258ef`: Python syntax check, Container runtime smoke test, Validate Docker packaging, Validate Docker image (publishing paused), Publish Docker release (build only, `push: false`) all passed. Earlier head `2bb2a02` failed the acquisition-regression job on the fixture envelope; fixed in `e12258ef`. Full suite not run (owner rule).
+- Open from this slice: not run against a live Navidrome or a real station; the first `/now` for each song makes one Navidrome search; a logged song appears in the Heard list once it passes 30 seconds, even while it still plays; a relay that stops sending data stops showing as live after 20 seconds.
+- Next: slice 3 (scrobble on threshold, off by default, and love).
+
 ## 2026-11-10 — Internet radio playback, stage 1 slice 1 (server stations list, favourites, tags, logos)
 
 - PR [#965](https://github.com/abucalip/navi-librarian/pull/965) merged as `b3eef2a35eedf57c99b762cd85865e2f5f3499ff` (head `d5f652d0`). Owner merged it; docs closeout follows on `main`.

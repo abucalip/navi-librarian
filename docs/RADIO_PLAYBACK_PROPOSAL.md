@@ -1,6 +1,6 @@
 # Internet radio playback proposal
 
-**Status:** owner decisions recorded 2026-11-10 (see "Decisions recorded"). Approved for build in two stages. Stage 1 slices 0 and 1 are done (slice 1 merged as PR #965, 2026-11-10); struck-through items below are built. Slice 2 is next.
+**Status:** owner decisions recorded 2026-11-10 (see "Decisions recorded"). Approved for build in two stages. Stage 1 slices 0, 1 and 2 are done (slice 1 merged as PR #965, slice 2 as PR #966, both 2026-11-10); struck-through items below are built. Slice 3 is next.
 **Date:** 2026-11-10
 **Context:** RADIO-01 ("Grab the radio", PR #637) already relays Navidrome radio stations through `/radio/stream/<token>`, reads ICY titles and logs songs heard for 30 seconds or more in `radio.sqlite3` (`integrations/radio/`, `app/api/radio.py`). This proposal adds playback in the clients on top of it. Related: [Android player contract](ANDROID_PLAYER_CONTRACT.md), [macOS client contract](MACOS_CLIENT_CONTRACT.md).
 
@@ -24,7 +24,7 @@ Three documents list radio as out of scope: `PRODUCT.md` (line 27), `ANDROID_PLA
 ### ~~Stations list~~ — done, PR #965 (merged 2026-11-10)
 ~~`GET /api/radio/stations` gains per station: `logo_url` (a server path, never a third-party URL), `homepage_url`, `favourite`, `sort_key` data (last played), and a `playable_url` (the relay URL when proxied, else the original). Stations that are not proxied are still returned and playable, but have no live title and no Download.~~ — done, PR #965 (merged 2026-11-10)
 
-### Live song: `GET /api/radio/stations/{id}/now`
+### ~~Live song: `GET /api/radio/stations/{id}/now`~~ — done, PR #966 (merged 2026-11-10); deviations are in the contract, section 3.2
 Returns `{state, raw_title, artist, title, play_id, in_library, cover_url}`.
 - `state`: `ok`, `no_metadata` (station sends no ICY titles), `unparsed` (title without "Artist - Title"), `not_proxied`, `unavailable`.
 - `play_id` is null until the song has been heard for the 30-second threshold, then it is the `radio_plays` id. The client enables Download only when `play_id` is set and `state` is `ok`.
@@ -41,10 +41,10 @@ Returns `{state, raw_title, artist, title, play_id, in_library, cover_url}`.
 
 ~~Fetch rules: http(s) only, no private or loopback addresses (SSRF guard, also after redirects), content type must be an image, size cap, timeout, no credentials sent, negative results cached with an expiry so a dead logo is not retried on every list call. Failures fall through to the next source, never to an error.~~
 
-### ~~Favourites, order and "now" strip (idea 1 and 2)~~ — favourites and tags done (PR #965); the `/now` strip is still open
+### ~~Favourites, order and "now" strip (idea 1 and 2)~~ — favourites, tags (PR #965) and the `/now` strip (`/api/radio/now`, PR #966) done
 - ~~`PUT /api/radio/stations/{id}/favourite`; the list sorts favourites first, then by last played.~~ — done, PR #965 (merged 2026-11-10)
 - ~~Optional per-station tags (free text, owner-set) for grouping.~~ — done, PR #965 (merged 2026-11-10)
-- `GET /api/radio/now` returns the live title for every proxied station that currently has a listener, so a client can show what is on without tuning in. Stations nobody is connected to report `idle`, because the relay does not hold a connection with no listener (it must not open upstream connections just to show titles).
+- ~~`GET /api/radio/now` returns the live title for every proxied station that currently has a listener, so a client can show what is on without tuning in. Stations nobody is connected to report `idle`, because the relay does not hold a connection with no listener (it must not open upstream connections just to show titles).~~ — done, PR #966
 
 ### Heard list in clients (idea 3)
 No new endpoint beyond the existing `/api/radio/plays`, with `grabbed` and `in_library` exposed so a client can show Download, Downloaded and Owned states.
@@ -70,7 +70,7 @@ Fixtures for each `/now` state, the stations list with and without logos, and th
 
 0. ~~Contract and doc edits (docs only, directly on `main`).~~ — done 2026-11-10 (docs on `main`)
 1. ~~Server: stations list fields, favourites, logo resolver and cache, with tests and fixtures.~~ — done, PR #965 (merged 2026-11-10)
-2. Server: live "now" holder, `/now`, `/api/radio/now`, `in_library`, `cover_url`.
+2. ~~Server: live "now" holder, `/now`, `/api/radio/now`, `in_library`, `cover_url`.~~ — done, PR #966 (merged 2026-11-10)
 3. Server: scrobble on threshold (off by default) and love.
 4. Android: decoders, Radio section, logos, favourites.
 5. Android: playback service, live Now Playing, Download and Heard states.
