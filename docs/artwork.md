@@ -27,7 +27,7 @@
 - ~~**Not verified yet:** index completeness, size distribution, and the Somethin' Else group.~~ Measured by the probe, see "Probe results (slice 0)". The caps below stay placeholders until the numbers are set from those results.
 
 ### Probe results (slice 0, 2026-11-10)
-Sample: 30 release groups (Somethin' Else first, the rest a seeded random sample of owned releases resolved to their group). Index JSON only; no image bytes downloaded; 1 request per second per host. Probe cap of 60 releases per group never triggered. The probe script is not merged yet (it needs its own PR); these numbers are the evidence.
+Sample: 30 release groups (Somethin' Else first, the rest a seeded random sample of owned releases resolved to their group). Index JSON only; no image bytes downloaded; 1 request per second per host. Probe cap of 60 releases per group never triggered. The probe script is `scripts/artwork_probe.py` (PR #944, merged).
 
 - **Coverage:** all 30 groups have at least one image; 21 of 30 have a type other than Front. The 9 Front-only or untyped groups are small (1 to 5 releases). Groups with 6 or more releases mostly carry Back, Booklet, Medium and Spine, and the largest also Obi, Tray and Sticker.
 - **Releases per group:** median 5.5, p90 23, max 59.
@@ -135,7 +135,7 @@ In Get and Downloads, the pipeline dock shows the covers of the release being fe
 
 ## Slices
 
-0. ~~**Probe (no UI):** a script that fetches the index for 30 owned release groups (Somethin' Else first) and reports releases per group, images per group, type mix, size distribution and failure rates. It sets the caps and TTLs above. No cache writes beyond the scratch folder.~~ **Done 2026-11-10** (results above; caps and TTLs still to be set from them).
+0. ~~**Probe (no UI):** a script that fetches the index for 30 owned release groups (Somethin' Else first) and reports releases per group, images per group, type mix, size distribution and failure rates. It sets the caps and TTLs above. No cache writes beyond the scratch folder.~~ **Done 2026-11-10, script merged in PR #944** (results above; caps and TTLs still to be set from them).
 1. **Server index and cache:** index builder, image cache with the 1.5 GB budget, endpoints, fixtures, tests.
 2. **Client decoders and the image store:** Android and macOS decode the index and load images through the Librarian.
 3. **Flip cover, booklet, zoom:** ideas 1 and 2.
