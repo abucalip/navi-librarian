@@ -76,12 +76,20 @@ def process_next(
     try:
         message = _run(db, row["subject"], row["navidrome_id"], get_album, get_artist, find_artist, fetch, clock)
         state = "done"
-    except Exception as exc:  # the message is the error type only; no paths or secrets
-        state, message = "failed", f"Update failed ({type(exc).__name__})."
+    except Exception as exc:
+        state, message = "failed", _describe(exc)
     if state == "done" and message.startswith("Nothing"):
         state = "failed"
     _finish(db, row["id"], state, message, now)
     return {"subject": row["subject"], "navidrome_id": row["navidrome_id"], "state": state, "message": message}
+
+
+def _describe(exc: Exception) -> str:
+    """The failure in words. A Navidrome API error carries its own short message (no URL, token or path);
+    any other error is named by type only, since transport errors can carry a signed URL."""
+    if type(exc) is RuntimeError and str(exc).startswith("Navidrome API error"):
+        return f"Update failed: {str(exc)[:200]}"
+    return f"Update failed ({type(exc).__name__})."
 
 
 def _run(db, subject, navidrome_id, get_album, get_artist, find_artist, fetch, clock) -> str:
@@ -101,17 +109,26 @@ def _run(db, subject, navidrome_id, get_album, get_artist, find_artist, fetch, c
     mbids: set[str] = set()
     artist_ids: set[int] = set()
     ingested = 0
+    owners: dict[str, Mapping[str, Any] | None] = {}
+    skipped: Exception | None = None
     for album_id in album_ids:
-        album = get_album(album_id)
+        try:
+            album = get_album(album_id)
+        except RuntimeError as exc:   # Navidrome refused this one album; carry on with the others
+            skipped = exc
+            continue
         if not album:
             continue
         album = dict(album)
-        owner = artist
-        if owner is None and album.get("artistId"):
-            owner = get_artist(str(album["artistId"]))
+        # The album's own artist, which for an artist's page is not always the artist asked about
+        # (compilations, features), so the credit is never forced onto the wrong artist.
+        owner_id = str(album.get("artistId") or "")
+        if owner_id not in owners:
+            owners[owner_id] = artist if (artist is not None and owner_id == navidrome_id) else (
+                get_artist(owner_id) if owner_id else None)
+        owner = owners[owner_id]
         if owner and owner.get("musicBrainzId"):
-            album["artists"] = [{"id": str(album.get("artistId") or navidrome_id), "name": owner.get("name", ""),
-                                 "musicBrainzId": owner["musicBrainzId"]}]
+            album["artists"] = [{"id": owner_id, "name": owner.get("name", ""), "musicBrainzId": owner["musicBrainzId"]}]
         result = ingest_album(db, album, now=now, search=None)
         ingested += 1
         for entity_id in (result.release_entity_id, result.artist_entity_id):
@@ -120,7 +137,14 @@ def _run(db, subject, navidrome_id, get_album, get_artist, find_artist, fetch, c
                 mbids.add(entity["mbid"].lower())
         if result.artist_entity_id:
             artist_ids.add(result.artist_entity_id)
+    if artist is not None and artist.get("musicBrainzId"):   # the artist asked about, even when only credited on others' albums
+        known = repo.find_entity(db, "artist", mbid=str(artist["musicBrainzId"]).lower())
+        if known:
+            artist_ids.add(known["id"])
+            mbids.add(str(known["mbid"]).lower())
     if not ingested:
+        if skipped is not None:
+            raise skipped
         return "Nothing found: the library has no such album."
     if not artist_ids:
         return "Nothing added: no MusicBrainz id on this artist yet."

@@ -44,6 +44,39 @@ class UpdateRequests(unittest.TestCase):
         self.assertEqual(out["state"], "failed")
         db.close()
 
+    def test_navidrome_error_is_reported_in_words(self):
+        db = open_store(Path(self.tmp) / routes.STORE_FILE)
+        ur.enqueue(db, "album", "x")
+
+        def boom(_):
+            raise RuntimeError("Navidrome API error 70: Data not found")
+        out = ur.process_next(db, get_album=boom, get_artist=boom)
+        self.assertEqual(out["state"], "failed")
+        self.assertIn("Data not found", out["message"])
+        db.close()
+
+    def test_artist_request_uses_each_albums_own_artist(self):
+        """An artist's list can hold an album credited to someone else; the credit must not be forced onto the requested artist."""
+        asked, other = "11111111-1111-4111-8111-111111111111", "22222222-2222-4222-8222-222222222222"
+        artists = {"ar-1": {"id": "ar-1", "name": "Asked", "musicBrainzId": asked, "album": [{"id": "al-feat"}, {"id": "al-own"}]},
+                   "ar-2": {"id": "ar-2", "name": "Other", "musicBrainzId": other}}
+        albums = {
+            "al-feat": {"id": "al-feat", "name": "Feature", "artist": "Other", "artistId": "ar-2",
+                        "musicBrainzId": "33333333-3333-4333-8333-333333333333", "song": []},
+            "al-own": {"id": "al-own", "name": "Own", "artist": "Asked", "artistId": "ar-1",
+                       "musicBrainzId": "44444444-4444-4444-8444-444444444444", "song": []},
+        }
+        db = open_store(Path(self.tmp) / routes.STORE_FILE)
+        ur.enqueue(db, "artist", "ar-1")
+        out = ur.process_next(db, get_album=albums.get, get_artist=artists.get,
+                              fetch=lambda url: (_ for _ in ()).throw(AssertionError("no network")))
+        self.assertEqual(out["state"], "done", out)
+        self.assertIn("2 albums", out["message"])
+        from intelligence.store import repositories as repo
+        self.assertIsNotNone(repo.find_entity(db, "artist", mbid=asked))
+        self.assertIsNotNone(repo.find_entity(db, "artist", mbid=other))
+        db.close()
+
     def test_bad_subject_is_422(self):
         r = self.client.post("/api/knowledge/update-store", json={"subject": "song", "navidrome_id": "1"})
         self.assertEqual(r.status_code, 422)
