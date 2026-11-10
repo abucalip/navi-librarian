@@ -8,6 +8,8 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from app.api import radio
+from integrations.radio import logos
+from integrations.radio.tile import tile_png
 from app.api.dependencies import get_librarian
 from app.security.app_login_middleware import create_app_login_middleware
 from tests.test_radio_icy import block
@@ -145,6 +147,85 @@ class RadioRouteTests(unittest.TestCase):
             self.assertFalse(self.client.post(f"/api/radio/plays/{play}/get").json()["ok"])
         request.assert_not_called()
         self.assertEqual(self.store.get_play(play)["grabbed"], 0)
+
+
+
+ROWS = [{"id": "1", "name": "Rock FM", "streamUrl": "http://rock.example/live", "homepageUrl": ""}]
+
+
+def navidrome(method, **params):
+    if method == "getInternetRadioStations":
+        return {"internetRadioStations": {"internetRadioStation": ROWS}}
+    return {}
+
+
+class StationFieldRouteTests(unittest.TestCase):
+    def setUp(self):
+        self.dir = tempfile.TemporaryDirectory()
+        radio._STORES.clear()
+        self.librarian = FakeLibrarian(self.dir.name)
+        self.librarian.api_call = mock.Mock(side_effect=navidrome)
+        self.store = radio.get_store(self.librarian)
+        app = FastAPI()
+        app.include_router(radio.router)
+        app.dependency_overrides[get_librarian] = lambda: self.librarian
+        self.client = TestClient(app)
+        # No outside request is made by any route test; logos come from the generated tile.
+        patcher = mock.patch.object(logos, "_find_remote", return_value=None)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+    def tearDown(self):
+        self.dir.cleanup()
+
+    def test_favourite_and_tags_are_saved_and_listed(self):
+        self.assertEqual(self.client.put("/api/radio/stations/1/favourite", json={"favourite": True}).json(),
+                         {"id": "1", "favourite": True})
+        self.assertEqual(self.client.put("/api/radio/stations/1/tags", json={"tags": ["rock", "Rock"]}).json(),
+                         {"id": "1", "tags": ["rock"]})
+        row = self.client.get("/api/radio/stations").json()["items"][0]
+        self.assertEqual((row["favourite"], row["tags"], row["logo_url"]),
+                         (True, ["rock"], "/api/radio/stations/1/logo"))
+        self.assertEqual(row["playable_url"], "http://rock.example/live")
+
+    def test_bad_favourite_or_tags_are_400(self):
+        self.assertEqual(self.client.put("/api/radio/stations/1/favourite", json={"favourite": "yes"}).status_code,
+                         400)
+        self.assertEqual(self.client.put("/api/radio/stations/1/tags", json={"tags": "rock"}).status_code, 400)
+        self.assertEqual(self.client.put("/api/radio/stations/99/favourite", json={"favourite": True}).status_code,
+                         400)
+
+    def test_logo_without_a_found_image_is_the_generated_png_tile(self):
+        for size in (128, 512):
+            with self.subTest(size=size):
+                response = self.client.get(f"/api/radio/stations/1/logo?size={size}")
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(response.headers["content-type"], "image/png")
+                self.assertEqual(response.content[:8], b"\x89PNG\r\n\x1a\n")
+                self.assertIn("max-age", response.headers["cache-control"])
+        self.assertEqual(self.client.get("/api/radio/stations/1/logo?size=100").status_code, 400)
+
+    def test_logo_for_an_unknown_station_is_400_and_bad_ids_are_refused(self):
+        self.assertEqual(self.client.get("/api/radio/stations/99/logo").status_code, 400)
+        self.assertEqual(self.client.get("/api/radio/stations/..%2Fx/logo").status_code, 404)
+
+    def test_owner_logo_is_stored_served_and_cleared(self):
+        png = tile_png("Upload", 16)
+        put = self.client.put("/api/radio/stations/1/logo", content=png,
+                              headers={"content-type": "image/png"})
+        self.assertEqual(put.json(), {"id": "1", "logo_url": "/api/radio/stations/1/logo", "source": "override"})
+        got = self.client.get("/api/radio/stations/1/logo?size=512")
+        self.assertEqual((got.headers["content-type"], got.content), ("image/png", png))
+        self.assertEqual(self.client.delete("/api/radio/stations/1/logo").json()["ok"], True)
+        self.assertIsNone(self.store.get_logo_state("1"))
+        self.assertEqual(self.client.get("/api/radio/stations/1/logo").headers["content-type"], "image/png")
+
+    def test_logo_upload_refuses_other_content_and_oversize_bodies(self):
+        svg = b"<svg xmlns='http://www.w3.org/2000/svg'/>"
+        self.assertEqual(self.client.put("/api/radio/stations/1/logo", content=svg).status_code, 400)
+        too_big = b"\x89PNG\r\n\x1a\n" + b"0" * (logos.MAX_UPLOAD_BYTES + 1)
+        self.assertEqual(self.client.put("/api/radio/stations/1/logo", content=too_big).status_code, 413)
+        self.assertIsNone(self.store.get_logo_state("1"))
 
 
 if __name__ == "__main__":

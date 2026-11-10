@@ -41,8 +41,10 @@ class StationTests(unittest.TestCase):
         update = [c for c in self.api.calls if c[0] == "updateInternetRadioStation"][0][1]
         self.assertEqual((update["name"], update["homepageUrl"]), ("Rock FM", "http://rock.example"))
         listed = stations.list_stations(self.api, self.store)
-        self.assertEqual(listed, [{"id": "7", "name": "Rock FM", "proxied": True,
-                                   "stream_url": "http://rock.example/live"}])
+        self.assertEqual(listed[0]["id"], "7")
+        self.assertTrue(listed[0]["proxied"])
+        self.assertEqual(listed[0]["stream_url"], "http://rock.example/live")
+        self.assertEqual(listed[0]["playable_url"], url)
         stations.disable(self.api, self.store, "7")
         self.assertEqual(self.api.rows["7"]["streamUrl"], "http://rock.example/live")
         self.assertFalse(stations.list_stations(self.api, self.store)[0]["proxied"])
@@ -118,3 +120,84 @@ class RecordingAlbumTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class StationListFieldTests(unittest.TestCase):
+    def setUp(self):
+        self.dir = tempfile.TemporaryDirectory()
+        self.store = RadioStore(Path(self.dir.name) / "radio.sqlite3")
+        self.api = FakeNavidrome([
+            {"id": "1", "name": "Zeta Radio", "streamUrl": "http://zeta.example/live", "homepageUrl": ""},
+            {"id": "2", "name": "Alpha FM", "streamUrl": "http://alpha.example/live",
+             "homepageUrl": "http://alpha.example"},
+            {"id": "3", "name": "Beta Jazz", "streamUrl": "http://beta.example/live", "homepageUrl": ""},
+        ])
+
+    def tearDown(self):
+        self.dir.cleanup()
+
+    def test_fields_for_a_station_that_is_not_relayed(self):
+        row = stations.list_stations(self.api, self.store)[-1]
+        self.assertEqual(row, {
+            "id": "1", "name": "Zeta Radio", "proxied": False,
+            "stream_url": "http://zeta.example/live", "playable_url": "http://zeta.example/live",
+            "homepage_url": None, "logo_url": "/api/radio/stations/1/logo",
+            "favourite": False, "tags": [], "last_played_at": None,
+        })
+
+    def test_relayed_station_is_playable_through_the_relay_and_keeps_its_original_address(self):
+        stations.enable(self.api, self.store, "2", "https://librarian.example")
+        row = next(s for s in stations.list_stations(self.api, self.store) if s["id"] == "2")
+        self.assertTrue(row["proxied"])
+        self.assertEqual(row["stream_url"], "http://alpha.example/live")
+        self.assertTrue(row["playable_url"].startswith("https://librarian.example/radio/stream/"))
+        self.assertEqual(row["homepage_url"], "http://alpha.example")
+
+    def test_favourites_first_then_last_played_then_name(self):
+        self.store.set_favourite("1", True)
+        self.store.record_play("3", "Beta Jazz", "B - Song", "B", "Song", 40, now=1000.0)
+        self.store.record_play("2", "Alpha FM", "A - Song", "A", "Song", 40, now=2000.0)
+        order = [s["id"] for s in stations.list_stations(self.api, self.store)]
+        self.assertEqual(order, ["1", "2", "3"])
+        self.assertEqual(
+            [s["last_played_at"] for s in stations.list_stations(self.api, self.store)],
+            [None, 2000.0, 1000.0])  # last time a play was logged (last_heard_at)
+
+    def test_unplayed_stations_sort_by_name(self):
+        self.assertEqual([s["id"] for s in stations.list_stations(self.api, self.store)], ["2", "3", "1"])
+
+    def test_set_favourite_and_tags_persist_and_show_in_the_list(self):
+        self.assertEqual(stations.set_favourite(self.api, self.store, "3", True),
+                         {"id": "3", "favourite": True})
+        self.assertEqual(stations.set_tags(self.api, self.store, "3", [" jazz ", "Jazz", "late  night"]),
+                         {"id": "3", "tags": ["jazz", "late night"]})
+        row = next(s for s in stations.list_stations(self.api, self.store) if s["id"] == "3")
+        self.assertTrue(row["favourite"])
+        self.assertEqual(row["tags"], ["jazz", "late night"])
+
+    def test_favourite_must_be_a_boolean_and_station_must_exist(self):
+        for bad in ("yes", 1, None):
+            with self.subTest(value=bad), self.assertRaises(stations.StationError):
+                stations.set_favourite(self.api, self.store, "3", bad)
+        with self.assertRaises(stations.StationError):
+            stations.set_favourite(self.api, self.store, "99", True)
+
+    def test_tags_are_cleaned_and_limited(self):
+        self.assertEqual(stations.clean_tags(None), [])
+        self.assertEqual(stations.clean_tags(["  ", ""]), [])
+        with self.assertRaises(stations.StationError):
+            stations.clean_tags("jazz")
+        with self.assertRaises(stations.StationError):
+            stations.clean_tags([1])
+        with self.assertRaises(stations.StationError):
+            stations.clean_tags(["x" * (stations.MAX_TAG_LENGTH + 1)])
+        with self.assertRaises(stations.StationError):
+            stations.clean_tags([f"t{i}" for i in range(stations.MAX_TAGS + 1)])
+
+    def test_logo_subject_gives_the_original_address_when_relayed(self):
+        stations.enable(self.api, self.store, "2", "https://librarian.example")
+        subject = stations.logo_subject(self.api, self.store, "2")
+        self.assertEqual(subject["stream_url"], "http://alpha.example/live")
+        self.assertEqual(subject["homepage_url"], "http://alpha.example")
+        self.assertIsNone(stations.logo_subject(self.api, self.store, "1")["homepage_url"])
+

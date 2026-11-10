@@ -4,13 +4,14 @@ from __future__ import annotations
 import threading
 
 import httpx
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import StreamingResponse
 
 from acquisition import track_service
 from app.api.dependencies import get_librarian
 from integrations.musicbrainz.recording_album import lookup_recording_album
-from integrations.radio import relay, stations
+from integrations.radio import logos, relay, stations
 from integrations.radio.listening import ListenTracker
 from integrations.radio.store import RadioStore
 
@@ -65,6 +66,67 @@ def radio_enable(station_id: str, payload: dict, librarian=Depends(get_librarian
 @router.post("/api/radio/stations/{station_id}/disable")
 def radio_disable(station_id: str, librarian=Depends(get_librarian), store=Depends(get_store)):
     return _station_call(lambda: stations.disable(librarian.api_call, store, station_id))
+
+
+LOGO_CACHE_CONTROL = "private, max-age=300"
+
+
+@router.put("/api/radio/stations/{station_id}/favourite")
+def radio_favourite(station_id: str, payload: dict, librarian=Depends(get_librarian), store=Depends(get_store)):
+    return _station_call(lambda: stations.set_favourite(
+        librarian.api_call, store, station_id, payload.get("favourite")))
+
+
+@router.put("/api/radio/stations/{station_id}/tags")
+def radio_tags(station_id: str, payload: dict, librarian=Depends(get_librarian), store=Depends(get_store)):
+    return _station_call(lambda: stations.set_tags(librarian.api_call, store, station_id, payload.get("tags")))
+
+
+@router.get("/api/radio/stations/{station_id}/logo")
+def radio_logo(station_id: str, size: int = 128, librarian=Depends(get_librarian), store=Depends(get_store)):
+    """A station's logo: the cached image, or a generated PNG tile. Resolved on first request."""
+    if size not in logos.LOGO_SIZES:
+        raise HTTPException(status_code=400, detail="size must be 128 or 512")
+    try:
+        cached = logos.cached_logo(store, librarian.DATA_DIR, station_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="invalid station id")
+    if cached is not None:
+        return Response(cached.path.read_bytes(), media_type=cached.media_type,
+                        headers={"Cache-Control": LOGO_CACHE_CONTROL})
+    subject = _station_call(lambda: stations.logo_subject(librarian.api_call, store, station_id))
+    body, media_type = logos.image_bytes(subject, store, librarian.DATA_DIR, size)
+    return Response(body, media_type=media_type, headers={"Cache-Control": LOGO_CACHE_CONTROL})
+
+
+def _save_logo(station_id: str, body: bytes, librarian, store) -> dict:
+    _station_call(lambda: stations.logo_subject(librarian.api_call, store, station_id))
+    try:
+        logos.set_override(store, librarian.DATA_DIR, station_id, body)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    return {"id": station_id, "logo_url": stations.logo_path(station_id), "source": logos.OVERRIDE}
+
+
+@router.put("/api/radio/stations/{station_id}/logo")
+async def radio_put_logo(station_id: str, request: Request, librarian=Depends(get_librarian),
+                         store=Depends(get_store)):
+    """The owner's own image for a station (PNG, JPEG, GIF, WebP or ICO, up to 2 MB)."""
+    body = await request.body()
+    if len(body) > logos.MAX_UPLOAD_BYTES:
+        raise HTTPException(status_code=413, detail="The image is too large.")
+    return await run_in_threadpool(_save_logo, station_id, body, librarian, store)
+
+
+@router.delete("/api/radio/stations/{station_id}/logo")
+def radio_delete_logo(station_id: str, librarian=Depends(get_librarian), store=Depends(get_store)):
+    """Clear the stored logo; the next request resolves it again from the sources."""
+    _station_call(lambda: stations.logo_subject(librarian.api_call, store, station_id))
+    try:
+        logos.clear(store, librarian.DATA_DIR, station_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="invalid station id")
+    return {"ok": True, "logo_url": stations.logo_path(station_id)}
 
 
 @router.get("/api/radio/plays")
