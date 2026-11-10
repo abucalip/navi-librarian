@@ -97,7 +97,7 @@ A derived view over the merged index (not a replacement for it). For each type t
 
 ### Image cache and endpoints
 - Resized per-album images (sizes: 250 px thumb, 640 px display; the CAA serves 250, 500 and 1200 px, so slice 1 checks whether 640 is resized by the server or the nearest CAA size is used) live in a disk cache with a **1.5 GB** budget shared with full-resolution images. Eviction is least-recently-used, with the front cover of each owned album protected from eviction until nothing else is left.
-- Endpoints (names to be settled in the contract): `GET /api/artwork/index?rgid=` and `GET /api/artwork/image/{image_id}?size=thumb|display|full`. `full` is fetched on first zoom and stored; later requests are served from disk.
+- Endpoints (built, PR pending; the contract section is still to write): `GET /api/artwork/index?rgid=&release=` (`release` = owned release, optional) and `GET /api/artwork/image/{image_id}?size=thumb|display|full`. Built with the CAA 250 px file as `thumb` and the 500 px file as `display` because no image library is installed; 640 px needs Pillow (owner decision). `full` is fetched on first zoom and stored; later requests are served from disk.
 - The server validates the image bytes, rejects non-images and oversize responses, and never follows a redirect to a host other than the CAA and the archive.org hosts that serve its files.
 - Access to the endpoints follows the existing session auth; image URLs are not public.
 - A background warm-up fills the display size for owned albums slowly, in order of recent listening, and stops at the budget. Nothing is fetched for albums the owner has never opened if the budget is full.

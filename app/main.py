@@ -42,6 +42,7 @@ from app.api.waveform import router as waveform_router
 from app.api.sonic import router as sonic_router
 from app.api.library import router as library_router
 from app.api.owned_artwork import router as owned_artwork_router
+from app.api.artwork import router as artwork_router
 from app.api.radio import router as radio_router
 from app.api.search import router as search_router
 from app.api.http_cache import add_cache_headers
@@ -228,6 +229,7 @@ app.include_router(sonic_router)
 app.include_router(waveform_router)
 app.include_router(capabilities_router)
 app.include_router(owned_artwork_router)
+app.include_router(artwork_router)
 app.middleware("http")(add_cache_headers)
 app.include_router(metadata_router)
 persistent_metadata.attach(
