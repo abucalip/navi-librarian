@@ -1,6 +1,7 @@
 """SQLite persistence for proxied stations and the log of songs that were heard."""
 from __future__ import annotations
 
+import json
 import sqlite3
 import time
 from pathlib import Path
@@ -37,6 +38,19 @@ CREATE TABLE IF NOT EXISTS radio_settings (
     value TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS radio_plays_heard ON radio_plays (heard_at DESC);
+CREATE TABLE IF NOT EXISTS radio_station_prefs (
+    station_id TEXT PRIMARY KEY,
+    favourite INTEGER NOT NULL DEFAULT 0,
+    tags TEXT NOT NULL DEFAULT '[]'
+);
+CREATE TABLE IF NOT EXISTS radio_logo_state (
+    station_id TEXT PRIMARY KEY,
+    source TEXT NOT NULL,
+    status TEXT NOT NULL,
+    media_type TEXT,
+    checked_at REAL NOT NULL,
+    expires_at REAL
+);
 """
 
 
@@ -81,6 +95,55 @@ class RadioStore:
         with self._connect() as db:
             rows = db.execute("SELECT * FROM radio_stations WHERE enabled = 1").fetchall()
         return [dict(row) for row in rows]
+
+    # ---- station preferences (favourite, tags) ----------------------------------------
+
+    def station_prefs(self) -> dict[str, dict[str, Any]]:
+        with self._connect() as db:
+            rows = db.execute("SELECT station_id, favourite, tags FROM radio_station_prefs").fetchall()
+        return {row["station_id"]: {"favourite": bool(row["favourite"]), "tags": json.loads(row["tags"])}
+                for row in rows}
+
+    def set_favourite(self, station_id: str, favourite: bool) -> None:
+        with self._connect() as db:
+            db.execute(
+                "INSERT INTO radio_station_prefs (station_id, favourite) VALUES (?, ?) "
+                "ON CONFLICT(station_id) DO UPDATE SET favourite = excluded.favourite",
+                (station_id, 1 if favourite else 0))
+
+    def set_tags(self, station_id: str, tags: list[str]) -> None:
+        with self._connect() as db:
+            db.execute(
+                "INSERT INTO radio_station_prefs (station_id, tags) VALUES (?, ?) "
+                "ON CONFLICT(station_id) DO UPDATE SET tags = excluded.tags",
+                (station_id, json.dumps(tags)))
+
+    def last_played_map(self) -> dict[str, float]:
+        with self._connect() as db:
+            rows = db.execute(
+                "SELECT station_id, MAX(last_heard_at) AS last FROM radio_plays GROUP BY station_id").fetchall()
+        return {row["station_id"]: row["last"] for row in rows}
+
+    # ---- logo resolution state ---------------------------------------------------------
+
+    def get_logo_state(self, station_id: str) -> dict[str, Any] | None:
+        with self._connect() as db:
+            row = db.execute("SELECT * FROM radio_logo_state WHERE station_id = ?", (station_id,)).fetchone()
+        return dict(row) if row else None
+
+    def save_logo_state(self, station_id: str, source: str, status: str, media_type: str | None,
+                        checked_at: float, expires_at: float | None) -> None:
+        with self._connect() as db:
+            db.execute(
+                "INSERT INTO radio_logo_state (station_id, source, status, media_type, checked_at, expires_at) "
+                "VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT(station_id) DO UPDATE SET source = excluded.source, "
+                "status = excluded.status, media_type = excluded.media_type, "
+                "checked_at = excluded.checked_at, expires_at = excluded.expires_at",
+                (station_id, source, status, media_type, checked_at, expires_at))
+
+    def delete_logo_state(self, station_id: str) -> None:
+        with self._connect() as db:
+            db.execute("DELETE FROM radio_logo_state WHERE station_id = ?", (station_id,))
 
     # ---- settings ----------------------------------------------------------------------
 

@@ -1,0 +1,57 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/api/radio/stations",
+    "query": {},
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "content_type": "application/json",
+    "elapsed_seconds": 0.0,
+    "body": {
+      "items": [
+        {
+          "id": "11",
+          "name": "Example Rock FM",
+          "proxied": true,
+          "stream_url": "http://rock.example.invalid/live",
+          "playable_url": "https://librarian.example.invalid/radio/stream/fixturetoken",
+          "homepage_url": "http://rock.example.invalid/",
+          "logo_url": "/api/radio/stations/11/logo",
+          "favourite": true,
+          "tags": [
+            "rock",
+            "local"
+          ],
+          "last_played_at": null
+        },
+        {
+          "id": "12",
+          "name": "Example Jazz",
+          "proxied": false,
+          "stream_url": "http://jazz.example.invalid/stream",
+          "playable_url": "http://jazz.example.invalid/stream",
+          "homepage_url": null,
+          "logo_url": "/api/radio/stations/12/logo",
+          "favourite": false,
+          "tags": [],
+          "last_played_at": 1700000000.0
+        },
+        {
+          "id": "13",
+          "name": "Example Talk",
+          "proxied": false,
+          "stream_url": "http://talk.example.invalid/live",
+          "playable_url": "http://talk.example.invalid/live",
+          "homepage_url": null,
+          "logo_url": "/api/radio/stations/13/logo",
+          "favourite": false,
+          "tags": [],
+          "last_played_at": null
+        }
+      ]
+    }
+  },
+  "captured_at": "2026-11-10T17:35:01Z"
+}

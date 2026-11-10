@@ -63,6 +63,8 @@ Returns the live title for each proxied station that has a current listener. Sta
 
 Resolved once per station, cached on disk in the data directory, served at `GET /api/radio/stations/{id}/logo?size=` in one of two sizes: 128 and 512 px, PNG or WebP (proposal default, open question 2).
 
+Slice 1 note: `size` accepts 128 or 512 and is validated, but the logo itself is served as the source image (PNG, JPEG, GIF, WebP or ICO, sniffed from its bytes) because no image library is installed. Only the generated tile is sized (a PNG drawn in pure Python). Resizing waits for an approved image dependency.
+
 Resolution order:
 
 1. **Owner override:** `PUT /api/radio/stations/{id}/logo` to upload, `DELETE` to clear.
@@ -81,7 +83,7 @@ Fetch rules for every external fetch:
 ### 3.5 Favourites and tags
 
 - `PUT /api/radio/stations/{id}/favourite` sets or clears the flag.
-- Tags are owner-set free text, for grouping (exact write endpoint to be fixed in slice 1).
+- Tags are owner-set free text, for grouping. `PUT /api/radio/stations/{id}/tags` with `{"tags": [...]}` replaces the list: at most 10 tags of 24 characters, blank and case-insensitive duplicates dropped.
 
 ### 3.6 Heard list
 

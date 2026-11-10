@@ -1,0 +1,26 @@
+{
+  "request": {
+    "method": "PUT",
+    "path": "/api/radio/stations/11/tags",
+    "query": {},
+    "body": {
+      "tags": [
+        "rock",
+        "local"
+      ]
+    }
+  },
+  "response": {
+    "status": 200,
+    "content_type": "application/json",
+    "elapsed_seconds": 0.0,
+    "body": {
+      "id": "11",
+      "tags": [
+        "rock",
+        "local"
+      ]
+    }
+  },
+  "captured_at": "2026-11-10T17:35:01Z"
+}

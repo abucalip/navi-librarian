@@ -42,7 +42,7 @@ class FixtureFilesTests(unittest.TestCase):
             with self.subTest(fixture=path.name):
                 doc = json.loads(path.read_text(encoding="utf-8"))
                 self.assertEqual(set(doc), {"request", "response", "captured_at"})
-                self.assertIn(doc["request"]["method"], {"GET", "POST"})
+                self.assertIn(doc["request"]["method"], {"GET", "POST", "PUT"})
                 self.assertIsInstance(doc["response"]["status"], int)
                 self.assertIn("body", doc["response"])
 

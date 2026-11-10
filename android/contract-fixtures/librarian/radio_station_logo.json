@@ -1,0 +1,20 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/api/radio/stations/12/logo",
+    "query": {
+      "size": "128"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "content_type": "image/png",
+    "elapsed_seconds": 0.0,
+    "body": {
+      "content_type": "image/png",
+      "bytes": 364
+    }
+  },
+  "captured_at": "2026-11-10T17:35:01Z"
+}
