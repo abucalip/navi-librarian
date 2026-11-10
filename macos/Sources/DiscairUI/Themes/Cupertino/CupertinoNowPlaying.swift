@@ -1,3 +1,4 @@
+import AppKit
 import DiscairAudio
 import DiscairLibrarian
 import SwiftUI
@@ -33,10 +34,10 @@ struct CupertinoNowPlaying: View {
         ZStack(alignment: .topLeading) {
             HStack(spacing: 6) {
                 TrafficLights()
-                Button { state.screen = .home } label: {
-                    Image(systemName: "chevron.backward").font(.system(size: 13, weight: .semibold))
+                Button { state.closeNowPlaying() } label: {
+                    Image(systemName: "chevron.down").font(.system(size: 13, weight: .semibold))
                 }
-                .buttonStyle(.plain).accessibilityLabel("Back").padding(.leading, 14)
+                .buttonStyle(.plain).accessibilityLabel("Close Now Playing").help("Back to \(AppState.title(of: state.nowPlayingReturn))").padding(.leading, 14)
             }
             .padding(18)
 
@@ -80,6 +81,7 @@ struct CupertinoNowPlaying: View {
         .foregroundStyle(.white)
         .clipShape(RoundedRectangle(cornerRadius: CU.windowRadius, style: .continuous))
         .background(WindowConfigurator())
+        .background(TwoFingerSwipeDown(maxX: 620) { state.closeNowPlaying() })
         .task(id: "\(state.player.current?.artist ?? "")|\(state.player.current?.album ?? "")|\(artwork?.generation ?? 0)") {
             albumArt = nil
             guard live, let c = state.player.current, let artwork else { return }
@@ -271,5 +273,41 @@ struct CupertinoNowPlaying: View {
         .background(Color.black.opacity(0.3), in: Capsule())          // dimming layer under clear glass
         .glassEffect(.clear, in: Capsule())
         .overlay { if strong { Capsule().fill(.white.opacity(0.18)) } }
+    }
+}
+
+
+/// A two-finger swipe down on the left part of the window (the artwork side, so the lyrics keep their own scrolling) calls `action`.
+private struct TwoFingerSwipeDown: NSViewRepresentable {
+    let maxX: CGFloat
+    let action: () -> Void
+
+    func makeNSView(context: Context) -> NSView {
+        let v = NSView()
+        context.coordinator.install(maxX: maxX, action: action)
+        return v
+    }
+    func updateNSView(_ v: NSView, context: Context) { context.coordinator.install(maxX: maxX, action: action) }
+    static func dismantleNSView(_ v: NSView, coordinator: Coordinator) { coordinator.remove() }
+    func makeCoordinator() -> Coordinator { Coordinator() }
+
+    final class Coordinator {
+        private var monitor: Any?
+        private var travelled: CGFloat = 0
+        private var fired = false
+
+        func install(maxX: CGFloat, action: @escaping () -> Void) {
+            remove()
+            monitor = NSEvent.addLocalMonitorForEvents(matching: .scrollWheel) { [weak self] e in
+                guard let self, e.hasPreciseScrollingDeltas, e.locationInWindow.x < maxX else { return e }
+                if e.phase == .began { self.travelled = 0; self.fired = false }
+                // Fingers moving down the trackpad give a positive delta with natural scrolling on.
+                self.travelled += e.scrollingDeltaY
+                if !self.fired, self.travelled > 90 { self.fired = true; DispatchQueue.main.async(execute: action) }
+                return e
+            }
+        }
+        func remove() { if let m = monitor { NSEvent.removeMonitor(m) }; monitor = nil }
+        deinit { if let m = monitor { NSEvent.removeMonitor(m) } }
     }
 }

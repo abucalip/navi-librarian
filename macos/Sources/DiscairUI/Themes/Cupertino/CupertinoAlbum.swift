@@ -70,8 +70,6 @@ struct CupertinoAlbumBanner: View {
                                     .buttonStyle(CapsuleButtonStyle(translucent: true)).disabled(!state.acquisition.canGet(a, song: t.title))
                                     .help(state.acquisition.detail(for: a, song: t.title))
                             }
-                            Button(state.acquisition.isSaved(a) ? "Saved" : "Save") { state.actions.save(album: a) }
-                                .buttonStyle(CapsuleButtonStyle(translucent: true)).disabled(state.acquisition.isSaved(a))
                         }
                     }
                 }
@@ -84,45 +82,81 @@ struct CupertinoAlbumBanner: View {
     }
 }
 
+enum AlbumTab: String, CaseIterable, Identifiable {
+    case tracks = "Tracks", notes = "Liner Notes", booklet = "Booklet", credits = "Credits", reviews = "Reviews"
+    var id: String { rawValue }
+}
+
 struct CupertinoAlbum: View {
     let state: AppState
+    @State private var tab: AlbumTab = .tracks
 
     var body: some View {
         let a = state.selectedAlbum
         ScrollViewReader { proxy in
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
-                trackTable.padding(.top, 18)
-
-                if !state.library.more(by: a).isEmpty {
-                Text("More by \(a.artist)").font(CU.title(20)).padding(.top, 22).padding(.bottom, 10)
-                    .accessibilityAddTraits(.isHeader)
-                HStack(alignment: .top, spacing: 20) {
-                    ForEach(state.library.more(by: a)) { m in
-                        Button { state.open(album: m) } label: {
-                        VStack(alignment: .leading, spacing: 8) {
-                            CoverView(album: m).frame(width: 110).clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-                                .shadow(color: .black.opacity(0.2), radius: 7, y: 4)
-                            Text(m.title).fontWeight(.semibold).lineLimit(1)
-                        }
-                        .font(.system(size: 13)).frame(width: 110, alignment: .leading)
-                        }
-                        .buttonStyle(.plain).accessibilityLabel("Open \(m.title)")
-                    }
+                tabBar.padding(.top, 16)
+                switch tab {
+                case .tracks: tracksTab(a)
+                case .notes: CupertinoAlbumSpread(state: state, part: .notes).padding(.top, 14)
+                case .booklet: AlbumBookletTab(state: state).padding(.top, 14)
+                case .credits: CupertinoAlbumSpread(state: state, part: .credits).padding(.top, 14)
+                case .reviews: CupertinoAlbumSpread(state: state, part: .reviews).padding(.top, 14)
                 }
-                }
-                RelatedSections(state: state, albums: true)
-                CupertinoAlbumSpread(state: state)
             }
             .padding(.horizontal, 28).padding(.bottom, 28)
         }
         .scrollEdgeEffectStyle(.hard, for: .top)
         .task(id: a.id) { await state.loadSelectedAlbum() }
+        .onChange(of: a.id) { _, _ in tab = .tracks }
         // A song opened from a Library search is marked and scrolled into view once the tracks arrive.
         .onChange(of: state.library.tracks) { _, tracks in
-            if let t = tracks.first(where: { isHighlighted($0) }) { withAnimation { proxy.scrollTo(t.id, anchor: .center) } }
+            if let t = tracks.first(where: { isHighlighted($0) }) { tab = .tracks; withAnimation { proxy.scrollTo(t.id, anchor: .center) } }
         }
         }
+    }
+
+    private var tabBar: some View {
+        HStack(spacing: 6) {
+            ForEach(AlbumTab.allCases) { t in
+                Button { tab = t } label: {
+                    Text(t.rawValue).font(.system(size: 13, weight: .semibold))
+                        .padding(.horizontal, 14).padding(.vertical, 6)
+                        .background(tab == t ? CU.accent : CU.fill, in: Capsule())
+                        .foregroundStyle(tab == t ? Color.white : CU.ink)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(t.rawValue).accessibilityAddTraits(tab == t ? [.isButton, .isSelected] : .isButton)
+            }
+        }
+    }
+
+    @ViewBuilder private func tracksTab(_ a: AlbumItem) -> some View {
+        // The table takes what it needs; the right side is kept free for a pane that comes later.
+        HStack(alignment: .top, spacing: 28) {
+            trackTable.frame(maxWidth: 620)
+            Color.clear.frame(maxWidth: .infinity, minHeight: 1).accessibilityHidden(true)
+        }
+        .padding(.top, 14)
+        if !state.library.more(by: a).isEmpty {
+            Text("More by \(a.artist)").font(CU.title(20)).padding(.top, 22).padding(.bottom, 10)
+                .accessibilityAddTraits(.isHeader)
+            HStack(alignment: .top, spacing: 20) {
+                ForEach(state.library.more(by: a)) { m in
+                    Button { state.open(album: m) } label: {
+                    VStack(alignment: .leading, spacing: 8) {
+                        CoverView(album: m).frame(width: 110).clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                            .shadow(color: .black.opacity(0.2), radius: 7, y: 4)
+                        Text(m.title).fontWeight(.semibold).lineLimit(1)
+                    }
+                    .font(.system(size: 13)).frame(width: 110, alignment: .leading)
+                    }
+                    .buttonStyle(.plain).accessibilityLabel("Open \(m.title)")
+                }
+            }
+        }
+        AlbumRelatedGrids(state: state)
     }
 
     private func isHighlighted(_ t: TrackItem) -> Bool {
@@ -132,7 +166,7 @@ struct CupertinoAlbum: View {
 
     private var trackTable: some View {
         VStack(spacing: 0) {
-            row(["#", "Song", "Time", "Quality", ""], header: true, shaded: false, playing: false, missing: false)
+            row(["#", "Track", "Duration", "Quality", ""], header: true, shaded: false, playing: false, missing: false)
             ForEach(Array(state.library.tracks.enumerated()), id: \.element.id) { i, t in
                 row(nil, track: t, index: i, shaded: i % 2 == 0)
                     .overlay { if isHighlighted(t) { RoundedRectangle(cornerRadius: 7, style: .continuous).stroke(CU.accent, lineWidth: 2) } }
@@ -146,7 +180,7 @@ struct CupertinoAlbum: View {
         .accessibilityElement(children: .contain)
     }
 
-    private let cols: [CGFloat?] = [52, nil, 80, 130, 110]
+    private let cols: [CGFloat?] = [44, nil, 84, 110, 96]
 
     private func row(_ header: [String]?, header isHeader: Bool = false, track: TrackItem? = nil, index: Int = 0,
                      shaded: Bool, playing: Bool = false, missing: Bool = false) -> some View {
@@ -158,8 +192,8 @@ struct CupertinoAlbum: View {
                 else if on { PlayingBars(active: state.player.isPlaying) }
                 else { Text("\(index + 1)").lineLimit(1).fixedSize() }
             }
-            cell(width: cols[1]) { Text(isHeader ? "Song" : track!.title).lineLimit(1) }
-            cell(width: cols[2]) { Text(isHeader ? "Time" : track!.duration).lineLimit(1).fixedSize() }
+            cell(width: cols[1]) { Text(isHeader ? "Track" : track!.title).lineLimit(1) }
+            cell(width: cols[2]) { Text(isHeader ? "Duration" : track!.duration).lineLimit(1).fixedSize() }
             cell(width: cols[3]) {
                 if isHeader { Text("Quality") }
                 else if track!.owned {

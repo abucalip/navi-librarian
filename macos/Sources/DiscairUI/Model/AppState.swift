@@ -67,7 +67,15 @@ public final class NoopActions: DiscairActions {
 @Observable
 public final class AppState {
     public var themeID: ThemeID
-    public var screen: Screen
+    public var screen: Screen {
+        didSet {
+            // Now Playing remembers where it was opened from, so its chevron goes back there.
+            if screen == .nowPlaying && oldValue != .nowPlaying { nowPlayingReturn = oldValue }
+        }
+    }
+    /// The screen the chevron on Now Playing returns to.
+    public let albumCredits = AlbumCreditsModel()
+    public private(set) var nowPlayingReturn: Screen = .home
     public var selectedAlbum: AlbumItem = Fixtures.albums[0]
     /// The live connection and logins. `nil` in previews and screenshot tests, which show the sample label.
     public let session: SessionModel?
@@ -369,6 +377,7 @@ public final class AppState {
         await library.loadTracks(for: selectedAlbum, navidrome: session?.navidrome, librarian: session?.librarian, related: related)
         await relatedLoad
         await spread.load(album: selectedAlbum, navidrome: session?.navidrome, librarian: session?.librarian, libraryArtists: library.artists.map(\.name))
+        await albumCredits.load(rgid: related.releaseGroupMBID, librarian: session?.librarian)
     }
 
     public func retrySpreadReviews() async { await spread.loadReviews(album: selectedAlbum, librarian: session?.librarian) }
@@ -462,7 +471,16 @@ public final class AppState {
     public func open(album: AlbumItem) {
         highlightedSong = nil
         if screen != .album && screen != .nowPlaying { albumBack = Self.listScreen(screen) }
+        // The previous album's songs, notes and similar lists are cleared at once, so the page never shows them under the new title.
+        if album.id != selectedAlbum.id || album.remoteID != selectedAlbum.remoteID || album.title != selectedAlbum.title {
+            library.showTracks([]); related.clear(); spread.startNewAlbum(); albumCredits.forget()
+        }
         selectedAlbum = album; screen = .album
+    }
+
+    /// Leaves Now Playing for the screen it was opened from.
+    public func closeNowPlaying() {
+        screen = nowPlayingReturn == .nowPlaying ? .home : nowPlayingReturn
     }
 
     public func open(artist: ArtistItem) {

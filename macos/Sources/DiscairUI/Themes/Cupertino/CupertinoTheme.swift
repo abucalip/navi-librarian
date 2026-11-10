@@ -256,15 +256,14 @@ struct CupertinoArtworkSlot: View {
 
     var body: some View {
         if let c = state.player.current {
-            Button { state.screen = .nowPlaying } label: {
+            // The large cover turns over on hover and opens the album's booklet on click (Now Playing when it has none).
+            PlayerBarCover(artist: c.artist, album: c.album, disc: c.disc, spinning: false, side: Self.side, cornerRadius: CU.sidebarRadius,
+                           showsDisc: false, fallback: { state.screen = .nowPlaying }) {
                 CoverView(album: AlbumItem(id: -1, title: c.album, artist: c.artist, year: 0, genre: "", format: "", owned: true, hue: 200, remoteID: c.albumID, coverArt: c.coverArt), px: 600)
-                    .frame(width: Self.side, height: Self.side)
-                    .clipShape(RoundedRectangle(cornerRadius: CU.sidebarRadius, style: .continuous))
-                    .shadow(color: .black.opacity(0.28), radius: 10, y: 4)
             }
+            .shadow(color: .black.opacity(0.28), radius: 10, y: 4)
             // The sidebar's glass starts 10 points in and is 216 wide: the cover takes the same column.
-            .buttonStyle(.plain).padding(.leading, 10).padding(.bottom, 10)
-            .accessibilityLabel("Now playing artwork: \(c.album.isEmpty ? c.title : c.album). Opens Now Playing")
+            .padding(.leading, 10).padding(.bottom, 10)
         } else {
             HStack(spacing: 5) {
                 Circle().fill(state.connectionIsGood ? Color.green : CU.accent).frame(width: 7, height: 7)

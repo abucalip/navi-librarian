@@ -132,7 +132,7 @@ struct CupertinoPlayerBar: View {
         Group {
             if let c = p.current {
                 HStack(spacing: 14) {
-                    PlayerBarCover(artist: c.artist, album: c.album, disc: c.disc, spinning: p.isPlaying, side: 50, cornerRadius: 7,
+                    PlayerBarCover(artist: c.artist, album: c.album, disc: c.disc, spinning: p.isPlaying, side: 50, cornerRadius: 7, flipsAndOpensBooklet: false,
                                    fallback: { state.screen = .nowPlaying }) {
                         CoverView(album: AlbumItem(id: -1, title: c.album, artist: c.artist, year: 0, genre: "", format: "", owned: true, hue: 200, remoteID: c.albumID, coverArt: c.coverArt))
                     }

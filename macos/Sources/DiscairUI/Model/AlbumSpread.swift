@@ -179,6 +179,12 @@ public final class AlbumSpreadModel {
 
     public init() {}
 
+    /// Forgets the album shown, so a new page never shows the last one's notes while its own load runs.
+    public func startNewAlbum() {
+        guard isLive else { return }
+        content = nil; reviews = .idle; loadedFor = nil; loading = true
+    }
+
     public func load(album: AlbumItem, navidrome: NavidromeClient?, librarian: LibrarianClient? = nil, libraryArtists: [String]) async {
         guard navidrome != nil || librarian != nil else {
             isLive = false; content = AlbumSpread.sample; reviews = .loaded(AlbumSpread.sampleReviews, retryable: false); loadedFor = nil; return
@@ -214,5 +220,5 @@ public final class AlbumSpreadModel {
         }
     }
 
-    public func reset() { content = nil; reviews = .idle; loadedFor = nil; isLive = false }
+    public func forget() { content = nil; reviews = .idle; loadedFor = nil; isLive = false }
 }

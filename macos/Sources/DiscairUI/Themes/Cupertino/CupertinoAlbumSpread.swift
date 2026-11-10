@@ -3,74 +3,85 @@ import SwiftUI
 /// The album spread under the track table: liner notes, credits, MusicBrainz data, similar artists, reviews.
 /// A part with nothing to show is left out. No mockup exists; it reuses the Album screen's own parts.
 struct CupertinoAlbumSpread: View {
+    enum Part { case notes, credits, reviews }
     let state: AppState
+    let part: Part
 
     var body: some View {
         let spread = state.spread
         VStack(alignment: .leading, spacing: 0) {
-            Text("Album spread").font(CU.title(20)).padding(.top, 26).padding(.bottom, 10).accessibilityAddTraits(.isHeader)
-            if spread.loading {
-                Text("Loading…").foregroundStyle(CU.muted)
-            } else if let c = spread.content, !c.isEmpty {
-                if let notes = c.notes {
-                    section("Liner notes") {
-                        Text(notes).font(.system(size: 13.5)).lineSpacing(3).textSelection(.enabled)
-                        if let src = c.notesSource, !src.isEmpty {
-                            if let u = c.notesURL { Link(src, destination: u).font(.system(size: 11.5)) }
-                            else { Text(src).font(.system(size: 11.5)).foregroundStyle(CU.muted) }
-                        }
-                    }
+            switch part {
+            case .reviews: reviews
+            case .notes, .credits:
+                if spread.loading {
+                    Text("Loading…").foregroundStyle(CU.muted)
+                } else if let c = spread.content, !c.isEmpty {
+                    if part == .notes { notes(c) } else { credits(c) }
+                } else {
+                    Text("Navidrome has no notes, credits or links for this album.").foregroundStyle(CU.muted)
                 }
-                if !c.credits.isEmpty {
-                    section("Credits") {
-                        VStack(alignment: .leading, spacing: 6) {
-                            ForEach(c.credits) { g in
-                                HStack(alignment: .firstTextBaseline, spacing: 12) {
-                                    Text(g.title).foregroundStyle(CU.muted).frame(width: 150, alignment: .leading)
-                                    Text(g.names.joined(separator: ", "))
-                                }
-                                .font(.system(size: 13)).accessibilityElement(children: .combine)
-                            }
-                        }
-                    }
-                }
-                if !c.facts.isEmpty || c.musicBrainzURL != nil || c.lastFmURL != nil {
-                    section("MusicBrainz and links") {
-                        VStack(alignment: .leading, spacing: 6) {
-                            ForEach(c.facts) { f in
-                                HStack(alignment: .firstTextBaseline, spacing: 12) {
-                                    Text(f.label).foregroundStyle(CU.muted).frame(width: 150, alignment: .leading)
-                                    Text(f.value).textSelection(.enabled)
-                                }
-                                .font(.system(size: 13)).accessibilityElement(children: .combine)
-                            }
-                            HStack(spacing: 16) {
-                                if let u = c.musicBrainzURL { Link("Open on MusicBrainz", destination: u) }
-                                if let u = c.lastFmURL { Link("Open on Last.fm", destination: u) }
-                            }
-                            .font(.system(size: 13)).padding(.top, 2)
-                        }
-                    }
-                }
-                if false {
-                    section("Similar artists") {
-                        HStack(spacing: 8) {
-                            ForEach(c.similar) { s in
-                                if s.inLibrary {
-                                    Button(s.name) { state.openArtist(named: s.name) }.buttonStyle(CapsuleButtonStyle(small: true))
-                                        .accessibilityLabel("Open artist \(s.name)")
-                                } else {
-                                    Text(s.name).font(.system(size: 12, weight: .medium)).padding(.horizontal, 10).padding(.vertical, 3)
-                                        .foregroundStyle(CU.muted).background(CU.fill, in: Capsule())
-                                }
-                            }
-                        }
-                    }
-                }
-            } else {
-                Text("Navidrome has no notes, credits or links for this album.").foregroundStyle(CU.muted)
             }
-            section("Reviews") { reviews }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    /// Liner notes first, then the album's facts and the links at the bottom.
+    @ViewBuilder private func notes(_ c: AlbumSpreadContent) -> some View {
+        if let notes = c.notes {
+            VStack(alignment: .leading, spacing: 8) {
+                Text(notes).font(.system(size: 13.5)).lineSpacing(3).textSelection(.enabled)
+                if let src = c.notesSource, !src.isEmpty {
+                    if let u = c.notesURL { Link(src, destination: u).font(.system(size: 11.5)) }
+                    else { Text(src).font(.system(size: 11.5)).foregroundStyle(CU.muted) }
+                }
+            }
+        } else if c.facts.isEmpty && c.musicBrainzURL == nil && c.lastFmURL == nil {
+            Text("No liner notes for this album.").foregroundStyle(CU.muted)
+        }
+        if !c.facts.isEmpty || c.musicBrainzURL != nil || c.lastFmURL != nil {
+            section("MusicBrainz and links") {
+                VStack(alignment: .leading, spacing: 6) {
+                    ForEach(c.facts) { f in
+                        HStack(alignment: .firstTextBaseline, spacing: 12) {
+                            Text(f.label).foregroundStyle(CU.muted).frame(width: 150, alignment: .leading)
+                            Text(f.value).textSelection(.enabled)
+                        }
+                        .font(.system(size: 13)).accessibilityElement(children: .combine)
+                    }
+                    HStack(spacing: 16) {
+                        if let u = c.musicBrainzURL { Link("Open on MusicBrainz", destination: u) }
+                        if let u = c.lastFmURL { Link("Open on Last.fm", destination: u) }
+                    }
+                    .font(.system(size: 13)).padding(.top, 2)
+                }
+            }
+        }
+    }
+
+    /// The extended credits from the knowledge base, then the credits Navidrome holds for the album.
+    @ViewBuilder private func credits(_ c: AlbumSpreadContent) -> some View {
+        let extended = state.albumCredits
+        if !extended.groups.isEmpty {
+            creditList(extended.groups.map { ($0.role, $0.names) })
+            if extended.truncated { Text("The list is cut short; the knowledge base holds more.").font(.system(size: 12)).foregroundStyle(CU.muted).padding(.top, 8) }
+        } else if !c.credits.isEmpty {
+            creditList(c.credits.map { ($0.title, $0.names) })
+        } else if extended.loading {
+            Text("Loading credits…").foregroundStyle(CU.muted)
+        } else {
+            Text("No credits for this album.").foregroundStyle(CU.muted)
+        }
+    }
+
+    private func creditList(_ rows: [(String, [String])]) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            ForEach(Array(rows.enumerated()), id: \.offset) { _, g in
+                HStack(alignment: .firstTextBaseline, spacing: 12) {
+                    Text(g.0).foregroundStyle(CU.muted).frame(width: 150, alignment: .leading)
+                    Text(g.1.joined(separator: ", ")).textSelection(.enabled)
+                }
+                .font(.system(size: 13)).accessibilityElement(children: .combine)
+            }
         }
     }
 
