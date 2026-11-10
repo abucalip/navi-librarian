@@ -1,6 +1,6 @@
 # Artwork proposal: the album as a physical object
 
-**Status:** draft for owner review. Nothing here is built.
+**Status:** draft for owner review. Slice 0 (probe) is done and its results are recorded below; nothing else is built.
 **Date:** 2026-11-10
 **Context:** MusicBrainz and the Cover Art Archive (CAA) hold more than a front cover for many releases: backs, booklet scans, disc labels, trays, spines, obi strips, posters and studio photos. Example: <https://musicbrainz.org/release/1edd139d-4779-4057-8e12-13c783674f0d/cover-art> (Somethin' Else). This proposal adds those images to the Android and macOS clients through the Librarian server. Related: [Album paths proposal](ALBUM_PATHS_PROPOSAL.md) (path rows, Same Room), [macOS design](../macos/DESIGN.md), [Android design](../android/DESIGN.md).
 
@@ -8,6 +8,7 @@
 
 - **Cache:** up to **1.5 GB** of resized per-album images on the server. Full-resolution images are fetched **on demand** (when the owner zooms) and cached under the same budget.
 - **Match:** by **MusicBrainz release group**. Use **all images of every release in the group**, not only the release in the library.
+- **Per-type slots (owner, 2026-11-10):** the merged index stays the source of truth. A derived view picks one best image per type (Front, Back, Spine, Obi, Medium, Tray and so on) for the flip cover, the disc and the grid, preferring the owned release's own image and falling back to another edition only when that type is missing, labelled with the edition. **Booklet is the exception:** it is one ordered set of pages taken from a single release (the one with the most pages), never mixed across editions. See "Per-type slots" under Server design.
 - **No OCR, no text recognition, no automatic credit linking.** That is LLM/ML-grade capability and is outside the Librarian's scope. Booklet pages are shown as images only. Any link from a page to a person or credit is out of scope.
 
 ## Rules (inherited)
@@ -23,7 +24,18 @@
 - **Release group to releases:** a MusicBrainz release-group lookup with its releases gives every edition (original, reissue, Japan, vinyl, deluxe).
 - **Per release:** the CAA release index lists images with `types[]` (Front, Back, Booklet, Medium, Tray, Obi, Spine, Liner, Sticker, Poster, Track, Other, Raw/Unedited, Watermark), `comment`, `approved`, `front`, `back`, and thumbnails at 250, 500 and 1200 px, plus the original file.
 - The CAA release-group endpoint returns only one release's images, so the aggregate is built by the server: one index fetch per release, merged.
-- **Not verified yet:** index completeness, size distribution, and the Somethin' Else group, which is the first thing to check (see slice 0). Release and image counts per group are unknown, so the caps below are placeholders to be set from the probe.
+- ~~**Not verified yet:** index completeness, size distribution, and the Somethin' Else group.~~ Measured by the probe, see "Probe results (slice 0)". The caps below stay placeholders until the numbers are set from those results.
+
+### Probe results (slice 0, 2026-11-10)
+Sample: 30 release groups (Somethin' Else first, the rest a seeded random sample of owned releases resolved to their group). Index JSON only; no image bytes downloaded; 1 request per second per host. Probe cap of 60 releases per group never triggered. The probe script is not merged yet (it needs its own PR); these numbers are the evidence.
+
+- **Coverage:** all 30 groups have at least one image; 21 of 30 have a type other than Front. The 9 Front-only or untyped groups are small (1 to 5 releases). Groups with 6 or more releases mostly carry Back, Booklet, Medium and Spine, and the largest also Obi, Tray and Sticker.
+- **Releases per group:** median 5.5, p90 23, max 59.
+- **Unique images per group:** median 7.5, p90 133, max 341. Somethin' Else: 37 releases, 132 unique images.
+- **Time to index a group at 1 request per second:** median 10 s, p90 71 s, max 120 s.
+- **Type mix (unique images, all groups):** Booklet 564, Front 322, Medium 210, Back 167, untyped 130 (about 8%), Spine 79, Other 47, Obi 45, Tray 44, Raw/Unedited 42, Sticker 21, Matrix/Runout 19, Liner 14, Track 5, Watermark 5, Poster 4, Top 1, Bottom 1. Booklet pages are the largest share.
+- **Failures:** 21.5% of release indexes were empty (404), 0.3% errored; MusicBrainz had no failures.
+- **Reading:** the placeholder caps (20 releases, 80 images) would truncate about 3 of 30 groups on releases and 9 of 30 on images. Because the median group is small and the tail is large, caps should limit what is served and shown, not stop the index fetch for heavy groups. Empty results are common, so they need the shorter TTL. Untyped images must be handled by clients. The sample is small (30 groups). Setting the final caps, TTLs and rate limits is the next step (Opus 5.5, high).
 
 ## Server design
 
@@ -37,6 +49,14 @@ Bounds: a cap on releases per group (placeholder 20, newest and best-documented 
 
 ### Choosing the "best front"
 Deterministic order: approved, Front type, larger side, then release date. This feeds idea 7 (grid fallback) and replaces the fallback problem that PR #683 worked around: **never fall back to an artist photo**.
+
+### Per-type slots
+A derived view over the merged index (not a replacement for it). For each type the server picks one best image by the same deterministic order as the best front: approved, larger side, then release date; ties break on image id. Rules:
+- Prefer the owned release's own image for a type; use another edition only when the owned release has none, and mark it with that edition's label.
+- Booklet is a set: the ordered pages of the single release with the most Booklet pages. Pages are never mixed across releases.
+- Untyped images are not in any slot; they appear only in the full index.
+- Types outside the slot list (Other, Raw/Unedited, Matrix/Runout, Watermark, Liner and so on) stay available in the full index for the artist collage, liner note and similar ideas.
+- Slot choice never uses taste or play data.
 
 ### Image cache and endpoints
 - Resized per-album images (placeholder sizes: 250 px thumb, 640 px display) live in a disk cache with a **1.5 GB** budget shared with full-resolution images. Eviction is least-recently-used, with the front cover of each owned album protected from eviction until nothing else is left.
@@ -115,7 +135,7 @@ In Get and Downloads, the pipeline dock shows the covers of the release being fe
 
 ## Slices
 
-0. **Probe (no UI):** a script that fetches the index for 30 owned release groups (Somethin' Else first) and reports releases per group, images per group, type mix, size distribution and failure rates. It sets the caps and TTLs above. No cache writes beyond the scratch folder.
+0. ~~**Probe (no UI):** a script that fetches the index for 30 owned release groups (Somethin' Else first) and reports releases per group, images per group, type mix, size distribution and failure rates. It sets the caps and TTLs above. No cache writes beyond the scratch folder.~~ **Done 2026-11-10** (results above; caps and TTLs still to be set from them).
 1. **Server index and cache:** index builder, image cache with the 1.5 GB budget, endpoints, fixtures, tests.
 2. **Client decoders and the image store:** Android and macOS decode the index and load images through the Librarian.
 3. **Flip cover, booklet, zoom:** ideas 1 and 2.
@@ -131,7 +151,7 @@ Models: Fable 5.1, Opus 5.5, Sonnet 5.5, Haiku 5.5. Effort: low, medium, high, x
 | Step | Work | Model | Effort | Why |
 |---|---|---|---|---|
 | Owner decisions | Four open decisions above | Owner | n/a | Policy, not code. |
-| 0. Probe | Script that samples about 30 release groups and prints counts | Sonnet 5.5 | medium | One script, no UI, easy to check by reading its output. |
+| ~~0. Probe~~ | ~~Script that samples about 30 release groups and prints counts~~ (done 2026-11-10) | Sonnet 5.5 | medium | One script, no UI, easy to check by reading its output. |
 | 0. Probe | Reading the results and setting caps, TTLs, rate limits | Opus 5.5 | high | Judgment from data; the numbers drive every later slice. |
 | 1. Server index and merge | Release-group to releases, dedupe, best-front rule, caps, `truncated` | Opus 5.5 | high | Rate limits, partial failure and ordering rules are easy to get subtly wrong. |
 | 1. Server cache and endpoints | 1.5 GB budget, eviction, protected fronts, redirect host check, byte validation, auth | Opus 5.5 | xhigh | Security-sensitive (fetching third-party bytes) and concurrency-sensitive. Review with Fable 5.1 at high. |
