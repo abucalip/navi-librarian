@@ -44,6 +44,17 @@ class UpdateRequests(unittest.TestCase):
         self.assertEqual(out["state"], "failed")
         db.close()
 
+    def test_navidrome_error_is_reported_in_words(self):
+        db = open_store(Path(self.tmp) / routes.STORE_FILE)
+        ur.enqueue(db, "album", "x")
+
+        def boom(_):
+            raise RuntimeError("Navidrome API error 70: Data not found")
+        out = ur.process_next(db, get_album=boom, get_artist=boom)
+        self.assertEqual(out["state"], "failed")
+        self.assertIn("Data not found", out["message"])
+        db.close()
+
     def test_bad_subject_is_422(self):
         r = self.client.post("/api/knowledge/update-store", json={"subject": "song", "navidrome_id": "1"})
         self.assertEqual(r.status_code, 422)

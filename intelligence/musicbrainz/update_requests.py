@@ -76,12 +76,20 @@ def process_next(
     try:
         message = _run(db, row["subject"], row["navidrome_id"], get_album, get_artist, find_artist, fetch, clock)
         state = "done"
-    except Exception as exc:  # the message is the error type only; no paths or secrets
-        state, message = "failed", f"Update failed ({type(exc).__name__})."
+    except Exception as exc:
+        state, message = "failed", _describe(exc)
     if state == "done" and message.startswith("Nothing"):
         state = "failed"
     _finish(db, row["id"], state, message, now)
     return {"subject": row["subject"], "navidrome_id": row["navidrome_id"], "state": state, "message": message}
+
+
+def _describe(exc: Exception) -> str:
+    """The failure in words. A Navidrome API error carries its own short message (no URL, token or path);
+    any other error is named by type only, since transport errors can carry a signed URL."""
+    if type(exc) is RuntimeError and str(exc).startswith("Navidrome API error"):
+        return f"Update failed: {str(exc)[:200]}"
+    return f"Update failed ({type(exc).__name__})."
 
 
 def _run(db, subject, navidrome_id, get_album, get_artist, find_artist, fetch, clock) -> str:
@@ -101,8 +109,13 @@ def _run(db, subject, navidrome_id, get_album, get_artist, find_artist, fetch, c
     mbids: set[str] = set()
     artist_ids: set[int] = set()
     ingested = 0
+    skipped: Exception | None = None
     for album_id in album_ids:
-        album = get_album(album_id)
+        try:
+            album = get_album(album_id)
+        except RuntimeError as exc:   # Navidrome refused this one album; carry on with the others
+            skipped = exc
+            continue
         if not album:
             continue
         album = dict(album)
@@ -121,6 +134,8 @@ def _run(db, subject, navidrome_id, get_album, get_artist, find_artist, fetch, c
         if result.artist_entity_id:
             artist_ids.add(result.artist_entity_id)
     if not ingested:
+        if skipped is not None:
+            raise skipped
         return "Nothing found: the library has no such album."
     if not artist_ids:
         return "Nothing added: no MusicBrainz id on this artist yet."
