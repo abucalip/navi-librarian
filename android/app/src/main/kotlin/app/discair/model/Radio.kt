@@ -141,3 +141,83 @@ fun radioNowText(now: RadioNow, proxied: Boolean): String = when (now.state) {
     RadioNowState.Unavailable -> "Station unreachable."
     RadioNowState.Idle -> if (proxied) "Tune in to see what is on." else "Live titles need the relay switched on for this station."
 }
+
+/** One song in the Heard list (`GET /api/radio/plays`). Rows without an id or a title are left out by the parser. */
+data class RadioPlay(
+    val id: Long,
+    val stationName: String,
+    val artist: String?,
+    val title: String,
+    val album: String?,
+    /** True once the server accepted a Get for this song. */
+    val grabbed: Boolean,
+    /** True when the song is in the Navidrome library. The server's plays route does not send this yet, so it reads false until it does. */
+    val inLibrary: Boolean,
+    val heardAt: Double?,
+) {
+    /** The server needs an artist to look a song up (RADIO-01), so a play without one has no Download. */
+    val hasArtist: Boolean get() = !artist.isNullOrBlank()
+}
+
+/** Parses `GET /api/radio/plays`, newest first as the server sends them. */
+fun parseRadioPlays(body: String): List<RadioPlay> {
+    val items = parseObject(body)?.get("items") as? JsonArray ?: return emptyList()
+    return items.mapNotNull { element ->
+        val o = element as? JsonObject ?: return@mapNotNull null
+        val id = o.long("id") ?: return@mapNotNull null
+        val title = o.text("title")?.takeIf { it.isNotBlank() } ?: return@mapNotNull null
+        RadioPlay(
+            id = id,
+            stationName = o.text("station_name").orEmpty(),
+            artist = o.text("artist")?.takeIf { it.isNotBlank() },
+            title = title,
+            album = o.text("album")?.takeIf { it.isNotBlank() },
+            grabbed = (o["grabbed"] as? JsonPrimitive)?.let { it.booleanOrNull ?: (it.intOrNull?.let { n -> n != 0 }) } ?: false,
+            inLibrary = o.flag("in_library") ?: false,
+            heardAt = (o["heard_at"] as? JsonPrimitive)?.doubleOrNull,
+        )
+    }
+}
+
+/** What the server answered to `POST /api/radio/plays/{id}/get`: [ok] and a message to show as text. */
+data class RadioGetResult(val ok: Boolean, val message: String)
+
+/** Parses the answer to a radio Get. A refusal ("could not find which album") has `ok` false and its own message; an unreadable body is a failure. */
+fun parseRadioGet(body: String): RadioGetResult {
+    val o = parseObject(body) ?: return RadioGetResult(false, "The server's answer could not be read.")
+    val status = o.text("status")
+    val ok = (o.flag("ok") ?: false) && status != "no_matches"
+    val message = o.text("message")?.takeIf { it.isNotBlank() } ?: when {
+        status == "no_matches" -> "No source had this song."
+        ok -> "Requested. Follow it under Downloads."
+        else -> "The song could not be requested."
+    }
+    return RadioGetResult(ok, message)
+}
+
+/**
+ * The words and the rule for a Download control (contract section 4). Always text: Download, Waiting, Downloading,
+ * Downloaded, Owned, or Try again.
+ */
+enum class RadioDownload(val label: String, val enabled: Boolean) {
+    /** Live song parsed but not yet heard for the 30-second threshold, so there is no play id. */
+    Waiting("Download (after about 30 seconds)", false),
+    Ready("Download", true),
+    Working("Downloading…", false),
+    Done("Downloaded", false),
+    Owned("Owned", false),
+    Failed("Try again", true),
+}
+
+/**
+ * Which state a song's control is in. [requested] is true when this device or the server already requested the song;
+ * [working] while the request is in flight; [failed] after a refusal. Owned wins over everything: nothing to fetch.
+ */
+fun radioDownloadState(playId: Long?, inLibrary: Boolean, requested: Boolean, working: Boolean, failed: Boolean): RadioDownload = when {
+    inLibrary -> RadioDownload.Owned
+    working -> RadioDownload.Working
+    requested -> RadioDownload.Done
+    failed -> RadioDownload.Failed
+    playId == null -> RadioDownload.Waiting
+    else -> RadioDownload.Ready
+}

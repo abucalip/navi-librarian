@@ -9,6 +9,7 @@ import kotlinx.serialization.Serializable
 @Serializable data object SettingsRoute
 @Serializable data object DownloadsRoute
 @Serializable data object RadioRoute
+@Serializable data object HeardRoute
 @Serializable data object EqualizerRoute
 @Serializable data object CrossfadeRoute
 @Serializable data object AppearanceRoute

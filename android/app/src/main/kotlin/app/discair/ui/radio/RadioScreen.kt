@@ -20,6 +20,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
@@ -56,6 +57,9 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
+/** The radio session for the signed-in shell (built in MainShell). */
+val LocalRadio = androidx.compose.runtime.compositionLocalOf<app.discair.player.RadioPlayback> { error("No radio playback") }
+
 /** How often the live titles are asked for while the page is on screen (the route is one cheap read, no provider call). */
 internal const val LIVE_REFRESH_MS = 15_000L
 
@@ -65,8 +69,10 @@ internal const val LIVE_REFRESH_MS = 15_000L
  * favourite toggle. Playing a station comes in slice 5. The strip is refreshed only while the page is visible.
  */
 @Composable
-fun RadioScreen(onBack: () -> Unit) {
+fun RadioScreen(onBack: () -> Unit, onOpenHeard: () -> Unit, onOpenPlayer: () -> Unit) {
     val repo = LocalRepository.current
+    val radio = LocalRadio.current
+    val onAir by radio.state.collectAsState()
     val stations = rememberLoad("radio_stations") { repo.radioStations() }
     val live = remember { mutableStateMapOf<String, RadioNow>() }
     val favourites = remember { mutableStateMapOf<String, Boolean>() }
@@ -96,6 +102,9 @@ fun RadioScreen(onBack: () -> Unit) {
         app.discair.ui.common.BackBar(onBack)
         LazyColumn(Modifier.fillMaxWidth(), contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 24.dp + app.discair.ui.LocalBottomClearance.current)) {
             item { PageHeading("Radio", Modifier.padding(start = 16.dp, end = 16.dp, bottom = 8.dp)) }
+            item(key = "heard") {
+                androidx.compose.material3.TextButton(onClick = onOpenHeard, Modifier.padding(horizontal = 8.dp).heightIn(min = Target)) { Text("Heard on radio") }
+            }
             message?.let { text ->
                 item(key = "message") {
                     Text(text, Modifier.padding(horizontal = 16.dp, vertical = 8.dp).semantics { liveRegion = LiveRegionMode.Polite }, color = Ink.ChartRedText, style = MaterialTheme.typography.bodyMedium)
@@ -112,6 +121,8 @@ fun RadioScreen(onBack: () -> Unit) {
                             station = station,
                             favourite = favourite,
                             now = live[station.id],
+                            onAir = onAir.stationId == station.id,
+                            onPlay = { if (onAir.stationId == station.id) onOpenPlayer() else radio.play(station).also { onOpenPlayer() } },
                             onFavourite = {
                                 val wanted = !favourite
                                 favourites[station.id] = wanted
@@ -138,16 +149,17 @@ fun RadioScreen(onBack: () -> Unit) {
 }
 
 @Composable
-private fun StationRow(station: RadioStation, favourite: Boolean, now: RadioNow?, onFavourite: () -> Unit) {
+private fun StationRow(station: RadioStation, favourite: Boolean, now: RadioNow?, onAir: Boolean, onPlay: () -> Unit, onFavourite: () -> Unit) {
     val repo = LocalRepository.current
     Row(
-        Modifier.fillMaxWidth().heightIn(min = 72.dp).padding(horizontal = 16.dp, vertical = 8.dp),
+        Modifier.fillMaxWidth().heightIn(min = 72.dp).clickable(onClickLabel = "Play ${station.name}", role = androidx.compose.ui.semantics.Role.Button, onClick = onPlay)
+            .padding(horizontal = 16.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Cover(repo.absolute(station.logoUrl), Modifier.size(56.dp), rect = false)
+        Cover(repo.absolute(station.logoUrl) + "?size=128", Modifier.size(56.dp), rect = false)
         Column(Modifier.weight(1f)) {
-            Text(station.name, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(if (onAir) "${station.name} · On air" else station.name, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Text(
                 stripText(station, now),
                 style = MaterialTheme.typography.bodySmall,

@@ -6,6 +6,7 @@ import app.discair.data.CredentialStore
 import app.discair.data.EncryptedPrefs
 import app.discair.data.ServerSettings
 import okhttp3.HttpUrl
+import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 
 /**
  * Turns media items that carry only a song id into items with a signed stream URL.
@@ -31,6 +32,11 @@ class StreamResolver(
     }
 
     fun resolve(items: List<MediaItem>): List<MediaItem> = items.mapNotNull { item ->
+        // A radio station plays from the address the server gave (the relay), never one built here; only http(s) is accepted.
+        item.requestMetadata.extras?.getString(EXTRA_LIVE_URL)?.let { live ->
+            val url = live.toHttpUrlOrNull() ?: return@mapNotNull null
+            return@mapNotNull item.buildUpon().setUri(url.toString()).build()
+        }
         // A song saved on the device plays from its file: no network, no converting. The MP3 fallback is a stream request.
         if (item.requestMetadata.extras?.getString(EXTRA_FORMAT) == null && isValidSongId(item.mediaId)) {
             saved(item.mediaId)?.let { return@mapNotNull item.buildUpon().setUri(android.net.Uri.fromFile(it)).build() }

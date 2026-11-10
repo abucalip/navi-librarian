@@ -41,7 +41,13 @@ import app.discair.model.AlbumPathKind
 import app.discair.model.PathsResponse
 import app.discair.model.SonicAlbumNeighbours
 import app.discair.model.parseSonicAlbumNeighbours
+import app.discair.model.RadioGetResult
+import app.discair.model.RadioNow
 import app.discair.model.RadioNowItem
+import app.discair.model.RadioPlay
+import app.discair.model.parseRadioGet
+import app.discair.model.parseRadioNow
+import app.discair.model.parseRadioPlays
 import app.discair.model.RadioStation
 import app.discair.model.SonicResponse
 import app.discair.model.parseRadioFavourite
@@ -248,6 +254,15 @@ interface LibraryRepository : AcquisitionApi {
 
     /** The live song of every relayed station with a listener (`GET /api/radio/now`). */
     fun radioNow(): List<RadioNowItem> = throw UnsupportedOperationException()
+
+    /** The live song of one station (`GET /api/radio/stations/{id}/now`). */
+    fun radioNowFor(stationId: String): RadioNow = throw UnsupportedOperationException()
+
+    /** The Heard list (`GET /api/radio/plays`), newest first. Read live. */
+    fun radioPlays(): List<RadioPlay> = throw UnsupportedOperationException()
+
+    /** The Download action for a logged song (`POST /api/radio/plays/{id}/get`); the answer's message is for the screen. */
+    fun radioGetPlay(playId: Long): RadioGetResult = throw UnsupportedOperationException()
 
     /** Sets or clears a station's favourite flag (`PUT /api/radio/stations/{id}/favourite`); returns the value the server saved. */
     fun setRadioFavourite(stationId: String, favourite: Boolean): Boolean = throw UnsupportedOperationException()
@@ -537,6 +552,21 @@ class LibrarianRepository(
     override fun radioNow(): List<RadioNowItem> {
         if (ReadMode.isCacheOnly) throw CacheMiss()
         return parseRadioNowAll(client.get(listOf("api", "radio", "now")))
+    }
+
+    override fun radioNowFor(stationId: String): RadioNow {
+        if (ReadMode.isCacheOnly) throw CacheMiss()
+        return parseRadioNow(client.get(listOf("api", "radio", "stations", stationId, "now")))
+    }
+
+    override fun radioPlays(): List<RadioPlay> {
+        if (ReadMode.isCacheOnly) throw CacheMiss()
+        return parseRadioPlays(client.get(listOf("api", "radio", "plays"), mapOf("limit" to "100")))
+    }
+
+    override fun radioGetPlay(playId: Long): RadioGetResult {
+        if (ReadMode.isCacheOnly) throw CacheMiss()
+        return parseRadioGet(client.post(listOf("api", "radio", "plays", "$playId", "get"), "{}"))
     }
 
     override fun setRadioFavourite(stationId: String, favourite: Boolean): Boolean {

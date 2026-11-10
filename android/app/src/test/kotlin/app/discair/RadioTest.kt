@@ -97,4 +97,34 @@ class RadioTest {
         assertTrue(radioNowText(parseRadioNow(body("radio_now_unavailable")), true).contains("unreachable"))
         assertTrue(radioNowText(RadioNow.Unknown.copy(state = RadioNowState.Idle), true).contains("Tune in"))
     }
+
+    @Test fun playsParseWithGrabbedAndMissingFields() {
+        val plays = app.discair.model.parseRadioPlays(
+            """{"items":[{"id":7,"station_name":"Rock","artist":"A","title":"T","album":null,"grabbed":1,"heard_at":5.0},
+               {"id":8,"station_name":"Rock","artist":null,"title":"Only title","grabbed":0},{"title":"no id"}]}""",
+        )
+        assertEquals(listOf(7L, 8L), plays.map { it.id })
+        assertTrue(plays[0].grabbed && plays[0].hasArtist && !plays[0].inLibrary)
+        assertFalse(plays[1].hasArtist)
+        assertTrue(app.discair.model.parseRadioPlays("nope").isEmpty())
+    }
+
+    @Test fun getAnswersBecomeTextAndOutcome() {
+        assertTrue(app.discair.model.parseRadioGet("""{"ok":true,"status":"started","message":"Looking for it."}""").ok)
+        val none = app.discair.model.parseRadioGet("""{"ok":true,"status":"no_matches"}""")
+        assertFalse(none.ok); assertEquals("No source had this song.", none.message)
+        assertEquals("Could not find which album this song is on.", app.discair.model.parseRadioGet("""{"ok":false,"message":"Could not find which album this song is on."}""").message)
+        assertFalse(app.discair.model.parseRadioGet("garbage").ok)
+    }
+
+    @Test fun downloadStatesFollowTheContractRule() {
+        val s = { p: Long?, o: Boolean, r: Boolean, w: Boolean, f: Boolean -> app.discair.model.radioDownloadState(p, o, r, w, f) }
+        assertEquals(app.discair.model.RadioDownload.Waiting, s(null, false, false, false, false))
+        assertEquals(app.discair.model.RadioDownload.Ready, s(3, false, false, false, false))
+        assertEquals(app.discair.model.RadioDownload.Working, s(3, false, false, true, false))
+        assertEquals(app.discair.model.RadioDownload.Done, s(3, false, true, false, false))
+        assertEquals(app.discair.model.RadioDownload.Failed, s(3, false, false, false, true))
+        assertEquals(app.discair.model.RadioDownload.Owned, s(3, true, true, false, false))
+        assertFalse(app.discair.model.RadioDownload.Waiting.enabled || app.discair.model.RadioDownload.Owned.enabled)
+    }
 }
