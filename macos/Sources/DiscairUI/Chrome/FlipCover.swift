@@ -60,6 +60,9 @@ struct FlipCover<Front: View>: View {
     var index: ArtworkIndex?
     /// Names the face in a small caption under the card while a back face shows (Now Playing).
     var caption = false
+    /// Hover instead of click: the card shows its first back face while the pointer is over it and turns back when it leaves. The click
+    /// is left to whoever wraps the card (the player bar's cover opens the booklet), so there is no tap gesture and no button trait.
+    var hover = false
     let front: () -> Front
 
     @Environment(\.artwork) private var store
@@ -106,13 +109,7 @@ struct FlipCover<Front: View>: View {
             }
         }
         .contentShape(Rectangle())
-        .onTapGesture { flip() }
-        .help("Click to flip the cover")
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel(label)
-        .accessibilityHint("Flips the cover")
-        .accessibilityAddTraits(.isButton)
-        .accessibilityAction { flip() }
+        .modifier(FlipTrigger(hover: hover, flip: flip, to: turn(to:), label: label))
     }
 
     @ViewBuilder private func faceView(_ i: Int) -> some View {
@@ -124,6 +121,14 @@ struct FlipCover<Front: View>: View {
                     .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
             ))
         }
+    }
+
+    /// Hover: turn to the first back face (1 step) or back to the front (0), whichever is not already showing.
+    private func turn(to target: Int) {
+        guard steps != target else { return }
+        steps = target
+        if reduceMotion { withAnimation(.easeInOut(duration: 0.2)) { steps = target } }
+        else { withAnimation(.easeInOut(duration: 0.45)) { angle = Double(target) * 180 } }
     }
 
     private func flip() {
@@ -148,6 +153,29 @@ struct FlipCover<Front: View>: View {
         spine = found.slotImage("Spine")
         // Warm the display size so the first flip shows the image, not an empty card.
         for picture in faces { _ = await store.albumImage(picture, size: .display) }
+    }
+}
+
+/// Click mode (the album and Now Playing covers) or hover mode (the player bar's cover).
+private struct FlipTrigger: ViewModifier {
+    let hover: Bool
+    let flip: () -> Void
+    let to: (Int) -> Void
+    let label: String
+
+    func body(content: Content) -> some View {
+        if hover {
+            content.onHover { to($0 ? 1 : 0) }
+        } else {
+            content
+                .onTapGesture { flip() }
+                .help("Click to flip the cover")
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(label)
+                .accessibilityHint("Flips the cover")
+                .accessibilityAddTraits(.isButton)
+                .accessibilityAction { flip() }
+        }
     }
 }
 

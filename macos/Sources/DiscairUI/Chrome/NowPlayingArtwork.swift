@@ -164,3 +164,49 @@ struct NowPlayingBookletBadge: View {
         }
     }
 }
+
+/// The small cover in the player bar (docs/artwork.md, ideas 1, 3 and 5 on the bar). Hovering turns it to the album's Back; a click opens
+/// the album's booklet when it has one and otherwise does what the bar's cover did before (`fallback`, Now Playing); the disc slides
+/// out from behind it and turns while playing. The playing album's index comes by artist and title (`nowPlayingIndex`), so with no
+/// index, no Back, no booklet or no Medium image it is the plain cover. The theme passes its cover and its edge treatment.
+struct PlayerBarCover<Cover: View>: View {
+    let artist: String
+    let album: String
+    let disc: Int?
+    let spinning: Bool
+    let side: CGFloat
+    var cornerRadius: CGFloat = 0
+    var border: Color?
+    let fallback: () -> Void
+    @ViewBuilder let cover: () -> Cover
+
+    @Environment(\.artwork) private var store
+    @State private var index: ArtworkIndex?
+    @State private var showing = false
+
+    private var booklet: BookletView? { index?.bookletView }
+    private var discPicture: ArtworkPicture? { index?.discImage(disc: disc) }
+
+    var body: some View {
+        Button {
+            if booklet != nil { showing = true } else { fallback() }
+        } label: {
+            FlipCover(rgid: nil, cornerRadius: cornerRadius, index: index, hover: true) { cover() }
+                .frame(width: side, height: side)
+                .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+                .overlay { if let border { RoundedRectangle(cornerRadius: cornerRadius, style: .continuous).strokeBorder(border, lineWidth: 2) } }
+                .discSleeve(discPicture, spinning: spinning)
+                .padding(.trailing, discPicture == nil ? 0 : side * 0.36)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .help(booklet == nil ? "Open Now Playing" : "Open the booklet")
+        .accessibilityLabel(booklet == nil ? "Open Now Playing" : "Open booklet, \(booklet?.badgeText ?? "")")
+        .sheet(isPresented: $showing) { if let booklet { BookletSheet(booklet: booklet) { showing = false } } }
+        .task(id: "\(artist)|\(album)|\(store?.generation ?? 0)") {
+            index = nil
+            guard let store else { return }
+            index = await store.nowPlayingIndex(artist: artist, album: album)
+        }
+    }
+}

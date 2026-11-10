@@ -171,25 +171,34 @@ struct ZinePlayerStrip: View {
         let a = Fixtures.albums[0]
         let idle = !sample && p.current == nil
         HStack(spacing: 16) {
-            Button { state.screen = .nowPlaying } label: {
+            if let c = p.current, !idle {
+                    PlayerBarCover(artist: c.artist, album: c.album, disc: c.disc, spinning: p.isPlaying, side: 34, border: Z.paper,
+                                   fallback: { state.screen = .nowPlaying }) {
+                        CoverView(album: AlbumItem(id: -1, title: c.album, artist: c.artist, year: 0, genre: "", format: "", owned: true, hue: 200, remoteID: c.albumID, coverArt: c.coverArt))
+                    }
+            }
                 HStack(spacing: 16) {
                     if idle {
                         Text("Nothing playing").font(Z.an(20)).textCase(.uppercase).foregroundStyle(Z.yellow)
                     } else if let c = p.current {
-                        CoverView(album: AlbumItem(id: -1, title: c.album, artist: c.artist, year: 0, genre: "", format: "", owned: true, hue: 200, remoteID: c.albumID, coverArt: c.coverArt))
-                            .frame(width: 34).overlay { Rectangle().strokeBorder(Z.paper, lineWidth: 2) }
                         Text(c.title).font(Z.an(20)).textCase(.uppercase).foregroundStyle(Z.yellow).lineLimit(1)
-                        PlaybackClock(player: p) { pos in Mono(p.phase == .loading ? "Loading…" : "\(c.artist) · \(PlayerModel.clock(pos)) / \(PlayerModel.clock(p.duration))").foregroundStyle(Z.paper) }
+                        HStack(spacing: 6) {
+                            Button { state.openCurrentArtist() } label: { Mono(p.phase == .loading ? "Loading…" : c.artist).foregroundStyle(Z.paper) }
+                                .buttonStyle(.plain).accessibilityLabel("Open artist \(c.artist)")
+                            if !c.album.isEmpty, p.phase != .loading {
+                                Mono("·").foregroundStyle(Z.paper)
+                                Button { state.openCurrentAlbum() } label: { Mono(c.album).foregroundStyle(Z.paper) }
+                                    .buttonStyle(.plain).accessibilityLabel("Open album \(c.album)")
+                            }
+                            PlaybackClock(player: p) { pos in Mono("· \(PlayerModel.clock(pos)) / \(PlayerModel.clock(p.duration))").foregroundStyle(Z.paper) }
+                        }
                     } else {
                         CoverView(album: a).frame(width: 34).overlay { Rectangle().strokeBorder(Z.paper, lineWidth: 2) }
                         Text("After the Flood").font(Z.an(20)).textCase(.uppercase).foregroundStyle(Z.yellow)
                         Mono("Talk Talk · 3:12 / 9:41").foregroundStyle(Z.paper)
                     }
                 }
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel(idle ? "Nothing playing. Opens Now Playing" : (p.current.map { "Now playing: \($0.title), \($0.artist), \(PlayerModel.clock(p.position)) of \(PlayerModel.clock(p.duration)). Opens Now Playing" } ?? "Now playing: After the Flood, Talk Talk, 3:12 of 9:41. Opens Now Playing"))
+                .accessibilityElement(children: .contain)
 
             if sample {
                 ZStack(alignment: .leading) {
@@ -224,6 +233,10 @@ struct ZinePlayerStrip: View {
         }
         .padding(.horizontal, 22).frame(height: 54)
         .background(Z.ink)
+        // Anywhere on the strip that is not a control opens Now Playing; the controls and links keep their own clicks.
+        .contentShape(Rectangle())
+        .onTapGesture { state.screen = .nowPlaying }
+        .accessibilityAction(named: "Open Now Playing") { state.screen = .nowPlaying }
     }
 }
 
