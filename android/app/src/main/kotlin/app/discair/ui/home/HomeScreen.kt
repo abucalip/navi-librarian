@@ -80,7 +80,7 @@ import kotlinx.coroutines.launch
 private const val GENRES_SHOWN = 6
 
 @Composable
-fun HomeScreen(open: Opener, onDiscover: () -> Unit, onLibrary: () -> Unit, onSettings: () -> Unit) {
+fun HomeScreen(open: Opener, onDiscover: () -> Unit, onLibrary: () -> Unit, onSettings: () -> Unit, onRadio: () -> Unit = {}) {
     val repo = LocalRepository.current
     val picks = rememberLoad("picks") { repo.picks(10).items }
     val genres = rememberLoad("genres") { repo.genres().items }
@@ -118,6 +118,16 @@ fun HomeScreen(open: Opener, onDiscover: () -> Unit, onLibrary: () -> Unit, onSe
         item(key = "new_releases") { NewReleasesSection(open) }
         for (shelf in listOf(Shelves.Recent to "Recently played", Shelves.Frequent to "Most played")) {
             item(key = shelf.first.path) { ShelfRow(shelf.first.path, shelf.second, open) { repo.shelf(shelf.first, 20).items } }
+        }
+        item(key = "radio") {
+            Row(
+                Modifier.fillMaxWidth().heightIn(min = 56.dp).clickable(role = Role.Button, onClick = onRadio).padding(horizontal = 16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                PageHeading("Radio")
+                Spacer(Modifier.weight(1f))
+                Text("Stations", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
         }
         item(key = "pages") { PageButtons(onDiscover, onLibrary, onSettings) }
     }

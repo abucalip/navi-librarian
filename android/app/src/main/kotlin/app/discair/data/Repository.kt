@@ -41,7 +41,12 @@ import app.discair.model.AlbumPathKind
 import app.discair.model.PathsResponse
 import app.discair.model.SonicAlbumNeighbours
 import app.discair.model.parseSonicAlbumNeighbours
+import app.discair.model.RadioNowItem
+import app.discair.model.RadioStation
 import app.discair.model.SonicResponse
+import app.discair.model.parseRadioFavourite
+import app.discair.model.parseRadioNowAll
+import app.discair.model.parseRadioStations
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import app.discair.model.ArtworkImage
 import app.discair.model.ArtworkIndexResult
@@ -237,6 +242,15 @@ interface LibraryRepository : AcquisitionApi {
 
     /** Whether the server reports sonic similarity (`sonic_available` in `/api/capabilities`). Read live; false when unknown. */
     fun sonicAvailable(): Boolean = false
+
+    /** Navidrome's radio stations with logos and favourites (`GET /api/radio/stations`), in the server's order. Read live, never from the saved copies. */
+    fun radioStations(): List<RadioStation> = throw UnsupportedOperationException()
+
+    /** The live song of every relayed station with a listener (`GET /api/radio/now`). */
+    fun radioNow(): List<RadioNowItem> = throw UnsupportedOperationException()
+
+    /** Sets or clears a station's favourite flag (`PUT /api/radio/stations/{id}/favourite`); returns the value the server saved. */
+    fun setRadioFavourite(stationId: String, favourite: Boolean): Boolean = throw UnsupportedOperationException()
 
     /** Whether the server resyncs its library from Navidrome shortly after each import. Read live, never from the saved copies. */
     fun libraryResync(): Boolean = true
@@ -513,6 +527,22 @@ class LibrarianRepository(
         } catch (e: Exception) {
             false
         }
+    }
+
+    override fun radioStations(): List<RadioStation> {
+        if (ReadMode.isCacheOnly) throw CacheMiss()
+        return parseRadioStations(client.get(listOf("api", "radio", "stations")))
+    }
+
+    override fun radioNow(): List<RadioNowItem> {
+        if (ReadMode.isCacheOnly) throw CacheMiss()
+        return parseRadioNowAll(client.get(listOf("api", "radio", "now")))
+    }
+
+    override fun setRadioFavourite(stationId: String, favourite: Boolean): Boolean {
+        if (ReadMode.isCacheOnly) throw CacheMiss()
+        val body = client.put(listOf("api", "radio", "stations", stationId, "favourite"), "{\"favourite\":$favourite}")
+        return parseRadioFavourite(body) ?: favourite
     }
 
     override fun refreshList(list: String) {
