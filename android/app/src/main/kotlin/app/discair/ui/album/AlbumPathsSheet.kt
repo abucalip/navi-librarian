@@ -191,7 +191,7 @@ private fun AlbumPathList(
                 is Load.Ready -> {
                     val answer = state.value
                     if (answer.steps.isEmpty()) {
-                        Text(albumPathsEmpty(tab, albumName), style = MaterialTheme.typography.bodyMedium, color = Ink.TextMuted)
+                        Text(answer.empty ?: albumPathsEmpty(tab, albumName), style = MaterialTheme.typography.bodyMedium, color = Ink.TextMuted)
                     } else LazyColumn(Modifier.fillMaxSize(), state = list, contentPadding = PaddingValues(bottom = 32.dp)) {
                         itemsIndexed(answer.steps) { index, step ->
                             AlbumPathRow(index + 1, step) { onStep(index) }
@@ -283,6 +283,13 @@ private fun AlbumPaneBody(tab: AlbumTab, step: AlbumStep, startName: String, go:
             if (step.artist.isNotBlank()) Text(step.artist, style = MaterialTheme.typography.bodyMedium, color = Ink.TextMuted)
             step.year?.let { Text("$it", style = MaterialTheme.typography.bodyMedium, color = Ink.TextMuted) }
             LibraryLine(true)
+        }
+    }
+    step.play?.let { play ->
+        InfoCard(raised = true) {
+            Eyebrow("Your listening")
+            Spacer(Modifier.size(8.dp))
+            Text(play, style = MaterialTheme.typography.titleLarge)
         }
     }
     val reasons = step.reasons.take(PaneReasons)

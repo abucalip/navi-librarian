@@ -9,14 +9,16 @@ import kotlinx.serialization.json.intOrNull
 
 /**
  * The album paths the server builds for `GET /api/knowledge/paths?type=release` (the Paths button on an album page).
- * Same route and body as the artist paths, parsed by [parsePaths]. `album_room` and `album_gaps` are not built yet
- * (the server answers 501), so they are not offered.
+ * Same route and body as the artist paths, parsed by [parsePaths]. Same room and Listen-through gaps are
+ * read the same way; Gaps also carries each stop's play label and the `history` of the play data it was filtered by.
  */
 enum class AlbumPathKind(val wire: String, val label: String) {
     StudioCrew("album_crew", "Studio crew"),
     GuestList("album_guests", "Guest list"),
     CoversAndSources("album_works", "Covers and sources"),
     SameYearSameScene("album_moment", "Same year, same scene"),
+    SameRoom("album_room", "Same room"),
+    ListenThroughGaps("album_gaps", "Listen-through gaps"),
 }
 
 /** A person or work whose albums were cut at the server's cap; [more] albums were left out and must be said so. */

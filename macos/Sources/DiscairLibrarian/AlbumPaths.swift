@@ -2,14 +2,16 @@ import Foundation
 
 // Album paths (`GET /api/knowledge/paths?type=release`, the Paths button on an album page) and the album sonic
 // neighbours (`GET /api/sonic/album-neighbours`). Same bodies and tolerant decoding as KnowledgeGraph.swift and
-// Sonic.swift; shapes in docs/SERVER_V2_CONTRACT.md. `album_room` and `album_gaps` are not built yet, so not offered.
+// Sonic.swift; shapes in docs/SERVER_V2_CONTRACT.md. `album_room` and `album_gaps` are read the same way (Gaps adds `play` and `history`).
 
-/// The four album kinds the server builds for a release start.
+/// The album graph kinds the server builds for a release start.
 public enum AlbumPathKind: String, Sendable, CaseIterable {
     case studioCrew = "album_crew"
     case guestList = "album_guests"
     case coversAndSources = "album_works"
     case sameYearSameScene = "album_moment"
+    case sameRoom = "album_room"
+    case listenThroughGaps = "album_gaps"
 }
 
 /// A person or work whose albums were cut at the server's cap; `more` albums were left out and must be said so.

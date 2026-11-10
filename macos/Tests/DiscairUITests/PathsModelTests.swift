@@ -14,8 +14,8 @@ import DiscairLibrarian
 
     @Test func neighboursByEarIsOfferedOnlyWithSonic() {
         #expect(!AlbumPathTab.available(sonic: false).contains(.neighboursByEar))
-        #expect(AlbumPathTab.available(sonic: true).count == 5)
-        #expect(AlbumPathTab.available(sonic: false).count == 4)
+        #expect(AlbumPathTab.available(sonic: true).count == 7)
+        #expect(AlbumPathTab.available(sonic: false).count == 6)
     }
 
     @Test func graphStepsKeepServerOrderAndNameThePerson() throws {
@@ -25,6 +25,36 @@ import DiscairLibrarian
         #expect(a.steps.first?.detail == "Cannonball Adderley")
         #expect(a.steps.first?.why == "Rudy van Gelder")
         #expect(a.steps.allSatisfy { !$0.reasons.isEmpty })
+    }
+
+    @Test func sameRoomNamesThePlace() throws {
+        let a = PathAnswer(album: try JSONDecoder().decode(KnowledgePaths.self, from: body("paths_album_room")))
+        #expect(a.steps.first?.why == "Van Gelder Studio")
+        #expect(a.steps.first?.reasons.first?.eyebrow == "Recorded at")
+    }
+
+    @Test func gapsShowThePlayLabelInServerOrder() throws {
+        let p = try JSONDecoder().decode(KnowledgePaths.self, from: body("paths_album_gaps"))
+        let a = PathAnswer(album: p)
+        #expect(a.steps.map(\.name) == p.stops.map(\.entity.name))
+        #expect(a.steps.first?.why == "Not played" && a.steps.first?.play == "Not played")
+        #expect(a.notes.isEmpty)
+    }
+
+    @Test func gapsWithUnavailableHistorySayEveryAlbumIsListed() throws {
+        let a = PathAnswer(album: try JSONDecoder().decode(KnowledgePaths.self, from: body("paths_album_gaps_unavailable")))
+        #expect(!a.steps.isEmpty && a.steps.allSatisfy { $0.play == nil })
+        #expect(a.notes.count == 1 && a.notes[0].contains("could not be read") && a.notes[0].contains("played or not"))
+        #expect(PathAnswer.historyNotes(PathHistory(state: "thin", playedAlbums: 5, filteredOut: 0, unknown: 0, littlePlaysBelow: 2))[0].contains("too short"))
+    }
+
+    @Test func gapsEmptyBecauseEverythingWasPlayedSaysSo() throws {
+        let a = PathAnswer(album: try JSONDecoder().decode(KnowledgePaths.self, from: body("paths_album_gaps_empty")))
+        #expect(a.steps.isEmpty)
+        #expect(a.empty?.hasPrefix("Every album these credits reach is one you have already played") == true)
+        let m = PathsSheetModel(albumTitle: "A", artist: "B", albumID: "1", sonicAvailable: false)
+        m.choose("listenThroughGaps")
+        #expect(m.emptyText == "No Listen-through Gaps path from A yet. A path appears only when every step has evidence.")
     }
 
     @Test func emptyAnswerStatesTheRule() throws {

@@ -103,6 +103,15 @@ struct PathsSheet: View {
                     Text(s.name).font(.headline)
                     Text([s.detail, s.year.map(String.init) ?? "", s.owned ? "In your library" : "Not in your library"].filter { !$0.isEmpty }.joined(separator: " · "))
                         .foregroundStyle(.secondary)
+                    if let play = s.play {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("YOUR LISTENING").font(.caption2.weight(.semibold)).foregroundStyle(.secondary)
+                            Text(play).fontWeight(.semibold)
+                        }
+                        .padding(10).frame(maxWidth: .infinity, alignment: .leading)
+                        .background(.background.secondary, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                        .accessibilityElement(children: .combine)
+                    }
                     ForEach(Array(s.reasons.prefix(3).enumerated()), id: \.offset) { _, r in
                         VStack(alignment: .leading, spacing: 4) {
                             Text(r.eyebrow.uppercased()).font(.caption2.weight(.semibold)).foregroundStyle(.secondary)

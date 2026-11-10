@@ -38,6 +38,8 @@ data class PathStop(
     val albums: List<PathAlbum> = emptyList(),
     /** Scene: the year this artist's career began, and the start artist's. */
     val beginYear: Int? = null, val anchorBeginYear: Int? = null,
+    /** Listen-through gaps: the server's play label (`Not played`, `Played 1 time`); null on every other path and when the history is not usable. */
+    val play: String? = null,
 )
 
 /** A release and the artist it is credited to: the pair a cover is looked up by. */
@@ -287,7 +289,12 @@ data class PathsResponse(
     val overlapDropped: Int = 0,
     /** Album paths: people or works whose albums were cut at the cap, with how many were left out. */
     val capped: List<PathCapped> = emptyList(),
+    /** Listen-through gaps: how usable the play history was, and what it left out. Null on every other path. */
+    val history: PathHistory? = null,
 )
+
+/** `history` of a Listen-through gaps body: [state] is `ok`, `thin` or `unavailable`; the counts are albums left out of the list. */
+data class PathHistory(val state: String, val playedAlbums: Int?, val filteredOut: Int, val unknown: Int, val littlePlaysBelow: Int)
 
 /** What the sheet shows for a read: the server's stops, or nothing it can honestly list. */
 sealed interface PathsView {
@@ -327,6 +334,7 @@ fun parsePaths(body: String): PathsResponse {
                 val album = o.string("album")?.trim()?.takeIf { it.isNotEmpty() } ?: return@mapNotNull null
                 PathAlbum(album, o.string("album_artist")?.trim()?.takeIf { it.isNotEmpty() } ?: return@mapNotNull null)
             },
+            play = stop.obj("play")?.string("text")?.trim()?.takeIf { it.isNotEmpty() },
             beginYear = stop.obj("presentation")?.int("begin_year"),
             anchorBeginYear = stop.obj("presentation")?.int("anchor_begin_year"),
             reasons = (stop["reasons"] as? JsonArray).orEmpty().mapNotNull { r ->
@@ -353,6 +361,12 @@ fun parsePaths(body: String): PathsResponse {
         startType = root.obj("start")?.string("type").orEmpty(),
         overlapDropped = root.int("overlap_dropped") ?: 0,
         capped = parseCapped(root),
+        history = root.obj("history")?.let { h ->
+            PathHistory(
+                state = h.string("state").orEmpty(), playedAlbums = h.int("played_albums"),
+                filteredOut = h.int("filtered_out") ?: 0, unknown = h.int("unknown") ?: 0, littlePlaysBelow = h.int("little_plays_below") ?: 2,
+            )
+        }?.takeIf { it.state.isNotEmpty() },
     )
 }
 
