@@ -341,6 +341,14 @@ Earlier project log entries are preserved verbatim in [PROJECT_LOG_HISTORY.md](d
 - Nothing calls the charts yet; no Zine file changed.
 - Next: M5 (home data) or M6 (services data), Sonnet; M8 builds Home from M2, M4 and M5.
 
+## 2026-11-11 — Redesign M6: Services data (macOS)
+
+- Merged as PR [#980](https://github.com/abucalip/navi-librarian/pull/980), squash `cf175239`, from head `843ebc1cb903d3aab39a8275398906af69872c20`; GitHub confirms the merge and compile, container-smoke, test-and-build and validate-container passed on that head. Plan: `docs/redesign.md` sections 6 and 11, step M6.
+- Changed: new `macos/Sources/DiscairLibrarian/ServiceSettings.swift` (settings, test, health and capabilities calls; the Discogs test body's `error` is folded into `status` and `message`; saves for Navidrome, Last.fm, slskd and Discogs) and `macos/Sources/DiscairUI/Model/ServicesModel.swift` (pure; state per service, summary, toolbar label, diagram edges, powers, setup fields, local history).
+- Tests actually run, filtered, on a Mac: `swift test --filter 'DiscairLibrarianTests.ServiceSettingsClientTests|DiscairUITests.ServicesModelTests'` (36 pass). Full suite not run (owner rule). No UI, so no visual check.
+- Limits: bodies in the tests come from the server's serializers, not live captures (only `health` is a recorded fixture); nothing is wired into `AppState` or a view; no client method reads Navidrome's plugin list, so Sonic analysis with the Librarian down needs the caller to supply it; the app must run the tests and Navidrome and SMB checks itself (M9).
+- Next: M7 (connections model), Sonnet; M9 builds the Services screens from M6.
+
 ## 2026-11-11 — Redesign M5: Home data (macOS)
 
 - Merged as PR [#979](https://github.com/abucalip/navi-librarian/pull/979), squash `3bf66cb2`, from head `c1a530dd161c05340c3a2a06a4c8830e52dd7d32`; GitHub confirms the merge and compile, container-smoke, test-and-build and validate-container passed on that head. Plan: `docs/redesign.md` section 11, step M5.
