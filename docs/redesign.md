@@ -1,6 +1,6 @@
 # Discair redesign: macOS Cupertino and Android
 
-Status: **proposal; M1 to M9 built and merged; M10a (drawn pages) and M10b (token-only pages) merged; M10 is done; S1 (listens by day, D2) is merged in PR [#986](https://github.com/abucalip/navi-librarian/pull/986), squash `41449e29`, 2026-11-11. M10b is PR [#985](https://github.com/abucalip/navi-librarian/pull/985), squash `c9a10549`, 2026-11-11.** (PR [#975](https://github.com/abucalip/navi-librarian/pull/975), squash `f0aba3d6`; PR [#976](https://github.com/abucalip/navi-librarian/pull/976), squash `e3e69220`; PR [#977](https://github.com/abucalip/navi-librarian/pull/977), squash `e3e63b0c`; PR [#978](https://github.com/abucalip/navi-librarian/pull/978), squash `2480b3a2`; PR [#979](https://github.com/abucalip/navi-librarian/pull/979), squash `3bf66cb2`; PR [#980](https://github.com/abucalip/navi-librarian/pull/980), squash `cf175239`; PR [#981](https://github.com/abucalip/navi-librarian/pull/981), squash `7e705614`; PR [#982](https://github.com/abucalip/navi-librarian/pull/982), squash `f9bccff8`; PR [#983](https://github.com/abucalip/navi-librarian/pull/983), squash `344252e3`; PR [#984](https://github.com/abucalip/navi-librarian/pull/984), squash `16cb3d9d`; all 2026-11-11). Every other step is not started. Nothing else here has been implemented, tested or approved by the owner.
+Status: **proposal; M1 to M9 built and merged; M10a (drawn pages) and M10b (token-only pages) merged; M10 is done; S2 (lens refresh status, D3) is merged in PR [#987](https://github.com/abucalip/navi-librarian/pull/987), squash `67dc7dce`, 2026-11-11. S1 (listens by day, D2) is merged in PR [#986](https://github.com/abucalip/navi-librarian/pull/986), squash `41449e29`, 2026-11-11. M10b is PR [#985](https://github.com/abucalip/navi-librarian/pull/985), squash `c9a10549`, 2026-11-11.** (PR [#975](https://github.com/abucalip/navi-librarian/pull/975), squash `f0aba3d6`; PR [#976](https://github.com/abucalip/navi-librarian/pull/976), squash `e3e69220`; PR [#977](https://github.com/abucalip/navi-librarian/pull/977), squash `e3e63b0c`; PR [#978](https://github.com/abucalip/navi-librarian/pull/978), squash `2480b3a2`; PR [#979](https://github.com/abucalip/navi-librarian/pull/979), squash `3bf66cb2`; PR [#980](https://github.com/abucalip/navi-librarian/pull/980), squash `cf175239`; PR [#981](https://github.com/abucalip/navi-librarian/pull/981), squash `7e705614`; PR [#982](https://github.com/abucalip/navi-librarian/pull/982), squash `f9bccff8`; PR [#983](https://github.com/abucalip/navi-librarian/pull/983), squash `344252e3`; PR [#984](https://github.com/abucalip/navi-librarian/pull/984), squash `16cb3d9d`; all 2026-11-11). Every other step is not started. Nothing else here has been implemented, tested or approved by the owner.
 
 Scope: the macOS client's Cupertino theme, and the Android client. The macOS Zine theme and the web client are out of scope and are not touched.
 
@@ -202,7 +202,7 @@ Content is 980 wide at the 1280 window. Rows are a 2:1 split with a 16 gap, exce
 | 6 | Your taste | Server `headline.text`, a dumbbell per listed shift, listen counts | `GET /api/insights/taste` | yes |
 | 7 | From the lenses | Top card of up to 3 enabled lenses, "n of 5 on" | `GET /api/insights` | yes |
 | 8 | Shelf life | Histogram of albums by time since last play (this month, 1–6 mo, 6–12 mo, 1–2 years, 2+ years, never), the never bin in accent; four longest-unplayed covers; "Play something unplayed" | Navidrome | yes |
-| 9 | Server activity | Insight lenses, taste profile, artist popularity, MusicBrainz data: state word and one line each | `updatedText`, taste and popularity status routes, capabilities | yes; a lens "next run" time is D3 |
+| 9 | Server activity | Insight lenses, taste profile, artist popularity, MusicBrainz data: state word and one line each | `updatedText`, taste and popularity status routes, capabilities | yes; the lens "next run" time is served by D3 (S2) |
 | 10 | Recently added | Six covers | existing | yes |
 
 Rules:
@@ -417,7 +417,7 @@ A failing service puts one warning banner under the top bar, as the offline bann
 |---|---|---|---|---|
 | D1 | Month-by-month "then and now" | `intelligence/taste/monthly.py` builds snapshots; nothing stores or serves them | `GET /api/insights/snapshots` contract proposal | A month comparison chart (not drawn) |
 | D2 | Listens per day or week (macOS client built in PR #982; server built in PR #986 as S1, field `listens_by_day` on the taste body, not yet checked live) | Was: the server returned no counts by date | Done: `listens_by_day` (last 84 days) on the taste body | "Listens last 7 days" stat and its comparison |
-| D3 | When a lens refresh last ran and will next run (macOS client built in PR #982, contract proposed in `SERVER_V2_CONTRACT.md`) | No status route for the insights job | `GET /api/insights/refresh/status`, like the taste one | "next in 4 hours" on Server activity |
+| D3 | When a lens refresh last ran and will next run (macOS client built in PR #982) | Done: `GET /api/insights/refresh/status` (PR #987, S2), shaped like the taste one; `retry_after` is an estimate from the loop cadence | "next in 4 hours" on Server activity |
 | D4 | Album added dates on Android | The Android app reads Librarian's library routes; confirm they carry the added date | Add the field if absent | Android hero change, growth chart |
 | D5 | Phone handoff (macOS side built in PR #982 from Navidrome's `getPlayQueue`; the Android app must call `savePlayQueue`) | Needs the Android app to call `savePlayQueue`; unchecked | Check, then a slice | Handoff notice |
 | D6 | Library health and unresolved items | Builders and fixtures exist; `GET /api/library-health` and `/api/unresolved` are not in the served routes | Serve them | Not designed here; a future "Health" row in Server activity |
@@ -476,7 +476,7 @@ Not drawn: Android Night, Tape and Sheet; Android loading, empty and error state
 
 Models: Sonnet or Haiku only. Each step is one PR from current `main`, following `DEVELOPMENT_WORKFLOW.md`: filtered tests only, no full suite, required CI on the PR head for Android, and macOS Swift tests locally with `macos/scripts/select-tests.sh`. "Visual check" means a screenshot of the built screen placed beside the named mockup; the owner approves the look.
 
-Order: M1 → M2 → (M3, M4, M5, M6, M7, M8 and M9 done) → M10a (done) → M10b (done). S1 done. A1 → A2 → (A3, A4, A5 in parallel) → A6 → A7 → A8 → A9. The M and A tracks are independent. S1 to S3 are server proposals and can run at any time.
+Order: M1 → M2 → (M3, M4, M5, M6, M7, M8 and M9 done) → M10a (done) → M10b (done). S1 and S2 done. A1 → A2 → (A3, A4, A5 in parallel) → A6 → A7 → A8 → A9. The M and A tracks are independent. S1 to S3 are server proposals and can run at any time.
 
 ### macOS
 
@@ -513,7 +513,7 @@ Order: M1 → M2 → (M3, M4, M5, M6, M7, M8 and M9 done) → M10a (done) → M1
 | Step | Objective | Model, effort |
 |---|---|---|
 | ~~**S1**~~ **Merged** in PR #986, squash `41449e29` (2026-11-11). Was: Contract proposal and route for D2 (listens by day) in a new module, with fixture and direct-import test; nothing added to `navidrome_server.py` | Sonnet, Medium |
-| **S2** | Status route for the insights refresh job (D3) | Haiku, High |
+| ~~**S2**~~ **Merged** in PR #987, squash `67dc7dce` (2026-11-11). Was: Status route for the insights refresh job (D3), read-only over `job_runs` for both lens jobs; new module `intelligence/insights/refresh_status.py`, route `app/api/insight_lens_status.py`; nothing added to `navidrome_server.py` | Haiku, High |
 | **S3** | Check D4 and D5 and record the answers; add the added-date field if absent | Haiku, Medium |
 
 ## 12. Verification
