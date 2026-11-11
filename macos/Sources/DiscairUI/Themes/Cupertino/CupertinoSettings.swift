@@ -20,6 +20,7 @@ struct CupertinoSettings: View {
     @State private var shareLocalRoot = ""
     @State private var shareUser = ""
     @State private var sharePass = ""
+    @State private var confirmClearCache = false
 
     var body: some View {
         ScrollView {
@@ -90,8 +91,9 @@ struct CupertinoSettings: View {
             Divider()
             playbackRow("Keep played songs and covers", detail: "Up to 2 GB on this Mac, oldest-used removed first. Off by default; songs and covers then play and show without the server. \(state.cache.readout)") {
                 HStack(spacing: CU.Space.s) {
-                    Button("Clear saved songs") { Task { await state.cache.clear() } }
+                    Button("Clear…") { confirmClearCache = true }
                         .buttonStyle(CapsuleButtonStyle(small: true, destructive: true))
+                        .accessibilityLabel("Clear the saved songs and covers")
                     switchControl("Keep played songs and covers", Binding(get: { state.cache.isEnabled }, set: { state.cache.isEnabled = $0 }))
                 }
             }
@@ -102,6 +104,12 @@ struct CupertinoSettings: View {
             }
         }
         .task { await state.cache.refresh() }
+        .alert("Clear the saved songs and covers?", isPresented: $confirmClearCache) {
+            Button("Cancel", role: .cancel) {}
+            Button("Clear", role: .destructive) { Task { await state.cache.clear() } }
+        } message: {
+            Text("Removes the songs and covers kept on this Mac. Your library on the server is not changed.")
+        }
     }
 
     /// One settings row: words on the left, the control on the trailing edge, 16 of padding above and below.

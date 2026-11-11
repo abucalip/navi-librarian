@@ -422,6 +422,8 @@ A failing service puts one warning banner under the top bar, as the offline bann
 | D5 | Phone handoff (macOS side built in PR #982 from Navidrome's `getPlayQueue`; the Android app must call `savePlayQueue`) | Needs the Android app to call `savePlayQueue`; unchecked | Check, then a slice | Handoff notice |
 | D6 | Library health and unresolved items | Builders and fixtures exist; `GET /api/library-health` and `/api/unresolved` are not in the served routes | Serve them | Not designed here; a future "Health" row in Server activity |
 | D7 | Per-service "since" time | Not returned by the settings test routes | Client keeps its own last-good time | none; client-side |
+| D8 | Time-of-day counts and the morning-vs-night contrast (M10) | Already served: `context` in `GET /api/insights/taste` (`intelligence/taste/context.py`, `context_persistence.py`) carries `time_of_day` listen counts and the `contrast` with its state. The client did not read it | No server change. Client reads `context` (`TasteContext`, `TasteContrast`) | none; resolved by the client in M10 |
+| D9 | "Arrived this week" on Downloads (M10) | Job `updated_at` is epoch seconds (`acquisition/state.py`) | No server change; the client counts imports changed in the last seven days | none; client-side |
 
 Until a dependency lands, its module shows the "not available" state and the rest of the screen is built as drawn.
 

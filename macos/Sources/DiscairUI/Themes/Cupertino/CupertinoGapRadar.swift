@@ -55,11 +55,17 @@ struct CupertinoGapRadar: View {
                 }
                 .padding(.vertical, CU.Space.xs)
             }
+            // One neutral Get under the card: the first missing album in order. "Get n missing" above is the card's one primary.
+            if let next = (g.dated + g.undatedOwned + g.undatedMissing).first(where: { !$0.owned }) {
+                Button("Get") { state.actions.get(album: next) }
+                    .buttonStyle(CapsuleButtonStyle(small: true)).disabled(!state.acquisition.canGet(next))
+                    .help(state.acquisition.detail(for: next))
+            }
         }
         .accessibilityElement(children: .contain)
     }
 
-    /// Owned covers are whole; a missing one keeps its full cover with a dashed outline, and its Get sits under it (neutral).
+    /// Owned covers are whole; a missing one keeps its full cover with a dashed outline. Gets are neutral; see `card`.
     private func tile(_ a: AlbumItem) -> some View {
         VStack(alignment: .leading, spacing: 3) {
             Button { if a.owned { state.open(album: a) } } label: {
@@ -70,12 +76,6 @@ struct CupertinoGapRadar: View {
             Text(a.title).cuRole(CU.Font.callout).fontWeight(.semibold).foregroundStyle(CU.text).lineLimit(1)
             Text(a.owned ? (a.yearText.isEmpty ? "Owned" : a.yearText) : (a.year > 0 ? "\(a.yearText) · Missing" : "Missing"))
                 .cuRole(CU.Font.caption).foregroundStyle(CU.textSecondary).lineLimit(1)
-            if !a.owned {
-                Button("Get") { state.actions.get(album: a) }
-                    .buttonStyle(CapsuleButtonStyle(small: true)).disabled(!state.acquisition.canGet(a))
-                    .help(state.acquisition.detail(for: a))
-                    .padding(.top, CU.Space.xs)
-            }
         }
         .frame(width: 96, alignment: .leading)
     }

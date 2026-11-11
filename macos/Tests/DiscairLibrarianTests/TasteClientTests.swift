@@ -62,3 +62,42 @@ private func tasteBody(_ name: String, file: String = #filePath) throws -> Data 
         await #expect(throws: (any Error).self) { try await client(t).refreshTaste() }
     }
 }
+
+@Suite("Taste context client") struct TasteContextClientTests {
+    let base = URL(string: "https://lib.example.ts.net")!
+    let cred = Credential(username: "owner", password: "s3cret-pw-1234")
+    func client(_ t: MockTransport) throws -> LibrarianClient { try LibrarianClient(baseURL: base, credential: cred, transport: t) }
+
+    @Test func timeOfDayListensAreReadPerContext() async throws {
+        let t = MockTransport { _, _ in (200, try tasteBody("taste_context")) }
+        let ctx = try #require(try await client(t).taste().context)
+        #expect(ctx.timezone == "UTC" && ctx.listens == 470)
+        #expect(ctx.listensIn("night") == 60 && ctx.listensIn("morning") == 120)
+        #expect(ctx.listensIn("afternoon") == 90 && ctx.listensIn("evening") == 200)
+        #expect(ctx.timeOfDay("missing") == nil && ctx.listensIn("missing") == 0)
+    }
+
+    @Test func lowSampleContrastComparesNothing() async throws {
+        let t = MockTransport { _, _ in (200, try tasteBody("taste_context")) }
+        let c = try #require(try await client(t).taste().context?.contrast)
+        #expect(c.state == "low_sample" && c.minListens == 100)
+        #expect(c.listens == ["night": 60, "morning": 120])
+        #expect(c.entries.isEmpty)
+    }
+
+    @Test func statedContrastListsEachValueWithItsShareOnBothSides() async throws {
+        let t = MockTransport { _, _ in (200, try tasteBody("taste_context_contrast")) }
+        let c = try #require(try await client(t).taste().context?.contrast)
+        #expect(c.state == "stated" && !c.entries.isEmpty)
+        for e in c.entries {
+            #expect(["genre", "era", "area", "label", "collaborator"].contains(e.dimension))
+            #expect((0...1).contains(e.morning) && (0...1).contains(e.night))
+        }
+    }
+
+    @Test func oldBodyWithoutContextStillDecodes() async throws {
+        let t = MockTransport { _, _ in (200, try tasteBody("taste_rich")) }
+        let r = try await client(t).taste()
+        #expect(r.context == nil && r.profiles?.headline != nil)
+    }
+}

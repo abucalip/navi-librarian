@@ -11,6 +11,8 @@ public final class TasteModel {
     public private(set) var profiles: TasteProfiles?
     /// Listens per UTC day for the last 84 days (D2), when the server serves them.
     public private(set) var listensByDay: [ListensDay]?
+    /// The listening-context lenses and the morning-vs-night contrast, when the server has saved them.
+    public private(set) var context: TasteContext?
     /// True once a read finished (so "not computed yet" is not confused with "still loading").
     public private(set) var loaded = false
     public private(set) var refreshing = false
@@ -28,6 +30,7 @@ public final class TasteModel {
             let answer = try await librarian.taste()
             profiles = answer.profiles
             listensByDay = answer.listensByDay
+            context = answer.context
             loaded = true
         } catch {
             if !loaded { note = "Could not read your taste profile: " + Self.message(error) }
@@ -71,6 +74,8 @@ public final class TasteModel {
 
     /// Test and preview seam: replaces the saved profiles without a server.
     func set(_ p: TasteProfiles?) { profiles = p; loaded = true }
+    /// Sets the profiles and the listening context together, as a read of `GET /api/insights/taste` does (render tests use it).
+    func showForPreview(_ response: TasteResponse) { profiles = response.profiles; context = response.context; loaded = true }
 
     // MARK: What the cards show
 

@@ -60,12 +60,14 @@ struct CupertinoDownloads: View {
         .scrollEdgeEffectStyle(.hard, for: .top)
     }
 
-    /// "2 on their way · 1 needs you · 3 arrived", with the zero parts left out so no count reads as a missing one.
+    /// "2 on their way · 1 needs you · 3 arrived this week", with the zero parts left out so no count reads as a missing one.
+    /// `updatedAt` is the Librarian's epoch seconds; "arrived this week" counts imports changed in the last seven days.
     private func summary(_ jobs: [Acquisition]) -> String {
         let way = jobs.filter { $0.phase == .working || $0.phase == .queued }.count
         let needs = jobs.filter { $0.phase == .failed }.count
-        let arrived = jobs.filter { $0.phase == .imported }.count
-        let parts = [way > 0 ? "\(way) on their way" : nil, needs > 0 ? "\(needs) needs you" : nil, arrived > 0 ? "\(arrived) arrived" : nil]
+        let weekAgo = Date().timeIntervalSince1970 - 7 * 86400
+        let arrived = jobs.filter { $0.phase == .imported && ($0.updatedAt ?? 0) >= weekAgo }.count
+        let parts = [way > 0 ? "\(way) on their way" : nil, needs > 0 ? "\(needs) needs you" : nil, arrived > 0 ? "\(arrived) arrived this week" : nil]
         let text = parts.compactMap { $0 }.joined(separator: " · ")
         return text.isEmpty ? "Nothing in progress." : text
     }

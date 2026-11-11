@@ -3,15 +3,21 @@ import SwiftUI
 
 /// "Your taste" on Insights, four panels (redesign 5.3, mockup `insights--default`): lately against always (dumbbell),
 /// top values (ranked bars with window and dimension controls), when you listen (columns) and morning against night.
-/// Every sentence is the server's. The two time-of-day panels say "not available": the taste contract has no hour counts,
-/// so no column or comparison is drawn from invented numbers.
+/// Every sentence is the server's. The time-of-day panels read the server's `context` block; the client draws its numbers and
+/// shows the server's state word (stated, no difference, low sample) without composing a claim of its own.
 struct CupertinoTaste: View {
     let model: TasteModel
     let state: AppState
 
     private static let windowNames = ["recent": "Last 90 days", "mid": "Last year", "all_time": "All time"]
     private static let windowTabs = ["recent": "90 days", "mid": "Year", "all_time": "All time"]
-    private static let dimensionNames = ["genre": "Genre", "era": "Decade", "area": "Area", "label": "Label", "collaborator": "Collaborator"]
+    private static let dimensionNames = ["genre": "Genre", "era": "Decade", "area": "Area", "label": "Label"]
+    /// The mockup offers four dimensions, in its order. The server also profiles collaborators; they are not offered here.
+    private static let pickerDimensions = ["genre", "era", "area", "label"]
+    private static let plurals = ["genre": "Genres", "era": "Decades", "area": "Areas", "label": "Labels"]
+    /// Time-of-day contexts in the mockup's order, with the hours each one covers.
+    private static let parts: [(key: String, label: String)] = [("night", "Night 0–5"), ("morning", "Morning 6–11"),
+                                                                ("afternoon", "Afternoon 12–17"), ("evening", "Evening 18–23")]
 
     var body: some View {
         VStack(alignment: .leading, spacing: CU.Space.m) {
@@ -107,7 +113,7 @@ struct CupertinoTaste: View {
     @ViewBuilder private func actions(_ a: TasteAction?) -> some View {
         if let a {
             HStack(spacing: CU.Space.s) {
-                Button("Make a smart playlist from \(a.label)") { state.makeSmartPlaylist(from: a) }
+                Button("Make \(Self.article(a.label)) \(a.label) playlist") { state.makeSmartPlaylist(from: a) }
                     .buttonStyle(CapsuleButtonStyle(small: true))
                 Button("Show \(a.label) in Library") { state.openLibrary(filteredBy: a) }
                     .buttonStyle(CapsuleButtonStyle(small: true))
@@ -116,15 +122,21 @@ struct CupertinoTaste: View {
         }
     }
 
+    /// "an Ambient", "a Jazz": the indefinite article for a button label.
+    static func article(_ word: String) -> String {
+        guard let first = word.lowercased().first else { return "a" }
+        return "aeiou".contains(first) ? "an" : "a"
+    }
+
     // MARK: Top values
 
     private var valuesPanel: some View {
         CUPanel {
-            eyebrow("Top values")
+            eyebrow("Top \(Self.plurals[model.dimension]?.lowercased() ?? "values")")
             VStack(alignment: .leading, spacing: CU.Space.s) {
                 CUSegmented(TasteProfiles.windowNames.map { (value: $0, label: Self.windowTabs[$0] ?? $0) },
                             selection: Binding(get: { model.window }, set: { model.window = $0 }), accessibilityName: "Window")
-                CUSegmented(TasteProfiles.dimensions.map { (value: $0, label: Self.dimensionNames[$0] ?? $0) },
+                CUSegmented(Self.pickerDimensions.map { (value: $0, label: Self.dimensionNames[$0] ?? $0) },
                             selection: Binding(get: { model.dimension }, set: { model.dimension = $0 }), accessibilityName: "Dimension")
             }
             valuesBody
@@ -148,7 +160,7 @@ struct CupertinoTaste: View {
                     note("Nothing recorded for \(Self.dimensionNames[model.dimension]?.lowercased() ?? model.dimension) in this window.")
                 } else {
                     CURankedBars(rows: entries.prefix(8).map { CURankedRow(label: $0.value, value: $0.share * 100) },
-                                 title: "Top \(Self.dimensionNames[model.dimension]?.lowercased() ?? model.dimension) values", labelWidth: 120,
+                                 title: "Top \(Self.plurals[model.dimension]?.lowercased() ?? model.dimension)", labelWidth: 120,
                                  format: CUValueFormat(percent: true))
                 }
             }
@@ -158,22 +170,55 @@ struct CupertinoTaste: View {
         }
     }
 
-    // MARK: Time of day (no data yet)
+    // MARK: Time of day
 
     private var listenPanel: some View {
         CUPanel {
-            CUChartFrame("When you listen", subtitle: "Share of listens by time of day", phase: .unavailable(
-                headline: "Not available yet",
-                message: "The taste data has no time-of-day counts, so this chart cannot be drawn. The server does not send them yet.",
-                fixTitle: nil), plotHeight: 160) { EmptyView() }
+            let timezone = model.context?.timezone ?? "UTC"
+            CUChartFrame("When you listen", subtitle: "Listens by time of day, \(timezone) · all time", phase: model.context == nil ? .unavailable(
+                headline: "Not computed yet", message: "The server has not saved the listening contexts yet. Refresh your taste to build them.", fixTitle: nil) : .ready,
+                plotHeight: 180) {
+                if let ctx = model.context {
+                    let columns = Self.parts.map { CUColumn(label: $0.label, value: Double(ctx.listensIn($0.key)), detail: "\($0.label): \(ctx.listensIn($0.key).formatted()) listens") }
+                    CUColumnChart(columns: columns, highlight: columns.indices.max { columns[$0].value < columns[$1].value },
+                                  showsValueLabels: true, format: CUValueFormat(unit: "listens", singular: "listen"), height: 180,
+                                  title: "Listens by time of day", xTitle: "Time of day")
+                } else {
+                    EmptyView()
+                }
+            }
         }
     }
 
+    // MARK: Morning against night
+
+    /// The server's contrast in its three states. Below the sample size nothing is compared: the bar shows the short side.
     private var nightPanel: some View {
         CUPanel {
             eyebrow("Morning against night")
-            Text("Not available yet.").cuRole(CU.Font.title3).foregroundStyle(CU.text)
-            note("Morning and night counts are not in the taste data, so no comparison is drawn. A contrast is stated only when both sides hold 100 listens.")
+            if let c = model.context?.contrast {
+                let points = Int(((model.profiles?.config.minShift ?? 0.05) * 100).rounded())
+                switch c.state {
+                case "stated":
+                    Text("Morning against night").cuRole(CU.Font.title3).foregroundStyle(CU.text)
+                    note("Share of listens, night to morning. Only values that differ by at least \(points) points are shown.")
+                    CUDumbbell(rows: c.entries.prefix(6).map { CUDumbbellRow(label: $0.value, before: $0.night, now: $0.morning) },
+                               title: "Morning against night")
+                case "no_difference":
+                    Text("No clear difference.").cuRole(CU.Font.title3).foregroundStyle(CU.text)
+                    note("No value differs by at least \(points) points between morning and night.")
+                default:
+                    let night = c.listens["night"] ?? 0, morning = c.listens["morning"] ?? 0
+                    let short = min(night, morning)
+                    let side = night < morning ? "night" : "morning"
+                    Text("Not enough \(side) listening to compare.").cuRole(CU.Font.title3).foregroundStyle(CU.text)
+                    note("A contrast is stated only when both sides hold \(c.minListens) listens. Night has \(night), morning has \(morning).")
+                    progress(short, c.minListens, sentence: "\(short) of \(c.minListens) listens")
+                }
+            } else {
+                Text("Not computed yet.").cuRole(CU.Font.title3).foregroundStyle(CU.text)
+                note("The server has not saved the morning and night comparison.")
+            }
         }
     }
 }
