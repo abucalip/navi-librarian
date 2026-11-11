@@ -330,3 +330,13 @@ Earlier project log entries are preserved verbatim in [PROJECT_LOG_HISTORY.md](d
 - Side effect: the regular button is 32 high (was 36), also where shared Chrome components use `CapsuleButtonStyle` under Zine.
 - Left for later steps: pages with several filled primaries per view (Discover, Gap Radar, Artist, Insights tiles) to M8 and M10.
 - Next: M3 (shell), Haiku, Medium.
+
+## 2026-11-11 — Redesign M4: Cupertino charts (macOS)
+
+- Merged as PR [#978](https://github.com/abucalip/navi-librarian/pull/978), squash `2480b3a2`, from head `1902590526c68255bc0fb99773004fab5f35b8e9`; GitHub confirms the merge and compile, container-smoke, test-and-build and validate-container passed on that head. Plan: `docs/redesign.md` section 11, step M4.
+- Changed: new `macos/Sources/DiscairUI/Chrome/CupertinoCharts.swift` (`CUChartMath`, `CUChartPhase`, `CUValueFormat`, `CUChartFrame`, `CUTooltip`, `CULineChart`, `CUColumnChart`, `CUPairedBars`, `CUDumbbell`, `CURankedBars`, `CUHeatmap`, `CUHeatmapKey`, `CUStageTracker`); `CU.trackerTrack` (`#DCDCE2`) added to `CupertinoTheme.swift`. New `CupertinoChartsTests` (29 tests) and `CupertinoChartSpecimenTests` (renders the `charts--specimens` sheet from the real views).
+- Tests actually run, filtered, on a Mac: `swift test --filter "CupertinoChartsTests|CupertinoChartSpecimenTests|CupertinoTokensTests|CupertinoControlsTests"` (40 tests, 4 suites, pass). Full suite not run (owner rule).
+- Visual: the rendered specimen sheet was compared by eye with `charts--specimens.png`; every type and state is present. Not signed off by the owner. Not checked: VoiceOver reading, keyboard focus ring, draw-in motion.
+- Choices: Swift Charts for the line, column and dumbbell charts, plain SwiftUI for paired bars, ranked bars, heatmap and tracker (fixed geometry); value axes have at most 5 ticks including the baseline; paired bars carry the two-series legend of rule 4.4; heatmap dates are written day first.
+- Nothing calls the charts yet; no Zine file changed.
+- Next: M5 (home data) or M6 (services data), Sonnet; M8 builds Home from M2, M4 and M5.
