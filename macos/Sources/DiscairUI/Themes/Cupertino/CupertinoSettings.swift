@@ -23,8 +23,8 @@ struct CupertinoSettings: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 18) {
-                Text("Settings").font(CU.title(34)).padding(.top, 4).accessibilityAddTraits(.isHeader)
+            VStack(alignment: .leading, spacing: CU.Space.m) {
+                Text("Settings").cuRole(CU.Font.largeTitle).foregroundStyle(CU.text).padding(.top, 4).accessibilityAddTraits(.isHeader)
                 if let s = state.session {
                     connection(s)
                     playback
@@ -32,100 +32,56 @@ struct CupertinoSettings: View {
                     profiles(s)
                     listenBrainz()
                     logins(s)
-                    if let message { Text(message).font(.system(size: 12)).foregroundStyle(CU.accent) }
+                    if let message { CUNotice(kind: .danger, lead: "Could not save.", message: message) }
                 } else {
-                    Text("Settings are available in the running app.").foregroundStyle(CU.muted)
+                    Text("Settings are available in the running app.").foregroundStyle(CU.textSecondary)
                 }
             }
-            .padding(.horizontal, 28).padding(.bottom, 28)
+            .padding(.horizontal, CU.Space.xl).padding(.bottom, CU.Space.xl)
         }
         .scrollEdgeEffectStyle(.hard, for: .top)
     }
 
     private func card<C: View>(_ title: String, @ViewBuilder _ content: () -> C) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text(title).font(CU.title(17)).accessibilityAddTraits(.isHeader)
-            content()
-        }
-        .padding(18).frame(maxWidth: .infinity, alignment: .leading)
-        .background(CU.card, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+        CUPanel(title) { VStack(alignment: .leading, spacing: CU.Space.s) { content() } }
+    }
+
+    private func note(_ text: String) -> some View {
+        Text(text).font(.system(size: 12)).foregroundStyle(CU.textSecondary)
     }
 
     private var playback: some View {
-        card("Playback") {
-            Text("Crossfade between songs").fontWeight(.semibold)
-            HStack(spacing: 8) {
-                ForEach(PlayerModel.crossfadeChoices, id: \.self) { n in
-                    let on = state.player.crossfadeSeconds == n
-                    Button(n == 0 ? "Off" : "\(n) s") { state.player.crossfadeSeconds = n }
-                        .buttonStyle(CapsuleButtonStyle(primary: on, small: true))
-                        .accessibilityAddTraits(on ? .isSelected : [])
-                }
-            }
-            Text("Consecutive tracks of one album always play gapless, so the fade happens between unrelated songs.")
-                .font(.system(size: 12)).foregroundStyle(CU.muted)
-            Text("Streaming quality").fontWeight(.semibold).padding(.top, 6)
-            HStack(spacing: 8) {
-                ForEach(PlayerModel.qualityChoices, id: \.self) { q in
-                    let on = state.player.qualityCap == q
-                    Button(q.map { "\($0)" } ?? "Original") { state.player.qualityCap = q }
-                        .buttonStyle(CapsuleButtonStyle(primary: on, small: true))
-                        .accessibilityLabel(q.map { "\($0) kilobits per second" } ?? "Original quality")
-                        .accessibilityAddTraits(on ? .isSelected : [])
-                }
-            }
-            Text("Original plays the file as it is. A number is the most the server may send (kbps); it converts only files above it. Applies to songs started afterwards.")
-                .font(.system(size: 12)).foregroundStyle(CU.muted)
-            Text("Songs that follow each other on one album always play gapless, with no fade.").font(.system(size: 12)).foregroundStyle(CU.muted)
-            Text("Match the output sample rate").fontWeight(.semibold).padding(.top, 6)
-            HStack(spacing: 8) {
-                ForEach([true, false], id: \.self) { on in
-                    Button(on ? "On" : "Off") { state.player.matchOutputRate = on }
-                        .buttonStyle(CapsuleButtonStyle(primary: state.player.matchOutputRate == on, small: true))
-                        .accessibilityLabel(on ? "Sample rate matching on" : "Sample rate matching off")
-                        .accessibilityAddTraits(state.player.matchOutputRate == on ? .isSelected : [])
-                }
-            }
-            Text("Switches your Mac's output device to each song's sample rate when the device offers it, so nothing is resampled. This changes the system output rate; it is put back when you switch this off or quit Discair. A short pause between songs of different rates is normal.")
-                .font(.system(size: 12)).foregroundStyle(CU.muted)
-            Text("Scrobble plays").fontWeight(.semibold).padding(.top, 6)
-            HStack(spacing: 8) {
-                ForEach([true, false], id: \.self) { on in
-                    Button(on ? "On" : "Off") { state.player.scrobbling = on }
-                        .buttonStyle(CapsuleButtonStyle(primary: state.player.scrobbling == on, small: true))
-                        .accessibilityLabel(on ? "Scrobbling on" : "Scrobbling off")
-                        .accessibilityAddTraits(state.player.scrobbling == on ? .isSelected : [])
-                }
-            }
-            Text("Reports what you play to Navidrome, which feeds your listening history and so your recommendations. Off sends nothing from this Mac.")
-                .font(.system(size: 12)).foregroundStyle(CU.muted)
-            Text("Tell me when a Get finishes").fontWeight(.semibold).padding(.top, 6)
-            HStack(spacing: 8) {
-                ForEach([true, false], id: \.self) { on in
-                    Button(on ? "On" : "Off") { state.acquisition.notifiesWhenFinished = on }
-                        .buttonStyle(CapsuleButtonStyle(primary: state.acquisition.notifiesWhenFinished == on, small: true))
-                        .accessibilityLabel(on ? "Get finished notifications on" : "Get finished notifications off")
-                        .accessibilityAddTraits(state.acquisition.notifiesWhenFinished == on ? .isSelected : [])
-                }
-            }
-            Text("A macOS notification when an album or song you asked for is in your library, or could not be found. macOS asks permission the first time.")
-                .font(.system(size: 12)).foregroundStyle(CU.muted)
-            Text("Keep played songs and covers").fontWeight(.semibold).padding(.top, 6)
-            HStack(spacing: 8) {
-                ForEach([true, false], id: \.self) { on in
-                    Button(on ? "On" : "Off") { state.cache.isEnabled = on }
-                        .buttonStyle(CapsuleButtonStyle(primary: state.cache.isEnabled == on, small: true))
-                        .accessibilityLabel(on ? "Keep a copy of played songs on" : "Keep a copy of played songs off")
-                        .accessibilityAddTraits(state.cache.isEnabled == on ? .isSelected : [])
-                }
-                Text(state.cache.readout).font(.system(size: 12)).foregroundStyle(CU.muted)
+        let player = state.player
+        return card("Playback") {
+            Text("Crossfade between songs").font(.system(size: 13, weight: .semibold))
+            CUSegmented(PlayerModel.crossfadeChoices.map { (value: $0, label: $0 == 0 ? "Off" : "\($0) s") },
+                        selection: Binding(get: { player.crossfadeSeconds }, set: { player.crossfadeSeconds = $0 }),
+                        accessibilityName: "Crossfade between songs")
+            note("Consecutive tracks of one album always play gapless, so the fade happens between unrelated songs.")
+            Text("Streaming quality").font(.system(size: 13, weight: .semibold)).padding(.top, CU.Space.s)
+            CUSegmented(PlayerModel.qualityChoices.map { (value: $0, label: $0.map { "\($0)" } ?? "Original") },
+                        selection: Binding(get: { player.qualityCap }, set: { player.qualityCap = $0 }),
+                        accessibilityName: "Streaming quality")
+            note("Original plays the file as it is. A number is the most the server may send (kbps); it converts only files above it. Applies to songs started afterwards.")
+            CUSwitchRow(title: "Match the output sample rate", isOn: Binding(get: { player.matchOutputRate }, set: { player.matchOutputRate = $0 }),
+                        detail: "Switches your Mac's output device to each song's sample rate when the device offers it, so nothing is resampled. This changes the system output rate; it is put back when you switch this off or quit Discair. A short pause between songs of different rates is normal.")
+                .padding(.top, CU.Space.s)
+            CUSwitchRow(title: "Scrobble plays", isOn: Binding(get: { player.scrobbling }, set: { player.scrobbling = $0 }),
+                        detail: "Reports what you play to Navidrome, which feeds your listening history and so your recommendations. Off sends nothing from this Mac.")
+                .padding(.top, CU.Space.s)
+            CUSwitchRow(title: "Tell me when a Get finishes", isOn: Binding(get: { state.acquisition.notifiesWhenFinished }, set: { state.acquisition.notifiesWhenFinished = $0 }),
+                        detail: "A macOS notification when an album or song you asked for is in your library, or could not be found. macOS asks permission the first time.")
+                .padding(.top, CU.Space.s)
+            CUSwitchRow(title: "Keep played songs and covers", isOn: Binding(get: { state.cache.isEnabled }, set: { state.cache.isEnabled = $0 }),
+                        detail: "Off by default. Songs you play and their covers are kept on this Mac, up to 2 GB, oldest-used removed first, so they play and show without the server.")
+                .padding(.top, CU.Space.s)
+            HStack(spacing: CU.Space.s) {
+                Text(state.cache.readout).font(.system(size: 12)).foregroundStyle(CU.textSecondary)
                 Button("Clear") { Task { await state.cache.clear() } }.buttonStyle(CapsuleButtonStyle(small: true))
                     .accessibilityLabel("Clear the saved songs and covers")
             }
-            Text("Off by default. Songs you play and their covers are kept on this Mac, up to 2 GB, oldest-used removed first, so they play and show without the server.")
-                .font(.system(size: 12)).foregroundStyle(CU.muted)
             Button("Equalizer · \(state.player.eq.enabled ? state.player.eq.presetLabel : "Off")") { state.screen = .equalizer }
-                .buttonStyle(CapsuleButtonStyle(small: true))
+                .buttonStyle(CapsuleButtonStyle(small: true)).padding(.top, CU.Space.s)
         }
         .task { await state.cache.refresh() }
     }
@@ -133,37 +89,35 @@ struct CupertinoSettings: View {
     private func musicFolder(_ s: SessionModel) -> some View {
         let share = state.share
         return card("Music folder over SMB") {
-            Text(share.statusLine).font(.system(size: 13)).foregroundStyle(share.isReady ? CU.muted : CU.accent)
-                .accessibilityLabel("Music folder status. \(share.statusLine)")
-            HStack(spacing: 8) {
-                ForEach([true, false], id: \.self) { on in
-                    Button(on ? "On" : "Off") { saveShare(); share.setEnabled(on) }
-                        .buttonStyle(CapsuleButtonStyle(primary: share.settings.enabled == on, small: true))
-                        .accessibilityLabel(on ? "Music folder on" : "Music folder off")
-                        .accessibilityAddTraits(share.settings.enabled == on ? .isSelected : [])
-                }
+            HStack(spacing: CU.Space.s) {
+                CUStatusLabel(share.isReady ? .connected : (share.settings.enabled ? .notUpdating : .notSetUp))
+                Text(share.statusLine).font(.system(size: 12)).foregroundStyle(CU.textSecondary)
+            }
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("Music folder status. \(share.statusLine)")
+            HStack(spacing: CU.Space.m) {
+                Toggle("Use the music folder", isOn: Binding(get: { share.settings.enabled }, set: { saveShare(); share.setEnabled($0) }))
+                    .toggleStyle(.switch).tint(CU.accent).font(.system(size: 13, weight: .semibold))
                 Button("Connect now") { saveShare(); Task { await share.mountNow() } }
                     .buttonStyle(CapsuleButtonStyle(small: true)).disabled(!share.settings.enabled || share.status == .mounting)
             }
-            TextField("Share address (smb://192.168.1.87/media)", text: $shareAddress)
-            TextField("Folder as Navidrome sees it (/music)", text: $shareServerRoot)
-            TextField("Same folder on this Mac (/Volumes/media/library/music)", text: $shareLocalRoot)
-            HStack {
-                TextField("Share username", text: $shareUser).frame(width: 220)
-                SecureField("Share password", text: $sharePass).frame(width: 220)
+            CUField(label: "Share address", text: $shareAddress, placeholder: "smb://192.168.1.87/media")
+            CUField(label: "Folder as Navidrome sees it", text: $shareServerRoot, placeholder: "/music")
+            CUField(label: "Same folder on this Mac", text: $shareLocalRoot, placeholder: "/Volumes/media/library/music")
+            HStack(alignment: .bottom, spacing: CU.Space.s) {
+                CUField(label: "Share username", text: $shareUser, width: 220)
+                CUField(label: "Share password", text: $sharePass, secure: true, width: 220)
                 Button(share.username == nil ? "Save login" : "Replace login") {
                     run { try share.saveLogin(username: shareUser, password: sharePass); sharePass = "" }
                 }.buttonStyle(CapsuleButtonStyle(small: true))
                 if share.username != nil { Button("Remove login") { run { try share.removeLogin() } }.buttonStyle(CapsuleButtonStyle(small: true, outlined: true)) }
                 Spacer(minLength: 0)
             }
-            Text(share.username.map { "Login saved for \($0)." } ?? "No share login saved.").font(.system(size: 12)).foregroundStyle(CU.muted)
+            note(share.username.map { "Login saved for \($0)." } ?? "No share login saved.")
             Button("Save folder settings") { saveShare() }.buttonStyle(CapsuleButtonStyle(small: true))
-            if let e = share.settingsError { Text(e).font(.system(size: 12)).foregroundStyle(CU.accent) }
-            Text("Optional. The app mounts the share itself, like Finder's Connect to Server, and only reads from it (quick tag reads, coming later). Playback never needs it. The login is kept in the Keychain on this Mac.")
-                .font(.system(size: 12)).foregroundStyle(CU.muted)
+            if let e = share.settingsError { CUNotice(kind: .danger, lead: "Folder settings problem.", message: e) }
+            note("Optional. The app mounts the share itself, like Finder's Connect to Server, and only reads from it (quick tag reads, coming later). Playback never needs it. The login is kept in the Keychain on this Mac.")
         }
-        .textFieldStyle(.roundedBorder).autocorrectionDisabled()
         .onAppear {
             shareAddress = share.settings.address; shareServerRoot = share.settings.serverRoot; shareLocalRoot = share.settings.localRoot
         }
@@ -173,16 +127,13 @@ struct CupertinoSettings: View {
 
     private func connection(_ s: SessionModel) -> some View {
         card("Connection") {
-            HStack(spacing: 8) {
-                Circle().fill(s.isGood ? Color.green : (s.status == .connecting ? Color.orange : CU.accent)).frame(width: 9, height: 9)
-                Text(s.label).fontWeight(.semibold)
-                if s.isUnencrypted {
-                    Text("Unencrypted").font(.system(size: 11, weight: .semibold)).padding(.horizontal, 8)
-                        .overlay(Capsule().stroke(CU.muted, lineWidth: 1))
-                }
+            HStack(spacing: CU.Space.s) {
+                CUStatusLabel(s.isGood ? .connected : (s.status == .connecting ? .unknown : .noAnswer))
+                Text(s.label).font(.system(size: 13, weight: .semibold))
+                if s.isUnencrypted { unencryptedPill }
             }
             .accessibilityElement(children: .combine)
-            Text(s.statusDetail).foregroundStyle(CU.muted)
+            Text(s.statusDetail).font(.system(size: 13)).foregroundStyle(CU.textSecondary)
             HStack {
                 Button(s.canRetry ? "Retry" : "Connect") { Task { await s.connect() } }
                     .buttonStyle(CapsuleButtonStyle(primary: true))
@@ -191,22 +142,28 @@ struct CupertinoSettings: View {
         }
     }
 
+    private var unencryptedPill: some View {
+        Text("Unencrypted").font(.system(size: 11, weight: .semibold)).foregroundStyle(CU.warning)
+            .padding(.horizontal, CU.Space.s).frame(height: 24)
+            .background(CU.warningTint, in: Capsule())
+    }
+
     private func profiles(_ s: SessionModel) -> some View {
         card("Profiles") {
-            if s.profiles.profiles.isEmpty { Text("No profiles yet.").foregroundStyle(CU.muted) }
+            if s.profiles.profiles.isEmpty { Text("No profiles yet.").foregroundStyle(CU.textSecondary) }
             ForEach(s.profiles.profiles) { p in
                 let active = s.activeProfile?.id == p.id
                 let chosen = s.profiles.overrideID == p.id
                 HStack(spacing: 10) {
-                    Image(systemName: active ? "checkmark.circle.fill" : "circle").foregroundStyle(active ? CU.accent : CU.muted)
+                    Image(systemName: active ? "checkmark.circle.fill" : "circle").foregroundStyle(active ? CU.success : CU.textSecondary)
                         .accessibilityHidden(true)
                     VStack(alignment: .leading, spacing: 1) {
                         Text(p.name).fontWeight(.semibold)
                         Text("\(p.network.displayName) · \(p.librarianURL.absoluteString) · \(p.navidromeURL.absoluteString)\(p.listenBrainzUsername.isEmpty ? "" : " · ListenBrainz \(p.listenBrainzUsername)")")
-                            .font(.system(size: 11)).foregroundStyle(CU.muted).lineLimit(1)
+                            .font(.system(size: 11)).foregroundStyle(CU.textSecondary).lineLimit(1)
                     }
                     Spacer()
-                    if p.isUnencrypted { Text("Unencrypted").font(.system(size: 11)).foregroundStyle(CU.muted) }
+                    if p.isUnencrypted { Text("Unencrypted").font(.system(size: 11)).foregroundStyle(CU.textSecondary) }
                     Button(chosen ? "Automatic" : "Use this") {
                         run { try s.setOverride(chosen ? nil : p.id); Task { await s.connect() } }
                     }
@@ -218,41 +175,44 @@ struct CupertinoSettings: View {
             }
             Divider()
             Text("Add a profile").fontWeight(.semibold)
-            HStack {
-                TextField("Name (Home)", text: $name)
-                TextField("Librarian address", text: $librarianURL)
-                TextField("Navidrome address", text: $navidromeURL)
-                TextField("ListenBrainz username (optional)", text: $lbUser)
+            HStack(alignment: .top, spacing: CU.Space.s) {
+                CUField(label: "Name", text: $name, placeholder: "Home")
+                CUField(label: "Librarian address", text: $librarianURL, placeholder: "http://100.92.14.7:8080")
+                CUField(label: "Navidrome address", text: $navidromeURL, placeholder: "http://100.92.14.7:4533")
+                CUField(label: "ListenBrainz username (optional)", text: $lbUser)
             }
-            .textFieldStyle(.roundedBorder).autocorrectionDisabled()
             Button("Add profile") {
                 run {
                     try s.addProfile(name: name, librarianURL: librarianURL, navidromeURL: navidromeURL, listenBrainzUsername: lbUser)
                     name = ""; librarianURL = ""; navidromeURL = ""; lbUser = ""
                 }
             }
-            .buttonStyle(CapsuleButtonStyle(primary: true))
+            .buttonStyle(CapsuleButtonStyle())
             Text("Plain http is accepted only for home-network addresses, .local names and Tailscale addresses.")
-                .font(.system(size: 11)).foregroundStyle(CU.muted)
+                .font(.system(size: 11)).foregroundStyle(CU.textSecondary)
         }
     }
 
     private func listenBrainz() -> some View {
         let lb = state.listenBrainz
         return card("ListenBrainz") {
-            Text(lb.isConnected ? "Connected as \(lb.settings?.username ?? "")\(lb.settings?.tokenConfigured == true ? " (token saved)" : "")" : "Not connected")
-                .fontWeight(.semibold)
-            HStack {
-                TextField("ListenBrainz username", text: Bindable(lb).username).frame(width: 220)
-                SecureField(lb.settings?.tokenConfigured == true ? "Token (saved)" : "Token (optional)", text: Bindable(lb).token).frame(width: 220)
+            HStack(spacing: CU.Space.s) {
+                CUStatusLabel(lb.isConnected ? .connected : .notSetUp)
+                if lb.isConnected {
+                    Text("as \(lb.settings?.username ?? "")\(lb.settings?.tokenConfigured == true ? " (token saved)" : "")")
+                        .font(.system(size: 13)).foregroundStyle(CU.textSecondary)
+                }
+            }
+            HStack(alignment: .bottom, spacing: CU.Space.s) {
+                CUField(label: "ListenBrainz username", text: Bindable(lb).username, width: 220)
+                CUField(label: "Token", text: Bindable(lb).token, placeholder: lb.settings?.tokenConfigured == true ? "Saved" : "Optional", secure: true, width: 220)
                 Button(lb.isConnected ? "Update" : "Connect") { Task { await state.connectListenBrainz() } }
                     .buttonStyle(CapsuleButtonStyle(small: true)).disabled(!lb.canSave)
                 Spacer(minLength: 0)
             }
-            .textFieldStyle(.roundedBorder).autocorrectionDisabled()
-            if let note = lb.note { Text(note).font(.system(size: 12)).foregroundStyle(CU.accent) }
+            if let n = lb.note { CUNotice(kind: .warning, lead: "ListenBrainz.", message: n) }
             Text("The server reads your listens from ListenBrainz to describe your taste. The username is enough for public listens; the token is only for private profiles. Both are kept in the macOS Keychain and sent to the server at every startup; the token is never shown again.")
-                .font(.system(size: 11)).foregroundStyle(CU.muted)
+                .font(.system(size: 11)).foregroundStyle(CU.textSecondary)
         }
         .task { await lb.load(librarian: state.session?.librarian) }
     }
@@ -267,7 +227,7 @@ struct CupertinoSettings: View {
                   save: { try s.saveLogin(.librarian, username: libUser, password: libPass); libPass = "" },
                   remove: { try s.removeLogin(.librarian) })
             Text("Stored in the macOS Keychain on this Mac only. Passwords are never shown.")
-                .font(.system(size: 11)).foregroundStyle(CU.muted)
+                .font(.system(size: 11)).foregroundStyle(CU.textSecondary)
         }
     }
 
@@ -276,17 +236,16 @@ struct CupertinoSettings: View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
                 Text(title).fontWeight(.semibold)
-                Text(saved.map { "Saved for \($0)" } ?? "Not saved").foregroundStyle(CU.muted)
+                Text(saved.map { "Saved for \($0)" } ?? "Not saved").foregroundStyle(CU.textSecondary)
                 Spacer()
                 if saved != nil { Button("Remove") { run(remove) }.buttonStyle(CapsuleButtonStyle(small: true, outlined: true)) }
             }
-            HStack {
-                TextField("Username", text: user).frame(width: 220)
-                SecureField("Password", text: pass).frame(width: 220)
+            HStack(alignment: .bottom, spacing: CU.Space.s) {
+                CUField(label: "Username", text: user, width: 220)
+                CUField(label: "Password", text: pass, secure: true, width: 220)
                 Button(saved == nil ? "Save" : "Replace") { run(save) }.buttonStyle(CapsuleButtonStyle(small: true))
                 Spacer(minLength: 0)
             }
-            .textFieldStyle(.roundedBorder).autocorrectionDisabled()
         }
     }
 

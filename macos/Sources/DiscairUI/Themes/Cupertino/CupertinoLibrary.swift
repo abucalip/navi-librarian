@@ -214,25 +214,3 @@ struct CupertinoLibrary: View {
     }
 }
 
-/// Capsule segmented control used by the library and the queue inspector (selected segment is a white capsule).
-struct CUSegmented: View {
-    let options: [String]
-    @Binding var selection: String
-
-    var body: some View {
-        HStack(spacing: 0) {
-            ForEach(options, id: \.self) { o in
-                let on = o == selection
-                Button { selection = o } label: {
-                    Text(o).font(.system(size: 13, weight: on ? .semibold : .medium)).lineLimit(1).fixedSize()
-                        .padding(.horizontal, 14).padding(.vertical, 3)
-                        .background(on ? Color.white : .clear, in: Capsule())
-                        .shadow(color: .black.opacity(on ? 0.15 : 0), radius: 1.5, y: 1)
-                }
-                .buttonStyle(.plain)
-                .accessibilityAddTraits(on ? .isSelected : [])
-            }
-        }
-        .padding(3).background(Color(red: 0.47, green: 0.47, blue: 0.5).opacity(0.14), in: Capsule())
-    }
-}
