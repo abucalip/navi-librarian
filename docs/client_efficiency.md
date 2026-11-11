@@ -1,291 +1,532 @@
-# Discair client efficiency proposal
+# Discair client efficiency plan
 
-**Status:** proposal only; not an implementation authorization.  
-**Baseline reviewed:** GitHub `main`, `ce01596fb8f3d6daf615a401e12bf3a5bc38c313` (2026-11-11).  
-**Scope:** macOS and Android client CPU, application memory, image rendering and GPU use.  
-**Evidence boundary:** this is a source-level survey. No Instruments, Android Studio Profiler, Perfetto or device/window profiling was performed for this document. The items below are measured code characteristics and hypotheses to validate, not proof that any one item accounts for a particular RAM or CPU figure.
+**Status:** plan only; not an implementation authorization. Each step needs the owner's go-ahead.
+**Revision:** 2 (2026-11-11). Replaces the first source survey of the same date.
+**Source reviewed:** GitHub `main` at `88a8f70e1b33f31b966004ede74467d2abd2d96f`. The macOS and Android client sources are unchanged since the first survey's baseline (`ce01596f`).
+**Scope:** macOS and Android clients: CPU, memory, rendering, playback buffers, energy and start-up.
 
-## 1. Objective
+## 1. Executive summary and objectives
 
-Reduce Discair's idle and playback CPU use, keep memory predictable during long browsing and Now Playing sessions, and use the GPU deliberately for visual work where it is likely to help. Preserve audio fidelity, artwork quality, playback continuity, accessibility, reduced-motion behavior and the existing client/server contracts.
+**Objectives.** Lower idle and playback CPU and wakeups, keep memory bounded over long sessions, and keep rendering cheap, without changing what the owner sees or hears.
 
-The goal is not to remove the artwork-rich presentation. It is to make the expensive parts demand-driven, bounded and measurable.
+**What this revision concludes.**
 
-## 2. Findings at a glance
+1. No profiling has been done yet. Every cost in this document is either a source fact or a hypothesis. Phase 0 (three short measurement steps) comes before any code change.
+2. Three source-verified defects are worth fixing regardless of their measured size, because the fix is small and the behaviour is plainly unintended:
+   - macOS: the audio engine's 20 ms ticker keeps running after pause, for as long as the song stays open (step M1).
+   - macOS: the player bar's title marquee redraws at the full display refresh rate with no cap and no pause (step M2).
+   - Android: the Now Playing slideshow recomposes on every display frame (step A1).
+3. The first survey's memory concerns were partly overstated. The Librarian's `display` images are 500 px and `thumb` images 250 px (`docs/artwork.md`), so a 12-image slideshow is about 11 MiB decoded (arithmetic, not a measurement). The real unbounded cases on macOS are originals: artist photos, looked-up covers and full-resolution booklet pages, none of which are downsampled or costed correctly (step M3).
+4. Custom GPU work (Metal, OpenGL, Vulkan) is not recommended anywhere. The one GPU question worth measuring is live blur over moving content. If it is costly, the fix is to blur less (a small pre-blurred image on macOS, a downscaled layer on Android), not to add a renderer (steps M5 and A3, both conditional).
+5. Playback buffering on Android stays as it is. It was tuned for lossless streams over Tailscale, and no evidence suggests the memory is a problem.
 
-| Priority | Client | Finding in current source | Proposed direction |
+**Roadmap in one view.** 14 steps: 3 measurement, 3 mandatory CPU fixes, 3 memory steps, 4 conditional steps that run only if a measured gate is met, and 1 closeout. Model allocation: 9 Sonnet, 5 Haiku (section 9).
+
+## 2. Scope and evidence boundaries
+
+**In scope:** the files listed in section 14 and the behaviour they implement. **Out of scope:** the server, the web client, the widget, and any other efficiency plan.
+
+Every claim in this document carries one of these labels:
+
+| Label | Meaning |
+|---|---|
+| **Source fact** | Read directly in the code at the reviewed revision. |
+| **Arithmetic** | Computed from source facts (for example pixels × 4 bytes). Not a measurement of Discair. |
+| **Hypothesis** | A plausible cost or benefit that has not been measured. |
+| **Measured** | Recorded by a Phase 0 or later step. None exist yet. |
+| **Verified** | A before/after comparison that met its acceptance criteria. None exist yet. |
+
+No percentage improvement is promised anywhere. Gate thresholds in section 8.5 are decision rules, not predictions, and the owner may change them.
+
+## 3. Critical review of the first survey
+
+| # | First survey said | Verdict | Reason |
 |---|---|---|---|
-| P1 | macOS CPU | Audio output starts a 20 ms (50 Hz) ticker on play. Ordinary pause does not cancel it; stop does. | Run the ticker only while a growing file, crossfade, pending transition or other time-sensitive work needs it. |
-| P1 | Android CPU | Now Playing slideshow advances elapsed time through `withFrameNanosCompat()` and writes Compose state on every display frame. | Move frame-varying reads into a graphics/draw layer or use an animation primitive that does not recompose the full slideshow subtree each frame. |
-| P1 | Both GPU/CPU | Large animated blurred artwork is used in Now Playing and player surfaces. | Keep motion and blur in the rendering pipeline, avoid repeated CPU image processing, and cache only useful derived images. |
-| P1 | macOS RAM | Main `NSCache<NSString, NSImage>` has a 400-item count limit but no total-cost limit. The album cache's 96 MiB cost is calculated from compressed data length. | Bound decoded-image cost using pixel storage, not compressed file size; set a budget for the main cache too. |
-| P1 | Android RAM | Shared Coil loader globally sets `allowHardware(false)`; the application does not declare an explicit memory-cache budget or a client-level decode-size policy in its builder. | Measure the reason for software-only bitmaps; enable hardware-backed images where compatible and scope software decoding to transformations that require it. Add explicit cache and request sizing. |
-| P2 | Android RAM | Now Playing asks for up to 1000 px artwork; slideshow selection can contain up to 12 display images. Only the current and transition image need to be visible, but image-loader caching can retain decoded results. | Keep prefetch bounded to current/next; use display-sized requests and avoid eager loading of the whole slideshow. |
-| P2 | Both RAM | Full-resolution artwork is fetched for zoom; PDFs and large originals can add transient memory. | Keep full resolution on-demand, release it when the viewer closes or zoom ends, and measure PDF decode/render peaks. |
-| P2 | Android RAM | ExoPlayer buffers 30–60 seconds and a second player can exist during crossfade. | Measure memory for lossless/high-bitrate streams and crossfade before changing buffer policy. |
-| P3 | Both | Several small periodic clocks/tickers exist. | Retain low-frequency updates that serve visible UI or playback semantics; stop them when their owning surface or task is inactive. |
+| 1 | macOS 50 Hz ticker is a P1 CPU cost | **Partly right, reframed** | Source fact: `play()` starts it, only `stop()` cancels it, so it survives pause. In steady playback `step()` is three early returns, so CPU time is likely tiny (hypothesis). The real cost is 50 main-thread wakeups per second, including while paused for hours. This is an energy and wakeup issue. |
+| 2 | "Start the ticker only while a pending transition needs it" | **Insufficient** | Source fact: with crossfade on, or a gapless join across formats, a non-queued `pending` exists for almost the whole song, so the ticker would still run all the time. The poll must become a deadline (step M1). |
+| 3 | Cost macOS images with `CGImage.bytesPerRow * height` | **Wrong as stated** | Source fact: images are made with `NSImage(data:)`, which decodes lazily at first draw, on the main thread. There is no decoded bitmap to cost at insert time, and asking for one makes a copy. The decode must move to ImageIO off the main thread; cost then follows for free (step M3). |
+| 4 | "Keep the existing rule that only the active and incoming images are needed" on macOS | **Wrong** | Source fact: `SlideshowBackdrop` loads every slide into `@State` up front. But at 500 px each this is about 11 MiB (arithmetic), so it is not worth a step. |
+| 5 | Android: "no explicit memory-cache budget" | **Overstated** | Coil 3 applies a default bounded memory cache (a fraction of the app's memory class) and `AsyncImage` already decodes to the laid-out size. No new policy is needed unless measurement shows a problem. |
+| 6 | Android: find out why `allowHardware(false)` is set | **Answered** | Source fact: `dominantColor` in `ui/common/Common.kt` and `radioArtworkBytes` in `ui/MainShell.kt` read pixels through `toBitmap()`. Those two requests need software bitmaps; the rest do not (step A2). |
+| 7 | Android blur: keep "the no-blur fallback on older devices" | **Dead concern** | Source fact: `minSdk = 33`, and `canBlur` is `SDK_INT >= 31`, so blur is always available. |
+| 8 | Compare 30 FPS disc rotation with 15–20 FPS | **Rejected** | Arithmetic: at 10 rpm the disc turns 60° per second; at 15 FPS that is 4° per frame, a visible step at the rim. Lowering the rate trades quality for an unmeasured gain. If the disc is costly, make each frame cheaper instead (section 7). |
+| 9 | Lower the slideshow rate to 8–12 FPS | **Kept in part** | A slow drift under a 36-point blur tolerates a low rate. Android goes to about 30 Hz in step A1 (from up to 120). macOS already runs at 20 FPS; going lower is not worth a step. |
+| 10 | Android PDF: derive the raster size from the display | **Rejected** | Source fact: pages render at up to 2048 px wide and zoom scales that bitmap. Rendering at display width would blur zoomed pages, which breaks full-resolution booklet zoom. One page is about 23 MiB for an A4-shaped page (arithmetic), held only while the booklet is open. |
+| 11 | Test Core Image or Metal for blur on macOS; cached `RenderEffect` on Android | **Narrowed** | A static, heavily blurred backdrop needs very few pixels. A small bitmap blurred once on the CPU or with Core Image is simpler than any per-frame GPU path. No Metal. On Android a `RenderEffect` is applied each time the layer is drawn, so "caching" it is not available; shrinking the blurred layer is (step A3). |
+| 12 | ExoPlayer buffers: measure, then maybe reduce | **Kept as measure-only** | The buffer holds compressed audio and is bounded by 60 s. At about 3 Mbit/s (hi-res FLAC) that is roughly 22 MiB per player (arithmetic). Changing it risks the stalls it was tuned to stop. No step. |
+| 13 | Phase 3 "targeted GPU improvements" as a standing phase | **Removed** | Replaced by two conditional steps behind measured gates. |
 
-## 3. macOS client
+## 4. macOS strategy
 
-### 3.1 CPU: make the audio ticker conditional
+### 4.1 Audio engine ticker (`DiscairAudio/AudioOutput.swift`)
 
-**Current behavior**
+**Source facts.** `EngineOutput.startTicker()` runs `step()` every 20 ms. `step()` does real work in three cases only: a growing download (`feedGrowth`, which limits itself to once per 0.25 s), an active fade (volume steps), and a `pending` song that is not queued on the node (crossfade, or a gapless join across formats), where it waits for the last moments of the song. `pause()` does not stop the ticker. `PlayerModel`'s own 250 ms tick does stop on pause.
 
-`macos/Sources/DiscairAudio/AudioOutput.swift` sets `tick = 0.02` seconds. `play()` starts a task that calls `step()` every 20 ms. `pause()` pauses the audio node but does not stop the ticker; `stop()` cancels it. The ticker is useful for growing downloads, crossfade progression, pending transitions and related playback housekeeping, but normal steady-state playback may not need 50 checks per second.
+**Strategy.** Run the ticker only while one of the three cases is live, and replace the long wait before a transition with one sleep to a deadline. Keep the 20 ms cadence inside a fade and near the join; do not lower it. Step M1.
 
-**Proposal**
+**Alternatives rejected.**
+- Starting the second node at an exact sample time (`play(at:)`) would remove the poll for joins, but it changes how transitions are timed and needs its own spike. Not justified by an efficiency goal.
+- Engine-side volume ramps: `AVAudioPlayerNode` has no ramp. A custom render path adds risk to the real-time thread for no audible gain.
+- A slower global tick: coarser fade steps and later joins.
 
-1. Separate the work that genuinely needs frequent polling from ordinary playback state.
-2. Start the 50 Hz ticker only while a growing file, an active fade, a pending transition or another explicitly identified operation needs it.
-3. Cancel or suspend it on pause when no such operation needs to progress; restart it on resume if required.
-4. Prefer audio-engine scheduling/completion callbacks for events that can be driven by the engine rather than polled.
-5. Preserve the exact transition, gapless, growing-download and cancellation semantics. Do not simply lower the tick rate without tests.
+**Also noted, no step.** `feedGrowth` and `readableFrames` open and test-read files on the main actor, and `attach` sleeps the main thread 150 ms after a device rate change. Both are short, happen between songs or during a download, and touching them risks growing-download playback. Leave them unless Phase 0 shows main-thread hitches there.
 
-**Acceptance:** tests prove that a paused ordinary track has no active ticker; growing playback still resumes when bytes arrive; crossfade reaches the same end state and timing tolerance; queued transitions do not introduce gaps; stop/replacement cancels work exactly once.
+### 4.2 Artwork memory (`DiscairUI/Model/ArtworkStore.swift`)
 
-### 3.2 RAM: bound decoded artwork, not compressed files
+**Source facts.**
+- Main cache: 400 entries, no cost limit, no costs passed.
+- Album cache: 120 entries, 96 MiB, but cost is the compressed byte count.
+- Library covers are sized by the server (`size=px`, 300 by default, 600 for blurred backdrops). Looked-up covers (`lookup|…`) and artist photos (`artist|…`) are fetched as whatever the remote URL serves and their keys ignore `px`.
+- `albumImage(_, size: .full)` puts full-resolution originals in the album cache.
+- `albumPDF` keeps the last PDF's bytes (which the code notes can be tens of MB) in `lastPDF` until another PDF replaces it.
 
-**Current behavior**
+**Arithmetic.** A 300 px cover is about 0.34 MiB decoded and a 600 px one about 1.4 MiB, so 400 server-sized covers stay within about 140–550 MiB in the worst case and far less in practice. A 3000 px original is about 34 MiB, yet it counts as a few MB in the album cache and as nothing in the main cache.
 
-`macos/Sources/DiscairUI/Model/ArtworkStore.swift` has a primary `NSCache` with `countLimit = 400` and no `totalCostLimit`. Its separate album-art cache has a 96 MiB cost limit, but entries are inserted with `data.count` as the cost. That is the compressed response size, not the decoded bitmap's memory footprint.
+**Strategy.** Decode with ImageIO off the main actor, capped to the size the caller needs, and cost each entry by its decoded bytes (step M3). Keep full-resolution originals out of the shared cache; the booklet page that asked for one owns it. Release PDF bytes when the booklet closes (step M4). Budgets are provisional until Phase 0 records real sizes.
 
-**Proposal**
+`NSCache` limits are advisory and it evicts under memory pressure by itself. Do not add a second pressure handler.
 
-- Give both caches explicit, independently justified budgets.
-- Calculate image cost from decoded pixel storage where available (for example, `CGImage.bytesPerRow * height`), with a safe fallback when the backing representation is unavailable.
-- Keep cache limits advisory: handle eviction and reloading correctly, and do not rely on `NSCache` as a hard process-memory ceiling.
-- Downsample before decoding when the view needs a thumbnail or display image; do not decode a full original and then scale it down for a small card.
-- Keep full-resolution originals out of the general-purpose cache, or place them in a separately bounded, short-lived zoom cache.
-- Avoid retaining duplicate `Data`, `NSImage` and PDF representations longer than necessary.
+### 4.3 Rendering and animation
 
-The artwork cache is shared by many screens, so budgets should be based on measured decoded sizes and the app's total footprint, not chosen solely from the number of albums.
+**Source facts.**
+- Disc: `TimelineView` at 30 FPS, paused when not playing or under Reduce Motion. It also spins in the player bar.
+- Slideshow: `TimelineView` at 20 FPS; a live 36-point blur wraps layers whose scale and offset change each tick. Paused when not playing, under Reduce Motion, in Low Power Mode and in screenshot capture.
+- `BlurredArtwork` (five call sites) and `CollageHeroBackdrop` apply a live blur to static images.
+- The player bar marquee uses `TimelineView(.animation)` with no minimum interval and no pause.
+- `PlaybackClock` redraws at 4 Hz. `PlayerModel` writes its observable `position` at 4 Hz while playing.
+- No code reacts to the window being hidden, minimized or occluded.
 
-### 3.3 GPU: use the Apple rendering stack for image presentation
+**Strategy.**
+- SwiftUI's blur, transforms and opacity already run in the system compositor. That is the right baseline and stays.
+- Hypothesis: because the slideshow's moving layers sit inside the blur, the blur is recomputed on every tick. Its cost appears in the WindowServer process, not in Discair, so Phase 0 must measure both.
+- If that cost passes gate G1, replace live blur with a small image blurred once (step M5). Blur commutes with the pan and, near enough, with the 10 % zoom, so the motion can stay outside the blur.
+- Cap and pause the marquee now (step M2).
+- Whether timelines keep ticking when the window is not visible is unknown. Measure it; fix only if they do (step M6).
+- Keep the 4 Hz clock. Keep Reduce Motion, Low Power Mode and pause as hard stops.
 
-The Mac's Apple Silicon GPU is appropriate for compositing, transforms, rotation, opacity, scaling and image effects. SwiftUI/Core Animation already perform much of this work through the system rendering pipeline. The first optimization should be to keep animated changes as layer properties rather than repeatedly rebuilding image content.
+### 4.4 Booklets and PDFs (`DiscairUI/Chrome/BookletSheet.swift`)
 
-**Recommendations**
+**Source facts.** A page loads `display` first and `full` only after the first zoom; both live in the page's `@State`. `PDFDocument(data:)` is built from bytes that `ArtworkStore.lastPDF` also holds. `MediaCache.file(for:ext:)` can return the on-disk file.
 
-- Keep disc rotation, slideshow pan/zoom, cross-fades and view transforms in SwiftUI/Core Animation layer animations wherever possible.
-- For the blurred artwork backdrop in `macos/Sources/DiscairUI/Chrome/CoverView.swift`, profile the cost before replacing SwiftUI's blur. If blur is a material bottleneck, test a cached Core Image or Metal-rendered blurred derivative generated when the source artwork changes, not on every animation frame.
-- Cache a blurred derivative by source image identity and target dimensions; invalidate it when the artwork or required output size changes. Keep the unblurred source for foreground display and zoom.
-- Avoid creating a new Metal texture or converting a bitmap on every frame. Texture upload, intermediate render targets and retained textures can increase unified-memory pressure.
-- Use GPU acceleration for image effects only where the result is a genuine improvement in frame time, CPU use or energy. Measure both GPU activity and total memory/energy.
+**Strategy.** Keep the one-page design and on-demand full resolution. Open the PDF from its cached file when there is one, and clear `lastPDF` on dismissal (step M4). Whether PDFKit holds rendered pages after dismissal is a Phase 0 check, not a step.
 
-Do not introduce a custom Metal renderer just because the app has image-heavy screens. The system compositor is the preferred baseline; Core Image/Metal is a targeted option after profiling.
+## 5. Android strategy
 
-### 3.4 Now Playing motion
+### 5.1 Slideshow recomposition (`ui/player/NowPlayingArtwork.kt`)
 
-`macos/Sources/DiscairUI/Chrome/NowPlayingArtwork.swift` runs the disc at a 30 FPS TimelineView and the slideshow at a 20 FPS TimelineView. The slideshow is already paused when playback stops, Reduce Motion is enabled, Low Power Mode is active or screenshot rendering is in progress. Keep these safeguards.
+**Source facts.** A `withFrameNanos` loop adds to a `mutableFloatStateOf` every display frame. `SlideshowBackdrop` reads that state in composition, so the function, both `layer` calls and their modifiers recompose every frame: up to 120 times per second on the owner's phone. The alpha goes through `Modifier.alpha(value)`, also a composition-time read. A 36 dp blur wraps both layers.
 
-- Compare 30 FPS disc motion with 15–20 FPS on the target Mac; select the lowest rate that still looks smooth.
-- Compare the slideshow's 20 FPS updates with 8–12 FPS, or use compositor-driven animation for slow pan/zoom and only update slide state at transition boundaries.
-- Keep the existing rule that only the active and incoming images are needed for a transition. Avoid turning the full slide list into eagerly decoded `NSImage` objects.
-- Do not lower the 4 Hz playback clock in `PlaybackClock.swift` unless profiling shows it matters; it is a small, user-visible time display.
+**Strategy (step A1).** Read the clock only inside `graphicsLayer` blocks, so a tick invalidates the layer and nothing else. Let composition see only the slide indices, which change at boundaries. Advance the clock at about 30 Hz instead of every vsync; the drift is slow and sits under a heavy blur. The disc is already correct: an `Animatable` read inside `graphicsLayer`.
 
-### 3.5 Booklets and PDFs
+### 5.2 Image loading (`AppContainer.kt`, Coil 3.0.4)
 
-The booklet view retains display and full-resolution images for zoom, and PDFKit receives the PDF data to create a document. The recent main change (#973) now presents one centred PDF page at a time rather than a two-page spread; preserve that lower-workload behavior.
+**Source facts.** One shared `ImageLoader` with `allowHardware(false)`. Two call sites read pixels (section 3, row 6). The player cover asks the server for 1000 px (about 3.8 MiB decoded, arithmetic).
 
-- Keep the PDF document scoped to the visible booklet session and release it on dismissal.
-- Request full-resolution page images only after an explicit zoom action.
-- Avoid keeping both the full PDF byte buffer and redundant rendered page images alive after the viewer closes.
-- Profile page changes, zoom and large PDFs separately; PDFKit may retain decoded/rendered resources beyond the lifetime of a single SwiftUI view value.
+**Strategy.** Hypothesis: a software bitmap that is drawn also gets uploaded as a GPU texture, so it is held twice, where a hardware bitmap is held once. Turn hardware bitmaps on by default and keep software decoding on the two requests that read pixels (step A2). This is an experiment: it stays only if total PSS falls. A fall in native heap matched by a rise in graphics memory is not a win.
 
-## 4. Android client
+Leave Coil's default memory cache and automatic sizing alone. Keep the 1000 px player cover: it is one image, and it is the sharpest thing on the screen.
 
-### 4.1 CPU: remove per-frame Compose state churn
+### 5.3 Blur and rendering
 
-**Current behavior**
+**Source facts.** Blur is a `RenderEffect` (Android 12 and up, always available here). Slideshow: 36 dp over moving content. Player line and Now Playing backdrop: 28 dp over a static image, scaled 1.3×. Three small infinite transitions drive the playing-bars indicators.
 
-`android/app/src/main/kotlin/app/discair/ui/player/NowPlayingArtwork.kt` advances slideshow elapsed time in an infinite `withFrameNanosCompat()` loop and writes to `mutableFloatStateOf` on every display frame. That can mean 60 or 120 state writes per second and cause recomposition work even though the desired change is mostly image position, scale and alpha.
+**Strategy.** Compose already renders through the hardware pipeline; transforms and alpha in `graphicsLayer` are the cheapest path there is. A `RenderEffect` blur is reapplied whenever its layer is drawn, so its cost scales with the layer's pixel area and how often the frame redraws. Step A1 cuts the redraw rate. If RenderThread or GPU cost still passes gate G3, blur a quarter-size layer and scale it up (step A3). No custom shaders.
 
-**Proposal**
+### 5.4 PDF booklet (`ui/album/Booklet.kt`)
 
-- Keep the animation clock, but read frame-varying values inside a `graphicsLayer` or draw lambda so Compose can update the layer without recomposing the full content tree on every frame.
-- Alternatively use `Animatable`/infinite transition primitives with state reads confined to the layer that actually animates.
-- Update the slide index only at transition boundaries; do not make the slide-selection model itself a per-frame state.
-- Keep the existing stop conditions: paused playback, reduced motion and Battery Saver. Also ensure the effect is cancelled when the Now Playing surface leaves composition.
-- Profile the 6-second disc rotation separately; it already uses an animation primitive and a graphics layer, so it is a lower-priority suspect.
+**Source facts.** One `PdfRenderer` and descriptor per open booklet, closed in `awaitDispose`. One page bitmap at a time, up to 2048 px wide; `beyondViewportPageCount = 0`. Full-size images load only past a zoom threshold.
 
-**Acceptance:** frame time and CPU use improve during a 10-minute slideshow; no visible stutter or incorrect slide timing; no slideshow work continues after the surface is removed or playback pauses.
+**Strategy.** No change. Phase 0 confirms that memory returns to its earlier level after the booklet closes.
 
-### 4.2 RAM: establish a deliberate Coil policy
+### 5.5 Playback (`player/PlaybackService.kt`, Media3 1.11.0)
 
-**Current behavior**
+**Source facts.** 30 s minimum and 60 s maximum buffer, time prioritized over bytes, 1.5 s to start, 8 s to resume after a stall. The next song preloads 10 s. A second player exists only while crossfade is on. Both players share one `DefaultLoadControl`; recent Media3 versions track buffers per player, so each gets its own 60 s ceiling. The controller's 1 s ticker is started and cancelled with the playing state.
 
-`android/app/src/main/kotlin/app/discair/AppContainer.kt` builds one shared Coil `ImageLoader` and sets `allowHardware(false)`. The builder does not declare an app-specific memory-cache budget. `NowPlayingSheet.kt` requests player artwork at up to 1000 px. The slideshow model selects at most 12 display images; the composable draws the current image and, during a cross-fade, the next image. The pager in `ui/album/Booklet.kt` already uses `beyondViewportPageCount = 0` and fetches full resolution only after zoom.
-
-**Proposal**
-
-1. Establish why hardware bitmaps were disabled. Check all Coil transformations, software readbacks and screenshot/test paths before changing the shared setting.
-2. Where compatible, allow hardware bitmaps for ordinary display-only artwork. If a particular transformation requires software pixels, request software decoding for that request rather than forcing every image in the app to be software-backed.
-3. Configure a measured Coil memory-cache budget and explicit request sizing. Keep disk caching separate from decoded-memory caching.
-4. Use the smallest server size that satisfies the rendered surface:
-   - tiny avatars and list thumbnails: thumb;
-   - album cards and ordinary grids: thumb or display according to rendered pixel dimensions;
-   - Now Playing: display, with the current 1000 px ceiling retained only if measurements show it is useful on the target device;
-   - slideshow backdrop: display-sized images only;
-   - booklet zoom: full only after a deliberate zoom gesture.
-5. Prefetch only the next image when a transition is imminent. Do not decode all 12 slideshow candidates at once.
-6. Clear or allow eviction of large transient images when a sheet/viewer closes; avoid application-level maps that retain bitmap objects after their UI has gone away.
-
-A 1000 × 1000 RGBA bitmap is approximately 3.8 MiB before row alignment and other overhead. A handful of retained images, PDF page bitmaps, GPU textures and player buffers can therefore add up quickly. This is an illustration of decoded size, not a measured Discair allocation.
-
-### 4.3 GPU: accelerate presentation, not the entire image pipeline
-
-Android already uses hardware-accelerated rendering for normal Compose drawing. Use it rather than adding a custom renderer.
-
-- Keep rotation, translation, scale, alpha and cross-fade in `graphicsLayer` or Compose animation APIs.
-- The slideshow applies a 36 dp blur and the player line applies a 28 dp blur. Profile these on the actual target GPU and Android versions. If blur dominates, test a hardware-backed `RenderEffect`/Compose rendering path on supported Android versions, with the existing no-blur/tint fallback on older devices.
-- Apply blur to a low-resolution backdrop, not a full-resolution source. Reuse the result while the source image and output size remain unchanged.
-- Keep blur and backdrop work inactive when Now Playing is hidden, photos are off, playback is paused, or reduced motion/Battery Saver requires stillness.
-- Use `graphicsLayer` for animated transforms so the image is not repeatedly decoded or redrawn from scratch.
-- Do not add custom OpenGL/Vulkan/compute code unless Perfetto or GPU profiling demonstrates a specific bottleneck that platform effects cannot address.
-
-Hardware bitmaps and GPU textures are not free memory. They may move pressure from the Java heap to graphics/native or shared device memory, and can complicate pixel readback. Compare total process PSS/RSS, graphics memory where available, frame time and energy—not just Java heap size.
-
-### 4.4 PDF booklet rendering
-
-`android/app/src/main/kotlin/app/discair/ui/album/Booklet.kt` already renders one pager page at a time (`beyondViewportPageCount = 0`) and loads the original only after zoom. Keep that architecture.
-
-- Derive the raster target from the actual display pixel size and density, with a sensible maximum; avoid rendering every page at a fixed oversized resolution.
-- Keep a single active page bitmap plus, at most, a small adjacent-page prefetch if measurements justify it.
-- Close `PdfRenderer`, page and file-descriptor resources on dismissal and cancellation.
-- Do not retain both the PDF's full byte array and every rendered page bitmap.
-- Verify that zoom remains sharp; memory savings must not silently degrade the owner's explicit zoom action.
-
-### 4.5 Playback buffers and crossfade
-
-`PlaybackService.kt` configures ExoPlayer for 30 seconds minimum and 60 seconds maximum buffering, with time prioritized over the byte threshold. This was chosen to prevent repeated stalls for lossless streams over a home/Tailscale connection. Crossfade can create a second player while the overlap is active.
-
-Do not reduce these values based on a generic memory target. First measure MP3, FLAC and high-bitrate FLAC at normal playback, buffering/rebuffering and crossfade. If memory is excessive, evaluate a combined byte-and-time budget or a smaller crossfade-only second-player buffer, but only if playback remains reliable on the owner's actual network. The audio service's stability takes precedence over a small idle-memory reduction.
-
-The Android controller's one-second position/scrobble ticker is comparatively low frequency. Verify its lifecycle and cancellation, but do not prioritize it ahead of the per-frame slideshow loop.
-
-## 5. Cross-platform GPU and memory principles
-
-1. **Decode once at the size needed.** A GPU blur cannot recover memory already wasted decoding a 4000 px original for a 300 px card.
-2. **Separate source, display and derived images.** Keep the original for explicit zoom; use a bounded display decode; create a blurred derivative only when needed.
-3. **Prefer compositor transforms.** Rotation, scale, translation, alpha and simple transitions should stay in the platform rendering system.
-4. **Use GPU effects selectively.** Blur is the strongest candidate. Cache its output and compare GPU time, CPU time, frame pacing, memory and battery.
-5. **Do not use the GPU for audio DSP by default.** EQ and crossfade operate on real-time audio buffers. Moving this work to the GPU would add buffer transfers, synchronization and latency, and would complicate the real-time audio path. Keep audio processing on the established CPU/audio-engine path unless a separate, measured design proves a GPU implementation safe and worthwhile.
-6. **Avoid per-frame CPU/GPU conversions.** Repeated bitmap-to-texture uploads, readbacks and new offscreen surfaces can cost more than the effect itself.
-7. **Respect low-power and accessibility modes.** Keep Reduce Motion, Battery Saver/Low Power Mode and pause behavior as hard constraints, not optional tuning switches.
-8. **Treat GPU memory as part of total memory.** On Apple Silicon, CPU and GPU share unified physical memory. On Android, hardware bitmaps and render targets still consume device memory even when they are not counted in the Java heap.
-
-## 6. Measurement plan
-
-No optimization should be accepted on source inspection alone. Establish a reproducible before/after baseline on the same app revision, device, display refresh rate, server, network and library.
-
-### 6.1 Scenarios
-
-Run each scenario for at least 10 minutes after a consistent warm-up, and record cold-start and steady-state separately:
-
-1. Cold launch, Home idle, no playback.
-2. Browse 20–30 albums with mixed artwork sizes; open and close several album pages.
-3. Now Playing with photos off; playback paused.
-4. Now Playing with disc rotation and photos/slideshow enabled during playback.
-5. Repeatedly open booklet pages, zoom in/out and dismiss; include a large PDF.
-6. Play a local/LAN MP3, then FLAC and high-bitrate FLAC over the same network.
-7. Play with crossfade disabled and enabled; include an actual overlap.
-8. Pause for five minutes, then resume; verify background/hidden surfaces are not animating.
-
-### 6.2 Tools and metrics
-
-**macOS**
-- Instruments: Time Profiler, Allocations, VM Tracker and Energy Log.
-- Record process physical footprint/resident memory, peak memory, decoded image/cache estimates, CPU time by hot path, main-thread stalls, GPU activity/frame pacing and energy impact.
-- Inspect allocations while navigating and after dismissing the booklet/Now Playing views to find objects that remain retained.
-
-**Android**
-- Android Studio Profiler: Memory, CPU and Energy where available.
-- Perfetto/System Trace and FrameTimeline for Compose recomposition, main/render thread scheduling, frame misses and GPU/render work.
-- Record total PSS/RSS, Java heap, native/graphics memory where available, bitmap allocations, CPU time, frame time/jank and battery/thermal behavior.
-- Repeat on the owner's Galaxy S20 FE and one lower-memory or lower-performance Android device if available. Do not infer device behavior from an emulator alone.
-
-### 6.3 Report format
-
-For each scenario, record:
-- exact GitHub application SHA and build type;
-- OS/device, display refresh rate and power mode;
-- peak and steady-state memory (including native/graphics categories where available);
-- average and peak CPU use, plus hot functions;
-- frame-time distribution/jank and GPU activity;
-- network format/bitrate and whether crossfade was active;
-- visible regressions, errors and whether resources were released after leaving the screen.
-
-Compare medians across repeated runs. Do not claim a percentage improvement from a single run. Keep the test library and private media outside the repository.
-
-## 7. Recommended implementation sequence
-
-This is a prioritization proposal, not a commitment to implement all items in one change.
-
-### Phase 0 — establish baselines
-
-- Profile the scenarios in section 6 before modifying code.
-- Confirm whether the macOS ticker continues to run while paused and quantify its CPU cost.
-- Quantify Android slideshow recomposition and blur cost at the actual refresh rate.
-- Identify the largest decoded-image and PDF allocations and whether they remain after navigation.
-- Record whether GPU time, CPU time, memory or network buffering is the dominant constraint for each scenario.
-
-### Phase 1 — high-confidence CPU fixes
-
-1. macOS: make the audio ticker demand-driven and pause-aware, with transition/growing-download regression tests.
-2. Android: eliminate full-subtree per-frame recomposition in the slideshow; retain the same visual timing and pause rules.
-3. Profile blur and animation paths on both clients; change frame cadence only where a measured gain is visible.
-
-### Phase 2 — predictable artwork memory
-
-1. macOS: add decoded-cost accounting and explicit budgets to both artwork caches.
-2. Android: introduce an explicit Coil memory-cache/decode-size policy and permit hardware images where safe.
-3. Bound slideshow prefetch and full-resolution zoom retention.
-4. Keep PDF rendering one-page-at-a-time and validate resource closure.
-
-### Phase 3 — targeted GPU improvements
-
-1. Benchmark current SwiftUI/Core Animation and Compose hardware rendering first.
-2. If blur is a measured bottleneck, prototype cached Core Image/Metal on macOS and a cached hardware RenderEffect path on Android.
-3. Compare CPU/GPU frame time, memory and energy; retain the simplest implementation that wins.
-4. Do not introduce custom GPU audio processing.
-
-### Phase 4 — playback memory tuning, only if needed
-
-- Measure ExoPlayer buffer and dual-player overlap memory for each format.
-- Adjust only with playback continuity tests on LAN and Tailscale.
-- Preserve audio quality and the current crossfade contract.
-
-## 8. Acceptance criteria
-
-A performance change is acceptable only when all applicable points hold:
-
-- The target scenario has a repeatable before/after measurement on the exact GitHub revision.
-- Memory is bounded by decoded cost or explicit loader policy; leaving a screen releases transient full-resolution and PDF resources.
-- CPU work stops when playback is paused or the owning UI is hidden, except for explicitly required playback work.
-- Animation remains smooth at supported refresh rates, with no increase in dropped frames or visible artifacts.
-- GPU changes improve measured frame time, CPU use or energy without increasing total memory unacceptably.
-- Playback remains gapless/correct, crossfade behavior is unchanged, and no buffering regressions appear on the owner's network.
-- Reduced Motion, Low Power Mode/Battery Saver, accessibility labels and all existing client/server contracts remain intact.
-- Focused regression tests pass; the required CI workflows pass on the exact final PR-head SHA. UI changes receive the manual checks required by `docs/LOCAL_UI_TESTING.md`.
-
-## 9. Source files reviewed
-
-- macOS artwork cache: `macos/Sources/DiscairUI/Model/ArtworkStore.swift`
-- macOS Now Playing animation: `macos/Sources/DiscairUI/Chrome/NowPlayingArtwork.swift`
-- macOS booklet/PDF: `macos/Sources/DiscairUI/Chrome/BookletSheet.swift`
-- macOS audio ticker: `macos/Sources/DiscairAudio/AudioOutput.swift`
-- macOS playback clock and blur: `macos/Sources/DiscairUI/Chrome/PlaybackClock.swift`, `macos/Sources/DiscairUI/Chrome/CoverView.swift`
-- Android shared image loader: `android/app/src/main/kotlin/app/discair/AppContainer.kt`
-- Android slideshow and disc: `android/app/src/main/kotlin/app/discair/ui/player/NowPlayingArtwork.kt`
-- Android player artwork sizing: `android/app/src/main/kotlin/app/discair/ui/player/NowPlayingSheet.kt`
-- Android blurred player line: `android/app/src/main/kotlin/app/discair/ui/player/PlayerLineUi.kt`
-- Android booklet/PDF: `android/app/src/main/kotlin/app/discair/ui/album/Booklet.kt`
-- Android player buffers and ticker: `android/app/src/main/kotlin/app/discair/player/PlaybackService.kt`, `android/app/src/main/kotlin/app/discair/player/PlayerController.kt`
-- Android slideshow selection: `android/app/src/main/kotlin/app/discair/model/NowPlayingArtwork.kt`
-- Related contracts and artwork design: `docs/MACOS_CLIENT_CONTRACT.md`, `docs/ANDROID_PLAYER_CONTRACT.md`, `docs/ANDROID_CROSSFADE_CONTRACT.md`, `docs/artwork.md`, `docs/TEST_PLAN.md`
-
-## 10. Current verification boundary
-
-At the baseline revision, the four repository main-branch workflows (Python syntax check, container runtime smoke test, Docker packaging validation and Docker image validation with publishing paused) completed successfully. Those workflows validate the repository revision, not client runtime performance.
-
-No client profiler session, physical-device performance run, macOS window verification or Android device verification was performed as part of this survey. No code, runtime settings, audio buffer values or artwork behavior have been changed by this proposal.
+**Strategy.** No change. Phase 0 records memory for MP3, CD-quality FLAC and hi-res FLAC, with and without a crossfade overlap, so that a later decision has numbers. If the owner then wants a lower ceiling, it needs its own design: a `LoadControl` cannot be swapped on a built player, and the fading-in player becomes the main one.
+
+## 6. Cross-platform rendering and memory principles
+
+1. **Decode once, at the size shown.** Downsampling at decode is the only way to save decoded memory; nothing later can recover it.
+2. **Count all memory.** On Apple Silicon the GPU shares system memory, so use physical footprint. On Android use total PSS, with the graphics and native lines read together. Moving bytes between lines is not an improvement.
+3. **The compositor is the default.** Rotation, scale, translation, opacity and cross-fades belong in SwiftUI and Core Animation, or in Compose `graphicsLayer`. Neither client needs Metal, OpenGL or Vulkan.
+4. **Blur is the only costly effect here, and its cost is area × redraws.** Cut redraws first (pause, lower cadence), then area (small source, small layer). A blur over static content should be computed once.
+5. **Measure the right process.** On macOS, compositor work is charged to WindowServer. On Android it is charged to the app's RenderThread and to the GPU.
+6. **Lower frame rates only where the eye cannot tell.** Slow blurred drift: yes. Rotation and scrolling text: only with the owner's visual check.
+7. **Audio stays on the CPU audio path.** EQ and crossfade run on real-time buffers; a GPU round trip adds latency and risk for no gain.
+8. **Stillness rules are hard constraints.** Reduce Motion, Low Power Mode, Battery Saver and pause stop motion. No step may weaken them.
+9. **The two clients share principles, not code.** The macOS ticker has no Android twin; the Android recomposition problem has no macOS twin.
+
+## 7. Additional opportunities
+
+These came from this review, not the first survey. Those marked "step" are in the roadmap. The rest are recorded so they are not rediscovered, and get a step only if Phase 0 points at them.
+
+| Opportunity | Client | Evidence | Disposition |
+|---|---|---|---|
+| Marquee redraws at display rate, never pauses | macOS | Source fact | Step M2 |
+| Main-thread image decode at first draw (scroll hitches) | macOS | Source fact; hitch size is a hypothesis | Solved by step M3 |
+| Originals for artist photos and looked-up covers kept at full size | macOS | Source fact | Step M3 |
+| PDF bytes kept after the booklet closes | macOS | Source fact | Step M4 |
+| Animations may run while the window is hidden or occluded | macOS | Unknown | Phase 0 check; step M6 if gate G2 is met |
+| No Baseline Profile (R8 is on) | Android | Source fact; start-up cost unknown | Step A4 if gate G4 is met |
+| `PlayerModel.position` written at 4 Hz invalidates every view that reads it | macOS | Source fact; cost unknown | Phase 0 check with the SwiftUI instrument. No step yet. |
+| Disc redraws a masked image 30 times per second | macOS | Hypothesis | If Phase 0 shows it, flatten the disc once (`drawingGroup()` or a pre-cut bitmap). No step yet. |
+| Playing-bars indicators may read animation values in composition | Android | Unknown | Phase 0 recomposition count. No step yet. |
+| A new `OkHttpClient` per scrobble send, and separate clients for offline songs and lyrics | Android | Source fact; a few sends per song | Low value. Share one base client only when that file is next edited. |
+| Slideshow could load `thumb` (250 px) instead of `display` (500 px) | Both | Arithmetic: saves about 8 MiB | Not worth the visual risk by itself. Folded into M5 if that step runs. |
+
+## 8. Profiling and measurement methodology
+
+### 8.1 Rules
+
+- Measure release builds. Debug builds are used only for Compose recomposition counts.
+- Same device, OS, display refresh rate, power state, server, network and library for before and after. Record all of them.
+- Three runs per scenario; compare medians. One run proves nothing.
+- Warm up for one minute, then measure for five. Ten-minute runs are needed only for the memory-stability scenario (S8).
+- Start cheap. Use a full Instruments or Perfetto trace only when a cheap number shows something to explain.
+- Keep traces and the test library out of the repository. Commit only the result tables.
+
+### 8.2 Scenarios
+
+| ID | Scenario | Answers |
+|---|---|---|
+| S1 | Cold launch to Home, five times | Start-up time |
+| S2 | Home idle, nothing played since launch | Idle floor |
+| S3 | Playing, main window or screen visible, Now Playing closed | Bar disc, marquee, clock, tickers |
+| S4 | Now Playing, photos off, playing | Disc and static backdrop |
+| S5 | Now Playing, photos on, playing | Slideshow and blur (compare with S4) |
+| S6 | Paused for five minutes after S5 | Work that should have stopped |
+| S7 | Playing with the window minimized or fully covered (macOS); app in background (Android) | Hidden work |
+| S8 | Browse 30 albums and 10 artists, open and close each, twice | Cache growth and return |
+| S9 | Open a booklet, turn 10 pages, zoom 3, open a large PDF, close | Peak and release |
+| S10 | MP3, CD-quality FLAC, hi-res FLAC; then crossfade with a real overlap | Buffer memory, playback health |
+| S11 | Growing download: play a song that is still downloading (macOS) | Ticker behaviour, continuity |
+
+### 8.3 macOS tools
+
+| Question | Cheap tool | Deeper tool |
+|---|---|---|
+| CPU and wakeups | `top -l 6 -s 10 -pid <pid> -stats pid,cpu,idlew,power` for Discair **and** WindowServer | Instruments Time Profiler (`xcrun xctrace record --template 'Time Profiler' --attach <pid> --time-limit 60s`) |
+| Memory | `footprint <pid>` (physical footprint with graphics categories); `vmmap --summary <pid>` | Instruments Allocations and VM Tracker, with generation marks before and after S8 and S9 |
+| Which views redraw | none | Instruments SwiftUI template (view body counts) |
+| Frame pacing | visual check | Instruments Animation Hitches |
+| Energy | `top` power column; Activity Monitor Energy tab | `sudo powermetrics --show-process-energy -i 10000 -n 6` (the owner runs it; it needs an administrator password) |
+| Leaks and retention | `leaks <pid>` after S8 and S9 | Allocations, "persistent" filter on `NSImage`, `CGImage`, `PDFDocument` |
+
+### 8.4 Android tools
+
+| Question | Cheap tool | Deeper tool |
+|---|---|---|
+| Memory | `adb shell dumpsys meminfo app.discair` (Java heap, native heap, graphics, total PSS) | Android Studio Memory Profiler heap dump after S8 and S9 |
+| Frame pacing | `adb shell dumpsys gfxinfo app.discair reset`, run the scenario, then `adb shell dumpsys gfxinfo app.discair` (percentiles, janky frames) | Perfetto with FrameTimeline (`android.surfaceflinger.frametimeline`), plus `sched`, `gfx`, `view` and `freq` categories |
+| CPU by thread | `adb shell top -H -b -n 6 -d 10 -p $(adb shell pidof app.discair)` (main thread and RenderThread separately) | Perfetto CPU scheduling; Android Studio CPU Profiler |
+| Recomposition | none | Layout Inspector recomposition counts (debug build; counts only, never timings) |
+| Start-up | `adb shell am start -W -n app.discair/.MainActivity` after `am force-stop`, five times, `TotalTime` | Macrobenchmark `StartupTimingMetric` (only inside step A4) |
+| Energy | `adb shell dumpsys batterystats --reset`, unplug, run 10 minutes, `dumpsys batterystats app.discair` | Android Studio Power Profiler needs on-device power rails, which the Galaxy S20 FE lacks; use CPU time and batterystats as the proxy |
+
+**Devices.** The owner's Mac and the owner's Galaxy S20 FE, at its 120 Hz setting, are required. A second, slower Android phone is welcome but not required. Emulator numbers are not accepted for memory, frames or energy.
+
+### 8.5 Gates for conditional steps
+
+Provisional thresholds; the owner may change them after seeing Phase 0.
+
+| Gate | Opens | Condition (medians) |
+|---|---|---|
+| G1 | M5 | S5 minus S4, Discair plus WindowServer: more than 3 percentage points of one core, or the `top` power figure more than 20 % higher |
+| G2 | M6 | S7: Discair CPU more than 0.5 percentage points above S7 repeated with Reduce Motion on (audio-only reference), or any `TimelineView` body evaluations in the SwiftUI instrument while hidden |
+| G3 | A3 | After A1, S5 minus S4: RenderThread CPU more than 5 percentage points of one core, or the 90th-percentile frame time over the display's frame budget |
+| G4 | A4 | S1 median `TotalTime` over 1000 ms, or the owner judges start-up slow |
+
+### 8.6 When to measure
+
+- **Before any code:** P0-1 to P0-3. They produce the baseline tables and settle the gates.
+- **After each step:** only that step's scenarios, three runs, with the cheap tools. Each step lists them.
+- **At the end:** P4-1 reruns the whole baseline once.
+
+## 9. Prioritized roadmap
+
+Ordered by expected value, then risk. "Mandatory" means do it once Phase 0 has a baseline to compare against. "Experimental" means keep the change only if its own measurement passes. "Conditional" means do not start unless the gate is met.
+
+| Order | Step | Client | Kind | Class | Model | Effort |
+|---|---|---|---|---|---|---|
+| 1 | P0-1 Baseline protocol and results file | Both | Measurement prep | Mandatory | Haiku | Low |
+| 2 | P0-2 macOS baseline and gate decisions | macOS | Profiling | Mandatory | Sonnet | Medium |
+| 3 | P0-3 Android baseline and gate decisions | Android | Profiling | Mandatory | Sonnet | Medium |
+| 4 | A1 Slideshow without per-frame recomposition | Android | Straightforward | Mandatory | Sonnet | Medium |
+| 5 | M1 Demand-driven engine ticker | macOS | Complex (audio) | Mandatory | Sonnet | High |
+| 6 | M2 Marquee cap and pause | macOS | Straightforward | Mandatory | Haiku | Low |
+| 7 | M3 Off-main decode, real costs, budgets | macOS | Complex (memory) | Mandatory | Sonnet | High |
+| 8 | M4 Release PDF bytes; open PDFs from file | macOS | Straightforward | Mandatory | Haiku | Medium |
+| 9 | A2 Hardware bitmaps by default | Android | Experimental | Keep only if it wins | Sonnet | Medium |
+| 10 | M5 Pre-blurred backdrops | macOS | Experimental | Conditional on G1 | Sonnet | High |
+| 11 | A3 Quarter-size blur layer | Android | Experimental | Conditional on G3 | Sonnet | Medium |
+| 12 | M6 Pause motion when the window is hidden | macOS | Straightforward | Conditional on G2 | Haiku | Medium |
+| 13 | A4 Baseline Profile | Android | Straightforward | Conditional on G4 | Haiku | Medium |
+| 14 | P4-1 Final comparison and closeout | Both | Profiling | Mandatory | Sonnet | Low |
+
+Steps on different clients are independent and can be interleaved. Each code step is one branch and one PR under `docs/DEVELOPMENT_WORKFLOW.md`.
+
+## 10. Implementation steps
+
+### Phase 0: measurement
+
+#### P0-1 Baseline protocol and results file
+
+- **Objective:** make every later measurement repeatable and comparable.
+- **Current problem:** no baseline exists and no agreed way to take one.
+- **Proposed solution:** add `docs/client_efficiency_results.md` with the scenario scripts, exact commands and empty result tables.
+- **Implementation details:** copy scenarios S1–S11 and the cheap-tool commands from section 8. For each scenario write numbered manual steps (which album, which song, how long). Add a header block per run: app SHA, build type, device, OS, refresh rate, power state, network, server version. One table per client with a row per scenario and columns for CPU, wakeups or RenderThread CPU, memory lines, frame percentiles and notes. Add a small shell script per client under `scripts/perf/` that runs the cheap commands and prints a table row; it must not need a private path or credential.
+- **Dependencies:** none.
+- **Risks:** none to the app. A vague scenario script makes later numbers incomparable.
+- **Verification:** a second agent or the owner can run S2 from the file alone and fill one row.
+- **Acceptance criteria:** the results file and both scripts exist; every scenario has numbered steps; no measured values are invented; the file refers to the owner only as "the owner".
+- **Model: Haiku | Effort: Low**
+
+#### P0-2 macOS baseline and gate decisions
+
+- **Objective:** replace the macOS hypotheses with measurements and decide gates G1 and G2.
+- **Current problem:** every macOS cost in sections 3 and 4 is unmeasured.
+- **Proposed solution:** run S1–S11 on a release build with the cheap tools; take a deeper trace only where a number needs explaining.
+- **Implementation details:** always sample WindowServer beside Discair. Required deeper traces: (a) the SwiftUI instrument during S3 and S5 to list views whose bodies run on a timer; (b) Allocations with generation marks around S8 and S9 to see what stays; (c) a Time Profiler run of S6 to confirm what runs while paused. Record the decoded pixel sizes of the largest images in memory after S8 (Allocations, `CGImage` and `NSImage` by size). State for each row of section 3 whether the measurement supports it. The owner drives the UI and runs `powermetrics`; the agent runs the scripts and reads the traces.
+- **Dependencies:** P0-1. A release build of the reviewed SHA.
+- **Risks:** an attached profiler changes timing; use the cheap tools for the headline numbers and the traces for explanation only.
+- **Verification:** three runs per scenario; the spread between runs is recorded beside each median.
+- **Acceptance criteria:** the macOS table is complete; G1 and G2 are each marked met or not met with the numbers; any hypothesis the data contradicts is marked so in the results file; no code is changed.
+- **Model: Sonnet | Effort: Medium**
+
+#### P0-3 Android baseline and gate decisions
+
+- **Objective:** the same for Android, deciding G3 (provisionally, to be confirmed after A1) and G4.
+- **Current problem:** every Android cost in sections 3 and 5 is unmeasured.
+- **Proposed solution:** run S1–S10 on the Galaxy S20 FE at 120 Hz with a release build and the cheap tools; one Perfetto trace of S5; one debug-build Layout Inspector session for recomposition counts.
+- **Implementation details:** for S5 record main-thread and RenderThread CPU separately and the gfxinfo percentiles. In Layout Inspector note recomposition counts over 10 seconds for `SlideshowBackdrop`, the disc, and the three playing-bars indicators. For S8 and S9 record meminfo before, at peak and one minute after returning Home. For S10 record meminfo per format and during a crossfade overlap, and note any rebuffering. Confirm in S7 that the app draws no frames in the background (`gfxinfo` frame count stays flat).
+- **Dependencies:** P0-1. The phone connected by USB with debugging on.
+- **Risks:** thermal throttling skews later runs; let the phone cool between scenarios and note the battery temperature.
+- **Verification:** three runs per scenario; spread recorded.
+- **Acceptance criteria:** the Android table is complete; G4 is decided; the S5 numbers needed for G3 are recorded; recomposition counts are recorded; no code is changed.
+- **Model: Sonnet | Effort: Medium**
+
+### Phase 1: mandatory CPU fixes
+
+#### A1 Android slideshow without per-frame recomposition
+
+- **Objective:** stop composition work on every frame of the slideshow and lower its redraw rate.
+- **Current problem:** `SlideshowBackdrop` reads a per-frame state in composition (section 5.1).
+- **Proposed solution:** composition reads only slide indices; `graphicsLayer` blocks read the clock; the clock advances at about 30 Hz.
+- **Implementation details:** in `ui/player/NowPlayingArtwork.kt`:
+  1. Keep `elapsed` as a `MutableFloatState` but never read it in the composable body.
+  2. Add `val slots by remember(slides) { derivedStateOf { slideshowFrame(elapsed.floatValue.toDouble(), slides.size)?.let { Triple(it.index, it.next, it.mix > 0f) } } }`. It changes only at slide and cross-fade boundaries.
+  3. In each layer, replace `Modifier.alpha(...)` and the captured `progress` with one `graphicsLayer { }` block that calls `slideshowFrame` itself and sets `alpha`, `scaleX`, `scaleY` and `translationX`. Keep the `loaded` check inside the block so an unloaded image stays at alpha 0.
+  4. Replace the every-vsync loop with `while (true) { delay(33); val now = withFrameNanos { it }; elapsed.floatValue += … }`.
+  5. Keep the `running` key (pause, Reduce Motion, Battery Saver) exactly as it is. Do not change `slideshowFrame`, the blur, the scrim or the 30 px pan.
+- **Dependencies:** P0-3.
+- **Risks:** an off-by-one at a slide boundary (a flash of the wrong image); the incoming layer missing during a cross-fade; 30 Hz looking steppy.
+- **Verification:** existing `slideshowFrame` unit tests still pass (`./gradlew testDebugUnitTest --tests '*NowPlayingArtwork*'` or the matching model test). Layout Inspector count for `SlideshowBackdrop` over 10 seconds. S5 and S6 with the cheap tools, three runs. The owner watches two full slide changes.
+- **Acceptance criteria:** `SlideshowBackdrop` recomposes only at slide and cross-fade boundaries (a handful of times per slide, not per frame); S5 main-thread CPU median is lower than baseline; S5 frame percentiles are no worse; S6 shows no slideshow work; slide order, hold time and cross-fade length are unchanged; the owner sees no stepping.
+- **Model: Sonnet | Effort: Medium**
+
+#### M1 macOS demand-driven engine ticker
+
+- **Objective:** no periodic engine work unless a growing download, a fade or an imminent transition needs it; none at all while an ordinary song is paused.
+- **Current problem:** the 20 ms ticker runs from the first `play()` until `stop()` (section 4.1).
+- **Proposed solution:** one private `rearmTicker()` that decides, from engine state, whether a ticker is needed and when it must first fire.
+- **Implementation details:** in `DiscairAudio/AudioOutput.swift`:
+  1. Define the need: (a) `growth != nil`: tick every 20 ms as today, including while paused, because the download continues and the hand-over to a whole file must still happen; (b) `fade != nil` and the current node is playing: tick every 20 ms; (c) a `pending` song not queued on the node and the current node is playing: sleep until `remaining − max(fadeLength, 0.03) − 0.25` seconds from now, then tick every 20 ms; (d) otherwise no ticker.
+  2. `rearmTicker()` cancels the running task and starts a new one with that first delay, or none. Call it at the end of `play`, `pause`, `seek`, `preload`, `cancelPreload`, `open`, `openGrowing`, `beginFade`, `endFade`, and wherever `growth`, `fade` or `pending` is set or cleared inside `step`, `feedGrowth` and `segmentEnded`. `stop()` keeps cancelling.
+  3. Leave `step()`, `feedGrowth()`, the fade curve, the audio-clock rule for fade progress, and `segmentEnded`'s late-join fallback untouched. The fallback stays as the safety net for a missed deadline.
+  4. Add an internal `tickerActiveForTests` beside `levelsForTests`.
+  5. The deadline in (c) assumes playback at normal speed, which is the only speed the engine has. A seek or a pause changes `remaining`, which is why both must rearm.
+- **Dependencies:** P0-2.
+- **Risks:** a missed rearm path makes a crossfade start late or fall back to a hard join; a growing download that stalls and never resumes; a double ticker. This is the highest-risk step in the plan.
+- **Verification:** `swift test --filter DiscairAudioTests` (covers `EngineOutputTests` and `GrowingPlaybackTests`). New tests listed below. S6 and S11 with `top` (wakeups), three runs. Manual listening: one crossfade, one same-format gapless join, one cross-format join, one seek to ten seconds before the end with crossfade on, one pause and resume inside a fade, one growing download on a throttled link.
+- **Acceptance criteria:** new tests prove: no ticker while an ordinary song is paused; no ticker during ordinary playback with a queued gapless follower; a ticker during a fade and none after it; a crossfade starts within the existing tolerance of its due time after a seek and after pause and resume; a stalled growing download resumes when bytes arrive, playing or paused; `stop()` and `open()` leave no ticker. All existing audio tests pass unchanged. In S6 the paused app's wakeups are within run-to-run noise of S2. No audible change in the manual checks.
+- **Model: Sonnet | Effort: High**
+
+#### M2 macOS marquee cap and pause
+
+- **Objective:** stop the player bar title from redrawing at display rate forever.
+- **Current problem:** `TimelineView(.animation)` in `Themes/Cupertino/CupertinoPlayerBar.swift` (the overflow branch) has no minimum interval and no pause.
+- **Proposed solution:** cap the schedule and pause it under the same stillness rules as the slideshow.
+- **Implementation details:** use `.animation(minimumInterval: 1.0 / 30, paused: lowPower)`. Read Low Power Mode the way `SlideshowBackdrop` does (initial `ProcessInfo` value plus `NSProcessInfoPowerStateDidChange`). While paused, show the text at its current offset. Reduce Motion already takes the non-scrolling branch; keep that. If the owner finds 30 FPS text scrolling uneven, use `1.0 / 60` and record that choice.
+- **Dependencies:** P0-2.
+- **Risks:** text scrolling that looks less smooth on a 120 Hz display.
+- **Verification:** S3 with a long title, `top` for Discair and WindowServer, three runs. The owner's visual check. `swift test --filter DiscairUITests` only if a UI test touches the player bar.
+- **Acceptance criteria:** the marquee does not advance in Low Power Mode; S3 CPU median (Discair plus WindowServer) is not higher than baseline; the owner accepts the motion; Reduce Motion behaviour is unchanged.
+- **Model: Haiku | Effort: Low**
+
+### Phase 2: memory
+
+#### M3 macOS off-main decode, real costs and budgets
+
+- **Objective:** every cached image is decoded once, off the main thread, no larger than needed, and costed by its decoded bytes.
+- **Current problem:** lazy main-thread decode, uncosted or mis-costed entries, originals kept at full size (section 4.2).
+- **Proposed solution:** one decode helper built on ImageIO, used by every `ArtworkStore` path; cost limits on both caches; full-resolution originals kept out of the shared cache.
+- **Implementation details:** in `DiscairUI/Model/ArtworkStore.swift`:
+  1. Add a `nonisolated` async helper `decode(_ data: Data, maxPixel: Int?) -> (CGImage, cost: Int)?`. Use `CGImageSourceCreateWithData` with `kCGImageSourceShouldCache: false`, then `CGImageSourceCreateThumbnailAtIndex` with `kCGImageSourceCreateThumbnailFromImageAlways`, `kCGImageSourceCreateThumbnailWithTransform`, `kCGImageSourceShouldCacheImmediately` all true and `kCGImageSourceThumbnailMaxPixelSize` when `maxPixel` is set. This never upscales. Cost is `bytesPerRow * height`. Wrap the result in `NSImage(cgImage:size:)` on the main actor.
+  2. Caps: server-sized covers (`coverArt@px`, `owned|…`) pass `px`; looked-up covers pass their `px` argument and add it to the cache key; artist photos get a cap equal to the largest size any call site draws, in pixels at 2× (find the call sites; add a size argument if they differ widely); `thumb` and `display` album images pass no cap (they are already 250 and 500 px).
+  3. `size: .full` decodes at full size with no cap, off the main actor, and is returned without being stored in `albumCache`. `BookletPage` already holds it in `@State`. The disk media cache still stores the bytes.
+  4. Pass `cost:` on every `setObject`. Set `cache.totalCostLimit` and keep `albumCache`'s limit, now in real bytes. Provisional values: 128 MiB main, 64 MiB album. Replace them with values from the P0-2 size table and record the reasoning in a comment.
+  5. `isSmall` reads `representations.first.pixelsWide`; confirm it still works for a `CGImage`-backed image, or read the `CGImage` width instead.
+  6. Keep the disk-cache writes, the `failed` set, the joined album loads and the cancellation behaviour exactly as they are.
+- **Dependencies:** P0-2 (size table).
+- **Risks:** a cap set too low softens artwork; the wrong orientation without the transform flag; a changed cache key causing one refetch per cover; `isSmall` misjudging and swapping covers; an actor-isolation mistake around the non-`Sendable` `NSImage`.
+- **Verification:** new unit tests for the helper (cap respected, no upscale, cost equals decoded bytes, EXIF orientation applied) and for `isSmall`. `swift test --filter DiscairUITests` for the store's existing tests. S8 and S9 with `footprint`, three runs. Side-by-side screenshots of Home, an album page, an artist page and a zoomed booklet page at the same window size, before and after.
+- **Acceptance criteria:** no `NSImage(data:)` remains in `ArtworkStore`; every cache insert carries a decoded-byte cost; both caches have a cost limit; after S8 the footprint returns to within run-to-run noise of its pre-browse level plus the cache budgets; S9 peak falls back after the booklet closes; screenshots show no visible loss of sharpness; a zoomed booklet page is pixel-identical in size to before; Time Profiler shows no image decode on the main thread during scrolling.
+- **Model: Sonnet | Effort: High**
+
+#### M4 macOS release PDF bytes; open PDFs from file
+
+- **Objective:** a closed booklet holds no PDF memory.
+- **Current problem:** `lastPDF` keeps the last PDF's bytes for the rest of the session, and `PDFDocument(data:)` is built from a second reference to them (section 4.4).
+- **Proposed solution:** prefer the cached file; drop the bytes on dismissal.
+- **Implementation details:** in `ArtworkStore`, add a method that returns the PDF's file URL when `media?.file(for:ext:)` has it, and a `releasePDF()` that clears `lastPDF`. In `DiscairUI/Chrome/BookletSheet.swift`, build `PDFDocument(url:)` when a file URL exists and fall back to `PDFDocument(data:)` when the media cache is off. Call `releasePDF()` when the sheet is dismissed. Keep the one-page presentation from #973 and the link-click delegate.
+- **Dependencies:** none (independent of M3; do it after M3 only to avoid merge conflicts in the same file).
+- **Risks:** a PDF that fails to open from the file path; reopening the same booklet refetches when the media cache is off (accepted: it is the price of releasing the memory).
+- **Verification:** S9 with a large PDF, `footprint` before opening, while open and one minute after closing, three runs. A test that `releasePDF()` clears the held bytes. `swift test --filter DiscairUITests`.
+- **Acceptance criteria:** one minute after closing, the footprint is within run-to-run noise of the pre-open level; the PDF opens with the media cache on and off; page turning and zoom are unchanged.
+- **Model: Haiku | Effort: Medium**
+
+#### A2 Android hardware bitmaps by default (experimental)
+
+- **Objective:** find out whether hardware bitmaps lower total memory, and keep them only if they do.
+- **Current problem:** every image is a software bitmap because two call sites read pixels (section 5.2).
+- **Proposed solution:** remove the global `allowHardware(false)`; set it on the two requests that need it.
+- **Implementation details:** in `AppContainer.kt` delete `.allowHardware(false)`. In `ui/common/Common.kt`, when `Cover` is given `onColor`, build an `ImageRequest` with `allowHardware(false)`. In `ui/MainShell.kt` add `allowHardware(false)` to the `radioArtworkBytes` request. Search the Android sources for `toBitmap`, `asAndroidBitmap`, `getPixel`, `copyPixelsToBuffer`, `drawToBitmap`, `PixelCopy` and `Canvas(` over a bitmap; every hit that touches a Coil image needs the same per-request setting. Check that the media notification artwork path is covered.
+- **Dependencies:** P0-3. Do after A1 so S5 numbers are not confounded.
+- **Risks:** a missed pixel read crashes with "Software rendering doesn't support hardware bitmaps" or returns no colour; memory only moves from native heap to graphics.
+- **Verification:** S4, S5, S8 and a radio station with artwork: meminfo (total PSS, native heap, graphics) and gfxinfo, three runs each. Manual: the Now Playing tint still follows the cover in every theme; the notification and lock screen show radio artwork; no crash in a 15-minute mixed session.
+- **Acceptance criteria:** keep the change only if S8 total PSS median falls by more than the run-to-run spread and frame percentiles are no worse. Otherwise revert and record the numbers in the results file. In both cases: no crash, tint and notification artwork unchanged.
+- **Model: Sonnet | Effort: Medium**
+
+### Phase 3: conditional steps
+
+#### M5 macOS pre-blurred backdrops (only if G1 is met)
+
+- **Objective:** remove live blur from moving backdrops.
+- **Current problem:** measured in P0-2 as the S5 minus S4 cost. If G1 is not met, this step is closed without work.
+- **Proposed solution:** blur a small copy of each image once and draw it without a blur filter; keep the motion.
+- **Implementation details:** add a `nonisolated` backdrop renderer: take the `thumb` image, downsample to about 128 px on its longer side with the M3 helper, then with Core Image apply `clampedToExtent`, `CIGaussianBlur` with the radius scaled by (derivative pixels ÷ on-screen points), `CIColorControls` for the same saturation, crop to the original extent and render with one shared `CIContext`. Cache the result in a small dedicated `NSCache` keyed by image id and blur class. In `SlideshowBackdrop` draw the derivative with `.interpolation(.medium)`, remove `.blur` and `.saturation`, keep `scaleEffect`, `offset`, the opacity cross-fade, the 20 FPS timeline and every pause rule. Apply the same derivative to `CollageHeroBackdrop` and then `BlurredArtwork`, each as its own commit and measurement, and stop at the first one that shows no gain. Check how `RenderMode.offscreenScreenshot` tests expect backdrops to look, since a baked blur will now appear in captures.
+- **Dependencies:** P0-2 with G1 met; M3 (decode helper).
+- **Risks:** a backdrop that looks different (banding, softer or harder blur, edge darkening); screenshot tests changing; more code for a gain that may be small.
+- **Verification:** S4 and S5 for Discair plus WindowServer, three runs. Side-by-side screenshots of three albums at two window sizes for the owner. `swift test --filter DiscairUITests`.
+- **Acceptance criteria:** S5 minus S4 (Discair plus WindowServer) falls below the G1 threshold or by more than the run-to-run spread; footprint in S5 is not higher; the owner approves the screenshots; pause, Reduce Motion and Low Power Mode still hold the backdrop still. If the gain is within noise, revert.
+- **Model: Sonnet | Effort: High**
+
+#### A3 Android quarter-size blur layer (only if G3 is met after A1)
+
+- **Objective:** cut the pixel area the blur processes.
+- **Current problem:** measured after A1 as the S5 minus S4 RenderThread and frame-time cost. If G3 is not met, this step is closed without work.
+- **Proposed solution:** lay the blurred box out at a quarter of the width and height, blur it with a quarter of the radius, and scale it up four times in a parent `graphicsLayer`.
+- **Implementation details:** in `SlideshowBackdrop`, wrap the blurred `Box` in a layout modifier that measures it at one quarter of the incoming constraints and places it at the origin, with `graphicsLayer { scaleX = 4f; scaleY = 4f; transformOrigin = TransformOrigin(0f, 0f) }` on the parent. Use `blur(9.dp)`. Divide the pan by four so the on-screen drift is unchanged. Coil will then decode the slides at the smaller layout size by itself. If S4 alone (static backdrop) is costly, apply the same wrapper to the 28 dp backdrops in `PlayerLineUi.kt` and `NowPlayingSheet.kt` as a second commit.
+- **Dependencies:** A1; P0-3 numbers; G3 met.
+- **Risks:** visible softness or shimmer from upscaling; edges showing at the screen border; a wrong pan distance.
+- **Verification:** S4 and S5 gfxinfo and RenderThread CPU, three runs. Screenshots before and after for the owner.
+- **Acceptance criteria:** S5 RenderThread CPU median and 90th-percentile frame time both improve by more than the run-to-run spread; total PSS is not higher; the owner approves the look. Otherwise revert.
+- **Model: Sonnet | Effort: Medium**
+
+#### M6 macOS pause motion when the window is hidden (only if G2 is met)
+
+- **Objective:** no animation work while nothing is visible.
+- **Current problem:** measured in P0-2 scenario S7. If timelines already stop when the window is hidden, this step is closed without work.
+- **Proposed solution:** one environment value, "window visible", fed from `NSWindow.occlusionState`, added to every `paused:` condition.
+- **Implementation details:** observe `NSWindow.didChangeOcclusionStateNotification` for the main window and publish `occlusionState.contains(.visible)` through the SwiftUI environment. Add it to the `paused:` argument of the disc, slideshow and marquee timelines and to `PlaybackClock` (switch it to a schedule that can pause, or skip its content update). Hold angles and elapsed time the same way the existing `running` handlers do, so nothing jumps on return.
+- **Dependencies:** P0-2 with G2 met; M2 (same marquee code).
+- **Risks:** motion that does not resume, or jumps, when the window comes back; a second window (booklet sheet) confusing the visible state.
+- **Verification:** S7 with `top`, three runs. Manual: minimize, switch Space, cover fully, then return; the disc and slideshow continue from where they stopped.
+- **Acceptance criteria:** S7 Discair CPU is within run-to-run noise of S7 with Reduce Motion on; no visible jump on return; Reduce Motion and Low Power Mode behaviour unchanged.
+- **Model: Haiku | Effort: Medium**
+
+#### A4 Android Baseline Profile (only if G4 is met)
+
+- **Objective:** faster cold start and fewer first-use janky frames.
+- **Current problem:** the release build has R8 but no Baseline Profile, so start-up code is interpreted or JIT-compiled on first runs. Its size is measured in S1.
+- **Proposed solution:** the standard AndroidX Baseline Profile set-up.
+- **Implementation details:** add a `baselineprofile` module with the `androidx.baselineprofile` plugin and `profileinstaller` to the app. One generator journey: cold start, scroll Home, open an album, start a song, open Now Playing. Generate on the owner's phone or an API 33+ emulator with a rooted or userdebug image, commit the generated profile, and build the release with it. Sign-in in the journey must use a local test server, never real credentials in the repository.
+- **Dependencies:** P0-3 with G4 met.
+- **Risks:** build-time and module overhead; a journey that cannot sign in without credentials; the profile going stale as code changes (regenerate at releases).
+- **Verification:** S1 five times before and after on the same install path, plus gfxinfo for the first Home scroll after install.
+- **Acceptance criteria:** S1 median `TotalTime` improves by more than the run-to-run spread; the release build and existing unit tests still pass; no credential is committed. Otherwise remove the module.
+- **Model: Haiku | Effort: Medium**
+
+### Phase 4: closeout
+
+#### P4-1 Final comparison and closeout
+
+- **Objective:** one honest before/after record.
+- **Current problem:** per-step measurements do not show the combined effect or interactions.
+- **Proposed solution:** rerun the full baseline once on the final SHA and write the comparison.
+- **Implementation details:** rerun S1–S11 on macOS and S1–S10 on Android with the P0-1 scripts. Fill a before/after table in `docs/client_efficiency_results.md`. Change each hypothesis in this document's section 13 to "verified", "refuted" or "still open", with the numbers. Update `docs/PROJECT_STATUS.md` and `PROJECT_LOG.md` as the workflow requires.
+- **Dependencies:** all steps that were carried out.
+- **Risks:** drift in the test library or network since the baseline; note any difference.
+- **Verification:** three runs per scenario.
+- **Acceptance criteria:** every scenario has before and after medians with spread; every reverted or skipped step is listed with its reason; no claim is made without a number behind it.
+- **Model: Sonnet | Effort: Low**
+
+## 11. Regression testing requirements
+
+These apply on top of each step's own verification. A step that touches an area must pass that area's row.
+
+| Area to preserve | Check | Steps |
+|---|---|---|
+| Audio fidelity | No change to the EQ, mixer, sample-rate matching or decode path in any step; bit-identical playback is assumed because those files are not edited. A step that edits them is out of scope. | M1 |
+| Gapless playback | `EngineOutputTests` gapless cases; manual same-format and cross-format album joins | M1 |
+| Crossfade | Fade level tests through `levelsForTests`; manual fade after seek, and pause and resume inside a fade. Android crossfade is untouched; `docs/ANDROID_CROSSFADE_CONTRACT.md` checks apply only if a step edits the player package. | M1 |
+| Growing-download playback | `GrowingPlaybackTests`; S11 on a throttled link, including a forced stall and a pause during the stall | M1 |
+| Playback continuity | S10 on LAN and Tailscale with no new rebuffering; a 30-minute mixed session per client at closeout | M1, A2, P4-1 |
+| Artwork quality | Side-by-side screenshots at the same window or screen size; the owner's sign-off | M3, M5, A2, A3 |
+| Full-resolution booklet zoom | A zoomed page shows the original's pixel size (macOS); zoomed image and PDF pages are as sharp as before (both) | M3, M4 |
+| Accessibility | Labels on the disc, booklet badge, player bar cover and booklet pages unchanged; decorative backdrops stay hidden from VoiceOver and TalkBack | A1, M2, M5, M6, A3 |
+| Reduce Motion | With it on: no disc spin, no slideshow drift, no marquee, on both clients | A1, M2, M5, M6, A3 |
+| macOS Low Power Mode | Slideshow still; marquee still (new in M2) | M2, M5, M6 |
+| Android Battery Saver | Slideshow still | A1, A3 |
+| Client/server contracts | No request, size parameter or endpoint changes except the `thumb` request in M5, which is an existing size. Check `docs/MACOS_CLIENT_CONTRACT.md`, `docs/ANDROID_PLAYER_CONTRACT.md` and `docs/artwork.md`. | M3, M5 |
+
+Testing rules from `docs/DEVELOPMENT_WORKFLOW.md` apply: focused tests only (`swift test --filter …`, `./gradlew testDebugUnitTest --tests …` with JDK 17), never the full suite; Swift tests run locally on the Mac; report exactly what ran.
+
+## 12. Acceptance criteria and definition of done
+
+**A step is done when:**
+
+1. Its own acceptance criteria are met, with three-run medians and spread recorded in the results file against the exact SHA.
+2. Its rows in section 11 pass.
+3. Total resource use fell or stayed level: no shift from CPU to GPU, or from one memory line to another, is counted as a gain.
+4. Focused tests pass and required CI passes on the final PR head.
+5. An experimental or conditional step that did not beat run-to-run noise is reverted, and the result is recorded.
+
+**The plan is done when:**
+
+- P0-1 to P0-3, A1, M1, M2, M3 and M4 are complete.
+- A2 is kept or reverted on its numbers.
+- Each of M5, M6, A3 and A4 is either complete or closed with its gate recorded as not met.
+- P4-1 is recorded and section 13 is updated.
+
+## 13. Remaining uncertainties and decisions needing evidence
+
+| Question | Settled by | Affects |
+|---|---|---|
+| How much do 50 wakeups per second cost in energy, playing and paused? | P0-2, S3 and S6 | Size of M1's benefit (M1 is done either way) |
+| Does live blur over moving layers cost meaningful WindowServer time on the owner's Mac? | P0-2, S4 against S5 | G1, M5 |
+| Do SwiftUI timelines keep running when the window is hidden? | P0-2, S7 | G2, M6 |
+| Does the disc redraw its masked image every frame? | P0-2 SwiftUI and Time Profiler traces | A possible later step (section 7) |
+| Does the 4 Hz `position` write redraw more than the time readout? | P0-2 SwiftUI trace | A possible later step |
+| What are the real decoded sizes of artist photos, looked-up covers and booklet originals? | P0-2 size table | M3 caps and budgets |
+| Does PDFKit keep rendered pages after dismissal? | P0-2, S9 | Whether M4 is enough |
+| How much of the Android slideshow cost is composition and how much is blur? | P0-3, then A1 | G3, A3 |
+| Do hardware bitmaps lower total PSS on the Galaxy S20 FE? | A2 | Whether A2 stays |
+| Is cold start slow enough to justify a profile module? | P0-3, S1 | G4, A4 |
+| How much memory do the ExoPlayer buffers hold for hi-res FLAC and during a crossfade? | P0-3, S10 | A future owner decision; no step planned |
+| Is 30 FPS acceptable for the macOS marquee and 30 Hz for the Android drift? | The owner's visual check in M2 and A1 | Final cadence values |
+
+## 14. Source files reviewed
+
+- macOS audio: `macos/Sources/DiscairAudio/AudioOutput.swift`; tests in `macos/Tests/DiscairAudioTests/`
+- macOS artwork: `macos/Sources/DiscairUI/Model/ArtworkStore.swift`, `macos/Sources/DiscairUI/Chrome/CoverView.swift`
+- macOS Now Playing and booklet: `macos/Sources/DiscairUI/Chrome/NowPlayingArtwork.swift`, `BookletSheet.swift`, `PlaybackClock.swift`, `ArtistCollage.swift`
+- macOS player model and bar (ticks and marquee only): `macos/Sources/DiscairUI/Model/PlayerModel.swift`, `macos/Sources/DiscairUI/Themes/Cupertino/CupertinoPlayerBar.swift`
+- Android image loader and build: `android/app/src/main/kotlin/app/discair/AppContainer.kt`, `android/app/build.gradle.kts`
+- Android Now Playing: `ui/player/NowPlayingArtwork.kt`, `ui/player/NowPlayingSheet.kt`, `ui/player/PlayerLineUi.kt`
+- Android pixel reads: `ui/common/Common.kt` (`dominantColor`), `ui/MainShell.kt` (`radioArtworkBytes`)
+- Android booklet: `ui/album/Booklet.kt`
+- Android playback: `player/PlaybackService.kt`, `player/PlayerController.kt`
+- Image sizes: `docs/artwork.md` (thumb 250 px, display 500 px)
+
+**Verification boundary.** This revision is a source review. No profiler, device run or listening test was performed, and no code, setting or buffer value was changed.
