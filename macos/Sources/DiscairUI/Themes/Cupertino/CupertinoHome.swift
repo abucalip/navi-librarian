@@ -11,7 +11,7 @@ struct CupertinoHome: View {
                 Text("Home").font(CU.title(34)).padding(.top, 4).padding(.bottom, 14)
                 if state.library.isLive { LinerNoteCard(albums: state.visible(state.library.missing)) }
                 if !state.library.isLive { continueCard }   // needs playback history, which arrives with the audio engine
-                if case .failed(let m) = state.library.phase { Text(m).foregroundStyle(CU.accent).padding(.bottom, 8) }
+                if case .failed(let m) = state.library.phase { CUNotice(kind: .danger, lead: "Could not load your library.", message: m).padding(.bottom, CU.Space.s) }
                 if state.library.phase == .loading { Text("Loading your library…").foregroundStyle(CU.muted).padding(.bottom, 8) }
                 sectionTitle("Missing from your library", sub: "Recommended for you")
                 if state.library.isLive, state.visible(state.library.missing).isEmpty, state.library.phase == .loaded {
@@ -85,7 +85,7 @@ struct CupertinoHome: View {
                 VStack(alignment: .leading, spacing: 6) {
                     HStack(spacing: 5) {
                         Button(state.acquisition.buttonLabel(for: a)) { state.actions.get(album: a) }
-                            .buttonStyle(CapsuleButtonStyle(primary: true, small: true)).disabled(!state.acquisition.canGet(a))
+                            .buttonStyle(CapsuleButtonStyle(small: true)).disabled(!state.acquisition.canGet(a))
                             .help(state.acquisition.detail(for: a)).accessibilityHint(state.acquisition.detail(for: a))
                         Button(state.acquisition.isSaved(a) ? "Saved" : "Save") { state.actions.save(album: a) }
                             .buttonStyle(CapsuleButtonStyle(small: true)).disabled(state.acquisition.isSaved(a))
@@ -99,25 +99,5 @@ struct CupertinoHome: View {
         .frame(width: 156, alignment: .leading)
         .font(.system(size: 13))
         .accessibilityElement(children: .contain)
-    }
-}
-
-struct CapsuleButtonStyle: ButtonStyle {
-    var primary = false
-    var small = false
-    var outlined = false
-    var large = false
-    /// White text on a 28% white fill, for buttons over a banner image.
-    var translucent = false
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .font(.system(size: small ? 12 : 14, weight: .semibold))
-            .lineLimit(1).fixedSize()
-            .padding(.horizontal, small ? 10 : (large ? 24 : 20))
-            .frame(minHeight: small ? 24 : (large ? 40 : 36))
-            .foregroundStyle(primary || translucent ? Color.white : (outlined ? CU.muted : CU.ink))
-            .background(primary ? CU.accent : (translucent ? Color.white.opacity(0.28) : (outlined ? Color.clear : CU.fill)), in: Capsule())
-            .overlay { if outlined { Capsule(style: .circular).inset(by: 0.75).stroke(CU.muted, lineWidth: 1.5) } }
-            .opacity(configuration.isPressed ? 0.8 : 1)
     }
 }
