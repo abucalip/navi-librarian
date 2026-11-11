@@ -340,3 +340,11 @@ Earlier project log entries are preserved verbatim in [PROJECT_LOG_HISTORY.md](d
 - Choices: Swift Charts for the line, column and dumbbell charts, plain SwiftUI for paired bars, ranked bars, heatmap and tracker (fixed geometry); value axes have at most 5 ticks including the baseline; paired bars carry the two-series legend of rule 4.4; heatmap dates are written day first.
 - Nothing calls the charts yet; no Zine file changed.
 - Next: M5 (home data) or M6 (services data), Sonnet; M8 builds Home from M2, M4 and M5.
+
+## 2026-11-11 — Redesign M5: Home data (macOS)
+
+- Merged as PR [#979](https://github.com/abucalip/navi-librarian/pull/979), squash `3bf66cb2`, from head `c1a530dd161c05340c3a2a06a4c8830e52dd7d32`; GitHub confirms the merge and compile, container-smoke, test-and-build and validate-container passed on that head. Plan: `docs/redesign.md` section 11, step M5.
+- Changed: new `macos/Sources/DiscairUI/Model/HomeDashboard.swift` (pure; albums owned and added against the 30 days before, never played with change against a saved baseline, six shelf-life bins plus the four longest-unplayed albums, growth series by range, decade shares with recent listen shares only from a sound taste window, arrivals rows capped at four, notice). `AppState` gains `homeDashboard` and `refreshHomeDashboard()` (no request; builds off the main thread from the shared album list). `LibraryModel.allNavidromeAlbums` keeps the raw list; `NavidromeAlbum` gains optional `playCount` and `played`; `AcquisitionModel.statusText` is `nonisolated`.
+- Tests actually run, filtered, on a Mac: `swift test --filter HomeDashboardTests` (18 pass) and `--filter "DiscairNavidromeTests|LibraryModelTests|AcquisitionModelTests|OfflineTests|LibraryHubTests|BulkSongLoadTests"` (112 pass). Full suite not run (owner rule). No UI, so no visual check.
+- Limits: radio plays in Arrivals not included (no client route); phone handoff (D5) and Listens last 7 days (D2) not produced; absent `playCount` is read as no plays (Navidrome omits it); Librarian reachability is inferred from the picks read until M6.
+- Next: M6 (services data) or M7 (connections model), Sonnet; M8 builds Home from M2, M4 and M5.
