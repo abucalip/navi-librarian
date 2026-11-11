@@ -21,7 +21,7 @@ struct CupertinoDiscover: View {
                 }
                 content
             }
-            .padding(.horizontal, 28).padding(.bottom, 28)
+            .padding(.horizontal, CU.Space.xl).padding(.bottom, CU.Space.xl)
         }
         .scrollEdgeEffectStyle(.hard, for: .top)
         .task { await model.load(model.selected) }

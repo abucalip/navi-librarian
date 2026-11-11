@@ -26,7 +26,7 @@ struct CupertinoDownloads: View {
                 }
                 ForEach(acq.sortedJobs) { job in row(job) }
             }
-            .padding(.horizontal, 28).padding(.bottom, 28)
+            .padding(.horizontal, CU.Space.xl).padding(.bottom, CU.Space.xl)
         }
         .scrollEdgeEffectStyle(.hard, for: .top)
     }
@@ -45,7 +45,7 @@ struct CupertinoDownloads: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 12) {
                 Image(systemName: icon(j)).font(.system(size: 22))
-                    .foregroundStyle(j.phase == .failed || j.phase == .working ? CU.accent : CU.muted)
+                    .foregroundStyle(j.phase == .failed ? CU.danger : (j.phase == .working ? CU.accent : CU.muted))
                     .frame(width: 28).accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(j.title).font(.system(size: 15, weight: .semibold)).lineLimit(1)

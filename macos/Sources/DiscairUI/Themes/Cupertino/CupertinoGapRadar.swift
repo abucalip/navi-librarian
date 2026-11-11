@@ -22,7 +22,7 @@ struct CupertinoGapRadar: View {
                     ForEach(lib.gapRadar) { artist in card(artist).frame(minWidth: 0, idealWidth: GapCardWidth.width(albums: artist.total, undatedDivider: !artist.undatedOwned.isEmpty || !artist.undatedMissing.isEmpty), maxWidth: GapCardWidth.width(albums: artist.total, undatedDivider: !artist.undatedOwned.isEmpty || !artist.undatedMissing.isEmpty)) }
                 }
             }
-            .padding(.horizontal, 28).padding(.bottom, 28)
+            .padding(.horizontal, CU.Space.xl).padding(.bottom, CU.Space.xl)
         }
         .scrollEdgeEffectStyle(.hard, for: .top)
         .task { await state.loadGapRadar() }
