@@ -22,6 +22,7 @@ from typing import Any, Callable, Iterable, Mapping
 from ..jobs import runner
 from .context import build_context_profiles
 from .context_persistence import save_context_profiles
+from .listens_by_day import build_listens_by_day, save_listens_by_day
 from .loader import load_listens
 from .persistence import save_profiles
 from .profiles import ProfileConfig, build_profiles
@@ -84,6 +85,7 @@ def refresh_taste(
         changed = save_profiles(db, profiles, loaded, now=now)
         context = build_context_profiles(loaded.listens, config=base)
         changed = save_context_profiles(db, context, base, now=now) or changed
+        changed = save_listens_by_day(db, build_listens_by_day(loaded.listens, day_start), now=now) or changed
         ctx.checkpoint({"changed": changed, "genre_tracks": len(genres_by_recording or ()), "listens": loaded.total, "unusable": loaded.unusable,
                         "unmatched": loaded.unmatched}, items=1)
         return True

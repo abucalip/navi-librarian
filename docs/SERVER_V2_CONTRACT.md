@@ -122,12 +122,12 @@ Served by `app/api/popularity.py` (D-016: nothing added to `navidrome_server.py`
 - Requests carry a `User-Agent` of `Discair/1.0 (...)` and `Authorization: Token <LISTENBRAINZ_TOKEN>`, the token read only from `config.env` in the working folder (key `LISTENBRAINZ_TOKEN`). The token is never logged, returned or stored.
 - Figures are saved in `state.artist_popularity` and are the only write. Obscurity-band smart-playlist rules stay `missing_data` until figures are saved.
 
-## Proposed: `listens_by_day` on GET /api/insights/taste (redesign D2)
+## `listens_by_day` on GET /api/insights/taste (redesign D2, redesign S1)
 
-Not built on the server. The macOS Home (redesign M8) already reads it; until the server serves it the tile says "Not available yet", never zero.
+Built in `intelligence/taste/listens_by_day.py` (D-016: nothing added to `navidrome_server.py`); the field is added by `intelligence/api/taste.py` and saved by the taste refresh. The macOS Home (redesign M8) already reads it. Fixture: `taste_listens_by_day.json`. Not yet checked against the owner's live ListenBrainz history.
 
-- Body field `listens_by_day`: an array of `{date, count}`, one entry per UTC calendar day for the 84 complete days before today, oldest first, **zero days included** (the client needs at least 14 entries and treats the last 7 against the 7 before). `date` is `YYYY-MM-DD`; `count` is a non-negative integer. The field is absent, not empty, when no listens source is set or the profiles are not computed yet.
-- Built from the listens the taste refresh already reads, stored with the profiles; the read stays read-only and makes no provider call. The series ends at the day before the last refresh's start, so a stale series is visible from its last date ("as of 9 November").
+- Body field `listens_by_day`: an array of `{date, count}`, one entry per UTC calendar day for the 84 complete days before the refresh's day, oldest first, **zero days included** (the client needs at least 14 entries and treats the last 7 against the 7 before). `date` is `YYYY-MM-DD`; `count` is a non-negative integer. The field is absent, not empty, until a refresh has saved it (so also when no listens source is set); the other taste fields are unchanged.
+- Built from the listens the taste refresh already read, with no extra provider call, and saved as one `taste_listens_by_day` row in `insights` (no migration; an unchanged series writes nothing). The route stays read-only. The series ends at the day before the day the last refresh ran, so a stale series is visible from its last date ("as of 9 November"). A listen without a usable timestamp is not counted.
 
 ## Proposed: GET /api/insights/refresh/status (redesign D3)
 
