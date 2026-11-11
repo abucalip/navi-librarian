@@ -20,6 +20,17 @@ public enum GraphSector: Int, CaseIterable, Sendable {
         }
     }
 
+    /// The row label in the inspector's counts by kind.
+    public var kindsTitle: String {
+        switch self {
+        case .albums: "Albums"
+        case .label: "Labels"
+        case .people: "People"
+        case .place: "Places"
+        case .other: "Other"
+        }
+    }
+
     /// The eyebrow that names the sector on the graph.
     public var title: String {
         switch self {
@@ -159,6 +170,23 @@ public enum GraphWording {
 
     public static func relation(_ code: String) -> String { relations[code] ?? capitalised(code) }
     public static func matchQuality(_ code: String) -> String { matchQualities[code] ?? capitalised(code) }
+
+    /// "Source: MusicBrainz · exact match": the source code in words and the match quality in lower case.
+    public static func sourceLine(source: String, matchQuality code: String) -> String {
+        let name = source.lowercased().hasPrefix("musicbrainz") ? "MusicBrainz" : capitalised(source)
+        return "Source: \(name) · \(matchQuality(code).prefix(1).lowercased() + matchQuality(code).dropFirst())"
+    }
+
+    /// The inspector's name for a kind of entity: "Person", "Album", "Label".
+    public static func kindWord(_ kind: String) -> String {
+        switch GraphSector.of(kind: kind) {
+        case .people: "Person"
+        case .albums: "Album"
+        case .label: "Label"
+        case .place: "Place"
+        case .other: capitalised(kind)
+        }
+    }
     /// True when the relation has words of its own in the table (not the capitalised fallback).
     public static func hasWords(relation code: String) -> Bool { relations[code] != nil }
 
@@ -284,6 +312,20 @@ public final class GraphExplorerModel {
     public private(set) var updateNote: String?
     public var depth = 1
     public var creditsOnly = true
+    /// The View control: the graph (false) or the list (true).
+    public var showsList = false
+    /// What a failed read says. The nodes already drawn are kept; `retry` repeats the read that failed.
+    public struct LoadFailure: Equatable, Sendable {
+        public let summary: String
+        /// True when the failed read was "Load more", so the connections already shown are kept.
+        public let wasLoadMore: Bool
+    }
+    public private(set) var loadFailure: LoadFailure?
+    /// The artist the explorer was asked to start from, even when the server has nothing on them yet (the not-loaded state).
+    public private(set) var startName: String?
+    /// True once the server accepted a store update; the not-loaded notice then gives way to "Requested".
+    public private(set) var updateRequested = false
+    public private(set) var updateFailed = false
     /// Off until the owner turns it on: each album disc asks the server for one artwork index.
     public var showsDiscs = false
     /// Navidrome artist id the explorer last started from, so opening the screen again does not reload it.
@@ -293,10 +335,63 @@ public final class GraphExplorerModel {
     public init() {}
 
     /// Shows a finished walk without a server: screenshots and tests.
-    func preview(centre: KnowledgeEntity, nodes: [GraphNode]) { self.centre = centre; self.nodes = nodes; coverage = "loaded" }
+    func preview(centre: KnowledgeEntity, nodes: [GraphNode], truncated: String? = nil, failure: LoadFailure? = nil, more: Bool = false, depth: Int? = nil) {
+        self.centre = centre; self.nodes = nodes; coverage = "loaded"; self.truncated = truncated; loadFailure = failure
+        nextCursor = more ? "next" : nil
+        if let depth { self.depth = depth }
+    }
+
+    /// Shows the not-loaded state without a server: an artist the store has no data on, with the update requested or not.
+    func previewNotLoaded(name: String, requested: Bool) {
+        startName = name; centre = nil; nodes = []; coverage = "pending"; note = "This artist is not in the knowledge store yet."
+        canRequestUpdate = !requested; updateRequested = requested
+    }
 
     public var selected: GraphNode? { nodes.first { $0.id == selectedID } }
     public var canGoBack: Bool { !trail.isEmpty }
+    /// The artist Back returns to, named on the button.
+    public var backTitle: String? { trail.last?.name }
+
+    /// "16 connections within 2 steps · 9 in your library". The server sends no total, so this counts what has been read.
+    public var summaryLine: String {
+        let owned = nodes.filter(\.entity.owned).count
+        let reach = max(nodes.map(\.depth).max() ?? depth, 1)
+        let steps = reach == 1 ? "1 step" : "\(reach) steps"
+        return "\(nodes.count) \(nodes.count == 1 ? "connection" : "connections") within \(steps) · \(owned) in your library"
+    }
+
+    /// Under the graph: how many connections are drawn, and that the walk was cut or has more to read.
+    public var footerCount: String {
+        let n = nodes.count
+        let word = n == 1 ? "connection" : "connections"
+        if truncated != nil { return "\(n) of \(n)+ connections" }
+        return nextCursor != nil ? "\(n) \(word) so far" : "\(n) \(word)"
+    }
+
+    /// The truncated-walk sentence, with the server's limits named (docs/redesign.md section 5.2).
+    public var truncatedNotice: (lead: String, message: String)? {
+        guard truncated != nil else { return nil }
+        return ("Showing the first \(nodes.count) connections.",
+                "The server stops a walk at 200 rows or 2 seconds. Turn on Credits only, lower the reach, or use List to page through the rest.")
+    }
+
+    /// Owned albums that sit next to a node in the walk (its parent or its children), for "Also on, in your library".
+    public func alsoOnInLibrary(_ node: GraphNode) -> [GraphNode] {
+        nodes.filter { other in
+            GraphSector.of(kind: other.entity.type) == .albums && other.entity.owned && other.id != node.id
+                && (other.id == node.via || other.via == node.id)
+        }
+    }
+
+    /// The name of the node a step-2 node hangs from, or the centre's for step 1.
+    public func parentName(of node: GraphNode) -> String? {
+        node.via == centre?.mbid ? centre?.name : nodes.first { $0.id == node.via }?.entity.name
+    }
+
+    /// Repeats the read that failed: Load more when that was it, otherwise the walk again.
+    public func retry(librarian: LibrarianClient?) async {
+        if loadFailure?.wasLoadMore == true { await loadMore(librarian: librarian) } else { await reload(librarian: librarian) }
+    }
     public var truncatedText: String? {
         switch truncated {
         case "rows": "The walk stopped at its row limit. Showing what it reached."
@@ -336,6 +431,7 @@ public final class GraphExplorerModel {
             note = "Connect to your library and open an artist you own to explore their connections."; return
         }
         guard startedFor != artistRemoteID else { return }
+        startName = name; updateRequested = false; updateFailed = false; updateNote = nil
         loading = true; note = nil
         defer { loading = false }
         guard let detail = try? await navidrome.artist(id: artistRemoteID), let mbid = detail.artist.musicBrainzId, !mbid.isEmpty else {
@@ -354,6 +450,7 @@ public final class GraphExplorerModel {
         defer { updating = false }
         do {
             var result = try await librarian.requestStoreUpdate(subject: "artist", id: id)
+            updateRequested = true; updateFailed = false
             var polls = 0
             while !result.finished, polls < 60 {
                 updateNote = "The server is updating its store…"
@@ -365,10 +462,10 @@ public final class GraphExplorerModel {
             case "done":
                 updateNote = nil
                 if let centreMBID = mbidForRetry { await walk(mbid: centreMBID, type: "artist", name: name, librarian: librarian) }
-            case "failed": updateNote = result.message ?? "The server could not add this."
+            case "failed": updateNote = result.message ?? "The server could not add this."; updateRequested = false; updateFailed = true
             default: updateNote = "The server is still working on it. Try again in a minute."
             }
-        } catch { updateNote = "The server could not be reached. Try again." }
+        } catch { updateNote = "The server could not be reached. Try again."; updateRequested = false; updateFailed = true }
     }
     private var mbidForRetry: String?
 
@@ -403,7 +500,7 @@ public final class GraphExplorerModel {
         loading = true; defer { loading = false }
         do {
             let page = try await librarian.knowledgeConnections(mbid: mbid, type: type, depth: depth, limit: 50, creditsOnly: creditsOnly, cursor: cursor)
-            note = nil; canRequestUpdate = false
+            note = nil; canRequestUpdate = false; loadFailure = nil
             let fresh = page.hops.map { GraphNode(entity: $0.entity, depth: $0.depth, via: $0.viaMBID, credit: $0.credit, evidence: $0.evidence) }
             if replace { centre = page.start; nodes = fresh; selectedID = nil }
             else { let have = Set(nodes.map(\.id)); nodes += fresh.filter { !have.contains($0.id) } }
@@ -415,8 +512,11 @@ public final class GraphExplorerModel {
                 note = "This artist is not in the knowledge store yet."
                 canRequestUpdate = trail.isEmpty && mbid == mbidForRetry
             }
-            else { note = e.summary }
+            else { note = e.summary; loadFailure = LoadFailure(summary: e.summary, wasLoadMore: !replace) }
             if replace { nodes = []; nextCursor = nil }
-        } catch { note = "Could not read connections."; if replace { nodes = []; nextCursor = nil } }
+        } catch {
+            note = "Could not read connections."; loadFailure = LoadFailure(summary: "The connections could not be read.", wasLoadMore: !replace)
+            if replace { nodes = []; nextCursor = nil }
+        }
     }
 }

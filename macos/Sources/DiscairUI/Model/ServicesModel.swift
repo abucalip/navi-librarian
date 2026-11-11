@@ -307,6 +307,11 @@ public struct ServicesModel: Equatable, Sendable {
         .smb: Info(name: "Music folder over SMB", role: "Optional, read only", group: .onThisMac, powers: ["Quick tag reads"], optional: true, noun: ""),
     ]
 
+    /// The service's name as the screen writes it.
+    public static func name(for id: ServiceID) -> String { info[id]!.name }
+    /// The credential a service is refused on: "Token", "Key", "Password" (empty for a service with none).
+    public static func noun(for id: ServiceID) -> String { info[id]!.noun }
+
     private static func makeRow(_ id: ServiceID, state: State, input: Inputs) -> Row {
         let i = info[id]!
         return Row(id: id, name: i.name, role: i.role, group: i.group, powers: i.powers, state: state, optional: i.optional,

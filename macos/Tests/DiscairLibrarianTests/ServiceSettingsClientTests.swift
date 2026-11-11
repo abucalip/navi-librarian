@@ -95,6 +95,16 @@ import DiscairCore
         #expect(try body(3) as NSDictionary == ["token": ""] as NSDictionary)
     }
 
+    @Test func slskdFoldersAreSentOnlyWhenGiven() async throws {
+        let t = answer(#"{"ok":true}"#)
+        let c = try client(t)
+        try await c.saveSlskd(url: "http://sl:5030", qualityPriority: ["mp3_320"])
+        try await c.saveSlskd(url: "http://sl:5030", apiKey: "k", qualityPriority: ["mp3_320"], downloadsPath: "/downloads", musicLibraryPath: "/music")
+        func body(_ i: Int) throws -> [String: Any] { try JSONSerialization.jsonObject(with: #require(t.sent[i].httpBody)) as! [String: Any] }
+        #expect(try body(0).keys.sorted() == ["api_key", "quality_priority", "slskd_url"])      // the server keeps a folder it is not sent
+        #expect(try body(1)["slskd_downloads_path"] as? String == "/downloads" && body(1)["music_library_path"] as? String == "/music")
+    }
+
     @Test func aRejectedSaveThrows() async throws {
         let t = answer(#"{"detail":"Enter a valid HTTP or HTTPS Navidrome URL."}"#, status: 400)
         await #expect(throws: DiscairError.self) { try await client(t).saveNavidrome(url: "x", username: "me") }

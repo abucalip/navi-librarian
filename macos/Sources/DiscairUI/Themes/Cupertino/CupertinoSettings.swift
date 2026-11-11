@@ -1,9 +1,9 @@
 import DiscairCore
 import SwiftUI
 
-/// Settings: connection, profiles and the two logins. No mockup exists for this screen; it follows Cupertino's
-/// rules (bold sans title, opaque white content, grouped cards, red-pink accent). Passwords go to the Keychain
-/// and are never shown or read back.
+/// Settings, in four tabs (`docs/redesign.md` sections 5.3 and 6.2): Services (the connected services, their health and setup,
+/// `CupertinoServices`), Playback, Music folder and Profiles. The cards inside the last three keep their form until step M10.
+/// Passwords go to the Keychain and are never shown or read back.
 struct CupertinoSettings: View {
     let state: AppState
     @State private var name = ""
@@ -25,13 +25,21 @@ struct CupertinoSettings: View {
         ScrollView {
             VStack(alignment: .leading, spacing: CU.Space.m) {
                 Text("Settings").cuRole(CU.Font.largeTitle).foregroundStyle(CU.text).padding(.top, 4).accessibilityAddTraits(.isHeader)
-                if let s = state.session {
-                    connection(s)
-                    playback
-                    musicFolder(s)
-                    profiles(s)
-                    listenBrainz()
-                    logins(s)
+                CUSegmented(SettingsTab.allCases.map { (value: $0, label: $0.rawValue) }, selection: Binding(get: { state.settingsTab }, set: { state.settingsTab = $0 }),
+                            accessibilityName: "Settings section", inControlBar: true)
+                if state.settingsTab == .services {
+                    CupertinoServices(state: state)
+                } else if let s = state.session {
+                    switch state.settingsTab {
+                    case .playback: playback
+                    case .musicFolder: musicFolder(s)
+                    case .profiles:
+                        connection(s)
+                        profiles(s)
+                        listenBrainz()
+                        logins(s)
+                    case .services: EmptyView()
+                    }
                     if let message { CUNotice(kind: .danger, lead: "Could not save.", message: message) }
                 } else {
                     Text("Settings are available in the running app.").foregroundStyle(CU.textSecondary)

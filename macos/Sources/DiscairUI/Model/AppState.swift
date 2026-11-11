@@ -125,6 +125,10 @@ public final class AppState {
     /// Settings > ListenBrainz: the server-side account taste and popularity read.
     public let listenBrainz = ListenBrainzModel()
     public let graph = GraphExplorerModel()
+    /// The connected-services screen's model and edit state (redesign M9); `refreshServices()` fills it.
+    public let services: ServicesController
+    /// The Cupertino Settings tab. "Fix <service>" and "Open Services" set it from other screens.
+    public var settingsTab: SettingsTab = .services
     public let atlas = AtlasModel()
     public let timeline = TimelineModel()
     public let artwork: ArtworkStore
@@ -153,6 +157,7 @@ public final class AppState {
         let acquisition = AcquisitionModel(defaults: defaults)
         self.acquisition = acquisition
         self.homeDefaults = defaults
+        self.services = ServicesController(defaults: defaults)
         self.session = session
         self.themeID = themeID
         self.screen = screen
@@ -197,6 +202,7 @@ public final class AppState {
             self?.share.startIfNeeded()
             // The refresh can take about a minute on a long history, so it never holds up the library load.
             Task { [weak self] in await self?.refreshTaste() }
+            Task { [weak self] in await self?.refreshServices() }
             await self?.refreshLibrary()
         }
         session?.onNavidromeSignOut = { [weak self] in self?.lyrics.clearAll(); self?.facts.reset(); self?.library.clearSavedPages(); self?.cache.media.clear(); self?.player.waveformCache.clear() }

@@ -343,12 +343,13 @@ struct CupertinoSidebar: View {
     }
 }
 
-/// Search and the Queue button, top right. The player itself is `CupertinoPlayerBar`, along the bottom.
+/// The services status button (M9), Search and the Queue button, top right. The player itself is `CupertinoPlayerBar`, along the bottom.
 struct CupertinoToolbar: View {
     let state: AppState
     var body: some View {
         HStack(spacing: 12) {
             Spacer(minLength: 0)
+            CupertinoStatusButton(state: state)
             Button { state.palette.open() } label: {
                 HStack(spacing: 8) {
                     Image(systemName: "magnifyingglass")

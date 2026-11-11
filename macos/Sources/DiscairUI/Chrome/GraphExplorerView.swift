@@ -4,7 +4,10 @@ import SwiftUI
 /// Colours and type a theme gives the explorer. The screen itself is the same in every theme.
 struct GraphStyle {
     let accent: Color, ink: Color, muted: Color, card: Color, title: Font
-    static let cupertino = GraphStyle(accent: CU.accent, ink: CU.ink, muted: CU.muted, card: CU.card, title: CU.title(34))
+    /// True for the Cupertino redesign (`docs/redesign.md` section 5.2): its own control bar, sectors, List view and inspector,
+    /// drawn by `CupertinoConnections`. The Zine explorer below is unchanged.
+    var redesigned = false
+    static let cupertino = GraphStyle(accent: CU.accent, ink: CU.ink, muted: CU.muted, card: CU.card, title: CU.title(34), redesigned: true)
     static let zine = GraphStyle(accent: Z.red, ink: Z.ink, muted: Z.ink.opacity(0.6), card: Z.paper, title: Z.an(60))
 }
 
@@ -17,6 +20,10 @@ struct GraphExplorerView: View {
     private var graph: GraphExplorerModel { state.graph }
 
     var body: some View {
+        if style.redesigned { CupertinoConnections(state: state) } else { classic }
+    }
+
+    private var classic: some View {
         HStack(spacing: 0) {
             VStack(alignment: .leading, spacing: 10) {
                 header
