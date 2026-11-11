@@ -9,7 +9,7 @@ struct CupertinoSmartPlaylists: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 18) {
+            VStack(alignment: .leading, spacing: 16) {
                 Text("Smart Playlists").font(CU.title(34)).padding(.top, 4).accessibilityAddTraits(.isHeader)
                 Text("Rules pick songs from your library. Save a result to Navidrome to play it anywhere.").foregroundStyle(CU.muted)
                 picker
@@ -45,8 +45,8 @@ struct CupertinoSmartPlaylists: View {
 
     private func editor(_ list: SmartPlaylist) -> some View {
         let b = binding(list)
-        return VStack(alignment: .leading, spacing: 12) {
-            HStack(spacing: 12) {
+        return VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 8) {
                 TextField("Name", text: b.name).textFieldStyle(.plain).font(CU.title(22))
                 Spacer(minLength: 8)
                 Button("Delete") { smart.remove(list.id) }.buttonStyle(CapsuleButtonStyle(small: true, outlined: true))
@@ -82,7 +82,7 @@ struct CupertinoSmartPlaylists: View {
             if b.wrappedValue.rules.contains(where: { $0.field.isInsight }) {
                 Text("Insight rules are worked out by the server. This app lists every song for them.").font(.caption).foregroundStyle(CU.muted)
             }
-            HStack(spacing: 12) {
+            HStack(spacing: 8) {
                 Button("Add rule") { b.wrappedValue.rules.append(SmartRule(field: .artist, op: .contains, value: "")) }
                     .buttonStyle(CapsuleButtonStyle(small: true, outlined: true))
                 Spacer(minLength: 8)
@@ -101,8 +101,8 @@ struct CupertinoSmartPlaylists: View {
 
     private func results(_ list: SmartPlaylist) -> some View {
         let songs = state.smartSongs(list)
-        return VStack(alignment: .leading, spacing: 10) {
-            HStack(spacing: 12) {
+        return VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 8) {
                 Text("\(songs.count) songs").font(CU.title(20))
                 if state.library.songsHaveMore { Text("(first \(state.library.songs.count) songs read)").foregroundStyle(CU.muted) }
                 Spacer(minLength: 8)
@@ -110,19 +110,19 @@ struct CupertinoSmartPlaylists: View {
                 Button(smart.saving ? "Saving…" : "Save to Navidrome") { state.saveSmart(list, songs: songs) }
                     .buttonStyle(CapsuleButtonStyle(small: true)).disabled(songs.isEmpty || smart.saving)
             }
-            if let s = smart.status { Text(s).foregroundStyle(CU.muted).font(.system(size: 12)) }
+            if let s = smart.status { Text(s).foregroundStyle(CU.muted).font(CU.Font.callout.weighted(.regular)) }
             if songs.isEmpty {
                 Text(state.library.songsLoading ? "Reading your songs…" : "No songs match these rules.").foregroundStyle(CU.muted)
             }
             ForEach(Array(songs.prefix(previewLimit).enumerated()), id: \.offset) { i, s in
                 Button { state.play(rows: songs, startAt: i) } label: {
-                    HStack(spacing: 10) {
+                    HStack(spacing: 8) {
                         Text(s.title).fontWeight(.medium).lineLimit(1)
                         Text(s.artist).foregroundStyle(CU.muted).lineLimit(1)
                         Spacer(minLength: 8)
-                        Text("\(s.plays) plays").font(.system(size: 11)).foregroundStyle(CU.muted)
+                        Text("\(s.plays) plays").font(CU.Font.caption.weighted(.regular)).foregroundStyle(CU.muted)
                     }
-                    .padding(.vertical, 3).contentShape(Rectangle())
+                    .padding(.vertical, 4).contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
             }
@@ -131,7 +131,7 @@ struct CupertinoSmartPlaylists: View {
     }
 
     private var remote: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: 8) {
             Text("On Navidrome").font(CU.title(20))
             ForEach(smart.remote) { p in
                 HStack { Text(p.name).lineLimit(1); Spacer(); Text("\(p.songCount) songs").foregroundStyle(CU.muted) }

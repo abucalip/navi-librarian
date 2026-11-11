@@ -12,13 +12,13 @@ struct CupertinoPlayerBar: View {
 
     private var p: PlayerModel { state.player }
     /// White on a tint (tints are kept dark); the usual ink and glass when nothing is playing.
-    private var ink: Color { tint != nil ? .white : CU.ink }
-    private var secondary: Color { tint != nil ? .white.opacity(0.72) : CU.muted }
+    private var ink: Color { tint != nil ? CU.onMedia : CU.ink }
+    private var secondary: Color { tint != nil ? CU.onMedia.opacity(0.72) : CU.muted }
     private var shape: RoundedRectangle { RoundedRectangle(cornerRadius: 16, style: .continuous) }
 
     var body: some View {
         display
-            .padding(.leading, Self.sidebarSlot).padding(.trailing, 18)
+            .padding(.leading, Self.sidebarSlot).padding(.trailing, 16)
             .frame(height: Self.height)
             .foregroundStyle(ink)
             .animation(RenderMode.offscreenScreenshot ? nil : .easeInOut(duration: 0.5), value: tint)
@@ -61,21 +61,21 @@ struct CupertinoPlayerBar: View {
             ZStack {
                 LinearGradient(colors: [tint.color, ArtworkTint(hue: tint.hue, saturation: tint.saturation, brightness: max(0.2, tint.brightness - 0.1)).color],
                                startPoint: .top, endPoint: .bottom)
-                if let cover = coverItem { BlurredArtwork(album: cover, radius: 24); Color.black.opacity(0.28) }
+                if let cover = coverItem { BlurredArtwork(album: cover, radius: 24); CU.shadowInk.opacity(0.28) }
             }
             .clipShape(shape)
-            .overlay(shape.stroke(.white.opacity(0.12), lineWidth: 1))
+            .overlay(shape.stroke(CU.onMedia.opacity(0.12), lineWidth: 1))
         } else {
             Color.clear.glassEffect(CU.glass, in: shape)
         }
     }
 
     private var transport: some View {
-        HStack(spacing: 10) {
+        HStack(spacing: 8) {
             Button { p.toggleShuffle() } label: { Image(systemName: "shuffle").foregroundStyle(p.shuffle ? CU.accent : ink) }
                 .accessibilityLabel(p.shuffle ? "Shuffle, on" : "Shuffle, off")
             Button { p.previous() } label: { Image(systemName: "backward.fill") }.accessibilityLabel("Previous")
-            Button { p.togglePlayPause() } label: { Image(systemName: p.isPlaying ? "pause.fill" : "play.fill").font(.system(size: 22)) }
+            Button { p.togglePlayPause() } label: { Image(systemName: p.isPlaying ? "pause.fill" : "play.fill").font(CU.Icon.transport()) }
                 .accessibilityLabel(p.isPlaying ? "Pause" : "Play").disabled(p.current == nil)
             Button { p.next() } label: { Image(systemName: "forward.fill") }.accessibilityLabel("Next").disabled(p.current == nil)
             Button { p.cycleRepeat() } label: {
@@ -83,7 +83,7 @@ struct CupertinoPlayerBar: View {
             }
             .accessibilityLabel("Repeat, \(p.repeatMode.rawValue)")
         }
-        .buttonStyle(.plain).font(.system(size: 15))
+        .buttonStyle(.plain).font(CU.Icon.row())
     }
 
     private var display: some View {
@@ -95,19 +95,19 @@ struct CupertinoPlayerBar: View {
     }
 
     private var barRow: some View {
-        HStack(spacing: 14) {
+        HStack(spacing: 16) {
             nowPlayingButton
             middle
             if let q = p.current?.qualityLabel {
-                Text(q).font(.system(size: 10, weight: .semibold, design: .monospaced)).foregroundStyle(secondary)
-                    .padding(.horizontal, 6).padding(.vertical, 2)
+                Text(q).font(CU.Font.caption.weighted(.semibold)).foregroundStyle(secondary)
+                    .padding(.horizontal, 8).padding(.vertical, 4)
                     .overlay(RoundedRectangle(cornerRadius: 4, style: .continuous).stroke(secondary.opacity(0.6), lineWidth: 1))
                     .fixedSize().accessibilityLabel("Quality \(q)")
             }
             if p.current != nil { lineSwitches }
             transport
-            PlaybackClock(player: p) { Text("\(PlayerModel.clock($0)) / \(PlayerModel.clock(p.duration))").font(.system(size: 12)).monospacedDigit().foregroundStyle(secondary) }
-                .padding(.leading, 6)
+            PlaybackClock(player: p) { Text("\(PlayerModel.clock($0)) / \(PlayerModel.clock(p.duration))").font(CU.Font.callout.weighted(.regular)).monospacedDigit().foregroundStyle(secondary) }
+                .padding(.leading, 8)
         }
         .padding(.horizontal, 16).frame(height: 68)
         .background {
@@ -120,7 +120,7 @@ struct CupertinoPlayerBar: View {
             GeometryReader { g in
                 ZStack(alignment: .leading) {
                     Rectangle().fill(ink.opacity(0.18))
-                    Rectangle().fill(tint != nil ? Color.white : CU.accent).frame(width: g.size.width * p.fraction)
+                    Rectangle().fill(tint != nil ? CU.onAccent : CU.accent).frame(width: g.size.width * p.fraction)
                 }
             }
             .frame(height: 4).clipShape(UnevenRoundedRectangle(bottomLeadingRadius: 16, bottomTrailingRadius: 16))
@@ -131,13 +131,13 @@ struct CupertinoPlayerBar: View {
     private var nowPlayingButton: some View {
         Group {
             if let c = p.current {
-                HStack(spacing: 14) {
-                    PlayerBarCover(artist: c.artist, album: c.album, disc: c.disc, spinning: p.isPlaying, side: 50, cornerRadius: 7, flipsAndOpensBooklet: false,
+                HStack(spacing: 16) {
+                    PlayerBarCover(artist: c.artist, album: c.album, disc: c.disc, spinning: p.isPlaying, side: 50, cornerRadius: 8, flipsAndOpensBooklet: false,
                                    fallback: { state.screen = .nowPlaying }) {
                         CoverView(album: AlbumItem(id: -1, title: c.album, artist: c.artist, year: 0, genre: "", format: "", owned: true, hue: 200, remoteID: c.albumID, coverArt: c.coverArt))
                     }
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(c.title).font(.system(size: 14, weight: .semibold)).lineLimit(1)
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(c.title).font(CU.Font.body.weighted(.semibold)).lineLimit(1)
                         if p.phase == .loading {
                             Text("Loading…").foregroundStyle(secondary).lineLimit(1)
                         } else {
@@ -155,10 +155,10 @@ struct CupertinoPlayerBar: View {
                         }
                         if case .failed(let m) = p.phase { CUErrorLine(message: m, onDark: tint != nil).lineLimit(1) }
                     }
-                    .font(.system(size: 12.5)).frame(maxWidth: .infinity, alignment: .leading)
+                    .font(CU.Font.callout.weighted(.regular)).frame(maxWidth: .infinity, alignment: .leading)
                 }
             } else {
-                Text("Nothing playing").font(.system(size: 12.5)).foregroundStyle(secondary).frame(maxWidth: .infinity, alignment: .leading)
+                Text("Nothing playing").font(CU.Font.callout.weighted(.regular)).foregroundStyle(secondary).frame(maxWidth: .infinity, alignment: .leading)
             }
         }
         .frame(minWidth: 150, idealWidth: 270, maxWidth: p.current == nil ? .infinity : 290, alignment: .leading)
@@ -191,7 +191,7 @@ struct CupertinoPlayerBar: View {
             ZStack {
                 switch now {
                 case .lyric(let i, let text):
-                    MarqueeLine(reduceMotion: reduceMotion) { Text(text).font(.system(size: 13.5, weight: .semibold)) }
+                    MarqueeLine(reduceMotion: reduceMotion) { Text(text).font(CU.Font.body.weighted(.semibold)) }
                         .id("l\(i)").transition(slide).accessibilityElement(children: .ignore).accessibilityLabel("Lyric: \(text)")
                 case .fact(let fact):
                     MarqueeLine(reduceMotion: reduceMotion) { factText(fact) }.id(fact.id).transition(slide)
@@ -210,7 +210,7 @@ struct CupertinoPlayerBar: View {
     }
 
     @ViewBuilder private func factText(_ fact: PlayerFact) -> some View {
-        let label = Text(fact.text).font(.system(size: 12.5)).foregroundStyle(ink.opacity(0.86))
+        let label = Text(fact.text).font(CU.Font.callout.weighted(.regular)).foregroundStyle(ink.opacity(0.86))
         if let url = fact.sourceURL {
             Button { NSWorkspace.shared.open(url) } label: { label }.buttonStyle(.plain)
                 .help("\(fact.source). Opens the page this comes from.").accessibilityLabel("Fact: \(fact.text). Source \(fact.source). Opens the page")
@@ -227,7 +227,7 @@ struct CupertinoPlayerBar: View {
                 QuoteMark().frame(width: 17, height: 17)
             } toggle: { state.barOptions.showLyrics.toggle() }
             switchButton(on: state.barOptions.showFacts, label: "Facts in the player bar") {
-                Image(systemName: "info.circle").font(.system(size: 14, weight: .medium))
+                Image(systemName: "info.circle").font(CU.Icon.row(.medium))
             } toggle: { state.barOptions.showFacts.toggle() }
         }
     }
@@ -236,7 +236,7 @@ struct CupertinoPlayerBar: View {
         Button(action: toggle) {
             icon().foregroundStyle(on ? ink : secondary.opacity(0.8))
                 .frame(width: 26, height: 26)
-                .background(RoundedRectangle(cornerRadius: 7, style: .continuous).fill(ink.opacity(on ? 0.22 : 0)))
+                .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(ink.opacity(on ? 0.22 : 0)))
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -276,8 +276,8 @@ struct PlayerBarGraph: View {
                 let value = CGFloat(peaks[lo..<min(hi, peaks.count)].max() ?? 0)
                 let h = max(1.5, value * top)
                 let played = Double(i) / Double(count) <= fraction
-                ctx.fill(Path(roundedRect: CGRect(x: CGFloat(i) * step, y: floorY - h, width: width, height: h), cornerRadius: 1),
-                         with: .color(.white.opacity(played ? 0.22 : 0.11)))
+                ctx.fill(Path(roundedRect: CGRect(x: CGFloat(i) * step, y: floorY - h, width: width, height: h), cornerRadius: 4),
+                         with: .color(CU.onMedia.opacity(played ? 0.22 : 0.11)))
             }
         }
         .allowsHitTesting(false).accessibilityHidden(true)

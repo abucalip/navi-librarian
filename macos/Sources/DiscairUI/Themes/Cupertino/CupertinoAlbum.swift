@@ -13,38 +13,38 @@ struct CupertinoAlbumBanner: View {
         let owned = tracks.filter(\.owned).count
         let h = a.hue / 360
         ZStack(alignment: .topLeading) {
-            Color(hue: h, saturation: 0.45, brightness: 0.45)
-            RadialGradient(colors: [Color(hue: h, saturation: 0.6, brightness: 0.9).opacity(0.95), .clear],
+            CU.artwork(hue: h, saturation: 0.45, brightness: 0.45)
+            RadialGradient(colors: [CU.artwork(hue: h, saturation: 0.6, brightness: 0.9).opacity(0.95), .clear],
                            center: UnitPoint(x: 0.2, y: 0.1), startRadius: 0, endRadius: 800)
-            RadialGradient(colors: [Color(hue: (h + 0.1).truncatingRemainder(dividingBy: 1), saturation: 0.7, brightness: 0.6).opacity(0.9), .clear],
+            RadialGradient(colors: [CU.artwork(hue: (h + 0.1).truncatingRemainder(dividingBy: 1), saturation: 0.7, brightness: 0.6).opacity(0.9), .clear],
                            center: UnitPoint(x: 0.9, y: 0.9), startRadius: 0, endRadius: 700)
-            if !(a.coverArt ?? "").isEmpty { BlurredArtwork(album: a, radius: 24); Color.black.opacity(0.12) }
-            LinearGradient(colors: [.black.opacity(0.0), .black.opacity(0.4)], startPoint: .top, endPoint: .bottom)
+            if !(a.coverArt ?? "").isEmpty { BlurredArtwork(album: a, radius: 24); CU.shadowInk.opacity(0.12) }
+            LinearGradient(colors: [CU.shadowInk.opacity(0.0), CU.shadowInk.opacity(0.4)], startPoint: .top, endPoint: .bottom)
         }
         .frame(height: CupertinoArtistLayout.bannerHeight)
         .frame(maxWidth: .infinity)
         .overlay(alignment: .topLeading) {
             VStack(alignment: .leading, spacing: 0) {
-                BackButton(title: AppState.title(of: state.albumBack), onDark: true) { state.screen = state.albumBack }.padding(.bottom, 10)
-                HStack(alignment: .top, spacing: 26) {
+                BackButton(title: AppState.title(of: state.albumBack), onDark: true) { state.screen = state.albumBack }.padding(.bottom, 8)
+                HStack(alignment: .top, spacing: 24) {
                     FlipCover(rgid: state.related.releaseGroupMBID, cornerRadius: 12, spineStrip: true, albumID: a.owned ? a.remoteID : nil) { CoverView(album: a).clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous)) }
                         .frame(width: 170, height: 170)
-                        .shadow(color: .black.opacity(0.35), radius: 10, y: 5)
+                        .shadow(color: CU.shadowInk.opacity(0.35), radius: 10, y: 5)
                     VStack(alignment: .leading, spacing: 0) {
                         Text(a.title).font(CU.title(34)).lineLimit(1).minimumScaleFactor(0.5)
-                        Button { state.openArtist(named: a.artist) } label: { Text(a.artist).font(.system(size: 20, weight: .semibold)) }
-                            .buttonStyle(.plain).padding(.top, 2).accessibilityLabel("Open artist \(a.artist)")
+                        Button { state.openArtist(named: a.artist) } label: { Text(a.artist).font(CU.Font.title2.weighted(.semibold)) }
+                            .buttonStyle(.plain).padding(.top, 4).accessibilityLabel("Open artist \(a.artist)")
                         Text(a.line([a.genre, a.yearText, tracks.isEmpty ? "" : "\(tracks.count) songs" + (state.library.isLive ? "" : ", 41 minutes")]))
                             .opacity(0.85).padding(.top, 4)
-                        HStack(spacing: 6) {
+                        HStack(spacing: 8) {
                             if let q = tracks.first(where: \.owned)?.format, !q.isEmpty {
-                                Text(q).font(.system(size: 10.5, weight: .bold)).padding(.horizontal, 7).padding(.vertical, 1)
-                                    .background(.white.opacity(0.22), in: RoundedRectangle(cornerRadius: 5))
+                                Text(q).font(CU.Font.caption.weighted(.bold)).padding(.horizontal, 8).padding(.vertical, 0)
+                                    .background(CU.onMedia.opacity(0.22), in: RoundedRectangle(cornerRadius: 4))
                             }
-                            Text("\(owned) of \(tracks.count) owned").font(.system(size: 10.5, weight: .bold)).padding(.horizontal, 7).padding(.vertical, 1)
-                                .background(.white.opacity(0.22), in: RoundedRectangle(cornerRadius: 5))
+                            Text("\(owned) of \(tracks.count) owned").font(CU.Font.caption.weighted(.bold)).padding(.horizontal, 8).padding(.vertical, 0)
+                                .background(CU.onMedia.opacity(0.22), in: RoundedRectangle(cornerRadius: 4))
                         }
-                        .padding(.top, 8).padding(.bottom, 12)
+                        .padding(.top, 8).padding(.bottom, 16)
                         HStack(spacing: 8) {
                             Button { state.actions.play(album: a) } label: { Label("Play", systemImage: "play.fill") }
                                 .buttonStyle(CapsuleButtonStyle(primary: true))
@@ -74,7 +74,7 @@ struct CupertinoAlbumBanner: View {
                     }
                 }
             }
-            .foregroundStyle(.white)
+            .foregroundStyle(CU.onMedia)
             .padding(.leading, 236 + CU.Space.xl).padding(.top, 76)
             .padding(.trailing, state.queueOpen ? CupertinoQueueInspector.width + CU.Space.xl : CU.Space.xl)
         }
@@ -99,10 +99,10 @@ struct CupertinoAlbum: View {
                 tabBar.padding(.top, 16)
                 switch tab {
                 case .tracks: tracksTab(a)
-                case .notes: CupertinoAlbumSpread(state: state, part: .notes).padding(.top, 14)
-                case .booklet: AlbumBookletTab(state: state).padding(.top, 14)
-                case .credits: CupertinoAlbumSpread(state: state, part: .credits).padding(.top, 14)
-                case .reviews: CupertinoAlbumSpread(state: state, part: .reviews).padding(.top, 14)
+                case .notes: CupertinoAlbumSpread(state: state, part: .notes).padding(.top, 16)
+                case .booklet: AlbumBookletTab(state: state).padding(.top, 16)
+                case .credits: CupertinoAlbumSpread(state: state, part: .credits).padding(.top, 16)
+                case .reviews: CupertinoAlbumSpread(state: state, part: .reviews).padding(.top, 16)
                 }
             }
             .padding(.horizontal, CU.Space.xl).padding(.bottom, CU.Space.xl)
@@ -118,13 +118,13 @@ struct CupertinoAlbum: View {
     }
 
     private var tabBar: some View {
-        HStack(spacing: 6) {
+        HStack(spacing: 8) {
             ForEach(AlbumTab.allCases) { t in
                 Button { tab = t } label: {
-                    Text(t.rawValue).font(.system(size: 13, weight: .semibold))
-                        .padding(.horizontal, 14).padding(.vertical, 6)
+                    Text(t.rawValue).font(CU.Font.body.weighted(.semibold))
+                        .padding(.horizontal, 16).padding(.vertical, 8)
                         .background(tab == t ? CU.accent : CU.fill, in: Capsule())
-                        .foregroundStyle(tab == t ? Color.white : CU.ink)
+                        .foregroundStyle(tab == t ? CU.onAccent : CU.ink)
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(t.rawValue).accessibilityAddTraits(tab == t ? [.isButton, .isSelected] : .isButton)
@@ -134,23 +134,23 @@ struct CupertinoAlbum: View {
 
     @ViewBuilder private func tracksTab(_ a: AlbumItem) -> some View {
         // The table takes what it needs; the right side is kept free for a pane that comes later.
-        HStack(alignment: .top, spacing: 28) {
+        HStack(alignment: .top, spacing: 32) {
             trackTable.frame(maxWidth: 620)
             Color.clear.frame(maxWidth: .infinity, minHeight: 1).accessibilityHidden(true)
         }
-        .padding(.top, 14)
+        .padding(.top, 16)
         if !state.library.more(by: a).isEmpty {
-            Text("More by \(a.artist)").font(CU.title(20)).padding(.top, 22).padding(.bottom, 10)
+            Text("More by \(a.artist)").font(CU.title(20)).padding(.top, 24).padding(.bottom, 8)
                 .accessibilityAddTraits(.isHeader)
-            HStack(alignment: .top, spacing: 20) {
+            HStack(alignment: .top, spacing: 16) {
                 ForEach(state.library.more(by: a)) { m in
                     Button { state.open(album: m) } label: {
                     VStack(alignment: .leading, spacing: 8) {
-                        CoverView(album: m).frame(width: 110).clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-                            .shadow(color: .black.opacity(0.2), radius: 7, y: 4)
+                        CoverView(album: m).frame(width: 110).clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                            .shadow(color: CU.shadowInk.opacity(0.2), radius: 7, y: 4)
                         Text(m.title).fontWeight(.semibold).lineLimit(1)
                     }
-                    .font(.system(size: 13)).frame(width: 110, alignment: .leading)
+                    .font(CU.Font.body.weighted(.regular)).frame(width: 110, alignment: .leading)
                     }
                     .buttonStyle(.plain).accessibilityLabel("Open \(m.title)")
                 }
@@ -169,8 +169,8 @@ struct CupertinoAlbum: View {
             row(["#", "Track", "Duration", "Quality", ""], header: true, shaded: false, playing: false, missing: false)
             ForEach(Array(state.library.tracks.enumerated()), id: \.element.id) { i, t in
                 row(nil, track: t, index: i, shaded: i % 2 == 0)
-                    .overlay { if isHighlighted(t) { RoundedRectangle(cornerRadius: 7, style: .continuous).stroke(CU.accent, lineWidth: 2) } }
-                    .background { if isHighlighted(t) { RoundedRectangle(cornerRadius: 7, style: .continuous).fill(CU.accent.opacity(0.14)) } }
+                    .overlay { if isHighlighted(t) { RoundedRectangle(cornerRadius: 8, style: .continuous).stroke(CU.accent, lineWidth: 2) } }
+                    .background { if isHighlighted(t) { RoundedRectangle(cornerRadius: 8, style: .continuous).fill(CU.accent.opacity(0.14)) } }
                     .id(t.id)
                     .contentShape(Rectangle())
                     .onTapGesture(count: 2) { if t.owned { state.playAlbum(state.selectedAlbum, startAt: i) } }
@@ -197,9 +197,9 @@ struct CupertinoAlbum: View {
             cell(width: cols[3]) {
                 if isHeader { Text("Quality") }
                 else if track!.owned {
-                    Text(track!.format).font(.system(size: 10.5, weight: .bold))
-                        .padding(.horizontal, 7).padding(.vertical, 1)
-                        .background(on ? Color.white.opacity(0.25) : CU.fill, in: RoundedRectangle(cornerRadius: 5))
+                    Text(track!.format).font(CU.Font.caption.weighted(.bold))
+                        .padding(.horizontal, 8).padding(.vertical, 0)
+                        .background(on ? CU.onAccent.opacity(0.25) : CU.fill, in: RoundedRectangle(cornerRadius: 4))
                 } else { Text("Not owned") }
             }
             cell(width: cols[4], trailing: true) {
@@ -209,24 +209,24 @@ struct CupertinoAlbum: View {
                         Button(state.acquisition.buttonLabel(for: state.selectedAlbum, song: track!.title) == "Get" ? "Get song" : state.acquisition.buttonLabel(for: state.selectedAlbum, song: track!.title)) {
                             state.actions.getSong(album: state.selectedAlbum, title: track!.title, trackNumber: index + 1)
                         }
-                        .buttonStyle(CapsuleButtonStyle(primary: true, small: true))
+                        .buttonStyle(CapsuleButtonStyle(small: true))
                         .disabled(!state.acquisition.canGet(state.selectedAlbum, song: track!.title))
                         .help(state.acquisition.detail(for: state.selectedAlbum, song: track!.title))
                     }
                 }
             }
         }
-        .font(isHeader ? .system(size: 12, weight: .medium) : .system(size: 13))
+        .font(isHeader ? CU.Font.callout.weighted(.medium) : CU.Font.body.weighted(.regular))
         .monospacedDigit()
-        .foregroundStyle(isHeader || ms ? CU.muted : (on ? Color.white : CU.ink))
-        .padding(.vertical, isHeader ? 6 : 5)
+        .foregroundStyle(isHeader || ms ? CU.muted : (on ? CU.onAccent : CU.ink))
+        .padding(.vertical, isHeader ? 8 : 4)
         .background {
-            if on { RoundedRectangle(cornerRadius: 7, style: .continuous).fill(CU.accent) }
-            else if shaded && !ms { Rectangle().fill(Color(red: 0.965, green: 0.965, blue: 0.973)) }
+            if on { RoundedRectangle(cornerRadius: 8, style: .continuous).fill(CU.accent) }
+            else if shaded && !ms { Rectangle().fill(CU.bgPanel) }
         }
         .overlay(alignment: .bottom) {
-            if isHeader { Rectangle().fill(Color.black.opacity(0.08)).frame(height: 1) }
-            else if ms { Rectangle().stroke(Color(white: 0.73), style: StrokeStyle(lineWidth: 1.5, dash: [4, 3])).frame(height: 1.5) }
+            if isHeader { Rectangle().fill(CU.shadowInk.opacity(0.08)).frame(height: 1) }
+            else if ms { Rectangle().stroke(CU.textTertiary, style: StrokeStyle(lineWidth: 1.5, dash: [4, 3])).frame(height: 1.5) }
         }
         .accessibilityElement(children: .combine)
     }
@@ -234,7 +234,7 @@ struct CupertinoAlbum: View {
     /// A ZStack keeps the cell's width even when its content is empty (modifiers on an EmptyView vanish).
     private func cell<C: View>(width: CGFloat?, trailing: Bool = false, @ViewBuilder _ c: () -> C) -> some View {
         ZStack(alignment: trailing ? .trailing : .leading) { Color.clear.frame(height: 1); c() }
-            .padding(.horizontal, 10)
+            .padding(.horizontal, 8)
             .frame(width: width)
             .frame(maxWidth: width == nil ? .infinity : nil, alignment: .leading)
     }

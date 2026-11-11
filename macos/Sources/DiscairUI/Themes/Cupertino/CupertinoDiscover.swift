@@ -9,7 +9,7 @@ struct CupertinoDiscover: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 14) {
+            VStack(alignment: .leading, spacing: 16) {
                 Text("Discover").font(CU.title(34)).padding(.top, 4).accessibilityAddTraits(.isHeader)
                 HStack(spacing: 8) {
                     ForEach(DiscoveryModel.Kind.allCases) { k in
@@ -45,7 +45,7 @@ struct CupertinoDiscover: View {
                     Text(p.message ?? "Nothing here.").foregroundStyle(CU.muted)
                     if k != .saved {
                         Button(p.building ? "Building…" : "Build this list") { Task { await model.build(k) } }
-                            .buttonStyle(CapsuleButtonStyle(primary: true, small: true)).disabled(p.building)
+                            .buttonStyle(CapsuleButtonStyle(small: true)).disabled(p.building)
                     }
                 }.padding(.top, 8)
             }
@@ -54,24 +54,24 @@ struct CupertinoDiscover: View {
     }
 
     private func row(_ a: AlbumItem) -> some View {
-        HStack(alignment: .top, spacing: 14) {
+        HStack(alignment: .top, spacing: 16) {
             Button { state.open(album: a) } label: {
                 CoverView(album: a).frame(width: 84).clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-                    .shadow(color: .black.opacity(0.15), radius: 5, y: 3)
+                    .shadow(color: CU.shadowInk.opacity(0.15), radius: 5, y: 3)
             }
             .buttonStyle(.plain).accessibilityLabel("Open \(a.title)")
             VStack(alignment: .leading, spacing: 4) {
-                Button { state.open(album: a) } label: { Text(a.title).font(.system(size: 16, weight: .semibold)).lineLimit(1) }
+                Button { state.open(album: a) } label: { Text(a.title).font(CU.Font.title3.weighted(.semibold)).lineLimit(1) }
                     .buttonStyle(.plain).accessibilityLabel("Open \(a.title)")
                 Button(a.artist) { state.openArtist(named: a.artist) }.buttonStyle(.plain).foregroundStyle(CU.muted)
-                if let r = a.reason { Text(r).font(.system(size: 12)).foregroundStyle(CU.muted).lineLimit(2) }
+                if let r = a.reason { Text(r).font(CU.Font.callout.weighted(.regular)).foregroundStyle(CU.muted).lineLimit(2) }
                 if !a.suggestedTracks.isEmpty {
-                    Text("Try: " + a.suggestedTracks.prefix(3).joined(separator: ", ")).font(.system(size: 12)).foregroundStyle(CU.muted).lineLimit(1)
+                    Text("Try: " + a.suggestedTracks.prefix(3).joined(separator: ", ")).font(CU.Font.callout.weighted(.regular)).foregroundStyle(CU.muted).lineLimit(1)
                 }
                 DiscoverPeek(album: a, hovered: state.discovery.hoveredAlbum == a.id)
-                HStack(spacing: 6) {
+                HStack(spacing: 8) {
                     Button(state.acquisition.buttonLabel(for: a)) { state.actions.get(album: a) }
-                        .buttonStyle(CapsuleButtonStyle(primary: true, small: true)).disabled(!state.acquisition.canGet(a))
+                        .buttonStyle(CapsuleButtonStyle(small: true)).disabled(!state.acquisition.canGet(a))
                         .help(state.acquisition.detail(for: a)).accessibilityHint(state.acquisition.detail(for: a))
                     Button(state.acquisition.isSaved(a) ? "Saved" : "Save") { state.actions.save(album: a) }
                         .buttonStyle(CapsuleButtonStyle(small: true)).disabled(state.acquisition.isSaved(a))
@@ -81,7 +81,7 @@ struct CupertinoDiscover: View {
             }
             Spacer(minLength: 0)
         }
-        .padding(14).frame(maxWidth: .infinity, alignment: .leading)
+        .padding(16).frame(maxWidth: .infinity, alignment: .leading)
         .background(CU.card, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
         .onHover { on in
             let model = state.discovery

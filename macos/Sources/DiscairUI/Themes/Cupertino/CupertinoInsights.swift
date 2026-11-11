@@ -23,7 +23,7 @@ struct CupertinoInsights: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: CU.Space.l) {
                     header
-                    if let e = model.error { CUErrorLine(message: e).font(CU.Font.body.font) }
+                    if let e = model.error { CUErrorLine(message: e).font(CU.Font.body.weighted(.regular)) }
                     CupertinoTaste(model: state.taste, state: state)
                     VStack(alignment: .leading, spacing: CU.Space.m) {
                         Text("Lenses").cuRole(CU.Font.title1).foregroundStyle(CU.text).accessibilityAddTraits(.isHeader)
@@ -67,11 +67,11 @@ struct CupertinoInsights: View {
             ForEach(model.kinds, id: \.self) { k in
                 let on = model.isEnabled(k)
                 HStack(spacing: CU.Space.xs) {
-                    if on { Image(systemName: "checkmark").font(.system(size: 11, weight: .semibold)).accessibilityHidden(true) }
+                    if on { Image(systemName: "checkmark").font(CU.Icon.small(.semibold)).accessibilityHidden(true) }
                     Text(Self.name(k)).fontWeight(on ? .semibold : .medium)
                     Text(on ? " · \(model.cards(k).count)" : " · off").foregroundStyle(on ? CU.success : CU.textSecondary)
                 }
-                .font(.system(size: 12, weight: .semibold))
+                .font(CU.Font.callout.weighted(.semibold))
                 .foregroundStyle(on ? CU.success : CU.textSecondary)
                 .padding(.horizontal, CU.Space.m).frame(height: 24)
                 .background(on ? CU.successTint : CU.bgFill, in: Capsule())
@@ -178,9 +178,9 @@ struct CupertinoInsights: View {
     private func progress(_ owned: Int, _ total: Int, _ c: InsightCard) -> some View {
         let missing = Set(c.missingRuns.flatMap { Array($0.firstPosition...max($0.firstPosition, $0.lastPosition)) })
         return VStack(alignment: .leading, spacing: CU.Space.xs) {
-            HStack(spacing: 2) {
+            HStack(spacing: 4) {
                 ForEach(1...total, id: \.self) { i in
-                    RoundedRectangle(cornerRadius: 2).fill(missing.contains(i) ? CU.bgFill : CU.text).frame(height: 8)
+                    RoundedRectangle(cornerRadius: 4).fill(missing.contains(i) ? CU.bgFill : CU.text).frame(height: 8)
                 }
             }
             .accessibilityElement(children: .ignore).accessibilityLabel("\(owned) of \(total) owned")
@@ -188,7 +188,7 @@ struct CupertinoInsights: View {
                 Text("Missing " + (r.firstPosition == r.lastPosition ? "\(r.firstPosition)" : "\(r.firstPosition) to \(r.lastPosition)") + (r.labels.isEmpty ? "" : ": " + r.labels.joined(separator: ", ")))
                     .cuRole(CU.Font.callout).foregroundStyle(CU.textSecondary)
                     .padding(.horizontal, CU.Space.s).padding(.vertical, CU.Space.xs)
-                    .overlay(RoundedRectangle(cornerRadius: 9).strokeBorder(CU.textSecondary.opacity(0.5), style: StrokeStyle(lineWidth: 1.2, dash: [4, 3])))
+                    .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(CU.textSecondary.opacity(0.5), style: StrokeStyle(lineWidth: 1.2, dash: [4, 3])))
             }
         }
     }
@@ -203,7 +203,7 @@ struct CupertinoInsights: View {
             Text("Dismissed. It will not come back.")
             Button("Undo") { model.undoDismiss(librarian: state.session?.librarian) }.buttonStyle(CapsuleButtonStyle(small: true))
         }
-        .font(CU.Font.body.font).foregroundStyle(CU.content).padding(.leading, CU.Space.l).padding(.trailing, CU.Space.s).padding(.vertical, CU.Space.s)
+        .font(CU.Font.body.weighted(.regular)).foregroundStyle(CU.content).padding(.leading, CU.Space.l).padding(.trailing, CU.Space.s).padding(.vertical, CU.Space.s)
         .background(CU.text.opacity(0.85), in: Capsule()).padding(.bottom, CU.Space.l)
         .task(id: model.lastDismissed?.id) { try? await Task.sleep(for: .seconds(6)); model.clearUndo() }
     }

@@ -18,7 +18,7 @@ struct CupertinoGapRadar: View {
                 }
                 // Cards are only as wide as their albums need, so small ones sit side by side and only artists with many
                 // albums take (up to) the whole row.
-                GapFlowLayout(spacing: 14) {
+                GapFlowLayout(spacing: 16) {
                     ForEach(lib.gapRadar) { artist in card(artist).frame(minWidth: 0, idealWidth: GapCardWidth.width(albums: artist.total, undatedDivider: !artist.undatedOwned.isEmpty || !artist.undatedMissing.isEmpty), maxWidth: GapCardWidth.width(albums: artist.total, undatedDivider: !artist.undatedOwned.isEmpty || !artist.undatedMissing.isEmpty)) }
                 }
             }
@@ -45,7 +45,7 @@ struct CupertinoGapRadar: View {
                 }
             }
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(alignment: .top, spacing: 14) {
+                HStack(alignment: .top, spacing: 16) {
                     ForEach(g.dated) { a in tile(a) }
                     if !g.undatedOwned.isEmpty || !g.undatedMissing.isEmpty {
                         Rectangle().fill(CU.textSecondary.opacity(0.3)).frame(width: 1, height: 96).padding(.horizontal, CU.Space.xs)
@@ -67,10 +67,10 @@ struct CupertinoGapRadar: View {
 
     /// Owned covers are whole; a missing one keeps its full cover with a dashed outline. Gets are neutral; see `card`.
     private func tile(_ a: AlbumItem) -> some View {
-        VStack(alignment: .leading, spacing: 3) {
+        VStack(alignment: .leading, spacing: 4) {
             Button { if a.owned { state.open(album: a) } } label: {
                 CoverView(album: a).frame(width: 96).clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-                    .overlay { if !a.owned { RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(CU.textSecondary, style: StrokeStyle(lineWidth: 2, dash: [5, 4])).padding(-3) } }
+                    .overlay { if !a.owned { RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(CU.textSecondary, style: StrokeStyle(lineWidth: 2, dash: [5, 4])).padding(-4) } }
             }
             .buttonStyle(.plain).accessibilityLabel(a.owned ? "Open \(a.title)" : "\(a.title), missing")
             Text(a.title).cuRole(CU.Font.callout).fontWeight(.semibold).foregroundStyle(CU.text).lineLimit(1)

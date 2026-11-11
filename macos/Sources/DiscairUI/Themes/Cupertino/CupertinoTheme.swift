@@ -101,6 +101,32 @@ enum CU {
     static let card = bgPanel
     static let fill = bgFill
 
+    // Roles added in M10b so that no view needs a colour literal.
+    /// Label on the accent fill (the one primary action, a selected row).
+    static let onAccent = contentRGB.color
+    /// White marks and text over artwork or a dark gradient. Not a light-ground colour.
+    static let onMedia = Color.white
+    /// Source of shadows and dimming scrims; always used with an opacity.
+    static let shadowInk = Color.black
+    /// Ground of the full-screen Now Playing page, behind the artwork-derived washes.
+    static let playerGround = CURGB(0x3A2A1C).color
+    /// A colour derived from album artwork (hue, saturation, brightness). The one place a hue is built.
+    static func artwork(hue: Double, saturation: Double, brightness: Double) -> Color {
+        Color(hue: hue, saturation: saturation, brightness: brightness)
+    }
+
+    /// SF Symbols sizes: 16 in rows, 12 in small buttons (section 4.3).
+    enum Icon {
+        static func row(_ weight: SwiftUI.Font.Weight = .regular) -> SwiftUI.Font { .system(size: 16, weight: weight) }
+        static func small(_ weight: SwiftUI.Font.Weight = .regular) -> SwiftUI.Font { .system(size: 12, weight: weight) }
+        /// Transport controls in the player (previous, next).
+        static func transport(_ weight: SwiftUI.Font.Weight = .regular) -> SwiftUI.Font { .system(size: 24, weight: weight) }
+        /// The large play and pause symbol.
+        static func hero(_ weight: SwiftUI.Font.Weight = .regular) -> SwiftUI.Font { .system(size: 34, weight: weight) }
+        /// The service status symbol in an empty or summary state.
+        static func status(_ weight: SwiftUI.Font.Weight = .regular) -> SwiftUI.Font { .system(size: 32, weight: weight) }
+    }
+
     /// Mockup glass: rgba(246,246,249,.74) over the blur. Bare `.regular` is too clear over the pastel backdrop.
     /// Offscreen screenshot renders blank when the tint is applied, so tests switch it off (`RenderMode`).
     static var glass: Glass {
@@ -153,6 +179,8 @@ enum CU {
             let isCapitals: Bool
 
             var font: SwiftUI.Font { .system(size: size, weight: weight) }
+            /// The same size with another weight, for the Semibold or Medium labels the mockups use at a role's size.
+            func weighted(_ weight: SwiftUI.Font.Weight) -> SwiftUI.Font { .system(size: size, weight: weight) }
         }
 
         static let largeTitle = Role(size: 34, lineHeight: 40, weight: .bold, tracking: -0.4, isCapitals: false)
@@ -302,7 +330,7 @@ struct CupertinoSidebar: View {
                                 Image(systemName: "music.note.list").foregroundStyle(CU.textSecondary).frame(width: 18)
                                 Text(list.name).lineLimit(1)
                             }
-                            .font(CU.Font.body.font).foregroundStyle(CU.text)
+                            .font(CU.Font.body.weighted(.regular)).foregroundStyle(CU.text)
                             .padding(.horizontal, CU.Space.s).frame(height: 32, alignment: .leading)
                             .contentShape(Rectangle())
                         }
@@ -332,7 +360,7 @@ struct CupertinoSidebar: View {
                         .padding(.horizontal, 7).background(CU.accent, in: Capsule())
                 }
             }
-            .font(CU.Font.body.font)
+            .font(CU.Font.body.weighted(.regular))
             .foregroundStyle(on ? CU.accentStrong : CU.text)
             .padding(.horizontal, CU.Space.s).frame(height: 32)
             .background(on ? CU.accentTint : .clear, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
@@ -421,7 +449,7 @@ struct CupertinoArtworkSlot: View {
                     .foregroundStyle(state.connectionIsGood ? CU.success : CU.danger).accessibilityHidden(true)
                 Text(state.connectionLabel).lineLimit(1).minimumScaleFactor(0.8)
             }
-            .font(CU.Font.caption.font).foregroundStyle(CU.muted)
+            .font(CU.Font.caption.weighted(.regular)).foregroundStyle(CU.muted)
             .frame(width: Self.side, alignment: .leading).padding(.leading, 26).padding(.bottom, (CupertinoPlayerBar.height - 14) / 2)
             .accessibilityElement(children: .combine)
             .accessibilityLabel("Connection: \(state.connectionLabel)")

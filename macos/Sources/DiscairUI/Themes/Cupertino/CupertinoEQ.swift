@@ -15,7 +15,7 @@ struct CupertinoEQ: View {
                 card {
                     HStack {
                         Toggle("Equalizer", isOn: Binding(get: { p.eq.enabled }, set: { v in p.updateEQ { $0.enabled = v } }))
-                            .toggleStyle(.switch).tint(.green).fontWeight(.semibold)
+                            .toggleStyle(.switch).tint(CU.accent).fontWeight(.semibold)
                         Spacer()
                         Text(p.eq.enabled ? "On: \(p.eq.presetLabel)" : "Off. Settings are kept.").foregroundStyle(CU.muted)
                     }
@@ -32,7 +32,7 @@ struct CupertinoEQ: View {
                     }
                 }
                 card {
-                    HStack(alignment: .top, spacing: 6) {
+                    HStack(alignment: .top, spacing: 8) {
                         ForEach(0..<10, id: \.self) { i in band(i) }
                     }
                     .opacity(p.eq.enabled ? 1 : 0.5)
@@ -40,12 +40,12 @@ struct CupertinoEQ: View {
                 card {
                     HStack {
                         Toggle("Automatic pre-gain", isOn: Binding(get: { p.eq.preGainAuto }, set: { v in p.updateEQ { $0.preGainAuto = v } }))
-                            .toggleStyle(.switch).tint(.green)
+                            .toggleStyle(.switch).tint(CU.accent)
                         Spacer()
                         Text(String(format: "%+.1f dB", p.eq.preGainDB)).monospacedDigit().foregroundStyle(CU.muted)
                     }
                     if !p.eq.preGainAuto {
-                        HStack(spacing: 10) {
+                        HStack(spacing: 8) {
                             Button("−") { p.updateEQ { $0.preGainManual = max(-eqMaxGainDB, $0.preGainManual - eqStepDB) } }
                                 .buttonStyle(CapsuleButtonStyle(small: true)).accessibilityLabel("Lower pre-gain")
                             Button("+") { p.updateEQ { $0.preGainManual = min(0, $0.preGainManual + eqStepDB) } }
@@ -53,7 +53,7 @@ struct CupertinoEQ: View {
                         }
                     }
                     Text("Pre-gain lowers the signal before the bands so a boost does not clip. Automatic uses the largest boost.")
-                        .font(.system(size: 12)).foregroundStyle(CU.muted)
+                        .font(CU.Font.callout.weighted(.regular)).foregroundStyle(CU.muted)
                 }
             }
             .padding(.horizontal, CU.Space.xl).padding(.bottom, CU.Space.xl)
@@ -66,16 +66,16 @@ struct CupertinoEQ: View {
     }
 
     private func card<C: View>(@ViewBuilder _ c: () -> C) -> some View {
-        VStack(alignment: .leading, spacing: 12) { c() }
-            .padding(18).frame(maxWidth: .infinity, alignment: .leading)
+        VStack(alignment: .leading, spacing: 8) { c() }
+            .padding(16).frame(maxWidth: .infinity, alignment: .leading)
             .background(CU.card, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
     }
 
     private func band(_ i: Int) -> some View {
         let g = p.eq.gains[i]
         let hz = eqBandHz[i] >= 1000 ? "\(eqBandHz[i] / 1000) kHz" : "\(eqBandHz[i]) Hz"
-        return VStack(spacing: 6) {
-            Text(String(format: "%+.1f", g)).font(.system(size: 12, weight: .semibold)).monospacedDigit()
+        return VStack(spacing: 8) {
+            Text(String(format: "%+.1f", g)).font(CU.Font.callout.weighted(.semibold)).monospacedDigit()
             Button("+") { p.updateEQ { $0.nudge(band: i, steps: 1) } }
                 .buttonStyle(CapsuleButtonStyle(small: true)).accessibilityLabel("Raise \(hz)")
             ZStack(alignment: .top) {
@@ -89,7 +89,7 @@ struct CupertinoEQ: View {
             .accessibilityHidden(true)
             Button("−") { p.updateEQ { $0.nudge(band: i, steps: -1) } }
                 .buttonStyle(CapsuleButtonStyle(small: true)).accessibilityLabel("Lower \(hz)")
-            Text(hz).font(.system(size: 11)).foregroundStyle(CU.muted).lineLimit(1)
+            Text(hz).font(CU.Font.caption.weighted(.regular)).foregroundStyle(CU.muted).lineLimit(1)
         }
         .frame(maxWidth: .infinity)
         .accessibilityElement(children: .contain)

@@ -56,7 +56,7 @@ struct CupertinoSettings: View {
     }
 
     private func note(_ text: String) -> some View {
-        Text(text).font(.system(size: 12)).foregroundStyle(CU.textSecondary)
+        Text(text).font(CU.Font.callout.weighted(.regular)).foregroundStyle(CU.textSecondary)
     }
 
     /// Playback (redesign 5.3, mockup `settings--playback`): one grouped panel of rows. Each row has its words on the left and
@@ -99,7 +99,7 @@ struct CupertinoSettings: View {
             }
             Divider()
             playbackRow("Equalizer", detail: "10 bands. Now: \(player.eq.enabled ? player.eq.presetLabel : "Off").") {
-                Button { state.screen = .equalizer } label: { HStack(spacing: CU.Space.xs) { Text("Open"); Image(systemName: "chevron.right").font(.system(size: 11, weight: .semibold)) } }
+                Button { state.screen = .equalizer } label: { HStack(spacing: CU.Space.xs) { Text("Open"); Image(systemName: "chevron.right").font(CU.Icon.small(.semibold)) } }
                     .buttonStyle(CapsuleButtonStyle(small: true))
             }
         }
@@ -135,13 +135,13 @@ struct CupertinoSettings: View {
         return card("Music folder over SMB") {
             HStack(spacing: CU.Space.s) {
                 CUStatusLabel(share.isReady ? .connected : (share.settings.enabled ? .notUpdating : .notSetUp))
-                Text(share.statusLine).font(.system(size: 12)).foregroundStyle(CU.textSecondary)
+                Text(share.statusLine).font(CU.Font.callout.weighted(.regular)).foregroundStyle(CU.textSecondary)
             }
             .accessibilityElement(children: .combine)
             .accessibilityLabel("Music folder status. \(share.statusLine)")
             HStack(spacing: CU.Space.m) {
                 Toggle("Use the music folder", isOn: Binding(get: { share.settings.enabled }, set: { saveShare(); share.setEnabled($0) }))
-                    .toggleStyle(.switch).tint(CU.accent).font(.system(size: 13, weight: .semibold))
+                    .toggleStyle(.switch).tint(CU.accent).font(CU.Font.body.weighted(.semibold))
                 Button("Connect now") { saveShare(); Task { await share.mountNow() } }
                     .buttonStyle(CapsuleButtonStyle(small: true)).disabled(!share.settings.enabled || share.status == .mounting)
             }
@@ -173,11 +173,11 @@ struct CupertinoSettings: View {
         card("Connection") {
             HStack(spacing: CU.Space.s) {
                 CUStatusLabel(s.isGood ? .connected : (s.status == .connecting ? .unknown : .noAnswer))
-                Text(s.label).font(.system(size: 13, weight: .semibold))
+                Text(s.label).font(CU.Font.body.weighted(.semibold))
                 if s.isUnencrypted { unencryptedPill }
             }
             .accessibilityElement(children: .combine)
-            Text(s.statusDetail).font(.system(size: 13)).foregroundStyle(CU.textSecondary)
+            Text(s.statusDetail).font(CU.Font.body.weighted(.regular)).foregroundStyle(CU.textSecondary)
             HStack {
                 Button(s.canRetry ? "Retry" : "Connect") { Task { await s.connect() } }
                     .buttonStyle(CapsuleButtonStyle(primary: true))
@@ -187,7 +187,7 @@ struct CupertinoSettings: View {
     }
 
     private var unencryptedPill: some View {
-        Text("Unencrypted").font(.system(size: 11, weight: .semibold)).foregroundStyle(CU.warning)
+        Text("Unencrypted").font(CU.Font.caption.weighted(.semibold)).foregroundStyle(CU.warning)
             .padding(.horizontal, CU.Space.s).frame(height: 24)
             .background(CU.warningTint, in: Capsule())
     }
@@ -198,16 +198,16 @@ struct CupertinoSettings: View {
             ForEach(s.profiles.profiles) { p in
                 let active = s.activeProfile?.id == p.id
                 let chosen = s.profiles.overrideID == p.id
-                HStack(spacing: 10) {
+                HStack(spacing: 8) {
                     Image(systemName: active ? "checkmark.circle.fill" : "circle").foregroundStyle(active ? CU.success : CU.textSecondary)
                         .accessibilityHidden(true)
-                    VStack(alignment: .leading, spacing: 1) {
+                    VStack(alignment: .leading, spacing: 0) {
                         Text(p.name).fontWeight(.semibold)
                         Text("\(p.network.displayName) · \(p.librarianURL.absoluteString) · \(p.navidromeURL.absoluteString)\(p.listenBrainzUsername.isEmpty ? "" : " · ListenBrainz \(p.listenBrainzUsername)")")
-                            .font(.system(size: 11)).foregroundStyle(CU.textSecondary).lineLimit(1)
+                            .font(CU.Font.caption.weighted(.regular)).foregroundStyle(CU.textSecondary).lineLimit(1)
                     }
                     Spacer()
-                    if p.isUnencrypted { Text("Unencrypted").font(.system(size: 11)).foregroundStyle(CU.textSecondary) }
+                    if p.isUnencrypted { Text("Unencrypted").font(CU.Font.caption.weighted(.regular)).foregroundStyle(CU.textSecondary) }
                     Button(chosen ? "Automatic" : "Use this") {
                         run { try s.setOverride(chosen ? nil : p.id); Task { await s.connect() } }
                     }
@@ -233,7 +233,7 @@ struct CupertinoSettings: View {
             }
             .buttonStyle(CapsuleButtonStyle())
             Text("Plain http is accepted only for home-network addresses, .local names and Tailscale addresses.")
-                .font(.system(size: 11)).foregroundStyle(CU.textSecondary)
+                .font(CU.Font.caption.weighted(.regular)).foregroundStyle(CU.textSecondary)
         }
     }
 
@@ -244,7 +244,7 @@ struct CupertinoSettings: View {
                 CUStatusLabel(lb.isConnected ? .connected : .notSetUp)
                 if lb.isConnected {
                     Text("as \(lb.settings?.username ?? "")\(lb.settings?.tokenConfigured == true ? " (token saved)" : "")")
-                        .font(.system(size: 13)).foregroundStyle(CU.textSecondary)
+                        .font(CU.Font.body.weighted(.regular)).foregroundStyle(CU.textSecondary)
                 }
             }
             HStack(alignment: .bottom, spacing: CU.Space.s) {
@@ -256,7 +256,7 @@ struct CupertinoSettings: View {
             }
             if let n = lb.note { CUNotice(kind: .warning, lead: "ListenBrainz.", message: n) }
             Text("The server reads your listens from ListenBrainz to describe your taste. The username is enough for public listens; the token is only for private profiles. Both are kept in the macOS Keychain and sent to the server at every startup; the token is never shown again.")
-                .font(.system(size: 11)).foregroundStyle(CU.textSecondary)
+                .font(CU.Font.caption.weighted(.regular)).foregroundStyle(CU.textSecondary)
         }
         .task { await lb.load(librarian: state.session?.librarian) }
     }
@@ -271,13 +271,13 @@ struct CupertinoSettings: View {
                   save: { try s.saveLogin(.librarian, username: libUser, password: libPass); libPass = "" },
                   remove: { try s.removeLogin(.librarian) })
             Text("Stored in the macOS Keychain on this Mac only. Passwords are never shown.")
-                .font(.system(size: 11)).foregroundStyle(CU.textSecondary)
+                .font(CU.Font.caption.weighted(.regular)).foregroundStyle(CU.textSecondary)
         }
     }
 
     private func login(_ title: String, saved: String?, user: Binding<String>, pass: Binding<String>,
                        save: @escaping () throws -> Void, remove: @escaping () throws -> Void) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Text(title).fontWeight(.semibold)
                 Text(saved.map { "Saved for \($0)" } ?? "Not saved").foregroundStyle(CU.textSecondary)

@@ -191,7 +191,7 @@ struct CupertinoHome: View {
             HStack(alignment: .top, spacing: CU.Space.m) {
                 CoverView(album: a).frame(width: coverSide, height: coverSide)
                     .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-                    .shadow(color: .black.opacity(0.16), radius: 12, y: 4)
+                    .shadow(color: CU.shadowInk.opacity(0.16), radius: 12, y: 4)
                 VStack(alignment: .leading, spacing: CU.Space.s) {
                     HStack {
                         HomeEyebrow("Today's pick · \(position.label)")
@@ -224,7 +224,7 @@ struct CupertinoHome: View {
 
     private func stepButton(_ symbol: String, _ label: String, _ enabled: Bool, _ action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            Image(systemName: symbol).font(.system(size: 12, weight: .semibold)).frame(width: 24, height: 24).contentShape(Rectangle())
+            Image(systemName: symbol).font(CU.Icon.small(.semibold)).frame(width: 24, height: 24).contentShape(Rectangle())
         }
         .buttonStyle(.plain).foregroundStyle(enabled ? CU.textSecondary : CU.textTertiary).disabled(!enabled).accessibilityLabel(label)
     }
@@ -233,7 +233,7 @@ struct CupertinoHome: View {
     private func suggestedTrack(_ title: String, album a: AlbumItem) -> some View {
         HStack(spacing: CU.Space.s) {
             Button { if a.owned { state.playAlbum(a) } else { state.actions.getSong(album: a, title: title, trackNumber: nil) } } label: {
-                Image(systemName: a.owned ? "play.fill" : "arrow.down").font(.system(size: 12, weight: .semibold)).foregroundStyle(CU.text)
+                Image(systemName: a.owned ? "play.fill" : "arrow.down").font(CU.Icon.small(.semibold)).foregroundStyle(CU.text)
                     .frame(width: 32, height: 32).background(CU.bgFillOnPanel, in: Circle())
             }
             .buttonStyle(.plain).accessibilityLabel(a.owned ? "Play \(title)" : "Get the song \(title)")
@@ -288,7 +288,7 @@ struct CupertinoHome: View {
             Text("Picks come from your listening history. Connect Last.fm or ListenBrainz in Services and the first list is built within a few minutes. Nothing is suggested from guesses.")
                 .cu(CU.Font.body).foregroundStyle(CU.textSecondary).fixedSize(horizontal: false, vertical: true)
             HStack(spacing: CU.Space.s) {
-                Button("Open Services") { state.screen = .settings }.buttonStyle(CapsuleButtonStyle(primary: true, large: true))
+                Button("Open Services") { state.screen = .settings }.buttonStyle(CapsuleButtonStyle(large: true))
                 Button("Browse New releases") { state.screen = .discover }.buttonStyle(CapsuleButtonStyle(large: true))
             }
             .padding(.top, CU.Space.s)
@@ -645,7 +645,7 @@ struct CupertinoHome: View {
 
     private func activityRow(_ row: HomeScreen.ActivityRow) -> some View {
         HStack(alignment: .top, spacing: CU.Space.s) {
-            Image(systemName: row.symbol).font(.system(size: 16)).foregroundStyle(CU.textSecondary).frame(width: 20).padding(.top, 1).accessibilityHidden(true)
+            Image(systemName: row.symbol).font(CU.Icon.row()).foregroundStyle(CU.textSecondary).frame(width: 20).padding(.top, 0).accessibilityHidden(true)
             VStack(alignment: .leading, spacing: CU.Space.xs) {
                 HStack(spacing: CU.Space.s) {
                     Text(row.name).cu(CU.Font.headline).foregroundStyle(CU.text)
@@ -684,7 +684,7 @@ struct CupertinoHome: View {
                         Button { state.open(album: a) } label: {
                             VStack(alignment: .leading, spacing: CU.Space.xs) {
                                 CoverView(album: a).clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-                                    .shadow(color: .black.opacity(0.16), radius: 12, y: 4).padding(.bottom, CU.Space.xs)
+                                    .shadow(color: CU.shadowInk.opacity(0.16), radius: 12, y: 4).padding(.bottom, CU.Space.xs)
                                 Text(a.title).cu(CU.Font.headline).foregroundStyle(CU.text).lineLimit(1)
                                 Text(a.artist).cu(CU.Font.body).foregroundStyle(CU.textSecondary).lineLimit(1)
                             }

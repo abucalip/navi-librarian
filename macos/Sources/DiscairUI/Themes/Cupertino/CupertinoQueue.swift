@@ -14,12 +14,12 @@ struct CupertinoAlbumsGrid: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
-                if showHeader { Text(recent ? "Recently Added" : "Albums").font(CU.title(34)).padding(.top, 4).padding(.bottom, 14) }
+                if showHeader { Text(recent ? "Recently Added" : "Albums").font(CU.title(34)).padding(.top, 4).padding(.bottom, 16) }
                 if state.library.phase == .loading { Text("Loading your library…").foregroundStyle(CU.muted).padding(.bottom, 8) }
                 if case .failed(let m) = state.library.phase { CUErrorLine(message: m).padding(.bottom, 8) }
                 let shown = LibrarySearch.albums(state.visible(recent ? state.library.recent : state.library.searchableAlbums), query: query)
                 if shown.isEmpty, !query.isEmpty { Text("No albums match.").foregroundStyle(CU.muted) }
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 128, maximum: 128), spacing: 18, alignment: .top)], alignment: .leading, spacing: 18) {
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 128, maximum: 128), spacing: 16, alignment: .top)], alignment: .leading, spacing: 16) {
                     ForEach(shown) { a in AlbumTile(state: state, album: a) }
                 }
             }
@@ -42,15 +42,15 @@ struct CupertinoQueueInspector: View {
             HStack {
                 segmented
                 Spacer()
-                Text(tab == .saved ? "\(state.savedQueues.queues.count) saved" : live ? liveSummary : "8 songs · 52 min").foregroundStyle(CU.muted).font(.system(size: 13)).lineLimit(1).minimumScaleFactor(0.8)
+                Text(tab == .saved ? "\(state.savedQueues.queues.count) saved" : live ? liveSummary : "8 songs · 52 min").foregroundStyle(CU.muted).font(CU.Font.body.weighted(.regular)).lineLimit(1).minimumScaleFactor(0.8)
             }
-            .padding(.bottom, 12)
+            .padding(.bottom, 16)
 
-            HStack(spacing: 10) {
-                Image(systemName: "dot.radiowaves.left.and.right").font(.system(size: 16))
-                VStack(alignment: .leading, spacing: 1) {
+            HStack(spacing: 8) {
+                Image(systemName: "dot.radiowaves.left.and.right").font(CU.Icon.row())
+                VStack(alignment: .leading, spacing: 0) {
                     Text("Autoplay").fontWeight(.semibold)
-                    Text(state.radio.status ?? "Radio from this, similar artists in your library").font(.system(size: 12)).foregroundStyle(CU.muted).lineLimit(2)
+                    Text(state.radio.status ?? "Radio from this, similar artists in your library").font(CU.Font.callout.weighted(.regular)).foregroundStyle(CU.muted).lineLimit(2)
                 }
                 Spacer(minLength: 4)
                 Button("Radio") { state.startRadio() }.buttonStyle(CapsuleButtonStyle())
@@ -61,14 +61,14 @@ struct CupertinoQueueInspector: View {
                         .disabled(state.radio.busy || state.player.current == nil)
                         .accessibilityLabel("Add songs that sound like this song")
                 }
-                Toggle("Autoplay", isOn: Bindable(state.radio).autoplay).labelsHidden().toggleStyle(.switch).tint(.green)
+                Toggle("Autoplay", isOn: Bindable(state.radio).autoplay).labelsHidden().toggleStyle(.switch).tint(CU.accent)
             }
-            .padding(.horizontal, 8).padding(.top, 8).padding(.bottom, 12)
+            .padding(.horizontal, 8).padding(.top, 8).padding(.bottom, 16)
             .overlay(alignment: .bottom) { Rectangle().fill(CU.ink.opacity(0.08)).frame(height: 1) }
             .padding(.bottom, 8)
 
             // The playing album's Track images (idea 6): shown only when the album has some.
-            TrackSheetCards(state: state).padding(.bottom, 10)
+            TrackSheetCards(state: state).padding(.bottom, 8)
             ScrollViewReader { proxy in
             ScrollView {
                 VStack(spacing: 0) {
@@ -95,10 +95,10 @@ struct CupertinoQueueInspector: View {
                 Button("Clear") { if live { state.player.clearUpNext() } }.buttonStyle(CapsuleButtonStyle())
                     .disabled(live && state.player.queue.upNext.isEmpty)
             }
-            .padding(.top, 10)
+            .padding(.top, 8)
         }
-        .font(.system(size: 13))
-        .padding(.top, 66).padding([.horizontal, .bottom], 18)
+        .font(CU.Font.body.weighted(.regular))
+        .padding(.top, 66).padding([.horizontal, .bottom], 16)
         .frame(width: Self.width).frame(maxHeight: .infinity)
         .glassEffect(CU.glass, in: Rectangle())
         .overlay(alignment: .leading) { Rectangle().fill(CU.ink.opacity(0.08)).frame(width: 1) }
@@ -112,10 +112,10 @@ struct CupertinoQueueInspector: View {
         let list = state.savedQueues.queues
         if list.isEmpty { Text("No saved queues yet. Save the queue to bring it back later.").foregroundStyle(CU.muted).padding(8) }
         ForEach(list) { q in
-            HStack(spacing: 10) {
+            HStack(spacing: 8) {
                 VStack(alignment: .leading, spacing: 0) {
                     Text(q.name).fontWeight(.semibold).lineLimit(1)
-                    Text("\(q.items.count) songs · \(q.minutes) min").font(.system(size: 12)).foregroundStyle(CU.muted)
+                    Text("\(q.items.count) songs · \(q.minutes) min").font(CU.Font.callout.weighted(.regular)).foregroundStyle(CU.muted)
                 }
                 Spacer(minLength: 4)
                 Button("Play") { state.playSavedQueue(q.id) }.buttonStyle(CapsuleButtonStyle())
@@ -127,7 +127,7 @@ struct CupertinoQueueInspector: View {
                 .menuStyle(.borderlessButton).menuIndicator(.hidden).fixedSize()
                 .accessibilityLabel("Actions for \(q.name)")
             }
-            .padding(.horizontal, 8).padding(.vertical, 6)
+            .padding(.horizontal, 8).padding(.vertical, 8)
             .accessibilityElement(children: .contain)
         }
     }
@@ -174,13 +174,13 @@ struct CupertinoQueueInspector: View {
     }
 
     private func songRow<T: View>(_ q: QueueItem, time: String, playing: Bool, grab: ReorderGrab? = nil, onDouble: (() -> Void)? = nil, @ViewBuilder trailing: () -> T = { EmptyView() }) -> some View {
-        HStack(spacing: 11) {
-            HStack(spacing: 11) {
+        HStack(spacing: 8) {
+            HStack(spacing: 8) {
             CoverView(album: AlbumItem(id: -1, title: q.album, artist: q.artist, year: 0, genre: "", format: "", owned: true, hue: 200, coverArt: q.coverArt))
-                .frame(width: 40).clipShape(RoundedRectangle(cornerRadius: 5, style: .continuous)).accessibilityHidden(true)
+                .frame(width: 40).clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous)).accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 0) {
                 Text(q.title).fontWeight(.semibold).lineLimit(1)
-                Text(q.artist).font(.system(size: 12)).foregroundStyle(CU.muted).lineLimit(1)
+                Text(q.artist).font(CU.Font.callout.weighted(.regular)).foregroundStyle(CU.muted).lineLimit(1)
             }
             Spacer(minLength: 4)
             }
@@ -189,11 +189,11 @@ struct CupertinoQueueInspector: View {
                 if playing { PlayingBars(active: state.player.isPlaying) }
                 Text(time).monospacedDigit()
             }
-            .font(.system(size: 12)).foregroundStyle(CU.muted)
+            .font(CU.Font.callout.weighted(.regular)).foregroundStyle(CU.muted)
             trailing()
         }
-        .padding(.horizontal, 8).padding(.vertical, 6)
-        .background(playing ? CU.accent.opacity(0.12) : .clear, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+        .padding(.horizontal, 8).padding(.vertical, 8)
+        .background(playing ? CU.accent.opacity(0.12) : .clear, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
         .contentShape(Rectangle())
         .onTapGesture(count: 2) { onDouble?() }
         .accessibilityElement(children: .combine)
@@ -204,14 +204,14 @@ struct CupertinoQueueInspector: View {
             seg("Queue", on: tab == .queue) { tab = .queue }
             seg("Saved", on: tab == .saved) { tab = .saved }
         }
-        .padding(3).background(Color(red: 0.47, green: 0.47, blue: 0.5).opacity(0.14), in: Capsule())
+        .padding(4).background(CU.textSecondary.opacity(0.14), in: Capsule())
     }
 
     private func seg(_ t: String, on: Bool, _ action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            Text(t).font(.system(size: 13, weight: on ? .semibold : .medium)).lineLimit(1).fixedSize().padding(.horizontal, 14).padding(.vertical, 3)
-                .background(on ? Color.white : .clear, in: Capsule())
-                .shadow(color: .black.opacity(on ? 0.15 : 0), radius: 1.5, y: 1)
+            Text(t).font(CU.Font.body.weighted(on ? .semibold : .medium)).lineLimit(1).fixedSize().padding(.horizontal, 16).padding(.vertical, 4)
+                .background(on ? CU.onAccent : .clear, in: Capsule())
+                .shadow(color: CU.shadowInk.opacity(on ? 0.15 : 0), radius: 1.5, y: 1)
         }
         .buttonStyle(.plain)
         .accessibilityAddTraits(on ? .isSelected : [])
@@ -219,21 +219,21 @@ struct CupertinoQueueInspector: View {
 
     private func row(_ i: Int, _ q: (title: String, album: Int, time: String)) -> some View {
         let a = Fixtures.albums[q.album]
-        return HStack(spacing: 11) {
-            CoverView(album: a).frame(width: 40).clipShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
+        return HStack(spacing: 8) {
+            CoverView(album: a).frame(width: 40).clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
             VStack(alignment: .leading, spacing: 0) {
                 Text(q.title).fontWeight(.semibold).lineLimit(1)
-                Text(a.artist).font(.system(size: 12)).foregroundStyle(CU.muted).lineLimit(1)
+                Text(a.artist).font(CU.Font.callout.weighted(.regular)).foregroundStyle(CU.muted).lineLimit(1)
             }
             Spacer(minLength: 4)
             HStack(spacing: 4) {
                 if i == 0 { Image(systemName: "waveform").accessibilityLabel("Playing") }
                 Text(q.time).monospacedDigit()
             }
-            .font(.system(size: 12)).foregroundStyle(CU.muted)
+            .font(CU.Font.callout.weighted(.regular)).foregroundStyle(CU.muted)
         }
-        .padding(.horizontal, 8).padding(.vertical, 6)
-        .background(i == 0 ? CU.accent.opacity(0.12) : .clear, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+        .padding(.horizontal, 8).padding(.vertical, 8)
+        .background(i == 0 ? CU.accent.opacity(0.12) : .clear, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
         .accessibilityElement(children: .combine)
     }
 }

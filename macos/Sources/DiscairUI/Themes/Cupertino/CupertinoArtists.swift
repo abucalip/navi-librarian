@@ -18,21 +18,21 @@ struct CupertinoArtistsIndex: View {
     var body: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 0) {
-                if showHeader { Text("Artists").font(CU.title(34)).padding(.top, 4).padding(.bottom, 6) }
+                if showHeader { Text("Artists").font(CU.title(34)).padding(.top, 4).padding(.bottom, 8) }
                 if state.library.phase == .loading { Text("Loading your library…").foregroundStyle(CU.muted).padding(.bottom, 8) }
                 if case .failed(let m) = state.library.phase { CUErrorLine(message: m).padding(.bottom, 8) }
                 ForEach(groups, id: \.letter) { g in
-                    Text(g.letter).font(CU.title(20)).foregroundStyle(CU.accent).padding(.top, 18).padding(.bottom, 6)
+                    Text(g.letter).font(CU.title(20)).foregroundStyle(CU.accent).padding(.top, 16).padding(.bottom, 8)
                         .accessibilityAddTraits(.isHeader)
-                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 220), spacing: 12, alignment: .leading)], alignment: .leading, spacing: 2) {
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 220), spacing: 8, alignment: .leading)], alignment: .leading, spacing: 4) {
                         ForEach(g.artists) { a in
                             Button { state.open(artist: a) } label: {
                                 HStack(spacing: 8) {
                                     Text(a.name).lineLimit(1)
                                     Spacer(minLength: 4)
-                                    Text("\(a.albumCount)").font(.system(size: 12)).monospacedDigit().foregroundStyle(CU.muted)
+                                    Text("\(a.albumCount)").font(CU.Font.callout.weighted(.regular)).monospacedDigit().foregroundStyle(CU.muted)
                                 }
-                                .padding(.horizontal, 10).padding(.vertical, 6)
+                                .padding(.horizontal, 8).padding(.vertical, 8)
                                 .contentShape(Rectangle())
                             }
                             .buttonStyle(.plain)
@@ -41,7 +41,7 @@ struct CupertinoArtistsIndex: View {
                     }
                 }
             }
-            .font(.system(size: 13.5))
+            .font(CU.Font.body.weighted(.regular))
             .padding(.horizontal, CU.Space.xl).padding(.bottom, CU.Space.xl)
         }
         .scrollEdgeEffectStyle(.hard, for: .top)

@@ -80,14 +80,15 @@ struct CapsuleButtonStyle: ButtonStyle {
 
     private var labelColor: Color {
         if !isEnabled { return CU.textTertiary }
-        if primary || translucent { return .white }
+        if primary { return CU.onAccent }
+        if translucent { return CU.onMedia }
         if destructive { return CU.danger }
         return outlined ? CU.textSecondary : CU.text
     }
 
     private func fill(neutral: Color, pressed: Bool) -> Color {
         if primary { return isEnabled ? (pressed ? CU.accentStrong : CU.accent) : CU.bgFill }
-        if translucent { return Color.white.opacity(0.28) }
+        if translucent { return CU.onMedia.opacity(0.28) }
         return outlined ? .clear : neutral
     }
 }
@@ -116,14 +117,14 @@ struct CUSegmented<Value: Hashable>: View {
                 let on = option.value == selection
                 Button { selection = option.value } label: {
                     Text(option.label)
-                        .font(.system(size: 12, weight: on ? .semibold : .medium))
+                        .font(CU.Font.callout.weighted(on ? .semibold : .medium))
                         .foregroundStyle(on ? CU.text : CU.textSecondary)
-                        .padding(.horizontal, 12).frame(height: segmentHeight)
+                        .padding(.horizontal, 16).frame(height: segmentHeight)
                         .background {
                             if on {
-                                RoundedRectangle(cornerRadius: 6, style: .continuous).fill(CU.content)
-                                    .shadow(color: .black.opacity(0.14), radius: 1.5, y: 1)
-                                    .shadow(color: .black.opacity(0.06), radius: 0.5)
+                                RoundedRectangle(cornerRadius: 4, style: .continuous).fill(CU.content)
+                                    .shadow(color: CU.shadowInk.opacity(0.14), radius: 1.5, y: 1)
+                                    .shadow(color: CU.shadowInk.opacity(0.06), radius: 0.5)
                             }
                         }
                         .contentShape(Rectangle())
@@ -132,7 +133,7 @@ struct CUSegmented<Value: Hashable>: View {
                 .accessibilityAddTraits(on ? .isSelected : [])
             }
         }
-        .padding(2)
+        .padding(2)   // spec exception: the segmented track is padded 2 (section 4.3)
         .background(inPanel ? CU.bgFillOnPanel : CU.bgFill, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
         .accessibilityElement(children: .contain)
         .accessibilityLabel(accessibilityName ?? "")
@@ -209,10 +210,10 @@ struct CUStatusLabel: View {
 
     var body: some View {
         HStack(spacing: CU.Space.xs) {
-            Image(systemName: status.symbol).font(.system(size: 12)).accessibilityHidden(true)
+            Image(systemName: status.symbol).font(CU.Icon.small()).accessibilityHidden(true)
             Text(status.text)
         }
-        .font(.system(size: 12, weight: .semibold))
+        .font(CU.Font.callout.weighted(.semibold))
         .foregroundStyle(status.color)
         .lineLimit(1)
         .accessibilityElement(children: .ignore)
@@ -230,7 +231,7 @@ struct CUErrorLine: View {
 
     var body: some View {
         Label(message, systemImage: "exclamationmark.triangle.fill")
-            .foregroundStyle(onDark ? Color.white : CU.danger)
+            .foregroundStyle(onDark ? CU.onMedia : CU.danger)
             .accessibilityLabel("Problem: \(message)")
     }
 }
@@ -274,9 +275,9 @@ struct CUNotice: View {
 
     var body: some View {
         HStack(alignment: .top, spacing: CU.Space.s) {
-            Image(systemName: symbol).font(.system(size: 14)).foregroundStyle(color).padding(.top, 2).accessibilityHidden(true)
+            Image(systemName: symbol).font(CU.Icon.row()).foregroundStyle(color).padding(.top, 4).accessibilityHidden(true)
             (Text(lead).fontWeight(.semibold) + Text(message.isEmpty ? "" : " " + message))
-                .font(.system(size: 13)).foregroundStyle(color)
+                .font(CU.Font.body.weighted(.regular)).foregroundStyle(color)
                 .frame(maxWidth: .infinity, alignment: .leading)
             if let actionTitle, let action {
                 Button(actionTitle, action: action)
@@ -306,12 +307,12 @@ struct CUField: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: CU.Space.xs) {
-            Text(label).font(.system(size: 11, weight: .semibold)).foregroundStyle(CU.textSecondary)
+            Text(label).font(CU.Font.caption.weighted(.semibold)).foregroundStyle(CU.textSecondary)
             Group {
                 if secure { SecureField(placeholder, text: $text) } else { TextField(placeholder, text: $text) }
             }
             .textFieldStyle(.plain).autocorrectionDisabled()
-            .font(.system(size: 13)).foregroundStyle(CU.text)
+            .font(CU.Font.body.weighted(.regular)).foregroundStyle(CU.text)
             .focused($focused)
             .padding(.horizontal, CU.Space.s).frame(height: 28)
             .background(CU.content, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
@@ -321,7 +322,7 @@ struct CUField: View {
             }
             .overlay {
                 if focused && error == nil {
-                    RoundedRectangle(cornerRadius: 10.5, style: .continuous).inset(by: -2.5).stroke(CU.accent.opacity(0.28), lineWidth: 3)
+                    RoundedRectangle(cornerRadius: 8, style: .continuous).inset(by: -2.5).stroke(CU.accent.opacity(0.28), lineWidth: 3)
                 }
             }
             .accessibilityLabel(label)
@@ -330,9 +331,9 @@ struct CUField: View {
                     Image(systemName: "exclamationmark.triangle").accessibilityHidden(true)
                     Text(error)
                 }
-                .font(.system(size: 11)).foregroundStyle(CU.danger)
+                .font(CU.Font.caption.weighted(.regular)).foregroundStyle(CU.danger)
             } else if let help {
-                Text(help).font(.system(size: 11)).foregroundStyle(CU.textSecondary)
+                Text(help).font(CU.Font.caption.weighted(.regular)).foregroundStyle(CU.textSecondary)
             }
         }
         .frame(width: width, alignment: .leading)
@@ -350,10 +351,10 @@ struct CUSwitchRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: CU.Space.xs) {
             Toggle(isOn: $isOn) {
-                Text(title).font(.system(size: 13, weight: .semibold)).foregroundStyle(CU.text)
+                Text(title).font(CU.Font.body.weighted(.semibold)).foregroundStyle(CU.text)
             }
             .toggleStyle(.switch).tint(CU.accent)
-            if let detail { Text(detail).font(.system(size: 12)).foregroundStyle(CU.textSecondary) }
+            if let detail { Text(detail).font(CU.Font.callout.weighted(.regular)).foregroundStyle(CU.textSecondary) }
         }
     }
 }
