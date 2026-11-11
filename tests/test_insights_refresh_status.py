@@ -10,7 +10,7 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from app.api.dependencies import get_librarian
-from app.api.insights_refresh_status import router as status_router
+from app.api.insight_lens_status import router as status_router
 from app.services.insights_refresh import CHECK_SECONDS
 from intelligence.insights.refresh_status import LENS_JOBS, lens_refresh_status
 from intelligence.jobs import runner

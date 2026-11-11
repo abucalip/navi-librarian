@@ -131,7 +131,7 @@ Built in `intelligence/taste/listens_by_day.py` (D-016: nothing added to `navidr
 
 ## GET /api/insights/refresh/status (redesign D3, redesign S2)
 
-Served by `app/api/insights_refresh_status.py`; logic in `intelligence/insights/refresh_status.py` (D-016: nothing added to `navidrome_server.py`). Home's Server activity row for the insight lenses reads it; without it the row falls back to when the app last read the cards.
+Served by `app/api/insight_lens_status.py`; logic in `intelligence/insights/refresh_status.py` (D-016: nothing added to `navidrome_server.py`). Home's Server activity row for the insight lenses reads it; without it the row falls back to when the app last read the cards.
 
 - The lens refresh loop (`app/services/insights_refresh.py`) runs two jobs, `insights_forgotten_gems` and `insights_provider_lenses`. The status reads both and answers one result: `status` (newest run of either job, the highest run id), `last_good` (newest succeeded run of either job), `running` (true while either job has a running run), `min_interval` (the loop cadence, `CHECK_SECONDS`, 21600 seconds) and `retry_after` (seconds until the loop is next due: `last_good.finished_at` plus `min_interval`, minus now, clamped at 0; 0 when no run has succeeded yet). The loop has no minimum-interval guard of its own; `retry_after` is an estimate of the next tick, and it does not know whether a lens is switched on.
 - Same shape as `GET /api/insights/taste/refresh/status`. The client writes "Refreshed 2 hours ago · next in 4 hours" from `last_good.finished_at` and `retry_after`. Read-only: it reads `job_runs` only, makes no provider call and starts no job. A store read failure is `502`.
