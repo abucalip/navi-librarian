@@ -60,6 +60,9 @@ public final class InsightsModel {
         }
     }
 
+    /// Preview and test seam: shows a prepared answer without a server.
+    func showForPreview(_ r: InsightsResponse, live: Bool = true) { response = r; isLive = live; loadedAt = live ? Date() : nil }
+
     public func cards(_ kind: String) -> [InsightCard] { (response.lenses[kind]?.cards ?? []).filter { !hidden.contains($0.id) } }
     public func isEnabled(_ kind: String) -> Bool { response.lenses[kind]?.enabled ?? false }
     /// Kinds shown on the dashboard: the five known ones always (so "off" is visible), then any kind the server added.

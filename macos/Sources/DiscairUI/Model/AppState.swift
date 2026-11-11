@@ -102,6 +102,10 @@ public final class AppState {
     public let library = LibraryModel()
     /// The figures behind the Cupertino Home (redesign M5). Rebuilt by `refreshHomeDashboard()`; never read from the network.
     public private(set) var homeDashboard = HomeDashboard.notLoaded
+    /// What the server reports it can do (graph coverage, ListenBrainz), read once per connection for Home's Server activity.
+    public private(set) var serverCapabilities: ServerCapabilities?
+    @ObservationIgnored private let homeDefaults: UserDefaults
+    private static let neverPlayedKey = "discair.home.neverPlayedReadings"
     public let smart = SmartPlaylistModel()
     /// Saved queues and Radio from this (M6 slice 12).
     public let savedQueues: SavedQueueStore
@@ -142,6 +146,7 @@ public final class AppState {
         let defaults = session == nil ? (UserDefaults(suiteName: "discair-preview-\(UUID().uuidString)") ?? .standard) : UserDefaults.standard
         let acquisition = AcquisitionModel(defaults: defaults)
         self.acquisition = acquisition
+        self.homeDefaults = defaults
         self.session = session
         self.themeID = themeID
         self.screen = screen
@@ -213,6 +218,7 @@ public final class AppState {
         if let librarian = session.librarian {
             radio.setSonicAvailable(await librarian.sonicAvailable())
             pathsAvailable = await librarian.pathsAvailable()
+            serverCapabilities = try? await librarian.capabilities()
         }
         await library.load(navidrome: navidrome, librarian: session.librarian)
         await library.loadSongs(navidrome: navidrome)
@@ -230,11 +236,24 @@ public final class AppState {
         let albums: [NavidromeAlbum]? = !all.isEmpty ? all : (library.phase == .loaded && library.artists.isEmpty ? [] : nil)
         // The Librarian counts as unreachable only when it is set up and its recommendations failed to read (M6 adds a real check).
         let librarianUp = session?.librarian == nil || library.picksNote?.hasPrefix("Recommendations are unavailable") != true
+        // The never-played count is compared with the first reading since the first of last month; one reading is kept per day.
+        let calendar = Calendar(identifier: .gregorian)
+        let readings = storedNeverPlayedReadings()
         let input = HomeDashboard.Inputs(
             albums: albums, jobs: acquisition.visibleJobs, taste: taste.profiles,
             picksCount: session?.librarian == nil ? nil : visible(library.missing).count,
-            librarianReachable: librarianUp, now: now)
+            librarianReachable: librarianUp, neverPlayedBaseline: HomeScreen.baseline(readings, now: now, calendar: calendar),
+            now: now, calendar: calendar)
         homeDashboard = await Task.detached(priority: .userInitiated) { HomeDashboard.build(input) }.value
+        if let never = homeDashboard.neverPlayed {
+            let next = HomeScreen.recording(readings, count: never, now: now, calendar: calendar)
+            if next != readings, let data = try? JSONEncoder().encode(next) { homeDefaults.set(data, forKey: Self.neverPlayedKey) }
+        }
+    }
+
+    private func storedNeverPlayedReadings() -> [HomeScreen.Reading] {
+        guard let data = homeDefaults.data(forKey: Self.neverPlayedKey) else { return [] }
+        return (try? JSONDecoder().decode([HomeScreen.Reading].self, from: data)) ?? []
     }
 
     /// Saved pages are kept per Navidrome user. (They are not tied to the server address, so the LAN and Tailscale
@@ -412,6 +431,25 @@ public final class AppState {
         smart.add(action.playlist)
         screen = .smartPlaylists
     }
+    /// Home's Never played tile: opens a smart playlist of songs with no plays. It is made once and reused; nothing is saved to
+    /// Navidrome until the owner saves it.
+    public func openNeverPlayedPlaylist() {
+        let name = "Never played"
+        if let existing = smart.lists.first(where: { $0.name == name }) { smart.selectedID = existing.id }
+        else { smart.add(SmartPlaylist(name: name, rules: [SmartRule(field: .plays, op: .atMost, value: "0")])) }
+        screen = .smartPlaylists
+    }
+
+    /// Home's "Play something unplayed": plays a random album with no plays. Does nothing when there is none.
+    public func playSomethingUnplayed() {
+        let unplayed = library.allNavidromeAlbums.filter { ($0.playCount ?? 0) == 0 && $0.played == nil }
+        guard let pick = unplayed.randomElement() else { return }
+        playAlbum(LibraryModel.item(pick, index: 0))
+    }
+
+    /// Preview and test seam: shows a prepared set of Home figures without a library behind it.
+    func showHome(_ dashboard: HomeDashboard) { homeDashboard = dashboard }
+
     /// Taste card action: opens the Library's Songs tab showing only that genre or decade.
     public func openLibrary(filteredBy action: TasteAction) {
         librarySearch = ""; tasteFilter = action; libraryTab = .songs; screen = .library
