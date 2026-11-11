@@ -5,43 +5,251 @@ import DiscairNavidrome
 import Foundation
 import Observation
 
+/// The sectors of the graph, grouped by kind. The order is the order they take around the first ring.
+public enum GraphSector: Int, CaseIterable, Sendable {
+    case albums, label, people, place, other
+
+    /// The sector an entity type belongs to. Types the explorer does not group (work, recording, event, instrument) are `other`.
+    public static func of(kind: String) -> GraphSector {
+        switch kind {
+        case "artist", "person", "group": .people
+        case "release", "release_group": .albums
+        case "label": .label
+        case "area", "place": .place
+        default: .other
+        }
+    }
+
+    /// The eyebrow that names the sector on the graph.
+    public var title: String {
+        switch self {
+        case .albums: "Albums"
+        case .label: "Label"
+        case .people: "People"
+        case .place: "Place"
+        case .other: "Other"
+        }
+    }
+}
+
 /// Where each node of the connection graph sits, in unit coordinates around the centre (0, 0). Pure, so a test can drive it.
-/// Depth 1 nodes spread evenly on the first ring; a deeper node sits on a wider ring inside a fan around its parent.
+/// A deeper node sits on a wider ring inside a fan around its parent. Two styles place step 1 differently:
+/// `.classic` (the Zine explorer, unchanged) spreads step 1 evenly; `.sectors` (the Cupertino redesign) gives each sector its own
+/// arc and measures the rings in points as the mockup draws them (step 1 at 188, step 2 at 292).
 public enum GraphLayout {
+    public enum Style: Sendable {
+        case classic, sectors
+    }
+
     public struct Item: Equatable, Sendable {
         public let id: String
         public let depth: Int
         public let via: String
-        public init(id: String, depth: Int, via: String) { self.id = id; self.depth = depth; self.via = via }
+        /// The entity type. It decides the sector; empty or unknown means `other`.
+        public let kind: String
+        public init(id: String, depth: Int, via: String, kind: String = "") { self.id = id; self.depth = depth; self.via = via; self.kind = kind }
     }
 
-    /// Radius of a ring, in unit coordinates. The outermost ring a layout can have is `radius(of: 3)`.
-    public static func radius(of depth: Int) -> Double { depth <= 0 ? 0 : 1 + 0.9 * Double(depth - 1) }
+    /// Radius of the first ring, in points.
+    public static let firstRingPoints = 188.0
+    /// Distance between two rings, in points (292 - 188).
+    public static let ringStepPoints = 104.0
+    /// The smallest centre-to-centre distance a ring may have, in points. Below it the nodes would have to shrink under 40 pt,
+    /// so the page says "Too many to draw" and offers the list instead.
+    public static let minimumSpacing = 40.0
+    /// The gap between two neighbouring sectors on the first ring, in radians.
+    static let sectorGap = 0.15
 
-    public static func place(centre: String, items: [Item]) -> [String: CGPoint] {
-        var angle: [String: Double] = [centre: -Double.pi / 2]
+    /// Radius of a ring in points, as the mockup draws it. Depths below 1 are treated as the first ring.
+    public static func points(of depth: Int) -> Double { firstRingPoints + ringStepPoints * Double(max(depth, 1) - 1) }
+
+    /// Radius of a ring in unit coordinates. Zero for the centre; the first ring is 1 in both styles.
+    public static func radius(of depth: Int, style: Style = .classic) -> Double {
+        guard depth > 0 else { return 0 }
+        switch style {
+        case .classic: return 1 + 0.9 * Double(depth - 1)
+        case .sectors: return points(of: depth) / firstRingPoints
+        }
+    }
+
+    /// Centre-to-centre spacing of `count` nodes on a ring, in points. Nil for an empty ring.
+    public static func spacing(depth: Int, count: Int) -> Double? {
+        guard count > 0 else { return nil }
+        return 2 * Double.pi * points(of: depth) / Double(count)
+    }
+
+    /// True when any ring would need its nodes closer together than `minimumSpacing`.
+    public static func tooManyToDraw(_ items: [Item]) -> Bool {
+        Dictionary(grouping: items, by: \.depth).contains { entry in
+            (spacing(depth: entry.key, count: entry.value.count) ?? .infinity) < minimumSpacing
+        }
+    }
+
+    /// The angle of each sector's centre on the first ring, for the eyebrow labels. Only sectors with a step-1 node appear.
+    public static func sectorCentres(_ items: [Item]) -> [GraphSector: Double] {
+        sectorArcs(items.filter { $0.depth == 1 }).centres
+    }
+
+    /// Each step-1 node's angle, with each sector in its own arc: the arcs follow `GraphSector` order and share the circle
+    /// in proportion to how many nodes each holds. Within an arc the nodes keep their input order.
+    static func sectorArcs(_ items: [Item]) -> (angles: [String: Double], centres: [GraphSector: Double]) {
+        let groups = Dictionary(grouping: items, by: { GraphSector.of(kind: $0.kind) })
+        let used = GraphSector.allCases.filter { groups[$0] != nil }
+        let gap = used.count > 1 ? sectorGap : 0
+        let available = 2 * Double.pi - gap * Double(used.count)
+        let total = Double(items.count)
+        var angles: [String: Double] = [:], centres: [GraphSector: Double] = [:]
+        var start = -Double.pi / 2
+        for sector in used {
+            let members = groups[sector] ?? []
+            let arc = available * Double(members.count) / total
+            for (i, item) in members.enumerated() { angles[item.id] = start + arc * (Double(i) + 0.5) / Double(members.count) }
+            centres[sector] = start + arc / 2
+            start += arc + gap
+        }
+        return (angles, centres)
+    }
+
+    public static func place(centre: String, items: [Item], style: Style = .classic) -> [String: CGPoint] {
+        var angle: [String: Double] = [:]
         var out: [String: CGPoint] = [centre: .zero]
         let byDepth = Dictionary(grouping: items, by: \.depth)
         for depth in byDepth.keys.sorted() where depth >= 1 {
             let level = byDepth[depth] ?? []
-            // Nodes whose parent is placed fan out around it; the rest (and all of depth 1) share the ring evenly.
-            let children = Dictionary(grouping: level.filter { depth > 1 && angle[$0.via] != nil && $0.via != centre }, by: \.via)
-            let childIDs = Set(children.values.flatMap { $0.map(\.id) })
-            for (parent, kids) in children {
-                let m = Double(kids.count)
-                let span = min(1.1, 0.4 * m)
-                for (i, k) in kids.enumerated() {
-                    angle[k.id] = (angle[parent] ?? 0) + span * ((Double(i) + 0.5) / m - 0.5)
+            if depth == 1, style == .sectors {
+                for (id, a) in sectorArcs(level).angles { angle[id] = a }
+            } else {
+                // Nodes whose parent is placed fan out around it; the rest share the ring evenly.
+                let children = Dictionary(grouping: level.filter { depth > 1 && angle[$0.via] != nil && $0.via != centre }, by: \.via)
+                let childIDs = Set(children.values.flatMap { $0.map(\.id) })
+                for (parent, kids) in children {
+                    let m = Double(kids.count)
+                    let span = min(1.1, 0.4 * m)
+                    for (i, k) in kids.enumerated() {
+                        angle[k.id] = (angle[parent] ?? 0) + span * ((Double(i) + 0.5) / m - 0.5)
+                    }
                 }
+                let rest = level.filter { !childIDs.contains($0.id) }
+                for (i, item) in rest.enumerated() { angle[item.id] = -Double.pi / 2 + 2 * Double.pi * Double(i) / Double(max(rest.count, 1)) }
             }
-            let rest = level.filter { !childIDs.contains($0.id) }
-            for (i, item) in rest.enumerated() { angle[item.id] = -Double.pi / 2 + 2 * Double.pi * Double(i) / Double(max(rest.count, 1)) }
             for item in level {
-                let a = angle[item.id] ?? 0, r = radius(of: depth)
+                let a = angle[item.id] ?? 0, r = radius(of: depth, style: style)
                 out[item.id] = CGPoint(x: r * cos(a), y: r * sin(a))
             }
         }
         return out
+    }
+}
+
+/// Words for the codes the server sends with each connection. A code with no words in the table is shown capitalised,
+/// so a new code reads as text rather than as a bug.
+public enum GraphWording {
+    static let relations: [String: String] = [
+        "producer": "Producer", "engineer": "Engineer", "mix": "Mixing", "mastering": "Mastering",
+        "instrument": "Instrument", "vocal": "Vocals", "performer": "Performer", "main performer": "Main performer",
+        "performing orchestra": "Performing orchestra", "performance": "Performance", "member_of": "Member of",
+        "composer": "Composer", "arranger": "Arranger", "lyricist": "Lyricist", "publisher": "Publisher",
+        "held at": "Held at", "recorded in": "Recorded in", "recording location": "Recording location",
+        "area": "Area", "owner": "Owner",
+    ]
+    static let matchQualities: [String: String] = [
+        "exact_mbid": "Exact match", "isrc": "ISRC match", "fuzzy_confirmed": "Name match, confirmed",
+        "fuzzy_unconfirmed": "Name match, not confirmed", "unresolved": "Not matched",
+    ]
+
+    public static func relation(_ code: String) -> String { relations[code] ?? capitalised(code) }
+    public static func matchQuality(_ code: String) -> String { matchQualities[code] ?? capitalised(code) }
+    /// True when the relation has words of its own in the table (not the capitalised fallback).
+    public static func hasWords(relation code: String) -> Bool { relations[code] != nil }
+
+    /// The list group a relation belongs to. Nil for a relation no group takes (places, ownership).
+    static func group(relation code: String) -> GraphGroup? {
+        switch code {
+        case "producer", "engineer", "mix", "mastering": GraphGroup.produced
+        case "instrument", "vocal", "performer", "main performer", "performing orchestra", "performance", "member_of": GraphGroup.played
+        case "composer", "arranger", "lyricist", "publisher": GraphGroup.written
+        default: nil
+        }
+    }
+
+    /// The code with underscores as spaces and its first letter capitalised: "new_code" becomes "New code".
+    static func capitalised(_ code: String) -> String {
+        let spaced = code.replacingOccurrences(of: "_", with: " ")
+        return spaced.prefix(1).uppercased() + spaced.dropFirst()
+    }
+}
+
+/// The groups of the list view, in the order they are shown. Albums and places and labels group by kind; people, works
+/// and the rest group by the relation that reaches them.
+public enum GraphGroup: Int, CaseIterable, Sendable {
+    case produced, played, written, albums, placesAndLabels, other
+
+    public var title: String {
+        switch self {
+        case .produced: "Produced and engineered"
+        case .played: "Played with"
+        case .written: "Written and published"
+        case .albums: "Albums"
+        case .placesAndLabels: "Places and labels"
+        case .other: "Other connections"
+        }
+    }
+
+    static func of(_ node: GraphNode) -> GraphGroup {
+        switch GraphSector.of(kind: node.entity.type) {
+        case .albums: return .albums
+        case .place, .label: return .placesAndLabels
+        case .people, .other:
+            return GraphListRow.primary(of: node).flatMap { GraphWording.group(relation: $0.relation) } ?? .other
+        }
+    }
+}
+
+/// One row of the list view: a hop, what connects it to the centre in words, and how the link was matched.
+public struct GraphListRow: Identifiable, Equatable, Sendable {
+    public var id: String { node.id }
+    public let node: GraphNode
+    /// The instrument or vocal part for a played-with row ("Guitar"), otherwise the relation's words.
+    public let connection: String
+    /// The match quality of the row's evidence in words. Empty when there is no evidence.
+    public let match: String
+
+    public init(node: GraphNode) {
+        self.node = node
+        let primary = Self.primary(of: node)
+        connection = primary.map(Self.words) ?? "Linked"
+        match = primary.map { GraphWording.matchQuality($0.matchQuality) } ?? ""
+    }
+
+    /// The evidence that names the row's group: the first with a list group, else the first of any.
+    static func primary(of node: GraphNode) -> KnowledgeCredit? {
+        node.evidence.first { GraphWording.group(relation: $0.relation) != nil } ?? node.evidence.first
+    }
+
+    static func words(_ e: KnowledgeCredit) -> String {
+        if GraphWording.group(relation: e.relation) == .played, let role = e.role, !role.isEmpty { return GraphWording.capitalised(role) }
+        return GraphWording.relation(e.relation)
+    }
+}
+
+/// One group of the list view. Rows are sorted by steps, then by name.
+public struct GraphListGroup: Identifiable, Equatable, Sendable {
+    public var id: String { title }
+    public let group: GraphGroup
+    public let rows: [GraphListRow]
+    public var title: String { group.title }
+
+    /// The non-empty groups, in `GraphGroup` order, with their rows sorted.
+    public static func groups(_ nodes: [GraphNode]) -> [GraphListGroup] {
+        let byGroup = Dictionary(grouping: nodes.map(GraphListRow.init), by: { GraphGroup.of($0.node) })
+        return GraphGroup.allCases.compactMap { group in
+            guard let rows = byGroup[group], !rows.isEmpty else { return nil }
+            let sorted = rows.sorted { a, b in
+                if a.node.depth != b.node.depth { return a.node.depth < b.node.depth }
+                return a.node.entity.name.localizedCaseInsensitiveCompare(b.node.entity.name) == .orderedAscending
+            }
+            return GraphListGroup(group: group, rows: sorted)
+        }
     }
 }
 
@@ -97,11 +305,30 @@ public final class GraphExplorerModel {
         }
     }
 
-    /// Places every node, centre included, in unit coordinates.
+    /// Places every node, centre included, in unit coordinates, in the classic style the Zine explorer draws.
     public var layout: [String: CGPoint] {
         guard let centre else { return [:] }
-        return GraphLayout.place(centre: centre.mbid, items: nodes.map { .init(id: $0.id, depth: $0.depth, via: $0.via) })
+        return GraphLayout.place(centre: centre.mbid, items: layoutItems)
     }
+
+    /// Places every node in the Cupertino style: sectors by kind on the first ring, rings at 188 and 292 pt.
+    public var sectorLayout: [String: CGPoint] {
+        guard let centre else { return [:] }
+        return GraphLayout.place(centre: centre.mbid, items: layoutItems, style: .sectors)
+    }
+
+    private var layoutItems: [GraphLayout.Item] {
+        nodes.map { .init(id: $0.id, depth: $0.depth, via: $0.via, kind: $0.entity.type) }
+    }
+
+    /// True when a ring would need its nodes under 40 pt apart, so the graph should say "Too many to draw" and offer the list.
+    public var tooManyToDraw: Bool { GraphLayout.tooManyToDraw(layoutItems) }
+
+    /// How many nodes each sector holds, for the inspector's counts by kind.
+    public var sectorCounts: [GraphSector: Int] { Dictionary(grouping: nodes, by: { GraphSector.of(kind: $0.entity.type) }).mapValues(\.count) }
+
+    /// The list view's groups, in the order they are shown.
+    public var listGroups: [GraphListGroup] { GraphListGroup.groups(nodes) }
 
     /// Starts from a library artist: reads their MusicBrainz id from Navidrome, then walks from it.
     public func start(artistRemoteID: String?, name: String, navidrome: NavidromeClient?, librarian: LibrarianClient?) async {
