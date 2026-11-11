@@ -341,6 +341,14 @@ Earlier project log entries are preserved verbatim in [PROJECT_LOG_HISTORY.md](d
 - Nothing calls the charts yet; no Zine file changed.
 - Next: M5 (home data) or M6 (services data), Sonnet; M8 builds Home from M2, M4 and M5.
 
+## 2026-11-11 — Redesign M7: Connections model (macOS)
+
+- Merged as PR [#981](https://github.com/abucalip/navi-librarian/pull/981), squash `7e705614`, from head `6d0f06552068f1bd2673401940e862d6537d4c94`; GitHub confirms the merge and compile, container-smoke, test-and-build and validate-container passed on that head. Plan: `docs/redesign.md` section 11, step M7.
+- Changed: `macos/Sources/DiscairUI/Model/GraphExplorer.swift` (new `GraphSector`, `GraphGroup`, `GraphWording`, `GraphListRow`, `GraphListGroup`; `GraphLayout` gains `Style` with `.classic` (default, the Zine geometry) and `.sectors` (Cupertino: a sector per arc, rings at 188 and 292 pt), `spacing` and `tooManyToDraw` (under 40 pt spacing); `GraphExplorerModel` gains `tooManyToDraw`, `sectorCounts`, `sectorLayout`, `listGroups`); `macos/Tests/DiscairUITests/GraphExplorerTests.swift` (new suites).
+- Tests actually run, filtered, on a Mac: `swift test --filter Graph` (44 pass, 9 suites). Full suite not run (owner rule). No UI, so no visual check.
+- Limits: nothing calls the new pieces yet (M9 wires them). The 40 pt threshold is average spacing per ring; step-2 nodes are placed by fan, so their real spacing can differ. The relation and match words come from the server's vocabulary in code and fixtures, not live captures. Types the mockup does not draw (work, recording, event, instrument) fall into an "Other" sector. "member_of" reads "Member of", not the mockup's "member of Talk Talk". Zine's explorer keeps the classic geometry, so its look is unchanged.
+- Next: M8 (Home screen), Sonnet, High. M9 (Connections and Services screens) is also unblocked, Sonnet, High.
+
 ## 2026-11-11 — Redesign M6: Services data (macOS)
 
 - Merged as PR [#980](https://github.com/abucalip/navi-librarian/pull/980), squash `cf175239`, from head `843ebc1cb903d3aab39a8275398906af69872c20`; GitHub confirms the merge and compile, container-smoke, test-and-build and validate-container passed on that head. Plan: `docs/redesign.md` sections 6 and 11, step M6.
