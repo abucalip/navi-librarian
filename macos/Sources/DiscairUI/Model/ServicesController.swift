@@ -135,6 +135,8 @@ public final class ServicesController {
     /// Set by "Fix <service>" in the toolbar popover: the Services tab opens this row's edit sheet.
     public var editing: ServicesModel.ServiceID?
     public var draft = ServiceDraft()
+    /// What the server held when the sheet opened; the sheet's Test compares the draft with it.
+    public private(set) var savedDraft = ServiceDraft()
     public var editNotice: EditNotice?
     public private(set) var working = false
     public var confirmingDisconnect: ServicesModel.ServiceID?
@@ -197,10 +199,10 @@ public final class ServicesController {
         case .listenbrainz: d.username = inputs.listenBrainzSettings?.username ?? ""
         default: break
         }
-        draft = d; editNotice = nil; actionError = nil; editing = id
+        draft = d; savedDraft = d; editNotice = nil; actionError = nil; editing = id
     }
 
-    public func stopEditing() { editing = nil; editNotice = nil; draft = ServiceDraft() }
+    public func stopEditing() { editing = nil; editNotice = nil; draft = ServiceDraft(); savedDraft = ServiceDraft() }
 
     func setWorking(_ on: Bool) { working = on }
 

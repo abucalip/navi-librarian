@@ -33,16 +33,16 @@ struct CupertinoDiscover: View {
         let albums = state.visible(p.albums)
         switch p.phase {
         case .idle, .loading:
-            HStack(spacing: 8) { ProgressView().controlSize(.small); Text("Loading \(k.title)…") }.foregroundStyle(CU.muted).padding(.top, 8)
+            HStack(spacing: 8) { ProgressView().controlSize(.small); Text("Loading \(k.title)…") }.foregroundStyle(CU.textSecondary).padding(.top, 8)
         case .failed(let m):
             VStack(alignment: .leading, spacing: 8) {
-                Text(m).foregroundStyle(CU.muted)
+                Text(m).foregroundStyle(CU.textSecondary)
                 Button("Try again") { Task { await model.load(k, force: true) } }.buttonStyle(CapsuleButtonStyle(primary: true, small: true))
             }.padding(.top, 8)
         case .loaded:
             if albums.isEmpty {
                 VStack(alignment: .leading, spacing: 8) {
-                    Text(p.message ?? "Nothing here.").foregroundStyle(CU.muted)
+                    Text(p.message ?? "Nothing here.").foregroundStyle(CU.textSecondary)
                     if k != .saved {
                         Button(p.building ? "Building…" : "Build this list") { Task { await model.build(k) } }
                             .buttonStyle(CapsuleButtonStyle(small: true)).disabled(p.building)
@@ -63,10 +63,10 @@ struct CupertinoDiscover: View {
             VStack(alignment: .leading, spacing: 4) {
                 Button { state.open(album: a) } label: { Text(a.title).font(CU.Font.title3.weighted(.semibold)).lineLimit(1) }
                     .buttonStyle(.plain).accessibilityLabel("Open \(a.title)")
-                Button(a.artist) { state.openArtist(named: a.artist) }.buttonStyle(.plain).foregroundStyle(CU.muted)
-                if let r = a.reason { Text(r).font(CU.Font.callout.weighted(.regular)).foregroundStyle(CU.muted).lineLimit(2) }
+                Button(a.artist) { state.openArtist(named: a.artist) }.buttonStyle(.plain).foregroundStyle(CU.textSecondary)
+                if let r = a.reason { Text(r).font(CU.Font.callout.weighted(.regular)).foregroundStyle(CU.textSecondary).lineLimit(2) }
                 if !a.suggestedTracks.isEmpty {
-                    Text("Try: " + a.suggestedTracks.prefix(3).joined(separator: ", ")).font(CU.Font.callout.weighted(.regular)).foregroundStyle(CU.muted).lineLimit(1)
+                    Text("Try: " + a.suggestedTracks.prefix(3).joined(separator: ", ")).font(CU.Font.callout.weighted(.regular)).foregroundStyle(CU.textSecondary).lineLimit(1)
                 }
                 DiscoverPeek(album: a, hovered: state.discovery.hoveredAlbum == a.id)
                 HStack(spacing: 8) {
@@ -82,7 +82,7 @@ struct CupertinoDiscover: View {
             Spacer(minLength: 0)
         }
         .padding(16).frame(maxWidth: .infinity, alignment: .leading)
-        .background(CU.card, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .background(CU.bgPanel, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
         .onHover { on in
             let model = state.discovery
             if on { model.hoveredAlbum = a.id } else if model.hoveredAlbum == a.id { model.hoveredAlbum = nil }

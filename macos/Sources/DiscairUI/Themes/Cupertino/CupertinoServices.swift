@@ -272,7 +272,9 @@ struct ServiceRowView: View {
         var out: [(String, String, Bool)] = [("Answer", row.state.word, true)]
         if row.state.isFailing || row.state == .unknown { out.append(("Since", when(row.since, "Not seen yet"), false)) }
         if row.state.isFailing { out.append(("Last good read", when(row.lastGood, "Never seen working"), false)) }
+        if let route = row.route { out.insert(("Route", route, false), at: 1) }
         out.append(("Checked", when(row.checked, "Not checked yet"), false))
+        if let contract = row.contract { out.append(("Server contract", contract, false)) }
         return out
     }
 
@@ -409,7 +411,7 @@ struct ServicesDiagram: View {
 // MARK: Edit sheet
 
 /// Labelled fields, a Test button that reports in a notice, Cancel and Save (section 6.2, item 5). Saving an empty secret keeps
-/// the saved one; Test tests what is saved on the server.
+/// the saved one; Test tries the values typed here without saving them.
 struct ServiceEditSheet: View {
     let state: AppState
     let id: ServicesModel.ServiceID
@@ -431,7 +433,7 @@ struct ServiceEditSheet: View {
             if let n = services.editNotice { CUNotice(kind: n.kind == .success ? .success : .danger, lead: n.lead, message: n.message) }
             HStack(spacing: CU.Space.s) {
                 Button("Test") { Task { await state.testFromSheet(id) } }.buttonStyle(CapsuleButtonStyle()).disabled(services.working)
-                    .accessibilityHint("Tests what is saved on the server. Save first to try new values.")
+                    .accessibilityHint("Tests the values typed here without saving them.")
                 Spacer()
                 Button("Cancel") { services.stopEditing() }.buttonStyle(CapsuleButtonStyle()).keyboardShortcut(.cancelAction)
                 Button("Save") { Task { await state.saveService(id) } }.buttonStyle(CapsuleButtonStyle(primary: true)).disabled(services.working)

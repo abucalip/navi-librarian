@@ -61,7 +61,7 @@ struct CupertinoLibrary: View {
                                     .overlay { if r.id == selected { RoundedRectangle(cornerRadius: 8, style: .continuous).stroke(CU.accent, lineWidth: 3) } }
                                     .shadow(color: CU.shadowInk.opacity(0.2), radius: 7, y: 4).padding(.bottom, 8)
                                 Text(r.title).fontWeight(.semibold).lineLimit(1)
-                                Text(r.artist).foregroundStyle(CU.muted).lineLimit(1)
+                                Text(r.artist).foregroundStyle(CU.textSecondary).lineLimit(1)
                             }
                             .font(CU.Font.body.weighted(.regular)).frame(width: 128, alignment: .leading).contentShape(Rectangle())
                             .onTapGesture(count: 2) { selected = r.id; state.play(rows: all, startAt: i) }
@@ -123,7 +123,7 @@ struct CupertinoLibrary: View {
             Button { page = max(0, current - 1) } label: { Image(systemName: "chevron.left") }
                 .buttonStyle(CapsuleButtonStyle(small: true)).disabled(current == 0).accessibilityLabel("Previous page")
             Text(total == 0 ? "No songs" : "Songs \(current * Self.pageSize + 1)–\(min(total, (current + 1) * Self.pageSize)) of \(total) · Page \(current + 1) of \(pages)")
-                .font(CU.Font.callout.weighted(.regular)).monospacedDigit().foregroundStyle(CU.muted)
+                .font(CU.Font.callout.weighted(.regular)).monospacedDigit().foregroundStyle(CU.textSecondary)
             Button { page = min(pages - 1, current + 1) } label: { Image(systemName: "chevron.right") }
                 .buttonStyle(CapsuleButtonStyle(small: true)).disabled(current >= pages - 1).accessibilityLabel("Next page")
         }
@@ -135,9 +135,9 @@ struct CupertinoLibrary: View {
         let lib = state.library
         if lib.isLive {
             VStack(alignment: .leading, spacing: 8) {
-                if lib.songsLoading { HStack(spacing: 8) { ProgressView().controlSize(.small); Text("Loading songs… \(lib.songs.count) so far") }.foregroundStyle(CU.muted) }
+                if lib.songsLoading { HStack(spacing: 8) { ProgressView().controlSize(.small); Text("Loading songs… \(lib.songs.count) so far") }.foregroundStyle(CU.textSecondary) }
                 if let e = lib.songsError {
-                    Text(e).foregroundStyle(CU.muted)
+                    Text(e).foregroundStyle(CU.textSecondary)
                     Button("Try again") { Task { await state.loadAllSongs() } }
                         .buttonStyle(CapsuleButtonStyle(small: true))
                 } else if lib.songsHaveMore && !lib.songsLoading {
@@ -145,9 +145,9 @@ struct CupertinoLibrary: View {
                 }
                 if !lib.songs.isEmpty {
                     Text("\(lib.songs.count) songs loaded" + (lib.songsHaveMore ? ". Sorting reorders only these." : "."))
-                        .font(CU.Font.callout.weighted(.regular)).foregroundStyle(CU.muted)
+                        .font(CU.Font.callout.weighted(.regular)).foregroundStyle(CU.textSecondary)
                 }
-                if lib.songs.isEmpty && !lib.songsLoading && lib.songsError == nil { Text("No songs in the library yet.").foregroundStyle(CU.muted) }
+                if lib.songs.isEmpty && !lib.songsLoading && lib.songsError == nil { Text("No songs in the library yet.").foregroundStyle(CU.textSecondary) }
             }
             .padding(.top, 16)
         }
@@ -162,7 +162,7 @@ struct CupertinoLibrary: View {
             headCell(.format, w[5]); headCell(.bitrate, w[6]); headCell(.rating, w[7]); headCell(.plays, w[8])
             headCell(.lastPlayed, w[9]); headCell(.added, w[10]); headCell(.mbid, w[11])
         }
-        .font(CU.Font.callout.weighted(.medium)).foregroundStyle(CU.muted).padding(.vertical, 8)
+        .font(CU.Font.callout.weighted(.medium)).foregroundStyle(CU.textSecondary).padding(.vertical, 8)
         .overlay(alignment: .bottom) { Rectangle().fill(CU.shadowInk.opacity(0.08)).frame(height: 1) }
     }
 
@@ -186,7 +186,7 @@ struct CupertinoLibrary: View {
             cell(w[4]) { Text(r.genre).lineLimit(1) }
             cell(w[5]) {
                 Text(r.format).font(CU.Font.caption.weighted(.bold)).padding(.horizontal, 8).padding(.vertical, 0)
-                    .background(on ? CU.onAccent.opacity(0.25) : CU.fill, in: RoundedRectangle(cornerRadius: 4))
+                    .background(on ? CU.onAccent.opacity(0.25) : CU.bgFill, in: RoundedRectangle(cornerRadius: 4))
             }
             cell(w[6]) { Text(r.bitrate) }
             cell(w[7]) { Text(SongTable.stars(r.rating)).font(CU.Font.caption.weighted(.regular)).accessibilityLabel(r.rating > 0 ? "\(r.rating) stars" : "Not rated") }
@@ -195,7 +195,7 @@ struct CupertinoLibrary: View {
             cell(w[11]) { if !r.hasMBID { Text("Missing").font(CU.Font.caption.weighted(.semibold)).foregroundStyle(on ? CU.onAccent : CU.accent) } }
         }
         .font(CU.Font.body.weighted(.regular)).monospacedDigit()
-        .foregroundStyle(on ? CU.onAccent : CU.ink)
+        .foregroundStyle(on ? CU.onAccent : CU.text)
         .padding(.vertical, 4)
         .background {
             if on { RoundedRectangle(cornerRadius: 8, style: .continuous).fill(CU.accent) }

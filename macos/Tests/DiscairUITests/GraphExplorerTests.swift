@@ -181,7 +181,9 @@ private func circularDistance(_ a: Double, _ b: Double) -> Double {
         #expect(GraphSector.of(kind: "artist") == .people && GraphSector.of(kind: "group") == .people)
         #expect(GraphSector.of(kind: "release") == .albums && GraphSector.of(kind: "release_group") == .albums)
         #expect(GraphSector.of(kind: "label") == .label && GraphSector.of(kind: "area") == .place)
-        #expect(GraphSector.of(kind: "work") == .other && GraphSector.of(kind: "") == .other)
+        for kind in ["work", "recording", "event", "instrument"] { #expect(GraphSector.of(kind: kind) == .crew) }
+        #expect(GraphSector.crew.title == "Crew" && GraphSector.crew.kindsTitle == "Crew")
+        #expect(GraphSector.of(kind: "") == .other && GraphSector.of(kind: "series") == .other)
     }
 
     @Test func sameInputGivesTheSameLayout() {

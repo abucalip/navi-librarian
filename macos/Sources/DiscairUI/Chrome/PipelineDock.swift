@@ -57,13 +57,13 @@ struct PipelineDockView: View {
             Button { state.acquisition.dismissToast(t.id) } label: { Image(systemName: "xmark").font(.system(size: 10, weight: .bold)) }
                 .buttonStyle(.plain).accessibilityLabel("Dismiss")
         }
-        .foregroundStyle(zine ? Z.ink : CU.ink)
+        .foregroundStyle(zine ? Z.ink : CU.text)
         .padding(10)
         .background {
             if zine { Z.paper } else { Rectangle().fill(.regularMaterial) }
         }
         .clipShape(RoundedRectangle(cornerRadius: zine ? 0 : 12, style: .continuous))
-        .overlay { if zine { Rectangle().stroke(Z.ink, lineWidth: 3) } else { RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(CU.fill, lineWidth: 1) } }
+        .overlay { if zine { Rectangle().stroke(Z.ink, lineWidth: 3) } else { RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(CU.bgFill, lineWidth: 1) } }
         .shadow(color: .black.opacity(zine ? 0 : 0.14), radius: 10, y: 3)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(t.title). \(t.body)")
@@ -73,12 +73,12 @@ struct PipelineDockView: View {
         switch state.themeID {
         case .cupertino:
             VStack(alignment: .leading, spacing: 8) {
-                header(c, font: .system(size: 12, weight: .semibold), color: CU.ink)
+                header(c, font: .system(size: 12, weight: .semibold), color: CU.text)
                 if !folded { ForEach(c.rows) { row($0) }; overflow(c) }
             }
             .padding(12)
             .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).stroke(CU.fill, lineWidth: 1))
+            .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).stroke(CU.bgFill, lineWidth: 1))
             .shadow(color: .black.opacity(0.14), radius: 12, y: 4)
             .accessibilityElement(children: .contain)
             .accessibilityLabel("Pipeline, \(c.headline)")
@@ -124,7 +124,7 @@ struct PipelineDockView: View {
                 .font(zine ? Z.mono(10) : .system(size: 11)).opacity(0.7).lineLimit(1)
             GeometryReader { g in
                 ZStack(alignment: .leading) {
-                    Rectangle().fill(zine ? Z.ink.opacity(0.12) : CU.fill)
+                    Rectangle().fill(zine ? Z.ink.opacity(0.12) : CU.bgFill)
                     Rectangle().fill(zine ? Z.red : CU.accent).frame(width: g.size.width * (r.fraction ?? (r.waiting ? 0 : 0.12)))
                 }
                 .clipShape(RoundedRectangle(cornerRadius: zine ? 0 : 2))

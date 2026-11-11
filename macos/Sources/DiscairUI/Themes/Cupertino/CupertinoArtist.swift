@@ -125,7 +125,7 @@ struct CupertinoArtist: View {
 
     @ViewBuilder private var relatedStatus: some View {
         Text(state.related.loading ? "Still looking for the biography and top songs…" : (state.related.lastError ?? "The Librarian had not finished.") + " Reopen the page to ask again.")
-            .font(CU.Font.callout.weighted(.regular)).foregroundStyle(CU.muted).padding(.top, 8)
+            .font(CU.Font.callout.weighted(.regular)).foregroundStyle(CU.textSecondary).padding(.top, 8)
     }
 
     private func songRow(_ t: (title: String, album: Int, sub: String, missing: Bool)) -> some View {
@@ -133,13 +133,13 @@ struct CupertinoArtist: View {
             CoverView(album: Fixtures.albums[t.album]).frame(width: 40).clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
             VStack(alignment: .leading, spacing: 0) {
                 Text(t.title).fontWeight(.semibold).lineLimit(1)
-                Text(t.sub).font(CU.Font.callout.weighted(.regular)).foregroundStyle(CU.muted).lineLimit(1)
+                Text(t.sub).font(CU.Font.callout.weighted(.regular)).foregroundStyle(CU.textSecondary).lineLimit(1)
             }
             Spacer(minLength: 4)
             if t.missing {
                 Button("Get") { state.actions.get(album: Fixtures.albums[t.album]) }.buttonStyle(CapsuleButtonStyle(small: true))
             } else {
-                Text("4:49").font(CU.Font.callout.weighted(.regular)).monospacedDigit().foregroundStyle(CU.muted)
+                Text("4:49").font(CU.Font.callout.weighted(.regular)).monospacedDigit().foregroundStyle(CU.textSecondary)
             }
         }
         .font(CU.Font.body.weighted(.regular)).padding(.horizontal, 8).padding(.vertical, 8)
@@ -156,7 +156,7 @@ struct CupertinoArtist: View {
             }
             .buttonStyle(.plain).padding(.bottom, 8).accessibilityLabel(a.owned ? "Open \(a.title)" : "\(a.title), missing")
             Text(a.title).fontWeight(.semibold).lineLimit(1)
-            Text(a.line([a.yearText, a.owned ? "" : "Missing"])).foregroundStyle(CU.muted)
+            Text(a.line([a.yearText, a.owned ? "" : "Missing"])).foregroundStyle(CU.textSecondary)
             if !a.owned {
                 Button(state.acquisition.buttonLabel(for: a)) { state.actions.get(album: a) }
                     .buttonStyle(CapsuleButtonStyle(small: true)).padding(.top, 8).disabled(!state.acquisition.canGet(a))

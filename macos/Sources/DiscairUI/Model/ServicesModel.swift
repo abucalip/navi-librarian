@@ -100,6 +100,9 @@ public struct ServicesModel: Equatable, Sendable {
         public let actions: [Action]
         /// A sentence for the danger notice above an expanded failing row: the cause and the fix in words.
         public let notice: String?
+        /// Librarian only, under Status now: how this Mac reaches it, and the contract and data generation it reports.
+        public var route: String? = nil
+        public var contract: String? = nil
 
         /// Counts toward "needs attention": a failure, or a required service that is not set up.
         public var needsAttention: Bool { state.isFailing || (state == .notSetUp && !optional) }
@@ -254,9 +257,16 @@ public struct ServicesModel: Equatable, Sendable {
         // Times come from the history as it stands after this check.
         let rows = built.map { r -> Row in
             let e = history.entries[r.id]
-            return Row(id: r.id, name: r.name, role: r.role, group: r.group, powers: r.powers, state: r.state, optional: r.optional,
-                       since: e?.since, lastGood: e?.lastGood, checked: input.librarianReachable == nil && r.state == .unknown ? nil : input.now,
-                       setup: r.setup, actions: r.actions, notice: r.notice)
+            var row = Row(id: r.id, name: r.name, role: r.role, group: r.group, powers: r.powers, state: r.state, optional: r.optional,
+                          since: e?.since, lastGood: e?.lastGood, checked: input.librarianReachable == nil && r.state == .unknown ? nil : input.now,
+                          setup: r.setup, actions: r.actions, notice: r.notice)
+            if r.id == .librarian, input.librarianReachable == true {
+                row.route = input.tailscaleHint ? "Tailscale" : "Direct address"
+                if let caps = input.capabilities, let v = caps.contractVersion {
+                    row.contract = "Version \(v)" + (caps.generation.map { " · data generation \($0)" } ?? "")
+                }
+            }
+            return row
         }
 
         return ServicesModel(rows: rows, summary: summary(rows, input, history: history), toolbar: toolbar(rows, input),

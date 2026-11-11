@@ -17,7 +17,7 @@ struct CupertinoEQ: View {
                         Toggle("Equalizer", isOn: Binding(get: { p.eq.enabled }, set: { v in p.updateEQ { $0.enabled = v } }))
                             .toggleStyle(.switch).tint(CU.accent).fontWeight(.semibold)
                         Spacer()
-                        Text(p.eq.enabled ? "On: \(p.eq.presetLabel)" : "Off. Settings are kept.").foregroundStyle(CU.muted)
+                        Text(p.eq.enabled ? "On: \(p.eq.presetLabel)" : "Off. Settings are kept.").foregroundStyle(CU.textSecondary)
                     }
                     HStack(spacing: 8) {
                         Text("Preset").fontWeight(.semibold)
@@ -42,7 +42,7 @@ struct CupertinoEQ: View {
                         Toggle("Automatic pre-gain", isOn: Binding(get: { p.eq.preGainAuto }, set: { v in p.updateEQ { $0.preGainAuto = v } }))
                             .toggleStyle(.switch).tint(CU.accent)
                         Spacer()
-                        Text(String(format: "%+.1f dB", p.eq.preGainDB)).monospacedDigit().foregroundStyle(CU.muted)
+                        Text(String(format: "%+.1f dB", p.eq.preGainDB)).monospacedDigit().foregroundStyle(CU.textSecondary)
                     }
                     if !p.eq.preGainAuto {
                         HStack(spacing: 8) {
@@ -53,7 +53,7 @@ struct CupertinoEQ: View {
                         }
                     }
                     Text("Pre-gain lowers the signal before the bands so a boost does not clip. Automatic uses the largest boost.")
-                        .font(CU.Font.callout.weighted(.regular)).foregroundStyle(CU.muted)
+                        .font(CU.Font.callout.weighted(.regular)).foregroundStyle(CU.textSecondary)
                 }
             }
             .padding(.horizontal, CU.Space.xl).padding(.bottom, CU.Space.xl)
@@ -68,7 +68,7 @@ struct CupertinoEQ: View {
     private func card<C: View>(@ViewBuilder _ c: () -> C) -> some View {
         VStack(alignment: .leading, spacing: 8) { c() }
             .padding(16).frame(maxWidth: .infinity, alignment: .leading)
-            .background(CU.card, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+            .background(CU.bgPanel, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
     }
 
     private func band(_ i: Int) -> some View {
@@ -79,17 +79,17 @@ struct CupertinoEQ: View {
             Button("+") { p.updateEQ { $0.nudge(band: i, steps: 1) } }
                 .buttonStyle(CapsuleButtonStyle(small: true)).accessibilityLabel("Raise \(hz)")
             ZStack(alignment: .top) {
-                Capsule().fill(CU.fill).frame(width: 6, height: 120)
+                Capsule().fill(CU.bgFill).frame(width: 6, height: 120)
                 let h = max(g == 0 ? 0 : 2, 60 * abs(g) / eqMaxGainDB)      // the middle (0 dB) is at 60 pt
                 Capsule().fill(CU.accent).frame(width: 6, height: h).offset(y: g >= 0 ? 60 - h : 60)
-                Rectangle().fill(CU.muted).frame(width: 12, height: 1.5).offset(y: 59)
+                Rectangle().fill(CU.textSecondary).frame(width: 12, height: 1.5).offset(y: 59)
             }
             .frame(height: 120)
             .eqBandDrag(trackHeight: 120) { db in p.updateEQ { $0.set(band: i, db: db) } }
             .accessibilityHidden(true)
             Button("−") { p.updateEQ { $0.nudge(band: i, steps: -1) } }
                 .buttonStyle(CapsuleButtonStyle(small: true)).accessibilityLabel("Lower \(hz)")
-            Text(hz).font(CU.Font.caption.weighted(.regular)).foregroundStyle(CU.muted).lineLimit(1)
+            Text(hz).font(CU.Font.caption.weighted(.regular)).foregroundStyle(CU.textSecondary).lineLimit(1)
         }
         .frame(maxWidth: .infinity)
         .accessibilityElement(children: .contain)

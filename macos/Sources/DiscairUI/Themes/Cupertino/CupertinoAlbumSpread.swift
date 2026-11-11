@@ -14,11 +14,11 @@ struct CupertinoAlbumSpread: View {
             case .reviews: reviews
             case .notes, .credits:
                 if spread.loading {
-                    Text("Loading…").foregroundStyle(CU.muted)
+                    Text("Loading…").foregroundStyle(CU.textSecondary)
                 } else if let c = spread.content, !c.isEmpty {
                     if part == .notes { notes(c) } else { credits(c) }
                 } else {
-                    Text("Navidrome has no notes, credits or links for this album.").foregroundStyle(CU.muted)
+                    Text("Navidrome has no notes, credits or links for this album.").foregroundStyle(CU.textSecondary)
                 }
             }
         }
@@ -32,18 +32,18 @@ struct CupertinoAlbumSpread: View {
                 Text(notes).font(CU.Font.body.weighted(.regular)).lineSpacing(3).textSelection(.enabled)
                 if let src = c.notesSource, !src.isEmpty {
                     if let u = c.notesURL { Link(src, destination: u).font(CU.Font.callout.weighted(.regular)) }
-                    else { Text(src).font(CU.Font.callout.weighted(.regular)).foregroundStyle(CU.muted) }
+                    else { Text(src).font(CU.Font.callout.weighted(.regular)).foregroundStyle(CU.textSecondary) }
                 }
             }
         } else if c.facts.isEmpty && c.musicBrainzURL == nil && c.lastFmURL == nil {
-            Text("No liner notes for this album.").foregroundStyle(CU.muted)
+            Text("No liner notes for this album.").foregroundStyle(CU.textSecondary)
         }
         if !c.facts.isEmpty || c.musicBrainzURL != nil || c.lastFmURL != nil {
             section("MusicBrainz and links") {
                 VStack(alignment: .leading, spacing: 8) {
                     ForEach(c.facts) { f in
                         HStack(alignment: .firstTextBaseline, spacing: 8) {
-                            Text(f.label).foregroundStyle(CU.muted).frame(width: 150, alignment: .leading)
+                            Text(f.label).foregroundStyle(CU.textSecondary).frame(width: 150, alignment: .leading)
                             Text(f.value).textSelection(.enabled)
                         }
                         .font(CU.Font.body.weighted(.regular)).accessibilityElement(children: .combine)
@@ -63,13 +63,13 @@ struct CupertinoAlbumSpread: View {
         let extended = state.albumCredits
         if !extended.groups.isEmpty {
             creditList(extended.groups.map { ($0.role, $0.names) })
-            if extended.truncated { Text("The list is cut short; the knowledge base holds more.").font(CU.Font.callout.weighted(.regular)).foregroundStyle(CU.muted).padding(.top, 8) }
+            if extended.truncated { Text("The list is cut short; the knowledge base holds more.").font(CU.Font.callout.weighted(.regular)).foregroundStyle(CU.textSecondary).padding(.top, 8) }
         } else if !c.credits.isEmpty {
             creditList(c.credits.map { ($0.title, $0.names) })
         } else if extended.loading {
-            Text("Loading credits…").foregroundStyle(CU.muted)
+            Text("Loading credits…").foregroundStyle(CU.textSecondary)
         } else {
-            Text("No credits for this album.").foregroundStyle(CU.muted)
+            Text("No credits for this album.").foregroundStyle(CU.textSecondary)
         }
     }
 
@@ -77,7 +77,7 @@ struct CupertinoAlbumSpread: View {
         VStack(alignment: .leading, spacing: 8) {
             ForEach(Array(rows.enumerated()), id: \.offset) { _, g in
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
-                    Text(g.0).foregroundStyle(CU.muted).frame(width: 150, alignment: .leading)
+                    Text(g.0).foregroundStyle(CU.textSecondary).frame(width: 150, alignment: .leading)
                     Text(g.1.joined(separator: ", ")).textSelection(.enabled)
                 }
                 .font(CU.Font.body.weighted(.regular)).accessibilityElement(children: .combine)
@@ -87,13 +87,13 @@ struct CupertinoAlbumSpread: View {
 
     @ViewBuilder private var reviews: some View {
         switch state.spread.reviews {
-        case .idle: Text("Reviews need a Librarian sign-in.").foregroundStyle(CU.muted)
-        case .loading: Text("Loading reviews…").foregroundStyle(CU.muted)
+        case .idle: Text("Reviews need a Librarian sign-in.").foregroundStyle(CU.textSecondary)
+        case .loading: Text("Loading reviews…").foregroundStyle(CU.textSecondary)
         case .failed:
-            HStack { Text("Reviews could not be loaded.").foregroundStyle(CU.muted); retryButton }
+            HStack { Text("Reviews could not be loaded.").foregroundStyle(CU.textSecondary); retryButton }
         case .loaded(let list, let retryable):
             VStack(alignment: .leading, spacing: 8) {
-                if list.isEmpty { Text(retryable ? "No reviews found. Some sources did not answer." : "No reviews found for this album.").foregroundStyle(CU.muted) }
+                if list.isEmpty { Text(retryable ? "No reviews found. Some sources did not answer." : "No reviews found for this album.").foregroundStyle(CU.textSecondary) }
                 ForEach(list) { r in
                     VStack(alignment: .leading, spacing: 4) {
                         Text("\u{201C}\(r.quote)\u{201D}").font(CU.Font.body.weighted(.regular)).lineSpacing(3).textSelection(.enabled)
@@ -101,7 +101,7 @@ struct CupertinoAlbumSpread: View {
                     }
                     .accessibilityElement(children: .combine)
                 }
-                if retryable && !list.isEmpty { Text("Some sources did not answer.").font(CU.Font.callout.weighted(.regular)).foregroundStyle(CU.muted) }
+                if retryable && !list.isEmpty { Text("Some sources did not answer.").font(CU.Font.callout.weighted(.regular)).foregroundStyle(CU.textSecondary) }
                 if retryable { retryButton }
             }
         }
@@ -113,7 +113,7 @@ struct CupertinoAlbumSpread: View {
 
     private func section<C: View>(_ title: String, @ViewBuilder _ body: () -> C) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(title).font(CU.Font.callout.weighted(.semibold)).foregroundStyle(CU.muted).textCase(.uppercase)
+            Text(title).font(CU.Font.callout.weighted(.semibold)).foregroundStyle(CU.textSecondary).textCase(.uppercase)
                 .accessibilityAddTraits(.isHeader)
             body()
         }

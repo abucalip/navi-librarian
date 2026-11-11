@@ -146,6 +146,8 @@ public final class AppState {
     public var librarySearch = ""
     /// A genre or decade a taste card asked the Songs tab to show (slice 7); the owner clears it with the chip on the tab.
     public var tasteFilter: TasteAction?
+    /// Home's Never played tile asked the Albums tab to show only albums with no plays; the chip on the tab clears it.
+    public var neverPlayedOnly = false
     /// The song to mark on the album page after a Library search result opened it (matched by title).
     public var highlightedSong: String?
     /// The Discover group of the Cupertino sidebar is folded or open.
@@ -499,13 +501,9 @@ public final class AppState {
         smart.add(action.playlist)
         screen = .smartPlaylists
     }
-    /// Home's Never played tile: opens a smart playlist of songs with no plays. It is made once and reused; nothing is saved to
-    /// Navidrome until the owner saves it.
-    public func openNeverPlayedPlaylist() {
-        let name = "Never played"
-        if let existing = smart.lists.first(where: { $0.name == name }) { smart.selectedID = existing.id }
-        else { smart.add(SmartPlaylist(name: name, rules: [SmartRule(field: .plays, op: .atMost, value: "0")])) }
-        screen = .smartPlaylists
+    /// Home's Never played tile: opens the Albums tab showing the albums with no plays, the same set the tile counts.
+    public func openNeverPlayedAlbums() {
+        librarySearch = ""; neverPlayedOnly = true; libraryTab = .albums; screen = .library
     }
 
     /// Home's "Play something unplayed": plays a random album with no plays. Does nothing when there is none.
