@@ -242,10 +242,10 @@ public struct GraphListRow: Identifiable, Equatable, Sendable {
     /// The match quality of the row's evidence in words. Empty when there is no evidence.
     public let match: String
 
-    public init(node: GraphNode) {
+    public init(node: GraphNode, centreName: String? = nil) {
         self.node = node
         let primary = Self.primary(of: node)
-        connection = primary.map(Self.words) ?? "Linked"
+        connection = primary.map { Self.words($0, centreName: centreName) } ?? "Linked"
         match = primary.map { GraphWording.matchQuality($0.matchQuality) } ?? ""
     }
 
@@ -254,7 +254,9 @@ public struct GraphListRow: Identifiable, Equatable, Sendable {
         node.evidence.first { GraphWording.group(relation: $0.relation) != nil } ?? node.evidence.first
     }
 
-    static func words(_ e: KnowledgeCredit) -> String {
+    /// With the centre's name, `member_of` reads "Member of Talk Talk", as in `connections--list`; without it, "Member of".
+    static func words(_ e: KnowledgeCredit, centreName: String? = nil) -> String {
+        if e.relation == "member_of", let name = centreName, !name.isEmpty { return "\(GraphWording.relation(e.relation)) \(name)" }
         if GraphWording.group(relation: e.relation) == .played, let role = e.role, !role.isEmpty { return GraphWording.capitalised(role) }
         return GraphWording.relation(e.relation)
     }
@@ -268,8 +270,8 @@ public struct GraphListGroup: Identifiable, Equatable, Sendable {
     public var title: String { group.title }
 
     /// The non-empty groups, in `GraphGroup` order, with their rows sorted.
-    public static func groups(_ nodes: [GraphNode]) -> [GraphListGroup] {
-        let byGroup = Dictionary(grouping: nodes.map(GraphListRow.init), by: { GraphGroup.of($0.node) })
+    public static func groups(_ nodes: [GraphNode], centreName: String? = nil) -> [GraphListGroup] {
+        let byGroup = Dictionary(grouping: nodes.map { GraphListRow(node: $0, centreName: centreName) }, by: { GraphGroup.of($0.node) })
         return GraphGroup.allCases.compactMap { group in
             guard let rows = byGroup[group], !rows.isEmpty else { return nil }
             let sorted = rows.sorted { a, b in
@@ -423,7 +425,7 @@ public final class GraphExplorerModel {
     public var sectorCounts: [GraphSector: Int] { Dictionary(grouping: nodes, by: { GraphSector.of(kind: $0.entity.type) }).mapValues(\.count) }
 
     /// The list view's groups, in the order they are shown.
-    public var listGroups: [GraphListGroup] { GraphListGroup.groups(nodes) }
+    public var listGroups: [GraphListGroup] { GraphListGroup.groups(nodes, centreName: centre?.name) }
 
     /// Starts from a library artist: reads their MusicBrainz id from Navidrome, then walks from it.
     public func start(artistRemoteID: String?, name: String, navidrome: NavidromeClient?, librarian: LibrarianClient?) async {

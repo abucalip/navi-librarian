@@ -105,4 +105,13 @@ import DiscairCore
         let no = #"{"subsonic-response":{"status":"ok","version":"1.16.1","openSubsonicExtensions":[{"name":"transcoding","versions":[1]}]}}"#
         #expect(try await client(no).0.supportsLyrics() == false)
     }
+
+    @Test func sonicExtensionCheck() async throws {
+        let yes = #"{"subsonic-response":{"status":"ok","version":"1.16.1","openSubsonicExtensions":[{"name":"songLyrics","versions":[1]},{"name":"sonicSimilarity","versions":[1]}]}}"#
+        #expect(try await client(yes).0.supportsSonicSimilarity())
+        let no = #"{"subsonic-response":{"status":"ok","version":"1.16.1","openSubsonicExtensions":[{"name":"songLyrics","versions":[1]}]}}"#
+        #expect(try await client(no).0.supportsSonicSimilarity() == false)
+        let none = #"{"subsonic-response":{"status":"ok","version":"1.16.1"}}"#
+        #expect(try await client(none).0.supportsSonicSimilarity() == false)
+    }
 }

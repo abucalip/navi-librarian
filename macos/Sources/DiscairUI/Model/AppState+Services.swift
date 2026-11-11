@@ -31,6 +31,8 @@ extension AppState {
 
         guard let librarian = session.librarian, let caps = try? await librarian.capabilities() else {
             input.librarianReachable = false
+            // Sonic analysis is a Navidrome extension: read it directly. If that fails too, it stays Unknown.
+            if let navidrome = session.navidrome { input.sonicAvailable = try? await navidrome.supportsSonicSimilarity() }
             services.finish(input)
             return
         }

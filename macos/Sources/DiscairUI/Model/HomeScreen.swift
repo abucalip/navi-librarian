@@ -114,6 +114,12 @@ enum HomeScreen {
     }
     enum PickArrow { case left, right, down }
 
+    /// What Space does on the pick: an owned album plays; one the library lacks says so instead of doing nothing.
+    enum SpaceOutcome: Equatable { case play, notOwned(notice: String) }
+    static func spaceOutcome(owned: Bool) -> SpaceOutcome {
+        owned ? .play : .notOwned(notice: "This album is not in your library yet, so there is nothing to play. Press → to get it.")
+    }
+
     /// What the pick panel shows when it has no pick: its own sentence and the button that fixes it.
     enum PickEmpty: Equatable {
         case needsHistory           // no listening source: nothing is guessed

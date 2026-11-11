@@ -73,6 +73,12 @@ import DiscairNavidrome
         #expect(HomeScreen.pickKey(arrow: .left) == .notForMe)
     }
 
+    @Test func spaceOnAnUnownedPickShowsANoticeAndOnAnOwnedOnePlays() {
+        #expect(HomeScreen.spaceOutcome(owned: true) == .play)
+        guard case .notOwned(let notice) = HomeScreen.spaceOutcome(owned: false) else { Issue.record("expected a notice"); return }
+        #expect(notice.contains("not in your library"))
+    }
+
     @Test func emptyPickStateFollowsTheSource() {
         #expect(HomeScreen.pickEmpty(librarianReachable: false, hasListeningSource: true, note: nil) == .withoutLibrarian)
         #expect(HomeScreen.pickEmpty(librarianReachable: true, hasListeningSource: false, note: nil) == .needsHistory)

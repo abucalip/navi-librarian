@@ -102,9 +102,14 @@ import DiscairNavidrome
         #expect(Self.build(few).shelfLife?.longestUnplayed == ["x", "p1", "p2"])
     }
 
-    @Test func noPlaysAtAllMeansEveryAlbumIsNeverPlayed() {
-        let d = Self.build([Self.album("a"), Self.album("b"), Self.album("c")])
-        #expect(d.neverPlayed == 3 && d.shelfLife?.count(.never) == 3 && d.shelfLife?.unknownPlayed == 0)
+    @Test func noPlayFieldsAnywhereMeansNotCountedYet() {
+        let d = Self.build([Self.album("a"), Self.album("b"), Self.album("c")], baseline: .init(count: 1, date: Self.now))
+        #expect(d.neverPlayed == nil && d.neverPlayedChange == nil)
+    }
+
+    @Test func mixedPlayFieldsCountOnlyAlbumsWithNoPlays() {
+        let d = Self.build([Self.album("a"), Self.album("b"), Self.album("c", plays: 2, playedDaysAgo: 3)])
+        #expect(d.neverPlayed == 2)
     }
 
     // MARK: Growth
@@ -201,10 +206,10 @@ import DiscairNavidrome
     // MARK: Librarian down
 
     @Test func librarianDownKeepsNavidromeFiguresAndDropsTheRest() {
-        let albums = [Self.album("a", year: 1985, addedDaysAgo: 3), Self.album("b", year: 1990, addedDaysAgo: 40)]
+        let albums = [Self.album("a", year: 1985, addedDaysAgo: 3), Self.album("b", year: 1990, addedDaysAgo: 40), Self.album("c", plays: 1, playedDaysAgo: 9)]
         let d = Self.build(albums, jobs: [Self.job("no_matches", message: "x")], taste: Self.taste(), picks: 5, up: false)
         #expect(d.notice == .librarianUnreachable)                  // outranks a failed Get
-        #expect(d.albumCount == 2 && d.added == .init(last: 1, before: 1) && d.neverPlayed == 2 && d.shelfLife != nil && d.series(.oneYear) != nil)
+        #expect(d.albumCount == 3 && d.added == .init(last: 1, before: 1) && d.neverPlayed == 2 && d.shelfLife != nil && d.series(.oneYear) != nil)
         #expect(d.waiting?.picks == nil && !d.listenSharesAvailable && d.decades.allSatisfy { $0.listenShare == nil })
     }
 
