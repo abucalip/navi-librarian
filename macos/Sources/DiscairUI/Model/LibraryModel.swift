@@ -108,11 +108,14 @@ public final class LibraryModel {
     /// Every album in the library (the home page holds only the first 120 by name and the newest 24, so a search over those
     /// missed most of the library). Empty until it has been read.
     public private(set) var allAlbums: [AlbumItem] = []
+    /// The same list as Navidrome sent it (dates and play counts included), read once and shared with the Home figures.
+    public private(set) var allNavidromeAlbums: [NavidromeAlbum] = []
     /// What a search or the Albums tab covers: the whole library once read, else what the home page holds.
     public var searchableAlbums: [AlbumItem] { allAlbums.isEmpty ? albums + recent : allAlbums }
 
     public func loadAllAlbums(navidrome: NavidromeClient?) async {
         guard isLive, let navidrome, let list = try? await navidrome.allAlbums() else { return }
+        allNavidromeAlbums = list
         allAlbums = list.enumerated().map { Self.item($0.element, index: 1000 + $0.offset) }
     }
 
@@ -154,7 +157,7 @@ public final class LibraryModel {
     }
 
     private func fail(_ message: String) {
-        recent = []; missing = []; albums = []; allAlbums = []; artists = []; allPicks = []; picksNote = nil; gapRadar = []
+        recent = []; missing = []; albums = []; allAlbums = []; allNavidromeAlbums = []; artists = []; allPicks = []; picksNote = nil; gapRadar = []
         songs = []; songsLoaded = false; songsHaveMore = false; songsError = nil
         phase = .failed(message)
     }

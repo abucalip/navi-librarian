@@ -100,6 +100,8 @@ public final class AppState {
     private let systemMedia: AnyObject?
     /// Sample data until a session connects, then the owner's library.
     public let library = LibraryModel()
+    /// The figures behind the Cupertino Home (redesign M5). Rebuilt by `refreshHomeDashboard()`; never read from the network.
+    public private(set) var homeDashboard = HomeDashboard.notLoaded
     public let smart = SmartPlaylistModel()
     /// Saved queues and Radio from this (M6 slice 12).
     public let savedQueues: SavedQueueStore
@@ -214,10 +216,25 @@ public final class AppState {
         }
         await library.load(navidrome: navidrome, librarian: session.librarian)
         await library.loadSongs(navidrome: navidrome)
-        Task { await library.loadAllAlbums(navidrome: navidrome) }
+        Task { await library.loadAllAlbums(navidrome: navidrome); await refreshHomeDashboard() }
         share.noteServerPaths(library.songServerPaths)
         if library.isLive { selectedArtist = library.artists.first ?? selectedArtist; selectedLetter = selectedArtist.letter }
         if library.isLive, let first = library.recent.first ?? library.albums.first { selectedAlbum = first }
+    }
+
+    /// Recomputes the Home figures from what the app already holds (the shared album list, the Gets, the saved taste) off the main
+    /// thread. The album list is read once, by `library.loadAllAlbums`; this makes no request.
+    public func refreshHomeDashboard(now: Date = Date()) async {
+        let all = library.allNavidromeAlbums
+        // An empty list is "not read" unless the home read finished on a library with no artists.
+        let albums: [NavidromeAlbum]? = !all.isEmpty ? all : (library.phase == .loaded && library.artists.isEmpty ? [] : nil)
+        // The Librarian counts as unreachable only when it is set up and its recommendations failed to read (M6 adds a real check).
+        let librarianUp = session?.librarian == nil || library.picksNote?.hasPrefix("Recommendations are unavailable") != true
+        let input = HomeDashboard.Inputs(
+            albums: albums, jobs: acquisition.visibleJobs, taste: taste.profiles,
+            picksCount: session?.librarian == nil ? nil : visible(library.missing).count,
+            librarianReachable: librarianUp, now: now)
+        homeDashboard = await Task.detached(priority: .userInitiated) { HomeDashboard.build(input) }.value
     }
 
     /// Saved pages are kept per Navidrome user. (They are not tied to the server address, so the LAN and Tailscale
