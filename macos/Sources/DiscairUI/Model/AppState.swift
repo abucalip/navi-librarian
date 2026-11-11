@@ -102,6 +102,16 @@ public final class AppState {
     public let library = LibraryModel()
     /// The figures behind the Cupertino Home (redesign M5). Rebuilt by `refreshHomeDashboard()`; never read from the network.
     public private(set) var homeDashboard = HomeDashboard.notLoaded
+    /// What the server reports it can do (graph coverage, ListenBrainz), read once per connection for Home's Server activity.
+    public private(set) var serverCapabilities: ServerCapabilities?
+    /// The feeds behind Home's arrivals, activity and handoff notice. Each is nil or empty until the server answers, and stays so
+    /// when a route is not served yet (D2, D3): a missing answer is "not available", never a zero.
+    public private(set) var radioPlays: [RadioPlay] = []
+    public private(set) var popularityStatus: JobStatus?
+    public private(set) var insightsJobStatus: JobStatus?
+    public private(set) var phoneQueue: NavidromePlayQueue?
+    @ObservationIgnored private let homeDefaults: UserDefaults
+    private static let neverPlayedKey = "discair.home.neverPlayedReadings"
     public let smart = SmartPlaylistModel()
     /// Saved queues and Radio from this (M6 slice 12).
     public let savedQueues: SavedQueueStore
@@ -142,6 +152,7 @@ public final class AppState {
         let defaults = session == nil ? (UserDefaults(suiteName: "discair-preview-\(UUID().uuidString)") ?? .standard) : UserDefaults.standard
         let acquisition = AcquisitionModel(defaults: defaults)
         self.acquisition = acquisition
+        self.homeDefaults = defaults
         self.session = session
         self.themeID = themeID
         self.screen = screen
@@ -213,6 +224,7 @@ public final class AppState {
         if let librarian = session.librarian {
             radio.setSonicAvailable(await librarian.sonicAvailable())
             pathsAvailable = await librarian.pathsAvailable()
+            serverCapabilities = try? await librarian.capabilities()
         }
         await library.load(navidrome: navidrome, librarian: session.librarian)
         await library.loadSongs(navidrome: navidrome)
@@ -230,11 +242,80 @@ public final class AppState {
         let albums: [NavidromeAlbum]? = !all.isEmpty ? all : (library.phase == .loaded && library.artists.isEmpty ? [] : nil)
         // The Librarian counts as unreachable only when it is set up and its recommendations failed to read (M6 adds a real check).
         let librarianUp = session?.librarian == nil || library.picksNote?.hasPrefix("Recommendations are unavailable") != true
+        // The never-played count is compared with the first reading since the first of last month; one reading is kept per day.
+        let calendar = Calendar(identifier: .gregorian)
+        let readings = storedNeverPlayedReadings()
         let input = HomeDashboard.Inputs(
             albums: albums, jobs: acquisition.visibleJobs, taste: taste.profiles,
             picksCount: session?.librarian == nil ? nil : visible(library.missing).count,
-            librarianReachable: librarianUp, now: now)
+            librarianReachable: librarianUp, neverPlayedBaseline: HomeScreen.baseline(readings, now: now, calendar: calendar),
+            radioPlays: radioPlays, listensByDay: taste.listensByDay,
+            handoff: HomeScreen.handoff(queue: phoneQueue, now: now, clientName: SubsonicAuth.clientName, playingSongID: player.current?.songID),
+            now: now, calendar: calendar)
         homeDashboard = await Task.detached(priority: .userInitiated) { HomeDashboard.build(input) }.value
+        if let never = homeDashboard.neverPlayed {
+            let next = HomeScreen.recording(readings, count: never, now: now, calendar: calendar)
+            if next != readings, let data = try? JSONEncoder().encode(next) { homeDefaults.set(data, forKey: Self.neverPlayedKey) }
+        }
+    }
+
+    /// Reads the feeds Home shows besides the album list: radio plays, the popularity and insight job states and the play queue
+    /// another client saved. Four small reads, each failing on its own; then the figures are rebuilt.
+    public func loadHomeFeeds() async {
+        guard let session else { return }
+        async let plays = Self.attempt { try await session.librarian?.radioPlays(limit: 50) }
+        async let popularity = Self.attempt { try await session.librarian?.popularityStatus() }
+        async let insightsJob = Self.attempt { try await session.librarian?.insightsRefreshStatus() }
+        async let queue = Self.attempt { try await session.navidrome?.playQueue() }
+        radioPlays = await plays ?? []
+        popularityStatus = await popularity
+        insightsJobStatus = await insightsJob
+        phoneQueue = await queue ?? nil
+        await refreshHomeDashboard()
+    }
+
+    private static func attempt<T: Sendable>(_ work: @Sendable () async throws -> T?) async -> T? { try? await work() }
+
+    /// Home's Get on a heard song: the server looks the album up and requests it. Failures come back as the server's sentence.
+    public func getRadioPlay(_ id: Int) async {
+        guard let librarian = session?.librarian else { return }
+        do {
+            let result = try await librarian.getRadioPlay(id: id)
+            if !result.ok { acquisition.report(result.message ?? "The Librarian could not get this song.") }
+        } catch {
+            acquisition.report((error as? LocalizedError)?.errorDescription ?? "The Librarian did not answer.")
+        }
+        await loadHomeFeeds()
+    }
+
+    /// Runs one bounded batch of the artist popularity fill (the owner's button; the server has no scheduler).
+    public func fillPopularity() async {
+        guard let librarian = session?.librarian else { return }
+        do {
+            let result = try await librarian.fillPopularity()
+            if result.state == "failed" { acquisition.report("The popularity fill failed" + (result.error.map { ": \($0)" } ?? ".")) }
+        } catch {
+            acquisition.report((error as? LocalizedError)?.errorDescription ?? "The popularity fill could not run.")
+        }
+        await loadHomeFeeds()
+    }
+
+    /// "Continue on this Mac": plays the phone's queue from the song it was on, at the position it reached.
+    public func continueFromPhone() {
+        guard let queue = phoneQueue else { return }
+        let start = HomeScreen.handoffStart(queue: queue)
+        player.play(start.songs.map(PlayerModel.item), startAt: start.startAt)
+        let seconds = Double(queue.positionMs) / 1000
+        Task {
+            // The song has to be loaded before it can seek.
+            for _ in 0..<40 where !player.isPlaying { try? await Task.sleep(for: .milliseconds(150)) }
+            if seconds > 1 { player.seek(toSeconds: seconds) }
+        }
+    }
+
+    private func storedNeverPlayedReadings() -> [HomeScreen.Reading] {
+        guard let data = homeDefaults.data(forKey: Self.neverPlayedKey) else { return [] }
+        return (try? JSONDecoder().decode([HomeScreen.Reading].self, from: data)) ?? []
     }
 
     /// Saved pages are kept per Navidrome user. (They are not tied to the server address, so the LAN and Tailscale
@@ -412,6 +493,30 @@ public final class AppState {
         smart.add(action.playlist)
         screen = .smartPlaylists
     }
+    /// Home's Never played tile: opens a smart playlist of songs with no plays. It is made once and reused; nothing is saved to
+    /// Navidrome until the owner saves it.
+    public func openNeverPlayedPlaylist() {
+        let name = "Never played"
+        if let existing = smart.lists.first(where: { $0.name == name }) { smart.selectedID = existing.id }
+        else { smart.add(SmartPlaylist(name: name, rules: [SmartRule(field: .plays, op: .atMost, value: "0")])) }
+        screen = .smartPlaylists
+    }
+
+    /// Home's "Play something unplayed": plays a random album with no plays. Does nothing when there is none.
+    public func playSomethingUnplayed() {
+        let unplayed = library.allNavidromeAlbums.filter { ($0.playCount ?? 0) == 0 && $0.played == nil }
+        guard let pick = unplayed.randomElement() else { return }
+        playAlbum(LibraryModel.item(pick, index: 0))
+    }
+
+    /// Preview and test seam: shows a prepared set of Home figures without a library behind it.
+    func showHome(_ dashboard: HomeDashboard) { homeDashboard = dashboard }
+
+    /// Preview and test seam: sets the feeds Home reads from the server.
+    func showHomeFeeds(radio: [RadioPlay] = [], popularity: JobStatus? = nil, insightsJob: JobStatus? = nil, queue: NavidromePlayQueue? = nil) {
+        radioPlays = radio; popularityStatus = popularity; insightsJobStatus = insightsJob; phoneQueue = queue
+    }
+
     /// Taste card action: opens the Library's Songs tab showing only that genre or decade.
     public func openLibrary(filteredBy action: TasteAction) {
         librarySearch = ""; tasteFilter = action; libraryTab = .songs; screen = .library

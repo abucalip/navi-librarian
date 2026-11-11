@@ -416,10 +416,10 @@ A failing service puts one warning banner under the top bar, as the offline bann
 | Id | Need | Today | Proposal | Blocks |
 |---|---|---|---|---|
 | D1 | Month-by-month "then and now" | `intelligence/taste/monthly.py` builds snapshots; nothing stores or serves them | `GET /api/insights/snapshots` contract proposal | A month comparison chart (not drawn) |
-| D2 | Listens per day or week | The server reads ListenBrainz for taste but returns no counts by date | Add `listens_by_day` (last 84 days) to the taste body, or a small route | "Listens last 7 days" stat and its comparison |
-| D3 | When a lens refresh last ran and will next run | No status route for the insights job | `GET /api/insights/refresh/status`, like the taste one | "next in 4 hours" on Server activity |
+| D2 | Listens per day or week (macOS client built in PR #982, contract proposed in `SERVER_V2_CONTRACT.md`) | The server reads ListenBrainz for taste but returns no counts by date | Add `listens_by_day` (last 84 days) to the taste body, or a small route | "Listens last 7 days" stat and its comparison |
+| D3 | When a lens refresh last ran and will next run (macOS client built in PR #982, contract proposed in `SERVER_V2_CONTRACT.md`) | No status route for the insights job | `GET /api/insights/refresh/status`, like the taste one | "next in 4 hours" on Server activity |
 | D4 | Album added dates on Android | The Android app reads Librarian's library routes; confirm they carry the added date | Add the field if absent | Android hero change, growth chart |
-| D5 | Phone handoff | Needs the Android app to call `savePlayQueue`; unchecked | Check, then a slice | Handoff notice |
+| D5 | Phone handoff (macOS side built in PR #982 from Navidrome's `getPlayQueue`; the Android app must call `savePlayQueue`) | Needs the Android app to call `savePlayQueue`; unchecked | Check, then a slice | Handoff notice |
 | D6 | Library health and unresolved items | Builders and fixtures exist; `GET /api/library-health` and `/api/unresolved` are not in the served routes | Serve them | Not designed here; a future "Health" row in Server activity |
 | D7 | Per-service "since" time | Not returned by the settings test routes | Client keeps its own last-good time | none; client-side |
 

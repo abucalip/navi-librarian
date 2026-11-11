@@ -304,6 +304,8 @@ public final class AcquisitionModel {
     }
 
     public func clearNotice() { notice = nil }
+    /// Shows a one-line failure in the window's notice until it is closed (for actions that are not Gets, such as Home's).
+    public func report(_ message: String) { notice = message }
 
     // MARK: Jobs
 

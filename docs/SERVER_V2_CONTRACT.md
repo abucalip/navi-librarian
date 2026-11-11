@@ -122,6 +122,19 @@ Served by `app/api/popularity.py` (D-016: nothing added to `navidrome_server.py`
 - Requests carry a `User-Agent` of `Discair/1.0 (...)` and `Authorization: Token <LISTENBRAINZ_TOKEN>`, the token read only from `config.env` in the working folder (key `LISTENBRAINZ_TOKEN`). The token is never logged, returned or stored.
 - Figures are saved in `state.artist_popularity` and are the only write. Obscurity-band smart-playlist rules stay `missing_data` until figures are saved.
 
+## Proposed: `listens_by_day` on GET /api/insights/taste (redesign D2)
+
+Not built on the server. The macOS Home (redesign M8) already reads it; until the server serves it the tile says "Not available yet", never zero.
+
+- Body field `listens_by_day`: an array of `{date, count}`, one entry per UTC calendar day for the 84 complete days before today, oldest first, **zero days included** (the client needs at least 14 entries and treats the last 7 against the 7 before). `date` is `YYYY-MM-DD`; `count` is a non-negative integer. The field is absent, not empty, when no listens source is set or the profiles are not computed yet.
+- Built from the listens the taste refresh already reads, stored with the profiles; the read stays read-only and makes no provider call. The series ends at the day before the last refresh's start, so a stale series is visible from its last date ("as of 9 November").
+
+## Proposed: GET /api/insights/refresh/status (redesign D3)
+
+Not built on the server. Home's Server activity row for the insight lenses reads it; without it the row falls back to when the app last read the cards.
+
+- Same shape as `GET /api/insights/taste/refresh/status`: `status` (newest run of the lens refresh job), `last_good`, `running`, `min_interval` (seconds) and `retry_after` (seconds until the next run is due, 0 = now). The client writes "Refreshed 2 hours ago · next in 4 hours" from `last_good.finished_at` and `retry_after`. Read-only; makes no provider call.
+
 ## GET /api/knowledge/{album,person,label,work,recording-works} (Phase 4)
 
 Served by `app/api/knowledge.py` (D-016: nothing added to `navidrome_server.py`). Every body is built by `KnowledgeReader` (`album_dossier`, `person_page`, `label_page`, `work_page`, `works_of_recording`) from `intelligence.sqlite3`; no provider traffic, no writes, no ownership flags. The page shapes are those the reader returns, with provenance on every credit and a `coverage` field (`pending`, `loaded`, `no_relationships_in_slice`) instead of a silent empty list.

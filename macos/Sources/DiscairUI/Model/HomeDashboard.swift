@@ -110,9 +110,39 @@ public struct HomeDashboard: Equatable, Sendable {
         case job(id: String, title: String, artist: String, stage: ArrivalStage, failure: String?)
         /// An album that reached the library recently and has no plays; the row offers Play.
         case arrived(albumID: String, title: String, artist: String)
+        /// A song heard on a relayed station that the library does not hold; the row offers Get.
+        case radio(playID: Int, title: String, artist: String, station: String, heardAt: Date)
 
         public var id: String {
-            switch self { case .job(let id, _, _, _, _): "job|" + id; case .arrived(let id, _, _): "album|" + id }
+            switch self {
+            case .job(let id, _, _, _, _): "job|" + id
+            case .arrived(let id, _, _): "album|" + id
+            case .radio(let id, _, _, _, _): "radio|\(id)"
+            }
+        }
+    }
+
+    /// Listens in the last 7 complete days against the 7 before (D2).
+    public struct ListensFigure: Equatable, Sendable {
+        public let last: Int
+        public let before: Int
+        /// The last day the series covers. Older than yesterday means the figure is stale and the view says "as of".
+        public let asOf: Date
+        public var delta: Int { last - before }
+        /// Whole percent change against the 7 days before; nil when that week had no listens.
+        public var percent: Int? { before > 0 ? Int((Double(delta) / Double(before) * 100).rounded()) : nil }
+    }
+
+    /// A song another client was playing when it last saved the queue (D5).
+    public struct Handoff: Equatable, Sendable {
+        public let songID: String
+        public let title: String
+        public let artist: String
+        public let positionSeconds: Int
+        public let durationSeconds: Int?
+        public init(songID: String, title: String, artist: String, positionSeconds: Int, durationSeconds: Int?) {
+            self.songID = songID; self.title = title; self.artist = artist
+            self.positionSeconds = positionSeconds; self.durationSeconds = durationSeconds
         }
     }
 
@@ -120,6 +150,8 @@ public struct HomeDashboard: Equatable, Sendable {
         case librarianUnreachable
         /// A failed Get: the first one's title and reason, and how many more failed.
         case failedJob(title: String, reason: String, others: Int)
+        /// Playing on another device (D5); the lowest-priority notice.
+        case handoff(Handoff)
     }
 
     // MARK: Values
@@ -132,6 +164,8 @@ public struct HomeDashboard: Equatable, Sendable {
     /// Albums with no plays. nil when the list was not read.
     public let neverPlayed: Int?
     public let neverPlayedChange: NeverPlayedChange?
+    /// nil until the server serves listens by day (D2) with at least 14 days.
+    public let listens: ListensFigure?
     public let waiting: Waiting?
     public let shelfLife: ShelfLife?
     public let growth: [GrowthRange: GrowthSeries]
@@ -169,14 +203,22 @@ public struct HomeDashboard: Equatable, Sendable {
         public var picksCount: Int?
         public var librarianReachable = true
         public var neverPlayedBaseline: NeverPlayedBaseline?
+        /// The Heard list of the radio relay, newest first.
+        public var radioPlays: [RadioPlay] = []
+        /// Listens per UTC day (D2), when the server serves them.
+        public var listensByDay: [ListensDay]?
+        /// A queue another client saved recently (D5).
+        public var handoff: Handoff?
         public var now = Date()
         public var calendar = Calendar(identifier: .gregorian)
 
         public init(albums: [NavidromeAlbum]?, jobs: [Acquisition] = [], taste: TasteProfiles? = nil, picksCount: Int? = nil,
                     librarianReachable: Bool = true, neverPlayedBaseline: NeverPlayedBaseline? = nil,
+                    radioPlays: [RadioPlay] = [], listensByDay: [ListensDay]? = nil, handoff: Handoff? = nil,
                     now: Date = Date(), calendar: Calendar = Calendar(identifier: .gregorian)) {
             self.albums = albums; self.jobs = jobs; self.taste = taste; self.picksCount = picksCount
             self.librarianReachable = librarianReachable; self.neverPlayedBaseline = neverPlayedBaseline
+            self.radioPlays = radioPlays; self.listensByDay = listensByDay; self.handoff = handoff
             self.now = now; self.calendar = calendar
         }
     }
@@ -190,18 +232,19 @@ public struct HomeDashboard: Equatable, Sendable {
     public static func build(_ input: Inputs) -> HomeDashboard {
         let notice = Self.notice(for: input)
         let ownJobs = Self.jobRows(input.jobs)
+        let radioRows = Self.radioRows(input)
 
         guard let albums = input.albums else {
-            return HomeDashboard(load: .notLoaded, albumCount: nil, added: nil, neverPlayed: nil, neverPlayedChange: nil,
+            return HomeDashboard(load: .notLoaded, albumCount: nil, added: nil, neverPlayed: nil, neverPlayedChange: nil, listens: nil,
                                  waiting: nil, shelfLife: nil, growth: [:], decades: [], listenSharesAvailable: false,
-                                 arrivals: Array(ownJobs.prefix(maxArrivalRows)), arrivalsHidden: max(0, ownJobs.count - maxArrivalRows),
+                                 arrivals: Array((ownJobs + radioRows).prefix(maxArrivalRows)), arrivalsHidden: max(0, ownJobs.count + radioRows.count - maxArrivalRows),
                                  notice: notice)
         }
         guard !albums.isEmpty else {
-            return HomeDashboard(load: .empty, albumCount: 0, added: nil, neverPlayed: nil, neverPlayedChange: nil,
+            return HomeDashboard(load: .empty, albumCount: 0, added: nil, neverPlayed: nil, neverPlayedChange: nil, listens: Self.listensFigure(input),
                                  waiting: Waiting(picks: input.librarianReachable ? input.picksCount : nil, unplayedArrivals: 0),
                                  shelfLife: nil, growth: [:], decades: [], listenSharesAvailable: false,
-                                 arrivals: Array(ownJobs.prefix(maxArrivalRows)), arrivalsHidden: max(0, ownJobs.count - maxArrivalRows),
+                                 arrivals: Array((ownJobs + radioRows).prefix(maxArrivalRows)), arrivalsHidden: max(0, ownJobs.count + radioRows.count - maxArrivalRows),
                                  notice: notice)
         }
 
@@ -246,7 +289,7 @@ public struct HomeDashboard: Equatable, Sendable {
             .filter { i in !hasPlays(i) && (created[i].map { $0 > arrivalCutoff } ?? false) }
             .sorted { (created[$0] ?? .distantPast) > (created[$1] ?? .distantPast) }
         let arrivedRows = arrivedIdx.map { ArrivalRow.arrived(albumID: albums[$0].id, title: albums[$0].name, artist: albums[$0].artist ?? "Unknown artist") }
-        let allRows = ownJobs + arrivedRows
+        let allRows = ownJobs + arrivedRows + radioRows
 
         // Without the Librarian there are no picks and no listen shares; the Navidrome figures stay.
         let picks = input.librarianReachable ? input.picksCount : nil
@@ -259,7 +302,7 @@ public struct HomeDashboard: Equatable, Sendable {
             if let s = Self.growth(r, dates: datedDates, undated: albums.count - datedCount, now: now, calendar: cal) { growth[r] = s }
         }
 
-        return HomeDashboard(load: .ready, albumCount: albums.count, added: added, neverPlayed: never, neverPlayedChange: change,
+        return HomeDashboard(load: .ready, albumCount: albums.count, added: added, neverPlayed: never, neverPlayedChange: change, listens: Self.listensFigure(input),
                              waiting: Waiting(picks: picks, unplayedArrivals: arrivedRows.count), shelfLife: shelf, growth: growth,
                              decades: decades, listenSharesAvailable: listenOK,
                              arrivals: Array(allRows.prefix(maxArrivalRows)), arrivalsHidden: max(0, allRows.count - maxArrivalRows),
@@ -379,7 +422,39 @@ public struct HomeDashboard: Equatable, Sendable {
         if !input.librarianReachable { return .librarianUnreachable }
         let failed = input.jobs.filter { !$0.isSong && $0.phase == .failed }
             .sorted { ($0.updatedAt ?? 0) > ($1.updatedAt ?? 0) }
-        guard let first = failed.first else { return nil }
-        return .failedJob(title: first.title, reason: first.details?.message ?? AcquisitionModel.statusText(first), others: failed.count - 1)
+        if let first = failed.first {
+            return .failedJob(title: first.title, reason: first.details?.message ?? AcquisitionModel.statusText(first), others: failed.count - 1)
+        }
+        return input.handoff.map(Notice.handoff)
+    }
+
+    /// Songs heard on the radio that the library lacks and nobody has asked for yet, newest first, one per artist and title,
+    /// from the last week.
+    static let radioDays = 7
+
+    private static func radioRows(_ input: Inputs) -> [ArrivalRow] {
+        guard input.librarianReachable else { return [] }
+        let cutoff = input.now.addingTimeInterval(-Double(radioDays) * 86_400).timeIntervalSince1970
+        var seen = Set<String>()
+        return input.radioPlays
+            .filter { !$0.inLibrary && !$0.grabbed && !($0.artist ?? "").isEmpty && $0.heardAt >= cutoff }
+            .sorted { $0.heardAt > $1.heardAt }
+            .compactMap { p -> ArrivalRow? in
+                guard seen.insert((p.artist ?? "").lowercased() + "|" + p.title.lowercased()).inserted else { return nil }
+                return .radio(playID: p.id, title: p.title, artist: p.artist ?? "", station: p.stationName, heardAt: Date(timeIntervalSince1970: p.heardAt))
+            }
+    }
+
+    /// The last 7 listed days against the 7 before. At least 14 days must be listed: a shorter series cannot say a week's change,
+    /// and a missing series is "not served", never zero. Days are UTC calendar days ("2026-11-10").
+    static func listensFigure(_ input: Inputs) -> ListensFigure? {
+        guard input.librarianReachable, let series = input.listensByDay, series.count >= 14 else { return nil }
+        let f = DateFormatter()
+        f.calendar = Calendar(identifier: .gregorian); f.timeZone = TimeZone(identifier: "UTC"); f.locale = Locale(identifier: "en_US_POSIX"); f.dateFormat = "yyyy-MM-dd"
+        let days = series.compactMap { d in f.date(from: d.date).map { ($0, d.count) } }.sorted { $0.0 < $1.0 }
+        guard days.count >= 14, let asOf = days.last?.0 else { return nil }
+        let tail = days.suffix(14)
+        let before = tail.prefix(7).reduce(0) { $0 + $1.1 }, last = tail.suffix(7).reduce(0) { $0 + $1.1 }
+        return ListensFigure(last: last, before: before, asOf: asOf)
     }
 }
