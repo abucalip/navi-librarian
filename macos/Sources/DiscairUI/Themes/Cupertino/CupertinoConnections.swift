@@ -140,7 +140,7 @@ struct CupertinoConnections: View {
                     ForEach(artists) { a in
                         Button { Task { await state.loadConnections(for: a) } } label: {
                             VStack(spacing: CU.Space.xs) {
-                                GraphNodeFace(entity: .preview(name: a.name, type: "artist", owned: true), size: 72, library: state.library, hintArtist: a.name, forceOwned: true, ink: CU.ink)
+                                GraphNodeFace(entity: .preview(name: a.name, type: "artist", owned: true), size: 72, library: state.library, hintArtist: a.name, forceOwned: true, ink: CU.text)
                                 Text(a.name).cuRole(CU.Font.headline).foregroundStyle(CU.text).lineLimit(1)
                                 Text(a.albumCount == 1 ? "1 album" : "\(a.albumCount) albums").cuRole(CU.Font.callout).foregroundStyle(CU.textSecondary)
                             }
@@ -221,7 +221,7 @@ struct CupertinoConnections: View {
             }
             if let c = graph.centre {
                 VStack(spacing: CU.Space.xs) {
-                    GraphNodeFace(entity: c, size: Sizes.centre, library: state.library, hintArtist: c.name, forceOwned: true, ink: CU.ink)
+                    GraphNodeFace(entity: c, size: Sizes.centre, library: state.library, hintArtist: c.name, forceOwned: true, ink: CU.text)
                     Text(c.name).cuRole(CU.Font.headline).foregroundStyle(CU.text).lineLimit(1).frame(width: 140)
                 }
                 .position(x: origin.x, y: origin.y + 10)
@@ -237,7 +237,7 @@ struct CupertinoConnections: View {
         let size = n.depth <= 1 ? Sizes.step1 : Sizes.step2
         let picked = n.id == graph.selectedID
         return Button { graph.selectedID = picked ? nil : n.id } label: {
-            GraphNodeFace(entity: n.entity, size: size, library: state.library, hintArtist: graph.centre?.name ?? "", forceOwned: false, ink: CU.ink, discs: false)
+            GraphNodeFace(entity: n.entity, size: size, library: state.library, hintArtist: graph.centre?.name ?? "", forceOwned: false, ink: CU.text, discs: false)
                 .overlay {
                     if picked {
                         if GraphSector.of(kind: n.entity.type) == .albums {
@@ -276,7 +276,7 @@ struct CupertinoConnections: View {
 
     private func notLoadedCentre(_ name: String) -> some View {
         VStack(spacing: CU.Space.s) {
-            GraphNodeFace(entity: .preview(name: name, type: "artist", owned: true), size: Sizes.centre, library: state.library, hintArtist: name, forceOwned: true, ink: CU.ink)
+            GraphNodeFace(entity: .preview(name: name, type: "artist", owned: true), size: Sizes.centre, library: state.library, hintArtist: name, forceOwned: true, ink: CU.text)
             Text(name).cuRole(CU.Font.headline).foregroundStyle(CU.text)
             Text(graph.loading ? "Reading connections…" : "No connections to draw yet.").cuRole(CU.Font.callout).foregroundStyle(CU.textSecondary)
         }
@@ -290,8 +290,8 @@ struct CupertinoConnections: View {
 
     private var legend: some View {
         HStack(spacing: CU.Space.m) {
-            legendItem("In your library") { Circle().fill(CU.accentTint).overlay(Circle().strokeBorder(CU.ink, lineWidth: 2)).frame(width: 14, height: 14) }
-            legendItem("Not in your library") { Circle().fill(CU.bgFill).overlay(Circle().strokeBorder(CU.ink, style: StrokeStyle(lineWidth: 1.5, dash: [3, 2]))).frame(width: 14, height: 14) }
+            legendItem("In your library") { Circle().fill(CU.accentTint).overlay(Circle().strokeBorder(CU.text, lineWidth: 2)).frame(width: 14, height: 14) }
+            legendItem("Not in your library") { Circle().fill(CU.bgFill).overlay(Circle().strokeBorder(CU.text, style: StrokeStyle(lineWidth: 1.5, dash: [3, 2]))).frame(width: 14, height: 14) }
             legendItem("Stated credit") { Rectangle().fill(CU.chart2).frame(width: 24, height: 1.5) }
             legendItem("Link, not a credit") {
                 Path { p in p.move(to: .zero); p.addLine(to: CGPoint(x: 24, y: 0)) }
@@ -348,7 +348,7 @@ struct CupertinoConnections: View {
         return Button { graph.selectedID = picked ? nil : n.id } label: {
             HStack(spacing: CU.Space.s) {
                 HStack(spacing: CU.Space.s) {
-                    GraphNodeFace(entity: n.entity, size: 32, library: state.library, hintArtist: graph.centre?.name ?? "", forceOwned: false, ink: CU.ink)
+                    GraphNodeFace(entity: n.entity, size: 32, library: state.library, hintArtist: graph.centre?.name ?? "", forceOwned: false, ink: CU.text)
                     Text(n.entity.name).cuRole(CU.Font.headline).foregroundStyle(CU.text).lineLimit(1)
                 }
                 .frame(width: Column.name + 40 - CU.Space.s, alignment: .leading)
@@ -423,7 +423,7 @@ struct CupertinoConnections: View {
         let artist = isPerson ? state.library.artist(named: n.entity.name) : nil
         let album = isAlbum ? GraphNodeFace.ownedAlbum(n.entity.name, library: state.library) : nil
         HStack(spacing: CU.Space.m) {
-            GraphNodeFace(entity: n.entity, size: 44, library: state.library, hintArtist: graph.centre?.name ?? "", forceOwned: false, ink: CU.ink)
+            GraphNodeFace(entity: n.entity, size: 44, library: state.library, hintArtist: graph.centre?.name ?? "", forceOwned: false, ink: CU.text)
             VStack(alignment: .leading, spacing: 0) {
                 Text(n.entity.name).cuRole(CU.Font.title3).foregroundStyle(CU.text).lineLimit(2).accessibilityAddTraits(.isHeader)
                 Text("\(GraphWording.kindWord(n.entity.type)) · \(n.depth == 1 ? "1 step" : "\(n.depth) steps") from \(graph.parentName(of: n) ?? graph.centre?.name ?? "the start")")
@@ -457,7 +457,7 @@ struct CupertinoConnections: View {
                 ForEach(also.prefix(5)) { a in
                     let item = GraphNodeFace.ownedAlbum(a.entity.name, library: state.library)
                     Button { if let item { state.open(album: item) } } label: {
-                        GraphNodeFace(entity: a.entity, size: 44, library: state.library, hintArtist: graph.centre?.name ?? "", forceOwned: true, ink: CU.ink)
+                        GraphNodeFace(entity: a.entity, size: 44, library: state.library, hintArtist: graph.centre?.name ?? "", forceOwned: true, ink: CU.text)
                     }
                     .buttonStyle(.plain).accessibilityLabel("\(a.entity.name), in your library")
                 }

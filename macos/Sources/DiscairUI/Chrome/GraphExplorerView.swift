@@ -7,7 +7,7 @@ struct GraphStyle {
     /// True for the Cupertino redesign (`docs/redesign.md` section 5.2): its own control bar, sectors, List view and inspector,
     /// drawn by `CupertinoConnections`. The Zine explorer below is unchanged.
     var redesigned = false
-    static let cupertino = GraphStyle(accent: CU.accent, ink: CU.ink, muted: CU.muted, card: CU.card, title: CU.title(34), redesigned: true)
+    static let cupertino = GraphStyle(accent: CU.accent, ink: CU.text, muted: CU.textSecondary, card: CU.bgPanel, title: CU.title(34), redesigned: true)
     static let zine = GraphStyle(accent: Z.red, ink: Z.ink, muted: Z.ink.opacity(0.6), card: Z.paper, title: Z.an(60))
 }
 

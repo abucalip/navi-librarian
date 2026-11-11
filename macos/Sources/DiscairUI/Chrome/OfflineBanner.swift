@@ -12,13 +12,13 @@ struct OfflineBanner: View {
         case .cupertino:
             HStack(spacing: 10) {
                 Image(systemName: "wifi.slash").foregroundStyle(CU.accent).accessibilityHidden(true)
-                Text(text).font(.system(size: 13)).foregroundStyle(CU.ink).fixedSize(horizontal: false, vertical: true)
+                Text(text).font(.system(size: 13)).foregroundStyle(CU.text).fixedSize(horizontal: false, vertical: true)
                 Spacer(minLength: 8)
                 retry.buttonStyle(CapsuleButtonStyle(primary: true, small: true))
             }
             .padding(.horizontal, 16).padding(.vertical, 8)
-            .background(CU.card)
-            .overlay(alignment: .bottom) { Rectangle().fill(CU.fill).frame(height: 1) }
+            .background(CU.bgPanel)
+            .overlay(alignment: .bottom) { Rectangle().fill(CU.bgFill).frame(height: 1) }
             .accessibilityElement(children: .contain)
         case .zine:
             HStack(spacing: 12) {

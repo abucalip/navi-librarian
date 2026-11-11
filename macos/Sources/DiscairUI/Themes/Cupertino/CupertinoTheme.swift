@@ -94,12 +94,11 @@ enum CU {
     static let chartBase = chartBaseRGB.color
     static let trackerTrack = trackerTrackRGB.color
     static let heat: [Color] = heatRGB.map(\.color)
-
-    // Aliases for the names the views already use.
-    static let muted = textSecondary
-    static let ink = text
-    static let card = bgPanel
-    static let fill = bgFill
+    /// The pastel wash behind the window (lilac, blush, mist); the glass sidebar and toolbar float over it.
+    static let backdropRGB: [CURGB] = [CURGB(0xEFE9F7), CURGB(0xF7ECEA), CURGB(0xEAF1F7)]
+    static let backdrop = LinearGradient(colors: backdropRGB.map(\.color), startPoint: .topLeading, endPoint: .bottomTrailing)
+    /// Glass tint: rgba(246,246,249,.74) in the mockup.
+    static let glassTintRGB = CURGB(0xF6F6F9)
 
     // Roles added in M10b so that no view needs a colour literal.
     /// Label on the accent fill (the one primary action, a selected row).
@@ -130,9 +129,22 @@ enum CU {
     /// Mockup glass: rgba(246,246,249,.74) over the blur. Bare `.regular` is too clear over the pastel backdrop.
     /// Offscreen screenshot renders blank when the tint is applied, so tests switch it off (`RenderMode`).
     static var glass: Glass {
-        RenderMode.offscreenScreenshot ? .regular : .regular.tint(Color(red: 0.965, green: 0.965, blue: 0.976).opacity(0.74))
+        RenderMode.offscreenScreenshot ? .regular : .regular.tint(glassTintRGB.color.opacity(0.74))
     }
     static let sidebarRadius: CGFloat = 20
+    /// Shell geometry kept as it is (section 4.3). These are the named exceptions to the 4, 8, 16, 24, 32 scale: changing them
+    /// would move every screen and the Zine-shared chrome.
+    enum Shell {
+        static let sidebarWidth: CGFloat = 216
+        /// Gap between the window edge and the floating sidebar; the artwork slot uses the same column.
+        static let inset: CGFloat = 10
+        static let contentLeading: CGFloat = 236
+        static let contentTop: CGFloat = 66
+        static let toolbarLeading: CGFloat = 238
+        static let toolbarTop: CGFloat = 12
+        /// 20 (sidebar) minus 8 (row padding), section 4.3.
+        static let rowRadius: CGFloat = 12
+    }
     static let windowRadius: CGFloat = 26
     static func title(_ size: CGFloat) -> SwiftUI.Font { .system(size: size, weight: .bold).width(.standard) }
 
@@ -220,10 +232,10 @@ struct CupertinoWindow: View {
                 // Opaque content; flows under the floating sidebar and toolbar (content is never glass).
                 content
                     .padding(.trailing, state.queueOpen && state.screen != .artist && state.screen != .album ? CupertinoQueueInspector.width : 0)
-                    .padding(.leading, 236)
-                    .padding(.top, state.screen == .artist || state.screen == .album ? CupertinoArtistLayout.bannerHeight : 66)
+                    .padding(.leading, CU.Shell.contentLeading)
+                    .padding(.top, state.screen == .artist || state.screen == .album ? CupertinoArtistLayout.bannerHeight : CU.Shell.contentTop)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-                    .background(Color.white)
+                    .background(CU.content)
 
                 if state.screen == .artist { CupertinoArtistBanner(state: state) }
                 if state.screen == .album { CupertinoAlbumBanner(state: state) }   // under the sidebar and toolbar
@@ -231,19 +243,19 @@ struct CupertinoWindow: View {
                 CupertinoSidebar(state: state)
                     .padding(.bottom, state.player.current != nil ? CupertinoArtworkSlot.side + 20 - CupertinoPlayerBar.height : 0)
                 CupertinoToolbar(state: state)
-                    .padding(.leading, 238).padding(.trailing, state.queueOpen ? CupertinoQueueInspector.width + 16 : 16).padding(.top, 12)
+                    .padding(.leading, CU.Shell.toolbarLeading).padding(.trailing, state.queueOpen ? CupertinoQueueInspector.width + CU.Space.m : CU.Space.m).padding(.top, CU.Shell.toolbarTop)
                 if state.queueOpen {
                     CupertinoQueueInspector(state: state).frame(maxWidth: .infinity, alignment: .trailing)
                 }
             }
-            .overlay(alignment: .bottom) { CupertinoNotice(state: state).padding(.bottom, 22) }
+            .overlay(alignment: .bottom) { CupertinoNotice(state: state).padding(.bottom, CU.Space.l) }
             // The player runs along the bottom of the window (owner decision; Apple's guidance puts it at the top).
             CupertinoPlayerBar(state: state)
         }
         // Left of the player, under the sidebar: the playing cover as a large square, or the connection when nothing plays.
         .overlay(alignment: .bottomLeading) { CupertinoArtworkSlot(state: state) }
-        .background(LinearGradient(colors: [Color(red: 0.937, green: 0.914, blue: 0.969), Color(red: 0.969, green: 0.925, blue: 0.918), Color(red: 0.918, green: 0.945, blue: 0.969)], startPoint: .topLeading, endPoint: .bottomTrailing))
-        .foregroundStyle(CU.ink)
+        .background(CU.backdrop)
+        .foregroundStyle(CU.text)
         .clipShape(RoundedRectangle(cornerRadius: CU.windowRadius, style: .continuous))
         .background(WindowConfigurator(canDragAt: { [state] p, size in !(state.queueOpen && p.x > size.width - CupertinoQueueInspector.width && p.y < size.height - CupertinoPlayerBar.height) }))
     }
@@ -265,7 +277,8 @@ struct CupertinoWindow: View {
         case .smartPlaylists: CupertinoSmartPlaylists(state: state)
         case .history: CupertinoHistory(state: state)
         case .insights: CupertinoInsights(state: state)
-        default: Text("\(state.screen.rawValue): not built yet").foregroundStyle(CU.muted).padding(28)
+        // `body` shows Now Playing on its own, so it never reaches here; the case is listed so a new Screen must be placed.
+        case .nowPlaying: CupertinoNowPlaying(state: state)
         }
     }
 }
@@ -298,19 +311,19 @@ struct CupertinoSidebar: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
-            TrafficLights().padding(.leading, 6).padding(.bottom, 20)
+            TrafficLights().padding(.leading, CU.Space.s).padding(.bottom, CU.Space.m)
             ScrollView {
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: CU.Space.xs) {
                     row("house", "Home", .home)
                     row("books.vertical", "Library", .library)
-                    Color.clear.frame(height: 12)
+                    Color.clear.frame(height: CU.Space.m)
                     Button { state.discoverOpen.toggle() } label: {
-                        HStack(spacing: 6) {
-                            Image(systemName: state.discoverOpen ? "chevron.down" : "chevron.right").font(.system(size: 10, weight: .bold)).frame(width: 18)
+                        HStack(spacing: CU.Space.s) {
+                            Image(systemName: state.discoverOpen ? "chevron.down" : "chevron.right").font(CU.Icon.small(.bold)).frame(width: 18)
                             Text("Discover").font(CU.Font.headline.font)
                             Spacer()
                         }
-                        .foregroundStyle(CU.muted).padding(.horizontal, 10).padding(.top, 2).padding(.bottom, 2)
+                        .foregroundStyle(CU.textSecondary).padding(.horizontal, CU.Space.s).padding(.vertical, CU.Space.xs)
                         .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
@@ -319,11 +332,11 @@ struct CupertinoSidebar: View {
                     if state.discoverOpen {
                         ForEach(discover, id: \.1) { icon, label, screen in row(icon, label, screen).padding(.leading, 16) }
                     }
-                    Color.clear.frame(height: 12)
+                    Color.clear.frame(height: CU.Space.m)
                     row("wand.and.stars", "Smart Playlists", .smartPlaylists)
                     row("arrow.down.circle", "Downloads", .downloads)
                     row("gearshape", "Settings", .settings)
-                    Text("Playlists").font(.system(size: 11, weight: .bold)).foregroundStyle(CU.muted).padding(.leading, 10).padding(.top, 14)
+                    Text("Playlists").font(CU.Font.eyebrow.font).foregroundStyle(CU.textSecondary).padding(.leading, CU.Space.s).padding(.top, CU.Space.m)
                     ForEach(state.smart.lists) { list in
                         Button { state.smart.selectedID = list.id; state.screen = .smartPlaylists } label: {
                             HStack(spacing: CU.Space.s) {
@@ -340,10 +353,10 @@ struct CupertinoSidebar: View {
             }
             .scrollIndicators(.hidden)
         }
-        .padding(10).padding(.top, 6)
-        .frame(width: 216)
+        .padding(CU.Shell.inset).padding(.top, CU.Space.s)
+        .frame(width: CU.Shell.sidebarWidth)
         .glassEffect(CU.glass, in: RoundedRectangle(cornerRadius: CU.sidebarRadius, style: .continuous))
-        .padding(10)
+        .padding(CU.Shell.inset)
     }
 
     private func row(_ icon: String, _ label: String, _ screen: Screen) -> some View {
@@ -356,15 +369,15 @@ struct CupertinoSidebar: View {
                 Text(label).fontWeight(on ? .semibold : .regular)
                 Spacer()
                 if label == "Downloads", !state.library.isLive || state.acquisition.activeCount > 0 {
-                    Text(state.library.isLive ? String(state.acquisition.activeCount) : "2").font(.system(size: 11, weight: .bold)).foregroundStyle(.white)
-                        .padding(.horizontal, 7).background(CU.accent, in: Capsule())
+                    Text(state.library.isLive ? String(state.acquisition.activeCount) : "2").font(CU.Font.eyebrow.font).foregroundStyle(CU.onAccent)
+                        .padding(.horizontal, CU.Space.s).background(CU.accent, in: Capsule())
                 }
             }
             .font(CU.Font.body.weighted(.regular))
             .foregroundStyle(on ? CU.accentStrong : CU.text)
             .padding(.horizontal, CU.Space.s).frame(height: 32)
-            .background(on ? CU.accentTint : .clear, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-            .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .background(on ? CU.accentTint : .clear, in: RoundedRectangle(cornerRadius: CU.Shell.rowRadius, style: .continuous))
+            .contentShape(RoundedRectangle(cornerRadius: CU.Shell.rowRadius, style: .continuous))
         }
         .buttonStyle(.plain)
         .accessibilityAddTraits(on ? .isSelected : [])
@@ -375,7 +388,7 @@ struct CupertinoSidebar: View {
 struct CupertinoToolbar: View {
     let state: AppState
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: CU.Space.s) {
             Spacer(minLength: 0)
             CupertinoStatusButton(state: state)
             Button { state.palette.open() } label: {
@@ -384,7 +397,7 @@ struct CupertinoToolbar: View {
                     Text("Search  ⌘K")
                     Spacer(minLength: 0)
                 }
-                .foregroundStyle(CU.muted).padding(.horizontal, 14).frame(width: 210, height: 36)
+                .foregroundStyle(CU.textSecondary).padding(.horizontal, CU.Space.m).frame(width: 210, height: 36)
                 .contentShape(Capsule())
                 .glassEffect(CU.glass, in: Capsule())
             }
@@ -392,7 +405,7 @@ struct CupertinoToolbar: View {
 
             // The whole circle is the button, not just the icon.
             Button { state.queueOpen.toggle() } label: {
-                Image(systemName: "list.bullet").font(.system(size: 15)).foregroundStyle(state.queueOpen ? CU.accent : CU.ink)
+                Image(systemName: "list.bullet").font(CU.Icon.row()).foregroundStyle(state.queueOpen ? CU.accent : CU.text)
                     .frame(width: 40, height: 40).contentShape(Circle()).glassEffect(CU.glass, in: Circle())
             }
             .buttonStyle(.plain).contentShape(Circle()).accessibilityLabel(state.queueOpen ? "Close Queue" : "Queue")
@@ -407,20 +420,20 @@ struct CupertinoNotice: View {
     var body: some View {
         let acq = state.acquisition
         if let p = acq.pending {
-            HStack(spacing: 12) {
+            HStack(spacing: CU.Space.s) {
                 Text("Not for me: \(p.title)").fontWeight(.semibold).lineLimit(1)
                 Button("Undo") { acq.undo() }.buttonStyle(CapsuleButtonStyle(primary: true, small: true))
                 Button("Never suggest \(p.artist)") { Task { await acq.neverSuggest() } }.buttonStyle(CapsuleButtonStyle(small: true, outlined: true))
             }
-            .font(.system(size: 13)).padding(.horizontal, 16).padding(.vertical, 10)
+            .font(CU.Font.body.font).padding(.horizontal, CU.Space.m).padding(.vertical, CU.Space.s)
             .glassEffect(CU.glass, in: Capsule())
             .accessibilityElement(children: .contain)
         } else if let n = acq.notice {
-            HStack(spacing: 12) {
+            HStack(spacing: CU.Space.s) {
                 Text(n).lineLimit(2)
                 Button("Dismiss") { acq.clearNotice() }.buttonStyle(CapsuleButtonStyle(small: true))
             }
-            .font(.system(size: 13)).padding(.horizontal, 16).padding(.vertical, 10)
+            .font(CU.Font.body.font).padding(.horizontal, CU.Space.m).padding(.vertical, CU.Space.s)
             .glassEffect(CU.glass, in: Capsule())
         }
     }
@@ -430,7 +443,7 @@ struct CupertinoNotice: View {
 /// connection text), or that text when nothing is playing.
 struct CupertinoArtworkSlot: View {
     let state: AppState
-    static let side: CGFloat = 216
+    static let side: CGFloat = CU.Shell.sidebarWidth
 
     var body: some View {
         if let c = state.player.current {
@@ -439,18 +452,18 @@ struct CupertinoArtworkSlot: View {
                            showsDisc: false, fallback: { state.screen = .nowPlaying }) {
                 CoverView(album: AlbumItem(id: -1, title: c.album, artist: c.artist, year: 0, genre: "", format: "", owned: true, hue: 200, remoteID: c.albumID, coverArt: c.coverArt), px: 600)
             }
-            .shadow(color: .black.opacity(0.28), radius: 10, y: 4)
+            .shadow(color: CU.shadowInk.opacity(0.28), radius: 10, y: 4)
             // The sidebar's glass starts 10 points in and is 216 wide: the cover takes the same column.
-            .padding(.leading, 10).padding(.bottom, 10)
+            .padding(.leading, CU.Shell.inset).padding(.bottom, CU.Shell.inset)
         } else {
-            HStack(spacing: 5) {
+            HStack(spacing: CU.Space.xs) {
                 // A bad connection is danger with its own icon and the label's words; never the accent.
                 Image(systemName: state.connectionIsGood ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
                     .foregroundStyle(state.connectionIsGood ? CU.success : CU.danger).accessibilityHidden(true)
                 Text(state.connectionLabel).lineLimit(1).minimumScaleFactor(0.8)
             }
-            .font(CU.Font.caption.weighted(.regular)).foregroundStyle(CU.muted)
-            .frame(width: Self.side, alignment: .leading).padding(.leading, 26).padding(.bottom, (CupertinoPlayerBar.height - 14) / 2)
+            .font(CU.Font.caption.weighted(.regular)).foregroundStyle(CU.textSecondary)
+            .frame(width: Self.side, alignment: .leading).padding(.leading, CU.Shell.inset + CU.Space.m).padding(.bottom, (CupertinoPlayerBar.height - 14) / 2)
             .accessibilityElement(children: .combine)
             .accessibilityLabel("Connection: \(state.connectionLabel)")
         }

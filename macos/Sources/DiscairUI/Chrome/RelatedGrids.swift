@@ -90,7 +90,7 @@ struct AlbumRelatedGrids: View {
                 }
             }
             if r.loading && r.artists.isEmpty && r.albums.isEmpty {
-                Text("Looking for similar artists…").font(.system(size: 12)).foregroundStyle(CU.muted).padding(.top, 14)
+                Text("Looking for similar artists…").font(.system(size: 12)).foregroundStyle(CU.textSecondary).padding(.top, 14)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -99,11 +99,11 @@ struct AlbumRelatedGrids: View {
 
     private func box<C: View>(_ title: String, @ViewBuilder _ content: () -> C) -> some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text(title).font(.system(size: 12, weight: .semibold)).foregroundStyle(CU.muted).textCase(.uppercase).accessibilityAddTraits(.isHeader)
+            Text(title).font(.system(size: 12, weight: .semibold)).foregroundStyle(CU.textSecondary).textCase(.uppercase).accessibilityAddTraits(.isHeader)
             content()
         }
         .padding(16)
-        .background(CU.fill.opacity(0.5), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .background(CU.bgFill.opacity(0.5), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 }
 
@@ -132,7 +132,7 @@ struct ArtistSimilarRow: View {
             }
             .onChange(of: state.selectedArtist.id) { _, _ in salt = .random(in: 0...UInt64.max) }
         } else if state.related.loading {
-            Text("Looking for similar artists…").font(.system(size: 12)).foregroundStyle(CU.muted).padding(.top, 14)
+            Text("Looking for similar artists…").font(.system(size: 12)).foregroundStyle(CU.textSecondary).padding(.top, 14)
         }
     }
 }
@@ -162,7 +162,7 @@ struct AlbumBookletTab: View {
                     }
                 }
             } else {
-                Text(loaded ? "This album has no booklet." : "Looking for the booklet…").foregroundStyle(CU.muted)
+                Text(loaded ? "This album has no booklet." : "Looking for the booklet…").foregroundStyle(CU.textSecondary)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)

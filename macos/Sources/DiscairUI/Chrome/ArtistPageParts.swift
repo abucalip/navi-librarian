@@ -27,7 +27,7 @@ struct ArtistBio: View {
                     Button(expanded ? "Show less" : "Read more") { expanded.toggle() }
                         .buttonStyle(.plain).font(.system(size: 12, weight: .semibold)).foregroundStyle(CU.accent)
                 }
-                if let s = state.related.bioSource, !s.isEmpty { Text(s).font(.system(size: 11)).foregroundStyle(CU.muted) }
+                if let s = state.related.bioSource, !s.isEmpty { Text(s).font(.system(size: 11)).foregroundStyle(CU.textSecondary) }
             }
         }
         .frame(maxWidth: 640, alignment: .leading)
@@ -74,7 +74,7 @@ struct JustifiedText: NSViewRepresentable {
         style.lineSpacing = 3
         style.lineBreakMode = .byWordWrapping
         f.attributedStringValue = NSAttributedString(string: text, attributes: [
-            .font: NSFont.systemFont(ofSize: size), .paragraphStyle: style, .foregroundColor: NSColor(CU.ink)])
+            .font: NSFont.systemFont(ofSize: size), .paragraphStyle: style, .foregroundColor: NSColor(CU.text)])
         f.maximumNumberOfLines = lineLimit
         f.lineBreakMode = lineLimit > 0 ? .byTruncatingTail : .byWordWrapping
     }
@@ -126,7 +126,7 @@ struct TopSongsPanel: View {
     private func row(_ s: TopSongEntry) -> some View {
         HStack(spacing: 10) {
             Text("\(s.rank)").font(zine ? Z.an(18) : .system(size: 15, weight: .bold)).monospacedDigit()
-                .foregroundStyle(zine ? Z.ink : CU.muted).frame(width: 24, alignment: .trailing)
+                .foregroundStyle(zine ? Z.ink : CU.textSecondary).frame(width: 24, alignment: .trailing)
             VStack(alignment: .leading, spacing: 1) {
                 Text(s.name).font(zine ? Z.serif(14, bold: true) : .system(size: 13, weight: .semibold)).lineLimit(1)
                 Text([s.album, s.listensText.map { "\($0) listens" }].compactMap { $0 }.joined(separator: " · "))

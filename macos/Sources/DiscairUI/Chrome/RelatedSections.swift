@@ -23,7 +23,7 @@ struct RelatedSections: View {
             }
             if albums && !r.albums.isEmpty { albumRow("Similar albums not in your library", r.albums) }
             if r.loading && r.artists.isEmpty && r.albums.isEmpty {
-                Text("Looking for similar artists…").font(zine ? Z.mono(11) : .system(size: 12)).foregroundStyle(zine ? Z.ink.opacity(0.6) : CU.muted).padding(.top, 14)
+                Text("Looking for similar artists…").font(zine ? Z.mono(11) : .system(size: 12)).foregroundStyle(zine ? Z.ink.opacity(0.6) : CU.textSecondary).padding(.top, 14)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)

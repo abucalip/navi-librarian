@@ -48,11 +48,11 @@ struct CupertinoMiller: View {
                             HStack {
                                 Text(e.name).lineLimit(1)
                                 Spacer(minLength: 6)
-                                Text(String(e.count)).foregroundStyle(on ? CU.onAccent.opacity(0.85) : CU.muted).monospacedDigit()
+                                Text(String(e.count)).foregroundStyle(on ? CU.onAccent.opacity(0.85) : CU.textSecondary).monospacedDigit()
                             }
                             .font(CU.Font.body.weighted(.regular))
                             .padding(.horizontal, 8).padding(.vertical, 4)
-                            .foregroundStyle(on ? CU.onAccent : CU.ink)
+                            .foregroundStyle(on ? CU.onAccent : CU.text)
                             .background(on ? CU.accent : .clear, in: RoundedRectangle(cornerRadius: 4, style: .continuous))
                             .contentShape(Rectangle())
                         }
@@ -76,13 +76,13 @@ struct CupertinoMiller: View {
                     ForEach(Array(rows.enumerated()), id: \.element.id) { i, r in
                         let on = r.id == track
                         HStack(spacing: 8) {
-                            Text(r.track.map(String.init) ?? "").foregroundStyle(on ? CU.onAccent.opacity(0.85) : CU.muted).monospacedDigit().frame(width: 22, alignment: .trailing)
+                            Text(r.track.map(String.init) ?? "").foregroundStyle(on ? CU.onAccent.opacity(0.85) : CU.textSecondary).monospacedDigit().frame(width: 22, alignment: .trailing)
                             Text(r.title).lineLimit(1)
                             Spacer(minLength: 0)
                         }
                         .font(CU.Font.body.weighted(.regular))
                         .padding(.horizontal, 8).padding(.vertical, 4)
-                        .foregroundStyle(on ? CU.onAccent : CU.ink)
+                        .foregroundStyle(on ? CU.onAccent : CU.text)
                         .background(on ? CU.accent : .clear, in: RoundedRectangle(cornerRadius: 4, style: .continuous))
                         .contentShape(Rectangle())
                         .onTapGesture(count: 2) { track = r.id; state.play(rows: rows, startAt: i) }
@@ -105,7 +105,7 @@ struct CupertinoMiller: View {
                 CoverView(album: r.albumItem).frame(width: 120, height: 120).clipShape(RoundedRectangle(cornerRadius: 8))
                 Text(r.title).font(CU.Font.title3.weighted(.bold)).lineLimit(2)
                 Text(r.artist).foregroundStyle(CU.accent)
-                Text(MillerColumns.albumName(r)).foregroundStyle(CU.muted).lineLimit(2)
+                Text(MillerColumns.albumName(r)).foregroundStyle(CU.textSecondary).lineLimit(2)
                 VStack(alignment: .leading, spacing: 4) {
                     fact("Genre", MillerColumns.genreName(r))
                     fact("Year", r.year > 0 ? String(r.year) : "")
@@ -124,22 +124,22 @@ struct CupertinoMiller: View {
                     }
                 }
             } else {
-                Text("Pick a track to see its details.").foregroundStyle(CU.muted)
+                Text("Pick a track to see its details.").foregroundStyle(CU.textSecondary)
             }
             Spacer(minLength: 0)
         }
         .padding(.horizontal, 16)
         .frame(width: 230, alignment: .topLeading)
-        .background(CU.card)
+        .background(CU.bgPanel)
     }
 
     private func heading(_ t: String) -> some View {
-        Text(t).font(CU.Font.callout.weighted(.medium)).foregroundStyle(CU.muted)
+        Text(t).font(CU.Font.callout.weighted(.medium)).foregroundStyle(CU.textSecondary)
             .frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 16).padding(.vertical, 8)
             .overlay(alignment: .bottom) { Rectangle().fill(CU.shadowInk.opacity(0.08)).frame(height: 1) }
     }
 
     @ViewBuilder private func fact(_ k: String, _ v: String) -> some View {
-        if !v.isEmpty { HStack(alignment: .firstTextBaseline) { Text(k).foregroundStyle(CU.muted).frame(width: 78, alignment: .leading); Text(v) } }
+        if !v.isEmpty { HStack(alignment: .firstTextBaseline) { Text(k).foregroundStyle(CU.textSecondary).frame(width: 78, alignment: .leading); Text(v) } }
     }
 }

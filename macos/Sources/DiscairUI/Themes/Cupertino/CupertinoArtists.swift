@@ -19,7 +19,7 @@ struct CupertinoArtistsIndex: View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 0) {
                 if showHeader { Text("Artists").font(CU.title(34)).padding(.top, 4).padding(.bottom, 8) }
-                if state.library.phase == .loading { Text("Loading your library…").foregroundStyle(CU.muted).padding(.bottom, 8) }
+                if state.library.phase == .loading { Text("Loading your library…").foregroundStyle(CU.textSecondary).padding(.bottom, 8) }
                 if case .failed(let m) = state.library.phase { CUErrorLine(message: m).padding(.bottom, 8) }
                 ForEach(groups, id: \.letter) { g in
                     Text(g.letter).font(CU.title(20)).foregroundStyle(CU.accent).padding(.top, 16).padding(.bottom, 8)
@@ -30,7 +30,7 @@ struct CupertinoArtistsIndex: View {
                                 HStack(spacing: 8) {
                                     Text(a.name).lineLimit(1)
                                     Spacer(minLength: 4)
-                                    Text("\(a.albumCount)").font(CU.Font.callout.weighted(.regular)).monospacedDigit().foregroundStyle(CU.muted)
+                                    Text("\(a.albumCount)").font(CU.Font.callout.weighted(.regular)).monospacedDigit().foregroundStyle(CU.textSecondary)
                                 }
                                 .padding(.horizontal, 8).padding(.vertical, 8)
                                 .contentShape(Rectangle())

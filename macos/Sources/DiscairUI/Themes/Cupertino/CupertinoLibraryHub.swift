@@ -60,19 +60,19 @@ struct CupertinoLibraryHub: View {
 
     private var searchField: some View {
         HStack(spacing: 8) {
-            Image(systemName: "magnifyingglass").foregroundStyle(CU.muted).accessibilityHidden(true)
+            Image(systemName: "magnifyingglass").foregroundStyle(CU.textSecondary).accessibilityHidden(true)
             TextField(state.libraryTab == .overview ? "Search your library" : "Filter \(state.libraryTab.rawValue.lowercased())", text: $state.librarySearch)
                 .textFieldStyle(.plain).focused($searchFocused)
                 .accessibilityLabel(state.libraryTab == .overview ? "Search your library" : "Filter \(state.libraryTab.rawValue)")
                 .onExitCommand { state.librarySearch = "" }
             if !query.isEmpty {
-                Button { state.librarySearch = "" } label: { Image(systemName: "xmark.circle.fill").foregroundStyle(CU.muted) }
+                Button { state.librarySearch = "" } label: { Image(systemName: "xmark.circle.fill").foregroundStyle(CU.textSecondary) }
                     .buttonStyle(.plain).accessibilityLabel("Clear search")
             }
         }
         .font(CU.Font.body.weighted(.regular))
         .padding(.horizontal, 16).frame(width: 300, height: 34)
-        .background(CU.fill, in: Capsule())
+        .background(CU.bgFill, in: Capsule())
     }
 
     // MARK: Overview
@@ -82,7 +82,7 @@ struct CupertinoLibraryHub: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
                     Text("Recently Added").font(CU.title(20)).padding(.bottom, 16).accessibilityAddTraits(.isHeader)
-                    if state.library.phase == .loading { Text("Loading your library…").foregroundStyle(CU.muted).padding(.bottom, 8) }
+                    if state.library.phase == .loading { Text("Loading your library…").foregroundStyle(CU.textSecondary).padding(.bottom, 8) }
                     if case .failed(let m) = state.library.phase { CUErrorLine(message: m).padding(.bottom, 8) }
                     LazyVGrid(columns: [GridItem(.adaptive(minimum: 128, maximum: 128), spacing: 16, alignment: .top)], alignment: .leading, spacing: 16) {
                         ForEach(state.visible(state.library.recent)) { a in AlbumTile(state: state, album: a) }
@@ -100,7 +100,7 @@ struct CupertinoLibraryHub: View {
         return VStack(alignment: .leading, spacing: 8) {
             Text("Recently played").font(CU.title(20)).padding(.bottom, 8).accessibilityAddTraits(.isHeader)
             if songs.isEmpty {
-                Text(state.library.songsLoading ? "Reading your songs…" : "Nothing played yet.").foregroundStyle(CU.muted)
+                Text(state.library.songsLoading ? "Reading your songs…" : "Nothing played yet.").foregroundStyle(CU.textSecondary)
             }
             ScrollView {
                 VStack(spacing: 0) {
@@ -110,7 +110,7 @@ struct CupertinoLibraryHub: View {
                                 CoverView(album: s.albumItem).frame(width: 36).clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous)).accessibilityHidden(true)
                                 VStack(alignment: .leading, spacing: 0) {
                                     Text(s.title).fontWeight(.semibold).lineLimit(1)
-                                    Text(s.artist).font(CU.Font.callout.weighted(.regular)).foregroundStyle(CU.muted).lineLimit(1)
+                                    Text(s.artist).font(CU.Font.callout.weighted(.regular)).foregroundStyle(CU.textSecondary).lineLimit(1)
                                 }
                                 Spacer(minLength: 0)
                             }
@@ -125,7 +125,7 @@ struct CupertinoLibraryHub: View {
         .font(CU.Font.body.weighted(.regular))
         .padding(.leading, 16).padding(.trailing, 24).padding(.bottom, 16)
         .frame(width: 270)
-        .overlay(alignment: .leading) { Rectangle().fill(CU.ink.opacity(0.08)).frame(width: 1) }
+        .overlay(alignment: .leading) { Rectangle().fill(CU.text.opacity(0.08)).frame(width: 1) }
     }
 
     // MARK: Search sheet
@@ -134,7 +134,7 @@ struct CupertinoLibraryHub: View {
         let r = results
         return ScrollView {
             VStack(alignment: .leading, spacing: 4) {
-                if r.isEmpty { Text("Nothing in your library matches.").foregroundStyle(CU.muted).padding(8) }
+                if r.isEmpty { Text("Nothing in your library matches.").foregroundStyle(CU.textSecondary).padding(8) }
                 if !r.artists.isEmpty {
                     sectionTitle("Artists")
                     ForEach(r.artists) { a in
@@ -161,7 +161,7 @@ struct CupertinoLibraryHub: View {
         .font(CU.Font.body.weighted(.regular))
         .frame(width: 420).frame(maxHeight: 420).fixedSize(horizontal: false, vertical: true)
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).stroke(CU.ink.opacity(0.08), lineWidth: 1))
+        .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).stroke(CU.text.opacity(0.08), lineWidth: 1))
         .shadow(color: CU.shadowInk.opacity(0.18), radius: 16, y: 6)
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Search results")
@@ -170,7 +170,7 @@ struct CupertinoLibraryHub: View {
     private func close() { state.librarySearch = "" }
 
     private func sectionTitle(_ t: String) -> some View {
-        Text(t).font(CU.Font.caption.weighted(.bold)).foregroundStyle(CU.muted).padding(.horizontal, 8).padding(.top, 8)
+        Text(t).font(CU.Font.caption.weighted(.bold)).foregroundStyle(CU.textSecondary).padding(.horizontal, 8).padding(.top, 8)
             .accessibilityAddTraits(.isHeader)
     }
 
@@ -181,7 +181,7 @@ struct CupertinoLibraryHub: View {
                 else if let icon { Image(systemName: icon).foregroundStyle(CU.accent).frame(width: 32).accessibilityHidden(true) }
                 VStack(alignment: .leading, spacing: 0) {
                     Text(title).fontWeight(.semibold).lineLimit(1)
-                    Text(detail).font(CU.Font.callout.weighted(.regular)).foregroundStyle(CU.muted).lineLimit(1)
+                    Text(detail).font(CU.Font.callout.weighted(.regular)).foregroundStyle(CU.textSecondary).lineLimit(1)
                 }
                 Spacer(minLength: 0)
             }
@@ -202,7 +202,7 @@ struct AlbumTile: View {
                 CoverView(album: album).frame(width: 128).clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
                     .shadow(color: CU.shadowInk.opacity(0.2), radius: 7, y: 4).padding(.bottom, 8)
                 Text(album.title).fontWeight(.semibold).lineLimit(1)
-                Text(album.artist).foregroundStyle(CU.muted).lineLimit(1)
+                Text(album.artist).foregroundStyle(CU.textSecondary).lineLimit(1)
             }
             .font(CU.Font.body.weighted(.regular)).frame(width: 128, alignment: .leading)
             .contentShape(Rectangle())

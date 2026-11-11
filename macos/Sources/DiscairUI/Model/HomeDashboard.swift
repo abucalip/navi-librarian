@@ -315,6 +315,13 @@ public struct HomeDashboard: Equatable, Sendable {
 
     // MARK: Pieces
 
+    /// The positions of albums with no plays (no count above zero and no last-played date). The tile's number and the list it
+    /// opens both come from here, so they cannot disagree.
+    static func neverPlayedIndices(_ albums: [NavidromeAlbum]) -> [Int] {
+        let parse = DateParser()
+        return albums.indices.filter { (albums[$0].playCount ?? 0) == 0 && albums[$0].played.flatMap(parse.date) == nil }
+    }
+
     /// ISO 8601 with or without fractional seconds, as Navidrome writes them.
     private struct DateParser {
         private let plain = ISO8601DateFormatter()

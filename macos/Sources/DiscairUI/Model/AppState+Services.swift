@@ -130,8 +130,23 @@ extension AppState {
         services.record(test: result ?? ServiceTestResult(ok: false, status: "connection_failed"), for: id)
     }
 
-    /// The sheet's Test: tests what is saved on the server and says so in a notice. The sheet's Save comes first when values changed.
-    public func testFromSheet(_ id: ServicesModel.ServiceID) async {
+    /// The sheet's Test: tests the values typed in the sheet and says so in a notice. Nothing is saved, so Cancel leaves the saved
+    /// settings as they were. An untouched sheet asks the server to test what it holds, which is the same thing.
+    public func testFromSheet(_ id: ServicesModel.ServiceID, probe: ServiceDraftProbe = ServiceDraftProbe()) async {
+        let name = ServicesModel.name(for: id), noun = ServicesModel.noun(for: id)
+        switch ServiceDraftProbe.plan(for: id, draft: services.draft, saved: services.savedDraft) {
+        case .needsSecret(let why):
+            services.editNotice = .init(kind: .danger, lead: "Can't test yet.", message: why)
+        case .probe:
+            services.setWorking(true); defer { services.setWorking(false) }
+            let result = await probe.test(id, draft: services.draft)
+            services.editNotice = ServicesController.notice(for: result, name: name, noun: noun)
+        case .useSaved:
+            await testSaved(id, name: name, noun: noun)
+        }
+    }
+
+    private func testSaved(_ id: ServicesModel.ServiceID, name: String, noun: String) async {
         guard let librarian = session?.librarian else { services.editNotice = .init(kind: .danger, lead: "Test failed.", message: "The Librarian is not connected."); return }
         services.setWorking(true); defer { services.setWorking(false) }
         let result: ServiceTestResult
@@ -146,7 +161,7 @@ extension AppState {
             default: return
             }
         } catch { result = ServiceTestResult(ok: false, status: "connection_failed") }
-        services.editNotice = ServicesController.notice(for: result, name: ServicesModel.name(for: id), noun: ServicesModel.noun(for: id))
+        services.editNotice = ServicesController.notice(for: result, name: name, noun: noun)
     }
 
     /// Saves the sheet through the settings route of that service. An empty secret keeps the saved one. Closes the sheet and

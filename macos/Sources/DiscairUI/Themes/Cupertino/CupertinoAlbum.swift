@@ -123,8 +123,8 @@ struct CupertinoAlbum: View {
                 Button { tab = t } label: {
                     Text(t.rawValue).font(CU.Font.body.weighted(.semibold))
                         .padding(.horizontal, 16).padding(.vertical, 8)
-                        .background(tab == t ? CU.accent : CU.fill, in: Capsule())
-                        .foregroundStyle(tab == t ? CU.onAccent : CU.ink)
+                        .background(tab == t ? CU.accent : CU.bgFill, in: Capsule())
+                        .foregroundStyle(tab == t ? CU.onAccent : CU.text)
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(t.rawValue).accessibilityAddTraits(tab == t ? [.isButton, .isSelected] : .isButton)
@@ -199,7 +199,7 @@ struct CupertinoAlbum: View {
                 else if track!.owned {
                     Text(track!.format).font(CU.Font.caption.weighted(.bold))
                         .padding(.horizontal, 8).padding(.vertical, 0)
-                        .background(on ? CU.onAccent.opacity(0.25) : CU.fill, in: RoundedRectangle(cornerRadius: 4))
+                        .background(on ? CU.onAccent.opacity(0.25) : CU.bgFill, in: RoundedRectangle(cornerRadius: 4))
                 } else { Text("Not owned") }
             }
             cell(width: cols[4], trailing: true) {
@@ -218,7 +218,7 @@ struct CupertinoAlbum: View {
         }
         .font(isHeader ? CU.Font.callout.weighted(.medium) : CU.Font.body.weighted(.regular))
         .monospacedDigit()
-        .foregroundStyle(isHeader || ms ? CU.muted : (on ? CU.onAccent : CU.ink))
+        .foregroundStyle(isHeader || ms ? CU.textSecondary : (on ? CU.onAccent : CU.text))
         .padding(.vertical, isHeader ? 8 : 4)
         .background {
             if on { RoundedRectangle(cornerRadius: 8, style: .continuous).fill(CU.accent) }

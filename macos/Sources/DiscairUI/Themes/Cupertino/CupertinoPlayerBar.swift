@@ -12,8 +12,8 @@ struct CupertinoPlayerBar: View {
 
     private var p: PlayerModel { state.player }
     /// White on a tint (tints are kept dark); the usual ink and glass when nothing is playing.
-    private var ink: Color { tint != nil ? CU.onMedia : CU.ink }
-    private var secondary: Color { tint != nil ? CU.onMedia.opacity(0.72) : CU.muted }
+    private var ink: Color { tint != nil ? CU.onMedia : CU.text }
+    private var secondary: Color { tint != nil ? CU.onMedia.opacity(0.72) : CU.textSecondary }
     private var shape: RoundedRectangle { RoundedRectangle(cornerRadius: 16, style: .continuous) }
 
     var body: some View {

@@ -7,15 +7,16 @@ import Observation
 
 /// The sectors of the graph, grouped by kind. The order is the order they take around the first ring.
 public enum GraphSector: Int, CaseIterable, Sendable {
-    case albums, label, people, place, other
+    case albums, label, people, place, crew, other
 
-    /// The sector an entity type belongs to. Types the explorer does not group (work, recording, event, instrument) are `other`.
+    /// The sector an entity type belongs to. Work, recording, event and instrument nodes are `crew` (owner decision, F3); anything else is `other`.
     public static func of(kind: String) -> GraphSector {
         switch kind {
         case "artist", "person", "group": .people
         case "release", "release_group": .albums
         case "label": .label
         case "area", "place": .place
+        case "work", "recording", "event", "instrument": .crew
         default: .other
         }
     }
@@ -27,6 +28,7 @@ public enum GraphSector: Int, CaseIterable, Sendable {
         case .label: "Labels"
         case .people: "People"
         case .place: "Places"
+        case .crew: "Crew"
         case .other: "Other"
         }
     }
@@ -38,6 +40,7 @@ public enum GraphSector: Int, CaseIterable, Sendable {
         case .label: "Label"
         case .people: "People"
         case .place: "Place"
+        case .crew: "Crew"
         case .other: "Other"
         }
     }
@@ -184,7 +187,7 @@ public enum GraphWording {
         case .albums: "Album"
         case .label: "Label"
         case .place: "Place"
-        case .other: capitalised(kind)
+        case .crew, .other: capitalised(kind)
         }
     }
     /// True when the relation has words of its own in the table (not the capitalised fallback).
@@ -227,7 +230,7 @@ public enum GraphGroup: Int, CaseIterable, Sendable {
         switch GraphSector.of(kind: node.entity.type) {
         case .albums: return .albums
         case .place, .label: return .placesAndLabels
-        case .people, .other:
+        case .people, .crew, .other:
             return GraphListRow.primary(of: node).flatMap { GraphWording.group(relation: $0.relation) } ?? .other
         }
     }

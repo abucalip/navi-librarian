@@ -114,18 +114,26 @@ public struct ServerCapabilities: Decodable, Equatable, Sendable {
     public let sonicAvailable: Bool
     public let listenBrainzConnected: Bool
     public let availableFeatures: Set<String>
+    /// The contract version and the data generation the server is on, for the Librarian row's "Server contract" line.
+    public let contractVersion: Int?
+    public let generation: Int?
 
     enum CodingKeys: String, CodingKey {
+        case contractVersion = "contract_version", generation
         case graphCoverage = "graph_coverage", sonicAvailable = "sonic_available", listenBrainzConnected = "listenbrainz_connected", features
     }
     private struct Feature: Decodable { let available: Bool? }
 
-    public init(graphCoverage: String = "none", sonicAvailable: Bool = false, listenBrainzConnected: Bool = false, availableFeatures: Set<String> = []) {
+    public init(graphCoverage: String = "none", sonicAvailable: Bool = false, listenBrainzConnected: Bool = false, availableFeatures: Set<String> = [],
+                contractVersion: Int? = nil, generation: Int? = nil) {
+        self.contractVersion = contractVersion; self.generation = generation
         self.graphCoverage = graphCoverage; self.sonicAvailable = sonicAvailable
         self.listenBrainzConnected = listenBrainzConnected; self.availableFeatures = availableFeatures
     }
     public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
+        contractVersion = try? c.decode(Int.self, forKey: .contractVersion)
+        generation = try? c.decode(Int.self, forKey: .generation)
         let coverage = (try? c.decode(String.self, forKey: .graphCoverage)) ?? "none"
         graphCoverage = ["none", "partial", "broad"].contains(coverage) ? coverage : "none"
         sonicAvailable = (try? c.decode(Bool.self, forKey: .sonicAvailable)) ?? false

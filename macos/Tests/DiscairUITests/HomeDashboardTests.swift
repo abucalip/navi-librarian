@@ -79,6 +79,13 @@ import DiscairNavidrome
         #expect(d.neverPlayedChange == .init(delta: -3, since: since))
     }
 
+    @Test func neverPlayedListAndTileCountAgree() {
+        let albums = [Self.album("a"), Self.album("b", plays: 0), Self.album("c", plays: 4, playedDaysAgo: 2), Self.album("d", plays: 1, playedDaysAgo: 400),
+                      Self.album("e", plays: 0, playedDaysAgo: 9)]
+        #expect(HomeDashboard.neverPlayedIndices(albums) == [0, 1])
+        #expect(HomeDashboard.neverPlayedIndices(albums).count == Self.build(albums).neverPlayed)
+    }
+
     @Test func shelfLifeBinsAreExhaustiveAndOrdered() {
         let albums = [Self.album("a", plays: 1, playedDaysAgo: 5),      // this month
                       Self.album("b", plays: 1, playedDaysAgo: 80),     // 2 months

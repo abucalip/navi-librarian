@@ -153,7 +153,7 @@ struct CupertinoHome: View {
 
     private var neverPlayedStat: some View {
         HomeStat(eyebrow: "Never played", value: d.neverPlayed.map { HomeScreen.count($0) } ?? "—", unit: d.neverPlayed == nil ? "" : "albums",
-                 action: { state.openNeverPlayedPlaylist() }, actionHint: "Opens a smart playlist of songs with no plays") {
+                 action: { state.openNeverPlayedAlbums() }, actionHint: "Opens the albums with no plays") {
             if d.neverPlayed == nil { Text("Not counted yet").cu(CU.Font.callout).foregroundStyle(CU.textSecondary) }
             else { HomeChange(line: HomeScreen.neverPlayedLine(d.neverPlayedChange)) }
         }

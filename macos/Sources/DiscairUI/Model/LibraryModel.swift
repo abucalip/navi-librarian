@@ -113,6 +113,11 @@ public final class LibraryModel {
     /// What a search or the Albums tab covers: the whole library once read, else what the home page holds.
     public var searchableAlbums: [AlbumItem] { allAlbums.isEmpty ? albums + recent : allAlbums }
 
+    /// Albums with no plays, by the rule Home's Never played count uses, so the tile's number equals the number listed.
+    public var neverPlayedAlbums: [AlbumItem] {
+        HomeDashboard.neverPlayedIndices(allNavidromeAlbums).map { Self.item(allNavidromeAlbums[$0], index: 1000 + $0) }
+    }
+
     public func loadAllAlbums(navidrome: NavidromeClient?) async {
         guard isLive, let navidrome, let list = try? await navidrome.allAlbums() else { return }
         allNavidromeAlbums = list

@@ -9,6 +9,12 @@
 
 # Project log
 
+## 2026-11-12 — macOS redesign follow-ups F6, F7, F11, F12 (plus F9 and F3 owner decisions)
+
+- F6: Home's Never played tile now opens the Albums tab filtered to never-played albums; tile and list share `HomeDashboard.neverPlayedIndices`. F7: the Services edit sheet's Test asks the service directly with the typed values (`ServiceDraftProbe`, from this Mac); nothing is saved. The server's test routes take no body, so a server-side version was not built. A changed address or username with an empty secret reports that it cannot be tested. F11: `CU.muted/ink/card/fill` aliases removed, backdrop and glass tint are tokens, shell geometry named in `CU.Shell`. F12: `CupertinoTheme.content` is exhaustive over `Screen`.
+- Owner decisions built here: F9 (Route and Server contract lines on the Librarian row, from the address and `/api/capabilities` `contract_version` and `generation`) and F3 (work, recording, event and instrument nodes take the sector Crew).
+- Tests run (filtered, `swift test --filter`): GraphExplorer, ConnectionsServices, ServicesModel, ServiceDraftProbe, LibrarianStatusLines, HomeDashboard, HomeScreen, CupertinoPages, CupertinoTokens: 142 passed. Not run: full suite, live-data checks, visual comparison against mockups. Route reads "Direct address" for a non-Tailscale address (wording not in the mockup).
+
 ## 2026-11-10 — Internet radio playback, slice 5 gap: `in_library` on the Heard list
 
 - PR [#971](https://github.com/abucalip/navi-librarian/pull/971) merged as `5aee5fbd7ded4aa617ab24fdb9697de8abc6ef40`. `GET /api/radio/plays` now adds `in_library` to every play (exact artist and title match through `find_song`), cached per song in `OwnedCache` (found songs kept, misses re-checked after 5 minutes, failed searches not kept, plays without an artist false).
