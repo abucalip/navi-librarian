@@ -162,8 +162,12 @@ extension LibrarianClient {
     }
 
     /// `PUT /api/settings/slskd`. The server resets the quality order when it is missing, so the current order is required.
-    public func saveSlskd(url: String, apiKey: String = "", qualityPriority: [String]) async throws {
-        try await write("api/settings/slskd", ["slskd_url": url, "api_key": apiKey, "quality_priority": qualityPriority])
+    /// The two folders are sent only when given; the server leaves a folder it was not sent as it is.
+    public func saveSlskd(url: String, apiKey: String = "", qualityPriority: [String], downloadsPath: String? = nil, musicLibraryPath: String? = nil) async throws {
+        var body: [String: Any] = ["slskd_url": url, "api_key": apiKey, "quality_priority": qualityPriority]
+        if let downloadsPath { body["slskd_downloads_path"] = downloadsPath }
+        if let musicLibraryPath { body["music_library_path"] = musicLibraryPath }
+        try await write("api/settings/slskd", body)
     }
 
     /// `PUT /api/settings/discogs`. An empty token clears the saved one.
