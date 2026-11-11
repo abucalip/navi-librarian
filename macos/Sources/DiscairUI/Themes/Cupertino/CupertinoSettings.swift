@@ -58,40 +58,68 @@ struct CupertinoSettings: View {
         Text(text).font(.system(size: 12)).foregroundStyle(CU.textSecondary)
     }
 
+    /// Playback (redesign 5.3, mockup `settings--playback`): one grouped panel of rows. Each row has its words on the left and
+    /// its control on the trailing edge: a segmented control for a choice, a switch for on or off, a neutral or danger button
+    /// for an action. The Clear button names what it removes.
     private var playback: some View {
         let player = state.player
-        return card("Playback") {
-            Text("Crossfade between songs").font(.system(size: 13, weight: .semibold))
-            CUSegmented(PlayerModel.crossfadeChoices.map { (value: $0, label: $0 == 0 ? "Off" : "\($0) s") },
-                        selection: Binding(get: { player.crossfadeSeconds }, set: { player.crossfadeSeconds = $0 }),
-                        accessibilityName: "Crossfade between songs")
-            note("Consecutive tracks of one album always play gapless, so the fade happens between unrelated songs.")
-            Text("Streaming quality").font(.system(size: 13, weight: .semibold)).padding(.top, CU.Space.s)
-            CUSegmented(PlayerModel.qualityChoices.map { (value: $0, label: $0.map { "\($0)" } ?? "Original") },
-                        selection: Binding(get: { player.qualityCap }, set: { player.qualityCap = $0 }),
-                        accessibilityName: "Streaming quality")
-            note("Original plays the file as it is. A number is the most the server may send (kbps); it converts only files above it. Applies to songs started afterwards.")
-            CUSwitchRow(title: "Match the output sample rate", isOn: Binding(get: { player.matchOutputRate }, set: { player.matchOutputRate = $0 }),
-                        detail: "Switches your Mac's output device to each song's sample rate when the device offers it, so nothing is resampled. This changes the system output rate; it is put back when you switch this off or quit Discair. A short pause between songs of different rates is normal.")
-                .padding(.top, CU.Space.s)
-            CUSwitchRow(title: "Scrobble plays", isOn: Binding(get: { player.scrobbling }, set: { player.scrobbling = $0 }),
-                        detail: "Reports what you play to Navidrome, which feeds your listening history and so your recommendations. Off sends nothing from this Mac.")
-                .padding(.top, CU.Space.s)
-            CUSwitchRow(title: "Tell me when a Get finishes", isOn: Binding(get: { state.acquisition.notifiesWhenFinished }, set: { state.acquisition.notifiesWhenFinished = $0 }),
-                        detail: "A macOS notification when an album or song you asked for is in your library, or could not be found. macOS asks permission the first time.")
-                .padding(.top, CU.Space.s)
-            CUSwitchRow(title: "Keep played songs and covers", isOn: Binding(get: { state.cache.isEnabled }, set: { state.cache.isEnabled = $0 }),
-                        detail: "Off by default. Songs you play and their covers are kept on this Mac, up to 2 GB, oldest-used removed first, so they play and show without the server.")
-                .padding(.top, CU.Space.s)
-            HStack(spacing: CU.Space.s) {
-                Text(state.cache.readout).font(.system(size: 12)).foregroundStyle(CU.textSecondary)
-                Button("Clear") { Task { await state.cache.clear() } }.buttonStyle(CapsuleButtonStyle(small: true))
-                    .accessibilityLabel("Clear the saved songs and covers")
+        return CUPanel {
+            playbackRow("Crossfade between songs", detail: "Tracks that follow each other on one album always play gapless, so the fade happens between unrelated songs.") {
+                CUSegmented(PlayerModel.crossfadeChoices.map { (value: $0, label: $0 == 0 ? "Off" : "\($0) s") },
+                            selection: Binding(get: { player.crossfadeSeconds }, set: { player.crossfadeSeconds = $0 }),
+                            accessibilityName: "Crossfade between songs")
             }
-            Button("Equalizer · \(state.player.eq.enabled ? state.player.eq.presetLabel : "Off")") { state.screen = .equalizer }
-                .buttonStyle(CapsuleButtonStyle(small: true)).padding(.top, CU.Space.s)
+            Divider()
+            playbackRow("Streaming quality", detail: "Original plays the file as it is. A number is the most the server may send, in kbps. Applies to songs started afterwards.") {
+                CUSegmented(PlayerModel.qualityChoices.map { (value: $0, label: $0.map { "\($0)" } ?? "Original") },
+                            selection: Binding(get: { player.qualityCap }, set: { player.qualityCap = $0 }),
+                            accessibilityName: "Streaming quality")
+            }
+            Divider()
+            playbackRow("Match the output sample rate", detail: "Switches your Mac's output device to each song's rate when the device offers it. Put back when you switch this off or quit. A short pause between songs of different rates is normal.") {
+                switchControl("Match the output sample rate", Binding(get: { player.matchOutputRate }, set: { player.matchOutputRate = $0 }))
+            }
+            Divider()
+            playbackRow("Scrobble plays", detail: "Reports what you play to Navidrome, which feeds your history and recommendations. Off sends nothing from this Mac.") {
+                switchControl("Scrobble plays", Binding(get: { player.scrobbling }, set: { player.scrobbling = $0 }))
+            }
+            Divider()
+            playbackRow("Tell me when a Get finishes", detail: "A macOS notification when an album is in your library, or could not be found. macOS asks permission the first time.") {
+                switchControl("Tell me when a Get finishes", Binding(get: { state.acquisition.notifiesWhenFinished }, set: { state.acquisition.notifiesWhenFinished = $0 }))
+            }
+            Divider()
+            playbackRow("Keep played songs and covers", detail: "Up to 2 GB on this Mac, oldest-used removed first. Off by default; songs and covers then play and show without the server. \(state.cache.readout)") {
+                HStack(spacing: CU.Space.s) {
+                    Button("Clear saved songs") { Task { await state.cache.clear() } }
+                        .buttonStyle(CapsuleButtonStyle(small: true, destructive: true))
+                    switchControl("Keep played songs and covers", Binding(get: { state.cache.isEnabled }, set: { state.cache.isEnabled = $0 }))
+                }
+            }
+            Divider()
+            playbackRow("Equalizer", detail: "10 bands. Now: \(player.eq.enabled ? player.eq.presetLabel : "Off").") {
+                Button { state.screen = .equalizer } label: { HStack(spacing: CU.Space.xs) { Text("Open"); Image(systemName: "chevron.right").font(.system(size: 11, weight: .semibold)) } }
+                    .buttonStyle(CapsuleButtonStyle(small: true))
+            }
         }
         .task { await state.cache.refresh() }
+    }
+
+    /// One settings row: words on the left, the control on the trailing edge, 16 of padding above and below.
+    private func playbackRow<Control: View>(_ title: String, detail: String, @ViewBuilder control: () -> Control) -> some View {
+        HStack(alignment: .center, spacing: CU.Space.l) {
+            VStack(alignment: .leading, spacing: CU.Space.xs) {
+                Text(title).cuRole(CU.Font.headline).foregroundStyle(CU.text)
+                Text(detail).cuRole(CU.Font.callout).foregroundStyle(CU.textSecondary).fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            control()
+        }
+        .padding(.vertical, CU.Space.m)
+    }
+
+    /// The system switch, labelled for VoiceOver and with the label hidden on screen (the row carries the words).
+    private func switchControl(_ label: String, _ isOn: Binding<Bool>) -> some View {
+        Toggle(label, isOn: isOn).labelsHidden().toggleStyle(.switch).tint(CU.accent)
     }
 
     private func musicFolder(_ s: SessionModel) -> some View {

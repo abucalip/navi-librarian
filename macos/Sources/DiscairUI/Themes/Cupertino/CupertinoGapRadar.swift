@@ -9,12 +9,12 @@ struct CupertinoGapRadar: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 18) {
-                Text("Gap Radar").font(CU.title(34)).padding(.top, 4).accessibilityAddTraits(.isHeader)
-                Text("Artists you own, with the albums the Librarian says are missing.").foregroundStyle(CU.muted)
+            VStack(alignment: .leading, spacing: CU.Space.m) {
+                Text("Gap Radar").cuRole(CU.Font.largeTitle).foregroundStyle(CU.text).padding(.top, 4).accessibilityAddTraits(.isHeader)
+                Text("Artists you own, with the albums the Librarian says are missing. Biggest gap first.").cuRole(CU.Font.body).foregroundStyle(CU.textSecondary)
                 if lib.gapRadar.isEmpty {
                     Text(lib.gapLoading ? "Reading your artists…" : (lib.picksNote ?? "No gaps found: every recommended album by your artists is already here."))
-                        .foregroundStyle(CU.muted).padding(.top, 8)
+                        .cuRole(CU.Font.body).foregroundStyle(CU.textSecondary).padding(.top, CU.Space.s)
                 }
                 // Cards are only as wide as their albums need, so small ones sit side by side and only artists with many
                 // albums take (up to) the whole row.
@@ -29,51 +29,52 @@ struct CupertinoGapRadar: View {
     }
 
     private func card(_ g: GapArtist) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            VStack(alignment: .leading, spacing: 6) {
-                Button { state.openArtist(named: g.name) } label: { Text(g.name).font(CU.title(20)).lineLimit(1) }
-                    .buttonStyle(.plain).accessibilityLabel("Open \(g.name)")
-                HStack(spacing: 10) {
-                    Text(g.summary).font(.system(size: 12)).foregroundStyle(CU.muted).lineLimit(1)
-                    Spacer(minLength: 4)
-                    ProgressView(value: g.completeness).frame(width: 60).tint(CU.accent).accessibilityHidden(true)
+        CUPanel {
+            HStack(alignment: .top, spacing: CU.Space.m) {
+                VStack(alignment: .leading, spacing: CU.Space.xs) {
+                    Button { state.openArtist(named: g.name) } label: { Text(g.name).cuRole(CU.Font.title2).foregroundStyle(CU.text).lineLimit(1) }
+                        .buttonStyle(.plain).accessibilityLabel("Open \(g.name)")
+                    Text(g.summary).cuRole(CU.Font.callout).foregroundStyle(CU.textSecondary).lineLimit(1)
                 }
-                if g.missing.count > 1 {
-                    Button("Get \(g.missing.count) missing") { state.getAllMissing(g) }.buttonStyle(CapsuleButtonStyle(primary: true, small: true))
+                Spacer(minLength: CU.Space.s)
+                VStack(alignment: .trailing, spacing: CU.Space.s) {
+                    if g.missing.count > 1 {
+                        Button("Get \(g.missing.count) missing") { state.getAllMissing(g) }.buttonStyle(CapsuleButtonStyle(primary: true, small: true))
+                    }
+                    ProgressView(value: g.completeness).frame(width: 96).tint(CU.text).accessibilityHidden(true)
                 }
             }
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(alignment: .top, spacing: 14) {
                     ForEach(g.dated) { a in tile(a) }
                     if !g.undatedOwned.isEmpty || !g.undatedMissing.isEmpty {
-                        Rectangle().fill(CU.muted.opacity(0.3)).frame(width: 1, height: 96).padding(.horizontal, 4)
+                        Rectangle().fill(CU.textSecondary.opacity(0.3)).frame(width: 1, height: 96).padding(.horizontal, CU.Space.xs)
                             .accessibilityHidden(true)
                         ForEach(g.undatedOwned + g.undatedMissing) { a in tile(a) }
                     }
                 }
-                .padding(.vertical, 4)
+                .padding(.vertical, CU.Space.xs)
             }
         }
-        .padding(16)
-        .background(CU.card, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         .accessibilityElement(children: .contain)
     }
 
+    /// Owned covers are whole; a missing one keeps its full cover with a dashed outline, and its Get sits under it (neutral).
     private func tile(_ a: AlbumItem) -> some View {
         VStack(alignment: .leading, spacing: 3) {
             Button { if a.owned { state.open(album: a) } } label: {
                 CoverView(album: a).frame(width: 96).clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-                    .opacity(a.owned ? 1 : 0.35)
-                    .overlay { if !a.owned { RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(Color(white: 0.53), style: StrokeStyle(lineWidth: 2, dash: [5, 4])).padding(-3) } }
+                    .overlay { if !a.owned { RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(CU.textSecondary, style: StrokeStyle(lineWidth: 2, dash: [5, 4])).padding(-3) } }
             }
             .buttonStyle(.plain).accessibilityLabel(a.owned ? "Open \(a.title)" : "\(a.title), missing")
-            Text(a.title).font(.system(size: 12, weight: .semibold)).lineLimit(1)
+            Text(a.title).cuRole(CU.Font.callout).fontWeight(.semibold).foregroundStyle(CU.text).lineLimit(1)
             Text(a.owned ? (a.yearText.isEmpty ? "Owned" : a.yearText) : (a.year > 0 ? "\(a.yearText) · Missing" : "Missing"))
-                .font(.system(size: 11)).foregroundStyle(CU.muted).lineLimit(1)
+                .cuRole(CU.Font.caption).foregroundStyle(CU.textSecondary).lineLimit(1)
             if !a.owned {
-                Button(state.acquisition.buttonLabel(for: a)) { state.actions.get(album: a) }
-                    .buttonStyle(CapsuleButtonStyle(primary: true, small: true)).disabled(!state.acquisition.canGet(a))
+                Button("Get") { state.actions.get(album: a) }
+                    .buttonStyle(CapsuleButtonStyle(small: true)).disabled(!state.acquisition.canGet(a))
                     .help(state.acquisition.detail(for: a))
+                    .padding(.top, CU.Space.xs)
             }
         }
         .frame(width: 96, alignment: .leading)
