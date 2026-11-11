@@ -26,6 +26,7 @@ from ..knowledge import KnowledgeReader
 from ..taste import Listen, ProfileConfig, build_profiles, save_profiles
 from ..taste.context import build_context_profiles
 from ..taste.context_persistence import save_context_profiles
+from ..taste.listens_by_day import build_listens_by_day, save_listens_by_day
 from .taste import build_taste_body
 from ..graph import Limits
 from ..resolution import unresolved
@@ -304,10 +305,11 @@ def _hour_listen(days: int, hour: int, **attrs: tuple[str, ...]) -> Listen:
     return Listen(day_start + hour * 3600 + 1800, {k: tuple(v) for k, v in attrs.items()})
 
 
-def _taste_case(listens: list[Listen], with_context: bool = False) -> dict[str, Any]:
+def _taste_case(listens: list[Listen], with_context: bool = False, with_series: bool = False) -> dict[str, Any]:
     """Save profiles built from these listens in a store of their own and return the taste body.
 
-    ``with_context`` also saves the listening-context lenses and the morning-vs-night contrast, as the refresh does.
+    ``with_context`` also saves the listening-context lenses and the morning-vs-night contrast, as the refresh does;
+    ``with_series`` also saves the listens per UTC day (redesign D2).
     """
     with tempfile.TemporaryDirectory() as tmp:
         db = open_store(Path(tmp) / "taste.sqlite3")
@@ -315,6 +317,8 @@ def _taste_case(listens: list[Listen], with_context: bool = False) -> dict[str, 
             save_profiles(db, build_profiles(listens, _TASTE_CONFIG), now=_TASTE_NOW)
             if with_context:
                 save_context_profiles(db, build_context_profiles(listens, "UTC", _TASTE_CONFIG), _TASTE_CONFIG, now=_TASTE_NOW)
+            if with_series:
+                save_listens_by_day(db, build_listens_by_day(listens, _TASTE_NOW - _TASTE_NOW % _DAY), now=_TASTE_NOW)
             return build_taste_body(db)
         finally:
             db.close()
@@ -344,6 +348,8 @@ def _taste_fixtures() -> dict[str, dict[str, Any]]:
               + [_listen(520, genre=("rock",)), _listen(521, genre=("rock",))])
     empty = [_listen(10, genre=("jazz",)), _listen(20, genre=("jazz",)), _listen(500, genre=("rock",))]
     request = "GET /api/insights/taste"
+    # Listens on the last 10 complete days (an uneven week), so the 84-day series shows zero days and the 7 against the 7 before.
+    daily = [_hour_listen(d, 9 + i) for d in range(1, 11) for i in range(d % 4)] + [_listen(500, genre=("rock",))]
     return {
         "taste_rich.json": {"request": request, "response": _taste_case(rich),
                             "note": "recent window sound; genre pair shift; headline window recent"},
@@ -353,6 +359,8 @@ def _taste_fixtures() -> dict[str, dict[str, Any]]:
                                         "note": "genre low_sample (2 attributed); headline uses era"},
         "taste_empty.json": {"request": request, "response": _taste_case(empty),
                              "note": "saved but no sound window; headline is null"},
+        "taste_listens_by_day.json": {"request": request, "response": _taste_case(daily, with_series=True),
+                                      "note": "listens_by_day: 84 UTC days, oldest first, zero days included; present only once a refresh saved it"},
         "taste_context.json": {"request": request,
                                "response": _taste_case(_context_listens({"night": 60, "morning": 120, "afternoon": 90, "evening": 200}), with_context=True),
                                "note": "saved context lenses; night has 60 listens, under the 100 the contrast needs: low_sample, nothing compared"},

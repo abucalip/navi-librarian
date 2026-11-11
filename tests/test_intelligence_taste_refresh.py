@@ -44,12 +44,20 @@ class RefreshTests(unittest.TestCase):
         r = self.go(listens(5))
         self.assertEqual((r.state, r.changed), ("refreshed", True))
         self.assertEqual(load_saved_profiles(self.db)["windows"]["all_time"]["listens"], 5)
-        self.assertEqual(generations.data_versions(self.db)["insights"], before + 2)  # profiles row and context row
+        self.assertEqual(generations.data_versions(self.db)["insights"], before + 3)  # profiles, context and listens-by-day rows
 
     def test_refresh_also_saves_context_profiles(self):
         from intelligence.taste.context_persistence import load_saved_context
         self.go(listens(5))
         self.assertEqual(load_saved_context(self.db)["listens"], 5)
+
+    def test_refresh_saves_listens_by_day_ending_the_day_before_the_refresh(self):
+        from intelligence.taste.listens_by_day import load_listens_by_day
+        self.go(listens(5))   # all five fall two days before NOW (200000 s), on the same UTC day
+        series = load_listens_by_day(self.db)
+        self.assertEqual((len(series), sum(e["count"] for e in series)), (84, 5))
+        self.assertEqual(series[-1]["date"], "1970-01-11")   # NOW is on 1970-01-12; the series ends the day before
+        self.assertEqual((series[-2]["date"], series[-2]["count"]), ("1970-01-10", 5))
 
     def test_within_interval_is_too_soon_and_reads_nothing(self):
         self.go(listens(5))
@@ -116,7 +124,7 @@ class RefreshTests(unittest.TestCase):
     def test_profiles_leave_recommendation_state_alone(self):
         self.go(listens(5))
         tables = {r[0] for r in self.db.execute("SELECT DISTINCT kind FROM insights")}
-        self.assertEqual(tables, {"taste_profile", "taste_context"})
+        self.assertEqual(tables, {"taste_profile", "taste_context", "taste_listens_by_day"})
 
 
 class FakeLibrarian:

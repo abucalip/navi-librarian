@@ -11,13 +11,18 @@ from typing import Any
 
 from ..store import generations
 from ..taste.context_persistence import load_saved_context
+from ..taste.listens_by_day import load_listens_by_day
 from ..taste.persistence import load_saved_profiles
 
 
 def build_taste_body(db: sqlite3.Connection) -> dict[str, Any]:
-    return {
+    body = {
         "profiles": load_saved_profiles(db),
         "context": load_saved_context(db),
         "data_version": generations.data_versions(db).get("insights", 0),
         "generation": generations.current_generation(db),
     }
+    series = load_listens_by_day(db)
+    if series is not None:   # absent, not empty, until a refresh has saved it (redesign D2)
+        body["listens_by_day"] = series
+    return body
