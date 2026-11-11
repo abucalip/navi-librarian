@@ -129,11 +129,12 @@ Built in `intelligence/taste/listens_by_day.py` (D-016: nothing added to `navidr
 - Body field `listens_by_day`: an array of `{date, count}`, one entry per UTC calendar day for the 84 complete days before the refresh's day, oldest first, **zero days included** (the client needs at least 14 entries and treats the last 7 against the 7 before). `date` is `YYYY-MM-DD`; `count` is a non-negative integer. The field is absent, not empty, until a refresh has saved it (so also when no listens source is set); the other taste fields are unchanged.
 - Built from the listens the taste refresh already read, with no extra provider call, and saved as one `taste_listens_by_day` row in `insights` (no migration; an unchanged series writes nothing). The route stays read-only. The series ends at the day before the day the last refresh ran, so a stale series is visible from its last date ("as of 9 November"). A listen without a usable timestamp is not counted.
 
-## Proposed: GET /api/insights/refresh/status (redesign D3)
+## GET /api/insights/refresh/status (redesign D3, redesign S2)
 
-Not built on the server. Home's Server activity row for the insight lenses reads it; without it the row falls back to when the app last read the cards.
+Served by `app/api/insights_refresh_status.py`; logic in `intelligence/insights/refresh_status.py` (D-016: nothing added to `navidrome_server.py`). Home's Server activity row for the insight lenses reads it; without it the row falls back to when the app last read the cards.
 
-- Same shape as `GET /api/insights/taste/refresh/status`: `status` (newest run of the lens refresh job), `last_good`, `running`, `min_interval` (seconds) and `retry_after` (seconds until the next run is due, 0 = now). The client writes "Refreshed 2 hours ago · next in 4 hours" from `last_good.finished_at` and `retry_after`. Read-only; makes no provider call.
+- The lens refresh loop (`app/services/insights_refresh.py`) runs two jobs, `insights_forgotten_gems` and `insights_provider_lenses`. The status reads both and answers one result: `status` (newest run of either job, the highest run id), `last_good` (newest succeeded run of either job), `running` (true while either job has a running run), `min_interval` (the loop cadence, `CHECK_SECONDS`, 21600 seconds) and `retry_after` (seconds until the loop is next due: `last_good.finished_at` plus `min_interval`, minus now, clamped at 0; 0 when no run has succeeded yet). The loop has no minimum-interval guard of its own; `retry_after` is an estimate of the next tick, and it does not know whether a lens is switched on.
+- Same shape as `GET /api/insights/taste/refresh/status`. The client writes "Refreshed 2 hours ago · next in 4 hours" from `last_good.finished_at` and `retry_after`. Read-only: it reads `job_runs` only, makes no provider call and starts no job. A store read failure is `502`.
 
 ## GET /api/knowledge/{album,person,label,work,recording-works} (Phase 4)
 
