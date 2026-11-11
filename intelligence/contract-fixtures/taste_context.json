@@ -1,0 +1,510 @@
+{
+  "note": "saved context lenses; night has 60 listens, under the 100 the contrast needs: low_sample, nothing compared",
+  "request": "GET /api/insights/taste",
+  "response": {
+    "context": {
+      "computed_at": 1700000000.0,
+      "contrast": {
+        "between": [
+          "morning",
+          "night"
+        ],
+        "entries": [],
+        "listens": {
+          "morning": 120,
+          "night": 60
+        },
+        "min_listens": 100,
+        "state": "low_sample"
+      },
+      "generation": 1,
+      "kind": "taste_context",
+      "lenses": {
+        "day_type": {
+          "weekday": {
+            "attributed": {
+              "area": 0,
+              "collaborator": 0,
+              "era": 243,
+              "genre": 243,
+              "label": 0
+            },
+            "dimension_low_sample": {
+              "area": true,
+              "collaborator": true,
+              "era": false,
+              "genre": false,
+              "label": true
+            },
+            "dimensions": {
+              "area": [],
+              "collaborator": [],
+              "era": [
+                {
+                  "count": 123,
+                  "share": 0.506173,
+                  "value": "1990s"
+                },
+                {
+                  "count": 120,
+                  "share": 0.493827,
+                  "value": "1980s"
+                }
+              ],
+              "genre": [
+                {
+                  "count": 114,
+                  "share": 0.469136,
+                  "value": "dream pop"
+                },
+                {
+                  "count": 43,
+                  "share": 0.176955,
+                  "value": "ambient"
+                },
+                {
+                  "count": 43,
+                  "share": 0.176955,
+                  "value": "jazz"
+                },
+                {
+                  "count": 43,
+                  "share": 0.176955,
+                  "value": "post-punk"
+                }
+              ],
+              "label": []
+            },
+            "listens": 243,
+            "low_sample": false
+          },
+          "weekend": {
+            "attributed": {
+              "area": 0,
+              "collaborator": 0,
+              "era": 227,
+              "genre": 227,
+              "label": 0
+            },
+            "dimension_low_sample": {
+              "area": true,
+              "collaborator": true,
+              "era": false,
+              "genre": false,
+              "label": true
+            },
+            "dimensions": {
+              "area": [],
+              "collaborator": [],
+              "era": [
+                {
+                  "count": 115,
+                  "share": 0.506608,
+                  "value": "1980s"
+                },
+                {
+                  "count": 112,
+                  "share": 0.493392,
+                  "value": "1990s"
+                }
+              ],
+              "genre": [
+                {
+                  "count": 86,
+                  "share": 0.378855,
+                  "value": "dream pop"
+                },
+                {
+                  "count": 77,
+                  "share": 0.339207,
+                  "value": "jazz"
+                },
+                {
+                  "count": 47,
+                  "share": 0.207048,
+                  "value": "post-punk"
+                },
+                {
+                  "count": 17,
+                  "share": 0.07489,
+                  "value": "ambient"
+                }
+              ],
+              "label": []
+            },
+            "listens": 227,
+            "low_sample": false
+          }
+        },
+        "time_of_day": {
+          "afternoon": {
+            "attributed": {
+              "area": 0,
+              "collaborator": 0,
+              "era": 90,
+              "genre": 90,
+              "label": 0
+            },
+            "dimension_low_sample": {
+              "area": true,
+              "collaborator": true,
+              "era": false,
+              "genre": false,
+              "label": true
+            },
+            "dimensions": {
+              "area": [],
+              "collaborator": [],
+              "era": [
+                {
+                  "count": 45,
+                  "share": 0.5,
+                  "value": "1980s"
+                },
+                {
+                  "count": 45,
+                  "share": 0.5,
+                  "value": "1990s"
+                }
+              ],
+              "genre": [
+                {
+                  "count": 90,
+                  "share": 1.0,
+                  "value": "post-punk"
+                }
+              ],
+              "label": []
+            },
+            "listens": 90,
+            "low_sample": false
+          },
+          "evening": {
+            "attributed": {
+              "area": 0,
+              "collaborator": 0,
+              "era": 200,
+              "genre": 200,
+              "label": 0
+            },
+            "dimension_low_sample": {
+              "area": true,
+              "collaborator": true,
+              "era": false,
+              "genre": false,
+              "label": true
+            },
+            "dimensions": {
+              "area": [],
+              "collaborator": [],
+              "era": [
+                {
+                  "count": 100,
+                  "share": 0.5,
+                  "value": "1980s"
+                },
+                {
+                  "count": 100,
+                  "share": 0.5,
+                  "value": "1990s"
+                }
+              ],
+              "genre": [
+                {
+                  "count": 200,
+                  "share": 1.0,
+                  "value": "dream pop"
+                }
+              ],
+              "label": []
+            },
+            "listens": 200,
+            "low_sample": false
+          },
+          "morning": {
+            "attributed": {
+              "area": 0,
+              "collaborator": 0,
+              "era": 120,
+              "genre": 120,
+              "label": 0
+            },
+            "dimension_low_sample": {
+              "area": true,
+              "collaborator": true,
+              "era": false,
+              "genre": false,
+              "label": true
+            },
+            "dimensions": {
+              "area": [],
+              "collaborator": [],
+              "era": [
+                {
+                  "count": 60,
+                  "share": 0.5,
+                  "value": "1980s"
+                },
+                {
+                  "count": 60,
+                  "share": 0.5,
+                  "value": "1990s"
+                }
+              ],
+              "genre": [
+                {
+                  "count": 120,
+                  "share": 1.0,
+                  "value": "jazz"
+                }
+              ],
+              "label": []
+            },
+            "listens": 120,
+            "low_sample": false
+          },
+          "night": {
+            "attributed": {
+              "area": 0,
+              "collaborator": 0,
+              "era": 60,
+              "genre": 60,
+              "label": 0
+            },
+            "dimension_low_sample": {
+              "area": true,
+              "collaborator": true,
+              "era": false,
+              "genre": false,
+              "label": true
+            },
+            "dimensions": {
+              "area": [],
+              "collaborator": [],
+              "era": [
+                {
+                  "count": 30,
+                  "share": 0.5,
+                  "value": "1980s"
+                },
+                {
+                  "count": 30,
+                  "share": 0.5,
+                  "value": "1990s"
+                }
+              ],
+              "genre": [
+                {
+                  "count": 60,
+                  "share": 1.0,
+                  "value": "ambient"
+                }
+              ],
+              "label": []
+            },
+            "listens": 60,
+            "low_sample": false
+          }
+        }
+      },
+      "listens": 470,
+      "timezone": "UTC"
+    },
+    "data_version": 2,
+    "generation": 1,
+    "profiles": {
+      "computed_at": 1700000000.0,
+      "config": {
+        "mid_days": 365.0,
+        "min_attributed": 3,
+        "min_listens": 4,
+        "min_shift": 0.05,
+        "now": 1700000000.0,
+        "recent_days": 90.0,
+        "top": 10
+      },
+      "generation": 1,
+      "headline": {
+        "kind": "steady",
+        "subjects": [],
+        "text": "Your taste has held steady.",
+        "window": "recent"
+      },
+      "kind": "taste_profile",
+      "shifts": [],
+      "windows": {
+        "all_time": {
+          "attributed": {
+            "area": 0,
+            "collaborator": 0,
+            "era": 470,
+            "genre": 470,
+            "label": 0
+          },
+          "dimension_low_sample": {
+            "area": true,
+            "collaborator": true,
+            "era": false,
+            "genre": false,
+            "label": true
+          },
+          "dimensions": {
+            "area": [],
+            "collaborator": [],
+            "era": [
+              {
+                "count": 235,
+                "share": 0.5,
+                "value": "1980s"
+              },
+              {
+                "count": 235,
+                "share": 0.5,
+                "value": "1990s"
+              }
+            ],
+            "genre": [
+              {
+                "count": 200,
+                "share": 0.425532,
+                "value": "dream pop"
+              },
+              {
+                "count": 120,
+                "share": 0.255319,
+                "value": "jazz"
+              },
+              {
+                "count": 90,
+                "share": 0.191489,
+                "value": "post-punk"
+              },
+              {
+                "count": 60,
+                "share": 0.12766,
+                "value": "ambient"
+              }
+            ],
+            "label": []
+          },
+          "listens": 470,
+          "low_sample": false
+        },
+        "mid": {
+          "attributed": {
+            "area": 0,
+            "collaborator": 0,
+            "era": 470,
+            "genre": 470,
+            "label": 0
+          },
+          "dimension_low_sample": {
+            "area": true,
+            "collaborator": true,
+            "era": false,
+            "genre": false,
+            "label": true
+          },
+          "dimensions": {
+            "area": [],
+            "collaborator": [],
+            "era": [
+              {
+                "count": 235,
+                "share": 0.5,
+                "value": "1980s"
+              },
+              {
+                "count": 235,
+                "share": 0.5,
+                "value": "1990s"
+              }
+            ],
+            "genre": [
+              {
+                "count": 200,
+                "share": 0.425532,
+                "value": "dream pop"
+              },
+              {
+                "count": 120,
+                "share": 0.255319,
+                "value": "jazz"
+              },
+              {
+                "count": 90,
+                "share": 0.191489,
+                "value": "post-punk"
+              },
+              {
+                "count": 60,
+                "share": 0.12766,
+                "value": "ambient"
+              }
+            ],
+            "label": []
+          },
+          "listens": 470,
+          "low_sample": false
+        },
+        "recent": {
+          "attributed": {
+            "area": 0,
+            "collaborator": 0,
+            "era": 160,
+            "genre": 160,
+            "label": 0
+          },
+          "dimension_low_sample": {
+            "area": true,
+            "collaborator": true,
+            "era": false,
+            "genre": false,
+            "label": true
+          },
+          "dimensions": {
+            "area": [],
+            "collaborator": [],
+            "era": [
+              {
+                "count": 81,
+                "share": 0.50625,
+                "value": "1990s"
+              },
+              {
+                "count": 79,
+                "share": 0.49375,
+                "value": "1980s"
+              }
+            ],
+            "genre": [
+              {
+                "count": 65,
+                "share": 0.40625,
+                "value": "dream pop"
+              },
+              {
+                "count": 39,
+                "share": 0.24375,
+                "value": "jazz"
+              },
+              {
+                "count": 30,
+                "share": 0.1875,
+                "value": "post-punk"
+              },
+              {
+                "count": 26,
+                "share": 0.1625,
+                "value": "ambient"
+              }
+            ],
+            "label": []
+          },
+          "listens": 160,
+          "low_sample": false
+        }
+      }
+    }
+  }
+}

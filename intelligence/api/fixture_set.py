@@ -24,6 +24,8 @@ from ..insights.series_completion import CARD_KIND as SERIES_KIND
 from ..ingest.navidrome import normalize_album
 from ..knowledge import KnowledgeReader
 from ..taste import Listen, ProfileConfig, build_profiles, save_profiles
+from ..taste.context import build_context_profiles
+from ..taste.context_persistence import save_context_profiles
 from .taste import build_taste_body
 from ..graph import Limits
 from ..resolution import unresolved
@@ -296,19 +298,42 @@ def _listen(days: float, **attrs: tuple[str, ...]) -> Listen:
     return Listen(_TASTE_NOW - days * _DAY, {k: tuple(v) for k, v in attrs.items()})
 
 
-def _taste_case(listens: list[Listen]) -> dict[str, Any]:
-    """Save profiles built from these listens in a store of their own and return the taste body."""
+def _hour_listen(days: int, hour: int, **attrs: tuple[str, ...]) -> Listen:
+    """A listen `days` before the fixture day, at this UTC hour: the time-of-day lens reads the hour."""
+    day_start = (_TASTE_NOW // _DAY) * _DAY - days * _DAY
+    return Listen(day_start + hour * 3600 + 1800, {k: tuple(v) for k, v in attrs.items()})
+
+
+def _taste_case(listens: list[Listen], with_context: bool = False) -> dict[str, Any]:
+    """Save profiles built from these listens in a store of their own and return the taste body.
+
+    ``with_context`` also saves the listening-context lenses and the morning-vs-night contrast, as the refresh does.
+    """
     with tempfile.TemporaryDirectory() as tmp:
         db = open_store(Path(tmp) / "taste.sqlite3")
         try:
             save_profiles(db, build_profiles(listens, _TASTE_CONFIG), now=_TASTE_NOW)
+            if with_context:
+                save_context_profiles(db, build_context_profiles(listens, "UTC", _TASTE_CONFIG), _TASTE_CONFIG, now=_TASTE_NOW)
             return build_taste_body(db)
         finally:
             db.close()
 
 
+def _context_listens(counts: dict[str, int]) -> list[Listen]:
+    """Listens spread over the four time-of-day contexts with these counts, over the last 300 days."""
+    hours = {"night": 2, "morning": 8, "afternoon": 14, "evening": 20}
+    genres = {"night": ("ambient",), "morning": ("jazz",), "afternoon": ("post-punk",), "evening": ("dream pop",)}
+    out: list[Listen] = []
+    for name, n in counts.items():
+        for i in range(n):
+            out.append(_hour_listen(1 + (i * 7) % 300, hours[name] + i % 4, genre=genres[name], era=("1980s",) if i % 2 else ("1990s",)))
+    return out
+
+
 def _taste_fixtures() -> dict[str, dict[str, Any]]:
-    """Taste bodies with a headline: rich, thin recent window, sparse genre, and empty (nothing sound)."""
+    """Taste bodies with a headline: rich, thin recent window, sparse genre, and empty (nothing sound); and two with the
+    listening-context lenses, one whose morning-vs-night contrast is low sample and one whose contrast is stated."""
     rich = [_listen(10 + i, genre=("jazz",)) for i in range(6)] + [_listen(500 + i, genre=("rock",)) for i in range(14)]
     # Recent has one listen (low sample); the mid window is sound and carries the shift.
     thin = ([_listen(10, genre=("jazz",))] + [_listen(150 + i, genre=("jazz",)) for i in range(8)]
@@ -328,6 +353,12 @@ def _taste_fixtures() -> dict[str, dict[str, Any]]:
                                         "note": "genre low_sample (2 attributed); headline uses era"},
         "taste_empty.json": {"request": request, "response": _taste_case(empty),
                              "note": "saved but no sound window; headline is null"},
+        "taste_context.json": {"request": request,
+                               "response": _taste_case(_context_listens({"night": 60, "morning": 120, "afternoon": 90, "evening": 200}), with_context=True),
+                               "note": "saved context lenses; night has 60 listens, under the 100 the contrast needs: low_sample, nothing compared"},
+        "taste_context_contrast.json": {"request": request,
+                                        "response": _taste_case(_context_listens({"night": 130, "morning": 120, "afternoon": 90, "evening": 200}), with_context=True),
+                                        "note": "saved context lenses; both morning and night hold 100 or more listens: the contrast is stated"},
     }
 
 

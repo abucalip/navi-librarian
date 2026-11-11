@@ -140,18 +140,79 @@ public struct TasteProfiles: Decodable, Equatable, Sendable {
     }
 }
 
+/// `context` of `GET /api/insights/taste`: the listening-context lenses (time of day, day type), each context profiled the
+/// same way as a window, and the morning-vs-night contrast. Served by the server; the client only reads it.
+public struct TasteContext: Decodable, Equatable, Sendable {
+    public let timezone: String
+    public let listens: Int
+    /// lens (`time_of_day`, `day_type`) -> context (`night`, `morning`, ...) -> profile. Each profile has the same flags as a window.
+    public let lenses: [String: [String: TasteWindow]]
+    public let contrast: TasteContrast?
+
+    enum CodingKeys: String, CodingKey { case timezone, listens, lenses, contrast }
+    public init(from decoder: any Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        timezone = (try? c.decode(String.self, forKey: .timezone)) ?? "UTC"
+        listens = (try? c.decode(Int.self, forKey: .listens)) ?? 0
+        lenses = (try? c.decode([String: [String: TasteWindow]].self, forKey: .lenses)) ?? [:]
+        contrast = try? c.decode(TasteContrast.self, forKey: .contrast)
+    }
+
+    /// The profile of one context of the time-of-day lens, or nil when the server did not send it.
+    public func timeOfDay(_ name: String) -> TasteWindow? { lenses["time_of_day"]?[name] }
+    /// Listens in one time-of-day context; 0 when the server did not send it.
+    public func listensIn(_ name: String) -> Int { timeOfDay(name)?.listens ?? 0 }
+}
+
+/// The morning-vs-night contrast. `state` is the server's word: `stated` (entries listed), `no_difference`, or `low_sample`
+/// (one side holds fewer than `minListens` listens, so nothing is compared). Each entry is a share on each side.
+public struct TasteContrast: Decodable, Equatable, Sendable {
+    public struct Entry: Decodable, Equatable, Sendable {
+        public let dimension: String
+        public let value: String
+        public let morning: Double
+        public let night: Double
+
+        enum CodingKeys: String, CodingKey { case dimension, value, morning, night }
+        public init(from decoder: any Decoder) throws {
+            let c = try decoder.container(keyedBy: CodingKeys.self)
+            dimension = (try? c.decode(String.self, forKey: .dimension)) ?? ""
+            value = (try? c.decode(String.self, forKey: .value)) ?? ""
+            morning = (try? c.decode(Double.self, forKey: .morning)) ?? 0
+            night = (try? c.decode(Double.self, forKey: .night)) ?? 0
+        }
+    }
+
+    public let state: String
+    public let minListens: Int
+    public let listens: [String: Int]
+    public let entries: [Entry]
+
+    enum CodingKeys: String, CodingKey { case state, minListens = "min_listens", listens, entries }
+    public init(from decoder: any Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        state = (try? c.decode(String.self, forKey: .state)) ?? "low_sample"     // unknown means not sound
+        minListens = (try? c.decode(Int.self, forKey: .minListens)) ?? 100
+        listens = (try? c.decode([String: Int].self, forKey: .listens)) ?? [:]
+        entries = (try? c.decode([TasteContrast.Entry].self, forKey: .entries)) ?? []
+    }
+}
+
 /// `GET /api/insights/taste`. `profiles` is nil until a refresh has saved some ("not computed yet").
 public struct TasteResponse: Decodable, Equatable, Sendable {
     public let profiles: TasteProfiles?
+    /// The listening-context lenses and the morning-vs-night contrast; nil until a refresh has saved them.
+    public let context: TasteContext?
     public let dataVersion: Int
     public let generation: Int
     /// D2 (proposed): one entry per UTC day for the last 84 days, zero days included. nil until the server serves it.
     public let listensByDay: [ListensDay]?
 
-    enum CodingKeys: String, CodingKey { case profiles, dataVersion = "data_version", generation, listensByDay = "listens_by_day" }
+    enum CodingKeys: String, CodingKey { case profiles, context, dataVersion = "data_version", generation, listensByDay = "listens_by_day" }
     public init(from decoder: any Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         profiles = try? c.decode(TasteProfiles.self, forKey: .profiles)
+        context = try? c.decode(TasteContext.self, forKey: .context)
         dataVersion = (try? c.decode(Int.self, forKey: .dataVersion)) ?? 0
         generation = (try? c.decode(Int.self, forKey: .generation)) ?? 0
         listensByDay = (try? c.decode([FeedLossy<ListensDay>].self, forKey: .listensByDay))?.compactMap(\.value)

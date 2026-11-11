@@ -1,7 +1,8 @@
 import SwiftUI
 
-/// Listening History (contract 6.6): a 26-week heatmap of the days songs were last played, and a timeline by day
-/// below it. Built from Navidrome's per-song latest play; see `ListeningHistory`. No mockup exists for this screen.
+/// Listening History (contract 6.6, redesign 5.3, mockup `history--default`): a 26-week heatmap of the days songs were last
+/// played, with a Fewer to More key, then a list of each day's songs. Built from Navidrome's per-song latest play; see
+/// `ListeningHistory`. The heatmap is `CUHeatmap`: five stepped colours, month and weekday labels, click or arrow-key selection.
 struct CupertinoHistory: View {
     let state: AppState
     private let shownDays = 30
@@ -10,12 +11,14 @@ struct CupertinoHistory: View {
         let songs = state.library.songs
         let days = ListeningHistory.days(songs)
         ScrollView {
-            VStack(alignment: .leading, spacing: 18) {
-                Text("History").font(CU.title(34)).padding(.top, 4).accessibilityAddTraits(.isHeader)
-                Text("When you last played each song. Navidrome keeps one latest play per song.").foregroundStyle(CU.muted)
+            VStack(alignment: .leading, spacing: CU.Space.m) {
+                Text("History").cuRole(CU.Font.largeTitle).foregroundStyle(CU.text).padding(.top, CU.Space.xs).accessibilityAddTraits(.isHeader)
+                Text("When you last played each song. Navidrome keeps one latest play per song, so earlier plays of the same song are not shown.")
+                    .cuRole(CU.Font.body).foregroundStyle(CU.textSecondary).frame(maxWidth: 620, alignment: .leading)
                 heat(songs)
                 if days.isEmpty {
-                    Text(state.library.songsLoading ? "Reading your songs…" : "No played songs yet.").foregroundStyle(CU.muted)
+                    Text(state.library.songsLoading ? "Reading your songs…" : "No played songs yet.")
+                        .cuRole(CU.Font.body).foregroundStyle(CU.textSecondary)
                 }
                 ForEach(days.prefix(shownDays)) { day in section(day) }
             }
@@ -26,51 +29,56 @@ struct CupertinoHistory: View {
     }
 
     private func heat(_ songs: [SongRow]) -> some View {
-        let cells = ListeningHistory.heatmap(songs)
-        let top = cells.map(\.count).max() ?? 0
-        let columns = stride(from: 0, to: cells.count, by: 7).map { Array(cells[$0..<min($0 + 7, cells.count)]) }
-        return HStack(alignment: .top, spacing: 3) {
-            ForEach(Array(columns.enumerated()), id: \.offset) { _, col in
-                VStack(spacing: 3) {
-                    ForEach(col) { c in
-                        RoundedRectangle(cornerRadius: 2, style: .continuous)
-                            .fill(c.count == 0 ? CU.muted.opacity(0.15) : CU.accent.opacity(0.25 + 0.2 * Double(ListeningHistory.level(c.count, max: top))))
-                            .frame(width: 11, height: 11)
-                            .help("\(c.date.formatted(date: .abbreviated, time: .omitted)): \(c.count) songs")
+        let cells = ListeningHistory.heatmap(songs).map { CUHeatCell(date: $0.date, count: $0.count) }
+        let withPlays = cells.filter { $0.count > 0 }.count
+        return CUPanel {
+            HStack(alignment: .top, spacing: CU.Space.m) {
+                VStack(alignment: .leading, spacing: CU.Space.xs) {
+                    Text("Last 26 weeks").cuRole(CU.Font.title2).foregroundStyle(CU.text).accessibilityAddTraits(.isHeader)
+                    if let first = cells.first, let last = cells.last {
+                        Text("Songs whose latest play fell on each day · \(CUChartMath.longDate(first.date, weekday: false)) to \(CUChartMath.longDate(last.date, weekday: false))")
+                            .cuRole(CU.Font.callout).foregroundStyle(CU.textSecondary)
                     }
                 }
+                Spacer(minLength: CU.Space.m)
+                CUHeatmapKey()
             }
+            CUHeatmap(cells: cells, title: "Songs played each day, last 26 weeks")
+                .padding(.vertical, CU.Space.xs)
+            Text("Click a day or move with the arrow keys to read its count. \(withPlays) of \(cells.count) days have plays.")
+                .cuRole(CU.Font.callout).foregroundStyle(CU.textSecondary)
         }
-        .padding(16).frame(maxWidth: .infinity, alignment: .leading)
-        .background(CU.card, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Heatmap of the last 26 weeks, \(cells.filter { $0.count > 0 }.count) days with plays")
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Heatmap of the last 26 weeks, \(withPlays) days with plays")
     }
 
     private func section(_ day: HistoryDay) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack {
-                Text(ListeningHistory.dayTitle(day.date)).font(CU.title(18))
-                Text("\(day.songs.count) songs").foregroundStyle(CU.muted)
-                Spacer()
-                Button("Play day") { state.play(rows: day.songs, startAt: 0) }.buttonStyle(CapsuleButtonStyle(primary: true, small: true))
+        CUPanel {
+            HStack(alignment: .firstTextBaseline, spacing: CU.Space.s) {
+                Text(ListeningHistory.dayTitle(day.date)).cuRole(CU.Font.title2).foregroundStyle(CU.text)
+                Text("\(day.songs.count) songs").cuRole(CU.Font.callout).foregroundStyle(CU.textSecondary)
+                Spacer(minLength: 0)
+                Button { state.play(rows: day.songs, startAt: 0) } label: { Label("Play day", systemImage: "play.fill") }
+                    .buttonStyle(CapsuleButtonStyle(small: true))
             }
             ForEach(Array(day.songs.enumerated()), id: \.offset) { i, s in
+                if i > 0 { Divider() }
                 Button { state.play(rows: day.songs, startAt: i) } label: {
-                    HStack(spacing: 10) {
-                        Text(s.playedAt?.formatted(date: .omitted, time: .shortened) ?? "").foregroundStyle(CU.muted).frame(width: 64, alignment: .leading)
-                        Text(s.title).lineLimit(1)
-                        Text(s.artist).foregroundStyle(CU.muted).lineLimit(1)
-                        Spacer(minLength: 0)
-                        Text("\(s.plays) plays").font(.system(size: 11)).foregroundStyle(CU.muted)
+                    HStack(spacing: CU.Space.s) {
+                        Text(s.playedAt?.formatted(date: .omitted, time: .shortened) ?? "")
+                            .cuRole(CU.Font.body).foregroundStyle(CU.textSecondary).monospacedDigit().frame(width: 64, alignment: .leading)
+                        Text(s.title).cuRole(CU.Font.headline).foregroundStyle(CU.text).lineLimit(1)
+                        Spacer(minLength: CU.Space.s)
+                        Text(s.artist).cuRole(CU.Font.body).foregroundStyle(CU.textSecondary).lineLimit(1).frame(width: 200, alignment: .leading)
+                        Text("\(s.plays) plays").cuRole(CU.Font.body).foregroundStyle(CU.textSecondary).monospacedDigit()
+                            .frame(width: 90, alignment: .trailing)
                     }
+                    .padding(.vertical, CU.Space.xs)
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain).accessibilityLabel("Play \(s.title) by \(s.artist)")
             }
         }
-        .padding(16).frame(maxWidth: .infinity, alignment: .leading)
-        .background(CU.card, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         .accessibilityElement(children: .contain)
     }
 }
