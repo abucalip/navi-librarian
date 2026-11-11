@@ -341,6 +341,15 @@ Earlier project log entries are preserved verbatim in [PROJECT_LOG_HISTORY.md](d
 - Nothing calls the charts yet; no Zine file changed.
 - Next: M5 (home data) or M6 (services data), Sonnet; M8 builds Home from M2, M4 and M5.
 
+## 2026-11-11 — Redesign M9: Connections and Services screens (macOS)
+
+- Merged as PR [#983](https://github.com/abucalip/navi-librarian/pull/983), squash `344252e3`, from head `393e7d4f06fa6d8749ebd63bee20a6482042cc86`; GitHub confirms the merge and compile, container-smoke, test-and-build and validate-container passed on that head. Plan: `docs/redesign.md` sections 5.2, 6 and 11, step M9.
+- Changed: new `Themes/Cupertino/CupertinoConnections.swift` and `CupertinoServices.swift`, new `Model/ServicesController.swift` and `AppState+Services.swift`; `GraphExplorerView.swift` (`GraphStyle.redesigned`), `GraphExplorer.swift` (view mode, start name, load failure and retry, requested and failed update, summary, footer and truncated wording, Also on), `CupertinoSettings.swift` (four tabs), `CupertinoTheme.swift` (status button), `ServicesModel.swift` (name and noun lookups), `AppState.swift` (`services`, `settingsTab`, a services check after connect), `ServiceSettings.swift` (`saveSlskd` folders, optional).
+- Tests actually run, filtered, on a Mac: `ConnectionsScreenModelTests`, `ServicesScreenTests`, `ConnectionsServicesRenderTests`, `GraphLayoutTests`, `GraphExplorer`, `ServicesModel`, `ScreenshotTests`, `CupertinoControlsTests`, `CupertinoTokensTests`, `ServiceSettingsClientTests` (123 in the last run). Full suite not run (owner rule).
+- Visual check: sample-data renders of connections graph, selected, list, empty, not loaded, truncated and failed, and services healthy, degraded, Librarian unreachable, edit sheet and popover, compared with the mockups by eye; the graph's labels were moved to the outer side of each node after the first render collided. Zine before and after screenshots were not taken (owner waived).
+- Limits: no live server or window run, no VoiceOver or keyboard pass, owner has not approved the look. The server sends no connection total, so the footer counts what was read. Disconnect exists for Discogs and ListenBrainz only. The edit sheet's Test tests the saved settings. Status now shows Answer, Since, Last good read and Checked from the Mac's own history; Route and Server contract are not drawn. "Also on, in your library" is derived from the walk's structure (owned albums next to the node), not from a server field.
+- Next: M10 (remaining pages, two PRs), Haiku, High.
+
 ## 2026-11-11 — Redesign M8: Home screen (macOS)
 
 - Merged as PR [#982](https://github.com/abucalip/navi-librarian/pull/982), squash `f9bccff8`, from head `1abfecbafcb6dadf0f252aa12b87a5117152ee98`; GitHub confirms the merge and compile, container-smoke, test-and-build and validate-container passed on that head. Plan: `docs/redesign.md` sections 5.1 and 11, step M8.
