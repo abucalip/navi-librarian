@@ -14,6 +14,7 @@ struct CupertinoHome: View {
     @State private var range: HomeDashboard.GrowthRange = .oneYear
     @State private var decadeSelection: String?
     @FocusState private var pickFocused: Bool
+    @State private var pickNotice: String?
 
     private var d: HomeDashboard { state.homeDashboard }
     private var stacked: Bool { HomeScreen.isStacked(contentWidth: width) }
@@ -208,6 +209,7 @@ struct CupertinoHome: View {
                     if let track = a.suggestedTracks.first { suggestedTrack(track, album: a).padding(.top, CU.Space.xs) }
                     Spacer(minLength: 0)
                     pickButtons(a)
+                    pickNoticeView()
                 }
             }
             if !stacked { keyHints }
@@ -244,6 +246,13 @@ struct CupertinoHome: View {
         }
     }
 
+    @ViewBuilder private func pickNoticeView() -> some View {
+        if let pickNotice {
+            Label(pickNotice, systemImage: "info.circle").cu(CU.Font.callout).foregroundStyle(CU.info)
+                .accessibilityAddTraits(.updatesFrequently)
+        }
+    }
+
     private func pickButtons(_ a: AlbumItem) -> some View {
         let acq = state.acquisition
         let label = acq.buttonLabel(for: a)
@@ -269,13 +278,18 @@ struct CupertinoHome: View {
         .accessibilityHidden(true)   // the buttons carry the same actions; the hints are for sighted keyboard users
     }
 
-    /// Arrow keys act on the pick in view. Space plays the suggested track only when the album is already owned.
+    /// Arrow keys act on the pick in view. Space plays the album when owned, and otherwise shows a short notice.
     private func act(_ key: HomeScreen.PickKey, _ a: AlbumItem) -> KeyPress.Result {
+        if key != .play { pickNotice = nil }
         switch key {
         case .get: guard state.acquisition.canGet(a) else { return .ignored }; state.actions.get(album: a)
         case .save: guard !state.acquisition.isSaved(a) else { return .ignored }; state.actions.save(album: a)
         case .notForMe: state.actions.notForMe(album: a)
-        case .play: guard a.owned else { return .ignored }; state.playAlbum(a)
+        case .play:
+            switch HomeScreen.spaceOutcome(owned: a.owned) {
+            case .play: pickNotice = nil; state.playAlbum(a)
+            case .notOwned(let notice): pickNotice = notice
+            }
         }
         return .handled
     }

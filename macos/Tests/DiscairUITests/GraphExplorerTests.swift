@@ -300,6 +300,13 @@ private func circularDistance(_ a: Double, _ b: Double) -> Double {
         #expect(groups[0].rows[0].connection == "Linked" && groups[0].rows[0].match == "")
     }
 
+    @Test func memberOfNamesTheCentreWhenKnown() {
+        let node = graphNode("lee", kind: "person", evidence: [credit("member_of")])
+        #expect(GraphListGroup.groups([node], centreName: "Talk Talk")[0].rows[0].connection == "Member of Talk Talk")
+        #expect(GraphListGroup.groups([node])[0].rows[0].connection == "Member of")
+        #expect(GraphListGroup.groups([graphNode("t", evidence: [credit("producer")])], centreName: "Talk Talk")[0].rows[0].connection == "Producer")
+    }
+
     @Test func aGroupRelationBeatsAnEarlierRelationWithNoGroup() {
         let groups = GraphListGroup.groups([graphNode("tim", evidence: [credit("held at"), credit("producer")])])
         #expect(groups.map(\.group) == [.produced])

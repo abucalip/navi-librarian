@@ -114,6 +114,13 @@ public struct NavidromeClient: Sendable {
         return (p.openSubsonicExtensions ?? []).contains { $0.name == "songLyrics" }
     }
 
+    /// Whether the server lists the `sonicSimilarity` extension: the same check the Librarian makes for its `sonic_available` flag
+    /// (`intelligence/sonic/detect.py`), so Sonic analysis keeps its state when the Librarian is down.
+    public func supportsSonicSimilarity() async throws -> Bool {
+        let p = try await call("getOpenSubsonicExtensions", [], as: ExtensionsPayload.self)
+        return (p.openSubsonicExtensions ?? []).contains { $0.name == "sonicSimilarity" }
+    }
+
     // MARK: Playlists (contract section 6 item 7, check 6a)
 
     public func playlists() async throws -> [NavidromePlaylist] {

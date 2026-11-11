@@ -278,10 +278,14 @@ public struct HomeDashboard: Equatable, Sendable {
                 counts[.never, default: 0] += 1
             }
         }
+        // Navidrome leaves playCount and played out for an album with no plays. If no album carries either, the server is not
+        // reporting plays at all (live check, 2026-11-12: both fields appear on exactly the played albums), so "never played"
+        // cannot be told from "not counted" and no number is shown.
+        let playsReported = albums.indices.contains { albums[$0].playCount != nil || played[$0] != nil }
         let never = counts[.never] ?? 0
         let longest = Self.longestUnplayed(albums: albums, created: created, played: played, hasPlays: hasPlays)
         let shelf = ShelfLife(bins: ShelfBin.allCases.map { ($0, counts[$0] ?? 0) }, unknownPlayed: unknownPlayed, longestUnplayed: longest)
-        let change = input.neverPlayedBaseline.map { NeverPlayedChange(delta: never - $0.count, since: $0.date) }
+        let change = playsReported ? input.neverPlayedBaseline.map { NeverPlayedChange(delta: never - $0.count, since: $0.date) } : nil
 
         // Arrived and unplayed: added recently, no plays.
         let arrivalCutoff = cal.date(byAdding: .day, value: -arrivalDays, to: now) ?? now
@@ -302,7 +306,7 @@ public struct HomeDashboard: Equatable, Sendable {
             if let s = Self.growth(r, dates: datedDates, undated: albums.count - datedCount, now: now, calendar: cal) { growth[r] = s }
         }
 
-        return HomeDashboard(load: .ready, albumCount: albums.count, added: added, neverPlayed: never, neverPlayedChange: change, listens: Self.listensFigure(input),
+        return HomeDashboard(load: .ready, albumCount: albums.count, added: added, neverPlayed: playsReported ? never : nil, neverPlayedChange: change, listens: Self.listensFigure(input),
                              waiting: Waiting(picks: picks, unplayedArrivals: arrivedRows.count), shelfLife: shelf, growth: growth,
                              decades: decades, listenSharesAvailable: listenOK,
                              arrivals: Array(allRows.prefix(maxArrivalRows)), arrivalsHidden: max(0, allRows.count - maxArrivalRows),
