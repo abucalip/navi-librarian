@@ -247,6 +247,10 @@ struct ServiceRowView: View {
                 column("Setup", rows: row.setup.map { ($0.label, $0.value, false) })
             }
             HStack(spacing: CU.Space.s) { ForEach(Array(row.actions.enumerated()), id: \.offset) { _, a in actionButton(a) } }
+            // F8: a row with no Disconnect says why, in words, rather than leaving the choice unexplained.
+            if let note = ServiceEditSpec.disconnectNote(row.id) {
+                Text(note).cuRole(CU.Font.callout).foregroundStyle(CU.textSecondary).fixedSize(horizontal: false, vertical: true)
+            }
         }
         .padding(CU.Space.m)
         .frame(maxWidth: .infinity, alignment: .leading)

@@ -211,6 +211,18 @@ private func client(_ body: Data, status: Int = 200) throws -> LibrarianClient {
         #expect(ServiceEditSpec.disconnectDetail(.listenbrainz, powers: ["Taste", "Popularity"]).hasPrefix("Taste, Popularity stop updating."))
     }
 
+    /// F8: every service either offers a named Disconnect or has a sentence saying why not.
+    @Test func everyRowWithoutDisconnectSaysWhy() {
+        for id in ServicesModel.ServiceID.allCases {
+            if ServiceEditSpec.canDisconnect(id) {
+                #expect(ServiceEditSpec.disconnectNote(id) == nil)
+            } else {
+                let note = ServiceEditSpec.disconnectNote(id)
+                #expect(note?.hasPrefix("Disconnect is not offered.") == true, "\(id) needs a reason")
+            }
+        }
+    }
+
     @Test func testNoticesSayWhatHappenedInWords() {
         let pass = ServicesController.notice(for: ServiceTestResult(ok: true, status: "connected"), name: "slskd", noun: "Key")
         #expect(pass == .init(kind: .success, lead: "Test passed.", message: "slskd answered and the key was accepted."))

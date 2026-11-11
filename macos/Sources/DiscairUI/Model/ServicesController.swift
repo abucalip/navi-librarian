@@ -70,6 +70,16 @@ public enum ServiceEditSpec {
     /// The routes clear a saved secret for these two only (Discogs with an empty token; ListenBrainz with an empty username).
     public static func canDisconnect(_ id: ServicesModel.ServiceID) -> Bool { id == .discogs || id == .listenbrainz }
 
+    /// Where a row without Disconnect says why (F8): every row either offers a named Disconnect or states the reason here.
+    public static func disconnectNote(_ id: ServicesModel.ServiceID) -> String? {
+        guard !canDisconnect(id) else { return nil }
+        switch id {
+        case .librarian: return "Disconnect is not offered. The Librarian address is set in Profiles, and it is not cleared from here."
+        case .smb: return "Disconnect is not offered. The music folder is set in Music folder, and nothing here clears it."
+        default: return "Disconnect is not offered. The Librarian's settings route clears a saved secret only for Discogs and ListenBrainz. Edit replaces it."
+        }
+    }
+
     /// The destructive label names what is cut off (section 4.3).
     public static func disconnectLabel(_ id: ServicesModel.ServiceID, name: String) -> String { "Disconnect \(name)" }
 

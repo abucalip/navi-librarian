@@ -451,6 +451,8 @@ struct CupertinoConnections: View {
         let also = graph.alsoOnInLibrary(n)
         if !also.isEmpty {
             Text("Also on, in your library").cuRole(CU.Font.eyebrow).textCase(.uppercase).foregroundStyle(CU.textSecondary).padding(.top, CU.Space.s)
+            // F10: the covers come from the walk already read, not from a server total (docs/redesign.md section 5.2).
+            Text("Owned albums next to this one in the walk you have read.").cuRole(CU.Font.caption).foregroundStyle(CU.textSecondary)
             HStack(spacing: CU.Space.s) {
                 ForEach(also.prefix(5)) { a in
                     let item = GraphNodeFace.ownedAlbum(a.entity.name, library: state.library)

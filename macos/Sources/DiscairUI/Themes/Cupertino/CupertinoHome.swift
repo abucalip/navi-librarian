@@ -65,7 +65,7 @@ struct CupertinoHome: View {
             split([1, 1]) { tastePanel; lensesPanel }
             split([2, 1]) { shelfPanel; activityPanel }
         } else {
-            collectionPanel
+            // Matches `home--librarian-unreachable`: the collection chart is hidden, not kept, when Librarian is down (F5).
             split([2, 1]) { shelfPanel; activityPanel }
         }
         recentlyAdded.padding(.top, CU.Space.m)
