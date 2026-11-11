@@ -351,6 +351,12 @@ Earlier project log entries are preserved verbatim in [PROJECT_LOG_HISTORY.md](d
 - Limits: no live Librarian run; the morning-vs-night and time-of-day numbers come from fixtures; the Top values picker no longer offers Collaborator (mockup's four); the Clear confirmation and the Playback layout are not exercised in a window.
 - Next: M10b (token-only pages), Haiku, High.
 
+## 2026-11-11: Redesign S1, listens by day (D2)
+
+- PR #986 merged as squash `41449e29cb6cc8c6842e130264a564aff6c0d445` from head `e7001cf799137df7a875b89dea22c9d74d8a2a8a`. `listens_by_day` on `GET /api/insights/taste`: 84 complete UTC days before the refresh day, oldest first, zero days included; absent until a refresh saves it. Built by `intelligence/taste/listens_by_day.py`, saved by the taste refresh as one `taste_listens_by_day` row (no migration, no new provider call).
+- Tests actually run, filtered: listens-by-day, taste refresh, taste persistence and contract-fixture suites (44 pass). Full suite not run (owner rule). Not checked live or against the macOS client.
+- Next: S2, Haiku, High.
+
 ## 2026-11-11 — Redesign M9: Connections and Services screens (macOS)
 
 - Merged as PR [#983](https://github.com/abucalip/navi-librarian/pull/983), squash `344252e3`, from head `393e7d4f06fa6d8749ebd63bee20a6482042cc86`; GitHub confirms the merge and compile, container-smoke, test-and-build and validate-container passed on that head. Plan: `docs/redesign.md` sections 5.2, 6 and 11, step M9.
