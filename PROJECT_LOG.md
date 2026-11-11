@@ -310,3 +310,13 @@ Earlier project log entries are preserved verbatim in [PROJECT_LOG_HISTORY.md](d
 - Tests actually run, filtered: macOS `swift test --filter LinerNote` (5 pass) and `--filter EditionCover` (6 pass), re-run during review; the authors report Android `LinerNoteTest`, `EditionCoversTest`, `PathArtworkTest` passing. Not run: full suites, anything on a device or in a window.
 - Open: the Sticker Wall peel-off look for the liner note is not built; the Downloads covers show the album's editions, not the fetched pressing (the server does not record it); open decisions 1 to 4 in `artwork.md` stay with the owner.
 - `docs/artwork.md` marked complete: every slice and client idea is merged. Next: the owner's manual checks; no artwork code is left to build.
+
+## 2026-11-11 — Redesign M1: Cupertino tokens (macOS)
+
+- Merged as PR [#975](https://github.com/abucalip/navi-librarian/pull/975), squash `f0aba3d6`, from head `61fda98a`; GitHub confirms the merge. Plan: `docs/redesign.md` section 11, step M1.
+- Changed: `macos/Sources/DiscairUI/Themes/Cupertino/CupertinoTheme.swift` (colour roles from section 4.1, `CU.Font` roles from 4.2 with `Text.cuRole`, `CU.Space` 4/8/16/24/32; old names kept as aliases). New `macos/Tests/DiscairUITests/CupertinoTokensTests.swift`.
+- Tests actually run, filtered, on a Mac: `swift test --filter CupertinoTokensTests` (6 pass); `swift test --filter "CupertinoRound1Tests|CupertinoTokensTests"` (11 pass in 2 suites). One of the agent's own assertions failed on first run (a line-height rule not in the plan) and was removed before merge.
+- Not checked: a screenshot against `components--tokens-and-controls`; CI on the PR head was not recorded in this session.
+- Side effect, accepted by the owner: shared Chrome components that read `CU` (for example `OfflineBanner`, `ArtistPageParts`) change colour, including under the Zine theme. Zine's own tokens are untouched.
+- Left for later steps: literal colours outside the table (`Color.green`/`Color.orange` status dots, the `#F6F6F8` row shade, taste colours), to M2, M3 and M10.
+- Next: M2 (controls), Sonnet, Medium.
