@@ -23,11 +23,11 @@ struct CupertinoLibraryHub: View {
                 Spacer(minLength: 0)
                 searchField
             }
-            .padding(.horizontal, 28).padding(.top, 4).padding(.bottom, 12)
+            .padding(.horizontal, CU.Space.xl).padding(.top, 4).padding(.bottom, 12)
             .zIndex(2)
             .overlay(alignment: .topTrailing) {
                 if state.libraryTab == .overview, !query.trimmingCharacters(in: .whitespaces).isEmpty {
-                    sheet.padding(.top, 52).padding(.trailing, 28)
+                    sheet.padding(.top, 52).padding(.trailing, CU.Space.xl)
                 }
             }
             .zIndex(2)
@@ -83,12 +83,12 @@ struct CupertinoLibraryHub: View {
                 VStack(alignment: .leading, spacing: 0) {
                     Text("Recently Added").font(CU.title(20)).padding(.bottom, 12).accessibilityAddTraits(.isHeader)
                     if state.library.phase == .loading { Text("Loading your library…").foregroundStyle(CU.muted).padding(.bottom, 8) }
-                    if case .failed(let m) = state.library.phase { Text(m).foregroundStyle(CU.accent).padding(.bottom, 8) }
+                    if case .failed(let m) = state.library.phase { CUErrorLine(message: m).padding(.bottom, 8) }
                     LazyVGrid(columns: [GridItem(.adaptive(minimum: 128, maximum: 128), spacing: 18, alignment: .top)], alignment: .leading, spacing: 18) {
                         ForEach(state.visible(state.library.recent)) { a in AlbumTile(state: state, album: a) }
                     }
                 }
-                .padding(.leading, 28).padding(.trailing, 20).padding(.bottom, 28)
+                .padding(.leading, CU.Space.xl).padding(.trailing, 20).padding(.bottom, CU.Space.xl)
             }
             .scrollEdgeEffectStyle(.hard, for: .top)
             recentlyPlayed

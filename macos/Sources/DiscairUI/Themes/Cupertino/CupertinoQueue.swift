@@ -16,14 +16,14 @@ struct CupertinoAlbumsGrid: View {
             VStack(alignment: .leading, spacing: 0) {
                 if showHeader { Text(recent ? "Recently Added" : "Albums").font(CU.title(34)).padding(.top, 4).padding(.bottom, 14) }
                 if state.library.phase == .loading { Text("Loading your library…").foregroundStyle(CU.muted).padding(.bottom, 8) }
-                if case .failed(let m) = state.library.phase { Text(m).foregroundStyle(CU.accent).padding(.bottom, 8) }
+                if case .failed(let m) = state.library.phase { CUErrorLine(message: m).padding(.bottom, 8) }
                 let shown = LibrarySearch.albums(state.visible(recent ? state.library.recent : state.library.searchableAlbums), query: query)
                 if shown.isEmpty, !query.isEmpty { Text("No albums match.").foregroundStyle(CU.muted) }
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 128, maximum: 128), spacing: 18, alignment: .top)], alignment: .leading, spacing: 18) {
                     ForEach(shown) { a in AlbumTile(state: state, album: a) }
                 }
             }
-            .padding(.horizontal, 28).padding(.bottom, 28)
+            .padding(.horizontal, CU.Space.xl).padding(.bottom, CU.Space.xl)
         }
         .scrollEdgeEffectStyle(.hard, for: .top)
     }

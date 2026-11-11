@@ -19,7 +19,7 @@ struct CupertinoInsights: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
                     header
-                    if let e = model.error { Text(e).font(.system(size: 13)).foregroundStyle(CU.accent).accessibilityLabel("Problem: \(e)") }
+                    if let e = model.error { CUErrorLine(message: e).font(CU.Font.body.font) }
                     CupertinoTaste(model: state.taste, state: state)
                     lensIndicators
                     HStack(alignment: .top, spacing: 16) {
@@ -27,7 +27,7 @@ struct CupertinoInsights: View {
                         VStack(spacing: 16) { ForEach(right, id: \.self) { panel($0) } }.frame(maxWidth: .infinity)
                     }
                 }
-                .padding(.horizontal, 28).padding(.bottom, 60)
+                .padding(.horizontal, CU.Space.xl).padding(.bottom, 60)
             }
             .scrollEdgeEffectStyle(.hard, for: .top)
             if model.lastDismissed != nil { undoBar }

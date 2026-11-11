@@ -153,7 +153,7 @@ struct CupertinoPlayerBar: View {
                             }
                             .foregroundStyle(secondary)
                         }
-                        if case .failed(let m) = p.phase { Text(m).foregroundStyle(CU.accent).lineLimit(1) }
+                        if case .failed(let m) = p.phase { CUErrorLine(message: m, onDark: tint != nil).lineLimit(1) }
                     }
                     .font(.system(size: 12.5)).frame(maxWidth: .infinity, alignment: .leading)
                 }

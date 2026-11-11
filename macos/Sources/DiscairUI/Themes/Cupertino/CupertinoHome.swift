@@ -27,7 +27,7 @@ struct CupertinoHome: View {
                 sectionTitle("Recently added", sub: nil)
                 shelf(state.library.recent, missing: false)
             }
-            .padding(.horizontal, 28).padding(.bottom, 28)
+            .padding(.horizontal, CU.Space.xl).padding(.bottom, CU.Space.xl)
         }
         .scrollEdgeEffectStyle(.hard, for: .top)
     }

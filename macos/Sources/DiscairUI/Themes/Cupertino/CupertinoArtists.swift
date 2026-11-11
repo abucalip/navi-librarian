@@ -20,7 +20,7 @@ struct CupertinoArtistsIndex: View {
             LazyVStack(alignment: .leading, spacing: 0) {
                 if showHeader { Text("Artists").font(CU.title(34)).padding(.top, 4).padding(.bottom, 6) }
                 if state.library.phase == .loading { Text("Loading your library…").foregroundStyle(CU.muted).padding(.bottom, 8) }
-                if case .failed(let m) = state.library.phase { Text(m).foregroundStyle(CU.accent).padding(.bottom, 8) }
+                if case .failed(let m) = state.library.phase { CUErrorLine(message: m).padding(.bottom, 8) }
                 ForEach(groups, id: \.letter) { g in
                     Text(g.letter).font(CU.title(20)).foregroundStyle(CU.accent).padding(.top, 18).padding(.bottom, 6)
                         .accessibilityAddTraits(.isHeader)
@@ -42,7 +42,7 @@ struct CupertinoArtistsIndex: View {
                 }
             }
             .font(.system(size: 13.5))
-            .padding(.horizontal, 28).padding(.bottom, 28)
+            .padding(.horizontal, CU.Space.xl).padding(.bottom, CU.Space.xl)
         }
         .scrollEdgeEffectStyle(.hard, for: .top)
     }

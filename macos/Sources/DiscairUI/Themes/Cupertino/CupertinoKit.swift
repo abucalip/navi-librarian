@@ -220,6 +220,21 @@ struct CUStatusLabel: View {
     }
 }
 
+// MARK: Error line
+
+/// An inline error in a view's flow: danger colour, a warning icon and the words. Never the accent (the accent is the main action).
+/// `onDark` is for a ground that is dark (the player's tint), where danger would not reach contrast; the icon and words still carry it.
+struct CUErrorLine: View {
+    let message: String
+    var onDark = false
+
+    var body: some View {
+        Label(message, systemImage: "exclamationmark.triangle.fill")
+            .foregroundStyle(onDark ? Color.white : CU.danger)
+            .accessibilityLabel("Problem: \(message)")
+    }
+}
+
 // MARK: Notice
 
 /// Tinted strip, radius 16, padding 8 by 16: icon, bold lead-in, sentence, and one small button at the trailing edge.

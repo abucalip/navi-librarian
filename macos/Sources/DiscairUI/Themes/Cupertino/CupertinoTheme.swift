@@ -277,7 +277,7 @@ struct CupertinoSidebar: View {
                     Button { state.discoverOpen.toggle() } label: {
                         HStack(spacing: 6) {
                             Image(systemName: state.discoverOpen ? "chevron.down" : "chevron.right").font(.system(size: 10, weight: .bold)).frame(width: 18)
-                            Text("Discover").font(.system(size: 11, weight: .bold))
+                            Text("Discover").font(CU.Font.headline.font)
                             Spacer()
                         }
                         .foregroundStyle(CU.muted).padding(.horizontal, 10).padding(.top, 2).padding(.bottom, 2)
@@ -296,11 +296,12 @@ struct CupertinoSidebar: View {
                     Text("Playlists").font(.system(size: 11, weight: .bold)).foregroundStyle(CU.muted).padding(.leading, 10).padding(.top, 14)
                     ForEach(state.smart.lists) { list in
                         Button { state.smart.selectedID = list.id; state.screen = .smartPlaylists } label: {
-                            HStack(spacing: 9) {
-                                Image(systemName: "music.note.list").foregroundStyle(CU.accent).frame(width: 18)
+                            HStack(spacing: CU.Space.s) {
+                                Image(systemName: "music.note.list").foregroundStyle(CU.textSecondary).frame(width: 18)
                                 Text(list.name).lineLimit(1)
                             }
-                            .font(.system(size: 13.5)).padding(.horizontal, 10).padding(.vertical, 6)
+                            .font(CU.Font.body.font).foregroundStyle(CU.text)
+                            .padding(.horizontal, CU.Space.s).frame(height: 32, alignment: .leading)
                             .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
@@ -317,9 +318,11 @@ struct CupertinoSidebar: View {
 
     private func row(_ icon: String, _ label: String, _ screen: Screen) -> some View {
         let on = label == selected
+        // Mockup: 32 high, radius 12, 8 horizontal padding. Icons are secondary text; only the selected row takes the accent,
+        // as an accent-tint ground, accent-strong text and an accent icon.
         return Button { state.screen = screen } label: {
-            HStack(spacing: 9) {
-                Image(systemName: icon).foregroundStyle(CU.accent).frame(width: 18)
+            HStack(spacing: CU.Space.s) {
+                Image(systemName: icon).foregroundStyle(on ? CU.accent : CU.textSecondary).frame(width: 18)
                 Text(label).fontWeight(on ? .semibold : .regular)
                 Spacer()
                 if label == "Downloads", !state.library.isLive || state.acquisition.activeCount > 0 {
@@ -327,11 +330,11 @@ struct CupertinoSidebar: View {
                         .padding(.horizontal, 7).background(CU.accent, in: Capsule())
                 }
             }
-            .font(.system(size: 13.5))
-            .foregroundStyle(on ? CU.accent : CU.ink)
-            .padding(.horizontal, 10).padding(.vertical, 6)
-            .background(on ? CU.accent.opacity(0.13) : .clear, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
-            .contentShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
+            .font(CU.Font.body.font)
+            .foregroundStyle(on ? CU.accentStrong : CU.text)
+            .padding(.horizontal, CU.Space.s).frame(height: 32)
+            .background(on ? CU.accentTint : .clear, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         }
         .buttonStyle(.plain)
         .accessibilityAddTraits(on ? .isSelected : [])
@@ -410,10 +413,12 @@ struct CupertinoArtworkSlot: View {
             .padding(.leading, 10).padding(.bottom, 10)
         } else {
             HStack(spacing: 5) {
-                Circle().fill(state.connectionIsGood ? Color.green : CU.accent).frame(width: 7, height: 7)
+                // A bad connection is danger with its own icon and the label's words; never the accent.
+                Image(systemName: state.connectionIsGood ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
+                    .foregroundStyle(state.connectionIsGood ? CU.success : CU.danger).accessibilityHidden(true)
                 Text(state.connectionLabel).lineLimit(1).minimumScaleFactor(0.8)
             }
-            .font(.system(size: 11)).foregroundStyle(CU.muted)
+            .font(CU.Font.caption.font).foregroundStyle(CU.muted)
             .frame(width: Self.side, alignment: .leading).padding(.leading, 26).padding(.bottom, (CupertinoPlayerBar.height - 14) / 2)
             .accessibilityElement(children: .combine)
             .accessibilityLabel("Connection: \(state.connectionLabel)")

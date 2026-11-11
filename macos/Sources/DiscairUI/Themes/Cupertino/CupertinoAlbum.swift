@@ -75,8 +75,8 @@ struct CupertinoAlbumBanner: View {
                 }
             }
             .foregroundStyle(.white)
-            .padding(.leading, 264).padding(.top, 76)
-            .padding(.trailing, state.queueOpen ? CupertinoQueueInspector.width + 28 : 28)
+            .padding(.leading, 236 + CU.Space.xl).padding(.top, 76)
+            .padding(.trailing, state.queueOpen ? CupertinoQueueInspector.width + CU.Space.xl : CU.Space.xl)
         }
         .accessibilityElement(children: .contain)
     }
@@ -105,7 +105,7 @@ struct CupertinoAlbum: View {
                 case .reviews: CupertinoAlbumSpread(state: state, part: .reviews).padding(.top, 14)
                 }
             }
-            .padding(.horizontal, 28).padding(.bottom, 28)
+            .padding(.horizontal, CU.Space.xl).padding(.bottom, CU.Space.xl)
         }
         .scrollEdgeEffectStyle(.hard, for: .top)
         .task(id: a.id) { await state.loadSelectedAlbum() }

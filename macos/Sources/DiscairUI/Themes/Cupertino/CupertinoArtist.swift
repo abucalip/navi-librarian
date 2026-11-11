@@ -72,7 +72,7 @@ struct CupertinoArtistBanner: View {
                 }
             }
             .foregroundStyle(.white)
-            .padding(.leading, 264).padding(.top, 104)       // 236 sidebar column + 28 margin
+            .padding(.leading, 236 + CU.Space.xl).padding(.top, 104)       // 236 sidebar column + 32 margin
         }
         .overlay(alignment: .trailing) {
             ArtistPhoto(name: state.selectedArtist.name, size: 210)
@@ -118,7 +118,7 @@ struct CupertinoArtist: View {
                     if state.library.isLive { TopSongsPanel(state: state).padding(.top, 18) }
                 }
             }
-            .padding(.horizontal, 28).padding(.bottom, 28)
+            .padding(.horizontal, CU.Space.xl).padding(.bottom, CU.Space.xl)
         }
         .task(id: state.selectedArtist.id) { await state.loadSelectedArtist() }
     }
