@@ -124,7 +124,7 @@ public final class AcquisitionModel {
         }
     }
 
-    static func statusText(_ job: Acquisition) -> String {
+    nonisolated static func statusText(_ job: Acquisition) -> String {
         switch job.status {
         case "downloading":
             if let p = job.details?.liveProgress?.percent { return "Downloading \(Int(p))%" }

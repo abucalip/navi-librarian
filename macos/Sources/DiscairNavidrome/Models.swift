@@ -26,6 +26,9 @@ public struct NavidromeAlbum: Codable, Equatable, Sendable, Identifiable {
     public let genre: String?
     public let created: String?
     public let musicBrainzId: String?
+    /// Plays and the ISO time of the last one. Navidrome leaves both out when the album was never played, so absent means no plays.
+    public var playCount: Int? = nil
+    public var played: String? = nil
 }
 
 public struct NavidromeSong: Codable, Equatable, Sendable, Identifiable {
