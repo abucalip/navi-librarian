@@ -1,3 +1,12 @@
+## 2026-11-11 — Discair client efficiency proposal
+
+- Added [`docs/client_efficiency.md`](docs/client_efficiency.md), a source-level proposal for macOS and Android CPU, memory and GPU efficiency. It covers the macOS 50 Hz audio ticker and decoded-image cache accounting; Android's per-frame slideshow state updates, Coil hardware-bitmap/cache policy, blur rendering and PDF handling; and ExoPlayer buffer/crossfade measurement.
+- GPU guidance: prefer SwiftUI/Core Animation and Compose hardware layers for transforms; consider cached Core Image/Metal or Android RenderEffect only if profiling shows blur is a bottleneck; do not move real-time audio DSP to the GPU without a separate proven design. GPU/texture memory must be counted as part of total memory.
+- Baseline source revision: `ce01596fb8f3d6daf615a401e12bf3a5bc38c313`. The four main workflows on that revision passed: Python syntax, container runtime smoke, Docker packaging validation and Docker image validation (publishing paused).
+- Evidence boundary: no Instruments, Android Studio Profiler, Perfetto or physical-device/window profiling was run. No application code, settings, artwork behavior or audio buffer values were changed. The proposal is not implementation approval.
+- Documentation commits: proposal `950a60089ba8403711f1e102ff71fe20a262ddb2`; status update `6a5d5262735c8a2b6900c5bc03b328629b63a4cd`. Final docs-only closeout and post-push workflow state to be checked on the resulting main head.
+- Next: establish repeatable before/after baselines from section 6 of the proposal, then choose one focused optimization slice.
+
 # Project log
 
 ## 2026-11-10 — Internet radio playback, slice 5 gap: `in_library` on the Heard list
