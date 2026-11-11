@@ -89,7 +89,7 @@ struct HomeKeyHint: View {
     var body: some View {
         HStack(spacing: CU.Space.s) {
             Group { if symbol { Image(systemName: key) } else { Text(key) } }
-                .font(.system(size: 11, weight: .semibold)).foregroundStyle(CU.text)
+                .font(CU.Font.caption.weighted(.semibold)).foregroundStyle(CU.text)
                 .padding(.horizontal, symbol ? 0 : CU.Space.s).frame(minWidth: 24, minHeight: 24)
                 .background(CU.content, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
                 .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(CU.separatorStrong, lineWidth: 1))
@@ -118,7 +118,7 @@ struct HomeChange: View {
         HStack(alignment: .firstTextBaseline, spacing: CU.Space.xs) {
             if let trend = line.trend {
                 Image(systemName: trend == .up ? "arrow.up" : trend == .down ? "arrow.down" : "equal")
-                    .font(.system(size: 12, weight: .semibold)).foregroundStyle(trend == .up ? CU.success : CU.text).accessibilityHidden(true)
+                    .font(CU.Font.callout.weighted(.semibold)).foregroundStyle(trend == .up ? CU.success : CU.text).accessibilityHidden(true)
             }
             Text(line.text).cu(CU.Font.callout).foregroundStyle(CU.text).fixedSize(horizontal: false, vertical: true)
         }

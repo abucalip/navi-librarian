@@ -32,16 +32,16 @@ struct CupertinoNowPlaying: View {
     var body: some View {
         let a = nowAlbum
         ZStack(alignment: .topLeading) {
-            HStack(spacing: 6) {
+            HStack(spacing: 8) {
                 TrafficLights()
                 Button { state.closeNowPlaying() } label: {
-                    Image(systemName: "chevron.down").font(.system(size: 13, weight: .semibold))
+                    Image(systemName: "chevron.down").font(CU.Icon.row(.semibold))
                 }
-                .buttonStyle(.plain).accessibilityLabel("Close Now Playing").help("Back to \(AppState.title(of: state.nowPlayingReturn))").padding(.leading, 14)
+                .buttonStyle(.plain).accessibilityLabel("Close Now Playing").help("Back to \(AppState.title(of: state.nowPlayingReturn))").padding(.leading, 16)
             }
-            .padding(18)
+            .padding(16)
 
-            HStack(spacing: 10) {
+            HStack(spacing: 8) {
                 if !slides.isEmpty {
                     Button { state.barOptions.showSlideshow.toggle() } label: {
                         chip("photo.on.rectangle.angled", state.barOptions.showSlideshow ? "Photos on" : "Photos off")
@@ -53,14 +53,14 @@ struct CupertinoNowPlaying: View {
                 if !live { chip("text.quote", "Lyrics") }
                 Button { state.queueOpen = true; state.screen = .albums } label: { chip("list.bullet", "Up Next") }.buttonStyle(.plain)
             }
-            .frame(maxWidth: .infinity, alignment: .trailing).padding(.trailing, 20).padding(.top, 14)
+            .frame(maxWidth: .infinity, alignment: .trailing).padding(.trailing, 16).padding(.top, 16)
 
             (live ? AnyView(livePlayer(a)) : AnyView(player(a))).frame(width: 420).padding(.leading, 90).padding(.top, 90)
 
             (live ? AnyView(noLyrics) : AnyView(lyricColumn))
                 .frame(height: 560).padding(.leading, 640).padding(.trailing, 60).padding(.top, 90)
 
-            HStack(spacing: 10) {
+            HStack(spacing: 8) {
                 if live {
                     Button { state.screen = .equalizer } label: { chip("slider.horizontal.3", "EQ · \(state.player.eq.enabled ? state.player.eq.presetLabel : "Off")") }
                         .buttonStyle(.plain)
@@ -78,7 +78,7 @@ struct CupertinoNowPlaying: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background(alignment: .topLeading) { backdrop(a) }   // a background never changes the layout size
-        .foregroundStyle(.white)
+        .foregroundStyle(CU.onMedia)
         .clipShape(RoundedRectangle(cornerRadius: CU.windowRadius, style: .continuous))
         .background(WindowConfigurator())
         .background(TwoFingerSwipeDown(maxX: 620) { state.closeNowPlaying() })
@@ -92,18 +92,18 @@ struct CupertinoNowPlaying: View {
     /// Soft radial colour fields from the cover's hues; the real cover, blurred, is laid over them once it loads.
     private func backdrop(_ a: AlbumItem) -> some View {
         let h = a.hue / 360
-        let warm = Color(hue: h, saturation: 0.6, brightness: 0.85)
-        let deep = Color(hue: (h + 0.08).truncatingRemainder(dividingBy: 1), saturation: 0.75, brightness: 0.5)
+        let warm = CU.artwork(hue: h, saturation: 0.6, brightness: 0.85)
+        let deep = CU.artwork(hue: (h + 0.08).truncatingRemainder(dividingBy: 1), saturation: 0.75, brightness: 0.5)
         return ZStack {
-            Color(red: 0.227, green: 0.165, blue: 0.11)
+            CU.playerGround
             RadialGradient(colors: [warm.opacity(0.9), .clear], center: UnitPoint(x: 0.1, y: 0.1), startRadius: 0, endRadius: 900)
             RadialGradient(colors: [deep.opacity(0.9), .clear], center: UnitPoint(x: 0.85, y: 0.95), startRadius: 0, endRadius: 800)
             if let id = a.coverArt, !id.isEmpty {
                 BlurredArtwork(album: a)                                              // the real cover, blurred, over the colour fields
                 if slideshowOn { SlideshowBackdrop(slides: slides, playing: state.player.isPlaying) }
-                Color.black.opacity(slideshowOn ? 0.38 : 0.22)
+                CU.shadowInk.opacity(slideshowOn ? 0.38 : 0.22)
             } else {
-                Color(red: 0.08, green: 0.06, blue: 0.04).opacity(0.35)
+                CU.shadowInk.opacity(0.35)
             }
         }
         .accessibilityHidden(true)
@@ -113,22 +113,22 @@ struct CupertinoNowPlaying: View {
         VStack(alignment: .leading, spacing: 0) {
             FlipCover(rgid: nil, cornerRadius: 16, index: albumArt, caption: true) { CoverView(album: a).clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous)) }
                 .overlay(alignment: .bottomTrailing) { NowPlayingBookletBadge(index: albumArt) }
-                .shadow(color: .black.opacity(0.5), radius: 35, y: 30)
-            Text("After the Flood").font(.system(size: 24, weight: .bold)).padding(.top, 22)
-            Text("Talk Talk — Laughing Stock").font(.system(size: 18)).opacity(0.7)
-            HStack(spacing: 10) {
+                .shadow(color: CU.shadowInk.opacity(0.5), radius: 35, y: 30)
+            Text("After the Flood").font(CU.Font.title1.weighted(.bold)).padding(.top, 24)
+            Text("Talk Talk — Laughing Stock").font(CU.Font.title2.weighted(.regular)).opacity(0.7)
+            HStack(spacing: 8) {
                 Text("3:12")
-                Capsule().fill(.white.opacity(0.3)).frame(height: 5)
-                    .overlay(alignment: .leading) { GeometryReader { g in Capsule().fill(.white).frame(width: g.size.width * 0.33) } }
+                Capsule().fill(CU.onMedia.opacity(0.3)).frame(height: 5)
+                    .overlay(alignment: .leading) { GeometryReader { g in Capsule().fill(CU.onMedia).frame(width: g.size.width * 0.33) } }
                 Text("-6:29")
             }
-            .font(.system(size: 11)).monospacedDigit().opacity(0.85).padding(.top, 16)
+            .font(CU.Font.caption.weighted(.regular)).monospacedDigit().opacity(0.85).padding(.top, 16)
             HStack(spacing: 34) {
-                transport("shuffle", 17, "Shuffle")
-                transport("backward.fill", 24, "Previous")
-                transport("pause.fill", 34, "Pause")
-                transport("forward.fill", 24, "Next")
-                transport("repeat", 17, "Repeat")
+                transport("shuffle", CU.Icon.row(), "Shuffle")
+                transport("backward.fill", CU.Icon.transport(), "Previous")
+                transport("pause.fill", CU.Icon.hero(), "Pause")
+                transport("forward.fill", CU.Icon.transport(), "Next")
+                transport("repeat", CU.Icon.row(), "Repeat")
             }
             .frame(maxWidth: .infinity).padding(.top, 16)
         }
@@ -141,24 +141,24 @@ struct CupertinoNowPlaying: View {
     private var noLyrics: some View {
         let lyr = state.lyrics
         let idx = lyr.currentIndex(positionSeconds: state.player.position)
-        return VStack(alignment: .leading, spacing: 10) {
+        return VStack(alignment: .leading, spacing: 8) {
             switch lyr.state {
             case .idle, .loading:
-                HStack(spacing: 8) { ProgressView().controlSize(.small).tint(.white); Text("Loading lyrics…") }.font(.system(size: 22, weight: .semibold)).opacity(0.7)
-            case .none: Text("No lyrics for this song.").font(.system(size: 22, weight: .semibold)).opacity(0.7)
-            case .unsupported: Text("Your Navidrome doesn't provide lyrics.").font(.system(size: 22, weight: .semibold)).opacity(0.7)
+                HStack(spacing: 8) { ProgressView().controlSize(.small).tint(CU.onMedia); Text("Loading lyrics…") }.font(CU.Font.title2.weighted(.semibold)).opacity(0.7)
+            case .none: Text("No lyrics for this song.").font(CU.Font.title2.weighted(.semibold)).opacity(0.7)
+            case .unsupported: Text("Your Navidrome doesn't provide lyrics.").font(CU.Font.title2.weighted(.semibold)).opacity(0.7)
             case .failed(let m):
-                Text(m).font(.system(size: 18, weight: .semibold)).opacity(0.8)
+                Text(m).font(CU.Font.title2.weighted(.semibold)).opacity(0.8)
                 Button("Try again") { lyr.retry() }.buttonStyle(CapsuleButtonStyle(small: true, translucent: true))
             case .timed, .plain:
-                if lyr.isSavedCopy { Text("Saved copy").font(.system(size: 12, weight: .semibold)).opacity(0.7) }
-                if lyr.state == .plain { Text("These lyrics are not timed.").font(.system(size: 13)).opacity(0.7) }
+                if lyr.isSavedCopy { Text("Saved copy").font(CU.Font.callout.weighted(.semibold)).opacity(0.7) }
+                if lyr.state == .plain { Text("These lyrics are not timed.").font(CU.Font.body.weighted(.regular)).opacity(0.7) }
                 ScrollViewReader { proxy in
                     ScrollView(showsIndicators: false) {
-                        VStack(alignment: .leading, spacing: 22) {
+                        VStack(alignment: .leading, spacing: 24) {
                             ForEach(Array(lyr.lines.enumerated()), id: \.offset) { i, line in
-                                Text(line.text.isEmpty ? " " : line.text).font(.system(size: lyr.state == .timed ? 36 : 28, weight: .bold)).tracking(-0.7).lineSpacing(2)
-                                    .foregroundStyle(.white.opacity(lyr.state == .plain || i == idx || idx == nil ? 1 : 0.38))
+                                Text(line.text.isEmpty ? " " : line.text).font((lyr.state == .timed ? CU.Font.largeTitle : CU.Font.title1).weighted(.bold)).tracking(-0.7).lineSpacing(2)
+                                    .foregroundStyle(CU.onMedia.opacity(lyr.state == .plain || i == idx || idx == nil ? 1 : 0.38))
                                     .fixedSize(horizontal: false, vertical: true)
                                     .id(i)
                                     .accessibilityAddTraits(i == idx ? .isSelected : [])
@@ -182,8 +182,8 @@ struct CupertinoNowPlaying: View {
                         }
                     }
                 }
-                .mask(LinearGradient(stops: [.init(color: .clear, location: 0), .init(color: .black, location: 0.12),
-                                             .init(color: .black, location: 0.8), .init(color: .clear, location: 1)], startPoint: .top, endPoint: .bottom))
+                .mask(LinearGradient(stops: [.init(color: .clear, location: 0), .init(color: CU.shadowInk, location: 0.12),
+                                             .init(color: CU.shadowInk, location: 0.8), .init(color: .clear, location: 1)], startPoint: .top, endPoint: .bottom))
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -200,9 +200,9 @@ struct CupertinoNowPlaying: View {
         let p = state.player
         return VStack(alignment: .leading, spacing: 0) {
             CoverView(album: a).clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-                .shadow(color: .black.opacity(0.5), radius: 35, y: 30)
+                .shadow(color: CU.shadowInk.opacity(0.5), radius: 35, y: 30)
                 .discSleeve(albumArt?.discImage(disc: p.current?.disc), spinning: p.isPlaying)
-            Text(p.current?.title ?? "Nothing playing").font(.system(size: 24, weight: .bold)).lineLimit(2).padding(.top, 22)
+            Text(p.current?.title ?? "Nothing playing").font(CU.Font.title1.weighted(.bold)).lineLimit(2).padding(.top, 24)
             if let c = p.current {
                 HStack(spacing: 0) {
                     Button { state.openCurrentArtist() } label: { Text(c.artist).underline(false) }
@@ -213,66 +213,66 @@ struct CupertinoNowPlaying: View {
                             .buttonStyle(.plain).accessibilityLabel("Open album \(c.album)")
                     }
                 }
-                .font(.system(size: 18)).opacity(0.7).lineLimit(2)
+                .font(CU.Font.title2.weighted(.regular)).opacity(0.7).lineLimit(2)
             }
-            if case .failed(let m) = p.phase { Text(m).font(.system(size: 13)).foregroundStyle(.white).padding(.top, 4) }
-            if let n = p.notice { Text(n).font(.system(size: 12)).opacity(0.8).padding(.top, 2) }
-            HStack(spacing: 10) {
+            if case .failed(let m) = p.phase { Text(m).font(CU.Font.body.weighted(.regular)).foregroundStyle(CU.onMedia).padding(.top, 4) }
+            if let n = p.notice { Text(n).font(CU.Font.callout.weighted(.regular)).opacity(0.8).padding(.top, 4) }
+            HStack(spacing: 8) {
                 PlaybackClock(player: p) { Text(PlayerModel.clock($0)) }
                 DragBar(value: p.fraction, peaks: p.waveform, label: "Position", valueText: { "\(PlayerModel.clock($0 * p.duration)) of \(PlayerModel.clock(p.duration))" }) { p.seek(toFraction: $0) }
                 PlaybackClock(player: p) { Text("-" + PlayerModel.clock(max(0, p.duration - $0))) }
             }
-            .font(.system(size: 11)).monospacedDigit().opacity(0.85).padding(.top, 16)
+            .font(CU.Font.caption.weighted(.regular)).monospacedDigit().opacity(0.85).padding(.top, 16)
             HStack(spacing: 34) {
-                Button { p.toggleShuffle() } label: { Image(systemName: "shuffle").font(.system(size: 17)).opacity(p.shuffle ? 1 : 0.5) }
+                Button { p.toggleShuffle() } label: { Image(systemName: "shuffle").font(CU.Icon.row()).opacity(p.shuffle ? 1 : 0.5) }
                     .accessibilityLabel(p.shuffle ? "Shuffle, on" : "Shuffle, off")
-                Button { p.previous() } label: { Image(systemName: "backward.fill").font(.system(size: 24)) }.accessibilityLabel("Previous")
-                Button { p.togglePlayPause() } label: { Image(systemName: p.isPlaying ? "pause.fill" : "play.fill").font(.system(size: 34)) }
+                Button { p.previous() } label: { Image(systemName: "backward.fill").font(CU.Icon.transport()) }.accessibilityLabel("Previous")
+                Button { p.togglePlayPause() } label: { Image(systemName: p.isPlaying ? "pause.fill" : "play.fill").font(CU.Icon.hero()) }
                     .accessibilityLabel(p.isPlaying ? "Pause" : "Play").disabled(p.current == nil)
-                Button { p.next() } label: { Image(systemName: "forward.fill").font(.system(size: 24)) }.accessibilityLabel("Next").disabled(p.current == nil)
-                Button { p.cycleRepeat() } label: { Image(systemName: p.repeatMode == .one ? "repeat.1" : "repeat").font(.system(size: 17)).opacity(p.repeatMode == .off ? 0.5 : 1) }
+                Button { p.next() } label: { Image(systemName: "forward.fill").font(CU.Icon.transport()) }.accessibilityLabel("Next").disabled(p.current == nil)
+                Button { p.cycleRepeat() } label: { Image(systemName: p.repeatMode == .one ? "repeat.1" : "repeat").font(CU.Icon.row()).opacity(p.repeatMode == .off ? 0.5 : 1) }
                     .accessibilityLabel("Repeat, \(p.repeatMode.rawValue)")
             }
             .buttonStyle(.plain).frame(maxWidth: .infinity).padding(.top, 16)
             HStack(spacing: 8) {
-                Image(systemName: "speaker.fill").font(.system(size: 11)).accessibilityHidden(true)
+                Image(systemName: "speaker.fill").font(CU.Icon.small()).accessibilityHidden(true)
                 DragBar(value: Double(p.volume), label: "Volume") { p.volume = Float($0) }
-                Image(systemName: "speaker.wave.3.fill").font(.system(size: 11)).accessibilityHidden(true)
+                Image(systemName: "speaker.wave.3.fill").font(CU.Icon.small()).accessibilityHidden(true)
             }
             .opacity(0.85).padding(.top, 16)
         }
     }
 
-    private func transport(_ symbol: String, _ size: CGFloat, _ label: String) -> some View {
-        Button { } label: { Image(systemName: symbol).font(.system(size: size)) }
+    private func transport(_ symbol: String, _ font: Font, _ label: String) -> some View {
+        Button { } label: { Image(systemName: symbol).font(font) }
             .buttonStyle(.plain).accessibilityLabel(label)
     }
 
     private var lyricColumn: some View {
-        VStack(alignment: .leading, spacing: 22) {
+        VStack(alignment: .leading, spacing: 24) {
             ForEach(Array(lyrics.enumerated()), id: \.offset) { i, line in
-                Text(line).font(.system(size: 36, weight: .bold)).tracking(-0.7).lineSpacing(2)
-                    .foregroundStyle(.white.opacity(i == 2 ? 1 : 0.38))
+                Text(line).font(CU.Font.largeTitle.weighted(.bold)).tracking(-0.7).lineSpacing(2)
+                    .foregroundStyle(CU.onMedia.opacity(i == 2 ? 1 : 0.38))
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .mask(LinearGradient(stops: [.init(color: .clear, location: 0), .init(color: .black, location: 0.12),
-                                     .init(color: .black, location: 0.8), .init(color: .clear, location: 1)],
+        .mask(LinearGradient(stops: [.init(color: .clear, location: 0), .init(color: CU.shadowInk, location: 0.12),
+                                     .init(color: CU.shadowInk, location: 0.8), .init(color: .clear, location: 1)],
                              startPoint: .top, endPoint: .bottom))
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Lyrics. Current line: \(lyrics[2])")
     }
 
     private func chip(_ symbol: String?, _ text: String, strong: Bool = false) -> some View {
-        HStack(spacing: 6) {
+        HStack(spacing: 8) {
             if let symbol { Image(systemName: symbol) }
             Text(text)
         }
-        .font(.system(size: 13, weight: .semibold)).lineLimit(1).fixedSize().padding(.horizontal, 14).frame(height: 32)
-        .background(Color.black.opacity(0.3), in: Capsule())          // dimming layer under clear glass
+        .font(CU.Font.body.weighted(.semibold)).lineLimit(1).fixedSize().padding(.horizontal, 16).frame(height: 32)
+        .background(CU.shadowInk.opacity(0.3), in: Capsule())          // dimming layer under clear glass
         .glassEffect(.clear, in: Capsule())
-        .overlay { if strong { Capsule().fill(.white.opacity(0.18)) } }
+        .overlay { if strong { Capsule().fill(CU.onMedia.opacity(0.18)) } }
     }
 }
 

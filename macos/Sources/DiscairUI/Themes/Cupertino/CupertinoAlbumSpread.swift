@@ -29,10 +29,10 @@ struct CupertinoAlbumSpread: View {
     @ViewBuilder private func notes(_ c: AlbumSpreadContent) -> some View {
         if let notes = c.notes {
             VStack(alignment: .leading, spacing: 8) {
-                Text(notes).font(.system(size: 13.5)).lineSpacing(3).textSelection(.enabled)
+                Text(notes).font(CU.Font.body.weighted(.regular)).lineSpacing(3).textSelection(.enabled)
                 if let src = c.notesSource, !src.isEmpty {
-                    if let u = c.notesURL { Link(src, destination: u).font(.system(size: 11.5)) }
-                    else { Text(src).font(.system(size: 11.5)).foregroundStyle(CU.muted) }
+                    if let u = c.notesURL { Link(src, destination: u).font(CU.Font.callout.weighted(.regular)) }
+                    else { Text(src).font(CU.Font.callout.weighted(.regular)).foregroundStyle(CU.muted) }
                 }
             }
         } else if c.facts.isEmpty && c.musicBrainzURL == nil && c.lastFmURL == nil {
@@ -40,19 +40,19 @@ struct CupertinoAlbumSpread: View {
         }
         if !c.facts.isEmpty || c.musicBrainzURL != nil || c.lastFmURL != nil {
             section("MusicBrainz and links") {
-                VStack(alignment: .leading, spacing: 6) {
+                VStack(alignment: .leading, spacing: 8) {
                     ForEach(c.facts) { f in
-                        HStack(alignment: .firstTextBaseline, spacing: 12) {
+                        HStack(alignment: .firstTextBaseline, spacing: 8) {
                             Text(f.label).foregroundStyle(CU.muted).frame(width: 150, alignment: .leading)
                             Text(f.value).textSelection(.enabled)
                         }
-                        .font(.system(size: 13)).accessibilityElement(children: .combine)
+                        .font(CU.Font.body.weighted(.regular)).accessibilityElement(children: .combine)
                     }
                     HStack(spacing: 16) {
                         if let u = c.musicBrainzURL { Link("Open on MusicBrainz", destination: u) }
                         if let u = c.lastFmURL { Link("Open on Last.fm", destination: u) }
                     }
-                    .font(.system(size: 13)).padding(.top, 2)
+                    .font(CU.Font.body.weighted(.regular)).padding(.top, 4)
                 }
             }
         }
@@ -63,7 +63,7 @@ struct CupertinoAlbumSpread: View {
         let extended = state.albumCredits
         if !extended.groups.isEmpty {
             creditList(extended.groups.map { ($0.role, $0.names) })
-            if extended.truncated { Text("The list is cut short; the knowledge base holds more.").font(.system(size: 12)).foregroundStyle(CU.muted).padding(.top, 8) }
+            if extended.truncated { Text("The list is cut short; the knowledge base holds more.").font(CU.Font.callout.weighted(.regular)).foregroundStyle(CU.muted).padding(.top, 8) }
         } else if !c.credits.isEmpty {
             creditList(c.credits.map { ($0.title, $0.names) })
         } else if extended.loading {
@@ -74,13 +74,13 @@ struct CupertinoAlbumSpread: View {
     }
 
     private func creditList(_ rows: [(String, [String])]) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: 8) {
             ForEach(Array(rows.enumerated()), id: \.offset) { _, g in
-                HStack(alignment: .firstTextBaseline, spacing: 12) {
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
                     Text(g.0).foregroundStyle(CU.muted).frame(width: 150, alignment: .leading)
                     Text(g.1.joined(separator: ", ")).textSelection(.enabled)
                 }
-                .font(.system(size: 13)).accessibilityElement(children: .combine)
+                .font(CU.Font.body.weighted(.regular)).accessibilityElement(children: .combine)
             }
         }
     }
@@ -92,16 +92,16 @@ struct CupertinoAlbumSpread: View {
         case .failed:
             HStack { Text("Reviews could not be loaded.").foregroundStyle(CU.muted); retryButton }
         case .loaded(let list, let retryable):
-            VStack(alignment: .leading, spacing: 10) {
+            VStack(alignment: .leading, spacing: 8) {
                 if list.isEmpty { Text(retryable ? "No reviews found. Some sources did not answer." : "No reviews found for this album.").foregroundStyle(CU.muted) }
                 ForEach(list) { r in
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text("\u{201C}\(r.quote)\u{201D}").font(.system(size: 13.5)).lineSpacing(3).textSelection(.enabled)
-                        Link("Read the full review at \(r.source)", destination: r.url).font(.system(size: 12))
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("\u{201C}\(r.quote)\u{201D}").font(CU.Font.body.weighted(.regular)).lineSpacing(3).textSelection(.enabled)
+                        Link("Read the full review at \(r.source)", destination: r.url).font(CU.Font.callout.weighted(.regular))
                     }
                     .accessibilityElement(children: .combine)
                 }
-                if retryable && !list.isEmpty { Text("Some sources did not answer.").font(.system(size: 12)).foregroundStyle(CU.muted) }
+                if retryable && !list.isEmpty { Text("Some sources did not answer.").font(CU.Font.callout.weighted(.regular)).foregroundStyle(CU.muted) }
                 if retryable { retryButton }
             }
         }
@@ -112,11 +112,11 @@ struct CupertinoAlbumSpread: View {
     }
 
     private func section<C: View>(_ title: String, @ViewBuilder _ body: () -> C) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(title).font(.system(size: 12, weight: .semibold)).foregroundStyle(CU.muted).textCase(.uppercase)
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title).font(CU.Font.callout.weighted(.semibold)).foregroundStyle(CU.muted).textCase(.uppercase)
                 .accessibilityAddTraits(.isHeader)
             body()
         }
-        .padding(.top, 14).frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.top, 16).frame(maxWidth: .infinity, alignment: .leading)
     }
 }

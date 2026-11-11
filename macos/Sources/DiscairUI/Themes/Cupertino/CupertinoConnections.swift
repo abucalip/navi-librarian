@@ -57,7 +57,7 @@ struct CupertinoConnections: View {
 
     private func labelled<C: View>(_ label: String, @ViewBuilder _ control: () -> C) -> some View {
         VStack(alignment: .leading, spacing: CU.Space.xs) {
-            Text(label).font(.system(size: 11, weight: .semibold)).foregroundStyle(CU.textSecondary)
+            Text(label).font(CU.Font.caption.weighted(.semibold)).foregroundStyle(CU.textSecondary)
             control().frame(height: 32)
         }
     }
@@ -67,7 +67,7 @@ struct CupertinoConnections: View {
         return HStack(alignment: .bottom, spacing: CU.Space.l) {
             if graph.canGoBack, let back = graph.backTitle {
                 Button { Task { await graph.back(librarian: librarian) } } label: {
-                    HStack(spacing: CU.Space.xs) { Image(systemName: "chevron.left").font(.system(size: 11, weight: .bold)); Text(back).lineLimit(1) }
+                    HStack(spacing: CU.Space.xs) { Image(systemName: "chevron.left").font(CU.Icon.small(.bold)); Text(back).lineLimit(1) }
                 }
                 .buttonStyle(CapsuleButtonStyle())
                 .accessibilityLabel("Back to \(back)")
@@ -241,8 +241,8 @@ struct CupertinoConnections: View {
                 .overlay {
                     if picked {
                         if GraphSector.of(kind: n.entity.type) == .albums {
-                            RoundedRectangle(cornerRadius: size * 0.12 + 4, style: .continuous).strokeBorder(CU.accent, lineWidth: 3).padding(-5)
-                        } else { Circle().strokeBorder(CU.accent, lineWidth: 3).padding(-5) }
+                            RoundedRectangle(cornerRadius: size * 0.12 + 4, style: .continuous).strokeBorder(CU.accent, lineWidth: 3).padding(-4)
+                        } else { Circle().strokeBorder(CU.accent, lineWidth: 3).padding(-4) }
                     }
                 }
                 .contentShape(Rectangle())
@@ -268,7 +268,7 @@ struct CupertinoConnections: View {
     private func nodeLabel(_ n: GraphNode, angle: CGFloat) -> some View {
         let picked = n.id == graph.selectedID
         let side = abs(cos(angle)) > 0.5
-        return Text(n.entity.name).font(.system(size: n.depth <= 1 ? 11 : 10, weight: .semibold)).foregroundStyle(picked ? CU.accentStrong : CU.text)
+        return Text(n.entity.name).font(CU.Font.caption.weighted(.semibold)).foregroundStyle(picked ? CU.accentStrong : CU.text)
             .multilineTextAlignment(side ? (cos(angle) > 0 ? .leading : .trailing) : .center).lineLimit(2)
             .frame(width: Self.labelWidth, alignment: side ? (cos(angle) > 0 ? .leading : .trailing) : .center)
             .allowsHitTesting(false).accessibilityHidden(true)
@@ -290,7 +290,7 @@ struct CupertinoConnections: View {
 
     private var legend: some View {
         HStack(spacing: CU.Space.m) {
-            legendItem("In your library") { Circle().fill(Color(red: 0.78, green: 0.72, blue: 0.62)).overlay(Circle().strokeBorder(CU.ink, lineWidth: 2)).frame(width: 14, height: 14) }
+            legendItem("In your library") { Circle().fill(CU.accentTint).overlay(Circle().strokeBorder(CU.ink, lineWidth: 2)).frame(width: 14, height: 14) }
             legendItem("Not in your library") { Circle().fill(CU.bgFill).overlay(Circle().strokeBorder(CU.ink, style: StrokeStyle(lineWidth: 1.5, dash: [3, 2]))).frame(width: 14, height: 14) }
             legendItem("Stated credit") { Rectangle().fill(CU.chart2).frame(width: 24, height: 1.5) }
             legendItem("Link, not a credit") {
@@ -298,7 +298,7 @@ struct CupertinoConnections: View {
                     .stroke(CU.chart2, style: StrokeStyle(lineWidth: 1.5, dash: [4, 3])).frame(width: 24, height: 2)
             }
         }
-        .font(CU.Font.caption.font).foregroundStyle(CU.textSecondary)
+        .font(CU.Font.caption.weighted(.regular)).foregroundStyle(CU.textSecondary)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Key: in your library is in colour with a solid border; not in your library is grey with a dashed border; a solid line is a stated credit; a dashed line is a link that is not a credit.")
     }
@@ -319,7 +319,7 @@ struct CupertinoConnections: View {
                 Text("Library").frame(width: Column.library, alignment: .leading)
                 Text("Steps").frame(width: Column.steps, alignment: .trailing)
             }
-            .font(.system(size: 11, weight: .semibold)).foregroundStyle(CU.textSecondary)
+            .font(CU.Font.caption.weighted(.semibold)).foregroundStyle(CU.textSecondary)
             .padding(.horizontal, CU.Space.s).padding(.bottom, CU.Space.xs)
             .overlay(alignment: .bottom) { Rectangle().fill(CU.separator).frame(height: 1) }
             .accessibilityHidden(true)
@@ -356,8 +356,8 @@ struct CupertinoConnections: View {
                     .lineLimit(1).truncationMode(.tail).frame(maxWidth: .infinity, alignment: .leading)
                 Group {
                     if n.entity.owned {
-                        HStack(spacing: CU.Space.xs) { Image(systemName: "checkmark.circle").font(.system(size: 12)); Text("In library") }
-                            .font(.system(size: 12, weight: .semibold)).foregroundStyle(CU.success)
+                        HStack(spacing: CU.Space.xs) { Image(systemName: "checkmark.circle").font(CU.Icon.small()); Text("In library") }
+                            .font(CU.Font.callout.weighted(.semibold)).foregroundStyle(CU.success)
                     } else { Text("Not in library").cuRole(CU.Font.callout).foregroundStyle(CU.textSecondary) }
                 }
                 .frame(width: Column.library, alignment: .leading)
@@ -407,7 +407,7 @@ struct CupertinoConnections: View {
                         Spacer()
                         Text("\(graph.sectorCounts[sector] ?? 0)").monospacedDigit()
                     }
-                    .font(CU.Font.body.font).foregroundStyle(CU.text)
+                    .font(CU.Font.body.weighted(.regular)).foregroundStyle(CU.text)
                 }
             }
             if let cov = graph.coverage {
@@ -435,7 +435,7 @@ struct CupertinoConnections: View {
                 Button("Re-centre here") { Task { await graph.recentre(on: n, librarian: librarian) } }.buttonStyle(CapsuleButtonStyle(primary: true))
                 Button("Open artist") { if let artist { state.open(artist: artist) } }.buttonStyle(CapsuleButtonStyle()).disabled(artist == nil)
             }
-            if isAlbum, let album { Button("Open album") { state.open(album: album) }.buttonStyle(CapsuleButtonStyle(primary: true)) }
+            if isAlbum, let album { Button("Open album") { state.open(album: album) }.buttonStyle(CapsuleButtonStyle()) }
         }
         .padding(.top, CU.Space.xs)
         if isPerson, artist == nil {
@@ -469,10 +469,10 @@ struct CupertinoConnections: View {
                 Text(GraphListRow.words(e)).cuRole(CU.Font.headline).foregroundStyle(CU.text)
                 Spacer(minLength: CU.Space.s)
                 if n.credit {
-                    Label("Credit", systemImage: "checkmark").font(.system(size: 11, weight: .semibold)).foregroundStyle(CU.success)
+                    Label("Credit", systemImage: "checkmark").font(CU.Font.caption.weighted(.semibold)).foregroundStyle(CU.success)
                         .padding(.horizontal, CU.Space.s).frame(height: 24).background(CU.successTint, in: Capsule())
                 } else {
-                    Label("Link", systemImage: "link").font(.system(size: 11, weight: .semibold)).foregroundStyle(CU.textSecondary)
+                    Label("Link", systemImage: "link").font(CU.Font.caption.weighted(.semibold)).foregroundStyle(CU.textSecondary)
                         .padding(.horizontal, CU.Space.s).frame(height: 24).background(CU.bgFill, in: Capsule())
                 }
             }
@@ -512,16 +512,16 @@ struct CupertinoStartField: View {
         HStack(spacing: CU.Space.s) {
             if let current, text.isEmpty { ArtistPhoto(name: current, size: 20) } else { Image(systemName: "magnifyingglass").foregroundStyle(CU.textSecondary).accessibilityHidden(true) }
             TextField(current ?? "Artist name", text: $text).textFieldStyle(.plain).focused($focused)
-                .font(.system(size: 13)).foregroundStyle(CU.text)
+                .font(CU.Font.body.weighted(.regular)).foregroundStyle(CU.text)
                 .onSubmit { if let first = matches.first { pick(first) } }
                 .accessibilityLabel("Start from")
-            Image(systemName: "chevron.down").font(.system(size: 10, weight: .semibold)).foregroundStyle(CU.textSecondary).accessibilityHidden(true)
+            Image(systemName: "chevron.down").font(CU.Icon.small(.semibold)).foregroundStyle(CU.textSecondary).accessibilityHidden(true)
         }
         .padding(.horizontal, CU.Space.s).frame(width: 240, height: 32)
         .background(CU.content, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
         .overlay { RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(focused ? CU.accent : CU.separatorStrong, lineWidth: 1) }
         .overlay {
-            if focused { RoundedRectangle(cornerRadius: 10.5, style: .continuous).inset(by: -2.5).stroke(CU.accent.opacity(0.28), lineWidth: 3) }
+            if focused { RoundedRectangle(cornerRadius: 8, style: .continuous).inset(by: -2.5).stroke(CU.accent.opacity(0.28), lineWidth: 3) }
         }
         .overlay(alignment: .topLeading) {
             if !matches.isEmpty {
@@ -532,7 +532,7 @@ struct CupertinoStartField: View {
                                 ArtistPhoto(name: a.name, size: 24)
                                 Text(a.name).lineLimit(1)
                                 Spacer()
-                                Text(a.albumCount == 1 ? "1 album" : "\(a.albumCount) albums").font(.system(size: 11)).foregroundStyle(CU.textSecondary)
+                                Text(a.albumCount == 1 ? "1 album" : "\(a.albumCount) albums").font(CU.Font.caption.weighted(.regular)).foregroundStyle(CU.textSecondary)
                             }
                             .padding(.horizontal, CU.Space.s).frame(height: 32).contentShape(Rectangle())
                         }
@@ -542,7 +542,7 @@ struct CupertinoStartField: View {
                 .padding(.vertical, CU.Space.xs).frame(width: 240)
                 .background(CU.content, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
                 .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(CU.separatorStrong, lineWidth: 1))
-                .shadow(color: .black.opacity(0.16), radius: 12, y: 4)
+                .shadow(color: CU.shadowInk.opacity(0.16), radius: 12, y: 4)
                 .offset(y: 36)
             }
         }

@@ -23,7 +23,7 @@ struct CupertinoLibraryHub: View {
                 Spacer(minLength: 0)
                 searchField
             }
-            .padding(.horizontal, CU.Space.xl).padding(.top, 4).padding(.bottom, 12)
+            .padding(.horizontal, CU.Space.xl).padding(.top, 4).padding(.bottom, 16)
             .zIndex(2)
             .overlay(alignment: .topTrailing) {
                 if state.libraryTab == .overview, !query.trimmingCharacters(in: .whitespaces).isEmpty {
@@ -70,8 +70,8 @@ struct CupertinoLibraryHub: View {
                     .buttonStyle(.plain).accessibilityLabel("Clear search")
             }
         }
-        .font(.system(size: 13.5))
-        .padding(.horizontal, 12).frame(width: 300, height: 34)
+        .font(CU.Font.body.weighted(.regular))
+        .padding(.horizontal, 16).frame(width: 300, height: 34)
         .background(CU.fill, in: Capsule())
     }
 
@@ -81,14 +81,14 @@ struct CupertinoLibraryHub: View {
         HStack(alignment: .top, spacing: 0) {
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
-                    Text("Recently Added").font(CU.title(20)).padding(.bottom, 12).accessibilityAddTraits(.isHeader)
+                    Text("Recently Added").font(CU.title(20)).padding(.bottom, 16).accessibilityAddTraits(.isHeader)
                     if state.library.phase == .loading { Text("Loading your library…").foregroundStyle(CU.muted).padding(.bottom, 8) }
                     if case .failed(let m) = state.library.phase { CUErrorLine(message: m).padding(.bottom, 8) }
-                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 128, maximum: 128), spacing: 18, alignment: .top)], alignment: .leading, spacing: 18) {
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 128, maximum: 128), spacing: 16, alignment: .top)], alignment: .leading, spacing: 16) {
                         ForEach(state.visible(state.library.recent)) { a in AlbumTile(state: state, album: a) }
                     }
                 }
-                .padding(.leading, CU.Space.xl).padding(.trailing, 20).padding(.bottom, CU.Space.xl)
+                .padding(.leading, CU.Space.xl).padding(.trailing, 16).padding(.bottom, CU.Space.xl)
             }
             .scrollEdgeEffectStyle(.hard, for: .top)
             recentlyPlayed
@@ -97,8 +97,8 @@ struct CupertinoLibraryHub: View {
 
     private var recentlyPlayed: some View {
         let songs = state.recentlyPlayed
-        return VStack(alignment: .leading, spacing: 6) {
-            Text("Recently played").font(CU.title(20)).padding(.bottom, 6).accessibilityAddTraits(.isHeader)
+        return VStack(alignment: .leading, spacing: 8) {
+            Text("Recently played").font(CU.title(20)).padding(.bottom, 8).accessibilityAddTraits(.isHeader)
             if songs.isEmpty {
                 Text(state.library.songsLoading ? "Reading your songs…" : "Nothing played yet.").foregroundStyle(CU.muted)
             }
@@ -106,11 +106,11 @@ struct CupertinoLibraryHub: View {
                 VStack(spacing: 0) {
                     ForEach(songs) { s in
                         Button { state.open(album: s.albumItem, highlighting: s.title) } label: {
-                            HStack(spacing: 10) {
-                                CoverView(album: s.albumItem).frame(width: 36).clipShape(RoundedRectangle(cornerRadius: 5, style: .continuous)).accessibilityHidden(true)
+                            HStack(spacing: 8) {
+                                CoverView(album: s.albumItem).frame(width: 36).clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous)).accessibilityHidden(true)
                                 VStack(alignment: .leading, spacing: 0) {
                                     Text(s.title).fontWeight(.semibold).lineLimit(1)
-                                    Text(s.artist).font(.system(size: 12)).foregroundStyle(CU.muted).lineLimit(1)
+                                    Text(s.artist).font(CU.Font.callout.weighted(.regular)).foregroundStyle(CU.muted).lineLimit(1)
                                 }
                                 Spacer(minLength: 0)
                             }
@@ -122,8 +122,8 @@ struct CupertinoLibraryHub: View {
                 }
             }
         }
-        .font(.system(size: 13))
-        .padding(.leading, 18).padding(.trailing, 22).padding(.bottom, 16)
+        .font(CU.Font.body.weighted(.regular))
+        .padding(.leading, 16).padding(.trailing, 24).padding(.bottom, 16)
         .frame(width: 270)
         .overlay(alignment: .leading) { Rectangle().fill(CU.ink.opacity(0.08)).frame(width: 1) }
     }
@@ -134,7 +134,7 @@ struct CupertinoLibraryHub: View {
         let r = results
         return ScrollView {
             VStack(alignment: .leading, spacing: 4) {
-                if r.isEmpty { Text("Nothing in your library matches.").foregroundStyle(CU.muted).padding(10) }
+                if r.isEmpty { Text("Nothing in your library matches.").foregroundStyle(CU.muted).padding(8) }
                 if !r.artists.isEmpty {
                     sectionTitle("Artists")
                     ForEach(r.artists) { a in
@@ -158,11 +158,11 @@ struct CupertinoLibraryHub: View {
             }
             .padding(8)
         }
-        .font(.system(size: 13))
+        .font(CU.Font.body.weighted(.regular))
         .frame(width: 420).frame(maxHeight: 420).fixedSize(horizontal: false, vertical: true)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).stroke(CU.ink.opacity(0.08), lineWidth: 1))
-        .shadow(color: .black.opacity(0.18), radius: 16, y: 6)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).stroke(CU.ink.opacity(0.08), lineWidth: 1))
+        .shadow(color: CU.shadowInk.opacity(0.18), radius: 16, y: 6)
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Search results")
     }
@@ -170,18 +170,18 @@ struct CupertinoLibraryHub: View {
     private func close() { state.librarySearch = "" }
 
     private func sectionTitle(_ t: String) -> some View {
-        Text(t).font(.system(size: 11, weight: .bold)).foregroundStyle(CU.muted).padding(.horizontal, 8).padding(.top, 6)
+        Text(t).font(CU.Font.caption.weighted(.bold)).foregroundStyle(CU.muted).padding(.horizontal, 8).padding(.top, 8)
             .accessibilityAddTraits(.isHeader)
     }
 
     private func resultRow(icon: String? = nil, cover: AlbumItem? = nil, title: String, detail: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            HStack(spacing: 10) {
-                if let cover { CoverView(album: cover).frame(width: 32).clipShape(RoundedRectangle(cornerRadius: 5, style: .continuous)).accessibilityHidden(true) }
+            HStack(spacing: 8) {
+                if let cover { CoverView(album: cover).frame(width: 32).clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous)).accessibilityHidden(true) }
                 else if let icon { Image(systemName: icon).foregroundStyle(CU.accent).frame(width: 32).accessibilityHidden(true) }
                 VStack(alignment: .leading, spacing: 0) {
                     Text(title).fontWeight(.semibold).lineLimit(1)
-                    Text(detail).font(.system(size: 12)).foregroundStyle(CU.muted).lineLimit(1)
+                    Text(detail).font(CU.Font.callout.weighted(.regular)).foregroundStyle(CU.muted).lineLimit(1)
                 }
                 Spacer(minLength: 0)
             }
@@ -199,12 +199,12 @@ struct AlbumTile: View {
     var body: some View {
         Button { state.open(album: album) } label: {
             VStack(alignment: .leading, spacing: 0) {
-                CoverView(album: album).frame(width: 128).clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-                    .shadow(color: .black.opacity(0.2), radius: 7, y: 4).padding(.bottom, 9)
+                CoverView(album: album).frame(width: 128).clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                    .shadow(color: CU.shadowInk.opacity(0.2), radius: 7, y: 4).padding(.bottom, 8)
                 Text(album.title).fontWeight(.semibold).lineLimit(1)
                 Text(album.artist).foregroundStyle(CU.muted).lineLimit(1)
             }
-            .font(.system(size: 13)).frame(width: 128, alignment: .leading)
+            .font(CU.Font.body.weighted(.regular)).frame(width: 128, alignment: .leading)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)

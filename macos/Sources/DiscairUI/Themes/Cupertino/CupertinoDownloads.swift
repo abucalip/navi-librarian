@@ -100,7 +100,7 @@ struct CupertinoDownloads: View {
     @ViewBuilder private func stateLine(_ j: Acquisition, failure: String?) -> some View {
         if failure == nil {
             if j.phase == .imported {
-                Label("In your library", systemImage: "checkmark.circle").font(CU.Font.callout.font).foregroundStyle(CU.success)
+                Label("In your library", systemImage: "checkmark.circle").font(CU.Font.callout.weighted(.regular)).foregroundStyle(CU.success)
             } else {
                 let line = [acq.statusLine(j), acq.progressLine(j)].filter { !$0.isEmpty }.joined(separator: " · ")
                 if !line.isEmpty { Text(line).cuRole(CU.Font.callout).foregroundStyle(CU.textSecondary) }

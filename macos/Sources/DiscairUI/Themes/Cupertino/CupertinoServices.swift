@@ -34,10 +34,10 @@ struct ServiceStateLabel: View {
     let state: ServicesModel.State
     var body: some View {
         HStack(spacing: CU.Space.xs) {
-            Image(systemName: state.tone.symbol).font(.system(size: 12)).accessibilityHidden(true)
+            Image(systemName: state.tone.symbol).font(CU.Icon.small()).accessibilityHidden(true)
             Text(state.word)
         }
-        .font(.system(size: 12, weight: .semibold)).foregroundStyle(state.tone.color).lineLimit(1)
+        .font(CU.Font.callout.weighted(.semibold)).foregroundStyle(state.tone.color).lineLimit(1)
         .accessibilityElement(children: .ignore).accessibilityLabel(state.word)
     }
 }
@@ -125,7 +125,7 @@ struct CupertinoServices: View {
     private var summary: some View {
         let s = model.summary
         return HStack(alignment: .top, spacing: CU.Space.m) {
-            Image(systemName: services.checking && !services.hasChecked ? "ellipsis.circle" : s.tone.symbol).font(.system(size: 32, weight: .regular))
+            Image(systemName: services.checking && !services.hasChecked ? "ellipsis.circle" : s.tone.symbol).font(CU.Icon.status())
                 .foregroundStyle(s.tone.color).frame(width: 32, height: 32).accessibilityHidden(true)
             VStack(alignment: .leading, spacing: CU.Space.xs) {
                 Text(s.title).cuRole(CU.Font.title2).foregroundStyle(CU.text).accessibilityAddTraits(.isHeader)
@@ -147,7 +147,7 @@ struct CupertinoServices: View {
 
     private func refreshLabel(_ title: String) -> some View {
         HStack(spacing: CU.Space.xs) {
-            if services.checking { ProgressView().controlSize(.small) } else { Image(systemName: "arrow.clockwise").font(.system(size: 12, weight: .semibold)) }
+            if services.checking { ProgressView().controlSize(.small) } else { Image(systemName: "arrow.clockwise").font(CU.Icon.small(.semibold)) }
             Text(title)
         }
     }
@@ -208,7 +208,7 @@ struct ServiceRowView: View {
 
     private var header: some View {
         HStack(spacing: CU.Space.m) {
-            Image(systemName: ServiceIcon.symbol(row.id.rawValue)).font(.system(size: 14)).foregroundStyle(CU.textSecondary)
+            Image(systemName: ServiceIcon.symbol(row.id.rawValue)).font(CU.Icon.row()).foregroundStyle(CU.textSecondary)
                 .frame(width: 32, height: 32).background(CU.content, in: RoundedRectangle(cornerRadius: 8, style: .continuous)).accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 0) {
                 Text(row.name).cuRole(CU.Font.headline).foregroundStyle(CU.text)
@@ -217,7 +217,7 @@ struct ServiceRowView: View {
             .frame(width: 260, alignment: .leading)
             HStack(spacing: CU.Space.xs) {
                 ForEach(row.powers, id: \.self) { p in
-                    Text(p).font(.system(size: 11, weight: .semibold)).foregroundStyle(CU.textSecondary).lineLimit(1)
+                    Text(p).font(CU.Font.caption.weighted(.semibold)).foregroundStyle(CU.textSecondary).lineLimit(1)
                         .padding(.horizontal, CU.Space.s).frame(height: 24).background(CU.bgFillOnPanel, in: Capsule())
                 }
             }
@@ -228,7 +228,7 @@ struct ServiceRowView: View {
             } else {
                 ServiceStateLabel(state: row.state)
             }
-            Image(systemName: open ? "chevron.up" : "chevron.down").font(.system(size: 11, weight: .semibold)).foregroundStyle(CU.textSecondary)
+            Image(systemName: open ? "chevron.up" : "chevron.down").font(CU.Icon.small(.semibold)).foregroundStyle(CU.textSecondary)
                 .frame(width: 16).accessibilityHidden(true)
         }
         .frame(minHeight: 56).contentShape(Rectangle())
@@ -282,7 +282,7 @@ struct ServiceRowView: View {
                     Spacer(minLength: CU.Space.s)
                     if r.2 { ServiceStateLabel(state: row.state) } else { Text(r.1).foregroundStyle(CU.text).multilineTextAlignment(.trailing) }
                 }
-                .font(.system(size: 12))
+                .font(CU.Font.callout.weighted(.regular))
                 .accessibilityElement(children: .combine)
             }
         }
@@ -388,13 +388,13 @@ struct ServicesDiagram: View {
     private func nodeView(_ n: Node) -> some View {
         let failing = n.state?.isFailing == true
         return HStack(spacing: CU.Space.s) {
-            Image(systemName: ServiceIcon.symbol(n.id)).font(.system(size: 13)).foregroundStyle(CU.textSecondary).frame(width: 20)
+            Image(systemName: ServiceIcon.symbol(n.id)).font(CU.Icon.row()).foregroundStyle(CU.textSecondary).frame(width: 20)
             VStack(alignment: .leading, spacing: 0) {
                 Text(n.title).cuRole(CU.Font.headline).foregroundStyle(CU.text).lineLimit(1)
                 if let s = n.subtitle { Text(s).cuRole(CU.Font.caption).foregroundStyle(CU.textSecondary).lineLimit(1) }
             }
             Spacer(minLength: 0)
-            if let state = n.state { Image(systemName: state.tone.symbol).font(.system(size: 13)).foregroundStyle(state.tone.color) }
+            if let state = n.state { Image(systemName: state.tone.symbol).font(CU.Icon.row()).foregroundStyle(state.tone.color) }
         }
         .padding(.horizontal, CU.Space.s)
         .background(CU.content, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
@@ -469,8 +469,8 @@ struct CupertinoStatusButton: View {
                 Image(systemName: toolbar.kind == .checking ? "ellipsis.circle" : toolbar.tone.symbol).foregroundStyle(toolbar.tone.color).accessibilityHidden(true)
                 Text(toolbar.text).lineLimit(1)
             }
-            .font(.system(size: 13, weight: .semibold)).foregroundStyle(CU.text)
-            .padding(.horizontal, 14).frame(height: 36).contentShape(Capsule())
+            .font(CU.Font.body.weighted(.semibold)).foregroundStyle(CU.text)
+            .padding(.horizontal, 16).frame(height: 36).contentShape(Capsule())
             .glassEffect(CU.glass, in: Capsule())
         }
         .buttonStyle(.plain)
@@ -513,12 +513,12 @@ struct CupertinoServicesPopover: View {
                 ForEach(listed) { row in
                     VStack(alignment: .leading, spacing: CU.Space.xs) {
                         HStack(spacing: CU.Space.s) {
-                            Image(systemName: ServiceIcon.symbol(row.id.rawValue)).font(.system(size: 13)).foregroundStyle(CU.textSecondary).frame(width: 20).accessibilityHidden(true)
+                            Image(systemName: ServiceIcon.symbol(row.id.rawValue)).font(CU.Icon.row()).foregroundStyle(CU.textSecondary).frame(width: 20).accessibilityHidden(true)
                             Text(row.name).cuRole(CU.Font.headline).foregroundStyle(CU.text)
                             Spacer(minLength: CU.Space.m)
                             ServiceStateLabel(state: row.state)
                         }
-                        if let line = impact(row) { Text(line).cuRole(CU.Font.callout).foregroundStyle(CU.textSecondary).padding(.leading, 28) }
+                        if let line = impact(row) { Text(line).cuRole(CU.Font.callout).foregroundStyle(CU.textSecondary).padding(.leading, 32) }
                     }
                     .accessibilityElement(children: .combine)
                 }
