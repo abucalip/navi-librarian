@@ -13,12 +13,92 @@ struct CupertinoTheme: DiscairTheme {
     }
 }
 
+/// An sRGB colour kept as hex, so the contrast of every token can be measured in tests.
+struct CURGB: Equatable, Sendable {
+    let hex: UInt32
+    init(_ hex: UInt32) { self.hex = hex }
+
+    private func channel(_ shift: UInt32) -> Double { Double((hex >> shift) & 0xFF) / 255 }
+    var color: Color { Color(red: channel(16), green: channel(8), blue: channel(0)) }
+
+    /// WCAG 2 relative luminance.
+    var luminance: Double {
+        func linear(_ c: Double) -> Double { c <= 0.03928 ? c / 12.92 : pow((c + 0.055) / 1.055, 2.4) }
+        return 0.2126 * linear(channel(16)) + 0.7152 * linear(channel(8)) + 0.0722 * linear(channel(0))
+    }
+
+    /// WCAG 2 contrast ratio against another colour, 1 to 21.
+    func contrast(with other: CURGB) -> Double {
+        let (hi, lo) = luminance >= other.luminance ? (luminance, other.luminance) : (other.luminance, luminance)
+        return (hi + 0.05) / (lo + 0.05)
+    }
+}
+
+/// Cupertino (macOS) tokens. Values are section 4.1 of `docs/redesign.md`; the stylesheet named there is the tie-breaker.
+/// The old names (`accent`, `muted`, `ink`, `card`, `fill`) are kept as aliases of the new roles, so views that use them compile unchanged.
 enum CU {
-    static let accent = Color(red: 0.98, green: 0.176, blue: 0.282)      // #fa2d48
-    static let muted = Color(red: 0.43, green: 0.43, blue: 0.45)         // #6e6e73
-    static let ink = Color(red: 0.114, green: 0.114, blue: 0.122)        // #1d1d1f
-    static let card = Color(red: 0.96, green: 0.96, blue: 0.97)          // #f5f5f7
-    static let fill = Color(red: 0.925, green: 0.925, blue: 0.94)        // #ececf0
+    // MARK: Colour roles
+
+    static let contentRGB = CURGB(0xFFFFFF)          // content ground
+    static let bgPanelRGB = CURGB(0xF5F5F7)          // grouped panels, inspector
+    static let bgFillRGB = CURGB(0xECECF0)           // neutral buttons and tracks on white
+    static let bgFillOnPanelRGB = CURGB(0xE6E6EB)    // neutral buttons and tracks on a panel
+    static let textRGB = CURGB(0x1D1D1F)             // primary text
+    static let textSecondaryRGB = CURGB(0x636368)    // secondary text
+    static let textTertiaryRGB = CURGB(0x8E8E93)     // disabled and decorative only, never essential text
+    static let separatorRGB = CURGB(0xE5E5EA)        // hairlines, gridlines
+    static let separatorStrongRGB = CURGB(0xD1D1D6)  // field and outline-button borders
+    static let accentRGB = CURGB(0xD61F4A)           // main action, selection, highlighted series
+    static let accentStrongRGB = CURGB(0xC8163F)     // pressed; accent text on the tint
+    static let accentTintRGB = CURGB(0xFCE8EC)       // selected row ground
+    static let successRGB = CURGB(0x187A48)
+    static let successTintRGB = CURGB(0xE6F4EC)
+    static let warningRGB = CURGB(0x8A5200)
+    static let warningTintRGB = CURGB(0xFFF4DC)
+    static let dangerRGB = CURGB(0xB3261E)           // a brick hue, never the accent; always with an icon and a sentence
+    static let dangerTintRGB = CURGB(0xFBEAE8)
+    static let infoRGB = CURGB(0x0B5CAD)             // not loaded, paused
+    static let infoTintRGB = CURGB(0xE8F1FB)
+    static let chart2RGB = CURGB(0x8E8E93)           // comparison line, baseline dot (graphic, 3:1)
+    static let chart3RGB = CURGB(0xC7C7CC)           // context bars
+    static let chartGridRGB = CURGB(0xE5E5EA)
+    static let chartBaseRGB = CURGB(0xC7C7CC)
+    static let heatRGB: [CURGB] = ([0xECECF0, 0xF6C5D0, 0xEE8FA5, 0xE2537A, 0xD61F4A] as [UInt32]).map { CURGB($0) }
+
+    static let content = contentRGB.color
+    static let bgPanel = bgPanelRGB.color
+    static let bgFill = bgFillRGB.color
+    static let bgFillOnPanel = bgFillOnPanelRGB.color
+    static let text = textRGB.color
+    static let textSecondary = textSecondaryRGB.color
+    static let textTertiary = textTertiaryRGB.color
+    static let separator = separatorRGB.color
+    static let separatorStrong = separatorStrongRGB.color
+    static let accent = accentRGB.color
+    static let accentStrong = accentStrongRGB.color
+    static let accentTint = accentTintRGB.color
+    static let success = successRGB.color
+    static let successTint = successTintRGB.color
+    static let warning = warningRGB.color
+    static let warningTint = warningTintRGB.color
+    static let danger = dangerRGB.color
+    static let dangerTint = dangerTintRGB.color
+    static let info = infoRGB.color
+    static let infoTint = infoTintRGB.color
+    static let chart1 = accent
+    static let chart2 = chart2RGB.color
+    static let chart3 = chart3RGB.color
+    static let chartGhost = bgFill
+    static let chartGrid = chartGridRGB.color
+    static let chartBase = chartBaseRGB.color
+    static let heat: [Color] = heatRGB.map(\.color)
+
+    // Aliases for the names the views already use.
+    static let muted = textSecondary
+    static let ink = text
+    static let card = bgPanel
+    static let fill = bgFill
+
     /// Mockup glass: rgba(246,246,249,.74) over the blur. Bare `.regular` is too clear over the pastel backdrop.
     /// Offscreen screenshot renders blank when the tint is applied, so tests switch it off (`RenderMode`).
     static var glass: Glass {
@@ -26,7 +106,71 @@ enum CU {
     }
     static let sidebarRadius: CGFloat = 20
     static let windowRadius: CGFloat = 26
-    static func title(_ size: CGFloat) -> Font { .system(size: size, weight: .bold).width(.standard) }
+    static func title(_ size: CGFloat) -> SwiftUI.Font { .system(size: size, weight: .bold).width(.standard) }
+
+    /// Every text and accent pair that section 4.1 says must reach 4.5:1. `text.tertiary` is left out on purpose: it is 3.3:1 and decorative only.
+    /// Accent text on the accent tint is also left out: it is 4.31:1, so the table uses `accent.strong` there instead.
+    static let contrastPairs: [(name: String, text: CURGB, ground: CURGB)] = [
+        ("text on content", textRGB, contentRGB),
+        ("text on panel", textRGB, bgPanelRGB),
+        ("text on fill", textRGB, bgFillRGB),
+        ("text secondary on content", textSecondaryRGB, contentRGB),
+        ("text secondary on panel", textSecondaryRGB, bgPanelRGB),
+        ("text secondary on fill", textSecondaryRGB, bgFillRGB),
+        ("white label on accent", contentRGB, accentRGB),
+        ("accent on panel", accentRGB, bgPanelRGB),
+        ("accent strong on accent tint", accentStrongRGB, accentTintRGB),
+        ("success on panel", successRGB, bgPanelRGB),
+        ("success on success tint", successRGB, successTintRGB),
+        ("warning on warning tint", warningRGB, warningTintRGB),
+        ("danger on danger tint", dangerRGB, dangerTintRGB),
+        ("info on info tint", infoRGB, infoTintRGB),
+    ]
+
+    // MARK: Spacing (4, 8, 16, 24, 32 only)
+
+    enum Space {
+        static let xs: CGFloat = 4
+        static let s: CGFloat = 8
+        static let m: CGFloat = 16
+        static let l: CGFloat = 24
+        static let xl: CGFloat = 32
+        static let scale: [CGFloat] = [xs, s, m, l, xl]
+    }
+
+    // MARK: Type roles (section 4.2)
+
+    enum Font {
+        struct Role: Equatable, Sendable {
+            let size: CGFloat
+            let lineHeight: CGFloat
+            let weight: SwiftUI.Font.Weight
+            /// Tracking in points. The eyebrow's +0.06em is stored as points at 11 pt.
+            let tracking: CGFloat
+            /// Set in capitals by the view; the role only records that the style is an eyebrow.
+            let isCapitals: Bool
+
+            var font: SwiftUI.Font { .system(size: size, weight: weight) }
+        }
+
+        static let largeTitle = Role(size: 34, lineHeight: 40, weight: .bold, tracking: -0.4, isCapitals: false)
+        static let heroMetric = Role(size: 44, lineHeight: 48, weight: .bold, tracking: -0.8, isCapitals: false)
+        static let title1 = Role(size: 24, lineHeight: 32, weight: .bold, tracking: -0.3, isCapitals: false)
+        static let title2 = Role(size: 20, lineHeight: 24, weight: .bold, tracking: -0.2, isCapitals: false)
+        static let metric = Role(size: 24, lineHeight: 32, weight: .semibold, tracking: -0.3, isCapitals: false)
+        static let title3 = Role(size: 17, lineHeight: 24, weight: .semibold, tracking: -0.1, isCapitals: false)
+        static let headline = Role(size: 13, lineHeight: 20, weight: .semibold, tracking: 0, isCapitals: false)
+        static let body = Role(size: 13, lineHeight: 20, weight: .regular, tracking: 0, isCapitals: false)
+        static let callout = Role(size: 12, lineHeight: 18, weight: .regular, tracking: 0, isCapitals: false)
+        static let caption = Role(size: 11, lineHeight: 16, weight: .regular, tracking: 0, isCapitals: false)
+        static let eyebrow = Role(size: 11, lineHeight: 16, weight: .bold, tracking: 0.66, isCapitals: true)
+    }
+}
+
+extension Text {
+    /// Applies a `CU.Font.Role`'s size, weight and tracking. SwiftUI cannot set an exact line height on one `Text`;
+    /// a block that needs one uses `lineSpacing(role.lineHeight - role.size)` where the view applies it.
+    func cuRole(_ role: CU.Font.Role) -> Text { font(role.font).tracking(role.tracking) }
 }
 
 struct CupertinoWindow: View {
