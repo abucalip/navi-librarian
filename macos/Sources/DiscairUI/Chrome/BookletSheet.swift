@@ -29,23 +29,24 @@ struct BookletOpener<Button: View>: View {
     }
 }
 
-/// The booklet as a two-page spread. Arrow keys turn the pages; a zoom lens follows the pointer and loads the full-resolution file
-/// on first use. A PDF booklet opens in PDFKit (two-up, continuous, zoom, arrow keys). Captions are the image's type, edition and
-/// the Cover Art Archive comment, as plain text. No text recognition and no credit links.
+/// The booklet one page at a time, centred in the window. Arrow keys turn the pages; pinch zoom loads the full-resolution file
+/// on first use. A PDF booklet opens in PDFKit (one page wide, continuous, zoom, arrow keys). Captions are the image's type,
+/// edition and the Cover Art Archive comment, as plain text. No text recognition and no credit links.
 struct BookletSheet: View {
     let booklet: BookletView
     let close: () -> Void
-    @State private var spread = 0
+    @State private var page = 0
     @FocusState private var focused: Bool
 
-    private var spreads: [[ArtworkPicture]] { booklet.spreads }
+    /// Every bitmap page and extra once, in the booklet's order.
+    private var pages: [ArtworkPicture] { booklet.spreads.flatMap { $0 } }
 
     var body: some View {
         VStack(spacing: 0) {
             header
             Divider()
             Group {
-                if let pdf = booklet.pdf, spreads.isEmpty { PDFBookletView(picture: pdf) } else { spreadView }
+                if let pdf = booklet.pdf, pages.isEmpty { PDFBookletView(picture: pdf) } else { pageView }
             }
         }
         .frame(minWidth: 760, idealWidth: 980, minHeight: 600, idealHeight: 760)
@@ -66,7 +67,7 @@ struct BookletSheet: View {
         HStack(spacing: 12) {
             Text(booklet.edition.isEmpty ? "Booklet" : "Booklet · \(booklet.edition)").font(.headline).accessibilityAddTraits(.isHeader)
             Spacer()
-            if !spreads.isEmpty {
+            if !pages.isEmpty {
                 Text(position).font(.callout).foregroundStyle(.white.opacity(0.7)).monospacedDigit()
                 Text("Pinch to zoom").font(.callout).foregroundStyle(.white.opacity(0.55))
             }
@@ -76,29 +77,28 @@ struct BookletSheet: View {
     }
 
     private var position: String {
-        guard spreads.indices.contains(spread) else { return "" }
+        guard pages.indices.contains(page) else { return "" }
         let items = booklet.items
-        let ids = spreads[spread].compactMap { p in items.firstIndex { $0.imageID == p.imageID } }.map { $0 + 1 }
-        let span = ids.count == 2 ? "Pages \(ids[0])–\(ids[1])" : (ids.first.map { $0 <= booklet.pages.count ? "Page \($0)" : "Image \($0)" } ?? "")
+        let n = items.firstIndex { $0.imageID == pages[page].imageID }.map { $0 + 1 } ?? 0
+        let span = n <= booklet.pages.count ? "Page \(n)" : "Image \(n)"
         return "\(span) of \(items.count)"
     }
 
-    private var spreadView: some View {
+    /// One picture, scaled to fit and centred, with the arrows at the window's edges.
+    private var pageView: some View {
         HStack(spacing: 8) {
             Button { turn(-1) } label: { Image(systemName: "chevron.left") }
-                .buttonStyle(.borderless).disabled(spread == 0).accessibilityLabel("Previous pages").help("Previous pages (left arrow)")
-            if spreads.indices.contains(spread) {
-                HStack(alignment: .top, spacing: 2) {
-                    ForEach(spreads[spread]) { BookletPage(picture: $0) }
-                }
+                .buttonStyle(.borderless).disabled(page == 0).accessibilityLabel("Previous page").help("Previous page (left arrow)")
+            if pages.indices.contains(page) {
+                BookletPage(picture: pages[page]).frame(maxWidth: .infinity, maxHeight: .infinity)
             }
             Button { turn(1) } label: { Image(systemName: "chevron.right") }
-                .buttonStyle(.borderless).disabled(spread >= spreads.count - 1).accessibilityLabel("Next pages").help("Next pages (right arrow)")
+                .buttonStyle(.borderless).disabled(page >= pages.count - 1).accessibilityLabel("Next page").help("Next page (right arrow)")
         }
         .padding(12)
     }
 
-    private func turn(_ by: Int) { spread = min(max(spread + by, 0), max(spreads.count - 1, 0)) }
+    private func turn(_ by: Int) { page = min(max(page + by, 0), max(pages.count - 1, 0)) }
 }
 
 /// One page at display size with its caption. Spreading two fingers zooms in (loading the full-resolution file the first time),
@@ -150,7 +150,7 @@ private struct BookletPage: View {
     }
 }
 
-/// A PDF booklet: downloaded whole when the sheet opens (cancelling closes the request), then shown by PDFKit.
+/// A PDF booklet: downloaded whole when the sheet opens (cancelling closes the request), then shown by PDFKit one page wide.
 private struct PDFBookletView: View {
     let picture: ArtworkPicture
     @Environment(\.artwork) private var store
@@ -180,8 +180,7 @@ private struct PDFKitView: NSViewRepresentable {
 
     func makeNSView(context: Context) -> PDFView {
         let view = PDFView()
-        view.displayMode = .twoUpContinuous
-        view.displaysAsBook = true
+        view.displayMode = .singlePageContinuous
         view.autoScales = true
         view.delegate = context.coordinator
         view.document = PDFDocument(data: data)
