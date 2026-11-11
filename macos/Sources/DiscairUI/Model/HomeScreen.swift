@@ -1,4 +1,5 @@
 import DiscairLibrarian
+import DiscairNavidrome
 import Foundation
 
 /// What each module of the redesigned Cupertino Home says in each state (`docs/redesign.md` section 5.1, step M8). Pure: the
@@ -45,13 +46,15 @@ enum HomeScreen {
         }
     }
 
-    /// The Listens tile. Listens per day need a server route that does not exist yet (D2), so the tile is never a number today.
+    /// The Listens tile: a figure once the server serves listens by day (D2), else the reason there is none.
     enum ListensTile: Equatable {
+        case figure(HomeDashboard.ListensFigure)
         case needsListenBrainz
         case notServedYet
         case withoutLibrarian
         var sentence: String {
             switch self {
+            case .figure: ""
             case .needsListenBrainz: "Needs ListenBrainz."
             case .notServedYet: "Not available yet. The server does not report listens by day."
             case .withoutLibrarian: "Unavailable without Librarian"
@@ -60,9 +63,25 @@ enum HomeScreen {
         var offersConnect: Bool { self == .needsListenBrainz }
     }
 
-    static func listensTile(librarianReachable: Bool, listenBrainzConnected: Bool) -> ListensTile {
+    static func listensTile(librarianReachable: Bool, listenBrainzConnected: Bool, figure: HomeDashboard.ListensFigure? = nil) -> ListensTile {
         if !librarianReachable { return .withoutLibrarian }
+        if let figure { return .figure(figure) }
         return listenBrainzConnected ? .notServedYet : .needsListenBrainz
+    }
+
+    /// "18% more than the 7 days before (181)", with the arrow. A stale series says when it ends ("as of 9 November").
+    static func listensLine(_ f: HomeDashboard.ListensFigure, now: Date, calendar: Calendar = .current) -> ChangeLine {
+        let trend: Trend = f.delta > 0 ? .up : f.delta < 0 ? .down : .flat
+        var text: String
+        if let pct = f.percent {
+            text = pct == 0 ? "Same as the 7 days before (\(count(f.before)))"
+                           : "\(abs(pct))% \(f.delta > 0 ? "more" : "fewer") than the 7 days before (\(count(f.before)))"
+        } else {
+            text = "No listens in the 7 days before"
+        }
+        var utc = Calendar(identifier: .gregorian); utc.timeZone = TimeZone(identifier: "UTC")!
+        if let age = utc.dateComponents([.day], from: f.asOf, to: now).day, age > 1 { text += " · as of \(dayAndMonth(f.asOf, calendar: utc))" }
+        return ChangeLine(trend: trend, text: text)
     }
 
     /// The Waiting tile: picks, with the unplayed arrivals beneath. nil picks (Librarian down) means no number.
@@ -236,13 +255,15 @@ enum HomeScreen {
     // MARK: Server activity
 
     struct ActivityRow: Equatable, Identifiable {
-        enum Fix: Equatable { case openSettings }
+        enum Fix: Equatable { case openSettings, fillPopularity }
         let id: String
         let name: String
         let symbol: String
         let status: CUStatus
         let line: String
         var fix: Fix? = nil
+        /// The button's words ("Continue", "Try again"), when there is a fix.
+        var fixTitle: String? = nil
     }
 
     struct ActivityInput {
@@ -257,18 +278,24 @@ enum HomeScreen {
         var tasteNote: String?
         var tasteListens: Int?
         var graphCoverage: String?
+        /// `GET /api/insights/popularity/status`, when read.
+        var popularity: JobStatus?
+        /// `GET /api/insights/refresh/status` (D3), when the server serves it.
+        var insightsJob: JobStatus?
         var now = Date()
     }
 
     /// One state word and one line per background job. With the Librarian unreachable everything it would report is Unknown.
     static func activity(_ i: ActivityInput) -> [ActivityRow] {
         guard i.librarianReachable else {
-            return [("insights", "Insight lenses", "lightbulb"), ("taste", "Taste profile", "waveform"), ("musicbrainz", "MusicBrainz data", "point.3.connected.trianglepath.dotted")]
+            return [("insights", "Insight lenses", "lightbulb"), ("taste", "Taste profile", "waveform"), ("popularity", "Artist popularity", "person"), ("musicbrainz", "MusicBrainz data", "point.3.connected.trianglepath.dotted")]
                 .map { ActivityRow(id: $0.0, name: $0.1, symbol: $0.2, status: .unknown, line: "Librarian is not answering.") }
         }
         var rows: [ActivityRow] = []
 
-        if !i.insightsLive {
+        if let job = i.insightsJob, job.status != nil || job.lastGood != nil {
+            rows.append(insightsJobRow(job, i))
+        } else if !i.insightsLive {
             rows.append(ActivityRow(id: "insights", name: "Insight lenses", symbol: "lightbulb", status: .notLoaded, line: "Not read yet"))
         } else if i.insightsError {
             let when = i.insightsLoadedAt.map { " Last read \(relative($0, now: i.now))." } ?? ""
@@ -287,12 +314,83 @@ enum HomeScreen {
             rows.append(ActivityRow(id: "taste", name: "Taste profile", symbol: "waveform", status: .done, line: (i.tasteRefreshing ? "Refreshing now · " : "At launch · ") + listens))
         }
 
+        rows.append(popularityRow(i.popularity, now: i.now))
+
         if let coverage = i.graphCoverage {
             let loaded = coverage != "none"
             rows.append(ActivityRow(id: "musicbrainz", name: "MusicBrainz data", symbol: "point.3.connected.trianglepath.dotted",
                                     status: loaded ? .loaded : .notLoaded, line: "Graph coverage: \(coverage)"))
         }
         return rows
+    }
+
+    private static func insightsJobRow(_ job: JobStatus, _ i: ActivityInput) -> ActivityRow {
+        let finished = job.lastGood?.finishedAt.map { Date(timeIntervalSince1970: $0) }
+        let refreshed = finished.map { "Refreshed \(relative($0, now: i.now))" } ?? "Not refreshed yet"
+        let next = job.retryAfter.map { $0 <= 0 ? "next due now" : "next in \(duration($0))" }
+        let line = [refreshed, next].compactMap { $0 }.joined(separator: " · ")
+        let failed = job.status?.state == "failed"
+        return ActivityRow(id: "insights", name: "Insight lenses", symbol: "lightbulb", status: failed ? .notUpdating : .done,
+                           line: failed ? "The last refresh failed. " + line : (job.running ? "Refreshing now · " + line : line))
+    }
+
+    /// Artist popularity is filled by hand only (the server has no scheduler): the row says how many artists are left and offers
+    /// the button that runs the next bounded batch.
+    static func popularityRow(_ job: JobStatus?, now: Date) -> ActivityRow {
+        func row(_ status: CUStatus, _ line: String, _ fix: String? = nil) -> ActivityRow {
+            ActivityRow(id: "popularity", name: "Artist popularity", symbol: "person", status: status, line: line,
+                        fix: fix == nil ? nil : .fillPopularity, fixTitle: fix)
+        }
+        guard let job else { return row(.notLoaded, "Not read yet") }
+        guard let newest = job.status ?? job.lastGood else { return row(.paused, "No figures yet · runs only when you ask", "Start") }
+        let pending = Int(newest.progress["pending"] ?? job.lastGood?.progress["pending"] ?? 0)
+        if job.running { return row(.paused, "Filling now\(pending > 0 ? " · \(count(pending)) artists left" : "")") }
+        switch newest.state {
+        case "failed":
+            let reason = newest.error.map { ": \($0)" } ?? ""
+            return row(.notUpdating, "The last fill failed\(reason). Earlier figures are kept.", "Try again")
+        case "queued": return row(.paused, "\(count(pending)) artists left · runs only when you ask", "Continue")
+        default:
+            if pending > 0 { return row(.paused, "\(count(pending)) artists left · runs only when you ask", "Continue") }
+            let when = newest.finishedAt.map { " · filled \(relative(Date(timeIntervalSince1970: $0), now: now))" } ?? ""
+            return row(.done, "Figures are up to date\(when)")
+        }
+    }
+
+    /// "4 hours", "35 minutes", "1 minute".
+    static func duration(_ seconds: Double) -> String {
+        let minutes = max(1, Int((seconds / 60).rounded()))
+        if minutes < 90 { return "\(minutes) minute\(minutes == 1 ? "" : "s")" }
+        let hours = Int((Double(minutes) / 60).rounded())
+        return "\(hours) hour\(hours == 1 ? "" : "s")"
+    }
+
+    // MARK: Phone handoff (D5)
+
+    /// The queue another client saved, offered as "Playing on your phone". Only when it is not this app's own queue, was saved
+    /// within `handoffHours`, has a current song, and that song is not the one this Mac is already playing.
+    static let handoffHours = 24
+
+    static func handoff(queue: NavidromePlayQueue?, now: Date, clientName: String, playingSongID: String?) -> HomeDashboard.Handoff? {
+        guard let queue, let song = queue.current, let changed = queue.changed else { return nil }
+        if (queue.changedBy ?? "").lowercased() == clientName.lowercased() { return nil }
+        guard now.timeIntervalSince(changed) <= Double(handoffHours) * 3600, changed <= now.addingTimeInterval(300) else { return nil }
+        if song.id == playingSongID { return nil }
+        return HomeDashboard.Handoff(songID: song.id, title: song.title, artist: song.artist ?? "Unknown artist",
+                                     positionSeconds: queue.positionMs / 1000, durationSeconds: song.duration)
+    }
+
+    /// "Ascension Day, Talk Talk · 2:41 of 6:00".
+    static func handoffText(_ h: HomeDashboard.Handoff) -> String {
+        let place = h.durationSeconds.map { "\(clock(h.positionSeconds)) of \(clock($0))" } ?? clock(h.positionSeconds)
+        return "\(h.title), \(h.artist) · \(place)"
+    }
+
+    static func clock(_ seconds: Int) -> String { String(format: "%d:%02d", max(0, seconds) / 60, max(0, seconds) % 60) }
+
+    /// The queue to start here: from the song that was playing, with the rest behind it.
+    static func handoffStart(queue: NavidromePlayQueue) -> (songs: [NavidromeSong], startAt: Int) {
+        (queue.songs, queue.songs.firstIndex { $0.id == queue.currentID } ?? 0)
     }
 
     // MARK: Which page

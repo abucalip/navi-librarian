@@ -42,7 +42,20 @@ struct HomeRenderTests {
         switch scenario {
         case .normal:
             state.taste.set(Self.taste)
-            state.showHome(HomeDashboard.build(.init(albums: Self.albums(now: now), taste: Self.taste, picksCount: 7, now: now)))
+            let song = try! JSONDecoder().decode(NavidromeSong.self, from: Data(#"{"id":"s2","title":"Ascension Day","artist":"Talk Talk","duration":360}"#.utf8))
+            let queue = NavidromePlayQueue(songs: [song], currentID: "s2", positionMs: 161_000, changed: now.addingTimeInterval(-600), changedBy: "discair-android")
+            let plays = [RadioPlay(id: 1, stationName: "FIP", artist: "The Blue Nile", title: "Sea Song", heardAt: now.timeIntervalSince1970 - 3600)]
+            let finished = now.timeIntervalSince1970 - 7200
+            let pop = JobRun(state: "queued", finishedAt: finished, progress: ["pending": 340])
+            let insights = JobRun(state: "succeeded", finishedAt: finished)
+            state.showHomeFeeds(radio: plays, popularity: JobStatus(status: pop, lastGood: pop),
+                                insightsJob: JobStatus(status: insights, lastGood: insights, minInterval: 21_600, retryAfter: 14_400), queue: queue)
+            let days = (0..<84).map { i -> ListensDay in
+                let f = DateFormatter(); f.calendar = Calendar(identifier: .gregorian); f.timeZone = TimeZone(identifier: "UTC"); f.locale = Locale(identifier: "en_US_POSIX"); f.dateFormat = "yyyy-MM-dd"
+                return ListensDay(date: f.string(from: now.addingTimeInterval(-Double(84 - i) * 86_400)), count: i >= 77 ? 31 : (i >= 70 ? 26 : 20))
+            }
+            state.showHome(HomeDashboard.build(.init(albums: Self.albums(now: now), taste: Self.taste, picksCount: 7, radioPlays: plays, listensByDay: days,
+                                                     handoff: HomeScreen.handoff(queue: queue, now: now, clientName: "discair", playingSongID: nil), now: now)))
         case .firstRun:
             state.library.apply(newest: [], first: [], artists: [], picks: [])
             state.insights.showForPreview(Self.offLenses)

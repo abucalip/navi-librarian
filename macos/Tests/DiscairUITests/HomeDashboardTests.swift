@@ -207,4 +207,57 @@ import DiscairNavidrome
         #expect(d.albumCount == 2 && d.added == .init(last: 1, before: 1) && d.neverPlayed == 2 && d.shelfLife != nil && d.series(.oneYear) != nil)
         #expect(d.waiting?.picks == nil && !d.listenSharesAvailable && d.decades.allSatisfy { $0.listenShare == nil })
     }
+
+    // MARK: Radio, listens and handoff (M8)
+
+    static func play(_ id: Int, _ title: String, artist: String? = "Artist", agoDays: Double = 1, owned: Bool = false, grabbed: Bool = false) -> RadioPlay {
+        RadioPlay(id: id, stationName: "FIP", artist: artist, title: title, heardAt: now.timeIntervalSince1970 - agoDays * 86_400, grabbed: grabbed, inLibrary: owned)
+    }
+
+    @Test func heardSongsTheLibraryLacksBecomeRadioRowsNewestFirstOnePerSong() {
+        let plays = [Self.play(1, "Old", agoDays: 9), Self.play(2, "Sea Song", agoDays: 1), Self.play(3, "Sea Song", agoDays: 2), Self.play(4, "Owned", owned: true),
+                     Self.play(5, "Asked", grabbed: true), Self.play(6, "No artist", artist: nil), Self.play(7, "Newer", agoDays: 0.2)]
+        let d = HomeDashboard.build(.init(albums: [Self.album("a")], radioPlays: plays, now: Self.now, calendar: Self.cal))
+        #expect(d.arrivals.map(\.id) == ["radio|7", "radio|2"])
+        guard case .radio(_, let title, _, let station, _) = d.arrivals[0] else { Issue.record("not a radio row"); return }
+        #expect(title == "Newer" && station == "FIP")
+    }
+
+    @Test func radioRowsComeAfterJobsAndArrivalsAndShareTheFourRowCap() {
+        let jobs = [Self.job("downloading", album: "A"), Self.job("importing", album: "B")]
+        let d = HomeDashboard.build(.init(albums: [Self.album("n", addedDaysAgo: 2)], jobs: jobs, radioPlays: (1...4).map { Self.play($0, "S\($0)") }, now: Self.now, calendar: Self.cal))
+        #expect(d.arrivals.count == 4 && d.arrivalsHidden == 3)
+        #expect(d.arrivals.prefix(3).map { if case .radio = $0 { "radio" } else { "other" } } == ["other", "other", "other"])
+    }
+
+    @Test func noRadioRowsWithoutTheLibrarian() {
+        let d = HomeDashboard.build(.init(albums: [Self.album("a")], librarianReachable: false, radioPlays: [Self.play(1, "S")], now: Self.now, calendar: Self.cal))
+        #expect(d.arrivals.isEmpty)
+    }
+
+    static func days(_ counts: [Int], endingDaysAgo: Int = 1) -> [ListensDay] {
+        let f = DateFormatter(); f.calendar = Calendar(identifier: .gregorian); f.timeZone = TimeZone(identifier: "UTC"); f.locale = Locale(identifier: "en_US_POSIX"); f.dateFormat = "yyyy-MM-dd"
+        return counts.enumerated().map { i, c in ListensDay(date: f.string(from: now.addingTimeInterval(-Double(endingDaysAgo + counts.count - 1 - i) * 86_400)), count: c) }
+    }
+
+    @Test func listensAreTheLast7DaysAgainstThe7Before() {
+        let series = Self.days(Array(repeating: 1, count: 70) + Array(repeating: 2, count: 7) + Array(repeating: 3, count: 7))
+        let d = HomeDashboard.build(.init(albums: [Self.album("a")], listensByDay: series, now: Self.now, calendar: Self.cal))
+        #expect(d.listens?.last == 21 && d.listens?.before == 14 && d.listens?.percent == 50)
+    }
+
+    @Test func tooFewOrMissingDaysGiveNoFigureNotAZero() {
+        for series in [nil, [], Self.days(Array(repeating: 3, count: 13))] as [[ListensDay]?] {
+            #expect(HomeDashboard.build(.init(albums: [Self.album("a")], listensByDay: series, now: Self.now, calendar: Self.cal)).listens == nil)
+        }
+        #expect(HomeDashboard.build(.init(albums: [Self.album("a")], librarianReachable: false, listensByDay: Self.days(Array(repeating: 3, count: 20)), now: Self.now, calendar: Self.cal)).listens == nil)
+    }
+
+    @Test func handoffIsTheLowestPriorityNotice() {
+        let h = HomeDashboard.Handoff(songID: "s", title: "T", artist: "A", positionSeconds: 5, durationSeconds: nil)
+        #expect(HomeDashboard.build(.init(albums: [Self.album("a")], handoff: h, now: Self.now, calendar: Self.cal)).notice == .handoff(h))
+        let failed = HomeDashboard.build(.init(albums: [Self.album("a")], jobs: [Self.job("no_matches")], handoff: h, now: Self.now, calendar: Self.cal))
+        if case .failedJob = failed.notice {} else { Issue.record("a failed Get outranks the handoff") }
+        #expect(HomeDashboard.build(.init(albums: [Self.album("a")], librarianReachable: false, handoff: h, now: Self.now, calendar: Self.cal)).notice == .librarianUnreachable)
+    }
 }

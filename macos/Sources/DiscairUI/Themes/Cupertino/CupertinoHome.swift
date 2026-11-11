@@ -36,7 +36,7 @@ struct CupertinoHome: View {
         .scrollEdgeEffectStyle(.hard, for: .top)
         .onGeometryChange(for: CGFloat.self) { $0.size.width - CU.Space.xl * 2 } action: { width = $0 }
         .task(id: refreshKey) { if state.session != nil { await state.refreshHomeDashboard() } }
-        .task { await state.loadInsights() }
+        .task { await state.loadInsights(); await state.loadHomeFeeds() }
     }
 
     /// What the figures depend on besides the album list: the Gets, the saved taste and the picks.
@@ -89,6 +89,9 @@ struct CupertinoHome: View {
             CUNotice(kind: .danger, lead: "\(title) did not arrive.",
                      message: reason + (others > 0 ? " \(others) more \(others == 1 ? "Get" : "Gets") failed too." : ""),
                      actionTitle: "Open Downloads") { state.screen = .downloads }
+        case .handoff(let h):
+            CUNotice(kind: .info, lead: "Playing on your phone:", message: HomeScreen.handoffText(h),
+                     actionTitle: "Continue on this Mac") { state.continueFromPhone() }
         case nil:
             EmptyView()
         }
@@ -128,8 +131,15 @@ struct CupertinoHome: View {
     }
 
     private var listensStat: some View {
-        let tile = HomeScreen.listensTile(librarianReachable: librarianUp, listenBrainzConnected: hasListeningSource || state.listenBrainz.isConnected)
-        return HomeStat(eyebrow: "Listens · last 7 days", value: "—", action: { state.screen = .history }, actionHint: "Opens History") {
+        let tile = HomeScreen.listensTile(librarianReachable: librarianUp, listenBrainzConnected: hasListeningSource || state.listenBrainz.isConnected,
+                                          figure: d.listens)
+        if case .figure(let f) = tile {
+            return AnyView(HomeStat(eyebrow: "Listens · last 7 days", value: HomeScreen.count(f.last), unit: "plays",
+                                    action: { state.screen = .history }, actionHint: "Opens History") {
+                HomeChange(line: HomeScreen.listensLine(f, now: Date()))
+            })
+        }
+        return AnyView(HomeStat(eyebrow: "Listens · last 7 days", value: "—", action: { state.screen = .history }, actionHint: "Opens History") {
             HStack(alignment: .firstTextBaseline) {
                 Text(tile.sentence).cu(CU.Font.callout).foregroundStyle(CU.textSecondary).fixedSize(horizontal: false, vertical: true)
                 if tile.offersConnect {
@@ -137,7 +147,7 @@ struct CupertinoHome: View {
                         .buttonStyle(.plain).cu(CU.Font.callout).foregroundStyle(CU.accentStrong).underline()
                 }
             }
-        }
+        })
     }
 
     private var neverPlayedStat: some View {
@@ -329,6 +339,17 @@ struct CupertinoHome: View {
                 }
             }
             .accessibilityElement(children: .combine)
+        case .radio(let playID, let title, let artist, let station, let heardAt):
+            HStack(spacing: CU.Space.s) {
+                CoverView(album: placeholder(title: title, artist: artist)).frame(width: 48, height: 48).clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                VStack(alignment: .leading, spacing: CU.Space.xs) {
+                    Text(title).cu(CU.Font.headline).foregroundStyle(CU.text).lineLimit(1)
+                    Text("Heard on \(station) at \(heardAt.formatted(date: .omitted, time: .shortened))").cu(CU.Font.callout).foregroundStyle(CU.textSecondary).lineLimit(1)
+                }
+                Spacer(minLength: 0)
+                Button("Get") { Task { await state.getRadioPlay(playID) } }
+                    .buttonStyle(CapsuleButtonStyle(small: true)).accessibilityLabel("Get \(title) by \(artist)")
+            }
         case .arrived(let id, let title, let artist):
             HStack(spacing: CU.Space.s) {
                 let item = ownedItem(id) ?? placeholder(title: title, artist: artist)
@@ -601,7 +622,8 @@ struct CupertinoHome: View {
             librarianReachable: librarianUp, insightsLive: insights.isLive, insightsError: insights.error != nil, insightsLoadedAt: insights.loadedAt,
             lensesOn: insights.kinds.filter(insights.isEnabled).count, lensesTotal: insights.kinds.count,
             tasteLoaded: state.taste.loaded, tasteRefreshing: state.taste.refreshing, tasteNote: state.taste.note,
-            tasteListens: state.taste.recent?.listens, graphCoverage: state.serverCapabilities?.graphCoverage))
+            tasteListens: state.taste.recent?.listens, graphCoverage: state.serverCapabilities?.graphCoverage,
+            popularity: state.popularityStatus, insightsJob: state.insightsJobStatus))
         return HomePanel {
             HomeHeader(title: "Server activity") {
                 Button("Services") { state.screen = .settings }.buttonStyle(CapsuleButtonStyle(small: true))
@@ -630,10 +652,19 @@ struct CupertinoHome: View {
                     CUStatusLabel(row.status)
                 }
                 Text(row.line).cu(CU.Font.callout).foregroundStyle(CU.textSecondary).lineLimit(2)
+                if let title = row.fixTitle, let fix = row.fix {
+                    Button(title) {
+                    switch fix {
+                    case .openSettings: state.screen = .settings
+                    case .fillPopularity: Task { await state.fillPopularity() }
+                    }
+                }
+                .buttonStyle(CapsuleButtonStyle(small: true)).accessibilityLabel("\(title) \(row.name)")
+                }
             }
             Spacer(minLength: 0)
         }
-        .accessibilityElement(children: .combine)
+        .accessibilityElement(children: .contain)
     }
 
     // MARK: 10. Recently added

@@ -145,13 +145,16 @@ public struct TasteResponse: Decodable, Equatable, Sendable {
     public let profiles: TasteProfiles?
     public let dataVersion: Int
     public let generation: Int
+    /// D2 (proposed): one entry per UTC day for the last 84 days, zero days included. nil until the server serves it.
+    public let listensByDay: [ListensDay]?
 
-    enum CodingKeys: String, CodingKey { case profiles, dataVersion = "data_version", generation }
+    enum CodingKeys: String, CodingKey { case profiles, dataVersion = "data_version", generation, listensByDay = "listens_by_day" }
     public init(from decoder: any Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         profiles = try? c.decode(TasteProfiles.self, forKey: .profiles)
         dataVersion = (try? c.decode(Int.self, forKey: .dataVersion)) ?? 0
         generation = (try? c.decode(Int.self, forKey: .generation)) ?? 0
+        listensByDay = (try? c.decode([FeedLossy<ListensDay>].self, forKey: .listensByDay))?.compactMap(\.value)
     }
 }
 

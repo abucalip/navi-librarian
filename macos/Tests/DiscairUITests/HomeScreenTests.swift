@@ -196,11 +196,11 @@ import DiscairNavidrome
 
     @Test func healthyActivityHasAWordAndALinePerJob() {
         let rows = HomeScreen.activity(input())
-        #expect(rows.map(\.name) == ["Insight lenses", "Taste profile", "MusicBrainz data"])
-        #expect(rows.map(\.status) == [.done, .done, .loaded])
+        #expect(rows.map(\.name) == ["Insight lenses", "Taste profile", "Artist popularity", "MusicBrainz data"])
+        #expect(rows.map(\.status) == [.done, .done, .notLoaded, .loaded])
         #expect(rows[0].line == "Read 2 hours ago · 3 of 5 on")
         #expect(rows[1].line == "At launch · 1,240 listens in the recent window")
-        #expect(rows[2].line == "Graph coverage: broad")
+        #expect(rows[3].line == "Graph coverage: broad")
     }
 
     @Test func failedReadsSayNotUpdatingAndKeepWhatWasSaved() {
@@ -211,8 +211,8 @@ import DiscairNavidrome
 
     @Test func unreadSourcesAreNotLoadedAndNoCoverageIsNotLoaded() {
         let rows = HomeScreen.activity(input(live: false, taste: false, coverage: "none"))
-        #expect(rows.map(\.status) == [.notLoaded, .notLoaded, .notLoaded])
-        #expect(HomeScreen.activity(input(coverage: nil)).map(\.name) == ["Insight lenses", "Taste profile"])
+        #expect(rows.map(\.status) == [.notLoaded, .notLoaded, .notLoaded, .notLoaded])
+        #expect(HomeScreen.activity(input(coverage: nil)).map(\.name) == ["Insight lenses", "Taste profile", "Artist popularity"])
     }
 
     // MARK: Page
@@ -256,5 +256,84 @@ import DiscairNavidrome
         #expect(HomeScreen.fullDate(d, calendar: Self.cal) == "11 November 2026")
         #expect(HomeScreen.relative(Self.now.addingTimeInterval(-7200), now: Self.now) == "2 hours ago")
         #expect(HomeScreen.parseDate("2026-11-01T10:00:00.123Z") != nil && HomeScreen.parseDate("2026-11-01T10:00:00Z") != nil && HomeScreen.parseDate(nil) == nil)
+    }
+
+    // MARK: Listens (D2)
+
+    @Test func listensTileShowsTheFigureOnceServed() {
+        let f = HomeDashboard.ListensFigure(last: 214, before: 181, asOf: Self.now)
+        #expect(HomeScreen.listensTile(librarianReachable: true, listenBrainzConnected: true, figure: f) == .figure(f))
+        #expect(HomeScreen.listensTile(librarianReachable: false, listenBrainzConnected: true, figure: f) == .withoutLibrarian)
+        #expect(f.percent == 18 && f.delta == 33)
+    }
+
+    @Test func listensLineSaysTheDirectionInWordsAndWhenStale() {
+        let up = HomeScreen.listensLine(.init(last: 214, before: 181, asOf: Self.now), now: Self.now, calendar: Self.cal)
+        #expect(up == .init(trend: .up, text: "18% more than the 7 days before (181)"))
+        #expect(HomeScreen.listensLine(.init(last: 90, before: 100, asOf: Self.now), now: Self.now, calendar: Self.cal).text == "10% fewer than the 7 days before (100)")
+        #expect(HomeScreen.listensLine(.init(last: 5, before: 0, asOf: Self.now), now: Self.now, calendar: Self.cal).text == "No listens in the 7 days before")
+        let stale = HomeScreen.listensLine(.init(last: 5, before: 5, asOf: Self.now.addingTimeInterval(-3 * 86_400)), now: Self.now, calendar: Self.cal)
+        #expect(stale.text.hasSuffix("· as of 8 November") && stale.trend == .flat)
+    }
+
+    // MARK: Handoff (D5)
+
+    static func queue(by: String = "discair-android", ageHours: Double = 1, current: String = "s2", position: Int = 161_000) -> NavidromePlayQueue {
+        let songs = [#"{"id":"s1","title":"One"}"#, #"{"id":"s2","title":"Ascension Day","artist":"Talk Talk","duration":360}"#]
+            .map { try! JSONDecoder().decode(NavidromeSong.self, from: Data($0.utf8)) }
+        return NavidromePlayQueue(songs: songs, currentID: current, positionMs: position, changed: Self.now.addingTimeInterval(-ageHours * 3600), changedBy: by)
+    }
+
+    @Test func aRecentQueueFromAnotherClientIsOffered() {
+        let h = HomeScreen.handoff(queue: Self.queue(), now: Self.now, clientName: "discair", playingSongID: nil)
+        #expect(h == .init(songID: "s2", title: "Ascension Day", artist: "Talk Talk", positionSeconds: 161, durationSeconds: 360))
+        #expect(HomeScreen.handoffText(try! #require(h)) == "Ascension Day, Talk Talk · 2:41 of 6:00")
+    }
+
+    @Test func ownOldOrAlreadyPlayingQueuesAreNotOffered() {
+        #expect(HomeScreen.handoff(queue: Self.queue(by: "Discair"), now: Self.now, clientName: "discair", playingSongID: nil) == nil)
+        #expect(HomeScreen.handoff(queue: Self.queue(ageHours: 30), now: Self.now, clientName: "discair", playingSongID: nil) == nil)
+        #expect(HomeScreen.handoff(queue: Self.queue(), now: Self.now, clientName: "discair", playingSongID: "s2") == nil)
+        #expect(HomeScreen.handoff(queue: nil, now: Self.now, clientName: "discair", playingSongID: nil) == nil)
+    }
+
+    @Test func continuingStartsAtTheSongThePhoneWasOn() {
+        let start = HomeScreen.handoffStart(queue: Self.queue())
+        #expect(start.startAt == 1 && start.songs.count == 2)
+        #expect(HomeScreen.handoffStart(queue: Self.queue(current: "gone")).startAt == 0)
+    }
+
+    // MARK: Artist popularity and the insight job
+
+    private func job(_ state: String, pending: Double = 0, finished: Double? = nil, error: String? = nil, running: Bool = false, last: Bool = true) -> JobStatus {
+        let run = JobRun(state: state, finishedAt: finished, progress: ["pending": pending], error: error)
+        return JobStatus(status: run, lastGood: last ? run : nil, running: running)
+    }
+
+    @Test func popularityIsPausedWithTheArtistsLeftAndAContinueButton() {
+        let r = HomeScreen.popularityRow(job("queued", pending: 340), now: Self.now)
+        #expect(r.status == .paused && r.line == "340 artists left · runs only when you ask" && r.fix == .fillPopularity && r.fixTitle == "Continue")
+    }
+
+    @Test func popularityStatesDone_failed_neverRun_unread() {
+        let done = HomeScreen.popularityRow(job("succeeded", finished: Self.now.timeIntervalSince1970 - 7200), now: Self.now)
+        #expect(done.status == .done && done.line == "Figures are up to date · filled 2 hours ago" && done.fix == nil)
+        let failed = HomeScreen.popularityRow(job("failed", error: "timeout", last: false), now: Self.now)
+        #expect(failed.status == .notUpdating && failed.line.contains("timeout") && failed.fixTitle == "Try again")
+        let never = HomeScreen.popularityRow(JobStatus(status: nil, lastGood: nil), now: Self.now)
+        #expect(never.status == .paused && never.fixTitle == "Start")
+        #expect(HomeScreen.popularityRow(nil, now: Self.now).status == .notLoaded)
+        #expect(HomeScreen.popularityRow(job("running", pending: 120, running: true), now: Self.now).line == "Filling now · 120 artists left")
+    }
+
+    @Test func insightsJobGivesLastRefreshAndNextRun() {
+        var i = input()
+        let run = JobRun(state: "succeeded", finishedAt: Self.now.timeIntervalSince1970 - 7200)
+        i.insightsJob = JobStatus(status: run, lastGood: run, minInterval: 21_600, retryAfter: 14_400)
+        #expect(HomeScreen.activity(i)[0].line == "Refreshed 2 hours ago · next in 4 hours" && HomeScreen.activity(i)[0].status == .done)
+        i.insightsJob = JobStatus(status: JobRun(state: "failed"), lastGood: run, retryAfter: 0)
+        let failed = HomeScreen.activity(i)[0]
+        #expect(failed.status == .notUpdating && failed.line.hasSuffix("next due now"))
+        #expect(HomeScreen.duration(35 * 60) == "35 minutes" && HomeScreen.duration(60) == "1 minute" && HomeScreen.duration(3 * 3600) == "3 hours")
     }
 }

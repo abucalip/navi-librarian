@@ -9,6 +9,8 @@ import Observation
 @Observable
 public final class TasteModel {
     public private(set) var profiles: TasteProfiles?
+    /// Listens per UTC day for the last 84 days (D2), when the server serves them.
+    public private(set) var listensByDay: [ListensDay]?
     /// True once a read finished (so "not computed yet" is not confused with "still loading").
     public private(set) var loaded = false
     public private(set) var refreshing = false
@@ -23,7 +25,9 @@ public final class TasteModel {
     public func load(librarian: LibrarianClient?) async {
         guard let librarian else { return }
         do {
-            profiles = try await librarian.taste().profiles
+            let answer = try await librarian.taste()
+            profiles = answer.profiles
+            listensByDay = answer.listensByDay
             loaded = true
         } catch {
             if !loaded { note = "Could not read your taste profile: " + Self.message(error) }
