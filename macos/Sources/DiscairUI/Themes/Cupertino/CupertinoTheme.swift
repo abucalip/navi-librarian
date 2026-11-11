@@ -63,6 +63,7 @@ enum CU {
     static let chart3RGB = CURGB(0xC7C7CC)           // context bars
     static let chartGridRGB = CURGB(0xE5E5EA)
     static let chartBaseRGB = CURGB(0xC7C7CC)
+    static let trackerTrackRGB = CURGB(0xDCDCE2)     // unfilled stage-tracker segments (the specimen sheet's value, a step darker than chart.ghost)
     static let heatRGB: [CURGB] = ([0xECECF0, 0xF6C5D0, 0xEE8FA5, 0xE2537A, 0xD61F4A] as [UInt32]).map { CURGB($0) }
 
     static let content = contentRGB.color
@@ -91,6 +92,7 @@ enum CU {
     static let chartGhost = bgFill
     static let chartGrid = chartGridRGB.color
     static let chartBase = chartBaseRGB.color
+    static let trackerTrack = trackerTrackRGB.color
     static let heat: [Color] = heatRGB.map(\.color)
 
     // Aliases for the names the views already use.
