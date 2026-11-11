@@ -341,6 +341,15 @@ Earlier project log entries are preserved verbatim in [PROJECT_LOG_HISTORY.md](d
 - Nothing calls the charts yet; no Zine file changed.
 - Next: M5 (home data) or M6 (services data), Sonnet; M8 builds Home from M2, M4 and M5.
 
+## 2026-11-11 — Redesign M8: Home screen (macOS)
+
+- Merged as PR [#982](https://github.com/abucalip/navi-librarian/pull/982), squash `f9bccff8`, from head `1abfecbafcb6dadf0f252aa12b87a5117152ee98`; GitHub confirms the merge and compile, container-smoke, test-and-build and validate-container passed on that head. Plan: `docs/redesign.md` sections 5.1 and 11, step M8.
+- Changed: `CupertinoHome.swift` rewritten, new `CupertinoHomeParts.swift`, new pure `Model/HomeScreen.swift` (state choice and wording); `HomeDashboard` gains radio rows, a listens figure and the handoff notice; `AppState` gains `loadHomeFeeds()`, capabilities, a once-a-day never-played reading, Never played playlist, Play something unplayed, popularity fill and Continue on this Mac; new `DiscairLibrarian/HomeFeeds.swift` and `DiscairNavidrome/PlayQueue.swift`; `listens_by_day` on the taste body; D2 and D3 contract proposals in `docs/SERVER_V2_CONTRACT.md`.
+- Tests actually run, filtered, on a Mac: `HomeScreenTests`, `HomeDashboardTests`, `HomeRenderTests`, `HomeFeedsClientTests`, `PlayQueueTests`, `TasteClientTests`, `TasteModelTests`, `InsightsModelTests`, `CupertinoControlsTests`, `CupertinoTokensTests`, `ScreenshotTests` (110 in the last run). Full suite not run (owner rule).
+- Visual check: five sample-data renders (default, first run, Librarian unreachable, loading, stacked) compared with the `home--*` mockups by eye; the degraded mockup is the M9 popover.
+- Limits: D2 and D3 are tested from the proposed contract only, the server does not serve them; the handoff needs the Android app to call `savePlayQueue` (D5); no live-data run, no VoiceOver pass, owner has not approved the look; Space plays only an owned album; the collection chart stays when Librarian is down (the mockup omits it).
+- Next: M9 (Connections and Services screens), Sonnet, High.
+
 ## 2026-11-11 — Redesign M7: Connections model (macOS)
 
 - Merged as PR [#981](https://github.com/abucalip/navi-librarian/pull/981), squash `7e705614`, from head `6d0f06552068f1bd2673401940e862d6537d4c94`; GitHub confirms the merge and compile, container-smoke, test-and-build and validate-container passed on that head. Plan: `docs/redesign.md` section 11, step M7.
