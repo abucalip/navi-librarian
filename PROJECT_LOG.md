@@ -320,3 +320,13 @@ Earlier project log entries are preserved verbatim in [PROJECT_LOG_HISTORY.md](d
 - Side effect, accepted by the owner: shared Chrome components that read `CU` (for example `OfflineBanner`, `ArtistPageParts`) change colour, including under the Zine theme. Zine's own tokens are untouched.
 - Left for later steps: literal colours outside the table (`Color.green`/`Color.orange` status dots, the `#F6F6F8` row shade, taste colours), to M2, M3 and M10.
 - Next: M2 (controls), Sonnet, Medium.
+
+## 2026-11-11 — Redesign M2: Cupertino controls (macOS)
+
+- Merged as PR [#976](https://github.com/abucalip/navi-librarian/pull/976), squash `e3e69220`; GitHub confirms the merge. Plan: `docs/redesign.md` section 11, step M2.
+- Changed: new `macos/Sources/DiscairUI/Themes/Cupertino/CupertinoKit.swift` (`CapsuleButtonStyle` moved here from `CupertinoHome.swift`, `CUPanel`, `CUSegmented`, `CUStatus`, `CUStatusLabel`, `CUNotice`, `CUField`, `CUSwitchRow`); `CupertinoSettings.swift` (switches, segmented controls, labelled fields, notices); `CupertinoHome.swift` (error notice, neutral tile Get); `CupertinoLibrary.swift` (old `CUSegmented` removed). New `CupertinoControlsTests`.
+- Tests actually run, filtered, on a Mac: `swift build`; `swift test --filter "CupertinoControlsTests|CupertinoTokensTests|LibraryHubTests"` (17 tests, 3 suites, pass).
+- Not checked: a screenshot against `components--tokens-and-controls`; CI on the PR head was not recorded in this session; full suite not run (owner rule).
+- Side effect: the regular button is 32 high (was 36), also where shared Chrome components use `CapsuleButtonStyle` under Zine.
+- Left for later steps: pages with several filled primaries per view (Discover, Gap Radar, Artist, Insights tiles) to M8 and M10.
+- Next: M3 (shell), Haiku, Medium.
