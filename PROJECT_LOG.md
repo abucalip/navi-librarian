@@ -341,6 +341,16 @@ Earlier project log entries are preserved verbatim in [PROJECT_LOG_HISTORY.md](d
 - Nothing calls the charts yet; no Zine file changed.
 - Next: M5 (home data) or M6 (services data), Sonnet; M8 builds Home from M2, M4 and M5.
 
+## 2026-11-11 — Redesign M10a: drawn pages (macOS)
+
+- Merged as PR [#984](https://github.com/abucalip/navi-librarian/pull/984), squash `16cb3d9d`, from head `62eb745b` (the first commit `90e81523` restyled the five pages; `62eb745b` built the deviations). GitHub confirms the merge. Plan: `docs/redesign.md` sections 5.3 and 11, step M10a.
+- Changed: `CupertinoInsights.swift` (lens pills, lens cards with neutral actions), `CupertinoTaste.swift` (four panels, time of day and the morning-vs-night contrast read from the server's `context`, four top-value dimensions), `CupertinoHistory.swift` (`CUHeatmap`, day panels), `CupertinoDownloads.swift` (filter, tracker rows, weekly arrival count, Try again as the only primary), `CupertinoGapRadar.swift` (ink completeness bar, one neutral Get per card), `CupertinoSettings.swift` (Playback rows, Clear confirmation), `DiscairLibrarian/Taste.swift` (`TasteContext`, `TasteContrast`), `Model/TasteModel.swift`.
+- Server: no change. `intelligence/api/fixture_set.py` gained the `taste_context` and `taste_context_contrast` cases, which the server's own context builder writes; `scripts/write_intelligence_fixtures.py` regenerated them and the existing fixtures are unchanged.
+- Tests actually run, filtered, on a Mac: `swift test --filter Cupertino` (45), `TasteContextClientTests` and `TasteClientTests` (11), the Cupertino, TasteModel and HomeDashboard suites (72), `CupertinoPagesRenderTests` (4, PNGs of Insights, History, Downloads and Gap Radar). Python: `tests/test_intelligence_contract_fixtures.py` and `tests/test_intelligence_api_insights.py` (20). Full suite not run (owner rule).
+- Visual check: the four rendered pages were read against the mockups by eye; Settings Playback was not rendered (its tab needs a live session). The owner has not approved the look.
+- Limits: no live Librarian run; the morning-vs-night and time-of-day numbers come from fixtures; the Top values picker no longer offers Collaborator (mockup's four); the Clear confirmation and the Playback layout are not exercised in a window.
+- Next: M10b (token-only pages), Haiku, High.
+
 ## 2026-11-11 — Redesign M9: Connections and Services screens (macOS)
 
 - Merged as PR [#983](https://github.com/abucalip/navi-librarian/pull/983), squash `344252e3`, from head `393e7d4f06fa6d8749ebd63bee20a6482042cc86`; GitHub confirms the merge and compile, container-smoke, test-and-build and validate-container passed on that head. Plan: `docs/redesign.md` sections 5.2, 6 and 11, step M9.
