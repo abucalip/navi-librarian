@@ -43,6 +43,11 @@ fun HeardScreen(radio: RadioPlayback, onBack: () -> Unit) {
     val repo = LocalRepository.current
     val plays = rememberLoad("radio_plays") { repo.radioPlays() }
     val live by radio.state.collectAsState()
+    // Soft Brut draws its own list (CoverStackRadio.kt); the loading and the Download requests are shared.
+    if (app.discair.ui.common.isCoverStack()) {
+        CoverStackHeard(onBack, plays.state, plays.reload, live) { radio.download(it) }
+        return
+    }
     Column(Modifier.fillMaxSize()) {
         app.discair.ui.common.BackBar(onBack)
         LazyColumn(Modifier.fillMaxWidth(), contentPadding = PaddingValues(bottom = 24.dp + app.discair.ui.LocalBottomClearance.current)) {
