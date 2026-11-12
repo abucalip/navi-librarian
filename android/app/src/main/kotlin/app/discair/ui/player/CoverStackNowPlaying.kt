@@ -124,7 +124,7 @@ private val Mono @Composable get() = LocalFontPair.current.mono
 
 /** JetBrains Mono 500 11, caps, +0.08em, muted (mockup `.eb`). */
 @Composable
-private fun Eyebrow(text: String, modifier: Modifier = Modifier, heading: Boolean = false) {
+internal fun Eyebrow(text: String, modifier: Modifier = Modifier, heading: Boolean = false) {
     Text(
         text.uppercase(), modifier.then(if (heading) Modifier.semantics { heading() } else Modifier), color = LocalPalette.current.textMuted, maxLines = 1, overflow = TextOverflow.Ellipsis,
         style = MaterialTheme.typography.labelSmall.copy(fontFamily = Mono, fontSize = 11.sp, lineHeight = 16.sp, fontWeight = FontWeight.Medium, letterSpacing = 0.08.em),
@@ -146,7 +146,7 @@ private fun OutlinedCover(item: QueueItem, size: Int, modifier: Modifier = Modif
  * glyph (the mockup's Shuffle and Repeat); a flat button that is on is filled and outlined so the state is not colour alone.
  */
 @Composable
-private fun CsButton(
+internal fun CsButton(
     label: String, size: Int, onClick: () -> Unit, modifier: Modifier = Modifier, radius: Int = 10, primary: Boolean = false, flat: Boolean = false,
     on: Boolean = false, enabled: Boolean = true, state: String? = null, icon: @Composable (Color) -> Unit,
 ) {

@@ -71,6 +71,9 @@ object ChartRules {
         layout == Layout.SheetStack -> ChartStyle(
             MarkShape.Outlined, 3f, area = false, steppedLine = false, meterColumns = false, barRadiusDp = 0f, segmentRadiusDp = 0f,
         )
+        layout == Layout.CoverStack -> ChartStyle(
+            MarkShape.Outlined, 2f, area = true, steppedLine = false, meterColumns = false, barRadiusDp = 0f, segmentRadiusDp = 0f,
+        )
         family == Family.Brutal -> ChartStyle(
             MarkShape.Outlined, 2f, area = false, steppedLine = false, meterColumns = false, barRadiusDp = 0f, segmentRadiusDp = 0f,
         )

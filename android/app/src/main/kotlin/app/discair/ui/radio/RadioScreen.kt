@@ -98,6 +98,33 @@ fun RadioScreen(onBack: () -> Unit, onOpenHeard: () -> Unit, onOpenPlayer: () ->
         }
     }
 
+    // One favourite toggle for both layouts: optimistic, put back with a sentence when the server refuses.
+    val toggleFavourite: (RadioStation, Boolean) -> Unit = { station, favourite ->
+        val wanted = !favourite
+        favourites[station.id] = wanted
+        message = null
+        scope.launch {
+            try {
+                val saved = withContext(Dispatchers.IO) { repo.setRadioFavourite(station.id, wanted) }
+                favourites[station.id] = saved
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                favourites.remove(station.id)
+                message = "Could not save the favourite for ${station.name}. Try again."
+            }
+        }
+    }
+    val playStation: (RadioStation) -> Unit = { station -> if (onAir.stationId == station.id) onOpenPlayer() else radio.play(station).also { onOpenPlayer() } }
+    // Soft Brut draws its own page (CoverStackRadio.kt); the loading, polling and favourites above are shared.
+    if (app.discair.ui.common.isCoverStack()) {
+        CoverStackStations(
+            onBack, onOpenHeard, stations.state, stations.reload, message,
+            favourite = { favourites[it.id] ?: it.favourite }, now = { live[it.id] }, onAirId = onAir.stationId,
+            onPlay = playStation, onFavourite = { toggleFavourite(it, favourites[it.id] ?: it.favourite) },
+        )
+        return
+    }
     Column(Modifier.fillMaxSize()) {
         app.discair.ui.common.BackBar(onBack)
         LazyColumn(Modifier.fillMaxWidth(), contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 24.dp + app.discair.ui.LocalBottomClearance.current)) {
@@ -123,23 +150,8 @@ fun RadioScreen(onBack: () -> Unit, onOpenHeard: () -> Unit, onOpenPlayer: () ->
                             favourite = favourite,
                             now = live[station.id],
                             onAir = onAir.stationId == station.id,
-                            onPlay = { if (onAir.stationId == station.id) onOpenPlayer() else radio.play(station).also { onOpenPlayer() } },
-                            onFavourite = {
-                                val wanted = !favourite
-                                favourites[station.id] = wanted
-                                message = null
-                                scope.launch {
-                                    try {
-                                        val saved = withContext(Dispatchers.IO) { repo.setRadioFavourite(station.id, wanted) }
-                                        favourites[station.id] = saved
-                                    } catch (e: CancellationException) {
-                                        throw e
-                                    } catch (e: Exception) {
-                                        favourites.remove(station.id)
-                                        message = "Could not save the favourite for ${station.name}. Try again."
-                                    }
-                                }
-                            },
+                            onPlay = { playStation(station) },
+                            onFavourite = { toggleFavourite(station, favourite) },
                         )
                         RowDivider()
                     }

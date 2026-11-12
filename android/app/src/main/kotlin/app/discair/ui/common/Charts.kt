@@ -51,6 +51,8 @@ import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.text.font.FontWeight
 import app.discair.ui.theme.LocalPalette
 import app.discair.ui.theme.MotionRole
 import app.discair.ui.theme.MotionRules
@@ -103,11 +105,17 @@ fun ChartFrame(
     plotHeight: Dp,
     modifier: Modifier = Modifier,
     legend: @Composable (() -> Unit)? = null,
+    header: @Composable (() -> Unit)? = null,
     content: @Composable () -> Unit,
 ) {
     val p = LocalPalette.current
     Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Text(title, style = MaterialTheme.typography.titleMedium, color = p.text)
+        // Soft Brut: the title is the card's mono eyebrow (mockup `.eb`); [header] is the headline figure under it. Every other theme is unchanged.
+        if (isCoverStack()) Text(
+            title.uppercase(), color = p.textMuted,
+            style = MaterialTheme.typography.labelSmall.copy(fontFamily = app.discair.ui.theme.LocalFontPair.current.mono, fontSize = 11.sp, lineHeight = 16.sp, fontWeight = FontWeight.Medium, letterSpacing = 0.88.sp),
+        ) else Text(title, style = MaterialTheme.typography.titleMedium, color = p.text)
+        header?.invoke()
         Text(subtitle, style = MaterialTheme.typography.bodySmall, color = p.textMuted)
         Box(Modifier.padding(top = 8.dp).fillMaxWidth().height(maxOf(plotHeight, ChartRules.MIN_PLOT_HEIGHT_DP.dp))) {
             when (state) {
@@ -226,6 +234,7 @@ fun LineChart(
     previous: List<Double>? = null,
     timeLabelCount: Int = 5,
     plotHeight: Dp = ChartRules.MIN_PLOT_HEIGHT_DP.dp,
+    header: @Composable (() -> Unit)? = null,
 ) {
     val p = LocalPalette.current
     val style = chartStyle()
@@ -236,7 +245,7 @@ fun LineChart(
     val summary = ChartRules.lineSummary(title, points)
     val selectedPoint = points.getOrNull(selected)
 
-    ChartFrame(title, subtitle, state, plotHeight + SelectionHeader + TimeAxisHeight, modifier) {
+    ChartFrame(title, subtitle, state, plotHeight + SelectionHeader + TimeAxisHeight, modifier, header = header) {
         Column(Modifier.fillMaxSize()) {
             Box(Modifier.height(SelectionHeader), contentAlignment = Alignment.CenterStart) {
                 Text(
@@ -293,9 +302,9 @@ fun LineChart(
                         )
                     }
                     if (points.size > 1) {
-                        if (style.area) drawPath(path(points.map { it.value }, true), p.chart1.copy(alpha = if (p.layout == app.discair.ui.theme.Layout.TapeDeck) 0.35f else ChartRules.AREA_ALPHA))
+                        if (style.area) drawPath(path(points.map { it.value }, true), p.chart1.copy(alpha = if (p.layout == app.discair.ui.theme.Layout.TapeDeck) 0.35f else if (p.layout == app.discair.ui.theme.Layout.CoverStack) 0.18f else ChartRules.AREA_ALPHA))
                         drawPath(
-                            path(points.map { it.value }, false), p.chart1,
+                            path(points.map { it.value }, false), if (p.layout == app.discair.ui.theme.Layout.CoverStack) p.text else p.chart1, // Soft Brut: an ink line, the lavender is the fill and the marker (mockup)
                             style = Stroke(style.lineWidthDp.dp.toPx(), cap = StrokeCap.Round, join = if (style.steppedLine) StrokeJoin.Miter else StrokeJoin.Round),
                         )
                     }

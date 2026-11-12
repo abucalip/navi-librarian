@@ -24,6 +24,9 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import app.discair.ui.common.BackBar
+import app.discair.ui.common.CoverStackTitle
+import app.discair.ui.common.CoverStackTopBar
+import app.discair.ui.common.isCoverStack
 import app.discair.ui.common.ChartState
 import app.discair.ui.common.ColumnChart
 import app.discair.ui.common.FilterChip
@@ -56,16 +59,19 @@ fun StatsScreen(onBack: () -> Unit) {
     val tasteBody = (taste.state as? Load.Ready)?.value
 
     Column(Modifier.fillMaxSize()) {
-        BackBar(onBack)
+        val softBrut = isCoverStack() // Soft Brut: a cover-stack bar and title, word chips and outlined cards (CoverStackStats.kt)
+        if (softBrut) CoverStackTopBar(onBack, emptyList(), title = "Library stats") else BackBar(onBack)
         LazyColumn(
             Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 0.dp, bottom = 24.dp + app.discair.ui.LocalBottomClearance.current),
+            contentPadding = PaddingValues(start = 16.dp, end = if (softBrut) 19.dp else 16.dp, top = 0.dp, bottom = 24.dp + app.discair.ui.LocalBottomClearance.current),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             item(key = "title") {
-                Text("Library stats", style = MaterialTheme.typography.headlineMedium, modifier = Modifier.semantics { heading() })
+                if (softBrut) CoverStackTitle("Library stats", maxLines = 1)
+                else Text("Library stats", style = MaterialTheme.typography.headlineMedium, modifier = Modifier.semantics { heading() })
             }
-            item(key = "ranges") {
+            if (softBrut) item(key = "ranges") { CoverStackRanges(range) { range = it } }
+            else item(key = "ranges") {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                     StatsRange.entries.forEach { r ->
                         FilterChip(
@@ -88,15 +94,15 @@ private fun CollectionCard(
     read: StatsRead?, loading: Boolean, state: Load<StatsRead>, retry: () -> Unit, range: StatsRange, now: Instant,
 ) {
     val series = remember(read, range) { read?.let { StatsRules.collection(it, range, now) } }
-    DashCard {
+    StatsCard {
         if (state is Load.Failed) {
             Text("Collection over time", style = MaterialTheme.typography.titleLarge, modifier = Modifier.semantics { heading() })
             Inline(state.failure.message, retry)
-            return@DashCard
+            return@StatsCard
         }
         if (series != null) {
             val today = StatsRules.dateWords(now.atZone(ZoneOffset.UTC).toLocalDate())
-            Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            if (!isCoverStack()) Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
                     app.discair.ui.common.ChartRules.formatCount(series.total.toDouble()), style = discairType().displayMetric,
                     modifier = Modifier.semantics { contentDescription = "${series.total} albums on $today" },
@@ -109,6 +115,10 @@ private fun CollectionCard(
             subtitle = series?.let { StatsRules.collectionSubtitle(it) } ?: "Albums in your library",
             points = series?.points.orEmpty(),
             state = StatsRules.collectionState(series, read, loading),
+            // Soft Brut puts the figure under the eyebrow, inside the chart's frame (mockup frame 2).
+            header = if (isCoverStack() && series != null) ({
+                CoverStackFigure(app.discair.ui.common.ChartRules.formatCount(series.total.toDouble()), "albums on " + StatsRules.dateWords(now.atZone(ZoneOffset.UTC).toLocalDate()))
+            }) else null,
         )
         if (series != null) Text("Touch and drag the chart to read a date.", style = MaterialTheme.typography.bodySmall, color = Ink.TextMuted)
     }
@@ -117,7 +127,7 @@ private fun CollectionCard(
 @Composable
 private fun DecadesCard(read: StatsRead?, taste: app.discair.model.TasteResponse?, loading: Boolean) {
     val shares = remember(read, taste) { StatsRules.decades(read, taste?.profiles) }
-    DashCard {
+    StatsCard {
         val title = "Own and play, by decade"
         when {
             loading -> RankedBars(title, "Share of the albums you own", emptyList(), state = ChartState.Loading)
@@ -135,7 +145,7 @@ private fun DecadesCard(read: StatsRead?, taste: app.discair.model.TasteResponse
 
 @Composable
 private fun ShelfLifeCard() {
-    DashCard {
+    StatsCard {
         // No Android source for last-played dates, so the chart says so instead of drawing zeros; no button is offered.
         ColumnChart(
             "Shelf life", "Albums by time since the last play", emptyList(),
@@ -147,10 +157,16 @@ private fun ShelfLifeCard() {
 @Composable
 private fun TimeOfDayCard(taste: app.discair.model.TasteResponse?, loading: Boolean, failed: Boolean) {
     val points = remember(taste) { StatsRules.timeOfDay(taste?.timeOfDay) }
-    DashCard {
+    StatsCard {
         ColumnChart(
             "When you listen", StatsRules.timeOfDaySubtitle(taste?.timeOfDayZone ?: "UTC"), points.orEmpty(),
             state = if (failed) ChartState.Unavailable("The taste profile could not be read.") else StatsRules.timeOfDayState(points, loading),
         )
     }
+}
+
+/** A stats card: the Standard dashboard card, or Soft Brut's outlined one. */
+@Composable
+private fun StatsCard(content: @Composable () -> Unit) {
+    if (isCoverStack()) app.discair.ui.discover.CoverStackCardBox(content = content) else DashCard(content = content)
 }

@@ -76,7 +76,7 @@ import app.discair.ui.player.playerArtworkUrl
 import app.discair.ui.theme.Ink
 
 /** The station logo is served at 128 or 512 only; the song cover goes through the player's usual large request. */
-private fun radioArtworkUrl(url: String): String? =
+internal fun radioArtworkUrl(url: String): String? =
     if ("/logo" in url) url.takeIf { it.isNotBlank() }?.let { if ("size=" in it) it else app.discair.model.radioLogoRequest(it, 512) }
     else playerArtworkUrl(url)
 
@@ -116,6 +116,11 @@ fun RadioNowPlayingSheet(
                     drawRect(Brush.verticalGradient(listOf(wash, ground), startY = top, endY = size.height * 0.9f), topLeft = Offset(0f, top), size = Size(size.width, size.height - top))
                 }.padding(horizontal = 16.dp),
             ) {
+                // Soft Brut draws its own live-radio sheet (mockup soft-brut/radio, frame 2): CoverStackRadio.kt.
+                if (app.discair.ui.common.isCoverStack()) {
+                    CoverStackRadioNow(state, controller, radio, sleep, live, item, artwork, radioStatusText(state, live), onDismiss, onOpenHeard)
+                    return@Column
+                }
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     PlayerIconButton(onClick = onDismiss, Modifier.size(Target)) { Icon(PlayerIcons.Down, contentDescription = "Close now playing") }
                     Spacer(Modifier.weight(1f))
@@ -197,7 +202,7 @@ private val RECONNECT_TRIES get() = app.discair.player.DEFAULT_BACKOFF_MS.size
 
 /** The sleep timer: a button that says what is set and opens the lengths (and Off while one runs). Reads aloud as a button with its state. */
 @Composable
-private fun SleepTimerControl(sleep: SleepTimer) {
+internal fun SleepTimerControl(sleep: SleepTimer) {
     val left by sleep.remainingMs.collectAsState()
     var open by remember { mutableStateOf(false) }
     val text = sleepTimerText(left)
@@ -219,7 +224,7 @@ private fun SleepTimerControl(sleep: SleepTimer) {
 
 /** The explanation under the song when there is no Download: no titles, unmatched title, relay off, unreachable (contract section 6). */
 @Composable
-private fun Note(now: RadioNow, proxied: Boolean) {
+internal fun Note(now: RadioNow, proxied: Boolean) {
     val words = when (now.state) {
         app.discair.model.RadioNowState.Ok, app.discair.model.RadioNowState.Idle -> null
         else -> radioNowText(now, proxied)
