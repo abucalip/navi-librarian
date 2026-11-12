@@ -79,22 +79,7 @@ private fun Appearance.summary(): String {
 /** Settings shows only this row: the name, what is chosen now, and a chevron to the Appearance screen. */
 @Composable
 fun AppearanceRow(appearance: Appearance, onClick: () -> Unit) {
-    val summary = appearance.summary()
-    Row(
-        Modifier.fillMaxWidth().heightIn(min = Target).clickable(role = Role.Button, onClick = onClick)
-            .semantics(mergeDescendants = true) { contentDescription = "Appearance, $summary" }
-            .padding(top = 16.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Column(Modifier.weight(1f)) {
-            Text("Appearance", style = MaterialTheme.typography.titleLarge.copy(
-                fontFamily = MaterialTheme.typography.bodyLarge.fontFamily, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
-                letterSpacing = androidx.compose.ui.unit.TextUnit.Unspecified,
-            ))
-            Text(summary, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-        Icon(PlayerIcons.Right, contentDescription = null)
-    }
+    SettingsRow(PlayerIcons.Sun, "Appearance", appearance.summary(), onClick = onClick)
 }
 
 /** Which list the picker is showing: the one fixed theme, or the day or night slot. Saved so a rotation keeps it. */

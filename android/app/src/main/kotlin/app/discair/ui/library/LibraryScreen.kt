@@ -86,21 +86,10 @@ fun LibraryScreen(open: Opener) {
 
     Column(Modifier.fillMaxSize()) {
         PageHeading("Library", Modifier.padding(start = 16.dp, top = 16.dp, end = 16.dp), large = true)
-        OutlinedTextField(
-            value = state.query,
-            onValueChange = model::search,
-            placeholder = { Text("Search your library") },
-            trailingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
-            singleLine = true,
-            shape = RoundedCornerShape(28.dp),
-            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 16.dp)
-                .semantics { contentDescription = "Search your library" },
-        )
         val tabs = listOf(LibraryTab.Artists, LibraryTab.Albums)
         app.discair.ui.common.SegmentedTabs(
             listOf("Artists", "Albums"), tabs.indexOf(state.tab), { model.selectTab(tabs[it]) },
-            Modifier.padding(horizontal = 16.dp),
+            Modifier.padding(start = 16.dp, top = 16.dp, end = 16.dp),
         )
         SortRow(state, model)
         Box(Modifier.weight(1f)) {
@@ -277,7 +266,7 @@ private fun GridRows(state: LibraryState, model: LibraryViewModel, open: Opener,
     ) {
         if (state.tab == LibraryTab.Artists) {
             gridItems(state.artists, key = { it.id }) { artist ->
-                Column(Modifier.clickable(role = Role.Button) { open.artist(artist.name, artist.key, artist.id, null) }) {
+                Column(Modifier.animateItem().clickable(role = Role.Button) { open.artist(artist.name, artist.key, artist.id, null) }) {
                     Cover(artist.artworkUrl?.let { repo.absolute(it) }, Modifier.fillMaxWidth().aspectRatio(1f), circle = true)
                     Text(artist.name, style = MaterialTheme.typography.bodyMedium, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 8.dp))
                     Text(plural(artist.albumCount, "album"), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
@@ -285,7 +274,7 @@ private fun GridRows(state: LibraryState, model: LibraryViewModel, open: Opener,
             }
         } else {
             gridItems(state.albums, key = { it.id }) { album ->
-                Column(Modifier.clickable(role = Role.Button) { open.album(album.key, album.artist, album.name, album.id, album.year) }) {
+                Column(Modifier.animateItem().clickable(role = Role.Button) { open.album(album.key, album.artist, album.name, album.id, album.year) }) {
                     Cover(album.artworkUrl?.let { repo.absolute(it) }, Modifier.fillMaxWidth().aspectRatio(1f))
                     Text(album.name, style = MaterialTheme.typography.bodyMedium, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 8.dp))
                     Text(

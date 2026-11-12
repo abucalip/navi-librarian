@@ -176,40 +176,28 @@ private fun StatusLine(hub: AcquisitionHub, jobs: List<AcquisitionJob>?) {
 @Composable
 private fun JobRow(job: AcquisitionJob, hub: AcquisitionHub, now: Double, open: Opener, onDismiss: () -> Unit) {
     val busy = hub.busy(job)
-    Box(Modifier.fillMaxWidth()) {
+    val repo = app.discair.ui.common.LocalRepository.current
+    val play = app.discair.ui.player.LocalPlayActions.current
+    // An arrived album plays from the library: its id is looked up by artist and album name (null until found).
+    val ownedId by produceState<String?>(null, job.key, job.isImported) {
+        if (job.isImported && !job.isSong) value = try {
+            kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                DownloadsRules.ownedAlbumId(repo.albums(job.albumName, app.discair.data.AlbumSort.Name, null, null).items, job.artist, job.albumName)
+            }
+        } catch (e: kotlin.coroutines.cancellation.CancellationException) { throw e } catch (e: Exception) { null }
+    }
+    val openAlbum = { open.album(routeKey(job.artist, job.albumName), job.artist, job.albumName, null, job.year) }
     Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 16.dp)) {
-        AlbumCover(
-            job.artistName, job.albumName, null,
-            Modifier.size(64.dp).clickable(role = Role.Button) { open.album(routeKey(job.artist, job.albumName), job.artist, job.albumName, null, job.year) },
-        )
+        AlbumCover(job.artistName, job.albumName, null, Modifier.size(64.dp).clickable(role = Role.Button, onClick = openAlbum))
         Column(Modifier.weight(1f).padding(start = 16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            // Room on the right for the icons in the card's corner.
-            val iconRoom = if (!job.canDismiss) 0.dp else if (job.canRetry) 96.dp else 48.dp
             Text(
-                job.title, style = MaterialTheme.typography.titleLarge,
+                job.title, style = MaterialTheme.typography.titleLarge, maxLines = 2, overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.clickable(role = Role.Button, onClick = openAlbum),
+            )
+            Text(
+                listOfNotNull(job.artistName, if (job.isSong) "Song on ${job.albumName}" else null, job.qualityProfile.takeIf { it != "Not reported" }).joinToString(" · "),
+                style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 2, overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.padding(end = iconRoom).then(
-                    if (job.isSong) Modifier else Modifier.clickable(role = Role.Button) {
-                        open.album(routeKey(job.artist, job.albumName), job.artist, job.albumName, null, job.year)
-                    },
-                ),
-            )
-            Text(
-                job.artistName, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary,
-                maxLines = 1, overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.heightIn(min = Target).clickable(role = Role.Button) { open.artist(job.artistName, null, null, null) }
-                    .padding(vertical = 16.dp),
-            )
-            if (job.isSong) Text(
-                "Song on ${job.albumName}", style = MaterialTheme.typography.bodyMedium,
-                maxLines = 1, overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.heightIn(min = Target).clickable(role = Role.Button) {
-                    open.album(routeKey(job.artist, job.albumName), job.artist, job.albumName, null, job.year)
-                }.padding(vertical = 16.dp),
-            )
-            Text(
-                "Quality profile: ${job.qualityProfile}", style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             job.releaseGroup?.let { ReleaseEditionCovers(it) }
             // Four named steps (docs/redesign.md section 3); the words below still say the exact state.
@@ -220,85 +208,50 @@ private fun JobRow(job: AcquisitionJob, hub: AcquisitionHub, now: Double, open: 
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Icon(statusIcon(job), contentDescription = null, tint = toneColor(info.tone), modifier = Modifier.size(18.dp))
                 Text(info.label, style = MaterialTheme.typography.titleMedium, color = toneColor(info.tone))
+                if (job.isImported) job.updatedAt?.let {
+                    Text("· arrived " + DateFormat.getTimeInstance(DateFormat.SHORT).format(Date((it * 1000).toLong())), style = MaterialTheme.typography.bodyMedium)
+                }
             }
-            job.progress?.let { Progress(it) }
-            listOfNotNull(
-                job.message, job.error,
-                job.peer?.let { "Peer: $it" },
-                job.updatedAt?.let { "Updated: " + DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT).format(Date((it * 1000).toLong())) },
-            ).forEach {
+            DownloadsRules.progressLine(job)?.let {
+                Text(it, style = MaterialTheme.typography.titleMedium, modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite })
+            }
+            // What the server said about a problem stays: it is the reason the record needs the owner.
+            listOfNotNull(job.message, job.error).forEach {
                 Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            // The one filled action on a record that has arrived.
+            // One action row: Play on an arrived album, Use next source while one is offered, Try again, Dismiss.
             if (job.isImported && !job.isSong) app.discair.ui.common.Button(
-                onClick = { open.album(routeKey(job.artist, job.albumName), job.artist, job.albumName, null, job.year) },
+                onClick = { ownedId?.let { play.playAlbum(it) } },
+                enabled = ownedId != null,
                 modifier = Modifier.fillMaxWidth().heightIn(min = Target).padding(top = 8.dp),
-            ) { Text("Open album") }
+            ) {
+                Icon(app.discair.ui.player.PlayerIcons.Play, contentDescription = null, Modifier.size(18.dp))
+                Text("Play", Modifier.padding(start = 8.dp))
+            }
+            job.skipSecondsLeft(now)?.let { left ->
+                OutlinedButton(
+                    onClick = { hub.skipSource(job) },
+                    enabled = left > 0 && busy == null,
+                    modifier = Modifier.fillMaxWidth().heightIn(min = Target).padding(top = 8.dp),
+                ) {
+                    Text(
+                        when {
+                            busy == RowBusy.Skipping -> "Requesting source switch…"
+                            left > 0 -> "Use next source (${left}s)"
+                            else -> "Switching source…"
+                        },
+                    )
+                }
+            }
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                job.skipSecondsLeft(now)?.let { left ->
-                    OutlinedButton(
-                        onClick = { hub.skipSource(job) },
-                        enabled = left > 0 && busy == null,
-                        modifier = Modifier.heightIn(min = Target),
-                    ) {
-                        Icon(app.discair.ui.player.PlayerIcons.Right, contentDescription = null, Modifier.size(18.dp))
-                        Text(
-                            when {
-                                busy == RowBusy.Skipping -> "Requesting source switch…"
-                                left > 0 -> "Use next source (${left}s)"
-                                else -> "Switching source…"
-                            },
-                            Modifier.padding(start = 8.dp),
-                        )
-                    }
+                if (job.canRetry) OutlinedButton(onClick = { hub.retry(job) }, enabled = busy == null, modifier = Modifier.heightIn(min = Target)) {
+                    Text(if (busy == RowBusy.Retrying) "Trying again…" else "Try again")
+                }
+                if (job.canDismiss) androidx.compose.material3.TextButton(onClick = onDismiss, enabled = busy == null, modifier = Modifier.heightIn(min = Target)) {
+                    Text(if (busy == RowBusy.Dismissing) "Dismissing…" else "Dismiss")
                 }
             }
         }
-    }
-    if (job.canDismiss) Row(Modifier.align(Alignment.TopEnd).padding(top = 4.dp, end = 4.dp)) {
-        // Icons only, like the app's other icon buttons: no square, no text; the words are spoken.
-        if (job.canRetry) IconButton(
-            onClick = { hub.retry(job) }, enabled = busy == null, modifier = Modifier.size(Target),
-        ) {
-            if (busy == RowBusy.Retrying) CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp, color = Ink.Text)
-            else Icon(app.discair.ui.player.PlayerIcons.Retry, contentDescription = "Try again, ${job.title}", tint = Ink.Text)
-        }
-        IconButton(onClick = onDismiss, enabled = busy == null, modifier = Modifier.size(Target)) {
-            if (busy == RowBusy.Dismissing) CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp, color = Ink.Text)
-            else Icon(app.discair.ui.player.PlayerIcons.Close, contentDescription = "Dismiss ${job.title}", tint = Ink.Text)
-        }
-    }
-    }
-}
-
-/** The bar scales with the figure and the percentage is also written out, so it never depends on the bar being seen. */
-@Composable
-private fun Progress(p: app.discair.model.LiveProgress) {
-    val percent = p.percent
-    Column(Modifier.padding(top = 4.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        if (percent == null) LinearProgressIndicator(
-            progress = { 0f }, modifier = Modifier.fillMaxWidth().semantics { contentDescription = "Download progress unavailable" },
-            color = Ink.Accent, trackColor = Ink.Edge,
-        ) else LinearProgressIndicator(
-            progress = { (percent / 100.0).toFloat() },
-            modifier = Modifier.fillMaxWidth().clearAndSetSemantics { contentDescription = "Download progress ${percent.roundToInt()} percent" },
-            color = Ink.Accent, trackColor = Ink.Edge,
-        )
-        Text(
-            if (percent == null) "Progress unavailable" else "${percent.roundToInt()}% complete",
-            style = MaterialTheme.typography.bodySmall,
-        )
-        Text(formatSpeed(p.speedBytesPerSecond), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        val total = formatBytes(p.totalSizeBytes)
-        val left = formatBytes(p.remainingSizeBytes)
-        if (total != null && left != null) {
-            Text("Total $total · $left remaining", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-        Text(
-            if (p.remainingTracks == null) "Tracks remaining unavailable"
-            else "${p.remainingTracks} of ${p.totalTracks ?: "?"} tracks remaining",
-            style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
     }
 }
 

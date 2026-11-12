@@ -225,6 +225,17 @@ internal fun TasteSheet(profiles: TasteProfiles, onDismiss: () -> Unit) {
             } else {
                 Bars(w, profiles.window("all_time"), dimension, showTick = window != "all_time")
             }
+            // The mockup's one filled action. No server route creates a playlist yet, so it is disabled and says why.
+            TasteCard.playlistTarget(profiles)?.let { target ->
+                app.discair.ui.common.Button(
+                    onClick = {}, enabled = TasteCard.PlaylistRouteAvailable,
+                    modifier = Modifier.fillMaxWidth().heightIn(min = Target).padding(top = 8.dp),
+                ) { Text("Make ${if (target.firstOrNull()?.lowercaseChar()?.let { it in "aeiou" } == true) "an" else "a"} $target playlist") }
+                if (!TasteCard.PlaylistRouteAvailable) Text(
+                    "Not available yet: the server cannot create playlists.",
+                    color = Ink.TextMuted, style = MaterialTheme.typography.bodySmall,
+                )
+            }
         }
     }
 }

@@ -56,9 +56,16 @@ fun ListenBrainzSettings() {
         }
     }
 
-    Column(Modifier.fillMaxWidth().padding(top = 16.dp)) {
-        Text("ListenBrainz", style = MaterialTheme.typography.titleLarge, modifier = Modifier.semantics { heading() })
+    var expanded by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(false) }
+    Column(Modifier.fillMaxWidth()) {
         val a = account
+        SettingsRow(
+            app.discair.ui.player.PlayerIcons.Wave, "ListenBrainz",
+            when { a?.connected == true -> "Connected as ${a.username}"; a != null -> "Not connected"; failed -> "Could not read this" ; else -> "Checking the server." },
+            onClick = { expanded = !expanded },
+            trailing = { androidx.compose.material3.Icon(if (expanded) app.discair.ui.player.PlayerIcons.Down else app.discair.ui.player.PlayerIcons.Right, contentDescription = if (expanded) "Collapse" else "Expand") },
+        )
+        if (expanded) Column(Modifier.fillMaxWidth()) {
         Text(
             if (a?.connected == true) "Connected as ${a.username}${if (a.tokenConfigured) " (token saved)" else ""}." else "Not connected. Taste needs a ListenBrainz account.",
             style = MaterialTheme.typography.bodyMedium,
@@ -104,5 +111,6 @@ fun ListenBrainzSettings() {
             "The server reads your listens from ListenBrainz to describe your taste. A username is enough for public listens; the token is only for private profiles.",
             style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+    }
     }
 }
