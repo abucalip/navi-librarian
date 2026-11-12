@@ -273,6 +273,7 @@ private fun BandNudge(icon: ImageVector, description: String, enabled: Boolean, 
 /** The Brutal themes' switch: a flat track (accent when on), an outlined round knob that slides across, a hard shadow. */
 @Composable
 private fun BrutalSwitch(checked: Boolean, shape: androidx.compose.ui.graphics.Shape, modifier: Modifier) {
+    if (isCoverStack()) { CoverStackSwitch(checked, modifier); return }
     val knobX by animateDpAsState(if (checked) 40.dp else 0.dp, tween(200), label = "knob")
     val line = themeBorder(BorderStroke(2.dp, Ink.EdgeStrong))
     val knobShape = if (LocalPalette.current.shape?.radius == 0f) androidx.compose.ui.graphics.RectangleShape else CircleShape
@@ -284,5 +285,17 @@ private fun BrutalSwitch(checked: Boolean, shape: androidx.compose.ui.graphics.S
             Modifier.padding(4.dp).align(Alignment.CenterStart).offset(x = knobX).size(24.dp)
                 .background(if (checked) Color.White else Ink.Text, knobShape).border(line, knobShape),
         )
+    }
+}
+
+/** Cover Stack switch: 52 by 32, outlined; on is filled with the accent and the knob (20dp, outlined) sits at the right. */
+@Composable
+private fun CoverStackSwitch(checked: Boolean, modifier: Modifier) {
+    val p = LocalPalette.current
+    val knobX by animateDpAsState(if (checked) 24.dp else 0.dp, tween(200), label = "csKnob")
+    val ol = CoverStackRules.outline(p).dp
+    val track = RoundedCornerShape(16.dp)
+    Box(modifier.size(width = 52.dp, height = 32.dp).clip(track).background(if (checked) p.accent else p.surface).border(ol, p.edgeStrong, track)) {
+        Box(Modifier.padding(start = 4.dp).align(Alignment.CenterStart).offset(x = knobX).size(20.dp).background(if (checked) p.surface else p.raised, CircleShape).border(ol, p.edgeStrong, CircleShape))
     }
 }

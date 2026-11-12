@@ -159,6 +159,14 @@ private fun AppearanceHome(appearance: Appearance, open: (String) -> Unit) {
         "Titles use ${appearance.fonts.titleName}; everything else uses ${appearance.fonts.bodyName}. Numbers use ${appearance.fonts.monoName}. All text still follows the phone's font size.",
         style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
+    // A theme drawn with a particular pair says so, in words; the owner's font is never changed for them.
+    val chosenPalette = Palettes.byId(if (following) appearance.dayTheme else appearance.themeChoice)
+    chosenPalette?.let { p -> app.discair.ui.theme.AppearanceRules.suggestedFont(p, appearance.fontPairId)?.let { f ->
+        Text(
+            "${p.label} is drawn with ${f.label} (${f.titleName} and ${f.bodyName}). Your font is unchanged.",
+            style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    } }
 }
 
 /** A row that opens the grid: the slot's name, the theme in it, its three dots and a chevron. */

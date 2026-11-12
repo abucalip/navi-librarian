@@ -15,6 +15,10 @@ object AppearanceRules {
     fun sanitizeNight(id: String?): String = Palettes.Dark.firstOrNull { it.id == id }?.id ?: Palettes.Dark.first().id
     fun sanitizeFont(id: String?): String = FontPairs.byId(id)?.id ?: FontPairs.Discair.id
 
+    /** The font pair [palette] is drawn with when it is not the one in use, else null. A suggestion only: the owner's font is never changed. */
+    fun suggestedFont(palette: Palette, currentFontId: String): FontPair? =
+        FontPairs.byId(palette.suggestedFontId)?.takeIf { it.id != currentFontId }
+
     /** The palette to draw with: the chosen one, or by the phone's mode the day or night theme. */
     fun resolve(choice: String, day: String, night: String, systemDark: Boolean): Palette {
         val chosen = if (choice == THEME_SYSTEM) null else Palettes.byId(choice)

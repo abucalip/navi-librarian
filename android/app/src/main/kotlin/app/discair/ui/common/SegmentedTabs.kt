@@ -60,6 +60,7 @@ fun SegmentedTabs(
     onSelect: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    if (isCoverStack()) { CoverStackTabs(labels, selectedIndex, onSelect, modifier); return }
     val TrackShape = themeShape(9.dp)
     val ThumbShape = themeShape(7.dp)
     val brutal = LocalPalette.current.brutal

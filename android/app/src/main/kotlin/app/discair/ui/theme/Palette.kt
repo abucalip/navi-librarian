@@ -59,6 +59,8 @@ class Palette(
     val minAccentContrast: Double = 3.0,
     /** How the screens are composed (D-023). Every theme but the Round 2 ones keeps [Layout.Standard], today's composition. */
     val layout: Layout = Layout.Standard,
+    /** The font pair this theme is drawn with (a [FontPairs] id). Suggested in Appearance, never forced (art themes proposal, D4). */
+    val suggestedFontId: String? = null,
 ) {
     val brutal: Boolean get() = shape != null
 
@@ -76,7 +78,7 @@ class Palette(
         chartGrid = dark.chartGrid, chartBase = dark.chartBase,
         minTextContrast = minTextContrast, family = family, shape = shape,
         accent2 = accent2, accent3 = accent3, accent4 = accent4, shadowColor = shadowColor, minAccentContrast = minAccentContrast,
-        layout = layout,
+        layout = layout, suggestedFontId = suggestedFontId,
     )
 }
 
@@ -88,6 +90,7 @@ enum class Family(val label: String) { Classic("Classic"), Brutal("Brutal") }
  */
 enum class Layout(val label: String) {
     Standard("Standard"), TapeDeck("Cassette Deck"), SheetStack("Sheet Stack"), StickerWall("Sticker Wall"),
+    CoverStack("Cover Stack"),
 }
 
 /**
@@ -343,8 +346,23 @@ object Palettes {
         layout = Layout.StickerWall,
     )
 
+    // Art themes proposal (docs/ANDROID_ART_THEMES_PROPOSAL.md section 3): Soft Brut, a turned-down neobrutalism. A 1.5dp ink outline, a 3dp shadow,
+    // one lavender accent that is never used as text (the outline carries it). Values are the tokens of design/android-art-themes/soft-brut.css.
+    val SoftBrut = Palette(
+        "softbrut", "Soft Brut · Lavender", true,
+        rail = c(0xFBF7EE), ink = c(0xFBF7EE), surface = c(0xFFFFFF), raised = c(0xF1EBDD), edge = c(0x1C1B22), edgeStrong = c(0x1C1B22),
+        text = c(0x1C1B22), textMuted = c(0x5E5A6B), accent = c(0xC4B5FD), accentDim = c(0xECE6FF), onAccent = c(0x1C1B22),
+        chartRed = c(0xB3261E), chartRedText = c(0xB3261E), ok = c(0x1B6B33), caution = c(0x7F4A00),
+        family = Family.Brutal, shape = BrutalShape(10f, 1.5f, 3f), shadowColor = c(0x1C1B22),
+        info = c(0x1D4FB8), okDim = c(0xD9EEDD), cautionDim = c(0xFBE9C4), dangerDim = c(0xF8D9D5), infoDim = c(0xDCE5FB),
+        chart1 = c(0xC4B5FD), chart2 = c(0x8B879A), chart3 = c(0xFFFFFF), chartGhost = c(0xF1EBDD), chartGrid = c(0xD8D2C4),
+        chartBase = c(0x1C1B22),
+        accent2 = c(0xBFD9FF), accent3 = c(0xA6E9CB), accent4 = c(0xFFD84D), minAccentContrast = 1.7,
+        layout = Layout.CoverStack, suggestedFontId = "brut_modern",
+    )
+
     /** Light themes in the order the picker shows them; the first is the default day theme. */
-    val Light: List<Palette> = listOf(Sand, Paper, Mist, Sage, Blush, BrutLavender, BrutMint, BrutLemon, BrutCream, BrutSky, BrutPoster, TapeLime, TapeCobalt, TapeTangerine, SheetDaylight, StickerPeach)
+    val Light: List<Palette> = listOf(Sand, Paper, Mist, Sage, Blush, BrutLavender, BrutMint, BrutLemon, BrutCream, BrutSky, BrutPoster, TapeLime, TapeCobalt, TapeTangerine, SheetDaylight, StickerPeach, SoftBrut)
 
     /** Dark themes in the order the picker shows them; the first is the default night theme. */
     val Dark: List<Palette> = listOf(Night, Amoled, Forest, Ocean, Ember, Graphite, HighContrast, BrutInk, BrutMidnight, SheetViolet, SheetAcid)
