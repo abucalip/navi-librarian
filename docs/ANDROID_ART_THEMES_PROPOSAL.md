@@ -1,6 +1,6 @@
 # Android art-led themes: Soft Brut and Flow (proposal)
 
-Status: **proposal; step 0 (PR #1005), S1 (PR #1006) and S2 (PR #1007) built; S3 built (Album, Artist, Genre, Discover, Library and Search pages themed, in PRs #1008, #1009 and this one).** Written 2026-11-12. This document and the mockups beside it are the whole change; no application code is touched. Building starts only after the owner approves it and the steps in section 10 are scheduled in `ACTIVE_WORK.md`.
+Status: **proposal; step 0 (PR #1005), S1 (PR #1006) and S2 (PR #1007) built; S3 built (Album, Artist, Genre, Discover, Library and Search pages themed, in PRs #1008, #1009 and #1010); S4 part 1 built (Now Playing, Queue and Lyrics, in the PR after #1010).** Written 2026-11-12. This document and the mockups beside it are the whole change; no application code is touched. Building starts only after the owner approves it and the steps in section 10 are scheduled in `ACTIVE_WORK.md`.
 
 ## 1. What the owner asked for
 
@@ -298,7 +298,7 @@ Each step is one PR with its own tests, in this order. Soft Brut and Flow are in
 | **S1** Soft Brut palette and shell (merged, PR #1006) | Palette `softbrut`, `Layout.CoverStack`, the outline recipe, navigation bar, mini player, buttons, chips, tabs, lists, sheets, snackbar | `soft-brut/components` matched; the theme can be chosen in Appearance; contrast test passes |
 | **S2** Soft Brut Home (merged, PR #1007) | Section 6.1 | `soft-brut/home` matched in all five frames; Get, Save and the menu work on the front sleeve |
 | **S3** Soft Brut pages | Album, Artist, Genre, Discover, Library, Search | Their mockups matched |
-| **S4** Soft Brut player and the rest | Now Playing, Queue, Lyrics, Radio, Downloads, Stats, Server, Settings, Equalizer, Crossfade | Their mockups matched; closeout |
+| **S4** Soft Brut player and the rest | Now Playing, Queue, Lyrics (part 1, built), then Radio, Downloads, Stats, Server, Settings, Equalizer, Crossfade | Their mockups matched; closeout |
 | **F1** Flow palette and shell | Palette `flow`, `Layout.Flow`, font pair `flow`, depth levels, capsules, grouped list, segmented control, floating bars; settle D2 | `flow/components` matched |
 | **F2** Flow Home | Section 6.2 | `flow/home` matched in all four frames |
 | **F3** Flow pages | Album (with the wash), Artist, Genre, Discover, Library, Search | Their mockups matched |

@@ -94,6 +94,32 @@ fun SeekBar(fraction: Float, enabled: Boolean, onChange: (Float) -> Unit, onFini
             drawRect(palette.edgeStrong, Offset(x - tw / 2, y - th / 2), androidx.compose.ui.geometry.Size(tw, th))
             return@Canvas
         }
+        if (palette.layout == app.discair.ui.theme.Layout.CoverStack) {
+            // Soft Brut: a 12dp outlined track, the played part in the accent with an inked end, and a 16 by 21 block thumb with a 2dp shadow.
+            val outline = app.discair.ui.common.CoverStackRules.outline(palette).dp.toPx()
+            val h = 12.dp.toPx()
+            val corner = androidx.compose.ui.geometry.CornerRadius(6.dp.toPx())
+            val left = inset
+            val width = size.width - 2 * inset
+            val x = left + width * fraction.coerceIn(0f, 1f)
+            val top = y - h / 2
+            drawRoundRect(palette.surface, Offset(left, top), androidx.compose.ui.geometry.Size(width, h), corner)
+            val played = (x - left).coerceAtLeast(0f)
+            if (played > 0f) {
+                drawRoundRect(palette.accent, Offset(left, top), androidx.compose.ui.geometry.Size(played, h), androidx.compose.ui.geometry.CornerRadius(4.dp.toPx()))
+                drawLine(palette.edgeStrong, Offset(x, top), Offset(x, top + h), strokeWidth = outline)
+            }
+            drawRoundRect(palette.edgeStrong, Offset(left, top), androidx.compose.ui.geometry.Size(width, h), corner, style = androidx.compose.ui.graphics.drawscope.Stroke(outline))
+            val tw = (if (active) 18.dp else 16.dp).toPx()
+            val th = (if (active) 24.dp else 21.dp).toPx()
+            val tl = Offset(x - tw / 2, y - th / 2)
+            val tc = androidx.compose.ui.geometry.CornerRadius(4.dp.toPx())
+            val sh = app.discair.ui.common.CoverStackRules.shadow(palette).dp.toPx() * (2f / 3f)
+            drawRoundRect(palette.shadowColor, Offset(tl.x + sh, tl.y + sh), androidx.compose.ui.geometry.Size(tw, th), tc)
+            drawRoundRect(if (enabled) palette.surface else palette.raised, tl, androidx.compose.ui.geometry.Size(tw, th), tc)
+            drawRoundRect(palette.edgeStrong, tl, androidx.compose.ui.geometry.Size(tw, th), tc, style = androidx.compose.ui.graphics.drawscope.Stroke(outline))
+            return@Canvas
+        }
         if (palette.brutal) {
             // Neobrut: an outlined track (thin, like the reference) with the accent for the played part, and a square
             // outlined thumb with a hard shadow that grows a little while it is held.
