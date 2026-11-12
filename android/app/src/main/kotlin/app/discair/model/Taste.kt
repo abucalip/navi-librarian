@@ -95,6 +95,18 @@ sealed interface TasteCardState {
 }
 
 object TasteCard {
+    /**
+     * False until the server has a route that creates a playlist (docs/redesign.md A8b item 1). The button is drawn,
+     * disabled, with the reason in words; turning this on is the only change the client needs once the route exists.
+     */
+    const val PlaylistRouteAvailable = false
+
+    /** The value the "Make a … playlist" button names: the biggest riser in the headline window; null when there is no headline or no riser. */
+    fun playlistTarget(profiles: TasteProfiles): String? {
+        val headline = profiles.headline ?: return null
+        return profiles.shifts(headline.window).firstOrNull { it.isUp }?.value
+    }
+
     /** The card shows the three biggest movers; the sheet shows all of them. */
     const val ChipCount = 3
 

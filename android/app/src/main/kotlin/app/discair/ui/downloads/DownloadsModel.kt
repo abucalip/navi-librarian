@@ -38,6 +38,22 @@ object DownloadsRules {
     fun fill(job: AcquisitionJob): Float =
         if (step(job.status).current == 1 && !step(job.status).failed) ((job.progress?.percent ?: 0.0) / 100.0).toFloat() else 0f
 
+    /** The album id in the owner's library for an arrived record, matched on artist and album name (case and spacing ignored); null when none matches. */
+    fun ownedAlbumId(candidates: List<app.discair.model.LibraryAlbum>, artist: String, album: String): String? {
+        fun norm(t: String) = t.trim().lowercase().replace(Regex("\\s+"), " ")
+        return candidates.firstOrNull { it.id.isNotBlank() && norm(it.name) == norm(album) && norm(it.artist) == norm(artist) }?.id
+    }
+
+    /** "64% · 7 of 9 files" under the tracker of a download in progress; null when the server gave no figures. */
+    fun progressLine(job: AcquisitionJob): String? {
+        val p = job.progress ?: return null
+        val pct = p.percent?.let { "${it.toInt()}%" }
+        val total = p.totalTracks
+        val left = p.remainingTracks
+        val files = if (total != null && left != null) "${total - left} of $total files" else null
+        return listOfNotNull(pct, files).joinToString(" · ").ifEmpty { null }
+    }
+
     /** "1 on its way · 1 arrived today". [dayStartSeconds] is local midnight as epoch seconds. */
     fun summary(jobs: List<AcquisitionJob>, dayStartSeconds: Double): String {
         val way = jobs.count { it.isActive }

@@ -240,20 +240,14 @@ fun SettingsScreen(state: UiState, model: AppViewModel, onBack: () -> Unit, onEq
         CheckLine("Navidrome", state.navidrome)
         // A grouped row with its state in words, first in the list (docs/redesign.md 8.2).
         val serverLine = app.discair.ui.downloads.SettingsRules.serverLine(state.librarian, state.navidrome)
-        Column(
-            Modifier.fillMaxWidth().heightIn(min = 64.dp).clickable(role = Role.Button, onClickLabel = "Open Server and services", onClick = onServer),
-            verticalArrangement = Arrangement.Center,
-        ) {
-            Text("Server and services", style = MaterialTheme.typography.titleMedium)
-            Text(
-                serverLine.text, style = MaterialTheme.typography.bodySmall,
-                color = when (serverLine.tone) {
-                    app.discair.ui.downloads.SettingsRules.Tone.Success -> Ink.Ok
-                    app.discair.ui.downloads.SettingsRules.Tone.Danger -> Ink.ChartRedText
-                    else -> MaterialTheme.colorScheme.onSurfaceVariant
-                },
-            )
-        }
+        app.discair.ui.settings.SettingsRow(
+            app.discair.ui.player.PlayerIcons.Server, "Server and services", serverLine.text, onClick = onServer,
+            stateColor = when (serverLine.tone) {
+                app.discair.ui.downloads.SettingsRules.Tone.Success -> Ink.Ok
+                app.discair.ui.downloads.SettingsRules.Tone.Danger -> Ink.ChartRedText
+                else -> MaterialTheme.colorScheme.onSurfaceVariant
+            },
+        )
         app.discair.ui.settings.AppearanceRow(container.appearance, onAppearance)
         PlaybackSettings(container, onEqualizer, onCrossfade)
         LibrarySettings()
@@ -351,16 +345,12 @@ private fun PlaybackSettings(container: AppContainer, onEqualizer: () -> Unit, o
     Section("Playback", bold = true)
     var qualityOpen by remember { mutableStateOf(false) }
     val qualityName = app.discair.player.qualityLabel(rate)
-    Text("Streaming quality", style = MaterialTheme.typography.titleMedium)
     Box {
-        OutlinedButton(
-            onClick = { qualityOpen = true },
-            modifier = Modifier.fillMaxWidth().heightIn(min = Target)
-                .semantics { contentDescription = "Streaming quality, $qualityName"; role = Role.DropdownList },
-        ) {
-            Text(qualityName, Modifier.weight(1f))
-            Icon(app.discair.ui.player.PlayerIcons.Down, contentDescription = null)
-        }
+        app.discair.ui.settings.SettingsRow(
+            app.discair.ui.player.PlayerIcons.Wave, "Streaming quality", qualityName,
+            modifier = Modifier.semantics { role = Role.DropdownList }, onClick = { qualityOpen = true },
+            trailing = { Icon(app.discair.ui.player.PlayerIcons.Down, contentDescription = null) },
+        )
         app.discair.ui.common.DropdownMenu(expanded = qualityOpen, onDismissRequest = { qualityOpen = false }) {
             app.discair.player.QUALITY_CHOICES.forEach { choice ->
                 val name = app.discair.player.qualityLabel(choice)
@@ -376,21 +366,17 @@ private fun PlaybackSettings(container: AppContainer, onEqualizer: () -> Unit, o
         "Original plays the file as it is and keeps songs gapless. A lower rate converts on the server and saves data, but the converted stream can leave a short gap between songs. It applies to songs you start after changing it.",
         style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
-    Row(
-        Modifier.fillMaxWidth().heightIn(min = Target)
-            .toggleable(value = scrobble, role = Role.Switch, onValueChange = { scrobble = it; container.setScrobbling(it) }),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Column(Modifier.weight(1f).padding(end = 16.dp)) {
-            Text("Scrobble", style = MaterialTheme.typography.titleMedium)
-            Text(
-                if (scrobble) "On. Songs you play here are added to your listening history, which also shapes your recommendations."
-                else "Off. Plays are not sent, so they will not change your history or recommendations.",
-                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-        app.discair.ui.common.DiscairSwitch(checked = scrobble)
-    }
+    app.discair.ui.settings.SettingsRow(
+        app.discair.ui.player.PlayerIcons.MusicNote, "Scrobble plays",
+        if (scrobble) "On. Reports plays to Navidrome" else "Off. Plays are not reported",
+        modifier = Modifier.toggleable(value = scrobble, role = Role.Switch, onValueChange = { scrobble = it; container.setScrobbling(it) }),
+        trailing = { app.discair.ui.common.DiscairSwitch(checked = scrobble) },
+    )
+    Text(
+        if (scrobble) "Songs you play here are added to your listening history, which also shapes your recommendations."
+        else "Plays are not sent, so they will not change your history or recommendations.",
+        style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
     // Songs saved with "Download to device": how many, how much room they take, and one way to clear them.
     val offline = container.offline
     val offlineStatus by offline.status.collectAsState()
@@ -416,38 +402,19 @@ private fun PlaybackSettings(container: AppContainer, onEqualizer: () -> Unit, o
         val remove = container.eqSettings.addListener { eqNow = container.eqSettings.load() }
         onDispose { remove() }
     }
-    Row(
-        Modifier.fillMaxWidth().heightIn(min = Target).clickable(role = Role.Button, onClick = onEqualizer),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Column(Modifier.weight(1f).padding(end = 16.dp)) {
-            Text("Equalizer", style = MaterialTheme.typography.titleMedium)
-            Text(
-                app.discair.player.eq.eqSummary(eqNow).removePrefix("Equalizer: ").replaceFirstChar { it.uppercase() },
-                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-        Icon(app.discair.ui.player.PlayerIcons.Right, contentDescription = null)
-    }
+    app.discair.ui.settings.SettingsRow(
+        app.discair.ui.player.PlayerIcons.Tune, "Equalizer",
+        app.discair.player.eq.eqSummary(eqNow).removePrefix("Equalizer: ").replaceFirstChar { it.uppercase() }, onClick = onEqualizer,
+    )
     // Crossfade: the summary says off or the length in words (ANDROID_CROSSFADE_CONTRACT.md 7).
     var xfNow by remember { mutableStateOf(settings.crossfade) }
     androidx.compose.runtime.DisposableEffect(settings) {
         val handle = settings.onChange { xfNow = settings.crossfade }
         onDispose { handle.close() }
     }
-    Row(
-        Modifier.fillMaxWidth().heightIn(min = Target).clickable(role = Role.Button, onClick = onCrossfade),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Column(Modifier.weight(1f).padding(end = 16.dp)) {
-            Text("Crossfade", style = MaterialTheme.typography.titleMedium)
-            Text(
-                app.discair.player.crossfade.CrossfadeText.summary(xfNow),
-                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-        Icon(app.discair.ui.player.PlayerIcons.Right, contentDescription = null)
-    }
+    app.discair.ui.settings.SettingsRow(
+        app.discair.ui.player.PlayerIcons.Swap, "Crossfade", app.discair.player.crossfade.CrossfadeText.summary(xfNow), onClick = onCrossfade,
+    )
 }
 
 @Composable

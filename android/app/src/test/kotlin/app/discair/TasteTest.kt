@@ -108,4 +108,12 @@ class TasteTest {
         assertTrue(parseTasteRefresh("""{"state":"refreshed","changed":true}""").changed)
         assertEquals("failed", parseTasteRefresh("not an object").state)
     }
+
+    @Test fun playlistButtonNamesTheBiggestRiserAndIsOffUntilTheServerHasARoute() {
+        val p = parseTaste(body("taste_rich")).profiles!!
+        val target = TasteCard.playlistTarget(p)
+        assertEquals(p.shifts(p.headline!!.window).first { it.isUp }.value, target)
+        assertEquals(null, TasteCard.playlistTarget(parseTaste(body("taste_empty")).profiles!!))
+        assertFalse(TasteCard.PlaylistRouteAvailable)
+    }
 }

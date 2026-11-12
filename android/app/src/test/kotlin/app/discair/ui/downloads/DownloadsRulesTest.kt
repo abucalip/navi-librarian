@@ -63,4 +63,18 @@ class DownloadsRulesTest {
         assertFalse(SettingsRules.serverLine(Check.Idle, Check.Idle).tone == SettingsRules.Tone.Success)
         assertTrue(SettingsRules.serverLine(Check.Idle, Check.Idle).text.startsWith("Not checked"))
     }
+
+    private fun album(id: String, name: String, artist: String) = app.discair.model.LibraryAlbum(id = id, name = name, artist = artist)
+
+    @Test fun ownedAlbumIsMatchedOnArtistAndNameIgnoringCase() {
+        val list = listOf(album("1", "Hats", "Other"), album("2", "Hats", "The Blue Nile"))
+        assertEquals("2", DownloadsRules.ownedAlbumId(list, " the blue  nile", "HATS"))
+        assertEquals(null, DownloadsRules.ownedAlbumId(list, "Nobody", "Hats"))
+        assertEquals(null, DownloadsRules.ownedAlbumId(emptyList(), "A", "B"))
+    }
+
+    @Test fun progressLineNeedsFigures() {
+        assertEquals(null, DownloadsRules.progressLine(job("downloading")))
+        assertEquals("64%", DownloadsRules.progressLine(job("downloading", percent = 64.0)))
+    }
 }

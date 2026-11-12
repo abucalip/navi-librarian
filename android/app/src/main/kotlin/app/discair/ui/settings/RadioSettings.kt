@@ -107,8 +107,16 @@ fun RadioSettings() {
         }
     }
 
-    Column(Modifier.fillMaxWidth().padding(top = 16.dp)) {
-        Text("Radio", style = MaterialTheme.typography.titleLarge, modifier = Modifier.semantics { heading() })
+    var expanded by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(false) }
+    Column(Modifier.fillMaxWidth()) {
+        val count = stations?.size
+        SettingsRow(
+            app.discair.ui.player.PlayerIcons.Radio, "Radio",
+            when { stationsProblem -> "Could not read the stations"; count == null -> "Checking the server."; else -> app.discair.ui.common.plural(count, "station") },
+            onClick = { expanded = !expanded },
+            trailing = { androidx.compose.material3.Icon(if (expanded) app.discair.ui.player.PlayerIcons.Down else app.discair.ui.player.PlayerIcons.Right, contentDescription = if (expanded) "Collapse" else "Expand") },
+        )
+        if (expanded) Column(Modifier.fillMaxWidth()) {
         val current = scrobbling
         Row(
             Modifier.fillMaxWidth().heightIn(min = Target).then(
@@ -173,5 +181,6 @@ fun RadioSettings() {
             }
         }
         note?.let { Text(it, Modifier.semantics { liveRegion = LiveRegionMode.Polite }, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+    }
     }
 }
