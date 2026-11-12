@@ -80,7 +80,7 @@ import kotlinx.coroutines.launch
 private const val GENRES_SHOWN = 6
 
 @Composable
-fun HomeScreen(open: Opener, onDiscover: () -> Unit, onLibrary: () -> Unit, onSettings: () -> Unit, onRadio: () -> Unit = {}) {
+fun HomeScreen(open: Opener, onRadio: () -> Unit = {}) {
     val repo = LocalRepository.current
     val picks = rememberLoad("picks") { repo.picks(10).items }
     val genres = rememberLoad("genres") { repo.genres().items }
@@ -129,48 +129,7 @@ fun HomeScreen(open: Opener, onDiscover: () -> Unit, onLibrary: () -> Unit, onSe
                 Text("Stations", color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
-        item(key = "pages") { PageButtons(onDiscover, onLibrary, onSettings) }
     }
-}
-
-/**
- * Where the bottom bar's Discover and Library tabs went, with Settings beside them: icons only, in the
- * web's joined button group (one rounded frame, a hairline between the buttons). Each is announced by name.
- */
-@Composable
-private fun PageButtons(onDiscover: () -> Unit, onLibrary: () -> Unit, onSettings: () -> Unit) {
-    val palette = app.discair.ui.theme.LocalPalette.current
-    val frame = app.discair.ui.theme.themeShape(6.dp)
-    val seam = if (palette.brutal) (palette.shape?.outline ?: 2).dp else 1.dp
-    Box(Modifier.fillMaxWidth().padding(vertical = 24.dp), contentAlignment = Alignment.Center) {
-    // About as wide as the navigation island below it. Neobrut: one outlined frame with a hard shadow and thick seams (a button group).
-    // Cassette Deck: Settings lives in its navigation bar, so only Discover and Library are left here.
-    val withSettings = app.discair.ui.common.TapeDeckRules.homeShowsSettingsButton(palette.layout)
-    // Sheet Stack: Library is a segment of its navigation group, so Discover and Settings are left here.
-    val withLibrary = app.discair.ui.common.SheetStackRules.homeShowsLibraryButton(palette.layout)
-    Row(
-        Modifier.width(when { withSettings && withLibrary -> 200.dp; withSettings || withLibrary -> 136.dp; else -> 72.dp }).height(48.dp).brutalShadow(frame).clip(frame).background(Ink.Surface)
-            .border(if (palette.brutal) app.discair.ui.theme.brutalOutline() else androidx.compose.foundation.BorderStroke(1.dp, Ink.EdgeStrong), frame),
-    ) {
-        PageButton("Discover", Icons.Default.Star, onDiscover, Modifier.weight(1f))
-        if (withLibrary) {
-            Box(Modifier.width(seam).fillMaxHeight().background(Ink.EdgeStrong))
-            PageButton("Library", Icons.AutoMirrored.Filled.List, onLibrary, Modifier.weight(1f))
-        }
-        if (withSettings) {
-            Box(Modifier.width(seam).fillMaxHeight().background(Ink.EdgeStrong))
-            PageButton("Settings", app.discair.ui.player.PlayerIcons.Tune, onSettings, Modifier.weight(1f))
-        }
-    }
-    }
-}
-
-@Composable
-private fun PageButton(label: String, icon: androidx.compose.ui.graphics.vector.ImageVector, onClick: () -> Unit, modifier: Modifier) {
-    Box(
-        modifier.fillMaxHeight().clickable(role = Role.Button, onClick = onClick).semantics { contentDescription = label },
-        contentAlignment = Alignment.Center,
-    ) { Icon(icon, contentDescription = null, tint = if (app.discair.ui.theme.LocalPalette.current.brutal) Ink.Text else Ink.TextMuted, modifier = Modifier.size(24.dp)) }
 }
 
 @Composable

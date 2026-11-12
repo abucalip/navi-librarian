@@ -2,6 +2,7 @@ package app.discair.ui
 
 import coil3.toBitmap
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.layout.fillMaxSize
@@ -35,6 +36,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.automirrored.filled.List
 import app.discair.ui.discover.DiscoverScreen
 import app.discair.ui.search.SearchScreen
@@ -61,6 +63,15 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.slideInVertically
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
+import app.discair.ui.theme.MotionPlans
+import app.discair.ui.theme.currentMotionFamily
+import app.discair.ui.theme.rememberReducedMotion
+import app.discair.ui.theme.toTween
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -106,9 +117,6 @@ import app.discair.ui.library.LibraryScreen
 private fun Opaque(content: @Composable () -> Unit) {
     Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) { content() }
 }
-
-private const val PageMs = 300
-private val PageEase = FastOutSlowInEasing
 
 private fun androidx.navigation.NavDestination?.isHome() = this?.hasRoute(HomeRoute::class) == true
 
@@ -179,6 +187,18 @@ fun MainShell(state: UiState, model: AppViewModel, container: AppContainer) {
     val clearance = with(androidx.compose.ui.platform.LocalDensity.current) { islandPx.toDp() }
     val entry by nav.currentBackStackEntryAsState()
     val destination = entry?.destination
+    // The layout the owner chose (not the artwork tint): it decides which navigation is drawn and where Discover sits.
+    val chosenLayout = (app.discair.ui.theme.LocalThemePalette.current ?: app.discair.ui.theme.LocalPalette.current).layout
+    val rail = NavRules.railShown(LocalConfiguration.current.screenWidthDp)
+    val playerLabel = playerState.current?.let { "Now playing: ${it.title}, ${it.artist}. Open player" } ?: "Player, nothing playing"
+    // Motion (docs/design/redesign 7.4): tabs fade through, pages slide on a shared axis; nothing moves when the phone reduces motion.
+    val motionFamily = currentMotionFamily()
+    val reducedMotion = rememberReducedMotion()
+    val density = LocalDensity.current
+    val fadePlan = MotionPlans.fadeThrough(motionFamily, reducedMotion)
+    val axisPlan = MotionPlans.sharedAxisX(motionFamily, reducedMotion)
+    val risePx = with(density) { fadePlan.riseDp.dp.roundToPx() }
+    val slidePx = with(density) { axisPlan.slideDp.dp.roundToPx() }
     val tabs = listOf(
         Tab(HomeRoute, "Home", Icons.Default.Home),
         Tab(DiscoverRoute, "Discover", Icons.Default.Star),
@@ -190,6 +210,11 @@ fun MainShell(state: UiState, model: AppViewModel, container: AppContainer) {
     val goPage: (Any) -> Unit = { route -> nav.navigate(route) { launchSingleTop = true } }
     val goHome: () -> Unit = {
         nav.navigate(HomeRoute) { popUpTo(nav.graph.findStartDestination().id); launchSingleTop = true }
+    }
+    /** The player button: opens Now Playing, or says nothing is playing. */
+    val openPlayer: () -> Unit = {
+        if (playerState.visible) nowPlayingOpen = true
+        else scope.launch { snackbar.showSnackbar("Nothing is playing.") }
     }
     var searchOpen by rememberSaveable { mutableStateOf(false) }
     var searchText by rememberSaveable { mutableStateOf("") }
@@ -243,6 +268,21 @@ fun MainShell(state: UiState, model: AppViewModel, container: AppContainer) {
             SearchSheet(searchText, { searchText = it }, fromSheet, onDismiss = { searchOpen = false })
         }
         Box(Modifier.fillMaxSize()) {
+        Row(Modifier.fillMaxSize()) {
+        if (rail) NavRail(
+            homeSelected = destination?.hasRoute(HomeRoute::class) == true,
+            discoverSelected = destination?.hasRoute(DiscoverRoute::class) == true,
+            librarySelected = destination?.hasRoute(LibraryRoute::class) == true,
+            playing = playerState.isPlaying,
+            playerLabel = playerLabel,
+            showPlayer = NavRules.playerButtonShown(chosenLayout),
+            onHome = goHome,
+            onDiscover = { goPage(DiscoverRoute) },
+            onLibrary = { goPage(LibraryRoute) },
+            onSearch = { searchOpen = true },
+            onPlayer = openPlayer,
+        )
+        Box(Modifier.weight(1f).fillMaxSize()) {
         Scaffold(
             snackbarHost = { SnackbarHost(snackbar, Modifier.padding(bottom = clearance)) },
             // Pages run behind the system navigation bar; the island and each page's end padding clear it.
@@ -250,7 +290,10 @@ fun MainShell(state: UiState, model: AppViewModel, container: AppContainer) {
             topBar = {
                 if (onTopLevel) AppHeader(
                     active = hub.activeDownloads,
+                    showDiscover = NavRules.discoverInTopBar(chosenLayout, rail),
+                    onDiscover = { goPage(DiscoverRoute) },
                     onDownloads = { nav.navigate(DownloadsRoute) { launchSingleTop = true } },
+                    onSettings = { goPage(SettingsRoute) },
                 )
             },
         ) { padding ->
@@ -268,29 +311,42 @@ fun MainShell(state: UiState, model: AppViewModel, container: AppContainer) {
             } else Modifier
             NavHost(
                 nav, startDestination = HomeRoute, modifier = Modifier.weight(1f).fillMaxWidth().then(swipe),
-                // Deeper pages slide in from the right; Back (button or swipe) slides the page out to the right and
-                // the one under it returns from a quarter of the way left. Tabs keep their own order-based slide.
+                // Tab to tab fades through (the new tab rises a little); a push slides in on a shared axis from the right, and Back
+                // (button or swipe) slides the page out to the right while the one under it comes back from the left.
                 enterTransition = {
-                    val from = indexOf(initialState); val to = indexOf(targetState)
-                    if (from >= 0 && to >= 0) slideIntoContainer(
-                        if (to > from) AnimatedContentTransitionScope.SlideDirection.Start else AnimatedContentTransitionScope.SlideDirection.End,
-                    ) else slideInHorizontally(tween(PageMs, easing = PageEase)) { it }
+                    val tabToTab = indexOf(initialState) >= 0 && indexOf(targetState) >= 0
+                    when {
+                        reducedMotion -> EnterTransition.None
+                        tabToTab -> fadeIn(fadePlan.arrive.toTween(fadePlan.arriveDelayMs)) +
+                            slideInVertically(fadePlan.arrive.toTween(fadePlan.arriveDelayMs)) { risePx }
+                        else -> slideInHorizontally(axisPlan.arrive.toTween()) { slidePx } + fadeIn(axisPlan.arrive.toTween())
+                    }
                 },
                 exitTransition = {
-                    val from = indexOf(initialState); val to = indexOf(targetState)
-                    if (from >= 0 && to >= 0) slideOutOfContainer(
-                        if (to > from) AnimatedContentTransitionScope.SlideDirection.Start else AnimatedContentTransitionScope.SlideDirection.End,
-                    ) else slideOutHorizontally(tween(PageMs, easing = PageEase)) { -it / 4 } + fadeOut(tween(PageMs))
+                    val tabToTab = indexOf(initialState) >= 0 && indexOf(targetState) >= 0
+                    when {
+                        reducedMotion -> ExitTransition.None
+                        tabToTab -> fadeOut(fadePlan.leave.toTween())
+                        else -> slideOutHorizontally(axisPlan.leave.toTween()) { -slidePx } + fadeOut(axisPlan.leave.toTween())
+                    }
                 },
                 popEnterTransition = {
-                    slideInHorizontally(tween(PageMs, easing = PageEase)) { -it / 4 } + fadeIn(tween(PageMs))
+                    val tabToTab = indexOf(initialState) >= 0 && indexOf(targetState) >= 0
+                    when {
+                        reducedMotion -> EnterTransition.None
+                        tabToTab -> fadeIn(fadePlan.arrive.toTween(fadePlan.arriveDelayMs))
+                        else -> slideInHorizontally(axisPlan.arrive.toTween()) { -slidePx } + fadeIn(axisPlan.arrive.toTween())
+                    }
                 },
                 popExitTransition = {
-                    slideOutHorizontally(tween(PageMs, easing = PageEase)) { it }
+                    when {
+                        reducedMotion -> ExitTransition.None
+                        else -> slideOutHorizontally(axisPlan.leave.toTween()) { slidePx } + fadeOut(axisPlan.leave.toTween())
+                    }
                 },
             ) {
                 composable<HomeRoute> {
-                    Opaque { HomeScreen(open, onDiscover = { goPage(DiscoverRoute) }, onLibrary = { goPage(LibraryRoute) }, onSettings = { goPage(SettingsRoute) }, onRadio = { nav.navigate(RadioRoute) { launchSingleTop = true } }) }
+                    Opaque { HomeScreen(open, onRadio = { nav.navigate(RadioRoute) { launchSingleTop = true } }) }
                 }
                 composable<DiscoverRoute> { Opaque { DiscoverScreen(open) } }
                 composable<LibraryRoute> { Opaque { LibraryScreen(open) } }
@@ -307,31 +363,30 @@ fun MainShell(state: UiState, model: AppViewModel, container: AppContainer) {
             }
             }
         }
-        // The island floats over the pages: no bar behind it. Hidden cover load below gives it the artwork's tint.
-        // It is drawn over a dark artwork tint, so it keeps light icons on every theme.
-        // Cassette Deck: the mini player sits on the ruled bar while a song is queued. Standard themes have no mini player.
+        // The bottom navigation floats over the pages, with no bar behind it; a wide screen (600 dp and over) has the rail instead.
+        // It is drawn over a dark artwork tint, so it keeps light icons on every theme. The mini player (Cassette Deck only) sits
+        // above its bar while a song is queued. The hidden cover load below gives the island its tint.
         Column(Modifier.align(Alignment.BottomCenter).onSizeChanged { islandPx = it.height }) {
             if (app.discair.ui.common.TapeDeckRules.miniPlayerShown(app.discair.ui.theme.LocalPalette.current.layout, playerState.current != null)) {
                 app.discair.ui.player.TapeMiniPlayer(playerState, player, onOpen = { if (playerState.visible) nowPlayingOpen = true })
             }
-            app.discair.ui.theme.OnArtwork {
+            if (!rail) app.discair.ui.theme.OnArtwork {
                 NavIsland(
                     tint = islandTint,
                     homeSelected = destination?.hasRoute(HomeRoute::class) == true,
+                    discoverSelected = destination?.hasRoute(DiscoverRoute::class) == true,
+                    librarySelected = destination?.hasRoute(LibraryRoute::class) == true,
                     playing = playerState.isPlaying,
-                    playerLabel = playerState.current?.let { "Now playing: ${it.title}, ${it.artist}. Open player" } ?: "Player, nothing playing",
+                    playerLabel = playerLabel,
                     onSearch = { searchOpen = true },
                     onHome = goHome,
-                    onPlayer = {
-                        if (playerState.visible) nowPlayingOpen = true
-                        else scope.launch { snackbar.showSnackbar("Nothing is playing.") }
-                    },
-                    onSettings = { goPage(SettingsRoute) },
-                    settingsSelected = destination?.hasRoute(SettingsRoute::class) == true,
+                    onDiscover = { goPage(DiscoverRoute) },
                     onLibrary = { goPage(LibraryRoute) },
-                    librarySelected = destination?.hasRoute(LibraryRoute::class) == true,
+                    onPlayer = openPlayer,
                 )
             }
+        }
+        }
         }
         playerState.current?.coverUrl?.takeIf { it.isNotBlank() }?.let { url ->
             app.discair.ui.common.Cover(app.discair.ui.player.playerArtworkUrl(url), Modifier.size(1.dp), onColor = { islandTint = it })
@@ -340,38 +395,49 @@ fun MainShell(state: UiState, model: AppViewModel, container: AppContainer) {
     }
 }
 
-/** The bar over Home, Discover and Library: the app name in the display face and Downloads (with the active count, as the web nav has). */
+/**
+ * The bar over Home, Discover and Library: the app name in the display face, then the actions. Discover is here only where the
+ * navigation does not carry it (every layout but the Cassette Deck, and not on a rail). Downloads shows the active count, as the
+ * web nav has. Settings is last.
+ */
 @Composable
-private fun AppHeader(active: Int, onDownloads: () -> Unit) {
+private fun AppHeader(active: Int, showDiscover: Boolean, onDiscover: () -> Unit, onDownloads: () -> Unit, onSettings: () -> Unit) {
     Column(Modifier.background(app.discair.ui.theme.Ink.Rail)) {
         Row(
             Modifier.fillMaxWidth().statusBarsPadding().heightIn(min = 56.dp).padding(start = 16.dp, end = 16.dp),
             verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             app.discair.ui.common.Wordmark(30.dp)
             Spacer(Modifier.weight(1f))
-            val frame = RoundedCornerShape(6.dp)
-            val label = if (active == 0) "Downloads" else "Downloads, $active active"
-            if (app.discair.ui.theme.LocalPalette.current.brutal) {
-                // Neobrut: a square icon button with an outline and a hard shadow; the active count is a badge on it.
-                app.discair.ui.common.BrutalIconButton(onClick = onDownloads, modifier = Modifier.size(48.dp, 40.dp).semantics { contentDescription = label }) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(app.discair.ui.player.PlayerIcons.Cloud, contentDescription = null, modifier = Modifier.size(22.dp))
-                        if (active > 0) Badge(Modifier.align(Alignment.TopEnd).offset(x = 10.dp, y = (-8).dp)) { Text("$active") }
-                    }
-                }
-            } else Box(
-                Modifier.size(48.dp, 38.dp).clip(frame).background(app.discair.ui.theme.Ink.Surface)
-                    .border(1.dp, app.discair.ui.theme.Ink.EdgeStrong, frame)
-                    .clickable(role = Role.Button, onClick = onDownloads)
-                    .semantics { contentDescription = label },
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(app.discair.ui.player.PlayerIcons.Cloud, contentDescription = null, tint = app.discair.ui.theme.Ink.TextMuted, modifier = Modifier.size(20.dp))
-                if (active > 0) Badge(Modifier.align(Alignment.TopEnd).padding(top = 4.dp, end = 4.dp)) { Text("$active") }
-            }
+            if (showDiscover) HeaderButton("Discover", Icons.Default.Star, badge = 0, onClick = onDiscover)
+            HeaderButton(if (active == 0) "Downloads" else "Downloads, $active active", app.discair.ui.player.PlayerIcons.Cloud, badge = active, onClick = onDownloads)
+            HeaderButton("Settings", Icons.Default.Settings, badge = 0, onClick = onSettings)
         }
         RowDivider()
+    }
+}
+
+/** A square icon button in the top bar; a count badge shows on it when [badge] is above zero. Neobrut gets an outline and a hard shadow. */
+@Composable
+private fun HeaderButton(label: String, icon: ImageVector, badge: Int, onClick: () -> Unit) {
+    val frame = RoundedCornerShape(6.dp)
+    if (app.discair.ui.theme.LocalPalette.current.brutal) {
+        app.discair.ui.common.BrutalIconButton(onClick = onClick, modifier = Modifier.size(48.dp, 40.dp).semantics { contentDescription = label }) {
+            Box(contentAlignment = Alignment.Center) {
+                Icon(icon, contentDescription = null, modifier = Modifier.size(22.dp))
+                if (badge > 0) Badge(Modifier.align(Alignment.TopEnd).offset(x = 10.dp, y = (-8).dp)) { Text("$badge") }
+            }
+        }
+    } else Box(
+        Modifier.size(48.dp, 38.dp).clip(frame).background(app.discair.ui.theme.Ink.Surface)
+            .border(1.dp, app.discair.ui.theme.Ink.EdgeStrong, frame)
+            .clickable(role = Role.Button, onClick = onClick)
+            .semantics { contentDescription = label },
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(icon, contentDescription = null, tint = app.discair.ui.theme.Ink.TextMuted, modifier = Modifier.size(20.dp))
+        if (badge > 0) Badge(Modifier.align(Alignment.TopEnd).padding(top = 4.dp, end = 4.dp)) { Text("$badge") }
     }
 }
 

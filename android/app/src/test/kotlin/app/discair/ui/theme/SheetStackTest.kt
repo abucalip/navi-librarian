@@ -64,11 +64,6 @@ class SheetStackTest {
         assertEquals("Unknown status", SheetStackRules.requestWord("whatever", "Unknown status"))
     }
 
-    @Test fun libraryMovesIntoTheNavigationGroupOnlyOnTheSheetStack() {
-        assertFalse(SheetStackRules.homeShowsLibraryButton(Layout.SheetStack))
-        for (l in Layout.values().filter { it != Layout.SheetStack && it != Layout.TapeDeck }) assertTrue(SheetStackRules.homeShowsLibraryButton(l)) // the Cassette Deck bar has a Library cell too
-    }
-
     @Test fun theVolumeSliderMapsATouchToZeroToOneFromTheBottom() {
         assertEquals(1f, SheetStackRules.volumeFromTouch(0f, 400f, 14f), 0.001f) // above the track: full
         assertEquals(1f, SheetStackRules.volumeFromTouch(14f, 400f, 14f), 0.001f)

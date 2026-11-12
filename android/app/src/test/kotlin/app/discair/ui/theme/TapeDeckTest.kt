@@ -88,20 +88,6 @@ class TapeDeckTest {
         for (layout in Layout.values().filter { it != Layout.TapeDeck }) assertFalse(TapeDeckRules.miniPlayerShown(layout, hasSong = true))
     }
 
-    @Test fun settingsMovesToTheCassetteDeckBarAndLeavesHomeWithTwoPageButtons() {
-        assertFalse(TapeDeckRules.homeShowsSettingsButton(Layout.TapeDeck))
-        for (layout in Layout.values().filter { it != Layout.TapeDeck }) assertTrue(TapeDeckRules.homeShowsSettingsButton(layout))
-    }
-
-    @Test fun libraryJoinsTheCassetteDeckBarSoHomeKeepsOnlyDiscover() {
-        assertFalse(TapeDeckRules.homeShowsLibraryButton(Layout.TapeDeck))
-        assertFalse(TapeDeckRules.homeShowsSettingsButton(Layout.TapeDeck))
-        assertTrue(TapeDeckRules.homeShowsLibraryButton(Layout.Standard) && TapeDeckRules.homeShowsLibraryButton(Layout.StickerWall))
-        assertFalse(app.discair.ui.common.SheetStackRules.homeShowsLibraryButton(Layout.TapeDeck))
-        assertFalse(app.discair.ui.common.SheetStackRules.homeShowsLibraryButton(Layout.SheetStack))
-        assertTrue(app.discair.ui.common.SheetStackRules.homeShowsLibraryButton(Layout.Standard))
-    }
-
     @Test fun theSeekBarRulerHasNineMarksInTenthsAndNoneAtTheEnds() {
         val ticks = TapeDeckRules.seekTicks(10)
         assertEquals(9, ticks.size)

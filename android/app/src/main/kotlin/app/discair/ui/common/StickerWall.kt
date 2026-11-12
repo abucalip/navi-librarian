@@ -99,36 +99,39 @@ object StickerWallRules {
 }
 
 /**
- * The Sticker Wall's navigation: a floating pill (Search, Home, Player) with a hard shadow, each cell an icon over a word. The
- * current page is a filled round chip. Replaces the island, in the owner's chosen theme rather than the artwork tint.
+ * The Sticker Wall's navigation: a floating pill (Search, Home, Library, Player) with a hard shadow, each cell an icon over a word,
+ * the cells sharing the width. Discover is in the top bar, not in the pill. The current page is a filled round chip. Replaces the island,
+ * in the owner's chosen theme rather than the artwork tint.
  */
 @Composable
 fun StickerPill(
-    palette: Palette, homeSelected: Boolean, playerLabel: String,
-    onSearch: () -> Unit, onHome: () -> Unit, onPlayer: () -> Unit, modifier: Modifier = Modifier,
-    searchIcon: @Composable (Color) -> Unit, homeIcon: @Composable (Color) -> Unit, player: @Composable (Color) -> Unit,
+    palette: Palette, homeSelected: Boolean, librarySelected: Boolean, playerLabel: String,
+    onSearch: () -> Unit, onHome: () -> Unit, onLibrary: () -> Unit, onPlayer: () -> Unit, modifier: Modifier = Modifier,
+    searchIcon: @Composable (Color) -> Unit, homeIcon: @Composable (Color) -> Unit, libraryIcon: @Composable (Color) -> Unit,
+    player: @Composable (Color) -> Unit,
 ) {
     val pill = CircleShape
     val outline = (palette.shape?.outline ?: 3).dp
-    Box(modifier.fillMaxWidth().navigationBarsPadding().padding(bottom = 16.dp), contentAlignment = Alignment.BottomCenter) {
+    Box(modifier.fillMaxWidth().navigationBarsPadding().padding(start = 16.dp, end = 16.dp, bottom = 16.dp), contentAlignment = Alignment.BottomCenter) {
         Row(
-            Modifier.brutalShadow(pill).clip(pill).background(palette.surface).border(outline, palette.edgeStrong, pill).padding(horizontal = 8.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically,
+            Modifier.fillMaxWidth().brutalShadow(pill).clip(pill).background(palette.surface).border(outline, palette.edgeStrong, pill).padding(horizontal = 8.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically,
         ) {
             PillCell(palette, "Search", "Search", false, onSearch) { searchIcon(it) }
             PillCell(palette, "Home", "Home", homeSelected, onHome) { homeIcon(it) }
+            PillCell(palette, "Library", "Library", librarySelected, onLibrary) { libraryIcon(it) }
             PillCell(palette, "Player", playerLabel, false, onPlayer) { player(it) }
         }
     }
 }
 
 @Composable
-private fun PillCell(palette: Palette, word: String, spoken: String, selected: Boolean, onClick: () -> Unit, icon: @Composable (Color) -> Unit) {
+private fun androidx.compose.foundation.layout.RowScope.PillCell(palette: Palette, word: String, spoken: String, selected: Boolean, onClick: () -> Unit, icon: @Composable (Color) -> Unit) {
     val fill = if (selected) palette.accent else palette.surface
     val ink = if (selected) palette.onAccent else palette.text
     Column(
-        Modifier.heightIn(min = 52.dp).clip(CircleShape).background(fill).then(if (selected) Modifier.border((palette.shape?.outline ?: 3).dp, palette.edgeStrong, CircleShape) else Modifier)
-            .clickable(role = Role.Button, onClick = onClick).padding(horizontal = 16.dp, vertical = 4.dp)
+        Modifier.weight(1f).heightIn(min = 52.dp).clip(CircleShape).background(fill).then(if (selected) Modifier.border((palette.shape?.outline ?: 3).dp, palette.edgeStrong, CircleShape) else Modifier)
+            .clickable(role = Role.Button, onClick = onClick).padding(horizontal = 2.dp, vertical = 4.dp)
             .semantics { contentDescription = spoken; this.selected = selected },
         horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center,
     ) {

@@ -12,6 +12,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -27,11 +28,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import app.discair.ui.theme.Palette
@@ -54,12 +59,6 @@ object TapeDeckRules {
 
     /** The mini player belongs to the Cassette Deck only, and only while a song is queued; every other layout has none. */
     fun miniPlayerShown(layout: app.discair.ui.theme.Layout, hasSong: Boolean): Boolean = layout == app.discair.ui.theme.Layout.TapeDeck && hasSong
-
-    /** Settings sits in the Cassette Deck's navigation bar (the mini player took the player's place), so Home's page buttons drop it. */
-    fun homeShowsSettingsButton(layout: app.discair.ui.theme.Layout): Boolean = layout != app.discair.ui.theme.Layout.TapeDeck
-
-    /** The Cassette Deck's bar also has a Library cell, so Home's page buttons drop Library there too (Discover is what is left). */
-    fun homeShowsLibraryButton(layout: app.discair.ui.theme.Layout): Boolean = layout != app.discair.ui.theme.Layout.TapeDeck
 
     /** Where the ruler marks of the Cassette Deck's seek bar sit, as fractions of the track: [count] equal steps, the two ends excluded. */
     fun seekTicks(count: Int): List<Float> = if (count < 2) emptyList() else List(count - 1) { (it + 1f) / count }
@@ -102,25 +101,25 @@ fun TapeMeter(bars: Int, moving: Boolean, color: Color, modifier: Modifier = Mod
 }
 
 /**
- * The ruled navigation bar of the Cassette Deck: Search, Home, Library and Settings (four cells) in a full-width bar split by rules; the current page is
- * filled with the accent. The player has no cell here: the mini player above the bar opens Now Playing. [palette] is the owner's
- * chosen theme: the bar sits on the page, not on the dark artwork tint the island takes.
+ * The ruled navigation bar of the Cassette Deck: Home, Discover, Library and Search (four labelled cells) in a full-width bar split by
+ * rules; the current page is filled with the accent. The player has no cell here: the mini player above the bar opens Now Playing.
+ * [palette] is the owner's chosen theme: the bar sits on the page, not on the dark artwork tint the island takes.
  */
 @Composable
 fun TapeNavBar(
     palette: Palette,
     homeSelected: Boolean,
+    discoverSelected: Boolean,
     librarySelected: Boolean,
-    settingsSelected: Boolean,
-    onSearch: () -> Unit,
     onHome: () -> Unit,
+    onDiscover: () -> Unit,
     onLibrary: () -> Unit,
-    onSettings: () -> Unit,
+    onSearch: () -> Unit,
     modifier: Modifier = Modifier,
-    searchIcon: @Composable (Color) -> Unit,
     homeIcon: @Composable (Color) -> Unit,
+    discoverIcon: @Composable (Color) -> Unit,
     libraryIcon: @Composable (Color) -> Unit,
-    settingsIcon: @Composable (Color) -> Unit,
+    searchIcon: @Composable (Color) -> Unit,
 ) {
     val rule = (palette.shape?.outline ?: 2).dp
     Row(
@@ -129,10 +128,10 @@ fun TapeNavBar(
         }.navigationBarsPadding().height(56.dp + rule),
         horizontalArrangement = Arrangement.spacedBy(0.dp),
     ) {
-        TapeNavCell(palette, "Search", false, onSearch, Modifier.weight(1f), rule, last = false) { searchIcon(it) }
         TapeNavCell(palette, "Home", homeSelected, onHome, Modifier.weight(1f), rule, last = false) { homeIcon(it) }
+        TapeNavCell(palette, "Discover", discoverSelected, onDiscover, Modifier.weight(1f), rule, last = false) { discoverIcon(it) }
         TapeNavCell(palette, "Library", librarySelected, onLibrary, Modifier.weight(1f), rule, last = false) { libraryIcon(it) }
-        TapeNavCell(palette, "Settings", settingsSelected, onSettings, Modifier.weight(1f), rule, last = true) { settingsIcon(it) }
+        TapeNavCell(palette, "Search", false, onSearch, Modifier.weight(1f), rule, last = true) { searchIcon(it) }
     }
 }
 
@@ -143,13 +142,17 @@ private fun androidx.compose.foundation.layout.RowScope.TapeNavCell(
 ) {
     val fill = if (selected) palette.accent else palette.surface
     val ink = if (selected) palette.onAccent else palette.text
-    Box(
+    Column(
         modifier.fillMaxHeight().padding0Top(rule).background(fill)
             .let { if (last) it else it.drawBehind { drawRect(palette.edgeStrong, Offset(size.width - rule.toPx(), 0f), Size(rule.toPx(), size.height)) } }
             .clickable(role = Role.Button, onClick = onClick)
             .semantics { contentDescription = label; this.selected = selected },
-        contentAlignment = Alignment.Center,
-    ) { content(ink) }
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
+        Box(Modifier.size(24.dp), contentAlignment = Alignment.Center) { content(ink) }
+        Text(label, style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold), color = ink, maxLines = 1, modifier = Modifier.clearAndSetSemantics { })
+    }
 }
 
 /** Leaves [top] clear above the cell, where the bar's top rule is drawn. */
