@@ -1,3 +1,10 @@
+## 2026-11-12 — Android art themes S1: Soft Brut palette and shell (PR #1006)
+
+- Merged as `d9417fa7c831c62b64d777ed978066aa30e54640` from head `7e4d2e6838755ffa56b757e03d1135126fa3f981`; compile, container-smoke, test-and-build and validate-container passed. Added palette `softbrut`, `Layout.CoverStack` (`ui/common/CoverStack.kt`, `ui/player/CoverStackPlayer.kt`), the outlined navigation bar and mini player, and layout-guarded branches in buttons, chips, tabs, switch, progress, tags, dividers, snackbar and sheet. `PaletteTest` and `NavRulesTest` were updated for the new theme; every other palette's layout and shape is still pinned by `ExistingLayoutsTest`.
+- Verified with JDK 17, filtered: `SoftBrutTest`, `PaletteTest`, `ExistingLayoutsTest`, `NavRulesTest`, `AppearanceRulesTest`, `MotionTest`; `assembleDebug` clean. Full suite not run. No screenshots against the mockups and nothing seen on a device; the new control branches have no automated test beyond compiling.
+- D4 taken as proposed (font pair suggested, not forced). D6 still open before F1. Not themed yet: Home, pages, player (S2 to S4).
+- Documents updated: `docs/ACTIVE_WORK.md` section 2l, `docs/PROJECT_STATUS.md`, `docs/ANDROID_ART_THEMES_PROPOSAL.md`.
+
 ## 2026-11-12 — Android art themes step 0 (PR #1005)
 
 - Merged as `35bb9a75d2d5d5442da3cfb4cce70c50b9401b03`. `ui/home/HomeArtists.kt` (distinct artists from Recent then Frequent, up to 8, unwired), `BrutalShape` now Float with the whole-number constructor kept (D1 as proposed), and `ExistingLayoutsTest` pinning every existing palette's layout and exact shape. `PaletteTest` adjusted for the Float radius. No screen changed.
