@@ -49,13 +49,14 @@ struct CupertinoArtistBanner: View {
                            center: UnitPoint(x: 0.2, y: 0.1), startRadius: 0, endRadius: 800)
             RadialGradient(colors: [CU.artwork(hue: (h + 0.1).truncatingRemainder(dividingBy: 1), saturation: 0.7, brightness: 0.6).opacity(0.9), .clear],
                            center: UnitPoint(x: 0.9, y: 0.9), startRadius: 0, endRadius: 700)
-            // The artist's own photos (band and session pictures the artwork pipeline identified) move as a slideshow; the blurred
-            // backdrop shows only when there is no photo besides the one in the circle.
+            // The blurred cover is always the backdrop; the artist's own photos (band and session pictures the artwork pipeline
+            // identified) lie over it as a mosaic that fills the banner, so an artist with no other photo keeps the blur.
+            if lib.isLive, let cover = lib.artistAlbums.first(where: { !($0.coverArt ?? "").isEmpty }) {
+                BlurredArtwork(album: cover, radius: 24); CU.shadowInk.opacity(0.12)
+            }
             if lib.isLive, !collage.entries.isEmpty {
                 CollageHeroBackdrop(entries: collage.entries).transition(.opacity)
-                CU.shadowInk.opacity(0.28)
-            } else if lib.isLive, let cover = lib.artistAlbums.first(where: { !($0.coverArt ?? "").isEmpty }) {
-                BlurredArtwork(album: cover, radius: 24); CU.shadowInk.opacity(0.12)
+                CU.shadowInk.opacity(0.38)
             }
             LinearGradient(colors: [CU.shadowInk.opacity(0.0), CU.shadowInk.opacity(0.4)], startPoint: .top, endPoint: .bottom)
         }
@@ -69,7 +70,7 @@ struct CupertinoArtistBanner: View {
                         .overlay(Circle().stroke(CU.onMedia.opacity(0.85), lineWidth: 4))
                         .shadow(color: CU.shadowInk.opacity(0.35), radius: 14, y: 6)
                     VStack(alignment: .leading, spacing: 0) {
-                        HStack(alignment: .center, spacing: 8) {
+                        HStack(alignment: .lastTextBaseline, spacing: 8) {
                             Text(state.selectedArtist.name).font(CU.Font.heroMetric.weighted(.bold)).tracking(-1.5).lineLimit(1).minimumScaleFactor(0.5)
                             artistMenu
                         }

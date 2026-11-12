@@ -1,7 +1,7 @@
 import DiscairLibrarian
 import SwiftUI
 
-/// Downloads (redesign 5.3, mockup `downloads--default`): the Librarian's job list, one row per record with the four-step
+/// Downloads (redesign 5.3, mockup `downloads--default`): the Librarian's job list, one row per record with the four-circle
 /// tracker, the state in words and a filter (All, Active, Needs you, Arrived). A failed row carries the only primary, Try again.
 /// The state is always icon plus words, never colour alone. Dismiss only hides the row.
 struct CupertinoDownloads: View {
@@ -53,6 +53,8 @@ struct CupertinoDownloads: View {
                             row(job)
                         }
                     }
+                    // Circles need less room than bars did: the list takes half the page, never less than a row needs.
+                    .containerRelativeFrame(.horizontal, alignment: .leading) { width, _ in max(width / 2, 520) }
                 }
             }
             .padding(.horizontal, CU.Space.xl).padding(.bottom, CU.Space.xl)

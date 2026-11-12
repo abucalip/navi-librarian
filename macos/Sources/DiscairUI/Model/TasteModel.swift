@@ -68,7 +68,7 @@ public final class TasteModel {
     /// Opening Insights with nothing saved asks for a refresh even if one already ran this launch (the account may have been
     /// connected since). The server answers `too_soon` after a good run, so this cannot hammer ListenBrainz.
     public func refreshIfEmpty(librarian: LibrarianClient?) async {
-        guard loaded, profiles?.headline == nil, !refreshing else { return }
+        guard loaded, profiles?.cardHeadline == nil, !refreshing else { return }
         await refreshNow(librarian: librarian)
     }
 
@@ -80,8 +80,9 @@ public final class TasteModel {
     // MARK: What the cards show
 
     /// The window the headline speaks about (`recent`, or `mid` when recent is thin).
-    public var headlineWindow: String { profiles?.headline?.window ?? "recent" }
-    public var shifts: [TasteShift] { profiles?.shifts(in: headlineWindow) ?? [] }
+    public var headlineWindow: String { profiles?.cardHeadline?.window ?? "recent" }
+    /// The shifts the cards draw: no areas.
+    public var shifts: [TasteShift] { profiles?.cardShifts(in: headlineWindow) ?? [] }
     public var selectedWindow: TasteWindow? { profiles?.window(window) }
     public var recent: TasteWindow? { profiles?.window("recent") }
     public var allTime: TasteWindow? { profiles?.window("all_time") }

@@ -127,7 +127,7 @@ struct ZineTaste: View {
     private var shiftStory: some View {
         VStack(alignment: .leading, spacing: 6) {
             eyebrow("Lately vs. always")
-            if let h = model.profiles?.headline {
+            if let h = model.profiles?.cardHeadline {
                 let mid = h.window == "mid"
                 let base = model.profiles?.window(h.window)?.listens ?? 0
                 Text(h.text).font(Z.an(54)).textCase(.uppercase).lineSpacing(-6).fixedSize(horizontal: false, vertical: true).padding(.top, 4)

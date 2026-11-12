@@ -256,7 +256,7 @@ public final class LibraryModel {
         guard isLive else { return Fixtures.albums([1, 13, 11]) }
         return (albums + recent).filter { $0.artist == album.artist && $0.id != album.id && $0.title != album.title }
             .reduce(into: [AlbumItem]()) { acc, a in if !acc.contains(where: { $0.title == a.title }) { acc.append(a) } }
-            .prefix(4).map { $0 }
+            .prefix(5).map { $0 }
     }
 
     public func artist(named name: String) -> ArtistItem? {

@@ -1102,8 +1102,24 @@ struct CUHeatmapKey: View {
 
 // MARK: Stage tracker
 
-/// Four 4 pt segments: Found, Downloading, Importing, In library. Done is ink, the current one is accent (filled to its percentage
-/// when the server gives one), a failed one is danger and its reason is written beside it.
+/// A circle filled from twelve o'clock to `fraction` of the way round.
+private struct CUPieSlice: Shape {
+    var fraction: Double
+    var animatableData: Double { get { fraction } set { fraction = newValue } }
+    func path(in rect: CGRect) -> Path {
+        var p = Path()
+        let c = CGPoint(x: rect.midX, y: rect.midY)
+        p.move(to: c)
+        p.addArc(center: c, radius: min(rect.width, rect.height) / 2, startAngle: .degrees(-90),
+                 endAngle: .degrees(-90 + 360 * min(max(fraction, 0), 1)), clockwise: false)
+        p.closeSubpath()
+        return p
+    }
+}
+
+/// Four circles, one per stage: Found, Downloading, Importing, In library. A done stage is a full ink circle, the current one is
+/// accent and fills round to its percentage when the server gives one (a solid accent circle when it does not), a failed one is danger
+/// and its reason is written under it, and one still to come is an empty ring.
 struct CUStageTracker: View {
     let step: Int
     var progress: Double?
@@ -1115,16 +1131,17 @@ struct CUStageTracker: View {
     var body: some View {
         let segments = CUChartMath.stageSegments(step: step, progress: progress, failed: failed)
         VStack(alignment: .leading, spacing: CU.Space.xs) {
-            HStack(spacing: CU.Space.xs) {
-                ForEach(Array(segments.enumerated()), id: \.offset) { _, s in segment(s) }
-            }
-            if showsNames {
-                HStack(spacing: 0) {
-                    ForEach(Array(CUChartMath.stageNames.enumerated()), id: \.offset) { i, name in
-                        Text(name).font(.system(size: 11, weight: i == step ? .semibold : .regular))
-                            .foregroundStyle(i == step ? (failed ? CU.danger : CU.text) : CU.textSecondary)
-                            .frame(maxWidth: .infinity, alignment: .leading)
+            HStack(alignment: .top, spacing: showsNames ? 0 : CU.Space.s) {
+                ForEach(Array(segments.enumerated()), id: \.offset) { i, s in
+                    VStack(spacing: 5) {
+                        segment(s)
+                        if showsNames {
+                            Text(CUChartMath.stageNames[i]).font(.system(size: 11, weight: i == step ? .semibold : .regular))
+                                .foregroundStyle(i == step ? (failed ? CU.danger : CU.text) : CU.textSecondary)
+                                .lineLimit(1).fixedSize()
+                        }
                     }
+                    .frame(maxWidth: showsNames ? .infinity : nil)
                 }
             }
             if failed, let failureReason {
@@ -1136,17 +1153,20 @@ struct CUStageTracker: View {
         .accessibilityLabel(CUChartMath.stageWords(step: step, progress: progress, failed: failed, reason: failureReason))
     }
 
+    private static let diameter: CGFloat = 20
+
     @ViewBuilder private func segment(_ s: CUStageSegment) -> some View {
+        let d = Self.diameter
         switch s {
-        case .done: Capsule().fill(CU.text).frame(height: 4)
-        case .failed: Capsule().fill(CU.danger).frame(height: 4)
-        case .pending: Capsule().fill(CU.trackerTrack).frame(height: 4)
+        case .done: Circle().fill(CU.text).frame(width: d, height: d)
+        case .failed: Circle().fill(CU.danger).frame(width: d, height: d)
+        case .pending: Circle().strokeBorder(CU.trackerTrack, lineWidth: 2).frame(width: d, height: d)
         case .current(let progress):
             if let progress {
-                Capsule().fill(CU.trackerTrack).frame(height: 4)
-                    .overlay(alignment: .leading) { GeometryReader { g in Capsule().fill(CU.accent).frame(width: g.size.width * progress) } }
+                Circle().strokeBorder(CU.trackerTrack, lineWidth: 2).frame(width: d, height: d)
+                    .overlay { CUPieSlice(fraction: progress).fill(CU.accent).padding(3) }
             } else {
-                Capsule().fill(CU.accent).frame(height: 4)
+                Circle().fill(CU.accent).frame(width: d, height: d)
             }
         }
     }

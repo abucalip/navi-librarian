@@ -195,10 +195,10 @@ enum HomeScreen {
     static func taste(profiles: TasteProfiles?, loaded: Bool) -> TasteState {
         guard loaded else { return .loading }
         let need = profiles?.config.minListens ?? 50
-        guard let profiles, let headline = profiles.headline, !headline.text.isEmpty else {
+        guard let profiles, let headline = profiles.cardHeadline, !headline.text.isEmpty else {
             return .progress(listens: profiles?.window("recent")?.listens ?? 0, need: need)
         }
-        let rows = profiles.shifts(in: headline.window).map {
+        let rows = profiles.cardShifts(in: headline.window).map {
             TasteShiftRow(label: capitalFirst($0.value), before: $0.fromShare * 100, now: $0.toShare * 100)
         }
         let recentLabel = headline.window == "mid" ? "Past year" : "Last \(profiles.config.recentDays) days"
@@ -208,7 +208,7 @@ enum HomeScreen {
 
     /// "YOUR TASTE · LAST 90 DAYS AGAINST ALL TIME", from the window the headline speaks about.
     static func tasteEyebrow(profiles: TasteProfiles?) -> String {
-        let window = profiles?.headline?.window ?? "recent"
+        let window = profiles?.cardHeadline?.window ?? "recent"
         let span = window == "mid" ? "Past year" : "Last \(profiles?.config.recentDays ?? 90) days"
         return "Your taste · \(span) against all time"
     }
