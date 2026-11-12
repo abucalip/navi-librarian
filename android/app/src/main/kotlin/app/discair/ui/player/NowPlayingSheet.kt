@@ -396,7 +396,7 @@ private fun Player(state: PlayerUiState, controller: PlayerController, onSignIn:
         // Cassette Deck: "Track n of m" in the mono face beside a five-bar meter that follows the real playback state.
         if (app.discair.ui.theme.LocalPalette.current.layout == app.discair.ui.theme.Layout.TapeDeck) {
             val label = app.discair.ui.common.TapeDeckRules.trackLabel(state.queue.index, state.queue.items.size)
-            val reduced = app.discair.ui.common.rememberReducedMotion()
+            val reduced = app.discair.ui.theme.rememberReducedMotion()
             Row(Modifier.fillMaxWidth().padding(bottom = 8.dp), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
                 if (label.isNotEmpty()) {
                     Text(label, style = MaterialTheme.typography.labelMedium.copy(fontFamily = app.discair.ui.theme.LocalFontPair.current.mono), color = MaterialTheme.colorScheme.onSurfaceVariant)

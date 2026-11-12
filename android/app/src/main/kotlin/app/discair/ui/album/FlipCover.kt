@@ -34,7 +34,7 @@ import app.discair.model.ArtworkSize
 import app.discair.model.faceAfter
 import app.discair.ui.common.LocalImageLoader
 import app.discair.ui.common.LocalRepository
-import app.discair.ui.common.rememberReducedMotion
+import app.discair.ui.theme.rememberReducedMotion
 import coil3.compose.AsyncImage
 import kotlin.math.roundToInt
 import kotlinx.coroutines.launch

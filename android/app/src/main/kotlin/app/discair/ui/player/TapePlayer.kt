@@ -52,7 +52,7 @@ import app.discair.ui.common.Cover
 import app.discair.ui.common.TapeDeckRules
 import app.discair.ui.common.TapeMeter
 import app.discair.ui.common.Target
-import app.discair.ui.common.rememberReducedMotion
+import app.discair.ui.theme.rememberReducedMotion
 import app.discair.ui.theme.LocalFontPair
 import app.discair.ui.theme.LocalPalette
 import app.discair.ui.theme.brutalShadow

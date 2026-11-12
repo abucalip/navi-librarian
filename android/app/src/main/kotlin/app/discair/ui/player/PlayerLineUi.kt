@@ -42,7 +42,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.discair.player.PlayerLine
 import app.discair.ui.common.Target
-import app.discair.ui.common.rememberReducedMotion
+import app.discair.ui.theme.rememberReducedMotion
 import app.discair.ui.theme.Ink
 import coil3.compose.AsyncImage
 

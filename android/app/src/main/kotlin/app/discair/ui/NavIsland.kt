@@ -91,7 +91,7 @@ fun NavIsland(
     }
     // Sticker Wall: a floating pill (Search, Home, Player) in the owner's theme.
     if (deckTheme.layout == app.discair.ui.theme.Layout.StickerWall) {
-        val reduced = app.discair.ui.common.rememberReducedMotion()
+        val reduced = app.discair.ui.theme.rememberReducedMotion()
         app.discair.ui.common.StickerPill(
             deckTheme, homeSelected, playerLabel, onSearch, onHome, onPlayer, modifier,
             searchIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = it, modifier = Modifier.size(24.dp)) },
@@ -102,7 +102,7 @@ fun NavIsland(
     }
     // Sheet Stack: one joined four-segment group (Home, Search, Library, Player) in the owner's theme.
     if (deckTheme.layout == app.discair.ui.theme.Layout.SheetStack) {
-        val reduced = app.discair.ui.common.rememberReducedMotion()
+        val reduced = app.discair.ui.theme.rememberReducedMotion()
         app.discair.ui.common.SheetNavGroup(
             deckTheme, homeSelected, librarySelected, playerLabel, onHome, onSearch, onLibrary, onPlayer, modifier,
             homeIcon = { Icon(Icons.Default.Home, contentDescription = null, tint = it, modifier = Modifier.size(24.dp)) },

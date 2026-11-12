@@ -1,6 +1,5 @@
 package app.discair.ui.common
 
-import android.provider.Settings
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -23,14 +22,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.selected
@@ -72,13 +69,6 @@ object TapeDeckRules {
 
     /** How many rows the Home list shows before "See all": the ruled list is not lazy, so it stays short. */
     const val HOME_ROWS = 8
-}
-
-/** True when the phone's animations are turned off (Settings, Developer options or Accessibility, "Remove animations"). */
-@Composable
-fun rememberReducedMotion(): Boolean {
-    val context = LocalContext.current
-    return remember { Settings.Global.getFloat(context.contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f) == 0f }
 }
 
 /**
