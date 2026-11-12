@@ -96,15 +96,12 @@ sealed interface TasteCardState {
 
 object TasteCard {
     /**
-     * False until the server has a route that creates a playlist (docs/redesign.md A8b item 1). The button is drawn,
-     * disabled, with the reason in words; turning this on is the only change the client needs once the route exists.
+     * The genre the "Make a … playlist" button names: the biggest genre riser in the headline window; null when there is
+     * no headline or no genre riser. Genre only, because `POST /api/playlists/taste` builds a playlist from a genre.
      */
-    const val PlaylistRouteAvailable = false
-
-    /** The value the "Make a … playlist" button names: the biggest riser in the headline window; null when there is no headline or no riser. */
     fun playlistTarget(profiles: TasteProfiles): String? {
         val headline = profiles.headline ?: return null
-        return profiles.shifts(headline.window).firstOrNull { it.isUp }?.value
+        return profiles.shifts(headline.window).firstOrNull { it.isUp && it.dimension == "genre" }?.value
     }
 
     /** The card shows the three biggest movers; the sheet shows all of them. */
@@ -204,4 +201,13 @@ fun parseTasteRefresh(body: String): TasteRefreshResult {
         o?.double("retry_after") ?: 0.0,
         o?.string("error"),
     )
+}
+
+/** `POST /api/playlists/taste`: the Navidrome playlist the server made from one genre. */
+data class TastePlaylistResult(val playlistId: String, val name: String, val songCount: Int)
+
+fun parseTastePlaylist(body: String): TastePlaylistResult {
+    val o = ApiJson.parseToJsonElement(body) as? JsonObject ?: throw IllegalArgumentException("not an object")
+    val id = o.string("playlist_id")?.takeIf { it.isNotBlank() } ?: throw IllegalArgumentException("no playlist id")
+    return TastePlaylistResult(id, o.string("name") ?: "", o.int("song_count") ?: 0)
 }

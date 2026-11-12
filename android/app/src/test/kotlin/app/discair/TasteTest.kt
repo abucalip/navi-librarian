@@ -2,6 +2,8 @@ package app.discair
 
 import app.discair.model.TasteCard
 import app.discair.model.TasteCardState
+import app.discair.model.TastePlaylistResult
+import app.discair.model.parseTastePlaylist
 import app.discair.model.parseTaste
 import app.discair.model.parseTasteRefresh
 import kotlinx.serialization.json.Json
@@ -109,11 +111,17 @@ class TasteTest {
         assertEquals("failed", parseTasteRefresh("not an object").state)
     }
 
-    @Test fun playlistButtonNamesTheBiggestRiserAndIsOffUntilTheServerHasARoute() {
+    @Test fun playlistButtonNamesTheBiggestGenreRiser() {
         val p = parseTaste(body("taste_rich")).profiles!!
         val target = TasteCard.playlistTarget(p)
-        assertEquals(p.shifts(p.headline!!.window).first { it.isUp }.value, target)
+        assertEquals(p.shifts(p.headline!!.window).firstOrNull { it.isUp && it.dimension == "genre" }?.value, target)
         assertEquals(null, TasteCard.playlistTarget(parseTaste(body("taste_empty")).profiles!!))
-        assertFalse(TasteCard.PlaylistRouteAvailable)
+    }
+
+    @Test fun tastePlaylistAnswerParsesAndRefusesAnswerWithoutAnId() {
+        val r = parseTastePlaylist("""{"playlist_id":"pl-1","name":"Ambient (Discair)","genre":"Ambient","song_count":50}""")
+        assertEquals(TastePlaylistResult("pl-1", "Ambient (Discair)", 50), r)
+        val refused = runCatching { parseTastePlaylist("""{"playlist_id":""}""") }.exceptionOrNull()
+        assertTrue(refused is IllegalArgumentException)
     }
 }

@@ -29,7 +29,9 @@ import app.discair.model.ListenBrainzCheck
 import app.discair.model.listenBrainzBody
 import app.discair.model.parseListenBrainzAccount
 import app.discair.model.parseListenBrainzCheck
+import app.discair.model.TastePlaylistResult
 import app.discair.model.TasteRefreshResult
+import app.discair.model.parseTastePlaylist
 import app.discair.model.TasteResponse
 import app.discair.model.parseTaste
 import app.discair.model.parseTasteRefresh
@@ -78,6 +80,8 @@ import kotlinx.serialization.json.JsonPrimitive
 import app.discair.model.AlbumPage
 import app.discair.model.ApiJson
 import kotlinx.serialization.json.booleanOrNull
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 import kotlinx.serialization.json.jsonPrimitive
 import app.discair.model.ArtistPage
 import app.discair.model.GenrePage
@@ -194,6 +198,9 @@ interface LibraryRepository : AcquisitionApi {
      * take about a minute, answers `too_soon` inside the one-hour interval and is refused while another run is going.
      */
     fun refreshTaste(): TasteRefreshResult = throw UnsupportedOperationException()
+
+    /** Makes a Navidrome playlist of the owner's songs in one genre (`POST /api/playlists/taste`); throws unless the server answers with a playlist. */
+    fun makeTastePlaylist(genre: String): TastePlaylistResult = throw UnsupportedOperationException()
 
     /**
      * One discovery path from an artist (`GET /api/knowledge/paths`). Built on demand by the server and cached there;
@@ -479,6 +486,9 @@ class LibrarianRepository(
     }
 
     override fun refreshTaste(): TasteRefreshResult = parseTasteRefresh(client.post(listOf("api", "insights", "taste", "refresh"), "{}"))
+
+    override fun makeTastePlaylist(genre: String): TastePlaylistResult =
+        parseTastePlaylist(client.post(listOf("api", "playlists", "taste"), buildJsonObject { put("genre", genre) }.toString()))
 
     override fun paths(kind: PathKind, mbid: String): PathsResponse {
         if (ReadMode.isCacheOnly) throw CacheMiss()

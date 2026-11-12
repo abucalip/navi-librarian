@@ -35,6 +35,7 @@ from app.api.smart_playlists import router as smart_playlists_router
 from app.api.insights import router as insights_router
 from app.api.paths_warm import router as paths_warm_router
 from app.api.popularity import router as popularity_router
+from app.api.taste_playlist import router as taste_playlist_router
 from app.api.taste_refresh import router as taste_refresh_router
 from app.api.insight_lens_status import router as insight_lens_status_router
 from app.api.knowledge import router as knowledge_router
@@ -220,6 +221,7 @@ app.include_router(search_router)
 app.include_router(library_router)
 app.include_router(feedback_router)
 app.include_router(smart_playlists_router)
+app.include_router(taste_playlist_router)
 app.include_router(insights_router)
 app.include_router(popularity_router)
 app.include_router(taste_refresh_router)
