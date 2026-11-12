@@ -113,6 +113,18 @@ private fun ArtistContent(route: ArtistRoute, page: ArtistPage, open: Opener, li
 
     if (showPaths && pathsMbid != null) ArtistPathsSheet(name, pathsMbid, open) { showPaths = false }
 
+    // Soft Brut: its own arrangement, in CoverStackArtist.kt; every other theme continues below unchanged.
+    if (app.discair.ui.theme.LocalPalette.current.layout == app.discair.ui.theme.Layout.CoverStack) {
+        CoverStackArtistContent(
+            CoverStackArtistData(
+                route, name, sections, owned, info?.albumCount, info?.owned == true, artistId, similar, collage,
+                pathsOn && pathsMbid != null, { showPaths = true },
+            ),
+            open, list, showAllSongs, { showAllSongs = true }, showAllMissing, { showAllMissing = true },
+        )
+        return
+    }
+
     LazyColumn(Modifier.fillMaxSize(), state = list, contentPadding = PaddingValues(bottom = 32.dp + app.discair.ui.LocalBottomClearance.current)) {
         item {
             Box(
