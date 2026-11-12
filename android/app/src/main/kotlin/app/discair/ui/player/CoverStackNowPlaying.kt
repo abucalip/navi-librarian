@@ -261,7 +261,7 @@ fun CoverStackPlayer(
     Column(Modifier.fillMaxWidth().fillMaxHeight()) {
         TopBar(view, onBack = { if (view == CoverStackPlayerRules.VIEW_PLAYER) onClose() else onView(CoverStackPlayerRules.VIEW_PLAYER) }, menu = menu)
         when (view) {
-            CoverStackPlayerRules.VIEW_QUEUE -> QueueView(state, controller)
+            CoverStackPlayerRules.VIEW_QUEUE -> QueueView(state, controller, input.line.peaks)
             CoverStackPlayerRules.VIEW_LYRICS -> LyricsView(state, controller, item, input, photos)
             else -> NowPlayingView(state, controller, item, onView, onSignIn, onEqualizer, onCrossfade, onOpenArtist, onOpenAlbum, onCoverColor, input)
         }
@@ -365,7 +365,7 @@ private fun PlayingHeader(item: QueueItem, eyebrow: String?, trailing: @Composab
 /** The mockup's Queue: the playing song, "Next up", rows with a remove X, "Add songs that sound like this", then the seek bar and transport. */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun ColumnScope.QueueView(state: PlayerUiState, controller: PlayerController) {
+private fun ColumnScope.QueueView(state: PlayerUiState, controller: PlayerController, peaks: FloatArray?) {
     val p = LocalPalette.current
     val items = state.queue.items
     val playing = state.current ?: return
@@ -444,7 +444,7 @@ private fun ColumnScope.QueueView(state: PlayerUiState, controller: PlayerContro
             Text("Add songs that sound like this", color = p.text, style = MaterialTheme.typography.labelLarge.copy(fontSize = 14.sp, fontWeight = FontWeight.Bold))
         }
     }
-    SeekRow(state, controller)
+    SeekRow(state, controller, peaks)
     Transport(state, controller)
     Spacer(Modifier.height(12.dp))
 }
@@ -463,7 +463,7 @@ private fun ColumnScope.LyricsView(state: PlayerUiState, controller: PlayerContr
         photos()
         CoverStackLyricsPanel(input.lyricsState, input.currentLine, input.songId, input.onTryAgain, Modifier.fillMaxSize().padding(top = 8.dp), overPhotos = input.hasPhotos && input.photosOn)
     }
-    SeekRow(state, controller)
+    SeekRow(state, controller, input.line.peaks)
     Transport(state, controller)
     Spacer(Modifier.height(12.dp))
 }
