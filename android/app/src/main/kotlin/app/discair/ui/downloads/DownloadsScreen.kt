@@ -22,7 +22,9 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Warning
-import app.discair.ui.common.AlertDialog
+import app.discair.ui.common.ConfirmSheet
+import app.discair.ui.common.ConfirmSpec
+import app.discair.ui.common.ConfirmSpecs
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -30,7 +32,6 @@ import app.discair.ui.common.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import app.discair.ui.common.OutlinedButton
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -131,36 +132,25 @@ fun DownloadsScreen(open: Opener) {
         }
     }
 
+    // Nothing is sent until the destructive button of this sheet is tapped (ConfirmSheet).
     confirm?.let { ask ->
-        AlertDialog(
-            onDismissRequest = { confirm = null },
-            title = { Text(ask.title) },
-            text = {
-                Text(
-                    "This removes the record and deletes the downloaded files the server identifies for it. " +
-                        "The server refuses if it cannot do that safely.",
-                )
+        ConfirmSheet(
+            spec = ask.spec,
+            onKeep = { confirm = null },
+            onConfirm = {
+                confirm = null
+                when (ask) {
+                    is Confirm.One -> hub.dismiss(ask.job)
+                    is Confirm.Imported -> hub.dismissImported()
+                }
             },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        confirm = null
-                        when (ask) {
-                            is Confirm.One -> hub.dismiss(ask.job)
-                            is Confirm.Imported -> hub.dismissImported()
-                        }
-                    },
-                    Modifier.heightIn(min = Target),
-                ) { Text("Dismiss") }
-            },
-            dismissButton = { TextButton(onClick = { confirm = null }, Modifier.heightIn(min = Target)) { Text("Cancel") } },
         )
     }
 }
 
-private sealed class Confirm(val title: String) {
-    class One(val job: AcquisitionJob) : Confirm("Dismiss ${job.title}?")
-    class Imported(count: Int) : Confirm("Dismiss ${plural(count, "import")}?")
+private sealed class Confirm(val spec: ConfirmSpec) {
+    class One(val job: AcquisitionJob) : Confirm(ConfirmSpecs.dismissJob(job.title))
+    class Imported(count: Int) : Confirm(ConfirmSpecs.dismissImports(count))
 }
 
 /** One polite line: how many records, whether updates are live, and any problem reading the list. */
