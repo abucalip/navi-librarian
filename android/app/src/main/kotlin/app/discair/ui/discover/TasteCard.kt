@@ -22,6 +22,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -35,11 +36,15 @@ import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import app.discair.model.TasteCard
 import app.discair.model.TasteCardState
 import app.discair.model.TasteProfiles
 import app.discair.model.TasteShift
 import app.discair.model.TasteWindow
+import app.discair.ui.common.LocalRepository
 import app.discair.ui.common.ModalBottomSheet
 import app.discair.ui.common.Target
 import app.discair.ui.theme.Ink
@@ -225,19 +230,40 @@ internal fun TasteSheet(profiles: TasteProfiles, onDismiss: () -> Unit) {
             } else {
                 Bars(w, profiles.window("all_time"), dimension, showTick = window != "all_time")
             }
-            // The mockup's one filled action. No server route creates a playlist yet, so it is disabled and says why.
+            // The mockup's one filled action: the server builds a Navidrome playlist from the genre.
             TasteCard.playlistTarget(profiles)?.let { target ->
+                val repo = LocalRepository.current
+                val scope = rememberCoroutineScope()
+                var made by remember(target) { mutableStateOf<PlaylistState>(PlaylistState.Idle) }
                 app.discair.ui.common.Button(
-                    onClick = {}, enabled = TasteCard.PlaylistRouteAvailable,
+                    onClick = {
+                        made = PlaylistState.Working
+                        scope.launch {
+                            made = try {
+                                PlaylistState.Done(withContext(Dispatchers.IO) { repo.makeTastePlaylist(target) }.name)
+                            } catch (e: Exception) {
+                                PlaylistState.Failed
+                            }
+                        }
+                    },
+                    enabled = made != PlaylistState.Working,
                     modifier = Modifier.fillMaxWidth().heightIn(min = Target).padding(top = 8.dp),
-                ) { Text("Make ${if (target.firstOrNull()?.lowercaseChar()?.let { it in "aeiou" } == true) "an" else "a"} $target playlist") }
-                if (!TasteCard.PlaylistRouteAvailable) Text(
-                    "Not available yet: the server cannot create playlists.",
-                    color = Ink.TextMuted, style = MaterialTheme.typography.bodySmall,
-                )
+                ) { Text(if (made == PlaylistState.Working) "Making the playlist…" else "Make ${if (target.firstOrNull()?.lowercaseChar()?.let { it in "aeiou" } == true) "an" else "a"} $target playlist") }
+                when (val m = made) {
+                    is PlaylistState.Done -> Text("Made \"${m.name}\" in Navidrome.", color = Ink.TextMuted, style = MaterialTheme.typography.bodySmall)
+                    PlaylistState.Failed -> Text("Could not make the playlist. Try again.", color = app.discair.ui.theme.LocalPalette.current.chartRedText, style = MaterialTheme.typography.bodySmall)
+                    else -> {}
+                }
             }
         }
     }
+}
+
+private sealed interface PlaylistState {
+    data object Idle : PlaylistState
+    data object Working : PlaylistState
+    data class Done(val name: String) : PlaylistState
+    data object Failed : PlaylistState
 }
 
 @Composable
