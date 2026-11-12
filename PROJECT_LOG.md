@@ -1,3 +1,11 @@
+## 2026-11-12 — Android art themes S4 part 2: Soft Brut Radio, Downloads and Library stats (PR #1012)
+
+- Merged as `4652b1007a4e54c610708d765c2016ba9da7a56e` from head `2d7357e416f4950cd2b80ca7130fa064e00ddfba`. Added `ui/radio/CoverStackRadio.kt`, `ui/downloads/CoverStackDownloads.kt`, `ui/stats/CoverStackStats.kt` and `CoverStackRadioDownloadsStatsRulesTest`; `isCoverStack()` branches in the five screens; Cover Stack-only branches in the shared chart frame, line chart and chart style.
+- Verified with JDK 17, filtered: `CoverStackRadioDownloadsStatsRulesTest`, `ExistingLayoutsTest`, `SoftBrutTest`, `ChartMathTest`, `RadioScreenTest`, `DownloadsRulesTest`, `StatsModelTest`. Full suite not run (owner rule).
+- Differences from the mockups: 3-month range chip kept; decades stay paired-bar rows; Shelf life keeps its "not available" sentence; Download button words unchanged; Sleep timer and stream status kept on the live sheet.
+- Not checked: no screenshots beside the mockups and no device check.
+- Next action: the owner checks these on the phone; then Server, Settings, Equalizer and Crossfade, or F1.
+
 ## 2026-11-12 — Android art themes S3 part 3: Soft Brut Library and Search (PR #1010)
 
 - Merged as `06d107c0cad9ff30390476cc33e0b4d93c408b43` from head `38f846bc5d79834330e0a2d6506e2c9b93804b3a`. Added `ui/library/CoverStackLibrary.kt`, `ui/search/CoverStackSearch.kt` and `PlayerIcons.Sort`; one `isCoverStack()` branch each in `LibraryScreen` and `SearchScreen`; a few helpers made internal.
