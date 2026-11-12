@@ -1,0 +1,300 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body>
+<title>Discair Soft Brut Dashboards</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;700&display=swap">
+<style>
+/* Layout: a review sheet. Quiet page chrome; four phone frames per sheet, each scrollable, each a self-contained theme. */
+:root{--pg:#F1F0EC;--pfg:#1A1A1F;--pmut:#5C5B63;--pline:#D6D4CB;--pchip:#FFFFFF;
+  --f-head:'Space Grotesk',system-ui,sans-serif;--f-body:'Inter',system-ui,sans-serif;--f-mono:'JetBrains Mono',ui-monospace,monospace}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--pg:#16161A;--pfg:#EEEDE8;--pmut:#A3A2AB;--pline:#33333B;--pchip:#222228;color-scheme:dark}}
+:root[data-theme="dark"]{--pg:#16161A;--pfg:#EEEDE8;--pmut:#A3A2AB;--pline:#33333B;--pchip:#222228;color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--pg);color:var(--pfg);font-family:var(--f-body);font-size:15px;line-height:1.5;
+  padding-block:32px 64px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:1540px;margin:0 auto;display:flex;flex-direction:column;gap:32px}
+.top h1{font-family:var(--f-head);font-size:clamp(28px,4vw,40px);line-height:1.1;margin:0 0 10px;letter-spacing:-.02em;text-wrap:balance}
+.top p{margin:0;max-width:68ch;color:var(--pmut)}
+.top .how{margin-top:10px;color:var(--pfg)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:44px 24px;justify-items:center;align-items:start}
+.prop{width:100%;max-width:360px;display:flex;flex-direction:column;gap:14px;min-width:0}
+.prop h2{font-family:var(--f-head);font-size:22px;line-height:1.15;margin:0;display:flex;gap:10px;align-items:baseline}
+.prop h2 b{font-family:var(--f-mono);font-size:12px;font-weight:500;border:1px solid var(--pline);background:var(--pchip);border-radius:6px;padding:2px 7px;letter-spacing:.04em}
+.prop .note{margin:0;color:var(--pmut);font-size:14px}
+.prop dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:13px;border-top:1px solid var(--pline);padding-top:10px}
+.prop dt{font-family:var(--f-mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--pmut);padding-top:2px}
+.prop dd{margin:0}
+.sw{display:inline-flex;gap:4px;vertical-align:-2px}
+.sw i{width:14px;height:14px;border-radius:4px;border:1px solid var(--pline);display:inline-block}
+.foot{color:var(--pmut);font-size:13px;max-width:72ch;margin:0}
+
+/* phone frame */
+.phone{position:relative;width:100%;height:740px;border-radius:40px;border:9px solid #101012;overflow:hidden;background:var(--bg);color:var(--tx);box-shadow:0 18px 40px -18px rgba(0,0,0,.45);font-size:14px;line-height:1.35}
+.scr{height:100%;overflow-y:auto;scrollbar-width:none;padding-bottom:156px;display:flex;flex-direction:column;gap:18px}
+.scr::-webkit-scrollbar{display:none}
+.scr>*{flex:none}
+.scr:focus-visible{outline:2px solid var(--pfg);outline-offset:-4px}
+.status{display:flex;justify-content:space-between;padding:10px 22px 0;font-size:12px;font-weight:600;flex:none}
+.dock{position:absolute;left:0;right:0;bottom:0;padding:0 12px 12px;display:flex;flex-direction:column;gap:8px}
+.pad{padding-inline:16px}
+.row{display:flex;align-items:center;gap:10px}
+.sp{flex:1;min-width:0}
+.hs{display:flex;gap:12px;overflow-x:auto;scrollbar-width:none;padding-inline:16px}
+.hs::-webkit-scrollbar{display:none}
+.hs>*{flex:none}
+.el{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.phone svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.phone svg.f{fill:currentColor;stroke:none}
+.phone p,.phone h3,.phone h4{margin:0}
+
+/* stand-in cover art */
+.cv{aspect-ratio:1;display:block;flex:none;background-size:cover}
+.k1{background:linear-gradient(#0000 78%,#0a1226 78%),repeating-linear-gradient(90deg,#16264a 0 13px,#22407c 13px 19px)}
+.k2{background:radial-gradient(circle at 50% 56%,#f7a23b 0 17%,#0000 17.5%),linear-gradient(#7a1f2b,#e9762b 56%,#3a1420 56%)}
+.k3{background:radial-gradient(circle,#0000 0 21%,#5fb8cf 22% 30%,#0000 31%),#132d33}
+.k4{background:radial-gradient(circle at 30% 30%,#7b5cff,#1a8fd1 55%,#0d2a66)}
+.k5{background:radial-gradient(ellipse 22% 26% at 50% 36%,#d98a45 0 98%,#0000 100%),linear-gradient(90deg,#0000 48.5%,#5b3a23 48.5% 51.5%,#0000 51.5%),linear-gradient(#dfe6ea 80%,#6b4a2f 80%)}
+.k6{background:conic-gradient(from 45deg,#ff6fa3,#ffd84d,#ff6fa3,#7ad7f0,#ff6fa3)}
+.k7{background:linear-gradient(160deg,#0f3d2e,#3fa36c 60%,#e8d77a)}
+.k8{background:repeating-radial-gradient(circle at 50% 120%,#111 0 9px,#e9e6dc 9px 10px)}
+.k9{background:linear-gradient(135deg,#b3186d,#f08a4b)}
+.k10{background:radial-gradient(circle at 60% 55%,#2747c7 0 28%,#0000 28.5%),#e9dcc3}
+.k11{background:linear-gradient(90deg,#f2c230 50%,#0e6b6b 50%)}
+.k12{background:linear-gradient(200deg,#cfd6dd,#6f7c8a 60%,#2b323a)}
+/* stand-in artist portraits */
+.ar{display:block;flex:none;background:radial-gradient(circle at 50% 40%,var(--h) 0 17%,#0000 17.6%),radial-gradient(ellipse 44% 36% at 50% 102%,var(--s) 0 98%,#0000 100%),var(--b)}
+.a1{--b:linear-gradient(#e9a13b,#c2541c);--h:#3a1a12;--s:#3a1a12}
+.a2{--b:linear-gradient(#9fc4e8,#3b5fa8);--h:#12203f;--s:#12203f}
+.a3{--b:linear-gradient(#d8d2c4,#8d8676);--h:#2a2722;--s:#2a2722}
+.a4{--b:linear-gradient(#f3a6c4,#a8387a);--h:#3d0f2b;--s:#3d0f2b}
+.a5{--b:linear-gradient(#a9e0c1,#2f7f63);--h:#0e2f25;--s:#0e2f25}
+.a6{--b:linear-gradient(#c9b8f5,#5b45b8);--h:#1d1447;--s:#1d1447}
+</style>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<symbol id="i-home" viewBox="0 0 24 24"><path d="M4 11l8-7 8 7v8a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z"/></symbol>
+<symbol id="i-disc" viewBox="0 0 24 24"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8zM18.5 16l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7z"/></symbol>
+<symbol id="i-lib" viewBox="0 0 24 24"><path d="M5 4v16M9.5 4v16M14 5l4.5 14.5"/></symbol>
+<symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></symbol>
+<symbol id="i-play" viewBox="0 0 24 24"><path d="M7 4.5v15l12.5-7.5z"/></symbol>
+<symbol id="i-pause" viewBox="0 0 24 24"><path d="M7 5h3.5v14H7zM13.5 5H17v14h-3.5z"/></symbol>
+<symbol id="i-dl" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5v8M8.5 12.5L12 16l3.5-3.500"/></symbol>
+<symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.500v3M2.5 12h3M18.500 12h3M5.300 5.300l2.100 2.100M16.600 16.600l2.100 2.100M5.300 18.700l2.100-2.100M16.600 7.400l2.100-2.100"/></symbol>
+<symbol id="i-more" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></symbol>
+<symbol id="i-chev" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></symbol>
+<symbol id="i-radio" viewBox="0 0 24 24"><rect x="3" y="8" width="18" height="12" rx="2"/><path d="M7 8l9-4"/><circle cx="8.500" cy="14" r="2.500"/><path d="M14 12.500h4M14 15.500h4"/></symbol>
+<symbol id="i-get" viewBox="0 0 24 24"><path d="M7 18a4.500 4.500 0 0 1-.6-8.960 6 6 0 0 1 11.700 1.500A3.800 3.800 0 0 1 17.500 18M12 11v8M9 16.500l3 3 3-3"/></symbol>
+</defs></svg>
+<style>
+/* subtle neobrutalism: 1.5px ink outline, 3px hard shadow, pastel fills, one accent per proposal */
+.nb{font-family:'DM Sans',system-ui,sans-serif}
+.nb h3{font-family:'Space Grotesk',system-ui,sans-serif;font-weight:700;letter-spacing:-.01em}
+.nb .bx{border:1.5px solid var(--ink);box-shadow:3px 3px 0 var(--sh);border-radius:var(--r,10px);background:var(--sf)}
+.nb .ol{border:1.5px solid var(--ink)}
+.nb .eb{font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--mut)}
+.nb .tag{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.07em;text-transform:uppercase;border:1.5px solid var(--ink);border-radius:6px;padding:2px 7px;background:var(--ac);color:var(--onac);display:inline-block}
+.nb .btn{height:44px;padding:0 16px;display:inline-flex;align-items:center;justify-content:center;gap:8px;font-weight:700;font-size:14px;border:1.5px solid var(--ink);box-shadow:3px 3px 0 var(--sh);border-radius:10px;background:var(--sf);color:var(--tx)}
+.nb .btn.p{background:var(--ac);color:var(--onac)}
+.nb .btn.sq{width:44px;padding:0}
+.nb .mut{color:var(--mut)}
+.nb .wm{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:22px;letter-spacing:-.04em}
+.nb .ib{width:40px;height:40px;display:grid;place-items:center;position:relative}
+.nb .bdg{position:absolute;top:2px;right:0;min-width:16px;height:16px;border-radius:8px;border:1.5px solid var(--ink);background:var(--ac);color:var(--onac);font-size:10px;font-weight:700;display:grid;place-items:center}
+.nb .sec{display:flex;align-items:baseline;justify-content:space-between}
+.nb .sec h3{font-size:18px}
+.nb .sec a{font-size:13px;font-weight:600;text-decoration:underline;text-underline-offset:3px;color:var(--tx)}
+.nb .mini{padding:7px 10px 7px 7px;gap:10px}
+.nb .mini .cv{width:40px;border-radius:6px}
+.nb .nav{display:grid;grid-template-columns:repeat(4,1fr);padding:5px;gap:4px;border-radius:14px}
+.nb .nav span{height:50px;border-radius:9px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;font-size:11px;font-weight:600;border:1.5px solid #0000}
+.nb .nav .on{background:var(--ac);color:var(--onac);border-color:var(--ink)}
+.nb .cap b{display:block;font-weight:700;font-size:14px}
+.nb .cap span{font-size:12.5px;color:var(--mut)}
+.nb .prog{height:10px;border:1.5px solid var(--ink);border-radius:6px;background:var(--sf);overflow:hidden}
+.nb .prog i{display:block;height:100%;background:var(--ac);border-right:1.5px solid var(--ink)}
+.nb .stat{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.04em;border-top:1.5px dashed var(--ink);border-bottom:1.5px dashed var(--ink);padding:9px 0;display:flex;justify-content:space-between;gap:8px}
+
+.n1{--bg:#FBF7EE;--sf:#FFFFFF;--tx:#1C1B22;--mut:#5E5A6B;--ink:#1C1B22;--sh:#1C1B22;--ac:#C4B5FD;--onac:#1C1B22}
+.n1 .stack{position:relative;height:262px;margin:6px 40px 0 26px}
+.n1 .stack .cv{position:absolute;width:236px;border-radius:12px}
+.n1 .stack .b2{left:34px;top:18px;transform:rotate(5deg)}
+.n1 .stack .b1{left:18px;top:10px;transform:rotate(2.500deg)}
+.n1 .stack .f{left:0;top:0;box-shadow:4px 4px 0 var(--sh)}
+.n1 .who{width:72px;text-align:center;font-size:12px;font-weight:600}
+.n1 .who .ar{width:68px;height:68px;border-radius:50%;margin:0 auto 6px}
+.n1 .g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.n1 .g2 .cv{border-radius:10px;margin-bottom:8px}
+
+.n2{--bg:#FFFBEA;--sf:#FFFFFF;--tx:#1A1A1A;--mut:#5B5648;--ink:#1A1A1A;--sh:#1A1A1A;--ac:#FFD84D;--onac:#1A1A1A;--ac2:#A6E9CB}
+.n2 .head{position:relative;margin-bottom:34px}
+.n2 .head .ar{width:100%;height:280px;border-radius:16px}
+.n2 .head .tag{position:absolute;left:12px;top:12px;background:var(--ac2)}
+.n2 .plate{position:absolute;left:12px;right:44px;bottom:-30px;padding:10px 14px}
+.n2 .plate h3{font-size:24px;line-height:1.1}
+.n2 .playb{position:absolute;right:10px;bottom:-22px;width:56px;height:56px;border-radius:50%;display:grid;place-items:center;background:var(--ac)}
+.n2 .tile{position:relative}
+.n2 .tile .ar{width:100%;aspect-ratio:1;border-radius:12px}
+.n2 .tile b{position:absolute;left:8px;bottom:8px;background:var(--sf);border:1.5px solid var(--ink);border-radius:6px;padding:2px 7px;font-size:12px}
+.n2 .chips{display:flex;flex-wrap:wrap;gap:8px}
+.n2 .chips span{border:1.5px solid var(--ink);border-radius:99px;padding:6px 12px;font-size:13px;font-weight:600;background:var(--sf)}
+
+.n3{--bg:#EDF1F6;--sf:#FFFFFF;--tx:#16181D;--mut:#565C68;--ink:#16181D;--sh:#16181D;--ac:#FF9483;--onac:#16181D;--ac2:#BFD9FF}
+.n3 .mo{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.n3 .big{grid-column:1/-1;overflow:hidden;--r:14px}
+.n3 .big .cv{width:100%;aspect-ratio:1/.82}
+.n3 .big .ft{border-top:1.5px solid var(--ink);padding:10px 12px}
+.n3 .t{overflow:hidden;--r:14px;position:relative;aspect-ratio:1;display:flex;flex-direction:column}
+.n3 .t .ar,.n3 .t>.cv{width:100%;flex:1;aspect-ratio:auto}
+.n3 .t .lb{border-top:1.5px solid var(--ink);padding:6px 10px;font-weight:700;font-size:13px;background:var(--sf)}
+.n3 .t.num{background:var(--ac);padding:12px;justify-content:space-between}
+.n3 .t.num strong{font-family:'Space Grotesk',sans-serif;font-size:44px;line-height:1}
+.n3 .t.arr{padding:10px;gap:8px;justify-content:space-between}
+.n3 .t.arr .cv{width:64px;flex:none;aspect-ratio:1;border-radius:8px}
+.n3 .wide{grid-column:1/-1;padding:12px;--r:14px;background:var(--ac2)}
+
+.n4{--bg:#1F1E26;--sf:#2B2A35;--tx:#F4EFE1;--mut:#B4AEC0;--ink:#F4EFE1;--sh:#0B0B0E;--ac:#FFA3D1;--onac:#1F1E26}
+.n4 .tabs{display:grid;grid-template-columns:repeat(3,1fr);overflow:hidden}
+.n4 .tabs span{height:40px;display:grid;place-items:center;font-weight:700;font-size:13px;border-right:1.5px solid var(--ink)}
+.n4 .tabs span:last-child{border:0}
+.n4 .tabs .on{background:var(--ac);color:var(--onac)}
+.n4 .slv{display:flex;gap:0;align-items:center}
+.n4 .slv .art{position:relative;width:150px;flex:none;height:122px}
+.n4 .slv .cv{position:absolute;left:0;top:0;width:122px;border-radius:6px;z-index:1;box-shadow:3px 3px 0 var(--sh)}
+.n4 .slv .vin{position:absolute;left:38px;top:7px;width:108px;height:108px;border-radius:50%;background:radial-gradient(circle,var(--ac) 0 16%,#0b0b0e 17% 100%);border:1.5px solid var(--ink)}
+.n4 .slv h3{font-size:18px;line-height:1.15}
+.n4 .film{display:flex;margin-inline:16px;overflow:hidden;--r:12px}
+.n4 .film div{flex:1;border-right:1.5px solid var(--ink);position:relative}
+.n4 .film div:last-child{border:0}
+.n4 .film .ar{width:100%;aspect-ratio:3/4}
+.n4 .film b{display:block;border-top:1.5px solid var(--ink);padding:5px 6px;font-size:11.5px;background:var(--sf)}
+</style>
+<div class="wrap">
+<header class="top">
+  <h1>Subtle neobrutalist theme, four dashboards</h1>
+  <p>Android, phone width. Every proposal keeps the neobrutalist kit from the local folder (ink outline, hard offset shadow, pastel fill, mono labels) but turned down: 1.5dp outlines, 3dp shadows, one accent, and the outline goes on the artwork first. Covers and artist photos are drawn stand-ins; the app uses the real ones.</p>
+  <p class="how">Scroll inside each phone. Reply with one code (N1 to N4), or a mix such as "N2 with the nav from N4".</p>
+</header>
+<div class="grid">
+
+<!-- N1 -->
+<section class="prop">
+<h2><b>N1</b>Cover Stack</h2>
+<div class="phone nb n1"><div class="scr" tabindex="0">
+  <div class="status"><span>21:14</span><span>5G 82%</span></div>
+  <div class="row pad"><span class="wm">discair</span><span class="sp"></span><span class="ib"><svg><use href="#i-dl"/></svg><i class="bdg" style="font-style:normal">2</i></span><span class="ib"><svg><use href="#i-gear"/></svg></span></div>
+  <div class="pad sec"><span class="eb">Today's picks</span><span class="eb">1 / 7</span></div>
+  <div class="stack"><i class="cv ol b2 k3"></i><i class="cv ol b1 k2"></i><i class="cv ol f k1"></i></div>
+  <div class="pad"><h3 style="font-size:26px;line-height:1.1">Hex</h3><p class="mut">Bark Psychosis · 1994 · Post-rock</p></div>
+  <div class="pad row"><span class="btn p sp"><svg><use href="#i-get"/></svg>Get album</span><span class="btn">Save</span><span class="btn sq"><svg class="f"><use href="#i-more"/></svg></span></div>
+  <div class="pad sec"><h3>In rotation</h3><a>All artists</a></div>
+  <div class="hs">
+    <div class="who"><i class="ar ol a1"></i>Alice Coltrane</div><div class="who"><i class="ar ol a2"></i>The Blue Nile</div><div class="who"><i class="ar ol a3"></i>Talk Talk</div><div class="who"><i class="ar ol a4"></i>Slowdive</div><div class="who"><i class="ar ol a5"></i>Portishead</div>
+  </div>
+  <div class="pad"><div class="bx row" style="padding:10px"><i class="cv ol k4" style="width:52px;border-radius:8px"></i><div class="sp"><b>Pygmalion</b><p class="mut" style="font-size:12.5px;margin-bottom:6px">Slowdive · Downloading · 64%</p><div class="prog"><i style="width:64%"></i></div></div></div></div>
+  <div class="pad sec"><h3>Recently added</h3><a>Library</a></div>
+  <div class="pad g2">
+    <div class="cap"><i class="cv ol k10"></i><b class="el">Hats</b><span>The Blue Nile</span></div>
+    <div class="cap"><i class="cv ol k2"></i><b class="el">Journey in Satchidananda</b><span>Alice Coltrane</span></div>
+    <div class="cap"><i class="cv ol k3"></i><b class="el">Third</b><span>Portishead</span></div>
+    <div class="cap"><i class="cv ol k5"></i><b class="el">Laughing Stock</b><span>Talk Talk</span></div>
+  </div>
+  <div class="pad"><div class="stat"><span>1,284 ALBUMS</span><span>12 NEW THIS MONTH</span><span>STATS →</span></div></div>
+</div>
+<div class="dock">
+  <div class="bx row mini"><i class="cv ol k5"></i><div class="sp"><b class="el" style="display:block">After the Flood</b><span class="mut" style="font-size:12px">Talk Talk</span></div><svg class="f"><use href="#i-pause"/></svg></div>
+  <div class="bx nav"><span class="on"><svg><use href="#i-home"/></svg>Home</span><span><svg><use href="#i-disc"/></svg>Discover</span><span><svg><use href="#i-lib"/></svg>Library</span><span><svg><use href="#i-search"/></svg>Search</span></div>
+</div></div>
+<p class="note">Today's picks are a physical pile of sleeves you flick through. The front cover is the hero; the next two peek out behind it. Artists follow as outlined portraits, then a two-column cover wall.</p>
+<dl><dt>Palette</dt><dd><span class="sw"><i style="background:#FBF7EE"></i><i style="background:#C4B5FD"></i><i style="background:#1C1B22"></i></span> cream, lavender, ink</dd><dt>Stats</dt><dd>One dashed strip at the very bottom</dd></dl>
+</section>
+
+<!-- N2 -->
+<section class="prop">
+<h2><b>N2</b>Headliner</h2>
+<div class="phone nb n2"><div class="scr" tabindex="0">
+  <div class="status"><span>21:14</span><span>5G 82%</span></div>
+  <div class="row pad"><span class="wm">discair</span><span class="sp"></span><span class="ib"><svg><use href="#i-dl"/></svg><i class="bdg" style="font-style:normal">2</i></span><span class="ib"><svg><use href="#i-gear"/></svg></span></div>
+  <div class="pad"><div class="head">
+    <i class="ar ol a1" style="box-shadow:3px 3px 0 var(--sh)"></i><span class="tag">On repeat this week</span>
+    <div class="bx plate"><h3>Alice Coltrane</h3><p class="mut" style="font-size:12.5px">6 albums in your library</p></div>
+    <span class="bx playb"><svg class="f"><use href="#i-play"/></svg></span>
+  </div></div>
+  <div class="hs">
+    <i class="cv ol k2" style="width:96px;border-radius:8px"></i><i class="cv ol k9" style="width:96px;border-radius:8px"></i><i class="cv ol k7" style="width:96px;border-radius:8px"></i><i class="cv ol k6" style="width:96px;border-radius:8px"></i>
+  </div>
+  <div class="pad sec"><h3>Today's pick</h3><span class="eb">1 / 7</span></div>
+  <div class="pad"><div class="bx" style="padding:12px;display:flex;flex-direction:column;gap:12px">
+    <div class="row" style="align-items:flex-start;gap:12px"><i class="cv ol k1" style="width:104px;border-radius:8px"></i><div class="sp"><span class="tag" style="background:var(--ac2)">Not in library</span><h3 style="font-size:22px;margin-top:6px">Hex</h3><p class="mut">Bark Psychosis · 1994</p><p class="mut" style="font-size:12.5px">Post-rock</p></div></div>
+    <div class="row"><span class="btn p sp"><svg><use href="#i-get"/></svg>Get album</span><span class="btn">Save</span><span class="btn sq"><svg class="f"><use href="#i-more"/></svg></span></div>
+  </div></div>
+  <div class="pad sec"><h3>More from your ears</h3><a>All artists</a></div>
+  <div class="pad" style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+    <div class="tile"><i class="ar ol a2"></i><b>The Blue Nile</b></div><div class="tile"><i class="ar ol a4"></i><b>Slowdive</b></div>
+    <div class="tile"><i class="ar ol a3"></i><b>Talk Talk</b></div><div class="tile"><i class="ar ol a5"></i><b>Portishead</b></div>
+  </div>
+  <div class="pad sec"><h3>Genres</h3></div>
+  <div class="pad chips"><span>Dream pop</span><span>Ambient</span><span>Post-rock</span><span>Spiritual jazz</span><span>Trip hop</span></div>
+</div>
+<div class="dock">
+  <div class="bx row mini" style="--r:99px;padding-right:14px"><i class="cv ol k5" style="border-radius:50%"></i><div class="sp"><b class="el" style="display:block">After the Flood</b><span class="mut" style="font-size:12px">Talk Talk</span></div><svg class="f"><use href="#i-pause"/></svg></div>
+  <div class="bx nav" style="--r:99px"><span class="on" style="border-radius:99px"><svg><use href="#i-home"/></svg>Home</span><span><svg><use href="#i-disc"/></svg>Discover</span><span><svg><use href="#i-lib"/></svg>Library</span><span><svg><use href="#i-search"/></svg>Search</span></div>
+</div></div>
+<p class="note">The artist leads. One large portrait of the artist you played most this week, with a name plate and Play sitting on its edge like stickers, and their albums right under. The pick becomes a compact card; other artists are a portrait grid.</p>
+<dl><dt>Palette</dt><dd><span class="sw"><i style="background:#FFFBEA"></i><i style="background:#FFD84D"></i><i style="background:#A6E9CB"></i><i style="background:#1A1A1A"></i></span> butter, yellow, mint, ink</dd><dt>Stats</dt><dd>None on Home; Stats stays one tap away in Library</dd></dl>
+</section>
+
+<!-- N3 -->
+<section class="prop">
+<h2><b>N3</b>Mosaic</h2>
+<div class="phone nb n3"><div class="scr" tabindex="0">
+  <div class="status"><span>21:14</span><span>5G 82%</span></div>
+  <div class="row pad"><span class="wm">discair</span><span class="sp"></span><span class="ib"><svg><use href="#i-dl"/></svg><i class="bdg" style="font-style:normal">2</i></span><span class="ib"><svg><use href="#i-gear"/></svg></span></div>
+  <div class="pad mo">
+    <div class="bx big"><i class="cv k1"></i><div class="ft"><div class="row"><div class="sp"><span class="eb">Today's pick · 1 / 7</span><h3 style="font-size:22px">Hex</h3><p class="mut">Bark Psychosis · 1994</p></div><span class="btn sq"><svg class="f"><use href="#i-more"/></svg></span></div><div class="row" style="margin-top:10px"><span class="btn p sp"><svg><use href="#i-get"/></svg>Get album</span><span class="btn">Save</span></div></div></div>
+    <div class="bx t"><i class="ar a1"></i><div class="lb el">Alice Coltrane</div></div>
+    <div class="bx t"><i class="ar a2"></i><div class="lb el">The Blue Nile</div></div>
+    <div class="bx t arr"><div class="row" style="align-items:flex-start"><i class="cv ol k4"></i><span class="tag">Arriving</span></div><div><b>Pygmalion</b><p class="mut" style="font-size:12px;margin-bottom:6px">Slowdive · 64%</p><div class="prog"><i style="width:64%"></i></div></div></div>
+    <div class="bx t num"><span class="eb" style="color:var(--tx)">Plays · 7 days</span><div><strong>214</strong><p style="font-size:12.5px;font-weight:600">▲ 18% on the week before</p></div></div>
+    <div class="bx t"><i class="cv k10"></i><div class="lb el">Hats</div></div>
+    <div class="bx t"><i class="cv k2"></i><div class="lb el">Journey in Satchidananda</div></div>
+    <div class="bx t"><i class="ar a4"></i><div class="lb el">Slowdive</div></div>
+    <div class="bx t"><i class="cv k3"></i><div class="lb el">Third</div></div>
+    <div class="bx wide"><div class="row"><svg><use href="#i-radio"/></svg><div class="sp"><b>Radio</b><p style="font-size:12.5px">Last heard: FIP, 08:42</p></div><svg><use href="#i-chev"/></svg></div></div>
+  </div>
+</div>
+<div class="dock">
+  <div class="bx row mini" style="--r:14px"><i class="cv ol k5"></i><div class="sp"><b class="el" style="display:block">After the Flood</b><span class="mut" style="font-size:12px">Talk Talk</span></div><svg class="f"><use href="#i-pause"/></svg></div>
+  <div class="bx nav"><span class="on"><svg><use href="#i-home"/></svg>Home</span><span><svg><use href="#i-disc"/></svg>Discover</span><span><svg><use href="#i-lib"/></svg>Library</span><span><svg><use href="#i-search"/></svg>Search</span></div>
+</div></div>
+<p class="note">No sections, no headings: one wall of square tiles. Covers, artist portraits, the arriving download and a single number all share the same tile shape, so the page reads as pictures first. The pick is the one double-width tile.</p>
+<dl><dt>Palette</dt><dd><span class="sw"><i style="background:#EDF1F6"></i><i style="background:#FF9483"></i><i style="background:#BFD9FF"></i><i style="background:#16181D"></i></span> mist, coral, sky, ink</dd><dt>Stats</dt><dd>One coral tile (plays this week), opens Stats</dd></dl>
+</section>
+
+<!-- N4 -->
+<section class="prop">
+<h2><b>N4</b>Sleeves</h2>
+<div class="phone nb n4"><div class="scr" tabindex="0">
+  <div class="status"><span>21:14</span><span>5G 82%</span></div>
+  <div class="row pad"><span class="wm">discair</span><span class="sp"></span><span class="ib"><svg><use href="#i-dl"/></svg><i class="bdg" style="font-style:normal">2</i></span><span class="ib"><svg><use href="#i-gear"/></svg></span></div>
+  <div class="pad"><div class="bx tabs"><span class="on">For you</span><span>New in</span><span>Played</span></div></div>
+  <div class="pad" style="display:flex;flex-direction:column;gap:20px">
+    <div class="slv"><div class="art"><i class="vin"></i><i class="cv ol k1"></i></div><div class="sp"><span class="eb">Pick 1 / 7 · Post-rock</span><h3>Hex</h3><p class="mut" style="margin-bottom:8px">Bark Psychosis · 1994</p><div class="row" style="gap:8px"><span class="btn p" style="height:38px;padding:0 12px">Get</span><span class="btn" style="height:38px;padding:0 12px">Save</span></div></div></div>
+    <div class="slv"><div class="art"><i class="vin"></i><i class="cv ol k9"></i></div><div class="sp"><span class="eb">Pick 2 / 7 · Spiritual jazz</span><h3>Ptah, the El Daoud</h3><p class="mut" style="margin-bottom:8px">Alice Coltrane · 1970</p><div class="row" style="gap:8px"><span class="btn p" style="height:38px;padding:0 12px">Get</span><span class="btn" style="height:38px;padding:0 12px">Save</span></div></div></div>
+    <div class="slv"><div class="art"><i class="vin"></i><i class="cv ol k12"></i></div><div class="sp"><span class="eb">Pick 3 / 7 · Art pop</span><h3>Spirit of Eden</h3><p class="mut" style="margin-bottom:8px">Talk Talk · 1988</p><div class="row" style="gap:8px"><span class="btn p" style="height:38px;padding:0 12px">Get</span><span class="btn" style="height:38px;padding:0 12px">Save</span></div></div></div>
+  </div>
+  <div class="pad sec"><h3>Artists you keep playing</h3><a>All</a></div>
+  <div class="bx film"><div><i class="ar a1"></i><b class="el">Alice Coltrane</b></div><div><i class="ar a6"></i><b class="el">Bark Psychosis</b></div><div><i class="ar a4"></i><b class="el">Slowdive</b></div></div>
+  <div class="pad"><div class="bx row" style="padding:10px"><i class="cv ol k4" style="width:52px;border-radius:8px"></i><div class="sp"><b>Pygmalion</b><p class="mut" style="font-size:12.5px;margin-bottom:6px">Slowdive · Downloading · 64%</p><div class="prog"><i style="width:64%"></i></div></div></div></div>
+  <div class="pad"><div class="stat"><span>1,284 ALBUMS</span><span>214 PLAYS THIS WEEK</span><span>STATS →</span></div></div>
+</div>
+<div class="dock">
+  <div class="bx row mini"><i class="cv ol k5"></i><div class="sp"><b class="el" style="display:block">After the Flood</b><span class="mut" style="font-size:12px">Talk Talk</span></div><svg class="f"><use href="#i-pause"/></svg></div>
+  <div class="bx nav"><span class="on"><svg><use href="#i-home"/></svg>Home</span><span><svg><use href="#i-disc"/></svg>Discover</span><span><svg><use href="#i-lib"/></svg>Library</span><span><svg><use href="#i-search"/></svg>Search</span></div>
+</div></div>
+<p class="note">The dark one. Three tabs replace the long scroll (For you, New in, Played); each is a short list of sleeves with the record sliding out. Artists sit in a joined filmstrip. Outlines are cream instead of black, so it stays soft.</p>
+<dl><dt>Palette</dt><dd><span class="sw"><i style="background:#1F1E26"></i><i style="background:#2B2A35"></i><i style="background:#FFA3D1"></i><i style="background:#F4EFE1"></i></span> aubergine, pink, cream outline</dd><dt>Stats</dt><dd>One dashed strip at the bottom</dd></dl>
+</section>
+
+</div>
+<p class="foot">All four keep the app's real controls: Get album, Save and the overflow (Not this album, Never suggest artist) on every pick, the downloads badge and Settings in the top bar, the mini player, and the four destinations. Each draws its own navigation, mini player and cards, so nothing here changes another theme. Artist-led modules need a "most played artists" list on Home, which the app does not load today; I will check what the server already offers before planning.</p>
+</div>
+
+</body></html>
