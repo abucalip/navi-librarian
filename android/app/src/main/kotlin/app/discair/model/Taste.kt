@@ -61,7 +61,16 @@ data class TasteProfiles(
 }
 
 /** `profiles` is null until a refresh has saved some ("not computed yet"). */
-data class TasteResponse(val profiles: TasteProfiles?, val dataVersion: Int, val generation: Int)
+data class TasteResponse(
+    val profiles: TasteProfiles?,
+    val dataVersion: Int,
+    val generation: Int,
+    /** D2: listens per UTC day, oldest first, ending the day before today. Null until a refresh has saved it. */
+    val listensByDay: List<ListensDay>? = null,
+)
+
+/** One day of listens. [date] is a UTC calendar day, "2026-11-10". */
+data class ListensDay(val date: String, val count: Int)
 
 /** `POST /api/insights/taste/refresh`: `state` is refreshed, unchanged, too_soon, failed or no_listens_source. */
 data class TasteRefreshResult(val state: String, val changed: Boolean, val retryAfter: Double, val error: String?)
@@ -152,7 +161,16 @@ private fun parseProfiles(o: JsonObject): TasteProfiles {
 /** Parses a `GET /api/insights/taste` body. A body that is not an object, or a null `profiles`, gives "not computed yet". */
 fun parseTaste(body: String): TasteResponse {
     val root = runCatching { ApiJson.parseToJsonElement(body) }.getOrNull() as? JsonObject
-    return TasteResponse(root?.obj("profiles")?.let(::parseProfiles), root?.int("data_version") ?: 0, root?.int("generation") ?: 0)
+    // A missing or malformed series is "not served", never zero days; a bad entry drops only itself.
+    val days = (root?.get("listens_by_day") as? kotlinx.serialization.json.JsonArray)?.mapNotNull { e ->
+        val o = e as? JsonObject ?: return@mapNotNull null
+        val date = o.string("date") ?: return@mapNotNull null
+        val count = o.int("count")?.takeIf { it >= 0 } ?: return@mapNotNull null
+        ListensDay(date, count)
+    }
+    return TasteResponse(
+        root?.obj("profiles")?.let(::parseProfiles), root?.int("data_version") ?: 0, root?.int("generation") ?: 0, days,
+    )
 }
 
 fun parseTasteRefresh(body: String): TasteRefreshResult {

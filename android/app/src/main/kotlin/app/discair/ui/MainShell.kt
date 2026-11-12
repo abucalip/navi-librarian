@@ -346,7 +346,7 @@ fun MainShell(state: UiState, model: AppViewModel, container: AppContainer) {
                 },
             ) {
                 composable<HomeRoute> {
-                    Opaque { HomeScreen(open, onRadio = { nav.navigate(RadioRoute) { launchSingleTop = true } }) }
+                    Opaque { HomeScreen(open, onRadio = { nav.navigate(RadioRoute) { launchSingleTop = true } }, onDownloads = { nav.navigate(DownloadsRoute) { launchSingleTop = true } }) }
                 }
                 composable<DiscoverRoute> { Opaque { DiscoverScreen(open) } }
                 composable<LibraryRoute> { Opaque { LibraryScreen(open) } }
