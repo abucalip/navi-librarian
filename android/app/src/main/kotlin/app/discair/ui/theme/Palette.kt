@@ -90,8 +90,13 @@ enum class Layout(val label: String) {
     Standard("Standard"), TapeDeck("Cassette Deck"), SheetStack("Sheet Stack"), StickerWall("Sticker Wall"),
 }
 
-/** Corner radius, outline width and hard-shadow offset, all in dp. A radius of 0 is square; pills are drawn at 50%. */
-class BrutalShape(val radius: Int, val outline: Int, val shadow: Int)
+/**
+ * Corner radius, outline width and hard-shadow offset, all in dp. A radius of 0 is square; pills are drawn at 50%.
+ * Fractions are allowed (Soft Brut draws a 1.5dp outline); the whole-number constructor keeps every earlier theme as it was.
+ */
+class BrutalShape(val radius: Float, val outline: Float, val shadow: Float) {
+    constructor(radius: Int, outline: Int, shadow: Int) : this(radius.toFloat(), outline.toFloat(), shadow.toFloat())
+}
 
 private fun c(hex: Long) = Color(0xFF000000 or hex)
 

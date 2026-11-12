@@ -121,7 +121,7 @@ fun TapeNavBar(
     libraryIcon: @Composable (Color) -> Unit,
     searchIcon: @Composable (Color) -> Unit,
 ) {
-    val rule = (palette.shape?.outline ?: 2).dp
+    val rule = (palette.shape?.outline ?: 2f).dp
     Row(
         modifier.fillMaxWidth().background(palette.surface).drawBehind {
             drawRect(palette.edgeStrong, Offset.Zero, Size(size.width, rule.toPx()))

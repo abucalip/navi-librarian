@@ -75,7 +75,7 @@ fun TapePlayer(
 ) {
     val item = state.current ?: return
     val p = LocalPalette.current
-    val rule = (p.shape?.outline ?: 2).dp
+    val rule = (p.shape?.outline ?: 2f).dp
     val mono = LocalFontPair.current.mono
     val reduced = rememberReducedMotion()
     var dragging by remember { mutableStateOf<Float?>(null) }
