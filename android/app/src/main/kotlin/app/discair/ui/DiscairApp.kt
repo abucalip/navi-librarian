@@ -238,7 +238,22 @@ fun SettingsScreen(state: UiState, model: AppViewModel, onBack: () -> Unit, onEq
         Text("Connected to your servers.", style = MaterialTheme.typography.bodyLarge)
         CheckLine("Librarian", state.librarian)
         CheckLine("Navidrome", state.navidrome)
-        OutlinedButton(onClick = onServer, Modifier.fillMaxWidth().heightIn(min = Target)) { Text("Server and services") }
+        // A grouped row with its state in words, first in the list (docs/redesign.md 8.2).
+        val serverLine = app.discair.ui.downloads.SettingsRules.serverLine(state.librarian, state.navidrome)
+        Column(
+            Modifier.fillMaxWidth().heightIn(min = 64.dp).clickable(role = Role.Button, onClickLabel = "Open Server and services", onClick = onServer),
+            verticalArrangement = Arrangement.Center,
+        ) {
+            Text("Server and services", style = MaterialTheme.typography.titleMedium)
+            Text(
+                serverLine.text, style = MaterialTheme.typography.bodySmall,
+                color = when (serverLine.tone) {
+                    app.discair.ui.downloads.SettingsRules.Tone.Success -> Ink.Ok
+                    app.discair.ui.downloads.SettingsRules.Tone.Danger -> Ink.ChartRedText
+                    else -> MaterialTheme.colorScheme.onSurfaceVariant
+                },
+            )
+        }
         app.discair.ui.settings.AppearanceRow(container.appearance, onAppearance)
         PlaybackSettings(container, onEqualizer, onCrossfade)
         LibrarySettings()
@@ -257,10 +272,10 @@ fun SettingsScreen(state: UiState, model: AppViewModel, onBack: () -> Unit, onEq
         }
         // Destructive and rare: set apart from the routine actions and always confirmed.
         Spacer(Modifier.size(32.dp))
-        TextButton(
+        OutlinedButton(
             onClick = { confirmSignOut = true },
             modifier = Modifier.fillMaxWidth().heightIn(min = Target),
-        ) { Text("Sign out…", color = MaterialTheme.colorScheme.error) }
+        ) { Text("Sign out…", color = Ink.ChartRedText) }
     }
     if (confirmSignOut) {
         // Nothing is signed out until the destructive button of the sheet is tapped.
@@ -437,6 +452,8 @@ private fun PlaybackSettings(container: AppContainer, onEqualizer: () -> Unit, o
 
 @Composable
 private fun Section(title: String, bold: Boolean = false) {
+    // A hairline sets each group apart, as the grouped rows in the mockup do.
+    app.discair.ui.common.RowDivider(Modifier.padding(top = 16.dp))
     Text(
         title,
         // Bold in the body face instead of the display face (owner request for Playback).

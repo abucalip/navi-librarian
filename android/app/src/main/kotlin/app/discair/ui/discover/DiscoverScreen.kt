@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items as gridItems
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.CircularProgressIndicator
@@ -253,11 +254,20 @@ fun DiscoverScreen(open: Opener) {
         }) {
             PageHeading("Discover", Modifier.padding(start = 16.dp, top = 16.dp, end = 16.dp), large = true)
             val options = DiscoveryList.entries
-            SegmentedTabs(
-                options.map { it.label }, options.indexOf(list),
-                onSelect = { i -> if (options[i] != list) { selected = options[i].name; statusLine = null } },
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-            )
+            // List names as chips in one scrolling row (docs/redesign.md 8.2).
+            androidx.compose.foundation.lazy.LazyRow(
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                items(options.size, key = { options[it].name }) { i ->
+                    app.discair.ui.common.FilterChip(
+                        selected = options[i] == list,
+                        onClick = { if (options[i] != list) { selected = options[i].name; statusLine = null } },
+                        label = { Text(options[i].label) },
+                        modifier = Modifier.heightIn(min = Target),
+                    )
+                }
+            }
             statusLine?.let {
                 Text(
                     it, color = Ink.ChartRedText, style = MaterialTheme.typography.bodyMedium,

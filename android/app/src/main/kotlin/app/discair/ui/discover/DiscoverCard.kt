@@ -158,6 +158,10 @@ fun DiscoverCard(
             )
             CardMenu(entry, saveState, onSave, onDismiss, Modifier.align(Alignment.TopEnd))
             if (item.acquired) Box(Modifier.align(Alignment.BottomEnd).padding(8.dp)) { OwnedMark(true) }
+            // Get sits on the cover, as drawn (docs/redesign.md 8.2).
+            else Box(Modifier.align(Alignment.BottomEnd).padding(8.dp)) {
+                app.discair.ui.common.GetAlbumButton(artist, item.album, app.discair.ui.common.pageMetadata(artist, item.album, item.year), overlay = true)
+            }
         }
         Column(Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 16.dp)) {
             FitTitle(item.album, Modifier.fillMaxWidth().clickable(role = Role.Button, onClick = openAlbum))

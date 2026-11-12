@@ -125,8 +125,10 @@ fun DownloadsScreen(open: Opener) {
             )
             else -> LazyColumn(Modifier.fillMaxSize(), contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = app.discair.ui.LocalBottomClearance.current)) {
                 items(jobs, key = { it.key }) { job ->
-                    JobRow(job, hub, now, open, onDismiss = { confirm = Confirm.One(job) })
-                    RowDivider()
+                    Column(Modifier.animateItem()) {
+                        JobRow(job, hub, now, open, onDismiss = { confirm = Confirm.One(job) })
+                        RowDivider()
+                    }
                 }
             }
         }
@@ -160,7 +162,7 @@ private fun StatusLine(hub: AcquisitionHub, jobs: List<AcquisitionJob>?) {
         hub.listProblem != null -> hub.listProblem!!
         jobs == null -> "Connecting to acquisition status…"
         jobs.isEmpty() -> "No acquisition records to show."
-        else -> plural(jobs.size, "acquisition record") + if (hub.live) ". Updating live." else ". Refreshing every few seconds."
+        else -> DownloadsRules.summary(jobs, java.time.LocalDate.now().atStartOfDay(java.time.ZoneId.systemDefault()).toEpochSecond().toDouble())
     }
     Text(
         text,
@@ -210,6 +212,9 @@ private fun JobRow(job: AcquisitionJob, hub: AcquisitionHub, now: Double, open: 
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             job.releaseGroup?.let { ReleaseEditionCovers(it) }
+            // Four named steps (docs/redesign.md section 3); the words below still say the exact state.
+            val step = DownloadsRules.step(job.status)
+            app.discair.ui.common.StageTracker(step.current, Modifier.padding(vertical = 4.dp), failed = step.failed, progress = DownloadsRules.fill(job))
             // The icon and the words are the status; the colour only adds emphasis (rule 4).
             val info = job.info
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -224,6 +229,11 @@ private fun JobRow(job: AcquisitionJob, hub: AcquisitionHub, now: Double, open: 
             ).forEach {
                 Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
+            // The one filled action on a record that has arrived.
+            if (job.isImported && !job.isSong) app.discair.ui.common.Button(
+                onClick = { open.album(routeKey(job.artist, job.albumName), job.artist, job.albumName, null, job.year) },
+                modifier = Modifier.fillMaxWidth().heightIn(min = Target).padding(top = 8.dp),
+            ) { Text("Open album") }
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 job.skipSecondsLeft(now)?.let { left ->
                     OutlinedButton(
