@@ -193,7 +193,7 @@ private fun TopBar(view: Int, onBack: () -> Unit, menu: List<Pair<String, () -> 
 
 /** The outlined seek bar with a block thumb, and the two times under it (mockup `.seek` and `.num`). */
 @Composable
-private fun SeekRow(state: PlayerUiState, controller: PlayerController) {
+private fun SeekRow(state: PlayerUiState, controller: PlayerController, peaks: FloatArray? = null) {
     val p = LocalPalette.current
     var dragging by remember { mutableStateOf<Float?>(null) }
     val duration = state.durationMs
@@ -206,6 +206,7 @@ private fun SeekRow(state: PlayerUiState, controller: PlayerController) {
             onChange = { dragging = it },
             onFinish = { dragging?.let { controller.seekTo((it * duration).toLong()) }; dragging = null },
             modifier = Modifier.semantics { contentDescription = "Seek"; stateDescription = seekDescription(shown, duration) },
+            peaks = peaks,
         )
         Row(Modifier.fillMaxWidth().padding(horizontal = 4.dp), horizontalArrangement = Arrangement.SpaceBetween) {
             Text(formatTime(shown), style = timeStyle, color = p.textMuted)
@@ -302,6 +303,15 @@ private fun ColumnScope.NowPlayingView(
                     modifier = Modifier.weight(1f, fill = false).heightIn(min = Target).clickable(onClickLabel = "Open album", role = Role.Button) { onOpenAlbum(item) }.wrapContentHeight(Alignment.CenterVertically),
                 )
             }
+            // The quality tag: mono caps in an outlined radius-6 tag (the theme's tag recipe, on the surface fill).
+            qualityLabel(item)?.let {
+                Text(
+                    it.uppercase(), color = p.text, maxLines = 1,
+                    style = MaterialTheme.typography.labelSmall.copy(fontFamily = Mono, fontSize = 10.sp, lineHeight = 14.sp, fontWeight = FontWeight.Medium, letterSpacing = 0.07.em),
+                    modifier = Modifier.padding(top = 2.dp, bottom = 4.dp).clip(RoundedCornerShape(6.dp)).background(p.accentDim)
+                        .border(CoverStackRules.outline(p).dp, p.edgeStrong, RoundedCornerShape(6.dp)).padding(horizontal = 7.dp, vertical = 2.dp),
+                )
+            }
             // States the mockup does not draw, said in words: the lyric or fact line (when switched on), and the status.
             if (input.line.showLyrics || input.line.showFacts) PlayerLineText(input.line.line, Modifier.padding(top = 2.dp), align = TextAlign.Start)
             if (state.status != null || state.buffering) Text(
@@ -311,7 +321,7 @@ private fun ColumnScope.NowPlayingView(
             if (state.waitingForNetwork) TextButton(onClick = controller::retryNow, Modifier.heightIn(min = Target)) { Text("Retry now", color = p.text, textDecoration = TextDecoration.Underline) }
         }
         Spacer(Modifier.height(14.dp))
-        SeekRow(state, controller)
+        SeekRow(state, controller, input.line.peaks)
         Transport(state, controller)
     }
     // The four entries under the transport: Queue, Lyrics, Equalizer and Crossfade (the mockup's Sonic path has no Now Playing action).
