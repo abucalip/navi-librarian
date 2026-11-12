@@ -1,0 +1,131 @@
+/*
+ * Soft Brut · Lavender. Subtle neobrutalism: a 1.5dp ink outline, a 3dp hard ink shadow, pastel fills, mono labels.
+ * The outline goes on the artwork first; surfaces around it stay quiet. All values are dp (1 CSS px = 1 dp).
+ * The token block is the spec: docs/ANDROID_ART_THEMES_PROPOSAL.md section 3 maps each token to a Palette role.
+ */
+.sb{
+  /* colour roles */
+  --page:#FBF7EE; --rail:#FBF7EE; --surface:#FFFFFF; --raised:#F1EBDD;
+  --edge:#1C1B22; --edge-soft:#D8D2C4; --text:#1C1B22; --muted:#5E5A6B;
+  --accent:#C4B5FD; --accent-dim:#ECE6FF; --on-accent:#1C1B22;
+  --accent2:#BFD9FF; --accent3:#A6E9CB; --accent4:#FFD84D;
+  --shadow:#1C1B22;
+  --ok:#1B6B33; --ok-dim:#D9EEDD; --caution:#7F4A00; --caution-dim:#FBE9C4;
+  --danger:#B3261E; --danger-dim:#F8D9D5; --info:#1D4FB8; --info-dim:#DCE5FB;
+  --chart1:#C4B5FD; --chart2:#8B879A; --chart3:#FFFFFF; --chart-ghost:#F1EBDD; --chart-grid:#D8D2C4; --chart-base:#1C1B22;
+  /* shape */
+  --ol:1.5px; --sh:3px; --r:10px; --r-sm:6px; --r-lg:14px; --r-pill:999px;
+  /* type */
+  --f-display:'Space Grotesk',system-ui,sans-serif; --f-body:'Inter',system-ui,sans-serif; --f-label:'JetBrains Mono',ui-monospace,monospace;
+}
+.sb h2{font:700 26px/30px var(--f-display);letter-spacing:-.01em}
+.sb h3{font:700 18px/24px var(--f-display);letter-spacing:-.01em}
+.sb h4{font:600 14px/20px var(--f-body)}
+.sb .lt{font:700 26px/32px var(--f-display);letter-spacing:-.02em}
+.sb .wm{font-size:22px;letter-spacing:-.04em}
+.sb .eb{font:500 11px/16px var(--f-label);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.sb .h a,.sb .lk{font-weight:600;font-size:13px;text-decoration:underline;text-underline-offset:3px;color:var(--text)}
+.sb .numeral{font:700 28px/32px var(--f-display)}
+
+/* the one outline-and-shadow recipe */
+.sb .card,.sb .btn,.sb .mini,.sb .nav,.sb .field,.sb .tabs,.sb .sheet,.sb .snack,.sb .cb,.sb .tile{border:var(--ol) solid var(--edge);box-shadow:var(--sh) var(--sh) 0 var(--shadow);background:var(--surface);border-radius:var(--r)}
+.sb .cv,.sb .ar,.sb .lg{border:var(--ol) solid var(--edge);border-radius:var(--r-sm)}
+.sb .cv.lgc{border-radius:12px;box-shadow:4px 4px 0 var(--shadow)}
+.sb .ar.rd{border-radius:50%}
+.sb .card{padding:12px}
+.sb .tile{padding:12px;border-radius:var(--r-lg)}
+.sb .tile.radio{background:var(--accent2)}
+
+.sb .bdg{top:4px;right:2px;border:var(--ol) solid var(--edge);background:var(--accent);color:var(--on-accent)}
+.sb .btn{height:44px;padding:0 16px;font-weight:700;font-size:14px;color:var(--text)}
+.sb .btn.p{background:var(--accent);color:var(--on-accent)}
+.sb .btn.sq{width:44px;padding:0}
+.sb .btn.sm{height:36px;padding:0 12px;font-size:13px}
+.sb .btn.d{color:var(--danger)}
+.sb .tag{font:500 10px/14px var(--f-label);letter-spacing:.07em;text-transform:uppercase;border:var(--ol) solid var(--edge);border-radius:var(--r-sm);padding:2px 7px;background:var(--accent3);color:var(--text);display:inline-block}
+.sb .tag.y{background:var(--accent4)}.sb .tag.a{background:var(--accent)}
+.sb .chip{height:36px;padding:0 13px;border:var(--ol) solid var(--edge);border-radius:var(--r-pill);font-weight:600;font-size:13px;background:var(--surface)}
+.sb .chip.on{background:var(--accent)}
+.sb .tabs{overflow:hidden;margin-inline:16px}
+.sb .tabs span{height:40px;display:grid;place-items:center;font-weight:700;font-size:13px;border-right:var(--ol) solid var(--edge)}
+.sb .tabs span:last-child{border:0}
+.sb .tabs .on{background:var(--accent)}
+.sb .field{height:52px;margin-inline:16px;display:flex;align-items:center;gap:10px;padding:0 14px;font-size:16px}
+.sb .list{display:flex;flex-direction:column;padding-inline:16px}
+.sb .li{border-bottom:var(--ol) dashed var(--edge-soft)}
+.sb .li:last-child{border:0}
+.sb .list.card{margin-inline:16px;padding:0 12px}
+.sb .li .cv,.sb .li .ar{width:48px}
+.sb .li.on{background:var(--accent-dim);margin-inline:-12px;padding-inline:12px}
+.sb .ic{width:36px;height:36px;display:grid;place-items:center;border:var(--ol) solid var(--edge);border-radius:var(--r-sm);background:var(--accent-dim);flex:none}
+.sb .ic svg{width:20px;height:20px}
+.sb .prog{height:10px;border:var(--ol) solid var(--edge);border-radius:var(--r-sm);background:var(--surface);overflow:hidden}
+.sb .prog i{display:block;height:100%;background:var(--accent);border-right:var(--ol) solid var(--edge)}
+.sb .trk i{height:10px;border:var(--ol) solid var(--edge);border-radius:3px;background:var(--surface)}
+.sb .trk i.on{background:var(--accent)}
+.sb .trk i.bad{background:var(--danger-dim)}
+.sb .sw{border:var(--ol) solid var(--edge);border-radius:16px;background:var(--surface)}
+.sb .sw::after{left:4px;width:20px;height:20px;border:var(--ol) solid var(--edge);background:var(--raised)}
+.sb .sw.on{background:var(--accent)}
+.sb .sw.on::after{left:auto;right:4px;background:var(--surface)}
+.sb .stat{font:500 11px/16px var(--f-label);letter-spacing:.04em;border-top:var(--ol) dashed var(--edge);border-bottom:var(--ol) dashed var(--edge);padding:10px 0;display:flex;justify-content:space-between;gap:8px;text-transform:uppercase}
+.sb .banner{margin-inline:16px;padding:10px 12px;border:var(--ol) solid var(--edge);border-radius:var(--r);background:var(--caution-dim);display:flex;gap:10px;align-items:center}
+.sb .cap b{display:block;font-weight:700;font-size:14px}
+.sb .cap span{font-size:12px;line-height:18px;color:var(--muted)}
+.sb .who{width:72px;text-align:center;font-size:12px;line-height:16px;font-weight:600}
+.sb .who .ar{width:68px;margin:0 auto 6px}
+
+/* dock */
+.sb .mini{padding:0 12px 0 7px}
+.sb .nav{padding:5px;gap:4px;border-radius:var(--r-lg)}
+.sb .nav span{height:50px;border-radius:9px;font-size:11px;font-weight:600;border:var(--ol) solid #0000}
+.sb .nav .on{background:var(--accent);border-color:var(--edge)}
+.sb .sheet{border-radius:var(--r-lg) var(--r-lg) 0 0;border-bottom:0;box-shadow:none}
+.sb .snack{background:var(--text);color:var(--page)}
+.sb .snack .lk{color:var(--page)}
+
+/* Home: the cover stack */
+.sb .stack{position:relative;height:262px;margin:2px 60px 0 34px}
+.sb .stack .cv{position:absolute;width:248px;border-radius:12px}
+.sb .stack .b2{left:34px;top:18px;transform:rotate(5deg)}
+.sb .stack .b1{left:18px;top:10px;transform:rotate(2.5deg)}
+.sb .stack .f{left:0;top:0;box-shadow:4px 4px 0 var(--shadow)}
+.sb .stack .sk{border:var(--ol) solid var(--edge)}
+
+/* Discover cards: two columns, cover on top */
+.sb .cards{display:grid;grid-template-columns:1fr 1fr;gap:14px;padding-inline:16px}
+.sb .dc{display:flex;flex-direction:column;gap:6px;min-width:0}
+.sb .dc .cv{width:100%;border-radius:var(--r)}
+.sb .dc .acts{display:flex;gap:8px;margin-top:2px}
+.sb .dc .acts .btn{height:36px;padding:0 10px;font-size:13px;flex:1}
+.sb .dc .acts .btn.sq{flex:none;width:36px}
+
+/* Album and artist headers: art left-aligned, stacked on a tilted second sleeve */
+.sb .hero{display:flex;flex-direction:column;gap:12px;padding-inline:16px}
+.sb .hero .art{position:relative;width:216px;height:216px;margin:4px 0 6px 6px}
+.sb .hero .art .cv{position:absolute;inset:0;border-radius:12px;box-shadow:4px 4px 0 var(--shadow)}
+.sb .hero .art::before{content:"";position:absolute;inset:0;border:var(--ol) solid var(--edge);border-radius:12px;background:var(--accent);transform:translate(12px,8px) rotate(4deg)}
+.sb .ahero{display:flex;gap:14px;align-items:center;padding-inline:16px}
+.sb .ahero .ar{width:120px;border-radius:50%;box-shadow:4px 4px 0 var(--shadow)}
+.sb .trow{display:grid;grid-template-columns:24px 1fr auto;gap:10px;align-items:center;min-height:52px;border-bottom:var(--ol) dashed var(--edge-soft)}
+.sb .trow.on{background:var(--accent-dim);margin-inline:-16px;padding-inline:16px;border-bottom-style:solid;border-color:var(--edge);border-top:var(--ol) solid var(--edge)}
+
+/* Now Playing */
+.sb.np .npc{width:296px;margin:0 auto;border-radius:14px;box-shadow:5px 5px 0 var(--shadow)}
+.sb .seek{height:12px;border:var(--ol) solid var(--edge);border-radius:var(--r-sm);background:var(--surface)}
+.sb .seek i{position:absolute;left:0;top:0;bottom:0;background:var(--accent);border-right:var(--ol) solid var(--edge);border-radius:4px 0 0 4px}
+.sb .seek b{position:absolute;top:-6px;width:16px;height:21px;margin-left:-8px;border:var(--ol) solid var(--edge);border-radius:4px;background:var(--surface);box-shadow:2px 2px 0 var(--shadow)}
+.sb .cb{width:48px;height:48px}
+.sb .cb.main{width:68px;height:68px;background:var(--accent);border-radius:var(--r-lg)}
+.sb .cb.flat{border:0;box-shadow:none;background:none}
+.sb .lyr p{font:700 20px/28px var(--f-display);color:var(--muted)}
+.sb .lyr p.on{color:var(--text);background:var(--accent);display:inline;padding:2px 4px;box-decoration-break:clone;-webkit-box-decoration-break:clone}
+
+/* charts and bars */
+.sb .bars i{height:14px;border:var(--ol) solid var(--edge);border-radius:3px;background:var(--surface);display:block}
+.sb .bars i.on{background:var(--accent)}
+.sb .eq i{border:var(--ol) solid var(--edge);border-radius:4px;background:var(--surface)}
+.sb .eq i::after{content:"";position:absolute;left:-1.5px;right:-1.5px;bottom:-1.5px;height:var(--v);background:var(--accent);border:var(--ol) solid var(--edge);border-radius:4px}
+.sb .swt i{border:var(--ol) solid var(--edge);border-radius:var(--r)}
+.sb .swt .on i{box-shadow:var(--sh) var(--sh) 0 var(--shadow)}
+.sb .sk{border-radius:var(--r-sm)}

@@ -1,0 +1,145 @@
+/*
+ * Flow · Warm white. An iOS-inspired theme: no outlines, no hard shadows. Large titles, continuous corners, soft depth,
+ * translucent bars, capsule buttons, grouped lists. The artwork supplies the colour. All values are dp (1 CSS px = 1 dp).
+ * The token block is the spec: docs/ANDROID_ART_THEMES_PROPOSAL.md section 4 maps each token to a Palette role.
+ */
+.fl{
+  /* colour roles */
+  --page:#FBFAF7; --rail:#FBFAF7; --surface:#FFFFFF; --raised:#EFECE5;
+  --edge:#E2DFD6; --edge-strong:#8E887B; --text:#15130F; --muted:#6F6A60;
+  --accent:#C2410C; --accent-dim:#FBE4D5; --on-accent:#FFFFFF;
+  --ok:#1E7A3C; --ok-dim:#DCEEDF; --caution:#8A5300; --caution-dim:#F8E8CC;
+  --danger:#C0271A; --danger-dim:#F9DCD8; --info:#1F5FBF; --info-dim:#DCE7F8;
+  --chart1:#C2410C; --chart2:#A8A296; --chart3:#D9D4C8; --chart-ghost:#EFECE5; --chart-grid:#E2DFD6; --chart-base:#8E887B;
+  --bar:rgba(255,255,255,.86); --hair:rgba(0,0,0,.08);
+  /* shape and depth */
+  --r-card:16px; --r-cover:14px; --r-cover-sm:8px; --r-pill:999px;
+  --e1:0 4px 14px -10px rgba(21,19,15,.30);            /* cards, grouped lists */
+  --e2:0 6px 22px -8px rgba(21,19,15,.30);             /* floating bars */
+  --e3:0 22px 34px -18px rgba(21,19,15,.60);           /* the cover in front */
+  /* type */
+  --f-display:'Inter',system-ui,sans-serif; --f-body:'Inter',system-ui,sans-serif; --f-label:'Inter',system-ui,sans-serif;
+}
+.fl{letter-spacing:-.01em}
+.fl h2{font:700 24px/28px var(--f-display);letter-spacing:-.02em}
+.fl h3{font:700 20px/24px var(--f-display);letter-spacing:-.02em}
+.fl h4{font:600 15px/20px var(--f-body)}
+.fl .lt{font:800 30px/36px var(--f-display);letter-spacing:-.03em}
+.fl .wm{font-size:26px}
+.fl .eb{font:600 12px/16px var(--f-label);letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
+.fl .h a,.fl .lk{font-weight:500;font-size:14px;color:var(--accent)}
+.fl .numeral{font:700 28px/32px var(--f-display);letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+
+.fl .cv{border-radius:var(--r-cover-sm)}
+.fl .cv.lgc{border-radius:var(--r-cover);box-shadow:var(--e3)}
+.fl .ar.rd{border-radius:50%}
+.fl .lg{border-radius:10px}
+.fl .card,.fl .tile{background:var(--surface);border-radius:var(--r-card);box-shadow:var(--e1);padding:14px}
+.fl .ib{width:36px;height:36px;border-radius:50%;background:var(--raised);margin-left:6px}
+.fl .ib svg{width:20px;height:20px}
+.fl .bar .ib{background:none;margin:0;width:44px;height:44px;color:var(--accent)}
+.fl .bdg{top:-3px;right:-3px;background:var(--accent);color:var(--on-accent)}
+.fl .btn{height:44px;padding:0 18px;border-radius:22px;font-weight:600;font-size:15px;background:var(--raised);color:var(--text)}
+.fl .btn.p{background:var(--accent);color:var(--on-accent)}
+.fl .btn.t{color:var(--accent)}
+.fl .btn.sq{width:44px;padding:0}
+.fl .btn.sm{height:34px;padding:0 14px;font-size:14px}
+.fl .btn.d{color:var(--danger)}
+.fl .tag{font:600 11px/16px var(--f-label);letter-spacing:.03em;text-transform:uppercase;border-radius:6px;padding:2px 7px;background:var(--raised);color:var(--muted);display:inline-block}
+.fl .tag.y{background:var(--caution-dim);color:var(--caution)}.fl .tag.a{background:var(--accent-dim);color:var(--accent)}
+.fl .chip{height:34px;padding:0 14px;border-radius:17px;font-weight:500;font-size:14px;background:var(--raised)}
+.fl .chip.on{background:var(--text);color:var(--page)}
+.fl .tabs{margin-inline:16px;background:var(--raised);border-radius:11px;padding:2px;font-size:13px;font-weight:600}
+.fl .tabs span{padding:7px 0;border-radius:9px}
+.fl .tabs .on{background:var(--surface);box-shadow:0 2px 6px -2px rgba(0,0,0,.25)}
+.fl .field{height:44px;margin-inline:16px;display:flex;align-items:center;gap:8px;padding:0 12px;font-size:16px;background:var(--raised);border-radius:12px}
+.fl .field svg{width:20px;height:20px;color:var(--muted)}
+.fl .list{display:flex;flex-direction:column;padding-inline:16px}
+.fl .li{border-bottom:.5px solid var(--edge)}
+.fl .li:last-child{border:0}
+.fl .list.card{margin-inline:16px;padding:0 12px}
+.fl .li .cv,.fl .li .ar{width:48px}
+.fl .li.on h4{color:var(--accent)}
+.fl .ic{width:32px;height:32px;border-radius:8px;display:grid;place-items:center;background:var(--raised);flex:none}
+.fl .ic svg{width:18px;height:18px}
+.fl .chev{width:16px!important;height:16px!important;color:#B5B0A5;stroke-width:2.4!important}
+.fl .prog{height:4px;border-radius:2px;background:var(--raised);overflow:hidden}
+.fl .prog i{display:block;height:100%;background:var(--accent);border-radius:2px}
+.fl .trk i{height:4px;border-radius:2px;background:var(--raised)}
+.fl .trk i.on{background:var(--accent)}
+.fl .trk i.bad{background:var(--danger)}
+.fl .sw{border-radius:16px;background:#D9D5CB}
+.fl .sw::after{left:2px;width:28px;height:28px;background:#fff;box-shadow:0 2px 5px rgba(0,0,0,.25)}
+.fl .sw.on{background:var(--ok)}
+.fl .sw.on::after{left:auto;right:2px}
+.fl .banner{margin-inline:16px;padding:10px 12px;border-radius:12px;background:var(--caution-dim);display:flex;gap:10px;align-items:center}
+.fl .cap b{display:block;font-weight:600;font-size:14px}
+.fl .cap span{font-size:13px;line-height:18px;color:var(--muted)}
+.fl .who{width:84px;text-align:center;font-size:12px;line-height:16px;font-weight:500}
+.fl .who .ar{width:80px;margin:0 auto 6px}
+
+/* dock: translucent capsules */
+.fl .mini,.fl .nav{background:var(--bar);-webkit-backdrop-filter:blur(22px) saturate(1.6);backdrop-filter:blur(22px) saturate(1.6);box-shadow:var(--e2),inset 0 0 0 .5px var(--hair)}
+.fl .mini{border-radius:18px;padding:0 14px 0 8px}
+.fl .mini .cv{border-radius:9px}
+.fl .nav{border-radius:30px;padding:5px}
+.fl .nav span{height:50px;border-radius:25px;font-size:10.5px;font-weight:600;color:var(--muted)}
+.fl .nav .on{color:var(--accent);background:var(--raised)}
+.fl .sheet{background:var(--surface);border-radius:24px 24px 0 0}
+.fl .snack{background:var(--text);color:var(--page);border-radius:14px;box-shadow:var(--e2)}
+.fl .snack .lk{color:#FFB48A}
+
+/* Home: the cover carousel and portrait cards */
+.fl .flow{position:relative;height:236px;overflow:hidden}
+.fl .flow .cv{position:absolute;top:50%;border-radius:var(--r-cover)}
+.fl .flow .c{width:220px;left:50%;transform:translate(-50%,-50%);box-shadow:var(--e3);z-index:2}
+.fl .flow .s{width:160px;opacity:.75;transform:translateY(-50%)}
+.fl .flow .s.lf{left:-70px}.fl .flow .s.rt{right:-70px}
+.fl .pc{width:150px;border-radius:18px;overflow:hidden;position:relative}
+.fl .pc .ar{width:100%;aspect-ratio:3/4}
+.fl .pc b{position:absolute;left:0;right:0;bottom:0;padding:26px 12px 10px;color:#fff;font-size:14px;background:linear-gradient(#0000,rgba(0,0,0,.7))}
+
+/* Discover cards: one column, cover left */
+.fl .cards{display:flex;flex-direction:column;gap:12px;padding-inline:16px}
+.fl .dc{display:grid;grid-template-columns:112px 1fr;grid-template-rows:auto auto auto 1fr;column-gap:14px;background:var(--surface);border-radius:var(--r-card);box-shadow:var(--e1);padding:10px}
+.fl .dc .cv{width:112px;grid-row:1/-1;border-radius:10px}
+.fl .dc .acts{display:flex;gap:8px;align-self:end}
+.fl .dc .acts .btn{height:34px;padding:0 14px;font-size:14px}
+.fl .dc .acts .btn.sq{width:34px;padding:0}
+
+/* Album and artist headers: centred art over a wash of its colour */
+.fl .hero{display:flex;flex-direction:column;gap:10px;padding:0 16px;align-items:center;text-align:center}
+.fl .hero .art{width:232px;height:232px;margin:2px 0 8px}
+.fl .hero .art .cv{width:100%;border-radius:var(--r-cover);box-shadow:var(--e3)}
+.fl.wash .scr{background:linear-gradient(var(--wash,#DFE6EA),var(--page) 420px)}
+.fl .ahero{position:relative;margin-top:-96px}
+.fl .ahero .ar{width:100%;aspect-ratio:1/.92}
+.fl .ahero .ov{position:absolute;left:0;right:0;bottom:0;padding:60px 16px 14px;color:#fff;background:linear-gradient(#0000,rgba(0,0,0,.78));display:flex;align-items:flex-end;gap:12px}
+.fl .ahero .ov .mut{color:rgba(255,255,255,.8)}
+.fl.ov .status{position:relative;z-index:2;color:#fff}
+.fl .over{position:relative;z-index:2;color:#fff}
+.fl .over .ib{color:#fff;background:rgba(0,0,0,.28)}
+.fl .trow{display:grid;grid-template-columns:24px 1fr auto;gap:10px;align-items:center;min-height:48px;border-bottom:.5px solid var(--edge)}
+.fl .trow.on{color:var(--accent);font-weight:600}
+
+/* Now Playing */
+.fl.np .npc{width:312px;margin:0 auto;border-radius:18px;box-shadow:var(--e3)}
+.fl .seek{height:4px;border-radius:2px;background:rgba(21,19,15,.14)}
+.fl .seek i{position:absolute;left:0;top:0;bottom:0;background:var(--text);border-radius:2px}
+.fl .seek b{position:absolute;top:-5px;width:14px;height:14px;margin-left:-7px;border-radius:50%;background:var(--text)}
+.fl .cb{width:48px;height:48px}
+.fl .cb svg{width:30px;height:30px}
+.fl .cb.main{width:72px;height:72px;border-radius:50%;background:var(--text);color:var(--page)}
+.fl .cb.main svg{width:32px;height:32px}
+.fl .cb.flat svg{width:22px;height:22px;color:var(--muted)}
+.fl .lyr p{font:700 22px/30px var(--f-display);letter-spacing:-.02em;color:rgba(21,19,15,.32)}
+.fl .lyr p.on{color:var(--text)}
+
+/* charts and bars */
+.fl .bars i{height:8px;border-radius:4px;background:var(--chart3);display:block}
+.fl .bars i.on{background:var(--accent)}
+.fl .eq i{border-radius:5px;background:var(--raised)}
+.fl .eq i::after{content:"";position:absolute;left:0;right:0;bottom:0;height:var(--v);background:var(--accent);border-radius:5px}
+.fl .swt i{border-radius:14px;box-shadow:inset 0 0 0 .5px var(--hair)}
+.fl .swt .on i{box-shadow:0 0 0 2px var(--page),0 0 0 4px var(--accent)}
+.fl .sk{border-radius:10px}

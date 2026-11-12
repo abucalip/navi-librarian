@@ -1,0 +1,306 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body>
+<title>Discair iOS-Style Dashboards</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;700&display=swap">
+<style>
+/* Layout: a review sheet. Quiet page chrome; four phone frames per sheet, each scrollable, each a self-contained theme. */
+:root{--pg:#F1F0EC;--pfg:#1A1A1F;--pmut:#5C5B63;--pline:#D6D4CB;--pchip:#FFFFFF;
+  --f-head:'Space Grotesk',system-ui,sans-serif;--f-body:'Inter',system-ui,sans-serif;--f-mono:'JetBrains Mono',ui-monospace,monospace}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--pg:#16161A;--pfg:#EEEDE8;--pmut:#A3A2AB;--pline:#33333B;--pchip:#222228;color-scheme:dark}}
+:root[data-theme="dark"]{--pg:#16161A;--pfg:#EEEDE8;--pmut:#A3A2AB;--pline:#33333B;--pchip:#222228;color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--pg);color:var(--pfg);font-family:var(--f-body);font-size:15px;line-height:1.5;
+  padding-block:32px 64px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:1540px;margin:0 auto;display:flex;flex-direction:column;gap:32px}
+.top h1{font-family:var(--f-head);font-size:clamp(28px,4vw,40px);line-height:1.1;margin:0 0 10px;letter-spacing:-.02em;text-wrap:balance}
+.top p{margin:0;max-width:68ch;color:var(--pmut)}
+.top .how{margin-top:10px;color:var(--pfg)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:44px 24px;justify-items:center;align-items:start}
+.prop{width:100%;max-width:360px;display:flex;flex-direction:column;gap:14px;min-width:0}
+.prop h2{font-family:var(--f-head);font-size:22px;line-height:1.15;margin:0;display:flex;gap:10px;align-items:baseline}
+.prop h2 b{font-family:var(--f-mono);font-size:12px;font-weight:500;border:1px solid var(--pline);background:var(--pchip);border-radius:6px;padding:2px 7px;letter-spacing:.04em}
+.prop .note{margin:0;color:var(--pmut);font-size:14px}
+.prop dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:13px;border-top:1px solid var(--pline);padding-top:10px}
+.prop dt{font-family:var(--f-mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--pmut);padding-top:2px}
+.prop dd{margin:0}
+.sw{display:inline-flex;gap:4px;vertical-align:-2px}
+.sw i{width:14px;height:14px;border-radius:4px;border:1px solid var(--pline);display:inline-block}
+.foot{color:var(--pmut);font-size:13px;max-width:72ch;margin:0}
+
+/* phone frame */
+.phone{position:relative;width:100%;height:740px;border-radius:40px;border:9px solid #101012;overflow:hidden;background:var(--bg);color:var(--tx);box-shadow:0 18px 40px -18px rgba(0,0,0,.45);font-size:14px;line-height:1.35}
+.scr{height:100%;overflow-y:auto;scrollbar-width:none;padding-bottom:156px;display:flex;flex-direction:column;gap:18px}
+.scr::-webkit-scrollbar{display:none}
+.scr>*{flex:none}
+.scr:focus-visible{outline:2px solid var(--pfg);outline-offset:-4px}
+.status{display:flex;justify-content:space-between;padding:10px 22px 0;font-size:12px;font-weight:600;flex:none}
+.dock{position:absolute;left:0;right:0;bottom:0;padding:0 12px 12px;display:flex;flex-direction:column;gap:8px}
+.pad{padding-inline:16px}
+.row{display:flex;align-items:center;gap:10px}
+.sp{flex:1;min-width:0}
+.hs{display:flex;gap:12px;overflow-x:auto;scrollbar-width:none;padding-inline:16px}
+.hs::-webkit-scrollbar{display:none}
+.hs>*{flex:none}
+.el{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.phone svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.phone svg.f{fill:currentColor;stroke:none}
+.phone p,.phone h3,.phone h4{margin:0}
+
+/* stand-in cover art */
+.cv{aspect-ratio:1;display:block;flex:none;background-size:cover}
+.k1{background:linear-gradient(#0000 78%,#0a1226 78%),repeating-linear-gradient(90deg,#16264a 0 13px,#22407c 13px 19px)}
+.k2{background:radial-gradient(circle at 50% 56%,#f7a23b 0 17%,#0000 17.5%),linear-gradient(#7a1f2b,#e9762b 56%,#3a1420 56%)}
+.k3{background:radial-gradient(circle,#0000 0 21%,#5fb8cf 22% 30%,#0000 31%),#132d33}
+.k4{background:radial-gradient(circle at 30% 30%,#7b5cff,#1a8fd1 55%,#0d2a66)}
+.k5{background:radial-gradient(ellipse 22% 26% at 50% 36%,#d98a45 0 98%,#0000 100%),linear-gradient(90deg,#0000 48.5%,#5b3a23 48.5% 51.5%,#0000 51.5%),linear-gradient(#dfe6ea 80%,#6b4a2f 80%)}
+.k6{background:conic-gradient(from 45deg,#ff6fa3,#ffd84d,#ff6fa3,#7ad7f0,#ff6fa3)}
+.k7{background:linear-gradient(160deg,#0f3d2e,#3fa36c 60%,#e8d77a)}
+.k8{background:repeating-radial-gradient(circle at 50% 120%,#111 0 9px,#e9e6dc 9px 10px)}
+.k9{background:linear-gradient(135deg,#b3186d,#f08a4b)}
+.k10{background:radial-gradient(circle at 60% 55%,#2747c7 0 28%,#0000 28.5%),#e9dcc3}
+.k11{background:linear-gradient(90deg,#f2c230 50%,#0e6b6b 50%)}
+.k12{background:linear-gradient(200deg,#cfd6dd,#6f7c8a 60%,#2b323a)}
+/* stand-in artist portraits */
+.ar{display:block;flex:none;background:radial-gradient(circle at 50% 40%,var(--h) 0 17%,#0000 17.6%),radial-gradient(ellipse 44% 36% at 50% 102%,var(--s) 0 98%,#0000 100%),var(--b)}
+.a1{--b:linear-gradient(#e9a13b,#c2541c);--h:#3a1a12;--s:#3a1a12}
+.a2{--b:linear-gradient(#9fc4e8,#3b5fa8);--h:#12203f;--s:#12203f}
+.a3{--b:linear-gradient(#d8d2c4,#8d8676);--h:#2a2722;--s:#2a2722}
+.a4{--b:linear-gradient(#f3a6c4,#a8387a);--h:#3d0f2b;--s:#3d0f2b}
+.a5{--b:linear-gradient(#a9e0c1,#2f7f63);--h:#0e2f25;--s:#0e2f25}
+.a6{--b:linear-gradient(#c9b8f5,#5b45b8);--h:#1d1447;--s:#1d1447}
+</style>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<symbol id="i-home" viewBox="0 0 24 24"><path d="M4 11l8-7 8 7v8a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z"/></symbol>
+<symbol id="i-disc" viewBox="0 0 24 24"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8zM18.5 16l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7z"/></symbol>
+<symbol id="i-lib" viewBox="0 0 24 24"><path d="M5 4v16M9.5 4v16M14 5l4.5 14.5"/></symbol>
+<symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></symbol>
+<symbol id="i-play" viewBox="0 0 24 24"><path d="M7 4.5v15l12.5-7.5z"/></symbol>
+<symbol id="i-pause" viewBox="0 0 24 24"><path d="M7 5h3.5v14H7zM13.5 5H17v14h-3.5z"/></symbol>
+<symbol id="i-dl" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5v8M8.5 12.5L12 16l3.5-3.500"/></symbol>
+<symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.500v3M2.5 12h3M18.500 12h3M5.300 5.300l2.100 2.100M16.600 16.600l2.100 2.100M5.300 18.700l2.100-2.100M16.600 7.400l2.100-2.100"/></symbol>
+<symbol id="i-more" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></symbol>
+<symbol id="i-chev" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></symbol>
+<symbol id="i-radio" viewBox="0 0 24 24"><rect x="3" y="8" width="18" height="12" rx="2"/><path d="M7 8l9-4"/><circle cx="8.500" cy="14" r="2.500"/><path d="M14 12.500h4M14 15.500h4"/></symbol>
+<symbol id="i-get" viewBox="0 0 24 24"><path d="M7 18a4.500 4.500 0 0 1-.6-8.960 6 6 0 0 1 11.700 1.500A3.800 3.800 0 0 1 17.500 18M12 11v8M9 16.500l3 3 3-3"/></symbol>
+</defs></svg>
+<style>
+/* iOS-inspired: no outlines, large titles, continuous corners, soft depth, translucent bars */
+.io{font-family:'Inter',system-ui,sans-serif;letter-spacing:-.01em}
+.io h3{font-weight:700;letter-spacing:-.02em}
+.io .lt{font-size:32px;font-weight:800;letter-spacing:-.03em;line-height:1.1}
+.io .mut{color:var(--mut)}
+.io .sec{display:flex;align-items:center;justify-content:space-between}
+.io .sec h3{font-size:20px;display:flex;align-items:center;gap:2px}
+.io .sec h3 svg{width:16px;height:16px;stroke-width:2.600;color:var(--mut)}
+.io .sec a{color:var(--ac);font-size:14px;font-weight:500}
+.io .btn{height:44px;padding:0 18px;border-radius:22px;display:inline-flex;align-items:center;justify-content:center;gap:7px;font-weight:600;font-size:15px;background:var(--fill);color:var(--tx)}
+.io .btn.p{background:var(--ac);color:var(--onac)}
+.io .btn.sq{width:44px;padding:0}
+.io .ib{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;background:var(--fill);position:relative}
+.io .ib svg{width:20px;height:20px}
+.io .bdg{position:absolute;top:-3px;right:-3px;min-width:16px;height:16px;border-radius:8px;background:var(--ac);color:var(--onac);font-size:10px;font-weight:700;display:grid;place-items:center;font-style:normal}
+.io .cap b{display:block;font-weight:600;font-size:14px}
+.io .cap span{font-size:13px;color:var(--mut)}
+.io .glass{background:var(--bar);-webkit-backdrop-filter:blur(22px) saturate(1.6);backdrop-filter:blur(22px) saturate(1.6);box-shadow:0 6px 22px -8px rgba(0,0,0,.3),inset 0 0 0 .5px var(--hair)}
+.io .mini{border-radius:18px;padding:7px 14px 7px 7px;gap:10px}
+.io .mini .cv{width:40px;border-radius:9px}
+.io .nav{display:grid;grid-template-columns:repeat(4,1fr);border-radius:30px;padding:5px}
+.io .nav span{height:50px;border-radius:25px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;font-size:10.5px;font-weight:600;color:var(--mut)}
+.io .nav .on{color:var(--ac);background:var(--fill)}
+.io .who{width:88px;text-align:center;font-size:12.5px;font-weight:500}
+.io .who .ar{width:84px;height:84px;border-radius:50%;margin:0 auto 6px}
+
+.i1{--bg:#FFFFFF;--tx:#0B0B0F;--mut:#6C6C74;--ac:#5B50E6;--onac:#FFFFFF;--fill:#EEEEF3;--bar:rgba(250,250,252,.82);--hair:rgba(0,0,0,.08)}
+.i1 .card{width:232px;border-radius:18px;overflow:hidden;box-shadow:0 14px 28px -14px rgba(20,30,70,.55)}
+.i1 .card .ft{padding:12px 14px 14px;color:#fff}
+.i1 .card .ft p{opacity:.8;font-size:13px}
+.i1 .card .ft .row{margin-top:10px}
+.i1 .card .pill{height:36px;padding:0 14px;border-radius:18px;background:#fff;color:#0B0B0F;font-weight:600;font-size:14px;display:inline-flex;align-items:center;gap:6px}
+.i1 .card .pill.g{background:rgba(255,255,255,.2);color:#fff}
+.i1 .sh .cv{width:136px;border-radius:10px;margin-bottom:7px;box-shadow:0 6px 14px -8px rgba(0,0,0,.35)}
+.i1 .sh .cap{width:136px}
+.i1 .li{display:flex;gap:12px;align-items:center;padding:8px 0;border-bottom:.5px solid #DADAE0}
+.i1 .li .cv{width:48px;border-radius:7px}
+
+.i2{--bg:#0A0C16;--tx:#FFFFFF;--mut:rgba(255,255,255,.66);--ac:#FFFFFF;--onac:#0A0C16;--fill:rgba(255,255,255,.14);--bar:rgba(40,44,70,.62);--hair:rgba(255,255,255,.16)}
+.i2.phone{background:radial-gradient(120% 60% at 15% 0,#2f55b5 0,#0000 62%),radial-gradient(90% 50% at 100% 18%,#5a3aa8 0,#0000 60%),radial-gradient(90% 40% at 50% 60%,#16264a 0,#0000 70%),#0A0C16}
+.i2 .hero{width:270px;margin:4px auto 0;border-radius:22px;box-shadow:0 30px 50px -22px #000}
+.i2 .dots{display:flex;gap:6px;justify-content:center}
+.i2 .dots i{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.3)}
+.i2 .dots i:first-child{background:#fff;width:18px;border-radius:3px}
+.i2 .jb{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.i2 .jb div{display:flex;align-items:center;gap:9px;background:var(--fill);border-radius:12px;overflow:hidden;font-weight:600;font-size:13px;padding-right:8px;min-width:0}
+.i2 .jb .cv{width:52px}
+.i2 .wk{border-radius:20px;padding:14px 16px;background:var(--fill);display:flex;align-items:flex-end;gap:14px}
+.i2 .bars{display:flex;gap:5px;align-items:flex-end;height:44px;margin-left:auto}
+.i2 .bars i{width:9px;border-radius:4px;background:rgba(255,255,255,.4)}
+.i2 .bars i:last-child{background:#fff}
+
+.i3{--bg:#F2F2F7;--tx:#0B0B0F;--mut:#6C6C74;--ac:#0A7AFF;--onac:#FFFFFF;--fill:#E4E4EB;--bar:rgba(255,255,255,.8);--hair:rgba(0,0,0,.07);--w:#FFFFFF}
+.i3 .wg{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.i3 .w{background:var(--w);border-radius:24px;overflow:hidden;position:relative;aspect-ratio:1;box-shadow:0 8px 20px -14px rgba(0,0,0,.3);display:flex;flex-direction:column}
+.i3 .w.l{grid-column:1/-1;aspect-ratio:1/.98}
+.i3 .w.m{grid-column:1/-1;aspect-ratio:auto;padding:14px}
+.i3 .w .fill{position:absolute;inset:0;width:100%;height:100%;aspect-ratio:auto}
+.i3 .w .ov{position:absolute;left:0;right:0;bottom:0;padding:40px 14px 14px;color:#fff;background:linear-gradient(#0000,rgba(0,0,0,.78))}
+.i3 .w .ov p{font-size:13px;opacity:.85}
+.i3 .wl{font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--mut)}
+.i3 .pill{height:38px;padding:0 14px;border-radius:19px;background:#fff;color:#0B0B0F;font-weight:600;font-size:14px;display:inline-flex;align-items:center;gap:6px}
+.i3 .pill.g{background:rgba(255,255,255,.24);color:#fff;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+.i3 .ring{width:54px;height:54px;border-radius:50%;background:conic-gradient(var(--ac) 64%,var(--fill) 0);display:grid;place-items:center;font-size:12px;font-weight:700}
+.i3 .ring::before{content:"";grid-area:1/1;width:42px;height:42px;border-radius:50%;background:var(--w)}
+.i3 .ring span{grid-area:1/1;position:relative}
+.i3 .bars{display:flex;gap:5px;align-items:flex-end;height:40px}
+.i3 .bars i{flex:1;border-radius:4px;background:var(--fill)}
+.i3 .bars i:last-child{background:var(--ac)}
+
+.i4{--bg:#FBFAF7;--tx:#15130F;--mut:#6F6A60;--ac:#E8590C;--onac:#FFFFFF;--fill:#EFECE5;--bar:rgba(255,255,255,.82);--hair:rgba(0,0,0,.08)}
+.i4 .seg{display:grid;grid-template-columns:repeat(3,1fr);background:var(--fill);border-radius:11px;padding:2px;font-size:13px;font-weight:600;text-align:center}
+.i4 .seg span{padding:7px 0;border-radius:9px}
+.i4 .seg .on{background:#fff;box-shadow:0 2px 6px -2px rgba(0,0,0,.25)}
+.i4 .flow{position:relative;height:236px;overflow:hidden}
+.i4 .flow .cv{position:absolute;top:50%;border-radius:14px}
+.i4 .flow .c{width:220px;left:50%;transform:translate(-50%,-50%);box-shadow:0 22px 34px -18px rgba(0,0,0,.6);z-index:2}
+.i4 .flow .s{width:160px;opacity:.75;transform:translateY(-50%)}
+.i4 .flow .s.lf{left:-70px}.i4 .flow .s.rt{right:-70px}
+.i4 .pc{width:150px;border-radius:18px;overflow:hidden;position:relative}
+.i4 .pc .ar{width:100%;aspect-ratio:3/4}
+.i4 .pc b{position:absolute;left:0;right:0;bottom:0;padding:26px 12px 10px;color:#fff;font-size:14px;background:linear-gradient(#0000,rgba(0,0,0,.7))}
+.i4 .gl{background:#fff;border-radius:16px;box-shadow:0 4px 14px -10px rgba(0,0,0,.3)}
+.i4 .gl .row{padding:11px 12px;border-bottom:.5px solid #E2DFD6}
+.i4 .gl .row:last-child{border:0}
+.i4 .gl .ic{width:32px;height:32px;border-radius:8px;display:grid;place-items:center;background:var(--fill)}
+.i4 .gl .ic svg{width:18px;height:18px}
+.i4 .gl .row>svg:last-child{width:16px;height:16px;color:#B5B0A5;stroke-width:2.400}
+</style>
+<div class="wrap">
+<header class="top">
+  <h1>iOS-inspired theme, four dashboards</h1>
+  <p>Android, phone width. No outlines and no hard shadows here: large titles, continuous corners, soft depth and translucent bars. The artwork supplies the colour. Covers and artist photos are drawn stand-ins; the app uses the real ones.</p>
+  <p class="how">Scroll inside each phone. Reply with one code (I1 to I4), or a mix such as "I2 with the widgets from I3".</p>
+</header>
+<div class="grid">
+
+<!-- I1 -->
+<section class="prop">
+<h2><b>I1</b>Listen</h2>
+<div class="phone io i1"><div class="scr" tabindex="0">
+  <div class="status"><span>21:14</span><span>5G 82%</span></div>
+  <div class="row pad" style="margin-top:6px"><span class="lt">Home</span><span class="sp"></span><span class="ib"><svg><use href="#i-dl"/></svg><i class="bdg">2</i></span><span class="ib"><svg><use href="#i-gear"/></svg></span></div>
+  <div class="pad sec" style="margin-bottom:-6px"><h3>Picked for you</h3><span class="mut" style="font-size:13px">1 of 7</span></div>
+  <div class="hs" style="padding-bottom:16px">
+    <div class="card" style="background:#16264a"><i class="cv k1"></i><div class="ft"><h3 style="font-size:19px">Hex</h3><p>Bark Psychosis · 1994 · Post-rock</p><div class="row"><span class="pill"><svg style="width:18px;height:18px"><use href="#i-get"/></svg>Get album</span><span class="pill g">Save</span><span class="sp"></span><svg class="f"><use href="#i-more"/></svg></div></div></div>
+    <div class="card" style="background:#8a2d58"><i class="cv k9"></i><div class="ft"><h3 style="font-size:19px">Ptah, the El Daoud</h3><p>Alice Coltrane · 1970</p><div class="row"><span class="pill">Get album</span><span class="pill g">Save</span></div></div></div>
+  </div>
+  <div class="pad sec" style="margin-top:-10px"><h3>Recently played<svg><use href="#i-chev"/></svg></h3></div>
+  <div class="hs sh">
+    <div class="cap"><i class="cv k5"></i><b class="el">Laughing Stock</b><span>Talk Talk</span></div>
+    <div class="cap"><i class="cv k2"></i><b class="el">Journey in Satchidananda</b><span>Alice Coltrane</span></div>
+    <div class="cap"><i class="cv k3"></i><b class="el">Third</b><span>Portishead</span></div>
+  </div>
+  <div class="pad sec"><h3>Your artists<svg><use href="#i-chev"/></svg></h3></div>
+  <div class="hs">
+    <div class="who"><i class="ar a1"></i>Alice Coltrane</div><div class="who"><i class="ar a2"></i>The Blue Nile</div><div class="who"><i class="ar a3"></i>Talk Talk</div><div class="who"><i class="ar a4"></i>Slowdive</div>
+  </div>
+  <div class="pad sec"><h3>New in your library<svg><use href="#i-chev"/></svg></h3></div>
+  <div class="pad" style="margin-top:-10px">
+    <div class="li"><i class="cv k10"></i><div class="sp cap"><b class="el">Hats</b><span>The Blue Nile · arrived today</span></div><svg class="f" style="color:var(--ac)"><use href="#i-play"/></svg></div>
+    <div class="li"><i class="cv k4"></i><div class="sp cap"><b class="el">Pygmalion</b><span>Slowdive · downloading, 64%</span></div><svg style="color:var(--mut)"><use href="#i-dl"/></svg></div>
+    <div class="li" style="border:0"><i class="cv k7"></i><div class="sp cap"><b class="el">Promises</b><span>Floating Points · 3 days ago</span></div><svg class="f" style="color:var(--ac)"><use href="#i-play"/></svg></div>
+  </div>
+</div>
+<div class="dock">
+  <div class="glass row mini"><i class="cv k5"></i><div class="sp"><b class="el" style="display:block;font-size:14px">After the Flood</b><span class="mut" style="font-size:12px">Talk Talk</span></div><svg class="f"><use href="#i-pause"/></svg></div>
+  <div class="glass nav"><span class="on"><svg><use href="#i-home"/></svg>Home</span><span><svg><use href="#i-disc"/></svg>Discover</span><span><svg><use href="#i-lib"/></svg>Library</span><span><svg><use href="#i-search"/></svg>Search</span></div>
+</div></div>
+<p class="note">The familiar music-app shape, done cleanly: a large title, then tall pick cards whose footer takes its colour from the cover, then shelves of covers and round artist portraits. White page, so the art is the only colour.</p>
+<dl><dt>Palette</dt><dd><span class="sw"><i style="background:#FFFFFF"></i><i style="background:#EEEEF3"></i><i style="background:#5B50E6"></i></span> white, system grey, indigo</dd><dt>Stats</dt><dd>None on Home</dd></dl>
+</section>
+
+<!-- I2 -->
+<section class="prop">
+<h2><b>I2</b>Aurora</h2>
+<div class="phone io i2"><div class="scr" tabindex="0">
+  <div class="status"><span>21:14</span><span>5G 82%</span></div>
+  <div class="row pad" style="margin-top:6px"><div><p class="mut" style="font-size:13px;font-weight:600">Thursday evening</p><h3 style="font-size:22px">Today's pick</h3></div><span class="sp"></span><span class="ib"><svg><use href="#i-dl"/></svg><i class="bdg">2</i></span><span class="ib"><svg><use href="#i-gear"/></svg></span></div>
+  <i class="cv k1 hero"></i>
+  <div class="dots"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+  <div class="pad" style="text-align:center;margin-top:-6px"><h3 style="font-size:26px">Hex</h3><p class="mut">Bark Psychosis · 1994 · Post-rock</p></div>
+  <div class="pad row" style="justify-content:center"><span class="btn p"><svg><use href="#i-get"/></svg>Get album</span><span class="btn">Save</span><span class="btn sq"><svg class="f"><use href="#i-more"/></svg></span></div>
+  <div class="pad sec"><h3>Jump back in</h3></div>
+  <div class="pad jb" style="margin-top:-8px">
+    <div><i class="cv k5"></i><span class="el">Laughing Stock</span></div><div><i class="cv k2"></i><span class="el">Journey in Satchidananda</span></div>
+    <div><i class="cv k3"></i><span class="el">Third</span></div><div><i class="cv k10"></i><span class="el">Hats</span></div>
+    <div><i class="cv k4"></i><span class="el">Pygmalion · 64%</span></div><div><i class="cv k7"></i><span class="el">Promises</span></div>
+  </div>
+  <div class="pad sec"><h3>Artists</h3><a>See all</a></div>
+  <div class="hs">
+    <div class="who"><i class="ar a1"></i>Alice Coltrane</div><div class="who"><i class="ar a2"></i>The Blue Nile</div><div class="who"><i class="ar a3"></i>Talk Talk</div><div class="who"><i class="ar a4"></i>Slowdive</div>
+  </div>
+  <div class="pad"><div class="wk"><div><p class="mut" style="font-size:12px;font-weight:600">This week</p><h3 style="font-size:22px">214 plays</h3><p class="mut" style="font-size:12.5px">18% more than last week</p></div><div class="bars"><i style="height:40%"></i><i style="height:62%"></i><i style="height:35%"></i><i style="height:70%"></i><i style="height:55%"></i><i style="height:82%"></i><i style="height:100%"></i></div></div></div>
+</div>
+<div class="dock">
+  <div class="glass row mini"><i class="cv k5"></i><div class="sp"><b class="el" style="display:block;font-size:14px">After the Flood</b><span class="mut" style="font-size:12px">Talk Talk</span></div><svg class="f"><use href="#i-pause"/></svg></div>
+  <div class="glass nav"><span class="on"><svg><use href="#i-home"/></svg>Home</span><span><svg><use href="#i-disc"/></svg>Discover</span><span><svg><use href="#i-lib"/></svg>Library</span><span><svg><use href="#i-search"/></svg>Search</span></div>
+</div></div>
+<p class="note">The page takes its colour from the cover in front. Swipe to the next pick and the whole background drifts to that album's colours. One big centred cover, frosted-glass buttons and tiles, nothing else competing.</p>
+<dl><dt>Palette</dt><dd><span class="sw"><i style="background:#0A0C16"></i><i style="background:#2f55b5"></i><i style="background:#5a3aa8"></i><i style="background:#FFFFFF"></i></span> dark, colours pulled from the art, white accent</dd><dt>Stats</dt><dd>One glass card at the bottom (plays this week)</dd></dl>
+</section>
+
+<!-- I3 -->
+<section class="prop">
+<h2><b>I3</b>Widgets</h2>
+<div class="phone io i3"><div class="scr" tabindex="0">
+  <div class="status"><span>21:14</span><span>5G 82%</span></div>
+  <div class="row pad" style="margin-top:6px;align-items:flex-end"><div><p class="wl">Thursday 12 November</p><span class="lt">Today</span></div><span class="sp"></span><span class="ib"><svg><use href="#i-dl"/></svg><i class="bdg">2</i></span><span class="ib"><svg><use href="#i-gear"/></svg></span></div>
+  <div class="pad wg">
+    <div class="w l"><i class="cv k1 fill"></i><div class="ov"><p style="font-weight:700;font-size:11px;letter-spacing:.05em;text-transform:uppercase">Pick 1 of 7</p><h3 style="font-size:26px">Hex</h3><p>Bark Psychosis · 1994 · Post-rock</p><div class="row" style="margin-top:10px"><span class="pill"><svg style="width:18px;height:18px"><use href="#i-get"/></svg>Get album</span><span class="pill g">Save</span><span class="sp"></span><span class="pill g" style="padding:0;width:38px;justify-content:center"><svg class="f" style="width:18px;height:18px"><use href="#i-more"/></svg></span></div></div></div>
+    <div class="w"><i class="ar a1 fill"></i><div class="ov"><p style="font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase">On repeat</p><h3 style="font-size:17px">Alice Coltrane</h3></div></div>
+    <div class="w" style="padding:14px;justify-content:space-between"><div class="row" style="justify-content:space-between"><i class="cv k4" style="width:54px;border-radius:10px"></i><span class="ring"><span>64%</span></span></div><div><p class="wl">Arriving</p><h3 style="font-size:17px">Pygmalion</h3><p class="mut" style="font-size:13px">Slowdive</p></div></div>
+    <div class="w m"><div class="sec" style="margin-bottom:10px"><p class="wl">Recently added</p><a>Library</a></div><div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px"><i class="cv k10" style="border-radius:10px"></i><i class="cv k2" style="border-radius:10px"></i><i class="cv k3" style="border-radius:10px"></i><i class="cv k7" style="border-radius:10px"></i></div></div>
+    <div class="w"><i class="ar a2 fill"></i><div class="ov"><p style="font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase">Back in rotation</p><h3 style="font-size:17px">The Blue Nile</h3></div></div>
+    <div class="w" style="padding:14px;justify-content:space-between"><p class="wl">This week</p><div class="bars"><i style="height:40%"></i><i style="height:62%"></i><i style="height:35%"></i><i style="height:70%"></i><i style="height:55%"></i><i style="height:82%"></i><i style="height:100%"></i></div><div><h3 style="font-size:20px">214 plays</h3><p class="mut" style="font-size:12.5px">Up 18%</p></div></div>
+    <div class="w m"><div class="row"><span class="ib" style="background:var(--ac);color:#fff"><svg><use href="#i-radio"/></svg></span><div class="sp"><h3 style="font-size:16px">Radio</h3><p class="mut" style="font-size:13px">Last heard: FIP, 08:42</p></div><svg class="f" style="color:var(--ac)"><use href="#i-play"/></svg></div></div>
+  </div>
+</div>
+<div class="dock">
+  <div class="glass row mini"><i class="cv k5"></i><div class="sp"><b class="el" style="display:block;font-size:14px">After the Flood</b><span class="mut" style="font-size:12px">Talk Talk</span></div><svg class="f"><use href="#i-pause"/></svg></div>
+  <div class="glass nav"><span class="on"><svg><use href="#i-home"/></svg>Home</span><span><svg><use href="#i-disc"/></svg>Discover</span><span><svg><use href="#i-lib"/></svg>Library</span><span><svg><use href="#i-search"/></svg>Search</span></div>
+</div></div>
+<p class="note">Home as a board of widgets. Artwork and artist photos fill their widgets edge to edge with the text laid over; small widgets carry the arriving download, radio and one number. Calm grey page, white widgets.</p>
+<dl><dt>Palette</dt><dd><span class="sw"><i style="background:#F2F2F7"></i><i style="background:#FFFFFF"></i><i style="background:#0A7AFF"></i></span> grouped grey, white, blue</dd><dt>Stats</dt><dd>One small widget (plays this week)</dd></dl>
+</section>
+
+<!-- I4 -->
+<section class="prop">
+<h2><b>I4</b>Flow</h2>
+<div class="phone io i4"><div class="scr" tabindex="0">
+  <div class="status"><span>21:14</span><span>5G 82%</span></div>
+  <div class="row pad" style="margin-top:6px"><span class="lt" style="font-size:26px">discair</span><span class="sp"></span><span class="ib"><svg><use href="#i-dl"/></svg><i class="bdg">2</i></span><span class="ib"><svg><use href="#i-gear"/></svg></span></div>
+  <div class="pad"><div class="seg"><span class="on">Picks</span><span>New</span><span>Played</span></div></div>
+  <div class="flow"><i class="cv k9 s lf"></i><i class="cv k12 s rt"></i><i class="cv k1 c"></i></div>
+  <div class="pad" style="text-align:center;margin-top:-8px"><h3 style="font-size:24px">Hex</h3><p class="mut">Bark Psychosis · 1994 · Post-rock</p></div>
+  <div class="pad row" style="justify-content:center"><span class="btn p"><svg><use href="#i-get"/></svg>Get album</span><span class="btn" style="color:var(--ac)">Save</span><span class="btn sq"><svg class="f"><use href="#i-more"/></svg></span></div>
+  <div class="pad sec"><h3>Artists<svg><use href="#i-chev"/></svg></h3></div>
+  <div class="hs" style="margin-top:-8px">
+    <div class="pc"><i class="ar a1"></i><b>Alice Coltrane</b></div><div class="pc"><i class="ar a2"></i><b>The Blue Nile</b></div><div class="pc"><i class="ar a4"></i><b>Slowdive</b></div>
+  </div>
+  <div class="pad"><div class="gl">
+    <div class="row"><i class="cv k4" style="width:32px;border-radius:8px"></i><div class="sp"><b style="font-weight:600">Pygmalion</b><p class="mut" style="font-size:12.5px">Downloading · 64%</p></div><svg><use href="#i-chev"/></svg></div>
+    <div class="row"><span class="ic"><svg><use href="#i-radio"/></svg></span><div class="sp"><b style="font-weight:600">Radio</b><p class="mut" style="font-size:12.5px">Last heard: FIP, 08:42</p></div><svg><use href="#i-chev"/></svg></div>
+    <div class="row"><span class="ic"><svg><use href="#i-lib"/></svg></span><div class="sp"><b style="font-weight:600">Library</b><p class="mut" style="font-size:12.5px">1,284 albums · 12 new this month</p></div><svg><use href="#i-chev"/></svg></div>
+  </div></div>
+</div>
+<div class="dock">
+  <div class="glass row mini"><i class="cv k5"></i><div class="sp"><b class="el" style="display:block;font-size:14px">After the Flood</b><span class="mut" style="font-size:12px">Talk Talk</span></div><svg class="f"><use href="#i-pause"/></svg></div>
+  <div class="glass nav"><span class="on"><svg><use href="#i-home"/></svg>Home</span><span><svg><use href="#i-disc"/></svg>Discover</span><span><svg><use href="#i-lib"/></svg>Library</span><span><svg><use href="#i-search"/></svg>Search</span></div>
+</div></div>
+<p class="note">A centred cover carousel under a segmented control (Picks, New, Played), so the top of Home is always one row of covers you swipe. Artists are tall portrait cards. Everything practical sits in one grouped list.</p>
+<dl><dt>Palette</dt><dd><span class="sw"><i style="background:#FBFAF7"></i><i style="background:#EFECE5"></i><i style="background:#E8590C"></i></span> warm white, stone, orange</dd><dt>Stats</dt><dd>One line inside the Library row</dd></dl>
+</section>
+
+</div>
+<p class="foot">All four keep the app's real controls: Get album, Save and the overflow on every pick, the downloads badge and Settings, the mini player, and the four destinations. Each draws its own navigation, mini player and cards, so nothing here changes another theme. The app would ship Inter for this theme, since Apple's own typeface cannot be bundled on Android. Artist-led modules need a "most played artists" list on Home, which the app does not load today; I will check what the server already offers before planning.</p>
+</div>
+
+</body></html>
