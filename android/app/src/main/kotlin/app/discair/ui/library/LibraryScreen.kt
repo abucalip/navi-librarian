@@ -63,6 +63,8 @@ import app.discair.ui.common.ActionGroupButton
 import app.discair.ui.common.GroupDivider
 import app.discair.ui.common.GroupIcon
 import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
 import app.discair.ui.common.Cover
 import app.discair.ui.common.ErrorBlock
 import app.discair.ui.common.LocalRepository
@@ -78,8 +80,9 @@ fun LibraryScreen(open: Opener) {
     val model: LibraryViewModel = viewModel(factory = LibraryViewModelFactory(repo))
     val state by model.state.collectAsState()
     val list = rememberLazyListState()
-    var grid by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(false) }
-    var cell by androidx.compose.runtime.saveable.rememberSaveable { androidx.compose.runtime.mutableFloatStateOf(120f) }
+    // Albums are two to a row, as drawn; artists stay a list (docs/redesign.md 8.2).
+    val grid = state.tab == LibraryTab.Albums
+    val cell = 160f
 
     Column(Modifier.fillMaxSize()) {
         PageHeading("Library", Modifier.padding(start = 16.dp, top = 16.dp, end = 16.dp), large = true)
@@ -94,44 +97,12 @@ fun LibraryScreen(open: Opener) {
             modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 16.dp)
                 .semantics { contentDescription = "Search your library" },
         )
-        Row(
-            Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            // Artists and Albums as two icons in one joined group; the names are spoken.
-            ActionGroup {
-                ActionGroupButton(
-                    { model.selectTab(LibraryTab.Artists) }, description = "Artists", selected = state.tab == LibraryTab.Artists,
-                ) { GroupIcon(app.discair.ui.player.PlayerIcons.Person, state.tab == LibraryTab.Artists) }
-                GroupDivider()
-                ActionGroupButton(
-                    { model.selectTab(LibraryTab.Albums) }, description = "Albums", selected = state.tab == LibraryTab.Albums,
-                ) { GroupIcon(app.discair.ui.player.PlayerIcons.Album, state.tab == LibraryTab.Albums) }
-            }
-            // One button flips between icons and a list; it shows the view it would switch to.
-            ActionGroup {
-                ActionGroupButton(
-                    { grid = !grid },
-                    description = if (grid) "Showing icons. Switch to a list." else "Showing a list. Switch to icons.",
-                ) { GroupIcon(if (grid) app.discair.ui.player.PlayerIcons.List else app.discair.ui.player.PlayerIcons.Grid) }
-            }
-            if (grid) app.discair.ui.common.Slider(
-                value = cell, onValueChange = { cell = it }, valueRange = 80f..200f,
-                modifier = Modifier.weight(1f).semantics {
-                    contentDescription = "Icon size"
-                    stateDescription = "${cell.toInt()} density-independent pixels"
-                },
-            )
-        }
+        val tabs = listOf(LibraryTab.Artists, LibraryTab.Albums)
+        app.discair.ui.common.SegmentedTabs(
+            listOf("Artists", "Albums"), tabs.indexOf(state.tab), { model.selectTab(tabs[it]) },
+            Modifier.padding(horizontal = 16.dp),
+        )
         SortRow(state, model)
-        Row(Modifier.padding(horizontal = 16.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text("›", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.titleMedium)
-            Text(
-                caption(state), style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.padding(start = 8.dp),
-            )
-        }
         Box(Modifier.weight(1f)) {
             when {
                 state.failure != null && currentCount(state) == 0 -> ErrorBlock(state.failure!!, model::retry)
@@ -145,13 +116,6 @@ fun LibraryScreen(open: Opener) {
             }
         }
     }
-}
-
-/** "Showing 60 of 733 artists", as on the web. */
-private fun caption(s: LibraryState): String {
-    val noun = if (s.tab == LibraryTab.Artists) "artists" else "albums"
-    val shown = currentCount(s)
-    return if (s.total == null) "Loading…" else "Showing $shown of ${s.total} $noun"
 }
 
 /** Names the order in words that fit the field being sorted. */
@@ -182,22 +146,25 @@ private fun Message(text: String) {
 private fun SortRow(state: LibraryState, model: LibraryViewModel) {
     var open by remember { mutableStateOf(false) }
     val label = if (state.tab == LibraryTab.Artists) state.artistSort.label else state.albumSort.label
+    val noun = if (state.tab == LibraryTab.Artists) "artists" else "albums"
     Row(
         Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
     ) {
-        Text("Sort by", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(
+            app.discair.ui.downloads.LibraryText.countLine(noun, state.total, directionLabel(state)),
+            style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.weight(1f).semantics { liveRegion = LiveRegionMode.Polite },
+        )
         Box {
             Row(
-                Modifier.height(32.dp).clip(RoundedCornerShape(16.dp))
-                    .background(MaterialTheme.colorScheme.surface).clickable(role = Role.Button) { open = true }
+                Modifier.heightIn(min = Target).clip(RoundedCornerShape(24.dp)).clickable(role = Role.Button) { open = true }
                     .padding(horizontal = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
             ) {
-                Text(label, style = MaterialTheme.typography.labelMedium)
-                Text("▾", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("Sort", style = MaterialTheme.typography.titleMedium)
+                Text("· $label", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
                 if (state.tab == LibraryTab.Artists) ArtistSort.entries.forEach { sort ->
@@ -205,17 +172,11 @@ private fun SortRow(state: LibraryState, model: LibraryViewModel) {
                 } else AlbumSort.entries.forEach { sort ->
                     DropdownMenuItem(text = { Text(sort.label) }, onClick = { open = false; model.sortAlbums(sort) })
                 }
+                DropdownMenuItem(
+                    text = { Text("Reverse: " + directionLabel(state)) },
+                    onClick = { open = false; model.flipDirection() },
+                )
             }
-        }
-        // The arrow points the way the list runs: up for ascending, down for descending.
-        OutlinedIconButton(
-            onClick = model::flipDirection,
-            modifier = Modifier.size(32.dp).semantics { contentDescription = directionLabel(state) + ". Switch the order." },
-        ) {
-            Icon(
-                app.discair.ui.player.PlayerIcons.Left, contentDescription = null,
-                modifier = Modifier.size(16.dp).rotate(if (state.effectiveDescending) -90f else 90f),
-            )
         }
     }
 }
@@ -230,7 +191,7 @@ private fun Rows(state: LibraryState, model: LibraryViewModel, open: Opener, lis
         if (state.tab == LibraryTab.Artists) {
             items(state.artists, key = { it.id }) { artist ->
                 Row(
-                    Modifier.fillMaxWidth().heightIn(min = 68.dp)
+                    Modifier.animateItem().fillMaxWidth().heightIn(min = 68.dp)
                         .clickable(role = Role.Button) { open.artist(artist.name, artist.key, artist.id, null) }
                         .padding(horizontal = 16.dp, vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically,

@@ -16,6 +16,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Icon
@@ -126,7 +127,12 @@ fun SearchScreen(open: Opener, text: String, onText: (String) -> Unit) {
             },
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
             keyboardActions = KeyboardActions(onSearch = { keyboard?.hide() }), // typing already searches
-            modifier = Modifier.fillMaxWidth().padding(16.dp).focusRequester(focus),
+            shape = androidx.compose.foundation.shape.RoundedCornerShape(28.dp),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp).heightIn(min = 56.dp).focusRequester(focus),
+        )
+        if (text.isBlank()) Text(
+            "In your library first, then everything else.", style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
         )
         val status = when {
             state.error != null -> state.error
@@ -157,12 +163,12 @@ private fun Results(results: List<SearchResult>, open: Opener) {
             val rows = owned.filter { it.type == type }
             if (rows.isNotEmpty()) {
                 item(key = "h-$type") { GroupHeading(title) }
-                items(rows.distinctBy { it.id }, key = { "o-${it.type}-${it.id}" }) { ResultRow(it, open) }
+                items(rows.distinctBy { it.id }, key = { "o-${it.type}-${it.id}" }) { ResultRow(it, open, Modifier.animateItem()) }
             }
         }
         if (other.isNotEmpty()) {
             item(key = "h-other") { GroupHeading("Not in your library") }
-            items(other.distinctBy { it.type + it.id }, key = { "x-${it.type}-${it.id}" }) { ResultRow(it, open, showType = true) }
+            items(other.distinctBy { it.type + it.id }, key = { "x-${it.type}-${it.id}" }) { ResultRow(it, open, Modifier.animateItem(), showType = true) }
         }
     }
 }
@@ -176,7 +182,7 @@ private fun GroupHeading(text: String) {
 }
 
 @Composable
-private fun ResultRow(r: SearchResult, open: Opener, showType: Boolean = false) {
+private fun ResultRow(r: SearchResult, open: Opener, modifier: Modifier = Modifier, showType: Boolean = false) {
     val repo = LocalRepository.current
     val ownedId = r.id.takeIf { r.owned }
     val detail = when (r.type) {
@@ -207,7 +213,7 @@ private fun ResultRow(r: SearchResult, open: Opener, showType: Boolean = false) 
         r.type == "genre" -> { { open.genre(r.tag ?: r.key, r.name) } }
         else -> null
     }
-    Column {
+    Column(modifier) {
         Row(
             Modifier.fillMaxWidth().heightIn(min = 64.dp).let { if (go != null) it.clickable(role = Role.Button, onClick = go) else it }
                 .padding(horizontal = 16.dp, vertical = 8.dp),
@@ -226,7 +232,16 @@ private fun ResultRow(r: SearchResult, open: Opener, showType: Boolean = false) 
                 IconButton(onClick = { playActions.queueSong(ownedSong, next = false) }, Modifier.size(Target)) {
                     Icon(app.discair.ui.player.PlayerIcons.QueueAdd, contentDescription = "Add ${r.name} to the queue")
                 }
-            } else if (r.type != "song") OwnedMark(r.owned)
+            } else if (r.type == "album" && !r.owned && artist != null) {
+                // A missing album can be fetched from the result itself.
+                app.discair.ui.common.GetAlbumButton(artist, r.name, app.discair.ui.common.pageMetadata(artist, r.name, r.year))
+            } else if (r.type != "song" && r.owned) {
+                // Owned is said in words; the icon only backs it up.
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Icon(androidx.compose.material.icons.Icons.Default.Check, contentDescription = null, tint = Ink.Ok, modifier = Modifier.size(18.dp))
+                    Text("Owned", style = MaterialTheme.typography.labelLarge, color = Ink.Ok)
+                }
+            }
         }
         RowDivider()
     }

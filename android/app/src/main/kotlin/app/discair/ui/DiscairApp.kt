@@ -238,7 +238,22 @@ fun SettingsScreen(state: UiState, model: AppViewModel, onBack: () -> Unit, onEq
         Text("Connected to your servers.", style = MaterialTheme.typography.bodyLarge)
         CheckLine("Librarian", state.librarian)
         CheckLine("Navidrome", state.navidrome)
-        OutlinedButton(onClick = onServer, Modifier.fillMaxWidth().heightIn(min = Target)) { Text("Server and services") }
+        // A grouped row with its state in words, first in the list (docs/redesign.md 8.2).
+        val serverLine = app.discair.ui.downloads.SettingsRules.serverLine(state.librarian, state.navidrome)
+        Column(
+            Modifier.fillMaxWidth().heightIn(min = 64.dp).clickable(role = Role.Button, onClickLabel = "Open Server and services", onClick = onServer),
+            verticalArrangement = Arrangement.Center,
+        ) {
+            Text("Server and services", style = MaterialTheme.typography.titleMedium)
+            Text(
+                serverLine.text, style = MaterialTheme.typography.bodySmall,
+                color = when (serverLine.tone) {
+                    app.discair.ui.downloads.SettingsRules.Tone.Success -> Ink.Ok
+                    app.discair.ui.downloads.SettingsRules.Tone.Danger -> Ink.ChartRedText
+                    else -> MaterialTheme.colorScheme.onSurfaceVariant
+                },
+            )
+        }
         app.discair.ui.settings.AppearanceRow(container.appearance, onAppearance)
         PlaybackSettings(container, onEqualizer, onCrossfade)
         LibrarySettings()

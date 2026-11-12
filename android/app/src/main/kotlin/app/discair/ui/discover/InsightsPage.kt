@@ -2,6 +2,7 @@ package app.discair.ui.discover
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -90,7 +91,7 @@ fun InsightsPage(
                         color = Ink.TextMuted, style = MaterialTheme.typography.bodyMedium,
                     )
                 }
-                else -> items(cards, key = { it.id }) { card -> InsightCardView(card, onDismiss) }
+                else -> items(cards, key = { it.id }) { card -> Box(Modifier.animateItem()) { InsightCardView(card, onDismiss) } }
             }
         }
     }
