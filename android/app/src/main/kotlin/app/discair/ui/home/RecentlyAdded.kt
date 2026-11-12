@@ -53,7 +53,7 @@ import app.discair.ui.common.LocalRepository
 import app.discair.ui.common.Target
 import app.discair.ui.common.TapeDeckRules
 import app.discair.ui.common.TapeMeter
-import app.discair.ui.common.rememberReducedMotion
+import app.discair.ui.theme.rememberReducedMotion
 import app.discair.ui.common.aspectSquare
 import app.discair.ui.common.plural
 import app.discair.ui.common.rememberLoad

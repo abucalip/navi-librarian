@@ -52,7 +52,7 @@ import app.discair.model.slideshowFrame
 import app.discair.player.QueueItem
 import app.discair.ui.common.LocalImageLoader
 import app.discair.ui.common.LocalRepository
-import app.discair.ui.common.rememberReducedMotion
+import app.discair.ui.theme.rememberReducedMotion
 import app.discair.ui.common.routeKey
 import coil3.compose.AsyncImage
 import kotlinx.coroutines.Dispatchers
