@@ -31,6 +31,8 @@ import app.discair.ui.common.rememberLoad
 fun GenreScreen(route: GenreRoute, open: Opener) {
     val repo = LocalRepository.current
     val loaded = rememberLoad(route) { repo.genrePage(route.tag) }
+    // Soft Brut: its own arrangement, in CoverStackGenre.kt; every other theme continues below unchanged.
+    if (app.discair.ui.common.isCoverStack()) { CoverStackGenre(route, loaded, open); return }
     Column(Modifier.fillMaxSize()) {
         BackBar(open.back)
         LoadView(loaded) { page ->

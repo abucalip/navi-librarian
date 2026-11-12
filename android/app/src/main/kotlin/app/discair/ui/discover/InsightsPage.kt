@@ -61,11 +61,13 @@ fun InsightsPage(
     taste: TasteResponse? = null,
     tasteLoaded: Boolean = false,
     showTaste: Boolean = false,
+    open: app.discair.ui.Opener? = null,
 ) {
+    val cs = app.discair.ui.common.isCoverStack() && open != null
     LazyColumn(
         Modifier.fillMaxSize(),
         contentPadding = PaddingValues(start = 16.dp, top = 8.dp, end = 16.dp, bottom = 16.dp + app.discair.ui.LocalBottomClearance.current),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+        verticalArrangement = Arrangement.spacedBy(if (cs) 14.dp else 16.dp),
     ) {
         if (showTaste) item(key = "taste") { TasteCardView(taste?.profiles, tasteLoaded) }
         for (kind in lensKinds(response)) {
@@ -73,7 +75,7 @@ fun InsightsPage(
             val enabled = lens?.enabled == true
             val cards = lens?.cards.orEmpty().filter { it.id !in hidden }
             item(key = "head:$kind") {
-                Row(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+                if (cs) CoverStackLensHeading(lensName(kind), if (enabled) "${cards.size}" else "off") else Row(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.SpaceBetween) {
                     Text(lensName(kind), style = MaterialTheme.typography.titleMedium, modifier = Modifier.semantics { heading() })
                     Text(
                         if (enabled) "${cards.size}" else "off", color = Ink.TextMuted, style = MaterialTheme.typography.labelLarge,
@@ -91,7 +93,7 @@ fun InsightsPage(
                         color = Ink.TextMuted, style = MaterialTheme.typography.bodyMedium,
                     )
                 }
-                else -> items(cards, key = { it.id }) { card -> Box(Modifier.animateItem()) { InsightCardView(card, onDismiss) } }
+                else -> items(cards, key = { it.id }) { card -> Box(Modifier.animateItem()) { if (cs) CoverStackInsightCard(card, open!!, onDismiss) else InsightCardView(card, onDismiss) } }
             }
         }
     }
