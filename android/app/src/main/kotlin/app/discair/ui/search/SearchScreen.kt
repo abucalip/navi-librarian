@@ -63,7 +63,7 @@ import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 
 /** Where a search stands. Results stay in the order the server streamed them; nothing is re-ranked here. */
-private data class SearchState(
+internal data class SearchState(
     val results: List<SearchResult> = emptyList(),
     val running: Boolean = false,
     val done: Boolean = false,
@@ -72,7 +72,7 @@ private data class SearchState(
     val error: String? = null,
 )
 
-private val typeOrder = listOf("artist" to "Artists", "album" to "Albums", "song" to "Songs", "genre" to "Genres")
+internal val typeOrder = listOf("artist" to "Artists", "album" to "Albums", "song" to "Songs", "genre" to "Genres")
 
 @Composable
 fun SearchScreen(open: Opener, text: String, onText: (String) -> Unit) {
@@ -113,6 +113,21 @@ fun SearchScreen(open: Opener, text: String, onText: (String) -> Unit) {
         }
     }
     LaunchedEffect(Unit) { if (text.isEmpty()) focus.requestFocus() }
+
+    // Soft Brut draws its own arrangement (CoverStackSearch.kt); every other theme continues below.
+    if (app.discair.ui.common.isCoverStack()) {
+        val cs = when {
+            state.error != null -> state.error
+            text.isBlank() -> null
+            state.running && state.results.isEmpty() -> "Searching…"
+            state.running -> "Still searching…"
+            state.done && state.results.isEmpty() -> "No matches."
+            state.sourceProblem || state.partial -> "Some sources did not answer, so this may be incomplete."
+            else -> null
+        }
+        CoverStackSearch(text, onText, state, cs, focus, { keyboard?.hide() }, open)
+        return
+    }
 
     Column(Modifier.fillMaxSize()) {
         PageHeading("Search", Modifier.padding(start = 16.dp, top = 16.dp, end = 16.dp), large = true)

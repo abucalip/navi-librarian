@@ -48,6 +48,8 @@ object PlayerIcons {
             strokeLineWidth = 1.8f, strokeLineCap = StrokeCap.Round, strokeLineJoin = StrokeJoin.Round,
         )
     }.build()
+    /** An arrow down beside three shortening bars: sort order (mockup `sort`, drawn filled like the rest). */
+    val Sort = icon("sort", "M7,19l-4,-4 1.4,-1.4L6,15.2V5h2v10.2l1.6,-1.6L11,15l-4,4zM14,6h7v2h-7zM14,11h5v2h-5zM14,16h3v2h-3z")
     val Remove = icon("remove", "M19,13H5v-2h14v2z")
     val Add = icon("add", "M19,13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z")
     val Server = icon("server", "M20,13H4c-0.55,0 -1,0.45 -1,1v6c0,0.55 0.45,1 1,1h16c0.55,0 1,-0.45 1,-1v-6c0,-0.55 -0.45,-1 -1,-1zM7,19c-1.1,0 -2,-0.9 -2,-2s0.9,-2 2,-2 2,0.9 2,2 -0.9,2 -2,2zM20,3H4c-0.55,0 -1,0.45 -1,1v6c0,0.55 0.45,1 1,1h16c0.55,0 1,-0.45 1,-1V4c0,-0.55 -0.45,-1 -1,-1zM7,9c-1.1,0 -2,-0.9 -2,-2s0.9,-2 2,-2 2,0.9 2,2 -0.9,2 -2,2z")

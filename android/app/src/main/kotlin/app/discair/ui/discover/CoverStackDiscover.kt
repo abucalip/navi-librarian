@@ -109,7 +109,7 @@ internal fun CoverStackChip(label: String, selected: Boolean, onClick: () -> Uni
 
 /** A 36dp outlined button with a hard shadow inside a 48dp touch target (mockup `.dc .acts .btn`). */
 @Composable
-private fun SmallButton(label: String?, icon: ImageVector?, filled: Boolean, description: String, modifier: Modifier = Modifier, state: String? = null, enabled: Boolean = true, onClick: () -> Unit) {
+internal fun SmallButton(label: String?, icon: ImageVector?, filled: Boolean, description: String, modifier: Modifier = Modifier, state: String? = null, enabled: Boolean = true, onClick: () -> Unit) {
     val p = LocalPalette.current
     val shape = RoundedCornerShape(CoverStackRules.radius(p).dp)
     Box(
