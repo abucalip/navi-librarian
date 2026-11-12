@@ -166,7 +166,7 @@ internal fun CoverStackHome(
 // ----- shared bits -----------------------------------------------------------------------------------------------
 
 @Composable
-private fun Eyebrow(text: String, modifier: Modifier = Modifier) {
+internal fun Eyebrow(text: String, modifier: Modifier = Modifier) {
     Text(
         text.uppercase(), modifier, color = LocalPalette.current.textMuted, maxLines = 1,
         style = MaterialTheme.typography.labelSmall.copy(fontFamily = LocalFontPair.current.mono, fontWeight = FontWeight.Medium, fontSize = 11.sp, lineHeight = 16.sp, letterSpacing = 0.88.sp),

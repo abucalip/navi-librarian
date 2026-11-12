@@ -85,6 +85,9 @@ fun LibraryScreen(open: Opener) {
     val grid = state.tab == LibraryTab.Albums
     val cell = 160f
 
+    // Soft Brut draws its own arrangement (CoverStackLibrary.kt); every other theme continues below.
+    if (app.discair.ui.common.isCoverStack()) { CoverStackLibrary(state, model, open, list); return }
+
     Column(Modifier.fillMaxSize()) {
         PageHeading("Library", Modifier.padding(start = 16.dp, top = 16.dp, end = 16.dp), large = true)
         val tabs = listOf(LibraryTab.Artists, LibraryTab.Albums)
@@ -109,7 +112,7 @@ fun LibraryScreen(open: Opener) {
 }
 
 /** Names the order in words that fit the field being sorted. */
-private fun directionLabel(s: LibraryState): String {
+internal fun directionLabel(s: LibraryState): String {
     val desc = s.effectiveDescending
     val kind = if (s.tab == LibraryTab.Artists) when (s.artistSort) {
         ArtistSort.Name -> "text"; ArtistSort.Albums -> "number"; ArtistSort.Added -> "date"
