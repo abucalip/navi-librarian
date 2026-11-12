@@ -1,3 +1,10 @@
+## 2026-11-12 — Android art themes S2: Soft Brut Home (PR #1007)
+
+- Merged as `2ea52f6548de9cf49450005876bf900ee918f045` from head `1657a6e9fddd79ca89a606e834cf183e220a62a8`. Added `ui/home/CoverStackHome.kt` and `CoverStackHomeRules.kt`, a `Layout.CoverStack` branch in `HomeScreen.kt`, `onLibrary` in `MainShell.kt`, and an optional shadow offset in `coverStackShadow`. No other theme's Home path changed.
+- Verified with JDK 17, filtered: `CoverStackHomeRulesTest`, `HomeArtistsTest`, `SoftBrutTest`, `NavRulesTest`. Full suite not run; no screenshots against the mockup, nothing seen on a device; the composables have no automated test beyond compiling.
+- Differences from the mockup: Insight button "Open album" (no Play without a library id); "new this month" is the trailing 30 days; Radio says "Stations" until a song is heard.
+- Documents updated: `docs/ACTIVE_WORK.md` section 2l, `docs/PROJECT_STATUS.md`, `docs/ANDROID_ART_THEMES_PROPOSAL.md`. Next: owner phone check, then S3.
+
 ## 2026-11-12 — Android art themes S1: Soft Brut palette and shell (PR #1006)
 
 - Merged as `d9417fa7c831c62b64d777ed978066aa30e54640` from head `7e4d2e6838755ffa56b757e03d1135126fa3f981`; compile, container-smoke, test-and-build and validate-container passed. Added palette `softbrut`, `Layout.CoverStack` (`ui/common/CoverStack.kt`, `ui/player/CoverStackPlayer.kt`), the outlined navigation bar and mini player, and layout-guarded branches in buttons, chips, tabs, switch, progress, tags, dividers, snackbar and sheet. `PaletteTest` and `NavRulesTest` were updated for the new theme; every other palette's layout and shape is still pinned by `ExistingLayoutsTest`.

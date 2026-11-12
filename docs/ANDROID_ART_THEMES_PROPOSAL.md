@@ -1,6 +1,6 @@
 # Android art-led themes: Soft Brut and Flow (proposal)
 
-Status: **proposal; step 0 (PR #1005) and S1 (PR #1006) built; no screen beyond the shell is themed yet.** Written 2026-11-12. This document and the mockups beside it are the whole change; no application code is touched. Building starts only after the owner approves it and the steps in section 10 are scheduled in `ACTIVE_WORK.md`.
+Status: **proposal; step 0 (PR #1005), S1 (PR #1006) and S2 (PR #1007) built; Home and the shell are themed, the other pages are not yet.** Written 2026-11-12. This document and the mockups beside it are the whole change; no application code is touched. Building starts only after the owner approves it and the steps in section 10 are scheduled in `ACTIVE_WORK.md`.
 
 ## 1. What the owner asked for
 
@@ -296,7 +296,7 @@ Each step is one PR with its own tests, in this order. Soft Brut and Flow are in
 |---|---|---|
 | **0** Shared groundwork (merged, PR #1005) | `HomeArtists` and its test; `BrutalShape` accepts 1.5 (D1); the "existing layouts unchanged" test | Tests pass; no screen looks different |
 | **S1** Soft Brut palette and shell (merged, PR #1006) | Palette `softbrut`, `Layout.CoverStack`, the outline recipe, navigation bar, mini player, buttons, chips, tabs, lists, sheets, snackbar | `soft-brut/components` matched; the theme can be chosen in Appearance; contrast test passes |
-| **S2** Soft Brut Home | Section 6.1 | `soft-brut/home` matched in all five frames; Get, Save and the menu work on the front sleeve |
+| **S2** Soft Brut Home (merged, PR #1007) | Section 6.1 | `soft-brut/home` matched in all five frames; Get, Save and the menu work on the front sleeve |
 | **S3** Soft Brut pages | Album, Artist, Genre, Discover, Library, Search | Their mockups matched |
 | **S4** Soft Brut player and the rest | Now Playing, Queue, Lyrics, Radio, Downloads, Stats, Server, Settings, Equalizer, Crossfade | Their mockups matched; closeout |
 | **F1** Flow palette and shell | Palette `flow`, `Layout.Flow`, font pair `flow`, depth levels, capsules, grouped list, segmented control, floating bars; settle D2 | `flow/components` matched |
