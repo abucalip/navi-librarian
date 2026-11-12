@@ -35,7 +35,10 @@ fun SettingsRow(
     stateColor: Color = MaterialTheme.colorScheme.onSurfaceVariant,
     onClick: (() -> Unit)? = null,
     trailing: (@Composable () -> Unit)? = null,
+    divider: Boolean = true,
 ) {
+    // Soft Brut: an icon tile, no hairline above the first row of a card (CoverStackSettings.kt). Every other theme is unchanged.
+    if (app.discair.ui.common.isCoverStack()) { CoverStackSettingsRow(icon, title, state, modifier, stateColor, onClick, trailing, divider); return }
     Column(modifier) {
         RowDivider()
         Row(

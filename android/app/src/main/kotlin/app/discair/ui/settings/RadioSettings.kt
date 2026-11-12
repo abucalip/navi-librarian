@@ -69,7 +69,7 @@ internal fun readLogo(open: () -> java.io.InputStream?): ByteArray? = try {
  * Everything lives on the server, so it is read live and written back.
  */
 @Composable
-fun RadioSettings() {
+fun RadioSettings(divider: Boolean = true) {
     val repo = LocalRepository.current
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
@@ -115,6 +115,7 @@ fun RadioSettings() {
             when { stationsProblem -> "Could not read the stations"; count == null -> "Checking the server."; else -> app.discair.ui.common.plural(count, "station") },
             onClick = { expanded = !expanded },
             trailing = { androidx.compose.material3.Icon(if (expanded) app.discair.ui.player.PlayerIcons.Down else app.discair.ui.player.PlayerIcons.Right, contentDescription = if (expanded) "Collapse" else "Expand") },
+            divider = divider,
         )
         if (expanded) Column(Modifier.fillMaxWidth()) {
         val current = scrobbling
