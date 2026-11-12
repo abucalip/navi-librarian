@@ -414,6 +414,13 @@ Earlier project log entries are preserved verbatim in [PROJECT_LOG_HISTORY.md](d
 - Limits: radio plays in Arrivals not included (no client route); phone handoff (D5) and Listens last 7 days (D2) not produced; absent `playCount` is read as no plays (Navidrome omits it); Librarian reachability is inferred from the picks read until M6.
 - Next: M6 (services data) or M7 (connections model), Sonnet; M8 builds Home from M2, M4 and M5.
 
+## 2026-11-12 — A9 merged (PR #1003, squash e4f4ba1b)
+
+- Built: cover to Album shared element (wired on Recently added, Library grid, Artist albums, Album header; off when motion is reduced; Tape 60% linear); `Palette.accentText` / `Ink.AccentText` (accent as text only at 4.5:1 on page and card, else ink text) applied to Album, Radio, the four players, Queue and Equalizer; Equalizer reset on the A5 confirmation sheet; eyebrow tracking +0.08em; `animateItem` on Radio stations.
+- Tests run locally (JDK 17, filtered): `MotionTest`, `PaletteTest`, `ConfirmSheetTest`, `RadioPlaybackTest`; all pass. Full suite not run (owner rule).
+- Not checked: no emulator or device, so the transition, Night, Tape and Sheet identity and 200% font scale are unseen.
+- Next action: the owner reviews Night, Tape and Sheet on a device (A9 acceptance and A8b item 7); the Android track is otherwise built.
+
 ## 2026-11-12 — A8b merged (PR #1001, squash d020f7b2)
 
 - Built: Settings rows with icon, state line and chevron; Library search field removed; Downloads tracker, state in words, one action row, Play on an arrived album (owned album id looked up by artist and album); `animateItem` on the Library grid; Taste sheet "Make a X playlist" button drawn but disabled.
