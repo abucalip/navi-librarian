@@ -232,7 +232,8 @@ fun DiscoverScreen(open: Opener) {
     }
 
     // The shell's Scaffold already insets for the bars, so this one adds none (it left a gap under the header).
-    Scaffold(snackbarHost = { SnackbarHost(snackbar) }, contentWindowInsets = androidx.compose.foundation.layout.WindowInsets(0)) { padding ->
+    // Above the island (and the Cassette Deck mini player), as every other snackbar sits.
+    Scaffold(snackbarHost = { SnackbarHost(snackbar, Modifier.padding(bottom = app.discair.ui.LocalBottomClearance.current)) }, contentWindowInsets = androidx.compose.foundation.layout.WindowInsets(0)) { padding ->
         fun switchBy(step: Int) {
             val options = DiscoveryList.entries
             val target = options.indexOf(list) + step

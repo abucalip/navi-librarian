@@ -1,13 +1,35 @@
 package app.discair.ui.common
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.togetherWith
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.keyframes
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.ProgressIndicatorDefaults
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
+import app.discair.ui.theme.MotionRole
+import app.discair.ui.theme.MotionRules
+import app.discair.ui.theme.MotionTokens
+import app.discair.ui.theme.Timing
+import app.discair.ui.theme.currentMotionFamily
+import app.discair.ui.theme.rememberReducedMotion
+import app.discair.ui.theme.toTween
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Warning
@@ -48,6 +70,17 @@ fun pageMetadata(artist: String, album: String, year: Int?, releaseGroupMbid: St
  */
 @Composable
 fun GetButton(noun: String, name: String, state: GetState, onClick: () -> Unit, modifier: Modifier = Modifier, overlay: Boolean = false) {
+    val family = currentMotionFamily()
+    val reduced = rememberReducedMotion()
+    // A failed request shakes once it appears (docs/redesign.md 7.4). The first composition never shakes, so a
+    // row that scrolls back into view does not repeat a failure it already showed.
+    val failed = state is GetState.Failed
+    val shake = remember { Animatable(0f) }
+    var seenFirst by remember { mutableStateOf(false) }
+    LaunchedEffect(failed) {
+        if (failed && seenFirst && !reduced) shake.animateTo(0f, shakeSpec())
+        seenFirst = true
+    }
     IconButton(
         onClick = { if (state is GetState.Idle || state is GetState.Failed) onClick() },
         modifier.size(Target).semantics {
@@ -60,13 +93,38 @@ fun GetButton(noun: String, name: String, state: GetState, onClick: () -> Unit, 
             }
         },
     ) {
-        when (state) {
-            GetState.Idle -> GetIcon(app.discair.ui.player.PlayerIcons.Cloud, null, overlay)
-            GetState.Pending -> CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp, color = if (overlay) Color.White else ProgressIndicatorDefaults.circularColor)
-            is GetState.Requested -> GetIcon(Icons.Default.Check, Ink.Ok, overlay)
-            is GetState.Failed -> GetIcon(Icons.Default.Warning, Ink.ChartRedText, overlay)
+        // The icon swaps with a 200 ms cross-fade and a scale from 0.8 to 1 (the base token); reduced motion swaps at once.
+        val enter = MotionRules.timing(MotionTokens.BASE_MS, MotionRole.Arrive, family, reduced)
+        val leave = Timing(MotionRules.duration(MotionRules.exitDuration(MotionTokens.BASE_MS), family, reduced), MotionRules.curve(MotionRole.Leave, family))
+        AnimatedContent(
+            targetState = state,
+            contentKey = { it::class },
+            modifier = Modifier.graphicsLayer { translationX = shake.value.dp.toPx() },
+            transitionSpec = {
+                if (reduced) EnterTransition.None togetherWith ExitTransition.None
+                else (fadeIn(enter.toTween()) + scaleIn(initialScale = 0.8f, animationSpec = enter.toTween())) togetherWith fadeOut(leave.toTween())
+            },
+            label = "get-state",
+        ) { s ->
+            when (s) {
+                GetState.Idle -> GetIcon(app.discair.ui.player.PlayerIcons.Cloud, null, overlay)
+                GetState.Pending -> CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp, color = if (overlay) Color.White else ProgressIndicatorDefaults.circularColor)
+                is GetState.Requested -> GetIcon(Icons.Default.Check, Ink.Ok, overlay)
+                is GetState.Failed -> GetIcon(Icons.Default.Warning, Ink.ChartRedText, overlay)
+            }
         }
     }
+}
+
+/** Two full cycles of 4 dp, 300 ms in total (the enter token's length; the table gives no shake token). */
+private fun shakeSpec() = keyframes<Float> {
+    durationMillis = 300
+    0f at 0
+    4f at 60
+    -4f at 120
+    4f at 180
+    -4f at 240
+    0f at 300
 }
 
 /**

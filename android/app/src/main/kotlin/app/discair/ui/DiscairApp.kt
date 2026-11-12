@@ -37,7 +37,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Warning
-import app.discair.ui.common.AlertDialog
 import app.discair.ui.common.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -263,27 +262,11 @@ fun SettingsScreen(state: UiState, model: AppViewModel, onBack: () -> Unit, onEq
         ) { Text("Sign out…", color = MaterialTheme.colorScheme.error) }
     }
     if (confirmSignOut) {
-        AlertDialog(
-            onDismissRequest = { confirmSignOut = false },
-            title = { Text("Sign out of Discair?") },
-            text = {
-                Text(
-                    "This removes both server addresses, user names and passwords from this phone. " +
-                        "You will have to enter them again.",
-                )
-            },
-            dismissButton = {
-                TextButton(
-                    onClick = { confirmSignOut = false },
-                    modifier = Modifier.defaultMinSize(minHeight = Target),
-                ) { Text("Keep me signed in") }
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = { confirmSignOut = false; model.signOut() },
-                    modifier = Modifier.defaultMinSize(minHeight = Target),
-                ) { Text("Sign out", color = MaterialTheme.colorScheme.error) }
-            },
+        // Nothing is signed out until the destructive button of the sheet is tapped.
+        app.discair.ui.common.ConfirmSheet(
+            spec = app.discair.ui.common.ConfirmSpecs.signOut(),
+            onKeep = { confirmSignOut = false },
+            onConfirm = { confirmSignOut = false; model.signOut() },
         )
     }
 }
