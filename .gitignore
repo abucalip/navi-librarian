@@ -26,3 +26,6 @@ dist/
 *.bak-*
 
 web-venv/
+
+# Local app authentication key: never commit
+app_auth.key
