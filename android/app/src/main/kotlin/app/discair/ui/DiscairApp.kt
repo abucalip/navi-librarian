@@ -272,10 +272,10 @@ fun SettingsScreen(state: UiState, model: AppViewModel, onBack: () -> Unit, onEq
         }
         // Destructive and rare: set apart from the routine actions and always confirmed.
         Spacer(Modifier.size(32.dp))
-        TextButton(
+        OutlinedButton(
             onClick = { confirmSignOut = true },
             modifier = Modifier.fillMaxWidth().heightIn(min = Target),
-        ) { Text("Sign out…", color = MaterialTheme.colorScheme.error) }
+        ) { Text("Sign out…", color = Ink.ChartRedText) }
     }
     if (confirmSignOut) {
         // Nothing is signed out until the destructive button of the sheet is tapped.
@@ -452,6 +452,8 @@ private fun PlaybackSettings(container: AppContainer, onEqualizer: () -> Unit, o
 
 @Composable
 private fun Section(title: String, bold: Boolean = false) {
+    // A hairline sets each group apart, as the grouped rows in the mockup do.
+    app.discair.ui.common.RowDivider(Modifier.padding(top = 16.dp))
     Text(
         title,
         // Bold in the body face instead of the display face (owner request for Playback).

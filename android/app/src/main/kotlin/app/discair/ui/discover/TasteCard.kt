@@ -214,9 +214,11 @@ internal fun TasteSheet(profiles: TasteProfiles, onDismiss: () -> Unit) {
             Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 for (d in TasteProfiles.Dimensions) Pick(d.replaceFirstChar { it.uppercase() }, dimension == d) { dimension = d }
             }
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                for (w in TasteProfiles.WindowNames) Pick(TasteCard.windowLabel(w, profiles.recentDays), window == w) { window = w }
-            }
+            val windows = TasteProfiles.WindowNames
+            app.discair.ui.common.SegmentedTabs(
+                windows.map { TasteCard.windowLabel(it, profiles.recentDays) }, windows.indexOf(window).coerceAtLeast(0),
+                onSelect = { window = windows[it] }, modifier = Modifier.fillMaxWidth(),
+            )
             val w = profiles.window(window)
             if (w == null) {
                 Text("No ${TasteCard.windowLabel(window, profiles.recentDays).lowercase()} window yet.", color = Ink.TextMuted, style = MaterialTheme.typography.bodyMedium)
@@ -268,7 +270,7 @@ private fun Bars(w: TasteWindow, allTime: TasteWindow?, dimension: String, showT
         Text("Nothing tagged for this yet.", color = Ink.TextMuted, style = MaterialTheme.typography.bodyMedium)
         return
     }
-    for (e in entries) {
+    for ((index, e) in entries.withIndex()) {
         val tick = if (showTick) allTime?.entries(dimension)?.firstOrNull { it.value == e.value }?.share else null
         Row(
             Modifier.fillMaxWidth().semantics(mergeDescendants = true) {
@@ -278,7 +280,7 @@ private fun Bars(w: TasteWindow, allTime: TasteWindow?, dimension: String, showT
         ) {
             Text(e.value, Modifier.width(96.dp), maxLines = 1, style = MaterialTheme.typography.bodySmall)
             Box(Modifier.weight(1f).height(10.dp).clip(RoundedCornerShape(5.dp)).background(Ink.Raised)) {
-                Box(Modifier.fillMaxWidth(e.share.coerceIn(0.0, 1.0).toFloat()).height(10.dp).background(if (sketch) Ink.TextMuted else Ink.Accent))
+                Box(Modifier.fillMaxWidth(e.share.coerceIn(0.0, 1.0).toFloat()).height(10.dp).background(if (sketch || index > 0) Ink.TextMuted else Ink.Accent))
                 if (tick != null) BoxWithFraction(tick)
             }
             Text("${TasteCard.percent(e.share)}%", Modifier.width(40.dp), color = Ink.TextMuted, style = MaterialTheme.typography.bodySmall)

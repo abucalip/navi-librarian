@@ -229,6 +229,11 @@ private fun JobRow(job: AcquisitionJob, hub: AcquisitionHub, now: Double, open: 
             ).forEach {
                 Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
+            // The one filled action on a record that has arrived.
+            if (job.isImported && !job.isSong) app.discair.ui.common.Button(
+                onClick = { open.album(routeKey(job.artist, job.albumName), job.artist, job.albumName, null, job.year) },
+                modifier = Modifier.fillMaxWidth().heightIn(min = Target).padding(top = 8.dp),
+            ) { Text("Open album") }
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 job.skipSecondsLeft(now)?.let { left ->
                     OutlinedButton(
