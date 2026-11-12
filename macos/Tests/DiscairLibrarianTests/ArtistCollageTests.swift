@@ -54,6 +54,12 @@ import Testing
         #expect(artistCollage(from: []).isEmpty)
     }
 
+    @Test func aLowerMinimumKeepsAShortSlideshow() throws {
+        let a = try index([pic(1, ["Other"]), pic(2, ["Other"])])
+        #expect(artistCollage(from: [("A", "ga", a)], minimum: 1).count == 2)
+        #expect(artistCollage(from: [("A", "ga", a)], minimum: 3).isEmpty)
+    }
+
     @Test func labelNamesTheAlbum() {
         let e = CollageEntry(picture: pic(1, ["Other"], comment: "session"), albumTitle: "Kid A", rgid: "g")
         #expect(e.label == "Other: session, from Kid A")

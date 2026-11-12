@@ -554,7 +554,7 @@ public let collagePerAlbum = 3
 /// Builds the collage from the artist's albums, in the order given: the qualifying pictures of each album (the server's quality order),
 /// taken round-robin so every album shows before any shows twice. The same image id appears once. Returns [] under `collageMinimum`.
 public func artistCollage(from albums: [(title: String, rgid: String, index: ArtworkIndex)],
-                          limit: Int = collageLimit, perAlbum: Int = collagePerAlbum) -> [CollageEntry] {
+                          limit: Int = collageLimit, perAlbum: Int = collagePerAlbum, minimum: Int = collageMinimum) -> [CollageEntry] {
     var seen = Set<Int>()
     let lists: [[CollageEntry]] = albums.map { a in
         var taken: [CollageEntry] = []
@@ -569,5 +569,5 @@ public func artistCollage(from albums: [(title: String, rgid: String, index: Art
         for l in lists where round < l.count && out.count < limit { out.append(l[round]) }
         round += 1
     }
-    return out.count >= collageMinimum ? out : []
+    return out.count >= minimum ? out : []
 }

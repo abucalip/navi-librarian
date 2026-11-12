@@ -90,7 +90,7 @@ struct BookletSheet: View {
             Button { turn(-1) } label: { Image(systemName: "chevron.left") }
                 .buttonStyle(.borderless).disabled(page == 0).accessibilityLabel("Previous page").help("Previous page (left arrow)")
             if pages.indices.contains(page) {
-                BookletPage(picture: pages[page]).frame(maxWidth: .infinity, maxHeight: .infinity)
+                BookletPage(picture: pages[page]).id(pages[page].imageID).frame(maxWidth: .infinity, maxHeight: .infinity)
             }
             Button { turn(1) } label: { Image(systemName: "chevron.right") }
                 .buttonStyle(.borderless).disabled(page >= pages.count - 1).accessibilityLabel("Next page").help("Next page (right arrow)")
@@ -133,9 +133,10 @@ private struct BookletPage: View {
                 .simultaneousGesture(DragGesture().updating($drag) { v, state, _ in if scale > 1 { state = v.translation } }
                     .onEnded { v in if scale > 1 { offset.width += v.translation.width; offset.height += v.translation.height } })
                 .onTapGesture(count: 2) { withAnimation(.easeOut(duration: 0.2)) { zoom = 1; offset = .zero } }
-                .task(id: scale > 1) {
-                    // The original is asked for the first time a page is zoomed, never before.
-                    guard scale > 1, full == nil, let store else { return }
+                .task(id: zoom > 1.25) {
+                    // The original is asked for only once a zoom has been settled on (not while a pinch is under way, and not for a
+                    // stray touch), never on a page that is shown whole: the 500 px display file is what an unzoomed page uses.
+                    guard zoom > 1.25, full == nil, let store else { return }
                     full = await store.albumImage(picture, size: .full)
                 }
             }
