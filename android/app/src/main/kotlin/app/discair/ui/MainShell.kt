@@ -346,14 +346,16 @@ fun MainShell(state: UiState, model: AppViewModel, container: AppContainer) {
                 },
             ) {
                 composable<HomeRoute> {
-                    Opaque { HomeScreen(open, onRadio = { nav.navigate(RadioRoute) { launchSingleTop = true } }, onDownloads = { nav.navigate(DownloadsRoute) { launchSingleTop = true } }) }
+                    Opaque { HomeScreen(open, onRadio = { nav.navigate(RadioRoute) { launchSingleTop = true } }, onDownloads = { nav.navigate(DownloadsRoute) { launchSingleTop = true } }, onStats = { goPage(StatsRoute) }, onServer = { goPage(ServerRoute) }) }
                 }
                 composable<DiscoverRoute> { Opaque { DiscoverScreen(open) } }
                 composable<LibraryRoute> { Opaque { LibraryScreen(open) } }
                 composable<DownloadsRoute> { Opaque { DownloadsScreen(open) } }
                 composable<RadioRoute> { Opaque { app.discair.ui.radio.RadioScreen(onBack = { nav.popBackStack() }, onOpenHeard = { nav.navigate(HeardRoute) { launchSingleTop = true } }, onOpenPlayer = { nowPlayingOpen = true }) } }
                 composable<HeardRoute> { Opaque { app.discair.ui.radio.HeardScreen(radio, onBack = { nav.popBackStack() }) } }
-                composable<SettingsRoute> { Opaque { SettingsScreen(state, model, onBack = { nav.popBackStack() }, onEqualizer = { nav.navigate(EqualizerRoute) { launchSingleTop = true } }, onCrossfade = { nav.navigate(CrossfadeRoute) { launchSingleTop = true } }, onAppearance = { nav.navigate(AppearanceRoute) { launchSingleTop = true } }) } }
+                composable<SettingsRoute> { Opaque { SettingsScreen(state, model, onBack = { nav.popBackStack() }, onEqualizer = { nav.navigate(EqualizerRoute) { launchSingleTop = true } }, onCrossfade = { nav.navigate(CrossfadeRoute) { launchSingleTop = true } }, onAppearance = { nav.navigate(AppearanceRoute) { launchSingleTop = true } }, onServer = { goPage(ServerRoute) }) } }
+                composable<StatsRoute> { Opaque { app.discair.ui.stats.StatsScreen(onBack = { nav.popBackStack() }) } }
+                composable<ServerRoute> { Opaque { app.discair.ui.settings.ServerScreen(navidromeDirect = state.navidrome.let { c -> when (c) { app.discair.Check.Ok -> true; is app.discair.Check.Failed -> false; else -> null } }, onBack = { nav.popBackStack() }) } }
                 composable<AppearanceRoute> { Opaque { app.discair.ui.settings.AppearanceScreen(container.appearance, onBack = { nav.popBackStack() }) } }
                 composable<EqualizerRoute> { Opaque { app.discair.ui.player.EqualizerScreen(container, onBack = { nav.popBackStack() }) } }
                 composable<CrossfadeRoute> { Opaque { app.discair.ui.player.CrossfadeScreen(container, onBack = { nav.popBackStack() }) } }

@@ -67,6 +67,13 @@ data class TasteResponse(
     val generation: Int,
     /** D2: listens per UTC day, oldest first, ending the day before today. Null until a refresh has saved it. */
     val listensByDay: List<ListensDay>? = null,
+    /**
+     * Listens by time of day (`context.lenses.time_of_day`): night, morning, afternoon, evening, in UTC. Null until a refresh has
+     * saved the context lenses; a context the server did not list is absent, never zero.
+     */
+    val timeOfDay: Map<String, Int>? = null,
+    /** The zone the time-of-day contexts are cut in (`context.timezone`), "UTC" when the server names none. */
+    val timeOfDayZone: String = "UTC",
 )
 
 /** One day of listens. [date] is a UTC calendar day, "2026-11-10". */
@@ -168,8 +175,12 @@ fun parseTaste(body: String): TasteResponse {
         val count = o.int("count")?.takeIf { it >= 0 } ?: return@mapNotNull null
         ListensDay(date, count)
     }
+    val timeOfDay = root?.obj("context")?.obj("lenses")?.obj("time_of_day")?.let { lens ->
+        lens.mapNotNull { (name, v) -> (v as? JsonObject)?.int("listens")?.takeIf { it >= 0 }?.let { name to it } }.toMap()
+    }?.takeIf { it.isNotEmpty() }
     return TasteResponse(
-        root?.obj("profiles")?.let(::parseProfiles), root?.int("data_version") ?: 0, root?.int("generation") ?: 0, days,
+        root?.obj("profiles")?.let(::parseProfiles), root?.int("data_version") ?: 0, root?.int("generation") ?: 0, days, timeOfDay,
+        root?.obj("context")?.string("timezone") ?: "UTC",
     )
 }
 
