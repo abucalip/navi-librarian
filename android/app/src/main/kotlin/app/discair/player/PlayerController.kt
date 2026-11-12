@@ -45,6 +45,10 @@ class PlayerController(
     private val clock: () -> Long = System::currentTimeMillis,
     private val tickMs: Long = 1_000,
     private val saveEveryTicks: Int = 5,
+    /** Sends the queue to Navidrome for the Mac's "playing on your phone" handoff. Null in tests that do not need it. */
+    private val remote: PlayQueueSync? = null,
+    /** While playing, the queue is also sent every this many ticks (30 s at one tick per second). */
+    private val remoteEveryTicks: Int = 30,
 ) : PortListener {
     private val _state = MutableStateFlow(PlayerUiState())
     val state: StateFlow<PlayerUiState> = _state.asStateFlow()
@@ -212,6 +216,7 @@ class PlayerController(
             scrobbler.onTick(port.positionMs, advancing = false)
             _state.update { it.copy(positionMs = port.positionMs) }
             persist()
+            syncRemote()
         }
     }
 
@@ -228,6 +233,7 @@ class PlayerController(
         pendingStart = true
         if (port.isPlaying) beginPlayIfPending()
         persist()
+        syncRemote()
     }
 
     override fun onEnded() {
@@ -328,6 +334,7 @@ class PlayerController(
                 _state.update { it.copy(positionMs = pos, durationMs = duration ?: it.durationMs) }
                 duration?.let { scrobbler.onPlayerDuration((it / 1000).toInt()) }
                 if (++ticks % saveEveryTicks == 0) persist()
+                if (ticks % remoteEveryTicks == 0) syncRemote()
             }
         }
     }
@@ -335,6 +342,14 @@ class PlayerController(
     private fun apply(queue: QueueState, capped: Boolean) {
         _state.update { it.copy(queue = queue, status = if (capped) "Queue is full at $MAX_QUEUE songs." else it.status) }
         persist()
+        syncRemote()
+    }
+
+    /** Offers the current queue and position to Navidrome. Never blocks playback; nothing is sent for a station. */
+    private fun syncRemote() {
+        val sync = remote ?: return
+        val s = _state.value
+        remotePlayQueueOf(s.queue, s.positionMs)?.let { sync.offer(it) }
     }
 
     private fun notifyCap(capped: Boolean) {

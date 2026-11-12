@@ -1,3 +1,12 @@
+## 2026-11-12 — Redesign S3: check of D4 (album added dates) and D5 (phone handoff)
+
+- Checked in code and the recorded fixture; no code changed.
+- **D4 (added dates):** `GET /api/library/albums` serves `added` on each item, from Navidrome's album `created` (`discovery/search/index.py`, `discovery/search/query.py`). The Android DTO reads it and `RecentlyAdded.kt` uses it. The fixture `android/contract-fixtures/librarian/library_albums.json` has a value on all three items. No server change was needed. The field may be null; clients must treat null as unknown.
+- **D5 (phone handoff):** Android did not call `savePlayQueue`. Built in the same PR: `player/NavidromeQueueSaver.kt` (signed `rest/savePlayQueue`, client name `discair-android`), `player/PlayQueueSync.kt` (newest-only send, up to 100 songs from the current one), hooks in `PlayerController` (pause, song change, queue edit, every 30 s while playing), wiring in `AppContainer.kt`, `Subsonic.PHONE_CLIENT`.
+- Focused Android tests run locally with JDK 17: `PlayQueueSyncTest` (6), `NavidromeQueueSaverTest` (3), `PlayerQueueSyncTest` (4), `PlayerControllerTest` (22), `NavidromeScrobblerTest` (7); all pass.
+- Documents updated: `docs/redesign.md` (sections 9 and 11), `docs/ACTIVE_WORK.md` section 2k.
+- Evidence boundary: D4 is static reading and the recorded fixture. D5 is unit-tested only; no live Navidrome call was made, so the `savePlayQueue` request is not yet confirmed against the real server.
+
 ## 2026-11-11 — Discair client efficiency proposal
 
 - Added [`docs/client_efficiency.md`](docs/client_efficiency.md), a source-level proposal for macOS and Android CPU, memory and GPU efficiency. It covers the macOS 50 Hz audio ticker and decoded-image cache accounting; Android's per-frame slideshow state updates, Coil hardware-bitmap/cache policy, blur rendering and PDF handling; and ExoPlayer buffer/crossfade measurement.
