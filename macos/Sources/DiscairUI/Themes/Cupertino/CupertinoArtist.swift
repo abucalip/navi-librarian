@@ -3,6 +3,15 @@ import SwiftUI
 /// Artist: a banner (colour field from the artwork, until real blurred art arrives in M5) with the bold sans name,
 /// Top Songs, Albums with the missing ones dashed and a Get button. Mockup: `R.cupertino.artist`.
 /// The banner runs edge to edge under the sidebar and toolbar; only the lists below it scroll.
+/// The artist page's single text column and its rhythm: the biography, the album grid and the similar artists share its edges.
+enum ArtistSpacing {
+    static let columnWidth: CGFloat = 640
+    static let columns = 4
+    static let gap: CGFloat = 16
+    /// Above a section headline, then (a little less) between it and its row.
+    static let beforeHeading: CGFloat = 44
+    static let afterHeading: CGFloat = 32
+}
 enum CupertinoArtistLayout { static let bannerHeight: CGFloat = 356 }
 
 struct CupertinoArtistBanner: View {
@@ -40,48 +49,56 @@ struct CupertinoArtistBanner: View {
                            center: UnitPoint(x: 0.2, y: 0.1), startRadius: 0, endRadius: 800)
             RadialGradient(colors: [CU.artwork(hue: (h + 0.1).truncatingRemainder(dividingBy: 1), saturation: 0.7, brightness: 0.6).opacity(0.9), .clear],
                            center: UnitPoint(x: 0.9, y: 0.9), startRadius: 0, endRadius: 700)
-            if lib.isLive, let cover = lib.artistAlbums.first(where: { !($0.coverArt ?? "").isEmpty }) { BlurredArtwork(album: cover, radius: 24); CU.shadowInk.opacity(0.12) }
-            // Session and band pictures from the artist's albums, when there are enough; else the usual banner stays.
-            if lib.isLive, !collage.entries.isEmpty { CollageHeroBackdrop(entries: collage.entries).transition(.opacity); CU.shadowInk.opacity(0.18) }
+            // The artist's own photos (band and session pictures the artwork pipeline identified) move as a slideshow; the blurred
+            // backdrop shows only when there is no photo besides the one in the circle.
+            if lib.isLive, !collage.entries.isEmpty {
+                CollageHeroBackdrop(entries: collage.entries).transition(.opacity)
+                CU.shadowInk.opacity(0.28)
+            } else if lib.isLive, let cover = lib.artistAlbums.first(where: { !($0.coverArt ?? "").isEmpty }) {
+                BlurredArtwork(album: cover, radius: 24); CU.shadowInk.opacity(0.12)
+            }
             LinearGradient(colors: [CU.shadowInk.opacity(0.0), CU.shadowInk.opacity(0.4)], startPoint: .top, endPoint: .bottom)
         }
         .frame(height: CupertinoArtistLayout.bannerHeight)
         .frame(maxWidth: .infinity)
         .overlay(alignment: .topLeading) {
             VStack(alignment: .leading, spacing: 0) {
-                BackButton(title: AppState.title(of: state.artistBack), onDark: true) { state.screen = state.artistBack }.padding(.bottom, 16)
-                HStack(alignment: .center, spacing: 8) {
-                    Text(state.selectedArtist.name).font(CU.Font.heroMetric.weighted(.bold)).tracking(-1.5).lineLimit(1).minimumScaleFactor(0.5)
-                    artistMenu
-                }
-                Text(state.selectedArtistIsUnowned ? "Not in your library" : lib.isLive ? "\(state.shownArtistOwnedCount) of \(state.shownArtistOwnedCount + state.shownArtistMissingCount) albums owned" : "3 of 5 albums owned · Post-rock, Synth-pop").opacity(0.85).padding(.top, 8).padding(.bottom, 16)
-                HStack(spacing: 8) {
-                    if !state.selectedArtistIsUnowned {
-                    Button { state.actions.play(album: lib.artistAlbums.first ?? Fixtures.albums[1]) } label: { Label("Play", systemImage: "play.fill") }
-                        .buttonStyle(CapsuleButtonStyle(primary: true))
-                    }
-                    Button { } label: { Label("Shuffle", systemImage: "shuffle") }
-                        .buttonStyle(CapsuleButtonStyle(translucent: true))
-                    Button { } label: { Label("Radio", systemImage: "dot.radiowaves.left.and.right") }
-                        .buttonStyle(CapsuleButtonStyle(translucent: true))
-                    if state.canShowArtistPaths {
-                        Button { state.showArtistPaths() } label: { Label("Paths", systemImage: "point.topleft.down.to.point.bottomright.curvepath") }
-                            .buttonStyle(CapsuleButtonStyle(translucent: true))
-                            .help("Songs, albums and artists linked to this artist by credits, labels, compositions and scene")
+                BackButton(title: AppState.title(of: state.artistBack), onDark: true) { state.screen = state.artistBack }.padding(.bottom, 14)
+                HStack(alignment: .center, spacing: 28) {
+                    ArtistPhoto(name: state.selectedArtist.name, size: 210)
+                        .overlay(Circle().stroke(CU.onMedia.opacity(0.85), lineWidth: 4))
+                        .shadow(color: CU.shadowInk.opacity(0.35), radius: 14, y: 6)
+                    VStack(alignment: .leading, spacing: 0) {
+                        HStack(alignment: .center, spacing: 8) {
+                            Text(state.selectedArtist.name).font(CU.Font.heroMetric.weighted(.bold)).tracking(-1.5).lineLimit(1).minimumScaleFactor(0.5)
+                            artistMenu
+                        }
+                        Text(state.selectedArtistIsUnowned ? "Not in your library" : lib.isLive ? "\(state.shownArtistOwnedCount) of \(state.shownArtistOwnedCount + state.shownArtistMissingCount) albums owned" : "3 of 5 albums owned · Post-rock, Synth-pop").opacity(0.85).padding(.top, 8).padding(.bottom, 16)
+                        HStack(spacing: 8) {
+                            if !state.selectedArtistIsUnowned {
+                            Button { state.actions.play(album: lib.artistAlbums.first ?? Fixtures.albums[1]) } label: { Label("Play", systemImage: "play.fill") }
+                                .buttonStyle(CapsuleButtonStyle(primary: true))
+                            }
+                            Button { } label: { Label("Shuffle", systemImage: "shuffle") }
+                                .buttonStyle(CapsuleButtonStyle(translucent: true))
+                            Button { } label: { Label("Radio", systemImage: "dot.radiowaves.left.and.right") }
+                                .buttonStyle(CapsuleButtonStyle(translucent: true))
+                            if state.canShowArtistPaths {
+                                Button { state.showArtistPaths() } label: { Label("Paths", systemImage: "point.topleft.down.to.point.bottomright.curvepath") }
+                                    .buttonStyle(CapsuleButtonStyle(translucent: true))
+                                    .help("Songs, albums and artists linked to this artist by credits, labels, compositions and scene")
+                            }
+                        }
                     }
                 }
             }
             .foregroundStyle(CU.onMedia)
-            .padding(.leading, 236 + CU.Space.xl).padding(.top, 104)       // 236 sidebar column + 32 margin
-        }
-        .overlay(alignment: .trailing) {
-            ArtistPhoto(name: state.selectedArtist.name, size: 210)
-                .overlay(Circle().stroke(CU.onMedia.opacity(0.85), lineWidth: 4))
-                .shadow(color: CU.shadowInk.opacity(0.35), radius: 14, y: 6)
-                .padding(.trailing, state.queueOpen ? CupertinoQueueInspector.width + 40 : 40).padding(.top, 60)
+            .padding(.leading, 236 + CU.Space.xl).padding(.top, 50)       // 236 sidebar column + 32 margin
+            .padding(.trailing, state.queueOpen ? CupertinoQueueInspector.width + 40 : 40)
         }
         .accessibilityElement(children: .contain)
         .task(id: "\(state.related.ownedGroups.map(\.rgid))|\(artwork?.generation ?? 0)") {
+            collage.minimum = 1
             await collage.load(sources: state.related.ownedGroups, store: artwork)
         }
     }
@@ -105,16 +122,19 @@ struct CupertinoArtist: View {
                 }
                 // The bio and the albums on the left; the numbered top songs on the right (the page is the web's, in this theme).
                 HStack(alignment: .top, spacing: 32) {
+                    // One centred column: the bio, the album grid and the similar artists share its two edges.
                     VStack(alignment: .leading, spacing: 0) {
                         if state.library.isLive { ArtistBio(state: state) }
                         if state.library.isLive, state.related.loading || state.related.incomplete { relatedStatus }
-                        Text("Albums").font(CU.title(20)).padding(.top, 24).padding(.bottom, 8).accessibilityAddTraits(.isHeader)
-                        LazyVGrid(columns: [GridItem(.adaptive(minimum: 128, maximum: 128), spacing: 16, alignment: .top)], alignment: .leading, spacing: 16) {
+                        Text("Albums").font(CU.title(20)).padding(.top, ArtistSpacing.beforeHeading).padding(.bottom, ArtistSpacing.afterHeading).accessibilityAddTraits(.isHeader)
+                        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: ArtistSpacing.gap, alignment: .top), count: ArtistSpacing.columns),
+                                  alignment: .leading, spacing: ArtistSpacing.gap) {
                             ForEach(state.shownArtistAlbums) { a in albumTile(a) }
                         }
                         if state.library.isLive { ArtistSimilarRow(state: state) }
                     }
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .frame(maxWidth: ArtistSpacing.columnWidth, alignment: .leading)
+                    .frame(maxWidth: .infinity)
                     if state.library.isLive { TopSongsPanel(state: state).padding(.top, 16) }
                 }
             }
@@ -149,7 +169,7 @@ struct CupertinoArtist: View {
     private func albumTile(_ a: AlbumItem) -> some View {
         VStack(alignment: .leading, spacing: 0) {
             Button { state.open(album: a) } label: {
-            CoverView(album: a).frame(width: 128).clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+            CoverView(album: a).frame(maxWidth: .infinity).clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
                 .opacity(a.owned ? 1 : 0.35)
                 .overlay { if !a.owned { RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(CU.textTertiary, style: StrokeStyle(lineWidth: 2, dash: [5, 4])).padding(-4) } }
                 .shadow(color: CU.shadowInk.opacity(a.owned ? 0.2 : 0), radius: 7, y: 4)
@@ -163,7 +183,7 @@ struct CupertinoArtist: View {
                     .help(state.acquisition.detail(for: a))
             }
         }
-        .font(CU.Font.body.weighted(.regular)).frame(width: 128, alignment: .leading)
+        .font(CU.Font.body.weighted(.regular)).frame(maxWidth: .infinity, alignment: .leading)
         .accessibilityElement(children: .contain)
     }
 }

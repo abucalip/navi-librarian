@@ -8,12 +8,14 @@ import SwiftUI
 final class ArtistCollageModel {
     private(set) var entries: [CollageEntry] = []
     private var loadedFor: String?
+    /// The fewest pictures that count; the Cupertino hero takes any (one is a slideshow of one), the Zine sheet keeps the default.
+    var minimum = collageMinimum
 
     func load(sources: [CollageSource], store: ArtworkStore?) async {
         let key = sources.map(\.rgid).joined(separator: ",")
         guard !sources.isEmpty, let store else { entries = []; loadedFor = nil; return }
         if loadedFor == key { return }
-        let found = await store.artistCollage(sources)
+        let found = await store.artistCollage(sources, minimum: minimum)
         guard !Task.isCancelled else { return }
         entries = found; loadedFor = key
     }
@@ -42,13 +44,15 @@ struct ZineContactSheet: View {
     }
 }
 
-/// Cupertino: the banner shows the pictures one after another, blurred behind the name. Holds on the first picture under Reduce Motion
-/// and in the offscreen screenshot.
+/// Cupertino: the banner's moving slideshow of the artist's own photos, sharp, each drifting slowly and cross-fading into the next.
+/// Holds on the first picture under Reduce Motion and in the offscreen screenshot. The caller adds the scrim for the text.
 struct CollageHeroBackdrop: View {
     let entries: [CollageEntry]
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var index = 0
-    private let hold: Duration = .seconds(9)
+    @State private var drift = false
+    private let hold: Duration = .seconds(8)
+    private var still: Bool { reduceMotion || RenderMode.offscreenScreenshot }
 
     var body: some View {
         ZStack {
@@ -56,18 +60,26 @@ struct CollageHeroBackdrop: View {
                 AlbumPictureView(picture: entries[index].picture, size: .display)
                     .id(entries[index].id)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .blur(radius: RenderMode.offscreenScreenshot ? 0 : 30).saturation(1.15).clipped()
+                    .scaleEffect(drift && !still ? 1.12 : 1.0)
+                    .offset(x: drift && !still ? -14 : 0)
+                    .animation(.linear(duration: 9), value: drift)
+                    .clipped()
                     .transition(.opacity)
             }
         }
         .allowsHitTesting(false).accessibilityHidden(true)
         .task(id: entries.map(\.id)) {
-            index = 0
-            guard entries.count > 1, !reduceMotion, !RenderMode.offscreenScreenshot else { return }
+            index = 0; drift = false
+            guard !entries.isEmpty, !still else { return }
+            drift = true
+            guard entries.count > 1 else { return }
             while !Task.isCancelled {
                 try? await Task.sleep(for: hold)
                 guard !Task.isCancelled else { return }
+                drift = false
                 withAnimation(.easeInOut(duration: 1.4)) { index = (index + 1) % entries.count }
+                try? await Task.sleep(for: .milliseconds(50))
+                drift = true
             }
         }
     }

@@ -69,7 +69,7 @@ struct AlbumRelatedGrids: View {
     }
 
     private func heading(_ title: String, size: CGFloat = 20) -> some View {
-        Text(title).font(CU.title(size)).padding(.top, 22).padding(.bottom, 10).accessibilityAddTraits(.isHeader)
+        Text(title).font(CU.title(size)).padding(.top, 40).padding(.bottom, 10).accessibilityAddTraits(.isHeader)
     }
 
     var body: some View {
@@ -85,7 +85,7 @@ struct AlbumRelatedGrids: View {
             if !others.isEmpty || !albums.isEmpty {
                 heading("Not in your library")
                 HStack(alignment: .top, spacing: 20) {
-                    if !others.isEmpty { box("Artists") { rows(others.map { SimilarArtistCircle(state: state, artist: $0, size: 84) }) } }
+                    if !others.isEmpty { box("Similar artists") { rows(others.map { SimilarArtistCircle(state: state, artist: $0, size: 84) }) } }
                     if !albums.isEmpty { box("Albums") { rows(albums.map { SimilarAlbumSquare(state: state, album: $0, side: 96) }) } }
                 }
             }
@@ -102,33 +102,32 @@ struct AlbumRelatedGrids: View {
             Text(title).font(.system(size: 12, weight: .semibold)).foregroundStyle(CU.textSecondary).textCase(.uppercase).accessibilityAddTraits(.isHeader)
             content()
         }
-        .padding(16)
-        .background(CU.bgFill.opacity(0.5), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 }
 
 /// The artist page's similar artists (Cupertino): as many round photos as fit one row of the album grid, picked at random each visit.
 struct ArtistSimilarRow: View {
     let state: AppState
-    /// The album grid's tile width and gap, so the row ends where the grid does.
-    var tile: CGFloat = 128
-    var gap: CGFloat = 16
     @State private var salt = UInt64.random(in: 0...UInt64.max)
 
     var body: some View {
         let list = state.related.artists
         if !list.isEmpty {
             VStack(alignment: .leading, spacing: 0) {
-                Text("Similar artists").font(CU.title(20)).padding(.top, 22).padding(.bottom, 10).accessibilityAddTraits(.isHeader)
+                Text("Similar artists").font(CU.title(20)).padding(.top, ArtistSpacing.beforeHeading).padding(.bottom, ArtistSpacing.afterHeading)
+                    .accessibilityAddTraits(.isHeader)
+                // The same columns as the album grid, so the circles start and end where the albums do.
                 GeometryReader { g in
-                    let n = max(1, Int((g.size.width + gap) / (tile + gap)))
+                    let n = ArtistSpacing.columns, gap = ArtistSpacing.gap
+                    let tile = (g.size.width - gap * CGFloat(n - 1)) / CGFloat(n)
                     HStack(alignment: .top, spacing: gap) {
                         ForEach(RandomPick.pick(list, n, salt: salt)) { a in
-                            SimilarArtistCircle(state: state, artist: a, size: tile - 14).frame(width: tile)
+                            SimilarArtistCircle(state: state, artist: a, size: tile).frame(width: tile)
                         }
+                        Spacer(minLength: 0)
                     }
                 }
-                .frame(height: tile + 40)
+                .frame(height: 148 + 44)
             }
             .onChange(of: state.selectedArtist.id) { _, _ in salt = .random(in: 0...UInt64.max) }
         } else if state.related.loading {
@@ -148,10 +147,10 @@ struct AlbumBookletTab: View {
     var body: some View {
         Group {
             if let booklet {
-                VStack(alignment: .leading, spacing: 12) {
+                VStack(alignment: .center, spacing: 28) {
                     Button { showing = true } label: { Label("Open the booklet · \(booklet.badgeText)", systemImage: "book") }
                         .buttonStyle(CapsuleButtonStyle(primary: true))
-                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 120, maximum: 120), spacing: 14, alignment: .top)], alignment: .leading, spacing: 14) {
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 120, maximum: 120), spacing: 14, alignment: .top)], alignment: .center, spacing: 14) {
                         ForEach(booklet.items.filter { !$0.isPDF }) { p in
                             Button { showing = true } label: {
                                 AlbumPictureView(picture: p, size: .thumb).frame(width: 120, height: 120)
@@ -165,7 +164,7 @@ struct AlbumBookletTab: View {
                 Text(loaded ? "This album has no booklet." : "Looking for the booklet…").foregroundStyle(CU.textSecondary)
             }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(maxWidth: .infinity, alignment: .center)
         .sheet(isPresented: $showing) { if let booklet { BookletSheet(booklet: booklet) { showing = false } } }
         .task(id: "\(state.related.releaseGroupMBID ?? "")|\(store?.generation ?? 0)") {
             booklet = nil; loaded = false

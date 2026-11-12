@@ -82,6 +82,9 @@ struct CupertinoAlbumBanner: View {
     }
 }
 
+/// The space between the tab buttons and whatever the tab shows, the same for every tab.
+enum AlbumTabGap { static let value: CGFloat = 28 }
+
 enum AlbumTab: String, CaseIterable, Identifiable {
     case tracks = "Tracks", notes = "Liner Notes", booklet = "Booklet", credits = "Credits", reviews = "Reviews"
     var id: String { rawValue }
@@ -96,13 +99,13 @@ struct CupertinoAlbum: View {
         ScrollViewReader { proxy in
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
-                tabBar.padding(.top, 16)
+                tabBar.frame(maxWidth: .infinity).padding(.top, 16)
                 switch tab {
                 case .tracks: tracksTab(a)
-                case .notes: CupertinoAlbumSpread(state: state, part: .notes).padding(.top, 16)
-                case .booklet: AlbumBookletTab(state: state).padding(.top, 16)
-                case .credits: CupertinoAlbumSpread(state: state, part: .credits).padding(.top, 16)
-                case .reviews: CupertinoAlbumSpread(state: state, part: .reviews).padding(.top, 16)
+                case .notes: CupertinoAlbumSpread(state: state, part: .notes).padding(.top, AlbumTabGap.value)
+                case .booklet: AlbumBookletTab(state: state).padding(.top, AlbumTabGap.value)
+                case .credits: CupertinoAlbumSpread(state: state, part: .credits).padding(.top, AlbumTabGap.value)
+                case .reviews: CupertinoAlbumSpread(state: state, part: .reviews).padding(.top, AlbumTabGap.value)
                 }
             }
             .padding(.horizontal, CU.Space.xl).padding(.bottom, CU.Space.xl)
@@ -133,14 +136,10 @@ struct CupertinoAlbum: View {
     }
 
     @ViewBuilder private func tracksTab(_ a: AlbumItem) -> some View {
-        // The table takes what it needs; the right side is kept free for a pane that comes later.
-        HStack(alignment: .top, spacing: 32) {
-            trackTable.frame(maxWidth: 620)
-            Color.clear.frame(maxWidth: .infinity, minHeight: 1).accessibilityHidden(true)
-        }
-        .padding(.top, 16)
+        trackTable.frame(maxWidth: 620).frame(maxWidth: .infinity)
+            .padding(.top, AlbumTabGap.value)
         if !state.library.more(by: a).isEmpty {
-            Text("More by \(a.artist)").font(CU.title(20)).padding(.top, 24).padding(.bottom, 8)
+            Text("More by \(a.artist)").font(CU.title(20)).padding(.top, 40).padding(.bottom, 8)
                 .accessibilityAddTraits(.isHeader)
             HStack(alignment: .top, spacing: 16) {
                 ForEach(state.library.more(by: a)) { m in
@@ -156,7 +155,7 @@ struct CupertinoAlbum: View {
                 }
             }
         }
-        AlbumRelatedGrids(state: state)
+        AlbumRelatedGrids(state: state).padding(.top, 8)
     }
 
     private func isHighlighted(_ t: TrackItem) -> Bool {

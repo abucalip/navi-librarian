@@ -30,9 +30,7 @@ struct ArtistBio: View {
                 if let s = state.related.bioSource, !s.isEmpty { Text(s).font(.system(size: 11)).foregroundStyle(CU.textSecondary) }
             }
         }
-        .frame(maxWidth: 640, alignment: .leading)
-        .padding(.horizontal, 40)
-        .frame(maxWidth: .infinity)
+        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.top, 44).padding(.bottom, 10)
         .accessibilityElement(children: .contain)
     }

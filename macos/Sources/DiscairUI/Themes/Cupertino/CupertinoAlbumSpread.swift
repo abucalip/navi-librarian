@@ -25,11 +25,19 @@ struct CupertinoAlbumSpread: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
+    /// The notes column's width, the same as the artist page's.
+    private var column: CGFloat { ArtistSpacing.columnWidth }
+
     /// Liner notes first, then the album's facts and the links at the bottom.
     @ViewBuilder private func notes(_ c: AlbumSpreadContent) -> some View {
+        notesColumn(c).frame(maxWidth: column, alignment: .leading).frame(maxWidth: .infinity)
+    }
+
+    @ViewBuilder private func notesColumn(_ c: AlbumSpreadContent) -> some View {
         if let notes = c.notes {
-            VStack(alignment: .leading, spacing: 8) {
-                Text(notes).font(CU.Font.body.weighted(.regular)).lineSpacing(3).textSelection(.enabled)
+            // The same column as the artist's biography: justified, split into paragraphs, centred on the page.
+            VStack(alignment: .leading, spacing: 10) {
+                ForEach(Array(BioParagraphs.split(notes).enumerated()), id: \.offset) { _, p in JustifiedText(text: p, size: 14) }
                 if let src = c.notesSource, !src.isEmpty {
                     if let u = c.notesURL { Link(src, destination: u).font(CU.Font.callout.weighted(.regular)) }
                     else { Text(src).font(CU.Font.callout.weighted(.regular)).foregroundStyle(CU.textSecondary) }
@@ -39,6 +47,7 @@ struct CupertinoAlbumSpread: View {
             Text("No liner notes for this album.").foregroundStyle(CU.textSecondary)
         }
         if !c.facts.isEmpty || c.musicBrainzURL != nil || c.lastFmURL != nil {
+            Color.clear.frame(height: 24)
             section("MusicBrainz and links") {
                 VStack(alignment: .leading, spacing: 8) {
                     ForEach(c.facts) { f in
@@ -73,12 +82,17 @@ struct CupertinoAlbumSpread: View {
         }
     }
 
+    /// A long list of names breaks after every fourth full name.
+    static func creditLines(_ names: [String], perLine: Int = 4) -> String {
+        stride(from: 0, to: names.count, by: perLine).map { names[$0..<min($0 + perLine, names.count)].joined(separator: ", ") }.joined(separator: ",\n")
+    }
+
     private func creditList(_ rows: [(String, [String])]) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             ForEach(Array(rows.enumerated()), id: \.offset) { _, g in
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
                     Text(g.0).foregroundStyle(CU.textSecondary).frame(width: 150, alignment: .leading)
-                    Text(g.1.joined(separator: ", ")).textSelection(.enabled)
+                    Text(Self.creditLines(g.1)).textSelection(.enabled)
                 }
                 .font(CU.Font.body.weighted(.regular)).accessibilityElement(children: .combine)
             }
@@ -113,7 +127,7 @@ struct CupertinoAlbumSpread: View {
 
     private func section<C: View>(_ title: String, @ViewBuilder _ body: () -> C) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(title).font(CU.Font.callout.weighted(.semibold)).foregroundStyle(CU.textSecondary).textCase(.uppercase)
+            Text(title).font(CU.Font.callout.weighted(.semibold)).foregroundStyle(CU.textSecondary)
                 .accessibilityAddTraits(.isHeader)
             body()
         }
