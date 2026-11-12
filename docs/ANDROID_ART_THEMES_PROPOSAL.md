@@ -1,6 +1,6 @@
 # Android art-led themes: Soft Brut and Flow (proposal)
 
-Status: **proposal; step 0 (PR #1005), S1 (PR #1006) and S2 (PR #1007) built; S3 in progress: the Album and Artist pages are themed, Genre, Discover, Library and Search are not yet.** Written 2026-11-12. This document and the mockups beside it are the whole change; no application code is touched. Building starts only after the owner approves it and the steps in section 10 are scheduled in `ACTIVE_WORK.md`.
+Status: **proposal; step 0 (PR #1005), S1 (PR #1006) and S2 (PR #1007) built; S3 in progress: the Album, Artist, Genre and Discover pages are themed, Library and Search are not yet.** Written 2026-11-12. This document and the mockups beside it are the whole change; no application code is touched. Building starts only after the owner approves it and the steps in section 10 are scheduled in `ACTIVE_WORK.md`.
 
 ## 1. What the owner asked for
 

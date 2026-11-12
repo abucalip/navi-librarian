@@ -49,13 +49,16 @@ import app.discair.ui.theme.LocalPalette
 
 /** The page's top bar: Back at the left, an optional three-dot menu at the right (mockup `.bar`). Sits under the status bar. */
 @Composable
-fun CoverStackTopBar(onBack: () -> Unit, menu: List<Pair<String, () -> Unit>>, modifier: Modifier = Modifier) {
+fun CoverStackTopBar(onBack: () -> Unit, menu: List<Pair<String, () -> Unit>>, modifier: Modifier = Modifier, title: String? = null) {
     val p = LocalPalette.current
     Row(modifier.statusBarsPadding().fillMaxWidth().padding(start = 8.dp, end = 8.dp, top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
         Box(Modifier.size(Target).clip(CircleShape).clickable(role = Role.Button, onClick = onBack), contentAlignment = Alignment.Center) {
             Icon(PlayerIcons.Left, contentDescription = "Back", tint = p.text)
         }
-        Box(Modifier.weight(1f))
+        if (title != null) Text(
+            title, Modifier.weight(1f).padding(start = 4.dp), color = p.text, maxLines = 1, overflow = TextOverflow.Ellipsis,
+            style = MaterialTheme.typography.titleMedium.copy(fontSize = 15.sp, fontWeight = FontWeight.SemiBold),
+        ) else Box(Modifier.weight(1f))
         if (menu.isNotEmpty()) {
             var open by remember { mutableStateOf(false) }
             Box {

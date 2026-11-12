@@ -252,8 +252,11 @@ fun DiscoverScreen(open: Opener) {
                 onDragEnd = { switchBy(if (total < -swipeThreshold) 1 else if (total > swipeThreshold) -1 else 0) },
             ) { _, delta -> total += delta }
         }) {
-            PageHeading("Discover", Modifier.padding(start = 16.dp, top = 16.dp, end = 16.dp), large = true)
             val options = DiscoveryList.entries
+            // Soft Brut: Lists | Insights, then the list names (CoverStackDiscover.kt); every other theme draws the chips below.
+            if (app.discair.ui.common.isCoverStack()) CoverStackDiscoverHeader(list) { if (it != list) { selected = it.name; statusLine = null } }
+            else {
+            PageHeading("Discover", Modifier.padding(start = 16.dp, top = 16.dp, end = 16.dp), large = true)
             // List names as chips in one scrolling row (docs/redesign.md 8.2).
             androidx.compose.foundation.lazy.LazyRow(
                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
@@ -267,6 +270,7 @@ fun DiscoverScreen(open: Opener) {
                         modifier = Modifier.heightIn(min = Target),
                     )
                 }
+            }
             }
             statusLine?.let {
                 Text(
@@ -289,6 +293,7 @@ fun DiscoverScreen(open: Opener) {
                         InsightsPage(
                             it, insightsHidden.keys, ::dismissInsight, tasteShown, tasteLoaded = taste.state is Load.Ready || tasteShown != null,
                             showTaste = taste.state !is Load.Failed || tasteShown != null,
+                            open = open,
                         )
                     }
                 }
@@ -433,11 +438,16 @@ private fun CardGrid(
     LazyVerticalGrid(
         GridCells.Fixed(2), Modifier.fillMaxSize(),
         contentPadding = PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 16.dp + app.discair.ui.LocalBottomClearance.current),
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+        horizontalArrangement = Arrangement.spacedBy(if (app.discair.ui.common.isCoverStack()) 14.dp else 16.dp),
+        verticalArrangement = Arrangement.spacedBy(if (app.discair.ui.common.isCoverStack()) 14.dp else 16.dp),
     ) {
         gridItems(entries, key = { it.key }) { entry ->
-            DiscoverCard(
+            if (app.discair.ui.common.isCoverStack()) CoverStackDiscoverCard(
+                entry, open,
+                saveState = saves[entry.key] ?: if (list == DiscoveryList.Saved) SaveState.Saved else SaveState.Idle,
+                onSave = { onSave(entry) },
+                onDismiss = { artistToo -> onDismiss(entry, artistToo) },
+            ) else DiscoverCard(
                 entry, open,
                 saveState = saves[entry.key] ?: if (list == DiscoveryList.Saved) SaveState.Saved else SaveState.Idle,
                 onSave = { onSave(entry) },
