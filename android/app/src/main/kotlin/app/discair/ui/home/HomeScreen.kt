@@ -85,7 +85,7 @@ import kotlinx.coroutines.launch
 private const val GENRES_SHOWN = 6
 
 @Composable
-fun HomeScreen(open: Opener, onRadio: () -> Unit = {}, onDownloads: () -> Unit = {}, onStats: () -> Unit = {}, onServer: () -> Unit = {}) {
+fun HomeScreen(open: Opener, onRadio: () -> Unit = {}, onDownloads: () -> Unit = {}, onStats: () -> Unit = {}, onServer: () -> Unit = {}, onLibrary: () -> Unit = {}) {
     val repo = LocalRepository.current
     val hub = app.discair.ui.common.LocalAcquisitions.current
     val now = remember { Instant.now() }
@@ -124,6 +124,15 @@ fun HomeScreen(open: Opener, onRadio: () -> Unit = {}, onDownloads: () -> Unit =
         problem = hub.listProblem,
     )
     val banner = DashboardRules.banner(data.problem)
+
+    // Soft Brut: its own arrangement, in CoverStackHome.kt; every other theme continues below unchanged.
+    if (layout == app.discair.ui.theme.Layout.CoverStack) {
+        CoverStackHome(
+            CoverStackHomeData(picks.state, pickList, picks.reload, genres.state, data.hero, data.arrivals, data.insight, banner),
+            open, feedback, onRadio, onLibrary, onStats, onServer, onDownloads,
+        )
+        return
+    }
 
     @Composable
     fun Module(m: DashModule, wide: Boolean) {
