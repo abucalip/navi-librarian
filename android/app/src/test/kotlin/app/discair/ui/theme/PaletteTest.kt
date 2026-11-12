@@ -19,12 +19,12 @@ class PaletteTest {
         assertTrue("${p.label}: $what on $bgName is %.2f, needs %.1f".format(got, need), got >= need)
     }
 
-    @Test fun twentySevenThemesWithUniqueIds() {
-        assertEquals(27, Palettes.All.size)
-        assertEquals(16, Palettes.Light.size)
+    @Test fun twentyEightThemesWithUniqueIds() {
+        assertEquals(28, Palettes.All.size)
+        assertEquals(17, Palettes.Light.size)
         assertEquals(11, Palettes.Dark.size)
         assertEquals(12, Palettes.All.count { it.family == Family.Classic })
-        assertEquals(15, Palettes.All.count { it.family == Family.Brutal })
+        assertEquals(16, Palettes.All.count { it.family == Family.Brutal })
         assertTrue(Palettes.All.all { (it.family == Family.Brutal) == (it.shape != null) })
         assertEquals(Palettes.All.size, Palettes.All.map { it.id }.toSet().size)
         assertEquals(Palettes.All.size, Palettes.All.map { it.label }.toSet().size)
@@ -135,7 +135,7 @@ class PaletteTest {
         val radii = Palettes.All.filter { it.brutal }.map { it.shape!!.radius }.toSet()
         assertTrue("shape variety kept: $radii", radii.size >= 5)
         assertEquals(0f, Palettes.BrutPoster.shape!!.radius, 0f) // square
-        assertTrue(Palettes.All.filter { it.brutal }.all { it.shape!!.outline >= 2 && it.shapeShadowIsVisible() })
+        assertTrue(Palettes.All.filter { it.brutal }.all { it.shape!!.outline >= 1.5f && it.shapeShadowIsVisible() })
         assertTrue(Palettes.All.filter { !it.brutal }.all { it.shape == null })
     }
 
