@@ -9,6 +9,7 @@ import javax.net.ssl.SSLException
 import app.discair.model.AcquisitionJob
 import app.discair.model.AlbumLinks
 import app.discair.model.AlbumReviews
+import app.discair.model.ServerReads
 import app.discair.model.StoreUpdate
 import app.discair.model.parseStoreUpdate
 import app.discair.model.GetState
@@ -304,6 +305,12 @@ interface LibraryRepository : AcquisitionApi {
     fun connectListenBrainz(username: String, token: String): ListenBrainzCheck = throw UnsupportedOperationException()
 
     /** Artist biography text, or null when none is available. */
+    /**
+     * One pass over the routes the Server screen shows (A7): health, the service settings and their tests, capabilities and the
+     * two job statuses. Each is read on its own, so one failing route leaves the rest; [navidromeDirect] is the phone's own check.
+     */
+    fun serverReads(navidromeDirect: Boolean?): ServerReads = throw UnsupportedOperationException()
+
     fun artistBio(artist: String): String?
 
     /** Streams a search to [onEvent]; blocks until it ends. */
@@ -448,6 +455,12 @@ class LibrarianRepository(
     override fun connectListenBrainz(username: String, token: String): ListenBrainzCheck {
         client.put(listOf("api", "settings", "listenbrainz"), listenBrainzBody(username, token))
         return parseListenBrainzCheck(client.post(listOf("api", "settings", "listenbrainz", "test"), "{}"))
+    }
+
+    override fun serverReads(navidromeDirect: Boolean?): ServerReads {
+        // Live state, never from a saved copy: a saved "all working" would be a claim nobody checked.
+        if (ReadMode.isCacheOnly) throw CacheMiss()
+        return readServer(client, navidromeDirect)
     }
 
     override fun insights(limit: Int): InsightsResponse {

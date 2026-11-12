@@ -224,7 +224,7 @@ private fun UnavailableScreen(state: UiState, model: AppViewModel) {
 }
 
 @Composable
-fun SettingsScreen(state: UiState, model: AppViewModel, onBack: () -> Unit, onEqualizer: () -> Unit = {}, onCrossfade: () -> Unit = {}, onAppearance: () -> Unit = {}) {
+fun SettingsScreen(state: UiState, model: AppViewModel, onBack: () -> Unit, onEqualizer: () -> Unit = {}, onCrossfade: () -> Unit = {}, onAppearance: () -> Unit = {}, onServer: () -> Unit = {}) {
     var confirmSignOut by remember { mutableStateOf(false) }
     val container = (androidx.compose.ui.platform.LocalContext.current.applicationContext as DiscairApplication).container
     // The page scrolls because the playback choices make it taller than a phone in landscape or at large text.
@@ -238,6 +238,7 @@ fun SettingsScreen(state: UiState, model: AppViewModel, onBack: () -> Unit, onEq
         Text("Connected to your servers.", style = MaterialTheme.typography.bodyLarge)
         CheckLine("Librarian", state.librarian)
         CheckLine("Navidrome", state.navidrome)
+        OutlinedButton(onClick = onServer, Modifier.fillMaxWidth().heightIn(min = Target)) { Text("Server and services") }
         app.discair.ui.settings.AppearanceRow(container.appearance, onAppearance)
         PlaybackSettings(container, onEqualizer, onCrossfade)
         LibrarySettings()

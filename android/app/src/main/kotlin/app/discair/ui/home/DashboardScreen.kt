@@ -180,14 +180,14 @@ private fun StatCard(label: String, value: String?, unit: String, line: String, 
 
 /** Listens come from the taste body (D2). Never played has no source on Android, so it says so; Waiting is today's picks. */
 @Composable
-fun StatRow(listens: ListensFigures?, listensLoaded: Boolean, waiting: WaitingFigures?, wide: Boolean, onWaiting: () -> Unit) {
+fun StatRow(listens: ListensFigures?, listensLoaded: Boolean, waiting: WaitingFigures?, wide: Boolean, onWaiting: () -> Unit, onStats: () -> Unit = {}) {
     val cards: List<@Composable (Modifier) -> Unit> = listOf(
         { m ->
             if (listens != null) StatCard(
-                "Listens · 7 days", DashboardRules.formatCount(listens.last7), "plays", DashboardRules.listensChange(listens), m,
-            ) else StatCard("Listens · 7 days", null, "", if (listensLoaded) DashboardRules.NOT_AVAILABLE else "Loading…", m)
+                "Listens · 7 days", DashboardRules.formatCount(listens.last7), "plays", DashboardRules.listensChange(listens), m, onStats,
+            ) else StatCard("Listens · 7 days", null, "", if (listensLoaded) DashboardRules.NOT_AVAILABLE else "Loading…", m, onStats)
         },
-        { m -> StatCard("Never played", null, "", DashboardRules.NOT_AVAILABLE, m) },
+        { m -> StatCard("Never played", null, "", DashboardRules.NOT_AVAILABLE, m, onStats) },
         { m ->
             if (waiting != null) StatCard(
                 "Waiting", DashboardRules.formatCount(waiting.picks), if (waiting.picks == 1) "pick" else "picks",
@@ -370,10 +370,10 @@ fun InsightModule(card: InsightCard, open: Opener) {
 // ----- 7. library in numbers -------------------------------------------------------------------------------------
 
 @Composable
-fun LibraryNumbers(read: LibraryRead?, loading: Boolean, now: Instant) {
+fun LibraryNumbers(read: LibraryRead?, loading: Boolean, now: Instant, onStats: () -> Unit = {}) {
     val points = if (read == null) null else DashboardRules.growth(read, now)
     DashCard {
-        ModuleTitle("Library in numbers")
+        ModuleTitle("Library in numbers", "Open stats", onStats)
         LineChart(
             title = "Albums over the last 12 months",
             subtitle = points?.let { DashboardRules.growthSubtitle(it, now) } ?: "Albums at the end of each month",
@@ -386,9 +386,12 @@ fun LibraryNumbers(read: LibraryRead?, loading: Boolean, now: Instant) {
 // ----- 10. server ------------------------------------------------------------------------------------------------
 
 @Composable
-fun ServerRow(problem: String?) {
+fun ServerRow(problem: String?, onOpen: () -> Unit = {}) {
     val p = LocalPalette.current
-    Column(Modifier.fillMaxWidth().heightIn(min = 56.dp).padding(horizontal = 16.dp), verticalArrangement = Arrangement.Center) {
+    Column(
+        Modifier.fillMaxWidth().heightIn(min = 56.dp).clickable(role = Role.Button, onClick = onOpen).padding(horizontal = 16.dp),
+        verticalArrangement = Arrangement.Center,
+    ) {
         Text(DashboardRules.serverLine(problem), style = MaterialTheme.typography.titleMedium)
         Text(
             problem ?: "Downloads are reading normally.", style = MaterialTheme.typography.bodySmall,

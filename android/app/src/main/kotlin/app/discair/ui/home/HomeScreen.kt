@@ -85,7 +85,7 @@ import kotlinx.coroutines.launch
 private const val GENRES_SHOWN = 6
 
 @Composable
-fun HomeScreen(open: Opener, onRadio: () -> Unit = {}, onDownloads: () -> Unit = {}) {
+fun HomeScreen(open: Opener, onRadio: () -> Unit = {}, onDownloads: () -> Unit = {}, onStats: () -> Unit = {}, onServer: () -> Unit = {}) {
     val repo = LocalRepository.current
     val hub = app.discair.ui.common.LocalAcquisitions.current
     val now = remember { Instant.now() }
@@ -129,7 +129,7 @@ fun HomeScreen(open: Opener, onRadio: () -> Unit = {}, onDownloads: () -> Unit =
     fun Module(m: DashModule, wide: Boolean) {
         when (m) {
             DashModule.Hero -> HeroModule(data.hero, data.heroLoading)
-            DashModule.Stats -> StatRow(data.listens, data.listensLoaded, data.waiting, wide, onWaiting = {})
+            DashModule.Stats -> StatRow(data.listens, data.listensLoaded, data.waiting, wide, onWaiting = {}, onStats = onStats)
             DashModule.Pick -> Box(Modifier.heightIn(min = 120.dp)) {
                 when (val state = data.picksState) {
                     Load.Loading -> Muted("Loading…")
@@ -147,7 +147,7 @@ fun HomeScreen(open: Opener, onRadio: () -> Unit = {}, onDownloads: () -> Unit =
                 Box(Modifier.padding(horizontal = if (wide) 0.dp else 16.dp)) { TasteModule(data.tasteProfiles, data.tasteLoaded) }
             }
             DashModule.Insight -> data.insight?.let { Box(Modifier.padding(horizontal = if (wide) 0.dp else 16.dp)) { InsightModule(it, open) } }
-            DashModule.Numbers -> Box(Modifier.padding(horizontal = if (wide) 0.dp else 16.dp)) { LibraryNumbers(data.libraryRead, data.libraryLoading, data.now) }
+            DashModule.Numbers -> Box(Modifier.padding(horizontal = if (wide) 0.dp else 16.dp)) { LibraryNumbers(data.libraryRead, data.libraryLoading, data.now, onStats) }
             DashModule.Shelves -> Column {
                 RecentlyAddedSection(open)
                 ShelfRow(Shelves.Recent.path, "Recently played", open) { repo.shelf(Shelves.Recent, 20).items }
@@ -168,7 +168,7 @@ fun HomeScreen(open: Opener, onRadio: () -> Unit = {}, onDownloads: () -> Unit =
                 Spacer(Modifier.weight(1f))
                 Text("Stations", color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            DashModule.Server -> ServerRow(data.problem)
+            DashModule.Server -> ServerRow(data.problem, onServer)
         }
     }
 
