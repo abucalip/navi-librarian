@@ -390,6 +390,9 @@ public struct LibrarianClient: Sendable {
         }
         // A taste refresh reads the whole listening history and can take about a minute; the 30 s default cut it off.
         if parts[0].hasSuffix("taste/refresh") || parts[0].hasSuffix("settings/listenbrainz/test") { request.timeoutInterval = 150 }
+        // A popularity fill makes up to five ListenBrainz batch calls in a row, each with its own 30 s limit on the server, so the
+        // 30 s default cut the app off while the server was still working and the fill read as failed.
+        if parts[0].hasSuffix("popularity/fill") { request.timeoutInterval = 200 }
         do { return try await transport.send(request) }
         catch { throw ErrorMapping.map(error, tailscaleHint: tailscaleHint()) }
     }

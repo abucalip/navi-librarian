@@ -88,7 +88,7 @@ struct CupertinoTaste: View {
     private var shiftPanel: some View {
         CUPanel {
             eyebrow("Lately against always")
-            if let h = model.profiles?.headline {
+            if let h = model.profiles?.cardHeadline {
                 Text(h.text).cuRole(CU.Font.title1).foregroundStyle(CU.text).fixedSize(horizontal: false, vertical: true)
                 let base = model.profiles?.window(h.window)?.listens ?? 0
                 note(h.window == "mid"

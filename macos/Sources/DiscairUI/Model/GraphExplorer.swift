@@ -336,12 +336,14 @@ public final class GraphExplorerModel {
     /// Navidrome artist id the explorer last started from, so opening the screen again does not reload it.
     public private(set) var startedFor: String?
     private(set) var trail: [KnowledgeEntity] = []
+    /// The walk as the server sent it, songs included; `nodes` is this with the songs folded into their albums.
+    private var rawNodes: [GraphNode] = []
 
     public init() {}
 
     /// Shows a finished walk without a server: screenshots and tests.
     func preview(centre: KnowledgeEntity, nodes: [GraphNode], truncated: String? = nil, failure: LoadFailure? = nil, more: Bool = false, depth: Int? = nil) {
-        self.centre = centre; self.nodes = nodes; coverage = "loaded"; self.truncated = truncated; loadFailure = failure
+        self.centre = centre; self.nodes = nodes; rawNodes = nodes; coverage = "loaded"; self.truncated = truncated; loadFailure = failure
         nextCursor = more ? "next" : nil
         if let depth { self.depth = depth }
     }
@@ -507,8 +509,9 @@ public final class GraphExplorerModel {
             let page = try await librarian.knowledgeConnections(mbid: mbid, type: type, depth: depth, limit: 50, creditsOnly: creditsOnly, cursor: cursor)
             note = nil; canRequestUpdate = false; loadFailure = nil
             let fresh = page.hops.map { GraphNode(entity: $0.entity, depth: $0.depth, via: $0.viaMBID, credit: $0.credit, evidence: $0.evidence) }
-            if replace { centre = page.start; nodes = fresh; selectedID = nil }
-            else { let have = Set(nodes.map(\.id)); nodes += fresh.filter { !have.contains($0.id) } }
+            if replace { centre = page.start; rawNodes = fresh; selectedID = nil }
+            else { let have = Set(rawNodes.map(\.id)); rawNodes += fresh.filter { !have.contains($0.id) } }
+            nodes = GraphAlbums.collapse(rawNodes, centre: page.start.mbid)
             nextCursor = page.nextCursor; truncated = page.truncated
             coverage = page.sources["musicbrainz_dump"]?.coverage
             if replace, fresh.isEmpty { note = coverage == "pending" ? "The MusicBrainz data for this artist is not on the server yet." : "No connections are stated for \(page.start.name)." }
@@ -518,10 +521,10 @@ public final class GraphExplorerModel {
                 canRequestUpdate = trail.isEmpty && mbid == mbidForRetry
             }
             else { note = e.summary; loadFailure = LoadFailure(summary: e.summary, wasLoadMore: !replace) }
-            if replace { nodes = []; nextCursor = nil }
+            if replace { nodes = []; rawNodes = []; nextCursor = nil }
         } catch {
             note = "Could not read connections."; loadFailure = LoadFailure(summary: "The connections could not be read.", wasLoadMore: !replace)
-            if replace { nodes = []; nextCursor = nil }
+            if replace { nodes = []; rawNodes = []; nextCursor = nil }
         }
     }
 }

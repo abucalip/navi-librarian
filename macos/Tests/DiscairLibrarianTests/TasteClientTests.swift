@@ -101,3 +101,17 @@ private func tasteBody(_ name: String, file: String = #filePath) throws -> Data 
         #expect(r.context == nil && r.profiles?.headline != nil)
     }
 }
+
+@Suite struct TasteCardsWithoutAreasTests {
+    @Test func cardsDropAreaShiftsAndAnAreaHeadline() throws {
+        let json = #"""
+        {"headline":{"text":"More Sweden lately.","kind":"up","window":"recent","subjects":[{"dimension":"area","value":"Sweden","direction":"up"}]},
+         "windows":{},"shifts":[
+          {"window":"recent","dimension":"area","value":"Sweden","direction":"up","from_share":0.1,"to_share":0.3},
+          {"window":"recent","dimension":"genre","value":"jazz","direction":"up","from_share":0.1,"to_share":0.2}],"config":{}}
+        """#
+        let p = try JSONDecoder().decode(TasteProfiles.self, from: Data(json.utf8))
+        #expect(p.cardShifts(in: "recent").map(\.value) == ["jazz"])
+        #expect(p.cardHeadline == nil)
+    }
+}

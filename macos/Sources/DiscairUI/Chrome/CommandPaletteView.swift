@@ -53,6 +53,15 @@ struct CommandPaletteView: View {
         .background { if zine { Rectangle().fill(Color.black).offset(x: 6, y: 6) } }
         .shadow(color: .black.opacity(zine ? 0 : 0.25), radius: zine ? 0 : 24, x: 0, y: zine ? 0 : 10)
         .onAppear { focused = true }
+        // On appear the field is often not in the window yet, or the top bar field still holds the focus, so the first request is
+        // lost. Ask again once the view has settled.
+        .task {
+            for delay in [0, 60, 200] as [Int] {
+                try? await Task.sleep(for: .milliseconds(delay))
+                guard !Task.isCancelled else { return }
+                focused = true
+            }
+        }
         .task(id: state.palette.query) { await state.searchSongHits(state.palette.query) }
         .accessibilityElement(children: .contain)
         .accessibilityAddTraits(.isModal)

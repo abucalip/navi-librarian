@@ -7,12 +7,14 @@ import SwiftUI
 struct AlbumPictureView: View {
     let picture: ArtworkPicture
     var size: ArtworkSize = .display
+    /// Fill the frame and crop the overflow, instead of fitting inside it with empty space around.
+    var fill = false
     @Environment(\.artwork) private var store
     @State private var image: NSImage?
 
     var body: some View {
         ZStack {
-            if let image { Image(nsImage: image).resizable().scaledToFit() }
+            if let image { Image(nsImage: image).resizable().aspectRatio(contentMode: fill ? .fill : .fit) }
         }
         .task(id: "\(picture.imageID)|\(size.rawValue)|\(store?.generation ?? 0)") {
             guard let store else { return }

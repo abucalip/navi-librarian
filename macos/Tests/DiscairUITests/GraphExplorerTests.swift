@@ -322,3 +322,50 @@ private func circularDistance(_ a: Double, _ b: Double) -> Double {
         #expect(rows == ["zeta", "alpha", "beta"])
     }
 }
+
+// MARK: Songs fold into their albums
+
+@Suite struct GraphAlbumsTests {
+    private func node(_ id: String, _ kind: String, depth: Int, via: String) -> GraphNode {
+        GraphNode(entity: graphEntity(id, kind: kind, name: id), depth: depth, via: via, credit: true, evidence: [])
+    }
+
+    @Test func songsNeverAppearAndLendTheirCreditsToTheAlbum() {
+        // Artist c made song s1 (on album a1, which the walk reached through the song) and song s2 (on album a2, a parent).
+        let raw = [
+            node("a2", "release", depth: 1, via: "c"), node("s1", "recording", depth: 1, via: "c"), node("s2", "recording", depth: 2, via: "a2"),
+            node("a1", "release", depth: 2, via: "s1"), node("p1", "artist", depth: 2, via: "s1"), node("p2", "person", depth: 3, via: "s2"),
+        ]
+        let out = GraphAlbums.collapse(raw, centre: "c")
+        #expect(!out.contains { GraphAlbums.isSong(kind: $0.entity.type) })
+        let by = Dictionary(uniqueKeysWithValues: out.map { ($0.id, $0) })
+        #expect(by["a1"]?.via == "c" && by["a1"]?.depth == 1)
+        #expect(by["p1"]?.via == "a1" && by["p1"]?.depth == 2)
+        #expect(by["p2"]?.via == "a2" && by["p2"]?.depth == 2)
+    }
+
+    @Test func aSongWithNoAlbumHandsItsCreditsToTheSongsParent() {
+        let out = GraphAlbums.collapse([node("s", "work", depth: 1, via: "c"), node("p", "artist", depth: 2, via: "s")], centre: "c")
+        #expect(out.map(\.id) == ["p"] && out[0].via == "c" && out[0].depth == 1)
+    }
+}
+
+// MARK: Artist banner mosaic
+
+@Suite struct CollageLayoutTests {
+    @Test func slotsStayInsideTheBannerAndGrowWithThePictures() {
+        for n in 0...8 {
+            let slots = CollageLayout.slots(count: n)
+            #expect(slots.count == min(n, CollageLayout.maxSlots))
+            for s in slots { #expect(s.minX >= 0 && s.minY >= 0 && s.maxX <= 1.0001 && s.maxY <= 1.0001) }
+        }
+        let five = CollageLayout.slots(count: 5)
+        #expect(Set(five.map { $0.width * $0.height }).count > 2, "tiles differ in size")
+    }
+
+    @Test func nextPicksAPictureNoSlotShows() {
+        #expect(CollageLayout.next(after: 0, shown: [0, 1, 2], count: 6) == 3)
+        #expect(CollageLayout.next(after: 2, shown: [3, 4, 2], count: 6) == 5)
+        #expect(CollageLayout.next(after: 0, shown: [0, 1], count: 2) == nil)
+    }
+}

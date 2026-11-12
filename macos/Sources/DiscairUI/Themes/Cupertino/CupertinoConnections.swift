@@ -17,7 +17,7 @@ struct CupertinoConnections: View {
         ScrollView {
             VStack(alignment: .leading, spacing: CU.Space.m) {
                 header
-                controlBar
+                controlBar.zIndex(10)   // the Start from list overlays what follows, notices included
                 if hasStart {
                     HStack(alignment: .top, spacing: CU.Space.m) {
                         VStack(alignment: .leading, spacing: CU.Space.m) {

@@ -136,26 +136,35 @@ struct CupertinoAlbum: View {
     }
 
     @ViewBuilder private func tracksTab(_ a: AlbumItem) -> some View {
-        trackTable.frame(maxWidth: 620).frame(maxWidth: .infinity)
-            .padding(.top, AlbumTabGap.value)
-        if !state.library.more(by: a).isEmpty {
-            Text("More by \(a.artist)").font(CU.title(20)).padding(.top, 40).padding(.bottom, 8)
-                .accessibilityAddTraits(.isHeader)
-            HStack(alignment: .top, spacing: 16) {
-                ForEach(state.library.more(by: a)) { m in
-                    Button { state.open(album: m) } label: {
-                    VStack(alignment: .leading, spacing: 8) {
-                        CoverView(album: m).frame(width: 110).clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-                            .shadow(color: CU.shadowInk.opacity(0.2), radius: 7, y: 4)
-                        Text(m.title).fontWeight(.semibold).lineLimit(1)
+        // One column as wide as the track table: the table, "More by" and the related lists share its edges, and each row of
+        // covers or photos is centred in it.
+        VStack(alignment: .center, spacing: 0) {
+            trackTable.frame(maxWidth: .infinity)
+            let more = state.library.more(by: a)
+            if !more.isEmpty {
+                VStack(alignment: .leading, spacing: 0) {
+                    Text("More by \(a.artist)").font(CU.title(20)).padding(.top, 40).padding(.bottom, 16)
+                        .accessibilityAddTraits(.isHeader)
+                    HStack(alignment: .top, spacing: AlbumColumn.gap) {
+                        ForEach(more) { m in
+                            Button { state.open(album: m) } label: {
+                                VStack(alignment: .leading, spacing: 8) {
+                                    CoverView(album: m).frame(width: AlbumColumn.tile(5)).clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                                        .shadow(color: CU.shadowInk.opacity(0.2), radius: 7, y: 4)
+                                    Text(m.title).fontWeight(.semibold).lineLimit(1)
+                                }
+                                .font(CU.Font.body.weighted(.regular)).frame(width: AlbumColumn.tile(5), alignment: .leading)
+                            }
+                            .buttonStyle(.plain).accessibilityLabel("Open \(m.title)")
+                        }
                     }
-                    .font(CU.Font.body.weighted(.regular)).frame(width: 110, alignment: .leading)
-                    }
-                    .buttonStyle(.plain).accessibilityLabel("Open \(m.title)")
                 }
             }
+            AlbumRelatedGrids(state: state).padding(.top, 8)
         }
-        AlbumRelatedGrids(state: state).padding(.top, 8)
+        .frame(maxWidth: AlbumColumn.width)
+        .frame(maxWidth: .infinity)
+        .padding(.top, AlbumTabGap.value)
     }
 
     private func isHighlighted(_ t: TrackItem) -> Bool {

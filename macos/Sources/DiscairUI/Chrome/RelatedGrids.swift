@@ -25,7 +25,7 @@ struct SimilarArtistCircle: View {
         Button { state.open(similar: artist) } label: {
             VStack(spacing: 6) {
                 ArtistPhoto(name: artist.name, url: artist.artworkURL, size: size)
-                Text(artist.name).font(.system(size: 12.5, weight: .medium)).lineLimit(2).multilineTextAlignment(.center).frame(width: size + 20)
+                Text(artist.name).font(.system(size: 12.5, weight: .medium)).lineLimit(2).multilineTextAlignment(.center).frame(width: size + 12)
             }
             .contentShape(Rectangle())
         }
@@ -54,46 +54,54 @@ struct SimilarAlbumSquare: View {
     }
 }
 
-/// The album page's related lists (Cupertino): similar artists in the library, six at random in two rows of three; then
-/// "Not in your library" with two boxes side by side, six artists as circles and six albums as squares, each in two rows of three.
+/// The album page's column: as wide as the track table, so every row below the table starts and ends where the table does.
+enum AlbumColumn {
+    static let width: CGFloat = 620
+    static let gap: CGFloat = 16
+    /// The side of one tile when `count` of them fill the column exactly.
+    static func tile(_ count: Int) -> CGFloat { (width - gap * CGFloat(count - 1)) / CGFloat(count) }
+}
+
+/// The album page's related lists (Cupertino), each a single row of six that fills the track table's width: similar artists in the
+/// library, then "Not in your library" with its similar artists as circles in one row and its albums as squares in the row below.
+/// Each block is centred under the table, with its heading on the block's left edge.
 struct AlbumRelatedGrids: View {
     let state: AppState
     @State private var salt = UInt64.random(in: 0...UInt64.max)
 
-    private func rows<V: View>(_ items: [V], spacing: CGFloat = 18) -> some View {
-        let first = Array(items.prefix(3)), second = Array(items.dropFirst(3).prefix(3))
-        return VStack(alignment: .leading, spacing: spacing) {
-            HStack(alignment: .top, spacing: 18) { ForEach(first.indices, id: \.self) { first[$0] } }
-            if !second.isEmpty { HStack(alignment: .top, spacing: 18) { ForEach(second.indices, id: \.self) { second[$0] } } }
-        }
+    private func row<V: View>(_ items: [V]) -> some View {
+        HStack(alignment: .top, spacing: AlbumColumn.gap) { ForEach(items.indices, id: \.self) { items[$0] } }
     }
 
-    private func heading(_ title: String, size: CGFloat = 20) -> some View {
-        Text(title).font(CU.title(size)).padding(.top, 40).padding(.bottom, 10).accessibilityAddTraits(.isHeader)
+    private func heading(_ title: String) -> some View {
+        Text(title).font(CU.title(20)).padding(.top, 40).padding(.bottom, 16).accessibilityAddTraits(.isHeader)
     }
 
     var body: some View {
         let r = state.related
+        let side = AlbumColumn.tile(6)
         let owned = RandomPick.pick(r.ownedArtists, 6, salt: salt)
         let others = RandomPick.pick(r.otherArtists, 6, salt: salt)
         let albums = RandomPick.pick(r.albums, 6, salt: salt)
-        VStack(alignment: .leading, spacing: 0) {
+        VStack(alignment: .center, spacing: 0) {
             if !owned.isEmpty {
-                heading("Similar artists")
-                rows(owned.map { SimilarArtistCircle(state: state, artist: $0, size: 112) })
+                VStack(alignment: .leading, spacing: 0) {
+                    heading("Similar artists")
+                    row(owned.map { SimilarArtistCircle(state: state, artist: $0, size: side) })
+                }
             }
             if !others.isEmpty || !albums.isEmpty {
-                heading("Not in your library")
-                HStack(alignment: .top, spacing: 20) {
-                    if !others.isEmpty { box("Similar artists") { rows(others.map { SimilarArtistCircle(state: state, artist: $0, size: 84) }) } }
-                    if !albums.isEmpty { box("Albums") { rows(albums.map { SimilarAlbumSquare(state: state, album: $0, side: 96) }) } }
+                VStack(alignment: .leading, spacing: 18) {
+                    heading("Not in your library").padding(.bottom, -2)
+                    if !others.isEmpty { box("Similar artists") { row(others.map { SimilarArtistCircle(state: state, artist: $0, size: side) }) } }
+                    if !albums.isEmpty { box("Albums") { row(albums.map { SimilarAlbumSquare(state: state, album: $0, side: side) }) } }
                 }
             }
             if r.loading && r.artists.isEmpty && r.albums.isEmpty {
                 Text("Looking for similar artists…").font(.system(size: 12)).foregroundStyle(CU.textSecondary).padding(.top, 14)
             }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(maxWidth: .infinity, alignment: .center)
         .onChange(of: state.selectedAlbum.id) { _, _ in salt = .random(in: 0...UInt64.max) }
     }
 

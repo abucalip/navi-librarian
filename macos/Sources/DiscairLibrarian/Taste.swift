@@ -134,6 +134,12 @@ public struct TasteProfiles: Decodable, Equatable, Sendable {
     }
 
     public func window(_ name: String) -> TasteWindow? { windows[name] }
+
+    /// What the lately-against-always cards show: genres, decades, labels and the other categories, never areas (countries).
+    /// The server still lists area shifts; the cards leave them out.
+    public func cardShifts(in window: String) -> [TasteShift] { shifts(in: window).filter { $0.dimension != "area" } }
+    /// The headline for those cards: nil when it speaks of an area, because the server wrote it and the app does not reword it.
+    public var cardHeadline: TasteHeadline? { headline.flatMap { $0.subjects.contains { $0.dimension == "area" } ? nil : $0 } }
     /// Shifts of one window, biggest move first. Only what the server listed.
     public func shifts(in window: String) -> [TasteShift] {
         shifts.filter { $0.window == window }.sorted { abs($0.toShare - $0.fromShare) > abs($1.toShare - $1.fromShare) }
