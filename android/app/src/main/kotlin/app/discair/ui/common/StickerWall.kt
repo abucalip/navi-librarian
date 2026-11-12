@@ -111,7 +111,7 @@ fun StickerPill(
     player: @Composable (Color) -> Unit,
 ) {
     val pill = CircleShape
-    val outline = (palette.shape?.outline ?: 3).dp
+    val outline = (palette.shape?.outline ?: 3f).dp
     Box(modifier.fillMaxWidth().navigationBarsPadding().padding(start = 16.dp, end = 16.dp, bottom = 16.dp), contentAlignment = Alignment.BottomCenter) {
         Row(
             Modifier.fillMaxWidth().brutalShadow(pill).clip(pill).background(palette.surface).border(outline, palette.edgeStrong, pill).padding(horizontal = 8.dp, vertical = 8.dp),
@@ -130,7 +130,7 @@ private fun androidx.compose.foundation.layout.RowScope.PillCell(palette: Palett
     val fill = if (selected) palette.accent else palette.surface
     val ink = if (selected) palette.onAccent else palette.text
     Column(
-        Modifier.weight(1f).heightIn(min = 52.dp).clip(CircleShape).background(fill).then(if (selected) Modifier.border((palette.shape?.outline ?: 3).dp, palette.edgeStrong, CircleShape) else Modifier)
+        Modifier.weight(1f).heightIn(min = 52.dp).clip(CircleShape).background(fill).then(if (selected) Modifier.border((palette.shape?.outline ?: 3f).dp, palette.edgeStrong, CircleShape) else Modifier)
             .clickable(role = Role.Button, onClick = onClick).padding(horizontal = 2.dp, vertical = 4.dp)
             .semantics { contentDescription = spoken; this.selected = selected },
         horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center,
@@ -148,7 +148,7 @@ fun StickerBadge(sticker: Sticker, palette: Palette, tilt: Float, modifier: Modi
         sticker.word, style = MaterialTheme.typography.labelMedium.copy(fontFamily = LocalFontPair.current.mono, fontWeight = FontWeight.ExtraBold),
         color = palette.text, maxLines = 1,
         modifier = modifier.graphicsLayer { rotationZ = tilt }.clip(themeShape(8.dp)).background(fill)
-            .border((palette.shape?.outline ?: 3).dp, palette.edgeStrong, themeShape(8.dp)).padding(horizontal = 8.dp, vertical = 4.dp)
+            .border((palette.shape?.outline ?: 3f).dp, palette.edgeStrong, themeShape(8.dp)).padding(horizontal = 8.dp, vertical = 4.dp)
             .clearAndSetSemantics { },
     )
 }
@@ -167,7 +167,7 @@ fun StickerTile(
     val tilt = StickerWallRules.tiltFor(index)
     Box(modifier.graphicsLayer { rotationZ = tilt }.padding(end = 8.dp, bottom = 8.dp)) {
         Column(
-            Modifier.fillMaxWidth().brutalShadow(shape).clip(shape).background(palette.surface).border((palette.shape?.outline ?: 3).dp, palette.edgeStrong, shape)
+            Modifier.fillMaxWidth().brutalShadow(shape).clip(shape).background(palette.surface).border((palette.shape?.outline ?: 3f).dp, palette.edgeStrong, shape)
                 .clickable(role = Role.Button, onClick = onClick)
                 .semantics(mergeDescendants = true) { contentDescription = StickerWallRules.tileDescription(album, artist, sticker) },
         ) {

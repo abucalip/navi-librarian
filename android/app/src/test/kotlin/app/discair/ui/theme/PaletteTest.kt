@@ -134,7 +134,7 @@ class PaletteTest {
     @Test fun brutalThemesHaveTheirOwnShapes() {
         val radii = Palettes.All.filter { it.brutal }.map { it.shape!!.radius }.toSet()
         assertTrue("shape variety kept: $radii", radii.size >= 5)
-        assertEquals(0, Palettes.BrutPoster.shape!!.radius) // square
+        assertEquals(0f, Palettes.BrutPoster.shape!!.radius, 0f) // square
         assertTrue(Palettes.All.filter { it.brutal }.all { it.shape!!.outline >= 2 && it.shapeShadowIsVisible() })
         assertTrue(Palettes.All.filter { !it.brutal }.all { it.shape == null })
     }

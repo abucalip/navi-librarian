@@ -196,7 +196,7 @@ private fun TapeRecentList(albums: List<LibraryAlbum>, open: Opener) {
     val play = LocalPlayActions.current
     val now = app.discair.ui.player.LocalPlayingNow.current
     val reduced = rememberReducedMotion()
-    val rule = (p.shape?.outline ?: 2).dp
+    val rule = (p.shape?.outline ?: 2f).dp
     val mono = app.discair.ui.theme.LocalFontPair.current.mono
     Column(
         Modifier.padding(start = 16.dp, end = 24.dp, top = 8.dp, bottom = 8.dp).fillMaxWidth()

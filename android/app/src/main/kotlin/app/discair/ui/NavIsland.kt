@@ -133,7 +133,7 @@ fun NavIsland(
         // Neobrut: the outline and hard shadow of the theme the owner chose (the island itself may sit on the dark artwork palette).
         val chosen = app.discair.ui.theme.LocalThemePalette.current ?: app.discair.ui.theme.LocalPalette.current
         val frame = if (chosen.brutal) {
-            val outline = (chosen.shape?.outline ?: 2).dp
+            val outline = (chosen.shape?.outline ?: 2f).dp
             Modifier.brutalShadowOf(card, chosen).background(fill, card).border(outline, chosen.edgeStrong, card)
         } else Modifier.shadow(10.dp, card).background(fill, card).border(1.dp, Color.White.copy(alpha = 0.12f), card)
         Row(
@@ -208,7 +208,7 @@ private fun PlayBars(playing: Boolean, color: Color) {
 /** A hard shadow in a given palette's shadow colour (the island needs the chosen theme's, not the over-artwork copy's edge). */
 private fun Modifier.brutalShadowOf(shape: androidx.compose.ui.graphics.Shape, p: app.discair.ui.theme.Palette): Modifier {
     val s = p.shape ?: return this
-    if (s.shadow == 0) return this
+    if (s.shadow == 0f) return this
     return drawBehind {
         val outline = shape.createOutline(size, layoutDirection, this)
         translate(s.shadow.dp.toPx(), s.shadow.dp.toPx()) { drawOutline(outline, p.shadowColor) }

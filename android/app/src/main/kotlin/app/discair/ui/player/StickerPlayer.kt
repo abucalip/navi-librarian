@@ -82,7 +82,7 @@ fun StickerPlayer(
 ) {
     val item = state.current ?: return
     val p = LocalPalette.current
-    val rule = (p.shape?.outline ?: 3).dp
+    val rule = (p.shape?.outline ?: 3f).dp
     val shape = themeShape(18.dp)
     val mono = LocalFontPair.current.mono
     var dragging by remember { mutableStateOf<Float?>(null) }
@@ -198,7 +198,7 @@ private fun RoundButton(
     val fill = if (!enabled) p.raised else if (on) p.accent else p.surface
     val ink = if (!enabled) p.textMuted else if (on) p.onAccent else p.text
     Box(
-        Modifier.size(size.dp).brutalShadow(CircleShape, if (primary) 1f else 0.6f).clip(CircleShape).background(fill).border((p.shape?.outline ?: 3).dp, p.edgeStrong, CircleShape)
+        Modifier.size(size.dp).brutalShadow(CircleShape, if (primary) 1f else 0.6f).clip(CircleShape).background(fill).border((p.shape?.outline ?: 3f).dp, p.edgeStrong, CircleShape)
             .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
             .semantics { contentDescription = label; if (state != null) stateDescription = state },
         contentAlignment = Alignment.Center,
@@ -209,7 +209,7 @@ private fun RoundButton(
 private fun PillToggle(label: String, open: Boolean, modifier: Modifier, onClick: () -> Unit) {
     val p = LocalPalette.current
     Box(
-        modifier.heightIn(min = 48.dp).clip(CircleShape).background(if (open) p.accent else p.surface).border((p.shape?.outline ?: 3).dp, p.edgeStrong, CircleShape)
+        modifier.heightIn(min = 48.dp).clip(CircleShape).background(if (open) p.accent else p.surface).border((p.shape?.outline ?: 3f).dp, p.edgeStrong, CircleShape)
             .clickable(role = Role.Button, onClick = onClick).semantics { contentDescription = label; stateDescription = if (open) "Open" else "Closed" },
         contentAlignment = Alignment.Center,
     ) { Text(label, style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold), color = if (open) p.onAccent else p.text, modifier = Modifier.clearAndSetSemantics { }) }
@@ -241,7 +241,7 @@ private fun StickerEqualizer(onOpen: () -> Unit) {
             val level = if (config.enabled) StickerWallRules.barFraction(StickerWallRules.barGainDb(config.bandGainsDb, bar), EQ_MAX_GAIN_DB) else 0.5f
             Row(Modifier.heightIn(min = 44.dp), verticalAlignment = Alignment.CenterVertically) {
                 Text(bar.label, style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold), modifier = Modifier.widthIn(min = 56.dp).clearAndSetSemantics { })
-                Box(Modifier.weight(1f).height(26.dp).clip(CircleShape).background(p.surface).border((p.shape?.outline ?: 3).dp, p.edgeStrong, CircleShape).clearAndSetSemantics { }) {
+                Box(Modifier.weight(1f).height(26.dp).clip(CircleShape).background(p.surface).border((p.shape?.outline ?: 3f).dp, p.edgeStrong, CircleShape).clearAndSetSemantics { }) {
                     Box(Modifier.fillMaxSize().padding(4.dp)) {
                         Box(Modifier.fillMaxWidth(level).fillMaxSize().clip(CircleShape).background(if (config.enabled) p.accent else p.raised))
                     }

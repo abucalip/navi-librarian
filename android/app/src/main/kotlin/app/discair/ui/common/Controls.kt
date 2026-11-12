@@ -275,7 +275,7 @@ private fun BandNudge(icon: ImageVector, description: String, enabled: Boolean, 
 private fun BrutalSwitch(checked: Boolean, shape: androidx.compose.ui.graphics.Shape, modifier: Modifier) {
     val knobX by animateDpAsState(if (checked) 40.dp else 0.dp, tween(200), label = "knob")
     val line = themeBorder(BorderStroke(2.dp, Ink.EdgeStrong))
-    val knobShape = if (LocalPalette.current.shape?.radius == 0) androidx.compose.ui.graphics.RectangleShape else CircleShape
+    val knobShape = if (LocalPalette.current.shape?.radius == 0f) androidx.compose.ui.graphics.RectangleShape else CircleShape
     Box(
         modifier.size(width = 66.dp, height = 32.dp).brutalShadow(shape).clip(shape)
             .background(if (checked) Ink.Accent else Ink.Surface).border(line, shape),

@@ -225,10 +225,10 @@ private fun ThemeGrid(appearance: Appearance, slot: String, filter: String, onFi
 @Composable
 private fun ThemeTile(p: Palette, selected: Boolean, modifier: Modifier, onClick: () -> Unit) {
     val s = p.shape
-    val radius = s?.radius ?: 10
-    val shape: Shape = if (radius == 0) RectangleShape else RoundedCornerShape(radius.dp)
-    val inner: Shape = if (radius == 0) RectangleShape else RoundedCornerShape((radius * 0.6f).coerceAtLeast(3f).dp)
-    val outline = (s?.outline ?: 1).dp
+    val radius = s?.radius ?: 10f
+    val shape: Shape = if (radius == 0f) RectangleShape else RoundedCornerShape(radius.dp)
+    val inner: Shape = if (radius == 0f) RectangleShape else RoundedCornerShape((radius * 0.6f).coerceAtLeast(3f).dp)
+    val outline = (s?.outline ?: 1f).dp
     val edge = if (s != null) p.edgeStrong else p.edge
     val kind = (if (p.light) "Light" else "Dark") + (if (p.family == Family.Brutal) " · Brutal" else "") +
         (if (p.layout != app.discair.ui.theme.Layout.Standard) " · ${p.layout.label}" else "")
@@ -242,7 +242,7 @@ private fun ThemeTile(p: Palette, selected: Boolean, modifier: Modifier, onClick
             Column(
                 Modifier.fillMaxWidth().heightIn(min = 84.dp)
                     .let { m ->
-                        if (s == null || s.shadow == 0) m else m.drawBehind {
+                        if (s == null || s.shadow == 0f) m else m.drawBehind {
                             val o = shape.createOutline(size, layoutDirection, this)
                             translate(s.shadow.dp.toPx(), s.shadow.dp.toPx()) { drawOutline(o, p.shadowColor) }
                         }

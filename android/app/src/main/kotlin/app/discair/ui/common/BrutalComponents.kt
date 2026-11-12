@@ -104,7 +104,7 @@ private fun brutColors(kind: BrutKind): ButtonColors {
 private fun pressOffset(source: MutableInteractionSource, enabled: Boolean): Dp {
     val pressed by source.collectIsPressedAsState()
     val p = LocalPalette.current
-    return if (pressed && enabled) ((p.shape?.shadow ?: 0) * p.sm).dp else 0.dp
+    return if (pressed && enabled) ((p.shape?.shadow ?: 0f) * p.sm).dp else 0.dp
 }
 
 @Composable
@@ -240,7 +240,7 @@ fun OutlinedTextField(
     val source = interactionSource ?: remember { MutableInteractionSource() }
     val focused by source.collectIsFocusedAsState()
     val s = shape ?: themeShape(8.dp)
-    val outline = (p.shape?.outline ?: 2).dp
+    val outline = (p.shape?.outline ?: 2f).dp
     val edge = if (isError) Ink.ChartRedText else p.edgeStrong
     val clear = Color.Transparent
     // The label sits above the box: a floating label would land on the thick outline and vanish into it. The caller's
@@ -283,7 +283,7 @@ fun DropdownMenu(
         return
     }
     val s = themeShape(8.dp)
-    val sh = ((p.shape?.shadow ?: 0)).dp
+    val sh = ((p.shape?.shadow ?: 0f)).dp
     androidx.compose.material3.DropdownMenu(
         expanded, onDismissRequest, modifier, offset, scrollState, properties,
         shape = RectangleShape, containerColor = Color.Transparent, tonalElevation = 0.dp, shadowElevation = 0.dp, border = null,
@@ -314,7 +314,7 @@ fun AlertDialog(
         return
     }
     val s = shape ?: themeShape(10.dp)
-    val sh = ((p.shape?.shadow ?: 0)).dp
+    val sh = ((p.shape?.shadow ?: 0f)).dp
     androidx.compose.ui.window.Dialog(onDismissRequest = onDismissRequest, properties = properties) {
         Box(modifier.padding(end = sh, bottom = sh)) {
             Column(Modifier.widthIn(max = 360.dp).brutalShadow(s).clip(s).background(containerColor ?: p.surface).border(brutalOutline(), s)) {
@@ -324,7 +324,7 @@ fun AlertDialog(
                     text?.let { ProvideTextStyle(MaterialTheme.typography.bodyMedium) { CompositionLocalProvider(LocalContentColor provides p.textMuted) { it() } } }
                 }
                 // The footer band: a rule, then the actions on the raised ground (neobrutalism.com's border-t-2 bg-muted/50).
-                Box(Modifier.fillMaxWidth().height((p.shape?.outline ?: 2).dp).background(p.edgeStrong))
+                Box(Modifier.fillMaxWidth().height((p.shape?.outline ?: 2f).dp).background(p.edgeStrong))
                 Row(Modifier.fillMaxWidth().background(p.raised).padding(horizontal = 16.dp, vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End), verticalAlignment = Alignment.CenterVertically) {
                     dismissButton?.invoke()
                     confirmButton()
@@ -342,8 +342,8 @@ private fun ProvideTextStyle(style: TextStyle, content: @Composable () -> Unit) 
 /** A corner that never grows past [maxDp]: controls inside a rounded theme stay near-square (square on a theme with radius 0). */
 @Composable
 internal fun smallShape(maxDp: Int): Shape {
-    val r = minOf(LocalPalette.current.shape?.radius ?: 0, maxDp)
-    return if (r == 0) RectangleShape else RoundedCornerShape(r.dp)
+    val r = minOf(LocalPalette.current.shape?.radius ?: 0f, maxDp.toFloat())
+    return if (r == 0f) RectangleShape else RoundedCornerShape(r.dp)
 }
 
 /** The Neobrut slider thumb: a square with an outline and a shadow-sm. */
@@ -437,7 +437,7 @@ fun SnackbarHost(hostState: SnackbarHostState, modifier: Modifier = Modifier) {
 private fun BrutalSnackbar(data: SnackbarData) {
     val p = LocalPalette.current
     val s = themeShape(8.dp)
-    val sh = ((p.shape?.shadow ?: 0)).dp
+    val sh = ((p.shape?.shadow ?: 0f)).dp
     Box(Modifier.padding(start = 16.dp, top = 16.dp, end = 16.dp + sh, bottom = 16.dp + sh)) {
         Row(
             Modifier.fillMaxWidth().brutalShadow(s).clip(s).background(p.surface).border(brutalOutline(), s).padding(start = 16.dp, top = 8.dp, bottom = 8.dp, end = 8.dp),
@@ -466,14 +466,14 @@ fun ModalBottomSheet(
         )
         return
     }
-    val top = shape ?: (p.shape?.radius ?: 0).let { r -> if (r == 0) RectangleShape else RoundedCornerShape(topStart = r.dp, topEnd = r.dp) }
+    val top = shape ?: (p.shape?.radius ?: 0f).let { r -> if (r == 0f) RectangleShape else RoundedCornerShape(topStart = r.dp, topEnd = r.dp) }
     androidx.compose.material3.ModalBottomSheet(
         onDismissRequest, modifier, sheetState, shape = top,
         containerColor = containerColor ?: p.surface,
         // A full-width rule is the sheet's edge, with a short thick bar as the handle.
         dragHandle = {
             Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-                Box(Modifier.fillMaxWidth().height((p.shape?.outline ?: 2).dp).background(p.edgeStrong))
+                Box(Modifier.fillMaxWidth().height((p.shape?.outline ?: 2f).dp).background(p.edgeStrong))
                 Box(Modifier.padding(vertical = 8.dp).size(width = 40.dp, height = 8.dp).clip(smallShape(2)).background(p.text))
             }
         },

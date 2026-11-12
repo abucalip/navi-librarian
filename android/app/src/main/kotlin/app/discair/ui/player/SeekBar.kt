@@ -76,7 +76,7 @@ fun SeekBar(fraction: Float, enabled: Boolean, onChange: (Float) -> Unit, onFini
         }
         if (palette.layout == app.discair.ui.theme.Layout.TapeDeck) {
             // Cassette Deck: a ruled track with a mark every tenth, the played part filled with the accent, and a tall bar as the thumb.
-            val outline = (palette.shape?.outline ?: 2).dp.toPx()
+            val outline = (palette.shape?.outline ?: 2f).dp.toPx()
             val h = 18.dp.toPx()
             val left = inset
             val width = size.width - 2 * inset
@@ -97,9 +97,9 @@ fun SeekBar(fraction: Float, enabled: Boolean, onChange: (Float) -> Unit, onFini
         if (palette.brutal) {
             // Neobrut: an outlined track (thin, like the reference) with the accent for the played part, and a square
             // outlined thumb with a hard shadow that grows a little while it is held.
-            val outline = (palette.shape?.outline ?: 2).dp.toPx()
+            val outline = (palette.shape?.outline ?: 2f).dp.toPx()
             val h = 14.dp.toPx()
-            val corner = androidx.compose.ui.geometry.CornerRadius(minOf(palette.shape?.radius ?: 0, 3).dp.toPx())
+            val corner = androidx.compose.ui.geometry.CornerRadius(minOf(palette.shape?.radius ?: 0f, 3f).dp.toPx())
             val left = inset
             val width = size.width - 2 * inset
             val x = left + width * fraction.coerceIn(0f, 1f)
@@ -107,7 +107,7 @@ fun SeekBar(fraction: Float, enabled: Boolean, onChange: (Float) -> Unit, onFini
             drawRoundRect(palette.accent, Offset(left, y - h / 2), androidx.compose.ui.geometry.Size((x - left).coerceAtLeast(0f), h), corner)
             drawRoundRect(palette.edgeStrong, Offset(left, y - h / 2), androidx.compose.ui.geometry.Size(width, h), corner, style = androidx.compose.ui.graphics.drawscope.Stroke(outline))
             val t = (if (active) 26.dp else 22.dp).toPx()
-            val sh = ((palette.shape?.shadow ?: 0) * 0.5f).dp.toPx()
+            val sh = ((palette.shape?.shadow ?: 0f) * 0.5f).dp.toPx()
             val tl = Offset(x - t / 2, y - t / 2)
             drawRoundRect(palette.shadowColor, Offset(tl.x + sh, tl.y + sh), androidx.compose.ui.geometry.Size(t, t), corner)
             drawRoundRect(if (enabled) palette.surface else palette.raised, tl, androidx.compose.ui.geometry.Size(t, t), corner)

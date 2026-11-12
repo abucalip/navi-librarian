@@ -85,7 +85,7 @@ fun SheetPlayer(
 ) {
     val item = state.current ?: return
     val p = LocalPalette.current
-    val rule = (p.shape?.outline ?: 2).dp
+    val rule = (p.shape?.outline ?: 2f).dp
     val shape = themeShape(14.dp)
     val mono = LocalFontPair.current.mono
     var dragging by remember { mutableStateOf<Float?>(null) }
@@ -224,5 +224,5 @@ private fun RowScope.TransportSegment(
 @Composable
 private fun Seam() {
     val p = LocalPalette.current
-    Box(Modifier.width((p.shape?.outline ?: 2).dp).fillMaxHeight().background(p.edgeStrong))
+    Box(Modifier.width((p.shape?.outline ?: 2f).dp).fillMaxHeight().background(p.edgeStrong))
 }

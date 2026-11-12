@@ -23,12 +23,12 @@ import androidx.compose.ui.unit.dp
 @Composable @ReadOnlyComposable
 fun themeShape(default: Dp): Shape {
     val r = LocalPalette.current.shape?.radius ?: return RoundedCornerShape(default)
-    return if (r == 0) RectangleShape else RoundedCornerShape(r.dp)
+    return if (r == 0f) RectangleShape else RoundedCornerShape(r.dp)
 }
 
 /** A fully round shape (switch track, chips); square on a theme whose radius is 0. */
 @Composable @ReadOnlyComposable
-fun pillShape(): Shape = if (LocalPalette.current.shape?.radius == 0) RectangleShape else RoundedCornerShape(50)
+fun pillShape(): Shape = if (LocalPalette.current.shape?.radius == 0f) RectangleShape else RoundedCornerShape(50)
 
 /** The outline to draw: a Brutal theme's thick outline in its strong edge colour, else [classic]. */
 @Composable @ReadOnlyComposable
@@ -43,7 +43,7 @@ fun themeBorder(classic: BorderStroke): BorderStroke {
 fun Modifier.brutalShadow(shape: Shape, scale: Float = 1f): Modifier {
     val p = LocalPalette.current
     val s = p.shape ?: return this
-    if (s.shadow == 0) return this
+    if (s.shadow == 0f) return this
     val color = p.shadowColor
     val offset = (s.shadow * scale).dp
     return drawBehind {
@@ -63,5 +63,5 @@ fun shapesFor(p: Palette): Shapes {
 @Composable @ReadOnlyComposable
 fun brutalOutline(): BorderStroke {
     val p = LocalPalette.current
-    return BorderStroke((p.shape?.outline ?: 1).dp, p.edgeStrong)
+    return BorderStroke((p.shape?.outline ?: 1f).dp, p.edgeStrong)
 }

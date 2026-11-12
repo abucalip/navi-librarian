@@ -47,7 +47,7 @@ fun SheetRequestsSection(open: Opener) {
     val hub = LocalAcquisitions.current
     val jobs = hub.jobs
     val p = LocalPalette.current
-    val rule = (p.shape?.outline ?: 2).dp
+    val rule = (p.shape?.outline ?: 2f).dp
     val shape = themeShape(14.dp)
     PageHeading("Requests", Modifier.padding(start = 16.dp, end = 16.dp, top = 24.dp, bottom = 8.dp))
     val shown = jobs?.filter { it.status.lowercase() != "dismissed" }?.take(SheetStackRules.HOME_REQUESTS).orEmpty()
@@ -94,7 +94,7 @@ private fun RequestRow(job: AcquisitionJob, open: Opener) {
         Text(
             word, style = MaterialTheme.typography.labelMedium.copy(fontFamily = LocalFontPair.current.mono, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold),
             color = ink, maxLines = 1,
-            modifier = Modifier.clip(themeShape(6.dp)).background(fill).border((p.shape?.outline ?: 2).dp, p.edgeStrong, themeShape(6.dp))
+            modifier = Modifier.clip(themeShape(6.dp)).background(fill).border((p.shape?.outline ?: 2f).dp, p.edgeStrong, themeShape(6.dp))
                 .padding(horizontal = 8.dp, vertical = 4.dp),
         )
     }

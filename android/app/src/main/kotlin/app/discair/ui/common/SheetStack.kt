@@ -102,7 +102,7 @@ fun SheetNavGroup(
     libraryIcon: @Composable (Color) -> Unit, player: @Composable (Color) -> Unit,
 ) {
     val shape = themeShape(14.dp)
-    val seam = (palette.shape?.outline ?: 2).dp
+    val seam = (palette.shape?.outline ?: 2f).dp
     Box(modifier.fillMaxWidth().navigationBarsPadding().padding(start = 16.dp, end = 24.dp, bottom = 16.dp, top = 8.dp)) {
         Row(
             Modifier.fillMaxWidth().height(56.dp).brutalShadow(shape).clip(shape).background(palette.surface)
@@ -142,7 +142,7 @@ private fun RowScope.SheetSegment(
 @Composable
 fun VerticalVolumeSlider(volume: Float, onChange: (Float) -> Unit, palette: Palette, modifier: Modifier = Modifier) {
     val v = volume.coerceIn(0f, 1f)
-    val outline = (palette.shape?.outline ?: 2).dp
+    val outline = (palette.shape?.outline ?: 2f).dp
     Canvas(
         modifier.width(48.dp)
             .semantics {
@@ -166,7 +166,7 @@ fun VerticalVolumeSlider(volume: Float, onChange: (Float) -> Unit, palette: Pale
         val left = (size.width - trackW) / 2
         val top = inset
         val trackH = size.height - 2 * inset
-        val corner = CornerRadius(minOf(palette.shape?.radius ?: 0, 4).dp.toPx())
+        val corner = CornerRadius(minOf(palette.shape?.radius ?: 0f, 4f).dp.toPx())
         drawRoundRect(palette.surface, Offset(left, top), Size(trackW, trackH), corner)
         val fillH = trackH * v
         drawRoundRect(palette.accent, Offset(left, top + trackH - fillH), Size(trackW, fillH), corner)

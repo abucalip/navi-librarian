@@ -48,7 +48,7 @@ import app.discair.ui.theme.LocalThemePalette
 fun TapeMiniPlayer(state: PlayerUiState, controller: PlayerController, onOpen: () -> Unit, modifier: Modifier = Modifier) {
     val item = state.current ?: return
     val p = LocalThemePalette.current ?: LocalPalette.current
-    val rule = (p.shape?.outline ?: 2).dp
+    val rule = (p.shape?.outline ?: 2f).dp
     val reduced = rememberReducedMotion()
     val fraction = if (state.durationMs > 0) (state.positionMs.toFloat() / state.durationMs).coerceIn(0f, 1f) else 0f
     Column(modifier.fillMaxWidth().background(p.surface)) {
