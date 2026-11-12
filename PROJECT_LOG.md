@@ -413,3 +413,10 @@ Earlier project log entries are preserved verbatim in [PROJECT_LOG_HISTORY.md](d
 - Tests actually run, filtered, on a Mac: `swift test --filter HomeDashboardTests` (18 pass) and `--filter "DiscairNavidromeTests|LibraryModelTests|AcquisitionModelTests|OfflineTests|LibraryHubTests|BulkSongLoadTests"` (112 pass). Full suite not run (owner rule). No UI, so no visual check.
 - Limits: radio plays in Arrivals not included (no client route); phone handoff (D5) and Listens last 7 days (D2) not produced; absent `playCount` is read as no plays (Navidrome omits it); Librarian reachability is inferred from the picks read until M6.
 - Next: M6 (services data) or M7 (connections model), Sonnet; M8 builds Home from M2, M4 and M5.
+
+## 2026-11-12 — A8b merged (PR #1001, squash d020f7b2)
+
+- Built: Settings rows with icon, state line and chevron; Library search field removed; Downloads tracker, state in words, one action row, Play on an arrived album (owned album id looked up by artist and album); `animateItem` on the Library grid; Taste sheet "Make a X playlist" button drawn but disabled.
+- Tests run locally: `DownloadsRulesTest`, `TasteTest`, `LibraryViewModelTest`. Full suite not run (owner rule).
+- Not done: item 1 needs a server route that creates a Navidrome playlist (new module), then `TasteCard.PlaylistRouteAvailable` on; item 7 device check of the three mockups and Night, Tape, Sheet (no emulator available). Nothing compared on screen.
+- Next action: A9.
