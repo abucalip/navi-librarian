@@ -118,7 +118,7 @@ private fun CoverStackSortRow(state: LibraryState, model: LibraryViewModel) {
             modifier = Modifier.weight(1f).semantics { liveRegion = LiveRegionMode.Polite },
         )
         Box {
-            SmallButton("Sort", null, false, "Sort ${noun}, now ${if (state.tab == LibraryTab.Artists) state.artistSort.label else state.albumSort.label}", Modifier.width(84.dp)) { open = true }
+            SmallButton("Sort", PlayerIcons.Sort, false, "Sort ${noun}, now ${if (state.tab == LibraryTab.Artists) state.artistSort.label else state.albumSort.label}", Modifier.width(84.dp)) { open = true }
             DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
                 if (state.tab == LibraryTab.Artists) ArtistSort.entries.forEach { sort ->
                     DropdownMenuItem(text = { Text(sort.label) }, onClick = { open = false; model.sortArtists(sort) })
