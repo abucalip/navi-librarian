@@ -7,8 +7,11 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.verticalDrag
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -23,6 +26,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
@@ -44,9 +51,6 @@ import app.discair.ui.theme.themeShape
 
 /** Pure rules for the Sheet Stack layout (docs/BRUT_LAYOUTS_PLAN.md section 7), apart from the drawing so they are unit-tested. */
 object SheetStackRules {
-    /** Library moves into the Sheet Stack's navigation group, so Home's page buttons drop it. */
-    fun homeShowsLibraryButton(layout: Layout): Boolean = layout != Layout.SheetStack && TapeDeckRules.homeShowsLibraryButton(layout)
-
     /** The request words of Home's list: Fetching, Queued, Done; any other status keeps the app's own label (never a bare colour). */
     fun requestWord(status: String, label: String): String = when (status.lowercase()) {
         "queued", "requested", "queued_unconfirmed" -> "Queued"
@@ -85,9 +89,9 @@ object SheetStackRules {
 }
 
 /**
- * The Sheet Stack's navigation: one joined group of four segments (Home, Search, Library, Player) in a hard-shadowed frame, in the
- * owner's chosen theme; the current page is filled with the accent. Replaces the floating island. [player] draws the Player cell's
- * content (the live meter).
+ * The Sheet Stack's navigation: one joined group in a hard-shadowed frame, in the owner's chosen theme; the current page is filled with
+ * the accent. It holds Home, Search and Library, then the Player cell (the group has no mini player, so the player lives here). Discover
+ * is in the top bar, not in the group. [player] draws the Player cell's content (the live meter).
  */
 @Composable
 fun SheetNavGroup(
@@ -107,22 +111,27 @@ fun SheetNavGroup(
             SheetSegment(palette, "Home", homeSelected, onHome, seam, last = false) { homeIcon(it) }
             SheetSegment(palette, "Search", false, onSearch, seam, last = false) { searchIcon(it) }
             SheetSegment(palette, "Library", librarySelected, onLibrary, seam, last = false) { libraryIcon(it) }
-            SheetSegment(palette, playerLabel, false, onPlayer, seam, last = true) { player(it) }
+            SheetSegment(palette, playerLabel, false, onPlayer, seam, last = true, word = null) { player(it) }
         }
     }
 }
 
 @Composable
 private fun RowScope.SheetSegment(
-    palette: Palette, label: String, selected: Boolean, onClick: () -> Unit, seam: Dp, last: Boolean, content: @Composable (Color) -> Unit,
+    palette: Palette, label: String, selected: Boolean, onClick: () -> Unit, seam: Dp, last: Boolean,
+    word: String? = label, content: @Composable (Color) -> Unit,
 ) {
     val fill = if (selected) palette.accent else palette.surface
     val ink = if (selected) palette.onAccent else palette.text
-    Box(
+    Column(
         Modifier.weight(1f).fillMaxHeight().background(fill).clickable(role = Role.Button, onClick = onClick)
             .semantics { contentDescription = label; this.selected = selected },
-        contentAlignment = Alignment.Center,
-    ) { content(ink) }
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
+        Box(Modifier.size(22.dp), contentAlignment = Alignment.Center) { content(ink) }
+        if (word != null) Text(word, style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold), color = ink, maxLines = 1, modifier = Modifier.clearAndSetSemantics { })
+    }
     if (!last) Box(Modifier.width(seam).fillMaxHeight().background(palette.edgeStrong))
 }
 
