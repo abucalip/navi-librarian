@@ -1,3 +1,9 @@
+## 2026-11-12 — Android art themes step 0 (PR #1005)
+
+- Merged as `35bb9a75d2d5d5442da3cfb4cce70c50b9401b03`. `ui/home/HomeArtists.kt` (distinct artists from Recent then Frequent, up to 8, unwired), `BrutalShape` now Float with the whole-number constructor kept (D1 as proposed), and `ExistingLayoutsTest` pinning every existing palette's layout and exact shape. `PaletteTest` adjusted for the Float radius. No screen changed.
+- Verified with JDK 17, filtered: `HomeArtistsTest`, `ui.theme.*`, `NavRulesTest`; `compileDebugKotlin` clean. Full suite not run; nothing seen on a device.
+- Open: D4 (font pair suggested or forced) before S1, D6 (Flow accent `#C2410C`) before F1. Documents updated: `docs/ACTIVE_WORK.md` section 2l, `docs/ANDROID_ART_THEMES_PROPOSAL.md` status and step table.
+
 ## 2026-11-12 — Redesign S3: check of D4 (album added dates) and D5 (phone handoff)
 
 - Checked in code and the recorded fixture; no code changed.

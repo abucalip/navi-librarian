@@ -1,6 +1,6 @@
 # Android art-led themes: Soft Brut and Flow (proposal)
 
-Status: **proposal, not approved, nothing built.** Written 2026-11-12. This document and the mockups beside it are the whole change; no application code is touched. Building starts only after the owner approves it and the steps in section 10 are scheduled in `ACTIVE_WORK.md`.
+Status: **proposal; step 0 built (PR #1005), no theme built yet.** Written 2026-11-12. This document and the mockups beside it are the whole change; no application code is touched. Building starts only after the owner approves it and the steps in section 10 are scheduled in `ACTIVE_WORK.md`.
 
 ## 1. What the owner asked for
 
@@ -294,7 +294,7 @@ Each step is one PR with its own tests, in this order. Soft Brut and Flow are in
 
 | Step | Objective | Acceptance |
 |---|---|---|
-| **0** Shared groundwork | `HomeArtists` and its test; `BrutalShape` accepts 1.5 (D1); the "existing layouts unchanged" test | Tests pass; no screen looks different |
+| **0** Shared groundwork (merged, PR #1005) | `HomeArtists` and its test; `BrutalShape` accepts 1.5 (D1); the "existing layouts unchanged" test | Tests pass; no screen looks different |
 | **S1** Soft Brut palette and shell | Palette `softbrut`, `Layout.CoverStack`, the outline recipe, navigation bar, mini player, buttons, chips, tabs, lists, sheets, snackbar | `soft-brut/components` matched; the theme can be chosen in Appearance; contrast test passes |
 | **S2** Soft Brut Home | Section 6.1 | `soft-brut/home` matched in all five frames; Get, Save and the menu work on the front sleeve |
 | **S3** Soft Brut pages | Album, Artist, Genre, Discover, Library, Search | Their mockups matched |
