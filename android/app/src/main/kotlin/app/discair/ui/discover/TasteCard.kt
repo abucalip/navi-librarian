@@ -192,7 +192,7 @@ private fun ProgressBar(fraction: Double, description: String) {
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun TasteSheet(profiles: TasteProfiles, onDismiss: () -> Unit) {
+internal fun TasteSheet(profiles: TasteProfiles, onDismiss: () -> Unit) {
     var window by remember { mutableStateOf("recent") }
     var dimension by remember { mutableStateOf("genre") }
     val headline = profiles.headline
