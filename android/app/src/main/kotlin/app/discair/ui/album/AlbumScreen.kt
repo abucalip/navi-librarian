@@ -55,6 +55,7 @@ import app.discair.model.Done
 import app.discair.ui.AlbumRoute
 import app.discair.ui.Opener
 import app.discair.ui.common.AlbumCover
+import app.discair.ui.common.CoverStackTabs
 import app.discair.ui.common.ArtistCircle
 import app.discair.ui.common.GetAlbumButton
 import app.discair.ui.common.GetSongButton
@@ -159,6 +160,19 @@ private fun AlbumContent(route: AlbumRoute, page: AlbumPage, open: Opener, list:
     var showPaths by androidx.compose.runtime.saveable.rememberSaveable(route) { mutableStateOf(false) }
     // The server builds album paths from an album in the library, by its Navidrome id.
     if (showPaths && albumId != null) AlbumPathsSheet(title, artist, albumId, sonicOn, open) { showPaths = false }
+
+    // Soft Brut: its own arrangement, in CoverStackAlbum.kt; every other theme continues below unchanged.
+    if (app.discair.ui.theme.LocalPalette.current.layout == app.discair.ui.theme.Layout.CoverStack) {
+        CoverStackAlbumContent(
+            CoverStackAlbumData(
+                route, info, title, artist, year, s.genre.genre, owned, albumId, tracks, app.discair.model.coverUrlFor(info?.artworkUrl, choice), backs,
+                editions.size, canPick, { showEditions = true }, booklet, s.description.description, page.done != Done(),
+                s.similarAlbums.items, similarArtists, pathsOn, { showPaths = true },
+            ),
+            open, list,
+        )
+        return
+    }
 
     LazyColumn(Modifier.fillMaxSize(), state = list, contentPadding = PaddingValues(bottom = 32.dp + app.discair.ui.LocalBottomClearance.current)) {
         item {
@@ -318,7 +332,7 @@ private fun AlbumContent(route: AlbumRoute, page: AlbumPage, open: Opener, list:
 
 /** "Disc 2" above the first track of each disc of an album that spans several discs. */
 @Composable
-private fun DiscHeading(disc: Int) {
+internal fun DiscHeading(disc: Int) {
     Text(
         "Disc $disc".uppercase(), style = MaterialTheme.typography.labelMedium.copy(fontFamily = app.discair.ui.theme.LocalFontPair.current.mono, letterSpacing = 0.08.em),
         color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -354,7 +368,7 @@ private fun QualityTag(text: String, modifier: Modifier = Modifier) {
 
 /** "27 songs, 1 hour 19 minutes · 10 in your library", centred under the tracklist. */
 @Composable
-private fun Summary(songs: Int, seconds: Int, inLibrary: Int) {
+internal fun Summary(songs: Int, seconds: Int, inLibrary: Int) {
     val minutes = seconds / 60
     val length = when {
         minutes >= 60 -> plural(minutes / 60, "hour") + (if (minutes % 60 > 0) " " + plural(minutes % 60, "minute") else "")
@@ -380,7 +394,7 @@ private val SERVICES = listOf(
 
 /** Logo-only service links. Each opens a search at once and is upgraded to the album's own page when the server finds an exact match. */
 @Composable
-private fun ServiceLinks(artist: String, album: String, mbid: String?) {
+internal fun ServiceLinks(artist: String, album: String, mbid: String?) {
     val repo = LocalRepository.current
     val uri = LocalUriHandler.current
     val exact = (rememberLoad(artist, album, mbid) { repo.albumLinks(artist, album, mbid) }.state as? Load.Ready)?.value
@@ -405,13 +419,13 @@ private fun ServiceLinks(artist: String, album: String, mbid: String?) {
  * itself, unless the reader has already picked a tab.
  */
 @Composable
-private fun InfoReviewsTabs(artist: String, album: String, description: Description?, finished: Boolean, booklet: app.discair.model.BookletView?) {
+internal fun InfoReviewsTabs(artist: String, album: String, description: Description?, finished: Boolean, booklet: app.discair.model.BookletView?) {
     val paragraphs = description?.paragraphs.orEmpty()
     var chosen by remember(artist, album) { mutableStateOf<Int?>(null) }
     val labels = if (booklet != null) listOf("Info", "Reviews", "Booklet") else listOf("Info", "Reviews")
     val tab = (chosen ?: if (finished && paragraphs.isEmpty()) 1 else 0).coerceAtMost(labels.size - 1)
     Column(Modifier.fillMaxWidth().padding(top = 16.dp)) {
-        TabRow(
+        if (app.discair.ui.common.isCoverStack()) CoverStackTabs(labels, tab, { chosen = it }, Modifier.padding(horizontal = 16.dp)) else TabRow(
             selectedTabIndex = tab, containerColor = Color.Transparent, contentColor = Ink.AccentText,
             divider = { RowDivider(Modifier.padding(horizontal = 16.dp)) },
         ) {
