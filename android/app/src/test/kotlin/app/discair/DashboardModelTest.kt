@@ -119,4 +119,35 @@ class DashboardModelTest {
         )
         assertEquals(DashModule.phone.toSet(), (DashModule.primary + DashModule.secondary).toSet())
     }
+
+    private fun days(vararg counts: Int) = counts.mapIndexed { i, c -> app.discair.model.ListensDay("2026-10-%02d".format(i + 1), c) }
+
+    @Test fun `listens compare the last 7 days with the 7 before`() {
+        val f = DashboardRules.listens(days(*IntArray(7) { 10 }, *IntArray(7) { 12 }))!!
+        assertEquals(84, f.last7); assertEquals(70, f.before7)
+        assertEquals("▲ 20% vs the 7 before", DashboardRules.listensChange(f))
+    }
+
+    @Test fun `only the newest 14 days count`() {
+        val f = DashboardRules.listens(days(*IntArray(70) { 99 }, *IntArray(7) { 1 }, *IntArray(7) { 2 }))!!
+        assertEquals(14, f.last7); assertEquals(7, f.before7)
+    }
+
+    @Test fun `listens are missing, not zero, when the server sent none or too few`() {
+        assertNull(DashboardRules.listens(null))
+        assertNull(DashboardRules.listens(days(1, 2, 3)))
+    }
+
+    @Test fun `listens change words cover a fall, a flat week and a first week`() {
+        assertEquals("▼ 50% vs the 7 before", DashboardRules.listensChange(app.discair.ui.home.ListensFigures(5, 10)))
+        assertEquals("Same as the 7 before", DashboardRules.listensChange(app.discair.ui.home.ListensFigures(5, 5)))
+        assertEquals("▲ 5 more than the 7 before", DashboardRules.listensChange(app.discair.ui.home.ListensFigures(5, 0)))
+        assertEquals("No listens in either week", DashboardRules.listensChange(app.discair.ui.home.ListensFigures(0, 0)))
+    }
+
+    @Test fun `parseTaste reads listens_by_day and drops bad entries`() {
+        val r = app.discair.model.parseTaste("""{"profiles":null,"listens_by_day":[{"date":"2026-11-01","count":3},{"date":"x"},{"date":"2026-11-02","count":-1},{"date":"2026-11-03","count":0}]}""")
+        assertEquals(listOf(3, 0), r.listensByDay!!.map { it.count })
+        assertNull(app.discair.model.parseTaste("""{"profiles":null}""").listensByDay)
+    }
 }

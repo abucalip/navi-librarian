@@ -178,11 +178,15 @@ private fun StatCard(label: String, value: String?, unit: String, line: String, 
     }
 }
 
-/** Listens and Never played need data this app does not get yet, so they say so; Waiting is today's picks. */
+/** Listens come from the taste body (D2). Never played has no source on Android, so it says so; Waiting is today's picks. */
 @Composable
-fun StatRow(waiting: WaitingFigures?, wide: Boolean, onWaiting: () -> Unit) {
+fun StatRow(listens: ListensFigures?, listensLoaded: Boolean, waiting: WaitingFigures?, wide: Boolean, onWaiting: () -> Unit) {
     val cards: List<@Composable (Modifier) -> Unit> = listOf(
-        { m -> StatCard("Listens · 7 days", null, "", DashboardRules.NOT_AVAILABLE, m) },
+        { m ->
+            if (listens != null) StatCard(
+                "Listens · 7 days", DashboardRules.formatCount(listens.last7), "plays", DashboardRules.listensChange(listens), m,
+            ) else StatCard("Listens · 7 days", null, "", if (listensLoaded) DashboardRules.NOT_AVAILABLE else "Loading…", m)
+        },
         { m -> StatCard("Never played", null, "", DashboardRules.NOT_AVAILABLE, m) },
         { m ->
             if (waiting != null) StatCard(

@@ -107,6 +107,8 @@ fun HomeScreen(open: Opener, onRadio: () -> Unit = {}, onDownloads: () -> Unit =
     val data = DashboardData(
         hero = libraryRead?.let { DashboardRules.hero(it, now) },
         heroLoading = library.state is Load.Loading,
+        listens = DashboardRules.listens((taste.state as? Load.Ready)?.value?.listensByDay),
+        listensLoaded = taste.state !is Load.Loading,
         waiting = DashboardRules.waiting((picks.state as? Load.Ready)?.let { pickList.size }, jobs),
         arrivals = DashboardRules.arrivals(jobs),
         picks = pickList,
@@ -127,7 +129,7 @@ fun HomeScreen(open: Opener, onRadio: () -> Unit = {}, onDownloads: () -> Unit =
     fun Module(m: DashModule, wide: Boolean) {
         when (m) {
             DashModule.Hero -> HeroModule(data.hero, data.heroLoading)
-            DashModule.Stats -> StatRow(data.waiting, wide, onWaiting = {})
+            DashModule.Stats -> StatRow(data.listens, data.listensLoaded, data.waiting, wide, onWaiting = {})
             DashModule.Pick -> Box(Modifier.heightIn(min = 120.dp)) {
                 when (val state = data.picksState) {
                     Load.Loading -> Muted("Loading…")

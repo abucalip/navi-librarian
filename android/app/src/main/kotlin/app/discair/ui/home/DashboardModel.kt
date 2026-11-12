@@ -41,6 +41,9 @@ data class HeroFigures(val count: Int, val added30: Int, val addedBefore30: Int)
 /** One row of Arrivals. [stage] is the tracker's current step (4 = in library). */
 data class ArrivalRow(val job: AcquisitionJob, val stage: Int, val failed: Boolean, val detail: String)
 
+/** Listens in the last 7 complete UTC days and in the 7 before (D2). */
+data class ListensFigures(val last7: Int, val before7: Int)
+
 /** The Waiting stat: today's picks, and how many arrivals came in. */
 data class WaitingFigures(val picks: Int, val arrived: Int)
 
@@ -172,6 +175,26 @@ object DashboardRules {
         return WaitingFigures(pickCount, jobs.orEmpty().count { !it.isSong && it.isImported })
     }
 
+    // ----- listens (D2) -------------------------------------------------------------------------------------------
+
+    /** The last 7 days against the 7 before, or null when the server sent fewer than 14 days (not served, never zero). */
+    fun listens(series: List<app.discair.model.ListensDay>?): ListensFigures? {
+        if (series == null || series.size < 14) return null
+        val last = series.takeLast(14)
+        return ListensFigures(last.drop(7).sumOf { it.count }, last.take(7).sumOf { it.count })
+    }
+
+    /** "18% vs the 7 before"; a first week after nothing says how many instead of a percentage of zero. */
+    fun listensChange(f: ListensFigures): String = when {
+        f.before7 == 0 && f.last7 == 0 -> "No listens in either week"
+        f.before7 == 0 -> "▲ ${f.last7} more than the 7 before"
+        f.last7 == f.before7 -> "Same as the 7 before"
+        else -> {
+            val pct = Math.round(abs(f.last7 - f.before7) * 100.0 / f.before7).toInt()
+            (if (f.last7 > f.before7) "▲ " else "▼ ") + "$pct% vs the 7 before"
+        }
+    }
+
     // ----- taste --------------------------------------------------------------------------------------------------
 
     /** The headline window's biggest listed shifts as dumbbell rows, in points of share; only what the server listed. */
@@ -238,6 +261,8 @@ data class DashboardData(
     val hero: HeroFigures?,
     val heroLoading: Boolean,
     val waiting: WaitingFigures?,
+    val listens: ListensFigures?,
+    val listensLoaded: Boolean,
     val arrivals: List<ArrivalRow>,
     val picks: List<app.discair.model.Pick>,
     val picksState: app.discair.ui.common.Load<List<app.discair.model.Pick>>,
