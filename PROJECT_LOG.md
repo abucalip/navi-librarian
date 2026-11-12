@@ -1,3 +1,11 @@
+## 2026-11-12 — Android art themes S3 part 3: Soft Brut Library and Search (PR #1010)
+
+- Merged as `06d107c0cad9ff30390476cc33e0b4d93c408b43` from head `38f846bc5d79834330e0a2d6506e2c9b93804b3a`. Added `ui/library/CoverStackLibrary.kt`, `ui/search/CoverStackSearch.kt` and `PlayerIcons.Sort`; one `isCoverStack()` branch each in `LibraryScreen` and `SearchScreen`; a few helpers made internal.
+- Verified with JDK 17, filtered: `compileDebugKotlin`, `ExistingLayoutsTest`, `SoftBrutTest`. Full suite not run (owner rule).
+- Differences from the mockup: artist Play and queue actions in a three-dot menu; owned results first within each group; placeholder instead of a floating label.
+- Not checked: no screenshots beside the mockup and no device check.
+- Next action: the owner checks Library and Search on the phone; then S4 or F1.
+
 ## 2026-11-12 — Android art themes S2: Soft Brut Home (PR #1007)
 
 - Merged as `2ea52f6548de9cf49450005876bf900ee918f045` from head `1657a6e9fddd79ca89a606e834cf183e220a62a8`. Added `ui/home/CoverStackHome.kt` and `CoverStackHomeRules.kt`, a `Layout.CoverStack` branch in `HomeScreen.kt`, `onLibrary` in `MainShell.kt`, and an optional shadow offset in `coverStackShadow`. No other theme's Home path changed.
