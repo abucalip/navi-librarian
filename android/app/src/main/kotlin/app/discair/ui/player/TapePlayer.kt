@@ -133,7 +133,7 @@ fun TapePlayer(
             // Status in words: loading, buffering, lost connection, unavailable, queue full.
             if (state.status != null || state.buffering) {
                 Text(
-                    playerSubtitle(state), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary,
+                    playerSubtitle(state), style = MaterialTheme.typography.bodyMedium, color = app.discair.ui.theme.Ink.AccentText,
                     modifier = Modifier.fillMaxWidth().semantics { liveRegion = LiveRegionMode.Polite },
                 )
             }

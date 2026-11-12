@@ -97,7 +97,7 @@ fun QueuePanel(state: PlayerUiState, controller: PlayerController, modifier: Mod
             modifier = Modifier.padding(vertical = 8.dp).semantics { heading() },
         )
         if (state.status != null) {
-            Text(state.status, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(bottom = 8.dp))
+            Text(state.status, style = MaterialTheme.typography.bodySmall, color = app.discair.ui.theme.Ink.AccentText, modifier = Modifier.padding(bottom = 8.dp))
         }
         val playing = state.current
         if (sonic && playing != null) {
@@ -133,7 +133,7 @@ fun QueuePanel(state: PlayerUiState, controller: PlayerController, modifier: Mod
                     app.discair.ui.common.Cover(item.coverUrl.ifBlank { null }, Modifier.padding(end = 16.dp).size(40.dp))
                     Column(Modifier.weight(1f).padding(vertical = 8.dp)) {
                         // The state is a moving icon beside the title (still when paused, spoken as words) or the word Unavailable; never colour alone.
-                        if (unavailable) Text("Unavailable", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
+                        if (unavailable) Text("Unavailable", style = MaterialTheme.typography.labelSmall, color = app.discair.ui.theme.Ink.AccentText)
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(
                                 item.title, style = MaterialTheme.typography.bodyMedium,

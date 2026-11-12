@@ -438,7 +438,7 @@ private fun Player(state: PlayerUiState, controller: PlayerController, onSignIn:
         val subtitle = playerSubtitle(state)
         if (state.status != null || state.buffering) {
             Text(
-                subtitle, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary,
+                subtitle, style = MaterialTheme.typography.bodyMedium, color = app.discair.ui.theme.Ink.AccentText,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp).semantics { liveRegion = LiveRegionMode.Polite },
             )

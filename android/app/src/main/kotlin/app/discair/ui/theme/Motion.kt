@@ -151,7 +151,14 @@ data class FadeThroughPlan(val leave: Timing, val arrive: Timing, val arriveDela
 /** Push to a stack page (7.4): the new page slides in over a 30 dp shared axis while it fades; the old one moves the other way. */
 data class SharedAxisPlan(val arrive: Timing, val leave: Timing, val slideDp: Int)
 
+/** Cover to Album page (7.4): the cover grows into the album header over `enter` on `easeStandard`. */
+data class SharedCoverPlan(val bounds: Timing)
+
 object MotionPlans {
+    /** Null when the phone reduces motion: the cover is then not shared and the page uses the plain transition. */
+    fun sharedCover(family: MotionFamily, reduced: Boolean): SharedCoverPlan? =
+        if (reduced) null else SharedCoverPlan(MotionRules.timing(MotionTokens.ENTER_MS, MotionRole.Move, family, reduced))
+
     fun fadeThrough(family: MotionFamily, reduced: Boolean): FadeThroughPlan {
         val leave = MotionRules.timing(MotionTokens.FAST_MS, MotionRole.Leave, family, reduced)
         val arrive = MotionRules.timing(MotionTokens.BASE_MS, MotionRole.Arrive, family, reduced)

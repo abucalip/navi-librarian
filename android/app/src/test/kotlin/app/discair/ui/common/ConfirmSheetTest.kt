@@ -45,4 +45,11 @@ class ConfirmSheetTest {
             assertTrue(spec.destructiveLabel.length > "Dismiss".length)
         }
     }
+
+    @Test fun resettingTheEqualizerKeepsTheCurveFirstAndNamesWhatIsErased() {
+        val spec = ConfirmSpecs.resetEqualizer()
+        val actions = ConfirmRules.actions(spec)
+        assertTrue(actions.first() is ConfirmAction.Keep)
+        assertTrue(spec.destructiveLabel.contains("Custom curve"))
+    }
 }

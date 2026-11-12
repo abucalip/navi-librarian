@@ -1,5 +1,6 @@
 package app.discair.ui.library
 
+import app.discair.ui.common.sharedCover
 import androidx.compose.foundation.clickable
 import androidx.compose.ui.semantics.Role
 import app.discair.ui.common.PageHeading
@@ -275,7 +276,7 @@ private fun GridRows(state: LibraryState, model: LibraryViewModel, open: Opener,
         } else {
             gridItems(state.albums, key = { it.id }) { album ->
                 Column(Modifier.animateItem().clickable(role = Role.Button) { open.album(album.key, album.artist, album.name, album.id, album.year) }) {
-                    Cover(album.artworkUrl?.let { repo.absolute(it) }, Modifier.fillMaxWidth().aspectRatio(1f))
+                    Cover(album.artworkUrl?.let { repo.absolute(it) }, Modifier.fillMaxWidth().aspectRatio(1f).sharedCover(album.key))
                     Text(album.name, style = MaterialTheme.typography.bodyMedium, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 8.dp))
                     Text(
                         listOfNotNull(album.artist, album.year?.toString()).joinToString(" · "),

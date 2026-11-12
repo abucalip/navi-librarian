@@ -358,3 +358,21 @@ val LocalThemePalette = staticCompositionLocalOf<Palette?> { null }
 @androidx.compose.runtime.Composable
 @androidx.compose.runtime.ReadOnlyComposable
 fun currentLayout(): Layout = LocalPalette.current.layout
+
+/** WCAG contrast of two colours; pure, so the rules that use it are unit-tested. */
+object Contrast {
+    private fun lin(v: Float): Double = v.toDouble().let { if (it <= 0.03928) it / 12.92 else Math.pow((it + 0.055) / 1.055, 2.4) }
+    private fun luminance(c: Color) = 0.2126 * lin(c.red) + 0.7152 * lin(c.green) + 0.0722 * lin(c.blue)
+    fun ratio(a: Color, b: Color): Double {
+        val x = luminance(a); val y = luminance(b)
+        return (maxOf(x, y) + 0.05) / (minOf(x, y) + 0.05)
+    }
+}
+
+/**
+ * The accent as a text or thin-icon colour (7.3, "Accent as text"). Where the accent reads on the page and on a card at 4.5:1
+ * it is the accent (Sand, Night, Sheet). Where it does not (Tape's lime on cream is 1.1, the pastel Brutal accents) the
+ * ink text colour is used, and the fill carries the accent instead.
+ */
+val Palette.accentText: Color
+    get() = if (Contrast.ratio(accent, ink) >= 4.5 && Contrast.ratio(accent, surface) >= 4.5) accent else text

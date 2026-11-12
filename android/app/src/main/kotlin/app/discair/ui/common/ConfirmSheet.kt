@@ -60,6 +60,14 @@ object ConfirmSpecs {
         destructiveLabel = "Remove ${plural(count, "import")} and their files",
     )
 
+    /** Reset the equalizer to flat; the destructive label says what is erased. */
+    fun resetEqualizer() = ConfirmSpec(
+        title = "Reset the equalizer?",
+        message = "All bands go back to 0 dB and your Custom curve is erased. The presets are not changed.",
+        safeLabel = "Keep my curve",
+        destructiveLabel = "Reset and erase my Custom curve",
+    )
+
     /** Sign out forgets the server logins on this phone; the destructive label says exactly that. */
     fun signOut() = ConfirmSpec(
         title = "Sign out of Discair?",

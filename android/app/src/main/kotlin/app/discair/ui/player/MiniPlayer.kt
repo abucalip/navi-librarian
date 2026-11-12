@@ -51,7 +51,7 @@ fun MiniPlayer(state: PlayerUiState, controller: PlayerController, onOpen: () ->
                 LinearProgressIndicator(
                     progress = { (state.positionMs.toFloat() / state.durationMs).coerceIn(0f, 1f) },
                     modifier = Modifier.fillMaxWidth().height(2.dp).clearAndSetSemantics { }, // decorative; Now Playing has the seek bar
-                    color = MaterialTheme.colorScheme.primary,
+                    color = app.discair.ui.theme.Ink.AccentText,
                     trackColor = Ink.Edge,
                 )
             }
