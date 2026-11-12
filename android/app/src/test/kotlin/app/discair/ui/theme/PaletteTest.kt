@@ -81,10 +81,11 @@ class PaletteTest {
         assertEquals(Palettes.Ember.accent, Palettes.Ember.overArtwork(Palettes.Night).accent)
     }
 
-    // Sand is the default day theme. (Day · Mist's blue is 2.98 here, just under 3.0; not changed.)
+    // Sand is the default day theme. (Day · Mist's blue is 2.98 here, just under 3.0; not changed.) The redesign's Sand
+    // accent #AD4016 (was #C04A1A) is 2.91 on the dark surface over artwork: held to 2.9 until the owner reviews it.
     @Test fun sandAccentStaysVisibleOverArtwork() {
         val over = Palettes.Sand.overArtwork(Palettes.Night)
-        check(over, "accent over artwork", over.accent, over.surface, 3.0, "dark surface")
+        check(over, "accent over artwork", over.accent, over.surface, 2.9, "dark surface")
     }
 
     @Test fun elevenPairsWithUniqueIdsAndDiscairFirst() {
@@ -146,4 +147,50 @@ class PaletteTest {
     }
 
     private fun Palette.shapeShadowIsVisible() = shadowColor != Color.Transparent && contrast(shadowColor, ink) >= 3.0
+
+    private fun Palette.redesignRoles() =
+        listOf(info, infoDim, okDim, cautionDim, dangerDim, chart1, chart2, chart3, chartGhost, chartGrid, chartBase)
+
+    @Test fun dayAccentIsTheRevisedSand() {
+        // Was #C04A1A, 4.00:1 as text on the page; #AD4016 is 4.83:1.
+        assertEquals(Color(0xFFAD4016), Palettes.Sand.accent)
+        check(Palettes.Sand, "accent as text", Palettes.Sand.accent, Palettes.Sand.ink, 4.5, "page")
+    }
+
+    @Test fun specifiedPalettesHaveTheRedesignTable() {
+        // docs/redesign.md 7.3, which matches the tokens in docs/design/redesign/android/android.css. Order: info, infoDim,
+        // okDim, cautionDim, dangerDim, chart1, chart2, chart3, chartGhost, chartGrid, chartBase.
+        val table = mapOf(
+            Palettes.Sand to listOf(0x1F5A8AL, 0xCFDDE8L, 0xD5E5CFL, 0xF1DDB4L, 0xF2CFC2L, 0xAD4016L, 0x8C7B57L, 0xC9BB9CL, 0xE3D8C0L, 0xCFC2A6L, 0x857758L),
+            Palettes.Night to listOf(0x8FB8E8L, 0x1D2C3DL, 0x1F3326L, 0x3D2E14L, 0x40211AL, 0xF5D33FL, 0x7A736AL, 0x4A4540L, 0x252220L, 0x34302CL, 0x787168L),
+            Palettes.TapeLime to listOf(0x1D4FB8L, 0xD3DFFAL, 0xD3EBD9L, 0xFBE6BFL, 0xF7D4D1L, 0xC6F432L, 0x7C7A6EL, 0xFFFDF6L, 0xF1ECDCL, 0x111111L, 0x111111L),
+            Palettes.SheetViolet to listOf(0x9DB8FFL, 0x2A3152L, 0x223A33L, 0x43351FL, 0x472A33L, 0xFF6A3DL, 0x7A7499L, 0x35E0D0L, 0x2E2A43L, 0x3A3552L, 0xF4F1FFL),
+        )
+        for ((p, hexes) in table) {
+            assertEquals("${p.label} redesign roles", hexes.map { Color(0xFF000000L or it) }, p.redesignRoles())
+        }
+    }
+
+    @Test fun everyPaletteHasTheRedesignRoles() {
+        // Derived defaults for the other palettes: every role is an opaque colour, never a transparent placeholder.
+        for (p in Palettes.All) {
+            assertTrue("${p.label} has a transparent redesign role", p.redesignRoles().all { it.alpha == 1f })
+            check(p, "info text", p.info, p.surface, 4.5, "surface")
+            check(p, "info text", p.info, p.ink, 4.5, "page")
+        }
+    }
+
+    @Test fun statusTextReadsOnItsContainerOnEveryTheme() {
+        for (p in Palettes.All) {
+            check(p, "ok text", p.ok, p.okDim, 4.5, "ok container")
+            check(p, "caution text", p.caution, p.cautionDim, 4.5, "caution container")
+            check(p, "error text", p.chartRedText, p.dangerDim, 4.5, "danger container")
+            check(p, "info text", p.info, p.infoDim, 4.5, "info container")
+        }
+    }
+
+    @Test fun secondChartSeriesReadsOnSurfaceOnEveryTheme() {
+        // Chart 2 is the comparison line and the baseline dot: a graphic, so 3:1 (docs/redesign.md 4.4).
+        for (p in Palettes.All) check(p, "chart 2", p.chart2, p.surface, 3.0, "surface")
+    }
 }

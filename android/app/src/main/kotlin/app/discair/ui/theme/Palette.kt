@@ -2,6 +2,7 @@ package app.discair.ui.theme
 
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.unit.Dp
 
 /**
@@ -27,6 +28,23 @@ class Palette(
     val chartRedText: Color,
     val ok: Color,
     val caution: Color,
+    // Redesign roles (docs/redesign.md 7.3). A palette that does not name them gets the derived defaults below; the four
+    // palettes the redesign specifies (Sand, Night, Tape · Lime, Sheet · Violet) name every one of them.
+    /** The fourth status colour (information): a blue, lighter in dark mode. No existing role to derive it from. */
+    val info: Color = if (light) c(0x1F5A8A) else c(0x8FB8E8),
+    /** Tinted containers behind a status: the status colour at 10% over the surface. */
+    val okDim: Color = tint(ok, surface),
+    val cautionDim: Color = tint(caution, surface),
+    /** Danger is [chartRedText], the colour that already passes as text. */
+    val dangerDim: Color = tint(chartRedText, surface),
+    val infoDim: Color = tint(info, surface),
+    /** Chart roles. Series one is the accent; the others are the muted text, the raised tone and the edges. */
+    val chart1: Color = accent,
+    val chart2: Color = textMuted,
+    val chart3: Color = edgeStrong,
+    val chartGhost: Color = raised,
+    val chartGrid: Color = edge,
+    val chartBase: Color = edgeStrong,
     /** The smallest text contrast this theme is held to by the unit test (WCAG: 4.5 normal text, 7 for AAA). */
     val minTextContrast: Double = 4.5,
     /** Classic themes keep the original soft look; Brutal themes draw hard outlines and offset shadows (android/DESIGN.md). */
@@ -53,6 +71,9 @@ class Palette(
         accent = accent, accentDim = if (light) dark.accentDim else accentDim,
         onAccent = onAccent,
         chartRed = dark.chartRed, chartRedText = dark.chartRedText, ok = dark.ok, caution = dark.caution,
+        info = dark.info, okDim = dark.okDim, cautionDim = dark.cautionDim, dangerDim = dark.dangerDim, infoDim = dark.infoDim,
+        chart1 = accent, chart2 = dark.chart2, chart3 = dark.chart3, chartGhost = dark.chartGhost,
+        chartGrid = dark.chartGrid, chartBase = dark.chartBase,
         minTextContrast = minTextContrast, family = family, shape = shape,
         accent2 = accent2, accent3 = accent3, accent4 = accent4, shadowColor = shadowColor, minAccentContrast = minAccentContrast,
         layout = layout,
@@ -74,6 +95,9 @@ class BrutalShape(val radius: Int, val outline: Int, val shadow: Int)
 
 private fun c(hex: Long) = Color(0xFF000000 or hex)
 
+/** [color] at 10% over [onto]: the tinted container behind a status (the `…Dim` roles). */
+private fun tint(color: Color, onto: Color): Color = lerp(onto, color, 0.10f)
+
 object Palettes {
     /** The original theme, unchanged from the first release. Always the dark fallback. */
     val Night = Palette(
@@ -81,14 +105,20 @@ object Palettes {
         rail = c(0x0F0E0D), ink = c(0x141211), surface = c(0x1C1A18), raised = c(0x252220), edge = c(0x34302C), edgeStrong = c(0x787168),
         text = c(0xF4EFE6), textMuted = c(0xB4AC9F), accent = c(0xF5D33F), accentDim = c(0x554B26), onAccent = c(0x141211),
         chartRed = c(0xFF5A3C), chartRedText = c(0xFF7B62), ok = c(0x86D39B), caution = c(0xF0A640),
+        info = c(0x8FB8E8), okDim = c(0x1F3326), cautionDim = c(0x3D2E14), dangerDim = c(0x40211A), infoDim = c(0x1D2C3D),
+        chart1 = c(0xF5D33F), chart2 = c(0x7A736A), chart3 = c(0x4A4540), chartGhost = c(0x252220), chartGrid = c(0x34302C),
+        chartBase = c(0x787168),
     )
 
     /** The day theme used when the phone is in light mode and the owner has not chosen another. */
     val Sand = Palette(
         "sand", "Day · Sand", true,
         rail = c(0xE6DCC8), ink = c(0xEFE6D3), surface = c(0xF8F1E1), raised = c(0xE3D8C0), edge = c(0xCFC2A6), edgeStrong = c(0x857758),
-        text = c(0x26201A), textMuted = c(0x62563F), accent = c(0xC04A1A), accentDim = c(0xEFC9B0), onAccent = c(0xFFF8EE),
+        text = c(0x26201A), textMuted = c(0x62563F), accent = c(0xAD4016), accentDim = c(0xEFC9B0), onAccent = c(0xFFF8EE),
         chartRed = c(0xA8300E), chartRedText = c(0xA8300E), ok = c(0x25693A), caution = c(0x7F4A00),
+        info = c(0x1F5A8A), okDim = c(0xD5E5CF), cautionDim = c(0xF1DDB4), dangerDim = c(0xF2CFC2), infoDim = c(0xCFDDE8),
+        chart1 = c(0xAD4016), chart2 = c(0x8C7B57), chart3 = c(0xC9BB9C), chartGhost = c(0xE3D8C0), chartGrid = c(0xCFC2A6),
+        chartBase = c(0x857758),
     )
     val Paper = Palette(
         "paper", "Day · Paper", true,
@@ -235,6 +265,9 @@ object Palettes {
         text = c(0x111111), textMuted = c(0x4F4D44), accent = c(0xC6F432), accentDim = c(0xE9F8B4), onAccent = c(0x111111),
         chartRed = c(0xB3261E), chartRedText = c(0xB3261E), ok = c(0x1B6B33), caution = c(0x7F4A00),
         family = Family.Brutal, shape = BrutalShape(2, 2, 5), shadowColor = c(0x111111),
+        info = c(0x1D4FB8), okDim = c(0xD3EBD9), cautionDim = c(0xFBE6BF), dangerDim = c(0xF7D4D1), infoDim = c(0xD3DFFA),
+        chart1 = c(0xC6F432), chart2 = c(0x7C7A6E), chart3 = c(0xFFFDF6), chartGhost = c(0xF1ECDC), chartGrid = c(0x111111),
+        chartBase = c(0x111111),
         accent2 = c(0xFF5D8F), accent3 = c(0x3D7BFF), accent4 = c(0xFFC93C), minAccentContrast = 1.1,
         layout = Layout.TapeDeck,
     )
@@ -267,6 +300,9 @@ object Palettes {
         text = c(0xF4F1FF), textMuted = c(0xA8A2C4), accent = c(0xFF6A3D), accentDim = c(0x2E2A43), onAccent = c(0x15131F),
         chartRed = c(0xFF8A80), chartRedText = c(0xFF8A80), ok = c(0x86D39B), caution = c(0xF0A640),
         family = Family.Brutal, shape = BrutalShape(14, 2, 4), shadowColor = c(0xFF6A3D),
+        info = c(0x9DB8FF), okDim = c(0x223A33), cautionDim = c(0x43351F), dangerDim = c(0x472A33), infoDim = c(0x2A3152),
+        chart1 = c(0xFF6A3D), chart2 = c(0x7A7499), chart3 = c(0x35E0D0), chartGhost = c(0x2E2A43), chartGrid = c(0x3A3552),
+        chartBase = c(0xF4F1FF),
         accent2 = c(0x35E0D0), accent3 = c(0xFFD166), accent4 = c(0xB6A4FF), minAccentContrast = 3.0,
         layout = Layout.SheetStack,
     )

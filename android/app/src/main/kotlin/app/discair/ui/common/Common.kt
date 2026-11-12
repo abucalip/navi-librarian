@@ -3,6 +3,8 @@ package app.discair.ui.common
 import android.graphics.Bitmap
 import androidx.compose.foundation.background
 import androidx.compose.ui.unit.em
+import androidx.compose.ui.unit.TextUnit
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.foundation.text.appendInlineContent
 import androidx.compose.foundation.clickable
 import androidx.compose.ui.semantics.Role
@@ -71,6 +73,28 @@ val LocalRepository = compositionLocalOf<LibraryRepository> { error("No reposito
 val LocalImageLoader = compositionLocalOf<ImageLoader> { error("No image loader") }
 
 val Target = 48.dp
+
+/**
+ * Letter spacing for a title. Compose has no word spacing, so the redesign's +0.16em word spacing becomes a tighter
+ * −0.06em for any title with a space in it (docs/redesign.md 7.2). A single word keeps the style's own spacing.
+ */
+internal fun titleLetterSpacing(text: String, base: TextUnit): TextUnit = if (text.contains(' ')) (-0.06).em else base
+
+/** A page or section title. Use it instead of [Text] for [MaterialTheme.typography] headings. */
+@Composable
+fun TitleText(
+    text: String,
+    modifier: Modifier = Modifier,
+    style: TextStyle = MaterialTheme.typography.headlineMedium,
+    color: Color = Color.Unspecified,
+    maxLines: Int = Int.MAX_VALUE,
+    overflow: TextOverflow = TextOverflow.Clip,
+) {
+    Text(
+        text, modifier = modifier, color = color, maxLines = maxLines, overflow = overflow,
+        style = style.copy(letterSpacing = titleLetterSpacing(text, style.letterSpacing)),
+    )
+}
 
 /**
  * Cover, bio and year lookups are cosmetic and some are slow (they reach other catalogues), so they
