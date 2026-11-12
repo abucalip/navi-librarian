@@ -166,6 +166,8 @@ fun NowPlayingSheet(state: PlayerUiState, controller: PlayerController, lyrics: 
     val sheetStack = app.discair.ui.theme.LocalPalette.current.layout == app.discair.ui.theme.Layout.SheetStack
     // Sticker Wall: a poster with a round transport; the queue and lyrics open from two pill buttons (view 2 = queue, 1 = lyrics).
     val sticker = app.discair.ui.theme.LocalPalette.current.layout == app.discair.ui.theme.Layout.StickerWall
+    // Soft Brut: its own top bar and views, in CoverStackNowPlaying.kt; the queue and the lyrics are views 2 and 1 as for every theme.
+    val coverStack = app.discair.ui.theme.LocalPalette.current.layout == app.discair.ui.theme.Layout.CoverStack
     BackHandler(enabled = view != 0) { view = 0; lastView = 0 }
     val scope = androidx.compose.runtime.rememberCoroutineScope()
     // -1 = queue, 0 = artwork, +1 = lyrics; fractions are mid-flip while a finger is down or the flip settles.
@@ -206,7 +208,7 @@ fun NowPlayingSheet(state: PlayerUiState, controller: PlayerController, lyrics: 
             showLyrics, showFacts,
             { showLyrics = !showLyrics; settings.showLyricLine = showLyrics }, { showFacts = !showFacts; settings.showFacts = showFacts },
         )
-        val blurred = canBlur && !sticker && item.coverUrl.isNotBlank()
+        val blurred = canBlur && !sticker && !coverStack && item.coverUrl.isNotBlank()
         // The playing album's disc and session photos (docs/artwork.md, ideas 3 and 4); nothing extra while they load or when there are none.
         val artIndex = rememberAlbumArtIndex(item)
         val slides = remember(artIndex) { app.discair.model.slideshowImages(artIndex) }
@@ -224,7 +226,7 @@ fun NowPlayingSheet(state: PlayerUiState, controller: PlayerController, lyrics: 
                 drawRect(Brush.verticalGradient(listOf(wash, ground), startY = top, endY = size.height * 0.9f), topLeft = androidx.compose.ui.geometry.Offset(0f, top), size = androidx.compose.ui.geometry.Size(size.width, size.height - top))
             }.padding(horizontal = 16.dp),
         ) {
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            if (!coverStack) Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 app.discair.ui.common.PlayerIconButton(onClick = onDismiss, Modifier.size(Target)) { Icon(PlayerIcons.Down, contentDescription = "Close now playing") }
                 Spacer(Modifier.weight(1f))
                 if (tape || sheetStack || sticker) {
@@ -249,8 +251,21 @@ fun NowPlayingSheet(state: PlayerUiState, controller: PlayerController, lyrics: 
                     }
                 } else Spacer(Modifier.size(Target)) // balances the close button so the tabs sit in the middle
             }
-            Spacer(Modifier.height(16.dp)) // the tabs must not touch the cover, the lyrics note or the queue title
-            if (sticker) StickerPlayer(
+            if (!coverStack) Spacer(Modifier.height(16.dp)) // the tabs must not touch the cover, the lyrics note or the queue title
+            if (coverStack) {
+                val lyricsForSong = if (lyricsState.songIdOrNull() == songId) lyricsState else LyricsUiState.Idle
+                val photosAvailable = canBlur && slides.isNotEmpty()
+                CoverStackPlayer(
+                    state, controller, view, onView = { view = it; lastView = it }, onClose = onDismiss,
+                    onSignIn = onSignIn, onEqualizer = { eqOpen = true }, onCrossfade = { crossfadeOpen = true },
+                    onOpenArtist = onOpenArtist, onOpenAlbum = onOpenAlbum, onCoverColor = { tint = it },
+                    input = CoverStackPlayerInput(
+                        lyricsForSong, currentLine, songId.orEmpty(), { if (songId != null) lyrics.retry(songId, nextId) },
+                        lineUi, photosAvailable, showSlides, { showSlides = !showSlides; settings.showSlideshow = showSlides },
+                    ),
+                    photos = { if (photosAvailable && showSlides && view == 1) SlideshowBackdrop(slides, state.isPlaying) },
+                )
+            } else if (sticker) StickerPlayer(
                 state, controller, view, onView = { view = it; lastView = it },
                 onSignIn = onSignIn, onEqualizer = { eqOpen = true }, onCrossfade = { crossfadeOpen = true },
                 onOpenArtist = onOpenArtist, onOpenAlbum = onOpenAlbum, onCoverColor = { tint = it },
