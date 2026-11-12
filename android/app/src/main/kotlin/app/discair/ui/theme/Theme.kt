@@ -320,7 +320,24 @@ private fun colorScheme(p: Palette): ColorScheme {
 private fun style(family: FontFamily, weight: FontWeight, size: Int, line: Int) =
     TextStyle(fontFamily = family, fontWeight = weight, fontSize = size.sp, lineHeight = line.sp)
 
-private fun typography(f: FontPair): Typography {
+/** Roles that Material's [Typography] has no slot for (docs/redesign.md 7.2). Read them with [discairType]. */
+class DiscairTypography(val displayMetric: TextStyle, val headlineSentence: TextStyle)
+
+internal fun discairTypography(f: FontPair) = DiscairTypography(
+    // The dashboard's big number: the pair's numeral face at its heaviest weight.
+    displayMetric = TextStyle(fontFamily = f.numeral, fontWeight = FontWeight.ExtraBold, fontSize = 64.sp, lineHeight = 64.sp),
+    // Server-authored sentences use the body face, never the display face.
+    headlineSentence = style(f.body, FontWeight.SemiBold, 20, 28),
+)
+
+val LocalDiscairTypography = staticCompositionLocalOf { discairTypography(FontPairs.Discair) }
+
+/** The redesign's extra type roles for the chosen font pair. */
+@Composable
+@ReadOnlyComposable
+fun discairType(): DiscairTypography = LocalDiscairTypography.current
+
+internal fun typography(f: FontPair): Typography {
     fun title(size: Int) = (size * f.titleScale).let { scaled ->
         TextStyle(
             fontFamily = f.title, fontWeight = f.titleWeight, fontSize = scaled.sp,
@@ -335,7 +352,7 @@ private fun typography(f: FontPair): Typography {
         titleSmall = style(f.body, FontWeight.Medium, 14, 20),
         bodyLarge = style(f.body, FontWeight.Normal, 16, 24),
         bodyMedium = style(f.body, FontWeight.Normal, 14, 20),
-        bodySmall = style(f.body, FontWeight.Normal, 12, 16),
+        bodySmall = style(f.body, FontWeight.Normal, 12, 18),
         labelLarge = style(f.body, FontWeight.SemiBold, 14, 20),
         labelMedium = style(f.mono, FontWeight.Medium, 12, 16),
         labelSmall = style(f.mono, FontWeight.Normal, 11, 16),
@@ -346,7 +363,8 @@ private fun typography(f: FontPair): Typography {
 fun DiscairTheme(palette: Palette = Palettes.Night, fonts: FontPair = FontPairs.Discair, content: @Composable () -> Unit) {
     val scheme = remember(palette) { colorScheme(palette) }
     val type = remember(fonts) { typography(fonts) }
-    CompositionLocalProvider(LocalPalette provides palette, LocalFontPair provides fonts) {
+    val extra = remember(fonts) { discairTypography(fonts) }
+    CompositionLocalProvider(LocalPalette provides palette, LocalFontPair provides fonts, LocalDiscairTypography provides extra) {
         MaterialTheme(colorScheme = scheme, typography = type, shapes = shapesFor(palette), content = content)
     }
 }
