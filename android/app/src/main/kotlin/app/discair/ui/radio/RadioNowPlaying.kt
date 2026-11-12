@@ -147,7 +147,7 @@ fun RadioNowPlayingSheet(
                     // Status in words: buffering, lost connection, unavailable.
                     val status = radioStatusText(state, live)
                     if (status != null) Text(
-                        status, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary, textAlign = TextAlign.Center,
+                        status, style = MaterialTheme.typography.bodyMedium, color = app.discair.ui.theme.Ink.AccentText, textAlign = TextAlign.Center,
                         modifier = Modifier.fillMaxWidth().padding(top = 8.dp).semantics { liveRegion = LiveRegionMode.Polite },
                     )
                     if (state.signInRequired) TextButton(onClick = { controller.dismissSignIn(); onDismiss() }, Modifier.heightIn(min = Target)) { Text("Sign in again") }
@@ -159,7 +159,7 @@ fun RadioNowPlayingSheet(
                             Modifier.size(buttonSize).semantics { stateDescription = if (live.favourite) "Favourite" else "Not a favourite" },
                             selected = live.favourite,
                         ) {
-                            if (live.favourite) Icon(Icons.Default.Favorite, contentDescription = "Remove ${item.title} from favourites", tint = Ink.Accent)
+                            if (live.favourite) Icon(Icons.Default.Favorite, contentDescription = "Remove ${item.title} from favourites", tint = Ink.AccentText)
                             else Icon(Icons.Default.FavoriteBorder, contentDescription = "Add ${item.title} to favourites")
                         }
                         FilledIconButton(

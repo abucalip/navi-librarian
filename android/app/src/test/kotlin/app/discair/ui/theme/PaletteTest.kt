@@ -193,4 +193,28 @@ class PaletteTest {
         // Chart 2 is the comparison line and the baseline dot: a graphic, so 3:1 (docs/redesign.md 4.4).
         for (p in Palettes.All) check(p, "chart 2", p.chart2, p.surface, 3.0, "surface")
     }
+
+    @Test fun accentTextIsTheAccentOnlyWhereItReadsOnThePageAndCard() {
+        for (p in Palettes.All) {
+            val got = p.accentText
+            if (got == p.accent) {
+                check(p, "accent as text", p.accent, p.ink, 4.5, "page")
+                check(p, "accent as text", p.accent, p.surface, 4.5, "surface")
+            } else assertEquals("${p.label}: falls back to the ink text colour", p.text, got)
+        }
+    }
+
+    @Test fun theFourSpecifiedThemesFollowTheAccentAsTextRule() {
+        val byId = Palettes.All.associateBy { it.id }
+        // 7.3: accent as text on the page is 4.8 on Sand, 12.7 on Night, 6.5 on Sheet, and not allowed on Tape (1.1).
+        val sand = Palettes.All.first { it.accent == Color(0xFFAD4016) && it.light }
+        val night = Palettes.All.first { it.accent == Color(0xFFF5D33F) && !it.light }
+        val tape = Palettes.All.first { it.accent == Color(0xFFC6F432) && it.light }
+        val sheet = Palettes.All.first { it.accent == Color(0xFFFF6A3D) && !it.light }
+        assertEquals(sand.accent, sand.accentText)
+        assertEquals(night.accent, night.accentText)
+        assertEquals(sheet.accent, sheet.accentText)
+        assertEquals(tape.text, tape.accentText)
+        assertTrue(byId.isNotEmpty())
+    }
 }

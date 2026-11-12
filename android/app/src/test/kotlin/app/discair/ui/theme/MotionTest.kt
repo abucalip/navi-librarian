@@ -125,4 +125,14 @@ class MotionTest {
             for (role in MotionRole.entries) assertTrue(MotionRules.timing(token, role, family, reduced = false).durationMs > 0)
         }
     }
+
+    @Test fun sharedCoverGrowsOverEnterOnTheStandardCurve() {
+        assertEquals(Timing(300, Curve.Curved(MotionTokens.EASE_STANDARD)), MotionPlans.sharedCover(standard, false)?.bounds)
+        assertEquals(Timing(300, Curve.Curved(MotionTokens.EASE_STANDARD)), MotionPlans.sharedCover(sheet, false)?.bounds)
+        assertEquals(Timing(180, Curve.Linear), MotionPlans.sharedCover(tape, false)?.bounds)
+    }
+
+    @Test fun sharedCoverIsOffWhenMotionIsReduced() {
+        for (family in MotionFamily.entries) assertNull(MotionPlans.sharedCover(family, true))
+    }
 }

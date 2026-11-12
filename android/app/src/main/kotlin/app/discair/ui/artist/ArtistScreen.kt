@@ -1,5 +1,6 @@
 package app.discair.ui.artist
 
+import app.discair.ui.common.sharedCover
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.ui.semantics.Role
@@ -221,7 +222,7 @@ private fun ArtistContent(route: ArtistRoute, page: ArtistPage, open: Opener, li
                             Modifier.weight(1f).padding(4.dp).clickable(role = Role.Button) { open.album(album.key, name, album.name, album.id, album.year) },
                         ) {
                             Box {
-                                AlbumCover(name, album.name, album.artworkUrl, Modifier.fillMaxWidth().aspectSquare())
+                                AlbumCover(name, album.name, album.artworkUrl, Modifier.fillMaxWidth().aspectSquare().sharedCover(album.key))
                                 CheckBadge(
                                     Modifier.align(Alignment.BottomEnd).padding(8.dp),
                                     onPlay = album.id.takeIf { it.isNotBlank() }?.let { id -> { play.playAlbum(id) } },

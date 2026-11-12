@@ -42,6 +42,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import app.discair.model.PathAlbum
 import app.discair.model.Span
@@ -335,7 +336,7 @@ internal fun SectionTitle(text: String) {
 /** A short label above a card's content. Small capitals are kept for labels like this one. */
 @Composable
 internal fun Eyebrow(text: String) {
-    Text(text.uppercase(), style = MaterialTheme.typography.labelMedium.copy(letterSpacing = 0.6.sp), color = Ink.TextMuted)
+    Text(text.uppercase(), style = MaterialTheme.typography.labelMedium.copy(letterSpacing = 0.08.em), color = Ink.TextMuted)
 }
 
 /** Library state as a plain line of words. */

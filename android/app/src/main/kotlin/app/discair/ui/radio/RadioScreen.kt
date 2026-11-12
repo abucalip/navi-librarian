@@ -118,6 +118,7 @@ fun RadioScreen(onBack: () -> Unit, onOpenHeard: () -> Unit, onOpenPlayer: () ->
                     items(state.value, key = { it.id }) { station ->
                         val favourite = favourites[station.id] ?: station.favourite
                         StationRow(
+                            modifier = Modifier.animateItem(),
                             station = station,
                             favourite = favourite,
                             now = live[station.id],
@@ -149,10 +150,10 @@ fun RadioScreen(onBack: () -> Unit, onOpenHeard: () -> Unit, onOpenPlayer: () ->
 }
 
 @Composable
-private fun StationRow(station: RadioStation, favourite: Boolean, now: RadioNow?, onAir: Boolean, onPlay: () -> Unit, onFavourite: () -> Unit) {
+private fun StationRow(modifier: Modifier, station: RadioStation, favourite: Boolean, now: RadioNow?, onAir: Boolean, onPlay: () -> Unit, onFavourite: () -> Unit) {
     val repo = LocalRepository.current
     Row(
-        Modifier.fillMaxWidth().heightIn(min = 72.dp).clickable(onClickLabel = "Play ${station.name}", role = androidx.compose.ui.semantics.Role.Button, onClick = onPlay)
+        modifier.fillMaxWidth().heightIn(min = 72.dp).clickable(onClickLabel = "Play ${station.name}", role = androidx.compose.ui.semantics.Role.Button, onClick = onPlay)
             .padding(horizontal = 16.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -172,7 +173,7 @@ private fun StationRow(station: RadioStation, favourite: Boolean, now: RadioNow?
             onClick = onFavourite,
             Modifier.size(Target).semantics { contentDescription = if (favourite) "Remove ${station.name} from favourites" else "Add ${station.name} to favourites" },
         ) {
-            if (favourite) Icon(Icons.Default.Favorite, contentDescription = null, tint = Ink.Accent)
+            if (favourite) Icon(Icons.Default.Favorite, contentDescription = null, tint = Ink.AccentText)
             else Icon(Icons.Default.FavoriteBorder, contentDescription = null)
         }
     }

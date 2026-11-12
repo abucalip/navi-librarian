@@ -36,6 +36,8 @@ object Ink {
     val Text: Color @Composable @ReadOnlyComposable get() = LocalPalette.current.text
     val TextMuted: Color @Composable @ReadOnlyComposable get() = LocalPalette.current.textMuted
     val Accent: Color @Composable @ReadOnlyComposable get() = LocalPalette.current.accent
+    /** The accent where it can be read as text; the ink text colour on themes whose accent cannot (Tape). See [accentText]. */
+    val AccentText: Color @Composable @ReadOnlyComposable get() = LocalPalette.current.accentText
     val AccentDim: Color @Composable @ReadOnlyComposable get() = LocalPalette.current.accentDim
     val OnAccent: Color @Composable @ReadOnlyComposable get() = LocalPalette.current.onAccent
     val ChartRed: Color @Composable @ReadOnlyComposable get() = LocalPalette.current.chartRed

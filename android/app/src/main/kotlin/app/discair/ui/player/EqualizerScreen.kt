@@ -99,7 +99,7 @@ fun EqualizerScreen(container: AppContainer, onBack: (() -> Unit)?) {
         }
         eqStatusLine(on, status)?.let {
             Text(
-                it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary,
+                it, style = MaterialTheme.typography.bodyMedium, color = app.discair.ui.theme.Ink.AccentText,
                 modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
             )
         }
@@ -149,12 +149,10 @@ fun EqualizerScreen(container: AppContainer, onBack: (() -> Unit)?) {
         Spacer(Modifier.size(24.dp))
     }
     if (confirmReset) {
-        AlertDialog(
-            onDismissRequest = { confirmReset = false },
-            title = { Text("Reset the equalizer?") },
-            text = { Text("All bands go back to 0 dB and your Custom curve is erased. The presets are not changed.") },
-            dismissButton = { TextButton(onClick = { confirmReset = false }, Modifier.heightIn(min = Target)) { Text("Cancel") } },
-            confirmButton = { TextButton(onClick = { confirmReset = false; editor.reset() }, Modifier.heightIn(min = Target)) { Text("Reset") } },
+        app.discair.ui.common.ConfirmSheet(
+            app.discair.ui.common.ConfirmSpecs.resetEqualizer(),
+            onKeep = { confirmReset = false },
+            onConfirm = { confirmReset = false; editor.reset() },
         )
     }
 }

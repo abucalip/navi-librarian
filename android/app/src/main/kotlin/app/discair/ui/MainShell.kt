@@ -114,8 +114,10 @@ import app.discair.ui.library.LibraryScreen
 
 /** Pages slide over each other, so each paints the app background: the one underneath must not show through. */
 @Composable
-private fun Opaque(content: @Composable () -> Unit) {
-    Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) { content() }
+private fun androidx.compose.animation.AnimatedVisibilityScope.Opaque(content: @Composable () -> Unit) {
+    androidx.compose.runtime.CompositionLocalProvider(app.discair.ui.common.LocalNavVisibilityScope provides this) {
+        Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) { content() }
+    }
 }
 
 private fun androidx.navigation.NavDestination?.isHome() = this?.hasRoute(HomeRoute::class) == true
@@ -309,8 +311,11 @@ fun MainShell(state: UiState, model: AppViewModel, container: AppContainer) {
                     onDragEnd = { if (total > swipeThreshold) nav.popBackStack() },
                 ) { _, delta -> total += delta }
             } else Modifier
+            @OptIn(androidx.compose.animation.ExperimentalSharedTransitionApi::class)
+            androidx.compose.animation.SharedTransitionLayout(Modifier.weight(1f).fillMaxWidth()) {
+            androidx.compose.runtime.CompositionLocalProvider(app.discair.ui.common.LocalSharedTransitionScope provides this) {
             NavHost(
-                nav, startDestination = HomeRoute, modifier = Modifier.weight(1f).fillMaxWidth().then(swipe),
+                nav, startDestination = HomeRoute, modifier = Modifier.fillMaxSize().then(swipe),
                 // Tab to tab fades through (the new tab rises a little); a push slides in on a shared axis from the right, and Back
                 // (button or swipe) slides the page out to the right while the one under it comes back from the left.
                 enterTransition = {
@@ -362,6 +367,8 @@ fun MainShell(state: UiState, model: AppViewModel, container: AppContainer) {
                 composable<ArtistRoute> { Opaque { ArtistScreen(it.toRoute(), open) } }
                 composable<AlbumRoute> { Opaque { AlbumScreen(it.toRoute(), open) } }
                 composable<GenreRoute> { Opaque { GenreScreen(it.toRoute(), open) } }
+            }
+            }
             }
             }
         }

@@ -1,5 +1,6 @@
 package app.discair.ui.home
 
+import app.discair.ui.common.sharedCover
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.border
 import androidx.compose.foundation.background
@@ -119,7 +120,7 @@ private fun RecentCard(album: LibraryAlbum, open: Opener) {
             .clickable(role = Role.Button) { open.album(album.key, album.artist, album.name, album.id, album.year) },
     ) {
         Box {
-            AlbumCover(album.artist, album.name, album.artworkUrl, Modifier.fillMaxWidth().aspectSquare(), rect = true)
+            AlbumCover(album.artist, album.name, album.artworkUrl, Modifier.fillMaxWidth().aspectSquare().sharedCover(album.key), rect = true)
             CheckBadge(
                 Modifier.align(Alignment.BottomEnd).padding(8.dp),
                 onPlay = album.id.takeIf { it.isNotBlank() }?.let { id -> { play.playAlbum(id) } },

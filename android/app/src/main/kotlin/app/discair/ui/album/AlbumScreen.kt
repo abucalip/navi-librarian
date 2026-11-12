@@ -1,5 +1,6 @@
 package app.discair.ui.album
 
+import app.discair.ui.common.sharedCover
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.ui.semantics.Role
@@ -45,6 +46,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import app.discair.R
 import app.discair.model.AlbumPage
@@ -167,7 +169,7 @@ private fun AlbumContent(route: AlbumRoute, page: AlbumPage, open: Opener, list:
                         Box(Modifier.size(240.dp)) {
                             AlbumCover(
                                 artist, title, app.discair.model.coverUrlFor(info?.artworkUrl, choice),
-                                Modifier.size(240.dp).aspectSquare(),
+                                Modifier.size(240.dp).aspectSquare().sharedCover(route.key),
                                 onColor = onTint,
                             )
                             // The album's file quality, as a label on the lower right corner of the artwork.
@@ -318,7 +320,7 @@ private fun AlbumContent(route: AlbumRoute, page: AlbumPage, open: Opener, list:
 @Composable
 private fun DiscHeading(disc: Int) {
     Text(
-        "Disc $disc".uppercase(), style = MaterialTheme.typography.labelMedium.copy(fontFamily = app.discair.ui.theme.LocalFontPair.current.mono, letterSpacing = 1.sp),
+        "Disc $disc".uppercase(), style = MaterialTheme.typography.labelMedium.copy(fontFamily = app.discair.ui.theme.LocalFontPair.current.mono, letterSpacing = 0.08.em),
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 8.dp)
             .semantics { heading() },
@@ -410,13 +412,13 @@ private fun InfoReviewsTabs(artist: String, album: String, description: Descript
     val tab = (chosen ?: if (finished && paragraphs.isEmpty()) 1 else 0).coerceAtMost(labels.size - 1)
     Column(Modifier.fillMaxWidth().padding(top = 16.dp)) {
         TabRow(
-            selectedTabIndex = tab, containerColor = Color.Transparent, contentColor = Ink.Accent,
+            selectedTabIndex = tab, containerColor = Color.Transparent, contentColor = Ink.AccentText,
             divider = { RowDivider(Modifier.padding(horizontal = 16.dp)) },
         ) {
             labels.forEachIndexed { i, label ->
                 Tab(
                     selected = tab == i, onClick = { chosen = i }, modifier = Modifier.heightIn(min = Target),
-                    selectedContentColor = Ink.Accent, unselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    selectedContentColor = Ink.AccentText, unselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
                     text = { Text(label, style = MaterialTheme.typography.labelLarge) },
                 )
             }
@@ -446,7 +448,7 @@ private fun InfoTab(description: Description?, paragraphs: List<String>, finishe
         val link = description?.url
         Text(
             credit, style = MaterialTheme.typography.bodySmall,
-            color = if (link != null) Ink.Accent else MaterialTheme.colorScheme.onSurfaceVariant,
+            color = if (link != null) Ink.AccentText else MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.heightIn(min = Target).then(
                 if (link != null) Modifier.clickable(role = Role.Button) { uri.openUri(link) } else Modifier,
             ).padding(vertical = 16.dp),
@@ -472,7 +474,7 @@ private fun ReviewsTab(artist: String, album: String) {
                     Column(Modifier.padding(bottom = 16.dp)) {
                         Text("\u201c${review.quote}\u201d", style = MaterialTheme.typography.bodyMedium)
                         Text(
-                            "Read the full review at ${review.source}", style = MaterialTheme.typography.bodySmall, color = Ink.Accent,
+                            "Read the full review at ${review.source}", style = MaterialTheme.typography.bodySmall, color = Ink.AccentText,
                             modifier = Modifier.heightIn(min = Target).clickable(role = Role.Button) { uri.openUri(review.url) }.padding(vertical = 16.dp),
                         )
                     }

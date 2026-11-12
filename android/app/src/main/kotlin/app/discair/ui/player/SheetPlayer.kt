@@ -129,7 +129,7 @@ fun SheetPlayer(
         // Status in words: loading, buffering, lost connection, unavailable, queue full.
         if (state.status != null || state.buffering) {
             Text(
-                playerSubtitle(state), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary, textAlign = TextAlign.Center,
+                playerSubtitle(state), style = MaterialTheme.typography.bodyMedium, color = app.discair.ui.theme.Ink.AccentText, textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth().padding(top = 4.dp).semantics { liveRegion = LiveRegionMode.Polite },
             )
         }
