@@ -63,8 +63,8 @@ object CoverStackRules {
 }
 
 /** The Cover Stack recipe's hard shadow in [p]'s shadow colour, offset by the palette's shadow width. */
-fun Modifier.coverStackShadow(shape: Shape, p: Palette): Modifier {
-    val off = CoverStackRules.shadow(p)
+fun Modifier.coverStackShadow(shape: Shape, p: Palette, offsetDp: Float? = null): Modifier {
+    val off = offsetDp ?: CoverStackRules.shadow(p)
     if (off == 0f) return this
     return drawBehind {
         val outline = shape.createOutline(size, layoutDirection, this)
