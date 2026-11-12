@@ -6,6 +6,7 @@ Last checked: 2026-11-11. GitHub `main` is authoritative; current head `16cb3d9d
 
 ## Current state
 
+- **Android art themes S4 part 1 (Soft Brut Now Playing, Queue and Lyrics) merged (2026-11-12):** PR [#1011](https://github.com/abucalip/navi-librarian/pull/1011), squash `33f8f6503`. Filtered tests only, not seen on a device. Details in `ACTIVE_WORK.md` section 2l. Next: the owner checks the three screens on the phone; then the rest of S4 or F1.
 - **Android art themes S3 part 3 (Soft Brut Library and Search) merged (2026-11-12):** PR [#1010](https://github.com/abucalip/navi-librarian/pull/1010), squash `06d107c0`. S3 is complete. Filtered tests only, not seen on a device. Details in `ACTIVE_WORK.md` section 2l. Next: the owner checks Library and Search on the phone; then S4 or F1.
 - **Android art themes S3 part 2 (Soft Brut Genre and Discover) merged (2026-11-12):** PR [#1009](https://github.com/abucalip/navi-librarian/pull/1009), squash `73a6f960`. Own files behind `isCoverStack()` branches; filtered tests only, not seen on a device. Details in `ACTIVE_WORK.md` section 2l. Next: the owner checks both pages on the phone; S3 still has Library and Search.
 - **Android art themes S3 part 1 (Soft Brut Album and Artist) merged (2026-11-12):** PR [#1008](https://github.com/abucalip/navi-librarian/pull/1008), squash `e0eb64c3`. Own files behind one layout branch per screen; filtered tests only, not seen on a device. Details in `ACTIVE_WORK.md` section 2l. Next: the owner checks both pages on the phone; S3 still has Genre, Discover, Library and Search.
