@@ -32,6 +32,17 @@ import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.unit.sp
+import app.discair.ui.theme.Layout
+import app.discair.ui.theme.LocalPalette
 import app.discair.ui.theme.Palette
 
 /**
@@ -104,5 +115,49 @@ private fun RowScope.Cell(palette: Palette, label: String, selected: Boolean, on
     ) {
         Box(Modifier.size(24.dp), contentAlignment = Alignment.Center) { icon(palette.text) }
         Text(label, style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold), color = palette.text, maxLines = 1, modifier = Modifier.clearAndSetSemantics { })
+    }
+}
+
+/** True while the owner's theme is Soft Brut's Cover Stack. Every Cover Stack branch in a shared control is guarded by this, so no other theme changes. */
+@Composable
+@androidx.compose.runtime.ReadOnlyComposable
+fun isCoverStack(): Boolean = LocalPalette.current.layout == Layout.CoverStack
+
+/** The dashed 1.5dp divider of Cover Stack lists (the palette's grid colour). */
+@Composable
+fun CoverStackDivider(modifier: Modifier = Modifier) {
+    val p = LocalPalette.current
+    val ol = CoverStackRules.outline(p)
+    Box(modifier.fillMaxWidth().height(ol.dp).drawBehind {
+        drawLine(p.chartGrid, Offset(0f, size.height / 2), Offset(size.width, size.height / 2), strokeWidth = ol.dp.toPx(), pathEffect = PathEffect.dashPathEffect(floatArrayOf(4.dp.toPx(), 3.dp.toPx())))
+    })
+}
+
+/**
+ * Cover Stack tabs: one joined, outlined group with a hard shadow, the selected segment filled with the accent and a rule between segments.
+ * 40dp high, label Inter 700 13. Up to four tabs share the width; more scroll. Mockup: soft-brut/components.
+ */
+@Composable
+fun CoverStackTabs(labels: List<String>, selectedIndex: Int, onSelect: (Int) -> Unit, modifier: Modifier = Modifier) {
+    val p = LocalPalette.current
+    val shape = RoundedCornerShape(CoverStackRules.radius(p).dp)
+    val ol = CoverStackRules.outline(p).dp
+    val fits = labels.size <= 4
+    Row(
+        modifier.coverStackFrame(shape, p).then(if (fits) Modifier else Modifier.horizontalScroll(rememberScrollState())).height(40.dp),
+    ) {
+        labels.forEachIndexed { i, label ->
+            val on = i == selectedIndex
+            Box(
+                (if (fits) Modifier.weight(1f) else Modifier.widthIn(min = 72.dp)).fillMaxHeight()
+                    .background(if (on) p.accent else p.surface)
+                    .clickable(role = Role.Tab, onClick = { onSelect(i) })
+                    .semantics { selected = on },
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(label, style = MaterialTheme.typography.labelLarge.copy(fontSize = 13.sp, fontWeight = FontWeight.Bold), color = if (on) p.onAccent else p.text, maxLines = 1, modifier = Modifier.padding(horizontal = 12.dp))
+            }
+            if (i < labels.lastIndex) Box(Modifier.width(ol).fillMaxHeight().background(p.edgeStrong))
+        }
     }
 }

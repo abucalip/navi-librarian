@@ -64,6 +64,11 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.PopupProperties
 import androidx.compose.ui.unit.DpOffset
@@ -83,7 +88,8 @@ import app.discair.ui.theme.themeShape
  * so Classic themes look exactly as before; on a Brutal theme they draw the Neobrut version.
  */
 
-private val Palette.sm: Float get() = 0.6f
+/** The small-shadow scale of buttons and icon buttons. Soft Brut draws its full 3dp shadow on every control (proposal section 3). */
+private val Palette.sm: Float get() = if (layout == app.discair.ui.theme.Layout.CoverStack) 1f else 0.6f
 
 // ---------------------------------------------------------------- buttons
 
@@ -115,12 +121,17 @@ private fun BrutalButtonBody(
     val source = interactionSource ?: remember { MutableInteractionSource() }
     val drop = pressOffset(source, enabled)
     val s = shape ?: themeShape(8.dp)
+    val cs = isCoverStack()
+    // Soft Brut: 44dp high, 16dp padding, label Inter 700 14.
     androidx.compose.material3.Button(
         onClick = onClick,
         modifier = modifier.offset { IntOffset(drop.roundToPx(), drop.roundToPx()) }
+            .then(if (cs) Modifier.heightIn(min = 44.dp) else Modifier)
             .then(if (drop == 0.dp && enabled) Modifier.brutalShadow(s, LocalPalette.current.sm) else Modifier),
         enabled = enabled, shape = s, colors = colors ?: brutColors(kind), elevation = null, border = brutalOutline(),
-        contentPadding = contentPadding, interactionSource = source, content = content,
+        contentPadding = if (cs && contentPadding == ButtonDefaults.ContentPadding) PaddingValues(horizontal = 16.dp) else contentPadding,
+        interactionSource = source,
+        content = if (cs) ({ androidx.compose.material3.ProvideTextStyle(LocalTextStyle.current.copy(fontWeight = FontWeight.Bold, fontSize = 14.sp)) { content() } }) else content,
     )
 }
 
@@ -253,7 +264,7 @@ fun OutlinedTextField(
         }
     androidx.compose.material3.OutlinedTextField(
         value, onValueChange,
-        Modifier.fillMaxWidth().brutalShadow(s, 0.5f).border(BorderStroke(if (focused) outline + 1.dp else outline, edge), s),
+        Modifier.fillMaxWidth().brutalShadow(s, if (isCoverStack()) 1f else 0.5f).border(BorderStroke(if (focused) outline + 1.dp else outline, edge), s),
         enabled, readOnly, textStyle, null, placeholder ?: label, leadingIcon, trailingIcon, null, null, supportingText, isError,
         visualTransformation, keyboardOptions, keyboardActions, singleLine, maxLines, minLines, source, s,
         colors ?: androidx.compose.material3.OutlinedTextFieldDefaults.colors(
@@ -415,9 +426,16 @@ fun LinearProgressIndicator(modifier: Modifier = Modifier, color: Color = Progre
 @Composable
 private fun BrutalSliderTrackBar(fraction: Float, modifier: Modifier) {
     val p = LocalPalette.current
-    val s = smallShape(3)
-    Box(modifier.height(14.dp).clip(s).background(p.surface).border(brutalOutline(), s)) {
-        Box(Modifier.fillMaxWidth(fraction.coerceIn(0f, 1f)).fillMaxHeight().background(p.accent))
+    val cs = isCoverStack()
+    val s = if (cs) RoundedCornerShape(6.dp) else smallShape(3)
+    Box(modifier.height(if (cs) 10.dp else 14.dp).clip(s).background(p.surface).border(brutalOutline(), s)) {
+        val f = fraction.coerceIn(0f, 1f)
+        Box(
+            Modifier.fillMaxWidth(f).fillMaxHeight().background(p.accent).then(
+                // Soft Brut closes the fill with a rule, so a part-full bar reads as a block.
+                if (cs && f > 0f && f < 1f) Modifier.drawBehind { drawRect(p.edgeStrong, Offset(size.width - 1.5.dp.toPx(), 0f), Size(1.5.dp.toPx(), size.height)) } else Modifier,
+            ),
+        )
     }
 }
 
@@ -438,6 +456,23 @@ private fun BrutalSnackbar(data: SnackbarData) {
     val p = LocalPalette.current
     val s = themeShape(8.dp)
     val sh = ((p.shape?.shadow ?: 0f)).dp
+    if (isCoverStack()) {
+        // Soft Brut: an ink toast with page-coloured text and an underlined Undo (mockup: soft-brut/sheets frame 3).
+        Box(Modifier.padding(start = 12.dp, top = 8.dp, end = 12.dp + sh, bottom = 8.dp + sh)) {
+            Row(
+                Modifier.fillMaxWidth().brutalShadow(s).clip(s).background(p.text).border(brutalOutline(), s).padding(start = 14.dp, end = 4.dp),
+                verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Text(data.visuals.message, Modifier.weight(1f).padding(vertical = 12.dp), color = p.ink, style = MaterialTheme.typography.bodyMedium)
+                data.visuals.actionLabel?.let { label ->
+                    Box(Modifier.heightIn(min = 48.dp).clickable(role = Role.Button, onClick = { data.performAction() }).padding(horizontal = 12.dp), contentAlignment = Alignment.Center) {
+                        Text(label, color = p.ink, fontWeight = FontWeight.SemiBold, textDecoration = androidx.compose.ui.text.style.TextDecoration.Underline, style = MaterialTheme.typography.labelLarge)
+                    }
+                }
+            }
+        }
+        return
+    }
     Box(Modifier.padding(start = 16.dp, top = 16.dp, end = 16.dp + sh, bottom = 16.dp + sh)) {
         Row(
             Modifier.fillMaxWidth().brutalShadow(s).clip(s).background(p.surface).border(brutalOutline(), s).padding(start = 16.dp, top = 8.dp, bottom = 8.dp, end = 8.dp),
@@ -463,6 +498,17 @@ fun ModalBottomSheet(
         androidx.compose.material3.ModalBottomSheet(
             onDismissRequest, modifier, sheetState, shape = shape ?: androidx.compose.material3.BottomSheetDefaults.ExpandedShape,
             containerColor = containerColor ?: androidx.compose.material3.BottomSheetDefaults.ContainerColor, content = content,
+        )
+        return
+    }
+    if (isCoverStack()) {
+        // Soft Brut: an outlined surface with a 14dp top radius, no shadow, and a short grey handle (mockup: soft-brut/sheets).
+        val top = shape ?: RoundedCornerShape(topStart = CoverStackRules.barRadius(p).dp, topEnd = CoverStackRules.barRadius(p).dp)
+        androidx.compose.material3.ModalBottomSheet(
+            onDismissRequest, modifier.border(BorderStroke(CoverStackRules.outline(p).dp, p.edgeStrong), top), sheetState, shape = top,
+            containerColor = containerColor ?: p.surface,
+            dragHandle = { Box(Modifier.padding(vertical = 10.dp).size(width = 36.dp, height = 4.dp).clip(RoundedCornerShape(2.dp)).background(p.chartGrid)) },
+            content = content,
         )
         return
     }
@@ -499,6 +545,22 @@ fun FilterChip(
         )
         return
     }
+    if (isCoverStack()) {
+        // Soft Brut: a 36dp pill, outlined, no shadow; the chosen one is filled with the accent.
+        val pill = RoundedCornerShape(50)
+        Row(
+            modifier.heightIn(min = 36.dp).clip(pill).background(if (selected) p.accent else p.surface).border(brutalOutline(), pill)
+                .clickable(enabled = enabled, role = Role.Checkbox, onClick = onClick).padding(horizontal = 13.dp),
+            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            leadingIcon?.invoke()
+            CompositionLocalProvider(LocalContentColor provides if (selected) p.onAccent else p.text) {
+                androidx.compose.material3.ProvideTextStyle(MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold, fontSize = 13.sp), label)
+            }
+            trailingIcon?.invoke()
+        }
+        return
+    }
     val s = shape ?: themeShape(8.dp)
     val source = interactionSource ?: remember { MutableInteractionSource() }
     val drop = pressOffset(source, enabled)
@@ -522,9 +584,10 @@ fun FilterChip(
 @Composable
 fun BrutalTag(modifier: Modifier = Modifier, primary: Boolean = true, content: @Composable () -> Unit) {
     val p = LocalPalette.current
-    val s = themeShape(4.dp)
+    val cs = isCoverStack()
+    val s = if (cs) RoundedCornerShape(6.dp) else themeShape(4.dp)
     Box(
-        modifier.brutalShadow(s, 0.4f).clip(s).background(if (primary) p.accent else p.raised).border(brutalOutline(), s)
+        modifier.then(if (cs) Modifier else Modifier.brutalShadow(s, 0.4f)).clip(s).background(if (primary) p.accent else p.raised).border(brutalOutline(), s)
             .padding(horizontal = 8.dp, vertical = 4.dp),
         contentAlignment = Alignment.Center,
     ) { CompositionLocalProvider(LocalContentColor provides if (primary) p.onAccent else p.text) { content() } }
