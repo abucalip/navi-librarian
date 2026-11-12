@@ -13,6 +13,12 @@ object Subsonic {
     const val API_VERSION = "1.16.1"
     const val CLIENT = "discair"
 
+    /**
+     * Client name for `savePlayQueue`. Navidrome stores it as `changedBy`; the Mac app ignores a saved queue whose
+     * name is its own ("discair"), so the phone must use a different one.
+     */
+    const val PHONE_CLIENT = "discair-android"
+
     fun token(password: String, salt: String): String =
         MessageDigest.getInstance("MD5").digest((password + salt).toByteArray(Charsets.UTF_8))
             .joinToString("") { "%02x".format(it) }

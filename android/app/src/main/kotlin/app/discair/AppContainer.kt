@@ -16,9 +16,13 @@ import coil3.network.okhttp.OkHttpNetworkFetcherFactory
 import okhttp3.OkHttpClient
 import app.discair.player.FileQueueStorage
 import app.discair.player.Media3Port
+import app.discair.player.NavidromeQueueSaver
 import app.discair.player.NavidromeScrobbler
 import app.discair.player.OfflineSongs
+import app.discair.player.PlayQueueSync
 import app.discair.player.PlayerController
+import app.discair.player.RemotePlayQueue
+import app.discair.player.RemotePlayQueueApi
 import app.discair.player.PlayerSettings
 import app.discair.player.PrefsPlayerSettings
 import app.discair.player.eq.EqRuntimeStatus
@@ -48,6 +52,16 @@ class AppContainer(val app: Application) {
             val api = NavidromeScrobbler.create(OkHttpClient(), s.navidromeUrl, s.navidromeUser, s.navidromePassword)
                 ?: return SendOutcome.Ambiguous
             return api.send(songId, submission, timeMs)
+        }
+    }
+
+    /** Saves the queue to Navidrome with the login that is current at save time (redesign D5, phone handoff). */
+    private val queueApi = object : RemotePlayQueueApi {
+        override suspend fun save(queue: RemotePlayQueue): Boolean {
+            val s = servers
+            val api = NavidromeQueueSaver.create(OkHttpClient(), s.navidromeUrl, s.navidromeUser, s.navidromePassword)
+                ?: return false
+            return api.save(queue)
         }
     }
 
@@ -85,6 +99,7 @@ class AppContainer(val app: Application) {
             storage = FileQueueStorage(java.io.File(app.filesDir, "player_queue.json")),
             scrobbler = ScrobbleCoordinator(scrobbleApi, CoroutineScope(SupervisorJob() + Dispatchers.Default), enabled = playerSettings.scrobbling),
             scope = scope,
+            remote = PlayQueueSync(queueApi, CoroutineScope(SupervisorJob() + Dispatchers.Default)),
         )
         controller.restore()
         val manager = app.getSystemService(android.net.ConnectivityManager::class.java)
