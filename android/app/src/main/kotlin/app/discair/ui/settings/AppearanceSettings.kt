@@ -78,8 +78,8 @@ private fun Appearance.summary(): String {
 
 /** Settings shows only this row: the name, what is chosen now, and a chevron to the Appearance screen. */
 @Composable
-fun AppearanceRow(appearance: Appearance, onClick: () -> Unit) {
-    SettingsRow(PlayerIcons.Sun, "Appearance", appearance.summary(), onClick = onClick)
+fun AppearanceRow(appearance: Appearance, onClick: () -> Unit, divider: Boolean = true) {
+    SettingsRow(PlayerIcons.Sun, "Appearance", appearance.summary(), onClick = onClick, divider = divider)
 }
 
 /** Which list the picker is showing: the one fixed theme, or the day or night slot. Saved so a rotation keeps it. */
@@ -95,6 +95,8 @@ private val Filters = listOf("All", "Light", "Dark", "Brutal")
  */
 @Composable
 fun AppearanceScreen(appearance: Appearance, onBack: () -> Unit) {
+    // Soft Brut draws its own page (CoverStackAppearance.kt); the choices and where they are kept are Appearance's.
+    if (app.discair.ui.common.isCoverStack()) { CoverStackAppearance(appearance, onBack); return }
     var picking by rememberSaveable { mutableStateOf<String?>(null) }
     var filter by rememberSaveable { mutableStateOf("All") }
     BackHandler(enabled = picking != null) { picking = null }

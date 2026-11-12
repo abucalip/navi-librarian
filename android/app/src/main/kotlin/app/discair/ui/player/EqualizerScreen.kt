@@ -73,7 +73,8 @@ fun EqualizerScreen(container: AppContainer, onBack: (() -> Unit)?) {
     val status by container.eqStatus.collectAsState()
     val on = settings.config.enabled
     var confirmReset by remember { mutableStateOf(false) }
-    Column(
+    // Soft Brut draws its own page (CoverStackEqCrossfade.kt); the editor, the reset sheet below and the sheet's no-back case are shared.
+    if (app.discair.ui.common.isCoverStack()) CoverStackEqualizer(editor, settings, status, onBack, onReset = { confirmReset = true }) else Column(
         Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(start = 16.dp, top = 8.dp, end = 16.dp, bottom = 8.dp + app.discair.ui.LocalBottomClearance.current),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {

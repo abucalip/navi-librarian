@@ -228,7 +228,10 @@ fun SettingsScreen(state: UiState, model: AppViewModel, onBack: () -> Unit, onEq
     var confirmSignOut by remember { mutableStateOf(false) }
     val container = (androidx.compose.ui.platform.LocalContext.current.applicationContext as DiscairApplication).container
     // The page scrolls because the playback choices make it taller than a phone in landscape or at large text.
-    Page(scroll = true) {
+    // Soft Brut draws its own grouped page (settings/CoverStackSettings.kt); the sign-out sheet below is shared.
+    if (app.discair.ui.common.isCoverStack()) app.discair.ui.settings.CoverStackSettingsPage(
+        state, model, container, onBack, onEqualizer, onCrossfade, onAppearance, onServer, onSignOut = { confirmSignOut = true },
+    ) else Page(scroll = true) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             androidx.compose.material3.IconButton(onClick = onBack, Modifier.size(Target)) {
                 Icon(app.discair.ui.player.PlayerIcons.Left, contentDescription = "Back")
@@ -286,7 +289,7 @@ fun SettingsScreen(state: UiState, model: AppViewModel, onBack: () -> Unit, onEq
  * it live and writes it back; if the server cannot be reached the row says so instead of guessing.
  */
 @Composable
-private fun LibrarySettings() {
+internal fun LibrarySettings() {
     val repo = app.discair.ui.common.LocalRepository.current
     var value by remember { mutableStateOf<Boolean?>(null) }
     var problem by remember { mutableStateOf<String?>(null) }
@@ -298,8 +301,37 @@ private fun LibrarySettings() {
             problem = "Could not read this option from the server."
         }
     }
-    Section("Library", bold = true)
+    val softBrut = app.discair.ui.common.isCoverStack()
+    if (!softBrut) Section("Library", bold = true)
     val current = value
+    val toggle: (Boolean) -> Unit = { on ->
+        value = on
+        problem = null
+        scope.launch {
+            try {
+                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { repo.setLibraryResync(on) }
+            } catch (e: Exception) {
+                value = !on
+                problem = "The server did not save this. Try again."
+            }
+        }
+    }
+    if (softBrut) {
+        // A grouped row with an icon tile and a switch (CoverStackSettings.kt); the words are the same.
+        app.discair.ui.settings.SettingsRow(
+            app.discair.ui.player.PlayerIcons.Retry, "Resync after import",
+            when {
+                current == null && problem == null -> "Checking the server."
+                current == null -> problem.orEmpty()
+                problem != null -> problem.orEmpty()
+                current -> "On. A few seconds after a successful import, the server reloads your library."
+                else -> "Off. A new album can take up to ten minutes to show up."
+            },
+            modifier = if (current == null) Modifier else Modifier.toggleable(value = current, role = Role.Switch, onValueChange = toggle),
+            trailing = { if (current != null) app.discair.ui.common.DiscairSwitch(checked = current) },
+        )
+        return
+    }
     Row(
         Modifier.fillMaxWidth().heightIn(min = Target).then(
             if (current == null) Modifier else Modifier.toggleable(value = current, role = Role.Switch) { on ->
@@ -336,19 +368,23 @@ private fun LibrarySettings() {
     }
 }
 
-/** Streaming quality and scrobbling. Both are per device and apply to songs started afterwards. */
+internal enum class PlaybackShow { All, LookAndSound, Rest }
+
+/**
+ * Streaming quality and scrobbling. Both are per device and apply to songs started afterwards. Soft Brut lists the Equalizer and Crossfade rows under Look and sound and the rest under Playback; every other theme shows [PlaybackShow.All]. */
 @Composable
-private fun PlaybackSettings(container: AppContainer, onEqualizer: () -> Unit, onCrossfade: () -> Unit) {
+internal fun PlaybackSettings(container: AppContainer, onEqualizer: () -> Unit, onCrossfade: () -> Unit, show: PlaybackShow = PlaybackShow.All) {
     val settings = container.playerSettings
     var rate by remember { mutableStateOf(settings.maxBitRate) }
     var scrobble by remember { mutableStateOf(settings.scrobbling) }
-    Section("Playback", bold = true)
+    if (show != PlaybackShow.LookAndSound) {
+    if (show == PlaybackShow.All) Section("Playback", bold = true)
     var qualityOpen by remember { mutableStateOf(false) }
     val qualityName = app.discair.player.qualityLabel(rate)
     Box {
         app.discair.ui.settings.SettingsRow(
             app.discair.ui.player.PlayerIcons.Wave, "Streaming quality", qualityName,
-            modifier = Modifier.semantics { role = Role.DropdownList }, onClick = { qualityOpen = true },
+            modifier = Modifier.semantics { role = Role.DropdownList }, onClick = { qualityOpen = true }, divider = show != PlaybackShow.Rest,
             trailing = { Icon(app.discair.ui.player.PlayerIcons.Down, contentDescription = null) },
         )
         app.discair.ui.common.DropdownMenu(expanded = qualityOpen, onDismissRequest = { qualityOpen = false }) {
@@ -395,6 +431,8 @@ private fun PlaybackSettings(container: AppContainer, onEqualizer: () -> Unit, o
             onClick = { offlineScope.launch { offline.removeAll() } }, modifier = Modifier.heightIn(min = Target),
         ) { Text("Remove all") }
     }
+    }
+    if (show != PlaybackShow.Rest) {
     // The summary says on or off in words, so the state is not left to colour or to opening the page.
     val eq = remember { container.eqSettings.load() }
     var eqNow by remember { mutableStateOf(eq) }
@@ -415,6 +453,7 @@ private fun PlaybackSettings(container: AppContainer, onEqualizer: () -> Unit, o
     app.discair.ui.settings.SettingsRow(
         app.discair.ui.player.PlayerIcons.Swap, "Crossfade", app.discair.player.crossfade.CrossfadeText.summary(xfNow), onClick = onCrossfade,
     )
+    }
 }
 
 @Composable
@@ -482,6 +521,12 @@ private fun Field(
             .heightIn(min = 56.dp)
             .then(if (kind != null) Modifier.semantics { this.contentType = kind } else Modifier),
     )
+}
+
+@Composable
+internal fun CheckLines(state: UiState) {
+    CheckLine("Librarian", state.librarian)
+    CheckLine("Navidrome", state.navidrome)
 }
 
 /** One server's state as icon plus words, never colour alone. Announced to TalkBack on change. */
