@@ -1,3 +1,9 @@
+## 2026-11-13 — Art themes F4 part 1: Flow Now Playing, Queue and Lyrics (PR #1026)
+
+- Merged as `96b2162dfb6e5bd97a6df17c2eb831ff0c2322de` from head `c6cb1a3bfdae41010e2fb412b575588cf7c53b73`; required CI passed (compile, container-smoke, test-and-build, validate-container). `ui/player/FlowNowPlaying.kt` (top bar, 312dp cover at level 3 depth over the pastel wash, plain transport with a round Play, Queue/Lyrics/Equalizer/Crossfade entries), a Flow branch in `SeekBar` (4dp line, round thumb), a `flow` option in `CoverStackLyricsPanel`, one `flow` branch in `NowPlayingSheet`. Queue and Lyrics open as a sheet over Now Playing, as Soft Brut's now do (PR #1017), not as the full pages the mockup draws. Not drawn: the heart (no favourite action) and Sonic path (Crossfade takes its slot). Kept beyond the mockup: quality tag, lyric/fact line, status and sign-in, Earlier songs, long-press row actions, Track images, the sound graph. Other themes unchanged.
+- Verified, filtered (JDK 17): `FlowPlayerRulesTest` (new), `FlowTest`, `ExistingLayoutsTest`, `CoverStackPlayerRulesTest`. Full suite not run. Not seen on a device; no screenshot comparison with `flow/player`; the Photos switch over the lyrics is untested.
+- Next action: the owner checks Now Playing, Queue and Lyrics on the phone; then the rest of F4 (Radio, Downloads, Stats, Server, Settings, Equalizer, Crossfade).
+
 ## 2026-11-13 — Art themes F3 part 2: Flow Discover, Library and Search (PR #1025)
 
 - Merged as `867fc559f9ae6781a46c74e6734b137f38a2b91a` from head `c4ded7e22630f709d67d47247879ccbc78efc17c`. Flow pages from `flow/discover` and `flow/library-search`, behind `isFlow()`; other themes unchanged. Details and differences from the mockups in `docs/ACTIVE_WORK.md` section 2l.
