@@ -1,6 +1,6 @@
 # Android art-led themes: Soft Brut and Flow (proposal)
 
-Status: **proposal; step 0 (PR #1005), S1 (PR #1006) and S2 (PR #1007) built; S3 built (Album, Artist, Genre, Discover, Library and Search pages themed, in PRs #1008, #1009 and #1010); S4 part 1 built (Now Playing, Queue and Lyrics, PR #1011); S4 part 2 built (Radio, Downloads and Library stats, PR #1012); F1 built and merged (Flow palette, layout, font pair and shell controls, PR #1020); F2 built and merged (Flow Home and the Flow top bar, PR #1023); F3 built and merged (PRs #1024 and #1025); F4 built and merged (Flow Now Playing, Queue and Lyrics, PR #1026; Radio, Downloads and Library stats, PR #1027; Settings, Appearance, Server, Equalizer and Crossfade, PR #1028); the owner settled D1, D4 and D6 on 2026-11-13.** Written 2026-11-12. This document and the mockups beside it are the whole change; no application code is touched. Building starts only after the owner approves it and the steps in section 10 are scheduled in `ACTIVE_WORK.md`.
+Status: **built and merged; no code steps remain (closed 2026-11-13).** Step 0 (PR #1005), Soft Brut S1 to S4 (PRs #1006 to #1013) and Flow F1 to F4 (PRs #1020 to #1028) are all on `main`. The owner settled D1, D4 and D6 on 2026-11-13. Written 2026-11-12. What is left is the owner's phone check of each screen against its mockup (section 11); the build record, with what each PR dropped or changed, is in `ACTIVE_WORK.md` section 2l. This document and the mockups beside it stay as the reference for the two themes.
 
 ## 1. What the owner asked for
 
@@ -298,8 +298,8 @@ Each step is one PR with its own tests, in this order. Soft Brut and Flow are in
 | **0** Shared groundwork (merged, PR #1005) | `HomeArtists` and its test; `BrutalShape` accepts 1.5 (D1); the "existing layouts unchanged" test | Tests pass; no screen looks different |
 | **S1** Soft Brut palette and shell (merged, PR #1006) | Palette `softbrut`, `Layout.CoverStack`, the outline recipe, navigation bar, mini player, buttons, chips, tabs, lists, sheets, snackbar | `soft-brut/components` matched; the theme can be chosen in Appearance; contrast test passes |
 | **S2** Soft Brut Home (merged, PR #1007) | Section 6.1 | `soft-brut/home` matched in all five frames; Get, Save and the menu work on the front sleeve |
-| **S3** Soft Brut pages | Album, Artist, Genre, Discover, Library, Search | Their mockups matched |
-| **S4** Soft Brut player and the rest | Now Playing, Queue, Lyrics (part 1, built), Radio, Downloads, Stats (part 2, built), then Server, Settings, Equalizer, Crossfade | Their mockups matched; closeout |
+| **S3** Soft Brut pages (merged, PRs #1008 to #1010) | Album, Artist, Genre, Discover, Library, Search | Their mockups matched |
+| **S4** Soft Brut player and the rest (merged, PRs #1011 to #1013) | Now Playing, Queue, Lyrics (part 1, built), Radio, Downloads, Stats (part 2, built), then Server, Settings, Equalizer, Crossfade | Their mockups matched; closeout |
 | **F1** Flow palette and shell (merged, PR #1020; three colours and the accent tag label differ from the mockup, see D7) | Palette `flow`, `Layout.Flow`, font pair `flow`, depth levels, capsules, grouped list, segmented control, floating bars; settle D2 (done, section 8) | `flow/components` matched |
 | **F2** Flow Home (merged, PR #1023; "played an hour ago" not drawn, Insight button reads "Open album") | Section 6.2 | `flow/home` matched in all four frames |
 | **F3** Flow pages (merged, PRs #1024 and #1025) | Album (with the wash), Artist, Genre, Discover, Library, Search | Their mockups matched |
@@ -311,3 +311,7 @@ Each step is one PR with its own tests, in this order. Soft Brut and Flow are in
 - The unchanged-layout test from step 0 stays green in every step.
 - A screenshot of each built screen beside its mockup PNG in the PR, and a list of anything dropped.
 - The owner checks each step on the phone before the next one starts.
+
+## 12. Closeout
+
+All steps in section 10 are built and merged. Known differences from the mockups are recorded per PR in `ACTIVE_WORK.md` section 2l (for example Flow's Settings has no Fade row, Queue and Lyrics are sheets over Now Playing, and the heart and Sonic path are not drawn). Nothing was checked on a device or by screenshot beside the mockups; that check belongs to the owner and is not queued code work. D5 (dark variants) stays a later proposal.
