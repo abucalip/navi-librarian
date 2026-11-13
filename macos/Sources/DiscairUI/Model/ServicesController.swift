@@ -5,7 +5,7 @@ import Observation
 
 /// The tabs of the Cupertino Settings page (`docs/redesign.md` section 5.3 and 6.2).
 public enum SettingsTab: String, CaseIterable, Sendable {
-    case services = "Services", playback = "Playback", musicFolder = "Music folder", profiles = "Profiles"
+    case services = "Services", playback = "Playback", appearance = "Appearance", musicFolder = "Music folder", profiles = "Profiles"
 }
 
 /// One labelled field of the edit sheet.

@@ -53,7 +53,7 @@ struct PipelineDockTests {
         #expect(c.rows[0].fraction == 1)
     }
 
-    @Test(arguments: [ThemeID.cupertino, ThemeID.zine])
+    @Test(arguments: ThemeID.allCases)
     func rendersDock(theme: ThemeID) throws {
         RenderMode.offscreenScreenshot = true
         let state = AppState(themeID: theme, screen: .home)

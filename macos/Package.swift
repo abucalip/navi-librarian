@@ -28,8 +28,7 @@ let package = Package(
         .target(name: "DiscairAudio", dependencies: ["DiscairCore", "DiscairNavidrome"]),
         .target(
             name: "DiscairUI",
-            dependencies: ["DiscairCore", "DiscairNavidrome", "DiscairLibrarian", "DiscairAudio"],
-            resources: [.copy("Resources/Fonts")]
+            dependencies: ["DiscairCore", "DiscairNavidrome", "DiscairLibrarian", "DiscairAudio"]
         ),
         .executableTarget(name: "DiscairApp", dependencies: ["DiscairUI", "DiscairCore", "DiscairNavidrome", "DiscairLibrarian", .product(name: "Sparkle", package: "Sparkle")]),
         // The Notification Center widget (M6). Built as an app extension: `NSExtensionMain` is the entry point that WidgetKit

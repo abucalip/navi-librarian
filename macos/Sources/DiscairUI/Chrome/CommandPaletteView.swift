@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// The ⌘K palette: a search field over a short list. Type, arrow up or down, Return to run, Escape to close.
-/// One look for both themes, tinted by the theme (rounded and translucent in Cupertino, square and bordered in Zine).
+/// Rounded and translucent, in the Cupertino look.
 struct CommandPaletteView: View {
     @Bindable var state: AppState
     @FocusState private var focused: Bool
@@ -10,8 +10,7 @@ struct CommandPaletteView: View {
 
     var body: some View {
         let results = state.paletteResults()
-        let zine = state.themeID == .zine
-        let shape = RoundedRectangle(cornerRadius: zine ? 0 : 14, style: .continuous)
+        let shape = RoundedRectangle(cornerRadius: 14, style: .continuous)
         VStack(spacing: 0) {
             HStack(spacing: 8) {
                 Image(systemName: "magnifyingglass").foregroundStyle(.secondary).accessibilityHidden(true)
@@ -38,7 +37,7 @@ struct CommandPaletteView: View {
                                     .padding(.horizontal, 10).padding(.top, i == 0 ? 2 : 10).padding(.bottom, 3)
                                     .accessibilityAddTraits(.isHeader)
                             }
-                            row(c, selected: i == state.palette.highlight, zine: zine)
+                            row(c, selected: i == state.palette.highlight)
                         }
                     }
                     .padding(6)
@@ -47,11 +46,10 @@ struct CommandPaletteView: View {
             }
         }
         .frame(width: 560)
-        .background { if zine || RenderMode.offscreenScreenshot { shape.fill(Color(white: 0.95)) } else { shape.fill(.regularMaterial) } }
-        .environment(\.colorScheme, zine || RenderMode.offscreenScreenshot ? .light : colorScheme)
-        .overlay { shape.stroke(zine ? Color.black : Color.primary.opacity(0.12), lineWidth: zine ? 2 : 1) }
-        .background { if zine { Rectangle().fill(Color.black).offset(x: 6, y: 6) } }
-        .shadow(color: .black.opacity(zine ? 0 : 0.25), radius: zine ? 0 : 24, x: 0, y: zine ? 0 : 10)
+        .background { if RenderMode.offscreenScreenshot { shape.fill(CU.bgPanel) } else { shape.fill(.regularMaterial) } }
+        .environment(\.colorScheme, colorScheme)
+        .overlay { shape.stroke(Color.primary.opacity(0.12), lineWidth: 1) }
+        .shadow(color: .black.opacity(0.25), radius: 24, x: 0, y: 10)
         .onAppear { focused = true }
         // On appear the field is often not in the window yet, or the top bar field still holds the focus, so the first request is
         // lost. Ask again once the view has settled.
@@ -72,11 +70,11 @@ struct CommandPaletteView: View {
         state.perform(results[state.palette.highlight])
     }
 
-    private func row(_ c: PaletteCommand, selected: Bool, zine: Bool) -> some View {
-        let primary: Color = selected ? .white : .primary
-        let quiet: Color = selected ? .white.opacity(0.78) : .secondary
+    private func row(_ c: PaletteCommand, selected: Bool) -> some View {
+        let primary: Color = selected ? CU.onAccent : .primary
+        let quiet: Color = selected ? CU.onAccent.opacity(0.78) : .secondary
         return HStack(spacing: 10) {
-            leading(c, zine: zine)
+            leading(c)
             VStack(alignment: .leading, spacing: 1) {
                 Text(c.name.isEmpty ? c.title : c.name).font(.system(size: 14, weight: .medium)).lineLimit(1)
                 if !c.detail.isEmpty { Text(c.detail).font(.system(size: 11.5)).foregroundStyle(quiet).lineLimit(1) }
@@ -93,7 +91,7 @@ struct CommandPaletteView: View {
         }
         .padding(.horizontal, 10).padding(.vertical, 5)
         .foregroundStyle(primary)
-        .background(selected ? Color.accentColor : .clear, in: RoundedRectangle(cornerRadius: zine ? 0 : 8, style: .continuous))
+        .background(selected ? CU.accent : .clear, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
         .contentShape(Rectangle())
         .onTapGesture { state.perform(c) }
         .accessibilityElement(children: .contain)
@@ -102,18 +100,18 @@ struct CommandPaletteView: View {
     }
 
     /// Artwork for albums and songs, the photo for an artist, a small icon for pages and playback.
-    @ViewBuilder private func leading(_ c: PaletteCommand, zine: Bool) -> some View {
+    @ViewBuilder private func leading(_ c: PaletteCommand) -> some View {
         let size: CGFloat = 36
         switch c.kind {
         case .album, .song:
             if let a = c.album ?? c.song?.albumItem {
-                CoverView(album: a).frame(width: size, height: size).clipShape(RoundedRectangle(cornerRadius: zine ? 0 : 5, style: .continuous))
+                CoverView(album: a).frame(width: size, height: size).clipShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
             }
         case .artist:
             ArtistPhoto(name: c.name, size: size)
         case .screen, .playback:
             Image(systemName: c.kind == .playback ? "playpause" : "arrow.turn.down.right").font(.system(size: 13))
-                .frame(width: size, height: size).background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: zine ? 0 : 5, style: .continuous))
+                .frame(width: size, height: size).background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 5, style: .continuous))
         }
     }
 }

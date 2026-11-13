@@ -1,12 +1,12 @@
 import SwiftUI
 
-/// Cupertino (macOS, light). Spec: `docs/design/macos-m4/mockups.html`, `R.cupertino`.
+/// Cupertino (macOS, Day or Night). Spec: `docs/design/macos-m4/mockups.html`, `R.cupertino`.
 /// Rules: glass only on controls (sidebar, toolbar pieces, centre display); opaque white content;
 /// bold SF Pro Display titles (not serif); red-pink accent; Up Next as a trailing inspector.
 struct CupertinoTheme: DiscairTheme {
     let id = ThemeID.cupertino
     let name = "Cupertino"
-    let colorScheme = ColorScheme.light
+    var colorScheme: ColorScheme { CUPalette.current.isNight ? .dark : .light }
 
     func window(state: AppState) -> AnyView {
         AnyView(CupertinoWindow(state: state))
@@ -38,71 +38,74 @@ struct CURGB: Equatable, Sendable {
 /// The old names (`accent`, `muted`, `ink`, `card`, `fill`) are kept as aliases of the new roles, so views that use them compile unchanged.
 enum CU {
     // MARK: Colour roles
+    // Read from `CUPalette.current` (Day or Night, set in Settings > Appearance), so no view holds a colour literal.
 
-    static let contentRGB = CURGB(0xFFFFFF)          // content ground
-    static let bgPanelRGB = CURGB(0xF5F5F7)          // grouped panels, inspector
-    static let bgFillRGB = CURGB(0xECECF0)           // neutral buttons and tracks on white
-    static let bgFillOnPanelRGB = CURGB(0xE6E6EB)    // neutral buttons and tracks on a panel
-    static let textRGB = CURGB(0x1D1D1F)             // primary text
-    static let textSecondaryRGB = CURGB(0x636368)    // secondary text
-    static let textTertiaryRGB = CURGB(0x8E8E93)     // disabled and decorative only, never essential text
-    static let separatorRGB = CURGB(0xE5E5EA)        // hairlines, gridlines
-    static let separatorStrongRGB = CURGB(0xD1D1D6)  // field and outline-button borders
-    static let accentRGB = CURGB(0xD61F4A)           // main action, selection, highlighted series
-    static let accentStrongRGB = CURGB(0xC8163F)     // pressed; accent text on the tint
-    static let accentTintRGB = CURGB(0xFCE8EC)       // selected row ground
-    static let successRGB = CURGB(0x187A48)
-    static let successTintRGB = CURGB(0xE6F4EC)
-    static let warningRGB = CURGB(0x8A5200)
-    static let warningTintRGB = CURGB(0xFFF4DC)
-    static let dangerRGB = CURGB(0xB3261E)           // a brick hue, never the accent; always with an icon and a sentence
-    static let dangerTintRGB = CURGB(0xFBEAE8)
-    static let infoRGB = CURGB(0x0B5CAD)             // not loaded, paused
-    static let infoTintRGB = CURGB(0xE8F1FB)
-    static let chart2RGB = CURGB(0x8E8E93)           // comparison line, baseline dot (graphic, 3:1)
-    static let chart3RGB = CURGB(0xC7C7CC)           // context bars
-    static let chartGridRGB = CURGB(0xE5E5EA)
-    static let chartBaseRGB = CURGB(0xC7C7CC)
-    static let trackerTrackRGB = CURGB(0xDCDCE2)     // unfilled stage-tracker segments (the specimen sheet's value, a step darker than chart.ghost)
-    static let heatRGB: [CURGB] = ([0xECECF0, 0xF6C5D0, 0xEE8FA5, 0xE2537A, 0xD61F4A] as [UInt32]).map { CURGB($0) }
+    private static var p: CUPalette { CUPalette.current }
+    static var contentRGB: CURGB { p.content }                  // content ground
+    static var bgPanelRGB: CURGB { p.panel }                    // grouped panels, inspector
+    static var bgFillRGB: CURGB { p.fill }                      // neutral buttons and tracks on the content ground
+    static var bgFillOnPanelRGB: CURGB { p.fillOnPanel }        // neutral buttons and tracks on a panel
+    static var textRGB: CURGB { p.text }
+    static var textSecondaryRGB: CURGB { p.textSecondary }
+    static var textTertiaryRGB: CURGB { p.textTertiary }        // disabled and decorative only, never essential text
+    static var separatorRGB: CURGB { p.separator }
+    static var separatorStrongRGB: CURGB { p.separatorStrong }  // field and outline-button borders
+    static var accentRGB: CURGB { p.accent }                    // main action, selection, highlighted series
+    static var accentStrongRGB: CURGB { p.accentStrong }        // pressed; accent text on the tint
+    static var accentTintRGB: CURGB { p.accentTint }            // selected row ground
+    static var successRGB: CURGB { p.success }
+    static var successTintRGB: CURGB { p.successTint }
+    static var warningRGB: CURGB { p.warning }
+    static var warningTintRGB: CURGB { p.warningTint }
+    static var dangerRGB: CURGB { p.danger }                    // a brick hue, never the accent; always with an icon and a sentence
+    static var dangerTintRGB: CURGB { p.dangerTint }
+    static var infoRGB: CURGB { p.info }                        // not loaded, paused
+    static var infoTintRGB: CURGB { p.infoTint }
+    static var chart2RGB: CURGB { p.chart2 }                    // comparison line, baseline dot (graphic, 3:1)
+    static var chart3RGB: CURGB { p.chart3 }                    // context bars
+    static var chartGridRGB: CURGB { p.chartGrid }
+    static var chartBaseRGB: CURGB { p.chartBase }
+    static var trackerTrackRGB: CURGB { p.tracker }             // unfilled stage-tracker segments
+    static var heatRGB: [CURGB] { p.heat }
 
-    static let content = contentRGB.color
-    static let bgPanel = bgPanelRGB.color
-    static let bgFill = bgFillRGB.color
-    static let bgFillOnPanel = bgFillOnPanelRGB.color
-    static let text = textRGB.color
-    static let textSecondary = textSecondaryRGB.color
-    static let textTertiary = textTertiaryRGB.color
-    static let separator = separatorRGB.color
-    static let separatorStrong = separatorStrongRGB.color
-    static let accent = accentRGB.color
-    static let accentStrong = accentStrongRGB.color
-    static let accentTint = accentTintRGB.color
-    static let success = successRGB.color
-    static let successTint = successTintRGB.color
-    static let warning = warningRGB.color
-    static let warningTint = warningTintRGB.color
-    static let danger = dangerRGB.color
-    static let dangerTint = dangerTintRGB.color
-    static let info = infoRGB.color
-    static let infoTint = infoTintRGB.color
-    static let chart1 = accent
-    static let chart2 = chart2RGB.color
-    static let chart3 = chart3RGB.color
-    static let chartGhost = bgFill
-    static let chartGrid = chartGridRGB.color
-    static let chartBase = chartBaseRGB.color
-    static let trackerTrack = trackerTrackRGB.color
-    static let heat: [Color] = heatRGB.map(\.color)
-    /// The pastel wash behind the window (lilac, blush, mist); the glass sidebar and toolbar float over it.
-    static let backdropRGB: [CURGB] = [CURGB(0xEFE9F7), CURGB(0xF7ECEA), CURGB(0xEAF1F7)]
-    static let backdrop = LinearGradient(colors: backdropRGB.map(\.color), startPoint: .topLeading, endPoint: .bottomTrailing)
-    /// Glass tint: rgba(246,246,249,.74) in the mockup.
-    static let glassTintRGB = CURGB(0xF6F6F9)
+    static var content: Color { contentRGB.color }
+    static var bgPanel: Color { bgPanelRGB.color }
+    static var bgFill: Color { bgFillRGB.color }
+    static var bgFillOnPanel: Color { bgFillOnPanelRGB.color }
+    static var text: Color { textRGB.color }
+    static var textSecondary: Color { textSecondaryRGB.color }
+    static var textTertiary: Color { textTertiaryRGB.color }
+    static var separator: Color { separatorRGB.color }
+    static var separatorStrong: Color { separatorStrongRGB.color }
+    static var accent: Color { accentRGB.color }
+    static var accentStrong: Color { accentStrongRGB.color }
+    static var accentTint: Color { accentTintRGB.color }
+    static var success: Color { successRGB.color }
+    static var successTint: Color { successTintRGB.color }
+    static var warning: Color { warningRGB.color }
+    static var warningTint: Color { warningTintRGB.color }
+    static var danger: Color { dangerRGB.color }
+    static var dangerTint: Color { dangerTintRGB.color }
+    static var info: Color { infoRGB.color }
+    static var infoTint: Color { infoTintRGB.color }
+    static var chart1: Color { accent }
+    static var chart2: Color { chart2RGB.color }
+    static var chart3: Color { chart3RGB.color }
+    static var chartGhost: Color { bgFill }
+    static var chartGrid: Color { chartGridRGB.color }
+    static var chartBase: Color { chartBaseRGB.color }
+    static var trackerTrack: Color { trackerTrackRGB.color }
+    static var heat: [Color] { heatRGB.map(\.color) }
+    /// The wash behind the window (pastel by day, near black at night); the glass sidebar and toolbar float over it.
+    static var backdropRGB: [CURGB] { p.backdrop }
+    static var backdrop: LinearGradient { LinearGradient(colors: backdropRGB.map(\.color), startPoint: .topLeading, endPoint: .bottomTrailing) }
+    /// Glass tint: rgba(246,246,249,.74) by day in the mockup.
+    static var glassTintRGB: CURGB { p.glassTint }
 
     // Roles added in M10b so that no view needs a colour literal.
-    /// Label on the accent fill (the one primary action, a selected row).
-    static let onAccent = contentRGB.color
+    /// Label on the accent fill (the one primary action, a selected row): white by day, near black at night.
+    static var onAccentRGB: CURGB { p.onAccent }
+    static var onAccent: Color { onAccentRGB.color }
     /// White marks and text over artwork or a dark gradient. Not a light-ground colour.
     static let onMedia = Color.white
     /// Source of shadows and dimming scrims; always used with an opacity.
@@ -129,11 +132,11 @@ enum CU {
     /// Mockup glass: rgba(246,246,249,.74) over the blur. Bare `.regular` is too clear over the pastel backdrop.
     /// Offscreen screenshot renders blank when the tint is applied, so tests switch it off (`RenderMode`).
     static var glass: Glass {
-        RenderMode.offscreenScreenshot ? .regular : .regular.tint(glassTintRGB.color.opacity(0.74))
+        RenderMode.offscreenScreenshot ? .regular : .regular.tint(glassTintRGB.color.opacity(p.glassOpacity))
     }
     static let sidebarRadius: CGFloat = 20
     /// Shell geometry kept as it is (section 4.3). These are the named exceptions to the 4, 8, 16, 24, 32 scale: changing them
-    /// would move every screen and the Zine-shared chrome.
+    /// would move every screen and the shared chrome.
     enum Shell {
         static let sidebarWidth: CGFloat = 216
         /// Gap between the window edge and the floating sidebar; the artwork slot uses the same column.
@@ -148,24 +151,8 @@ enum CU {
     static let windowRadius: CGFloat = 26
     static func title(_ size: CGFloat) -> SwiftUI.Font { .system(size: size, weight: .bold).width(.standard) }
 
-    /// Every text and accent pair that section 4.1 says must reach 4.5:1. `text.tertiary` is left out on purpose: it is 3.3:1 and decorative only.
-    /// Accent text on the accent tint is also left out: it is 4.31:1, so the table uses `accent.strong` there instead.
-    static let contrastPairs: [(name: String, text: CURGB, ground: CURGB)] = [
-        ("text on content", textRGB, contentRGB),
-        ("text on panel", textRGB, bgPanelRGB),
-        ("text on fill", textRGB, bgFillRGB),
-        ("text secondary on content", textSecondaryRGB, contentRGB),
-        ("text secondary on panel", textSecondaryRGB, bgPanelRGB),
-        ("text secondary on fill", textSecondaryRGB, bgFillRGB),
-        ("white label on accent", contentRGB, accentRGB),
-        ("accent on panel", accentRGB, bgPanelRGB),
-        ("accent strong on accent tint", accentStrongRGB, accentTintRGB),
-        ("success on panel", successRGB, bgPanelRGB),
-        ("success on success tint", successRGB, successTintRGB),
-        ("warning on warning tint", warningRGB, warningTintRGB),
-        ("danger on danger tint", dangerRGB, dangerTintRGB),
-        ("info on info tint", infoRGB, infoTintRGB),
-    ]
+    /// Every text and accent pair that must reach 4.5:1, for the palette now in use. `text.tertiary` is left out on purpose: decorative only.
+    static var contrastPairs: [(name: String, text: CURGB, ground: CURGB)] { p.contrastPairs }
 
     // MARK: Spacing (4, 8, 16, 24, 32 only)
 

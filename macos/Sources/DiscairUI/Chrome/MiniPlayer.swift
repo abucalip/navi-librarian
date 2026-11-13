@@ -36,12 +36,10 @@ public struct MiniPlayerView: View {
 
     public var body: some View {
         let content = MiniPlayerContent(current: p.current, upNext: p.queue.upNext)
-        let zine = state.themeID == .zine
         HStack(spacing: 12) {
             CoverView(album: album, px: 240)
                 .frame(width: 96, height: 96)
-                .clipShape(RoundedRectangle(cornerRadius: zine ? 0 : 10, style: .continuous))
-                .overlay { if zine { Rectangle().stroke(.black, lineWidth: 2) } }
+                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
             VStack(alignment: .leading, spacing: 4) {
                 Text(content.title).font(.system(size: 14, weight: .bold)).lineLimit(1)
                 Text(content.artist).font(.system(size: 12)).foregroundStyle(.white.opacity(0.7)).lineLimit(1)

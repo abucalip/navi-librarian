@@ -147,7 +147,7 @@ private func circularDistance(_ a: Double, _ b: Double) -> Double {
         #expect(GraphLayout.radius(of: 1, style: .sectors) == 1 && GraphLayout.radius(of: 0, style: .sectors) == 0)
     }
 
-    @Test func theClassicStyleKeepsTheRingsTheZineExplorerDraws() {
+    @Test func theClassicStyleKeepsItsRings() {
         #expect(GraphLayout.radius(of: 1) == 1 && abs(GraphLayout.radius(of: 2) - 1.9) < 1e-9 && GraphLayout.radius(of: 0) == 0)
         // Step 1 spreads evenly in the classic style, whatever the kinds: two nodes sit at the top and the bottom.
         let items = [GraphLayout.Item(id: "a", depth: 1, via: "c", kind: "artist"), GraphLayout.Item(id: "b", depth: 1, via: "c", kind: "release")]

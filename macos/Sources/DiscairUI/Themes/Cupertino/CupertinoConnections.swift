@@ -4,7 +4,7 @@ import SwiftUI
 /// Connections, the credit graph, as `docs/redesign.md` section 5.2 draws it (mockups `connections--*`): a control bar with every
 /// control labelled, the graph in sectors by kind with nodes that are always named, a List view for the keyboard, VoiceOver and
 /// dense walks, a 300 pt inspector, and a sentence for each state (no start, not loaded, truncated, failed).
-/// The data is the explorer model's; the Zine theme keeps its own look in `GraphExplorerView`.
+/// The data is the explorer model's; `GraphExplorerView` hands over to it.
 struct CupertinoConnections: View {
     let state: AppState
     private var graph: GraphExplorerModel { state.graph }

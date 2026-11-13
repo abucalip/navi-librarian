@@ -67,6 +67,8 @@ public final class NoopActions: DiscairActions {
 @Observable
 public final class AppState {
     public var themeID: ThemeID
+    /// Day or Night and the accent colour (Settings > Appearance).
+    public let appearance: AppearanceModel
     public var screen: Screen {
         didSet {
             // Now Playing remembers where it was opened from, so its chevron goes back there.
@@ -137,8 +139,6 @@ public final class AppState {
     /// The optional SMB mount of the music folder (Settings; off by default).
     public let share: ShareModel
     public var selectedArtist: ArtistItem = ArtistItem(id: 0, name: "Talk Talk", albumCount: 5)
-    /// The letter shown in the Zine A-Z index.
-    public var selectedLetter = "T"
     /// Cupertino's Up Next inspector. It sits over whatever screen is showing, so opening it never changes the screen.
     public var queueOpen = false
     /// The Library page's tab, and the text in its search field (it stays when the tab changes).
@@ -159,6 +159,7 @@ public final class AppState {
         let acquisition = AcquisitionModel(defaults: defaults)
         self.acquisition = acquisition
         self.homeDefaults = defaults
+        self.appearance = AppearanceModel(defaults: defaults)
         self.services = ServicesController(defaults: defaults)
         self.session = session
         self.themeID = themeID
@@ -238,7 +239,7 @@ public final class AppState {
         await library.loadSongs(navidrome: navidrome)
         Task { await library.loadAllAlbums(navidrome: navidrome); await refreshHomeDashboard() }
         share.noteServerPaths(library.songServerPaths)
-        if library.isLive { selectedArtist = library.artists.first ?? selectedArtist; selectedLetter = selectedArtist.letter }
+        if library.isLive { selectedArtist = library.artists.first ?? selectedArtist }
         if library.isLive, let first = library.recent.first ?? library.albums.first { selectedAlbum = first }
     }
 
@@ -611,7 +612,7 @@ public final class AppState {
 
     public func open(artist: ArtistItem) {
         if screen != .artist && screen != .nowPlaying { artistBack = Self.listScreen(screen) }
-        selectedArtist = artist; selectedLetter = artist.letter; screen = .artist
+        selectedArtist = artist; screen = .artist
     }
 
     /// Goes to a screen. Up Next in Cupertino opens the inspector over the current screen instead.

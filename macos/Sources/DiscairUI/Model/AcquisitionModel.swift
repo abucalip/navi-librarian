@@ -163,7 +163,7 @@ public final class AcquisitionModel {
 
     public var activeCount: Int { jobs.filter { $0.phase == .working || $0.phase == .queued }.count }
 
-    /// The Zine ticker: what is moving, what waits, what arrived, how many failed.
+    /// The pipeline dock: what is moving, what waits, what arrived, how many failed.
     public var tickerText: String {
         guard !visibleJobs.isEmpty else { return "Pipeline: no downloads in progress" }
         var parts: [String] = []

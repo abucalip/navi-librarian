@@ -11,7 +11,7 @@ struct PathsSheet: View {
     static let size = CGSize(width: 820, height: 520)
     private static let inspectorWidth: CGFloat = 300
 
-    private var accent: Color { state.themeID == .zine ? Z.red : CU.accent }
+    private var accent: Color { CU.accent }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -287,7 +287,7 @@ private struct SheetButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(.system(size: 14, weight: .semibold))
-            .foregroundStyle(prominent ? Color.white : Color.primary)
+            .foregroundStyle(prominent ? CU.onAccent : Color.primary)
             .padding(.horizontal, 14).padding(.vertical, 6)
             .background(RoundedRectangle(cornerRadius: 9, style: .continuous).fill(prominent ? accent : Color(nsColor: .controlBackgroundColor)))
             .overlay(RoundedRectangle(cornerRadius: 9, style: .continuous).stroke(prominent ? Color.clear : Color.primary.opacity(0.25), lineWidth: 1))

@@ -13,6 +13,7 @@ public struct RootView: View {
         GeometryReader { g in
             ScrollView([.horizontal, .vertical]) {
                 theme.window(state: state)
+                    .id(state.appearance.revision)
                     .safeAreaInset(edge: .top, spacing: 0) {
                         if let notice = state.offlineNotice { OfflineBanner(state: state, text: notice) }
                     }
@@ -26,7 +27,7 @@ public struct RootView: View {
         .modifier(CommandPaletteOverlay(state: state))
         .sheet(item: $state.sonicPath) { SonicPathSheet(state: state, model: $0) }
         .sheet(item: $state.paths) { PathsSheet(state: state, model: $0) }
-        .preferredColorScheme(theme.colorScheme)
+        .preferredColorScheme(state.appearance.mode == .night ? .dark : .light)
         .environment(\.artwork, state.artwork)
         .frame(minWidth: 480, minHeight: 360)
     }
