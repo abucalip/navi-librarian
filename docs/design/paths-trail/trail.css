@@ -1,0 +1,95 @@
+/*
+ * Paths sheets, Trail layout: components (docs/pathsredesign.md).
+ * 1 CSS px = 1 dp. Colours come only from tokens.css. Class names map to the Compose pieces named in the proposal.
+ */
+
+.pt-sheet {
+  background: var(--surface);
+  color: var(--text);
+  font: 14px/20px Roboto, system-ui, sans-serif; /* bodyMedium */
+  border-radius: 24px 24px 0 0;
+  padding: 8px 16px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.pt-sheet * { box-sizing: border-box; }
+.pt-handle { width: 32px; height: 4px; border-radius: 2px; background: var(--muted); opacity: .4; margin: 8px auto 12px; }
+
+/* ---- header: the start, then its name ---- */
+.pt-head { display: flex; align-items: center; gap: 12px; padding-bottom: 8px; }
+.pt-head .pt-pic { --size: 40px; }
+.pt-eyebrow { font: 500 12px/16px Roboto, system-ui, sans-serif; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); } /* labelMedium */
+.pt-title { font: 400 22px/28px Roboto, system-ui, sans-serif; } /* titleLarge */
+
+/* ---- tabs: words with a mark under the chosen one ---- */
+.pt-tabs { display: flex; gap: 20px; overflow-x: auto; white-space: nowrap; border-bottom: 1px solid var(--edge); scrollbar-width: none; margin: 0 -16px; padding: 0 16px; }
+.pt-tabs::-webkit-scrollbar { display: none; }
+.pt-tab { flex: none; min-height: 48px; display: flex; align-items: center; font: 500 14px/20px Roboto, system-ui, sans-serif; color: var(--muted); border-bottom: 3px solid transparent; } /* labelLarge */
+.pt-tab[aria-selected="true"] { color: var(--text); font-weight: 700; border-bottom-color: var(--accent-text); }
+
+.pt-desc { color: var(--muted); padding: 4px 0 8px; }
+
+/* ---- the trail ---- */
+.pt-trail { padding-left: 24px; display: flex; flex-direction: column; gap: 8px; }
+.pt-trail > * { position: relative; }
+/* The line: 2dp wide, its centre 8dp from the content edge. Every item draws its own piece, up through the gap above it (8dp, 12dp above a link). */
+.pt-trail > *::before { content: ""; position: absolute; left: -17px; width: 2px; top: -12px; bottom: 0; background: var(--edge); }
+.pt-trail > :first-child::before { top: 14px; }
+/* The last step ends the line at its elbow. */
+.pt-trail > .pt-last::before { bottom: auto; height: calc(12px + var(--elbow) + 1px); }
+
+/* A link: what connects the steps under it. Not a button. */
+.pt-link { align-self: flex-start; max-width: 100%; margin-top: 4px; padding: 4px 12px; border-radius: 999px; background: var(--accent-dim); color: var(--text); font: 600 14px/20px Roboto, system-ui, sans-serif; }
+.pt-link:first-child { margin-top: 0; }
+.pt-link span { font-weight: 400; }
+/* Its dot: 10dp, on the line, ringed 3dp in the sheet's own ground so the line stops short of it. */
+.pt-link::after { content: ""; position: absolute; left: -21px; top: 50%; width: 10px; height: 10px; margin-top: -5px; border-radius: 50%; background: var(--accent); outline: var(--dot-outline) solid var(--edge); box-shadow: 0 0 0 calc(3px + var(--dot-outline)) var(--surface); }
+
+/* A step, closed: picture, name, one line, a chevron. Min height 64dp; the whole row is the button. */
+.pt-stop { --elbow: 31px; }
+.pt-stop::after { content: ""; position: absolute; left: -15px; width: 11px; height: 2px; top: var(--elbow); background: var(--edge); }
+.pt-row { display: flex; align-items: center; gap: 12px; min-height: 64px; padding: 8px 0; }
+.pt-row > div:not(.pt-pic) { flex: 1; min-width: 0; }
+.pt-name { font: 500 16px/24px Roboto, system-ui, sans-serif; } /* titleMedium */
+.pt-sub { color: var(--muted); }
+.pt-chev { flex: none; width: 24px; height: 24px; color: var(--muted); }
+.pt-chev svg { width: 24px; height: 24px; display: block; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+/* A step, opened in place: the app's Panel on the raised ground. */
+.pt-open { --elbow: 47px; background: var(--raised); border: var(--outline) solid var(--edge); border-radius: var(--radius); box-shadow: var(--shadow) var(--shadow) 0 var(--shadow-color); padding: 12px; display: flex; flex-direction: column; gap: 12px; }
+.pt-open .pt-row { min-height: 72px; padding: 0; }
+.pt-open .pt-row .pt-pic { --size: 72px; }
+.pt-open > .pt-row .pt-name { font: 400 22px/28px Roboto, system-ui, sans-serif; } /* titleLarge */
+.pt-story { font: 400 16px/24px Roboto, system-ui, sans-serif; } /* bodyLarge */
+.pt-story i { font-weight: 500; }
+
+/* Inside an opened step: a reason card sits on the sheet's ground so it reads against the raised card. */
+.pt-card { background: var(--surface); border: var(--outline) solid var(--edge); border-radius: calc(var(--radius) - 4px); padding: 12px; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.pt-card .pt-big { font: 400 20px/26px Roboto, system-ui, sans-serif; }
+.pt-pair { display: flex; gap: 8px; }
+.pt-pair > * { flex: 1; }
+.pt-pair.pt-center .pt-card { align-items: center; text-align: center; }
+.pt-card.pt-split { flex-direction: row; align-items: center; gap: 12px; }
+.pt-card.pt-split > div:not(.pt-pic) { flex: 1; min-width: 0; }
+.pt-mini { display: flex; align-items: center; gap: 8px; }
+.pt-mini .pt-pic { --size: 40px; }
+
+/* The two things to open: the person as a circle, the album as a square, each with its name below. */
+.pt-find { display: flex; justify-content: center; gap: 16px; }
+.pt-find > div { width: 128px; display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; }
+.pt-find .pt-pic { --size: 96px; }
+
+/* Sideman: the records a leader led, one button each. */
+.pt-records { display: flex; flex-direction: column; gap: 8px; }
+.pt-record { display: flex; align-items: center; gap: 12px; min-height: 64px; padding: 8px 12px; background: var(--surface); border: var(--outline) solid var(--edge); border-radius: calc(var(--radius) - 4px); }
+.pt-record > div:not(.pt-pic) { flex: 1; min-width: 0; }
+.pt-record .pt-pic { --size: 40px; }
+.pt-record small { font: 400 12px/16px Roboto, system-ui, sans-serif; color: var(--muted); display: block; }
+
+/* Under the trail: what the server cut or skipped. */
+.pt-note { font: 400 12px/16px Roboto, system-ui, sans-serif; color: var(--muted); padding-top: 8px; }
+
+/* Pictures. In the app these are PathRowCover / PathAlbumCover (square, 4dp corners) and ArtistPhoto (circle). */
+.pt-pic { --size: 48px; --hue: 200; flex: none; width: var(--size); height: var(--size); border-radius: 4px; display: grid; place-items: center; color: #fff; font: 600 calc(var(--size) * .28)/1 Roboto, system-ui, sans-serif; background: linear-gradient(140deg, hsl(var(--hue) 42% 48%), hsl(calc(var(--hue) + 50) 46% 26%)); }
+.pt-pic.pt-round { border-radius: 50%; }

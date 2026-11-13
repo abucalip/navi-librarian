@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Paths Trail Mockups</title>
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="trail.css">
+<style>
+/* Page chrome only. The design itself is tokens.css and trail.css. */
+body{margin:0;background:var(--behind);color:var(--text);font:15px/1.5 Roboto,system-ui,sans-serif;padding:24px max(16px,env(safe-area-inset-right,0px)) 56px max(16px,env(safe-area-inset-left,0px))}
+.wrap{max-width:800px;margin:0 auto;display:flex;flex-direction:column;gap:28px}
+h1{font:700 28px/1.15 Roboto,system-ui,sans-serif;margin:0}
+h2{font:700 20px/1.2 Roboto,system-ui,sans-serif;margin:16px 0 0;padding-top:20px;border-top:1px solid var(--edge)}
+h3{font:600 16px/1.3 Roboto,system-ui,sans-serif;margin:0}
+.lede{color:var(--muted);margin:6px 0 0;max-width:68ch}
+.pal{display:flex;flex-wrap:wrap;gap:8px}
+.pal button{font:600 13px Roboto,system-ui,sans-serif;min-height:40px;padding:0 14px;border-radius:999px;border:1px solid var(--edge);background:var(--surface);color:var(--text);cursor:pointer}
+.pal button[aria-pressed="true"]{background:var(--text);color:var(--surface);border-color:var(--text)}
+.pal button:focus-visible{outline:2px solid var(--accent-text);outline-offset:2px}
+.tab{display:flex;flex-direction:column;gap:12px}
+.pair{display:flex;flex-wrap:wrap;gap:20px;align-items:flex-start}
+.col{flex:1 1 320px;max-width:380px;min-width:0;display:flex;flex-direction:column;gap:6px}
+.cap{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;font-weight:600}
+.frame{border:1px solid var(--edge);border-radius:28px;overflow:hidden;background:var(--behind);padding-top:28px}
+.shot .hide{display:none}
+.shot .wrap{gap:0}
+.shot body,body.shot{padding-top:16px;padding-bottom:16px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="hide">
+    <h1>Paths sheets: Trail</h1>
+    <p class="lede">Every tab of the Album Paths and Artist Paths sheets, closed and with its first step opened in place. Names, counts and sentences are example data, not server output. Switch the palette to see the same layout on a light Classic, a dark Classic, a Brutal and the Flow theme.</p>
+  </header>
+  <div class="pal hide" id="pal"></div>
+  <div id="out"></div>
+</div>
+<script>
+const hue = s => { let h = 0; for (const c of s) h = (h * 31 + c.charCodeAt(0)) % 360; return h; };
+const ini = s => s.replace(/[^A-Za-z0-9 ]/g, "").split(" ").filter(Boolean).slice(0, 2).map(w => w[0].toUpperCase()).join("");
+const pic = (name, round, size) => `<div class="pt-pic${round ? " pt-round" : ""}" style="--hue:${hue(name)}${size ? ";--size:" + size + "px" : ""}">${ini(name)}</div>`;
+const chev = up => `<span class="pt-chev"><svg viewBox="0 0 24 24"><path d="${up ? "M6 15l6-6 6 6" : "M6 9l6 6 6-6"}"/></svg></span>`;
+const card = (eyebrow, big, extra = "") => `<div class="pt-card"><div class="pt-eyebrow">${eyebrow}</div><div class="pt-big">${big}</div>${extra}</div>`;
+const story = html => `<div class="pt-story">${html}</div>`;
+const find = (person, album) => `<div class="pt-find">${person ? `<div>${pic(person, true)}<span>${person}</span></div>` : ""}${album ? `<div>${pic(album)}<span>${album}</span></div>` : ""}</div>`;
+const lib = owned => owned ? "In your library" : "Not in your library";
+
+const A = "Kind of Blue", M = "Miles Davis";
+const TABS = [
+  // ---------------- album sheet ----------------
+  { id: "album-crew", sheet: "album", label: "Studio crew",
+    desc: `Albums in your library that share a producer, engineer or mixer credit with ${A}.`,
+    groups: [
+      { l: "Fred Plaut", k: "production credit", stops: [
+        { n: "Time Out", s: "The Dave Brubeck Quartet", subs: ["The Dave Brubeck Quartet", lib(true)],
+          body: card("Production credit", "Fred Plaut") + story(`Fred Plaut is credited as engineer on <i>${A}</i> and on <i>Time Out</i>.`) + find("Fred Plaut", "Time Out") },
+        { n: "Mingus Ah Um", s: "Charles Mingus" }, { n: "Sketches of Spain", s: "Miles Davis" } ] },
+      { l: "Irving Townsend", k: "production credit", stops: [{ n: "Lady in Satin", s: "Billie Holiday" }, { n: "Such Sweet Thunder", s: "Duke Ellington" }] },
+      { l: "Teo Macero", k: "production credit", stops: [{ n: "Monk's Dream", s: "Thelonious Monk" }] } ] },
+  { id: "album-guests", sheet: "album", label: "Guest list",
+    desc: `Albums in your library where the guests credited on ${A} also appear.`,
+    groups: [
+      { l: "John Coltrane", k: "guest credit", stops: [
+        { n: "Blue Train", s: "John Coltrane", subs: ["John Coltrane", lib(true)],
+          body: card("Guest credit", "John Coltrane") + story(`John Coltrane plays tenor saxophone on <i>${A}</i> and on <i>Blue Train</i>.`) + find("John Coltrane", "Blue Train") },
+        { n: "Giant Steps", s: "John Coltrane" } ] },
+      { l: "Bill Evans", k: "guest credit", stops: [{ n: "Waltz for Debby", s: "Bill Evans Trio" }, { n: "Sunday at the Village Vanguard", s: "Bill Evans Trio" }] },
+      { l: "Cannonball Adderley", k: "guest credit", stops: [{ n: "Somethin' Else", s: "Cannonball Adderley" }] } ] },
+  { id: "album-works", sheet: "album", label: "Covers and sources",
+    desc: `Other albums in your library with a recording of a song on ${A}, and the works they come from.`,
+    groups: [
+      { l: "Blue in Green", k: "same work", stops: [
+        { n: "Portrait in Jazz", s: "Bill Evans Trio", subs: ["Bill Evans Trio", lib(true)],
+          body: card("Same work", "Blue in Green") + story(`<i>Portrait in Jazz</i> has a recording of <i>Blue in Green</i>, a song on <i>${A}</i>.`) + find(null, "Portrait in Jazz") } ] },
+      { l: "So What", k: "same work", stops: [{ n: "Beyond the Blue Horizon", s: "George Benson" }] },
+      { l: "So What", k: "related work", stops: [{ n: "Impressions", s: "John Coltrane" }] } ] },
+  { id: "album-moment", sheet: "album", label: "Same year, same scene",
+    desc: `Albums in your library from the same years as ${A}, linked by a label, an area or a shared artist.`,
+    groups: [
+      { l: "Columbia", k: "same label", stops: [
+        { n: "Time Out", s: "The Dave Brubeck Quartet", subs: ["The Dave Brubeck Quartet", lib(true)],
+          body: `<div class="pt-pair">${card("Same label", "Columbia")}${card("Same period", "Within 1 year")}</div>` + story(`<i>Time Out</i> and <i>${A}</i> came out on Columbia within 1 year of each other.`) + find(null, "Time Out") },
+        { n: "Mingus Ah Um", s: "Charles Mingus" } ] },
+      { l: "New York", k: "same area", stops: [{ n: "Giant Steps", s: "John Coltrane" }] },
+      { l: "Paul Chambers", k: "shared artist", stops: [{ n: "Kelly Blue", s: "Wynton Kelly" }] } ] },
+  { id: "album-room", sheet: "album", label: "Same room",
+    desc: `Albums in your library with a recording made in the same studio or at the same event as a recording on ${A}.`,
+    groups: [
+      { l: "Columbia 30th Street Studio", k: "recorded at", stops: [
+        { n: "Time Out", s: "The Dave Brubeck Quartet", subs: ["The Dave Brubeck Quartet", lib(true)],
+          body: `<div class="pt-pair"><div class="pt-mini">${pic(A)}<span>${A}</span></div><div class="pt-mini">${pic("Time Out")}<span>Time Out</span></div></div>` + card("Recorded at", "Columbia 30th Street Studio") + story(`Recordings on <i>${A}</i> and on <i>Time Out</i> were made at Columbia 30th Street Studio.`) + find(null, "Time Out") },
+        { n: "Mingus Ah Um", s: "Charles Mingus" }, { n: "Sketches of Spain", s: "Miles Davis" } ] } ] },
+  { id: "album-gaps", sheet: "album", label: "Listen-through gaps",
+    desc: `Albums in your library that share a credit with ${A} and that you have played little or never.`,
+    groups: [
+      { l: "John Coltrane", k: "guest credit", stops: [
+        { n: "Olé Coltrane", s: "John Coltrane · Not played", subs: ["John Coltrane", lib(true)],
+          body: card("Your listening", "Not played") + card("Guest credit", "John Coltrane") + story(`John Coltrane plays on <i>${A}</i> and leads <i>Olé Coltrane</i>.`) + find("John Coltrane", "Olé Coltrane") } ] },
+      { l: "Fred Plaut", k: "production credit", stops: [{ n: "Sketches of Spain", s: "Miles Davis · Not played" }, { n: "Mingus Ah Um", s: "Charles Mingus · Not played" }] } ],
+    note: "2 albums reached by these credits left out because you have played them more than 2 times." },
+  { id: "album-ear", sheet: "album", label: "Neighbours by ear",
+    desc: `Albums in your library that sound like ${A}, found from 5 of its tracks.`,
+    groups: [
+      { l: "4 of 5 tracks", k: "sound alike", stops: [
+        { n: "Sketches of Spain", s: "Miles Davis · 1960", subs: ["Miles Davis", "1960", lib(true)],
+          body: card("Sounds alike", "4 of 5 tracks") + story(`4 tracks of <i>${A}</i> have a close match on <i>Sketches of Spain</i>.`) + find(null, "Sketches of Spain") } ] },
+      { l: "3 of 5 tracks", k: "sound alike", stops: [{ n: "Moon Beams", s: "Bill Evans Trio · 1962" }, { n: "Waltz for Debby", s: "Bill Evans Trio · 1962" }] },
+      { l: "2 of 5 tracks", k: "sound alike", stops: [{ n: "Chet", s: "Chet Baker · 1959" }] } ] },
+
+  // ---------------- artist sheet ----------------
+  { id: "artist-musician", sheet: "artist", label: "Follow the musician",
+    desc: `Songs, not in your library, by musicians who also played with ${M}.`,
+    groups: [
+      { l: "John Coltrane", k: "musician", stops: [
+        { n: "Naima", s: "Giant Steps · John Coltrane", subs: ["on Giant Steps", "by John Coltrane", lib(false)],
+          body: story(`John Coltrane played tenor saxophone on a recording by ${M}, and recorded <i>Naima</i>.`) + find("John Coltrane", "Giant Steps") },
+        { n: "Central Park West", s: "Coltrane's Sound · John Coltrane" } ] },
+      { l: "Bill Evans", k: "musician", stops: [{ n: "Peace Piece", s: "Everybody Digs Bill Evans · Bill Evans" }] },
+      { l: "Herbie Hancock", k: "musician", stops: [{ n: "Maiden Voyage", s: "Maiden Voyage · Herbie Hancock" }] } ] },
+  { id: "artist-sideman", sheet: "artist", label: "Sideman",
+    desc: `Artists whose records ${M} played on as a sideman.`,
+    groups: [
+      { l: "Somethin' Else", k: "a record they led", stops: [
+        { n: "Cannonball Adderley", s: "In your library", r: 1, subs: ["Person", lib(true)],
+          body: `<div class="pt-name" style="font-size:16px">Records Cannonball Adderley led</div><div class="pt-records"><div class="pt-record">${pic("Somethin' Else")}<div><div class="pt-name">Somethin' Else</div><small>carries <i>Autumn Leaves</i>, a recording ${M} played on.</small></div><span class="pt-chev"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></div></div>` } ] },
+      { l: "The Savoy Sessions", k: "a record they led", stops: [{ n: "Charlie Parker", s: "In your library", r: 1 }] },
+      { l: "Ezz-thetic", k: "a record they led", stops: [{ n: "Lee Konitz", s: "Not in your library", r: 1 }] } ] },
+  { id: "artist-label", sheet: "artist", label: "Label",
+    desc: `Albums released on the same labels as ${M}'s records.`,
+    groups: [
+      { l: "Columbia", k: "same label", stops: [
+        { n: "Time Out", s: "The Dave Brubeck Quartet", subs: ["The Dave Brubeck Quartet", lib(true)],
+          body: `<div class="pt-card pt-split"><div class="pt-big">Columbia</div><div><div class="pt-sub" style="font-size:12px">Same label as:</div><div class="pt-mini">${pic(A)}<span>${A}</span></div></div></div>` + find("The Dave Brubeck Quartet", "Time Out") },
+        { n: "Mingus Ah Um", s: "Charles Mingus" } ] },
+      { l: "Prestige", k: "same label", stops: [{ n: "Saxophone Colossus", s: "Sonny Rollins" }] },
+      { l: "Blue Note", k: "same label", stops: [{ n: "Moanin'", s: "Art Blakey and the Jazz Messengers" }] } ] },
+  { id: "artist-composition", sheet: "artist", label: "Composition",
+    desc: `Other recordings of the same compositions as ${M}'s, covers and live versions included.`,
+    groups: [
+      { l: "So What", k: `composed by ${M}`, stops: [
+        { n: "So What", p: "Beyond the Blue Horizon", s: "George Benson · Beyond the Blue Horizon", subs: ["George Benson", "on Beyond the Blue Horizon", lib(false)],
+          body: `<div class="pt-card pt-split">${pic(A, false, 64)}<div><div class="pt-big">So What</div><div class="pt-sub">composed by ${M}</div><div class="pt-sub">In your library</div></div></div>` + story(`George Benson also recorded <i>So What</i> on Beyond the Blue Horizon. Not in your library`) + find("George Benson", "Beyond the Blue Horizon") } ] },
+      { l: "Milestones", k: `composed by ${M}`, stops: [{ n: "Milestones", s: "Bill Evans Trio · Waltz for Debby" }] },
+      { l: "Nardis", k: `composed by ${M}`, stops: [{ n: "Nardis", s: "Bill Evans Trio · Explorations" }] } ] },
+  { id: "artist-scene", sheet: "artist", label: "Scene",
+    desc: `Artists from the same place and era as ${M}.`,
+    groups: [
+      { l: "St. Louis", k: "same place", stops: [
+        { n: "Clark Terry", s: "In your library", r: 1, subs: ["Person", lib(true)],
+          body: `<div class="pt-pair pt-center">${card("Same place", "St. Louis")}${card("Same era", "1940s")}</div>` + story(`Clark Terry is from St. Louis, just like ${M}. They both started their careers in the same era.`) + find("Clark Terry", null) },
+        { n: "Oliver Nelson", s: "Not in your library", r: 1 }, { n: "Chuck Berry", s: "In your library", r: 1 } ] } ] },
+];
+
+function sheet(tab, open) {
+  const tabs = TABS.filter(t => t.sheet === tab.sheet);
+  const start = tab.sheet === "album" ? A : M;
+  const flat = tab.groups.flatMap(g => g.stops);
+  let i = 0, trail = "";
+  for (const g of tab.groups) {
+    trail += `<div class="pt-link">${g.l} <span>· ${g.k}</span></div>`;
+    for (const s of g.stops) {
+      const last = i === flat.length - 1 ? " pt-last" : "";
+      if (open && i === 0) {
+        trail += `<div class="pt-stop pt-open${last}"><div class="pt-row">${pic(s.p || s.n, s.r)}<div><div class="pt-name">${s.n}</div>${s.subs.map(x => `<div class="pt-sub">${x}</div>`).join("")}</div>${chev(true)}</div>${s.body}</div>`;
+      } else {
+        trail += `<div class="pt-stop${last}"><div class="pt-row">${pic(s.p || s.n, s.r)}<div><div class="pt-name">${s.n}</div><div class="pt-sub">${s.s}</div></div>${chev(false)}</div></div>`;
+      }
+      i++;
+    }
+  }
+  return `<div class="frame"><div class="pt-sheet"><div class="pt-handle"></div>
+    <div class="pt-head">${pic(start, tab.sheet === "artist")}<div><div class="pt-eyebrow">Paths from</div><div class="pt-title">${start}</div></div></div>
+    <div class="pt-tabs">${[tab, ...tabs.filter(t => t !== tab)].map(t => `<span class="pt-tab" aria-selected="${t === tab}">${t.label}</span>`).join("")}</div>
+    <div class="pt-desc">${tab.desc}</div>
+    <div class="pt-trail">${trail}</div>
+    ${tab.note ? `<div class="pt-note">${tab.note}</div>` : ""}
+  </div></div>`;
+}
+
+const q = new URLSearchParams(location.search), only = q.get("only");
+const root = document.documentElement;
+if (q.get("palette")) root.dataset.palette = q.get("palette");
+if (only) root.classList.add("shot");
+let html = "", group = "";
+for (const tab of TABS) {
+  if (only && tab.id !== only) continue;
+  if (!only && tab.sheet !== group) { group = tab.sheet; html += `<h2>${group === "album" ? "Album Paths" : "Artist Paths"}</h2>`; }
+  html += `<section class="tab" id="${tab.id}" style="margin-top:20px"><h3 class="hide">${tab.label}</h3><div class="pair">
+    <div class="col"><div class="cap">Closed</div>${sheet(tab, false)}</div>
+    <div class="col"><div class="cap">First step open</div>${sheet(tab, true)}</div></div></section>`;
+}
+document.getElementById("out").innerHTML = html;
+
+const pal = document.getElementById("pal");
+[["sand", "Day · Sand"], ["night", "Night"], ["softbrut", "Soft Brut"], ["flow", "Flow"]].forEach(([id, label]) => {
+  const b = document.createElement("button");
+  b.textContent = label; b.type = "button";
+  b.setAttribute("aria-pressed", (root.dataset.palette || "sand") === id);
+  b.onclick = () => { root.dataset.palette = id; pal.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", x === b)); };
+  pal.appendChild(b);
+});
+root.dataset.h = document.documentElement.scrollHeight;
+</script>
+</body>
+</html>

@@ -1,0 +1,102 @@
+/*
+ * Paths sheets, Trail layout: colour roles (docs/pathsredesign.md).
+ *
+ * Trail adds no colours. Every value below is an existing role of the Android Palette
+ * (android/app/src/main/kotlin/app/discair/ui/theme/Palette.kt), read in the app through `Ink`.
+ * Four palettes are copied here as references so the mockups can be checked in a dark Classic,
+ * a light Classic, a Brutal and the Flow theme. The other themes follow from the same roles.
+ *
+ *   CSS variable     Palette role / Ink accessor
+ *   --surface        surface       Ink.Surface      the sheet's ground in the mockups (the app keeps its own sheet container)
+ *   --raised         raised        Ink.Raised       an opened step, reason cards, picture placeholders
+ *   --edge           edge          Ink.Edge         the trail line, elbows, the rule under the tabs, card outlines
+ *   --text           text          Ink.Text         names, sentences, the words in a link pill
+ *   --muted          textMuted     Ink.TextMuted    second lines, the description, eyebrows, notes
+ *   --accent         accent        Ink.Accent       the dot of a link (a fill, never text)
+ *   --accent-dim     accentDim     Ink.AccentDim    the ground of a link pill
+ *   --accent-text    accentText    Ink.AccentText   the mark under the chosen tab
+ *   --danger         chartRedText  Ink.ChartRedText the failure message (unchanged from today)
+ *
+ * Shape variables come from Palette.shape (BrutalShape) on a Brutal theme and are the Classic defaults otherwise.
+ */
+
+/* Day · Sand: the default light theme. */
+:root,
+:root[data-palette="sand"] {
+  --behind: #EFE6D3;      /* ink: the page behind the sheet */
+  --surface: #F8F1E1;
+  --raised: #E3D8C0;
+  --edge: #CFC2A6;
+  --text: #26201A;
+  --muted: #62563F;
+  --accent: #AD4016;
+  --accent-dim: #EFC9B0;
+  --accent-text: #AD4016;
+  --danger: #A8300E;
+  --outline: 1px;         /* Classic: a hairline in the edge colour */
+  --radius: 12px;
+  --shadow: 0px;
+  --shadow-color: transparent;
+  --dot-outline: 0px;
+  color-scheme: light;
+}
+
+/* Night: the default dark theme. */
+:root[data-palette="night"] {
+  --behind: #141211;
+  --surface: #1C1A18;
+  --raised: #252220;
+  --edge: #34302C;
+  --text: #F4EFE6;
+  --muted: #B4AC9F;
+  --accent: #F5D33F;
+  --accent-dim: #554B26;
+  --accent-text: #F5D33F;
+  --danger: #FF7B62;
+  --outline: 1px;
+  --radius: 12px;
+  --shadow: 0px;
+  --shadow-color: transparent;
+  --dot-outline: 0px;
+  color-scheme: dark;
+}
+
+/* Soft Brut · Lavender: a Brutal theme. BrutalShape(radius 10, outline 1.5, shadow 3). */
+:root[data-palette="softbrut"] {
+  --behind: #FBF7EE;
+  --surface: #FFFFFF;
+  --raised: #F1EBDD;
+  --edge: #1C1B22;
+  --text: #1C1B22;
+  --muted: #5E5A6B;
+  --accent: #C4B5FD;
+  --accent-dim: #ECE6FF;
+  --accent-text: #1C1B22; /* the accent cannot be read as text, so accentText falls back to text */
+  --danger: #B3261E;
+  --outline: 1.5px;
+  --radius: 10px;
+  --shadow: 3px;
+  --shadow-color: #1C1B22;
+  --dot-outline: 1.5px;   /* a pastel dot needs the theme's outline to be seen */
+  color-scheme: light;
+}
+
+/* Flow · Warm white. */
+:root[data-palette="flow"] {
+  --behind: #FBFAF7;
+  --surface: #FFFFFF;
+  --raised: #EFECE5;
+  --edge: #E2DFD6;
+  --text: #15130F;
+  --muted: #645F55;
+  --accent: #C2410C;
+  --accent-dim: #FBE4D5;
+  --accent-text: #C2410C;
+  --danger: #C0271A;
+  --outline: 1px;
+  --radius: 12px;
+  --shadow: 0px;
+  --shadow-color: transparent;
+  --dot-outline: 0px;
+  color-scheme: light;
+}
