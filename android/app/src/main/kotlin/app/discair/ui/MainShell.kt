@@ -468,14 +468,14 @@ private fun FlowAppHeader(active: Int, showDiscover: Boolean, onDiscover: () -> 
             style = MaterialTheme.typography.headlineLarge.copy(fontSize = 30.sp, lineHeight = 36.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = (-0.03).em),
         ) else app.discair.ui.common.Wordmark(30.dp)
         Spacer(Modifier.weight(1f))
-        if (showDiscover) app.discair.ui.common.FlowCircleButton(Icons.Default.Star, "Discover", onDiscover)
+        if (showDiscover) app.discair.ui.common.FlowCircleButton(app.discair.ui.common.FlowIcons.Disc, "Discover", onDiscover)
         Box {
             app.discair.ui.common.FlowCircleButton(
-                app.discair.ui.player.PlayerIcons.Cloud, if (active == 0) "Downloads" else "Downloads, $active active", onDownloads,
+                app.discair.ui.common.FlowIcons.Download, if (active == 0) "Downloads" else "Downloads, $active active", onDownloads,
             )
             if (active > 0) Badge(Modifier.align(Alignment.TopEnd).padding(top = 4.dp, end = 4.dp)) { Text("$active") }
         }
-        app.discair.ui.common.FlowCircleButton(Icons.Default.Settings, "Settings", onSettings)
+        app.discair.ui.common.FlowCircleButton(app.discair.ui.common.FlowIcons.Gear, "Settings", onSettings)
     }
 }
 

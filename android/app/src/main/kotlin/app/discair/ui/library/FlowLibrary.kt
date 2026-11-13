@@ -1,5 +1,6 @@
 package app.discair.ui.library
 
+import app.discair.ui.common.FlowIcons
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -59,7 +60,6 @@ import app.discair.ui.common.Target
 import app.discair.ui.common.plural
 import app.discair.ui.common.sharedCover
 import app.discair.ui.player.LocalPlayActions
-import app.discair.ui.player.PlayerIcons
 import app.discair.ui.player.RowMoreMenu
 import app.discair.ui.theme.LocalPalette
 
@@ -109,7 +109,7 @@ private fun FlowSortRow(state: LibraryState, model: LibraryViewModel) {
             modifier = Modifier.weight(1f).semantics { liveRegion = LiveRegionMode.Polite },
         )
         Box {
-            FlowSmallButton("Sort", PlayerIcons.Sort, false, "Sort $noun, now ${if (state.tab == LibraryTab.Artists) state.artistSort.label else state.albumSort.label}") { open = true }
+            FlowSmallButton("Sort", FlowIcons.Sort, false, "Sort $noun, now ${if (state.tab == LibraryTab.Artists) state.artistSort.label else state.albumSort.label}") { open = true }
             DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
                 if (state.tab == LibraryTab.Artists) ArtistSort.entries.forEach { sort ->
                     DropdownMenuItem(text = { Text(sort.label) }, onClick = { open = false; model.sortArtists(sort) })

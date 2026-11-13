@@ -1,5 +1,6 @@
 package app.discair.ui.settings
 
+import app.discair.ui.common.FlowIcons
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -18,7 +19,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -45,7 +45,6 @@ import app.discair.ui.common.FlowGroup
 import app.discair.ui.common.FlowHeading
 import app.discair.ui.common.FlowTabs
 import app.discair.ui.common.Target
-import app.discair.ui.player.PlayerIcons
 import app.discair.ui.theme.Appearance
 import app.discair.ui.theme.AppearanceRules
 import app.discair.ui.theme.FontPairs
@@ -124,7 +123,7 @@ private fun Home(appearance: Appearance, filter: String, onFilter: (String) -> U
                     Text(pair.label, color = p.text, fontFamily = pair.title, fontWeight = pair.titleWeight, style = MaterialTheme.typography.bodyLarge.copy(fontSize = 15.sp))
                     Text("${pair.titleName} and ${pair.bodyName}", color = p.textMuted, style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp))
                 }
-                if (on) Icon(Icons.Default.Check, contentDescription = null, tint = p.text, modifier = Modifier.size(24.dp))
+                if (on) Icon(FlowIcons.Check, contentDescription = null, tint = p.text, modifier = Modifier.size(24.dp))
             }
         }
     }

@@ -1,12 +1,12 @@
 package app.discair.ui.settings
 
+import app.discair.ui.common.FlowIcons
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -29,7 +29,6 @@ import app.discair.ui.common.Load
 import app.discair.ui.common.flowCard
 import app.discair.ui.home.Inline
 import app.discair.ui.home.Muted
-import app.discair.ui.player.PlayerIcons
 import app.discair.ui.theme.LocalPalette
 import java.time.Instant
 import java.time.ZoneId
@@ -56,7 +55,7 @@ internal fun FlowServer(state: Load<ServerReads>, reload: () -> Unit, onBack: ()
                 FlowGroupEyebrow("Services")
                 FlowGroup {
                     view.services.forEachIndexed { i, row ->
-                        SettingsRow(PlayerIcons.Server, row.name, row.status.word, stateColor = toneColor(row.status.tone), onClick = null, trailing = {}, divider = i > 0)
+                        SettingsRow(FlowIcons.Server, row.name, row.status.word, stateColor = toneColor(row.status.tone), onClick = null, trailing = {}, divider = i > 0)
                     }
                 }
                 if (view.activity.isNotEmpty()) {
@@ -66,7 +65,7 @@ internal fun FlowServer(state: Load<ServerReads>, reload: () -> Unit, onBack: ()
                             // A warning or a failure says its word first; a finished job shows only its line (mockup).
                             val calm = row.status.tone == ServerTone.Success || row.status.tone == ServerTone.Neutral
                             val line = if (calm) row.line else "${row.status.word}. ${row.line}"
-                            SettingsRow(PlayerIcons.Wave, row.name, line, stateColor = if (calm) Color.Unspecified else toneColor(row.status.tone), onClick = null, trailing = {}, divider = i > 0)
+                            SettingsRow(FlowIcons.Wave, row.name, line, stateColor = if (calm) Color.Unspecified else toneColor(row.status.tone), onClick = null, trailing = {}, divider = i > 0)
                         }
                     }
                 }
@@ -83,7 +82,7 @@ private fun Summary(summary: ServerSummary, reload: () -> Unit) {
         Modifier.padding(horizontal = 16.dp).fillMaxWidth().flowCard(p).padding(start = 14.dp, top = 12.dp, bottom = 12.dp, end = 8.dp).semantics { liveRegion = LiveRegionMode.Polite },
         horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically,
     ) {
-        Icon(if (summary.tone == ServerTone.Success) Icons.Default.Check else PlayerIcons.Info, contentDescription = null, tint = toneColor(summary.tone), modifier = Modifier.size(24.dp))
+        Icon(if (summary.tone == ServerTone.Success) FlowIcons.Check else FlowIcons.Info, contentDescription = null, tint = toneColor(summary.tone), modifier = Modifier.size(24.dp))
         Column(Modifier.weight(1f)) {
             Text(summary.title, color = p.text, style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold, fontSize = 15.sp, lineHeight = 20.sp))
             Text(summary.detail, color = p.textMuted, style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp, lineHeight = 18.sp))

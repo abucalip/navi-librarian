@@ -1,5 +1,6 @@
 package app.discair.ui.downloads
 
+import app.discair.ui.common.FlowIcons
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -42,7 +43,6 @@ import app.discair.ui.common.ReleaseEditionCovers
 import app.discair.ui.common.Target
 import app.discair.ui.theme.accentText
 import app.discair.ui.common.flowCard
-import app.discair.ui.player.PlayerIcons
 import app.discair.ui.theme.LocalPalette
 import app.discair.ui.theme.Palette
 
@@ -93,7 +93,7 @@ internal fun FlowJob(
         job.releaseGroup?.let { ReleaseEditionCovers(it) }
         FlowTracker(step.current, step.failed)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(0.dp)) {
-            if (job.isImported && !job.isSong) Action("Play", PlayerIcons.Play, FlowActionKind.Primary, enabled = canPlay, onClick = onPlay)
+            if (job.isImported && !job.isSong) Action("Play", FlowIcons.Play, FlowActionKind.Primary, enabled = canPlay, onClick = onPlay)
             secondsLeft?.let { left ->
                 Action(
                     when {
