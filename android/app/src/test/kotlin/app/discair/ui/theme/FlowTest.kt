@@ -19,7 +19,7 @@ class FlowTest {
         assertEquals(Layout.Flow, p.layout); assertEquals("Flow", p.layout.label)
         assertEquals(Family.Classic, p.family); assertNull(p.shape); assertFalse(p.brutal)
         assertTrue(p.light && p in Palettes.Light)
-        assertEquals(setOf("flow", "flow_forest", "flow_raspberry", "flow_violet"), Palettes.All.filter { it.layout == Layout.Flow }.map { it.id }.toSet())
+        assertEquals(setOf("flow", "flow_forest", "flow_raspberry", "flow_violet", "flow_ember", "flow_moss", "flow_plum"), Palettes.All.filter { it.layout == Layout.Flow }.map { it.id }.toSet())
         assertEquals(Layout.Flow, p.overArtwork(Palettes.Night).layout)
         assertEquals("flow", AppearanceRules.sanitizeDay("flow"))
         assertEquals(Palettes.Night.id, AppearanceRules.sanitizeNight("flow"))
@@ -148,5 +148,66 @@ class FlowTest {
         assertEquals("D9D5CB", hex(FlowRules.switchOff(p))); assertEquals("B5B0A5", hex(FlowRules.chevron(p)))
         assertEquals(listOf("D0D6C6", "DCCFD1", "D3CFE0"), day.map { hex(FlowRules.switchOff(it)) })
         assertEquals(listOf("AEB5A3", "BBADB0", "B2AEC2"), day.map { hex(FlowRules.chevron(it)) })
+    }
+
+    // Step P4 of docs/palettes.md: the three new night palettes (sections 4.2, 4.3 and 4.4).
+    private val night = listOf(Palettes.FlowEmber, Palettes.FlowMoss, Palettes.FlowPlum)
+
+    @Test fun newNightPalettesAreListedInDarkAndKeepTheThemeShape() {
+        assertEquals(listOf("flow_ember", "flow_moss", "flow_plum"), Palettes.Dark.map { it.id }.filter { it.startsWith("flow") })
+        assertEquals(Palettes.Night, Palettes.Dark.first())
+        assertEquals(listOf("Flow · Ember", "Flow · Moss", "Flow · Plum"), night.map { it.label })
+        for (d in night) {
+            assertFalse(d.light); assertTrue(d in Palettes.Dark && d !in Palettes.Light)
+            assertEquals(Layout.Flow, d.layout); assertEquals(Family.Classic, d.family); assertNull(d.shape); assertEquals("flow", d.suggestedFontId)
+            assertEquals(d.id, AppearanceRules.sanitizeNight(d.id))
+            assertEquals(Palettes.Sand.id, AppearanceRules.sanitizeDay(d.id))
+            assertEquals("86D39B", hex(d.ok)); assertEquals("1F3326", hex(d.okDim))
+            assertEquals("F0A640", hex(d.caution)); assertEquals("3D2E14", hex(d.cautionDim))
+            assertEquals("8FB8E8", hex(d.info)); assertEquals("1D2C3D", hex(d.infoDim)); assertEquals("40211A", hex(d.dangerDim))
+        }
+    }
+
+    @Test fun newNightPalettesMatchTheSpecTable() {
+        // id -> page, surface, raised, edge, strong edge, text, muted, accent, accentDim, onAccent, chart2, chart3
+        val spec = mapOf(
+            "flow_ember" to listOf("12110F", "1C1A17", "2A2723", "35312C", "8A8377", "F5F1EA", "A9A296", "FF8A4C", "4A2A17", "1A0F08", "8A8377", "4A453E"),
+            "flow_moss" to listOf("0E1311", "171E1A", "232C27", "2D3832", "7A887F", "EEF5F0", "9FAFA5", "5FD28C", "173D27", "06170D", "7A887F", "3D4A43"),
+            "flow_plum" to listOf("151015", "1F181F", "2D232D", "3A2E3A", "8C7C8C", "F7EEF5", "B3A2B0", "FF7FAE", "4D1F33", "2A0A17", "8C7C8C", "4C3D4C"),
+        )
+        for (d in night) {
+            val got = listOf(d.ink, d.surface, d.raised, d.edge, d.edgeStrong, d.text, d.textMuted, d.accent, d.accentDim, d.onAccent, d.chart2, d.chart3).map(::hex)
+            assertEquals(d.id, spec[d.id], got)
+            assertEquals(d.ink, d.rail); assertEquals(d.accent, d.chart1); assertEquals(d.raised, d.chartGhost); assertEquals(d.edge, d.chartGrid); assertEquals(d.edgeStrong, d.chartBase)
+            assertEquals("FF7B62", hex(d.chartRedText))
+        }
+    }
+
+    @Test fun everyNewNightPaletteMeetsTheContrastFloors() {
+        for (d in night) {
+            for ((name, bg) in listOf("page" to d.ink, "surface" to d.surface, "raised" to d.raised)) {
+                assertTrue("${d.id} text on $name", ratio(d.text, bg) >= 4.5)
+                assertTrue("${d.id} muted on $name", ratio(d.textMuted, bg) >= 4.5)
+                assertTrue("${d.id} error on $name", ratio(d.chartRedText, bg) >= 4.5)
+            }
+            assertTrue("${d.id} accent on the page", ratio(d.accent, d.ink) >= 4.5)
+            assertTrue("${d.id} accent on the surface", ratio(d.accent, d.surface) >= 4.5)
+            assertTrue("${d.id} label on the accent", ratio(d.onAccent, d.accent) >= 4.5)
+            assertTrue("${d.id} text on the accent tint", ratio(d.text, d.accentDim) >= 4.5)
+            assertTrue("${d.id} ok", ratio(d.ok, d.okDim) >= 4.5); assertTrue("${d.id} caution", ratio(d.caution, d.cautionDim) >= 4.5)
+            assertTrue("${d.id} danger", ratio(d.chartRedText, d.dangerDim) >= 4.5); assertTrue("${d.id} info", ratio(d.info, d.infoDim) >= 4.5)
+            assertTrue("${d.id} the strong edge holds against the page", ratio(d.edgeStrong, d.ink) >= 3.0)
+            assertEquals(d.accent, d.accentText)
+        }
+    }
+
+    @Test fun nightChevronSwitchAndBarHairlineFollowThePalette() {
+        assertEquals(listOf("4A453E", "3D4A43", "4C3D4C"), night.map { hex(FlowRules.switchOff(it)) })
+        assertEquals(listOf("6B655B", "5E6B63", "6E5F6E"), night.map { hex(FlowRules.chevron(it)) })
+        for (d in night) {
+            val h = FlowRules.barHairline(d)
+            assertEquals(1f, h.red, 0f); assertEquals(0.10f, h.alpha, 0.005f)
+        }
+        for (d in day + p) { val h = FlowRules.barHairline(d); assertEquals(0f, h.red, 0f); assertEquals(0.08f, h.alpha, 0.005f) }
     }
 }
