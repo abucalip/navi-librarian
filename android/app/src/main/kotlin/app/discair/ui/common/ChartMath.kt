@@ -74,6 +74,10 @@ object ChartRules {
         layout == Layout.CoverStack -> ChartStyle(
             MarkShape.Outlined, 2f, area = true, steppedLine = false, meterColumns = false, barRadiusDp = 0f, segmentRadiusDp = 0f,
         )
+        // Flow: rounded 3dp tops, an ink line over a pale fill (flow/downloads-stats-server, frame 2).
+        layout == Layout.Flow -> ChartStyle(
+            MarkShape.Rounded, 2f, area = true, steppedLine = false, meterColumns = false, barRadiusDp = 3f, segmentRadiusDp = 2f,
+        )
         family == Family.Brutal -> ChartStyle(
             MarkShape.Outlined, 2f, area = false, steppedLine = false, meterColumns = false, barRadiusDp = 0f, segmentRadiusDp = 0f,
         )

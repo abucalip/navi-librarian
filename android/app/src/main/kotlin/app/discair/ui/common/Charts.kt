@@ -114,7 +114,8 @@ fun ChartFrame(
         if (isCoverStack()) Text(
             title.uppercase(), color = p.textMuted,
             style = MaterialTheme.typography.labelSmall.copy(fontFamily = app.discair.ui.theme.LocalFontPair.current.mono, fontSize = 11.sp, lineHeight = 16.sp, fontWeight = FontWeight.Medium, letterSpacing = 0.88.sp),
-        ) else Text(title, style = MaterialTheme.typography.titleMedium, color = p.text)
+        ) else if (isFlow()) FlowEyebrow(title) // Flow: the same caption in Inter capitals (flow.css `.eb`)
+        else Text(title, style = MaterialTheme.typography.titleMedium, color = p.text)
         header?.invoke()
         Text(subtitle, style = MaterialTheme.typography.bodySmall, color = p.textMuted)
         Box(Modifier.padding(top = 8.dp).fillMaxWidth().height(maxOf(plotHeight, ChartRules.MIN_PLOT_HEIGHT_DP.dp))) {
@@ -302,9 +303,9 @@ fun LineChart(
                         )
                     }
                     if (points.size > 1) {
-                        if (style.area) drawPath(path(points.map { it.value }, true), p.chart1.copy(alpha = if (p.layout == app.discair.ui.theme.Layout.TapeDeck) 0.35f else if (p.layout == app.discair.ui.theme.Layout.CoverStack) 0.18f else ChartRules.AREA_ALPHA))
+                        if (style.area) drawPath(path(points.map { it.value }, true), p.chart1.copy(alpha = if (p.layout == app.discair.ui.theme.Layout.TapeDeck) 0.35f else if (p.layout == app.discair.ui.theme.Layout.CoverStack || p.layout == app.discair.ui.theme.Layout.Flow) 0.18f else ChartRules.AREA_ALPHA))
                         drawPath(
-                            path(points.map { it.value }, false), if (p.layout == app.discair.ui.theme.Layout.CoverStack) p.text else p.chart1, // Soft Brut: an ink line, the lavender is the fill and the marker (mockup)
+                            path(points.map { it.value }, false), if (p.layout == app.discair.ui.theme.Layout.CoverStack || p.layout == app.discair.ui.theme.Layout.Flow) p.text else p.chart1, // Soft Brut and Flow: an ink line, the accent is the fill and the marker (mockups)
                             style = Stroke(style.lineWidthDp.dp.toPx(), cap = StrokeCap.Round, join = if (style.steppedLine) StrokeJoin.Miter else StrokeJoin.Round),
                         )
                     }

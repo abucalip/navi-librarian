@@ -48,6 +48,10 @@ fun HeardScreen(radio: RadioPlayback, onBack: () -> Unit) {
         CoverStackHeard(onBack, plays.state, plays.reload, live) { radio.download(it) }
         return
     }
+    if (app.discair.ui.common.isFlow()) {
+        FlowHeard(onBack, plays.state, plays.reload, live) { radio.download(it) }
+        return
+    }
     Column(Modifier.fillMaxSize()) {
         app.discair.ui.common.BackBar(onBack)
         LazyColumn(Modifier.fillMaxWidth(), contentPadding = PaddingValues(bottom = 24.dp + app.discair.ui.LocalBottomClearance.current)) {
