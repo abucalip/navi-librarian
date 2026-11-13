@@ -244,11 +244,11 @@ The rule is a pure function (`HomeArtists.from(recent, frequent)`) with a unit t
 | # | Point | Proposed answer |
 |---|---|---|
 | D1 | `BrutalShape(radius, outline, shadow)` takes whole numbers; Soft Brut needs a 1.5dp outline | Change the three fields to `Float` (existing values are unchanged). If the owner prefers no change to the class, Soft Brut uses 2dp. **Settled 2026-11-13: taken as proposed; done in step 0 (PR #1005)** |
-| D2 | Colours from the cover (the Flow wash) | Use the Palette library the player already uses for artwork tint if present; otherwise the wash is `raised` and the colour is a later refinement. Confirm at step F1 |
+| D2 | Colours from the cover (the Flow wash) | Use the Palette library the player already uses for artwork tint if present; otherwise the wash is `raised` and the colour is a later refinement. Confirm at step F1. **Settled 2026-11-13: as proposed.** The app already derives the cover colour (`tint`) and lightens it with `pastelOf` for light themes (`theme/Theme.kt`, used by the album, artist and Now Playing washes), so the Flow wash reuses it in F3 and needs no new dependency |
 | D3 | Blur behind the Flow bars | Not in the first build (section 4) |
 | D4 | The font pair when a theme is chosen | Suggested, not forced (section 5). The owner may prefer each theme to lock its pair. **Settled 2026-11-13: suggested, not forced** |
 | D5 | Dark variants | Not designed. Each theme is one light palette, as Round 3 did; a night palette for each is a later proposal |
-| D7 | Flow tokens adjusted at F1 so the shared contrast tests pass | `textMuted` `#6F6A60` to `#645F55` (3.96:1 on the player's pastel washes before, 4.67:1 after); `ok` `#1E7A3C` to `#1B7339` (4.44:1 on its tint before, 4.87:1 after); `chart2` `#A8A296` to `#8F897D` (2.54:1 on white before, 3.48:1 after). An accent tag takes the text colour for its label because the accent on its own tint is 4.23:1. D2 (wash colour) is not needed until F3 and stays open |
+| D7 | Flow tokens adjusted at F1 so the shared contrast tests pass | `textMuted` `#6F6A60` to `#645F55` (3.96:1 on the player's pastel washes before, 4.67:1 after); `ok` `#1E7A3C` to `#1B7339` (4.44:1 on its tint before, 4.87:1 after); `chart2` `#A8A296` to `#8F897D` (2.54:1 on white before, 3.48:1 after). An accent tag takes the text colour for its label because the accent on its own tint is 4.23:1. D2 (wash colour) is settled and is used from F3 |
 | D6 | The Flow accent was darkened from `#E8590C` to `#C2410C` for contrast | Needs the owner's agreement, since it differs from the chosen mockup. **Settled 2026-11-13: agreed** |
 
 ## 9. Every page, and the files to build from
@@ -300,7 +300,7 @@ Each step is one PR with its own tests, in this order. Soft Brut and Flow are in
 | **S2** Soft Brut Home (merged, PR #1007) | Section 6.1 | `soft-brut/home` matched in all five frames; Get, Save and the menu work on the front sleeve |
 | **S3** Soft Brut pages | Album, Artist, Genre, Discover, Library, Search | Their mockups matched |
 | **S4** Soft Brut player and the rest | Now Playing, Queue, Lyrics (part 1, built), Radio, Downloads, Stats (part 2, built), then Server, Settings, Equalizer, Crossfade | Their mockups matched; closeout |
-| **F1** Flow palette and shell (merged, PR #1020; three colours and the accent tag label differ from the mockup, see D7) | Palette `flow`, `Layout.Flow`, font pair `flow`, depth levels, capsules, grouped list, segmented control, floating bars; settle D2 | `flow/components` matched |
+| **F1** Flow palette and shell (merged, PR #1020; three colours and the accent tag label differ from the mockup, see D7) | Palette `flow`, `Layout.Flow`, font pair `flow`, depth levels, capsules, grouped list, segmented control, floating bars; settle D2 (done, section 8) | `flow/components` matched |
 | **F2** Flow Home | Section 6.2 | `flow/home` matched in all four frames |
 | **F3** Flow pages | Album (with the wash), Artist, Genre, Discover, Library, Search | Their mockups matched |
 | **F4** Flow player and the rest | As S4 | Their mockups matched; closeout |
