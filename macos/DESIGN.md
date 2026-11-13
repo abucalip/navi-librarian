@@ -503,3 +503,10 @@ Internet radio on the Mac, built from the owner's choices. Mockups (the spec): [
 - **Navigation:** `Screen.stations`, the sidebar row "Radio" (symbol `radio`) under Library.
 - **Changed from the plan:** no Go or View menu entry. No other page has one (pages are reached from the sidebar and ⌘K), and E2 (radio in ⌘K) was not chosen. `CupertinoStations` is a placeholder that shows the title and a count, so the case compiles; the real page is item 7.
 - **Not done here:** `pageVisible` follows the screen only. "Window hidden or minimised" (S2.5) is added with the page in item 7. Nothing was looked at in a window.
+
+### Radio, S2-1 item 7: the page (mockup A2)
+
+- **Built:** `CupertinoStations`: title and count, tag chips (selected chip is `text` on `content`), station rows (logo 34 pt at 22% radius, `headline` name over `callout` sentence, first tag, star), On Air panel 330 pt, radius 14, `panel` ground. The live title is drawn in `accent`, "Station unreachable" in `danger`, the selected row on `accentTint`. Below 880 pt of content width the panel goes under the list.
+- **Logos:** `StationLogoStore` (one request per station and size, five-minute memory of a failure). While a logo loads the square is a plain `fill`; the Mac draws no placeholder logo of its own.
+- **Changed from the mockup:** one tag per row, not two; the panel shows no playing hero until S2-2; states (loading, empty, error with Try again) are plain sentences.
+- **Not verified:** Night mode, real logos, keyboard use in a window, the window-hidden rule of S2.5.

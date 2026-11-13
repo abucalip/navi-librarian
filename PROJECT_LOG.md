@@ -1,3 +1,11 @@
+## 2026-11-13 — Radio stage 2, S2-1 item 7: the Radio page (PR #1051)
+
+- PR [#1051](https://github.com/abucalip/navi-librarian/pull/1051), merged as `e07189cc0be4b0aa651e28d414473536d368ce4a`. `CupertinoStations` is now mockup A2: title and count, tag chips, station list (logo 34 pt, name, status sentence, first tag, star with the spoken label "Favourite, on/off"), and the On Air panel ("Nothing playing. Choose a station."), which moves under the list below 880 pt. A row click only selects; arrow keys move the selection. `StationLogoStore` and `StationLogo` fetch each logo once per station and size (memory, plus disk when the media cache is on; cleared by Reset saved data). `StationsModel.showForPreview` serves the render test. Simple loading, empty and error (Try again) states were added so the page is not blank. No server change.
+- Changed from the plan: first tag only per row (the mockup lists two); no playing hero in the panel (needs S2-2); no Edit Tags yet.
+- Tests actually run: `swift test --filter "RadioClientTests|StationRulesTests|StationsModelTests|CupertinoPagesRenderTests"`, 61 passed, including `rendersStations` (Day). Full suite not run (owner rule). No macOS CI exists. The owner saw the Day render.
+- Not verified: Night mode; logos against a real server (the render shows blank squares); keyboard use in a real window; "window hidden or minimised" polling.
+- Not done: S2-1 items 8 and 9 (Edit Tags, states checked against the plan).
+
 ## 2026-11-13 — Radio stage 2, S2-1 items 4 to 6: rules, stations model, navigation (PR #1050)
 
 - PR [#1050](https://github.com/abucalip/navi-librarian/pull/1050), merged as `579fbc9268d146674d17e71ebb22754fc3603334`. `macos/Sources/DiscairUI/Model/Stations.swift`: `StationRules` (row sentence, tag chips, tag checks) and `DownloadState` (S2.7 table, Owned first), pure. `StationsModel` (`AppState.stations`, behind a `StationsSource` protocol): list in server order, live titles, tag filter, loading/empty/error states, S2.5 polling (list once a minute, titles every 15 s) driven by `pageVisible`; favourite and tag changes show at once, send, then reload, and a refusal restores the old value with the server's sentence. `Screen.stations` and the sidebar row "Radio" under Library. No server change.
