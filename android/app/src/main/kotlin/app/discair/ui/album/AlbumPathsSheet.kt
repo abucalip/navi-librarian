@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -95,9 +94,6 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-/** The sheet's height as a share of the window, as the artist sheet. */
-private const val SheetHeight = 0.92f
-
 /** Reasons a pane lists; the rest are counted by the server, not aloud. */
 private const val PaneReasons = 3
 
@@ -150,7 +146,7 @@ fun AlbumPathsSheet(albumName: String, artistName: String, albumId: String, soni
         val state = model.answers[tab] ?: Load.Loading
         val steps = (state as? Load.Ready)?.value?.steps.orEmpty()
         BackHandler(enabled = step in steps.indices) { step = -1 }
-        Box(Modifier.fillMaxWidth().fillMaxHeight(SheetHeight)) {
+        Box(Modifier.fillMaxWidth().weight(1f)) { // the sheet height left after its handle; a fixed fraction overflowed the Soft Brut outline
             if (step in steps.indices) {
                 AlbumPathDetail(albumName, artistName, tab, steps, step, onBack = { step = -1 }, onStep = { step = it }, go = go)
             } else {
