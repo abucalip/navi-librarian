@@ -120,6 +120,18 @@ fun SeekBar(fraction: Float, enabled: Boolean, onChange: (Float) -> Unit, onFini
             drawRoundRect(palette.edgeStrong, tl, androidx.compose.ui.geometry.Size(tw, th), tc, style = androidx.compose.ui.graphics.drawscope.Stroke(outline))
             return@Canvas
         }
+        if (palette.layout == app.discair.ui.theme.Layout.Flow) {
+            // Flow: a 4dp line (the text colour at 14%), the played part in the text colour, and a 14dp round thumb (flow.css `.seek`).
+            val h = 4.dp.toPx()
+            val left = inset
+            val width = size.width - 2 * inset
+            val x = left + width * fraction.coerceIn(0f, 1f)
+            val corner = androidx.compose.ui.geometry.CornerRadius(h / 2)
+            drawRoundRect(palette.text.copy(alpha = 0.14f), Offset(left, y - h / 2), androidx.compose.ui.geometry.Size(width, h), corner)
+            drawRoundRect(palette.text, Offset(left, y - h / 2), androidx.compose.ui.geometry.Size((x - left).coerceAtLeast(0f), h), corner)
+            drawCircle(if (enabled) palette.text else palette.edgeStrong, (if (active) 9.dp else 7.dp).toPx(), Offset(x, y))
+            return@Canvas
+        }
         if (palette.brutal) {
             // Neobrut: an outlined track (thin, like the reference) with the accent for the played part, and a square
             // outlined thumb with a hard shadow that grows a little while it is held.

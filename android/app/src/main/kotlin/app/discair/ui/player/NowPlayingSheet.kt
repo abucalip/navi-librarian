@@ -158,7 +158,7 @@ fun NowPlayingSheet(state: PlayerUiState, controller: PlayerController, lyrics: 
     var tint by remember { mutableStateOf<Color?>(null) }
     var eqOpen by remember { mutableStateOf(false) }
     var crossfadeOpen by remember { mutableStateOf(false) }
-    var panel by remember { mutableStateOf(0) } // Soft Brut: 2 = the queue and 1 = the lyrics open as a sheet, like the equalizer and crossfade
+    var panel by remember { mutableStateOf(0) } // Soft Brut and Flow: 2 = the queue and 1 = the lyrics open as a sheet, like the equalizer and crossfade
     val container = (androidx.compose.ui.platform.LocalContext.current.applicationContext as app.discair.DiscairApplication).container
     // Cassette Deck: no flip card; the queue sits under the player and a lyrics button swaps it for the lyrics (view 1 is lyrics, anything else the queue).
     val tape = app.discair.ui.theme.LocalPalette.current.layout == app.discair.ui.theme.Layout.TapeDeck
@@ -169,7 +169,9 @@ fun NowPlayingSheet(state: PlayerUiState, controller: PlayerController, lyrics: 
     val sticker = app.discair.ui.theme.LocalPalette.current.layout == app.discair.ui.theme.Layout.StickerWall
     // Soft Brut: its own top bar and views, in CoverStackNowPlaying.kt; the queue and the lyrics are views 2 and 1 as for every theme.
     val coverStack = app.discair.ui.theme.LocalPalette.current.layout == app.discair.ui.theme.Layout.CoverStack
-    LaunchedEffect(coverStack) { if (coverStack && view != 0) { view = 0; lastView = 0 } }
+    // Flow: its own top bar and player in FlowNowPlaying.kt; the queue and the lyrics open as a sheet, as on Soft Brut.
+    val flow = app.discair.ui.theme.LocalPalette.current.layout == app.discair.ui.theme.Layout.Flow
+    LaunchedEffect(coverStack, flow) { if ((coverStack || flow) && view != 0) { view = 0; lastView = 0 } }
     BackHandler(enabled = view != 0) { view = 0; lastView = 0 }
     val scope = androidx.compose.runtime.rememberCoroutineScope()
     // -1 = queue, 0 = artwork, +1 = lyrics; fractions are mid-flip while a finger is down or the flip settles.
@@ -179,7 +181,7 @@ fun NowPlayingSheet(state: PlayerUiState, controller: PlayerController, lyrics: 
     val lyricsState by lyrics.state.collectAsState()
     val songId = state.current?.songId
     val nextId = state.queue.nextIndex()?.let { state.queue.items.getOrNull(it)?.songId }?.takeIf { it != songId }
-    val lyricsOpen = view == 1 || (coverStack && panel == 1) || flip.value > 0.5f || sheetStack || settings.showLyricLine // the line under the title needs them while the sheet is open
+    val lyricsOpen = view == 1 || ((coverStack || flow) && panel == 1) || flip.value > 0.5f || sheetStack || settings.showLyricLine // the line under the title needs them while the sheet is open
     // Fetch only while the Lyrics view is open for the song that is playing; close stops everything.
     LaunchedEffect(lyricsOpen, songId, nextId) {
         if (lyricsOpen && songId != null) lyrics.open(songId, nextId) else lyrics.close()
@@ -199,7 +201,8 @@ fun NowPlayingSheet(state: PlayerUiState, controller: PlayerController, lyrics: 
         // The artwork's colour washes down from the top, as on the album and artist pages.
         val ground = Ink.Ink
         val brutal = app.discair.ui.theme.LocalPalette.current.brutal
-        val wash by animateColorAsState(if (brutal) ground else tint ?: ground, animationSpec = tween(500), label = "artworkTint")
+        // Flow's wash is the cover's pastel (decision D2), as on the album and artist pages.
+        val wash by animateColorAsState(if (brutal) ground else if (flow) tint?.let { if (app.discair.ui.theme.LocalPalette.current.light) app.discair.ui.theme.pastelOf(it) else it } ?: app.discair.ui.theme.LocalPalette.current.raised else tint ?: ground, animationSpec = tween(500), label = "artworkTint")
         LaunchedEffect(item.coverUrl) { if (item.coverUrl.isBlank()) tint = null }
         // The line, the graph and the switches (S2, T1, B). Both switches are kept on the phone.
         var showLyrics by remember { mutableStateOf(settings.showLyricLine) }
@@ -210,7 +213,7 @@ fun NowPlayingSheet(state: PlayerUiState, controller: PlayerController, lyrics: 
             showLyrics, showFacts,
             { showLyrics = !showLyrics; settings.showLyricLine = showLyrics }, { showFacts = !showFacts; settings.showFacts = showFacts },
         )
-        val blurred = canBlur && !sticker && !coverStack && item.coverUrl.isNotBlank()
+        val blurred = canBlur && !sticker && !coverStack && !flow && item.coverUrl.isNotBlank()
         // The playing album's disc and session photos (docs/artwork.md, ideas 3 and 4); nothing extra while they load or when there are none.
         val artIndex = rememberAlbumArtIndex(item)
         val slides = remember(artIndex) { app.discair.model.slideshowImages(artIndex) }
@@ -228,7 +231,7 @@ fun NowPlayingSheet(state: PlayerUiState, controller: PlayerController, lyrics: 
                 drawRect(Brush.verticalGradient(listOf(wash, ground), startY = top, endY = size.height * 0.9f), topLeft = androidx.compose.ui.geometry.Offset(0f, top), size = androidx.compose.ui.geometry.Size(size.width, size.height - top))
             }.padding(horizontal = 16.dp),
         ) {
-            if (!coverStack) Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            if (!coverStack && !flow) Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 app.discair.ui.common.PlayerIconButton(onClick = onDismiss, Modifier.size(Target)) { Icon(PlayerIcons.Down, contentDescription = "Close now playing") }
                 Spacer(Modifier.weight(1f))
                 if (tape || sheetStack || sticker) {
@@ -253,7 +256,7 @@ fun NowPlayingSheet(state: PlayerUiState, controller: PlayerController, lyrics: 
                     }
                 } else Spacer(Modifier.size(Target)) // balances the close button so the tabs sit in the middle
             }
-            if (!coverStack) Spacer(Modifier.height(16.dp)) // the tabs must not touch the cover, the lyrics note or the queue title
+            if (!coverStack && !flow) Spacer(Modifier.height(16.dp)) // the tabs must not touch the cover, the lyrics note or the queue title
             if (coverStack) {
                 val lyricsForSong = if (lyricsState.songIdOrNull() == songId) lyricsState else LyricsUiState.Idle
                 val photosAvailable = canBlur && slides.isNotEmpty()
@@ -270,6 +273,20 @@ fun NowPlayingSheet(state: PlayerUiState, controller: PlayerController, lyrics: 
                 )
                 if (panel != 0) SettingsSheet({ panel = 0 }) {
                     CoverStackPanel(state, controller, panel, csInput, photos = { if (photosAvailable && showSlides && panel == 1) SlideshowBackdrop(slides, state.isPlaying) })
+                }
+            } else if (flow) {
+                val photosAvailable = canBlur && slides.isNotEmpty()
+                val flowInput = CoverStackPlayerInput(
+                    if (lyricsState.songIdOrNull() == songId) lyricsState else LyricsUiState.Idle, currentLine, songId.orEmpty(),
+                    { if (songId != null) lyrics.retry(songId, nextId) }, lineUi, photosAvailable, showSlides, { showSlides = !showSlides; settings.showSlideshow = showSlides },
+                )
+                FlowPlayer(
+                    state, controller, onView = { panel = it }, onClose = onDismiss,
+                    onSignIn = onSignIn, onEqualizer = { eqOpen = true }, onCrossfade = { crossfadeOpen = true },
+                    onOpenArtist = onOpenArtist, onOpenAlbum = onOpenAlbum, onCoverColor = { tint = it }, input = flowInput,
+                )
+                if (panel != 0) SettingsSheet({ panel = 0 }) {
+                    FlowPanel(state, controller, panel, flowInput, photos = { if (photosAvailable && showSlides && panel == 1) SlideshowBackdrop(slides, state.isPlaying) })
                 }
             } else if (sticker) StickerPlayer(
                 state, controller, view, onView = { view = it; lastView = it },
