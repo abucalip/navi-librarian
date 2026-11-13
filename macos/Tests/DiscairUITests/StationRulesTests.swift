@@ -135,4 +135,45 @@ import Testing
         #expect(StationRules.validated(tags: []) == .success([]))
         #expect(!StationRules.TagProblem.tooMany.message.isEmpty)
     }
+
+    // MARK: Edit Tags draft
+    @Test func returnAddsATrimmedTagAndClearsTheField() {
+        var d = TagDraft(tags: ["Jazz"])
+        d.typed = "  Late night "
+        d.commitTyped()
+        #expect(d.tags == ["Jazz", "Late night"] && d.typed.isEmpty && d.problem == nil)
+    }
+    @Test func aRejectedTagStaysTypedWithItsSentence() {
+        var d = TagDraft(tags: ["Jazz"])
+        d.typed = "jazz"; d.commitTyped()
+        #expect(d.tags == ["Jazz"] && d.typed == "jazz" && d.problem == .duplicate)
+        d.typed = "   "; d.commitTyped()
+        #expect(d.problem == .blank)
+        d.typed = String(repeating: "x", count: 25); d.commitTyped()
+        #expect(d.problem == .tooLong)
+    }
+    @Test func theListStopsAtTenAndRemovingMakesRoom() {
+        var d = TagDraft(tags: (1...10).map { "t\($0)" })
+        #expect(d.isFull && d.countLine == "10 of 10 tags")
+        d.typed = "extra"; d.commitTyped()
+        #expect(d.problem == .tooMany && d.tags.count == 10)
+        d.remove("t3")
+        #expect(d.problem == nil && !d.isFull)
+        d.commitTyped()
+        #expect(d.tags.last == "extra")
+    }
+    @Test func saveTakesAStillTypedTagAndRefusesABadOne() {
+        var d = TagDraft(tags: ["Jazz"])
+        d.typed = "Live"
+        #expect(d.result() == ["Jazz", "Live"])
+        var bad = TagDraft(tags: ["Jazz"])
+        bad.typed = "JAZZ"
+        #expect(bad.result() == nil && bad.problem == .duplicate)
+    }
+    @Test func theDraftKnowsWhenItChanged() {
+        var d = TagDraft(tags: ["Jazz"])
+        #expect(!d.isChanged)
+        d.remove("Jazz")
+        #expect(d.isChanged && d.result() == [])
+    }
 }

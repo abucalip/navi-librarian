@@ -3,10 +3,11 @@ import SwiftUI
 
 /// The Radio page, mockup A2 "Tuner" (docs/design/macos-radio/mockups.html; docs/RADIO_PLAYBACK_PROPOSAL.md S2-1 item 7):
 /// the title, the tag chips, the station list (logo, name, state in words, first tag, star) and the fixed On Air panel.
-/// Nothing plays yet (live playback is S2-2), so a row click only selects it and the panel says so. Edit Tags is item 8.
+/// Nothing plays yet (live playback is S2-2), so a row click only selects it and the panel says so. Edit Tags (item 8) opens from a row's right-click menu.
 struct CupertinoStations: View {
     let state: AppState
     @State private var selectedID: String?
+    @State private var editingTags: RadioStation?
 
     init(state: AppState, selected: String? = nil) {
         self.state = state
@@ -110,12 +111,16 @@ struct CupertinoStations: View {
                 StationRow(station: station, status: model.status(for: station), selected: selected,
                            showsRule: i > 0 && !selected && !previousSelected,
                            select: { selectedID = station.id },
-                           toggleFavourite: { Task { await model.setFavourite(station, on: !station.favourite) } })
+                           toggleFavourite: { Task { await model.setFavourite(station, on: !station.favourite) } },
+                           editTags: { editingTags = station })
             }
         }
         .focusable()
         .onKeyPress(.downArrow) { move(by: 1, in: shown) }
         .onKeyPress(.upArrow) { move(by: -1, in: shown) }
+        .sheet(item: $editingTags) { station in
+            StationTagsSheet(station: station) { tags in Task { await model.setTags(station, to: tags) } }
+        }
     }
 
     private func move(by step: Int, in shown: [RadioStation]) -> KeyPress.Result {
@@ -135,6 +140,7 @@ private struct StationRow: View {
     let showsRule: Bool
     let select: () -> Void
     let toggleFavourite: () -> Void
+    let editTags: () -> Void
 
     var body: some View {
         HStack(spacing: 10) {
@@ -169,6 +175,11 @@ private struct StationRow: View {
         .padding(.horizontal, CU.Space.s).padding(.vertical, 6)
         .background(selected ? CU.accentTint : .clear, in: RoundedRectangle(cornerRadius: CU.Shell.rowRadius, style: .continuous))
         .overlay(alignment: .top) { if showsRule { Rectangle().fill(CU.separator).frame(height: 1) } }
+        .contextMenu {
+            Button("Edit Tags…", action: editTags)
+            Button(station.favourite ? "Remove from Favourites" : "Add to Favourites", action: toggleFavourite)
+        }
+        .accessibilityAction(named: "Edit Tags", editTags)
     }
 
     private var statusColour: Color {
@@ -189,5 +200,114 @@ private struct OnAirPanel: View {
         .frame(maxWidth: .infinity, minHeight: 120, alignment: .topLeading)
         .background(CU.bgPanel, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
         .accessibilityElement(children: .combine)
+    }
+}
+
+/// Edit Tags (E5): the station's tags as removable chips and a field. Return adds a tag, Save sends the whole list, Cancel closes.
+struct StationTagsSheet: View {
+    let station: RadioStation
+    let save: ([String]) -> Void
+    @State private var draft: TagDraft
+    @Environment(\.dismiss) private var dismiss
+    @FocusState private var fieldFocused: Bool
+
+    init(station: RadioStation, save: @escaping ([String]) -> Void) {
+        self.station = station
+        self.save = save
+        _draft = State(initialValue: TagDraft(tags: station.tags))
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: CU.Space.m) {
+            VStack(alignment: .leading, spacing: CU.Space.xs) {
+                Text("Edit tags").cuRole(CU.Font.title2).foregroundStyle(CU.text).accessibilityAddTraits(.isHeader)
+                Text(station.name).cuRole(CU.Font.callout).foregroundStyle(CU.textSecondary).lineLimit(1)
+            }
+            VStack(alignment: .leading, spacing: CU.Space.s) {
+                FlowTags(tags: draft.tags) { tag in draft.remove(tag) }
+                TextField(draft.isFull ? "The list is full" : "Add a tag, then press Return", text: $draft.typed)
+                    .textFieldStyle(.plain).font(.system(size: CU.Font.body.size)).foregroundStyle(CU.text)
+                    .focused($fieldFocused)
+                    .onSubmit { draft.commitTyped(); fieldFocused = true }
+                    .accessibilityLabel("New tag")
+            }
+            .padding(CU.Space.s)
+            .background(CU.content, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).stroke(CU.separator, lineWidth: 1))
+            if let problem = draft.problem {
+                Text(problem.message).cuRole(CU.Font.callout).foregroundStyle(CU.danger).accessibilityLabel("Problem: \(problem.message)")
+            } else {
+                Text("\(draft.countLine). Up to \(StationRules.maxTagLength) characters each.").cuRole(CU.Font.callout).foregroundStyle(CU.textSecondary)
+            }
+            HStack(spacing: CU.Space.s) {
+                Spacer()
+                Button("Cancel") { dismiss() }.buttonStyle(CapsuleButtonStyle()).keyboardShortcut(.cancelAction)
+                Button("Save") {
+                    if let tags = draft.result() { save(tags); dismiss() }
+                }
+                .buttonStyle(CapsuleButtonStyle(primary: true)).keyboardShortcut(.defaultAction)
+            }
+        }
+        .padding(CU.Space.l)
+        .frame(width: 400)
+        .background(CU.bgPanel)
+        .foregroundStyle(CU.text)
+        .onAppear { fieldFocused = true }
+    }
+}
+
+/// The tags so far, wrapping onto lines, each with a remove button.
+private struct FlowTags: View {
+    let tags: [String]
+    let remove: (String) -> Void
+
+    var body: some View {
+        if tags.isEmpty {
+            Text("No tags yet.").cuRole(CU.Font.callout).foregroundStyle(CU.textSecondary)
+        } else {
+            WrapLayout(spacing: 6) {
+                ForEach(tags, id: \.self) { tag in
+                    HStack(spacing: 4) {
+                        Text(tag).cuRole(CU.Font.callout).foregroundStyle(CU.text).lineLimit(1)
+                        Button { remove(tag) } label: {
+                            Image(systemName: "xmark").font(.system(size: 9, weight: .bold)).foregroundStyle(CU.textSecondary).frame(width: 14, height: 14)
+                        }
+                        .buttonStyle(.plain).accessibilityLabel("Remove tag \(tag)")
+                    }
+                    .padding(.horizontal, 8).padding(.vertical, 2)
+                    .background(CU.bgFill, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+                }
+            }
+        }
+    }
+}
+
+/// A minimal left-to-right layout that wraps to the next line.
+private struct WrapLayout: Layout {
+    var spacing: CGFloat
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        arrange(in: proposal.width ?? .infinity, subviews).size
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        let laid = arrange(in: bounds.width, subviews)
+        for (subview, origin) in zip(subviews, laid.origins) {
+            subview.place(at: CGPoint(x: bounds.minX + origin.x, y: bounds.minY + origin.y), proposal: .unspecified)
+        }
+    }
+
+    private func arrange(in width: CGFloat, _ subviews: Subviews) -> (origins: [CGPoint], size: CGSize) {
+        var origins: [CGPoint] = []
+        var x: CGFloat = 0, y: CGFloat = 0, rowHeight: CGFloat = 0, maxX: CGFloat = 0
+        for subview in subviews {
+            let size = subview.sizeThatFits(.unspecified)
+            if x > 0, x + size.width > width { x = 0; y += rowHeight + spacing; rowHeight = 0 }
+            origins.append(CGPoint(x: x, y: y))
+            x += size.width + spacing
+            rowHeight = max(rowHeight, size.height)
+            maxX = max(maxX, x - spacing)
+        }
+        return (origins, CGSize(width: maxX, height: y + rowHeight))
     }
 }
