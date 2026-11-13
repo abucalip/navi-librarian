@@ -131,10 +131,12 @@ public struct ArtworkIndex: Decodable, Equatable, Sendable {
     /// One best image per type (Front, Back, Spine, Obi, Medium, Tray, Sticker, Poster), keyed by the type name.
     public let slots: [String: ArtworkSlot]
     public let booklet: ArtworkBooklet?
+    /// Every release's booklet, best first (the first is `booklet`); empty from an older server.
+    public let booklets: [ArtworkBooklet]
     public let images: [ArtworkPicture]
 
     enum CodingKeys: String, CodingKey {
-        case rgid, truncated, truncatedReason = "truncated_reason", releases, bestFront = "best_front", slots, booklet, images
+        case rgid, truncated, truncatedReason = "truncated_reason", releases, bestFront = "best_front", slots, booklet, booklets, images
     }
 
     public init(from decoder: any Decoder) throws {
@@ -147,6 +149,8 @@ public struct ArtworkIndex: Decodable, Equatable, Sendable {
         let rawSlots = (try? c.decodeIfPresent([String: LenientEntry<ArtworkSlot>].self, forKey: .slots)) ?? [:]
         slots = rawSlots.compactMapValues { $0.value }
         booklet = (try? c.decodeIfPresent(ArtworkBooklet.self, forKey: .booklet)).flatMap { $0.imageIDs.isEmpty ? nil : $0 }
+        let listed = ((try? c.decodeIfPresent([LenientEntry<ArtworkBooklet>].self, forKey: .booklets)) ?? []).compactMap { $0.value }.filter { !$0.imageIDs.isEmpty }
+        booklets = listed.isEmpty ? [booklet].compactMap { $0 } : listed
         images = ((try? c.decodeIfPresent([LenientEntry<ArtworkPicture>].self, forKey: .images)) ?? []).compactMap { $0.value }
     }
 
@@ -392,12 +396,18 @@ extension ArtworkIndex {
     /// Changes when the index changes, so a view can restart its work for a new album or a rebuilt index.
     public var faceKey: String { "\(rgid)|\(images.count)" }
 
-    public var bookletView: BookletView? {
-        let pages = bookletImages
-        guard !pages.isEmpty else { return nil }
-        var seen = Set(pages.map(\.imageID))
-        let extras = ["Sticker", "Obi", "Poster"].compactMap { slotImage($0) }.filter { seen.insert($0.imageID).inserted }
-        return BookletView(edition: booklet?.edition ?? "", pages: pages, extras: extras)
+    public var bookletView: BookletView? { bookletViews.first }
+
+    /// Every booklet the index holds, best first, for the sheet's "Another booklet" button. Each is one release's pages; the album's
+    /// Sticker, Obi and Poster follow every one. A booklet whose pages were trimmed from the served images is left out.
+    public var bookletViews: [BookletView] {
+        booklets.compactMap { b in
+            let pages = b.imageIDs.compactMap { image($0) }
+            guard !pages.isEmpty else { return nil }
+            var seen = Set(pages.map(\.imageID))
+            let extras = ["Sticker", "Obi", "Poster"].compactMap { slotImage($0) }.filter { seen.insert($0.imageID).inserted }
+            return BookletView(edition: b.edition, pages: pages, extras: extras)
+        }
     }
 }
 

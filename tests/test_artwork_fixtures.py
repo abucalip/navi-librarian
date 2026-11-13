@@ -13,7 +13,7 @@ ROOT = Path(__file__).resolve().parent.parent
 FIXTURES = ROOT / "android" / "contract-fixtures" / "librarian"
 SLOTS = {"Front", "Back", "Spine", "Obi", "Medium", "Tray", "Sticker", "Poster"}
 IMAGE_KEYS = {"image_id", "release", "releases", "edition", "types", "comment", "approved", "width", "height", "format"}
-TOP_KEYS = {"status", "rgid", "truncated", "truncated_reason", "releases", "best_front", "slots", "booklet", "images"}
+TOP_KEYS = {"status", "rgid", "truncated", "truncated_reason", "releases", "best_front", "slots", "booklet", "booklets", "images"}
 
 
 def body(name):

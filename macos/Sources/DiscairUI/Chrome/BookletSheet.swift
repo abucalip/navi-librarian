@@ -12,20 +12,20 @@ struct BookletOpener<Button: View>: View {
     var index: ArtworkIndex?
     @ViewBuilder let button: (@escaping () -> Void) -> Button
     @Environment(\.artwork) private var store
-    @State private var booklet: BookletView?
+    @State private var booklets: [BookletView] = []
     @State private var showing = false
 
     var body: some View {
         Group {
-            if booklet != nil { button { showing = true } }
+            if !booklets.isEmpty { button { showing = true } }
         }
         .task(id: "\(rgid ?? "")|\(index?.faceKey ?? "")|\(store?.generation ?? 0)") {
-            booklet = nil
-            if let index { booklet = index.bookletView; return }
+            booklets = []
+            if let index { booklets = index.bookletViews; return }
             guard let rgid, !rgid.isEmpty, let store else { return }
-            if case .ready(let index) = await store.artworkIndex(rgid: rgid, release: nil), !Task.isCancelled { booklet = index.bookletView }
+            if case .ready(let index) = await store.artworkIndex(rgid: rgid, release: nil), !Task.isCancelled { booklets = index.bookletViews }
         }
-        .sheet(isPresented: $showing) { if let booklet { BookletSheet(booklet: booklet) { showing = false } } }
+        .sheet(isPresented: $showing) { if !booklets.isEmpty { BookletSheet(booklets: booklets) { showing = false } } }
     }
 }
 
@@ -33,10 +33,15 @@ struct BookletOpener<Button: View>: View {
 /// on first use. A PDF booklet opens in PDFKit (one page wide, continuous, zoom, arrow keys). Captions are the image's type,
 /// edition and the Cover Art Archive comment, as plain text. No text recognition and no credit links.
 struct BookletSheet: View {
-    let booklet: BookletView
+    /// Every booklet the album has, best first. The sheet opens on the first; "Another booklet" shows the next, wrapping round.
+    let booklets: [BookletView]
     let close: () -> Void
+    @State private var current = 0
     @State private var page = 0
+    @State private var notice: String?
     @FocusState private var focused: Bool
+
+    private var booklet: BookletView { booklets[min(current, booklets.count - 1)] }
 
     /// Every bitmap page and extra once, in the booklet's order.
     private var pages: [ArtworkPicture] { booklet.spreads.flatMap { $0 } }
@@ -46,7 +51,7 @@ struct BookletSheet: View {
             header
             Divider()
             Group {
-                if let pdf = booklet.pdf, pages.isEmpty { PDFBookletView(picture: pdf) } else { pageView }
+                if let pdf = booklet.pdf, pages.isEmpty { PDFBookletView(picture: pdf).id(pdf.imageID) } else { pageView }
             }
         }
         .frame(minWidth: 760, idealWidth: 980, minHeight: 600, idealHeight: 760)
@@ -67,6 +72,13 @@ struct BookletSheet: View {
         HStack(spacing: 12) {
             Text(booklet.edition.isEmpty ? "Booklet" : "Booklet · \(booklet.edition)").font(.headline).accessibilityAddTraits(.isHeader)
             Spacer()
+            if let notice {
+                Text(notice).font(.callout).foregroundStyle(.white.opacity(0.85)).lineLimit(1).transition(.opacity)
+                    .accessibilityLabel(notice)
+            }
+            Button { another() } label: { Label("Another booklet", systemImage: "arrow.triangle.2.circlepath") }
+                .buttonStyle(CapsuleButtonStyle(small: true))
+                .help("Look for a different booklet of this album, for example one in your language or at a higher resolution")
             if !pages.isEmpty {
                 Text(position).font(.callout).foregroundStyle(.white.opacity(0.7)).monospacedDigit()
                 Text("Pinch to zoom").font(.callout).foregroundStyle(.white.opacity(0.55))
@@ -96,6 +108,24 @@ struct BookletSheet: View {
                 .buttonStyle(.borderless).disabled(page >= pages.count - 1).accessibilityLabel("Next page").help("Next page (right arrow)")
         }
         .padding(12)
+    }
+
+    /// Moves to the next booklet (the images it needs are fetched as they are shown and stay in the cache) and says what happened.
+    private func another() {
+        guard booklets.count > 1 else { announce("No other booklet found."); return }
+        current = (current + 1) % booklets.count
+        page = 0
+        let b = booklet
+        announce("Booklet \(current + 1) of \(booklets.count)" + (b.edition.isEmpty ? "" : " · \(b.edition)") + ".")
+    }
+
+    private func announce(_ text: String) {
+        withAnimation { notice = text }
+        if let window = NSApp.keyWindow { NSAccessibility.post(element: window, notification: .announcementRequested, userInfo: [.announcement: text]) }
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(4))
+            if notice == text { withAnimation { notice = nil } }
+        }
     }
 
     private func turn(_ by: Int) { page = min(max(page + by, 0), max(pages.count - 1, 0)) }

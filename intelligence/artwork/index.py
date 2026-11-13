@@ -26,6 +26,7 @@ RELEASES_CAP = 60
 IMAGES_STORED_CAP = 400
 IMAGES_SERVED_CAP = 250
 BOOKLET_PAGES_CAP = 100
+BOOKLETS_CAP = 8   # booklets listed per group, best first; the first is `booklet`
 BUILD_SECONDS = 180.0
 SLOT_TYPES = ("Front", "Back", "Spine", "Obi", "Medium", "Tray", "Sticker", "Poster")
 
@@ -262,18 +263,21 @@ def _slot_winner(images: list[ImageEntry], kind: str, owned: str | None) -> Imag
     return min(pool, key=_quality_key) if pool else None
 
 
-def _booklet(images: list[ImageEntry], owned: str | None, dates: Mapping[str, str]) -> tuple[str | None, list[ImageEntry]]:
+def _booklets(images: list[ImageEntry], owned: str | None, dates: Mapping[str, str]) -> list[tuple[str, list[ImageEntry]]]:
+    """Every release's booklet, best first: most pages, then the owned release, then the earlier date, then MBID."""
     pages: dict[str, list[ImageEntry]] = {}
     for e in images:
         if _has(e, "Booklet"):
             for rel in e.releases:
                 pages.setdefault(rel, []).append(e)
-    if not pages:
-        return None, []
-    # most pages; then the owned release; then the earlier date; then MBID
-    chosen = min(pages, key=lambda r: (-len(pages[r]), r != owned, _date_key(dates.get(r, "")), r))
-    ordered = sorted(pages[chosen], key=lambda e: (e.positions.get(chosen, 0), e.image_id))
-    return chosen, ordered[:BOOKLET_PAGES_CAP]
+    ranked = sorted(pages, key=lambda r: (-len(pages[r]), r != owned, _date_key(dates.get(r, "")), r))
+    return [(r, sorted(pages[r], key=lambda e: (e.positions.get(r, 0), e.image_id))[:BOOKLET_PAGES_CAP])
+            for r in ranked[:BOOKLETS_CAP]]
+
+
+def _booklet(images: list[ImageEntry], owned: str | None, dates: Mapping[str, str]) -> tuple[str | None, list[ImageEntry]]:
+    found = _booklets(images, owned, dates)
+    return found[0] if found else (None, [])
 
 
 def slots_view(index: GroupIndex) -> dict:
@@ -287,10 +291,9 @@ def slots_view(index: GroupIndex) -> dict:
         own = bool(owned and owned in win.releases)
         slots[kind] = {"image_id": win.image_id, "release": owned if own else win.release,
                        "edition": index.labels.get(owned, "") if own else win.edition, "from_owned": own}
-    rel, pages = _booklet(index.images, owned, index.dates)
-    booklet = ({"release": rel, "edition": index.labels.get(rel, ""), "image_ids": [p.image_id for p in pages]}
-               if rel else None)
-    return {"slots": slots, "booklet": booklet}
+    booklets = [{"release": rel, "edition": index.labels.get(rel, ""), "image_ids": [p.image_id for p in pages]}
+                for rel, pages in _booklets(index.images, owned, index.dates)]
+    return {"slots": slots, "booklet": booklets[0] if booklets else None, "booklets": booklets}
 
 
 def _priority(images: list[ImageEntry], owned: str | None, dates: Mapping[str, str] | None = None) -> list[ImageEntry]:
@@ -324,7 +327,7 @@ def to_response(index: GroupIndex, *, served_cap: int = IMAGES_SERVED_CAP) -> di
         images = _trim(images, served_cap, index.owned_release, index.dates)
         reason = reason or "served_cap"
     served = sorted(images, key=_quality_key)
-    view = slots_view(GroupIndex(**{**index.__dict__, "images": served})) if served else {"slots": {}, "booklet": None}
+    view = slots_view(GroupIndex(**{**index.__dict__, "images": served})) if served else {"slots": {}, "booklet": None, "booklets": []}
     front = best_front(served)
     return {
         "status": index.status,
@@ -336,5 +339,6 @@ def to_response(index: GroupIndex, *, served_cap: int = IMAGES_SERVED_CAP) -> di
         "best_front": front.image_id if front else None,
         "slots": view["slots"],
         "booklet": view["booklet"],
+        "booklets": view["booklets"],
         "images": [e.to_dict() for e in served],
     }

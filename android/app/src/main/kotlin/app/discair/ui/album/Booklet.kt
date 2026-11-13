@@ -51,6 +51,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.IntSize
@@ -62,6 +63,7 @@ import app.discair.model.ArtworkSize
 import app.discair.model.BookletView
 import app.discair.model.FULL_ZOOM
 import app.discair.model.MAX_ZOOM
+import app.discair.model.anotherBooklet
 import app.discair.model.bitmapItems
 import app.discair.model.maxPan
 import app.discair.model.nextZoom
@@ -85,11 +87,28 @@ private val Target = 48.dp
  * in a page-by-page PDF viewer. No text recognition and no credit links: pages are images.
  */
 @Composable
-fun BookletTab(booklet: BookletView) {
+fun BookletTab(first: BookletView) {
+    // The album's booklets, best first; "Another booklet" moves along them and round again. Images load as each is shown and stay cached.
+    val all = remember(first) { listOf(first.copy(others = emptyList())) + first.others }
+    var current by remember(first) { mutableStateOf(0) }
+    var notice by remember(first) { mutableStateOf<String?>(null) }
+    val booklet = all[current]
     var viewer by remember(booklet) { mutableStateOf<Int?>(null) }
     val state = rememberPagerState { booklet.items.size }
+    LaunchedEffect(booklet) { state.scrollToPage(0) }
     val repo = LocalRepository.current
     Column(Modifier.fillMaxWidth().padding(vertical = 16.dp)) {
+        OutlinedButton(
+            onClick = { val step = anotherBooklet(current, all); current = step.next; notice = step.message },
+            modifier = Modifier.padding(horizontal = 16.dp).heightIn(min = Target),
+        ) { Text("Another booklet") }
+        notice?.let {
+            Text(
+                it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+                    .semantics { liveRegion = androidx.compose.ui.semantics.LiveRegionMode.Polite },
+            )
+        }
         if (booklet.edition.isNotBlank()) Text(
             "Booklet from ${booklet.edition}", style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),

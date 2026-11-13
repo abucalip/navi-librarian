@@ -31,6 +31,23 @@ import Testing
         #expect(view?.edition == "1999 JP CD")
     }
 
+    @Test func everyListedBookletBecomesAViewBestFirst() throws {
+        let object: [String: Any] = ["status": "ok", "rgid": "rg", "slots": [String: Any](),
+            "booklet": ["release": "a", "edition": "1999 JP CD", "image_ids": [1, 2]],
+            "booklets": [["release": "a", "edition": "1999 JP CD", "image_ids": [1, 2]],
+                         ["release": "b", "edition": "2004 DE CD", "image_ids": [3]],
+                         ["release": "c", "edition": "gone", "image_ids": [99]]],
+            "images": [1, 2, 3].map { ["image_id": $0, "release": "a", "releases": ["a"], "edition": "", "types": ["Booklet"], "format": "jpg", "approved": true] as [String: Any] }]
+        let index = try JSONDecoder().decode(ArtworkIndex.self, from: JSONSerialization.data(withJSONObject: object))
+        #expect(index.bookletViews.map(\.edition) == ["1999 JP CD", "2004 DE CD"])
+        #expect(index.bookletView?.pages.map(\.imageID) == [1, 2])
+    }
+
+    @Test func anOlderServerWithoutTheListStillGivesTheOneBooklet() throws {
+        let view = try index(pages: [pic(1, "Booklet"), pic(2, "Booklet")])
+        #expect(view.bookletViews.count == 1)
+    }
+
     @Test func spreadsStartWithTheCoverAloneThenPairs() {
         #expect(bookletSpreads([1, 2, 3, 4, 5]) == [[1], [2, 3], [4, 5]])
         #expect(bookletSpreads([1, 2, 3, 4]) == [[1], [2, 3], [4]])

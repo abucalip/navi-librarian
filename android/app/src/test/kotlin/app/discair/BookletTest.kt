@@ -8,6 +8,9 @@ import app.discair.model.ArtworkSlot
 import app.discair.model.MAX_ZOOM
 import app.discair.model.bitmapItems
 import app.discair.model.bookletView
+import app.discair.model.BookletView
+import app.discair.model.anotherBooklet
+import app.discair.model.BookletStep
 import app.discair.model.maxPan
 import app.discair.model.nextZoom
 import org.junit.Assert.assertEquals
@@ -63,5 +66,25 @@ class BookletTest {
     @Test fun panIsLimitedToWhatTheZoomAdds() {
         assertEquals(0f, maxPan(1000f, 1f), 0f)
         assertEquals(500f, maxPan(1000f, 2f), 0f)
+    }
+
+    @Test fun otherBookletsFollowTheFirstAndTheButtonCyclesThem() {
+        val a = listOf(image(1, "Booklet"), image(2, "Booklet")); val b = listOf(image(3, "Booklet"))
+        val base = index(a + b)
+        val idx = base.copy(booklets = listOf(
+            ArtworkBooklet("a", "1999 JP CD", listOf(1, 2)), ArtworkBooklet("b", "2004 DE CD", listOf(3)), ArtworkBooklet("c", "gone", listOf(99)),
+        ))
+        val view = bookletView(idx)!!
+        assertEquals(listOf(1L, 2L), view.items.map { it.imageId })
+        assertEquals(listOf("2004 DE CD"), view.others.map { it.edition })
+        val all = listOf(view.copy(others = emptyList())) + view.others
+        assertEquals(BookletStep(1, "Booklet 2 of 2 · 2004 DE CD."), anotherBooklet(0, all))
+        assertEquals(0, anotherBooklet(1, all).next)
+    }
+
+    @Test fun oneBookletMeansNoOtherFound() {
+        val view = bookletView(index(listOf(image(1, "Booklet"))))!!
+        assertEquals(emptyList<BookletView>(), view.others)
+        assertEquals(BookletStep(0, "No other booklet found."), anotherBooklet(0, listOf(view)))
     }
 }

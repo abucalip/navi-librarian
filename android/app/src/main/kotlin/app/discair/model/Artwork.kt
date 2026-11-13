@@ -38,6 +38,8 @@ data class ArtworkIndex(
     val slots: Map<String, ArtworkSlot>,
     val booklet: ArtworkBooklet?,
     val images: List<ArtworkImage>,
+    /** Every release's booklet, best first (the first is [booklet]); empty from an older server. */
+    val booklets: List<ArtworkBooklet> = emptyList(),
 ) {
     private val byId: Map<Long, ArtworkImage> by lazy { images.associateBy { it.imageId } }
 
@@ -48,6 +50,9 @@ data class ArtworkIndex(
 
     /** The booklet pages that are in [images], in the server's order. A PDF booklet is one entry. */
     fun bookletImages(): List<ArtworkImage> = booklet?.imageIds.orEmpty().mapNotNull { byId[it] }
+
+    /** The pages of [b] that are in [images], in the server's order. */
+    fun bookletImages(b: ArtworkBooklet): List<ArtworkImage> = b.imageIds.mapNotNull { byId[it] }
 }
 
 data class ArtworkReleaseCounts(val total: Int, val fetched: Int, val empty: Int, val failed: Int)
@@ -135,6 +140,7 @@ private fun parseIndexBody(root: JsonObject): ArtworkIndex {
         slots = parseSlots(root.sub("slots")),
         booklet = parseBooklet(root.sub("booklet")),
         images = (root["images"] as? JsonArray).orEmpty().mapNotNull { (it as? JsonObject)?.let(::parseImage) },
+        booklets = (root["booklets"] as? JsonArray).orEmpty().mapNotNull { parseBooklet(it as? JsonObject) },
     )
 }
 

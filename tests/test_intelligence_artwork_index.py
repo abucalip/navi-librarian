@@ -134,6 +134,17 @@ class SelectionTests(unittest.TestCase):
         b = slots_view(self.idx)["booklet"]
         self.assertEqual((b["release"], b["image_ids"]), (R2, [22, 23, 24]))
 
+    def test_booklets_lists_every_release_best_first(self):
+        view = slots_view(self.idx)
+        self.assertEqual(view["booklets"][0], view["booklet"])
+        self.assertEqual([b["release"] for b in view["booklets"]][0], R2)
+        self.assertEqual(len({b["release"] for b in view["booklets"]}), len(view["booklets"]))
+
+    def test_no_booklet_means_empty_booklets(self):
+        idx, _ = build([rel(R1, "2000")], {R1: ok(img(1, ["Front"]))}, owned_release=R1)
+        view = slots_view(idx)
+        self.assertEqual((view["booklet"], view["booklets"]), (None, []))
+
     def test_booklet_tie_goes_to_owned(self):
         idx, _ = build([rel(R1, "2000"), rel(R2, "1990")],
                        {R1: ok(img(1, ["Booklet"])), R2: ok(img(2, ["Booklet"]))}, owned_release=R1)
