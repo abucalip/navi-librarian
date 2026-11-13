@@ -74,6 +74,7 @@ fun DiscairSwitch(checked: Boolean, modifier: Modifier = Modifier, enabled: Bool
     val knobX by animateDpAsState(if (checked) 32.dp else 0.dp, tween(300), label = "knob")
     val glow by animateFloatAsState(if (checked) 1f else 0f, tween(300), label = "glow")
     val shape = pillShape()
+    if (isFlow()) { FlowSwitch(checked, modifier); return }
     if (LocalPalette.current.brutal) {
         BrutalSwitch(checked, shape, modifier)
         return

@@ -382,6 +382,9 @@ fun MainShell(state: UiState, model: AppViewModel, container: AppContainer) {
             if (app.discair.ui.theme.LocalPalette.current.layout == app.discair.ui.theme.Layout.CoverStack && playerState.current != null) {
                 app.discair.ui.player.CoverStackMiniPlayer(playerState, player, onOpen = { if (playerState.visible) nowPlayingOpen = true }, modifier = Modifier.padding(bottom = if (rail) 12.dp else 8.dp))
             }
+            if (app.discair.ui.theme.LocalPalette.current.layout == app.discair.ui.theme.Layout.Flow && playerState.current != null) {
+                app.discair.ui.player.FlowMiniPlayer(playerState, player, onOpen = { if (playerState.visible) nowPlayingOpen = true }, modifier = Modifier.padding(bottom = if (rail) 12.dp else 8.dp))
+            }
             if (!rail) app.discair.ui.theme.OnArtwork {
                 NavIsland(
                     tint = islandTint,

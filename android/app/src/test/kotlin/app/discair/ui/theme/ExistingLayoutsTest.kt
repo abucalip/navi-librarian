@@ -17,7 +17,7 @@ class ExistingLayoutsTest {
     private val layouts = mapOf(
         "tapelime" to Layout.TapeDeck, "tapecobalt" to Layout.TapeDeck, "tapetangerine" to Layout.TapeDeck,
         "sheetviolet" to Layout.SheetStack, "sheetacid" to Layout.SheetStack, "sheetdaylight" to Layout.SheetStack,
-        "stickerpeach" to Layout.StickerWall,
+        "stickerpeach" to Layout.StickerWall, "softbrut" to Layout.CoverStack,
     ) + standard.associateWith { Layout.Standard }
 
     /** radius, outline, shadow */
@@ -27,7 +27,7 @@ class ExistingLayoutsTest {
         "brutink" to Triple(6f, 2f, 4f), "brutmidnight" to Triple(12f, 2f, 4f),
         "tapelime" to Triple(2f, 2f, 5f), "tapecobalt" to Triple(2f, 2f, 5f), "tapetangerine" to Triple(2f, 2f, 5f),
         "sheetviolet" to Triple(14f, 2f, 4f), "sheetacid" to Triple(14f, 2f, 4f), "sheetdaylight" to Triple(14f, 2f, 4f),
-        "stickerpeach" to Triple(18f, 3f, 5f),
+        "stickerpeach" to Triple(18f, 3f, 5f), "softbrut" to Triple(10f, 1.5f, 3f),
     )
 
     @Test fun everyExistingPaletteKeepsItsLayout() {

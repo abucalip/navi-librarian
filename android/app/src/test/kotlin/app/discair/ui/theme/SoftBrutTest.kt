@@ -63,7 +63,7 @@ class SoftBrutTest {
         assertTrue(!NavRules.discoverInTopBar(Layout.CoverStack, rail = false))
         assertTrue(!NavRules.playerButtonShown(Layout.CoverStack))
         // No other layout changes.
-        for (l in Layout.values().filter { it != Layout.CoverStack && it != Layout.TapeDeck }) {
+        for (l in Layout.values().filter { it != Layout.CoverStack && it != Layout.TapeDeck && it != Layout.Flow }) {
             assertTrue(!NavRules.discoverInBar(l)); assertTrue(NavRules.playerButtonShown(l))
         }
     }

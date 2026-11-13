@@ -264,9 +264,20 @@ object FontPairs {
         )
     }
 
+    /** Flow (art themes proposal section 5): Inter throughout, 800 for the large title, 700 for headings; numbers stay in Inter. */
+    val Flow = run {
+        val title = FontFamily(variable(R.font.inter_variable, 700), variable(R.font.inter_variable, 800))
+        FontPair(
+            "flow", "Flow", "Inter", "Inter",
+            title = title, titleWeight = FontWeight.ExtraBold, titleTracking = (-0.03).em, titleLineHeight = 1.2f,
+            body = variableBody(R.font.inter_variable), numeral = title, numeralWeight = FontWeight.Bold,
+            mono = variableBody(R.font.inter_variable), monoName = "Inter",
+        )
+    }
+
     val All: List<FontPair> = listOf(
         Discair, Editorial, Bricolage, Geometric, Transit,
-        BrutBaseline, BrutTechnical, BrutEditorial, BrutModern, BrutShout, BrutSwiss,
+        BrutBaseline, BrutTechnical, BrutEditorial, BrutModern, BrutShout, BrutSwiss, Flow,
     )
 
     fun byId(id: String?): FontPair? = All.firstOrNull { it.id == id }
