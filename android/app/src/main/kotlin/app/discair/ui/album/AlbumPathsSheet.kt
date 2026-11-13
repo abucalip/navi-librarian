@@ -207,14 +207,14 @@ private fun AlbumStepItem(
         return
     }
     TrailOpenStep(
-        title = step.album, lines = listOfNotNull(step.artist.takeIf { it.isNotBlank() }, step.year?.toString(), "In your library"),
+        title = step.album, lines = listOfNotNull(step.artist.takeIf { it.isNotBlank() }, step.year?.toString(), if (step.owned) "In your library" else "Not in your library"),
         picture = { PathRowCover(step.artist, step.album, cover, Modifier.size(TrailSizes.OpenPicture)) }, onClose = onClose,
     ) { AlbumPaneBody(tab, step, startName, startArtist, go) }
 }
 
 /**
  * The body of an opened step: a card per reason the server sent (the first three), and the person and album to open; the album
- * itself is the step's header row (every step is in the library). The cards sit on the sheet's ground, against the raised panel. The sentence is the server's own; a fact it did not send is left out.
+ * itself is the step's header row (its library state is said there). The cards sit on the sheet's ground, against the raised panel. The sentence is the server's own; a fact it did not send is left out.
  */
 @Composable
 private fun AlbumPaneBody(tab: AlbumTab, step: AlbumStep, startName: String, startArtist: String, go: (PathLink) -> Unit) {
@@ -228,7 +228,7 @@ private fun AlbumPaneBody(tab: AlbumTab, step: AlbumStep, startName: String, sta
     if (tab == AlbumTab.SameRoom) SameRoomPhotos(startArtist, startName, step.artist, step.album)
     val reasons = step.reasons.take(PaneReasons)
     reasons.forEach { ReasonCard(tab, it) }
-    if (reasons.isEmpty()) InfoCard { Text("In your library.", style = MaterialTheme.typography.bodyMedium) }
+    if (reasons.isEmpty()) InfoCard { Text(if (step.owned) "In your library." else "Not in your library.", style = MaterialTheme.typography.bodyMedium) }
     val person = step.reasons.firstNotNullOfOrNull { it.via?.takeIf { v -> v.isArtist } }
     FindRow(
         person = person?.let { it.name to PathLink(false, it.name, null, it.mbid) },

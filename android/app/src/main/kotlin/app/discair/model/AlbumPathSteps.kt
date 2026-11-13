@@ -37,6 +37,8 @@ data class AlbumStep(
     val detail: String, val reasons: List<AlbumStepReason>, val matchCount: Int = 0,
     /** Listen-through gaps: the server's play label ("Not played"); null elsewhere. */
     val play: String? = null,
+    /** Whether the album is in the owner's library; the server sends albums outside it too. */
+    val owned: Boolean = true,
 )
 
 /** The steps of one tab and the honest notes under them (what was cut, what was skipped). */
@@ -74,12 +76,11 @@ internal fun truncationNote(reason: String): String {
 fun PathsResponse.toAlbumAnswer(): AlbumAnswer {
     val steps = stops.map { stop ->
         val by = stop.albumArtist ?: stop.displayContext.orEmpty()
-        val via = stop.reasons.firstOrNull()?.via?.name
         AlbumStep(
             album = stop.name, artist = by, year = null, albumId = null,
-            detail = listOfNotNull(by.ifBlank { null }, stop.play ?: via).joinToString(" · ").ifBlank { stop.reason },
+            detail = listOfNotNull(by.ifBlank { null }, stop.play).joinToString(" · ").ifBlank { stop.reason },
             reasons = stop.reasons.map { AlbumStepReason(it.code, it.text, it.via, it.anchor, it.credits) },
-            play = stop.play,
+            play = stop.play, owned = stop.owned,
         )
     }
     val notes = buildList {
@@ -97,12 +98,11 @@ fun PathsResponse.toAlbumAnswer(): AlbumAnswer {
 fun SonicAlbumNeighbours.toAlbumAnswer(): AlbumAnswer {
     val of = seeds.size
     val steps = stops.map { s ->
-        val tracks = if (of > 0) "${s.matchCount} of $of tracks" else "${s.matchCount} ${if (s.matchCount == 1) "track" else "tracks"}"
         AlbumStep(
             album = s.album, artist = s.artist, year = s.year, albumId = s.albumId,
-            detail = listOf(s.artist.ifBlank { null }, tracks).filterNotNull().joinToString(" · "),
+            detail = listOf(s.artist.ifBlank { null }, s.year?.toString()).filterNotNull().joinToString(" · "),
             reasons = listOfNotNull(s.reasonText?.let { AlbumStepReason("sonic_neighbour", it, null, null) }),
-            matchCount = s.matchCount,
+            matchCount = s.matchCount, owned = s.owned,
         )
     }
     val notes = buildList {
@@ -114,13 +114,13 @@ fun SonicAlbumNeighbours.toAlbumAnswer(): AlbumAnswer {
 
 /** One line under the chips, per tab. [seeds] is how many of the album's tracks Neighbours by ear used, once known. */
 fun albumTabDescription(tab: AlbumTab, album: String, seeds: Int = 0): String = when (tab) {
-    AlbumTab.StudioCrew -> "Albums in your library that share a producer, engineer or mixer credit with $album."
-    AlbumTab.GuestList -> "Albums in your library where the guests credited on $album also appear."
-    AlbumTab.CoversAndSources -> "Other albums in your library with a recording of a song on $album, and the works they come from."
-    AlbumTab.SameYearSameScene -> "Albums in your library from the same years as $album, linked by a label, an area or a shared artist."
-    AlbumTab.SameRoom -> "Albums in your library with a recording made in the same studio or at the same event as a recording on $album."
-    AlbumTab.ListenThroughGaps -> "Albums in your library that share a credit with $album and that you have played little or never."
-    AlbumTab.NeighboursByEar -> if (seeds > 0) "Albums in your library that sound like $album, found from $seeds of its tracks." else "Albums in your library that sound like $album."
+    AlbumTab.StudioCrew -> "Albums that share a producer, engineer or mixer credit with $album."
+    AlbumTab.GuestList -> "Albums where the guests credited on $album also appear."
+    AlbumTab.CoversAndSources -> "Other albums with a recording of a song on $album, and the works they come from."
+    AlbumTab.SameYearSameScene -> "Albums from the same years as $album, linked by a label, an area or a shared artist."
+    AlbumTab.SameRoom -> "Albums with a recording made in the same studio or at the same event as a recording on $album."
+    AlbumTab.ListenThroughGaps -> "Albums that share a credit with $album and that you have played little or never."
+    AlbumTab.NeighboursByEar -> if (seeds > 0) "Albums that sound like $album, found from $seeds of its tracks." else "Albums that sound like $album."
 }
 
 fun albumPathsEmpty(tab: AlbumTab, album: String) =
