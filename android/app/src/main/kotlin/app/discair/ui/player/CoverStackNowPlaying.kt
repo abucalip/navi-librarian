@@ -268,6 +268,21 @@ fun CoverStackPlayer(
     }
 }
 
+/**
+ * The Queue and the Lyrics as a sheet over Now Playing, like Equalizer and Crossfade ([NowPlayingSheet] hosts it in its settings sheet).
+ * [view] is VIEW_QUEUE or VIEW_LYRICS; the sheet's own handle closes it, so there is no top bar.
+ */
+@Composable
+fun CoverStackPanel(
+    state: PlayerUiState, controller: PlayerController, view: Int, input: CoverStackPlayerInput,
+    photos: @Composable androidx.compose.foundation.layout.BoxScope.() -> Unit,
+) {
+    val item = state.current ?: return
+    Column(Modifier.fillMaxWidth().fillMaxHeight(0.92f).padding(horizontal = 16.dp)) {
+        if (view == CoverStackPlayerRules.VIEW_QUEUE) QueueView(state, controller, input.line.peaks) else LyricsView(state, controller, item, input, photos)
+    }
+}
+
 @Composable
 private fun ColumnScope.NowPlayingView(
     state: PlayerUiState, controller: PlayerController, item: QueueItem, onView: (Int) -> Unit, onSignIn: () -> Unit,

@@ -45,6 +45,8 @@ public final class LibraryModel {
     public private(set) var picksNote: String?
 
     private var allPicks: [AlbumItem] = []
+    /// True while the picks are the ones the last library read fetched, so the first visit to Home does not fetch them again.
+    private var picksAreFresh = false
 
     /// Set while the screens show a saved copy because the server could not be reached: when the copy was saved and why
     /// the server was not used. Cleared by the next good read.
@@ -152,6 +154,7 @@ public final class LibraryModel {
             }
             let snap = HomeSnapshot(newest: n, first: f, artists: a, picks: picks, picksNote: note)
             apply(snap)
+            picksAreFresh = librarian != nil
             savedCopyDate = nil; savedCopyReason = nil
             cache?.put("home", snap)
         } catch let e as DiscairError {
@@ -159,6 +162,20 @@ public final class LibraryModel {
         } catch {
             fallBack(ErrorMapping.map(error))
         }
+    }
+
+    /// Today's picks rotate on every visit to Home: the server shuffles the week's Current tastes lists on each read, so a visit
+    /// after the first asks again. A failed read leaves the picks on screen as they were. Gap Radar keeps its own set.
+    public func reshufflePicks(librarian: LibrarianClient?) async {
+        guard isLive, phase == .loaded, let librarian else { return }
+        if picksAreFresh { picksAreFresh = false; return }
+        guard let fresh = try? await librarian.dashboardPicks(count: 12) else { return }
+        let owned = Set((recent + albums).map { Self.key($0.artist, $0.title) })
+        let items = fresh.enumerated().map { Self.item($0.element, index: 5000 + $0.offset) }
+            .filter { !owned.contains(Self.key($0.artist, $0.title)) }
+        guard !items.isEmpty else { return }
+        missing = items
+        picksNote = nil
     }
 
     /// A failed read keeps the owner's library on screen from the saved copy when there is one. A refused login is not

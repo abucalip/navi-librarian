@@ -140,7 +140,7 @@ private fun RecentCard(album: LibraryAlbum, open: Opener) {
 /** Every album added in the last month, newest first. Tapping a row opens the album. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun RecentlyAddedSheet(albums: List<LibraryAlbum>, open: Opener, onDismiss: () -> Unit) {
+internal fun RecentlyAddedSheet(albums: List<LibraryAlbum>, open: Opener, onDismiss: () -> Unit) {
     val play = LocalPlayActions.current
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
         app.discair.ui.common.TransparentNavigationBar()

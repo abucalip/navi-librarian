@@ -353,7 +353,7 @@ private fun PathDetail(
                 Spacer(Modifier.size(8.dp))
             }
         }
-        Box(Modifier.fillMaxWidth().height(2.dp).background(Ink.EdgeStrong))
+        if (!app.discair.ui.common.isCoverStack()) Box(Modifier.fillMaxWidth().height(2.dp).background(Ink.EdgeStrong)) // Soft Brut: the sheet has its own edge; a second full-width rule reads as stray
         Row(
             Modifier.fillMaxWidth().padding(start = 16.dp, end = 8.dp, top = 8.dp, bottom = 24.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),

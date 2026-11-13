@@ -137,11 +137,10 @@ internal fun CoverStackAlbumContent(d: CoverStackAlbumData, open: Opener, list: 
                     OutlinedButton(onClick = { play.playAlbum(albumId, shuffle = true) }, Modifier.heightIn(min = Target)) {
                         Icon(PlayerIcons.Shuffle, contentDescription = null, Modifier.size(20.dp)); Text(" Shuffle")
                     }
-                    // Saves every song of the album the library holds, one by one, with the Standard page's per-song action.
-                    OutlinedButton(
-                        onClick = { d.tracks.filter { it.owned }.forEach { play.downloadTrack(albumId, it.title, it.number, disc = it.disc) } },
-                        Modifier.size(Target), contentPadding = PaddingValues(0.dp),
-                    ) { Icon(PlayerIcons.DownloadToDevice, contentDescription = "Download album to device", Modifier.size(20.dp)) }
+                    // The album's Paths (it replaced the album-level download; the per-song actions stay on the rows).
+                    if (d.pathsOn) OutlinedButton(
+                        onClick = d.onPaths, Modifier.size(Target), contentPadding = PaddingValues(0.dp),
+                    ) { Icon(PlayerIcons.Paths, contentDescription = "Paths from this album", Modifier.size(20.dp)) }
                 }
                 // The album-level Get stays until every track is in the library (ACQ-08).
                 if (!d.owned || d.tracks.any { !it.owned }) GetAlbumButton(d.artist, d.title, pageMetadata(d.artist, d.title, d.year, d.info?.releaseGroupMbid))
@@ -220,10 +219,10 @@ private fun MetaLine(d: CoverStackAlbumData, open: Opener) {
         val genre = d.genre
         if (!genre.isNullOrBlank()) {
             if (before.isNotEmpty()) Text(" · ", color = p.textMuted, style = small)
-            Text(
-                genre, color = p.textMuted, style = small, maxLines = 1, overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f, fill = false).heightIn(min = Target).clickable(role = Role.Button) { open.genre(genre.lowercase(), genre) }.padding(vertical = 14.dp),
-            )
+            Box(
+                Modifier.weight(1f, fill = false).heightIn(min = Target).clickable(role = Role.Button) { open.genre(genre.lowercase(), genre) },
+                contentAlignment = Alignment.CenterStart,
+            ) { Text(genre, color = p.textMuted, style = small, maxLines = 1, overflow = TextOverflow.Ellipsis) }
         }
         if (after.isNotEmpty()) Text(((if (before.isNotEmpty() || !genre.isNullOrBlank()) " · " else "") + after), color = p.textMuted, style = small, maxLines = 1)
     }

@@ -114,10 +114,10 @@ internal fun CoverStackArtistContent(d: CoverStackArtistData, open: Opener, list
                     val genres = d.sections.tags.items.map { it.name }.ifEmpty { listOfNotNull(d.sections.artist.artist?.genre) }.take(3)
                     if (genres.isNotEmpty()) Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         genres.forEach { g ->
-                            Text(
-                                g, color = p.textMuted, maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.bodySmall,
-                                modifier = Modifier.weight(1f, fill = false).heightIn(min = Target).clickable(role = Role.Button) { open.genre(g.lowercase(), g) }.padding(vertical = 14.dp),
-                            )
+                            Box(
+                                Modifier.weight(1f, fill = false).heightIn(min = Target).clickable(role = Role.Button) { open.genre(g.lowercase(), g) },
+                                contentAlignment = Alignment.CenterStart,
+                            ) { Text(g, color = p.textMuted, maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.bodySmall) }
                         }
                     }
                 }
@@ -125,11 +125,14 @@ internal fun CoverStackArtistContent(d: CoverStackArtistData, open: Opener, list
         }
         if (artistId != null) item {
             Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                Button(onClick = { play.playArtist(artistId, shuffle = false) }, Modifier.weight(1f).heightIn(min = Target)) {
+                Button(onClick = { play.playArtist(artistId, shuffle = false) }, Modifier.heightIn(min = Target)) {
                     Icon(PlayerIcons.Play, contentDescription = null, Modifier.size(20.dp)); Text(" Play")
                 }
                 OutlinedButton(onClick = { play.playArtist(artistId, shuffle = true) }, Modifier.heightIn(min = Target)) {
                     Icon(PlayerIcons.Shuffle, contentDescription = null, Modifier.size(20.dp)); Text(" Shuffle")
+                }
+                if (d.canPaths) OutlinedButton(onClick = d.onPaths, Modifier.heightIn(min = Target)) {
+                    Icon(PlayerIcons.Paths, contentDescription = null, Modifier.size(20.dp)); Text(" Paths")
                 }
             }
         }
