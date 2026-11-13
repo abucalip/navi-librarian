@@ -417,6 +417,10 @@ fun MainShell(state: UiState, model: AppViewModel, container: AppContainer) {
  */
 @Composable
 private fun AppHeader(active: Int, showDiscover: Boolean, onDiscover: () -> Unit, onDownloads: () -> Unit, onSettings: () -> Unit) {
+    if (app.discair.ui.theme.LocalPalette.current.layout == app.discair.ui.theme.Layout.Flow) {
+        FlowAppHeader(active, showDiscover, onDiscover, onDownloads, onSettings)
+        return
+    }
     Column(Modifier.background(app.discair.ui.theme.Ink.Rail)) {
         Row(
             Modifier.fillMaxWidth().statusBarsPadding().heightIn(min = 56.dp).padding(start = 16.dp, end = 16.dp),
@@ -430,6 +434,29 @@ private fun AppHeader(active: Int, showDiscover: Boolean, onDiscover: () -> Unit
             HeaderButton("Settings", Icons.Default.Settings, badge = 0, onClick = onSettings)
         }
         RowDivider()
+    }
+}
+
+/**
+ * Flow's top bar (flow/home): the app name large on the page colour, 36dp round `raised` buttons for the actions, no rule under it. The
+ * Downloads button carries the active count as a badge. Every other theme keeps [AppHeader] above.
+ */
+@Composable
+private fun FlowAppHeader(active: Int, showDiscover: Boolean, onDiscover: () -> Unit, onDownloads: () -> Unit, onSettings: () -> Unit) {
+    Row(
+        Modifier.background(app.discair.ui.theme.Ink.Rail).fillMaxWidth().statusBarsPadding().heightIn(min = 56.dp).padding(start = 16.dp, end = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        app.discair.ui.common.Wordmark(30.dp)
+        Spacer(Modifier.weight(1f))
+        if (showDiscover) app.discair.ui.common.FlowCircleButton(Icons.Default.Star, "Discover", onDiscover)
+        Box {
+            app.discair.ui.common.FlowCircleButton(
+                app.discair.ui.player.PlayerIcons.Cloud, if (active == 0) "Downloads" else "Downloads, $active active", onDownloads,
+            )
+            if (active > 0) Badge(Modifier.align(Alignment.TopEnd).padding(top = 4.dp, end = 4.dp)) { Text("$active") }
+        }
+        app.discair.ui.common.FlowCircleButton(Icons.Default.Settings, "Settings", onSettings)
     }
 }
 

@@ -134,6 +134,15 @@ fun HomeScreen(open: Opener, onRadio: () -> Unit = {}, onDownloads: () -> Unit =
         return
     }
 
+    // Flow: its own arrangement, in FlowHome.kt; every other theme continues below unchanged.
+    if (layout == app.discair.ui.theme.Layout.Flow) {
+        FlowHome(
+            FlowHomeData(picks.state, pickList, picks.reload, genres.state, data.hero, data.arrivals, data.insight, banner),
+            open, feedback, onRadio, onLibrary, onStats, onServer, onDownloads,
+        )
+        return
+    }
+
     @Composable
     fun Module(m: DashModule, wide: Boolean) {
         when (m) {
