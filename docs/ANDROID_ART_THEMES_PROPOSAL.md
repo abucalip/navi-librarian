@@ -302,7 +302,7 @@ Each step is one PR with its own tests, in this order. Soft Brut and Flow are in
 | **S4** Soft Brut player and the rest | Now Playing, Queue, Lyrics (part 1, built), Radio, Downloads, Stats (part 2, built), then Server, Settings, Equalizer, Crossfade | Their mockups matched; closeout |
 | **F1** Flow palette and shell (merged, PR #1020; three colours and the accent tag label differ from the mockup, see D7) | Palette `flow`, `Layout.Flow`, font pair `flow`, depth levels, capsules, grouped list, segmented control, floating bars; settle D2 (done, section 8) | `flow/components` matched |
 | **F2** Flow Home (merged, PR #1023; "played an hour ago" not drawn, Insight button reads "Open album") | Section 6.2 | `flow/home` matched in all four frames |
-| **F3** Flow pages | Album (with the wash), Artist, Genre, Discover, Library, Search | Their mockups matched |
+| **F3** Flow pages (merged, PRs #1024 and #1025) | Album (with the wash), Artist, Genre, Discover, Library, Search | Their mockups matched |
 | **F4** Flow player and the rest | As S4 | Their mockups matched; closeout |
 
 ## 11. Verification for each build step

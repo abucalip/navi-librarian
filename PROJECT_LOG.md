@@ -1,3 +1,9 @@
+## 2026-11-13 — Art themes F3 part 2: Flow Discover, Library and Search (PR #1025)
+
+- Merged as `867fc559f9ae6781a46c74e6734b137f38a2b91a` from head `c4ded7e22630f709d67d47247879ccbc78efc17c`. Flow pages from `flow/discover` and `flow/library-search`, behind `isFlow()`; other themes unchanged. Details and differences from the mockups in `docs/ACTIVE_WORK.md` section 2l.
+- Verified, filtered (JDK 17): `FlowPagesRulesTest` (new cases), `FlowTest`, `ExistingLayoutsTest`, `SoftBrutTest`, `InsightsTest`, `DiscoveryTest`, `NavRulesTest`. Full suite not run. CI result on the final head not re-checked by the agent. Not seen on a device; no screenshot comparison with the mockups.
+- Next action: the owner checks Discover, Library and Search on the phone; then F4 (Flow player and the rest).
+
 ## 2026-11-13 — Art themes F3 part 1: Flow Album, Artist and Genre, and the bar blur (PR #1024)
 
 - Merged as `70567d503a16ab50980a5e752b398d94ecb6d6b8` from head `2ab4ee84c8afeac3d94e5546537a586a023cbe2a`. Flow pages from `flow/album-artist-genre` (wash on the album, full-width photo on the artist, Paths beside Play, white status bar icons over the photo, genre grid) and the D3 bar blur on the navigation capsule and mini player. Other themes unchanged. Details in `docs/ACTIVE_WORK.md` section 2l.
