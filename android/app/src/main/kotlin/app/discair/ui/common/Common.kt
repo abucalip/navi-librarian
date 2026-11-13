@@ -228,7 +228,7 @@ fun Cover(
     Box(modifier.clip(shape).background(MaterialTheme.colorScheme.surfaceVariant)) {
         if (model != null) {
             AsyncImage(
-                model = model,
+                model = app.discair.model.ArtworkChoices.versioned(model),
                 contentDescription = null, // decorative: the title next to it carries the meaning
                 imageLoader = LocalImageLoader.current,
                 contentScale = ContentScale.Crop,

@@ -64,7 +64,7 @@ val canBlur: Boolean get() = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
 fun androidx.compose.foundation.layout.BoxScope.ArtworkBackdrop(coverUrl: String?) {
     if (!canBlur || coverUrl.isNullOrBlank()) return
     AsyncImage(
-        model = coverUrl, contentDescription = null, contentScale = ContentScale.Crop,
+        model = app.discair.model.ArtworkChoices.versioned(coverUrl), contentDescription = null, contentScale = ContentScale.Crop,
         modifier = Modifier.matchParentSize().graphicsLayer { scaleX = 1.3f; scaleY = 1.3f }.blur(28.dp, BlurredEdgeTreatment.Unbounded),
     )
     Box(Modifier.matchParentSize().background(Color.Black.copy(alpha = 0.42f)))
