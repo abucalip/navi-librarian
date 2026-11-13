@@ -22,8 +22,14 @@ enum class AlbumTab(val label: String, val graph: AlbumPathKind?) {
 /** The tabs a sheet offers: Neighbours by ear only when the server reports sonic similarity. */
 fun albumTabs(sonicAvailable: Boolean): List<AlbumTab> = AlbumTab.entries.filter { it.graph != null || sonicAvailable }
 
-/** One reason on an album step, as the server sent it. */
-data class AlbumStepReason(val code: String, val text: String, val via: PathRef?, val anchor: PathRef?)
+/**
+ * One reason on an album step, as the server sent it. [credits] are the stored credits behind it, the one on the start
+ * first; the Trail link reads the role of a studio credit from them.
+ */
+data class AlbumStepReason(
+    val code: String, val text: String, val via: PathRef?, val anchor: PathRef?,
+    val credits: List<PathCreditFact> = emptyList(),
+)
 
 /** One owned album a path reaches. [detail] is the second line of its list row. */
 data class AlbumStep(
@@ -72,7 +78,7 @@ fun PathsResponse.toAlbumAnswer(): AlbumAnswer {
         AlbumStep(
             album = stop.name, artist = by, year = null, albumId = null,
             detail = listOfNotNull(by.ifBlank { null }, stop.play ?: via).joinToString(" · ").ifBlank { stop.reason },
-            reasons = stop.reasons.map { AlbumStepReason(it.code, it.text, it.via, it.anchor) },
+            reasons = stop.reasons.map { AlbumStepReason(it.code, it.text, it.via, it.anchor, it.credits) },
             play = stop.play,
         )
     }
