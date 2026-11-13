@@ -137,6 +137,46 @@ enum StationRules {
     }
 }
 
+/// The list being edited in the Edit Tags sheet (E5): Return adds the typed tag, a tag's x removes it, Save sends the list.
+/// A rejected tag stays typed and the problem is a sentence; nothing is dropped silently.
+struct TagDraft: Equatable {
+    private(set) var tags: [String]
+    var typed = ""
+    private(set) var problem: StationRules.TagProblem?
+    private let original: [String]
+
+    init(tags: [String]) {
+        self.tags = tags
+        original = tags
+    }
+
+    /// Return in the field. An empty field is not a problem the owner needs told about when tags exist already; Save is the way out.
+    mutating func commitTyped() {
+        switch StationRules.check(tag: typed, among: tags) {
+        case .ok(let tag): tags.append(tag); typed = ""; problem = nil
+        case .rejected(let p): problem = p
+        }
+    }
+
+    mutating func remove(_ tag: String) {
+        tags.removeAll { $0 == tag }
+        problem = nil
+    }
+
+    /// What Save sends: the list, plus a tag still typed but not yet added. Nil when a problem blocks it (then `problem` says which).
+    mutating func result() -> [String]? {
+        if !typed.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            commitTyped()
+            if problem != nil { return nil }
+        }
+        return tags
+    }
+
+    var isChanged: Bool { tags != original || !typed.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+    var isFull: Bool { tags.count >= StationRules.maxTags }
+    var countLine: String { "\(tags.count) of \(StationRules.maxTags) tags" }
+}
+
 /// The state of a Download control (S2.7). Always words plus a mark, never colour alone.
 enum DownloadState: Equatable {
     /// Heard, but not yet for 30 seconds: no `play_id`, so nothing can be asked for.

@@ -91,4 +91,13 @@ struct CupertinoPagesRenderTests {
         ])
         try render("stations", width: 1180, height: 640, CupertinoStations(state: state, selected: "1")) { _ in }
     }
+
+    /// The Radio page's sentences when there is nothing to list (S2-1 item 9), and the Edit Tags sheet (item 8).
+    @Test func rendersStationsStatesAndTagSheet() throws {
+        let empty = AppState(themeID: .cupertino, screen: .stations)
+        empty.stations.showForPreview(stations: [])
+        try render("stations-empty", width: 900, height: 300, CupertinoStations(state: empty)) { _ in }
+        let sheetStation = RadioStation(id: "1", name: "Radio Swiss Jazz", proxied: true, playableURL: "https://example.invalid/1", favourite: true, tags: ["Jazz", "Late night", "Swiss"])
+        try render("stations-tags-sheet", width: 400, height: 260, StationTagsSheet(station: sheetStation) { _ in }) { _ in }
+    }
 }

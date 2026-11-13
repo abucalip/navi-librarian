@@ -510,3 +510,11 @@ Internet radio on the Mac, built from the owner's choices. Mockups (the spec): [
 - **Logos:** `StationLogoStore` (one request per station and size, five-minute memory of a failure). While a logo loads the square is a plain `fill`; the Mac draws no placeholder logo of its own.
 - **Changed from the mockup:** one tag per row, not two; the panel shows no playing hero until S2-2; states (loading, empty, error with Try again) are plain sentences.
 - **Not verified:** Night mode, real logos, keyboard use in a window, the window-hidden rule of S2.5.
+
+### Radio, S2-1 items 8 to 10: Edit Tags, states, tests
+
+- **Edit Tags (E5):** right-click a station, "Edit Tags…" (also the VoiceOver action "Edit Tags"); the same menu has the favourite toggle. The sheet (`StationTagsSheet`, 400 pt, `panel` ground) shows the tags as removable chips over a field; Return adds the typed tag, Save sends the whole list (and takes a tag still typed), Cancel or Escape closes. The logic is `TagDraft` (pure, tested) on `StationRules.check`: a rejected tag stays typed and the sheet says why ("That tag is already on the list."), at most 10 tags of 24 characters. Save goes through `StationsModel.setTags`, so the change shows at once and a server refusal restores the old tags and shows the server's sentence on the page.
+- **States with words (item 9):** already built with the page in item 7 (loading "Reading the stations…", empty "No stations yet. Add one in Navidrome and it appears here.", failure with the app's usual sentence and Try again, hidden when the address is refused); this slice adds the render test for the empty state and no code change to them.
+- **Changed from the mockup:** the sheet has no per-tag drag order (the server keeps the list order as sent); the count line "3 of 10 tags. Up to 24 characters each." is added so the limits are visible before they are hit.
+- **Tests run (filtered):** `swift test --skip-update --filter "RadioClientTests|StationRulesTests|StationsModelTests|rendersStations"`: 63 passed (includes five new `TagDraft` tests and the render of the empty page and the sheet in Day).
+- **Not verified:** not seen in a window (right-click menu, sheet focus and Return/Escape keys were not tried by hand), Night mode, the error state render, VoiceOver.
