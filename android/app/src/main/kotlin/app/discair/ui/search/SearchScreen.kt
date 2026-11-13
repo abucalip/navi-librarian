@@ -115,7 +115,7 @@ fun SearchScreen(open: Opener, text: String, onText: (String) -> Unit) {
     LaunchedEffect(Unit) { if (text.isEmpty()) focus.requestFocus() }
 
     // Soft Brut draws its own arrangement (CoverStackSearch.kt); every other theme continues below.
-    if (app.discair.ui.common.isCoverStack()) {
+    if (app.discair.ui.common.isCoverStack() || app.discair.ui.common.isFlow()) {
         val cs = when {
             state.error != null -> state.error
             text.isBlank() -> null
@@ -125,7 +125,8 @@ fun SearchScreen(open: Opener, text: String, onText: (String) -> Unit) {
             state.sourceProblem || state.partial -> "Some sources did not answer, so this may be incomplete."
             else -> null
         }
-        CoverStackSearch(text, onText, state, cs, focus, { keyboard?.hide() }, open)
+        if (app.discair.ui.common.isFlow()) FlowSearch(text, onText, state, cs, focus, { keyboard?.hide() }, open)
+        else CoverStackSearch(text, onText, state, cs, focus, { keyboard?.hide() }, open)
         return
     }
 

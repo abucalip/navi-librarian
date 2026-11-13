@@ -255,6 +255,8 @@ fun DiscoverScreen(open: Opener) {
             val options = DiscoveryList.entries
             // Soft Brut: Lists | Insights, then the list names (CoverStackDiscover.kt); every other theme draws the chips below.
             if (app.discair.ui.common.isCoverStack()) CoverStackDiscoverHeader(list) { if (it != list) { selected = it.name; statusLine = null } }
+            // Flow: the bar above carries the large title; Lists | Insights and the list chips are FlowDiscover.kt's.
+            else if (app.discair.ui.common.isFlow()) FlowDiscoverHeader(list) { if (it != list) { selected = it.name; statusLine = null } }
             else {
             PageHeading("Discover", Modifier.padding(start = 16.dp, top = 16.dp, end = 16.dp), large = true)
             // List names as chips in one scrolling row (docs/redesign.md 8.2).
@@ -435,6 +437,22 @@ private fun CardGrid(
     onSave: (DiscoveryEntry) -> Unit,
     onDismiss: (DiscoveryEntry, Boolean) -> Unit,
 ) {
+    if (app.discair.ui.common.isFlow()) {
+        // Flow: one white card to a row, the cover at the left (flow/discover frame 1).
+        androidx.compose.foundation.lazy.LazyColumn(
+            Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(start = 16.dp, top = 4.dp, end = 16.dp, bottom = 16.dp + app.discair.ui.LocalBottomClearance.current),
+            verticalArrangement = Arrangement.spacedBy(app.discair.ui.common.FlowPagesRules.DISCOVER_GAP.dp),
+        ) {
+            items(entries, key = { it.key }) { entry ->
+                FlowDiscoverCard(
+                    entry, open, saveState = saves[entry.key] ?: if (list == DiscoveryList.Saved) SaveState.Saved else SaveState.Idle,
+                    onSave = { onSave(entry) }, onDismiss = { artistToo -> onDismiss(entry, artistToo) }, modifier = Modifier.animateItem(),
+                )
+            }
+        }
+        return
+    }
     LazyVerticalGrid(
         GridCells.Fixed(2), Modifier.fillMaxSize(),
         contentPadding = PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 16.dp + app.discair.ui.LocalBottomClearance.current),

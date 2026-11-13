@@ -62,8 +62,9 @@ fun TasteCardView(profiles: TasteProfiles?, loaded: Boolean) {
     var window by remember { mutableStateOf("recent") }
     val state = TasteCard.state(profiles)
     val cs = app.discair.ui.common.isCoverStack()
+    val fl = app.discair.ui.common.isFlow()
     CardBox {
-        Eyebrow(if (cs && state is TasteCardState.Ready) "Your taste · " + TasteCard.windowLabel(state.headline.window, profiles?.recentDays ?: 90) else "Your taste")
+        Eyebrow(if ((cs || fl) && state is TasteCardState.Ready) "Your taste · " + TasteCard.windowLabel(state.headline.window, profiles?.recentDays ?: 90) else "Your taste")
         when (state) {
             TasteCardState.Empty -> {
                 Text(
@@ -89,17 +90,17 @@ fun TasteCardView(profiles: TasteProfiles?, loaded: Boolean) {
             is TasteCardState.Ready -> {
                 Text(state.headline.text, style = MaterialTheme.typography.titleLarge, modifier = Modifier.semantics { heading() })
                 val label = TasteCard.windowLabel(state.headline.window, profiles?.recentDays ?: 90)
-                if (cs) {
-                    // Soft Brut (mockup frame 2): the window's top four genres as ranked bars, then the listen counts and Details.
+                if (cs || fl) {
+                    // Soft Brut and Flow (mockup frame 2): the window's top four genres as ranked bars, then the listen counts and Details.
                     val w = profiles?.window(state.headline.window)
                     val top = if (w == null || w.isLowSample("genre")) emptyList() else w.entries("genre").take(4)
-                    if (top.isNotEmpty()) CoverStackBars(top)
+                    if (top.isNotEmpty()) { if (fl) FlowBars(top) else CoverStackBars(top) }
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                         Text(
                             "${state.windowListens} listens against ${state.allTimeListens} overall", Modifier.weight(1f),
                             color = Ink.TextMuted, style = MaterialTheme.typography.bodySmall,
                         )
-                        CoverStackLink("Details") { sheet = true }
+                        if (fl) FlowLink("Details") { sheet = true } else CoverStackLink("Details") { sheet = true }
                     }
                 } else {
                 Text(
@@ -116,7 +117,8 @@ fun TasteCardView(profiles: TasteProfiles?, loaded: Boolean) {
             }
         }
         if (cs && state is TasteCardState.Thin) CoverStackLink("Details") { sheet = true }
-        else if (state !is TasteCardState.Empty && !(cs && state is TasteCardState.Ready)) {
+        else if (fl && state is TasteCardState.Thin) FlowLink("Details") { sheet = true }
+        else if (state !is TasteCardState.Empty && !((cs || fl) && state is TasteCardState.Ready)) {
             Row(
                 Modifier.fillMaxWidth().heightIn(min = Target).clickable(role = Role.Button) { sheet = true },
                 horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically,
@@ -132,6 +134,7 @@ fun TasteCardView(profiles: TasteProfiles?, loaded: Boolean) {
 @Composable
 private fun CardBox(content: @Composable () -> Unit) {
     if (app.discair.ui.common.isCoverStack()) { CoverStackCardBox { content() }; return }
+    if (app.discair.ui.common.isFlow()) { FlowCardBox { content() }; return }
     Column(
         Modifier.fillMaxWidth().clip(themeShape(16.dp)).background(MaterialTheme.colorScheme.surface).padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -140,6 +143,7 @@ private fun CardBox(content: @Composable () -> Unit) {
 
 @Composable
 private fun Eyebrow(text: String) {
+    if (app.discair.ui.common.isFlow()) { app.discair.ui.common.FlowEyebrow(text); return }
     // Soft Brut never sets the accent as text: its eyebrow is the muted mono label.
     if (app.discair.ui.common.isCoverStack()) Text(
         text.uppercase(), color = app.discair.ui.theme.LocalPalette.current.textMuted,
@@ -188,6 +192,10 @@ private fun AllTimeChips(profiles: TasteProfiles?) {
 /** The mockup's two-way toggle. Each segment keeps the 48dp touch height even though the pill looks smaller. */
 @Composable
 private fun WindowToggle(selected: String, recentLabel: String = "Recent", onSelect: (String) -> Unit) {
+    if (app.discair.ui.common.isFlow()) {
+        app.discair.ui.common.FlowTabs(listOf(recentLabel, "All time"), if (selected == "recent") 0 else 1, { onSelect(if (it == 0) "recent" else "all_time") })
+        return
+    }
     if (app.discair.ui.common.isCoverStack()) {
         app.discair.ui.common.CoverStackTabs(listOf(recentLabel, "All time"), if (selected == "recent") 0 else 1, { onSelect(if (it == 0) "recent" else "all_time") }, Modifier.padding(end = 3.dp))
         return
@@ -236,7 +244,8 @@ internal fun TasteSheet(profiles: TasteProfiles, onDismiss: () -> Unit) {
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             val cs = app.discair.ui.common.isCoverStack()
-            if (cs) Text("Your taste", style = MaterialTheme.typography.titleLarge, modifier = Modifier.semantics { heading() }) else Eyebrow("Your taste")
+            val fl = app.discair.ui.common.isFlow()
+            if (cs || fl) Text("Your taste", style = MaterialTheme.typography.titleLarge, modifier = Modifier.semantics { heading() }) else Eyebrow("Your taste")
             Text(headline?.text ?: "No clear shift yet.", style = MaterialTheme.typography.titleLarge, modifier = Modifier.semantics { heading() })
             if (headline != null) {
                 for (s in profiles.shifts(headline.window)) MoverRow(s)
@@ -253,12 +262,12 @@ internal fun TasteSheet(profiles: TasteProfiles, onDismiss: () -> Unit) {
             }
             val windows = TasteProfiles.WindowNames
             // Soft Brut draws the windows first, then the dimension chips (mockup frame 3).
-            if (!cs) dimensionRow()
+            if (!cs && !fl) dimensionRow()
             app.discair.ui.common.SegmentedTabs(
                 windows.map { TasteCard.windowLabel(it, profiles.recentDays) }, windows.indexOf(window).coerceAtLeast(0),
                 onSelect = { window = windows[it] }, modifier = Modifier.fillMaxWidth().then(if (cs) Modifier.padding(end = 3.dp) else Modifier),
             )
-            if (cs) dimensionRow()
+            if (cs || fl) dimensionRow()
             val w = profiles.window(window)
             if (w == null) {
                 Text("No ${TasteCard.windowLabel(window, profiles.recentDays).lowercase()} window yet.", color = Ink.TextMuted, style = MaterialTheme.typography.bodyMedium)
@@ -283,7 +292,11 @@ internal fun TasteSheet(profiles: TasteProfiles, onDismiss: () -> Unit) {
                     },
                     enabled = made != PlaylistState.Working,
                     modifier = Modifier.fillMaxWidth().heightIn(min = Target).padding(top = 8.dp),
-                ) { Text(if (made == PlaylistState.Working) "Making the playlist…" else "Make ${if (target.firstOrNull()?.lowercaseChar()?.let { it in "aeiou" } == true) "an" else "a"} $target playlist") }
+                ) { Text(
+                    if (made == PlaylistState.Working) "Making the playlist…"
+                    else if (app.discair.ui.common.isFlow()) "Make a playlist from $target" // the mockup's words (flow/discover frame 3)
+                    else "Make ${if (target.firstOrNull()?.lowercaseChar()?.let { it in "aeiou" } == true) "an" else "a"} $target playlist",
+                ) }
                 when (val m = made) {
                     is PlaylistState.Done -> Text("Made \"${m.name}\" in Navidrome.", color = Ink.TextMuted, style = MaterialTheme.typography.bodySmall)
                     PlaylistState.Failed -> Text("Could not make the playlist. Try again.", color = app.discair.ui.theme.LocalPalette.current.chartRedText, style = MaterialTheme.typography.bodySmall)
@@ -304,6 +317,7 @@ private sealed interface PlaylistState {
 @Composable
 private fun Pick(label: String, on: Boolean, onClick: () -> Unit) {
     if (app.discair.ui.common.isCoverStack()) { CoverStackChip(label, on, onClick); return }
+    if (app.discair.ui.common.isFlow()) { app.discair.ui.common.FilterChip(on, onClick, { Text(label) }, Modifier.heightIn(min = Target)); return }
     Box(
         Modifier.heightIn(min = Target).clip(RoundedCornerShape(99.dp))
             .background(if (on) Ink.Text else Ink.Raised)
@@ -344,6 +358,7 @@ private fun Bars(w: TasteWindow, allTime: TasteWindow?, dimension: String, showT
         return
     }
     if (app.discair.ui.common.isCoverStack()) { CoverStackBars(entries, sketch); return }
+    if (app.discair.ui.common.isFlow()) { FlowBars(entries, sketch); return }
     for ((index, e) in entries.withIndex()) {
         val tick = if (showTick) allTime?.entries(dimension)?.firstOrNull { it.value == e.value }?.share else null
         Row(
