@@ -74,6 +74,12 @@ class FlowTest {
         assertEquals(30f, FlowRules.RADIUS_NAV, 0f); assertEquals(18f, FlowRules.RADIUS_MINI, 0f)
     }
 
+    @Test fun depthLevelsAndGroupedRowsKeepTheMockupNumbers() {
+        assertEquals(4f, FlowRules.elevation(1), 0f); assertEquals(8f, FlowRules.elevation(2), 0f); assertEquals(16f, FlowRules.elevation(3), 0f)
+        assertEquals(16f, FlowRules.RADIUS_CARD, 0f)
+        assertEquals(64f, FlowRules.ROW_MIN, 0f)
+    }
+
     @Test fun motionTakesTheStandardFamily() {
         assertEquals(MotionFamily.Standard, MotionRules.familyFor(Layout.Flow))
     }
