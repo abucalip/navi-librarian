@@ -1,3 +1,9 @@
+## 2026-11-13 — Art themes F3 part 1: Flow Album, Artist and Genre, and the bar blur (PR #1024)
+
+- Merged as `70567d503a16ab50980a5e752b398d94ecb6d6b8` from head `2ab4ee84c8afeac3d94e5546537a586a023cbe2a`. Flow pages from `flow/album-artist-genre` (wash on the album, full-width photo on the artist, Paths beside Play, white status bar icons over the photo, genre grid) and the D3 bar blur on the navigation capsule and mini player. Other themes unchanged. Details in `docs/ACTIVE_WORK.md` section 2l.
+- Verified, filtered (JDK 17): `FlowPagesRulesTest` (new), `FlowTest`, `ExistingLayoutsTest`. Full suite not run. CI result on the final head not re-checked by the agent. Not seen on a device; no screenshot comparison with the mockup.
+- Next action: the owner checks the album wash, the blur and the artist status bar on the phone; then F3 Discover, Library and Search.
+
 ## 2026-11-13 — Art themes F1 follow-up: Flow grouped list and small controls (PR #1021)
 
 - Merged as `7648531aba224cf5b4a188561176d5e432ad2ac2`. `FlowKit.kt` gains `FlowGroup`, `FlowListRow`, `FlowIconTile`, `FlowCircleButton` and `FlowTag` from `flow.css`; depth levels, capsule buttons and chips were already in #1020. No screen uses them yet.

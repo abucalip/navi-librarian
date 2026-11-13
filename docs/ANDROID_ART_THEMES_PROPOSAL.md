@@ -146,7 +146,7 @@ The accent in the chosen mockup was `#E8590C`. White on it is 3.6:1, which fails
 | Navigation and mini player | Two floating capsules (radius 30 and 18) in `--bar` with a hairline. The current destination is accent-coloured on a `raised` pill |
 | Wash | Album and Now Playing tint the top of the page with a colour taken from the cover, fading to the page by 420dp |
 
-The mockups blur what is behind the two bars. Compose cannot blur content behind a surface without extra work (a captured layer with `RenderEffect` on Android 12 and later, nothing below), so the first build uses the 86% fill with no blur; blur is a later refinement (section 8, D3).
+The mockups blur what is behind the two bars. Compose cannot blur content behind a surface without extra work (a captured layer with `RenderEffect` on Android 12 and later, nothing below), so the first build used the 86% fill with no blur. The blur was built in PR #1024 (section 8, D3): the page area records into a graphics layer and the navigation capsule and the mini player draw it blurred (24px) under the 86% fill.
 
 ## 5. Fonts and icons
 
@@ -245,7 +245,7 @@ The rule is a pure function (`HomeArtists.from(recent, frequent)`) with a unit t
 |---|---|---|
 | D1 | `BrutalShape(radius, outline, shadow)` takes whole numbers; Soft Brut needs a 1.5dp outline | Change the three fields to `Float` (existing values are unchanged). If the owner prefers no change to the class, Soft Brut uses 2dp. **Settled 2026-11-13: taken as proposed; done in step 0 (PR #1005)** |
 | D2 | Colours from the cover (the Flow wash) | Use the Palette library the player already uses for artwork tint if present; otherwise the wash is `raised` and the colour is a later refinement. Confirm at step F1. **Settled 2026-11-13: as proposed.** The app already derives the cover colour (`tint`) and lightens it with `pastelOf` for light themes (`theme/Theme.kt`, used by the album, artist and Now Playing washes), so the Flow wash reuses it in F3 and needs no new dependency |
-| D3 | Blur behind the Flow bars | Not in the first build (section 4) |
+| D3 | Blur behind the Flow bars | Not in the first build (section 4). **Built 2026-11-13 in PR #1024** with a captured layer and `RenderEffect` (the app's minimum is Android 13); recorded only on Flow. Radius 24px, fill unchanged at 86%; not judged on a device |
 | D4 | The font pair when a theme is chosen | Suggested, not forced (section 5). The owner may prefer each theme to lock its pair. **Settled 2026-11-13: suggested, not forced** |
 | D5 | Dark variants | Not designed. Each theme is one light palette, as Round 3 did; a night palette for each is a later proposal |
 | D7 | Flow tokens adjusted at F1 so the shared contrast tests pass | `textMuted` `#6F6A60` to `#645F55` (3.96:1 on the player's pastel washes before, 4.67:1 after); `ok` `#1E7A3C` to `#1B7339` (4.44:1 on its tint before, 4.87:1 after); `chart2` `#A8A296` to `#8F897D` (2.54:1 on white before, 3.48:1 after). An accent tag takes the text colour for its label because the accent on its own tint is 4.23:1. D2 (wash colour) is settled and is used from F3 |
