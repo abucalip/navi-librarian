@@ -187,6 +187,8 @@ Every mockup is in [`docs/design/redesign/macos/cupertino/`](design/redesign/mac
 
 ### 5.1 Home
 
+> **Superseded layout (2026-11-13).** The owner chose an artwork-led Home, "Marquee". Its plan is [`MACOS_HOME_MARQUEE_PLAN.md`](MACOS_HOME_MARQUEE_PLAN.md) and its mockups are in [`design/macos-home-marquee/`](design/macos-home-marquee/). Nothing of it is built yet, so the text below still describes the Home in the app. The plan moves modules 4, 5, 6, 8 (the charts) to Insights and module 9 to Settings.
+
 Mockups: `home--default-full`, `home--default`, `home--loading`, `home--first-run`, `home--degraded`, `home--librarian-unreachable`, `home--handoff`.
 
 Content is 980 wide at the 1280 window. Rows are a 2:1 split with a 16 gap, except the taste and lens row (1:1). When the queue inspector is open or the content is under 860 wide, each row stacks into one column in reading order.

@@ -1,0 +1,45 @@
+/* Styles used only by the two mockups that were not chosen. */
+/* B · Cover Wall */
+.chips{display:flex;gap:6px}.chip{padding:4px 12px;border-radius:99px;background:var(--f);color:var(--t2);font-size:12px;font-weight:600}.chip.on{background:var(--t);color:var(--c)}
+.wall{display:grid;grid-template-columns:repeat(8,1fr);grid-auto-rows:114px;gap:10px}
+.wall>*{border-radius:10px;min-width:0;min-height:0}
+.wall .cv{box-shadow:none;width:auto;height:auto}
+.wall .cap{position:absolute;left:0;right:0;bottom:0;padding:26px 12px 10px;border-radius:0 0 10px 10px;background:linear-gradient(transparent,rgba(0,0,0,.78));color:#fff}
+.wall .cap b{display:block;font-size:14px}.wall .cap span{font-size:12px;opacity:.85}
+.pickB{display:flex;flex-direction:column;justify-content:flex-end;padding:16px;gap:6px;background-size:cover;position:relative;overflow:hidden;color:#fff}
+.pickB::after{content:"";position:absolute;inset:0;background:linear-gradient(transparent 30%,rgba(0,0,0,.86))}
+.pickB>*{position:relative;z-index:1}.pickB h4{font:700 24px/1.1 var(--dp);margin:0;letter-spacing:-.3px}
+.pickB p{margin:0;font-size:12.5px;line-height:1.4;opacity:.9}
+.pickB .acts{display:flex;gap:6px;margin-top:4px;align-items:center}
+.pickB .tag{position:absolute;z-index:1}
+.txt{background:var(--p);padding:12px 14px;display:flex;flex-direction:column;justify-content:center;gap:3px}
+.txt .big{font:700 26px/1 var(--dp);letter-spacing:-.4px}.txt span{color:var(--t2);font-size:12px}.txt p{margin:0;font-size:13px;line-height:1.35}
+.txt.go{background:var(--at);color:var(--a);font-weight:700;font-size:14px;flex-direction:row;align-items:center;justify-content:space-between}
+
+/* C · Covers as Charts */
+.rowC{display:grid;grid-template-columns:1.12fr 1fr;gap:26px}
+.deck{display:flex;gap:26px;align-items:center}
+.stack{width:236px;height:236px;position:relative;flex:none;margin:6px 10px 6px 14px}
+.stack .cv{position:absolute;inset:8px;width:auto;height:auto;border-radius:12px}
+.stack .cv:nth-child(1){transform:rotate(-8deg) translate(-14px,4px);filter:brightness(.8)}
+.stack .cv:nth-child(2){transform:rotate(6deg) translate(12px,2px);filter:brightness(.9)}
+.deck .mx{min-width:0;display:flex;flex-direction:column;gap:6px}
+.deck h4{font:700 24px/1.1 var(--dp);margin:0;letter-spacing:-.3px}
+.deck p{margin:0;color:var(--t2);line-height:1.45}
+.deck .acts{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.rot{display:grid;grid-template-columns:148px 1fr;gap:10px;height:148px}
+.rot .cv{border-radius:9px}.rot>div{display:flex;flex-direction:column;gap:10px;min-width:0}
+.rot .r1,.rot .r2{display:flex;gap:10px}.rot .r1 .cv{width:80px;height:80px}.rot .r2 .cv{width:58px;height:58px}
+.note{color:var(--t2);font-size:12px;margin:8px 0 0}.note b{color:var(--t);font-weight:600}
+.way{display:flex;gap:12px}.way{gap:10px}.way .ti{width:64px}.way .ti b{font-size:12px}.way .ti span{font-size:11px}
+.ribbon{display:flex;gap:4px}
+.dec{min-width:0;display:flex;flex-direction:column;gap:6px}
+.dec .strip{height:96px;border-radius:8px;overflow:hidden;display:flex;flex-wrap:wrap;align-content:flex-start;background:var(--f)}
+.dec .strip i{flex:1 0 44px;height:48px;background-size:cover;background-position:center}
+.dec b{font-size:13px}.dec span{color:var(--t2);font-size:11.5px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dec .ls{height:4px;border-radius:2px;background:var(--f)}.dec .ls i{display:block;height:100%;border-radius:2px;background:var(--t3)}
+.dec.sel b{color:var(--a)}.dec.sel .ls i{background:var(--a)}
+.dust{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;align-items:end}
+.lastC{display:grid;grid-template-columns:1fr 286px;gap:30px;align-items:end}.pile{position:relative;height:100px}
+.pile .cv{position:absolute;left:0;bottom:0;width:58px;height:58px;border-radius:6px;box-shadow:0 2px 8px rgba(0,0,0,.25)}
+.dust .lb b{display:block;font-size:13px}.dust .lb span{color:var(--t2);font-size:12px}.dust .nv b{color:var(--a)}

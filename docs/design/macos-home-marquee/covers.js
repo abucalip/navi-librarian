@@ -1,0 +1,29 @@
+/* Sample data and drawn stand-in covers for the mockups. Not app code: the app shows real artwork through CoverView.
+   Album names, artists and years are invented. */
+
+const AL=[["Salt Flats at Noon","Marit Oyelaran",1974],["Paper Lanterns","The Low Tides",2019],["Night Bus to Porto","Idris Vale",1998],["Glasshouse","Coral & Vine",2021],["Second Weather","Hana Brückner",1986],["Lowland Hymns","Tomasz Aderin",2007],["Copper Season","Ruth Okabe Quartet",1963],["Signal Fires","Neon Orchard",2014],["Half Moon Motel","Dara Lindqvist",1979],["Tidewater","Malik Serrano",2002],["Blue Hour Study","Ensemble Varga",1991],["The Quiet Engine","Pilot Fields",2023],["Orchard Road","Sena Marlowe",1971],["Static Bloom","Kite Theory",2016],["Harbour Lights","Okonkwo & Reyes",1984],["Slow Carousel","Lena Ashby",2010],["Northern Rooms","Arvid Solheim",1996],["Velvet Arithmetic","The Parallels",1968],["Mirror Lake","Yuki Tanabe",2005],["Dust and Honey","Elias Ward",1977],["After the Parade","Brass Lantern",2018],["Winter Citrus","Noor Haddad",2022],["Long Way Round","Calloway Trio",1959],["Soft Machines","Vera Koss",1989],["Ember Days","Juniper Hale",2012],["Sea Legs","The Driftwoods",1994],["Tin Roof Sun","Abel Fontaine",1966],["Parallel Summer","Mono Garden",2020],["Low Sun","Ines Ferreira",1982],["Field Notes","Hollow Pines",2009],["Radio Silence","Kasimir",2001],["Green Room","Odette Marsh",1975],["Small Hours","Theo Lang",2017],["Cinder Path","Wren & Ivory",1999],["Open Water","Sable Coast",2024],["Analog Heart","Mira Castell",1987]];
+const PAL=[["#f2c14e","#d1495b","#2e4057"],["#e9d8a6","#0a9396","#9b2226"],["#ffb4a2","#6d597a","#355070"],["#f6f0e2","#e76f51","#264653"],["#cdb4db","#3d348b","#f7b801"],["#d8f3dc","#40916c","#1b4332"],["#f8edeb","#22223b","#c9184a"],["#ffd166","#ef476f","#073b4c"],["#e0e1dd","#415a77","#0d1b2a"],["#fec89a","#bc4749","#386641"],["#bde0fe","#fb8500","#023047"],["#f1faee","#457b9d","#e63946"]];
+function rng(s){return()=>{s|=0;s=s+0x6D2B79F5|0;let t=Math.imul(s^s>>>15,1|s);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function cover(i){const S=256,c=document.createElement('canvas');c.width=c.height=S;const g=c.getContext('2d'),r=rng(i*7919+31);
+ let p=PAL[(i*5+3)%PAL.length].slice();if(r()>.5)p.reverse();const [a,b,d]=p,k=i%8;
+ const lg=(x0,y0,x1,y1,c0,c1)=>{const q=g.createLinearGradient(x0,y0,x1,y1);q.addColorStop(0,c0);q.addColorStop(1,c1);return q};
+ g.fillStyle=d;g.fillRect(0,0,S,S);
+ if(k==0){g.fillStyle=lg(0,0,0,S,a,b);g.fillRect(0,0,S,S);g.fillStyle=d;g.beginPath();g.arc(S*(.3+r()*.4),S*.58,S*.27,0,7);g.fill();g.fillStyle=b;for(let y=S*.6;y<S;y+=14)g.fillRect(0,y,S,5+(y-S*.6)/14)}
+ else if(k==1){g.save();g.translate(S/2,S/2);g.rotate(-.6+r()*1.2);const w=22+r()*26;for(let x=-S,j=0;x<S;x+=w,j++){g.fillStyle=[a,b,d][j%3];g.fillRect(x,-S,w+1,S*2)}g.restore()}
+ else if(k==2){const cx=S*(.25+r()*.5),cy=S*(.25+r()*.5);for(let q=S*1.1,j=0;q>8;q-=18+r()*10,j++){g.fillStyle=[a,b,d][j%3];g.beginPath();g.arc(cx,cy,q,0,7);g.fill()}}
+ else if(k==3){g.fillStyle=a;g.fillRect(0,0,S,S);g.fillStyle=b;g.fillRect(S*.08,S*.08,S*.38,S*.6);g.fillStyle=d;g.fillRect(S*.52,S*.08,S*.4,S*.28);g.beginPath();g.arc(S*.72,S*.56,S*.15,0,7);g.fill();g.fillRect(S*.08,S*.76,S*.84,S*.07);g.fillStyle=b;g.fillRect(S*.08,S*.87,S*.5,S*.035)}
+ else if(k==4){for(let j=0;j<7;j++){const x=r()*S,y=r()*S,q=g.createRadialGradient(x,y,0,x,y,S*(.3+r()*.4));q.addColorStop(0,[a,b,a,b][j%4]);q.addColorStop(1,'rgba(0,0,0,0)');g.fillStyle=q;g.fillRect(0,0,S,S)}}
+ else if(k==5){g.fillStyle=a;g.fillRect(0,0,S,S);g.fillStyle=d;g.beginPath();g.moveTo(0,S);g.lineTo(S,0);g.lineTo(S,S);g.fill();g.fillStyle=b;for(let y=22;y<S;y+=30)for(let x=22;x<S;x+=30)if(x+y<S-10){g.beginPath();g.arc(x,y,3+((x+y)/S)*7,0,7);g.fill()}}
+ else if(k==6){g.fillStyle=lg(0,0,0,S,a,b);g.fillRect(0,0,S,S);g.fillStyle='rgba(255,255,255,.85)';g.beginPath();g.arc(S*(.2+r()*.6),S*.3,S*.09,0,7);g.fill();for(let j=0;j<4;j++){const y0=S*(.45+j*.14),ph=r()*6,am=18+r()*18;g.fillStyle=d;g.globalAlpha=.35+j*.2;g.beginPath();g.moveTo(0,S);for(let x=0;x<=S;x+=8)g.lineTo(x,y0+Math.sin(x/38+ph)*am);g.lineTo(S,S);g.fill()}g.globalAlpha=1}
+ else{g.fillStyle=b;g.fillRect(0,0,S,S);g.fillStyle=a;g.font='900 300px Georgia,serif';g.fillText(AL[i%AL.length][0][0],-20+r()*40,S*.92);g.fillStyle=d;g.fillRect(S*.08,S*.08,S*.3,S*.03)}
+ const im=g.getImageData(0,0,S,S),D=im.data;for(let q=0;q<D.length;q+=4){const n=(r()-.5)*22;D[q]+=n;D[q+1]+=n;D[q+2]+=n}g.putImageData(im,0,0);
+ return c.toDataURL('image/jpeg',.82)}
+const CV=AL.map((_,i)=>cover(i));
+const cv=(i,x='',st='')=>`<div class="cv" data-c="${i}" style="${st}">${x}</div>`;
+const ti=(i,st,x='',cls='')=>`<div class="ti">${cv(i,x)}<b>${AL[i][0]}</b><span>${AL[i][1]}</span>${st?`<span class="st ${cls}">${st}</span>`:''}</div>`;
+const busy=v=>`<div class="busy"><div class="ring" style="--v:${v}%"></div></div>`,play='<div class="play">▶</div>';
+const shell=(body,np)=>`<div class="win"><div class="sb"><div class="tl"><i></i><i></i><i></i></div><div class="r on">Home</div><div class="r">Library</div><div class="r">Radio</div><div class="g">Discover ›</div><div class="r">Insights</div><div class="r">Smart Playlists</div><div class="r">Downloads</div><div class="r">Settings</div></div>
+<div class="main"><div class="top"><h3>Home</h3><span class="cx">● Home · Tailscale</span><span class="srch">Search ⌘K</span></div><div class="bd">${body}</div>
+<div class="pb onart"><div class="blur" data-c="${np}"></div>${cv(np,'','width:48px;height:48px;border-radius:6px')}<div class="mx"><b>${AL[np][0]}</b><span>${AL[np][1]}</span></div><div class="tx"><span>⏮</span><span class="pp">⏸</span><span>⏭</span></div><div class="bar"><i></i></div><span style="opacity:.8;font-size:12px">1:52 / 4:47</span></div></div></div>`;
+
+function paint(root){(root||document).querySelectorAll('[data-c]').forEach(e=>e.style.backgroundImage=`url(${CV[e.dataset.c]})`)}
