@@ -1,6 +1,6 @@
 # Paths sheets redesign: Trail (proposal)
 
-Status: **proposal, not built.** Written 2026-11-13. The owner was shown three layouts for the Android Paths sheets (Trail, Shelves, Deck) and chose **Trail** on 2026-11-13. This document is the build specification for it. The owner decided D1 to D5 on 2026-11-13 (section 11); the build is approved and goes in the order of section 9.
+Status: **build in progress: steps 1 to 5 merged (PRs #1030, #1031); step 6 and the phone check remain.** Written 2026-11-13. The owner was shown three layouts for the Android Paths sheets (Trail, Shelves, Deck) and chose **Trail** on 2026-11-13. This document is the build specification for it. The owner decided D1 to D5 on 2026-11-13 (section 11); the build is approved and goes in the order of section 9.
 
 Scope: the Android client only, the two sheets `ArtistPathsSheet` (artist page) and `AlbumPathsSheet` (album page). One layout for every theme: no per-theme screens. No server change, no new request, no new colour.
 
