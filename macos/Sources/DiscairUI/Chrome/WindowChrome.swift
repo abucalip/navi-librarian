@@ -42,7 +42,8 @@ struct WindowConfigurator: NSViewRepresentable {
         w.titleVisibility = .hidden
         w.styleMask.insert(.fullSizeContentView)
         w.isMovableByWindowBackground = true
-        w.backgroundColor = .clear
+        w.backgroundColor = .windowBackgroundColor
+        w.isOpaque = true
         for b in [NSWindow.ButtonType.closeButton, .miniaturizeButton, .zoomButton] {
             w.standardWindowButton(b)?.isHidden = true
         }

@@ -5,22 +5,18 @@ public struct RootView: View {
     @Bindable var state: AppState
     public init(state: AppState) { self.state = state }
 
-    /// The smallest size the screens are drawn for. A window smaller than this scrolls instead of squeezing the layout.
+    /// The smallest window the screens are drawn for. The window cannot be resized below it, so the content never scrolls or bounces.
     static let designSize = CGSize(width: 1100, height: 700)
 
     public var body: some View {
         let theme = ThemeRegistry.theme(state.themeID)
-        GeometryReader { g in
-            ScrollView([.horizontal, .vertical]) {
-                theme.window(state: state)
-                    .id(state.appearance.revision)
-                    .safeAreaInset(edge: .top, spacing: 0) {
-                        if let notice = state.offlineNotice { OfflineBanner(state: state, text: notice) }
-                    }
-                    .frame(width: max(g.size.width, Self.designSize.width), height: max(g.size.height, Self.designSize.height))
+        theme.window(state: state)
+            .id(state.appearance.revision)
+            .safeAreaInset(edge: .top, spacing: 0) {
+                if let notice = state.offlineNotice { OfflineBanner(state: state, text: notice) }
             }
-            .scrollBounceBehavior(.basedOnSize)
-        }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(Color(nsColor: .windowBackgroundColor))
         .ignoresSafeArea()
         .background(SpaceBarPlayPause { [state] in state.player.togglePlayPause() })
         .overlay { PipelineDockView(state: state) }
@@ -29,6 +25,6 @@ public struct RootView: View {
         .sheet(item: $state.paths) { PathsSheet(state: state, model: $0) }
         .preferredColorScheme(state.appearance.mode == .night ? .dark : .light)
         .environment(\.artwork, state.artwork)
-        .frame(minWidth: 480, minHeight: 360)
+        .frame(minWidth: Self.designSize.width, minHeight: Self.designSize.height)
     }
 }
