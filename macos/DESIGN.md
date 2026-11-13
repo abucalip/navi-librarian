@@ -518,3 +518,19 @@ Internet radio on the Mac, built from the owner's choices. Mockups (the spec): [
 - **Changed from the mockup:** the sheet has no per-tag drag order (the server keeps the list order as sent); the count line "3 of 10 tags. Up to 24 characters each." is added so the limits are visible before they are hit.
 - **Tests run (filtered):** `swift test --skip-update --filter "RadioClientTests|StationRulesTests|StationsModelTests|rendersStations"`: 63 passed (includes five new `TagDraft` tests and the render of the empty page and the sheet in Day).
 - **Not verified:** not seen in a window (right-click menu, sheet focus and Return/Escape keys were not tried by hand), Night mode, the error state render, VoiceOver.
+
+### Radio, S2-2 item 1: the tap spike (2026-11-14) — FAILED, stopped for the owner
+
+`discair-audio-spike live` plays a stream through `LiveStreamPlayer` (AVPlayer, `MTAudioProcessingTap` on the item's audio track, attached at ready-to-play before the first sound) and counts level values. Volume 0.1, 12 to 15 s per stream. Addresses are never printed.
+
+| Source | Sound | Tap samples |
+|---|---|---|
+| Local m4a file (control, same code) | yes | yes (35 values in 3 s) |
+| Public Icecast MP3, direct | yes, first sound 1.1 to 1.5 s | **none** |
+| Public Icecast AAC (ADTS), direct | yes, first sound 2.8 to 3.1 s | **none** |
+| The same MP3 and AAC through a local pass-through relay that sends no ICY metadata | yes | **none** |
+
+- The item lists one audio track (`item.tracks`; `asset.loadTracks` returns none for a live asset), the tap is created and attached, and `process` is never called. The tap works on a file, so the code is sound; AVFoundation does not feed taps on live progressive streams.
+- **Not tested:** the owner's real relayed stations. The Librarian answered at the corrected address (`config.env` has `192.168.1..12`, a double dot), but the login in `config.env` was refused ("Invalid username or password"). The relay emulation above is a stand-in, not proof.
+- By the proposal (S2.6 "Proof first") the work stops here. Choices for the owner: **B1 everywhere** (the 3 pt hairline, no meter), or **decode the stream into the existing engine** (a larger piece of work, and it would give real levels).
+- The tap callbacks must be built in a `nonisolated` context: closures made inside a `@MainActor` class trap at run time when AVFoundation calls them on the audio thread.
