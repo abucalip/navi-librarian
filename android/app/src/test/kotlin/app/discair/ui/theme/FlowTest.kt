@@ -14,12 +14,12 @@ class FlowTest {
     private fun ratio(a: androidx.compose.ui.graphics.Color, b: androidx.compose.ui.graphics.Color) = Contrast.ratio(a, b)
     private fun hex(c: androidx.compose.ui.graphics.Color) = "%02X%02X%02X".format((c.red * 255).toInt(), (c.green * 255).toInt(), (c.blue * 255).toInt())
 
-    @Test fun flowIsTheOnlyFlowLayoutAndALightClassicTheme() {
+    @Test fun flowIsALightClassicFlowLayoutTheme() {
         assertEquals("flow", p.id); assertEquals("Flow \u00b7 Warm white", p.label)
         assertEquals(Layout.Flow, p.layout); assertEquals("Flow", p.layout.label)
         assertEquals(Family.Classic, p.family); assertNull(p.shape); assertFalse(p.brutal)
         assertTrue(p.light && p in Palettes.Light)
-        assertEquals(listOf(p), Palettes.All.filter { it.layout == Layout.Flow })
+        assertEquals(setOf("flow", "flow_forest", "flow_raspberry", "flow_violet"), Palettes.All.filter { it.layout == Layout.Flow }.map { it.id }.toSet())
         assertEquals(Layout.Flow, p.overArtwork(Palettes.Night).layout)
         assertEquals("flow", AppearanceRules.sanitizeDay("flow"))
         assertEquals(Palettes.Night.id, AppearanceRules.sanitizeNight("flow"))
@@ -93,5 +93,60 @@ class FlowTest {
         assertNull(AppearanceRules.suggestedFont(p, "flow"))
         assertEquals(FontPairs.Discair.id, AppearanceRules.sanitizeFont(FontPairs.Discair.id))
         assertEquals("flow", AppearanceRules.sanitizeFont("flow"))
+    }
+
+    // Step P3 of docs/palettes.md: the three new day palettes (sections 4.2 and 4.4).
+    private val day = listOf(Palettes.FlowForest, Palettes.FlowRaspberry, Palettes.FlowViolet)
+
+    @Test fun newDayPalettesAreListedAfterFlowAndKeepTheThemeShape() {
+        assertEquals(listOf("flow", "flow_forest", "flow_raspberry", "flow_violet"), Palettes.Light.map { it.id }.filter { it.startsWith("flow") })
+        assertEquals(listOf("Flow · Forest", "Flow · Raspberry", "Flow · Violet"), day.map { it.label })
+        for (d in day) {
+            assertTrue(d.light && d in Palettes.Light && d !in Palettes.Dark)
+            assertEquals(Layout.Flow, d.layout); assertEquals(Family.Classic, d.family); assertNull(d.shape); assertEquals("flow", d.suggestedFontId)
+            assertEquals(d.id, AppearanceRules.sanitizeDay(d.id))
+            assertEquals(Palettes.Night.id, AppearanceRules.sanitizeNight(d.id))
+            assertEquals(p.ok, d.ok); assertEquals(p.okDim, d.okDim); assertEquals(p.caution, d.caution); assertEquals(p.cautionDim, d.cautionDim)
+            assertEquals(p.chartRedText, d.chartRedText); assertEquals(p.dangerDim, d.dangerDim); assertEquals(p.info, d.info); assertEquals(p.infoDim, d.infoDim)
+        }
+    }
+
+    @Test fun newDayPalettesMatchTheSpecTable() {
+        // id -> page, surface, raised, edge, strong edge, text, muted, accent, accentDim, onAccent, chart2, chart3
+        val spec = mapOf(
+            "flow_forest" to listOf("F8F9F4", "FFFFFF", "E9EDE2", "DBE0D2", "7D8672", "12150F", "596051", "1B7340", "D9EEDF", "FFFFFF", "87907C", "D0D6C6"),
+            "flow_raspberry" to listOf("FCF8F8", "FFFFFF", "F1E8E9", "E5DADB", "8E7F82", "171113", "6A5C5F", "BE2260", "FADCE6", "FFFFFF", "96878A", "DCCFD1"),
+            "flow_violet" to listOf("F9F8FC", "FFFFFF", "ECEAF3", "DEDBE8", "827D93", "13111A", "5F5A6E", "6A3BD2", "E7DEFA", "FFFFFF", "8A859B", "D3CFE0"),
+        )
+        for (d in day) {
+            val got = listOf(d.ink, d.surface, d.raised, d.edge, d.edgeStrong, d.text, d.textMuted, d.accent, d.accentDim, d.onAccent, d.chart2, d.chart3).map(::hex)
+            assertEquals(d.id, spec[d.id], got)
+            assertEquals(d.ink, d.rail); assertEquals(d.accent, d.chart1); assertEquals(d.raised, d.chartGhost); assertEquals(d.edge, d.chartGrid); assertEquals(d.edgeStrong, d.chartBase)
+            assertEquals(4.5, d.minTextContrast, 0.0)
+        }
+    }
+
+    @Test fun everyNewDayPaletteMeetsTheContrastFloors() {
+        for (d in day) {
+            for ((name, bg) in listOf("page" to d.ink, "surface" to d.surface, "raised" to d.raised)) {
+                assertTrue("${d.id} text on $name", ratio(d.text, bg) >= 4.5)
+                assertTrue("${d.id} muted on $name", ratio(d.textMuted, bg) >= 4.5)
+                assertTrue("${d.id} error on $name", ratio(d.chartRedText, bg) >= 4.5)
+            }
+            assertTrue("${d.id} accent on the page", ratio(d.accent, d.ink) >= 4.5)
+            assertTrue("${d.id} accent on the surface", ratio(d.accent, d.surface) >= 4.5)
+            assertTrue("${d.id} label on the accent", ratio(d.onAccent, d.accent) >= 4.5)
+            assertTrue("${d.id} text on the accent tint", ratio(d.text, d.accentDim) >= 4.5)
+            assertTrue("${d.id} ok", ratio(d.ok, d.okDim) >= 4.5); assertTrue("${d.id} caution", ratio(d.caution, d.cautionDim) >= 4.5)
+            assertTrue("${d.id} danger", ratio(d.chartRedText, d.dangerDim) >= 4.5); assertTrue("${d.id} info", ratio(d.info, d.infoDim) >= 4.5)
+            assertTrue("${d.id} the strong edge holds against the page", ratio(d.edgeStrong, d.ink) >= 3.0)
+            assertEquals(d.accent, d.accentText)
+        }
+    }
+
+    @Test fun switchAndChevronFollowThePaletteAndTheCurrentFlowIsUnchanged() {
+        assertEquals("D9D5CB", hex(FlowRules.switchOff(p))); assertEquals("B5B0A5", hex(FlowRules.chevron(p)))
+        assertEquals(listOf("D0D6C6", "DCCFD1", "D3CFE0"), day.map { hex(FlowRules.switchOff(it)) })
+        assertEquals(listOf("AEB5A3", "BBADB0", "B2AEC2"), day.map { hex(FlowRules.chevron(it)) })
     }
 }

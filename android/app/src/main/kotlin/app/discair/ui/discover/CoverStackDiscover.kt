@@ -119,9 +119,9 @@ internal fun SmallButton(label: String?, icon: ImageVector?, filled: Boolean, de
                 .coverStackFrame(shape, p, if (filled) p.accent else p.surface).padding(horizontal = if (label == null) 0.dp else 8.dp),
             horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically,
         ) {
-            if (icon != null) Icon(icon, contentDescription = null, tint = p.text, modifier = Modifier.size(18.dp))
+            if (icon != null) Icon(icon, contentDescription = null, tint = if (filled) p.onAccent else p.text, modifier = Modifier.size(18.dp))
             if (icon != null && label != null) Spacer(Modifier.width(5.dp))
-            if (label != null) Text(label, color = p.text, maxLines = 1, style = MaterialTheme.typography.labelLarge.copy(fontSize = 13.sp, fontWeight = FontWeight.Bold))
+            if (label != null) Text(label, color = if (filled) p.onAccent else p.text, maxLines = 1, style = MaterialTheme.typography.labelLarge.copy(fontSize = 13.sp, fontWeight = FontWeight.Bold))
         }
     }
 }
@@ -219,7 +219,7 @@ internal fun CoverStackInsightCard(card: InsightCard, open: Opener, onDismiss: (
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 val tag = RoundedCornerShape(6.dp)
                 Text(
-                    lensName(card.kind).uppercase(), color = p.text, maxLines = 1,
+                    lensName(card.kind).uppercase(), color = p.onAccent, maxLines = 1,
                     style = MaterialTheme.typography.labelSmall.copy(fontFamily = LocalFontPair.current.mono, fontWeight = FontWeight.Medium, fontSize = 10.sp, lineHeight = 14.sp, letterSpacing = 0.7.sp),
                     modifier = Modifier.background(if (card.kind == "anniversary") p.accent4 else p.accent3, tag).border(CoverStackRules.outline(p).dp, p.edgeStrong, tag).padding(horizontal = 7.dp, vertical = 2.dp),
                 )
@@ -250,7 +250,7 @@ private fun SmallButtonWide(label: String, filled: Boolean, modifier: Modifier =
         Box(
             Modifier.height(44.dp).widthIn(min = 64.dp).then(if (filled) Modifier.fillMaxWidth() else Modifier).coverStackFrame(shape, p, if (filled) p.accent else p.surface).padding(horizontal = 14.dp),
             contentAlignment = Alignment.Center,
-        ) { Text(label, color = p.text, maxLines = 1, textAlign = TextAlign.Center, style = MaterialTheme.typography.labelLarge.copy(fontSize = 14.sp, fontWeight = FontWeight.Bold)) }
+        ) { Text(label, color = if (filled) p.onAccent else p.text, maxLines = 1, textAlign = TextAlign.Center, style = MaterialTheme.typography.labelLarge.copy(fontSize = 14.sp, fontWeight = FontWeight.Bold)) }
     }
 }
 

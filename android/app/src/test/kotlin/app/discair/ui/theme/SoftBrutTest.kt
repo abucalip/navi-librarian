@@ -17,7 +17,7 @@ class SoftBrutTest {
         assertEquals(Layout.CoverStack, p.layout); assertEquals("Cover Stack", p.layout.label)
         assertEquals(Family.Brutal, p.family)
         assertTrue(p.light && p in Palettes.Light)
-        assertEquals(setOf("softbrut", "softbrut_mint", "softbrut_peach", "softbrut_sky", "softbrut_lemon"), Palettes.All.filter { it.layout == Layout.CoverStack }.map { it.id }.toSet())
+        assertEquals(setOf("softbrut", "softbrut_mint", "softbrut_peach", "softbrut_sky", "softbrut_lemon", "softbrut_midnight_mint", "softbrut_plum_peach", "softbrut_navy_sky"), Palettes.All.filter { it.layout == Layout.CoverStack }.map { it.id }.toSet())
         assertEquals(Layout.CoverStack, p.overArtwork(Palettes.Night).layout)
         assertEquals("softbrut", AppearanceRules.sanitizeDay("softbrut"))
         assertEquals(Palettes.Night.id, AppearanceRules.sanitizeNight("softbrut"))
@@ -140,6 +140,68 @@ class SoftBrutTest {
             assertTrue("${d.id} danger", ratio(d.chartRedText, d.dangerDim) >= 4.5); assertTrue("${d.id} info", ratio(d.info, d.infoDim) >= 4.5)
             assertTrue("${d.id} accent holds against the page", ratio(d.accent, d.ink) >= d.minAccentContrast)
             assertEquals(d.text, d.accentText)
+        }
+    }
+
+    // Step P2 of docs/palettes.md: the three night palettes (sections 3 and 4.1, 4.3).
+    private val night = listOf(Palettes.SoftBrutMidnightMint, Palettes.SoftBrutPlumPeach, Palettes.SoftBrutNavySky)
+
+    @Test fun nightPalettesAreListedInTheDarkListAndKeepTheThemeShape() {
+        assertEquals(listOf("night"), Palettes.Dark.map { it.id }.take(1))
+        assertEquals(listOf("softbrut_midnight_mint", "softbrut_plum_peach", "softbrut_navy_sky"), Palettes.Dark.map { it.id }.filter { it.startsWith("softbrut") })
+        assertEquals(listOf("Soft Brut · Midnight Mint", "Soft Brut · Plum Peach", "Soft Brut · Navy Sky"), night.map { it.label })
+        for (d in night) {
+            assertTrue(!d.light && d in Palettes.Dark && d !in Palettes.Light)
+            assertEquals(Layout.CoverStack, d.layout); assertEquals(Family.Brutal, d.family); assertEquals("brut_modern", d.suggestedFontId)
+            assertEquals(Triple(10f, 1.5f, 3f), Triple(d.shape!!.radius, d.shape!!.outline, d.shape!!.shadow))
+            assertEquals(d.edge, d.edgeStrong); assertEquals(d.edgeStrong, d.shadowColor); assertEquals(d.edgeStrong, d.chartBase)
+            assertEquals(d.ink, d.onAccent) // dark ink on every pastel fill
+            assertEquals(d.id, AppearanceRules.sanitizeNight(d.id))
+            assertEquals(Palettes.Sand.id, AppearanceRules.sanitizeDay(d.id))
+            assertEquals(Layout.CoverStack, d.overArtwork(Palettes.Night).layout)
+        }
+    }
+
+    @Test fun nightPalettesMatchTheSpecTable() {
+        // id -> page, surface, raised, outline, text, muted, accent, accentDim, accent2, accent3, accent4, soft edge, chart2
+        val spec = mapOf(
+            "softbrut_midnight_mint" to listOf("101714", "18221D", "223029", "DDEFE3", "EFF8F1", "A9C0B2", "9BE3C0", "1F4636", "FFD9A8", "C9BBFF", "FFD84D", "31443A", "7E9487"),
+            "softbrut_plum_peach" to listOf("1B1416", "261C1F", "35272B", "F6E4DC", "FFF3EE", "CDB3AD", "FFB59A", "55302A", "BFE3FF", "B9E8C2", "FFD84D", "4A383C", "9A827D"),
+            "softbrut_navy_sky" to listOf("0F1520", "17202F", "212D42", "DCE7F7", "F0F5FF", "A7B5CC", "A9CCFF", "24406B", "FFC9DE", "A6E9CB", "FFE066", "2F3D57", "7D8BA3"),
+        )
+        for (d in night) {
+            val got = listOf(d.ink, d.surface, d.raised, d.edge, d.text, d.textMuted, d.accent, d.accentDim, d.accent2, d.accent3, d.accent4, d.chartGrid, d.chart2).map(::hex)
+            assertEquals(d.id, spec[d.id], got)
+            assertEquals(d.ink, d.rail); assertEquals(d.accent, d.chart1); assertEquals(d.surface, d.chart3); assertEquals(d.raised, d.chartGhost)
+            assertEquals(3.0, d.minAccentContrast, 0.0); assertEquals(4.5, d.minTextContrast, 0.0)
+        }
+    }
+
+    @Test fun nightPalettesUseTheDarkStatusColours() {
+        val ref = Palettes.Night
+        for (d in night) {
+            assertEquals(ref.ok, d.ok); assertEquals(ref.okDim, d.okDim); assertEquals(ref.caution, d.caution); assertEquals(ref.cautionDim, d.cautionDim)
+            assertEquals(ref.info, d.info); assertEquals(ref.infoDim, d.infoDim); assertEquals(ref.dangerDim, d.dangerDim)
+            assertEquals("FF8A80", hex(d.chartRed)); assertEquals(d.chartRed, d.chartRedText)
+        }
+    }
+
+    @Test fun everyNightPaletteMeetsTheContrastFloors() {
+        for (d in night) {
+            for ((name, bg) in listOf("page" to d.ink, "surface" to d.surface, "raised" to d.raised)) {
+                assertTrue("${d.id} text on $name", ratio(d.text, bg) >= 4.5)
+                assertTrue("${d.id} muted on $name", ratio(d.textMuted, bg) >= 4.5)
+                assertTrue("${d.id} error on $name", ratio(d.chartRedText, bg) >= 4.5)
+            }
+            for ((name, fill) in listOf("accent" to d.accent, "accent2" to d.accent2, "accent3" to d.accent3, "accent4" to d.accent4))
+                assertTrue("${d.id} onAccent on $name", ratio(d.onAccent, fill) >= 4.5)
+            assertTrue("${d.id} text on the playing-row tint", ratio(d.text, d.accentDim) >= 4.5)
+            assertTrue("${d.id} ok", ratio(d.ok, d.okDim) >= 4.5); assertTrue("${d.id} caution", ratio(d.caution, d.cautionDim) >= 4.5)
+            assertTrue("${d.id} danger", ratio(d.chartRedText, d.dangerDim) >= 4.5); assertTrue("${d.id} info", ratio(d.info, d.infoDim) >= 4.5)
+            assertTrue("${d.id} accent holds against the page", ratio(d.accent, d.ink) >= d.minAccentContrast)
+            assertTrue("${d.id} the outline holds against the page", ratio(d.edge, d.ink) >= 3.0)
+            assertTrue("${d.id} accent is readable as text", ratio(d.accent, d.surface) >= 4.5)
+            assertEquals(d.accent, d.accentText) // pale accents on a dark page can be text (unlike the day palettes)
         }
     }
 }

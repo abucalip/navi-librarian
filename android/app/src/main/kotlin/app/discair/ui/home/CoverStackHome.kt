@@ -547,7 +547,7 @@ private fun InsightCardView(card: InsightCard, open: Opener) {
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 val tag = RoundedCornerShape(6.dp)
                 Text(
-                    lensName(card.kind).uppercase(), color = p.text, maxLines = 1,
+                    lensName(card.kind).uppercase(), color = p.onAccent, maxLines = 1,
                     style = MaterialTheme.typography.labelSmall.copy(fontFamily = LocalFontPair.current.mono, fontWeight = FontWeight.Medium, fontSize = 10.sp, lineHeight = 14.sp, letterSpacing = 0.7.sp),
                     modifier = Modifier.clip(tag).background(p.accent4).border(CoverStackRules.outline(p).dp, p.edgeStrong, tag).padding(horizontal = 7.dp, vertical = 2.dp),
                 )

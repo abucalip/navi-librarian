@@ -414,6 +414,46 @@ object Palettes {
         layout = Layout.CoverStack, suggestedFontId = "brut_modern",
     )
 
+    // Colour palettes plan (docs/palettes.md section 4.1, step P2): three night palettes for Soft Brut. Same shape, layout and font as softbrut; the outline and hard shadow are the light outline colour and onAccent is dark.
+    val SoftBrutMidnightMint = Palette(
+        "softbrut_midnight_mint", "Soft Brut · Midnight Mint", false,
+        rail = c(0x101714), ink = c(0x101714), surface = c(0x18221D), raised = c(0x223029), edge = c(0xDDEFE3), edgeStrong = c(0xDDEFE3),
+        text = c(0xEFF8F1), textMuted = c(0xA9C0B2), accent = c(0x9BE3C0), accentDim = c(0x1F4636), onAccent = c(0x101714),
+        chartRed = c(0xFF8A80), chartRedText = c(0xFF8A80), ok = c(0x86D39B), caution = c(0xF0A640),
+        family = Family.Brutal, shape = BrutalShape(10f, 1.5f, 3f), shadowColor = c(0xDDEFE3),
+        info = c(0x8FB8E8), okDim = c(0x1F3326), cautionDim = c(0x3D2E14), dangerDim = c(0x40211A), infoDim = c(0x1D2C3D),
+        chart1 = c(0x9BE3C0), chart2 = c(0x7E9487), chart3 = c(0x18221D), chartGhost = c(0x223029), chartGrid = c(0x31443A),
+        chartBase = c(0xDDEFE3),
+        accent2 = c(0xFFD9A8), accent3 = c(0xC9BBFF), accent4 = c(0xFFD84D), minAccentContrast = 3.0,
+        layout = Layout.CoverStack, suggestedFontId = "brut_modern",
+    )
+
+    val SoftBrutPlumPeach = Palette(
+        "softbrut_plum_peach", "Soft Brut · Plum Peach", false,
+        rail = c(0x1B1416), ink = c(0x1B1416), surface = c(0x261C1F), raised = c(0x35272B), edge = c(0xF6E4DC), edgeStrong = c(0xF6E4DC),
+        text = c(0xFFF3EE), textMuted = c(0xCDB3AD), accent = c(0xFFB59A), accentDim = c(0x55302A), onAccent = c(0x1B1416),
+        chartRed = c(0xFF8A80), chartRedText = c(0xFF8A80), ok = c(0x86D39B), caution = c(0xF0A640),
+        family = Family.Brutal, shape = BrutalShape(10f, 1.5f, 3f), shadowColor = c(0xF6E4DC),
+        info = c(0x8FB8E8), okDim = c(0x1F3326), cautionDim = c(0x3D2E14), dangerDim = c(0x40211A), infoDim = c(0x1D2C3D),
+        chart1 = c(0xFFB59A), chart2 = c(0x9A827D), chart3 = c(0x261C1F), chartGhost = c(0x35272B), chartGrid = c(0x4A383C),
+        chartBase = c(0xF6E4DC),
+        accent2 = c(0xBFE3FF), accent3 = c(0xB9E8C2), accent4 = c(0xFFD84D), minAccentContrast = 3.0,
+        layout = Layout.CoverStack, suggestedFontId = "brut_modern",
+    )
+
+    val SoftBrutNavySky = Palette(
+        "softbrut_navy_sky", "Soft Brut · Navy Sky", false,
+        rail = c(0x0F1520), ink = c(0x0F1520), surface = c(0x17202F), raised = c(0x212D42), edge = c(0xDCE7F7), edgeStrong = c(0xDCE7F7),
+        text = c(0xF0F5FF), textMuted = c(0xA7B5CC), accent = c(0xA9CCFF), accentDim = c(0x24406B), onAccent = c(0x0F1520),
+        chartRed = c(0xFF8A80), chartRedText = c(0xFF8A80), ok = c(0x86D39B), caution = c(0xF0A640),
+        family = Family.Brutal, shape = BrutalShape(10f, 1.5f, 3f), shadowColor = c(0xDCE7F7),
+        info = c(0x8FB8E8), okDim = c(0x1F3326), cautionDim = c(0x3D2E14), dangerDim = c(0x40211A), infoDim = c(0x1D2C3D),
+        chart1 = c(0xA9CCFF), chart2 = c(0x7D8BA3), chart3 = c(0x17202F), chartGhost = c(0x212D42), chartGrid = c(0x2F3D57),
+        chartBase = c(0xDCE7F7),
+        accent2 = c(0xFFC9DE), accent3 = c(0xA6E9CB), accent4 = c(0xFFE066), minAccentContrast = 3.0,
+        layout = Layout.CoverStack, suggestedFontId = "brut_modern",
+    )
+
     // Art themes proposal (docs/ANDROID_ART_THEMES_PROPOSAL.md section 4): Flow, an iOS-inspired Classic theme. No outline, no hard shadow, soft depth
     // drawn by the layout. The accent is the proposal's darkened #C2410C (D6). Three greys/greens are a step darker than the mockup so the shared contrast tests pass:
     // muted 645F55 (was 6F6A60, 3.96:1 on the player's pastel washes), ok 1B7339 (was 1E7A3C, 4.44:1 on its tint), chart2 8F897D (was A8A296, 2.54:1 on white). Values are the tokens of design/android-art-themes/flow.css.
@@ -428,11 +468,45 @@ object Palettes {
         layout = Layout.Flow, suggestedFontId = "flow",
     )
 
+    // Colour palettes plan (docs/palettes.md section 4.2, step P3): three day palettes for Flow. Same layout, family and font as flow; only colours differ. Status colours are the current Flow's.
+    val FlowForest = Palette(
+        "flow_forest", "Flow · Forest", true,
+        rail = c(0xF8F9F4), ink = c(0xF8F9F4), surface = c(0xFFFFFF), raised = c(0xE9EDE2), edge = c(0xDBE0D2), edgeStrong = c(0x7D8672),
+        text = c(0x12150F), textMuted = c(0x596051), accent = c(0x1B7340), accentDim = c(0xD9EEDF), onAccent = c(0xFFFFFF),
+        chartRed = c(0xC0271A), chartRedText = c(0xC0271A), ok = c(0x1B7339), caution = c(0x8A5300),
+        info = c(0x1F5FBF), okDim = c(0xDCEEDF), cautionDim = c(0xF8E8CC), dangerDim = c(0xF9DCD8), infoDim = c(0xDCE7F8),
+        chart1 = c(0x1B7340), chart2 = c(0x87907C), chart3 = c(0xD0D6C6), chartGhost = c(0xE9EDE2), chartGrid = c(0xDBE0D2),
+        chartBase = c(0x7D8672),
+        layout = Layout.Flow, suggestedFontId = "flow",
+    )
+
+    val FlowRaspberry = Palette(
+        "flow_raspberry", "Flow · Raspberry", true,
+        rail = c(0xFCF8F8), ink = c(0xFCF8F8), surface = c(0xFFFFFF), raised = c(0xF1E8E9), edge = c(0xE5DADB), edgeStrong = c(0x8E7F82),
+        text = c(0x171113), textMuted = c(0x6A5C5F), accent = c(0xBE2260), accentDim = c(0xFADCE6), onAccent = c(0xFFFFFF),
+        chartRed = c(0xC0271A), chartRedText = c(0xC0271A), ok = c(0x1B7339), caution = c(0x8A5300),
+        info = c(0x1F5FBF), okDim = c(0xDCEEDF), cautionDim = c(0xF8E8CC), dangerDim = c(0xF9DCD8), infoDim = c(0xDCE7F8),
+        chart1 = c(0xBE2260), chart2 = c(0x96878A), chart3 = c(0xDCCFD1), chartGhost = c(0xF1E8E9), chartGrid = c(0xE5DADB),
+        chartBase = c(0x8E7F82),
+        layout = Layout.Flow, suggestedFontId = "flow",
+    )
+
+    val FlowViolet = Palette(
+        "flow_violet", "Flow · Violet", true,
+        rail = c(0xF9F8FC), ink = c(0xF9F8FC), surface = c(0xFFFFFF), raised = c(0xECEAF3), edge = c(0xDEDBE8), edgeStrong = c(0x827D93),
+        text = c(0x13111A), textMuted = c(0x5F5A6E), accent = c(0x6A3BD2), accentDim = c(0xE7DEFA), onAccent = c(0xFFFFFF),
+        chartRed = c(0xC0271A), chartRedText = c(0xC0271A), ok = c(0x1B7339), caution = c(0x8A5300),
+        info = c(0x1F5FBF), okDim = c(0xDCEEDF), cautionDim = c(0xF8E8CC), dangerDim = c(0xF9DCD8), infoDim = c(0xDCE7F8),
+        chart1 = c(0x6A3BD2), chart2 = c(0x8A859B), chart3 = c(0xD3CFE0), chartGhost = c(0xECEAF3), chartGrid = c(0xDEDBE8),
+        chartBase = c(0x827D93),
+        layout = Layout.Flow, suggestedFontId = "flow",
+    )
+
     /** Light themes in the order the picker shows them; the first is the default day theme. */
-    val Light: List<Palette> = listOf(Sand, Paper, Mist, Sage, Blush, BrutLavender, BrutMint, BrutLemon, BrutCream, BrutSky, BrutPoster, TapeLime, TapeCobalt, TapeTangerine, SheetDaylight, StickerPeach, SoftBrut, SoftBrutMint, SoftBrutPeach, SoftBrutSky, SoftBrutLemon, Flow)
+    val Light: List<Palette> = listOf(Sand, Paper, Mist, Sage, Blush, BrutLavender, BrutMint, BrutLemon, BrutCream, BrutSky, BrutPoster, TapeLime, TapeCobalt, TapeTangerine, SheetDaylight, StickerPeach, SoftBrut, SoftBrutMint, SoftBrutPeach, SoftBrutSky, SoftBrutLemon, Flow, FlowForest, FlowRaspberry, FlowViolet)
 
     /** Dark themes in the order the picker shows them; the first is the default night theme. */
-    val Dark: List<Palette> = listOf(Night, Amoled, Forest, Ocean, Ember, Graphite, HighContrast, BrutInk, BrutMidnight, SheetViolet, SheetAcid)
+    val Dark: List<Palette> = listOf(Night, Amoled, Forest, Ocean, Ember, Graphite, HighContrast, BrutInk, BrutMidnight, SheetViolet, SheetAcid, SoftBrutMidnightMint, SoftBrutPlumPeach, SoftBrutNavySky)
 
     val All: List<Palette> = Light + Dark
 

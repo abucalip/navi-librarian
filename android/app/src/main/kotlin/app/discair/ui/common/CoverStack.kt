@@ -114,7 +114,7 @@ private fun RowScope.Cell(palette: Palette, label: String, selected: Boolean, on
         horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center,
     ) {
         // Icons only; the label stays as the cell's content description.
-        Box(Modifier.size(24.dp), contentAlignment = Alignment.Center) { icon(palette.text) }
+        Box(Modifier.size(24.dp), contentAlignment = Alignment.Center) { icon(if (selected) palette.onAccent else palette.text) }
     }
 }
 
