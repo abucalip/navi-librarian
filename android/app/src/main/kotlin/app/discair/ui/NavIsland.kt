@@ -171,7 +171,7 @@ fun NavIsland(
     }
 }
 
-/** A labelled island cell: the icon over its word, 48 dp high. The current page fills the cell with the accent and inks it dark. */
+/** An icon-only island cell (the label is its spoken name), 48 dp high. The current page fills the cell with the accent and inks it dark. */
 @Composable
 private fun IslandCell(onClick: () -> Unit, label: String, icon: androidx.compose.ui.graphics.vector.ImageVector, selected: Boolean = false) {
     val ink = if (selected) Ink.OnAccent else Ink.Text
@@ -185,7 +185,6 @@ private fun IslandCell(onClick: () -> Unit, label: String, icon: androidx.compos
         verticalArrangement = Arrangement.Center,
     ) {
         Icon(icon, contentDescription = null, tint = ink, modifier = Modifier.size(20.dp))
-        Text(label, style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold), color = ink, maxLines = 1, modifier = Modifier.clearAndSetSemantics { })
     }
 }
 

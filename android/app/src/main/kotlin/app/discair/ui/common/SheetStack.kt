@@ -111,7 +111,7 @@ fun SheetNavGroup(
             SheetSegment(palette, "Home", homeSelected, onHome, seam, last = false) { homeIcon(it) }
             SheetSegment(palette, "Search", false, onSearch, seam, last = false) { searchIcon(it) }
             SheetSegment(palette, "Library", librarySelected, onLibrary, seam, last = false) { libraryIcon(it) }
-            SheetSegment(palette, playerLabel, false, onPlayer, seam, last = true, word = null) { player(it) }
+            SheetSegment(palette, playerLabel, false, onPlayer, seam, last = true) { player(it) }
         }
     }
 }
@@ -119,7 +119,7 @@ fun SheetNavGroup(
 @Composable
 private fun RowScope.SheetSegment(
     palette: Palette, label: String, selected: Boolean, onClick: () -> Unit, seam: Dp, last: Boolean,
-    word: String? = label, content: @Composable (Color) -> Unit,
+    content: @Composable (Color) -> Unit,
 ) {
     val fill = if (selected) palette.accent else palette.surface
     val ink = if (selected) palette.onAccent else palette.text
@@ -130,7 +130,6 @@ private fun RowScope.SheetSegment(
         verticalArrangement = Arrangement.Center,
     ) {
         Box(Modifier.size(22.dp), contentAlignment = Alignment.Center) { content(ink) }
-        if (word != null) Text(word, style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold), color = ink, maxLines = 1, modifier = Modifier.clearAndSetSemantics { })
     }
     if (!last) Box(Modifier.width(seam).fillMaxHeight().background(palette.edgeStrong))
 }

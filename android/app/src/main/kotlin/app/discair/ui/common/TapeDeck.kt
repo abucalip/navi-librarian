@@ -151,7 +151,6 @@ private fun androidx.compose.foundation.layout.RowScope.TapeNavCell(
         verticalArrangement = Arrangement.Center,
     ) {
         Box(Modifier.size(24.dp), contentAlignment = Alignment.Center) { content(ink) }
-        Text(label, style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold), color = ink, maxLines = 1, modifier = Modifier.clearAndSetSemantics { })
     }
 }
 
