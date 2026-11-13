@@ -160,4 +160,34 @@ object ArtIcons {
     val SignOut = stroked("out",
             "M10 5H5v14h5M14 8l4 4-4 4M18 12H9",
         )
+    val Up = stroked("up",
+            "M5 15l7-7 7 7",
+        )
+    val Warning = stroked("warning",
+            "M12 4l9 16H3z",
+            "M12 10v4M12 17h.01",
+        )
+    val Delete = stroked("delete",
+            "M5 7h14M10 7V4h4v3M7 7l1 13h8l1-13M10 11v6M14 11v6",
+        )
+    val Refresh = stroked("refresh",
+            "M19 12a7 7 0 1 1-2.050-4.950M19 4v4h-4",
+        )
+    val Place = stroked("place",
+            "M12 21s-6-5.500-6-11a6 6 0 0 1 12 0c0 5.500-6 11-6 11z",
+            "M10,10a2,2 0 1,0 4,0a2,2 0 1,0 -4,0",
+        )
+    val Album = stroked("album",
+            "M3,12a9,9 0 1,0 18,0a9,9 0 1,0 -18,0",
+            "M9.500,12a2.500,2.500 0 1,0 5,0a2.500,2.500 0 1,0 -5,0",
+        )
+    val Photos = stroked("photos",
+            "M5,5h14a1,1 0 0 1 1,1v12a1,1 0 0 1 -1,1h-14a1,1 0 0 1 -1,-1v-12a1,1 0 0 1 1,-1z",
+            "M4 16l5-5 4 4 3-3 4 4M14.500 8.500h.01",
+        )
+    val MusicNote = stroked("music_note",
+            "M9 18V6l10-2v12",
+            "M5,18a2,2 0 1,0 4,0a2,2 0 1,0 -4,0",
+            "M15,16a2,2 0 1,0 4,0a2,2 0 1,0 -4,0",
+        )
 }

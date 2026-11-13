@@ -11,10 +11,6 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.FavoriteBorder
-import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
@@ -192,10 +188,10 @@ fun SaveButton(album: String, state: SaveState, onClick: () -> Unit) {
         },
     ) {
         when (state) {
-            SaveState.Idle -> Icon(Icons.Default.FavoriteBorder, contentDescription = null)
+            SaveState.Idle -> Icon(ArtIcons.Heart, contentDescription = null)
             SaveState.Pending -> CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
-            SaveState.Saved -> Icon(Icons.Default.Favorite, contentDescription = null, tint = Ink.Accent)
-            SaveState.Failed -> Icon(Icons.Default.Warning, contentDescription = null, tint = Ink.ChartRedText)
+            SaveState.Saved -> Icon(ArtIcons.HeartFilled, contentDescription = null, tint = Ink.Accent)
+            SaveState.Failed -> Icon(ArtIcons.Warning, contentDescription = null, tint = Ink.ChartRedText)
         }
     }
 }
@@ -206,7 +202,7 @@ fun DismissMenu(album: String, artist: String, onDismiss: (Boolean) -> Unit) {
     var open by remember { mutableStateOf(false) }
     Box {
         IconButton(onClick = { open = true }, Modifier.size(Target)) {
-            Icon(Icons.Default.MoreVert, contentDescription = "Not for me: $album")
+            Icon(ArtIcons.More, contentDescription = "Not for me: $album")
         }
         DropdownMenu(open, onDismissRequest = { open = false }) {
             DropdownMenuItem(text = { Text("Not this album") }, onClick = { open = false; onDismiss(false) })

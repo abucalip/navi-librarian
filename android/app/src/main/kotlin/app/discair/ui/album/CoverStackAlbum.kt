@@ -19,7 +19,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -160,7 +160,7 @@ internal fun CoverStackAlbumContent(d: CoverStackAlbumData, open: Opener, list: 
             item { CoverStackHeading("Similar albums", Modifier.padding(top = 16.dp, bottom = 8.dp)) }
             item {
                 LazyRow(contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    items(d.similarAlbums, key = { it.key + it.name }) { album ->
+                    itemsIndexed(d.similarAlbums, key = { i, it -> "$i|${it.key}|${it.name}" }) { _, album ->
                         Column(
                             Modifier.width(112.dp).clip(RoundedCornerShape(6.dp))
                                 .clickable(role = Role.Button) { open.album(album.key, album.artist, album.name, null, album.year) },
@@ -180,7 +180,7 @@ internal fun CoverStackAlbumContent(d: CoverStackAlbumData, open: Opener, list: 
             item { CoverStackHeading("Similar artists", Modifier.padding(top = 16.dp, bottom = 8.dp)) }
             item {
                 LazyRow(contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    items(d.similarArtists, key = { it.name }) { a -> CoverStackArtistChip(a.name, a.artworkUrl, { open.artist(a.name, a.key, a.id, a.mbid) }) }
+                    itemsIndexed(d.similarArtists, key = { i, it -> "$i|${it.name}" }) { _, a -> CoverStackArtistChip(a.name, a.artworkUrl, { open.artist(a.name, a.key, a.id, a.mbid) }) }
                 }
             }
         }

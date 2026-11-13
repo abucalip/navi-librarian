@@ -1,5 +1,6 @@
 package app.discair.ui.search
 
+import app.discair.ui.common.ArtIcons
 import androidx.compose.foundation.clickable
 import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.layout.Arrangement
@@ -15,7 +16,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Search
@@ -135,10 +135,10 @@ fun SearchScreen(open: Opener, text: String, onText: (String) -> Unit) {
         OutlinedTextField(
             value = text, onValueChange = { onText(it.take(200)) }, singleLine = true,
             label = { Text("Artists, albums, songs, genres") },
-            leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+            leadingIcon = { Icon(ArtIcons.Search, contentDescription = null) },
             trailingIcon = {
                 if (text.isNotEmpty()) IconButton(onClick = { onText("") }, Modifier.size(Target)) {
-                    Icon(Icons.Default.Clear, contentDescription = "Clear search")
+                    Icon(ArtIcons.Close, contentDescription = "Clear search")
                 }
             },
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
@@ -254,7 +254,7 @@ private fun ResultRow(r: SearchResult, open: Opener, modifier: Modifier = Modifi
             } else if (r.type != "song" && r.owned) {
                 // Owned is said in words; the icon only backs it up.
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Icon(androidx.compose.material.icons.Icons.Default.Check, contentDescription = null, tint = Ink.Ok, modifier = Modifier.size(18.dp))
+                    Icon(ArtIcons.Check, contentDescription = null, tint = Ink.Ok, modifier = Modifier.size(18.dp))
                     Text("Owned", style = MaterialTheme.typography.labelLarge, color = Ink.Ok)
                 }
             }

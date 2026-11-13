@@ -1,16 +1,13 @@
 package app.discair.ui.discover
 
+import app.discair.ui.common.ArtIcons
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.layout.size
-import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.FavoriteBorder
-import androidx.compose.material.icons.filled.MoreVert
 import app.discair.ui.common.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -97,7 +94,7 @@ private fun CardMenu(entry: DiscoveryEntry, saveState: SaveState, onSave: () -> 
         IconButton(onClick = { open = true }, Modifier.size(Target)) {
             // A dark round backing keeps the dots readable on any cover; the old soft halo vanished on white and yellow ones.
             Box(Modifier.size(34.dp).background(Color.Black.copy(alpha = 0.55f), CircleShape), contentAlignment = Alignment.Center) {
-                Icon(Icons.Default.MoreVert, contentDescription = "Options for ${item.album}", tint = Color.White)
+                Icon(ArtIcons.More, contentDescription = "Options for ${item.album}", tint = Color.White)
             }
         }
         DropdownMenu(open, onDismissRequest = { open = false }) {
@@ -111,20 +108,20 @@ private fun CardMenu(entry: DiscoveryEntry, saveState: SaveState, onSave: () -> 
             DropdownMenuItem(
                 text = { Text(if (saveState == SaveState.Saved) "Saved" else "Save") },
                 leadingIcon = {
-                    if (saveState == SaveState.Saved) Icon(Icons.Default.Favorite, contentDescription = null, tint = Ink.Accent)
-                    else Icon(Icons.Default.FavoriteBorder, contentDescription = null)
+                    if (saveState == SaveState.Saved) Icon(ArtIcons.HeartFilled, contentDescription = null, tint = Ink.Accent)
+                    else Icon(ArtIcons.Heart, contentDescription = null)
                 },
                 enabled = saveState != SaveState.Pending,
                 onClick = { open = false; onSave() },
             )
             DropdownMenuItem(
                 text = { Text("Not this album") },
-                leadingIcon = { Icon(Icons.Default.Delete, contentDescription = null) },
+                leadingIcon = { Icon(ArtIcons.Delete, contentDescription = null) },
                 onClick = { open = false; onDismiss(false) },
             )
             DropdownMenuItem(
                 text = { Text("Not this artist") },
-                leadingIcon = { Icon(Icons.Default.Delete, contentDescription = null) },
+                leadingIcon = { Icon(ArtIcons.Delete, contentDescription = null) },
                 onClick = { open = false; onDismiss(true) },
             )
         }

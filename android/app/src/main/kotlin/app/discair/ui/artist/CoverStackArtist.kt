@@ -18,6 +18,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
@@ -129,11 +130,14 @@ internal fun CoverStackArtistContent(d: CoverStackArtistData, open: Opener, list
                 Button(onClick = { play.playArtist(artistId, shuffle = false) }, Modifier.heightIn(min = Target)) {
                     Icon(ArtIcons.Play, contentDescription = null, Modifier.size(20.dp)); Text(" Play")
                 }
-                OutlinedButton(onClick = { play.playArtist(artistId, shuffle = true) }, Modifier.heightIn(min = Target)) {
+                // With Paths beside it, Shuffle shrinks to its icon so the three buttons stay on one line.
+                if (d.canPaths) OutlinedButton(onClick = { play.playArtist(artistId, shuffle = true) }, Modifier.size(Target), contentPadding = PaddingValues(0.dp)) {
+                    Icon(ArtIcons.Shuffle, contentDescription = "Shuffle", Modifier.size(20.dp))
+                } else OutlinedButton(onClick = { play.playArtist(artistId, shuffle = true) }, Modifier.heightIn(min = Target)) {
                     Icon(ArtIcons.Shuffle, contentDescription = null, Modifier.size(20.dp)); Text(" Shuffle")
                 }
                 if (d.canPaths) OutlinedButton(onClick = d.onPaths, Modifier.heightIn(min = Target)) {
-                    Icon(ArtIcons.Paths, contentDescription = null, Modifier.size(20.dp)); Text(" Paths")
+                    Icon(ArtIcons.Paths, contentDescription = null, Modifier.size(20.dp)); Text(" Paths", maxLines = 1, softWrap = false)
                 }
             }
         }
@@ -155,7 +159,7 @@ internal fun CoverStackArtistContent(d: CoverStackArtistData, open: Opener, list
             item { CoverStackHeading("In your library", Modifier.padding(top = 16.dp, bottom = 8.dp)) }
             item {
                 LazyRow(contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    items(owned, key = { it.key + it.id }) { album ->
+                    itemsIndexed(owned, key = { i, it -> "$i|${it.key}|${it.id}" }) { _, album ->
                         CoverStackCover(
                             d.name, album.name, album.artworkUrl,
                             Modifier.width(104.dp).clip(RoundedCornerShape(6.dp))
@@ -176,7 +180,7 @@ internal fun CoverStackArtistContent(d: CoverStackArtistData, open: Opener, list
             }
             item {
                 LazyRow(contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    items(if (showAllMissing) missing else missing.take(MISSING_SHOWN), key = { it.key + it.name }) { album -> MissingCard(d.name, album, open) }
+                    itemsIndexed(if (showAllMissing) missing else missing.take(MISSING_SHOWN), key = { i, it -> "$i|${it.key}|${it.name}" }) { _, album -> MissingCard(d.name, album, open) }
                 }
             }
         }
@@ -184,7 +188,7 @@ internal fun CoverStackArtistContent(d: CoverStackArtistData, open: Opener, list
             item { CoverStackHeading("Similar artists", Modifier.padding(top = 16.dp, bottom = 8.dp)) }
             item {
                 LazyRow(contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    items(d.similar, key = { it.name }) { a -> CoverStackArtistChip(a.name, a.artworkUrl, { open.artist(a.name, a.key, a.id, a.mbid) }) }
+                    itemsIndexed(d.similar, key = { i, it -> "$i|${it.name}" }) { _, a -> CoverStackArtistChip(a.name, a.artworkUrl, { open.artist(a.name, a.key, a.id, a.mbid) }) }
                 }
             }
         }

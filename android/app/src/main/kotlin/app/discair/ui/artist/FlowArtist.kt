@@ -20,6 +20,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
@@ -165,7 +166,7 @@ internal fun FlowArtistContent(d: CoverStackArtistData, open: Opener, list: Lazy
             item { FlowHeading("In your library", Modifier.padding(top = 20.dp, bottom = 10.dp)) }
             item {
                 LazyRow(contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    items(owned, key = { it.key + it.id }) { album ->
+                    itemsIndexed(owned, key = { i, it -> "$i|${it.key}|${it.id}" }) { _, album ->
                         FlowCover(
                             d.name, album.name, album.artworkUrl,
                             Modifier.width(FlowPagesRules.LIBRARY_COVER.dp).clip(RoundedCornerShape(8.dp))
@@ -186,7 +187,7 @@ internal fun FlowArtistContent(d: CoverStackArtistData, open: Opener, list: Lazy
             }
             item {
                 LazyRow(contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    items(if (showAllMissing) missing else missing.take(MISSING_SHOWN), key = { it.key + it.name }) { album -> MissingCard(d.name, album, open) }
+                    itemsIndexed(if (showAllMissing) missing else missing.take(MISSING_SHOWN), key = { i, it -> "$i|${it.key}|${it.name}" }) { _, album -> MissingCard(d.name, album, open) }
                 }
             }
         }
@@ -194,7 +195,7 @@ internal fun FlowArtistContent(d: CoverStackArtistData, open: Opener, list: Lazy
             item { FlowHeading("Similar artists", Modifier.padding(top = 20.dp, bottom = 10.dp)) }
             item {
                 LazyRow(contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    items(d.similar, key = { it.name }) { a -> FlowArtistChip(a.name, a.artworkUrl, { open.artist(a.name, a.key, a.id, a.mbid) }) }
+                    itemsIndexed(d.similar, key = { i, it -> "$i|${it.name}" }) { _, a -> FlowArtistChip(a.name, a.artworkUrl, { open.artist(a.name, a.key, a.id, a.mbid) }) }
                 }
             }
         }

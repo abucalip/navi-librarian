@@ -1,5 +1,6 @@
 package app.discair.ui
 
+import app.discair.ui.common.ArtIcons
 import coil3.toBitmap
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.Arrangement
@@ -35,12 +36,9 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.automirrored.filled.List
 import app.discair.ui.discover.DiscoverScreen
 import app.discair.ui.search.SearchScreen
 import androidx.compose.material3.Icon
@@ -206,9 +204,9 @@ fun MainShell(state: UiState, model: AppViewModel, container: AppContainer) {
     val risePx = with(density) { fadePlan.riseDp.dp.roundToPx() }
     val slidePx = with(density) { axisPlan.slideDp.dp.roundToPx() }
     val tabs = listOf(
-        Tab(HomeRoute, "Home", Icons.Default.Home),
-        Tab(DiscoverRoute, "Discover", Icons.Default.Star),
-        Tab(LibraryRoute, "Library", Icons.AutoMirrored.Filled.List),
+        Tab(HomeRoute, "Home", ArtIcons.Home),
+        Tab(DiscoverRoute, "Discover", ArtIcons.Disc),
+        Tab(LibraryRoute, "Library", ArtIcons.Lib),
     )
     val onTopLevel = tabs.any { destination?.hasRoute(it.route::class) == true }
     val tabIndex = tabs.indexOfFirst { destination?.hasRoute(it.route::class) == true }
@@ -446,9 +444,9 @@ private fun AppHeader(active: Int, showDiscover: Boolean, onDiscover: () -> Unit
             Spacer(Modifier.weight(1f))
             // Soft Brut draws the mockup's icons; every other theme keeps its stand-ins.
             val softBrut = app.discair.ui.theme.LocalPalette.current.layout == app.discair.ui.theme.Layout.CoverStack
-            if (showDiscover) HeaderButton("Discover", if (softBrut) app.discair.ui.common.ArtIcons.Disc else Icons.Default.Star, badge = 0, onClick = onDiscover)
-            HeaderButton(if (active == 0) "Downloads" else "Downloads, $active active", if (softBrut) app.discair.ui.common.ArtIcons.Download else app.discair.ui.player.PlayerIcons.Cloud, badge = active, onClick = onDownloads)
-            HeaderButton("Settings", if (softBrut) app.discair.ui.common.ArtIcons.Gear else Icons.Default.Settings, badge = 0, onClick = onSettings)
+            if (showDiscover) HeaderButton("Discover", ArtIcons.Disc, badge = 0, onClick = onDiscover)
+            HeaderButton(if (active == 0) "Downloads" else "Downloads, $active active", ArtIcons.Download, badge = active, onClick = onDownloads)
+            HeaderButton("Settings", ArtIcons.Gear, badge = 0, onClick = onSettings)
         }
         RowDivider()
     }
@@ -470,14 +468,14 @@ private fun FlowAppHeader(active: Int, showDiscover: Boolean, onDiscover: () -> 
             style = MaterialTheme.typography.headlineLarge.copy(fontSize = 30.sp, lineHeight = 36.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = (-0.03).em),
         ) else app.discair.ui.common.Wordmark(30.dp)
         Spacer(Modifier.weight(1f))
-        if (showDiscover) app.discair.ui.common.FlowCircleButton(app.discair.ui.common.ArtIcons.Disc, "Discover", onDiscover)
+        if (showDiscover) app.discair.ui.common.FlowCircleButton(ArtIcons.Disc, "Discover", onDiscover)
         Box {
             app.discair.ui.common.FlowCircleButton(
-                app.discair.ui.common.ArtIcons.Download, if (active == 0) "Downloads" else "Downloads, $active active", onDownloads,
+                ArtIcons.Download, if (active == 0) "Downloads" else "Downloads, $active active", onDownloads,
             )
             if (active > 0) Badge(Modifier.align(Alignment.TopEnd).padding(top = 4.dp, end = 4.dp)) { Text("$active") }
         }
-        app.discair.ui.common.FlowCircleButton(app.discair.ui.common.ArtIcons.Gear, "Settings", onSettings)
+        app.discair.ui.common.FlowCircleButton(ArtIcons.Gear, "Settings", onSettings)
     }
 }
 
@@ -519,7 +517,7 @@ private fun OfflineBanner(staleSince: Long?) {
             .semantics { liveRegion = androidx.compose.ui.semantics.LiveRegionMode.Polite },
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Icon(Icons.Default.Info, contentDescription = null, tint = app.discair.ui.theme.Ink.Caution, modifier = Modifier.size(18.dp))
+        Icon(ArtIcons.Info, contentDescription = null, tint = app.discair.ui.theme.Ink.Caution, modifier = Modifier.size(18.dp))
         Text(
             "Can't reach Librarian. Showing a copy saved $saved.",
             style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(start = 8.dp),

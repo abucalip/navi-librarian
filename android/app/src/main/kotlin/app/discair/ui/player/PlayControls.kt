@@ -1,13 +1,13 @@
 package app.discair.ui.player
 
+import app.discair.ui.common.ArtIcons
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.size
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.MoreVert
 import app.discair.ui.common.Button
 import app.discair.ui.common.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -44,16 +44,21 @@ fun PlayRow(
         if (onPlay != null) Button(onClick = onPlay, Modifier.heightIn(min = Target)) {
             Icon(PlayerIcons.Play, contentDescription = null, Modifier.size(20.dp)); Text(" Play")
         }
-        if (onShuffle != null) OutlinedButton(onClick = onShuffle, Modifier.heightIn(min = Target)) {
-            Icon(PlayerIcons.Shuffle, contentDescription = null, Modifier.size(20.dp)); Text(" Shuffle")
+        // With Paths beside it, Shuffle shrinks to its icon so Play, Shuffle, Paths and the menu fit one line on a narrow phone.
+        if (onShuffle != null) {
+            if (onPaths != null) OutlinedButton(onClick = onShuffle, Modifier.size(Target), contentPadding = PaddingValues(0.dp)) {
+                Icon(PlayerIcons.Shuffle, contentDescription = "Shuffle", Modifier.size(20.dp))
+            } else OutlinedButton(onClick = onShuffle, Modifier.heightIn(min = Target)) {
+                Icon(PlayerIcons.Shuffle, contentDescription = null, Modifier.size(20.dp)); Text(" Shuffle")
+            }
         }
         if (onPaths != null) OutlinedButton(onClick = onPaths, Modifier.heightIn(min = Target)) {
-            Icon(PlayerIcons.Timeline, contentDescription = null, Modifier.size(20.dp)); Text(" Paths")
+            Icon(PlayerIcons.Timeline, contentDescription = null, Modifier.size(20.dp)); Text(" Paths", maxLines = 1, softWrap = false)
         }
         if (onPlayNext != null && onAddToQueue != null) {
             var menu by remember { mutableStateOf(false) }
             Box {
-                IconButton(onClick = { menu = true }, Modifier.size(Target)) { Icon(Icons.Default.MoreVert, contentDescription = "More ways to play") }
+                IconButton(onClick = { menu = true }, Modifier.size(Target)) { Icon(ArtIcons.More, contentDescription = "More ways to play") }
                 DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
                     DropdownMenuItem(text = { Text("Play next") }, onClick = { menu = false; onPlayNext() })
                     DropdownMenuItem(text = { Text("Add to queue") }, onClick = { menu = false; onAddToQueue() })
@@ -74,7 +79,7 @@ fun RowPlayButton(label: String, onClick: () -> Unit, modifier: Modifier = Modif
 fun RowMoreMenu(label: String, actions: List<Pair<String, () -> Unit>>, modifier: Modifier = Modifier) {
     var menu by remember { mutableStateOf(false) }
     Box(modifier) {
-        IconButton(onClick = { menu = true }, Modifier.size(Target)) { Icon(Icons.Default.MoreVert, contentDescription = "More ways to play $label") }
+        IconButton(onClick = { menu = true }, Modifier.size(Target)) { Icon(ArtIcons.More, contentDescription = "More ways to play $label") }
         DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
             actions.forEach { (text, run) -> DropdownMenuItem(text = { Text(text) }, onClick = { menu = false; run() }) }
         }

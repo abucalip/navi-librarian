@@ -1,5 +1,6 @@
 package app.discair.ui
 
+import app.discair.ui.common.ArtIcons
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
@@ -23,11 +24,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -97,10 +95,10 @@ fun NavIsland(
     if (deckTheme.layout == app.discair.ui.theme.Layout.TapeDeck) {
         app.discair.ui.common.TapeNavBar(
             deckTheme, homeSelected, discoverSelected, librarySelected, onHome, onDiscover, onLibrary, onSearch, modifier,
-            homeIcon = { Icon(Icons.Default.Home, contentDescription = null, tint = it, modifier = Modifier.size(24.dp)) },
-            discoverIcon = { Icon(Icons.Default.Star, contentDescription = null, tint = it, modifier = Modifier.size(24.dp)) },
-            libraryIcon = { Icon(Icons.AutoMirrored.Filled.List, contentDescription = null, tint = it, modifier = Modifier.size(24.dp)) },
-            searchIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = it, modifier = Modifier.size(24.dp)) },
+            homeIcon = { Icon(ArtIcons.Home, contentDescription = null, tint = it, modifier = Modifier.size(24.dp)) },
+            discoverIcon = { Icon(ArtIcons.Disc, contentDescription = null, tint = it, modifier = Modifier.size(24.dp)) },
+            libraryIcon = { Icon(ArtIcons.Lib, contentDescription = null, tint = it, modifier = Modifier.size(24.dp)) },
+            searchIcon = { Icon(ArtIcons.Search, contentDescription = null, tint = it, modifier = Modifier.size(24.dp)) },
         )
         return
     }
@@ -108,10 +106,10 @@ fun NavIsland(
     if (deckTheme.layout == app.discair.ui.theme.Layout.CoverStack) {
         app.discair.ui.common.CoverStackNavBar(
             deckTheme, homeSelected, discoverSelected, librarySelected, onHome, onDiscover, onLibrary, onSearch, modifier,
-            homeIcon = { Icon(app.discair.ui.common.ArtIcons.Home, contentDescription = null, tint = it, modifier = Modifier.size(24.dp)) },
-            discoverIcon = { Icon(app.discair.ui.common.ArtIcons.Disc, contentDescription = null, tint = it, modifier = Modifier.size(24.dp)) },
-            libraryIcon = { Icon(app.discair.ui.common.ArtIcons.Lib, contentDescription = null, tint = it, modifier = Modifier.size(24.dp)) },
-            searchIcon = { Icon(app.discair.ui.common.ArtIcons.Search, contentDescription = null, tint = it, modifier = Modifier.size(24.dp)) },
+            homeIcon = { Icon(ArtIcons.Home, contentDescription = null, tint = it, modifier = Modifier.size(24.dp)) },
+            discoverIcon = { Icon(ArtIcons.Disc, contentDescription = null, tint = it, modifier = Modifier.size(24.dp)) },
+            libraryIcon = { Icon(ArtIcons.Lib, contentDescription = null, tint = it, modifier = Modifier.size(24.dp)) },
+            searchIcon = { Icon(ArtIcons.Search, contentDescription = null, tint = it, modifier = Modifier.size(24.dp)) },
         )
         return
     }
@@ -119,10 +117,10 @@ fun NavIsland(
     if (deckTheme.layout == app.discair.ui.theme.Layout.Flow) {
         app.discair.ui.common.FlowNavBar(
             deckTheme, homeSelected, discoverSelected, librarySelected, onHome, onDiscover, onLibrary, onSearch, modifier,
-            homeIcon = { Icon(app.discair.ui.common.ArtIcons.Home, contentDescription = null, tint = it, modifier = Modifier.size(24.dp)) },
-            discoverIcon = { Icon(app.discair.ui.common.ArtIcons.Disc, contentDescription = null, tint = it, modifier = Modifier.size(24.dp)) },
-            libraryIcon = { Icon(app.discair.ui.common.ArtIcons.Lib, contentDescription = null, tint = it, modifier = Modifier.size(24.dp)) },
-            searchIcon = { Icon(app.discair.ui.common.ArtIcons.Search, contentDescription = null, tint = it, modifier = Modifier.size(24.dp)) },
+            homeIcon = { Icon(ArtIcons.Home, contentDescription = null, tint = it, modifier = Modifier.size(24.dp)) },
+            discoverIcon = { Icon(ArtIcons.Disc, contentDescription = null, tint = it, modifier = Modifier.size(24.dp)) },
+            libraryIcon = { Icon(ArtIcons.Lib, contentDescription = null, tint = it, modifier = Modifier.size(24.dp)) },
+            searchIcon = { Icon(ArtIcons.Search, contentDescription = null, tint = it, modifier = Modifier.size(24.dp)) },
         )
         return
     }
@@ -131,9 +129,9 @@ fun NavIsland(
         val reduced = app.discair.ui.theme.rememberReducedMotion()
         app.discair.ui.common.StickerPill(
             deckTheme, homeSelected, librarySelected, playerLabel, onSearch, onHome, onLibrary, onPlayer, modifier,
-            searchIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = it, modifier = Modifier.size(24.dp)) },
-            homeIcon = { Icon(Icons.Default.Home, contentDescription = null, tint = it, modifier = Modifier.size(24.dp)) },
-            libraryIcon = { Icon(Icons.AutoMirrored.Filled.List, contentDescription = null, tint = it, modifier = Modifier.size(24.dp)) },
+            searchIcon = { Icon(ArtIcons.Search, contentDescription = null, tint = it, modifier = Modifier.size(24.dp)) },
+            homeIcon = { Icon(ArtIcons.Home, contentDescription = null, tint = it, modifier = Modifier.size(24.dp)) },
+            libraryIcon = { Icon(ArtIcons.Lib, contentDescription = null, tint = it, modifier = Modifier.size(24.dp)) },
             player = { app.discair.ui.common.TapeMeter(4, app.discair.ui.common.TapeDeckRules.meterMoves(playing, false, reduced), it, size = 22.dp) },
         )
         return
@@ -143,9 +141,9 @@ fun NavIsland(
         val reduced = app.discair.ui.theme.rememberReducedMotion()
         app.discair.ui.common.SheetNavGroup(
             deckTheme, homeSelected, librarySelected, playerLabel, onHome, onSearch, onLibrary, onPlayer, modifier,
-            homeIcon = { Icon(Icons.Default.Home, contentDescription = null, tint = it, modifier = Modifier.size(24.dp)) },
-            searchIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = it, modifier = Modifier.size(24.dp)) },
-            libraryIcon = { Icon(Icons.AutoMirrored.Filled.List, contentDescription = null, tint = it, modifier = Modifier.size(24.dp)) },
+            homeIcon = { Icon(ArtIcons.Home, contentDescription = null, tint = it, modifier = Modifier.size(24.dp)) },
+            searchIcon = { Icon(ArtIcons.Search, contentDescription = null, tint = it, modifier = Modifier.size(24.dp)) },
+            libraryIcon = { Icon(ArtIcons.Lib, contentDescription = null, tint = it, modifier = Modifier.size(24.dp)) },
             player = { app.discair.ui.common.TapeMeter(4, app.discair.ui.common.TapeDeckRules.meterMoves(playing, false, reduced), it, size = 22.dp) },
         )
         return
@@ -165,9 +163,9 @@ fun NavIsland(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(4.dp),
         ) {
-            IslandCell(onClick = onSearch, label = "Search", icon = Icons.Default.Search)
-            IslandCell(onClick = onHome, label = "Home", icon = Icons.Default.Home, selected = homeSelected)
-            IslandCell(onClick = onLibrary, label = "Library", icon = Icons.AutoMirrored.Filled.List, selected = librarySelected)
+            IslandCell(onClick = onSearch, label = "Search", icon = ArtIcons.Search)
+            IslandCell(onClick = onHome, label = "Home", icon = ArtIcons.Home, selected = homeSelected)
+            IslandCell(onClick = onLibrary, label = "Library", icon = ArtIcons.Lib, selected = librarySelected)
             IslandPlayer(onClick = onPlayer, label = playerLabel) { PlayBars(playing, Ink.Text) }
         }
     }

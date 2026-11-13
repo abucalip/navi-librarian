@@ -1,5 +1,6 @@
 package app.discair.ui.settings
 
+import app.discair.ui.common.ArtIcons
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -25,7 +26,6 @@ import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import app.discair.ui.common.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -273,7 +273,7 @@ private fun ThemeTile(p: Palette, selected: Boolean, modifier: Modifier, onClick
                 Text(p.label, style = MaterialTheme.typography.titleSmall)
                 Text(kind, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            if (selected) Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(20.dp))
+            if (selected) Icon(ArtIcons.Check, contentDescription = null, modifier = Modifier.size(20.dp))
         }
     }
 }
@@ -307,7 +307,7 @@ private fun ChoiceDropdown(title: String, current: String, options: List<FontOpt
                                 Text(option.detail, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                             Spacer(Modifier.width(4.dp))
-                            if (on) Icon(Icons.Default.Check, contentDescription = "Selected", modifier = Modifier.size(18.dp))
+                            if (on) Icon(ArtIcons.Check, contentDescription = "Selected", modifier = Modifier.size(18.dp))
                         }
                     },
                     onClick = { open = false; onPick(option.id) },

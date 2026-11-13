@@ -1,5 +1,6 @@
 package app.discair.ui.artist
 
+import app.discair.ui.common.ArtIcons
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -19,7 +20,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -220,7 +220,7 @@ private fun PlacePane(pane: PathPane.Place, stop: PathStop, go: (PathLink) -> Un
         InfoCard(Modifier.weight(1f).fillMaxHeight(), fill = true) {
             Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically)) {
                 Eyebrow("Same place")
-                Icon(Icons.Default.Place, contentDescription = null, modifier = Modifier.size(32.dp))
+                Icon(ArtIcons.Place, contentDescription = null, modifier = Modifier.size(32.dp))
                 Text(place, style = MaterialTheme.typography.titleLarge, textAlign = TextAlign.Center)
             }
         }

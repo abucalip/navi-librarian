@@ -26,9 +26,6 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.selection.selectable
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -318,7 +315,7 @@ fun TrailStepRow(
             Text(title, style = MaterialTheme.typography.titleMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
             if (line.isNotBlank()) Text(line, style = MaterialTheme.typography.bodyMedium, color = Ink.TextMuted, maxLines = 2, overflow = TextOverflow.Ellipsis)
         }
-        Icon(Icons.Default.KeyboardArrowDown, contentDescription = null, tint = Ink.TextMuted, modifier = Modifier.size(TrailSizes.Chevron))
+        Icon(ArtIcons.Down, contentDescription = null, tint = Ink.TextMuted, modifier = Modifier.size(TrailSizes.Chevron))
     }
 }
 
@@ -358,7 +355,7 @@ fun TrailOpenStep(
                 horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically,
             ) {
                 identity()
-                Icon(Icons.Default.KeyboardArrowUp, contentDescription = null, tint = Ink.TextMuted, modifier = Modifier.size(TrailSizes.Chevron))
+                Icon(ArtIcons.Up, contentDescription = null, tint = Ink.TextMuted, modifier = Modifier.size(TrailSizes.Chevron))
             }
         } else {
             Row(Modifier.fillMaxWidth().heightIn(min = TrailSizes.OpenPicture), verticalAlignment = Alignment.CenterVertically) {
@@ -371,7 +368,7 @@ fun TrailOpenStep(
                         .clickable(onClickLabel = "Close step", role = Role.Button, onClick = onClose)
                         .semantics { stateDescription = "Expanded" },
                     contentAlignment = Alignment.Center,
-                ) { Icon(Icons.Default.KeyboardArrowUp, contentDescription = null, tint = Ink.TextMuted, modifier = Modifier.size(TrailSizes.Chevron)) }
+                ) { Icon(ArtIcons.Up, contentDescription = null, tint = Ink.TextMuted, modifier = Modifier.size(TrailSizes.Chevron)) }
             }
         }
         body()

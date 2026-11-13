@@ -1,5 +1,6 @@
 package app.discair.ui.radio
 
+import app.discair.ui.common.ArtIcons
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
@@ -34,10 +35,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import app.discair.ui.common.OutlinedButton
@@ -169,8 +167,8 @@ fun RadioNowPlayingSheet(
                             Modifier.size(buttonSize).semantics { stateDescription = if (live.favourite) "Favourite" else "Not a favourite" },
                             selected = live.favourite,
                         ) {
-                            if (live.favourite) Icon(Icons.Default.Favorite, contentDescription = "Remove ${item.title} from favourites", tint = Ink.AccentText)
-                            else Icon(Icons.Default.FavoriteBorder, contentDescription = "Add ${item.title} to favourites")
+                            if (live.favourite) Icon(ArtIcons.HeartFilled, contentDescription = "Remove ${item.title} from favourites", tint = Ink.AccentText)
+                            else Icon(ArtIcons.Heart, contentDescription = "Add ${item.title} to favourites")
                         }
                         FilledIconButton(
                             onClick = controller::playPause, Modifier.size(64.dp),
@@ -255,7 +253,7 @@ internal fun DownloadControl(download: RadioDownload, onClick: () -> Unit, modif
         },
         enabled = download.enabled,
     ) {
-        if (download == RadioDownload.Done || download == RadioDownload.Owned) Icon(Icons.Default.Check, contentDescription = null, Modifier.size(18.dp).padding(end = 0.dp))
+        if (download == RadioDownload.Done || download == RadioDownload.Owned) Icon(ArtIcons.Check, contentDescription = null, Modifier.size(18.dp).padding(end = 0.dp))
         Text(download.label)
     }
 }
