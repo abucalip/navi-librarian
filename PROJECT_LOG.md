@@ -1,3 +1,9 @@
+## 2026-11-13 — Colour palettes P1: Soft Brut day palettes (PR #1043)
+
+- Merged as `398cbb0ba925c9875d1f725ded595f9705414c24` from head `6628c4f5aaacb0d7d3ffe52e634df5acc9b38dee`; required CI passed (compile, container-smoke, test-and-build, validate-container). `Palette.kt` gained `SoftBrutMint`, `SoftBrutPeach`, `SoftBrutSky`, `SoftBrutLemon` (values from `docs/design/android-art-themes/palettes/roles.md`), listed after `SoftBrut` in `Palettes.Light`. No screen code changed.
+- Verified, filtered (JDK 17): `SoftBrutTest` (12, new cases for spec values, shared status colours, contrast floors), `PaletteTest` (19, counts 33/22/20), `ExistingLayoutsTest`, `AppearanceRulesTest`. Full suite not run. Not seen on a device; no screenshot comparison with `docs/design/android-art-themes/palettes/`.
+- Next action: P2 (Soft Brut night palettes and the `onAccent` audit), then the owner's phone check.
+
 ## 2026-11-13 — Paths Trail steps 3 to 5: artist sheet, artist pane bodies, album sheet (PR #1031)
 
 - Merged as `04afccf076e9a469c90c08dc5a4d183b4edef623` (steps 1 and 2 had merged in PR #1030). Both Paths sheets now show the Trail from `docs/pathsredesign.md`: header with the start's picture, text tabs with a mark, links with their steps under them, a step that opens in place. `PathDetail`, `AlbumPathDetail`, the Back button, "Step n of N" and the arrows are removed; Back closes an open step first; the saved step stays an index into the server's list. Pane bodies lose their hero rows (the opened step's 72dp header carries them) and their cards sit on the sheet's ground. Sideman and Scene rows say the library state. New `TrailEntry`, `entries()` and `TrailList` (scrolls an opened step into view).
