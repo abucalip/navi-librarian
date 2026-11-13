@@ -39,6 +39,8 @@ fun SettingsRow(
 ) {
     // Soft Brut: an icon tile, no hairline above the first row of a card (CoverStackSettings.kt). Every other theme is unchanged.
     if (app.discair.ui.common.isCoverStack()) { CoverStackSettingsRow(icon, title, state, modifier, stateColor, onClick, trailing, divider); return }
+    // Flow: a 32dp icon tile in a white grouped card (FlowSettings.kt).
+    if (app.discair.ui.common.isFlow()) { FlowSettingsRow(icon, title, state, modifier, stateColor, onClick, trailing, divider); return }
     Column(modifier) {
         RowDivider()
         Row(
