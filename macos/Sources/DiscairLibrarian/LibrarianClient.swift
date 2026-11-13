@@ -362,20 +362,22 @@ public struct LibrarianClient: Sendable {
 
     /// One send with a single re-login on 401 (the session cookie lives in memory only).
     // Same-module access for extensions in other files (private members are not visible there).
-    func authedSendPublic(_ method: String, _ path: String, body: Data?) async throws -> (Data, HTTPURLResponse) { try await authedSend(method, path, body: body) }
+    func authedSendPublic(_ method: String, _ path: String, body: Data?, contentType: String = "application/json") async throws -> (Data, HTTPURLResponse) {
+        try await authedSend(method, path, body: body, contentType: contentType)
+    }
     func failurePublic(_ http: HTTPURLResponse, _ data: Data) -> DiscairError? { failure(http, data) }
     func decodePublic<T: Decodable>(_ type: T.Type, _ data: Data, _ http: HTTPURLResponse) throws -> T { try decode(type, data, http) }
 
-    private func authedSend(_ method: String, _ path: String, body: Data?) async throws -> (Data, HTTPURLResponse) {
-        var (data, http) = try await send(method, path, body: body)
+    private func authedSend(_ method: String, _ path: String, body: Data?, contentType: String = "application/json") async throws -> (Data, HTTPURLResponse) {
+        var (data, http) = try await send(method, path, body: body, contentType: contentType)
         if http.statusCode == 401 {
             try await login()
-            (data, http) = try await send(method, path, body: body)
+            (data, http) = try await send(method, path, body: body, contentType: contentType)
         }
         return (data, http)
     }
 
-    private func send(_ method: String, _ path: String, body: Data?) async throws -> (Data, HTTPURLResponse) {
+    private func send(_ method: String, _ path: String, body: Data?, contentType: String = "application/json") async throws -> (Data, HTTPURLResponse) {
         let parts = path.split(separator: "?", maxSplits: 1).map(String.init)
         var comps = URLComponents(url: base, resolvingAgainstBaseURL: false)!
         // The path is already percent-encoded (page keys carry %20); setting `path` would encode the % again.
@@ -386,7 +388,7 @@ public struct LibrarianClient: Sendable {
         request.setValue("application/json", forHTTPHeaderField: "Accept")
         if let body {
             request.httpBody = body
-            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            request.setValue(contentType, forHTTPHeaderField: "Content-Type")
         }
         // A taste refresh reads the whole listening history and can take about a minute; the 30 s default cut it off.
         if parts[0].hasSuffix("taste/refresh") || parts[0].hasSuffix("settings/listenbrainz/test") { request.timeoutInterval = 150 }
