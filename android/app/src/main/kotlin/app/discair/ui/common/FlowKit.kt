@@ -15,12 +15,14 @@ import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -31,14 +33,18 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
+import app.discair.ui.player.PlayerIcons
 import app.discair.ui.theme.Layout
 import app.discair.ui.theme.LocalPalette
 import app.discair.ui.theme.Palette
@@ -53,6 +59,9 @@ object FlowRules {
     const val RADIUS_COVER_SMALL = 8f
     const val RADIUS_NAV = 30f
     const val RADIUS_MINI = 18f
+
+    /** A list row is at least this high (dp). */
+    const val ROW_MIN = 64f
 
     /** The bars' fill is white at this alpha. Blur behind them is a later refinement (proposal D3). */
     const val BAR_ALPHA = 0.86f
@@ -183,3 +192,84 @@ fun FlowSwitch(checked: Boolean, modifier: Modifier = Modifier) {
 
 /** The switch track when off (flow.css `.sw`). */
 private val FLOW_SWITCH_OFF = Color(0xFFD9D5CB)
+
+/**
+ * Flow's grouped list (flow.css `.list.card`): one white card of radius 16 at level 1 depth, rows 12dp in from its edge, a 0.5dp hairline
+ * between rows (none after the last). Margins are 16dp at the sides, as the mockups draw it. Rows are [FlowListRow]s.
+ */
+@Composable
+fun FlowGroup(modifier: Modifier = Modifier, content: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit) {
+    val p = LocalPalette.current
+    Column(
+        modifier.padding(horizontal = 16.dp).fillMaxWidth().flowCard(p).padding(horizontal = 12.dp),
+        content = content,
+    )
+}
+
+/**
+ * One row of a group (flow.css `.li`): at least 64dp, a [leading] visual (a 32dp [FlowIconTile], a cover or a photo), the title in Inter 600 15,
+ * its state in words under it in muted text, then a grey chevron or [trailing]. [divider] draws the hairline above the row (every row but the first).
+ */
+@Composable
+fun FlowListRow(
+    title: String, modifier: Modifier = Modifier, state: String = "", onClick: (() -> Unit)? = null, divider: Boolean = false,
+    leading: (@Composable () -> Unit)? = null, trailing: (@Composable () -> Unit)? = null,
+) {
+    val p = LocalPalette.current
+    Column(modifier) {
+        if (divider) FlowDivider()
+        Row(
+            Modifier.fillMaxWidth().heightIn(min = FlowRules.ROW_MIN.dp)
+                .then(if (onClick != null) Modifier.clickable(role = Role.Button, onClick = onClick) else Modifier)
+                .semantics(mergeDescendants = true) { contentDescription = if (state.isEmpty()) title else "$title, $state" }
+                .padding(vertical = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically,
+        ) {
+            leading?.invoke()
+            Column(Modifier.weight(1f)) {
+                Text(title, color = p.text, maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold, fontSize = 15.sp, lineHeight = 20.sp))
+                if (state.isNotEmpty()) Text(state, color = p.textMuted, maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp, lineHeight = 18.sp))
+            }
+            if (trailing != null) trailing() else Icon(PlayerIcons.Right, contentDescription = null, tint = FLOW_CHEVRON, modifier = Modifier.size(16.dp))
+        }
+    }
+}
+
+/** The 32dp tile in front of a grouped row: radius 8, `raised`, an 18dp glyph in the text colour (flow.css `.ic`). */
+@Composable
+fun FlowIconTile(icon: ImageVector, modifier: Modifier = Modifier) {
+    val p = LocalPalette.current
+    Box(modifier.size(32.dp).clip(RoundedCornerShape(8.dp)).background(p.raised), contentAlignment = Alignment.Center) {
+        Icon(icon, contentDescription = null, tint = p.text, modifier = Modifier.size(18.dp))
+    }
+}
+
+/**
+ * Flow's round icon button: a `raised` circle of 36dp in a top bar (the touch target stays 48dp) or 44dp elsewhere; [size] is that visible diameter
+ * (flow.css `.ib`, `.btn.sq`). The glyph is the text colour, or the accent when [accent] (the bars' own buttons).
+ */
+@Composable
+fun FlowCircleButton(icon: ImageVector, label: String, onClick: () -> Unit, modifier: Modifier = Modifier, size: Int = 36, accent: Boolean = false) {
+    val p = LocalPalette.current
+    Box(
+        modifier.size(maxOf(size, 48).dp).clip(CircleShape).clickable(role = Role.Button, onClick = onClick).semantics { contentDescription = label },
+        contentAlignment = Alignment.Center,
+    ) {
+        Box(Modifier.size(size.dp).clip(CircleShape).background(p.raised), contentAlignment = Alignment.Center) {
+            Icon(icon, contentDescription = null, tint = if (accent) p.accent else p.text, modifier = Modifier.size(20.dp))
+        }
+    }
+}
+
+/** Flow's tag: Inter 600 11 in capitals, radius 6, a tinted fill. The label is the text colour on the accent tint (4.2:1 for the accent itself, D7). */
+@Composable
+fun FlowTag(text: String, modifier: Modifier = Modifier, tint: Color = LocalPalette.current.raised, labelColor: Color = LocalPalette.current.textMuted) {
+    Text(
+        text.uppercase(), color = labelColor, maxLines = 1,
+        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold, fontSize = 11.sp, lineHeight = 16.sp, letterSpacing = 0.03.em),
+        modifier = modifier.clip(RoundedCornerShape(6.dp)).background(tint).padding(horizontal = 7.dp, vertical = 2.dp),
+    )
+}
+
+/** The chevron colour (flow.css `.chev`). */
+private val FLOW_CHEVRON = Color(0xFFB5B0A5)
