@@ -90,7 +90,7 @@ enum class Family(val label: String) { Classic("Classic"), Brutal("Brutal") }
  */
 enum class Layout(val label: String) {
     Standard("Standard"), TapeDeck("Cassette Deck"), SheetStack("Sheet Stack"), StickerWall("Sticker Wall"),
-    CoverStack("Cover Stack"),
+    CoverStack("Cover Stack"), Flow("Flow"),
 }
 
 /**
@@ -361,8 +361,22 @@ object Palettes {
         layout = Layout.CoverStack, suggestedFontId = "brut_modern",
     )
 
+    // Art themes proposal (docs/ANDROID_ART_THEMES_PROPOSAL.md section 4): Flow, an iOS-inspired Classic theme. No outline, no hard shadow, soft depth
+    // drawn by the layout. The accent is the proposal's darkened #C2410C (D6). Three greys/greens are a step darker than the mockup so the shared contrast tests pass:
+    // muted 645F55 (was 6F6A60, 3.96:1 on the player's pastel washes), ok 1B7339 (was 1E7A3C, 4.44:1 on its tint), chart2 8F897D (was A8A296, 2.54:1 on white). Values are the tokens of design/android-art-themes/flow.css.
+    val Flow = Palette(
+        "flow", "Flow · Warm white", true,
+        rail = c(0xFBFAF7), ink = c(0xFBFAF7), surface = c(0xFFFFFF), raised = c(0xEFECE5), edge = c(0xE2DFD6), edgeStrong = c(0x8E887B),
+        text = c(0x15130F), textMuted = c(0x645F55), accent = c(0xC2410C), accentDim = c(0xFBE4D5), onAccent = c(0xFFFFFF),
+        chartRed = c(0xC0271A), chartRedText = c(0xC0271A), ok = c(0x1B7339), caution = c(0x8A5300),
+        info = c(0x1F5FBF), okDim = c(0xDCEEDF), cautionDim = c(0xF8E8CC), dangerDim = c(0xF9DCD8), infoDim = c(0xDCE7F8),
+        chart1 = c(0xC2410C), chart2 = c(0x8F897D), chart3 = c(0xD9D4C8), chartGhost = c(0xEFECE5), chartGrid = c(0xE2DFD6),
+        chartBase = c(0x8E887B),
+        layout = Layout.Flow, suggestedFontId = "flow",
+    )
+
     /** Light themes in the order the picker shows them; the first is the default day theme. */
-    val Light: List<Palette> = listOf(Sand, Paper, Mist, Sage, Blush, BrutLavender, BrutMint, BrutLemon, BrutCream, BrutSky, BrutPoster, TapeLime, TapeCobalt, TapeTangerine, SheetDaylight, StickerPeach, SoftBrut)
+    val Light: List<Palette> = listOf(Sand, Paper, Mist, Sage, Blush, BrutLavender, BrutMint, BrutLemon, BrutCream, BrutSky, BrutPoster, TapeLime, TapeCobalt, TapeTangerine, SheetDaylight, StickerPeach, SoftBrut, Flow)
 
     /** Dark themes in the order the picker shows them; the first is the default night theme. */
     val Dark: List<Palette> = listOf(Night, Amoled, Forest, Ocean, Ember, Graphite, HighContrast, BrutInk, BrutMidnight, SheetViolet, SheetAcid)

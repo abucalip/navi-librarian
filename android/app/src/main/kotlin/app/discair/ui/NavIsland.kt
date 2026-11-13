@@ -66,6 +66,7 @@ val LocalBottomClearance = androidx.compose.runtime.compositionLocalOf { 0.dp }
  * The bottom navigation, drawn in the owner's theme.
  *
  * - Cassette Deck: a ruled bar with Home, Discover, Library and Search; the mini player sits above it.
+ * - Flow: a floating capsule with Home, Discover, Library and Search; the mini player sits above it.
  * - Cover Stack: one outlined bar with Home, Discover, Library and Search; the mini player sits above it.
  * - Sticker Wall: a pill with Search, Home, Library and the player.
  * - Sheet Stack: a joined group with Home, Search, Library and the player.
@@ -106,6 +107,17 @@ fun NavIsland(
     // Cover Stack (Soft Brut): one outlined bar with Home, Discover, Library and Search; the mini player sits above it.
     if (deckTheme.layout == app.discair.ui.theme.Layout.CoverStack) {
         app.discair.ui.common.CoverStackNavBar(
+            deckTheme, homeSelected, discoverSelected, librarySelected, onHome, onDiscover, onLibrary, onSearch, modifier,
+            homeIcon = { Icon(Icons.Default.Home, contentDescription = null, tint = it, modifier = Modifier.size(24.dp)) },
+            discoverIcon = { Icon(Icons.Default.Star, contentDescription = null, tint = it, modifier = Modifier.size(24.dp)) },
+            libraryIcon = { Icon(Icons.AutoMirrored.Filled.List, contentDescription = null, tint = it, modifier = Modifier.size(24.dp)) },
+            searchIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = it, modifier = Modifier.size(24.dp)) },
+        )
+        return
+    }
+    // Flow: a floating translucent capsule with Home, Discover, Library and Search; the mini player sits above it.
+    if (deckTheme.layout == app.discair.ui.theme.Layout.Flow) {
+        app.discair.ui.common.FlowNavBar(
             deckTheme, homeSelected, discoverSelected, librarySelected, onHome, onDiscover, onLibrary, onSearch, modifier,
             homeIcon = { Icon(Icons.Default.Home, contentDescription = null, tint = it, modifier = Modifier.size(24.dp)) },
             discoverIcon = { Icon(Icons.Default.Star, contentDescription = null, tint = it, modifier = Modifier.size(24.dp)) },

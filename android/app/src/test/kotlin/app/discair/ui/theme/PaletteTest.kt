@@ -19,11 +19,11 @@ class PaletteTest {
         assertTrue("${p.label}: $what on $bgName is %.2f, needs %.1f".format(got, need), got >= need)
     }
 
-    @Test fun twentyEightThemesWithUniqueIds() {
-        assertEquals(28, Palettes.All.size)
-        assertEquals(17, Palettes.Light.size)
+    @Test fun twentyNineThemesWithUniqueIds() {
+        assertEquals(29, Palettes.All.size)
+        assertEquals(18, Palettes.Light.size)
         assertEquals(11, Palettes.Dark.size)
-        assertEquals(12, Palettes.All.count { it.family == Family.Classic })
+        assertEquals(13, Palettes.All.count { it.family == Family.Classic })
         assertEquals(16, Palettes.All.count { it.family == Family.Brutal })
         assertTrue(Palettes.All.all { (it.family == Family.Brutal) == (it.shape != null) })
         assertEquals(Palettes.All.size, Palettes.All.map { it.id }.toSet().size)
@@ -88,8 +88,8 @@ class PaletteTest {
         check(over, "accent over artwork", over.accent, over.surface, 2.9, "dark surface")
     }
 
-    @Test fun elevenPairsWithUniqueIdsAndDiscairFirst() {
-        assertEquals(11, FontPairs.All.size)
+    @Test fun twelvePairsWithUniqueIdsAndDiscairFirst() {
+        assertEquals(12, FontPairs.All.size)
         assertEquals(FontPairs.All.size, FontPairs.All.map { it.id }.toSet().size)
         assertEquals(FontPairs.All.size, FontPairs.All.map { it.label }.toSet().size)
         assertEquals("discair", FontPairs.All.first().id)
@@ -101,7 +101,7 @@ class PaletteTest {
         // Each pair is chosen by its id alone: the saved font id never depends on the colour theme.
         for (p in brut) assertEquals(p.id, AppearanceRules.sanitizeFont(p.id))
         // The older pairs keep JetBrains Mono for numbers; the Brut pairs that name another mono bring it.
-        assertEquals(setOf("JetBrains Mono"), FontPairs.All.filter { !it.id.startsWith("brut_") }.map { it.monoName }.toSet())
+        assertEquals(setOf("JetBrains Mono"), FontPairs.All.filter { !it.id.startsWith("brut_") && it.id != "flow" }.map { it.monoName }.toSet())
         assertEquals(setOf("JetBrains Mono", "IBM Plex Mono", "DM Mono", "Space Mono", "Roboto Mono"), brut.map { it.monoName }.toSet())
         assertTrue(brut.all { it.titleScale in 0.5f..1.5f })
         // Technical's body is proportional (IBM Plex Sans); only its numbers are monospaced.

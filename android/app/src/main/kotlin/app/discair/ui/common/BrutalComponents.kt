@@ -80,6 +80,7 @@ import app.discair.ui.theme.Palette
 import app.discair.ui.theme.brutalOutline
 import app.discair.ui.theme.brutalShadow
 import app.discair.ui.theme.themeShape
+import app.discair.ui.theme.accentText
 
 /*
  * The Neobrut component layer of the app (neobrut.md, after neobrutalism.com): a thick outline, a small radius, a hard
@@ -142,6 +143,7 @@ fun Button(
     contentPadding: PaddingValues = ButtonDefaults.ContentPadding, interactionSource: MutableInteractionSource? = null,
     content: @Composable RowScope.() -> Unit,
 ) {
+    if (isFlow()) { FlowButton(FlowKind.Primary, onClick, modifier, enabled, shape, colors, contentPadding, interactionSource, content); return }
     if (!LocalPalette.current.brutal) {
         androidx.compose.material3.Button(onClick, modifier, enabled, shape ?: ButtonDefaults.shape, colors ?: ButtonDefaults.buttonColors(), elevation, border, contentPadding, interactionSource, content)
         return
@@ -156,6 +158,7 @@ fun OutlinedButton(
     contentPadding: PaddingValues = ButtonDefaults.ContentPadding, interactionSource: MutableInteractionSource? = null,
     content: @Composable RowScope.() -> Unit,
 ) {
+    if (isFlow()) { FlowButton(FlowKind.Tonal, onClick, modifier, enabled, shape, colors, contentPadding, interactionSource, content); return }
     if (!LocalPalette.current.brutal) {
         androidx.compose.material3.OutlinedButton(onClick, modifier, enabled, shape ?: ButtonDefaults.outlinedShape, colors ?: ButtonDefaults.outlinedButtonColors(), elevation, border ?: ButtonDefaults.outlinedButtonBorder(enabled), contentPadding, interactionSource, content)
         return
@@ -170,6 +173,7 @@ fun FilledTonalButton(
     contentPadding: PaddingValues = ButtonDefaults.ContentPadding, interactionSource: MutableInteractionSource? = null,
     content: @Composable RowScope.() -> Unit,
 ) {
+    if (isFlow()) { FlowButton(FlowKind.Tonal, onClick, modifier, enabled, shape, colors, contentPadding, interactionSource, content); return }
     if (!LocalPalette.current.brutal) {
         androidx.compose.material3.FilledTonalButton(onClick, modifier, enabled, shape ?: ButtonDefaults.filledTonalShape, colors ?: ButtonDefaults.filledTonalButtonColors(), elevation, border, contentPadding, interactionSource, content)
         return
@@ -239,6 +243,20 @@ fun OutlinedTextField(
     shape: Shape? = null, colors: TextFieldColors? = null,
 ) {
     val p = LocalPalette.current
+    if (isFlow()) {
+        // Flow: a 44dp field of radius 12 filled with `raised`, no outline.
+        val clear = Color.Transparent
+        androidx.compose.material3.OutlinedTextField(
+            value, onValueChange, modifier, enabled, readOnly, textStyle, label, placeholder, leadingIcon, trailingIcon, null, null,
+            supportingText, isError, visualTransformation, keyboardOptions, keyboardActions, singleLine, maxLines, minLines,
+            interactionSource, shape ?: RoundedCornerShape(12.dp),
+            colors ?: androidx.compose.material3.OutlinedTextFieldDefaults.colors(
+                focusedContainerColor = p.raised, unfocusedContainerColor = p.raised, disabledContainerColor = p.raised, errorContainerColor = p.raised,
+                focusedBorderColor = if (isError) p.chartRedText else p.accent, unfocusedBorderColor = if (isError) p.chartRedText else clear, disabledBorderColor = clear, errorBorderColor = p.chartRedText,
+            ),
+        )
+        return
+    }
     if (!p.brutal) {
         androidx.compose.material3.OutlinedTextField(
             value, onValueChange, modifier, enabled, readOnly, textStyle, label, placeholder, leadingIcon, trailingIcon, null, null,
@@ -403,6 +421,7 @@ fun Slider(
 fun LinearProgressIndicator(
     progress: () -> Float, modifier: Modifier = Modifier, color: Color = ProgressIndicatorDefaultsColor(), trackColor: Color = ProgressIndicatorDefaultsTrack(),
 ) {
+    if (isFlow()) { FlowProgress(progress(), modifier); return }
     if (!LocalPalette.current.brutal) {
         androidx.compose.material3.LinearProgressIndicator(progress, modifier, color, trackColor)
         return
@@ -412,6 +431,7 @@ fun LinearProgressIndicator(
 
 @Composable
 fun LinearProgressIndicator(modifier: Modifier = Modifier, color: Color = ProgressIndicatorDefaultsColor(), trackColor: Color = ProgressIndicatorDefaultsTrack()) {
+    if (isFlow()) { androidx.compose.material3.LinearProgressIndicator(modifier.height(4.dp).clip(RoundedCornerShape(2.dp)), LocalPalette.current.accent, LocalPalette.current.raised); return }
     if (!LocalPalette.current.brutal) {
         androidx.compose.material3.LinearProgressIndicator(modifier, color, trackColor)
         return
@@ -444,6 +464,7 @@ private fun BrutalSliderTrackBar(fraction: Float, modifier: Modifier) {
 /** The snackbar host: on a Brutal theme each toast is an outlined card with a hard shadow and a pressable action. */
 @Composable
 fun SnackbarHost(hostState: SnackbarHostState, modifier: Modifier = Modifier) {
+    if (isFlow()) { androidx.compose.material3.SnackbarHost(hostState, modifier) { data -> FlowSnackbar(data) }; return }
     if (!LocalPalette.current.brutal) {
         androidx.compose.material3.SnackbarHost(hostState, modifier)
         return
@@ -494,6 +515,16 @@ fun ModalBottomSheet(
     shape: Shape? = null, containerColor: Color? = null, content: @Composable ColumnScope.() -> Unit,
 ) {
     val p = LocalPalette.current
+    if (isFlow()) {
+        // Flow: a white sheet with a 24dp top radius and a short grey handle (mockup: flow/sheets).
+        androidx.compose.material3.ModalBottomSheet(
+            onDismissRequest, modifier, sheetState, shape = shape ?: RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
+            containerColor = containerColor ?: p.surface,
+            dragHandle = { Box(Modifier.padding(vertical = 10.dp).size(width = 36.dp, height = 4.dp).clip(RoundedCornerShape(2.dp)).background(p.chartGrid)) },
+            content = content,
+        )
+        return
+    }
     if (!p.brutal) {
         androidx.compose.material3.ModalBottomSheet(
             onDismissRequest, modifier, sheetState, shape = shape ?: androidx.compose.material3.BottomSheetDefaults.ExpandedShape,
@@ -538,6 +569,22 @@ fun FilterChip(
     colors: SelectableChipColors? = null, elevation: SelectableChipElevation? = null, border: BorderStroke? = null, interactionSource: MutableInteractionSource? = null,
 ) {
     val p = LocalPalette.current
+    if (isFlow()) {
+        // Flow: a 34dp capsule on `raised`; the chosen one is filled with the text colour.
+        val pill = RoundedCornerShape(17.dp)
+        Row(
+            modifier.heightIn(min = 34.dp).clip(pill).background(if (selected) p.text else p.raised)
+                .clickable(enabled = enabled, role = Role.Checkbox, onClick = onClick).padding(horizontal = 14.dp),
+            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            leadingIcon?.invoke()
+            CompositionLocalProvider(LocalContentColor provides if (selected) p.ink else p.text) {
+                androidx.compose.material3.ProvideTextStyle(MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Medium, fontSize = 14.sp), label)
+            }
+            trailingIcon?.invoke()
+        }
+        return
+    }
     if (!p.brutal) {
         androidx.compose.material3.FilterChip(
             selected, onClick, label, modifier, enabled, leadingIcon, trailingIcon, shape ?: FilterChipDefaults.shape,
@@ -633,3 +680,59 @@ fun PlayerIconButton(
     }
     BrutalIconButton(onClick, modifier, enabled, selected, content = content)
 }
+
+
+// ---------------------------------------------------------------- Flow (docs/ANDROID_ART_THEMES_PROPOSAL.md section 4)
+
+private enum class FlowKind { Primary, Tonal }
+
+/** Flow's capsule button, 44dp high: primary is the accent with a white label, secondary is `raised` with an accent label. Inter 600 15. */
+@Composable
+private fun FlowButton(
+    kind: FlowKind, onClick: () -> Unit, modifier: Modifier, enabled: Boolean, shape: Shape?, colors: ButtonColors?,
+    contentPadding: PaddingValues, interactionSource: MutableInteractionSource?, content: @Composable RowScope.() -> Unit,
+) {
+    val p = LocalPalette.current
+    val defaults = if (kind == FlowKind.Primary) ButtonDefaults.buttonColors(containerColor = p.accent, contentColor = p.onAccent)
+    else ButtonDefaults.buttonColors(containerColor = p.raised, contentColor = p.accentText)
+    androidx.compose.material3.Button(
+        onClick = onClick, modifier = modifier.heightIn(min = 44.dp), enabled = enabled, shape = shape ?: RoundedCornerShape(22.dp),
+        colors = colors ?: defaults, elevation = null,
+        contentPadding = if (contentPadding == ButtonDefaults.ContentPadding) PaddingValues(horizontal = 18.dp) else contentPadding,
+        interactionSource = interactionSource,
+        content = { androidx.compose.material3.ProvideTextStyle(LocalTextStyle.current.copy(fontWeight = FontWeight.SemiBold, fontSize = 15.sp)) { content() } },
+    )
+}
+
+/** A 4dp rounded bar: `raised` track, accent fill. */
+@Composable
+private fun FlowProgress(fraction: Float, modifier: Modifier) {
+    val p = LocalPalette.current
+    val s = RoundedCornerShape(2.dp)
+    Box(modifier.height(4.dp).clip(s).background(p.raised)) {
+        Box(Modifier.fillMaxWidth(fraction.coerceIn(0f, 1f)).fillMaxHeight().clip(s).background(p.accent))
+    }
+}
+
+/** Flow's toast: the text colour with page-coloured text, radius 14, level 2 depth and an underlined-free Undo in a light accent. */
+@Composable
+private fun FlowSnackbar(data: SnackbarData) {
+    val p = LocalPalette.current
+    val s = RoundedCornerShape(14.dp)
+    Box(Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
+        Row(
+            Modifier.fillMaxWidth().flowDepth(2, s, p).clip(s).background(p.text).padding(start = 14.dp, end = 4.dp),
+            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Text(data.visuals.message, Modifier.weight(1f).padding(vertical = 12.dp), color = p.ink, style = MaterialTheme.typography.bodyMedium)
+            data.visuals.actionLabel?.let { label ->
+                Box(Modifier.heightIn(min = 48.dp).clickable(role = Role.Button, onClick = { data.performAction() }).padding(horizontal = 12.dp), contentAlignment = Alignment.Center) {
+                    Text(label, color = FLOW_SNACK_ACTION, fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.labelLarge)
+                }
+            }
+        }
+    }
+}
+
+/** The Undo colour on the dark toast (flow.css `.snack .lk`). */
+private val FLOW_SNACK_ACTION = Color(0xFFFFB48A)

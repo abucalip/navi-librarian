@@ -578,5 +578,6 @@ fun abbreviate(n: Long): String = when {
 @Composable
 fun RowDivider(modifier: Modifier = Modifier) {
     if (isCoverStack()) { CoverStackDivider(modifier); return }
+    if (isFlow()) { FlowDivider(modifier); return }
     Box(modifier.fillMaxWidth().height(1.dp).background(Ink.Edge))
 }
