@@ -229,7 +229,10 @@ fun SettingsScreen(state: UiState, model: AppViewModel, onBack: () -> Unit, onEq
     val container = (androidx.compose.ui.platform.LocalContext.current.applicationContext as DiscairApplication).container
     // The page scrolls because the playback choices make it taller than a phone in landscape or at large text.
     // Soft Brut draws its own grouped page (settings/CoverStackSettings.kt); the sign-out sheet below is shared.
-    if (app.discair.ui.common.isCoverStack()) app.discair.ui.settings.CoverStackSettingsPage(
+    // Flow draws its own grouped page (settings/FlowSettings.kt), also with the same sign-out sheet.
+    if (app.discair.ui.common.isFlow()) app.discair.ui.settings.FlowSettingsPage(
+        state, model, container, onBack, onEqualizer, onCrossfade, onAppearance, onServer, onSignOut = { confirmSignOut = true },
+    ) else if (app.discair.ui.common.isCoverStack()) app.discair.ui.settings.CoverStackSettingsPage(
         state, model, container, onBack, onEqualizer, onCrossfade, onAppearance, onServer, onSignOut = { confirmSignOut = true },
     ) else Page(scroll = true) {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -301,7 +304,7 @@ internal fun LibrarySettings() {
             problem = "Could not read this option from the server."
         }
     }
-    val softBrut = app.discair.ui.common.isCoverStack()
+    val softBrut = app.discair.ui.common.isCoverStack() || app.discair.ui.common.isFlow() // both group it as a row with a switch
     if (!softBrut) Section("Library", bold = true)
     val current = value
     val toggle: (Boolean) -> Unit = { on ->

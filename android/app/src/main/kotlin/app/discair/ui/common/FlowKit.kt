@@ -263,12 +263,12 @@ fun FlowGroup(modifier: Modifier = Modifier, content: @Composable androidx.compo
 
 /**
  * One row of a group (flow.css `.li`): at least 64dp, a [leading] visual (a 32dp [FlowIconTile], a cover or a photo), the title in Inter 600 15,
- * its state in words under it in muted text, then a grey chevron or [trailing]. [divider] draws the hairline above the row (every row but the first).
+ * its state in words under it in muted text (or [stateColor]), then a grey chevron or [trailing]. [divider] draws the hairline above the row (every row but the first).
  */
 @Composable
 fun FlowListRow(
     title: String, modifier: Modifier = Modifier, state: String = "", onClick: (() -> Unit)? = null, divider: Boolean = false,
-    leading: (@Composable () -> Unit)? = null, trailing: (@Composable () -> Unit)? = null,
+    leading: (@Composable () -> Unit)? = null, trailing: (@Composable () -> Unit)? = null, stateColor: Color = Color.Unspecified,
 ) {
     val p = LocalPalette.current
     Column(modifier) {
@@ -283,7 +283,7 @@ fun FlowListRow(
             leading?.invoke()
             Column(Modifier.weight(1f)) {
                 Text(title, color = p.text, maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold, fontSize = 15.sp, lineHeight = 20.sp))
-                if (state.isNotEmpty()) Text(state, color = p.textMuted, maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp, lineHeight = 18.sp))
+                if (state.isNotEmpty()) Text(state, color = if (stateColor == Color.Unspecified) p.textMuted else stateColor, maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp, lineHeight = 18.sp))
             }
             if (trailing != null) trailing() else Icon(PlayerIcons.Right, contentDescription = null, tint = FLOW_CHEVRON, modifier = Modifier.size(16.dp))
         }
