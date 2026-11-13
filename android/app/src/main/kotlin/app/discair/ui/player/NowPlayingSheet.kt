@@ -60,7 +60,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.contentDescription
@@ -81,6 +80,8 @@ import app.discair.player.PlayerUiState
 import app.discair.player.RepeatMode
 import app.discair.player.qualityLabel
 import app.discair.ui.common.Cover
+import app.discair.ui.common.flowDepth
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -171,7 +172,7 @@ fun NowPlayingSheet(state: PlayerUiState, controller: PlayerController, lyrics: 
     val coverStack = app.discair.ui.theme.LocalPalette.current.layout == app.discair.ui.theme.Layout.CoverStack
     // Flow: its own top bar and player in FlowNowPlaying.kt; the queue and the lyrics open as a sheet, as on Soft Brut.
     val flow = app.discair.ui.theme.LocalPalette.current.layout == app.discair.ui.theme.Layout.Flow
-    LaunchedEffect(coverStack, flow) { if ((coverStack || flow) && view != 0) { view = 0; lastView = 0 } }
+    LaunchedEffect(coverStack) { if (coverStack && view != 0) { view = 0; lastView = 0 } }
     BackHandler(enabled = view != 0) { view = 0; lastView = 0 }
     val scope = androidx.compose.runtime.rememberCoroutineScope()
     // -1 = queue, 0 = artwork, +1 = lyrics; fractions are mid-flip while a finger is down or the flip settles.
@@ -181,7 +182,7 @@ fun NowPlayingSheet(state: PlayerUiState, controller: PlayerController, lyrics: 
     val lyricsState by lyrics.state.collectAsState()
     val songId = state.current?.songId
     val nextId = state.queue.nextIndex()?.let { state.queue.items.getOrNull(it)?.songId }?.takeIf { it != songId }
-    val lyricsOpen = view == 1 || ((coverStack || flow) && panel == 1) || flip.value > 0.5f || sheetStack || settings.showLyricLine // the line under the title needs them while the sheet is open
+    val lyricsOpen = view == 1 || (coverStack && panel == 1) || flip.value > 0.5f || sheetStack || settings.showLyricLine // the line under the title needs them while the sheet is open
     // Fetch only while the Lyrics view is open for the song that is playing; close stops everything.
     LaunchedEffect(lyricsOpen, songId, nextId) {
         if (lyricsOpen && songId != null) lyrics.open(songId, nextId) else lyrics.close()
@@ -281,13 +282,32 @@ fun NowPlayingSheet(state: PlayerUiState, controller: PlayerController, lyrics: 
                     { if (songId != null) lyrics.retry(songId, nextId) }, lineUi, photosAvailable, showSlides, { showSlides = !showSlides; settings.showSlideshow = showSlides },
                 )
                 FlowPlayer(
-                    state, controller, onView = { panel = it }, onClose = onDismiss,
+                    state, controller, view = view, onView = { view = it; lastView = it }, onClose = onDismiss,
                     onSignIn = onSignIn, onEqualizer = { eqOpen = true }, onCrossfade = { crossfadeOpen = true },
-                    onOpenArtist = onOpenArtist, onOpenAlbum = onOpenAlbum, onCoverColor = { tint = it }, input = flowInput,
+                    onOpenArtist = onOpenArtist, onOpenAlbum = onOpenAlbum, input = flowInput,
+                    card = {
+                        DiscSleeve(disc, state.isPlaying) {
+                            FlipCard(
+                                progress = flip.value,
+                                onDrag = { next -> scope.launch { flip.snapTo(next) } },
+                                onSettle = { target, velocity ->
+                                    val changed = target != view
+                                    view = target; lastView = target
+                                    if (!changed) scope.launch { flip.animateTo(viewToProgress(target), spring(dampingRatio = 0.85f, stiffness = 220f), velocity) }
+                                },
+                                base = viewToProgress(view), flowStyle = true,
+                                front = { Cover(playerArtworkUrl(item.coverUrl), Modifier.fillMaxSize(), rect = true, onColor = { tint = it }) },
+                                lyricsFace = {
+                                    CoverStackLyricsPanel(
+                                        flowInput.lyricsState, currentLine, songId.orEmpty(), { if (songId != null) lyrics.retry(songId, nextId) },
+                                        Modifier.fillMaxSize().padding(16.dp), flow = true,
+                                    )
+                                },
+                                queueFace = { QueuePanel(state, controller, Modifier.fillMaxSize().padding(horizontal = 16.dp)) },
+                            )
+                        }
+                    },
                 )
-                if (panel != 0) SettingsSheet({ panel = 0 }) {
-                    FlowPanel(state, controller, panel, flowInput, photos = { if (photosAvailable && showSlides && panel == 1) SlideshowBackdrop(slides, state.isPlaying) })
-                }
             } else if (sticker) StickerPlayer(
                 state, controller, view, onView = { view = it; lastView = it },
                 onSignIn = onSignIn, onEqualizer = { eqOpen = true }, onCrossfade = { crossfadeOpen = true },
@@ -378,7 +398,10 @@ private fun SettingsSheet(onDismiss: () -> Unit, content: @Composable () -> Unit
 private fun FlipCard(
     progress: Float, base: Float, onDrag: (Float) -> Unit, onSettle: (view: Int, velocity: Float) -> Unit,
     front: @Composable () -> Unit, lyricsFace: @Composable () -> Unit, queueFace: @Composable () -> Unit,
+    flowStyle: Boolean = false, // Flow: soft radius 18, level 3 depth and a raised back instead of the outlined card
 ) {
+    val palette = app.discair.ui.theme.LocalPalette.current
+    val cardShape = if (flowStyle) RoundedCornerShape(app.discair.ui.player.FlowPlayerRules.COVER_RADIUS.dp) else app.discair.ui.theme.themeShape(12.dp)
     val p = progress.coerceIn(-1f, 1f)
     val angle = -p * 180f
     val showFront = kotlin.math.abs(p) < 0.5f
@@ -407,10 +430,10 @@ private fun FlipCard(
                 rotationY = if (showFront) angle else if (p > 0f) angle + 180f else angle - 180f
                 cameraDistance = 14f * density
             }
-            .then(if (app.discair.ui.theme.LocalPalette.current.brutal) Modifier.brutalShadow(app.discair.ui.theme.themeShape(12.dp)) else Modifier)
-            .clip(app.discair.ui.theme.themeShape(12.dp))
-            .background(MaterialTheme.colorScheme.surfaceVariant)
-            .then(if (app.discair.ui.theme.LocalPalette.current.brutal) Modifier.border(app.discair.ui.theme.brutalOutline(), app.discair.ui.theme.themeShape(12.dp)) else Modifier),
+            .then(if (flowStyle) Modifier.flowDepth(3, cardShape, palette) else if (palette.brutal) Modifier.brutalShadow(cardShape) else Modifier)
+            .clip(cardShape)
+            .background(if (flowStyle) palette.raised else MaterialTheme.colorScheme.surfaceVariant)
+            .then(if (!flowStyle && palette.brutal) Modifier.border(app.discair.ui.theme.brutalOutline(), cardShape) else Modifier),
     ) {
         when {
             showFront -> front()

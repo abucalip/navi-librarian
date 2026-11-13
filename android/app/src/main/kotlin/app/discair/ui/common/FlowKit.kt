@@ -187,10 +187,6 @@ private fun RowScope.Cell(palette: Palette, label: String, selected: Boolean, on
         horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center,
     ) {
         Box(Modifier.size(24.dp), contentAlignment = Alignment.Center) { icon(tint) }
-        Text(
-            label, style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold, fontSize = 10.5.sp),
-            color = if (selected) palette.text else palette.textMuted, maxLines = 1, modifier = Modifier.clearAndSetSemantics { },
-        )
     }
 }
 

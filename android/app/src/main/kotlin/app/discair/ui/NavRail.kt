@@ -94,6 +94,5 @@ private fun RailCell(palette: app.discair.ui.theme.Palette, label: String, selec
         verticalArrangement = Arrangement.Center,
     ) {
         Icon(icon, contentDescription = null, tint = ink, modifier = Modifier.size(24.dp))
-        Text(label, style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold), color = ink, maxLines = 1, modifier = Modifier.clearAndSetSemantics { })
     }
 }

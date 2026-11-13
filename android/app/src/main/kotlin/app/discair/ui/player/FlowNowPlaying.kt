@@ -56,6 +56,7 @@ import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
@@ -204,15 +205,15 @@ private fun FlowTopBar(onClose: () -> Unit, menu: List<Pair<String, () -> Unit>>
 }
 
 /**
- * The Flow player: the top bar, the 312dp cover over the wash, title and artist, the seek line, the transport and the four entries under it
- * (Queue, Lyrics, Equalizer, Crossfade). The mockup's heart (no favourite action) and Sonic path (no Now Playing action; Crossfade takes its
+ * The Flow player: the top bar, the Queue and Lyrics buttons over the 312dp cover (which flips to them on a swipe), title and artist, the seek line, the transport and the two entries under it
+ * (Equalizer, Crossfade). The mockup's heart (no favourite action) and Sonic path (no Now Playing action; Crossfade takes its
  * slot) are not drawn, as on Soft Brut. [onView] opens the Queue (2) or the Lyrics (1) as a sheet.
  */
 @Composable
 fun FlowPlayer(
-    state: PlayerUiState, controller: PlayerController, onView: (Int) -> Unit, onClose: () -> Unit,
+    state: PlayerUiState, controller: PlayerController, view: Int, onView: (Int) -> Unit, onClose: () -> Unit,
     onSignIn: () -> Unit, onEqualizer: () -> Unit, onCrossfade: () -> Unit,
-    onOpenArtist: (QueueItem) -> Unit, onOpenAlbum: (QueueItem) -> Unit, onCoverColor: (Color) -> Unit, input: CoverStackPlayerInput,
+    onOpenArtist: (QueueItem) -> Unit, onOpenAlbum: (QueueItem) -> Unit, input: CoverStackPlayerInput, card: @Composable () -> Unit,
 ) {
     val item = state.current ?: return
     val p = LocalPalette.current
@@ -222,14 +223,18 @@ fun FlowPlayer(
         if (item.artist.isNotBlank()) add("Open artist" to { onOpenArtist(item) })
         if (item.album.isNotBlank()) add("Open album" to { onOpenAlbum(item) })
     }
-    val coverShape = RoundedCornerShape(FlowPlayerRules.COVER_RADIUS.dp)
     Column(Modifier.fillMaxWidth().fillMaxHeight()) {
         FlowTopBar(onClose, menu)
         Column(Modifier.weight(1f, fill = true).fillMaxWidth().verticalScroll(rememberScrollState())) {
-            Box(Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 20.dp), contentAlignment = Alignment.Center) {
-                Box(
-                    Modifier.widthIn(max = FlowPlayerRules.COVER.dp).fillMaxWidth().aspectRatio(1f).flowDepth(3, coverShape, p).clip(coverShape),
-                ) { Cover(playerArtworkUrl(item.coverUrl), Modifier.fillMaxSize(), rect = true, onColor = onCoverColor) }
+            // Queue and Lyrics sit above the artwork (queue on the left, lyrics on the right, as the card turns); the artwork flips to them on a swipe.
+            Box(Modifier.fillMaxWidth().padding(top = 4.dp, bottom = 20.dp), contentAlignment = Alignment.Center) {
+                Column(Modifier.widthIn(max = FlowPlayerRules.COVER.dp).fillMaxWidth()) {
+                    Row(Modifier.fillMaxWidth().padding(bottom = 8.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+                        FlowViewButton("Queue", ArtIcons.Queue, view == CoverStackPlayerRules.VIEW_QUEUE) { onView(if (view == CoverStackPlayerRules.VIEW_QUEUE) 0 else CoverStackPlayerRules.VIEW_QUEUE) }
+                        FlowViewButton("Lyrics", ArtIcons.Quote, view == CoverStackPlayerRules.VIEW_LYRICS) { onView(if (view == CoverStackPlayerRules.VIEW_LYRICS) 0 else CoverStackPlayerRules.VIEW_LYRICS) }
+                    }
+                    card()
+                }
             }
             Column(Modifier.fillMaxWidth()) {
                 Text(
@@ -265,12 +270,21 @@ fun FlowPlayer(
             FlowTransport(state, controller)
         }
         Row(Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 12.dp), horizontalArrangement = Arrangement.SpaceAround) {
-            Entry("Queue", ArtIcons.Queue) { onView(CoverStackPlayerRules.VIEW_QUEUE) }
-            Entry("Lyrics", ArtIcons.Quote) { onView(CoverStackPlayerRules.VIEW_LYRICS) }
             Entry("Equalizer", ArtIcons.Tune, onEqualizer)
             Entry("Crossfade", ArtIcons.Swap, onCrossfade)
         }
     }
+}
+
+/** A round icon button above the artwork; the open view is accent-coloured and announced as selected. */
+@Composable
+private fun FlowViewButton(label: String, icon: ImageVector, selected: Boolean, onClick: () -> Unit) {
+    val p = LocalPalette.current
+    Box(
+        Modifier.size(Target).clip(CircleShape).background(if (selected) p.raised else Color.Transparent)
+            .clickable(role = Role.Tab, onClick = onClick).semantics { contentDescription = label; this.selected = selected },
+        contentAlignment = Alignment.Center,
+    ) { Icon(icon, contentDescription = null, tint = if (selected) p.accentText else p.textMuted, modifier = Modifier.size(24.dp)) }
 }
 
 /** An icon over a small muted label, at least 48dp to touch (mockup: the row under the transport). */
@@ -285,155 +299,4 @@ private fun Entry(label: String, icon: ImageVector, onClick: () -> Unit) {
         Icon(icon, contentDescription = null, tint = p.textMuted, modifier = Modifier.size(24.dp))
         Text(label, style = MaterialTheme.typography.labelSmall.copy(fontSize = 12.sp), color = p.textMuted, maxLines = 1, modifier = Modifier.clearAndSetSemantics { })
     }
-}
-
-/**
- * The Queue and the Lyrics as a sheet over Now Playing, like Equalizer and Crossfade ([NowPlayingSheet] hosts it in its settings sheet).
- * [view] is VIEW_QUEUE or VIEW_LYRICS; the sheet's own handle closes it, so there is no top bar.
- */
-@Composable
-fun FlowPanel(
-    state: PlayerUiState, controller: PlayerController, view: Int, input: CoverStackPlayerInput,
-    photos: @Composable androidx.compose.foundation.layout.BoxScope.() -> Unit,
-) {
-    val item = state.current ?: return
-    Column(Modifier.fillMaxWidth().fillMaxHeight(0.92f).padding(horizontal = 16.dp)) {
-        if (view == CoverStackPlayerRules.VIEW_QUEUE) FlowQueue(state, controller, input.line.peaks) else FlowLyrics(state, controller, item, input, photos)
-    }
-}
-
-/** A cover with Flow's soft corners and no outline. */
-@Composable
-private fun FlowThumb(url: String, size: Int, radius: Int = FlowRules.RADIUS_COVER_SMALL.toInt()) {
-    Box(Modifier.size(size.dp).clip(RoundedCornerShape(radius.dp))) { Cover(url.ifBlank { null }, Modifier.fillMaxSize(), rect = true) }
-}
-
-/** The playing song at the top of the Queue and Lyrics: a 56dp cover, then the eyebrow, title and artist. */
-@Composable
-private fun FlowPlayingHeader(item: QueueItem, eyebrow: String?, trailing: @Composable () -> Unit = {}) {
-    val p = LocalPalette.current
-    Row(Modifier.fillMaxWidth().padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        FlowThumb(item.coverUrl, 56)
-        Column(Modifier.weight(1f)) {
-            if (eyebrow != null) FlowEyebrow(eyebrow)
-            Text(item.title, color = p.text, maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold), modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite })
-            Text(item.artist, color = p.textMuted, maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.bodySmall)
-        }
-        trailing()
-    }
-}
-
-/** The mockup's Queue: the playing song, "Next up", rows with a remove X, "Add songs that sound like this", then the seek line and transport. */
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
-private fun ColumnScope.FlowQueue(state: PlayerUiState, controller: PlayerController, peaks: FloatArray?) {
-    val p = LocalPalette.current
-    val items = state.queue.items
-    val playing = state.current ?: return
-    val repo = LocalRepository.current
-    val play = LocalPlayActions.current
-    val sonic by produceState(false, repo) { value = withContext(Dispatchers.IO) { repo.sonicAvailable() } }
-    val queuedIds = items.mapTo(HashSet()) { it.songId }
-    var pathTo by remember { mutableStateOf<QueueItem?>(null) }
-    pathTo?.let { target -> SonicPathSheet(playing, target) { pathTo = null } }
-    val next = CoverStackPlayerRules.nextUp(items.size, state.queue.index)
-    val earlier = CoverStackPlayerRules.earlier(items.size, state.queue.index)
-
-    FlowPlayingHeader(playing, "Playing")
-    if (state.status != null) Text(state.status, style = MaterialTheme.typography.bodySmall, color = p.text, modifier = Modifier.padding(bottom = 6.dp))
-    Row(Modifier.fillMaxWidth().padding(top = 10.dp, bottom = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-        FlowEyebrow(CoverStackPlayerRules.nextUpLabel(next.size), Modifier.weight(1f).semantics { heading() })
-        if (next.isNotEmpty()) Box(
-            Modifier.heightIn(min = Target).clickable(role = Role.Button, onClickLabel = "Remove every upcoming song") { next.asReversed().forEach(controller::remove) }.padding(start = 8.dp),
-            contentAlignment = Alignment.Center,
-        ) { Text("Clear", color = p.accentText, style = MaterialTheme.typography.labelLarge.copy(fontSize = 14.sp, fontWeight = FontWeight.Medium)) }
-    }
-    val list = rememberLazyListState()
-    LaunchedEffect(Unit) {
-        if (items.isEmpty()) return@LaunchedEffect
-        val shown = snapshotFlow { list.layoutInfo.visibleItemsInfo }.first { it.isNotEmpty() }
-        if (shown.isNotEmpty() && next.isNotEmpty() && shown.none { it.index == 0 }) list.scrollToItem(0)
-    }
-    val rows = next + earlier
-    LazyColumn(Modifier.fillMaxWidth().weight(1f), state = list) {
-        itemsIndexed(rows, key = { _, position -> "$position-${items[position].songId}" }) { rowNo, position ->
-            val song = items[position]
-            val unavailable = song.songId in state.queue.unavailable
-            if (rowNo == next.size && earlier.isNotEmpty()) {
-                FlowEyebrow("Earlier · ${CoverStackPlayerRules.songs(earlier.size)}", Modifier.padding(top = 14.dp, bottom = 4.dp).semantics { heading() })
-            }
-            var menu by remember { mutableStateOf(false) }
-            val actions = buildList {
-                if (position > 0) add("Move up" to { controller.move(position, position - 1) })
-                if (position < items.lastIndex) add("Move down" to { controller.move(position, position + 1) })
-                if (sonic) add("Add songs that sound like this" to { play.soundsLike(song.songId, queuedIds) })
-                if (sonic) add("Sonic path from playing song to this one" to { pathTo = song })
-            }
-            Row(
-                Modifier.fillMaxWidth().heightIn(min = FlowRules.ROW_MIN.dp)
-                    .combinedClickable(onClickLabel = "Play this song", role = Role.Button, onLongClickLabel = "More actions", onLongClick = { menu = true }) { if (!unavailable) controller.skipTo(position) }
-                    .semantics { customActions = actions.map { (label, run) -> CustomAccessibilityAction(label) { run(); true } } },
-                verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                FlowThumb(song.coverUrl, 48)
-                Column(Modifier.weight(1f).padding(vertical = 8.dp)) {
-                    if (unavailable) Text("Unavailable", style = MaterialTheme.typography.labelSmall, color = p.text, textDecoration = TextDecoration.Underline)
-                    Text(song.title, color = p.text, maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold))
-                    Text(song.artist, color = p.textMuted, maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.bodySmall)
-                }
-                Box {
-                    Box(Modifier.size(Target).clip(CircleShape).clickable(role = Role.Button) { controller.remove(position) }, contentAlignment = Alignment.Center) {
-                        Icon(ArtIcons.Close, contentDescription = "Remove ${song.title} from queue", tint = p.text, modifier = Modifier.size(20.dp))
-                    }
-                    DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
-                        actions.forEach { (label, run) -> DropdownMenuItem(text = { Text(label) }, onClick = { menu = false; run() }) }
-                        DropdownMenuItem(text = { Text("Remove from queue") }, onClick = { menu = false; controller.remove(position) })
-                    }
-                }
-            }
-            FlowDivider()
-        }
-        item { TrackImageCards(trackImages(rememberAlbumArtIndex(playing)), Modifier.padding(top = 8.dp)) }
-    }
-    if (sonic) Box(Modifier.fillMaxWidth().padding(vertical = 10.dp)) {
-        Row(
-            Modifier.heightIn(min = 44.dp).clip(RoundedCornerShape(22.dp)).background(p.raised).clickable(role = Role.Button) { play.soundsLike(playing.songId, queuedIds) }.padding(horizontal = 16.dp),
-            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            Icon(ArtIcons.Wave, contentDescription = null, tint = p.text, modifier = Modifier.size(20.dp))
-            Text("Add songs that sound like this", color = p.text, style = MaterialTheme.typography.labelLarge.copy(fontSize = 15.sp, fontWeight = FontWeight.SemiBold))
-        }
-    }
-    FlowSeekRow(state, controller, peaks)
-    FlowTransport(state, controller)
-    Spacer(Modifier.height(12.dp))
-}
-
-/** The mockup's Lyrics: the playing song with the Photos switch, the lines, then the seek line and transport. */
-@Composable
-private fun ColumnScope.FlowLyrics(
-    state: PlayerUiState, controller: PlayerController, item: QueueItem, input: CoverStackPlayerInput,
-    photos: @Composable androidx.compose.foundation.layout.BoxScope.() -> Unit,
-) {
-    val p = LocalPalette.current
-    FlowPlayingHeader(item, null) {
-        if (input.hasPhotos) Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            Text("Photos", color = p.textMuted, style = MaterialTheme.typography.bodySmall, modifier = Modifier.clearAndSetSemantics { })
-            Box(
-                Modifier.size(width = 60.dp, height = Target).clickable(onClick = input.onPhotos)
-                    .semantics { role = Role.Switch; contentDescription = "Photos behind the lyrics"; stateDescription = if (input.photosOn) "On" else "Off" },
-                contentAlignment = Alignment.Center,
-            ) { FlowSwitch(input.photosOn) }
-        }
-    }
-    Box(Modifier.weight(1f).fillMaxWidth()) {
-        photos()
-        CoverStackLyricsPanel(
-            input.lyricsState, input.currentLine, input.songId, input.onTryAgain, Modifier.fillMaxSize().padding(top = 8.dp),
-            overPhotos = input.hasPhotos && input.photosOn, flow = true,
-        )
-    }
-    FlowSeekRow(state, controller, input.line.peaks)
-    FlowTransport(state, controller)
-    Spacer(Modifier.height(12.dp))
 }

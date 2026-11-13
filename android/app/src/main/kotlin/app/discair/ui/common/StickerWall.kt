@@ -136,7 +136,6 @@ private fun androidx.compose.foundation.layout.RowScope.PillCell(palette: Palett
         horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center,
     ) {
         Box(Modifier.size(24.dp), contentAlignment = Alignment.Center) { icon(ink) }
-        Text(word, style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold), color = ink, maxLines = 1, modifier = Modifier.clearAndSetSemantics { })
     }
 }
 
