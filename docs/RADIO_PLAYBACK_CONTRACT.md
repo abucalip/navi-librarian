@@ -133,6 +133,8 @@ Written against the deployed and verified API. Under stage 2 the macOS client ge
 
 The macOS line in `MACOS_CLIENT_CONTRACT.md` is lifted only when stage 2 starts.
 
+Stage 2 planning note (2026-11-13): the owner chose the macOS design and the detailed plan is in [`RADIO_PLAYBACK_PROPOSAL.md`](RADIO_PLAYBACK_PROPOSAL.md), "Stage 2 detailed plan", with mockups in [`design/macos-radio/`](design/macos-radio/mockups.html). Its slice S2-0 folds those rules into this section; until then the bullets above stand as written.
+
 ## 6. States and failure rules
 
 | Situation | What the client shows |

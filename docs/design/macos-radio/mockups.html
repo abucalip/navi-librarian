@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Discair Mac Radio Mockups</title>
+<link rel="stylesheet" href="mockups.css">
+<link rel="stylesheet" href="cupertino-radio.css">
+</head><body>
+<div class="pg">
+<h1>Discair for Mac · radio (stage 2)</h1>
+<p class="mu">Mockups for the Cupertino theme, against the deployed radio API. No server or Android change is needed for anything here. Station names, songs and times are sample data. Nothing is built.</p>
+<div class="note"><b>The owner's choices (2026-11-13): A2 · B2 · C1 · D2 · E1 E5 E7.</b> The page opens on them and marks them "chosen". The other options stay for the record and are not built. Love (E3) was not chosen, so the Love buttons drawn in A2, A3, C1 and C2 are not built. The Mac uses Android's word "Owned" where these mockups say "In library". The build steps are in <code>docs/RADIO_PLAYBACK_PROPOSAL.md</code>, section "Stage 2 detailed plan".</div>
+
+<h2><small>Before the mockups</small>What I would change in the macOS part of the plan</h2>
+<div class="note"><ul>
+<li><b>"One view per theme" no longer applies.</b> Zine was removed; the app has one theme, Cupertino, in Day and Night. The plan becomes one Radio layout drawn for both modes (switch below).</li>
+<li><b>There is no menu bar item today.</b> The proposal says "integration with the menu bar item", but the app has none (only the mini player, the widget and media keys). Building one is a new piece: decision D.</li>
+<li><b>The sleep timer is listed as out of scope</b> in the macOS contract (line 9). It has to be lifted together with the radio line when stage 2 starts.</li>
+<li><b>A live stream needs its own playback path.</b> The Mac engine plays files through two player nodes (gapless, crossfade, waveform, sample-rate matching). An endless stream fits none of that, so radio gets a separate live player behind the same player model, as Android did with a "live item": no seek, no waveform, no crossfade, no scrobble by the client, not saved in the queue. I would leave the equalizer off for radio in the first version and say so in the UI.</li>
+<li><b>The "Mailroom tape" does not exist as a screen.</b> Home already lists heard songs with Get (it reads <code>/api/radio/plays</code>). So that bullet becomes: Home's heard rows and the new Heard list show Downloaded and Owned.</li>
+<li><b>Media keys.</b> Play/pause stops and restarts the stream (a live stream cannot pause and keep its place). Next and Previous move through favourite stations. The seek command is switched off while a station plays.</li>
+<li><b>Request budget</b> (the plan did not say): the playing station's <code>/now</code> every 5 s only while it plays; <code>/api/radio/now</code> every 15 s only while the Radio page is on screen; the stations list on opening the page and after a change; nothing while the window is hidden and nothing plays.</li>
+<li><b>Mac-only additions</b> worth having: number shortcuts for favourite stations, "Tune to…" in the ⌘K palette, drag an image onto a station to set its logo, love, and the widget showing the station. They are in section E to pick from.</li>
+</ul></div>
+
+<div class="pills" id="mode"><span class="mu" style="font-size:13px">App mode in the mockups</span><button data-v="day" aria-pressed="true">Day</button><button data-v="night" aria-pressed="false">Night</button></div>
+
+<h2><small>Decision A</small>The Radio page</h2>
+<p class="mu">A new "Radio" row in the sidebar under Library. Three layouts for the same data: stations (favourites first, then last played), the live song, and the Heard list.</p>
+<div class="pills" data-g="A"><button data-v="A1" aria-pressed="true">A1 · Station wall</button><button data-v="A2" aria-pressed="false">A2 · Tuner</button><button data-v="A3" aria-pressed="false">A3 · Presets and On Air</button></div>
+<div class="scroll"><div class="app" id="appA"><div class="win">
+ <div class="sb"><div class="tl"><i></i><i></i><i></i></div><div class="r">Home</div><div class="r">Library</div><div class="r on">Radio</div><div class="g">Discover ›</div><div class="r">Smart Playlists</div><div class="r">Downloads</div><div class="r">Settings</div></div>
+ <div class="main"><div class="top"><h3>Radio</h3><span class="cx">● Home · Tailscale</span><span class="srch">Search ⌘K</span></div><div class="bd" id="bdA"></div>
+ <div class="pb" id="pbA" data-b="B3"></div></div></div></div></div>
+<p class="cap" id="capA"></p>
+
+<h2><small>Decision B</small>The player bar while a station plays</h2>
+<p class="mu">Same 92 pt bar and blurred backdrop as today. The seek bar and the sound graph have no meaning for a live stream, so something else takes their place. The bar above follows this choice.</p>
+<div class="pills" data-g="B"><button data-v="B1" aria-pressed="false">B1 · Plain live</button><button data-v="B2" aria-pressed="false">B2 · Level meter</button><button data-v="B3" aria-pressed="true">B3 · Session tape</button></div>
+<div class="scroll"><div class="app" id="appB" style="height:104px"><div class="pb" id="pbB" data-b="B3"></div></div></div>
+<p class="cap" id="capB"></p>
+
+<h2><small>Decision C</small>Now Playing for radio</h2>
+<div class="pills" data-g="C"><button data-v="C1" aria-pressed="true">C1 · Song first</button><button data-v="C2" aria-pressed="false">C2 · Station first</button></div>
+<div class="scroll"><div class="app"><div class="np" id="np"></div></div></div>
+<p class="cap" id="capC"></p>
+
+<h2><small>Not a choice</small>The Download button and the honest states</h2>
+<p class="mu">Fixed by the contract (section 6). Every state has words, never colour alone. Click a state to see the bar line and the button.</p>
+<div class="pills" id="states"></div>
+<div class="scroll"><div class="app" id="appS" style="height:104px"><div class="pb" id="pbS" data-b="B1"></div></div></div>
+<p class="cap" id="capS"></p>
+
+<h2><small>Decision D</small>Menu bar item</h2>
+<p class="mu">The mini player and the widget get the station logo, the live title and a LIVE mark in either case. The question is whether to add a menu bar item, which the app does not have yet.</p>
+<div class="pills" data-g="D"><button data-v="D1" aria-pressed="false">D1 · No menu bar item</button><button data-v="D2" aria-pressed="true">D2 · Menu bar item with popover</button></div>
+<div class="scroll"><div class="desk" id="desk" data-d="D2">
+ <div class="mbar"><b>Discair</b><span>File</span><span>Edit</span><span>View</span><span>Controls</span><span class="sp"></span><span class="it">◉ Talk Talk — Life's What You…</span><span>Fri 21:17</span></div>
+ <div class="pop" id="pop"></div>
+ <div class="none">No menu bar item. Radio is reached from the window, the mini player, media keys and the widget only.</div>
+ <div class="mini" id="mini"></div>
+</div></div>
+<p class="cap"><b>D2</b> works for library songs too (title, play/pause, next), so it is not radio-only. It costs one extra slice and a setting to hide it. The title in the menu bar is cut at about 30 characters and can be switched to the icon alone. <b>D1</b> keeps stage 2 smaller; the proposal's "menu bar item" line is then removed.</p>
+
+<h2><small>Decision E</small>Extras: tick the ones you want</h2>
+<div class="ex" id="ex"></div>
+
+<h2><small>Follows from E1, E5, E7 and the sleep timer</small>Small pieces</h2>
+<p class="mu">Not choices. These draw the parts the chosen extras need, so they have a mockup too.</p>
+<div class="scroll"><div class="app" id="appX"><div class="xs">
+ <div class="col"><div class="eye">Home card · a station is playing (E7)</div><div class="hcard" id="hc1"></div><div class="eye" style="margin-top:8px">Home card · nothing playing</div><div class="hcard" id="hc2"></div></div>
+ <div class="col"><div class="eye">Edit Tags sheet (E5)</div><div class="sheet" id="tags"></div></div>
+ <div class="col"><div class="eye">Sleep timer menu</div><div class="menu" id="sleep"></div><div class="eye" style="margin-top:8px">Controls › Stations (E1)</div><div class="menu" id="stmenu"></div></div>
+</div></div></div>
+<p class="cap"><b>Home card.</b> One card in Home's first row: logo or cover, station, live song and Stop while a station plays; the last station with Resume when none does; no card when no station was ever played. <b>Edit Tags</b> opens from a station's right-click menu: up to 10 tags of 24 characters, Return adds one, Save sends the whole list. <b>Sleep timer</b> opens from the moon in the bar and from the Controls menu; the bar then shows the minutes left. <b>Stations</b> lists the first nine favourites with ⌘1 to ⌘9.</p>
+
+<h2><small>For reference</small>Stage 2 slices after your choices</h2>
+<div class="note"><ol start="0">
+<li><b>Docs.</b> Record the choices here in <code>macos/DESIGN.md</code>, lift the radio and sleep timer lines in the macOS contract, correct the "per theme" and "Mailroom" wording.</li>
+<li><b>Stations.</b> Swift decoders tested against the shared contract fixtures, a radio model with the request budget above, the Radio page (A), logos, favourite toggle, tag filter.</li>
+<li><b>Live playback.</b> The live player behind the player model, the bar in live mode (B), media keys and Control Centre, mini player and widget.</li>
+<li><b>Live song.</b> Now Playing for radio (C), Download with all states, the Heard list, Downloaded and Owned on Home's heard rows.</li>
+<li><b>Staying power.</b> Reconnect (2, 5, 10, 20, 30 s, then "Station unreachable" with Retry; no retry after a stop), sleep timer, Settings (scrobbling switch, logo Change and Reset, app address read only), and the extras picked in E. The menu bar item, if D2, is its own slice after this.</li>
+<li><b>Menu bar item</b> (D2 chosen): for radio and library songs, with a setting to hide it.</li>
+</ol><p class="mu" style="margin-top:6px">Each slice is one PR with filtered tests only, as usual.</p></div>
+</div>
+
+<div class="sum"><div><span class="mu">Your picks</span><code id="picks"></code><button id="copy">Copy</button></div></div>
+<script src="mockups.js"></script>
+</body></html>

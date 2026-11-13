@@ -1,0 +1,31 @@
+/* Page chrome of the mockup page only (notes, pills, the picks bar). Nothing here is app design. */
+/* Layout: one reading column of notes; each decision is a labelled group (A to E) with pills that switch a Mac window mock. */
+:root{--bg:#eeedf0;--fg:#1c1b20;--mu:#63606b;--sf:#ffffff;--ln:#d8d5dd;--ac:#c2264d;--acfg:#ffffff;
+ --ui:-apple-system,"SF Pro Text",system-ui,"Segoe UI",Roboto,sans-serif;--dp:-apple-system,"SF Pro Display",system-ui,"Segoe UI",Roboto,sans-serif}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#141317;--fg:#f0eef3;--mu:#a19da9;--sf:#1f1d24;--ln:#35323c;--ac:#ff7a8f;--acfg:#141317;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#141317;--fg:#f0eef3;--mu:#a19da9;--sf:#1f1d24;--ln:#35323c;--ac:#ff7a8f;--acfg:#141317;color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:15px/1.5 var(--ui);padding-block:24px 90px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.pg{max-width:1120px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+h1{font:700 26px/1.2 var(--dp);margin:0;letter-spacing:-.3px}
+h2{font:700 19px/1.25 var(--dp);margin:26px 0 0;text-wrap:balance}
+h2 small{font:600 12px var(--ui);color:var(--ac);letter-spacing:.08em;text-transform:uppercase;display:block;margin-bottom:2px}
+p{margin:0;max-width:78ch}.mu{color:var(--mu)}
+.note{background:var(--sf);border:1px solid var(--ln);border-radius:12px;padding:12px 16px;font-size:14px}
+.note ul,.note ol{margin:4px 0 0;padding-left:20px;max-width:90ch}.note li{margin:4px 0}
+.pills{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.pills button{font:inherit;font-size:13px;border:1px solid var(--ln);background:var(--sf);color:var(--fg);padding:6px 14px;border-radius:99px;cursor:pointer}
+.pills button[aria-pressed=true]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+button:focus-visible,label:focus-within{outline:2px solid var(--ac);outline-offset:2px}
+.scroll{overflow-x:auto;border-radius:14px;border:1px solid var(--ln)}
+.cap{font-size:13.5px;color:var(--mu);max-width:92ch}
+.cap b{color:var(--fg)}
+.ex{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:10px}
+.ex label{display:flex;gap:10px;background:var(--sf);border:1px solid var(--ln);border-radius:12px;padding:10px 14px;font-size:14px;cursor:pointer;min-width:0}
+.ex label b{display:block}.ex label span{color:var(--mu);font-size:13px}.ex input{margin-top:4px;accent-color:var(--ac)}
+.sum{position:fixed;left:0;right:0;bottom:0;background:var(--sf);border-top:1px solid var(--ln);padding:10px max(16px,env(safe-area-inset-right,0px)) calc(10px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));z-index:20}
+.sum div{max-width:1120px;margin:0 auto;display:flex;gap:12px;align-items:center;flex-wrap:wrap;font-size:14px}
+.sum code{font:600 14px ui-monospace,Menlo,monospace;flex:1;min-width:0;overflow-wrap:anywhere}
+.sum button{font:inherit;font-size:13px;border:0;background:var(--ac);color:var(--acfg);padding:6px 16px;border-radius:99px;cursor:pointer}
+table{border-collapse:collapse;font-size:13.5px;width:100%}td,th{text-align:left;padding:6px 10px 6px 0;border-bottom:1px solid var(--ln);vertical-align:top}th{color:var(--mu);font-weight:600}
+

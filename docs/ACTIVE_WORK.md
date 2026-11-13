@@ -108,6 +108,7 @@ Done: Genres grid and four album shelves on the dashboard, the Recommended slide
 - A song with no `Artist - Title` form, or with no exact MusicBrainz match, cannot be downloaded.
 - A relayed station uses the app address saved on the Radio page (for example the Tailscale address); with none saved it uses the address of the browser tab it was switched on from. Saving a new address moves stations that are already relayed. Away from home, the phone must reach that address (Tailscale connected).
 - Not done: browser checklist, live slskd download of a radio song, a phone client test away from home.
+- **macOS radio (stage 2) planned, not started (2026-11-13):** the owner chose the design (A2 Tuner page, B2 level meter bar, C1 song-first Now Playing, D2 menu bar item, extras E1, E5, E7). Detailed slices S2-0 to S2-5 are in [`RADIO_PLAYBACK_PROPOSAL.md`](RADIO_PLAYBACK_PROPOSAL.md), "Stage 2 detailed plan"; mockups in [`design/macos-radio/`](design/macos-radio/mockups.html). Next: S2-0 (documents), when the owner says so.
 
 ## 2f. Android client (Discair) — contract PR #651, phases 0–4 built, phase 5 built and run on the owner's phone
 
