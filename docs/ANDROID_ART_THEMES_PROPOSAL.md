@@ -1,6 +1,6 @@
 # Android art-led themes: Soft Brut and Flow (proposal)
 
-Status: **proposal; step 0 (PR #1005), S1 (PR #1006) and S2 (PR #1007) built; S3 built (Album, Artist, Genre, Discover, Library and Search pages themed, in PRs #1008, #1009 and #1010); S4 part 1 built (Now Playing, Queue and Lyrics, PR #1011); S4 part 2 built (Radio, Downloads and Library stats, PR #1012); F1 built (Flow palette, layout, font pair and shell controls, branch `art-themes-f1-flow-shell`).** Written 2026-11-12. This document and the mockups beside it are the whole change; no application code is touched. Building starts only after the owner approves it and the steps in section 10 are scheduled in `ACTIVE_WORK.md`.
+Status: **proposal; step 0 (PR #1005), S1 (PR #1006) and S2 (PR #1007) built; S3 built (Album, Artist, Genre, Discover, Library and Search pages themed, in PRs #1008, #1009 and #1010); S4 part 1 built (Now Playing, Queue and Lyrics, PR #1011); S4 part 2 built (Radio, Downloads and Library stats, PR #1012); F1 built and merged (Flow palette, layout, font pair and shell controls, PR #1020); the owner settled D1, D4 and D6 on 2026-11-13.** Written 2026-11-12. This document and the mockups beside it are the whole change; no application code is touched. Building starts only after the owner approves it and the steps in section 10 are scheduled in `ACTIVE_WORK.md`.
 
 ## 1. What the owner asked for
 
@@ -243,13 +243,13 @@ The rule is a pure function (`HomeArtists.from(recent, frequent)`) with a unit t
 
 | # | Point | Proposed answer |
 |---|---|---|
-| D1 | `BrutalShape(radius, outline, shadow)` takes whole numbers; Soft Brut needs a 1.5dp outline | Change the three fields to `Float` (existing values are unchanged). If the owner prefers no change to the class, Soft Brut uses 2dp |
+| D1 | `BrutalShape(radius, outline, shadow)` takes whole numbers; Soft Brut needs a 1.5dp outline | Change the three fields to `Float` (existing values are unchanged). If the owner prefers no change to the class, Soft Brut uses 2dp. **Settled 2026-11-13: taken as proposed; done in step 0 (PR #1005)** |
 | D2 | Colours from the cover (the Flow wash) | Use the Palette library the player already uses for artwork tint if present; otherwise the wash is `raised` and the colour is a later refinement. Confirm at step F1 |
 | D3 | Blur behind the Flow bars | Not in the first build (section 4) |
-| D4 | The font pair when a theme is chosen | Suggested, not forced (section 5). The owner may prefer each theme to lock its pair |
+| D4 | The font pair when a theme is chosen | Suggested, not forced (section 5). The owner may prefer each theme to lock its pair. **Settled 2026-11-13: suggested, not forced** |
 | D5 | Dark variants | Not designed. Each theme is one light palette, as Round 3 did; a night palette for each is a later proposal |
 | D7 | Flow tokens adjusted at F1 so the shared contrast tests pass | `textMuted` `#6F6A60` to `#645F55` (3.96:1 on the player's pastel washes before, 4.67:1 after); `ok` `#1E7A3C` to `#1B7339` (4.44:1 on its tint before, 4.87:1 after); `chart2` `#A8A296` to `#8F897D` (2.54:1 on white before, 3.48:1 after). An accent tag takes the text colour for its label because the accent on its own tint is 4.23:1. D2 (wash colour) is not needed until F3 and stays open |
-| D6 | The Flow accent was darkened from `#E8590C` to `#C2410C` for contrast | Needs the owner's agreement, since it differs from the chosen mockup |
+| D6 | The Flow accent was darkened from `#E8590C` to `#C2410C` for contrast | Needs the owner's agreement, since it differs from the chosen mockup. **Settled 2026-11-13: agreed** |
 
 ## 9. Every page, and the files to build from
 
@@ -300,7 +300,7 @@ Each step is one PR with its own tests, in this order. Soft Brut and Flow are in
 | **S2** Soft Brut Home (merged, PR #1007) | Section 6.1 | `soft-brut/home` matched in all five frames; Get, Save and the menu work on the front sleeve |
 | **S3** Soft Brut pages | Album, Artist, Genre, Discover, Library, Search | Their mockups matched |
 | **S4** Soft Brut player and the rest | Now Playing, Queue, Lyrics (part 1, built), Radio, Downloads, Stats (part 2, built), then Server, Settings, Equalizer, Crossfade | Their mockups matched; closeout |
-| **F1** Flow palette and shell (built; three colours and the accent tag label differ from the mockup, see D7) | Palette `flow`, `Layout.Flow`, font pair `flow`, depth levels, capsules, grouped list, segmented control, floating bars; settle D2 | `flow/components` matched |
+| **F1** Flow palette and shell (merged, PR #1020; three colours and the accent tag label differ from the mockup, see D7) | Palette `flow`, `Layout.Flow`, font pair `flow`, depth levels, capsules, grouped list, segmented control, floating bars; settle D2 | `flow/components` matched |
 | **F2** Flow Home | Section 6.2 | `flow/home` matched in all four frames |
 | **F3** Flow pages | Album (with the wash), Artist, Genre, Discover, Library, Search | Their mockups matched |
 | **F4** Flow player and the rest | As S4 | Their mockups matched; closeout |
