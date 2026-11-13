@@ -62,12 +62,11 @@ import app.discair.ui.theme.THEME_SYSTEM
 private const val SLOT_THEME = "theme"
 private const val SLOT_DAY = "day"
 private const val SLOT_NIGHT = "night"
-private val Filters = listOf("All", "Light", "Dark", "Brutal")
 
 @Composable
 internal fun FlowAppearance(appearance: Appearance, onBack: () -> Unit) {
     var picking by rememberSaveable { mutableStateOf<String?>(null) }
-    var filter by rememberSaveable { mutableStateOf("All") }
+    var filter by rememberSaveable { mutableStateOf(ThemeGroups.of(Palettes.byId(appearance.themeChoice))) }
     BackHandler(enabled = picking != null) { picking = null }
     FlowSettingsColumn {
         FlowSettingsHead(
@@ -75,7 +74,7 @@ internal fun FlowAppearance(appearance: Appearance, onBack: () -> Unit) {
             barTitle = CoverStackAppearanceRules.slotTitle(picking).takeIf { picking != null } ?: "Appearance",
         )
         val slot = picking
-        if (slot == null) Home(appearance, filter, { filter = it }) { picking = it; filter = CoverStackAppearanceRules.slotFilter(it) }
+        if (slot == null) Home(appearance, filter, { filter = it }) { picking = it; filter = ThemeGroups.of(Palettes.byId(when (it) { SLOT_DAY -> appearance.dayTheme; SLOT_NIGHT -> appearance.nightTheme; else -> appearance.themeChoice })) }
         else Picker(appearance, slot, filter) { filter = it }
     }
 }
@@ -154,12 +153,16 @@ private fun SlotRow(title: String, theme: Palette, divider: Boolean, onClick: ()
 private fun Picker(appearance: Appearance, slot: String, filter: String, onFilter: (String) -> Unit) {
     val p = LocalPalette.current
     val selectedId = when (slot) { SLOT_DAY -> appearance.dayTheme; SLOT_NIGHT -> appearance.nightTheme; else -> appearance.themeChoice }
-    val shown = CoverStackAppearanceRules.shown(Palettes.All.sortedBy { it.family }, filter)
-    if (slot == SLOT_THEME) {
+    val light = ThemeGroups.slotLight(slot)
+    val chips = ThemeGroups.chips(Palettes.All, light)
+    val group = if (filter in chips) filter else chips.firstOrNull() ?: ThemeGroups.DEFAULT
+    val shown = ThemeGroups.shown(Palettes.All, group, light)
+    run {
         Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Filters.forEach { f -> FilterChip(selected = f == filter, onClick = { onFilter(f) }, label = { Text(f) }) }
+            chips.forEach { f -> FilterChip(selected = f == group, onClick = { onFilter(f) }, label = { Text(f) }) }
         }
-    } else Text(if (slot == SLOT_DAY) "Light themes only." else "Dark themes only.", color = p.textMuted, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(horizontal = 16.dp))
+    }
+    if (slot != SLOT_THEME) Text(if (slot == SLOT_DAY) "Light themes only." else "Dark themes only.", color = p.textMuted, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(horizontal = 16.dp))
     Text("${shown.size} themes", color = p.textMuted, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 8.dp))
     Column(Modifier.padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         shown.chunked(3).forEach { row ->
