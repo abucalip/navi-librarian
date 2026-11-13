@@ -230,15 +230,15 @@ fun FlowSmallButton(
 
 /**
  * The Get capsule for one album: Get, Requesting, Requested, or Retry after a failure, each with its state spoken. A request is never sent twice:
- * only Get and Retry take a tap. [metadata] is what the server needs to find the album.
+ * only Get and Retry take a tap. [iconOnly] draws the round icon button alone (Discover). [metadata] is what the server needs to find the album.
  */
 @Composable
-fun FlowGetButton(artist: String, album: String, metadata: kotlinx.serialization.json.JsonObject, modifier: Modifier = Modifier) {
+fun FlowGetButton(artist: String, album: String, metadata: kotlinx.serialization.json.JsonObject, modifier: Modifier = Modifier, iconOnly: Boolean = false) {
     val hub = LocalAcquisitions.current
     val get = hub.getState(artist, album)
     val idle = get is GetState.Idle || get is GetState.Failed
     FlowSmallButton(
-        when (get) { GetState.Pending -> "Requesting"; is GetState.Requested -> "Requested"; is GetState.Failed -> "Retry"; else -> "Get" },
+        if (iconOnly) null else when (get) { GetState.Pending -> "Requesting"; is GetState.Requested -> "Requested"; is GetState.Failed -> "Retry"; else -> "Get" },
         when (get) { is GetState.Requested -> ArtIcons.Check; GetState.Pending, is GetState.Failed, GetState.Idle -> ArtIcons.Get },
         idle, "Get album $album", modifier,
         state = when (get) { GetState.Idle -> "Not requested"; GetState.Pending -> "Requesting"; is GetState.Requested -> "Requested. Follow it under Downloads"; is GetState.Failed -> "Could not request. Select to try again" },

@@ -159,19 +159,20 @@ internal fun CoverStackDiscoverCard(
             style = MaterialTheme.typography.bodySmall,
         )
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(0.dp), verticalAlignment = Alignment.CenterVertically) {
-            if (item.acquired) SmallButton("In library", ArtIcons.Check, false, "${item.album} is in your library", Modifier.weight(1f), enabled = false) {}
+            if (item.acquired) SmallButton(null, ArtIcons.Check, false, "${item.album} is in your library", Modifier.widthIn(min = Target), enabled = false) {}
             else SmallButton(
-                when (get) { GetState.Pending -> "Requesting"; is GetState.Requested -> "Requested"; is GetState.Failed -> "Retry"; else -> "Get" },
+                null,
                 when (get) { is GetState.Requested -> ArtIcons.Check; else -> ArtIcons.Get },
-                get is GetState.Idle || get is GetState.Failed, "Get album ${item.album}", Modifier.weight(1f),
+                get is GetState.Idle || get is GetState.Failed, "Get album ${item.album}", Modifier.widthIn(min = Target),
                 state = when (get) { GetState.Idle -> "Not requested"; GetState.Pending -> "Requesting"; is GetState.Requested -> "Requested. Follow it under Downloads"; is GetState.Failed -> "Could not request. Select to try again" },
                 enabled = get is GetState.Idle || get is GetState.Failed,
             ) { hub.getAlbum(artist, item.album, entry.raw) }
             val saved = saveState == SaveState.Saved
             SmallButton(
-                if (saved) "Saved" else "Save", if (saved) ArtIcons.HeartFilled else null, false, (if (saved) "Remove ${item.album} from saved" else "Save ${item.album}"),
-                Modifier.weight(1f), enabled = saveState != SaveState.Pending, onClick = onSave,
+                null, if (saved) ArtIcons.BookmarkFilled else ArtIcons.Bookmark, false, (if (saved) "Remove ${item.album} from saved" else "Save ${item.album}"),
+                Modifier.widthIn(min = Target), enabled = saveState != SaveState.Pending, onClick = onSave,
             )
+            Spacer(Modifier.weight(1f))
             Box {
                 SmallButton(null, ArtIcons.More, false, "Options for ${item.album}") { menu = true }
                 DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {

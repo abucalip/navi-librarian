@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
@@ -122,16 +123,18 @@ internal fun FlowDiscoverCard(
             if (similar.isNotEmpty()) Text("Similar to: $similar", color = p.textMuted, maxLines = 2, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.bodySmall.copy(fontSize = 13.sp, lineHeight = 18.sp))
             Spacer(Modifier.weight(1f))
             Row(horizontalArrangement = Arrangement.spacedBy(0.dp), verticalAlignment = Alignment.CenterVertically) {
-                if (item.acquired) FlowSmallButton("In library", ArtIcons.Check, false, "${item.album} is in your library", enabled = false) {}
-                else FlowGetButton(artist, item.album, entry.raw)
+                // Every button is the round 34dp icon button the three-dot menu is, in a 48dp-wide touch target.
+                val touch = Modifier.widthIn(min = Target)
+                if (item.acquired) FlowSmallButton(null, ArtIcons.Check, false, "${item.album} is in your library", touch, enabled = false) {}
+                else FlowGetButton(artist, item.album, entry.raw, touch, iconOnly = true)
                 val saved = saveState == SaveState.Saved
                 FlowSmallButton(
-                    if (saved) "Saved" else "Save", if (saved) ArtIcons.HeartFilled else null, false, if (saved) "Remove ${item.album} from saved" else "Save ${item.album}",
-                    Modifier.padding(start = 0.dp), enabled = saveState != SaveState.Pending, onClick = onSave,
+                    null, if (saved) ArtIcons.BookmarkFilled else ArtIcons.Bookmark, false, if (saved) "Remove ${item.album} from saved" else "Save ${item.album}",
+                    touch, enabled = saveState != SaveState.Pending, onClick = onSave,
                 )
                 Spacer(Modifier.weight(1f))
                 Box {
-                    FlowSmallButton(null, ArtIcons.More, false, "Options for ${item.album}") { menu = true }
+                    FlowSmallButton(null, ArtIcons.More, false, "Options for ${item.album}", touch) { menu = true }
                     DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
                         DropdownMenuItem(text = { Text("Not this album") }, onClick = { menu = false; onDismiss(false) })
                         DropdownMenuItem(text = { Text("Not this artist") }, onClick = { menu = false; onDismiss(true) })

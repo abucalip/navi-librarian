@@ -93,6 +93,12 @@ object ArtIcons {
     val HeartFilled = filled("heart_filled",
             "M12 20s-7-4.300-7-9.500A4 4 0 0 1 12 8a4 4 0 0 1 7 2.500C19 15.700 12 20 12 20z",
         )
+    val Bookmark = stroked("bookmark",
+            "M7 4h10a1 1 0 0 1 1 1v15l-6-4-6 4V5a1 1 0 0 1 1-1z",
+        )
+    val BookmarkFilled = filled("bookmark_filled",
+            "M7 4h10a1 1 0 0 1 1 1v15l-6-4-6 4V5a1 1 0 0 1 1-1z",
+        )
     val Check = stroked("check",
             "M5 12.500l4.500 4.500L19 7.500",
         )
