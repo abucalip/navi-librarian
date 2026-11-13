@@ -31,17 +31,17 @@ class AlbumPathStepsTest {
         assertEquals(6, albumTabs(false).size)
     }
 
-    @Test fun graphStepsKeepServerOrderAndNameThePersonInTheDetailLine() {
+    @Test fun graphStepsKeepServerOrderAndTheDetailLineIsTheArtistOnly() {
         val r = parsePaths(body("paths_album_crew"))
         val a = r.toAlbumAnswer()
         assertEquals(r.stops.map { it.name }, a.steps.map { it.album })
-        assertEquals("Cannonball Adderley · Rudy van Gelder", a.steps.first().detail)
+        assertEquals("Cannonball Adderley", a.steps.first().detail)
         assertTrue(a.steps.all { it.reasons.isNotEmpty() })
     }
 
     @Test fun sameRoomNamesThePlaceAndLabelsItRecordedAt() {
         val a = parsePaths(body("paths_album_room")).toAlbumAnswer()
-        assertEquals("Herbie Hancock · Van Gelder Studio", a.steps.first().detail)
+        assertEquals("Herbie Hancock", a.steps.first().detail)
         assertEquals("Recorded at", reasonEyebrow(a.steps.first().reasons.first().code))
         assertTrue(a.steps.all { it.play == null })
     }
@@ -100,14 +100,27 @@ class AlbumPathStepsTest {
     @Test fun neighboursShowTheCountOfMatchedTracksAndTheSkippedSeeds() {
         val a = parseSonicAlbumNeighbours(body("sonic_album_neighbours")).toAlbumAnswer()
         assertEquals(4, a.seeds)
-        assertEquals("Amina · 4 of 4 tracks", a.steps.first().detail)
+        assertEquals(4, a.steps.first().matchCount)
+        assertTrue(a.steps.first().detail.startsWith("Amina"))
+        assertFalse(a.steps.first().detail.contains("tracks"))
         val e = parseSonicAlbumNeighbours(body("sonic_album_neighbours_empty")).toAlbumAnswer()
         assertEquals(listOf("1 track has no sound analysis and was skipped."), e.notes)
     }
 
+    @Test fun stepsCarryWhetherTheAlbumIsInTheLibrary() {
+        val r = parsePaths(body("paths_album_crew"))
+        assertEquals(r.stops.map { it.owned }, r.toAlbumAnswer().steps.map { it.owned })
+        val json = """{"kind":"album_crew","status":"ok","stops":[{"entity":{"canonical_name":"Away","type":"release","owned":false},"reason_count":1,"reasons":[{"code":"crew_on","text":"t","via":{"name":"P","type":"person"}}]}]}"""
+        assertFalse(parsePaths(json).toAlbumAnswer().steps.single().owned)
+    }
+
+    @Test fun descriptionsDoNotClaimTheResultsAreInTheLibrary() {
+        for (t in AlbumTab.entries) assertFalse(albumTabDescription(t, "X", 3).contains("in your library"))
+    }
+
     @Test fun descriptionsNameTheAlbumAndTheSeedCount() {
         assertTrue(albumTabDescription(AlbumTab.StudioCrew, "X").contains("X"))
-        assertEquals("Albums in your library that sound like X, found from 8 of its tracks.", albumTabDescription(AlbumTab.NeighboursByEar, "X", 8))
+        assertEquals("Albums that sound like X, found from 8 of its tracks.", albumTabDescription(AlbumTab.NeighboursByEar, "X", 8))
     }
 
     @Test fun yearGapReadsTheServersWording() {
