@@ -1,3 +1,9 @@
+## 2026-11-13 — Colour palettes P4 and P5: Flow night palettes and closeout (PR #1045)
+
+- PR [#1045](https://github.com/abucalip/navi-librarian/pull/1045), branch `palettes-p4-flow-night`; open, not merged, CI not yet recorded. `Palette.kt` gained `FlowEmber`, `FlowMoss`, `FlowPlum` (in `Palettes.Dark`, after the Soft Brut night palettes). `FlowRules.chevron` has their greys; `FlowRules.barHairline` (new) is white at 10% on a dark palette and black at 8% on a light one, used by `flowBar`. The wash behind the album and player was checked and left as is: artwork tints are always dark, and a dark palette uses them unchanged. P5: `ACTIVE_WORK.md`, `PROJECT_STATUS.md`, this log and `docs/palettes.md` updated; `android/DESIGN.md` has a short palettes note.
+- Verified, filtered (JDK 17): `FlowTest` (16), `PaletteTest` (19, counts 42/25/17), `SoftBrutTest` (16), `ExistingLayoutsTest` (3), all passed. Full suite not run. Not seen on a device; no screenshot comparison with the palette PNGs.
+- Next action: merge after required CI; then the owner's phone check of the 13 palettes.
+
 ## 2026-11-13 — Colour palettes P2 and P3: Soft Brut night and Flow day palettes (PR #1044)
 
 - Merged as `e3c804eafa2c5ef608e99646888a3ddceefe7907` from head `e960749b25638ede830db30cb59c35ec0cbf51c6`; required CI passed (compile, container-smoke, test-and-build, validate-container). `Palette.kt` gained `SoftBrutMidnightMint`, `SoftBrutPlumPeach`, `SoftBrutNavySky` (in `Palettes.Dark`) and `FlowForest`, `FlowRaspberry`, `FlowViolet` (after `Flow` in `Palettes.Light`). Cover Stack content on an accent fill now uses `onAccent` (nav cell icon, Home and Discover tags, Discover small buttons). `FlowRules.switchOff` and `FlowRules.chevron` replace the two Flow literals; the current `flow` palette keeps its values.

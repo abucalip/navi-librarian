@@ -502,11 +502,45 @@ object Palettes {
         layout = Layout.Flow, suggestedFontId = "flow",
     )
 
+    // Colour palettes plan (docs/palettes.md section 4.2, step P4): three night palettes for Flow. Same layout, family and font as flow; only colours differ. Status colours are the night values of the other dark themes.
+    val FlowEmber = Palette(
+        "flow_ember", "Flow · Ember", false,
+        rail = c(0x12110F), ink = c(0x12110F), surface = c(0x1C1A17), raised = c(0x2A2723), edge = c(0x35312C), edgeStrong = c(0x8A8377),
+        text = c(0xF5F1EA), textMuted = c(0xA9A296), accent = c(0xFF8A4C), accentDim = c(0x4A2A17), onAccent = c(0x1A0F08),
+        chartRed = c(0xFF7B62), chartRedText = c(0xFF7B62), ok = c(0x86D39B), caution = c(0xF0A640),
+        info = c(0x8FB8E8), okDim = c(0x1F3326), cautionDim = c(0x3D2E14), dangerDim = c(0x40211A), infoDim = c(0x1D2C3D),
+        chart1 = c(0xFF8A4C), chart2 = c(0x8A8377), chart3 = c(0x4A453E), chartGhost = c(0x2A2723), chartGrid = c(0x35312C),
+        chartBase = c(0x8A8377),
+        layout = Layout.Flow, suggestedFontId = "flow",
+    )
+
+    val FlowMoss = Palette(
+        "flow_moss", "Flow · Moss", false,
+        rail = c(0x0E1311), ink = c(0x0E1311), surface = c(0x171E1A), raised = c(0x232C27), edge = c(0x2D3832), edgeStrong = c(0x7A887F),
+        text = c(0xEEF5F0), textMuted = c(0x9FAFA5), accent = c(0x5FD28C), accentDim = c(0x173D27), onAccent = c(0x06170D),
+        chartRed = c(0xFF7B62), chartRedText = c(0xFF7B62), ok = c(0x86D39B), caution = c(0xF0A640),
+        info = c(0x8FB8E8), okDim = c(0x1F3326), cautionDim = c(0x3D2E14), dangerDim = c(0x40211A), infoDim = c(0x1D2C3D),
+        chart1 = c(0x5FD28C), chart2 = c(0x7A887F), chart3 = c(0x3D4A43), chartGhost = c(0x232C27), chartGrid = c(0x2D3832),
+        chartBase = c(0x7A887F),
+        layout = Layout.Flow, suggestedFontId = "flow",
+    )
+
+    val FlowPlum = Palette(
+        "flow_plum", "Flow · Plum", false,
+        rail = c(0x151015), ink = c(0x151015), surface = c(0x1F181F), raised = c(0x2D232D), edge = c(0x3A2E3A), edgeStrong = c(0x8C7C8C),
+        text = c(0xF7EEF5), textMuted = c(0xB3A2B0), accent = c(0xFF7FAE), accentDim = c(0x4D1F33), onAccent = c(0x2A0A17),
+        chartRed = c(0xFF7B62), chartRedText = c(0xFF7B62), ok = c(0x86D39B), caution = c(0xF0A640),
+        info = c(0x8FB8E8), okDim = c(0x1F3326), cautionDim = c(0x3D2E14), dangerDim = c(0x40211A), infoDim = c(0x1D2C3D),
+        chart1 = c(0xFF7FAE), chart2 = c(0x8C7C8C), chart3 = c(0x4C3D4C), chartGhost = c(0x2D232D), chartGrid = c(0x3A2E3A),
+        chartBase = c(0x8C7C8C),
+        layout = Layout.Flow, suggestedFontId = "flow",
+    )
+
     /** Light themes in the order the picker shows them; the first is the default day theme. */
     val Light: List<Palette> = listOf(Sand, Paper, Mist, Sage, Blush, BrutLavender, BrutMint, BrutLemon, BrutCream, BrutSky, BrutPoster, TapeLime, TapeCobalt, TapeTangerine, SheetDaylight, StickerPeach, SoftBrut, SoftBrutMint, SoftBrutPeach, SoftBrutSky, SoftBrutLemon, Flow, FlowForest, FlowRaspberry, FlowViolet)
 
     /** Dark themes in the order the picker shows them; the first is the default night theme. */
-    val Dark: List<Palette> = listOf(Night, Amoled, Forest, Ocean, Ember, Graphite, HighContrast, BrutInk, BrutMidnight, SheetViolet, SheetAcid, SoftBrutMidnightMint, SoftBrutPlumPeach, SoftBrutNavySky)
+    val Dark: List<Palette> = listOf(Night, Amoled, Forest, Ocean, Ember, Graphite, HighContrast, BrutInk, BrutMidnight, SheetViolet, SheetAcid, SoftBrutMidnightMint, SoftBrutPlumPeach, SoftBrutNavySky, FlowEmber, FlowMoss, FlowPlum)
 
     val All: List<Palette> = Light + Dark
 

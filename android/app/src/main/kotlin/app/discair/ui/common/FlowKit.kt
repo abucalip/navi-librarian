@@ -94,8 +94,12 @@ object FlowRules {
     /** The grey chevron at the end of a row: the current Flow's own grey, a step lighter than the strong edge on the others (docs/palettes.md 4.4). */
     fun chevron(p: Palette): Color = when (p.id) {
         "flow_forest" -> Color(0xFFAEB5A3); "flow_raspberry" -> Color(0xFFBBADB0); "flow_violet" -> Color(0xFFB2AEC2)
+        "flow_ember" -> Color(0xFF6B655B); "flow_moss" -> Color(0xFF5E6B63); "flow_plum" -> Color(0xFF6E5F6E)
         else -> Color(0xFFB5B0A5)
     }
+
+    /** The 0.5dp hairline round a floating bar: black at 8% on a light palette, white at 10% on a dark one (docs/palettes.md 4.4). */
+    fun barHairline(p: Palette): Color = if (p.light) Color.Black.copy(alpha = 0.08f) else Color.White.copy(alpha = 0.10f)
 
     /** The fill of the navigation bar and the mini player. */
     fun barFill(p: Palette): Color = p.surface.copy(alpha = BAR_ALPHA)
@@ -115,7 +119,7 @@ fun Modifier.flowDepth(level: Int, shape: Shape, p: Palette): Modifier {
 /** A floating bar: the page behind it blurred, a translucent white over that, a 0.5dp hairline and level 2 depth. */
 @Composable
 fun Modifier.flowBar(shape: Shape, p: Palette): Modifier =
-    flowDepth(2, shape, p).clip(shape).flowBlurBehind().background(FlowRules.barFill(p)).border(0.5.dp, Color.Black.copy(alpha = 0.08f), shape)
+    flowDepth(2, shape, p).clip(shape).flowBlurBehind().background(FlowRules.barFill(p)).border(0.5.dp, FlowRules.barHairline(p), shape)
 
 /**
  * What the Flow bars blur (proposal D3). The page area records what it draws into [layer]; a bar draws that layer again, shifted to line up
