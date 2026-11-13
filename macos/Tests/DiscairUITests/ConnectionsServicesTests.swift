@@ -105,9 +105,8 @@ private func client(_ body: Data, status: Int = 200) throws -> LibrarianClient {
         #expect(m.nodes.isEmpty && m.loadFailure?.wasLoadMore == false)
     }
 
-    @Test func zineKeepsItsOwnLayout() {
-        #expect(GraphStyle.cupertino.redesigned && !GraphStyle.zine.redesigned)
-        // The classic layout the Zine explorer draws is untouched.
+    @Test func theClassicLayoutIsUntouched() {
+        #expect(GraphStyle.cupertino.redesigned)
         let items = (0..<4).map { GraphLayout.Item(id: "n\($0)", depth: 1, via: "c") }
         let p = GraphLayout.place(centre: "c", items: items)
         for i in items { let q = p[i.id]!; #expect(abs(hypot(q.x, q.y) - 1) < 1e-9) }
@@ -276,8 +275,8 @@ private func client(_ body: Data, status: Int = 200) throws -> LibrarianClient {
         #expect(state.services.model.toolbar.text == "All working" && state.services.hasChecked)
     }
 
-    @Test func settingsTabsAreTheFourOfTheMockups() {
-        #expect(SettingsTab.allCases.map(\.rawValue) == ["Services", "Playback", "Music folder", "Profiles"])
+    @Test func settingsTabsAreTheFourOfTheMockupsAndAppearance() {
+        #expect(SettingsTab.allCases.map(\.rawValue) == ["Services", "Playback", "Appearance", "Music folder", "Profiles"])
         #expect(AppState(themeID: .cupertino, screen: .settings).settingsTab == .services)
     }
 }

@@ -229,12 +229,6 @@ struct QueueAndNowPlayingTests {
         #expect(!s.queueOpen && s.screen == .library)
     }
 
-    @Test func zineKeepsUpNextAsItsOwnPage() {
-        let s = AppState(themeID: .zine, screen: .home)
-        s.go(.queue)
-        #expect(s.screen == .queue && !s.queueOpen)
-    }
-
     @Test func theNowPlayingNamesOpenTheAlbumAndTheArtist() async throws {
         let d = UserDefaults(suiteName: "discair-test-\(UUID().uuidString)")!
         let (p, _) = try player(d)

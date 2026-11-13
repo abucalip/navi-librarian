@@ -6,18 +6,11 @@ struct BackButton: View {
     var title: String
     /// Over the dark artist banner (Cupertino): white text on a translucent capsule.
     var onDark = false
-    var zine = false
     let action: () -> Void
 
     var body: some View {
-        Group {
-            if zine {
-                Button(action: action) { Label(title, systemImage: "chevron.left") }.buttonStyle(ZineButtonStyle(small: true))
-            } else {
-                Button(action: action) { Label(title, systemImage: "chevron.left") }
-                    .buttonStyle(CapsuleButtonStyle(small: true, translucent: onDark))
-            }
-        }
+        Button(action: action) { Label(title, systemImage: "chevron.left") }
+            .buttonStyle(CapsuleButtonStyle(small: true, translucent: onDark))
         .accessibilityLabel("Back to \(title)")
     }
 }

@@ -30,7 +30,7 @@ struct MiniPlayerTests {
         #expect(MiniPlayerContent(current: item("One"), upNext: [item("Two", "")]).next == "Two")
     }
 
-    @Test(arguments: [ThemeID.cupertino, ThemeID.zine])
+    @Test(arguments: ThemeID.allCases)
     func rendersMiniWindow(theme: ThemeID) throws {
         RenderMode.offscreenScreenshot = true
         let state = AppState(themeID: theme, screen: .home)

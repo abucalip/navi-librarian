@@ -5,10 +5,9 @@ import SwiftUI
 struct GraphStyle {
     let accent: Color, ink: Color, muted: Color, card: Color, title: Font
     /// True for the Cupertino redesign (`docs/redesign.md` section 5.2): its own control bar, sectors, List view and inspector,
-    /// drawn by `CupertinoConnections`. The Zine explorer below is unchanged.
+    /// drawn by `CupertinoConnections`. The `classic` view below is kept for the other styles.
     var redesigned = false
-    static let cupertino = GraphStyle(accent: CU.accent, ink: CU.text, muted: CU.textSecondary, card: CU.bgPanel, title: CU.title(34), redesigned: true)
-    static let zine = GraphStyle(accent: Z.red, ink: Z.ink, muted: Z.ink.opacity(0.6), card: Z.paper, title: Z.an(60))
+    static var cupertino: GraphStyle { GraphStyle(accent: CU.accent, ink: CU.text, muted: CU.textSecondary, card: CU.bgPanel, title: CU.title(34), redesigned: true) }
 }
 
 /// The connection graph (Phase 7 client gate). An artist in the middle; artists show their photo and albums their artwork.

@@ -51,9 +51,9 @@ private struct FlipCard<Front: View, Back: View>: View, @preconcurrency Animatab
 struct FlipCover<Front: View>: View {
     let rgid: String?
     var cornerRadius: CGFloat = 0
-    /// A theme dresses the back faces like its own cover (Zine's border and shadow); the default leaves them plain.
+    /// A theme dresses the back faces like its own cover (a border and shadow); the default leaves them plain.
     var dressBack: (AnyView) -> AnyView = { $0 }
-    /// Draws the album's Spine image as a thin strip on the cover's left edge, when it has one (Cupertino and Zine headers).
+    /// Draws the album's Spine image as a thin strip on the cover's left edge, when it has one (the Cupertino headers).
     var spineStrip = false
     /// The library album id: when set, the cover carries the edition picker button (owned albums only).
     var albumID: String?

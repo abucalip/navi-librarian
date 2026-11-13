@@ -1,7 +1,7 @@
 import SwiftUI
 
 public enum ThemeID: String, CaseIterable, Sendable, Identifiable {
-    case cupertino, zine
+    case cupertino
     public var id: String { rawValue }
 }
 
@@ -22,7 +22,6 @@ public enum ThemeRegistry {
     public static func theme(_ id: ThemeID) -> DiscairTheme {
         switch id {
         case .cupertino: CupertinoTheme()
-        case .zine: ZineTheme()
         }
     }
 }

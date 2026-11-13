@@ -95,7 +95,7 @@ struct CommandPaletteTests {
         #expect(p.highlight == 0)
     }
 
-    @Test(arguments: [ThemeID.cupertino, ThemeID.zine])
+    @Test(arguments: ThemeID.allCases)
     func rendersOpenPalette(theme: ThemeID) throws {
         RenderMode.offscreenScreenshot = true
         let state = AppState(themeID: theme, screen: .home)

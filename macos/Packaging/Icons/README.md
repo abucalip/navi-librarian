@@ -5,7 +5,6 @@ One icon per theme (see `macos/DESIGN.md`). Both are built from the Discair word
 | Theme | Files | Look |
 |---|---|---|
 | Cupertino | `Discair-Cupertino.*` | The base icon, nothing added. |
-| Zine Spread | `Discair-Zine.*` | The base icon plus a yellow ticker band with ink rules, like the pipeline ticker. |
 
 `.svg` is the source (1024 x 1024, tile inset to 824 as macOS expects), `.png` is the 1024 render with transparent corners, `.icns` is the full set for the bundle.
 

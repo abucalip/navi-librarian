@@ -8,7 +8,7 @@ import SwiftUI
 final class ArtistCollageModel {
     private(set) var entries: [CollageEntry] = []
     private var loadedFor: String?
-    /// The fewest pictures that count; the Cupertino hero takes any (one is a slideshow of one), the Zine sheet keeps the default.
+    /// The fewest pictures that count; the Cupertino hero takes any (one is a slideshow of one).
     var minimum = collageMinimum
 
     func load(sources: [CollageSource], store: ArtworkStore?) async {
@@ -18,29 +18,6 @@ final class ArtistCollageModel {
         let found = await store.artistCollage(sources, minimum: minimum)
         guard !Task.isCancelled else { return }
         entries = found; loadedFor = key
-    }
-}
-
-/// Zine: a contact sheet, one framed frame per picture with the album under it in mono type.
-struct ZineContactSheet: View {
-    let entries: [CollageEntry]
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Mono("Contact sheet")
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: 120, maximum: 150), spacing: 10, alignment: .top)], alignment: .leading, spacing: 10) {
-                ForEach(entries) { e in
-                    VStack(alignment: .leading, spacing: 3) {
-                        AlbumPictureView(picture: e.picture, size: .thumb)
-                            .frame(maxWidth: .infinity).frame(height: 96)
-                            .background(Z.white).clipped().zBorder(3)
-                        Mono(e.albumTitle).lineLimit(1)
-                    }
-                    .accessibilityElement(children: .ignore).accessibilityLabel(e.label)
-                }
-            }
-        }
-        .padding(.vertical, 8)
     }
 }
 

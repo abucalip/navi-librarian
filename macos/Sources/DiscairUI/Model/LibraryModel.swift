@@ -99,7 +99,16 @@ public final class LibraryModel {
     /// Test hook: shows these songs on the album page without a server.
     func showTracks(_ songs: [TrackItem]) { tracks = songs }
 
-    static let sampleArtists: [ArtistItem] = ZineFixtures.artistIndex.enumerated().map {
+    private static let sampleArtistIndex: [(String, Int)] = [
+        ("Talk Talk", 3), ("Tangerine Dream", 2), ("Television", 1), ("Tindersticks", 4), ("Tony Allen", 3), ("Tortoise", 5),
+        ("Toots & the Maytals", 2), ("Tom Waits", 9), ("Tricky", 3), ("Trentemøller", 2), ("T. Rex", 4), ("Throbbing Gristle", 1),
+        ("The Tallest Man on Earth", 2), ("The The", 2), ("Thievery Corporation", 3), ("Tom Tom Club", 1), ("Tame Impala", 4),
+        ("Tinariwen", 3), ("Todd Rundgren", 6), ("Tori Amos", 5), ("Toro y Moi", 3), ("Tune-Yards", 2), ("Talking Heads", 8),
+        ("Tangerine", 1), ("Tori", 2), ("Tortoise II", 1), ("Trio", 2), ("Tuxedomoon", 3), ("Twin Shadow", 2), ("Tycho", 4),
+        ("Tyondai Braxton", 1),
+    ]
+
+    static let sampleArtists: [ArtistItem] = sampleArtistIndex.enumerated().map {
         ArtistItem(id: $0.offset, name: $0.element.0, albumCount: $0.element.1)
     }
 

@@ -1,8 +1,8 @@
 import DiscairCore
 import SwiftUI
 
-/// Settings, in four tabs (`docs/redesign.md` sections 5.3 and 6.2): Services (the connected services, their health and setup,
-/// `CupertinoServices`), Playback, Music folder and Profiles. The cards inside the last three keep their form until step M10.
+/// Settings, in five tabs (`docs/redesign.md` sections 5.3 and 6.2): Services (the connected services, their health and setup,
+/// `CupertinoServices`), Playback, Appearance (`CupertinoAppearance`), Music folder and Profiles. The cards inside Playback, Music folder and Profiles keep their form until step M10.
 /// Passwords go to the Keychain and are never shown or read back.
 struct CupertinoSettings: View {
     let state: AppState
@@ -30,6 +30,8 @@ struct CupertinoSettings: View {
                             accessibilityName: "Settings section", inControlBar: true)
                 if state.settingsTab == .services {
                     CupertinoServices(state: state)
+                } else if state.settingsTab == .appearance {
+                    CupertinoAppearance(state: state)
                 } else if let s = state.session {
                     switch state.settingsTab {
                     case .playback: playback
@@ -39,7 +41,7 @@ struct CupertinoSettings: View {
                         profiles(s)
                         listenBrainz()
                         logins(s)
-                    case .services: EmptyView()
+                    case .services, .appearance: EmptyView()
                     }
                     if let message { CUNotice(kind: .danger, lead: "Could not save.", message: message) }
                 } else {

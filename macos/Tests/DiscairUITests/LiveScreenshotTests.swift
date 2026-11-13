@@ -72,7 +72,6 @@ struct LiveScreenshotTests {
         state.library.apply(newest: albums, first: albums, artists: artists, picks: picks)
         state.selectedAlbum = state.library.recent[0]
         state.selectedArtist = state.library.artists[0]
-        state.selectedLetter = "T"
         return state
     }
 
