@@ -1,3 +1,9 @@
+## 2026-11-13 — Art themes F1 follow-up: Flow grouped list and small controls (PR #1021)
+
+- Merged as `7648531aba224cf5b4a188561176d5e432ad2ac2`. `FlowKit.kt` gains `FlowGroup`, `FlowListRow`, `FlowIconTile`, `FlowCircleButton` and `FlowTag` from `flow.css`; depth levels, capsule buttons and chips were already in #1020. No screen uses them yet.
+- Verified, filtered (JDK 17): `FlowTest` (new depth and row-number test) and `ExistingLayoutsTest`. No screenshots; not seen on a device.
+- Next action: F2 (Flow Home).
+
 ## 2026-11-13 — Soft Brut fixes batch 1 and Today's picks from the week's Current tastes lists (PR #1017)
 
 - Merged as `b855d91c5d6724927eb8f892b2a1e40d0070f98b` from head `b8399386944dfd4031986ac3500230532417a8be`. Android (Soft Brut): genre on the same line as year and song count (album, artist); Queue and Lyrics open as sheets over Now Playing (`CoverStackPanel`); radio Now Playing sheet fills the screen, and the Paths step bar's extra rule is hidden in Soft Brut; artist Play narrowed with a Paths button (new `PlayerIcons.Paths`) beside Shuffle; album Paths replaces the album-level download; Home Recently added is a sideways row of the last 30 days, link "More" opens the full list.
