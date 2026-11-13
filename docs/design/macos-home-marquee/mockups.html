@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Discair Mac Home Marquee Mockups</title>
+<link rel="stylesheet" href="mockups.css">
+<link rel="stylesheet" href="home-marquee.css">
+</head><body>
+<div class="pg">
+<h1>Discair for Mac · Home, "Marquee" layout</h1>
+<p class="mu">The owner chose this artwork-led Home on 2026-11-13. These mockups are the spec. Album names are invented and the drawn covers stand in for real artwork. Nothing is built. The build steps are in <code>docs/MACOS_HOME_MARQUEE_PLAN.md</code>.</p>
+<div class="pills" id="mode"><span class="mu" style="font-size:13px">App mode in the mockups</span><button data-v="day" aria-pressed="true">Day</button><button data-v="night" aria-pressed="false">Night</button></div>
+
+<h2><small>home-marquee--default</small>Default</h2>
+<p class="cap">Today's pick over its own blurred cover, two shelves of six covers, and one line of text that holds every number left on Home. Text on the artwork is white in Day and in Night.</p>
+<div class="scroll"><div class="app" id="A"></div></div>
+
+<h2><small>Shelf tiles</small>Every kind of tile in "New on the shelf"</h2>
+<p class="cap">Left to right: the three stages of a Get (the ring shows one, two or three quarters), a failed Get, an arrived album nobody has played, a song heard on a relayed station, a recently added album. Gets and radio songs have no artwork yet, so the app draws its usual colour placeholder there.</p>
+<div class="scroll"><div class="app"><div class="tiles" id="tiles"></div></div></div>
+
+<h2><small>home-marquee--notice</small>With a notice</h2>
+<p class="cap">At most one notice, above the pick, as today: Librarian unreachable, a failed Get, or playing on the phone. The failed Get is also the first tile of the shelf.</p>
+<div class="scroll"><div class="app" id="A-notice"></div></div>
+
+<h2><small>home-marquee--no-pick</small>No pick right now</h2>
+<p class="cap">The pick area keeps its height and becomes a plain panel with today's sentences. Nothing below it moves.</p>
+<div class="scroll"><div class="app" id="A-nopick"></div></div>
+
+<h2><small>home-marquee--first-run</small>First run</h2>
+<p class="cap">No listening history and an empty library. Each shelf shows its own sentence, and the line shows only what is known.</p>
+<div class="scroll"><div class="app" id="A-firstrun"></div></div>
+
+<h2><small>home-marquee--librarian-unreachable</small>Librarian unreachable</h2>
+<p class="cap">Everything that comes from Navidrome stays: recently added albums fill the first shelf, Waiting longest is unchanged, and the line keeps the three Navidrome figures.</p>
+<div class="scroll"><div class="app" id="A-down"></div></div>
+
+<h2><small>home-marquee--loading</small>Loading</h2>
+<div class="scroll"><div class="app" id="A-loading"></div></div>
+
+<h2><small>home-marquee--narrow</small>Content under 860 pt wide</h2>
+<p class="cap">For a small window or an open queue inspector. The cover shrinks to 160 pt, the next picks move under the pick's text, the shelves show three covers per row, and the taste sentence takes its own line.</p>
+<div class="scroll" style="max-width:880px"><div class="app" id="A-narrow"></div></div>
+
+<p class="mu" style="margin-top:20px">The two layouts that were offered and not chosen are kept in <a href="not-chosen.html">not-chosen.html</a>.</p>
+</div>
+<script src="covers.js"></script>
+<script src="mockups.js"></script>
+</body></html>
