@@ -5,10 +5,15 @@ import Foundation
 import Observation
 
 /// One small file per song, kept per server and user, so another server never reads it. At most 300 songs or 5 MB, oldest
-/// removed first; a "none" answer is trusted for 24 hours and a found one is refreshed at most daily. Lyrics are copyrighted
+/// removed first; a "none" answer is trusted for 5 minutes and a found one for an hour, so a server fix shows up the next
+/// time the song opens. Entries carry a schema number and the language they were asked in; any other is a miss. Lyrics are copyrighted
 /// text: they live only here and are deleted at sign-out (`clear`).
 struct LyricsCache {
-    struct Entry: Codable, Equatable { var fetchedAt: Date; var lyrics: Lyrics? }
+    struct Entry: Codable, Equatable { var fetchedAt: Date; var lyrics: Lyrics?; var schema: Int? = nil; var language: String? = nil }
+    /// Raise when an older build may have saved wrong answers: every earlier entry then counts as a miss.
+    static let schema = 2
+    static let noneTrust: TimeInterval = 300
+    static let foundTrust: TimeInterval = 3_600
     static let maxFiles = 300
     static let maxBytes = 5_000_000
     let directory: URL
@@ -22,16 +27,20 @@ struct LyricsCache {
 
     private func file(_ id: String) -> URL { directory.appending(path: "\(id).json") }
 
-    func get(_ id: String) -> Entry? {
-        guard isValidSongID(id), let data = try? Data(contentsOf: file(id)) else { return nil }
-        return try? JSONDecoder().decode(Entry.self, from: data)
+    func get(_ id: String, language: String? = nil) -> Entry? {
+        guard isValidSongID(id), let data = try? Data(contentsOf: file(id)),
+              let e = try? JSONDecoder().decode(Entry.self, from: data),
+              e.schema == Self.schema, e.language == language else { return nil }
+        return e
     }
 
-    /// A "none" entry older than a day counts as a miss; a found entry older than a day is stale but still usable.
-    func isFresh(_ e: Entry) -> Bool { now().timeIntervalSince(e.fetchedAt) < 86_400 }
+    /// Fresh entries are shown without asking the server; a stale one is shown at once and then checked.
+    func isFresh(_ e: Entry) -> Bool {
+        now().timeIntervalSince(e.fetchedAt) < (e.lyrics == nil ? Self.noneTrust : Self.foundTrust)
+    }
 
-    func put(_ id: String, _ lyrics: Lyrics?) {
-        guard isValidSongID(id), let data = try? JSONEncoder().encode(Entry(fetchedAt: now(), lyrics: lyrics)) else { return }
+    func put(_ id: String, _ lyrics: Lyrics?, language: String? = nil) {
+        guard isValidSongID(id), let data = try? JSONEncoder().encode(Entry(fetchedAt: now(), lyrics: lyrics, schema: Self.schema, language: language)) else { return }
         try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         try? data.write(to: file(id), options: .atomic)
         trim()
@@ -95,6 +104,14 @@ public final class LyricsModel {
         configure(navidrome: nil, scope: "")
     }
 
+    /// Settings "Reset saved data": deletes every saved answer and asks again for the song on screen.
+    func reset() {
+        cache?.clear()
+        let id = songID
+        inFlight?.cancel(); songID = nil; state = .idle; lines = []; isSavedCopy = false
+        if id != nil { show(songID: id) }
+    }
+
     public func currentIndex(positionSeconds: Double) -> Int? {
         guard state == .timed else { return nil }
         return LyricsTimeline.currentIndex(in: lines, positionMs: Int(positionSeconds * 1000))
@@ -114,7 +131,7 @@ public final class LyricsModel {
         guard navidrome != nil, let cache else { return }
         // The cache answers at once; only a miss or a stale copy goes to the server.
         lines = []; isSavedCopy = false
-        let cached = cache.get(id)
+        let cached = cache.get(id, language: language)
         if let cached { apply(cached.lyrics) } else { state = .loading }
         if let cached, cache.isFresh(cached) { return }
         inFlight = Task { [weak self] in await self?.load(id, mine, cached) }
@@ -137,7 +154,7 @@ public final class LyricsModel {
             if supports == nil { supports = try await navidrome.supportsLyrics() }
             guard supports == true else { if mine == generation { state = .unsupported }; return }
             let fetched = try await navidrome.lyrics(songID: id, language: language)
-            cache.put(id, fetched)
+            cache.put(id, fetched, language: language)
             guard mine == generation, !Task.isCancelled else { return }
             apply(fetched)
         } catch {
@@ -151,9 +168,9 @@ public final class LyricsModel {
     /// Fetches the next song's lyrics into the cache so they are ready at the song change. Only called while lyrics are showing.
     public func prefetch(songID id: String?) {
         guard let id, id != songID, let navidrome, let cache, supports == true else { return }
-        if let c = cache.get(id), cache.isFresh(c) { return }
+        if let c = cache.get(id, language: language), cache.isFresh(c) { return }
         Task { [language] in
-            do { cache.put(id, try await navidrome.lyrics(songID: id, language: language)) } catch {}   // a failure is simply not cached
+            do { cache.put(id, try await navidrome.lyrics(songID: id, language: language), language: language) } catch {}   // a failure is simply not cached
         }
     }
 }

@@ -329,6 +329,13 @@ public final class AppState {
 
     /// Saved pages are kept per Navidrome user. (They are not tied to the server address, so the LAN and Tailscale
     /// profiles of one library share them.)
+    /// Settings "Reset saved data": drops what this Mac kept (lyrics, saved pages, covers, waveforms, the media cache) and
+    /// everything remembered as failed. Nothing on the servers changes; screens fill again as they are opened.
+    public func resetSavedData() async {
+        lyrics.reset(); library.resetSavedPages(); artwork.resetAll(); player.waveformCache.clear()
+        await cache.clear()
+    }
+
     private func configureSavedPages() {
         let scope = session?.navidromeUsername.map { "navidrome|\($0)" }
         library.configureCache(scope: scope)

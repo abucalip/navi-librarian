@@ -14,7 +14,24 @@ import SwiftUI
 public final class ArtworkStore {
     private var builder: StreamURLBuilder?
     @ObservationIgnored private let cache = NSCache<NSString, NSImage>()
-    @ObservationIgnored private var failed = Set<String>()
+    /// Covers that could not be had, with the time of the failure. A failure is only remembered for `retryAfter`, so a cover that
+    /// failed while the server was misconfigured is asked for again once it is fixed, without a relaunch.
+    @ObservationIgnored private var failed: [String: Date] = [:]
+    static let retryAfter: TimeInterval = 300
+    @ObservationIgnored var now: () -> Date = { .now }
+    private func isBlocked(_ key: String) -> Bool {
+        guard let at = failed[key] else { return false }
+        if now().timeIntervalSince(at) < Self.retryAfter { return true }
+        failed[key] = nil; return false
+    }
+    private func block(_ key: String) { failed[key] = now() }
+
+    /// Settings "Reset saved data": forgets every cover held in memory and every failure; views ask again.
+    public func resetAll() {
+        cache.removeAllObjects(); albumCache.removeAllObjects()
+        indexes.removeAll(); releaseGroups.removeAll(); failed.removeAll(); lastPDF = nil
+        generation += 1
+    }
     /// Counts connections made. A cover asked for before the connection existed (a restored queue at launch) got nothing and is
     /// never asked again by itself, so views include this in their task id and ask again once it changes.
     public private(set) var generation = 0
@@ -53,7 +70,7 @@ public final class ArtworkStore {
         albumCache.removeAllObjects()
         indexes.removeAll()
         releaseGroups.removeAll()
-        for k in failed where k.hasPrefix("lookup|") || k.hasPrefix("owned|") { failed.remove(k) }
+        for k in failed.keys where k.hasPrefix("lookup|") || k.hasPrefix("owned|") { failed[k] = nil }
         choices = [:]
         generation += 1
         if let librarian { let connection = generation; Task { [weak self] in await self?.loadChoices(librarian, connection: connection) } }
@@ -87,14 +104,14 @@ public final class ArtworkStore {
     public func ownedCover(albumID: String, px: Int) async -> NSImage? {
         let key = "owned|\(albumID)|\(choices[albumID] ?? 0)|\(px)"
         if let hit = cache.object(forKey: key as NSString) { return hit }
-        guard !failed.contains(key), let librarian else { return nil }
+        guard !isBlocked(key), let librarian else { return nil }
         do {
             let got = try await librarian.ownedCover(albumID: albumID, px: px)
-            guard !got.isPDF, let image = NSImage(data: got.data) else { failed.insert(key); return nil }
+            guard !got.isPDF, let image = NSImage(data: got.data) else { block(key); return nil }
             cache.setObject(image, forKey: key as NSString)
             return image
         } catch DiscairError.server(let status, _) where status == 404 {
-            failed.insert(key); return nil
+            block(key); return nil
         } catch { return nil }
     }
 
@@ -102,16 +119,16 @@ public final class ArtworkStore {
     public func image(artist: String, album: String, px: Int) async -> NSImage? {
         let key = "lookup|\(artist.lowercased())|\(album.lowercased())"
         if let hit = cache.object(forKey: key as NSString) { return hit }
-        let diskKey = "cover|\(key)"
+        let diskKey = "cover2|\(key)"
         if let data = media?.data(for: diskKey, ext: "img"), let image = NSImage(data: data) {
             cache.setObject(image, forKey: key as NSString); return image
         }
-        guard !failed.contains(key), let librarian else { return nil }
-        guard let url = try? await librarian.artworkURL(artist: artist, album: album) else { failed.insert(key); return nil }
+        guard !isBlocked(key), let librarian else { return nil }
+        guard let url = try? await librarian.artworkURL(artist: artist, album: album) else { block(key); return nil }
         var request = URLRequest(url: url)
         request.setValue("image/*", forHTTPHeaderField: "Accept")
         guard let (data, http) = try? await transport.send(request), http.statusCode == 200, let image = NSImage(data: data) else {
-            failed.insert(key); return nil
+            block(key); return nil
         }
         cache.setObject(image, forKey: key as NSString)
         media?.store(data: data, key: diskKey, ext: "img")
@@ -122,18 +139,18 @@ public final class ArtworkStore {
     public func image(artistName: String, url: URL?) async -> NSImage? {
         let key = "artist|\(artistName.lowercased())"
         if let hit = cache.object(forKey: key as NSString) { return hit }
-        let diskKey = "cover|\(key)"
+        let diskKey = "cover2|\(key)"
         if let data = media?.data(for: diskKey, ext: "img"), let image = NSImage(data: data) {
             cache.setObject(image, forKey: key as NSString); return image
         }
-        guard !failed.contains(key) else { return nil }
+        guard !isBlocked(key) else { return nil }
         var source = url
         if source == nil, let librarian { source = try? await librarian.artistImageURL(name: artistName) }
-        guard let source else { failed.insert(key); return nil }
+        guard let source else { block(key); return nil }
         var request = URLRequest(url: source)
         request.setValue("image/*", forHTTPHeaderField: "Accept")
         guard let (data, http) = try? await transport.send(request), http.statusCode == 200, let image = NSImage(data: data) else {
-            failed.insert(key); return nil
+            block(key); return nil
         }
         cache.setObject(image, forKey: key as NSString)
         media?.store(data: data, key: diskKey, ext: "img")
@@ -210,17 +227,17 @@ public final class ArtworkStore {
     }
 
     /// One album image as a bitmap. A PDF original (`size == .full`) is not a bitmap and gives nil: the PDF viewer fetches it whole.
-    /// A 404 is remembered for the session; a 503 or a network error is not, so the next ask tries again. Cancelling the caller
+    /// A 404 is remembered for five minutes; a 503 or a network error is not, so the next ask tries again. Cancelling the caller
     /// cancels the download once nobody else is waiting for it.
     public func albumImage(_ image: ArtworkPicture, size: ArtworkSize) async -> NSImage? {
         if image.isPDF && size == .full { return nil }
         let key = "album|\(image.imageID)|\(size.rawValue)"
         if let hit = albumCache.object(forKey: key as NSString) { return hit }
-        let diskKey = "cover|\(key)"
+        let diskKey = "cover2|\(key)"
         if let data = media?.data(for: diskKey, ext: "img"), let decoded = NSImage(data: data) {
             albumCache.setObject(decoded, forKey: key as NSString, cost: data.count); return decoded
         }
-        guard !failed.contains(key), let librarian else { return nil }
+        guard !isBlocked(key), let librarian else { return nil }
         let load: AlbumLoad
         if let running = albumLoads[key] { load = running } else {
             let task = Task<NSImage?, Never> { [weak self] in
@@ -255,7 +272,7 @@ public final class ArtworkStore {
     /// A PDF booklet's bytes (`size=full`), whole: it can be tens of MB, so only the last one is kept in memory (the media cache, when
     /// on, keeps it on disk). nil on any failure; cancelling the caller cancels the download. Never a bitmap: the PDF viewer reads it.
     public func albumPDF(_ image: ArtworkPicture) async -> Data? {
-        let diskKey = "cover|album|\(image.imageID)|pdf"
+        let diskKey = "cover2|album|\(image.imageID)|pdf"
         if let hit = lastPDF, hit.id == image.imageID { return hit.data }
         if let data = media?.data(for: diskKey, ext: "pdf") { lastPDF = (image.imageID, data); return data }
         guard let librarian, let got = try? await librarian.artworkImage(id: image.imageID, size: .full), got.isPDF, !Task.isCancelled else { return nil }
@@ -265,7 +282,7 @@ public final class ArtworkStore {
     }
     @ObservationIgnored private var lastPDF: (id: Int, data: Data)?
 
-    private func markFailed(_ key: String) { failed.insert(key) }
+    private func markFailed(_ key: String) { block(key) }
     private func keep(_ image: NSImage, data: Data, key: String, diskKey: String) {
         albumCache.setObject(image, forKey: key as NSString, cost: data.count)
         media?.store(data: data, key: diskKey, ext: "img")
@@ -283,15 +300,15 @@ public final class ArtworkStore {
     public func image(coverArt: String, px: Int) async -> NSImage? {
         let key = "\(coverArt)@\(px)"
         if let hit = cache.object(forKey: key as NSString) { return hit }
-        let diskKey = "cover|\(key)"
+        let diskKey = "cover2|\(key)"
         if let data = media?.data(for: diskKey, ext: "img"), let image = NSImage(data: data) {
             cache.setObject(image, forKey: key as NSString); return image
         }
-        guard !failed.contains(key), let builder, let url = try? builder.coverArtURL(coverArtID: coverArt, size: px) else { return nil }
+        guard !isBlocked(key), let builder, let url = try? builder.coverArtURL(coverArtID: coverArt, size: px) else { return nil }
         var request = URLRequest(url: url)
         request.setValue("image/*", forHTTPHeaderField: "Accept")
         guard let (data, http) = try? await transport.send(request), http.statusCode == 200, let image = NSImage(data: data) else {
-            failed.insert(key); return nil
+            block(key); return nil
         }
         cache.setObject(image, forKey: key as NSString)
         media?.store(data: data, key: diskKey, ext: "img")

@@ -63,4 +63,29 @@ struct CacheModelTests {
         _ = await s.image(coverArt: "al-1", px: 300)
         #expect(media.usedBytes() == 0)
     }
+
+    @Test func aFailedCoverIsAskedForAgainAfterFiveMinutes() async throws {
+        let t = PngTransport(); t.online = false
+        let builder = try StreamURLBuilder(baseURL: URL(string: "https://navi.example.ts.net")!, auth: SubsonicAuth(credential: Credential(username: "o", password: "pw")))
+        let s = ArtworkStore(transport: t, media: nil); s.configure(builder)
+        var clock = Date(timeIntervalSince1970: 1_000)
+        s.now = { clock }
+        #expect(await s.image(coverArt: "al-1", px: 300) == nil)
+        t.online = true
+        #expect(await s.image(coverArt: "al-1", px: 300) == nil)          // still remembered as failed
+        clock = clock.addingTimeInterval(301)
+        #expect(await s.image(coverArt: "al-1", px: 300) != nil)          // the server was fixed in the meantime
+    }
+
+    @Test func resetAllForgetsFailuresAtOnce() async throws {
+        let t = PngTransport(); t.online = false
+        let builder = try StreamURLBuilder(baseURL: URL(string: "https://navi.example.ts.net")!, auth: SubsonicAuth(credential: Credential(username: "o", password: "pw")))
+        let s = ArtworkStore(transport: t, media: nil); s.configure(builder)
+        _ = await s.image(coverArt: "al-1", px: 300)
+        t.online = true
+        let before = s.generation
+        s.resetAll()
+        #expect(s.generation == before + 1)
+        #expect(await s.image(coverArt: "al-1", px: 300) != nil)
+    }
 }

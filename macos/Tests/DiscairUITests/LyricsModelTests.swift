@@ -53,14 +53,26 @@ struct LyricsCacheTests {
         #expect(a.get("../x") == nil)
     }
 
-    @Test func freshnessIsOneDay() {
+    @Test func foundAnswersStayFreshAnHourAndNoneFiveMinutes() {
         let root = tempRoot(); defer { try? FileManager.default.removeItem(at: root) }
         var clock = Date(timeIntervalSince1970: 1_000_000)
         let c = LyricsCache(root: root, scope: "s", now: { clock })
-        c.put("s1", nil)
-        let e = c.get("s1")!
-        clock = clock.addingTimeInterval(86_000); #expect(c.isFresh(e))
-        clock = clock.addingTimeInterval(1_000); #expect(!c.isFresh(e))
+        c.put("none", nil); c.put("found", Lyrics(timed: false, lines: [LyricLine(startMs: nil, text: "x")]))
+        clock = clock.addingTimeInterval(200); #expect(c.isFresh(c.get("none")!))
+        clock = clock.addingTimeInterval(200); #expect(!c.isFresh(c.get("none")!) && c.isFresh(c.get("found")!))
+        clock = clock.addingTimeInterval(3_300); #expect(!c.isFresh(c.get("found")!))
+    }
+
+    @Test func entriesFromAnOlderSchemaOrAnotherLanguageAreMisses() throws {
+        let root = tempRoot(); defer { try? FileManager.default.removeItem(at: root) }
+        let c = LyricsCache(root: root, scope: "s")
+        c.put("s1", nil, language: "en")
+        #expect(c.get("s1", language: "en") != nil)
+        #expect(c.get("s1", language: "fr") == nil)
+        // An entry written before schema numbers existed (no schema field) is dropped.
+        try FileManager.default.createDirectory(at: c.directory, withIntermediateDirectories: true)
+        try Data(#"{"fetchedAt":1000,"lyrics":null}"#.utf8).write(to: c.directory.appending(path: "old.json"))
+        #expect(c.get("old") == nil)
     }
 
     @Test func keepsAtMost300SongsDroppingTheOldest() throws {

@@ -21,6 +21,7 @@ struct CupertinoSettings: View {
     @State private var shareUser = ""
     @State private var sharePass = ""
     @State private var confirmClearCache = false
+    @State private var confirmResetSaved = false
 
     var body: some View {
         ScrollView {
@@ -100,12 +101,24 @@ struct CupertinoSettings: View {
                 }
             }
             Divider()
+            playbackRow("Reset saved data", detail: "Forgets the lyrics, saved pages, covers and failed lookups this Mac kept, so everything is fetched fresh. Use it after fixing something on the server.") {
+                Button("Reset…") { confirmResetSaved = true }
+                    .buttonStyle(CapsuleButtonStyle(small: true, destructive: true))
+                    .accessibilityLabel("Reset the saved lyrics, pages and covers")
+            }
+            Divider()
             playbackRow("Equalizer", detail: "10 bands. Now: \(player.eq.enabled ? player.eq.presetLabel : "Off").") {
                 Button { state.screen = .equalizer } label: { HStack(spacing: CU.Space.xs) { Text("Open"); Image(systemName: "chevron.right").font(CU.Icon.small(.semibold)) } }
                     .buttonStyle(CapsuleButtonStyle(small: true))
             }
         }
         .task { await state.cache.refresh() }
+        .alert("Reset saved data?", isPresented: $confirmResetSaved) {
+            Button("Cancel", role: .cancel) {}
+            Button("Reset", role: .destructive) { Task { await state.resetSavedData() } }
+        } message: {
+            Text("Removes saved lyrics, pages, covers and songs from this Mac. Your library on the server is not changed.")
+        }
         .alert("Clear the saved songs and covers?", isPresented: $confirmClearCache) {
             Button("Cancel", role: .cancel) {}
             Button("Clear", role: .destructive) { Task { await state.cache.clear() } }
