@@ -31,6 +31,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
@@ -93,22 +94,11 @@ fun BookletTab(first: BookletView) {
     var current by remember(first) { mutableStateOf(0) }
     var notice by remember(first) { mutableStateOf<String?>(null) }
     val booklet = all[current]
-    var viewer by remember(booklet) { mutableStateOf<Int?>(null) }
+    var viewer by remember(first) { mutableStateOf<Int?>(null) } // kept across "Another booklet" so the viewer stays open
     val state = rememberPagerState { booklet.items.size }
     LaunchedEffect(booklet) { state.scrollToPage(0) }
     val repo = LocalRepository.current
     Column(Modifier.fillMaxWidth().padding(vertical = 16.dp)) {
-        OutlinedButton(
-            onClick = { val step = anotherBooklet(current, all); current = step.next; notice = step.message },
-            modifier = Modifier.padding(horizontal = 16.dp).heightIn(min = Target),
-        ) { Text("Another booklet") }
-        notice?.let {
-            Text(
-                it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
-                    .semantics { liveRegion = androidx.compose.ui.semantics.LiveRegionMode.Polite },
-            )
-        }
         if (booklet.edition.isNotBlank()) Text(
             "Booklet from ${booklet.edition}", style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
@@ -119,7 +109,7 @@ fun BookletTab(first: BookletView) {
             Box(
                 Modifier.fillMaxWidth().aspectRatio(1f).clip(MaterialTheme.shapes.small)
                     .background(MaterialTheme.colorScheme.surfaceVariant)
-                    .clickable(onClickLabel = if (image.isPdf) "Open the PDF booklet" else "Zoom in on this page", role = Role.Button) { viewer = i },
+                    .clickable(onClickLabel = if (image.isPdf) "Open the PDF booklet" else "Zoom in on this page", role = Role.Button) { notice = null; viewer = i },
                 contentAlignment = Alignment.Center,
             ) {
                 if (url != null) AsyncImage(
@@ -142,21 +132,32 @@ fun BookletTab(first: BookletView) {
     }
     val open = viewer
     if (open != null) {
-        val tapped = booklet.items[open]
-        if (tapped.isPdf) PdfViewer(tapped) { viewer = null } else {
-            val pages = booklet.bitmapItems()
-            ImageViewer(pages, pages.indexOfFirst { it.imageId == tapped.imageId }.coerceAtLeast(0)) { viewer = null }
+        // "Another booklet" sits next to Close in the viewer only; it swaps the booklet and starts at its first page.
+        val another = { val step = anotherBooklet(current, all); current = step.next; notice = step.message; viewer = 0 }
+        val tapped = booklet.items[open.coerceIn(0, booklet.items.lastIndex)]
+        key(current) {
+            if (tapped.isPdf) PdfViewer(tapped, another, notice) { viewer = null } else {
+                val pages = booklet.bitmapItems()
+                ImageViewer(pages, pages.indexOfFirst { it.imageId == tapped.imageId }.coerceAtLeast(0), another, notice) { viewer = null }
+            }
         }
     }
 }
 
 @Composable
-private fun ViewerFrame(title: String, onClose: () -> Unit, content: @Composable () -> Unit) {
+private fun ViewerFrame(title: String, onClose: () -> Unit, another: () -> Unit, notice: String?, content: @Composable () -> Unit) {
     Dialog(onDismissRequest = onClose, properties = DialogProperties(usePlatformDefaultWidth = false)) {
         Box(Modifier.fillMaxSize().background(Color.Black)) {
             content()
             Row(Modifier.statusBarsPadding().fillMaxWidth().padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text(title, color = Color.White, style = MaterialTheme.typography.labelLarge, modifier = Modifier.weight(1f).padding(start = 8.dp), maxLines = 1)
+                Column(Modifier.weight(1f).padding(start = 8.dp)) {
+                    Text(title, color = Color.White, style = MaterialTheme.typography.labelLarge, maxLines = 1)
+                    notice?.let {
+                        Text(it, color = Color.White.copy(alpha = 0.8f), style = MaterialTheme.typography.bodySmall, maxLines = 2,
+                            modifier = Modifier.semantics { liveRegion = androidx.compose.ui.semantics.LiveRegionMode.Polite })
+                    }
+                }
+                OutlinedButton(onClick = another, modifier = Modifier.heightIn(min = Target).padding(end = 8.dp)) { Text("Another booklet", color = Color.White) }
                 OutlinedButton(onClick = onClose, modifier = Modifier.heightIn(min = Target)) { Text("Close", color = Color.White) }
             }
         }
@@ -165,10 +166,10 @@ private fun ViewerFrame(title: String, onClose: () -> Unit, content: @Composable
 
 /** The booklet's bitmap pages full screen, swipe to turn, pinch or double-tap to zoom. */
 @Composable
-private fun ImageViewer(pages: List<ArtworkImage>, start: Int, onClose: () -> Unit) {
+private fun ImageViewer(pages: List<ArtworkImage>, start: Int, another: () -> Unit, notice: String?, onClose: () -> Unit) {
     val state = rememberPagerState(initialPage = start) { pages.size }
     var zoomed by remember { mutableStateOf(false) }
-    ViewerFrame("Page ${state.currentPage + 1} of ${pages.size}", onClose) {
+    ViewerFrame("Page ${state.currentPage + 1} of ${pages.size}", onClose, another, notice) {
         HorizontalPager(state, Modifier.fillMaxSize(), userScrollEnabled = !zoomed, beyondViewportPageCount = 0) { i ->
             val image = pages[i]
             val repo = LocalRepository.current
@@ -238,7 +239,7 @@ private sealed interface PdfState {
 
 /** One PDF booklet, downloaded whole on first open (progress shown, Close cancels) and drawn one page at a time. */
 @Composable
-private fun PdfViewer(image: ArtworkImage, onClose: () -> Unit) {
+private fun PdfViewer(image: ArtworkImage, another: () -> Unit, notice: String?, onClose: () -> Unit) {
     val repo = LocalRepository.current
     val context = LocalContext.current
     val state by produceState<PdfState>(PdfState.Downloading(0, -1), image) {
@@ -252,7 +253,7 @@ private fun PdfViewer(image: ArtworkImage, onClose: () -> Unit) {
             PdfState.Ready(file)
         } catch (e: kotlinx.coroutines.CancellationException) { throw e } catch (e: Exception) { PdfState.Failed }
     }
-    ViewerFrame("PDF booklet", onClose) {
+    ViewerFrame("PDF booklet", onClose, another, notice) {
         Box(Modifier.fillMaxSize()) { when (val s = state) {
             is PdfState.Downloading -> Column(Modifier.align(Alignment.Center), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text("Downloading the booklet…", color = Color.White, style = MaterialTheme.typography.bodyMedium)
