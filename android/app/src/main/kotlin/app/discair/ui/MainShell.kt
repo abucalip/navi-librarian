@@ -11,6 +11,8 @@ import app.discair.ui.common.Target
 import app.discair.ui.common.RowDivider
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.em
 import androidx.compose.ui.Alignment
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.IconButton
@@ -53,6 +55,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -301,6 +304,12 @@ fun MainShell(state: UiState, model: AppViewModel, container: AppContainer) {
                     onDiscover = { goPage(DiscoverRoute) },
                     onDownloads = { nav.navigate(DownloadsRoute) { launchSingleTop = true } },
                     onSettings = { goPage(SettingsRoute) },
+                    // Flow draws the page's name large in the bar on Discover and Library (flow/discover, flow/library-search); Home keeps the wordmark.
+                    flowTitle = when {
+                        destination?.hasRoute(DiscoverRoute::class) == true -> "Discover"
+                        destination?.hasRoute(LibraryRoute::class) == true -> "Library"
+                        else -> null
+                    },
                 )
             },
         ) { padding ->
@@ -422,9 +431,9 @@ fun MainShell(state: UiState, model: AppViewModel, container: AppContainer) {
  * web nav has. Settings is last.
  */
 @Composable
-private fun AppHeader(active: Int, showDiscover: Boolean, onDiscover: () -> Unit, onDownloads: () -> Unit, onSettings: () -> Unit) {
+private fun AppHeader(active: Int, showDiscover: Boolean, onDiscover: () -> Unit, onDownloads: () -> Unit, onSettings: () -> Unit, flowTitle: String? = null) {
     if (app.discair.ui.theme.LocalPalette.current.layout == app.discair.ui.theme.Layout.Flow) {
-        FlowAppHeader(active, showDiscover, onDiscover, onDownloads, onSettings)
+        FlowAppHeader(active, showDiscover, onDiscover, onDownloads, onSettings, flowTitle)
         return
     }
     Column(Modifier.background(app.discair.ui.theme.Ink.Rail)) {
@@ -448,12 +457,16 @@ private fun AppHeader(active: Int, showDiscover: Boolean, onDiscover: () -> Unit
  * Downloads button carries the active count as a badge. Every other theme keeps [AppHeader] above.
  */
 @Composable
-private fun FlowAppHeader(active: Int, showDiscover: Boolean, onDiscover: () -> Unit, onDownloads: () -> Unit, onSettings: () -> Unit) {
+private fun FlowAppHeader(active: Int, showDiscover: Boolean, onDiscover: () -> Unit, onDownloads: () -> Unit, onSettings: () -> Unit, title: String? = null) {
     Row(
         Modifier.background(app.discair.ui.theme.Ink.Rail).fillMaxWidth().statusBarsPadding().heightIn(min = 56.dp).padding(start = 16.dp, end = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        app.discair.ui.common.Wordmark(30.dp)
+        if (title != null) Text(
+            title, color = app.discair.ui.theme.LocalPalette.current.text, maxLines = 1,
+            modifier = Modifier.semantics { heading() },
+            style = MaterialTheme.typography.headlineLarge.copy(fontSize = 30.sp, lineHeight = 36.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = (-0.03).em),
+        ) else app.discair.ui.common.Wordmark(30.dp)
         Spacer(Modifier.weight(1f))
         if (showDiscover) app.discair.ui.common.FlowCircleButton(Icons.Default.Star, "Discover", onDiscover)
         Box {

@@ -6,6 +6,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
@@ -16,6 +18,7 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -36,6 +39,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.graphics.vector.ImageVector
+import app.discair.model.GetState
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -71,6 +78,24 @@ object FlowPagesRules {
 
     /** Genre grid: two columns, 14dp apart (shared.css `.g2`). */
     const val GRID_GAP = 14
+
+    /** Discover (flow.css `.dc`): the card's cover, its padding, the gap between cards, the small capsule buttons and the insight card's cover. */
+    const val DISCOVER_COVER = 112
+    const val DISCOVER_GAP = 12
+    const val SMALL_BUTTON = 34
+    const val INSIGHT_COVER = 88
+
+    /** The search field (flow.css `.field`) and a list row's cover (`.li .cv`). */
+    const val FIELD_HEIGHT = 44
+    const val ROW_COVER = 48
+
+    /** Ranked bars (flow.css `.bars`): 8dp high, the longest one 85% of the track, the others in proportion to it, never under 4%. */
+    const val BAR_HEIGHT = 8
+    const val BAR_LONGEST = 0.85f
+    fun barFraction(share: Double, top: Double): Float {
+        val longest = top.takeIf { it > 0 } ?: 1.0
+        return (BAR_LONGEST * (share / longest).toFloat()).coerceIn(0.04f, BAR_LONGEST)
+    }
 
     /** How far the wash has scrolled away: the whole way once the first item has left, else by the first item's offset (px). */
     fun washScroll(firstVisibleIndex: Int, firstVisibleOffset: Int, height: Float): Float =
@@ -161,4 +186,75 @@ fun FlowArtistChip(name: String, ownedPath: String?, onClick: () -> Unit, modifi
             style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium, fontSize = 12.sp, lineHeight = 16.sp),
         )
     }
+}
+
+/** A small caption in capitals (flow.css `.eb`: Inter 600 12/16, 0.04em, muted): "ARTISTS", "YOUR TASTE · LAST 90 DAYS". */
+@Composable
+fun FlowEyebrow(text: String, modifier: Modifier = Modifier) {
+    Text(
+        text.uppercase(), modifier, color = LocalPalette.current.textMuted, maxLines = 1, overflow = TextOverflow.Ellipsis,
+        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold, fontSize = 12.sp, lineHeight = 16.sp, letterSpacing = 0.04.em),
+    )
+}
+
+/**
+ * A 34dp capsule (flow.css `.btn.sm`, `.dc .acts .btn`) inside a 48dp touch height: filled with the accent and a white label when [primary], else
+ * `raised` with an accent label. [icon] only, with no [label], is the round 34dp button.
+ */
+@Composable
+fun FlowSmallButton(
+    label: String?, icon: ImageVector?, primary: Boolean, description: String, modifier: Modifier = Modifier,
+    state: String? = null, enabled: Boolean = true, onClick: () -> Unit,
+) {
+    val p = LocalPalette.current
+    val ink = if (primary) p.onAccent else p.accentText
+    val shape = RoundedCornerShape(17.dp)
+    Box(
+        modifier.heightIn(min = Target).clickable(enabled = enabled, role = Role.Button, onClick = onClick)
+            .semantics { contentDescription = description; if (state != null) stateDescription = state },
+        contentAlignment = Alignment.Center,
+    ) {
+        Row(
+            Modifier.height(FlowPagesRules.SMALL_BUTTON.dp).then(if (label == null) Modifier.width(FlowPagesRules.SMALL_BUTTON.dp) else Modifier.padding(horizontal = 14.dp))
+                .clip(shape).background(if (primary) p.accent else p.raised),
+            horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically,
+        ) {
+            if (icon != null) Icon(icon, contentDescription = null, tint = if (label == null) p.text else ink, modifier = Modifier.size(if (label == null) 18.dp else 20.dp))
+            if (icon != null && label != null) Spacer(Modifier.width(4.dp))
+            if (label != null) Text(label, color = ink, maxLines = 1, style = MaterialTheme.typography.labelLarge.copy(fontSize = 14.sp, fontWeight = FontWeight.SemiBold))
+        }
+    }
+}
+
+/**
+ * The Get capsule for one album: Get, Requesting, Requested, or Retry after a failure, each with its state spoken. A request is never sent twice:
+ * only Get and Retry take a tap. [metadata] is what the server needs to find the album.
+ */
+@Composable
+fun FlowGetButton(artist: String, album: String, metadata: kotlinx.serialization.json.JsonObject, modifier: Modifier = Modifier) {
+    val hub = LocalAcquisitions.current
+    val get = hub.getState(artist, album)
+    val idle = get is GetState.Idle || get is GetState.Failed
+    FlowSmallButton(
+        when (get) { GetState.Pending -> "Requesting"; is GetState.Requested -> "Requested"; is GetState.Failed -> "Retry"; else -> "Get" },
+        when (get) { is GetState.Requested -> Icons.Default.Check; GetState.Pending, is GetState.Failed, GetState.Idle -> PlayerIcons.Cloud },
+        idle, "Get album $album", modifier,
+        state = when (get) { GetState.Idle -> "Not requested"; GetState.Pending -> "Requesting"; is GetState.Requested -> "Requested. Follow it under Downloads"; is GetState.Failed -> "Could not request. Select to try again" },
+        enabled = idle,
+    ) { hub.getAlbum(artist, album, metadata) }
+}
+
+/** A page's large title (flow.css `.lt`: Inter 800 30/36, -0.03em) for a page the shell's bar does not title, such as the Search sheet. */
+@Composable
+fun FlowLargeTitle(text: String, modifier: Modifier = Modifier) {
+    Text(
+        text, modifier.semantics { heading() }, color = LocalPalette.current.text, maxLines = 1,
+        style = MaterialTheme.typography.headlineLarge.copy(fontSize = 30.sp, lineHeight = 36.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = (-0.03).em),
+    )
+}
+
+/** The grey chevron at the end of a row (flow.css `.chev`, 16dp). */
+@Composable
+fun FlowChevron(modifier: Modifier = Modifier) {
+    Icon(PlayerIcons.Right, contentDescription = null, tint = Color(0xFFB5B0A5), modifier = modifier.size(16.dp))
 }

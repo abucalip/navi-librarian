@@ -87,6 +87,8 @@ fun LibraryScreen(open: Opener) {
 
     // Soft Brut draws its own arrangement (CoverStackLibrary.kt); every other theme continues below.
     if (app.discair.ui.common.isCoverStack()) { CoverStackLibrary(state, model, open, list); return }
+    // Flow draws its own arrangement (FlowLibrary.kt); the shell's bar carries its large title.
+    if (app.discair.ui.common.isFlow()) { FlowLibrary(state, model, open, list); return }
 
     Column(Modifier.fillMaxSize()) {
         PageHeading("Library", Modifier.padding(start = 16.dp, top = 16.dp, end = 16.dp), large = true)
