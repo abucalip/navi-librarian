@@ -1,3 +1,10 @@
+## 2026-11-13 — Radio stage 2, S2-1 items 2 and 3: client calls and tests (PR #1049)
+
+- PR [#1049](https://github.com/abucalip/navi-librarian/pull/1049), merged as `8695091a78ce981ff26a703138d6490dd8e53e5d`. `macos/Sources/DiscairLibrarian/RadioClient.swift`: `radioStations`, `radioNow(station:)`, `radioNowAll`, `setRadioFavourite`, `setRadioTags`, `radioLogo(station:size:)`, `radioScrobbling`, `setRadioScrobbling`, `uploadRadioLogo`, `resetRadioLogo`, `radioSettings` (`RadioSettings`, `RadioLogoSize`). No server change.
+- `LibrarianClient` send path takes an optional content type (default JSON) so a logo upload sends the raw image; existing calls unchanged. An unreadable `/now` body reads as unavailable; an empty or over-2 MB logo is refused before sending.
+- Tests actually run: `swift test --skip-update --filter "RadioClientTests|RadioDecoderTests"` passed locally (all radio fixtures covered, plus paths, bodies, id encoding, refusals, 401 re-login on a write). Full suite not run (owner rule). Required CI (compile, container-smoke, test-and-build, validate-container) passed; no macOS CI exists, so the Swift tests were not run there.
+- Not done: S2-1 items 4 to 10 (`StationRules`, `StationsModel`, navigation, the page, Edit Tags, states, render test).
+
 ## 2026-11-13 — Radio stage 2, S2-1 item 1: decoders (PR #1048)
 
 - PR [#1048](https://github.com/abucalip/navi-librarian/pull/1048), merged as `8c17aaae5a7a1b8dc770063e72b1dfdfdec4971c`. `macos/Sources/DiscairLibrarian/Radio.swift`: `RadioStation` (no `stream_url`; description, debug description and mirror leave the address out), `RadioNow` with `RadioNowState` (unknown words decode as `unknown`), `RadioNowAll`, `RadioScrobbling`; lossy list decoding.
