@@ -1,45 +1,26 @@
 package app.discair.ui.album
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.background
-import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
@@ -48,12 +29,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -67,6 +44,8 @@ import app.discair.model.albumPathsEmpty
 import app.discair.model.albumPathsFailure
 import app.discair.model.albumTabDescription
 import app.discair.model.albumTabs
+import app.discair.model.groupByLink
+import app.discair.model.trailLink
 import app.discair.model.isArtist
 import app.discair.model.reasonEyebrow
 import app.discair.model.toAlbumAnswer
@@ -79,16 +58,20 @@ import app.discair.ui.artist.LibraryLine
 import app.discair.ui.common.PathAlbumCover
 import app.discair.ui.common.PathRowCover
 import app.discair.ui.common.SameRoomPhotos
-import app.discair.ui.common.FilterChip
+import app.discair.ui.common.TrailHeader
+import app.discair.ui.common.TrailList
+import app.discair.ui.common.TrailOpenStep
+import app.discair.ui.common.TrailSizes
+import app.discair.ui.common.TrailStepRow
+import app.discair.ui.common.TrailTabs
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
 import app.discair.ui.common.Load
 import app.discair.ui.common.LocalRepository
 import app.discair.ui.common.ModalBottomSheet
 import app.discair.ui.common.OutlinedButton
-import app.discair.ui.common.OutlinedIconButton
-import app.discair.ui.common.RowDivider
 import app.discair.ui.common.Target
 import app.discair.ui.common.routeKey
-import app.discair.ui.player.PlayerIcons
 import app.discair.ui.theme.Ink
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -145,45 +128,39 @@ fun AlbumPathsSheet(albumName: String, artistName: String, albumId: String, soni
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
         val state = model.answers[tab] ?: Load.Loading
         val steps = (state as? Load.Ready)?.value?.steps.orEmpty()
+        // Back with a step open closes the step; Back with none open closes the sheet.
         BackHandler(enabled = step in steps.indices) { step = -1 }
         Box(Modifier.fillMaxWidth().weight(1f)) { // the sheet height left after its handle; a fixed fraction overflowed the Soft Brut outline
-            if (step in steps.indices) {
-                AlbumPathDetail(albumName, artistName, tab, steps, step, onBack = { step = -1 }, onStep = { step = it }, go = go)
-            } else {
-                val seeds = (model.answers[AlbumTab.NeighboursByEar] as? Load.Ready)?.value?.seeds ?: 0
-                AlbumPathList(
-                    albumName, albumId, tab, tabs, state, seeds, lists.getValue(tab),
-                    onTab = { step = -1; tabName = it.name }, onStep = { step = it }, onRetry = { attempt++ },
-                )
-            }
+            val seeds = (model.answers[AlbumTab.NeighboursByEar] as? Load.Ready)?.value?.seeds ?: 0
+            AlbumPathList(
+                albumName, artistName, albumId, tab, tabs, state, seeds, step, lists.getValue(tab), go,
+                onTab = { step = -1; tabName = it.name }, onStep = { step = it }, onRetry = { attempt++ },
+            )
         }
     }
 }
 
-// ---------------------------------------------------------------- the list
+// ---------------------------------------------------------------- the trail
 
 @Composable
 private fun AlbumPathList(
-    albumName: String, albumId: String, tab: AlbumTab, tabs: List<AlbumTab>, state: Load<AlbumAnswer>, seeds: Int, list: LazyListState,
+    albumName: String, artistName: String, albumId: String, tab: AlbumTab, tabs: List<AlbumTab>, state: Load<AlbumAnswer>, seeds: Int,
+    step: Int, list: LazyListState, go: (PathLink) -> Unit,
     onTab: (AlbumTab) -> Unit, onStep: (Int) -> Unit, onRetry: () -> Unit,
 ) {
-    Column(Modifier.fillMaxSize().padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    Column(Modifier.fillMaxSize()) {
+        TrailHeader(albumName, { PathAlbumCover(artistName, albumName, Modifier.size(TrailSizes.HeaderPicture).clip(RoundedCornerShape(4.dp))) }, Modifier.padding(horizontal = 16.dp))
+        TrailTabs(tabs.map { it.label }, tabs.indexOf(tab), { onTab(tabs[it]) })
         Text(
-            "Paths from $albumName", style = MaterialTheme.typography.titleLarge,
-            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp).semantics { heading() },
+            albumTabDescription(tab, albumName, seeds), style = MaterialTheme.typography.bodyMedium, color = Ink.TextMuted,
+            modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 8.dp),
         )
-        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            items(tabs, key = { it.name }) { option ->
-                FilterChip(selected = option == tab, onClick = { onTab(option) }, label = { Text(option.label) }, modifier = Modifier.heightIn(min = Target))
-            }
-        }
-        Text(albumTabDescription(tab, albumName, seeds), style = MaterialTheme.typography.bodyMedium, color = Ink.TextMuted, modifier = Modifier.fillMaxWidth())
         Box(Modifier.fillMaxWidth().weight(1f)) {
             when (state) {
                 Load.Loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator(Modifier.semantics { contentDescription = "Loading paths" })
                 }
-                is Load.Failed -> Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.Center) {
+                is Load.Failed -> Column(Modifier.fillMaxSize().padding(horizontal = 16.dp), verticalArrangement = Arrangement.Center) {
                     Text(state.failure.message, style = MaterialTheme.typography.bodyLarge, color = Ink.ChartRedText)
                     Spacer(Modifier.size(16.dp))
                     OutlinedButton(onClick = onRetry, Modifier.heightIn(min = Target)) { Text("Try again") }
@@ -195,16 +172,15 @@ private fun AlbumPathList(
                 is Load.Ready -> {
                     val answer = state.value
                     if (answer.steps.isEmpty()) {
-                        Text(answer.empty ?: albumPathsEmpty(tab, albumName), style = MaterialTheme.typography.bodyMedium, color = Ink.TextMuted)
-                    } else LazyColumn(Modifier.fillMaxSize(), state = list, contentPadding = PaddingValues(bottom = 32.dp)) {
-                        itemsIndexed(answer.steps) { index, step ->
-                            AlbumPathRow(index + 1, step) { onStep(index) }
-                            RowDivider()
-                        }
-                        answer.notes.forEach { note ->
-                            item {
-                                Text(note, style = MaterialTheme.typography.bodySmall, color = Ink.TextMuted, modifier = Modifier.padding(top = 16.dp))
-                            }
+                        Text(
+                            answer.empty ?: albumPathsEmpty(tab, albumName), style = MaterialTheme.typography.bodyMedium, color = Ink.TextMuted,
+                            modifier = Modifier.padding(horizontal = 16.dp),
+                        )
+                    } else {
+                        // The link of each step is built from its first reason, so the trail is stable; steps that share a link sit under it.
+                        val groups = remember(answer, tab) { groupByLink(answer.steps) { it.trailLink(tab, answer.seeds) } }
+                        TrailList(groups, step, list, answer.notes) { entry, open ->
+                            AlbumStepItem(tab, entry.item, albumName, artistName, open, go, onOpen = { onStep(entry.index) }, onClose = { onStep(-1) })
                         }
                     }
                 }
@@ -214,91 +190,36 @@ private fun AlbumPathList(
 }
 
 /**
- * One step: its number, the album's cover, the album with one line of detail, and a chevron. One tap opens its pane. A long press
+ * One step of the trail: closed, the album's row, which opens it in place; open, the album's pane under a header row. A long press
  * (also offered to TalkBack as "Show next cover") turns the cover to the album's next alternate cover, when it has more than one.
  */
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun AlbumPathRow(number: Int, step: AlbumStep, onClick: () -> Unit) {
-    var cover by remember { mutableIntStateOf(0) }
-    Row(
-        Modifier.fillMaxWidth().heightIn(min = 64.dp)
-            .combinedClickable(
-                onClickLabel = "Open step $number", role = Role.Button, onClick = onClick,
-                onLongClickLabel = "Show next cover", onLongClick = { cover++ },
-            )
-            .padding(vertical = 8.dp),
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text("$number", style = MaterialTheme.typography.labelLarge, color = Ink.TextMuted, textAlign = TextAlign.End, modifier = Modifier.width(24.dp))
-        PathRowCover(step.artist, step.album, cover, Modifier.size(48.dp))
-        Column(Modifier.weight(1f)) {
-            Text(step.album, style = MaterialTheme.typography.titleMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
-            Text(step.detail, style = MaterialTheme.typography.bodyMedium, color = Ink.TextMuted, maxLines = 2, overflow = TextOverflow.Ellipsis)
-        }
-        Icon(PlayerIcons.Right, contentDescription = null, modifier = Modifier.size(24.dp))
-    }
-}
-
-// ---------------------------------------------------------------- the pane
-
-/** A step's pane: back to the list at the top, the path and step with the arrows at the bottom, as the artist sheet. */
-@Composable
-private fun AlbumPathDetail(
-    startName: String, startArtist: String, tab: AlbumTab, steps: List<AlbumStep>, index: Int,
-    onBack: () -> Unit, onStep: (Int) -> Unit, go: (PathLink) -> Unit,
+private fun AlbumStepItem(
+    tab: AlbumTab, step: AlbumStep, startName: String, startArtist: String, open: Boolean, go: (PathLink) -> Unit,
+    onOpen: () -> Unit, onClose: () -> Unit,
 ) {
-    val step = steps[index]
-    Column(Modifier.fillMaxSize()) {
-        Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, bottom = 16.dp)) {
-            OutlinedIconButton(onClick = onBack, Modifier.size(Target)) { Icon(PlayerIcons.Left, contentDescription = "Back to the list") }
-        }
-        key(index) {
-            Column(
-                Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-            ) {
-                AlbumPaneBody(tab, step, startName, startArtist, go)
-                Spacer(Modifier.size(8.dp))
-            }
-        }
-        if (!app.discair.ui.common.isCoverStack()) Box(Modifier.fillMaxWidth().height(2.dp).background(Ink.EdgeStrong)) // Soft Brut: the sheet has its own edge; a second full-width rule reads as stray
-        Row(
-            Modifier.fillMaxWidth().padding(start = 16.dp, end = 8.dp, top = 8.dp, bottom = 24.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Column(Modifier.weight(1f)) {
-                Text(tab.label, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                Text("Step ${index + 1} of ${steps.size}", style = MaterialTheme.typography.bodySmall, color = Ink.TextMuted)
-            }
-            IconButton(onClick = { onStep(index - 1) }, Modifier.size(Target), enabled = index > 0) {
-                Icon(Icons.Default.KeyboardArrowUp, contentDescription = "Previous step")
-            }
-            IconButton(onClick = { onStep(index + 1) }, Modifier.size(Target), enabled = index < steps.lastIndex) {
-                Icon(Icons.Default.KeyboardArrowDown, contentDescription = "Next step")
-            }
-        }
+    var cover by remember { mutableIntStateOf(0) }
+    if (!open) {
+        TrailStepRow(
+            title = step.album, line = step.detail, picture = { PathRowCover(step.artist, step.album, cover, Modifier.size(TrailSizes.StepPicture)) },
+            onOpen = onOpen, onShowNextCover = { cover++ },
+        )
+        return
     }
+    TrailOpenStep(
+        title = step.album, lines = listOfNotNull(step.artist.takeIf { it.isNotBlank() }, step.year?.toString(), "In your library"),
+        picture = { PathRowCover(step.artist, step.album, cover, Modifier.size(TrailSizes.OpenPicture)) }, onClose = onClose,
+    ) { AlbumPaneBody(tab, step, startName, startArtist, go) }
 }
 
 /**
- * One album and why it is here: the album as the hero (every step is in the library), a card per reason the server sent
- * (the first three), and the person and album to open. The sentence is the server's own; a fact it did not send is left out.
+ * The body of an opened step: a card per reason the server sent (the first three), and the person and album to open; the album
+ * itself is the step's header row (every step is in the library). The cards sit on the sheet's ground, against the raised panel. The sentence is the server's own; a fact it did not send is left out.
  */
 @Composable
 private fun AlbumPaneBody(tab: AlbumTab, step: AlbumStep, startName: String, startArtist: String, go: (PathLink) -> Unit) {
-    Row(horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.Bottom) {
-        PathAlbumCover(step.artist, step.album, Modifier.size(144.dp))
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(step.album, style = MaterialTheme.typography.titleLarge, modifier = Modifier.semantics { heading() })
-            if (step.artist.isNotBlank()) Text(step.artist, style = MaterialTheme.typography.bodyMedium, color = Ink.TextMuted)
-            step.year?.let { Text("$it", style = MaterialTheme.typography.bodyMedium, color = Ink.TextMuted) }
-            LibraryLine(true)
-        }
-    }
     step.play?.let { play ->
-        InfoCard(raised = true) {
+        InfoCard() {
             Eyebrow("Your listening")
             Spacer(Modifier.size(8.dp))
             Text(play, style = MaterialTheme.typography.titleLarge)
@@ -324,12 +245,12 @@ private fun ReasonCard(tab: AlbumTab, reason: AlbumStepReason) {
         // The link and the period side by side, as Same place and Same era on a scene pane.
         val gap = yearGap(reason.text)
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            InfoCard(Modifier.weight(1f), raised = true) {
+            InfoCard(Modifier.weight(1f)) {
                 Eyebrow(reasonEyebrow(reason.code))
                 Spacer(Modifier.size(8.dp))
                 Text(via, style = MaterialTheme.typography.titleLarge)
             }
-            if (gap != null) InfoCard(Modifier.weight(1f), raised = true) {
+            if (gap != null) InfoCard(Modifier.weight(1f)) {
                 Eyebrow("Same period")
                 Spacer(Modifier.size(8.dp))
                 Text(gap, style = MaterialTheme.typography.titleLarge)
@@ -338,7 +259,7 @@ private fun ReasonCard(tab: AlbumTab, reason: AlbumStepReason) {
         Text(reason.text, style = MaterialTheme.typography.bodyLarge)
         return
     }
-    InfoCard(raised = true) {
+    InfoCard() {
         Eyebrow(reasonEyebrow(reason.code))
         if (via != null) {
             Spacer(Modifier.size(8.dp))

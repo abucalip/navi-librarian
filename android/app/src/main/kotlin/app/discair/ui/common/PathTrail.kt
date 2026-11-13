@@ -14,11 +14,14 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -33,6 +36,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -53,7 +57,11 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import app.discair.model.TrailEntry
+import app.discair.model.TrailGroup
 import app.discair.model.TrailLink
+import app.discair.model.TrailStep
+import app.discair.model.entries
 import app.discair.ui.artist.Eyebrow
 import app.discair.ui.theme.Ink
 import app.discair.ui.theme.LocalPalette
@@ -224,6 +232,44 @@ fun TrailLinkPill(link: TrailLink, modifier: Modifier = Modifier) {
         modifier = modifier.background(Ink.AccentDim, pillShape()).padding(horizontal = 12.dp, vertical = 4.dp)
             .semantics(mergeDescendants = true) { heading(); contentDescription = link.spoken },
     )
+}
+
+/**
+ * The trail of a sheet: each group's link, then its steps ([step] draws one, and is told whether it is the open one). [openIndex]
+ * is the saved index into the server's list, or -1. When a step opens the list scrolls so it is in view (at once with reduced
+ * motion). [notes] go under the trail.
+ */
+@Composable
+fun <T> TrailList(
+    groups: List<TrailGroup<T>>, openIndex: Int, state: LazyListState, notes: List<String>, modifier: Modifier = Modifier,
+    step: @Composable (TrailStep<T>, Boolean) -> Unit,
+) {
+    val entries = remember(groups) { groups.entries() }
+    val reduced = rememberReducedMotion()
+    LaunchedEffect(openIndex, entries) {
+        val at = entries.indexOfFirst { it is TrailEntry.Step && it.step.index == openIndex }
+        if (at >= 0) {
+            val visible = state.layoutInfo.visibleItemsInfo.firstOrNull { it.index == at }
+            val fits = visible != null && visible.offset >= 0 && visible.offset + visible.size <= state.layoutInfo.viewportEndOffset
+            if (!fits) if (reduced) state.scrollToItem(at) else state.animateScrollToItem(at)
+        }
+    }
+    LazyColumn(modifier.fillMaxSize(), state = state, contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 32.dp)) {
+        itemsIndexed(entries, key = { n, it -> if (it is TrailEntry.Step) "step:${it.step.index}" else "link:$n" }) { _, entry ->
+            when (entry) {
+                is TrailEntry.Link -> TrailLinkItem(entry.link, entry.first)
+                is TrailEntry.Step -> {
+                    val open = entry.step.index == openIndex
+                    TrailStepItem(entry.last, open) { step(entry.step, open) }
+                }
+            }
+        }
+        notes.forEach { note ->
+            item {
+                Text(note, style = MaterialTheme.typography.bodySmall, color = Ink.TextMuted, modifier = Modifier.padding(top = 16.dp))
+            }
+        }
+    }
 }
 
 /** A link on the trail, with its dot. [first] is the first item of the trail, which has no gap above it. */
