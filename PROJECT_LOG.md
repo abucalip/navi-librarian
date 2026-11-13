@@ -1,3 +1,13 @@
+## 2026-11-13 — Radio stage 2 documents, S2-0 (PR #1047)
+
+- PR [#1047](https://github.com/abucalip/navi-librarian/pull/1047), merged as `567932f50c6a1053e3337deea3543ff55deeb388`. Docs only: `RADIO_PLAYBACK_CONTRACT.md` section 5 (owner choices, corrections, request budget, live playback rules, Download states, slices) and section 11 (owner's deployment report); `MACOS_CLIENT_CONTRACT.md` scope and window list; `macos/DESIGN.md` "Radio (stage 2)"; `ACTIVE_WORK.md` slice lines.
+- Checks: relative links in the four files resolve; `git diff --check` clean. No code, tests or CI-relevant files changed.
+- The owner's deployment checks are recorded as reported by the owner; not re-run by the agent.
+- Follow-up on `main` (docs only, same rule): the active queue now says stage 2 started and S2-0 merged, with this log entry.
+- Next: S2-1 (stations, Radio page, favourites, tags) on the Mac.
+
+---
+
 ## 2026-11-13 — Archive completed proposals and plans
 
 - Reviewed the current GitHub `main`, recent commits, open PR search results, the project status and active-work queue, requirements, development workflow, test plan, and the candidate proposal/plan documents.
