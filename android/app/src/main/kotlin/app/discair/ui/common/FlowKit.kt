@@ -26,6 +26,20 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.BlurEffect
+import androidx.compose.ui.graphics.TileMode
+import androidx.compose.ui.graphics.drawscope.translate
+import androidx.compose.ui.graphics.layer.GraphicsLayer
+import androidx.compose.ui.graphics.layer.drawLayer
+import androidx.compose.ui.graphics.rememberGraphicsLayer
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -63,8 +77,11 @@ object FlowRules {
     /** A list row is at least this high (dp). */
     const val ROW_MIN = 64f
 
-    /** The bars' fill is white at this alpha. Blur behind them is a later refinement (proposal D3). */
+    /** The bars' fill is white at this alpha, over the blurred page (proposal D3). */
     const val BAR_ALPHA = 0.86f
+
+    /** The blur behind the bars, in px of blur radius. */
+    const val BLUR_RADIUS = 24f
 
     /** The shadow elevation (dp) of a depth level: 1 cards and grouped lists, 2 the bars and snackbar, 3 the cover in front. */
     fun elevation(level: Int): Float = when (level) { 1 -> 4f; 2 -> 8f; else -> 16f }
@@ -87,9 +104,47 @@ fun Modifier.flowDepth(level: Int, shape: Shape, p: Palette): Modifier {
     return shadow(e, shape, clip = false, ambientColor = p.text.copy(alpha = 0.12f), spotColor = p.text.copy(alpha = if (level == 3) 0.5f else 0.3f))
 }
 
-/** A floating bar: translucent white, a 0.5dp hairline and level 2 depth. */
+/** A floating bar: the page behind it blurred, a translucent white over that, a 0.5dp hairline and level 2 depth. */
+@Composable
 fun Modifier.flowBar(shape: Shape, p: Palette): Modifier =
-    flowDepth(2, shape, p).clip(shape).background(FlowRules.barFill(p)).border(0.5.dp, Color.Black.copy(alpha = 0.08f), shape)
+    flowDepth(2, shape, p).clip(shape).flowBlurBehind().background(FlowRules.barFill(p)).border(0.5.dp, Color.Black.copy(alpha = 0.08f), shape)
+
+/**
+ * What the Flow bars blur (proposal D3). The page area records what it draws into [layer]; a bar draws that layer again, shifted to line up
+ * with where the bar sits, through a blur, under its own translucent fill. [origin] is the page area's position in the window.
+ */
+class FlowBackdrop(val layer: GraphicsLayer) {
+    var origin by mutableStateOf(Offset.Zero)
+}
+
+/** The backdrop the bars below the page area blur; null where there is none (the bars are then translucent only). */
+val LocalFlowBackdrop = staticCompositionLocalOf<FlowBackdrop?> { null }
+
+@Composable
+fun rememberFlowBackdrop(): FlowBackdrop {
+    val layer = rememberGraphicsLayer()
+    return remember(layer) { FlowBackdrop(layer) }
+}
+
+/** Marks the page area as what the bars blur: draws as usual and records the same drawing into the backdrop layer. */
+fun Modifier.flowBackdropSource(backdrop: FlowBackdrop): Modifier =
+    onGloballyPositioned { backdrop.origin = it.positionInRoot() }.drawWithContent {
+        backdrop.layer.record { this@drawWithContent.drawContent() }
+        drawLayer(backdrop.layer)
+    }
+
+@Composable
+private fun Modifier.flowBlurBehind(): Modifier {
+    val backdrop = LocalFlowBackdrop.current ?: return this
+    val blur = rememberGraphicsLayer()
+    var at by remember { mutableStateOf(Offset.Zero) }
+    return onGloballyPositioned { at = it.positionInRoot() }.drawWithContent {
+        blur.renderEffect = BlurEffect(FlowRules.BLUR_RADIUS, FlowRules.BLUR_RADIUS, TileMode.Clamp)
+        blur.record { translate(backdrop.origin.x - at.x, backdrop.origin.y - at.y) { drawLayer(backdrop.layer) } }
+        drawLayer(blur)
+        drawContent()
+    }
+}
 
 /** The Flow card: white, radius 16, level 1 depth. */
 fun Modifier.flowCard(p: Palette, shape: Shape = RoundedCornerShape(FlowRules.RADIUS_CARD.dp)): Modifier =

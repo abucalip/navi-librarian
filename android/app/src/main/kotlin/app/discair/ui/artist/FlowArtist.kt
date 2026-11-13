@@ -24,7 +24,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import android.app.Activity
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.ui.platform.LocalView
+import androidx.core.view.WindowCompat
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -68,7 +72,7 @@ private const val MISSING_SHOWN = 10
 /**
  * Flow's Artist page (mockup flow/album-artist-genre, frame 2): the photo runs full width behind the status bar with the name, the album count
  * and a round Play button over a dark fade at its foot, Top songs as plain rows, then strips of the albums in the library, the missing albums
- * (with Get) and similar artists. Shuffle, Play next, Add to queue and Paths, which the mockup has no button for, are in the three-dot menu.
+ * (with Get) and similar artists. Paths sits beside Play, as on the Soft Brut page; Shuffle, Play next and Add to queue are in the three-dot menu.
  * The data is [CoverStackArtistData], the same the Soft Brut page takes.
  */
 @Composable
@@ -82,9 +86,9 @@ internal fun FlowArtistContent(d: CoverStackArtistData, open: Opener, list: Lazy
             add("Play next" to { play.queueArtist(artistId, next = true) })
             add("Add to queue" to { play.queueArtist(artistId, next = false) })
         }
-        if (d.canPaths) add("Paths" to d.onPaths)
     }
     val owned = d.owned
+    LightStatusBarIcons()
     LazyColumn(Modifier.fillMaxSize(), state = list, contentPadding = PaddingValues(bottom = 32.dp + app.discair.ui.LocalBottomClearance.current)) {
         item {
             BoxWithConstraints(Modifier.fillMaxWidth()) {
@@ -107,6 +111,16 @@ internal fun FlowArtistContent(d: CoverStackArtistData, open: Opener, list: Lazy
                                 if (d.inLibrary) plural(d.ownedAlbumCount ?: 0, "album") + " in your library" else "Not in your library",
                                 color = Color.White.copy(alpha = 0.8f), style = MaterialTheme.typography.bodySmall,
                             )
+                        }
+                        // Paths beside Play, with Soft Brut's icon: a 44dp disc, a white glyph on 28% black as the bar's buttons are over the photo.
+                        if (d.canPaths) Box(
+                            Modifier.size(Target).clip(CircleShape).clickable(role = Role.Button, onClick = d.onPaths)
+                                .semantics { contentDescription = "Paths from ${d.name}" },
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Box(Modifier.size(44.dp).background(Color.Black.copy(alpha = 0.28f), CircleShape), contentAlignment = Alignment.Center) {
+                                Icon(PlayerIcons.Paths, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
+                            }
                         }
                         if (artistId != null) Box(
                             Modifier.size(Target).clip(CircleShape).clickable(role = Role.Button) { play.playArtist(artistId, shuffle = false) }
@@ -237,4 +251,35 @@ private fun MissingCard(artist: String, album: MissingAlbum, open: Opener) {
         }
         GetAlbumButton(artist, album.name, pageMetadata(artist, album.name, album.year))
     }
+}
+
+/**
+ * The status bar's icons are white while this page is showing, because the photo runs behind them, and go back to what the theme set when the
+ * page leaves. (The app draws edge to edge; on a light theme the icons are dark, which would vanish on a dark photo.)
+ */
+@Composable
+private fun LightStatusBarIcons() {
+    val view = LocalView.current
+    if (view.isInEditMode) return
+    DisposableEffect(view) {
+        val window = (view.context as? Activity)?.window
+        val controller = window?.let { WindowCompat.getInsetsController(it, view) }
+        // Two artist pages can overlap while one replaces the other, so the theme's own setting is kept from the first and put back by the last.
+        if (controller != null) {
+            if (StatusBarOwners.count == 0) StatusBarOwners.theme = controller.isAppearanceLightStatusBars
+            StatusBarOwners.count++
+            controller.isAppearanceLightStatusBars = false
+        }
+        onDispose {
+            if (controller != null) {
+                StatusBarOwners.count--
+                if (StatusBarOwners.count == 0) controller.isAppearanceLightStatusBars = StatusBarOwners.theme
+            }
+        }
+    }
+}
+
+private object StatusBarOwners {
+    var count = 0
+    var theme = false
 }
