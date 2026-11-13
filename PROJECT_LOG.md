@@ -1,3 +1,10 @@
+## 2026-11-13 — Radio stage 2, S2-1 items 4 to 6: rules, stations model, navigation (PR #1050)
+
+- PR [#1050](https://github.com/abucalip/navi-librarian/pull/1050), merged as `579fbc9268d146674d17e71ebb22754fc3603334`. `macos/Sources/DiscairUI/Model/Stations.swift`: `StationRules` (row sentence, tag chips, tag checks) and `DownloadState` (S2.7 table, Owned first), pure. `StationsModel` (`AppState.stations`, behind a `StationsSource` protocol): list in server order, live titles, tag filter, loading/empty/error states, S2.5 polling (list once a minute, titles every 15 s) driven by `pageVisible`; favourite and tag changes show at once, send, then reload, and a refusal restores the old value with the server's sentence. `Screen.stations` and the sidebar row "Radio" under Library. No server change.
+- Changed from the plan: no Go/View menu entry (no other page has one; E2 not chosen). `CupertinoStations` is a placeholder (title and count) so the new `Screen` case compiles. `pageVisible` follows the screen only; window hidden or minimised comes with the page.
+- Tests actually run: `swift test --filter "StationRulesTests|StationsModelTests"` passed locally, 37 tests. Full suite not run (owner rule). No macOS CI exists. Nothing was looked at in a window; no render test yet (item 7).
+- Not done: S2-1 items 7 to 10 (the page, Edit Tags, states, render test).
+
 ## 2026-11-13 — Radio stage 2, S2-1 items 2 and 3: client calls and tests (PR #1049)
 
 - PR [#1049](https://github.com/abucalip/navi-librarian/pull/1049), merged as `8695091a78ce981ff26a703138d6490dd8e53e5d`. `macos/Sources/DiscairLibrarian/RadioClient.swift`: `radioStations`, `radioNow(station:)`, `radioNowAll`, `setRadioFavourite`, `setRadioTags`, `radioLogo(station:size:)`, `radioScrobbling`, `setRadioScrobbling`, `uploadRadioLogo`, `resetRadioLogo`, `radioSettings` (`RadioSettings`, `RadioLogoSize`). No server change.
