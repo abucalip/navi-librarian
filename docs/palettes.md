@@ -1,6 +1,6 @@
 # Colour palettes for Soft Brut and Flow (plan)
 
-Status: **P1 built (Soft Brut day, PR #1043); P2 to P5 not built.** The owner picked the palettes on 2026-11-13. This document is the spec for the implementer: the palette ids, every colour code, the mockups, and the code that has to change so the existing Soft Brut and Flow themes can be drawn in each palette.
+Status: **P1 (PR #1043), P2 and P3 (PR #1044) built; P4 and P5 not built.** The owner picked the palettes on 2026-11-13. This document is the spec for the implementer: the palette ids, every colour code, the mockups, and the code that has to change so the existing Soft Brut and Flow themes can be drawn in each palette.
 
 ## 1. What the owner asked for
 

@@ -1,3 +1,9 @@
+## 2026-11-13 — Colour palettes P2 and P3: Soft Brut night and Flow day palettes (PR #1044)
+
+- Merged as `e3c804eafa2c5ef608e99646888a3ddceefe7907` from head `e960749b25638ede830db30cb59c35ec0cbf51c6`; required CI passed (compile, container-smoke, test-and-build, validate-container). `Palette.kt` gained `SoftBrutMidnightMint`, `SoftBrutPlumPeach`, `SoftBrutNavySky` (in `Palettes.Dark`) and `FlowForest`, `FlowRaspberry`, `FlowViolet` (after `Flow` in `Palettes.Light`). Cover Stack content on an accent fill now uses `onAccent` (nav cell icon, Home and Discover tags, Discover small buttons). `FlowRules.switchOff` and `FlowRules.chevron` replace the two Flow literals; the current `flow` palette keeps its values.
+- Verified, filtered (JDK 17): `SoftBrutTest`, `FlowTest`, `PaletteTest` (counts 39/25/14), `ExistingLayoutsTest`, `AppearanceRulesTest`. Full suite not run. Not seen on a device; no screenshot comparison. On night palettes `accentText` is the accent (it passes 4.5:1 on the dark page), so the test asserts that instead of `text`.
+- Next action: P4 (Flow night palettes, the bar hairline and the night checks of section 5.3).
+
 ## 2026-11-13 — Colour palettes P1: Soft Brut day palettes (PR #1043)
 
 - Merged as `398cbb0ba925c9875d1f725ded595f9705414c24` from head `6628c4f5aaacb0d7d3ffe52e634df5acc9b38dee`; required CI passed (compile, container-smoke, test-and-build, validate-container). `Palette.kt` gained `SoftBrutMint`, `SoftBrutPeach`, `SoftBrutSky`, `SoftBrutLemon` (values from `docs/design/android-art-themes/palettes/roles.md`), listed after `SoftBrut` in `Palettes.Light`. No screen code changed.
