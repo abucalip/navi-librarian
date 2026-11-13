@@ -1,3 +1,10 @@
+## 2026-11-13 — Radio stage 2, S2-1 item 1: decoders (PR #1048)
+
+- PR [#1048](https://github.com/abucalip/navi-librarian/pull/1048), merged as `8c17aaae5a7a1b8dc770063e72b1dfdfdec4971c`. `macos/Sources/DiscairLibrarian/Radio.swift`: `RadioStation` (no `stream_url`; description, debug description and mirror leave the address out), `RadioNow` with `RadioNowState` (unknown words decode as `unknown`), `RadioNowAll`, `RadioScrobbling`; lossy list decoding.
+- Tests actually run: `swift test --skip-update --filter RadioDecoderTests`, 9 passed. Full suite not run (owner rule). No macOS CI exists.
+- Not covered yet: the client calls and their per-fixture tests (`RadioClientTests`) and the `radio_station_favourite`, `_tags` and `_logo` fixtures, which belong to item 2.
+- Next: S2-1 items 2 to 10.
+
 ## 2026-11-13 — Radio stage 2 documents, S2-0 (PR #1047)
 
 - PR [#1047](https://github.com/abucalip/navi-librarian/pull/1047), merged as `567932f50c6a1053e3337deea3543ff55deeb388`. Docs only: `RADIO_PLAYBACK_CONTRACT.md` section 5 (owner choices, corrections, request budget, live playback rules, Download states, slices) and section 11 (owner's deployment report); `MACOS_CLIENT_CONTRACT.md` scope and window list; `macos/DESIGN.md` "Radio (stage 2)"; `ACTIVE_WORK.md` slice lines.
