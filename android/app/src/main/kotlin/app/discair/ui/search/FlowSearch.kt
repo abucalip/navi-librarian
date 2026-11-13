@@ -1,5 +1,6 @@
 package app.discair.ui.search
 
+import app.discair.ui.common.FlowIcons
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -20,7 +21,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Icon
@@ -64,7 +64,6 @@ import app.discair.ui.common.Target
 import app.discair.ui.common.pageMetadata
 import app.discair.ui.common.routeKey
 import app.discair.ui.player.LocalPlayActions
-import app.discair.ui.player.PlayerIcons
 import app.discair.ui.theme.LocalPalette
 
 /*
@@ -105,7 +104,7 @@ private fun FlowSearchField(text: String, onText: (String) -> Unit, focus: Focus
         modifier.fillMaxWidth().height(FlowPagesRules.FIELD_HEIGHT.dp).clip(RoundedCornerShape(12.dp)).background(p.raised).padding(start = 12.dp),
         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Icon(Icons.Default.Search, contentDescription = null, tint = p.textMuted, modifier = Modifier.size(20.dp))
+        Icon(FlowIcons.Search, contentDescription = null, tint = p.textMuted, modifier = Modifier.size(20.dp))
         Box(Modifier.weight(1f), contentAlignment = Alignment.CenterStart) {
             if (text.isEmpty()) Text("Artists, albums, songs, genres", color = p.textMuted, maxLines = 1, style = MaterialTheme.typography.bodyLarge.copy(fontSize = 16.sp))
             BasicTextField(
@@ -118,7 +117,7 @@ private fun FlowSearchField(text: String, onText: (String) -> Unit, focus: Focus
             )
         }
         if (text.isNotEmpty()) IconButton(onClick = { onText("") }, Modifier.size(Target)) {
-            Icon(Icons.Default.Clear, contentDescription = "Clear search", tint = p.textMuted, modifier = Modifier.size(20.dp))
+            Icon(FlowIcons.Close, contentDescription = "Clear search", tint = p.textMuted, modifier = Modifier.size(20.dp))
         }
     }
 }
@@ -193,7 +192,7 @@ private fun FlowResultRow(r: SearchResult, open: Opener, modifier: Modifier = Mo
             }
             when {
                 ownedSong != null -> IconButton(onClick = { play.queueSong(ownedSong, next = false) }, Modifier.size(Target)) {
-                    Icon(PlayerIcons.QueueAdd, contentDescription = "Add ${r.name} to the queue", tint = p.text)
+                    Icon(FlowIcons.QueueAdd, contentDescription = "Add ${r.name} to the queue", tint = p.text)
                 }
                 r.type == "album" && !r.owned && artist != null -> FlowGetButton(artist, r.name, pageMetadata(artist, r.name, r.year))
                 go != null -> FlowChevron()

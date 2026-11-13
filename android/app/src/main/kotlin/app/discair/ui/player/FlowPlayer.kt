@@ -1,5 +1,6 @@
 package app.discair.ui.player
 
+import app.discair.ui.common.FlowIcons
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -65,6 +66,6 @@ fun FlowMiniPlayer(state: PlayerUiState, controller: PlayerController, onOpen: (
             Modifier.size(Target).clickable(role = Role.Button, onClick = controller::playPause)
                 .semantics { contentDescription = if (state.isPlaying) "Pause" else "Play" },
             contentAlignment = Alignment.Center,
-        ) { Icon(if (state.isPlaying) PlayerIcons.Pause else PlayerIcons.Play, contentDescription = null, modifier = Modifier.size(24.dp)) }
+        ) { Icon(if (state.isPlaying) FlowIcons.Pause else FlowIcons.Play, contentDescription = null, modifier = Modifier.size(24.dp)) }
     }
 }
