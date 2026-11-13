@@ -30,6 +30,7 @@ class ArtworkIndexTest {
         for ((type, slot) in index.slots) assertTrue("$type slot resolves", index.slotImage(type) != null && slot.imageId > 0)
         val booklet = index.booklet!!
         assertEquals(booklet.imageIds, index.bookletImages().map { it.imageId })
+        assertEquals(booklet, index.booklets.first())
         assertTrue(index.images.all { it.format in setOf("jpg", "png", "gif", "webp", "pdf") })
     }
 

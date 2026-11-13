@@ -209,7 +209,7 @@ struct PlayerBarCover<Cover: View>: View {
         .buttonStyle(.plain)
         .help(booklet == nil ? "Open Now Playing" : "Open the booklet")
         .accessibilityLabel(booklet == nil ? "Open Now Playing" : "Open booklet, \(booklet?.badgeText ?? "")")
-        .sheet(isPresented: $showing) { if let booklet { BookletSheet(booklet: booklet) { showing = false } } }
+        .sheet(isPresented: $showing) { if let all = index?.bookletViews, !all.isEmpty { BookletSheet(booklets: all) { showing = false } } }
         .task(id: "\(artist)|\(album)|\(store?.generation ?? 0)") {
             index = nil
             guard let store else { return }

@@ -13,6 +13,7 @@
     "body": {
       "best_front": null,
       "booklet": null,
+      "booklets": [],
       "images": [],
       "releases": {
         "empty": 1,

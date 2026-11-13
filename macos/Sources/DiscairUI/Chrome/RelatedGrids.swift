@@ -149,6 +149,7 @@ struct AlbumBookletTab: View {
     let state: AppState
     @Environment(\.artwork) private var store
     @State private var booklet: BookletView?
+    @State private var allBooklets: [BookletView] = []
     @State private var loaded = false
     @State private var showing = false
 
@@ -173,11 +174,11 @@ struct AlbumBookletTab: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .center)
-        .sheet(isPresented: $showing) { if let booklet { BookletSheet(booklet: booklet) { showing = false } } }
+        .sheet(isPresented: $showing) { if !allBooklets.isEmpty { BookletSheet(booklets: allBooklets) { showing = false } } }
         .task(id: "\(state.related.releaseGroupMBID ?? "")|\(store?.generation ?? 0)") {
-            booklet = nil; loaded = false
+            booklet = nil; allBooklets = []; loaded = false
             guard let rg = state.related.releaseGroupMBID, !rg.isEmpty, let store else { return }
-            if case .ready(let index) = await store.artworkIndex(rgid: rg, release: nil), !Task.isCancelled { booklet = index.bookletView }
+            if case .ready(let index) = await store.artworkIndex(rgid: rg, release: nil), !Task.isCancelled { booklet = index.bookletView; allBooklets = index.bookletViews }
             loaded = true
         }
     }
