@@ -1,0 +1,495 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="margin:0">
+<title>Flow and Soft Brut Palettes</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@700&display=swap">
+<style>
+/* Layout: one section per theme; a Day row and a Night row of palette cards, then three phone frames that take the selected palette. */
+:root{--pk-bg:#ECEAE4;--pk-panel:#F7F6F2;--pk-fg:#1B1B1F;--pk-mut:#5A5862;--pk-line:#CFCCC3;--pk-sel:#1B1B1F;--pk-frame:#101012;
+  --pk-display:'Space Grotesk',system-ui,sans-serif;--pk-body:Inter,system-ui,sans-serif;--pk-mono:'JetBrains Mono',ui-monospace,monospace}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--pk-bg:#17171A;--pk-panel:#202024;--pk-fg:#EEEDF0;--pk-mut:#A5A3AD;--pk-line:#3A3A41;--pk-sel:#EEEDF0;--pk-frame:#3A3A41;color-scheme:dark}}
+:root[data-theme="dark"]{--pk-bg:#17171A;--pk-panel:#202024;--pk-fg:#EEEDF0;--pk-mut:#A5A3AD;--pk-line:#3A3A41;--pk-sel:#EEEDF0;--pk-frame:#3A3A41;color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--pk-bg);color:var(--pk-fg);font:14px/1.5 var(--pk-body);padding-block:28px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.pk-wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:44px}
+.pk-intro h1{font:700 30px/1.1 var(--pk-display);letter-spacing:-.02em;margin:0 0 10px;text-wrap:balance}
+.pk-intro p,.pk-h p{margin:0;max-width:68ch;color:var(--pk-mut)}
+.pk-intro p+p{margin-top:6px}
+.pk-sec{display:flex;flex-direction:column;gap:18px}
+.pk-h h2{font:700 22px/1.2 var(--pk-display);letter-spacing:-.01em;margin:0 0 4px}
+.pk-row h3{font:500 12px/1 var(--pk-mono);letter-spacing:.08em;text-transform:uppercase;margin:0 0 10px;color:var(--pk-mut);display:flex;gap:12px;align-items:baseline;flex-wrap:wrap}
+.pk-count{letter-spacing:.02em;text-transform:none}
+.pk-count.pk-done{color:var(--pk-fg);font-weight:500}
+.pk-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:10px}
+.pk-card{background:var(--pk-panel);border:1px solid var(--pk-line);border-radius:12px;display:flex;flex-direction:column;min-width:0}
+.pk-card:has(.pk-show[aria-pressed="true"]){border-color:var(--pk-sel);box-shadow:0 0 0 1px var(--pk-sel)}
+.pk-show{all:unset;cursor:pointer;display:flex;flex-direction:column;gap:8px;padding:8px 8px 6px;border-radius:11px 11px 0 0}
+.pk-show:focus-visible,.pk-pick input:focus-visible,.pk-copy:focus-visible{outline:2px solid var(--pk-sel);outline-offset:2px}
+.pk-mini{display:flex;align-items:center;gap:8px;height:56px;padding:0 10px;border-radius:8px;background:var(--page);color:var(--text);font:700 18px/1 var(--pk-display)}
+.pk-mini em{font:600 11px/1 var(--pk-body);font-style:normal;padding:7px 10px;background:var(--accent);color:var(--on-accent)}
+.pk-mini u{flex:1;height:26px;background:var(--surface)}
+.pk-mini.pk-brut em,.pk-mini.pk-brut u{border:1.5px solid var(--edge);border-radius:6px;box-shadow:2px 2px 0 var(--shadow)}
+.pk-mini.pk-soft em{border-radius:99px}
+.pk-mini.pk-soft u{border-radius:8px;box-shadow:inset 0 0 0 .5px var(--hair)}
+.pk-meta{display:grid;grid-template-columns:auto 1fr;column-gap:8px;align-items:baseline}
+.pk-id{font:500 11px/1.4 var(--pk-mono);color:var(--pk-mut)}
+.pk-name{font-weight:600}
+.pk-note{grid-column:1/-1;font-size:12px;line-height:1.35;color:var(--pk-mut);min-height:2.7em}
+.pk-dots{display:flex;gap:3px}
+.pk-dots i{flex:1;height:12px;border-radius:3px;box-shadow:inset 0 0 0 1px var(--pk-line)}
+.pk-pick{display:flex;align-items:center;gap:8px;padding:8px 10px;border-top:1px solid var(--pk-line);font-weight:600;font-size:13px;cursor:pointer;min-height:40px}
+.pk-pick input{width:16px;height:16px;margin:0;accent-color:var(--pk-sel)}
+.pk-now{margin:0;font:500 12px/1.4 var(--pk-mono);color:var(--pk-mut)}
+.pk-phones{display:flex;flex-wrap:wrap;gap:20px}
+.pk-fig{margin:0}
+.pk-fig figcaption{font:500 12px/1 var(--pk-mono);color:var(--pk-mut);margin-bottom:8px}
+.pk-zoom{zoom:.74}
+.pk-zoom .phone{border-color:var(--pk-frame);transition:background-color .2s}
+@media (prefers-reduced-motion:reduce){.pk-zoom .phone{transition:none}}
+.pk-sum{background:var(--pk-panel);border:1px solid var(--pk-line);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:10px}
+.pk-sum h2{font:700 18px/1.2 var(--pk-display);margin:0}
+.pk-sum pre{margin:0;font:500 13px/1.6 var(--pk-mono);white-space:pre-wrap;user-select:all}
+.pk-copy{align-self:flex-start;font:600 13px/1 var(--pk-body);padding:10px 14px;border-radius:8px;border:1px solid var(--pk-sel);background:var(--pk-sel);color:var(--pk-bg);cursor:pointer}
+/* ---- the repo's mockup CSS, unchanged apart from three Flow literals turned into tokens ---- */
+/* phone frame */
+.phone{position:relative;width:378px;height:798px;border:9px solid #101012;border-radius:44px;overflow:hidden;background:var(--page);color:var(--text);font-family:var(--f-body);font-size:14px;line-height:20px}
+.scr{height:100%;overflow:hidden;display:flex;flex-direction:column;gap:16px}
+.scr>*{flex:none}
+.status{display:flex;justify-content:space-between;height:32px;align-items:flex-end;padding:0 22px;font-size:12px;font-weight:600}
+.dock{position:absolute;left:0;right:0;bottom:0;padding:0 12px 12px;display:flex;flex-direction:column;gap:8px;z-index:3}
+.scrim{position:absolute;inset:0;background:rgba(0,0,0,.4);z-index:4}
+.sheet{position:absolute;left:0;right:0;bottom:0;z-index:5;padding:10px 16px 24px;display:flex;flex-direction:column;gap:14px}
+.sheet::before{content:"";width:36px;height:4px;border-radius:2px;background:var(--muted);opacity:.5;align-self:center}
+.snack{position:absolute;left:12px;right:12px;bottom:150px;z-index:5;display:flex;align-items:center;gap:12px;padding:12px 14px}
+
+/* layout helpers */
+.pad{padding-inline:16px}
+.row{display:flex;align-items:center;gap:10px}
+.col{display:flex;flex-direction:column;gap:12px}
+.sp{flex:1;min-width:0}
+.ctr{text-align:center;justify-content:center}
+.hs{display:flex;gap:12px;overflow:hidden;padding-inline:16px}
+.hs>*{flex:none}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.g2>*{min-width:0}
+.wrapc{display:flex;flex-wrap:wrap;gap:8px}
+.el{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.phone p,.phone h2,.phone h3,.phone h4{margin:0}
+.phone svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.phone svg.f{fill:currentColor;stroke:none}
+.phone svg.s{width:18px;height:18px}
+.phone svg.chart{width:100%;height:auto;stroke-width:0}
+.mut{color:var(--muted)}
+.sm{font-size:12px;line-height:18px}
+.num{font-variant-numeric:tabular-nums}
+.ok{color:var(--ok)}.cau{color:var(--caution)}.dan{color:var(--danger)}
+
+/* stand-in cover art (the app shows the real covers) */
+.cv{aspect-ratio:1;display:block;flex:none}
+.k1{background:linear-gradient(#0000 78%,#0a1226 78%),repeating-linear-gradient(90deg,#16264a 0 13px,#22407c 13px 19px)}
+.k2{background:radial-gradient(circle at 50% 56%,#f7a23b 0 17%,#0000 17.5%),linear-gradient(#7a1f2b,#e9762b 56%,#3a1420 56%)}
+.k3{background:radial-gradient(circle,#0000 0 21%,#5fb8cf 22% 30%,#0000 31%),#132d33}
+.k4{background:radial-gradient(circle at 30% 30%,#7b5cff,#1a8fd1 55%,#0d2a66)}
+.k5{background:radial-gradient(ellipse 22% 26% at 50% 36%,#d98a45 0 98%,#0000 100%),linear-gradient(90deg,#0000 48.5%,#5b3a23 48.5% 51.5%,#0000 51.5%),linear-gradient(#dfe6ea 80%,#6b4a2f 80%)}
+.k6{background:conic-gradient(from 45deg,#ff6fa3,#ffd84d,#ff6fa3,#7ad7f0,#ff6fa3)}
+.k7{background:linear-gradient(160deg,#0f3d2e,#3fa36c 60%,#e8d77a)}
+.k8{background:repeating-radial-gradient(circle at 50% 120%,#111 0 9px,#e9e6dc 9px 10px)}
+.k9{background:linear-gradient(135deg,#b3186d,#f08a4b)}
+.k10{background:radial-gradient(circle at 60% 55%,#2747c7 0 28%,#0000 28.5%),#e9dcc3}
+.k11{background:linear-gradient(90deg,#f2c230 50%,#0e6b6b 50%)}
+.k12{background:linear-gradient(200deg,#cfd6dd,#6f7c8a 60%,#2b323a)}
+/* stand-in artist photos */
+.ar{display:block;flex:none;aspect-ratio:1;background:radial-gradient(circle at 50% 40%,var(--h) 0 17%,#0000 17.6%),radial-gradient(ellipse 44% 36% at 50% 102%,var(--h) 0 98%,#0000 100%),var(--b)}
+.a1{--b:linear-gradient(#e9a13b,#c2541c);--h:#3a1a12}
+.a2{--b:linear-gradient(#9fc4e8,#3b5fa8);--h:#12203f}
+.a3{--b:linear-gradient(#d8d2c4,#8d8676);--h:#2a2722}
+.a4{--b:linear-gradient(#f3a6c4,#a8387a);--h:#3d0f2b}
+.a5{--b:linear-gradient(#a9e0c1,#2f7f63);--h:#0e2f25}
+.a6{--b:linear-gradient(#c9b8f5,#5b45b8);--h:#1d1447}
+/* stand-in station logos */
+.lg{width:48px;height:48px;display:grid;place-items:center;font-weight:800;font-size:13px;color:#fff;flex:none}
+.l1{background:#d6336c}.l2{background:#1c7ed6}.l3{background:#2b8a3e}.l4{background:#5f3dc4}.l5{background:#e67700}
+
+/* structure only; each theme gives these their look */
+.top{display:flex;align-items:center;gap:6px;padding:4px 16px 0;min-height:48px}
+.bar{display:flex;align-items:center;gap:4px;padding:4px 8px 0;min-height:48px}
+.ib{width:44px;height:44px;display:grid;place-items:center;position:relative;flex:none}
+.bdg{position:absolute;font-style:normal;min-width:16px;height:16px;border-radius:8px;font-size:10px;font-weight:700;display:grid;place-items:center}
+.h{display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding-inline:16px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;white-space:nowrap}
+.tabs{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;text-align:center}
+.chip{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.li{display:flex;align-items:center;gap:12px;min-height:64px}
+.nav{display:grid;grid-template-columns:repeat(4,1fr)}
+.nav span{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px}
+.mini{display:flex;align-items:center;gap:10px;height:56px}
+.mini .cv{width:40px}
+.sw{position:relative;width:52px;height:32px;flex:none}
+.sw::after{content:"";position:absolute;top:50%;transform:translateY(-50%);border-radius:50%}
+.trk{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
+.trkn{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;font-size:11px;line-height:16px}
+.seek{position:relative}
+.ctl{display:flex;align-items:center;justify-content:space-between}
+.cb{display:grid;place-items:center}
+.bars{display:flex;flex-direction:column;gap:10px}
+.bars div{display:grid;grid-template-columns:92px 1fr 40px;gap:10px;align-items:center}
+.eq{display:grid;grid-template-columns:repeat(10,1fr);gap:6px;height:150px;align-items:end}
+.eq i{position:relative;height:100%}
+.sk{display:block;background:var(--raised)}
+.swt{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.swt div{display:flex;flex-direction:column;gap:6px;font-size:12px;line-height:16px}
+.swt i{display:block;height:56px}
+
+/*
+ * Soft Brut · Lavender. Subtle neobrutalism: a 1.5dp ink outline, a 3dp hard ink shadow, pastel fills, mono labels.
+ * The outline goes on the artwork first; surfaces around it stay quiet. All values are dp (1 CSS px = 1 dp).
+ * The token block is the spec: docs/ANDROID_ART_THEMES_PROPOSAL.md section 3 maps each token to a Palette role.
+ */
+.sb{
+  /* colour roles */
+  --page:#FBF7EE; --rail:#FBF7EE; --surface:#FFFFFF; --raised:#F1EBDD;
+  --edge:#1C1B22; --edge-soft:#D8D2C4; --text:#1C1B22; --muted:#5E5A6B;
+  --accent:#C4B5FD; --accent-dim:#ECE6FF; --on-accent:#1C1B22;
+  --accent2:#BFD9FF; --accent3:#A6E9CB; --accent4:#FFD84D;
+  --shadow:#1C1B22;
+  --ok:#1B6B33; --ok-dim:#D9EEDD; --caution:#7F4A00; --caution-dim:#FBE9C4;
+  --danger:#B3261E; --danger-dim:#F8D9D5; --info:#1D4FB8; --info-dim:#DCE5FB;
+  --chart1:#C4B5FD; --chart2:#8B879A; --chart3:#FFFFFF; --chart-ghost:#F1EBDD; --chart-grid:#D8D2C4; --chart-base:#1C1B22;
+  /* shape */
+  --ol:1.5px; --sh:3px; --r:10px; --r-sm:6px; --r-lg:14px; --r-pill:999px;
+  /* type */
+  --f-display:'Space Grotesk',system-ui,sans-serif; --f-body:'Inter',system-ui,sans-serif; --f-label:'JetBrains Mono',ui-monospace,monospace;
+}
+.sb h2{font:700 26px/30px var(--f-display);letter-spacing:-.01em}
+.sb h3{font:700 18px/24px var(--f-display);letter-spacing:-.01em}
+.sb h4{font:600 14px/20px var(--f-body)}
+.sb .lt{font:700 26px/32px var(--f-display);letter-spacing:-.02em}
+.sb .wm{font-size:22px;letter-spacing:-.04em}
+.sb .eb{font:500 11px/16px var(--f-label);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.sb .h a,.sb .lk{font-weight:600;font-size:13px;text-decoration:underline;text-underline-offset:3px;color:var(--text)}
+.sb .numeral{font:700 28px/32px var(--f-display)}
+
+/* the one outline-and-shadow recipe */
+.sb .card,.sb .btn,.sb .mini,.sb .nav,.sb .field,.sb .tabs,.sb .sheet,.sb .snack,.sb .cb,.sb .tile{border:var(--ol) solid var(--edge);box-shadow:var(--sh) var(--sh) 0 var(--shadow);background:var(--surface);border-radius:var(--r)}
+.sb .cv,.sb .ar,.sb .lg{border:var(--ol) solid var(--edge);border-radius:var(--r-sm)}
+.sb .cv.lgc{border-radius:12px;box-shadow:4px 4px 0 var(--shadow)}
+.sb .ar.rd{border-radius:50%}
+.sb .card{padding:12px}
+.sb .tile{padding:12px;border-radius:var(--r-lg)}
+.sb .tile.radio{background:var(--accent2)}
+
+.sb .bdg{top:4px;right:2px;border:var(--ol) solid var(--edge);background:var(--accent);color:var(--on-accent)}
+.sb .btn{height:44px;padding:0 16px;font-weight:700;font-size:14px;color:var(--text)}
+.sb .btn.p{background:var(--accent);color:var(--on-accent)}
+.sb .btn.sq{width:44px;padding:0}
+.sb .btn.sm{height:36px;padding:0 12px;font-size:13px}
+.sb .btn.d{color:var(--danger)}
+.sb .tag{font:500 10px/14px var(--f-label);letter-spacing:.07em;text-transform:uppercase;border:var(--ol) solid var(--edge);border-radius:var(--r-sm);padding:2px 7px;background:var(--accent3);color:var(--text);display:inline-block}
+.sb .tag.y{background:var(--accent4)}.sb .tag.a{background:var(--accent)}
+.sb .chip{height:36px;padding:0 13px;border:var(--ol) solid var(--edge);border-radius:var(--r-pill);font-weight:600;font-size:13px;background:var(--surface)}
+.sb .chip.on{background:var(--accent)}
+.sb .tabs{overflow:hidden;margin-inline:16px}
+.sb .tabs span{height:40px;display:grid;place-items:center;font-weight:700;font-size:13px;border-right:var(--ol) solid var(--edge)}
+.sb .tabs span:last-child{border:0}
+.sb .tabs .on{background:var(--accent)}
+.sb .field{height:52px;margin-inline:16px;display:flex;align-items:center;gap:10px;padding:0 14px;font-size:16px}
+.sb .list{display:flex;flex-direction:column;padding-inline:16px}
+.sb .li{border-bottom:var(--ol) dashed var(--edge-soft)}
+.sb .li:last-child{border:0}
+.sb .list.card{margin-inline:16px;padding:0 12px}
+.sb .li .cv,.sb .li .ar{width:48px}
+.sb .li.on{background:var(--accent-dim);margin-inline:-12px;padding-inline:12px}
+.sb .ic{width:36px;height:36px;display:grid;place-items:center;border:var(--ol) solid var(--edge);border-radius:var(--r-sm);background:var(--accent-dim);flex:none}
+.sb .ic svg{width:20px;height:20px}
+.sb .prog{height:10px;border:var(--ol) solid var(--edge);border-radius:var(--r-sm);background:var(--surface);overflow:hidden}
+.sb .prog i{display:block;height:100%;background:var(--accent);border-right:var(--ol) solid var(--edge)}
+.sb .trk i{height:10px;border:var(--ol) solid var(--edge);border-radius:3px;background:var(--surface)}
+.sb .trk i.on{background:var(--accent)}
+.sb .trk i.bad{background:var(--danger-dim)}
+.sb .sw{border:var(--ol) solid var(--edge);border-radius:16px;background:var(--surface)}
+.sb .sw::after{left:4px;width:20px;height:20px;border:var(--ol) solid var(--edge);background:var(--raised)}
+.sb .sw.on{background:var(--accent)}
+.sb .sw.on::after{left:auto;right:4px;background:var(--surface)}
+.sb .stat{font:500 11px/16px var(--f-label);letter-spacing:.04em;border-top:var(--ol) dashed var(--edge);border-bottom:var(--ol) dashed var(--edge);padding:10px 0;display:flex;justify-content:space-between;gap:8px;text-transform:uppercase}
+.sb .banner{margin-inline:16px;padding:10px 12px;border:var(--ol) solid var(--edge);border-radius:var(--r);background:var(--caution-dim);display:flex;gap:10px;align-items:center}
+.sb .cap b{display:block;font-weight:700;font-size:14px}
+.sb .cap span{font-size:12px;line-height:18px;color:var(--muted)}
+.sb .who{width:72px;text-align:center;font-size:12px;line-height:16px;font-weight:600}
+.sb .who .ar{width:68px;margin:0 auto 6px}
+
+/* dock */
+.sb .mini{padding:0 12px 0 7px}
+.sb .nav{padding:5px;gap:4px;border-radius:var(--r-lg)}
+.sb .nav span{height:50px;border-radius:9px;font-size:11px;font-weight:600;border:var(--ol) solid #0000}
+.sb .nav .on{background:var(--accent);border-color:var(--edge)}
+.sb .sheet{border-radius:var(--r-lg) var(--r-lg) 0 0;border-bottom:0;box-shadow:none}
+.sb .snack{background:var(--text);color:var(--page)}
+.sb .snack .lk{color:var(--page)}
+
+/* Home: the cover stack */
+.sb .stack{position:relative;height:262px;margin:2px 60px 0 34px}
+.sb .stack .cv{position:absolute;width:248px;border-radius:12px}
+.sb .stack .b2{left:34px;top:18px;transform:rotate(5deg)}
+.sb .stack .b1{left:18px;top:10px;transform:rotate(2.5deg)}
+.sb .stack .f{left:0;top:0;box-shadow:4px 4px 0 var(--shadow)}
+.sb .stack .sk{border:var(--ol) solid var(--edge)}
+
+/* Discover cards: two columns, cover on top */
+.sb .cards{display:grid;grid-template-columns:1fr 1fr;gap:14px;padding-inline:16px}
+.sb .dc{display:flex;flex-direction:column;gap:6px;min-width:0}
+.sb .dc .cv{width:100%;border-radius:var(--r)}
+.sb .dc .acts{display:flex;gap:8px;margin-top:2px}
+.sb .dc .acts .btn{height:36px;padding:0 10px;font-size:13px;flex:1}
+.sb .dc .acts .btn.sq{flex:none;width:36px}
+
+/* Album and artist headers: art left-aligned, stacked on a tilted second sleeve */
+.sb .hero{display:flex;flex-direction:column;gap:12px;padding-inline:16px}
+.sb .hero .art{position:relative;width:216px;height:216px;margin:4px 0 6px 6px}
+.sb .hero .art .cv{position:absolute;inset:0;border-radius:12px;box-shadow:4px 4px 0 var(--shadow)}
+.sb .hero .art::before{content:"";position:absolute;inset:0;border:var(--ol) solid var(--edge);border-radius:12px;background:var(--accent);transform:translate(12px,8px) rotate(4deg)}
+.sb .ahero{display:flex;gap:14px;align-items:center;padding-inline:16px}
+.sb .ahero .ar{width:120px;border-radius:50%;box-shadow:4px 4px 0 var(--shadow)}
+.sb .trow{display:grid;grid-template-columns:24px 1fr auto;gap:10px;align-items:center;min-height:52px;border-bottom:var(--ol) dashed var(--edge-soft)}
+.sb .trow.on{background:var(--accent-dim);margin-inline:-16px;padding-inline:16px;border-bottom-style:solid;border-color:var(--edge);border-top:var(--ol) solid var(--edge)}
+
+/* Now Playing */
+.sb.np .npc{width:296px;margin:0 auto;border-radius:14px;box-shadow:5px 5px 0 var(--shadow)}
+.sb .seek{height:12px;border:var(--ol) solid var(--edge);border-radius:var(--r-sm);background:var(--surface)}
+.sb .seek i{position:absolute;left:0;top:0;bottom:0;background:var(--accent);border-right:var(--ol) solid var(--edge);border-radius:4px 0 0 4px}
+.sb .seek b{position:absolute;top:-6px;width:16px;height:21px;margin-left:-8px;border:var(--ol) solid var(--edge);border-radius:4px;background:var(--surface);box-shadow:2px 2px 0 var(--shadow)}
+.sb .cb{width:48px;height:48px}
+.sb .cb.main{width:68px;height:68px;background:var(--accent);border-radius:var(--r-lg)}
+.sb .cb.flat{border:0;box-shadow:none;background:none}
+.sb .lyr p{font:700 20px/28px var(--f-display);color:var(--muted)}
+.sb .lyr p.on{color:var(--text);background:var(--accent);display:inline;padding:2px 4px;box-decoration-break:clone;-webkit-box-decoration-break:clone}
+
+/* charts and bars */
+.sb .bars i{height:14px;border:var(--ol) solid var(--edge);border-radius:3px;background:var(--surface);display:block}
+.sb .bars i.on{background:var(--accent)}
+.sb .eq i{border:var(--ol) solid var(--edge);border-radius:4px;background:var(--surface)}
+.sb .eq i::after{content:"";position:absolute;left:-1.5px;right:-1.5px;bottom:-1.5px;height:var(--v);background:var(--accent);border:var(--ol) solid var(--edge);border-radius:4px}
+.sb .swt i{border:var(--ol) solid var(--edge);border-radius:var(--r)}
+.sb .swt .on i{box-shadow:var(--sh) var(--sh) 0 var(--shadow)}
+.sb .sk{border-radius:var(--r-sm)}
+
+/*
+ * Flow · Warm white. An iOS-inspired theme: no outlines, no hard shadows. Large titles, continuous corners, soft depth,
+ * translucent bars, capsule buttons, grouped lists. The artwork supplies the colour. All values are dp (1 CSS px = 1 dp).
+ * The token block is the spec: docs/ANDROID_ART_THEMES_PROPOSAL.md section 4 maps each token to a Palette role.
+ */
+.fl{
+  /* colour roles */
+  --page:#FBFAF7; --rail:#FBFAF7; --surface:#FFFFFF; --raised:#EFECE5;
+  --edge:#E2DFD6; --edge-strong:#8E887B; --text:#15130F; --muted:#6F6A60;
+  --accent:#C2410C; --accent-dim:#FBE4D5; --on-accent:#FFFFFF;
+  --ok:#1E7A3C; --ok-dim:#DCEEDF; --caution:#8A5300; --caution-dim:#F8E8CC;
+  --danger:#C0271A; --danger-dim:#F9DCD8; --info:#1F5FBF; --info-dim:#DCE7F8;
+  --chart1:#C2410C; --chart2:#A8A296; --chart3:#D9D4C8; --chart-ghost:#EFECE5; --chart-grid:#E2DFD6; --chart-base:#8E887B;
+  --bar:rgba(255,255,255,.86); --hair:rgba(0,0,0,.08);
+  /* shape and depth */
+  --r-card:16px; --r-cover:14px; --r-cover-sm:8px; --r-pill:999px;
+  --e1:0 4px 14px -10px rgba(21,19,15,.30);            /* cards, grouped lists */
+  --e2:0 6px 22px -8px rgba(21,19,15,.30);             /* floating bars */
+  --e3:0 22px 34px -18px rgba(21,19,15,.60);           /* the cover in front */
+  /* type */
+  --f-display:'Inter',system-ui,sans-serif; --f-body:'Inter',system-ui,sans-serif; --f-label:'Inter',system-ui,sans-serif;
+}
+.fl{letter-spacing:-.01em}
+.fl h2{font:700 24px/28px var(--f-display);letter-spacing:-.02em}
+.fl h3{font:700 20px/24px var(--f-display);letter-spacing:-.02em}
+.fl h4{font:600 15px/20px var(--f-body)}
+.fl .lt{font:800 30px/36px var(--f-display);letter-spacing:-.03em}
+.fl .wm{font-size:26px}
+.fl .eb{font:600 12px/16px var(--f-label);letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
+.fl .h a,.fl .lk{font-weight:500;font-size:14px;color:var(--accent)}
+.fl .numeral{font:700 28px/32px var(--f-display);letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+
+.fl .cv{border-radius:var(--r-cover-sm)}
+.fl .cv.lgc{border-radius:var(--r-cover);box-shadow:var(--e3)}
+.fl .ar.rd{border-radius:50%}
+.fl .lg{border-radius:10px}
+.fl .card,.fl .tile{background:var(--surface);border-radius:var(--r-card);box-shadow:var(--e1);padding:14px}
+.fl .ib{width:36px;height:36px;border-radius:50%;background:var(--raised);margin-left:6px}
+.fl .ib svg{width:20px;height:20px}
+.fl .bar .ib{background:none;margin:0;width:44px;height:44px;color:var(--accent)}
+.fl .bdg{top:-3px;right:-3px;background:var(--accent);color:var(--on-accent)}
+.fl .btn{height:44px;padding:0 18px;border-radius:22px;font-weight:600;font-size:15px;background:var(--raised);color:var(--text)}
+.fl .btn.p{background:var(--accent);color:var(--on-accent)}
+.fl .btn.t{color:var(--accent)}
+.fl .btn.sq{width:44px;padding:0}
+.fl .btn.sm{height:34px;padding:0 14px;font-size:14px}
+.fl .btn.d{color:var(--danger)}
+.fl .tag{font:600 11px/16px var(--f-label);letter-spacing:.03em;text-transform:uppercase;border-radius:6px;padding:2px 7px;background:var(--raised);color:var(--muted);display:inline-block}
+.fl .tag.y{background:var(--caution-dim);color:var(--caution)}.fl .tag.a{background:var(--accent-dim);color:var(--accent)}
+.fl .chip{height:34px;padding:0 14px;border-radius:17px;font-weight:500;font-size:14px;background:var(--raised)}
+.fl .chip.on{background:var(--text);color:var(--page)}
+.fl .tabs{margin-inline:16px;background:var(--raised);border-radius:11px;padding:2px;font-size:13px;font-weight:600}
+.fl .tabs span{padding:7px 0;border-radius:9px}
+.fl .tabs .on{background:var(--surface);box-shadow:0 2px 6px -2px rgba(0,0,0,.25)}
+.fl .field{height:44px;margin-inline:16px;display:flex;align-items:center;gap:8px;padding:0 12px;font-size:16px;background:var(--raised);border-radius:12px}
+.fl .field svg{width:20px;height:20px;color:var(--muted)}
+.fl .list{display:flex;flex-direction:column;padding-inline:16px}
+.fl .li{border-bottom:.5px solid var(--edge)}
+.fl .li:last-child{border:0}
+.fl .list.card{margin-inline:16px;padding:0 12px}
+.fl .li .cv,.fl .li .ar{width:48px}
+.fl .li.on h4{color:var(--accent)}
+.fl .ic{width:32px;height:32px;border-radius:8px;display:grid;place-items:center;background:var(--raised);flex:none}
+.fl .ic svg{width:18px;height:18px}
+.fl .chev{width:16px!important;height:16px!important;color:var(--chev,#B5B0A5);stroke-width:2.4!important}
+.fl .prog{height:4px;border-radius:2px;background:var(--raised);overflow:hidden}
+.fl .prog i{display:block;height:100%;background:var(--accent);border-radius:2px}
+.fl .trk i{height:4px;border-radius:2px;background:var(--raised)}
+.fl .trk i.on{background:var(--accent)}
+.fl .trk i.bad{background:var(--danger)}
+.fl .sw{border-radius:16px;background:var(--sw-off,#D9D5CB)}
+.fl .sw::after{left:2px;width:28px;height:28px;background:#fff;box-shadow:0 2px 5px rgba(0,0,0,.25)}
+.fl .sw.on{background:var(--ok)}
+.fl .sw.on::after{left:auto;right:2px}
+.fl .banner{margin-inline:16px;padding:10px 12px;border-radius:12px;background:var(--caution-dim);display:flex;gap:10px;align-items:center}
+.fl .cap b{display:block;font-weight:600;font-size:14px}
+.fl .cap span{font-size:13px;line-height:18px;color:var(--muted)}
+.fl .who{width:84px;text-align:center;font-size:12px;line-height:16px;font-weight:500}
+.fl .who .ar{width:80px;margin:0 auto 6px}
+
+/* dock: translucent capsules */
+.fl .mini,.fl .nav{background:var(--bar);-webkit-backdrop-filter:blur(22px) saturate(1.6);backdrop-filter:blur(22px) saturate(1.6);box-shadow:var(--e2),inset 0 0 0 .5px var(--hair)}
+.fl .mini{border-radius:18px;padding:0 14px 0 8px}
+.fl .mini .cv{border-radius:9px}
+.fl .nav{border-radius:30px;padding:5px}
+.fl .nav span{height:50px;border-radius:25px;font-size:10.5px;font-weight:600;color:var(--muted)}
+.fl .nav .on{color:var(--accent);background:var(--raised)}
+.fl .sheet{background:var(--surface);border-radius:24px 24px 0 0}
+.fl .snack{background:var(--text);color:var(--page);border-radius:14px;box-shadow:var(--e2)}
+.fl .snack .lk{color:#FFB48A}
+
+/* Home: the cover carousel and portrait cards */
+.fl .flow{position:relative;height:236px;overflow:hidden}
+.fl .flow .cv{position:absolute;top:50%;border-radius:var(--r-cover)}
+.fl .flow .c{width:220px;left:50%;transform:translate(-50%,-50%);box-shadow:var(--e3);z-index:2}
+.fl .flow .s{width:160px;opacity:.75;transform:translateY(-50%)}
+.fl .flow .s.lf{left:-70px}.fl .flow .s.rt{right:-70px}
+.fl .pc{width:150px;border-radius:18px;overflow:hidden;position:relative}
+.fl .pc .ar{width:100%;aspect-ratio:3/4}
+.fl .pc b{position:absolute;left:0;right:0;bottom:0;padding:26px 12px 10px;color:#fff;font-size:14px;background:linear-gradient(#0000,rgba(0,0,0,.7))}
+
+/* Discover cards: one column, cover left */
+.fl .cards{display:flex;flex-direction:column;gap:12px;padding-inline:16px}
+.fl .dc{display:grid;grid-template-columns:112px 1fr;grid-template-rows:auto auto auto 1fr;column-gap:14px;background:var(--surface);border-radius:var(--r-card);box-shadow:var(--e1);padding:10px}
+.fl .dc .cv{width:112px;grid-row:1/-1;border-radius:10px}
+.fl .dc .acts{display:flex;gap:8px;align-self:end}
+.fl .dc .acts .btn{height:34px;padding:0 14px;font-size:14px}
+.fl .dc .acts .btn.sq{width:34px;padding:0}
+
+/* Album and artist headers: centred art over a wash of its colour */
+.fl .hero{display:flex;flex-direction:column;gap:10px;padding:0 16px;align-items:center;text-align:center}
+.fl .hero .art{width:232px;height:232px;margin:2px 0 8px}
+.fl .hero .art .cv{width:100%;border-radius:var(--r-cover);box-shadow:var(--e3)}
+.fl.wash .scr{background:linear-gradient(var(--wash,#DFE6EA),var(--page) 420px)}
+.fl .ahero{position:relative;margin-top:-96px}
+.fl .ahero .ar{width:100%;aspect-ratio:1/.92}
+.fl .ahero .ov{position:absolute;left:0;right:0;bottom:0;padding:60px 16px 14px;color:#fff;background:linear-gradient(#0000,rgba(0,0,0,.78));display:flex;align-items:flex-end;gap:12px}
+.fl .ahero .ov .mut{color:rgba(255,255,255,.8)}
+.fl.ov .status{position:relative;z-index:2;color:#fff}
+.fl .over{position:relative;z-index:2;color:#fff}
+.fl .over .ib{color:#fff;background:rgba(0,0,0,.28)}
+.fl .trow{display:grid;grid-template-columns:24px 1fr auto;gap:10px;align-items:center;min-height:48px;border-bottom:.5px solid var(--edge)}
+.fl .trow.on{color:var(--accent);font-weight:600}
+
+/* Now Playing */
+.fl.np .npc{width:312px;margin:0 auto;border-radius:18px;box-shadow:var(--e3)}
+.fl .seek{height:4px;border-radius:2px;background:var(--track,rgba(21,19,15,.14))}
+.fl .seek i{position:absolute;left:0;top:0;bottom:0;background:var(--text);border-radius:2px}
+.fl .seek b{position:absolute;top:-5px;width:14px;height:14px;margin-left:-7px;border-radius:50%;background:var(--text)}
+.fl .cb{width:48px;height:48px}
+.fl .cb svg{width:30px;height:30px}
+.fl .cb.main{width:72px;height:72px;border-radius:50%;background:var(--text);color:var(--page)}
+.fl .cb.main svg{width:32px;height:32px}
+.fl .cb.flat svg{width:22px;height:22px;color:var(--muted)}
+.fl .lyr p{font:700 22px/30px var(--f-display);letter-spacing:-.02em;color:rgba(21,19,15,.32)}
+.fl .lyr p.on{color:var(--text)}
+
+/* charts and bars */
+.fl .bars i{height:8px;border-radius:4px;background:var(--chart3);display:block}
+.fl .bars i.on{background:var(--accent)}
+.fl .eq i{border-radius:5px;background:var(--raised)}
+.fl .eq i::after{content:"";position:absolute;left:0;right:0;bottom:0;height:var(--v);background:var(--accent);border-radius:5px}
+.fl .swt i{border-radius:14px;box-shadow:inset 0 0 0 .5px var(--hair)}
+.fl .swt .on i{box-shadow:0 0 0 2px var(--page),0 0 0 4px var(--accent)}
+.fl .sk{border-radius:10px}
+
+/* Night needs this in Soft Brut: anything drawn on a pastel fill uses the on-accent ink (the same ink as text by day). */
+.sb .nav .on,.sb .cb.main,.sb .chip.on,.sb .tabs .on,.sb .tag,.sb .tile.radio,.sb .bdg,.sb .lyr p.on{color:var(--on-accent)}
+/* ---- palettes ---- */
+.sb.p-SD0,.pk-mini.p-SD0{--page:#FBF7EE;--rail:#FBF7EE;--surface:#FFFFFF;--raised:#F1EBDD;--edge:#1C1B22;--edge-soft:#D8D2C4;--text:#1C1B22;--muted:#5E5A6B;--accent:#C4B5FD;--accent-dim:#ECE6FF;--on-accent:#1C1B22;--accent2:#BFD9FF;--accent3:#A6E9CB;--accent4:#FFD84D;--shadow:#1C1B22;--ok:#1B6B33;--ok-dim:#D9EEDD;--caution:#7F4A00;--caution-dim:#FBE9C4;--danger:#B3261E;--danger-dim:#F8D9D5;--info:#1D4FB8;--info-dim:#DCE5FB;}
+.sb.p-SD1,.pk-mini.p-SD1{--page:#F5F8F0;--rail:#F5F8F0;--surface:#FFFFFF;--raised:#E6EDDD;--edge:#17211C;--edge-soft:#CFD8C6;--text:#17211C;--muted:#55625A;--accent:#9BE3C0;--accent-dim:#DDF5EA;--on-accent:#17211C;--accent2:#FFD9A8;--accent3:#C9BBFF;--accent4:#FFD84D;--shadow:#17211C;--ok:#1B6B33;--ok-dim:#D9EEDD;--caution:#7F4A00;--caution-dim:#FBE9C4;--danger:#B3261E;--danger-dim:#F8D9D5;--info:#1D4FB8;--info-dim:#DCE5FB;}
+.sb.p-SD2,.pk-mini.p-SD2{--page:#FFF6EE;--rail:#FFF6EE;--surface:#FFFFFF;--raised:#F7E6D6;--edge:#261A15;--edge-soft:#E2CFBF;--text:#261A15;--muted:#6B564C;--accent:#FFB59A;--accent-dim:#FFE6DB;--on-accent:#261A15;--accent2:#BFE3FF;--accent3:#B9E8C2;--accent4:#FFD84D;--shadow:#261A15;--ok:#1B6B33;--ok-dim:#D9EEDD;--caution:#7F4A00;--caution-dim:#FBE9C4;--danger:#B3261E;--danger-dim:#F8D9D5;--info:#1D4FB8;--info-dim:#DCE5FB;}
+.sb.p-SD3,.pk-mini.p-SD3{--page:#F3F7FB;--rail:#F3F7FB;--surface:#FFFFFF;--raised:#E1EAF3;--edge:#141C2B;--edge-soft:#C9D4E0;--text:#141C2B;--muted:#556073;--accent:#A9CCFF;--accent-dim:#E0ECFF;--on-accent:#141C2B;--accent2:#FFC9DE;--accent3:#A6E9CB;--accent4:#FFE066;--shadow:#141C2B;--ok:#1B6B33;--ok-dim:#D9EEDD;--caution:#7F4A00;--caution-dim:#FBE9C4;--danger:#B3261E;--danger-dim:#F8D9D5;--info:#1D4FB8;--info-dim:#DCE5FB;}
+.sb.p-SD4,.pk-mini.p-SD4{--page:#FBF8E9;--rail:#FBF8E9;--surface:#FFFFFF;--raised:#F0EBCF;--edge:#1F1D12;--edge-soft:#D9D3B3;--text:#1F1D12;--muted:#615C45;--accent:#FFDF5C;--accent-dim:#FFF4BF;--on-accent:#1F1D12;--accent2:#C9BBFF;--accent3:#A6E9CB;--accent4:#FFB59A;--shadow:#1F1D12;--ok:#1B6B33;--ok-dim:#D9EEDD;--caution:#7F4A00;--caution-dim:#FBE9C4;--danger:#B3261E;--danger-dim:#F8D9D5;--info:#1D4FB8;--info-dim:#DCE5FB;}
+.sb.p-SD5,.pk-mini.p-SD5{--page:#FBF3F3;--rail:#FBF3F3;--surface:#FFFFFF;--raised:#F2E2E3;--edge:#241619;--edge-soft:#DDC9CC;--text:#241619;--muted:#6A5358;--accent:#F7A8C0;--accent-dim:#FDE3EB;--on-accent:#241619;--accent2:#BFD9FF;--accent3:#B5E8C9;--accent4:#FFD84D;--shadow:#241619;--ok:#1B6B33;--ok-dim:#D9EEDD;--caution:#7F4A00;--caution-dim:#FBE9C4;--danger:#B3261E;--danger-dim:#F8D9D5;--info:#1D4FB8;--info-dim:#DCE5FB;}
+.sb.p-SN1,.pk-mini.p-SN1{--page:#16141D;--rail:#16141D;--surface:#201D2B;--raised:#2C2840;--edge:#E6E0F7;--edge-soft:#3D3856;--text:#F5F2FF;--muted:#B8B0D2;--accent:#C4B5FD;--accent-dim:#37305A;--on-accent:#16141D;--accent2:#BFD9FF;--accent3:#A6E9CB;--accent4:#FFD84D;--shadow:#E6E0F7;--ok:#86D39B;--ok-dim:#1F3326;--caution:#F0A640;--caution-dim:#3D2E14;--danger:#FF8A80;--danger-dim:#40211A;--info:#8FB8E8;--info-dim:#1D2C3D;}
+.sb.p-SN2,.pk-mini.p-SN2{--page:#101714;--rail:#101714;--surface:#18221D;--raised:#223029;--edge:#DDEFE3;--edge-soft:#31443A;--text:#EFF8F1;--muted:#A9C0B2;--accent:#9BE3C0;--accent-dim:#1F4636;--on-accent:#101714;--accent2:#FFD9A8;--accent3:#C9BBFF;--accent4:#FFD84D;--shadow:#DDEFE3;--ok:#86D39B;--ok-dim:#1F3326;--caution:#F0A640;--caution-dim:#3D2E14;--danger:#FF8A80;--danger-dim:#40211A;--info:#8FB8E8;--info-dim:#1D2C3D;}
+.sb.p-SN3,.pk-mini.p-SN3{--page:#1B1416;--rail:#1B1416;--surface:#261C1F;--raised:#35272B;--edge:#F6E4DC;--edge-soft:#4A383C;--text:#FFF3EE;--muted:#CDB3AD;--accent:#FFB59A;--accent-dim:#55302A;--on-accent:#1B1416;--accent2:#BFE3FF;--accent3:#B9E8C2;--accent4:#FFD84D;--shadow:#F6E4DC;--ok:#86D39B;--ok-dim:#1F3326;--caution:#F0A640;--caution-dim:#3D2E14;--danger:#FF8A80;--danger-dim:#40211A;--info:#8FB8E8;--info-dim:#1D2C3D;}
+.sb.p-SN4,.pk-mini.p-SN4{--page:#0F1520;--rail:#0F1520;--surface:#17202F;--raised:#212D42;--edge:#DCE7F7;--edge-soft:#2F3D57;--text:#F0F5FF;--muted:#A7B5CC;--accent:#A9CCFF;--accent-dim:#24406B;--on-accent:#0F1520;--accent2:#FFC9DE;--accent3:#A6E9CB;--accent4:#FFE066;--shadow:#DCE7F7;--ok:#86D39B;--ok-dim:#1F3326;--caution:#F0A640;--caution-dim:#3D2E14;--danger:#FF8A80;--danger-dim:#40211A;--info:#8FB8E8;--info-dim:#1D2C3D;}
+.sb.p-SN5,.pk-mini.p-SN5{--page:#161616;--rail:#161616;--surface:#202020;--raised:#2D2D2B;--edge:#F2EFE2;--edge-soft:#414039;--text:#F7F5EC;--muted:#B9B6A8;--accent:#FFDF5C;--accent-dim:#4A421A;--on-accent:#161616;--accent2:#C9BBFF;--accent3:#A6E9CB;--accent4:#FFB59A;--shadow:#F2EFE2;--ok:#86D39B;--ok-dim:#1F3326;--caution:#F0A640;--caution-dim:#3D2E14;--danger:#FF8A80;--danger-dim:#40211A;--info:#8FB8E8;--info-dim:#1D2C3D;}
+.fl.p-FD0,.pk-mini.p-FD0{--page:#FBFAF7;--rail:#FBFAF7;--surface:#FFFFFF;--raised:#EFECE5;--edge:#E2DFD6;--edge-strong:#8E887B;--text:#15130F;--muted:#645F55;--accent:#C2410C;--accent-dim:#FBE4D5;--on-accent:#FFFFFF;--bar:rgba(255,255,255,.86);--hair:rgba(0,0,0,.08);--e1:0 4px 14px -10px rgba(21,19,15,0.3);--e2:0 6px 22px -8px rgba(21,19,15,0.3);--e3:0 22px 34px -18px rgba(21,19,15,0.6);--track:rgba(21,19,15,0.14);--chev:#8E887B;--sw-off:#E2DFD6;--ok:#1B7339;--caution:#8A5300;--caution-dim:#F8E8CC;--danger:#C0271A;}
+.fl.p-FD1,.pk-mini.p-FD1{--page:#F7F8FA;--rail:#F7F8FA;--surface:#FFFFFF;--raised:#E9ECF1;--edge:#DCE0E7;--edge-strong:#7F8795;--text:#111318;--muted:#5B6270;--accent:#1D5FD1;--accent-dim:#DCE7FB;--on-accent:#FFFFFF;--bar:rgba(255,255,255,.86);--hair:rgba(0,0,0,.08);--e1:0 4px 14px -10px rgba(17,19,24,0.3);--e2:0 6px 22px -8px rgba(17,19,24,0.3);--e3:0 22px 34px -18px rgba(17,19,24,0.6);--track:rgba(17,19,24,0.14);--chev:#7F8795;--sw-off:#DCE0E7;--ok:#1B7339;--caution:#8A5300;--caution-dim:#F8E8CC;--danger:#C0271A;}
+.fl.p-FD2,.pk-mini.p-FD2{--page:#F8F9F4;--rail:#F8F9F4;--surface:#FFFFFF;--raised:#E9EDE2;--edge:#DBE0D2;--edge-strong:#7D8672;--text:#12150F;--muted:#596051;--accent:#1B7340;--accent-dim:#D9EEDF;--on-accent:#FFFFFF;--bar:rgba(255,255,255,.86);--hair:rgba(0,0,0,.08);--e1:0 4px 14px -10px rgba(18,21,15,0.3);--e2:0 6px 22px -8px rgba(18,21,15,0.3);--e3:0 22px 34px -18px rgba(18,21,15,0.6);--track:rgba(18,21,15,0.14);--chev:#7D8672;--sw-off:#DBE0D2;--ok:#1B7339;--caution:#8A5300;--caution-dim:#F8E8CC;--danger:#C0271A;}
+.fl.p-FD3,.pk-mini.p-FD3{--page:#FCF8F8;--rail:#FCF8F8;--surface:#FFFFFF;--raised:#F1E8E9;--edge:#E5DADB;--edge-strong:#8E7F82;--text:#171113;--muted:#6A5C5F;--accent:#BE2260;--accent-dim:#FADCE6;--on-accent:#FFFFFF;--bar:rgba(255,255,255,.86);--hair:rgba(0,0,0,.08);--e1:0 4px 14px -10px rgba(23,17,19,0.3);--e2:0 6px 22px -8px rgba(23,17,19,0.3);--e3:0 22px 34px -18px rgba(23,17,19,0.6);--track:rgba(23,17,19,0.14);--chev:#8E7F82;--sw-off:#E5DADB;--ok:#1B7339;--caution:#8A5300;--caution-dim:#F8E8CC;--danger:#C0271A;}
+.fl.p-FD4,.pk-mini.p-FD4{--page:#F9F8FC;--rail:#F9F8FC;--surface:#FFFFFF;--raised:#ECEAF3;--edge:#DEDBE8;--edge-strong:#827D93;--text:#13111A;--muted:#5F5A6E;--accent:#6A3BD2;--accent-dim:#E7DEFA;--on-accent:#FFFFFF;--bar:rgba(255,255,255,.86);--hair:rgba(0,0,0,.08);--e1:0 4px 14px -10px rgba(19,17,26,0.3);--e2:0 6px 22px -8px rgba(19,17,26,0.3);--e3:0 22px 34px -18px rgba(19,17,26,0.6);--track:rgba(19,17,26,0.14);--chev:#827D93;--sw-off:#DEDBE8;--ok:#1B7339;--caution:#8A5300;--caution-dim:#F8E8CC;--danger:#C0271A;}
+.fl.p-FD5,.pk-mini.p-FD5{--page:#F7F7F5;--rail:#F7F7F5;--surface:#FFFFFF;--raised:#EAEAE6;--edge:#DDDDD8;--edge-strong:#85857E;--text:#121212;--muted:#5E5E58;--accent:#1A1A1A;--accent-dim:#E0E0DB;--on-accent:#FFFFFF;--bar:rgba(255,255,255,.86);--hair:rgba(0,0,0,.08);--e1:0 4px 14px -10px rgba(18,18,18,0.3);--e2:0 6px 22px -8px rgba(18,18,18,0.3);--e3:0 22px 34px -18px rgba(18,18,18,0.6);--track:rgba(18,18,18,0.14);--chev:#85857E;--sw-off:#DDDDD8;--ok:#1B7339;--caution:#8A5300;--caution-dim:#F8E8CC;--danger:#C0271A;}
+.fl.p-FN1,.pk-mini.p-FN1{--page:#12110F;--rail:#12110F;--surface:#1C1A17;--raised:#2A2723;--edge:#35312C;--edge-strong:#8A8377;--text:#F5F1EA;--muted:#A9A296;--accent:#FF8A4C;--accent-dim:#4A2A17;--on-accent:#1A0F08;--bar:rgba(28,26,23,0.84);--hair:rgba(255,255,255,.10);--e1:0 4px 14px -10px rgba(0,0,0,.7);--e2:0 6px 22px -8px rgba(0,0,0,.8);--e3:0 22px 34px -18px rgba(0,0,0,.9);--track:rgba(245,241,234,0.18);--chev:#8A8377;--sw-off:#35312C;--wash:#27313A;--ok:#6FCF8E;--caution:#F0A640;--caution-dim:#3D2E14;--danger:#FF7B6B;}
+.fl.p-FN2,.pk-mini.p-FN2{--page:#000000;--rail:#000000;--surface:#151517;--raised:#232326;--edge:#2E2E32;--edge-strong:#7C7C84;--text:#F5F5F7;--muted:#A0A0A8;--accent:#5AA2FF;--accent-dim:#12305A;--on-accent:#04101F;--bar:rgba(21,21,23,0.84);--hair:rgba(255,255,255,.10);--e1:0 4px 14px -10px rgba(0,0,0,.7);--e2:0 6px 22px -8px rgba(0,0,0,.8);--e3:0 22px 34px -18px rgba(0,0,0,.9);--track:rgba(245,245,247,0.18);--chev:#7C7C84;--sw-off:#2E2E32;--wash:#27313A;--ok:#6FCF8E;--caution:#F0A640;--caution-dim:#3D2E14;--danger:#FF7B6B;}
+.fl.p-FN3,.pk-mini.p-FN3{--page:#0E1311;--rail:#0E1311;--surface:#171E1A;--raised:#232C27;--edge:#2D3832;--edge-strong:#7A887F;--text:#EEF5F0;--muted:#9FAFA5;--accent:#5FD28C;--accent-dim:#173D27;--on-accent:#06170D;--bar:rgba(23,30,26,0.84);--hair:rgba(255,255,255,.10);--e1:0 4px 14px -10px rgba(0,0,0,.7);--e2:0 6px 22px -8px rgba(0,0,0,.8);--e3:0 22px 34px -18px rgba(0,0,0,.9);--track:rgba(238,245,240,0.18);--chev:#7A887F;--sw-off:#2D3832;--wash:#27313A;--ok:#6FCF8E;--caution:#F0A640;--caution-dim:#3D2E14;--danger:#FF7B6B;}
+.fl.p-FN4,.pk-mini.p-FN4{--page:#151015;--rail:#151015;--surface:#1F181F;--raised:#2D232D;--edge:#3A2E3A;--edge-strong:#8C7C8C;--text:#F7EEF5;--muted:#B3A2B0;--accent:#FF7FAE;--accent-dim:#4D1F33;--on-accent:#2A0A17;--bar:rgba(31,24,31,0.84);--hair:rgba(255,255,255,.10);--e1:0 4px 14px -10px rgba(0,0,0,.7);--e2:0 6px 22px -8px rgba(0,0,0,.8);--e3:0 22px 34px -18px rgba(0,0,0,.9);--track:rgba(247,238,245,0.18);--chev:#8C7C8C;--sw-off:#3A2E3A;--wash:#27313A;--ok:#6FCF8E;--caution:#F0A640;--caution-dim:#3D2E14;--danger:#FF7B6B;}
+.fl.p-FN5,.pk-mini.p-FN5{--page:#141416;--rail:#141416;--surface:#1D1D20;--raised:#2A2A2E;--edge:#35353A;--edge-strong:#84848C;--text:#F2F2F4;--muted:#A4A4AC;--accent:#F2F2F4;--accent-dim:#3A3A40;--on-accent:#141416;--bar:rgba(29,29,32,0.84);--hair:rgba(255,255,255,.10);--e1:0 4px 14px -10px rgba(0,0,0,.7);--e2:0 6px 22px -8px rgba(0,0,0,.8);--e3:0 22px 34px -18px rgba(0,0,0,.9);--track:rgba(242,242,244,0.18);--chev:#84848C;--sw-off:#35353A;--wash:#27313A;--ok:#6FCF8E;--caution:#F0A640;--caution-dim:#3D2E14;--danger:#FF7B6B;}
+</style>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><symbol id="i-home" viewBox="0 0 24 24"><path d="M4 11l8-7 8 7v8a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z"/></symbol><symbol id="i-disc" viewBox="0 0 24 24"><path d="M12 3l1.800 5.200L19 10l-5.200 1.800L12 17l-1.800-5.200L5 10l5.200-1.800zM18.500 16l.7 1.800 1.800.7-1.800.7-.7 1.800-.7-1.800-1.800-.7 1.800-.7z"/></symbol><symbol id="i-lib" viewBox="0 0 24 24"><path d="M5 4v16M9.500 4v16M14 5l4.500 14.500"/></symbol><symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.500"/><path d="M16 16l4.500 4.500"/></symbol><symbol id="i-play" viewBox="0 0 24 24"><path d="M7 4.500v15l12.500-7.500z"/></symbol><symbol id="i-pause" viewBox="0 0 24 24"><path d="M7 5h3.500v14H7zM13.500 5H17v14h-3.500z"/></symbol><symbol id="i-next" viewBox="0 0 24 24"><path d="M5 5v14l10-7zM17 5h2.500v14H17z"/></symbol><symbol id="i-prev" viewBox="0 0 24 24"><path d="M19 5v14L9 12zM4.500 5H7v14H4.500z"/></symbol><symbol id="i-dl" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.500"/><path d="M12 7.500v8M8.500 12.500L12 16l3.500-3.500"/></symbol><symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2.500v3M12 18.500v3M2.500 12h3M18.500 12h3M5.300 5.300l2.100 2.100M16.600 16.600l2.100 2.100M5.300 18.700l2.100-2.100M16.600 7.400l2.100-2.100"/></symbol><symbol id="i-more" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.600"/><circle cx="12" cy="12" r="1.600"/><circle cx="19" cy="12" r="1.600"/></symbol><symbol id="i-chev" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></symbol><symbol id="i-back" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></symbol><symbol id="i-down" viewBox="0 0 24 24"><path d="M5 9l7 7 7-7"/></symbol><symbol id="i-radio" viewBox="0 0 24 24"><rect x="3" y="8" width="18" height="12" rx="2"/><path d="M7 8l9-4"/><circle cx="8.500" cy="14" r="2.500"/><path d="M14 12.500h4M14 15.500h4"/></symbol><symbol id="i-get" viewBox="0 0 24 24"><path d="M7 18a4.500 4.500 0 0 1-.6-8.960 6 6 0 0 1 11.700 1.500A3.800 3.800 0 0 1 17.500 18M12 11v8M9 16.500l3 3 3-3"/></symbol><symbol id="i-heart" viewBox="0 0 24 24"><path d="M12 20s-7-4.300-7-9.500A4 4 0 0 1 12 8a4 4 0 0 1 7 2.500C19 15.700 12 20 12 20z"/></symbol><symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.500l4.500 4.500L19 7.500"/></symbol><symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol><symbol id="i-queue" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h10"/></symbol><symbol id="i-qadd" viewBox="0 0 24 24"><path d="M4 7h12M4 12h12M4 17h7M18 14v6M15 17h6"/></symbol><symbol id="i-shuffle" viewBox="0 0 24 24"><path d="M4 7h3l10 10h3M4 17h3l3-3M14 10l3-3h3M18 5l2 2-2 2M18 15l2 2-2 2"/></symbol><symbol id="i-repeat" viewBox="0 0 24 24"><path d="M5 11V9a2 2 0 0 1 2-2h11M16 4l3 3-3 3M19 13v2a2 2 0 0 1-2 2H6M8 20l-3-3 3-3"/></symbol><symbol id="i-quote" viewBox="0 0 24 24"><path d="M5 6h14v10H10l-4 3v-3H5z"/></symbol><symbol id="i-tune" viewBox="0 0 24 24"><path d="M6 4v16M12 4v16M18 4v16"/><circle cx="6" cy="9" r="2"/><circle cx="12" cy="15" r="2"/><circle cx="18" cy="8" r="2"/></symbol><symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.600 5.600l1.400 1.400M17 17l1.400 1.400M5.600 18.400L7 17M17 7l1.400-1.400"/></symbol><symbol id="i-server" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="7" rx="1.500"/><rect x="4" y="13" width="16" height="7" rx="1.500"/><path d="M7.500 7.500h.01M7.500 16.500h.01"/></symbol><symbol id="i-swap" viewBox="0 0 24 24"><path d="M4 8h13M14 5l3 3-3 3M20 16H7M10 13l-3 3 3 3"/></symbol><symbol id="i-wave" viewBox="0 0 24 24"><path d="M4 12h2l2-6 3 12 3-9 2 5 1-2h3"/></symbol><symbol id="i-sort" viewBox="0 0 24 24"><path d="M7 5v14M4 16l3 3 3-3M14 7h6M14 12h4M14 17h2"/></symbol><symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol><symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol><symbol id="i-path" viewBox="0 0 24 24"><circle cx="6" cy="18" r="2"/><circle cx="18" cy="6" r="2"/><path d="M8 18h5a3 3 0 0 0 0-6h-2a3 3 0 0 1 0-6h5"/></symbol><symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.500"/><path d="M12 11v5M12 8h.01"/></symbol><symbol id="i-out" viewBox="0 0 24 24"><path d="M10 5H5v14h5M14 8l4 4-4 4M18 12H9"/></symbol></defs></svg>
+<div class="pk-wrap">
+<div class="pk-intro"><h1>Flow and Soft Brut palettes</h1>
+<p>Ten proposals per theme, five for day and five for night, plus the current palette for reference. Tap a card to apply it to the three screens below it. Tick Pick on three day and three night palettes per theme.</p>
+<p>Only colours change. Layout, shapes, outlines, shadows and type are the existing themes' own; the screens are the mockups already in the repo. Covers and photos are drawn stand-ins.</p></div>
+<section class="pk-sec" id="sb"><header class="pk-h"><h2>Soft Brut</h2><p>At night the outline and the hard shadow turn light, and the pastel fills keep dark ink on them. Each palette also carries three extra fills for tags and the Radio tile (the last three swatches).</p></header><div class="pk-row"><h3>Day <span class="pk-count" data-count="sb-day">0 of 3 picked</span></h3><div class="pk-cards"><div class="pk-card" data-theme-key="sb" data-pid="SD0"><button type="button" class="pk-show" id="show-SD0" aria-pressed="true"><span class="pk-mini p-SD0 pk-brut"><b>Aa</b><em>Play</em><u></u></span><span class="pk-meta"><span class="pk-id">SD0</span><span class="pk-name">Lavender</span><span class="pk-note">Current</span></span><span class="pk-dots"><i style="background:#FBF7EE"></i><i style="background:#FFFFFF"></i><i style="background:#F1EBDD"></i><i style="background:#1C1B22"></i><i style="background:#5E5A6B"></i><i style="background:#C4B5FD"></i><i style="background:#ECE6FF"></i><i style="background:#BFD9FF"></i><i style="background:#A6E9CB"></i><i style="background:#FFD84D"></i></span></button><label class="pk-pick"><input type="checkbox" id="pick-SD0" data-pick="SD0"> Pick</label></div><div class="pk-card" data-theme-key="sb" data-pid="SD1"><button type="button" class="pk-show" id="show-SD1" aria-pressed="false"><span class="pk-mini p-SD1 pk-brut"><b>Aa</b><em>Play</em><u></u></span><span class="pk-meta"><span class="pk-id">SD1</span><span class="pk-name">Mint</span><span class="pk-note">Cool green paper, mint fills</span></span><span class="pk-dots"><i style="background:#F5F8F0"></i><i style="background:#FFFFFF"></i><i style="background:#E6EDDD"></i><i style="background:#17211C"></i><i style="background:#55625A"></i><i style="background:#9BE3C0"></i><i style="background:#DDF5EA"></i><i style="background:#FFD9A8"></i><i style="background:#C9BBFF"></i><i style="background:#FFD84D"></i></span></button><label class="pk-pick"><input type="checkbox" id="pick-SD1" data-pick="SD1"> Pick</label></div><div class="pk-card" data-theme-key="sb" data-pid="SD2"><button type="button" class="pk-show" id="show-SD2" aria-pressed="false"><span class="pk-mini p-SD2 pk-brut"><b>Aa</b><em>Play</em><u></u></span><span class="pk-meta"><span class="pk-id">SD2</span><span class="pk-name">Peach</span><span class="pk-note">Warm cream, peach fills</span></span><span class="pk-dots"><i style="background:#FFF6EE"></i><i style="background:#FFFFFF"></i><i style="background:#F7E6D6"></i><i style="background:#261A15"></i><i style="background:#6B564C"></i><i style="background:#FFB59A"></i><i style="background:#FFE6DB"></i><i style="background:#BFE3FF"></i><i style="background:#B9E8C2"></i><i style="background:#FFD84D"></i></span></button><label class="pk-pick"><input type="checkbox" id="pick-SD2" data-pick="SD2"> Pick</label></div><div class="pk-card" data-theme-key="sb" data-pid="SD3"><button type="button" class="pk-show" id="show-SD3" aria-pressed="false"><span class="pk-mini p-SD3 pk-brut"><b>Aa</b><em>Play</em><u></u></span><span class="pk-meta"><span class="pk-id">SD3</span><span class="pk-name">Sky</span><span class="pk-note">Cool white, sky-blue fills</span></span><span class="pk-dots"><i style="background:#F3F7FB"></i><i style="background:#FFFFFF"></i><i style="background:#E1EAF3"></i><i style="background:#141C2B"></i><i style="background:#556073"></i><i style="background:#A9CCFF"></i><i style="background:#E0ECFF"></i><i style="background:#FFC9DE"></i><i style="background:#A6E9CB"></i><i style="background:#FFE066"></i></span></button><label class="pk-pick"><input type="checkbox" id="pick-SD3" data-pick="SD3"> Pick</label></div><div class="pk-card" data-theme-key="sb" data-pid="SD4"><button type="button" class="pk-show" id="show-SD4" aria-pressed="false"><span class="pk-mini p-SD4 pk-brut"><b>Aa</b><em>Play</em><u></u></span><span class="pk-meta"><span class="pk-id">SD4</span><span class="pk-name">Lemon</span><span class="pk-note">Butter paper, lemon fills</span></span><span class="pk-dots"><i style="background:#FBF8E9"></i><i style="background:#FFFFFF"></i><i style="background:#F0EBCF"></i><i style="background:#1F1D12"></i><i style="background:#615C45"></i><i style="background:#FFDF5C"></i><i style="background:#FFF4BF"></i><i style="background:#C9BBFF"></i><i style="background:#A6E9CB"></i><i style="background:#FFB59A"></i></span></button><label class="pk-pick"><input type="checkbox" id="pick-SD4" data-pick="SD4"> Pick</label></div><div class="pk-card" data-theme-key="sb" data-pid="SD5"><button type="button" class="pk-show" id="show-SD5" aria-pressed="false"><span class="pk-mini p-SD5 pk-brut"><b>Aa</b><em>Play</em><u></u></span><span class="pk-meta"><span class="pk-id">SD5</span><span class="pk-name">Rose</span><span class="pk-note">Pale blush, rose fills</span></span><span class="pk-dots"><i style="background:#FBF3F3"></i><i style="background:#FFFFFF"></i><i style="background:#F2E2E3"></i><i style="background:#241619"></i><i style="background:#6A5358"></i><i style="background:#F7A8C0"></i><i style="background:#FDE3EB"></i><i style="background:#BFD9FF"></i><i style="background:#B5E8C9"></i><i style="background:#FFD84D"></i></span></button><label class="pk-pick"><input type="checkbox" id="pick-SD5" data-pick="SD5"> Pick</label></div></div></div><div class="pk-row"><h3>Night <span class="pk-count" data-count="sb-night">0 of 3 picked</span></h3><div class="pk-cards"><div class="pk-card" data-theme-key="sb" data-pid="SN1"><button type="button" class="pk-show" id="show-SN1" aria-pressed="false"><span class="pk-mini p-SN1 pk-brut"><b>Aa</b><em>Play</em><u></u></span><span class="pk-meta"><span class="pk-id">SN1</span><span class="pk-name">Ink Lavender</span><span class="pk-note">Night twin of the current theme</span></span><span class="pk-dots"><i style="background:#16141D"></i><i style="background:#201D2B"></i><i style="background:#2C2840"></i><i style="background:#F5F2FF"></i><i style="background:#B8B0D2"></i><i style="background:#C4B5FD"></i><i style="background:#37305A"></i><i style="background:#BFD9FF"></i><i style="background:#A6E9CB"></i><i style="background:#FFD84D"></i></span></button><label class="pk-pick"><input type="checkbox" id="pick-SN1" data-pick="SN1"> Pick</label></div><div class="pk-card" data-theme-key="sb" data-pid="SN2"><button type="button" class="pk-show" id="show-SN2" aria-pressed="false"><span class="pk-mini p-SN2 pk-brut"><b>Aa</b><em>Play</em><u></u></span><span class="pk-meta"><span class="pk-id">SN2</span><span class="pk-name">Midnight Mint</span><span class="pk-note">Green-black, mint fills</span></span><span class="pk-dots"><i style="background:#101714"></i><i style="background:#18221D"></i><i style="background:#223029"></i><i style="background:#EFF8F1"></i><i style="background:#A9C0B2"></i><i style="background:#9BE3C0"></i><i style="background:#1F4636"></i><i style="background:#FFD9A8"></i><i style="background:#C9BBFF"></i><i style="background:#FFD84D"></i></span></button><label class="pk-pick"><input type="checkbox" id="pick-SN2" data-pick="SN2"> Pick</label></div><div class="pk-card" data-theme-key="sb" data-pid="SN3"><button type="button" class="pk-show" id="show-SN3" aria-pressed="false"><span class="pk-mini p-SN3 pk-brut"><b>Aa</b><em>Play</em><u></u></span><span class="pk-meta"><span class="pk-id">SN3</span><span class="pk-name">Plum Peach</span><span class="pk-note">Warm plum-black, peach fills</span></span><span class="pk-dots"><i style="background:#1B1416"></i><i style="background:#261C1F"></i><i style="background:#35272B"></i><i style="background:#FFF3EE"></i><i style="background:#CDB3AD"></i><i style="background:#FFB59A"></i><i style="background:#55302A"></i><i style="background:#BFE3FF"></i><i style="background:#B9E8C2"></i><i style="background:#FFD84D"></i></span></button><label class="pk-pick"><input type="checkbox" id="pick-SN3" data-pick="SN3"> Pick</label></div><div class="pk-card" data-theme-key="sb" data-pid="SN4"><button type="button" class="pk-show" id="show-SN4" aria-pressed="false"><span class="pk-mini p-SN4 pk-brut"><b>Aa</b><em>Play</em><u></u></span><span class="pk-meta"><span class="pk-id">SN4</span><span class="pk-name">Navy Sky</span><span class="pk-note">Deep navy, sky-blue fills</span></span><span class="pk-dots"><i style="background:#0F1520"></i><i style="background:#17202F"></i><i style="background:#212D42"></i><i style="background:#F0F5FF"></i><i style="background:#A7B5CC"></i><i style="background:#A9CCFF"></i><i style="background:#24406B"></i><i style="background:#FFC9DE"></i><i style="background:#A6E9CB"></i><i style="background:#FFE066"></i></span></button><label class="pk-pick"><input type="checkbox" id="pick-SN4" data-pick="SN4"> Pick</label></div><div class="pk-card" data-theme-key="sb" data-pid="SN5"><button type="button" class="pk-show" id="show-SN5" aria-pressed="false"><span class="pk-mini p-SN5 pk-brut"><b>Aa</b><em>Play</em><u></u></span><span class="pk-meta"><span class="pk-id">SN5</span><span class="pk-name">Charcoal Lemon</span><span class="pk-note">Neutral charcoal, lemon fills</span></span><span class="pk-dots"><i style="background:#161616"></i><i style="background:#202020"></i><i style="background:#2D2D2B"></i><i style="background:#F7F5EC"></i><i style="background:#B9B6A8"></i><i style="background:#FFDF5C"></i><i style="background:#4A421A"></i><i style="background:#C9BBFF"></i><i style="background:#A6E9CB"></i><i style="background:#FFB59A"></i></span></button><label class="pk-pick"><input type="checkbox" id="pick-SN5" data-pick="SN5"> Pick</label></div></div></div><p class="pk-now" data-now="sb"></p><div class="pk-phones"><figure class="pk-fig"><figcaption>Home</figcaption><div class="pk-zoom"><div class="phone sb " style=""><div class="scr"><div class="status"><span>21:14</span><span>5G 82%</span></div><div class="top"><span class="lt wm">discair</span><span class="sp"></span><span class="ib"><svg class=""><use href="#i-dl"/></svg><i class="bdg">2</i></span><span class="ib"><svg class=""><use href="#i-gear"/></svg></span></div><div class="h"><span class="eb">Today's picks</span><span class="eb">1 / 7</span></div><div class="stack"><i class="cv k3 b2" style=""></i><i class="cv k2 b1" style=""></i><i class="cv k1 f" style=""></i></div><div class="pad"><h2>Hex</h2><p class="mut">Bark Psychosis · 1994 · Post-rock</p></div><div class="pad row"><span class="btn p sp"><svg class=""><use href="#i-get"/></svg>Get album</span><span class="btn t">Save</span><span class="btn sq"><svg class="f"><use href="#i-more"/></svg></span></div><div class="h"><h3>In rotation</h3><a>All artists</a></div><div class="hs"><div class="who"><i class="ar a1 rd" style=""></i>Alice Coltrane</div><div class="who"><i class="ar a2 rd" style=""></i>The Blue Nile</div><div class="who"><i class="ar a3 rd" style=""></i>Talk Talk</div><div class="who"><i class="ar a4 rd" style=""></i>Slowdive</div><div class="who"><i class="ar a5 rd" style=""></i>Portishead</div></div></div><div class="dock"><div class="mini"><i class="cv k5 " style=""></i><div class="sp"><h4 class="el">After the Flood</h4><p class="mut sm">Talk Talk</p></div><svg class="f"><use href="#i-pause"/></svg></div><div class="nav"><span class="on"><svg class=""><use href="#i-home"/></svg>Home</span><span class=""><svg class=""><use href="#i-disc"/></svg>Discover</span><span class=""><svg class=""><use href="#i-lib"/></svg>Library</span><span class=""><svg class=""><use href="#i-search"/></svg>Search</span></div></div></div></div></figure><figure class="pk-fig"><figcaption>Album</figcaption><div class="pk-zoom"><div class="phone sb " style=""><div class="scr"><div class="status"><span>21:14</span><span>5G 82%</span></div><div class="bar"><span class="ib"><svg class=""><use href="#i-back"/></svg></span><h4 class="sp el"></h4><span class="ib"><svg class="f"><use href="#i-more"/></svg></span></div><div class="hero"><div class="art"><i class="cv k5 " style=""></i></div><div><h2>Laughing Stock</h2><p><a class="lk">Talk Talk</a></p><p class="mut sm">1991 · Art rock · 6 songs · FLAC</p></div><div class="row"><span class="btn p"><svg class=""><use href="#i-play"/></svg>Play</span><span class="btn t"><svg class=""><use href="#i-shuffle"/></svg>Shuffle</span><span class="btn sq"><svg class=""><use href="#i-dl"/></svg></span></div></div><div class="pad"><div class="trow"><span class="mut num sm">1</span><span class="el">Myrrhman</span><span class="mut num sm">5:33</span></div><div class="trow"><span class="mut num sm">2</span><span class="el">Ascension Day</span><span class="mut num sm">6:00</span></div><div class="trow on"><span class="mut num sm"><svg class="s"><use href="#i-wave"/></svg></span><span class="el">After the Flood</span><span class="mut num sm">9:39</span></div><div class="trow"><span class="mut num sm">4</span><span class="el">Taphead</span><span class="mut num sm">7:30</span></div><div class="trow"><span class="mut num sm">5</span><span class="el">New Grass</span><span class="mut num sm">9:40</span></div><div class="trow"><span class="mut num sm">6</span><span class="el">Runeii</span><span class="mut num sm">4:58</span></div></div><div class="h"><h3>Similar albums</h3></div><div class="hs"><i class="cv k12 " style="width:112px"></i><i class="cv k1 " style="width:112px"></i><i class="cv k10 " style="width:112px"></i></div></div><div class="dock"><div class="mini"><i class="cv k5 " style=""></i><div class="sp"><h4 class="el">After the Flood</h4><p class="mut sm">Talk Talk</p></div><svg class="f"><use href="#i-pause"/></svg></div></div></div></div></figure><figure class="pk-fig"><figcaption>Now Playing</figcaption><div class="pk-zoom"><div class="phone sb np " style=""><div class="scr"><div class="status"><span>21:14</span><span>5G 82%</span></div><div class="bar"><span class="ib"><svg class=""><use href="#i-down"/></svg></span><span class="eb sp ctr" style="display:block">Now playing</span><span class="ib"><svg class="f"><use href="#i-more"/></svg></span></div><i class="cv k5 npc lgc" style=""></i><div class="pad row"><div class="sp"><h2 class="el">After the Flood</h2><p class="mut el">Talk Talk · Laughing Stock</p></div><span class="ib"><svg class=""><use href="#i-heart"/></svg></span></div><div class="pad"><div class="seek"><i style="width:38%"></i><b style="left:38%"></b></div><div class="row num sm mut" style="justify-content:space-between;margin-top:10px"><span>3:41</span><span>9:39</span></div></div><div class="pad ctl"><span class="cb flat"><svg class=""><use href="#i-shuffle"/></svg></span><span class="cb"><svg class="f"><use href="#i-prev"/></svg></span><span class="cb main"><svg class="f"><use href="#i-pause"/></svg></span><span class="cb"><svg class="f"><use href="#i-next"/></svg></span><span class="cb flat"><svg class=""><use href="#i-repeat"/></svg></span></div><div class="pad row" style="justify-content:space-around;margin-top:auto;padding-bottom:28px"><span class="col ctr sm mut" style="gap:2px;align-items:center"><svg class=""><use href="#i-queue"/></svg>Queue</span><span class="col ctr sm mut" style="gap:2px;align-items:center"><svg class=""><use href="#i-quote"/></svg>Lyrics</span><span class="col ctr sm mut" style="gap:2px;align-items:center"><svg class=""><use href="#i-path"/></svg>Sonic path</span><span class="col ctr sm mut" style="gap:2px;align-items:center"><svg class=""><use href="#i-tune"/></svg>Equalizer</span></div></div></div></div></figure></div></section>
+<section class="pk-sec" id="fl"><header class="pk-h"><h2>Flow</h2><p>The accent is also used as text (links, the playing track), so each one is chosen to read on its page and cards. At night the album wash is a darkened tone of the cover.</p></header><div class="pk-row"><h3>Day <span class="pk-count" data-count="fl-day">0 of 3 picked</span></h3><div class="pk-cards"><div class="pk-card" data-theme-key="fl" data-pid="FD0"><button type="button" class="pk-show" id="show-FD0" aria-pressed="true"><span class="pk-mini p-FD0 pk-soft"><b>Aa</b><em>Play</em><u></u></span><span class="pk-meta"><span class="pk-id">FD0</span><span class="pk-name">Warm white</span><span class="pk-note">Current</span></span><span class="pk-dots"><i style="background:#FBFAF7"></i><i style="background:#FFFFFF"></i><i style="background:#EFECE5"></i><i style="background:#15130F"></i><i style="background:#645F55"></i><i style="background:#C2410C"></i><i style="background:#FBE4D5"></i></span></button><label class="pk-pick"><input type="checkbox" id="pick-FD0" data-pick="FD0"> Pick</label></div><div class="pk-card" data-theme-key="fl" data-pid="FD1"><button type="button" class="pk-show" id="show-FD1" aria-pressed="false"><span class="pk-mini p-FD1 pk-soft"><b>Aa</b><em>Play</em><u></u></span><span class="pk-meta"><span class="pk-id">FD1</span><span class="pk-name">Cool white · Blue</span><span class="pk-note">Blue-grey neutrals, blue accent</span></span><span class="pk-dots"><i style="background:#F7F8FA"></i><i style="background:#FFFFFF"></i><i style="background:#E9ECF1"></i><i style="background:#111318"></i><i style="background:#5B6270"></i><i style="background:#1D5FD1"></i><i style="background:#DCE7FB"></i></span></button><label class="pk-pick"><input type="checkbox" id="pick-FD1" data-pick="FD1"> Pick</label></div><div class="pk-card" data-theme-key="fl" data-pid="FD2"><button type="button" class="pk-show" id="show-FD2" aria-pressed="false"><span class="pk-mini p-FD2 pk-soft"><b>Aa</b><em>Play</em><u></u></span><span class="pk-meta"><span class="pk-id">FD2</span><span class="pk-name">Linen · Forest</span><span class="pk-note">Green-tinted paper, forest accent</span></span><span class="pk-dots"><i style="background:#F8F9F4"></i><i style="background:#FFFFFF"></i><i style="background:#E9EDE2"></i><i style="background:#12150F"></i><i style="background:#596051"></i><i style="background:#1B7340"></i><i style="background:#D9EEDF"></i></span></button><label class="pk-pick"><input type="checkbox" id="pick-FD2" data-pick="FD2"> Pick</label></div><div class="pk-card" data-theme-key="fl" data-pid="FD3"><button type="button" class="pk-show" id="show-FD3" aria-pressed="false"><span class="pk-mini p-FD3 pk-soft"><b>Aa</b><em>Play</em><u></u></span><span class="pk-meta"><span class="pk-id">FD3</span><span class="pk-name">Blush · Raspberry</span><span class="pk-note">Rosy white, raspberry accent</span></span><span class="pk-dots"><i style="background:#FCF8F8"></i><i style="background:#FFFFFF"></i><i style="background:#F1E8E9"></i><i style="background:#171113"></i><i style="background:#6A5C5F"></i><i style="background:#BE2260"></i><i style="background:#FADCE6"></i></span></button><label class="pk-pick"><input type="checkbox" id="pick-FD3" data-pick="FD3"> Pick</label></div><div class="pk-card" data-theme-key="fl" data-pid="FD4"><button type="button" class="pk-show" id="show-FD4" aria-pressed="false"><span class="pk-mini p-FD4 pk-soft"><b>Aa</b><em>Play</em><u></u></span><span class="pk-meta"><span class="pk-id">FD4</span><span class="pk-name">Pearl · Violet</span><span class="pk-note">Lilac-grey neutrals, violet accent</span></span><span class="pk-dots"><i style="background:#F9F8FC"></i><i style="background:#FFFFFF"></i><i style="background:#ECEAF3"></i><i style="background:#13111A"></i><i style="background:#5F5A6E"></i><i style="background:#6A3BD2"></i><i style="background:#E7DEFA"></i></span></button><label class="pk-pick"><input type="checkbox" id="pick-FD4" data-pick="FD4"> Pick</label></div><div class="pk-card" data-theme-key="fl" data-pid="FD5"><button type="button" class="pk-show" id="show-FD5" aria-pressed="false"><span class="pk-mini p-FD5 pk-soft"><b>Aa</b><em>Play</em><u></u></span><span class="pk-meta"><span class="pk-id">FD5</span><span class="pk-name">Stone · Ink</span><span class="pk-note">No accent colour: the covers carry it all</span></span><span class="pk-dots"><i style="background:#F7F7F5"></i><i style="background:#FFFFFF"></i><i style="background:#EAEAE6"></i><i style="background:#121212"></i><i style="background:#5E5E58"></i><i style="background:#1A1A1A"></i><i style="background:#E0E0DB"></i></span></button><label class="pk-pick"><input type="checkbox" id="pick-FD5" data-pick="FD5"> Pick</label></div></div></div><div class="pk-row"><h3>Night <span class="pk-count" data-count="fl-night">0 of 3 picked</span></h3><div class="pk-cards"><div class="pk-card" data-theme-key="fl" data-pid="FN1"><button type="button" class="pk-show" id="show-FN1" aria-pressed="false"><span class="pk-mini p-FN1 pk-soft"><b>Aa</b><em>Play</em><u></u></span><span class="pk-meta"><span class="pk-id">FN1</span><span class="pk-name">Ember</span><span class="pk-note">Night twin of the current theme</span></span><span class="pk-dots"><i style="background:#12110F"></i><i style="background:#1C1A17"></i><i style="background:#2A2723"></i><i style="background:#F5F1EA"></i><i style="background:#A9A296"></i><i style="background:#FF8A4C"></i><i style="background:#4A2A17"></i></span></button><label class="pk-pick"><input type="checkbox" id="pick-FN1" data-pick="FN1"> Pick</label></div><div class="pk-card" data-theme-key="fl" data-pid="FN2"><button type="button" class="pk-show" id="show-FN2" aria-pressed="false"><span class="pk-mini p-FN2 pk-soft"><b>Aa</b><em>Play</em><u></u></span><span class="pk-meta"><span class="pk-id">FN2</span><span class="pk-name">Black · Blue</span><span class="pk-note">True black for OLED, blue accent</span></span><span class="pk-dots"><i style="background:#000000"></i><i style="background:#151517"></i><i style="background:#232326"></i><i style="background:#F5F5F7"></i><i style="background:#A0A0A8"></i><i style="background:#5AA2FF"></i><i style="background:#12305A"></i></span></button><label class="pk-pick"><input type="checkbox" id="pick-FN2" data-pick="FN2"> Pick</label></div><div class="pk-card" data-theme-key="fl" data-pid="FN3"><button type="button" class="pk-show" id="show-FN3" aria-pressed="false"><span class="pk-mini p-FN3 pk-soft"><b>Aa</b><em>Play</em><u></u></span><span class="pk-meta"><span class="pk-id">FN3</span><span class="pk-name">Moss</span><span class="pk-note">Green-black, soft green accent</span></span><span class="pk-dots"><i style="background:#0E1311"></i><i style="background:#171E1A"></i><i style="background:#232C27"></i><i style="background:#EEF5F0"></i><i style="background:#9FAFA5"></i><i style="background:#5FD28C"></i><i style="background:#173D27"></i></span></button><label class="pk-pick"><input type="checkbox" id="pick-FN3" data-pick="FN3"> Pick</label></div><div class="pk-card" data-theme-key="fl" data-pid="FN4"><button type="button" class="pk-show" id="show-FN4" aria-pressed="false"><span class="pk-mini p-FN4 pk-soft"><b>Aa</b><em>Play</em><u></u></span><span class="pk-meta"><span class="pk-id">FN4</span><span class="pk-name">Plum</span><span class="pk-note">Aubergine black, pink accent</span></span><span class="pk-dots"><i style="background:#151015"></i><i style="background:#1F181F"></i><i style="background:#2D232D"></i><i style="background:#F7EEF5"></i><i style="background:#B3A2B0"></i><i style="background:#FF7FAE"></i><i style="background:#4D1F33"></i></span></button><label class="pk-pick"><input type="checkbox" id="pick-FN4" data-pick="FN4"> Pick</label></div><div class="pk-card" data-theme-key="fl" data-pid="FN5"><button type="button" class="pk-show" id="show-FN5" aria-pressed="false"><span class="pk-mini p-FN5 pk-soft"><b>Aa</b><em>Play</em><u></u></span><span class="pk-meta"><span class="pk-id">FN5</span><span class="pk-name">Graphite · Paper</span><span class="pk-note">No accent colour: the covers carry it all</span></span><span class="pk-dots"><i style="background:#141416"></i><i style="background:#1D1D20"></i><i style="background:#2A2A2E"></i><i style="background:#F2F2F4"></i><i style="background:#A4A4AC"></i><i style="background:#F2F2F4"></i><i style="background:#3A3A40"></i></span></button><label class="pk-pick"><input type="checkbox" id="pick-FN5" data-pick="FN5"> Pick</label></div></div></div><p class="pk-now" data-now="fl"></p><div class="pk-phones"><figure class="pk-fig"><figcaption>Home</figcaption><div class="pk-zoom"><div class="phone fl " style=""><div class="scr"><div class="status"><span>21:14</span><span>5G 82%</span></div><div class="top"><span class="lt wm">discair</span><span class="sp"></span><span class="ib"><svg class=""><use href="#i-dl"/></svg><i class="bdg">2</i></span><span class="ib"><svg class=""><use href="#i-gear"/></svg></span></div><div class="tabs"><span class="on">Picks</span><span class="">New</span><span class="">Played</span></div><div class="flow"><i class="cv k9 s lf" style=""></i><i class="cv k12 s rt" style=""></i><i class="cv k1 c" style=""></i></div><div class="pad ctr"><h2>Hex</h2><p class="mut">Bark Psychosis · 1994 · Post-rock</p></div><div class="pad row ctr"><span class="btn p"><svg class=""><use href="#i-get"/></svg>Get album</span><span class="btn t">Save</span><span class="btn sq"><svg class="f"><use href="#i-more"/></svg></span></div><div class="h"><h3>Artists</h3><a>All</a></div><div class="hs"><div class="pc"><i class="ar a1 " style=""></i><b>Alice Coltrane</b></div><div class="pc"><i class="ar a2 " style=""></i><b>The Blue Nile</b></div><div class="pc"><i class="ar a4 " style=""></i><b>Slowdive</b></div></div></div><div class="dock"><div class="mini"><i class="cv k5 " style=""></i><div class="sp"><h4 class="el">After the Flood</h4><p class="mut sm">Talk Talk</p></div><svg class="f"><use href="#i-pause"/></svg></div><div class="nav"><span class="on"><svg class=""><use href="#i-home"/></svg>Home</span><span class=""><svg class=""><use href="#i-disc"/></svg>Discover</span><span class=""><svg class=""><use href="#i-lib"/></svg>Library</span><span class=""><svg class=""><use href="#i-search"/></svg>Search</span></div></div></div></div></figure><figure class="pk-fig"><figcaption>Album</figcaption><div class="pk-zoom"><div class="phone fl wash" style=""><div class="scr"><div class="status"><span>21:14</span><span>5G 82%</span></div><div class="bar"><span class="ib"><svg class=""><use href="#i-back"/></svg></span><h4 class="sp el"></h4><span class="ib"><svg class="f"><use href="#i-more"/></svg></span></div><div class="hero"><div class="art"><i class="cv k5 " style=""></i></div><div><h2>Laughing Stock</h2><p><a class="lk">Talk Talk</a></p><p class="mut sm">1991 · Art rock · 6 songs · FLAC</p></div><div class="row"><span class="btn p"><svg class=""><use href="#i-play"/></svg>Play</span><span class="btn t"><svg class=""><use href="#i-shuffle"/></svg>Shuffle</span><span class="btn sq"><svg class=""><use href="#i-dl"/></svg></span></div></div><div class="pad"><div class="trow"><span class="mut num sm">1</span><span class="el">Myrrhman</span><span class="mut num sm">5:33</span></div><div class="trow"><span class="mut num sm">2</span><span class="el">Ascension Day</span><span class="mut num sm">6:00</span></div><div class="trow on"><span class="mut num sm"><svg class="s"><use href="#i-wave"/></svg></span><span class="el">After the Flood</span><span class="mut num sm">9:39</span></div><div class="trow"><span class="mut num sm">4</span><span class="el">Taphead</span><span class="mut num sm">7:30</span></div><div class="trow"><span class="mut num sm">5</span><span class="el">New Grass</span><span class="mut num sm">9:40</span></div><div class="trow"><span class="mut num sm">6</span><span class="el">Runeii</span><span class="mut num sm">4:58</span></div></div><div class="h"><h3>Similar albums</h3></div><div class="hs"><i class="cv k12 " style="width:112px"></i><i class="cv k1 " style="width:112px"></i><i class="cv k10 " style="width:112px"></i></div></div><div class="dock"><div class="mini"><i class="cv k5 " style=""></i><div class="sp"><h4 class="el">After the Flood</h4><p class="mut sm">Talk Talk</p></div><svg class="f"><use href="#i-pause"/></svg></div></div></div></div></figure><figure class="pk-fig"><figcaption>Now Playing</figcaption><div class="pk-zoom"><div class="phone fl np wash" style=""><div class="scr"><div class="status"><span>21:14</span><span>5G 82%</span></div><div class="bar"><span class="ib"><svg class=""><use href="#i-down"/></svg></span><span class="eb sp ctr" style="display:block">Now playing</span><span class="ib"><svg class="f"><use href="#i-more"/></svg></span></div><i class="cv k5 npc lgc" style=""></i><div class="pad row"><div class="sp"><h2 class="el">After the Flood</h2><p class="mut el">Talk Talk · Laughing Stock</p></div><span class="ib"><svg class=""><use href="#i-heart"/></svg></span></div><div class="pad"><div class="seek"><i style="width:38%"></i><b style="left:38%"></b></div><div class="row num sm mut" style="justify-content:space-between;margin-top:10px"><span>3:41</span><span>9:39</span></div></div><div class="pad ctl"><span class="cb flat"><svg class=""><use href="#i-shuffle"/></svg></span><span class="cb"><svg class="f"><use href="#i-prev"/></svg></span><span class="cb main"><svg class="f"><use href="#i-pause"/></svg></span><span class="cb"><svg class="f"><use href="#i-next"/></svg></span><span class="cb flat"><svg class=""><use href="#i-repeat"/></svg></span></div><div class="pad row" style="justify-content:space-around;margin-top:auto;padding-bottom:28px"><span class="col ctr sm mut" style="gap:2px;align-items:center"><svg class=""><use href="#i-queue"/></svg>Queue</span><span class="col ctr sm mut" style="gap:2px;align-items:center"><svg class=""><use href="#i-quote"/></svg>Lyrics</span><span class="col ctr sm mut" style="gap:2px;align-items:center"><svg class=""><use href="#i-path"/></svg>Sonic path</span><span class="col ctr sm mut" style="gap:2px;align-items:center"><svg class=""><use href="#i-tune"/></svg>Equalizer</span></div></div></div></div></figure></div></section>
+<div class="pk-sum"><h2>Your picks</h2><pre id="pk-out">Nothing picked yet.</pre><button type="button" class="pk-copy" id="pk-copy">Copy picks</button></div>
+</div>
+<script>
+(function(){
+  var NAMES={'SD0': 'Lavender', 'SD1': 'Mint', 'SD2': 'Peach', 'SD3': 'Sky', 'SD4': 'Lemon', 'SD5': 'Rose', 'SN1': 'Ink Lavender', 'SN2': 'Midnight Mint', 'SN3': 'Plum Peach', 'SN4': 'Navy Sky', 'SN5': 'Charcoal Lemon', 'FD0': 'Warm white', 'FD1': 'Cool white · Blue', 'FD2': 'Linen · Forest', 'FD3': 'Blush · Raspberry', 'FD4': 'Pearl · Violet', 'FD5': 'Stone · Ink', 'FN1': 'Ember', 'FN2': 'Black · Blue', 'FN3': 'Moss', 'FN4': 'Plum', 'FN5': 'Graphite · Paper'};
+  var KEY='palette-picks-v1';
+  function apply(theme,pid){
+    document.querySelectorAll('#'+theme+' .phone').forEach(function(p){
+      p.className=p.className.replace(/\s*p-\w+/g,'')+' p-'+pid;
+    });
+    document.querySelectorAll('#'+theme+' .pk-show').forEach(function(b){
+      b.setAttribute('aria-pressed',String(b.parentNode.dataset.pid===pid));
+    });
+    var now=document.querySelector('[data-now="'+theme+'"]');
+    if(now) now.textContent='Showing '+pid+' · '+NAMES[pid];
+  }
+  document.querySelectorAll('.pk-show').forEach(function(b){
+    b.addEventListener('click',function(){apply(b.parentNode.dataset.themeKey,b.parentNode.dataset.pid);});
+  });
+  var boxes=[].slice.call(document.querySelectorAll('[data-pick]'));
+  function summary(){
+    var groups=[['Soft Brut day','SD','sb-day'],['Soft Brut night','SN','sb-night'],['Flow day','FD','fl-day'],['Flow night','FN','fl-night']];
+    var picked=boxes.filter(function(b){return b.checked;}).map(function(b){return b.dataset.pick;});
+    var lines=groups.map(function(g){
+      var mine=picked.filter(function(p){return p.indexOf(g[1])===0;});
+      var c=document.querySelector('[data-count="'+g[2]+'"]');
+      if(c){c.textContent=mine.length+' of 3 picked';c.classList.toggle('pk-done',mine.length===3);}
+      return g[0]+': '+(mine.length?mine.map(function(p){return p+' '+NAMES[p];}).join(', '):'none');
+    });
+    document.getElementById('pk-out').textContent=picked.length?lines.join('\n'):'Nothing picked yet.';
+    try{localStorage.setItem(KEY,JSON.stringify(picked));}catch(e){}
+  }
+  try{(JSON.parse(localStorage.getItem(KEY))||[]).forEach(function(p){var b=document.getElementById('pick-'+p);if(b)b.checked=true;});}catch(e){}
+  boxes.forEach(function(b){b.addEventListener('change',summary);});
+  document.getElementById('pk-copy').addEventListener('click',function(){
+    var btn=this,pre=document.getElementById('pk-out');
+    function sel(){var r=document.createRange();r.selectNodeContents(pre);var s=getSelection();s.removeAllRanges();s.addRange(r);}
+    try{navigator.clipboard.writeText(pre.textContent).then(function(){btn.textContent='Copied';setTimeout(function(){btn.textContent='Copy picks';},1500);},sel);}catch(e){sel();}
+  });
+  apply('sb','SD0');apply('fl','FD0');summary();
+})();
+</script>
+</body></html>
