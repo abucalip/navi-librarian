@@ -67,4 +67,28 @@ struct CupertinoPagesRenderTests {
         let state = AppState(themeID: .cupertino, screen: .gapRadar)
         try render("gap-radar", width: 1100, height: 900, CupertinoGapRadar(state: state)) { _ in }
     }
+
+    /// The Radio page (S2-1 item 7, mockup A2) with the mockup's sample stations. Logos are not fetched here, so they show as plain squares.
+    @Test func rendersStations() throws {
+        let state = AppState(themeID: .cupertino, screen: .stations)
+        let day = Date().timeIntervalSince1970 - 3600
+        func st(_ id: String, _ name: String, _ tags: [String], fav: Bool = false, proxied: Bool = true, played: Double? = nil) -> RadioStation {
+            RadioStation(id: id, name: name, proxied: proxied, playableURL: "https://example.invalid/\(id)", favourite: fav, tags: tags, lastPlayedAt: played)
+        }
+        state.stations.showForPreview(stations: [
+            st("1", "FIP", ["Eclectic"], fav: true, played: day),
+            st("2", "Radio Paradise", ["Eclectic"], fav: true, played: day - 86_400 * 0.1),
+            st("3", "KEXP", ["Indie"], fav: true, played: day - 86_400),
+            st("4", "BBC Radio 6 Music", ["Indie", "Talk"], fav: true, proxied: false),
+            st("5", "SomaFM Groove Salad", ["Electronic"], fav: true, played: day - 86_400 * 3),
+            st("6", "Radio Swiss Jazz", ["Jazz"], fav: true),
+            st("7", "NTS 1", ["Electronic", "Talk"]),
+            st("8", "Worldwide FM", ["Jazz", "Eclectic"]),
+        ], now: [
+            "1": RadioNow(state: .ok, rawTitle: "Talk Talk - Life's What You Make It", artist: "Talk Talk", title: "Life's What You Make It"),
+            "6": RadioNow(state: .noMetadata),
+            "8": RadioNow(state: .unavailable),
+        ])
+        try render("stations", width: 1180, height: 640, CupertinoStations(state: state, selected: "1")) { _ in }
+    }
 }

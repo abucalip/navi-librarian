@@ -184,6 +184,12 @@ public final class StationsModel {
 
     public func clearNote() { actionNote = nil }
 
+    /// Previews and render tests: shows a list without a server.
+    public func showForPreview(stations: [RadioStation], now: [String: RadioNow] = [:]) {
+        self.stations = stations; nowByID = now; phase = .loaded; loadedAt = clockNow()
+    }
+    private func clockNow() -> Date { clock() }
+
     private func update(_ id: String, _ change: (RadioStation) -> RadioStation) {
         guard let i = stations.firstIndex(where: { $0.id == id }) else { return }
         stations[i] = change(stations[i])
