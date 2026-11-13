@@ -1,6 +1,7 @@
 package app.discair.ui.album
 
 import app.discair.ui.common.sharedCover
+import app.discair.ui.common.flowWash
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.ui.semantics.Role
@@ -94,10 +95,13 @@ fun AlbumScreen(route: AlbumRoute, open: Opener) {
     androidx.compose.runtime.LaunchedEffect(route) {
         kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { pathsOn = repo.pathsAvailable(); sonicOn = repo.sonicAvailable() }
     }
-    TintedPage(tint, list) {
+    val body: @Composable () -> Unit = {
         LoadView(loaded) { page -> AlbumContent(route, page, open, list, onTint = { tint = it }, pathsOn = pathsOn, sonicOn = sonicOn) }
         if (loaded.state !is Load.Ready) OverlayBack(open.back, Modifier.statusBarsPadding().padding(16.dp))
     }
+    // Flow draws its own wash (the cover's pastel on the page colour, D2); the other themes keep TintedPage.
+    if (app.discair.ui.common.isFlow()) Box(Modifier.fillMaxSize().flowWash(tint, list, app.discair.ui.theme.LocalPalette.current)) { body() }
+    else TintedPage(tint, list) { body() }
 }
 
 @Composable
@@ -170,6 +174,19 @@ private fun AlbumContent(route: AlbumRoute, page: AlbumPage, open: Opener, list:
                 s.similarAlbums.items, similarArtists, pathsOn, { showPaths = true },
             ),
             open, list,
+        )
+        return
+    }
+
+    // Flow: the cover on a wash of its own colour, in FlowAlbum.kt (the wash itself is drawn by AlbumScreen).
+    if (app.discair.ui.common.isFlow()) {
+        FlowAlbumContent(
+            CoverStackAlbumData(
+                route, info, title, artist, year, s.genre.genre, owned, albumId, tracks, app.discair.model.coverUrlFor(info?.artworkUrl, choice), backs,
+                editions.size, canPick, { showEditions = true }, booklet, s.description.description, page.done != Done(),
+                s.similarAlbums.items, similarArtists, pathsOn, { showPaths = true },
+            ),
+            open, list, onTint,
         )
         return
     }
@@ -425,7 +442,7 @@ internal fun InfoReviewsTabs(artist: String, album: String, description: Descrip
     val labels = if (booklet != null) listOf("Info", "Reviews", "Booklet") else listOf("Info", "Reviews")
     val tab = (chosen ?: if (finished && paragraphs.isEmpty()) 1 else 0).coerceAtMost(labels.size - 1)
     Column(Modifier.fillMaxWidth().padding(top = 16.dp)) {
-        if (app.discair.ui.common.isCoverStack()) CoverStackTabs(labels, tab, { chosen = it }, Modifier.padding(horizontal = 16.dp)) else TabRow(
+        if (app.discair.ui.common.isCoverStack()) CoverStackTabs(labels, tab, { chosen = it }, Modifier.padding(horizontal = 16.dp)) else if (app.discair.ui.common.isFlow()) app.discair.ui.common.FlowTabs(labels, tab, { chosen = it }, Modifier.padding(horizontal = 16.dp)) else TabRow(
             selectedTabIndex = tab, containerColor = Color.Transparent, contentColor = Ink.AccentText,
             divider = { RowDivider(Modifier.padding(horizontal = 16.dp)) },
         ) {

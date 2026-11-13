@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.layout.fillMaxSize
+import app.discair.ui.common.flowBackdropSource
 import app.discair.ui.common.Target
 import app.discair.ui.common.RowDivider
 import androidx.compose.ui.semantics.semantics
@@ -284,8 +285,12 @@ fun MainShell(state: UiState, model: AppViewModel, container: AppContainer) {
             onSearch = { searchOpen = true },
             onPlayer = openPlayer,
         )
+        val flowBackdrop = app.discair.ui.common.rememberFlowBackdrop()
         Box(Modifier.weight(1f).fillMaxSize()) {
+        androidx.compose.runtime.CompositionLocalProvider(app.discair.ui.common.LocalFlowBackdrop provides flowBackdrop) {
         Scaffold(
+            // Flow's bars blur the page behind them; no other theme records it.
+            modifier = if (app.discair.ui.common.isFlow()) Modifier.flowBackdropSource(flowBackdrop) else Modifier,
             snackbarHost = { SnackbarHost(snackbar, Modifier.padding(bottom = clearance)) },
             // Pages run behind the system navigation bar; the island and each page's end padding clear it.
             contentWindowInsets = androidx.compose.foundation.layout.WindowInsets(0),
@@ -400,6 +405,7 @@ fun MainShell(state: UiState, model: AppViewModel, container: AppContainer) {
                     onPlayer = openPlayer,
                 )
             }
+        }
         }
         }
         }
