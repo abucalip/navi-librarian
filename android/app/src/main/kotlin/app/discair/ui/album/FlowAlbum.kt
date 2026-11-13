@@ -16,7 +16,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -125,7 +125,7 @@ internal fun FlowAlbumContent(d: CoverStackAlbumData, open: Opener, list: LazyLi
             item { FlowHeading("Similar albums", Modifier.padding(top = 20.dp, bottom = 10.dp)) }
             item {
                 LazyRow(contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    items(d.similarAlbums, key = { it.key + it.name }) { album ->
+                    itemsIndexed(d.similarAlbums, key = { i, it -> "$i|${it.key}|${it.name}" }) { _, album ->
                         Column(
                             Modifier.width(FlowPagesRules.SIMILAR_COVER.dp).clip(RoundedCornerShape(8.dp))
                                 .clickable(role = Role.Button) { open.album(album.key, album.artist, album.name, null, album.year) },
@@ -145,7 +145,7 @@ internal fun FlowAlbumContent(d: CoverStackAlbumData, open: Opener, list: LazyLi
             item { FlowHeading("Similar artists", Modifier.padding(top = 20.dp, bottom = 10.dp)) }
             item {
                 LazyRow(contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    items(d.similarArtists, key = { it.name }) { a -> FlowArtistChip(a.name, a.artworkUrl, { open.artist(a.name, a.key, a.id, a.mbid) }) }
+                    itemsIndexed(d.similarArtists, key = { i, it -> "$i|${it.name}" }) { _, a -> FlowArtistChip(a.name, a.artworkUrl, { open.artist(a.name, a.key, a.id, a.mbid) }) }
                 }
             }
         }

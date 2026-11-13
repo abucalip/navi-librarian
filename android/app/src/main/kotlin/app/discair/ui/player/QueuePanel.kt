@@ -1,5 +1,6 @@
 package app.discair.ui.player
 
+import app.discair.ui.common.ArtIcons
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -16,8 +17,6 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import kotlinx.coroutines.flow.first
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.MoreVert
 import app.discair.ui.common.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -146,7 +145,7 @@ fun QueuePanel(state: PlayerUiState, controller: PlayerController, modifier: Mod
                     }
                     Column {
                         IconButton(onClick = { menu = true }, Modifier.size(Target)) {
-                            Icon(Icons.Default.MoreVert, contentDescription = "Actions for ${item.title}")
+                            Icon(ArtIcons.More, contentDescription = "Actions for ${item.title}")
                         }
                         DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
                             DropdownMenuItem(text = { Text("Move up") }, enabled = index > 0, onClick = { menu = false; controller.move(index, index - 1) })

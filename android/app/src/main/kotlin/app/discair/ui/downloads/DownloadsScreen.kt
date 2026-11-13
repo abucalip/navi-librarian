@@ -1,5 +1,6 @@
 package app.discair.ui.downloads
 
+import app.discair.ui.common.ArtIcons
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,10 +16,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Warning
@@ -281,11 +280,11 @@ private fun JobRow(job: AcquisitionJob, hub: AcquisitionHub, now: Double, open: 
 
 @Composable
 private fun statusIcon(job: AcquisitionJob): androidx.compose.ui.graphics.vector.ImageVector = when (job.info.tone) {
-    Tone.Ok -> Icons.Default.Check
-    Tone.Error -> Icons.Default.Warning
-    Tone.Caution -> Icons.Default.Info
-    Tone.Muted -> Icons.Default.Close
-    Tone.Active -> Icons.Default.Refresh
+    Tone.Ok -> ArtIcons.Check
+    Tone.Error -> ArtIcons.Warning
+    Tone.Caution -> ArtIcons.Info
+    Tone.Muted -> ArtIcons.Close
+    Tone.Active -> ArtIcons.Refresh
 }
 
 @Composable

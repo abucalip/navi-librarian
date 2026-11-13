@@ -1,5 +1,6 @@
 package app.discair.ui
 
+import app.discair.ui.common.ArtIcons
 import app.discair.R
 import androidx.compose.foundation.layout.height
 import androidx.compose.ui.graphics.Color
@@ -33,7 +34,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Warning
@@ -548,9 +548,9 @@ private fun CheckLine(name: String, check: Check) {
     ) {
         when (check) {
             Check.Pending -> CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
-            Check.Ok -> Icon(Icons.Default.Check, contentDescription = null, tint = tint)
-            is Check.Failed -> Icon(Icons.Default.Warning, contentDescription = null, tint = tint)
-            Check.Idle -> Icon(Icons.Default.Info, contentDescription = null, tint = tint)
+            Check.Ok -> Icon(ArtIcons.Check, contentDescription = null, tint = tint)
+            is Check.Failed -> Icon(ArtIcons.Warning, contentDescription = null, tint = tint)
+            Check.Idle -> Icon(ArtIcons.Info, contentDescription = null, tint = tint)
         }
         Spacer(Modifier.width(8.dp))
         Text(text, style = MaterialTheme.typography.bodyMedium, color = tint)

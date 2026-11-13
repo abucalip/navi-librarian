@@ -30,7 +30,6 @@ import app.discair.ui.theme.Timing
 import app.discair.ui.theme.currentMotionFamily
 import app.discair.ui.theme.rememberReducedMotion
 import app.discair.ui.theme.toTween
-import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.CircularProgressIndicator
@@ -109,8 +108,8 @@ fun GetButton(noun: String, name: String, state: GetState, onClick: () -> Unit, 
             when (s) {
                 GetState.Idle -> GetIcon(app.discair.ui.player.PlayerIcons.Cloud, null, overlay)
                 GetState.Pending -> CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp, color = if (overlay) Color.White else ProgressIndicatorDefaults.circularColor)
-                is GetState.Requested -> GetIcon(Icons.Default.Check, Ink.Ok, overlay)
-                is GetState.Failed -> GetIcon(Icons.Default.Warning, Ink.ChartRedText, overlay)
+                is GetState.Requested -> GetIcon(ArtIcons.Check, Ink.Ok, overlay)
+                is GetState.Failed -> GetIcon(ArtIcons.Warning, Ink.ChartRedText, overlay)
             }
         }
     }

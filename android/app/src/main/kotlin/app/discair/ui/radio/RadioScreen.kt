@@ -1,5 +1,6 @@
 package app.discair.ui.radio
 
+import app.discair.ui.common.ArtIcons
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -11,9 +12,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -194,8 +192,8 @@ private fun StationRow(modifier: Modifier, station: RadioStation, favourite: Boo
             onClick = onFavourite,
             Modifier.size(Target).semantics { contentDescription = if (favourite) "Remove ${station.name} from favourites" else "Add ${station.name} to favourites" },
         ) {
-            if (favourite) Icon(Icons.Default.Favorite, contentDescription = null, tint = Ink.AccentText)
-            else Icon(Icons.Default.FavoriteBorder, contentDescription = null)
+            if (favourite) Icon(ArtIcons.HeartFilled, contentDescription = null, tint = Ink.AccentText)
+            else Icon(ArtIcons.Heart, contentDescription = null)
         }
     }
 }

@@ -1,5 +1,6 @@
 package app.discair.ui
 
+import app.discair.ui.common.ArtIcons
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -13,11 +14,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -65,10 +63,10 @@ fun NavRail(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        RailCell(palette, "Home", homeSelected, onHome, Icons.Default.Home)
-        RailCell(palette, "Discover", discoverSelected, onDiscover, Icons.Default.Star)
-        RailCell(palette, "Library", librarySelected, onLibrary, Icons.AutoMirrored.Filled.List)
-        RailCell(palette, "Search", false, onSearch, Icons.Default.Search)
+        RailCell(palette, "Home", homeSelected, onHome, ArtIcons.Home)
+        RailCell(palette, "Discover", discoverSelected, onDiscover, ArtIcons.Disc)
+        RailCell(palette, "Library", librarySelected, onLibrary, ArtIcons.Lib)
+        RailCell(palette, "Search", false, onSearch, ArtIcons.Search)
         Spacer(Modifier.weight(1f))
         if (showPlayer) {
             Column(

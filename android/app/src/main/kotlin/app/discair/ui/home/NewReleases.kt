@@ -1,5 +1,6 @@
 package app.discair.ui.home
 
+import app.discair.ui.common.ArtIcons
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -13,8 +14,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.MoreVert
 import app.discair.ui.common.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -111,7 +110,7 @@ private fun ReleaseMenu(entry: DiscoveryEntry) {
     var open by remember { mutableStateOf(false) }
     Box {
         IconButton(onClick = { open = true }, Modifier.size(Target)) {
-            Icon(Icons.Default.MoreVert, contentDescription = "Options for ${item.album}")
+            Icon(ArtIcons.More, contentDescription = "Options for ${item.album}")
         }
         DropdownMenu(open, onDismissRequest = { open = false }) {
             val downloadable = !item.acquired && (get is GetState.Idle || get is GetState.Failed)

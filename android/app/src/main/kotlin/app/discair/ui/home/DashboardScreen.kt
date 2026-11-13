@@ -1,5 +1,6 @@
 package app.discair.ui.home
 
+import app.discair.ui.common.ArtIcons
 import androidx.compose.animation.core.Animatable
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -20,8 +21,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -268,7 +267,7 @@ private fun PickCard(pick: Pick, page: Int, count: Int, open: Opener, onFeedback
             ) { Text(if (saved) "Saved" else "Save") }
             Box {
                 IconButton(onClick = { menu = true }, Modifier.size(Target)) {
-                    Icon(Icons.Default.MoreVert, contentDescription = "More for ${pick.album}")
+                    Icon(ArtIcons.More, contentDescription = "More for ${pick.album}")
                 }
                 DropdownMenu(menu, onDismissRequest = { menu = false }) {
                     DropdownMenuItem(text = { Text("Not this album") }, onClick = { menu = false; onFeedback(FeedbackAction.Dismiss, pick) })
