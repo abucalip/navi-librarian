@@ -77,6 +77,9 @@ public final class LibraryModel {
         cache = scope.map { PageCache(root: root, scope: $0, now: now) }
     }
 
+    /// Settings "Reset saved data": deletes the saved pages but keeps saving new ones.
+    func resetSavedPages() { cache?.clear() }
+
     /// Sign-out: delete every saved page.
     func clearSavedPages() { cache?.clear(); cache = nil; savedCopyDate = nil; savedCopyReason = nil }
 
