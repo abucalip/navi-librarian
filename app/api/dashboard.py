@@ -8,8 +8,7 @@ import random
 from fastapi import APIRouter, Depends, HTTPException
 
 from app.api.dependencies import get_librarian
-from app.api.utils import parse_result
-from app.services.dashboard import build_dashboard_picks
+from app.services import lens_week_picks
 from app.services.dashboard_sections import SHELF_TYPES, album_shelf, genre_tiles
 
 router = APIRouter()
@@ -37,17 +36,8 @@ def dashboard_picks(count: int = 10, librarian=Depends(get_librarian)):
     if not 1 <= count <= 20:
         raise HTTPException(status_code=400, detail="count must be between 1 and 20")
 
-    def read_list(list_name, requested_count):
-        return parse_result(
-            librarian.discovery_get_list(list_name=list_name, count=requested_count)
-        )
-
-    return build_dashboard_picks(
-        read_list,
-        librarian._discovery_is_album_candidate,
-        count,
-        shuffle=random.shuffle,
-    )
+    # Only the week's Current tastes lists (docs/ACTIVE_WORK.md, owner request); each call shuffles again.
+    return lens_week_picks.picks(librarian, count, shuffle=random.shuffle)
 
 
 @router.get("/api/dashboard/genres")

@@ -158,6 +158,7 @@ fun NowPlayingSheet(state: PlayerUiState, controller: PlayerController, lyrics: 
     var tint by remember { mutableStateOf<Color?>(null) }
     var eqOpen by remember { mutableStateOf(false) }
     var crossfadeOpen by remember { mutableStateOf(false) }
+    var panel by remember { mutableStateOf(0) } // Soft Brut: 2 = the queue and 1 = the lyrics open as a sheet, like the equalizer and crossfade
     val container = (androidx.compose.ui.platform.LocalContext.current.applicationContext as app.discair.DiscairApplication).container
     // Cassette Deck: no flip card; the queue sits under the player and a lyrics button swaps it for the lyrics (view 1 is lyrics, anything else the queue).
     val tape = app.discair.ui.theme.LocalPalette.current.layout == app.discair.ui.theme.Layout.TapeDeck
@@ -168,6 +169,7 @@ fun NowPlayingSheet(state: PlayerUiState, controller: PlayerController, lyrics: 
     val sticker = app.discair.ui.theme.LocalPalette.current.layout == app.discair.ui.theme.Layout.StickerWall
     // Soft Brut: its own top bar and views, in CoverStackNowPlaying.kt; the queue and the lyrics are views 2 and 1 as for every theme.
     val coverStack = app.discair.ui.theme.LocalPalette.current.layout == app.discair.ui.theme.Layout.CoverStack
+    LaunchedEffect(coverStack) { if (coverStack && view != 0) { view = 0; lastView = 0 } }
     BackHandler(enabled = view != 0) { view = 0; lastView = 0 }
     val scope = androidx.compose.runtime.rememberCoroutineScope()
     // -1 = queue, 0 = artwork, +1 = lyrics; fractions are mid-flip while a finger is down or the flip settles.
@@ -177,7 +179,7 @@ fun NowPlayingSheet(state: PlayerUiState, controller: PlayerController, lyrics: 
     val lyricsState by lyrics.state.collectAsState()
     val songId = state.current?.songId
     val nextId = state.queue.nextIndex()?.let { state.queue.items.getOrNull(it)?.songId }?.takeIf { it != songId }
-    val lyricsOpen = view == 1 || flip.value > 0.5f || sheetStack || settings.showLyricLine // the line under the title needs them while the sheet is open
+    val lyricsOpen = view == 1 || (coverStack && panel == 1) || flip.value > 0.5f || sheetStack || settings.showLyricLine // the line under the title needs them while the sheet is open
     // Fetch only while the Lyrics view is open for the song that is playing; close stops everything.
     LaunchedEffect(lyricsOpen, songId, nextId) {
         if (lyricsOpen && songId != null) lyrics.open(songId, nextId) else lyrics.close()
@@ -255,16 +257,20 @@ fun NowPlayingSheet(state: PlayerUiState, controller: PlayerController, lyrics: 
             if (coverStack) {
                 val lyricsForSong = if (lyricsState.songIdOrNull() == songId) lyricsState else LyricsUiState.Idle
                 val photosAvailable = canBlur && slides.isNotEmpty()
+                val csInput = CoverStackPlayerInput(
+                    lyricsForSong, currentLine, songId.orEmpty(), { if (songId != null) lyrics.retry(songId, nextId) },
+                    lineUi, photosAvailable, showSlides, { showSlides = !showSlides; settings.showSlideshow = showSlides },
+                )
                 CoverStackPlayer(
-                    state, controller, view, onView = { view = it; lastView = it }, onClose = onDismiss,
+                    state, controller, 0, onView = { panel = it }, onClose = onDismiss,
                     onSignIn = onSignIn, onEqualizer = { eqOpen = true }, onCrossfade = { crossfadeOpen = true },
                     onOpenArtist = onOpenArtist, onOpenAlbum = onOpenAlbum, onCoverColor = { tint = it },
-                    input = CoverStackPlayerInput(
-                        lyricsForSong, currentLine, songId.orEmpty(), { if (songId != null) lyrics.retry(songId, nextId) },
-                        lineUi, photosAvailable, showSlides, { showSlides = !showSlides; settings.showSlideshow = showSlides },
-                    ),
-                    photos = { if (photosAvailable && showSlides && view == 1) SlideshowBackdrop(slides, state.isPlaying) },
+                    input = csInput,
+                    photos = {},
                 )
+                if (panel != 0) SettingsSheet({ panel = 0 }) {
+                    CoverStackPanel(state, controller, panel, csInput, photos = { if (photosAvailable && showSlides && panel == 1) SlideshowBackdrop(slides, state.isPlaying) })
+                }
             } else if (sticker) StickerPlayer(
                 state, controller, view, onView = { view = it; lastView = it },
                 onSignIn = onSignIn, onEqualizer = { eqOpen = true }, onCrossfade = { crossfadeOpen = true },

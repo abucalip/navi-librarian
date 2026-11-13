@@ -186,13 +186,22 @@ def build(librarian: Any) -> dict[str, Any]:
 
 def refresh(librarian: Any) -> dict[str, Any]:
     """Build the lens lists and store each one the snapshot policy accepts."""
-    return discovery_refresh.refresh_lens_lists(
+    outcome = discovery_refresh.refresh_lens_lists(
         lambda: build(librarian),
         librarian._discovery_read_list,
         librarian._discovery_write_list,
         _REFRESH_LOCK,
         excluded_provider=lambda: _owned_or_none(librarian),
     )
+    try:  # the week of Current tastes lists behind Today's picks keeps each day's list
+        from discovery import lens_week
+        lens_week.archive_current(
+            librarian._discovery_read_list(lens_storage_name(lens_week.LENS)),
+            librarian._discovery_read_list, librarian._discovery_write_list,
+        )
+    except Exception:
+        pass
+    return outcome
 
 
 def _due(librarian: Any) -> bool:

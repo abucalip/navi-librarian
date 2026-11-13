@@ -26,6 +26,9 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
+import app.discair.data.RECENT_DAYS
+import app.discair.data.recentlyAdded
+import app.discair.model.LibraryAlbum
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -124,7 +127,7 @@ internal fun CoverStackHome(
     val repo = LocalRepository.current
     val recent = rememberLoad("shelf_recent_20") { repo.shelf(Shelves.Recent, 20).items }
     val frequent = rememberLoad("shelf_frequent_20") { repo.shelf(Shelves.Frequent, 20).items }
-    val newest = rememberLoad("shelf_newest_4") { repo.shelf(Shelves.Newest, 4).items }
+    val newest = rememberLoad("recently_added") { repo.recentlyAdded() } // the last month, newest first; the row scrolls and More lists them all
     val plays = rememberLoad("radio_plays") { repo.radioPlays() }
     val artists = HomeArtists.from((recent.state as? Load.Ready)?.value.orEmpty(), (frequent.state as? Load.Ready)?.value.orEmpty())
     val listeningKnown = recent.state !is Load.Loading && frequent.state !is Load.Loading
@@ -135,7 +138,7 @@ internal fun CoverStackHome(
         { InRotation(artists, listeningKnown, open, onLibrary) },
         { if (data.arrivals.isNotEmpty()) ArrivalCards(data.arrivals, open, onDownloads) },
         { RadioTile((plays.state as? Load.Ready)?.value, onRadio) },
-        { RecentlyAddedGrid(newest.state, newest.reload, open, onLibrary) },
+        { RecentlyAddedRow(newest.state, newest.reload, open) },
         { RecentlyPlayed(recent.state, open) },
         { data.insight?.let { InsightCardView(it, open) } },
         { GenresBlock(data.genres, open) },
@@ -475,25 +478,27 @@ private fun RadioTile(plays: List<RadioPlay>?, onRadio: () -> Unit) {
 
 // ----- 5. recently added -----------------------------------------------------------------------------------------
 
-/** A two-column cover grid of the four newest albums; "Library" opens Library. */
+/** The albums added in the last month in one row that slides sideways; "More" opens the whole list. */
 @Composable
-private fun RecentlyAddedGrid(state: Load<List<ShelfAlbum>>, retry: () -> Unit, open: Opener, onLibrary: () -> Unit) {
+private fun RecentlyAddedRow(state: Load<List<LibraryAlbum>>, retry: () -> Unit, open: Opener) {
     val p = LocalPalette.current
+    var all by remember { mutableStateOf(false) }
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        SectionHeading("Recently added", "Library", onLibrary)
+        SectionHeading("Recently added", "More") { all = true }
         when (state) {
             Load.Loading -> Muted("Loading…")
             is Load.Failed -> app.discair.ui.home.Inline(state.failure.message, retry)
-            is Load.Ready -> if (state.value.isEmpty()) Muted("Nothing here yet.") else Column(Modifier.padding(horizontal = Gutter), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                state.value.take(4).chunked(2).forEach { pair ->
-                    Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                        pair.forEach { album -> Box(Modifier.weight(1f)) { AlbumCaption(album, open, p, radius = CoverStackRules.radius(p).toInt()) } }
-                        if (pair.size == 1) Spacer(Modifier.weight(1f))
+            is Load.Ready -> if (state.value.isEmpty()) Muted("Nothing was added in the last $RECENT_DAYS days.") else {
+                LazyRow(contentPadding = PaddingValues(horizontal = Gutter), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                    items(state.value, key = { it.id.ifBlank { it.key } }) { album ->
+                        AlbumCaption(ShelfAlbum(album.id, album.name, album.artist, "", album.year, album.artworkUrl), open, p, radius = CoverStackRules.radius(p).toInt(), modifier = Modifier.width(148.dp))
                     }
                 }
+                if (all) RecentlyAddedSheet(state.value, open) { all = false }
             }
         }
     }
+    if (all && state !is Load.Ready) all = false
 }
 
 @Composable

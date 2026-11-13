@@ -14,11 +14,8 @@ class FakeLibrarian:
     def __init__(self):
         self.calls = []
         self.health_error = None
-        self.lists = {
-            "personal": {"items": [{"artist": "Artist A", "album": "Album A"}]},
-            "classics": {"items": [{"artist": "Artist B", "album": "Album B"}]},
-            "artist_deep_dive": {"items": [{"artist": "Artist C", "album": "Album C"}]},
-        }
+        self.store = {}
+        self.owned = set()
 
     def api_call(self, method):
         self.calls.append(("api_call", method))
@@ -26,12 +23,29 @@ class FakeLibrarian:
             raise self.health_error
         return {"status": "pong"}
 
-    def discovery_get_list(self, *, list_name, count):
-        self.calls.append(("discovery_get_list", list_name, count))
-        return json.dumps(self.lists[list_name])
+    def _discovery_read_list(self, name):
+        payload = self.store.get(name)
+        return {"payload": payload, "generated_at": 1.0} if payload is not None else None
 
-    def _discovery_is_album_candidate(self, item):
-        return item.get("album") != "Exclude"
+    def _discovery_write_list(self, name, payload):
+        self.calls.append(("write", name))
+        self.store[name] = payload
+
+    def _music_key(self, text):
+        return text.strip().casefold()
+
+    def _discovery_settings_read(self):
+        return {}
+
+    def _discovery_library_snapshot(self):
+        return {"albums": [{"artist": a, "album": b} for a, b in self.owned]}
+
+    def _discovery_feedback_rows(self):
+        return []
+
+
+def lens_payload(day, *albums):
+    return {"day": day, "albums": [{"artist": a, "album": b, "tags": ["rock"], "seed_tag": "rock"} for a, b in albums]}
 
 
 class DashboardRoutesTests(unittest.TestCase):
@@ -73,38 +87,40 @@ class DashboardRoutesTests(unittest.TestCase):
                          "Navidrome is unavailable or authentication failed.")
         self.assertNotIn("sensitive", response.text)
 
-    def test_dashboard_balances_categories_and_maps_service_calls(self):
+    def test_picks_come_only_from_the_weeks_current_tastes_lists(self):
+        from datetime import datetime
+        from discovery.lens_storage import lens_day
+        today = lens_day(datetime.now())
+        self.fake.store["lens:current_tastes"] = lens_payload(today, ("Artist A", "Album A"), ("Artist B", "Album B"))
+        self.fake.store["lens:deep_cuts"] = lens_payload(today, ("Other", "Not a pick"))
         with patch("app.api.dashboard.random.shuffle", side_effect=lambda values: None):
-            response = self.client.get("/api/dashboard-picks?count=3")
+            response = self.client.get("/api/dashboard-picks?count=5")
         self.assertEqual(response.status_code, 200)
         payload = response.json()
-        self.assertEqual(payload["count"], 3)
-        self.assertEqual(payload["pool_size"], 3)
-        self.assertEqual(
-            {item["dashboard_category"] for item in payload["items"]},
-            {"Personal discoveries", "Add to your collection", "Artist Deep Dives"},
-        )
-        self.assertEqual(self.fake.calls, [
-            ("discovery_get_list", "personal", 150),
-            ("discovery_get_list", "classics", 150),
-            ("discovery_get_list", "artist_deep_dive", 150),
-        ])
+        self.assertEqual([(i["artist"], i["album"]) for i in payload["items"]], [("Artist A", "Album A"), ("Artist B", "Album B")])
+        self.assertEqual({i["dashboard_category"] for i in payload["items"]}, {"Current tastes"})
+        self.assertIn(("write", f"lens_week:current_tastes:{today}"), self.fake.calls)
 
-    def test_dashboard_deduplicates_and_filters_non_album_candidates(self):
-        self.fake.lists["classics"] = {"recommendations": [
-            {"artist": " artist a ", "album": "album a"},
-            {"artist": "Artist D", "album": "Exclude"},
-            {"artist": "Artist D", "album": "Album D"},
-        ]}
-        with patch("app.api.dashboard.random.shuffle", side_effect=lambda values: None):
-            response = self.client.get("/api/dashboard-picks?count=20")
-        self.assertEqual(response.status_code, 200)
-        payload = response.json()
-        self.assertEqual(payload["pool_size"], 3)
-        identities = [(item["artist"].casefold(), item["album"].casefold())
-                      for item in payload["items"]]
-        self.assertEqual(len(identities), len(set(identities)))
-        self.assertNotIn(("artist d", "exclude"), identities)
+    def test_picks_reshuffle_on_every_request_and_skip_owned_albums(self):
+        from datetime import datetime
+        from discovery.lens_storage import lens_day
+        today = lens_day(datetime.now())
+        self.fake.store["lens:current_tastes"] = lens_payload(today, ("A", "1"), ("B", "2"), ("C", "3"))
+        self.fake.owned = {("C", "3")}
+        seen = []
+        def reverse(values):
+            seen.append(len(values)); values.reverse()
+        with patch("app.api.dashboard.random.shuffle", side_effect=reverse):
+            first = self.client.get("/api/dashboard-picks?count=5").json()
+            second = self.client.get("/api/dashboard-picks?count=5").json()
+        self.assertEqual(seen, [2, 2])
+        self.assertEqual([i["artist"] for i in first["items"]], ["B", "A"])
+        self.assertEqual(first, second)
+        self.assertEqual(first["pool_size"], 2)
+
+    def test_no_list_means_no_picks(self):
+        response = self.client.get("/api/dashboard-picks?count=5")
+        self.assertEqual(response.json()["items"], [])
 
     def test_dashboard_rejects_invalid_count(self):
         response = self.client.get("/api/dashboard-picks?count=21")

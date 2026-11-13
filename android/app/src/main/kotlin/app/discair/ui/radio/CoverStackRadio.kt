@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
@@ -289,7 +290,7 @@ internal fun CoverStackRadioNow(
     val p = LocalPalette.current
     val coverShape = RoundedCornerShape(14.dp)
     val (headline, under) = CoverStackRadioRules.headline(item.title, live.now, item.artist)
-    Column(Modifier.fillMaxWidth()) {
+    Column(Modifier.fillMaxWidth().fillMaxHeight()) { // full height, like Now Playing, so the sheet's top edge is the top of the screen
         Row(Modifier.fillMaxWidth().heightIn(min = 48.dp), verticalAlignment = Alignment.CenterVertically) {
             Box(Modifier.size(Target).clip(CircleShape).clickable(role = Role.Button, onClick = onDismiss), contentAlignment = Alignment.Center) {
                 Icon(PlayerIcons.Down, contentDescription = "Close now playing", tint = p.text)
@@ -299,7 +300,7 @@ internal fun CoverStackRadioNow(
                 Icon(PlayerIcons.List, contentDescription = "Heard on radio", tint = p.text)
             }
         }
-        Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()), horizontalAlignment = Alignment.CenterHorizontally) {
+        Column(Modifier.fillMaxWidth().weight(1f).verticalScroll(rememberScrollState()), horizontalAlignment = Alignment.CenterHorizontally) {
             Box(Modifier.fillMaxWidth().padding(top = 4.dp, bottom = 12.dp), contentAlignment = Alignment.Center) {
                 Box(
                     Modifier.widthIn(max = 296.dp).fillMaxWidth().aspectRatio(1f).coverStackShadow(coverShape, p, 5f).clip(coverShape)

@@ -38,6 +38,7 @@ struct CupertinoHome: View {
         .onGeometryChange(for: CGFloat.self) { $0.size.width - CU.Space.xl * 2 } action: { width = $0 }
         .task(id: refreshKey) { if state.session != nil { await state.refreshHomeDashboard() } }
         .task { await state.loadInsights(); await state.loadHomeFeeds() }
+        .task { await state.library.reshufflePicks(librarian: state.session?.librarian) }
     }
 
     /// What the figures depend on besides the album list: the Gets, the saved taste and the picks.
