@@ -10,6 +10,7 @@ import app.discair.lyrics.LyricsCache
 import app.discair.lyrics.LyricsController
 import app.discair.lyrics.SubsonicLyricsSource
 import app.discair.net.LibrarianClient
+import app.discair.model.ArtworkChoices
 import coil3.ImageLoader
 import coil3.request.allowHardware
 import coil3.network.okhttp.OkHttpNetworkFetcherFactory
@@ -140,7 +141,11 @@ class AppContainer(val app: Application) {
     val imageLoader: ImageLoader by lazy {
         ImageLoader.Builder(app)
             .allowHardware(false)
-            .components { add(OkHttpNetworkFetcherFactory(callFactory = { http.newBuilder().dispatcher(okhttp3.Dispatcher().apply { maxRequestsPerHost = 6 }).build() })) }
+            .components {
+                // Any owned-cover address that reaches the loader without the owner's pick gets it here (notifications, previews).
+                add(coil3.map.Mapper<String, String> { data, _ -> ArtworkChoices.versioned(data).takeIf { it != data } })
+                add(OkHttpNetworkFetcherFactory(callFactory = { http.newBuilder().dispatcher(okhttp3.Dispatcher().apply { maxRequestsPerHost = 6 }).build() }))
+            }
             .build()
     }
 

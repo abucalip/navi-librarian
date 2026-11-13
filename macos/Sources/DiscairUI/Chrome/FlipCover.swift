@@ -73,6 +73,10 @@ struct FlipCover<Front: View>: View {
     @State private var spine: ArtworkPicture?
     @State private var steps = 0
     @State private var angle = 0.0
+    /// The covers the owner can pick from and the group they belong to, read from the same index as the back faces.
+    @State private var editions: [ArtworkPicture] = []
+    @State private var groupID: String?
+    @State private var picking = false
 
     var body: some View {
         Group {
@@ -83,7 +87,14 @@ struct FlipCover<Front: View>: View {
             }
         }
         .overlay(alignment: .bottomLeading) {
-            if let albumID, !albumID.isEmpty { EditionPickerButton(albumID: albumID, rgid: rgid) }
+            if let albumID, !albumID.isEmpty, !hover { EditionPickerButton(albumID: albumID, rgid: groupID, editions: editions, showing: $picking) }
+        }
+        // The same sheet from a right-click, so the choice is reachable on every screen that shows the cover, not only by the small button.
+        .contextMenu {
+            if canPick { Button("Choose cover…") { picking = true } }
+        }
+        .sheet(isPresented: $picking) {
+            if let albumID, let groupID { EditionPickerSheet(albumID: albumID, rgid: groupID, editions: editions) }
         }
         .overlay(alignment: .leading) {
             if spineStrip, let spine { SpineStrip(picture: spine).offset(x: -SpineStrip.width) }
@@ -98,6 +109,8 @@ struct FlipCover<Front: View>: View {
         }
         .task(id: "\(rgid ?? "")|\(index?.faceKey ?? "")|\(store?.generation ?? 0)") { await loadFaces() }
     }
+
+    private var canPick: Bool { !(albumID ?? "").isEmpty && !(groupID ?? "").isEmpty && hasEditionChoice(editions) }
 
     private var face: Int { coverFace(afterSteps: steps, backs: backs.count) }
     private var label: String { face == 0 ? "Front cover" : backs[face - 1].label }
@@ -143,13 +156,15 @@ struct FlipCover<Front: View>: View {
     }
 
     private func loadFaces() async {
-        steps = 0; angle = 0; backs = []; spine = nil
+        steps = 0; angle = 0; backs = []; spine = nil; editions = []; groupID = nil
         guard let store else { return }
         let found: ArtworkIndex
         if let index { found = index } else {
             guard let rgid, !rgid.isEmpty, case .ready(let ready) = await store.artworkIndex(rgid: rgid, release: nil), !Task.isCancelled else { return }
             found = ready
         }
+        editions = found.coverEditions
+        groupID = found.rgid
         let faces = found.coverBackFaces
         backs = faces
         spine = found.slotImage("Spine")

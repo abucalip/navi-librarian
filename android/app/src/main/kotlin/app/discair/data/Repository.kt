@@ -245,6 +245,9 @@ interface LibraryRepository : AcquisitionApi {
     /** Removes the pick (`DELETE /api/artwork/choice/{album_id}`): the automatic cover is used again. */
     fun clearArtworkChoice(albumId: String): Unit = throw UnsupportedOperationException()
 
+    /** The owner's cover picks, library album id to artwork image id (`GET /api/artwork/choices`). Empty when unknown. */
+    fun artworkChoices(): Map<String, Long> = emptyMap()
+
     /** Whether the server reports the paths feature (`features.paths` in `/api/capabilities`). Read live; false when unknown. */
     fun pathsAvailable(): Boolean = false
 
@@ -526,6 +529,9 @@ class LibrarianRepository(
         return baseUrl.toHttpUrl().newBuilder().apply { artworkImageSegments(image.imageId).forEach { addPathSegment(it) } }
             .addQueryParameter("size", size.wire).build().toString()
     }
+
+    override fun artworkChoices(): Map<String, Long> =
+        if (ReadMode.isCacheOnly) emptyMap() else app.discair.model.ArtworkChoices.parse(client.get(listOf("api", "artwork", "choices")))
 
     override fun setArtworkChoice(albumId: String, rgid: String, imageId: Long) {
         if (ReadMode.isCacheOnly) throw CacheMiss()

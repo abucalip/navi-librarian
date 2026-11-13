@@ -111,7 +111,7 @@ struct CupertinoNowPlaying: View {
 
     private func player(_ a: AlbumItem) -> some View {
         VStack(alignment: .leading, spacing: 0) {
-            FlipCover(rgid: nil, cornerRadius: 16, index: albumArt, caption: true) { CoverView(album: a).clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous)) }
+            FlipCover(rgid: nil, cornerRadius: 16, albumID: a.owned ? a.remoteID : nil, index: albumArt, caption: true) { CoverView(album: a).clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous)) }
                 .overlay(alignment: .bottomTrailing) { NowPlayingBookletBadge(index: albumArt) }
                 .shadow(color: CU.shadowInk.opacity(0.5), radius: 35, y: 30)
             Text("After the Flood").font(CU.Font.title1.weighted(.bold)).padding(.top, 24)

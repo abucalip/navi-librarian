@@ -146,7 +146,7 @@ private fun AlbumContent(route: AlbumRoute, page: AlbumPage, open: Opener, list:
                 val saved = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
                     try { repoForArt.setArtworkChoice(albumId!!, rgid!!, image.imageId); true } catch (e: kotlinx.coroutines.CancellationException) { throw e } catch (e: Exception) { false }
                 }
-                if (saved) choice = image.imageId
+                if (saved) { choice = image.imageId; app.discair.model.ArtworkChoices.set(albumId!!, image.imageId) }
             }
         },
         onAutomatic = {
@@ -155,7 +155,7 @@ private fun AlbumContent(route: AlbumRoute, page: AlbumPage, open: Opener, list:
                 val cleared = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
                     try { repoForArt.clearArtworkChoice(albumId!!); true } catch (e: kotlinx.coroutines.CancellationException) { throw e } catch (e: Exception) { false }
                 }
-                if (cleared) choice = null
+                if (cleared) { choice = null; app.discair.model.ArtworkChoices.clear(albumId!!) }
             }
         },
         onDismiss = { showEditions = false },

@@ -7,13 +7,12 @@ import SwiftUI
 struct EditionPickerButton: View {
     let albumID: String
     let rgid: String?
-    @Environment(\.artwork) private var store
-    @State private var editions: [ArtworkPicture] = []
-    @State private var showing = false
+    let editions: [ArtworkPicture]
+    @Binding var showing: Bool
 
     var body: some View {
         Group {
-            if hasEditionChoice(editions), let rgid {
+            if hasEditionChoice(editions), let rgid, !rgid.isEmpty {
                 Button { showing = true } label: {
                     Text("\(editions.count) covers")
                         .font(.caption.weight(.medium))
@@ -24,14 +23,7 @@ struct EditionPickerButton: View {
                 .padding(8)
                 .help("Choose a cover")
                 .accessibilityLabel("Choose cover, \(editions.count) editions")
-                .sheet(isPresented: $showing) { EditionPickerSheet(albumID: albumID, rgid: rgid, editions: editions) }
             }
-        }
-        .task(id: "\(rgid ?? "")|\(store?.generation ?? 0)") {
-            editions = []
-            guard let rgid, !rgid.isEmpty, let store else { return }
-            guard case .ready(let index) = await store.artworkIndex(rgid: rgid, release: nil), !Task.isCancelled else { return }
-            editions = index.coverEditions
         }
     }
 }

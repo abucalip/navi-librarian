@@ -130,6 +130,11 @@ private data class Tab(val route: Any, val label: String, val icon: ImageVector)
 @Composable
 fun MainShell(state: UiState, model: AppViewModel, container: AppContainer) {
     val repo = remember(state.saved) { container.repository(state.saved, onSessionLost = model::sessionExpired) }
+    // The owner's cover picks apply on every screen, so they are read once per server and kept current by the album page.
+    LaunchedEffect(repo) {
+        val found = kotlinx.coroutines.withContext(Dispatchers.IO) { try { repo.artworkChoices() } catch (e: kotlinx.coroutines.CancellationException) { throw e } catch (e: Exception) { null } }
+        if (found != null) app.discair.model.ArtworkChoices.replace(found)
+    }
     val nav = rememberNavController()
     val scope = rememberCoroutineScope()
     val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
