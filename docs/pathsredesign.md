@@ -189,8 +189,8 @@ All paths are under `android/app/src/main/kotlin/app/discair/`.
 
 | Piece | Where | Notes |
 |---|---|---|
-| Link and grouping | new `model/PathTrail.kt` | Pure functions: the link (name, kind) of a `PathStop` per `PathKind` and of an `AlbumStep` per `AlbumTab`, and the grouping of a list by link. No Compose, so it is unit-tested directly. |
-| Trail pieces | new `ui/common/PathTrail.kt` | Header, tab row, link pill, closed row, the opened-step frame, and the line drawn per item (`drawBehind`), shared by both sheets. |
+| Link and grouping (merged, PR 1030) | new `model/PathTrail.kt` | Pure functions: the link (name, kind) of a `PathStop` per `PathKind` and of an `AlbumStep` per `AlbumTab`, and the grouping of a list by link. No Compose, so it is unit-tested directly. |
+| Trail pieces (merged, PR 1030) | new `ui/common/PathTrail.kt` | Header, tab row, link pill, closed row, the opened-step frame, and the line drawn per item (`drawBehind`), shared by both sheets. |
 | Artist sheet | `ui/artist/ArtistPaths.kt` | `PathList` renders groups; `PathRow` becomes the closed row; `PathDetail` is deleted; `rowDetail` changes for Sideman and Scene. |
 | Artist bodies | `ui/artist/PathPanes.kt` | `PaneBody` and the five panes are reused inside the opened step. Their hero rows move to the shared header row at 72dp. |
 | Album sheet | `ui/album/AlbumPathsSheet.kt` | Same changes; `AlbumPaneBody` and `ReasonCard` are reused; `AlbumPathDetail` is deleted. |
