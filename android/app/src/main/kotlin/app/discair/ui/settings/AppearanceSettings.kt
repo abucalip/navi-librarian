@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.toggleable
@@ -87,8 +88,6 @@ private const val SLOT_THEME = "theme"
 private const val SLOT_DAY = "day"
 private const val SLOT_NIGHT = "night"
 
-private val Filters = listOf("All", "Light", "Dark", "Brutal")
-
 /**
  * Appearance: "Follow phone light/dark" with Day and Night slots, or one fixed Theme slot, and the Font. A slot
  * opens a grid of tiles, each drawn in that theme's own colours and shape. Choices apply at once and are kept on this device.
@@ -100,7 +99,7 @@ fun AppearanceScreen(appearance: Appearance, onBack: () -> Unit) {
     // Flow draws its own page too (FlowAppearance.kt).
     if (app.discair.ui.common.isFlow()) { FlowAppearance(appearance, onBack); return }
     var picking by rememberSaveable { mutableStateOf<String?>(null) }
-    var filter by rememberSaveable { mutableStateOf("All") }
+    var filter by rememberSaveable { mutableStateOf(ThemeGroups.of(Palettes.byId(appearance.themeChoice))) }
     BackHandler(enabled = picking != null) { picking = null }
     Box(Modifier.fillMaxSize().safeDrawingPadding(), contentAlignment = Alignment.TopCenter) {
         Column(
@@ -118,7 +117,7 @@ fun AppearanceScreen(appearance: Appearance, onBack: () -> Unit) {
                     style = MaterialTheme.typography.headlineMedium, modifier = Modifier.semantics { heading() },
                 )
             }
-            if (slot == null) AppearanceHome(appearance) { picking = it; filter = when (it) { SLOT_DAY -> "Light"; SLOT_NIGHT -> "Dark"; else -> "All" } }
+            if (slot == null) AppearanceHome(appearance) { picking = it; filter = ThemeGroups.of(Palettes.byId(when (it) { SLOT_DAY -> appearance.dayTheme; SLOT_NIGHT -> appearance.nightTheme; else -> appearance.themeChoice })) }
             else ThemeGrid(appearance, slot, filter, onFilter = { filter = it }, onPicked = { })
         }
     }
@@ -198,27 +197,19 @@ private fun ThemeSlot(title: String, p: Palette, onClick: () -> Unit) {
 private fun ThemeGrid(appearance: Appearance, slot: String, filter: String, onFilter: (String) -> Unit, onPicked: () -> Unit) {
     val fixed = slot == SLOT_THEME
     val selectedId = when (slot) { SLOT_DAY -> appearance.dayTheme; SLOT_NIGHT -> appearance.nightTheme; else -> appearance.themeChoice }
-    val all = Palettes.All.sortedBy { it.family } // Classic first, each family keeps its light-then-dark order
-    val shown = all.filter {
-        when (filter) {
-            "Light" -> it.light
-            "Dark" -> !it.light
-            "Brutal" -> it.family == Family.Brutal
-            else -> true
+    val light = ThemeGroups.slotLight(slot)
+    val chips = ThemeGroups.chips(Palettes.All, light)
+    val group = if (filter in chips) filter else chips.firstOrNull() ?: ThemeGroups.DEFAULT
+    val shown = ThemeGroups.shown(Palettes.All, group, light)
+    Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        chips.forEach { f ->
+            FilterChip(
+                selected = f == group, onClick = { onFilter(f) }, label = { Text(f) },
+                modifier = Modifier.heightIn(min = Target),
+            )
         }
     }
-    if (fixed) {
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Filters.forEach { f ->
-                FilterChip(
-                    selected = f == filter, onClick = { onFilter(f) }, label = { Text(f) },
-                    modifier = Modifier.heightIn(min = Target),
-                )
-            }
-        }
-    } else {
-        Text(if (slot == SLOT_DAY) "Light themes only." else "Dark themes only.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-    }
+    if (!fixed) Text(if (slot == SLOT_DAY) "Light themes only." else "Dark themes only.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     Text("${shown.size} themes", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     shown.chunked(2).forEach { pair ->
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {

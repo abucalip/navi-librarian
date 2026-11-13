@@ -3,6 +3,7 @@ package app.discair.ui
 import app.discair.player.crossfade.CrossfadeSettings
 import app.discair.ui.player.CoverStackEqRules
 import app.discair.ui.settings.CoverStackAppearanceRules
+import app.discair.ui.settings.ThemeGroups
 import app.discair.ui.settings.CoverStackSettingsRules
 import app.discair.ui.theme.Palettes
 import org.junit.Assert.assertEquals
@@ -38,16 +39,22 @@ class CoverStackSettingsRulesTest {
         assertTrue(CoverStackEqRules.lengthAt(0.5f) in CrossfadeSettings.MIN_SECONDS..CrossfadeSettings.MAX_SECONDS)
     }
 
-    @Test fun themeFiltersAndSlotsFollowTheStandardPage() {
+    @Test fun themeGroupsSectionEveryPaletteOnce() {
         val all = Palettes.All
-        assertTrue(CoverStackAppearanceRules.shown(all, "Light").all { it.light })
-        assertTrue(CoverStackAppearanceRules.shown(all, "Dark").none { it.light })
-        assertEquals(all.size, CoverStackAppearanceRules.shown(all, "All").size)
-        assertEquals("Light", CoverStackAppearanceRules.slotFilter("day"))
-        assertEquals("Dark", CoverStackAppearanceRules.slotFilter("night"))
-        assertEquals("All", CoverStackAppearanceRules.slotFilter("theme"))
-        assertEquals("Appearance", CoverStackAppearanceRules.slotTitle(null))
+        assertEquals(listOf("Standard", "Flow", "Brut", "Tape", "Sheet", "Sticker", "Soft Brut"), ThemeGroups.All)
+        assertEquals(all.size, ThemeGroups.All.sumOf { ThemeGroups.shown(all, it).size })
+        assertTrue(ThemeGroups.All.all { ThemeGroups.shown(all, it).isNotEmpty() })
+        assertEquals("Soft Brut", ThemeGroups.of(Palettes.byId("softbrut")))
+        assertEquals("Standard", ThemeGroups.of(null))
+    }
+
+    @Test fun daySlotsShowLightPalettesAndNightSlotsDarkOnes() {
+        val all = Palettes.All
+        assertTrue(ThemeGroups.All.all { g -> ThemeGroups.shown(all, g, true).all { it.light } })
+        assertTrue(ThemeGroups.All.all { g -> ThemeGroups.shown(all, g, false).none { it.light } })
+        assertEquals(ThemeGroups.All, ThemeGroups.chips(all, null))
         assertEquals("Day theme", CoverStackAppearanceRules.slotTitle("day"))
+        assertEquals("Appearance", CoverStackAppearanceRules.slotTitle(null))
     }
 
     @Test fun settingsGroupsKeepTheMockupOrder() {
