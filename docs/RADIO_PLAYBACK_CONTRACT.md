@@ -1,6 +1,6 @@
 # Internet radio playback contract (Discair)
 
-Status: **approved by the owner on 2026-11-10. Stage 1 slice 0 (contract), slice 1 (server stations list, favourites, tags, logos; PR #965) slice 2 (server live "now" holder, `/now`, `/api/radio/now`; PR #966) slice 3 (server scrobble and love; PR #967) slice 4 (Android decoders, Radio page, logos, favourites; PR #968) and slice 5 (Android playback, live Now Playing, Download and Heard states; PR #969) are merged (2026-11-10). Slice 6 (reconnect, sleep timer, settings) is merged (PR #970, 2026-11-10); stage 1 is complete and the deployment gate is next. Stage 2 (macOS) starts only after deployment is authorized and verified.**
+Status: **approved by the owner on 2026-11-10. Stage 2 (macOS) started 2026-11-13, section 5. Stage 1 slice 0 (contract), slice 1 (server stations list, favourites, tags, logos; PR #965) slice 2 (server live "now" holder, `/now`, `/api/radio/now`; PR #966) slice 3 (server scrobble and love; PR #967) slice 4 (Android decoders, Radio page, logos, favourites; PR #968) and slice 5 (Android playback, live Now Playing, Download and Heard states; PR #969) are merged (2026-11-10). Slice 6 (reconnect, sleep timer, settings) is merged (PR #970, 2026-11-10); stage 1 is complete and the deployment gate is next. Stage 2 (macOS) starts only after deployment is authorized and verified.**
 
 This contract turns [`RADIO_PLAYBACK_PROPOSAL.md`](RADIO_PLAYBACK_PROPOSAL.md) into the rules the server and clients build against. Where the proposal and this contract disagree, this contract governs. Builds on RADIO-01 ("Grab the radio", PR [#637](https://github.com/abucalip/navi-librarian/pull/637)): the relay at `GET /radio/stream/{token}`, ICY title reading, the 30-second play log in `radio.sqlite3`, and `POST /api/radio/plays/{play_id}/get` as the Download action. Related: [`ANDROID_PLAYER_CONTRACT.md`](ANDROID_PLAYER_CONTRACT.md), [`MACOS_CLIENT_CONTRACT.md`](MACOS_CLIENT_CONTRACT.md).
 
@@ -122,18 +122,71 @@ Additive only. New columns or tables are created when missing, so a rollback to 
 - **Slice 6 note:** (a) Reconnect: after a drop or a stall of 20 seconds the client tries again after 2, 5, 10, 20 and 30 seconds, then shows "Station unreachable" with Retry; sound resets the count; nothing is tried while the app is in the background or after a pause. A relay or station that answers with an error status counts as a drop for a station (a song would be skipped). (b) The app had no sleep timer, so "reuses the existing timer" became a new generic `SleepTimer` (15, 30, 45, 60 or 90 minutes, pause on expiry), offered on the radio Now Playing sheet and cancelled when a station is no longer playing. (c) Settings: the scrobbling switch (disabled with an explanation when the server says Last.fm is not set up), a per-station logo picker (Change uploads up to 2 MB, Reset clears the override), and the app address shown read only: changing it rewrites the stations in Navidrome, so it stays on the web Radio page. Not seen on a device.
 - Everything in `ANDROID_CLIENT_CONTRACT.md` section 2 applies: 48dp targets, TalkBack labels, no third-party SDKs or analytics, bundled assets, honest states, and the `/mobile-design` pass recorded in `android/DESIGN.md`.
 
-## 5. macOS client (stage 2, not started)
+## 5. macOS client (stage 2, started 2026-11-13)
 
-Written against the deployed and verified API. Under stage 2 the macOS client gets:
+The owner reports the server and Android parts deployed and working (2026-11-13), so stage 2 starts. The owner chose the macOS design. The detailed slices are S2-0 to S2-5 in [`RADIO_PLAYBACK_PROPOSAL.md`](RADIO_PLAYBACK_PROPOSAL.md), "Stage 2 detailed plan". The mockups in [`design/macos-radio/mockups.html`](design/macos-radio/mockups.html) are the spec; the options the owner chose are the ones the page opens on. The rules below are what the macOS slices build against. Where the earlier stage 2 bullets differ, these rules govern.
 
-- one neutral Radio layout first (stations with logos, now-playing strip, Download, Heard list), then one view per theme as each theme is touched;
-- integration with the existing player model, media keys, the Now Playing centre and the menu bar item, with live-stream behaviour as on Android;
-- the "Heard on Radio" tape in the Mailroom (`MACOS_CLIENT_CONTRACT.md` section 6) gains the Owned and Downloaded states;
-- the same reconnect and sleep timer rules as Android.
+### 5.1 Choices (owner, 2026-11-13)
 
-The macOS line in `MACOS_CLIENT_CONTRACT.md` is lifted only when stage 2 starts.
+| Area | Chosen | Not built |
+|---|---|---|
+| A · Radio page | A2 Tuner: station list left, fixed On Air panel right | A1, A3 |
+| B · Player bar while a station plays | B2 level meter (fallback B1, see 5.4) | B3 |
+| C · Now Playing | C1 song first, "Heard on (station) tonight" in the right column | C2 |
+| D · Menu bar item | D2 item with a popover | D1 |
+| E · Extras | E1 ⌘1 to ⌘9 for the first nine favourites; E5 Edit Tags on the Mac; E7 radio card on Home | E2, E3 (no Love button), E4, E6, E8, E9 |
 
-Stage 2 planning note (2026-11-13): the owner chose the macOS design and the detailed plan is in [`RADIO_PLAYBACK_PROPOSAL.md`](RADIO_PLAYBACK_PROPOSAL.md), "Stage 2 detailed plan", with mockups in [`design/macos-radio/`](design/macos-radio/mockups.html). Its slice S2-0 folds those rules into this section; until then the bullets above stand as written.
+### 5.2 Corrections to the earlier stage 2 bullets
+
+1. **One theme.** Zine is removed (`macos/DESIGN.md`, "Night mode and Zine removal"). Radio is drawn once, in Cupertino Day and Night, through the `CU` colour roles only; no accent hex in a view.
+2. **Menu bar item.** The app has none today; D2 adds it as its own slice.
+3. **Sleep timer is in scope on the Mac.** `MACOS_CLIENT_CONTRACT.md` lifts it with the radio line.
+4. **Live playback has its own path.** A live stream does not fit the `AVAudioEngine` pipeline that plays files, so radio gets a separate live player behind `PlayerModel` (5.4).
+5. **The "Heard on Radio" tape is not a screen.** Home's heard rows and the new Heard list show Downloaded and Owned.
+6. **Media keys.** Play/pause stops and restarts a station (a live stream cannot keep its place). Next and Previous move through the favourite stations. Seek is off while a station plays.
+7. **Names.** `RadioModel` already means "Radio from this" (`DiscairUI/Model/QueueWorkspace.swift`). The internet radio types use the `Station` and `Live` prefixes. The sidebar row is "Radio".
+
+### 5.3 Request budget
+
+- Stations list (`GET /api/radio/stations`): on opening the Radio page, after a favourite, tag or logo change, and at most once a minute while the page stays open.
+- Live titles of all stations (`GET /api/radio/now`): every 15 s, only while the Radio page is visible and the window is not hidden or minimised.
+- The playing station's `GET /api/radio/stations/{id}/now`: every 5 s while it plays, from any screen. It stops with the stream. This is the only title source; the Mac does not read ICY titles itself in this version, so the title and the Download rule never disagree.
+- Heard list (`GET /api/radio/plays`): on opening the Radio page or radio Now Playing, and when the playing station's `play_id` changes. No timer.
+- Logos: one fetch per station and size (128 in rows and menus; 512 for the bar, Now Playing and the system cover), kept in memory and on disk under the app's caches folder. Refetched after Change or Reset, and after "Reset saved data".
+- Nothing is requested while the window is hidden and no station plays. One request of each kind at a time; a slow answer is not stacked with another.
+- The `playable_url` is never logged, displayed or put in an error text.
+
+### 5.4 Live playback
+
+- **Engine:** `AVPlayer` on `playable_url`, behind a `LiveOutput` protocol (`start(url:)`, `stop()`, `volume`, state and level callbacks) so the model is tested with a fake. It lives in `DiscairAudio`.
+- **Level meter (B2):** an audio tap on the player item gives one RMS value about 15 times a second; the last 64 values are drawn as bars, newest on the right, white at 17% opacity, at most half the bar's height.
+- **Proof first:** the spike S2-2 plays one relayed MP3 and one relayed AAC station and records the result in `macos/DESIGN.md`. If the tap gives no samples on relayed stations, the work stops and the owner decides between B1 everywhere and decoding the stream into the existing engine.
+- **Fallback (stated by design, not as an error):** when no samples arrive within 3 s of sound, or under Reduce Motion or Low Power Mode, the meter is not drawn and the bar shows B1: a 3 pt hairline at 22% white on its bottom edge.
+- **Switched off in live mode:** seek, the waveform, gapless and crossfade, output sample-rate matching (`restoreOutputRate()` runs before a station starts), client scrobbling (the server scrobbles radio), feedback events, the saved queue (a station is never written to it), lyrics, facts, the flip cover, booklet, disc and slideshow. The equalizer does not apply to radio; the Equalizer screen says so in one line while a station plays.
+- **Addresses the Mac cannot play:** a station that is not relayed and whose address is a `.pls` or `.m3u` playlist shows "This station's address is a playlist the Mac cannot play. Switch its relay on from the web Radio page." It never fails silently.
+- **Queue:** starting a station pauses the library song and leaves the queue as it is. Stopping the station leaves the queue paused on the same song. Playing a library song stops the station.
+- **Reconnect (same rule as Android, section 4):** after a drop, an error status, or 20 s without sound, retry after 2, 5, 10, 20 and 30 s; sound resets the count; after the fifth failure the state is "Station unreachable" with Retry. Nothing is tried after the owner pressed stop. While the Mac sleeps nothing is tried; on wake, one fresh round if a station was playing.
+- **Sleep timer (same rule as Android):** Off, 15, 30, 45, 60 or 90 minutes. On expiry a station stops and a library song pauses. Cancelled when playback stops.
+
+### 5.5 States and words
+
+The Download button follows the Android rules in `model/Radio.kt` (`RadioDownload`). Owned wins over everything.
+
+| State | Rule | Words |
+|---|---|---|
+| Waiting | `ok`, `play_id` null | "Listening · 18 s" with a small ring; disabled. The seconds count from when the Mac first saw the title, capped at 30; the server's `play_id` alone enables Download |
+| Ready | `ok` with `play_id`, not grabbed, not in library | "Download" |
+| Working | the Get request is in flight | "Downloading…"; disabled |
+| Done | `grabbed` | "✓ Downloaded"; disabled |
+| Owned | `in_library` | "✓ Owned"; disabled |
+| Failed | the server refused | "Try again", with the server's sentence beside it |
+| No button | `no_metadata`, `unparsed`, `not_proxied`, `idle` | the sentence from section 6 |
+
+Every state is words plus a mark, never colour alone. Other rules: every control has a spoken label and a keyboard path; the star says "on" or "off"; LIVE is a word; text never goes below the caption size; no address, token or password appears in any text, log or error.
+
+### 5.6 Slices
+
+S2-0 documents (this change). S2-1 stations, the Radio page, favourites and tags. S2-2 live playback, the bar, media keys, mini player and widget (after the spike). S2-3 the live song, Now Playing, Download, Heard and the Home card. S2-4 reconnect, sleep timer, Settings and ⌘1 to ⌘9. S2-5 the menu bar item. Each slice is one PR with focused tests; the owner runs the full suite and checks the live behaviour listed in the proposal, S2.10.
 
 ## 6. States and failure rules
 
@@ -192,7 +245,7 @@ Owner checks on a live deployment:
 
 ## 11. Stage 2 gate
 
-Stage 2 (macOS) starts only after deployment is authorized and the checks in section 10 are recorded. The stage 2 layout and theme work follow the same rules as `macos/DESIGN.md`.
+Stage 2 (macOS) starts only after deployment is authorized and the checks in section 10 are recorded. **Recorded 2026-11-13:** the owner reports the server and Android parts deployed and working, and stage 2 started; the section 10 checks are as the owner reported them, not re-run by the agent. The stage 2 layout and theme work follow the same rules as `macos/DESIGN.md`.
 
 ## 12. Risks
 
