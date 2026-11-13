@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -88,9 +87,6 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-/** The sheet's height as a share of the window: tall enough for a pane and its bottom button without scrolling away the header. */
-private const val SheetHeight = 0.92f
-
 /**
  * The answers the paths sheet has read, kept with the artist's page on the back stack. Opening an album or artist from the
  * sheet leaves the page, and Back returns to it: the sheet comes back with its answers, so nothing is asked again.
@@ -145,7 +141,7 @@ fun ArtistPathsSheet(artistName: String, mbid: String, open: Opener, onDismiss: 
         val stops = (response?.view() as? PathsView.Stops)?.response?.stops.orEmpty()
         // Back from a pane goes to the list first; Back from the list closes the sheet.
         BackHandler(enabled = step in stops.indices) { step = -1 }
-        Box(Modifier.fillMaxWidth().fillMaxHeight(SheetHeight)) {
+        Box(Modifier.fillMaxWidth().weight(1f)) { // the sheet height left after its handle; a fixed fraction overflowed the Soft Brut outline
             if (step in stops.indices) {
                 PathDetail(
                     artistName, kind, stops, step,
