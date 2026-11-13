@@ -1,5 +1,6 @@
 package app.discair.ui.player
 
+import app.discair.ui.common.ArtIcons
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -67,6 +68,6 @@ fun CoverStackMiniPlayer(state: PlayerUiState, controller: PlayerController, onO
             Modifier.size(Target).clickable(role = Role.Button, onClick = controller::playPause)
                 .semantics { contentDescription = if (state.isPlaying) "Pause" else "Play" },
             contentAlignment = Alignment.Center,
-        ) { Icon(if (state.isPlaying) PlayerIcons.Pause else PlayerIcons.Play, contentDescription = null, modifier = Modifier.size(24.dp)) }
+        ) { Icon(if (state.isPlaying) ArtIcons.Pause else ArtIcons.Play, contentDescription = null, modifier = Modifier.size(24.dp)) }
     }
 }

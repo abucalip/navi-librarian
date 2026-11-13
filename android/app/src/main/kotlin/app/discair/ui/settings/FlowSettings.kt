@@ -1,6 +1,6 @@
 package app.discair.ui.settings
 
-import app.discair.ui.common.FlowIcons
+import app.discair.ui.common.ArtIcons
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -110,7 +110,7 @@ internal fun FlowSettingsPage(
         val serverLine = SettingsRules.serverLine(state.librarian, state.navidrome)
         FlowGroup {
             SettingsRow(
-                FlowIcons.Server, "Server and services", serverLine.text, onClick = onServer, divider = false,
+                ArtIcons.Server, "Server and services", serverLine.text, onClick = onServer, divider = false,
                 stateColor = when (serverLine.tone) {
                     SettingsRules.Tone.Success -> p.ok
                     SettingsRules.Tone.Danger -> p.chartRedText

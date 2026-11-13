@@ -1,6 +1,6 @@
 package app.discair.ui.artist
 
-import app.discair.ui.common.FlowIcons
+import app.discair.ui.common.ArtIcons
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -119,7 +119,7 @@ internal fun FlowArtistContent(d: CoverStackArtistData, open: Opener, list: Lazy
                             contentAlignment = Alignment.Center,
                         ) {
                             Box(Modifier.size(44.dp).background(Color.Black.copy(alpha = 0.28f), CircleShape), contentAlignment = Alignment.Center) {
-                                Icon(FlowIcons.Paths, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
+                                Icon(ArtIcons.Paths, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
                             }
                         }
                         if (artistId != null) Box(
@@ -128,7 +128,7 @@ internal fun FlowArtistContent(d: CoverStackArtistData, open: Opener, list: Lazy
                             contentAlignment = Alignment.Center,
                         ) {
                             Box(Modifier.size(44.dp).background(p.accent, CircleShape), contentAlignment = Alignment.Center) {
-                                Icon(FlowIcons.Play, contentDescription = null, tint = p.onAccent, modifier = Modifier.size(20.dp))
+                                Icon(ArtIcons.Play, contentDescription = null, tint = p.onAccent, modifier = Modifier.size(20.dp))
                             }
                         }
                     }

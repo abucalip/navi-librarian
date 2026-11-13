@@ -1,6 +1,6 @@
 package app.discair.ui.discover
 
-import app.discair.ui.common.FlowIcons
+import app.discair.ui.common.ArtIcons
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -124,16 +124,16 @@ internal fun FlowDiscoverCard(
             if (similar.isNotEmpty()) Text("Similar to: $similar", color = p.textMuted, maxLines = 2, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.bodySmall.copy(fontSize = 13.sp, lineHeight = 18.sp))
             Spacer(Modifier.weight(1f))
             Row(horizontalArrangement = Arrangement.spacedBy(0.dp), verticalAlignment = Alignment.CenterVertically) {
-                if (item.acquired) FlowSmallButton("In library", FlowIcons.Check, false, "${item.album} is in your library", enabled = false) {}
+                if (item.acquired) FlowSmallButton("In library", ArtIcons.Check, false, "${item.album} is in your library", enabled = false) {}
                 else FlowGetButton(artist, item.album, entry.raw)
                 val saved = saveState == SaveState.Saved
                 FlowSmallButton(
-                    if (saved) "Saved" else "Save", if (saved) FlowIcons.HeartFilled else null, false, if (saved) "Remove ${item.album} from saved" else "Save ${item.album}",
+                    if (saved) "Saved" else "Save", if (saved) ArtIcons.HeartFilled else null, false, if (saved) "Remove ${item.album} from saved" else "Save ${item.album}",
                     Modifier.padding(start = 0.dp), enabled = saveState != SaveState.Pending, onClick = onSave,
                 )
                 Spacer(Modifier.weight(1f))
                 Box {
-                    FlowSmallButton(null, FlowIcons.More, false, "Options for ${item.album}") { menu = true }
+                    FlowSmallButton(null, ArtIcons.More, false, "Options for ${item.album}") { menu = true }
                     DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
                         DropdownMenuItem(text = { Text("Not this album") }, onClick = { menu = false; onDismiss(false) })
                         DropdownMenuItem(text = { Text("Not this artist") }, onClick = { menu = false; onDismiss(true) })

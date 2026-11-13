@@ -1,5 +1,6 @@
 package app.discair.ui.discover
 
+import app.discair.ui.common.ArtIcons
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -162,21 +163,21 @@ internal fun CoverStackDiscoverCard(
             style = MaterialTheme.typography.bodySmall,
         )
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(0.dp), verticalAlignment = Alignment.CenterVertically) {
-            if (item.acquired) SmallButton("In library", Icons.Default.Check, false, "${item.album} is in your library", Modifier.weight(1f), enabled = false) {}
+            if (item.acquired) SmallButton("In library", ArtIcons.Check, false, "${item.album} is in your library", Modifier.weight(1f), enabled = false) {}
             else SmallButton(
                 when (get) { GetState.Pending -> "Requesting"; is GetState.Requested -> "Requested"; is GetState.Failed -> "Retry"; else -> "Get" },
-                when (get) { is GetState.Requested -> Icons.Default.Check; else -> PlayerIcons.Cloud },
+                when (get) { is GetState.Requested -> ArtIcons.Check; else -> ArtIcons.Get },
                 get is GetState.Idle || get is GetState.Failed, "Get album ${item.album}", Modifier.weight(1f),
                 state = when (get) { GetState.Idle -> "Not requested"; GetState.Pending -> "Requesting"; is GetState.Requested -> "Requested. Follow it under Downloads"; is GetState.Failed -> "Could not request. Select to try again" },
                 enabled = get is GetState.Idle || get is GetState.Failed,
             ) { hub.getAlbum(artist, item.album, entry.raw) }
             val saved = saveState == SaveState.Saved
             SmallButton(
-                if (saved) "Saved" else "Save", if (saved) Icons.Default.Favorite else null, false, (if (saved) "Remove ${item.album} from saved" else "Save ${item.album}"),
+                if (saved) "Saved" else "Save", if (saved) ArtIcons.HeartFilled else null, false, (if (saved) "Remove ${item.album} from saved" else "Save ${item.album}"),
                 Modifier.weight(1f), enabled = saveState != SaveState.Pending, onClick = onSave,
             )
             Box {
-                SmallButton(null, Icons.Default.MoreVert, false, "Options for ${item.album}") { menu = true }
+                SmallButton(null, ArtIcons.More, false, "Options for ${item.album}") { menu = true }
                 DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
                     DropdownMenuItem(text = { Text("Not this album") }, onClick = { menu = false; onDismiss(false) })
                     DropdownMenuItem(text = { Text("Not this artist") }, onClick = { menu = false; onDismiss(true) })

@@ -1,5 +1,6 @@
 package app.discair.ui.radio
 
+import app.discair.ui.common.ArtIcons
 import androidx.compose.foundation.border
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -201,7 +202,7 @@ private fun StationRow(station: RadioStation, favourite: Boolean, now: RadioNow?
             Modifier.size(Target).clip(CircleShape).clickable(role = Role.Button, onClick = onFavourite)
                 .semantics { contentDescription = if (favourite) "Remove ${station.name} from favourites" else "Add ${station.name} to favourites" },
             contentAlignment = Alignment.Center,
-        ) { Icon(if (favourite) Icons.Default.Favorite else Icons.Default.FavoriteBorder, contentDescription = null, tint = p.text) }
+        ) { Icon(if (favourite) ArtIcons.HeartFilled else ArtIcons.Heart, contentDescription = null, tint = p.text) }
     }
 }
 
@@ -269,8 +270,8 @@ private fun HeardRow(play: RadioPlay, download: RadioDownload, failure: String?,
         when (trailing) {
             CoverStackRadioRules.Trailing.Get -> SmallButton("Get", null, true, "Download: ${play.title}", Modifier.width64(), onClick = onDownload)
             CoverStackRadioRules.Trailing.TryAgain -> SmallButton("Try again", null, true, "Try again: ${play.title}", Modifier.size(width = 96.dp, height = Target), onClick = onDownload)
-            CoverStackRadioRules.Trailing.InLibrary -> Icon(Icons.Default.Check, contentDescription = "In your library: ${play.title}", tint = p.ok, modifier = Modifier.size(24.dp))
-            CoverStackRadioRules.Trailing.Requested -> Icon(PlayerIcons.DownloadToDevice, contentDescription = "Requested. Follow it under Downloads: ${play.title}", tint = p.text, modifier = Modifier.size(24.dp))
+            CoverStackRadioRules.Trailing.InLibrary -> Icon(ArtIcons.Check, contentDescription = "In your library: ${play.title}", tint = p.ok, modifier = Modifier.size(24.dp))
+            CoverStackRadioRules.Trailing.Requested -> Icon(ArtIcons.Download, contentDescription = "Requested. Follow it under Downloads: ${play.title}", tint = p.text, modifier = Modifier.size(24.dp))
             CoverStackRadioRules.Trailing.Working -> Unit // the line above says "Requesting…"
             CoverStackRadioRules.Trailing.None -> Unit
         }
@@ -293,11 +294,11 @@ internal fun CoverStackRadioNow(
     Column(Modifier.fillMaxWidth().fillMaxHeight()) { // full height, like Now Playing, so the sheet's top edge is the top of the screen
         Row(Modifier.fillMaxWidth().heightIn(min = 48.dp), verticalAlignment = Alignment.CenterVertically) {
             Box(Modifier.size(Target).clip(CircleShape).clickable(role = Role.Button, onClick = onDismiss), contentAlignment = Alignment.Center) {
-                Icon(PlayerIcons.Down, contentDescription = "Close now playing", tint = p.text)
+                Icon(ArtIcons.Down, contentDescription = "Close now playing", tint = p.text)
             }
             Box(Modifier.weight(1f), contentAlignment = Alignment.Center) { Eyebrow("Live radio", heading = true) }
             Box(Modifier.size(Target).clip(CircleShape).clickable(role = Role.Button, onClick = onOpenHeard), contentAlignment = Alignment.Center) {
-                Icon(PlayerIcons.List, contentDescription = "Heard on radio", tint = p.text)
+                Icon(ArtIcons.Queue, contentDescription = "Heard on radio", tint = p.text)
             }
         }
         Column(Modifier.fillMaxWidth().weight(1f).verticalScroll(rememberScrollState()), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -329,11 +330,11 @@ internal fun CoverStackRadioNow(
                 CsButton(
                     if (live.favourite) "Remove ${item.title} from favourites" else "Add ${item.title} to favourites", 48, radio::toggleFavourite,
                     state = if (live.favourite) "Favourite" else "Not a favourite",
-                ) { ink -> Icon(if (live.favourite) Icons.Default.Favorite else Icons.Default.FavoriteBorder, contentDescription = null, tint = ink) }
+                ) { ink -> Icon(if (live.favourite) ArtIcons.HeartFilled else ArtIcons.Heart, contentDescription = null, tint = ink) }
                 CsButton(if (state.isPlaying) "Pause" else "Play", 68, controller::playPause, radius = 14, primary = true) { ink ->
-                    Icon(if (state.isPlaying) PlayerIcons.Pause else PlayerIcons.Play, contentDescription = null, tint = ink, modifier = Modifier.size(32.dp))
+                    Icon(if (state.isPlaying) ArtIcons.Pause else ArtIcons.Play, contentDescription = null, tint = ink, modifier = Modifier.size(32.dp))
                 }
-                CsButton("Heard on radio", 48, onOpenHeard) { ink -> Icon(PlayerIcons.List, contentDescription = null, tint = ink) }
+                CsButton("Heard on radio", 48, onOpenHeard) { ink -> Icon(ArtIcons.Queue, contentDescription = null, tint = ink) }
             }
             if (live.proxied) {
                 val download = live.download
@@ -372,7 +373,7 @@ private fun WideButton(label: String, enabled: Boolean, description: String, onC
                 .clickable(enabled = enabled, role = Role.Button, onClick = onClick).semantics { contentDescription = description },
             horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically,
         ) {
-            Icon(PlayerIcons.DownloadToDevice, contentDescription = null, tint = if (enabled) p.onAccent else p.textMuted, modifier = Modifier.size(20.dp))
+            Icon(ArtIcons.Download, contentDescription = null, tint = if (enabled) p.onAccent else p.textMuted, modifier = Modifier.size(20.dp))
             Text(label, Modifier.padding(start = 8.dp), color = if (enabled) p.onAccent else p.textMuted, maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.labelLarge.copy(fontSize = 14.sp, fontWeight = FontWeight.Bold))
         }
     }

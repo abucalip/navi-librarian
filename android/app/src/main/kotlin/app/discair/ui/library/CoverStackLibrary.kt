@@ -1,5 +1,6 @@
 package app.discair.ui.library
 
+import app.discair.ui.common.ArtIcons
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -118,7 +119,7 @@ private fun CoverStackSortRow(state: LibraryState, model: LibraryViewModel) {
             modifier = Modifier.weight(1f).semantics { liveRegion = LiveRegionMode.Polite },
         )
         Box {
-            SmallButton("Sort", PlayerIcons.Sort, false, "Sort ${noun}, now ${if (state.tab == LibraryTab.Artists) state.artistSort.label else state.albumSort.label}", Modifier.width(84.dp)) { open = true }
+            SmallButton("Sort", ArtIcons.Sort, false, "Sort ${noun}, now ${if (state.tab == LibraryTab.Artists) state.artistSort.label else state.albumSort.label}", Modifier.width(84.dp)) { open = true }
             DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
                 if (state.tab == LibraryTab.Artists) ArtistSort.entries.forEach { sort ->
                     DropdownMenuItem(text = { Text(sort.label) }, onClick = { open = false; model.sortArtists(sort) })
@@ -167,7 +168,7 @@ private fun CoverStackArtistRows(state: LibraryState, model: LibraryViewModel, o
                             "Add to queue" to { play.queueArtist(artist.id, next = false) },
                         ),
                     )
-                    Icon(PlayerIcons.Right, contentDescription = null, tint = p.text, modifier = Modifier.padding(end = 12.dp))
+                    Icon(ArtIcons.Chevron, contentDescription = null, tint = p.text, modifier = Modifier.padding(end = 12.dp))
                 }
                 CoverStackDivider(Modifier.padding(horizontal = 16.dp))
             }

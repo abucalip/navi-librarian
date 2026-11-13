@@ -1,5 +1,6 @@
 package app.discair.ui.player
 
+import app.discair.ui.common.ArtIcons
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectDragGestures
@@ -148,12 +149,12 @@ internal fun CoverStackEqualizer(editor: EqEditor, settings: EqSettings, status:
         // The selected band's value and the two 48dp buttons: the columns are the quick way, never the only way.
         val gain = settings.config.bandGainsDb[selected]
         Row(Modifier.padding(start = 16.dp, end = 19.dp, top = 12.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
-            StepButton("Lower ${bandSpoken(EQ_BAND_HZ[selected])} by half a decibel", PlayerIcons.Remove, on && gain > -EQ_MAX_GAIN_DB) { editor.nudgeBand(selected, -1) }
+            StepButton("Lower ${bandSpoken(EQ_BAND_HZ[selected])} by half a decibel", ArtIcons.Minus, on && gain > -EQ_MAX_GAIN_DB) { editor.nudgeBand(selected, -1) }
             Text(
                 "${bandLabel(EQ_BAND_HZ[selected])} · ${formatDb(gain)}", Modifier.weight(1f).semantics { liveRegion = LiveRegionMode.Polite; contentDescription = "${bandSpoken(EQ_BAND_HZ[selected])}, ${formatDb(gain, spoken = true)}" },
                 color = p.text, textAlign = TextAlign.Center, style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold, fontSize = 14.sp),
             )
-            StepButton("Raise ${bandSpoken(EQ_BAND_HZ[selected])} by half a decibel", PlayerIcons.Add, on && gain < EQ_MAX_GAIN_DB) { editor.nudgeBand(selected, 1) }
+            StepButton("Raise ${bandSpoken(EQ_BAND_HZ[selected])} by half a decibel", ArtIcons.Plus, on && gain < EQ_MAX_GAIN_DB) { editor.nudgeBand(selected, 1) }
         }
         Spacer(Modifier.height(16.dp))
         CoverStackHeading("Headroom")
@@ -168,9 +169,9 @@ internal fun CoverStackEqualizer(editor: EqEditor, settings: EqSettings, status:
         }
         if (!auto) Row(Modifier.padding(start = 16.dp, end = 19.dp, top = 12.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
             val pre = settings.config.preGainDb
-            StepButton("Lower the volume change by half a decibel", PlayerIcons.Remove, on && pre > -EQ_MAX_GAIN_DB) { editor.nudgePreGain(-1) }
+            StepButton("Lower the volume change by half a decibel", ArtIcons.Minus, on && pre > -EQ_MAX_GAIN_DB) { editor.nudgePreGain(-1) }
             Text("Volume change · ${formatDb(pre)}", Modifier.weight(1f), color = p.text, textAlign = TextAlign.Center, style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold, fontSize = 14.sp))
-            StepButton("Raise the volume change by half a decibel", PlayerIcons.Add, on && pre < 0.0) { editor.nudgePreGain(1) }
+            StepButton("Raise the volume change by half a decibel", ArtIcons.Plus, on && pre < 0.0) { editor.nudgePreGain(1) }
         }
         Row(Modifier.padding(start = 16.dp, end = 19.dp, top = 20.dp)) {
             SmallButton("Reset to flat", null, false, "Reset to flat", Modifier.fillMaxWidth(), enabled = on, onClick = onReset)
@@ -225,12 +226,12 @@ internal fun CoverStackCrossfade(settings: app.discair.player.PlayerSettings, xf
         CoverStackHeading("Length")
         Column(Modifier.padding(start = 16.dp, end = 19.dp, top = 12.dp).alpha(if (on) 1f else 0.5f), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally), verticalAlignment = Alignment.CenterVertically) {
-                StepButton("Shorten the crossfade by one second", PlayerIcons.Remove, on && CrossfadeText.canLower(seconds)) { settings.crossfadeSeconds = CrossfadeText.nudge(seconds, -1) }
+                StepButton("Shorten the crossfade by one second", ArtIcons.Minus, on && CrossfadeText.canLower(seconds)) { settings.crossfadeSeconds = CrossfadeText.nudge(seconds, -1) }
                 Text(
                     CrossfadeText.length(seconds), color = p.text, style = MaterialTheme.typography.headlineLarge.copy(fontSize = 28.sp, lineHeight = 32.sp, fontWeight = FontWeight.Bold),
                     modifier = Modifier.semantics { contentDescription = CrossfadeText.lengthSpoken(seconds); liveRegion = LiveRegionMode.Polite },
                 )
-                StepButton("Lengthen the crossfade by one second", PlayerIcons.Add, on && CrossfadeText.canRaise(seconds)) { settings.crossfadeSeconds = CrossfadeText.nudge(seconds, 1) }
+                StepButton("Lengthen the crossfade by one second", ArtIcons.Plus, on && CrossfadeText.canRaise(seconds)) { settings.crossfadeSeconds = CrossfadeText.nudge(seconds, 1) }
             }
             LengthBar(seconds, on) { settings.crossfadeSeconds = it }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {

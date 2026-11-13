@@ -1,6 +1,6 @@
 package app.discair.ui.player
 
-import app.discair.ui.common.FlowIcons
+import app.discair.ui.common.ArtIcons
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -140,19 +140,19 @@ private fun FlowTransport(state: PlayerUiState, controller: PlayerController) {
     val repeat = state.queue.repeat
     Row(Modifier.fillMaxWidth().padding(vertical = 6.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
         FlowTransportButton("Shuffle", { controller.setShuffle(!shuffle) }, state = if (shuffle) "On" else "Off") {
-            Icon(FlowIcons.Shuffle, null, tint = if (shuffle) p.accentText else p.textMuted, modifier = Modifier.size(FlowPlayerRules.FLAT_GLYPH.dp))
+            Icon(ArtIcons.Shuffle, null, tint = if (shuffle) p.accentText else p.textMuted, modifier = Modifier.size(FlowPlayerRules.FLAT_GLYPH.dp))
         }
-        FlowTransportButton("Previous song", controller::previous) { Icon(FlowIcons.Previous, null, tint = it, modifier = Modifier.size(FlowPlayerRules.SIDE_GLYPH.dp)) }
+        FlowTransportButton("Previous song", controller::previous) { Icon(ArtIcons.Previous, null, tint = it, modifier = Modifier.size(FlowPlayerRules.SIDE_GLYPH.dp)) }
         FlowTransportButton(if (state.isPlaying) "Pause" else "Play", controller::playPause, size = FlowPlayerRules.PLAY_BUTTON, main = true) {
-            Icon(if (state.isPlaying) FlowIcons.Pause else FlowIcons.Play, null, tint = it, modifier = Modifier.size(FlowPlayerRules.PLAY_GLYPH.dp))
+            Icon(if (state.isPlaying) ArtIcons.Pause else ArtIcons.Play, null, tint = it, modifier = Modifier.size(FlowPlayerRules.PLAY_GLYPH.dp))
         }
-        FlowTransportButton("Next song", controller::next, enabled = state.queue.items.size > 1) { Icon(FlowIcons.Next, null, tint = it, modifier = Modifier.size(FlowPlayerRules.SIDE_GLYPH.dp)) }
+        FlowTransportButton("Next song", controller::next, enabled = state.queue.items.size > 1) { Icon(ArtIcons.Next, null, tint = it, modifier = Modifier.size(FlowPlayerRules.SIDE_GLYPH.dp)) }
         FlowTransportButton(
             "Repeat", controller::cycleRepeat,
             state = when (repeat) { RepeatMode.Off -> "Off"; RepeatMode.All -> "Repeat all"; RepeatMode.One -> "Repeat one" },
         ) {
             Icon(
-                if (repeat == RepeatMode.One) FlowIcons.RepeatOne else FlowIcons.Repeat, null,
+                if (repeat == RepeatMode.One) ArtIcons.RepeatOne else ArtIcons.Repeat, null,
                 tint = if (repeat != RepeatMode.Off) p.accentText else p.textMuted, modifier = Modifier.size(FlowPlayerRules.FLAT_GLYPH.dp),
             )
         }
@@ -189,13 +189,13 @@ private fun FlowTopBar(onClose: () -> Unit, menu: List<Pair<String, () -> Unit>>
     val p = LocalPalette.current
     Row(Modifier.fillMaxWidth().heightIn(min = 48.dp), verticalAlignment = Alignment.CenterVertically) {
         Box(Modifier.size(Target).clip(CircleShape).clickable(role = Role.Button, onClick = onClose), contentAlignment = Alignment.Center) {
-            Icon(FlowIcons.Down, contentDescription = "Close now playing", tint = p.accentText)
+            Icon(ArtIcons.Down, contentDescription = "Close now playing", tint = p.accentText)
         }
         Box(Modifier.weight(1f).semantics { heading() }, contentAlignment = Alignment.Center) { FlowEyebrow(FlowPlayerRules.TITLE) }
         var open by remember { mutableStateOf(false) }
         Box {
             Box(Modifier.size(Target).clip(CircleShape).clickable(role = Role.Button) { open = true }, contentAlignment = Alignment.Center) {
-                Icon(FlowIcons.More, contentDescription = "More", tint = p.accentText)
+                Icon(ArtIcons.More, contentDescription = "More", tint = p.accentText)
             }
             DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
                 menu.forEach { (label, run) -> DropdownMenuItem(text = { Text(label) }, onClick = { open = false; run() }) }
@@ -266,10 +266,10 @@ fun FlowPlayer(
             FlowTransport(state, controller)
         }
         Row(Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 12.dp), horizontalArrangement = Arrangement.SpaceAround) {
-            Entry("Queue", FlowIcons.Queue) { onView(CoverStackPlayerRules.VIEW_QUEUE) }
-            Entry("Lyrics", FlowIcons.Quote) { onView(CoverStackPlayerRules.VIEW_LYRICS) }
-            Entry("Equalizer", FlowIcons.Tune, onEqualizer)
-            Entry("Crossfade", FlowIcons.Swap, onCrossfade)
+            Entry("Queue", ArtIcons.Queue) { onView(CoverStackPlayerRules.VIEW_QUEUE) }
+            Entry("Lyrics", ArtIcons.Quote) { onView(CoverStackPlayerRules.VIEW_LYRICS) }
+            Entry("Equalizer", ArtIcons.Tune, onEqualizer)
+            Entry("Crossfade", ArtIcons.Swap, onCrossfade)
         }
     }
 }
@@ -384,7 +384,7 @@ private fun ColumnScope.FlowQueue(state: PlayerUiState, controller: PlayerContro
                 }
                 Box {
                     Box(Modifier.size(Target).clip(CircleShape).clickable(role = Role.Button) { controller.remove(position) }, contentAlignment = Alignment.Center) {
-                        Icon(FlowIcons.Close, contentDescription = "Remove ${song.title} from queue", tint = p.text, modifier = Modifier.size(20.dp))
+                        Icon(ArtIcons.Close, contentDescription = "Remove ${song.title} from queue", tint = p.text, modifier = Modifier.size(20.dp))
                     }
                     DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
                         actions.forEach { (label, run) -> DropdownMenuItem(text = { Text(label) }, onClick = { menu = false; run() }) }
@@ -401,7 +401,7 @@ private fun ColumnScope.FlowQueue(state: PlayerUiState, controller: PlayerContro
             Modifier.heightIn(min = 44.dp).clip(RoundedCornerShape(22.dp)).background(p.raised).clickable(role = Role.Button) { play.soundsLike(playing.songId, queuedIds) }.padding(horizontal = 16.dp),
             verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Icon(FlowIcons.Wave, contentDescription = null, tint = p.text, modifier = Modifier.size(20.dp))
+            Icon(ArtIcons.Wave, contentDescription = null, tint = p.text, modifier = Modifier.size(20.dp))
             Text("Add songs that sound like this", color = p.text, style = MaterialTheme.typography.labelLarge.copy(fontSize = 15.sp, fontWeight = FontWeight.SemiBold))
         }
     }

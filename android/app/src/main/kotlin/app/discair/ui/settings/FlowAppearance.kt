@@ -1,6 +1,6 @@
 package app.discair.ui.settings
 
-import app.discair.ui.common.FlowIcons
+import app.discair.ui.common.ArtIcons
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -123,7 +123,7 @@ private fun Home(appearance: Appearance, filter: String, onFilter: (String) -> U
                     Text(pair.label, color = p.text, fontFamily = pair.title, fontWeight = pair.titleWeight, style = MaterialTheme.typography.bodyLarge.copy(fontSize = 15.sp))
                     Text("${pair.titleName} and ${pair.bodyName}", color = p.textMuted, style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp))
                 }
-                if (on) Icon(FlowIcons.Check, contentDescription = null, tint = p.text, modifier = Modifier.size(24.dp))
+                if (on) Icon(ArtIcons.Check, contentDescription = null, tint = p.text, modifier = Modifier.size(24.dp))
             }
         }
     }

@@ -1,5 +1,6 @@
 package app.discair.ui.player
 
+import app.discair.ui.common.ArtIcons
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -176,13 +177,13 @@ private fun TopBar(view: Int, onBack: () -> Unit, menu: List<Pair<String, () -> 
     val p = LocalPalette.current
     Row(Modifier.fillMaxWidth().heightIn(min = 48.dp), verticalAlignment = Alignment.CenterVertically) {
         Box(Modifier.size(Target).clip(CircleShape).clickable(role = Role.Button, onClick = onBack), contentAlignment = Alignment.Center) {
-            Icon(if (view == CoverStackPlayerRules.VIEW_PLAYER) PlayerIcons.Down else PlayerIcons.Left, contentDescription = CoverStackPlayerRules.backLabel(view), tint = p.text)
+            Icon(if (view == CoverStackPlayerRules.VIEW_PLAYER) ArtIcons.Down else ArtIcons.Back, contentDescription = CoverStackPlayerRules.backLabel(view), tint = p.text)
         }
         Box(Modifier.weight(1f), contentAlignment = Alignment.Center) { Eyebrow(CoverStackPlayerRules.frameTitle(view), heading = true) }
         var open by remember { mutableStateOf(false) }
         Box {
             Box(Modifier.size(Target).clip(CircleShape).clickable(role = Role.Button) { open = true }, contentAlignment = Alignment.Center) {
-                Icon(Icons.Default.MoreVert, contentDescription = "More", tint = p.text)
+                Icon(ArtIcons.More, contentDescription = "More", tint = p.text)
             }
             DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
                 menu.forEach { (label, run) -> DropdownMenuItem(text = { Text(label) }, onClick = { open = false; run() }) }
@@ -221,16 +222,16 @@ private fun Transport(state: PlayerUiState, controller: PlayerController) {
     val shuffle = state.queue.shuffle
     val repeat = state.queue.repeat
     Row(Modifier.fillMaxWidth().padding(vertical = 6.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-        CsButton("Shuffle", 48, { controller.setShuffle(!shuffle) }, flat = true, on = shuffle, state = if (shuffle) "On" else "Off") { Icon(PlayerIcons.Shuffle, null, tint = it) }
-        CsButton("Previous song", 48, controller::previous) { Icon(PlayerIcons.Previous, null, tint = it) }
+        CsButton("Shuffle", 48, { controller.setShuffle(!shuffle) }, flat = true, on = shuffle, state = if (shuffle) "On" else "Off") { Icon(ArtIcons.Shuffle, null, tint = it) }
+        CsButton("Previous song", 48, controller::previous) { Icon(ArtIcons.Previous, null, tint = it) }
         CsButton(if (state.isPlaying) "Pause" else "Play", 68, controller::playPause, radius = 14, primary = true) {
-            Icon(if (state.isPlaying) PlayerIcons.Pause else PlayerIcons.Play, null, tint = it, modifier = Modifier.size(32.dp))
+            Icon(if (state.isPlaying) ArtIcons.Pause else ArtIcons.Play, null, tint = it, modifier = Modifier.size(32.dp))
         }
-        CsButton("Next song", 48, controller::next, enabled = state.queue.items.size > 1) { Icon(PlayerIcons.Next, null, tint = it) }
+        CsButton("Next song", 48, controller::next, enabled = state.queue.items.size > 1) { Icon(ArtIcons.Next, null, tint = it) }
         CsButton(
             "Repeat", 48, controller::cycleRepeat, flat = true, on = repeat != RepeatMode.Off,
             state = when (repeat) { RepeatMode.Off -> "Off"; RepeatMode.All -> "Repeat all"; RepeatMode.One -> "Repeat one" },
-        ) { Icon(if (repeat == RepeatMode.One) PlayerIcons.RepeatOne else PlayerIcons.Repeat, null, tint = it) }
+        ) { Icon(if (repeat == RepeatMode.One) ArtIcons.RepeatOne else ArtIcons.Repeat, null, tint = it) }
     }
 }
 
@@ -341,10 +342,10 @@ private fun ColumnScope.NowPlayingView(
     }
     // The four entries under the transport: Queue, Lyrics, Equalizer and Crossfade (the mockup's Sonic path has no Now Playing action).
     Row(Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 12.dp), horizontalArrangement = Arrangement.SpaceAround) {
-        Entry("Queue", PlayerIcons.List) { onView(CoverStackPlayerRules.VIEW_QUEUE) }
-        Entry("Lyrics", PlayerIcons.Quote) { onView(CoverStackPlayerRules.VIEW_LYRICS) }
-        Entry("Equalizer", PlayerIcons.Tune, onEqualizer)
-        Entry("Crossfade", PlayerIcons.Swap, onCrossfade)
+        Entry("Queue", ArtIcons.Queue) { onView(CoverStackPlayerRules.VIEW_QUEUE) }
+        Entry("Lyrics", ArtIcons.Quote) { onView(CoverStackPlayerRules.VIEW_LYRICS) }
+        Entry("Equalizer", ArtIcons.Tune, onEqualizer)
+        Entry("Crossfade", ArtIcons.Swap, onCrossfade)
     }
 }
 
@@ -437,7 +438,7 @@ private fun ColumnScope.QueueView(state: PlayerUiState, controller: PlayerContro
                 }
                 Box {
                     Box(Modifier.size(Target).clip(CircleShape).clickable(role = Role.Button) { controller.remove(position) }, contentAlignment = Alignment.Center) {
-                        Icon(PlayerIcons.Close, contentDescription = "Remove ${song.title} from queue", tint = p.text, modifier = Modifier.size(20.dp))
+                        Icon(ArtIcons.Close, contentDescription = "Remove ${song.title} from queue", tint = p.text, modifier = Modifier.size(20.dp))
                     }
                     DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
                         actions.forEach { (label, run) -> DropdownMenuItem(text = { Text(label) }, onClick = { menu = false; run() }) }
@@ -455,7 +456,7 @@ private fun ColumnScope.QueueView(state: PlayerUiState, controller: PlayerContro
             Modifier.coverStackFrame(shape, p).heightIn(min = 44.dp).clickable(role = Role.Button) { play.soundsLike(playing.songId, queuedIds) }.padding(horizontal = 16.dp),
             verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Icon(PlayerIcons.Wave, contentDescription = null, tint = p.text, modifier = Modifier.size(20.dp))
+            Icon(ArtIcons.Wave, contentDescription = null, tint = p.text, modifier = Modifier.size(20.dp))
             Text("Add songs that sound like this", color = p.text, style = MaterialTheme.typography.labelLarge.copy(fontSize = 14.sp, fontWeight = FontWeight.Bold))
         }
     }

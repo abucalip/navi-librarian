@@ -1,5 +1,6 @@
 package app.discair.ui.settings
 
+import app.discair.ui.common.ArtIcons
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -89,7 +90,7 @@ internal fun CoverStackSettingsRow(
                 Text(title, color = p.text, style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold, fontSize = 14.sp))
                 Text(state, color = if (stateColor == Color.Unspecified) p.textMuted else stateColor, style = MaterialTheme.typography.bodySmall)
             }
-            if (trailing != null) trailing() else Icon(PlayerIcons.Right, contentDescription = null, tint = p.text)
+            if (trailing != null) trailing() else Icon(ArtIcons.Chevron, contentDescription = null, tint = p.text)
         }
     }
 }
@@ -136,7 +137,7 @@ internal fun CoverStackSettingsPage(
         val serverLine = SettingsRules.serverLine(state.librarian, state.navidrome)
         CsGroup {
             SettingsRow(
-                PlayerIcons.Server, "Server and services", serverLine.text, onClick = onServer, divider = false,
+                ArtIcons.Server, "Server and services", serverLine.text, onClick = onServer, divider = false,
                 stateColor = when (serverLine.tone) {
                     SettingsRules.Tone.Success -> p.ok
                     SettingsRules.Tone.Danger -> p.chartRedText
