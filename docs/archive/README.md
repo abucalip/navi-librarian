@@ -9,6 +9,18 @@ These files preserve completed roadmaps, redesign specifications, measurements, 
 - `redesign/REDESIGN_ROADMAP.md`, `redesign/UI_BACKLOG_EXECUTION.md`: phase history and implementation evidence.
 - `redesign/FRONTEND_DESIGN_GUIDE.md`, `redesign/STATUS_ICON_DEV.md`: prior interaction/design guidance and specific UI task notes. Permanent UI safety, accessibility, and testing rules now live in the development workflow and test plan.
 
+## Recently completed proposals and plans
+
+The following documents were moved here after their implementation/build plans closed. The original paths contain short pointers for source-comment and contract compatibility:
+
+- `completed/ALBUM_PAGE_REDESIGN_PROPOSAL.md` and `completed/ARTIST_PAGE_REDESIGN_PROPOSAL.md`: page layouts and API additions merged in PRs #634–#636; contract sections are authoritative. Browser verification was not claimed.
+- `completed/ALBUM_PATHS_PROPOSAL.md`: all seven album path kinds, routes, fixtures and client screens built; owner checks after deployment remain.
+- `completed/ANDROID_ART_THEMES_PROPOSAL.md`: Soft Brut and Flow build slices merged; owner phone review remains.
+- `completed/palettes.md`: P1–P5 merged; owner phone comparison with palette mockups remains.
+- `completed/BRUT_LAYOUTS_PLAN.md`: P1–P6 merged; the remaining owner phone/accessibility checks are still tracked in the active queue.
+- `completed/HARDCODE_REPLACEMENT.md`: derived taste behavior replaced the hard-coded mode (PRs #561–#571).
+- `completed/artwork.md`: all planned artwork slices merged; owner device/window checks and any open decisions remain outstanding.
+
 ## Completed engineering plans
 
 - `completed/MODULARIZATION_ROADMAP.md`: completed domain modularization.

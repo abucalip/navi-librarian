@@ -1,6 +1,6 @@
 # Project status
 
-Last checked: 2026-11-11. GitHub `main` is authoritative; current head `16cb3d9d` (PR #984 squash). Server V2 Phase 6 taste presentation is closed; Phase 7 implementation is merged through PR #889, with runtime and client verification remaining. PR #898 is merged; publication as `v0.5.3` is authorized but not yet completed.
+Last checked: 2026-11-13. GitHub `main` is authoritative; this archive update is based on main at `01421b0e583b56f0fbbb9725a14c8d91ce91b8d7`.
 
 **Server V2 work queue:** `docs/ServerV2.md` now contains only remaining client slices and verification; the former full plan and completed-work history is preserved in `docs/archive/ServerV2_HISTORY_2026-11-09.md`.
 

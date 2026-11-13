@@ -1,3 +1,13 @@
+## 2026-11-13 — Archive completed proposals and plans
+
+- Reviewed the current GitHub `main`, recent commits, open PR search results, the project status and active-work queue, requirements, development workflow, test plan, and the candidate proposal/plan documents.
+- Moved the full contents of eight closed documents into `docs/archive/completed/`: album and artist page redesign records, album paths, Android art themes, colour palettes, Brut layouts, hard-coded taste replacement, and artwork.
+- Kept short pointer files at the original paths because source comments, tests, contracts, or documentation refer to those paths. Updated active-work links and the archive index. Updated the project-status check date and archived palette reference.
+- Completion means the planned implementation/build slices are merged; it does not claim outstanding owner device/browser checks, publication, deployment, or runtime verification. Those gates remain explicitly recorded in the active queue and archived document status.
+- Documentation-only change, committed directly to `main` under the repository workflow. No application code, tests, configuration, provider traffic, publication, or deployment changed. No application tests or CI were run because no executable files changed.
+
+---
+
 ## 2026-11-13 — Colour palettes P4 and P5: Flow night palettes and closeout (PR #1045)
 
 - PR [#1045](https://github.com/abucalip/navi-librarian/pull/1045), merged as `8c10438897f3b16873916848149bde1f3c636028` from head `05967dc67a07872ec191e1cbc82d4d179436b0b7`; required CI passed (compile, container-smoke, test-and-build, validate-container). `Palette.kt` gained `FlowEmber`, `FlowMoss`, `FlowPlum` (in `Palettes.Dark`, after the Soft Brut night palettes). `FlowRules.chevron` has their greys; `FlowRules.barHairline` (new) is white at 10% on a dark palette and black at 8% on a light one, used by `flowBar`. The wash behind the album and player was checked and left as is: artwork tints are always dark, and a dark palette uses them unchanged. P5: `ACTIVE_WORK.md`, `PROJECT_STATUS.md`, this log and `docs/palettes.md` updated; `android/DESIGN.md` has a short palettes note.
