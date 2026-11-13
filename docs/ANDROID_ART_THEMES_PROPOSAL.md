@@ -300,13 +300,8 @@ Each step is one PR with its own tests, in this order. Soft Brut and Flow are in
 | **S2** Soft Brut Home (merged, PR #1007) | Section 6.1 | `soft-brut/home` matched in all five frames; Get, Save and the menu work on the front sleeve |
 | **S3** Soft Brut pages | Album, Artist, Genre, Discover, Library, Search | Their mockups matched |
 | **S4** Soft Brut player and the rest | Now Playing, Queue, Lyrics (part 1, built), Radio, Downloads, Stats (part 2, built), then Server, Settings, Equalizer, Crossfade | Their mockups matched; closeout |
-<<<<<<< HEAD
 | **F1** Flow palette and shell (merged, PR #1020; three colours and the accent tag label differ from the mockup, see D7) | Palette `flow`, `Layout.Flow`, font pair `flow`, depth levels, capsules, grouped list, segmented control, floating bars; settle D2 (done, section 8) | `flow/components` matched |
-| **F2** Flow Home | Section 6.2 | `flow/home` matched in all four frames |
-=======
-| **F1** Flow palette and shell (merged, PR #1020; three colours and the accent tag label differ from the mockup, see D7) | Palette `flow`, `Layout.Flow`, font pair `flow`, depth levels, capsules, grouped list, segmented control, floating bars; settle D2 | `flow/components` matched |
 | **F2** Flow Home (built) | Section 6.2 | `flow/home` matched in all four frames |
->>>>>>> 7f6908db (Art themes F2: Flow Home (segmented control, cover carousel, Artists, Insight, Genres, grouped list))
 | **F3** Flow pages | Album (with the wash), Artist, Genre, Discover, Library, Search | Their mockups matched |
 | **F4** Flow player and the rest | As S4 | Their mockups matched; closeout |
 
