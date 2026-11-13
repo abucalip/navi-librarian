@@ -1,3 +1,9 @@
+## 2026-11-13 — Another booklet button on macOS and Android, `booklets` in the artwork index (PR #1016)
+
+- Merged as `a7f4e658600244282b4fb11b0bb6855aa279c92d`. Server: `intelligence/artwork/index.py` gains `_booklets` (every release's booklet by the existing rule: most pages, then the owned release, then the earlier date, then MBID; at most `BOOKLETS_CAP` = 8) and `to_response` adds `booklets`; `booklet` is unchanged and equals the first entry. Contract section and the five `artwork_index*.json` fixtures updated. macOS: `ArtworkIndex.booklets` and `bookletViews`, `BookletSheet` takes `booklets` and has the button and notice. Android: `ArtworkIndex.booklets`, `BookletView.others`, `anotherBooklet`, button and live-region notice in `BookletTab`.
+- Verified, filtered: Python `test_intelligence_artwork_index` and `test_artwork_fixtures` (40 passed); macOS `BookletTests`, `ArtworkTests`, `NowPlayingArtworkTests`, `EditionPickerTests`, `LinerNoteTests` (51 passed); Android (JDK 17) `BookletTest`, `ArtworkIndexTest`, `NowPlayingArtworkTest`, `DiscoverPeekTest`. Full suites not run (owner rule). Not seen in a window or on a device. Not published or deployed.
+- Next action: the owner looks at the button on the Mac and on a device.
+
 ## 2026-11-13 — macOS: remove Zine, add Night mode and the Appearance tab (PR #1015)
 
 - Merged as `3fc8d652e32d02964158684684028fcb1f97b5b4`. Deleted `Themes/Zine`, the Anton, Space Mono and Source Serif 4 fonts with the `Resources/Fonts` package resource, the Zine Dock icon, the Theme menu and the Zine branches in the shared chrome; `ThemeID` keeps `cupertino`. Added `CUPalette` (Day, Night, optional accent hue; `CU.*` now reads it), `AppearanceModel` (saved in UserDefaults), `CupertinoAppearance` and a `SettingsTab.appearance`. `RootView` rebuilds the window on a change. Night is `#0B0B0D` with coral `#FF7A8F`; Day keeps `#D61F4A`.
