@@ -1,6 +1,6 @@
 # Android art-led themes: Soft Brut and Flow (proposal)
 
-Status: **proposal; step 0 (PR #1005), S1 (PR #1006) and S2 (PR #1007) built; S3 built (Album, Artist, Genre, Discover, Library and Search pages themed, in PRs #1008, #1009 and #1010); S4 part 1 built (Now Playing, Queue and Lyrics, PR #1011); S4 part 2 built (Radio, Downloads and Library stats, PR #1012); F1 built and merged (Flow palette, layout, font pair and shell controls, PR #1020); F2 built (Flow Home, the Flow top bar); the owner settled D1, D4 and D6 on 2026-11-13.** Written 2026-11-12. This document and the mockups beside it are the whole change; no application code is touched. Building starts only after the owner approves it and the steps in section 10 are scheduled in `ACTIVE_WORK.md`.
+Status: **proposal; step 0 (PR #1005), S1 (PR #1006) and S2 (PR #1007) built; S3 built (Album, Artist, Genre, Discover, Library and Search pages themed, in PRs #1008, #1009 and #1010); S4 part 1 built (Now Playing, Queue and Lyrics, PR #1011); S4 part 2 built (Radio, Downloads and Library stats, PR #1012); F1 built and merged (Flow palette, layout, font pair and shell controls, PR #1020); F2 built and merged (Flow Home and the Flow top bar, PR #1023); the owner settled D1, D4 and D6 on 2026-11-13.** Written 2026-11-12. This document and the mockups beside it are the whole change; no application code is touched. Building starts only after the owner approves it and the steps in section 10 are scheduled in `ACTIVE_WORK.md`.
 
 ## 1. What the owner asked for
 
@@ -301,7 +301,7 @@ Each step is one PR with its own tests, in this order. Soft Brut and Flow are in
 | **S3** Soft Brut pages | Album, Artist, Genre, Discover, Library, Search | Their mockups matched |
 | **S4** Soft Brut player and the rest | Now Playing, Queue, Lyrics (part 1, built), Radio, Downloads, Stats (part 2, built), then Server, Settings, Equalizer, Crossfade | Their mockups matched; closeout |
 | **F1** Flow palette and shell (merged, PR #1020; three colours and the accent tag label differ from the mockup, see D7) | Palette `flow`, `Layout.Flow`, font pair `flow`, depth levels, capsules, grouped list, segmented control, floating bars; settle D2 (done, section 8) | `flow/components` matched |
-| **F2** Flow Home (built) | Section 6.2 | `flow/home` matched in all four frames |
+| **F2** Flow Home (merged, PR #1023; "played an hour ago" not drawn, Insight button reads "Open album") | Section 6.2 | `flow/home` matched in all four frames |
 | **F3** Flow pages | Album (with the wash), Artist, Genre, Discover, Library, Search | Their mockups matched |
 | **F4** Flow player and the rest | As S4 | Their mockups matched; closeout |
 
