@@ -125,7 +125,10 @@ private fun Color.forThemeOf(p: Palette): Color = if (p.light) app.discair.ui.th
  * buttons. On [over] a photo they are white glyphs on a 28% black disc (`.over .ib`); otherwise bare accent glyphs (`.bar .ib`).
  */
 @Composable
-fun FlowPageBar(onBack: () -> Unit, menu: List<Pair<String, () -> Unit>>, modifier: Modifier = Modifier, title: String? = null, over: Boolean = false) {
+fun FlowPageBar(
+    onBack: () -> Unit, menu: List<Pair<String, () -> Unit>>, modifier: Modifier = Modifier, title: String? = null, over: Boolean = false,
+    trailing: @Composable () -> Unit = {},
+) {
     val p = LocalPalette.current
     val glyph = if (over) Color.White else p.accentText
     val disc = if (over) Modifier.background(Color.Black.copy(alpha = 0.28f), CircleShape) else Modifier
@@ -137,6 +140,7 @@ fun FlowPageBar(onBack: () -> Unit, menu: List<Pair<String, () -> Unit>>, modifi
             title, Modifier.weight(1f).padding(start = 4.dp), color = p.text, maxLines = 1, overflow = TextOverflow.Ellipsis,
             style = MaterialTheme.typography.titleMedium.copy(fontSize = 15.sp, lineHeight = 20.sp, fontWeight = FontWeight.SemiBold),
         ) else Box(Modifier.weight(1f))
+        trailing()
         if (menu.isNotEmpty()) {
             var open by remember { mutableStateOf(false) }
             Box {

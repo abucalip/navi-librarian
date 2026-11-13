@@ -101,10 +101,11 @@ fun RadioNowPlayingSheet(
     var tint by remember { mutableStateOf<Color?>(null) }
     val ground = Ink.Ink
     val palette = app.discair.ui.theme.LocalPalette.current
-    val wash by animateColorAsState(if (palette.brutal) ground else tint ?: ground, animationSpec = tween(500), label = "artworkTint")
+    val flow = app.discair.ui.common.isFlow() // Flow: a plain page, as in flow/radio frame 2 (no tint, no blurred backdrop)
+    val wash by animateColorAsState(if (palette.brutal || flow) ground else tint ?: ground, animationSpec = tween(500), label = "artworkTint")
     LaunchedEffect(item.coverUrl) { if (item.coverUrl.isBlank()) tint = null }
     val artwork = radioArtworkUrl(item.coverUrl)
-    val blurred = canBlur && !artwork.isNullOrBlank()
+    val blurred = canBlur && !artwork.isNullOrBlank() && !flow
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true), containerColor = Ink.Ink, shape = RectangleShape) {
         app.discair.ui.common.TransparentNavigationBar()
         Box {
@@ -119,6 +120,10 @@ fun RadioNowPlayingSheet(
                 // Soft Brut draws its own live-radio sheet (mockup soft-brut/radio, frame 2): CoverStackRadio.kt.
                 if (app.discair.ui.common.isCoverStack()) {
                     CoverStackRadioNow(state, controller, radio, sleep, live, item, artwork, radioStatusText(state, live), onDismiss, onOpenHeard)
+                    return@Column
+                }
+                if (flow) {
+                    FlowRadioNow(state, controller, radio, sleep, live, item, artwork, radioStatusText(state, live), onDismiss, onOpenHeard)
                     return@Column
                 }
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {

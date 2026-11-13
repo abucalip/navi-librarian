@@ -125,6 +125,15 @@ fun RadioScreen(onBack: () -> Unit, onOpenHeard: () -> Unit, onOpenPlayer: () ->
         )
         return
     }
+    // Flow draws its own page the same way (FlowRadio.kt).
+    if (app.discair.ui.common.isFlow()) {
+        FlowStations(
+            onBack, onOpenHeard, stations.state, stations.reload, message,
+            favourite = { favourites[it.id] ?: it.favourite }, now = { live[it.id] }, onAirId = onAir.stationId,
+            onPlay = playStation, onFavourite = { toggleFavourite(it, favourites[it.id] ?: it.favourite) },
+        )
+        return
+    }
     Column(Modifier.fillMaxSize()) {
         app.discair.ui.common.BackBar(onBack)
         LazyColumn(Modifier.fillMaxWidth(), contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 24.dp + app.discair.ui.LocalBottomClearance.current)) {

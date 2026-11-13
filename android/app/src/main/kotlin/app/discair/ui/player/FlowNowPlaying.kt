@@ -118,7 +118,7 @@ object FlowPlayerRules {
 
 /** One plain Flow transport button: a glyph, no frame; [main] is the round text-colour Play. */
 @Composable
-private fun FlowTransportButton(
+internal fun FlowTransportButton(
     label: String, onClick: () -> Unit, modifier: Modifier = Modifier, size: Int = FlowPlayerRules.SIDE_BUTTON, main: Boolean = false,
     enabled: Boolean = true, state: String? = null, icon: @Composable (Color) -> Unit,
 ) {

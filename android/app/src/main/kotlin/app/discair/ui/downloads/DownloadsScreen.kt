@@ -95,12 +95,17 @@ fun DownloadsScreen(open: Opener) {
 
     Column(Modifier.fillMaxSize()) {
         val softBrut = app.discair.ui.common.isCoverStack() // Soft Brut: a cover-stack bar and title, outlined cards (CoverStackDownloads.kt)
-        if (softBrut) app.discair.ui.common.CoverStackTopBar(open.back, emptyList(), title = "Downloads") else BackBar(open.back)
+        val flow = app.discair.ui.common.isFlow() // Flow: its own bar, large title and white cards (FlowDownloads.kt)
+        if (softBrut) app.discair.ui.common.CoverStackTopBar(open.back, emptyList(), title = "Downloads")
+        else if (flow) app.discair.ui.common.FlowPageBar(open.back, emptyList(), title = "Downloads")
+        else BackBar(open.back)
         if (softBrut) app.discair.ui.common.CoverStackTitle("Downloads", Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp), maxLines = 1)
+        else if (flow) app.discair.ui.common.FlowLargeTitle("Downloads", Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp))
         else PageHeading("Downloads", Modifier.padding(start = 16.dp, end = 16.dp), large = true)
         StatusLine(hub, jobs)
         val imported = jobs.orEmpty().count { it.isImported }
         if (imported > 0 && softBrut) app.discair.ui.discover.CoverStackLink("Dismiss all successful imports", Modifier.padding(start = 16.dp)) { confirm = Confirm.Imported(imported) }
+        else if (imported > 0 && flow) FlowDismissAll { confirm = Confirm.Imported(imported) }
         else if (imported > 0) Row(
             Modifier.padding(horizontal = 16.dp, vertical = 4.dp).heightIn(min = Target)
                 .clickable(role = Role.Button, onClickLabel = "Dismiss all successful imports") { confirm = Confirm.Imported(imported) },
@@ -130,7 +135,7 @@ fun DownloadsScreen(open: Opener) {
                 items(jobs, key = { it.key }) { job ->
                     Column(Modifier.animateItem()) {
                         JobRow(job, hub, now, open, onDismiss = { confirm = Confirm.One(job) })
-                        if (!softBrut) RowDivider()
+                        if (!softBrut && !flow) RowDivider()
                     }
                 }
             }
@@ -193,6 +198,14 @@ private fun JobRow(job: AcquisitionJob, hub: AcquisitionHub, now: Double, open: 
     if (app.discair.ui.common.isCoverStack()) {
         val arrived = job.updatedAt?.let { DateFormat.getTimeInstance(DateFormat.SHORT).format(Date((it * 1000).toLong())) }
         CoverStackJob(
+            job, busy, job.skipSecondsLeft(now), ownedId != null, arrived, openAlbum,
+            onPlay = { ownedId?.let { play.playAlbum(it) } }, onSkip = { hub.skipSource(job) }, onRetry = { hub.retry(job) }, onDismiss = onDismiss,
+        )
+        return
+    }
+    if (app.discair.ui.common.isFlow()) {
+        val arrived = job.updatedAt?.let { DateFormat.getTimeInstance(DateFormat.SHORT).format(Date((it * 1000).toLong())) }
+        FlowJob(
             job, busy, job.skipSecondsLeft(now), ownedId != null, arrived, openAlbum,
             onPlay = { ownedId?.let { play.playAlbum(it) } }, onSkip = { hub.skipSource(job) }, onRetry = { hub.retry(job) }, onDismiss = onDismiss,
         )
