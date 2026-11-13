@@ -93,6 +93,8 @@ public final class AppState {
     public let discovery = DiscoveryModel()
     /// Internet radio stations, their live titles and the tag filter.
     public let stations = StationsModel()
+    /// Station logos, fetched once per station and size (S2.5).
+    public let stationLogos: StationLogoStore
     /// The ⌘K command palette.
     public let palette = PaletteModel()
     /// Songs the server found for the text being searched (the palette and the Library search), whole library.
@@ -176,6 +178,7 @@ public final class AppState {
         // Previews and tests never touch the Keychain or mount anything.
         self.share = session == nil ? ShareModel(defaults: defaults, secrets: InMemorySecretStore(), mounter: NoMounter()) : ShareModel(defaults: defaults, secrets: session?.secrets ?? InMemorySecretStore())
         self.artwork = ArtworkStore(media: media)
+        self.stationLogos = StationLogoStore(media: media)
         self.barOptions = PlayerBarOptions(defaults: defaults)
         let player = PlayerModel(output: output ?? EngineOutput(), fetcher: CachingFetcher(cache: media), defaults: defaults)
         self.player = player
@@ -233,6 +236,7 @@ public final class AppState {
         acquisition.configure(librarian: session.librarian)
         discovery.configure(librarian: session.librarian)
         stations.configure(source: session.librarian)
+        stationLogos.configure(source: session.librarian)
         player.configure(urls: navidrome.urls, scrobbler: navidrome)
         // Skips saved while the Librarian was unreachable go out now that it is connected (in the background).
         Task { await feedback?.flush() }
@@ -339,7 +343,7 @@ public final class AppState {
     /// Settings "Reset saved data": drops what this Mac kept (lyrics, saved pages, covers, waveforms, the media cache) and
     /// everything remembered as failed. Nothing on the servers changes; screens fill again as they are opened.
     public func resetSavedData() async {
-        lyrics.reset(); library.resetSavedPages(); artwork.resetAll(); player.waveformCache.clear()
+        lyrics.reset(); library.resetSavedPages(); artwork.resetAll(); stationLogos.resetAll(); player.waveformCache.clear()
         await cache.clear()
     }
 

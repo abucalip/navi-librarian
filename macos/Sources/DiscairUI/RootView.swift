@@ -25,6 +25,7 @@ public struct RootView: View {
         .sheet(item: $state.paths) { PathsSheet(state: state, model: $0) }
         .preferredColorScheme(state.appearance.mode == .night ? .dark : .light)
         .environment(\.artwork, state.artwork)
+        .environment(\.stationLogos, state.stationLogos)
         .frame(minWidth: Self.designSize.width, minHeight: Self.designSize.height)
     }
 }
