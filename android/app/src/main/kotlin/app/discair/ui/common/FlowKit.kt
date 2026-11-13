@@ -88,6 +88,15 @@ object FlowRules {
     /** The destinations of the bar, in order: all four, with Discover in the bar (NavRules.discoverInBar). */
     val cells: List<String> = listOf("Home", "Discover", "Library", "Search")
 
+    /** The switch track when off (flow.css `.sw`): the current Flow's own grey, the palette's `chart3` for the others (docs/palettes.md 4.4). */
+    fun switchOff(p: Palette): Color = if (p.id == "flow") Color(0xFFD9D5CB) else p.chart3
+
+    /** The grey chevron at the end of a row: the current Flow's own grey, a step lighter than the strong edge on the others (docs/palettes.md 4.4). */
+    fun chevron(p: Palette): Color = when (p.id) {
+        "flow_forest" -> Color(0xFFAEB5A3); "flow_raspberry" -> Color(0xFFBBADB0); "flow_violet" -> Color(0xFFB2AEC2)
+        else -> Color(0xFFB5B0A5)
+    }
+
     /** The fill of the navigation bar and the mini player. */
     fun barFill(p: Palette): Color = p.surface.copy(alpha = BAR_ALPHA)
 }
@@ -231,7 +240,7 @@ fun FlowTabs(labels: List<String>, selectedIndex: Int, onSelect: (Int) -> Unit, 
 fun FlowSwitch(checked: Boolean, modifier: Modifier = Modifier) {
     val p = LocalPalette.current
     val knobX by animateDpAsState(if (checked) 20.dp else 0.dp, tween(200), label = "flowKnob")
-    Box(modifier.size(width = 52.dp, height = 32.dp).clip(RoundedCornerShape(16.dp)).background(if (checked) p.ok else FLOW_SWITCH_OFF)) {
+    Box(modifier.size(width = 52.dp, height = 32.dp).clip(RoundedCornerShape(16.dp)).background(if (checked) p.ok else FlowRules.switchOff(p))) {
         Box(
             Modifier.padding(2.dp).align(Alignment.CenterStart).offset(x = knobX).size(28.dp)
                 .shadow(3.dp, CircleShape, clip = false, ambientColor = Color.Black.copy(alpha = 0.15f), spotColor = Color.Black.copy(alpha = 0.3f))
@@ -240,8 +249,6 @@ fun FlowSwitch(checked: Boolean, modifier: Modifier = Modifier) {
     }
 }
 
-/** The switch track when off (flow.css `.sw`). */
-private val FLOW_SWITCH_OFF = Color(0xFFD9D5CB)
 
 /**
  * Flow's grouped list (flow.css `.list.card`): one white card of radius 16 at level 1 depth, rows 12dp in from its edge, a 0.5dp hairline
@@ -280,7 +287,7 @@ fun FlowListRow(
                 Text(title, color = p.text, maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold, fontSize = 15.sp, lineHeight = 20.sp))
                 if (state.isNotEmpty()) Text(state, color = if (stateColor == Color.Unspecified) p.textMuted else stateColor, maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp, lineHeight = 18.sp))
             }
-            if (trailing != null) trailing() else Icon(ArtIcons.Chevron, contentDescription = null, tint = FLOW_CHEVRON, modifier = Modifier.size(16.dp))
+            if (trailing != null) trailing() else Icon(ArtIcons.Chevron, contentDescription = null, tint = FlowRules.chevron(LocalPalette.current), modifier = Modifier.size(16.dp))
         }
     }
 }
@@ -321,5 +328,3 @@ fun FlowTag(text: String, modifier: Modifier = Modifier, tint: Color = LocalPale
     )
 }
 
-/** The chevron colour (flow.css `.chev`). */
-private val FLOW_CHEVRON = Color(0xFFB5B0A5)

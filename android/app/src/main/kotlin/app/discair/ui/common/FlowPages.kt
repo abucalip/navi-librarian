@@ -258,5 +258,5 @@ fun FlowLargeTitle(text: String, modifier: Modifier = Modifier) {
 /** The grey chevron at the end of a row (flow.css `.chev`, 16dp). */
 @Composable
 fun FlowChevron(modifier: Modifier = Modifier) {
-    Icon(ArtIcons.Chevron, contentDescription = null, tint = Color(0xFFB5B0A5), modifier = modifier.size(16.dp))
+    Icon(ArtIcons.Chevron, contentDescription = null, tint = FlowRules.chevron(LocalPalette.current), modifier = modifier.size(16.dp))
 }
