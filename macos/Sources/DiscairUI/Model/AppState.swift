@@ -36,6 +36,8 @@ public enum Screen: String, CaseIterable, Sendable {
     case artists
     /// Albums added to the library most recently (the Recently Added tab).
     case recent
+    /// Internet radio: the station list and the On Air panel (macOS stage 2, S2-1; mockup A2).
+    case stations
 }
 
 /// What a theme may ask the app to do. Themes call these; they never reach the network or the audio engine.
@@ -73,6 +75,8 @@ public final class AppState {
         didSet {
             // Now Playing remembers where it was opened from, so its chevron goes back there.
             if screen == .nowPlaying && oldValue != .nowPlaying { nowPlayingReturn = oldValue }
+            // The station list and live titles are polled only while their page is open (request budget, S2.5).
+            if (screen == .stations) != (oldValue == .stations) { stations.setPageVisible(screen == .stations) }
         }
     }
     /// The screen the chevron on Now Playing returns to.
@@ -87,6 +91,8 @@ public final class AppState {
     /// Get, Save, Not for me and the job list. Live only once a session connects.
     public let acquisition: AcquisitionModel
     public let discovery = DiscoveryModel()
+    /// Internet radio stations, their live titles and the tag filter.
+    public let stations = StationsModel()
     /// The ⌘K command palette.
     public let palette = PaletteModel()
     /// Songs the server found for the text being searched (the palette and the Library search), whole library.
@@ -226,6 +232,7 @@ public final class AppState {
         artwork.configure(librarian: session.librarian)
         acquisition.configure(librarian: session.librarian)
         discovery.configure(librarian: session.librarian)
+        stations.configure(source: session.librarian)
         player.configure(urls: navidrome.urls, scrobbler: navidrome)
         // Skips saved while the Librarian was unreachable go out now that it is connected (in the background).
         Task { await feedback?.flush() }
@@ -670,6 +677,7 @@ public final class AppState {
         case .insights: "Insights"
         case .artists: "Artists"
         case .recent: "Recently Added"
+        case .stations: "Radio"
         }
     }
 

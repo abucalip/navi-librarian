@@ -264,6 +264,7 @@ struct CupertinoWindow: View {
         case .smartPlaylists: CupertinoSmartPlaylists(state: state)
         case .history: CupertinoHistory(state: state)
         case .insights: CupertinoInsights(state: state)
+        case .stations: CupertinoStations(state: state)
         // `body` shows Now Playing on its own, so it never reaches here; the case is listed so a new Screen must be placed.
         case .nowPlaying: CupertinoNowPlaying(state: state)
         }
@@ -287,6 +288,7 @@ struct CupertinoSidebar: View {
         case .smartPlaylists: "Smart Playlists"
         case .history: "Library"
         case .insights: "Insights"
+        case .stations: "Radio"
         default: "Home"
         }
     }
@@ -303,6 +305,7 @@ struct CupertinoSidebar: View {
                 VStack(alignment: .leading, spacing: CU.Space.xs) {
                     row("house", "Home", .home)
                     row("books.vertical", "Library", .library)
+                    row("radio", "Radio", .stations)
                     Color.clear.frame(height: CU.Space.m)
                     Button { state.discoverOpen.toggle() } label: {
                         HStack(spacing: CU.Space.s) {
