@@ -132,7 +132,7 @@ fun FlowPageBar(
     val disc = if (over) Modifier.background(Color.Black.copy(alpha = 0.28f), CircleShape) else Modifier
     Row(modifier.statusBarsPadding().fillMaxWidth().padding(start = 8.dp, end = 8.dp, top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
         Box(Modifier.size(Target).clip(CircleShape).clickable(role = Role.Button, onClick = onBack), contentAlignment = Alignment.Center) {
-            Box(Modifier.size(44.dp).then(disc), contentAlignment = Alignment.Center) { Icon(FlowIcons.Back, contentDescription = "Back", tint = glyph) }
+            Box(Modifier.size(44.dp).then(disc), contentAlignment = Alignment.Center) { Icon(ArtIcons.Back, contentDescription = "Back", tint = glyph) }
         }
         if (title != null) Text(
             title, Modifier.weight(1f).padding(start = 4.dp), color = p.text, maxLines = 1, overflow = TextOverflow.Ellipsis,
@@ -143,7 +143,7 @@ fun FlowPageBar(
             var open by remember { mutableStateOf(false) }
             Box {
                 Box(Modifier.size(Target).clip(CircleShape).clickable(role = Role.Button) { open = true }, contentAlignment = Alignment.Center) {
-                    Box(Modifier.size(44.dp).then(disc), contentAlignment = Alignment.Center) { Icon(FlowIcons.More, contentDescription = "More", tint = glyph) }
+                    Box(Modifier.size(44.dp).then(disc), contentAlignment = Alignment.Center) { Icon(ArtIcons.More, contentDescription = "More", tint = glyph) }
                 }
                 DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
                     menu.forEach { (label, run) -> DropdownMenuItem(text = { Text(label) }, onClick = { open = false; run() }) }
@@ -239,7 +239,7 @@ fun FlowGetButton(artist: String, album: String, metadata: kotlinx.serialization
     val idle = get is GetState.Idle || get is GetState.Failed
     FlowSmallButton(
         when (get) { GetState.Pending -> "Requesting"; is GetState.Requested -> "Requested"; is GetState.Failed -> "Retry"; else -> "Get" },
-        when (get) { is GetState.Requested -> FlowIcons.Check; GetState.Pending, is GetState.Failed, GetState.Idle -> FlowIcons.Get },
+        when (get) { is GetState.Requested -> ArtIcons.Check; GetState.Pending, is GetState.Failed, GetState.Idle -> ArtIcons.Get },
         idle, "Get album $album", modifier,
         state = when (get) { GetState.Idle -> "Not requested"; GetState.Pending -> "Requesting"; is GetState.Requested -> "Requested. Follow it under Downloads"; is GetState.Failed -> "Could not request. Select to try again" },
         enabled = idle,
@@ -258,5 +258,5 @@ fun FlowLargeTitle(text: String, modifier: Modifier = Modifier) {
 /** The grey chevron at the end of a row (flow.css `.chev`, 16dp). */
 @Composable
 fun FlowChevron(modifier: Modifier = Modifier) {
-    Icon(FlowIcons.Chevron, contentDescription = null, tint = Color(0xFFB5B0A5), modifier = modifier.size(16.dp))
+    Icon(ArtIcons.Chevron, contentDescription = null, tint = Color(0xFFB5B0A5), modifier = modifier.size(16.dp))
 }

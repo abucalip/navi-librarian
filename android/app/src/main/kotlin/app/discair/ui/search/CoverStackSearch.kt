@@ -1,5 +1,6 @@
 package app.discair.ui.search
 
+import app.discair.ui.common.ArtIcons
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -79,10 +80,10 @@ internal fun CoverStackSearch(
         OutlinedTextField(
             value = text, onValueChange = { onText(it.take(200)) }, singleLine = true,
             placeholder = { Text("Artists, albums, songs, genres", color = p.textMuted) },
-            leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = p.text) },
+            leadingIcon = { Icon(ArtIcons.Search, contentDescription = null, tint = p.text) },
             trailingIcon = {
                 if (text.isNotEmpty()) IconButton(onClick = { onText("") }, Modifier.size(Target)) {
-                    Icon(Icons.Default.Clear, contentDescription = "Clear search", tint = p.text)
+                    Icon(ArtIcons.Close, contentDescription = "Clear search", tint = p.text)
                 }
             },
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
@@ -173,10 +174,10 @@ private fun CoverStackResultRow(r: SearchResult, open: Opener, modifier: Modifie
             }
             when {
                 ownedSong != null -> IconButton(onClick = { play.queueSong(ownedSong, next = false) }, Modifier.size(Target)) {
-                    Icon(PlayerIcons.QueueAdd, contentDescription = "Add ${r.name} to the queue", tint = p.text)
+                    Icon(ArtIcons.QueueAdd, contentDescription = "Add ${r.name} to the queue", tint = p.text)
                 }
                 r.type == "album" && !r.owned && artist != null -> GetAlbumButton(artist, r.name, pageMetadata(artist, r.name, r.year))
-                go != null -> Icon(PlayerIcons.Right, contentDescription = null, tint = p.text)
+                go != null -> Icon(ArtIcons.Chevron, contentDescription = null, tint = p.text)
             }
         }
         CoverStackDivider(Modifier.padding(horizontal = 16.dp))

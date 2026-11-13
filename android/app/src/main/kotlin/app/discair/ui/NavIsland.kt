@@ -108,10 +108,10 @@ fun NavIsland(
     if (deckTheme.layout == app.discair.ui.theme.Layout.CoverStack) {
         app.discair.ui.common.CoverStackNavBar(
             deckTheme, homeSelected, discoverSelected, librarySelected, onHome, onDiscover, onLibrary, onSearch, modifier,
-            homeIcon = { Icon(Icons.Default.Home, contentDescription = null, tint = it, modifier = Modifier.size(24.dp)) },
-            discoverIcon = { Icon(Icons.Default.Star, contentDescription = null, tint = it, modifier = Modifier.size(24.dp)) },
-            libraryIcon = { Icon(Icons.AutoMirrored.Filled.List, contentDescription = null, tint = it, modifier = Modifier.size(24.dp)) },
-            searchIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = it, modifier = Modifier.size(24.dp)) },
+            homeIcon = { Icon(app.discair.ui.common.ArtIcons.Home, contentDescription = null, tint = it, modifier = Modifier.size(24.dp)) },
+            discoverIcon = { Icon(app.discair.ui.common.ArtIcons.Disc, contentDescription = null, tint = it, modifier = Modifier.size(24.dp)) },
+            libraryIcon = { Icon(app.discair.ui.common.ArtIcons.Lib, contentDescription = null, tint = it, modifier = Modifier.size(24.dp)) },
+            searchIcon = { Icon(app.discair.ui.common.ArtIcons.Search, contentDescription = null, tint = it, modifier = Modifier.size(24.dp)) },
         )
         return
     }
@@ -119,10 +119,10 @@ fun NavIsland(
     if (deckTheme.layout == app.discair.ui.theme.Layout.Flow) {
         app.discair.ui.common.FlowNavBar(
             deckTheme, homeSelected, discoverSelected, librarySelected, onHome, onDiscover, onLibrary, onSearch, modifier,
-            homeIcon = { Icon(app.discair.ui.common.FlowIcons.Home, contentDescription = null, tint = it, modifier = Modifier.size(24.dp)) },
-            discoverIcon = { Icon(app.discair.ui.common.FlowIcons.Disc, contentDescription = null, tint = it, modifier = Modifier.size(24.dp)) },
-            libraryIcon = { Icon(app.discair.ui.common.FlowIcons.Lib, contentDescription = null, tint = it, modifier = Modifier.size(24.dp)) },
-            searchIcon = { Icon(app.discair.ui.common.FlowIcons.Search, contentDescription = null, tint = it, modifier = Modifier.size(24.dp)) },
+            homeIcon = { Icon(app.discair.ui.common.ArtIcons.Home, contentDescription = null, tint = it, modifier = Modifier.size(24.dp)) },
+            discoverIcon = { Icon(app.discair.ui.common.ArtIcons.Disc, contentDescription = null, tint = it, modifier = Modifier.size(24.dp)) },
+            libraryIcon = { Icon(app.discair.ui.common.ArtIcons.Lib, contentDescription = null, tint = it, modifier = Modifier.size(24.dp)) },
+            searchIcon = { Icon(app.discair.ui.common.ArtIcons.Search, contentDescription = null, tint = it, modifier = Modifier.size(24.dp)) },
         )
         return
     }

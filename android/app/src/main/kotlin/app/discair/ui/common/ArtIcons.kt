@@ -9,12 +9,12 @@ import androidx.compose.ui.graphics.vector.PathParser
 import androidx.compose.ui.unit.dp
 
 /**
- * The Flow theme's icon set, taken from the icon symbols in the Flow mockups
+ * The Flow and Soft Brut themes' icon set, taken from the icon symbols in their mockups (identical in both)
  * (the HTML files in `docs/design/android-art-themes/flow`, 24 by 24 viewBox). Most are 1.8 stroked, round-capped line
  * icons; the transport glyphs, the three dots and the filled heart are solid, as the mockups draw them.
  * Colour comes from the `Icon` tint.
  */
-object FlowIcons {
+object ArtIcons {
     private fun build(name: String, paths: Array<out String>, filled: Boolean): ImageVector {
         val b = ImageVector.Builder(name, 24.dp, 24.dp, 24f, 24f)
         paths.forEach {

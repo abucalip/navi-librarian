@@ -1,6 +1,6 @@
 package app.discair.ui.home
 
-import app.discair.ui.common.FlowIcons
+import app.discair.ui.common.ArtIcons
 import android.content.Context
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -199,7 +199,7 @@ private fun ServiceBanner(text: String, onServer: () -> Unit) {
             .semantics { contentDescription = "Warning. $text" },
         horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically,
     ) {
-        Icon(FlowIcons.Info, contentDescription = null, tint = p.text, modifier = Modifier.size(20.dp))
+        Icon(ArtIcons.Info, contentDescription = null, tint = p.text, modifier = Modifier.size(20.dp))
         Text(text, Modifier.weight(1f), color = p.text, style = MaterialTheme.typography.bodySmall)
         Box(Modifier.heightIn(min = Target).clickable(role = Role.Button, onClick = onServer).padding(horizontal = 4.dp), contentAlignment = Alignment.Center) {
             Text("Server", color = p.accentText, style = MaterialTheme.typography.labelLarge.copy(fontSize = 14.sp, fontWeight = FontWeight.Medium))
@@ -331,7 +331,7 @@ private fun PickActions(pick: Pick, onFeedback: (FeedbackAction, Pick) -> Unit) 
     Column(Modifier.fillMaxWidth().padding(horizontal = Gutter), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
             Button(onClick = { hub.getAlbum(pick.artist, pick.album, pageMetadata(pick.artist, pick.album, pick.year, pick.releaseGroupMbid)) }, enabled = !busy) {
-                Icon(FlowIcons.Get, contentDescription = null, modifier = Modifier.size(20.dp))
+                Icon(ArtIcons.Get, contentDescription = null, modifier = Modifier.size(20.dp))
                 Text(
                     " " + when (get) {
                         GetState.Pending -> "Requesting…"
@@ -343,7 +343,7 @@ private fun PickActions(pick: Pick, onFeedback: (FeedbackAction, Pick) -> Unit) 
             }
             OutlinedButton(onClick = { saved = true; onFeedback(FeedbackAction.Save, pick) }, enabled = !saved) { Text(if (saved) "Saved" else "Save") }
             Box {
-                FlowCircleButton(FlowIcons.More, "More for ${pick.album}", { menu = true }, size = 44)
+                FlowCircleButton(ArtIcons.More, "More for ${pick.album}", { menu = true }, size = 44)
                 DropdownMenu(menu, onDismissRequest = { menu = false }) {
                     DropdownMenuItem(text = { Text("Not this album") }, onClick = { menu = false; onFeedback(FeedbackAction.Dismiss, pick) })
                     DropdownMenuItem(text = { Text("Never suggest artist") }, onClick = { menu = false; onFeedback(FeedbackAction.DismissArtist, pick) })
@@ -362,12 +362,12 @@ private fun PlayActions(item: FlowHomeRules.Item) {
     var menu by remember(item) { mutableStateOf(false) }
     Row(Modifier.fillMaxWidth().padding(horizontal = Gutter), horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally), verticalAlignment = Alignment.CenterVertically) {
         Button(onClick = { id?.let { play.playAlbum(it) } }, enabled = id != null) {
-            Icon(FlowIcons.Play, contentDescription = null, modifier = Modifier.size(20.dp))
+            Icon(ArtIcons.Play, contentDescription = null, modifier = Modifier.size(20.dp))
             Text(" Play")
         }
         OutlinedButton(onClick = { id?.let { play.playAlbum(it, shuffle = true) } }, enabled = id != null) { Text("Shuffle") }
         Box {
-            FlowCircleButton(FlowIcons.More, "More for ${item.title}", { menu = true }, size = 44)
+            FlowCircleButton(ArtIcons.More, "More for ${item.title}", { menu = true }, size = 44)
             DropdownMenu(menu, onDismissRequest = { menu = false }) {
                 DropdownMenuItem(text = { Text("Play next") }, enabled = id != null, onClick = { menu = false; id?.let { play.queueAlbum(it, next = true) } })
                 DropdownMenuItem(text = { Text("Add to queue") }, enabled = id != null, onClick = { menu = false; id?.let { play.queueAlbum(it, next = false) } })
@@ -486,7 +486,7 @@ private fun GroupedList(
                 leading = { AlbumCover(job.artistName, job.albumName, null, Modifier.size(32.dp).clip(RoundedCornerShape(FlowRules.RADIUS_COVER_SMALL.dp)), rect = true) },
             )
         }
-        FlowListRow("Radio", state = FlowHomeRules.radioLine(plays), divider = arrivals.isNotEmpty(), onClick = onRadio, leading = { FlowIconTile(FlowIcons.Radio) })
-        FlowListRow("Library", state = FlowHomeRules.libraryLine(hero), divider = true, onClick = onStats, leading = { FlowIconTile(FlowIcons.Lib) })
+        FlowListRow("Radio", state = FlowHomeRules.radioLine(plays), divider = arrivals.isNotEmpty(), onClick = onRadio, leading = { FlowIconTile(ArtIcons.Radio) })
+        FlowListRow("Library", state = FlowHomeRules.libraryLine(hero), divider = true, onClick = onStats, leading = { FlowIconTile(ArtIcons.Lib) })
     }
 }

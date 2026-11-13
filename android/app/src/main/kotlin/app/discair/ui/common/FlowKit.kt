@@ -284,7 +284,7 @@ fun FlowListRow(
                 Text(title, color = p.text, maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold, fontSize = 15.sp, lineHeight = 20.sp))
                 if (state.isNotEmpty()) Text(state, color = if (stateColor == Color.Unspecified) p.textMuted else stateColor, maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp, lineHeight = 18.sp))
             }
-            if (trailing != null) trailing() else Icon(FlowIcons.Chevron, contentDescription = null, tint = FLOW_CHEVRON, modifier = Modifier.size(16.dp))
+            if (trailing != null) trailing() else Icon(ArtIcons.Chevron, contentDescription = null, tint = FLOW_CHEVRON, modifier = Modifier.size(16.dp))
         }
     }
 }

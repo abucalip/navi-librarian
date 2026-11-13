@@ -1,6 +1,6 @@
 package app.discair.ui.radio
 
-import app.discair.ui.common.FlowIcons
+import app.discair.ui.common.ArtIcons
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -166,7 +166,7 @@ private fun StationRow(station: RadioStation, favourite: Boolean, now: RadioNow?
             Modifier.size(Target).clip(CircleShape).clickable(role = Role.Button, onClick = onFavourite)
                 .semantics { contentDescription = if (favourite) "Remove ${station.name} from favourites" else "Add ${station.name} to favourites" },
             contentAlignment = Alignment.Center,
-        ) { Icon(if (favourite) FlowIcons.HeartFilled else FlowIcons.Heart, contentDescription = null, tint = p.text) }
+        ) { Icon(if (favourite) ArtIcons.HeartFilled else ArtIcons.Heart, contentDescription = null, tint = p.text) }
     }
 }
 
@@ -232,8 +232,8 @@ private fun HeardRow(play: RadioPlay, download: RadioDownload, failure: String?,
         when (trailing) {
             CoverStackRadioRules.Trailing.Get -> FlowSmallButton("Get", null, true, "Download: ${play.title}", onClick = onDownload)
             CoverStackRadioRules.Trailing.TryAgain -> FlowSmallButton("Try again", null, true, "Try again: ${play.title}", onClick = onDownload)
-            CoverStackRadioRules.Trailing.InLibrary -> Icon(FlowIcons.Check, contentDescription = "In your library: ${play.title}", tint = p.ok, modifier = Modifier.size(24.dp))
-            CoverStackRadioRules.Trailing.Requested -> Icon(FlowIcons.Download, contentDescription = "Requested. Follow it under Downloads: ${play.title}", tint = p.text, modifier = Modifier.size(24.dp))
+            CoverStackRadioRules.Trailing.InLibrary -> Icon(ArtIcons.Check, contentDescription = "In your library: ${play.title}", tint = p.ok, modifier = Modifier.size(24.dp))
+            CoverStackRadioRules.Trailing.Requested -> Icon(ArtIcons.Download, contentDescription = "Requested. Follow it under Downloads: ${play.title}", tint = p.text, modifier = Modifier.size(24.dp))
             CoverStackRadioRules.Trailing.Working -> Unit // the line above says "Requesting…"
             CoverStackRadioRules.Trailing.None -> Unit
         }
@@ -254,11 +254,11 @@ internal fun FlowRadioNow(
     Column(Modifier.fillMaxWidth().fillMaxHeight()) { // full height, like Now Playing, so the sheet's top edge is the top of the screen
         Row(Modifier.fillMaxWidth().heightIn(min = 48.dp), verticalAlignment = Alignment.CenterVertically) {
             Box(Modifier.size(Target).clip(CircleShape).clickable(role = Role.Button, onClick = onDismiss), contentAlignment = Alignment.Center) {
-                Icon(FlowIcons.Down, contentDescription = "Close now playing", tint = p.accentText)
+                Icon(ArtIcons.Down, contentDescription = "Close now playing", tint = p.accentText)
             }
             Box(Modifier.weight(1f).semantics { heading() }, contentAlignment = Alignment.Center) { app.discair.ui.common.FlowEyebrow("Live radio") }
             Box(Modifier.size(Target).clip(CircleShape).clickable(role = Role.Button, onClick = onOpenHeard), contentAlignment = Alignment.Center) {
-                Icon(FlowIcons.Queue, contentDescription = "Heard on radio", tint = p.accentText)
+                Icon(ArtIcons.Queue, contentDescription = "Heard on radio", tint = p.accentText)
             }
         }
         Column(Modifier.fillMaxWidth().weight(1f).verticalScroll(rememberScrollState()), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -289,11 +289,11 @@ internal fun FlowRadioNow(
                 FlowTransportButton(
                     if (live.favourite) "Remove ${item.title} from favourites" else "Add ${item.title} to favourites", radio::toggleFavourite,
                     state = if (live.favourite) "Favourite" else "Not a favourite",
-                ) { ink -> Icon(if (live.favourite) FlowIcons.HeartFilled else FlowIcons.Heart, contentDescription = null, tint = ink, modifier = Modifier.size(24.dp)) }
+                ) { ink -> Icon(if (live.favourite) ArtIcons.HeartFilled else ArtIcons.Heart, contentDescription = null, tint = ink, modifier = Modifier.size(24.dp)) }
                 FlowTransportButton(if (state.isPlaying) "Pause" else "Play", controller::playPause, size = FlowRadioRules.PLAY_BUTTON, main = true) { ink ->
-                    Icon(if (state.isPlaying) FlowIcons.Pause else FlowIcons.Play, contentDescription = null, tint = ink, modifier = Modifier.size(32.dp))
+                    Icon(if (state.isPlaying) ArtIcons.Pause else ArtIcons.Play, contentDescription = null, tint = ink, modifier = Modifier.size(32.dp))
                 }
-                FlowTransportButton("Heard on radio", onOpenHeard) { ink -> Icon(FlowIcons.Queue, contentDescription = null, tint = ink, modifier = Modifier.size(FlowRadioRules.GLYPH.dp)) }
+                FlowTransportButton("Heard on radio", onOpenHeard) { ink -> Icon(ArtIcons.Queue, contentDescription = null, tint = ink, modifier = Modifier.size(FlowRadioRules.GLYPH.dp)) }
             }
             if (live.proxied) {
                 val download = live.download
@@ -319,7 +319,7 @@ private fun WideButton(label: String, enabled: Boolean, description: String, onC
             .clickable(enabled = enabled, role = Role.Button, onClick = onClick).semantics { contentDescription = description },
         horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically,
     ) {
-        Icon(FlowIcons.Download, contentDescription = null, tint = if (enabled) p.onAccent else p.textMuted, modifier = Modifier.size(20.dp))
+        Icon(ArtIcons.Download, contentDescription = null, tint = if (enabled) p.onAccent else p.textMuted, modifier = Modifier.size(20.dp))
         Text(label, Modifier.padding(start = 8.dp), color = if (enabled) p.onAccent else p.textMuted, maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.labelLarge.copy(fontSize = 15.sp, fontWeight = FontWeight.SemiBold))
     }
 }

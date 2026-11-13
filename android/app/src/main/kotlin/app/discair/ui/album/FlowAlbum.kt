@@ -1,6 +1,6 @@
 package app.discair.ui.album
 
-import app.discair.ui.common.FlowIcons
+import app.discair.ui.common.ArtIcons
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -100,13 +100,13 @@ internal fun FlowAlbumContent(d: CoverStackAlbumData, open: Opener, list: LazyLi
                 }
                 if (albumId != null) Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                     Button(onClick = { play.playAlbum(albumId) }) {
-                        Icon(FlowIcons.Play, contentDescription = null, Modifier.size(20.dp)); Text(" Play")
+                        Icon(ArtIcons.Play, contentDescription = null, Modifier.size(20.dp)); Text(" Play")
                     }
                     OutlinedButton(onClick = { play.playAlbum(albumId, shuffle = true) }) {
-                        Icon(FlowIcons.Shuffle, contentDescription = null, Modifier.size(20.dp)); Text(" Shuffle")
+                        Icon(ArtIcons.Shuffle, contentDescription = null, Modifier.size(20.dp)); Text(" Shuffle")
                     }
                     // The round button of the mockup's download slot: the album's Paths, as on the Soft Brut page (the per-song actions stay on the rows).
-                    if (d.pathsOn) FlowCircleButton(FlowIcons.Paths, "Paths from this album", d.onPaths, size = 44)
+                    if (d.pathsOn) FlowCircleButton(ArtIcons.Paths, "Paths from this album", d.onPaths, size = 44)
                 }
                 // The album-level Get stays until every track is in the library (ACQ-08).
                 if (!d.owned || d.tracks.any { !it.owned }) GetAlbumButton(d.artist, d.title, pageMetadata(d.artist, d.title, d.year, d.info?.releaseGroupMbid))

@@ -77,7 +77,7 @@ fun Modifier.coverStackFrame(shape: Shape, p: Palette, fill: Color = p.surface):
     coverStackShadow(shape, p).clip(shape).background(fill).border(CoverStackRules.outline(p).dp, p.edgeStrong, shape)
 
 /**
- * The Cover Stack navigation: one outlined bar, radius 14, four cells of 50dp (icon over label). The current cell is filled with the accent
+ * The Cover Stack navigation: one outlined bar, radius 14, four icon-only cells of 50dp. The current cell is filled with the accent
  * and outlined. Floats 12dp from the sides and bottom. Mockup: soft-brut/home, the bar under the mini player.
  */
 @Composable
@@ -113,8 +113,8 @@ private fun RowScope.Cell(palette: Palette, label: String, selected: Boolean, on
             .semantics { contentDescription = label; this.selected = selected },
         horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center,
     ) {
+        // Icons only; the label stays as the cell's content description.
         Box(Modifier.size(24.dp), contentAlignment = Alignment.Center) { icon(palette.text) }
-        Text(label, style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold), color = palette.text, maxLines = 1, modifier = Modifier.clearAndSetSemantics { })
     }
 }
 

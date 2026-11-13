@@ -1,5 +1,6 @@
 package app.discair.ui.home
 
+import app.discair.ui.common.ArtIcons
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -223,7 +224,7 @@ private fun ServiceBanner(text: String, onServer: () -> Unit) {
             .semantics { contentDescription = "Warning. $text" },
         horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically,
     ) {
-        Icon(PlayerIcons.Info, contentDescription = null, tint = p.text, modifier = Modifier.size(20.dp))
+        Icon(ArtIcons.Info, contentDescription = null, tint = p.text, modifier = Modifier.size(20.dp))
         Text(text, Modifier.weight(1f), color = p.text, style = MaterialTheme.typography.bodySmall)
         Box(Modifier.heightIn(min = Target).clickable(role = Role.Button, onClick = onServer).padding(horizontal = 4.dp), contentAlignment = Alignment.Center) {
             Text(
@@ -357,7 +358,7 @@ private fun PickActions(pick: Pick?, onFeedback: (FeedbackAction, Pick) -> Unit)
                 onClick = { pick?.let { hub.getAlbum(it.artist, it.album, pageMetadata(it.artist, it.album, it.year, it.releaseGroupMbid)) } },
                 Modifier.weight(1f).heightIn(min = Target), enabled = pick != null && !busy,
             ) {
-                Icon(PlayerIcons.Cloud, contentDescription = null, modifier = Modifier.size(18.dp))
+                Icon(ArtIcons.Get, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp))
                 Text(
                     when (get) {
@@ -373,7 +374,7 @@ private fun PickActions(pick: Pick?, onFeedback: (FeedbackAction, Pick) -> Unit)
             }
             Box {
                 OutlinedIconButton(onClick = { menu = true }, Modifier.size(Target), enabled = pick != null) {
-                    Icon(Icons.Default.MoreVert, contentDescription = "More for ${pick?.album.orEmpty()}")
+                    Icon(ArtIcons.More, contentDescription = "More for ${pick?.album.orEmpty()}")
                 }
                 DropdownMenu(menu, onDismissRequest = { menu = false }) {
                     DropdownMenuItem(text = { Text("Not this album") }, onClick = { menu = false; pick?.let { onFeedback(FeedbackAction.Dismiss, it) } })
@@ -467,12 +468,12 @@ private fun RadioTile(plays: List<RadioPlay>?, onRadio: () -> Unit) {
             .semantics(mergeDescendants = true) { contentDescription = "Radio. $line" },
         horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically,
     ) {
-        Icon(PlayerIcons.Radio, contentDescription = null, tint = p.onAccent, modifier = Modifier.size(24.dp))
+        Icon(ArtIcons.Radio, contentDescription = null, tint = p.onAccent, modifier = Modifier.size(24.dp))
         Column(Modifier.weight(1f)) {
             Text("Radio", color = p.onAccent, style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold, fontSize = 14.sp))
             Text(line, color = p.onAccent, style = MaterialTheme.typography.bodySmall)
         }
-        Icon(PlayerIcons.Right, contentDescription = null, tint = p.onAccent, modifier = Modifier.size(24.dp))
+        Icon(ArtIcons.Chevron, contentDescription = null, tint = p.onAccent, modifier = Modifier.size(24.dp))
     }
 }
 

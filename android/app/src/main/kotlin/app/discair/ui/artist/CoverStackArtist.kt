@@ -1,5 +1,6 @@
 package app.discair.ui.artist
 
+import app.discair.ui.common.ArtIcons
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -126,13 +127,13 @@ internal fun CoverStackArtistContent(d: CoverStackArtistData, open: Opener, list
         if (artistId != null) item {
             Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                 Button(onClick = { play.playArtist(artistId, shuffle = false) }, Modifier.heightIn(min = Target)) {
-                    Icon(PlayerIcons.Play, contentDescription = null, Modifier.size(20.dp)); Text(" Play")
+                    Icon(ArtIcons.Play, contentDescription = null, Modifier.size(20.dp)); Text(" Play")
                 }
                 OutlinedButton(onClick = { play.playArtist(artistId, shuffle = true) }, Modifier.heightIn(min = Target)) {
-                    Icon(PlayerIcons.Shuffle, contentDescription = null, Modifier.size(20.dp)); Text(" Shuffle")
+                    Icon(ArtIcons.Shuffle, contentDescription = null, Modifier.size(20.dp)); Text(" Shuffle")
                 }
                 if (d.canPaths) OutlinedButton(onClick = d.onPaths, Modifier.heightIn(min = Target)) {
-                    Icon(PlayerIcons.Paths, contentDescription = null, Modifier.size(20.dp)); Text(" Paths")
+                    Icon(ArtIcons.Paths, contentDescription = null, Modifier.size(20.dp)); Text(" Paths")
                 }
             }
         }

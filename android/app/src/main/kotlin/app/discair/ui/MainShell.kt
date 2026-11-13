@@ -444,9 +444,11 @@ private fun AppHeader(active: Int, showDiscover: Boolean, onDiscover: () -> Unit
         ) {
             app.discair.ui.common.Wordmark(30.dp)
             Spacer(Modifier.weight(1f))
-            if (showDiscover) HeaderButton("Discover", Icons.Default.Star, badge = 0, onClick = onDiscover)
-            HeaderButton(if (active == 0) "Downloads" else "Downloads, $active active", app.discair.ui.player.PlayerIcons.Cloud, badge = active, onClick = onDownloads)
-            HeaderButton("Settings", Icons.Default.Settings, badge = 0, onClick = onSettings)
+            // Soft Brut draws the mockup's icons; every other theme keeps its stand-ins.
+            val softBrut = app.discair.ui.theme.LocalPalette.current.layout == app.discair.ui.theme.Layout.CoverStack
+            if (showDiscover) HeaderButton("Discover", if (softBrut) app.discair.ui.common.ArtIcons.Disc else Icons.Default.Star, badge = 0, onClick = onDiscover)
+            HeaderButton(if (active == 0) "Downloads" else "Downloads, $active active", if (softBrut) app.discair.ui.common.ArtIcons.Download else app.discair.ui.player.PlayerIcons.Cloud, badge = active, onClick = onDownloads)
+            HeaderButton("Settings", if (softBrut) app.discair.ui.common.ArtIcons.Gear else Icons.Default.Settings, badge = 0, onClick = onSettings)
         }
         RowDivider()
     }
@@ -468,14 +470,14 @@ private fun FlowAppHeader(active: Int, showDiscover: Boolean, onDiscover: () -> 
             style = MaterialTheme.typography.headlineLarge.copy(fontSize = 30.sp, lineHeight = 36.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = (-0.03).em),
         ) else app.discair.ui.common.Wordmark(30.dp)
         Spacer(Modifier.weight(1f))
-        if (showDiscover) app.discair.ui.common.FlowCircleButton(app.discair.ui.common.FlowIcons.Disc, "Discover", onDiscover)
+        if (showDiscover) app.discair.ui.common.FlowCircleButton(app.discair.ui.common.ArtIcons.Disc, "Discover", onDiscover)
         Box {
             app.discair.ui.common.FlowCircleButton(
-                app.discair.ui.common.FlowIcons.Download, if (active == 0) "Downloads" else "Downloads, $active active", onDownloads,
+                app.discair.ui.common.ArtIcons.Download, if (active == 0) "Downloads" else "Downloads, $active active", onDownloads,
             )
             if (active > 0) Badge(Modifier.align(Alignment.TopEnd).padding(top = 4.dp, end = 4.dp)) { Text("$active") }
         }
-        app.discair.ui.common.FlowCircleButton(app.discair.ui.common.FlowIcons.Gear, "Settings", onSettings)
+        app.discair.ui.common.FlowCircleButton(app.discair.ui.common.ArtIcons.Gear, "Settings", onSettings)
     }
 }
 

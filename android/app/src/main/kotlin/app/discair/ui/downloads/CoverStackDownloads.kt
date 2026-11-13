@@ -1,5 +1,6 @@
 package app.discair.ui.downloads
 
+import app.discair.ui.common.ArtIcons
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -108,7 +109,7 @@ internal fun CoverStackJob(
         job.releaseGroup?.let { ReleaseEditionCovers(it) }
         CoverStackTracker(step.current, step.failed)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(0.dp)) {
-            if (job.isImported && !job.isSong) Action("Play", PlayerIcons.Play, filled = true, enabled = canPlay, onClick = onPlay)
+            if (job.isImported && !job.isSong) Action("Play", ArtIcons.Play, filled = true, enabled = canPlay, onClick = onPlay)
             secondsLeft?.let { left ->
                 Action(
                     when {

@@ -1,5 +1,6 @@
 package app.discair.ui.settings
 
+import app.discair.ui.common.ArtIcons
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -64,7 +65,7 @@ internal fun CoverStackServer(state: Load<ServerReads>, reload: () -> Unit, onBa
                 CsEyebrow("Services")
                 CsGroup {
                     view.services.forEachIndexed { i, row ->
-                        SettingsRow(PlayerIcons.Server, row.name, row.status.word, stateColor = toneColor(row.status.tone), onClick = null, trailing = {}, divider = i > 0)
+                        SettingsRow(ArtIcons.Server, row.name, row.status.word, stateColor = toneColor(row.status.tone), onClick = null, trailing = {}, divider = i > 0)
                     }
                 }
                 if (view.activity.isNotEmpty()) {
@@ -73,7 +74,7 @@ internal fun CoverStackServer(state: Load<ServerReads>, reload: () -> Unit, onBa
                         view.activity.forEachIndexed { i, row ->
                             // A warning or a failure says its word first; a finished job shows only its line (mockup).
                             val line = if (row.status.tone == ServerTone.Success || row.status.tone == ServerTone.Neutral) row.line else "${row.status.word}. ${row.line}"
-                            SettingsRow(PlayerIcons.Wave, row.name, line, stateColor = toneColor(row.status.tone).takeIf { row.status.tone != ServerTone.Success && row.status.tone != ServerTone.Neutral } ?: androidx.compose.ui.graphics.Color.Unspecified, onClick = null, trailing = {}, divider = i > 0)
+                            SettingsRow(ArtIcons.Wave, row.name, line, stateColor = toneColor(row.status.tone).takeIf { row.status.tone != ServerTone.Success && row.status.tone != ServerTone.Neutral } ?: androidx.compose.ui.graphics.Color.Unspecified, onClick = null, trailing = {}, divider = i > 0)
                         }
                     }
                 }
@@ -92,7 +93,7 @@ private fun Summary(summary: ServerSummary, reload: () -> Unit) {
             .coverStackFrame(RoundedCornerShape(CoverStackRules.radius(p).dp), p).padding(12.dp).semantics { liveRegion = LiveRegionMode.Polite },
         horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically,
     ) {
-        Icon(if (summary.tone == ServerTone.Success) Icons.Default.Check else PlayerIcons.Info, contentDescription = null, tint = ink, modifier = Modifier.size(24.dp))
+        Icon(if (summary.tone == ServerTone.Success) ArtIcons.Check else ArtIcons.Info, contentDescription = null, tint = ink, modifier = Modifier.size(24.dp))
         Column(Modifier.weight(1f)) {
             Text(summary.title, color = p.text, style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold, fontSize = 14.sp))
             Text(summary.detail, color = p.textMuted, style = MaterialTheme.typography.bodySmall)

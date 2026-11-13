@@ -56,7 +56,7 @@ fun CoverStackTopBar(
     val p = LocalPalette.current
     Row(modifier.statusBarsPadding().fillMaxWidth().padding(start = 8.dp, end = 8.dp, top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
         Box(Modifier.size(Target).clip(CircleShape).clickable(role = Role.Button, onClick = onBack), contentAlignment = Alignment.Center) {
-            Icon(PlayerIcons.Left, contentDescription = "Back", tint = p.text)
+            Icon(ArtIcons.Back, contentDescription = "Back", tint = p.text)
         }
         if (title != null) Text(
             title, Modifier.weight(1f).padding(start = 4.dp), color = p.text, maxLines = 1, overflow = TextOverflow.Ellipsis,
@@ -67,7 +67,7 @@ fun CoverStackTopBar(
             var open by remember { mutableStateOf(false) }
             Box {
                 Box(Modifier.size(Target).clip(CircleShape).clickable(role = Role.Button) { open = true }, contentAlignment = Alignment.Center) {
-                    Icon(Icons.Default.MoreVert, contentDescription = "More", tint = p.text)
+                    Icon(ArtIcons.More, contentDescription = "More", tint = p.text)
                 }
                 DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
                     menu.forEach { (label, run) -> DropdownMenuItem(text = { Text(label) }, onClick = { open = false; run() }) }

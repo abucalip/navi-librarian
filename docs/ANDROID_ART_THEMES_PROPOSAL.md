@@ -166,7 +166,7 @@ The mockups blur what is behind the two bars. Compose cannot blur content behind
 
 Space Grotesk ships at 700 only (`space_grotesk_700.ttf`); that is the only weight used. The font pair stays the owner's choice in Appearance: choosing either theme does not force its pair, but the pair above is the one each theme is drawn with and is suggested when the theme is first chosen.
 
-**Icons.** No new icon assets. The mockups draw stand-ins; the app keeps its own. **Exception, Flow (2026-11-13):** Flow draws the mockups' own icons, 1.8 stroked with round caps (transport glyphs, three dots and the filled heart are solid), in `ui/common/FlowIcons.kt`; the table below still applies to Soft Brut and the other themes.
+**Icons.** No new icon assets. The mockups draw stand-ins; the app keeps its own. **Exception, Flow and Soft Brut (2026-11-13):** both draw the mockups' own icons (the symbols are identical in the two sets), 1.8 stroked with round caps (transport glyphs, three dots and the filled heart are solid), in `ui/common/ArtIcons.kt`; the table below still applies to the other themes.
 
 | Mockup | App icon |
 |---|---|

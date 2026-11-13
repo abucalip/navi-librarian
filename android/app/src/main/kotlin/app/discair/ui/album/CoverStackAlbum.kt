@@ -1,5 +1,6 @@
 package app.discair.ui.album
 
+import app.discair.ui.common.ArtIcons
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -132,15 +133,15 @@ internal fun CoverStackAlbumContent(d: CoverStackAlbumData, open: Opener, list: 
                 }
                 if (albumId != null) Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                     Button(onClick = { play.playAlbum(albumId) }, Modifier.heightIn(min = Target)) {
-                        Icon(PlayerIcons.Play, contentDescription = null, Modifier.size(20.dp)); Text(" Play")
+                        Icon(ArtIcons.Play, contentDescription = null, Modifier.size(20.dp)); Text(" Play")
                     }
                     OutlinedButton(onClick = { play.playAlbum(albumId, shuffle = true) }, Modifier.heightIn(min = Target)) {
-                        Icon(PlayerIcons.Shuffle, contentDescription = null, Modifier.size(20.dp)); Text(" Shuffle")
+                        Icon(ArtIcons.Shuffle, contentDescription = null, Modifier.size(20.dp)); Text(" Shuffle")
                     }
                     // The album's Paths (it replaced the album-level download; the per-song actions stay on the rows).
                     if (d.pathsOn) OutlinedButton(
                         onClick = d.onPaths, Modifier.size(Target), contentPadding = PaddingValues(0.dp),
-                    ) { Icon(PlayerIcons.Paths, contentDescription = "Paths from this album", Modifier.size(20.dp)) }
+                    ) { Icon(ArtIcons.Paths, contentDescription = "Paths from this album", Modifier.size(20.dp)) }
                 }
                 // The album-level Get stays until every track is in the library (ACQ-08).
                 if (!d.owned || d.tracks.any { !it.owned }) GetAlbumButton(d.artist, d.title, pageMetadata(d.artist, d.title, d.year, d.info?.releaseGroupMbid))
