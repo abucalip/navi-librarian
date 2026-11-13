@@ -8,7 +8,10 @@ import app.discair.model.PathKind
 import app.discair.model.PathReason
 import app.discair.model.PathRef
 import app.discair.model.PathStop
+import app.discair.model.TrailEntry
+import app.discair.model.TrailGroup
 import app.discair.model.TrailLink
+import app.discair.model.entries
 import app.discair.model.groupByLink
 import app.discair.model.parsePaths
 import app.discair.model.shownOrder
@@ -148,5 +151,21 @@ class PathTrailTest {
 
     @Test fun noStepsMakeNoGroups() {
         assertTrue(groupByLink(emptyList<String>()) { TrailLink(it, "x") }.isEmpty())
+    }
+
+    @Test fun entriesPutEachLinkBeforeItsStepsAndMarkTheFirstLinkAndTheLastStep() {
+        val groups = groupByLink(listOf("Columbia", "Prestige", "Columbia")) { TrailLink(it, "same label") }
+        val entries = groups.entries()
+        assertEquals(
+            listOf("link:Columbia", "step:0", "step:2", "link:Prestige", "step:1"),
+            entries.map { if (it is TrailEntry.Link) "link:${it.link.name}" else "step:${(it as TrailEntry.Step).step.index}" },
+        )
+        assertEquals(listOf(true, false), entries.filterIsInstance<TrailEntry.Link>().map { it.first })
+        // The last step shown ends the line, not the last step of the server's list.
+        assertEquals(listOf(1), entries.filterIsInstance<TrailEntry.Step<String>>().filter { it.last }.map { it.step.index })
+    }
+
+    @Test fun noGroupsMakeNoEntries() {
+        assertTrue(emptyList<TrailGroup<String>>().entries().isEmpty())
     }
 }

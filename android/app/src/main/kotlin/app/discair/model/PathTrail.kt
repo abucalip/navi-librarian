@@ -34,6 +34,24 @@ fun <T> groupByLink(items: List<T>, linkOf: (T) -> TrailLink): List<TrailGroup<T
     return groups.map { (link, steps) -> TrailGroup(link, steps) }
 }
 
+/** One line of the trail as the list draws it: a link, or a step under it. */
+sealed interface TrailEntry<out T> {
+    /** [first] is the first line of the trail, which has no gap above it. */
+    data class Link(val link: TrailLink, val first: Boolean) : TrailEntry<Nothing>
+
+    /** [last] is the last step of the whole trail, where the line ends at its elbow. */
+    data class Step<T>(val step: TrailStep<T>, val last: Boolean) : TrailEntry<T>
+}
+
+/** Each group's link, then its steps, in the order the trail shows them. */
+fun <T> List<TrailGroup<T>>.entries(): List<TrailEntry<T>> {
+    val lastIndex = lastOrNull()?.steps?.lastOrNull()?.index
+    return flatMapIndexed { n, group ->
+        listOf<TrailEntry<T>>(TrailEntry.Link(group.link, first = n == 0)) +
+            group.steps.map { TrailEntry.Step(it, last = it.index == lastIndex) }
+    }
+}
+
 /** The steps of [groups] in the order the trail shows them. */
 fun <T> List<TrailGroup<T>>.shownOrder(): List<TrailStep<T>> = flatMap { it.steps }
 
