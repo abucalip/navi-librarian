@@ -495,3 +495,11 @@ Internet radio on the Mac, built from the owner's choices. Mockups (the spec): [
 - **Names:** the internet radio types use the `Station` and `Live` prefixes. `RadioModel` keeps its meaning ("Radio from this").
 - **Live playback:** its own player (`AVPlayer` behind `LiveOutput`), not `AVAudioEngineOutput`. The tap-based meter is proven first on one MP3 and one AAC relayed station (slice S2-2); its fallback is the B1 hairline.
 - **No UI in S2-0.** Nothing is built or verified on screen by this slice. Each later slice adds its own section here with what the mockup showed that was dropped or changed, and what was not verified.
+
+### Radio, S2-1 items 4 to 6: rules, model, navigation
+
+- **Rules** (`DiscairUI/Model/Stations.swift`): `StationRules` (row sentence, tag chips, tag checks) and `DownloadState`, pure and tested. A song heard on a relayed station with no usable title says "Sends no song titles"; `unknown` states read the same way. The row sentence counts calendar days, not 24-hour spans.
+- **Model** (`StationsModel`, `AppState.stations`): the list in the server's order, live titles, the chip filter, and the S2.5 polling (list once a minute, titles every 15 s) driven by `pageVisible`. `AppState` sets it from `screen`. A favourite or tag change shows at once, is sent, then the list reloads; a refusal puts the old value back and keeps the server's sentence (or the app's short text when it sent none). A reload that arrives while a change is in flight does not undo it.
+- **Navigation:** `Screen.stations`, the sidebar row "Radio" (symbol `radio`) under Library.
+- **Changed from the plan:** no Go or View menu entry. No other page has one (pages are reached from the sidebar and ⌘K), and E2 (radio in ⌘K) was not chosen. `CupertinoStations` is a placeholder that shows the title and a count, so the case compiles; the real page is item 7.
+- **Not done here:** `pageVisible` follows the screen only. "Window hidden or minimised" (S2.5) is added with the page in item 7. Nothing was looked at in a window.
