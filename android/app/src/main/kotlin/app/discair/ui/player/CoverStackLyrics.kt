@@ -37,6 +37,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import app.discair.lyrics.LyricsTimeline
 import app.discair.lyrics.LyricsUiState
@@ -51,9 +52,9 @@ import app.discair.ui.theme.LocalPalette
  * Over the photos (the Photos switch) the lines are white, as on every theme's photo backdrop.
  */
 @Composable
-fun CoverStackLyricsPanel(state: LyricsUiState, currentLine: Int, songId: String, onTryAgain: () -> Unit, modifier: Modifier = Modifier, overPhotos: Boolean = false) {
+fun CoverStackLyricsPanel(state: LyricsUiState, currentLine: Int, songId: String, onTryAgain: () -> Unit, modifier: Modifier = Modifier, overPhotos: Boolean = false, flow: Boolean = false) {
     val p = LocalPalette.current
-    val quiet = if (overPhotos) androidx.compose.ui.graphics.Color.White else p.textMuted
+    val quiet = if (overPhotos) androidx.compose.ui.graphics.Color.White else if (flow) p.text.copy(alpha = 0.5f) else p.textMuted
     Column(modifier.fillMaxWidth()) {
         when (state) {
             LyricsUiState.Idle, is LyricsUiState.Loading -> Message("Loading lyrics…", quiet, progress = true)
@@ -66,7 +67,7 @@ fun CoverStackLyricsPanel(state: LyricsUiState, currentLine: Int, songId: String
             is LyricsUiState.Ready -> {
                 if (state.savedCopy) Note("Saved copy", quiet)
                 if (!state.lyrics.timed) Note("These lyrics are not timed.", quiet)
-                Lines(state, currentLine, songId, quiet, Modifier.weight(1f))
+                Lines(state, currentLine, songId, quiet, Modifier.weight(1f), flow, overPhotos)
             }
         }
     }
@@ -84,7 +85,7 @@ private fun Message(text: String, color: androidx.compose.ui.graphics.Color, pro
 private fun Note(text: String, color: androidx.compose.ui.graphics.Color) = Text(text, style = MaterialTheme.typography.bodySmall, color = color, modifier = Modifier.padding(bottom = 8.dp))
 
 @Composable
-private fun Lines(state: LyricsUiState.Ready, currentLine: Int, songId: String, quiet: androidx.compose.ui.graphics.Color, modifier: Modifier = Modifier) {
+private fun Lines(state: LyricsUiState.Ready, currentLine: Int, songId: String, quiet: androidx.compose.ui.graphics.Color, modifier: Modifier = Modifier, flow: Boolean = false, overPhotos: Boolean = false) {
     val p = LocalPalette.current
     val list = rememberLazyListState()
     // Following resumes when the song changes (lyrics contract 6); a hand scroll stops it.
@@ -102,12 +103,17 @@ private fun Lines(state: LyricsUiState.Ready, currentLine: Int, songId: String, 
             if (reduceMotion) list.scrollToItem(currentLine, offset) else list.animateScrollToItem(currentLine, offset)
         } finally { scrolling = false }
     }
-    val style = MaterialTheme.typography.titleLarge.copy(fontSize = 20.sp, lineHeight = 28.sp, fontWeight = FontWeight.Bold)
+    // Flow: Inter 700 22/30, -0.02em; the line being sung is the text colour, the others are quiet (flow.css `.lyr`); no highlight block.
+    val style = if (flow) MaterialTheme.typography.titleLarge.copy(fontSize = 22.sp, lineHeight = 30.sp, fontWeight = FontWeight.Bold, letterSpacing = (-0.02).em)
+    else MaterialTheme.typography.titleLarge.copy(fontSize = 20.sp, lineHeight = 28.sp, fontWeight = FontWeight.Bold)
     Box(modifier.fillMaxWidth()) {
         LazyColumn(Modifier.fillMaxSize(), state = list, verticalArrangement = Arrangement.spacedBy(14.dp)) {
             itemsIndexed(state.lyrics.lines) { index, line ->
                 if (line.text.isBlank()) Spacer(Modifier.height(14.dp).fillMaxWidth().clearAndSetSemantics { })
-                else if (timed && index == currentLine) Text(
+                else if (flow && timed && index == currentLine) Text(
+                    line.text, style = style, color = if (overPhotos) androidx.compose.ui.graphics.Color.White else p.text,
+                    modifier = Modifier.fillMaxWidth().semantics { stateDescription = "Current line" },
+                ) else if (timed && index == currentLine) Text(
                     buildAnnotatedString { withStyle(SpanStyle(background = p.accent, color = p.onAccent)) { append(" ${line.text} ") } },
                     style = style, modifier = Modifier.fillMaxWidth().semantics { stateDescription = "Current line" },
                 ) else Text(line.text, style = style, color = quiet, modifier = Modifier.fillMaxWidth())
