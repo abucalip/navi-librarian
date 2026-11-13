@@ -1,6 +1,6 @@
 # Paths sheets redesign: Trail (proposal)
 
-Status: **proposal, not built.** Written 2026-11-13. The owner was shown three layouts for the Android Paths sheets (Trail, Shelves, Deck) and chose **Trail** on 2026-11-13. This document is the build specification for it. Do not start the build until the owner says so; section 11 lists the decisions still open.
+Status: **proposal, not built.** Written 2026-11-13. The owner was shown three layouts for the Android Paths sheets (Trail, Shelves, Deck) and chose **Trail** on 2026-11-13. This document is the build specification for it. The owner decided D1 to D5 on 2026-11-13 (section 11); the build is approved and goes in the order of section 9.
 
 Scope: the Android client only, the two sheets `ArtistPathsSheet` (artist page) and `AlbumPathsSheet` (album page). One layout for every theme: no per-theme screens. No server change, no new request, no new colour.
 
@@ -43,7 +43,7 @@ From top to bottom, inside the existing `ModalBottomSheet` (horizontal padding 1
 | Description | `bodyMedium`, muted. Text unchanged (`kindDescription`, `albumTabDescription`). |
 | Trail | Indented 24dp. The line is 2dp wide in `Ink.Edge`, its centre 8dp from the content edge. It starts at the first link's dot and ends at the last step's elbow. 8dp between items; 12dp above a link that is not the first. |
 | Link | A pill, not a button: 4dp by 12dp padding, full radius, ground `Ink.AccentDim`. The name in `labelLarge` weight 600 and the kind in weight 400, both in `Ink.Text` (muted text fails contrast on `accentDim` in Night). A 10dp dot in `Ink.Accent` sits on the line beside it, with a 3dp ring in the sheet's container colour. On a Brutal theme the dot also gets the theme's outline in `Ink.Edge`, because a pastel accent cannot be seen without it. |
-| Step, closed | A row at least 64dp tall, the whole row one button. Picture 48dp, 12dp gap, name (`titleMedium`, 2 lines) over one line (`bodyMedium`, muted, 2 lines), then a 24dp chevron pointing down, muted. An 11dp by 2dp elbow in `Ink.Edge` joins the line to the row at the row's centre. No number. No divider between rows. |
+| Step, closed | A row at least 64dp tall, the whole row one button. Picture 48dp, 12dp gap, name (`titleMedium`, 2 lines) over one line (`bodyMedium`, muted, 2 lines), then a small chevron pointing down (18dp, D3), muted. An 11dp by 2dp elbow in `Ink.Edge` joins the line to the row at the row's centre. No number. No divider between rows. |
 | Step, open | The app's `Panel` on `Ink.Raised`, padding 12dp, 12dp between its parts. First a header row: picture 72dp, name (`titleLarge`), the lines today's pane shows beside its hero, and a chevron pointing up. Then the body of today's pane for that tab (section 7). Cards inside it sit on the sheet's ground so they read against the raised panel. On a Brutal theme the panel takes the theme's outline, radius and hard shadow, as `Panel` already does. |
 | Notes | Under the trail, `bodySmall`, muted: the server's truncation, capped and history notes, unchanged. |
 
@@ -87,7 +87,7 @@ A step whose first reason names nothing to link through goes under a link that s
 
 | Tab | Link name | Link kind | Closed row, second line |
 |---|---|---|---|
-| Studio crew | `via.name` (the person) | `reasonEyebrow(code)` in lower case: "production credit" | artist |
+| Studio crew | `via.name` (the person) | the role of the credit on the start, from the reason's evidence (`producer`, `engineer`, `mix`, `mastering`): "producer credit", "engineer credit", "mixing credit", "mastering credit"; "production credit" when the evidence has none (D5) | artist |
 | Guest list | `via.name` (the guest) | "guest credit" | artist |
 | Covers and sources | `via.name` (the work) | "same work" or "related work" | artist |
 | Same year, same scene | `via.name` (label, area or artist) | "same label", "same area" or "shared artist" | artist |
@@ -207,15 +207,17 @@ Follow `docs/TEST_PLAN.md` and `docs/DEVELOPMENT_WORKFLOW.md`. At the least:
 - The shared palette contrast test extended, or a new case added, for `Text` on `AccentDim` (the link pill) across all palettes.
 - On the owner's phone: every tab of both sheets on one Classic light, one Classic dark, one Brutal theme, Soft Brut and Flow; Back from an opened album or artist; TalkBack through one tab; reduced motion.
 
-## 11. Open decisions
+## 11. Decisions
 
-| # | Decision | Recommendation |
+Decided by the owner on 2026-11-13.
+
+| # | Decision | Outcome |
 |---|---|---|
-| D1 | Grouping can move a step up to join its link. The alternative groups only steps that are already next to each other, which keeps the server's order exactly but repeats a link. | Group by first appearance. |
-| D2 | Text tabs with a mark replace `FilterChip` on every theme, including the Brutal ones, whose chips are part of their look. | Text tabs everywhere, as chosen; revisit after the phone check if a Brutal theme reads as too plain. |
-| D3 | A chevron on each row (down when closed, up when open) was added after the chosen mockup, to show that a row opens in place. On Sideman it also separates closing the step from opening the leader's page. | Keep it. |
-| D4 | The link pill is not a button. It could open the person, label or work it names. | Not a button for now; the opened step already offers the page. |
-| D5 | Studio crew links say "production credit". The role (engineer, producer) could replace it if the server's reason carries it for album paths; `AlbumStepReason` drops `credits` today. | Leave for a later change. |
+| D1 | Grouping can move a step up to join its link. | **Group by first appearance**, as recommended. |
+| D2 | Text tabs with a mark replace `FilterChip` on every theme, including the Brutal ones. | **Text tabs everywhere**, as recommended; revisit after the phone check if a Brutal theme reads as too plain. |
+| D3 | A chevron on each row (down when closed, up when open). | **Keep it, but small** (18dp instead of 24dp). |
+| D4 | The link pill could open the person, label or work it names. | **Not a button**, as recommended. |
+| D5 | Studio crew links could show the role instead of "production credit". | **Show the role.** The server already carries it: every album reason sends `evidence` whose first entry is the credit on the start, with its `relation` (`producer`, `engineer`, `mix`, `mastering`), and the client already reads it into `PathReason.credits`; only `AlbumStepReason` dropped it. So no server change is needed; the client keeps `credits` on `AlbumStepReason`. |
 
 ## 12. Out of scope
 
