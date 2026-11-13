@@ -6,7 +6,9 @@ Status: **approved by the owner and merged (PR [#713](https://github.com/abucali
 
 A native macOS app named **Discair** for the owner: a full Navidrome player and a Librarian discovery and acquisition client, reimagined for the desktop rather than ported from the web UI. It has **everything the Android app has** (Home, Library, Artist, Album, Search, Discover lists, Downloads, Settings, Now Playing, queue, gapless, crossfade, EQ, lyrics, scrobbling, quality cap, resume paused) plus the desktop features in section 6. Nothing on Android is left out.
 
-Out of scope: App Store distribution, Intel Macs, macOS before 26, multi-user, internet radio until stage 2 of [`RADIO_PLAYBACK_CONTRACT.md`](RADIO_PLAYBACK_CONTRACT.md) starts (approved 2026-11-10, not before the server API is deployed and verified), a terminal/TUI theme, a Mac Catalyst or web wrapper, technical audio analysis beyond a bitrate and format badge, tag-audit view, sleep timer, AirPlay picker, per-device EQ.
+Out of scope: App Store distribution, Intel Macs, macOS before 26, multi-user, a terminal/TUI theme, a Mac Catalyst or web wrapper, technical audio analysis beyond a bitrate and format badge, tag-audit view, AirPlay picker, per-device EQ.
+
+**Internet radio and the sleep timer are in scope** (stage 2 of [`RADIO_PLAYBACK_CONTRACT.md`](RADIO_PLAYBACK_CONTRACT.md) started 2026-11-13, after the owner confirmed the server and Android parts deployed). The rules are in that contract's section 5; the mockups are in `design/macos-radio/`.
 
 ## 2. Decisions taken
 
@@ -120,6 +122,7 @@ Priorities when trade-offs appear (owner, 2026-11-03): the look, smooth browsing
 - **Signing:** no Apple Developer account. Ad-hoc signed; Gatekeeper warnings on install and update are accepted. Sparkle updates are verified with Sparkle's own EdDSA key (a separate key, kept out of the repo), so updates stay authentic without notarization. Each first launch needs right-click > Open.
 - **Widget:** Notification Center widget shows now playing only.
 - **Mini window:** floating always-on-top; cover, transport, seek bar, peek at the next track.
+- **Menu bar item (radio, stage 2, slice S2-5):** a `MenuBarExtra` with a popover for radio and library songs (cover or logo, title, Stop or Play/Pause, Next for library songs, Download, sleep timer, first four favourites). A switch in Settings hides it. Rules: `RADIO_PLAYBACK_CONTRACT.md` section 5.
 - **Cache (optional, off by default):** audio, covers and metadata, capped at **2 GB** with least-recently-used eviction, a clear button and a size readout in Settings.
 - **SMB:** music folder is `/Volumes/media/library/music`, mounted by hand today. The app mounts it itself: the share address is a setting, the SMB login is stored in the Keychain, and the app calls Apple's NetFS mount API at launch and when the profile changes (the same as Finder "Connect to Server", no extra tools). If the mount fails or the volume is absent, SMB features switch off silently and playback is unaffected. Remaining detail for M2: the Navidrome-path to `/Volumes/media/library/music` prefix mapping, which the spike confirms against real paths. Share address: `smb://192.168.1.87/media` (username and password login; the credentials go in the Keychain, never in the repo).
 - **O7 Xcode (resolved 2026-11-03):** Xcode 26.6 (macOS SDK 26.5) is installed and active at `/Applications/Xcode.app` on the owner's Mac (the earlier note that only the Command Line Tools were present is out of date). The package builds and tests with `swift build`, `swift test` and `xcodebuild -scheme Discair-Package -destination 'platform=macOS' test`. The SwiftUI app shell, screenshot tests and Sparkle start in M4. CI uses GitHub's `macos-26` runner (Xcode 26.6 is its default).

@@ -485,3 +485,13 @@ Mockups: `docs/design/macos-player-refinements/mockups.html`. Owner choices: art
 - **Settings > Appearance** (`CupertinoAppearance`, new tab after Playback): the theme (Cupertino, in use), a Day or Night switch, and an accent hue slider with a preview, plus a button back to the default ("Back to coral" at night). The choice is saved in UserDefaults (`discair.appearance.mode`, `discair.appearance.accentHue`) by `AppearanceModel`, which `AppState.appearance` owns.
 - **Applying a change.** The palette is global, so `RootView` rebuilds the window (`.id(appearance.revision)`) and sets the system colour scheme. A rebuild resets view-local state, so the slider shows its colour live in the preview panel while it moves and applies it when released (arrow keys and VoiceOver apply after a half-second pause).
 - **Not done:** the Mini Player window keeps its dark look; no Night screenshot test (the palette is process-wide, so a render test would race the day tests); not checked with VoiceOver or on every screen at every hue.
+
+## Radio (stage 2): choices and rules (S2-0, 2026-11-13)
+
+Internet radio on the Mac, built from the owner's choices. Mockups (the spec): [`docs/design/macos-radio/mockups.html`](../docs/design/macos-radio/mockups.html), with `cupertino-radio.css` for the colour roles and components. Rules: [`docs/RADIO_PLAYBACK_CONTRACT.md`](../docs/RADIO_PLAYBACK_CONTRACT.md) section 5; slices: [`docs/RADIO_PLAYBACK_PROPOSAL.md`](../docs/RADIO_PLAYBACK_PROPOSAL.md), "Stage 2 detailed plan".
+
+- **Chosen:** A2 Tuner page (station list left, On Air panel right), B2 level meter in the bar, C1 song-first Now Playing, D2 menu bar item with popover, E1 ⌘1 to ⌘9 for the first nine favourites, E5 Edit Tags on the Mac, E7 radio card on Home. Not built: the other options drawn in the mockups, and no Love button.
+- **One theme:** Radio is drawn once, in Cupertino Day and Night, through `CU` roles only. No accent hex in a view; the accent follows the hue slider.
+- **Names:** the internet radio types use the `Station` and `Live` prefixes. `RadioModel` keeps its meaning ("Radio from this").
+- **Live playback:** its own player (`AVPlayer` behind `LiveOutput`), not `AVAudioEngineOutput`. The tap-based meter is proven first on one MP3 and one AAC relayed station (slice S2-2); its fallback is the B1 hairline.
+- **No UI in S2-0.** Nothing is built or verified on screen by this slice. Each later slice adds its own section here with what the mockup showed that was dropped or changed, and what was not verified.
