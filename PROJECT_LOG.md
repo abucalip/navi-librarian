@@ -1,3 +1,10 @@
+## 2026-11-13 — macOS: remove Zine, add Night mode and the Appearance tab (PR #1015)
+
+- Merged as `3fc8d652e32d02964158684684028fcb1f97b5b4`. Deleted `Themes/Zine`, the Anton, Space Mono and Source Serif 4 fonts with the `Resources/Fonts` package resource, the Zine Dock icon, the Theme menu and the Zine branches in the shared chrome; `ThemeID` keeps `cupertino`. Added `CUPalette` (Day, Night, optional accent hue; `CU.*` now reads it), `AppearanceModel` (saved in UserDefaults), `CupertinoAppearance` and a `SettingsTab.appearance`. `RootView` rebuilds the window on a change. Night is `#0B0B0D` with coral `#FF7A8F`; Day keeps `#D61F4A`.
+- Verified locally, filtered: `AppearanceTests` (new), `CupertinoTokensTests`, `CommandPaletteTests`, `MiniPlayerTests`, `PipelineDockTests`, `ConnectionsServicesTests`, `GraphExplorerTests`, `OfflineTests`, `ScreenshotTests`, `BugBatchTests`, `LiveScreenshotTests`: 150 passed. Every slider hue reaches 4.5:1 for the text and accent pairs in both modes (5 degree steps). Full suite not run (owner rule); `Package.swift` changed, so `select-tests.sh` selects it.
+- Night rendered offscreen for Home, Settings, Library and Album and viewed once; no Night screenshot test, because the palette is process-wide. Not checked: VoiceOver, every screen at every hue, a live window on the Mac. Not published or deployed.
+- Next action: the owner runs the full macOS suite and looks at Night in the app.
+
 ## 2026-11-12 — Android art themes S4 part 2: Soft Brut Radio, Downloads and Library stats (PR #1012)
 
 - Merged as `4652b1007a4e54c610708d765c2016ba9da7a56e` from head `2d7357e416f4950cd2b80ca7130fa064e00ddfba`. Added `ui/radio/CoverStackRadio.kt`, `ui/downloads/CoverStackDownloads.kt`, `ui/stats/CoverStackStats.kt` and `CoverStackRadioDownloadsStatsRulesTest`; `isCoverStack()` branches in the five screens; Cover Stack-only branches in the shared chart frame, line chart and chart style.
