@@ -147,6 +147,14 @@ struct ConnectionsServicesRenderTests {
         try services(m, open: [], name: "librarian-unreachable", height: 1700)
     }
 
+    /// Server activity, the last section of the Services tab (Home Marquee H2 item 3), from the fixtures Home's render uses.
+    @Test func rendersServicesServerActivity() throws {
+        let state = HomeRenderTests().state(.normal)
+        state.screen = .settings
+        state.services.preview(ServicesModelTests.healthy { $0.share = .off }, expanded: [])
+        try window(state, name: "services-server-activity", height: 2400)
+    }
+
     @Test func rendersEditSheet() throws {
         let state = AppState(themeID: .cupertino, screen: .settings)
         state.services.preview(ServicesModelTests.healthy())

@@ -1,3 +1,9 @@
+## 2026-11-14 — macOS Home marquee H2 items 3 to 5: Server activity in Settings, Services (PR pending)
+
+- Plan: `docs/MACOS_HOME_MARQUEE_PLAN.md` slice H2, items 3 to 5. `CupertinoServices` ends with `ServerActivityPanel` (new `onServicesPage` flag hides the "Services" and "Open Services" buttons, since the page is the destination) and loads insights and Home feeds in a `.task`. Home still draws the panel through the same view (item 4: nothing disappears between merges).
+- Test: `ConnectionsServicesRenderTests/rendersServicesServerActivity` (Insights render test already existed from items 1-2). Filtered run on a Mac: `HomeRenderTests|ConnectionsServicesRenderTests|CupertinoPagesRenderTests|ConnectionsServicesTests`: all passed except `settingsTabsAreTheFourOfTheMockupsAndAppearance`, which expects five tabs and fails on `main` because the Radio tab exists; not touched here. Full suite not run. Not published or deployed.
+- **Next action:** H3, the new Home.
+
 ## 2026-11-14 — macOS Home marquee H2 items 1 and 2 merged; duplicate taste panel removed
 
 - PR [#1078](https://github.com/abucalip/navi-librarian/pull/1078) squash-merged as `897d6bfa`. After the merge the owner asked to remove the duplicated taste panel from Insights: "Your collection" repeated the headline and shifts that `CupertinoTaste` already shows. Removed `TastePanel` from `CupertinoInsights`; the section is now collection 2:1 decades, then shelf life full width. `TastePanel` stays in `CupertinoCollectionPanels.swift` because Home still draws it until H3.
