@@ -1,3 +1,10 @@
+## 2026-11-14 — macOS Home marquee H1 items 3 and 4: tests and filtered run (PR #1077)
+
+- PR [#1077](https://github.com/abucalip/navi-librarian/pull/1077), squash-merged as `304ae87a`. Plan: `docs/MACOS_HOME_MARQUEE_PLAN.md` slice H1, items 3 and 4.
+- Added: a singular "1 listen in 7 days" figure test, and a test that summary figures are left out when nil (no added dates, no listen series).
+- Filtered run on a Mac: `swift test --filter "HomeDashboardTests|HomeScreenTests"`, 84 tests in 2 suites, all passing. Full suite not run (owner rule). No visible change; not published or deployed.
+- **Next action:** H2 (charts to Insights, Server activity to Settings), Sonnet, Medium.
+
 ## 2026-11-14 — macOS Home marquee H1 item 2: HomeScreen rules (PR #1076)
 
 - PR [#1076](https://github.com/abucalip/navi-librarian/pull/1076), squash-merged as `92a73182`. Plan: `docs/MACOS_HOME_MARQUEE_PLAN.md` slice H1, item 2.
