@@ -4,7 +4,7 @@
 **Revision:** 2 (2026-11-11). Replaces the first source survey of the same date.
 **Source reviewed:** GitHub `main` at `88a8f70e1b33f31b966004ede74467d2abd2d96f`. The macOS and Android client sources are unchanged since the first survey's baseline (`ce01596f`).
 **Scope:** macOS and Android clients: CPU, memory, rendering, playback buffers, energy and start-up.
-**Progress:** P0-1 done (commit `84d3d5b4`, direct to `main` on the owner's instruction): protocol and empty results tables in [`client_efficiency_results.md`](client_efficiency_results.md), per-client cheap-tool scripts in `scripts/perf/`. No measurements taken; P0-2 and P0-3 are next and need the owner's device time.
+**Progress:** P0-1 done (commit `84d3d5b4`, direct to `main` on the owner's instruction): protocol and empty results tables in [`client_efficiency_results.md`](client_efficiency_results.md), per-client cheap-tool scripts in `scripts/perf/`. P0-2 started: macOS S2 (idle Home) measured, merged in PR #1066 (`2f9a55e2`); S1 and S3–S11, G1/G2 and the traces remain. P0-3 not started. Both need the owner's device time. First finding: idle Discair on Home uses about 32 % of one core with almost no wakeups, which the plan did not predict (see the results file, S2 note).
 
 ## 1. Executive summary and objectives
 
@@ -293,6 +293,7 @@ Steps on different clients are independent and can be interleaved. Each code ste
 - **Risks:** an attached profiler changes timing; use the cheap tools for the headline numbers and the traces for explanation only.
 - **Verification:** three runs per scenario; the spread between runs is recorded beside each median.
 - **Acceptance criteria:** the macOS table is complete; G1 and G2 are each marked met or not met with the numbers; any hypothesis the data contradicts is marked so in the results file; no code is changed.
+- **Status (2026-11-14):** in progress. Done: S2, three runs, build `fab8032d` (inferred from the binary's build time). Not done: S1, S3–S11, G1 and G2, the three traces. Next: a Time Profiler and SwiftUI trace on idle Home, then S7 (minimized), then S3–S6.
 - **Model: Sonnet | Effort: Medium**
 
 #### P0-3 Android baseline and gate decisions

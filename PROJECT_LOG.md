@@ -1,3 +1,11 @@
+## 2026-11-14 — Client efficiency P0-2: macOS S2 idle baseline (PR #1066)
+
+- PR [#1066](https://github.com/abucalip/navi-librarian/pull/1066), merged as `2f9a55e2`. Fills the macOS S2 row of `docs/client_efficiency_results.md` and fixes `scripts/perf/macos_cheap.sh`, whose wakeups column printed top's running IDLEW total (about 38,000) instead of a per-second rate.
+- **Result (Release build, inferred SHA `fab8032d`, M2 16 GB, macOS 26.2, AC power, Discair reopened on Home, nothing played, Firefox closed, no other audio; three five-minute runs):** Discair median 31.7 % of one core (28.2, 31.7, 31.8), WindowServer 5.4 % (2.9, 5.6, 5.4), about 0.02 idle wakeups per second, footprint 115 MB. A steady load with almost no wakeups points to continuous drawing or computing, not a timer; the plan's section 3 did not predict it. Cause not identified.
+- **Discarded attempts, recorded in the results file:** the app was not on Home (Discair 23.4 %, WindowServer 2.8 %, 212 MB); then Firefox and `coreaudiod` were busy (Discair 41.8 %, WindowServer 31.6 %), so most of that WindowServer load was not Discair's.
+- **Limits:** the SHA is inferred (the binary was built three minutes after the `fab8032d` merge and `macos/` is unchanged since); refresh rate, server version and library not recorded; run 1 sits about 3.5 points below runs 2 and 3, unexplained. S1, S3–S11, the gates G1 and G2 and the three traces are not done. No app code changed.
+- **Next action:** Time Profiler and SwiftUI instrument trace on idle Home, then S7 (minimized), then S3–S6.
+
 ## 2026-11-14 — Client efficiency P0-1: baseline protocol and results file
 
 - Direct to `main` (owner instruction). Adds `docs/client_efficiency_results.md` (scenarios S1–S11 with numbered manual steps, cheap-tool commands, run header, and empty macOS and Android result tables with gate-decision rows) and `scripts/perf/macos_cheap.sh` and `scripts/perf/android_cheap.sh`, which each print one markdown row per run. Raw output goes to `~/discair-perf-raw` by default, outside the repository. No measured value exists yet; every result cell is blank.
