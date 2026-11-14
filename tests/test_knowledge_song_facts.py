@@ -82,3 +82,78 @@ class SongFacts(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class MemberLineage(unittest.TestCase):
+    """``member_lineage`` artist lines: stated band memberships only, one line per member, own projects skipped."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        api = FastAPI()
+        api.include_router(routes.router)
+        api.dependency_overrides[get_librarian] = lambda: FakeLibrarian(self.tmp.name)
+        self.client = TestClient(api)
+        self.db = open_store(Path(self.tmp.name) / STORE_FILE)
+        self.up = lambda t, n, g: repo.upsert_entity(self.db, t, n, mbid=g)[0]
+        repo.upsert_entity(self.db, "recording", "Take", mbid="r-gid")
+
+    def member(self, who, band, begin=None, end=None, **kw):
+        repo.add_edge(self.db, who, band, "member of band", valid_from=begin, valid_to=end, **{**SRC, **kw})
+
+    def lines(self, artist_mbid):
+        self.db.commit()
+        r = self.client.get("/api/knowledge/song-facts", params={"mbid": "r-gid", "artist_mbid": artist_mbid})
+        self.assertEqual(r.status_code, 200, r.text)
+        return [f for f in r.json()["facts"] if f["kind"] == "member_lineage"]
+
+    def test_dated_line_says_left_then_joined_and_links_the_other_band(self):
+        band, other, dave = self.up("artist", "Metallica", "m"), self.up("artist", "Megadeth", "x"), self.up("artist", "Dave Mustaine", "d")
+        self.member(dave, band, "1981", "1983-04")
+        self.member(dave, other, "1983-06")
+        (line,) = self.lines("m")
+        self.assertEqual(line["text"], "Dave Mustaine was in Metallica until 1983 and joined Megadeth in 1983")
+        self.assertEqual(line["scope"], "artist")
+        self.assertEqual(line["source"], "MusicBrainz")
+        self.assertEqual(line["link"], {"type": "artist", "mbid": "x"})
+
+    def test_without_stated_years_the_line_only_says_also_and_dated_comes_first(self):
+        band, a, b = self.up("artist", "Cream", "c"), self.up("artist", "Blind Faith", "bf"), self.up("artist", "Traffic", "tr")
+        eric, steve = self.up("artist", "Eric C", "e"), self.up("artist", "Steve W", "s")
+        self.member(eric, band); self.member(eric, a)
+        self.member(steve, band, "1960", "1970"); self.member(steve, b, "1972")
+        texts = [l["text"] for l in self.lines("c")]
+        self.assertEqual(texts, ["Steve W was in Cream until 1970 and joined Traffic in 1972", "Eric C of Cream was also in Blind Faith"])
+
+    def test_own_projects_and_the_artist_itself_are_skipped_but_the_word_the_is_not_a_match(self):
+        band, trio, same, other = (self.up("artist", n, g) for n, g in
+                                   (("The Beatles", "b"), ("John Lennon Trio", "t"), ("The Beatles", "b2"), ("The Headhunters", "h")))
+        john = self.up("artist", "John Lennon", "j")
+        for target in (band, trio, same, other):
+            self.member(john, target)
+        self.assertEqual([l["link"]["mbid"] for l in self.lines("b")], ["h"])
+
+    def test_person_artist_gets_the_bands_they_belonged_to_and_the_cap_applies(self):
+        person = self.up("artist", "Solo Sam", "p")
+        bands = [self.up("artist", f"Band {c}", f"bd{c}") for c in "ABC"]
+        for b in bands:
+            self.member(person, b)
+        lines = self.lines("p")
+        self.assertEqual(len(lines), 1)  # one line per member: the person is the member in every row
+        self.assertEqual(lines[0]["text"], "Solo Sam was also a member of Band A")
+
+    def test_inferred_edges_and_bands_without_members_give_no_line(self):
+        band, a, b = self.up("artist", "Alpha", "a"), self.up("artist", "Omega", "o"), self.up("artist", "Delta", "d")
+        man = self.up("artist", "Mia", "mi")
+        self.member(man, band)
+        self.member(man, a, evidence_class="inferred")
+        self.member(man, b, match_quality="fuzzy_unconfirmed")
+        self.assertEqual(self.lines("a"), [])  # Alpha's member reaches the others only by non-credit-grade edges
+
+    def test_a_member_with_an_open_or_returning_tenure_is_never_said_to_have_left(self):
+        band, other, josh = self.up("artist", "Desert Band", "q"), self.up("artist", "Side Act", "s"), self.up("artist", "Josh H", "j")
+        self.member(josh, band, "1996", "1996")
+        self.member(josh, band, "1997")  # back in the band, no end stated
+        self.member(josh, other, "1998")
+        (line,) = self.lines("q")
+        self.assertEqual(line["text"], "Josh H of Desert Band was also in Side Act")
