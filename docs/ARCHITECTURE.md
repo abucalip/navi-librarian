@@ -1,46 +1,40 @@
-# Architecture overview
+# Architecture
 
-Last reviewed: 2026-10-25 (global search P1 backend added)
+Last reviewed: 2026-11-14. This is a map of current module ownership, not a roadmap. GitHub `main` is authoritative.
 
-This document describes current architectural responsibilities at a useful level. It is not a chronological extraction log; see root `PROJECT_LOG.md` for PR-by-PR history and verification evidence. Confirm all details against current GitHub `main` and source before changing a boundary.
+## Server
 
-## Main layers
+| Module | Owns |
+|---|---|
+| `app/main.py`, `app/api/` | FastAPI assembly and HTTP adapters: request validation, authentication dependencies, response/status mapping and route registration. Keep business rules out of route handlers. |
+| `app/security/` | Web-session authentication, login middleware, cookies and security boundaries. |
+| `app/services/` | Application-lifetime services and background-worker coordination. `app/worker.py` starts worker-owned jobs; `library_enrich.py` and `insights_refresh.py` coordinate their respective loops. |
+| `discovery/` | Discovery policy and read models: candidate gathering, list construction/refresh, lenses, feedback, taste-derived discovery inputs, and `discovery/search/`'s owned-library index, query/ranking, paging and search events. |
+| `recommendation/` | Recommendation-engine policy: candidate evaluation, scoring/diversity allocation, result shaping, and deterministic capture/replay and comparison tools. |
+| `acquisition/` | Acquisition lifecycle and safety: request coordination, source selection/switching, tracking, recovery, completion, cleanup and verified import transactions. |
+| `intelligence/` | Server V2 knowledge and enrichment domain: dedicated store/schema, jobs, MusicBrainz imports and enrichment, artwork index, taste/listening analysis, insights, graph/path building and API response builders. |
+| `integrations/` | External-system boundaries and protocol clients (Navidrome, slskd, ListenBrainz, Last.fm, MusicBrainz, Discogs and radio). Own provider I/O, parsing and provider-specific transport behavior—not discovery policy. |
+| `settings/` | Configuration defaults, validation, settings persistence and generation/version helpers. |
+| `navidrome_server.py` | Legacy compatibility and orchestration boundary still used by existing server callers. Do not add code; new behavior belongs in the appropriate package and this module may only shrink. |
+| `static/`, `app/templates/` | Browser UI assets and HTML templates. The browser presents server-owned results; it must not duplicate recommendation, discovery, acquisition or import rules. |
 
-### Web application
+## Clients
 
-- `app/main.py` assembles the FastAPI application, dependencies, authentication integration, middleware, and route registration.
-- `app/api/` contains HTTP route adapters. Routes validate requests, invoke domain/service logic, and shape HTTP responses; they should not duplicate domain policy.
-- `app/security/` owns authentication/security helpers. Keep persisted secret loading, configuration predicates, sessions, cookies, and route/middleware behavior behind their existing contracts.
-- `app/services/` owns reusable application/domain services. Provider access and persistence should remain explicit dependencies rather than hidden app initialization.
-- `app/api/search.py`, `app/api/library.py` and `app/api/owned_artwork.py` are the global search, artist page, library browsing and owned cover-art adapters. They call `discovery/search/` and `integrations/navidrome/client.py`, and hold no matching or ranking logic.
+- `android/`: native Android client. Owns its UI, local playback/queue, device-side state and API integration; streams owned music directly from Navidrome.
+- `macos/`: native macOS client, split into audio, API/library, model and UI packages. Owns desktop presentation and local playback behavior.
+- Both clients consume server contracts; neither is a second implementation of server recommendation or acquisition policy.
 
-### Global search (`discovery/search/`)
+## Runtime and data boundaries
 
-- `normalize.py` owns name keys and query normalization; `index.py` owns the in-process owned index, its single-flight background build, last-known-good state, and song paging; `query.py` owns matching, ranking, library pages, cursors and artist lookup; `events.py` owns capabilities, SSE framing and the search stream; `artist_page.py` owns artist sections.
-- The index is keyed by the Navidrome credential generation (`navidrome_generation` in settings). Requests read the last completed build and never wait for one. Provider sources are not wired yet (contract P2).
-- Contract: `docs/SEARCH_CONTRACT.md`, section 11 for the P1 record.
+- The web process serves requests. The separate worker process owns scheduled/background enrichment and insight refresh work.
+- SQLite application settings/authentication data and the dedicated Server V2 intelligence store persist under the configured data directory, outside the container image.
+- Provider clients are called through `integrations/`; domain packages decide what to request and how returned data affects the product.
+- Acquisition/import/cleanup are safety-critical: canonicalize paths under configured roots, reject traversal, symlink escapes and ambiguous targets, and never overwrite or remove unrelated files.
 
-### Legacy server and domain helpers
+## Dependency rules
 
-- `navidrome_server.py` remains a large compatibility/orchestration boundary used by existing callers. It coordinates provider/library access, cache and persistence dependencies, discovery routes/tools, and acquisition wiring.
-- Root-level `discovery_*.py` modules own extracted discovery policies and payload transformations, including New Releases candidate selection/merge/window/query/response rules, classics candidate collection/rating/genre stages, personal recommendation allocation/payload shaping, and cached discovery-list projection.
-- Root-level `acquisition_*.py` modules own extracted acquisition state, candidate validation/start, request coordination, lifecycle, orchestration, recovery, watcher, progress accounting/snapshots, diagnostics, completion, import, cleanup, and source-switch responsibilities.
-- `navidrome_client.py`, `integrations/lastfm/client.py`, `integrations/listenbrainz/client.py`, `slskd_client.py`, `musicbrainz_*.py`, `slskd_*.py`, and cache/settings modules isolate provider protocols or supporting policies where extracted.
-- `server.py` and `mcp_registry.py` are part of the existing server/MCP compatibility surface. Routine modularization must preserve that behavior unless a separate approved retirement plan changes it.
-
-These are responsibility summaries, not an assertion that every dependency is already ideal. Inspect actual imports and call sites before moving code.
-
-## Boundary rules
-
-1. Keep HTTP routing, application assembly, domain policy, provider I/O, persistence, and UI concerns distinct.
-2. Prefer pure helpers or small explicit dependency-injected interfaces that can be tested by direct import.
-3. Keep provider/cache/rate-limit ownership and orchestration at the layer that already owns them unless the extraction contract explicitly and safely changes that boundary.
-4. Preserve existing signatures, response shapes, side effects, persistence semantics, and compatibility adapters unless an approved requirement says otherwise.
-5. Treat acquisition, import, cleanup, and deletion as safety-critical. Validate canonical paths under configured roots, reject traversal/symlink escapes and ambiguous targets, and prove unrelated files remain untouched.
-6. Do not extract code solely to reduce file size. Avoid broad callback surfaces, duplicate policy, and extra layers that make the system harder to understand.
-7. Review package/Docker inclusion and AST-coupled test assumptions whenever modules or imports move.
-8. Keep MCP compatibility during modularization. Retirement is a separate decision and migration gate.
-
-## Modularization disposition
-
-The planned domain modularization and Python package-layout migrations are complete. Do not resume size-only extraction work. Historical boundaries and closeout evidence are retained in [the archive](archive/completed/MODULARIZATION_ROADMAP.md) and root `PROJECT_LOG.md`. Current outstanding work is listed in [`ACTIVE_WORK.md`](ACTIVE_WORK.md); required verification is in [`TEST_PLAN.md`](TEST_PLAN.md) and release gates are in [`DEVELOPMENT_WORKFLOW.md`](DEVELOPMENT_WORKFLOW.md).
+1. HTTP adapters call services/domain modules; they do not contain domain policy.
+2. Domain modules use explicit provider and persistence dependencies rather than hidden app initialization.
+3. Keep provider I/O in `integrations/`, recommendation policy in `recommendation/`, discovery policy in `discovery/`, and knowledge/enrichment state in `intelligence/`.
+4. Preserve established API shapes, persistence semantics and client compatibility when changing ownership.
+5. Do not resume size-only modularization. See `docs/DECISIONS.md` for binding decisions, `docs/TEST_PLAN.md` for verification, and `PROJECT_LOG.md` for implementation history.
