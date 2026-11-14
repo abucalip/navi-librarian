@@ -1,3 +1,10 @@
+## 2026-11-14 — macOS Home marquee H3 items 2 and 3: old Home modules and lens request removed (merged)
+
+- PR [#1081](https://github.com/abucalip/navi-librarian/pull/1081), squash `574d33a9`. Plan slice H3, items 2 and 3. Removed from `CupertinoHome.swift` the briefing band and its stats, the Arrivals panel, the lens rows, the Recently added row and the helpers only they used (`split`, `FlowChips`, `stageWords`, local cover helpers); about 275 lines, none added. Home's task is now `loadHomeFeeds()` only (no `loadInsights`); `refreshHomeDashboard` and `reshufflePicks` are kept.
+- Test: `swift build` clean; filtered run `HomeRenderTests`, 7 passed. Full suite not run. Not compared on screen. Not published or deployed.
+- Not done: item 4 (delete `HomeStat`, `HomeChange`, `HomeKeyHint`, `HomeSplit`, old `HomeScreen` helpers, `HomeDashboard.Waiting` and their tests, after a search for each), the seven-state render tests (item 7), docs (item 8).
+- Next action: H3 item 4.
+
 ## 2026-11-14 — macOS Home marquee H3 item 1: the new Home page (merged)
 
 - PR [#1080](https://github.com/abucalip/navi-librarian/pull/1080), squash `192d3fda`. Plan: `docs/MACOS_HOME_MARQUEE_PLAN.md` slice H3, item 1 only. The `page` of `CupertinoHome` is rewritten: notice, marquee (blurred cover, 55% black wash, white text, Get as the one primary button with keys inside the buttons, Next picks covers instead of chevrons), radio card (between marquee and shelf), New on the shelf, Waiting longest, summary line, Liner note; empty marquee, skeleton and narrow layout. New file `CupertinoHomeMarquee.swift` (shelf, waiting, summary views); `FlowLayout` is no longer private.
