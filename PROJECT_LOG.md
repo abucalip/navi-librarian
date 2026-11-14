@@ -1,6 +1,6 @@
-## 2026-11-14 — macOS Home marquee H2 items 3 to 5: Server activity in Settings, Services (PR pending)
+## 2026-11-14 — macOS Home marquee H2 items 3 to 5: Server activity in Settings, Services (merged)
 
-- Plan: `docs/MACOS_HOME_MARQUEE_PLAN.md` slice H2, items 3 to 5. `CupertinoServices` ends with `ServerActivityPanel` (new `onServicesPage` flag hides the "Services" and "Open Services" buttons, since the page is the destination) and loads insights and Home feeds in a `.task`. Home still draws the panel through the same view (item 4: nothing disappears between merges).
+- PR [#1079](https://github.com/abucalip/navi-librarian/pull/1079), squash `606b606c`. Plan: `docs/MACOS_HOME_MARQUEE_PLAN.md` slice H2, items 3 to 5. `CupertinoServices` ends with `ServerActivityPanel` (new `onServicesPage` flag hides the "Services" and "Open Services" buttons, since the page is the destination) and loads insights and Home feeds in a `.task`. Home still draws the panel through the same view (item 4: nothing disappears between merges).
 - Test: `ConnectionsServicesRenderTests/rendersServicesServerActivity` (Insights render test already existed from items 1-2). Filtered run on a Mac: `HomeRenderTests|ConnectionsServicesRenderTests|CupertinoPagesRenderTests|ConnectionsServicesTests`: all passed except `settingsTabsAreTheFourOfTheMockupsAndAppearance`, which expects five tabs and fails on `main` because the Radio tab exists; not touched here. Full suite not run. Not published or deployed.
 - **Next action:** H3, the new Home.
 
