@@ -1,6 +1,7 @@
 import DiscairAudio
 import DiscairLibrarian
 import Foundation
+import Observation
 
 /// The menu bar item's switches, kept in `UserDefaults` (docs/RADIO_PLAYBACK_PROPOSAL.md S2-5 item 3). Both are on by default.
 public enum MenuBarSettings {
@@ -82,4 +83,38 @@ struct MenuBarContent: Equatable {
         case .idle: "Discair, nothing playing"
         }
     }
+}
+
+/// Whether the menu bar item is inserted, as a plain observable value for the `MenuBarExtra` scene.
+///
+/// The scene must not take a binding made by `@AppStorage` on the `App` struct: SwiftUI writes `isInserted` back while it sets the
+/// scene up, the write invalidates the `App` body, and the main thread then loops at full CPU with memory growing, so the app
+/// never finishes starting. This object writes `UserDefaults` only when the value really changes, and follows changes made
+/// elsewhere (the Settings > Radio switch is an `@AppStorage` on the same key).
+@MainActor @Observable
+public final class MenuBarVisibility {
+    public var isInserted: Bool {
+        didSet { if isInserted != Self.stored(defaults) { defaults.set(isInserted, forKey: MenuBarSettings.showKey) } }
+    }
+    @ObservationIgnored private let defaults: UserDefaults
+    @ObservationIgnored nonisolated(unsafe) private var observer: (any NSObjectProtocol)?
+
+    public init(defaults: UserDefaults = .standard) {
+        self.defaults = defaults
+        isInserted = Self.stored(defaults)
+        observer = NotificationCenter.default.addObserver(forName: UserDefaults.didChangeNotification, object: defaults, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated { self?.refresh() }
+        }
+    }
+
+    deinit { if let observer { NotificationCenter.default.removeObserver(observer) } }
+
+    /// Takes over a change made through the defaults. Equal values are ignored, so nothing loops.
+    func refresh() {
+        let value = Self.stored(defaults)
+        if value != isInserted { isInserted = value }
+    }
+
+    /// On unless switched off (a missing value means on).
+    static func stored(_ defaults: UserDefaults) -> Bool { defaults.object(forKey: MenuBarSettings.showKey) as? Bool ?? true }
 }
