@@ -169,6 +169,8 @@ struct ShelfLifePanel: View {
 /// "Server activity": what the server is doing for the app, one row per job.
 struct ServerActivityPanel: View {
     let state: AppState
+    /// On Settings > Services the page is already the place the buttons lead to, so they are left out.
+    var onServicesPage = false
     private var d: HomeDashboard { state.homeDashboard }
     private var librarianUp: Bool { d.notice != .librarianUnreachable }
 
@@ -182,12 +184,12 @@ struct ServerActivityPanel: View {
             popularity: state.popularityStatus, insightsJob: state.insightsJobStatus))
         return HomePanel {
             HomeHeader(title: "Server activity") {
-                Button("Services") { state.screen = .settings }.buttonStyle(CapsuleButtonStyle(small: true))
+                if !onServicesPage { Button("Services") { state.screen = .settings }.buttonStyle(CapsuleButtonStyle(small: true)) }
             }
             if !librarianUp {
                 Text("Unknown. The app asks Librarian for this, and Librarian is not answering\(state.session?.activeProfile.map { " at \($0.librarianURL.absoluteString)" } ?? "").")
                     .cu(CU.Font.body).foregroundStyle(CU.textSecondary).fixedSize(horizontal: false, vertical: true).padding(.top, CU.Space.s)
-                Button("Open Services") { state.screen = .settings }.buttonStyle(CapsuleButtonStyle())
+                if !onServicesPage { Button("Open Services") { state.screen = .settings }.buttonStyle(CapsuleButtonStyle()) }
             } else {
                 VStack(spacing: 0) {
                     ForEach(Array(rows.enumerated()), id: \.element.id) { i, row in
