@@ -2,10 +2,9 @@ import DiscairLibrarian
 import DiscairNavidrome
 import SwiftUI
 
-/// Home, redesigned (`docs/redesign.md` section 5.1, step M8). A dashboard that leads with the two collector's questions:
-/// "what do I have?" (the briefing band, collection, decades, shelf life) and "what should I add next?" (today's pick,
-/// arrivals, taste and lenses). Operations sit last, and move to the top as a notice when something is wrong.
-/// Mockups: `docs/design/redesign/macos/cupertino/home--*`. Figures come from `HomeDashboard`, wording from `HomeScreen`.
+/// Home, the "Marquee" layout (`docs/MACOS_HOME_MARQUEE_PLAN.md`): today's pick over its own blurred cover, two shelves of covers
+/// ("New on the shelf", "Waiting longest") and a one-line summary. Mockups: `docs/design/macos-home-marquee/`.
+/// Figures come from `HomeDashboard`, wording from `HomeScreen`. Home does not request the lens cards: Insights owns them.
 struct CupertinoHome: View {
     let state: AppState
     @State private var width: CGFloat = 980
@@ -34,7 +33,7 @@ struct CupertinoHome: View {
         .scrollEdgeEffectStyle(.hard, for: .top)
         .onGeometryChange(for: CGFloat.self) { $0.size.width - CU.Space.xl * 2 } action: { width = $0 }
         .task(id: refreshKey) { if state.session != nil { await state.refreshHomeDashboard() } }
-        .task { await state.loadInsights(); await state.loadHomeFeeds() }
+        .task { await state.loadHomeFeeds() }
         .task { await state.loadStationsForHome() }
         .task { await state.library.reshufflePicks(librarian: state.session?.librarian) }
     }
@@ -67,11 +66,6 @@ struct CupertinoHome: View {
         if state.library.isLive { LinerNoteCard(albums: state.visible(state.library.missing)) }
     }
 
-    /// Two or three panels side by side, or one column in reading order when the content is under 860 pt wide.
-    @ViewBuilder private func split<C: View>(_ weights: [CGFloat], @ViewBuilder _ content: () -> C) -> some View {
-        if stacked { VStack(spacing: CU.Space.m) { content() } } else { HomeSplit(weights: weights) { content() } }
-    }
-
     // MARK: 0. Radio card (E7)
 
     /// While a station plays, or when a last station is known and still listed. No card otherwise.
@@ -99,82 +93,6 @@ struct CupertinoHome: View {
                      actionTitle: "Continue on this Mac") { state.continueFromPhone() }
         case nil:
             EmptyView()
-        }
-    }
-
-    // MARK: 1. Briefing band
-
-    private var briefing: some View {
-        // One cell per figure, the hero wider; each cell after the first has a hairline on its leading edge.
-        HomeSplit(weights: librarianUp ? [1.75, 1, 1, 1] : [1.75, 1, 1], spacing: 0) {
-            heroStat
-            if librarianUp {
-                cell(listensStat); cell(neverPlayedStat); cell(waitingStat)
-            } else {
-                cell(neverPlayedStat); cell(unavailableStat)
-            }
-        }
-        .accessibilityElement(children: .contain)
-    }
-
-    private func cell<C: View>(_ content: C) -> some View {
-        content.padding(.leading, CU.Space.m).padding(.trailing, CU.Space.xs)
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-            .overlay(alignment: .leading) { Rectangle().fill(CU.separator).frame(width: 1) }
-    }
-
-    private var heroStat: some View {
-        let line = HomeScreen.addedLine(d.added)
-        return HomeStat(eyebrow: "Your library", value: d.albumCount.map { HomeScreen.count($0) } ?? "—", unit: "albums", hero: true,
-                        action: { state.screen = .library }, actionHint: "Opens your Library") {
-            switch d.load {
-            case .notLoaded: Text("Your library has not been read yet.").cu(CU.Font.callout).foregroundStyle(CU.textSecondary)
-            case .empty: Text("Nothing in your library yet.").cu(CU.Font.callout).foregroundStyle(CU.textSecondary)
-            case .ready: HomeChange(line: line)
-            }
-        }
-    }
-
-    private var listensStat: some View {
-        let tile = HomeScreen.listensTile(librarianReachable: librarianUp, listenBrainzConnected: hasListeningSource || state.listenBrainz.isConnected,
-                                          figure: d.listens)
-        if case .figure(let f) = tile {
-            return AnyView(HomeStat(eyebrow: "Listens · last 7 days", value: HomeScreen.count(f.last), unit: "plays",
-                                    action: { state.screen = .history }, actionHint: "Opens History") {
-                HomeChange(line: HomeScreen.listensLine(f, now: Date()))
-            })
-        }
-        return AnyView(HomeStat(eyebrow: "Listens · last 7 days", value: "—", action: { state.screen = .history }, actionHint: "Opens History") {
-            HStack(alignment: .firstTextBaseline) {
-                Text(tile.sentence).cu(CU.Font.callout).foregroundStyle(CU.textSecondary).fixedSize(horizontal: false, vertical: true)
-                if tile.offersConnect {
-                    Button("Connect") { state.screen = .settings }
-                        .buttonStyle(.plain).cu(CU.Font.callout).foregroundStyle(CU.accentStrong).underline()
-                }
-            }
-        })
-    }
-
-    private var neverPlayedStat: some View {
-        HomeStat(eyebrow: "Never played", value: d.neverPlayed.map { HomeScreen.count($0) } ?? "—", unit: d.neverPlayed == nil ? "" : "albums",
-                 action: { state.openNeverPlayedAlbums() }, actionHint: "Opens the albums with no plays") {
-            if d.neverPlayed == nil { Text("Not counted yet").cu(CU.Font.callout).foregroundStyle(CU.textSecondary) }
-            else { HomeChange(line: HomeScreen.neverPlayedLine(d.neverPlayedChange)) }
-        }
-    }
-
-    private var waitingStat: some View {
-        let tile = HomeScreen.waitingTile(d.waiting)
-        return HomeStat(eyebrow: "Waiting for you", value: tile.picks.map { HomeScreen.count($0) } ?? "—", unit: tile.picks == nil ? "" : "picks",
-                        action: { state.screen = .discover }, actionHint: "Opens Discover") {
-            Text(tile.detail).cu(CU.Font.callout).foregroundStyle(CU.textSecondary).fixedSize(horizontal: false, vertical: true)
-        }
-    }
-
-    /// With Librarian unreachable the listens and waiting figures merge into one honest tile.
-    private var unavailableStat: some View {
-        HomeStat(eyebrow: "Listens · waiting", value: "—") {
-            Text("Unavailable without Librarian").cu(CU.Font.callout).foregroundStyle(CU.textSecondary)
         }
     }
 
@@ -379,182 +297,6 @@ struct CupertinoHome: View {
             .fixedSize(horizontal: false, vertical: true).frame(maxWidth: 520, alignment: .leading)
     }
 
-    // MARK: 3. Arrivals
-
-    @ViewBuilder private var arrivalsPanel: some View {
-        // Arrivals collapses when empty once the app has history; before that its empty sentence explains what will appear.
-        if !(d.arrivals.isEmpty && pickEmpty != .needsHistory) {
-            HomePanel {
-                HomeHeader(title: "Arrivals") {
-                    Button("All downloads") { state.screen = .downloads }.buttonStyle(CapsuleButtonStyle(small: true))
-                }
-                if d.arrivals.isEmpty {
-                    Text("Nothing on its way. Albums you Get appear here while they download, and stay until you have played them.")
-                        .cu(CU.Font.body).foregroundStyle(CU.textSecondary).fixedSize(horizontal: false, vertical: true).padding(.top, CU.Space.s)
-                } else {
-                    VStack(spacing: 0) {
-                        ForEach(Array(d.arrivals.enumerated()), id: \.element.id) { i, row in
-                            if i > 0 { Rectangle().fill(CU.separator).frame(height: 1) }
-                            arrivalRow(row).padding(.vertical, CU.Space.s)
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    @ViewBuilder private func arrivalRow(_ row: HomeDashboard.ArrivalRow) -> some View {
-        switch row {
-        case .job(_, let title, let artist, let stage, let failure):
-            HStack(spacing: CU.Space.s) {
-                CoverView(album: placeholder(title: title, artist: artist)).frame(width: 48, height: 48).clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-                VStack(alignment: .leading, spacing: CU.Space.xs) {
-                    Text(title).cu(CU.Font.headline).foregroundStyle(CU.text).lineLimit(1)
-                    Text("\(artist) · \(failure == nil ? Self.stageWords[stage.rawValue] : "Failed")").cu(CU.Font.callout).foregroundStyle(CU.textSecondary).lineLimit(1)
-                    CUStageTracker(step: stage.rawValue, failed: failure != nil, failureReason: failure)
-                }
-            }
-            .accessibilityElement(children: .combine)
-        case .radio(let playID, let title, let artist, let station, let heardAt):
-            VStack(alignment: .leading, spacing: CU.Space.xs) {
-            HStack(spacing: CU.Space.s) {
-                CoverView(album: placeholder(title: title, artist: artist)).frame(width: 48, height: 48).clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-                VStack(alignment: .leading, spacing: CU.Space.xs) {
-                    Text(title).cu(CU.Font.headline).foregroundStyle(CU.text).lineLimit(1)
-                    Text("Heard on \(station) at \(heardAt.formatted(date: .omitted, time: .shortened))").cu(CU.Font.callout).foregroundStyle(CU.textSecondary).lineLimit(1)
-                }
-                Spacer(minLength: 0)
-                DownloadButton(state: state.downloadState(playID: playID), compact: true, surface: .page) {
-                    Task { await state.radioDownloads.get(playID: playID) }
-                }
-            }
-            if let sentence = state.radioDownloads.sentence(for: playID) {
-                Text(sentence).cu(CU.Font.caption).foregroundStyle(state.downloadState(playID: playID) == .failed ? CU.danger : CU.textSecondary)
-                    .lineLimit(2).padding(.leading, 48 + CU.Space.s)
-            }
-            }
-        case .arrived(let id, let title, let artist):
-            HStack(spacing: CU.Space.s) {
-                let item = ownedItem(id) ?? placeholder(title: title, artist: artist)
-                CoverView(album: item).frame(width: 48, height: 48).clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-                VStack(alignment: .leading, spacing: CU.Space.xs) {
-                    Text(title).cu(CU.Font.headline).foregroundStyle(CU.text).lineLimit(1)
-                    Text("\(artist) · Not played yet").cu(CU.Font.callout).foregroundStyle(CU.textSecondary).lineLimit(1)
-                }
-                Spacer(minLength: 0)
-                Button { state.playAlbum(item) } label: { Label("Play", systemImage: "play.fill") }
-                    .buttonStyle(CapsuleButtonStyle(small: true)).accessibilityLabel("Play \(title)")
-            }
-        }
-    }
-
-    private static let stageWords = ["Looking for a source", "Downloading", "Importing", "In library"]
-
-    private func placeholder(title: String, artist: String) -> AlbumItem {
-        AlbumItem(id: -1, title: title, artist: artist, year: 0, genre: "", format: "", owned: false, hue: LibraryModel.hue(for: title))
-    }
-
-    private func ownedItem(_ navidromeID: String) -> AlbumItem? {
-        state.library.allNavidromeAlbums.first { $0.id == navidromeID }.map { LibraryModel.item($0, index: 0) }
-    }
-
-    // MARK: 7. From the lenses
-
-    private var lensesPanel: some View {
-        let insights = state.insights
-        let summary = HomeScreen.lenses(insights.kinds.map {
-            HomeScreen.LensInput(kind: $0, name: CupertinoInsights.name($0), enabled: insights.isEnabled($0), cards: insights.cards($0))
-        })
-        return HomePanel {
-            HomeHeader(title: "From the lenses") {
-                HStack(spacing: CU.Space.s) {
-                    Text(summary.countText).cu(CU.Font.body).foregroundStyle(CU.textSecondary)
-                    Button("All insights") { state.screen = .insights }.buttonStyle(CapsuleButtonStyle(small: true))
-                }
-            }
-            if summary.enabledCount == 0 {
-                Text("No lens is on yet. The server turns a lens on only after it passes its own check, so nothing here is a guess.")
-                    .cu(CU.Font.body).foregroundStyle(CU.textSecondary).fixedSize(horizontal: false, vertical: true).padding(.top, CU.Space.s)
-                FlowChips(items: summary.off.map { "\($0) · off" })
-            } else if summary.rows.isEmpty {
-                Text("Every lens that is on found nothing to show today. A lens never fills the gap with guesses.")
-                    .cu(CU.Font.body).foregroundStyle(CU.textSecondary).fixedSize(horizontal: false, vertical: true).padding(.top, CU.Space.s)
-            } else {
-                VStack(spacing: 0) {
-                    ForEach(Array(summary.rows.enumerated()), id: \.element.card.id) { i, row in
-                        if i > 0 { Rectangle().fill(CU.separator).frame(height: 1) }
-                        lensRow(row.card, lens: row.lens).padding(.vertical, CU.Space.s)
-                    }
-                }
-            }
-        }
-    }
-
-    private func lensRow(_ c: InsightCard, lens: String) -> some View {
-        let get = InsightsModel.album(for: c)
-        let owned = c.kind == "anniversary" ? ownedAlbum(c) : nil
-        return HStack(spacing: CU.Space.s) {
-            if let n = c.owned, let t = c.total {
-                VStack(spacing: 0) {
-                    Text("\(n)/\(t)").cu(CU.Font.metric).monospacedDigit().foregroundStyle(CU.text)
-                    Text("owned").cu(CU.Font.caption).foregroundStyle(CU.textSecondary)
-                }
-                .frame(width: 56, height: 56).background(CU.content, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-            } else {
-                CoverView(album: owned ?? get ?? placeholder(title: c.subject.title ?? c.title, artist: c.subject.artist ?? ""))
-                    .frame(width: 56, height: 56).clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-            }
-            VStack(alignment: .leading, spacing: CU.Space.xs) {
-                Text(c.title).cu(CU.Font.headline).foregroundStyle(CU.text).lineLimit(1)
-                Text("\(lens) · \(c.body)").cu(CU.Font.callout).foregroundStyle(CU.textSecondary).lineLimit(1)
-            }
-            Spacer(minLength: 0)
-            if let owned {
-                Button { state.insights.accepted(c, librarian: state.session?.librarian); state.actions.play(album: owned) } label: { Label("Play", systemImage: "play.fill") }
-                    .buttonStyle(CapsuleButtonStyle(small: true)).accessibilityLabel("Play \(owned.title)")
-            } else if let get {
-                Button("Get") { state.insights.accepted(c, librarian: state.session?.librarian); state.actions.get(album: get) }
-                    .buttonStyle(CapsuleButtonStyle(small: true)).disabled(!state.acquisition.canGet(get)).accessibilityLabel("Get \(get.title)")
-            }
-        }
-        .accessibilityElement(children: .contain)
-    }
-
-    private func ownedAlbum(_ c: InsightCard) -> AlbumItem? {
-        let t = (c.subject.title ?? c.title).lowercased(), a = (c.subject.artist ?? "").lowercased()
-        return state.library.albums.first { $0.title.lowercased() == t && $0.artist.lowercased() == a }
-    }
-
-    // MARK: 10. Recently added
-
-    private var recentlyAdded: some View {
-        let albums = Array(state.library.recent.prefix(6))
-        let columns = Array(repeating: GridItem(.flexible(), spacing: CU.Space.m, alignment: .top), count: stacked ? 3 : 6)
-        return VStack(alignment: .leading, spacing: CU.Space.m) {
-            HomeHeader(title: "Recently added") {
-                Button("Library") { state.screen = .library }.buttonStyle(CapsuleButtonStyle(small: true))
-            }
-            if albums.isEmpty {
-                Text(d.load == .notLoaded ? "Your library has not been read yet." : "Albums you add appear here.").cu(CU.Font.body).foregroundStyle(CU.textSecondary)
-            } else {
-                LazyVGrid(columns: columns, alignment: .leading, spacing: CU.Space.m) {
-                    ForEach(albums) { a in
-                        Button { state.open(album: a) } label: {
-                            VStack(alignment: .leading, spacing: CU.Space.xs) {
-                                CoverView(album: a).clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-                                    .shadow(color: CU.shadowInk.opacity(0.16), radius: 12, y: 4).padding(.bottom, CU.Space.xs)
-                                Text(a.title).cu(CU.Font.headline).foregroundStyle(CU.text).lineLimit(1)
-                                Text(a.artist).cu(CU.Font.body).foregroundStyle(CU.textSecondary).lineLimit(1)
-                            }
-                            .contentShape(Rectangle())
-                        }
-                        .buttonStyle(.plain).accessibilityLabel("\(a.title) by \(a.artist)")
-                    }
-                }
-            }
-        }
-    }
-
     // MARK: Loading
 
     /// One block for the marquee, then two rows of a title block and six square blocks (three when narrow).
@@ -589,22 +331,6 @@ private struct MarqueeButtonStyle: ButtonStyle {
             .foregroundStyle(primary ? CupertinoHome.dayAccentStrong : Color.white)
             .background(primary ? Color.white : Color.white.opacity(0.2), in: Capsule())
             .opacity(!isEnabled ? 0.5 : configuration.isPressed ? 0.85 : 1)
-    }
-}
-
-/// Small neutral chips that wrap: the "Forgotten Gems · off" list of a first run.
-private struct FlowChips: View {
-    let items: [String]
-    @Environment(\.cuInPanel) private var inPanel
-
-    var body: some View {
-        FlowLayout(spacing: CU.Space.s) {
-            ForEach(items, id: \.self) { item in
-                Text(item).cu(CU.Font.headline).foregroundStyle(CU.textSecondary)
-                    .padding(.horizontal, CU.Space.m).frame(height: 32)
-                    .background(inPanel ? CU.bgFillOnPanel : CU.bgFill, in: Capsule())
-            }
-        }
     }
 }
 
