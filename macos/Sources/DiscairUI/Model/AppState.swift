@@ -77,6 +77,8 @@ public final class AppState {
             if screen == .nowPlaying && oldValue != .nowPlaying { nowPlayingReturn = oldValue }
             // The station list and live titles are polled only while their page is open (request budget, S2.5).
             if (screen == .stations) != (oldValue == .stations) { stations.setPageVisible(screen == .stations) }
+            // The Heard list is read on opening the Radio page (S2.5); no timer.
+            if screen == .stations && oldValue != .stations { Task { await loadHeard() } }
         }
     }
     /// The screen the chevron on Now Playing returns to.
@@ -239,7 +241,8 @@ public final class AppState {
         discovery.configure(librarian: session.librarian)
         stations.configure(source: session.librarian)
         radioDownloads.configure(source: session.librarian)
-        radioDownloads.onSuccess = { [weak self] in await self?.loadHomeFeeds() }
+        radioDownloads.onSuccess = { [weak self] in await self?.loadHeard() }
+        player.onLivePlay = { [weak self] in Task { await self?.loadHeard() } }
         player.liveNowSource = session.librarian
         stationLogos.configure(source: session.librarian)
         player.configure(urls: navidrome.urls, scrobbler: navidrome)
@@ -276,7 +279,7 @@ public final class AppState {
             albums: albums, jobs: acquisition.visibleJobs, taste: taste.profiles,
             picksCount: session?.librarian == nil ? nil : visible(library.missing).count,
             librarianReachable: librarianUp, neverPlayedBaseline: HomeScreen.baseline(readings, now: now, calendar: calendar),
-            radioPlays: radioPlays, listensByDay: taste.listensByDay,
+            radioPlays: radioPlays, keptRadioPlays: Set(radioDownloads.attempts.keys), listensByDay: taste.listensByDay,
             handoff: HomeScreen.handoff(queue: phoneQueue, now: now, clientName: SubsonicAuth.clientName, playingSongID: player.current?.songID),
             now: now, calendar: calendar)
         homeDashboard = await Task.detached(priority: .userInitiated) { HomeDashboard.build(input) }.value
@@ -290,7 +293,7 @@ public final class AppState {
     /// another client saved. Four small reads, each failing on its own; then the figures are rebuilt.
     public func loadHomeFeeds() async {
         guard let session else { return }
-        async let plays = Self.attempt { try await session.librarian?.radioPlays(limit: 50) }
+        async let plays = Self.attempt { try await session.librarian?.radioPlays(limit: Self.heardLimit) }
         async let popularity = Self.attempt { try await session.librarian?.popularityStatus() }
         async let insightsJob = Self.attempt { try await session.librarian?.insightsRefreshStatus() }
         async let queue = Self.attempt { try await session.navidrome?.playQueue() }
@@ -303,16 +306,32 @@ public final class AppState {
 
     private static func attempt<T: Sendable>(_ work: @Sendable () async throws -> T?) async -> T? { try? await work() }
 
-    /// Home's Get on a heard song: the server looks the album up and requests it. Failures come back as the server's sentence.
-    public func getRadioPlay(_ id: Int) async {
-        guard let librarian = session?.librarian else { return }
+    /// How many heard songs are read. One list serves Home's heard rows, the On Air panel, Now Playing and the Heard tab.
+    public static let heardLimit = 200
+    /// The server's sentence when the Heard list could not be read; nil after a good read.
+    public private(set) var heardNote: String?
+    @ObservationIgnored private var heardBusy = false
+
+    /// Reads the Heard list (`GET /api/radio/plays`). One read at a time; a failure keeps the list on screen and says so. Home's
+    /// rows are rebuilt from the same list.
+    public func loadHeard() async {
+        guard let librarian = session?.librarian, !heardBusy else { return }
+        heardBusy = true; defer { heardBusy = false }
         do {
-            let result = try await librarian.getRadioPlay(id: id)
-            if !result.ok { acquisition.report(result.message ?? "The Librarian could not get this song.") }
+            radioPlays = try await librarian.radioPlays(limit: Self.heardLimit)
+            heardNote = nil
         } catch {
-            acquisition.report((error as? LocalizedError)?.errorDescription ?? "The Librarian did not answer.")
+            heardNote = StationsModel.message(error)
         }
-        await loadHomeFeeds()
+        await refreshHomeDashboard()
+    }
+
+    /// The Download control's state for a heard song: what the server says, then what this window sent.
+    func downloadState(playID: Int) -> DownloadState {
+        guard let play = radioPlays.first(where: { $0.id == playID }) else {
+            return DownloadState.resolved(playID: playID, attempt: radioDownloads.attempt(for: playID))
+        }
+        return DownloadState.of(play: play, attempt: radioDownloads.attempt(for: playID))
     }
 
     /// Runs one bounded batch of the artist popularity fill (the owner's button; the server has no scheduler).

@@ -29,17 +29,15 @@ struct CupertinoNowPlaying: View {
                          hue: LibraryModel.hue(for: c.album.isEmpty ? c.title : c.album), remoteID: c.albumID, coverArt: c.coverArt)
     }
 
+    /// A station that plays has its own Now Playing (mockup C1, `CupertinoNowPlayingLive.swift`); a library song has this one.
     var body: some View {
+        if let station = state.player.live { CupertinoNowPlayingLive(state: state, live: station) } else { songBody }
+    }
+
+    @ViewBuilder private var songBody: some View {
         let a = nowAlbum
         ZStack(alignment: .topLeading) {
-            HStack(spacing: 8) {
-                TrafficLights()
-                Button { state.closeNowPlaying() } label: {
-                    Image(systemName: "chevron.down").font(CU.Icon.row(.semibold))
-                }
-                .buttonStyle(.plain).accessibilityLabel("Close Now Playing").help("Back to \(AppState.title(of: state.nowPlayingReturn))").padding(.leading, 16)
-            }
-            .padding(16)
+            NowPlayingCloseControls(state: state)
 
             HStack(spacing: 8) {
                 if !slides.isEmpty {
@@ -277,8 +275,24 @@ struct CupertinoNowPlaying: View {
 }
 
 
+/// The traffic lights and the chevron that returns to where Now Playing was opened from.
+struct NowPlayingCloseControls: View {
+    let state: AppState
+
+    var body: some View {
+        HStack(spacing: 8) {
+            TrafficLights()
+            Button { state.closeNowPlaying() } label: {
+                Image(systemName: "chevron.down").font(CU.Icon.row(.semibold))
+            }
+            .buttonStyle(.plain).accessibilityLabel("Close Now Playing").help("Back to \(AppState.title(of: state.nowPlayingReturn))").padding(.leading, 16)
+        }
+        .padding(16)
+    }
+}
+
 /// A two-finger swipe down on the left part of the window (the artwork side, so the lyrics keep their own scrolling) calls `action`.
-private struct TwoFingerSwipeDown: NSViewRepresentable {
+struct TwoFingerSwipeDown: NSViewRepresentable {
     let maxX: CGFloat
     let action: () -> Void
 

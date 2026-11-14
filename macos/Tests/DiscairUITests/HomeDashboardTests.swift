@@ -242,6 +242,20 @@ import DiscairNavidrome
         #expect(d.arrivals.prefix(3).map { if case .radio = $0 { "radio" } else { "other" } } == ["other", "other", "other"])
     }
 
+    @Test func aSongAskedForFromHomeKeepsItsRowAfterTheServerMarksItGrabbed() {
+        let plays = [Self.play(1, "Sea Song", grabbed: true), Self.play(2, "Other", grabbed: true), Self.play(3, "Fresh")]
+        let without = HomeDashboard.build(.init(albums: [Self.album("a")], radioPlays: plays, now: Self.now, calendar: Self.cal))
+        #expect(without.arrivals.map(\.id) == ["radio|3"])
+        let kept = HomeDashboard.build(.init(albums: [Self.album("a")], radioPlays: plays, keptRadioPlays: [1], now: Self.now, calendar: Self.cal))
+        #expect(Set(kept.arrivals.map(\.id)) == ["radio|1", "radio|3"])
+    }
+
+    @Test func aKeptRowStaysEvenWhenTheSongIsNowInTheLibrary() {
+        let plays = [Self.play(1, "Sea Song", owned: true)]
+        let d = HomeDashboard.build(.init(albums: [Self.album("a")], radioPlays: plays, keptRadioPlays: [1], now: Self.now, calendar: Self.cal))
+        #expect(d.arrivals.map(\.id) == ["radio|1"])
+    }
+
     @Test func noRadioRowsWithoutTheLibrarian() {
         let d = HomeDashboard.build(.init(albums: [Self.album("a")], librarianReachable: false, radioPlays: [Self.play(1, "S")], now: Self.now, calendar: Self.cal))
         #expect(d.arrivals.isEmpty)

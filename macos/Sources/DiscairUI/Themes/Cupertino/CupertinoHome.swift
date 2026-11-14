@@ -355,6 +355,7 @@ struct CupertinoHome: View {
             }
             .accessibilityElement(children: .combine)
         case .radio(let playID, let title, let artist, let station, let heardAt):
+            VStack(alignment: .leading, spacing: CU.Space.xs) {
             HStack(spacing: CU.Space.s) {
                 CoverView(album: placeholder(title: title, artist: artist)).frame(width: 48, height: 48).clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
                 VStack(alignment: .leading, spacing: CU.Space.xs) {
@@ -362,8 +363,14 @@ struct CupertinoHome: View {
                     Text("Heard on \(station) at \(heardAt.formatted(date: .omitted, time: .shortened))").cu(CU.Font.callout).foregroundStyle(CU.textSecondary).lineLimit(1)
                 }
                 Spacer(minLength: 0)
-                Button("Get") { Task { await state.getRadioPlay(playID) } }
-                    .buttonStyle(CapsuleButtonStyle(small: true)).accessibilityLabel("Get \(title) by \(artist)")
+                DownloadButton(state: state.downloadState(playID: playID), compact: true, surface: .page) {
+                    Task { await state.radioDownloads.get(playID: playID) }
+                }
+            }
+            if let sentence = state.radioDownloads.sentence(for: playID) {
+                Text(sentence).cu(CU.Font.caption).foregroundStyle(state.downloadState(playID: playID) == .failed ? CU.danger : CU.textSecondary)
+                    .lineLimit(2).padding(.leading, 48 + CU.Space.s)
+            }
             }
         case .arrived(let id, let title, let artist):
             HStack(spacing: CU.Space.s) {

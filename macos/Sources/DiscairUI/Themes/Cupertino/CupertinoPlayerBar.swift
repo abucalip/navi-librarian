@@ -95,9 +95,9 @@ struct CupertinoPlayerBar: View {
         Group { if let live = p.live { liveRow(live) } else { barRow } }
             // Anywhere on the bar that is not a control opens Now Playing; the controls and links keep their own clicks.
             .contentShape(Rectangle())
-            .onTapGesture { if p.current != nil || p.live != nil { state.screen = p.live != nil ? .stations : .nowPlaying } }
-            .accessibilityAction(named: p.live != nil ? "Open Radio" : "Open Now Playing") {
-                if p.current != nil || p.live != nil { state.screen = p.live != nil ? .stations : .nowPlaying }
+            .onTapGesture { if p.current != nil || p.live != nil { state.screen = .nowPlaying } }
+            .accessibilityAction(named: "Open Now Playing") {
+                if p.current != nil || p.live != nil { state.screen = .nowPlaying }
             }
     }
 

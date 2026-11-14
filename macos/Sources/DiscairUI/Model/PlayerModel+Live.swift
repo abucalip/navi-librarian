@@ -127,8 +127,10 @@ extension PlayerModel {
         guard live?.stationID == stationID, answer != liveNow else { return }
         let key = LiveSongLine.key(answer)
         if key != liveSongKey { liveSongKey = key; liveSongSince = key == nil ? nil : Date() }
+        let newPlay = answer.playID != nil && answer.playID != liveNow?.playID
         liveNow = answer
         onNowPlayingChange?()
+        if newPlay { onLivePlay?() }
     }
 
     /// The line the bar, the panel, the mini player and the system show for the playing station.

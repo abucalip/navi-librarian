@@ -115,6 +115,55 @@ struct CupertinoPagesRenderTests {
         try render("stations-reconnecting", width: 1180, height: 420, CupertinoStations(state: state)) { _ in }
     }
 
+    /// Heard (S2-3 item 4): the On Air panel's Heard box, then the Heard tab with every state of the button, and the empty tab.
+    @Test func rendersHeard() throws {
+        let state = AppState(themeID: .cupertino, screen: .stations)
+        state.stations.showForPreview(stations: [RadioStation(id: "1", name: "FIP", proxied: true, playableURL: "https://example.invalid/1", favourite: true, tags: ["Eclectic"]),
+                                                  RadioStation(id: "2", name: "KEXP", proxied: true, playableURL: "https://example.invalid/2", tags: ["Indie"])])
+        let t = Date().timeIntervalSince1970
+        state.showHomeFeeds(radio: [
+            RadioPlay(id: 1, stationName: "FIP", artist: "Elis Regina & Tom Jobim", title: "Águas de Março", heardAt: t - 900),
+            RadioPlay(id: 2, stationName: "FIP", artist: "Radiohead", title: "Pyramid Song", heardAt: t - 1500, inLibrary: true),
+            RadioPlay(id: 3, stationName: "FIP", artist: "Minnie Riperton", title: "Les Fleurs", heardAt: t - 1800, grabbed: true),
+            RadioPlay(id: 4, stationName: "KEXP", artist: "Television", title: "Marquee Moon", heardAt: t - 86_400 * 1.2),
+        ])
+        state.player.live = LiveSession(stationID: "1", name: "FIP", logoPath: "", startedAt: Date().addingTimeInterval(-600), phase: .playing)
+        state.player.liveNow = RadioNow(state: .ok, rawTitle: "Talk Talk - Life's What You Make It", artist: "Talk Talk", title: "Life's What You Make It")
+        try render("stations-onair-heard", width: 1180, height: 760, CupertinoStations(state: state)) { _ in }
+        state.stations.pane = .heard
+        try render("stations-heard-tab", width: 1180, height: 640, CupertinoStations(state: state)) { _ in }
+        let empty = AppState(themeID: .cupertino, screen: .stations)
+        empty.stations.showForPreview(stations: [])
+        empty.stations.pane = .heard
+        try render("stations-heard-empty", width: 900, height: 300, CupertinoStations(state: empty)) { _ in }
+    }
+
+    /// Now Playing while a station plays (S2-3 item 3, mockup C1): the song, Download and Favourite on the left, what the station
+    /// played tonight on the right.
+    @Test func rendersNowPlayingLive() throws {
+        let state = AppState(themeID: .cupertino, screen: .nowPlaying)
+        state.stations.showForPreview(stations: [RadioStation(id: "1", name: "FIP", proxied: true, playableURL: "https://example.invalid/1", favourite: true, tags: ["Eclectic"]),
+                                                  RadioStation(id: "2", name: "KEXP", proxied: true, playableURL: "https://example.invalid/2", favourite: true)])
+        let t = Date().timeIntervalSince1970
+        state.showHomeFeeds(radio: [
+            RadioPlay(id: 1, stationName: "FIP", artist: "Elis Regina & Tom Jobim", title: "Águas de Março", heardAt: t - 600),
+            RadioPlay(id: 2, stationName: "FIP", artist: "Radiohead", title: "Pyramid Song", heardAt: t - 1100, inLibrary: true),
+            RadioPlay(id: 3, stationName: "FIP", artist: "Minnie Riperton", title: "Les Fleurs", heardAt: t - 1500, grabbed: true),
+            RadioPlay(id: 4, stationName: "FIP", artist: "Miles Davis", title: "Blue in Green", heardAt: t - 2400, inLibrary: true),
+        ])
+        state.player.live = LiveSession(stationID: "1", name: "FIP", logoPath: "", startedAt: Date().addingTimeInterval(-(19 * 60 + 12)), phase: .playing)
+        state.player.liveNow = RadioNow(state: .ok, rawTitle: "Talk Talk - Life's What You Make It", artist: "Talk Talk", title: "Life's What You Make It")
+        state.player.liveSongSince = Date().addingTimeInterval(-18)
+        try render("now-playing-live-listening", width: 1180, height: 720, CupertinoNowPlaying(state: state)) { _ in }
+        state.player.liveNow = RadioNow(state: .ok, rawTitle: "Talk Talk - Life's What You Make It", artist: "Talk Talk", title: "Life's What You Make It", playID: 9)
+        try render("now-playing-live-ready", width: 1180, height: 720, CupertinoNowPlaying(state: state)) { _ in }
+        state.player.liveNow = RadioNow(state: .noMetadata)
+        try render("now-playing-live-nometa", width: 1180, height: 720, CupertinoNowPlaying(state: state)) { _ in }
+        state.player.liveNow = nil
+        state.player.live?.phase = .reconnecting
+        try render("now-playing-live-reconnecting", width: 1180, height: 720, CupertinoNowPlaying(state: state)) { _ in }
+    }
+
     /// The Radio page's sentences when there is nothing to list (S2-1 item 9), and the Edit Tags sheet (item 8).
     @Test func rendersStationsStatesAndTagSheet() throws {
         let empty = AppState(themeID: .cupertino, screen: .stations)
