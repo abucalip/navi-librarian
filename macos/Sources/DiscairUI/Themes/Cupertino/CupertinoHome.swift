@@ -130,6 +130,7 @@ struct CupertinoHome: View {
                 CoverView(album: a).frame(width: coverSide, height: coverSide)
                     .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                     .shadow(color: CU.shadowInk.opacity(0.45), radius: 40, y: 14)
+                    .accessibilityHidden(true)   // the title that follows names the album
                 pickText(a, position: position)
                 if !stacked && !next.isEmpty {
                     VStack(alignment: .trailing, spacing: CU.Space.s) { Spacer(minLength: 0); nextPicksView(next) }
@@ -145,6 +146,7 @@ struct CupertinoHome: View {
                 BlurredArtwork(album: a, radius: 44)
                 Color.black.opacity(0.55)
             }
+            .accessibilityHidden(true)   // decoration: the cover is read once, from the pick's own text
         }
         .clipShape(RoundedRectangle(cornerRadius: Self.marqueeRadius, style: .continuous))
         .foregroundStyle(.white)
@@ -161,6 +163,7 @@ struct CupertinoHome: View {
         .onKeyPress(.space) { act(.play, a) }
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Today's pick, \(position.label)")
+        .accessibilityHint("Right arrow gets the album, down arrow saves it, left arrow is not for me, space plays it.")
     }
 
     private func pickText(_ a: AlbumItem, position: (index: Int, label: String)) -> some View {

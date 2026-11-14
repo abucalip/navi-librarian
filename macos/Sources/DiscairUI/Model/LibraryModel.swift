@@ -132,10 +132,15 @@ public final class LibraryModel {
         HomeDashboard.neverPlayedIndices(allNavidromeAlbums).map { Self.item(allNavidromeAlbums[$0], index: 1000 + $0) }
     }
 
-    public func loadAllAlbums(navidrome: NavidromeClient?) async {
-        guard isLive, let navidrome, let list = try? await navidrome.allAlbums() else { return }
+    /// Sets the album list (`loadAllAlbums` reads it from the server; tests and previews pass it in).
+    func setAllAlbums(_ list: [NavidromeAlbum]) {
         allNavidromeAlbums = list
         allAlbums = list.enumerated().map { Self.item($0.element, index: 1000 + $0.offset) }
+    }
+
+    public func loadAllAlbums(navidrome: NavidromeClient?) async {
+        guard isLive, let navidrome, let list = try? await navidrome.allAlbums() else { return }
+        setAllAlbums(list)
     }
 
     /// Reads the home data. Picks are optional: without a Librarian login the library still shows.

@@ -49,6 +49,8 @@ struct HomeShelfTile<Overlay: View, Accessory: View>: View {
     let statusColor: Color
     var statusIcon: String?
     var label: String
+    /// Spoken after the label when the label cannot carry the status (the radio tile: "Get *title* by *artist*").
+    var value = ""
     let action: () -> Void
     @ViewBuilder var overlay: Overlay
     @ViewBuilder var accessory: Accessory
@@ -74,7 +76,7 @@ struct HomeShelfTile<Overlay: View, Accessory: View>: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .accessibilityLabel(label)
+            .accessibilityLabel(label).accessibilityValue(value)
             accessory
         }
         .accessibilityElement(children: .contain)
@@ -83,9 +85,9 @@ struct HomeShelfTile<Overlay: View, Accessory: View>: View {
 
 extension HomeShelfTile where Accessory == EmptyView {
     init(cover: AlbumItem, title: String, artist: String, status: String, statusColor: Color, statusIcon: String? = nil, label: String,
-         action: @escaping () -> Void, @ViewBuilder overlay: () -> Overlay) {
+         value: String = "", action: @escaping () -> Void, @ViewBuilder overlay: () -> Overlay) {
         self.init(cover: cover, title: title, artist: artist, status: status, statusColor: statusColor, statusIcon: statusIcon, label: label,
-                  action: action, overlay: overlay, accessory: { EmptyView() })
+                  value: value, action: action, overlay: overlay, accessory: { EmptyView() })
     }
 }
 
@@ -145,7 +147,7 @@ struct HomeShelfSection: View {
         case let .job(_, title, artist, stage, failure):
             HomeShelfTile(cover: HomeCovers.placeholder(title: title, artist: artist), title: title, artist: artist, status: status.text,
                           statusColor: color(status.role), statusIcon: failure == nil ? nil : "exclamationmark.triangle.fill",
-                          label: "\(title) by \(artist), \(status.text)", action: { state.screen = .downloads }) {
+                          label: HomeScreen.tileLabel(title: title, artist: artist, status: status.text), action: { state.screen = .downloads }) {
                 ZStack {
                     Color.black.opacity(failure == nil ? 0.5 : 0.6)
                     if failure != nil {
@@ -158,14 +160,14 @@ struct HomeShelfSection: View {
         case let .arrived(albumID, title, artist, _):
             let item = byID[albumID].map(HomeCovers.item) ?? HomeCovers.placeholder(title: title, artist: artist)
             HomeShelfTile(cover: item, title: title, artist: artist, status: status.text, statusColor: color(status.role),
-                          label: "\(title) by \(artist), \(status.text)", action: { state.open(album: item) },
+                          label: HomeScreen.tileLabel(title: title, artist: artist, status: status.text), action: { state.open(album: item) },
                           overlay: { EmptyView() }, accessory: { playButton(item, title: title) })
         case let .radio(playID, title, artist, _):
             radioTile(playID: playID, title: title, artist: artist, base: status)
         case let .added(albumID, title, artist, _):
             let item = byID[albumID].map(HomeCovers.item) ?? HomeCovers.placeholder(title: title, artist: artist)
             HomeShelfTile(cover: item, title: title, artist: artist, status: status.text, statusColor: color(status.role),
-                          label: "\(title) by \(artist), \(status.text)", action: { state.open(album: item) }, overlay: { EmptyView() })
+                          label: HomeScreen.tileLabel(title: title, artist: artist, status: status.text), action: { state.open(album: item) }, overlay: { EmptyView() })
         }
     }
 
@@ -181,7 +183,7 @@ struct HomeShelfSection: View {
         default: break
         }
         return HomeShelfTile(cover: HomeCovers.placeholder(title: title, artist: artist), title: title, artist: artist, status: text,
-                             statusColor: color(role), statusIcon: icon, label: "Get \(title) by \(artist)",
+                             statusColor: color(role), statusIcon: icon, label: "Get \(title) by \(artist)", value: text,
                              action: { Task { await state.radioDownloads.get(playID: playID) } }) {
             VStack {
                 HStack {
@@ -235,7 +237,7 @@ struct HomeWaitingSection: View {
                         let caption = HomeScreen.waitingCaption(created: HomeScreen.parseDate(a.created), played: HomeScreen.parseDate(a.played), neverPlayed: never(a)) ?? ""
                         let artist = a.artist ?? "Unknown artist"
                         HomeShelfTile(cover: item, title: a.name, artist: artist, status: caption, statusColor: CU.textSecondary,
-                                      label: "\(a.name) by \(artist)" + (caption.isEmpty ? "" : ", \(caption)"),
+                                      label: HomeScreen.tileLabel(title: a.name, artist: artist, status: caption),
                                       action: { state.open(album: item) }, overlay: { EmptyView() })
                     }
                 }

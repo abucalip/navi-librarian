@@ -187,32 +187,21 @@ Every mockup is in [`docs/design/redesign/macos/cupertino/`](design/redesign/mac
 
 ### 5.1 Home
 
-> **Superseded layout (2026-11-13).** The owner chose an artwork-led Home, "Marquee". Its plan is [`MACOS_HOME_MARQUEE_PLAN.md`](MACOS_HOME_MARQUEE_PLAN.md) and its mockups are in [`design/macos-home-marquee/`](design/macos-home-marquee/). Nothing of it is built yet, so the text below still describes the Home in the app. The plan moves modules 4, 5, 6, 8 (the charts) to Insights and module 9 to Settings.
+The Home in the app is the "Marquee" layout, built from [`MACOS_HOME_MARQUEE_PLAN.md`](MACOS_HOME_MARQUEE_PLAN.md) (the plan holds the measures, rules and wording) and the mockups in [`design/macos-home-marquee/`](design/macos-home-marquee/), which are the spec. The earlier eleven-module Home (briefing band, charts, lens rows, Arrivals, Recently added) is gone from Home; its charts live on Insights ("Your collection") and its Server activity panel in Settings, Services. The design system in section 4 still applies in full.
 
-Mockups: `home--default-full`, `home--default`, `home--loading`, `home--first-run`, `home--degraded`, `home--librarian-unreachable`, `home--handoff`.
+Parts, top to bottom, at most 980 wide at the 1280 window; under 860 wide (or with the queue inspector open) the cover shrinks, the shelves show three covers a row and the taste sentence takes its own line:
 
-Content is 980 wide at the 1280 window. Rows are a 2:1 split with a 16 gap, except the taste and lens row (1:1). When the queue inspector is open or the content is under 860 wide, each row stacks into one column in reading order.
+| # | Part | What it shows |
+|---|---|---|
+| 0 | Notice slot | At most one: Librarian unreachable, a failed Get, or playing on the phone |
+| 1 | Marquee | Today's pick over its own blurred cover under a 55% black wash, white text, Get as the one primary button; keys → Get, ↓ Save, ← Not for me, Space plays; "Next picks" covers |
+| 2 | Radio card | Only while a station plays or a last station is known (E7); between the marquee and the shelf |
+| 3 | New on the shelf | Six covers: Gets in progress or failed, arrived albums not played, songs heard on the radio, then recently added |
+| 4 | Waiting longest | Six albums that have waited longest for a play |
+| 5 | Summary line | The taste headline and up to four figures as one line of text |
+| 6 | Liner note | `LinerNoteCard`, unchanged |
 
-| # | Module | Content | Data | Available |
-|---|---|---|---|---|
-| 0 | Notice slot | At most one: Librarian unreachable, a failed job, or phone handoff | session, job status routes | yes, handoff D5 |
-| 1 | Briefing band | Hero: albums owned, with added in the last 30 days against the 30 before. Then Listens last 7 days against the 7 before; Never played with change since the first of last month; Waiting (picks, unplayed arrivals) | Navidrome album list (`created`, `playCount`, `played`); listens need D2; picks and acquisitions | hero, never played, waiting: yes. Listens: D2 |
-| 2 | Today's pick | Cover 232, title, artist, year, the server's reason, suggested track, Get (the view's one primary), Save, Not for me, "1 of 7". Keys: → Get, ↓ Save, ← Not for me, Space plays | `GET /api/dashboard-picks`, existing actions, `LinerNoteCard` text | yes |
-| 3 | Arrivals | Active Gets with the tracker, arrived-and-unplayed albums with Play, radio plays with Get. At most 4 rows, then All downloads | acquisition model, `GET /api/radio/plays` | yes |
-| 4 | Collection over time | Line of total albums, or columns of albums added per month. Range 3M, 1Y, 5Y, All | Navidrome `created` | yes |
-| 5 | Own and play, by decade | Paired bars: share of albums, share of listens in the recent window. Selected row in bold | Navidrome years; taste `windows.recent.dimensions.era` | yes when taste is saved |
-| 6 | Your taste | Server `headline.text`, a dumbbell per listed shift, listen counts | `GET /api/insights/taste` | yes |
-| 7 | From the lenses | Top card of up to 3 enabled lenses, "n of 5 on" | `GET /api/insights` | yes |
-| 8 | Shelf life | Histogram of albums by time since last play (this month, 1–6 mo, 6–12 mo, 1–2 years, 2+ years, never), the never bin in accent; four longest-unplayed covers; "Play something unplayed" | Navidrome | yes |
-| 9 | Server activity | Insight lenses, taste profile, artist popularity, MusicBrainz data: state word and one line each | `updatedText`, taste and popularity status routes, capabilities | yes; the lens "next run" time is served by D3 (S2) |
-| 10 | Recently added | Six covers | existing | yes |
-
-Rules:
-- The first-row stats are buttons: Library, History, a "never played" smart playlist, Discover.
-- A module whose source is off or missing shows its own sentence (see `home--first-run`); it is not removed, so the page does not reshuffle. Exception: the notice slot and Arrivals collapse when empty after first use.
-- With Librarian unreachable, the Navidrome modules (1 hero and never played, 8, 10) stay and the rest become one sentence. The collection chart (4) is hidden, as `home--librarian-unreachable` draws it (F5, built): the mockup is the spec where this paragraph and the mockup differ.
-- Shifts are drawn only from `shifts[]`. A `null` headline shows the progress state with "n of 100 listens".
-- The "then and now" month comparison is not drawn: it needs D1.
+Rules: a part whose source is missing shows its own sentence (see the first-run and Librarian-unreachable mockups); nothing is invented. With Librarian unreachable only recently added albums fill the first shelf. Accessibility is in section 6 of the plan. Not drawn: the "then and now" month comparison (it needs D1).
 
 ### 5.2 Connections (the credit graph)
 

@@ -397,6 +397,11 @@ enum HomeScreen {
         let role: StatusRole
     }
 
+    /// What VoiceOver says for a tile: "*title* by *artist*, *status line*" (plan section 6). The status is left out when empty.
+    static func tileLabel(title: String, artist: String, status: String) -> String {
+        "\(title) by \(artist)" + (status.isEmpty ? "" : ", \(status)")
+    }
+
     /// The status line under a shelf tile (plan 3.2).
     static func shelfStatus(_ tile: ShelfTile, now: Date, calendar: Calendar = .current) -> ShelfStatus {
         switch tile {
