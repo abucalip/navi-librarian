@@ -1,3 +1,9 @@
+## 2026-11-14 — Client efficiency P0-1: baseline protocol and results file
+
+- Direct to `main` (owner instruction). Adds `docs/client_efficiency_results.md` (scenarios S1–S11 with numbered manual steps, cheap-tool commands, run header, and empty macOS and Android result tables with gate-decision rows) and `scripts/perf/macos_cheap.sh` and `scripts/perf/android_cheap.sh`, which each print one markdown row per run. Raw output goes to `~/discair-perf-raw` by default, outside the repository. No measured value exists yet; every result cell is blank.
+- **Tests run:** `bash -n` on both scripts. `macos_cheap.sh` run against a live process (short two-sample run) and against the running Discair process; `android_cheap.sh` run with no device (clean error) and with a mock `adb` that returned canned `meminfo`, `gfxinfo` and `top -H` output (parsing checked; the mock is not recorded). No device run and no release-build measurement.
+- **Next action:** P0-2 (macOS baseline, owner-driven UI scenarios) and P0-3 (Android baseline on the Galaxy S20 FE); the first Android run must check the parsed `meminfo` and `top -H` values against the raw files.
+
 ## 2026-11-14 — Opportunistic simplification rule and CI lint ratchet (PR #1065)
 
 - Docs direct to `main`: `7606ae53` (the rule in `docs/DEVELOPMENT_WORKFLOW.md`, plus a "Simplification candidates" section in `docs/ACTIVE_WORK.md`) and `65f49fd6` (lint-style checks).
