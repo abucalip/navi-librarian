@@ -293,7 +293,7 @@ Steps on different clients are independent and can be interleaved. Each code ste
 - **Risks:** an attached profiler changes timing; use the cheap tools for the headline numbers and the traces for explanation only.
 - **Verification:** three runs per scenario; the spread between runs is recorded beside each median.
 - **Acceptance criteria:** the macOS table is complete; G1 and G2 are each marked met or not met with the numbers; any hypothesis the data contradicts is marked so in the results file; no code is changed.
-- **Status (2026-11-14):** in progress. Done: S2, three runs, build `fab8032d` (inferred from the binary's build time). Not done: S1, S3–S11, G1 and G2, the three traces. A `sample` of idle Home (one 5 s sample, see the results file) points at the player-bar marquee `TimelineView(.animation)` as the per-frame cost; unconfirmed until the bar state during S2 is known and a SwiftUI-instrument trace is taken. Next (needs the owner's UI driving): confirm the bar state, S7 (minimized), then S3–S6.
+- **Status (2026-11-14):** in progress. Done: S2, three runs, build `fab8032d` (inferred from the binary's build time). Not done: S1, S3–S11, G1 and G2, the three traces. A `sample` of idle Home shows time in SwiftUI/AttributeGraph updates; the marquee guess was checked against the screen and rejected (no overflowing line), and the S2 state had a paused track loaded, not nothing played (see the results file). Cause unknown; needs a SwiftUI-instrument trace. Next (needs the owner's UI driving): confirm the bar state, S7 (minimized), then S3–S6.
 - **Model: Sonnet | Effort: Medium**
 
 #### P0-3 Android baseline and gate decisions
