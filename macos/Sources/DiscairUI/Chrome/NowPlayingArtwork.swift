@@ -13,29 +13,27 @@ struct DiscView: View {
     @Environment(\.artwork) private var store
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var image: NSImage?
-    @State private var base = 0.0
-    @State private var since: Double?
+    @State private var rendered: CGImage?
 
     private var running: Bool { spinning && !reduceMotion }
-    private static func now() -> Double { Date.timeIntervalSinceReferenceDate }
 
+    /// The disc is drawn once into a bitmap and turned by a Core Animation layer, so the render server does the turning and the
+    /// main thread does no work per frame (a 30 Hz `TimelineView` here starved the playback clock's tick).
     var body: some View {
-        SwiftUI.TimelineView(.animation(minimumInterval: 1.0 / 30, paused: !running)) { context in
-            disc.rotationEffect(.degrees(discAngle(base: base, since: since, now: context.date.timeIntervalSinceReferenceDate, rpm: rpm)))
-        }
-        .frame(width: diameter, height: diameter)
-        .opacity(image == nil ? 0 : 1)
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Disc: \(picture.label)")
-        .accessibilityAddTraits(.isImage)
-        .onChange(of: running, initial: true) { _, on in
-            let t = Self.now()
-            if on { since = t } else { base = discAngle(base: base, since: since, now: t, rpm: rpm); since = nil }
-        }
-        .task(id: "\(picture.imageID)|\(store?.generation ?? 0)") {
-            guard let store else { return }
-            image = await store.albumImage(picture, size: .display)
-        }
+        SpinningBitmap(image: rendered, spinning: running, rpm: rpm)
+            .frame(width: diameter, height: diameter)
+            .opacity(rendered == nil ? 0 : 1)
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel("Disc: \(picture.label)")
+            .accessibilityAddTraits(.isImage)
+            .task(id: "\(picture.imageID)|\(store?.generation ?? 0)") {
+                guard let store else { return }
+                image = await store.albumImage(picture, size: .display)
+                guard image != nil else { rendered = nil; return }
+                let renderer = ImageRenderer(content: disc)
+                renderer.scale = 2
+                rendered = renderer.cgImage
+            }
     }
 
     private var disc: some View {
@@ -214,6 +212,45 @@ struct PlayerBarCover<Cover: View>: View {
             index = nil
             guard let store else { return }
             index = await store.nowPlayingIndex(artist: artist, album: album)
+        }
+    }
+}
+
+
+/// A bitmap turned by a repeating Core Animation rotation (clockwise, `rpm`), paused in place when `spinning` is false.
+private struct SpinningBitmap: NSViewRepresentable {
+    let image: CGImage?
+    let spinning: Bool
+    let rpm: Double
+
+    func makeNSView(context: Context) -> NSView {
+        let view = NSView()
+        view.wantsLayer = true
+        view.layer?.contentsGravity = .resizeAspect
+        let spin = CABasicAnimation(keyPath: "transform.rotation.z")
+        spin.fromValue = 0
+        spin.toValue = -2 * Double.pi
+        spin.duration = 60 / rpm
+        spin.repeatCount = .infinity
+        spin.timingFunction = CAMediaTimingFunction(name: .linear)
+        view.layer?.add(spin, forKey: "spin")
+        view.layer?.speed = 0
+        return view
+    }
+
+    func updateNSView(_ view: NSView, context: Context) {
+        guard let layer = view.layer else { return }
+        if layer.contents as AnyObject? !== image as AnyObject? { layer.contents = image }
+        if spinning, layer.speed == 0 {
+            let held = layer.timeOffset
+            layer.timeOffset = 0
+            layer.beginTime = 0
+            layer.beginTime = layer.convertTime(CACurrentMediaTime(), from: nil) - held
+            layer.speed = 1
+        } else if !spinning, layer.speed != 0 {
+            let local = layer.convertTime(CACurrentMediaTime(), from: nil)
+            layer.speed = 0
+            layer.timeOffset = local
         }
     }
 }
