@@ -54,12 +54,12 @@ struct HomeRenderTests {
                 let f = DateFormatter(); f.calendar = Calendar(identifier: .gregorian); f.timeZone = TimeZone(identifier: "UTC"); f.locale = Locale(identifier: "en_US_POSIX"); f.dateFormat = "yyyy-MM-dd"
                 return ListensDay(date: f.string(from: now.addingTimeInterval(-Double(84 - i) * 86_400)), count: i >= 77 ? 31 : (i >= 70 ? 26 : 20))
             }
-            state.showHome(HomeDashboard.build(.init(albums: Self.albums(now: now), taste: Self.taste, picksCount: 7, radioPlays: plays, listensByDay: days,
+            state.showHome(HomeDashboard.build(.init(albums: Self.albums(now: now), taste: Self.taste, radioPlays: plays, listensByDay: days,
                                                      handoff: HomeScreen.handoff(queue: queue, now: now, clientName: "discair", playingSongID: nil), now: now)))
         case .firstRun:
             state.library.apply(newest: [], first: [], artists: [], picks: [])
             state.insights.showForPreview(Self.offLenses)
-            state.showHome(HomeDashboard.build(.init(albums: Self.albums(now: now), picksCount: 0, now: now)))
+            state.showHome(HomeDashboard.build(.init(albums: Self.albums(now: now), now: now)))
             state.taste.set(nil)
         case .unreachable:
             state.showHome(HomeDashboard.build(.init(albums: Self.albums(now: now), librarianReachable: false, now: now)))

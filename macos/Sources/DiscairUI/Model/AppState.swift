@@ -286,7 +286,6 @@ public final class AppState {
         let readings = storedNeverPlayedReadings()
         let input = HomeDashboard.Inputs(
             albums: albums, jobs: acquisition.visibleJobs, taste: taste.profiles,
-            picksCount: session?.librarian == nil ? nil : visible(library.missing).count,
             librarianReachable: librarianUp, neverPlayedBaseline: HomeScreen.baseline(readings, now: now, calendar: calendar),
             radioPlays: radioPlays, keptRadioPlays: Set(radioDownloads.attempts.keys), listensByDay: taste.listensByDay,
             handoff: HomeScreen.handoff(queue: phoneQueue, now: now, clientName: SubsonicAuth.clientName, playingSongID: player.current?.songID),
