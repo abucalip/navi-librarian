@@ -1,3 +1,12 @@
+## 2026-11-14 — macOS Home marquee H1 item 1: Home dashboard data (PR #1075)
+
+- PR [#1075](https://github.com/abucalip/navi-librarian/pull/1075), squash-merged as `ed3faa84`. Code PR, not a docs commit. Plan: `docs/MACOS_HOME_MARQUEE_PLAN.md` slice H1, item 1.
+- `HomeDashboard` (`macos/Sources/DiscairUI/Model/HomeDashboard.swift`): `longestUnplayed` rises from four to six (`longestUnplayedLimit`), filled from the oldest-played albums when never-played ones run short. New `recentlyAdded` (`recentlyAddedLimit` = 6): newest dated albums, excluding albums shown in the capped `arrivals` rows; empty when the album list was not read; independent of Librarian reachability.
+- `CupertinoHome.swift`: the four small covers under Shelf life take `prefix(4)`, so Home is unchanged.
+- **Tests:** `swift test --filter "HomeDashboardTests|HomeRenderTests"` on a Mac, 41 tests in 2 suites, pass. Full suite not run (owner rule). CI on the head `f7863970`: `compile`, `container-smoke`, `lint-changed` and `validate-container` passed; `test-and-build` was still pending when this entry was written (the owner merged; the result is not recorded here). The macOS Swift tests run locally only (owner removed the macOS CI workflow).
+- **Interpretation to confirm:** "already shown in step 1" read as the capped arrival rows only, so an arrived album past the cap can appear in recently added.
+- **Next action:** H1 item 2 (`HomeScreen` pure functions and tests), Haiku, High.
+
 ## 2026-11-14 — Client efficiency: player-bar position readers split out (PR #1073)
 
 - PR [#1073](https://github.com/abucalip/navi-librarian/pull/1073), merged as `a25c3460`. Docs direct to `main` on the owner's instruction. `CupertinoPlayerBar`: the progress fill and the waveform, the two readers of the 4 Hz `position`/`fraction` in the bar, are now their own views (`BarProgress`, `BarWaveform`), so a tick no longer rebuilds the whole bar (cover, disc lookup, text).

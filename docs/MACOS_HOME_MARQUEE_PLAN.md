@@ -1,6 +1,6 @@
 # macOS Home, "Marquee" layout: implementation plan
 
-Status: **plan only, nothing built.** The owner chose this layout on 2026-11-13 from three mockups. The owner's reason for the change: the current Home is too number-driven; Home should be artwork-driven, with only a few statistics.
+Status: **H1 item 1 merged** (PR #1075, squash `ed3faa84`: `HomeDashboard` data, no visible change). The rest is still to build. Originally: **plan only, nothing built.** The owner chose this layout on 2026-11-13 from three mockups. The owner's reason for the change: the current Home is too number-driven; Home should be artwork-driven, with only a few statistics.
 
 The mockups are the spec: [`design/macos-home-marquee/mockups.html`](design/macos-home-marquee/mockups.html) (open in a browser, no network needed). Where this text and a mockup differ, the mockup wins, except for the corrections listed in section 9.
 
