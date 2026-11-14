@@ -88,6 +88,26 @@ enum StationRules {
         return stations.filter { $0.tags.contains { $0.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() == key } }
     }
 
+    // MARK: Station shortcuts (S2-4 item 4, E1)
+
+    /// How many favourites get a number key: ⌘1 to ⌘9.
+    static let shortcutCount = 9
+
+    /// The favourites that get ⌘1 to ⌘9, in the server's order (first favourite is ⌘1). Stations that are not favourites never do.
+    static func shortcutStations(_ stations: [RadioStation]) -> [RadioStation] {
+        Array(stations.filter(\.favourite).prefix(shortcutCount))
+    }
+
+    /// The station a number key tunes to, or nil when the key does nothing: no favourite has that number, or that station is
+    /// already playing (a click on its row does nothing either). One that gave up ("Station unreachable") is tried afresh.
+    static func shortcutTarget(number: Int, in stations: [RadioStation], live: LiveSession?) -> RadioStation? {
+        let list = shortcutStations(stations)
+        guard number >= 1, number <= list.count else { return nil }
+        let station = list[number - 1]
+        if let live, live.stationID == station.id, live.phase != .unreachable { return nil }
+        return station
+    }
+
     // MARK: Tags in the Edit Tags sheet
 
     static let maxTags = 10
