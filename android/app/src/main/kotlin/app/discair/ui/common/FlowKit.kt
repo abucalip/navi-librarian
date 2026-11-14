@@ -324,11 +324,11 @@ fun FlowCircleButton(icon: ImageVector, label: String, onClick: () -> Unit, modi
 
 /** Flow's tag: Inter 600 11 in capitals, radius 6, a tinted fill. The label is the text colour on the accent tint (4.2:1 for the accent itself, D7). */
 @Composable
-fun FlowTag(text: String, modifier: Modifier = Modifier, tint: Color = LocalPalette.current.raised, labelColor: Color = LocalPalette.current.textMuted) {
+fun FlowTag(text: String, modifier: Modifier = Modifier, tint: Color = LocalPalette.current.raised, labelColor: Color = LocalPalette.current.textMuted, compact: Boolean = false) {
     Text(
         text.uppercase(), color = labelColor, maxLines = 1,
-        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold, fontSize = 11.sp, lineHeight = 16.sp, letterSpacing = 0.03.em),
-        modifier = modifier.clip(RoundedCornerShape(6.dp)).background(tint).padding(horizontal = 7.dp, vertical = 2.dp),
+        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold, fontSize = if (compact) 9.sp else 11.sp, lineHeight = if (compact) 12.sp else 16.sp, letterSpacing = 0.03.em),
+        modifier = modifier.clip(RoundedCornerShape(if (compact) 5.dp else 6.dp)).background(tint).padding(horizontal = if (compact) 5.dp else 7.dp, vertical = if (compact) 1.dp else 2.dp),
     )
 }
 

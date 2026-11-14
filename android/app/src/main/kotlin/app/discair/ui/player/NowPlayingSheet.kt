@@ -303,7 +303,7 @@ fun NowPlayingSheet(state: PlayerUiState, controller: PlayerController, lyrics: 
                                         Modifier.fillMaxSize().padding(16.dp), flow = true,
                                     )
                                 },
-                                queueFace = { QueuePanel(state, controller, Modifier.fillMaxSize().padding(horizontal = 16.dp)) },
+                                queueFace = { QueuePanel(state, controller, Modifier.fillMaxSize().padding(horizontal = 16.dp), showSoundsLikeButton = false) },
                             )
                         }
                     },

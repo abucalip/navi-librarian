@@ -11,7 +11,7 @@ import org.junit.Test
 /** Step F4 part 1 of docs/ANDROID_ART_THEMES_PROPOSAL.md: the numbers of flow/player (flow.css `.npc`, `.cb`, `.lyr`) and the lyric contrast. */
 class FlowPlayerRulesTest {
     @Test fun buttonsAndCoverFollowTheMockup() {
-        assertEquals("Now playing", FlowPlayerRules.TITLE)
+        assertEquals(22, FlowPlayerRules.TITLE_SIZE)
         assertEquals(48, FlowPlayerRules.SIDE_BUTTON)
         assertEquals(72, FlowPlayerRules.PLAY_BUTTON)
         assertEquals(30, FlowPlayerRules.SIDE_GLYPH)
