@@ -617,7 +617,7 @@ struct CupertinoHome: View {
                     }
                 }
                 .frame(maxWidth: .infinity)
-                if let shelf, !shelf.longestUnplayed.isEmpty { longestCovers(shelf.longestUnplayed).layoutPriority(1) }
+                if let shelf, !shelf.longestUnplayed.isEmpty { longestCovers(Array(shelf.longestUnplayed.prefix(4))).layoutPriority(1) }
             }
             if stacked { VStack(alignment: .leading, spacing: CU.Space.m) { content }.padding(.top, CU.Space.s) }
             else { HStack(alignment: .bottom, spacing: CU.Space.l) { content }.padding(.top, CU.Space.s) }

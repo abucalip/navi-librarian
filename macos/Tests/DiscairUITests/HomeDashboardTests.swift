@@ -104,9 +104,47 @@ import DiscairNavidrome
     @Test func longestUnplayedIsOldestAddedNeverPlayedThenOldestLastPlay() {
         let albums = [Self.album("new", addedDaysAgo: 2), Self.album("old", addedDaysAgo: 900), Self.album("mid", addedDaysAgo: 300),
                       Self.album("undated"), Self.album("p1", plays: 1, playedDaysAgo: 700), Self.album("p2", plays: 1, playedDaysAgo: 100)]
-        #expect(Self.build(albums).shelfLife?.longestUnplayed == ["old", "mid", "new", "undated"])
+        // Four never played, then the two played albums, oldest last play first: the row holds six.
+        #expect(Self.build(albums).shelfLife?.longestUnplayed == ["old", "mid", "new", "undated", "p1", "p2"])
         let few = [Self.album("x", addedDaysAgo: 5), Self.album("p1", plays: 1, playedDaysAgo: 700), Self.album("p2", plays: 1, playedDaysAgo: 100)]
         #expect(Self.build(few).shelfLife?.longestUnplayed == ["x", "p1", "p2"])
+    }
+
+    @Test func longestUnplayedIsCappedAtSix() {
+        let many = (1...8).map { Self.album("n\($0)", addedDaysAgo: 100 * $0) }   // never played, n8 oldest
+        #expect(Self.build(many).shelfLife?.longestUnplayed == ["n8", "n7", "n6", "n5", "n4", "n3"])
+    }
+
+    @Test func longestUnplayedFillsSixFromTheOldestPlayed() {
+        let albums = [Self.album("a", addedDaysAgo: 10), Self.album("b", addedDaysAgo: 20), Self.album("c", addedDaysAgo: 30),
+                      Self.album("p1", plays: 1, playedDaysAgo: 900), Self.album("p2", plays: 1, playedDaysAgo: 800),
+                      Self.album("p3", plays: 1, playedDaysAgo: 700), Self.album("p4", plays: 1, playedDaysAgo: 100)]
+        #expect(Self.build(albums).shelfLife?.longestUnplayed == ["c", "b", "a", "p1", "p2", "p3"])
+    }
+
+    @Test func recentlyAddedIsNewestDatedFirstCappedAtSix() {
+        // Old, never-arrived albums (added over a year ago) so none is an arrival.
+        let albums = (1...8).map { Self.album("r\($0)", addedDaysAgo: 400 + $0) } + [Self.album("undated")]
+        #expect(Self.build(albums).recentlyAdded == ["r1", "r2", "r3", "r4", "r5", "r6"])
+    }
+
+    @Test func recentlyAddedLeavesOutAlbumsShownAsArrivals() {
+        // Six arrived in the last 14 days with no plays. The arrivals row shows the four newest, so only those are left out of the
+        // shelf; a5 and a6 arrived but are not shown in the row, so they appear here, followed by the older album.
+        let albums = (1...6).map { (i: Int) -> NavidromeAlbum in Self.album("a\(i)", addedDaysAgo: i) } + [Self.album("old", addedDaysAgo: 500)]
+        let d = Self.build(albums)
+        #expect(d.arrivals.count == 4)
+        #expect(d.recentlyAdded == ["a5", "a6", "old"])
+    }
+
+    @Test func recentlyAddedIgnoresLibrarianReachability() {
+        let albums = [Self.album("x", addedDaysAgo: 400), Self.album("y", addedDaysAgo: 401)]
+        #expect(Self.build(albums, up: false).recentlyAdded == ["x", "y"])
+    }
+
+    @Test func recentlyAddedIsEmptyWhenTheListWasNotRead() {
+        #expect(Self.build(nil).recentlyAdded.isEmpty)
+        #expect(Self.build([]).recentlyAdded.isEmpty)
     }
 
     @Test func noPlayFieldsAnywhereMeansNotCountedYet() {
