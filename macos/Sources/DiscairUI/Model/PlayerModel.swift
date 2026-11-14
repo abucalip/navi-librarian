@@ -152,6 +152,16 @@ public final class PlayerModel {
     @ObservationIgnored public var onLivePlay: (() -> Void)?
     @ObservationIgnored var liveNowPause: @Sendable (TimeInterval) async -> Void = { try? await Task.sleep(for: .seconds($0)) }
     public static let liveNowInterval: TimeInterval = 5
+    // Reconnect and sleep (S2-4). `liveURL` is the resolved address; it is only ever handed to the output.
+    @ObservationIgnored var liveURL: URL?
+    @ObservationIgnored var reconnectPolicy = ReconnectPolicy()
+    @ObservationIgnored var reconnectTask: Task<Void, Never>?
+    @ObservationIgnored var silenceTask: Task<Void, Never>?
+    @ObservationIgnored var systemAsleep = false
+    @ObservationIgnored var sleepObservers: [any NSObjectProtocol] = []
+    @ObservationIgnored var reconnectPause: @Sendable (TimeInterval) async -> Void = { try? await Task.sleep(for: .seconds($0)) }
+    /// The sleep timer (S2-4 item 2): any playback can be put to sleep.
+    public let sleepTimer = SleepTimer()
     /// The favourites in server order, for station Next and Previous. Wired by `AppState`.
     @ObservationIgnored public var favouriteStations: () -> [RadioStation] = { [] }
     public static let lastStationKey = "discair.radio.lastStation"
@@ -203,6 +213,11 @@ public final class PlayerModel {
         output.onFinished = { [weak self] in self?.songEnded() }
         output.onAdvanced = { [weak self] in self?.advancedByEngine() }
         liveOutput.onState = { [weak self] state in self?.liveStateChanged(state) }
+        sleepTimer.onExpire = { [weak self] in self?.sleepTimerExpired() }
+        sleepTimer.isPlaying = { [weak self] in
+            guard let self else { return false }
+            return live != nil || phase == .playing || phase == .loading
+        }
     }
 
     /// Seconds to jump to when the restored song first starts (0 otherwise).
@@ -346,6 +361,7 @@ public final class PlayerModel {
 
     public func stop() {
         endLive()
+        sleepTimer.cancel()
         loadGeneration += 1
         loadTask?.cancel()
         dropPreload()

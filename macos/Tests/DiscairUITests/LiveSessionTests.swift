@@ -82,7 +82,8 @@ struct LiveSessionTests {
         p.playStation(station("1"))
         live.report(.playing); #expect(p.live?.phase == .playing)
         live.report(.stalled); #expect(p.live?.phase == .reconnecting)
-        live.report(.failed); #expect(p.live?.phase == .unreachable)
+        // A failure is a drop to try again; "unreachable" comes only after the tries (ReconnectModelTests).
+        live.report(.failed); #expect(p.live?.phase == .reconnecting && p.live?.reconnect?.attempt == 1)
     }
 
     @Test func aLibrarySongIsPausedAndTheQueueIsLeftAlone() async throws {

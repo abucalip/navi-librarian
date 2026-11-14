@@ -186,6 +186,7 @@ public final class AppState {
         self.barOptions = PlayerBarOptions(defaults: defaults)
         let player = PlayerModel(output: output ?? EngineOutput(), fetcher: CachingFetcher(cache: media), defaults: defaults)
         self.player = player
+        if session != nil { player.observeSystemSleep() }   // the running app only: nothing is tried while the Mac sleeps
         self.savedQueues = SavedQueueStore(defaults: defaults)
         self.radio = RadioModel(defaults: defaults)
         self.systemMedia = session != nil ? SystemMedia(player, artwork: artwork, widget: WidgetPublisher(), logos: stationLogos) : nil   // media keys only in the running app

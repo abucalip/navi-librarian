@@ -126,6 +126,17 @@ struct CupertinoPagesRenderTests {
         try render("stations-playing-nometa", width: 1180, height: 420, CupertinoStations(state: state)) { _ in }
         state.player.live?.phase = .reconnecting
         try render("stations-reconnecting", width: 1180, height: 420, CupertinoStations(state: state)) { _ in }
+        // S2-4: the countdown line, "Station unreachable" with Retry, and the moon with minutes left.
+        state.player.live?.reconnect = .init(attempt: 2, of: 5, retryAt: Date().addingTimeInterval(5))
+        try render("player-bar-live-countdown", width: 1180, height: CupertinoPlayerBar.height, CupertinoPlayerBar(state: state)) { _ in }
+        state.player.live?.reconnect = nil
+        state.player.live?.phase = .unreachable
+        try render("player-bar-live-unreachable", width: 1180, height: CupertinoPlayerBar.height, CupertinoPlayerBar(state: state)) { _ in }
+        try render("stations-unreachable", width: 1180, height: 420, CupertinoStations(state: state)) { _ in }
+        state.player.live?.phase = .playing
+        state.player.sleepTimer.start(minutes: 45)
+        try render("player-bar-live-sleep", width: 1180, height: CupertinoPlayerBar.height, CupertinoPlayerBar(state: state)) { _ in }
+        state.player.sleepTimer.cancel()
     }
 
     /// Heard (S2-3 item 4): the On Air panel's Heard box, then the Heard tab with every state of the button, and the empty tab.

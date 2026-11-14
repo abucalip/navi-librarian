@@ -87,6 +87,7 @@ struct CupertinoPlayerBar: View {
                 Image(systemName: p.repeatMode == .one ? "repeat.1" : "repeat").foregroundStyle(p.repeatMode == .off ? ink : CU.accent)
             }
             .accessibilityLabel("Repeat, \(p.repeatMode.rawValue)")
+            SleepTimerMenu(timer: p.sleepTimer, ink: ink)
         }
         .buttonStyle(.plain).font(CU.Icon.row())
     }
@@ -116,7 +117,8 @@ struct CupertinoPlayerBar: View {
                 VStack(alignment: .leading, spacing: 4) {
                     let line = p.liveLine
                     Text(line.headline(station: live.name)).font(CU.Font.body.weighted(.semibold)).lineLimit(1)
-                    Text(barSecondLine(live, line)).foregroundStyle(secondary).lineLimit(1)
+                    Group { if live.phaseSentence != nil { LivePhaseText(live: live) } else { Text(barSecondLine(live, line)) } }
+                        .foregroundStyle(secondary).lineLimit(1)
                 }
                 .font(CU.Font.callout.weighted(.regular)).frame(maxWidth: .infinity, alignment: .leading)
             }
@@ -160,6 +162,7 @@ struct CupertinoPlayerBar: View {
         HStack(spacing: 8) {
             Button { p.previous() } label: { Image(systemName: "backward.fill") }
                 .accessibilityLabel("Previous station").disabled(state.stations.favourites.count < 2)
+            if live.phase == .unreachable { RetryStationButton(player: p) }
             Button { p.stopStation() } label: { Image(systemName: "stop.fill").font(CU.Icon.transport()) }
                 .accessibilityLabel("Stop \(live.name)")
             Button { p.next() } label: { Image(systemName: "forward.fill") }
@@ -170,6 +173,7 @@ struct CupertinoPlayerBar: View {
                 }
                 .accessibilityLabel(station.favourite ? "Favourite, on" : "Favourite, off")
             }
+            SleepTimerMenu(timer: p.sleepTimer, ink: ink)
         }
         .buttonStyle(.plain).font(CU.Icon.row())
     }

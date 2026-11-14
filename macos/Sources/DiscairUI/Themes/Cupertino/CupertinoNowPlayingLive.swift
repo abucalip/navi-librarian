@@ -81,7 +81,9 @@ struct CupertinoNowPlayingLive: View {
             .padding(.top, 12)
             .accessibilityElement(children: .combine)
             Text(line.headline(station: live.name)).font(CU.Font.title1.weighted(.bold)).lineLimit(2)
-            if let second = secondLine(line) {
+            if live.phaseSentence != nil {
+                LivePhaseText(live: live).font(CU.Font.title2.weighted(.regular)).foregroundStyle(CU.onMedia.opacity(0.85)).lineLimit(2).padding(.top, -4)
+            } else if let second = secondLine(line) {
                 Text(second).font(CU.Font.title2.weighted(.regular)).foregroundStyle(CU.onMedia.opacity(0.85)).lineLimit(2).padding(.top, -4)
             }
             if line.sentence != nil, line.hasSong == false, let raw = line.title {
@@ -104,12 +106,11 @@ struct CupertinoNowPlayingLive: View {
 
     /// The artist for a song; else the state sentence ("This station sends no song titles."), or the connection phase.
     private func secondLine(_ line: LiveSongLine) -> String? {
-        if let phase = live.phaseSentence { return phase }
         let text = line.hasSong ? line.detail : (line.sentence ?? "")
         return text.isEmpty ? nil : text
     }
 
-    /// Download and Favourite (Love was not chosen; Sleep comes with S2-4). The Download control is drawn only while a song can be
+    /// Download, Favourite and Sleep (Love was not chosen). The Download control is drawn only while a song can be
     /// asked for or its state is worth showing; a station with no titles shows its sentence instead.
     private func actions(_ download: DownloadState) -> some View {
         HStack(spacing: 8) {
@@ -132,6 +133,8 @@ struct CupertinoNowPlayingLive: View {
                 .buttonStyle(.plain)
                 .accessibilityLabel(station.favourite ? "Favourite, on" : "Favourite, off")
             }
+            SleepTimerMenu(timer: p.sleepTimer, style: .pill)
+            if live.phase == .unreachable { RetryStationButton(player: p) }
         }
         .padding(.top, 4)
     }

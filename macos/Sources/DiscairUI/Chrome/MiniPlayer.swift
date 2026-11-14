@@ -73,6 +73,13 @@ public struct MiniPlayerView: View {
                 Text(content.artist).font(.system(size: 12)).foregroundStyle(.white.opacity(0.7)).lineLimit(1)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
+            if live.phase == .unreachable {
+                Button { p.retryStation() } label: {
+                    Text("Retry").font(.system(size: 12, weight: .semibold)).foregroundStyle(Color(red: 0.70, green: 0.07, blue: 0.24))
+                        .padding(.horizontal, 10).padding(.vertical, 4).background(.white, in: Capsule())
+                }
+                .buttonStyle(.plain).accessibilityLabel("Retry")
+            }
             Button { p.stopStation() } label: {
                 Image(systemName: "stop.fill").font(.system(size: 18, weight: .semibold)).frame(width: 36, height: 36)
             }
