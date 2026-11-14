@@ -7,7 +7,7 @@ Nothing is ranked or guessed ("notable", "famous", "first ever" are never writte
 
 A fact is ``{kind, scope, text, source, source_url, link}``. ``scope`` is ``song``, ``album`` or ``artist``; ``link``
 is ``{type, mbid}`` of the page that backs the line, or null. Lines are stable in order (song, album, artist) so a
-client can rotate through them.
+client can rotate through them. Artist lines include ``member_lineage``: other bands a member of the artist belonged to.
 """
 from __future__ import annotations
 
@@ -16,6 +16,7 @@ from typing import Any
 from ..editions.grouping import REL_APPEARS_ON
 from ..graph import Limits
 from ..store import repositories as repo
+from ..store.generations import current_generation
 from .pages import PERSON_TYPES, _album_for, _coverage, _life_span
 
 MAX_NAMES = 3
@@ -31,6 +32,14 @@ _CREDIT_LINES = (
     ("arranger", "Arranged by"),
 )
 _YEAR_ONLY = 4
+MAX_LINEAGE = 2
+# Credit-grade only: never an inferred edge, never an unconfirmed or unresolved end.
+_CREDIT_GRADE = "e.evidence_class != 'inferred' AND e.match_quality NOT IN ('fuzzy_unconfirmed', 'unresolved')"
+_TENURES = ("SELECT e.from_id AS member, e.to_id AS band, e.valid_from AS begin, e.valid_to AS end, e.source_url AS url "
+            f"FROM edges e WHERE e.relation = 'member of band' AND e.generation = ? AND {_CREDIT_GRADE} AND e.{{side}} = ? "
+            "ORDER BY e.id")
+# Words that say nothing about whose project a band is.
+_NAME_NOISE = frozenset({"the", "and", "his", "her", "band", "with"})
 
 
 def song_facts_page(reader, recording: dict[str, Any], *, album: dict[str, Any] | None = None,
@@ -206,7 +215,81 @@ def _artist_facts(reader, db, artist: dict[str, Any], limit: int) -> list[dict[s
     members = [m for m in members if m]
     if members:
         out.append(_fact("members", "artist", f"Linked members: {_join(members[:4], len(members))}", [], artist))
+    out += _lineage_facts(db, artist)
     return out
+
+
+def _lineage_facts(db, artist: dict[str, Any]) -> list[dict[str, Any]]:
+    """Other bands that the artist's members (or the artist, for a person) are stated to have belonged to.
+
+    A line is MusicBrainz's membership statement and nothing more. When the stated years show a member left the
+    artist's band before the other began, the line says so ("was in X until 1983 and joined Y in 1983"); otherwise
+    it only says the member was also in the other band. A band that shares a name word with the artist or the
+    member is that person's own project and is skipped. At most ``MAX_LINEAGE`` lines, one per member, dated first,
+    then by name: the order never reflects popularity or plays.
+    """
+    gen = current_generation(db)
+    rows = lambda side, ident: db.execute(_TENURES.format(side=side), (gen, ident)).fetchall()
+    names: dict[int, str] = {}
+
+    def name(entity_id: int) -> str:
+        if entity_id not in names:
+            entity = repo.get_entity(db, entity_id)
+            names[entity_id] = (entity or {}).get("canonical_name") or ""
+        return names[entity_id]
+
+    def own_project(band: int, *owners: str) -> bool:
+        words = lambda text: set(_name_words(text)) - _NAME_NOISE
+        return any(words(owner) & words(name(band)) for owner in owners)
+
+    found: dict[tuple[int, int], tuple[bool, str, Any]] = {}  # (member, band) -> (dated, text, row)
+    stays: dict[int, list[Any]] = {}  # member -> their tenures in this artist
+    for mine in rows("to_id", artist["id"]):
+        stays.setdefault(mine["member"], []).append(mine)
+    for member, own in stays.items():  # a band: its members' other bands
+        left = _bound(own, "end", max)  # None while any tenure is open or undated: "until" would be a guess
+        elsewhere: dict[int, list[Any]] = {}
+        for other in rows("from_id", member):
+            elsewhere.setdefault(other["band"], []).append(other)
+        for band, tenures in elsewhere.items():
+            if band == artist["id"] or not name(band) or own_project(band, name(artist["id"]), name(member)):
+                continue
+            joined = _bound(tenures, "begin", min)
+            dated = left is not None and joined is not None and joined >= left
+            found[(member, band)] = (dated, (
+                f"{name(member)} was in {name(artist['id'])} until {left} and joined {name(band)} in {joined}" if dated
+                else f"{name(member)} of {name(artist['id'])} was also in {name(band)}"), tenures[0])
+    for mine in rows("from_id", artist["id"]):  # a person: the bands they belonged to
+        band = mine["band"]
+        if band != artist["id"] and name(band) and not own_project(band, name(artist["id"])):
+            found.setdefault((artist["id"], band), (False, f"{name(artist['id'])} was also a member of {name(band)}", mine))
+    ordered = sorted(found.items(), key=lambda kv: (not kv[1][0], name(kv[0][0]).lower(), name(kv[0][1]).lower()))
+    out: list[dict[str, Any]] = []
+    seen_members: set[int] = set()
+    for (member, band), (_, text, row) in ordered:
+        if member in seen_members:
+            continue
+        seen_members.add(member)
+        evidence = [{"source_url": row["url"]}] if row["url"] else []
+        out.append(_fact("member_lineage", "artist", text, evidence, repo.get_entity(db, band)))
+        if len(out) == MAX_LINEAGE:
+            break
+    return out
+
+
+def _name_words(text: str) -> list[str]:
+    return [w for w in "".join(c.lower() if c.isalnum() else " " for c in text).split() if len(w) > 2]
+
+
+def _bound(tenures: list[Any], column: str, pick) -> int | None:
+    """The latest end or earliest begin year over all tenures; None when any tenure states no such year."""
+    years = [_year(t[column]) for t in tenures]
+    return None if None in years else pick(years)
+
+
+def _year(value: str | None) -> int | None:
+    head = (value or "")[:_YEAR_ONLY]
+    return int(head) if head.isdigit() else None
 
 
 # ---------------------------------------------------------------- helpers
