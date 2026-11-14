@@ -194,7 +194,7 @@ Parts, top to bottom, at most 980 wide at the 1280 window; under 860 wide (or wi
 | # | Part | What it shows |
 |---|---|---|
 | 0 | Notice slot | At most one: Librarian unreachable, a failed Get, or playing on the phone |
-| 1 | Marquee | Today's pick over its own blurred cover under a 55% black wash, white text, Get as the one primary button; keys → Get, ↓ Save, ← Not for me, Space plays; "Next picks" covers |
+| 1 | Marquee | Today's pick over its own blurred cover under a 55% black wash, white text, Get as the one primary button; chevrons at the top right and the ← → keys step through the picks (↓ does nothing), Space plays; "Next picks" covers |
 | 2 | Radio card | Only while a station plays or a last station is known (E7); between the marquee and the shelf |
 | 3 | New on the shelf | Six covers: Gets in progress or failed, arrived albums not played, songs heard on the radio, then recently added |
 | 4 | Waiting longest | Six albums that have waited longest for a play |

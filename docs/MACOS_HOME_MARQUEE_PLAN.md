@@ -72,7 +72,7 @@ The rule from M5 stays: **missing is not zero.** A figure or tile whose source i
 
 - The album is `picks[pickIndex]`, as today (`state.visible(state.library.missing)`), with the same eyebrow "Today's pick · 1 of 7" (`HomeScreen.pickPosition`).
 - Title, artist line, the server's reason, the suggested track, and the three buttons keep today's text, states, help text and actions (`pickButtons`, `suggestedTrack`, `act`). Only their place and colours change.
-- Keys are unchanged: → Get, ↓ Save, ← Not for me, Space plays or shows the "not owned" notice. The key hints row is removed; each key is shown inside its button, as drawn. Space has no hint on screen; it stays in the button's help text.
+- **Chevrons (owner change, 2026-11-14, after H3):** two round buttons, 30 across, white 20% fill, white chevron, at the panel's top right corner (16 in), go to the previous and the next pick, wrapping round (`HomeScreen.steppedPick`). Not drawn with one pick. The ← and → keys do the same. ↓ does nothing. Space plays or shows the "not owned" notice (its help is in the marquee's accessibility hint). The buttons Get album, Save and Not for me carry no key glyphs, and → no longer gets, ↓ no longer saves, ← no longer dismisses; the three buttons are the only way to act on a pick.
 - **Next picks** replace the two chevron buttons. They show the other picks in order, starting after the current one and wrapping round, six at most. A click shows that pick in the marquee. With one pick the block is not drawn. Each cover is a button named "Show pick 3 of 7: *title* by *artist*".
 - **No pick** (`HomeScreen.pickEmpty`): the panel keeps its minimum height and becomes a plain `bg.panel` panel with no artwork, with today's three sets of sentences and buttons unchanged (`needsHistory`, `noneRightNow`, `withoutLibrarian`). See `home-marquee--no-pick`, `--first-run` and `--librarian-unreachable`.
 
@@ -188,7 +188,7 @@ Suggested model: Sonnet, high effort.
 7. Tests: replace the cases of `HomeRenderTests` with the seven mockup states (default, notice, no pick, first run, Librarian unreachable, loading, narrow), default in Day and in Night. Run: `swift test --filter "HomeRenderTests|HomeScreenTests|HomeDashboardTests"`.
 8. Documents: rewrite `redesign.md` 5.1 to describe the built Home and point here; update `macos/DESIGN.md`, `docs/ACTIVE_WORK.md`, `docs/PROJECT_STATUS.md` and `PROJECT_LOG.md` as the workflow requires.
 
-Acceptance: each of the seven states matches its mockup in Day and Night; the marquee has one primary button; no chart and no figure tile remains on Home; the pick's keys work as before.
+Acceptance: each of the seven states matches its mockup in Day and Night; the marquee has one primary button; no chart and no figure tile remains on Home; the pick's keys work as in 3.1 (chevrons, ← →, Space).
 
 ### H4 · Owner check and fixes
 
@@ -215,7 +215,7 @@ The owner runs the app against the real server and compares it with the mockups 
 ## 8. Owner checks after H3
 
 1. Home with a pick: the marquee shows the cover, the blurred backdrop takes the cover's colours, and the text is easy to read on a light cover and on a dark one.
-2. →, ↓, ←, Space on the pick; a click on a "Next picks" cover.
+2. The chevrons and ← → step through the picks, ↓ does nothing, Space on the pick; a click on a "Next picks" cover.
 3. Get an album and watch its tile go from Looking for a source to Arrived, then play it from the tile.
 4. A song heard on a relayed station appears as a "Radio" tile and its Get works.
 5. Waiting longest shows six albums that really have no plays.

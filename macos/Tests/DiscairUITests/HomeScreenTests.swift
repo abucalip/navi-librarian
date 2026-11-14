@@ -25,10 +25,13 @@ import DiscairNavidrome
         #expect(HomeScreen.pickPosition(index: 0, count: 0) == nil)
     }
 
-    @Test func arrowKeysMapToTheDeckActions() {
-        #expect(HomeScreen.pickKey(arrow: .right) == .get)
-        #expect(HomeScreen.pickKey(arrow: .down) == .save)
-        #expect(HomeScreen.pickKey(arrow: .left) == .notForMe)
+    @Test func chevronsAndArrowsStepThroughThePicksAndWrap() {
+        #expect(HomeScreen.steppedPick(index: 0, count: 7, by: 1) == 1)
+        #expect(HomeScreen.steppedPick(index: 6, count: 7, by: 1) == 0)
+        #expect(HomeScreen.steppedPick(index: 0, count: 7, by: -1) == 6)
+        #expect(HomeScreen.steppedPick(index: 9, count: 7, by: 1) == 0)      // a stale index is clamped first
+        #expect(HomeScreen.steppedPick(index: 0, count: 1, by: 1) == 0)
+        #expect(HomeScreen.steppedPick(index: 3, count: 0, by: -1) == 0)
     }
 
     @Test func spaceOnAnUnownedPickShowsANoticeAndOnAnOwnedOnePlays() {
