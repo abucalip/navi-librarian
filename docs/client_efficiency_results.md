@@ -153,10 +153,10 @@ Columns: Discair CPU %, WindowServer CPU %, Discair wakeups/s, Discair power, Wi
 | Scenario | Run | Discair CPU % | WindowServer CPU % | Discair wakeups/s | Discair power | WindowServer power | Footprint | Notes |
 |---|---|---|---|---|---|---|---|---|
 | S1 (median of 5 launches) | — | | | | | | | |
-| S2 | 1 | 23.30 | 2.95 | 1.84 | 23.40 | 3.00 | 212 MB | 30 samples at 10 s |
-| S2 | 2 | 23.40 | 2.70 | 1.16 | 23.45 | 2.70 | 212 MB | |
-| S2 | 3 | 23.40 | 2.80 | 1.16 | 23.45 | 2.80 | 212 MB | |
-| S2 | **median** | 23.40 (spread 0.10) | 2.80 (spread 0.25) | 1.16 (spread 0.68) | 23.45 (spread 0.05) | 2.80 (spread 0.30) | 212 MB (spread 0) | Idle Home sits at about 23 % of one core; see the S2 note below |
+| S2 | 1 | 40.35 | 31.55 | 0.02 | 40.35 | 31.70 | 115 MB | Firefox, a coreaudiod load and other apps active; see S2 note |
+| S2 | 2 | 41.80 | 31.45 | 0.02 | 41.80 | 31.65 | 115 MB | |
+| S2 | 3 | 45.45 | 37.50 | 0.01 | 45.45 | 37.75 | 115 MB | |
+| S2 | **median** | 41.80 (spread 5.10) | 31.55 (spread 6.05) | 0.02 (spread 0.01) | 41.80 (spread 5.10) | 31.70 (spread 6.10) | 115 MB (spread 0) | Not a clean baseline; see S2 note |
 | S3 | 1 | | | | | | | |
 | S3 | 2 | | | | | | | |
 | S3 | 3 | | | | | | | |
@@ -194,9 +194,11 @@ Columns: Discair CPU %, WindowServer CPU %, Discair wakeups/s, Discair power, Wi
 | S11 | 3 | | | | | | | |
 | S11 | **median** | | | | | | | |
 
-**S2 run header (macOS, 2026-11-14).** App SHA `fab8032d` (inferred: the installed Release binary was built 03:16, three minutes after that merge, and `macos/` has not changed since; the owner could not name the commit). Release build, installed in `/Applications`. Apple M2, 16 GB, macOS 26.2 (25C56), 2560 x 1664 Retina; refresh rate not read. AC power, battery 97 % charging, Low Power Mode off. Tailscale connected. Server version and library: not recorded. One minute warm-up, then three back-to-back five-minute runs (30 samples at 10 s, the first sample dropped). Whether the app was on Home with nothing played since launch was taken on the owner's instruction, not checked by the agent.
+**S2 run header (macOS, 2026-11-14).** App SHA `fab8032d` (inferred: the installed Release binary was built 03:16, three minutes after that merge, and `macos/` has not changed since; the owner could not name the commit). Release build, installed in `/Applications`. Apple M2, 16 GB, macOS 26.2 (25C56), 2560 x 1664 Retina; refresh rate not read. AC power, battery 97 % charging, Low Power Mode off. Tailscale connected. Server version and library: not recorded. One minute warm-up, then three back-to-back five-minute runs (30 samples at 10 s, the first sample dropped), started 12:14 after the owner quit and reopened Discair on Home with nothing played.
 
-**S2 note.** An app left idle on Home used about 23 % of one core and about 2.8 % in WindowServer, steadily across all 90 samples, with only about 1 to 2 idle wakeups per second. A constant load with few wakeups points to something redrawing or computing continuously (an animation or a busy thread) rather than a timer. This is a measurement, not a diagnosis; the SwiftUI instrument and Time Profiler traces are needed to name the cause. The plan's section 3 hypotheses do not predict this on Home, so it is a new finding. The `macos_cheap.sh` wakeups column printed the running IDLEW total (about 38,000) in the first version; the script now reports a rate, and the table above was computed from the raw `top` output with the same formula.
+**Discarded first attempt (11:45 to 12:00).** The app was not on Home, so those numbers (Discair 23.4 %, WindowServer 2.8 %, footprint 212 MB) are not S2 and are not in the table. Raw output is kept outside the repository.
+
+**S2 note.** On Home, Discair used a median 41.8 % of one core (runs 40.4, 41.8, 45.5) and WindowServer 31.6 %, with about 0.02 idle wakeups per second. Almost no wakeups with a high steady load means continuous rendering or computing, not a timer. **This is not yet a clean baseline:** the system `top` shown right after the runs also had Firefox helper processes (about 12 % each) and `coreaudiod` (about 12 %) active, and WindowServer is shared by every app, so some of its load is not Discair's. Run 3 was also 4 to 5 points higher than runs 1 and 2. To attribute the cost to Discair, repeat S2 with other apps closed, and compare against Discair minimised (S7). The wakeups column is now a rate: `macos_cheap.sh` first printed top's running IDLEW total, and was fixed in this PR.
 
 **Gate decisions (P0-2)**
 
@@ -216,10 +218,10 @@ Columns: total PSS, native heap, graphics (from `meminfo`); RenderThread CPU % a
 | Scenario | Run | Total PSS (KB) | Native heap (KB) | Graphics (KB) | Main thread CPU % | RenderThread CPU % | Frames total / janky | p50 / p90 / p99 frame ms | Notes |
 |---|---|---|---|---|---|---|---|---|---|
 | S1 (median of 5 `TotalTime`) | — | | | | | | | | |
-| S2 | 1 | | | | | | | | |
-| S2 | 2 | | | | | | | | |
-| S2 | 3 | | | | | | | | |
-| S2 | **median** | | | | | | | | |
+| S2 | 1 | 40.35 | 31.55 | 0.02 | 40.35 | 31.70 | 115 MB | Firefox, a coreaudiod load and other apps active; see S2 note |
+| S2 | 2 | 41.80 | 31.45 | 0.02 | 41.80 | 31.65 | 115 MB | |
+| S2 | 3 | 45.45 | 37.50 | 0.01 | 45.45 | 37.75 | 115 MB | |
+| S2 | **median** | 41.80 (spread 5.10) | 31.55 (spread 6.05) | 0.02 (spread 0.01) | 41.80 (spread 5.10) | 31.70 (spread 6.10) | 115 MB (spread 0) | Not a clean baseline; see S2 note |
 | S3 | 1 | | | | | | | | |
 | S3 | 2 | | | | | | | | |
 | S3 | 3 | | | | | | | | |
