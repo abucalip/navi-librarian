@@ -253,16 +253,17 @@ Ordered by expected value, then risk. "Mandatory" means do it once Phase 0 has a
 | 2 | P0-2 macOS baseline and gate decisions | macOS | Profiling | Mandatory | Sonnet | Medium |
 | 3 | P0-3 Android baseline and gate decisions | Android | Profiling | Mandatory | Sonnet | Medium |
 | 4 | A1 Slideshow without per-frame recomposition | Android | Straightforward | Mandatory | Sonnet | Medium |
-| 5 | M1 Demand-driven engine ticker | macOS | Complex (audio) | Mandatory | Sonnet | High |
-| 6 | M2 Marquee cap and pause | macOS | Straightforward | Mandatory | Haiku | Low |
-| 7 | M3 Off-main decode, real costs, budgets | macOS | Complex (memory) | Mandatory | Sonnet | High |
-| 8 | M4 Release PDF bytes; open PDFs from file | macOS | Straightforward | Mandatory | Haiku | Medium |
-| 9 | A2 Hardware bitmaps by default | Android | Experimental | Keep only if it wins | Sonnet | Medium |
-| 10 | M5 Pre-blurred backdrops | macOS | Experimental | Conditional on G1 | Sonnet | High |
-| 11 | A3 Quarter-size blur layer | Android | Experimental | Conditional on G3 | Sonnet | Medium |
-| 12 | M6 Pause motion when the window is hidden | macOS | Straightforward | Conditional on G2 | Haiku | Medium |
-| 13 | A4 Baseline Profile | Android | Straightforward | Conditional on G4 | Haiku | Medium |
-| 14 | P4-1 Final comparison and closeout | Both | Profiling | Mandatory | Sonnet | Low |
+| 5 | M7 `PlaybackClock` does not tick while paused | macOS | Straightforward | Mandatory | Sonnet | Medium |
+| 6 | M1 Demand-driven engine ticker | macOS | Complex (audio) | Mandatory | Sonnet | High |
+| 7 | M2 Marquee cap and pause | macOS | Straightforward | Mandatory | Haiku | Low |
+| 8 | M3 Off-main decode, real costs, budgets | macOS | Complex (memory) | Mandatory | Sonnet | High |
+| 9 | M4 Release PDF bytes; open PDFs from file | macOS | Straightforward | Mandatory | Haiku | Medium |
+| 10 | A2 Hardware bitmaps by default | Android | Experimental | Keep only if it wins | Sonnet | Medium |
+| 11 | M5 Pre-blurred backdrops | macOS | Experimental | Conditional on G1 | Sonnet | High |
+| 12 | A3 Quarter-size blur layer | Android | Experimental | Conditional on G3 | Sonnet | Medium |
+| 13 | M6 Pause motion when the window is hidden | macOS | Straightforward | Conditional on G2 | Haiku | Medium |
+| 14 | A4 Baseline Profile | Android | Straightforward | Conditional on G4 | Haiku | Medium |
+| 15 | P4-1 Final comparison and closeout | Both | Profiling | Mandatory | Sonnet | Low |
 
 Steps on different clients are independent and can be interleaved. Each code step is one branch and one PR under `docs/DEVELOPMENT_WORKFLOW.md`.
 
@@ -293,7 +294,7 @@ Steps on different clients are independent and can be interleaved. Each code ste
 - **Risks:** an attached profiler changes timing; use the cheap tools for the headline numbers and the traces for explanation only.
 - **Verification:** three runs per scenario; the spread between runs is recorded beside each median.
 - **Acceptance criteria:** the macOS table is complete; G1 and G2 are each marked met or not met with the numbers; any hypothesis the data contradicts is marked so in the results file; no code is changed.
-- **Status (2026-11-14):** in progress. Done: S2 to S7 and the S7 Reduce Motion reference, three runs each (S3 run 3 is an outlier, flagged). **G1 not met** (S5 − S4 = −2.1 points), so M5 closes without work. **G2 met by the letter but marginal** (S7 26.8 % vs 24.8 % with Reduce Motion); **the owner opened M6 on 2026-11-14**, expecting a gain of about 2 points at most, with the main cost elsewhere. Main finding: Discair uses about 25 to 29 % of one core in every state (S6 paused 13.75 %), unaffected by hiding the window or Reduce Motion; the cause is unidentified and needs a SwiftUI-instrument trace. S5 photos add about 170 MB (207 → 376 MB). Marquee hypothesis rejected. Not done: S1, S8 to S11, the three required traces. S2 had a paused track loaded, because the app has no way to clear Now Playing. SwiftUI-instrument trace and element bisect of idle Home done (2026-11-14): the main thread is saturated by AttributeGraph updates about 120 times a second, and **the cause is the two 4 Hz `PlaybackClock` timelines in the player bar running while paused**: making the clock static, or not rendering it unless the phase is `.playing`, takes idle CPU from about 26 % to 0 % and SwiftUI updates to 0. Glass, waveform, blurred plate, covers, banner, sidebar and marquee are refuted (results file, S2 bisect). No code changed. Next: the owner decides on a new step (provisionally M7: no `PlaybackClock` timeline while paused); S3 and S5 traces with the clock running, the hidden-window check for G2, S1, S8 to S11 and the other traces remain.
+- **Status (2026-11-14):** in progress. Done: S2 to S7 and the S7 Reduce Motion reference, three runs each (S3 run 3 is an outlier, flagged). **G1 not met** (S5 − S4 = −2.1 points), so M5 closes without work. **G2 met by the letter but marginal** (S7 26.8 % vs 24.8 % with Reduce Motion); **the owner opened M6 on 2026-11-14**, expecting a gain of about 2 points at most, with the main cost elsewhere. Main finding: Discair uses about 25 to 29 % of one core in every state (S6 paused 13.75 %), unaffected by hiding the window or Reduce Motion; the cause is unidentified and needs a SwiftUI-instrument trace. S5 photos add about 170 MB (207 → 376 MB). Marquee hypothesis rejected. Not done: S1, S8 to S11, the three required traces. S2 had a paused track loaded, because the app has no way to clear Now Playing. SwiftUI-instrument trace and element bisect of idle Home done (2026-11-14): the main thread is saturated by AttributeGraph updates about 120 times a second, and **the cause is the two 4 Hz `PlaybackClock` timelines in the player bar running while paused**: making the clock static, or not rendering it unless the phase is `.playing`, takes idle CPU from about 26 % to 0 % and SwiftUI updates to 0. Glass, waveform, blurred plate, covers, banner, sidebar and marquee are refuted (results file, S2 bisect). No code changed. The fix is recorded as step **M7** (to implement, not started); S3 and S5 traces with the clock running, the hidden-window check for G2, S1, S8 to S11 and the other traces remain.
 - **Model: Sonnet | Effort: Medium**
 
 #### P0-3 Android baseline and gate decisions
@@ -428,7 +429,7 @@ Steps on different clients are independent and can be interleaved. Each code ste
 
 #### M6 macOS pause motion when the window is hidden (only if G2 is met)
 
-- **Status (2026-11-14):** G2 met by the letter (marginal); **opened by the owner**. Not started. Expected gain is about 2 points of one core at most (P0-2, S7 against S7 with Reduce Motion); the larger idle cost is a separate, unidentified cause.
+- **Status (2026-11-14):** G2 met by the letter (marginal); **opened by the owner**. Not started. Expected gain is about 2 points of one core at most (P0-2, S7 against S7 with Reduce Motion); the larger idle cost is M7 (PlaybackClock).
 
 - **Objective:** no animation work while nothing is visible.
 - **Current problem:** measured in P0-2 scenario S7. If timelines already stop when the window is hidden, this step is closed without work.
@@ -439,6 +440,19 @@ Steps on different clients are independent and can be interleaved. Each code ste
 - **Verification:** S7 with `top`, three runs. Manual: minimize, switch Space, cover fully, then return; the disc and slideshow continue from where they stopped.
 - **Acceptance criteria:** S7 Discair CPU is within run-to-run noise of S7 with Reduce Motion on; no visible jump on return; Reduce Motion and Low Power Mode behaviour unchanged.
 - **Model: Haiku | Effort: Medium**
+
+#### M7 macOS `PlaybackClock` does not tick while paused
+
+- **Status (2026-11-14):** **to implement; not started; needs the owner's go-ahead.** Added from the P0-2 element bisect ([`client_efficiency_results.md`](client_efficiency_results.md), "S2 bisect").
+- **Objective:** remove the idle cost of a paused player: about 26 % of one core on Home with a paused track (25 to 29 % in every state tried).
+- **Current problem:** `macos/Sources/DiscairUI/Chrome/PlaybackClock.swift` wraps `TimelineView(.periodic(from: .now, by: 0.25))`, used twice in `CupertinoPlayerBar` (the time readout, and the middle line for lyrics and facts). While paused, the schedule still drives a full SwiftUI graph update about 120 times a second (measured: 0 % CPU and 0 updates in a 10 s trace when it was static or gated; unchanged with a fixed start date instead of `.now`). Why a 4 Hz schedule updates at display rate is not understood.
+- **Proposed solution:** render the `TimelineView` only while `player.phase == .playing`; otherwise call `content(player.position)` directly. Bisect variant "gate" did exactly this.
+- **Implementation details:** in `PlaybackClock.body`, branch on `player.phase` (a stored, observed property, so the view re-evaluates when playback starts or stops). Check every other `TimelineView(.periodic…)` in `DiscairUI` for the same pattern (the 1 s timelines in `CupertinoPlayerBar`, `CupertinoStations`, `CupertinoNowPlayingLive`, `CupertinoDownloadButton`, `CupertinoSleepTimer`, `MenuBarPopover`) and measure before touching them; do not change them speculatively. Check that the middle line's lyric transitions and the time readout still update promptly on play, pause, seek and song change, and that the live-station bar is unchanged.
+- **Dependencies:** P0-2 (done). Do before re-measuring S3 to S5, so their numbers are not confounded by this cost.
+- **Risks:** the readout or lyric line stuck after a state change; a paused clock showing a stale position after a seek while paused (`position` must update on seek). Understand why a 4 Hz timeline updates at display rate before assuming the gate also cures the playing state; the playing state still ticks and is measured in S3.
+- **Verification:** S2 and S6 with `macos_cheap.sh`, three runs each, and a SwiftUI-instrument trace of idle Home (expect near-zero updates). Then S3 (playing) to see the cost that remains. Filtered tests only (`swift test --filter` for the player and bar tests).
+- **Acceptance criteria:** S2 Discair CPU falls from about 26 % to near zero (within noise of the audio-only reference) with no visible change on play, pause, seek, song change or station start; S3 not worse than before.
+- **Model: Sonnet | Effort: Medium**
 
 #### A4 Android Baseline Profile (only if G4 is met)
 
@@ -499,7 +513,7 @@ Testing rules from `docs/DEVELOPMENT_WORKFLOW.md` apply: focused tests only (`sw
 
 **The plan is done when:**
 
-- P0-1 to P0-3, A1, M1, M2, M3 and M4 are complete.
+- P0-1 to P0-3, A1, M1, M2, M3, M4 and M7 are complete.
 - A2 is kept or reverted on its numbers.
 - Each of M5, M6, A3 and A4 is either complete or closed with its gate recorded as not met.
 - P4-1 is recorded and section 13 is updated.

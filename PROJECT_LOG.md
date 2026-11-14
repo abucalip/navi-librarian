@@ -1,3 +1,8 @@
+## 2026-11-14 — Client efficiency: M7 recorded (PlaybackClock fix)
+
+- Docs direct to `main` on the owner's instruction, after PR #1068 merged (`f5fdb638`). `docs/client_efficiency.md` gains step M7 (`PlaybackClock` renders its `TimelineView` only while playing), placed after A1 in the order table (later steps renumbered); `docs/PROJECT_STATUS.md` notes the finding. No code changed.
+- **Next action:** the owner decides whether to start M7; then S3 to S5 traces, the hidden-window check for G2, S1, S8 to S11.
+
 ## 2026-11-14 — Client efficiency P0-2: SwiftUI-instrument trace of idle Home
 
 - Docs only. Adds the trace findings to `docs/client_efficiency_results.md` (S2) and updates the P0-2 status in `docs/client_efficiency.md`. No code changed; the trace file is not committed.
