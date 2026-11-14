@@ -184,7 +184,7 @@ public final class AppState {
         self.player = player
         self.savedQueues = SavedQueueStore(defaults: defaults)
         self.radio = RadioModel(defaults: defaults)
-        self.systemMedia = session != nil ? SystemMedia(player, artwork: artwork, widget: WidgetPublisher()) : nil   // media keys only in the running app
+        self.systemMedia = session != nil ? SystemMedia(player, artwork: artwork, widget: WidgetPublisher(), logos: stationLogos) : nil   // media keys only in the running app
         if let actions { self.actions = actions }
         else if session != nil {
             let live = AcquisitionActions(acquisition)

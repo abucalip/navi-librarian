@@ -92,6 +92,20 @@ struct CupertinoPagesRenderTests {
         try render("stations", width: 1180, height: 640, CupertinoStations(state: state, selected: "1")) { _ in }
     }
 
+    /// A station playing (S2-2 items 4 and 5): the page with the tinted row and the On Air hero, and the bar's live branch (mockup B1).
+    @Test func rendersStationPlaying() throws {
+        let state = AppState(themeID: .cupertino, screen: .stations)
+        func st(_ id: String, _ name: String, _ tags: [String], fav: Bool = false) -> RadioStation {
+            RadioStation(id: id, name: name, proxied: true, playableURL: "https://example.invalid/\(id)", favourite: fav, tags: tags)
+        }
+        state.stations.showForPreview(stations: [st("1", "FIP", ["Eclectic"], fav: true), st("2", "KEXP", ["Indie"], fav: true), st("3", "NTS 1", ["Electronic"])])
+        state.player.live = LiveSession(stationID: "1", name: "FIP", logoPath: "", startedAt: Date().addingTimeInterval(-(19 * 60 + 12)), phase: .playing)
+        try render("stations-playing", width: 1180, height: 420, CupertinoStations(state: state)) { _ in }
+        try render("player-bar-live", width: 1180, height: CupertinoPlayerBar.height, CupertinoPlayerBar(state: state)) { _ in }
+        state.player.live?.phase = .reconnecting
+        try render("stations-reconnecting", width: 1180, height: 420, CupertinoStations(state: state)) { _ in }
+    }
+
     /// The Radio page's sentences when there is nothing to list (S2-1 item 9), and the Edit Tags sheet (item 8).
     @Test func rendersStationsStatesAndTagSheet() throws {
         let empty = AppState(themeID: .cupertino, screen: .stations)

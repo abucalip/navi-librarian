@@ -1,3 +1,4 @@
+import DiscairLibrarian
 import SwiftUI
 
 /// The player along the bottom of the window: one rectangle with the artwork, the song, a line in the middle (the synced lyric,
@@ -12,8 +13,10 @@ struct CupertinoPlayerBar: View {
 
     private var p: PlayerModel { state.player }
     /// White on a tint (tints are kept dark); the usual ink and glass when nothing is playing.
-    private var ink: Color { tint != nil ? CU.onMedia : CU.text }
-    private var secondary: Color { tint != nil ? CU.onMedia.opacity(0.72) : CU.textSecondary }
+    /// White ink is used on the song's tint, and on the dark plate a station has (mockup B1); a station never takes the song's tint.
+    private var tinted: Bool { p.live != nil || tint != nil }
+    private var ink: Color { tinted ? CU.onMedia : CU.text }
+    private var secondary: Color { tinted ? CU.onMedia.opacity(0.72) : CU.textSecondary }
     private var shape: RoundedRectangle { RoundedRectangle(cornerRadius: 16, style: .continuous) }
 
     var body: some View {
@@ -57,7 +60,9 @@ struct CupertinoPlayerBar: View {
     /// ground; the cover itself, blurred as on the album page, goes over it once it has loaded, with a dimming layer so the
     /// white text keeps its contrast.
     @ViewBuilder private var plate: some View {
-        if let tint, !RenderMode.offscreenScreenshot {
+        if p.live != nil {
+            LiveStationPlate.gradient.clipShape(shape).overlay(shape.stroke(CU.onMedia.opacity(0.12), lineWidth: 1))
+        } else if let tint, !RenderMode.offscreenScreenshot {
             ZStack {
                 LinearGradient(colors: [tint.color, ArtworkTint(hue: tint.hue, saturation: tint.saturation, brightness: max(0.2, tint.brightness - 0.1)).color],
                                startPoint: .top, endPoint: .bottom)
@@ -87,11 +92,65 @@ struct CupertinoPlayerBar: View {
     }
 
     private var display: some View {
-        barRow
+        Group { if let live = p.live { liveRow(live) } else { barRow } }
             // Anywhere on the bar that is not a control opens Now Playing; the controls and links keep their own clicks.
             .contentShape(Rectangle())
-            .onTapGesture { if p.current != nil { state.screen = .nowPlaying } }
-            .accessibilityAction(named: "Open Now Playing") { if p.current != nil { state.screen = .nowPlaying } }
+            .onTapGesture { if p.current != nil || p.live != nil { state.screen = p.live != nil ? .stations : .nowPlaying } }
+            .accessibilityAction(named: p.live != nil ? "Open Radio" : "Open Now Playing") {
+                if p.current != nil || p.live != nil { state.screen = p.live != nil ? .stations : .nowPlaying }
+            }
+    }
+
+    // MARK: Live station (mockup B1; B2 was dropped, see macos/DESIGN.md)
+
+    private var liveStation: RadioStation? { p.live.flatMap { live in state.stations.stations.first { $0.id == live.stationID } } }
+
+    /// A station is playing: its logo, name, LIVE and the time since tuning in, then previous, stop and next station and the star,
+    /// and a 3 pt hairline in place of the progress line. Shuffle, repeat, the lyric and fact line and their switches, the quality
+    /// tag, the sound graph and the clock are not drawn: none of them applies to a stream (S2.6).
+    private func liveRow(_ live: LiveSession) -> some View {
+        HStack(spacing: 16) {
+            HStack(spacing: 16) {
+                if let station = liveStation { StationLogo(station: station, size: 50, radiusFraction: 0.16) }
+                else { RoundedRectangle(cornerRadius: 8, style: .continuous).fill(CU.bgFill).frame(width: 50, height: 50) }
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(live.name).font(CU.Font.body.weighted(.semibold)).lineLimit(1)
+                    Text(live.phaseSentence ?? "On air").foregroundStyle(secondary).lineLimit(1)
+                }
+                .font(CU.Font.callout.weighted(.regular)).frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .frame(minWidth: 150, idealWidth: 270, maxWidth: 380, alignment: .leading).layoutPriority(1)
+            Spacer(minLength: 0)
+            LiveBadge()
+            SwiftUI.TimelineView(.periodic(from: .now, by: 1)) { tl in
+                Text(live.elapsedText(at: tl.date)).font(CU.Font.callout.weighted(.regular)).monospacedDigit().foregroundStyle(secondary)
+            }
+            .accessibilityLabel("On air for \(live.elapsedText(at: Date()))")
+            liveTransport(live)
+        }
+        .padding(.horizontal, 16).frame(height: 68)
+        .background { plate }
+        .overlay(alignment: .bottom) { Rectangle().fill(CU.onMedia.opacity(0.22)).frame(height: 3).accessibilityHidden(true) }
+        .clipShape(shape)
+        .accessibilityElement(children: .contain)
+    }
+
+    private func liveTransport(_ live: LiveSession) -> some View {
+        HStack(spacing: 8) {
+            Button { p.previous() } label: { Image(systemName: "backward.fill") }
+                .accessibilityLabel("Previous station").disabled(state.stations.favourites.count < 2)
+            Button { p.stopStation() } label: { Image(systemName: "stop.fill").font(CU.Icon.transport()) }
+                .accessibilityLabel("Stop \(live.name)")
+            Button { p.next() } label: { Image(systemName: "forward.fill") }
+                .accessibilityLabel("Next station").disabled(state.stations.favourites.count < 2)
+            if let station = liveStation {
+                Button { Task { await state.stations.setFavourite(station, on: !station.favourite) } } label: {
+                    Image(systemName: station.favourite ? "star.fill" : "star").foregroundStyle(station.favourite ? CU.accent : ink)
+                }
+                .accessibilityLabel(station.favourite ? "Favourite, on" : "Favourite, off")
+            }
+        }
+        .buttonStyle(.plain).font(CU.Icon.row())
     }
 
     private var barRow: some View {

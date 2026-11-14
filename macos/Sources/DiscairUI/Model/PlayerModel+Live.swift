@@ -11,6 +11,23 @@ public struct LiveSession: Equatable, Sendable {
     /// When the owner tuned in; the bar shows the time since.
     public let startedAt: Date
     public var phase: Phase
+
+    /// The time since tuning in as the bar and the On Air panel show it: "19:12", or "1:02:03" after an hour. Never negative.
+    public func elapsedText(at now: Date) -> String {
+        let total = max(0, Int(now.timeIntervalSince(startedAt)))
+        let h = total / 3600, m = (total % 3600) / 60, s = total % 60
+        return h > 0 ? String(format: "%d:%02d:%02d", h, m, s) : String(format: "%d:%02d", m, s)
+    }
+
+    /// A sentence for a phase that is not plain playing, or nil while the station plays. No address is ever in it.
+    public var phaseSentence: String? {
+        switch phase {
+        case .playing: nil
+        case .connecting: "Connecting…"
+        case .reconnecting: "Reconnecting…"
+        case .unreachable: "Station unreachable"
+        }
+    }
 }
 
 extension PlayerModel {

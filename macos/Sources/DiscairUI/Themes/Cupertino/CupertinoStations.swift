@@ -3,7 +3,9 @@ import SwiftUI
 
 /// The Radio page, mockup A2 "Tuner" (docs/design/macos-radio/mockups.html; docs/RADIO_PLAYBACK_PROPOSAL.md S2-1 item 7):
 /// the title, the tag chips, the station list (logo, name, state in words, first tag, star) and the fixed On Air panel.
-/// Nothing plays yet (live playback is S2-2), so a row click only selects it and the panel says so. Edit Tags (item 8) opens from a row's right-click menu.
+/// A row click (or Return on the selected row) plays the station; the playing row has the accent tint and the On Air panel shows
+/// the station with the time since tuning in and Stop (S2-2 item 4). The live song joins the panel in S2-3. Edit Tags opens from
+/// a row's right-click menu.
 struct CupertinoStations: View {
     let state: AppState
     @State private var selectedID: String?
@@ -15,6 +17,7 @@ struct CupertinoStations: View {
     }
 
     private var model: StationsModel { state.stations }
+    private var player: PlayerModel { state.player }
 
     /// Below this content width the On Air panel moves under the list (S2.7).
     static let sideBySideWidth: CGFloat = 880
@@ -91,11 +94,11 @@ struct CupertinoStations: View {
             if sideBySide {
                 HStack(alignment: .top, spacing: CU.Space.l) {
                     ScrollView { list.padding(.bottom, CU.Space.xl) }.scrollEdgeEffectStyle(.hard, for: .top)
-                    OnAirPanel().frame(width: Self.panelWidth)
+                    OnAirPanel(player: player, stations: model).frame(width: Self.panelWidth)
                 }
             } else {
                 ScrollView {
-                    VStack(alignment: .leading, spacing: CU.Space.m) { list; OnAirPanel() }.padding(.bottom, CU.Space.xl)
+                    VStack(alignment: .leading, spacing: CU.Space.m) { list; OnAirPanel(player: player, stations: model) }.padding(.bottom, CU.Space.xl)
                 }
                 .scrollEdgeEffectStyle(.hard, for: .top)
             }
@@ -106,11 +109,12 @@ struct CupertinoStations: View {
         let shown = model.visibleStations
         return LazyVStack(spacing: 0) {
             ForEach(Array(shown.enumerated()), id: \.element.id) { i, station in
-                let selected = station.id == selectedID
-                let previousSelected = i > 0 && shown[i - 1].id == selectedID
-                StationRow(station: station, status: model.status(for: station), selected: selected,
+                let playing = player.live?.stationID == station.id
+                let selected = station.id == selectedID || playing
+                let previousSelected = i > 0 && (shown[i - 1].id == selectedID || player.live?.stationID == shown[i - 1].id)
+                StationRow(station: station, status: model.status(for: station), selected: selected, playing: playing,
                            showsRule: i > 0 && !selected && !previousSelected,
-                           select: { selectedID = station.id },
+                           select: { selectedID = station.id; if !playing { player.playStation(station) } },
                            toggleFavourite: { Task { await model.setFavourite(station, on: !station.favourite) } },
                            editTags: { editingTags = station })
             }
@@ -118,6 +122,11 @@ struct CupertinoStations: View {
         .focusable()
         .onKeyPress(.downArrow) { move(by: 1, in: shown) }
         .onKeyPress(.upArrow) { move(by: -1, in: shown) }
+        .onKeyPress(.return) {
+            guard let station = shown.first(where: { $0.id == selectedID }) else { return .ignored }
+            if player.live?.stationID != station.id { player.playStation(station) }
+            return .handled
+        }
         .sheet(item: $editingTags) { station in
             StationTagsSheet(station: station) { tags in Task { await model.setTags(station, to: tags) } }
         }
@@ -137,6 +146,7 @@ private struct StationRow: View {
     let station: RadioStation
     let status: StationRules.Status
     let selected: Bool
+    let playing: Bool
     let showsRule: Bool
     let select: () -> Void
     let toggleFavourite: () -> Void
@@ -163,7 +173,8 @@ private struct StationRow: View {
             }
             .buttonStyle(.plain)
             .accessibilityElement(children: .ignore)
-            .accessibilityLabel("\(station.name), \(status.text)")
+            .accessibilityLabel("\(station.name), \(playing ? "playing, " : "")\(status.text)")
+            .accessibilityHint(playing ? "" : "Plays the station")
             .accessibilityAddTraits(selected ? .isSelected : [])
             Button(action: toggleFavourite) {
                 Image(systemName: station.favourite ? "star.fill" : "star").font(.system(size: 15))
@@ -189,17 +200,56 @@ private struct StationRow: View {
     }
 }
 
-/// The fixed panel on the right. Until live playback exists (S2-2) it only says nothing is playing.
+/// The fixed panel on the right (mockup A2, "On Air"). Nothing playing: a sentence. A station playing: the hero from the mockup, the
+/// logo, LIVE, the station and the time since tuning in, and Stop. The song, Download and Heard come with S2-3.
 private struct OnAirPanel: View {
+    let player: PlayerModel
+    let stations: StationsModel
+
     var body: some View {
-        VStack(alignment: .leading, spacing: CU.Space.s) {
-            Text("On air").cuRole(CU.Font.eyebrow).textCase(.uppercase).foregroundStyle(CU.textSecondary)
-            Text("Nothing playing. Choose a station.").cuRole(CU.Font.body).foregroundStyle(CU.textSecondary)
+        if let live = player.live {
+            hero(live)
+        } else {
+            VStack(alignment: .leading, spacing: CU.Space.s) {
+                Text("On air").cuRole(CU.Font.eyebrow).textCase(.uppercase).foregroundStyle(CU.textSecondary)
+                Text(player.notice ?? "Nothing playing. Choose a station.").cuRole(CU.Font.body)
+                    .foregroundStyle(player.notice == nil ? CU.textSecondary : CU.danger)
+            }
+            .padding(14)
+            .frame(maxWidth: .infinity, minHeight: 120, alignment: .topLeading)
+            .background(CU.bgPanel, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .accessibilityElement(children: .combine)
         }
-        .padding(14)
-        .frame(maxWidth: .infinity, minHeight: 120, alignment: .topLeading)
-        .background(CU.bgPanel, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .accessibilityElement(children: .combine)
+    }
+
+    private func hero(_ live: LiveSession) -> some View {
+        let station = stations.stations.first { $0.id == live.stationID }
+        return HStack(spacing: 16) {
+            if let station { StationLogo(station: station, size: 96) }
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(spacing: 8) {
+                    LiveBadge()
+                    SwiftUI.TimelineView(.periodic(from: .now, by: 1)) { tl in
+                        Text("On air for \(live.elapsedText(at: tl.date))").cuRole(CU.Font.callout).monospacedDigit()
+                            .foregroundStyle(CU.onMedia.opacity(0.85)).lineLimit(1)
+                    }
+                }
+                Text(live.name).cuRole(CU.Font.title2).foregroundStyle(CU.onMedia).lineLimit(2)
+                if let sentence = live.phaseSentence { Text(sentence).cuRole(CU.Font.callout).foregroundStyle(CU.onMedia.opacity(0.85)) }
+                Button { player.stopStation() } label: {
+                    HStack(spacing: 6) { Image(systemName: "stop.fill"); Text("Stop").cuRole(CU.Font.callout) }.foregroundStyle(CU.onMedia)
+                        .padding(.horizontal, 12).padding(.vertical, 4)
+                        .background(CU.onMedia.opacity(0.2), in: Capsule())
+                }
+                .buttonStyle(.plain).padding(.top, 4)
+                .accessibilityLabel("Stop \(live.name)")
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(LiveStationPlate.gradient.clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous)))
+        .accessibilityElement(children: .contain)
     }
 }
 
@@ -309,5 +359,24 @@ private struct WrapLayout: Layout {
             maxX = max(maxX, x - spacing)
         }
         return (origins, CGSize(width: maxX, height: y + rowHeight))
+    }
+}
+
+/// The word LIVE on a white pill (mockup `.livep`): used on the On Air panel and the player bar. A word, never a colour alone.
+struct LiveBadge: View {
+    var body: some View {
+        Text("LIVE").font(CU.Font.caption.weighted(.bold)).tracking(0.8)
+            .foregroundStyle(CU.accentStrong)
+            .padding(.horizontal, 6).padding(.vertical, 1)
+            .background(CU.onMedia, in: RoundedRectangle(cornerRadius: 4, style: .continuous))
+            .accessibilityLabel("Live")
+    }
+}
+
+/// The dark ground of a station that plays, on the On Air panel and the player bar (mockup `.hero` and `.pb`): the accent pulled
+/// towards black. White text on it keeps its contrast at every hue, in Day and in Night.
+enum LiveStationPlate {
+    static var gradient: LinearGradient {
+        LinearGradient(colors: [CU.accentStrong.mix(with: CU.shadowInk, by: 0.55), CU.shadowInk.opacity(0.92)], startPoint: .topLeading, endPoint: .bottomTrailing)
     }
 }
