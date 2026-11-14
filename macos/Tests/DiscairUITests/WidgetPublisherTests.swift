@@ -57,4 +57,34 @@ import Testing
         #expect(NowPlayingShare.read(in: dir) == nil)
         #expect(count.n == 2)
     }
+
+    @Test func aStationIsWrittenLiveWithItsLogoAndReloadsOnce() throws {
+        let (p, dir, count) = setup(); defer { try? FileManager.default.removeItem(at: dir) }
+        p.publishLive(stationName: "FIP", stationID: "fip", logo: nil)
+        p.publishLive(stationName: "FIP", stationID: "fip", logo: nil)   // same state: nothing new
+        #expect(count.n == 1)
+        let snap = try #require(NowPlayingShare.read(in: dir))
+        #expect(snap.live && snap.title == "FIP" && snap.duration == 0 && snap.coverFile == nil)
+        p.publishLive(stationName: "FIP", stationID: "fip", logo: cover())   // the logo arrives
+        #expect(count.n == 2)
+        let withLogo = try #require(NowPlayingShare.read(in: dir))
+        #expect(NowPlayingShare.coverData(for: withLogo, in: dir) != nil)
+    }
+
+    @Test func anotherStationWritesAgainAndStoppingClears() {
+        let (p, dir, count) = setup(); defer { try? FileManager.default.removeItem(at: dir) }
+        p.publishLive(stationName: "FIP", stationID: "fip", logo: nil)
+        p.publishLive(stationName: "KEXP", stationID: "kexp", logo: nil)
+        #expect(count.n == 2)
+        p.publish(item: nil, duration: 0, position: 0, playing: false, cover: nil)
+        #expect(NowPlayingShare.read(in: dir) == nil)
+        #expect(count.n == 3)
+    }
+
+    @Test func aSongAfterAStationReplacesTheLiveSnapshot() throws {
+        let (p, dir, _) = setup(); defer { try? FileManager.default.removeItem(at: dir) }
+        p.publishLive(stationName: "FIP", stationID: "fip", logo: nil)
+        p.publish(item: song, duration: 200, position: 0, playing: true, cover: nil)
+        #expect(try #require(NowPlayingShare.read(in: dir)).live == false)
+    }
 }

@@ -9,8 +9,18 @@ struct MiniPlayerContent: Equatable {
     /// The next song in the queue (title and artist), or nil when nothing follows.
     var next: String?
     var hasSong: Bool
+    /// A station plays (S2-2 item 7): the title is the station, the second line says "On air" or what is wrong, and there is no
+    /// "next" line.
+    var isLive = false
 
-    init(current: QueueItem?, upNext: [QueueItem]) {
+    init(current: QueueItem?, upNext: [QueueItem], live: LiveSession? = nil) {
+        if let live {
+            isLive = true; hasSong = false
+            title = live.name
+            artist = live.phaseSentence ?? "On air"
+            next = nil
+            return
+        }
         hasSong = current != nil
         title = current?.title ?? "Nothing playing"
         artist = current?.artist ?? ""
@@ -24,6 +34,8 @@ struct MiniPlayerContent: Equatable {
 public struct MiniPlayerView: View {
     @Bindable var state: AppState
     public static let size = CGSize(width: 340, height: 150)
+    /// While a station plays the window is one row: logo, name and stop (mockup `.mini`).
+    public static let liveSize = CGSize(width: 340, height: 76)
 
     public init(state: AppState) { self.state = state }
 
@@ -35,7 +47,47 @@ public struct MiniPlayerView: View {
     }
 
     public var body: some View {
-        let content = MiniPlayerContent(current: p.current, upNext: p.queue.upNext)
+        let content = MiniPlayerContent(current: p.current, upNext: p.queue.upNext, live: p.live)
+        if let live = p.live { liveBody(live, content) } else { songBody(content) }
+    }
+
+    /// Mockup `.mini`: the station logo at 52, then LIVE, the name and "On air", then a stop button. No seek bar, clock or
+    /// "Next" line: none of them applies to a stream.
+    private func liveBody(_ live: LiveSession, _ content: MiniPlayerContent) -> some View {
+        let station = state.stations.stations.first { $0.id == live.stationID }
+        return HStack(spacing: 12) {
+            Group {
+                if let station { StationLogo(station: station, size: 52, radiusFraction: 0.16) }
+                else { RoundedRectangle(cornerRadius: 8, style: .continuous).fill(.white.opacity(0.1)).frame(width: 52, height: 52) }
+            }
+            VStack(alignment: .leading, spacing: 2) {
+                Text("LIVE").font(.system(size: 10.5, weight: .bold)).tracking(0.8)
+                    .foregroundStyle(Color(red: 0.70, green: 0.07, blue: 0.24))
+                    .padding(.horizontal, 6).padding(.vertical, 1)
+                    .background(.white, in: RoundedRectangle(cornerRadius: 4, style: .continuous))
+                    .accessibilityLabel("Live")
+                Text(content.title).font(.system(size: 14, weight: .bold)).lineLimit(1)
+                Text(content.artist).font(.system(size: 12)).foregroundStyle(.white.opacity(0.7)).lineLimit(1)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            Button { p.stopStation() } label: {
+                Image(systemName: "stop.fill").font(.system(size: 18, weight: .semibold)).frame(width: 36, height: 36)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Stop \(live.name)")
+            .help("Stop")
+        }
+        .foregroundStyle(.white)
+        .padding(12)
+        .frame(width: Self.liveSize.width, height: Self.liveSize.height)
+        .background(Color(red: 0.133, green: 0.125, blue: 0.165))
+        .preferredColorScheme(.dark)
+        .environment(\.artwork, state.artwork)
+        .environment(\.stationLogos, state.stationLogos)
+        .background(MiniWindowConfigurator())
+    }
+
+    private func songBody(_ content: MiniPlayerContent) -> some View {
         HStack(spacing: 12) {
             CoverView(album: album, px: 240)
                 .frame(width: 96, height: 96)

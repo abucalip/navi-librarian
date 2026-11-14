@@ -45,6 +45,23 @@ final class WidgetPublisher {
         }
     }
 
+    /// A station plays: the widget shows its name, its logo and LIVE, with no length or position. `stationID` keys the logo so
+    /// one arriving late is written once; a changed station writes again.
+    func publishLive(stationName: String, stationID: String, logo: NSImage?) {
+        let coverJPEG = logo.flatMap { Self.jpeg($0) }
+        let coverKey = coverJPEG == nil ? nil : "live:\(stationID)"
+        let snap = NowPlayingSnapshot(title: stationName, artist: "", album: "", duration: 0, position: 0, isPlaying: true,
+                                      coverFile: coverJPEG == nil ? nil : NowPlayingShare.coverName, isLive: true)
+        if let last, last.sameState(as: snap), lastCoverID == coverKey { return }
+        do {
+            try NowPlayingShare.write(snap, cover: coverJPEG, in: folder)
+            last = snap; lastCoverID = coverKey
+            reload()
+        } catch {
+            // As for songs: the widget never reaches playback.
+        }
+    }
+
     nonisolated static func jpeg(_ image: NSImage) -> Data? {
         guard let tiff = image.tiffRepresentation, let rep = NSBitmapImageRep(data: tiff) else { return nil }
         let longest = max(rep.pixelsWide, rep.pixelsHigh)

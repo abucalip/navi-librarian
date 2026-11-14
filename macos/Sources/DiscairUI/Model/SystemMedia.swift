@@ -69,7 +69,7 @@ final class SystemMedia {
             loadLogoIfNeeded(for: player.stationByLive)
             center.nowPlayingInfo = Self.liveInfo(stationName: live.name, cover: logoImage)
             center.playbackState = .playing
-            widget?.publish(item: nil, duration: 0, position: 0, playing: false, cover: nil)   // the widget's live case is S2-2 item 7
+            widget?.publishLive(stationName: live.name, stationID: live.stationID, logo: logoImage)
             return
         }
         logoTask?.cancel(); logoKey = nil; logoImage = nil

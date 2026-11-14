@@ -50,4 +50,23 @@ struct MiniPlayerTests {
         let dir = URL(fileURLWithPath: ProcessInfo.processInfo.environment["DISCAIR_SCREENSHOT_DIR"] ?? NSTemporaryDirectory())
         try png.write(to: dir.appendingPathComponent("mini-\(theme.rawValue).png"))
     }
+
+    @Test func aStationShowsItsNameOnAirAndNoNextLine() {
+        let live = LiveSession(stationID: "fip", name: "FIP", logoPath: "", startedAt: Date(), phase: .playing)
+        let c = MiniPlayerContent(current: item("One"), upNext: [item("Two")], live: live)
+        #expect(c.isLive && !c.hasSong)
+        #expect(c.title == "FIP" && c.artist == "On air")
+        #expect(c.next == nil)
+    }
+
+    @Test func aStationThatIsNotPlayingYetSaysWhy() {
+        var live = LiveSession(stationID: "fip", name: "FIP", logoPath: "", startedAt: Date(), phase: .reconnecting)
+        #expect(MiniPlayerContent(current: nil, upNext: [], live: live).artist == "Reconnecting…")
+        live.phase = .unreachable
+        #expect(MiniPlayerContent(current: nil, upNext: [], live: live).artist == "Station unreachable")
+    }
+
+    @Test func aSongIsNotLive() {
+        #expect(!MiniPlayerContent(current: item("One"), upNext: []).isLive)
+    }
 }
