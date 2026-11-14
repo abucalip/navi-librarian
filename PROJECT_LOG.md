@@ -1,3 +1,11 @@
+## 2026-11-14 — Client efficiency: spinning disc moved to Core Animation (PR #1072)
+
+- PR [#1072](https://github.com/abucalip/navi-librarian/pull/1072), merged as `179a8e33`. Docs direct to `main` on the owner's instruction. `DiscView` (`macos/Sources/DiscairUI/Chrome/NowPlayingArtwork.swift`) no longer uses a 30 Hz `TimelineView(.animation)`; the disc is drawn once to a bitmap (`ImageRenderer`) and turned by a `CABasicAnimation` on a child layer kept centred in an `NSViewRepresentable`, paused in place when not playing, still off under Reduce Motion. The sleeve slide (`DiscSleeve`) is unchanged.
+- **Why:** after #1071 the owner still saw about 40 % CPU and a lagging track clock while a track played. A 10 s `sample` of the playing app showed the main thread mostly waiting on Core Animation commits (`CA::Transaction::commit`), with the player-bar disc `TimelineView` the only per-frame driver; per-frame main-thread work delays the 4 Hz `position` tick, which is the lag. The #1071 A/B (Home, same track) did not catch it, probably because that track's disc was not drawn.
+- **First version was wrong:** it rotated the SwiftUI-managed layer, so the disc orbited the artwork instead of turning in place. Fixed in the same PR by rotating a centred child layer.
+- **Not measured:** no CPU A/B is recorded for this change; the owner merged after trying a build. Re-measure S3 with a disc image present before quoting a number. The other `TimelineView(.animation)` user, `SlideshowBackdrop` (20 Hz, Now Playing only), is untouched.
+- **Next action:** S3 to S5 re-baseline with the clock and disc fixed, the hidden-window check for G2, then M1 and M2.
+
 ## 2026-11-14 — Client efficiency: M7 merged (PlaybackClock without a TimelineView)
 
 - PR [#1071](https://github.com/abucalip/navi-librarian/pull/1071), merged as `5edb1b27`. `PlaybackClock` now renders `content(player.displayPosition())` from the observed `position`; no `TimelineView`. Docs direct to `main` on the owner's instruction.
