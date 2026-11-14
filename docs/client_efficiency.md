@@ -293,7 +293,7 @@ Steps on different clients are independent and can be interleaved. Each code ste
 - **Risks:** an attached profiler changes timing; use the cheap tools for the headline numbers and the traces for explanation only.
 - **Verification:** three runs per scenario; the spread between runs is recorded beside each median.
 - **Acceptance criteria:** the macOS table is complete; G1 and G2 are each marked met or not met with the numbers; any hypothesis the data contradicts is marked so in the results file; no code is changed.
-- **Status (2026-11-14):** in progress. Done: S2, three runs, build `fab8032d` (inferred from the binary's build time). Not done: S1, S3–S11, G1 and G2, the three traces. Next: a Time Profiler and SwiftUI trace on idle Home, then S7 (minimized), then S3–S6.
+- **Status (2026-11-14):** in progress. Done: S2 to S7 and the S7 Reduce Motion reference, three runs each (S3 run 3 is an outlier, flagged). **G1 not met** (S5 − S4 = −2.1 points), so M5 closes without work. **G2 met by the letter but marginal** (S7 26.8 % vs 24.8 % with Reduce Motion; owner to decide). Main finding: Discair uses about 25 to 29 % of one core in every state (S6 paused 13.75 %), unaffected by hiding the window or Reduce Motion; the cause is unidentified and needs a SwiftUI-instrument trace. S5 photos add about 170 MB (207 → 376 MB). Marquee hypothesis rejected. Not done: S1, S8 to S11, the three required traces. S2 had a paused track loaded, because the app has no way to clear Now Playing.
 - **Model: Sonnet | Effort: Medium**
 
 #### P0-3 Android baseline and gate decisions
