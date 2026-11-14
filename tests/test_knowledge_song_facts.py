@@ -153,7 +153,7 @@ class MemberLineage(unittest.TestCase):
     def test_a_member_with_an_open_or_returning_tenure_is_never_said_to_have_left(self):
         band, other, josh = self.up("artist", "Desert Band", "q"), self.up("artist", "Side Act", "s"), self.up("artist", "Josh H", "j")
         self.member(josh, band, "1996", "1996")
-        self.member(josh, band, "1997")  # back in the band, no end stated
+        self.member(josh, band, "1997", role="second stint")  # back in the band, no end stated
         self.member(josh, other, "1998")
         (line,) = self.lines("q")
         self.assertEqual(line["text"], "Josh H of Desert Band was also in Side Act")
