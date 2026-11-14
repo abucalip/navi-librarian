@@ -238,6 +238,8 @@ public final class AppState {
         stations.configure(source: session.librarian)
         stationLogos.configure(source: session.librarian)
         player.configure(urls: navidrome.urls, scrobbler: navidrome)
+        player.liveBase = session.activeProfile?.librarianURL
+        player.favouriteStations = { [weak self] in self?.stations.favourites ?? [] }
         // Skips saved while the Librarian was unreachable go out now that it is connected (in the background).
         Task { await feedback?.flush() }
         lyrics.configure(navidrome: navidrome, scope: "\(session.activeProfile?.navidromeURL.absoluteString ?? "")|\(session.navidromeUsername ?? "")")

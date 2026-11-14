@@ -4,7 +4,8 @@ import DiscairCore
 import DiscairLibrarian
 import Foundation
 
-/// S2-2 item 1, the proof: does a live MP3 or AAC stream play, and does the tap give samples? Addresses are never printed.
+/// S2-2 item 1, the proof: does a live MP3 or AAC stream play through `LiveStreamPlayer`? (The level tap was tried and gave no
+/// samples on live streams, so it was removed: macos/DESIGN.md.) Addresses are never printed.
 @MainActor
 func liveSpike(args: [String], seconds: Double, volume: Float) async throws {
     var targets: [(label: String, url: URL)] = []
@@ -45,18 +46,13 @@ func runOne(label: String, url: URL, seconds: Double, volume: Float) async {
     let player = LiveStreamPlayer()
     player.volume = volume
     var states: [String] = []
-    var levels: [Float] = []
     let start = Date()
     var firstSound: Double?
     player.onState = { states.append("\($0)@\(f(Date().timeIntervalSince(start), 1))s"); if $0 == .playing, firstSound == nil { firstSound = Date().timeIntervalSince(start) } }
-    player.onLevel = { levels.append($0) }
     player.start(url: url)
     try? await Task.sleep(for: .seconds(seconds))
     player.stop()
     report("states", states.joined(separator: " → "))
     report("seconds to first sound", firstSound.map { f($0, 1) } ?? "never")
-    report("tap samples", player.hasTapSamples ? "yes" : "NO")
-    report("level values (15 Hz expected ≈ \(Int(seconds * 15)))", "\(levels.count)")
-    if let mx = levels.max() { report("level min / mean / max", "\(f(Double(levels.min()!), 3)) / \(f(Double(levels.reduce(0, +)) / Double(levels.count), 3)) / \(f(Double(mx), 3))") }
     print()
 }

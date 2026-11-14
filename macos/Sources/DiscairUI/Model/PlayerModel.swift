@@ -12,10 +12,10 @@ public final class PlayerModel {
     public enum Phase: Equatable, Sendable { case idle, loading, playing, paused, failed(String) }
 
     public private(set) var queue = PlayQueue()
-    public private(set) var phase: Phase = .idle { didSet { onNowPlayingChange?() } }
+    public internal(set) var phase: Phase = .idle { didSet { onNowPlayingChange?() } }
     /// Told when the song or play state changes (the system Now Playing hook).
     @ObservationIgnored public var onNowPlayingChange: (() -> Void)?
-    public private(set) var position: Double = 0 { didSet { positionAnchor = Date() } }
+    public internal(set) var position: Double = 0 { didSet { positionAnchor = Date() } }
     @ObservationIgnored private var positionAnchor = Date()
     /// The position for a clock on screen: the last reading carried forward by the time since it was taken (at most 2 s), so
     /// the clock keeps moving smoothly when a tick is late. Never behind `position`, never past the song's end.
@@ -61,11 +61,11 @@ public final class PlayerModel {
     public static let qualityChoices: [Int?] = [nil, 320, 256, 192, 128, 96, 64]
     private static let qualityKey = "discair.qualityCap"
     /// Told to the owner when something was changed for them (an MP3 fallback); cleared when the next song starts.
-    public private(set) var notice: String?
+    public internal(set) var notice: String?
     private static let crossfadeKey = "discair.crossfadeSeconds"
     /// App output level 0...1 (remembered).
     public var volume: Float {
-        didSet { output.volume = volume; defaults.set(Double(volume), forKey: Self.volumeKey) }
+        didSet { output.volume = volume; liveOutput.volume = volume; defaults.set(Double(volume), forKey: Self.volumeKey) }
     }
     /// The equalizer (remembered). Change it through `updateEQ`.
     public private(set) var eq = EQSettings()
@@ -127,23 +127,39 @@ public final class PlayerModel {
     public var fraction: Double { duration > 0 ? min(max(position / duration, 0), 1) : 0 }
 
     @ObservationIgnored private var urls: StreamURLBuilder?
-    @ObservationIgnored private let output: AudioOutput
+    @ObservationIgnored let output: AudioOutput
+
+    // MARK: Live radio (stage 2, S2-2; rules in docs/RADIO_PLAYBACK_PROPOSAL.md S2.6)
+
+    /// The station that is playing, or nil. Never saved with the queue.
+    public internal(set) var live: LiveSession?
+    /// The station that was stopped last, so Play can start it again. Cleared when a library song starts.
+    @ObservationIgnored var stoppedStation: RadioStation?
+    /// The playing station as the server sent it, for Next and Previous.
+    @ObservationIgnored var stationByLive: RadioStation?
+    @ObservationIgnored let liveOutput: LiveOutput
+    /// Resolves a station's `playable_url` (the Librarian's relay path is relative). Set from the active profile.
+    @ObservationIgnored var liveBase: URL?
+    /// The favourites in server order, for station Next and Previous. Wired by `AppState`.
+    @ObservationIgnored public var favouriteStations: () -> [RadioStation] = { [] }
+    public static let lastStationKey = "discair.radio.lastStation"
     @ObservationIgnored private let fetcher: AudioFetcher
-    @ObservationIgnored private var loadTask: Task<Void, Never>?
+    @ObservationIgnored var loadTask: Task<Void, Never>?
     @ObservationIgnored private var tickTask: Task<Void, Never>?
-    @ObservationIgnored private var loadGeneration = 0
+    @ObservationIgnored var loadGeneration = 0
     @ObservationIgnored private var downloaded: URL?
     /// The current song while it streams to disk (contract 12.2); cancelled when the song changes.
     @ObservationIgnored private var growing: GrowingDownload?
     /// The message for a song whose download broke while it played; shown now and again after the next song starts.
     @ObservationIgnored private var cutShort: String?
-    @ObservationIgnored private let defaults: UserDefaults
+    @ObservationIgnored let defaults: UserDefaults
     @ObservationIgnored private var preloadTask: Task<Void, Never>?
     /// The song handed to the engine (or being fetched) as the follower, and its file once downloaded.
     @ObservationIgnored private var preloaded: (id: UUID, file: URL?)?
 
     public init(output: AudioOutput = EngineOutput(), fetcher: AudioFetcher = URLSessionFetcher(), defaults: UserDefaults = .standard,
-                waveformCache: WaveformCache = WaveformCache()) {
+                waveformCache: WaveformCache = WaveformCache(), liveOutput: LiveOutput = LiveStreamPlayer()) {
+        self.liveOutput = liveOutput
         self.waveformCache = waveformCache
         self.output = output
         self.fetcher = fetcher
@@ -161,6 +177,7 @@ public final class PlayerModel {
         let v = defaults.object(forKey: Self.volumeKey) as? Double
         volume = Float(min(max(v ?? 1, 0), 1))
         output.volume = volume
+        liveOutput.volume = volume
         if let data = defaults.data(forKey: Self.eqKey), let saved = try? JSONDecoder().decode(EQSettings.self, from: data) { eq = saved }
         output.applyEQ(gains: eq.effective.gains, preGain: eq.effective.preGain)
         if let data = defaults.data(forKey: Self.queueKey), let snap = try? JSONDecoder().decode(PlayQueue.Snapshot.self, from: data), !snap.items.isEmpty {
@@ -171,6 +188,7 @@ public final class PlayerModel {
         }
         output.onFinished = { [weak self] in self?.songEnded() }
         output.onAdvanced = { [weak self] in self?.advancedByEngine() }
+        liveOutput.onState = { [weak self] state in self?.liveStateChanged(state) }
     }
 
     /// Seconds to jump to when the restored song first starts (0 otherwise).
@@ -245,6 +263,7 @@ public final class PlayerModel {
     // MARK: Controls
 
     public func togglePlayPause() {
+        if togglePlayPauseLive() { return }
         switch phase {
         case .playing: output.pause(); phase = .paused; position = output.position; stopTicking(); persist()
         case .paused: output.play(); phase = .playing; startTicking()
@@ -254,6 +273,7 @@ public final class PlayerModel {
     }
 
     public func next() {
+        if live != nil { stepStation(by: 1); return }
         leaveByOwner()
         pushHistory()
         guard queue.advance(natural: false) != nil else { stop(); return }
@@ -262,6 +282,7 @@ public final class PlayerModel {
 
     /// Past three seconds, Previous restarts the song; otherwise it goes back one.
     public func previous() {
+        if live != nil { stepStation(by: -1); return }
         if phase == .playing || phase == .paused, output.position > 3 { seek(toSeconds: 0); return }
         let before = queue.current?.id, lastInQueue = queue.upNext.isEmpty
         guard queue.back() != nil else { return }
@@ -274,7 +295,7 @@ public final class PlayerModel {
     public func seek(toFraction f: Double) { seek(toSeconds: duration * min(max(f, 0), 1)) }
 
     public func seek(toSeconds s: Double) {
-        guard phase == .playing || phase == .paused else { return }
+        guard live == nil, phase == .playing || phase == .paused else { return }
         output.seek(to: s)
         position = output.position
     }
@@ -310,6 +331,7 @@ public final class PlayerModel {
     public func clearUpNext() { queue.clearUpNext(); refreshPreload(); persist() }
 
     public func stop() {
+        endLive()
         loadGeneration += 1
         loadTask?.cancel()
         dropPreload()
@@ -337,6 +359,8 @@ public final class PlayerModel {
     private func startCurrent(resume: Bool = false) {
         guard let item = queue.current else { stop(); return }
         guard let urls else { phase = .failed("Not connected to Navidrome. Check Settings."); return }
+        endLive()
+        stoppedStation = nil
         loadGeneration += 1
         let mine = loadGeneration
         loadTask?.cancel()
@@ -535,7 +559,7 @@ public final class PlayerModel {
         }
     }
 
-    private func stopTicking() { tickTask?.cancel(); tickTask = nil }
+    func stopTicking() { tickTask?.cancel(); tickTask = nil }
 }
 
 extension PlayerModel {

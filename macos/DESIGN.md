@@ -533,5 +533,6 @@ Internet radio on the Mac, built from the owner's choices. Mockups (the spec): [
 
 - The item lists one audio track (`item.tracks`; `asset.loadTracks` returns none for a live asset), the tap is created and attached, and `process` is never called. The tap works on a file, so the code is sound; AVFoundation does not feed taps on live progressive streams.
 - The owner's run on two real relayed stations (15 s each) gives the same result as the public streams, so the failure holds for the actual relay.
+- **Owner decision (2026-11-14): B1 everywhere.** The level tap and the `levels` value are removed; the live bar uses the 3 pt hairline at 22% white on the bottom edge, always. `LiveStreamPlayer` reports state only (connecting, playing, stalled, failed).
 - By the proposal (S2.6 "Proof first") the work stops here. Choices for the owner: **B1 everywhere** (the 3 pt hairline, no meter), or **decode the stream into the existing engine** (a larger piece of work, and it would give real levels).
 - The tap callbacks must be built in a `nonisolated` context: closures made inside a `@MainActor` class trap at run time when AVFoundation calls them on the audio thread.
