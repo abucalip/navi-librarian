@@ -10,8 +10,8 @@ const hero=`<div class="heroA onart"><div class="blur" data-c="0"></div>${cv(0)}
  <div class="mx"><span class="eye">Today's pick · 1 of 7</span><h4>${AL[0][0]}</h4><span class="by">${AL[0][1]} · ${AL[0][2]} · Jazz · not in your library</span>
  <p class="why">You have played three of her later records this month and none from before 1980. This is the one the others grew out of.</p>
  <span class="trk">↓ Mirage Line · suggested track</span>
- <div class="acts"><span class="btn pri">Get album <span class="kbd">→</span></span><span class="btn sec">Save <span class="kbd">↓</span></span><span class="btn sec">Not for me <span class="kbd">←</span></span></div></div>
- <div class="nextA"><span class="eye">Next picks</span><div>${[7,13,2].map(i=>cv(i)).join('')}</div><div>${[21,16,30].map(i=>cv(i)).join('')}</div></div></div>`;
+ <div class="acts"><span class="btn pri">Get album</span><span class="btn sec">Save</span><span class="btn sec">Not for me</span></div></div>
+ <span class="chev"><i>‹</i><i>›</i></span><div class="nextA"><span class="eye">Next picks</span><div>${[7,13,2].map(i=>cv(i)).join('')}</div><div>${[21,16,30].map(i=>cv(i)).join('')}</div></div></div>`;
 const EMPTY={
  none:`<div class="heroE"><span class="eye">Today's pick</span><h4>No picks right now.</h4><p>Nothing is missing from your recommendations right now.</p><div class="acts"><span class="btn sec">Browse New releases</span></div></div>`,
  history:`<div class="heroE"><span class="eye">Today's pick</span><h4>No picks yet.</h4><p>Picks come from your listening history. Connect Last.fm or ListenBrainz in Services and the first list is built within a few minutes. Nothing is suggested from guesses.</p><div class="acts"><span class="btn sec">Open Services</span><span class="btn sec">Browse New releases</span></div></div>`,

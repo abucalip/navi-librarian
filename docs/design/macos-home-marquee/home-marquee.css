@@ -68,3 +68,5 @@
 .nar .nextA{flex-direction:row;align-items:center;justify-content:flex-start;width:100%}.nar .lineA{flex-wrap:wrap}.nar .lineA p{flex-basis:100%}
 .tiles{display:grid;grid-template-columns:repeat(7,1fr);gap:16px;padding:24px 32px}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+
+.heroA{position:relative}.chev{position:absolute;top:16px;right:16px;display:flex;gap:8px}.chev i{width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.2);color:#fff;font:600 20px/28px var(--dp);font-style:normal;text-align:center}

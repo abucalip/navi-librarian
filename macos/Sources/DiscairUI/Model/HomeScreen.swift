@@ -27,17 +27,18 @@ enum HomeScreen {
         return (i, "\(i + 1) of \(count)")
     }
 
-    enum PickKey: Equatable { case get, save, notForMe, play }
-
-    static func pickKey(arrow: PickArrow) -> PickKey? {
-        switch arrow { case .right: .get; case .down: .save; case .left: .notForMe }
+    /// The pick after a chevron or an arrow key: one step back (-1) or forward (+1), wrapping round the list. `index` is clamped as
+    /// in `pickPosition`. With fewer than two picks there is nowhere to go and the index stays.
+    static func steppedPick(index: Int, count: Int, by step: Int) -> Int {
+        guard count > 1 else { return 0 }
+        let current = min(max(index, 0), count - 1)
+        return ((current + step) % count + count) % count
     }
-    enum PickArrow { case left, right, down }
 
     /// What Space does on the pick: an owned album plays; one the library lacks says so instead of doing nothing.
     enum SpaceOutcome: Equatable { case play, notOwned(notice: String) }
     static func spaceOutcome(owned: Bool) -> SpaceOutcome {
-        owned ? .play : .notOwned(notice: "This album is not in your library yet, so there is nothing to play. Press → to get it.")
+        owned ? .play : .notOwned(notice: "This album is not in your library yet, so there is nothing to play. Use Get album to get it.")
     }
 
     /// What the pick panel shows when it has no pick: its own sentence and the button that fixes it.

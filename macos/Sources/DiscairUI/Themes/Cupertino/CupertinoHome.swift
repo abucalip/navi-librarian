@@ -157,13 +157,13 @@ struct CupertinoHome: View {
                     .padding(-4).allowsHitTesting(false)
             }
         }
-        .onKeyPress(.rightArrow) { act(.get, a) }
-        .onKeyPress(.downArrow) { act(.save, a) }
-        .onKeyPress(.leftArrow) { act(.notForMe, a) }
-        .onKeyPress(.space) { act(.play, a) }
+        .overlay(alignment: .topTrailing) { if picks.count > 1 { chevrons(from: position.index) }}
+        .onKeyPress(.rightArrow) { step(from: position.index, by: 1) }
+        .onKeyPress(.leftArrow) { step(from: position.index, by: -1) }
+        .onKeyPress(.space) { play(a) }
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Today's pick, \(position.label)")
-        .accessibilityHint("Right arrow gets the album, down arrow saves it, left arrow is not for me, space plays it.")
+        .accessibilityHint("Left and right arrows show the previous and next pick. Space plays the album.")
     }
 
     private func pickText(_ a: AlbumItem, position: (index: Int, label: String)) -> some View {
@@ -230,9 +230,26 @@ struct CupertinoHome: View {
         }
     }
 
-    /// A button's words with its key beside them, smaller (the key hints row is gone; each key is shown inside its button).
-    private func keyed(_ words: Text, _ key: String) -> some View {
-        HStack(spacing: 6) { words; Text(key).font(.system(size: 10.5, weight: .semibold)).accessibilityHidden(true) }
+    /// Back and forward through the picks, wrapping round: at the panel's top right corner. The left and right arrow keys do the same.
+    private func chevrons(from index: Int) -> some View {
+        HStack(spacing: CU.Space.s) {
+            chevron("chevron.left", help: "Previous pick") { _ = step(from: index, by: -1) }
+            chevron("chevron.right", help: "Next pick") { _ = step(from: index, by: 1) }
+        }
+        .padding(CU.Space.m)
+    }
+
+    private func chevron(_ symbol: String, help: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: symbol).font(CU.Icon.small(.semibold)).foregroundStyle(.white)
+                .frame(width: 30, height: 30).background(Color.white.opacity(0.2), in: Circle())
+        }
+        .buttonStyle(.plain).help(help).accessibilityLabel(help)
+    }
+
+    private func step(from index: Int, by step: Int) -> KeyPress.Result {
+        pickIndex = HomeScreen.steppedPick(index: index, count: picks.count, by: step); pickNotice = nil
+        return .handled
     }
 
     /// Get is the one primary button: white, its label in the Day `accentStrong` in both modes. Each key is shown inside its button.
@@ -240,28 +257,21 @@ struct CupertinoHome: View {
         let acq = state.acquisition
         let label = acq.buttonLabel(for: a)
         return HStack(spacing: CU.Space.s) {
-            Button { state.actions.get(album: a) } label: { keyed(Text(label == "Get" ? "Get album" : label), "→") }
+            Button { state.actions.get(album: a) } label: { Text(label == "Get" ? "Get album" : label) }
                 .buttonStyle(MarqueeButtonStyle(primary: true)).disabled(!acq.canGet(a))
                 .help(acq.detail(for: a)).accessibilityHint(acq.detail(for: a))
-            Button { state.actions.save(album: a) } label: { keyed(Text(acq.isSaved(a) ? "Saved" : "Save"), "↓") }
+            Button { state.actions.save(album: a) } label: { Text(acq.isSaved(a) ? "Saved" : "Save") }
                 .buttonStyle(MarqueeButtonStyle()).disabled(acq.isSaved(a))
-            Button { state.actions.notForMe(album: a) } label: { keyed(Text("Not for me"), "←") }
+            Button { state.actions.notForMe(album: a) } label: { Text("Not for me") }
                 .buttonStyle(MarqueeButtonStyle())
         }
     }
 
-    /// Arrow keys act on the pick in view. Space plays the album when owned, and otherwise shows a short notice.
-    private func act(_ key: HomeScreen.PickKey, _ a: AlbumItem) -> KeyPress.Result {
-        if key != .play { pickNotice = nil }
-        switch key {
-        case .get: guard state.acquisition.canGet(a) else { return .ignored }; state.actions.get(album: a)
-        case .save: guard !state.acquisition.isSaved(a) else { return .ignored }; state.actions.save(album: a)
-        case .notForMe: state.actions.notForMe(album: a)
-        case .play:
-            switch HomeScreen.spaceOutcome(owned: a.owned) {
-            case .play: pickNotice = nil; state.playAlbum(a)
-            case .notOwned(let notice): pickNotice = notice
-            }
+    /// Space plays the album when owned, and otherwise shows a short notice.
+    private func play(_ a: AlbumItem) -> KeyPress.Result {
+        switch HomeScreen.spaceOutcome(owned: a.owned) {
+        case .play: pickNotice = nil; state.playAlbum(a)
+        case .notOwned(let notice): pickNotice = notice
         }
         return .handled
     }
