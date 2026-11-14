@@ -15,13 +15,22 @@ public struct NowPlayingSnapshot: Codable, Equatable, Sendable {
     public var updatedAt: Date
     /// File name of the cover inside the share folder; nil when the song has none (yet).
     public var coverFile: String?
+    /// True while a radio station plays: `title` is the station, the cover is its logo, there is no length and no position.
+    /// Optional so a file written before radio still decodes (S2-2 item 7).
+    public var isLive: Bool?
 
     public init(title: String, artist: String, album: String, duration: Double, position: Double,
-                isPlaying: Bool, updatedAt: Date = Date(), coverFile: String? = nil) {
+                isPlaying: Bool, updatedAt: Date = Date(), coverFile: String? = nil, isLive: Bool? = nil) {
         self.title = title; self.artist = artist; self.album = album
         self.duration = duration; self.position = position
-        self.isPlaying = isPlaying; self.updatedAt = updatedAt; self.coverFile = coverFile
+        self.isPlaying = isPlaying; self.updatedAt = updatedAt; self.coverFile = coverFile; self.isLive = isLive
     }
+
+    /// A station is playing (an absent `isLive` means a song).
+    public var live: Bool { isLive == true }
+
+    /// How long a live snapshot is believed when nobody updates it (the app quit or crashed while a station played).
+    public static let liveLifetime: TimeInterval = 6 * 3600
 
     /// The song position at `now`: moves on while playing, clamped to the song.
     public func position(at now: Date) -> Double {
@@ -40,6 +49,7 @@ public struct NowPlayingSnapshot: Codable, Equatable, Sendable {
     /// When a playing song will have ended if nobody updated the file (the app quit or crashed mid-song); nil when paused or
     /// the length is unknown. The widget stops showing the song then instead of a full bar forever.
     public var expectedEnd: Date? {
+        if live { return updatedAt.addingTimeInterval(Self.liveLifetime) }
         guard isPlaying, duration > 0 else { return nil }
         return updatedAt.addingTimeInterval(max(0, duration - position) + 5)
     }
@@ -47,7 +57,7 @@ public struct NowPlayingSnapshot: Codable, Equatable, Sendable {
     /// True when only the clock moved: same song, same state, and the position is where playing would have put it.
     public func sameState(as other: NowPlayingSnapshot, tolerance: Double = 2) -> Bool {
         guard title == other.title, artist == other.artist, album == other.album, duration == other.duration,
-              isPlaying == other.isPlaying, coverFile == other.coverFile else { return false }
+              isPlaying == other.isPlaying, coverFile == other.coverFile, live == other.live else { return false }
         return abs(other.position(at: other.updatedAt) - position(at: other.updatedAt)) <= tolerance
     }
 }

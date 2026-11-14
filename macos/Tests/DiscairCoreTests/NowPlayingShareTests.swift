@@ -76,4 +76,36 @@ import Testing
         try Data("not json".utf8).write(to: dir.appending(path: NowPlayingShare.snapshotName))
         #expect(NowPlayingShare.read(in: dir) == nil)
     }
+
+    // MARK: Live station (S2-2 item 7)
+
+    private func liveSnap() -> NowPlayingSnapshot {
+        NowPlayingSnapshot(title: "FIP", artist: "", album: "", duration: 0, position: 0, isPlaying: true, updatedAt: t0, isLive: true)
+    }
+
+    @Test func aSnapshotWrittenBeforeRadioStillDecodesAsASong() throws {
+        let old = #"{"title":"Such a Shame","artist":"Talk Talk","album":"It's My Life","duration":240,"position":30,"isPlaying":true,"updatedAt":0}"#
+        let snap = try JSONDecoder().decode(NowPlayingSnapshot.self, from: Data(old.utf8))
+        #expect(snap.isLive == nil && !snap.live)
+        #expect(snap.title == "Such a Shame")
+    }
+
+    @Test func aLiveSnapshotSurvivesTheRoundTrip() throws {
+        let dir = folder(); defer { try? FileManager.default.removeItem(at: dir) }
+        try NowPlayingShare.write(liveSnap(), cover: nil, in: dir)
+        let back = try #require(NowPlayingShare.read(in: dir))
+        #expect(back.live && back.title == "FIP" && back.duration == 0)
+        #expect(back.progressInterval(at: t0) == nil)
+    }
+
+    @Test func aLiveSnapshotExpiresAfterSixHoursWithoutAnUpdate() {
+        #expect(liveSnap().expectedEnd == t0.addingTimeInterval(NowPlayingSnapshot.liveLifetime))
+        #expect(NowPlayingSnapshot.liveLifetime == 6 * 3600)
+    }
+
+    @Test func aStationAndASongAreNeverTheSameState() {
+        var song = liveSnap(); song.isLive = nil
+        #expect(!liveSnap().sameState(as: song))
+        #expect(liveSnap().sameState(as: liveSnap()))
+    }
 }
