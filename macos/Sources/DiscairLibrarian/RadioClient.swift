@@ -73,6 +73,18 @@ extension LibrarianClient {
         return ArtworkImageData(data: data, contentType: http.value(forHTTPHeaderField: "Content-Type") ?? "")
     }
 
+    /// The cover of the live song: a server artwork path from `RadioNow.coverPath` (the owned-artwork route). Only paths under
+    /// `/api/` are fetched, so a odd answer can never make the Mac ask another host.
+    public func radioCover(path: String) async throws -> ArtworkImageData {
+        guard path.hasPrefix("/api/"), !path.contains("://") else { throw DiscairError.server(status: 400, message: nil) }
+        let (data, http) = try await authedSendPublic("GET", String(path.dropFirst()), body: nil)
+        guard http.statusCode == 200 else {
+            if let failure = failurePublic(http, data) { throw failure }
+            throw DiscairError.server(status: http.statusCode, message: nil)
+        }
+        return ArtworkImageData(data: data, contentType: http.value(forHTTPHeaderField: "Content-Type") ?? "")
+    }
+
     /// `GET /api/radio/scrobbling`. An unreadable body reads as off and not set up.
     public func radioScrobbling() async throws -> RadioScrobbling {
         let (data, http) = try await authedSendPublic("GET", "api/radio/scrobbling", body: nil)

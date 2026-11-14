@@ -140,6 +140,16 @@ public final class PlayerModel {
     @ObservationIgnored let liveOutput: LiveOutput
     /// Resolves a station's `playable_url` (the Librarian's relay path is relative). Set from the active profile.
     @ObservationIgnored var liveBase: URL?
+    /// The live song of the playing station (S2-3 item 1), read every `liveNowInterval` seconds while a station plays. Nil until
+    /// the first answer. Never saved.
+    public internal(set) var liveNow: RadioNow?
+    /// When the Mac first saw the current title, for the "Listening · N s" label of Download.
+    public internal(set) var liveSongSince: Date?
+    @ObservationIgnored public var liveNowSource: (any LiveNowSource)?
+    @ObservationIgnored var liveNowTask: Task<Void, Never>?
+    @ObservationIgnored var liveSongKey: String?
+    @ObservationIgnored var liveNowPause: @Sendable (TimeInterval) async -> Void = { try? await Task.sleep(for: .seconds($0)) }
+    public static let liveNowInterval: TimeInterval = 5
     /// The favourites in server order, for station Next and Previous. Wired by `AppState`.
     @ObservationIgnored public var favouriteStations: () -> [RadioStation] = { [] }
     public static let lastStationKey = "discair.radio.lastStation"

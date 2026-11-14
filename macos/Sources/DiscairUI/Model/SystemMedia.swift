@@ -23,6 +23,10 @@ final class SystemMedia {
     private var logoKey: String?
     private var logoImage: NSImage?
     private var logoTask: Task<Void, Never>?
+    /// The cover of the live song (S2-3 item 1), by the server path it came from; the logo is used until it arrives or when none.
+    private var songCoverPath: String?
+    private var songCoverImage: NSImage?
+    private var songCoverTask: Task<Void, Never>?
     private let seekCommand: MPRemoteCommand
     /// Asked for at 600 px: Control Centre shows it at most a few hundred points wide.
     static let coverPixels = 600
@@ -67,12 +71,17 @@ final class SystemMedia {
         seekCommand.isEnabled = player.live == nil
         if let live = player.live {
             loadLogoIfNeeded(for: player.stationByLive)
-            center.nowPlayingInfo = Self.liveInfo(stationName: live.name, cover: logoImage)
+            loadSongCoverIfNeeded(path: player.liveNow?.coverPath)
+            let line = live.phase == .playing ? player.liveLine : nil
+            let picture = songCoverImage ?? logoImage
+            center.nowPlayingInfo = Self.liveInfo(stationName: live.name, song: line, cover: picture)
             center.playbackState = .playing
-            widget?.publishLive(stationName: live.name, stationID: live.stationID, logo: logoImage)
+            widget?.publishLive(stationName: live.name, stationID: live.stationID, song: line, logo: picture,
+                                coverID: songCoverImage == nil ? nil : songCoverPath)
             return
         }
         logoTask?.cancel(); logoKey = nil; logoImage = nil
+        songCoverTask?.cancel(); songCoverPath = nil; songCoverImage = nil
         guard let c = player.current, player.phase != .idle else {
             coverTask?.cancel(); coverID = nil; coverImage = nil
             center.nowPlayingInfo = nil
@@ -103,18 +112,38 @@ final class SystemMedia {
     }
 
     /// What the system is told while a station plays: the station's name as the title, a live stream (no duration, no position,
-    /// no elapsed time) and the logo. The song joins it with S2-3. Pure, like `info`.
-    nonisolated static func liveInfo(stationName: String, cover: NSImage?) -> [String: Any] {
+    /// no elapsed time) and the logo, or, when a song is known, its title, artist and cover. Pure, like `info`.
+    nonisolated static func liveInfo(stationName: String, song: LiveSongLine? = nil, cover: NSImage?) -> [String: Any] {
         var info: [String: Any] = [
             MPMediaItemPropertyTitle: stationName,
             MPNowPlayingInfoPropertyIsLiveStream: true,
             MPNowPlayingInfoPropertyPlaybackRate: 1.0,
         ]
+        // A song: its title and artist, and the album is the station's name (S2-3 item 1). Anything else keeps the station as title.
+        if let song, song.hasSong, let title = song.title {
+            info[MPMediaItemPropertyTitle] = title
+            if let artist = song.artist { info[MPMediaItemPropertyArtist] = artist }
+            info[MPMediaItemPropertyAlbumTitle] = stationName
+        }
         if let cover {
             nonisolated(unsafe) let image = cover
             info[MPMediaItemPropertyArtwork] = MPMediaItemArtwork(boundsSize: cover.size) { _ in image }
         }
         return info
+    }
+
+    /// Fetches the live song's cover once per path; a late answer for another song is dropped. No path clears it (the logo shows).
+    private func loadSongCoverIfNeeded(path: String?) {
+        guard path != songCoverPath else { return }
+        songCoverTask?.cancel()
+        songCoverPath = path; songCoverImage = nil
+        guard let path, let logos else { return }
+        songCoverTask = Task { [weak self] in
+            let image = await logos.cover(path: path)
+            guard !Task.isCancelled, let self, self.songCoverPath == path, let image else { return }
+            self.songCoverImage = Self.squareCover(image) ?? image
+            self.update()
+        }
     }
 
     /// Fetches the cover of a new song once; a late answer for a song that is no longer playing is dropped.

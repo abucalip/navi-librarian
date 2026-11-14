@@ -93,6 +93,8 @@ public final class AppState {
     public let discovery = DiscoveryModel()
     /// Internet radio stations, their live titles and the tag filter.
     public let stations = StationsModel()
+    /// What Download sent for each heard song, shared by every place the live song is shown (S2-3 item 2).
+    public let radioDownloads = RadioDownloads()
     /// Station logos, fetched once per station and size (S2.5).
     public let stationLogos: StationLogoStore
     /// The ⌘K command palette.
@@ -236,6 +238,9 @@ public final class AppState {
         acquisition.configure(librarian: session.librarian)
         discovery.configure(librarian: session.librarian)
         stations.configure(source: session.librarian)
+        radioDownloads.configure(source: session.librarian)
+        radioDownloads.onSuccess = { [weak self] in await self?.loadHomeFeeds() }
+        player.liveNowSource = session.librarian
         stationLogos.configure(source: session.librarian)
         player.configure(urls: navidrome.urls, scrobbler: navidrome)
         player.liveBase = session.activeProfile?.librarianURL
