@@ -38,6 +38,7 @@ struct CupertinoHome: View {
         .onGeometryChange(for: CGFloat.self) { $0.size.width - CU.Space.xl * 2 } action: { width = $0 }
         .task(id: refreshKey) { if state.session != nil { await state.refreshHomeDashboard() } }
         .task { await state.loadInsights(); await state.loadHomeFeeds() }
+        .task { await state.loadStationsForHome() }
         .task { await state.library.reshufflePicks(librarian: state.session?.librarian) }
     }
 
@@ -59,6 +60,7 @@ struct CupertinoHome: View {
 
     @ViewBuilder private var page: some View {
         notice
+        radioCard
         briefing.padding(.vertical, CU.Space.m)
         if librarianUp {
             split([2, 1]) { pickPanel; arrivalsPanel }
@@ -77,6 +79,16 @@ struct CupertinoHome: View {
     /// Two or three panels side by side, or one column in reading order when the content is under 860 pt wide.
     @ViewBuilder private func split<C: View>(_ weights: [CGFloat], @ViewBuilder _ content: () -> C) -> some View {
         if stacked { VStack(spacing: CU.Space.m) { content() } } else { HomeSplit(weights: weights) { content() } }
+    }
+
+    // MARK: 0. Radio card (E7)
+
+    /// While a station plays, or when a last station is known and still listed. No card otherwise.
+    @ViewBuilder private var radioCard: some View {
+        if let card = HomeRadioCard.of(live: state.player.live, line: state.player.liveLine, lastStationID: state.player.lastStationID,
+                                       stations: state.stations.stations, at: Date()) {
+            HomeRadioCardView(state: state, card: card)
+        }
     }
 
     // MARK: 0. Notice

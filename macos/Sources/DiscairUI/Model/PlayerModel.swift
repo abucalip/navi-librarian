@@ -155,6 +155,8 @@ public final class PlayerModel {
     /// The favourites in server order, for station Next and Previous. Wired by `AppState`.
     @ObservationIgnored public var favouriteStations: () -> [RadioStation] = { [] }
     public static let lastStationKey = "discair.radio.lastStation"
+    /// The station played last, kept for the Home card (E7).
+    public var lastStationID: String? { defaults.string(forKey: Self.lastStationKey) }
     @ObservationIgnored private let fetcher: AudioFetcher
     @ObservationIgnored var loadTask: Task<Void, Never>?
     @ObservationIgnored private var tickTask: Task<Void, Never>?
