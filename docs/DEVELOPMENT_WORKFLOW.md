@@ -43,6 +43,15 @@ Last updated: 2026-11-14.
   5. **Never in safety-critical or paced code:** acquisition, import, cleanup/deletion, authentication, path validation, and provider-request code (budgets and pacing live there).
   6. **Real simplification only:** remove dead code or duplication, flatten needless branching, drop an unused parameter after checking every caller. Renames, reformatting and moving code for taste do not count.
   7. **Contracts and public names are untouched:** nothing a contract document (including the Android and macOS client contracts) defines, and no name a client depends on.
+  - **Lint-style checks (pylint-like), on touched code only.** A "real simplification" (condition 6) is one of these, each fixed only where behaviour stays identical:
+    - Unused import, variable, argument or private function (pylint `unused-*`); an unreachable statement or a branch whose condition is constant.
+    - Duplicated block or repeated expression that one local helper or variable can replace (`duplicate-code`, `R0801`), when it stays inside the touched file.
+    - Needless `else` or `elif` after `return`, `raise`, `continue` or `break` (`no-else-return`, `no-else-raise`); a nested `if` that merges into one; `if x: return True else: return False` written as `return x`.
+    - `== True`, `== None`, `len(x) == 0` and similar comparisons written the idiomatic way; a loop that is a comprehension, `any`, `all` or `sum` (`consider-using-*`), only when truthiness and short-circuit order are the same.
+    - Too many arguments, branches or nesting levels in a function the task already rewrites (`too-many-*`), fixed only by a flatter structure, not by moving code to a new file.
+    - Broad `except Exception` or a bare `except` that hides errors is **reported, not changed** (the failure behaviour would change); add it to the candidates list.
+    - Do not "fix" a lint finding in code the task does not touch, and do not add suppression comments or a lint configuration. The `simplify:` commit shows which checks it applies.
+    - Pylint, ruff or flake8 may be used locally when installed, as a reading aid for the touched files only. Their output is not evidence of correctness, never gates a PR, and the full-repo findings are not a task. Adding a linter to requirements or CI is a separate owner decision.
   - In `navidrome_server.py` a simplification must remove lines overall (D-016). On every platform (Python, Swift, Kotlin) the same rule applies.
   - Tests for simplified code are changed-code tests: run them and report them (selective testing still applies; never the full suite).
   - The PR description gets a **Simplifications** section: what changed, why behaviour is identical, tests run, and net lines (added minus removed). `PROJECT_LOG.md` records one line for it.
