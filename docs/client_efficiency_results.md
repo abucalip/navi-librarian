@@ -1,6 +1,6 @@
 # Client efficiency — baseline protocol and results
 
-**Status:** protocol and tables. macOS S2 to S7 (and the S7 Reduce Motion reference) have been measured (2026-11-14); S1 and S8 to S11 and every Android cell stay blank until a Phase 0 step (P0-2 macOS, P0-3 Android) fills it from a real run.
+**Status:** protocol and tables. macOS S2 to S7 (and the S7 Reduce Motion reference) have been measured (2026-11-14); S11 and every Android cell stay blank; S1 and S8 to S10 are measured on a short protocol (see the S1 and S8 to S11 notes) until a Phase 0 step (P0-2 macOS, P0-3 Android) fills it from a real run.
 **Plan:** [`docs/client_efficiency.md`](client_efficiency.md), step P0-1. Scenario IDs (S1–S11) and cheap-tool commands are copied from its section 8; the plan remains the authority if the two ever disagree.
 **Scripts:** [`scripts/perf/macos_cheap.sh`](../scripts/perf/macos_cheap.sh) and [`scripts/perf/android_cheap.sh`](../scripts/perf/android_cheap.sh). Each prints one markdown table row per run. Raw tool output goes to `$DISCAIR_PERF_RAW` (default `~/discair-perf-raw`), never into the repository.
 
@@ -152,7 +152,7 @@ Columns: Discair CPU %, WindowServer CPU %, Discair wakeups/s, Discair power, Wi
 
 | Scenario | Run | Discair CPU % | WindowServer CPU % | Discair wakeups/s | Discair power | WindowServer power | Footprint | Notes |
 |---|---|---|---|---|---|---|---|---|
-| S1 (median of 5 launches) | — | | | | | | | |
+| S1 (median of 5 launches) | — | n/a | n/a | n/a | n/a | n/a | n/a | Time to first window 0.88 s (0.89, 0.91, 0.88, 0.86, 0.87; spread 0.05). See S1 note |
 | S2 | 1 | 28.20 | 2.90 | 0.72 | 28.25 | 2.90 | 115 MB | Firefox closed, no other audio |
 | S2 | 2 | 31.70 | 5.60 | 0.02 | 31.70 | 5.60 | 115 MB | |
 | S2 | 3 | 31.80 | 5.40 | 0.02 | 31.80 | 5.50 | 115 MB | |
@@ -177,22 +177,31 @@ Columns: Discair CPU %, WindowServer CPU %, Discair wakeups/s, Discair power, Wi
 | S7 | 2 | 26.70 | 8.90 | 2.63 | 26.80 | 8.95 | 169 MB |  |
 | S7 | 3 | 27.50 | 8.80 | 2.52 | 27.60 | 8.85 | 176 MB |  |
 | S7 | **median** | 26.80 (spread 0.80) | 8.80 (spread 0.25) | 2.63 (spread 0.53) | 26.90 (spread 0.80) | 8.85 (spread 0.25) | 169 MB (spread 7) |  |
-| S8 | 1 | | | | | | | |
+| S8 | 1 | 36.10 | 50.30 | 0.60 | 36.10 | 50.30 | 380 MB | Short protocol, 15 s CPU window after pass 2; footprint 147 MB at launch, 380 MB after pass 2, 380 MB one minute later. See S8 to S11 note |
 | S8 | 2 | | | | | | | |
 | S8 | 3 | | | | | | | |
-| S8 | **median** | | | | | | | |
-| S9 | 1 | | | | | | | |
+| S8 | **median** | single run | | | | | | One run only; no spread |
+| S9 | 1 | not taken | not taken | not taken | not taken | not taken | 380 / 411 / 394 MB | Before opening / booklet open (13 pages) / one minute after closing |
 | S9 | 2 | | | | | | | |
 | S9 | 3 | | | | | | | |
-| S9 | **median** | | | | | | | |
-| S10 | 1 | | | | | | | |
-| S10 | 2 | | | | | | | |
+| S9 | **median** | single run | | | | | | One run only; memory only |
+| S10 | 1 | 55.50 (MP3) / 48.35 (CD FLAC) / 49.40 (hi-res FLAC) | 46.00 / 22.90 / 39.15 | 3.40 / 0.85 / 0.75 | 55.70 / 48.45 / 49.40 | 46.40 / 23.00 / 39.40 | 437 / 507 / 468 MB | MP3 128 kbps, CD FLAC 1403 kbps, hi-res FLAC 5500 kbps; 20 s warm-up then 20 s window each |
+| S10 | 2 | 19.50 (crossfade, 6 s) | 33.10 | 3.27 | 19.60 | 33.40 | 175 MB | Window covered the overlap; fresh process after a hang, so footprint is not comparable. First attempt (32.80 / 42.45 / 454 MB) probably missed the overlap |
 | S10 | 3 | | | | | | | |
 | S10 | **median** | | | | | | | |
-| S11 | 1 | | | | | | | |
+| S11 | 1 | not run | | | | | | No way to throttle a download on this Mac |
 | S11 | 2 | | | | | | | |
 | S11 | 3 | | | | | | | |
-| S11 | **median** | | | | | | | |
+| S11 | **median** | not run | | | | | | |
+
+**S1 note (macOS, 2026-11-14).** Measured by `scripts/perf/macos_launch.sh`: quit Discair, wait for the process to exit, pause, `open -a Discair`, poll System Events for the first window. Five launches, **10 s pause instead of the plan's 30 s** (the owner asked for short runs). The figure is **time to first window**, not time to Home content: the script cannot see content, so it is a lower bound on the plan's definition. App SHA, power state and server were not re-recorded for this run (same Mac as S2; `sw_vers` reports macOS 26.2). Warm-start effects are possible, as the app binary was cached from earlier launches.
+
+**S8 to S11 note (macOS, 2026-11-14).** Run on the same Mac, macOS 26.2, with a Release build installed in `/Applications` (SHA not re-recorded). **Short protocol agreed with the owner, one run each, so no medians or spreads exist and none of these rows meets the plan's three-run rule.** Deviations: S8 used 10 albums and 5 artists (not 30 and 10), two passes; CPU windows were 15 to 20 s, not minutes; S10 played each format for about 40 s, not 3 minutes. The CPU figures are inflated by the already-known `PlaybackClock` cost (see the S2 bisect) and are read only against each other.
+- **S8 memory:** footprint 147 MB at launch, 380 MB after the second pass, 380 MB a minute later (nothing released). `leaks` found 362 leaks, 22 KB, mostly 112-byte `CFData` roots: negligible next to the 233 MB growth, so the growth is retained cache, not leaks. This supports the plan's unbounded-image-cache hypothesis (M3). Decoded pixel sizes (Allocations) not taken.
+- **S9 memory:** booklet open added 31 MB (380 to 411 MB); one minute after closing 394 MB, so about 14 MB stayed. `leaks` unchanged at 362 (22 KB). No CPU run was taken.
+- **S10:** CPU does not track bitrate (MP3 55.5 %, CD FLAC 48.4 %, hi-res 49.4 %), so decoding is not the main cost; footprint differed by format (437, 507, 468 MB) but the app had also been running and caching, so order confounds it. Crossfade overlap read 19.5 % CPU. **A hang happened during or shortly after this scenario; the owner relaunched Discair (PID 66639 to 67207). Cause and exact moment unknown, no spin or crash report in `~/Library/Logs/DiagnosticReports`.** The owner heard no stall in the formats otherwise (to be confirmed; not recorded at the time).
+- **S11:** not run. The owner has no way to throttle a download on this Mac. Needs a throttling tool (for example the Network Link Conditioner) or a different scenario.
+- Raw output is kept outside the repository.
 
 **S2 run header (macOS, 2026-11-14).** App SHA `fab8032d` (inferred: the installed Release binary was built 03:16, three minutes after that merge, and `macos/` has not changed since; the owner could not name the commit). Release build, installed in `/Applications`. Apple M2, 16 GB, macOS 26.2 (25C56), 2560 x 1664 Retina; refresh rate not read. AC power, battery 97 % charging, Low Power Mode off. Tailscale connected. Server version and library: not recorded. One minute warm-up, then three back-to-back five-minute runs (30 samples at 10 s, the first sample dropped), started 12:14 after the owner quit and reopened Discair on Home with nothing played.
 
