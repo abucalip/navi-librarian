@@ -436,7 +436,15 @@ struct CupertinoArtworkSlot: View {
     static let side: CGFloat = CU.Shell.sidebarWidth
 
     var body: some View {
-        if let c = state.player.current {
+        if let live = state.player.live, let station = state.stations.stations.first(where: { $0.id == live.stationID }) {
+            // A station is on air: its logo takes the square.
+            StationLogo(station: station, size: Self.side, radiusFraction: CU.sidebarRadius / Self.side)
+                .shadow(color: CU.shadowInk.opacity(0.28), radius: 10, y: 4)
+                .padding(.leading, CU.Shell.inset).padding(.bottom, CU.Shell.inset)
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel("\(station.name) logo")
+                .accessibilityAddTraits(.isImage)
+        } else if let c = state.player.current {
             // The large cover turns over on hover and opens the album's booklet on click (Now Playing when it has none).
             PlayerBarCover(artist: c.artist, album: c.album, disc: c.disc, spinning: false, side: Self.side, cornerRadius: CU.sidebarRadius,
                            showsDisc: false, fallback: { state.screen = .nowPlaying }) {

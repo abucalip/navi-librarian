@@ -102,13 +102,16 @@ struct CUSegmented<Value: Hashable>: View {
     var accessibilityName: String?
     /// Segment height: 24, or 28 in a control bar.
     var segmentHeight: CGFloat = 24
+    /// The selected segment is filled with the accent colour (white text) instead of a white chip.
+    var accented = false
     @Environment(\.cuInPanel) private var inPanel
 
-    init(_ options: [(value: Value, label: String)], selection: Binding<Value>, accessibilityName: String? = nil, inControlBar: Bool = false) {
+    init(_ options: [(value: Value, label: String)], selection: Binding<Value>, accessibilityName: String? = nil, inControlBar: Bool = false, accented: Bool = false) {
         self.options = options
         self._selection = selection
         self.accessibilityName = accessibilityName
         self.segmentHeight = inControlBar ? 28 : 24
+        self.accented = accented
     }
 
     var body: some View {
@@ -118,11 +121,11 @@ struct CUSegmented<Value: Hashable>: View {
                 Button { selection = option.value } label: {
                     Text(option.label)
                         .font(CU.Font.callout.weighted(on ? .semibold : .medium))
-                        .foregroundStyle(on ? CU.text : CU.textSecondary)
+                        .foregroundStyle(on ? (accented ? Color.white : CU.text) : CU.textSecondary)
                         .padding(.horizontal, 16).frame(height: segmentHeight)
                         .background {
                             if on {
-                                RoundedRectangle(cornerRadius: 4, style: .continuous).fill(CU.content)
+                                RoundedRectangle(cornerRadius: 4, style: .continuous).fill(accented ? CU.accent : CU.content)
                                     .shadow(color: CU.shadowInk.opacity(0.14), radius: 1.5, y: 1)
                                     .shadow(color: CU.shadowInk.opacity(0.06), radius: 0.5)
                             }

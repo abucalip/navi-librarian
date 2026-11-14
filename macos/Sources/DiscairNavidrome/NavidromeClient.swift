@@ -134,6 +134,13 @@ public struct NavidromeClient: Sendable {
         return NavidromePlaylist(try await call("createPlaylist", q, as: PlaylistPayload.self).playlist)
     }
 
+    /// Adds an internet radio station (Subsonic `createInternetRadioStation`). Writes to the server. `homepageURL` may be blank.
+    public func createInternetRadioStation(name: String, streamURL: String, homepageURL: String = "") async throws {
+        var q = [URLQueryItem(name: "name", value: name), URLQueryItem(name: "streamUrl", value: streamURL)]
+        if !homepageURL.isEmpty { q.append(URLQueryItem(name: "homepageUrl", value: homepageURL)) }
+        _ = try await call("createInternetRadioStation", q, as: Empty.self)
+    }
+
     public func playlistSongIDs(id: String) async throws -> [String] {
         try requireID(id)
         return try await call("getPlaylist", [.init(name: "id", value: id)], as: PlaylistPayload.self).playlist.entry?.map(\.id) ?? []

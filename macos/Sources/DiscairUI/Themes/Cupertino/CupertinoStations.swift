@@ -11,6 +11,7 @@ struct CupertinoStations: View {
     let state: AppState
     @State private var selectedID: String?
     @State private var editingTags: RadioStation?
+    @State private var addingStation = false
 
     init(state: AppState, selected: String? = nil) {
         self.state = state
@@ -47,11 +48,9 @@ struct CupertinoStations: View {
                 if let summary { Text(summary).cuRole(CU.Font.body).foregroundStyle(CU.textSecondary) }
             }
             Spacer(minLength: 0)
-            Picker("Radio view", selection: Binding(get: { model.pane }, set: { model.pane = $0 })) {
-                ForEach(StationsModel.Pane.allCases, id: \.self) { Text($0.rawValue).tag($0) }
-            }
-            .pickerStyle(.segmented).labelsHidden().frame(width: 170).padding(.top, CU.Space.s)
-            .accessibilityLabel("Radio view")
+            CUSegmented(StationsModel.Pane.allCases.map { (value: $0, label: $0.rawValue) },
+                        selection: Binding(get: { model.pane }, set: { model.pane = $0 }), accessibilityName: "Radio view", accented: true)
+                .padding(.top, CU.Space.s)
         }
         .padding(.top, CU.Space.xs)
     }
@@ -92,13 +91,30 @@ struct CupertinoStations: View {
         if sideBySide {
             HStack(alignment: .top, spacing: CU.Space.l) {
                 ScrollView { main().padding(.bottom, CU.Space.xl) }.scrollEdgeEffectStyle(.hard, for: .top)
-                ScrollView { OnAirPanel(state: state).padding(.bottom, CU.Space.xl) }.frame(width: Self.panelWidth).scrollEdgeEffectStyle(.hard, for: .top)
+                ScrollView { panelColumn.padding(.bottom, CU.Space.xl) }.frame(width: Self.panelWidth).scrollEdgeEffectStyle(.hard, for: .top)
             }
         } else {
             ScrollView {
-                VStack(alignment: .leading, spacing: CU.Space.m) { main(); OnAirPanel(state: state) }.padding(.bottom, CU.Space.xl)
+                VStack(alignment: .leading, spacing: CU.Space.m) { main(); panelColumn }.padding(.bottom, CU.Space.xl)
             }
             .scrollEdgeEffectStyle(.hard, for: .top)
+        }
+    }
+
+    /// The On Air panel, and on the Stations tab the Add station button under it (and under its "Heard on" list).
+    private var panelColumn: some View {
+        VStack(alignment: .leading, spacing: CU.Space.m) {
+            OnAirPanel(state: state)
+            if model.pane == .stations {
+                Button { addingStation = true } label: {
+                    HStack(spacing: 6) { Image(systemName: "plus"); Text("Add station") }
+                }
+                .buttonStyle(CapsuleButtonStyle(outlined: true))
+                .accessibilityLabel("Add station")
+                .sheet(isPresented: $addingStation) {
+                    AddStationSheet { draft in await state.addStation(draft) }
+                }
+            }
         }
     }
 
@@ -143,6 +159,7 @@ struct CupertinoStations: View {
             }
         }
         .focusable()
+        .focusEffectDisabled()
         .onKeyPress(.downArrow) { move(by: 1, in: shown) }
         .onKeyPress(.upArrow) { move(by: -1, in: shown) }
         .onKeyPress(.return) {
@@ -268,7 +285,8 @@ private struct OnAirPanel: View {
                 HStack(spacing: 8) {
                     if live.phase == .unreachable { RetryStationButton(player: player) }
                     Button { player.stopStation() } label: {
-                        HStack(spacing: 6) { Image(systemName: "stop.fill"); Text("Stop").cuRole(CU.Font.callout) }.foregroundStyle(CU.onMedia)
+                        HStack(spacing: 6) { Image(systemName: "stop.fill"); Text("Stop").cuRole(CU.Font.callout).fontWeight(.semibold) }.foregroundStyle(CU.onMedia)
+                            .frame(minWidth: LiveButtonWidth.value)
                             .padding(.horizontal, 12).padding(.vertical, 4)
                             .background(CU.onMedia.opacity(0.2), in: Capsule())
                     }
@@ -283,6 +301,67 @@ private struct OnAirPanel: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(LiveStationPlate.gradient.clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous)))
         .accessibilityElement(children: .contain)
+    }
+}
+
+/// Add station: name, stream URL and internet address. Add sends it to Navidrome; a refusal stays on the sheet as a sentence.
+struct AddStationSheet: View {
+    let add: (StationRules.NewStation) async -> String?
+    @State private var name = ""
+    @State private var streamURL = ""
+    @State private var homepageURL = ""
+    @State private var problem: String?
+    @State private var busy = false
+    @Environment(\.dismiss) private var dismiss
+    @FocusState private var nameFocused: Bool
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: CU.Space.m) {
+            Text("Add station").cuRole(CU.Font.title2).foregroundStyle(CU.text).accessibilityAddTraits(.isHeader)
+            field("Name", text: $name, prompt: "FIP").focused($nameFocused)
+            field("Stream URL", text: $streamURL, prompt: "https://stream.example.com/live")
+            field("Internet address", text: $homepageURL, prompt: "https://example.com (optional)")
+            if let problem {
+                Text(problem).cuRole(CU.Font.callout).foregroundStyle(CU.danger).accessibilityLabel("Problem: \(problem)")
+            }
+            HStack(spacing: CU.Space.s) {
+                Spacer()
+                Button("Cancel") { dismiss() }.buttonStyle(CapsuleButtonStyle()).keyboardShortcut(.cancelAction)
+                Button(busy ? "Adding…" : "Add") { submit() }
+                    .buttonStyle(CapsuleButtonStyle(primary: true)).keyboardShortcut(.defaultAction).disabled(busy)
+            }
+        }
+        .padding(CU.Space.l)
+        .frame(width: 420)
+        .background(CU.bgPanel)
+        .foregroundStyle(CU.text)
+        .onAppear { nameFocused = true }
+    }
+
+    private func field(_ label: String, text: Binding<String>, prompt: String) -> some View {
+        VStack(alignment: .leading, spacing: CU.Space.xs) {
+            Text(label).cuRole(CU.Font.callout).foregroundStyle(CU.textSecondary)
+            TextField(label, text: text, prompt: Text(prompt))
+                .textFieldStyle(.plain).labelsHidden().font(.system(size: CU.Font.body.size)).foregroundStyle(CU.text)
+                .autocorrectionDisabled()
+                .padding(CU.Space.s)
+                .background(CU.content, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).stroke(CU.separator, lineWidth: 1))
+                .accessibilityLabel(label)
+        }
+    }
+
+    private func submit() {
+        switch StationRules.newStation(name: name, streamURL: streamURL, homepageURL: homepageURL) {
+        case .failure(let p): problem = p.message
+        case .success(let draft):
+            problem = nil; busy = true
+            Task {
+                let result = await add(draft)
+                busy = false
+                if let result { problem = result } else { dismiss() }
+            }
+        }
     }
 }
 

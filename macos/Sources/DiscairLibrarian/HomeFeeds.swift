@@ -155,6 +155,12 @@ extension LibrarianClient {
         return try decodePublic(RadioPlaysPayload.self, data, http).items
     }
 
+    /// `DELETE /api/radio/plays`: empties the Heard list on the server.
+    public func clearRadioPlays() async throws {
+        let (data, http) = try await authedSendPublic("DELETE", "api/radio/plays", body: nil)
+        if let failure = failurePublic(http, data) { throw failure }
+    }
+
     /// `POST /api/radio/plays/{id}/get`: the song-only Get for a heard song.
     public func getRadioPlay(id: Int) async throws -> RadioGetResult {
         let (data, http) = try await authedSendPublic("POST", "api/radio/plays/\(id)/get", body: nil)
