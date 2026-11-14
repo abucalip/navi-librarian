@@ -1,6 +1,6 @@
 # Client efficiency — baseline protocol and results
 
-**Status:** protocol and empty tables only. No value in this file has been measured. Every cell stays blank until a Phase 0 step (P0-2 macOS, P0-3 Android) fills it from a real run.
+**Status:** protocol and tables. Only the macOS S2 row has been measured (2026-11-14); every other cell stays blank until a Phase 0 step (P0-2 macOS, P0-3 Android) fills it from a real run.
 **Plan:** [`docs/client_efficiency.md`](client_efficiency.md), step P0-1. Scenario IDs (S1–S11) and cheap-tool commands are copied from its section 8; the plan remains the authority if the two ever disagree.
 **Scripts:** [`scripts/perf/macos_cheap.sh`](../scripts/perf/macos_cheap.sh) and [`scripts/perf/android_cheap.sh`](../scripts/perf/android_cheap.sh). Each prints one markdown table row per run. Raw tool output goes to `$DISCAIR_PERF_RAW` (default `~/discair-perf-raw`), never into the repository.
 
@@ -153,10 +153,10 @@ Columns: Discair CPU %, WindowServer CPU %, Discair wakeups/s, Discair power, Wi
 | Scenario | Run | Discair CPU % | WindowServer CPU % | Discair wakeups/s | Discair power | WindowServer power | Footprint | Notes |
 |---|---|---|---|---|---|---|---|---|
 | S1 (median of 5 launches) | — | | | | | | | |
-| S2 | 1 | | | | | | | |
-| S2 | 2 | | | | | | | |
-| S2 | 3 | | | | | | | |
-| S2 | **median** | | | | | | | |
+| S2 | 1 | 28.20 | 2.90 | 0.72 | 28.25 | 2.90 | 115 MB | Firefox closed, no other audio |
+| S2 | 2 | 31.70 | 5.60 | 0.02 | 31.70 | 5.60 | 115 MB | |
+| S2 | 3 | 31.80 | 5.40 | 0.02 | 31.80 | 5.50 | 115 MB | |
+| S2 | **median** | 31.70 (spread 3.60) | 5.40 (spread 2.70) | 0.02 (spread 0.70) | 31.70 (spread 3.55) | 5.50 (spread 2.70) | 115 MB (spread 0) | Run 1 lower than runs 2 and 3; see S2 note |
 | S3 | 1 | | | | | | | |
 | S3 | 2 | | | | | | | |
 | S3 | 3 | | | | | | | |
@@ -194,6 +194,12 @@ Columns: Discair CPU %, WindowServer CPU %, Discair wakeups/s, Discair power, Wi
 | S11 | 3 | | | | | | | |
 | S11 | **median** | | | | | | | |
 
+**S2 run header (macOS, 2026-11-14).** App SHA `fab8032d` (inferred: the installed Release binary was built 03:16, three minutes after that merge, and `macos/` has not changed since; the owner could not name the commit). Release build, installed in `/Applications`. Apple M2, 16 GB, macOS 26.2 (25C56), 2560 x 1664 Retina; refresh rate not read. AC power, battery 97 % charging, Low Power Mode off. Tailscale connected. Server version and library: not recorded. One minute warm-up, then three back-to-back five-minute runs (30 samples at 10 s, the first sample dropped), started 12:14 after the owner quit and reopened Discair on Home with nothing played.
+
+**Discarded attempts.** (1) 11:45 to 12:00: the app was not on Home (Discair 23.4 %, WindowServer 2.8 %, footprint 212 MB). (2) 12:15 to 12:30: on Home, but Firefox helpers and `coreaudiod` were busy (Discair median 41.8 %, WindowServer 31.6 %). Neither is in the table; raw output is kept outside the repository. The table holds the third attempt (12:33 to 12:48): Firefox closed, nothing else playing audio, Discair reopened on Home earlier by the owner, nothing played.
+
+**S2 note.** On Home with nothing else running, Discair used a median 31.7 % of one core (runs 28.2, 31.7, 31.8) and WindowServer 5.4 % (2.9, 5.6, 5.4), with about 0.02 idle wakeups per second (run 1: 0.72). Almost no wakeups with a high steady load points to continuous rendering or computing, not a timer. The 4-point gap between run 1 and runs 2 and 3, and the WindowServer step from 2.9 to 5.6 %, are not explained; the spread is larger than the plan's other thresholds would like. The cause is not named: a Time Profiler and SwiftUI instrument trace on idle Home is the next step. Comparing S7 (window minimized) would show how much of this is drawing. The wakeups column is now a rate: `macos_cheap.sh` first printed top's running IDLEW total, and was fixed in this PR.
+
 **Gate decisions (P0-2)**
 
 | Gate | Condition (plan section 8.5) | Measured value | Met? |
@@ -212,10 +218,10 @@ Columns: total PSS, native heap, graphics (from `meminfo`); RenderThread CPU % a
 | Scenario | Run | Total PSS (KB) | Native heap (KB) | Graphics (KB) | Main thread CPU % | RenderThread CPU % | Frames total / janky | p50 / p90 / p99 frame ms | Notes |
 |---|---|---|---|---|---|---|---|---|---|
 | S1 (median of 5 `TotalTime`) | — | | | | | | | | |
-| S2 | 1 | | | | | | | | |
-| S2 | 2 | | | | | | | | |
-| S2 | 3 | | | | | | | | |
-| S2 | **median** | | | | | | | | |
+| S2 | 1 | 28.20 | 2.90 | 0.72 | 28.25 | 2.90 | 115 MB | Firefox closed, no other audio |
+| S2 | 2 | 31.70 | 5.60 | 0.02 | 31.70 | 5.60 | 115 MB | |
+| S2 | 3 | 31.80 | 5.40 | 0.02 | 31.80 | 5.50 | 115 MB | |
+| S2 | **median** | 31.70 (spread 3.60) | 5.40 (spread 2.70) | 0.02 (spread 0.70) | 31.70 (spread 3.55) | 5.50 (spread 2.70) | 115 MB (spread 0) | Run 1 lower than runs 2 and 3; see S2 note |
 | S3 | 1 | | | | | | | | |
 | S3 | 2 | | | | | | | | |
 | S3 | 3 | | | | | | | | |
