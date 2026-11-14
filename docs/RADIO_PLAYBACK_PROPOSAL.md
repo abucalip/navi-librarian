@@ -269,7 +269,7 @@ Each slice is one PR from a worktree off `origin/main`, with filtered tests only
 6. **`SystemMedia`:** while live, title is the station name, `MPNowPlayingInfoPropertyIsLiveStream` is true, no duration and no position, the picture is the logo at 512; the seek command is disabled and enabled again when a library song plays.
 7. **Mini player:** LIVE badge, station name, a stop button, no "next" line. **Widget:** `NowPlayingSnapshot` gains an optional `isLive` (old snapshots still decode); the widget draws LIVE where the progress bar is.
 8. **Tests to run:** `--filter "LiveSessionTests|PlayerModelTests|SystemMediaTests|MiniPlayerTests"` with the fake output: start, stop, toggle, next and previous over favourites, the queue untouched, nothing persisted, seek disabled. Build the bundle (widget changed).
-9. **Not verifiable by tests:** that sound plays and the meter moves. Say so; the owner listens.
+9. **Not verifiable by tests:** that sound plays, and how the bar, the media keys, the mini player and the widget look and behave in a real window. Say so; the owner listens. (2026-11-14: the level meter is dropped after the failed spike, so there is no meter to check; the B1 hairline is static. Recorded under "Not verified" in `macos/DESIGN.md` and in `ACTIVE_WORK.md`.)
 
 #### S2-3 · The live song: Now Playing (C1), Download, Heard, Home (E7)
 
