@@ -1,3 +1,12 @@
+## 2026-11-14 — Client efficiency P0-2: SwiftUI-instrument trace of idle Home
+
+- Docs only. Adds the trace findings to `docs/client_efficiency_results.md` (S2) and updates the P0-2 status in `docs/client_efficiency.md`. No code changed; the trace file is not committed.
+- **Method:** `xctrace record --template SwiftUI --attach` on the running Release build, 15 s, Home with a paused track loaded, window visible; one trace.
+- **Result:** the main thread is saturated by AttributeGraph updates (`ViewGraphRootValueUpdater.render`, about 70 % of samples) with no Discair-module frames on top. SwiftUI view-body updates are not the cost: 4,394 timeline-filter updates, 86 ms in total. The graph updates about 120 times a second (`External: UInt32` and `External: Time` changes; `ForEach` and `GlassContainer` evictors re-run each frame). The driver is not identified.
+- **Limits:** one trace, with profiler overhead; empty backtraces; window visible, so G2's hidden-window evaluation count is still not measured. S3 and S5 traces, Allocations and the Time Profiler run of S6 are not done.
+- **Next action (superseded by the bisect below):** bisect idle Home by element.
+- **Bisect result (same day, same PR):** a throwaway copy of `macos/` outside the repository with an environment switch per element, Release build, one run per variant (reference ranged 24 to 36 %). Removing the whole player bar takes Discair from about 26 % to 0.3 % and updates to 0; making `PlaybackClock` static, or skipping its `TimelineView` unless the phase is `.playing`, does the same. Glass, waveform graph, blurred plate, bar cover, large cover, notice banner, sidebar, switches, tint animation and a fixed timeline start date have no effect; Home content removal saves about 13 points. Why a 4 Hz timeline updates the graph at display rate is not explained. First four runs had a stray second instance running and are marked as such. Full table in `docs/client_efficiency_results.md`. No app code changed; the owner must authorise a fix step. Not measured: playing state, hidden window (G2), repeats.
+
 ## 2026-11-14 — Client efficiency P0-2: macOS S3–S7 baseline and gate decisions (PR #1067)
 
 - PR [#1067](https://github.com/abucalip/navi-librarian/pull/1067), merged as `fd4757cf`. Fills the macOS S3–S7 rows and an S7 Reduce Motion reference, three runs each, plus short probes. Docs only.
