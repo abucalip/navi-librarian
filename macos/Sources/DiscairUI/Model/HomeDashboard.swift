@@ -205,6 +205,9 @@ public struct HomeDashboard: Equatable, Sendable {
         public var neverPlayedBaseline: NeverPlayedBaseline?
         /// The Heard list of the radio relay, newest first.
         public var radioPlays: [RadioPlay] = []
+        /// Heard songs a Get was sent for from this window. Their rows stay (Downloading, then Downloaded) until the next launch
+        /// instead of vanishing when the server marks them grabbed.
+        public var keptRadioPlays: Set<Int> = []
         /// Listens per UTC day (D2), when the server serves them.
         public var listensByDay: [ListensDay]?
         /// A queue another client saved recently (D5).
@@ -214,11 +217,11 @@ public struct HomeDashboard: Equatable, Sendable {
 
         public init(albums: [NavidromeAlbum]?, jobs: [Acquisition] = [], taste: TasteProfiles? = nil, picksCount: Int? = nil,
                     librarianReachable: Bool = true, neverPlayedBaseline: NeverPlayedBaseline? = nil,
-                    radioPlays: [RadioPlay] = [], listensByDay: [ListensDay]? = nil, handoff: Handoff? = nil,
+                    radioPlays: [RadioPlay] = [], keptRadioPlays: Set<Int> = [], listensByDay: [ListensDay]? = nil, handoff: Handoff? = nil,
                     now: Date = Date(), calendar: Calendar = Calendar(identifier: .gregorian)) {
             self.albums = albums; self.jobs = jobs; self.taste = taste; self.picksCount = picksCount
             self.librarianReachable = librarianReachable; self.neverPlayedBaseline = neverPlayedBaseline
-            self.radioPlays = radioPlays; self.listensByDay = listensByDay; self.handoff = handoff
+            self.radioPlays = radioPlays; self.keptRadioPlays = keptRadioPlays; self.listensByDay = listensByDay; self.handoff = handoff
             self.now = now; self.calendar = calendar
         }
     }
@@ -448,7 +451,10 @@ public struct HomeDashboard: Equatable, Sendable {
         let cutoff = input.now.addingTimeInterval(-Double(radioDays) * 86_400).timeIntervalSince1970
         var seen = Set<String>()
         return input.radioPlays
-            .filter { !$0.inLibrary && !$0.grabbed && !($0.artist ?? "").isEmpty && $0.heardAt >= cutoff }
+            .filter { p in
+                if input.keptRadioPlays.contains(p.id) { return true }
+                return !p.inLibrary && !p.grabbed && !(p.artist ?? "").isEmpty && p.heardAt >= cutoff
+            }
             .sorted { $0.heardAt > $1.heardAt }
             .compactMap { p -> ArrivalRow? in
                 guard seen.insert((p.artist ?? "").lowercased() + "|" + p.title.lowercased()).inserted else { return nil }

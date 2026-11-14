@@ -1,29 +1,76 @@
 import SwiftUI
 
-/// One Download control for every place a live song is shown (S2-3 item 2; states in S2.7). Words and a mark, never colour alone.
-/// It sits on the dark plate of a playing station, so the ink is `onMedia`. A state with no button (`.none`) draws nothing: the
-/// row says why in its own sentence.
+/// One Download control for every place a song is shown (S2-3 item 2; states and colours in S2.7). Words and a mark, never colour
+/// alone. On the dark plate of a playing station (`.media`: the bar, the On Air panel, Now Playing) the ink is `onMedia`; on a page
+/// (`.page`: the Heard tab and Home's rows) it uses the roles of the table. A state with no button (`.none`) draws nothing: the row
+/// says why in its own sentence.
 struct DownloadButton: View {
+    enum Surface { case media, page }
+
     let state: DownloadState
     /// Seconds the Mac has heard this title, for "Listening · 12 s" while Download is not yet possible.
     var listeningSeconds: Int?
     var compact = false
+    var surface: Surface = .media
     let action: () -> Void
+
+    /// The brighter green of the dark plate (mockup `.np .btn.done`); the page roles are for light and dark pages.
+    private static let plateGreen = Color(red: 0.35, green: 0.86, blue: 0.59)
 
     var body: some View {
         if let label = state.label(listeningSeconds: listeningSeconds) {
             Button(action: action) {
-                Text(label).cuRole(compact ? CU.Font.caption : CU.Font.callout).fontWeight(.semibold).monospacedDigit()
-                    .foregroundStyle(state.isEnabled ? CU.accentStrong : CU.onMedia)
-                    .padding(.horizontal, compact ? 8 : 12).padding(.vertical, compact ? 2 : 4)
-                    .background(state.isEnabled ? CU.onMedia : CU.onMedia.opacity(0.2), in: Capsule())
-                    .opacity(state == .waiting || state == .working ? 0.85 : 1)
+                HStack(spacing: 6) {
+                    if state == .waiting { ring }
+                    Text(label).cuRole(compact ? CU.Font.caption : CU.Font.callout).fontWeight(.semibold).monospacedDigit()
+                }
+                .foregroundStyle(ink)
+                .padding(.horizontal, compact ? 8 : 12).padding(.vertical, compact ? 2 : 4)
+                .background(fill, in: Capsule())
+                .overlay { if state == .owned { Capsule().strokeBorder(outline, lineWidth: 1) } }
             }
             .buttonStyle(.plain)
             .disabled(!state.isEnabled)
             .accessibilityLabel(Self.spoken(state))
         }
     }
+
+    /// A small ring that fills as the 30 seconds pass (mockup `.ring`).
+    private var ring: some View {
+        let progress = Double(min(max(listeningSeconds ?? 0, 0), 30)) / 30
+        return ZStack {
+            Circle().stroke(ink.opacity(0.3), lineWidth: 2)
+            Circle().trim(from: 0, to: max(progress, 0.05)).stroke(ink, style: StrokeStyle(lineWidth: 2, lineCap: .butt)).rotationEffect(.degrees(-90))
+        }
+        .frame(width: 11, height: 11).accessibilityHidden(true)
+    }
+
+    private var ink: Color {
+        switch (surface, state) {
+        case (.media, .ready), (.media, .failed): CU.accentStrong
+        case (.media, _): CU.onMedia
+        case (.page, .ready), (.page, .failed): CU.onAccent
+        case (.page, .working): CU.warning
+        case (.page, .done): CU.success
+        case (.page, _): CU.textSecondary
+        }
+    }
+
+    private var fill: Color {
+        switch (surface, state) {
+        case (.media, .ready), (.media, .failed): CU.onMedia
+        case (.media, .done): Self.plateGreen.opacity(0.25)
+        case (.media, .owned): .clear
+        case (.media, _): CU.onMedia.opacity(0.18)
+        case (.page, .ready), (.page, .failed): CU.accent
+        case (.page, .working): CU.warningTint
+        case (.page, .done): CU.successTint
+        case (.page, .owned): .clear
+        case (.page, _): CU.bgFill
+        }
+    }
+
+    private var outline: Color { surface == .media ? CU.onMedia.opacity(0.35) : CU.separator }
 
     /// What VoiceOver reads for each state.
     static func spoken(_ state: DownloadState) -> String {

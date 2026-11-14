@@ -27,6 +27,9 @@ public final class StationsModel {
     /// The live song by station id, from `GET /api/radio/now`. Only relayed stations with a listener appear.
     public private(set) var nowByID: [String: RadioNow] = [:]
     public private(set) var phase: Phase = .idle
+    /// The page's two views (S2-3 item 4): the station list, or every heard song.
+    public enum Pane: String, CaseIterable, Sendable { case stations = "Stations", heard = "Heard" }
+    public var pane: Pane = .stations
     /// The chip chosen over the list; nil is All.
     public private(set) var tagFilter: String?
     /// The server's sentence after a refused favourite or tag change; cleared by the next successful one.

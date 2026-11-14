@@ -4,8 +4,9 @@ import SwiftUI
 /// The Radio page, mockup A2 "Tuner" (docs/design/macos-radio/mockups.html; docs/RADIO_PLAYBACK_PROPOSAL.md S2-1 item 7):
 /// the title, the tag chips, the station list (logo, name, state in words, first tag, star) and the fixed On Air panel.
 /// A row click (or Return on the selected row) plays the station; the playing row has the accent tint and the On Air panel shows
-/// the station with the time since tuning in and Stop (S2-2 item 4). The live song joins the panel in S2-3. Edit Tags opens from
-/// a row's right-click menu.
+/// the station with the time since tuning in, the live song, Download and Stop (S2-2 item 4, S2-3), then the station's last three
+/// plays and "All heard songs ›", which switches the header's Stations | Heard control to every heard song (S2-3 item 4). Edit
+/// Tags opens from a row's right-click menu.
 struct CupertinoStations: View {
     let state: AppState
     @State private var selectedID: String?
@@ -18,7 +19,6 @@ struct CupertinoStations: View {
 
     private var model: StationsModel { state.stations }
     private var player: PlayerModel { state.player }
-    private var downloads: RadioDownloads { state.radioDownloads }
 
     /// Below this content width the On Air panel moves under the list (S2.7).
     static let sideBySideWidth: CGFloat = 880
@@ -29,7 +29,7 @@ struct CupertinoStations: View {
             let sideBySide = geo.size.width >= Self.sideBySideWidth
             VStack(alignment: .leading, spacing: CU.Space.m) {
                 header
-                if model.phase == .loaded, !model.isEmpty { chips }
+                if model.pane == .stations, model.phase == .loaded, !model.isEmpty { chips }
                 if let note = model.actionNote { noteLine(note) }
                 content(sideBySide: sideBySide)
             }
@@ -41,14 +41,23 @@ struct CupertinoStations: View {
     // MARK: Header and chips
 
     private var header: some View {
-        VStack(alignment: .leading, spacing: CU.Space.xs) {
-            Text("Radio").cuRole(CU.Font.largeTitle).foregroundStyle(CU.text).accessibilityAddTraits(.isHeader)
-            if let summary { Text(summary).cuRole(CU.Font.body).foregroundStyle(CU.textSecondary) }
+        HStack(alignment: .top, spacing: CU.Space.m) {
+            VStack(alignment: .leading, spacing: CU.Space.xs) {
+                Text("Radio").cuRole(CU.Font.largeTitle).foregroundStyle(CU.text).accessibilityAddTraits(.isHeader)
+                if let summary { Text(summary).cuRole(CU.Font.body).foregroundStyle(CU.textSecondary) }
+            }
+            Spacer(minLength: 0)
+            Picker("Radio view", selection: Binding(get: { model.pane }, set: { model.pane = $0 })) {
+                ForEach(StationsModel.Pane.allCases, id: \.self) { Text($0.rawValue).tag($0) }
+            }
+            .pickerStyle(.segmented).labelsHidden().frame(width: 170).padding(.top, CU.Space.s)
+            .accessibilityLabel("Radio view")
         }
         .padding(.top, CU.Space.xs)
     }
 
     private var summary: String? {
+        if model.pane == .heard { let n = state.radioPlays.count; return n == 0 ? nil : (n == 1 ? "1 song heard" : "\(n) songs heard") }
         guard model.phase == .loaded, !model.isEmpty else { return nil }
         let n = model.stations.count
         return n == 1 ? "1 station" : "\(n) stations"
@@ -78,7 +87,30 @@ struct CupertinoStations: View {
 
     // MARK: Body
 
+    /// The main part and the On Air panel: side by side when there is room, else the panel under it.
+    @ViewBuilder private func withPanel(sideBySide: Bool, @ViewBuilder main: () -> some View) -> some View {
+        if sideBySide {
+            HStack(alignment: .top, spacing: CU.Space.l) {
+                ScrollView { main().padding(.bottom, CU.Space.xl) }.scrollEdgeEffectStyle(.hard, for: .top)
+                ScrollView { OnAirPanel(state: state).padding(.bottom, CU.Space.xl) }.frame(width: Self.panelWidth).scrollEdgeEffectStyle(.hard, for: .top)
+            }
+        } else {
+            ScrollView {
+                VStack(alignment: .leading, spacing: CU.Space.m) { main(); OnAirPanel(state: state) }.padding(.bottom, CU.Space.xl)
+            }
+            .scrollEdgeEffectStyle(.hard, for: .top)
+        }
+    }
+
     @ViewBuilder private func content(sideBySide: Bool) -> some View {
+        if model.pane == .heard {
+            withPanel(sideBySide: sideBySide) { HeardList(state: state) }
+        } else {
+            stationsContent(sideBySide: sideBySide)
+        }
+    }
+
+    @ViewBuilder private func stationsContent(sideBySide: Bool) -> some View {
         switch model.phase {
         case .idle, .loading:
             Text("Reading the stations…").cuRole(CU.Font.body).foregroundStyle(CU.textSecondary).padding(.top, CU.Space.s)
@@ -92,17 +124,7 @@ struct CupertinoStations: View {
             Text("No stations yet. Add one in Navidrome and it appears here.")
                 .cuRole(CU.Font.body).foregroundStyle(CU.textSecondary).padding(.top, CU.Space.s)
         case .loaded:
-            if sideBySide {
-                HStack(alignment: .top, spacing: CU.Space.l) {
-                    ScrollView { list.padding(.bottom, CU.Space.xl) }.scrollEdgeEffectStyle(.hard, for: .top)
-                    OnAirPanel(player: player, stations: model, downloads: downloads).frame(width: Self.panelWidth)
-                }
-            } else {
-                ScrollView {
-                    VStack(alignment: .leading, spacing: CU.Space.m) { list; OnAirPanel(player: player, stations: model, downloads: downloads) }.padding(.bottom, CU.Space.xl)
-                }
-                .scrollEdgeEffectStyle(.hard, for: .top)
-            }
+            withPanel(sideBySide: sideBySide) { list }
         }
     }
 
@@ -202,15 +224,19 @@ private struct StationRow: View {
 }
 
 /// The fixed panel on the right (mockup A2, "On Air"). Nothing playing: a sentence. A station playing: the hero from the mockup, the
-/// logo, LIVE, the station and the time since tuning in, and Stop. The live song and Download are here; Heard comes with S2-3 item 4.
+/// logo, LIVE, the station and the time since tuning in, the live song with Download, and Stop; under it the station's Heard box.
 private struct OnAirPanel: View {
-    let player: PlayerModel
-    let stations: StationsModel
-    let downloads: RadioDownloads
+    let state: AppState
+    private var player: PlayerModel { state.player }
+    private var stations: StationsModel { state.stations }
+    private var downloads: RadioDownloads { state.radioDownloads }
 
     var body: some View {
         if let live = player.live {
-            hero(live)
+            VStack(alignment: .leading, spacing: CU.Space.m) {
+                hero(live)
+                OnAirHeard(state: state, live: live)
+            }
         } else {
             VStack(alignment: .leading, spacing: CU.Space.s) {
                 Text("On air").cuRole(CU.Font.eyebrow).textCase(.uppercase).foregroundStyle(CU.textSecondary)

@@ -133,6 +133,21 @@ private func make(proxied: Bool = true) -> (PlayerModel, FakeNowSource, RadioSta
         #expect(source.asked.allSatisfy { $0 == "7" })
     }
 
+    @Test func theHeardListIsReadAgainWhenANewPlayIDArrivesAndOnlyThen() async {
+        let (p, source, station) = make()
+        var reads = 0
+        p.onLivePlay = { reads += 1 }
+        p.playStation(station)
+        source.answer = song("Air", "One"); await p.pollLiveNow()                    // no play id yet
+        #expect(reads == 0)
+        source.answer = song("Air", "One", playID: 11); await p.pollLiveNow()      // crossed 30 s
+        #expect(reads == 1)
+        source.answer = song("Air", "One", playID: 11, inLibrary: true); await p.pollLiveNow()   // the same play, changed
+        #expect(reads == 1)
+        source.answer = song("Air", "Two", playID: 12); await p.pollLiveNow()
+        #expect(reads == 2)
+    }
+
     @Test func aNewTitleRestartsTheListeningClockAndTheSameTitleDoesNot() async {
         let (p, source, station) = make()
         p.playStation(station)

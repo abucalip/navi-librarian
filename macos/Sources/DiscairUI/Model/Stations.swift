@@ -215,6 +215,9 @@ enum DownloadState: Equatable {
         return resolve(playID: play.id, attempt: a)
     }
 
+    /// A song known only by its id (a Home row whose list entry has gone): the request's state, else Download.
+    static func resolved(playID: Int, attempt: Attempt) -> DownloadState { resolve(playID: playID, attempt: attempt) }
+
     private static func resolve(playID: Int?, attempt: Attempt) -> DownloadState {
         if attempt.working { return .working }
         if attempt.requested { return .done }

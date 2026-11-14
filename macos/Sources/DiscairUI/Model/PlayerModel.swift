@@ -148,6 +148,8 @@ public final class PlayerModel {
     @ObservationIgnored public var liveNowSource: (any LiveNowSource)?
     @ObservationIgnored var liveNowTask: Task<Void, Never>?
     @ObservationIgnored var liveSongKey: String?
+    /// Called when the playing station's `play_id` changes (a new song crossed 30 s), so the Heard list is read again (S2.5).
+    @ObservationIgnored public var onLivePlay: (() -> Void)?
     @ObservationIgnored var liveNowPause: @Sendable (TimeInterval) async -> Void = { try? await Task.sleep(for: .seconds($0)) }
     public static let liveNowInterval: TimeInterval = 5
     /// The favourites in server order, for station Next and Previous. Wired by `AppState`.
