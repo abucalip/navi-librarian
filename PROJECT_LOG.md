@@ -1,3 +1,10 @@
+## 2026-11-14 — Radio stage 2, S2-5: menu bar item (PR #1063)
+
+- PR [#1063](https://github.com/abucalip/navi-librarian/pull/1063), merged as `59ca29194f1ec099c2f19e8a74ba1e1d1f69df04`. A `MenuBarExtra` in window style: `radio` symbol while a station plays, a note for a library song, the title cut at 30 characters while "Show title" is on. Popover (mockup D2): cover or logo, LIVE and station (or album), title, artist; Stop or Play/Pause, Next (library song), the shared `DownloadButton`, Retry when unreachable, the sleep timer (new `.neutral` pill); the first four favourites with ⌘1 to ⌘4; Open Discair. Settings › Radio gained the two switches (`UserDefaults`, on by default). It reads `AppState` only; no new requests.
+- **Tests run (filtered):** `MenuBarContentTests|rendersMenuBarPopover|RadioSettingsModelTests|rendersRadioSettings|SleepTimerTests|MiniPlayerTests`: 38 passed; package builds, bundle built; full suite not run. Popover renders looked at against the mockup.
+- **Not verified:** the item in the real menu bar, popover focus and dismissal, Open Discair raising the window, Download against a real station, Night mode, VoiceOver, the switches.
+- **State:** all stage 2 slices (S2-0 to S2-5) are built. Next: the owner's live checks, S2.10.
+
 ## 2026-11-14 — Radio stage 2, S2-4 items 3 to 5: Settings › Radio, station shortcuts, tests (PR #1062)
 
 - PR [#1062](https://github.com/abucalip/navi-librarian/pull/1062), merged as `dbad617299498c36b2fa7351b3c679247d68c599`. **Settings › Radio:** a tab after Playback (`CupertinoRadioSettings`, `RadioSettingsModel`): the server's scrobbling switch (disabled with "Last.fm is not set up on the server"; a refusal restores it and shows the server's sentence), the app address read only ("Changed on the web Radio page"), and a logo Change… (open panel, one image, size checked before the file is read, over 2 MB refused unsent) and Reset for each station; the logo store forgets the station and the list reloads afterwards.
