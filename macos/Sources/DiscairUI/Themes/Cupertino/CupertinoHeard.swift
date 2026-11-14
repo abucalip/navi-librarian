@@ -83,12 +83,22 @@ struct OnAirHeard: View {
 /// The Heard tab: every play, newest first, grouped by day, each with its station, time and Download control.
 struct HeardList: View {
     let state: AppState
+    @State private var confirmingClear = false
 
     var body: some View {
         let days = HeardRules.grouped(state.radioPlays, at: Date())
         VStack(alignment: .leading, spacing: CU.Space.m) {
             if let note = state.heardNote {
                 Text(note).cuRole(CU.Font.callout).foregroundStyle(CU.danger).accessibilityLabel("Problem: \(note)")
+            }
+            if !days.isEmpty {
+                Button { confirmingClear = true } label: { Text("Clear list") }
+                    .buttonStyle(CapsuleButtonStyle(small: true, outlined: true))
+                    .accessibilityLabel("Clear list")
+                    .confirmationDialog("Clear every song from the Heard list?", isPresented: $confirmingClear) {
+                        Button("Clear list", role: .destructive) { Task { await state.clearHeard() } }
+                        Button("Cancel", role: .cancel) {}
+                    }
             }
             if days.isEmpty {
                 Text(HeardRules.emptyText).cuRole(CU.Font.body).foregroundStyle(CU.textSecondary)

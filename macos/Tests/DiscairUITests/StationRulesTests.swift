@@ -210,3 +210,16 @@ import Testing
         #expect(StationRules.shortcutTarget(number: 1, in: list, live: live)?.id == "f1")
     }
 }
+
+@Suite("New station rules")
+struct NewStationRulesTests {
+    @Test func acceptsAndTrims() throws {
+        let s = try StationRules.newStation(name: " FIP ", streamURL: " https://a.example/live ", homepageURL: "").get()
+        #expect(s == .init(name: "FIP", streamURL: "https://a.example/live", homepageURL: ""))
+    }
+    @Test func refusesBadFields() {
+        #expect((try? StationRules.newStation(name: "", streamURL: "https://a.example", homepageURL: "").get()) == nil)
+        #expect((try? StationRules.newStation(name: "x", streamURL: "ftp://a.example", homepageURL: "").get()) == nil)
+        #expect((try? StationRules.newStation(name: "x", streamURL: "https://a.example", homepageURL: "nope").get()) == nil)
+    }
+}

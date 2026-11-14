@@ -367,6 +367,31 @@ public final class AppState {
         await refreshHomeDashboard()
     }
 
+    /// Heard › Clear list: empties the list on the server, then reads it again. A refusal is kept as `heardNote`.
+    public func clearHeard() async {
+        guard let librarian = session?.librarian else { return }
+        do {
+            try await librarian.clearRadioPlays()
+            radioPlays = []
+            heardNote = nil
+        } catch {
+            heardNote = StationsModel.message(error)
+        }
+        await loadHeard()
+    }
+
+    /// Stations › Add station: adds the station in Navidrome, then reads the list again. Returns the sentence to show when it failed.
+    func addStation(_ draft: StationRules.NewStation) async -> String? {
+        guard let navidrome = session?.navidrome else { return "Not connected to Navidrome." }
+        do {
+            try await navidrome.createInternetRadioStation(name: draft.name, streamURL: draft.streamURL, homepageURL: draft.homepageURL)
+        } catch {
+            return StationsModel.message(error)
+        }
+        await stations.reload()
+        return nil
+    }
+
     /// The Download control's state for a heard song: what the server says, then what this window sent.
     func downloadState(playID: Int) -> DownloadState {
         guard let play = radioPlays.first(where: { $0.id == playID }) else {

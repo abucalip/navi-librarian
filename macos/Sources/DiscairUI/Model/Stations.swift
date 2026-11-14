@@ -4,6 +4,28 @@ import Foundation
 /// The radio page's rules, pure so a test can drive them (docs/RADIO_PLAYBACK_PROPOSAL.md, S2-1 item 4; the words match
 /// Android's `model/Radio.kt`). Nothing here reads the network, the clock (it is passed in) or a view.
 enum StationRules {
+    /// What the Add station pop-up sends, already trimmed.
+    struct NewStation: Equatable, Sendable {
+        let name: String, streamURL: String, homepageURL: String
+    }
+
+    /// Checks the pop-up's three fields: a name and a stream address (http or https) are required; the internet address may be
+    /// blank but must be http or https when given. A problem is a sentence.
+    static func newStation(name: String, streamURL: String, homepageURL: String) -> Result<NewStation, ProblemText> {
+        let n = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        let s = streamURL.trimmingCharacters(in: .whitespacesAndNewlines)
+        let h = homepageURL.trimmingCharacters(in: .whitespacesAndNewlines)
+        func web(_ text: String) -> Bool {
+            guard let u = URL(string: text), let scheme = u.scheme?.lowercased() else { return false }
+            return (scheme == "http" || scheme == "https") && (u.host?.isEmpty == false)
+        }
+        if n.isEmpty { return .failure(ProblemText(message: "Give the station a name.")) }
+        if !web(s) { return .failure(ProblemText(message: "The stream URL must start with http:// or https://.")) }
+        if !h.isEmpty && !web(h) { return .failure(ProblemText(message: "The internet address must start with http:// or https://.")) }
+        return .success(NewStation(name: n, streamURL: s, homepageURL: h))
+    }
+    struct ProblemText: Error, Equatable, Sendable { let message: String }
+
     // MARK: Status sentence of a row
 
     /// What a station row says under its name. `isLiveTitle` is true for a song being heard: the row draws it in the accent.

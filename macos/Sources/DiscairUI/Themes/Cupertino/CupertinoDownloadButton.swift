@@ -12,6 +12,8 @@ struct DownloadButton: View {
     var listeningSeconds: Int?
     var compact = false
     var surface: Surface = .media
+    /// A least width, so the button matches the Stop button beside or under it (On Air panel).
+    var minWidth: CGFloat?
     let action: () -> Void
 
     /// The brighter green of the dark plate (mockup `.np .btn.done`); the page roles are for light and dark pages.
@@ -25,6 +27,7 @@ struct DownloadButton: View {
                     Text(label).cuRole(compact ? CU.Font.caption : CU.Font.callout).fontWeight(.semibold).monospacedDigit()
                 }
                 .foregroundStyle(ink)
+                .frame(minWidth: minWidth)
                 .padding(.horizontal, compact ? 8 : 12).padding(.vertical, compact ? 2 : 4)
                 .background(fill, in: Capsule())
                 .overlay { if state == .owned { Capsule().strokeBorder(outline, lineWidth: 1) } }
@@ -107,7 +110,7 @@ struct LiveSongBlock: View {
             if state != .none {
                 HStack(spacing: 8) {
                     SwiftUI.TimelineView(.periodic(from: .now, by: 1)) { tl in
-                        DownloadButton(state: state, listeningSeconds: player.liveSongSince.map { DownloadState.listeningSeconds(since: $0, now: tl.date) }) {
+                        DownloadButton(state: state, listeningSeconds: player.liveSongSince.map { DownloadState.listeningSeconds(since: $0, now: tl.date) }, minWidth: LiveButtonWidth.value) {
                             if let id = player.liveNow?.playID { Task { await downloads.get(playID: id) } }
                         }
                     }
@@ -121,3 +124,6 @@ struct LiveSongBlock: View {
         .accessibilityElement(children: .contain)
     }
 }
+
+/// The width shared by Download and Stop in the On Air panel.
+enum LiveButtonWidth { static let value: CGFloat = 88 }
