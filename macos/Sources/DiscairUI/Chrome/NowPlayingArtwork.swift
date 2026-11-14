@@ -217,30 +217,56 @@ struct PlayerBarCover<Cover: View>: View {
 }
 
 
-/// A bitmap turned by a repeating Core Animation rotation (clockwise, `rpm`), paused in place when `spinning` is false.
+/// A bitmap turned in place by a repeating Core Animation rotation (clockwise, `rpm`), paused where it is when `spinning` is
+/// false. The turning layer is a child kept centred in the view, so the view itself (which SwiftUI moves, e.g. the disc sliding
+/// out of the sleeve) is never what rotates.
 private struct SpinningBitmap: NSViewRepresentable {
     let image: CGImage?
     let spinning: Bool
     let rpm: Double
 
-    func makeNSView(context: Context) -> NSView {
-        let view = NSView()
-        view.wantsLayer = true
-        view.layer?.contentsGravity = .resizeAspect
-        let spin = CABasicAnimation(keyPath: "transform.rotation.z")
-        spin.fromValue = 0
-        spin.toValue = -2 * Double.pi
-        spin.duration = 60 / rpm
-        spin.repeatCount = .infinity
-        spin.timingFunction = CAMediaTimingFunction(name: .linear)
-        view.layer?.add(spin, forKey: "spin")
-        view.layer?.speed = 0
-        return view
+    final class Host: NSView {
+        let disc = CALayer()
+        override init(frame: NSRect) {
+            super.init(frame: frame)
+            wantsLayer = true
+            layer?.masksToBounds = false
+            disc.contentsGravity = .resizeAspect
+            disc.anchorPoint = CGPoint(x: 0.5, y: 0.5)
+            disc.speed = 0
+            let spin = CABasicAnimation(keyPath: "transform.rotation.z")
+            spin.fromValue = 0
+            spin.toValue = -2 * Double.pi
+            spin.duration = 60 / 10
+            spin.repeatCount = .infinity
+            spin.timingFunction = CAMediaTimingFunction(name: .linear)
+            disc.add(spin, forKey: "spin")
+            layer?.addSublayer(disc)
+        }
+        required init?(coder: NSCoder) { nil }
+        override func layout() {
+            super.layout()
+            CATransaction.begin()
+            CATransaction.setDisableActions(true)
+            let side = min(bounds.width, bounds.height)
+            disc.bounds = CGRect(x: 0, y: 0, width: side, height: side)
+            disc.position = CGPoint(x: bounds.midX, y: bounds.midY)
+            CATransaction.commit()
+        }
     }
 
-    func updateNSView(_ view: NSView, context: Context) {
-        guard let layer = view.layer else { return }
+    func makeNSView(context: Context) -> Host { Host() }
+
+    func updateNSView(_ view: Host, context: Context) {
+        let layer = view.disc
         if layer.contents as AnyObject? !== image as AnyObject? { layer.contents = image }
+        if let spin = layer.animation(forKey: "spin"), spin.duration != 60 / rpm {
+            layer.removeAnimation(forKey: "spin")
+            let new = CABasicAnimation(keyPath: "transform.rotation.z")
+            new.fromValue = 0; new.toValue = -2 * Double.pi; new.duration = 60 / rpm
+            new.repeatCount = .infinity; new.timingFunction = CAMediaTimingFunction(name: .linear)
+            layer.add(new, forKey: "spin")
+        }
         if spinning, layer.speed == 0 {
             let held = layer.timeOffset
             layer.timeOffset = 0
