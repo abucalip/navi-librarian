@@ -290,6 +290,11 @@ import DiscairNavidrome
         if case let .arrived(_, _, _, addedAt) = tiles[0] { #expect(addedAt == Self.daysAgo(1)) } else { Issue.record("expected arrived") }
     }
 
+    @Test func tileLabelIsTitleByArtistThenStatus() {
+        #expect(HomeScreen.tileLabel(title: "Spirit", artist: "Talk Talk", status: "Arrived today") == "Spirit by Talk Talk, Arrived today")
+        #expect(HomeScreen.tileLabel(title: "Spirit", artist: "Talk Talk", status: "") == "Spirit by Talk Talk")
+    }
+
     @Test func shelfStatusWordsForEveryTileKind() {
         let now = Self.now
         let found = HomeScreen.shelfStatus(.job(id: "1", title: "T", artist: "A", stage: .found, failure: nil), now: now, calendar: Self.cal)

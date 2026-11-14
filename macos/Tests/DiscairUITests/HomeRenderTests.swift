@@ -5,11 +5,13 @@ import SwiftUI
 import Testing
 @testable import DiscairUI
 
-/// Renders the redesigned Cupertino Home in the states of `docs/design/redesign/macos/cupertino/home--*` to PNG, to be put
-/// beside the mockups. Output goes to `DISCAIR_SCREENSHOT_DIR` (or a temp folder) as `cupertino-home-<state>.png`.
+/// Renders the Marquee Home in the seven states of `docs/design/macos-home-marquee/mockups.html` (default, notice, no pick, first
+/// run, Librarian unreachable, loading, narrow; the default also in Night) to PNG, to be put beside the mockups. Output goes to
+/// `DISCAIR_SCREENSHOT_DIR` (or a temp folder) as `cupertino-home-<state>.png`. Each state first checks the inputs that make it that
+/// state, so a render cannot pass while showing a different state. The two radio card renders belong to the radio plan (E7).
 @MainActor
 struct HomeRenderTests {
-    /// A library of 1,284 albums with a spread of added dates, release years and last plays, shaped like the mockup's numbers.
+    /// A library of 1,284 albums (albums 0 and 1 arrived days ago and have no plays) with a spread of added dates, release years and last plays, shaped like the mockup's numbers.
     static func albums(now: Date) -> [NavidromeAlbum] {
         let iso = ISO8601DateFormatter()
         func ago(_ days: Int) -> String { iso.string(from: Calendar(identifier: .gregorian).date(byAdding: .day, value: -days, to: now)!) }
@@ -17,7 +19,7 @@ struct HomeRenderTests {
         return (0..<1284).map { i in
             let added = i < 12 ? i * 2 + 1 : i < 19 ? 31 + (i - 12) * 4 : 61 + Int(Double(i - 19) * 1.4)
             var f = [#""id":"a\#(i)","name":"Album \#(i)","artist":"Artist \#(i % 40)","year":\#(1960 + (i * 7) % 64)"#, #""created":"\#(ago(added))""#]
-            if i % 13 != 0 { f.append(#""playCount":\#(1 + i % 9),"played":"\#(ago(playedAgo[i % 5] + i % 20))""#) }
+            if i % 13 != 0 && i != 1 { f.append(#""playCount":\#(1 + i % 9),"played":"\#(ago(playedAgo[i % 5] + i % 20))""#) }
             return try! JSONDecoder().decode(NavidromeAlbum.self, from: Data("{\(f.joined(separator: ","))}".utf8))
         }
     }
@@ -34,35 +36,45 @@ struct HomeRenderTests {
         return try! JSONDecoder().decode(InsightsResponse.self, from: Data(#"{"data_version":3,"generation":1,"lenses":{"forgotten_gem":\#(off),"blind_spot":\#(off),"series_completion":\#(off),"hidden_canon":\#(off),"anniversary":\#(off)}}"#.utf8))
     }()
 
-    enum Scenario { case normal, firstRun, unreachable, loading, radioPlaying, radioResume }
+    enum Scenario { case normal, notice, noPick, firstRun, unreachable, loading, radioPlaying, radioResume }
+
+    static func job(_ album: String, _ status: String, message: String? = nil) -> Acquisition {
+        let details = message.map { #","details":{"message":"\#($0)"}"# } ?? ""
+        return try! JSONDecoder().decode(Acquisition.self, from: Data(#"{"artist":"Talk Talk","album":"\#(album)","status":"\#(status)","updated_at":1\#(details)}"#.utf8))
+    }
 
     func state(_ scenario: Scenario) -> AppState {
         let now = Date()
         let state = AppState(themeID: .cupertino, screen: .home)
+        let albums = Self.albums(now: now)
         switch scenario {
-        case .normal, .radioPlaying, .radioResume:
+        case .normal, .notice, .radioPlaying, .radioResume:
             state.taste.set(Self.taste)
-            let song = try! JSONDecoder().decode(NavidromeSong.self, from: Data(#"{"id":"s2","title":"Ascension Day","artist":"Talk Talk","duration":360}"#.utf8))
-            let queue = NavidromePlayQueue(songs: [song], currentID: "s2", positionMs: 161_000, changed: now.addingTimeInterval(-600), changedBy: "discair-android")
             let plays = [RadioPlay(id: 1, stationName: "FIP", artist: "The Blue Nile", title: "Sea Song", heardAt: now.timeIntervalSince1970 - 3600)]
             let finished = now.timeIntervalSince1970 - 7200
             let pop = JobRun(state: "queued", finishedAt: finished, progress: ["pending": 340])
             let insights = JobRun(state: "succeeded", finishedAt: finished)
             state.showHomeFeeds(radio: plays, popularity: JobStatus(status: pop, lastGood: pop),
-                                insightsJob: JobStatus(status: insights, lastGood: insights, minInterval: 21_600, retryAfter: 14_400), queue: queue)
-            let days = (0..<84).map { i -> ListensDay in
-                let f = DateFormatter(); f.calendar = Calendar(identifier: .gregorian); f.timeZone = TimeZone(identifier: "UTC"); f.locale = Locale(identifier: "en_US_POSIX"); f.dateFormat = "yyyy-MM-dd"
-                return ListensDay(date: f.string(from: now.addingTimeInterval(-Double(84 - i) * 86_400)), count: i >= 77 ? 31 : (i >= 70 ? 26 : 20))
-            }
-            state.showHome(HomeDashboard.build(.init(albums: Self.albums(now: now), taste: Self.taste, radioPlays: plays, listensByDay: days,
-                                                     handoff: HomeScreen.handoff(queue: queue, now: now, clientName: "discair", playingSongID: nil), now: now)))
+                                insightsJob: JobStatus(status: insights, lastGood: insights, minInterval: 21_600, retryAfter: 14_400))
+            state.library.setAllAlbums(albums)
+            // The mockup's shelf: a Get moving (a failed one first in the notice state), two arrived albums, a radio song, two added.
+            let jobs = scenario == .notice ? [Self.job("Harbour Lights", "no_matches", message: "No source had the whole album."), Self.job("Spirit", "downloading")]
+                                           : [Self.job("Spirit", "downloading")]
+            state.showHome(HomeDashboard.build(.init(albums: albums, jobs: jobs, taste: Self.taste, radioPlays: plays, now: now)))
+        case .noPick:
+            state.taste.set(Self.taste)
+            state.library.apply(newest: [], first: [], artists: [], picks: [], picksNote: "Nothing is missing from your recommendations right now.")
+            state.library.setAllAlbums(albums)
+            state.showHome(HomeDashboard.build(.init(albums: albums, taste: Self.taste, now: now)))
         case .firstRun:
             state.library.apply(newest: [], first: [], artists: [], picks: [])
             state.insights.showForPreview(Self.offLenses)
-            state.showHome(HomeDashboard.build(.init(albums: Self.albums(now: now), now: now)))
+            state.showHome(HomeDashboard.build(.init(albums: [], now: now)))
             state.taste.set(nil)
         case .unreachable:
-            state.showHome(HomeDashboard.build(.init(albums: Self.albums(now: now), librarianReachable: false, now: now)))
+            state.library.apply(newest: [], first: [], artists: [], picks: [])
+            state.library.setAllAlbums(albums)
+            state.showHome(HomeDashboard.build(.init(albums: albums, librarianReachable: false, now: now)))
         case .loading:
             break
         }
@@ -81,11 +93,43 @@ struct HomeRenderTests {
         return state
     }
 
-    private func render(_ scenario: Scenario, name: String, width: CGFloat = 1044, height: CGFloat = 2300) throws {
+    /// What makes each scenario the state its mockup shows.
+    private func check(_ scenario: Scenario, _ s: AppState) {
+        let d = s.homeDashboard
+        let picks = s.visible(s.library.missing)
+        switch scenario {
+        case .normal, .radioPlaying, .radioResume:
+            #expect(d.notice == nil && !picks.isEmpty && d.load == .ready)
+            #expect(d.arrivals.count == 4 && d.recentlyAdded.count == 6 && d.shelfLife?.longestUnplayed.count == 6)
+            #expect(s.taste.profiles != nil)
+        case .notice:
+            if case .failedJob(let title, _, _)? = d.notice { #expect(title == "Harbour Lights") } else { Issue.record("expected the failed Get notice, got \(String(describing: d.notice))") }
+            #expect(!picks.isEmpty)
+            if case .job(_, _, _, _, let failure)? = d.arrivals.first { #expect(failure != nil) } else { Issue.record("the failed Get should be the first tile") }
+        case .noPick:
+            #expect(picks.isEmpty && d.notice == nil)
+            #expect(HomeScreen.pickEmpty(librarianReachable: true, hasListeningSource: true, note: s.library.picksNote) == .noneRightNow)
+        case .firstRun:
+            #expect(picks.isEmpty && d.load == .empty && d.albumCount == 0 && d.arrivals.isEmpty && d.recentlyAdded.isEmpty)
+            #expect(HomeScreen.pickEmpty(librarianReachable: true, hasListeningSource: false, note: s.library.picksNote) == .needsHistory)
+        case .unreachable:
+            #expect(d.notice == .librarianUnreachable && picks.isEmpty && d.recentlyAdded.count == 6)
+        case .loading:
+            #expect(d.load == .notLoaded)
+        }
+    }
+
+    private func render(_ scenario: Scenario, name: String, night: Bool = false, width: CGFloat = 1044, height: CGFloat = 2300) throws {
         RenderMode.offscreenScreenshot = true
+        // `CU` reads the palette global, not the colour scheme, so Night is set here and put back after the render.
+        let saved = CUPalette.current
+        CUPalette.current = night ? .night : .day
+        defer { CUPalette.current = saved }
         let s = state(scenario)
+        check(scenario, s)
         let size = NSSize(width: width, height: height)
-        let view = CupertinoHome(state: s).frame(width: width, height: height).background(Color.white).environment(\.colorScheme, .light)
+        let view = CupertinoHome(state: s).frame(width: width, height: height).background(CU.content)
+            .environment(\.colorScheme, night ? .dark : .light)
         let host = NSHostingView(rootView: view)
         host.frame = NSRect(origin: .zero, size: size)
         let window = NSWindow(contentRect: host.frame, styleMask: [.borderless], backing: .buffered, defer: false)
@@ -107,11 +151,17 @@ struct HomeRenderTests {
         try png.write(to: dir.appendingPathComponent("cupertino-home-\(name).png"))
     }
 
+    // The seven states of the mockups (`home-marquee--*`); the default is also rendered in Night.
     @Test func rendersDefault() throws { try render(.normal, name: "default") }
+    @Test func rendersDefaultNight() throws { try render(.normal, name: "default-night", night: true) }
+    @Test func rendersNotice() throws { try render(.notice, name: "notice") }
+    @Test func rendersNoPick() throws { try render(.noPick, name: "no-pick", height: 1500) }
     @Test func rendersFirstRun() throws { try render(.firstRun, name: "first-run", height: 1200) }
-    @Test func rendersLibrarianUnreachable() throws { try render(.unreachable, name: "librarian-unreachable", height: 1300) }
+    @Test func rendersLibrarianUnreachable() throws { try render(.unreachable, name: "librarian-unreachable", height: 1500) }
+    @Test func rendersLoading() throws { try render(.loading, name: "loading", height: 1000) }
+    @Test func rendersNarrow() throws { try render(.normal, name: "narrow", width: 760, height: 3000) }
+
+    // The radio card (E7) is not one of the seven: it belongs to the radio plan and keeps its two renders.
     @Test func rendersRadioCardPlaying() throws { try render(.radioPlaying, name: "radio-playing") }
     @Test func rendersRadioCardResume() throws { try render(.radioResume, name: "radio-resume") }
-    @Test func rendersLoading() throws { try render(.loading, name: "loading", height: 1000) }
-    @Test func rendersStackedUnder860() throws { try render(.normal, name: "stacked", width: 760, height: 3400) }
 }
