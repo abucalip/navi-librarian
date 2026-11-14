@@ -1,6 +1,6 @@
 # macOS Home, "Marquee" layout: implementation plan
 
-Status: **H1 merged.** Item 1 (PR #1075, squash `ed3faa84`: `HomeDashboard` data) and item 2 (PR #1076, squash `92a73182`: `HomeScreen` rules and their tests) are in `main`, with no visible change. H1 item 3 (tests) and item 4 (filtered run, 84 tests in `HomeDashboardTests` and `HomeScreenTests`) are merged in PR [#1077](https://github.com/abucalip/navi-librarian/pull/1077), squash `304ae87a`. H2 items 1 and 2 (panels moved, Insights "Your collection") are in a PR; H3 (the new Home) is not started. Originally: **plan only, nothing built.** The owner chose this layout on 2026-11-13 from three mockups. The owner's reason for the change: the current Home is too number-driven; Home should be artwork-driven, with only a few statistics.
+Status: **H1 merged.** Item 1 (PR #1075, squash `ed3faa84`: `HomeDashboard` data) and item 2 (PR #1076, squash `92a73182`: `HomeScreen` rules and their tests) are in `main`, with no visible change. H1 item 3 (tests) and item 4 (filtered run, 84 tests in `HomeDashboardTests` and `HomeScreenTests`) are merged in PR [#1077](https://github.com/abucalip/navi-librarian/pull/1077), squash `304ae87a`. H2 items 1 and 2 (panels moved, Insights "Your collection") merged in PR [#1078](https://github.com/abucalip/navi-librarian/pull/1078), squash `897d6bfa`; the duplicate taste panel was then removed from Insights (the page already shows taste). H2 items 3 to 5 are next; H3 (the new Home) is not started. Originally: **plan only, nothing built.** The owner chose this layout on 2026-11-13 from three mockups. The owner's reason for the change: the current Home is too number-driven; Home should be artwork-driven, with only a few statistics.
 
 The mockups are the spec: [`design/macos-home-marquee/mockups.html`](design/macos-home-marquee/mockups.html) (open in a browser, no network needed). Where this text and a mockup differ, the mockup wins, except for the corrections listed in section 9.
 
@@ -28,7 +28,7 @@ The Liner note card (`LinerNoteCard`) stays at the bottom of the page, unchanged
 | Collection over time (chart) | Insights, new section "Your collection" | Moved as it is |
 | Own and play, by decade (chart) | Insights, "Your collection" | Moved as it is |
 | Shelf life (histogram) | Insights, "Your collection" | Moved as it is, without the four small covers (they become "Waiting longest" on Home) |
-| Your taste (headline and dumbbells) | Insights, "Your collection" | Moved as it is. Home keeps the headline sentence only |
+| Your taste (headline and dumbbells) | Not moved: Insights already has the taste page (`CupertinoTaste`), which shows the same headline and shifts. The panel is moved to a view for Home until H3, then deleted. Home keeps the headline sentence only (the owner decided this on 2026-11-14, as it was a duplicate) |
 | From the lenses (three rows) | Removed | The Insights page already is the lenses |
 | Server activity | Settings, Services tab, last section | Moved as it is |
 | Arrivals (rows) | "New on the shelf" | Same data, drawn as cover tiles |
@@ -168,12 +168,12 @@ Acceptance: the existing Home renders as before (the four small covers of Shelf 
 Suggested model: Sonnet, medium effort.
 
 1. Move `collectionPanel`, `decadesPanel`, `tastePanel`, `shelfPanel` (and their helpers and `@State`) out of `CupertinoHome.swift` into a new `Themes/Cupertino/CupertinoCollectionPanels.swift`, as views that take `state` and `stacked`. Move `activityPanel` into a view in the same way. No change to what they draw, except that the Shelf life panel loses its "Longest since a play" covers.
-2. `CupertinoInsights`: add a section "Your collection" above "Lenses", with the four panels in two rows (collection 2:1 decades, taste 1:1 shelf life), stacking under 860. The page calls `state.refreshHomeDashboard()` in a `.task`, since it now draws those figures.
+2. `CupertinoInsights`: add a section "Your collection" above "Lenses", with three panels (collection 2:1 decades in the first row, shelf life full width under it), stacking under 860. The page calls `state.refreshHomeDashboard()` in a `.task`, since it now draws those figures.
 3. Settings, Services tab: add "Server activity" as the last section.
 4. Home keeps showing the moved panels through the new views in this slice, so nothing disappears between two merges.
 5. Tests: the existing `HomeRenderTests` still pass. Add one render test for Insights with the new section and one for the Services tab. Run: `swift test --filter "HomeRenderTests|InsightsRenderTests|ServicesRenderTests"` (use the names of the existing suites for those two pages if they already exist).
 
-Acceptance: Insights shows the four panels with the same states as on Home; Settings shows Server activity; Home is unchanged to the eye apart from the four small covers.
+Acceptance: Insights shows the three panels with the same states as on Home; Settings shows Server activity; Home is unchanged to the eye apart from the four small covers.
 
 ### H3 · The new Home
 

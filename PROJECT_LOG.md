@@ -1,3 +1,10 @@
+## 2026-11-14 — macOS Home marquee H2 items 1 and 2 merged; duplicate taste panel removed
+
+- PR [#1078](https://github.com/abucalip/navi-librarian/pull/1078) squash-merged as `897d6bfa`. After the merge the owner asked to remove the duplicated taste panel from Insights: "Your collection" repeated the headline and shifts that `CupertinoTaste` already shows. Removed `TastePanel` from `CupertinoInsights`; the section is now collection 2:1 decades, then shelf life full width. `TastePanel` stays in `CupertinoCollectionPanels.swift` because Home still draws it until H3.
+- Pushed directly to `main` on the owner's instruction. Filtered run on a Mac: `swift test --filter "CupertinoPagesRenderTests/rendersInsightsYourCollection"`. Full suite not run (owner rule). Not published or deployed.
+- Docs: plan (status, section 1 table, H2 item 2 and acceptance), `ACTIVE_WORK.md`.
+- **Next action:** H2 item 3 (Server activity in Settings, Services), then items 4 and 5.
+
 ## 2026-11-14 — macOS Home marquee H2 items 1 and 2: panels moved, Insights "Your collection" (PR pending)
 
 - Plan: `docs/MACOS_HOME_MARQUEE_PLAN.md` slice H2, items 1 and 2 only (the owner limited this task to those two).
