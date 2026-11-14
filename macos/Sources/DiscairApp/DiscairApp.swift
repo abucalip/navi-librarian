@@ -85,12 +85,34 @@ struct CommandPaletteCommands: Commands {
     }
 }
 
-/// Controls > Sleep Timer: Off, 15 to 90 minutes, with a check mark on the running length. (The station shortcuts join this menu.)
+/// Controls > Stations (the first nine favourites with ⌘1 to ⌘9, then Stop Radio; mockup "Controls › Stations", E1) and
+/// Controls > Sleep Timer (Off, 15 to 90 minutes, a check mark on the running length). Menu shortcuts work from any screen.
 struct PlaybackCommands: Commands {
     let state: AppState
     var body: some Commands {
         CommandMenu("Controls") {
+            StationsMenu(state: state)
             Menu("Sleep Timer") { SleepTimerChoices(timer: state.player.sleepTimer) }
+        }
+    }
+}
+
+/// The Stations submenu. With no favourite it says so (disabled) instead of being empty.
+struct StationsMenu: View {
+    let state: AppState
+    var body: some View {
+        let favourites = state.stationShortcuts
+        Menu("Stations") {
+            if favourites.isEmpty {
+                Text("No favourite stations")
+            } else {
+                ForEach(favourites) { shortcut in
+                    Button(shortcut.name) { state.tuneShortcut(shortcut.number) }
+                        .keyboardShortcut(KeyEquivalent(Character(String(shortcut.number))), modifiers: .command)
+                }
+            }
+            Divider()
+            Button("Stop Radio") { state.player.stopStation() }.disabled(state.player.live == nil)
         }
     }
 }

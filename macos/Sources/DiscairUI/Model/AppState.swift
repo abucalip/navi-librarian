@@ -97,6 +97,8 @@ public final class AppState {
     public let stations = StationsModel()
     /// What Download sent for each heard song, shared by every place the live song is shown (S2-3 item 2).
     public let radioDownloads = RadioDownloads()
+    /// Settings › Radio: scrobbling, the app address and the logo overrides (S2-4 item 3).
+    public let radioSettings = RadioSettingsModel()
     /// Station logos, fetched once per station and size (S2.5).
     public let stationLogos: StationLogoStore
     /// The ⌘K command palette.
@@ -246,11 +248,17 @@ public final class AppState {
         player.onLivePlay = { [weak self] in Task { await self?.loadHeard() } }
         player.liveNowSource = session.librarian
         stationLogos.configure(source: session.librarian)
+        radioSettings.configure(source: session.librarian)
+        radioSettings.onLogoChanged = { [weak self] id in
+            self?.stationLogos.forget(station: id)
+            Task { await self?.stations.reload() }
+        }
         player.configure(urls: navidrome.urls, scrobbler: navidrome)
         player.liveBase = session.activeProfile?.librarianURL
         player.favouriteStations = { [weak self] in self?.stations.favourites ?? [] }
         // Skips saved while the Librarian was unreachable go out now that it is connected (in the background).
         Task { await feedback?.flush() }
+        Task { await loadStationsForShortcuts() }
         lyrics.configure(navidrome: navidrome, scope: "\(session.activeProfile?.navidromeURL.absoluteString ?? "")|\(session.navidromeUsername ?? "")")
         if let librarian = session.librarian {
             radio.setSonicAvailable(await librarian.sonicAvailable())
@@ -317,6 +325,32 @@ public final class AppState {
     public func loadStationsForHome() async {
         guard session != nil, stations.stations.isEmpty, stations.phase != .loading, player.lastStationID != nil else { return }
         await stations.reload()
+    }
+
+    /// ⌘1 to ⌘9 work from any screen, so the list must be known before the Radio page is opened (S2-4 item 4). One read after
+    /// connecting, only when nothing has read it yet; the page's own budget (S2.5) is unchanged.
+    public func loadStationsForShortcuts() async {
+        guard session != nil, stations.stations.isEmpty, stations.phase == .idle else { return }
+        await stations.reload()
+    }
+
+    /// One line of Controls › Stations: the key (⌘ and this number) and the station's name.
+    public struct StationShortcut: Identifiable, Equatable, Sendable {
+        public let number: Int
+        public let name: String
+        public var id: Int { number }
+    }
+
+    /// The first nine favourites, numbered from 1 (`StationRules.shortcutStations`).
+    public var stationShortcuts: [StationShortcut] {
+        StationRules.shortcutStations(stations.stations).enumerated().map { StationShortcut(number: $0.offset + 1, name: $0.element.name) }
+    }
+
+    /// Controls › Stations: tunes to the favourite with this number (1 to 9). The station that is already playing is left alone,
+    /// as a click on its row is; one that gave up ("Station unreachable") is tried afresh.
+    public func tuneShortcut(_ number: Int) {
+        guard let station = StationRules.shortcutTarget(number: number, in: stations.stations, live: player.live) else { return }
+        player.playStation(station)
     }
 
     /// Reads the Heard list (`GET /api/radio/plays`). One read at a time; a failure keeps the list on screen and says so. Home's

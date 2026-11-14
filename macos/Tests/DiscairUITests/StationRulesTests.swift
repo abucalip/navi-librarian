@@ -176,4 +176,37 @@ import Testing
         d.remove("Jazz")
         #expect(d.isChanged && d.result() == [])
     }
+
+    // MARK: station shortcuts (S2-4 item 4)
+    func favs(_ n: Int, extra: [RadioStation] = []) -> [RadioStation] {
+        (1...n).map { RadioStation(id: "f\($0)", name: "Fav \($0)", playableURL: "https://relay.example/f\($0)", favourite: true) } + extra
+    }
+    @Test func onlyTheFirstNineFavouritesGetAKey() {
+        #expect(StationRules.shortcutStations(favs(12)).map(\.id) == (1...9).map { "f\($0)" })
+        #expect(StationRules.shortcutStations(favs(3)).count == 3)
+        #expect(StationRules.shortcutStations([]).isEmpty)
+    }
+    @Test func aStationThatIsNotAFavouriteNeverGetsAKey() {
+        let plain = RadioStation(id: "p", name: "Plain", playableURL: "https://relay.example/p")
+        let list = [plain] + favs(2)                      // the server's order is kept; the plain one is skipped
+        #expect(StationRules.shortcutStations(list).map(\.id) == ["f1", "f2"])
+    }
+    @Test func aKeyPicksTheFavouriteWithThatNumber() {
+        let list = favs(3)
+        #expect(StationRules.shortcutTarget(number: 1, in: list, live: nil)?.id == "f1")
+        #expect(StationRules.shortcutTarget(number: 3, in: list, live: nil)?.id == "f3")
+        #expect(StationRules.shortcutTarget(number: 4, in: list, live: nil) == nil)
+        #expect(StationRules.shortcutTarget(number: 0, in: list, live: nil) == nil)
+        #expect(StationRules.shortcutTarget(number: 10, in: favs(12), live: nil) == nil)
+    }
+    @Test func theStationThatIsPlayingIsLeftAloneUnlessItGaveUp() {
+        let list = favs(2)
+        var live = LiveSession(stationID: "f1", name: "Fav 1", logoPath: "", startedAt: at(14), phase: .playing)
+        #expect(StationRules.shortcutTarget(number: 1, in: list, live: live) == nil)
+        #expect(StationRules.shortcutTarget(number: 2, in: list, live: live)?.id == "f2")
+        live.phase = .reconnecting
+        #expect(StationRules.shortcutTarget(number: 1, in: list, live: live) == nil)
+        live.phase = .unreachable
+        #expect(StationRules.shortcutTarget(number: 1, in: list, live: live)?.id == "f1")
+    }
 }
