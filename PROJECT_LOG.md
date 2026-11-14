@@ -1,3 +1,10 @@
+## 2026-11-14 — Client efficiency: PlaybackClock regression pinned to PR #900
+
+- Docs direct to `main` on the owner's instruction. No app code changed. `docs/client_efficiency_results.md` gains "S2 A/B across PR #900"; `docs/client_efficiency.md` M7 gains the evidence and a preferred variant.
+- **Result:** paused idle CPU on Home, same track, three runs each: 1.50 % of one core on `be9738d0^` and 30.45 % on `be9738d0` (PR #900, which introduced `PlaybackClock` for the clock-lag fix). The idle cost arrived with that wrapper. A bare 4 Hz `TimelineView` in a throwaway app ran at 4 Hz (2 to 4 % CPU), so the display-rate behaviour is specific to Discair's window or bar and is still unexplained.
+- **Added to M7:** preferred variant, drop the `TimelineView` and render from the observed `position` with `displayPosition` kept as a computed value; gate on `.playing` as the fallback. Needs a playing-state A/B first (S3 on `be9738d0^`, `be9738d0`, `main`) and the owner's go-ahead.
+- Not measured: playing state across the three builds; whether the timeline closure itself runs at display rate. The clock-lag link (main thread saturated, model tick late) is an inference.
+
 ## 2026-11-14 — Client efficiency P0-2: macOS S1 and S8 to S10 (PR #1069)
 
 - PR [#1069](https://github.com/abucalip/navi-librarian/pull/1069), merged as `43a29414`; this entry and the plan's progress line are docs direct to `main` on the owner's instruction. Adds `scripts/perf/macos_launch.sh` and fills S1 and S8 to S10 in `docs/client_efficiency_results.md`. No app code changed.

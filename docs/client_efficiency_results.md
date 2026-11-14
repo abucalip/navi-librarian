@@ -245,6 +245,26 @@ Columns: Discair CPU %, WindowServer CPU %, Discair wakeups/s, Discair power, Wi
 
 **Hypotheses.** Glass, the waveform graph, the blurred plate, the bar cover, the large cover, the notice banner, the sidebar, the lyric/fact marquee and the bar's tint animation are each refuted as the main driver (none moved CPU by more than the run-to-run noise). Marquee and 4 Hz position write: refuted. A paused-state gate on the clock is supported and is a candidate for a new step, which the owner must authorise; this PR changes no app code. Not measured: playing state (S3 has the clock running for real), the hidden window (G2), repeat runs of each variant.
 
+**S2 A/B across PR #900 (macOS, 2026-11-14): the idle cost arrived with the `PlaybackClock` change.** PR #900 (`be9738d0`, 2026-11-08, "steadier clock") replaced the plain `Text(PlayerModel.clock(p.position))` readouts with `PlaybackClock`. Method: two throwaway worktrees of the repository (`be9738d0^`, the parent, and `be9738d0`), each built with `macos/scripts/bundle.sh` (Release, signed locally) into a scratch folder outside the repository, no change to app source. One build at a time, the other quit, a single Discair process (checked). The owner launched each build, played **the same track** on Home and paused it, Now Playing closed, window visible; 25 s warm-up, then `macos_cheap.sh` three runs of 4 samples of 5 s. Apple M2, macOS 26.2, same Mac as S2.
+
+| Build | Run | Discair CPU % | Wakeups/s | Footprint |
+|---|---:|---:|---:|---:|
+| Before #900 (`be9738d0^`) | 1 | 1.50 | 1.10 | 146 MB |
+| | 2 | 1.50 | 1.25 | 146 MB |
+| | 3 | 1.60 | 1.05 | 146 MB |
+| | **median** | **1.50** (spread 0.10) | 1.10 | 146 MB |
+| At #900 (`be9738d0`) | 1 | 30.50 | 2.10 | 151 MB |
+| | 2 | 30.20 | 2.85 | 151 MB |
+| | 3 | 30.45 | 2.80 | 141 MB |
+| | **median** | **30.45** (spread 0.30) | 2.80 | 151 MB |
+
+**Finding.** Paused idle CPU is about 1.5 % of one core before #900 and about 30 % at #900: a gap of about 29 points against a spread of 0.3. The cost is not a longstanding SwiftUI cost of the app; it arrived with the `TimelineView` wrapper in `PlaybackClock`. Before #900 the same readouts were observation-driven `Text` views, fed by the model's 4 Hz `position` write, and were cheap. This agrees with the bisect above (clock static or gated: 0 %). The #900 build's 30 % and the plan's 26 % for `main` agree, so no later change moved it. WindowServer read 15 to 17 % in both builds because other windows were on screen; not used.
+
+**Not explained.** Why a 4 Hz timeline costs this much in Discair. A throwaway SwiftUI app outside the repository (macOS 26, 10 s runs, closure runs counted) showed a bare `TimelineView(.periodic(from: .now, by: 0.25))` running at 4 Hz (about 40 closure runs in 10 s) and costing 2 to 4 % of a core, with the same result when it sat inside a Liquid Glass container with an `.animation` and a transition inside it, over a blurred gradient with a material background, reading an `@Observable` model, and in a split view with a bottom inset (5.1 %). So a plain timeline does not become display-rate by itself; something in Discair's window or bar does that. Not measured: the playing state before and after #900; whether the timeline closure itself runs at display rate (the trace counted the update filters, not the closure); today's `main` against these builds.
+
+**Link to the clock-lag report.** #900 was made because the clock lagged and jumped. The instrument trace shows the main thread saturated by graph updates (70,099 of 74,298 samples), which would make the model's 250 ms tick arrive late. That is an inference, not measured: #900 may have treated a symptom (late ticks, carried forward up to 2 s) with the change that added to the load.
+
+
 **Correction: the marquee lead is not supported.** The first version of this note named `MarqueeLine` (`TimelineView(.animation)`, `CupertinoPlayerBar.swift:394`). The owner confirmed that no title overflowed during S2, and a screenshot of the window showed the bar with a paused track (not "nothing played"; a track was loaded at 3:04 / 5:27), plain truncation of the artist, and an empty middle line, so no `MarqueeLine` was on screen. The `TimelineView` frames in the sample are the 4 Hz `PlaybackClock` driving `line(at:)` (the `Line` equality frames), which does not explain per-frame work. Other candidates visible in that state, none tested: the coloured `PlayerBarGraph` waveform behind the bar, the paused cover, and the "Playing on your phone" banner on Home. Also note S2's "nothing played since launch" step did not hold: a track was loaded in the bar, so the S2 rows should be read as "Home, paused track loaded". A SwiftUI-instrument trace, or toggling each element in turn, is needed before naming a cause. The sample file is kept outside the repository.
 
 
