@@ -13,29 +13,27 @@ struct DiscView: View {
     @Environment(\.artwork) private var store
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var image: NSImage?
-    @State private var base = 0.0
-    @State private var since: Double?
+    @State private var rendered: CGImage?
 
     private var running: Bool { spinning && !reduceMotion }
-    private static func now() -> Double { Date.timeIntervalSinceReferenceDate }
 
+    /// The disc is drawn once into a bitmap and turned by a Core Animation layer, so the render server does the turning and the
+    /// main thread does no work per frame (a 30 Hz `TimelineView` here starved the playback clock's tick).
     var body: some View {
-        SwiftUI.TimelineView(.animation(minimumInterval: 1.0 / 30, paused: !running)) { context in
-            disc.rotationEffect(.degrees(discAngle(base: base, since: since, now: context.date.timeIntervalSinceReferenceDate, rpm: rpm)))
-        }
-        .frame(width: diameter, height: diameter)
-        .opacity(image == nil ? 0 : 1)
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Disc: \(picture.label)")
-        .accessibilityAddTraits(.isImage)
-        .onChange(of: running, initial: true) { _, on in
-            let t = Self.now()
-            if on { since = t } else { base = discAngle(base: base, since: since, now: t, rpm: rpm); since = nil }
-        }
-        .task(id: "\(picture.imageID)|\(store?.generation ?? 0)") {
-            guard let store else { return }
-            image = await store.albumImage(picture, size: .display)
-        }
+        SpinningBitmap(image: rendered, spinning: running, rpm: rpm)
+            .frame(width: diameter, height: diameter)
+            .opacity(rendered == nil ? 0 : 1)
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel("Disc: \(picture.label)")
+            .accessibilityAddTraits(.isImage)
+            .task(id: "\(picture.imageID)|\(store?.generation ?? 0)") {
+                guard let store else { return }
+                image = await store.albumImage(picture, size: .display)
+                guard image != nil else { rendered = nil; return }
+                let renderer = ImageRenderer(content: disc)
+                renderer.scale = 2
+                rendered = renderer.cgImage
+            }
     }
 
     private var disc: some View {
@@ -214,6 +212,71 @@ struct PlayerBarCover<Cover: View>: View {
             index = nil
             guard let store else { return }
             index = await store.nowPlayingIndex(artist: artist, album: album)
+        }
+    }
+}
+
+
+/// A bitmap turned in place by a repeating Core Animation rotation (clockwise, `rpm`), paused where it is when `spinning` is
+/// false. The turning layer is a child kept centred in the view, so the view itself (which SwiftUI moves, e.g. the disc sliding
+/// out of the sleeve) is never what rotates.
+private struct SpinningBitmap: NSViewRepresentable {
+    let image: CGImage?
+    let spinning: Bool
+    let rpm: Double
+
+    final class Host: NSView {
+        let disc = CALayer()
+        override init(frame: NSRect) {
+            super.init(frame: frame)
+            wantsLayer = true
+            layer?.masksToBounds = false
+            disc.contentsGravity = .resizeAspect
+            disc.anchorPoint = CGPoint(x: 0.5, y: 0.5)
+            disc.speed = 0
+            let spin = CABasicAnimation(keyPath: "transform.rotation.z")
+            spin.fromValue = 0
+            spin.toValue = -2 * Double.pi
+            spin.duration = 60 / 10
+            spin.repeatCount = .infinity
+            spin.timingFunction = CAMediaTimingFunction(name: .linear)
+            disc.add(spin, forKey: "spin")
+            layer?.addSublayer(disc)
+        }
+        required init?(coder: NSCoder) { nil }
+        override func layout() {
+            super.layout()
+            CATransaction.begin()
+            CATransaction.setDisableActions(true)
+            let side = min(bounds.width, bounds.height)
+            disc.bounds = CGRect(x: 0, y: 0, width: side, height: side)
+            disc.position = CGPoint(x: bounds.midX, y: bounds.midY)
+            CATransaction.commit()
+        }
+    }
+
+    func makeNSView(context: Context) -> Host { Host() }
+
+    func updateNSView(_ view: Host, context: Context) {
+        let layer = view.disc
+        if layer.contents as AnyObject? !== image as AnyObject? { layer.contents = image }
+        if let spin = layer.animation(forKey: "spin"), spin.duration != 60 / rpm {
+            layer.removeAnimation(forKey: "spin")
+            let new = CABasicAnimation(keyPath: "transform.rotation.z")
+            new.fromValue = 0; new.toValue = -2 * Double.pi; new.duration = 60 / rpm
+            new.repeatCount = .infinity; new.timingFunction = CAMediaTimingFunction(name: .linear)
+            layer.add(new, forKey: "spin")
+        }
+        if spinning, layer.speed == 0 {
+            let held = layer.timeOffset
+            layer.timeOffset = 0
+            layer.beginTime = 0
+            layer.beginTime = layer.convertTime(CACurrentMediaTime(), from: nil) - held
+            layer.speed = 1
+        } else if !spinning, layer.speed != 0 {
+            let local = layer.convertTime(CACurrentMediaTime(), from: nil)
+            layer.speed = 0
+            layer.timeOffset = local
         }
     }
 }
