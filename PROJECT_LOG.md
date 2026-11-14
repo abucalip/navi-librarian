@@ -1,3 +1,10 @@
+## 2026-11-14 — macOS Home marquee H3 item 1: the new Home page (merged)
+
+- PR [#1080](https://github.com/abucalip/navi-librarian/pull/1080), squash `192d3fda`. Plan: `docs/MACOS_HOME_MARQUEE_PLAN.md` slice H3, item 1 only. The `page` of `CupertinoHome` is rewritten: notice, marquee (blurred cover, 55% black wash, white text, Get as the one primary button with keys inside the buttons, Next picks covers instead of chevrons), radio card (between marquee and shelf), New on the shelf, Waiting longest, summary line, Liner note; empty marquee, skeleton and narrow layout. New file `CupertinoHomeMarquee.swift` (shelf, waiting, summary views); `FlowLayout` is no longer private.
+- Test: filtered run `HomeRenderTests|HomeScreenTests|HomeDashboardTests`, 91 passed. Default and narrow renders compared with the mockup by eye; the render fixture does not load `allNavidromeAlbums`, so Waiting longest showed its empty sentence. Night and the other states not checked. Full suite not run. Not published or deployed.
+- Not done: the old briefing, arrivals, lenses and recently-added code is still in `CupertinoHome.swift`, unused (items 2 and 4); `loadInsights` still runs on Home (item 3); render tests for the seven states (item 7); docs (item 8).
+- Next action: H3 item 2 (remove the unused code).
+
 ## 2026-11-14 — macOS Home marquee H2 items 3 to 5: Server activity in Settings, Services (merged)
 
 - PR [#1079](https://github.com/abucalip/navi-librarian/pull/1079), squash `606b606c`. Plan: `docs/MACOS_HOME_MARQUEE_PLAN.md` slice H2, items 3 to 5. `CupertinoServices` ends with `ServerActivityPanel` (new `onServicesPage` flag hides the "Services" and "Open Services" buttons, since the page is the destination) and loads insights and Home feeds in a `.task`. Home still draws the panel through the same view (item 4: nothing disappears between merges).
