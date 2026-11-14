@@ -228,6 +228,12 @@ Done: Genres grid and four album shelves on the dashboard, the Recommended slide
 - Proposal: [`pathsredesign.md`](pathsredesign.md), with tokens, component CSS, mockups and stills for all 12 tabs in [`design/paths-trail/`](design/paths-trail/). The owner chose the Trail layout on 2026-11-13 for both the Album Paths and Artist Paths sheets: one layout for every theme, no server change.
 - Decisions D1 to D5 were taken on 2026-11-13; the build goes in the order of section 9 of the proposal. Steps 1 and 2 merged in PR [#1030](https://github.com/abucalip/navi-librarian/pull/1030), steps 3 to 5 (artist sheet, artist pane bodies, album sheet on the Trail) in PR [#1031](https://github.com/abucalip/navi-librarian/pull/1031), squash `04afccf076e9a469c90c08dc5a4d183b4edef623`, 2026-11-13. Filtered tests only (`PathTrailTest`, `PathsTest`, `AlbumPathStepsTest`, `AlbumPathsTest`); not seen on a device. Step 6 merged in PR [#1032](https://github.com/abucalip/navi-librarian/pull/1032), squash `a11a566460ba150ff73eec303e4ebb2e9d2d3884`, 2026-11-13: `AlbumStep.detail` drops the via and the track count (artist, with the play label on Gaps and the year on Neighbours by ear). The `Text` on `AccentDim` contrast test already exists in `PaletteTest`. Owner request in the same PR: the album tab descriptions no longer say "in your library" (results include albums outside it), and the opened step and the empty-reasons card now say "Not in your library" when the server sends `owned: false` (Android had hard-coded "In your library"; macOS already read the flag). Filtered tests (`AlbumPathStepsTest`, `PathTrailTest`, `PathsTest`, `AlbumPathsTest`, `PaletteTest`, JDK 17) pass; not seen on a device. Left: the owner's phone check.
 
+## 2n. Simplification candidates
+
+One line each: file, what could be simplified, why it was not done in the PR that found it (see "Opportunistic simplification" in [DEVELOPMENT_WORKFLOW.md](DEVELOPMENT_WORKFLOW.md)). Remove the line when it is done or no longer true.
+
+- None yet.
+
 ## 3. Recommendation engine — gated
 
 - CF freshness capture repeated 2026-10-23 after the imported history was recomputed: outcome "mixed", defaults kept. Deeper CF pages measured at 4 / 6 / 8: the larger pool changed the final list by one album (9/10 overlap), so `CF_MAX_PAGES` stays 4. A recent-30-days vs all-time profile comparison showed ranking responds to listening habits but the final list barely does. Evidence and limits: `PROJECT_LOG.md` (2026-10-23 entry).
