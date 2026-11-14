@@ -129,6 +129,14 @@ struct ConnectionsServicesRenderTests {
         try services(m, open: [.librarian], name: "healthy", height: 2000)
     }
 
+    /// Server activity is the last section of the Services tab (Home Marquee H2).
+    @Test func rendersServicesWithServerActivity() throws {
+        let state = HomeRenderTests().state(.normal)
+        state.screen = .settings
+        state.services.preview(ServicesModelTests.healthy { $0.share = .off }, expanded: [])
+        try window(state, name: "services-server-activity", height: 2300)
+    }
+
     @Test func rendersServicesDegraded() throws {
         let day = Self.now.addingTimeInterval(-2 * 86_400)
         let m = ServicesModelTests.healthy {

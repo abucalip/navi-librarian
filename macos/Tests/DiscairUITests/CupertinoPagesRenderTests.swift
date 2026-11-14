@@ -52,6 +52,14 @@ struct CupertinoPagesRenderTests {
         try render("insights", width: 1100, height: 1900, CupertinoInsights(state: state)) { _ in }
     }
 
+    /// Insights with "Your collection" (Home Marquee H2): the four charts that left Home, from the same fixtures Home's render uses.
+    @Test func rendersInsightsYourCollection() throws {
+        let state = HomeRenderTests().state(.normal)
+        state.screen = .insights
+        try render("insights-your-collection", width: 1100, height: 2900, CupertinoInsights(state: state)) { _ in }
+        try render("insights-your-collection-stacked", width: 760, height: 4300, CupertinoInsights(state: state)) { _ in }
+    }
+
     /// Settings › Radio (S2-4 item 3): the switch, the read-only address and a logo Change and Reset per station.
     @Test func rendersRadioSettings() throws {
         let state = AppState(themeID: .cupertino, screen: .settings)

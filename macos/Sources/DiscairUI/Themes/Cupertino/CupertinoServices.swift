@@ -101,7 +101,9 @@ struct CupertinoServices: View {
                 if !rows.isEmpty { groupSection(group, rows) }
             }
             if let e = services.actionError { CUNotice(kind: .danger, lead: "Could not change the service.", message: e) }
+            ServerActivityPanel(state: state)
         }
+        .task { await state.refreshHomeDashboard(); await state.loadInsights() }
         .task { if !services.hasChecked { await state.refreshServices() } }
         .sheet(isPresented: Binding(get: { services.editing != nil }, set: { if !$0 { services.stopEditing() } })) {
             if let id = services.editing { ServiceEditSheet(state: state, id: id) }
