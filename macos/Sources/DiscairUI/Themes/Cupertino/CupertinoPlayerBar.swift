@@ -197,16 +197,11 @@ struct CupertinoPlayerBar: View {
         .background {
             ZStack {
                 plate
-                if tint != nil, let peaks = p.waveform, !peaks.isEmpty { PlayerBarGraph(peaks: peaks, fraction: p.fraction).clipShape(shape) }
+                if tint != nil { BarWaveform(player: p, shape: shape) }
             }
         }
         .overlay(alignment: .bottomLeading) {
-            GeometryReader { g in
-                ZStack(alignment: .leading) {
-                    Rectangle().fill(ink.opacity(0.18))
-                    Rectangle().fill(tint != nil ? CU.onAccent : CU.accent).frame(width: g.size.width * p.fraction)
-                }
-            }
+            BarProgress(player: p, track: ink.opacity(0.18), fill: tint != nil ? CU.onAccent : CU.accent)
             .frame(height: 4).clipShape(UnevenRoundedRectangle(bottomLeadingRadius: 16, bottomTrailingRadius: 16))
         }
         .clipShape(shape)
@@ -411,5 +406,32 @@ private struct MarqueeLine<Content: View>: View {
         )
         .onPreferenceChange(MarqueeWidthKey.self) { textWidth = $0; start = Date() }
         .frame(height: 22)
+    }
+}
+
+
+/// The two readers of the 4 Hz position in the bar, each in its own view so a tick rebuilds only them and not the whole bar
+/// (the cover, the disc lookup and the text around it).
+private struct BarWaveform: View {
+    let player: PlayerModel
+    let shape: RoundedRectangle
+
+    var body: some View {
+        if let peaks = player.waveform, !peaks.isEmpty { PlayerBarGraph(peaks: peaks, fraction: player.fraction).clipShape(shape) }
+    }
+}
+
+private struct BarProgress: View {
+    let player: PlayerModel
+    let track: Color
+    let fill: Color
+
+    var body: some View {
+        GeometryReader { g in
+            ZStack(alignment: .leading) {
+                Rectangle().fill(track)
+                Rectangle().fill(fill).frame(width: g.size.width * player.fraction)
+            }
+        }
     }
 }
