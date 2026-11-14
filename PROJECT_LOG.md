@@ -1,3 +1,10 @@
+## 2026-11-14 — macOS Home marquee H3 items 4 and 5: unused helpers deleted, skeleton and narrow checked (merged)
+
+- PR [#1082](https://github.com/abucalip/navi-librarian/pull/1082), squash `40f5b4a8`. Plan slice H3, items 4 and 5. Deleted, after a search for each: `HomeStat`, `HomeChange`, `HomeKeyHint`; `HomeScreen` `addedLine`, `neverPlayedLine`, `listensTile`, `listensLine`, `waitingTile`, `lenses`, `ageText` and their types; `HomeDashboard.Waiting` and the `picksCount` input that only fed it (`AppState` and tests updated), with their tests. Kept `HomeSplit` (Insights uses it) and `neverPlayedChange` (not in the plan's list). Item 5 was already built; two details aligned with the mockups: 12 under the skeleton title block, and narrow Next picks keep the two-row block.
+- Test: filtered run `HomeRenderTests|HomeScreenTests|HomeDashboardTests`, 81 passed. Full suite not run. Not compared on screen. Not published or deployed.
+- Not done: item 6 (accessibility check), item 7 (seven-state render tests), item 8 (docs).
+- Next action: H3 item 6.
+
 ## 2026-11-14 — macOS Home marquee H3 items 2 and 3: old Home modules and lens request removed (merged)
 
 - PR [#1081](https://github.com/abucalip/navi-librarian/pull/1081), squash `574d33a9`. Plan slice H3, items 2 and 3. Removed from `CupertinoHome.swift` the briefing band and its stats, the Arrivals panel, the lens rows, the Recently added row and the helpers only they used (`split`, `FlowChips`, `stageWords`, local cover helpers); about 275 lines, none added. Home's task is now `loadHomeFeeds()` only (no `loadInsights`); `refreshHomeDashboard` and `reshufflePicks` are kept.
