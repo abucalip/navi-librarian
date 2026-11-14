@@ -81,7 +81,8 @@ median() {
 }
 
 app_cpu="$(extract "$dir/top-discair.txt" "$app_pid" | awk '{print $1}' | median)"
-app_wake="$(extract "$dir/top-discair.txt" "$app_pid" | awk '{print $2}' | median)"
+# IDLEW in top is a running total, so report the rate: (last - first) / elapsed seconds.
+app_wake="$(awk -v pid="$app_pid" -v iv="$interval" '$1 == pid { gsub(/[+-]/, "", $3); n++; if (n == 1) f = $3; l = $3 } END { if (n > 1) printf "%.2f\n", (l - f) / ((n - 1) * iv); else print "n/a" }' "$dir/top-discair.txt")"
 app_power="$(extract "$dir/top-discair.txt" "$app_pid" | awk '{print $3}' | median)"
 ws_cpu="$(extract "$dir/top-windowserver.txt" "$ws_pid" | awk '{print $1}' | median)"
 ws_power="$(extract "$dir/top-windowserver.txt" "$ws_pid" | awk '{print $3}' | median)"

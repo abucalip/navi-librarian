@@ -1,6 +1,6 @@
 # Client efficiency — baseline protocol and results
 
-**Status:** protocol and empty tables only. No value in this file has been measured. Every cell stays blank until a Phase 0 step (P0-2 macOS, P0-3 Android) fills it from a real run.
+**Status:** protocol and tables. Only the macOS S2 row has been measured (2026-11-14); every other cell stays blank until a Phase 0 step (P0-2 macOS, P0-3 Android) fills it from a real run.
 **Plan:** [`docs/client_efficiency.md`](client_efficiency.md), step P0-1. Scenario IDs (S1–S11) and cheap-tool commands are copied from its section 8; the plan remains the authority if the two ever disagree.
 **Scripts:** [`scripts/perf/macos_cheap.sh`](../scripts/perf/macos_cheap.sh) and [`scripts/perf/android_cheap.sh`](../scripts/perf/android_cheap.sh). Each prints one markdown table row per run. Raw tool output goes to `$DISCAIR_PERF_RAW` (default `~/discair-perf-raw`), never into the repository.
 
@@ -153,10 +153,10 @@ Columns: Discair CPU %, WindowServer CPU %, Discair wakeups/s, Discair power, Wi
 | Scenario | Run | Discair CPU % | WindowServer CPU % | Discair wakeups/s | Discair power | WindowServer power | Footprint | Notes |
 |---|---|---|---|---|---|---|---|---|
 | S1 (median of 5 launches) | — | | | | | | | |
-| S2 | 1 | | | | | | | |
-| S2 | 2 | | | | | | | |
-| S2 | 3 | | | | | | | |
-| S2 | **median** | | | | | | | |
+| S2 | 1 | 23.30 | 2.95 | 1.84 | 23.40 | 3.00 | 212 MB | 30 samples at 10 s |
+| S2 | 2 | 23.40 | 2.70 | 1.16 | 23.45 | 2.70 | 212 MB | |
+| S2 | 3 | 23.40 | 2.80 | 1.16 | 23.45 | 2.80 | 212 MB | |
+| S2 | **median** | 23.40 (spread 0.10) | 2.80 (spread 0.25) | 1.16 (spread 0.68) | 23.45 (spread 0.05) | 2.80 (spread 0.30) | 212 MB (spread 0) | Idle Home sits at about 23 % of one core; see the S2 note below |
 | S3 | 1 | | | | | | | |
 | S3 | 2 | | | | | | | |
 | S3 | 3 | | | | | | | |
@@ -193,6 +193,10 @@ Columns: Discair CPU %, WindowServer CPU %, Discair wakeups/s, Discair power, Wi
 | S11 | 2 | | | | | | | |
 | S11 | 3 | | | | | | | |
 | S11 | **median** | | | | | | | |
+
+**S2 run header (macOS, 2026-11-14).** App SHA `fab8032d` (inferred: the installed Release binary was built 03:16, three minutes after that merge, and `macos/` has not changed since; the owner could not name the commit). Release build, installed in `/Applications`. Apple M2, 16 GB, macOS 26.2 (25C56), 2560 x 1664 Retina; refresh rate not read. AC power, battery 97 % charging, Low Power Mode off. Tailscale connected. Server version and library: not recorded. One minute warm-up, then three back-to-back five-minute runs (30 samples at 10 s, the first sample dropped). Whether the app was on Home with nothing played since launch was taken on the owner's instruction, not checked by the agent.
+
+**S2 note.** An app left idle on Home used about 23 % of one core and about 2.8 % in WindowServer, steadily across all 90 samples, with only about 1 to 2 idle wakeups per second. A constant load with few wakeups points to something redrawing or computing continuously (an animation or a busy thread) rather than a timer. This is a measurement, not a diagnosis; the SwiftUI instrument and Time Profiler traces are needed to name the cause. The plan's section 3 hypotheses do not predict this on Home, so it is a new finding. The `macos_cheap.sh` wakeups column printed the running IDLEW total (about 38,000) in the first version; the script now reports a rate, and the table above was computed from the raw `top` output with the same formula.
 
 **Gate decisions (P0-2)**
 
