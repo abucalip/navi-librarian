@@ -1,13 +1,15 @@
 # Development and Git workflow
 
-Last updated: 2026-11-06.
+Last updated: 2026-11-14.
 
 ## Authority and responsibilities
 
 - **Exclusive reference rule:** in all repository documentation, source comments, commit messages, PR titles/descriptions/reviews, issue discussions, and other project communications, refer to the person directing this project exclusively as **“the owner”**. Do not use their personal name, account username/handle, or another label for that person. Apply this rule to new text and to any existing text being edited; quote historical text only when necessary to preserve evidence, and avoid expanding or repeating identifying references.
 - **GitHub is the single source of truth** for code, commits, branches, PRs, documentation, and release history. Never use a local checkout as the source for authoritative changes; local environments test identifiable GitHub revisions only.
 - Start each task by checking current `main`, recent commits, open PRs, and relevant CI. Read [`PROJECT_STATUS.md`](PROJECT_STATUS.md), then [`ACTIVE_WORK.md`](ACTIVE_WORK.md), and define one concrete objective with acceptance criteria.
-- Read [`REQUIREMENTS.md`](REQUIREMENTS.md), [`TEST_PLAN.md`](TEST_PLAN.md), [`ARCHITECTURE.md`](ARCHITECTURE.md), and [`DECISIONS.md`](DECISIONS.md) as relevant. Search root `PROJECT_LOG.md` for prior evidence. Use `python scripts/session_search.py "<task-specific concepts>"` when available; search is navigation, not proof that callers or safety cases have been inspected.
+- **Mandatory architecture-first navigation:** before opening source files, running broad grep/search commands, or choosing implementation files, read [`ARCHITECTURE.md`](ARCHITECTURE.md) in full. Use its module-ownership map to identify the responsible package and likely entry points. Then open those specific files, their callers, tests, configuration and contracts. Do not use repository-wide grep as the first way to discover ownership or module boundaries.
+- If the ownership map does not identify the needed file, use the task-specific documentation and [`scripts/session_search.py`](../scripts/session_search.py) to narrow the search; only then use targeted source search. Search results are navigation aids, not proof: trace actual imports/callers and inspect relevant tests, configuration and safety behavior. If ownership is genuinely unclear or crosses boundaries, update the map only after confirming the current code and dependencies.
+- Read [`REQUIREMENTS.md`](REQUIREMENTS.md), [`TEST_PLAN.md`](TEST_PLAN.md), and [`DECISIONS.md`](DECISIONS.md) for the task's behavior, verification and constraints. Search root [`PROJECT_LOG.md`](../PROJECT_LOG.md) for prior evidence.
 - MCP is retired as a supported interface. Do not reintroduce MCP runtime, registration, or startup paths. Preserve the supported web interface and shared service behavior.
 - UI work follows the same repository, testing, safety, and review rules as backend work. Keep domain/discovery/acquisition/import logic server-side; do not duplicate it in browser code. Preserve established API, authentication, accessibility, keyboard/focus, responsive, and reduced-motion behavior. UI work must use the isolated procedure in [`LOCAL_UI_TESTING.md`](LOCAL_UI_TESTING.md), plus the UI acceptance gates in [`TEST_PLAN.md`](TEST_PLAN.md). Historical redesign direction and phase evidence are in [`archive/redesign/`](archive/redesign/).
 
