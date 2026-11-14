@@ -443,4 +443,16 @@ import DiscairNavidrome
         let stale = HomeDashboard.build(.init(albums: [HomeDashboardTests.album("a")], listensByDay: HomeDashboardTests.days(Array(repeating: 1, count: 14), endingDaysAgo: 4), now: Self.now, calendar: Self.cal))
         #expect(HomeScreen.summaryFigures(stale, now: Self.now).contains(.init(text: "7 listens in the 7 days to 7 November", target: .history)))
     }
+
+    @Test func summaryListenSaysSingularForOne() {
+        let one = HomeDashboard.build(.init(albums: [HomeDashboardTests.album("a")], listensByDay: HomeDashboardTests.days(Array(repeating: 0, count: 13) + [1]), now: Self.now, calendar: Self.cal))
+        #expect(HomeScreen.summaryFigures(one, now: Self.now).contains(.init(text: "1 listen in 7 days", target: .history)))
+    }
+
+    @Test func summaryFiguresLeaveOutTheNilOnes() {
+        // Undated albums and no listen series: no "added" figure and no listens figure, only the figures that have values.
+        let d = HomeDashboardTests.build([HomeDashboardTests.album("a", plays: 0), HomeDashboardTests.album("b", plays: 0)])
+        #expect(d.added == nil && d.listens == nil)
+        #expect(HomeScreen.summaryFigures(d, now: Self.now) == [.init(text: "2 albums", target: .library), .init(text: "2 never played", target: .neverPlayed)])
+    }
 }
