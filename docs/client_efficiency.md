@@ -4,6 +4,7 @@
 **Revision:** 2 (2026-11-11). Replaces the first source survey of the same date.
 **Source reviewed:** GitHub `main` at `88a8f70e1b33f31b966004ede74467d2abd2d96f`. The macOS and Android client sources are unchanged since the first survey's baseline (`ce01596f`).
 **Scope:** macOS and Android clients: CPU, memory, rendering, playback buffers, energy and start-up.
+**Progress:** P0-1 done (commit `84d3d5b4`, direct to `main` on the owner's instruction): protocol and empty results tables in [`client_efficiency_results.md`](client_efficiency_results.md), per-client cheap-tool scripts in `scripts/perf/`. No measurements taken; P0-2 and P0-3 are next and need the owner's device time.
 
 ## 1. Executive summary and objectives
 
@@ -277,8 +278,9 @@ Steps on different clients are independent and can be interleaved. Each code ste
 - **Implementation details:** copy scenarios S1–S11 and the cheap-tool commands from section 8. For each scenario write numbered manual steps (which album, which song, how long). Add a header block per run: app SHA, build type, device, OS, refresh rate, power state, network, server version. One table per client with a row per scenario and columns for CPU, wakeups or RenderThread CPU, memory lines, frame percentiles and notes. Add a small shell script per client under `scripts/perf/` that runs the cheap commands and prints a table row; it must not need a private path or credential.
 - **Dependencies:** none.
 - **Risks:** none to the app. A vague scenario script makes later numbers incomparable.
-- **Verification:** a second agent or the owner can run S2 from the file alone and fill one row.
-- **Acceptance criteria:** the results file and both scripts exist; every scenario has numbered steps; no measured values are invented; the file refers to the owner only as "the owner".
+- **Verification:** a second agent or the owner can run S2 from the file alone and fill one row. **Not yet done.** Script checks so far: `bash -n` on both; the macOS script on a live process; the Android script's error path with no device and its parsing against a mock `adb`.
+- **Acceptance criteria:** the results file and both scripts exist (met); every scenario has numbered steps (met); no measured values are invented (met); the file refers to the owner only as "the owner" (met).
+- **Status:** done, except the second-person S2 check above. Scripts: `scripts/perf/macos_cheap.sh` and `scripts/perf/android_cheap.sh`. Open point: `docs/DEVELOPMENT_WORKFLOW.md` routes code changes through a PR; these scripts went direct to `main` on the owner's instruction.
 - **Model: Haiku | Effort: Low**
 
 #### P0-2 macOS baseline and gate decisions
