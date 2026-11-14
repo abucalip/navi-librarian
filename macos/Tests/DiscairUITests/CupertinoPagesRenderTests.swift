@@ -51,6 +51,19 @@ struct CupertinoPagesRenderTests {
         try render("insights", width: 1100, height: 1900, CupertinoInsights(state: state)) { _ in }
     }
 
+    /// The Home radio card on its own (E7), to put beside the mockup's `.hcard`.
+    @Test func rendersHomeRadioCards() throws {
+        let state = AppState(themeID: .cupertino, screen: .home)
+        let fip = RadioStation(id: "1", name: "FIP", proxied: true, playableURL: "https://example.invalid/1", favourite: true, tags: ["Eclectic"],
+                               lastPlayedAt: Date().timeIntervalSince1970 - 3600)
+        state.stations.showForPreview(stations: [fip])
+        state.player.live = LiveSession(stationID: "1", name: "FIP", logoPath: "", startedAt: Date().addingTimeInterval(-600), phase: .playing)
+        state.player.liveNow = RadioNow(state: .ok, rawTitle: "Talk Talk - Life's What You Make It", artist: "Talk Talk", title: "Life's What You Make It", playID: 4)
+        try render("home-radio-card-playing", width: 720, height: 90, HomeRadioCardView(state: state, card: HomeRadioCard.of(
+            live: state.player.live, line: state.player.liveLine, lastStationID: nil, stations: [fip], at: Date())!).padding(12)) { _ in }
+        try render("home-radio-card-resume", width: 720, height: 90, HomeRadioCardView(state: state, card: .resume(station: fip, lastPlayed: "Last played today, 21:17")).padding(12)) { _ in }
+    }
+
     @Test func rendersHistory() throws {
         let state = AppState(themeID: .cupertino, screen: .history)
         state.library.showSongs(Fixtures.songs)

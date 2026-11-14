@@ -312,6 +312,12 @@ public final class AppState {
     public private(set) var heardNote: String?
     @ObservationIgnored private var heardBusy = false
 
+    /// Reads the station list once for Home's radio card when it is not loaded and a station was played before (E7). No timer.
+    public func loadStationsForHome() async {
+        guard session != nil, stations.stations.isEmpty, stations.phase != .loading, player.lastStationID != nil else { return }
+        await stations.reload()
+    }
+
     /// Reads the Heard list (`GET /api/radio/plays`). One read at a time; a failure keeps the list on screen and says so. Home's
     /// rows are rebuilt from the same list.
     public func loadHeard() async {

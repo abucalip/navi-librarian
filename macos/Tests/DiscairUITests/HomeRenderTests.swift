@@ -34,13 +34,13 @@ struct HomeRenderTests {
         return try! JSONDecoder().decode(InsightsResponse.self, from: Data(#"{"data_version":3,"generation":1,"lenses":{"forgotten_gem":\#(off),"blind_spot":\#(off),"series_completion":\#(off),"hidden_canon":\#(off),"anniversary":\#(off)}}"#.utf8))
     }()
 
-    enum Scenario { case normal, firstRun, unreachable, loading }
+    enum Scenario { case normal, firstRun, unreachable, loading, radioPlaying, radioResume }
 
     func state(_ scenario: Scenario) -> AppState {
         let now = Date()
         let state = AppState(themeID: .cupertino, screen: .home)
         switch scenario {
-        case .normal:
+        case .normal, .radioPlaying, .radioResume:
             state.taste.set(Self.taste)
             let song = try! JSONDecoder().decode(NavidromeSong.self, from: Data(#"{"id":"s2","title":"Ascension Day","artist":"Talk Talk","duration":360}"#.utf8))
             let queue = NavidromePlayQueue(songs: [song], currentID: "s2", positionMs: 161_000, changed: now.addingTimeInterval(-600), changedBy: "discair-android")
@@ -65,6 +65,18 @@ struct HomeRenderTests {
             state.showHome(HomeDashboard.build(.init(albums: Self.albums(now: now), librarianReachable: false, now: now)))
         case .loading:
             break
+        }
+        // The radio card (E7): a station playing, or the last one with Resume.
+        if scenario == .radioPlaying || scenario == .radioResume {
+            let list = [RadioStation(id: "1", name: "FIP", proxied: true, playableURL: "https://example.invalid/1", favourite: true, tags: ["Eclectic"],
+                                     lastPlayedAt: now.timeIntervalSince1970 - 3600)]
+            state.stations.showForPreview(stations: list)
+            if scenario == .radioPlaying {
+                state.player.live = LiveSession(stationID: "1", name: "FIP", logoPath: "", startedAt: now.addingTimeInterval(-600), phase: .playing)
+                state.player.liveNow = RadioNow(state: .ok, rawTitle: "Talk Talk - Life's What You Make It", artist: "Talk Talk", title: "Life's What You Make It", playID: 4)
+            } else {
+                state.player.defaults.set("1", forKey: PlayerModel.lastStationKey)
+            }
         }
         return state
     }
@@ -98,6 +110,8 @@ struct HomeRenderTests {
     @Test func rendersDefault() throws { try render(.normal, name: "default") }
     @Test func rendersFirstRun() throws { try render(.firstRun, name: "first-run", height: 1200) }
     @Test func rendersLibrarianUnreachable() throws { try render(.unreachable, name: "librarian-unreachable", height: 1300) }
+    @Test func rendersRadioCardPlaying() throws { try render(.radioPlaying, name: "radio-playing") }
+    @Test func rendersRadioCardResume() throws { try render(.radioResume, name: "radio-resume") }
     @Test func rendersLoading() throws { try render(.loading, name: "loading", height: 1000) }
     @Test func rendersStackedUnder860() throws { try render(.normal, name: "stacked", width: 760, height: 3400) }
 }
