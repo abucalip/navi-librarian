@@ -443,7 +443,7 @@ Steps on different clients are independent and can be interleaved. Each code ste
 
 #### M7 macOS `PlaybackClock` does not tick while paused
 
-- **Status (2026-11-14):** **to implement; not started; needs the owner's go-ahead.** Added from the P0-2 element bisect ([`client_efficiency_results.md`](client_efficiency_results.md), "S2 bisect").
+- **Status (2026-11-14):** **implemented, the preferred variant (no `TimelineView`), after the playing-state A/B; PR pending.** Result: playing 38.4 % (`main`) to 7.05 %, paused about 26 to 30 % to 1.70 %, readout checked by the owner with no lag or jumps (results file, "M7 A/B"). The other `TimelineView(.periodic…)` users were not touched. Added from the P0-2 element bisect ([`client_efficiency_results.md`](client_efficiency_results.md), "S2 bisect").
 - **Objective:** remove the idle cost of a paused player: about 26 % of one core on Home with a paused track (25 to 29 % in every state tried).
 - **Current problem:** `macos/Sources/DiscairUI/Chrome/PlaybackClock.swift` wraps `TimelineView(.periodic(from: .now, by: 0.25))`, used twice in `CupertinoPlayerBar` (the time readout, and the middle line for lyrics and facts). While paused, the schedule still drives a full SwiftUI graph update about 120 times a second (measured: 0 % CPU and 0 updates in a 10 s trace when it was static or gated; unchanged with a fixed start date instead of `.now`). Why a 4 Hz schedule updates at display rate is not understood.
 - **Proposed solution:** render the `TimelineView` only while `player.phase == .playing`; otherwise call `content(player.position)` directly. Bisect variant "gate" did exactly this.
