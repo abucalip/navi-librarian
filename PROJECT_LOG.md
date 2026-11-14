@@ -1,3 +1,10 @@
+## 2026-11-14 — Client efficiency: M7 merged (PlaybackClock without a TimelineView)
+
+- PR [#1071](https://github.com/abucalip/navi-librarian/pull/1071), merged as `5edb1b27`. `PlaybackClock` now renders `content(player.displayPosition())` from the observed `position`; no `TimelineView`. Docs direct to `main` on the owner's instruction.
+- A/B on four Release builds, same track, three runs each (Discair CPU, median, share of one core): playing 7.95 % before #900, 31.85 % at #900, 38.40 % on `main`, 7.05 % with the change; paused 1.70 % with the change (1.5 % before #900). The owner saw no lag or jumps while playing, after a seek, or after pause and resume, so the gate fallback was not used. Table in `docs/client_efficiency_results.md` ("M7 A/B").
+- Tests: `swift test --filter PlayerModelTests` (32 passed); full suite not run. Not published.
+- **Next action:** S3 to S5 re-baseline with the clock fixed, the hidden-window check for G2, then M1 and M2.
+
 ## 2026-11-14 — Client efficiency: PlaybackClock regression pinned to PR #900
 
 - Docs direct to `main` on the owner's instruction. No app code changed. `docs/client_efficiency_results.md` gains "S2 A/B across PR #900"; `docs/client_efficiency.md` M7 gains the evidence and a preferred variant.
