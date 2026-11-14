@@ -1,9 +1,17 @@
+## 2026-11-14 — macOS Home marquee H1 item 2: HomeScreen rules (PR #1076)
+
+- PR [#1076](https://github.com/abucalip/navi-librarian/pull/1076), squash-merged as `92a73182`. Plan: `docs/MACOS_HOME_MARQUEE_PLAN.md` slice H1, item 2.
+- `HomeScreen` (`macos/Sources/DiscairUI/Model/HomeScreen.swift`): `shelfTiles` (arrivals then recently added, capped at six), `shelfStatus` and `shelfSubtitle`, `stageFraction`, `waitingCaption` and `waitingSubtitle` (with `monthAndYear`), `nextPicks` (wrapping, current pick left out, at most six), and `summaryFigures` (nil figures left out; stale listens name their last day).
+- **Choices:** arrived tiles take an `arrivedDates` map from the caller, since `ArrivalRow.arrived` has no date (no date gives "Arrived recently"); recently added takes resolved `NavidromeAlbum`s, and undated albums are skipped.
+- **Tests:** `swift test --filter "HomeScreenTests|HomeDashboardTests|HomeRenderTests"` on a Mac, 89 tests in 3 suites, pass. Full suite not run (owner rule). CI on the head: compile, container-smoke, lint-changed, test-and-build and validate-container passed.
+- **Next action:** H2 (charts to Insights, Server activity to Settings), Sonnet, Medium.
+
 ## 2026-11-14 — macOS Home marquee H1 item 1: Home dashboard data (PR #1075)
 
 - PR [#1075](https://github.com/abucalip/navi-librarian/pull/1075), squash-merged as `ed3faa84`. Code PR, not a docs commit. Plan: `docs/MACOS_HOME_MARQUEE_PLAN.md` slice H1, item 1.
 - `HomeDashboard` (`macos/Sources/DiscairUI/Model/HomeDashboard.swift`): `longestUnplayed` rises from four to six (`longestUnplayedLimit`), filled from the oldest-played albums when never-played ones run short. New `recentlyAdded` (`recentlyAddedLimit` = 6): newest dated albums, excluding albums shown in the capped `arrivals` rows; empty when the album list was not read; independent of Librarian reachability.
 - `CupertinoHome.swift`: the four small covers under Shelf life take `prefix(4)`, so Home is unchanged.
-- **Tests:** `swift test --filter "HomeDashboardTests|HomeRenderTests"` on a Mac, 41 tests in 2 suites, pass. Full suite not run (owner rule). CI on the head `f7863970`: `compile`, `container-smoke`, `lint-changed` and `validate-container` passed; `test-and-build` was still pending when this entry was written (the owner merged; the result is not recorded here). The macOS Swift tests run locally only (owner removed the macOS CI workflow).
+- **Tests:** `swift test --filter "HomeDashboardTests|HomeRenderTests"` on a Mac, 41 tests in 2 suites, pass. Full suite not run (owner rule). CI on the head `f7863970`: `compile`, `container-smoke`, `lint-changed` and `validate-container` passed; `test-and-build` passed later; all five checks passed (recorded 2026-11-14). The macOS Swift tests run locally only (owner removed the macOS CI workflow).
 - **Interpretation to confirm:** "already shown in step 1" read as the capped arrival rows only, so an arrived album past the cap can appear in recently added.
 - **Next action:** H1 item 2 (`HomeScreen` pure functions and tests), Haiku, High.
 

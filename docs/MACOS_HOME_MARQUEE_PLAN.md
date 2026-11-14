@@ -1,6 +1,6 @@
 # macOS Home, "Marquee" layout: implementation plan
 
-Status: **H1 item 1 merged** (PR #1075, squash `ed3faa84`: `HomeDashboard` data, no visible change). The rest is still to build. Originally: **plan only, nothing built.** The owner chose this layout on 2026-11-13 from three mockups. The owner's reason for the change: the current Home is too number-driven; Home should be artwork-driven, with only a few statistics.
+Status: **H1 merged.** Item 1 (PR #1075, squash `ed3faa84`: `HomeDashboard` data) and item 2 (PR #1076, squash `92a73182`: `HomeScreen` rules and their tests) are in `main`, with no visible change. H2 is next; H3 (the new Home) is not started. Originally: **plan only, nothing built.** The owner chose this layout on 2026-11-13 from three mockups. The owner's reason for the change: the current Home is too number-driven; Home should be artwork-driven, with only a few statistics.
 
 The mockups are the spec: [`design/macos-home-marquee/mockups.html`](design/macos-home-marquee/mockups.html) (open in a browser, no network needed). Where this text and a mockup differ, the mockup wins, except for the corrections listed in section 9.
 
