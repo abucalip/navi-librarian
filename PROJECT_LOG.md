@@ -1,3 +1,9 @@
+## 2026-11-14 — Client efficiency P0-2: macOS S1 and S8 to S10 (PR #1069)
+
+- PR [#1069](https://github.com/abucalip/navi-librarian/pull/1069), merged as `43a29414`; this entry and the plan's progress line are docs direct to `main` on the owner's instruction. Adds `scripts/perf/macos_launch.sh` and fills S1 and S8 to S10 in `docs/client_efficiency_results.md`. No app code changed.
+- Short protocol agreed with the owner, one run each (no spreads): S1 0.88 s to first window (10 s pauses); S8 footprint 147 to 380 MB and nothing released a minute later, `leaks` only 22 KB (supports M3); S9 +31 MB open, about 14 MB retained; S10 CPU does not follow bitrate. A hang occurred during S10 (cause unknown, no crash report); the owner relaunched the app.
+- **Next action:** S11 needs a throttling tool; three-run repeats of S8 to S10, the S3/S5, S8/S9 and S6 traces and the G2 hidden-window check remain; P0-3 not started.
+
 ## 2026-11-14 — Client efficiency: M7 recorded (PlaybackClock fix)
 
 - Docs direct to `main` on the owner's instruction, after PR #1068 merged (`f5fdb638`). `docs/client_efficiency.md` gains step M7 (`PlaybackClock` renders its `TimelineView` only while playing), placed after A1 in the order table (later steps renumbered); `docs/PROJECT_STATUS.md` notes the finding. No code changed.

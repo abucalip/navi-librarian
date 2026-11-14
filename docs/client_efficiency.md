@@ -4,7 +4,7 @@
 **Revision:** 2 (2026-11-11). Replaces the first source survey of the same date.
 **Source reviewed:** GitHub `main` at `88a8f70e1b33f31b966004ede74467d2abd2d96f`. The macOS and Android client sources are unchanged since the first survey's baseline (`ce01596f`).
 **Scope:** macOS and Android clients: CPU, memory, rendering, playback buffers, energy and start-up.
-**Progress:** P0-1 done (commit `84d3d5b4`, direct to `main` on the owner's instruction): protocol and empty results tables in [`client_efficiency_results.md`](client_efficiency_results.md), per-client cheap-tool scripts in `scripts/perf/`. P0-2 started: macOS S2 (idle Home) measured, merged in PR #1066 (`2f9a55e2`); S1 and S3–S11, G1/G2 and the traces remain. P0-3 not started. Both need the owner's device time. First finding: idle Discair on Home uses about 32 % of one core with almost no wakeups, which the plan did not predict (see the results file, S2 note).
+**Progress:** P0-1 done (commit `84d3d5b4`, direct to `main` on the owner's instruction): protocol and empty results tables in [`client_efficiency_results.md`](client_efficiency_results.md), per-client cheap-tool scripts in `scripts/perf/`. P0-2 in progress: macOS S2 to S7 measured (PRs #1066, #1067) and S1 and S8 to S10 measured on a short, one-run protocol (PR #1069, `43a29414`); S11 (no throttling tool), three-run repeats of S8 to S10, the three required traces and the G2 hidden-window check remain. P0-3 not started. Both need the owner's device time. First finding: idle Discair on Home uses about 32 % of one core with almost no wakeups, which the plan did not predict (see the results file, S2 note).
 
 ## 1. Executive summary and objectives
 
