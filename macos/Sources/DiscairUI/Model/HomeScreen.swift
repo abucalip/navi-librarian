@@ -460,6 +460,160 @@ enum HomeScreen {
         return fractional.date(from: s) ?? ISO8601DateFormatter().date(from: s)
     }
 
+    // MARK: New on the shelf and Waiting longest (plan 3.2, 3.3)
+
+    /// One tile of "New on the shelf", in the order of plan 3.2. `arrived` and `added` carry the album's added date.
+    enum ShelfTile: Equatable {
+        case job(id: String, title: String, artist: String, stage: HomeDashboard.ArrivalStage, failure: String?)
+        /// `addedAt` is nil only when the album's date is not known to the caller; the status then says "Arrived recently".
+        case arrived(albumID: String, title: String, artist: String, addedAt: Date?)
+        case radio(playID: Int, title: String, artist: String, station: String)
+        case added(albumID: String, title: String, artist: String, addedAt: Date)
+    }
+
+    /// The most tiles on the shelf.
+    static let shelfLimit = 6
+
+    /// The shelf's tiles: the dashboard's arrival rows in their own order, then recently added albums (newest first, dated albums
+    /// only) that are not already shown, until `limit` tiles. `arrivedDates` maps an arrived album's id to its added date.
+    static func shelfTiles(arrivals: [HomeDashboard.ArrivalRow], recentlyAdded: [NavidromeAlbum],
+                           arrivedDates: [String: Date] = [:], limit: Int = shelfLimit) -> [ShelfTile] {
+        var tiles: [ShelfTile] = []
+        var shownAlbums = Set<String>()
+        for row in arrivals {
+            switch row {
+            case let .job(id, title, artist, stage, failure):
+                tiles.append(.job(id: id, title: title, artist: artist, stage: stage, failure: failure))
+            case let .arrived(albumID, title, artist):
+                shownAlbums.insert(albumID)
+                tiles.append(.arrived(albumID: albumID, title: title, artist: artist, addedAt: arrivedDates[albumID]))
+            case let .radio(playID, title, artist, station, _):
+                tiles.append(.radio(playID: playID, title: title, artist: artist, station: station))
+            }
+        }
+        for album in recentlyAdded where tiles.count < limit {
+            guard !shownAlbums.contains(album.id), let added = parseDate(album.created) else { continue }
+            shownAlbums.insert(album.id)
+            tiles.append(.added(albumID: album.id, title: album.name, artist: album.artist ?? "Unknown artist", addedAt: added))
+        }
+        return Array(tiles.prefix(limit))
+    }
+
+    /// The words for a Get's stage (plan 3.2).
+    static func stageWords(_ stage: HomeDashboard.ArrivalStage) -> String {
+        switch stage {
+        case .found: return "Looking for a source"
+        case .downloading: return "Downloading"
+        case .importing: return "Importing"
+        case .inLibrary: return "In library"
+        }
+    }
+
+    /// The colour role of a status line. The view maps each role to a token; the words always carry the meaning too.
+    enum StatusRole: Equatable { case warning, danger, accent, secondary }
+
+    struct ShelfStatus: Equatable {
+        let text: String
+        let role: StatusRole
+    }
+
+    /// The status line under a shelf tile (plan 3.2).
+    static func shelfStatus(_ tile: ShelfTile, now: Date, calendar: Calendar = .current) -> ShelfStatus {
+        switch tile {
+        case let .job(_, _, _, stage, failure):
+            if let failure { return ShelfStatus(text: "Failed · \(failure)", role: .danger) }
+            return ShelfStatus(text: stageWords(stage), role: .warning)
+        case let .arrived(_, _, _, addedAt):
+            guard let addedAt else { return ShelfStatus(text: "Arrived recently", role: .accent) }
+            if calendar.isDate(addedAt, inSameDayAs: now) { return ShelfStatus(text: "Arrived today", role: .accent) }
+            if let yesterday = calendar.date(byAdding: .day, value: -1, to: now), calendar.isDate(addedAt, inSameDayAs: yesterday) {
+                return ShelfStatus(text: "Arrived yesterday", role: .accent)
+            }
+            return ShelfStatus(text: "Arrived \(dayAndMonth(addedAt, calendar: calendar))", role: .accent)
+        case let .radio(_, _, _, station):
+            return ShelfStatus(text: station.isEmpty ? "Heard on the radio · Get" : "Heard on \(station) · Get", role: .accent)
+        case let .added(_, _, _, addedAt):
+            return ShelfStatus(text: "Added \(dayAndMonth(addedAt, calendar: calendar))", role: .secondary)
+        }
+    }
+
+    /// The header subtitle of "New on the shelf": the full phrase, or "recently added" when every tile is a recently added album
+    /// (and when there are no tiles at all).
+    static func shelfSubtitle(tiles: [ShelfTile]) -> String {
+        let onlyAdded = tiles.allSatisfy { tile in
+            if case .added = tile { return true }
+            return false
+        }
+        return onlyAdded ? "recently added" : "arriving, just arrived and heard on the radio"
+    }
+
+    /// How far a Get has got, for the stage ring: a quarter, half or three quarters. nil once it is in the library (no ring).
+    static func stageFraction(_ stage: HomeDashboard.ArrivalStage) -> Double? {
+        switch stage {
+        case .found: return 0.25
+        case .downloading: return 0.5
+        case .importing: return 0.75
+        case .inLibrary: return nil
+        }
+    }
+
+    /// The caption under a "Waiting longest" cover (plan 3.3): "Since March 2023" for an album never played (the month it was
+    /// added), "Last played March 2023" for one that was. nil when the date is not known.
+    static func waitingCaption(created: Date?, played: Date?, neverPlayed: Bool, calendar: Calendar = .current) -> String? {
+        if neverPlayed { return created.map { "Since \(monthAndYear($0, calendar: calendar))" } }
+        return played.map { "Last played \(monthAndYear($0, calendar: calendar))" }
+    }
+
+    /// The header subtitle of "Waiting longest" (plan 3.3).
+    static func waitingSubtitle(allNeverPlayed: Bool) -> String {
+        allNeverPlayed ? "albums you own and have never played" : "albums you have not played for the longest time"
+    }
+
+    /// How many pick covers the "Next picks" row shows.
+    static let nextPicksLimit = 6
+
+    /// The other picks in the order "Next picks" shows them: starting after `index` and wrapping round, the current one left out,
+    /// at most `limit`. `index` is clamped as in `pickPosition`. Fewer than two picks gives nothing.
+    static func nextPicks(index: Int, count: Int, limit: Int = nextPicksLimit) -> [Int] {
+        guard count > 1, limit > 0 else { return [] }
+        let current = min(max(index, 0), count - 1)
+        return (1..<count).prefix(limit).map { (current + $0) % count }
+    }
+
+    // MARK: Summary line (plan 3.4)
+
+    /// Where a summary figure goes when clicked.
+    enum SummaryTarget: Equatable { case library, history, neverPlayed }
+
+    struct SummaryFigure: Equatable {
+        let text: String
+        let target: SummaryTarget
+    }
+
+    /// The figures of the summary line, in order. Each is left out when its value is nil. Listens are "as of" a day when the series
+    /// is stale (its last day is older than yesterday, in UTC like the series itself).
+    static func summaryFigures(_ d: HomeDashboard, now: Date) -> [SummaryFigure] {
+        var out: [SummaryFigure] = []
+        if let albums = d.albumCount {
+            out.append(SummaryFigure(text: "\(count(albums)) \(albums == 1 ? "album" : "albums")", target: .library))
+        }
+        if let added = d.added?.last {
+            out.append(SummaryFigure(text: "\(count(added)) added in 30 days", target: .library))
+        }
+        if let listens = d.listens {
+            let n = listens.last
+            let noun = n == 1 ? "listen" : "listens"
+            var utc = Calendar(identifier: .gregorian); utc.timeZone = TimeZone(identifier: "UTC")!
+            let stale = (utc.dateComponents([.day], from: listens.asOf, to: now).day ?? 0) > 1
+            let text = stale ? "\(count(n)) \(noun) in the 7 days to \(dayAndMonth(listens.asOf, calendar: utc))" : "\(count(n)) \(noun) in 7 days"
+            out.append(SummaryFigure(text: text, target: .history))
+        }
+        if let never = d.neverPlayed {
+            out.append(SummaryFigure(text: "\(count(never)) never played", target: .neverPlayed))
+        }
+        return out
+    }
+
     // MARK: Words
 
     static func count(_ n: Int) -> String { CUValueFormat.number(Double(n)) }
@@ -474,6 +628,8 @@ enum HomeScreen {
 
     /// "1 October".
     static func dayAndMonth(_ date: Date, calendar: Calendar = .current) -> String { formatted(date, "d MMMM", calendar: calendar) }
+    /// "March 2023".
+    static func monthAndYear(_ date: Date, calendar: Calendar = .current) -> String { formatted(date, "MMMM yyyy", calendar: calendar) }
     /// "1 December 2025".
     static func fullDate(_ date: Date, calendar: Calendar = .current) -> String { formatted(date, "d MMMM yyyy", calendar: calendar) }
     /// "Wednesday 11 November", the date on the page header.
