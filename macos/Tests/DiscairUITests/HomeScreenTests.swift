@@ -342,4 +342,105 @@ import DiscairNavidrome
         #expect(failed.status == .notUpdating && failed.line.hasSuffix("next due now"))
         #expect(HomeScreen.duration(35 * 60) == "35 minutes" && HomeScreen.duration(60) == "1 minute" && HomeScreen.duration(3 * 3600) == "3 hours")
     }
+
+    // MARK: New on the shelf, Waiting longest, next picks, summary line (H1 item 2)
+
+    static func arrivedRow(_ id: String) -> HomeDashboard.ArrivalRow { .arrived(albumID: id, title: "T \(id)", artist: "A") }
+    static func recent(_ id: String, addedDaysAgo: Int) -> NavidromeAlbum { HomeDashboardTests.album(id, addedDaysAgo: addedDaysAgo) }
+    static func kind(_ t: HomeScreen.ShelfTile) -> String {
+        switch t { case .job: "job"; case .arrived: "arrived"; case .radio: "radio"; case .added: "added" }
+    }
+    static func daysAgo(_ n: Int) -> Date { cal.date(byAdding: .day, value: -n, to: now)! }
+
+    @Test func shelfTilesKeepArrivalOrderThenAddSoleRecentAlbumsUpToSix() {
+        let arrivals: [HomeDashboard.ArrivalRow] = [
+            .job(id: "j1", title: "J", artist: "A", stage: .downloading, failure: nil),
+            Self.arrivedRow("a1"),
+            .radio(playID: 7, title: "R", artist: "B", station: "FIP", heardAt: Date(timeIntervalSince1970: 0)),
+        ]
+        let recent = (1...8).map { (i: Int) -> NavidromeAlbum in Self.recent("r\(i)", addedDaysAgo: 400 + i) }
+        let tiles = HomeScreen.shelfTiles(arrivals: arrivals, recentlyAdded: recent)
+        #expect(tiles.count == 6)
+        #expect(tiles.prefix(3).map(Self.kind) == ["job", "arrived", "radio"])
+        #expect(tiles.suffix(3).map(Self.kind) == ["added", "added", "added"])
+        if case let .added(albumID, _, _, _) = tiles.last { #expect(albumID == "r3") } else { Issue.record("last tile should be added") }
+    }
+
+    @Test func shelfTilesLeaveOutAlbumsAlreadyShownAsArrivals() {
+        let recent = [Self.recent("a1", addedDaysAgo: 1), Self.recent("x", addedDaysAgo: 500)]
+        let tiles = HomeScreen.shelfTiles(arrivals: [Self.arrivedRow("a1")], recentlyAdded: recent)
+        #expect(tiles.count == 2)
+        if case let .added(albumID, _, _, _) = tiles.last { #expect(albumID == "x") } else { Issue.record("expected the other album") }
+    }
+
+    @Test func shelfTilesSkipUndatedRecentAlbumsAndTakeArrivedDates() {
+        let undated = HomeDashboardTests.album("u")
+        let tiles = HomeScreen.shelfTiles(arrivals: [Self.arrivedRow("a1")], recentlyAdded: [undated], arrivedDates: ["a1": Self.daysAgo(1)])
+        #expect(tiles.count == 1)
+        if case let .arrived(_, _, _, addedAt) = tiles[0] { #expect(addedAt == Self.daysAgo(1)) } else { Issue.record("expected arrived") }
+    }
+
+    @Test func shelfStatusWordsForEveryTileKind() {
+        let now = Self.now
+        let found = HomeScreen.shelfStatus(.job(id: "1", title: "T", artist: "A", stage: .found, failure: nil), now: now, calendar: Self.cal)
+        #expect(found == .init(text: "Looking for a source", role: .warning))
+        #expect(HomeScreen.shelfStatus(.job(id: "1", title: "T", artist: "A", stage: .downloading, failure: nil), now: now, calendar: Self.cal).text == "Downloading")
+        #expect(HomeScreen.shelfStatus(.job(id: "1", title: "T", artist: "A", stage: .importing, failure: nil), now: now, calendar: Self.cal).text == "Importing")
+        let failed = HomeScreen.shelfStatus(.job(id: "1", title: "T", artist: "A", stage: .found, failure: "No source"), now: now, calendar: Self.cal)
+        #expect(failed == .init(text: "Failed · No source", role: .danger))
+        #expect(HomeScreen.shelfStatus(.arrived(albumID: "a", title: "T", artist: "A", addedAt: now), now: now, calendar: Self.cal) == .init(text: "Arrived today", role: .accent))
+        #expect(HomeScreen.shelfStatus(.arrived(albumID: "a", title: "T", artist: "A", addedAt: Self.daysAgo(1)), now: now, calendar: Self.cal).text == "Arrived yesterday")
+        #expect(HomeScreen.shelfStatus(.arrived(albumID: "a", title: "T", artist: "A", addedAt: Self.daysAgo(2)), now: now, calendar: Self.cal).text == "Arrived 9 November")
+        #expect(HomeScreen.shelfStatus(.arrived(albumID: "a", title: "T", artist: "A", addedAt: nil), now: now, calendar: Self.cal).text == "Arrived recently")
+        #expect(HomeScreen.shelfStatus(.radio(playID: 1, title: "T", artist: "A", station: "FIP"), now: now, calendar: Self.cal) == .init(text: "Heard on FIP · Get", role: .accent))
+        #expect(HomeScreen.shelfStatus(.added(albumID: "r", title: "T", artist: "A", addedAt: Self.daysAgo(2)), now: now, calendar: Self.cal) == .init(text: "Added 9 November", role: .secondary))
+    }
+
+    @Test func shelfSubtitleIsRecentlyAddedOnlyWhenEveryTileIsAnAddedAlbum() {
+        let added = HomeScreen.ShelfTile.added(albumID: "r", title: "T", artist: "A", addedAt: Self.now)
+        let arrived = HomeScreen.ShelfTile.arrived(albumID: "a", title: "T", artist: "A", addedAt: nil)
+        #expect(HomeScreen.shelfSubtitle(tiles: [added, added]) == "recently added")
+        #expect(HomeScreen.shelfSubtitle(tiles: []) == "recently added")
+        #expect(HomeScreen.shelfSubtitle(tiles: [arrived, added]) == "arriving, just arrived and heard on the radio")
+    }
+
+    @Test func stageFractionsAreQuartersAndNoRingOnceInLibrary() {
+        #expect(HomeScreen.stageFraction(.found) == 0.25)
+        #expect(HomeScreen.stageFraction(.downloading) == 0.5)
+        #expect(HomeScreen.stageFraction(.importing) == 0.75)
+        #expect(HomeScreen.stageFraction(.inLibrary) == nil)
+    }
+
+    @Test func waitingCaptionsNameTheMonth() {
+        let added = HomeScreen.parseDate("2023-03-15T00:00:00Z")!
+        let played = HomeScreen.parseDate("2025-06-02T10:00:00Z")!
+        #expect(HomeScreen.monthAndYear(added, calendar: Self.cal) == "March 2023")
+        #expect(HomeScreen.waitingCaption(created: added, played: nil, neverPlayed: true, calendar: Self.cal) == "Since March 2023")
+        #expect(HomeScreen.waitingCaption(created: added, played: played, neverPlayed: false, calendar: Self.cal) == "Last played June 2025")
+        #expect(HomeScreen.waitingCaption(created: nil, played: nil, neverPlayed: true, calendar: Self.cal) == nil)
+        #expect(HomeScreen.waitingSubtitle(allNeverPlayed: true) == "albums you own and have never played")
+        #expect(HomeScreen.waitingSubtitle(allNeverPlayed: false) == "albums you have not played for the longest time")
+    }
+
+    @Test func nextPicksWrapRoundWithoutTheCurrentOne() {
+        #expect(HomeScreen.nextPicks(index: 0, count: 1) == [])
+        #expect(HomeScreen.nextPicks(index: 0, count: 2) == [1])
+        #expect(HomeScreen.nextPicks(index: 1, count: 2) == [0])
+        #expect(HomeScreen.nextPicks(index: 0, count: 8) == [1, 2, 3, 4, 5, 6])
+        #expect(HomeScreen.nextPicks(index: 6, count: 8) == [7, 0, 1, 2, 3, 4])
+        #expect(HomeScreen.nextPicks(index: 99, count: 3) == [0, 1])
+    }
+
+    @Test func summaryFiguresLeaveOutNilsAndUseSingularForOne() {
+        let one = HomeDashboardTests.build([HomeDashboardTests.album("a", plays: 1, playedDaysAgo: 5)])
+        #expect(HomeScreen.summaryFigures(one, now: Self.now) == [.init(text: "1 album", target: .library), .init(text: "0 never played", target: .neverPlayed)])
+        #expect(HomeScreen.summaryFigures(.notLoaded, now: Self.now) == [])
+    }
+
+    @Test func summaryListensSayTheirWindowAndGoStaleWhenOld() {
+        let fresh = HomeDashboard.build(.init(albums: [HomeDashboardTests.album("a")], listensByDay: HomeDashboardTests.days(Array(repeating: 1, count: 14)), now: Self.now, calendar: Self.cal))
+        #expect(HomeScreen.summaryFigures(fresh, now: Self.now).contains(.init(text: "7 listens in 7 days", target: .history)))
+        let stale = HomeDashboard.build(.init(albums: [HomeDashboardTests.album("a")], listensByDay: HomeDashboardTests.days(Array(repeating: 1, count: 14), endingDaysAgo: 4), now: Self.now, calendar: Self.cal))
+        #expect(HomeScreen.summaryFigures(stale, now: Self.now).contains(.init(text: "7 listens in the 7 days to 7 November", target: .history)))
+    }
 }
