@@ -18,6 +18,7 @@ struct CupertinoStations: View {
 
     private var model: StationsModel { state.stations }
     private var player: PlayerModel { state.player }
+    private var downloads: RadioDownloads { state.radioDownloads }
 
     /// Below this content width the On Air panel moves under the list (S2.7).
     static let sideBySideWidth: CGFloat = 880
@@ -94,11 +95,11 @@ struct CupertinoStations: View {
             if sideBySide {
                 HStack(alignment: .top, spacing: CU.Space.l) {
                     ScrollView { list.padding(.bottom, CU.Space.xl) }.scrollEdgeEffectStyle(.hard, for: .top)
-                    OnAirPanel(player: player, stations: model).frame(width: Self.panelWidth)
+                    OnAirPanel(player: player, stations: model, downloads: downloads).frame(width: Self.panelWidth)
                 }
             } else {
                 ScrollView {
-                    VStack(alignment: .leading, spacing: CU.Space.m) { list; OnAirPanel(player: player, stations: model) }.padding(.bottom, CU.Space.xl)
+                    VStack(alignment: .leading, spacing: CU.Space.m) { list; OnAirPanel(player: player, stations: model, downloads: downloads) }.padding(.bottom, CU.Space.xl)
                 }
                 .scrollEdgeEffectStyle(.hard, for: .top)
             }
@@ -201,10 +202,11 @@ private struct StationRow: View {
 }
 
 /// The fixed panel on the right (mockup A2, "On Air"). Nothing playing: a sentence. A station playing: the hero from the mockup, the
-/// logo, LIVE, the station and the time since tuning in, and Stop. The song, Download and Heard come with S2-3.
+/// logo, LIVE, the station and the time since tuning in, and Stop. The live song and Download are here; Heard comes with S2-3 item 4.
 private struct OnAirPanel: View {
     let player: PlayerModel
     let stations: StationsModel
+    let downloads: RadioDownloads
 
     var body: some View {
         if let live = player.live {
@@ -235,7 +237,8 @@ private struct OnAirPanel: View {
                     }
                 }
                 Text(live.name).cuRole(CU.Font.title2).foregroundStyle(CU.onMedia).lineLimit(2)
-                if let sentence = live.phaseSentence { Text(sentence).cuRole(CU.Font.callout).foregroundStyle(CU.onMedia.opacity(0.85)) }
+                if live.phase == .playing { LiveSongBlock(player: player, downloads: downloads) }
+                else if let sentence = live.phaseSentence { Text(sentence).cuRole(CU.Font.callout).foregroundStyle(CU.onMedia.opacity(0.85)) }
                 Button { player.stopStation() } label: {
                     HStack(spacing: 6) { Image(systemName: "stop.fill"); Text("Stop").cuRole(CU.Font.callout) }.foregroundStyle(CU.onMedia)
                         .padding(.horizontal, 12).padding(.vertical, 4)

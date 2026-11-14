@@ -114,8 +114,9 @@ struct CupertinoPlayerBar: View {
                 if let station = liveStation { StationLogo(station: station, size: 50, radiusFraction: 0.16) }
                 else { RoundedRectangle(cornerRadius: 8, style: .continuous).fill(CU.bgFill).frame(width: 50, height: 50) }
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(live.name).font(CU.Font.body.weighted(.semibold)).lineLimit(1)
-                    Text(live.phaseSentence ?? "On air").foregroundStyle(secondary).lineLimit(1)
+                    let line = p.liveLine
+                    Text(line.headline(station: live.name)).font(CU.Font.body.weighted(.semibold)).lineLimit(1)
+                    Text(barSecondLine(live, line)).foregroundStyle(secondary).lineLimit(1)
                 }
                 .font(CU.Font.callout.weighted(.regular)).frame(maxWidth: .infinity, alignment: .leading)
             }
@@ -126,6 +127,7 @@ struct CupertinoPlayerBar: View {
                 Text(live.elapsedText(at: tl.date)).font(CU.Font.callout.weighted(.regular)).monospacedDigit().foregroundStyle(secondary)
             }
             .accessibilityLabel("On air for \(live.elapsedText(at: Date()))")
+            barDownload
             liveTransport(live)
         }
         .padding(.horizontal, 16).frame(height: 68)
@@ -133,6 +135,25 @@ struct CupertinoPlayerBar: View {
         .overlay(alignment: .bottom) { Rectangle().fill(CU.onMedia.opacity(0.22)).frame(height: 3).accessibilityHidden(true) }
         .clipShape(shape)
         .accessibilityElement(children: .contain)
+    }
+
+    /// "Artist · Station" for a song, else the state sentence; the connection phase wins while it is not plain playing.
+    private func barSecondLine(_ live: LiveSession, _ line: LiveSongLine) -> String {
+        if let phase = live.phaseSentence { return phase }
+        if line.hasSong { return line.artist.map { "\($0) · \(live.name)" } ?? live.name }
+        return line.sentence ?? "On air"
+    }
+
+    /// Download beside the time, only while a song can be asked for or its state is worth showing.
+    @ViewBuilder private var barDownload: some View {
+        let state = state.radioDownloads.state(now: p.liveNow)
+        if state != .none, p.live?.phase == .playing {
+            SwiftUI.TimelineView(.periodic(from: .now, by: 1)) { tl in
+                DownloadButton(state: state, listeningSeconds: p.liveSongSince.map { DownloadState.listeningSeconds(since: $0, now: tl.date) }, compact: true) {
+                    if let id = p.liveNow?.playID { Task { await self.state.radioDownloads.get(playID: id) } }
+                }
+            }
+        }
     }
 
     private func liveTransport(_ live: LiveSession) -> some View {

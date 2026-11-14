@@ -1,11 +1,17 @@
 import AppKit
 import DiscairAudio
+import DiscairCore
 import DiscairLibrarian
 import SwiftUI
 
 /// What the logo store asks of the Librarian. `LibrarianClient` is the real one; tests pass a fake.
 public protocol StationLogoSource: Sendable {
     func radioLogo(station: String, size: RadioLogoSize) async throws -> ArtworkImageData
+    func radioCover(path: String) async throws -> ArtworkImageData
+}
+extension StationLogoSource {
+    /// Fakes that only serve logos need not serve covers.
+    func radioCover(path: String) async throws -> ArtworkImageData { throw DiscairError.server(status: 404, message: nil) }
 }
 extension LibrarianClient: StationLogoSource {}
 
@@ -79,6 +85,18 @@ public final class StationLogoStore {
         }
         let image = await task.value
         if loads[key] == task { loads[key] = nil }
+        return image
+    }
+
+    /// The cover of the live song, by the server path of `RadioNow.coverPath`. Kept in memory only (songs change every few minutes);
+    /// nil while it cannot be had, and a failed path is not asked for again until the song changes.
+    public func cover(path: String) async -> NSImage? {
+        let key = "radio-cover|\(path)"
+        if let hit = cache.object(forKey: key as NSString) { return hit }
+        if failed[key] != nil { return nil }
+        guard let source else { return nil }
+        guard let got = try? await source.radioCover(path: path), let image = NSImage(data: got.data) else { failed[key] = now(); return nil }
+        cache.setObject(image, forKey: key as NSString, cost: got.data.count)
         return image
     }
 

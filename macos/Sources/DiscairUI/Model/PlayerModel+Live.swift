@@ -54,6 +54,7 @@ extension PlayerModel {
         stationByLive = station
         defaults.set(station.id, forKey: Self.lastStationKey)
         liveOutput.start(url: url)
+        startLiveNowPolling(for: station)
         onNowPlayingChange?()
     }
 
@@ -68,6 +69,7 @@ extension PlayerModel {
     func endLive() {
         guard live != nil else { return }
         liveOutput.stop()
+        stopLiveNowPolling()
         live = nil
         stationByLive = nil
         onNowPlayingChange?()
@@ -91,6 +93,46 @@ extension PlayerModel {
         else { target = delta > 0 ? 0 : favourites.count - 1 }
         playStation(favourites[target])
     }
+
+    // MARK: The live song (S2-3 item 1)
+
+    /// Reads the station's song every 5 s while it plays. A station that is not relayed has no title, so nothing is asked.
+    private func startLiveNowPolling(for station: RadioStation) {
+        stopLiveNowPolling()
+        if !station.proxied { applyLiveNow(RadioNow(state: .notProxied), for: station.id); return }
+        guard liveNowSource != nil else { return }
+        liveNowTask = Task { [weak self] in
+            while !Task.isCancelled {
+                guard let self else { return }
+                await self.pollLiveNow()
+                await self.liveNowPause(Self.liveNowInterval)
+            }
+        }
+    }
+
+    private func stopLiveNowPolling() {
+        liveNowTask?.cancel(); liveNowTask = nil
+        liveNow = nil; liveSongKey = nil; liveSongSince = nil
+    }
+
+    /// One read. A failed read keeps what was shown; an answer for a station that is no longer playing is dropped. Public so a
+    /// test can drive it without the timer.
+    public func pollLiveNow() async {
+        guard let id = live?.stationID, stationByLive?.proxied == true, let source = liveNowSource else { return }
+        guard let answer = try? await source.radioNow(station: id) else { return }
+        applyLiveNow(answer, for: id)
+    }
+
+    private func applyLiveNow(_ answer: RadioNow, for stationID: String) {
+        guard live?.stationID == stationID, answer != liveNow else { return }
+        let key = LiveSongLine.key(answer)
+        if key != liveSongKey { liveSongKey = key; liveSongSince = key == nil ? nil : Date() }
+        liveNow = answer
+        onNowPlayingChange?()
+    }
+
+    /// The line the bar, the panel, the mini player and the system show for the playing station.
+    var liveLine: LiveSongLine { LiveSongLine.of(liveNow, phase: live?.phase ?? .playing) }
 
     func liveStateChanged(_ state: LiveState) {
         guard live != nil else { return }

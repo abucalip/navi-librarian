@@ -102,6 +102,15 @@ struct CupertinoPagesRenderTests {
         state.player.live = LiveSession(stationID: "1", name: "FIP", logoPath: "", startedAt: Date().addingTimeInterval(-(19 * 60 + 12)), phase: .playing)
         try render("stations-playing", width: 1180, height: 420, CupertinoStations(state: state)) { _ in }
         try render("player-bar-live", width: 1180, height: CupertinoPlayerBar.height, CupertinoPlayerBar(state: state)) { _ in }
+        // The live song (S2-3 items 1 and 2): the song over the artist, and Download, on the page and in the bar.
+        state.player.liveNow = RadioNow(state: .ok, rawTitle: "Air - Playground Love", artist: "Air", title: "Playground Love", playID: 4)
+        state.player.liveSongSince = Date().addingTimeInterval(-40)
+        try render("stations-playing-song", width: 1180, height: 420, CupertinoStations(state: state)) { _ in }
+        try render("player-bar-live-song", width: 1180, height: CupertinoPlayerBar.height, CupertinoPlayerBar(state: state)) { _ in }
+        state.player.liveNow = RadioNow(state: .ok, rawTitle: "Air - Playground Love", artist: "Air", title: "Playground Love")
+        try render("player-bar-live-listening", width: 1180, height: CupertinoPlayerBar.height, CupertinoPlayerBar(state: state)) { _ in }
+        state.player.liveNow = RadioNow(state: .noMetadata)
+        try render("stations-playing-nometa", width: 1180, height: 420, CupertinoStations(state: state)) { _ in }
         state.player.live?.phase = .reconnecting
         try render("stations-reconnecting", width: 1180, height: 420, CupertinoStations(state: state)) { _ in }
     }

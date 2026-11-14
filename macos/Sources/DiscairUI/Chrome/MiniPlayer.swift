@@ -1,5 +1,6 @@
 import AppKit
 import DiscairAudio
+import DiscairLibrarian
 import SwiftUI
 
 /// What the mini window shows, worked out from the player. Pure so a test can check it without a window.
@@ -13,11 +14,13 @@ struct MiniPlayerContent: Equatable {
     /// "next" line.
     var isLive = false
 
-    init(current: QueueItem?, upNext: [QueueItem], live: LiveSession? = nil) {
+    init(current: QueueItem?, upNext: [QueueItem], live: LiveSession? = nil, liveNow: RadioNow? = nil) {
         if let live {
             isLive = true; hasSong = false
-            title = live.name
-            artist = live.phaseSentence ?? "On air"
+            let line = LiveSongLine.of(liveNow, phase: live.phase)
+            // A song: its title over "Artist · Station". Otherwise the station over the state sentence.
+            title = line.headline(station: live.name)
+            artist = line.hasSong ? (line.artist.map { "\($0) · \(live.name)" } ?? live.name) : (line.sentence ?? "On air")
             next = nil
             return
         }
@@ -47,7 +50,7 @@ public struct MiniPlayerView: View {
     }
 
     public var body: some View {
-        let content = MiniPlayerContent(current: p.current, upNext: p.queue.upNext, live: p.live)
+        let content = MiniPlayerContent(current: p.current, upNext: p.queue.upNext, live: p.live, liveNow: p.liveNow)
         if let live = p.live { liveBody(live, content) } else { songBody(content) }
     }
 

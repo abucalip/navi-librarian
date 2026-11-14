@@ -97,7 +97,7 @@ struct NowPlayingView: View {
             }
             Spacer(minLength: 0)
             Text(s.title).font(.system(size: 14, weight: .bold)).lineLimit(2).foregroundStyle(.white)
-            if !s.live { Text(s.artist).font(.system(size: 12)).lineLimit(1).foregroundStyle(.white.opacity(0.7)) }
+            if !s.artist.isEmpty { Text(s.artist).font(.system(size: 12)).lineLimit(1).foregroundStyle(.white.opacity(0.7)) }
         }
     }
 
@@ -112,10 +112,9 @@ struct NowPlayingView: View {
                 }
                 Spacer(minLength: 0)
                 Text(s.title).font(.system(size: 17, weight: .bold)).lineLimit(2).foregroundStyle(.white)
-                if !s.live {
-                    Text(s.artist).font(.system(size: 13)).lineLimit(1).foregroundStyle(.white.opacity(0.8))
-                    Text(s.album).font(.system(size: 12)).lineLimit(1).foregroundStyle(.white.opacity(0.55))
-                }
+                // A station with a known song carries the artist and the station name in the same fields (S2-3 item 1).
+                if !s.artist.isEmpty { Text(s.artist).font(.system(size: 13)).lineLimit(1).foregroundStyle(.white.opacity(0.8)) }
+                if !s.album.isEmpty { Text(s.album).font(.system(size: 12)).lineLimit(1).foregroundStyle(.white.opacity(0.55)) }
                 Spacer(minLength: 0)
                 // A station has no length: LIVE takes the place of the progress bar.
                 if s.live { LiveBadge() } else { progress(s) }

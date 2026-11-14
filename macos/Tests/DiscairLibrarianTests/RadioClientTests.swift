@@ -99,6 +99,16 @@ import DiscairCore
         #expect(fixtureQuery["size"] == "128")
     }
 
+    @Test func theLiveCoverIsFetchedFromAServerPathOnly() async throws {
+        let png = Data([0x89, 0x50, 0x4E, 0x47])
+        let t = MockTransport { _, _ in (200, png) }
+        let cover = try await client(t).radioCover(path: "/api/artwork/owned/abc?size=600")
+        #expect(t.sent[0].httpMethod == "GET" && t.sent[0].url!.path == "/api/artwork/owned/abc" && cover.data == png)
+        await #expect(throws: DiscairError.self) { _ = try await client(t).radioCover(path: "https://other.example/x.jpg") }
+        await #expect(throws: DiscairError.self) { _ = try await client(t).radioCover(path: "/elsewhere/x.jpg") }
+        #expect(t.sent.count == 1)                                  // the refused paths sent nothing
+    }
+
     @Test func aLogoFailureThrows() async throws {
         let t = MockTransport { _, _ in (404, self.json(#"{"detail":"No such station."}"#)) }
         await #expect(throws: DiscairError.self) { _ = try await client(t).radioLogo(station: "x") }
