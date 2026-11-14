@@ -216,7 +216,7 @@ Columns: Discair CPU %, WindowServer CPU %, Discair wakeups/s, Discair power, Wi
 | Gate | Condition (plan section 8.5) | Measured value | Met? |
 |---|---|---|---|
 | G1 | S5 minus S4, Discair plus WindowServer > 3 points of one core, or power > 20 % higher | S4 21.90 + 31.10 = 53.00; S5 21.80 + 29.10 = 50.90; difference −2.10 points. Power 53.5 vs 51.3 (−4 %). Footprint 207 → 376 MB (+169 MB) | **Not met.** M5 closes without work. The footprint gain belongs to M3. |
-| G2 | S7 Discair CPU > 0.5 points above Reduce Motion reference, or any `TimelineView` body evaluations while hidden | S7 26.80 (26.7 to 27.5) vs S7-RM 24.80 (24.8 to 27.1): +2.0 points; WindowServer 8.80 vs 3.00. No SwiftUI-instrument count taken | **Met by the letter (2.0 > 0.5), marginal:** the run ranges overlap and about 25 points remain with Reduce Motion on. Owner to decide whether to open M6. |
+| G2 | S7 Discair CPU > 0.5 points above Reduce Motion reference, or any `TimelineView` body evaluations while hidden | S7 26.80 (26.7 to 27.5) vs S7-RM 24.80 (24.8 to 27.1): +2.0 points; WindowServer 8.80 vs 3.00. No SwiftUI-instrument count taken | **Met by the letter (2.0 > 0.5), marginal:** the run ranges overlap and about 25 points remain with Reduce Motion on. The owner opened M6 on 2026-11-14. |
 
 **Deeper traces (P0-2, required):** SwiftUI instrument during S3 and S5 (views whose bodies run on a timer); Allocations with generation marks around S8 and S9; Time Profiler during S6. Record the decoded pixel size of the largest images after S8 here: _(blank)_. None of the three traces has been taken; the `sample` findings above are not a substitute.
 

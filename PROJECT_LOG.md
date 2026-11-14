@@ -1,3 +1,10 @@
+## 2026-11-14 — Client efficiency P0-2: macOS S3–S7 baseline and gate decisions (PR #1067)
+
+- PR [#1067](https://github.com/abucalip/navi-librarian/pull/1067), merged as `fd4757cf`. Fills the macOS S3–S7 rows and an S7 Reduce Motion reference, three runs each, plus short probes. Docs only.
+- **Gates:** G1 not met (S5 − S4 = −2.1 points), so M5 closes without work. G2 met by the letter but marginal (S7 26.8 % vs 24.8 % with Reduce Motion); the owner opened M6.
+- **Finding:** Discair uses about 25 to 29 % of one core in nearly every state (S6 paused on Now Playing 13.75 %), regardless of screen, window visibility or Reduce Motion; the cause is unidentified. Slideshow photos add about 170 MB (207 to 376 MB). The earlier marquee lead was rejected. WindowServer varied between about 3 and 30 % without a found cause. S2 had a paused track loaded.
+- **Next action:** the owner runs the SwiftUI-instrument trace of idle Home in a new session; then S1, S8 to S11 and the other required traces. P0-2 is still in progress; P0-3 not started.
+
 ## 2026-11-14 — Client efficiency P0-2: macOS S2 idle baseline (PR #1066)
 
 - PR [#1066](https://github.com/abucalip/navi-librarian/pull/1066), merged as `2f9a55e2`. Fills the macOS S2 row of `docs/client_efficiency_results.md` and fixes `scripts/perf/macos_cheap.sh`, whose wakeups column printed top's running IDLEW total (about 38,000) instead of a per-second rate.

@@ -293,7 +293,7 @@ Steps on different clients are independent and can be interleaved. Each code ste
 - **Risks:** an attached profiler changes timing; use the cheap tools for the headline numbers and the traces for explanation only.
 - **Verification:** three runs per scenario; the spread between runs is recorded beside each median.
 - **Acceptance criteria:** the macOS table is complete; G1 and G2 are each marked met or not met with the numbers; any hypothesis the data contradicts is marked so in the results file; no code is changed.
-- **Status (2026-11-14):** in progress. Done: S2 to S7 and the S7 Reduce Motion reference, three runs each (S3 run 3 is an outlier, flagged). **G1 not met** (S5 − S4 = −2.1 points), so M5 closes without work. **G2 met by the letter but marginal** (S7 26.8 % vs 24.8 % with Reduce Motion; owner to decide). Main finding: Discair uses about 25 to 29 % of one core in every state (S6 paused 13.75 %), unaffected by hiding the window or Reduce Motion; the cause is unidentified and needs a SwiftUI-instrument trace. S5 photos add about 170 MB (207 → 376 MB). Marquee hypothesis rejected. Not done: S1, S8 to S11, the three required traces. S2 had a paused track loaded, because the app has no way to clear Now Playing.
+- **Status (2026-11-14):** in progress. Done: S2 to S7 and the S7 Reduce Motion reference, three runs each (S3 run 3 is an outlier, flagged). **G1 not met** (S5 − S4 = −2.1 points), so M5 closes without work. **G2 met by the letter but marginal** (S7 26.8 % vs 24.8 % with Reduce Motion); **the owner opened M6 on 2026-11-14**, expecting a gain of about 2 points at most, with the main cost elsewhere. Main finding: Discair uses about 25 to 29 % of one core in every state (S6 paused 13.75 %), unaffected by hiding the window or Reduce Motion; the cause is unidentified and needs a SwiftUI-instrument trace. S5 photos add about 170 MB (207 → 376 MB). Marquee hypothesis rejected. Not done: S1, S8 to S11, the three required traces. S2 had a paused track loaded, because the app has no way to clear Now Playing. Next: the owner runs the SwiftUI-instrument trace of idle Home in a new session (it also covers the `TimelineView` evaluations while hidden for G2); then S1, S8 to S11 and the other traces.
 - **Model: Sonnet | Effort: Medium**
 
 #### P0-3 Android baseline and gate decisions
@@ -427,6 +427,8 @@ Steps on different clients are independent and can be interleaved. Each code ste
 - **Model: Sonnet | Effort: Medium**
 
 #### M6 macOS pause motion when the window is hidden (only if G2 is met)
+
+- **Status (2026-11-14):** G2 met by the letter (marginal); **opened by the owner**. Not started. Expected gain is about 2 points of one core at most (P0-2, S7 against S7 with Reduce Motion); the larger idle cost is a separate, unidentified cause.
 
 - **Objective:** no animation work while nothing is visible.
 - **Current problem:** measured in P0-2 scenario S7. If timelines already stop when the window is hidden, this step is closed without work.
