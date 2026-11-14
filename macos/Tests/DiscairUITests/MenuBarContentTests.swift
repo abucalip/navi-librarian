@@ -85,4 +85,30 @@ struct MenuBarContentTests {
         #expect(defaults.object(forKey: MenuBarSettings.showKey) == nil)
         #expect(MenuBarSettings.showKey == "discair.menubar.show" && MenuBarSettings.showTitleKey == "discair.menubar.showTitle")
     }
+
+    private func freshDefaults() -> UserDefaults { UserDefaults(suiteName: "menubar-vis-\(UUID().uuidString)")! }
+
+    @Test func visibilityIsOnWhenNothingIsSaved() {
+        #expect(MenuBarVisibility(defaults: freshDefaults()).isInserted)
+    }
+
+    @Test func visibilityWritesOnlyARealChange() {
+        let defaults = freshDefaults()
+        let v = MenuBarVisibility(defaults: defaults)
+        v.isInserted = true   // what the scene writes back while it starts
+        #expect(defaults.object(forKey: MenuBarSettings.showKey) == nil)
+        v.isInserted = false
+        #expect(defaults.bool(forKey: MenuBarSettings.showKey) == false)
+    }
+
+    @Test func visibilityFollowsTheSettingsSwitch() {
+        let defaults = freshDefaults()
+        let v = MenuBarVisibility(defaults: defaults)
+        defaults.set(false, forKey: MenuBarSettings.showKey)   // Settings > Radio writes through @AppStorage
+        v.refresh()
+        #expect(!v.isInserted)
+        defaults.removeObject(forKey: MenuBarSettings.showKey)
+        v.refresh()
+        #expect(v.isInserted)
+    }
 }

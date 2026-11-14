@@ -11,8 +11,9 @@ struct DiscairApp: App {
     )
 
     @State private var updater = UpdaterModel()
-    // The menu bar item's two switches (Settings > Radio); both are on by default.
-    @AppStorage(MenuBarSettings.showKey) private var showInMenuBar = true
+    // The menu bar item's two switches (Settings > Radio); both are on by default. The first is held by `MenuBarVisibility`, not `@AppStorage`: a binding
+    // from `@AppStorage` makes the scene loop at launch (see that type).
+    @State private var menuBar = MenuBarVisibility()
     @AppStorage(MenuBarSettings.showTitleKey) private var showMenuBarTitle = true
 
     init() {
@@ -37,7 +38,7 @@ struct DiscairApp: App {
         .defaultSize(width: 1280, height: 800)
 
         // The menu bar item (docs/RADIO_PLAYBACK_PROPOSAL.md S2-5, mockup D2): radio and library songs, with a popover.
-        MenuBarExtra(isInserted: $showInMenuBar) {
+        MenuBarExtra(isInserted: Bindable(menuBar).isInserted) {
             MenuBarPopoverHost(state: state, showTitle: showMenuBarTitle)
         } label: {
             MenuBarLabel(state: state, showTitle: showMenuBarTitle)
