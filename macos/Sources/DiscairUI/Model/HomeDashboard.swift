@@ -60,7 +60,8 @@ public struct HomeDashboard: Equatable, Sendable {
         public let bins: [(bin: ShelfBin, count: Int)]
         /// Albums with plays but no last-played time: in no bin, counted here so the bins plus this equal the library.
         public let unknownPlayed: Int
-        /// Up to four Navidrome album ids that have waited longest (never played, oldest added first, then oldest last play).
+        /// Up to `HomeDashboard.longestUnplayedLimit` Navidrome album ids that have waited longest (never played, oldest added first,
+        /// then oldest last play).
         public let longestUnplayed: [String]
         public func count(_ bin: ShelfBin) -> Int { bins.first { $0.bin == bin }?.count ?? 0 }
 
@@ -177,6 +178,9 @@ public struct HomeDashboard: Equatable, Sendable {
     public let arrivals: [ArrivalRow]
     /// Rows beyond the four shown, for "All downloads".
     public let arrivalsHidden: Int
+    /// Navidrome ids of the newest dated albums, newest first, at most `recentlyAddedLimit`. Albums already shown in `arrivals`
+    /// are left out. Empty when the album list was not read. Not affected by the Librarian being unreachable.
+    public let recentlyAdded: [String]
     public let notice: Notice?
 
     public func series(_ range: GrowthRange) -> GrowthSeries? { growth[range] }
@@ -229,6 +233,10 @@ public struct HomeDashboard: Equatable, Sendable {
     // MARK: Build
 
     public static let maxArrivalRows = 4
+    /// How many albums that waited longest for a play are offered (`ShelfLife.longestUnplayed`).
+    public static let longestUnplayedLimit = 6
+    /// How many recently added albums are offered (`recentlyAdded`).
+    public static let recentlyAddedLimit = 6
     /// How recently an album must have arrived to be offered as "arrived and unplayed".
     static let arrivalDays = 14
 
@@ -241,14 +249,14 @@ public struct HomeDashboard: Equatable, Sendable {
             return HomeDashboard(load: .notLoaded, albumCount: nil, added: nil, neverPlayed: nil, neverPlayedChange: nil, listens: nil,
                                  waiting: nil, shelfLife: nil, growth: [:], decades: [], listenSharesAvailable: false,
                                  arrivals: Array((ownJobs + radioRows).prefix(maxArrivalRows)), arrivalsHidden: max(0, ownJobs.count + radioRows.count - maxArrivalRows),
-                                 notice: notice)
+                                 recentlyAdded: [], notice: notice)
         }
         guard !albums.isEmpty else {
             return HomeDashboard(load: .empty, albumCount: 0, added: nil, neverPlayed: nil, neverPlayedChange: nil, listens: Self.listensFigure(input),
                                  waiting: Waiting(picks: input.librarianReachable ? input.picksCount : nil, unplayedArrivals: 0),
                                  shelfLife: nil, growth: [:], decades: [], listenSharesAvailable: false,
                                  arrivals: Array((ownJobs + radioRows).prefix(maxArrivalRows)), arrivalsHidden: max(0, ownJobs.count + radioRows.count - maxArrivalRows),
-                                 notice: notice)
+                                 recentlyAdded: [], notice: notice)
         }
 
         let cal = input.calendar, now = input.now
@@ -297,6 +305,17 @@ public struct HomeDashboard: Equatable, Sendable {
             .sorted { (created[$0] ?? .distantPast) > (created[$1] ?? .distantPast) }
         let arrivedRows = arrivedIdx.map { ArrivalRow.arrived(albumID: albums[$0].id, title: albums[$0].name, artist: albums[$0].artist ?? "Unknown artist") }
         let allRows = ownJobs + arrivedRows + radioRows
+        let shownRows = Array(allRows.prefix(maxArrivalRows))
+        let shownAlbumIDs = Set(shownRows.compactMap { row -> String? in
+            if case .arrived(let id, _, _) = row { id } else { nil }
+        })
+        let recent = albums.indices
+            .filter { created[$0] != nil && !shownAlbumIDs.contains(albums[$0].id) }
+            .sorted { a, b in
+                created[a]! != created[b]! ? created[a]! > created[b]! : albums[a].id < albums[b].id
+            }
+            .prefix(recentlyAddedLimit)
+            .map { albums[$0].id }
 
         // Without the Librarian there are no picks and no listen shares; the Navidrome figures stay.
         let picks = input.librarianReachable ? input.picksCount : nil
@@ -312,8 +331,8 @@ public struct HomeDashboard: Equatable, Sendable {
         return HomeDashboard(load: .ready, albumCount: albums.count, added: added, neverPlayed: playsReported ? never : nil, neverPlayedChange: change, listens: Self.listensFigure(input),
                              waiting: Waiting(picks: picks, unplayedArrivals: arrivedRows.count), shelfLife: shelf, growth: growth,
                              decades: decades, listenSharesAvailable: listenOK,
-                             arrivals: Array(allRows.prefix(maxArrivalRows)), arrivalsHidden: max(0, allRows.count - maxArrivalRows),
-                             notice: notice)
+                             arrivals: shownRows, arrivalsHidden: max(0, allRows.count - maxArrivalRows),
+                             recentlyAdded: Array(recent), notice: notice)
     }
 
     // MARK: Pieces
@@ -335,6 +354,7 @@ public struct HomeDashboard: Equatable, Sendable {
     }
 
     private static func longestUnplayed(albums: [NavidromeAlbum], created: [Date?], played: [Date?], hasPlays: (Int) -> Bool) -> [String] {
+        let limit = longestUnplayedLimit
         let never = albums.indices.filter { !hasPlays($0) }
             .sorted { a, b in
                 switch (created[a], created[b]) {
@@ -344,10 +364,10 @@ public struct HomeDashboard: Equatable, Sendable {
                 case (nil, nil): albums[a].id < albums[b].id
                 }
             }
-        var ids = never.prefix(4).map { albums[$0].id }
-        if ids.count < 4 {
+        var ids = never.prefix(limit).map { albums[$0].id }
+        if ids.count < limit {
             let rest = albums.indices.filter { played[$0] != nil }.sorted { played[$0]! < played[$1]! }
-            ids += rest.prefix(4 - ids.count).map { albums[$0].id }
+            ids += rest.prefix(limit - ids.count).map { albums[$0].id }
         }
         return ids
     }
