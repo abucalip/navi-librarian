@@ -8,54 +8,12 @@ import DiscairNavidrome
     static let now = HomeDashboardTests.now
     static var cal: Calendar { HomeDashboardTests.cal }
 
-    static func card(_ kind: String, _ title: String, body: String = "Body.") -> InsightCard {
-        try! JSONDecoder().decode(InsightCard.self, from: Data(#"{"kind":"\#(kind)","title":"\#(title)","body":"\#(body)","subject":{"key":"\#(kind):\#(title)"}}"#.utf8))
-    }
-
     // MARK: Layout
 
     @Test func rowsStackBelow860() {
         #expect(HomeScreen.isStacked(contentWidth: 859))
         #expect(!HomeScreen.isStacked(contentWidth: 860))
         #expect(!HomeScreen.isStacked(contentWidth: 980))
-    }
-
-    // MARK: Briefing band
-
-    @Test func addedLineNamesBothPeriods() {
-        let line = HomeScreen.addedLine(.init(last: 12, before: 7))
-        #expect(line.text == "12 added in the last 30 days · 7 in the 30 before")
-        #expect(line.trend == .up)
-        #expect(HomeScreen.addedLine(.init(last: 3, before: 9)).trend == .down)
-        #expect(HomeScreen.addedLine(.init(last: 3, before: 3)).trend == .flat)
-    }
-
-    @Test func missingAddedDatesAreSaidNotZero() {
-        let line = HomeScreen.addedLine(nil)
-        #expect(line.trend == nil && line.text.contains("not available"))
-    }
-
-    @Test func neverPlayedChangeUsesTheBaselineDate() {
-        let since = Self.cal.date(from: DateComponents(year: 2026, month: 10, day: 1))!
-        #expect(HomeScreen.neverPlayedLine(.init(delta: -4, since: since), calendar: Self.cal) == .init(trend: .down, text: "4 fewer than on 1 October"))
-        #expect(HomeScreen.neverPlayedLine(.init(delta: 6, since: since), calendar: Self.cal) == .init(trend: .up, text: "6 more than on 1 October"))
-        #expect(HomeScreen.neverPlayedLine(.init(delta: 0, since: since), calendar: Self.cal) == .init(trend: .flat, text: "No change since 1 October"))
-        #expect(HomeScreen.neverPlayedLine(nil).text == "First count today, no change yet")
-    }
-
-    @Test func listensTileIsNeverANumberUntilTheServerServesIt() {
-        #expect(HomeScreen.listensTile(librarianReachable: true, listenBrainzConnected: false) == .needsListenBrainz)
-        #expect(HomeScreen.listensTile(librarianReachable: true, listenBrainzConnected: true) == .notServedYet)
-        #expect(HomeScreen.listensTile(librarianReachable: false, listenBrainzConnected: true) == .withoutLibrarian)
-        #expect(HomeScreen.ListensTile.needsListenBrainz.offersConnect && !HomeScreen.ListensTile.notServedYet.offersConnect)
-    }
-
-    @Test func waitingTileWords() {
-        #expect(HomeScreen.waitingTile(.init(picks: 7, unplayedArrivals: 2)) == .init(picks: 7, detail: "2 arrivals not played yet"))
-        #expect(HomeScreen.waitingTile(.init(picks: 1, unplayedArrivals: 1)).detail == "1 arrival not played yet")
-        #expect(HomeScreen.waitingTile(.init(picks: 0, unplayedArrivals: 0)) == .init(picks: 0, detail: "Nothing on its way"))
-        #expect(HomeScreen.waitingTile(.init(picks: nil, unplayedArrivals: 3)).picks == nil)
-        #expect(HomeScreen.waitingTile(nil).picks == nil)
     }
 
     // MARK: Pick
@@ -150,37 +108,7 @@ import DiscairNavidrome
         #expect(rows.isEmpty)
     }
 
-    // MARK: Lenses
-
-    @Test func lensRowsAreTheTopCardOfUpTo3EnabledLenses() {
-        let inputs = [
-            HomeScreen.LensInput(kind: "forgotten_gem", name: "Forgotten Gems", enabled: false, cards: [Self.card("forgotten_gem", "Off one")]),
-            HomeScreen.LensInput(kind: "hidden_canon", name: "Hidden Canon", enabled: true, cards: [Self.card("hidden_canon", "A"), Self.card("hidden_canon", "A2")]),
-            HomeScreen.LensInput(kind: "blind_spot", name: "Blind Spots", enabled: true, cards: []),
-            HomeScreen.LensInput(kind: "series_completion", name: "Series", enabled: true, cards: [Self.card("series_completion", "B")]),
-            HomeScreen.LensInput(kind: "anniversary", name: "Anniversaries", enabled: true, cards: [Self.card("anniversary", "C")]),
-            HomeScreen.LensInput(kind: "extra", name: "Extra", enabled: true, cards: [Self.card("extra", "D")]),
-        ]
-        let s = HomeScreen.lenses(inputs)
-        #expect(s.rows.map(\.card.title) == ["A", "B", "C"])
-        #expect(s.countText == "5 of 6 on")
-        #expect(s.off == ["Forgotten Gems"])
-    }
-
-    @Test func noLensOnIsItsOwnState() {
-        let s = HomeScreen.lenses(["Forgotten Gems", "Series"].map { HomeScreen.LensInput(kind: $0, name: $0, enabled: false, cards: []) })
-        #expect(s.enabledCount == 0 && s.rows.isEmpty && s.countText == "0 of 2 on" && s.off.count == 2)
-    }
-
     // MARK: Shelf life
-
-    @Test func ageIsYearsAndMonths() {
-        let since = Self.cal.date(byAdding: .month, value: -(4 * 12 + 1), to: Self.now)!
-        #expect(HomeScreen.ageText(since: since, now: Self.now, calendar: Self.cal) == "4 y 1 m")
-        #expect(HomeScreen.ageText(since: Self.cal.date(byAdding: .month, value: -3, to: Self.now)!, now: Self.now, calendar: Self.cal) == "3 m")
-        #expect(HomeScreen.ageText(since: Self.cal.date(byAdding: .year, value: -2, to: Self.now)!, now: Self.now, calendar: Self.cal) == "2 y")
-        #expect(HomeScreen.ageText(since: Self.now, now: Self.now, calendar: Self.cal) == "< 1 m")
-    }
 
     @Test func shelfLifeNeedsAnAlbumInABin() {
         #expect(!HomeScreen.shelfAvailable(nil))
@@ -262,24 +190,6 @@ import DiscairNavidrome
         #expect(HomeScreen.fullDate(d, calendar: Self.cal) == "11 November 2026")
         #expect(HomeScreen.relative(Self.now.addingTimeInterval(-7200), now: Self.now) == "2 hours ago")
         #expect(HomeScreen.parseDate("2026-11-01T10:00:00.123Z") != nil && HomeScreen.parseDate("2026-11-01T10:00:00Z") != nil && HomeScreen.parseDate(nil) == nil)
-    }
-
-    // MARK: Listens (D2)
-
-    @Test func listensTileShowsTheFigureOnceServed() {
-        let f = HomeDashboard.ListensFigure(last: 214, before: 181, asOf: Self.now)
-        #expect(HomeScreen.listensTile(librarianReachable: true, listenBrainzConnected: true, figure: f) == .figure(f))
-        #expect(HomeScreen.listensTile(librarianReachable: false, listenBrainzConnected: true, figure: f) == .withoutLibrarian)
-        #expect(f.percent == 18 && f.delta == 33)
-    }
-
-    @Test func listensLineSaysTheDirectionInWordsAndWhenStale() {
-        let up = HomeScreen.listensLine(.init(last: 214, before: 181, asOf: Self.now), now: Self.now, calendar: Self.cal)
-        #expect(up == .init(trend: .up, text: "18% more than the 7 days before (181)"))
-        #expect(HomeScreen.listensLine(.init(last: 90, before: 100, asOf: Self.now), now: Self.now, calendar: Self.cal).text == "10% fewer than the 7 days before (100)")
-        #expect(HomeScreen.listensLine(.init(last: 5, before: 0, asOf: Self.now), now: Self.now, calendar: Self.cal).text == "No listens in the 7 days before")
-        let stale = HomeScreen.listensLine(.init(last: 5, before: 5, asOf: Self.now.addingTimeInterval(-3 * 86_400)), now: Self.now, calendar: Self.cal)
-        #expect(stale.text.hasSuffix("· as of 8 November") && stale.trend == .flat)
     }
 
     // MARK: Handoff (D5)

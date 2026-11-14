@@ -18,86 +18,6 @@ enum HomeScreen {
 
     static func isStacked(contentWidth: CGFloat) -> Bool { contentWidth < stackBelow }
 
-    // MARK: Briefing band
-
-    enum Trend: Equatable { case up, down, flat }
-
-    /// A change line: an arrow, then words. The arrow is never the only carrier of the direction.
-    struct ChangeLine: Equatable {
-        let trend: Trend?
-        let text: String
-    }
-
-    /// "12 added in the last 30 days · 7 in the 30 before". nil `added` means no album carries an added date.
-    static func addedLine(_ added: HomeDashboard.Comparison?) -> ChangeLine {
-        guard let added else { return ChangeLine(trend: nil, text: "Added dates are not available from Navidrome.") }
-        let trend: Trend = added.delta > 0 ? .up : added.delta < 0 ? .down : .flat
-        return ChangeLine(trend: trend, text: "\(count(added.last)) added in the last 30 days · \(count(added.before)) in the 30 before")
-    }
-
-    /// "4 fewer than on 1 October". Without a baseline the count is the first one and says so.
-    static func neverPlayedLine(_ change: HomeDashboard.NeverPlayedChange?, calendar: Calendar = .current) -> ChangeLine {
-        guard let change else { return ChangeLine(trend: nil, text: "First count today, no change yet") }
-        let day = dayAndMonth(change.since, calendar: calendar)
-        switch change.delta {
-        case 0: return ChangeLine(trend: .flat, text: "No change since \(day)")
-        case let d where d < 0: return ChangeLine(trend: .down, text: "\(count(-d)) fewer than on \(day)")
-        case let d: return ChangeLine(trend: .up, text: "\(count(d)) more than on \(day)")
-        }
-    }
-
-    /// The Listens tile: a figure once the server serves listens by day (D2), else the reason there is none.
-    enum ListensTile: Equatable {
-        case figure(HomeDashboard.ListensFigure)
-        case needsListenBrainz
-        case notServedYet
-        case withoutLibrarian
-        var sentence: String {
-            switch self {
-            case .figure: ""
-            case .needsListenBrainz: "Needs ListenBrainz."
-            case .notServedYet: "Not available yet. The server does not report listens by day."
-            case .withoutLibrarian: "Unavailable without Librarian"
-            }
-        }
-        var offersConnect: Bool { self == .needsListenBrainz }
-    }
-
-    static func listensTile(librarianReachable: Bool, listenBrainzConnected: Bool, figure: HomeDashboard.ListensFigure? = nil) -> ListensTile {
-        if !librarianReachable { return .withoutLibrarian }
-        if let figure { return .figure(figure) }
-        return listenBrainzConnected ? .notServedYet : .needsListenBrainz
-    }
-
-    /// "18% more than the 7 days before (181)", with the arrow. A stale series says when it ends ("as of 9 November").
-    static func listensLine(_ f: HomeDashboard.ListensFigure, now: Date, calendar: Calendar = .current) -> ChangeLine {
-        let trend: Trend = f.delta > 0 ? .up : f.delta < 0 ? .down : .flat
-        var text: String
-        if let pct = f.percent {
-            text = pct == 0 ? "Same as the 7 days before (\(count(f.before)))"
-                           : "\(abs(pct))% \(f.delta > 0 ? "more" : "fewer") than the 7 days before (\(count(f.before)))"
-        } else {
-            text = "No listens in the 7 days before"
-        }
-        var utc = Calendar(identifier: .gregorian); utc.timeZone = TimeZone(identifier: "UTC")!
-        if let age = utc.dateComponents([.day], from: f.asOf, to: now).day, age > 1 { text += " · as of \(dayAndMonth(f.asOf, calendar: utc))" }
-        return ChangeLine(trend: trend, text: text)
-    }
-
-    /// The Waiting tile: picks, with the unplayed arrivals beneath. nil picks (Librarian down) means no number.
-    struct WaitingTile: Equatable {
-        let picks: Int?
-        let detail: String
-    }
-
-    static func waitingTile(_ waiting: HomeDashboard.Waiting?) -> WaitingTile {
-        guard let waiting else { return WaitingTile(picks: nil, detail: "Not counted yet") }
-        guard let picks = waiting.picks else { return WaitingTile(picks: nil, detail: "Unavailable without Librarian") }
-        let arrivals = waiting.unplayedArrivals
-        if picks == 0 && arrivals == 0 { return WaitingTile(picks: 0, detail: "Nothing on its way") }
-        return WaitingTile(picks: picks, detail: arrivals == 0 ? "No arrivals waiting" : "\(count(arrivals)) arrival\(arrivals == 1 ? "" : "s") not played yet")
-    }
-
     // MARK: Today's pick
 
     /// The pick deck. `index` is clamped, so a dismissal that shortens the list never leaves a hole.
@@ -213,47 +133,7 @@ enum HomeScreen {
         return "Your taste · \(span) against all time"
     }
 
-    // MARK: Lenses
-
-    struct LensInput: Equatable {
-        let kind: String
-        let name: String
-        let enabled: Bool
-        let cards: [InsightCard]
-    }
-
-    struct LensSummary: Equatable {
-        /// The top card of up to 3 enabled lenses, in the server's lens order.
-        let rows: [(lens: String, card: InsightCard)]
-        let enabledCount: Int
-        let total: Int
-        /// Lenses that are off, named for the "off" chips.
-        let off: [String]
-        var countText: String { "\(enabledCount) of \(total) on" }
-
-        static func == (a: LensSummary, b: LensSummary) -> Bool {
-            a.enabledCount == b.enabledCount && a.total == b.total && a.off == b.off
-                && a.rows.map(\.card) == b.rows.map(\.card) && a.rows.map(\.lens) == b.rows.map(\.lens)
-        }
-    }
-
-    static let maxLensRows = 3
-
-    static func lenses(_ inputs: [LensInput]) -> LensSummary {
-        let rows = inputs.filter(\.enabled).compactMap { l in l.cards.first.map { (lens: l.name, card: $0) } }
-        return LensSummary(rows: Array(rows.prefix(maxLensRows)), enabledCount: inputs.filter(\.enabled).count, total: inputs.count,
-                           off: inputs.filter { !$0.enabled }.map(\.name))
-    }
-
     // MARK: Shelf life
-
-    /// "4 y 1 m" for the four longest-unplayed covers: years and months since the album was added (never played) or last played.
-    static func ageText(since: Date, now: Date, calendar: Calendar = .current) -> String {
-        let c = calendar.dateComponents([.year, .month], from: since, to: now)
-        let y = max(0, c.year ?? 0), m = max(0, c.month ?? 0)
-        if y == 0 && m == 0 { return "< 1 m" }
-        return y == 0 ? "\(m) m" : (m == 0 ? "\(y) y" : "\(y) y \(m) m")
-    }
 
     /// The shelf-life chart's state: it needs at least one album in a bin.
     static func shelfAvailable(_ shelf: HomeDashboard.ShelfLife?) -> Bool { (shelf?.bins.reduce(0) { $0 + $1.count } ?? 0) > 0 }

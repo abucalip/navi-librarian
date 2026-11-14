@@ -27,9 +27,9 @@ import DiscairNavidrome
         return try! JSONDecoder().decode(Acquisition.self, from: Data(#"{"artist":"Talk Talk","album":"\#(album)","status":"\#(status)","updated_at":\#(updated)\#(details)}"#.utf8))
     }
 
-    static func build(_ albums: [NavidromeAlbum]?, jobs: [Acquisition] = [], taste: TasteProfiles? = nil, picks: Int? = nil,
+    static func build(_ albums: [NavidromeAlbum]?, jobs: [Acquisition] = [], taste: TasteProfiles? = nil,
                       up: Bool = true, baseline: HomeDashboard.NeverPlayedBaseline? = nil) -> HomeDashboard {
-        HomeDashboard.build(.init(albums: albums, jobs: jobs, taste: taste, picksCount: picks, librarianReachable: up,
+        HomeDashboard.build(.init(albums: albums, jobs: jobs, taste: taste, librarianReachable: up,
                                   neverPlayedBaseline: baseline, now: now, calendar: cal))
     }
 
@@ -43,14 +43,13 @@ import DiscairNavidrome
     @Test func unreadListGivesNoFigures() {
         let d = Self.build(nil)
         #expect(d.load == .notLoaded && d.albumCount == nil && d.neverPlayed == nil && d.added == nil && d.shelfLife == nil)
-        #expect(d.growth.isEmpty && d.decades.isEmpty && d.waiting == nil)
+        #expect(d.growth.isEmpty && d.decades.isEmpty)
     }
 
     @Test func emptyLibraryIsZeroAlbumsAndNothingElse() {
-        let d = Self.build([], picks: 3)
+        let d = Self.build([])
         #expect(d.load == .empty && d.albumCount == 0)
         #expect(d.added == nil && d.neverPlayed == nil && d.shelfLife == nil && d.growth.isEmpty)
-        #expect(d.waiting == .init(picks: 3, unplayedArrivals: 0))
     }
 
     // MARK: Hero
@@ -215,7 +214,7 @@ import DiscairNavidrome
         let jobs = [Self.job("imported", album: "Done"), Self.job("queued", album: "Q", updated: 1), Self.job("downloading", album: "D", updated: 2),
                     Self.job("no_matches", album: "F", message: "Nothing found", updated: 3)]
         let albums = [Self.album("fresh", addedDaysAgo: 2), Self.album("playedFresh", addedDaysAgo: 3, plays: 1, playedDaysAgo: 1), Self.album("old", addedDaysAgo: 90)]
-        let d = Self.build(albums, jobs: jobs, picks: 2)
+        let d = Self.build(albums, jobs: jobs)
         #expect(d.arrivals.count == 4 && d.arrivalsHidden == 0)
         guard case .job(_, let t0, _, let s0, let f0) = d.arrivals[0] else { Issue.record("first row should be a job"); return }
         #expect(t0 == "F" && s0 == .found && f0 == "Nothing found")
@@ -224,8 +223,6 @@ import DiscairNavidrome
         guard case .job(_, let t2, _, let s2, _) = d.arrivals[2] else { Issue.record("third row should be a job"); return }
         #expect(t2 == "Q" && s2 == .found)
         #expect(d.arrivals[3] == .arrived(albumID: "fresh", title: "Album fresh", artist: "Artist"))
-        #expect(d.waiting == .init(picks: 2, unplayedArrivals: 1))
-        #expect(d.waiting?.total == 3)
     }
 
     @Test func arrivalsAreCappedAtFourAndTheRestIsCounted() {
@@ -252,10 +249,10 @@ import DiscairNavidrome
 
     @Test func librarianDownKeepsNavidromeFiguresAndDropsTheRest() {
         let albums = [Self.album("a", year: 1985, addedDaysAgo: 3), Self.album("b", year: 1990, addedDaysAgo: 40), Self.album("c", plays: 1, playedDaysAgo: 9)]
-        let d = Self.build(albums, jobs: [Self.job("no_matches", message: "x")], taste: Self.taste(), picks: 5, up: false)
+        let d = Self.build(albums, jobs: [Self.job("no_matches", message: "x")], taste: Self.taste(), up: false)
         #expect(d.notice == .librarianUnreachable)                  // outranks a failed Get
         #expect(d.albumCount == 3 && d.added == .init(last: 1, before: 1) && d.neverPlayed == 2 && d.shelfLife != nil && d.series(.oneYear) != nil)
-        #expect(d.waiting?.picks == nil && !d.listenSharesAvailable && d.decades.allSatisfy { $0.listenShare == nil })
+        #expect(!d.listenSharesAvailable && d.decades.allSatisfy { $0.listenShare == nil })
     }
 
     // MARK: Radio, listens and handoff (M8)

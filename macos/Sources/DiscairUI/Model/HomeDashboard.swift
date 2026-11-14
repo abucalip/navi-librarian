@@ -34,13 +34,6 @@ public struct HomeDashboard: Equatable, Sendable {
         public let since: Date
     }
 
-    /// Picks the owner has not acted on plus arrived albums nobody has played. `picks` is nil when the Librarian is unavailable.
-    public struct Waiting: Equatable, Sendable {
-        public let picks: Int?
-        public let unplayedArrivals: Int
-        public var total: Int { (picks ?? 0) + unplayedArrivals }
-    }
-
     public enum ShelfBin: String, CaseIterable, Equatable, Sendable {
         case thisMonth, oneToSixMonths, sixToTwelveMonths, oneToTwoYears, twoYearsPlus, never
         public var label: String {
@@ -167,7 +160,6 @@ public struct HomeDashboard: Equatable, Sendable {
     public let neverPlayedChange: NeverPlayedChange?
     /// nil until the server serves listens by day (D2) with at least 14 days.
     public let listens: ListensFigure?
-    public let waiting: Waiting?
     public let shelfLife: ShelfLife?
     public let growth: [GrowthRange: GrowthSeries]
     /// Decades of the dated albums, oldest first. Empty when no album has a year.
@@ -203,8 +195,6 @@ public struct HomeDashboard: Equatable, Sendable {
         public var jobs: [Acquisition] = []
         /// The saved taste profiles, when the server has them.
         public var taste: TasteProfiles?
-        /// Recommendations the owner has not acted on, when the Librarian answered.
-        public var picksCount: Int?
         public var librarianReachable = true
         public var neverPlayedBaseline: NeverPlayedBaseline?
         /// The Heard list of the radio relay, newest first.
@@ -219,11 +209,11 @@ public struct HomeDashboard: Equatable, Sendable {
         public var now = Date()
         public var calendar = Calendar(identifier: .gregorian)
 
-        public init(albums: [NavidromeAlbum]?, jobs: [Acquisition] = [], taste: TasteProfiles? = nil, picksCount: Int? = nil,
+        public init(albums: [NavidromeAlbum]?, jobs: [Acquisition] = [], taste: TasteProfiles? = nil,
                     librarianReachable: Bool = true, neverPlayedBaseline: NeverPlayedBaseline? = nil,
                     radioPlays: [RadioPlay] = [], keptRadioPlays: Set<Int> = [], listensByDay: [ListensDay]? = nil, handoff: Handoff? = nil,
                     now: Date = Date(), calendar: Calendar = Calendar(identifier: .gregorian)) {
-            self.albums = albums; self.jobs = jobs; self.taste = taste; self.picksCount = picksCount
+            self.albums = albums; self.jobs = jobs; self.taste = taste
             self.librarianReachable = librarianReachable; self.neverPlayedBaseline = neverPlayedBaseline
             self.radioPlays = radioPlays; self.keptRadioPlays = keptRadioPlays; self.listensByDay = listensByDay; self.handoff = handoff
             self.now = now; self.calendar = calendar
@@ -247,13 +237,12 @@ public struct HomeDashboard: Equatable, Sendable {
 
         guard let albums = input.albums else {
             return HomeDashboard(load: .notLoaded, albumCount: nil, added: nil, neverPlayed: nil, neverPlayedChange: nil, listens: nil,
-                                 waiting: nil, shelfLife: nil, growth: [:], decades: [], listenSharesAvailable: false,
+                                 shelfLife: nil, growth: [:], decades: [], listenSharesAvailable: false,
                                  arrivals: Array((ownJobs + radioRows).prefix(maxArrivalRows)), arrivalsHidden: max(0, ownJobs.count + radioRows.count - maxArrivalRows),
                                  recentlyAdded: [], notice: notice)
         }
         guard !albums.isEmpty else {
             return HomeDashboard(load: .empty, albumCount: 0, added: nil, neverPlayed: nil, neverPlayedChange: nil, listens: Self.listensFigure(input),
-                                 waiting: Waiting(picks: input.librarianReachable ? input.picksCount : nil, unplayedArrivals: 0),
                                  shelfLife: nil, growth: [:], decades: [], listenSharesAvailable: false,
                                  arrivals: Array((ownJobs + radioRows).prefix(maxArrivalRows)), arrivalsHidden: max(0, ownJobs.count + radioRows.count - maxArrivalRows),
                                  recentlyAdded: [], notice: notice)
@@ -317,8 +306,7 @@ public struct HomeDashboard: Equatable, Sendable {
             .prefix(recentlyAddedLimit)
             .map { albums[$0].id }
 
-        // Without the Librarian there are no picks and no listen shares; the Navidrome figures stay.
-        let picks = input.librarianReachable ? input.picksCount : nil
+        // Without the Librarian there are no listen shares; the Navidrome figures stay.
         let tasteProfiles = input.librarianReachable ? input.taste : nil
         let (decades, listenOK) = Self.decades(albums: albums, taste: tasteProfiles)
 
@@ -329,7 +317,7 @@ public struct HomeDashboard: Equatable, Sendable {
         }
 
         return HomeDashboard(load: .ready, albumCount: albums.count, added: added, neverPlayed: playsReported ? never : nil, neverPlayedChange: change, listens: Self.listensFigure(input),
-                             waiting: Waiting(picks: picks, unplayedArrivals: arrivedRows.count), shelfLife: shelf, growth: growth,
+                             shelfLife: shelf, growth: growth,
                              decades: decades, listenSharesAvailable: listenOK,
                              arrivals: shownRows, arrivalsHidden: max(0, allRows.count - maxArrivalRows),
                              recentlyAdded: Array(recent), notice: notice)

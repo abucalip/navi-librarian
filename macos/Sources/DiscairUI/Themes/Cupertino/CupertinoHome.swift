@@ -186,18 +186,10 @@ struct CupertinoHome: View {
         let covers = ForEach(Array(rows.enumerated()), id: \.offset) { _, row in
             HStack(spacing: 6) { ForEach(row, id: \.self) { nextPickButton($0) } }
         }
-        return Group {
-            if stacked {
-                HStack(spacing: CU.Space.s) {
-                    Text("NEXT PICKS").cuRole(CU.Font.eyebrow).accessibilityAddTraits(.isHeader)
-                    HStack(spacing: 6) { ForEach(indices, id: \.self) { nextPickButton($0) } }
-                }
-            } else {
-                VStack(alignment: .trailing, spacing: 6) {
-                    Text("NEXT PICKS").cuRole(CU.Font.eyebrow).accessibilityAddTraits(.isHeader).padding(.bottom, 2)
-                    covers
-                }
-            }
+        // Narrow (mockup `home-marquee--narrow`): the same block, wrapped under the text instead of at the trailing edge.
+        return VStack(alignment: .trailing, spacing: 6) {
+            Text("NEXT PICKS").cuRole(CU.Font.eyebrow).accessibilityAddTraits(.isHeader).padding(.bottom, 2)
+            covers
         }
     }
 
@@ -304,7 +296,7 @@ struct CupertinoHome: View {
         VStack(alignment: .leading, spacing: CU.Space.l) {
             HomeSkeletonBlock(height: Self.marqueeMinHeight, radius: Self.marqueeRadius)
             ForEach(0..<2, id: \.self) { _ in
-                VStack(alignment: .leading, spacing: CU.Space.m) {
+                VStack(alignment: .leading, spacing: 12) {   // the mockup's 12 under the title block
                     HomeSkeletonBlock(width: 170, height: 20)
                     LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: CU.Space.m), count: stacked ? 3 : 6), spacing: CU.Space.m) {
                         ForEach(0..<6, id: \.self) { _ in
