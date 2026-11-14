@@ -1,3 +1,12 @@
+## 2026-11-14 — Opportunistic simplification rule and CI lint ratchet (PR #1065)
+
+- Docs direct to `main`: `7606ae53` (the rule in `docs/DEVELOPMENT_WORKFLOW.md`, plus a "Simplification candidates" section in `docs/ACTIVE_WORK.md`) and `65f49fd6` (lint-style checks).
+- PR [#1065](https://github.com/abucalip/navi-librarian/pull/1065), merged as `f28a132e8de477a9130755445bcda91d60ed2a71`. New `Lint changed files` workflow and `scripts/check_lint_changed.py`: pylint 4.1.3 (installed in the job only) runs a small set of simplification checks on the Python files a PR changes and fails only on findings that are more frequent than in the base version of the file. Not gated: unused arguments, size checks, broad `except`. `tests/test_check_lint_changed.py` and the script were added to the `python-syntax.yml` compile list.
+- **Tests run (filtered):** `tests.test_check_lint_changed`: 5 passed. End to end locally against `origin/main`: a new file with an unused import and a needless else failed; a one-line change to `navidrome_server.py` passed. Full suite not run (owner rule).
+- **CI on the final PR head `aa61ac6f`:** `compile`, `container-smoke`, `lint-changed`, `test-and-build` and `validate-container` passed. The first run of `lint-changed` (head `8b0a14a1`) failed on an unused `Counter` import in the new script; fixed in `aa61ac6f`.
+- **Limits:** findings are counted per file and message, so a moved finding, or one fixed while an identical one is added, is not flagged. Workflows on `main` at `f28a132e` were still running when this was written.
+- **Next action:** the first real PR that changes Python files will show whether the ratchet is quiet enough for normal work.
+
 ## 2026-11-14 — Radio stage 2, S2-5: menu bar item (PR #1063)
 
 - PR [#1063](https://github.com/abucalip/navi-librarian/pull/1063), merged as `59ca29194f1ec099c2f19e8a74ba1e1d1f69df04`. A `MenuBarExtra` in window style: `radio` symbol while a station plays, a note for a library song, the title cut at 30 characters while "Show title" is on. Popover (mockup D2): cover or logo, LIVE and station (or album), title, artist; Stop or Play/Pause, Next (library song), the shared `DownloadButton`, Retry when unreachable, the sleep timer (new `.neutral` pill); the first four favourites with ⌘1 to ⌘4; Open Discair. Settings › Radio gained the two switches (`UserDefaults`, on by default). It reads `AppState` only; no new requests.
