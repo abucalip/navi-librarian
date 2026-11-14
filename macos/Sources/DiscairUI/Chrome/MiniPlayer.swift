@@ -43,8 +43,11 @@ public struct MiniPlayerView: View {
     public init(state: AppState) { self.state = state }
 
     private var p: PlayerModel { state.player }
-    private var album: AlbumItem {
-        guard let c = p.current else { return Fixtures.albums[0] }
+    private var album: AlbumItem { Self.album(for: p.current) }
+
+    /// The cover of a queue item as an album, shared with the menu bar popover.
+    static func album(for item: QueueItem?) -> AlbumItem {
+        guard let c = item else { return Fixtures.albums[0] }
         return AlbumItem(id: -1, title: c.album, artist: c.artist, year: 0, genre: "", format: "", owned: true,
                          hue: LibraryModel.hue(for: c.album.isEmpty ? c.title : c.album), remoteID: c.albumID, coverArt: c.coverArt)
     }

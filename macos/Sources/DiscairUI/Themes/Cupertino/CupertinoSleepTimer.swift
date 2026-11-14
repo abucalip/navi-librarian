@@ -3,7 +3,7 @@ import SwiftUI
 /// The sleep timer's menu (docs/RADIO_PLAYBACK_PROPOSAL.md S2-4 item 2; mockup "Small pieces", "Sleep timer menu"): Off, then
 /// 15 to 90 minutes, a check mark on the running length. The moon shows the minutes left while it runs.
 struct SleepTimerMenu: View {
-    enum Style { case icon, pill }
+    enum Style { case icon, pill, neutral }
     let timer: SleepTimer
     var style: Style = .icon
     /// The bar's text colour, so the moon matches the other controls in Day, Night and over artwork.
@@ -26,6 +26,14 @@ struct SleepTimerMenu: View {
                 }
                 .foregroundStyle(CU.onMedia).padding(.horizontal, 12).padding(.vertical, 4)
                 .background(CU.onMedia.opacity(0.18), in: Capsule())
+            case .neutral:
+                // The pill of the menu bar popover, which sits on a light or dark panel, not on the media plate.
+                HStack(spacing: 6) {
+                    Image(systemName: timer.isRunning ? "moon.fill" : "moon")
+                    Text(SleepTimer.shortText(minutesLeft: timer.minutesLeft) ?? "Sleep").cuRole(CU.Font.callout).fontWeight(.semibold)
+                }
+                .foregroundStyle(CU.text).padding(.horizontal, 12).padding(.vertical, 4)
+                .background(CU.bgFill, in: Capsule())
             }
         }
         .menuStyle(.button).buttonStyle(.plain).menuIndicator(.hidden).fixedSize()

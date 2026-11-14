@@ -11,6 +11,9 @@ struct DiscairApp: App {
     )
 
     @State private var updater = UpdaterModel()
+    // The menu bar item's two switches (Settings > Radio); both are on by default.
+    @AppStorage(MenuBarSettings.showKey) private var showInMenuBar = true
+    @AppStorage(MenuBarSettings.showTitleKey) private var showMenuBarTitle = true
 
     init() {
         // `swift run` starts a bare executable; without this the menu bar stays Terminal's and the Theme menu is not shown.
@@ -33,6 +36,14 @@ struct DiscairApp: App {
         .windowStyle(.hiddenTitleBar)
         .defaultSize(width: 1280, height: 800)
 
+        // The menu bar item (docs/RADIO_PLAYBACK_PROPOSAL.md S2-5, mockup D2): radio and library songs, with a popover.
+        MenuBarExtra(isInserted: $showInMenuBar) {
+            MenuBarPopoverHost(state: state, showTitle: showMenuBarTitle)
+        } label: {
+            MenuBarLabel(state: state, showTitle: showMenuBarTitle)
+        }
+        .menuBarExtraStyle(.window)
+
         // The floating mini player (contract section 10). Opened from Window > Mini Player.
         Window("Mini Player", id: "mini") {
             MiniPlayerView(state: state)
@@ -49,6 +60,19 @@ struct DiscairApp: App {
             PlaybackCommands(state: state)
             PathsCommands(state: state)
             UpdateCommands(updater: updater)
+        }
+    }
+}
+
+/// "Open Discair" brings the main window forward (it is one `Window`, so this never opens a second one).
+struct MenuBarPopoverHost: View {
+    @Environment(\.openWindow) private var openWindow
+    let state: AppState
+    let showTitle: Bool
+    var body: some View {
+        MenuBarPopover(state: state, showTitle: showTitle) {
+            openWindow(id: "main")
+            NSApplication.shared.activate(ignoringOtherApps: true)
         }
     }
 }
