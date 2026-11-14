@@ -48,4 +48,19 @@ import Testing
         let original = picture(width: 600, height: 600)
         #expect(SystemMedia.squareCover(original) === original)
     }
+
+    @Test func aStationIsAnEndlessStreamWithItsNameAsTheTitle() {
+        let info = SystemMedia.liveInfo(stationName: "FIP", cover: nil)
+        #expect(info[MPMediaItemPropertyTitle] as? String == "FIP")
+        #expect(info[MPNowPlayingInfoPropertyIsLiveStream] as? Bool == true)
+        #expect(info[MPMediaItemPropertyPlaybackDuration] == nil)
+        #expect(info[MPNowPlayingInfoPropertyElapsedPlaybackTime] == nil)
+        #expect(info[MPMediaItemPropertyArtwork] == nil)
+    }
+
+    @Test func theStationLogoIsTheSystemPicture() throws {
+        let logo = NSImage(size: NSSize(width: 512, height: 512))
+        let art = try #require(SystemMedia.liveInfo(stationName: "FIP", cover: logo)[MPMediaItemPropertyArtwork] as? MPMediaItemArtwork)
+        #expect(art.bounds.size == CGSize(width: 512, height: 512))
+    }
 }

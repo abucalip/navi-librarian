@@ -1,5 +1,6 @@
 import AppKit
 import DiscairAudio
+import DiscairLibrarian
 import Foundation
 import MediaPlayer
 
@@ -17,16 +18,25 @@ final class SystemMedia {
     private var coverTask: Task<Void, Never>?
     /// The Notification Center widget gets the same song (nil in tests that don't ask for it).
     private let widget: WidgetPublisher?
+    /// Station logos for the system picture while a station plays (S2-2 item 6); nil in tests that don't ask for it.
+    private let logos: StationLogoStore?
+    private var logoKey: String?
+    private var logoImage: NSImage?
+    private var logoTask: Task<Void, Never>?
+    private let seekCommand: MPRemoteCommand
     /// Asked for at 600 px: Control Centre shows it at most a few hundred points wide.
     static let coverPixels = 600
 
-    init(_ player: PlayerModel, artwork: ArtworkStore? = nil, widget: WidgetPublisher? = nil) {
+    init(_ player: PlayerModel, artwork: ArtworkStore? = nil, widget: WidgetPublisher? = nil, logos: StationLogoStore? = nil) {
         self.player = player
+        self.logos = logos
         self.widget = widget
         self.artwork = artwork
         let c = MPRemoteCommandCenter.shared()
-        add(c.playCommand) { p in if !p.isPlaying { p.togglePlayPause() } }
-        add(c.pauseCommand) { p in if p.isPlaying { p.togglePlayPause() } }
+        seekCommand = c.changePlaybackPositionCommand
+        // A station cannot pause and keep its place: Pause stops it and Play starts the stopped one again (S2.2 item 6).
+        add(c.playCommand) { p in if !p.isPlaying && p.live == nil { p.togglePlayPause() } }
+        add(c.pauseCommand) { p in if p.isPlaying || p.live != nil { p.togglePlayPause() } }
         add(c.togglePlayPauseCommand) { p in p.togglePlayPause() }
         add(c.nextTrackCommand) { p in p.next() }
         add(c.previousTrackCommand) { p in p.previous() }
@@ -53,6 +63,16 @@ final class SystemMedia {
 
     func update() {
         let center = MPNowPlayingInfoCenter.default()
+        // Seeking is off while a station plays and on again when a library song does.
+        seekCommand.isEnabled = player.live == nil
+        if let live = player.live {
+            loadLogoIfNeeded(for: player.stationByLive)
+            center.nowPlayingInfo = Self.liveInfo(stationName: live.name, cover: logoImage)
+            center.playbackState = .playing
+            widget?.publish(item: nil, duration: 0, position: 0, playing: false, cover: nil)   // the widget's live case is S2-2 item 7
+            return
+        }
+        logoTask?.cancel(); logoKey = nil; logoImage = nil
         guard let c = player.current, player.phase != .idle else {
             coverTask?.cancel(); coverID = nil; coverImage = nil
             center.nowPlayingInfo = nil
@@ -65,6 +85,36 @@ final class SystemMedia {
                                           playing: player.isPlaying, cover: coverImage)
         center.playbackState = player.isPlaying ? .playing : .paused
         widget?.publish(item: c, duration: player.duration, position: player.position, playing: player.isPlaying, cover: coverImage)
+    }
+
+    /// Fetches the logo of the playing station once, at 512; a late answer for another station is dropped.
+    private func loadLogoIfNeeded(for station: RadioStation?) {
+        guard let station else { return }
+        guard station.id != logoKey else { return }
+        logoTask?.cancel()
+        logoKey = station.id; logoImage = nil
+        guard let logos else { return }
+        logoTask = Task { [weak self] in
+            let image = await logos.logo(station: station.id, size: .large)
+            guard !Task.isCancelled, let self, self.logoKey == station.id, let image else { return }
+            self.logoImage = Self.squareCover(image) ?? image
+            self.update()
+        }
+    }
+
+    /// What the system is told while a station plays: the station's name as the title, a live stream (no duration, no position,
+    /// no elapsed time) and the logo. The song joins it with S2-3. Pure, like `info`.
+    nonisolated static func liveInfo(stationName: String, cover: NSImage?) -> [String: Any] {
+        var info: [String: Any] = [
+            MPMediaItemPropertyTitle: stationName,
+            MPNowPlayingInfoPropertyIsLiveStream: true,
+            MPNowPlayingInfoPropertyPlaybackRate: 1.0,
+        ]
+        if let cover {
+            nonisolated(unsafe) let image = cover
+            info[MPMediaItemPropertyArtwork] = MPMediaItemArtwork(boundsSize: cover.size) { _ in image }
+        }
+        return info
     }
 
     /// Fetches the cover of a new song once; a late answer for a song that is no longer playing is dropped.

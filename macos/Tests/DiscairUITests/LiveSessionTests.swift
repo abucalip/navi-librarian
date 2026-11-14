@@ -179,4 +179,23 @@ struct LiveSessionTests {
         p.volume = 0.4
         #expect(live.volume == 0.4)
     }
+
+    @Test func theTimeSinceTuningInReadsAsMinutesThenHours() {
+        let start = Date(timeIntervalSince1970: 1_000_000)
+        let live = LiveSession(stationID: "1", name: "FIP", logoPath: "", startedAt: start, phase: .playing)
+        #expect(live.elapsedText(at: start) == "0:00")
+        #expect(live.elapsedText(at: start.addingTimeInterval(19 * 60 + 12)) == "19:12")
+        #expect(live.elapsedText(at: start.addingTimeInterval(3600 + 2 * 60 + 3)) == "1:02:03")
+        #expect(live.elapsedText(at: start.addingTimeInterval(-5)) == "0:00")
+    }
+
+    @Test func eachPhaseHasItsSentenceAndPlayingHasNone() {
+        func sentence(_ phase: LiveSession.Phase) -> String? {
+            LiveSession(stationID: "1", name: "FIP", logoPath: "", startedAt: Date(), phase: phase).phaseSentence
+        }
+        #expect(sentence(.playing) == nil)
+        #expect(sentence(.connecting) == "Connecting…")
+        #expect(sentence(.reconnecting) == "Reconnecting…")
+        #expect(sentence(.unreachable) == "Station unreachable")
+    }
 }
