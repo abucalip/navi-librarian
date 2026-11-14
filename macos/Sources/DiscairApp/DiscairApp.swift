@@ -46,6 +46,7 @@ struct DiscairApp: App {
             // Discair has no documents or text editing, so the Edit menu keeps only the command palette.
             CommandGroup(replacing: .undoRedo) {}
             CommandGroup(replacing: .pasteboard) {}
+            PlaybackCommands(state: state)
             PathsCommands(state: state)
             UpdateCommands(updater: updater)
         }
@@ -80,6 +81,16 @@ struct CommandPaletteCommands: Commands {
         CommandGroup(replacing: .textEditing) {
             Button("Command Palette") { state.palette.toggle() }
                 .keyboardShortcut("k", modifiers: .command)
+        }
+    }
+}
+
+/// Controls > Sleep Timer: Off, 15 to 90 minutes, with a check mark on the running length. (The station shortcuts join this menu.)
+struct PlaybackCommands: Commands {
+    let state: AppState
+    var body: some Commands {
+        CommandMenu("Controls") {
+            Menu("Sleep Timer") { SleepTimerChoices(timer: state.player.sleepTimer) }
         }
     }
 }

@@ -264,14 +264,18 @@ private struct OnAirPanel: View {
                 }
                 Text(live.name).cuRole(CU.Font.title2).foregroundStyle(CU.onMedia).lineLimit(2)
                 if live.phase == .playing { LiveSongBlock(player: player, downloads: downloads) }
-                else if let sentence = live.phaseSentence { Text(sentence).cuRole(CU.Font.callout).foregroundStyle(CU.onMedia.opacity(0.85)) }
-                Button { player.stopStation() } label: {
-                    HStack(spacing: 6) { Image(systemName: "stop.fill"); Text("Stop").cuRole(CU.Font.callout) }.foregroundStyle(CU.onMedia)
-                        .padding(.horizontal, 12).padding(.vertical, 4)
-                        .background(CU.onMedia.opacity(0.2), in: Capsule())
+                else if live.phaseSentence != nil { LivePhaseText(live: live, role: CU.Font.callout).foregroundStyle(CU.onMedia.opacity(0.85)) }
+                HStack(spacing: 8) {
+                    if live.phase == .unreachable { RetryStationButton(player: player) }
+                    Button { player.stopStation() } label: {
+                        HStack(spacing: 6) { Image(systemName: "stop.fill"); Text("Stop").cuRole(CU.Font.callout) }.foregroundStyle(CU.onMedia)
+                            .padding(.horizontal, 12).padding(.vertical, 4)
+                            .background(CU.onMedia.opacity(0.2), in: Capsule())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Stop \(live.name)")
                 }
-                .buttonStyle(.plain).padding(.top, 4)
-                .accessibilityLabel("Stop \(live.name)")
+                .padding(.top, 4)
             }
             Spacer(minLength: 0)
         }
