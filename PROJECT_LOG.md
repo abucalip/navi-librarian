@@ -1,3 +1,13 @@
+## 2026-11-14 — macOS Home marquee H2 items 1 and 2: panels moved, Insights "Your collection" (PR pending)
+
+- Plan: `docs/MACOS_HOME_MARQUEE_PLAN.md` slice H2, items 1 and 2 only (the owner limited this task to those two).
+- New `macos/Sources/DiscairUI/Themes/Cupertino/CupertinoCollectionPanels.swift`: `CollectionOverTimePanel`, `OwnAndPlayByDecadePanel`, `TastePanel`, `ShelfLifePanel` and `ServerActivityPanel`, moved out of `CupertinoHome.swift` with their helpers and `@State`. Draws the same as before, except Shelf life no longer shows its four small "Longest since a play" covers (they become "Waiting longest" in H3); `longestCovers` deleted.
+- `CupertinoInsights`: new "Your collection" section above "Lenses" (collection 2:1 decades, taste 1:1 shelf life; one column under 860 wide); `.task` calls `state.refreshHomeDashboard()`.
+- Home still shows the panels through the new views.
+- Not done, by the owner's scope: item 3 (Server activity in Settings, Services), items 4 and 5 of H2. `ServerActivityPanel` is moved (item 1) but only Home uses it.
+- Tests: added `rendersInsightsYourCollection` (wide and stacked). Filtered run on a Mac: `swift test --filter "HomeRenderTests|CupertinoPagesRenderTests|ConnectionsServicesRenderTests"`, 32 tests in 3 suites, passing. Full suite not run (owner rule). Not published or deployed.
+- **Next action:** H2 items 3 to 5, then H3 (the new Home).
+
 ## 2026-11-14 — macOS Home marquee H1 items 3 and 4: tests and filtered run (PR #1077)
 
 - PR [#1077](https://github.com/abucalip/navi-librarian/pull/1077), squash-merged as `304ae87a`. Plan: `docs/MACOS_HOME_MARQUEE_PLAN.md` slice H1, items 3 and 4.

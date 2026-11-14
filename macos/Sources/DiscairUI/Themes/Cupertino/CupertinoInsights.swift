@@ -7,6 +7,7 @@ import SwiftUI
 /// with no cards shows an empty state. Every card action is neutral: the page has no primary action.
 struct CupertinoInsights: View {
     let state: AppState
+    @State private var width: CGFloat = 980
     private var model: InsightsModel { state.insights }
 
     private static let names = ["forgotten_gem": "Forgotten Gems", "series_completion": "Series", "blind_spot": "Blind Spots", "hidden_canon": "Hidden Canon", "anniversary": "Anniversaries"]
@@ -25,6 +26,7 @@ struct CupertinoInsights: View {
                     header
                     if let e = model.error { CUErrorLine(message: e).font(CU.Font.body.weighted(.regular)) }
                     CupertinoTaste(model: state.taste, state: state)
+                    collection
                     VStack(alignment: .leading, spacing: CU.Space.m) {
                         Text("Lenses").cuRole(CU.Font.title1).foregroundStyle(CU.text).accessibilityAddTraits(.isHeader)
                         HStack(alignment: .top, spacing: CU.Space.m) {
@@ -35,9 +37,11 @@ struct CupertinoInsights: View {
                 }
                 .padding(.horizontal, CU.Space.xl).padding(.bottom, 60)
             }
+            .onGeometryChange(for: CGFloat.self) { $0.size.width - CU.Space.xl * 2 } action: { width = $0 }
             .scrollEdgeEffectStyle(.hard, for: .top)
             if model.lastDismissed != nil { undoBar }
         }
+        .task { await state.refreshHomeDashboard() }
         .task {
             await state.loadInsights()
             await state.taste.load(librarian: state.session?.librarian)
@@ -51,6 +55,19 @@ struct CupertinoInsights: View {
                 await state.loadInsights()
             }
         }
+    }
+
+    /// The charts that used to sit on Home (`docs/MACOS_HOME_MARQUEE_PLAN.md`, H2): two rows, one column under 860 pt wide.
+    private var collection: some View {
+        VStack(alignment: .leading, spacing: CU.Space.m) {
+            Text("Your collection").cuRole(CU.Font.title1).foregroundStyle(CU.text).accessibilityAddTraits(.isHeader)
+            row([2, 1]) { CollectionOverTimePanel(state: state); OwnAndPlayByDecadePanel(state: state) }
+            row([1, 1]) { TastePanel(state: state); ShelfLifePanel(state: state) }
+        }
+    }
+
+    @ViewBuilder private func row<C: View>(_ weights: [CGFloat], @ViewBuilder _ content: () -> C) -> some View {
+        if HomeScreen.isStacked(contentWidth: width) { VStack(spacing: CU.Space.m) { content() } } else { HomeSplit(weights: weights) { content() } }
     }
 
     private var header: some View {
