@@ -46,7 +46,7 @@ let package = Package(
         // M2 measurement tool (contract section 12). Not shipped in the app.
         .executableTarget(
             name: "AudioSpike",
-            dependencies: ["DiscairCore", "DiscairNavidrome"]
+            dependencies: ["DiscairCore", "DiscairNavidrome", "DiscairLibrarian", "DiscairAudio"]
         ),
         .testTarget(name: "DiscairAudioTests", dependencies: ["DiscairAudio"]),
         .testTarget(name: "DiscairUITests", dependencies: ["DiscairUI", "DiscairAudio", "DiscairCore", "DiscairNavidrome", "DiscairLibrarian"]),

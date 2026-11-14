@@ -19,6 +19,9 @@ usage: discair-audio-spike <command>
   listen <id> <id> [--crossfade S] [--tail S] [--head S] [--volume V]
                    PLAYS SOUND: end of the first song into the start of the second (gapless, or crossfade)
   mapcheck [albums]   how many songs resolve to a file on the mounted share (default 60 albums)
+  live [--seconds N] [--volume V] <url>... | --relayed
+                   PLAYS SOUND: live stream through LiveStreamPlayer; reports state, tap samples and levels.
+                   --relayed reads relayed stations from the Librarian (DISCAIR_LIBRARIAN_URL, _USER, _PASSWORD); addresses are never printed
   smb <relative path>             time tag read, whole-file read and waveform over the SMB mount
 """
 
@@ -74,6 +77,9 @@ do {
         let a = try await fetch(client: client, id: ids[0], format: nil, bitRate: nil, to: work)
         let b = try await fetch(client: client, id: ids[1], format: nil, bitRate: nil, to: work)
         try await listen(a: a, b: b, crossfade: opt("--crossfade") ?? 0, tail: opt("--tail") ?? 20, head: opt("--head") ?? 20, volume: Float(opt("--volume") ?? 0.5))
+    case "live":
+        func opt(_ n: String) -> Double? { args.firstIndex(of: n).flatMap { Double(args[$0 + 1]) } }
+        try await liveSpike(args: args, seconds: opt("--seconds") ?? 20, volume: Float(opt("--volume") ?? 0.3))
     case "mapcheck":
         try await mapCheck(client: try makeClient(), albums: args.dropFirst().first.flatMap(Int.init) ?? 60)
     case "smb":
