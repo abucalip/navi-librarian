@@ -443,6 +443,7 @@ Steps on different clients are independent and can be interleaved. Each code ste
 
 #### M7 macOS `PlaybackClock` does not tick while paused
 
+- **Follow-up 2 (2026-11-14):** the bar's progress fill and waveform moved into their own views (PR [#1073](https://github.com/abucalip/navi-librarian/pull/1073), `a25c3460`) so the 4 Hz tick no longer rebuilds the whole bar; playing CPU 10 to 15 % to 8 to 11 % (owner, by eye). Treated as near the floor.
 - **Follow-up (2026-11-14):** #1071 alone did not cure the lag on the owner's machine; the 30 Hz `TimelineView` on the spinning disc was the remaining per-frame driver, moved to a Core Animation layer in PR [#1072](https://github.com/abucalip/navi-librarian/pull/1072) (`179a8e33`). No CPU A/B recorded yet.
 - **Status (2026-11-14):** **implemented, the preferred variant (no `TimelineView`), after the playing-state A/B; merged in PR [#1071](https://github.com/abucalip/navi-librarian/pull/1071), squash `5edb1b27`.** Result: playing 38.4 % (`main`) to 7.05 %, paused about 26 to 30 % to 1.70 %, readout checked by the owner with no lag or jumps (results file, "M7 A/B"). The other `TimelineView(.periodic…)` users were not touched. Added from the P0-2 element bisect ([`client_efficiency_results.md`](client_efficiency_results.md), "S2 bisect").
 - **Objective:** remove the idle cost of a paused player: about 26 % of one core on Home with a paused track (25 to 29 % in every state tried).

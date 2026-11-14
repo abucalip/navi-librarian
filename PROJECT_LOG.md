@@ -1,3 +1,11 @@
+## 2026-11-14 — Client efficiency: player-bar position readers split out (PR #1073)
+
+- PR [#1073](https://github.com/abucalip/navi-librarian/pull/1073), merged as `a25c3460`. Docs direct to `main` on the owner's instruction. `CupertinoPlayerBar`: the progress fill and the waveform, the two readers of the 4 Hz `position`/`fraction` in the bar, are now their own views (`BarProgress`, `BarWaveform`), so a tick no longer rebuilds the whole bar (cover, disc lookup, text).
+- **Why:** a 10 s `sample` of the installed build playing a track (10.8 % of one core) showed the main thread mostly idle; the Discair work left was `PlayerBarCover.body` and `CupertinoPlayerBar.body` re-evaluating every tick.
+- **Result (owner, by eye on Activity Monitor, one track, not a scripted A/B):** playing 10 to 15 % after #1072, 8 to 11 % after this change; about 40 % before #1072. Judged close to the floor (audio decode and the 4 Hz tick); further cuts would need a slower tick or fewer features, not recommended. No `macos_cheap.sh` three-run table recorded.
+- Tests not run (view-structure refactor only).
+- **Next action:** S3 to S5 re-baseline with the clock, disc and bar fixed, the hidden-window check for G2, then M1 and M2.
+
 ## 2026-11-14 — Client efficiency: spinning disc moved to Core Animation (PR #1072)
 
 - PR [#1072](https://github.com/abucalip/navi-librarian/pull/1072), merged as `179a8e33`. Docs direct to `main` on the owner's instruction. `DiscView` (`macos/Sources/DiscairUI/Chrome/NowPlayingArtwork.swift`) no longer uses a 30 Hz `TimelineView(.animation)`; the disc is drawn once to a bitmap (`ImageRenderer`) and turned by a `CABasicAnimation` on a child layer kept centred in an `NSViewRepresentable`, paused in place when not playing, still off under Reduce Motion. The sleeve slide (`DiscSleeve`) is unchanged.
