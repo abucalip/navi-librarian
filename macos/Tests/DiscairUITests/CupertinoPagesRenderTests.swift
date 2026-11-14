@@ -1,3 +1,4 @@
+import DiscairAudio
 import AppKit
 import DiscairLibrarian
 import SwiftUI
@@ -74,6 +75,20 @@ struct CupertinoPagesRenderTests {
         try render("home-radio-card-playing", width: 720, height: 90, HomeRadioCardView(state: state, card: HomeRadioCard.of(
             live: state.player.live, line: state.player.liveLine, lastStationID: nil, stations: [fip], at: Date())!).padding(12)) { _ in }
         try render("home-radio-card-resume", width: 720, height: 90, HomeRadioCardView(state: state, card: .resume(station: fip, lastPlayed: "Last played today, 21:17")).padding(12)) { _ in }
+    }
+
+    /// The menu bar popover (S2-5, mockup D2): a station with a song and four favourites, then a library song.
+    @Test func rendersMenuBarPopover() throws {
+        let state = AppState(themeID: .cupertino, screen: .home)
+        let favs = (1...5).map { RadioStation(id: "\($0)", name: ["FIP", "Radio Paradise", "KEXP", "BBC Radio 6 Music", "NTS 1"][$0 - 1],
+                                              proxied: true, playableURL: "https://example.invalid/\($0)", favourite: true) }
+        state.stations.showForPreview(stations: favs)
+        state.player.live = LiveSession(stationID: "1", name: "FIP", logoPath: "", startedAt: Date().addingTimeInterval(-600), phase: .playing)
+        state.player.liveNow = RadioNow(state: .ok, rawTitle: "Talk Talk - Life's What You Make It", artist: "Talk Talk", title: "Life's What You Make It", playID: 4)
+        try render("menubar-popover-station", width: 300, height: 330, MenuBarPopover(state: state, showTitle: true, openApp: {})) { _ in }
+        state.player.live = nil; state.player.liveNow = nil
+        state.player.play([QueueItem(songID: "a", title: "Glory Box", artist: "Portishead", album: "Dummy", duration: 300)])
+        try render("menubar-popover-song", width: 300, height: 330, MenuBarPopover(state: state, showTitle: true, openApp: {})) { _ in }
     }
 
     @Test func rendersHistory() throws {

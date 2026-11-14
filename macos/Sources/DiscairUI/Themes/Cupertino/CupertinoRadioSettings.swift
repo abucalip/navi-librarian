@@ -5,9 +5,11 @@ import UniformTypeIdentifiers
 
 /// Settings › Radio (docs/RADIO_PLAYBACK_PROPOSAL.md S2-4 item 3), in the same grouped rows as Playback: the scrobbling switch
 /// (disabled with its reason when Last.fm is not set up on the server), the app address read only, and for each station a
-/// logo with Change (an open panel, images up to 2 MB) and Reset. The menu bar switches join from S2-5.
+/// logo with Change (an open panel, images up to 2 MB) and Reset. Two switches for the menu bar item (S2-5) sit between the address and the logos.
 struct CupertinoRadioSettings: View {
     let state: AppState
+    @AppStorage(MenuBarSettings.showKey) private var showInMenuBar = true
+    @AppStorage(MenuBarSettings.showTitleKey) private var showTitle = true
 
     private var model: RadioSettingsModel { state.radioSettings }
     private var stations: StationsModel { state.stations }
@@ -30,6 +32,16 @@ struct CupertinoRadioSettings: View {
                     Text(model.appAddressText).cuRole(CU.Font.callout).foregroundStyle(CU.textSecondary)
                         .lineLimit(1).truncationMode(.middle).textSelection(.enabled)
                         .accessibilityLabel("App address, \(model.appAddressText)")
+                }
+            }
+            CUPanel("Menu bar") {
+                row("Show in menu bar", detail: "A menu bar item for the station or song that plays, with Stop, Download and your first four favourites.") {
+                    Toggle("Show in menu bar", isOn: $showInMenuBar).labelsHidden().toggleStyle(.switch).tint(CU.accent)
+                }
+                Divider()
+                row("Show title in menu bar", detail: "The song or station beside the symbol, cut at 30 characters. Off shows the symbol alone.") {
+                    Toggle("Show title in menu bar", isOn: $showTitle).labelsHidden().toggleStyle(.switch).tint(CU.accent)
+                        .disabled(!showInMenuBar)
                 }
             }
             CUPanel("Station logos") { stationLogos }
