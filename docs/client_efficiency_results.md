@@ -274,6 +274,18 @@ Columns: Discair CPU %, WindowServer CPU %, Discair wakeups/s, Discair power, Wi
 
 **Main finding (2026-11-14).** Discair uses roughly 25 to 29 % of one core in every state tried: any screen, paused or playing, window visible or minimized, Reduce Motion on or off. Wakeups stay near 2 to 3 per second, so the load is continuous rendering or computing, not a timer. The 5 s `sample` of the minimized window shows the main thread in `NSDisplayCycleFlush` and `ViewGraphRootValueUpdater.render`, nearly all in AttributeGraph, with almost no Discair frames. Only Now Playing with the song paused (S6) is lower, at 13.75 %. What keeps invalidating the SwiftUI graph is not yet identified; needs a SwiftUI-instrument trace.
 
+**M7 A/B, playing and paused (macOS, 2026-11-14).** Same method as the #900 A/B: four Release builds of throwaway worktrees (`be9738d0^`, `be9738d0`, `main` at `a44b7e8f`, and the M7 variant with no `TimelineView` in `PlaybackClock`, which renders `content(player.displayPosition())` from the observed `position`), one running at a time, the same track, Home, Now Playing closed, 25 s warm-up, `macos_cheap.sh` 3 runs of 4 samples of 5 s. Apple M2, macOS 26.2. WindowServer not used (other windows on screen).
+
+| Build | State | Runs (Discair CPU %) | Median | Wakeups/s (median) |
+|---|---|---|---:|---:|
+| Before #900 | S3 playing | 8.00, 7.65, 7.95 | **7.95** | 1.45 |
+| At #900 | S3 playing | 35.35, 31.85, 31.70 | **31.85** | 2.90 |
+| `main` `a44b7e8f` | S3 playing | 41.20, 37.55, 38.40 | **38.40** | 3.55 |
+| M7 variant | S3 playing | 7.10, 7.05, 6.85 | **7.05** | 2.10 |
+| M7 variant | S2 paused | 2.00, 1.60, 1.70 | **1.70** | 1.95 |
+
+**Finding.** The timeline wrapper costs while playing as well as paused (about 24 points at #900, about 30 on `main`). The plain variant is at the pre-#900 level in both states (7.05 against 7.95 playing, 1.70 against 1.50 paused). The owner watched the readout while playing, after a seek, and after a pause and resume: no lag and no jumps. So the lag that #900 was made for did not return without the timeline; the carry-forward in `displayPosition` stays as a computed value. The gate fallback is not needed.
+
 **Gate decisions (P0-2)**
 
 | Gate | Condition (plan section 8.5) | Measured value | Met? |
