@@ -24,10 +24,10 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -96,9 +96,6 @@ import kotlinx.coroutines.withContext
 
 /** The pure rules of the Flow player (unit-tested). The Queue lists are the Soft Brut ones. */
 object FlowPlayerRules {
-    /** The word in the top bar's middle. */
-    const val TITLE = "Now playing"
-
     /** Round buttons: Previous and Next 48dp, Play 72dp, Shuffle and Repeat plain 22dp glyphs (flow.css `.cb`). */
     const val SIDE_BUTTON = 48
     const val PLAY_BUTTON = 72
@@ -109,6 +106,9 @@ object FlowPlayerRules {
     /** The cover (flow.css `.npc`): 312dp wide at most, radius 18, level 3 depth. */
     const val COVER = 312
     const val COVER_RADIUS = 18
+
+    /** The song title (sp); it scrolls when it and the quality tag do not fit. */
+    const val TITLE_SIZE = 22
 
     /** The Lyrics' size (flow.css `.lyr p`: Inter 700 22/30) and the share of the text colour the lines not being sung keep. */
     const val LYRIC_SIZE = 22
@@ -183,15 +183,15 @@ private fun FlowSeekRow(state: PlayerUiState, controller: PlayerController, peak
     }
 }
 
-/** The top bar: a Down button (accent glyph) at the left, the title in the middle, the three-dot menu at the right (flow.css `.bar`). */
+/** The top bar: a Down button (accent glyph) at the left, the three view icons (Queue, artwork, Lyrics) in the middle as on Standard, the three-dot menu at the right. */
 @Composable
-private fun FlowTopBar(onClose: () -> Unit, menu: List<Pair<String, () -> Unit>>) {
+private fun FlowTopBar(onClose: () -> Unit, menu: List<Pair<String, () -> Unit>>, view: Int, onView: (Int) -> Unit) {
     val p = LocalPalette.current
     Row(Modifier.fillMaxWidth().heightIn(min = 48.dp), verticalAlignment = Alignment.CenterVertically) {
         Box(Modifier.size(Target).clip(CircleShape).clickable(role = Role.Button, onClick = onClose), contentAlignment = Alignment.Center) {
             Icon(ArtIcons.Down, contentDescription = "Close now playing", tint = p.accentText)
         }
-        Box(Modifier.weight(1f).semantics { heading() }, contentAlignment = Alignment.Center) { FlowEyebrow(FlowPlayerRules.TITLE) }
+        Box(Modifier.weight(1f), contentAlignment = Alignment.Center) { FlowViewIcons(view, onView) }
         var open by remember { mutableStateOf(false) }
         Box {
             Box(Modifier.size(Target).clip(CircleShape).clickable(role = Role.Button) { open = true }, contentAlignment = Alignment.Center) {
@@ -223,80 +223,89 @@ fun FlowPlayer(
         if (item.artist.isNotBlank()) add("Open artist" to { onOpenArtist(item) })
         if (item.album.isNotBlank()) add("Open album" to { onOpenAlbum(item) })
     }
+    // A fixed sheet: nothing scrolls. The artwork takes the room the rest leaves, up to 312dp square.
     Column(Modifier.fillMaxWidth().fillMaxHeight()) {
-        FlowTopBar(onClose, menu)
-        Column(Modifier.weight(1f, fill = true).fillMaxWidth().verticalScroll(rememberScrollState())) {
-            // Queue and Lyrics sit above the artwork (queue on the left, lyrics on the right, as the card turns); the artwork flips to them on a swipe.
-            Box(Modifier.fillMaxWidth().padding(top = 4.dp, bottom = 20.dp), contentAlignment = Alignment.Center) {
-                Column(Modifier.widthIn(max = FlowPlayerRules.COVER.dp).fillMaxWidth()) {
-                    Row(Modifier.fillMaxWidth().padding(bottom = 8.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-                        FlowViewButton("Queue", ArtIcons.Queue, view == CoverStackPlayerRules.VIEW_QUEUE) { onView(if (view == CoverStackPlayerRules.VIEW_QUEUE) 0 else CoverStackPlayerRules.VIEW_QUEUE) }
-                        FlowViewButton("Lyrics", ArtIcons.Quote, view == CoverStackPlayerRules.VIEW_LYRICS) { onView(if (view == CoverStackPlayerRules.VIEW_LYRICS) 0 else CoverStackPlayerRules.VIEW_LYRICS) }
-                    }
-                    card()
-                }
+        FlowTopBar(onClose, menu, view, onView)
+        Box(Modifier.weight(1f, fill = true).fillMaxWidth().padding(top = 4.dp, bottom = 12.dp), contentAlignment = Alignment.Center) {
+            androidx.compose.foundation.layout.BoxWithConstraints(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                val side = minOf(maxWidth, maxHeight, FlowPlayerRules.COVER.dp)
+                Box(Modifier.size(side)) { card() }
             }
-            Column(Modifier.fillMaxWidth()) {
-                Text(
-                    item.title, color = p.text, maxLines = 1, overflow = TextOverflow.Ellipsis,
-                    style = MaterialTheme.typography.headlineLarge.copy(fontSize = 26.sp, lineHeight = 30.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = (-0.02).em),
-                    modifier = Modifier.fillMaxWidth().semantics { liveRegion = LiveRegionMode.Polite; heading() },
-                )
-                // The artist and the album each open their own page, as on every other theme.
-                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    val link = MaterialTheme.typography.bodyMedium
-                    if (item.artist.isNotBlank()) Text(
-                        item.artist, style = link, color = p.textMuted, maxLines = 1, overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.weight(1f, fill = false).heightIn(min = Target).clickable(onClickLabel = "Open artist", role = Role.Button) { onOpenArtist(item) }.wrapContentHeight(Alignment.CenterVertically),
-                    )
-                    if (item.artist.isNotBlank() && item.album.isNotBlank()) Text(" · ", style = link, color = p.textMuted)
-                    if (item.album.isNotBlank()) Text(
-                        item.album, style = link, color = p.textMuted, maxLines = 1, overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.weight(1f, fill = false).heightIn(min = Target).clickable(onClickLabel = "Open album", role = Role.Button) { onOpenAlbum(item) }.wrapContentHeight(Alignment.CenterVertically),
-                    )
-                }
-                qualityLabel(item)?.let { FlowTag(it, Modifier.padding(top = 2.dp, bottom = 4.dp)) }
-                // States the mockup does not draw, said in words: the lyric or fact line (when switched on), and the status.
-                if (input.line.showLyrics || input.line.showFacts) PlayerLineText(input.line.line, Modifier.padding(top = 2.dp), align = TextAlign.Start)
-                if (state.status != null || state.buffering) Text(
-                    playerSubtitle(state), style = MaterialTheme.typography.bodyMedium, color = p.text,
-                    modifier = Modifier.fillMaxWidth().padding(top = 4.dp).semantics { liveRegion = LiveRegionMode.Polite },
-                )
-                if (state.signInRequired) TextButton(onClick = { controller.dismissSignIn(); onSignIn() }, Modifier.heightIn(min = Target)) { Text("Sign in again", color = p.accentText, textDecoration = TextDecoration.Underline) }
-                if (state.waitingForNetwork) TextButton(onClick = controller::retryNow, Modifier.heightIn(min = Target)) { Text("Retry now", color = p.accentText, textDecoration = TextDecoration.Underline) }
-            }
-            Spacer(Modifier.height(14.dp))
-            FlowSeekRow(state, controller, input.line.peaks)
-            FlowTransport(state, controller)
         }
-        Row(Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 12.dp), horizontalArrangement = Arrangement.SpaceAround) {
+        Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+            // The title scrolls when it and the tag do not fit; the tag keeps its place at the right.
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
+                val reduced = app.discair.ui.theme.rememberReducedMotion()
+                Text(
+                    item.title, color = p.text, maxLines = 1, softWrap = false,
+                    overflow = if (reduced) TextOverflow.Ellipsis else TextOverflow.Clip, textAlign = TextAlign.Center,
+                    style = MaterialTheme.typography.headlineLarge.copy(fontSize = FlowPlayerRules.TITLE_SIZE.sp, lineHeight = (FlowPlayerRules.TITLE_SIZE + 4).sp, fontWeight = FontWeight.ExtraBold, letterSpacing = (-0.02).em),
+                    modifier = Modifier.weight(1f, fill = false)
+                        .then(if (reduced) Modifier else Modifier.basicMarquee(iterations = Int.MAX_VALUE, initialDelayMillis = 1500))
+                        .semantics { liveRegion = LiveRegionMode.Polite; heading() },
+                )
+                qualityLabel(item)?.let { FlowTag(it, Modifier.padding(start = 8.dp), compact = true) }
+            }
+            // The artist and the album each open their own page, as on every other theme.
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
+                val link = MaterialTheme.typography.bodyMedium
+                if (item.artist.isNotBlank()) Text(
+                    item.artist, style = link, color = p.textMuted, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f, fill = false).heightIn(min = Target).clickable(onClickLabel = "Open artist", role = Role.Button) { onOpenArtist(item) }.wrapContentHeight(Alignment.CenterVertically),
+                )
+                if (item.artist.isNotBlank() && item.album.isNotBlank()) Text(" · ", style = link, color = p.textMuted)
+                if (item.album.isNotBlank()) Text(
+                    item.album, style = link, color = p.textMuted, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f, fill = false).heightIn(min = Target).clickable(onClickLabel = "Open album", role = Role.Button) { onOpenAlbum(item) }.wrapContentHeight(Alignment.CenterVertically),
+                )
+            }
+            // States the mockup does not draw, said in words: the lyric or fact line (when switched on), and the status.
+            if (input.line.showLyrics || input.line.showFacts) PlayerLineText(input.line.line, Modifier.padding(top = 2.dp), align = TextAlign.Center)
+            if (state.status != null || state.buffering) Text(
+                playerSubtitle(state), style = MaterialTheme.typography.bodyMedium, color = p.text, textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth().padding(top = 4.dp).semantics { liveRegion = LiveRegionMode.Polite },
+            )
+            if (state.signInRequired) TextButton(onClick = { controller.dismissSignIn(); onSignIn() }, Modifier.heightIn(min = Target)) { Text("Sign in again", color = p.accentText, textDecoration = TextDecoration.Underline) }
+            if (state.waitingForNetwork) TextButton(onClick = controller::retryNow, Modifier.heightIn(min = Target)) { Text("Retry now", color = p.accentText, textDecoration = TextDecoration.Underline) }
+        }
+        Spacer(Modifier.height(10.dp))
+        FlowSeekRow(state, controller, input.line.peaks)
+        FlowTransport(state, controller)
+        Row(Modifier.fillMaxWidth().padding(top = 4.dp, bottom = 12.dp), horizontalArrangement = Arrangement.SpaceAround) {
             Entry("Equalizer", ArtIcons.Tune, onEqualizer)
             Entry("Crossfade", ArtIcons.Swap, onCrossfade)
         }
     }
 }
 
-/** A round icon button above the artwork; the open view is accent-coloured and announced as selected. */
+/** The three views as Standard draws them: Queue, the artwork (the note) and Lyrics; the open one is larger and strong, the others smaller and dim, and it is announced as selected. */
 @Composable
-private fun FlowViewButton(label: String, icon: ImageVector, selected: Boolean, onClick: () -> Unit) {
+private fun FlowViewIcons(selected: Int, onSelect: (Int) -> Unit) {
     val p = LocalPalette.current
-    Box(
-        Modifier.size(Target).clip(CircleShape).background(if (selected) p.raised else Color.Transparent)
-            .clickable(role = Role.Tab, onClick = onClick).semantics { contentDescription = label; this.selected = selected },
-        contentAlignment = Alignment.Center,
-    ) { Icon(icon, contentDescription = null, tint = if (selected) p.accentText else p.textMuted, modifier = Modifier.size(24.dp)) }
+    val tabs = listOf(
+        Triple(CoverStackPlayerRules.VIEW_QUEUE, ArtIcons.Queue, "Queue"),
+        Triple(0, ArtIcons.MusicNote, "Player"),
+        Triple(CoverStackPlayerRules.VIEW_LYRICS, ArtIcons.Quote, "Lyrics"),
+    )
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        tabs.forEach { (view, icon, label) ->
+            val active = view == selected
+            val size by androidx.compose.animation.core.animateDpAsState(if (active) 24.dp else 18.dp, label = "flowViewIconSize")
+            val tint by androidx.compose.animation.animateColorAsState(if (active) p.accentText else p.textMuted.copy(alpha = 0.7f), label = "flowViewIconTint")
+            Box(
+                Modifier.size(Target).selectable(selected = active, role = Role.Tab) { onSelect(view) },
+                contentAlignment = Alignment.Center,
+            ) { Icon(icon, contentDescription = label, tint = tint, modifier = Modifier.size(size)) }
+        }
+    }
 }
 
-/** An icon over a small muted label, at least 48dp to touch (mockup: the row under the transport). */
+/** An icon alone (its name is spoken), at least 48dp to touch: the row under the transport. */
 @Composable
 private fun Entry(label: String, icon: ImageVector, onClick: () -> Unit) {
     val p = LocalPalette.current
-    Column(
-        Modifier.widthIn(min = 64.dp).heightIn(min = 52.dp).clip(RoundedCornerShape(10.dp)).clickable(role = Role.Button, onClick = onClick).padding(horizontal = 6.dp, vertical = 4.dp)
-            .semantics(mergeDescendants = true) { contentDescription = label },
-        horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center,
-    ) {
-        Icon(icon, contentDescription = null, tint = p.textMuted, modifier = Modifier.size(24.dp))
-        Text(label, style = MaterialTheme.typography.labelSmall.copy(fontSize = 12.sp), color = p.textMuted, maxLines = 1, modifier = Modifier.clearAndSetSemantics { })
-    }
+    Box(
+        Modifier.size(Target).clip(CircleShape).clickable(role = Role.Button, onClick = onClick).semantics { contentDescription = label },
+        contentAlignment = Alignment.Center,
+    ) { Icon(icon, contentDescription = null, tint = p.textMuted, modifier = Modifier.size(24.dp)) }
 }

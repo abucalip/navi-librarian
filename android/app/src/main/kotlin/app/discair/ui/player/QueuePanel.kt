@@ -80,7 +80,7 @@ fun TrackImageCards(tracks: List<ArtworkImage>, modifier: Modifier = Modifier) {
 
 /** The queue: tap a row to play it; the menu has Move up, Move down and Remove (no drag-only reordering). */
 @Composable
-fun QueuePanel(state: PlayerUiState, controller: PlayerController, modifier: Modifier = Modifier) {
+fun QueuePanel(state: PlayerUiState, controller: PlayerController, modifier: Modifier = Modifier, showSoundsLikeButton: Boolean = true) {
     val items = state.queue.items
     val repo = LocalRepository.current
     val play = LocalPlayActions.current
@@ -99,7 +99,7 @@ fun QueuePanel(state: PlayerUiState, controller: PlayerController, modifier: Mod
             Text(state.status, style = MaterialTheme.typography.bodySmall, color = app.discair.ui.theme.Ink.AccentText, modifier = Modifier.padding(bottom = 8.dp))
         }
         val playing = state.current
-        if (sonic && playing != null) {
+        if (sonic && playing != null && showSoundsLikeButton) {
             OutlinedButton(
                 onClick = { play.soundsLike(playing.songId, queuedIds) },
                 Modifier.heightIn(min = Target).padding(bottom = 8.dp),
