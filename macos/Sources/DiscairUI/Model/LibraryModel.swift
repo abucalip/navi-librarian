@@ -144,10 +144,8 @@ public final class LibraryModel {
     }
 
     /// Reads the home data. Picks are optional: without a Librarian login the library still shows.
-    /// `quiet` is a re-read of a library already on screen (after a Get was imported): the screen does not go back to
-    /// loading, and a failed read leaves what is shown as it was.
-    public func load(navidrome: NavidromeClient, librarian: LibrarianClient?, quiet: Bool = false) async {
-        if !quiet { phase = .loading }
+    public func load(navidrome: NavidromeClient, librarian: LibrarianClient?) async {
+        phase = .loading
         do {
             async let newest = navidrome.albumList(.newest, size: 24)
             async let first = navidrome.albumList(.alphabeticalByName, size: 120)
@@ -168,10 +166,17 @@ public final class LibraryModel {
             savedCopyDate = nil; savedCopyReason = nil
             cache?.put("home", snap)
         } catch let e as DiscairError {
-            if !quiet { fallBack(e) }
+            fallBack(e)
         } catch {
-            if !quiet { fallBack(ErrorMapping.map(error)) }
+            fallBack(ErrorMapping.map(error))
         }
+    }
+
+    /// After a Get was imported: reads only the newest albums (`getAlbumList2` newest, the list Android refreshes) and replaces
+    /// Recently Added. Nothing else is re-read; a failed read leaves the list as it was.
+    public func reloadNewest(navidrome: NavidromeClient) async {
+        guard isLive, phase == .loaded, let list = try? await navidrome.albumList(.newest, size: 24) else { return }
+        recent = list.enumerated().map { Self.item($0.element, index: $0.offset) }
     }
 
     /// Today's picks rotate on every visit to Home: the server shuffles the week's Current tastes lists on each read, so a visit

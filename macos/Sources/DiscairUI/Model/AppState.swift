@@ -285,14 +285,10 @@ public final class AppState {
         if library.isLive, let first = library.recent.first ?? library.albums.first { selectedAlbum = first }
     }
 
-    /// A Get finished importing: read the library again so the new album shows without a restart (Android does the same).
-    /// The screen stays as it is; a failed read keeps what is shown.
+    /// A Get finished importing: read the newest albums again so the new one shows in Recently Added without a restart.
     public func reloadLibraryAfterImport() async {
-        guard let session, let navidrome = session.navidrome, library.isLive, library.phase == .loaded else { return }
-        await library.load(navidrome: navidrome, librarian: session.librarian, quiet: true)
-        await library.loadSongs(navidrome: navidrome)
-        await library.loadAllAlbums(navidrome: navidrome)
-        await refreshHomeDashboard()
+        guard let navidrome = session?.navidrome else { return }
+        await library.reloadNewest(navidrome: navidrome)
     }
 
     /// Recomputes the Home figures from what the app already holds (the shared album list, the Gets, the saved taste) off the main
