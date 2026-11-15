@@ -23,11 +23,11 @@ def _starred(artists=(), albums=()):
 
 
 class WeightTests(unittest.TestCase):
-    def test_fresh_star_has_full_weight_and_is_below_a_save(self):
+    def test_fresh_star_has_full_weight_equal_to_a_save(self):
         weights = starred_seed_weights(
             _starred([{"id": "1", "name": "Band", "starred_at": NOW}]), _music_key, now=NOW)
         self.assertEqual(weights, {"band": STAR_SEED_WEIGHT})
-        self.assertLess(STAR_SEED_WEIGHT, SAVE_SEED_WEIGHT)
+        self.assertEqual(STAR_SEED_WEIGHT, SAVE_SEED_WEIGHT)
 
     def test_weight_halves_at_the_half_life_and_ends_at_expiry(self):
         def weight(age):

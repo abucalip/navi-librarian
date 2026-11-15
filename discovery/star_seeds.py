@@ -17,9 +17,9 @@ from typing import Any
 
 from integrations.navidrome.starred import fetch_starred
 
-# Half a save's seed weight (SAVE_SEED_WEIGHT is 1.0): a star is cheaper than a save and
-# lasts longer, so it should steer less per item.
-STAR_SEED_WEIGHT = 0.5
+# Equal to a save's seed weight (SAVE_SEED_WEIGHT is 1.0), by owner decision (2026-11-15).
+# A star lasts longer than a save, so it decays more slowly below.
+STAR_SEED_WEIGHT = 1.0
 # A star is a standing judgement, so it decays slower and expires later than a save.
 STAR_HALF_LIFE_SECONDS = 180 * 24 * 60 * 60
 STAR_EXPIRY_SECONDS = 365 * 24 * 60 * 60
