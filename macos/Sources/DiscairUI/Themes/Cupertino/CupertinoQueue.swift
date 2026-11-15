@@ -192,7 +192,7 @@ struct CupertinoQueueInspector: View {
             }
             .modifier(grab ?? ReorderGrab())
             HStack(spacing: 4) {
-                if playing { PlayingBars(active: state.player.isPlaying) }
+                if playing { PlayingBars(active: state.player.isPlaying, color: CU.textSecondary, pointSize: CU.Font.callout.size) }
                 Text(time).monospacedDigit()
             }
             .font(CU.Font.callout.weighted(.regular)).foregroundStyle(CU.textSecondary)
