@@ -154,6 +154,7 @@ internal fun CoverStackSettingsPage(
         CsGroup {
             RadioSettings(divider = false)
             ListenBrainzSettings()
+            BlocklistSettings()
             app.discair.ui.LibrarySettings()
         }
         CsEyebrow("Playback")

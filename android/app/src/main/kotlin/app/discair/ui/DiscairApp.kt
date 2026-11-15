@@ -258,6 +258,7 @@ fun SettingsScreen(state: UiState, model: AppViewModel, onBack: () -> Unit, onEq
         PlaybackSettings(container, onEqualizer, onCrossfade)
         LibrarySettings()
         app.discair.ui.settings.ListenBrainzSettings()
+        app.discair.ui.settings.BlocklistSettings()
         app.discair.ui.settings.RadioSettings()
         Spacer(Modifier.size(24.dp))
         // One joined group on one line, like the web's action groups.

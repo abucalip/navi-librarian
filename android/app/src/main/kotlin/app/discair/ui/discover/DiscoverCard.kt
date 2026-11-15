@@ -125,6 +125,7 @@ private fun CardMenu(entry: DiscoveryEntry, saveState: SaveState, onSave: () -> 
                 leadingIcon = { Icon(ArtIcons.Delete, contentDescription = null) },
                 onClick = { open = false; onDismiss(true) },
             )
+            PickFeedbackItems(entry) { open = false }
         }
     }
 }

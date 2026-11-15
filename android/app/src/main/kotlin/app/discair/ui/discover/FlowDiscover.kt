@@ -139,6 +139,7 @@ internal fun FlowDiscoverCard(
                     DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
                         DropdownMenuItem(text = { Text("Not this album") }, onClick = { menu = false; onDismiss(false) })
                         DropdownMenuItem(text = { Text("Not this artist") }, onClick = { menu = false; onDismiss(true) })
+                        PickFeedbackItems(entry) { menu = false }
                     }
                 }
             }

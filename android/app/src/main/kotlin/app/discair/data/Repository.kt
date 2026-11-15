@@ -178,6 +178,23 @@ interface LibraryRepository : AcquisitionApi {
     /** Sends feedback; throws unless the server answers `ok`. Nothing is assumed saved before this returns. */
     fun feedback(action: FeedbackAction, artist: String, album: String, metadata: JsonObject)
 
+    /** The blocklist screen's three lists, read live (never from a saved copy: an unblock must show at once). */
+    fun blocklist(): app.discair.model.Blocklist = app.discair.model.Blocklist()
+
+    /** Blocks a genre so it no longer appears in picks. Never changes the library. Throws when the server refuses. */
+    fun blockGenre(genre: String): Unit = throw UnsupportedOperationException()
+
+    fun unblockGenre(genre: String): Unit = throw UnsupportedOperationException()
+
+    /** Lifts a "Not this artist" (the hide and its score penalty). */
+    fun unblockArtist(artist: String): Unit = throw UnsupportedOperationException()
+
+    /** Marks an artist More or Less like this; [genres] and [lens] ride along as the server's metadata. */
+    fun setArtistLean(artist: String, lean: app.discair.model.Lean, genres: List<String>, lens: String?): Unit =
+        throw UnsupportedOperationException()
+
+    fun clearArtistLean(artist: String): Unit = throw UnsupportedOperationException()
+
     /** Asks the server to rebuild a list in the background (count 1-20). */
     fun refreshList(list: String)
 
@@ -445,6 +462,35 @@ class LibrarianRepository(
             client.post(listOf("api", "discovery", "feedback"), feedbackBody(action, artist, album, metadata)),
         )
         if (!reply.ok) throw IllegalStateException(reply.error ?: "The server did not accept this.")
+    }
+
+    override fun blocklist(): app.discair.model.Blocklist {
+        if (ReadMode.isCacheOnly) throw CacheMiss()
+        return app.discair.model.Blocklist(
+            genres = app.discair.model.parseBlockedGenres(client.get(listOf("api", "discovery", "blocked-genres"))),
+            hiddenArtists = app.discair.model.parseBlockedArtists(client.get(listOf("api", "discovery", "blocked-artists"))),
+            leans = app.discair.model.parseArtistLeans(client.get(listOf("api", "discovery", "artist-lean"))),
+        )
+    }
+
+    override fun blockGenre(genre: String) {
+        client.post(listOf("api", "discovery", "blocked-genres"), app.discair.model.genreBody(genre))
+    }
+
+    override fun unblockGenre(genre: String) {
+        client.delete(listOf("api", "discovery", "blocked-genres"), app.discair.model.genreBody(genre))
+    }
+
+    override fun unblockArtist(artist: String) {
+        client.delete(listOf("api", "discovery", "blocked-artists"), app.discair.model.artistBody(artist))
+    }
+
+    override fun setArtistLean(artist: String, lean: app.discair.model.Lean, genres: List<String>, lens: String?) {
+        client.post(listOf("api", "discovery", "artist-lean"), app.discair.model.leanBody(artist, lean, genres, lens))
+    }
+
+    override fun clearArtistLean(artist: String) {
+        client.delete(listOf("api", "discovery", "artist-lean"), app.discair.model.artistBody(artist))
     }
 
     override fun libraryResync(): Boolean =
