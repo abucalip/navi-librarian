@@ -20,6 +20,8 @@ public struct AlbumItem: Identifiable, Equatable, Sendable {
     public var coverArt: String? = nil
     /// Librarian's reason and suggested tracks, for picks.
     public var reason: String? = nil
+    /// Star Operation S1c: the short "why" line (`pickReason`), shown above the longer reason.
+    public var reasonLine: String? = nil
     public var suggestedTracks: [String] = []
     public var artistRemoteID: String? = nil
     public var songCount: Int? = nil

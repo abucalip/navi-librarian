@@ -16,9 +16,14 @@ public struct DashboardPick: Codable, Equatable, Sendable {
     public var releaseGroupMBID: String?
     /// The new-releases list sends its release group as `mbid`; other lists do not use this field for it.
     public var mbid: String?
+    /// Star Operation S1c (DISC-09): why the server picked it. A bad value is dropped, never the list.
+    public var because: PickBecause?
+
+    /// The reason line for this pick, or nil when there is nothing honest to say.
+    public var reasonLine: String? { pickReason(because: because, similarTo: similarTo ?? []) }
 
     enum CodingKeys: String, CodingKey {
-        case artist, album, reason, genres
+        case artist, album, reason, genres, because
         case suggestedTracks = "suggested_tracks"
         case similarTo = "similar_to"
         case dashboardCategory = "dashboard_category"
@@ -26,6 +31,37 @@ public struct DashboardPick: Codable, Equatable, Sendable {
         case releaseGroupMBID = "release_group_mbid"
         case mbid
     }
+}
+
+/// `because` on a personal pick: `{kind, names}`. Decoding never throws, so a malformed value costs only the reason line.
+public struct PickBecause: Codable, Equatable, Sendable {
+    public let kind: String?
+    public let names: [String]
+
+    public init(kind: String?, names: [String]) { self.kind = kind; self.names = names }
+
+    public init(from decoder: any Decoder) throws {
+        enum K: String, CodingKey { case kind, names }
+        let c = try? decoder.container(keyedBy: K.self)
+        kind = (try? c?.decodeIfPresent(String.self, forKey: .kind)) ?? nil
+        names = ((try? c?.decodeIfPresent([String].self, forKey: .names)) ?? nil) ?? []
+    }
+}
+
+/// The reason line for a personal pick (DISC-09). `tag` is a real seed: "Because you listen to ...". `similar_artists`
+/// is genre overlap: "Shares genres with ...". An unknown kind, or no usable names, gives no `because` reason. An older
+/// server sends only `similar_to`, the same overlap, so that gets the overlap wording. Nil when there is nothing to say.
+public func pickReason(because: PickBecause?, similarTo: [String]) -> String? {
+    let names = (because?.names ?? []).filter { !$0.trimmingCharacters(in: .whitespaces).isEmpty }
+    if !names.isEmpty {
+        switch because?.kind {
+        case "tag": return "Because you listen to " + names.joined(separator: ", ")
+        case "similar_artists": return "Shares genres with " + names.joined(separator: ", ")
+        default: break
+        }
+    }
+    let overlap = similarTo.filter { !$0.trimmingCharacters(in: .whitespaces).isEmpty }
+    return overlap.isEmpty ? nil : "Shares genres with " + overlap.joined(separator: ", ")
 }
 
 public struct DashboardPicks: Decodable, Equatable, Sendable {
