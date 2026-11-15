@@ -871,4 +871,12 @@ Earlier project log entries are preserved verbatim in [PROJECT_LOG_HISTORY.md](d
 - Built: `FlowDiscoverSwitch`, `FlowListSheet` and `FlowDiscoverRules` in `ui/discover/FlowDiscover.kt`; the Flow branch of `DiscoverScreen` draws the switch instead of `FlowDiscoverHeader`. Lens/genre tabs, one-column cards and Insights lens headings are unchanged until D2 and D3.
 - Tests run locally (JDK 17, filtered): `FlowDiscoverRulesTest` (new, 5), `FlowTest`, `ExistingLayoutsTest`, `DiscoveryTest`, `InsightsTest`, `FlowPagesRulesTest`, `SoftBrutTest`, `NavRulesTest`. Full suite not run (owner rule).
 - Not done: no device or emulator check, no comparison with frames B1 and B2.
-- Next action: D2.
+- Next action: D2 after the owner merges D1.
+
+## 2026-11-15 — Flow Discover D2: sections and grid card
+
+- Built: on Flow, `ListBody` draws `FlowDiscoverGrid` (one two-column `LazyVerticalGrid`, full-span `FlowLensHeading` and `FlowSectionNote` items) instead of `EditorTabs` and `HorizontalPager`; new `FlowDiscoverGridCard` (cover with Get on it, title, artist and year, third line, Save and the three-dot menu); section building, grid keys and the third-line rule are pure functions in `FlowDiscoverRules`. Sideways swipes already went to `switchBy`, and Flow has no pager now. `FlowSmallButton` draws an icon-only primary button's glyph in `onAccent` (it was `text`, dark on the accent). `FlowDiscoverCard` and `pagesFor` stay for D4 and the other themes. Daily picks turned off draws the whole-list note once, not once per lens.
+- Open point O1 default used (36 wide, 48 tall Save and menu boxes). The third line sits under the 48 dp row, a few dp lower than the mockup.
+- Tests run locally (JDK 17, filtered): `FlowDiscoverRulesTest` (13), `FlowTest`, `ExistingLayoutsTest`, `DiscoveryTest`, `InsightsTest`, `FlowPagesRulesTest`, `SoftBrutTest`, `NavRulesTest`. Full suite not run (owner rule).
+- Not done: no device or emulator check, no comparison with frames B1 and B3.
+- Next action: D3 after the owner merges D2.

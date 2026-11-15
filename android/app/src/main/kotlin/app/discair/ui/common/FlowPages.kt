@@ -221,7 +221,7 @@ fun FlowSmallButton(
                 .clip(shape).background(if (primary) p.accent else p.raised),
             horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically,
         ) {
-            if (icon != null) Icon(icon, contentDescription = null, tint = if (label == null) p.text else ink, modifier = Modifier.size(if (label == null) 18.dp else 20.dp))
+            if (icon != null) Icon(icon, contentDescription = null, tint = if (label == null && !primary) p.text else ink, modifier = Modifier.size(if (label == null) 18.dp else 20.dp))
             if (icon != null && label != null) Spacer(Modifier.width(4.dp))
             if (label != null) Text(label, color = ink, maxLines = 1, style = MaterialTheme.typography.labelLarge.copy(fontSize = 14.sp, fontWeight = FontWeight.SemiBold))
         }
