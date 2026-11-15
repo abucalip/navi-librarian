@@ -1,4 +1,4 @@
-## 2026-11-15 — Star Operation S4b: safer and deeper values from a replay measurement (PR #1102)
+## 2026-11-15 — Star Operation S4b: safer and deeper values from a replay measurement (merged #1102, squash `1e39cd98`, head `25428964`; CI passed: compile, container-smoke, lint-changed, test-and-build, validate-container)
 
 - Measurement: one live run, approved by the owner, through the existing gatherer (`lens_service.build`, nothing stored) and one personal-list capture (`recommend_new_music`), both on a copy of the local test data; the inputs are private, outside the repository, mode 0600. `scripts/discovery_mode_sweep.py` then replayed them offline over a grid (no further provider traffic). Aggregates only below.
 - Personal list (10 picks, 156 candidates: 30 adjacent, 116 adventurous, 10 cross-genre): `balanced` already picks 7 adventurous, above the floor of 2, so floor divisors 10 to 2 change nothing; divisor 1 (floor 10) makes every pick adventurous and cuts genre families from 6 to 3 (entropy 2.16 to 0.92). The floor is a floor: it cannot make a list safer, and raising it only reduces spread. Decision proposed: the floor is the same in every mode.
