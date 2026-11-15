@@ -113,11 +113,11 @@ def set_library_resync_settings(settings_write, value):
 
 
 STAR_SEED_KEY = "star_seed_enabled"
-DEFAULT_STAR_SEED_ENABLED = False
+DEFAULT_STAR_SEED_ENABLED = True
 
 
 def star_seed_enabled_value(settings_read):
-    """Read the Navidrome-stars seed switch (Star Operation, S3b); absent or non-boolean means off."""
+    """Read the Navidrome-stars seed switch (Star Operation, S3b); absent or non-boolean means on."""
     value = settings_read().get(STAR_SEED_KEY, DEFAULT_STAR_SEED_ENABLED)
     return value if type(value) is bool else DEFAULT_STAR_SEED_ENABLED
 

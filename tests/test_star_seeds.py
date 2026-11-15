@@ -91,17 +91,17 @@ class CacheTests(unittest.TestCase):
 
 
 class SettingTests(unittest.TestCase):
-    def test_default_is_off_and_bad_values_mean_off(self):
-        self.assertFalse(star_seed_enabled_value(lambda: {}))
-        self.assertFalse(star_seed_enabled_value(lambda: {"star_seed_enabled": "yes"}))
-        self.assertTrue(star_seed_enabled_value(lambda: {"star_seed_enabled": True}))
-        self.assertEqual(json.loads(get_star_seed_settings(lambda: {})), {"star_seed_enabled": False})
+    def test_default_is_on_and_bad_values_mean_on(self):
+        self.assertTrue(star_seed_enabled_value(lambda: {}))
+        self.assertTrue(star_seed_enabled_value(lambda: {"star_seed_enabled": "no"}))
+        self.assertFalse(star_seed_enabled_value(lambda: {"star_seed_enabled": False}))
+        self.assertEqual(json.loads(get_star_seed_settings(lambda: {})), {"star_seed_enabled": True})
 
     def test_set_persists_booleans_and_refuses_others_without_writing(self):
         written = []
-        ok = json.loads(set_star_seed_settings(written.append, True))
+        ok = json.loads(set_star_seed_settings(written.append, False))
         self.assertTrue(ok["ok"])
-        self.assertEqual(written, [{"star_seed_enabled": True}])
+        self.assertEqual(written, [{"star_seed_enabled": False}])
         bad = json.loads(set_star_seed_settings(written.append, "true"))
         self.assertFalse(bad["ok"])
         self.assertEqual(len(written), 1)
@@ -124,9 +124,9 @@ class GathererTests(unittest.TestCase):
         log = _run([], **kw)
         return log, run_metrics.snapshot_and_reset()["counts"]
 
-    def test_setting_off_or_absent_reads_no_stars_and_changes_nothing(self):
+    def test_setting_off_or_unwired_reads_no_stars_and_changes_nothing(self):
         base = _run([])
-        for reader in (None, lambda: {}, lambda: {"star_seed_enabled": False}):
+        for reader in (None, lambda: {"star_seed_enabled": False}):
             calls = []
             run_metrics.snapshot_and_reset()
             self.assertEqual(_run([], settings_read=reader, api_call=self._api(calls=calls)), base)
@@ -195,11 +195,11 @@ class StarSeedRouteTests(unittest.TestCase):
             _discovery_settings_write = staticmethod(lambda values: self.store.update(values))
         self.librarian = Librarian()
 
-    def test_get_defaults_off_then_put_round_trips(self):
-        self.assertEqual(self.routes.get_star_seed_settings(self.librarian), {"star_seed_enabled": False})
-        result = self.routes.set_star_seed_settings({"star_seed_enabled": True}, self.librarian)
-        self.assertTrue(result["ok"])
+    def test_get_defaults_on_then_put_round_trips(self):
         self.assertEqual(self.routes.get_star_seed_settings(self.librarian), {"star_seed_enabled": True})
+        result = self.routes.set_star_seed_settings({"star_seed_enabled": False}, self.librarian)
+        self.assertTrue(result["ok"])
+        self.assertEqual(self.routes.get_star_seed_settings(self.librarian), {"star_seed_enabled": False})
 
     def test_put_rejects_non_boolean_without_writing(self):
         from fastapi import HTTPException

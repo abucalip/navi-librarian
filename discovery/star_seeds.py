@@ -7,7 +7,7 @@ queries run. A star never makes an owned album a candidate and never adds a quer
 ``cached_starred``, whose callables are injected.
 
 The constants are stated policy, proposed for the owner's approval after the replay
-comparison; they are not fixture-calibrated quality claims. The setting is off by default.
+comparison; they are not fixture-calibrated quality claims. The setting is on by default (owner decision, 2026-11-15).
 """
 from __future__ import annotations
 
