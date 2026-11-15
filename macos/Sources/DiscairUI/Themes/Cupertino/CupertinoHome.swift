@@ -33,7 +33,8 @@ struct CupertinoHome: View {
         .scrollEdgeEffectStyle(.hard, for: .top)
         .onGeometryChange(for: CGFloat.self) { $0.size.width - CU.Space.xl * 2 } action: { width = $0 }
         .task(id: refreshKey) { if state.session != nil { await state.refreshHomeDashboard() } }
-        .task { await state.loadHomeFeeds() }
+        // Keyed on the connection: Home can open before the session is ready, and the feeds (the phone handoff among them) must be read once it is.
+        .task(id: state.session != nil) { await state.loadHomeFeeds() }
         .task { await state.loadStationsForHome() }
         .task { await state.library.reshufflePicks(librarian: state.session?.librarian) }
     }

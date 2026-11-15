@@ -126,6 +126,7 @@ public final class AppState {
     public private(set) var popularityStatus: JobStatus?
     public private(set) var insightsJobStatus: JobStatus?
     public private(set) var phoneQueue: NavidromePlayQueue?
+    @ObservationIgnored private var homeBuildCount = 0
     @ObservationIgnored private let homeDefaults: UserDefaults
     private static let neverPlayedKey = "discair.home.neverPlayedReadings"
     public let smart = SmartPlaylistModel()
@@ -290,7 +291,13 @@ public final class AppState {
             radioPlays: radioPlays, keptRadioPlays: Set(radioDownloads.attempts.keys), listensByDay: taste.listensByDay,
             handoff: HomeScreen.handoff(queue: phoneQueue, now: now, clientName: SubsonicAuth.clientName, playingSongID: player.current?.songID),
             now: now, calendar: calendar)
-        homeDashboard = await Task.detached(priority: .userInitiated) { HomeDashboard.build(input) }.value
+        // Builds run off the main thread and can finish out of order; an older build must not replace a newer one (it would
+        // drop what the feeds added meanwhile, such as the phone handoff).
+        homeBuildCount += 1
+        let mine = homeBuildCount
+        let built = await Task.detached(priority: .userInitiated) { HomeDashboard.build(input) }.value
+        guard mine == homeBuildCount else { return }
+        homeDashboard = built
         if let never = homeDashboard.neverPlayed {
             let next = HomeScreen.recording(readings, count: never, now: now, calendar: calendar)
             if next != readings, let data = try? JSONEncoder().encode(next) { homeDefaults.set(data, forKey: Self.neverPlayedKey) }

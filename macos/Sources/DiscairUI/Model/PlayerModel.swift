@@ -135,6 +135,9 @@ public final class PlayerModel {
     public internal(set) var live: LiveSession?
     /// The station that was stopped last, so Play can start it again. Cleared when a library song starts.
     @ObservationIgnored var stoppedStation: RadioStation?
+    /// True while a library song sits paused only because a station started. Stopping that station then leaves Play on the song,
+    /// not on the station. Cleared when the song plays again, another song starts, or the queue stops.
+    @ObservationIgnored var songPausedForStation = false
     /// The playing station as the server sent it, for Next and Previous.
     @ObservationIgnored var stationByLive: RadioStation?
     @ObservationIgnored let liveOutput: LiveOutput
@@ -295,7 +298,7 @@ public final class PlayerModel {
         if togglePlayPauseLive() { return }
         switch phase {
         case .playing: output.pause(); phase = .paused; position = output.position; stopTicking(); persist()
-        case .paused: output.play(); phase = .playing; startTicking()
+        case .paused: songPausedForStation = false; output.play(); phase = .playing; startTicking()
         case .idle, .failed: if current != nil { startCurrent(resume: true) }
         case .loading: break
         }
@@ -361,6 +364,7 @@ public final class PlayerModel {
 
     public func stop() {
         endLive()
+        stoppedStation = nil; songPausedForStation = false
         sleepTimer.cancel()
         loadGeneration += 1
         loadTask?.cancel()
@@ -390,7 +394,7 @@ public final class PlayerModel {
         guard let item = queue.current else { stop(); return }
         guard let urls else { phase = .failed("Not connected to Navidrome. Check Settings."); return }
         endLive()
-        stoppedStation = nil
+        stoppedStation = nil; songPausedForStation = false
         loadGeneration += 1
         let mine = loadGeneration
         loadTask?.cancel()
