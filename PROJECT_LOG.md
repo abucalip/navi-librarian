@@ -1,3 +1,10 @@
+## 2026-11-15 — Star Operation S2c: blocklist screen and menu entries on the three clients (merged #1097, #1098)
+
+- #1097 (squash `de3cfb1f`, head `4f98e4e9`): `discovery/artist_block.py` and `GET`/`DELETE /api/discovery/blocked-artists` (DISC-12, lists and lifts "Not this artist"; no schema change). Web More menu (`createFeedbackMenuButton`) and Blocklist page; Android `PickFeedbackItems` on the three Discover card menus and `BlocklistSettings` in all three settings layouts (`LibrarianClient.delete` with a JSON body); macOS `CupertinoPickFeedbackMenu`, `CupertinoBlocklist`, `BlocklistModel`, `SettingsTab.blocklist`. #1097 merged at its first head, before the review fixes were pushed.
+- #1098 (squash `f0493185`, head `bf36de3c`): review fixes. Web menu width, lean stores the item's own `lens`, Not this artist hides the row and is offered only on reloading lists, Block genre reloads them; Android reads lens `tags` and sends `lens`; macOS no menu on Saved rows, Discover reloads after Block genre; `macos/DESIGN.md` section.
+- Tests run (filtered): Python `test_discovery_artist_block` (4), `test_blocklist_ui_contract` (5), all `*ui_contract*` tests (481), routes and S2a/S2b suites; Android `BlocklistTest` (6), `DiscoveryTest`; macOS `BlocklistModelTests` (7) with the Home, pages and services render suites (111). CI passed on both heads. Full suite not run.
+- Not verified: nothing seen in a browser, on a device or in the app (menu placement and focus, themed web layouts, Android menus and TalkBack, macOS menus, Night mode, VoiceOver). Open: Android Home pick menus not changed; macOS offers only a pick's first genre (none on lens picks); web dashboard strip and shelf have no Not this artist.
+
 ## 2026-11-15 — Star Operation S2b: More like this and Less like this (merged #1096)
 
 - `discovery/artist_lean.py`: one row per artist (scope `artist_lean`), newer lean replaces older; `combined_seed_weights` and `combined_seed_genres` feed tag selection in `candidate_gathering`; `lean_boost` and `lean_penalty` feed `apply_feedback_signal`. `GET`/`POST`/`DELETE /api/discovery/artist-lean`. Requirement DISC-11.
