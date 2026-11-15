@@ -1,4 +1,4 @@
-## 2026-11-15 — Star Operation S3a: getStarred2 read and parser (PR #1099, open)
+## 2026-11-15 — Star Operation S3a: getStarred2 read and parser (merged #1099, squash `2790e50b`)
 
 - `integrations/navidrome/starred.py`: `fetch_starred` makes one `getStarred2` call through an injected `api_call`; `parse_starred` returns starred artists and albums with `starred_at` as epoch seconds or `None`. Songs ignored; errors propagate. Exported from `integrations/navidrome/__init__.py`. No caller, no behaviour change, no requirement row yet (S3b).
 - Tests run (filtered): `test_navidrome_starred` (8 pass), `test_navidrome_client` (10 pass). Full suite not run. pylint not installed locally; `check_lint_changed.py` left to CI.
