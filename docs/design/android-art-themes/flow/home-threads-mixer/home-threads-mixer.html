@@ -1,0 +1,376 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Flow Home Threads Mixer</title><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"><style>/*
+ * Shared by both themes: the review page, the phone frame (360 x 780 dp, 1 CSS px = 1 dp), layout helpers
+ * and the stand-in artwork. Nothing here carries a theme's look; that is soft-brut.css and flow.css.
+ */
+*{box-sizing:border-box}
+body{margin:0;background:#E9E7E1;color:#1B1B1F;font:14px/1.45 Inter,system-ui,sans-serif;padding:28px}
+.doc h1{font:700 26px/1.15 'Space Grotesk',system-ui,sans-serif;margin:0 0 6px;letter-spacing:-.02em}
+.doc p{margin:0 0 22px;max-width:76ch;color:#55535C}
+.frames{display:flex;flex-wrap:wrap;gap:36px 28px;align-items:flex-start}
+figure{margin:0}
+figcaption{font:500 12px/1.3 'JetBrains Mono',ui-monospace,monospace;margin-bottom:8px;color:#55535C;max-width:378px;min-height:32px}
+
+/* phone frame */
+.phone{position:relative;width:378px;height:798px;border:9px solid #101012;border-radius:44px;overflow:hidden;background:var(--page);color:var(--text);font-family:var(--f-body);font-size:14px;line-height:20px}
+.scr{height:100%;overflow:hidden;display:flex;flex-direction:column;gap:16px}
+.scr>*{flex:none}
+.status{display:flex;justify-content:space-between;height:32px;align-items:flex-end;padding:0 22px;font-size:12px;font-weight:600}
+.dock{position:absolute;left:0;right:0;bottom:0;padding:0 12px 12px;display:flex;flex-direction:column;gap:8px;z-index:3}
+.scrim{position:absolute;inset:0;background:rgba(0,0,0,.4);z-index:4}
+.sheet{position:absolute;left:0;right:0;bottom:0;z-index:5;padding:10px 16px 24px;display:flex;flex-direction:column;gap:14px}
+.sheet::before{content:"";width:36px;height:4px;border-radius:2px;background:var(--muted);opacity:.5;align-self:center}
+.snack{position:absolute;left:12px;right:12px;bottom:150px;z-index:5;display:flex;align-items:center;gap:12px;padding:12px 14px}
+
+/* layout helpers */
+.pad{padding-inline:16px}
+.row{display:flex;align-items:center;gap:10px}
+.col{display:flex;flex-direction:column;gap:12px}
+.sp{flex:1;min-width:0}
+.ctr{text-align:center;justify-content:center}
+.hs{display:flex;gap:12px;overflow:hidden;padding-inline:16px}
+.hs>*{flex:none}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.g2>*{min-width:0}
+.wrapc{display:flex;flex-wrap:wrap;gap:8px}
+.el{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.phone p,.phone h2,.phone h3,.phone h4{margin:0}
+.phone svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.phone svg.f{fill:currentColor;stroke:none}
+.phone svg.s{width:18px;height:18px}
+.phone svg.chart{width:100%;height:auto;stroke-width:0}
+.mut{color:var(--muted)}
+.sm{font-size:12px;line-height:18px}
+.num{font-variant-numeric:tabular-nums}
+.ok{color:var(--ok)}.cau{color:var(--caution)}.dan{color:var(--danger)}
+
+/* stand-in cover art (the app shows the real covers) */
+.cv{aspect-ratio:1;display:block;flex:none}
+.k1{background:linear-gradient(#0000 78%,#0a1226 78%),repeating-linear-gradient(90deg,#16264a 0 13px,#22407c 13px 19px)}
+.k2{background:radial-gradient(circle at 50% 56%,#f7a23b 0 17%,#0000 17.5%),linear-gradient(#7a1f2b,#e9762b 56%,#3a1420 56%)}
+.k3{background:radial-gradient(circle,#0000 0 21%,#5fb8cf 22% 30%,#0000 31%),#132d33}
+.k4{background:radial-gradient(circle at 30% 30%,#7b5cff,#1a8fd1 55%,#0d2a66)}
+.k5{background:radial-gradient(ellipse 22% 26% at 50% 36%,#d98a45 0 98%,#0000 100%),linear-gradient(90deg,#0000 48.5%,#5b3a23 48.5% 51.5%,#0000 51.5%),linear-gradient(#dfe6ea 80%,#6b4a2f 80%)}
+.k6{background:conic-gradient(from 45deg,#ff6fa3,#ffd84d,#ff6fa3,#7ad7f0,#ff6fa3)}
+.k7{background:linear-gradient(160deg,#0f3d2e,#3fa36c 60%,#e8d77a)}
+.k8{background:repeating-radial-gradient(circle at 50% 120%,#111 0 9px,#e9e6dc 9px 10px)}
+.k9{background:linear-gradient(135deg,#b3186d,#f08a4b)}
+.k10{background:radial-gradient(circle at 60% 55%,#2747c7 0 28%,#0000 28.5%),#e9dcc3}
+.k11{background:linear-gradient(90deg,#f2c230 50%,#0e6b6b 50%)}
+.k12{background:linear-gradient(200deg,#cfd6dd,#6f7c8a 60%,#2b323a)}
+/* stand-in artist photos */
+.ar{display:block;flex:none;aspect-ratio:1;background:radial-gradient(circle at 50% 40%,var(--h) 0 17%,#0000 17.6%),radial-gradient(ellipse 44% 36% at 50% 102%,var(--h) 0 98%,#0000 100%),var(--b)}
+.a1{--b:linear-gradient(#e9a13b,#c2541c);--h:#3a1a12}
+.a2{--b:linear-gradient(#9fc4e8,#3b5fa8);--h:#12203f}
+.a3{--b:linear-gradient(#d8d2c4,#8d8676);--h:#2a2722}
+.a4{--b:linear-gradient(#f3a6c4,#a8387a);--h:#3d0f2b}
+.a5{--b:linear-gradient(#a9e0c1,#2f7f63);--h:#0e2f25}
+.a6{--b:linear-gradient(#c9b8f5,#5b45b8);--h:#1d1447}
+/* stand-in station logos */
+.lg{width:48px;height:48px;display:grid;place-items:center;font-weight:800;font-size:13px;color:#fff;flex:none}
+.l1{background:#d6336c}.l2{background:#1c7ed6}.l3{background:#2b8a3e}.l4{background:#5f3dc4}.l5{background:#e67700}
+
+/* structure only; each theme gives these their look */
+.top{display:flex;align-items:center;gap:6px;padding:4px 16px 0;min-height:48px}
+.bar{display:flex;align-items:center;gap:4px;padding:4px 8px 0;min-height:48px}
+.ib{width:44px;height:44px;display:grid;place-items:center;position:relative;flex:none}
+.bdg{position:absolute;font-style:normal;min-width:16px;height:16px;border-radius:8px;font-size:10px;font-weight:700;display:grid;place-items:center}
+.h{display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding-inline:16px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;white-space:nowrap}
+.tabs{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;text-align:center}
+.chip{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.li{display:flex;align-items:center;gap:12px;min-height:64px}
+.nav{display:grid;grid-template-columns:repeat(4,1fr)}
+.nav span{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px}
+.mini{display:flex;align-items:center;gap:10px;height:56px}
+.mini .cv{width:40px}
+.sw{position:relative;width:52px;height:32px;flex:none}
+.sw::after{content:"";position:absolute;top:50%;transform:translateY(-50%);border-radius:50%}
+.trk{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
+.trkn{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;font-size:11px;line-height:16px}
+.seek{position:relative}
+.ctl{display:flex;align-items:center;justify-content:space-between}
+.cb{display:grid;place-items:center}
+.bars{display:flex;flex-direction:column;gap:10px}
+.bars div{display:grid;grid-template-columns:92px 1fr 40px;gap:10px;align-items:center}
+.eq{display:grid;grid-template-columns:repeat(10,1fr);gap:6px;height:150px;align-items:end}
+.eq i{position:relative;height:100%}
+.sk{display:block;background:var(--raised)}
+.swt{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.swt div{display:flex;flex-direction:column;gap:6px;font-size:12px;line-height:16px}
+.swt i{display:block;height:56px}
+
+/*
+ * Flow · Warm white. An iOS-inspired theme: no outlines, no hard shadows. Large titles, continuous corners, soft depth,
+ * translucent bars, capsule buttons, grouped lists. The artwork supplies the colour. All values are dp (1 CSS px = 1 dp).
+ * The token block is the spec: docs/ANDROID_ART_THEMES_PROPOSAL.md section 4 maps each token to a Palette role.
+ */
+.fl{
+  /* colour roles */
+  --page:#FBFAF7; --rail:#FBFAF7; --surface:#FFFFFF; --raised:#EFECE5;
+  --edge:#E2DFD6; --edge-strong:#8E887B; --text:#15130F; --muted:#6F6A60;
+  --accent:#C2410C; --accent-dim:#FBE4D5; --on-accent:#FFFFFF;
+  --ok:#1E7A3C; --ok-dim:#DCEEDF; --caution:#8A5300; --caution-dim:#F8E8CC;
+  --danger:#C0271A; --danger-dim:#F9DCD8; --info:#1F5FBF; --info-dim:#DCE7F8;
+  --chart1:#C2410C; --chart2:#A8A296; --chart3:#D9D4C8; --chart-ghost:#EFECE5; --chart-grid:#E2DFD6; --chart-base:#8E887B;
+  --bar:rgba(255,255,255,.86); --hair:rgba(0,0,0,.08);
+  /* shape and depth */
+  --r-card:16px; --r-cover:14px; --r-cover-sm:8px; --r-pill:999px;
+  --e1:0 4px 14px -10px rgba(21,19,15,.30);            /* cards, grouped lists */
+  --e2:0 6px 22px -8px rgba(21,19,15,.30);             /* floating bars */
+  --e3:0 22px 34px -18px rgba(21,19,15,.60);           /* the cover in front */
+  /* type */
+  --f-display:'Inter',system-ui,sans-serif; --f-body:'Inter',system-ui,sans-serif; --f-label:'Inter',system-ui,sans-serif;
+}
+.fl{letter-spacing:-.01em}
+.fl h2{font:700 24px/28px var(--f-display);letter-spacing:-.02em}
+.fl h3{font:700 20px/24px var(--f-display);letter-spacing:-.02em}
+.fl h4{font:600 15px/20px var(--f-body)}
+.fl .lt{font:800 30px/36px var(--f-display);letter-spacing:-.03em}
+.fl .wm{font-size:26px}
+.fl .eb{font:600 12px/16px var(--f-label);letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
+.fl .h a,.fl .lk{font-weight:500;font-size:14px;color:var(--accent)}
+.fl .numeral{font:700 28px/32px var(--f-display);letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+
+.fl .cv{border-radius:var(--r-cover-sm)}
+.fl .cv.lgc{border-radius:var(--r-cover);box-shadow:var(--e3)}
+.fl .ar.rd{border-radius:50%}
+.fl .lg{border-radius:10px}
+.fl .card,.fl .tile{background:var(--surface);border-radius:var(--r-card);box-shadow:var(--e1);padding:14px}
+.fl .ib{width:36px;height:36px;border-radius:50%;background:var(--raised);margin-left:6px}
+.fl .ib svg{width:20px;height:20px}
+.fl .bar .ib{background:none;margin:0;width:44px;height:44px;color:var(--accent)}
+.fl .bdg{top:-3px;right:-3px;background:var(--accent);color:var(--on-accent)}
+.fl .btn{height:44px;padding:0 18px;border-radius:22px;font-weight:600;font-size:15px;background:var(--raised);color:var(--text)}
+.fl .btn.p{background:var(--accent);color:var(--on-accent)}
+.fl .btn.t{color:var(--accent)}
+.fl .btn.sq{width:44px;padding:0}
+.fl .btn.sm{height:34px;padding:0 14px;font-size:14px}
+.fl .btn.d{color:var(--danger)}
+.fl .tag{font:600 11px/16px var(--f-label);letter-spacing:.03em;text-transform:uppercase;border-radius:6px;padding:2px 7px;background:var(--raised);color:var(--muted);display:inline-block}
+.fl .tag.y{background:var(--caution-dim);color:var(--caution)}.fl .tag.a{background:var(--accent-dim);color:var(--accent)}
+.fl .chip{height:34px;padding:0 14px;border-radius:17px;font-weight:500;font-size:14px;background:var(--raised)}
+.fl .chip.on{background:var(--text);color:var(--page)}
+.fl .tabs{margin-inline:16px;background:var(--raised);border-radius:11px;padding:2px;font-size:13px;font-weight:600}
+.fl .tabs span{padding:7px 0;border-radius:9px}
+.fl .tabs .on{background:var(--surface);box-shadow:0 2px 6px -2px rgba(0,0,0,.25)}
+.fl .field{height:44px;margin-inline:16px;display:flex;align-items:center;gap:8px;padding:0 12px;font-size:16px;background:var(--raised);border-radius:12px}
+.fl .field svg{width:20px;height:20px;color:var(--muted)}
+.fl .list{display:flex;flex-direction:column;padding-inline:16px}
+.fl .li{border-bottom:.5px solid var(--edge)}
+.fl .li:last-child{border:0}
+.fl .list.card{margin-inline:16px;padding:0 12px}
+.fl .li .cv,.fl .li .ar{width:48px}
+.fl .li.on h4{color:var(--accent)}
+.fl .ic{width:32px;height:32px;border-radius:8px;display:grid;place-items:center;background:var(--raised);flex:none}
+.fl .ic svg{width:18px;height:18px}
+.fl .chev{width:16px!important;height:16px!important;color:#B5B0A5;stroke-width:2.4!important}
+.fl .prog{height:4px;border-radius:2px;background:var(--raised);overflow:hidden}
+.fl .prog i{display:block;height:100%;background:var(--accent);border-radius:2px}
+.fl .trk i{height:4px;border-radius:2px;background:var(--raised)}
+.fl .trk i.on{background:var(--accent)}
+.fl .trk i.bad{background:var(--danger)}
+.fl .sw{border-radius:16px;background:#D9D5CB}
+.fl .sw::after{left:2px;width:28px;height:28px;background:#fff;box-shadow:0 2px 5px rgba(0,0,0,.25)}
+.fl .sw.on{background:var(--ok)}
+.fl .sw.on::after{left:auto;right:2px}
+.fl .banner{margin-inline:16px;padding:10px 12px;border-radius:12px;background:var(--caution-dim);display:flex;gap:10px;align-items:center}
+.fl .cap b{display:block;font-weight:600;font-size:14px}
+.fl .cap span{font-size:13px;line-height:18px;color:var(--muted)}
+.fl .who{width:84px;text-align:center;font-size:12px;line-height:16px;font-weight:500}
+.fl .who .ar{width:80px;margin:0 auto 6px}
+
+/* dock: translucent capsules */
+.fl .mini,.fl .nav{background:var(--bar);-webkit-backdrop-filter:blur(22px) saturate(1.6);backdrop-filter:blur(22px) saturate(1.6);box-shadow:var(--e2),inset 0 0 0 .5px var(--hair)}
+.fl .mini{border-radius:18px;padding:0 14px 0 8px}
+.fl .mini .cv{border-radius:9px}
+.fl .nav{border-radius:30px;padding:5px}
+.fl .nav span{height:50px;border-radius:25px;font-size:10.5px;font-weight:600;color:var(--muted)}
+.fl .nav .on{color:var(--accent);background:var(--raised)}
+.fl .sheet{background:var(--surface);border-radius:24px 24px 0 0}
+.fl .snack{background:var(--text);color:var(--page);border-radius:14px;box-shadow:var(--e2)}
+.fl .snack .lk{color:#FFB48A}
+
+/* Home: the cover carousel and portrait cards */
+.fl .flow{position:relative;height:236px;overflow:hidden}
+.fl .flow .cv{position:absolute;top:50%;border-radius:var(--r-cover)}
+.fl .flow .c{width:220px;left:50%;transform:translate(-50%,-50%);box-shadow:var(--e3);z-index:2}
+.fl .flow .s{width:160px;opacity:.75;transform:translateY(-50%)}
+.fl .flow .s.lf{left:-70px}.fl .flow .s.rt{right:-70px}
+.fl .pc{width:150px;border-radius:18px;overflow:hidden;position:relative}
+.fl .pc .ar{width:100%;aspect-ratio:3/4}
+.fl .pc b{position:absolute;left:0;right:0;bottom:0;padding:26px 12px 10px;color:#fff;font-size:14px;background:linear-gradient(#0000,rgba(0,0,0,.7))}
+
+/* Discover cards: one column, cover left */
+.fl .cards{display:flex;flex-direction:column;gap:12px;padding-inline:16px}
+.fl .dc{display:grid;grid-template-columns:112px 1fr;grid-template-rows:auto auto auto 1fr;column-gap:14px;background:var(--surface);border-radius:var(--r-card);box-shadow:var(--e1);padding:10px}
+.fl .dc .cv{width:112px;grid-row:1/-1;border-radius:10px}
+.fl .dc .acts{display:flex;gap:8px;align-self:end}
+.fl .dc .acts .btn{height:34px;padding:0 14px;font-size:14px}
+.fl .dc .acts .btn.sq{width:34px;padding:0}
+
+/* Album and artist headers: centred art over a wash of its colour */
+.fl .hero{display:flex;flex-direction:column;gap:10px;padding:0 16px;align-items:center;text-align:center}
+.fl .hero .art{width:232px;height:232px;margin:2px 0 8px}
+.fl .hero .art .cv{width:100%;border-radius:var(--r-cover);box-shadow:var(--e3)}
+.fl.wash .scr{background:linear-gradient(var(--wash,#DFE6EA),var(--page) 420px)}
+.fl .ahero{position:relative;margin-top:-96px}
+.fl .ahero .ar{width:100%;aspect-ratio:1/.92}
+.fl .ahero .ov{position:absolute;left:0;right:0;bottom:0;padding:60px 16px 14px;color:#fff;background:linear-gradient(#0000,rgba(0,0,0,.78));display:flex;align-items:flex-end;gap:12px}
+.fl .ahero .ov .mut{color:rgba(255,255,255,.8)}
+.fl.ov .status{position:relative;z-index:2;color:#fff}
+.fl .over{position:relative;z-index:2;color:#fff}
+.fl .over .ib{color:#fff;background:rgba(0,0,0,.28)}
+.fl .trow{display:grid;grid-template-columns:24px 1fr auto;gap:10px;align-items:center;min-height:48px;border-bottom:.5px solid var(--edge)}
+.fl .trow.on{color:var(--accent);font-weight:600}
+
+/* Now Playing */
+.fl.np .npc{width:312px;margin:0 auto;border-radius:18px;box-shadow:var(--e3)}
+.fl .seek{height:4px;border-radius:2px;background:rgba(21,19,15,.14)}
+.fl .seek i{position:absolute;left:0;top:0;bottom:0;background:var(--text);border-radius:2px}
+.fl .seek b{position:absolute;top:-5px;width:14px;height:14px;margin-left:-7px;border-radius:50%;background:var(--text)}
+.fl .cb{width:48px;height:48px}
+.fl .cb svg{width:30px;height:30px}
+.fl .cb.main{width:72px;height:72px;border-radius:50%;background:var(--text);color:var(--page)}
+.fl .cb.main svg{width:32px;height:32px}
+.fl .cb.flat svg{width:22px;height:22px;color:var(--muted)}
+.fl .lyr p{font:700 22px/30px var(--f-display);letter-spacing:-.02em;color:rgba(21,19,15,.32)}
+.fl .lyr p.on{color:var(--text)}
+
+/* charts and bars */
+.fl .bars i{height:8px;border-radius:4px;background:var(--chart3);display:block}
+.fl .bars i.on{background:var(--accent)}
+.fl .eq i{border-radius:5px;background:var(--raised)}
+.fl .eq i::after{content:"";position:absolute;left:0;right:0;bottom:0;height:var(--v);background:var(--accent);border-radius:5px}
+.fl .swt i{border-radius:14px;box-shadow:inset 0 0 0 .5px var(--hair)}
+.fl .swt .on i{box-shadow:0 0 0 2px var(--page),0 0 0 4px var(--accent)}
+.fl .sk{border-radius:10px}
+
+
+
+:root{--pg:#E9E7E1;--pg-text:#1B1B1F;--pg-mut:#55535C;--pg-card:#F5F3EE;--pg-line:#D6D2C8}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--pg:#1A1917;--pg-text:#EDEBE6;--pg-mut:#A8A49B;--pg-card:#24221F;--pg-line:#3A3733}}
+:root[data-theme="dark"]{--pg:#1A1917;--pg-text:#EDEBE6;--pg-mut:#A8A49B;--pg-card:#24221F;--pg-line:#3A3733}
+body{background:var(--pg);color:var(--pg-text)}
+.doc h1{font-family:Inter,system-ui,sans-serif;font-weight:800;letter-spacing:-.03em}
+.doc p,figcaption{color:var(--pg-mut)}
+.prop{margin:44px 0 0;padding-top:28px;border-top:1px solid var(--pg-line)}
+.prop h2{font:800 30px/1.1 Inter,system-ui,sans-serif;letter-spacing:-.03em;margin:0 0 4px;display:flex;gap:14px;align-items:baseline}
+.prop h2 .lt2{display:inline-grid;place-items:center;width:40px;height:40px;border-radius:12px;background:#C2410C;color:#fff;font-size:22px}
+.prop .sub{font:600 16px/1.3 Inter,system-ui,sans-serif;color:var(--pg-mut);margin:0 0 12px}
+.prop .what{max-width:80ch;margin:0 0 10px;font-size:15px;line-height:1.55}
+.prop ul{margin:0 0 22px;padding-left:18px;max-width:80ch;font-size:14px;line-height:1.55}
+.costs{border-collapse:collapse;margin:26px 0 0;font-size:13px;max-width:900px;width:100%;background:var(--pg-card);border-radius:12px;overflow:hidden}
+.costs th,.costs td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--pg-line);vertical-align:top}
+.costs th{font:600 11px/1 'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.05em;color:var(--pg-mut)}
+.costs code{font:12px 'JetBrains Mono',monospace}
+.cost{display:inline-block;font:600 11px/16px Inter,system-ui,sans-serif;padding:2px 8px;border-radius:6px;white-space:nowrap;margin:1px 0}
+.c1{background:#DCEEDF;color:#1E5A30}.c2{background:#DCE7F8;color:#1F4F9F}.c3{background:#F8E8CC;color:#7A4A00}
+.legend{display:flex;gap:10px;flex-wrap:wrap;align-items:center;font-size:13px;color:var(--pg-mut);margin:0 0 6px}
+.toc{display:flex;gap:10px;flex-wrap:wrap;margin:0 0 4px}
+.toc a{font:600 14px Inter,system-ui,sans-serif;color:var(--pg-text);text-decoration:none;background:var(--pg-card);padding:8px 14px;border-radius:999px}
+@media (max-width:420px){body{padding:16px}.phone{transform:scale(.86);transform-origin:top left;margin-bottom:-110px;margin-right:-52px}}
+
+/* A · constellation, bridge, fan */
+.fl .const{position:relative;height:292px;margin:-6px 0 -4px}
+.fl .const .orb{position:absolute;width:58px;border-radius:10px;box-shadow:var(--e1)}
+.fl .const .ctr-cv{position:absolute;width:100px;left:130px;top:96px;border-radius:var(--r-cover);box-shadow:var(--e3);z-index:2}
+.fl .lpill{position:absolute;transform:translate(-50%,-50%);font:600 10px/14px Inter,system-ui,sans-serif;padding:2px 7px;border-radius:999px;background:var(--surface);color:var(--muted);box-shadow:var(--e1);z-index:3;white-space:nowrap}
+.fl .lpill.on{background:var(--accent);color:var(--on-accent)}
+.fl .bridge{position:relative;height:150px;margin:0 0 -6px}
+.fl .bridge .end{position:absolute;width:76px;border-radius:12px;box-shadow:var(--e3);z-index:2}
+.fl .bridge .bead{position:absolute;width:34px;border-radius:7px;box-shadow:0 0 0 2.5px var(--page),var(--e1)}
+.fl .endlab{position:absolute;bottom:2px;font:600 11px Inter,system-ui,sans-serif;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);width:90px}
+.fl .fan{position:relative;height:178px;margin:-4px 0 0}
+.fl .fan .cv{position:absolute;left:122px;top:14px;width:116px;border-radius:12px;transform-origin:50% 190%;box-shadow:var(--e1)}
+.fl .fan .cv:nth-child(3){box-shadow:var(--e3)}
+.fl .wire{width:70px;height:2px;background:var(--accent);position:relative;display:grid;place-items:center}
+.fl .wire span{width:30px;height:30px;border-radius:50%;background:var(--accent);color:var(--on-accent);display:grid;place-items:center}
+.fl .sheet{background:var(--surface)}
+
+/* B · week, dial, timeline, tide */
+.fl .week{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;padding-inline:12px}
+.fl .wk{display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 0 8px;border-radius:14px;position:relative;min-height:104px}
+.fl .wk b{font:700 17px/22px Inter,system-ui,sans-serif;letter-spacing:-.02em}
+.fl .wk.on{background:var(--surface);box-shadow:var(--e1)}
+.fl .wk.on b{color:var(--accent)}
+.fl .wk-cv{width:40px;border-radius:7px;margin-top:6px;box-shadow:var(--e1)}
+.fl .wk-dot{width:5px;height:5px;border-radius:50%;background:var(--chart3);margin-top:22px}
+.fl .yrs{position:absolute;bottom:2px;font:700 10px/14px Inter,system-ui,sans-serif;background:var(--accent);color:var(--on-accent);padding:0 5px;border-radius:7px}
+.fl .dial{position:relative;height:214px;margin:-6px 0 0}
+.fl .dial .dcv{position:absolute;width:66px;border-radius:12px;box-shadow:var(--e1);transform-origin:50% 100%}
+.fl .lg-sw{width:10px;height:10px;border-radius:3px;display:inline-block}
+.fl .who-s{width:62px;display:flex;flex-direction:column;align-items:center;gap:4px;font:500 11px/14px Inter,system-ui,sans-serif;color:var(--muted)}
+.fl .who-s .ar{width:52px;border-radius:50%}
+.fl .who-s.on{color:var(--text);font-weight:600}
+.fl .who-s.on .ar{box-shadow:0 0 0 2px var(--page),0 0 0 4px var(--accent)}
+.fl .tl{position:relative;height:150px;margin:0 0 -6px}
+.fl .tl-axis{position:absolute;left:12px;right:12px;top:74px;height:2px;border-radius:1px;background:var(--chart3)}
+.fl .tl-cv{position:absolute;top:8px;width:54px;border-radius:8px;box-shadow:var(--e1)}
+.fl .tl-gh{position:absolute;top:100px;width:42px;height:42px;border-radius:8px;background:var(--raised);display:grid;place-items:center;color:var(--accent)}
+.fl .tl-tick{position:absolute;top:70px;width:2px;height:10px;border-radius:1px;background:var(--text)}
+.fl .tl-yr{position:absolute;top:84px;width:28px;text-align:center;font:500 10px Inter,system-ui,sans-serif;color:var(--muted)}
+.fl .tl-ev{position:absolute;top:104px;font:600 10px Inter,system-ui,sans-serif;color:var(--info);display:flex;align-items:center;gap:4px;white-space:nowrap}
+.fl .tl-ev i{width:7px;height:7px;border-radius:50%;background:var(--info)}
+.fl .tide{position:relative;margin:4px 16px 0;height:64px}
+.fl .tide svg{position:absolute;inset:0}
+.fl .tide-cv{position:absolute;width:30px;border-radius:6px;box-shadow:0 0 0 2px var(--page),var(--e1)}
+
+/* C · mixer, atlas, gaps */
+.fl .mosaic{display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(2,1fr);gap:6px;padding-inline:16px;height:166px}
+.fl .mosaic .cv,.fl .mosaic .sk{width:100%;height:100%;border-radius:10px;box-shadow:var(--e1)}
+.fl .mosaic .big{grid-column:1/3;grid-row:1/3;border-radius:var(--r-cover);box-shadow:var(--e3)}
+.fl .mosaic .more{position:relative;display:block}
+.fl .mosaic .more b{position:absolute;inset:0;display:grid;place-items:center;color:#fff;font:700 18px Inter,system-ui,sans-serif;background:rgba(21,19,15,.55);border-radius:10px}
+.fl .mosaic.empty .big{box-shadow:none}.fl .mosaic.empty .sk{box-shadow:none}
+.fl .drums{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding-inline:16px}
+.fl .drum{display:flex;flex-direction:column;align-items:center;gap:4px}
+.fl .drum-w{width:100%;background:var(--surface);border-radius:16px;box-shadow:var(--e1);display:flex;flex-direction:column;align-items:center;padding:6px 4px;position:relative;overflow:hidden}
+.fl .drum-w span{height:26px;display:grid;place-items:center;white-space:nowrap;font-weight:500}
+.fl .drum-w .d0{font:700 15px Inter,system-ui,sans-serif;color:var(--text);background:var(--raised);border-radius:10px;width:100%;height:32px}
+.fl .drum-w .d1{font-size:13px;color:var(--muted);transform:scaleY(.86)}
+.fl .drum-w .d2{font-size:12px;color:var(--muted);opacity:.45;transform:scaleY(.7)}
+.fl .atlas{position:relative;height:236px;margin:0 16px;border-radius:var(--r-card);background:var(--surface);box-shadow:var(--e1);overflow:hidden}
+.fl .land{position:absolute;background:radial-gradient(circle,var(--chart3) 1.1px,#0000 1.4px) 0 0/6px 6px}
+.fl .pin{position:absolute;width:22px;height:22px;border-radius:50%;background:var(--text);color:var(--page);font:700 10px/22px Inter,system-ui,sans-serif;text-align:center;box-shadow:0 0 0 2px var(--surface)}
+.fl .pin.on{background:var(--accent);color:var(--on-accent);width:24px;height:24px;line-height:24px}
+.fl .pinstack{position:absolute;width:72px;height:80px}
+.fl .pinstack .cv{position:absolute;width:58px;border-radius:8px;box-shadow:var(--e1)}
+.fl .pinstack .cv:nth-child(1){left:0;top:10px;transform:rotate(-8deg)}
+.fl .pinstack .cv:nth-child(2){left:14px;top:0;z-index:2;box-shadow:var(--e3)}
+.fl .pinstack .cv:nth-child(3){left:26px;top:12px;transform:rotate(8deg)}
+.fl .gaps{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;padding-inline:16px}
+.fl .gaps div{display:flex;flex-direction:column;align-items:center;gap:4px;font:500 11px Inter,system-ui,sans-serif;color:var(--muted)}
+.fl .gaps .cv{width:100%;border-radius:8px;box-shadow:var(--e1)}
+.fl .gaps .gh{width:100%;aspect-ratio:1;border-radius:8px;background:var(--raised);display:grid;place-items:center;color:var(--accent)}
+.fl .gaps .acc{color:var(--accent);font-weight:600}
+
+
+.fl .pickgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.fl .pickgrid .cv{width:100%;border-radius:10px;box-shadow:var(--e1)}
+.fl .pickgrid .cv.on{box-shadow:0 0 0 3px var(--surface),0 0 0 5px var(--accent)}
+.fl .mstack{position:relative;width:52px;height:44px;flex:none}
+.fl .mstack .cv{position:absolute;width:36px;border-radius:6px;box-shadow:var(--e1)}
+.fl .mstack .cv:nth-child(1){left:0;top:6px}.fl .mstack .cv:nth-child(2){left:8px;top:3px}.fl .mstack .cv:nth-child(3){left:16px;top:0;box-shadow:var(--e3)}
+.fl .ib.dice{width:44px;height:44px;border-radius:50%;background:var(--raised);color:var(--text)}
+figure.wide{flex-basis:100%}
+.board{background:var(--page);color:var(--text);border-radius:24px;padding:24px;display:grid;grid-template-columns:minmax(0,420px) minmax(0,380px);gap:32px;max-width:900px;font-family:Inter,system-ui,sans-serif;font-size:13px;line-height:18px}
+.board h5{font:600 12px/16px Inter,system-ui,sans-serif;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin:18px 0 8px}
+.board h5:first-child{margin-top:0}
+.board .bcol{display:flex;flex-direction:column;gap:6px;min-width:0}
+.board .swr{display:flex;gap:10px;align-items:center}
+.board .swr i{width:34px;height:34px;border-radius:10px;flex:none;box-shadow:inset 0 0 0 .5px rgba(0,0,0,.15)}
+.board .swr span,.board .lnr span{color:var(--muted)}
+.board code{font:12px 'JetBrains Mono',monospace}
+.board .lnr{display:flex;gap:10px;align-items:center}
+.board .lnr svg{width:120px;height:10px;flex:none}
+.board .icg{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.board .icr{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11px}
+.board .icr span{width:40px;height:40px;border-radius:10px;background:var(--surface);display:grid;place-items:center;box-shadow:var(--e1)}
+.board .icr svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.board .icr em{font-style:normal;color:var(--muted);font-size:10px}
+.board .geowrap{position:relative;width:360px;max-width:100%;background:repeating-linear-gradient(0deg,#0000 0 19px,var(--chart-grid) 19px 20px),repeating-linear-gradient(90deg,#0000 0 19px,var(--chart-grid) 19px 20px);border-radius:12px}
+.board .geo{margin:0}
+.board .dim{position:absolute;font:600 10px/14px 'JetBrains Mono',monospace;background:var(--text);color:var(--page);padding:1px 6px;border-radius:4px;z-index:4;white-space:nowrap}
+.board .drum{width:120px}
+@media (max-width:820px){.board{grid-template-columns:1fr}}
+</style></head><body><svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><symbol id="i-home" viewBox="0 0 24 24"><path d="M4 11l8-7 8 7v8a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z"/></symbol><symbol id="i-disc" viewBox="0 0 24 24"><path d="M12 3l1.800 5.200L19 10l-5.200 1.800L12 17l-1.800-5.200L5 10l5.200-1.800zM18.500 16l.7 1.800 1.800.7-1.800.7-.7 1.800-.7-1.800-1.800-.7 1.800-.7z"/></symbol><symbol id="i-lib" viewBox="0 0 24 24"><path d="M5 4v16M9.500 4v16M14 5l4.500 14.500"/></symbol><symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.500"/><path d="M16 16l4.500 4.500"/></symbol><symbol id="i-play" viewBox="0 0 24 24"><path d="M7 4.500v15l12.500-7.500z"/></symbol><symbol id="i-pause" viewBox="0 0 24 24"><path d="M7 5h3.500v14H7zM13.500 5H17v14h-3.500z"/></symbol><symbol id="i-next" viewBox="0 0 24 24"><path d="M5 5v14l10-7zM17 5h2.500v14H17z"/></symbol><symbol id="i-prev" viewBox="0 0 24 24"><path d="M19 5v14L9 12zM4.500 5H7v14H4.500z"/></symbol><symbol id="i-dl" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.500"/><path d="M12 7.500v8M8.500 12.500L12 16l3.500-3.500"/></symbol><symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2.500v3M12 18.500v3M2.500 12h3M18.500 12h3M5.300 5.300l2.100 2.100M16.600 16.600l2.100 2.100M5.300 18.700l2.100-2.100M16.600 7.400l2.100-2.100"/></symbol><symbol id="i-more" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.600"/><circle cx="12" cy="12" r="1.600"/><circle cx="19" cy="12" r="1.600"/></symbol><symbol id="i-chev" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></symbol><symbol id="i-back" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></symbol><symbol id="i-down" viewBox="0 0 24 24"><path d="M5 9l7 7 7-7"/></symbol><symbol id="i-radio" viewBox="0 0 24 24"><rect x="3" y="8" width="18" height="12" rx="2"/><path d="M7 8l9-4"/><circle cx="8.500" cy="14" r="2.500"/><path d="M14 12.500h4M14 15.500h4"/></symbol><symbol id="i-get" viewBox="0 0 24 24"><path d="M7 18a4.500 4.500 0 0 1-.6-8.960 6 6 0 0 1 11.700 1.500A3.800 3.800 0 0 1 17.500 18M12 11v8M9 16.500l3 3 3-3"/></symbol><symbol id="i-heart" viewBox="0 0 24 24"><path d="M12 20s-7-4.300-7-9.500A4 4 0 0 1 12 8a4 4 0 0 1 7 2.500C19 15.700 12 20 12 20z"/></symbol><symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.500l4.500 4.500L19 7.500"/></symbol><symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol><symbol id="i-queue" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h10"/></symbol><symbol id="i-qadd" viewBox="0 0 24 24"><path d="M4 7h12M4 12h12M4 17h7M18 14v6M15 17h6"/></symbol><symbol id="i-shuffle" viewBox="0 0 24 24"><path d="M4 7h3l10 10h3M4 17h3l3-3M14 10l3-3h3M18 5l2 2-2 2M18 15l2 2-2 2"/></symbol><symbol id="i-repeat" viewBox="0 0 24 24"><path d="M5 11V9a2 2 0 0 1 2-2h11M16 4l3 3-3 3M19 13v2a2 2 0 0 1-2 2H6M8 20l-3-3 3-3"/></symbol><symbol id="i-quote" viewBox="0 0 24 24"><path d="M5 6h14v10H10l-4 3v-3H5z"/></symbol><symbol id="i-tune" viewBox="0 0 24 24"><path d="M6 4v16M12 4v16M18 4v16"/><circle cx="6" cy="9" r="2"/><circle cx="12" cy="15" r="2"/><circle cx="18" cy="8" r="2"/></symbol><symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.600 5.600l1.400 1.400M17 17l1.400 1.400M5.600 18.400L7 17M17 7l1.400-1.400"/></symbol><symbol id="i-server" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="7" rx="1.500"/><rect x="4" y="13" width="16" height="7" rx="1.500"/><path d="M7.500 7.500h.01M7.500 16.500h.01"/></symbol><symbol id="i-swap" viewBox="0 0 24 24"><path d="M4 8h13M14 5l3 3-3 3M20 16H7M10 13l-3 3 3 3"/></symbol><symbol id="i-wave" viewBox="0 0 24 24"><path d="M4 12h2l2-6 3 12 3-9 2 5 1-2h3"/></symbol><symbol id="i-sort" viewBox="0 0 24 24"><path d="M7 5v14M4 16l3 3 3-3M14 7h6M14 12h4M14 17h2"/></symbol><symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol><symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol><symbol id="i-path" viewBox="0 0 24 24"><circle cx="6" cy="18" r="2"/><circle cx="18" cy="6" r="2"/><path d="M8 18h5a3 3 0 0 0 0-6h-2a3 3 0 0 1 0-6h5"/></symbol><symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.500"/><path d="M12 11v5M12 8h.01"/></symbol><symbol id="i-out" viewBox="0 0 24 24"><path d="M10 5H5v14h5M14 8l4 4-4 4M18 12H9"/></symbol><symbol id="i-person" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.500"/><path d="M5 20c.8-3.800 3.600-6 7-6s6.200 2.200 7 6"/></symbol><symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s-6-5.600-6-11a6 6 0 0 1 12 0c0 5.400-6 11-6 11z"/><circle cx="12" cy="10" r="2.200"/></symbol><symbol id="i-tag" viewBox="0 0 24 24"><path d="M4 12V5a1 1 0 0 1 1-1h7l8 8-8 8z"/><circle cx="8.500" cy="8.500" r="1.300"/></symbol><symbol id="i-cal" viewBox="0 0 24 24"><rect x="4" y="5.500" width="16" height="14.500" rx="2"/><path d="M4 10h16M8.500 3.500v4M15.500 3.500v4"/></symbol><symbol id="i-dice" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"/><circle cx="9" cy="9" r="1.200"/><circle cx="15" cy="15" r="1.200"/><circle cx="15" cy="9" r="1.200"/><circle cx="9" cy="15" r="1.200"/></symbol></defs></svg><div class="doc"><h1>Flow · Home: Threads and Shelf mixer</h1><p>The spec for docs/Home_threads_mixer.md. Android, Flow warm white, 360 × 780 dp, 1 px = 1 dp. Covers are drawn stand-ins. Both sections sit on Home after Artists and the Insight card, before Genres: Threads first, then the Shelf mixer. Frames T are Threads, M the Shelf mixer, K the components board. The mockups are the spec; where the plan and a frame disagree, ask the owner.</p></div><section class="prop" style="margin-top:8px;border:0;padding-top:0"><h2><span class="lt2">T</span>Threads</h2><div class="frames"><figure><figcaption>T1 · Home after Artists: Threads around the album played most recently. All selected; the line to Spirit of Eden is selected</figcaption><div class="phone fl"><div class="scr"><div class="status"><span>21:14</span><span>5G 82%</span></div><div class="hs" style="height:62px;align-items:flex-end;margin-top:-4px"><div class="pc" style="height:62px"><i class="ar a1" style="margin-top:-138px"></i><b>Alice Coltrane</b></div><div class="pc" style="height:62px"><i class="ar a2" style="margin-top:-138px"></i><b>The Blue Nile</b></div><div class="pc" style="height:62px"><i class="ar a4" style="margin-top:-138px"></i><b>Slowdive</b></div></div><div class="h"><div><span class="eb" style="display:block;margin-bottom:2px">Around Laughing Stock</span><h3>Threads</h3></div><a>Change</a></div><div class="const"><svg class="chart" viewBox="0 0 360 292" style="position:absolute;inset:0"><line x1="180" y1="146" x2="64.0" y2="90.0" stroke="var(--chart3)" stroke-width="1.4"  stroke-linecap="round"/><line x1="180" y1="146" x2="180.0" y2="34.0" stroke="var(--accent)" stroke-width="2.2" stroke-dasharray="5 4" stroke-linecap="round"/><line x1="180" y1="146" x2="296.0" y2="90.0" stroke="var(--chart3)" stroke-width="1.4" stroke-dasharray="1.5 4" stroke-linecap="round"/><line x1="180" y1="146" x2="296.0" y2="202.0" stroke="var(--chart3)" stroke-width="1.4"  stroke-linecap="round"/><line x1="180" y1="146" x2="180.0" y2="258.0" stroke="var(--chart3)" stroke-width="1.4" stroke-dasharray="5 4" stroke-linecap="round"/><line x1="180" y1="146" x2="64.0" y2="202.0" stroke="var(--chart3)" stroke-width="1.4"  stroke-linecap="round"/></svg><i class="cv k2 orb" style="left:35px;top:61px;"></i><i class="cv k8 orb" style="left:151px;top:5px;box-shadow:0 0 0 3px var(--page),0 0 0 5px var(--accent),var(--e1)"></i><i class="cv k3 orb" style="left:267px;top:61px;"></i><i class="cv k10 orb" style="left:267px;top:173px;"></i><i class="cv k12 orb" style="left:151px;top:229px;"></i><i class="cv k7 orb" style="left:35px;top:173px;"></i><i class="cv k5 ctr-cv"></i><span class="lpill" style="left:110px;top:112px">Producer</span><span class="lpill on" style="left:180px;top:79px">4AD</span><span class="lpill" style="left:250px;top:112px">Wessex</span><span class="lpill" style="left:250px;top:180px">Bass</span><span class="lpill" style="left:180px;top:213px">Island</span><span class="lpill" style="left:110px;top:180px">Engineer</span></div><div class="tabs" style="margin-top:-4px"><span class="on">All</span><span class="">People</span><span class="">Labels</span><span class="">Places</span></div><div class="pad row" style="margin-top:-2px"><div class="sp"><h4 class="el">Spirit of Eden · Talk Talk</h4><p class="mut sm el">Same producer: Tim Friese-Greene</p></div><span class="btn sm t">Centre</span><span class="btn sm p"><svg class="s"><use href="#i-play"/></svg>Play</span></div></div><div class="dock"><div class="mini"><i class="cv k5"></i><div class="sp"><h4 class="el">After the Flood</h4><p class="mut sm">Talk Talk</p></div><svg class="f"><use href="#i-pause"/></svg></div><div class="nav"><span class="on"><svg class=""><use href="#i-home"/></svg>Home</span><span><svg class=""><use href="#i-disc"/></svg>Discover</span><span><svg class=""><use href="#i-lib"/></svg>Library</span><span><svg class=""><use href="#i-search"/></svg>Search</span></div></div></div></figure><figure><figcaption>T2 · Labels selected: only label links, up to six; empty slots are not drawn</figcaption><div class="phone fl"><div class="scr"><div class="status"><span>21:14</span><span>5G 82%</span></div><div class="hs" style="height:62px;align-items:flex-end;margin-top:-4px"><div class="pc" style="height:62px"><i class="ar a1" style="margin-top:-138px"></i><b>Alice Coltrane</b></div><div class="pc" style="height:62px"><i class="ar a2" style="margin-top:-138px"></i><b>The Blue Nile</b></div><div class="pc" style="height:62px"><i class="ar a4" style="margin-top:-138px"></i><b>Slowdive</b></div></div><div class="h"><div><span class="eb" style="display:block;margin-bottom:2px">Around Laughing Stock</span><h3>Threads</h3></div><a>Change</a></div><div class="const"><svg class="chart" viewBox="0 0 360 292" style="position:absolute;inset:0"><line x1="180" y1="146" x2="64.0" y2="90.0" stroke="var(--accent)" stroke-width="2.2" stroke-dasharray="5 4" stroke-linecap="round"/><line x1="180" y1="146" x2="180.0" y2="34.0" stroke="var(--chart3)" stroke-width="1.4" stroke-dasharray="5 4" stroke-linecap="round"/><line x1="180" y1="146" x2="296.0" y2="90.0" stroke="var(--chart3)" stroke-width="1.4" stroke-dasharray="5 4" stroke-linecap="round"/></svg><i class="cv k9 orb" style="left:35px;top:61px;box-shadow:0 0 0 3px var(--page),0 0 0 5px var(--accent),var(--e1)"></i><i class="cv k8 orb" style="left:151px;top:5px;"></i><i class="cv k3 orb" style="left:267px;top:61px;"></i><i class="cv k5 ctr-cv"></i><span class="lpill on" style="left:110px;top:112px">Polydor</span><span class="lpill" style="left:180px;top:79px">4AD</span><span class="lpill" style="left:250px;top:112px">Parlophone</span></div><div class="tabs" style="margin-top:-4px"><span class="">All</span><span class="">People</span><span class="on">Labels</span><span class="">Places</span></div><div class="pad row" style="margin-top:-2px"><div class="sp"><h4 class="el">Hex · Bark Psychosis</h4><p class="mut sm el">Same label: Polydor, 1994</p></div><span class="btn sm t">Centre</span><span class="btn sm p"><svg class="s"><use href="#i-play"/></svg>Play</span></div></div><div class="dock"><div class="mini"><i class="cv k5"></i><div class="sp"><h4 class="el">After the Flood</h4><p class="mut sm">Talk Talk</p></div><svg class="f"><use href="#i-pause"/></svg></div><div class="nav"><span class="on"><svg class=""><use href="#i-home"/></svg>Home</span><span><svg class=""><use href="#i-disc"/></svg>Discover</span><span><svg class=""><use href="#i-lib"/></svg>Library</span><span><svg class=""><use href="#i-search"/></svg>Search</span></div></div></div></figure><figure><figcaption>T3 · Tap a line or a label pill: Why they connect (server sentences, the two covers, more of yours)</figcaption><div class="phone fl"><div class="scr"><div class="status"><span>21:14</span><span>5G 82%</span></div><div class="hs" style="height:62px;align-items:flex-end;margin-top:-4px"><div class="pc" style="height:62px"><i class="ar a1" style="margin-top:-138px"></i><b>Alice Coltrane</b></div><div class="pc" style="height:62px"><i class="ar a2" style="margin-top:-138px"></i><b>The Blue Nile</b></div><div class="pc" style="height:62px"><i class="ar a4" style="margin-top:-138px"></i><b>Slowdive</b></div></div><div class="h"><div><span class="eb" style="display:block;margin-bottom:2px">Around Laughing Stock</span><h3>Threads</h3></div><a>Change</a></div><div class="const"><svg class="chart" viewBox="0 0 360 292" style="position:absolute;inset:0"><line x1="180" y1="146" x2="64.0" y2="90.0" stroke="var(--chart3)" stroke-width="1.4"  stroke-linecap="round"/><line x1="180" y1="146" x2="180.0" y2="34.0" stroke="var(--accent)" stroke-width="2.2" stroke-dasharray="5 4" stroke-linecap="round"/><line x1="180" y1="146" x2="296.0" y2="90.0" stroke="var(--chart3)" stroke-width="1.4" stroke-dasharray="1.5 4" stroke-linecap="round"/><line x1="180" y1="146" x2="296.0" y2="202.0" stroke="var(--chart3)" stroke-width="1.4"  stroke-linecap="round"/><line x1="180" y1="146" x2="180.0" y2="258.0" stroke="var(--chart3)" stroke-width="1.4" stroke-dasharray="5 4" stroke-linecap="round"/><line x1="180" y1="146" x2="64.0" y2="202.0" stroke="var(--chart3)" stroke-width="1.4"  stroke-linecap="round"/></svg><i class="cv k2 orb" style="left:35px;top:61px;"></i><i class="cv k8 orb" style="left:151px;top:5px;box-shadow:0 0 0 3px var(--page),0 0 0 5px var(--accent),var(--e1)"></i><i class="cv k3 orb" style="left:267px;top:61px;"></i><i class="cv k10 orb" style="left:267px;top:173px;"></i><i class="cv k12 orb" style="left:151px;top:229px;"></i><i class="cv k7 orb" style="left:35px;top:173px;"></i><i class="cv k5 ctr-cv"></i><span class="lpill" style="left:110px;top:112px">Producer</span><span class="lpill on" style="left:180px;top:79px">4AD</span><span class="lpill" style="left:250px;top:112px">Wessex</span><span class="lpill" style="left:250px;top:180px">Bass</span><span class="lpill" style="left:180px;top:213px">Island</span><span class="lpill" style="left:110px;top:180px">Engineer</span></div></div><div class="scrim"></div><div class="sheet" style="gap:12px;padding-bottom:22px"><div class="row"><span class="eb sp">Why they connect</span><svg class="s"><use href="#i-close"/></svg></div><div class="row" style="gap:0;justify-content:center"><i class="cv k5" style="width:92px;border-radius:12px;box-shadow:var(--e1)"></i><div class="wire"><span><svg class="s"><use href="#i-person"/></svg></span></div><i class="cv k8" style="width:92px;border-radius:12px;box-shadow:var(--e1)"></i></div><p style="font-size:15px;line-height:22px;text-align:center"><b>Tim Friese-Greene</b> produced <b>Laughing Stock</b> and <b>Spirit of Eden</b>, and played keyboards on both.</p><div class="list card" style="margin:0;padding:0 12px"><div class="li" style="min-height:52px"><span class="ic"><svg class="s"><use href="#i-person"/></svg></span><div class="sp"><h4>Also on 7 more of yours</h4><p class="mut sm">Lush, Catherine Wheel, Tight Fit…</p></div><svg class="chev"><use href="#i-chev"/></svg></div><div class="li" style="min-height:52px"><span class="ic"><svg class="s"><use href="#i-tag"/></svg></span><div class="sp"><h4>Both on Parlophone, Polydor</h4><p class="mut sm">Different labels, same circle</p></div><svg class="chev"><use href="#i-chev"/></svg></div></div><div class="row"><span class="btn p sp"><svg class="s"><use href="#i-play"/></svg>Play the thread</span><span class="btn">Centre here</span></div></div></div></figure><figure><figcaption>T4 · Change: pick the centre from Played lately or Most played</figcaption><div class="phone fl"><div class="scr"><div class="status"><span>21:14</span><span>5G 82%</span></div><div class="hs" style="height:62px;align-items:flex-end;margin-top:-4px"><div class="pc" style="height:62px"><i class="ar a1" style="margin-top:-138px"></i><b>Alice Coltrane</b></div><div class="pc" style="height:62px"><i class="ar a2" style="margin-top:-138px"></i><b>The Blue Nile</b></div><div class="pc" style="height:62px"><i class="ar a4" style="margin-top:-138px"></i><b>Slowdive</b></div></div><div class="h"><div><span class="eb" style="display:block;margin-bottom:2px">Around Laughing Stock</span><h3>Threads</h3></div><a>Change</a></div><div class="const"><svg class="chart" viewBox="0 0 360 292" style="position:absolute;inset:0"><line x1="180" y1="146" x2="64.0" y2="90.0" stroke="var(--chart3)" stroke-width="1.4"  stroke-linecap="round"/><line x1="180" y1="146" x2="180.0" y2="34.0" stroke="var(--accent)" stroke-width="2.2" stroke-dasharray="5 4" stroke-linecap="round"/><line x1="180" y1="146" x2="296.0" y2="90.0" stroke="var(--chart3)" stroke-width="1.4" stroke-dasharray="1.5 4" stroke-linecap="round"/><line x1="180" y1="146" x2="296.0" y2="202.0" stroke="var(--chart3)" stroke-width="1.4"  stroke-linecap="round"/><line x1="180" y1="146" x2="180.0" y2="258.0" stroke="var(--chart3)" stroke-width="1.4" stroke-dasharray="5 4" stroke-linecap="round"/><line x1="180" y1="146" x2="64.0" y2="202.0" stroke="var(--chart3)" stroke-width="1.4"  stroke-linecap="round"/></svg><i class="cv k2 orb" style="left:35px;top:61px;"></i><i class="cv k8 orb" style="left:151px;top:5px;box-shadow:0 0 0 3px var(--page),0 0 0 5px var(--accent),var(--e1)"></i><i class="cv k3 orb" style="left:267px;top:61px;"></i><i class="cv k10 orb" style="left:267px;top:173px;"></i><i class="cv k12 orb" style="left:151px;top:229px;"></i><i class="cv k7 orb" style="left:35px;top:173px;"></i><i class="cv k5 ctr-cv"></i><span class="lpill" style="left:110px;top:112px">Producer</span><span class="lpill on" style="left:180px;top:79px">4AD</span><span class="lpill" style="left:250px;top:112px">Wessex</span><span class="lpill" style="left:250px;top:180px">Bass</span><span class="lpill" style="left:180px;top:213px">Island</span><span class="lpill" style="left:110px;top:180px">Engineer</span></div></div><div class="scrim"></div><div class="sheet" style="gap:12px;padding-bottom:22px"><div class="row"><h3 class="sp">Start from</h3><svg class="s"><use href="#i-close"/></svg></div><div class="tabs" style="margin:0"><span class="on">Played lately</span><span class="">Most played</span></div><div class="pickgrid"><i class="cv k5 on"></i><i class="cv k1"></i><i class="cv k10"></i><i class="cv k3"></i><i class="cv k9"></i><i class="cv k7"></i><i class="cv k12"></i><i class="cv k6"></i></div><p class="mut sm">Threads start from an album you own. Pick one; it is remembered until you change it.</p></div></div></figure><figure><figcaption>T5 · Loading (grey orbit slots, centre already drawn) and Nothing in the store yet</figcaption><div class="phone fl"><div class="scr"><div class="status"><span>21:14</span><span>5G 82%</span></div><div class="h"><div><span class="eb" style="display:block;margin-bottom:2px">Around Laughing Stock</span><h3>Threads</h3></div><a>Change</a></div><div class="const"><i class="sk orb" style="left:35px;top:61px;width:58px;height:58px;border-radius:10px"></i><i class="sk orb" style="left:151px;top:5px;width:58px;height:58px;border-radius:10px"></i><i class="sk orb" style="left:267px;top:61px;width:58px;height:58px;border-radius:10px"></i><i class="sk orb" style="left:267px;top:173px;width:58px;height:58px;border-radius:10px"></i><i class="sk orb" style="left:151px;top:229px;width:58px;height:58px;border-radius:10px"></i><i class="sk orb" style="left:35px;top:173px;width:58px;height:58px;border-radius:10px"></i><i class="cv k5 ctr-cv"></i></div><div class="pad col" style="gap:10px;margin-top:-6px"><h4>No links for Laughing Stock yet</h4><p class="mut sm">The store has no credits, label or studio for this album. Ask it to read them, or start from another album.</p><div class="row"><span class="btn sm p"><svg class="s"><use href="#i-server"/></svg>Update the store</span><span class="btn sm">Change</span></div></div></div><div class="dock"><div class="mini"><i class="cv k5"></i><div class="sp"><h4 class="el">After the Flood</h4><p class="mut sm">Talk Talk</p></div><svg class="f"><use href="#i-pause"/></svg></div><div class="nav"><span class="on"><svg class=""><use href="#i-home"/></svg>Home</span><span><svg class=""><use href="#i-disc"/></svg>Discover</span><span><svg class=""><use href="#i-lib"/></svg>Library</span><span><svg class=""><use href="#i-search"/></svg>Search</span></div></div></div></figure></div></section><section class="prop"><h2><span class="lt2">M</span>Shelf mixer</h2><div class="frames"><figure><figcaption>M1 · Home after Threads: the Shelf mixer. Three wheels, a mosaic of the albums they match, Play and Save</figcaption><div class="phone fl"><div class="scr"><div class="status"><span>21:14</span><span>5G 82%</span></div><div class="h"><div><span class="eb" style="display:block;margin-bottom:2px">Pull from your own shelves</span><h3>Shelf mixer</h3></div><a>Saved</a></div><div class="mosaic"><i class="cv k12 big"></i><i class="cv k3"></i><i class="cv k7"></i><i class="cv k10"></i><span class="more"><i class="cv k6"></i><b>+8</b></span></div><div class="pad row" style="margin-top:-4px"><div class="sp"><h4>14 albums · 9 h 40 min</h4><p class="mut sm">90s post-rock you have not played in a year</p></div><span class="ib dice"><svg class=""><use href="#i-dice"/></svg></span></div><div class="drums"><div class="drum"><span class="eb">Era</span><div class="drum-w"><span class="d2">70s</span><span class="d1">80s</span><span class="d0">90s</span><span class="d1">00s</span><span class="d2">10s</span></div></div><div class="drum"><span class="eb">Genre</span><div class="drum-w"><span class="d2">Jazz</span><span class="d1">Ambient</span><span class="d0">Post-rock</span><span class="d1">Dream pop</span><span class="d2">Folk</span></div></div><div class="drum"><span class="eb">Played</span><div class="drum-w"><span class="d2">Any</span><span class="d1">Never played</span><span class="d0">Not in a year</span><span class="d1">Rarely</span><span class="d2">Favourites</span></div></div></div><div class="pad row"><span class="btn p sp"><svg class="s"><use href="#i-play"/></svg>Play</span><span class="btn"><svg class="s"><use href="#i-plus"/></svg>Save</span></div></div><div class="dock"><div class="mini"><i class="cv k5"></i><div class="sp"><h4 class="el">After the Flood</h4><p class="mut sm">Talk Talk</p></div><svg class="f"><use href="#i-pause"/></svg></div><div class="nav"><span class="on"><svg class=""><use href="#i-home"/></svg>Home</span><span><svg class=""><use href="#i-disc"/></svg>Discover</span><span><svg class=""><use href="#i-lib"/></svg>Library</span><span><svg class=""><use href="#i-search"/></svg>Search</span></div></div></div></figure><figure><figcaption>M2 · Saved: the sheet of saved mixes (stored smart playlists); tap Play or the row to load its wheels</figcaption><div class="phone fl"><div class="scr"><div class="status"><span>21:14</span><span>5G 82%</span></div><div class="h"><div><span class="eb" style="display:block;margin-bottom:2px">Pull from your own shelves</span><h3>Shelf mixer</h3></div><a>Saved</a></div><div class="mosaic"><i class="cv k12 big"></i><i class="cv k3"></i><i class="cv k7"></i><i class="cv k10"></i><span class="more"><i class="cv k6"></i><b>+8</b></span></div><div class="drums"><div class="drum"><span class="eb">Era</span><div class="drum-w"><span class="d2">70s</span><span class="d1">80s</span><span class="d0">90s</span><span class="d1">00s</span><span class="d2">10s</span></div></div><div class="drum"><span class="eb">Genre</span><div class="drum-w"><span class="d2">Jazz</span><span class="d1">Ambient</span><span class="d0">Post-rock</span><span class="d1">Dream pop</span><span class="d2">Folk</span></div></div><div class="drum"><span class="eb">Played</span><div class="drum-w"><span class="d2">Any</span><span class="d1">Never played</span><span class="d0">Not in a year</span><span class="d1">Rarely</span><span class="d2">Favourites</span></div></div></div></div><div class="scrim"></div><div class="sheet" style="gap:12px;padding-bottom:22px;background:var(--rail)"><div class="row"><h3 class="sp">Saved mixes</h3><svg class="s"><use href="#i-close"/></svg></div><div class="list card" style="margin:0;padding:0 12px"><div class="li"><span class="mstack"><i class="cv k12"></i><i class="cv k3"></i><i class="cv k7"></i></span><div class="sp"><h4 class="el">90s post-rock, not in a year</h4><p class="mut sm el">14 albums · saved 12 Nov</p></div><span class="btn sm sq"><svg class="s"><use href="#i-play"/></svg></span></div><div class="li"><span class="mstack"><i class="cv k8"></i><i class="cv k1"></i><i class="cv k9"></i></span><div class="sp"><h4 class="el">80s, never played</h4><p class="mut sm el">6 albums · saved 2 Nov</p></div><span class="btn sm sq"><svg class="s"><use href="#i-play"/></svg></span></div><div class="li"><span class="mstack"><i class="cv k4"></i><i class="cv k6"></i><i class="cv k10"></i></span><div class="sp"><h4 class="el">Dream pop favourites</h4><p class="mut sm el">21 albums · saved 28 Oct</p></div><span class="btn sm sq"><svg class="s"><use href="#i-play"/></svg></span></div></div><p class="mut sm">Saved mixes are smart playlists on the server, so they also appear on the Mac. Long-press to rename or delete.</p></div></div></figure><figure><figcaption>M3 · Nothing matches: the mosaic stays empty and the server says which wheel to loosen</figcaption><div class="phone fl"><div class="scr"><div class="status"><span>21:14</span><span>5G 82%</span></div><div class="h"><div><span class="eb" style="display:block;margin-bottom:2px">Pull from your own shelves</span><h3>Shelf mixer</h3></div><a>Saved</a></div><div class="mosaic empty"><i class="sk big"></i><i class="sk"></i><i class="sk"></i><i class="sk"></i><span class="more"><i class="sk"></i></span></div><div class="pad col" style="gap:8px;margin-top:-4px"><h4>Nothing on your shelves matches</h4><div class="row" style="gap:8px;flex-wrap:wrap"><span class="chip">Era: Any · 6 albums</span><span class="chip">Played: Any · 3 albums</span></div></div><div class="drums"><div class="drum"><span class="eb">Era</span><div class="drum-w"><span class="d1">Any</span><span class="d0">60s</span><span class="d1">70s</span><span class="d2">80s</span></div></div><div class="drum"><span class="eb">Genre</span><div class="drum-w"><span class="d2">Ambient</span><span class="d1">Post-rock</span><span class="d0">Dream pop</span><span class="d1">Folk</span></div></div><div class="drum"><span class="eb">Played</span><div class="drum-w"><span class="d1">Any</span><span class="d0">Never played</span><span class="d1">Not in a year</span><span class="d2">Rarely</span></div></div></div><div class="pad row"><span class="btn p sp" style="opacity:.4"><svg class="s"><use href="#i-play"/></svg>Play</span><span class="btn" style="opacity:.4"><svg class="s"><use href="#i-plus"/></svg>Save</span></div></div><div class="dock"><div class="mini"><i class="cv k5"></i><div class="sp"><h4 class="el">After the Flood</h4><p class="mut sm">Talk Talk</p></div><svg class="f"><use href="#i-pause"/></svg></div><div class="nav"><span class="on"><svg class=""><use href="#i-home"/></svg>Home</span><span><svg class=""><use href="#i-disc"/></svg>Discover</span><span><svg class=""><use href="#i-lib"/></svg>Library</span><span><svg class=""><use href="#i-search"/></svg>Search</span></div></div></div></figure></div></section><section class="prop"><h2><span class="lt2">K</span>Components</h2><div class="frames"><figure class="wide"><figcaption>K · Components and tokens (warm white values; every role comes from the active Flow palette)</figcaption><div class="board fl"><div class="bcol"><h5>Colour roles</h5><div class="swr"><i style="background:var(--page)"></i><div><b>rail</b> <code>#FBFAF7</code><br><span>Page behind both sections</span></div></div><div class="swr"><i style="background:var(--surface)"></i><div><b>surface</b> <code>#FFFFFF</code><br><span>Wheel well, label pill, sheet</span></div></div><div class="swr"><i style="background:var(--raised)"></i><div><b>raised</b> <code>#EFECE5</code><br><span>Selected wheel row, chips, skeletons</span></div></div><div class="swr"><i style="background:var(--chart3)"></i><div><b>chart3</b> <code>#D9D4C8</code><br><span>Thread lines (not selected)</span></div></div><div class="swr"><i style="background:var(--text)"></i><div><b>text</b> <code>#15130F</code><br><span>Titles, selected wheel value</span></div></div><div class="swr"><i style="background:var(--muted)"></i><div><b>textMuted</b> <code>#645F55</code><br><span>Eyebrows, wheel neighbours, pills</span></div></div><div class="swr"><i style="background:var(--accent)"></i><div><b>accent</b> <code>#C2410C</code><br><span>Selected line, ring, pill; Play</span></div></div><div class="swr"><i style="background:var(--on-accent)"></i><div><b>onAccent</b> <code>#FFFFFF</code><br><span>Text on accent</span></div></div><h5>Thread lines</h5><div class="lnr"><svg viewBox="0 0 120 10"><line x1="4" y1="5" x2="116" y2="5" stroke="var(--chart3)" stroke-width="1.4" stroke-linecap="round" /></svg><span>People (crew, guests): solid 1.4 dp</span></div><div class="lnr"><svg viewBox="0 0 120 10"><line x1="4" y1="5" x2="116" y2="5" stroke="var(--chart3)" stroke-width="1.4" stroke-linecap="round" stroke-dasharray="5 4"/></svg><span>Labels: dash 5 dp, gap 4 dp</span></div><div class="lnr"><svg viewBox="0 0 120 10"><line x1="4" y1="5" x2="116" y2="5" stroke="var(--chart3)" stroke-width="1.4" stroke-linecap="round" stroke-dasharray="1.5 4"/></svg><span>Places (studio): dot 1.5 dp, gap 4 dp</span></div><div class="lnr"><svg viewBox="0 0 120 10"><line x1="4" y1="5" x2="116" y2="5" stroke="var(--accent)" stroke-width="2.2" stroke-linecap="round" /></svg><span>Selected link (any kind keeps its dash): 2.2 dp, accent</span></div><h5>Label pill</h5><div class="row" style="gap:12px;position:relative;height:30px"><span class="lpill" style="position:static;transform:none">Producer</span><span class="lpill on" style="position:static;transform:none">4AD</span><span class="sm mut">Inter 600 10/14 sp, padding 2×7 dp, depth 1</span></div><h5>Icons (24 dp grid, 1.8 stroke)</h5><div class="icg"><div class="icr"><span><svg class=""><use href="#i-person"/></svg></span><b>Person</b><em>new</em></div><div class="icr"><span><svg class=""><use href="#i-tag"/></svg></span><b>Label</b><em>new</em></div><div class="icr"><span><svg class=""><use href="#i-dice"/></svg></span><b>Dice</b><em>new</em></div><div class="icr"><span><svg class=""><use href="#i-pin"/></svg></span><b>Place</b><em>ArtIcons.Place</em></div><div class="icr"><span><svg class=""><use href="#i-play"/></svg></span><b>Play</b><em>ArtIcons.Play</em></div><div class="icr"><span><svg class=""><use href="#i-plus"/></svg></span><b>Plus</b><em>ArtIcons.Plus</em></div><div class="icr"><span><svg class=""><use href="#i-close"/></svg></span><b>Close</b><em>ArtIcons.Close</em></div><div class="icr"><span><svg class=""><use href="#i-chev"/></svg></span><b>Chevron</b><em>ArtIcons.Chevron</em></div><div class="icr"><span><svg class=""><use href="#i-server"/></svg></span><b>Server</b><em>ArtIcons.Server</em></div><div class="icr"><span><svg class=""><use href="#i-path"/></svg></span><b>Paths</b><em>ArtIcons.Paths</em></div></div></div><div class="bcol"><h5>Threads geometry (360 × 292 dp box)</h5><div class="geowrap"><div class="const geo"><svg class="chart" viewBox="0 0 360 292" style="position:absolute;inset:0"><line x1="180" y1="146" x2="64.0" y2="90.0" stroke="var(--chart3)" stroke-width="1.4"  stroke-linecap="round"/><line x1="180" y1="146" x2="180.0" y2="34.0" stroke="var(--accent)" stroke-width="2.2" stroke-dasharray="5 4" stroke-linecap="round"/><line x1="180" y1="146" x2="296.0" y2="90.0" stroke="var(--chart3)" stroke-width="1.4" stroke-dasharray="1.5 4" stroke-linecap="round"/><line x1="180" y1="146" x2="296.0" y2="202.0" stroke="var(--chart3)" stroke-width="1.4"  stroke-linecap="round"/><line x1="180" y1="146" x2="180.0" y2="258.0" stroke="var(--chart3)" stroke-width="1.4" stroke-dasharray="5 4" stroke-linecap="round"/><line x1="180" y1="146" x2="64.0" y2="202.0" stroke="var(--chart3)" stroke-width="1.4"  stroke-linecap="round"/></svg><i class="cv k2 orb" style="left:35px;top:61px;"></i><i class="cv k8 orb" style="left:151px;top:5px;box-shadow:0 0 0 3px var(--page),0 0 0 5px var(--accent),var(--e1)"></i><i class="cv k3 orb" style="left:267px;top:61px;"></i><i class="cv k10 orb" style="left:267px;top:173px;"></i><i class="cv k12 orb" style="left:151px;top:229px;"></i><i class="cv k7 orb" style="left:35px;top:173px;"></i><i class="cv k5 ctr-cv"></i><span class="lpill" style="left:110px;top:112px">Producer</span><span class="lpill on" style="left:180px;top:79px">4AD</span><span class="lpill" style="left:250px;top:112px">Wessex</span><span class="lpill" style="left:250px;top:180px">Bass</span><span class="lpill" style="left:180px;top:213px">Island</span><span class="lpill" style="left:110px;top:180px">Engineer</span></div><span class="dim" style="left:130px;top:150px">centre 100 dp, r14, depth 3</span><span class="dim" style="left:250px;top:8px">orbit 58 dp, r10, depth 1</span><span class="dim" style="left:6px;top:270px">ellipse rx 134 · ry 112 · angles −150 −90 −30 30 90 150°</span></div><h5>Wheel (one column)</h5><div style="width:130px"><div class="drums" style="padding:0;grid-template-columns:1fr"><div class="drum"><span class="eb">Era</span><div class="drum-w"><span class="d2">70s</span><span class="d1">80s</span><span class="d0">90s</span><span class="d1">00s</span><span class="d2">10s</span></div></div></div></div><p class="sm mut" style="margin:0">Selected row 32 dp, Inter 700 15 sp, text on raised, r10. Neighbours ±1: 13 sp textMuted, scaled 0.86 high; ±2: 12 sp, 45% alpha, scaled 0.7 high. Well: surface, r16, depth 1. Eyebrow above: 12 sp caps.</p></div><h5>Mosaic</h5><div style="width:328px"><div class="mosaic"><i class="cv k12 big"></i><i class="cv k3"></i><i class="cv k7"></i><i class="cv k10"></i><span class="more"><i class="cv k6"></i><b>+8</b></span></div></div><p class="sm mut" style="margin:0">4 × 2 grid, gap 6 dp, height 166 dp. Big cover spans 2 × 2 (r14, depth 3); three covers r10 depth 1; the last cell shows the next cover under ink 55% and “+n”.</p></div></div></figure></div></section></body></html>

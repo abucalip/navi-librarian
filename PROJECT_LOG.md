@@ -1,3 +1,8 @@
+## 2026-11-15 — Flow Home: Threads and Shelf mixer plan (documentation only, direct to main)
+
+- The owner chose A's Threads and C's Shelf mixer from three Home proposals (A Threads, B Time, C Shelves). Added `docs/Home_threads_mixer.md` (design system: colour roles for all seven Flow palettes, type, shapes, icons with paths, constellation and mixer geometry, motion; behaviour; server additions S0a and S0b; steps and models) and the spec mockups `docs/design/android-art-themes/flow/home-threads-mixer/` with their generator `_src/build_home_threads_mixer.py`.
+- No code, no tests run. Next: S0a.
+
 ## 2026-11-15 — Star Operation S4b: safer and deeper values from a replay measurement (merged #1102, squash `1e39cd98`, head `25428964`; CI passed: compile, container-smoke, lint-changed, test-and-build, validate-container)
 
 - Measurement: one live run, approved by the owner, through the existing gatherer (`lens_service.build`, nothing stored) and one personal-list capture (`recommend_new_music`), both on a copy of the local test data; the inputs are private, outside the repository, mode 0600. `scripts/discovery_mode_sweep.py` then replayed them offline over a grid (no further provider traffic). Aggregates only below.
