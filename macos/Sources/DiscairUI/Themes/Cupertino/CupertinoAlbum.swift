@@ -197,7 +197,7 @@ struct CupertinoAlbum: View {
         return HStack(spacing: 0) {
             cell(width: cols[0]) {
                 if isHeader { Text("#") }
-                else if on { PlayingBars(active: state.player.isPlaying) }
+                else if on { PlayingBars(active: state.player.isPlaying, color: CU.onAccent, pointSize: CU.Font.body.size) }
                 else { Text("\(index + 1)").lineLimit(1).fixedSize() }
             }
             cell(width: cols[1]) { Text(isHeader ? "Track" : track!.title).lineLimit(1) }

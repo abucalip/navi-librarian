@@ -270,7 +270,7 @@ struct CupertinoPlayerBar: View {
             ZStack {
                 switch now {
                 case .lyric(let i, let text):
-                    MarqueeLine(reduceMotion: reduceMotion) { Text(text).font(CU.Font.body.weighted(.semibold)) }
+                    MarqueeLine(reduceMotion: reduceMotion) { Text(text).font(CU.Font.body.weighted(.semibold)).foregroundStyle(ink) }
                         .id("l\(i)").transition(slide).accessibilityElement(children: .ignore).accessibilityLabel("Lyric: \(text)")
                 case .fact(let fact):
                     MarqueeLine(reduceMotion: reduceMotion) { factText(fact) }.id(fact.id).transition(slide)
@@ -385,13 +385,14 @@ private struct MarqueeLine<Content: View>: View {
         GeometryReader { g in
             let overflow = textWidth > g.size.width + 0.5 && !reduceMotion
             Group {
-                if overflow {
-                    SwiftUI.TimelineView(.animation) { tl in
-                        let cycle = Double(textWidth + gap)
-                        let t = max(0, tl.date.timeIntervalSince(start) - pause)
-                        HStack(spacing: gap) { content.fixedSize(); content.fixedSize() }
-                            .offset(x: -CGFloat((t * speed).truncatingRemainder(dividingBy: cycle)))
-                    }
+                if overflow && RenderMode.offscreenScreenshot {
+                    HStack(spacing: gap) { content.fixedSize(); content.fixedSize() }
+                        .frame(width: g.size.width, height: g.size.height, alignment: .leading)
+                } else if overflow {
+                    // Core Animation slides the strip; SwiftUI draws it once. A `TimelineView(.animation)` here re-rendered the
+                    // window's display list every frame while a line scrolled (about 10 points of CPU) and delayed the clock tick.
+                    MarqueeStrip(strip: HStack(spacing: gap) { content.fixedSize(); content.fixedSize() },
+                                 cycle: textWidth + gap, speed: speed, pause: pause, start: start)
                     .frame(width: g.size.width, height: g.size.height, alignment: .leading)
                 } else {
                     content.lineLimit(1).truncationMode(.tail)
@@ -406,6 +407,57 @@ private struct MarqueeLine<Content: View>: View {
         )
         .onPreferenceChange(MarqueeWidthKey.self) { textWidth = $0; start = Date() }
         .frame(height: 22)
+    }
+}
+
+/// The marquee's moving part: the two copies of the line in an `NSHostingView`, slid right to left by a repeating Core Animation
+/// translation (`cycle` points every `cycle / speed` seconds, after holding still for `pause`). The render server moves it, so
+/// scrolling costs the main thread nothing per frame. The hosting view does not inherit SwiftUI's environment, so the line's
+/// font and colour must be set on the content itself. Clicks land on the line's resting place, which covers the visible line.
+private struct MarqueeStrip<Strip: View>: NSViewRepresentable {
+    let strip: Strip
+    let cycle: CGFloat
+    let speed: Double
+    let pause: Double
+    let start: Date
+
+    final class Host: NSView {
+        let hosting: NSHostingView<Strip>
+        var key: (CGFloat, Date)?
+        init(strip: Strip) {
+            hosting = NSHostingView(rootView: strip)
+            super.init(frame: .zero)
+            wantsLayer = true
+            layer?.masksToBounds = true
+            hosting.wantsLayer = true
+            addSubview(hosting)
+        }
+        required init?(coder: NSCoder) { nil }
+        override var isFlipped: Bool { true }
+        override func layout() {
+            super.layout()
+            let size = hosting.fittingSize
+            hosting.frame = CGRect(x: 0, y: (bounds.height - size.height) / 2, width: size.width, height: size.height)
+        }
+    }
+
+    func makeNSView(context: Context) -> Host { Host(strip: strip) }
+
+    func updateNSView(_ view: Host, context: Context) {
+        view.hosting.rootView = strip
+        view.needsLayout = true
+        guard view.key?.0 != cycle || view.key?.1 != start, cycle > 0, let layer = view.hosting.layer else { return }
+        view.key = (cycle, start)
+        let slide = CABasicAnimation(keyPath: "transform.translation.x")
+        slide.fromValue = 0
+        slide.toValue = -cycle
+        slide.duration = Double(cycle) / speed
+        slide.repeatCount = .infinity
+        slide.timingFunction = CAMediaTimingFunction(name: .linear)
+        slide.beginTime = layer.convertTime(CACurrentMediaTime(), from: nil) + max(0, pause - Date().timeIntervalSince(start))
+        slide.fillMode = .backwards
+        layer.removeAnimation(forKey: "marquee")
+        layer.add(slide, forKey: "marquee")
     }
 }
 
