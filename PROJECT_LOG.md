@@ -1,3 +1,8 @@
+## 2026-11-15 — Star Operation S2b: More like this and Less like this (merged #1096)
+
+- `discovery/artist_lean.py`: one row per artist (scope `artist_lean`), newer lean replaces older; `combined_seed_weights` and `combined_seed_genres` feed tag selection in `candidate_gathering`; `lean_boost` and `lean_penalty` feed `apply_feedback_signal`. `GET`/`POST`/`DELETE /api/discovery/artist-lean`. Requirement DISC-11.
+- Tests run: `test_discovery_artist_lean` (11), `test_discovery_routes`, `test_discovery_genre_block`, `test_recommendation_feedback`, `test_recommendation_feedback_fixture`, `test_discovery_save_tag_seed`, `test_discovery_lens_feedback`, `test_api_discovery_injection`. Full suite not run locally. CI lint ratchet failed once on an unused import in the new test and passed after the fix. No client UI yet.
+
 ## 2026-11-15 — Star Operation S2a: block a genre (merged #1095)
 
 - `discovery/genre_block.py`: blocked-genre rows (scope `genre`), exclusion from the personal pool (`prepare_ranking_inputs`) and lens pools (`build_lens_lists`), read-time hiding in `list_payload.py`, and `GET`/`POST`/`DELETE /api/discovery/blocked-genres`. Requirement DISC-10.
