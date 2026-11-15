@@ -1,3 +1,9 @@
+## 2026-11-15 — Star Operation S1a: `because` field on personal picks (PR open)
+
+- New `discovery/pick_because.py` returns `similar_to` plus `because` (`{kind: "similar_artists", names}`) for each personal pick; `because` is omitted when there are no similar artists. `navidrome_server.py` swaps one import, one builder line and two assignments for the same number of lines (net 0, D-016). `similar_to` is unchanged.
+- Tests: `tests/test_discovery_pick_because.py` (new), with `test_discovery_similar_artists.py` and `test_discovery_recommendation_payload.py` re-run (21 pass). `scripts/check_server_size.py` passes. `check_lint_changed.py` not run (pylint not installed).
+- Android `ApiJson` and `LibrarianClient` ignore unknown keys; macOS Codable ignores them by default. Web and Android Discover are not changed.
+
 ## 2026-11-15 — Client efficiency: Now Playing slideshow and artist collage on Core Animation (PR open)
 
 - `SlideshowBackdrop`: the 20 Hz `TimelineView` (blur 36 and saturation per frame) is replaced by `SlideshowLayers`, one layer per photo with looping keyframes for opacity, zoom and pan, paused in place like the disc. Each photo is blurred and saturated once at the backdrop's size, in sRGB (checked side by side against SwiftUI's blur). The timing is the same as `slideshowFrame`. `CollageHeroBackdrop`: each slot is a `CollageSlotLayer` (a Core Animation zoom toward its corner, and a 1.4 s layer cross-fade on swap) instead of a SwiftUI `.animation` and `.transition`. In both, the offscreen screenshot keeps a still SwiftUI drawing.

@@ -231,6 +231,7 @@ Done: Genres grid and four album shelves on the dashboard, the Recommended slide
 ## 2m-2. Star Operation: proposal drafted, awaiting the owner
 
 - **Drafted 2026-11-15, documentation only.** [`STAR_OPERATION_PROPOSAL.md`](STAR_OPERATION_PROPOSAL.md) proposes four slices in this order: S1 a `because` field so every pick says why, S2 block genre and More like this, S3 Navidrome stars as a taste seed, S4 a Safer / Balanced / Deeper switch. Nothing is built, and no requirement or decision entry is added until the owner approves a slice. Open decisions are in section 8 of the proposal.
+- **S1a in review (2026-11-15):** server `because` field on personal picks, `discovery/pick_because.py`, requirement DISC-09. Only the `similar_artists` kind; the tag kind is not built because its condition is the same as `similar_artists`'s. Wording (section 8, item 1) is still open and clients are not changed (S1c). The PR is not merged. Seed carry-through (S1b) is needed: ListenBrainz candidates do not keep a seed through allocation.
 
 ## 2n. Simplification candidates
 
