@@ -47,6 +47,7 @@ public final class StationLogoStore {
         for size in [RadioLogoSize.small, .large] {
             let key = Self.key(station, size)
             cache.removeObject(forKey: key as NSString)
+            media?.remove(key: key, ext: "img")      // else the old image is read back from disk
             failed[key] = nil
             loads[key]?.cancel(); loads[key] = nil
         }
@@ -78,6 +79,7 @@ public final class StationLogoStore {
             task = Task { [weak self] in
                 guard let got = try? await source.radioLogo(station: station, size: size),
                       let image = NSImage(data: got.data) else { await self?.markFailed(key); return nil }
+                if Task.isCancelled { return nil }        // forgotten while loading: do not save the old image again
                 await self?.keep(image, data: got.data, key: key)
                 return image
             }

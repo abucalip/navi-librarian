@@ -77,6 +77,12 @@ public final class MediaCache: @unchecked Sendable {
         evict(in: dir, keeping: dest)
     }
 
+    /// Deletes the saved file for a key (an image that was replaced on the server); nothing when off or not saved.
+    public func remove(key: String, ext: String) {
+        guard let dir = active() else { return }
+        try? FileManager.default.removeItem(at: path(dir, key, ext))
+    }
+
     private func entries(in dir: URL) -> [(url: URL, date: Date, size: Int64)] {
         let keys: [URLResourceKey] = [.contentModificationDateKey, .fileSizeKey]
         let files = (try? FileManager.default.contentsOfDirectory(at: dir, includingPropertiesForKeys: keys)) ?? []

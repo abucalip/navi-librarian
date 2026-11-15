@@ -97,15 +97,23 @@ struct LiveSessionTests {
         #expect(p.queue.items.map(\.songID) == before && p.queue.snapshot.index == index)
     }
 
-    @Test func stoppingLeavesTheQueuePausedAndPlayStartsTheStationAgain() async throws {
-        let (p, live, _, _) = try make()
+    @Test func stoppingAStationThatPausedASongMakesPlayResumeTheSong() async throws {
+        let (p, live, out, _) = try make()
         p.play(songs(2))
         for _ in 0..<200 where p.phase != .playing { try? await Task.sleep(for: .milliseconds(10)) }
         p.playStation(station("1"))
         p.togglePlayPause()                                   // stops the station
         #expect(p.live == nil && live.stops >= 1 && p.phase == .paused && p.queue.items.count == 2)
-        p.togglePlayPause()                                   // starts it again, not the song
-        #expect(p.live?.stationID == "1" && live.started.count == 2 && p.phase == .paused)
+        p.togglePlayPause()                                   // resumes the song, not the station
+        #expect(p.live == nil && live.started.count == 1 && p.phase == .playing && out.isPlaying)
+    }
+
+    @Test func playStartsTheStoppedStationAgainWhenNoSongWasPaused() throws {
+        let (p, live, _, _) = try make()
+        p.playStation(station("1"))
+        p.togglePlayPause()                                   // stops the station
+        p.togglePlayPause()                                   // nothing else to resume: the station again
+        #expect(p.live?.stationID == "1" && live.started.count == 2)
     }
 
     @Test func aLibrarySongStopsTheStationAndForgetsItForPlay() async throws {

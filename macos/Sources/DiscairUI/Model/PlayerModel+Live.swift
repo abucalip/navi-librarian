@@ -83,7 +83,8 @@ extension PlayerModel {
     public func stopStation() {
         guard let station = stationByLive else { return }
         endLive()
-        stoppedStation = station
+        // A song that was paused for this station gets Play back; only without one does Play start the station again.
+        stoppedStation = songPausedForStation && current != nil ? nil : station
         sleepTimer.cancel()
     }
 
@@ -283,6 +284,7 @@ extension PlayerModel {
 
     private func pauseLibrarySongForStation() {
         output.pause()
+        songPausedForStation = true
         phase = .paused
         position = output.position
         stopTicking()
