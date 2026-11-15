@@ -151,7 +151,7 @@ struct CupertinoStations: View {
                 let playing = player.live?.stationID == station.id
                 let selected = station.id == selectedID || playing
                 let previousSelected = i > 0 && (shown[i - 1].id == selectedID || player.live?.stationID == shown[i - 1].id)
-                StationRow(station: station, status: model.status(for: station), selected: selected, playing: playing, isPlaying: player.isPlaying,
+                StationRow(station: station, status: model.status(for: station), selected: selected, playing: playing, isPlaying: player.live?.phase == .playing,
                            showsRule: i > 0 && !selected && !previousSelected,
                            select: { selectedID = station.id; if !playing { player.playStation(station) } },
                            toggleFavourite: { Task { await model.setFavourite(station, on: !station.favourite) } },

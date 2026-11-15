@@ -1,5 +1,6 @@
 ## 2026-11-16 — macOS: queue panel add-songs buttons are equal tiles, description on hover (PR open)
 
+- Radio bars: the player bar and the Radio page asked `player.isPlaying`, which is false for a station (its state is `live.phase`), so the bars never moved; both now use `live.phase == .playing`.
 - The two buttons at the top of the queue panel show only icon and name, in tiles of equal width and height (36 pt); what each adds shows as a hover tip and as the accessibility hint. Tests: `swift test --filter CupertinoPagesRenderTests` passed. Not run: full suite, a look in the installed app.
 
 ## 2026-11-16 — macOS: library reloads after a Get, moving playing bars, album page alignment, queue controls, handoff window (PR open)
