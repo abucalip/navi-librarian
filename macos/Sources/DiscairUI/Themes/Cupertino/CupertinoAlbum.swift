@@ -158,6 +158,7 @@ struct CupertinoAlbum: View {
                             .buttonStyle(.plain).accessibilityLabel("Open \(m.title)")
                         }
                     }
+                    .frame(width: AlbumColumn.width, alignment: .leading)
                 }
             }
             AlbumRelatedGrids(state: state).padding(.top, 8)

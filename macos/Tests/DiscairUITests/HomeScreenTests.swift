@@ -211,7 +211,7 @@ import DiscairNavidrome
 
     @Test func ownOldOrAlreadyPlayingQueuesAreNotOffered() {
         #expect(HomeScreen.handoff(queue: Self.queue(by: "Discair"), now: Self.now, clientName: "discair", playingSongID: nil) == nil)
-        #expect(HomeScreen.handoff(queue: Self.queue(ageHours: 30), now: Self.now, clientName: "discair", playingSongID: nil) == nil)
+        #expect(HomeScreen.handoff(queue: Self.queue(ageHours: 2.5), now: Self.now, clientName: "discair", playingSongID: nil) == nil)
         #expect(HomeScreen.handoff(queue: Self.queue(), now: Self.now, clientName: "discair", playingSongID: "s2") == nil)
         #expect(HomeScreen.handoff(queue: nil, now: Self.now, clientName: "discair", playingSongID: nil) == nil)
     }

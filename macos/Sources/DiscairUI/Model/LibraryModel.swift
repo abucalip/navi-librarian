@@ -172,6 +172,13 @@ public final class LibraryModel {
         }
     }
 
+    /// After a Get was imported: reads only the newest albums (`getAlbumList2` newest, the list Android refreshes) and replaces
+    /// Recently Added. Nothing else is re-read; a failed read leaves the list as it was.
+    public func reloadNewest(navidrome: NavidromeClient) async {
+        guard isLive, phase == .loaded, let list = try? await navidrome.albumList(.newest, size: 24) else { return }
+        recent = list.enumerated().map { Self.item($0.element, index: $0.offset) }
+    }
+
     /// Today's picks rotate on every visit to Home: the server shuffles the week's Current tastes lists on each read, so a visit
     /// after the first asks again. A failed read leaves the picks on screen as they were. Gap Radar keeps its own set.
     public func reshufflePicks(librarian: LibrarianClient?) async {

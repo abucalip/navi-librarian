@@ -1,3 +1,12 @@
+## 2026-11-16 — macOS: library reloads after a Get, moving playing bars, album page alignment, queue controls, handoff window (PR open)
+
+- Library: when a poll sees a Get become imported, `AppState.reloadLibraryAfterImport` waits 15 s (the server resyncs 10 s after an import, PR #698) then reads only the newest albums (`getAlbumList2` newest, 24) and replaces Recently Added; nothing else is re-read. A failed read keeps the list.
+- Playing bars: the AppKit symbol effect was requested before the view had a window and was dropped, so the bars stayed still. `PlayingBars` now starts the effect when the view joins a window. The Radio page's playing row shows the bars beside the station name.
+- Album page: the "More by", "Not in your library" blocks are one 620 pt column from the left edge; circles and squares sit in equal slots, so a short row keeps the slots of a full one and squares line up under the circles.
+- Queue panel: "Similar artists" and "Sounds alike" are labelled tiles that say what they add; Autoplay has its own full-width line with its explanation.
+- Continue on this Mac: offered only when the phone saved its queue within 2 hours (was 24). The cause of "does nothing" was not reproduced; failures to read the queue or an empty queue now show a notice instead of nothing.
+- Tests: `swift test --filter "AcquisitionModelTests|HomeScreenTests|GetFinishedDetectorTests|CupertinoPagesRenderTests"` passed (84); added one import-reload case, changed one handoff age. Not run: full suite, installed-app A/B of CPU (rule 6), a live phone handoff.
+
 ## 2026-11-15 — macOS: the ⌘K palette also searches music beyond the library (PR open)
 
 - The palette now lists a "Not in your library" section, last, with artists, albums and songs the library lacks. Source: the server's `GET /api/search` (`scope=all`), read whole (the stream ends within about 3 s) and parsed in `DiscairLibrarian/CatalogSearch.swift`; only `owned: false` results count. Requests start 450 ms after typing stops, need two characters, and a newer query cancels the older one; a failure leaves the rows as they were.

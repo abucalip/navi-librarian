@@ -69,8 +69,11 @@ struct AlbumRelatedGrids: View {
     let state: AppState
     @State private var salt = UInt64.random(in: 0...UInt64.max)
 
-    private func row<V: View>(_ items: [V]) -> some View {
-        HStack(alignment: .top, spacing: AlbumColumn.gap) { ForEach(items.indices, id: \.self) { items[$0] } }
+    /// Every item sits in a slot of exactly `side`, from the left edge, so a short row keeps the slots of a full one and the
+    /// circles above line up with the squares below (a circle's name is wider than its photo, which used to push them apart).
+    private func row<V: View>(_ items: [V], side: CGFloat) -> some View {
+        HStack(alignment: .top, spacing: AlbumColumn.gap) { ForEach(items.indices, id: \.self) { items[$0].frame(width: side) } }
+            .frame(width: AlbumColumn.width, alignment: .leading)
     }
 
     private func heading(_ title: String) -> some View {
@@ -87,14 +90,14 @@ struct AlbumRelatedGrids: View {
             if !owned.isEmpty {
                 VStack(alignment: .leading, spacing: 0) {
                     heading("Similar artists")
-                    row(owned.map { SimilarArtistCircle(state: state, artist: $0, size: side) })
+                    row(owned.map { SimilarArtistCircle(state: state, artist: $0, size: side) }, side: side)
                 }
             }
             if !others.isEmpty || !albums.isEmpty {
                 VStack(alignment: .leading, spacing: 18) {
                     heading("Not in your library").padding(.bottom, -2)
-                    if !others.isEmpty { box("Similar artists") { row(others.map { SimilarArtistCircle(state: state, artist: $0, size: side) }) } }
-                    if !albums.isEmpty { box("Albums") { row(albums.map { SimilarAlbumSquare(state: state, album: $0, side: side) }) } }
+                    if !others.isEmpty { box("Similar artists") { row(others.map { SimilarArtistCircle(state: state, artist: $0, size: side) }, side: side) } }
+                    if !albums.isEmpty { box("Albums") { row(albums.map { SimilarAlbumSquare(state: state, album: $0, side: side) }, side: side) } }
                 }
             }
             if r.loading && r.artists.isEmpty && r.albums.isEmpty {

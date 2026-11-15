@@ -52,22 +52,26 @@ struct CupertinoQueueInspector: View {
             }
             .padding(.bottom, 16)
 
-            HStack(spacing: 8) {
-                Image(systemName: "dot.radiowaves.left.and.right").font(CU.Icon.row())
-                VStack(alignment: .leading, spacing: 0) {
-                    Text("Autoplay").fontWeight(.semibold)
-                    Text(state.radio.status ?? "Radio from this, similar artists in your library").font(CU.Font.callout.weighted(.regular)).foregroundStyle(CU.textSecondary).lineLimit(2)
+            // Two ways to add songs now (each a labelled button with what it does), then the Autoplay switch on its own line.
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(alignment: .top, spacing: 8) {
+                    addSongsButton("Similar artists", detail: "Adds songs by artists like this one, from your library",
+                                   symbol: "person.2.wave.2", label: "Add songs by similar artists") { state.startRadio() }
+                    if state.radio.sonicAvailable {
+                        addSongsButton("Sounds alike", detail: "Adds songs that sound like this one",
+                                       symbol: "waveform", label: "Add songs that sound like this song") { state.startSonicRadio() }
+                    }
                 }
-                Spacer(minLength: 4)
-                Button("Radio") { state.startRadio() }.buttonStyle(CapsuleButtonStyle())
-                    .disabled(state.radio.busy || state.player.current == nil)
-                    .accessibilityLabel("Start radio from this song")
-                if state.radio.sonicAvailable {
-                    Button("Sounds like") { state.startSonicRadio() }.buttonStyle(CapsuleButtonStyle())
-                        .disabled(state.radio.busy || state.player.current == nil)
-                        .accessibilityLabel("Add songs that sound like this song")
+                HStack(spacing: 10) {
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text("Autoplay").fontWeight(.semibold)
+                        Text(state.radio.status ?? "Keeps adding similar songs when the queue runs low")
+                            .font(CU.Font.callout.weighted(.regular)).foregroundStyle(CU.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    Spacer(minLength: 8)
+                    Toggle("Autoplay", isOn: Bindable(state.radio).autoplay).labelsHidden().toggleStyle(.switch).tint(CU.accent)
                 }
-                Toggle("Autoplay", isOn: Bindable(state.radio).autoplay).labelsHidden().toggleStyle(.switch).tint(CU.accent)
             }
             .padding(.horizontal, 8).padding(.top, 8).padding(.bottom, 16)
             .overlay(alignment: .bottom) { Rectangle().fill(CU.text.opacity(0.08)).frame(height: 1) }
@@ -110,6 +114,24 @@ struct CupertinoQueueInspector: View {
         .overlay(alignment: .leading) { Rectangle().fill(CU.text.opacity(0.08)).frame(width: 1) }
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Queue")
+    }
+
+    /// One "add songs" choice: an icon, its name and a line saying what it adds, in a tile of equal width with its neighbour.
+    private func addSongsButton(_ title: String, detail: String, symbol: String, label: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            VStack(alignment: .leading, spacing: 4) {
+                Label(title, systemImage: symbol).fontWeight(.semibold).lineLimit(1)
+                Text(detail).font(CU.Font.callout.weighted(.regular)).foregroundStyle(CU.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(10)
+            .background(CU.bgFill, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .disabled(state.radio.busy || state.player.current == nil)
+        .accessibilityLabel(label)
     }
 
     private func commitSave() { state.saveQueue(named: saveName); saving = false; tab = .saved }

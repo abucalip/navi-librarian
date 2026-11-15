@@ -44,6 +44,21 @@ private let album = AlbumItem(id: 1, title: "Tago Mago", artist: "Can", year: 19
 
 @MainActor
 struct AcquisitionModelTests {
+    @Test func anImportedGetAsksTheAppToReloadTheLibraryOnce() async throws {
+        let running = #"{"ok":true,"acquisitions":[{"artist":"Can","album":"Tago Mago","status":"downloading"}]}"#
+        let done = #"{"ok":true,"acquisitions":[{"artist":"Can","album":"Tago Mago","status":"imported"}]}"#
+        let (m, t) = try make(["/api/acquisitions": (200, running)])
+        var reloads = 0
+        m.onImported = { reloads += 1 }
+        await m.refresh()
+        #expect(reloads == 0)
+        t.routes["/api/acquisitions"] = (200, done)
+        await m.refresh()
+        await m.refresh()
+        #expect(reloads == 1)
+        m.configure(librarian: nil)
+    }
+
     @Test func getShowsPendingThenTheServersAnswer() async throws {
         let (m, t) = try make(["/api/acquire": ok, "/api/acquisitions": jobsEmpty])
         #expect(m.buttonLabel(for: album) == "Get" && m.canGet(album))

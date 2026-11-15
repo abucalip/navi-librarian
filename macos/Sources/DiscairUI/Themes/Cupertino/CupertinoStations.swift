@@ -151,7 +151,7 @@ struct CupertinoStations: View {
                 let playing = player.live?.stationID == station.id
                 let selected = station.id == selectedID || playing
                 let previousSelected = i > 0 && (shown[i - 1].id == selectedID || player.live?.stationID == shown[i - 1].id)
-                StationRow(station: station, status: model.status(for: station), selected: selected, playing: playing,
+                StationRow(station: station, status: model.status(for: station), selected: selected, playing: playing, isPlaying: player.isPlaying,
                            showsRule: i > 0 && !selected && !previousSelected,
                            select: { selectedID = station.id; if !playing { player.playStation(station) } },
                            toggleFavourite: { Task { await model.setFavourite(station, on: !station.favourite) } },
@@ -187,6 +187,8 @@ private struct StationRow: View {
     let status: StationRules.Status
     let selected: Bool
     let playing: Bool
+    /// Whether the audio is running (not paused): the bars move only then.
+    var isPlaying = true
     let showsRule: Bool
     let select: () -> Void
     let toggleFavourite: () -> Void
@@ -198,7 +200,10 @@ private struct StationRow: View {
                 HStack(spacing: 10) {
                     StationLogo(station: station, size: 34)
                     VStack(alignment: .leading, spacing: 0) {
-                        Text(station.name).cuRole(CU.Font.headline).foregroundStyle(CU.text).lineLimit(1)
+                        HStack(spacing: 6) {
+                            Text(station.name).cuRole(CU.Font.headline).foregroundStyle(CU.text).lineLimit(1)
+                            if playing { PlayingBars(active: isPlaying, color: CU.accent, pointSize: CU.Font.callout.size) }
+                        }
                         Text(status.text).cuRole(CU.Font.callout)
                             .foregroundStyle(statusColour).fontWeight(status.isLiveTitle ? .semibold : .regular).lineLimit(1)
                     }

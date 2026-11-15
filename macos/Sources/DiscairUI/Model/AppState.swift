@@ -249,6 +249,7 @@ public final class AppState {
         discovery.configure(librarian: session.librarian)
         stations.configure(source: session.librarian)
         radioDownloads.configure(source: session.librarian)
+        acquisition.onImported = { [weak self] in await self?.reloadLibraryAfterImport() }
         radioDownloads.onSuccess = { [weak self] in await self?.loadHeard() }
         player.onLivePlay = { [weak self] in Task { await self?.loadHeard() } }
         player.liveNowSource = session.librarian
@@ -282,6 +283,17 @@ public final class AppState {
         share.noteServerPaths(library.songServerPaths)
         if library.isLive { selectedArtist = library.artists.first ?? selectedArtist }
         if library.isLive, let first = library.recent.first ?? library.albums.first { selectedAlbum = first }
+    }
+
+    /// A Get finished importing. The Librarian waits 10 s for Navidrome's scan, then drops its library snapshot and rebuilds
+    /// (server option `library_resync_after_import`, default on; Android only shows its switch). Reading the newest albums
+    /// before that scan would miss the new one, so this waits 15 s, in its own task so the poll is not held up.
+    public func reloadLibraryAfterImport() async {
+        Task { [weak self] in
+            try? await Task.sleep(for: .seconds(15))
+            guard let self, let navidrome = self.session?.navidrome else { return }
+            await self.library.reloadNewest(navidrome: navidrome)
+        }
     }
 
     /// Recomputes the Home figures from what the app already holds (the shared album list, the Gets, the saved taste) off the main
@@ -433,10 +445,16 @@ public final class AppState {
         Task {
             // The phone saves its queue every 30 s while it plays, so the copy Home read earlier can be old: read it again.
             let fresh = await Self.attempt { try await self.session?.navidrome?.playQueue() }
-            guard let queue = fresh ?? phoneQueue else { return }
+            guard let queue = fresh ?? phoneQueue else {
+                acquisition.report("Could not read the queue saved by your phone. Try again in a moment.")
+                return
+            }
             phoneQueue = queue
             let start = HomeScreen.handoffStart(queue: queue)
-            player.play(start.songs.map(PlayerModel.item), startAt: start.startAt, position: Double(queue.positionMs) / 1000)
+            let items = start.songs.map(PlayerModel.item)
+            guard !items.isEmpty else { acquisition.report("The phone's queue is empty."); return }
+            player.play(items, startAt: start.startAt, position: Double(queue.positionMs) / 1000)
+            await refreshHomeDashboard()
         }
     }
 
