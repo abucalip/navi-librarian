@@ -43,6 +43,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import app.discair.model.DiscoveryEntry
+import app.discair.model.pickReason
 import app.discair.model.DiscoveryList
 import app.discair.model.GetState
 import app.discair.model.InsightCard
@@ -91,8 +92,8 @@ internal fun FlowDiscoverHeader(list: DiscoveryList, onSelect: (DiscoveryList) -
 }
 
 /**
- * The Discover card (`.dc`): a white card at depth 1, the cover 112 at the left, then title, artist and year, the "Similar to:" line when the server
- * sent one, and Get, Save and a round three-dot menu (Not this album, Not this artist) at the foot. Whether the album is owned is said in words.
+ * The Discover card (`.dc`): a white card at depth 1, the cover 112 at the left, then title, artist and year, the reason line when the server
+ * sent one (see [pickReason]), and Get, Save and a round three-dot menu (Not this album, Not this artist) at the foot. Whether the album is owned is said in words.
  */
 @Composable
 internal fun FlowDiscoverCard(
@@ -119,8 +120,8 @@ internal fun FlowDiscoverCard(
                 listOfNotNull(artist.ifBlank { null }, year?.toString()).joinToString(" · "), color = p.textMuted, maxLines = 1, overflow = TextOverflow.Ellipsis,
                 style = MaterialTheme.typography.bodySmall.copy(fontSize = 13.sp, lineHeight = 18.sp), modifier = Modifier.clickable(role = Role.Button) { open.artist(artist, null, null, null) },
             )
-            val similar = item.similarTo.joinToString(", ")
-            if (similar.isNotEmpty()) Text("Similar to: $similar", color = p.textMuted, maxLines = 2, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.bodySmall.copy(fontSize = 13.sp, lineHeight = 18.sp))
+            val reason = pickReason(item.because, item.similarTo)
+            if (reason.isNotEmpty()) Text(reason, color = p.textMuted, maxLines = 2, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.bodySmall.copy(fontSize = 13.sp, lineHeight = 18.sp))
             Spacer(Modifier.weight(1f))
             Row(horizontalArrangement = Arrangement.spacedBy(0.dp), verticalAlignment = Alignment.CenterVertically) {
                 // Every button is the round 34dp icon button the three-dot menu is, in a 48dp-wide touch target.

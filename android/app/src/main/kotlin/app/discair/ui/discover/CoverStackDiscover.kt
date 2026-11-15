@@ -45,6 +45,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.discair.model.DiscoveryEntry
+import app.discair.model.pickReason
 import app.discair.model.GetState
 import app.discair.model.InsightCard
 import app.discair.model.InsightNarrative
@@ -127,7 +128,7 @@ internal fun SmallButton(label: String?, icon: ImageVector?, filled: Boolean, de
 }
 
 /**
- * The Discover card: the outlined cover on top, then title, artist and year, the "Similar to:" line when the server sent one, and
+ * The Discover card: the outlined cover on top, then title, artist and year, the reason line when the server sent one (see [pickReason]), and
  * Get, Save and a three-dot menu in one row (Not this album, Not this artist). Whether the album is owned is said in words.
  */
 @Composable
@@ -153,9 +154,9 @@ internal fun CoverStackDiscoverCard(
             listOfNotNull(artist.ifBlank { null }, year?.toString()).joinToString(" · ").ifEmpty { " " }, color = p.textMuted, maxLines = 1, overflow = TextOverflow.Ellipsis,
             style = MaterialTheme.typography.bodySmall, modifier = Modifier.clickable(role = Role.Button) { open.artist(artist, null, null, null) },
         )
-        val similar = item.similarTo.joinToString(", ")
+        val reason = pickReason(item.because, item.similarTo)
         Text(
-            if (similar.isEmpty()) " " else "Similar to: $similar", color = p.textMuted, maxLines = 1, overflow = TextOverflow.Ellipsis,
+            reason.ifEmpty { " " }, color = p.textMuted, maxLines = 1, overflow = TextOverflow.Ellipsis,
             style = MaterialTheme.typography.bodySmall,
         )
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(0.dp), verticalAlignment = Alignment.CenterVertically) {

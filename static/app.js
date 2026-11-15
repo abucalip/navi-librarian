@@ -1820,8 +1820,7 @@ function dismissRecommendationLocally(artist, album) {
 function buildRecommendationCard(item) {
   const card = buildListCard(item, {
     tag: categoryLabel(item.discovery_category || 'unclassified'),
-    meta: [item.discovery_category === 'adjacent' && Array.isArray(item.similar_to) && item.similar_to.length
-      ? 'Similar to: ' + item.similar_to.join(', ') : ''],
+    meta: [reasonLine(item)],
     onDismiss: dismissRecommendationLocally
   });
   card.dataset.key = recommendationKey(item);
@@ -1862,7 +1861,7 @@ function buildNewReleaseCard(item) {
 function buildPersonalCard(item) {
   return buildListCard(item, {
     tag: categoryLabel(item.discovery_category || ''),
-    meta: [item.discovery_category === 'unclassified' || item.genre_metadata_available === false
+    meta: [reasonLine(item), item.discovery_category === 'unclassified' || item.genre_metadata_available === false
       ? 'Low confidence: genre data unavailable' : ''],
     listName: 'personal',
     onDismiss: (artist, album, metadata, card) => sendFeedback('dismiss', artist, album, metadata, 'personal', card)
@@ -2820,12 +2819,29 @@ function categoryLabel(category) {
   return name === 'adventurous' ? 'Adventurous discovery' : name;
 }
 
-// An adjacent pick is named by the artists you play that share its genres ("Similar to: A, B");
-// the server computes them. With none to name, or for any other category, the category label shows.
-function categoryLine(item) {
+// Star Operation S1c (DISC-09): why a personal pick came up, from the server's `because`. A `tag`
+// kind is a real seed. A `similar_artists` kind is genre overlap, so it is worded as overlap.
+const BECAUSE_WORDING = new Map([
+  ['tag', names => 'Because you listen to ' + names.join(', ')],
+  ['similar_artists', names => 'Shares genres with ' + names.join(', ')]
+]);
+
+// The reason line for a pick, or '' when there is nothing honest to say. Any other kind, or no
+// usable names, gives no `because` reason. An older server sends only `similar_to` (the same genre
+// overlap), which the adjacent category shows with the overlap wording as a fallback.
+function reasonLine(item) {
+  const because = item.because;
+  const word = because && BECAUSE_WORDING.get(because.kind);
+  const names = Array.isArray(because && because.names) ? because.names.filter(Boolean).map(String) : [];
+  if (word && names.length) return word(names);
   const similar = Array.isArray(item.similar_to) ? item.similar_to.filter(Boolean) : [];
-  if (item.discovery_category === 'adjacent' && similar.length) return 'Similar to: ' + similar.join(', ');
-  return categoryLabel(item.discovery_category);
+  if (item.discovery_category === 'adjacent' && similar.length) return 'Shares genres with ' + similar.join(', ');
+  return '';
+}
+
+// The reason line, or the category label when there is no reason to show.
+function categoryLine(item) {
+  return reasonLine(item) || categoryLabel(item.discovery_category);
 }
 
 // Discover music metadata lines. Each line appears only when the API returned the value.

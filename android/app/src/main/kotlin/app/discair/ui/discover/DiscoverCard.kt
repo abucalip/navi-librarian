@@ -42,6 +42,7 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import app.discair.model.DiscoveryEntry
+import app.discair.model.pickReason
 import app.discair.ui.Opener
 import app.discair.ui.common.AlbumCover
 import app.discair.ui.common.ArtistBio
@@ -130,8 +131,8 @@ private fun CardMenu(entry: DiscoveryEntry, saveState: SaveState, onSave: () -> 
 
 /**
  * The Discover album card, two to a row: the cover with a three-dot menu (Download, Save, Not this album, Not this artist) in its corner, then the
- * title, the artist, the year (accent) with the listener count (grey), and the artist's bio. The server's
- * "reason" line is not shown. Order and content come from the server; the card only draws.
+ * title, the artist, the year (accent) with the listener count (grey), the reason line when the server sent one (see [pickReason]),
+ * and the artist's bio. Order and content come from the server; the card only draws.
  */
 @Composable
 fun DiscoverCard(
@@ -175,6 +176,8 @@ fun DiscoverCard(
             }
             // Always one line tall, so every card is the same height whether or not a year or count is known yet.
             Text(line.ifEmpty { AnnotatedString(" ") }, style = MaterialTheme.typography.labelMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            val reason = pickReason(item.because, item.similarTo)
+            if (reason.isNotEmpty()) Text(reason, style = MaterialTheme.typography.labelMedium, color = Ink.TextMuted, maxLines = 2, overflow = TextOverflow.Ellipsis)
             ArtistBio(artist, reserveLines = BIO_LINES, expandable = false)
         }
     }
