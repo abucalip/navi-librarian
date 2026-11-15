@@ -40,9 +40,7 @@ struct PaletteCommand: Identifiable {
     var section: String {
         if notInLibrary { return Self.notInLibraryHeading }
         return switch kind {
-        case .artist: "Artists"
-        case .album: "Albums"
-        case .song: "Songs"
+        case .artist, .album, .song: "In your library"
         case .screen, .playback: "Pages and settings"
         }
     }
@@ -83,7 +81,7 @@ enum PaletteCatalog {
             list.append(PaletteCommand(id: "open-album-\(a.id)-\(a.title)", title: "Open \(a.title) · \(a.artist)", hint: "Album", kind: .album, action: .openAlbum(a),
                                        name: a.title, detail: [a.artist, a.year > 0 ? String(a.year) : ""].filter { !$0.isEmpty }.joined(separator: " · "), album: a,
                                        secondary: a.owned ? .play(a) : .get(a), secondaryLabel: a.owned ? "Play" : "Get",
-                                       searchText: "\(a.title) \(a.artist)"))
+                                       searchText: "\(a.title) \(a.artist)", notInLibrary: !a.owned))
         }
         for a in artists {
             list.append(PaletteCommand(id: "artist-\(a.id)-\(a.name)", title: "Open \(a.name)", hint: "Artist", kind: .artist, action: .openArtist(a),
@@ -178,15 +176,19 @@ enum PaletteCatalog {
             .compactMap { i, c -> (Int, Int, PaletteCommand)? in let s = score(c.searchText.isEmpty ? c.title : c.searchText, query: trimmed); return s > 0 ? (s, i, c) : nil }
             .sorted { $0.0 != $1.0 ? $0.0 > $1.0 : $0.1 < $1.1 }
             .map { $0.2 }
-        var out: [PaletteCommand] = []
-        for kinds in [[PaletteCommand.Kind.artist], [.album], [.song], [.screen, .playback]] {
-            let group = scored.filter { kinds.contains($0.kind) }
-            out += Array(group.prefix(perSection[kinds[0]] ?? 4))
-        }
-        // Not in the library: what the Librarian's search found. Skipped for an album or artist the library lists (owned or missing).
+        // Three blocks: what the library holds, then music it lacks (the Librarian's picks and what its search found), then pages.
+        // An album or artist the library lists is never repeated from the search.
         var known = Set(artists.map { ownedKey($0.name) })
         known.formUnion(albums.map { ownedKey($0.artist, $0.title) })
-        return out + notInLibrary(catalog, excluding: known)
+        let lacking = scored.filter(\.notInLibrary) + notInLibrary(catalog, excluding: known)
+        func top(_ rows: [PaletteCommand], _ kinds: [PaletteCommand.Kind], _ limit: (PaletteCommand.Kind) -> Int) -> [PaletteCommand] {
+            kinds.flatMap { k in Array(rows.filter { $0.kind == k }.prefix(limit(k))) }
+        }
+        let owned = scored.filter { !$0.notInLibrary && $0.kind != .screen && $0.kind != .playback }
+        let pages = scored.filter { $0.kind == .screen || $0.kind == .playback }
+        return top(owned, [.artist, .album, .song]) { perSection[$0] ?? 4 }
+            + top(lacking, [.artist, .album, .song]) { notInLibraryLimit[$0] ?? 3 }
+            + Array(pages.prefix(perSection[.screen] ?? 4))
     }
 }
 

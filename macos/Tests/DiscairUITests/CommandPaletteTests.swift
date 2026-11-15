@@ -46,7 +46,7 @@ struct CommandPaletteTests {
         let artist = ArtistItem(id: 1, name: "Setting Sun", albumCount: 2)
         let rows = PaletteCatalog.results(query: "setting", playing: false, albums: [a], artists: [artist])
         #expect(rows.map(\.kind) == [.artist, .album, .screen])
-        #expect(rows.map(\.section) == ["Artists", "Albums", "Pages and settings"])
+        #expect(rows.map(\.section) == ["In your library", "In your library", "Pages and settings"])
     }
 
     @Test func matchingIgnoresCaseAndAccents() {
@@ -134,7 +134,7 @@ struct CommandPaletteTests {
     @Test func ownedRowsComeFirstAndKeepTheirOwnHeadings() {
         let owned = album(1, "Portishead Live", "Portishead")
         let rows = PaletteCatalog.results(query: "portis", playing: false, albums: [owned], artists: [], catalog: found)
-        #expect(rows.first?.section == "Albums" && rows.last?.section == "Not in your library")
+        #expect(rows.first?.section == "In your library" && rows.last?.section == "Not in your library")
     }
 
     @Test func anAlbumNotInTheLibraryOffersGetAndASongOpensItsAlbum() {
@@ -151,10 +151,19 @@ struct CommandPaletteTests {
         let ownedArtist = ArtistItem(id: 1, name: "portishead", albumCount: 2)
         let missingAlbum = album(2, "Third", "Portishead", owned: false)
         let rows = PaletteCatalog.results(query: "portis", playing: false, albums: [missingAlbum], artists: [ownedArtist], catalog: found)
-        #expect(rows.filter(\.notInLibrary).map(\.kind) == [])
+        #expect(rows.filter(\.notInLibrary).map(\.kind) == [.album])   // the missing album itself, once; not the artist or the song again
     }
 
     @Test func noQueryNeverShowsFoundMusic() {
         #expect(PaletteCatalog.results(query: "", playing: false, albums: [], artists: [], catalog: found).allSatisfy { !$0.notInLibrary })
+    }
+
+    @Test func ownedComeFirstThenNotOwnedThenPages() {
+        let owned = album(1, "Settings Live", "Some Band")
+        let missing = album(2, "Setting Sun", "Other Band", owned: false)
+        let found = CatalogHits(albums: [CatalogHit(kind: .album, name: "Settings Three", artist: "Third Band")])
+        let rows = PaletteCatalog.results(query: "setting", playing: false, albums: [owned, missing], artists: [], catalog: found)
+        #expect(rows.map(\.section) == ["In your library", "Not in your library", "Not in your library", "Pages and settings"])
+        #expect(rows[1].secondaryLabel == "Get" && rows[2].secondaryLabel == "Get")
     }
 }
