@@ -1,3 +1,8 @@
+## 2026-11-15 — Star Operation S2a: block a genre (merged #1095)
+
+- `discovery/genre_block.py`: blocked-genre rows (scope `genre`), exclusion from the personal pool (`prepare_ranking_inputs`) and lens pools (`build_lens_lists`), read-time hiding in `list_payload.py`, and `GET`/`POST`/`DELETE /api/discovery/blocked-genres`. Requirement DISC-10.
+- Tests run: `test_discovery_genre_block` (8), `test_discovery_list_payload`, `test_discovery_lens_storage`, `test_discovery_lens_lists`, `test_recommendation_feedback`, `test_recommendation_cooldown`, `test_discovery_lens_feedback_api`, `test_discovery_routes`. Full suite not run locally; CI passed on the head. No client UI yet.
+
 ## 2026-11-15 — Star Operation S1c: reason line on macOS
 
 - `DashboardPick.because` (lenient `PickBecause`, never throws) and `pickReason` in `DiscairLibrarian/LibrarianClient.swift`, same wording as web and Android: `tag` "Because you listen to {names}", `similar_artists` "Shares genres with {names}", older server `similar_to` falls back to the overlap wording, otherwise nothing. `AlbumItem.reasonLine` carries it; Cupertino Home (today's pick) and Discover rows draw it above the longer prose reason.
