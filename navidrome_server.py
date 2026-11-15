@@ -6,7 +6,7 @@ import shutil
 import sqlite3
 import time
 import unicodedata
-from discovery.similar_artists import build_similar_to_lookup
+from discovery.pick_because import build_pick_context_lookup
 from discovery import store as discovery_store
 from integrations.slskd import transfers as _slskd_transfers_module
 from integrations.listenbrainz import client as _listenbrainz_client
@@ -421,7 +421,7 @@ def recommend_new_music(
     )
     from discovery.selection_policy import selection_policy_report, selection_request_options
 
-    similar_to = build_similar_to_lookup(listens, genre_cache, _music_key)
+    pick_context = build_pick_context_lookup(listens, genre_cache, _music_key)
     # Empty style targets let measured MMR provide soft diversity.
     diversity_style_targets = {}
     selection_policy = _service_settings.recommendation_selection_policy_value(
@@ -473,7 +473,7 @@ def recommend_new_music(
             candidate,
             recent_artist_play_counts.get(_music_key(candidate["primary_artist"]), 0),
         )
-        result["similar_to"] = similar_to(candidate)
+        result.update(pick_context(candidate))
         result["ownership_check"] = (
             "No exact normalized album-title match found in the indexed "
             "Navidrome inventory; alternate editions may still exist."
@@ -492,7 +492,7 @@ def recommend_new_music(
             candidate,
             recent_artist_play_counts.get(_music_key(candidate["primary_artist"]), 0),
         )
-        result["similar_to"] = similar_to(candidate)
+        result.update(pick_context(candidate))
         result["ownership_note"] = (
             "A same-title album exists in Navidrome under a different "
             "artist credit. Review before treating this as new."
