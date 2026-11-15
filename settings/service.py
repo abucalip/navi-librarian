@@ -112,6 +112,29 @@ def set_library_resync_settings(settings_write, value):
     })
 
 
+STAR_SEED_KEY = "star_seed_enabled"
+DEFAULT_STAR_SEED_ENABLED = False
+
+
+def star_seed_enabled_value(settings_read):
+    """Read the Navidrome-stars seed switch (Star Operation, S3b); absent or non-boolean means off."""
+    value = settings_read().get(STAR_SEED_KEY, DEFAULT_STAR_SEED_ENABLED)
+    return value if type(value) is bool else DEFAULT_STAR_SEED_ENABLED
+
+
+def get_star_seed_settings(settings_read):
+    """Return the stable public star-seed payload."""
+    return json.dumps({STAR_SEED_KEY: star_seed_enabled_value(settings_read)})
+
+
+def set_star_seed_settings(settings_write, value):
+    """Persist the star-seed switch, refusing non-boolean input without writing."""
+    if type(value) is not bool:
+        return json.dumps({"ok": False, "error": "star_seed_enabled must be a boolean."})
+    settings_write({STAR_SEED_KEY: value})
+    return json.dumps({"ok": True, STAR_SEED_KEY: value, "message": "Star seed preference saved."})
+
+
 def get_automatic_refill_settings(settings_read):
     """Return the stable public refill payload."""
     return json.dumps({AUTOMATIC_REFILL_KEY: automatic_refill_enabled_value(settings_read)})
