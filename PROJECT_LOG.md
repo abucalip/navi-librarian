@@ -1,3 +1,9 @@
+## 2026-11-15 — Star Operation S3a: getStarred2 read and parser (PR #1099, open)
+
+- `integrations/navidrome/starred.py`: `fetch_starred` makes one `getStarred2` call through an injected `api_call`; `parse_starred` returns starred artists and albums with `starred_at` as epoch seconds or `None`. Songs ignored; errors propagate. Exported from `integrations/navidrome/__init__.py`. No caller, no behaviour change, no requirement row yet (S3b).
+- Tests run (filtered): `test_navidrome_starred` (8 pass), `test_navidrome_client` (10 pass). Full suite not run. pylint not installed locally; `check_lint_changed.py` left to CI.
+- Not verified: no live Navidrome call.
+
 ## 2026-11-15 — Star Operation S2c: blocklist screen and menu entries on the three clients (merged #1097, #1098)
 
 - #1097 (squash `de3cfb1f`, head `4f98e4e9`): `discovery/artist_block.py` and `GET`/`DELETE /api/discovery/blocked-artists` (DISC-12, lists and lifts "Not this artist"; no schema change). Web More menu (`createFeedbackMenuButton`) and Blocklist page; Android `PickFeedbackItems` on the three Discover card menus and `BlocklistSettings` in all three settings layouts (`LibrarianClient.delete` with a JSON body); macOS `CupertinoPickFeedbackMenu`, `CupertinoBlocklist`, `BlocklistModel`, `SettingsTab.blocklist`. #1097 merged at its first head, before the review fixes were pushed.
