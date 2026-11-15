@@ -70,8 +70,10 @@ class SimilarToUiContractTests(unittest.TestCase):
 
     def test_adjacent_rows_show_similar_to_and_other_categories_keep_their_label(self):
         self.assertIn("item.discovery_category === 'adjacent' && similar.length", self.js)
-        self.assertIn("'Similar to: ' + similar.join(', ')", self.js)
-        self.assertIn("return categoryLabel(item.discovery_category);", self.js)
+        # Star Operation S1c (DISC-09): the overlap wording now comes from reasonLine, and categoryLine
+        # prefers that reason before the category label.
+        self.assertIn("'Shares genres with ' + similar.join(', ')", self.js)
+        self.assertIn("reasonLine(item) || categoryLabel(item.discovery_category)", self.js)
 
     def test_discover_and_personal_rows_use_the_same_line(self):
         self.assertGreaterEqual(self.js.count("categoryLine("), 3)

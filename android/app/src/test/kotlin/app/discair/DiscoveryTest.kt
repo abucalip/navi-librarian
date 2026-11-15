@@ -4,11 +4,13 @@ import app.discair.model.FeedbackAction
 import app.discair.model.SearchEvent
 import app.discair.model.feedbackBody
 import app.discair.model.parseDiscovery
+import app.discair.model.pickReason
 import app.discair.model.parseSearchEvent
 import app.discair.ui.common.RowLead
 import app.discair.ui.discover.releaseDateLead
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
@@ -84,5 +86,31 @@ class DiscoveryTest {
         assertEquals(results.sortedByDescending { it.owned }.map { it.id }, results.map { it.id })
         assertEquals("album", results.first { it.type == "album" }.type)
         assertNull(parseSearchEvent("unknown", "{}"))
+    }
+    // Star Operation S1c (DISC-09): the reason line for a personal pick.
+    @Test fun pickReasonWordsEachKindAsTheOwnerWorded() {
+        val tag = Json.parseToJsonElement("""{"kind":"tag","names":["shoegaze","dream pop"]}""")
+        assertEquals("Because you listen to shoegaze, dream pop", pickReason(tag, emptyList()))
+        val overlap = Json.parseToJsonElement("""{"kind":"similar_artists","names":["Slowdive"]}""")
+        assertEquals("Shares genres with Slowdive", pickReason(overlap, listOf("Other")))
+    }
+
+    @Test fun pickReasonFallsBackToSimilarToFromAnOlderServer() {
+        assertEquals("Shares genres with A", pickReason(null, listOf("A", "")))
+        assertEquals("Shares genres with A", pickReason(Json.parseToJsonElement("""{"kind":"lens","names":["x"]}"""), listOf("A")))
+        assertEquals("", pickReason(null, emptyList()))
+    }
+
+    @Test fun pickReasonDropsMalformedValuesWithoutInventingNames() {
+        assertEquals("", pickReason(Json.parseToJsonElement("""{"kind":"tag","names":[1," "]}"""), emptyList()))
+        assertEquals("Shares genres with A", pickReason(JsonPrimitive("bad"), listOf("A")))
+    }
+
+    @Test fun malformedBecauseDoesNotFailTheList() {
+        val body = """{"items":[{"artist":"A","album":"B","because":"oops"},{"artist":"C","album":"D","because":{"kind":"tag","names":["rock"]}}]}"""
+        val entries = parseDiscovery(body).entries
+        assertEquals(2, entries.size)
+        assertEquals("", pickReason(entries[0].item.because, entries[0].item.similarTo))
+        assertEquals("Because you listen to rock", pickReason(entries[1].item.because, entries[1].item.similarTo))
     }
 }

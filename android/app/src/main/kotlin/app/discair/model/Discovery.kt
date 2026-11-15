@@ -2,6 +2,8 @@ package app.discair.model
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.decodeFromJsonElement
@@ -50,11 +52,33 @@ data class DiscoveryItem(
     val reason: String = "",
     val genres: List<String> = emptyList(),
     @SerialName("similar_to") val similarTo: List<String> = emptyList(),
+    /** Star Operation S1c: `{kind, names}` from the server. Kept as JSON so a bad value drops only the reason line. */
+    val because: JsonElement? = null,
     @SerialName("saved_at") val savedAt: Double? = null,
     val acquired: Boolean = false,
     @SerialName("genre_row_label") val genreRowLabel: String? = null,
 ) {
     val artistName get() = artist.ifBlank { albumArtist }
+}
+
+/**
+ * The reason line for a personal pick (Star Operation S1c, DISC-09). `tag` is a real seed and reads
+ * "Because you listen to ..."; `similar_artists` is genre overlap and reads "Shares genres with ...".
+ * An older server sends only `similar_to`, the same overlap, so it gets the overlap wording. Any other
+ * kind, or no names, draws nothing. Empty when there is nothing honest to say.
+ */
+fun pickReason(because: JsonElement?, similarTo: List<String>): String {
+    val obj = because as? JsonObject
+    val kind = (obj?.get("kind") as? JsonPrimitive)?.takeIf { it.isString }?.content
+    val names = (obj?.get("names") as? JsonArray).orEmpty().mapNotNull { element ->
+        (element as? JsonPrimitive)?.takeIf { it.isString }?.content?.takeIf { it.isNotBlank() }
+    }
+    if (names.isNotEmpty()) when (kind) {
+        "tag" -> return "Because you listen to " + names.joinToString(", ")
+        "similar_artists" -> return "Shares genres with " + names.joinToString(", ")
+    }
+    val overlap = similarTo.filter { it.isNotBlank() }
+    return if (overlap.isEmpty()) "" else "Shares genres with " + overlap.joinToString(", ")
 }
 
 /**
