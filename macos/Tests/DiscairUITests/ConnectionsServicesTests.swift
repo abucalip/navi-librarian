@@ -275,8 +275,8 @@ private func client(_ body: Data, status: Int = 200) throws -> LibrarianClient {
         #expect(state.services.model.toolbar.text == "All working" && state.services.hasChecked)
     }
 
-    @Test func settingsTabsAreTheFourOfTheMockupsAndAppearance() {
-        #expect(SettingsTab.allCases.map(\.rawValue) == ["Services", "Playback", "Appearance", "Music folder", "Profiles"])
+    @Test func settingsTabsAreTheMockupsPlusRadioAndBlocklist() {
+        #expect(SettingsTab.allCases.map(\.rawValue) == ["Services", "Playback", "Radio", "Blocklist", "Appearance", "Music folder", "Profiles"])
         #expect(AppState(themeID: .cupertino, screen: .settings).settingsTab == .services)
     }
 }

@@ -77,6 +77,7 @@ struct CupertinoDiscover: View {
                     Button(state.acquisition.isSaved(a) ? "Saved" : "Save") { state.actions.save(album: a) }
                         .buttonStyle(CapsuleButtonStyle(small: true)).disabled(state.acquisition.isSaved(a))
                     Button("Not for me") { state.actions.notForMe(album: a) }.buttonStyle(CapsuleButtonStyle(small: true, outlined: true))
+                    CupertinoPickFeedbackMenu(state: state, album: a)
                 }
                 .padding(.top, 4)
             }

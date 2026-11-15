@@ -72,8 +72,9 @@ Out of scope for v1:
 | Discovery lists | `GET /api/discovery/{personal\|for_me\|classics\|artist_deep_dive\|new_releases\|<lens>}?count=` (1–150) |
 | List refresh | `POST /api/discovery/{list}/refresh` (`count` JSON integer 1–20) |
 | Feedback | `POST /api/discovery/feedback` `{artist, album, action, metadata}`; actions `save`, `dismiss`, `dismiss_artist`, `remove_for_me` |
-| Blocked genres (server only so far; no client uses it yet) | `GET`, `POST`, `DELETE /api/discovery/blocked-genres` `{genre}` (DISC-10) |
-| Artist lean (server only so far; no client uses it yet) | `GET`, `POST`, `DELETE /api/discovery/artist-lean` `{artist, lean: more\|less, metadata?}` (DISC-11) |
+| Blocked genres | `GET`, `POST`, `DELETE /api/discovery/blocked-genres` `{genre}` (DISC-10). Android: Discover card menus (Block genre, the album's own genres only) and Settings › Blocklist. `DELETE` carries a JSON body |
+| Blocked artists ("Not this artist") | `GET /api/discovery/blocked-artists`, `DELETE` `{artist}` lifts the hide and its penalty (DISC-12). Android: Settings › Blocklist |
+| Artist lean | `GET`, `POST`, `DELETE /api/discovery/artist-lean` `{artist, lean: more\|less, metadata?}` (DISC-11). Android: Discover card menus (More like this artist, Less like this artist) and Settings › Blocklist |
 | Lens feedback summary | `GET /api/discovery/lens-feedback` |
 | Search | `GET /api/search` (SSE stream, `docs/SEARCH_CONTRACT.md` 3.1, 3.7, 3.8) |
 | Artist page | `GET /api/artists/{key}` (`docs/SEARCH_CONTRACT.md` 3.3) |

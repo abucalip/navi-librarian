@@ -269,6 +269,7 @@ struct CupertinoHome: View {
                 .buttonStyle(MarqueeButtonStyle()).disabled(acq.isSaved(a))
             Button { state.actions.notForMe(album: a) } label: { Text("Not for me") }
                 .buttonStyle(MarqueeButtonStyle())
+            CupertinoPickFeedbackMenu(state: state, album: a, marquee: true)
         }
     }
 

@@ -99,6 +99,8 @@ public final class AppState {
     public let radioDownloads = RadioDownloads()
     /// Settings › Radio: scrobbling, the app address and the logo overrides (S2-4 item 3).
     public let radioSettings = RadioSettingsModel()
+    /// Settings › Blocklist and the album menu's More like this, Less like this and Block genre (Star Operation S2c).
+    public let blocklist = BlocklistModel()
     /// Station logos, fetched once per station and size (S2.5).
     public let stationLogos: StationLogoStore
     /// The ⌘K command palette.
@@ -250,6 +252,8 @@ public final class AppState {
         player.liveNowSource = session.librarian
         stationLogos.configure(source: session.librarian)
         radioSettings.configure(source: session.librarian)
+        blocklist.configure(source: session.librarian)
+        blocklist.onNotice = { [weak self] text in self?.acquisition.report(text) }
         radioSettings.onLogoChanged = { [weak self] id in
             self?.stationLogos.forget(station: id)
             Task { await self?.stations.reload() }
