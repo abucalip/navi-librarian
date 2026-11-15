@@ -89,6 +89,18 @@ data class DiscoveryEntry(val item: DiscoveryItem, val raw: JsonObject) {
     val key get() = item.artistName.trim().lowercase() + "/" + item.album.trim().lowercase()
 }
 
+/**
+ * The genres an entry carries: `genres` on the lists, `tags` on the lens lists (the server matches a block on either, so the
+ * menu offers both). A lens album's own `lens` name rides along with a lean.
+ */
+fun entryGenres(entry: DiscoveryEntry): List<String> {
+    val tags = (entry.raw["tags"] as? JsonArray).orEmpty().mapNotNull { (it as? JsonPrimitive)?.takeIf { p -> p.isString }?.content }
+    return entry.item.genres + tags
+}
+
+fun entryLens(entry: DiscoveryEntry): String? =
+    (entry.raw["lens"] as? JsonPrimitive)?.takeIf { it.isString }?.content?.takeIf { it.isNotBlank() }
+
 data class DiscoveryResult(val entries: List<DiscoveryEntry>, val disabled: Boolean, val message: String?)
 
 fun parseDiscovery(body: String): DiscoveryResult {

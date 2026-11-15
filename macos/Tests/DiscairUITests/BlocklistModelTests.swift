@@ -70,12 +70,15 @@ final class FakeBlocklistSource: BlocklistSource, @unchecked Sendable {
     @Test func theMenuSendsTheAlbumsOwnGenreAndSaysWhatHappened() async {
         let (m, s) = make()
         var said: [String] = []
+        var blocked = 0
         m.onNotice = { said.append($0) }
+        m.onBlocked = { blocked += 1 }
         await m.lean(.more, on: album())
         await m.lean(.less, on: album(genre: ""))
         await m.blockGenre(of: album(genre: "  Post   Punk "))
         await m.blockGenre(of: album(genre: ""))
         #expect(s.calls == ["lean Slowdive more [\"Shoegaze\"]", "lean Slowdive less []", "block Post Punk"])
+        #expect(blocked == 1)
         #expect(said == ["More like Slowdive next time.", "Fewer picks like Slowdive. Nothing is hidden.",
                          "Blocked Post Punk. Your library is not affected. Undo it in Settings › Blocklist."])
     }
