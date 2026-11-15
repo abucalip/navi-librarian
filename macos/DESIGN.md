@@ -621,3 +621,7 @@ Internet radio on the Mac, built from the owner's choices. Mockups (the spec): [
 - **Known gap:** with Librarian unreachable the shelf shows recently added albums only, so an album that is both arrived and unplayed is in neither list (the dashboard leaves arrived albums out of "recently added"). Six other albums fill the row; not changed here.
 
 - **Pick chevrons (owner change, 2026-11-14):** chevron buttons at the marquee's top right step back and forward through the picks, wrapping round; ← and → do the same, ↓ does nothing, Space is unchanged. The key glyphs are gone from Get album, Save and Not for me, and the arrow keys no longer act on the pick. Pure rule: `HomeScreen.steppedPick`; test `chevronsAndArrowsStepThroughThePicksAndWrap`. Filtered run `HomeRenderTests|HomeScreenTests|HomeDashboardTests`, 85 passed; narrow render seen, chevrons checked by eye. Not tried by hand: the keys in a running window.
+
+## Palette: music not in the library
+
+The ⌘K palette adds a last section, "Not in your library" (`PaletteCommand.notInLibrary`), filled from `LibrarianClient.searchCatalog` (`GET /api/search?scope=all&types=artist,album,song`, `owned: false` rows only). Artists open, albums open or Get, songs open their album; nothing offers Play. Rows the library already lists are dropped. The Library search stays owned-only. **Tests run (filtered):** `CatalogSearchTests|CommandPaletteTests`. **Not verified:** not opened in a running app against a live server.

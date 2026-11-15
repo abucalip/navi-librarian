@@ -61,6 +61,7 @@ struct CommandPaletteView: View {
             }
         }
         .task(id: state.palette.query) { await state.searchSongHits(state.palette.query) }
+        .task(id: state.palette.query) { await state.searchCatalogHits(state.palette.query) }
         .accessibilityElement(children: .contain)
         .accessibilityAddTraits(.isModal)
     }

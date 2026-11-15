@@ -1,4 +1,5 @@
 import AppKit
+import DiscairLibrarian
 import SwiftUI
 import Testing
 @testable import DiscairUI
@@ -114,5 +115,46 @@ struct CommandPaletteTests {
         let png = try #require(rep.representation(using: .png, properties: [:]))
         let dir = URL(fileURLWithPath: ProcessInfo.processInfo.environment["DISCAIR_SCREENSHOT_DIR"] ?? NSTemporaryDirectory())
         try png.write(to: dir.appendingPathComponent("palette-\(theme.rawValue).png"))
+    }
+
+    // MARK: Not in your library
+
+    private let found = CatalogHits(
+        artists: [CatalogHit(kind: .artist, name: "Portishead")],
+        albums: [CatalogHit(kind: .album, name: "Third", artist: "Portishead", year: 2008)],
+        songs: [CatalogHit(kind: .song, name: "Machine Gun", artist: "Portishead", album: "Third", year: 2008)])
+
+    @Test func foundMusicIsListedLastUnderNotInYourLibrary() {
+        let rows = PaletteCatalog.results(query: "portis", playing: false, albums: [], artists: [], catalog: found)
+        #expect(rows.map(\.section) == Array(repeating: "Not in your library", count: 3))
+        #expect(rows.map(\.kind) == [.artist, .album, .song])
+        #expect(rows.allSatisfy { $0.notInLibrary })
+    }
+
+    @Test func ownedRowsComeFirstAndKeepTheirOwnHeadings() {
+        let owned = album(1, "Portishead Live", "Portishead")
+        let rows = PaletteCatalog.results(query: "portis", playing: false, albums: [owned], artists: [], catalog: found)
+        #expect(rows.first?.section == "Albums" && rows.last?.section == "Not in your library")
+    }
+
+    @Test func anAlbumNotInTheLibraryOffersGetAndASongOpensItsAlbum() {
+        let rows = PaletteCatalog.results(query: "third", playing: false, albums: [], artists: [], catalog: found)
+        let albumRow = rows.first { $0.kind == .album }
+        #expect(albumRow?.secondaryLabel == "Get")
+        if case .get(let a)? = albumRow?.secondary { #expect(!a.owned && a.title == "Third") } else { Issue.record("no Get action") }
+        let songRow = rows.first { $0.kind == .song }
+        if case .openAlbum(let a) = songRow?.action { #expect(!a.owned && a.title == "Third") } else { Issue.record("song does not open its album") }
+        #expect(songRow?.secondary == nil)
+    }
+
+    @Test func whatTheLibraryAlreadyListsIsNotRepeated() {
+        let ownedArtist = ArtistItem(id: 1, name: "portishead", albumCount: 2)
+        let missingAlbum = album(2, "Third", "Portishead", owned: false)
+        let rows = PaletteCatalog.results(query: "portis", playing: false, albums: [missingAlbum], artists: [ownedArtist], catalog: found)
+        #expect(rows.filter(\.notInLibrary).map(\.kind) == [])
+    }
+
+    @Test func noQueryNeverShowsFoundMusic() {
+        #expect(PaletteCatalog.results(query: "", playing: false, albums: [], artists: [], catalog: found).allSatisfy { !$0.notInLibrary })
     }
 }

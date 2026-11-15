@@ -302,7 +302,7 @@ public final class LibraryModel {
     static func key(_ artist: String, _ title: String) -> String { "\(artist.lowercased())|\(title.lowercased())" }
 
     /// A stable colour per title, so placeholder covers do not change between launches.
-    static func hue(for text: String) -> Double {
+    nonisolated static func hue(for text: String) -> Double {
         var h: UInt32 = 5381
         for b in text.lowercased().utf8 { h = (h &* 33) &+ UInt32(b) }
         return Double(h % 360)
