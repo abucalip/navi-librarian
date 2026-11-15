@@ -316,7 +316,7 @@ public final class LibraryModel {
 
     static func item(_ p: DashboardPick, index: Int) -> AlbumItem {
         AlbumItem(id: index, title: p.album, artist: p.artist, year: 0, genre: p.genres?.first ?? "", format: "", owned: false,
-                  hue: hue(for: p.album), reason: p.reason, suggestedTracks: p.suggestedTracks ?? [])
+                  hue: hue(for: p.album), reason: p.reason, reasonLine: p.reasonLine, suggestedTracks: p.suggestedTracks ?? [])
     }
 
     /// Reads the first page of songs, or the next one. Safe to call from `.task`; a loaded first page is not re-read.

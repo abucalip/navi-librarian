@@ -64,6 +64,7 @@ struct CupertinoDiscover: View {
                 Button { state.open(album: a) } label: { Text(a.title).font(CU.Font.title3.weighted(.semibold)).lineLimit(1) }
                     .buttonStyle(.plain).accessibilityLabel("Open \(a.title)")
                 Button(a.artist) { state.openArtist(named: a.artist) }.buttonStyle(.plain).foregroundStyle(CU.textSecondary)
+                if let line = a.reasonLine { Text(line).font(CU.Font.callout.weighted(.semibold)).lineLimit(2) }
                 if let r = a.reason { Text(r).font(CU.Font.callout.weighted(.regular)).foregroundStyle(CU.textSecondary).lineLimit(2) }
                 if !a.suggestedTracks.isEmpty {
                     Text("Try: " + a.suggestedTracks.prefix(3).joined(separator: ", ")).font(CU.Font.callout.weighted(.regular)).foregroundStyle(CU.textSecondary).lineLimit(1)

@@ -79,6 +79,19 @@ final class MockTransport: HTTPTransport, @unchecked Sendable {
         #expect(picks[1].artist == "Dave Grusin")
     }
 
+    @Test func reasonLineWording() throws {
+        func pick(_ extra: String) throws -> DashboardPick {
+            try JSONDecoder().decode(DashboardPick.self, from: Data(#"{"artist":"A","album":"B"\#(extra)}"#.utf8))
+        }
+        #expect(try pick(#","because":{"kind":"tag","names":["shoegaze","dream pop"]}"#).reasonLine == "Because you listen to shoegaze, dream pop")
+        #expect(try pick(#","because":{"kind":"similar_artists","names":["Slowdive"]}"#).reasonLine == "Shares genres with Slowdive")
+        // Unknown kind falls back to similar_to; a malformed value drops only the line; nothing gives nil.
+        #expect(try pick(#","because":{"kind":"x","names":["N"]},"similar_to":["Ride"]"#).reasonLine == "Shares genres with Ride")
+        #expect(try pick(#","because":"oops","similar_to":["Ride"]"#).reasonLine == "Shares genres with Ride")
+        #expect(try pick(#","because":{"kind":"tag","names":[5]}"#).reasonLine == nil)
+        #expect(try pick("").reasonLine == nil)
+    }
+
     @Test func countIsClamped() async throws {
         let t = MockTransport { _, _ in (200, Data(#"{"items":[]}"#.utf8)) }
         let c = try client(t)

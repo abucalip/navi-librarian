@@ -172,6 +172,10 @@ struct CupertinoHome: View {
             Text("Today's pick · \(position.label)".uppercased()).cuRole(CU.Font.eyebrow).accessibilityAddTraits(.isHeader)
             Text(a.title).font(CU.Font.largeTitle.font).tracking(-0.5).lineLimit(2).fixedSize(horizontal: false, vertical: true)
             Text(a.line([a.artist, a.yearText, a.genre, "not in your library"])).font(.system(size: 15)).lineLimit(2)
+            if let line = a.reasonLine {
+                Text(line).font(.system(size: 14, weight: .semibold)).lineLimit(2).fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: 400, alignment: .leading).padding(.top, CU.Space.xs)
+            }
             if let reason = a.reason, !reason.isEmpty {
                 Text(reason).font(.system(size: 14)).lineSpacing(4).lineLimit(4).fixedSize(horizontal: false, vertical: true)
                     .frame(maxWidth: 400, alignment: .leading).padding(.top, CU.Space.xs)

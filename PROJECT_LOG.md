@@ -1,3 +1,8 @@
+## 2026-11-15 — Star Operation S1c: reason line on macOS
+
+- `DashboardPick.because` (lenient `PickBecause`, never throws) and `pickReason` in `DiscairLibrarian/LibrarianClient.swift`, same wording as web and Android: `tag` "Because you listen to {names}", `similar_artists` "Shares genres with {names}", older server `similar_to` falls back to the overlap wording, otherwise nothing. `AlbumItem.reasonLine` carries it; Cupertino Home (today's pick) and Discover rows draw it above the longer prose reason.
+- Tests run: `swift test --filter DiscairLibrarianTests.LibrarianClientTests` (14 pass, new `reasonLineWording`); `swift build --build-tests` (compiles the UI target). The `DiscairUITests` suite was started but not finished, so it is not claimed. Not seen in the running app; the owner checks Home and Discover.
+
 ## 2026-11-15 — Star Operation S1c: reason line on web and Android (merged #1093)
 
 - Web `reasonLine` (`static/app.js`) and Android `pickReason` (`model/Discovery.kt`) draw the server's `because`: `tag` reads "Because you listen to {tag}", `similar_artists` reads "Shares genres with {names}". Older servers that send only `similar_to` get the overlap wording (adjacent on web, any pick on Android). Without a reason the web keeps the category label.
