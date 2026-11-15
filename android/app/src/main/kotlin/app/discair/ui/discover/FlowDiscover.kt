@@ -8,6 +8,22 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.material3.Icon
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.selected
+import kotlinx.coroutines.launch
+import androidx.compose.runtime.rememberCoroutineScope
+import app.discair.ui.common.FlowEyebrow
+import app.discair.ui.common.FlowGroup
+import app.discair.ui.common.FlowIconTile
+import app.discair.ui.common.FlowListRow
+import app.discair.ui.common.FlowRules
+import app.discair.ui.common.ModalBottomSheet
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
@@ -143,6 +159,115 @@ internal fun FlowDiscoverCard(
                     }
                 }
             }
+        }
+    }
+}
+
+// ----- The list switch and its sheet (docs/Discover_page.md 4.1, 4.2; mockup flow/discover-b frames B1 and B2) ----------------
+
+/** The numbers and tables of Flow's one-switch Discover. Kept here, not in the composables, so a unit test can hold them. */
+internal object FlowDiscoverRules {
+    const val SWITCH_HEIGHT = 48
+    const val DOT = 6
+    const val DOT_CURRENT = 18
+
+    /** One row of the list sheet: the list, its icon and the line under its name. */
+    class SheetRow(val list: DiscoveryList, val icon: ImageVector, val subtitle: String)
+
+    /** The sheet's rows in [DiscoveryList.entries] order: the five lists, then (under "Yours") Saved and Insights. */
+    val sheetRows: List<SheetRow> = listOf(
+        SheetRow(DiscoveryList.Daily, ArtIcons.Sun, "Four lists, new each day"),
+        SheetRow(DiscoveryList.DeepDive, ArtIcons.Album, "More from artists you play, by genre"),
+        SheetRow(DiscoveryList.NewReleases, ArtIcons.MusicNote, "Recent albums near your taste"),
+        SheetRow(DiscoveryList.Classics, ArtIcons.Lib, "Well-known albums you do not own"),
+        SheetRow(DiscoveryList.Personal, ArtIcons.Paths, "Further from what you play"),
+        SheetRow(DiscoveryList.Saved, ArtIcons.Bookmark, "Albums you kept for later"),
+        SheetRow(DiscoveryList.Insights, ArtIcons.Wave, "Your taste and what it notices"),
+    )
+
+    /** Saved and Insights sit under "Yours" in the sheet. */
+    fun isYours(list: DiscoveryList) = list == DiscoveryList.Saved || list == DiscoveryList.Insights
+
+    /** The short name the switch shows (owner decision O2); the sheet and everything else keep [DiscoveryList.label]. */
+    fun switchName(list: DiscoveryList): String = when (list) {
+        DiscoveryList.Classics -> "Collection"
+        DiscoveryList.Personal -> "Personal"
+        else -> list.label
+    }
+
+    /** The page dot that is current. */
+    fun dotIndex(list: DiscoveryList): Int = DiscoveryList.entries.indexOf(list)
+
+    /** What a screen reader hears on the switch: the full label and the place among the lists. */
+    fun switchDescription(list: DiscoveryList): String =
+        "${list.label}, list ${dotIndex(list) + 1} of ${DiscoveryList.entries.size}. Change list"
+}
+
+/** The switch row under the shell's bar: the current list's short name with a chevron, and one page dot per list. */
+@Composable
+internal fun FlowDiscoverSwitch(list: DiscoveryList, onOpen: () -> Unit) {
+    val p = LocalPalette.current
+    Row(
+        Modifier.fillMaxWidth().height(FlowDiscoverRules.SWITCH_HEIGHT.dp).padding(horizontal = 16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Row(
+            Modifier.weight(1f, fill = false).fillMaxHeight().clickable(role = Role.Button, onClick = onOpen)
+                .semantics { contentDescription = FlowDiscoverRules.switchDescription(list) },
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                FlowDiscoverRules.switchName(list), color = p.text, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false),
+                style = MaterialTheme.typography.titleLarge.copy(fontSize = 22.sp, lineHeight = 28.sp, fontWeight = FontWeight.Bold, letterSpacing = (-0.02).em),
+            )
+            Spacer(Modifier.width(4.dp))
+            Icon(ArtIcons.Down, contentDescription = null, tint = p.accent, modifier = Modifier.size(20.dp))
+        }
+        Spacer(Modifier.width(12.dp))
+        Spacer(Modifier.weight(1f))
+        Row(Modifier.clearAndSetSemantics {}, horizontalArrangement = Arrangement.spacedBy(5.dp), verticalAlignment = Alignment.CenterVertically) {
+            val current = FlowDiscoverRules.dotIndex(list)
+            DiscoveryList.entries.forEachIndexed { i, _ ->
+                Box(
+                    Modifier.size(width = (if (i == current) FlowDiscoverRules.DOT_CURRENT else FlowDiscoverRules.DOT).dp, height = FlowDiscoverRules.DOT.dp)
+                        .clip(RoundedCornerShape(3.dp)).background(if (i == current) p.text else p.chart3),
+                )
+            }
+        }
+    }
+}
+
+/** The sheet that lists every list (frame B2): the five lists, then Saved and Insights under "Yours". No counts and no covers. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+internal fun FlowListSheet(list: DiscoveryList, onSelect: (DiscoveryList) -> Unit, onDismiss: () -> Unit) {
+    val p = LocalPalette.current
+    val state = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val scope = rememberCoroutineScope()
+    fun choose(l: DiscoveryList) {
+        onSelect(l)
+        scope.launch { state.hide() }.invokeOnCompletion { onDismiss() }
+    }
+    @Composable
+    fun group(rows: List<FlowDiscoverRules.SheetRow>) = FlowGroup {
+        rows.forEachIndexed { i, row ->
+            val current = row.list == list
+            FlowListRow(
+                row.list.label, Modifier.then(if (current) Modifier.semantics { selected = true } else Modifier), state = row.subtitle,
+                onClick = { choose(row.list) }, divider = i > 0, leading = { FlowIconTile(row.icon) },
+                trailing = { if (current) Icon(ArtIcons.Check, contentDescription = null, tint = p.accent, modifier = Modifier.size(20.dp)) },
+            )
+        }
+    }
+    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = state, containerColor = p.rail) {
+        Column(Modifier.padding(bottom = 16.dp)) {
+            Text(
+                "Lists", Modifier.padding(start = 16.dp, end = 16.dp, bottom = 12.dp).semantics { heading() }, color = p.text,
+                style = MaterialTheme.typography.titleLarge.copy(fontSize = 20.sp, lineHeight = 24.sp, fontWeight = FontWeight.Bold),
+            )
+            group(FlowDiscoverRules.sheetRows.filterNot { FlowDiscoverRules.isYours(it.list) })
+            FlowEyebrow("Yours", Modifier.padding(start = 28.dp, top = 18.dp, end = 28.dp, bottom = 6.dp))
+            group(FlowDiscoverRules.sheetRows.filter { FlowDiscoverRules.isYours(it.list) })
         }
     }
 }

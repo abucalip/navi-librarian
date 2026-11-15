@@ -91,6 +91,7 @@ fun DiscoverScreen(open: Opener) {
     var selected by rememberSaveable { mutableStateOf(DiscoveryList.Daily.name) }
     val list = DiscoveryList.valueOf(selected)
     var statusLine by remember { mutableStateOf<String?>(null) }
+    var sheetOpen by remember { mutableStateOf(false) }
     val saves = remember { mutableStateMapOf<String, SaveState>() }
     val hidden = remember { mutableStateMapOf<String, Boolean>() }
     var pending by remember { mutableStateOf<(suspend () -> Unit)?>(null) }
@@ -240,6 +241,7 @@ fun DiscoverScreen(open: Opener) {
             val target = options.indexOf(list) + step
             if (target in options.indices) { selected = options[target].name; statusLine = null }
         }
+        if (sheetOpen) FlowListSheet(list, { if (it != list) { selected = it.name; statusLine = null } }, { sheetOpen = false })
         val swipeThreshold = with(androidx.compose.ui.platform.LocalDensity.current) { 72.dp.toPx() }
         // A sideways swipe moves between Discover's own tabs and never reaches the app's tab swipe, so it cannot
         // leave for Home or Search. Swipes the card pager uses (Daily picks, Deep dives) are used there first;
@@ -255,8 +257,8 @@ fun DiscoverScreen(open: Opener) {
             val options = DiscoveryList.entries
             // Soft Brut: Lists | Insights, then the list names (CoverStackDiscover.kt); every other theme draws the chips below.
             if (app.discair.ui.common.isCoverStack()) CoverStackDiscoverHeader(list) { if (it != list) { selected = it.name; statusLine = null } }
-            // Flow: the bar above carries the large title; Lists | Insights and the list chips are FlowDiscover.kt's.
-            else if (app.discair.ui.common.isFlow()) FlowDiscoverHeader(list) { if (it != list) { selected = it.name; statusLine = null } }
+            // Flow: the bar above carries the large title; the one switch row and its list sheet are FlowDiscover.kt's.
+            else if (app.discair.ui.common.isFlow()) FlowDiscoverSwitch(list) { sheetOpen = true }
             else {
             PageHeading("Discover", Modifier.padding(start = 16.dp, top = 16.dp, end = 16.dp), large = true)
             // List names as chips in one scrolling row (docs/redesign.md 8.2).
