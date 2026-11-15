@@ -23,3 +23,23 @@ fun TransparentNavigationBar() {
         WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightNavigationBars = false
     }
 }
+
+/**
+ * Call from inside a full-screen dialog (decorFitsSystemWindows = false). Both system bars are transparent with light icons, no dim sits
+ * over the page and the page may run under a display cutout, so the page's own background reaches every edge.
+ */
+@Composable
+fun TransparentSystemBars() {
+    val window = (LocalView.current.parent as? DialogWindowProvider)?.window
+    SideEffect {
+        window ?: return@SideEffect
+        window.statusBarColor = Color.TRANSPARENT
+        window.navigationBarColor = Color.TRANSPARENT
+        window.setDimAmount(0f)
+        if (Build.VERSION.SDK_INT >= 28) window.attributes = window.attributes.also { it.layoutInDisplayCutoutMode = android.view.WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES }
+        if (Build.VERSION.SDK_INT >= 29) window.isNavigationBarContrastEnforced = false
+        val controller = WindowCompat.getInsetsController(window, window.decorView)
+        controller.isAppearanceLightStatusBars = false
+        controller.isAppearanceLightNavigationBars = false
+    }
+}
