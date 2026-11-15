@@ -285,10 +285,15 @@ public final class AppState {
         if library.isLive, let first = library.recent.first ?? library.albums.first { selectedAlbum = first }
     }
 
-    /// A Get finished importing: read the newest albums again so the new one shows in Recently Added without a restart.
+    /// A Get finished importing. The Librarian waits 10 s for Navidrome's scan, then drops its library snapshot and rebuilds
+    /// (server option `library_resync_after_import`, default on; Android only shows its switch). Reading the newest albums
+    /// before that scan would miss the new one, so this waits 15 s, in its own task so the poll is not held up.
     public func reloadLibraryAfterImport() async {
-        guard let navidrome = session?.navidrome else { return }
-        await library.reloadNewest(navidrome: navidrome)
+        Task { [weak self] in
+            try? await Task.sleep(for: .seconds(15))
+            guard let self, let navidrome = self.session?.navidrome else { return }
+            await self.library.reloadNewest(navidrome: navidrome)
+        }
     }
 
     /// Recomputes the Home figures from what the app already holds (the shared album list, the Gets, the saved taste) off the main

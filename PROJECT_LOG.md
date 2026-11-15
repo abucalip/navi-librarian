@@ -1,6 +1,6 @@
 ## 2026-11-16 — macOS: library reloads after a Get, moving playing bars, album page alignment, queue controls, handoff window (PR open)
 
-- Library: when a poll sees a Get become imported, `AppState.reloadLibraryAfterImport` reads only the newest albums (`getAlbumList2` newest, 24) and replaces Recently Added; nothing else is re-read. A failed read keeps the list.
+- Library: when a poll sees a Get become imported, `AppState.reloadLibraryAfterImport` waits 15 s (the server resyncs 10 s after an import, PR #698) then reads only the newest albums (`getAlbumList2` newest, 24) and replaces Recently Added; nothing else is re-read. A failed read keeps the list.
 - Playing bars: the AppKit symbol effect was requested before the view had a window and was dropped, so the bars stayed still. `PlayingBars` now starts the effect when the view joins a window. The Radio page's playing row shows the bars beside the station name.
 - Album page: the "More by", "Not in your library" blocks are one 620 pt column from the left edge; circles and squares sit in equal slots, so a short row keeps the slots of a full one and squares line up under the circles.
 - Queue panel: "Similar artists" and "Sounds alike" are labelled tiles that say what they add; Autoplay has its own full-width line with its explanation.
