@@ -1,4 +1,5 @@
 import AppKit
+import CoreImage
 import DiscairLibrarian
 import SwiftUI
 
@@ -81,6 +82,11 @@ extension View {
 /// The session and booklet photos drifting, blurred, behind the lyrics (idea 4). Draws over the blurred cover, which stays visible
 /// until the first photo has loaded. Each photo is held and then cross-faded into the next with a slow zoom and pan. The drift holds
 /// still under Reduce Motion, in Low Power Mode and while paused; it never runs in the screenshot capture.
+///
+/// The motion is one looping Core Animation timeline (`SlideshowLayers`), paused in place when the drift stops, and each photo is
+/// blurred and saturated once at the backdrop's size. A 20 Hz `TimelineView` here re-rendered the window's display list on the
+/// main thread every frame (docs/DEVELOPMENT_WORKFLOW.md, macOS client motion and CPU rules). The offscreen screenshot, which cannot
+/// draw an AppKit view, gets the first frame in SwiftUI.
 struct SlideshowBackdrop: View {
     let slides: [ArtworkPicture]
     let playing: Bool
@@ -88,38 +94,26 @@ struct SlideshowBackdrop: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var images: [Int: NSImage] = [:]
     @State private var lowPower = ProcessInfo.processInfo.isLowPowerModeEnabled
-    @State private var base = 0.0
-    @State private var since: Double?
 
     private var running: Bool { playing && !reduceMotion && !lowPower && !RenderMode.offscreenScreenshot }
 
-    private func elapsed(at date: Date) -> Double { base + (since.map { max(0, date.timeIntervalSinceReferenceDate - $0) } ?? 0) }
-
     var body: some View {
         GeometryReader { g in
-            SwiftUI.TimelineView(.animation(minimumInterval: 1.0 / 20, paused: !running)) { context in
-                if let f = slideshowFrame(elapsed: elapsed(at: context.date), count: slides.count) {
-                    ZStack {
-                        layer(f.index, progress: f.progress, size: g.size)
-                        if f.mix > 0 { layer(f.next, progress: 0, size: g.size).opacity(f.mix) }
-                    }
-                    .blur(radius: RenderMode.offscreenScreenshot ? 0 : 36)
-                    .saturation(1.2)
-                    .clipped()
+            if RenderMode.offscreenScreenshot {
+                if let f = slideshowFrame(elapsed: 0, count: slides.count) {
+                    layer(f.index, progress: f.progress, size: g.size).saturation(1.2).clipped()
                 }
+            } else {
+                BlurredSlides(slides: slides, images: images, size: g.size, running: running)
             }
         }
         .allowsHitTesting(false)
         .accessibilityHidden(true)
-        .onChange(of: running, initial: true) { _, on in
-            let t = Date.timeIntervalSinceReferenceDate
-            if on { since = t } else { if let s = since { base += max(0, t - s) }; since = nil }
-        }
         .onReceive(NotificationCenter.default.publisher(for: .NSProcessInfoPowerStateDidChange)) { _ in
             lowPower = ProcessInfo.processInfo.isLowPowerModeEnabled
         }
         .task(id: "\(slides.map(\.imageID))|\(store?.generation ?? 0)") {
-            images = [:]; base = 0
+            images = [:]
             guard let store else { return }
             for slide in slides {
                 guard let image = await store.albumImage(slide, size: .display), !Task.isCancelled else { continue }
@@ -138,6 +132,193 @@ struct SlideshowBackdrop: View {
         }
     }
 }
+
+/// Blurs each loaded photo once, at the backdrop's size (rounded to 64 points, so a window resize redoes it only now and then), and
+/// hands the results to the layer timeline.
+private struct BlurredSlides: View {
+    let slides: [ArtworkPicture]
+    let images: [Int: NSImage]
+    let size: CGSize
+    let running: Bool
+    @State private var blurred: [Int: CGImage] = [:]
+
+    private var bucket: CGSize {
+        CGSize(width: max(64, (size.width / 64).rounded() * 64), height: max(64, (size.height / 64).rounded() * 64))
+    }
+
+    var body: some View {
+        SlideshowLayers(ids: slides.map(\.imageID), images: slides.map { blurred[$0.imageID] }, running: running)
+            .task(id: "\(images.keys.sorted())|\(bucket.width)x\(bucket.height)") {
+                let target = bucket
+                var done = blurred.filter { images[$0.key] != nil && blurredSize[$0.key] == target }
+                for (id, image) in images where done[id] == nil {
+                    guard let cg = image.cgImage(forProposedRect: nil, context: nil, hints: nil) else { continue }
+                    let out = await Task.detached(priority: .utility) { blurredFill(cg, size: target) }.value
+                    guard !Task.isCancelled else { return }
+                    if let out { done[id] = out; blurredSize[id] = target; blurred = done }
+                }
+                blurred = done
+            }
+    }
+
+    @State private var blurredSize: [Int: CGSize] = [:]
+}
+
+/// The photo drawn to fill `size` (points, one pixel each: the blur hides the resolution), then blurred and saturated by 1.2, as
+/// the SwiftUI version drew it. That one blurred by 36 after the zoom (1.18 to 1.28); this blurs before it, so by 36 / 1.23 to
+/// look the same on screen (checked side by side). Edges are clamped so the blur does not darken them.
+private func blurredFill(_ image: CGImage, size: CGSize) -> CGImage? {
+    let source = CIImage(cgImage: image)
+    let scale = max(size.width / source.extent.width, size.height / source.extent.height)
+    let scaled = source.transformed(by: CGAffineTransform(scaleX: scale, y: scale))
+    let crop = CGRect(x: (scaled.extent.width - size.width) / 2, y: (scaled.extent.height - size.height) / 2,
+                      width: size.width, height: size.height)
+    let blurred = scaled.clampedToExtent()
+        .applyingGaussianBlur(sigma: 36 / 1.23)
+        .applyingFilter("CIColorControls", parameters: [kCIInputSaturationKey: 1.2])
+        .cropped(to: crop)
+    // In sRGB, not Core Image's default linear light: that spread bright colours wider and brighter than SwiftUI's blur did
+    // (checked side by side).
+    let context = CIContext(options: [.cacheIntermediates: false, .workingColorSpace: CGColorSpace(name: CGColorSpace.sRGB)!])
+    return context.createCGImage(blurred, from: crop)
+}
+
+/// The slideshow as Core Animation: one layer per photo, in order (a later photo above an earlier one), each with looping
+/// keyframes for opacity, zoom and pan over the whole cycle, so the render server plays it and the main thread does nothing per
+/// frame. Paused in place (`speed` 0) when `running` is false, as the turning disc is. Timing follows `slideshowFrame`: each photo
+/// holds `hold` seconds, zooming 1.18 to 1.28 and panning 30 points, while the next fades in over the last `fade` seconds.
+private struct SlideshowLayers: NSViewRepresentable {
+    let ids: [Int]
+    let images: [CGImage?]
+    let running: Bool
+    var hold: Double = 14
+    var fade: Double = 3
+
+    final class Host: NSView {
+        let stage = CALayer()
+        var ids: [Int]?
+        override init(frame: NSRect) {
+            super.init(frame: frame)
+            wantsLayer = true
+            layer?.masksToBounds = true
+            layer?.addSublayer(stage)
+        }
+        required init?(coder: NSCoder) { nil }
+        override func layout() {
+            super.layout()
+            CATransaction.begin()
+            CATransaction.setDisableActions(true)
+            stage.frame = bounds
+            for slide in stage.sublayers ?? [] {
+                slide.bounds = CGRect(origin: .zero, size: bounds.size)
+                slide.position = CGPoint(x: bounds.midX, y: bounds.midY)
+            }
+            CATransaction.commit()
+        }
+    }
+
+    func makeNSView(context: Context) -> Host { Host() }
+
+    func updateNSView(_ view: Host, context: Context) {
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        if view.ids != ids { rebuild(view) }
+        for (slide, image) in zip(view.stage.sublayers ?? [], images) where slide.contents as AnyObject? !== image as AnyObject? {
+            slide.contents = image
+        }
+        let stage = view.stage
+        if running, stage.speed == 0 {
+            let held = stage.timeOffset
+            stage.timeOffset = 0
+            stage.beginTime = 0
+            stage.beginTime = stage.convertTime(CACurrentMediaTime(), from: nil) - held
+            stage.speed = 1
+        } else if !running, stage.speed != 0 {
+            let local = stage.convertTime(CACurrentMediaTime(), from: nil)
+            stage.speed = 0
+            stage.timeOffset = local
+        }
+        CATransaction.commit()
+    }
+
+    /// New photos: fresh layers and a timeline starting at its beginning, paused until `updateNSView` starts it.
+    private func rebuild(_ view: Host) {
+        view.ids = ids
+        let stage = view.stage
+        stage.sublayers?.forEach { $0.removeFromSuperlayer() }
+        stage.removeAllAnimations()
+        stage.speed = 0
+        stage.timeOffset = 0
+        stage.beginTime = 0
+        let n = ids.count
+        guard n > 0 else { return }
+        let cycle = Double(n) * hold
+        for i in 0..<n {
+            let slide = CALayer()
+            slide.contentsGravity = .resizeAspectFill
+            slide.bounds = CGRect(origin: .zero, size: view.bounds.size)
+            slide.position = CGPoint(x: view.bounds.midX, y: view.bounds.midY)
+            let frames = SlideshowKeyframes(index: i, count: n, hold: hold, fade: fade)
+            slide.opacity = Float(frames.opacity.first?.1 ?? 1)
+            slide.transform = CATransform3DMakeScale(1.18, 1.18, 1)
+            if n > 1 { slide.add(Self.keyframes("opacity", frames.opacity, cycle: cycle), forKey: "opacity") }
+            slide.add(Self.keyframes("transform.scale", frames.progress.map { ($0.0, 1.18 + 0.1 * $0.1) }, cycle: cycle), forKey: "zoom")
+            slide.add(Self.keyframes("transform.translation.x", frames.progress.map { ($0.0, ($0.1 - 0.5) * 30) }, cycle: cycle), forKey: "pan")
+            stage.addSublayer(slide)
+        }
+    }
+
+    private static func keyframes(_ path: String, _ points: [(Double, Double)], cycle: Double) -> CAKeyframeAnimation {
+        let a = CAKeyframeAnimation(keyPath: path)
+        a.values = points.map(\.1)
+        a.keyTimes = points.map { NSNumber(value: $0.0 / cycle) }
+        a.duration = cycle
+        a.repeatCount = .infinity
+        a.calculationMode = .linear
+        a.isRemovedOnCompletion = false
+        return a
+    }
+}
+
+/// One photo's keyframes over a cycle of `count * hold` seconds, as (time, value) pairs: its opacity, and its zoom-and-pan progress
+/// (0 to 1). A photo fades in over the one before it (it is above it), shows while it drifts, then is hidden under the next. The
+/// last photo is above the first, so at the end of the cycle the last fades out over the first instead, which looks the same.
+/// Pure, so a test can check it against `slideshowFrame`.
+struct SlideshowKeyframes {
+    let opacity: [(Double, Double)]
+    let progress: [(Double, Double)]
+
+    init(index i: Int, count n: Int, hold h: Double, fade f: Double) {
+        let cycle = Double(n) * h, start = Double(i) * h, end = start + h, e = 0.001
+        if n <= 1 {
+            opacity = [(0, 1), (cycle, 1)]
+            progress = [(0, 0), (cycle, 1)]
+        } else if i == 0 {
+            opacity = [(0, 1), (h, 1), (h + e, 0), (cycle - f, 0), (cycle - f + e, 1), (cycle, 1)]
+            progress = [(0, 0), (h, 1), (h + e, 0), (cycle, 0)]
+        } else if i == n - 1 {
+            opacity = [(0, 0), (start - f, 0), (start, 1), (cycle - f, 1), (cycle, 0)]
+            progress = [(0, 0), (start, 0), (end, 1)]
+        } else {
+            opacity = [(0, 0), (start - f, 0), (start, 1), (end, 1), (end + e, 0), (cycle, 0)]
+            progress = [(0, 0), (start, 0), (end, 1), (cycle, 1)]
+        }
+    }
+
+    /// What the cycle shows at `t` seconds: (opacity, progress) by straight-line interpolation, for tests.
+    func value(at t: Double) -> (opacity: Double, progress: Double) {
+        func at(_ points: [(Double, Double)]) -> Double {
+            guard let first = points.first else { return 0 }
+            if t <= first.0 { return first.1 }
+            for (a, b) in zip(points, points.dropFirst()) where t <= b.0 {
+                return b.0 > a.0 ? a.1 + (b.1 - a.1) * (t - a.0) / (b.0 - a.0) : b.1
+            }
+            return points.last!.1
+        }
+        return (at(opacity), at(progress))
+    }
+}
+
 
 /// A small badge on the Now Playing cover that opens the album's booklet (docs/artwork.md, idea 2). Shown only when the playing
 /// album has booklet pages; nothing otherwise. The cover's click still flips it (idea 1); this badge is a separate control.
