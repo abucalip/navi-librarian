@@ -1,3 +1,9 @@
+## 2026-11-15 — Star Operation S1b: seed tags on tag-search picks (PR open)
+
+- The owner chose option 1 for the reason wording: "Because you play" for a real seed, "Shares genres with" for tag-overlap names.
+- Open question answered by reading `candidate_gathering.py`: ListenBrainz CF items carry only `recording_mbid` and `score`, so CF candidates have no seed to carry. Tag-search candidates do: the profile tag. `record_seed_tag` (`discovery/pick_because.py`) stores profile-derived tags as `seed_tags` in `lb_tag_lane.py` and the MusicBrainz lane in `candidate_gathering.py` (exploration tags are not recorded, they do not come from the owner's listening). `because` gains kind `tag` (up to three names), which wins over `similar_artists`. No change to `navidrome_server.py`; no new provider requests.
+- Tests run: `pytest tests/test_discovery_pick_because.py tests/test_discovery_lb_tag_lane.py tests/test_discovery_mb_tag_seed.py tests/test_discovery_deep_cuts_supply.py` (37 pass). Not run: full suite (owner rule), `check_lint_changed.py` (nothing committed when run; CI runs it).
+
 ## 2026-11-15 — Star Operation S1a: `because` field on personal picks (merged #1091)
 
 - New `discovery/pick_because.py` returns `similar_to` plus `because` (`{kind: "similar_artists", names}`) for each personal pick; `because` is omitted when there are no similar artists. `navidrome_server.py` swaps one import, one builder line and two assignments for the same number of lines (net 0, D-016). `similar_to` is unchanged.

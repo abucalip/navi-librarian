@@ -27,7 +27,9 @@ from discovery.candidate_supply import (
     summarize_cf_recordings,
     summarize_supplementary_yield,
 )
+from discovery.pick_because import record_seed_tag
 from discovery.recommendations import decayed_listen_weights, merge_discovery_source
+from discovery.tag_queries import tag_from_query
 
 _RETRYABLE_STATUS_CODES = (429, 500, 502, 503, 504)
 _GENRE_LOOKUP_ATTEMPTS = 3
@@ -439,6 +441,7 @@ def _run_tag_queries(
                     regional_styles = albums[key].setdefault("regional_styles", [])
                     if regional_style not in regional_styles:
                         regional_styles.append(regional_style)
+                    record_seed_tag(albums[key], regional_style, tag_from_query(query))
                     continue
 
                 if state["added"] >= SUPPLEMENTARY_CANDIDATE_CAP:
@@ -459,6 +462,7 @@ def _run_tag_queries(
                     "regional_families": [regional_family],
                     "regional_styles": [regional_style],
                 }
+                record_seed_tag(albums[key], regional_style, tag_from_query(query))
                 state["added"] += 1
                 regional_query_added += 1
                 if regional_query_added >= 5:

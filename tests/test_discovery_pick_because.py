@@ -1,7 +1,9 @@
 """Tests for the Star Operation S1a "because" field on personal picks."""
 import unittest
 
-from discovery.pick_because import build_because, build_pick_context_lookup
+from discovery.pick_because import (
+    build_because, build_pick_context_lookup, build_seed_because, record_seed_tag,
+)
 
 
 def _key(value):
@@ -55,6 +57,46 @@ class PickContextLookupTests(unittest.TestCase):
         expected = build_similar_to_lookup(listens, genres, _key)(candidate)
         context = build_pick_context_lookup(listens, genres, _key)(candidate)
         self.assertEqual(context["similar_to"], expected)
+
+
+class SeedTagTests(unittest.TestCase):
+    def test_profile_style_records_tag_and_ignores_duplicates(self):
+        candidate = {}
+        record_seed_tag(candidate, "profile:jazz", "jazz")
+        record_seed_tag(candidate, "profile:jazz_2", "jazz")
+        record_seed_tag(candidate, "profile:cafe_jazz", "café jazz")
+        self.assertEqual(candidate["seed_tags"], ["jazz", "café jazz"])
+
+    def test_exploration_style_and_empty_tag_record_nothing(self):
+        candidate = {}
+        record_seed_tag(candidate, "explore:rai", "rai")
+        record_seed_tag(candidate, "profile:rai", "")
+        record_seed_tag(candidate, "profile:rai", None)
+        self.assertNotIn("seed_tags", candidate)
+
+    def test_build_seed_because_shape_cap_and_absence(self):
+        self.assertIsNone(build_seed_because(None))
+        self.assertIsNone(build_seed_because([]))
+        self.assertEqual(build_seed_because(["a", "b", "c", "d"]),
+                         {"kind": "tag", "names": ["a", "b", "c"]})
+
+    def test_seed_tag_wins_over_similar_artists(self):
+        listens = [_listen("Jazz One", "j1")]
+        lookup = build_pick_context_lookup(listens, {"j1": ["jazz"], "c": ["jazz"]}, _key)
+        context = lookup({"artist_mbid": "c", "primary_artist": "New", "seed_tags": ["jazz"]})
+        self.assertEqual(context["because"], {"kind": "tag", "names": ["jazz"]})
+        self.assertEqual(context["similar_to"], ["Jazz One"])
+
+    def test_seed_tag_alone_gives_because_without_similar_artists(self):
+        lookup = build_pick_context_lookup([], {}, _key)
+        context = lookup({"artist_mbid": "c", "primary_artist": "New", "seed_tags": ["rai"]})
+        self.assertEqual(context, {"similar_to": [], "because": {"kind": "tag", "names": ["rai"]}})
+
+    def test_candidate_without_seed_keeps_similar_artists_form(self):
+        lookup = build_pick_context_lookup(
+            [_listen("Jazz One", "j1")], {"j1": ["jazz"], "c": ["jazz"]}, _key)
+        context = lookup({"artist_mbid": "c", "primary_artist": "New"})
+        self.assertEqual(context["because"]["kind"], "similar_artists")
 
 
 if __name__ == "__main__":
