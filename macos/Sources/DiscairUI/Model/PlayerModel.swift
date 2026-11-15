@@ -135,9 +135,6 @@ public final class PlayerModel {
     public internal(set) var live: LiveSession?
     /// The station that was stopped last, so Play can start it again. Cleared when a library song starts.
     @ObservationIgnored var stoppedStation: RadioStation?
-    /// True while a library song sits paused only because a station started. Stopping that station then leaves Play on the song,
-    /// not on the station. Cleared when the song plays again, another song starts, or the queue stops.
-    @ObservationIgnored var songPausedForStation = false
     /// The playing station as the server sent it, for Next and Previous.
     @ObservationIgnored var stationByLive: RadioStation?
     @ObservationIgnored let liveOutput: LiveOutput
@@ -263,10 +260,12 @@ public final class PlayerModel {
     // MARK: Starting
 
     /// Plays `songs` from `startAt`, replacing the queue.
-    public func play(_ songs: [QueueItem], startAt: Int = 0) {
+    /// `position` (seconds) starts the song there instead of at 0, as a handoff from another device does.
+    public func play(_ songs: [QueueItem], startAt: Int = 0, position: Double = 0) {
         leaveByOwner()
         queue.set(songs, startAt: startAt)
-        startCurrent()
+        resumeAt = position
+        startCurrent(resume: position > 0)
     }
 
     public func playNext(_ song: QueueItem) {
@@ -298,7 +297,7 @@ public final class PlayerModel {
         if togglePlayPauseLive() { return }
         switch phase {
         case .playing: output.pause(); phase = .paused; position = output.position; stopTicking(); persist()
-        case .paused: songPausedForStation = false; output.play(); phase = .playing; startTicking()
+        case .paused: output.play(); phase = .playing; startTicking()
         case .idle, .failed: if current != nil { startCurrent(resume: true) }
         case .loading: break
         }
@@ -364,7 +363,7 @@ public final class PlayerModel {
 
     public func stop() {
         endLive()
-        stoppedStation = nil; songPausedForStation = false
+        stoppedStation = nil
         sleepTimer.cancel()
         loadGeneration += 1
         loadTask?.cancel()
@@ -394,7 +393,7 @@ public final class PlayerModel {
         guard let item = queue.current else { stop(); return }
         guard let urls else { phase = .failed("Not connected to Navidrome. Check Settings."); return }
         endLive()
-        stoppedStation = nil; songPausedForStation = false
+        stoppedStation = nil
         loadGeneration += 1
         let mine = loadGeneration
         loadTask?.cancel()
@@ -413,7 +412,8 @@ public final class PlayerModel {
                 // open while growing, takes the whole-file path below.
                 let streamSuffix = opts.format?.rawValue ?? item.suffix
                 let streamURL = try urls.streamURL(songID: item.songID, maxBitRate: opts.bitRate, format: opts.format)
-                if ProgressiveStart.requiredBytes(suffix: streamSuffix) != nil, let download = fetcher.beginGrowing(streamURL, suffix: streamSuffix) {
+                // A start part-way in takes the whole file: a growing file cannot be sought past what has arrived.
+                if startAt <= 3, ProgressiveStart.requiredBytes(suffix: streamSuffix) != nil, let download = fetcher.beginGrowing(streamURL, suffix: streamSuffix) {
                     do { try await Self.waitToStart(download, suffix: streamSuffix) }
                     catch { download.cancel(); try? FileManager.default.removeItem(at: download.file); throw error }
                     guard let self, !Task.isCancelled, self.loadGeneration == mine else { download.cancel(); try? FileManager.default.removeItem(at: download.file); return }

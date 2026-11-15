@@ -1,3 +1,10 @@
+## 2026-11-15 — macOS: Play after Stop resumes the song, Continue on this Mac starts at the phone's place (PR open)
+
+- Radio: #1090 made Play return to a song only when the station had paused it. A song the owner had already paused, a queue restored at launch, or a song still loading was missed, so Play restarted the station. Now Play after stopping a station goes to the queue's current song whenever there is one; only an empty queue restarts the station. `songPausedForStation` removed (dead). A song still loading when a station starts goes back to idle, not a false "paused".
+- Continue on this Mac: the position was applied by a seek after start, which a growing download clamps to what has arrived (so it landed near the start), and was dropped after 6 s of loading. `PlayerModel.play(_:startAt:position:)` now carries the position into the load, and a start part-way in skips the growing download and uses the whole file. Continue re-reads `getPlayQueue` at click time (falls back to the copy Home read).
+- Tests: `swift test --filter "LiveSessionTests|PlayerModelTests"` passed (53); added three station cases and two handoff cases. Not run: full suite, a live phone handoff, a run in the installed app. The owner's exact symptoms are not confirmed reproduced; these are the defects found by reading the code.
+- Docs: `RADIO_PLAYBACK_PROPOSAL.md` S2.6 queue rule updated.
+
 ## 2026-11-15 — macOS: played queue songs play on double-click, moving bars beside LIVE in the player bar (PR open)
 
 - Queue: played songs are no longer dimmed or single-click buttons; double-click plays one again (same as up-next rows). VoiceOver keeps a "Play again" action. The queue's playing mark already used the AppKit `PlayingBars` from #1088.

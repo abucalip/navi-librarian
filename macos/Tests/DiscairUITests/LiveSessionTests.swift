@@ -116,6 +116,44 @@ struct LiveSessionTests {
         #expect(p.live?.stationID == "1" && live.started.count == 2)
     }
 
+    @Test func playAfterStoppingResumesASongTheOwnerHadPaused() async throws {
+        let (p, live, out, _) = try make()
+        p.play(songs(2))
+        for _ in 0..<200 where p.phase != .playing { try? await Task.sleep(for: .milliseconds(10)) }
+        p.togglePlayPause()                                   // the owner pauses the song
+        p.playStation(station("1"))
+        p.togglePlayPause()                                   // stops the station
+        p.togglePlayPause()                                   // Play: the song, not the station
+        #expect(p.live == nil && live.started.count == 1 && p.phase == .playing && out.isPlaying)
+    }
+
+    @Test func playAfterStoppingStartsARestoredQueueNotTheStation() async throws {
+        let (first, _, _, defaults) = try make()
+        first.play(songs(2))
+        for _ in 0..<200 where first.phase != .playing { try? await Task.sleep(for: .milliseconds(10)) }
+        first.persist()
+        // A new launch: the queue is restored and has not played yet.
+        let live = FakeLiveOutput(), out = QuietOutput()
+        let p = PlayerModel(output: out, fetcher: QuietFetcher(), defaults: defaults, liveOutput: live)
+        p.configure(urls: try StreamURLBuilder(baseURL: URL(string: "https://navi.example.ts.net")!, auth: SubsonicAuth(credential: Credential(username: "o", password: "pw"))))
+        p.liveBase = URL(string: "http://librarian.example.invalid:8689")
+        #expect(p.phase == .idle && p.current != nil)
+        p.playStation(station("1"))
+        p.togglePlayPause()                                   // stops the station
+        p.togglePlayPause()
+        #expect(p.live == nil && live.started.count == 1 && p.phase != .idle)
+    }
+
+    @Test func aStationStartedWhileASongLoadsLeavesPlayStartingTheSong() throws {
+        let (p, live, _, _) = try make()
+        p.play(songs(2))
+        #expect(p.phase == .loading)
+        p.playStation(station("1"))
+        p.togglePlayPause()                                   // stops the station
+        p.togglePlayPause()
+        #expect(p.live == nil && live.started.count == 1 && p.phase == .loading)
+    }
+
     @Test func aLibrarySongStopsTheStationAndForgetsItForPlay() async throws {
         let (p, live, _, _) = try make()
         p.playStation(station("1"))
