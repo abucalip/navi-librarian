@@ -36,10 +36,22 @@ private struct SymbolBars: NSViewRepresentable {
 
     final class Coordinator { var moving = false; var pointSize: CGFloat = 0 }
 
+    /// A symbol effect only runs on a view that is in a window. SwiftUI calls `updateNSView` before the view is attached, so
+    /// the first request was dropped and the bars stayed still. The view asks again when it joins a window.
+    final class BarsView: NSImageView {
+        var wantsMotion = false { didSet { if wantsMotion != oldValue { apply() } } }
+        override func viewDidMoveToWindow() { super.viewDidMoveToWindow(); apply() }
+        private func apply() {
+            removeAllSymbolEffects(options: .default, animated: false)
+            guard wantsMotion, window != nil else { return }
+            addSymbolEffect(.variableColor.iterative.dimInactiveLayers, options: .repeating, animated: true)
+        }
+    }
+
     func makeCoordinator() -> Coordinator { Coordinator() }
 
     func makeNSView(context: Context) -> NSImageView {
-        let view = NSImageView()
+        let view = BarsView()
         view.image = NSImage(systemSymbolName: "waveform", accessibilityDescription: nil)
         view.imageScaling = .scaleNone
         view.setAccessibilityElement(false)
@@ -49,18 +61,14 @@ private struct SymbolBars: NSViewRepresentable {
     }
 
     func updateNSView(_ view: NSImageView, context: Context) {
+        guard let view = view as? BarsView else { return }
         let state = context.coordinator
         if state.pointSize != pointSize {
             view.symbolConfiguration = NSImage.SymbolConfiguration(pointSize: pointSize, weight: .regular)
             state.pointSize = pointSize
         }
         if view.contentTintColor != color { view.contentTintColor = color }
-        guard state.moving != moving else { return }
         state.moving = moving
-        if moving {
-            view.addSymbolEffect(.variableColor.iterative.dimInactiveLayers, options: .repeating, animated: true)
-        } else {
-            view.removeAllSymbolEffects(options: .default, animated: false)
-        }
+        view.wantsMotion = moving
     }
 }

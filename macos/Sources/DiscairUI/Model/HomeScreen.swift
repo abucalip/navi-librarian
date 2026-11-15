@@ -255,8 +255,8 @@ enum HomeScreen {
     // MARK: Phone handoff (D5)
 
     /// The queue another client saved, offered as "Playing on your phone". Only when it is not this app's own queue, was saved
-    /// within `handoffHours`, has a current song, and that song is not the one this Mac is already playing.
-    static let handoffHours = 24
+    /// within `handoffHours` (two hours), has a current song, and that song is not the one this Mac is already playing.
+    static let handoffHours = 2
 
     static func handoff(queue: NavidromePlayQueue?, now: Date, clientName: String, playingSongID: String?) -> HomeDashboard.Handoff? {
         guard let queue, let song = queue.current, let changed = queue.changed else { return nil }

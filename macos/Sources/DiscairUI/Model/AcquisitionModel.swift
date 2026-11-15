@@ -52,6 +52,8 @@ public final class AcquisitionModel {
     /// Set by the app; previews and tests leave it empty, so they never notify.
     @ObservationIgnored public var notifier: GetNotifier?
     @ObservationIgnored private var detector = GetFinishedDetector()
+    /// Called when a poll sees a Get become imported, so the app reads the library again (wired by `AppState`).
+    @ObservationIgnored public var onImported: () async -> Void = {}
 
     /// In-app notes for Gets that just ended (imported or failed), shown above the Pipeline dock for 30 seconds, then
     /// they fade away. Independent of the system-notification switch: this is the app's own signal.
@@ -317,6 +319,7 @@ public final class AcquisitionModel {
         let finished = detector.events(for: list)
         finished.forEach(post)
         if notifiesWhenFinished, let notifier { finished.forEach(notifier.deliver) }
+        if finished.contains(where: { $0.outcome == .imported }) { await onImported() }
     }
 
     // MARK: Downloads screen
