@@ -8,6 +8,7 @@ applies. The endpoint is undocumented in the public API docs.
 """
 from typing import Any, Callable
 
+from discovery.pick_because import record_seed_tag
 from discovery.tag_queries import tag_from_query
 
 LB_TAG_RADIO_URL = "https://api.listenbrainz.org/1/lb-radio/tags"
@@ -230,6 +231,7 @@ def run_lb_tag_queries(
                         styles = existing.setdefault("regional_styles", [])
                         if style not in styles:
                             styles.append(style)
+                        record_seed_tag(existing, style, tag)
                         continue
                     if state["added"] >= candidate_cap:
                         break
@@ -247,6 +249,7 @@ def run_lb_tag_queries(
                         "regional_families": [family],
                         "regional_styles": [style],
                     }
+                    record_seed_tag(albums[key], style, tag)
                     state["added"] += 1
                     added += 1
                 if added >= per_query or state["added"] >= candidate_cap:

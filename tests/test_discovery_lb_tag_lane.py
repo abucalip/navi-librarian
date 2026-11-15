@@ -51,6 +51,16 @@ class LaneTests(unittest.TestCase):
         for tag in ["jazz", "ethio-jazz", 'Hip Hop "x"', "a\\b"]:
             self.assertEqual(tag_from_query(_query_for_tag(tag)), tag)
 
+    def test_profile_tag_is_recorded_as_seed_and_explore_tag_is_not(self):
+        queries = [(_query_for_tag("jazz"), "jazz", "profile:jazz"), (_query_for_tag("rai"), "rai", "explore:rai")]
+        radio = {"jazz": [{"recording_mbid": R1}, {"recording_mbid": R2}], "rai": [{"recording_mbid": R2}, {"recording_mbid": R3}]}
+        recs = {R1: recording("A", "One", "g1"), R2: recording("B", "Two", "g2"), R3: recording("C", "Three", "g3")}
+        self.run_lane(queries, radio, recs)
+        by_artist = {c["primary_artist"]: c for c in self.albums.values()}
+        self.assertEqual(by_artist["A"]["seed_tags"], ["jazz"])
+        self.assertEqual(by_artist["B"]["seed_tags"], ["jazz"])  # also found by rai, which is not a seed
+        self.assertNotIn("seed_tags", by_artist["C"])
+
     def test_adds_candidates_merges_and_caches(self):
         queries = [(_query_for_tag("jazz"), "jazz", "profile:jazz"), (_query_for_tag("rai"), "rai", "explore:rai")]
         radio = {"jazz": [{"recording_mbid": R1}, {"recording_mbid": R2}], "rai": [{"recording_mbid": R2}, {"recording_mbid": R3}]}

@@ -92,7 +92,7 @@ Client slices that change screens need the owner's checks on a device and in a w
 
 ## 8. Decisions needed from the owner
 
-1. Wording of the reason line, and whether tag-overlap names should be labelled as tag overlap.
+1. Wording of the reason line, and whether tag-overlap names should be labelled as tag overlap. **Decided 2026-11-15 (owner):** tag-overlap names are labelled. `tag` reads "Because you listen to {tag}", `similar_artists` reads "Shares genres with {names}", a confirmed artist seed would read "Because you play {names}".
 2. Whether a genre block hides picks only, or also lenses and classics (the proposal says both).
 3. Whether to add "Less like this" next to "Not this artist".
 4. Whether stars start switched on or off, and their weight against a save.
