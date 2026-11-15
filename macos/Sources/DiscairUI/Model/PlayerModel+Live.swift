@@ -83,8 +83,9 @@ extension PlayerModel {
     public func stopStation() {
         guard let station = stationByLive else { return }
         endLive()
-        // A song that was paused for this station gets Play back; only without one does Play start the station again.
-        stoppedStation = songPausedForStation && current != nil ? nil : station
+        // With a song in the queue (playing, paused or only restored at launch) Play goes back to the song; only with an empty
+        // queue does Play start the station again.
+        stoppedStation = current != nil ? nil : station
         sleepTimer.cancel()
     }
 
@@ -283,10 +284,15 @@ extension PlayerModel {
     }
 
     private func pauseLibrarySongForStation() {
-        output.pause()
-        songPausedForStation = true
-        phase = .paused
-        position = output.position
+        if phase == .loading {
+            // Nothing is open yet (the load was cancelled), so there is nothing to pause: Play starts the song again.
+            output.stop()
+            phase = .idle
+        } else {
+            output.pause()
+            phase = .paused
+            position = output.position
+        }
         stopTicking()
         persist()
     }

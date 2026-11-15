@@ -428,14 +428,13 @@ public final class AppState {
 
     /// "Continue on this Mac": plays the phone's queue from the song it was on, at the position it reached.
     public func continueFromPhone() {
-        guard let queue = phoneQueue else { return }
-        let start = HomeScreen.handoffStart(queue: queue)
-        player.play(start.songs.map(PlayerModel.item), startAt: start.startAt)
-        let seconds = Double(queue.positionMs) / 1000
         Task {
-            // The song has to be loaded before it can seek.
-            for _ in 0..<40 where !player.isPlaying { try? await Task.sleep(for: .milliseconds(150)) }
-            if seconds > 1 { player.seek(toSeconds: seconds) }
+            // The phone saves its queue every 30 s while it plays, so the copy Home read earlier can be old: read it again.
+            let fresh = await Self.attempt { try await self.session?.navidrome?.playQueue() }
+            guard let queue = fresh ?? phoneQueue else { return }
+            phoneQueue = queue
+            let start = HomeScreen.handoffStart(queue: queue)
+            player.play(start.songs.map(PlayerModel.item), startAt: start.startAt, position: Double(queue.positionMs) / 1000)
         }
     }
 

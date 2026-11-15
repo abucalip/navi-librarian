@@ -62,6 +62,22 @@ private final class GrowingFetcher: AudioFetcher, @unchecked Sendable {
     func beginGrowing(_ url: URL, suffix: String?) -> GrowingDownload? { download }
 }
 
+/// Offers a growing download and records whether `beginGrowing` was asked for.
+private final class OfferingFetcher: AudioFetcher, @unchecked Sendable {
+    private let lock = NSLock()
+    private var asked = 0
+    var growingAsked: Int { lock.withLock { asked } }
+    func fetch(_ url: URL, suffix: String?) async throws -> URL {
+        let f = FileManager.default.temporaryDirectory.appending(path: "offer-\(UUID().uuidString).\(suffix ?? "bin")")
+        try Data([0]).write(to: f)
+        return f
+    }
+    func beginGrowing(_ url: URL, suffix: String?) -> GrowingDownload? {
+        lock.withLock { asked += 1 }
+        return GrowingDownload(file: FileManager.default.temporaryDirectory.appending(path: "offer-grow-\(UUID().uuidString).mp3"))
+    }
+}
+
 private func streamBuilder() throws -> StreamURLBuilder {
     try StreamURLBuilder(baseURL: URL(string: "https://navi.example.ts.net")!, auth: SubsonicAuth(credential: Credential(username: "o", password: "pw")))
 }
@@ -139,6 +155,26 @@ struct GrowingFailureTests {
 
 @MainActor
 struct PlayerModelTests {
+    @Test func aHandoffStartsAtThePositionFromTheWholeFileNotAGrowingDownload() async throws {
+        let out = FakeOutput(), fetcher = OfferingFetcher()
+        let p = PlayerModel(output: out, fetcher: fetcher, defaults: UserDefaults(suiteName: "discair-handoff-\(UUID().uuidString)")!)
+        p.configure(urls: try streamBuilder())
+        p.play(songs(3, suffix: "mp3"), startAt: 1, position: 161)
+        for _ in 0..<200 where p.phase != .playing { try? await Task.sleep(for: .milliseconds(10)) }
+        // A growing file cannot be sought past what has arrived, so a start part-way in must not use one.
+        #expect(fetcher.growingAsked == 0 && out.growingOpened == 0)
+        #expect(p.phase == .playing && p.current?.title == "T1" && out.seeks == [161])
+    }
+
+    @Test func aPlayWithoutAPositionStillStartsAsAGrowingDownload() async throws {
+        let out = FakeOutput(), fetcher = OfferingFetcher()
+        let p = PlayerModel(output: out, fetcher: fetcher, defaults: UserDefaults(suiteName: "discair-handoff-\(UUID().uuidString)")!)
+        p.configure(urls: try streamBuilder())
+        p.play(songs(1, suffix: "mp3"))
+        try? await Task.sleep(for: .milliseconds(100))
+        #expect(fetcher.growingAsked == 1)
+    }
+
     @Test func playLoadsTheSongThenPlaysIt() async throws {
         let (p, out, fetch) = try make()
         p.play(songs(3), startAt: 1)
