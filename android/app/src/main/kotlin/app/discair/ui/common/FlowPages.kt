@@ -77,9 +77,7 @@ object FlowPagesRules {
     /** Genre grid: two columns, 14dp apart (shared.css `.g2`). */
     const val GRID_GAP = 14
 
-    /** Discover (flow.css `.dc`): the card's cover, its padding, the gap between cards, the small capsule buttons and the insight card's cover. */
-    const val DISCOVER_COVER = 112
-    const val DISCOVER_GAP = 12
+    /** Discover (flow.css `.dc`): the small capsule buttons and the insight card's cover. */
     const val SMALL_BUTTON = 34
     const val INSIGHT_COVER = 88
 

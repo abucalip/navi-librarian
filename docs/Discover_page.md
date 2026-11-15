@@ -1,6 +1,6 @@
 # Flow Discover page: one switch (option B)
 
-Status: plan, approved direction. The owner chose option B ("One switch") on 2026-11-15 from three mockups (A one feed, B one switch, C hub). No code has been written yet. Build it in the steps of section 8, one PR per step, in order.
+Status: plan, approved direction. The owner chose option B ("One switch") on 2026-11-15 from three mockups (A one feed, B one switch, C hub). D1 to D3 are merged (#1103, #1105, #1106) and D4 (cleanup) is in review; only the owner's phone check remains. Steps are in section 8.
 
 Scope: the **Flow** layout of the Android client (`Layout.Flow`, every Flow palette). No other theme, the server, the web client or macOS changes. Every change sits behind `isFlow()`.
 
