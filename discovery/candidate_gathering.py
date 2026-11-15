@@ -899,13 +899,13 @@ def gather_recommendation_candidates(
     seed_counts = None
     if providers.feedback_rows is not None:
         from recommendation_feedback import (
-            FEEDBACK_SIGNAL_ENABLED, saved_artist_seed_genres, saved_artist_seed_weights,
+            FEEDBACK_SIGNAL_ENABLED, combined_seed_genres, combined_seed_weights,
         )
         if FEEDBACK_SIGNAL_ENABLED:
             try:
                 rows = list(providers.feedback_rows())
-                seeds = saved_artist_seed_weights(rows, now=time.time())
-                stored_genres = saved_artist_seed_genres(rows, now=time.time())
+                seeds = combined_seed_weights(rows, now=time.time())
+                stored_genres = combined_seed_genres(rows, now=time.time())
                 for candidate in albums.values():
                     if candidate.get("artist_mbid"):
                         mbid_by_artist_key.setdefault(
