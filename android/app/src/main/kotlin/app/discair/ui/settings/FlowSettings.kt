@@ -127,6 +127,7 @@ internal fun FlowSettingsPage(
         FlowGroup {
             RadioSettings(divider = false)
             ListenBrainzSettings()
+            BlocklistSettings()
             app.discair.ui.LibrarySettings()
         }
         FlowGroupEyebrow("Playback")

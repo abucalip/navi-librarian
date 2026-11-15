@@ -120,6 +120,65 @@ fun feedbackBody(action: FeedbackAction, artist: String, album: String, metadata
         ),
     ).toString()
 
+// ---- Blocklist (Star Operation S2c: /api/discovery/blocked-genres, blocked-artists, artist-lean)
+
+/** What the owner told the server to leave out of picks, or to lean on. A block hides picks only; it never touches the library. */
+data class Blocklist(
+    val genres: List<String> = emptyList(),
+    /** Artists hidden by "Not this artist". */
+    val hiddenArtists: List<String> = emptyList(),
+    val leans: List<ArtistLean> = emptyList(),
+)
+
+enum class Lean(val wire: String) { More("more"), Less("less") }
+
+data class ArtistLean(val artist: String, val lean: Lean)
+
+@Serializable
+private data class GenreRow(val genre: String = "")
+
+@Serializable
+private data class ArtistRow(val artist: String = "", val lean: String = "")
+
+@Serializable
+private data class GenreRows(val genres: List<GenreRow> = emptyList())
+
+@Serializable
+private data class ArtistRows(val artists: List<ArtistRow> = emptyList())
+
+fun parseBlockedGenres(body: String): List<String> =
+    ApiJson.decodeFromString(GenreRows.serializer(), body).genres.map { it.genre }.filter { it.isNotBlank() }
+
+fun parseBlockedArtists(body: String): List<String> =
+    ApiJson.decodeFromString(ArtistRows.serializer(), body).artists.map { it.artist }.filter { it.isNotBlank() }
+
+/** Rows with a lean the app does not know are dropped, so a newer server cannot break the screen. */
+fun parseArtistLeans(body: String): List<ArtistLean> =
+    ApiJson.decodeFromString(ArtistRows.serializer(), body).artists.mapNotNull { row ->
+        val lean = Lean.entries.firstOrNull { it.wire == row.lean }
+        if (row.artist.isBlank() || lean == null) null else ArtistLean(row.artist, lean)
+    }
+
+fun genreBody(genre: String): String = JsonObject(mapOf("genre" to JsonPrimitive(genre))).toString()
+
+fun artistBody(artist: String): String = JsonObject(mapOf("artist" to JsonPrimitive(artist))).toString()
+
+/** The server keeps only `genres` and `lens` of [genres] and [lens], so only those are sent. */
+fun leanBody(artist: String, lean: Lean, genres: List<String>, lens: String? = null): String {
+    val metadata = buildMap<String, kotlinx.serialization.json.JsonElement> {
+        if (genres.isNotEmpty()) put("genres", JsonArray(genres.map { JsonPrimitive(it) }))
+        if (!lens.isNullOrBlank()) put("lens", JsonPrimitive(lens))
+    }
+    return JsonObject(
+        mapOf("artist" to JsonPrimitive(artist), "lean" to JsonPrimitive(lean.wire), "metadata" to JsonObject(metadata)),
+    ).toString()
+}
+
+/** The genres a card may offer to block: the album's own, trimmed and without repeats (the server matches on these). */
+fun blockableGenres(genres: List<String>, limit: Int = 3): List<String> =
+    genres.map { it.trim().replace(Regex("\\s+"), " ") }.filter { it.isNotEmpty() }
+        .distinctBy { it.lowercase() }.take(limit)
+
 // ---- Search (GET /api/search, server-sent events)
 
 @Serializable

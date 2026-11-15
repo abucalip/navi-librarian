@@ -27,6 +27,8 @@ class DiscoveryRoutesTests(unittest.TestCase):
             ("/api/discovery/blocked-genres", "GET"),
             ("/api/discovery/blocked-genres", "POST"),
             ("/api/discovery/blocked-genres", "DELETE"),
+            ("/api/discovery/blocked-artists", "GET"),
+            ("/api/discovery/blocked-artists", "DELETE"),
             ("/api/discovery/artist-lean", "GET"),
             ("/api/discovery/artist-lean", "POST"),
             ("/api/discovery/artist-lean", "DELETE"),

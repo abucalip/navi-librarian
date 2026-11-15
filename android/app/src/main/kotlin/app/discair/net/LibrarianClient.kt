@@ -112,6 +112,12 @@ class LibrarianClient(
         return get(Request.Builder().url(url).delete().build())
     }
 
+    /** DELETE [segments] with a JSON body (the blocklist routes take the name in the body). Same re-login and error handling. */
+    fun delete(segments: List<String>, json: String): String {
+        val url = baseUrl.toHttpUrl().newBuilder().apply { segments.forEach { addPathSegment(it) } }.build()
+        return get(Request.Builder().url(url).delete(json.toRequestBody(JSON)).build())
+    }
+
     /**
      * Reads a server-sent event stream, calling [onEvent] with each event's name and data line.
      * Blocks until the stream ends; cancelling the calling coroutine's thread work closes the call.

@@ -60,6 +60,7 @@
       <div id="appMenu" class="header-menu-panel" hidden>
         <button type="button" data-page="library">Library</button>
         <button type="button" data-page="saved">Saved</button>
+        <button type="button" data-page="blocklist">Blocklist</button>
         <button type="button" data-page="radio">Radio</button>
         <button type="button" data-page="settings">Settings</button>
         <div class="header-menu-separator" role="separator"></div>
@@ -517,6 +518,20 @@
   </div>
 </section>
 
+<section id="blocklist" class="page hidden" aria-labelledby="blocklistHeading">
+  <div class="panel">
+    <h2 id="blocklistHeading">Blocklist</h2>
+    <p>What you told Discair to leave out of picks. Unblocking restores them on the next refresh.</p>
+    <p id="blocklistStatus" class="status-line" aria-live="polite"></p>
+    <h3>Blocked genres</h3>
+    <ul id="blocklistGenres" class="blocklist"></ul>
+    <h3>Artists hidden with Not this artist</h3>
+    <ul id="blocklistArtists" class="blocklist"></ul>
+    <h3>More and Less like this</h3>
+    <ul id="blocklistLeans" class="blocklist"></ul>
+  </div>
+</section>
+
 <section id="settings" class="page hidden" aria-labelledby="settingsHeading">
   <div class="panel">
     <h2 id="settingsHeading">Settings</h2>
@@ -667,6 +682,10 @@
      their own. Toasts are visual only, so each message is announced exactly once: here
      when the active view has no status region, otherwise by that region's own live area. -->
 <p id="appStatusAnnouncer" class="sr-only" role="status" aria-live="polite"></p>
+<div id="feedbackMenu" class="header-menu-panel feedback-menu" hidden></div>
+<div id="feedbackToast" class="undo-snackbar feedback-toast" role="status">
+  <p id="feedbackToastText" class="undo-snackbar-text"></p>
+</div>
 <div id="undoSnackbar" class="undo-snackbar" inert>
   <p id="undoSnackbarText" class="undo-snackbar-text"></p>
   <button id="undoSnackbarAction" type="button">Undo</button>

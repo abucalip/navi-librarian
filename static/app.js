@@ -39,7 +39,7 @@ function showPage(name) {
   document.querySelectorAll('nav button[data-page]').forEach(el =>
     el.classList.toggle('active', el.dataset.page === name));
   // Settings lives in the header menu, so the gear toggle carries the "you are here" cue.
-  $('appMenuButton').classList.toggle('is-current', name === 'settings' || name === 'saved' || name === 'library');
+  $('appMenuButton').classList.toggle('is-current', name === 'settings' || name === 'saved' || name === 'library' || name === 'blocklist');
   // The phone bar's More control carries the cue when one of its two destinations is current.
   $('navMoreButton').classList.toggle('is-current', NAV_MORE_PAGES.includes(name));
   moveNavIndicator();
@@ -104,6 +104,8 @@ function navigateTo(name) {
   initializePage(name);
   // Saved is read on every visit: saves made on other pages since the last visit must appear.
   if (name === 'saved') loadSaved();
+  // The blocklist is read on every visit: blocks made on other pages since the last visit must appear.
+  if (name === 'blocklist') loadBlocklist();
   // The library restarts from the first page on every visit, so new artists appear.
   if (name === 'library') { libraryReset(); loadLibrary({reset: true}); }
   // The stream is closed on leaving Acquisitions, so it must restart on every visit, not only
@@ -3422,8 +3424,202 @@ function createActionGroup(artist, album, metadata, options = {}) {
     dismissButton.setAttribute('aria-label', options.dismissLabel || 'Not for me: ' + album);
     dismissButton.addEventListener('click', options.onDismiss);
     group.append(dismissButton);
+    // The menu rides with Not for me: a list that cannot dismiss (Saved) has no artist or genre feedback either.
+    if (options.listName) group.append(createFeedbackMenuButton(artist, album, metadata, options));
   }
   return group;
+}
+
+/* Star Operation S2c: the "More" menu on an album. One shared panel, placed under the button that
+   opened it, so a scrolling card track or a themed layout cannot clip it. It offers More like this,
+   Less like this, Not this artist, and Block genre for the genres the album itself carries (the server
+   matches on those, so no other genre is offered). A block hides picks only, never the library. */
+const FEEDBACK_GENRE_LIMIT = 4;
+let feedbackMenuOwner = null;
+let feedbackToastTimer = null;
+
+function albumGenres(metadata) {
+  const seen = new Set();
+  const names = [];
+  for (const field of ['genres', 'tags']) {
+    for (const value of Array.isArray(metadata && metadata[field]) ? metadata[field] : []) {
+      const name = typeof value === 'string' ? value.trim().replace(/\s+/g, ' ') : '';
+      if (name && !seen.has(name.toLocaleLowerCase())) { seen.add(name.toLocaleLowerCase()); names.push(name); }
+    }
+  }
+  return names.slice(0, FEEDBACK_GENRE_LIMIT);
+}
+
+function showFeedbackToast(message) {
+  const toast = $('feedbackToast');
+  if (!toast) return;
+  $('feedbackToastText').textContent = message;
+  toast.classList.add('is-open');
+  clearTimeout(feedbackToastTimer);
+  feedbackToastTimer = setTimeout(() => toast.classList.remove('is-open'), 3600);
+  const announcer = $('appStatusAnnouncer');
+  if (announcer) announcer.textContent = message;
+}
+
+function closeFeedbackMenu({focusOwner = false} = {}) {
+  const panel = $('feedbackMenu');
+  if (!panel || panel.hidden) return;
+  panel.hidden = true;
+  const owner = feedbackMenuOwner;
+  feedbackMenuOwner = null;
+  if (owner) {
+    owner.setAttribute('aria-expanded', 'false');
+    if (focusOwner) owner.focus();
+  }
+}
+
+async function sendArtistLean(artist, lean, metadata, listName) {
+  try {
+    await sendJSON('/api/discovery/artist-lean', 'POST', {
+      artist, lean,
+      metadata: {genres: albumGenres(metadata), ...(listName ? {lens: listName} : {})}
+    });
+    showFeedbackToast(lean === 'more' ? 'More like ' + artist + ' next time.' : 'Fewer picks like ' + artist + '. Nothing is hidden.');
+  } catch (error) {
+    showFeedbackToast('Could not save that: ' + error.message);
+  }
+}
+
+async function sendGenreBlock(genre) {
+  try {
+    await sendJSON('/api/discovery/blocked-genres', 'POST', {genre});
+    showFeedbackToast('Blocked ' + genre + '. Your library is not affected. Undo it on the Blocklist page.');
+  } catch (error) {
+    showFeedbackToast('Could not block ' + genre + ': ' + error.message);
+  }
+}
+
+function openFeedbackMenu(button, artist, album, metadata, options) {
+  const panel = $('feedbackMenu');
+  if (!panel) return;
+  if (feedbackMenuOwner === button) { closeFeedbackMenu({focusOwner: true}); return; }
+  closeFeedbackMenu();
+  const entries = [
+    ['More like this artist', () => sendArtistLean(artist, 'more', metadata, options.listName)],
+    ['Less like this artist', () => sendArtistLean(artist, 'less', metadata, options.listName)],
+    ['Not this artist', () => sendFeedback('dismiss_artist', artist, album, metadata, options.listName, options.row || null)]
+  ];
+  for (const genre of albumGenres(metadata)) entries.push(['Block genre: ' + genre, () => sendGenreBlock(genre)]);
+  panel.replaceChildren();
+  for (const [label, run] of entries) {
+    const item = document.createElement('button');
+    item.type = 'button';
+    item.textContent = label;
+    item.addEventListener('click', () => { closeFeedbackMenu({focusOwner: true}); run(); });
+    panel.append(item);
+  }
+  const manage = document.createElement('button');
+  manage.type = 'button';
+  manage.className = 'feedback-menu-manage';
+  manage.textContent = 'Manage blocklist';
+  manage.addEventListener('click', () => { closeFeedbackMenu(); navigateTo('blocklist'); });
+  panel.append(manage);
+  panel.hidden = false;
+  const rect = button.getBoundingClientRect();
+  const width = panel.offsetWidth;
+  panel.style.left = Math.max(8, Math.min(rect.right - width, window.innerWidth - width - 8)) + 'px';
+  const below = rect.bottom + 4;
+  panel.style.top = (below + panel.offsetHeight > window.innerHeight ? Math.max(8, rect.top - panel.offsetHeight - 4) : below) + 'px';
+  feedbackMenuOwner = button;
+  button.setAttribute('aria-expanded', 'true');
+  panel.firstElementChild.focus();
+}
+
+function createFeedbackMenuButton(artist, album, metadata, options) {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'more-album';
+  button.append(spriteIcon('ellipsis'));
+  button.title = 'More: ' + artist;
+  button.setAttribute('aria-label', 'More options for ' + album);
+  button.setAttribute('aria-haspopup', 'true');
+  button.setAttribute('aria-expanded', 'false');
+  button.addEventListener('click', event => {
+    event.stopPropagation();
+    openFeedbackMenu(button, artist, album, metadata, options);
+  });
+  return button;
+}
+
+document.addEventListener('click', event => {
+  const panel = $('feedbackMenu');
+  if (panel && !panel.hidden && !panel.contains(event.target)) closeFeedbackMenu();
+});
+document.addEventListener('keydown', event => {
+  const panel = $('feedbackMenu');
+  if (!panel || panel.hidden) return;
+  const items = Array.from(panel.querySelectorAll('button'));
+  const index = items.indexOf(document.activeElement);
+  if (event.key === 'Escape') { event.preventDefault(); closeFeedbackMenu({focusOwner: true}); return; }
+  let target = null;
+  if (event.key === 'ArrowDown') target = items[(index + 1) % items.length];
+  else if (event.key === 'ArrowUp') target = items[(index - 1 + items.length) % items.length];
+  else if (event.key === 'Home') target = items[0];
+  else if (event.key === 'End') target = items[items.length - 1];
+  if (target) { event.preventDefault(); target.focus(); }
+});
+window.addEventListener('scroll', () => closeFeedbackMenu(), true);
+window.addEventListener('resize', () => closeFeedbackMenu());
+
+/* Blocklist page: blocked genres, artists hidden by Not this artist, and the artists marked More or
+   Less like this, each with a button that lifts it. Lifting a "Not this artist" row also lifts its
+   score penalty; the album that was dismissed with it stays dismissed. */
+const BLOCKLIST_GROUPS = [
+  {key: 'genres', url: '/api/discovery/blocked-genres', list: 'blocklistGenres', empty: 'No blocked genres.',
+   name: item => item.genre, body: item => ({genre: item.genre}), unblock: 'Unblock'},
+  {key: 'artists', url: '/api/discovery/blocked-artists', list: 'blocklistArtists', empty: 'No artists hidden with Not this artist.',
+   name: item => item.artist, body: item => ({artist: item.artist}), unblock: 'Unblock'},
+  {key: 'artists', url: '/api/discovery/artist-lean', list: 'blocklistLeans', empty: 'No artists marked More or Less like this.',
+   name: item => item.artist + ' · ' + (item.lean === 'more' ? 'More like this' : 'Less like this'),
+   body: item => ({artist: item.artist}), unblock: 'Clear'}
+];
+
+async function loadBlocklist() {
+  const status = $('blocklistStatus');
+  status.textContent = 'Loading…';
+  setStatusState(status, 'loading');
+  let failed = false;
+  await Promise.all(BLOCKLIST_GROUPS.map(async group => {
+    const target = $(group.list);
+    try {
+      const data = await requestJSON(group.url + '?nonce=' + Date.now());
+      const items = Array.isArray(data[group.key]) ? data[group.key] : [];
+      target.replaceChildren();
+      if (!items.length) { addTextElement(target, 'li', 'blocklist-empty', group.empty); return; }
+      for (const item of items) {
+        const row = document.createElement('li');
+        addTextElement(row, 'span', 'blocklist-name', group.name(item));
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.textContent = group.unblock;
+        button.setAttribute('aria-label', group.unblock + ' ' + group.name(item));
+        button.addEventListener('click', async () => {
+          button.disabled = true;
+          try {
+            await sendJSON(group.url, 'DELETE', group.body(item));
+            await loadBlocklist();
+          } catch (error) {
+            button.disabled = false;
+            status.textContent = 'Could not do that: ' + error.message;
+            setStatusState(status, 'error');
+          }
+        });
+        row.append(button);
+        target.append(row);
+      }
+    } catch (error) {
+      failed = true;
+      target.replaceChildren();
+      addTextElement(target, 'li', 'blocklist-empty', 'Could not load this list: ' + error.message);
+    }
+  }));
+  status.textContent = failed ? 'Some lists could not be loaded.' : 'Blocks hide picks only. Your library and Saved page are not affected.';
+  setStatusState(status, failed ? 'error' : 'idle');
 }
 
 // A lone control seated in the action group's frame, so a Get on its own matches the group.
