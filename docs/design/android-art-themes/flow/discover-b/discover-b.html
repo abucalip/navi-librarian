@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Flow · Discover, option B (one switch)</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap">
+<!--
+  Flow · Warm white. Discover redesign, option B "One switch", chosen by the owner on 2026-11-15.
+  Spec: docs/Discover_page.md. 1 CSS px = 1 dp. Covers are drawn stand-ins. Colour values are the
+  `Palettes.Flow` entries in android/.../ui/theme/Palette.kt; icon paths are copied from ui/common/ArtIcons.kt.
+-->
+<style>
+:root{--page:#FBFAF7;--surface:#FFFFFF;--raised:#EFECE5;--edge:#E2DFD6;--text:#15130F;--muted:#645F55;--accent:#C2410C;--accent-dim:#FBE4D5;--on-accent:#FFFFFF;--caution:#8A5300;--caution-dim:#F8E8CC;--chart3:#D9D4C8;--chev:#B5B0A5}
+body{margin:0;background:#E7E5DF;font-family:Inter,system-ui,sans-serif;color:var(--text);padding:28px}
+h1.sheet-title{font:700 24px/30px Inter;margin:0 0 4px}
+.lead{font-size:14px;color:#55514A;margin:0 0 22px;max-width:1500px}
+.frames{display:flex;gap:40px;flex-wrap:wrap;align-items:flex-start}
+.lab{font:500 13px/18px ui-monospace,Menlo,monospace;color:#55514A;margin:0 0 10px}
+svg.i{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
+svg.f{fill:currentColor;stroke:none}
+.ph{width:360px;height:780px;background:var(--page);border-radius:28px;box-shadow:0 0 0 10px #15130F;position:relative;overflow:hidden;letter-spacing:-.01em}
+.ph *{box-sizing:border-box}
+.ph p,.ph h2,.ph h3{margin:0}
+/* shell bar: unchanged (MainShell FlowAppHeader) */
+.bar{display:flex;align-items:center;gap:6px;height:56px;padding:0 12px 0 16px;margin-top:24px}
+.bar .t{font:800 30px/36px Inter;letter-spacing:-.03em;flex:1}
+.ib{width:36px;height:36px;border-radius:50%;background:var(--raised);display:grid;place-items:center;position:relative;margin-left:6px}
+.bdg{position:absolute;top:-3px;right:-3px;min-width:16px;height:16px;border-radius:8px;background:var(--accent);color:var(--on-accent);font:700 10px/16px Inter;text-align:center;padding:0 4px}
+/* NEW: the one switch row */
+.sw{display:flex;align-items:center;height:48px;padding:0 16px;gap:8px}
+.sw b{font:700 22px/28px Inter;letter-spacing:-.02em;display:flex;align-items:center;gap:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sw b svg{color:var(--accent);width:20px;height:20px;stroke-width:2.4}
+.dots{margin-left:auto;display:flex;gap:5px;align-items:center}
+.dots i{width:6px;height:6px;border-radius:3px;background:var(--chart3)}
+.dots i.on{width:18px;background:var(--text)}
+/* section heading inside a list (lens or genre) */
+.sh{display:flex;align-items:baseline;padding:14px 16px 10px}
+.sh h3{font:700 20px/24px Inter;letter-spacing:-.02em;flex:1}
+.sh span{font-size:14px;color:var(--muted)}
+.note{margin:0 16px;padding:10px 12px;border-radius:12px;background:var(--raised);font-size:13px;line-height:18px;color:var(--muted)}
+/* NEW: grid card */
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px 14px;padding:0 16px}
+.gc{display:flex;flex-direction:column;min-width:0}
+.cv{aspect-ratio:1/1;border-radius:12px;position:relative;box-shadow:0 6px 14px -10px rgba(21,19,15,.5);margin-bottom:8px}
+.get{position:absolute;right:8px;bottom:8px;width:34px;height:34px;border-radius:50%;background:var(--accent);color:var(--on-accent);display:grid;place-items:center;box-shadow:0 2px 8px rgba(0,0,0,.25)}
+.get svg{width:18px;height:18px;stroke-width:2}
+.get.done{background:var(--surface);color:var(--text)}
+.tr{display:flex;align-items:flex-start;gap:0}
+.tr .tx{flex:1;min-width:0}
+.ti{font:600 14px/19px Inter;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mu{font-size:12.5px;line-height:17px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mi{width:28px;height:28px;display:grid;place-items:center;color:var(--muted);flex:none}
+.mi svg{width:18px;height:18px}
+.mi.on{color:var(--accent)}
+/* nav capsule: unchanged */
+.nav{position:absolute;left:14px;right:14px;bottom:14px;height:60px;border-radius:30px;padding:5px;background:rgba(255,255,255,.94);box-shadow:0 6px 22px -8px rgba(21,19,15,.3),inset 0 0 0 .5px rgba(0,0,0,.08);display:grid;grid-template-columns:repeat(4,1fr)}
+.nav span{border-radius:25px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font:600 10.5px/14px Inter;color:var(--muted)}
+.nav .on{color:var(--accent);background:var(--raised)}
+/* sheet */
+.scrim{position:absolute;inset:0;background:rgba(21,19,15,.38)}
+.sheet{position:absolute;left:0;right:0;bottom:0;background:var(--page);border-radius:24px 24px 0 0;padding:8px 0 28px}
+.hdl{width:36px;height:5px;border-radius:3px;background:var(--chart3);margin:0 auto 14px}
+.sheet h2{font:700 20px/24px Inter;letter-spacing:-.02em;padding:0 16px 12px}
+.eb{font:600 12px/16px Inter;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);padding:18px 28px 6px}
+.grp{margin:0 16px;background:var(--surface);border-radius:16px;box-shadow:0 4px 14px -10px rgba(21,19,15,.3);padding:0 12px}
+.row{display:flex;align-items:center;gap:12px;min-height:56px;padding:8px 0;border-top:.5px solid var(--edge)}
+.row:first-child{border-top:0}
+.tile{width:32px;height:32px;border-radius:8px;background:var(--raised);display:grid;place-items:center;flex:none}
+.tile svg{width:18px;height:18px}
+.row .tx{flex:1;min-width:0}
+.row .ti{font-size:15px;line-height:20px}
+.row .mu{font-size:12px;line-height:18px}
+.row.cur .ti{color:var(--accent)}
+.row .ck{color:var(--accent);width:20px;height:20px;stroke-width:2.4}
+/* insights */
+.card{background:var(--surface);border-radius:16px;box-shadow:0 4px 14px -10px rgba(21,19,15,.3);padding:14px}
+.tag{font:600 11px/16px Inter;letter-spacing:.03em;text-transform:uppercase;border-radius:6px;padding:2px 7px;background:var(--raised);color:var(--muted);display:inline-block}
+.tag.y{background:var(--caution-dim);color:var(--caution)}
+.btn{height:44px;border-radius:22px;font:600 14px/44px Inter;text-align:center;background:var(--raised);padding:0 13px;white-space:nowrap}
+.btn.p{background:var(--accent);color:var(--on-accent);flex:1}
+.bars{display:flex;flex-direction:column;gap:10px;margin-top:12px}
+.bars div{display:flex;align-items:center;gap:10px;font-size:13px}
+.bars span:first-child{width:80px}
+.bars i{height:8px;border-radius:4px;background:var(--chart3);display:block}
+.bars i.on{background:var(--accent)}
+.bars span:last-child{width:34px;text-align:right;color:var(--muted)}
+/* cover stand-ins */
+.k1{background:repeating-linear-gradient(90deg,#1B2A55 0 14px,#2E4A8C 14px 22px)}
+.k2{background:linear-gradient(135deg,#B3245E,#E9814A)}
+.k3{background:linear-gradient(90deg,#F2C230 0 50%,#0F6B66 50%)}
+.k4{background:repeating-radial-gradient(circle at 30% 70%,#111 0 5px,#EEE 5px 7px)}
+.k5{background:linear-gradient(#9DB4A0 0 62%,#4C6B57 62%)}
+.k6{background:linear-gradient(90deg,#D8D1C2 0 33%,#C0392B 33% 66%,#2B2B2B 66%)}
+.k7{background:linear-gradient(160deg,#5B6770,#232A30)}
+.k8{background:linear-gradient(#D9A23B 0 45%,#6B3E1E 45%)}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<symbol id="home" viewBox="0 0 24 24"><path d="M4 11l8-7 8 7v8a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z"/></symbol>
+<symbol id="disc" viewBox="0 0 24 24"><path d="M12 3l1.800 5.200L19 10l-5.200 1.800L12 17l-1.800-5.200L5 10l5.200-1.800zM18.500 16l.7 1.800 1.800.7-1.800.7-.7 1.800-.7-1.800-1.800-.7 1.800-.7z"/></symbol>
+<symbol id="lib" viewBox="0 0 24 24"><path d="M5 4v16M9.500 4v16M14 5l4.500 14.500"/></symbol>
+<symbol id="search" viewBox="0 0 24 24"><path d="M4.5,11a6.5,6.5 0 1,0 13,0a6.5,6.5 0 1,0 -13,0M16 16l4.500 4.500"/></symbol>
+<symbol id="dl" viewBox="0 0 24 24"><path d="M3.5,12a8.5,8.5 0 1,0 17,0a8.5,8.5 0 1,0 -17,0M12 7.500v8M8.500 12.500L12 16l3.500-3.500"/></symbol>
+<symbol id="gear" viewBox="0 0 24 24"><path d="M9,12a3,3 0 1,0 6,0a3,3 0 1,0 -6,0M12 2.500v3M12 18.500v3M2.500 12h3M18.500 12h3M5.300 5.300l2.100 2.100M16.600 16.600l2.100 2.100M5.300 18.700l2.100-2.100M16.600 7.400l2.100-2.100"/></symbol>
+<symbol id="down" viewBox="0 0 24 24"><path d="M5 9l7 7 7-7"/></symbol>
+<symbol id="get" viewBox="0 0 24 24"><path d="M7 18a4.500 4.500 0 0 1-.6-8.960 6 6 0 0 1 11.700 1.500A3.800 3.800 0 0 1 17.500 18M12 11v8M9 16.500l3 3 3-3"/></symbol>
+<symbol id="check" viewBox="0 0 24 24"><path d="M5 12.500l4.500 4.500L19 7.500"/></symbol>
+<symbol id="bm" viewBox="0 0 24 24"><path d="M7 4h10a1 1 0 0 1 1 1v15l-6-4-6 4V5a1 1 0 0 1 1-1z"/></symbol>
+<symbol id="more" viewBox="0 0 24 24"><path d="M3.4,12a1.6,1.6 0 1,0 3.2,0a1.6,1.6 0 1,0 -3.2,0M10.4,12a1.6,1.6 0 1,0 3.2,0a1.6,1.6 0 1,0 -3.2,0M17.4,12a1.6,1.6 0 1,0 3.2,0a1.6,1.6 0 1,0 -3.2,0"/></symbol>
+<symbol id="sun" viewBox="0 0 24 24"><path d="M8,12a4,4 0 1,0 8,0a4,4 0 1,0 -8,0M12 3v2M12 19v2M3 12h2M19 12h2M5.600 5.600l1.400 1.400M17 17l1.400 1.400M5.600 18.400L7 17M17 7l1.400-1.400"/></symbol>
+<symbol id="album" viewBox="0 0 24 24"><path d="M3,12a9,9 0 1,0 18,0a9,9 0 1,0 -18,0M9.500,12a2.500,2.500 0 1,0 5,0a2.500,2.500 0 1,0 -5,0"/></symbol>
+<symbol id="note" viewBox="0 0 24 24"><path d="M9 18V6l10-2v12M5,18a2,2 0 1,0 4,0a2,2 0 1,0 -4,0M15,16a2,2 0 1,0 4,0a2,2 0 1,0 -4,0"/></symbol>
+<symbol id="paths" viewBox="0 0 24 24"><path d="M4,18a2,2 0 1,0 4,0a2,2 0 1,0 -4,0M16,6a2,2 0 1,0 4,0a2,2 0 1,0 -4,0M8 18h5a3 3 0 0 0 0-6h-2a3 3 0 0 1 0-6h5"/></symbol>
+<symbol id="wave" viewBox="0 0 24 24"><path d="M4 12h2l2-6 3 12 3-9 2 5 1-2h3"/></symbol>
+</defs></svg>
+
+<h1 class="sheet-title">Flow · Discover, option B: one switch</h1>
+<p class="lead">Chosen by the owner on 2026-11-15. The three selector rows (Lists | Insights, six chips, lens/genre tabs) become one switch row under the shell's unchanged bar. Lenses and genres become headings inside the list. Spec: docs/Discover_page.md. 360 × 780 dp, 1 px = 1 dp; covers are stand-ins.</p>
+
+<div class="frames">
+
+<!-- ============ B1 · Daily picks ============ -->
+<div>
+<p class="lab">B1 · Daily picks (lens headings)</p>
+<div class="ph">
+  <div class="bar"><span class="t">Discover</span>
+    <span class="ib"><svg class="i"><use href="#dl"/></svg><span class="bdg">2</span></span>
+    <span class="ib"><svg class="i"><use href="#gear"/></svg></span></div>
+  <div class="sw"><b>Daily picks<svg class="i"><use href="#down"/></svg></b>
+    <span class="dots"><i class="on"></i><i></i><i></i><i></i><i></i><i></i><i></i></span></div>
+
+  <div class="sh"><h3>Repeated tracks</h3><span>10</span></div>
+  <div class="grid">
+    <div class="gc"><div class="cv k1"><span class="get"><svg class="i"><use href="#get"/></svg></span></div>
+      <div class="tr"><div class="tx"><p class="ti">Hex</p><p class="mu">Bark Psychosis · 1994</p></div>
+        <span class="mi"><svg class="i"><use href="#bm"/></svg></span><span class="mi"><svg class="i f"><use href="#more"/></svg></span></div>
+      <p class="mu">Shares genres with Talk Talk</p></div>
+    <div class="gc"><div class="cv k5"><span class="get done"><svg class="i"><use href="#check"/></svg></span></div>
+      <div class="tr"><div class="tx"><p class="ti">Spirit of Eden</p><p class="mu">Talk Talk · 1988</p></div>
+        <span class="mi on"><svg class="i f"><use href="#bm"/></svg></span><span class="mi"><svg class="i f"><use href="#more"/></svg></span></div>
+      <p class="mu">In your library</p></div>
+  </div>
+
+  <div class="sh"><h3>Deep cuts</h3><span>10</span></div>
+  <div class="grid">
+    <div class="gc"><div class="cv k6"><span class="get"><svg class="i"><use href="#get"/></svg></span></div>
+      <div class="tr"><div class="tx"><p class="ti">Musique Électronique</p><p class="mu">Tolerance · 1981</p></div>
+        <span class="mi"><svg class="i"><use href="#bm"/></svg></span><span class="mi"><svg class="i f"><use href="#more"/></svg></span></div>
+      <p class="mu">Shares genres with Cluster</p></div>
+    <div class="gc"><div class="cv k3"><span class="get"><svg class="i"><use href="#get"/></svg></span></div>
+      <div class="tr"><div class="tx"><p class="ti">Vespertine</p><p class="mu">Björk · 2001</p></div>
+        <span class="mi"><svg class="i"><use href="#bm"/></svg></span><span class="mi"><svg class="i f"><use href="#more"/></svg></span></div>
+      <p class="mu">Shares genres with Portishead</p></div>
+  </div>
+
+  <nav class="nav"><span><svg class="i"><use href="#home"/></svg>Home</span><span class="on"><svg class="i"><use href="#disc"/></svg>Discover</span><span><svg class="i"><use href="#lib"/></svg>Library</span><span><svg class="i"><use href="#search"/></svg>Search</span></nav>
+</div>
+</div>
+
+<!-- ============ B2 · switcher sheet ============ -->
+<div>
+<p class="lab">B2 · The switch opened (sheet)</p>
+<div class="ph">
+  <div class="bar"><span class="t">Discover</span>
+    <span class="ib"><svg class="i"><use href="#dl"/></svg><span class="bdg">2</span></span>
+    <span class="ib"><svg class="i"><use href="#gear"/></svg></span></div>
+  <div class="sw"><b>Daily picks<svg class="i"><use href="#down"/></svg></b></div>
+  <div class="scrim"></div>
+  <div class="sheet">
+    <div class="hdl"></div>
+    <h2>Lists</h2>
+    <div class="grp">
+      <div class="row cur"><span class="tile"><svg class="i"><use href="#sun"/></svg></span><div class="tx"><p class="ti">Daily picks</p><p class="mu">Four lists, new each day</p></div><svg class="i ck"><use href="#check"/></svg></div>
+      <div class="row"><span class="tile"><svg class="i"><use href="#album"/></svg></span><div class="tx"><p class="ti">Deep dives</p><p class="mu">More from artists you play, by genre</p></div></div>
+      <div class="row"><span class="tile"><svg class="i"><use href="#note"/></svg></span><div class="tx"><p class="ti">New releases</p><p class="mu">Recent albums near your taste</p></div></div>
+      <div class="row"><span class="tile"><svg class="i"><use href="#lib"/></svg></span><div class="tx"><p class="ti">Add to your collection</p><p class="mu">Well-known albums you do not own</p></div></div>
+      <div class="row"><span class="tile"><svg class="i"><use href="#paths"/></svg></span><div class="tx"><p class="ti">Personal discoveries</p><p class="mu">Further from what you play</p></div></div>
+    </div>
+    <p class="eb">Yours</p>
+    <div class="grp">
+      <div class="row"><span class="tile"><svg class="i"><use href="#bm"/></svg></span><div class="tx"><p class="ti">Saved</p><p class="mu">Albums you kept for later</p></div></div>
+      <div class="row"><span class="tile"><svg class="i"><use href="#wave"/></svg></span><div class="tx"><p class="ti">Insights</p><p class="mu">Your taste and what it notices</p></div></div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ============ B3 · Deep dives ============ -->
+<div>
+<p class="lab">B3 · Deep dives (genre headings)</p>
+<div class="ph">
+  <div class="bar"><span class="t">Discover</span>
+    <span class="ib"><svg class="i"><use href="#dl"/></svg><span class="bdg">2</span></span>
+    <span class="ib"><svg class="i"><use href="#gear"/></svg></span></div>
+  <div class="sw"><b>Deep dives<svg class="i"><use href="#down"/></svg></b>
+    <span class="dots"><i></i><i class="on"></i><i></i><i></i><i></i><i></i><i></i></span></div>
+
+  <div class="sh"><h3>Spiritual jazz</h3><span>6</span></div>
+  <div class="grid">
+    <div class="gc"><div class="cv k2"><span class="get"><svg class="i"><use href="#get"/></svg></span></div>
+      <div class="tr"><div class="tx"><p class="ti">Ptah, the El Daoud</p><p class="mu">Alice Coltrane · 1970</p></div>
+        <span class="mi"><svg class="i"><use href="#bm"/></svg></span><span class="mi"><svg class="i f"><use href="#more"/></svg></span></div>
+      <p class="mu">Shares genres with Pharoah Sanders</p></div>
+    <div class="gc"><div class="cv k8"><span class="get"><svg class="i"><use href="#get"/></svg></span></div>
+      <div class="tr"><div class="tx"><p class="ti">Black Unity</p><p class="mu">Pharoah Sanders · 1971</p></div>
+        <span class="mi"><svg class="i"><use href="#bm"/></svg></span><span class="mi"><svg class="i f"><use href="#more"/></svg></span></div>
+      <p class="mu">Shares genres with Alice Coltrane</p></div>
+  </div>
+
+  <div class="sh"><h3>Ambient</h3><span>7</span></div>
+  <div class="grid">
+    <div class="gc"><div class="cv k7"><span class="get"><svg class="i"><use href="#get"/></svg></span></div>
+      <div class="tr"><div class="tx"><p class="ti">Music for Films</p><p class="mu">Brian Eno · 1978</p></div>
+        <span class="mi"><svg class="i"><use href="#bm"/></svg></span><span class="mi"><svg class="i f"><use href="#more"/></svg></span></div>
+      <p class="mu">Shares genres with Harold Budd</p></div>
+    <div class="gc"><div class="cv k1"><span class="get"><svg class="i"><use href="#get"/></svg></span></div>
+      <div class="tr"><div class="tx"><p class="ti">Pearl</p><p class="mu">Harold Budd · 1984</p></div>
+        <span class="mi"><svg class="i"><use href="#bm"/></svg></span><span class="mi"><svg class="i f"><use href="#more"/></svg></span></div>
+      <p class="mu">Shares genres with Brian Eno</p></div>
+  </div>
+
+  <nav class="nav"><span><svg class="i"><use href="#home"/></svg>Home</span><span class="on"><svg class="i"><use href="#disc"/></svg>Discover</span><span><svg class="i"><use href="#lib"/></svg>Library</span><span><svg class="i"><use href="#search"/></svg>Search</span></nav>
+</div>
+</div>
+
+<!-- ============ B4 · Insights ============ -->
+<div>
+<p class="lab">B4 · Insights (no lens headings)</p>
+<div class="ph">
+  <div class="bar"><span class="t">Discover</span>
+    <span class="ib"><svg class="i"><use href="#dl"/></svg><span class="bdg">2</span></span>
+    <span class="ib"><svg class="i"><use href="#gear"/></svg></span></div>
+  <div class="sw"><b>Insights<svg class="i"><use href="#down"/></svg></b>
+    <span class="dots"><i></i><i></i><i></i><i></i><i></i><i></i><i class="on"></i></span></div>
+
+  <div style="padding:6px 16px 0;display:flex;flex-direction:column;gap:12px">
+    <div class="card">
+      <p class="eb" style="padding:0">Your taste · last 90 days</p>
+      <p style="font:700 18px/23px Inter;letter-spacing:-.02em;margin-top:6px">More ambient, less post-punk lately.</p>
+      <div class="bars">
+        <div><span>Ambient</span><span style="flex:1"><i class="on" style="width:85%"></i></span><span>17%</span></div>
+        <div><span>Dream pop</span><span style="flex:1"><i style="width:70%"></i></span><span>14%</span></div>
+        <div><span>Post-rock</span><span style="flex:1"><i style="width:55%"></i></span><span>11%</span></div>
+      </div>
+      <p style="text-align:right;color:var(--accent);font:500 14px/20px Inter;margin-top:10px">Details</p>
+    </div>
+    <div class="card">
+      <div style="display:flex;gap:12px">
+        <div class="cv k4" style="width:88px;flex:none;margin:0;border-radius:10px"></div>
+        <div style="flex:1;min-width:0"><span class="tag y">Anniversaries</span>
+          <p style="font:600 15px/20px Inter;margin-top:6px">Closer turns 45 this week</p>
+          <p class="mu" style="font-size:13px;line-height:18px;white-space:normal">Joy Division · in your library</p></div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:12px"><span class="btn p">Open album</span><span class="btn">Why?</span><span class="btn">Dismiss</span></div>
+    </div>
+    <p class="note">Off: Series, Blind spots. Nothing today: Hidden canon.</p>
+  </div>
+
+  <nav class="nav"><span><svg class="i"><use href="#home"/></svg>Home</span><span class="on"><svg class="i"><use href="#disc"/></svg>Discover</span><span><svg class="i"><use href="#lib"/></svg>Library</span><span><svg class="i"><use href="#search"/></svg>Search</span></nav>
+</div>
+</div>
+
+</div>
+</body>
+</html>
