@@ -1,3 +1,9 @@
+## 2026-11-15 — Album page: owned songs matched to the provider tracklist by title likeness (PR open)
+
+- Symptom (Android, owner screenshot): on an album page some owned tracks showed the download prompt in place, and the same songs were appended owned at the bottom. Cause: `mark_owned_tracks` matched a library song to a provider track only by exact normalized title, or same number with a length within 3 s. A renamed song ("Excerpt From the Blues" / "Excerpts From The Blues", "You'd Be So Easy to Love" / "Easy To Love") whose length differed by 6 s matched neither, so the provider track stayed unowned and the song was appended as an extra.
+- Fix: a third pass owns a song on the same track number (disc 1 when multi-disc) whose title is alike (`titles_alike`: spelling ratio >= 0.85, or one title holds every word of the other, at least two words). The Android client only renders the server's list; the fix is server-side, so the web page gains it too. Whether the macOS client uses this endpoint was not checked.
+- Tests: `pytest tests/test_discovery_search_album_page.py tests/test_disc_layout.py` passed (37); two cases added. Not run: full suite, a live device.
+
 ## 2026-11-15 — macOS: Play after Stop resumes the song, Continue on this Mac starts at the phone's place (PR open)
 
 - Radio: #1090 made Play return to a song only when the station had paused it. A song the owner had already paused, a queue restored at launch, or a song still loading was missed, so Play restarted the station. Now Play after stopping a station goes to the queue's current song whenever there is one; only an empty queue restarts the station. `songPausedForStation` removed (dead). A song still loading when a station starts goes back to idle, not a false "paused".

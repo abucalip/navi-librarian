@@ -82,6 +82,18 @@ def owned():
     )
 
 
+def album_songs(*rows):
+    """The library songs of one album from (title, track number, seconds) rows."""
+    data = build_owned_data(
+        generation=1, built_at=0,
+        artists=[{"id": "ar1", "name": "Radiohead", "album_count": 1}],
+        albums=[{"id": "al1", "artist": "Radiohead", "artist_id": "ar1", "album": "Kid A", "year": 2000, "song_count": len(rows)}],
+        songs=[{"id": f"s{n}", "title": title, "artist": "Radiohead", "artistId": "ar1", "album": "Kid A",
+                "albumId": "al1", "duration": seconds, "track": n} for title, n, seconds in rows],
+    )
+    return data.songs
+
+
 def run(network, data=None, album=None, **kwargs):
     values = dict(artist="Radiohead", artist_key="radiohead", name="Kid A", year=2000, release_group_mbid="rg1")
     values.update(kwargs)
@@ -128,6 +140,18 @@ class TrackOwnershipTests(unittest.TestCase):
         data = owned()
         marked = mark_owned_tracks([track(1, "Something Else", 100)], [s for s in data.songs if s["album_id"] == "al1"])
         self.assertFalse(marked[0]["owned"])
+
+    def test_a_song_with_a_near_identical_title_in_the_same_place_is_owned_even_when_the_length_differs(self):
+        songs = album_songs(("Excerpt From the Blues", 4, 175), ("You'd Be So Easy to Love", 5, 192))
+        provider = [track(4, "Excerpts From The Blues", 181), track(5, "Easy To Love", 198)]
+        marked = mark_owned_tracks(provider, songs)
+        self.assertEqual([(t["title"], t["owned"]) for t in marked],
+                         [("Excerpts From The Blues", True), ("Easy To Love", True)])
+
+    def test_alike_titles_in_another_place_stay_unowned_and_the_song_is_appended(self):
+        songs = album_songs(("You'd Be So Easy to Love", 9, 198))
+        marked = mark_owned_tracks([track(5, "Easy To Love", 100)], songs)
+        self.assertEqual([(t["title"], t["owned"]) for t in marked], [("Easy To Love", False), ("You'd Be So Easy to Love", True)])
 
     def test_library_songs_the_provider_does_not_list_are_appended_as_owned(self):
         data = owned()
