@@ -64,8 +64,8 @@ data class DiscoveryItem(
 /**
  * The reason line for a personal pick (Star Operation S1c, DISC-09). `tag` is a real seed and reads
  * "Because you listen to ..."; `similar_artists` is genre overlap and reads "Shares genres with ...".
- * An older server sends only `similar_to`, the same overlap, so it gets the overlap wording. Any other
- * kind, or no names, draws nothing. Empty when there is nothing honest to say.
+ * Any other kind, or no usable names, gives no `because` reason. An older server sends only `similar_to`,
+ * the same overlap, so that gets the overlap wording as a fallback. Empty when there is nothing honest to say.
  */
 fun pickReason(because: JsonElement?, similarTo: List<String>): String {
     val obj = because as? JsonObject

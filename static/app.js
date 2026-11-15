@@ -2826,9 +2826,9 @@ const BECAUSE_WORDING = new Map([
   ['similar_artists', names => 'Shares genres with ' + names.join(', ')]
 ]);
 
-// The reason line for a pick, or '' when there is nothing honest to say. An older server sends
-// only `similar_to` (the same genre overlap), which the adjacent category keeps showing with the
-// overlap wording. Any other kind, or empty names, draws nothing.
+// The reason line for a pick, or '' when there is nothing honest to say. Any other kind, or no
+// usable names, gives no `because` reason. An older server sends only `similar_to` (the same genre
+// overlap), which the adjacent category shows with the overlap wording as a fallback.
 function reasonLine(item) {
   const because = item.because;
   const word = because && BECAUSE_WORDING.get(because.kind);
