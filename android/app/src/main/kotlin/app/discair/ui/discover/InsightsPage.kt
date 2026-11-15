@@ -71,6 +71,22 @@ fun InsightsPage(
         verticalArrangement = Arrangement.spacedBy(if (cs) 14.dp else if (fl) 12.dp else 16.dp),
     ) {
         if (showTaste) item(key = "taste") { TasteCardView(taste?.profiles, tasteLoaded) }
+        if (fl) {
+            // Flow (docs/Discover_page.md 4.6, frame B4): no lens headings. The cards carry their lens as a tag; lenses with nothing fold into one note.
+            val off = mutableListOf<String>()
+            val empty = mutableListOf<String>()
+            for (kind in lensKinds(response)) {
+                val lens = response.lenses[kind]
+                val cards = lens?.cards.orEmpty().filter { it.id !in hidden }
+                when {
+                    lens?.enabled != true -> off += lensName(kind)
+                    cards.isEmpty() -> empty += lensName(kind)
+                    else -> items(cards, key = { it.id }) { card -> Box(Modifier.animateItem()) { FlowInsightCard(card, open!!, onDismiss) } }
+                }
+            }
+            FlowDiscoverRules.insightsNote(off, empty)?.let { note -> item(key = "note") { FlowSectionNote(note) } }
+            return@LazyColumn
+        }
         for (kind in lensKinds(response)) {
             val lens = response.lenses[kind]
             val enabled = lens?.enabled == true

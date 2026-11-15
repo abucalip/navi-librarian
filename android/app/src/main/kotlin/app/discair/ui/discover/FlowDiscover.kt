@@ -336,6 +336,15 @@ internal object FlowDiscoverRules {
     /** The third line under a card: the reason, else "In your library" for an owned album, else nothing. */
     fun thirdLine(reason: String, owned: Boolean): String? = reason.ifEmpty { if (owned) "In your library" else null }
 
+    /** The one line under Flow's Insights cards (4.6): the lenses that are off and the ones with nothing today; either half is left out when empty, and no note when both are. */
+    fun insightsNote(off: List<String>, empty: List<String>): String? {
+        val parts = listOfNotNull(
+            off.takeIf { it.isNotEmpty() }?.let { "Off: ${it.joinToString(", ")}." },
+            empty.takeIf { it.isNotEmpty() }?.let { "Nothing today: ${it.joinToString(", ")}." },
+        )
+        return parts.joinToString(" ").ifEmpty { null }
+    }
+
     /** One row of the list sheet: the list, its icon and the line under its name. */
     class SheetRow(val list: DiscoveryList, val icon: ImageVector, val subtitle: String)
 

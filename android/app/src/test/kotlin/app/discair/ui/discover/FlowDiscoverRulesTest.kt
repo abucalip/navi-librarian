@@ -112,4 +112,11 @@ class FlowDiscoverRulesTest {
         assertEquals(12, FlowDiscoverRules.GRID_COVER_RADIUS)
         assertEquals(34, FlowDiscoverRules.GET_ON_COVER)
     }
+
+    @Test fun theInsightsNoteNamesOffAndEmptyLensesAndIsLeftOutWhenBothAreEmpty() {
+        assertEquals("Off: Series, Blind spots.", FlowDiscoverRules.insightsNote(listOf("Series", "Blind spots"), emptyList()))
+        assertEquals("Nothing today: Hidden canon.", FlowDiscoverRules.insightsNote(emptyList(), listOf("Hidden canon")))
+        assertEquals("Off: Series, Blind spots. Nothing today: Hidden canon.", FlowDiscoverRules.insightsNote(listOf("Series", "Blind spots"), listOf("Hidden canon")))
+        assertEquals(null, FlowDiscoverRules.insightsNote(emptyList(), emptyList()))
+    }
 }
