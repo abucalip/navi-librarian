@@ -1,3 +1,10 @@
+## 2026-11-15 — Star Operation S3b: Navidrome stars as a taste seed (PR open)
+
+- `discovery/star_seeds.py`: `starred_seed_weights` (artist key to weight; 1.0 fresh (owner decision), 180-day half-life, 365-day expiry, 0.5 flat when undated) and `cached_starred` (one `getStarred2` per six-hour metadata-cache window). `candidate_gathering._star_seed_weights` merges them into the existing seed map (larger weight wins per artist) only when `star_seed_enabled` is on; any failure returns no stars. Counter `star_seed.starred_artists`. Query budget unchanged: a star can replace a planned tag query, never add one.
+- Setting `star_seed_enabled` (default on, owner decision 2026-11-15) in `settings/service.py`, `GET`/`PUT /api/settings/star-seed`; requirement DISC-13. New `RecommendationProviders.settings_read`; the one wiring change in `navidrome_server.py` is net zero lines (D-016).
+- Tests run (filtered): `test_star_seeds` (16), `test_discovery_save_tag_seed`, `test_navidrome_starred`, `test_settings_routes`, `test_server_size_guard`, and the 239 tests that import `candidate_gathering` or the replay tape, all pass. Three pre-existing pytest collection errors in `test_service_settings.py` (functions named `test_*` imported from `settings.service`) are unchanged by this PR.
+- Not done: the live replay comparison with and without stars (it needs ListenBrainz and MusicBrainz traffic, which needs the owner's approval and `config.env`), so the weights carry no quality claim. No client shows the setting yet. With the setting on, a recorded tape would see extra `api_call` and cache events and not replay an older capture.
+
 ## 2026-11-15 — Star Operation S3a: getStarred2 read and parser (merged #1099, squash `2790e50b`)
 
 - `integrations/navidrome/starred.py`: `fetch_starred` makes one `getStarred2` call through an injected `api_call`; `parse_starred` returns starred artists and albums with `starred_at` as epoch seconds or `None`. Songs ignored; errors propagate. Exported from `integrations/navidrome/__init__.py`. No caller, no behaviour change, no requirement row yet (S3b).

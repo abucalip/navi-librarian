@@ -135,6 +135,28 @@ class RecommendationProviders:
     http_post: Callable[..., Any] | None = None
     # Optional. Returns stored feedback rows; None keeps tag-query selection unseeded.
     feedback_rows: Callable[[], Any] | None = None
+    # Optional. Reads the persisted settings; None keeps Navidrome stars out of the seeds.
+    settings_read: Callable[[], Any] | None = None
+
+def _star_seed_weights(providers: RecommendationProviders, now: float) -> dict[str, float]:
+    """Seed weights from Navidrome stars, or ``{}`` when the setting is off or anything fails.
+
+    Stars are optional input: a failed read must never fail discovery (Star Operation, S3b)."""
+    if providers.settings_read is None:
+        return {}
+    try:
+        from discovery.star_seeds import cached_starred, starred_seed_weights
+        from settings.service import star_seed_enabled_value
+        if not star_seed_enabled_value(providers.settings_read):
+            return {}
+        starred = cached_starred(
+            providers.api_call, providers.items,
+            providers.metadata_cache_get, providers.metadata_cache_set,
+        )
+        return starred_seed_weights(starred, providers.music_key, now=now)
+    except Exception:
+        return {}
+
 
 # Bounded CF replenishment. One ListenBrainz call per page; the first page is
 # required, later pages may fail without discarding earlier pages.
@@ -897,22 +919,26 @@ def gather_recommendation_candidates(
     # the plan the run would have made without any save.
     baseline_profile_tags = dict(profile_tags_by_artist)
     seed_counts = None
-    if providers.feedback_rows is not None:
+    star_seeds = _star_seed_weights(providers, time.time())
+    if providers.feedback_rows is not None or star_seeds:
         from recommendation_feedback import (
             FEEDBACK_SIGNAL_ENABLED, combined_seed_genres, combined_seed_weights,
         )
-        if FEEDBACK_SIGNAL_ENABLED:
+        if FEEDBACK_SIGNAL_ENABLED or star_seeds:
             try:
-                rows = list(providers.feedback_rows())
-                seeds = combined_seed_weights(rows, now=time.time())
-                stored_genres = combined_seed_genres(rows, now=time.time())
+                rows = list(providers.feedback_rows()) if providers.feedback_rows is not None else []
+                seeds = combined_seed_weights(rows, now=time.time()) if FEEDBACK_SIGNAL_ENABLED else {}
+                stored_genres = combined_seed_genres(rows, now=time.time()) if FEEDBACK_SIGNAL_ENABLED else {}
+                saved_count = len(seeds)
+                for artist_key, weight in star_seeds.items():
+                    seeds[artist_key] = max(seeds.get(artist_key, 0.0), weight)
                 for candidate in albums.values():
                     if candidate.get("artist_mbid"):
                         mbid_by_artist_key.setdefault(
                             providers.music_key(candidate["primary_artist"]), candidate["artist_mbid"],
                         )
                 tag_query_weights = Counter(recent_artist_mbid_counts)
-                counts = {"saved_artists": len(seeds), "from_cached_genres": 0,
+                counts = {"saved_artists": saved_count, "from_cached_genres": 0,
                           "from_metadata_genres": 0, "skipped_no_genres": 0,
                           "mbid_known_no_cached_genres": 0}
                 for artist_key, seed_weight in seeds.items():
@@ -1085,6 +1111,8 @@ def gather_recommendation_candidates(
             "replenish_queries_changed": replenish_changed,
         }.items():
             record_count(f"save_seed.{name}", value)
+        if star_seeds:
+            record_count("star_seed.starred_artists", len(star_seeds))
     eligible_after = count_eligible_unowned_albums(albums, library_by_title, providers.music_key)
 
     # Retrieve MusicBrainz genre tags for a bounded number of artists.

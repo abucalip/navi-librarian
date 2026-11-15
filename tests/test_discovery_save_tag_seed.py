@@ -55,7 +55,7 @@ def _save_row(artist, *, age_days, scope="album", status="for_me", metadata=None
     }
 
 
-def _run(feedback, *, many_artists=False):
+def _run(feedback, *, many_artists=False, settings_read=None, api_call=None, cache_extra=None):
     now = int(time.time())
     listens = [{
         "listened_at": now - i * 3600,
@@ -82,6 +82,7 @@ def _run(feedback, *, many_artists=False):
                 "primary-type": "Album", "secondary-types": [],
             }}],
         }
+    cache.update(cache_extra or {})
     recordings = [{"recording_mbid": f"rec-{i}", "score": 300 - i} for i in range(1, 4)]
     log = {"queries": [], "artist": []}
     providers = RecommendationProviders(
@@ -91,7 +92,7 @@ def _run(feedback, *, many_artists=False):
         metadata_cache_get=lambda key, **kw: cache.get(key),
         metadata_cache_set=lambda key, value, *a, **kw: cache.__setitem__(key, value),
         is_album_candidate=lambda candidate: True,
-        api_call=lambda *a, **kw: {"albumList2": {"album": []}},
+        api_call=api_call or (lambda *a, **kw: {"albumList2": {"album": []}}),
         items=lambda root: list(root or []),
         http_get=lambda url, params=None, **kw: _Response({"payload": {
             "mbids": recordings if params["offset"] == 0 else [],
@@ -99,6 +100,7 @@ def _run(feedback, *, many_artists=False):
         http_client=lambda *a, **kw: _Client(log),
         sleep=lambda _s: None,
         feedback_rows=feedback if callable(feedback) or feedback is None else (lambda: feedback),
+        settings_read=settings_read,
     )
     result = gather_recommendation_candidates(providers, shortlist_target=10)
     assert not isinstance(result, str), result

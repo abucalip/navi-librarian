@@ -17,6 +17,8 @@ from settings.service import (
     test_discogs_connection as _test_discogs_connection,
     get_automatic_refill_settings as _get_automatic_refill_settings,
     get_library_resync_settings as _get_library_resync_settings,
+    get_star_seed_settings as _get_star_seed_settings,
+    set_star_seed_settings as _set_star_seed_settings,
     set_library_resync_settings as _set_library_resync_settings,
     get_recommendation_diversity_settings as _get_recommendation_diversity_settings,
     set_automatic_refill_settings as _set_automatic_refill_settings,
@@ -72,6 +74,30 @@ def set_library_resync_settings(payload: dict, librarian=Depends(get_librarian))
         raise
     except Exception:
         raise HTTPException(status_code=502, detail="Could not save library resync settings.")
+
+
+@router.get("/api/settings/star-seed")
+def get_star_seed_settings(librarian=Depends(get_librarian)):
+    try:
+        return parse_result(_get_star_seed_settings(librarian._discovery_settings_read))
+    except Exception:
+        raise HTTPException(status_code=502, detail="Could not read star seed settings.")
+
+
+@router.put("/api/settings/star-seed")
+def set_star_seed_settings(payload: dict, librarian=Depends(get_librarian)):
+    value = payload.get("star_seed_enabled")
+    if type(value) is not bool:
+        raise HTTPException(status_code=400, detail="star_seed_enabled must be a boolean.")
+    try:
+        result = parse_result(_set_star_seed_settings(librarian._discovery_settings_write, value))
+        if isinstance(result, dict) and not result.get("ok"):
+            raise HTTPException(status_code=400, detail=result.get("error", "Invalid star seed setting."))
+        return result
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(status_code=502, detail="Could not save star seed settings.")
 
 
 @router.get("/api/settings/recommendation-diversity")
