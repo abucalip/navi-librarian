@@ -149,14 +149,12 @@ struct CupertinoQueueInspector: View {
 
     @ViewBuilder private var liveRows: some View {
         let p = state.player
-        // Played songs stay in the list above the current one, dimmed; choosing one plays it again.
+        // Played songs stay in the list above the current one at full strength; double-click plays one again.
         let played = p.queue.played
         ForEach(Array(played.enumerated()), id: \.element.id) { i, item in
-            Button { p.jump(toPlayed: i) } label: {
-                songRow(item, time: PlayerModel.clock(item.duration), playing: false).opacity(0.5)
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Played: \(item.title), \(item.artist). Play again")
+            songRow(item, time: PlayerModel.clock(item.duration), playing: false, onDouble: { p.jump(toPlayed: i) })
+                .accessibilityLabel("Played: \(item.title), \(item.artist)")
+                .accessibilityAction(named: "Play again") { p.jump(toPlayed: i) }
         }
         if let c = p.current { songRow(c, time: PlayerModel.clock(c.duration), playing: true).id("current-song") }
         else { Text("Nothing playing. Play a song and what follows shows here.").foregroundStyle(CU.textSecondary).padding(8) }
