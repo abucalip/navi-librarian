@@ -35,8 +35,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.fillMaxHeight
 import app.discair.ui.common.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import app.discair.ui.common.FilledIconButton
@@ -451,9 +450,14 @@ private fun Player(state: PlayerUiState, controller: PlayerController, onSignIn:
     var dragging by remember { mutableStateOf<Float?>(null) }
     val duration = state.durationMs
     val fraction = dragging ?: if (duration > 0) (state.positionMs.toFloat() / duration).coerceIn(0f, 1f) else 0f
-    Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()), horizontalAlignment = Alignment.CenterHorizontally) {
-        card()
-        Spacer(Modifier.height(16.dp))
+    // A fixed sheet, as on Flow: nothing scrolls. The artwork takes the room the rest leaves, up to 480dp square.
+    Column(Modifier.fillMaxWidth().fillMaxHeight(), horizontalAlignment = Alignment.CenterHorizontally) {
+        Box(Modifier.weight(1f, fill = true).fillMaxWidth().padding(bottom = 8.dp), contentAlignment = Alignment.Center) {
+            androidx.compose.foundation.layout.BoxWithConstraints(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                val side = minOf(maxWidth, maxHeight, 480.dp)
+                Box(Modifier.size(side)) { card() }
+            }
+        }
         // Cassette Deck: "Track n of m" in the mono face beside a five-bar meter that follows the real playback state.
         if (app.discair.ui.theme.LocalPalette.current.layout == app.discair.ui.theme.Layout.TapeDeck) {
             val label = app.discair.ui.common.TapeDeckRules.trackLabel(state.queue.index, state.queue.items.size)
@@ -572,7 +576,7 @@ private fun Player(state: PlayerUiState, controller: PlayerController, onSignIn:
             Spacer(Modifier.size(16.dp))
             CrossfadeLink(onCrossfade)
         }
-        Spacer(Modifier.height(24.dp))
+        Spacer(Modifier.height(12.dp))
     }
 }
 
