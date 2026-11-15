@@ -40,7 +40,7 @@ CACHE_PREFIX = "path:"
 SLICE_RESOURCE = "musicbrainz_slice"
 SCENE_YEARS = 10
 PROGRESS_OPS = 5000  # how many SQLite steps pass between deadline checks
-PRESENTATION_VERSION = 6
+PRESENTATION_VERSION = 7
 COVER_CANDIDATES = 5  # releases offered per recording, so the app can try each for a cover
 VARIOUS_NAMES = ("various artists", "various")
 # Performer credits only: a producer is not a musician on the record, so it never bridges two recordings.
@@ -341,6 +341,25 @@ def _recording_album(
     return found[0] if found else (None, None)
 
 
+# Credits that make an artist a composer of a work. A lyricist or an arranger did not compose it.
+COMPOSER_RELATIONS = ("composer", "writer")
+
+
+def _start_composed(db: sqlite3.Connection, start_id: int, row: sqlite3.Row | dict[str, Any], gen: int) -> bool:
+    """Whether the start is credited as a composer of the library's work behind a composition row.
+
+    That work is the one the stop's recording shares (``same_work``) or is related to (``related_work``, the bridge).
+    Performing a recording of a work says nothing about who wrote it, so this reads the work's own credits.
+    """
+    work = row["via"] if row["code"] == "same_work" else row["bridge"]
+    if work is None:
+        return False
+    marks = ", ".join("?" * len(COMPOSER_RELATIONS))
+    return db.execute(
+        f"SELECT 1 FROM edges e WHERE e.from_id = ? AND e.to_id = ? AND e.relation IN ({marks}) "
+        f"AND e.generation = ? AND {_cg('e')} LIMIT 1", (start_id, work, *COMPOSER_RELATIONS, gen)).fetchone() is not None
+
+
 def _anchor_presentation(
     db: sqlite3.Connection, kind: str, anchor_id: int | None, names: _Names, generation: int
 ) -> dict[str, str | None] | None:
@@ -523,6 +542,8 @@ def build_path(db: sqlite3.Connection, start_id: int, kind: str, *, limits: Path
             anchor_presentation = _anchor_presentation(db, kind, r["anchor"], names, gen)
             if anchor_presentation is not None:
                 reasons[-1]["anchor_presentation"] = anchor_presentation
+            if kind == "composition_path":
+                reasons[-1]["start_composed"] = _start_composed(db, start_id, r, gen)
         result_stops.append({
             "entity": names.get(stop_id),
             "presentation": presentation,

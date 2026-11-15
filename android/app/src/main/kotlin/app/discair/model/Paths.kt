@@ -58,6 +58,8 @@ data class PathReason(
     val anchorAlbum: String? = null, val anchorAlbumArtist: String? = null,
     /** The credits the server stored for this reason: first the start's side (the library song), then the stop's. */
     val credits: List<PathCreditFact> = emptyList(),
+    /** Composition paths: true only when the server found the start credited as composer or writer of the library's work. */
+    val startComposed: Boolean = false,
 )
 
 /**
@@ -123,7 +125,7 @@ sealed interface PathPane {
     data class Recording(
         val work: String?, val related: Boolean, val yoursAlbum: String?, val yoursArtist: String?,
         val track: String, val performer: String?, val album: String?, val albumArtist: String?, val covers: List<PathAlbum>,
-        val sentence: String,
+        val sentence: String, val startComposed: Boolean = false,
     ) : PathPane
 
     data class Place(
@@ -266,6 +268,7 @@ fun PathStop.pane(kind: PathKind, startName: String = "", random: Random = Rando
                 work = r.via?.name, related = r.code.startsWith("related"),
                 yoursAlbum = r.anchorAlbum, yoursArtist = r.anchorAlbumArtist,
                 track = name, performer = artist, album = album, albumArtist = albumArtist, covers = covers, sentence = r.sentence(),
+                startComposed = r.startComposed,
             )
         }
         PathKind.ScenePath -> {
@@ -349,6 +352,7 @@ fun parsePaths(body: String): PathsResponse {
                         val ev = e as? JsonObject ?: return@mapNotNull null
                         ev.string("relation")?.let { PathCreditFact(it, ev.string("role")?.trim()?.takeIf { r -> r.isNotEmpty() }) }
                     },
+                    startComposed = (o["start_composed"] as? JsonPrimitive)?.booleanOrNull ?: false,
                 )
             },
         )

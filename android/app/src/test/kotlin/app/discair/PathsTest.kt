@@ -352,6 +352,18 @@ class PathsTest {
         )
     }
 
+    @Test fun compositionPaneSaysComposedByOnlyWhenTheServerSaysTheStartWroteTheWork() {
+        fun pane(flag: String, code: String = "same_work") = parsePaths(
+            """{"kind":"composition_path","status":"ok","stops":[{"entity":{"canonical_name":"Cover","type":"recording"},"reason_count":1,
+            "reasons":[{"code":"$code","text":"t","via":{"canonical_name":"Song","type":"work"},
+            "anchor":{"canonical_name":"Mine","type":"recording"}$flag}]}]}""",
+        ).stops.first().pane(PathKind.CompositionPath) as PathPane.Recording
+        assertTrue(pane(""","start_composed":true""").startComposed)
+        assertFalse(pane(""","start_composed":false""").startComposed)
+        assertFalse(pane("").startComposed)  // an older server sends no flag: no claim about who wrote it
+        assertTrue(pane(""","start_composed":true""", "related_work").related)
+    }
+
     @Test fun anchorAlbumAndArtistComeFromTheServerWhenItSendsThem() {
         val body = """{"kind":"composition_path","status":"ok","stops":[{"entity":{"canonical_name":"Cover","type":"recording","owned":false},
             "reason_count":1,"presentation":{"title":"X","artist":"Cover artist","album":"Cover LP","album_artist":"Cover LP Artist"},
