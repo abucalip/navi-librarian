@@ -1,4 +1,5 @@
 import DiscairAudio
+import DiscairLibrarian
 import Foundation
 import Observation
 
@@ -30,13 +31,16 @@ struct PaletteCommand: Identifiable {
     var secondaryLabel = ""
     /// The words the query is matched against.
     var searchText = ""
+    /// True for a row the Librarian's search found beyond the library; they are listed together under their own heading.
+    var notInLibrary = false
+
+    static let notInLibraryHeading = "Not in your library"
 
     /// The section the row is listed under.
     var section: String {
-        switch kind {
-        case .artist: "Artists"
-        case .album: "Albums"
-        case .song: "Songs"
+        if notInLibrary { return Self.notInLibraryHeading }
+        return switch kind {
+        case .artist, .album, .song: "In your library"
         case .screen, .playback: "Pages and settings"
         }
     }
@@ -77,7 +81,7 @@ enum PaletteCatalog {
             list.append(PaletteCommand(id: "open-album-\(a.id)-\(a.title)", title: "Open \(a.title) · \(a.artist)", hint: "Album", kind: .album, action: .openAlbum(a),
                                        name: a.title, detail: [a.artist, a.year > 0 ? String(a.year) : ""].filter { !$0.isEmpty }.joined(separator: " · "), album: a,
                                        secondary: a.owned ? .play(a) : .get(a), secondaryLabel: a.owned ? "Play" : "Get",
-                                       searchText: "\(a.title) \(a.artist)"))
+                                       searchText: "\(a.title) \(a.artist)", notInLibrary: !a.owned))
         }
         for a in artists {
             list.append(PaletteCommand(id: "artist-\(a.id)-\(a.name)", title: "Open \(a.name)", hint: "Artist", kind: .artist, action: .openArtist(a),
@@ -95,6 +99,43 @@ enum PaletteCatalog {
                                   searchText: "\(s.title) \(s.artist) \(s.albumItem.title)")
         }
     }
+
+    /// What the Librarian found beyond the library, as rows. An album can be opened or fetched (the icon); an artist is opened;
+    /// a song opens its album, which is not owned either. Nothing here can be played, so no row offers Play.
+    /// Anything the library already lists (`ownedKeys`, from `ownedKey`) is left out.
+    static func notInLibrary(_ hits: CatalogHits, excluding ownedKeys: Set<String> = []) -> [PaletteCommand] {
+        func albumItem(_ h: CatalogHit, title: String) -> AlbumItem {
+            AlbumItem(id: 3_000_000 + abs("\(h.artist.lowercased())|\(title.lowercased())".hashValue % 800_000), title: title, artist: h.artist, year: h.year ?? 0,
+                      genre: "", format: "", owned: false, hue: LibraryModel.hue(for: title), releaseGroupMBID: h.releaseGroupMBID)
+        }
+        var out: [PaletteCommand] = []
+        for h in hits.artists.prefix(notInLibraryLimit[.artist] ?? 3) where !ownedKeys.contains(ownedKey(h.name)) {
+            let a = ArtistItem(id: 100_000 + abs(h.name.lowercased().hashValue % 800_000), name: h.name, albumCount: 0)
+            out.append(PaletteCommand(id: "cat-artist-\(h.name.lowercased())", title: "Open \(h.name)", hint: "Artist", kind: .artist, action: .openArtist(a),
+                                      name: h.name, detail: "Artist", artist: a, searchText: h.name, notInLibrary: true))
+        }
+        var albumsSeen = Set<String>()
+        for h in hits.albums where !ownedKeys.contains(ownedKey(h.artist, h.name)) && albumsSeen.insert(ownedKey(h.artist, h.name)).inserted {
+            guard out.filter({ $0.kind == .album }).count < (notInLibraryLimit[.album] ?? 4) else { break }
+            let a = albumItem(h, title: h.name)
+            out.append(PaletteCommand(id: "cat-album-\(ownedKey(h.artist, h.name))", title: "Open \(h.name) · \(h.artist)", hint: "Album", kind: .album, action: .openAlbum(a),
+                                      name: h.name, detail: [h.artist, h.year.map(String.init) ?? ""].filter { !$0.isEmpty }.joined(separator: " · "), album: a,
+                                      secondary: .get(a), secondaryLabel: "Get", searchText: "\(h.name) \(h.artist)", notInLibrary: true))
+        }
+        for h in hits.songs where !h.album.isEmpty && !ownedKeys.contains(ownedKey(h.artist, h.album)) {
+            guard out.filter({ $0.kind == .song }).count < (notInLibraryLimit[.song] ?? 3) else { break }
+            let a = albumItem(h, title: h.album)
+            out.append(PaletteCommand(id: "cat-song-\(ownedKey(h.artist, h.album, h.name))", title: "Open \(h.name) · \(h.artist)", hint: "Song", kind: .song, action: .openAlbum(a),
+                                      name: h.name, detail: "\(h.artist) — \(h.album)", album: a, searchText: "\(h.name) \(h.artist) \(h.album)", notInLibrary: true))
+        }
+        return out
+    }
+
+    /// Most rows of each kind under "Not in your library".
+    static let notInLibraryLimit = [PaletteCommand.Kind.artist: 3, .album: 4, .song: 3]
+
+    /// Names compared without case, accents or punctuation, so a server spelling still matches the library's.
+    static func ownedKey(_ parts: String...) -> String { parts.map(fold).joined(separator: "|") }
 
     static func fold(_ s: String) -> String { LibrarySearch.fold(s) }
 
@@ -125,8 +166,8 @@ enum PaletteCatalog {
     static let perSection = [PaletteCommand.Kind.artist: 4, .album: 5, .song: 5, .screen: 4, .playback: 4]
 
     /// With no query: screens and playback. With one: the best matches, grouped as artists, albums, songs, then pages and
-    /// settings (playback commands count with pages).
-    static func results(query: String, playing: Bool, albums: [AlbumItem], artists: [ArtistItem], songs rows: [SongRow] = [], limit: Int = 9) -> [PaletteCommand] {
+    /// settings (playback commands count with pages), then what the Librarian found beyond the library.
+    static func results(query: String, playing: Bool, albums: [AlbumItem], artists: [ArtistItem], songs rows: [SongRow] = [], catalog: CatalogHits = CatalogHits(), limit: Int = 9) -> [PaletteCommand] {
         let trimmed = query.trimmingCharacters(in: .whitespaces)
         let fixed = fixed(playing: playing)
         if trimmed.isEmpty { return Array(fixed.prefix(limit)) }
@@ -135,12 +176,19 @@ enum PaletteCatalog {
             .compactMap { i, c -> (Int, Int, PaletteCommand)? in let s = score(c.searchText.isEmpty ? c.title : c.searchText, query: trimmed); return s > 0 ? (s, i, c) : nil }
             .sorted { $0.0 != $1.0 ? $0.0 > $1.0 : $0.1 < $1.1 }
             .map { $0.2 }
-        var out: [PaletteCommand] = []
-        for kinds in [[PaletteCommand.Kind.artist], [.album], [.song], [.screen, .playback]] {
-            let group = scored.filter { kinds.contains($0.kind) }
-            out += Array(group.prefix(perSection[kinds[0]] ?? 4))
+        // Three blocks: what the library holds, then music it lacks (the Librarian's picks and what its search found), then pages.
+        // An album or artist the library lists is never repeated from the search.
+        var known = Set(artists.map { ownedKey($0.name) })
+        known.formUnion(albums.map { ownedKey($0.artist, $0.title) })
+        let lacking = scored.filter(\.notInLibrary) + notInLibrary(catalog, excluding: known)
+        func top(_ rows: [PaletteCommand], _ kinds: [PaletteCommand.Kind], _ limit: (PaletteCommand.Kind) -> Int) -> [PaletteCommand] {
+            kinds.flatMap { k in Array(rows.filter { $0.kind == k }.prefix(limit(k))) }
         }
-        return out
+        let owned = scored.filter { !$0.notInLibrary && $0.kind != .screen && $0.kind != .playback }
+        let pages = scored.filter { $0.kind == .screen || $0.kind == .playback }
+        return top(owned, [.artist, .album, .song]) { perSection[$0] ?? 4 }
+            + top(lacking, [.artist, .album, .song]) { notInLibraryLimit[$0] ?? 3 }
+            + Array(pages.prefix(perSection[.screen] ?? 4))
     }
 }
 

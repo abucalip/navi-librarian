@@ -1,3 +1,10 @@
+## 2026-11-15 — macOS: the ⌘K palette also searches music beyond the library (PR open)
+
+- The palette now lists a "Not in your library" section, last, with artists, albums and songs the library lacks. Source: the server's `GET /api/search` (`scope=all`), read whole (the stream ends within about 3 s) and parsed in `DiscairLibrarian/CatalogSearch.swift`; only `owned: false` results count. Requests start 450 ms after typing stops, need two characters, and a newer query cancels the older one; a failure leaves the rows as they were.
+- Rows: an artist opens an artist page built from Librarian data; an album opens its page and has the Get icon; a song opens its (unowned) album, with no Play or Get icon. Anything the library already lists (owned artists, owned or missing albums) is left out.
+- The Library search field is unchanged: it reads `LibrarySearch` and `songHits` only, so it stays owned-only.
+- Tests: `swift test --filter "CatalogSearchTests|CommandPaletteTests"` passed (4 new client cases, 5 new palette cases). Not run: full suite, the live app against a real server (provider results and timing not seen).
+
 ## 2026-11-15 — Album page: owned songs matched to the provider tracklist by title likeness (PR open)
 
 - Symptom (Android, owner screenshot): on an album page some owned tracks showed the download prompt in place, and the same songs were appended owned at the bottom. Cause: `mark_owned_tracks` matched a library song to a provider track only by exact normalized title, or same number with a length within 3 s. A renamed song ("Excerpt From the Blues" / "Excerpts From The Blues", "You'd Be So Easy to Love" / "Easy To Love") whose length differed by 6 s matched neither, so the provider track stayed unowned and the song was appended as an extra.

@@ -107,6 +107,8 @@ public final class AppState {
     public let palette = PaletteModel()
     /// Songs the server found for the text being searched (the palette and the Library search), whole library.
     public private(set) var songHits: [SongRow] = []
+    /// Artists, albums and songs the Librarian found that the library does not hold: the palette's "Not in your library". Never read by the Library search.
+    private(set) var catalogHits = CatalogHits()
     public let lyrics = LyricsModel()
     /// Facts about the playing song, album and artist for the player bar, and the two switches that show them.
     public let facts = FactsModel()
@@ -837,7 +839,7 @@ extension AppState {
     /// What the palette lists for what is typed, from the library as loaded now.
     func paletteResults() -> [PaletteCommand] {
         PaletteCatalog.results(query: palette.query, playing: player.isPlaying,
-                               albums: visible(library.searchableAlbums + library.missing), artists: library.artists, songs: songHits)
+                               albums: visible(library.searchableAlbums + library.missing), artists: library.artists, songs: songHits, catalog: catalogHits)
     }
 
     /// Asks the server for songs matching `query` after a short pause; a newer query cancels this one (call it from `.task(id:)`).
@@ -849,6 +851,16 @@ extension AppState {
         if let found = try? await nav.searchSongs(q, count: 8), !Task.isCancelled {
             songHits = found.enumerated().map { LibraryModel.row($0.element, id: 2_000_000 + $0.offset) }
         }
+    }
+
+    /// Asks the Librarian for music beyond the library matching `query`, after a pause longer than the song search's, because the
+    /// server asks outside services. A newer query cancels this one (call it from `.task(id:)`). Failures leave the rows as they were.
+    func searchCatalogHits(_ query: String) async {
+        let q = LibrarySearch.fold(query)
+        guard q.count >= 2, library.isLive, let librarian = session?.librarian else { catalogHits = CatalogHits(); return }
+        try? await Task.sleep(for: .milliseconds(450))
+        guard !Task.isCancelled else { return }
+        if let found = try? await librarian.searchCatalog(query.trimmingCharacters(in: .whitespaces)), !Task.isCancelled { catalogHits = found }
     }
 
     /// Runs one palette line and closes the palette.
