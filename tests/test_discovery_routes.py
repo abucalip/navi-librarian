@@ -24,6 +24,9 @@ class DiscoveryRoutesTests(unittest.TestCase):
             ("/api/discovery/{list_name}", "GET"),
             ("/api/discovery/{list_name}/refresh", "POST"),
             ("/api/discovery/feedback", "POST"),
+            ("/api/discovery/blocked-genres", "GET"),
+            ("/api/discovery/blocked-genres", "POST"),
+            ("/api/discovery/blocked-genres", "DELETE"),
         })
 
     def test_recommendations_preserve_default_and_filter_non_album_items(self):

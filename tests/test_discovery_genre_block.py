@@ -10,9 +10,8 @@ from fastapi.testclient import TestClient
 from app.api import discovery as routes
 from app.api.dependencies import get_librarian
 from discovery import genre_block
-from discovery.allocation_contract import AllocationCandidate  # noqa: F401
+from discovery.allocation_contract import AllocationCandidate
 from discovery.list_payload import build_cached_discovery_list_response, build_lens_list_response, dismissed_predicate
-from discovery.lens_lists import build_lens_lists  # noqa: F401
 from recommendation.music_key import music_key
 
 BLOCK = {"scope": "genre", "artist_key": music_key("Shoegaze"), "album_key": "", "artist": "Shoegaze",
