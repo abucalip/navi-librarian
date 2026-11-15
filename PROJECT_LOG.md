@@ -865,3 +865,10 @@ Earlier project log entries are preserved verbatim in [PROJECT_LOG_HISTORY.md](d
 - Tests run locally: `DownloadsRulesTest`, `TasteTest`, `LibraryViewModelTest`. Full suite not run (owner rule).
 - Not done: item 1 needs a server route that creates a Navidrome playlist (new module), then `TasteCard.PlaylistRouteAvailable` on; item 7 device check of the three mockups and Night, Tape, Sheet (no emulator available). Nothing compared on screen.
 - Next action: A9.
+
+## 2026-11-15 — Flow Discover D1: switch row and list sheet (PR #1103)
+
+- Built: `FlowDiscoverSwitch`, `FlowListSheet` and `FlowDiscoverRules` in `ui/discover/FlowDiscover.kt`; the Flow branch of `DiscoverScreen` draws the switch instead of `FlowDiscoverHeader`. Lens/genre tabs, one-column cards and Insights lens headings are unchanged until D2 and D3.
+- Tests run locally (JDK 17, filtered): `FlowDiscoverRulesTest` (new, 5), `FlowTest`, `ExistingLayoutsTest`, `DiscoveryTest`, `InsightsTest`, `FlowPagesRulesTest`, `SoftBrutTest`, `NavRulesTest`. Full suite not run (owner rule).
+- Not done: no device or emulator check, no comparison with frames B1 and B2.
+- Next action: D2 after the owner merges D1.
