@@ -1,3 +1,7 @@
+## 2026-11-16 — macOS: queue panel add-songs buttons are equal tiles, description on hover (PR open)
+
+- The two buttons at the top of the queue panel show only icon and name, in tiles of equal width and height (36 pt); what each adds shows as a hover tip and as the accessibility hint. Tests: `swift test --filter CupertinoPagesRenderTests` passed. Not run: full suite, a look in the installed app.
+
 ## 2026-11-16 — macOS: library reloads after a Get, moving playing bars, album page alignment, queue controls, handoff window (PR open)
 
 - Library: when a poll sees a Get become imported, `AppState.reloadLibraryAfterImport` waits 15 s (the server resyncs 10 s after an import, PR #698) then reads only the newest albums (`getAlbumList2` newest, 24) and replaces Recently Added; nothing else is re-read. A failed read keeps the list.
