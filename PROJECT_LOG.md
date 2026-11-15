@@ -1,3 +1,10 @@
+## 2026-11-15 — Star Operation S4a: discovery mode setting and knob wiring (merged #1101, squash `040e5da0`)
+
+- Head `ddf16a88`. `discovery/discovery_mode.py` holds the `discovery_mode` values, the `DiscoveryKnobs` (adventurous floor divisor, audience-band scales) and the stored-value reader; settings in `settings/service.py`, routes `GET`/`PUT /api/settings/discovery-mode` (DISC-14).
+- Wired into `selection_policy.selection_request_options` (personal list floor), `lenses.run_lens` / `partition_lenses` / `partition_lens_pools` (Genre spread floor, gate-lens audience band), `lens_lists.build_lens_lists` and `lens_service.build`.
+- `balanced` is today's behaviour and is tested equal to the setting absent; `safer` and `deeper` carry the balanced numbers until S4b. Lens definitions are unchanged; unknown audience is never obscure.
+- Tests: focused only (`test_discovery_mode` new, plus selection, lens, lens-list, settings and characterization suites, 197 pass); the owner runs the full suite. No client shows the setting.
+
 ## 2026-11-15 — Star Operation S3b: Navidrome stars as a taste seed (merged #1100, squash `f11dffda`)
 
 - `discovery/star_seeds.py`: `starred_seed_weights` (artist key to weight; 1.0 fresh (owner decision), 180-day half-life, 365-day expiry, 0.5 flat when undated) and `cached_starred` (one `getStarred2` per six-hour metadata-cache window). `candidate_gathering._star_seed_weights` merges them into the existing seed map (larger weight wins per artist) only when `star_seed_enabled` is on; any failure returns no stars. Counter `star_seed.starred_artists`. Query budget unchanged: a star can replace a planned tag query, never add one.
