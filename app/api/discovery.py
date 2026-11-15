@@ -10,7 +10,7 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from app.api.dependencies import get_librarian
 from app.api.utils import parse_result
-from discovery import artist_lean, genre_block, lens_service
+from discovery import artist_block, artist_lean, genre_block, lens_service
 from discovery.new_releases import enrich_new_release_listeners
 from discovery.taste_families import deep_dive_row
 
@@ -51,6 +51,29 @@ def unblock_genre(payload: dict, librarian=Depends(get_librarian)):
         return {"ok": True, "genre": genre, "removed": removed}
     except Exception:
         raise HTTPException(status_code=502, detail="Could not unblock the genre.")
+
+
+@router.get("/api/discovery/blocked-artists")
+def blocked_artists(librarian=Depends(get_librarian)):
+    """Artists hidden by "Not this artist" (Star Operation S2c)."""
+    try:
+        librarian._discovery_init()
+        return {"artists": artist_block.list_blocked(librarian.DISCOVERY_DB)}
+    except Exception:
+        raise HTTPException(status_code=502, detail="Could not read blocked artists.")
+
+
+@router.delete("/api/discovery/blocked-artists")
+def unblock_artist(payload: dict, librarian=Depends(get_librarian)):
+    artist = str(payload.get("artist") or "").strip()
+    if not librarian._music_key(artist):
+        raise HTTPException(status_code=400, detail="artist is required")
+    try:
+        librarian._discovery_init()
+        removed = artist_block.unblock_artist(librarian.DISCOVERY_DB, artist, librarian._music_key)
+        return {"ok": True, "artist": artist, "removed": removed}
+    except Exception:
+        raise HTTPException(status_code=502, detail="Could not unblock the artist.")
 
 
 @router.get("/api/discovery/artist-lean")

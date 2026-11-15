@@ -721,6 +721,15 @@ footer { margin: 36px 34px 0 calc(var(--rail-w) + 34px); padding-top: 14px; bord
   color: var(--text-muted); cursor: pointer;
 }
 .action-group > button + button { border-left: 1px solid var(--edge-strong); }
+/* Star Operation S2c: the More menu. One shared panel, fixed under the button that opened it. */
+.feedback-menu { position: fixed; z-index: 150; top: 0; left: 0; min-width: 220px; }
+.feedback-menu .feedback-menu-manage { border-top: 1px solid var(--edge-strong); border-radius: 0; color: var(--text-muted); }
+.feedback-toast { z-index: 201; pointer-events: none; padding-right: 16px; }
+.blocklist { margin: 0 0 24px; padding: 0; list-style: none; max-width: 560px; }
+.blocklist li { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 44px; border-bottom: 1px solid var(--edge-strong); }
+.blocklist-name { min-width: 0; overflow-wrap: anywhere; }
+.blocklist-empty { color: var(--text-muted); }
+.blocklist button { flex: none; min-height: 44px; min-width: 44px; padding: 0 16px; }
 .action-group[hidden] { display: none; }
 /* Page, panel and settings buttons are all groups too. The group height wins over the 44px floors set on .controls and #settings buttons, and groups seated next to each other keep a gap. */
 .controls .action-group > button, #settings .action-group > button { min-height: 0; height: var(--group-h); padding: 0; }
