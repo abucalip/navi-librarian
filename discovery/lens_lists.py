@@ -24,6 +24,7 @@ from discovery.history_windows import (
     window_artist_weights,
 )
 from discovery.current_tastes import current_tastes_plan, ranking_boost
+from discovery.discovery_mode import BALANCED, DiscoveryKnobs
 from discovery.lenses import CURRENT_TASTES, DEEP_CUTS, LENSES, OBSESSIONS, REPEATED_TRACKS, Lens, partition_lens_pools
 from discovery.profile_seeds import obsession_seed_queries, repeated_track_seed_queries
 from discovery.genre_block import drop_blocked_candidates
@@ -190,6 +191,7 @@ def build_lens_lists(
     artist_profiles: Mapping[str, Mapping[str, Any]] | None = None,
     current_context: Mapping[str, Any] | None = None,
     blocked_genres: frozenset[str] = frozenset(),
+    knobs: DiscoveryKnobs = BALANCED,
 ) -> dict[str, dict[str, Any]]:
     """Build one list of ``count`` albums per lens for ``day``, in ``lenses`` order.
 
@@ -221,7 +223,7 @@ def build_lens_lists(
         if lens is CURRENT_TASTES and current_context is not None:
             candidates[lens.name] = _with_current_boosts(
                 candidates[lens.name], by_lens[lens.name], popularity, artist_profiles or {}, current_context)
-    results = partition_lens_pools(candidates, count, lenses)
+    results = partition_lens_pools(candidates, count, lenses, knobs=knobs)
 
     lists: dict[str, dict[str, Any]] = {}
     for lens, result in zip(lenses, results):

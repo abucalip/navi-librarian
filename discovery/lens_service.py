@@ -24,6 +24,7 @@ from typing import Any
 from discovery import history_fetch
 from discovery import refresh as discovery_refresh
 from discovery.lens_feedback import lens_acquisition_summary, lens_feedback_summary
+from discovery.discovery_mode import discovery_knobs
 from discovery.lens_lists import LENS_LIST_ORDER, build_lens_lists, history_artist_mbids, usable_listens
 from discovery.lens_storage import lens_day, lens_storage_name
 from discovery.genre_block import blocked_genre_keys
@@ -189,6 +190,7 @@ def build(librarian: Any) -> dict[str, Any]:
         library_by_title=library_by_title, known_artist_mbids=history_artist_mbids(usable),
         seeds=gathered["seeds"], blocked_genres=_blocked_genres(librarian),
         artist_profiles=gathered["artist_profiles"], current_context=gathered["current_context"],
+        knobs=discovery_knobs(settings_read),
     )
     return {"status": "built", "day": day, "lists": lists}
 

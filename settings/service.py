@@ -135,6 +135,21 @@ def set_star_seed_settings(settings_write, value):
     return json.dumps({"ok": True, STAR_SEED_KEY: value, "message": "Star seed preference saved."})
 
 
+def get_discovery_mode_settings(settings_read):
+    """Return the stable public discovery-mode payload (Star Operation, S4a)."""
+    from discovery.discovery_mode import DISCOVERY_MODE_KEY, DISCOVERY_MODES, discovery_mode_value
+    return json.dumps({DISCOVERY_MODE_KEY: discovery_mode_value(settings_read), "modes": list(DISCOVERY_MODES)})
+
+
+def set_discovery_mode_settings(settings_write, value):
+    """Persist the discovery mode, refusing anything but a known mode without writing."""
+    from discovery.discovery_mode import DISCOVERY_MODE_KEY, DISCOVERY_MODES
+    if not isinstance(value, str) or value not in DISCOVERY_MODES:
+        return json.dumps({"ok": False, "error": "discovery_mode must be one of: " + ", ".join(DISCOVERY_MODES) + "."})
+    settings_write({DISCOVERY_MODE_KEY: value})
+    return json.dumps({"ok": True, DISCOVERY_MODE_KEY: value, "message": "Discovery mode saved; it applies from the next refresh."})
+
+
 def get_automatic_refill_settings(settings_read):
     """Return the stable public refill payload."""
     return json.dumps({AUTOMATIC_REFILL_KEY: automatic_refill_enabled_value(settings_read)})

@@ -419,6 +419,7 @@ def recommend_new_music(
     from discovery.recommendation_payload import (
         build_personal_recommendation_payload,
     )
+    from discovery.discovery_mode import discovery_knobs
     from discovery.selection_policy import selection_policy_report, selection_request_options
 
     pick_context = build_pick_context_lookup(listens, genre_cache, _music_key)
@@ -427,7 +428,8 @@ def recommend_new_music(
     selection_policy = _service_settings.recommendation_selection_policy_value(
         _discovery_settings_read
     )
-    targets, policy_options = selection_request_options(selection_policy, count)
+    targets, policy_options = selection_request_options(
+        selection_policy, count, discovery_knobs(_discovery_settings_read))
 
     # Prepare immutable policy inputs; the adapter owns identity and ownership lookup.
     candidate_by_id, allocation_candidates = build_allocation_inputs(
