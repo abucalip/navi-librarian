@@ -8,6 +8,8 @@ import androidx.compose.ui.platform.LocalContext
 import app.discair.model.DiscoveryEntry
 import app.discair.model.Lean
 import app.discair.model.blockableGenres
+import app.discair.model.entryGenres
+import app.discair.model.entryLens
 import app.discair.ui.common.LocalRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -25,7 +27,8 @@ fun PickFeedbackItems(entry: DiscoveryEntry, close: () -> Unit) {
     val repo = LocalRepository.current
     val context = LocalContext.current
     val artist = entry.item.artistName
-    val genres = blockableGenres(entry.item.genres)
+    val genres = blockableGenres(entryGenres(entry))
+    val lens = entryLens(entry)
 
     fun run(done: String, call: () -> Unit) {
         close()
@@ -43,11 +46,11 @@ fun PickFeedbackItems(entry: DiscoveryEntry, close: () -> Unit) {
 
     DropdownMenuItem(
         text = { Text("More like this artist") },
-        onClick = { run("More like $artist next time.") { repo.setArtistLean(artist, Lean.More, genres, null) } },
+        onClick = { run("More like $artist next time.") { repo.setArtistLean(artist, Lean.More, genres, lens) } },
     )
     DropdownMenuItem(
         text = { Text("Less like this artist") },
-        onClick = { run("Fewer picks like $artist. Nothing is hidden.") { repo.setArtistLean(artist, Lean.Less, genres, null) } },
+        onClick = { run("Fewer picks like $artist. Nothing is hidden.") { repo.setArtistLean(artist, Lean.Less, genres, lens) } },
     )
     for (genre in genres) DropdownMenuItem(
         text = { Text("Block genre: $genre") },

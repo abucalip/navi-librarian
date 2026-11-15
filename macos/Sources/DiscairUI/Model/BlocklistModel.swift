@@ -31,6 +31,8 @@ public final class BlocklistModel {
     @ObservationIgnored private var source: (any BlocklistSource)?
     /// Called with a short sentence after a menu action, so the window's notice shows it.
     @ObservationIgnored public var onNotice: (String) -> Void = { _ in }
+    /// Called after a genre was blocked, so the open Discover list is read again without it.
+    @ObservationIgnored public var onBlocked: () -> Void = {}
 
     public init() {}
 
@@ -83,6 +85,7 @@ public final class BlocklistModel {
         do {
             try await source.blockGenre(genre)
             onNotice("Blocked \(genre). Your library is not affected. Undo it in Settings › Blocklist.")
+            onBlocked()
         } catch { onNotice("Could not block \(genre): " + StationsModel.message(error)) }
     }
 

@@ -3473,11 +3473,13 @@ function closeFeedbackMenu({focusOwner = false} = {}) {
   }
 }
 
-async function sendArtistLean(artist, lean, metadata, listName) {
+async function sendArtistLean(artist, lean, metadata) {
   try {
+    // `lens` is the lens the item itself names (a lens album carries it, as lens_feedback.py reads it), never a list name.
+    const lens = metadata && typeof metadata.lens === 'string' ? metadata.lens : '';
     await sendJSON('/api/discovery/artist-lean', 'POST', {
       artist, lean,
-      metadata: {genres: albumGenres(metadata), ...(listName ? {lens: listName} : {})}
+      metadata: {genres: albumGenres(metadata), ...(lens ? {lens} : {})}
     });
     showFeedbackToast(lean === 'more' ? 'More like ' + artist + ' next time.' : 'Fewer picks like ' + artist + '. Nothing is hidden.');
   } catch (error) {
@@ -3485,10 +3487,19 @@ async function sendArtistLean(artist, lean, metadata, listName) {
   }
 }
 
-async function sendGenreBlock(genre) {
+// Lists the server rebuilds from stored rows on every read, so a block shows at once. The dashboard strip and shelf keep what
+// they hold until their next refresh.
+function reloadDiscoveryList(listName) {
+  if (listName === 'lens_lists') return loadLensList(activeLens);
+  if (['personal', 'classics', 'new_releases', 'artist_deep_dive'].includes(listName)) return loadDiscovery(listName);
+  return null;
+}
+
+async function sendGenreBlock(genre, listName) {
   try {
     await sendJSON('/api/discovery/blocked-genres', 'POST', {genre});
     showFeedbackToast('Blocked ' + genre + '. Your library is not affected. Undo it on the Blocklist page.');
+    await reloadDiscoveryList(listName);
   } catch (error) {
     showFeedbackToast('Could not block ' + genre + ': ' + error.message);
   }
@@ -3500,11 +3511,15 @@ function openFeedbackMenu(button, artist, album, metadata, options) {
   if (feedbackMenuOwner === button) { closeFeedbackMenu({focusOwner: true}); return; }
   closeFeedbackMenu();
   const entries = [
-    ['More like this artist', () => sendArtistLean(artist, 'more', metadata, options.listName)],
-    ['Less like this artist', () => sendArtistLean(artist, 'less', metadata, options.listName)],
-    ['Not this artist', () => sendFeedback('dismiss_artist', artist, album, metadata, options.listName, options.row || null)]
+    ['More like this artist', () => sendArtistLean(artist, 'more', metadata)],
+    ['Less like this artist', () => sendArtistLean(artist, 'less', metadata)]
   ];
-  for (const genre of albumGenres(metadata)) entries.push(['Block genre: ' + genre, () => sendGenreBlock(genre)]);
+  // Not this artist hides the row now and reloads its list when the Undo window closes, which only the lists below do.
+  if (['personal', 'classics', 'new_releases', 'lens_lists', 'artist_deep_dive'].includes(options.listName)) {
+    const row = button.closest('article.card, .ranked-row');
+    entries.push(['Not this artist', () => sendFeedback('dismiss_artist', artist, album, metadata, options.listName, row)]);
+  }
+  for (const genre of albumGenres(metadata)) entries.push(['Block genre: ' + genre, () => sendGenreBlock(genre, options.listName)]);
   panel.replaceChildren();
   for (const [label, run] of entries) {
     const item = document.createElement('button');

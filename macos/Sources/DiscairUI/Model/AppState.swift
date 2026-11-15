@@ -254,6 +254,10 @@ public final class AppState {
         radioSettings.configure(source: session.librarian)
         blocklist.configure(source: session.librarian)
         blocklist.onNotice = { [weak self] text in self?.acquisition.report(text) }
+        blocklist.onBlocked = { [weak self] in
+            guard let self else { return }
+            Task { await self.discovery.load(self.discovery.selected, force: true) }
+        }
         radioSettings.onLogoChanged = { [weak self] id in
             self?.stationLogos.forget(station: id)
             Task { await self?.stations.reload() }
