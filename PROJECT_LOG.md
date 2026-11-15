@@ -1,8 +1,9 @@
-## 2026-11-15 — Star Operation S1a: `because` field on personal picks (PR open)
+## 2026-11-15 — Star Operation S1a: `because` field on personal picks (merged #1091)
 
 - New `discovery/pick_because.py` returns `similar_to` plus `because` (`{kind: "similar_artists", names}`) for each personal pick; `because` is omitted when there are no similar artists. `navidrome_server.py` swaps one import, one builder line and two assignments for the same number of lines (net 0, D-016). `similar_to` is unchanged.
 - Tests: `tests/test_discovery_pick_because.py` (new), with `test_discovery_similar_artists.py` and `test_discovery_recommendation_payload.py` re-run (21 pass). `scripts/check_server_size.py` passes. `check_lint_changed.py` not run (pylint not installed).
 - Android `ApiJson` and `LibrarianClient` ignore unknown keys; macOS Codable ignores them by default. Web and Android Discover are not changed.
+- Merged as squash `5340e0b0` (PR #1091, head `b6ff5e4c`). CI passed on the head: compile, container smoke, lint-changed, test-and-build, validate-container, validate-release-workflow.
 
 ## 2026-11-15 — Client efficiency: Now Playing slideshow and artist collage on Core Animation (PR open)
 
