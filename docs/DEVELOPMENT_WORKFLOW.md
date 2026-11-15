@@ -71,6 +71,32 @@ Last updated: 2026-11-14.
 - Preserve configuration and persistent data. Never weaken safety checks, overwrite unrelated work, force-push, or delete production data to make tests pass.
 - Stop when a boundary is unclear, tests fail, or a higher-priority correctness/security/verification issue exists. Avoid size-only refactors and speculative extraction work; the opportunistic simplification rule above is the only exception.
 
+## macOS client motion and CPU rules (owner rule, 2026-11-15)
+
+The macOS client's CPU kept returning to about 40 % and the player clock lagged and jumped (fixed piece by piece in #1071, #1072, #1073 and #1088). Each time the cause was a SwiftUI view that animated every frame. On macOS, each such frame re-renders the whole window's SwiftUI display list on the main thread and then blocks on the render server (`-[RBLayer display]`, `waitForCommitId`). One small looping view cost 10 to 30 points of CPU, and the blocked main thread delayed the 4 Hz position tick, which made the clock lag and then jump. The rules:
+
+1. **No looping or continuous motion through SwiftUI.** In `macos/Sources` do not use `TimelineView(.animation)`, `TimelineView(.periodic)` faster than once a second, `.repeatForever`, `.symbolEffect(..., options: .repeating)`, or repeating `phaseAnimator`/`keyframeAnimator` for anything that keeps moving. This applies however small the element is: a 13 pt playing mark cost 30 points.
+2. **Use Core Animation or AppKit instead.** Use one of these:
+   - A layer in an `NSViewRepresentable` with a repeating `CABasicAnimation`, paused in place with `speed = 0` and `timeOffset`. Example: `SpinningBitmap` in `Chrome/NowPlayingArtwork.swift`.
+   - An AppKit symbol effect on an `NSImageView`. Example: `PlayingBars`.
+   - SwiftUI content drawn once in an `NSHostingView`, moved by a layer animation. Example: `MarqueeStrip` in `CupertinoPlayerBar.swift`.
+   - A bitmap rendered once with `ImageRenderer`.
+
+   SwiftUI animation stays fine for one-shot transitions caused by a state change (a fade, a slide, under about a second).
+3. **Fast-changing state is read in the smallest view.** `PlayerModel.position` changes 4 times a second. Read it only in small leaf views of its own (`PlaybackClock`, `BarProgress`, `BarWaveform`), never in a large `body` and never through a wrapping `TimelineView`. Do not add a faster tick.
+4. **Motion stops when nobody needs it:** when paused, under Reduce Motion, in Low Power Mode where the feature already allows that, and when not visible. Rows in a plain `VStack` or `HStack` (not lazy) stay alive when scrolled out of sight, so their animations keep running there.
+5. **AppKit views need two fallbacks:**
+   - `ImageRenderer` (the offscreen screenshot and the render tests) cannot draw an `NSViewRepresentable`. Under `RenderMode.offscreenScreenshot`, draw a still SwiftUI version.
+   - An `NSHostingView` inside a representable does not inherit SwiftUI's environment. Set the font and colour on its content explicitly.
+6. **Measure motion and timer changes, and not only on Home.** A PR that adds or changes motion, a timer or a tick in the macOS UI records Discair CPU with `top -l 4 -s 4 -pid <pid> -stats pid,cpu`, before and after, in these cases:
+   - playing on Home;
+   - playing on an album page that shows the playing row;
+   - playing with Now Playing open;
+   - paused.
+
+   Earlier A/Bs were taken only on Home and missed the album-page driver. A large gap between pages, or between playing and paused, means some view animates every frame. Find it with `sample <pid> 8`: the signature is the main thread in `UC::DriverCore::continueProcessing` with `DisplayList.ViewUpdater` and `RBLayer display` / `waitForCommitId`. Then bisect by page and state with the same track playing. A standalone test window is good enough to check a mechanism. The fix is done only after the owner's A/B in the installed app.
+7. **Known exception:** `SlideshowBackdrop` (Now Playing with photos on) still uses a 20 Hz `TimelineView`. It has not been measured or moved. Move it under rule 2 when it is next touched.
+
 ## Release and production safety
 
 - Image publication and deployment remain paused until explicitly authorized.

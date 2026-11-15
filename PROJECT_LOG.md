@@ -1,4 +1,9 @@
-## 2026-11-15 — Client efficiency: playing-row mark and player-bar marquee off the per-frame SwiftUI path (PR open)
+## 2026-11-15 — Workflow: macOS client motion and CPU rules
+
+- Docs only, direct to `main` on the owner's instruction. New section "macOS client motion and CPU rules" in `docs/DEVELOPMENT_WORKFLOW.md`, with the lessons of #1071 to #1073 and #1088: no looping SwiftUI motion; use Core Animation or AppKit instead; read fast state in leaf views; stop motion when not needed; fallbacks for the offscreen screenshot and for the hosting-view environment; measure CPU on several pages and states, not only Home; `SlideshowBackdrop` is the known exception.
+- PR #1088 merged as `242d5d0f`. The owner installed it and reports CPU much lower (by eye; no scripted three-run table).
+
+## 2026-11-15 — Client efficiency: playing-row mark and player-bar marquee off the per-frame SwiftUI path (PR #1088, merged)
 
 - `MarqueeLine` (player bar lyric or fact line that scrolls): `TimelineView(.animation)` replaced by `MarqueeStrip`, an `NSHostingView` slid by a repeating `CABasicAnimation`; still copy in the offscreen screenshot. Scrolling added about 10 points on Home (9.5 to 10 % against 17.5 to 22 %, window narrowed); standalone 5.3 to 6.1 % against 0.0 %.
 - `PlayingBars` (album and queue rows) used SwiftUI's repeating `.symbolEffect`, which re-renders the whole window's display list on the main thread every frame, including when the row is scrolled out of sight. Now an `NSImageView` with the same symbol effect through AppKit; still SwiftUI symbol in the offscreen screenshot; still under Reduce Motion. Callers pass the row colour and font size.
