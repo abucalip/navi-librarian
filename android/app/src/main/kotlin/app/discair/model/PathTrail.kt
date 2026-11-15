@@ -95,7 +95,7 @@ fun AlbumStep.trailLink(tab: AlbumTab, seeds: Int = 0): TrailLink {
 
 /**
  * The link of an artist step, from its first reason. [startName] is the artist the sheet started from (Composition says
- * "composed by" them).
+ * "composed by" them only when the server says they wrote the work; otherwise "a work you have, recorded by" them).
  */
 fun PathStop.trailLink(kind: PathKind, startName: String = ""): TrailLink {
     val reason = reasons.firstOrNull()
@@ -106,7 +106,12 @@ fun PathStop.trailLink(kind: PathKind, startName: String = ""): TrailLink {
         PathKind.LabelPath -> TrailLink(via?.name?.takeIf { it.isNotBlank() }, if (reason?.code?.startsWith("related") == true) "related label" else "same label")
         PathKind.CompositionPath -> TrailLink(
             via?.name?.takeIf { it.isNotBlank() },
-            if (reason?.code?.startsWith("related") == true) "related work" else if (startName.isNotBlank()) "composed by $startName" else "same work",
+            when {
+                reason?.code?.startsWith("related") == true -> "related work"
+                startName.isBlank() -> "same work"
+                reason?.startComposed == true -> "composed by $startName"
+                else -> "a work you have, recorded by $startName"
+            },
         )
         PathKind.ScenePath -> TrailLink(via?.name?.takeIf { it.isNotBlank() }, "same place")
     }

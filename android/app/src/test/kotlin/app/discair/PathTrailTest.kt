@@ -39,9 +39,9 @@ class PathTrailTest {
         reasons = listOf(AlbumStepReason(code, "sentence", via, ref("Mine", "release"), credits)), matchCount = matchCount,
     )
 
-    private fun stop(code: String, via: PathRef?, name: String = "Step") = PathStop(
+    private fun stop(code: String, via: PathRef?, name: String = "Step", composed: Boolean = false) = PathStop(
         name = name, type = "artist", owned = false, reasonCount = 1, reason = "sentence",
-        reasons = listOf(PathReason("sentence", code, via, ref("Mine", "recording"))),
+        reasons = listOf(PathReason("sentence", code, via, ref("Mine", "recording"), startComposed = composed)),
     )
 
     // ---- album links
@@ -101,7 +101,9 @@ class PathTrailTest {
         assertEquals(TrailLink("Cookin'", "a record they led"), stop("sideman_on", ref("Cookin'", "release")).trailLink(PathKind.SidemanToLeader))
         assertEquals(TrailLink("Columbia", "same label"), stop("same_label", ref("Columbia", "label")).trailLink(PathKind.LabelPath))
         assertEquals(TrailLink("Columbia", "related label"), stop("related_label", ref("Columbia", "label")).trailLink(PathKind.LabelPath))
-        assertEquals(TrailLink("So What", "composed by Miles Davis"), stop("same_work", ref("So What", "work")).trailLink(PathKind.CompositionPath, "Miles Davis"))
+        assertEquals(TrailLink("So What", "composed by Miles Davis"), stop("same_work", ref("So What", "work"), composed = true).trailLink(PathKind.CompositionPath, "Miles Davis"))
+        assertEquals(TrailLink("Tangerine", "a work you have, recorded by Jamal Ahmad"), stop("same_work", ref("Tangerine", "work")).trailLink(PathKind.CompositionPath, "Jamal Ahmad"))
+        assertEquals(TrailLink("Tangerine", "same work"), stop("same_work", ref("Tangerine", "work")).trailLink(PathKind.CompositionPath))
         assertEquals(TrailLink("Nardis", "related work"), stop("related_work", ref("Nardis", "work")).trailLink(PathKind.CompositionPath, "Miles Davis"))
         assertEquals(TrailLink("St. Louis", "same place"), stop("same_area", ref("St. Louis", "area")).trailLink(PathKind.ScenePath))
     }

@@ -177,7 +177,12 @@ private fun RecordingPane(pane: PathPane.Recording, stop: PathStop, startName: S
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(work, style = MaterialTheme.typography.titleLarge, modifier = Modifier.semantics { heading() })
                     Text(
-                        if (pane.related) "related to a work by $startName" else "composed by $startName",
+                        when {
+                            pane.startComposed && pane.related -> "related to a work by $startName"
+                            pane.startComposed -> "composed by $startName"
+                            pane.related -> "related to a work you have, recorded by $startName"
+                            else -> "a work you have, recorded by $startName"
+                        },
                         style = MaterialTheme.typography.bodyMedium, color = Ink.TextMuted,
                     )
                     // The library recording this work was found from is always one the owner has.

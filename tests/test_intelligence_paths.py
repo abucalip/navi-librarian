@@ -245,6 +245,34 @@ class PathTests(unittest.TestCase):
         self.assertEqual(reason["text"], "another recording of Song, the same work as Anchor Song, a recording in your library")
         self.assertEqual(path["stops"][0]["presentation"], {"title": "Cover artist", "context": "Cover", "album": None, "album_artist": None, "artist": "Cover artist"})
 
+    def test_composition_reason_says_whether_the_start_composed_the_work(self):
+        a, _, rec = self.library()
+        work, rec2 = self.ent("work", "Song"), self.ent("recording", "Cover")
+        self.edge(rec, work, "performance")
+        self.edge(rec2, work, "performance")
+        self.edge(self.ent("artist", "Cover artist"), rec2, "performer")
+        reason = lambda: build_path(self.db, a, "composition_path")["stops"][0]["reasons"][0]
+        self.assertIs(reason()["start_composed"], False)  # the start only plays it
+        self.edge(self.ent("artist", "Lyric only"), work, "composer")  # someone else's credit does not count
+        self.edge(a, work, "lyricist")
+        self.assertIs(reason()["start_composed"], False)
+        self.edge(a, work, "composer")
+        self.assertIs(reason()["start_composed"], True)
+
+    def test_related_composition_reason_reads_the_library_works_composer(self):
+        a, _, rec = self.library()
+        mine, other, rec2 = self.ent("work", "Mine"), self.ent("work", "Other"), self.ent("recording", "Cover")
+        self.edge(rec, mine, "performance")
+        self.edge(rec2, other, "performance")
+        self.edge(mine, other, "arrangement")
+        self.edge(self.ent("artist", "Cover artist"), rec2, "performer")
+        self.edge(a, other, "composer")  # the stop's work, not the library's: no claim about "mine"
+        reason = lambda: build_path(self.db, a, "composition_path")["stops"][0]["reasons"][0]
+        self.assertEqual(reason()["code"], "related_work")
+        self.assertIs(reason()["start_composed"], False)
+        self.edge(a, mine, "writer")
+        self.assertIs(reason()["start_composed"], True)
+
     def test_follow_the_musician_ignores_producers_and_collapses_one_artist(self):
         a, _, rec = self.library()
         player, producer = self.ent("artist", "Player"), self.ent("artist", "Producer")
@@ -363,7 +391,7 @@ class PathTests(unittest.TestCase):
         )
         self.db.commit()
         rebuilt = cached_path(self.db, a, "follow_the_musician")
-        self.assertEqual(rebuilt["presentation_version"], 6)
+        self.assertEqual(rebuilt["presentation_version"], 7)
         self.assertEqual(rebuilt["stops"][0]["presentation"]["title"], "Player")
 
     def test_cache_hit_refresh_and_staleness(self):
