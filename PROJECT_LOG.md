@@ -1,3 +1,9 @@
+## 2026-11-15 — macOS: played queue songs play on double-click, moving bars beside LIVE in the player bar (PR open)
+
+- Queue: played songs are no longer dimmed or single-click buttons; double-click plays one again (same as up-next rows). VoiceOver keeps a "Play again" action. The queue's playing mark already used the AppKit `PlayingBars` from #1088.
+- Player bar: while a station plays, `PlayingBars` (AppKit symbol effect, still when paused or under Reduce Motion) sits left of the LIVE tag, so no SwiftUI continuous motion.
+- Checked: `swift build --target DiscairUI` passes. No tests run (no logic changed; `PlayQueueTests` already covers `jump(played:)`). CPU with a station playing not measured; not run in the live app.
+
 ## 2026-11-15 — Flow Home: Threads and Shelf mixer plan (documentation only, direct to main)
 
 - The owner chose A's Threads and C's Shelf mixer from three Home proposals (A Threads, B Time, C Shelves). Added `docs/Home_threads_mixer.md` (design system: colour roles for all seven Flow palettes, type, shapes, icons with paths, constellation and mixer geometry, motion; behaviour; server additions S0a and S0b; steps and models) and the spec mockups `docs/design/android-art-themes/flow/home-threads-mixer/` with their generator `_src/build_home_threads_mixer.py`.
