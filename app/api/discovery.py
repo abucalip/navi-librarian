@@ -10,11 +10,47 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from app.api.dependencies import get_librarian
 from app.api.utils import parse_result
-from discovery import lens_service
+from discovery import genre_block, lens_service
 from discovery.new_releases import enrich_new_release_listeners
 from discovery.taste_families import deep_dive_row
 
 router = APIRouter()
+
+# Registered before the /api/discovery/{list_name} route so its path is not read as a list name.
+@router.get("/api/discovery/blocked-genres")
+def blocked_genres(librarian=Depends(get_librarian)):
+    """Genres the owner blocked from discovery lists (Star Operation S2a)."""
+    try:
+        librarian._discovery_init()
+        return {"genres": genre_block.list_blocked(librarian.DISCOVERY_DB)}
+    except Exception:
+        raise HTTPException(status_code=502, detail="Could not read blocked genres.")
+
+
+@router.post("/api/discovery/blocked-genres")
+def block_genre(payload: dict, librarian=Depends(get_librarian)):
+    genre = genre_block.clean_genre(payload.get("genre"))
+    if not librarian._music_key(genre):
+        raise HTTPException(status_code=400, detail="genre is required")
+    try:
+        librarian._discovery_init()
+        name = genre_block.block_genre(librarian.DISCOVERY_DB, genre, librarian._music_key)
+        return {"ok": True, "genre": name}
+    except Exception:
+        raise HTTPException(status_code=502, detail="Could not block the genre.")
+
+
+@router.delete("/api/discovery/blocked-genres")
+def unblock_genre(payload: dict, librarian=Depends(get_librarian)):
+    genre = genre_block.clean_genre(payload.get("genre"))
+    if not librarian._music_key(genre):
+        raise HTTPException(status_code=400, detail="genre is required")
+    try:
+        librarian._discovery_init()
+        removed = genre_block.unblock_genre(librarian.DISCOVERY_DB, genre, librarian._music_key)
+        return {"ok": True, "genre": genre, "removed": removed}
+    except Exception:
+        raise HTTPException(status_code=502, detail="Could not unblock the genre.")
 
 
 @router.get("/api/recommendations")
@@ -126,3 +162,4 @@ def discovery_feedback(payload: dict, librarian=Depends(get_librarian)):
         ))
     except Exception:
         raise HTTPException(status_code=502, detail="Could not save discovery feedback.")
+

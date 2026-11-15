@@ -164,4 +164,11 @@ def prepare_ranking_inputs(
     if feedback is not None:
         context["feedback"] = list(feedback)
         adjusted = apply_feedback_signal(adjusted, candidate_by_id, feedback, now=ranking_now)
+    if ranking_context_override is None and feedback_fn is not None:
+        # Star Operation S2a: a blocked genre leaves the pool whatever the feedback signal does.
+        from discovery.genre_block import blocked_genre_keys, drop_blocked_candidates
+        from recommendation.music_key import music_key
+
+        blocked = blocked_genre_keys(feedback_fn(), music_key)
+        adjusted = drop_blocked_candidates(adjusted, blocked, music_key)
     return adjusted, context

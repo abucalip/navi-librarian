@@ -5,6 +5,7 @@ import json
 from collections.abc import Callable, Mapping
 from typing import Any
 
+from discovery.genre_block import blocked_item_predicate
 from discovery.lens_storage import serve_lens_list
 from discovery.snapshot import serve_snapshot
 
@@ -86,6 +87,7 @@ def build_cached_discovery_list_response(
         for row in feedback
         if row["scope"] == "artist" and row["status"] == "not_for_me_artist"
     }
+    genre_blocked = blocked_item_predicate(feedback, music_key)
     acquired = acquired or set()
     library_owned = None
     if list_name != "personal" and library_snapshot is not None:
@@ -103,6 +105,8 @@ def build_cached_discovery_list_response(
         if identity in dismissed_albums or artist_key in dismissed_artists:
             continue
         if identity in saved:
+            continue
+        if genre_blocked(item):
             continue
         if identity in acquired or (library_owned is not None and library_owned(item)):
             continue
@@ -149,7 +153,7 @@ def dismissed_predicate(
     feedback: list[dict[str, Any]],
     music_key: Callable[[Any], str],
 ) -> Callable[[Mapping[str, Any]], bool]:
-    """Return a check for albums and artists the listener marked "Not for me".
+    """Return a check for albums and artists the listener marked "Not for me", and blocked genres.
 
     Same rules as the Discover path: an album dismissal matches its artist and album keys, and
     an artist dismissal matches every album by that artist.
@@ -165,9 +169,15 @@ def dismissed_predicate(
         if row["scope"] == "artist" and row["status"] == "not_for_me_artist"
     }
 
+    genre_blocked = blocked_item_predicate(feedback, music_key)
+
     def is_dismissed(item: Mapping[str, Any]) -> bool:
         artist_key = music_key(item.get("artist", ""))
-        return (artist_key, music_key(item.get("album", ""))) in dismissed_albums or artist_key in dismissed_artists
+        return (
+            (artist_key, music_key(item.get("album", ""))) in dismissed_albums
+            or artist_key in dismissed_artists
+            or genre_blocked(item)
+        )
 
     return is_dismissed
 

@@ -26,6 +26,7 @@ from discovery import refresh as discovery_refresh
 from discovery.lens_feedback import lens_acquisition_summary, lens_feedback_summary
 from discovery.lens_lists import LENS_LIST_ORDER, build_lens_lists, history_artist_mbids, usable_listens
 from discovery.lens_storage import lens_day, lens_storage_name
+from discovery.genre_block import blocked_genre_keys
 from discovery.list_payload import build_lens_list_response, dismissed_predicate, owned_predicate
 from settings import service as settings_service
 
@@ -56,6 +57,14 @@ def _dismissed_or_none(librarian: Any) -> Callable[[Any], bool] | None:
         return dismissed_predicate(librarian._discovery_feedback_rows(), librarian._music_key)
     except Exception:
         return None
+
+
+def _blocked_genres(librarian: Any) -> frozenset[str]:
+    """Blocked genre keys (Star Operation S2a); empty when feedback cannot be read."""
+    try:
+        return blocked_genre_keys(librarian._discovery_feedback_rows(), librarian._music_key)
+    except Exception:
+        return frozenset()
 
 
 def list_response(librarian: Any, lens_name: str, count: int) -> str:
@@ -178,7 +187,7 @@ def build(librarian: Any) -> dict[str, Any]:
         gathered["pools"], day=day, popularity=gathered["popularity"],
         artist_tags=gathered["artist_tags"], fallback_tags=gathered["fallback_tags"],
         library_by_title=library_by_title, known_artist_mbids=history_artist_mbids(usable),
-        seeds=gathered["seeds"],
+        seeds=gathered["seeds"], blocked_genres=_blocked_genres(librarian),
         artist_profiles=gathered["artist_profiles"], current_context=gathered["current_context"],
     )
     return {"status": "built", "day": day, "lists": lists}
