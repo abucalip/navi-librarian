@@ -81,7 +81,7 @@ private fun countFor(list: DiscoveryList) = when (list) {
 }
 
 /** A list name (or one lens) with what the server returned for it, or why it could not be read. */
-private data class Section(val title: String?, val path: String, val result: DiscoveryResult?, val error: String?)
+internal data class Section(val title: String?, val path: String, val result: DiscoveryResult?, val error: String?)
 
 @Composable
 fun DiscoverScreen(open: Opener) {
@@ -370,7 +370,6 @@ private fun ListBody(
     onEdgeSwipe: (Int) -> Unit,
     onRefresh: () -> Unit,
 ) {
-    val pages = pagesFor(list, sections, hidden)
     val first = sections.firstOrNull()?.result
     // A single plain list says why it is empty, and offers to build it; tabbed lists say it per tab.
     val emptyNote: @Composable () -> Unit = {
@@ -387,6 +386,12 @@ private fun ListBody(
             }
         }
     }
+    // Flow: one grid with a heading per section and no pager; sideways swipes are the screen's (switchBy).
+    if (app.discair.ui.common.isFlow()) {
+        FlowDiscoverGrid(list, FlowDiscoverRules.sections(list, sections, hidden), open, saves, onSave, onDismiss, emptyNote)
+        return
+    }
+    val pages = pagesFor(list, sections, hidden)
     val cards: @Composable (CardPage) -> Unit = { page ->
         if (page.entries.isEmpty()) {
             if (page.title == null) emptyNote()
@@ -439,22 +444,6 @@ private fun CardGrid(
     onSave: (DiscoveryEntry) -> Unit,
     onDismiss: (DiscoveryEntry, Boolean) -> Unit,
 ) {
-    if (app.discair.ui.common.isFlow()) {
-        // Flow: one white card to a row, the cover at the left (flow/discover frame 1).
-        androidx.compose.foundation.lazy.LazyColumn(
-            Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(start = 16.dp, top = 4.dp, end = 16.dp, bottom = 16.dp + app.discair.ui.LocalBottomClearance.current),
-            verticalArrangement = Arrangement.spacedBy(app.discair.ui.common.FlowPagesRules.DISCOVER_GAP.dp),
-        ) {
-            items(entries, key = { it.key }) { entry ->
-                FlowDiscoverCard(
-                    entry, open, saveState = saves[entry.key] ?: if (list == DiscoveryList.Saved) SaveState.Saved else SaveState.Idle,
-                    onSave = { onSave(entry) }, onDismiss = { artistToo -> onDismiss(entry, artistToo) }, modifier = Modifier.animateItem(),
-                )
-            }
-        }
-        return
-    }
     LazyVerticalGrid(
         GridCells.Fixed(2), Modifier.fillMaxSize(),
         contentPadding = PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 16.dp + app.discair.ui.LocalBottomClearance.current),

@@ -79,6 +79,15 @@ import app.discair.ui.common.OutlinedButton
 import app.discair.ui.common.SaveState
 import app.discair.ui.common.Target
 import app.discair.ui.common.flowCard
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items as gridItems
+import app.discair.ui.LocalBottomClearance
+import app.discair.ui.common.flowDepth
+import androidx.compose.foundation.shape.CircleShape
 import app.discair.ui.common.rememberAlbumYear
 import app.discair.ui.common.routeKey
 import app.discair.ui.theme.LocalPalette
@@ -163,6 +172,122 @@ internal fun FlowDiscoverCard(
     }
 }
 
+/**
+ * The grid card (frames B1, B3; docs/Discover_page.md 4.5): the square cover with Get on it, then the title, "artist · year" and the reason line, with Save and
+ * the three-dot menu beside the title. The cover opens the album, the artist line the artist.
+ */
+@Composable
+internal fun FlowDiscoverGridCard(
+    entry: DiscoveryEntry, open: Opener, saveState: SaveState, onSave: () -> Unit, onDismiss: (artistToo: Boolean) -> Unit, modifier: Modifier = Modifier,
+) {
+    val p = LocalPalette.current
+    val item = entry.item
+    val artist = item.artistName
+    val year = rememberAlbumYear(artist, item.album, item.year)
+    val openAlbum = { open.album(routeKey(artist, item.album), artist, item.album, null, item.year) }
+    var menu by remember { mutableStateOf(false) }
+    val coverShape = RoundedCornerShape(FlowDiscoverRules.GRID_COVER_RADIUS.dp)
+    Column(modifier.fillMaxWidth()) {
+        Box {
+            FlowCover(
+                artist, item.album, null, Modifier.fillMaxWidth().flowDepth(1, coverShape, p).clickable(role = Role.Button, onClick = openAlbum),
+                radius = FlowDiscoverRules.GRID_COVER_RADIUS,
+            )
+            // The 34 dp circle sits 8 dp from the corner; its touch box is 48 dp, so the box is 1 dp from it.
+            Box(Modifier.align(Alignment.BottomEnd).padding(end = 1.dp, bottom = 1.dp).size(Target), contentAlignment = Alignment.Center) {
+                val circle = FlowDiscoverRules.GET_ON_COVER.dp
+                Box(Modifier.size(circle).flowDepth(1, CircleShape, p))
+                if (item.acquired) Box(
+                    Modifier.size(circle).clip(CircleShape).background(p.surface).semantics { contentDescription = "${item.album} is in your library" },
+                    contentAlignment = Alignment.Center,
+                ) { Icon(ArtIcons.Check, contentDescription = null, tint = p.text, modifier = Modifier.size(18.dp)) }
+                else FlowGetButton(artist, item.album, entry.raw, Modifier.widthIn(min = Target), iconOnly = true)
+            }
+        }
+        Spacer(Modifier.height(8.dp))
+        Row(verticalAlignment = Alignment.Top) {
+            Column(Modifier.weight(1f)) {
+                Text(
+                    item.album, color = p.text, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold, fontSize = 14.sp, lineHeight = 19.sp),
+                    modifier = Modifier.clickable(role = Role.Button, onClick = openAlbum),
+                )
+                Text(
+                    listOfNotNull(artist.ifBlank { null }, year?.toString()).joinToString(" · "), color = p.textMuted, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.5.sp, lineHeight = 17.sp),
+                    modifier = Modifier.clickable(role = Role.Button) { open.artist(artist, null, null, null) },
+                )
+            }
+            // O1: 36 wide and 48 tall each, so the title keeps its room in a 157 dp column.
+            val saved = saveState == SaveState.Saved
+            Box(
+                Modifier.size(width = 36.dp, height = Target).clickable(enabled = saveState != SaveState.Pending, role = Role.Button, onClick = onSave)
+                    .semantics { contentDescription = if (saved) "Remove ${item.album} from saved" else "Save ${item.album}" },
+                contentAlignment = Alignment.Center,
+            ) { Icon(if (saved) ArtIcons.BookmarkFilled else ArtIcons.Bookmark, contentDescription = null, tint = if (saved) p.accent else p.textMuted, modifier = Modifier.size(18.dp)) }
+            Box {
+                Box(
+                    Modifier.size(width = 36.dp, height = Target).clickable(role = Role.Button) { menu = true }.semantics { contentDescription = "Options for ${item.album}" },
+                    contentAlignment = Alignment.Center,
+                ) { Icon(ArtIcons.More, contentDescription = null, tint = p.textMuted, modifier = Modifier.size(18.dp)) }
+                DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+                    DropdownMenuItem(text = { Text("Not this album") }, onClick = { menu = false; onDismiss(false) })
+                    DropdownMenuItem(text = { Text("Not this artist") }, onClick = { menu = false; onDismiss(true) })
+                    PickFeedbackItems(entry) { menu = false }
+                }
+            }
+        }
+        FlowDiscoverRules.thirdLine(pickReason(item.because, item.similarTo), item.acquired)?.let {
+            Text(it, color = p.textMuted, maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.5.sp, lineHeight = 17.sp))
+        }
+    }
+}
+
+/** The muted box a section note sits in (docs/Discover_page.md 4.4): `raised`, radius 12, 13/18 sp. */
+@Composable
+internal fun FlowSectionNote(text: String, modifier: Modifier = Modifier) {
+    val p = LocalPalette.current
+    Text(
+        text, modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(p.raised).padding(horizontal = 12.dp, vertical = 10.dp), color = p.textMuted,
+        style = MaterialTheme.typography.bodySmall.copy(fontSize = 13.sp, lineHeight = 18.sp),
+    )
+}
+
+/**
+ * Flow's list body: one two-column grid, a full-width heading (name and count) and note per section, then the cards. [empty] is the whole-list note
+ * for a list with nothing at all.
+ */
+@Composable
+internal fun FlowDiscoverGrid(
+    list: DiscoveryList, sections: List<FlowDiscoverRules.GridSection>, open: Opener, saves: Map<String, SaveState>,
+    onSave: (DiscoveryEntry) -> Unit, onDismiss: (DiscoveryEntry, Boolean) -> Unit, empty: @Composable () -> Unit,
+) {
+    if (sections.all { it.title == null && it.entries.isEmpty() }) {
+        empty()
+        return
+    }
+    LazyVerticalGrid(
+        GridCells.Fixed(2), Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 16.dp + LocalBottomClearance.current),
+        horizontalArrangement = Arrangement.spacedBy(FlowDiscoverRules.GRID_GAP_X.dp),
+        verticalArrangement = Arrangement.spacedBy(FlowDiscoverRules.GRID_GAP_Y.dp),
+    ) {
+        for (section in sections) {
+            val title = section.title
+            if (title != null) item(key = "h:$title", span = { GridItemSpan(maxLineSpan) }) {
+                Box(Modifier.padding(top = 8.dp)) { FlowLensHeading(title, section.count.toString()) }
+            }
+            section.note?.let { note -> item(key = "n:${section.title}", span = { GridItemSpan(maxLineSpan) }) { FlowSectionNote(note) } }
+            gridItems(section.entries, key = { FlowDiscoverRules.itemKey(section, it) }) { entry ->
+                FlowDiscoverGridCard(
+                    entry, open, saveState = saves[entry.key] ?: if (list == DiscoveryList.Saved) SaveState.Saved else SaveState.Idle,
+                    onSave = { onSave(entry) }, onDismiss = { artistToo -> onDismiss(entry, artistToo) }, modifier = Modifier.animateItem(),
+                )
+            }
+        }
+    }
+}
+
 // ----- The list switch and its sheet (docs/Discover_page.md 4.1, 4.2; mockup flow/discover-b frames B1 and B2) ----------------
 
 /** The numbers and tables of Flow's one-switch Discover. Kept here, not in the composables, so a unit test can hold them. */
@@ -170,6 +295,46 @@ internal object FlowDiscoverRules {
     const val SWITCH_HEIGHT = 48
     const val DOT = 6
     const val DOT_CURRENT = 18
+    const val GRID_GAP_X = 14
+    const val GRID_GAP_Y = 16
+    const val GRID_COVER_RADIUS = 12
+    const val GET_ON_COVER = 34
+    const val MORE = "More"
+
+    /** One section of the grid (docs/Discover_page.md 4.3, 4.4): a heading with a count ([title] null draws no heading), its cards, or a note when there are none. */
+    class GridSection(val title: String?, val entries: List<DiscoveryEntry>, val note: String? = null) {
+        val count get() = entries.size
+    }
+
+    /**
+     * The sections a list draws. Daily picks: one per lens in server order, a failed or empty lens with its note. Deep dives: one per genre row label
+     * ("More" when blank), none titled when no row has a label. Every other list: one untitled section. An empty result is one untitled empty section, which
+     * the screen draws as the whole-list note; Daily picks turned off is the same, so the note is said once.
+     */
+    internal fun sections(list: DiscoveryList, sections: List<Section>, hidden: Map<String, Boolean>): List<GridSection> {
+        fun visible(s: Section) = s.result?.entries.orEmpty().distinctBy { it.key }.filter { hidden[it.key] != true }
+        return when (list) {
+            DiscoveryList.Daily ->
+                if (sections.isNotEmpty() && sections.all { it.result?.disabled == true }) listOf(GridSection(null, emptyList()))
+                else sections.map {
+                    val entries = visible(it)
+                    GridSection(it.title, entries, if (entries.isNotEmpty()) null else it.error?.let { e -> "${it.title} could not be loaded: $e" } ?: it.result?.message ?: "No albums today.")
+                }
+            DiscoveryList.DeepDive -> {
+                val rows = sections.flatMap { visible(it) }
+                val groups = rows.groupBy { it.item.genreRowLabel ?: "" }
+                if (groups.keys.all { it.isEmpty() }) listOf(GridSection(null, rows))
+                else groups.map { (label, entries) -> GridSection(label.ifEmpty { MORE }, entries) }
+            }
+            else -> listOf(GridSection(null, sections.flatMap { visible(it) }))
+        }
+    }
+
+    /** The grid key of a card: one album can appear in two lens sections, so the section's title is part of it. */
+    fun itemKey(section: GridSection, entry: DiscoveryEntry) = "${section.title.orEmpty()}:${entry.key}"
+
+    /** The third line under a card: the reason, else "In your library" for an owned album, else nothing. */
+    fun thirdLine(reason: String, owned: Boolean): String? = reason.ifEmpty { if (owned) "In your library" else null }
 
     /** One row of the list sheet: the list, its icon and the line under its name. */
     class SheetRow(val list: DiscoveryList, val icon: ImageVector, val subtitle: String)
