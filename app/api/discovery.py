@@ -10,7 +10,7 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from app.api.dependencies import get_librarian
 from app.api.utils import parse_result
-from discovery import genre_block, lens_service
+from discovery import artist_lean, genre_block, lens_service
 from discovery.new_releases import enrich_new_release_listeners
 from discovery.taste_families import deep_dive_row
 
@@ -51,6 +51,46 @@ def unblock_genre(payload: dict, librarian=Depends(get_librarian)):
         return {"ok": True, "genre": genre, "removed": removed}
     except Exception:
         raise HTTPException(status_code=502, detail="Could not unblock the genre.")
+
+
+@router.get("/api/discovery/artist-lean")
+def artist_leans(librarian=Depends(get_librarian)):
+    """Artists marked More like this or Less like this (Star Operation S2b)."""
+    try:
+        librarian._discovery_init()
+        return {"artists": artist_lean.list_leans(librarian.DISCOVERY_DB)}
+    except Exception:
+        raise HTTPException(status_code=502, detail="Could not read artist preferences.")
+
+
+@router.post("/api/discovery/artist-lean")
+def set_artist_lean(payload: dict, librarian=Depends(get_librarian)):
+    artist = str(payload.get("artist") or "").strip()
+    lean = str(payload.get("lean") or "").strip()
+    if not librarian._music_key(artist):
+        raise HTTPException(status_code=400, detail="artist is required")
+    if lean not in artist_lean.LEANS:
+        raise HTTPException(status_code=400, detail="lean must be more or less")
+    try:
+        librarian._discovery_init()
+        name = artist_lean.set_lean(
+            librarian.DISCOVERY_DB, artist, lean, librarian._music_key, payload.get("metadata"))
+        return {"ok": True, "artist": name, "lean": lean}
+    except Exception:
+        raise HTTPException(status_code=502, detail="Could not save the artist preference.")
+
+
+@router.delete("/api/discovery/artist-lean")
+def clear_artist_lean(payload: dict, librarian=Depends(get_librarian)):
+    artist = str(payload.get("artist") or "").strip()
+    if not librarian._music_key(artist):
+        raise HTTPException(status_code=400, detail="artist is required")
+    try:
+        librarian._discovery_init()
+        removed = artist_lean.clear_lean(librarian.DISCOVERY_DB, artist, librarian._music_key)
+        return {"ok": True, "artist": artist, "removed": removed}
+    except Exception:
+        raise HTTPException(status_code=502, detail="Could not clear the artist preference.")
 
 
 @router.get("/api/recommendations")

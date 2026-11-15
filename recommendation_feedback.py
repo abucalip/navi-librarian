@@ -28,6 +28,14 @@ SAVE_ARTIST_BOOST = 0.10
 # Weight a fresh save adds to its artist in supplementary tag-query selection,
 # in the same units as decayed listen weights (about one recent listen).
 SAVE_SEED_WEIGHT = 1.0
+# Star Operation S2b: "More like this" / "Less like this" on an artist, rows in scope
+# ``artist_lean`` (``discovery/artist_lean.py``). More reuses the save constants (seed weight,
+# boost, 30-day half-life, 90-day expiry); Less reuses the artist-dismissal penalty and its
+# 14-day half-life and 60-day expiry, with no tag penalty and no hiding.
+LEAN_SCOPE = "artist_lean"
+LEAN_MORE = "more_like_this"
+LEAN_LESS = "less_like_this"
+LESS_ARTIST_PENALTY = ARTIST_DISMISS_PENALTY
 
 
 def _decay(age: float, half_life: float, expiry: float) -> float:
@@ -175,6 +183,70 @@ def saved_artist_seed_genres(feedback: Iterable[Mapping[str, Any]], *, now: floa
     return genres
 
 
+def _lean_weight(row: Mapping[str, Any], status: str, half_life: float, expiry: float, *, now: float) -> float:
+    """Decayed 0..1 weight of one ``artist_lean`` row with ``status``, else 0."""
+    if row.get("scope") != LEAN_SCOPE or row.get("status") != status:
+        return 0.0
+    stamp = _timestamp(row, "updated_at")
+    return 0.0 if stamp is None else _decay(float(now) - stamp, half_life, expiry)
+
+
+def lean_boost(artist_key: str, feedback: Iterable[Mapping[str, Any]], *, now: float) -> float:
+    """Boost fraction from "More like this" on the artist (same size and decay as a save)."""
+    return max((
+        SAVE_ARTIST_BOOST * _lean_weight(row, LEAN_MORE, POSITIVE_HALF_LIFE_SECONDS, POSITIVE_EXPIRY_SECONDS, now=now)
+        for row in feedback if isinstance(row, Mapping) and row.get("artist_key") == artist_key
+    ), default=0.0)
+
+
+def lean_penalty(artist_key: str, feedback: Iterable[Mapping[str, Any]], *, now: float) -> float:
+    """Soft penalty fraction from "Less like this" on the artist. Demotes; never hides."""
+    return max((
+        LESS_ARTIST_PENALTY * _lean_weight(row, LEAN_LESS, NEGATIVE_HALF_LIFE_SECONDS, NEGATIVE_EXPIRY_SECONDS, now=now)
+        for row in feedback if isinstance(row, Mapping) and row.get("artist_key") == artist_key
+    ), default=0.0)
+
+
+def more_like_this_seed_weights(feedback: Iterable[Mapping[str, Any]], *, now: float) -> dict[str, float]:
+    """artist_key -> decayed seed weight from "More like this" (same weight and window as a save)."""
+    seeds: dict[str, float] = {}
+    for row in feedback:
+        if not isinstance(row, Mapping) or not row.get("artist_key"):
+            continue
+        weight = SAVE_SEED_WEIGHT * _lean_weight(
+            row, LEAN_MORE, POSITIVE_HALF_LIFE_SECONDS, POSITIVE_EXPIRY_SECONDS, now=now,
+        )
+        if weight > 0.0:
+            seeds[row["artist_key"]] = max(seeds.get(row["artist_key"], 0.0), weight)
+    return seeds
+
+
+def combined_seed_weights(feedback: Iterable[Mapping[str, Any]], *, now: float) -> dict[str, float]:
+    """Saved-album and "More like this" seed weights; the larger wins per artist."""
+    rows = [row for row in feedback if isinstance(row, Mapping)]
+    seeds = saved_artist_seed_weights(rows, now=now)
+    for artist_key, weight in more_like_this_seed_weights(rows, now=now).items():
+        seeds[artist_key] = max(seeds.get(artist_key, 0.0), weight)
+    return seeds
+
+
+def combined_seed_genres(feedback: Iterable[Mapping[str, Any]], *, now: float) -> dict[str, list[str]]:
+    """Genres stored with active saved rows and active "More like this" rows."""
+    rows = [row for row in feedback if isinstance(row, Mapping)]
+    genres = saved_artist_seed_genres(rows, now=now)
+    active = set(more_like_this_seed_weights(rows, now=now))
+    for row in rows:
+        metadata = row.get("metadata")
+        raw = metadata.get("genres") if isinstance(metadata, Mapping) else None
+        if row.get("scope") != LEAN_SCOPE or row.get("artist_key") not in active or not isinstance(raw, (list, tuple)):
+            continue
+        bucket = genres.setdefault(row["artist_key"], [])
+        for tag in raw[:10]:
+            if isinstance(tag, str) and tag.strip() and tag not in bucket:
+                bucket.append(tag)
+    return genres
+
+
 def apply_feedback_signal(
     allocation_candidates: Iterable[Any],
     candidate_by_id: Mapping[str, Mapping[str, Any]],
@@ -211,7 +283,8 @@ def apply_feedback_signal(
         penalty = feedback_penalty(
             artist_key, candidate.album_key, candidate.tags, frozen_tags, rows, now=now,
         )
-        boost = save_boost(artist_key, rows, now=now)
+        penalty = max(penalty, lean_penalty(artist_key, rows, now=now))
+        boost = max(save_boost(artist_key, rows, now=now), lean_boost(artist_key, rows, now=now))
         factor = (1.0 - penalty) * (1.0 + boost)
         if factor == 1.0:
             adjusted.append(candidate)

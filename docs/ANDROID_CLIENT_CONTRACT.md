@@ -73,6 +73,7 @@ Out of scope for v1:
 | List refresh | `POST /api/discovery/{list}/refresh` (`count` JSON integer 1–20) |
 | Feedback | `POST /api/discovery/feedback` `{artist, album, action, metadata}`; actions `save`, `dismiss`, `dismiss_artist`, `remove_for_me` |
 | Blocked genres (server only so far; no client uses it yet) | `GET`, `POST`, `DELETE /api/discovery/blocked-genres` `{genre}` (DISC-10) |
+| Artist lean (server only so far; no client uses it yet) | `GET`, `POST`, `DELETE /api/discovery/artist-lean` `{artist, lean: more\|less, metadata?}` (DISC-11) |
 | Lens feedback summary | `GET /api/discovery/lens-feedback` |
 | Search | `GET /api/search` (SSE stream, `docs/SEARCH_CONTRACT.md` 3.1, 3.7, 3.8) |
 | Artist page | `GET /api/artists/{key}` (`docs/SEARCH_CONTRACT.md` 3.3) |

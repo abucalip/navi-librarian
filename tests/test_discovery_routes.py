@@ -27,6 +27,9 @@ class DiscoveryRoutesTests(unittest.TestCase):
             ("/api/discovery/blocked-genres", "GET"),
             ("/api/discovery/blocked-genres", "POST"),
             ("/api/discovery/blocked-genres", "DELETE"),
+            ("/api/discovery/artist-lean", "GET"),
+            ("/api/discovery/artist-lean", "POST"),
+            ("/api/discovery/artist-lean", "DELETE"),
         })
 
     def test_recommendations_preserve_default_and_filter_non_album_items(self):
