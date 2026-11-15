@@ -36,6 +36,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.statusBarsPadding
 import app.discair.ui.common.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import app.discair.ui.common.FilledIconButton
@@ -193,11 +195,12 @@ fun NowPlayingSheet(state: PlayerUiState, controller: PlayerController, lyrics: 
     LaunchedEffect(state.isPlaying) { follower.setPlaying(state.isPlaying) }
     LaunchedEffect(songId, state.positionMs) { follower.refresh() } // a seek or skip shows at once, also while paused
     val currentLine by follower.line.collectAsState()
-    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheet, containerColor = Ink.Ink,
-        shape = androidx.compose.ui.graphics.RectangleShape) {
-        app.discair.ui.common.TransparentNavigationBar()
+    // Standard: a full-screen page drawn behind the status and navigation bars (no sheet gap above, no band below); every other theme keeps its sheet.
+    val standard = app.discair.ui.theme.LocalPalette.current.layout == app.discair.ui.theme.Layout.Standard
+    PlayerContainer(standard, onDismiss, sheet) {
         val item = state.current
-        if (item == null) { onDismiss(); return@ModalBottomSheet }
+        if (item == null) { onDismiss(); return@PlayerContainer }
+        if (standard) BackHandler { if (view != 0) { view = 0; lastView = 0 } else onDismiss() }
         // The artwork's colour washes down from the top, as on the album and artist pages.
         val ground = Ink.Ink
         val brutal = app.discair.ui.theme.LocalPalette.current.brutal
@@ -220,16 +223,16 @@ fun NowPlayingSheet(state: PlayerUiState, controller: PlayerController, lyrics: 
         val disc = remember(artIndex, item.disc) { app.discair.model.discImage(artIndex, item.disc) }
         var showSlides by remember { mutableStateOf(settings.showSlideshow) }
         val slideshowOn = blurred && showSlides && slides.isNotEmpty()
-        Box {
+        Box(if (standard) Modifier.fillMaxSize().background(ground) else Modifier) {
         if (blurred) ArtworkBackdrop(playerArtworkUrl(item.coverUrl))
         if (slideshowOn) SlideshowBackdrop(slides, state.isPlaying)
         Column(
-            Modifier.fillMaxWidth().drawBehind {
+            (if (standard) Modifier.fillMaxSize() else Modifier.fillMaxWidth()).drawBehind {
                 if (blurred) return@drawBehind
                 // Starts above the content so the drag handle sits on the tint too.
                 val top = -48.dp.toPx()
                 drawRect(Brush.verticalGradient(listOf(wash, ground), startY = top, endY = size.height * 0.9f), topLeft = androidx.compose.ui.geometry.Offset(0f, top), size = androidx.compose.ui.geometry.Size(size.width, size.height - top))
-            }.padding(horizontal = 16.dp),
+            }.then(if (standard) Modifier.statusBarsPadding().navigationBarsPadding() else Modifier).padding(horizontal = 16.dp),
         ) {
             if (!coverStack && !flow) Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 app.discair.ui.common.PlayerIconButton(onClick = onDismiss, Modifier.size(Target)) { Icon(PlayerIcons.Down, contentDescription = "Close now playing") }
@@ -373,6 +376,26 @@ fun NowPlayingSheet(state: PlayerUiState, controller: PlayerController, lyrics: 
         // Settings come up from the bottom over the player, each in its own sheet.
         if (eqOpen) SettingsSheet({ eqOpen = false }) { EqualizerScreen(container, onBack = null) }
         if (crossfadeOpen) SettingsSheet({ crossfadeOpen = false }) { CrossfadeScreen(container, onBack = null) }
+    }
+}
+
+/** The player's frame: a full-screen dialog for [standard], the modal sheet for every other theme. Both draw [content] as the sheet content. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun PlayerContainer(standard: Boolean, onDismiss: () -> Unit, sheet: androidx.compose.material3.SheetState, content: @Composable () -> Unit) {
+    if (standard) {
+        androidx.compose.ui.window.Dialog(
+            onDismissRequest = onDismiss,
+            properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false, dismissOnBackPress = false),
+        ) {
+            app.discair.ui.common.TransparentSystemBars()
+            content()
+        }
+    } else {
+        ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheet, containerColor = Ink.Ink, shape = androidx.compose.ui.graphics.RectangleShape) {
+            app.discair.ui.common.TransparentNavigationBar()
+            content()
+        }
     }
 }
 
