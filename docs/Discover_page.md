@@ -36,7 +36,20 @@ The shell's bar stays as it is ("Discover" large, Downloads, Settings). Under it
 ### 4.1 Switch row (new, frames B1, B3, B4)
 
 - Sits directly under the shell bar, inside `DiscoverScreen`'s column, in place of `FlowDiscoverHeader`. Height 48 dp, padding 0 16 dp.
-- Left: one button, the current list's `DiscoveryList.label` in Inter 700 22/28 sp, letter-spacing −0.02 em, `p.text`, `maxLines = 1`, ellipsis; then `ArtIcons.Down` 20 dp in `p.accent` with 4 dp gap. The whole label plus chevron is the touch target (min height 48 dp). Semantics: role Button, content description "`<label>`, list `<n>` of 7. Change list".
+- Left: one button, the current list's **short switch name** (table below) in Inter 700 22/28 sp, letter-spacing −0.02 em, `p.text`, `maxLines = 1`, ellipsis; then `ArtIcons.Down` 20 dp in `p.accent` with 4 dp gap. The whole label plus chevron is the touch target (min height 48 dp). Semantics: role Button, content description "`<full label>`, list `<n>` of 7. Change list" (the full `DiscoveryList.label`, so a screen reader hears the same name as in the sheet).
+- Short switch names (owner decision O2, 2026-11-15). Only the switch uses them; the sheet, empty states and every other place keep the full `DiscoveryList.label`. Keep them in `FlowDiscoverRules`, not in `DiscoveryList`, so no other theme changes.
+
+  | `DiscoveryList` | Full label (sheet) | Switch name |
+  |---|---|---|
+  | `Daily` | Daily picks | Daily picks |
+  | `DeepDive` | Deep dives | Deep dives |
+  | `NewReleases` | New releases | New releases |
+  | `Classics` | Add to your collection | Collection |
+  | `Personal` | Personal discoveries | Personal |
+  | `Saved` | Saved | Saved |
+  | `Insights` | Insights | Insights |
+
+  The longest switch name ("New releases") fits beside the dots on a 320 dp screen; keep `maxLines = 1` with ellipsis as a guard.
 - Right: page dots, one per `DiscoveryList.entries` (7), 5 dp apart. Others 6×6 dp, radius 3, `p.chart3`. Current 18×6 dp, radius 3, `p.text`. Decorative (`clearAndSetSemantics {}`); the button's description carries the position.
 - Not in the shell. The shell keeps `flowTitle = "Discover"`. No new bar buttons (Saved lives in the sheet).
 
@@ -142,7 +155,7 @@ Each step: branch from current `main`, Flow-only, other themes unchanged. Run **
 
 - New `FlowDiscoverSwitch(list, onOpen)` and `FlowListSheet(list, onSelect, onDismiss)` in `ui/discover/FlowDiscover.kt`; the row/icon/subtitle table in `FlowDiscoverRules`.
 - `DiscoverScreen`: the Flow branch draws the switch instead of `FlowDiscoverHeader`, and holds `var sheetOpen by remember`.
-- Test `FlowDiscoverRulesTest`: one sheet row per `DiscoveryList` entry, in entry order, labels equal to `DiscoveryList.label`; dot index equals the entry's ordinal; the switch description text.
+- Test `FlowDiscoverRulesTest`: one sheet row per `DiscoveryList` entry, in entry order, labels equal to `DiscoveryList.label`; one short switch name per entry, each at most 12 characters, matching the table in 4.1; dot index equals the entry's ordinal; the switch description uses the full label.
 - Acceptance: one selector row; every list, Saved and Insights reachable from the sheet; the third row (lens/genre tabs) may still show until D2.
 
 ### D2. Sections and grid card (frames B1, B3)
@@ -167,4 +180,4 @@ Each step: branch from current `main`, Flow-only, other themes unchanged. Run **
 ## 9. Open points for the owner
 
 - **O1. Save and ⋯ touch size.** In a 157 dp column, two full 48×48 dp targets leave about 60 dp for the title. The plan uses 36 dp wide × 48 dp tall boxes (18 dp glyphs), which gives about 85 dp. If 48×48 is required, Save moves into the ⋯ menu and only ⋯ stays beside the title. Default until the owner says otherwise: 36×48.
-- **O2. Long list names in the switch.** "Add to your collection" and "Personal discoveries" fit at 22 sp beside the dots on a 360 dp screen; on narrower screens the label ellipsizes. Shorter switch labels are possible if the owner prefers.
+- **O2. Long list names in the switch: decided 2026-11-15.** The owner chose shorter switch names: "Collection" and "Personal" (section 4.1). The sheet keeps the full names.
