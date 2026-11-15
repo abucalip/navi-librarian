@@ -92,7 +92,7 @@ fun InsightsPage(
             val enabled = lens?.enabled == true
             val cards = lens?.cards.orEmpty().filter { it.id !in hidden }
             item(key = "head:$kind") {
-                if (cs) CoverStackLensHeading(lensName(kind), if (enabled) "${cards.size}" else "off") else if (fl) FlowLensHeading(lensName(kind), if (enabled) "${cards.size}" else "off") else Row(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+                if (cs) CoverStackLensHeading(lensName(kind), if (enabled) "${cards.size}" else "off") else Row(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.SpaceBetween) {
                     Text(lensName(kind), style = MaterialTheme.typography.titleMedium, modifier = Modifier.semantics { heading() })
                     Text(
                         if (enabled) "${cards.size}" else "off", color = Ink.TextMuted, style = MaterialTheme.typography.labelLarge,
@@ -110,7 +110,7 @@ fun InsightsPage(
                         color = Ink.TextMuted, style = MaterialTheme.typography.bodyMedium,
                     )
                 }
-                else -> items(cards, key = { it.id }) { card -> Box(Modifier.animateItem()) { if (cs) CoverStackInsightCard(card, open!!, onDismiss) else if (fl) FlowInsightCard(card, open!!, onDismiss) else InsightCardView(card, onDismiss) } }
+                else -> items(cards, key = { it.id }) { card -> Box(Modifier.animateItem()) { if (cs) CoverStackInsightCard(card, open!!, onDismiss) else InsightCardView(card, onDismiss) } }
             }
         }
     }

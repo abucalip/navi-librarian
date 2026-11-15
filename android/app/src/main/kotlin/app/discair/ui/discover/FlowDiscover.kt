@@ -2,7 +2,6 @@ package app.discair.ui.discover
 
 import app.discair.ui.common.ArtIcons
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -22,7 +21,6 @@ import app.discair.ui.common.FlowEyebrow
 import app.discair.ui.common.FlowGroup
 import app.discair.ui.common.FlowIconTile
 import app.discair.ui.common.FlowListRow
-import app.discair.ui.common.FlowRules
 import app.discair.ui.common.ModalBottomSheet
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -31,7 +29,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.DropdownMenu
@@ -39,8 +36,8 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -61,20 +58,15 @@ import androidx.compose.ui.unit.sp
 import app.discair.model.DiscoveryEntry
 import app.discair.model.pickReason
 import app.discair.model.DiscoveryList
-import app.discair.model.GetState
 import app.discair.model.InsightCard
 import app.discair.model.InsightNarrative
 import app.discair.model.TasteEntry
 import app.discair.ui.Opener
 import app.discair.ui.common.Button
-import app.discair.ui.common.FilterChip
 import app.discair.ui.common.FlowCover
 import app.discair.ui.common.FlowGetButton
 import app.discair.ui.common.FlowPagesRules
-import app.discair.ui.common.FlowSmallButton
-import app.discair.ui.common.FlowTabs
 import app.discair.ui.common.FlowTag
-import app.discair.ui.common.LocalAcquisitions
 import app.discair.ui.common.OutlinedButton
 import app.discair.ui.common.SaveState
 import app.discair.ui.common.Target
@@ -98,79 +90,6 @@ import app.discair.ui.theme.accentText
  * DiscoverScreen, InsightsPage and the taste card reach this behind isFlow(); no other theme changes. The page's name is drawn large by the
  * shell's bar (MainShell), beside the round buttons, as the mockup has it.
  */
-
-/** Lists | Insights as the segmented control, then the list names as capsule chips (the chips only while Lists is chosen). */
-@Composable
-internal fun FlowDiscoverHeader(list: DiscoveryList, onSelect: (DiscoveryList) -> Unit) {
-    val lists = DiscoveryList.entries.filter { it != DiscoveryList.Insights }
-    FlowTabs(
-        listOf("Lists", "Insights"), if (list == DiscoveryList.Insights) 1 else 0,
-        { if (it == 1) onSelect(DiscoveryList.Insights) else if (list == DiscoveryList.Insights) onSelect(lists.first()) },
-        Modifier.padding(start = 16.dp, top = 4.dp, end = 16.dp, bottom = 12.dp).fillMaxWidth(),
-    )
-    if (list != DiscoveryList.Insights) Row(
-        Modifier.horizontalScroll(rememberScrollState()).padding(start = 16.dp, end = 16.dp, bottom = 12.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        lists.forEach { l -> FilterChip(selected = l == list, onClick = { onSelect(l) }, label = { Text(l.label) }, modifier = Modifier.heightIn(min = 34.dp)) }
-    }
-}
-
-/**
- * The Discover card (`.dc`): a white card at depth 1, the cover 112 at the left, then title, artist and year, the reason line when the server
- * sent one (see [pickReason]), and Get, Save and a round three-dot menu (Not this album, Not this artist) at the foot. Whether the album is owned is said in words.
- */
-@Composable
-internal fun FlowDiscoverCard(
-    entry: DiscoveryEntry, open: Opener, saveState: SaveState, onSave: () -> Unit, onDismiss: (artistToo: Boolean) -> Unit, modifier: Modifier = Modifier,
-) {
-    val p = LocalPalette.current
-    val item = entry.item
-    val artist = item.artistName
-    val year = rememberAlbumYear(artist, item.album, item.year)
-    val openAlbum = { open.album(routeKey(artist, item.album), artist, item.album, null, item.year) }
-    var menu by remember { mutableStateOf(false) }
-    Row(
-        modifier.fillMaxWidth().flowCard(p).padding(10.dp),
-        horizontalArrangement = Arrangement.spacedBy(14.dp),
-    ) {
-        FlowCover(artist, item.album, null, Modifier.width(FlowPagesRules.DISCOVER_COVER.dp).clickable(role = Role.Button, onClick = openAlbum), radius = 10)
-        Column(Modifier.weight(1f).heightIn(min = FlowPagesRules.DISCOVER_COVER.dp)) {
-            Text(
-                item.album, color = p.text, maxLines = 2, overflow = TextOverflow.Ellipsis,
-                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold, fontSize = 15.sp, lineHeight = 20.sp),
-                modifier = Modifier.clickable(role = Role.Button, onClick = openAlbum),
-            )
-            Text(
-                listOfNotNull(artist.ifBlank { null }, year?.toString()).joinToString(" · "), color = p.textMuted, maxLines = 1, overflow = TextOverflow.Ellipsis,
-                style = MaterialTheme.typography.bodySmall.copy(fontSize = 13.sp, lineHeight = 18.sp), modifier = Modifier.clickable(role = Role.Button) { open.artist(artist, null, null, null) },
-            )
-            val reason = pickReason(item.because, item.similarTo)
-            if (reason.isNotEmpty()) Text(reason, color = p.textMuted, maxLines = 2, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.bodySmall.copy(fontSize = 13.sp, lineHeight = 18.sp))
-            Spacer(Modifier.weight(1f))
-            Row(horizontalArrangement = Arrangement.spacedBy(0.dp), verticalAlignment = Alignment.CenterVertically) {
-                // Every button is the round 34dp icon button the three-dot menu is, in a 48dp-wide touch target.
-                val touch = Modifier.widthIn(min = Target)
-                if (item.acquired) FlowSmallButton(null, ArtIcons.Check, false, "${item.album} is in your library", touch, enabled = false) {}
-                else FlowGetButton(artist, item.album, entry.raw, touch, iconOnly = true)
-                val saved = saveState == SaveState.Saved
-                FlowSmallButton(
-                    null, if (saved) ArtIcons.BookmarkFilled else ArtIcons.Bookmark, false, if (saved) "Remove ${item.album} from saved" else "Save ${item.album}",
-                    touch, enabled = saveState != SaveState.Pending, onClick = onSave,
-                )
-                Spacer(Modifier.weight(1f))
-                Box {
-                    FlowSmallButton(null, ArtIcons.More, false, "Options for ${item.album}", touch) { menu = true }
-                    DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
-                        DropdownMenuItem(text = { Text("Not this album") }, onClick = { menu = false; onDismiss(false) })
-                        DropdownMenuItem(text = { Text("Not this artist") }, onClick = { menu = false; onDismiss(true) })
-                        PickFeedbackItems(entry) { menu = false }
-                    }
-                }
-            }
-        }
-    }
-}
 
 /**
  * The grid card (frames B1, B3; docs/Discover_page.md 4.5): the square cover with Get on it, then the title, "artist · year" and the reason line, with Save and

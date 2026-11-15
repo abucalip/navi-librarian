@@ -25,8 +25,6 @@ class FlowPagesRulesTest {
     }
 
     @Test fun theDiscoverLibraryAndSearchNumbersAreTheMockups() {
-        assertEquals(112, FlowPagesRules.DISCOVER_COVER)
-        assertEquals(12, FlowPagesRules.DISCOVER_GAP)
         assertEquals(34, FlowPagesRules.SMALL_BUTTON)
         assertEquals(88, FlowPagesRules.INSIGHT_COVER)
         assertEquals(44, FlowPagesRules.FIELD_HEIGHT)

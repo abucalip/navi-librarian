@@ -880,3 +880,10 @@ Earlier project log entries are preserved verbatim in [PROJECT_LOG_HISTORY.md](d
 - Tests run locally (JDK 17, filtered): `FlowDiscoverRulesTest` (13), `FlowTest`, `ExistingLayoutsTest`, `DiscoveryTest`, `InsightsTest`, `FlowPagesRulesTest`, `SoftBrutTest`, `NavRulesTest`. Full suite not run (owner rule).
 - Not done: no device or emulator check, no comparison with frames B1 and B3.
 - Next action: D3 after the owner merges D2.
+
+## 2026-11-15 — Flow Discover D4: cleanup and closeout
+
+- Built: deleted the Flow code nothing calls after D1 to D3: `FlowDiscoverHeader` (Lists | Insights and the chips), the one-column `FlowDiscoverCard`, `FlowPagesRules.DISCOVER_COVER` and `DISCOVER_GAP` (and their assertions in `FlowPagesRulesTest`), the unused imports in `FlowDiscover.kt`, and two Flow branches in the classic Insights loop of `InsightsPage` that the Flow early return made unreachable. No file was added, so `ARCHITECTURE.md` is unchanged. Other themes are untouched.
+- Tests run locally (JDK 17, filtered): `FlowTest`, `ExistingLayoutsTest`, `DiscoveryTest`, `InsightsTest`, `FlowPagesRulesTest`, `SoftBrutTest`, `NavRulesTest`, `FlowDiscoverRulesTest`; all pass. Full suite not run (owner rule).
+- Not done: no device check. The owner's phone check is still open: each of the seven lists, the sheet, swipes across all seven, a night palette. Open point O1 (Save and ⋯ touch size) is still the owner's.
+- Next action: the owner's phone check after D4 merges.
