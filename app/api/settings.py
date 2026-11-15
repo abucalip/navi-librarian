@@ -17,6 +17,8 @@ from settings.service import (
     test_discogs_connection as _test_discogs_connection,
     get_automatic_refill_settings as _get_automatic_refill_settings,
     get_library_resync_settings as _get_library_resync_settings,
+    get_discovery_mode_settings as _get_discovery_mode_settings,
+    set_discovery_mode_settings as _set_discovery_mode_settings,
     get_star_seed_settings as _get_star_seed_settings,
     set_star_seed_settings as _set_star_seed_settings,
     set_library_resync_settings as _set_library_resync_settings,
@@ -74,6 +76,28 @@ def set_library_resync_settings(payload: dict, librarian=Depends(get_librarian))
         raise
     except Exception:
         raise HTTPException(status_code=502, detail="Could not save library resync settings.")
+
+
+@router.get("/api/settings/discovery-mode")
+def get_discovery_mode_settings(librarian=Depends(get_librarian)):
+    try:
+        return parse_result(_get_discovery_mode_settings(librarian._discovery_settings_read))
+    except Exception:
+        raise HTTPException(status_code=502, detail="Could not read discovery mode settings.")
+
+
+@router.put("/api/settings/discovery-mode")
+def set_discovery_mode_settings(payload: dict, librarian=Depends(get_librarian)):
+    value = payload.get("discovery_mode")
+    try:
+        result = parse_result(_set_discovery_mode_settings(librarian._discovery_settings_write, value))
+        if isinstance(result, dict) and not result.get("ok"):
+            raise HTTPException(status_code=400, detail=result.get("error", "Invalid discovery mode."))
+        return result
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(status_code=502, detail="Could not save discovery mode settings.")
 
 
 @router.get("/api/settings/star-seed")

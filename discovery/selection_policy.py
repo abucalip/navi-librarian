@@ -9,6 +9,7 @@ from __future__ import annotations
 from typing import Any, Iterable, Mapping
 
 from discovery.allocation_contract import AllocationCandidate
+from discovery.discovery_mode import BALANCED, DiscoveryKnobs
 
 GENRE_FAMILY_CAP = 2
 COVERAGE_FLOOR_RATIO = 0.4
@@ -24,13 +25,17 @@ def quota_targets(count: int) -> dict[str, int]:
     return targets
 
 
-def selection_request_options(policy: str, count: int) -> tuple[dict[str, int], dict[str, Any]]:
-    """Return (category_targets, extra AllocationRequest keyword arguments)."""
+def selection_request_options(
+    policy: str, count: int, knobs: DiscoveryKnobs = BALANCED,
+) -> tuple[dict[str, int], dict[str, Any]]:
+    """Return (category_targets, extra AllocationRequest keyword arguments).
+
+    ``knobs`` (the discovery mode) moves the adventurous floor; the default is today's."""
     if policy != "family_coverage":
         return quota_targets(count), {}
     return {}, {
         "genre_family_cap": GENRE_FAMILY_CAP,
-        "category_floors": {"adventurous": count // 5},
+        "category_floors": {"adventurous": knobs.adventurous_floor(count)},
         "coverage_target": count,
         "coverage_floor_ratio": COVERAGE_FLOOR_RATIO,
     }

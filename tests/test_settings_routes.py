@@ -42,6 +42,8 @@ class SettingsRoutesTests(unittest.TestCase):
             ("/api/settings/recommendation-diversity", "PUT"),
             ("/api/settings/automatic-refill", "GET"),
             ("/api/settings/automatic-refill", "PUT"),
+            ("/api/settings/discovery-mode", "GET"),
+            ("/api/settings/discovery-mode", "PUT"),
             ("/api/settings/star-seed", "GET"),
             ("/api/settings/star-seed", "PUT"),
         }

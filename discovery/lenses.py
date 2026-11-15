@@ -20,6 +20,7 @@ from discovery.allocation_contract import (
     CandidateDecision,
     OwnershipStatus,
 )
+from discovery.discovery_mode import BALANCED, DiscoveryKnobs
 from discovery.personal_allocator import allocate_personal_recommendations
 from discovery.selection_policy import quota_targets, selection_request_options
 
@@ -155,16 +156,20 @@ def run_lens(
     *,
     diversity_penalty: float = 0.0,
     max_checks: int = MAX_CANDIDATE_CHECKS,
+    knobs: DiscoveryKnobs = BALANCED,
 ) -> AllocationResult:
-    """Run one lens over a pool; the result carries the lens name."""
+    """Run one lens over a pool; the result carries the lens name.
+
+    ``knobs`` (the discovery mode) scales a gate lens's audience band and moves the floor."""
     if lens.kind == "deep_cuts":
+        min_audience, max_audience = knobs.audience_band(lens.min_audience, lens.max_audience)
         return select_deep_cuts(
             candidates, count, max_checks=max_checks, lens_name=lens.name,
-            min_audience=lens.min_audience, max_audience=lens.max_audience,
+            min_audience=min_audience, max_audience=max_audience,
             require_audience=lens.require_audience,
             exclude_known_artists=lens.exclude_known_artists)
     if lens.kind == "family_coverage":
-        targets, options = selection_request_options("family_coverage", count)
+        targets, options = selection_request_options("family_coverage", count, knobs)
     elif lens.kind == "quota":
         targets, options = quota_targets(count), {}
     else:
@@ -182,6 +187,7 @@ def partition_lenses(
     lenses: Sequence[Lens] = DEFAULT_LENS_ORDER,
     *,
     diversity_penalty: float = 0.0,
+    knobs: DiscoveryKnobs = BALANCED,
 ) -> tuple[AllocationResult, ...]:
     """Run lenses in order over one pool, each on what earlier lenses left.
 
@@ -192,7 +198,7 @@ def partition_lenses(
         raise ValueError("lens names must be unique")
     return partition_lens_pools(
         {lens.name: candidates for lens in lenses}, count, lenses,
-        diversity_penalty=diversity_penalty)
+        diversity_penalty=diversity_penalty, knobs=knobs)
 
 
 def partition_lens_pools(
@@ -201,6 +207,7 @@ def partition_lens_pools(
     lenses: Sequence[Lens],
     *,
     diversity_penalty: float = 0.0,
+    knobs: DiscoveryKnobs = BALANCED,
 ) -> tuple[AllocationResult, ...]:
     """Like ``partition_lenses``, but each lens draws from its own pool ({lens name:
     candidates}; a missing name is an empty pool), as the lenses whose supply is gathered
@@ -215,7 +222,7 @@ def partition_lens_pools(
         remaining = tuple(item for item in pools.get(lens.name, ())
             if item.artist_key not in taken_artists and item.album_key not in taken_albums
         )
-        result = run_lens(lens, remaining, count, diversity_penalty=diversity_penalty)
+        result = run_lens(lens, remaining, count, diversity_penalty=diversity_penalty, knobs=knobs)
         by_id = {item.candidate_id: item for item in remaining}
         for cid in result.selected_candidate_ids:
             taken_artists.add(by_id[cid].artist_key)
