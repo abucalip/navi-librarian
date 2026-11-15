@@ -1,9 +1,10 @@
-## 2026-11-15 — Star Operation S1c: reason line on web and Android (PR open)
+## 2026-11-15 — Star Operation S1c: reason line on web and Android (merged #1093)
 
 - Web `reasonLine` (`static/app.js`) and Android `pickReason` (`model/Discovery.kt`) draw the server's `because`: `tag` reads "Because you listen to {tag}", `similar_artists` reads "Shares genres with {names}". Older servers that send only `similar_to` get the overlap wording (adjacent on web, any pick on Android). Without a reason the web keeps the category label.
 - Android: `because` is decoded as JSON, so a malformed value drops only the reason line. The reason line is added to the classic `DiscoverCard`, which did not draw it before. Flow and CoverStack replace "Similar to:".
 - Tests run: `tests/test_discovery_because_display_ui_contract.py` (new, 5 pass); `tests/test_discovery_similar_artists.py` (wording updated, passes); every module that reads `static/app.js` or the other static UI files (44, all pass, with `.venv`); `DiscoveryTest` under JDK 17 (10 pass, 4 new); `test_discovery_pick_because.py` (pass); `scripts/check_lint_changed.py --base origin/main` (2 files, 0 new findings, pylint run from a scratch install). The formatter was run under Node with seven cases (tag, overlap, unknown kind, malformed, older server, none).
 - Not run: browser checks, a device, the macOS client (not in this slice), the full suite. Wording of a multi-tag `tag` reason ("shoegaze, dream pop") is not confirmed by the owner.
+- Merged as squash `73938ac8` (PR #1093, head `c42f68c6`, after a docs-comment fix commit `c42f68c6`). CI on the head passed: compile, container-smoke, lint-changed, test-and-build, validate-container, validate-release-workflow.
 
 ## 2026-11-15 — Star Operation S1b: seed tags on tag-search picks (merged #1092)
 
