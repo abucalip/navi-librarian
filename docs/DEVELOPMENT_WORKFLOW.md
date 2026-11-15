@@ -73,7 +73,7 @@ Last updated: 2026-11-14.
 
 ## macOS client motion and CPU rules (owner rule, 2026-11-15)
 
-The macOS client's CPU kept returning to about 40 % and the player clock lagged and jumped (fixed piece by piece in #1071, #1072, #1073 and #1088). Each time the cause was a SwiftUI view that animated every frame. On macOS, each such frame re-renders the whole window's SwiftUI display list on the main thread and then blocks on the render server (`-[RBLayer display]`, `waitForCommitId`). One small looping view cost 10 to 30 points of CPU, and the blocked main thread delayed the 4 Hz position tick, which made the clock lag and then jump. The rules:
+The macOS client's CPU kept returning to about 40 % and the player clock lagged and jumped (fixed piece by piece in #1071, #1072, #1073, #1088 and the backdrop PR after it). Each time the cause was a SwiftUI view that animated every frame. On macOS, each such frame re-renders the whole window's SwiftUI display list on the main thread and then blocks on the render server (`-[RBLayer display]`, `waitForCommitId`). One small looping view cost 10 to 30 points of CPU, and the blocked main thread delayed the 4 Hz position tick, which made the clock lag and then jump. The rules:
 
 1. **No looping or continuous motion through SwiftUI.** In `macos/Sources` do not use `TimelineView(.animation)`, `TimelineView(.periodic)` faster than once a second, `.repeatForever`, `.symbolEffect(..., options: .repeating)`, or repeating `phaseAnimator`/`keyframeAnimator` for anything that keeps moving. This applies however small the element is: a 13 pt playing mark cost 30 points.
 2. **Use Core Animation or AppKit instead.** Use one of these:
@@ -95,7 +95,7 @@ The macOS client's CPU kept returning to about 40 % and the player clock lagged 
    - paused.
 
    Earlier A/Bs were taken only on Home and missed the album-page driver. A large gap between pages, or between playing and paused, means some view animates every frame. Find it with `sample <pid> 8`: the signature is the main thread in `UC::DriverCore::continueProcessing` with `DisplayList.ViewUpdater` and `RBLayer display` / `waitForCommitId`. Then bisect by page and state with the same track playing. A standalone test window is good enough to check a mechanism. The fix is done only after the owner's A/B in the installed app.
-7. **Known exception:** `SlideshowBackdrop` (Now Playing with photos on) still uses a 20 Hz `TimelineView`. It has not been measured or moved. Move it under rule 2 when it is next touched.
+7. **Examples now in the code:** the disc (`SpinningBitmap`), the playing mark (`PlayingBars`), the player-bar marquee (`MarqueeStrip`), the Now Playing slideshow (`SlideshowLayers`, one looping keyframe timeline, photos blurred once), and the artist banner collage (`CollageSlotLayer`). No continuous SwiftUI motion is known to remain.
 
 ## Release and production safety
 

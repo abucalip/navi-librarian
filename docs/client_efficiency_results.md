@@ -290,6 +290,8 @@ Columns: Discair CPU %, WindowServer CPU %, Discair wakeups/s, Discair power, Wi
 
 The player bar's `MarqueeLine` (a lyric or fact line too long for its space) is a second driver of the same kind: a `TimelineView(.animation)`. With the window narrowed so the fact line scrolled, Home playing went from **9.5 to 10 %** to **17.5 to 22 %**. Now the two copies of the line are drawn once in an `NSHostingView` and slid by a repeating `CABasicAnimation`. Standalone check (the same line in a test window, 4 `top` samples): `TimelineView` **5.3 to 6.1 %**, Core Animation **0.0 %**; two screenshots 1.5 s apart showed it scrolling, with the same font, colour and clipping. The owner installed the build (#1088, `242d5d0f`) and reports CPU much lower (by eye; no scripted table). The rules learned are in `DEVELOPMENT_WORKFLOW.md`, "macOS client motion and CPU rules".
 
+**Backdrops (macOS, 2026-11-15).** Installed build, a track playing, `top`: Now Playing with photos on 9 to 10 % against 8.5 to 9 % with photos off (the 20 Hz slideshow cost about 0.5 points); artist page with the collage 22 to 25 % for about 16 s while the tiles zoomed, then about 10 % (more than five photos keep it moving with swaps). Both were moved to Core Animation (`SlideshowLayers`, `CollageSlotLayer`). Standalone window with the new code verbatim: slideshow 3.9 to 4.6 % before, 0.0 % after; collage 4.7 to 5.8 % before, 0.0 to 0.1 % after. Real-app A/B not yet run.
+
 **Gate decisions (P0-2)**
 
 | Gate | Condition (plan section 8.5) | Measured value | Met? |

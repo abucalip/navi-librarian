@@ -1,6 +1,7 @@
 import AppKit
 import DiscairAudio
 import DiscairCore
+import DiscairLibrarian
 import DiscairNavidrome
 import Foundation
 import Testing
@@ -47,5 +48,38 @@ struct NowPlayingArtworkUITests {
         let store = ArtworkStore(transport: PNGTransport())
         #expect(await store.nowPlayingIndex(artist: "a", album: "b") == nil)
         #expect(await store.nowPlayingIndex(artist: "a", album: "") == nil)
+    }
+}
+
+/// The Core Animation slideshow's keyframes against the SwiftUI rule it replaced (`slideshowFrame`): at every moment of the cycle
+/// the layers, stacked in order, show the same photos in the same mix and at the same zoom-and-pan progress.
+@Suite("Slideshow keyframes")
+struct SlideshowKeyframesTests {
+    @Test(arguments: [2, 3, 5, 12])
+    func layersMatchTheSlideshowRule(count: Int) {
+        let hold = 14.0, fade = 3.0, cycle = Double(count) * hold
+        let frames = (0..<count).map { SlideshowKeyframes(index: $0, count: count, hold: hold, fade: fade) }
+        var t = 0.05
+        while t < cycle * 2 {
+            let local = t.truncatingRemainder(dividingBy: cycle)
+            let edge = (0...count).map { Double($0) * hold }.contains { abs(local - $0) < 0.01 }
+            if !edge {
+                // Stack the layers bottom to top: each one covers what is under it by its opacity.
+                var weight = Array(repeating: 0.0, count: count)
+                for (i, f) in frames.enumerated() {
+                    let o = f.value(at: local).opacity
+                    weight = weight.map { $0 * (1 - o) }
+                    weight[i] += o
+                }
+                let rule = slideshowFrame(elapsed: t, count: count, hold: hold, fade: fade)!
+                var expected = Array(repeating: 0.0, count: count)
+                expected[rule.index] += 1 - rule.mix
+                expected[rule.next] += rule.mix
+                for i in 0..<count { #expect(abs(weight[i] - expected[i]) < 0.01, "t \(t) photo \(i)") }
+                #expect(abs(frames[rule.index].value(at: local).progress - rule.progress) < 0.01, "t \(t) progress")
+                if rule.mix > 0.01 { #expect(frames[rule.next].value(at: local).progress < 0.01, "t \(t) next still") }
+            }
+            t += 0.25
+        }
     }
 }

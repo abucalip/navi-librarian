@@ -1,3 +1,4 @@
+import AppKit
 import DiscairLibrarian
 import SwiftUI
 
@@ -60,17 +61,100 @@ private struct TileMotion {
     ]
 }
 
+/// The still SwiftUI tile, for the offscreen screenshot only (it cannot draw the AppKit layer of `CollageSlot`).
 private struct CollageTile: View {
     let entry: CollageEntry
-    let motion: TileMotion
-    let still: Bool
-    @State private var moved = false
 
     var body: some View {
         AlbumPictureView(picture: entry.picture, size: .display, fill: true)
-            .scaleEffect(moved && !still ? motion.scale : 1, anchor: motion.anchor)
-            .animation(.linear(duration: motion.seconds), value: moved)
-            .onAppear { moved = true }
+    }
+}
+
+/// One slot of the mosaic in the window: it loads its picture, then hands it to a Core Animation layer that zooms it slowly
+/// toward its corner and cross-fades it over the picture before. A SwiftUI zoom and cross-fade here re-rendered the window's
+/// display list on the main thread every frame while the banner moved (docs/DEVELOPMENT_WORKFLOW.md, macOS client motion and CPU
+/// rules). The old picture stays until the new one has loaded.
+private struct CollageSlot: View {
+    let entry: CollageEntry
+    let motion: TileMotion
+    let still: Bool
+    @Environment(\.artwork) private var store
+    @State private var loaded: (id: Int, image: NSImage)?
+
+    var body: some View {
+        CollageSlotLayer(loaded: loaded, motion: motion, still: still)
+            .task(id: "\(entry.picture.imageID)|\(store?.generation ?? 0)") {
+                guard let store, let image = await store.albumImage(entry.picture, size: .display), !Task.isCancelled else { return }
+                loaded = (entry.id, image)
+            }
+    }
+}
+
+private struct CollageSlotLayer: NSViewRepresentable {
+    let loaded: (id: Int, image: NSImage)?
+    let motion: TileMotion
+    let still: Bool
+    static let fade = 1.4
+
+    final class Host: NSView {
+        var shownID: Int?
+        override init(frame: NSRect) {
+            super.init(frame: frame)
+            wantsLayer = true
+            layer?.masksToBounds = true
+        }
+        required init?(coder: NSCoder) { nil }
+        override func layout() {
+            super.layout()
+            CATransaction.begin()
+            CATransaction.setDisableActions(true)
+            for tile in layer?.sublayers ?? [] { place(tile) }
+            CATransaction.commit()
+        }
+        /// Bounds and position, not frame: the tile carries a zoom transform, and its anchor is the corner it zooms toward.
+        func place(_ tile: CALayer) {
+            tile.bounds = CGRect(origin: .zero, size: bounds.size)
+            tile.position = CGPoint(x: tile.anchorPoint.x * bounds.width, y: tile.anchorPoint.y * bounds.height)
+        }
+    }
+
+    func makeNSView(context: Context) -> Host { Host() }
+
+    func updateNSView(_ view: Host, context: Context) {
+        guard let loaded, loaded.id != view.shownID, let root = view.layer else { return }
+        let first = view.shownID == nil
+        view.shownID = loaded.id
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        let tile = CALayer()
+        tile.contents = loaded.image
+        tile.contentsGravity = .resizeAspectFill
+        // SwiftUI's unit point counts y from the top; this layer's y runs from the bottom.
+        tile.anchorPoint = CGPoint(x: motion.anchor.x, y: 1 - motion.anchor.y)
+        view.place(tile)
+        root.addSublayer(tile)
+        if !still {
+            tile.transform = CATransform3DMakeScale(motion.scale, motion.scale, 1)
+            let zoom = CABasicAnimation(keyPath: "transform.scale")
+            zoom.fromValue = 1
+            zoom.toValue = motion.scale
+            zoom.duration = motion.seconds
+            zoom.timingFunction = CAMediaTimingFunction(name: .linear)
+            tile.add(zoom, forKey: "zoom")
+        }
+        let older = (root.sublayers ?? []).filter { $0 !== tile }
+        if first || still {
+            older.forEach { $0.removeFromSuperlayer() }
+        } else {
+            let fadeIn = CABasicAnimation(keyPath: "opacity")
+            fadeIn.fromValue = 0
+            fadeIn.toValue = 1
+            fadeIn.duration = Self.fade
+            fadeIn.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+            tile.add(fadeIn, forKey: "fade")
+            DispatchQueue.main.asyncAfter(deadline: .now() + Self.fade + 0.1) { older.forEach { $0.removeFromSuperlayer() } }
+        }
+        CATransaction.commit()
     }
 }
 
@@ -92,9 +176,11 @@ struct CollageHeroBackdrop: View {
                 ForEach(Array(slots.enumerated()), id: \.offset) { i, f in
                     ZStack {
                         if shown.indices.contains(i), entries.indices.contains(shown[i]) {
-                            CollageTile(entry: entries[shown[i]], motion: TileMotion.all[i % TileMotion.all.count], still: still)
-                                .id(entries[shown[i]].id)
-                                .transition(.opacity)
+                            if RenderMode.offscreenScreenshot {
+                                CollageTile(entry: entries[shown[i]])
+                            } else {
+                                CollageSlot(entry: entries[shown[i]], motion: TileMotion.all[i % TileMotion.all.count], still: still)
+                            }
                         }
                     }
                     .frame(width: max(f.width * g.size.width - seam, 0), height: max(f.height * g.size.height - seam, 0))
@@ -116,7 +202,7 @@ struct CollageHeroBackdrop: View {
                 guard let slot = changed.indices.min(by: { changed[$0] < changed[$1] }),
                       let pick = CollageLayout.next(after: shown[slot], shown: shown, count: entries.count) else { continue }
                 changed[slot] = tick
-                withAnimation(.easeInOut(duration: 1.4)) { shown[slot] = pick }
+                shown[slot] = pick    // the slot's layer cross-fades it (Core Animation, not a SwiftUI animation)
             }
         }
     }
