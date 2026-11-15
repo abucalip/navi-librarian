@@ -3,7 +3,7 @@ import json
 import unittest
 
 from discovery.discovery_mode import (
-    BALANCED, DEFAULT_DISCOVERY_MODE, DISCOVERY_MODES, DiscoveryKnobs,
+    BALANCED, DEEPER, DEFAULT_DISCOVERY_MODE, SAFER, DISCOVERY_MODES, DiscoveryKnobs,
     discovery_knobs, discovery_mode_value, knobs_for_mode,
 )
 from discovery.lenses import (
@@ -55,9 +55,16 @@ class ModeSettingTests(unittest.TestCase):
 class BalancedRegressionTests(unittest.TestCase):
     """balanced matches the output with the setting absent, and today's numbers."""
 
-    def test_every_mode_currently_carries_the_balanced_knobs(self):
-        for mode in DISCOVERY_MODES:
-            self.assertIs(knobs_for_mode(mode), BALANCED)
+    def test_balanced_is_the_default_knobs_and_safer_deeper_move_only_the_band_maximum(self):
+        self.assertIs(knobs_for_mode("balanced"), BALANCED)
+        self.assertEqual(BALANCED, DiscoveryKnobs())
+        self.assertEqual((BALANCED.adventurous_floor_divisor, BALANCED.audience_min_scale,
+                          BALANCED.audience_max_scale), (5, 1.0, 1.0))
+        self.assertEqual((SAFER.audience_max_scale, DEEPER.audience_max_scale), (2.0, 0.5))
+        for knobs in (SAFER, DEEPER):
+            self.assertEqual(knobs.adventurous_floor_divisor, BALANCED.adventurous_floor_divisor)
+            self.assertEqual(knobs.audience_min_scale, BALANCED.audience_min_scale)
+        self.assertEqual(knobs_for_mode("wild"), BALANCED)
 
     def test_selection_options_match_with_setting_absent_and_balanced(self):
         for policy in ("quota", "family_coverage"):
@@ -104,6 +111,37 @@ class KnobWiringTests(unittest.TestCase):
         self.assertEqual(partition_lenses(pool, 1, (DEEP_CUTS,))[0].selected_candidate_ids, ("mid",))
         narrow = DiscoveryKnobs(audience_max_scale=0.5)
         self.assertEqual(partition_lenses(pool, 1, (DEEP_CUTS,), knobs=narrow)[0].selected_candidate_ids, ())
+
+
+class ModeValueTests(unittest.TestCase):
+    def test_every_lens_runs_in_every_mode_and_never_widens_past_its_band(self):
+        pool = _pool()
+        for mode in DISCOVERY_MODES:
+            knobs = knobs_for_mode(mode)
+            for lens in (DEEP_CUTS, CURRENT_TASTES, GENRE_SPREAD):
+                result = run_lens(lens, pool, 5, knobs=knobs)
+                self.assertLessEqual(len(result.selected_candidate_ids), 5)
+        self.assertEqual(SAFER.audience_band(300, 50_000), (300, 100_000))
+        self.assertEqual(DEEPER.audience_band(300, 50_000), (300, 25_000))
+        self.assertEqual(DEEPER.audience_band(0, 500_000), (0, 250_000))
+
+    def test_safer_admits_a_better_known_album_and_deeper_drops_it(self):
+        pool = [item("big", audience=80_000, strength=0.9), item("mid", audience=40_000, strength=0.8)]
+        self.assertEqual(run_lens(DEEP_CUTS, pool, 2, knobs=BALANCED).selected_candidate_ids, ("mid",))
+        self.assertEqual(run_lens(DEEP_CUTS, pool, 2, knobs=SAFER).selected_candidate_ids, ("big", "mid"))
+        self.assertEqual(run_lens(DEEP_CUTS, pool, 2, knobs=DEEPER).selected_candidate_ids, ())
+
+    def test_unknown_audience_is_never_obscure_in_safer_or_deeper(self):
+        pool = [item("none", strength=0.9)]
+        for knobs in (SAFER, DEEPER):
+            self.assertEqual(run_lens(DEEP_CUTS, pool, 1, knobs=knobs).selected_candidate_ids, ())
+
+    def test_modes_leave_the_floor_and_quota_selection_alone(self):
+        for knobs in (SAFER, DEEPER):
+            for count in (5, 10, 20):
+                self.assertEqual(selection_request_options("family_coverage", count, knobs),
+                                 selection_request_options("family_coverage", count))
+                self.assertEqual(selection_request_options("quota", count, knobs), (quota_targets(count), {}))
 
 
 class ModeRouteTests(unittest.TestCase):

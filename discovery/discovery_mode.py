@@ -1,8 +1,10 @@
 """Discovery mode: one switch over the existing selection knobs (Star Operation, S4a).
 
-``balanced`` is exactly today's behaviour. ``safer`` and ``deeper`` are named here so the
-setting can be stored, shown and wired, but until S4b sets their numbers from a replay
-measurement (and the owner approves them) they carry the same values as ``balanced``.
+``balanced`` is exactly today's behaviour. ``safer`` and ``deeper`` move only the maximum of a
+gate lens's audience band (S4b, from a replay measurement; the numbers await the owner's approval):
+``safer`` doubles it (a wider, better known band) and ``deeper`` halves it. The adventurous floor
+is the same in every mode: it is a floor, so lowering it cannot make a list safer, and raising it
+only collapses genre spread (measured; see PROJECT_LOG.md).
 
 The knobs reach every list built from the allocator or the lens gates: the personal list
 (adventurous floor under the family-coverage policy) and the lens lists (the same floor in
@@ -40,8 +42,10 @@ class DiscoveryKnobs:
 
 
 BALANCED = DiscoveryKnobs()
-# S4b replaces the safer and deeper values after the replay measurement and the owner's approval.
-MODE_KNOBS: Mapping[str, DiscoveryKnobs] = {"safer": BALANCED, "balanced": BALANCED, "deeper": BALANCED}
+# S4b values, measured with scripts/discovery_mode_sweep.py; pending the owner's approval.
+SAFER = DiscoveryKnobs(audience_max_scale=2.0)
+DEEPER = DiscoveryKnobs(audience_max_scale=0.5)
+MODE_KNOBS: Mapping[str, DiscoveryKnobs] = {"safer": SAFER, "balanced": BALANCED, "deeper": DEEPER}
 
 
 def discovery_mode_value(settings_read: Callable[[], Mapping]) -> str:
