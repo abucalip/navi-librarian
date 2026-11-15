@@ -116,22 +116,19 @@ struct CupertinoQueueInspector: View {
         .accessibilityLabel("Queue")
     }
 
-    /// One "add songs" choice: an icon, its name and a line saying what it adds, in a tile of equal width with its neighbour.
+    /// One "add songs" choice: an icon and its name in a tile of one fixed height; what it adds shows on hover.
     private func addSongsButton(_ title: String, detail: String, symbol: String, label: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            VStack(alignment: .leading, spacing: 4) {
-                Label(title, systemImage: symbol).fontWeight(.semibold).lineLimit(1)
-                Text(detail).font(CU.Font.callout.weighted(.regular)).foregroundStyle(CU.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(10)
-            .background(CU.bgFill, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-            .contentShape(Rectangle())
+            Label(title, systemImage: symbol).fontWeight(.semibold).lineLimit(1).minimumScaleFactor(0.85)
+                .frame(maxWidth: .infinity, minHeight: 36)
+                .background(CU.bgFill, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .disabled(state.radio.busy || state.player.current == nil)
+        .help(detail)
         .accessibilityLabel(label)
+        .accessibilityHint(detail)
     }
 
     private func commitSave() { state.saveQueue(named: saveName); saving = false; tab = .saved }

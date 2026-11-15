@@ -125,7 +125,7 @@ struct CupertinoPlayerBar: View {
             .frame(minWidth: 150, idealWidth: 270, maxWidth: 380, alignment: .leading).layoutPriority(1)
             Spacer(minLength: 0)
             HStack(spacing: 6) {
-                PlayingBars(active: p.isPlaying, color: CU.onMedia, pointSize: CU.Font.callout.size)
+                PlayingBars(active: live.phase == .playing, color: CU.onMedia, pointSize: CU.Font.callout.size)
                 LiveBadge()
             }
             SwiftUI.TimelineView(.periodic(from: .now, by: 1)) { tl in
