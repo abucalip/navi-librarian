@@ -3,7 +3,7 @@
 The tracklist comes from a race between the providers that can supply one (Deezer, Last.fm,
 MusicBrainz): the first non-empty answer wins, so the page waits for the fastest source rather
 than the best one. Each track is marked ``owned`` against the library's songs for that album
-(by title, or by track number and length), and library songs the provider does not list are
+(by title, by track number and length, or by track number and a near-identical title), and library songs the provider does not list are
 appended as owned. When no provider answers, an owned album falls back to the library's own
 tracklist. Sections are yielded as they finish, so the album header never waits for the network.
 """
@@ -14,6 +14,7 @@ import threading
 import time
 from collections.abc import Iterator
 from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
+from difflib import SequenceMatcher
 from typing import Any
 
 from discovery.search.artist_sections import (
@@ -37,6 +38,7 @@ from discovery.search.query import artwork_url
 ALBUM_SECTION_ORDER = ("album", "year", "genre", "description", "tracks", "similar_artists", "similar_albums")
 # A provider track and a library song with the same number and a length within this many seconds are one track.
 TRACK_LENGTH_TOLERANCE_SECONDS = 3
+TITLE_LIKENESS = 0.85
 SIMILAR_ALBUM_ARTISTS = 6
 SIMILAR_ALBUM_LIMIT = 12
 
@@ -75,12 +77,28 @@ def owned_tracks(data: OwnedData, album_id: str) -> list[dict[str, Any]]:
     return tracks
 
 
+def titles_alike(a: str, b: str) -> bool:
+    """Whether two normalized titles name one song written a little differently.
+
+    "Excerpts From The Blues" / "Excerpt From the Blues" are alike by spelling; "Easy To Love" /
+    "You'd Be So Easy to Love" are alike because one holds every word of the other (at least two).
+    """
+    if not a or not b:
+        return False
+    words_a, words_b = set(a.split()), set(b.split())
+    short, long = sorted((words_a, words_b), key=len)
+    if len(short) >= 2 and short <= long:
+        return True
+    return SequenceMatcher(None, a, b).ratio() >= TITLE_LIKENESS
+
+
 def mark_owned_tracks(provider: list[dict[str, Any]], songs: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """The provider's tracklist with ``owned`` on each track, plus library songs it does not list.
 
     ``songs`` are the library's songs for this album. A track is owned when a song has the same
     normalized title, or the same track number and a length within a few seconds (remasters
-    rename tracks but keep their place). Songs matching no track are appended as owned.
+    rename tracks but keep their place), or the same track number and a title that is alike
+    (``titles_alike``: plural/spelling differences, or one title holding the other's words). Songs matching no track are appended as owned.
     When the songs span several discs, every track also gets its ``disc_number`` and its number
     on that disc (see ``disc_layout``).
     """
@@ -103,6 +121,19 @@ def mark_owned_tracks(provider: list[dict[str, Any]], songs: list[dict[str, Any]
             if s["track_number"] == track["track_number"] and s["duration"]
             and (not multi or disc_of(s) == 1)
             and abs(s["duration"] - track["duration_seconds"]) <= TRACK_LENGTH_TOLERANCE_SECONDS
+        ), None)
+        if song is not None:
+            unmatched.remove(song)
+            matched[index] = song
+    for index, track in enumerate(provider):
+        if index in matched:
+            continue
+        key = normalize_key(track["title"])
+        song = next((
+            s for s in unmatched
+            if s["track_number"] == track["track_number"]
+            and (not multi or disc_of(s) == 1)
+            and titles_alike(key, s["name_key"])
         ), None)
         if song is not None:
             unmatched.remove(song)
