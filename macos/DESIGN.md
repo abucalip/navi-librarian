@@ -604,6 +604,15 @@ Internet radio on the Mac, built from the owner's choices. Mockups (the spec): [
 - **Tests run (filtered):** `swift test --skip-update --filter "MenuBarContentTests|rendersMenuBarPopover|RadioSettingsModelTests|rendersRadioSettings|SleepTimerTests|MiniPlayerTests"`: 38 passed (label text and cut at 30, the symbols, which buttons show for a station, a library song, an unreachable and a connecting station, and nothing playing; renders of the popover for a station and a song were looked at). The package builds, and the bundle was built.
 - **Not verified:** the item in the real menu bar (width, the title cut, light and dark menu bars), the popover in a real session (the window style's focus and dismissal, Open Discair raising the window, Download against a real station), Night mode, VoiceOver, the switches removing and restoring the item.
 
+## Star Operation S2c: pick menu and Settings › Blocklist
+
+- **Pick menu (`CupertinoPickFeedbackMenu`, `CupertinoBlocklist.swift`):** a "More" menu beside Not for me on Discover rows (not on Saved rows) and on the Home marquee pick. More like {artist}, Less like {artist} (neither hides anything) and, when the album has a genre, Block genre: {genre}. A plain `Menu`, no motion. The answer shows in the window notice (`acquisition.report`).
+- **Genre:** `AlbumItem.genre` holds only the first genre a pick carries (`LibraryModel.item(_:index:)`), so that is the one offered. Lens lists send `tags` instead of `genres`, so a lens pick on macOS offers no Block genre.
+- **Settings › Blocklist (`CupertinoBlocklist`, tab `SettingsTab.blocklist`):** three panels (Blocked genres, Hidden with Not this artist, More and Less like this), each row with Unblock or Clear. `BlocklistModel` reads the three routes when the tab opens, sends a lift, then reads again.
+- **Requests:** `GET` of `blocked-genres`, `blocked-artists`, `artist-lean`; `POST`/`DELETE` of `blocked-genres` and `artist-lean`; `DELETE blocked-artists`. After Block genre the selected Discover list is read again.
+- **Tests run (filtered):** `BlocklistModelTests`, `ConnectionsServicesTests`, `RadioSettingsModelTests`, `HomeRenderTests`, `CupertinoPagesRenderTests`, `ConnectionsServicesRenderTests`, `HomeScreenTests`; `select-tests.sh` would choose the whole Librarian and UI targets, which were not run.
+- **Not verified:** the menus and the Blocklist tab in a real window, Night mode, VoiceOver; no render test draws the new views.
+
 ## Home, Marquee (plan slice H3)
 
 - **What it is:** `CupertinoHome` draws notice, marquee, radio card, New on the shelf, Waiting longest, summary line and Liner note (`CupertinoHomeMarquee.swift` holds the shelves and the summary line). Rules and words are pure code in `Model/HomeScreen.swift`, figures in `Model/HomeDashboard.swift`. Plan and measures: `docs/MACOS_HOME_MARQUEE_PLAN.md`; the mockups in `docs/design/macos-home-marquee/` are the spec; the layout is described in `docs/redesign.md` 5.1.

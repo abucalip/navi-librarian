@@ -49,11 +49,11 @@ struct CupertinoDiscover: View {
                     }
                 }.padding(.top, 8)
             }
-            ForEach(albums) { a in row(a) }
+            ForEach(albums) { a in row(a, kind: k) }
         }
     }
 
-    private func row(_ a: AlbumItem) -> some View {
+    private func row(_ a: AlbumItem, kind: DiscoveryModel.Kind) -> some View {
         HStack(alignment: .top, spacing: 16) {
             Button { state.open(album: a) } label: {
                 CoverView(album: a).frame(width: 84).clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
@@ -77,7 +77,8 @@ struct CupertinoDiscover: View {
                     Button(state.acquisition.isSaved(a) ? "Saved" : "Save") { state.actions.save(album: a) }
                         .buttonStyle(CapsuleButtonStyle(small: true)).disabled(state.acquisition.isSaved(a))
                     Button("Not for me") { state.actions.notForMe(album: a) }.buttonStyle(CapsuleButtonStyle(small: true, outlined: true))
-                    CupertinoPickFeedbackMenu(state: state, album: a)
+                    // Saved rows are bookmarks: no Not for me on the web's Saved page, so no artist or genre feedback here either.
+                    if kind != .saved { CupertinoPickFeedbackMenu(state: state, album: a) }
                 }
                 .padding(.top, 4)
             }

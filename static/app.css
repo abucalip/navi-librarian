@@ -722,7 +722,7 @@ footer { margin: 36px 34px 0 calc(var(--rail-w) + 34px); padding-top: 14px; bord
 }
 .action-group > button + button { border-left: 1px solid var(--edge-strong); }
 /* Star Operation S2c: the More menu. One shared panel, fixed under the button that opened it. */
-.feedback-menu { position: fixed; z-index: 150; top: 0; left: 0; min-width: 220px; }
+.feedback-menu { position: fixed; z-index: 150; top: 0; left: 0; right: auto; width: max-content; min-width: 220px; }
 .feedback-menu .feedback-menu-manage { border-top: 1px solid var(--edge-strong); border-radius: 0; color: var(--text-muted); }
 .feedback-toast { z-index: 201; pointer-events: none; padding-right: 16px; }
 .blocklist { margin: 0 0 24px; padding: 0; list-style: none; max-width: 560px; }

@@ -6,7 +6,10 @@ import app.discair.model.ArtistLean
 import app.discair.model.Lean
 import app.discair.model.artistBody
 import app.discair.model.blockableGenres
+import app.discair.model.entryGenres
+import app.discair.model.entryLens
 import app.discair.model.genreBody
+import app.discair.model.parseDiscovery
 import app.discair.model.leanBody
 import app.discair.model.parseArtistLeans
 import app.discair.model.parseBlockedArtists
@@ -90,6 +93,15 @@ class BlocklistTest {
         )
         assertEquals("""{"genre":"G"}""", genreBody("G"))
         assertEquals("""{"artist":"A"}""", artistBody("A"))
+    }
+
+    @Test fun aLensAlbumOffersItsTagsAndLensName() {
+        val lens = parseDiscovery("""{"items":[{"artist":"A","album":"B","tags":["Dub","Ambient"],"lens":"deep_cuts"}]}""").entries.single()
+        assertEquals(listOf("Dub", "Ambient"), entryGenres(lens))
+        assertEquals("deep_cuts", entryLens(lens))
+        val plain = parseDiscovery("""{"items":[{"artist":"A","album":"B","genres":["Jazz"]}]}""").entries.single()
+        assertEquals(listOf("Jazz"), entryGenres(plain))
+        assertEquals(null, entryLens(plain))
     }
 
     @Test fun onlyTheAlbumsOwnGenresAreOffered() {
