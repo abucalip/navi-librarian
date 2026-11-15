@@ -1,7 +1,7 @@
 """Discovery mode: one switch over the existing selection knobs (Star Operation, S4a).
 
 ``balanced`` is exactly today's behaviour. ``safer`` and ``deeper`` move only the maximum of a
-gate lens's audience band (S4b, from a replay measurement; the numbers await the owner's approval):
+gate lens's audience band (S4b, from a replay measurement; approved by the owner, who also decided the mode scales the Deep cuts band):
 ``safer`` doubles it (a wider, better known band) and ``deeper`` halves it. The adventurous floor
 is the same in every mode: it is a floor, so lowering it cannot make a list safer, and raising it
 only collapses genre spread (measured; see PROJECT_LOG.md).
@@ -42,7 +42,7 @@ class DiscoveryKnobs:
 
 
 BALANCED = DiscoveryKnobs()
-# S4b values, measured with scripts/discovery_mode_sweep.py; pending the owner's approval.
+# S4b values, measured with scripts/discovery_mode_sweep.py; approved by the owner (2026-11-15).
 SAFER = DiscoveryKnobs(audience_max_scale=2.0)
 DEEPER = DiscoveryKnobs(audience_max_scale=0.5)
 MODE_KNOBS: Mapping[str, DiscoveryKnobs] = {"safer": SAFER, "balanced": BALANCED, "deeper": DEEPER}
