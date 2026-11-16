@@ -75,6 +75,25 @@ class PathsRoute(unittest.TestCase):
         self.assertEqual(n, 1)
         self.assertEqual(self.get().json(), first)
 
+    def test_cache_miss_writes_only_through_the_writer_connection(self):
+        read_sql, real = [], routes.open_readonly
+
+        def traced(path):
+            con = real(path)
+            con.set_trace_callback(read_sql.append)
+            return con
+
+        routes.open_readonly = traced
+        self.addCleanup(setattr, routes, "open_readonly", real)
+        self.assertEqual(self.get().status_code, 200)
+        self.assertTrue(read_sql)
+        for sql in read_sql:
+            self.assertNotIn(sql.lstrip().split(None, 1)[0].upper(), {"INSERT", "UPDATE", "DELETE"}, sql)
+        db = open_store(Path(self.tmp.name) / STORE_FILE)
+        n = db.execute("SELECT COUNT(*) FROM insights WHERE kind = 'path:follow_the_musician'").fetchone()[0]
+        db.close()
+        self.assertEqual(n, 1)
+
     def test_validation(self):
         for over, code in (({"kind": "same_studio_different_decade"}, 400),
                            ({"kind": "nope"}, 400), ({"type": "label"}, 400), ({"type": None}, 400),

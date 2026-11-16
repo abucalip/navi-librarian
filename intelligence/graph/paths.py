@@ -578,10 +578,12 @@ def _label_evidence(db: sqlite3.Connection, r: sqlite3.Row) -> list[dict[str, An
 
 def cached_path(db: sqlite3.Connection, start_id: int, kind: str, *, limits: PathLimits = PathLimits(),
                 refresh: bool = False, clock: Callable[[], float] = time.monotonic,
-                now: Callable[[], float] = time.time) -> dict[str, Any] | None:
+                now: Callable[[], float] = time.time,
+                save_db: Callable[[], sqlite3.Connection] | None = None) -> dict[str, Any] | None:
     """The cached path for (start, kind, generation), building and saving it when missing or stale.
 
-    Needs a writable connection. A path cut short by time is returned but not saved, so a later
+    Saving needs a writable connection: ``db`` itself, or one opened by ``save_db`` (then ``db`` may be
+    read-only and the writer is opened and closed only on a miss). A path cut short by time is returned but not saved, so a later
     request with more room can complete it.
     """
     if kind not in PATH_KINDS:
@@ -601,9 +603,14 @@ def cached_path(db: sqlite3.Connection, start_id: int, kind: str, *, limits: Pat
     path = build_path(db, start_id, kind, limits=limits, generation=gen, clock=clock)
     if path is None or path["truncated"] == "time":
         return path
-    with db:
-        db.execute("DELETE FROM insights WHERE kind = ? AND subject_id = ?", (CACHE_PREFIX + kind, start_id))
-        db.execute("INSERT INTO insights (kind, subject_id, payload, reasons_json, generation, computed_at) "
-                   "VALUES (?, ?, ?, '[]', ?, ?)",
-                   (CACHE_PREFIX + kind, start_id, json.dumps(path, sort_keys=True), gen, now()))
+    writer = save_db() if save_db else db
+    try:
+        with writer:
+            writer.execute("DELETE FROM insights WHERE kind = ? AND subject_id = ?", (CACHE_PREFIX + kind, start_id))
+            writer.execute("INSERT INTO insights (kind, subject_id, payload, reasons_json, generation, computed_at) "
+                       "VALUES (?, ?, ?, '[]', ?, ?)",
+                       (CACHE_PREFIX + kind, start_id, json.dumps(path, sort_keys=True), gen, now()))
+    finally:
+        if save_db:
+            writer.close()
     return path
