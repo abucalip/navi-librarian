@@ -39,11 +39,11 @@ def test_numeric_delta_subtracts_leaves_and_skips_one_sided_keys():
 
 
 def test_build_routes_labels_carry_no_keys():
-    routes = baseline.build_routes("Artist Key/with slash", "album-id-123")
+    routes = baseline.build_routes("Artist Key/with slash", "album-id-123", "artist-id-9", "Artist Name")
     labels = [label for label, _ in routes]
     assert all("album-id" not in label and "Artist" not in label for label in labels)
     paths = dict(routes)
-    assert paths["artist_page"] == "/api/artists/Artist%20Key%2Fwith%20slash"
+    assert paths["artist_page"] == "/api/artists/Artist%20Name?id=artist-id-9"
     assert "kind=album_gaps" in paths["knowledge_paths_album_gaps"]
 
 
@@ -122,13 +122,13 @@ def test_end_to_end_writes_comparable_json_twice(stub_server, tmp_path, monkeypa
         out = tmp_path / name
         code = baseline.main([
             "--base-url", stub_server, "--username", "owner", "--artist-key", "a1",
-            "--album-key", "b2", "--runs", "3", "--out", str(out),
+            "--album-key", "b2", "--artist-id", "c3", "--artist-name", "d4", "--runs", "3", "--out", str(out),
         ])
         assert code == 0
         outputs.append(json.loads(out.read_text(encoding="utf-8")))
 
     first, second = outputs
-    assert set(first["routes"]) == set(second["routes"]) == {label for label, _ in baseline.build_routes("a", "b")}
+    assert set(first["routes"]) == set(second["routes"]) == {label for label, _ in baseline.build_routes("a", "b", "c", "d")}
     for stats in first["routes"].values():
         assert stats["count"] == 3
         assert stats["server_median_ms"] in (3.0, 4.0)
@@ -147,6 +147,6 @@ def test_wrong_password_exits_without_writing(stub_server, tmp_path, monkeypatch
     with pytest.raises(SystemExit):
         baseline.main([
             "--base-url", stub_server, "--username", "owner", "--artist-key", "a1",
-            "--album-key", "b2", "--out", str(out),
+            "--album-key", "b2", "--artist-id", "c3", "--artist-name", "d4", "--out", str(out),
         ])
     assert not out.exists()
