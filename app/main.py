@@ -32,6 +32,7 @@ from app.api.discovery import router as discovery_router
 from app.api.capabilities import router as capabilities_router
 from app.api.feedback import router as feedback_router
 from app.api.smart_playlists import router as smart_playlists_router
+from app.api.diagnostics import router as diagnostics_router
 from app.api.insights import router as insights_router
 from app.api.paths_warm import router as paths_warm_router
 from app.api.popularity import router as popularity_router
@@ -109,6 +110,14 @@ def _schedule_discovery_scheduler_startup():
     )
     _discovery_scheduler_start_timer.daemon = True
     _discovery_scheduler_start_timer.start()
+
+
+@app.on_event("startup")
+def _install_runtime_metrics():
+    """Count provider gate slots and store opens for GET /api/diagnostics/runtime."""
+    from app.services import runtime_metrics
+
+    runtime_metrics.install()
 
 
 @app.on_event("startup")
@@ -237,6 +246,7 @@ app.include_router(feedback_router)
 app.include_router(smart_playlists_router)
 app.include_router(taste_playlist_router)
 app.include_router(insights_router)
+app.include_router(diagnostics_router)
 app.include_router(popularity_router)
 app.include_router(taste_refresh_router)
 app.include_router(insight_lens_status_router)

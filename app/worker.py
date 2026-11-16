@@ -19,7 +19,7 @@ import time
 
 from app.api.insights import STORE_FILE
 from app.api.dependencies import get_librarian
-from app.services import insights_refresh, library_enrich
+from app.services import insights_refresh, library_enrich, runtime_metrics
 from intelligence.insights.provider_runtime import JOB as PROVIDER_LENSES_JOB
 from intelligence.insights.runtime import JOB as FORGOTTEN_GEMS_JOB
 from intelligence.jobs import prune_finished, recover_running
@@ -32,6 +32,7 @@ logger = logging.getLogger(__name__)
 
 LOCK_FILE = "worker.lock"
 PRUNE_SECONDS = 24 * 3600
+METRICS_SECONDS = 300            # how often the worker saves its runtime counters for the diagnostics route
 SHUTDOWN_GRACE_SECONDS = 25      # below compose's stop_grace_period (30 s), so the process ends before Docker kills it
 # The popularity job is named by string: the Phase 6 gate keeps taste imports out of app/ (a test pins the value).
 POPULARITY_JOB = "taste_popularity"
@@ -64,6 +65,23 @@ def _maintain(data_dir, recover=False):
         db.close()
 
 
+def _save_metrics(data_dir):
+    try:
+        db = open_store(data_dir / STORE_FILE)
+        try:
+            runtime_metrics.save_worker_snapshot(db)
+        finally:
+            db.close()
+    except Exception as exc:
+        logger.warning("Could not save runtime metrics (%s)", type(exc).__name__)
+
+
+def _metrics_loop(data_dir, stop, every=METRICS_SECONDS):
+    while not stop.wait(every):
+        _save_metrics(data_dir)
+    _save_metrics(data_dir)
+
+
 def _wait_for_threads(threads, grace=SHUTDOWN_GRACE_SECONDS):
     """Join the loop threads against one shared deadline; log any still running (their work is requeued at start)."""
     deadline = time.monotonic() + grace
@@ -85,6 +103,7 @@ def main(librarian=None, stop=None) -> int:
         if threading.current_thread() is threading.main_thread():
             for sig in (signal.SIGTERM, signal.SIGINT):
                 signal.signal(sig, lambda *_: stop.set())
+        runtime_metrics.install()
         ensure_store(librarian.DATA_DIR / STORE_FILE)
         _maintain(librarian.DATA_DIR, recover=True)   # before any thread starts, so no run is live
         insights_thread = insights_refresh.start(librarian, stop)   # six-hourly loop on its own daemon thread
@@ -92,12 +111,15 @@ def main(librarian=None, stop=None) -> int:
         enrich_thread = threading.Thread(target=library_enrich.run_forever, args=(librarian, stop),
                                          name="library-enrich", daemon=True)
         enrich_thread.start()
+        metrics_thread = threading.Thread(target=_metrics_loop, args=(librarian.DATA_DIR, stop),
+                                          name="runtime-metrics", daemon=True)
+        metrics_thread.start()
         while not stop.wait(PRUNE_SECONDS):
             try:
                 _maintain(librarian.DATA_DIR)
             except Exception as exc:
                 logger.error("Job history prune failed (%s)", type(exc).__name__)
-        _wait_for_threads((insights_thread, enrich_thread))
+        _wait_for_threads((insights_thread, enrich_thread, metrics_thread))
         return 0
     finally:
         lock.close()

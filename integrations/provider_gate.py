@@ -37,6 +37,15 @@ CREATE TABLE IF NOT EXISTS gate (
 """
 
 
+_observer = None
+
+
+def set_observer(fn) -> None:
+    """Report each reservation as ``fn(provider, waited_seconds, granted)`` (runtime metrics)."""
+    global _observer
+    _observer = fn
+
+
 class ProviderGate:
     def __init__(self, path, *, clock=time.time, sleep=time.sleep, intervals=None):
         self.path = Path(path)
@@ -59,10 +68,20 @@ class ProviderGate:
             self._warn(exc)
             wait = self._reserve_memory(provider, max_wait)
         if wait is None:
+            self._observe(provider, 0.0, False)
             return False
         if wait > 0:
             self._sleep(wait)
+        self._observe(provider, wait, True)
         return True
+
+    @staticmethod
+    def _observe(provider, waited, granted):
+        if _observer is not None:
+            try:
+                _observer(provider, waited, granted)
+            except Exception:  # metrics must never break a request
+                pass
 
     def penalize(self, provider: str, seconds: float) -> None:
         """Block the provider for ``seconds`` (after a 429 or 503; use Retry-After when sent)."""

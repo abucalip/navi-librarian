@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import sqlite3
 import threading
+import time
 from os import PathLike
 from pathlib import Path
 
@@ -10,6 +11,31 @@ from .migrations import migrate
 from .state import attach_state, default_state_path
 
 BUSY_TIMEOUT_SECONDS = 10
+
+_observer = None
+
+
+def set_observer(fn) -> None:
+    """Report each open as ``fn(operation, seconds, locked)`` (runtime metrics)."""
+    global _observer
+    _observer = fn
+
+
+def _observed(operation, opener):
+    started = time.perf_counter()
+    locked = False
+    try:
+        return opener()
+    except sqlite3.OperationalError as exc:
+        locked = "locked" in str(exc)
+        raise
+    finally:
+        if _observer is not None:
+            try:
+                _observer(operation, time.perf_counter() - started, locked)
+            except Exception:  # metrics must never break a request
+                pass
+
 
 _ensured: set[tuple[str, str]] = set()
 _ensure_lock = threading.Lock()
@@ -30,7 +56,7 @@ def connect(database_path: str | PathLike[str]) -> sqlite3.Connection:
     return db
 
 
-def open_store(
+def _open_store(
     database_path: str | PathLike[str], state_path: str | PathLike[str] | None = None
 ) -> sqlite3.Connection:
     """Open the knowledge database, bring its schema up to date and attach the owner-state file.
@@ -64,7 +90,7 @@ def ensure_store(
         _ensured.add(key)
 
 
-def open_writer(
+def _open_writer(
     database_path: str | PathLike[str], state_path: str | PathLike[str] | None = None
 ) -> sqlite3.Connection:
     """Open for writing without migrating or moving legacy rows (the store was prepared by :func:`ensure_store`)."""
@@ -77,7 +103,7 @@ def open_writer(
     return db
 
 
-def open_readonly(
+def _open_readonly(
     database_path: str | PathLike[str], state_path: str | PathLike[str] | None = None
 ) -> sqlite3.Connection:
     """Open the knowledge file and the state file read-only (for the web process).
@@ -90,3 +116,18 @@ def open_readonly(
     state = state_path if state_path is not None else default_state_path(database_path)
     db.execute("ATTACH DATABASE ? AS state", (f"file:{Path(state).resolve()}?mode=ro",))
     return db
+
+
+def open_store(database_path, state_path=None):
+    """Migrate and open (worker and scripts); see :func:`_open_store`."""
+    return _observed("open_store", lambda: _open_store(database_path, state_path))
+
+
+def open_writer(database_path, state_path=None):
+    """Open for writing without migrating; see :func:`_open_writer`."""
+    return _observed("open_writer", lambda: _open_writer(database_path, state_path))
+
+
+def open_readonly(database_path, state_path=None):
+    """Open read-only; see :func:`_open_readonly`."""
+    return _observed("open_readonly", lambda: _open_readonly(database_path, state_path))
