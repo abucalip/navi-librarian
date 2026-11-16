@@ -320,12 +320,13 @@ fun ArtistPhoto(
     modifier: Modifier = Modifier,
     circle: Boolean = false,
     onColor: ((Color) -> Unit)? = null,
+    rect: Boolean = false,
 ) {
     val repo = LocalRepository.current
     val url by produceState<String?>(null, name, ownedPath) {
         value = withContext(LookupDispatcher) { repo.artistImage(name) } ?: ownedPath?.let(repo::absolute)
     }
-    Cover(url, modifier, circle, onColor = onColor)
+    Cover(url, modifier, circle, rect = rect, onColor = onColor)
 }
 
 // ---- Shared pieces
