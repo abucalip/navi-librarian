@@ -19,6 +19,10 @@ class WorkerLockTests(unittest.TestCase):
         self.dir = Path(tmp.name)
         self.lib = SimpleNamespace(DATA_DIR=self.dir)
 
+    def test_popularity_job_name_matches_the_job(self):
+        from intelligence.taste.popularity_job import JOB
+        self.assertEqual(worker.POPULARITY_JOB, JOB)
+
     def test_lock_is_exclusive_and_released_on_close(self):
         first = worker.acquire_lock(self.dir)
         self.assertIsNotNone(first)

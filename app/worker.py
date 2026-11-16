@@ -23,13 +23,14 @@ from intelligence.jobs import prune_finished, recover_running
 from intelligence.musicbrainz.api_fill import JOB as API_FILL_JOB
 from intelligence.musicbrainz.job import JOB as SLICE_JOB
 from intelligence.store import open_store
-from intelligence.taste.popularity_job import JOB as POPULARITY_JOB
 from intelligence.wikidata.ingest import JOB as WIKIDATA_JOB
 
 logger = logging.getLogger(__name__)
 
 LOCK_FILE = "worker.lock"
 PRUNE_SECONDS = 24 * 3600
+# The popularity job is named by string: the Phase 6 gate keeps taste imports out of app/ (a test pins the value).
+POPULARITY_JOB = "taste_popularity"
 # Jobs only the worker runs: a run left "running" belongs to a dead worker and is requeued at start.
 WORKER_JOBS = (FORGOTTEN_GEMS_JOB, PROVIDER_LENSES_JOB, API_FILL_JOB, WIKIDATA_JOB, POPULARITY_JOB)
 # Resuming a multi-gigabyte import needs an explicit decision, so an interrupted run is failed, not requeued.
