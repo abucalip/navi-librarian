@@ -116,6 +116,7 @@ private val Gutter = GalleryRules.GUTTER.dp
 internal fun GalleryHome(
     data: GalleryHomeData, open: Opener, feedback: (FeedbackAction, Pick) -> Unit,
     onRadio: () -> Unit, onOpenPlayer: () -> Unit, onLibrary: () -> Unit, onStats: () -> Unit, onServer: () -> Unit, onDownloads: () -> Unit,
+    bar: @Composable () -> Unit = {},
 ) {
     val repo = LocalRepository.current
     val context = LocalContext.current
@@ -136,7 +137,10 @@ internal fun GalleryHome(
     var heroKey by remember { mutableStateOf<String?>(null) }
     val bottom = 24.dp + app.discair.ui.LocalBottomClearance.current
 
-    LazyColumn(Modifier.fillMaxWidth(), contentPadding = PaddingValues(top = 0.dp, bottom = bottom)) {
+    // The wordmark bar is Home's own, above the list (not the shell's): it stays put while a page opens, so the list never re-measures mid-transition.
+    Column(Modifier.fillMaxSize()) {
+    bar()
+    LazyColumn(Modifier.fillMaxWidth().weight(1f), contentPadding = PaddingValues(top = 0.dp, bottom = bottom)) {
         // Each block rises in turn as the page arrives (galleryArrive); the count follows the blocks actually shown.
         var block = 0
         data.banner?.let { item(key = "banner") { GalleryBanner(it, link = "Server", onLink = onServer) } }
@@ -157,6 +161,7 @@ internal fun GalleryHome(
         if (data.arrivals.isNotEmpty()) { val at = block++; item(key = "arrivals") { Column(Modifier.galleryArrive(at)) { Arrivals(data.arrivals.take(2), open, onDownloads) } } }
         item(key = "genres") { Genres(data.genres, open, onLibrary) }
         item(key = "library") { LibraryLine(GalleryHomeRules.libraryLine(data.hero, artistTotal), onStats) }
+    }
     }
 }
 

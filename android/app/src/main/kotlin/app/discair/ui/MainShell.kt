@@ -309,9 +309,9 @@ fun MainShell(state: UiState, model: AppViewModel, container: AppContainer) {
             // Pages run behind the system navigation bar; the island and each page's end padding clear it.
             contentWindowInsets = androidx.compose.foundation.layout.WindowInsets(0),
             topBar = {
-                // Gallery's Discover and Library carry their own page head (the date line and the large title); Home keeps the wordmark bar.
-                val galleryHead = app.discair.ui.common.isGallery() &&
-                    (destination?.hasRoute(DiscoverRoute::class) == true || destination?.hasRoute(LibraryRoute::class) == true)
+                // Gallery's pages carry their own heads: Discover and Library the date line and the large title, Home its wordmark bar
+                // (GalleryHome). A bar here would leave as a page opens from Home, and Home would re-measure and grow under it mid-transition.
+                val galleryHead = app.discair.ui.common.isGallery()
                 if (onTopLevel && !galleryHead) AppHeader(
                     active = hub.activeDownloads,
                     showDiscover = NavRules.discoverInTopBar(chosenLayout, rail),
@@ -383,7 +383,8 @@ fun MainShell(state: UiState, model: AppViewModel, container: AppContainer) {
                 },
             ) {
                 composable<HomeRoute> {
-                    Opaque { HomeScreen(open, onRadio = { nav.navigate(RadioRoute) { launchSingleTop = true } }, onDownloads = { nav.navigate(DownloadsRoute) { launchSingleTop = true } }, onStats = { goPage(StatsRoute) }, onServer = { goPage(ServerRoute) }, onLibrary = { goPage(LibraryRoute) }, onOpenPlayer = { nowPlayingOpen = true }) }
+                    Opaque { HomeScreen(open, onRadio = { nav.navigate(RadioRoute) { launchSingleTop = true } }, onDownloads = { nav.navigate(DownloadsRoute) { launchSingleTop = true } }, onStats = { goPage(StatsRoute) }, onServer = { goPage(ServerRoute) }, onLibrary = { goPage(LibraryRoute) }, onOpenPlayer = { nowPlayingOpen = true },
+                        onSettings = { goPage(SettingsRoute) }, showDiscover = NavRules.discoverInTopBar(chosenLayout, rail), onDiscover = { goPage(DiscoverRoute) }) }
                 }
                 composable<DiscoverRoute> { Opaque { DiscoverScreen(open) } }
                 composable<LibraryRoute> { Opaque { LibraryScreen(open) } }

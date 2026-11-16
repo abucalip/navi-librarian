@@ -85,7 +85,8 @@ import kotlinx.coroutines.launch
 private const val GENRES_SHOWN = 6
 
 @Composable
-fun HomeScreen(open: Opener, onRadio: () -> Unit = {}, onDownloads: () -> Unit = {}, onStats: () -> Unit = {}, onServer: () -> Unit = {}, onLibrary: () -> Unit = {}, onOpenPlayer: () -> Unit = {}) {
+fun HomeScreen(open: Opener, onRadio: () -> Unit = {}, onDownloads: () -> Unit = {}, onStats: () -> Unit = {}, onServer: () -> Unit = {}, onLibrary: () -> Unit = {}, onOpenPlayer: () -> Unit = {},
+    onSettings: () -> Unit = {}, showDiscover: Boolean = false, onDiscover: () -> Unit = {}) {
     val repo = LocalRepository.current
     val hub = app.discair.ui.common.LocalAcquisitions.current
     val now = remember { Instant.now() }
@@ -148,6 +149,7 @@ fun HomeScreen(open: Opener, onRadio: () -> Unit = {}, onDownloads: () -> Unit =
         GalleryHome(
             GalleryHomeData(picks.state, pickList, picks.reload, genres.state, data.hero, data.arrivals, data.insight, banner),
             open, feedback, onRadio, onOpenPlayer, onLibrary, onStats, onServer, onDownloads,
+            bar = { app.discair.ui.common.GalleryHomeBar(hub.activeDownloads, onDownloads, onSettings, showDiscover = showDiscover, onDiscover = onDiscover) },
         )
         return
     }
