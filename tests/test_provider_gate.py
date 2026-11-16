@@ -91,32 +91,44 @@ class ProviderGateTests(unittest.TestCase):
         self.assertTrue(self.gate.reserve("musicbrainz", 5))
         self.assertEqual(self.t.slept, [])
 
-    def test_clock_step_back_after_penalty_does_not_freeze_provider(self):
+    def test_clock_step_back_after_penalty_is_capped_at_max_penalty(self):
         self.gate.penalize("musicbrainz", 30)
-        self.t.now -= 3600
-        self.assertTrue(self.gate.reserve("musicbrainz", 60))
-        self.assertEqual(self.t.slept, [])
+        self.t.now -= 7200  # the stale block now sits 7230 s ahead
+        self.assertFalse(self.gate.reserve("musicbrainz", 3599))
+        self.assertTrue(self.gate.reserve("musicbrainz", 3600))
+        self.assertAlmostEqual(self.t.slept[0], 3600)
+        self.assertTrue(self.gate.reserve("musicbrainz", 5))
+        self.assertAlmostEqual(self.t.slept[1], 1.1)
+
+    def test_max_penalty_survives_small_clock_step_back(self):
+        self.gate.penalize("musicbrainz", 3600)
+        self.t.now -= 1
+        self.assertFalse(self.gate.reserve("musicbrainz", 3599))
+        self.assertTrue(self.gate.reserve("musicbrainz", 3600))
+        self.assertAlmostEqual(self.t.slept[0], 3600)
 
     def test_penalty_after_clock_step_back_still_blocks(self):
-        self.gate.penalize("musicbrainz", 30)
+        self.gate.reserve("musicbrainz", 5)
         self.t.now -= 3600
-        self.gate.penalize("musicbrainz", 30)  # a fresh 429 must not vanish into the stale block
+        self.gate.penalize("musicbrainz", 30)  # a fresh 429 must not vanish into a reset
         self.assertFalse(self.gate.reserve("musicbrainz", 10))
         self.assertTrue(self.gate.reserve("musicbrainz", 40))
         self.assertAlmostEqual(self.t.slept[0], 30)
 
-    def test_fallback_clock_step_back_does_not_freeze_provider(self):
+    def test_fallback_bounds_clock_step_and_keeps_max_penalty(self):
         bad = ProviderGate(self.path, clock=self.t.clock, sleep=self.t.sleep)
         with mock.patch("integrations.provider_gate.sqlite3.connect",
                         side_effect=__import__("sqlite3").OperationalError("nope")):
             with self.assertLogs("integrations.provider_gate", "WARNING"):
                 bad.penalize("musicbrainz", 30)
-                bad.reserve("musicbrainz", 60)
                 self.t.now -= 7200
-                self.assertTrue(bad.reserve("musicbrainz", 1))
-                bad.penalize("musicbrainz", 30)
-                self.assertFalse(bad.reserve("musicbrainz", 10))
-        self.assertEqual(self.t.slept, [30])
+                self.assertFalse(bad.reserve("musicbrainz", 3599))
+                self.assertTrue(bad.reserve("musicbrainz", 3600))
+                bad.penalize("musicbrainz", 3600)
+                self.t.now -= 1
+                self.assertFalse(bad.reserve("musicbrainz", 3599))
+                self.assertTrue(bad.reserve("musicbrainz", 3600))
+        self.assertEqual(self.t.slept, [3600, 3600])
 
     def test_day_counter_rolls_over(self):
         for _ in range(3):

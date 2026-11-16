@@ -189,14 +189,15 @@ class ProviderGate:
 
 
 def _clamp(now, next_at, blocked):
-    """Undo a wall-clock step back so it cannot freeze a provider.
+    """Bound what a wall-clock step back can do to a provider.
 
-    A block never sits more than MAX_PENALTY ahead and a queued slot never more than
-    MAX_FUTURE_SLOT past the block; anything further ahead means the clock moved back.
-    A step back smaller than these bounds still delays by the step.
+    A block is set at most MAX_PENALTY ahead, so one further ahead means the clock moved
+    back. It is capped at MAX_PENALTY, not cleared: a penalty's real remaining time is
+    never more than that, so a step back can delay a provider by at most MAX_PENALTY
+    but never lifts a penalty early. A queued slot more than MAX_FUTURE_SLOT past the
+    block is a clock step too and is reset to now.
     """
-    if blocked - now > MAX_PENALTY:
-        blocked = now
+    blocked = min(blocked, now + MAX_PENALTY)
     if next_at - max(now, blocked) > MAX_FUTURE_SLOT:
         next_at = now
     return next_at, blocked
