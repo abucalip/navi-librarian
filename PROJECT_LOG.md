@@ -1,3 +1,9 @@
+## 2026-11-16 — Server efficiency R4 follow-up: paths read-only, writer only for the cache save
+
+- PR [#1139](https://github.com/abucalip/navi-librarian/pull/1139), squash `e11f81c7`, merged. `GET /api/knowledge/paths` (non-Gaps) now reads through `open_readonly`; `cached_path`, `cached_album_path` and `path_page` take an optional `save_db` factory, so a writer is opened and closed only on a cache miss. Cache hits and Gaps never open a writer. No API shape change; `navidrome_server.py` untouched.
+- Tests run (focused only): `test_api_knowledge_paths_route.py` (new test: the read connection runs no INSERT/UPDATE/DELETE and the cache row is still saved), `test_store_readonly_access.py`, `test_intelligence_paths.py`, `test_intelligence_album_paths.py`, `test_api_paths_warm_routes.py`, 84 passed; lint changed files 0 new findings. Full suite not run.
+- Limitations: not deployed. R4 is complete.
+
 ## 2026-11-16 — Server efficiency R4: read-only knowledge reads
 
 - PR [#1138](https://github.com/abucalip/navi-librarian/pull/1138), squash `961f002f`, merged. New `ensure_store` (once per process and path, called at web and worker startup), `open_writer` (no migration, no legacy move); `open_readonly` wired into the read routes (`/api/knowledge/*`, capabilities, GET insights/taste/suppression, popularity, taste-refresh, refresh and paths-warm status, update-store status, smart-playlist GETs). Write routes use `open_writer`. Compose and worker wording corrected to "only writer of knowledge facts". `docs/ARCHITECTURE.md` amended.
