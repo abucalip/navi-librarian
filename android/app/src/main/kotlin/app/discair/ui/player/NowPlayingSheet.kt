@@ -173,6 +173,8 @@ fun NowPlayingSheet(state: PlayerUiState, controller: PlayerController, lyrics: 
     val coverStack = app.discair.ui.theme.LocalPalette.current.layout == app.discair.ui.theme.Layout.CoverStack
     // Flow: its own top bar and player in FlowNowPlaying.kt; the queue and the lyrics open as a sheet, as on Soft Brut.
     val flow = app.discair.ui.theme.LocalPalette.current.layout == app.discair.ui.theme.Layout.Flow
+    // Gallery: its own full-screen page in GalleryNowPlaying.kt that rises from the bottom; the player, the lyrics and the queue are views 0, 1 and 2 of it.
+    val gallery = app.discair.ui.theme.LocalPalette.current.layout == app.discair.ui.theme.Layout.Gallery
     LaunchedEffect(coverStack) { if (coverStack && view != 0) { view = 0; lastView = 0 } }
     BackHandler(enabled = view != 0) { view = 0; lastView = 0 }
     val scope = androidx.compose.runtime.rememberCoroutineScope()
@@ -197,7 +199,7 @@ fun NowPlayingSheet(state: PlayerUiState, controller: PlayerController, lyrics: 
     val currentLine by follower.line.collectAsState()
     // Standard: a full-screen page drawn behind the status and navigation bars (no sheet gap above, no band below); every other theme keeps its sheet.
     val standard = app.discair.ui.theme.LocalPalette.current.layout == app.discair.ui.theme.Layout.Standard
-    PlayerContainer(standard, onDismiss, sheet) {
+    PlayerContainer(standard, gallery, onDismiss, sheet) { close ->
         val item = state.current
         if (item == null) { onDismiss(); return@PlayerContainer }
         if (standard) BackHandler { if (view != 0) { view = 0; lastView = 0 } else onDismiss() }
@@ -216,14 +218,34 @@ fun NowPlayingSheet(state: PlayerUiState, controller: PlayerController, lyrics: 
             showLyrics, showFacts,
             { showLyrics = !showLyrics; settings.showLyricLine = showLyrics }, { showFacts = !showFacts; settings.showFacts = showFacts },
         )
-        val blurred = canBlur && !sticker && !coverStack && !flow && item.coverUrl.isNotBlank()
+        val blurred = canBlur && !sticker && !coverStack && !flow && !gallery && item.coverUrl.isNotBlank()
         // The playing album's disc and session photos (docs/artwork.md, ideas 3 and 4); nothing extra while they load or when there are none.
         val artIndex = rememberAlbumArtIndex(item)
         val slides = remember(artIndex) { app.discair.model.slideshowImages(artIndex) }
         val disc = remember(artIndex, item.disc) { app.discair.model.discImage(artIndex, item.disc) }
         var showSlides by remember { mutableStateOf(settings.showSlideshow) }
         val slideshowOn = blurred && showSlides && slides.isNotEmpty()
-        Box(if (standard) Modifier.fillMaxSize().background(ground) else Modifier) {
+        if (gallery) {
+            val photosAvailable = canBlur && slides.isNotEmpty()
+            val photosOn = view == 1 && photosAvailable && showSlides
+            val galleryInput = CoverStackPlayerInput(
+                if (lyricsState.songIdOrNull() == songId) lyricsState else LyricsUiState.Idle, currentLine, songId.orEmpty(),
+                { if (songId != null) lyrics.retry(songId, nextId) }, lineUi, photosAvailable, showSlides, { showSlides = !showSlides; settings.showSlideshow = showSlides },
+            )
+            BackHandler { if (view != 0) { view = 0; lastView = 0 } else close() }
+            val page: @Composable () -> Unit = {
+                Box(Modifier.fillMaxSize().background(if (photosOn) androidx.compose.ui.graphics.Color.Black else app.discair.ui.theme.LocalPalette.current.ink)) {
+                    if (photosOn) { ArtworkBackdrop(playerArtworkUrl(item.coverUrl)); SlideshowBackdrop(slides, state.isPlaying) }
+                    GalleryPlayer(
+                        state, controller, view = view, onView = { view = it; lastView = it }, onClose = close,
+                        onSignIn = onSignIn, onEqualizer = { eqOpen = true }, onCrossfade = { crossfadeOpen = true },
+                        onOpenArtist = onOpenArtist, onOpenAlbum = onOpenAlbum, input = galleryInput,
+                    )
+                }
+            }
+            // Over the photos the page keeps light text, as every theme's photo backdrop does.
+            if (photosOn) app.discair.ui.theme.OnArtwork { page() } else page()
+        } else Box(if (standard) Modifier.fillMaxSize().background(ground) else Modifier) {
         if (blurred) ArtworkBackdrop(playerArtworkUrl(item.coverUrl))
         if (slideshowOn) SlideshowBackdrop(slides, state.isPlaying)
         Column(
@@ -382,19 +404,21 @@ fun NowPlayingSheet(state: PlayerUiState, controller: PlayerController, lyrics: 
 /** The player's frame: a full-screen dialog for [standard], the modal sheet for every other theme. Both draw [content] as the sheet content. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun PlayerContainer(standard: Boolean, onDismiss: () -> Unit, sheet: androidx.compose.material3.SheetState, content: @Composable () -> Unit) {
-    if (standard) {
+private fun PlayerContainer(standard: Boolean, gallery: Boolean, onDismiss: () -> Unit, sheet: androidx.compose.material3.SheetState, content: @Composable (close: () -> Unit) -> Unit) {
+    if (gallery) {
+        app.discair.ui.player.GalleryPlayerFrame(onDismiss) { close -> content(close) }
+    } else if (standard) {
         androidx.compose.ui.window.Dialog(
             onDismissRequest = onDismiss,
             properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false, dismissOnBackPress = false),
         ) {
             app.discair.ui.common.TransparentSystemBars()
-            content()
+            content(onDismiss)
         }
     } else {
         ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheet, containerColor = Ink.Ink, shape = androidx.compose.ui.graphics.RectangleShape) {
             app.discair.ui.common.TransparentNavigationBar()
-            content()
+            content(onDismiss)
         }
     }
 }

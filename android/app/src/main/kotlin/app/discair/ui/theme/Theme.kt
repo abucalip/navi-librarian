@@ -87,7 +87,8 @@ const val MIN_PASTEL_LUMINANCE = 0.72f
 fun OnArtwork(keepBrutal: Boolean = false, content: @Composable () -> Unit) {
     val current = LocalPalette.current
     // A Brutal theme's player sheet stays in the chosen theme: its outline and hard shadow need the theme's own ground.
-    if (keepBrutal && current.brutal) { content(); return }
+    // Gallery's player and radio pages are drawn in the chosen palette, light or dark (the Lyrics page asks for this override itself when photos are behind it).
+    if (keepBrutal && (current.brutal || current.layout == Layout.Gallery)) { content(); return }
     val palette = remember(current) { if (current.light) current.overArtwork(Palettes.Night) else current }
     if (palette === current) { content(); return }
     // Material components and plain Text read the colour scheme, not Ink, so swap that too.
