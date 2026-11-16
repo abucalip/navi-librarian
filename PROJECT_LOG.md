@@ -1,3 +1,10 @@
+## 2026-11-16 — Server efficiency M1 follow-up: all httpx and urllib requests, statement timing
+
+- PR [#1142](https://github.com/abucalip/navi-librarian/pull/1142), squash `53a8f656`, head `af5bded8`, merged 2026-11-16 (after 19:37 UTC). `install()` also patches `httpx.Client.send`, `httpx.AsyncClient.send` and `urllib.request.OpenerDirector.open`, so every httpx and urllib caller is counted without touching `navidrome_server.py`. `intelligence/store/db.py` adds `_TimedConnection`, which times `execute` and `executemany` per verb (`sql_select`, `sql_insert`, …); slow statements log verb and first table name only.
+- Tests run: `tests/test_runtime_metrics.py` (focused, including the new cases). Lint changed files: 0 new findings. Full suite not run.
+- CI: `container-smoke`, `lint-changed`, `validate-release-workflow` and `validate-container` passed on head `af5bded8`; `compile` and `test-and-build` had no recorded conclusion in the PR rollup at the time of this entry, and the `main` push runs were still in progress.
+- Limitations: not deployed; Navidrome client (P2) not counted; cursor-level calls, `executescript` and row fetching are not timed.
+
 ## 2026-11-16 — Server efficiency M1: runtime counters and diagnostics route
 
 - PR [#1141](https://github.com/abucalip/navi-librarian/pull/1141), squash `a1407e69`, head `7f8b8512`, merged 2026-11-16 19:34 UTC. New `app/services/runtime_metrics.py` (counters by provider from a fixed host table and outcome class, gate reservations/refusals/waits, store opens with slow >250 ms and locked logged), `MeteredClient` on `_EXTERNAL_HTTP`, observer hooks in `integrations/provider_gate.py` and `intelligence/store/db.py`, `GET /api/diagnostics/runtime` (`app/api/diagnostics.py`), worker snapshot to `meta` every 5 minutes and at shutdown.
