@@ -5,17 +5,18 @@ import app.discair.ui.theme.Layout
 import app.discair.ui.theme.Palette
 
 /**
- * The seven themes the Appearance pickers are sectioned by, in the order the chips show them. Each holds that theme's palettes
+ * The eight themes the Appearance pickers are sectioned by, in the order the chips show them. Each holds that theme's palettes
  * (day and night). The three Appearance pages (Standard, Flow, Soft Brut) share this.
  */
 object ThemeGroups {
-    val All = listOf("Standard", "Flow", "Brut", "Tape", "Sheet", "Sticker", "Soft Brut")
+    val All = listOf("Standard", "Flow", "Brut", "Tape", "Sheet", "Sticker", "Soft Brut", "Gallery")
     const val DEFAULT = "Standard"
 
     /** The theme a palette belongs to. Brut is the Brutal palettes that keep the standard layout. */
     fun of(p: Palette?): String = when (p?.layout) {
         null -> DEFAULT
         Layout.Flow -> "Flow"
+        Layout.Gallery -> "Gallery"
         Layout.TapeDeck -> "Tape"
         Layout.SheetStack -> "Sheet"
         Layout.StickerWall -> "Sticker"
@@ -27,7 +28,7 @@ object ThemeGroups {
     fun shown(all: List<Palette>, group: String, light: Boolean? = null): List<Palette> =
         all.filter { of(it) == group && (light == null || it.light == light) }
 
-    /** The chips a slot offers: all seven for the one fixed theme; for day or night only the themes that have a palette of that kind. */
+    /** The chips a slot offers: all eight for the one fixed theme; for day or night only the themes that have a palette of that kind. */
     fun chips(all: List<Palette>, light: Boolean?): List<String> = All.filter { shown(all, it, light).isNotEmpty() }
 
     /** Which palettes a slot may hold: day light only, night dark only, the one theme either. */

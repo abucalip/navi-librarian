@@ -16,14 +16,14 @@ object NavRules {
     fun railShown(widthDp: Int): Boolean = widthDp >= RAIL_MIN_DP
 
     /** The Cassette Deck's ruled bar and the Cover Stack's outlined bar carry all four destinations. Every other layout keeps Discover in the top bar. */
-    fun discoverInBar(layout: Layout): Boolean = layout == Layout.TapeDeck || layout == Layout.CoverStack || layout == Layout.Flow
+    fun discoverInBar(layout: Layout): Boolean = layout == Layout.TapeDeck || layout == Layout.CoverStack || layout == Layout.Flow || layout == Layout.Gallery
 
     /** Discover sits in the top bar where the bar and the rail do not already carry it. */
     fun discoverInTopBar(layout: Layout, rail: Boolean): Boolean = !rail && !discoverInBar(layout)
 
     /**
      * The now-playing button stays in the navigation where the layout has no mini player. The Cassette Deck has its mini
-     * player above the bar instead, so its bar has no player cell; so have the Cover Stack and Flow.
+     * player above the bar instead, so its bar has no player cell; so have the Cover Stack, Flow and Gallery.
      */
-    fun playerButtonShown(layout: Layout): Boolean = layout != Layout.TapeDeck && layout != Layout.CoverStack && layout != Layout.Flow
+    fun playerButtonShown(layout: Layout): Boolean = layout != Layout.TapeDeck && layout != Layout.CoverStack && layout != Layout.Flow && layout != Layout.Gallery
 }

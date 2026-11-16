@@ -579,5 +579,6 @@ fun abbreviate(n: Long): String = when {
 fun RowDivider(modifier: Modifier = Modifier) {
     if (isCoverStack()) { CoverStackDivider(modifier); return }
     if (isFlow()) { FlowDivider(modifier); return }
+    if (isGallery()) { GalleryRule(modifier); return }
     Box(modifier.fillMaxWidth().height(1.dp).background(Ink.Edge))
 }

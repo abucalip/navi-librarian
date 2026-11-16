@@ -108,8 +108,26 @@ fun InChosenTheme(content: @Composable () -> Unit) {
 }
 
 @OptIn(androidx.compose.ui.text.ExperimentalTextApi::class)
-private fun variable(res: Int, weight: Int) =
+internal fun variable(res: Int, weight: Int) =
     Font(res, FontWeight(weight), variationSettings = FontVariation.Settings(FontVariation.weight(weight)))
+
+/** Gallery's font files (docs/GALLERY_THEME.md 5.1): Fraunces with `opsz` and `wght` axes (upright and italic) and Manrope 400 to 800. */
+@OptIn(androidx.compose.ui.text.ExperimentalTextApi::class)
+object GalleryFaces {
+    /** Fraunces at [weight] and optical size [opsz], upright or italic. */
+    fun fraunces(weight: Int, opsz: Float, italic: Boolean): FontFamily = FontFamily(
+        Font(
+            if (italic) R.font.fraunces_gallery_italic else R.font.fraunces_gallery, FontWeight(weight),
+            style = if (italic) androidx.compose.ui.text.font.FontStyle.Italic else androidx.compose.ui.text.font.FontStyle.Normal,
+            variationSettings = FontVariation.Settings(FontVariation.weight(weight), FontVariation.Setting("opsz", opsz)),
+        ),
+    )
+
+    val manrope: FontFamily = FontFamily(listOf(400, 500, 600, 700, 800).map { variable(R.font.manrope_gallery, it) })
+
+    /** The catalogue and time face: DM Mono, whatever font pair the owner chose (docs/GALLERY_THEME.md 5.2). */
+    val mono: FontFamily = FontFamily(Font(R.font.dm_mono_400, FontWeight.Normal), Font(R.font.dm_mono_500, FontWeight.Medium))
+}
 
 /**
  * A title face with a body face. Titles are page and section headings and the rank numerals; everything else
@@ -275,9 +293,23 @@ object FontPairs {
         )
     }
 
+    /**
+     * Gallery (docs/GALLERY_THEME.md 5.2): Fraunces for titles, Manrope for text, DM Mono for catalogue lines. The title family holds the upright and
+     * italic files; `GalleryKit` builds each text style with its own weight and optical size ([GalleryFaces.fraunces]).
+     */
+    val Gallery = run {
+        val title = GalleryFaces.fraunces(400, 48f, italic = false)
+        FontPair(
+            "gallery", "Gallery", "Fraunces", "Manrope",
+            title = title, titleWeight = FontWeight.Normal, titleTracking = (-0.02).em, titleLineHeight = 1.12f,
+            body = GalleryFaces.manrope, numeral = GalleryFaces.fraunces(400, 72f, italic = false), numeralWeight = FontWeight.Normal,
+            mono = monoOf(R.font.dm_mono_400, R.font.dm_mono_500), monoName = "DM Mono",
+        )
+    }
+
     val All: List<FontPair> = listOf(
         Discair, Editorial, Bricolage, Geometric, Transit,
-        BrutBaseline, BrutTechnical, BrutEditorial, BrutModern, BrutShout, BrutSwiss, Flow,
+        BrutBaseline, BrutTechnical, BrutEditorial, BrutModern, BrutShout, BrutSwiss, Flow, Gallery,
     )
 
     fun byId(id: String?): FontPair? = All.firstOrNull { it.id == id }

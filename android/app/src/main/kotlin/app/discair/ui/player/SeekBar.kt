@@ -120,6 +120,17 @@ fun SeekBar(fraction: Float, enabled: Boolean, onChange: (Float) -> Unit, onFini
             drawRoundRect(palette.edgeStrong, tl, androidx.compose.ui.geometry.Size(tw, th), tc, style = androidx.compose.ui.graphics.drawscope.Stroke(outline))
             return@Canvas
         }
+        if (palette.layout == app.discair.ui.theme.Layout.Gallery) {
+            // Gallery: a 1.5dp `edge` track, the played part in `text` and a 10dp `text` thumb (gallery.css `.seek`).
+            val h = 1.5.dp.toPx()
+            val left = inset
+            val width = size.width - 2 * inset
+            val x = left + width * fraction.coerceIn(0f, 1f)
+            drawRect(palette.edge, Offset(left, y - h / 2), androidx.compose.ui.geometry.Size(width, h))
+            drawRect(palette.text, Offset(left, y - h / 2), androidx.compose.ui.geometry.Size((x - left).coerceAtLeast(0f), h))
+            drawCircle(if (enabled) palette.text else palette.edgeStrong, (if (active) 7.dp else 5.dp).toPx(), Offset(x, y))
+            return@Canvas
+        }
         if (palette.layout == app.discair.ui.theme.Layout.Flow) {
             // Flow: a 4dp line (the text colour at 14%), the played part in the text colour, and a 14dp round thumb (flow.css `.seek`).
             val h = 4.dp.toPx()

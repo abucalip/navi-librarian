@@ -305,7 +305,7 @@ fun LineChart(
                     if (points.size > 1) {
                         if (style.area) drawPath(path(points.map { it.value }, true), p.chart1.copy(alpha = if (p.layout == app.discair.ui.theme.Layout.TapeDeck) 0.35f else if (p.layout == app.discair.ui.theme.Layout.CoverStack || p.layout == app.discair.ui.theme.Layout.Flow) 0.18f else ChartRules.AREA_ALPHA))
                         drawPath(
-                            path(points.map { it.value }, false), if (p.layout == app.discair.ui.theme.Layout.CoverStack || p.layout == app.discair.ui.theme.Layout.Flow) p.text else p.chart1, // Soft Brut and Flow: an ink line, the accent is the fill and the marker (mockups)
+                            path(points.map { it.value }, false), if (p.layout == app.discair.ui.theme.Layout.CoverStack || p.layout == app.discair.ui.theme.Layout.Flow || p.layout == app.discair.ui.theme.Layout.Gallery) p.text else p.chart1, // Soft Brut and Flow: an ink line, the accent is the fill and the marker (mockups)
                             style = Stroke(style.lineWidthDp.dp.toPx(), cap = StrokeCap.Round, join = if (style.steppedLine) StrokeJoin.Miter else StrokeJoin.Round),
                         )
                     }

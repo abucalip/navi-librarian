@@ -1,6 +1,6 @@
 # Gallery theme for Android: design system and build plan
 
-Status: **design approved by the owner, no code yet** (2026-11-16). This document is the spec implementing agents build from. The mockups beside it are the spec for every screen ("the mockups are the spec", Round 3 owner rule).
+Status: **design approved by the owner** (2026-11-16); **G1 built** (PR `claude/gallery-g1`). This document is the spec implementing agents build from. The mockups beside it are the spec for every screen ("the mockups are the spec", Round 3 owner rule).
 
 Package: [`docs/design/gallery/`](design/gallery/). Start with its [`README.md`](design/gallery/README.md).
 
@@ -69,7 +69,7 @@ Single source: [`tokens.json`](design/gallery/tokens.json). `family = Classic`, 
 | `edge` | `#DCDCD6` | `#C8D7CC` | `#C5D8DC` | `#E5D2CF` | `#E0D9B8` | `#2E2E2E` | `#33262A` | `#29322B` |
 | `edgeStrong` | `#85888F` | `#6F8277` | `#6A8188` | `#8E7579` | `#837D63` | `#76726A` | `#806A6E` | `#6E7B6E` |
 | `text` | `#15171C` | `#14342A` | `#0F2E37` | `#3A1820` | `#181E3C` | `#EDE8DE` | `#F3E5E3` | `#E3ECE2` |
-| `textMuted` | `#5E626A` | `#4A6056` | `#4A626A` | `#6E5458` | `#5A5C66` | `#A6A29A` | `#B49FA2` | `#9CAA9E` |
+| `textMuted` | `#5D6169` | `#4A6056` | `#4A626A` | `#6E5458` | `#5A5C66` | `#A6A29A` | `#B49FA2` | `#9CAA9E` |
 | `control` | `#15171C` | `#1E5C46` | `#14596A` | `#86243A` | `#2A3D9E` | `#E9B35A` | `#E6A397` | `#B5D69A` |
 | `onControl` | `#FFFFFF` | `#F3F8F3` | `#FFFFFF` | `#FFFFFF` | `#FFFFFF` | `#141414` | `#181113` | `#111512` |
 | `accent` | `#7A2E55` | `#9A3D22` | `#A3246B` | `#1F5A86` | `#B02E2A` | `#F0C27A` | `#F28B78` | `#C9E3A6` |
