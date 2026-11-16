@@ -442,9 +442,11 @@ def similar_items(
         records, name, mbid, owned, seed_tags=seed_tags, candidate_tags=candidate_tags,
         seed_styles=seed_styles, candidate_styles=candidate_styles,
     )
-    # Commit the fetched records only once the whole section is complete, so an incomplete
-    # refresh (a rate-limited tag lookup, say) leaves the previous entry in place (contract 5.2).
-    if fetched and complete and not tags_hit_deadline and remaining() > 0 and not cancelled.is_set():
+    # Commit the fetched records when every provider answered, even if a tag lookup was rate-limited:
+    # tags are cached on their own and the ranking is recomputed on every request, so the records are
+    # whole. A failed provider leaves the previous entry in place (contract 5.2). Without this, a gate
+    # that keeps refusing tag lookups made every page fetch the records again (docs/efficiency.md, M2).
+    if fetched and complete and remaining() > 0 and not cancelled.is_set():
         write_cached(network.cache_write, key, records, time.time())
     if complete and not tags_hit_deadline:
         return _available("similar", "items", items)

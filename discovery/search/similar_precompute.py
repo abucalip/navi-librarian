@@ -1,8 +1,9 @@
 """Daily precompute of similar artists for the library (contract sections 5.2 and 7, P3b).
 
 Each library artist goes through the on-demand path with ``refresh=True``, so a complete result
-overwrites the cached entry. A partial or failed result writes nothing, which keeps the previous
-entry (contract section 5.2). The run stops at its time budget; artists it does not reach keep
+overwrites the cached entry. A result where every provider answered but a tag lookup was rate-limited
+also stores the provider records (the section is still counted ``partial``); a failed provider writes
+nothing, which keeps the previous entry (contract section 5.2). The run stops at its time budget; artists it does not reach keep
 their entries. A run starts at ``start`` and wraps around the list, and ``on_progress`` reports the
 position to start the next run at, so a pass that runs out of budget is continued, not restarted.
 
@@ -37,7 +38,8 @@ def run_precompute(
 ) -> dict[str, int]:
     """Compute and store similar artists for each artist, in order, until the budget ends.
 
-    Returns counts only: ``complete`` (stored), ``partial`` and ``unavailable`` (nothing stored),
+    Returns counts only: ``complete`` (stored), ``partial`` (records stored only when every provider
+    answered and just the tag lookups ran out), ``unavailable`` (nothing stored),
     ``failed`` (an exception; nothing stored) and ``not_reached`` (budget ended first).
     """
     counts = {"complete": 0, "partial": 0, "unavailable": 0, "failed": 0, "not_reached": 0}
