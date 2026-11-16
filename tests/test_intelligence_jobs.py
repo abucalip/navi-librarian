@@ -3,7 +3,7 @@ import unittest
 from pathlib import Path
 
 from intelligence.jobs import (
-    cancel, enqueue, last_good, list_runs, prune_finished, recover_stale, run_job, status,
+    cancel, enqueue, last_good, list_runs, prune_finished, recover_running, recover_stale, run_job, status,
 )
 from intelligence.store import generations, open_store
 
@@ -153,6 +153,31 @@ class RecoveryAndRetentionTests(JobTestCase):
         self.assertEqual(recover_stale(self.db, now=5000, older_than=3600), 1)
         result = run_job(self.db, "j", lambda ctx: ctx.progress == {"next": 2}, clock=self.clock)
         self.assertEqual((result.run_id, result.state), (run_id, "succeeded"))
+
+    def test_running_row_blocks_run_job_until_recovered(self):
+        run_id, _ = enqueue(self.db, "j")
+        self.db.execute(
+            "UPDATE job_runs SET state = 'running', started_at = 100, progress = '{\"next\": 2}' WHERE id = ?",
+            (run_id,),
+        )
+        self.assertEqual(run_job(self.db, "j", lambda ctx: True, clock=self.clock).state, "skipped")   # F1
+        self.assertEqual(recover_running(self.db, ["j"]), {"requeued": 1, "failed": 0})
+        result = run_job(self.db, "j", lambda ctx: ctx.progress == {"next": 2}, clock=self.clock)
+        self.assertEqual((result.run_id, result.state), (run_id, "succeeded"))
+
+    def test_recover_running_fails_listed_jobs_and_leaves_others(self):
+        ids = {}
+        for name in ("worker", "slice", "web"):
+            ids[name], _ = enqueue(self.db, name)
+            self.db.execute("UPDATE job_runs SET state = 'running' WHERE id = ?", (ids[name],))
+        counts = recover_running(self.db, ["worker"], ["slice"], now=500)
+        self.assertEqual(counts, {"requeued": 1, "failed": 1})
+        state = lambda n: self.db.execute("SELECT state, error FROM job_runs WHERE id = ?", (ids[n],)).fetchone()
+        self.assertEqual(state("worker")["state"], "queued")
+        self.assertEqual(state("slice")["state"], "failed")
+        self.assertIn("worker restart", state("slice")["error"])
+        self.assertEqual(state("web")["state"], "running")
+        self.assertEqual(recover_running(self.db, [], []), {"requeued": 0, "failed": 0})
 
     def test_list_runs_filters_and_orders(self):
         run_job(self.db, "a", lambda ctx: True, clock=self.clock)
