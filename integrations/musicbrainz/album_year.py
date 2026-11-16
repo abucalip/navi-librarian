@@ -3,14 +3,26 @@ from __future__ import annotations
 
 import json
 import threading
-from time import monotonic, sleep
+from time import monotonic
+from urllib.error import HTTPError
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
+from integrations import provider_gate
+
 YEAR_CACHE_TTL = 180 * 24 * 60 * 60
 year_cache = {}
-_year_lock = threading.Lock()
-_last_request = 0.0
+_year_lock = threading.Lock()  # one lookup per pair at a time; spacing comes from the shared gate
+LOOKUP_MAX_WAIT = 20.0  # a page render does not queue behind more than this for a slot
+
+
+def _lane():
+    return provider_gate.musicbrainz_lane(LOOKUP_MAX_WAIT)
+
+
+def _penalize_on_throttle(lane, exc):
+    if isinstance(exc, HTTPError) and exc.code in (429, 503):
+        lane.penalize(float(exc.headers.get("Retry-After") or 0) if exc.headers else None, BATCH_RETRY_PAUSE)
 
 
 def _norm(value):
@@ -41,8 +53,6 @@ def _exact_year(groups, artist: str, album: str):
 
 def lookup_album_year(artist: str, album: str):
     """Resolve a release year only for an exact title and artist-credit match."""
-    global _last_request
-
     norm = _norm
     artist = str(artist or "").strip()
     album = str(album or "").strip()
@@ -65,9 +75,9 @@ def lookup_album_year(artist: str, album: str):
                 ttl = YEAR_CACHE_TTL if cached.get("year") else 6 * 60 * 60
                 if now - cached["time"] < ttl:
                     return cached["year"]
-            wait = 1.1 - (now - _last_request)
-            if wait > 0:
-                sleep(wait)
+            lane = _lane()
+            if not lane.acquire():
+                return None  # no slot soon enough: not cached, so a later call retries
             escaped_artist = artist.replace("\\\\", "\\\\\\\\").replace('"', '\\"')
             escaped_album = album.replace("\\\\", "\\\\\\\\").replace('"', '\\"')
             query = urlencode({
@@ -79,9 +89,12 @@ def lookup_album_year(artist: str, album: str):
                 "https://musicbrainz.org/ws/2/release-group/?" + query,
                 headers={"User-Agent": "Discair/1.0 (personal music discovery)"},
             )
-            _last_request = monotonic()
-            with urlopen(request, timeout=8) as response:
-                payload = json.loads(response.read().decode("utf-8"))
+            try:
+                with urlopen(request, timeout=8) as response:
+                    payload = json.loads(response.read().decode("utf-8"))
+            except Exception as exc:
+                _penalize_on_throttle(lane, exc)
+                raise
 
         year = _exact_year(payload.get("release-groups") or [], artist, album)
     except Exception:
@@ -120,9 +133,9 @@ def lookup_album_years(pairs, fetch=_fetch_release_groups):
     request. A request that fails leaves its pairs out of the result and out of the cache, so a
     later call retries them; a pair absent from a complete response is cached as no year, as the
     single lookup does. A response filled to the result limit is incomplete, so its chunk is split
-    and re-queried rather than trusted. Same exact title and artist-credit rule, same pacing lock.
+    and re-queried rather than trusted. Same exact title and artist-credit rule; every request
+    takes a MusicBrainz slot from the shared gate.
     """
-    global _last_request
     results = {}
     missing = []
     for artist, album in pairs:
@@ -140,7 +153,7 @@ def lookup_album_years(pairs, fetch=_fetch_release_groups):
         missing.append((artist, album))
 
     def resolve(chunk):
-        global _last_request
+        lane = _lane()
         query = " OR ".join(
             f'(artist:"{_escape(artist)}" AND releasegroup:"{_escape(album)}")' for artist, album in chunk
         )
@@ -148,14 +161,12 @@ def lookup_album_years(pairs, fetch=_fetch_release_groups):
         # MusicBrainz answers 503 when requests run over its rate limit; one retry after a pause.
         for attempt in range(2):
             try:
-                with _year_lock:
-                    wait = (1.1 if attempt == 0 else BATCH_RETRY_PAUSE) - (monotonic() - _last_request)
-                    if wait > 0:
-                        sleep(wait)
-                    _last_request = monotonic()
-                    groups = fetch(query, BATCH_RESULT_LIMIT)
+                if not lane.acquire():
+                    break
+                groups = fetch(query, BATCH_RESULT_LIMIT)
                 break
-            except Exception:
+            except Exception as exc:
+                _penalize_on_throttle(lane, exc)
                 groups = None
         if groups is None:
             return

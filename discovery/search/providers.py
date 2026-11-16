@@ -16,6 +16,7 @@ from urllib.parse import quote
 
 from discovery.search.cache import DEPTH
 from discovery.search.limiter import SourceLimiter
+from integrations.provider_gate import musicbrainz_lane
 from discovery.search.normalize import normalize_key
 
 MUSICBRAINZ = "musicbrainz"
@@ -139,7 +140,7 @@ def _as_list(value: Any) -> list[Any]:
 
 
 class MusicBrainzSearch:
-    """MusicBrainz artist and release-group search, paced by the shared limiter."""
+    """MusicBrainz artist and release-group search; every request takes a slot from the shared gate."""
 
     source = MUSICBRAINZ
 
@@ -147,12 +148,12 @@ class MusicBrainzSearch:
         self,
         *,
         get: Callable[..., Any],
-        limiter: SourceLimiter,
         pause: Callable[[float], None] = time.sleep,
         request_timeout: float = REQUEST_TIMEOUT,
+        lane: Any = None,
     ):
         self._get = get
-        self._limiter = limiter
+        self._lane = lane or musicbrainz_lane()
         self._pause = pause
         self._request_timeout = request_timeout
 
@@ -166,7 +167,7 @@ class MusicBrainzSearch:
                     # search finish with the other sources' results instead of waiting for a timeout.
                     raise ProviderError("rate_limited")
                 self._pause(delay)
-            if not self._limiter.admit(self.source, remaining()):
+            if not self._lane.acquire(remaining()):
                 raise ProviderError("rate_limited")
             try:
                 response = self._get(
@@ -178,6 +179,7 @@ class MusicBrainzSearch:
             except Exception as exc:
                 # A timeout or connection error is a failed call, so callers can skip just this request.
                 raise ProviderError("failed") from exc
+            self._lane.penalize_response(response)
             if response.status_code == 503:
                 continue
             response.raise_for_status()

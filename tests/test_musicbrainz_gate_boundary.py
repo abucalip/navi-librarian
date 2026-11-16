@@ -1,8 +1,8 @@
 """Every module that calls the MusicBrainz web service must take its slots from the shared gate.
 
 Efficiency plan R3: total MusicBrainz traffic from this host stays under one request per 1.1 s only
-if no module paces (or fails to pace) on its own. ``PENDING`` lists the web-side modules the second
-R3 PR still has to route; it may only shrink.
+if no module paces (or fails to pace) on its own. ``PENDING`` lists modules still to route; R3 part 2
+emptied it, so a new MusicBrainz caller must use the gate from the start.
 """
 import unittest
 from pathlib import Path
@@ -12,13 +12,7 @@ HOST = "musicbrainz.org/ws"
 SKIP_DIRS = {"tests", "scripts", ".venv", "node_modules", "android", "macos", "docs", "static"}
 # Module-level URL constants only: the caller hands in a gate lane (set_fetchers) or the gate itself.
 URL_ONLY = {"intelligence/insights/set_fetchers.py"}
-PENDING = {
-    "discovery/artist_links.py", "discovery/artist_profiles.py", "discovery/artist_tag_fallback.py",
-    "discovery/candidate_gathering.py", "discovery/mbid_popularity.py", "discovery/new_releases.py",
-    "discovery/search/providers.py", "integrations/musicbrainz/album_year.py",
-    "integrations/musicbrainz/rating_client.py", "integrations/musicbrainz/recording_album.py",
-    "intelligence/artwork/fetchers.py",
-}
+PENDING: set[str] = set()
 
 
 def _callers():

@@ -122,6 +122,28 @@ if __name__ == "__main__":
     unittest.main()
 
 
+class RecordingAlbumGateTests(unittest.TestCase):
+    def test_lookup_takes_a_gate_slot_and_a_refusal_sends_nothing(self):
+        from gate_fakes import FreeLane
+        lane = FreeLane()
+        self.assertIsNone(lookup_recording_album("A", "T", fetch=lambda q, n: [], lane=lane))
+        self.assertEqual(lane.acquired, 1)
+        with self.assertRaises(OSError):
+            lookup_recording_album("A", "T", fetch=lambda q, n: self.fail("no slot"), lane=FreeLane(grant=False))
+
+    def test_throttled_lookup_penalizes_the_gate(self):
+        from urllib.error import HTTPError
+        from gate_fakes import FreeLane
+        lane = FreeLane()
+
+        def throttled(q, n):
+            raise HTTPError("u", 503, "busy", {}, None)
+
+        with self.assertRaises(HTTPError):
+            lookup_recording_album("A", "T", fetch=throttled, lane=lane)
+        self.assertEqual(len(lane.penalties), 1)
+
+
 class StationListFieldTests(unittest.TestCase):
     def setUp(self):
         self.dir = tempfile.TemporaryDirectory()

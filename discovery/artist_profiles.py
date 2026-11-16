@@ -10,7 +10,7 @@ from __future__ import annotations
 from collections.abc import Callable, Iterable, Mapping
 from typing import Any
 
-from discovery.mbid_popularity import MUSICBRAINZ_SPACING_SECONDS
+from integrations.provider_gate import musicbrainz_lane
 
 MUSICBRAINZ_ARTIST_SEARCH_URL = "https://musicbrainz.org/ws/2/artist/"
 ARTIST_PROFILE_CACHE_PREFIX = "mb:artist-profile:"
@@ -47,7 +47,7 @@ def fetch_artist_profiles(
     headers: Mapping[str, str],
     cache_get: Callable[..., Any],
     cache_set: Callable[..., Any],
-    sleep: Callable[[float], Any] | None = None,
+    lane: Any = None,
     timeout: float = 30,
 ) -> dict[str, dict[str, Any]]:
     """Return {artist MBID: {"area": name or None, "begin_year": int or None}} for the artists asked.
@@ -68,11 +68,14 @@ def fetch_artist_profiles(
         else:
             uncached.append(mbid)
 
+    lane = lane or musicbrainz_lane()
     calls = 0
     for chunk in _chunks(uncached, ARTIST_PROFILE_CHUNK):
         if calls >= ARTIST_PROFILE_MAX_CALLS:
             break
         calls += 1
+        if not lane.acquire():
+            break
         try:
             record_provider_call("musicbrainz", "artist_search_batch")
             response = get(
@@ -81,8 +84,7 @@ def fetch_artist_profiles(
                 headers=dict(headers),
                 timeout=timeout,
             )
-            if sleep is not None:
-                sleep(MUSICBRAINZ_SPACING_SECONDS)
+            lane.penalize_response(response)
             if response.status_code != 200:
                 continue
             body = response.json()

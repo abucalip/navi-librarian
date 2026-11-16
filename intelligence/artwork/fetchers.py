@@ -9,7 +9,9 @@
 
 All traffic goes through one ``HostPacer``: at most one request start per second per host, and after a
 429 or 503 the host is closed (no request is sent) until ``Retry-After`` or 60 s, doubling to 15 minutes.
-A closed host answers ``unavailable``; it is never read as "no images". Index JSON may only be redirected
+MusicBrainz is the exception: its slots and its back-off come from the shared provider gate, so the web
+and the worker keep one request per 1.1 s between them. A closed host answers ``unavailable``; it is
+never read as "no images". Index JSON may only be redirected
 to the CAA and archive.org hosts. No image bytes are fetched here.
 """
 from __future__ import annotations
@@ -21,6 +23,8 @@ from typing import Callable
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode, urlparse
 from urllib.request import HTTPRedirectHandler, Request, build_opener
+
+from integrations import provider_gate
 
 from .index import EMPTY, OK, UNAVAILABLE, ReleaseIndex
 
@@ -37,6 +41,8 @@ SIZE_SUFFIX = {"thumb": "-250.jpg", "display": "-500.jpg", "full": None}   # CAA
 IMAGE_EXTENSIONS = ("jpg", "png", "gif", "webp", "pdf")
 TIMEOUT = 30
 ALLOWED_REDIRECT_HOSTS = ("coverartarchive.org", "archive.org")
+MUSICBRAINZ_HOST = "musicbrainz.org"
+MUSICBRAINZ_MAX_WAIT = 30.0  # a refused slot answers "unavailable" and the index is asked again later
 
 
 def _allowed_host(host: str) -> bool:
@@ -53,17 +59,29 @@ class _SafeRedirect(HTTPRedirectHandler):
 
 
 class HostPacer:
-    """Per-host start pacing and 429/503 back-off, shared by every artwork request."""
+    """Per-host start pacing and 429/503 back-off, shared by every artwork request.
 
-    def __init__(self, *, clock=time.monotonic, sleep=time.sleep, pace: float = PACE_SECONDS):
+    A host in ``lanes`` takes its slots and back-off from that provider-gate lane instead
+    (MusicBrainz, by default)."""
+
+    def __init__(self, *, clock=time.monotonic, sleep=time.sleep, pace: float = PACE_SECONDS, lanes=None):
         self._clock, self._sleep, self._pace = clock, sleep, pace
+        self._lanes = lanes
         self._lock = threading.Lock()
         self._last: dict[str, float] = {}
         self._closed_until: dict[str, float] = {}
         self._backoff: dict[str, float] = {}
 
+    def _lane(self, host: str):
+        if self._lanes is None:
+            self._lanes = {MUSICBRAINZ_HOST: provider_gate.musicbrainz_lane(MUSICBRAINZ_MAX_WAIT)}
+        return self._lanes.get(host)
+
     def acquire(self, host: str) -> bool:
         """Wait for this host's turn. ``False`` (no wait) while the host is closed after a 429/503."""
+        lane = self._lane(host)
+        if lane is not None:
+            return lane.acquire()
         with self._lock:
             now = self._clock()
             if self._closed_until.get(host, 0.0) > now:
@@ -75,6 +93,10 @@ class HostPacer:
             return True
 
     def throttled(self, host: str, retry_after: float | None) -> None:
+        lane = self._lane(host)
+        if lane is not None:
+            lane.penalize(retry_after, BACKOFF_START)
+            return
         with self._lock:
             step = min(max(self._backoff.get(host, 0.0) * 2, BACKOFF_START), BACKOFF_MAX)
             self._backoff[host] = step

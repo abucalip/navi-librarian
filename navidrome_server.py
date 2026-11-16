@@ -964,9 +964,7 @@ def _build_new_releases_list():
             cache_get=_metadata_cache_get,
             cache_set=_metadata_cache_set,
             http_get=httpx.get,
-            sleep=time.sleep,
             headers=headers,
-            pause_before_request=bool(index),
         )
         if lookup_error is not None:
             errors.append({"artist": artist, "error": lookup_error})

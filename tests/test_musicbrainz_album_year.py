@@ -23,7 +23,6 @@ class _Response:
 class MusicBrainzAlbumYearTests(unittest.TestCase):
     def setUp(self):
         service.year_cache.clear()
-        service._last_request = 0.0
 
     def test_exact_title_and_artist_credit_returns_earliest_valid_year(self):
         payload = {"release-groups": [
@@ -32,7 +31,7 @@ class MusicBrainzAlbumYearTests(unittest.TestCase):
             {"title": "Album", "artist-credit": [{"artist": {"name": "Artist"}}], "first-release-date": "1997"},
             {"title": "Album Deluxe", "artist-credit": [{"artist": {"name": "Artist"}}], "first-release-date": "1990"},
         ]}
-        with patch.object(service, "urlopen", return_value=_Response(payload)), patch.object(service, "monotonic", return_value=100.0), patch.object(service, "sleep"):
+        with patch.object(service, "urlopen", return_value=_Response(payload)), patch.object(service, "monotonic", return_value=100.0):
             self.assertEqual(service.lookup_album_year("Artist", "Album"), 1997)
 
     def test_missing_inputs_do_not_request(self):
@@ -43,7 +42,7 @@ class MusicBrainzAlbumYearTests(unittest.TestCase):
 
     def test_negative_result_is_cached_for_short_ttl(self):
         payload = {"release-groups": []}
-        with patch.object(service, "urlopen", return_value=_Response(payload)), patch.object(service, "monotonic", return_value=100.0), patch.object(service, "sleep"), patch.object(service, "_year_lock"):
+        with patch.object(service, "urlopen", return_value=_Response(payload)), patch.object(service, "monotonic", return_value=100.0), patch.object(service, "_year_lock"):
             self.assertIsNone(service.lookup_album_year("Unknown", "Album"))
             with patch.object(service, "urlopen") as request:
                 self.assertIsNone(service.lookup_album_year("Unknown", "Album"))
@@ -55,10 +54,6 @@ class BatchAlbumYearTests(unittest.TestCase):
         from integrations.musicbrainz import album_year
         self.module = album_year
         album_year.year_cache.clear()
-        album_year._last_request = -1e9
-        patcher = patch.object(album_year, "sleep", lambda seconds: None)
-        patcher.start()
-        self.addCleanup(patcher.stop)
 
     def _group(self, title, artist, date):
         return {"title": title, "first-release-date": date,
@@ -127,3 +122,41 @@ class BatchAlbumYearTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class GateTests(unittest.TestCase):
+    def setUp(self):
+        service.year_cache.clear()
+        self.addCleanup(service.year_cache.clear)
+
+    def _lane(self, grant=True):
+        class Lane:
+            acquired, penalties = 0, []
+
+            def acquire(self_):
+                self_.acquired += 1
+                return grant
+
+            def penalize(self_, seconds, default=60.0):
+                self_.penalties.append((seconds, default))
+        return Lane()
+
+    def test_single_lookup_takes_a_gate_slot_and_refusal_sends_nothing(self):
+        lane = self._lane(grant=False)
+        with patch.object(service, "_lane", return_value=lane), patch.object(service, "urlopen") as request:
+            self.assertIsNone(service.lookup_album_year("Artist", "Album"))
+            request.assert_not_called()
+        self.assertEqual(lane.acquired, 1)
+        self.assertEqual(service.year_cache, {})  # a refused slot is not remembered as "no year"
+
+    def test_batch_throttle_penalizes_the_gate_and_retries_once(self):
+        from urllib.error import HTTPError
+        lane, calls = self._lane(), []
+
+        def fetch(query, limit):
+            calls.append(query)
+            raise HTTPError("u", 503, "busy", {}, None)
+
+        with patch.object(service, "_lane", return_value=lane):
+            self.assertEqual(service.lookup_album_years([("A", "B")], fetch=fetch), {})
+        self.assertEqual((len(calls), lane.acquired, len(lane.penalties)), (2, 2, 2))
