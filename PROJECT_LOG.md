@@ -1,3 +1,9 @@
+## 2026-11-16 — Android Gallery theme G2: Home with the Radio section (merged)
+
+- PR [#1118](https://github.com/abucalip/navi-librarian/pull/1118), squash `68426668`. `ui/home/GalleryHome.kt` (source switch, hero print and placard with pager, Played lately, Artists you return to, Radio plates and "Heard on" rows, This week, Arrivals, Genres line, library line, loading/failing/no-listening states), `GalleryHomeRules.kt` (pure), one `Layout.Gallery` branch in `HomeScreen`, optional `onOpenPlayer` so a station plate opens that station live, `GalleryPrint` `small` option.
+- Differences from `pages/home` (data Home lacks): library line shows albums, artists and new this month (no listening hours); Played eyebrow is "Recently played" (no played time); This week button is "Open album" (an insight has no library album id); artist album counts come from one extra library artists request and are left out when unknown.
+- Tests run (focused, JDK 17): `GalleryHomeRulesTest` (new), `GalleryTest`, `ExistingLayoutsTest`, `FlowHomeRulesTest`. Not run on a device; no screenshot comparison with `pages/home.png` yet. Next: owner checks G2 on the phone, then G3 Album, Artist, Genre.
+
 ## 2026-11-16 — Android Gallery theme G1: palettes, fonts, icons, kit and shell (merged)
 
 - PR [#1117](https://github.com/abucalip/navi-librarian/pull/1117), squash `d6868845`. `Layout.Gallery`, eight palettes, optional `control`/`onControl`/`mat` roles, `FontPairs.Gallery` with three subset font files, `GalleryIcons`, `GalleryKit`, `GalleryShell` (dock bar with sliding marker, mini player, bars, snackbar, sheet), Gallery branches in the shared controls, chart, seek, nav rules, motion family and a Gallery group in Appearance. Pages are unchanged until G2 to G6.
