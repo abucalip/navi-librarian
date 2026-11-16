@@ -1,3 +1,12 @@
+## 2026-11-17 — Server efficiency M2: knowledge-route baseline
+
+- Branch `efficiency-m2-knowledge-baseline` from `main` at `5437669c`. Changes: `scripts/efficiency_baseline.py` gains `--knowledge-type` (default `release_group`, unchanged) and `build_routes(..., knowledge_type)`; `tests/test_efficiency_baseline.py` gains `test_build_routes_knowledge_type_is_configurable`; `docs/efficiency.md` (M2 status and evidence log) and `docs/PROJECT_STATUS.md`.
+- Store: copy of the owner's ingested knowledge store, served on a second local instance (port 8091, no reload, copy in `local-test/data-mb`). The owner's store was not opened by a server. The 8090 instance was not changed.
+- Tests run: `pytest tests/test_efficiency_baseline.py`, 10 passed; `python -m unittest tests.test_efficiency_baseline`, 10 passed (CI runner). `scripts/check_lint_changed.py --base origin/main` reported no changed Python files because the changes were uncommitted at the time; pylint on the two files still to run. Not run: full unit suite (not allowed by CLAUDE.md), any browser check (no UI change).
+- Live measurement (knowledge routes only, `type=release`, 20 runs after an unmeasured warm-up): `knowledge_connections` 200, median 177.7 ms, p95 178.6 ms, no outbound calls; `knowledge_paths_album_gaps` 200, median 992.6 ms, p95 1336.2 ms, Navidrome 4.0 requests per run, no provider calls.
+- Incident: a one-run probe of the full script made provider calls on the artist page (ListenBrainz 3, MusicBrainz 5) because the copied artist caches were cold; this was not owner-approved and was not checked before the run. No further provider traffic. The artist and album routes are not part of this baseline.
+- CI: not yet run (PR not open at time of writing). Limitations: one machine, one owned album, one copied store; the full seven-route table is still open and needs owner approval for a warm-up of the artist and album routes.
+
 ## 2026-11-16 — Server efficiency M2: merge of per-route attribution
 
 - PR [#1146](https://github.com/abucalip/navi-librarian/pull/1146), squash `a3b9eafe`, head `7cf3a403`, merged 2026-11-16 23:14 UTC (GitHub confirms `MERGED`). Changes: `scripts/efficiency_baseline.py` per-route runtime attribution, `numeric_delta` counts new keys from zero, nested `web` counter parsing; `tests/test_efficiency_baseline.py` 9 passed; lint changed files 0 new findings. Docs: `docs/efficiency.md` section 4 (F13), section 7 (P6), section 13 (live runs); `docs/PROJECT_STATUS.md`.

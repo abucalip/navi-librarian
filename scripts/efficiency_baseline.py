@@ -112,20 +112,27 @@ def _round(value: float | None) -> float | None:
     return None if value is None else round(value, 1)
 
 
-def build_routes(artist_key: str, album_key: str, artist_id: str, artist_name: str) -> list[tuple[str, str]]:
-    """Fixed route list as ``(label, path_with_query)``. Labels carry no keys."""
+def build_routes(
+    artist_key: str, album_key: str, artist_id: str, artist_name: str, knowledge_type: str = "release_group",
+) -> list[tuple[str, str]]:
+    """Fixed route list as ``(label, path_with_query)``. Labels carry no keys.
+
+    ``knowledge_type`` is the ``type`` query value for the two knowledge routes. Stores that
+    key owned albums as ``release`` answer 404 for ``release_group``, so it is configurable.
+    """
     artist = urllib.parse.quote(artist_key, safe="")
     artist_id_q = urllib.parse.quote(artist_id, safe="")
     artist_name_q = urllib.parse.quote(artist_name, safe="")
     album = urllib.parse.quote(album_key, safe="")
+    knowledge_type_q = urllib.parse.quote(knowledge_type, safe="")
     return [
         ("library_artists", "/api/library/artists?limit=50"),
         ("library_albums", "/api/library/albums?limit=50"),
         ("artist_page", f"/api/artists/{artist_name_q}?id={artist_id_q}"),
         ("album_page", f"/api/albums/{artist}/{album}?id={album}"),
         ("search", "/api/search?q=baseline&scope=owned"),
-        ("knowledge_connections", f"/api/knowledge/connections?navidrome_id={album}&type=release_group"),
-        ("knowledge_paths_album_gaps", f"/api/knowledge/paths?kind=album_gaps&navidrome_id={album}&type=release_group"),
+        ("knowledge_connections", f"/api/knowledge/connections?navidrome_id={album}&type={knowledge_type_q}"),
+        ("knowledge_paths_album_gaps", f"/api/knowledge/paths?kind=album_gaps&navidrome_id={album}&type={knowledge_type_q}"),
     ]
 
 
@@ -182,7 +189,9 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     client = Client(args.base_url)
     client.login(args.username, password)
 
-    routes = build_routes(args.artist_key, args.album_key, args.artist_id, args.artist_name)
+    routes = build_routes(
+        args.artist_key, args.album_key, args.artist_id, args.artist_name, args.knowledge_type,
+    )
     runtime_before = read_runtime(client)
     samples: dict[str, list[tuple[float, float | None, int]]] = {label: [] for label, _ in routes}
     per_route_runtime: dict[str, Any] = {}
@@ -245,6 +254,10 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--artist-name", required=True, help="artist name; the artist route matches on its normalized form")
     parser.add_argument("--artist-id", required=True, help="artist id (the id query parameter of /api/artists/{key})")
     parser.add_argument("--album-key", required=True, help="album navidrome id used by the album routes")
+    parser.add_argument(
+        "--knowledge-type", default="release_group",
+        help="type query value for the knowledge routes (release_group, or release on stores that key owned albums as releases)",
+    )
     parser.add_argument("--runs", type=int, default=20)
     parser.add_argument("--out", type=Path, required=True, help="JSON output file")
     args = parser.parse_args(argv)
