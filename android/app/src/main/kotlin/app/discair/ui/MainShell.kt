@@ -308,27 +308,10 @@ fun MainShell(state: UiState, model: AppViewModel, container: AppContainer) {
             snackbarHost = { SnackbarHost(snackbar, Modifier.padding(bottom = clearance)) },
             // Pages run behind the system navigation bar; the island and each page's end padding clear it.
             contentWindowInsets = androidx.compose.foundation.layout.WindowInsets(0),
-            topBar = {
-                // Gallery's pages carry their own heads: Discover and Library the date line and the large title, Home its wordmark bar
-                // (GalleryHome). A bar here would leave as a page opens from Home, and Home would re-measure and grow under it mid-transition.
-                val galleryHead = app.discair.ui.common.isGallery()
-                if (onTopLevel && !galleryHead) AppHeader(
-                    active = hub.activeDownloads,
-                    showDiscover = NavRules.discoverInTopBar(chosenLayout, rail),
-                    onDiscover = { goPage(DiscoverRoute) },
-                    onDownloads = { nav.navigate(DownloadsRoute) { launchSingleTop = true } },
-                    onSettings = { goPage(SettingsRoute) },
-                    // Flow draws the page's name large in the bar on Discover and Library (flow/discover, flow/library-search); Home keeps the wordmark.
-                    flowTitle = when {
-                        destination?.hasRoute(DiscoverRoute::class) == true -> "Discover"
-                        destination?.hasRoute(LibraryRoute::class) == true -> "Library"
-                        else -> null
-                    },
-                )
-            },
         ) { padding ->
             Column(Modifier.padding(padding).fillMaxSize()) {
-            OfflineBanner(repo.staleSince)
+            // A top-level page draws its own bar and banner (TopLevelPage), so the bar leaves with the page when one opens from it.
+            if (!onTopLevel) OfflineBanner(repo.staleSince)
             val swipeThreshold = with(androidx.compose.ui.platform.LocalDensity.current) { 72.dp.toPx() }
             // On any page but Home, a drag nothing else used (carousels, rows and pagers take theirs first) to the right goes back.
             val swipe = if (!destination.isHome()) Modifier.pointerInput(Unit) {
@@ -382,12 +365,28 @@ fun MainShell(state: UiState, model: AppViewModel, container: AppContainer) {
                     }
                 },
             ) {
-                composable<HomeRoute> {
-                    Opaque { HomeScreen(open, onRadio = { nav.navigate(RadioRoute) { launchSingleTop = true } }, onDownloads = { nav.navigate(DownloadsRoute) { launchSingleTop = true } }, onStats = { goPage(StatsRoute) }, onServer = { goPage(ServerRoute) }, onLibrary = { goPage(LibraryRoute) }, onOpenPlayer = { nowPlayingOpen = true },
-                        onSettings = { goPage(SettingsRoute) }, showDiscover = NavRules.discoverInTopBar(chosenLayout, rail), onDiscover = { goPage(DiscoverRoute) }) }
+                // The shell's bar used to sit in the Scaffold and vanish as a page opened from Home, Discover or Library; the page under
+                // it then re-measured mid-transition (the slow Album and Artist opens). Now the bar is part of the page.
+                @Composable fun TopLevelPage(flowTitle: String? = null, content: @Composable () -> Unit) {
+                    Column(Modifier.fillMaxSize()) {
+                        if (!app.discair.ui.common.isGallery()) AppHeader(
+                            active = hub.activeDownloads,
+                            showDiscover = NavRules.discoverInTopBar(chosenLayout, rail),
+                            onDiscover = { goPage(DiscoverRoute) },
+                            onDownloads = { nav.navigate(DownloadsRoute) { launchSingleTop = true } },
+                            onSettings = { goPage(SettingsRoute) },
+                            flowTitle = flowTitle,
+                        )
+                        OfflineBanner(repo.staleSince)
+                        Box(Modifier.weight(1f).fillMaxWidth()) { content() }
+                    }
                 }
-                composable<DiscoverRoute> { Opaque { DiscoverScreen(open) } }
-                composable<LibraryRoute> { Opaque { LibraryScreen(open) } }
+                composable<HomeRoute> {
+                    TopLevelPage { Opaque { HomeScreen(open, onRadio = { nav.navigate(RadioRoute) { launchSingleTop = true } }, onDownloads = { nav.navigate(DownloadsRoute) { launchSingleTop = true } }, onStats = { goPage(StatsRoute) }, onServer = { goPage(ServerRoute) }, onLibrary = { goPage(LibraryRoute) }, onOpenPlayer = { nowPlayingOpen = true },
+                        onSettings = { goPage(SettingsRoute) }, showDiscover = NavRules.discoverInTopBar(chosenLayout, rail), onDiscover = { goPage(DiscoverRoute) }) } }
+                }
+                composable<DiscoverRoute> { TopLevelPage("Discover") { Opaque { DiscoverScreen(open) } } }
+                composable<LibraryRoute> { TopLevelPage("Library") { Opaque { LibraryScreen(open) } } }
                 composable<DownloadsRoute> { Opaque { DownloadsScreen(open) } }
                 composable<RadioRoute> { Opaque { app.discair.ui.radio.RadioScreen(onBack = { nav.popBackStack() }, onOpenHeard = { nav.navigate(HeardRoute) { launchSingleTop = true } }, onOpenPlayer = { nowPlayingOpen = true }) } }
                 composable<HeardRoute> { Opaque { app.discair.ui.radio.HeardScreen(radio, onBack = { nav.popBackStack() }) } }
