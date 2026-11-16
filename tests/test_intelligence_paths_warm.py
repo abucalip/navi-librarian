@@ -44,6 +44,14 @@ class PathsWarmTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             run_paths_warm(self.db, kinds=("nonsense",))
 
+    def test_run_left_running_by_a_kill_is_recovered_by_age(self):
+        run_id, _ = runner.enqueue(self.db, JOB)
+        self.db.execute("UPDATE job_runs SET state = 'running', started_at = 1000 WHERE id = ?", (run_id,))
+        self.db.commit()
+        self.assertEqual(run_paths_warm(self.db, max_seconds=300, clock=lambda: 1500.0).state, "skipped")  # live
+        result = run_paths_warm(self.db, max_seconds=300, clock=lambda: 1000.0 + 300 + 601)
+        self.assertEqual((result.run_id, result.state), (run_id, "succeeded"))
+
     def test_time_budget_stops_early_and_resumes(self):
         ticks = iter(range(0, 10_000))
         # each clock() call advances 1 s; a 4 s budget cannot finish 15 builds

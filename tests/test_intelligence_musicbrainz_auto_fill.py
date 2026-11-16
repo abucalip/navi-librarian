@@ -259,13 +259,21 @@ class AutoFillCycleTests(unittest.TestCase):
 
 
 class WorkerTests(unittest.TestCase):
+    def lib(self):
+        import tempfile
+        from pathlib import Path
+        from types import SimpleNamespace
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        return SimpleNamespace(DATA_DIR=Path(tmp.name))
+
     def test_worker_runs_the_loop_in_its_own_process_and_stops(self):
         import threading
         import app.worker as worker
         stop = threading.Event()
         stop.set()
         with __import__("unittest").mock.patch.object(worker.insights_refresh, "start"):
-            self.assertEqual(worker.main(librarian=object(), stop=stop), 0)
+            self.assertEqual(worker.main(librarian=self.lib(), stop=stop), 0)
 
     def test_web_startup_starts_no_knowledge_store_writer(self):
         from pathlib import Path
@@ -280,7 +288,7 @@ class WorkerTests(unittest.TestCase):
         stop = threading.Event()
         stop.set()                      # main() returns as soon as both jobs are started
         started = threading.Event()
-        lib = object()
+        lib = self.lib()
         with mock.patch.object(worker.insights_refresh, "start") as insights, \
                 mock.patch.object(worker.library_enrich, "run_forever", side_effect=lambda *a: started.set()) as fill:
             worker.main(librarian=lib, stop=stop)
@@ -296,7 +304,7 @@ class WorkerTests(unittest.TestCase):
         result = []
         with mock.patch.object(worker.insights_refresh, "start") as insights, \
                 mock.patch.dict("os.environ", {library_enrich.POLL_ENV: "off"}):
-            thread = threading.Thread(target=lambda: result.append(worker.main(librarian=object(), stop=stop)))
+            thread = threading.Thread(target=lambda: result.append(worker.main(librarian=self.lib(), stop=stop)))
             thread.start()
             thread.join(0.5)
             self.assertTrue(thread.is_alive())      # auto fill returned at once; the worker did not exit

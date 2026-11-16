@@ -23,7 +23,7 @@ import json
 import sqlite3
 import time
 from dataclasses import dataclass
-from typing import Any, Callable
+from typing import Any, Callable, Iterable
 
 from ..store.generations import bump_data_version, current_generation
 
@@ -159,6 +159,32 @@ def recover_stale(db: sqlite3.Connection, now: float, older_than: float) -> int:
             "UPDATE job_runs SET state = 'queued' WHERE state = 'running' AND started_at < ?",
             (now - older_than,),
         ).rowcount
+
+
+def recover_running(
+    db: sqlite3.Connection, jobs: Iterable[str], fail_jobs: Iterable[str] = (), now: float | None = None
+) -> dict[str, int]:
+    """Settle runs a dead worker left ``running``; call only while holding the single-worker lock.
+
+    Runs of ``jobs`` go back to ``queued`` with their progress and ``started_at`` kept, so the next run resumes
+    from its checkpoint. Runs of ``fail_jobs`` (work that must not resume unasked) are marked ``failed``.
+    Other jobs are untouched.
+    """
+    requeue, fail = list(jobs), list(fail_jobs)
+    counts = {"requeued": 0, "failed": 0}
+    with db:
+        if requeue:
+            counts["requeued"] = db.execute(
+                "UPDATE job_runs SET state = 'queued' WHERE state = 'running' AND job IN (%s)"
+                % ",".join("?" * len(requeue)), requeue,
+            ).rowcount
+        if fail:
+            counts["failed"] = db.execute(
+                "UPDATE job_runs SET state = 'failed', finished_at = ?, error = ? "
+                "WHERE state = 'running' AND job IN (%s)" % ",".join("?" * len(fail)),
+                [time.time() if now is None else now, "interrupted by a worker restart; start it again to resume", *fail],
+            ).rowcount
+    return counts
 
 
 def status(db: sqlite3.Connection, job: str, scope: str = "") -> dict[str, Any] | None:

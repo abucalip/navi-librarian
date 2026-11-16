@@ -24,6 +24,7 @@ from .paths import CACHE_PREFIX, PATH_KINDS, SLICE_RESOURCE, PathLimits, cached_
 
 JOB = "paths_warm"
 DEFAULT_MAX_SECONDS = 300.0
+STALE_MARGIN = 600.0  # a run still "running" this long past its time budget was killed, not slow
 
 
 def owned_artist_ids(db: sqlite3.Connection) -> list[int]:
@@ -47,6 +48,7 @@ def run_paths_warm(
     unknown = [k for k in kinds if k not in PATH_KINDS]
     if unknown:
         raise ValueError(f"unknown path kind: {unknown[0]!r}")
+    runner.recover_stale(db, clock(), max_seconds + STALE_MARGIN)  # web-run job: recover by age, no worker lock
 
     def work(ctx: runner.JobContext) -> bool:
         ids = owned_artist_ids(db)
