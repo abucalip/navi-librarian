@@ -11,7 +11,7 @@ import app.api.insights as insights_routes
 import app.api.taste_refresh as routes
 from app.api.dependencies import get_librarian
 from intelligence.jobs import runner
-from intelligence.store import generations, open_store
+from intelligence.store import ensure_store, generations, open_store
 from intelligence.taste import load_saved_profiles
 from intelligence.taste.refresh import JOB, refresh_status, refresh_taste
 
@@ -145,6 +145,7 @@ class RouteTests(unittest.TestCase):
         api.include_router(routes.router)
         api.include_router(insights_routes.router)
         api.dependency_overrides[get_librarian] = lambda: FakeLibrarian(tmp.name)
+        ensure_store(Path(tmp.name) / routes.STORE_FILE)
         self.client = TestClient(api)
 
     def test_no_source_answers_without_writing(self):

@@ -16,7 +16,7 @@ from app.api.dependencies import get_librarian
 from intelligence.api import (
     FEEDBACK_DEFAULT_LIMIT, FEEDBACK_MAX_LIMIT, BatchTooLarge, build_intake_body, build_suppression_body,
 )
-from intelligence.store import open_store
+from intelligence.store import open_readonly, open_writer
 
 router = APIRouter()
 
@@ -33,7 +33,7 @@ def _now() -> float:
 
 
 def _store(librarian):
-    return open_store(librarian.DATA_DIR / STORE_FILE)
+    return open_writer(librarian.DATA_DIR / STORE_FILE)
 
 
 @router.post("/api/feedback/events")
@@ -59,7 +59,7 @@ def get_suppression(limit: int = FEEDBACK_DEFAULT_LIMIT, offset: int = 0, librar
     if offset < 0:
         raise HTTPException(status_code=400, detail="offset must be 0 or more")
     try:
-        db = _store(librarian)
+        db = open_readonly(librarian.DATA_DIR / STORE_FILE)
         try:
             return build_suppression_body(db, _now(), limit, offset)
         finally:

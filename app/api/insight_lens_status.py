@@ -10,7 +10,7 @@ from app.api.dependencies import get_librarian
 from app.api.insights import STORE_FILE
 from app.services.insights_refresh import CHECK_SECONDS
 from intelligence.insights.refresh_status import lens_refresh_status
-from intelligence.store import open_store
+from intelligence.store import open_readonly
 
 router = APIRouter()
 
@@ -18,7 +18,7 @@ router = APIRouter()
 @router.get("/api/insights/refresh/status")
 def insights_refresh_state(librarian=Depends(get_librarian)):
     try:
-        db = open_store(librarian.DATA_DIR / STORE_FILE)
+        db = open_readonly(librarian.DATA_DIR / STORE_FILE)
         try:
             return lens_refresh_status(db, min_interval=CHECK_SECONDS)
         finally:

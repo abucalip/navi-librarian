@@ -9,7 +9,7 @@ from fastapi.testclient import TestClient
 
 import app.api.feedback as routes
 from app.api.dependencies import get_librarian
-from intelligence.store import open_store
+from intelligence.store import ensure_store, open_store
 
 NOW = 1_700_000_000.0
 DAY = 86400.0
@@ -39,6 +39,7 @@ class FeedbackRoutes(unittest.TestCase):
         patch = mock.patch.object(routes, "_now", lambda: NOW)
         patch.start()
         self.addCleanup(patch.stop)
+        ensure_store(Path(self.tmp.name) / routes.STORE_FILE)
         self.client = TestClient(api)
 
     def post(self, events):

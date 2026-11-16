@@ -2,12 +2,17 @@
 from __future__ import annotations
 
 import sqlite3
+import threading
 from os import PathLike
+from pathlib import Path
 
 from .migrations import migrate
 from .state import attach_state, default_state_path
 
 BUSY_TIMEOUT_SECONDS = 10
+
+_ensured: set[tuple[str, str]] = set()
+_ensure_lock = threading.Lock()
 
 
 def connect(database_path: str | PathLike[str]) -> sqlite3.Connection:
@@ -43,6 +48,35 @@ def open_store(
     return db
 
 
+def ensure_store(
+    database_path: str | PathLike[str], state_path: str | PathLike[str] | None = None
+) -> None:
+    """Migrate and attach once per process and path, then close (call at web and worker startup).
+
+    Afterwards the knowledge and state files exist at the current version, so request handlers can use
+    :func:`open_readonly` and :func:`open_writer`. A failure is not remembered, so the next call retries.
+    """
+    key = (str(Path(database_path).resolve()), str(state_path))
+    with _ensure_lock:
+        if key in _ensured:
+            return
+        open_store(database_path, state_path).close()
+        _ensured.add(key)
+
+
+def open_writer(
+    database_path: str | PathLike[str], state_path: str | PathLike[str] | None = None
+) -> sqlite3.Connection:
+    """Open for writing without migrating or moving legacy rows (the store was prepared by :func:`ensure_store`)."""
+    db = connect(database_path)
+    try:
+        db.execute("ATTACH DATABASE ? AS state", (str(state_path if state_path is not None else default_state_path(database_path)),))
+    except BaseException:
+        db.close()
+        raise
+    return db
+
+
 def open_readonly(
     database_path: str | PathLike[str], state_path: str | PathLike[str] | None = None
 ) -> sqlite3.Connection:
@@ -51,8 +85,6 @@ def open_readonly(
     Does not migrate or create anything; the files must exist and be at the current version.
     Any write on this connection fails.
     """
-    from pathlib import Path
-
     db = sqlite3.connect(f"file:{Path(database_path).resolve()}?mode=ro", uri=True, timeout=BUSY_TIMEOUT_SECONDS)
     db.row_factory = sqlite3.Row
     state = state_path if state_path is not None else default_state_path(database_path)

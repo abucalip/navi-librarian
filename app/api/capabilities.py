@@ -14,7 +14,7 @@ from app.api.dependencies import get_librarian
 from app.api.insights import STORE_FILE
 from intelligence.api import ServerFacts, build_capabilities
 from intelligence.sonic.detect import SonicDetector
-from intelligence.store import open_store
+from intelligence.store import open_readonly
 
 router = APIRouter()
 SONIC = SonicDetector()
@@ -37,7 +37,7 @@ def _sonic_available(librarian):
 @router.get("/api/capabilities")
 def capabilities(librarian=Depends(get_librarian)):
     try:
-        db = open_store(librarian.DATA_DIR / STORE_FILE)
+        db = open_readonly(librarian.DATA_DIR / STORE_FILE)
         try:
             body = build_capabilities(db, ServerFacts(
                 sonic_available=_sonic_available(librarian),

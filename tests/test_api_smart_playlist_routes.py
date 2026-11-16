@@ -10,6 +10,7 @@ from fastapi.testclient import TestClient
 import app.api.smart_playlists as routes
 from app.api.dependencies import get_librarian
 from intelligence.api.smart_playlists import songs_from_subsonic
+from intelligence.store import ensure_store
 
 NOW = 1_700_000_000.0
 RID = "00000001-0000-4000-8000-00000005ba17"
@@ -46,6 +47,7 @@ class SmartPlaylistRoutes(unittest.TestCase):
         patch = mock.patch.object(routes, "_now", lambda: NOW)
         patch.start()
         self.addCleanup(patch.stop)
+        ensure_store(Path(self.tmp.name) / routes.STORE_FILE)
         self.client = TestClient(api)
         return self.client
 

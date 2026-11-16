@@ -112,6 +112,20 @@ def _schedule_discovery_scheduler_startup():
 
 
 @app.on_event("startup")
+def _prepare_knowledge_store():
+    """Migrate the knowledge store once, so request handlers open it read-only or write-only (no migration)."""
+    import logging
+
+    from app.api.insights import STORE_FILE
+    from intelligence.store import ensure_store
+
+    try:
+        ensure_store(get_librarian().DATA_DIR / STORE_FILE)
+    except Exception:
+        logging.getLogger(__name__).exception("Could not prepare the knowledge store")
+
+
+@app.on_event("startup")
 def _install_library_resync():
     """Resync the library copy shortly after each import (setting ``library_resync_after_import``)."""
     from app import library_resync
