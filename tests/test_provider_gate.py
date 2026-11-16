@@ -5,7 +5,7 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-from integrations.provider_gate import GATE_FILE, ProviderGate, default_gate
+from integrations.provider_gate import GATE_FILE, Lane, ProviderGate, default_gate
 
 
 class FakeTime:
@@ -161,6 +161,31 @@ class ProviderGateTests(unittest.TestCase):
         a = default_gate(self.path.parent)
         self.assertIs(a, default_gate(self.path.parent))
         a.close()
+
+
+class LaneTests(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.time = FakeTime()
+        self.gate = ProviderGate(Path(self.tmp.name) / GATE_FILE, clock=self.time.clock, sleep=self.time.sleep)
+        self.addCleanup(self.gate.close)
+        self.lane = Lane(self.gate, "musicbrainz")
+
+    def test_acquire_can_use_a_per_call_limit(self):
+        self.assertTrue(self.lane.acquire(0.0))
+        self.assertFalse(self.lane.acquire(0.5))  # the next slot is 1.1 s off
+        self.assertTrue(self.lane.acquire(2.0))
+
+    def test_throttled_response_blocks_the_provider_and_honours_retry_after(self):
+        response = mock.Mock(status_code=503, headers={"Retry-After": "30"})
+        self.assertTrue(self.lane.penalize_response(response))
+        self.assertTrue(self.lane.acquire())
+        self.assertGreaterEqual(sum(self.time.slept), 30)
+
+    def test_ordinary_response_does_not_penalize(self):
+        self.assertFalse(self.lane.penalize_response(mock.Mock(status_code=200, headers={})))
+        self.assertTrue(self.lane.acquire(0.0))
 
 
 class MultiProcessTests(unittest.TestCase):

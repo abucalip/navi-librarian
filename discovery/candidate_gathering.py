@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from datetime import timezone
 from email.utils import parsedate_to_datetime
 from integrations.listenbrainz.client import request_headers as listenbrainz_headers
+from integrations.provider_gate import musicbrainz_lane
 from recommendation_run_metrics import add_stage_seconds, timed_stage
 import re
 import json
@@ -93,19 +94,23 @@ def _get_with_bounded_retry(
     *,
     params,
     headers,
-    sleep,
+    lane,
     attempts=_GENRE_LOOKUP_ATTEMPTS,
     honor_retry_after=False,
 ):
     """Retry transient MusicBrainz statuses a bounded number of times; never cache here.
 
     With ``honor_retry_after`` set, a 429/503 response's Retry-After value (capped at
-    ``_RETRY_AFTER_MAX_SECONDS``) replaces the fixed backoff for that wait.
+    ``_RETRY_AFTER_MAX_SECONDS``) replaces the fixed backoff for that wait. Every attempt takes a
+    MusicBrainz slot from ``lane`` (the shared gate), and the backoff is held on the gate, so the
+    pause applies to every caller on the host.
     """
     response = None
     from recommendation_run_metrics import record_provider_call
 
     for attempt in range(attempts):
+        if not lane.acquire():
+            raise RuntimeError("musicbrainz rate limited")
         record_provider_call(_provider_for_url(url), "bounded_get")
         response = client.get(url, params=params, headers=headers)
         if response.status_code not in _RETRYABLE_STATUS_CODES:
@@ -114,7 +119,7 @@ def _get_with_bounded_retry(
             wait = None
             if honor_retry_after and response.status_code in _RETRY_AFTER_STATUS_CODES:
                 wait = _retry_after_seconds(response)
-            sleep(wait if wait is not None else 2 * (attempt + 1))
+            lane.penalize(wait if wait is not None else 2 * (attempt + 1))
     return response
 
 
@@ -137,6 +142,12 @@ class RecommendationProviders:
     feedback_rows: Callable[[], Any] | None = None
     # Optional. Reads the persisted settings; None keeps Navidrome stars out of the seeds.
     settings_read: Callable[[], Any] | None = None
+    # Optional. A MusicBrainz gate lane; None takes the shared provider gate.
+    mb_lane: Any = None
+
+
+def _mb_lane(providers):
+    return providers.mb_lane or musicbrainz_lane()
 
 def _star_seed_weights(providers: RecommendationProviders, now: float) -> dict[str, float]:
     """Seed weights from Navidrome stars, or ``{}`` when the setting is off or anything fails.
@@ -357,9 +368,6 @@ def _run_tag_queries(
                 state["hits"] += 1
 
             if search_data is None:
-                if state["request_index"]:
-                    providers.sleep(1.1)
-
                 response = _get_with_bounded_retry(
                     client,
                     "https://musicbrainz.org/ws/2/release-group/",
@@ -369,7 +377,7 @@ def _run_tag_queries(
                         "limit": 10,
                     },
                     headers=headers,
-                    sleep=providers.sleep,
+                    lane=_mb_lane(providers),
                     attempts=_TAG_SEARCH_ATTEMPTS,
                 )
                 state["request_index"] += 1
@@ -677,17 +685,19 @@ def gather_recommendation_candidates(
                 recorded = True
 
                 if recording is None and str(mbid) in batch_recordings:
-                    # Batch hit: no MusicBrainz call, no spacing sleep, no cache write,
+                    # Batch hit: no MusicBrainz call, no gate slot, no cache write,
                     # so it does not spend the uncached MusicBrainz budget.
                     recording = batch_recordings[str(mbid)]
                 if recording is None:
-                    if resolution_calls:
-                        providers.sleep(1.1)
                     resolution_calls += 1
 
                     response = None
+                    lane = _mb_lane(providers)
                     for attempt in range(3):
                         from recommendation_run_metrics import record_provider_call
+
+                        if not lane.acquire():
+                            raise RuntimeError("musicbrainz rate limited")
 
                         # Retries are counted apart so recording_lookup matches the budget.
                         record_provider_call(
@@ -706,7 +716,7 @@ def gather_recommendation_candidates(
                         ):
                             break
                         if attempt < 2:
-                            providers.sleep(2 * (attempt + 1))
+                            lane.penalize(2 * (attempt + 1))
 
                     response.raise_for_status()
                     recording = response.json()
@@ -847,16 +857,12 @@ def gather_recommendation_candidates(
                 ) is not None:
                     continue
 
-                if index:
-                    providers.sleep(1.1)
-
                 response = _get_with_bounded_retry(
                     client,
                     f"https://musicbrainz.org/ws/2/artist/{artist_id}",
                     params={"fmt": "json", "inc": "genres"},
                     headers=headers,
-                    sleep=providers.sleep,
-
+                    lane=_mb_lane(providers),
                     honor_retry_after=True,
                 )
                 if response.status_code in _RETRYABLE_STATUS_CODES:
@@ -1156,16 +1162,12 @@ def gather_recommendation_candidates(
                     genre_cache[artist_id] = cached_genres
                     continue
 
-                if index:
-                    providers.sleep(1.1)
-
                 response = _get_with_bounded_retry(
                     client,
                     f"https://musicbrainz.org/ws/2/artist/{artist_id}",
                     params={"fmt": "json", "inc": "genres"},
                     headers=headers,
-                    sleep=providers.sleep,
-
+                    lane=_mb_lane(providers),
                     honor_retry_after=True,
                 )
                 if response.status_code in _RETRYABLE_STATUS_CODES:

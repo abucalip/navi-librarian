@@ -4,6 +4,8 @@ import json
 import threading
 import unittest
 
+from gate_fakes import FreeLane
+
 from discovery.search.artist_sections import ArtistNetwork, similar_items
 from discovery.search.cache import genre_cache_key, purge_stale_generations
 from discovery.search.genre_page import (
@@ -131,7 +133,7 @@ class DiscogsSearchTests(unittest.TestCase):
                 {"id": "r2", "title": "Live", "secondary-types": ["Live"], "artist-credit": [{"name": "Slowdive"}]},
             ]}),
         )
-        mb = MusicBrainzSearch(get=get, limiter=SourceLimiter({}), pause=lambda s: None)
+        mb = MusicBrainzSearch(get=get, lane=FreeLane(), pause=lambda s: None)
         cancelled = threading.Event()
         artists = mb.artists_by_tag("shoegaze", remaining=plenty, cancelled=cancelled)
         albums = mb.albums_by_tag("shoegaze", remaining=plenty, cancelled=cancelled)
@@ -328,7 +330,7 @@ class GenreSearchTests(unittest.TestCase):
     def test_musicbrainz_genre_list_is_one_plain_text_request(self):
         get = Get(Response(payload={}))
         get.responses[0].text = "2 tone\nshoegaze\n\nacid jazz\n"
-        mb = MusicBrainzSearch(get=get, limiter=SourceLimiter({}), pause=lambda s: None)
+        mb = MusicBrainzSearch(get=get, lane=FreeLane(), pause=lambda s: None)
         names = mb.genre_names(remaining=plenty, cancelled=threading.Event())
         self.assertEqual(names, ["2 tone", "shoegaze", "acid jazz"])
         self.assertEqual(get.requests[0][0], "https://musicbrainz.org/ws/2/genre/all")
@@ -337,7 +339,7 @@ class GenreSearchTests(unittest.TestCase):
     def test_an_empty_musicbrainz_list_is_a_failure_not_an_answer(self):
         get = Get(Response(payload={}))
         get.responses[0].text = "\n"
-        mb = MusicBrainzSearch(get=get, limiter=SourceLimiter({}), pause=lambda s: None)
+        mb = MusicBrainzSearch(get=get, lane=FreeLane(), pause=lambda s: None)
         with self.assertRaises(ProviderError):
             mb.genre_names(remaining=plenty, cancelled=threading.Event())
 

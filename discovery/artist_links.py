@@ -13,7 +13,8 @@ from collections.abc import Callable, Iterable, Mapping
 from typing import Any
 
 from discovery.artist_tag_fallback import LASTFM_API_URL
-from discovery.mbid_popularity import LASTFM_SPACING_SECONDS, MUSICBRAINZ_SPACING_SECONDS
+from discovery.mbid_popularity import LASTFM_SPACING_SECONDS
+from integrations.provider_gate import musicbrainz_lane
 
 MUSICBRAINZ_ARTIST_URL = "https://musicbrainz.org/ws/2/artist/"
 SIMILAR_CACHE_PREFIX = "lastfm:similar:"
@@ -68,10 +69,14 @@ def _fetch_links(
     cache_get: Callable[..., Any],
     cache_set: Callable[..., Any],
     ask: Callable[[str], list[str] | None],
-    sleep: Callable[[float], Any] | None,
-    spacing: float,
+    sleep: Callable[[float], Any] | None = None,
+    spacing: float = 0.0,
+    lane: Any = None,
 ) -> dict[str, list[str]]:
-    """Shared cache-then-ask loop. ``ask`` returns the links for one artist, or None on failure."""
+    """Shared cache-then-ask loop. ``ask`` returns the links for one artist, or None on failure.
+
+    Spacing is ``lane`` (a slot from the shared gate before each ask) or, for a provider with
+    no gate, ``sleep(spacing)`` after each ask."""
     links: dict[str, list[str]] = {}
     asked = 0
     for mbid in dict.fromkeys(str(m) for m in mbids if m):
@@ -84,12 +89,14 @@ def _fetch_links(
             continue
         if asked >= LINK_MAX_CALLS:
             continue
+        if lane is not None and not lane.acquire():
+            break
         asked += 1
         try:
             answer = ask(mbid)
         except Exception:
             answer = None
-        if sleep is not None:
+        if lane is None and sleep is not None:
             sleep(spacing)
         if answer is None:
             continue
@@ -140,11 +147,13 @@ def fetch_collaborators(
     headers: Mapping[str, str],
     cache_get: Callable[..., Any],
     cache_set: Callable[..., Any],
-    sleep: Callable[[float], Any] | None = None,
+    lane: Any = None,
     timeout: float = 30,
 ) -> dict[str, list[str]]:
     """Return {artist MBID: collaborator MBIDs} from MusicBrainz artist relations (one lookup each)."""
     from recommendation_run_metrics import record_provider_call
+
+    lane = lane or musicbrainz_lane()
 
     def ask(mbid: str) -> list[str] | None:
         record_provider_call("musicbrainz", "artist_rels")
@@ -154,9 +163,10 @@ def fetch_collaborators(
             headers=dict(headers),
             timeout=timeout,
         )
+        lane.penalize_response(response)
         if response.status_code != 200:
             return None
         return _collaborators(response.json())
 
     return _fetch_links(artist_mbids, prefix=COLLABORATOR_CACHE_PREFIX, cache_get=cache_get,
-                        cache_set=cache_set, ask=ask, sleep=sleep, spacing=MUSICBRAINZ_SPACING_SECONDS)
+                        cache_set=cache_set, ask=ask, lane=lane)

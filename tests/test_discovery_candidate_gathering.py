@@ -1,5 +1,7 @@
 import json
 import unittest
+
+from gate_fakes import FreeLane
 from unittest import mock
 
 from discovery.candidate_gathering import (
@@ -21,7 +23,7 @@ class GenreLookupRetryTests(unittest.TestCase):
             "https://musicbrainz.org/ws/2/artist/synthetic",
             params={"fmt": "json", "inc": "genres"},
             headers={},
-            sleep=sleeps.append,
+            lane=FreeLane(waits=sleeps),
         )
         return response, client.calls, sleeps
 
@@ -59,7 +61,7 @@ class TagSearchRetryTests(unittest.TestCase):
             "https://musicbrainz.org/ws/2/release-group/",
             params={"query": "tag:synthetic", "fmt": "json", "limit": 10},
             headers={},
-            sleep=sleeps.append,
+            lane=FreeLane(waits=sleeps),
             attempts=_TAG_SEARCH_ATTEMPTS,
         )
         return response, client.calls, sleeps
@@ -173,7 +175,7 @@ class RetryAfterHonoringTests(unittest.TestCase):
             "https://musicbrainz.org/ws/2/artist/synthetic",
             params={"fmt": "json", "inc": "genres"},
             headers={},
-            sleep=sleeps.append,
+            lane=FreeLane(waits=sleeps),
             honor_retry_after=honor,
         )
         return response, client.calls, sleeps
@@ -607,3 +609,14 @@ class _Client:
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class GateSlotTests(unittest.TestCase):
+    def test_every_attempt_takes_a_slot_and_a_refusal_sends_nothing(self):
+        lane, client = FreeLane(), _ScriptedClient([503, 200])
+        _get_with_bounded_retry(client, "https://musicbrainz.org/ws/2/x", params={}, headers={}, lane=lane)
+        self.assertEqual((lane.acquired, client.calls), (2, 2))
+        refused, silent = FreeLane(grant=False), _ScriptedClient([200])
+        with self.assertRaises(RuntimeError):
+            _get_with_bounded_retry(silent, "https://musicbrainz.org/ws/2/x", params={}, headers={}, lane=refused)
+        self.assertEqual(silent.calls, 0)

@@ -17,6 +17,7 @@ leaves a candidate without a value and never raises. See docs/engine2.md.
 from typing import Any, Callable, Mapping
 
 from discovery.batch_metadata import LISTENBRAINZ_RELEASE_GROUP_URL, RELEASE_GROUP_CHUNK
+from integrations.provider_gate import musicbrainz_lane
 
 MUSICBRAINZ_RELEASE_SEARCH_URL = "https://musicbrainz.org/ws/2/release"
 LASTFM_API_URL = "https://ws.audioscrobbler.com/2.0/"
@@ -39,7 +40,6 @@ RELEASE_SEARCH_RETRY_STATUSES = (429, 500, 502, 503, 504)
 # Release MBIDs tried on Last.fm per release group (measured: 23 of 25 on the first
 # try, 24 of 25 within five, 1.1 tries on average).
 MAX_RELEASE_TRIES = 5
-MUSICBRAINZ_SPACING_SECONDS = 1.1
 LASTFM_SPACING_SECONDS = 0.27
 DEFAULT_MAX_LASTFM_CALLS = 450
 
@@ -57,16 +57,18 @@ def order_releases(releases: list[tuple[str, str | None, str]]) -> list[str]:
 
 def _release_search_body(
     get: Callable[..., Any], query: str, offset: int, *,
-    headers: Mapping[str, str], timeout: float, sleep: Callable[[float], Any] | None,
+    headers: Mapping[str, str], timeout: float, lane: Any,
 ) -> dict | None:
     """One release-search page as a body dict, or None when it failed for good.
 
     A rate limit, a server error or a dropped connection is tried again after a pause
-    (``RELEASE_SEARCH_RETRY_SECONDS``), up to ``RELEASE_SEARCH_ATTEMPTS`` tries. Without
-    ``sleep`` the retries are immediate. Never raises."""
+    (``RELEASE_SEARCH_RETRY_SECONDS``, held on the shared gate), up to ``RELEASE_SEARCH_ATTEMPTS``
+    tries. Every try takes a MusicBrainz slot from ``lane``. Never raises."""
     from recommendation_run_metrics import record_provider_call
 
     for attempt in range(RELEASE_SEARCH_ATTEMPTS):
+        if not lane.acquire():
+            return None
         try:
             record_provider_call("musicbrainz", "release_search_batch")
             response = get(
@@ -77,8 +79,7 @@ def _release_search_body(
             )
         except Exception:
             response = None
-        if sleep is not None:
-            sleep(MUSICBRAINZ_SPACING_SECONDS)
+        throttled = response is not None and lane.penalize_response(response, RELEASE_SEARCH_RETRY_SECONDS)
         if response is not None:
             if response.status_code == 200:
                 try:
@@ -88,8 +89,8 @@ def _release_search_body(
                 return body if isinstance(body, dict) else None
             if response.status_code not in RELEASE_SEARCH_RETRY_STATUSES:
                 return None
-        if attempt < RELEASE_SEARCH_ATTEMPTS - 1 and sleep is not None:
-            sleep(RELEASE_SEARCH_RETRY_SECONDS)
+        if not throttled and attempt < RELEASE_SEARCH_ATTEMPTS - 1:
+            lane.penalize(RELEASE_SEARCH_RETRY_SECONDS)  # 5xx or dropped connection: same pause
     return None
 
 
@@ -98,7 +99,7 @@ def fetch_release_mbids(
     release_group_mbids: list[str],
     *,
     headers: Mapping[str, str],
-    sleep: Callable[[float], Any] | None = None,
+    lane: Any = None,
     timeout: float = 30,
     years: dict[str, int] | None = None,
 ) -> dict[str, list[str]]:
@@ -110,13 +111,14 @@ def fetch_release_mbids(
     {release_group_mbid: earliest release year} from the same search, at no extra call. Never raises.
     """
     found: dict[str, list[tuple[str, str | None, str]]] = {}
+    lane = lane or musicbrainz_lane()
     for chunk in _chunks(list(dict.fromkeys(m for m in release_group_mbids if m)), RELEASE_SEARCH_GROUPS):
         wanted = set(chunk)
         query = "rgid:(" + " OR ".join(chunk) + ")"
         for page in range(MAX_RELEASE_SEARCH_PAGES):
             body = _release_search_body(
                 get, query, page * RELEASE_SEARCH_PAGE,
-                headers=headers, timeout=timeout, sleep=sleep,
+                headers=headers, timeout=timeout, lane=lane,
             )
             if body is None:
                 break
@@ -320,7 +322,7 @@ def resolve_popularity(
             pending.append(group)
     if pending and budget.left > 0:
         releases = fetch_release_mbids(
-            get, pending, headers=headers, sleep=sleep, timeout=timeout, years=release_years)
+            get, pending, headers=headers, timeout=timeout, years=release_years)
         missing = [g for g in pending if g not in releases]
         if missing:
             for group, release in fetch_representative_releases(
@@ -349,7 +351,7 @@ def resolve_popularity(
     # next run takes the fast path. Listeners are not refetched. A group with no date is stored with
     # None, as a miss is; a search that failed for good is therefore not retried until the entry expires.
     if legacy:
-        fetch_release_mbids(get, list(legacy), headers=headers, sleep=sleep, timeout=timeout, years=release_years)
+        fetch_release_mbids(get, list(legacy), headers=headers, timeout=timeout, years=release_years)
         for group, value in legacy.items():
             cached_years[group] = release_years.get(group)
             try:

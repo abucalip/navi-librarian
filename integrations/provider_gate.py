@@ -226,13 +226,25 @@ class Lane:
     def __init__(self, gate: ProviderGate, provider: str, max_wait: float = WORKER_MAX_WAIT):
         self.gate, self.provider, self.max_wait = gate, provider, max_wait
 
-    def acquire(self) -> bool:
-        """Wait for the next slot; False only when it is further off than ``max_wait``."""
-        return self.gate.reserve(self.provider, self.max_wait)
+    def acquire(self, max_wait: float | None = None) -> bool:
+        """Wait for the next slot; False only when it is further off than ``max_wait``
+        (this lane's own limit unless the caller, say with a request deadline, passes one)."""
+        return self.gate.reserve(self.provider, self.max_wait if max_wait is None else max_wait)
 
     def penalize(self, seconds: float | None, default: float = 60.0) -> None:
         """Block the provider after a 429 or 503 (``seconds`` is Retry-After when it was sent)."""
         self.gate.penalize(self.provider, seconds if seconds and seconds > 0 else default)
+
+    def penalize_response(self, response, default: float = 60.0) -> bool:
+        """Penalize after an HTTP 429 or 503 response (honouring Retry-After); True if it was one."""
+        if getattr(response, "status_code", None) not in (429, 503):
+            return False
+        try:
+            retry = float((getattr(response, "headers", None) or {}).get("Retry-After"))
+        except (TypeError, ValueError):
+            retry = None
+        self.penalize(retry, default)
+        return True
 
 
 def shared_gate() -> ProviderGate:

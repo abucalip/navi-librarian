@@ -4,6 +4,7 @@ from unittest.mock import patch
 import httpx
 
 import musicbrainz_rating_client as legacy_client
+from gate_fakes import FreeLane
 from integrations.musicbrainz.rating_client import critical_rating
 
 
@@ -27,7 +28,7 @@ class MusicBrainzRatingClientTests(unittest.TestCase):
     def setUp(self):
         self.cache = {}
         self.requests = []
-        self.sleeps = []
+        self.lane = FreeLane()
 
         def cache_get(key, ttl_seconds):
             self.requests.append(("cache_get", key, ttl_seconds))
@@ -49,7 +50,7 @@ class MusicBrainzRatingClientTests(unittest.TestCase):
             })
         result = critical_rating(
             "mbid-1", include_year=True, cache_get=self.cache_get,
-            cache_set=self.cache_set, http_get=http_get, sleep=self.sleeps.append,
+            cache_set=self.cache_set, http_get=http_get, lane=self.lane,
         )
         self.assertEqual(result, {"rating": 4.25, "votes": 12, "year": 1998})
         request = next(row for row in self.requests if row[0] == "http_get")
@@ -59,7 +60,7 @@ class MusicBrainzRatingClientTests(unittest.TestCase):
             "User-Agent": "Discair/1.0 (personal music discovery)"
         })
         self.assertEqual(request[2]["timeout"], 15)
-        self.assertEqual(self.sleeps, [1.1])
+        self.assertEqual(self.lane.acquired, 1)
         self.assertEqual(self.cache["discovery:mb-release-group-rating:mbid-1"], result)
 
     def test_cached_rating_without_year_refetches_only_when_year_requested(self):
@@ -70,19 +71,19 @@ class MusicBrainzRatingClientTests(unittest.TestCase):
             "rating": {"value": 3.5, "votes-count": 4}, "first-release-date": "2001"
         }))
         cached = critical_rating("mbid-2", cache_get=self.cache_get, cache_set=self.cache_set,
-                                 http_get=http_get, sleep=self.sleeps.append)
+                                 http_get=http_get, lane=self.lane)
         self.assertEqual(cached, {"rating": 3.5, "votes": 4})
         self.assertEqual(http_calls, [])
         refreshed = critical_rating("mbid-2", include_year=True, cache_get=self.cache_get,
                                     cache_set=self.cache_set, http_get=http_get,
-                                    sleep=self.sleeps.append)
+                                    lane=self.lane)
         self.assertEqual(refreshed["year"], 2001)
         self.assertEqual(len(http_calls), 1)
 
     def test_404_is_cached_as_empty_result(self):
         result = critical_rating("missing", cache_get=self.cache_get, cache_set=self.cache_set,
                                  http_get=lambda *_a, **_k: FakeResponse(status_code=404),
-                                 sleep=self.sleeps.append)
+                                 lane=self.lane)
         self.assertEqual(result, {"rating": None, "votes": 0, "year": None})
         self.assertEqual(self.cache["discovery:mb-release-group-rating:missing"], result)
 
@@ -93,7 +94,7 @@ class MusicBrainzRatingClientTests(unittest.TestCase):
         self.assertEqual(http_calls, [])
         self.assertIsNone(critical_rating("offline", cache_get=self.cache_get, cache_set=self.cache_set,
                                           http_get=lambda *_a, **_k: (_ for _ in ()).throw(httpx.ConnectError("offline")),
-                                          sleep=self.sleeps.append))
+                                          lane=self.lane))
 
     def test_legacy_server_adapter_delegates(self):
         import navidrome_server

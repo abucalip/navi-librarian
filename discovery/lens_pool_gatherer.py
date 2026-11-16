@@ -97,7 +97,7 @@ def gather_lens_pools(
     similar = fetch_similar_artists(
         get, window_mbids, api_key=lastfm_api_key, cache_get=cache_get, cache_set=cache_set, sleep=sleep)
     collaborators = fetch_collaborators(
-        get, window_mbids, headers=headers, cache_get=cache_get, cache_set=cache_set, sleep=sleep)
+        get, window_mbids, headers=headers, cache_get=cache_get, cache_set=cache_set)
     linked = {m for values in (*similar.values(), *collaborators.values()) for m in values}
     genre_mbids = sorted(set(history) | linked)
     prefetch_artist_genres(get, genre_mbids, headers=headers, cache_get=cache_get, cache_set=cache_set)
@@ -138,7 +138,7 @@ def gather_lens_pools(
         if mbids:
             if vocabulary is None:
                 # Loaded once per run; an empty result is kept, so a failed list is not retried per lens.
-                vocabulary = load_genre_vocabulary(get, headers, cache_get, cache_set, sleep=sleep)
+                vocabulary = load_genre_vocabulary(get, headers, cache_get, cache_set)
             fallback = fallback_artist_tags(
                 mbids, tags, get=get, api_key=lastfm_api_key, vocabulary=vocabulary,
                 cache_get=cache_get, cache_set=cache_set, sleep=sleep,
@@ -162,7 +162,7 @@ def gather_lens_pools(
     wanted = set(window_mbids) | {
         str(album["artist_mbid"]) for pool in pools.values() for album in pool if album.get("artist_mbid")}
     profiles = fetch_artist_profiles(
-        get, sorted(wanted - {""}), headers=headers, cache_get=cache_get, cache_set=cache_set, sleep=sleep)
+        get, sorted(wanted - {""}), headers=headers, cache_get=cache_get, cache_set=cache_set)
     # The history and linked artists' genres belong in the returned tag map too, not only the pool's.
     artist_tags.update(_genres_from_cache(providers, genre_mbids))
     areas = {mbid: profile["area"] for mbid, profile in profiles.items() if profile.get("area")}

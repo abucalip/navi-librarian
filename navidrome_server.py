@@ -945,7 +945,7 @@ def _build_new_releases_list():
     artist_batch = qualified_artists[:120]
     headers = {"User-Agent": "Discair/1.0 (personal music discovery)"}
 
-    for index, artist_record in enumerate(artist_batch):
+    for artist_record in artist_batch:
         artist = artist_record["name"].strip()
         if _discovery_is_various_artists(artist):
             continue
@@ -964,9 +964,7 @@ def _build_new_releases_list():
             cache_get=_metadata_cache_get,
             cache_set=_metadata_cache_set,
             http_get=httpx.get,
-            sleep=time.sleep,
             headers=headers,
-            pause_before_request=bool(index),
         )
         if lookup_error is not None:
             errors.append({"artist": artist, "error": lookup_error})

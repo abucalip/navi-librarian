@@ -3,6 +3,8 @@
 import threading
 import unittest
 
+from gate_fakes import FreeLane
+
 from discovery.search.cache import NEGATIVE_TTL_SECONDS, POSITIVE_TTL_SECONDS, provider_cache_key, read_cached, write_cached
 from discovery.search.limiter import SourceLimiter
 from discovery.search.providers import LastFmSearch, MusicBrainzSearch, ProviderError, lucene_phrase
@@ -73,7 +75,7 @@ class LimiterTests(unittest.TestCase):
 
 class MusicBrainzTests(unittest.TestCase):
     def client(self, get, pause=lambda _: None):
-        return MusicBrainzSearch(get=get, limiter=open_limiter(), pause=pause)
+        return MusicBrainzSearch(get=get, lane=FreeLane(), pause=pause)
 
     def test_503_is_retried_with_backoff_and_then_succeeds(self):
         pauses = []
@@ -103,10 +105,8 @@ class MusicBrainzTests(unittest.TestCase):
         self.assertEqual(len(get.requests), 1)
 
     def test_refused_pacing_reports_rate_limited_without_a_request(self):
-        limiter = SourceLimiter({"musicbrainz": 5.0})
-        limiter.admit("musicbrainz", 10.0)
         get = ScriptedGet()
-        client = MusicBrainzSearch(get=get, limiter=limiter, pause=lambda _: None)
+        client = MusicBrainzSearch(get=get, lane=FreeLane(grant=False), pause=lambda _: None)
         with self.assertRaises(ProviderError) as raised:
             client.artists("ash", remaining=lambda: 0.1, cancelled=never_cancelled())
         self.assertEqual(raised.exception.state, "rate_limited")
@@ -178,7 +178,7 @@ class MusicBrainzBrowseTests(unittest.TestCase):
             {"id": "rg-2", "title": "Live Bends", "first-release-date": "1996",
              "artist-credit": [{"name": "Radiohead"}], "secondary-types": ["Live"]},
         ]}))
-        client = MusicBrainzSearch(get=get, limiter=open_limiter(), pause=lambda _: None)
+        client = MusicBrainzSearch(get=get, lane=FreeLane(), pause=lambda _: None)
         albums = client.albums_by_artist("mb-rh", remaining=plenty, cancelled=never_cancelled())
         self.assertEqual([a["name"] for a in albums], ["The Bends"])
         _, params = get.requests[0]
@@ -195,7 +195,7 @@ class BatchedIdentityTests(unittest.TestCase):
             calls.append(params)
             return FakeResponse(200, responder(params))
 
-        client = MusicBrainzSearch(get=get, limiter=open_limiter(), pause=lambda _: None)
+        client = MusicBrainzSearch(get=get, lane=FreeLane(), pause=lambda _: None)
         return client, calls
 
     def test_batches_split_at_one_hundred_names(self):
@@ -271,7 +271,7 @@ class StoredIdentityBatchTests(unittest.TestCase):
             calls.append((url.rsplit("/", 1)[-1], params))
             return FakeResponse(200, responder(url, params))
 
-        return MusicBrainzSearch(get=get, limiter=open_limiter(), pause=lambda _: None), calls
+        return MusicBrainzSearch(get=get, lane=FreeLane(), pause=lambda _: None), calls
 
     def test_release_ids_map_to_release_groups_and_malformed_ids_are_never_sent(self):
         def responder(url, params):

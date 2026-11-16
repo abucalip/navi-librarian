@@ -1,4 +1,5 @@
 import unittest
+from gate_fakes import FreeLane
 from discovery.new_releases import fetch_artist_release_groups, enrich_new_release_listeners
 
 from discovery.new_releases import new_release_window, build_new_release_lookup, build_new_release_response, merge_release_candidates, prepare_new_release_library_scope, select_artist_release_candidates
@@ -158,8 +159,8 @@ class NewReleaseProviderLookupTests(unittest.TestCase):
             "key", "query", cache_get=lambda key, **kw: payload,
             cache_set=lambda *a: calls.append(("set", a)),
             http_get=lambda *a, **kw: calls.append(("http", kw)),
-            sleep=lambda seconds: calls.append(("sleep", seconds)),
-            headers={"User-Agent": "test"}, pause_before_request=True,
+            lane=FreeLane(),
+            headers={"User-Agent": "test"},
         )
         self.assertEqual(result, payload)
         self.assertIsNone(error)
@@ -175,15 +176,14 @@ class NewReleaseProviderLookupTests(unittest.TestCase):
             "key", "artist-query", cache_get=lambda key, **kw: None,
             cache_set=lambda key, value: calls.append(("set", key, value)),
             http_get=lambda url, **kw: (calls.append(("http", url, kw)) or response),
-            sleep=lambda seconds: calls.append(("sleep", seconds)),
-            headers={"User-Agent": "test"}, pause_before_request=True,
+            lane=FreeLane(),
+            headers={"User-Agent": "test"},
         )
         self.assertEqual(result, [{"id": "fresh"}])
         self.assertIsNone(error)
-        self.assertEqual(calls[0], ("sleep", 1.1))
-        self.assertEqual(calls[1][2]["params"], {"query": "artist-query", "fmt": "json", "limit": 100})
-        self.assertEqual(calls[1][2]["timeout"], 20)
-        self.assertEqual(calls[2], ("set", "key", [{"id": "fresh"}]))
+        self.assertEqual(calls[0][2]["params"], {"query": "artist-query", "fmt": "json", "limit": 100})
+        self.assertEqual(calls[0][2]["timeout"], 20)
+        self.assertEqual(calls[1], ("set", "key", [{"id": "fresh"}]))
 
     def test_malformed_payload_is_normalized_and_cached_as_empty(self):
         cached = []
@@ -194,8 +194,8 @@ class NewReleaseProviderLookupTests(unittest.TestCase):
         result, error = fetch_artist_release_groups(
             "key", "query", cache_get=lambda *a, **kw: None,
             cache_set=lambda key, value: cached.append(value),
-            http_get=lambda *a, **kw: response, sleep=lambda _: None,
-            headers={}, pause_before_request=False,
+            http_get=lambda *a, **kw: response, lane=FreeLane(),
+            headers={},
         )
         self.assertEqual(result, [])
         self.assertIsNone(error)
@@ -206,7 +206,7 @@ class NewReleaseProviderLookupTests(unittest.TestCase):
             "key", "query", cache_get=lambda *a, **kw: None,
             cache_set=lambda *a: self.fail("must not cache failures"),
             http_get=lambda *a, **kw: (_ for _ in ()).throw(ValueError("secret detail")),
-            sleep=lambda _: None, headers={}, pause_before_request=False,
+            lane=FreeLane(), headers={},
         )
         self.assertIsNone(result)
         self.assertEqual(error, "ValueError")
@@ -374,3 +374,21 @@ class NewReleaseRouteEnrichmentTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class NewReleaseGateTests(unittest.TestCase):
+    def test_refused_slot_is_reported_without_a_request(self):
+        result, error = fetch_artist_release_groups(
+            "key", "query", cache_get=lambda *a, **kw: None, cache_set=lambda *a: None,
+            http_get=lambda *a, **kw: self.fail("no slot, no request"), headers={}, lane=FreeLane(grant=False),
+        )
+        self.assertEqual((result, error), (None, "RateLimited"))
+
+    def test_throttled_response_penalizes_the_gate(self):
+        lane = FreeLane()
+        response = type("R", (), {"status_code": 503, "headers": {}, "raise_for_status": lambda s: None,
+                                  "json": lambda s: {"release-groups": []}})()
+        fetch_artist_release_groups(
+            "key", "query", cache_get=lambda *a, **kw: None, cache_set=lambda *a: None,
+            http_get=lambda *a, **kw: response, headers={}, lane=lane)
+        self.assertEqual(len(lane.penalties), 1)

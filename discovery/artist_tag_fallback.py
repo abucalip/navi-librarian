@@ -12,6 +12,8 @@ tags and never raises. Unwired; see docs/engine2.md.
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Callable, Iterable, Mapping, Sequence
 
+from integrations.provider_gate import musicbrainz_lane
+
 LASTFM_API_URL = "https://ws.audioscrobbler.com/2.0/"
 MUSICBRAINZ_GENRE_URL = "https://musicbrainz.org/ws/2/genre/all"
 GENRE_LIST_CACHE_KEY = "mb:genre-list"
@@ -20,7 +22,6 @@ LASTFM_TAGS_CACHE_PREFIX = "lfm:artist-tags:"
 LASTFM_TAGS_TTL_SECONDS = 90 * 24 * 60 * 60
 GENRE_PAGE_SIZE = 100
 MAX_GENRE_PAGES = 40
-MUSICBRAINZ_SPACING_SECONDS = 1.1
 # A page is tried this many times, waiting between tries; a page that never answers discards the list.
 GENRE_PAGE_ATTEMPTS = 3
 GENRE_RETRY_SECONDS = 5.0
@@ -35,14 +36,17 @@ DEFAULT_MAX_CALLS = 40
 
 def fetch_musicbrainz_genres(
     get: Callable[..., Any], headers: Mapping[str, str], *,
-    sleep: Callable[[float], Any] | None = None, timeout: float = 25,
+    lane: Any = None, timeout: float = 25,
 ) -> set[str]:
     """All MusicBrainz genre names, lower-cased. Returns an empty set on any failure: a
     partial list would silently drop real genres, so a failed page discards the result."""
     genres: set[str] = set()
+    lane = lane or musicbrainz_lane()
     for page in range(MAX_GENRE_PAGES):
         body = None
         for attempt in range(GENRE_PAGE_ATTEMPTS):
+            if not lane.acquire():
+                return set()
             try:
                 response = get(MUSICBRAINZ_GENRE_URL, params={
                     "fmt": "json", "limit": GENRE_PAGE_SIZE, "offset": page * GENRE_PAGE_SIZE,
@@ -51,8 +55,8 @@ def fetch_musicbrainz_genres(
                     body = response.json()
             except Exception:
                 body = None
-            if sleep is not None:
-                sleep(MUSICBRAINZ_SPACING_SECONDS if body is not None else GENRE_RETRY_SECONDS)
+            if body is None:
+                lane.penalize(GENRE_RETRY_SECONDS)  # the retry pause, held for every caller
             if body is not None:
                 break
         names = body.get("genres") if isinstance(body, dict) else None
@@ -68,7 +72,7 @@ def fetch_musicbrainz_genres(
 def load_genre_vocabulary(
     get: Callable[..., Any], headers: Mapping[str, str],
     cache_get: Callable[..., Any], cache_set: Callable[..., Any], *,
-    sleep: Callable[[float], Any] | None = None,
+    lane: Any = None,
 ) -> set[str]:
     """The MusicBrainz genre names, from the cache when fresh (about 25 requests otherwise)."""
     try:
@@ -77,7 +81,7 @@ def load_genre_vocabulary(
         cached = None
     if isinstance(cached, list) and cached:
         return {str(name) for name in cached}
-    genres = fetch_musicbrainz_genres(get, headers, sleep=sleep)
+    genres = fetch_musicbrainz_genres(get, headers, lane=lane)
     if genres:
         try:
             cache_set(GENRE_LIST_CACHE_KEY, sorted(genres))

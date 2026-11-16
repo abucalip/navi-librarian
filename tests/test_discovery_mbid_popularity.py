@@ -1,6 +1,8 @@
 """Offline tests for MBID-keyed Last.fm popularity (no network)."""
 import unittest
 
+from gate_fakes import FreeLane
+
 from discovery.mbid_popularity import (
     ALBUM_CACHE_PREFIX,
     MISS_TTL_SECONDS,
@@ -130,10 +132,14 @@ class FetchReleaseMbidsTests(unittest.TestCase):
             raise RuntimeError("down")
         self.assertEqual(fetch_release_mbids(boom, ["g1"], headers={}), {})
 
-    def test_sleeps_between_calls(self):
-        slept = []
-        fetch_release_mbids(_Net([_release("r", "g1")]), ["g1"], headers={}, sleep=slept.append)
-        self.assertEqual(len(slept), 1)
+    def test_every_search_takes_a_gate_slot(self):
+        lane = FreeLane()
+        fetch_release_mbids(_Net([_release("r", "g1")]), ["g1"], headers={}, lane=lane)
+        self.assertEqual(lane.acquired, 1)
+
+    def test_refused_slot_sends_no_search(self):
+        net = _Net([_release("r", "g1")])
+        self.assertEqual(fetch_release_mbids(net, ["g1"], headers={}, lane=FreeLane(grant=False)), {})
 
 
 class RepresentativeReleaseTests(unittest.TestCase):
@@ -316,11 +322,11 @@ class ReleaseSearchRetryTests(unittest.TestCase):
 
     def test_rate_limited_then_unavailable_search_is_retried_with_a_pause(self):
         net = self._Scripted([503, 429], [_release("r", "g1")])
-        slept = []
-        out = fetch_release_mbids(net, ["g1"], headers={}, sleep=slept.append)
+        lane = FreeLane()
+        out = fetch_release_mbids(net, ["g1"], headers={}, lane=lane)
         self.assertEqual(out, {"g1": ["r"]})
         self.assertEqual(net.calls, 3)
-        self.assertEqual(slept.count(RELEASE_SEARCH_RETRY_SECONDS), 2)
+        self.assertEqual(lane.penalties.count(RELEASE_SEARCH_RETRY_SECONDS), 2)
 
     def test_dropped_connection_is_retried(self):
         net = self._Scripted([None], [_release("r", "g1")])
@@ -329,10 +335,10 @@ class ReleaseSearchRetryTests(unittest.TestCase):
 
     def test_retries_stop_at_the_attempt_limit(self):
         net = self._Scripted([503] * 10, [_release("r", "g1")])
-        slept = []
-        self.assertEqual(fetch_release_mbids(net, ["g1"], headers={}, sleep=slept.append), {})
+        lane = FreeLane()
+        self.assertEqual(fetch_release_mbids(net, ["g1"], headers={}, lane=lane), {})
         self.assertEqual(net.calls, RELEASE_SEARCH_ATTEMPTS)
-        self.assertEqual(slept.count(RELEASE_SEARCH_RETRY_SECONDS), RELEASE_SEARCH_ATTEMPTS - 1)
+        self.assertEqual(lane.penalties.count(RELEASE_SEARCH_RETRY_SECONDS), RELEASE_SEARCH_ATTEMPTS)
 
     def test_client_error_is_not_retried(self):
         net = self._Scripted([404], [_release("r", "g1")])

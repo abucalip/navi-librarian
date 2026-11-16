@@ -5,6 +5,8 @@ import threading
 import time
 import unittest
 
+from gate_fakes import FreeLane
+
 from discovery.search.events import search_events
 from discovery.search.index import IndexView, STATE_FRESH, build_owned_data
 from discovery.search.providers import ProviderError, artist_candidate
@@ -287,10 +289,9 @@ class CacheAndSharingTests(unittest.TestCase):
                 raise TimeoutError("request timed out")
             return SlowButValid()
 
-        from discovery.search.limiter import SourceLimiter
         from discovery.search.providers import MusicBrainzSearch
 
-        client = MusicBrainzSearch(get=honoring_get, limiter=SourceLimiter({}), pause=lambda _: None)
+        client = MusicBrainzSearch(get=honoring_get, lane=FreeLane(), pause=lambda _: None)
         parts = [Part("musicbrainz", "artist", "search:musicbrainz:0:ash:artist:depth50",
                       lambda remaining, cancelled: client.artists("ash", remaining=remaining, cancelled=cancelled))]
 

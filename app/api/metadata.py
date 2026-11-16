@@ -655,12 +655,11 @@ def album_page_links(artist: str = "", album: str = "", mbid: str = ""):
             return mbid
         import threading
 
-        from discovery.search.network import LIMITER
         from discovery.search.providers import MusicBrainzSearch
 
         deadline = monotonic() + 4.0
         try:
-            groups = MusicBrainzSearch(get=_EXTERNAL_HTTP.get, limiter=LIMITER).release_groups_named(
+            groups = MusicBrainzSearch(get=_EXTERNAL_HTTP.get).release_groups_named(
                 artist, album, remaining=lambda: deadline - monotonic(), cancelled=threading.Event())
         except Exception:
             return None

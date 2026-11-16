@@ -89,7 +89,6 @@ def _identity_pass(librarian, data):
     import httpx
 
     from discovery.identity import purge_stale_identities, resolve_identities
-    from discovery.search.network import LIMITER
     from discovery.search.providers import MusicBrainzSearch
 
     def current_generation():
@@ -109,7 +108,7 @@ def _identity_pass(librarian, data):
     if data.generation != current_generation():
         return idle
     # A background pass can wait longer than a search request, and a timed-out batch is simply retried.
-    musicbrainz = MusicBrainzSearch(get=httpx.get, limiter=LIMITER, pause=time.sleep, request_timeout=30.0)
+    musicbrainz = MusicBrainzSearch(get=httpx.get, pause=time.sleep, request_timeout=30.0)
 
     def navidrome_mbid(artist_id):
         artist = librarian.api_call("getArtist", id=artist_id).get("artist", {})

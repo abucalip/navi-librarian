@@ -3,6 +3,8 @@
 import threading
 import unittest
 
+from gate_fakes import FreeLane
+
 from discovery.search.artist_sections import ArtistNetwork, network_sections, similar_items
 from discovery.search.cache import SIMILAR_TTL_SECONDS
 from discovery.search.index import build_owned_data
@@ -70,7 +72,7 @@ class MusicBrainzArtistTagsTests(unittest.TestCase):
                 "not a dict",
             ]})
 
-        musicbrainz = MusicBrainzSearch(get=get, limiter=SourceLimiter({}), pause=lambda s: None)
+        musicbrainz = MusicBrainzSearch(get=get, lane=FreeLane(), pause=lambda s: None)
         tags = musicbrainz.artist_tags("mb/x", remaining=lambda: 10.0, cancelled=never_cancelled())
         self.assertEqual(tags, [{"name": "trip hop"}])
         self.assertEqual(calls[0][0], "https://musicbrainz.org/ws/2/artist/mb%2Fx")

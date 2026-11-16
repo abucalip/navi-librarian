@@ -5,6 +5,10 @@ from collections.abc import Callable, Mapping
 from datetime import date, timedelta
 from typing import Any
 
+from integrations.provider_gate import musicbrainz_lane
+
+NEW_RELEASES_MAX_WAIT = 60.0  # the build queues for a slot; a refused one is reported as an error
+
 
 def new_release_window(today: date) -> tuple[str, int, int]:
     """Return the ISO cutoff, earliest query year, and current year for a 730-day window."""
@@ -36,14 +40,13 @@ def fetch_artist_release_groups(
     cache_get: Callable[..., Any],
     cache_set: Callable[..., Any],
     http_get: Callable[..., Any],
-    sleep: Callable[[float], Any],
     headers: Mapping[str, str],
-    pause_before_request: bool,
+    lane: Any = None,
 ) -> tuple[Any, str | None]:
     """Read cached release groups or fetch/cache them, returning a safe error type.
 
-    The caller owns artist iteration and provider pacing policy; injected effects keep
-    cache, transport, and delay behavior independently testable without server imports.
+    The caller owns artist iteration; a request takes a MusicBrainz slot from the shared gate
+    (``lane``), and injected effects keep cache and transport independently testable.
     """
     import httpx
 
@@ -51,14 +54,16 @@ def fetch_artist_release_groups(
     if payload is not None:
         return payload, None
     try:
-        if pause_before_request:
-            sleep(1.1)
+        lane = lane or musicbrainz_lane(NEW_RELEASES_MAX_WAIT)
+        if not lane.acquire():
+            return None, "RateLimited"
         response = http_get(
             "https://musicbrainz.org/ws/2/release-group/",
             params={"query": query, "fmt": "json", "limit": 100},
             headers=dict(headers),
             timeout=20,
         )
+        lane.penalize_response(response)
         response.raise_for_status()
         payload = response.json().get("release-groups", [])
         if not isinstance(payload, list):

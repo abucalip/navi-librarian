@@ -38,7 +38,7 @@ REGISTRY = FetchRegistry()
 # MusicBrainz asks for an average of one request per second per IP; Last.fm allows about five per second.
 # Discogs allows 60 authenticated requests a minute (secondary sources, section 9).
 # ListenBrainz radio allows 30 requests per window (contract section 5.1), so one every two seconds.
-LIMITER = SourceLimiter({"musicbrainz": 1.0, "lastfm": 0.2, "listenbrainz": 2.0, "discogs": 1.0})
+LIMITER = SourceLimiter({"lastfm": 0.2, "listenbrainz": 2.0, "discogs": 1.0})
 
 _KINDS = ("artist", "album")
 
@@ -100,7 +100,7 @@ def external_search(
         _schedule_purge(delete_except, "musicbrainz", MUSICBRAINZ_GENERATION)
     get = http_get or httpx.get
     rate_limiter = limiter or LIMITER
-    musicbrainz = MusicBrainzSearch(get=get, limiter=rate_limiter, pause=time.sleep)
+    musicbrainz = MusicBrainzSearch(get=get, pause=time.sleep)
     lastfm = LastFmSearch(get=get, limiter=rate_limiter, api_key=api_key) if api_key else None
     discogs = DiscogsSearch(get=get, limiter=rate_limiter, token=discogs_token) if discogs_token else None
 
@@ -206,7 +206,7 @@ def artist_network(
     """
     get = http_get or httpx.get
     rate_limiter = limiter or LIMITER
-    musicbrainz = MusicBrainzSearch(get=get, limiter=rate_limiter, pause=time.sleep)
+    musicbrainz = MusicBrainzSearch(get=get, pause=time.sleep)
     lastfm = LastFmSearch(get=get, limiter=rate_limiter, api_key=lastfm_api_key) if lastfm_api_key else None
     listenbrainz = ListenBrainzRadio(get=get, limiter=rate_limiter, headers=request_headers())
     discogs = DiscogsSearch(get=get, limiter=rate_limiter, token=discogs_token) if discogs_token else None
@@ -257,7 +257,7 @@ def genre_network(
     if delete_except is not None:
         _schedule_purge(delete_except, "discogs", gen)
     return GenreNetwork(
-        musicbrainz=MusicBrainzSearch(get=get, limiter=rate_limiter, pause=time.sleep),
+        musicbrainz=MusicBrainzSearch(get=get, pause=time.sleep),
         discogs=DiscogsSearch(get=get, limiter=rate_limiter, token=token) if token else None,
         discogs_generation=gen,
         cache_read=cache_read,

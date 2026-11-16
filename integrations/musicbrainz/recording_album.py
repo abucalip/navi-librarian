@@ -3,7 +3,12 @@ from __future__ import annotations
 
 import json
 from urllib.parse import urlencode
+from urllib.error import HTTPError
 from urllib.request import Request, urlopen
+
+from integrations.provider_gate import musicbrainz_lane
+
+RECORDING_MAX_WAIT = 15.0  # a radio "Get" click waits for a slot only this long
 
 
 def _norm(value) -> str:
@@ -36,11 +41,23 @@ def _rank(release):
     return (0 if plain else 1, 0 if official else 1, _year(release) or 9999)
 
 
-def lookup_recording_album(artist: str, title: str, fetch=_fetch_recordings):
-    """``{"album": str, "year": int | None}`` for the best exact match, else None."""
+def lookup_recording_album(artist: str, title: str, fetch=_fetch_recordings, lane=None):
+    """``{"album": str, "year": int | None}`` for the best exact match, else None.
+
+    The request takes a MusicBrainz slot from the shared gate; no slot within the wait raises
+    ``OSError`` like any failed lookup."""
     query = f'recording:"{_escape(title)}" AND artist:"{_escape(artist)}"'
     candidates = []
-    for recording in fetch(query, 10):
+    lane = lane or musicbrainz_lane(RECORDING_MAX_WAIT)
+    if not lane.acquire():
+        raise OSError("MusicBrainz is rate limited")
+    try:
+        recordings = fetch(query, 10)
+    except HTTPError as exc:
+        if exc.code in (429, 503):
+            lane.penalize(None)
+        raise
+    for recording in recordings:
         if _norm(recording.get("title")) != _norm(title):
             continue
         credit = "".join(c.get("name", "") + c.get("joinphrase", "") for c in recording.get("artist-credit") or [])

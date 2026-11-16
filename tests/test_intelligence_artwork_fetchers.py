@@ -102,3 +102,31 @@ class FetcherTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class GateRoutingTests(unittest.TestCase):
+    def test_musicbrainz_takes_gate_slots_and_the_cover_art_host_keeps_its_own_pacer(self):
+        from gate_fakes import FreeLane
+        lane, clock, urls = FreeLane(), Clock(), []
+
+        def opener(req):
+            urls.append(req.full_url)
+            return 200, json.dumps({"release-count": 0, "releases": [], "images": []}).encode(), None
+
+        fetchers = ArtworkFetchers(
+            pacer=HostPacer(clock=clock.now, sleep=clock.sleep, lanes={"musicbrainz.org": lane}), opener=opener)
+        fetchers.fetch_releases("rg")
+        fetchers.fetch_release_index("r1")
+        self.assertEqual((lane.acquired, len(urls), clock.slept), (1, 2, []))
+
+    def test_a_refused_slot_or_a_throttle_never_reads_as_no_images(self):
+        from gate_fakes import FreeLane
+        refused = FreeLane(grant=False)
+        fetchers = ArtworkFetchers(
+            pacer=HostPacer(lanes={"musicbrainz.org": refused}), opener=lambda r: self.fail("no slot, no request"))
+        self.assertIsNone(fetchers.fetch_releases("rg"))
+        lane = FreeLane()
+        fetchers = ArtworkFetchers(
+            pacer=HostPacer(lanes={"musicbrainz.org": lane}), opener=lambda r: (503, b"", 7.0))
+        self.assertIsNone(fetchers.fetch_releases("rg"))
+        self.assertEqual(lane.penalties, [7.0])

@@ -1,11 +1,14 @@
 """Cached MusicBrainz release-group rating lookup."""
 from __future__ import annotations
 
-import time
 from collections.abc import Callable
 from typing import Any
 
 import httpx
+
+from integrations.provider_gate import musicbrainz_lane
+
+RATING_MAX_WAIT = 60.0  # a Classics build queues for a slot; it does not give up early
 
 
 def critical_rating(
@@ -15,7 +18,7 @@ def critical_rating(
     cache_get: Callable[[str, int], Any],
     cache_set: Callable[[str, Any], None],
     http_get: Callable[..., Any] | None = None,
-    sleep: Callable[[float], None] | None = None,
+    lane: Any = None,
 ) -> dict[str, Any] | None:
     """Fetch rating/vote/year metadata with the established cache and pacing rules."""
     if not mbid:
@@ -25,10 +28,11 @@ def critical_rating(
     if cached is not None and (not include_year or "year" in cached):
         return cached
     request = http_get or httpx.get
-    pause = sleep or time.sleep
     try:
-        # MusicBrainz requests must be spaced to respect its public API limit.
-        pause(1.1)
+        # MusicBrainz requests take a slot from the shared gate to respect its public API limit.
+        lane = lane or musicbrainz_lane(RATING_MAX_WAIT)
+        if not lane.acquire():
+            return None
         from recommendation_run_metrics import record_provider_call
         record_provider_call("musicbrainz", "release_group_rating")
         response = request(
@@ -37,6 +41,7 @@ def critical_rating(
             headers={"User-Agent": "Discair/1.0 (personal music discovery)"},
             timeout=15,
         )
+        lane.penalize_response(response)
         if response.status_code == 404:
             empty_result = {"rating": None, "votes": 0, "year": None}
             cache_set(cache_key, empty_result)
