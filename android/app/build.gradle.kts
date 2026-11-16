@@ -22,8 +22,8 @@ android {
         applicationId = "app.discair"
         minSdk = 33
         targetSdk = 33
-        versionCode = 18
-        versionName = "1.8"
+        versionCode = 19
+        versionName = "1.8.1"
     }
 
     signingConfigs {
