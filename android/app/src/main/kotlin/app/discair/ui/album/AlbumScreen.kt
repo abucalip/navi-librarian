@@ -99,8 +99,12 @@ fun AlbumScreen(route: AlbumRoute, open: Opener) {
         LoadView(loaded) { page -> AlbumContent(route, page, open, list, onTint = { tint = it }, pathsOn = pathsOn, sonicOn = sonicOn) }
         if (loaded.state !is Load.Ready) OverlayBack(open.back, Modifier.statusBarsPadding().padding(16.dp))
     }
-    // Flow draws its own wash (the cover's pastel on the page colour, D2); the other themes keep TintedPage.
-    if (app.discair.ui.common.isFlow()) Box(Modifier.fillMaxSize().flowWash(tint, list, app.discair.ui.theme.LocalPalette.current)) { body() }
+    // Gallery hangs the page on the plain wall (no tint); Flow draws its own wash (the cover's pastel on the page colour, D2); the other themes keep TintedPage.
+    if (app.discair.ui.common.isGallery()) Box(Modifier.fillMaxSize()) {
+        LoadView(loaded) { page -> AlbumContent(route, page, open, list, onTint = {}, pathsOn = pathsOn, sonicOn = sonicOn) }
+        if (loaded.state !is Load.Ready) app.discair.ui.common.GalleryPageBar("Album", open.back)
+    }
+    else if (app.discair.ui.common.isFlow()) Box(Modifier.fillMaxSize().flowWash(tint, list, app.discair.ui.theme.LocalPalette.current)) { body() }
     else TintedPage(tint, list) { body() }
 }
 
@@ -187,6 +191,19 @@ private fun AlbumContent(route: AlbumRoute, page: AlbumPage, open: Opener, list:
                 s.similarAlbums.items, similarArtists, pathsOn, { showPaths = true },
             ),
             open, list, onTint,
+        )
+        return
+    }
+
+    // Gallery: the cover as a matted print and a catalogue placard, in GalleryAlbum.kt.
+    if (app.discair.ui.common.isGallery()) {
+        GalleryAlbumContent(
+            CoverStackAlbumData(
+                route, info, title, artist, year, s.genre.genre, owned, albumId, tracks, app.discair.model.coverUrlFor(info?.artworkUrl, choice), backs,
+                editions.size, canPick, { showEditions = true }, booklet, s.description.description, page.done != Done(),
+                s.similarAlbums.items, similarArtists, pathsOn, { showPaths = true },
+            ),
+            open, list,
         )
         return
     }
@@ -427,6 +444,19 @@ internal fun ServiceLinks(artist: String, album: String, mbid: String?) {
                 contentAlignment = Alignment.Center,
             ) { androidx.compose.foundation.Image(painterResource(service.icon), contentDescription = null, modifier = Modifier.size(24.dp)) }
         }
+    }
+}
+
+/** The album's services as menu entries: each opens a search at once and the album's own page when the server finds an exact match (Gallery lists them in the page's menu). */
+@Composable
+internal fun rememberServiceMenu(artist: String, album: String, mbid: String?): List<Pair<String, () -> Unit>> {
+    val repo = LocalRepository.current
+    val uri = LocalUriHandler.current
+    val exact = (rememberLoad(artist, album, mbid) { repo.albumLinks(artist, album, mbid) }.state as? Load.Ready)?.value
+    val query = URLEncoder.encode("$artist $album".trim(), "UTF-8")
+    return SERVICES.map { service ->
+        val target = exact?.let(service.exact) ?: (service.search + query)
+        "Open in ${service.name}" to { uri.openUri(target) }
     }
 }
 

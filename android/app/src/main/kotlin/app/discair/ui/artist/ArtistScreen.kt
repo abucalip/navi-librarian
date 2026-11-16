@@ -84,6 +84,14 @@ fun ArtistScreen(route: ArtistRoute, open: Opener) {
     // The paths entry shows only when the server reports the feature (live, never from the saved copies).
     var pathsOn by remember(route) { mutableStateOf(false) }
     LaunchedEffect(route) { pathsOn = withContext(Dispatchers.IO) { repo.pathsAvailable() } }
+    // Gallery hangs the page on the plain wall (no tint).
+    if (app.discair.ui.common.isGallery()) {
+        Box(Modifier.fillMaxSize()) {
+            LoadView(loaded) { page -> ArtistContent(route, page, open, list, onTint = {}, pathsOn = pathsOn) }
+            if (loaded.state !is app.discair.ui.common.Load.Ready) app.discair.ui.common.GalleryPageBar("Artist", open.back)
+        }
+        return
+    }
     TintedPage(tint, list) {
         LoadView(loaded) { page -> ArtistContent(route, page, open, list, onTint = { tint = it }, pathsOn = pathsOn) }
         // Back stays reachable while the page loads or fails.
@@ -128,6 +136,18 @@ private fun ArtistContent(route: ArtistRoute, page: ArtistPage, open: Opener, li
     // Flow: its own arrangement, in FlowArtist.kt.
     if (app.discair.ui.common.isFlow()) {
         FlowArtistContent(
+            CoverStackArtistData(
+                route, name, sections, owned, info?.albumCount, info?.owned == true, artistId, similar, collage,
+                pathsOn && pathsMbid != null, { showPaths = true },
+            ),
+            open, list, showAllSongs, { showAllSongs = true }, showAllMissing, { showAllMissing = true },
+        )
+        return
+    }
+
+    // Gallery: a photo print and a catalogue placard, in GalleryArtist.kt.
+    if (app.discair.ui.common.isGallery()) {
+        GalleryArtistContent(
             CoverStackArtistData(
                 route, name, sections, owned, info?.albumCount, info?.owned == true, artistId, similar, collage,
                 pathsOn && pathsMbid != null, { showPaths = true },
