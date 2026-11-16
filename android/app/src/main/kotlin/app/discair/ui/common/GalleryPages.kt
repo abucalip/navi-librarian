@@ -12,6 +12,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
@@ -57,8 +58,27 @@ fun GalleryMenuButton(label: String, items: List<Pair<String, () -> Unit>>, modi
     var open by remember { mutableStateOf(false) }
     Box(modifier) {
         GalleryIconButton(GalleryIcons.More, label, { open = true })
-        DropdownMenu(open, onDismissRequest = { open = false }) {
-            items.forEach { (text, run) -> DropdownMenuItem(text = { Text(text) }, onClick = { open = false; run() }) }
+        if (open) GalleryMenuSheet(items, onDismiss = { open = false })
+    }
+}
+
+/**
+ * The pick and song menus as Gallery draws them (mockup sheets, frames 1 and 2): a bottom sheet of 62dp option rows, Manrope 600 15, divided by hairlines.
+ * Choosing a row closes the sheet and runs it; a swipe, the scrim and Back close it without running anything.
+ */
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+@Composable
+fun GalleryMenuSheet(items: List<Pair<String, () -> Unit>>, onDismiss: () -> Unit) {
+    val p = LocalPalette.current
+    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = androidx.compose.material3.rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
+        Column(Modifier.fillMaxWidth().padding(horizontal = GalleryRules.GUTTER.dp).padding(bottom = 16.dp)) {
+            items.forEachIndexed { i, (text, run) ->
+                if (i > 0) GalleryRule()
+                Box(
+                    Modifier.fillMaxWidth().heightIn(min = 62.dp).clickable(role = Role.Button, onClick = { onDismiss(); run() }),
+                    contentAlignment = Alignment.CenterStart,
+                ) { Text(text, color = p.text, style = GalleryType.rowTitle()) }
+            }
         }
     }
 }

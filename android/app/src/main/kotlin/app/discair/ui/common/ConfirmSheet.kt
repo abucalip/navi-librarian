@@ -21,7 +21,7 @@ import androidx.compose.ui.unit.dp
  */
 
 /** Everything one confirmation says: the question, the sentence under it, the safe label and the destructive label. */
-data class ConfirmSpec(val title: String, val message: String, val safeLabel: String, val destructiveLabel: String)
+data class ConfirmSpec(val title: String, val message: String, val safeLabel: String, val destructiveLabel: String, val eyebrow: String? = null)
 
 /** One button on the sheet. [Keep] is the safe action (outlined); [Delete] is the destructive one (danger-labelled). */
 sealed interface ConfirmAction {
@@ -50,6 +50,7 @@ object ConfirmSpecs {
         message = DISMISS_SENTENCE,
         safeLabel = "Keep it",
         destructiveLabel = "Remove $title and its files",
+        eyebrow = "Downloads",
     )
 
     /** Dismiss every successful import at once. */
@@ -58,6 +59,7 @@ object ConfirmSpecs {
         message = DISMISS_SENTENCE,
         safeLabel = "Keep them",
         destructiveLabel = "Remove ${plural(count, "import")} and their files",
+        eyebrow = "Downloads",
     )
 
     /** Reset the equalizer to flat; the destructive label says what is erased. */
@@ -66,6 +68,7 @@ object ConfirmSpecs {
         message = "All bands go back to 0 dB and your Custom curve is erased. The presets are not changed.",
         safeLabel = "Keep my curve",
         destructiveLabel = "Reset and erase my Custom curve",
+        eyebrow = "Equalizer",
     )
 
     /** Sign out forgets the server logins on this phone; the destructive label says exactly that. */
@@ -74,6 +77,7 @@ object ConfirmSpecs {
         message = "This removes both server addresses, user names and passwords from this phone. You will have to enter them again.",
         safeLabel = "Keep me signed in",
         destructiveLabel = "Sign out and delete server details",
+        eyebrow = "Settings",
     )
 }
 
@@ -88,6 +92,24 @@ fun ConfirmSheet(spec: ConfirmSpec, onKeep: () -> Unit, onConfirm: () -> Unit) {
         onDismissRequest = onKeep,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
     ) {
+        // Gallery (mockup sheets, frame 3): a catalogue line, the question in Fraunces italic, the sentence, then Keep and the destructive button, both outlined.
+        if (isGallery()) {
+            val p = app.discair.ui.theme.LocalPalette.current
+            Column(Modifier.fillMaxWidth().padding(start = GalleryRules.GUTTER.dp, end = GalleryRules.GUTTER.dp, bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    spec.eyebrow?.let { GalleryEyebrow(it) }
+                    Text(spec.title, color = p.text, style = GalleryType.work)
+                }
+                Text(spec.message, color = p.text, style = GalleryType.body())
+                ConfirmRules.actions(spec).forEach { action ->
+                    when (action) {
+                        is ConfirmAction.Keep -> GalleryButton(action.label, onKeep, Modifier.fillMaxWidth(), kind = GalleryButtonKind.Outlined)
+                        is ConfirmAction.Delete -> GalleryButton(action.label, onConfirm, Modifier.fillMaxWidth(), kind = GalleryButtonKind.Danger)
+                    }
+                }
+            }
+            return@ModalBottomSheet
+        }
         Column(
             Modifier.fillMaxWidth().padding(start = 24.dp, end = 24.dp, bottom = 24.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),

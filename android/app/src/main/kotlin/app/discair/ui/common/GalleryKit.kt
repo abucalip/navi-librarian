@@ -317,7 +317,7 @@ fun GalleryRule(modifier: Modifier = Modifier) {
 @Composable
 fun GalleryRow(
     title: String, modifier: Modifier = Modifier, sub: String = "", onClick: (() -> Unit)? = null, divider: Boolean = true, minHeight: Dp = GalleryRules.ROW_MIN.dp,
-    italicTitle: Boolean = false, lead: (@Composable () -> Unit)? = null, trail: (@Composable () -> Unit)? = null,
+    italicTitle: Boolean = false, lead: (@Composable () -> Unit)? = null, trail: (@Composable () -> Unit)? = null, subColor: Color? = null,
 ) {
     val p = LocalPalette.current
     Column(modifier) {
@@ -331,7 +331,7 @@ fun GalleryRow(
             lead?.invoke()
             Column(Modifier.weight(1f)) {
                 Text(title, color = p.text, maxLines = 1, overflow = TextOverflow.Ellipsis, style = if (italicTitle) GalleryType.rowWork else GalleryType.rowTitle())
-                if (sub.isNotEmpty()) Text(sub, color = p.textMuted, maxLines = 1, overflow = TextOverflow.Ellipsis, style = GalleryType.small())
+                if (sub.isNotEmpty()) Text(sub, color = subColor ?: p.textMuted, maxLines = 1, overflow = TextOverflow.Ellipsis, style = GalleryType.small())
             }
             trail?.invoke()
         }
