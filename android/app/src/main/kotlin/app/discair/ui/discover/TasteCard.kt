@@ -58,6 +58,7 @@ import app.discair.ui.theme.themeShape
  */
 @Composable
 fun TasteCardView(profiles: TasteProfiles?, loaded: Boolean) {
+    if (app.discair.ui.common.isGallery()) { GalleryTasteCard(profiles, loaded); return }
     var sheet by remember { mutableStateOf(false) }
     var window by remember { mutableStateOf("recent") }
     val state = TasteCard.state(profiles)
@@ -144,6 +145,7 @@ private fun CardBox(content: @Composable () -> Unit) {
 @Composable
 private fun Eyebrow(text: String) {
     if (app.discair.ui.common.isFlow()) { app.discair.ui.common.FlowEyebrow(text); return }
+    if (app.discair.ui.common.isGallery()) { app.discair.ui.common.GalleryEyebrow(text); return }
     // Soft Brut never sets the accent as text: its eyebrow is the muted mono label.
     if (app.discair.ui.common.isCoverStack()) Text(
         text.uppercase(), color = app.discair.ui.theme.LocalPalette.current.textMuted,
@@ -240,13 +242,17 @@ internal fun TasteSheet(profiles: TasteProfiles, onDismiss: () -> Unit) {
     val headline = profiles.headline
     ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(
-            Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp).padding(bottom = 24.dp),
+            Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = if (app.discair.ui.common.isGallery()) 20.dp else 18.dp).padding(bottom = 24.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             val cs = app.discair.ui.common.isCoverStack()
             val fl = app.discair.ui.common.isFlow()
             if (cs || fl) Text("Your taste", style = MaterialTheme.typography.titleLarge, modifier = Modifier.semantics { heading() }) else Eyebrow("Your taste")
-            Text(headline?.text ?: "No clear shift yet.", style = MaterialTheme.typography.titleLarge, modifier = Modifier.semantics { heading() })
+            Text(
+                headline?.text ?: "No clear shift yet.", modifier = Modifier.semantics { heading() },
+                style = if (app.discair.ui.common.isGallery()) app.discair.ui.common.GalleryType.work else MaterialTheme.typography.titleLarge,
+                color = if (app.discair.ui.common.isGallery()) app.discair.ui.theme.LocalPalette.current.text else androidx.compose.ui.graphics.Color.Unspecified,
+            )
             if (headline != null) {
                 for (s in profiles.shifts(headline.window)) MoverRow(s)
             } else {
@@ -255,19 +261,25 @@ internal fun TasteSheet(profiles: TasteProfiles, onDismiss: () -> Unit) {
                     color = Ink.TextMuted, style = MaterialTheme.typography.bodyMedium,
                 )
             }
+            val gallery = app.discair.ui.common.isGallery()
             val dimensionRow: @Composable () -> Unit = {
-                Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                if (gallery) app.discair.ui.common.GallerySourceSwitch(
+                    TasteProfiles.Dimensions.map { it.replaceFirstChar { c -> c.uppercase() } }, TasteProfiles.Dimensions.indexOf(dimension).coerceAtLeast(0),
+                    { dimension = TasteProfiles.Dimensions[it] }, inset = 0.dp,
+                ) else Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     for (d in TasteProfiles.Dimensions) Pick(d.replaceFirstChar { it.uppercase() }, dimension == d) { dimension = d }
                 }
             }
             val windows = TasteProfiles.WindowNames
             // Soft Brut draws the windows first, then the dimension chips (mockup frame 3).
-            if (!cs && !fl) dimensionRow()
+            // Gallery, like Soft Brut and Flow, draws the windows first (gallery/discover frame 3).
+            if (!cs && !fl && !gallery) dimensionRow()
             app.discair.ui.common.SegmentedTabs(
                 windows.map { TasteCard.windowLabel(it, profiles.recentDays) }, windows.indexOf(window).coerceAtLeast(0),
-                onSelect = { window = windows[it] }, modifier = Modifier.fillMaxWidth().then(if (cs) Modifier.padding(end = 3.dp) else Modifier),
+                onSelect = { window = windows[it] },
+                modifier = Modifier.fillMaxWidth().then(if (cs) Modifier.padding(end = 3.dp) else if (gallery) Modifier.bleed(20.dp) else Modifier),
             )
-            if (cs || fl) dimensionRow()
+            if (cs || fl || gallery) dimensionRow()
             val w = profiles.window(window)
             if (w == null) {
                 Text("No ${TasteCard.windowLabel(window, profiles.recentDays).lowercase()} window yet.", color = Ink.TextMuted, style = MaterialTheme.typography.bodyMedium)
@@ -294,7 +306,7 @@ internal fun TasteSheet(profiles: TasteProfiles, onDismiss: () -> Unit) {
                     modifier = Modifier.fillMaxWidth().heightIn(min = Target).padding(top = 8.dp),
                 ) { Text(
                     if (made == PlaylistState.Working) "Making the playlist…"
-                    else if (app.discair.ui.common.isFlow()) "Make a playlist from $target" // the mockup's words (flow/discover frame 3)
+                    else if (app.discair.ui.common.isFlow() || gallery) "Make a playlist from $target" // the mockups' words (flow/discover frame 3, gallery/discover frame 3)
                     else "Make ${if (target.firstOrNull()?.lowercaseChar()?.let { it in "aeiou" } == true) "an" else "a"} $target playlist",
                 ) }
                 when (val m = made) {
@@ -359,6 +371,7 @@ private fun Bars(w: TasteWindow, allTime: TasteWindow?, dimension: String, showT
     }
     if (app.discair.ui.common.isCoverStack()) { CoverStackBars(entries, sketch); return }
     if (app.discair.ui.common.isFlow()) { FlowBars(entries, sketch); return }
+    if (app.discair.ui.common.isGallery()) { GalleryBars(entries, sketch); return }
     for ((index, e) in entries.withIndex()) {
         val tick = if (showTick) allTime?.entries(dimension)?.firstOrNull { it.value == e.value }?.share else null
         Row(

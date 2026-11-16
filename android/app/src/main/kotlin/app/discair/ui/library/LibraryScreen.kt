@@ -89,6 +89,8 @@ fun LibraryScreen(open: Opener) {
     if (app.discair.ui.common.isCoverStack()) { CoverStackLibrary(state, model, open, list); return }
     // Flow draws its own arrangement (FlowLibrary.kt); the shell's bar carries its large title.
     if (app.discair.ui.common.isFlow()) { FlowLibrary(state, model, open, list); return }
+    // Gallery draws its own arrangement (GalleryLibrary.kt): the page head is the page's, there is no wordmark bar over it.
+    if (app.discair.ui.common.isGallery()) { GalleryLibrary(state, model, open, list); return }
 
     Column(Modifier.fillMaxSize()) {
         PageHeading("Library", Modifier.padding(start = 16.dp, top = 16.dp, end = 16.dp), large = true)

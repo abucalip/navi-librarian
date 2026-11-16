@@ -301,7 +301,10 @@ fun MainShell(state: UiState, model: AppViewModel, container: AppContainer) {
             // Pages run behind the system navigation bar; the island and each page's end padding clear it.
             contentWindowInsets = androidx.compose.foundation.layout.WindowInsets(0),
             topBar = {
-                if (onTopLevel) AppHeader(
+                // Gallery's Discover and Library carry their own page head (the date line and the large title); Home keeps the wordmark bar.
+                val galleryHead = app.discair.ui.common.isGallery() &&
+                    (destination?.hasRoute(DiscoverRoute::class) == true || destination?.hasRoute(LibraryRoute::class) == true)
+                if (onTopLevel && !galleryHead) AppHeader(
                     active = hub.activeDownloads,
                     showDiscover = NavRules.discoverInTopBar(chosenLayout, rail),
                     onDiscover = { goPage(DiscoverRoute) },

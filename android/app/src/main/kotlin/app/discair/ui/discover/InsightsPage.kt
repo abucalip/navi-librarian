@@ -65,6 +65,10 @@ fun InsightsPage(
 ) {
     val cs = app.discair.ui.common.isCoverStack() && open != null
     val fl = app.discair.ui.common.isFlow() && open != null
+    if (app.discair.ui.common.isGallery() && open != null) {
+        GalleryInsights(response, hidden, onDismiss, taste, tasteLoaded, showTaste, open)
+        return
+    }
     LazyColumn(
         Modifier.fillMaxSize(),
         contentPadding = PaddingValues(start = 16.dp, top = 8.dp, end = 16.dp, bottom = 16.dp + app.discair.ui.LocalBottomClearance.current),
