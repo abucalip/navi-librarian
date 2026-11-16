@@ -201,11 +201,12 @@ fun GalleryPlayerFrame(onDismiss: () -> Unit, content: @Composable (close: () ->
     LaunchedEffect(Unit) {
         flight.playerUp = true
         if (reduced || flight.mini == null) return@LaunchedEffect
-        flight.flying = true
         flight.progress.snapTo(0f)
-        // The print is laid out in the first frame of the page; without one (another view, no room) the page just rises.
+        // The print is laid out in the first frame of the page (still below the screen); without one (another view, no room) the page just rises.
+        // The flight starts only once both ends are known, since the flying cover reads them when it is composed.
         withFrameNanos { }
-        if (flight.target() == null) { flight.flying = false; flight.progress.snapTo(1f); return@LaunchedEffect }
+        if (flight.target() == null) { flight.progress.snapTo(1f); return@LaunchedEffect }
+        flight.flying = true
         flight.progress.animateTo(1f, tween(rise, easing = RiseEase))
         flight.flying = false
     }
@@ -237,12 +238,12 @@ private fun FlyingCover(flight: GalleryPlayerFlight) {
     val from = flight.mini ?: return
     val to = flight.target() ?: return
     Box(
-        Modifier.layout { measurable, _ ->
+        Modifier.fillMaxSize().layout { measurable, constraints ->
             val r = androidx.compose.ui.geometry.lerp(from, to, flight.progress.value)
             val w = r.width.roundToInt().coerceAtLeast(1)
             val h = r.height.roundToInt().coerceAtLeast(1)
             val placeable = measurable.measure(androidx.compose.ui.unit.Constraints.fixed(w, h))
-            layout(w, h) { placeable.place(r.left.roundToInt(), r.top.roundToInt()) }
+            layout(constraints.maxWidth, constraints.maxHeight) { placeable.place(r.left.roundToInt(), r.top.roundToInt()) }
         },
     ) { Cover(flight.coverUrl, Modifier.fillMaxSize(), rect = true) }
 }
