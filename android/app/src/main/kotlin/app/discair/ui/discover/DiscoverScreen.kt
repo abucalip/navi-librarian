@@ -92,6 +92,9 @@ fun DiscoverScreen(open: Opener) {
     val list = DiscoveryList.valueOf(selected)
     var statusLine by remember { mutableStateOf<String?>(null) }
     var sheetOpen by remember { mutableStateOf(false) }
+    // Gallery's Lists tab returns to the list that was open before Insights.
+    var lastList by rememberSaveable { mutableStateOf(DiscoveryList.Daily.name) }
+    if (list != DiscoveryList.Insights && lastList != list.name) lastList = list.name
     val saves = remember { mutableStateMapOf<String, SaveState>() }
     val hidden = remember { mutableStateMapOf<String, Boolean>() }
     var pending by remember { mutableStateOf<(suspend () -> Unit)?>(null) }
@@ -259,6 +262,8 @@ fun DiscoverScreen(open: Opener) {
             if (app.discair.ui.common.isCoverStack()) CoverStackDiscoverHeader(list) { if (it != list) { selected = it.name; statusLine = null } }
             // Flow: the bar above carries the large title; the one switch row and its list sheet are FlowDiscover.kt's.
             else if (app.discair.ui.common.isFlow()) FlowDiscoverSwitch(list) { sheetOpen = true }
+            // Gallery: the date line and title, tabs Lists / Insights and the list names (GalleryDiscover.kt).
+            else if (app.discair.ui.common.isGallery()) GalleryDiscoverHead(list, DiscoveryList.valueOf(lastList)) { if (it != list) { selected = it.name; statusLine = null } }
             else {
             PageHeading("Discover", Modifier.padding(start = 16.dp, top = 16.dp, end = 16.dp), large = true)
             // List names as chips in one scrolling row (docs/redesign.md 8.2).
@@ -385,6 +390,11 @@ private fun ListBody(
                 OutlinedButton(onClick = onRefresh, Modifier.heightIn(min = Target)) { Text("Build this list") }
             }
         }
+    }
+    // Gallery: catalogue entries under hairline headings, no pager; sideways swipes are the screen's (switchBy).
+    if (app.discair.ui.common.isGallery()) {
+        GalleryDiscoverList(FlowDiscoverRules.sections(list, sections, hidden), open, saves, list == DiscoveryList.Saved, onSave, onDismiss, emptyNote)
+        return
     }
     // Flow: one grid with a heading per section and no pager; sideways swipes are the screen's (switchBy).
     if (app.discair.ui.common.isFlow()) {

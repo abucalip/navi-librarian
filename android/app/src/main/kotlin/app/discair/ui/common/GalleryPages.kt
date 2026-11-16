@@ -80,10 +80,10 @@ fun GalleryTextLink(text: String, modifier: Modifier = Modifier, onClick: () -> 
 
 /**
  * Get album: the primary button with its states as words (gallery Home's Get album). [primary] false draws the small outlined button used beside a note.
- * One request at a time; Requested and Requesting cannot be pressed again.
+ * [small] makes the filled one 36dp high too (Discover's entries). One request at a time; Requested and Requesting cannot be pressed again.
  */
 @Composable
-fun GalleryGetAlbumButton(artist: String, album: String, metadata: JsonObject, modifier: Modifier = Modifier, primary: Boolean = true) {
+fun GalleryGetAlbumButton(artist: String, album: String, metadata: JsonObject, modifier: Modifier = Modifier, primary: Boolean = true, small: Boolean = !primary) {
     val hub = LocalAcquisitions.current
     val get = hub.getState(artist, album)
     val busy = get is GetState.Pending || get is GetState.Requested
@@ -96,7 +96,7 @@ fun GalleryGetAlbumButton(artist: String, album: String, metadata: JsonObject, m
         },
         { hub.getAlbum(artist, album, metadata) }, modifier,
         kind = if (primary) GalleryButtonKind.Primary else GalleryButtonKind.Outlined,
-        icon = GalleryIcons.Get, small = !primary, enabled = !busy,
+        icon = GalleryIcons.Get, small = small, enabled = !busy,
     )
 }
 

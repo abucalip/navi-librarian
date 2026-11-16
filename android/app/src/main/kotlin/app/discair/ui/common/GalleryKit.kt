@@ -250,8 +250,8 @@ fun GalleryIconButton(icon: ImageVector, label: String, onClick: () -> Unit, mod
  * Scrolls sideways when the words do not fit. Never chips or pills.
  */
 @Composable
-fun GallerySourceSwitch(labels: List<String>, selectedIndex: Int, onSelect: (Int) -> Unit, modifier: Modifier = Modifier) {
-    Row(modifier.horizontalScroll(rememberScrollState()).padding(horizontal = GalleryRules.GUTTER.dp), horizontalArrangement = Arrangement.spacedBy(22.dp)) {
+fun GallerySourceSwitch(labels: List<String>, selectedIndex: Int, onSelect: (Int) -> Unit, modifier: Modifier = Modifier, inset: Dp = GalleryRules.GUTTER.dp) {
+    Row(modifier.horizontalScroll(rememberScrollState()).padding(horizontal = inset), horizontalArrangement = Arrangement.spacedBy(22.dp)) {
         labels.forEachIndexed { i, label -> GalleryWord(label, i == selectedIndex, GalleryType.sourceSwitch, Role.Tab) { onSelect(i) } }
     }
 }
