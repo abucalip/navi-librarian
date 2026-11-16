@@ -1,9 +1,10 @@
 package app.discair.ui.home
 
 import android.content.Context
+import app.discair.ui.theme.toTween
+import kotlinx.coroutines.launch
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -26,21 +27,17 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontStyle
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -219,7 +216,6 @@ private fun Hero(
     open: Opener, feedback: (FeedbackAction, Pick) -> Unit, onShownKey: (String?) -> Unit,
 ) {
     val p = LocalPalette.current
-    val density = LocalDensity.current
     val state: Load<List<HeroItem>>
     val retry: () -> Unit
     when (tab) {
@@ -231,27 +227,27 @@ private fun Hero(
         FlowHomeRules.Tab.Played -> { state = recent.heroes(); retry = retryRecent }
     }
     val items = (state as? Load.Ready)?.value.orEmpty()
-    var index by remember(tab) { mutableIntStateOf(0) }
-    val at = FlowHomeRules.clamp(index, items.size)
+    // The hero is a slideshow: a pager, so the print, its placard and actions follow the finger and settle into the next or previous album; the
+    // chevrons slide it the same way (a wrap from the last album to the first jumps). It starts on the first album whenever the source changes.
+    val pager = androidx.compose.runtime.key(tab) { androidx.compose.foundation.pager.rememberPagerState { items.size } }
+    val at = FlowHomeRules.clamp(pager.currentPage, items.size)
     val item = items.getOrNull(at)
-    val shownKey = item?.let { routeKey(it.artist, it.title) }
+    val shownKey = items.getOrNull(FlowHomeRules.clamp(pager.settledPage, items.size))?.let { routeKey(it.artist, it.title) }
     androidx.compose.runtime.SideEffect { onShownKey(shownKey) }
-    val step = { delta: Int -> index = FlowHomeRules.step(at, items.size, delta) }
-    // The swipe handler lives across pages (keyed on the count only), so it reads the current step; it used to keep the first one and its stale index.
-    val currentStep by androidx.compose.runtime.rememberUpdatedState(step)
+    val reduced = app.discair.ui.theme.rememberReducedMotion()
+    val slide = app.discair.ui.theme.GalleryMotion.heroSlide(reduced)
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
+    val step = { delta: Int ->
+        val target = FlowHomeRules.step(at, items.size, delta)
+        scope.launch {
+            if (reduced || kotlin.math.abs(target - at) > 1) pager.scrollToPage(target) else pager.animateScrollToPage(target, animationSpec = slide.toTween())
+        }
+        Unit
+    }
     Column {
         GallerySourceSwitch(FlowHomeRules.labels, tab.ordinal, { onTab(FlowHomeRules.Tab.entries[it]) }, Modifier.padding(top = 6.dp))
         Column(
             Modifier.fillMaxWidth().gallerySpot(p).padding(top = 20.dp)
-                .pointerInput(items.size) {
-                    if (items.size < 2) return@pointerInput
-                    var drag = 0f
-                    detectHorizontalDragGestures(
-                        onDragStart = { drag = 0f },
-                        onHorizontalDrag = { _, amount -> drag += amount },
-                        onDragEnd = { FlowHomeRules.swipeDelta(drag / density.density)?.let { currentStep(it) } },
-                    )
-                }
                 .then(if (item != null && items.size > 1) Modifier.semantics { stateDescription = "Swipe left or right for another album" } else Modifier),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
@@ -270,17 +266,22 @@ private fun Hero(
                     GalleryButton("Try again", retry, kind = GalleryButtonKind.Outlined)
                 }
                 item == null -> Muted(FlowHomeRules.empty(tab), Modifier.padding(horizontal = Gutter))
-                else -> {
+                else -> androidx.compose.foundation.pager.HorizontalPager(
+                    pager, Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top,
+                    flingBehavior = androidx.compose.foundation.pager.PagerDefaults.flingBehavior(pager, snapAnimationSpec = slide.toTween()),
+                ) { shown -> Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+                    val item = items.getOrNull(shown) ?: return@Column
                     val year = if (tab == FlowHomeRules.Tab.Picks) rememberAlbumYear(item.artist, item.title, item.year) else item.year
                     val key = routeKey(item.artist, item.title)
                     val openAlbum = { open.album(key, item.artist, item.title, item.albumId, year) }
-                    GalleryPrint(width, Modifier.clickable(role = Role.Button, onClickLabel = "Open ${item.title}", onClick = openAlbum), sharedKey = key) {
+                    // Only the settled album's print is the shared element: a neighbour sliding by may be in Played lately too, and one key is never on the page twice.
+                    GalleryPrint(width, Modifier.clickable(role = Role.Button, onClickLabel = "Open ${item.title}", onClick = openAlbum), sharedKey = key.takeIf { shown == pager.settledPage }) {
                         AlbumCover(item.artist, item.title, item.artworkUrl, Modifier.fillMaxWidth().aspectRatio(1f), rect = true)
                     }
                     Column(Modifier.width(width).padding(top = 20.dp), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                             Eyebrow(GalleryHomeRules.eyebrow(tab))
-                            if (items.size > 1) Pager(at, items.size, step)
+                            if (items.size > 1) Pager(shown, items.size, step)
                         }
                         Text(
                             item.title, color = p.text, maxLines = 2, overflow = TextOverflow.Ellipsis,
@@ -290,10 +291,10 @@ private fun Hero(
                         Muted(GalleryHomeRules.status(tab, item.genre, item.owned))
                     }
                     Row(Modifier.width(width).padding(top = 16.dp), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
-                        if (tab == FlowHomeRules.Tab.Picks) data.pickList.getOrNull(at)?.let { PickActions(it, feedback, Modifier.weight(1f)) }
+                        if (tab == FlowHomeRules.Tab.Picks) data.pickList.getOrNull(shown)?.let { PickActions(it, feedback, Modifier.weight(1f)) }
                         else PlayActions(item, Modifier.weight(1f))
                     }
-                }
+                } }
             }
         }
     }

@@ -30,12 +30,18 @@ object GalleryMotion {
 
     const val NAV_MARKER_MS = 450
 
+    /** Home's hero is a slideshow: a swipe settles, and the chevrons slide, to the next or previous album over [HERO_SLIDE_MS] on [TRAVEL]. */
+    const val HERO_SLIDE_MS = 380
+
     const val SNACK_IN_MS = 280
     const val SNACK_DP = 14
     const val SNACK_HOLD_MS = 4000L
 
     /** The shared print's tween: 420ms on [TRAVEL]; 0ms when the phone removes animations. */
     fun sharedCover(reduced: Boolean): Timing = Timing(MotionRules.duration(SHARED_COVER_MS, MotionFamily.Standard, reduced), Curve.Curved(TRAVEL))
+
+    /** The hero's slide: 380ms on [TRAVEL]; 0ms when the phone removes animations (the chevrons then change the album in place). */
+    fun heroSlide(reduced: Boolean): Timing = Timing(MotionRules.duration(HERO_SLIDE_MS, MotionFamily.Standard, reduced), Curve.Curved(TRAVEL))
 
     /** How long the whole arrival runs: the last staggered block's start plus its rise. 0 when reduced. */
     fun arrivalMs(reduced: Boolean): Int = if (reduced) 0 else RISE_START_MS + RISE_STAGGER_MS * (RISE_MAX_ITEMS - 1) + RISE_MS
