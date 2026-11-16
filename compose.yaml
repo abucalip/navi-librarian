@@ -34,6 +34,8 @@ services:
     container_name: discair-worker
     restart: unless-stopped
     command: ["python", "-m", "app.worker"]
+    # Longer than app/worker.py SHUTDOWN_GRACE_SECONDS (25 s), so the loops can stop before Docker kills the process.
+    stop_grace_period: 30s
     depends_on:
       - discair
     environment:
