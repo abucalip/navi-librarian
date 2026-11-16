@@ -231,7 +231,7 @@ Step identifiers are stable; refer to them in PR titles. **Model** names the sin
 #### R4. Read-only knowledge reads
 
 - **Objective:** a read request performs no write and no migration.
-- **Current state:** F3.
+- **Current state:** done, merged in PR #1138 (2026-11-16). Was F3. Deviation: `GET /api/knowledge/paths` (non-Gaps kinds) still uses `open_writer` because it fills the path cache, so the acceptance criterion holds for every other GET; moving the cache fill off the read path is not done.
 - **Proposed changes:** implement 6.3. Switch read routes in `app/api/knowledge.py`, `capabilities.py`, `insights.py` (GET), `popularity.py` (GET), `smart_playlists.py` (GET) to `open_readonly`; switch write routes to `open_writer`; call `ensure_store` at web and worker startup. Correct the "only writer" wording in `compose.yaml` and `app/worker.py` to "only writer of knowledge facts".
 - **Affected components:** `intelligence/store/db.py`, `intelligence/store/__init__.py`, the `app/api/*` modules that call `open_store`, `app/main.py`, `app/worker.py`.
 - **Implementation guidance:** classify each `open_store` caller as read or write by reading the handler, and list the classification in the PR. If the store file does not exist yet (fresh install, web starts before the worker), `ensure_store` creates it; keep that behaviour. Keep `open_store` for the worker and scripts.
