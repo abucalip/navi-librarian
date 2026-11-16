@@ -1,3 +1,8 @@
+## 2026-11-16 — Android Gallery theme: design system and mockups (PR open)
+
+- Three theme proposals (Gallery, Aura, Index) shown to the owner; Gallery chosen, Radio section added to Home, palettes reviewed in three rounds (eight kept). Docs only: `docs/GALLERY_THEME.md` and `docs/design/gallery/` (tokens.json, palettes.css, gallery.css, pages/*.html and .png, icons, fonts, _src/build.py, _src/check_contrast.py).
+- Checks run: `check_contrast.py` (all eight palettes pass the PaletteTest rules plus Gallery roles); the live motion page click-tested headless in Chrome (album open and back, Now Playing rise and fall, sheet, snackbar). No app code changed; no Android tests run (none affected). Fonts: Fraunces and Manrope from Google Fonts (OFL), subset with fontTools.
+
 ## 2026-11-16 — macOS: queue panel add-songs buttons are equal tiles, description on hover (PR open)
 
 - Radio bars: the player bar and the Radio page asked `player.isPlaying`, which is false for a station (its state is `live.phase`), so the bars never moved; both now use `live.phase == .playing`.
