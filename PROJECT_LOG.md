@@ -1,3 +1,10 @@
+## 2026-11-16 — Server efficiency M2: merge of per-route attribution
+
+- PR [#1146](https://github.com/abucalip/navi-librarian/pull/1146), squash `a3b9eafe`, head `7cf3a403`, merged 2026-11-16 23:14 UTC (GitHub confirms `MERGED`). Changes: `scripts/efficiency_baseline.py` per-route runtime attribution, `numeric_delta` counts new keys from zero, nested `web` counter parsing; `tests/test_efficiency_baseline.py` 9 passed; lint changed files 0 new findings. Docs: `docs/efficiency.md` section 4 (F13), section 7 (P6), section 13 (live runs); `docs/PROJECT_STATUS.md`.
+- Live runs on the local test instance (port 8090), owner-approved provider traffic: a cold pass on a second artist (artist page ListenBrainz 3, MusicBrainz 1, Navidrome 2; album page Apple 2, Deezer 1, MusicBrainz 2, Wikipedia 2, Navidrome 7), then 20 warm runs (artist page ListenBrainz 1.0 and Navidrome 1.0 per request; album page no outbound calls).
+- CI on head `7cf3a403` was still pending in the PR rollup at merge; check it on `a3b9eafe`.
+- Limitations: one machine, one artist and one album per run; knowledge routes measured on the 404 path only.
+
 ## 2026-11-16 — Server efficiency M2: per-route Navidrome attribution
 
 - Branch `efficiency-m2-route-attribution` from `main` at `0b9d3722`; PR opened (not merged). Changes `scripts/efficiency_baseline.py` (per-route runtime snapshots, `per_route_runtime` in the JSON, "Outbound per run" table column; `numeric_delta` counts new keys from zero) and `tests/test_efficiency_baseline.py`. Evidence log entry in `docs/efficiency.md` section 13.
