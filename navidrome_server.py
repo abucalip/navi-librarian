@@ -945,7 +945,7 @@ def _build_new_releases_list():
     artist_batch = qualified_artists[:120]
     headers = {"User-Agent": "Discair/1.0 (personal music discovery)"}
 
-    for index, artist_record in enumerate(artist_batch):
+    for artist_record in artist_batch:
         artist = artist_record["name"].strip()
         if _discovery_is_various_artists(artist):
             continue

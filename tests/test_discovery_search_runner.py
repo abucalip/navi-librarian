@@ -289,7 +289,6 @@ class CacheAndSharingTests(unittest.TestCase):
                 raise TimeoutError("request timed out")
             return SlowButValid()
 
-        from discovery.search.limiter import SourceLimiter
         from discovery.search.providers import MusicBrainzSearch
 
         client = MusicBrainzSearch(get=honoring_get, lane=FreeLane(), pause=lambda _: None)

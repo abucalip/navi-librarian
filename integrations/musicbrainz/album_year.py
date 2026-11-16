@@ -159,7 +159,7 @@ def lookup_album_years(pairs, fetch=_fetch_release_groups):
         )
         groups = None
         # MusicBrainz answers 503 when requests run over its rate limit; one retry after a pause.
-        for attempt in range(2):
+        for _attempt in range(2):
             try:
                 if not lane.acquire():
                     break
