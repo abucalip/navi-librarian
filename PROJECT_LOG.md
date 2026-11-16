@@ -1125,3 +1125,11 @@ Earlier project log entries are preserved verbatim in [PROJECT_LOG_HISTORY.md](d
 - Built: `genre_block.drop_blocked_items` and `current_blocked_keys` (unreadable feedback blocks nothing). Classics drops blocked-genre items after `enrich_classic_genres`, before re-sorting and diversifying. Deep Dives drops them after genre enrichment, before ranking, so neither the shown `items` nor `extra_items` holds one.
 - Not done: New releases. Its candidates come from MusicBrainz release groups with no genre field at build time, so there is nothing to test; it stays hidden by the read-time check only when an item carries genres (none do). Excluding it needs a genre lookup per artist, which is the owner's call.
 - Tests run (filtered): `test_discovery_genre_block` (3 new), classics and Deep Dives suites, `test_lens_week`: 58 passed. Not run: full suite, a live build.
+
+## 2026-11-16 - Efficiency M2 warm baseline
+
+- Owner request: run the warm baseline for M2 (`docs/efficiency.md`) now that #1143 and #1144 are on `main`, and record it.
+- Ran: restarted the local test instance on port 8090 from `main` at `c606b124`; one warm-up pass (2 runs), then `scripts/efficiency_baseline.py --runs 20`. Output `local-test/baseline-warm-1.json` (outside the repo, no keys in it). Table and findings in `docs/efficiency.md` section 13.
+- Result: no ListenBrainz, MusicBrainz or other provider requests during the measured run; album page median 410 ms, p95 1.3 s, all on the Navidrome LAN bucket. Knowledge routes 404 on this instance (no ingested MusicBrainz data), so they are not a real baseline.
+- Not done: no code change, no per-route attribution of the 120 LAN requests (the script does not split them by route), no deploy. Limitation: one machine, one library, one album and one artist.
+- Tests run: none (docs and a measurement only; the script was not changed).
