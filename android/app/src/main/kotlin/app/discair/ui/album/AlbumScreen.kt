@@ -117,7 +117,7 @@ private fun AlbumContent(route: AlbumRoute, page: AlbumPage, open: Opener, list:
     val owned = info?.owned == true
     val year = info?.year ?: route.year
     var showAllSimilar by remember { mutableStateOf(false) }
-    val similarArtists = remember(page) { s.similarArtists.items.shuffled().take(SIMILAR_ARTISTS_SHOWN) }
+    val similarArtists = remember(s.similarArtists.items) { s.similarArtists.items.shuffled().take(SIMILAR_ARTISTS_SHOWN) }
     val tracks = s.tracks.items
     // The Back image (and Tray, Spine) the cover flips to. Nothing is shown, and nothing flips, until the index says there is one.
     val repoForArt = LocalRepository.current

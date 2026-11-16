@@ -113,7 +113,7 @@ private fun ArtistContent(route: ArtistRoute, page: ArtistPage, open: Opener, li
     var showPaths by androidx.compose.runtime.saveable.rememberSaveable(route) { mutableStateOf(false) }
     val pathsMbid = (route.mbid ?: info?.mbid)?.takeIf { it.isNotBlank() }
     // LIB-05: five similar artists chosen at random on each page load. Variety only; the server's list is the source.
-    val similar = remember(page) { sections.similar.items.shuffled().take(SIMILAR_SHOWN) }
+    val similar = remember(sections.similar.items) { sections.similar.items.shuffled().take(SIMILAR_SHOWN) }
     val owned = sections.ownedAlbums.items
     val collage by rememberArtistCollage(owned)
     val artistId = (info?.id ?: route.id)?.takeIf { it.isNotBlank() && owned.isNotEmpty() }
