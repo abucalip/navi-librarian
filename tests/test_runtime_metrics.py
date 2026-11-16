@@ -45,6 +45,79 @@ class CountersTests(unittest.TestCase):
         for leaked in ("SECRET", "1234", "/ok", "token"):
             self.assertNotIn(leaked, text)
 
+    def test_install_counts_plain_httpx_callers_once(self):
+        def handler(request):
+            return httpx.Response(200)
+        self.addCleanup(setattr, httpx.Client, "send", rm._ORIGINAL_SEND)
+        self.addCleanup(setattr, httpx.AsyncClient, "send", rm._ORIGINAL_ASEND)
+        rm.count_all_httpx()
+        rm.count_all_httpx()
+        with httpx.Client(transport=httpx.MockTransport(handler)) as plain:
+            plain.get("https://api.deezer.com/x?q=SECRET")
+        with rm.MeteredClient(transport=httpx.MockTransport(handler)) as metered:
+            metered.get("https://api.deezer.com/y")
+        import asyncio
+
+        async def run():
+            async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as c:
+                await c.get("https://last.fm/z")
+        asyncio.run(run())
+        snap = rm.snapshot()["requests"]
+        self.assertEqual(snap["deezer"]["count"], 2)
+        self.assertEqual(snap["lastfm"]["count"], 1)
+        self.assertNotIn("SECRET", json.dumps(snap))
+
+    def test_install_counts_urllib_callers(self):
+        import io
+        import urllib.error
+        import urllib.request
+        self.addCleanup(setattr, urllib.request.OpenerDirector, "open", rm._ORIGINAL_OPEN)
+        outcomes = iter([io.BytesIO(b"x"), urllib.error.HTTPError("u", 404, "nf", {}, None),
+                         urllib.error.URLError(TimeoutError("t")), urllib.error.URLError("dns")])
+
+        def fake(self, fullurl, *a, **k):
+            item = next(outcomes)
+            if isinstance(item, Exception):
+                raise item
+            item.status = 200
+            return item
+        with patch.object(rm, "_ORIGINAL_OPEN", fake):
+            rm.count_all_httpx()
+            self.addCleanup(rm.reset)
+            for url in ("https://musicbrainz.org/ws/2/a?q=SECRET", "https://www.wikidata.org/x",
+                        "https://coverartarchive.org/y", "https://example.test/z"):
+                try:
+                    urllib.request.urlopen(urllib.request.Request(url), timeout=1)
+                except Exception:
+                    pass
+        snap = rm.snapshot()["requests"]
+        self.assertEqual(snap["musicbrainz"]["outcomes"], {"ok": 1})
+        self.assertEqual(snap["wikidata"]["outcomes"], {"not_found": 1})
+        self.assertEqual(snap["coverartarchive"]["outcomes"], {"timeout": 1})
+        self.assertEqual(snap["other"]["outcomes"], {"error": 1})
+        self.assertNotIn("SECRET", json.dumps(snap))
+
+    def test_statements_are_timed_by_verb_without_text_or_values(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "k.sqlite3"
+            with patch.object(store_db, "_observer", rm.record_store):
+                db = store_db.connect(path)
+                db.execute("CREATE TABLE t (a TEXT)")
+                db.execute("INSERT INTO t (a) VALUES (?)", ("SECRET-VALUE",))
+                db.executemany("INSERT INTO t (a) VALUES (?)", [("x",), ("y",)])
+                db.execute("SELECT a FROM t WHERE a = ?", ("SECRET-VALUE",)).fetchall()
+                with self.assertRaises(Exception):
+                    db.execute("SELECT * FROM missing_table")
+                with self.assertLogs(rm.logger, "WARNING") as logs, patch.object(rm, "SLOW_STORE_SECONDS", -1):
+                    db.execute("SELECT a FROM t")
+                db.close()
+        store = rm.snapshot()["store"]
+        self.assertEqual(store["sql_insert"]["count"], 2)
+        self.assertEqual(store["sql_select"]["count"], 3)
+        self.assertIn("sql_other", store)
+        self.assertIn("on t", logs.output[0])
+        self.assertNotIn("SECRET", json.dumps(store) + "".join(logs.output))
+
     def test_gate_reports_waits_and_refusals(self):
         with tempfile.TemporaryDirectory() as tmp:
             now = [1000.0]
