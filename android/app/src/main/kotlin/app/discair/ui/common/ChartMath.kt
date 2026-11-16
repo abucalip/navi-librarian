@@ -78,6 +78,10 @@ object ChartRules {
         layout == Layout.Flow -> ChartStyle(
             MarkShape.Rounded, 2f, area = true, steppedLine = false, meterColumns = false, barRadiusDp = 3f, segmentRadiusDp = 2f,
         )
+        // Gallery: square column tops, a 1.5dp ink line with an accent point and no fill (gallery/downloads-stats-server).
+        layout == Layout.Gallery -> ChartStyle(
+            MarkShape.Rounded, 1.5f, area = false, steppedLine = false, meterColumns = false, barRadiusDp = 0f, segmentRadiusDp = 0f,
+        )
         family == Family.Brutal -> ChartStyle(
             MarkShape.Outlined, 2f, area = false, steppedLine = false, meterColumns = false, barRadiusDp = 0f, segmentRadiusDp = 0f,
         )

@@ -17,7 +17,7 @@ class NavRulesTest {
     @Test fun onlyTheCassetteDeckAndCoverStackBarsCarryDiscoverSoEveryOtherLayoutKeepsItInTheTopBar() {
         assertTrue(NavRules.discoverInBar(Layout.TapeDeck))
         assertTrue(NavRules.discoverInBar(Layout.CoverStack))
-        for (layout in Layout.values().filter { it != Layout.TapeDeck && it != Layout.CoverStack && it != Layout.Flow }) {
+        for (layout in Layout.values().filter { it != Layout.TapeDeck && it != Layout.CoverStack && it != Layout.Flow && it != Layout.Gallery }) {
             assertFalse(NavRules.discoverInBar(layout))
             assertTrue(NavRules.discoverInTopBar(layout, rail = false))
         }
@@ -32,7 +32,7 @@ class NavRulesTest {
     @Test fun thePlayerButtonStaysInTheNavigationExceptWhereALayoutHasAMiniPlayer() {
         assertFalse(NavRules.playerButtonShown(Layout.TapeDeck))
         assertFalse(NavRules.playerButtonShown(Layout.CoverStack))
-        for (layout in Layout.values().filter { it != Layout.TapeDeck && it != Layout.CoverStack && it != Layout.Flow }) assertTrue(NavRules.playerButtonShown(layout))
+        for (layout in Layout.values().filter { it != Layout.TapeDeck && it != Layout.CoverStack && it != Layout.Flow && it != Layout.Gallery }) assertTrue(NavRules.playerButtonShown(layout))
     }
 
     @Test fun theFourDestinationsAreHomeDiscoverLibrarySearchInOrder() {

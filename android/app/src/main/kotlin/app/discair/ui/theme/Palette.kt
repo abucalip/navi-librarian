@@ -22,7 +22,7 @@ class Palette(
     val text: Color,
     val textMuted: Color,
     val accent: Color,
-    val accentDim: Color,
+    val accentDim: Color = tint(accent, surface),
     val onAccent: Color,
     val chartRed: Color,
     val chartRedText: Color,
@@ -61,6 +61,13 @@ class Palette(
     val layout: Layout = Layout.Standard,
     /** The font pair this theme is drawn with (a [FontPairs] id). Suggested in Appearance, never forced (art themes proposal, D4). */
     val suggestedFontId: String? = null,
+    // Gallery roles (docs/GALLERY_THEME.md 4.1, decision G1). Every earlier palette leaves them at the defaults, so none changes.
+    /** Primary button fill and every icon, link and selected underline. Defaults to [text]. */
+    val control: Color = text,
+    /** Text and icons on a [control] fill. Defaults to [ink]. */
+    val onControl: Color = ink,
+    /** The mat round every cover and artist photo. Defaults to [surface]. */
+    val mat: Color = surface,
 ) {
     val brutal: Boolean get() = shape != null
 
@@ -79,6 +86,7 @@ class Palette(
         minTextContrast = minTextContrast, family = family, shape = shape,
         accent2 = accent2, accent3 = accent3, accent4 = accent4, shadowColor = shadowColor, minAccentContrast = minAccentContrast,
         layout = layout, suggestedFontId = suggestedFontId,
+        control = control, onControl = onControl, mat = mat,
     )
 }
 
@@ -90,7 +98,7 @@ enum class Family(val label: String) { Classic("Classic"), Brutal("Brutal") }
  */
 enum class Layout(val label: String) {
     Standard("Standard"), TapeDeck("Cassette Deck"), SheetStack("Sheet Stack"), StickerWall("Sticker Wall"),
-    CoverStack("Cover Stack"), Flow("Flow"),
+    CoverStack("Cover Stack"), Flow("Flow"), Gallery("Gallery"),
 }
 
 /**
@@ -536,11 +544,93 @@ object Palettes {
         layout = Layout.Flow, suggestedFontId = "flow",
     )
 
+    // Gallery (docs/GALLERY_THEME.md 4.2): five day and three night palettes, one layout. Values are docs/design/gallery/tokens.json; the dims are the derived defaults.
+    // Day 1 muted text is 5D6169, one step darker than the first draft (5E626A was 4.4996:1 on the hue-120 pastel wash PaletteTest builds, under its 4.5 floor); tokens.json carries the same value.
+    val Gallery = Palette(
+        "gallery", "Gallery · White", true,
+        rail = c(0xFFFFFF), ink = c(0xF2F2EF), surface = c(0xFFFFFF), raised = c(0xE8E8E3), edge = c(0xDCDCD6), edgeStrong = c(0x85888F),
+        text = c(0x15171C), textMuted = c(0x5D6169), accent = c(0x7A2E55), onAccent = c(0xFFFFFF),
+        chartRed = c(0xB3261E), chartRedText = c(0xB3261E), ok = c(0x1B6B3A), caution = c(0x8A5300), info = c(0x1F5A8A),
+        chart2 = c(0x85888F), chart3 = c(0xD3D3CC),
+        control = c(0x15171C), onControl = c(0xFFFFFF), mat = c(0xFFFFFF),
+        layout = Layout.Gallery, suggestedFontId = "gallery",
+    )
+
+    val GalleryCeladon = Palette(
+        "gallery_celadon", "Gallery · Celadon", true,
+        rail = c(0xF3F8F3), ink = c(0xE4ECE5), surface = c(0xF3F8F3), raised = c(0xD8E2DA), edge = c(0xC8D7CC), edgeStrong = c(0x6F8277),
+        text = c(0x14342A), textMuted = c(0x4A6056), accent = c(0x9A3D22), onAccent = c(0xFFFFFF),
+        chartRed = c(0xAE2219), chartRedText = c(0xAE2219), ok = c(0x1B6B3A), caution = c(0x7F4A00), info = c(0x1F5A8A),
+        chart2 = c(0x6F8277), chart3 = c(0xC3D2C7),
+        control = c(0x1E5C46), onControl = c(0xF3F8F3), mat = c(0xFFFFFF),
+        layout = Layout.Gallery, suggestedFontId = "gallery",
+    )
+
+    val GalleryMist = Palette(
+        "gallery_mist", "Gallery · Mist Teal", true,
+        rail = c(0xF2F8F9), ink = c(0xE2EDEF), surface = c(0xF2F8F9), raised = c(0xD5E3E6), edge = c(0xC5D8DC), edgeStrong = c(0x6A8188),
+        text = c(0x0F2E37), textMuted = c(0x4A626A), accent = c(0xA3246B), onAccent = c(0xFFFFFF),
+        chartRed = c(0xAE2219), chartRedText = c(0xAE2219), ok = c(0x1B6B3A), caution = c(0x7F4A00), info = c(0x1F5A8A),
+        chart2 = c(0x6A8188), chart3 = c(0xC0D3D7),
+        control = c(0x14596A), onControl = c(0xFFFFFF), mat = c(0xFFFFFF),
+        layout = Layout.Gallery, suggestedFontId = "gallery",
+    )
+
+    val GalleryBlush = Palette(
+        "gallery_blush", "Gallery · Blush Paper", true,
+        rail = c(0xFCF6F5), ink = c(0xF4E9E7), surface = c(0xFCF6F5), raised = c(0xEADCD9), edge = c(0xE5D2CF), edgeStrong = c(0x8E7579),
+        text = c(0x3A1820), textMuted = c(0x6E5458), accent = c(0x1F5A86), onAccent = c(0xFFFFFF),
+        chartRed = c(0xAE2219), chartRedText = c(0xAE2219), ok = c(0x1B6B3A), caution = c(0x7F4A00), info = c(0x1F5A86),
+        chart2 = c(0x8E7579), chart3 = c(0xE0CDCA),
+        control = c(0x86243A), onControl = c(0xFFFFFF), mat = c(0xFFFFFF),
+        layout = Layout.Gallery, suggestedFontId = "gallery",
+    )
+
+    val GalleryButter = Palette(
+        "gallery_butter", "Gallery · Butter and Cobalt", true,
+        rail = c(0xFBF8EA), ink = c(0xF3EED6), surface = c(0xFBF8EA), raised = c(0xE9E3C6), edge = c(0xE0D9B8), edgeStrong = c(0x837D63),
+        text = c(0x181E3C), textMuted = c(0x5A5C66), accent = c(0xB02E2A), onAccent = c(0xFFFFFF),
+        chartRed = c(0xA3221C), chartRedText = c(0xA3221C), ok = c(0x1B6B3A), caution = c(0x784500), info = c(0x2A3D9E),
+        chart2 = c(0x837D63), chart3 = c(0xDDD5B0),
+        control = c(0x2A3D9E), onControl = c(0xFFFFFF), mat = c(0xFFFFFF),
+        layout = Layout.Gallery, suggestedFontId = "gallery",
+    )
+
+    val GalleryGraphite = Palette(
+        "gallery_graphite", "Gallery · Graphite Amber", false,
+        rail = c(0x1B1B1B), ink = c(0x141414), surface = c(0x1B1B1B), raised = c(0x242424), edge = c(0x2E2E2E), edgeStrong = c(0x76726A),
+        text = c(0xEDE8DE), textMuted = c(0xA6A29A), accent = c(0xF0C27A), onAccent = c(0x141414),
+        chartRed = c(0xFF8A73), chartRedText = c(0xFF8A73), ok = c(0x8FD6A0), caution = c(0xF2A65A), info = c(0x8FB8E8),
+        chart2 = c(0x76726A), chart3 = c(0x3A3A3A),
+        control = c(0xE9B35A), onControl = c(0x141414), mat = c(0x262626),
+        layout = Layout.Gallery, suggestedFontId = "gallery",
+    )
+
+    val GalleryOxblood = Palette(
+        "gallery_oxblood", "Gallery · Oxblood", false,
+        rail = c(0x20171A), ink = c(0x181113), surface = c(0x20171A), raised = c(0x2B2024), edge = c(0x33262A), edgeStrong = c(0x806A6E),
+        text = c(0xF3E5E3), textMuted = c(0xB49FA2), accent = c(0xF28B78), onAccent = c(0x181113),
+        chartRed = c(0xFF7B6B), chartRedText = c(0xFF7B6B), ok = c(0x8FD6A0), caution = c(0xF0B35A), info = c(0x9DBDF0),
+        chart2 = c(0x806A6E), chart3 = c(0x43333A),
+        control = c(0xE6A397), onControl = c(0x181113), mat = c(0x2D2125),
+        layout = Layout.Gallery, suggestedFontId = "gallery",
+    )
+
+    val GalleryMoss = Palette(
+        "gallery_moss", "Gallery · Moss Black", false,
+        rail = c(0x171C18), ink = c(0x111512), surface = c(0x171C18), raised = c(0x202721), edge = c(0x29322B), edgeStrong = c(0x6E7B6E),
+        text = c(0xE3ECE2), textMuted = c(0x9CAA9E), accent = c(0xC9E3A6), onAccent = c(0x111512),
+        chartRed = c(0xFF8A73), chartRedText = c(0xFF8A73), ok = c(0x8FD6A0), caution = c(0xF0B35A), info = c(0x9DBDF0),
+        chart2 = c(0x6E7B6E), chart3 = c(0x36413A),
+        control = c(0xB5D69A), onControl = c(0x111512), mat = c(0x222A24),
+        layout = Layout.Gallery, suggestedFontId = "gallery",
+    )
+
     /** Light themes in the order the picker shows them; the first is the default day theme. */
-    val Light: List<Palette> = listOf(Sand, Paper, Mist, Sage, Blush, BrutLavender, BrutMint, BrutLemon, BrutCream, BrutSky, BrutPoster, TapeLime, TapeCobalt, TapeTangerine, SheetDaylight, StickerPeach, SoftBrut, SoftBrutMint, SoftBrutPeach, SoftBrutSky, SoftBrutLemon, Flow, FlowForest, FlowRaspberry, FlowViolet)
+    val Light: List<Palette> = listOf(Sand, Paper, Mist, Sage, Blush, BrutLavender, BrutMint, BrutLemon, BrutCream, BrutSky, BrutPoster, TapeLime, TapeCobalt, TapeTangerine, SheetDaylight, StickerPeach, SoftBrut, SoftBrutMint, SoftBrutPeach, SoftBrutSky, SoftBrutLemon, Flow, FlowForest, FlowRaspberry, FlowViolet, Gallery, GalleryCeladon, GalleryMist, GalleryBlush, GalleryButter)
 
     /** Dark themes in the order the picker shows them; the first is the default night theme. */
-    val Dark: List<Palette> = listOf(Night, Amoled, Forest, Ocean, Ember, Graphite, HighContrast, BrutInk, BrutMidnight, SheetViolet, SheetAcid, SoftBrutMidnightMint, SoftBrutPlumPeach, SoftBrutNavySky, FlowEmber, FlowMoss, FlowPlum)
+    val Dark: List<Palette> = listOf(Night, Amoled, Forest, Ocean, Ember, Graphite, HighContrast, BrutInk, BrutMidnight, SheetViolet, SheetAcid, SoftBrutMidnightMint, SoftBrutPlumPeach, SoftBrutNavySky, FlowEmber, FlowMoss, FlowPlum, GalleryGraphite, GalleryOxblood, GalleryMoss)
 
     val All: List<Palette> = Light + Dark
 

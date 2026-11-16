@@ -144,6 +144,7 @@ fun Button(
     content: @Composable RowScope.() -> Unit,
 ) {
     if (isFlow()) { FlowButton(FlowKind.Primary, onClick, modifier, enabled, shape, colors, contentPadding, interactionSource, content); return }
+    if (isGallery()) { GalleryButtonBody(GalleryButtonKind.Primary, onClick, modifier, enabled, content = content); return }
     if (!LocalPalette.current.brutal) {
         androidx.compose.material3.Button(onClick, modifier, enabled, shape ?: ButtonDefaults.shape, colors ?: ButtonDefaults.buttonColors(), elevation, border, contentPadding, interactionSource, content)
         return
@@ -159,6 +160,7 @@ fun OutlinedButton(
     content: @Composable RowScope.() -> Unit,
 ) {
     if (isFlow()) { FlowButton(FlowKind.Tonal, onClick, modifier, enabled, shape, colors, contentPadding, interactionSource, content); return }
+    if (isGallery()) { GalleryButtonBody(GalleryButtonKind.Outlined, onClick, modifier, enabled, content = content); return }
     if (!LocalPalette.current.brutal) {
         androidx.compose.material3.OutlinedButton(onClick, modifier, enabled, shape ?: ButtonDefaults.outlinedShape, colors ?: ButtonDefaults.outlinedButtonColors(), elevation, border ?: ButtonDefaults.outlinedButtonBorder(enabled), contentPadding, interactionSource, content)
         return
@@ -174,6 +176,7 @@ fun FilledTonalButton(
     content: @Composable RowScope.() -> Unit,
 ) {
     if (isFlow()) { FlowButton(FlowKind.Tonal, onClick, modifier, enabled, shape, colors, contentPadding, interactionSource, content); return }
+    if (isGallery()) { GalleryButtonBody(GalleryButtonKind.Outlined, onClick, modifier, enabled, content = content); return }
     if (!LocalPalette.current.brutal) {
         androidx.compose.material3.FilledTonalButton(onClick, modifier, enabled, shape ?: ButtonDefaults.filledTonalShape, colors ?: ButtonDefaults.filledTonalButtonColors(), elevation, border, contentPadding, interactionSource, content)
         return
@@ -243,6 +246,21 @@ fun OutlinedTextField(
     shape: Shape? = null, colors: TextFieldColors? = null,
 ) {
     val p = LocalPalette.current
+    if (isGallery()) {
+        // Gallery: no box, a 1.5dp `text` rule under the text (gallery.css `.field`); the rule is the accent-free `control` colour when focused.
+        val clear = Color.Transparent
+        androidx.compose.material3.TextField(
+            value, onValueChange, modifier, enabled, readOnly, textStyle, label, placeholder, leadingIcon, trailingIcon, null, null,
+            supportingText, isError, visualTransformation, keyboardOptions, keyboardActions, singleLine, maxLines, minLines,
+            interactionSource, RoundedCornerShape(0.dp),
+            colors ?: androidx.compose.material3.TextFieldDefaults.colors(
+                focusedContainerColor = clear, unfocusedContainerColor = clear, disabledContainerColor = clear, errorContainerColor = clear,
+                focusedIndicatorColor = if (isError) p.chartRedText else p.control, unfocusedIndicatorColor = if (isError) p.chartRedText else p.text,
+                disabledIndicatorColor = p.edge, errorIndicatorColor = p.chartRedText, cursorColor = p.control,
+            ),
+        )
+        return
+    }
     if (isFlow()) {
         // Flow: a 44dp field of radius 12 filled with `raised`, no outline.
         val clear = Color.Transparent
@@ -422,6 +440,7 @@ fun LinearProgressIndicator(
     progress: () -> Float, modifier: Modifier = Modifier, color: Color = ProgressIndicatorDefaultsColor(), trackColor: Color = ProgressIndicatorDefaultsTrack(),
 ) {
     if (isFlow()) { FlowProgress(progress(), modifier); return }
+    if (isGallery()) { GalleryProgress(progress(), modifier); return }
     if (!LocalPalette.current.brutal) {
         androidx.compose.material3.LinearProgressIndicator(progress, modifier, color, trackColor)
         return
@@ -432,6 +451,7 @@ fun LinearProgressIndicator(
 @Composable
 fun LinearProgressIndicator(modifier: Modifier = Modifier, color: Color = ProgressIndicatorDefaultsColor(), trackColor: Color = ProgressIndicatorDefaultsTrack()) {
     if (isFlow()) { androidx.compose.material3.LinearProgressIndicator(modifier.height(4.dp).clip(RoundedCornerShape(2.dp)), LocalPalette.current.accent, LocalPalette.current.raised); return }
+    if (isGallery()) { androidx.compose.material3.LinearProgressIndicator(modifier.height(1.5.dp), LocalPalette.current.text, LocalPalette.current.edge); return }
     if (!LocalPalette.current.brutal) {
         androidx.compose.material3.LinearProgressIndicator(modifier, color, trackColor)
         return
@@ -465,6 +485,7 @@ private fun BrutalSliderTrackBar(fraction: Float, modifier: Modifier) {
 @Composable
 fun SnackbarHost(hostState: SnackbarHostState, modifier: Modifier = Modifier) {
     if (isFlow()) { androidx.compose.material3.SnackbarHost(hostState, modifier) { data -> FlowSnackbar(data) }; return }
+    if (isGallery()) { androidx.compose.material3.SnackbarHost(hostState, modifier) { data -> GallerySnackbar(data) }; return }
     if (!LocalPalette.current.brutal) {
         androidx.compose.material3.SnackbarHost(hostState, modifier)
         return
@@ -515,6 +536,15 @@ fun ModalBottomSheet(
     shape: Shape? = null, containerColor: Color? = null, content: @Composable ColumnScope.() -> Unit,
 ) {
     val p = LocalPalette.current
+    if (isGallery()) {
+        // Gallery: `surface`, a 14dp top radius, a 36 by 4dp `edge` handle and the fixed scrim (docs/GALLERY_THEME.md 7.3).
+        androidx.compose.material3.ModalBottomSheet(
+            onDismissRequest, modifier, sheetState, shape = shape ?: RoundedCornerShape(topStart = GalleryRules.SHEET_TOP_RADIUS.dp, topEnd = GalleryRules.SHEET_TOP_RADIUS.dp),
+            containerColor = containerColor ?: p.surface, scrimColor = GalleryRules.SCRIM, tonalElevation = 0.dp,
+            dragHandle = { GallerySheetHandle() }, content = content,
+        )
+        return
+    }
     if (isFlow()) {
         // Flow: a white sheet with a 24dp top radius and a short grey handle (mockup: flow/sheets).
         androidx.compose.material3.ModalBottomSheet(
@@ -569,6 +599,22 @@ fun FilterChip(
     colors: SelectableChipColors? = null, elevation: SelectableChipElevation? = null, border: BorderStroke? = null, interactionSource: MutableInteractionSource? = null,
 ) {
     val p = LocalPalette.current
+    if (isGallery()) {
+        // Gallery: type does the switching, never a chip. A word in Manrope 600 13 with a 1.5dp `control` underline when chosen.
+        Row(
+            modifier.heightIn(min = 48.dp).clickable(enabled = enabled, role = Role.Checkbox, onClick = onClick).padding(horizontal = 4.dp),
+            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            leadingIcon?.invoke()
+            CompositionLocalProvider(LocalContentColor provides if (selected) p.text else p.textMuted) {
+                androidx.compose.material3.ProvideTextStyle(GalleryType.tab(), {
+                    Box(Modifier.drawBehind { if (selected) drawRect(p.control, androidx.compose.ui.geometry.Offset(0f, size.height - 1.5.dp.toPx()), androidx.compose.ui.geometry.Size(size.width, 1.5.dp.toPx())) }.padding(vertical = 4.dp)) { label() }
+                })
+            }
+            trailingIcon?.invoke()
+        }
+        return
+    }
     if (isFlow()) {
         // Flow: a 34dp capsule on `raised`; the chosen one is filled with the text colour.
         val pill = RoundedCornerShape(17.dp)

@@ -402,6 +402,9 @@ fun MainShell(state: UiState, model: AppViewModel, container: AppContainer) {
             if (app.discair.ui.theme.LocalPalette.current.layout == app.discair.ui.theme.Layout.Flow && playerState.current != null) {
                 app.discair.ui.player.FlowMiniPlayer(playerState, player, onOpen = { if (playerState.visible) nowPlayingOpen = true }, modifier = Modifier.padding(bottom = if (rail) 12.dp else 8.dp))
             }
+            if (app.discair.ui.theme.LocalPalette.current.layout == app.discair.ui.theme.Layout.Gallery && playerState.current != null) {
+                app.discair.ui.common.GalleryMiniPlayer(playerState, player, onOpen = { if (playerState.visible) nowPlayingOpen = true })
+            }
             if (!rail) app.discair.ui.theme.OnArtwork {
                 NavIsland(
                     tint = islandTint,
@@ -437,6 +440,10 @@ fun MainShell(state: UiState, model: AppViewModel, container: AppContainer) {
 private fun AppHeader(active: Int, showDiscover: Boolean, onDiscover: () -> Unit, onDownloads: () -> Unit, onSettings: () -> Unit, flowTitle: String? = null) {
     if (app.discair.ui.theme.LocalPalette.current.layout == app.discair.ui.theme.Layout.Flow) {
         FlowAppHeader(active, showDiscover, onDiscover, onDownloads, onSettings, flowTitle)
+        return
+    }
+    if (app.discair.ui.theme.LocalPalette.current.layout == app.discair.ui.theme.Layout.Gallery) {
+        app.discair.ui.common.GalleryHomeBar(active, onDownloads, onSettings, showDiscover = showDiscover, onDiscover = onDiscover)
         return
     }
     Column(Modifier.background(app.discair.ui.theme.Ink.Rail)) {

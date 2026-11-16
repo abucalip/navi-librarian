@@ -22,6 +22,7 @@ Last reviewed: 2026-11-15. This is a map of current module ownership, not a road
 ## Clients
 
 - `android/`: native Android client. Owns its UI, local playback/queue, device-side state and API integration; streams owned music directly from Navidrome.
+  - Android layouts (`ui/theme/Palette.kt` `Layout`): each non-standard theme owns its own `<Theme>*.kt` files and is reached through one `is<Theme>()` branch in a shared control. **Gallery** (`Layout.Gallery`, eight palettes, spec `docs/GALLERY_THEME.md`, package `docs/design/gallery/`): `ui/common/GalleryKit.kt` (rules, type styles, prints, buttons, source switch, tabs, rows, state words, switch, tracker, banner), `ui/common/GalleryIcons.kt`, `ui/common/GalleryShell.kt` (dock bar with sliding marker, mini player, top bars, snackbar, sheet handle), fonts `res/font/fraunces_gallery*.ttf` and `manrope_gallery.ttf`. Screens follow in G2 to G6 as `Gallery<Screen>.kt` beside each screen. No other theme's file changes behaviour.
 - `macos/`: native macOS client, split into audio, API/library, model and UI packages. Owns desktop presentation and local playback behavior.
 - Both clients consume server contracts; neither is a second implementation of server recommendation or acquisition policy.
 
