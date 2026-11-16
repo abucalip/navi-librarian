@@ -1,3 +1,7 @@
+## 2026-11-16 — Android: app version 1.8.2
+
+- Pushed to `main` at the owner's request (no PR). Version bump only: app 1.8.2 (versionCode 20).
+
 ## 2026-11-16 — Android: the response cache no longer scans its folder on every save (all themes), app 1.8.1
 
 - Pushed to `main` at the owner's request (no PR). Cause of the Android-only slowness on every theme (slow page opens, pictures arriving one by one), while the web and macOS clients stayed fast: `FileResponseCache.put` ran `trim()` after every save. `trim()` listed the whole cache folder and sorted it, reading a file's date on every comparison, and summed every size. It held the same lock every `get` waits on. Every request saves its answer, including each artist-image, artwork and year lookup, so the folder holds thousands of small files (they are only deleted past 20 MB), and each save and read queued behind a full scan. Timing of the same scan on a Mac SSD: 105 ms per save at 2,000 files, 0.7 s at 10,000, 2.4 s at 30,000. #1127 (top bar inside the page) was ruled out from the code.
