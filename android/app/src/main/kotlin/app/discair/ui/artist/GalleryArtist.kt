@@ -26,6 +26,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -118,13 +119,13 @@ internal fun GalleryArtistContent(d: CoverStackArtistData, open: Opener, list: L
         val allSongs = d.sections.topSongs.items
         if (allSongs.isNotEmpty()) {
             val more = allSongs.size > GalleryPagesRules.SONGS_SHOWN && !showAllSongs
-            item { Box(Modifier.galleryArrive(3)) { GallerySectionHead("Top songs", link = if (more) "All top songs" else null, onLink = onAllSongs) } }
+            item { Column(Modifier.galleryArrive(3)) { GallerySectionHead("Top songs", link = if (more) "All top songs" else null, onLink = onAllSongs) } }
             val shown = if (showAllSongs) allSongs else allSongs.take(GalleryPagesRules.SONGS_SHOWN)
-            itemsIndexed(shown) { i, song -> Box(Modifier.galleryArrive(3)) { TopSongRow(d, song, i < shown.lastIndex) } }
+            itemsIndexed(shown) { i, song -> Column(Modifier.galleryArrive(3)) { TopSongRow(d, song, i < shown.lastIndex) } }
         }
         if (owned.isNotEmpty()) {
             val more = owned.size > GalleryPagesRules.ALBUMS_SHOWN && !showAllAlbums
-            item { Box(Modifier.galleryArrive(4)) { GallerySectionHead("In your library", link = if (more) "All albums" else null, onLink = { showAllAlbums = true }) } }
+            item { Column(Modifier.galleryArrive(4)) { GallerySectionHead("In your library", link = if (more) "All albums" else null, onLink = { showAllAlbums = true }) } }
             val shown = if (showAllAlbums) owned else owned.take(GalleryPagesRules.ALBUMS_SHOWN)
             items2(shown) { pair ->
                 Row(Modifier.fillMaxWidth().padding(horizontal = gutter).padding(bottom = 20.dp), horizontalArrangement = Arrangement.spacedBy(18.dp)) {
@@ -139,10 +140,19 @@ internal fun GalleryArtistContent(d: CoverStackArtistData, open: Opener, list: L
         }
         val missing = d.sections.missingAlbums.items
         if (missing.isNotEmpty()) {
-            val more = missing.size > GalleryPagesRules.MISSING_SHOWN && !showAllMissing
-            item { GallerySectionHead("Missing albums", link = if (more) "All missing albums" else null, onLink = onAllMissing) }
-            val shown = if (showAllMissing) missing else missing.take(GalleryPagesRules.MISSING_SHOWN)
-            itemsIndexed(shown) { i, album -> MissingRow(d.name, album, i < shown.lastIndex, open) }
+            // Missing albums read like the album page's Similar albums: one row of prints; the album page they open has Get.
+            item { GallerySectionHead("Missing albums") }
+            item {
+                LazyRow(contentPadding = PaddingValues(horizontal = gutter), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                    itemsIndexed(missing, key = { i, it -> "$i|${it.key}|${it.name}" }) { _, album ->
+                        val said = listOfNotNull(album.name, d.name, GalleryPagesRules.missingSub(album.year, album.popularity).ifBlank { null }).joinToString(", ")
+                        GalleryPrint(
+                            GalleryPagesRules.SIMILAR_PRINT_DP.dp,
+                            Modifier.clickable(role = Role.Button) { open.album(album.key, d.name, album.name, null, album.year) }.semantics { contentDescription = said },
+                        ) { AlbumCover(d.name, album.name, null, Modifier.fillMaxWidth().aspectRatio(1f), rect = true) }
+                    }
+                }
+            }
         }
         val bio = d.sections.bio.bio?.text.orEmpty()
         if (bio.isNotBlank()) {
@@ -195,16 +205,5 @@ private fun TopSongRow(d: CoverStackArtistData, song: TopSong, divider: Boolean)
                 },
             )
         },
-    )
-}
-
-/** A missing album: an empty-mat print of its cover, its name in Fraunces italic, the year and listens, and its Get. */
-@Composable
-private fun MissingRow(artist: String, album: MissingAlbum, divider: Boolean, open: Opener) {
-    GalleryRow(
-        album.name, Modifier.padding(horizontal = GalleryRules.GUTTER.dp), sub = GalleryPagesRules.missingSub(album.year, album.popularity), divider = divider, italicTitle = true,
-        onClick = { open.album(album.key, artist, album.name, null, album.year) },
-        lead = { GalleryPrint(GalleryPagesRules.ROW_PRINT_DP.dp) { AlbumCover(artist, album.name, null, Modifier.fillMaxWidth().aspectRatio(1f), rect = true) } },
-        trail = { GetAlbumButton(artist, album.name, pageMetadata(artist, album.name, album.year)) },
     )
 }

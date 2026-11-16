@@ -1,5 +1,10 @@
 package app.discair.ui.player
 
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.animation.core.Animatable
+import androidx.compose.foundation.gestures.rememberDraggableState
+import androidx.compose.foundation.gestures.draggable
+import androidx.compose.foundation.gestures.Orientation
 import android.provider.Settings
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.MutableTransitionState
@@ -226,7 +231,26 @@ fun GalleryPlayerFrame(onDismiss: () -> Unit, content: @Composable (close: () ->
                 visibleState = visible,
                 enter = slideInVertically(tween(rise, easing = RiseEase)) { it },
                 exit = slideOutVertically(tween(fall, easing = RiseEase)) { it },
-            ) { Box(Modifier.fillMaxSize().onGloballyPositioned { flight.page = it }) { content(close) } }
+            ) {
+                // Swipe down lowers the page: it follows the finger, and past a quarter of the screen (or on a quick flick) it falls; otherwise it springs back.
+                // Lists inside (Queue, Lyrics) keep their own scrolling; the drag is taken where nothing else scrolls (the print, the transport, the bar).
+                val drag = remember { Animatable(0f) }
+                val density = LocalDensity.current
+                Box(
+                    Modifier.fillMaxSize()
+                        .graphicsLayer { translationY = drag.value }
+                        .draggable(
+                            rememberDraggableState { d -> scope.launch { drag.snapTo((drag.value + d).coerceAtLeast(0f)) } },
+                            Orientation.Vertical,
+                            onDragStopped = { v ->
+                                val far = drag.value > (flight.page?.size?.height ?: 0) / 4f
+                                val flick = v > with(density) { 1200.dp.toPx() }
+                                if (far || flick) close() else drag.animateTo(0f, tween(220, easing = RiseEase))
+                            },
+                        )
+                        .onGloballyPositioned { flight.page = it },
+                ) { content(close) }
+            }
             if (flight.flying) FlyingCover(flight)
         }
     }

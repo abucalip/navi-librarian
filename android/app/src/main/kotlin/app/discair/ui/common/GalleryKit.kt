@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -30,6 +31,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
@@ -166,21 +168,24 @@ fun GalleryPrint(
     if (bare) { Box(shared.size(size)) { content() }; return }
     val large = !small && size.value >= GalleryRules.SMALL_BELOW
     val mat = (if (small) GalleryRules.MAT_SMALL else GalleryRules.mat(size.value, player)).dp
-    Box(shared.galleryShadow(large, p).background(p.mat).padding(mat)) { content() }
+    // [size] is the print's outer width; a caller's own width (fillMaxWidth, a weight) comes first and wins. Without it a print in a row or a
+    // LazyRow had no width bound, grew to the full width, and its cover was decoded at full size.
+    Box(shared.width(size).galleryShadow(large, p).background(p.mat).padding(mat)) { content() }
 }
 
 /** The wall shadow of a print: each layer of [GalleryRules.shadow] drawn as a blurred rectangle, inflated by its (negative) spread and shifted down. */
-fun Modifier.galleryShadow(large: Boolean, p: Palette): Modifier = drawBehind {
-    val layers = GalleryRules.shadow(large, p.light)
-    val paint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG)
-    drawIntoCanvas { canvas ->
-        for (l in layers) {
-            paint.color = (if (l.black) Color.Black else p.text).copy(alpha = l.alpha).toArgb()
-            // CSS blur radius b is a Gaussian of sigma b/2; BlurMaskFilter's radius is about (sigma - 0.5) / 0.577.
-            paint.maskFilter = BlurMaskFilter(((l.blur / 2f - 0.5f) / 0.577f).coerceAtLeast(0.5f) * density, BlurMaskFilter.Blur.NORMAL)
-            val s = l.spread.dp.toPx()
-            val dy = l.dy.dp.toPx()
-            canvas.nativeCanvas.drawRect(-s, -s + dy, size.width + s, size.height + s + dy, paint)
+fun Modifier.galleryShadow(large: Boolean, p: Palette): Modifier = drawWithCache {
+    // The paints (and their blur filters) are built once per size and palette, not on every frame: a page of prints rebuilt them all on each redraw.
+    val layers = GalleryRules.shadow(large, p.light).map { l ->
+        val paint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG)
+        paint.color = (if (l.black) Color.Black else p.text).copy(alpha = l.alpha).toArgb()
+        // CSS blur radius b is a Gaussian of sigma b/2; BlurMaskFilter's radius is about (sigma - 0.5) / 0.577.
+        paint.maskFilter = BlurMaskFilter(((l.blur / 2f - 0.5f) / 0.577f).coerceAtLeast(0.5f) * density, BlurMaskFilter.Blur.NORMAL)
+        Triple(paint, l.spread.dp.toPx(), l.dy.dp.toPx())
+    }
+    onDrawBehind {
+        drawIntoCanvas { canvas ->
+            for ((paint, sp, dy) in layers) canvas.nativeCanvas.drawRect(-sp, -sp + dy, size.width + sp, size.height + sp + dy, paint)
         }
     }
 }

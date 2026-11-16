@@ -165,15 +165,15 @@ internal fun GalleryAlbumContent(d: CoverStackAlbumData, open: Opener, list: Laz
                 for (i in d.tracks.indices) {
                     // The song list rises as one block, after the tabs.
                     if (startsDisc(d.tracks, i)) item(key = "disc-${d.tracks[i].disc}") { GalleryDiscHeading(d.tracks[i].disc ?: 1, Modifier.galleryArrive(4)) }
-                    item { Box(Modifier.galleryArrive(4)) { SongRow(d, i, albumId) } }
+                    item { Column(Modifier.galleryArrive(4)) { SongRow(d, i, albumId) } }
                 }
             }
-            "Info" -> item { Box(Modifier.galleryArrive(4)) { InfoTab(d) } }
-            "Reviews" -> item { Box(Modifier.galleryArrive(4)) { ReviewsTab(d.artist, d.title) } }
-            "Booklet" -> d.booklet?.let { b -> item { Box(Modifier.galleryArrive(4)) { BookletTab(b) } } }
+            "Info" -> item { Column(Modifier.galleryArrive(4)) { InfoTab(d) } }
+            "Reviews" -> item { Column(Modifier.galleryArrive(4)) { ReviewsTab(d.artist, d.title) } }
+            "Booklet" -> d.booklet?.let { b -> item { Column(Modifier.galleryArrive(4)) { BookletTab(b) } } }
         }
         if (d.similarAlbums.isNotEmpty()) {
-            item { Box(Modifier.galleryArrive(5)) { GallerySectionHead("Similar albums") } }
+            item { Column(Modifier.galleryArrive(5)) { GallerySectionHead("Similar albums") } }
             item {
                 LazyRow(Modifier.galleryArrive(5), contentPadding = PaddingValues(horizontal = gutter), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
                     itemsIndexed(d.similarAlbums, key = { i, it -> "$i|${it.key}|${it.name}" }) { _, album ->
