@@ -67,6 +67,36 @@ class CountersTests(unittest.TestCase):
         self.assertEqual(snap["lastfm"]["count"], 1)
         self.assertNotIn("SECRET", json.dumps(snap))
 
+    def test_install_counts_urllib_callers(self):
+        import io
+        import urllib.error
+        import urllib.request
+        self.addCleanup(setattr, urllib.request.OpenerDirector, "open", rm._ORIGINAL_OPEN)
+        outcomes = iter([io.BytesIO(b"x"), urllib.error.HTTPError("u", 404, "nf", {}, None),
+                         urllib.error.URLError(TimeoutError("t")), urllib.error.URLError("dns")])
+
+        def fake(self, fullurl, *a, **k):
+            item = next(outcomes)
+            if isinstance(item, Exception):
+                raise item
+            item.status = 200
+            return item
+        with patch.object(rm, "_ORIGINAL_OPEN", fake):
+            rm.count_all_httpx()
+            self.addCleanup(rm.reset)
+            for url in ("https://musicbrainz.org/ws/2/a?q=SECRET", "https://www.wikidata.org/x",
+                        "https://coverartarchive.org/y", "https://example.test/z"):
+                try:
+                    urllib.request.urlopen(urllib.request.Request(url), timeout=1)
+                except Exception:
+                    pass
+        snap = rm.snapshot()["requests"]
+        self.assertEqual(snap["musicbrainz"]["outcomes"], {"ok": 1})
+        self.assertEqual(snap["wikidata"]["outcomes"], {"not_found": 1})
+        self.assertEqual(snap["coverartarchive"]["outcomes"], {"timeout": 1})
+        self.assertEqual(snap["other"]["outcomes"], {"error": 1})
+        self.assertNotIn("SECRET", json.dumps(snap))
+
     def test_gate_reports_waits_and_refusals(self):
         with tempfile.TemporaryDirectory() as tmp:
             now = [1000.0]

@@ -11,6 +11,8 @@ import json
 import logging
 import threading
 import time
+import urllib.error
+import urllib.request
 from urllib.parse import urlsplit
 
 import httpx
@@ -138,11 +140,34 @@ async def _patched_asend(self, request, **kwargs):
     return response
 
 
-def count_all_httpx() -> None:
-    """Count every httpx request in this process (``httpx.get``/``post``, any ``Client``, ``AsyncClient``).
+_ORIGINAL_OPEN = urllib.request.OpenerDirector.open
 
-    Idempotent. A ``MeteredClient`` bypasses the patched method, so nothing is counted twice.
+
+def _patched_open(self, fullurl, *args, **kwargs):
+    url = getattr(fullurl, "full_url", fullurl)
+    provider = provider_for_url(url)
+    started = time.perf_counter()
+    try:
+        response = _ORIGINAL_OPEN(self, fullurl, *args, **kwargs)
+    except urllib.error.HTTPError as exc:
+        record_request(provider, outcome_for_status(exc.code), time.perf_counter() - started)
+        raise
+    except Exception as exc:
+        timed_out = isinstance(exc, TimeoutError) or isinstance(getattr(exc, "reason", None), TimeoutError)
+        record_request(provider, "timeout" if timed_out else "error", time.perf_counter() - started)
+        raise
+    record_request(provider, outcome_for_status(getattr(response, "status", 200) or 200), time.perf_counter() - started)
+    return response
+
+
+def count_all_httpx() -> None:
+    """Count every httpx and urllib request in this process.
+
+    httpx: ``httpx.get``/``post``, any ``Client``, ``AsyncClient``. urllib: ``urlopen`` and any
+    ``build_opener().open`` (both go through ``OpenerDirector.open``). Idempotent. A
+    ``MeteredClient`` bypasses the patched method, so nothing is counted twice.
     """
+    urllib.request.OpenerDirector.open = _patched_open
     httpx.Client.send = _patched_send
     httpx.AsyncClient.send = _patched_asend
 
