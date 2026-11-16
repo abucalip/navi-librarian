@@ -31,7 +31,7 @@ def ratio(a, b):
 
 def pastel(tint):
     """theme/Theme.kt pastelOf: same hue, saturation x0.6 capped at 0.5, value 0.95, lightened to luminance 0.72."""
-    h, s, v = colorsys.rgb_to_hsv(*tint)
+    h, s, _ = colorsys.rgb_to_hsv(*tint)
     out = colorsys.hsv_to_rgb(h, min(s * 0.6, 0.5), 0.95)
     steps = 0
     while lum(out) < 0.72 and steps < 20:
