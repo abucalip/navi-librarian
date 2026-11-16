@@ -167,14 +167,14 @@ def paths(kind: str, mbid: str | None = None, navidrome_id: str | None = None, t
         raise HTTPException(status_code=400, detail=f"type must be one of {', '.join(PERSON_TYPES + ALBUM_TYPES)}")
     records = _play_records(librarian) if kind == GAPS_KIND else None
     try:
-        # path_page fills the path cache (a write); Gaps are never cached, so they only read.
-        opener = open_readonly if kind == GAPS_KIND else open_writer
-        db = opener(librarian.DATA_DIR / STORE_FILE)
+        # Reads use a read-only connection; a cache miss opens a writer just for the cache write.
+        db = open_readonly(librarian.DATA_DIR / STORE_FILE)
         try:
             if kind == GAPS_KIND:
                 page = gaps_page(db, records, mbid=mbid, navidrome_id=navidrome_id, type=type)
             else:
-                page = path_page(db, kind=kind, mbid=mbid, navidrome_id=navidrome_id, type=type)
+                page = path_page(db, kind=kind, mbid=mbid, navidrome_id=navidrome_id, type=type,
+                                 save_db=lambda: open_writer(librarian.DATA_DIR / STORE_FILE))
         finally:
             db.close()
     except ValueError as exc:
