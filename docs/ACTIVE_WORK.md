@@ -250,6 +250,12 @@ Done: Genres grid and four album shelves on the dashboard, the Recommended slide
 
 - **S4b merged (2026-11-15), Star Operation complete:** PR #1102 (squash `1e39cd98`, head `25428964`, CI passed), owner-approved `safer` band maximum x2.0 and `deeper` x0.5 from one live measurement (`scripts/discovery_mode_sweep.py`); floor unchanged in every mode. The owner approved the numbers and scaling the Deep cuts band. Genre spread unmeasured; no client shows the mode setting yet.
 
+## 2o. Android Gallery theme — design package done (PR open), no code yet
+
+- The owner chose **Gallery** (editorial: covers as matted prints, Fraunces italic titles, DM Mono catalogue lines, hairlines) on 2026-11-16 from three proposals, asked for a Radio section on Home below "Artists you return to", and kept eight palettes: Day 1 Gallery White (default), Day 2 Celadon, Day 3 Mist Teal, Day 4 Blush Paper, Day 5 Butter and Cobalt, Night 1 Graphite Amber, Night 2 Oxblood Dark, Night 3 Moss Black.
+- Spec and build plan: [`GALLERY_THEME.md`](GALLERY_THEME.md). Package: [`design/gallery/`](design/gallery/) (tokens, generated palette CSS, component CSS, 12 mockup pages drawn in Day 1 plus a palettes page and a live motion page, 46 icons with a Kotlin object, three subset OFL font files, contrast checker: all eight palettes pass).
+- Open decisions G1 to G5 (new `Palette` fields `control`/`onControl`/`mat`, about 370 KB of fonts, shared-element API, Follow-the-phone defaults, stand-in lyrics) have proposed answers and wait for the owner. **Next:** owner review of the PR, then build step G1.
+
 ## 2n. Simplification candidates
 
 One line each: file, what could be simplified, why it was not done in the PR that found it (see "Opportunistic simplification" in [DEVELOPMENT_WORKFLOW.md](DEVELOPMENT_WORKFLOW.md)). Remove the line when it is done or no longer true.
