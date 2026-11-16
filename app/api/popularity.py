@@ -22,7 +22,7 @@ from fastapi import APIRouter, Body, Depends, HTTPException
 
 from app.api.dependencies import get_librarian
 from intelligence.jobs import runner
-from intelligence.store import open_store
+from intelligence.store import open_readonly, open_writer
 from intelligence.taste.popularity_job import DEFAULT_MAX_REQUESTS, JOB, run_popularity_fill
 
 router = APIRouter()
@@ -36,7 +36,7 @@ _LOCK = threading.Lock()
 
 
 def _store(librarian):
-    return open_store(librarian.DATA_DIR / STORE_FILE)
+    return open_writer(librarian.DATA_DIR / STORE_FILE)
 
 
 def _headers() -> dict[str, str]:
@@ -93,7 +93,7 @@ def fill_popularity(body: dict[str, Any] | None = Body(default=None), librarian=
 @router.get("/api/insights/popularity/status")
 def popularity_status(librarian=Depends(get_librarian)):
     try:
-        db = _store(librarian)
+        db = open_readonly(librarian.DATA_DIR / STORE_FILE)
         try:
             status = runner.status(db, JOB)
             # Persisted job state, so the flag is right across app workers (the lock is per process).

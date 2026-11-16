@@ -11,7 +11,7 @@ import threading
 from fastapi import APIRouter, Depends, HTTPException
 
 from app.api.dependencies import get_librarian
-from intelligence.store import open_store
+from intelligence.store import open_readonly, open_writer
 from intelligence.taste.library_genres import genres_by_recording
 from intelligence.taste.listenbrainz_listens import listenbrainz_reader
 from intelligence.taste.refresh import DEFAULT_MIN_INTERVAL, refresh_status, refresh_taste
@@ -34,7 +34,7 @@ def listens_source(librarian):
 
 
 def _store(librarian):
-    return open_store(librarian.DATA_DIR / STORE_FILE)
+    return open_writer(librarian.DATA_DIR / STORE_FILE)
 
 
 @router.post("/api/insights/taste/refresh")
@@ -64,7 +64,7 @@ def refresh(librarian=Depends(get_librarian)):
 @router.get("/api/insights/taste/refresh/status")
 def refresh_state(librarian=Depends(get_librarian)):
     try:
-        db = _store(librarian)
+        db = open_readonly(librarian.DATA_DIR / STORE_FILE)
         try:
             return refresh_status(db)
         finally:

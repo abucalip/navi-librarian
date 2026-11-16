@@ -14,7 +14,7 @@ from app.api.insight_lens_status import router as status_router
 from app.services.insights_refresh import CHECK_SECONDS
 from intelligence.insights.refresh_status import LENS_JOBS, lens_refresh_status
 from intelligence.jobs import runner
-from intelligence.store import open_store
+from intelligence.store import ensure_store, open_store
 
 GEMS, PROVIDER = LENS_JOBS
 INTERVAL = 100.0
@@ -108,6 +108,7 @@ class RouteTests(unittest.TestCase):
         api = FastAPI()
         api.include_router(status_router)
         api.dependency_overrides[get_librarian] = lambda: FakeLibrarian()
+        ensure_store(self.data_dir / "intelligence.sqlite3")
         self.client = TestClient(api)
 
     def test_route_answers_read_only_shape_on_empty_store(self):

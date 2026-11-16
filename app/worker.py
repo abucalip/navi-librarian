@@ -2,7 +2,7 @@
 
 Start with ``python -m app.worker``. It uses the same image, configuration and ``/data`` volume as the
 web app and is the only process that writes knowledge facts to the Server V2 store and calls MusicBrainz
-for it. It runs until SIGTERM or SIGINT. Jobs owned here: the automatic API fill and the insights refresh
+for it (web routes write only owner records and caches; reads there are read-only). It runs until SIGTERM or SIGINT. Jobs owned here: the automatic API fill and the insights refresh
 (Forgotten Gems and provider lenses, which write the knowledge store and call providers). There is no
 dispatcher yet; further loops move here one at a time (efficiency.md A4).
 
@@ -22,7 +22,7 @@ from intelligence.insights.runtime import JOB as FORGOTTEN_GEMS_JOB
 from intelligence.jobs import prune_finished, recover_running
 from intelligence.musicbrainz.api_fill import JOB as API_FILL_JOB
 from intelligence.musicbrainz.job import JOB as SLICE_JOB
-from intelligence.store import open_store
+from intelligence.store import ensure_store, open_store
 from intelligence.wikidata.ingest import JOB as WIKIDATA_JOB
 
 logger = logging.getLogger(__name__)
@@ -72,6 +72,7 @@ def main(librarian=None, stop=None) -> int:
         if threading.current_thread() is threading.main_thread():
             for sig in (signal.SIGTERM, signal.SIGINT):
                 signal.signal(sig, lambda *_: stop.set())
+        ensure_store(librarian.DATA_DIR / STORE_FILE)
         _maintain(librarian.DATA_DIR, recover=True)   # before any thread starts, so no run is live
         insights_refresh.start(librarian)   # six-hourly loop on its own daemon thread, same process
         # Auto fill runs on its own thread too: switching it off must not end the worker or the other jobs.

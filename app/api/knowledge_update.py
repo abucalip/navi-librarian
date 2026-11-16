@@ -8,7 +8,7 @@ from fastapi import APIRouter, Body, Depends, HTTPException, Query
 from app.api.dependencies import get_librarian
 from app.api.insights import STORE_FILE
 from intelligence.musicbrainz import update_requests
-from intelligence.store import open_store
+from intelligence.store import open_readonly, open_writer
 
 router = APIRouter()
 
@@ -23,9 +23,9 @@ def _key(body: dict) -> str:
     raise HTTPException(status_code=422, detail="give navidrome_id or mbid")
 
 
-def _with_store(librarian, call):
+def _with_store(librarian, call, *, read=False):
     try:
-        db = open_store(librarian.DATA_DIR / STORE_FILE)
+        db = (open_readonly if read else open_writer)(librarian.DATA_DIR / STORE_FILE)
         try:
             return call(db)
         finally:
@@ -45,5 +45,5 @@ def request_update(body: dict = Body(...), librarian=Depends(get_librarian)):
 def update_status(subject: str = Query(...), navidrome_id: str | None = None, mbid: str | None = None,
                   librarian=Depends(get_librarian)):
     key = _key({"navidrome_id": navidrome_id, "mbid": mbid})
-    result = _with_store(librarian, lambda db: update_requests.status(db, subject, key))
+    result = _with_store(librarian, lambda db: update_requests.status(db, subject, key), read=True)
     return result or {"state": "none"}

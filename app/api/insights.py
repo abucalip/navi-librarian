@@ -25,7 +25,7 @@ from intelligence.insights.blind_spots import CARD_KIND as BLIND_SPOT_KIND
 from intelligence.insights.forgotten_gems import CARD_KIND as GEM_KIND
 from intelligence.insights.hidden_canon import CARD_KIND as CANON_KIND
 from intelligence.insights.series_completion import CARD_KIND as SERIES_KIND
-from intelligence.store import open_store
+from intelligence.store import open_readonly, open_writer
 
 router = APIRouter()
 
@@ -62,7 +62,11 @@ def enabled_lenses(environ=None):
 
 
 def _store(librarian):
-    return open_store(librarian.DATA_DIR / STORE_FILE)
+    return open_writer(librarian.DATA_DIR / STORE_FILE)
+
+
+def _read_store(librarian):
+    return open_readonly(librarian.DATA_DIR / STORE_FILE)
 
 
 def _kind(kind):
@@ -76,7 +80,7 @@ def insights(limit: int = INSIGHTS_DEFAULT_LIMIT, librarian=Depends(get_libraria
     if not 1 <= limit <= INSIGHTS_MAX_LIMIT:
         raise HTTPException(status_code=400, detail=f"limit must be between 1 and {INSIGHTS_MAX_LIMIT}")
     try:
-        db = _store(librarian)
+        db = _read_store(librarian)
         try:
             return build_insights_body(db, enabled=enabled_lenses(), limit=limit)
         finally:
@@ -88,7 +92,7 @@ def insights(limit: int = INSIGHTS_DEFAULT_LIMIT, librarian=Depends(get_libraria
 @router.get("/api/insights/taste")
 def insights_taste(librarian=Depends(get_librarian)):
     try:
-        db = _store(librarian)
+        db = _read_store(librarian)
         try:
             return build_taste_body(db)
         finally:

@@ -58,7 +58,11 @@ class RouteTests(unittest.TestCase):
         import app.api.capabilities as caps
         from app.api.dependencies import get_librarian
 
+        from intelligence.store import ensure_store
+
         with tempfile.TemporaryDirectory() as tmp:
+            ensure_store(Path(tmp) / "intelligence.sqlite3")
+
             class Lib:
                 DATA_DIR = Path(tmp)
                 listed = True

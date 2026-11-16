@@ -16,7 +16,7 @@ from app.api.dependencies import get_librarian
 from intelligence.api.smart_playlists import (
     build_get_body, build_insights, build_list_body, build_put_body, build_result_body, delete_playlist, songs_from_subsonic,
 )
-from intelligence.store import open_store
+from intelligence.store import open_readonly, open_writer
 from intelligence.taste.smart_playlist_persistence import valid_rule_id
 
 router = APIRouter()
@@ -32,7 +32,11 @@ def _now() -> float:
 
 
 def _store(librarian):
-    return open_store(librarian.DATA_DIR / STORE_FILE)
+    return open_writer(librarian.DATA_DIR / STORE_FILE)
+
+
+def _read_store(librarian):
+    return open_readonly(librarian.DATA_DIR / STORE_FILE)
 
 
 def _check_id(rule_id: str) -> None:
@@ -58,7 +62,7 @@ def _fetch_songs(librarian) -> list[dict[str, Any]]:
 @router.get("/api/playlists/smart")
 def list_smart(librarian=Depends(get_librarian)):
     try:
-        db = _store(librarian)
+        db = _read_store(librarian)
         try:
             return build_list_body(db)
         finally:
@@ -88,7 +92,7 @@ def put_smart(rule_id: str, body: dict[str, Any], librarian=Depends(get_libraria
 def get_smart(rule_id: str, librarian=Depends(get_librarian)):
     _check_id(rule_id)
     try:
-        db = _store(librarian)
+        db = _read_store(librarian)
         try:
             body = build_get_body(db, rule_id)
         finally:
@@ -121,7 +125,7 @@ def delete_smart(rule_id: str, librarian=Depends(get_librarian)):
 def result_smart(rule_id: str, seed: int = 0, librarian=Depends(get_librarian)):
     _check_id(rule_id)
     try:
-        db = _store(librarian)
+        db = _read_store(librarian)
         try:
             if build_get_body(db, rule_id) is None:
                 raise HTTPException(status_code=404, detail="Smart playlist not found.")

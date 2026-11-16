@@ -16,7 +16,7 @@ from intelligence.graph.paths import PATH_KINDS
 from intelligence.knowledge import KnowledgeReader
 from intelligence.insights import album_to_record
 from intelligence.knowledge.path_pages import gaps_page, path_page
-from intelligence.store import open_store
+from intelligence.store import open_readonly, open_writer
 
 router = APIRouter()
 
@@ -33,7 +33,7 @@ DIRECTIONS = ("out", "in", "both")
 def _read(librarian, call):
     """Run ``call(reader)`` against the store; unknown entity is 404, any other failure 502."""
     try:
-        db = open_store(librarian.DATA_DIR / STORE_FILE)
+        db = open_readonly(librarian.DATA_DIR / STORE_FILE)
         try:
             page = call(KnowledgeReader(db))
         finally:
@@ -167,7 +167,9 @@ def paths(kind: str, mbid: str | None = None, navidrome_id: str | None = None, t
         raise HTTPException(status_code=400, detail=f"type must be one of {', '.join(PERSON_TYPES + ALBUM_TYPES)}")
     records = _play_records(librarian) if kind == GAPS_KIND else None
     try:
-        db = open_store(librarian.DATA_DIR / STORE_FILE)
+        # path_page fills the path cache (a write); Gaps are never cached, so they only read.
+        opener = open_readonly if kind == GAPS_KIND else open_writer
+        db = opener(librarian.DATA_DIR / STORE_FILE)
         try:
             if kind == GAPS_KIND:
                 page = gaps_page(db, records, mbid=mbid, navidrome_id=navidrome_id, type=type)

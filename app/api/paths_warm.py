@@ -16,7 +16,7 @@ from app.api.insights import STORE_FILE
 from intelligence.graph.paths import PATH_KINDS
 from intelligence.graph.paths_warm import DEFAULT_MAX_SECONDS, JOB, run_paths_warm
 from intelligence.jobs import runner
-from intelligence.store import open_store
+from intelligence.store import open_readonly, open_writer
 
 router = APIRouter()
 
@@ -41,7 +41,7 @@ def warm_paths(body: dict[str, Any] | None = Body(default=None), librarian=Depen
     if not _LOCK.acquire(blocking=False):
         raise HTTPException(status_code=409, detail="A path warm-up is already running.")
     try:
-        db = open_store(librarian.DATA_DIR / STORE_FILE)
+        db = open_writer(librarian.DATA_DIR / STORE_FILE)
         try:
             result = run_paths_warm(db, kinds=kinds, max_seconds=max_seconds)
         finally:
@@ -59,7 +59,7 @@ def warm_paths(body: dict[str, Any] | None = Body(default=None), librarian=Depen
 @router.get("/api/knowledge/paths/warm/status")
 def warm_status(librarian=Depends(get_librarian)):
     try:
-        db = open_store(librarian.DATA_DIR / STORE_FILE)
+        db = open_readonly(librarian.DATA_DIR / STORE_FILE)
         try:
             status = runner.status(db, JOB)
             return {"status": status, "last_good": runner.last_good(db, JOB),

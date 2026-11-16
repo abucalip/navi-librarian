@@ -28,8 +28,8 @@ services:
       - ${SLSKD_DOWNLOADS_HOST_PATH:-/media/downloads/slskd/complete}:/downloads
 
   worker:
-    # Background worker: the only process that writes the Server V2 knowledge store and calls
-    # MusicBrainz for it (automatic API fill, insights refresh). Same image, configuration and data volume.
+    # Background worker: the only writer of knowledge facts in the Server V2 store and the only caller of
+    # MusicBrainz for it (web routes write only owner records and caches) (automatic API fill, insights refresh). Same image, configuration and data volume.
     image: ghcr.io/abucalip/navi-librarian:latest
     container_name: discair-worker
     restart: unless-stopped

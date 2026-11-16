@@ -125,7 +125,7 @@ class KnowledgeRoutes(unittest.TestCase):
         self.assertEqual(get("/api/knowledge/connections", params={"mbid": "nope", "type": "artist"}).status_code, 404)
 
     def test_store_failure_is_502(self):
-        with mock.patch.object(routes, "open_store", side_effect=OSError("boom")):
+        with mock.patch.object(routes, "open_readonly", side_effect=OSError("boom")):
             self.assertEqual(self.client.get("/api/knowledge/label", params={"mbid": "l-gid"}).status_code, 502)
 
     def test_routes_do_not_write(self):

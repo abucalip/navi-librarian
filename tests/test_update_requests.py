@@ -8,7 +8,7 @@ from fastapi.testclient import TestClient
 import app.api.knowledge_update as routes
 from app.api.dependencies import get_librarian
 from intelligence.musicbrainz import update_requests as ur
-from intelligence.store import open_store
+from intelligence.store import ensure_store, open_store
 
 
 class FakeLibrarian:
@@ -25,6 +25,7 @@ class UpdateRequests(unittest.TestCase):
         api.dependency_overrides[get_librarian] = lambda: FakeLibrarian(tmp.name)
         self.client = TestClient(api)
         self.tmp = tmp.name
+        ensure_store(Path(self.tmp) / routes.STORE_FILE)
 
     def test_post_queues_once_and_status_reads(self):
         body = {"subject": "album", "navidrome_id": "al-1"}
