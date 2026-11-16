@@ -122,8 +122,14 @@ fun TrailHeader(name: String, picture: @Composable () -> Unit, modifier: Modifie
     ) {
         picture()
         Column(Modifier.weight(1f).semantics(mergeDescendants = true) { heading() }) {
-            Eyebrow("Paths from")
-            Text(name, style = MaterialTheme.typography.titleLarge, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            if (isGallery()) {
+                // Gallery: the catalogue eyebrow over the name in Fraunces italic.
+                GalleryEyebrow("Paths from")
+                Text(name, color = LocalPalette.current.text, style = GalleryType.workM, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            } else {
+                Eyebrow("Paths from")
+                Text(name, style = MaterialTheme.typography.titleLarge, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            }
         }
     }
 }
@@ -134,6 +140,7 @@ fun TrailHeader(name: String, picture: @Composable () -> Unit, modifier: Modifie
  */
 @Composable
 fun TrailTabs(labels: List<String>, selected: Int, onSelect: (Int) -> Unit, modifier: Modifier = Modifier) {
+    if (isGallery()) { GalleryTabs(labels, selected, onSelect, modifier); return }
     val state = rememberLazyListState()
     // A tab restored off screen (Back from an album) is brought into view; one already visible is left where it is.
     LaunchedEffect(selected) {
@@ -224,6 +231,16 @@ fun TrailLinkPill(link: TrailLink, modifier: Modifier = Modifier) {
             withStyle(SpanStyle(fontWeight = FontWeight.SemiBold)) { append(link.text) }
         }
     }
+    if (isGallery()) {
+        // Gallery: the link as a catalogue line in a hairline box, no fill.
+        val p = LocalPalette.current
+        Text(
+            (link.name?.let { "$it · ${link.kind}" } ?: link.text).uppercase(), style = GalleryType.catalogue, color = p.text,
+            modifier = modifier.border(1.dp, p.edge).padding(horizontal = 8.dp, vertical = 5.dp)
+                .semantics(mergeDescendants = true) { heading(); contentDescription = link.spoken },
+        )
+        return
+    }
     Text(
         text, style = MaterialTheme.typography.labelLarge, color = Ink.Text, // Ink.Text: muted text fails contrast on AccentDim in Night
         modifier = modifier.background(Ink.AccentDim, pillShape()).padding(horizontal = 12.dp, vertical = 4.dp)
@@ -263,7 +280,7 @@ fun <T> TrailList(
         }
         notes.forEach { note ->
             item {
-                Text(note, style = MaterialTheme.typography.bodySmall, color = Ink.TextMuted, modifier = Modifier.padding(top = 16.dp))
+                Text(note, style = if (isGallery()) GalleryType.small() else MaterialTheme.typography.bodySmall, color = Ink.TextMuted, modifier = Modifier.padding(top = 16.dp))
             }
         }
     }
@@ -312,8 +329,10 @@ fun TrailStepRow(
     ) {
         picture()
         Column(Modifier.weight(1f)) {
-            Text(title, style = MaterialTheme.typography.titleMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
-            if (line.isNotBlank()) Text(line, style = MaterialTheme.typography.bodyMedium, color = Ink.TextMuted, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            val g = isGallery()
+            val p = LocalPalette.current
+            Text(title, color = if (g) p.text else Color.Unspecified, style = if (g) GalleryType.rowWork else MaterialTheme.typography.titleMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            if (line.isNotBlank()) Text(line, style = if (g) GalleryType.small() else MaterialTheme.typography.bodyMedium, color = if (g) p.textMuted else Ink.TextMuted, maxLines = 2, overflow = TextOverflow.Ellipsis)
         }
         Icon(ArtIcons.Down, contentDescription = null, tint = Ink.TextMuted, modifier = Modifier.size(TrailSizes.Chevron))
     }
@@ -333,18 +352,22 @@ fun TrailOpenStep(
     title: String, lines: List<String>, picture: @Composable () -> Unit, onClose: () -> Unit,
     modifier: Modifier = Modifier, onOpenTitle: (() -> Unit)? = null, body: @Composable ColumnScope.() -> Unit,
 ) {
+    val g = isGallery()
+    val gp = LocalPalette.current
     val shape = themeShape(12.dp)
+    // Gallery: a square panel on the raised ground with a hairline, no corner or shadow.
+    val panel = if (g) Modifier.background(gp.raised).border(1.dp, gp.edge) else
+        Modifier.brutalShadow(shape).clip(shape).background(Ink.Raised).border(themeBorder(BorderStroke(1.dp, Ink.Edge)), shape)
     Column(
-        modifier.fillMaxWidth().brutalShadow(shape).clip(shape).background(Ink.Raised)
-            .border(themeBorder(BorderStroke(1.dp, Ink.Edge)), shape)
+        modifier.fillMaxWidth().then(panel)
             .padding(12.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         val identity: @Composable RowScope.() -> Unit = {
             picture()
             Column(Modifier.weight(1f)) {
-                Text(title, style = MaterialTheme.typography.titleLarge, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                lines.filter { it.isNotBlank() }.forEach { Text(it, style = MaterialTheme.typography.bodyMedium, color = Ink.TextMuted) }
+                Text(title, color = if (g) gp.text else Color.Unspecified, style = if (g) GalleryType.workM else MaterialTheme.typography.titleLarge, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                lines.filter { it.isNotBlank() }.forEach { Text(it, style = if (g) GalleryType.small() else MaterialTheme.typography.bodyMedium, color = if (g) gp.textMuted else Ink.TextMuted) }
             }
         }
         if (onOpenTitle == null) {

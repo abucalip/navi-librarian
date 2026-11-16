@@ -152,7 +152,7 @@ private fun AlbumPathList(
         TrailHeader(albumName, { PathAlbumCover(artistName, albumName, Modifier.size(TrailSizes.HeaderPicture).clip(RoundedCornerShape(4.dp))) }, Modifier.padding(horizontal = 16.dp))
         TrailTabs(tabs.map { it.label }, tabs.indexOf(tab), { onTab(tabs[it]) })
         Text(
-            albumTabDescription(tab, albumName, seeds), style = MaterialTheme.typography.bodyMedium, color = Ink.TextMuted,
+            albumTabDescription(tab, albumName, seeds), style = if (app.discair.ui.common.isGallery()) app.discair.ui.common.GalleryType.small() else MaterialTheme.typography.bodyMedium, color = Ink.TextMuted,
             modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 8.dp),
         )
         Box(Modifier.fillMaxWidth().weight(1f)) {
@@ -173,7 +173,7 @@ private fun AlbumPathList(
                     val answer = state.value
                     if (answer.steps.isEmpty()) {
                         Text(
-                            answer.empty ?: albumPathsEmpty(tab, albumName), style = MaterialTheme.typography.bodyMedium, color = Ink.TextMuted,
+                            answer.empty ?: albumPathsEmpty(tab, albumName), style = if (app.discair.ui.common.isGallery()) app.discair.ui.common.GalleryType.small() else MaterialTheme.typography.bodyMedium, color = Ink.TextMuted,
                             modifier = Modifier.padding(horizontal = 16.dp),
                         )
                     } else {
@@ -228,7 +228,7 @@ private fun AlbumPaneBody(tab: AlbumTab, step: AlbumStep, startName: String, sta
     if (tab == AlbumTab.SameRoom) SameRoomPhotos(startArtist, startName, step.artist, step.album)
     val reasons = step.reasons.take(PaneReasons)
     reasons.forEach { ReasonCard(tab, it) }
-    if (reasons.isEmpty()) InfoCard { Text(if (step.owned) "In your library." else "Not in your library.", style = MaterialTheme.typography.bodyMedium) }
+    if (reasons.isEmpty()) InfoCard { Text(if (step.owned) "In your library." else "Not in your library.", style = if (app.discair.ui.common.isGallery()) app.discair.ui.common.GalleryType.small() else MaterialTheme.typography.bodyMedium) }
     val person = step.reasons.firstNotNullOfOrNull { it.via?.takeIf { v -> v.isArtist } }
     FindRow(
         person = person?.let { it.name to PathLink(false, it.name, null, it.mbid) },

@@ -142,19 +142,19 @@ internal fun GalleryHome(
         data.banner?.let { item(key = "banner") { GalleryBanner(it, link = "Server", onLink = onServer) } }
         val heroAt = block++
         item(key = "hero") {
-            Box(Modifier.galleryArrive(heroAt)) {
+            Column(Modifier.galleryArrive(heroAt)) {
                 Hero(tab, { tab = it; writeTab(context, it) }, data, newest.state, newest.reload, recent.state, recent.reload, open, feedback, onShownKey = { heroKey = it })
             }
         }
-        if (recentList.isNotEmpty()) { val at = block++; item(key = "lately") { Box(Modifier.galleryArrive(at)) { PlayedLately(recentList.take(GalleryHomeRules.PLAYED_SHOWN), open, onLibrary, heroKey) } } }
+        if (recentList.isNotEmpty()) { val at = block++; item(key = "lately") { Column(Modifier.galleryArrive(at)) { PlayedLately(recentList.take(GalleryHomeRules.PLAYED_SHOWN), open, onLibrary, heroKey) } } }
         val artistsAt = block++
-        item(key = "artists") { Box(Modifier.galleryArrive(artistsAt)) { ArtistsBlock(artists, counts, listeningKnown, open, onLibrary) } }
+        item(key = "artists") { Column(Modifier.galleryArrive(artistsAt)) { ArtistsBlock(artists, counts, listeningKnown, open, onLibrary) } }
         val stationList = (stations.state as? Load.Ready)?.value.orEmpty()
         if (stationList.isNotEmpty()) { val at = block++; item(key = "radio") {
-            Box(Modifier.galleryArrive(at)) { RadioBlock(stationList, (plays.state as? Load.Ready)?.value.orEmpty(), now, onRadio, onOpenPlayer) }
+            Column(Modifier.galleryArrive(at)) { RadioBlock(stationList, (plays.state as? Load.Ready)?.value.orEmpty(), now, onRadio, onOpenPlayer) }
         } }
-        data.insight?.let { card -> val at = block++; item(key = "week") { Box(Modifier.galleryArrive(at)) { ThisWeek(card, open) } } }
-        if (data.arrivals.isNotEmpty()) { val at = block++; item(key = "arrivals") { Box(Modifier.galleryArrive(at)) { Arrivals(data.arrivals.take(2), open, onDownloads) } } }
+        data.insight?.let { card -> val at = block++; item(key = "week") { Column(Modifier.galleryArrive(at)) { ThisWeek(card, open) } } }
+        if (data.arrivals.isNotEmpty()) { val at = block++; item(key = "arrivals") { Column(Modifier.galleryArrive(at)) { Arrivals(data.arrivals.take(2), open, onDownloads) } } }
         item(key = "genres") { Genres(data.genres, open, onLibrary) }
         item(key = "library") { LibraryLine(GalleryHomeRules.libraryLine(data.hero, artistTotal), onStats) }
     }
@@ -232,6 +232,8 @@ private fun Hero(
     val shownKey = item?.let { routeKey(it.artist, it.title) }
     androidx.compose.runtime.SideEffect { onShownKey(shownKey) }
     val step = { delta: Int -> index = FlowHomeRules.step(at, items.size, delta) }
+    // The swipe handler lives across pages (keyed on the count only), so it reads the current step; it used to keep the first one and its stale index.
+    val currentStep by androidx.compose.runtime.rememberUpdatedState(step)
     Column {
         GallerySourceSwitch(FlowHomeRules.labels, tab.ordinal, { onTab(FlowHomeRules.Tab.entries[it]) }, Modifier.padding(top = 6.dp))
         Column(
@@ -242,7 +244,7 @@ private fun Hero(
                     detectHorizontalDragGestures(
                         onDragStart = { drag = 0f },
                         onHorizontalDrag = { _, amount -> drag += amount },
-                        onDragEnd = { FlowHomeRules.swipeDelta(drag / density.density)?.let(step) },
+                        onDragEnd = { FlowHomeRules.swipeDelta(drag / density.density)?.let { currentStep(it) } },
                     )
                 }
                 .then(if (item != null && items.size > 1) Modifier.semantics { stateDescription = "Swipe left or right for another album" } else Modifier),

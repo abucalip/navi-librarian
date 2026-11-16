@@ -148,7 +148,7 @@ private fun PathList(
         TrailTabs(PathKind.entries.map { it.label }, PathKind.entries.indexOf(kind), { onKind(PathKind.entries[it]) })
         Text(
             kindDescription(kind, artistName, (state as? Load.Ready)?.value?.startType.orEmpty()),
-            style = MaterialTheme.typography.bodyMedium,
+            style = if (app.discair.ui.common.isGallery()) app.discair.ui.common.GalleryType.small() else MaterialTheme.typography.bodyMedium,
             color = Ink.TextMuted,
             modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 8.dp),
         )
@@ -177,7 +177,7 @@ private fun PathList(
                     }
                     PathsView.Empty -> Text(
                         "No ${kind.label.lowercase()} path from $artistName yet. A path appears only when every step has evidence.",
-                        style = MaterialTheme.typography.bodyMedium, color = Ink.TextMuted, modifier = Modifier.padding(horizontal = 16.dp),
+                        style = if (app.discair.ui.common.isGallery()) app.discair.ui.common.GalleryType.small() else MaterialTheme.typography.bodyMedium, color = Ink.TextMuted, modifier = Modifier.padding(horizontal = 16.dp),
                     )
                 }
             }
