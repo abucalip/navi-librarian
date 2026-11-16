@@ -272,7 +272,7 @@ Step identifiers are stable; refer to them in PR titles. **Model** names the sin
 #### M2. Baseline capture
 
 - **Objective:** a repeatable before-and-after measurement for the Phase P steps.
-- **Current state:** none.
+- **Current state:** script and tests built on branch `efficiency-m2-baseline` (PR open, not merged). Tested only against a stub HTTP server; no live instance run and no baseline numbers recorded yet, so the first table is still to be captured.
 - **Proposed changes:** `scripts/efficiency_baseline.py`: against a running local instance, request a fixed list of routes (library pages, one artist page, one album page, one search, `/api/knowledge/connections`, `/api/knowledge/paths` including `album_gaps`) N times, record `Server-Timing`, and diff `/api/diagnostics/runtime` before and after. Output one JSON file and a short table. Record the first result in this document's evidence log.
 - **Affected components:** new script only.
 - **Implementation guidance:** follow `docs/LOCAL_UI_TESTING.md` for the local instance. Warm-cache runs only by default so no new provider traffic is caused; a cold run needs the owner's approval. Report median and p95.
