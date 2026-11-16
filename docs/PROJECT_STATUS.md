@@ -1,11 +1,12 @@
 # Project status
 
-Last checked: 2026-11-13. GitHub `main` is authoritative; this archive update is based on main at `01421b0e583b56f0fbbb9725a14c8d91ce91b8d7`.
+Last checked: 2026-11-16. GitHub `main` is authoritative; this update is based on main at `034341ea` (PR #1140 merged).
 
 **Server V2 work queue:** `docs/ServerV2.md` now contains only remaining client slices and verification; the former full plan and completed-work history is preserved in `docs/archive/ServerV2_HISTORY_2026-11-09.md`.
 
 ## Current state
 
+- **Server efficiency R5 merged (2026-11-16):** PR [#1140](https://github.com/abucalip/navi-librarian/pull/1140), squash `034341ea`; the insights refresh loop keeps its last refresh time in `meta` and waits out a restart inside `CHECK_SECONDS`, stops a provider tick before its next request on shutdown, and the worker joins its loop threads within 25 s while it holds `worker.lock` (compose `stop_grace_period: 30s`). Focused tests only (75 passed); not deployed. CI on head `efd564d4`: `compile` and `test-and-build` were still in progress at merge (19:08 UTC) and had not concluded at 19:12 UTC; check them. **Next action:** W1 (table-driven worker scheduler), Sonnet, High; C1 (Haiku, Low) can run in parallel.
 - **Server efficiency R4 follow-up merged (2026-11-16):** PR [#1139](https://github.com/abucalip/navi-librarian/pull/1139), squash `e11f81c7`; `GET /api/knowledge/paths` reads read-only and opens a writer only to save a path-cache miss, so R4 is complete (no GET under `/api/knowledge/` holds a write connection for its read). Focused tests only; not deployed. **Next action:** C1 or R5 (worker loop lifecycle), Sonnet, Low to Medium.
 - **Server efficiency R4 merged (2026-11-16):** PR [#1138](https://github.com/abucalip/navi-librarian/pull/1138), squash `961f002f`; `ensure_store` at web and worker startup, read routes use `open_readonly`, write routes `open_writer` (no migration). Focused tests only; not deployed. The paths-cache exception was closed by #1139 (above).
 - **Server efficiency R3 part 2 merged (2026-11-16):** PR [#1137](https://github.com/abucalip/navi-librarian/pull/1137), squash `cdd34851`; web-side MusicBrainz (`discovery/` callers, `integrations/musicbrainz/*`, search providers, artwork host pacer) takes slots from the shared gate; boundary test `PENDING` is empty; R3 done except the live two-process timing check. Focused tests only; not deployed. **Next action:** R4 (read-only knowledge reads) or C1, Sonnet, Medium; either can run in parallel.
