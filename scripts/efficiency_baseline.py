@@ -204,8 +204,15 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
 
 
 def outbound_per_run(delta: Any, runs: int) -> dict[str, float]:
-    """Requests per run by provider from one route's runtime delta (``other`` is the Navidrome LAN server)."""
-    requests = (delta or {}).get("requests", {}) if isinstance(delta, dict) else {}
+    """Web-process requests per run by provider from one route's runtime delta (``other`` is the Navidrome LAN server).
+
+    The diagnostics snapshot nests the counters under ``web`` (and ``worker``); only ``web`` is read here,
+    because the worker snapshot is saved every few minutes and is not per route.
+    """
+    web = delta.get("web") if isinstance(delta, dict) else None
+    requests = web.get("requests") if isinstance(web, dict) else None
+    if not isinstance(requests, dict):
+        return {}
     return {
         provider: round(row["count"] / runs, 2)
         for provider, row in sorted(requests.items())

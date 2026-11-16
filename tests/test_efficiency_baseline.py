@@ -41,12 +41,13 @@ class BaselineHelperTests(unittest.TestCase):
         self.assertEqual(baseline.numeric_delta(before, after), {"web": {"requests": 4}, "new": 2})
 
     def test_outbound_per_run_attributes_provider_requests_to_one_route(self):
-        before = {"requests": {"other": {"count": 4, "seconds": 1.0, "outcomes": {"ok": 4}}}}
-        after = {"requests": {
+        before = {"web": {"requests": {"other": {"count": 4, "seconds": 1.0, "outcomes": {"ok": 4}}}}, "worker": None}
+        after = {"web": {"requests": {
             "other": {"count": 64, "seconds": 9.0, "outcomes": {"ok": 64}},
             "listenbrainz": {"count": 3, "seconds": 0.5, "outcomes": {"ok": 3}},
-        }}
+        }}, "worker": {"requests": {"musicbrainz": {"count": 99, "seconds": 1.0, "outcomes": {"ok": 99}}}}}
         delta = baseline.numeric_delta(before, after)
+        # Worker counters are ignored: only the web process is attributed per route.
         self.assertEqual(baseline.outbound_per_run(delta, 20), {"listenbrainz": 0.15, "other": 3.0})
         self.assertEqual(baseline.outbound_per_run(None, 20), {})
 

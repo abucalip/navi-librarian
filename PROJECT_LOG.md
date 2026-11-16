@@ -2,7 +2,9 @@
 
 - Branch `efficiency-m2-route-attribution` from `main` at `0b9d3722`; PR opened (not merged). Changes `scripts/efficiency_baseline.py` (per-route runtime snapshots, `per_route_runtime` in the JSON, "Outbound per run" table column; `numeric_delta` counts new keys from zero) and `tests/test_efficiency_baseline.py`. Evidence log entry in `docs/efficiency.md` section 13.
 - Tests run: `.venv/bin/python -m pytest -q tests/test_efficiency_baseline.py`, 9 passed (stub server). Not run: full unit suite (not allowed by CLAUDE.md), any live instance run.
-- Limitations: no live measurement yet; the owner's test password and artist/album keys were not available to this session. Routes are timed warm-only, one at a time; background web threads are counted in the same window.
+- Live run (test instance, port 8090): 20 warm runs, table and per-route attribution in `docs/efficiency.md` section 13. The 2-run warm-up before it made provider calls (ListenBrainz, MusicBrainz, Apple, Deezer), which needed owner approval; the owner gave the test login.
+- Fixed during the live run: the diagnostics snapshot nests counters under `web`; the first version read the top level and showed no outbound calls. The unit test now uses the nested shape.
+- Limitations: one machine, one artist and one album; the knowledge routes return 404 on this instance, so they are not the real route. Background web threads are counted in the same window.
 
 ## 2026-11-16 — Server efficiency M2 follow-up: CI test fix and similar-records caching
 
