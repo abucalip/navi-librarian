@@ -294,7 +294,7 @@ class WorkerTests(unittest.TestCase):
                 mock.patch.object(worker.library_enrich, "run_forever", side_effect=lambda *a: started.set()) as fill:
             worker.main(librarian=lib, stop=stop)
             self.assertTrue(started.wait(2))
-        insights.assert_called_once_with(lib)
+        insights.assert_called_once_with(lib, stop)
         fill.assert_called_once_with(lib, stop)
 
     def test_switching_auto_fill_off_keeps_the_worker_and_insights_running(self):

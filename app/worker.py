@@ -8,11 +8,14 @@ dispatcher yet; further loops move here one at a time (efficiency.md A4).
 
 Exactly one worker runs: it takes an exclusive lock on ``DATA_DIR/worker.lock`` and exits non-zero if
 another holds it. Holding the lock makes it safe to requeue ``running`` rows left by a killed worker.
+On SIGTERM or SIGINT the loops stop; the worker waits up to ``SHUTDOWN_GRACE_SECONDS`` for them while it
+still holds the lock (``stop_grace_period`` in compose.yaml is longer than that).
 """
 import fcntl
 import logging
 import signal
 import threading
+import time
 
 from app.api.insights import STORE_FILE
 from app.api.dependencies import get_librarian
@@ -29,6 +32,7 @@ logger = logging.getLogger(__name__)
 
 LOCK_FILE = "worker.lock"
 PRUNE_SECONDS = 24 * 3600
+SHUTDOWN_GRACE_SECONDS = 25      # below compose's stop_grace_period (30 s), so the process ends before Docker kills it
 # The popularity job is named by string: the Phase 6 gate keeps taste imports out of app/ (a test pins the value).
 POPULARITY_JOB = "taste_popularity"
 # Jobs only the worker runs: a run left "running" belongs to a dead worker and is requeued at start.
@@ -60,6 +64,15 @@ def _maintain(data_dir, recover=False):
         db.close()
 
 
+def _wait_for_threads(threads, grace=SHUTDOWN_GRACE_SECONDS):
+    """Join the loop threads against one shared deadline; log any still running (their work is requeued at start)."""
+    deadline = time.monotonic() + grace
+    for thread in threads:
+        thread.join(max(0.0, deadline - time.monotonic()))
+        if thread.is_alive():
+            logger.error("Thread %s did not stop within %s s", thread.name, grace)
+
+
 def main(librarian=None, stop=None) -> int:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(levelname)s %(message)s")
     stop = stop or threading.Event()
@@ -74,15 +87,17 @@ def main(librarian=None, stop=None) -> int:
                 signal.signal(sig, lambda *_: stop.set())
         ensure_store(librarian.DATA_DIR / STORE_FILE)
         _maintain(librarian.DATA_DIR, recover=True)   # before any thread starts, so no run is live
-        insights_refresh.start(librarian)   # six-hourly loop on its own daemon thread, same process
+        insights_thread = insights_refresh.start(librarian, stop)   # six-hourly loop on its own daemon thread
         # Auto fill runs on its own thread too: switching it off must not end the worker or the other jobs.
-        threading.Thread(target=library_enrich.run_forever, args=(librarian, stop), name="library-enrich",
-                         daemon=True).start()
+        enrich_thread = threading.Thread(target=library_enrich.run_forever, args=(librarian, stop),
+                                         name="library-enrich", daemon=True)
+        enrich_thread.start()
         while not stop.wait(PRUNE_SECONDS):
             try:
                 _maintain(librarian.DATA_DIR)
             except Exception as exc:
                 logger.error("Job history prune failed (%s)", type(exc).__name__)
+        _wait_for_threads((insights_thread, enrich_thread))
         return 0
     finally:
         lock.close()

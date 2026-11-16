@@ -73,13 +73,14 @@ class BudgetSpent(Exception):
 
 
 class CountingGet:
-    """Wraps a ``requests.get``-shaped callable and refuses calls beyond the budget."""
+    """Wraps a ``requests.get``-shaped callable and refuses calls beyond the budget or once ``should_stop`` says so."""
 
-    def __init__(self, get: Get, budget: int):
+    def __init__(self, get: Get, budget: int, should_stop: Callable[[], bool] | None = None):
         self._get, self.budget, self.used = get, budget, 0
+        self._should_stop = should_stop
 
     def __call__(self, url: str, **kwargs: Any) -> Any:
-        if self.used >= self.budget:
+        if self.used >= self.budget or (self._should_stop is not None and self._should_stop()):
             raise BudgetSpent()
         self.used += 1
         return self._get(url, **kwargs)
@@ -270,12 +271,14 @@ def refresh_provider_lenses(
     now: float | None = None,
     today: date | None = None,
     series: bool = False,
+    should_stop: Callable[[], bool] | None = None,
 ) -> RunResult:
+    """One budgeted tick. ``should_stop`` (checked before each request) ends the tick like an exhausted budget."""
     if budget < 1:
         raise ValueError("budget must be at least 1")
     now = time.time() if now is None else now
     today = today or date.fromtimestamp(now)
-    counting = CountingGet(get, budget)
+    counting = CountingGet(get, budget, should_stop)
     if lane is _SHARED:
         lane = musicbrainz_lane()
 
