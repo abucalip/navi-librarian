@@ -85,7 +85,7 @@ import kotlinx.coroutines.launch
 private const val GENRES_SHOWN = 6
 
 @Composable
-fun HomeScreen(open: Opener, onRadio: () -> Unit = {}, onDownloads: () -> Unit = {}, onStats: () -> Unit = {}, onServer: () -> Unit = {}, onLibrary: () -> Unit = {}) {
+fun HomeScreen(open: Opener, onRadio: () -> Unit = {}, onDownloads: () -> Unit = {}, onStats: () -> Unit = {}, onServer: () -> Unit = {}, onLibrary: () -> Unit = {}, onOpenPlayer: () -> Unit = {}) {
     val repo = LocalRepository.current
     val hub = app.discair.ui.common.LocalAcquisitions.current
     val now = remember { Instant.now() }
@@ -139,6 +139,15 @@ fun HomeScreen(open: Opener, onRadio: () -> Unit = {}, onDownloads: () -> Unit =
         FlowHome(
             FlowHomeData(picks.state, pickList, picks.reload, genres.state, data.hero, data.arrivals, data.insight, banner),
             open, feedback, onRadio, onLibrary, onStats, onServer, onDownloads,
+        )
+        return
+    }
+
+    // Gallery: its own arrangement, in GalleryHome.kt; every other theme continues below unchanged.
+    if (layout == app.discair.ui.theme.Layout.Gallery) {
+        GalleryHome(
+            GalleryHomeData(picks.state, pickList, picks.reload, genres.state, data.hero, data.arrivals, data.insight, banner),
+            open, feedback, onRadio, onOpenPlayer, onLibrary, onStats, onServer, onDownloads,
         )
         return
     }
