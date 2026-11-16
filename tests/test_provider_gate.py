@@ -21,13 +21,31 @@ class FakeTime:
         self.now += seconds
 
 
+class _Recorder:
+    """Real clock and sleep that remember the granted slot start (clock read + wait)."""
+
+    def __init__(self):
+        self.read = 0.0
+        self.waited = 0.0
+
+    def clock(self):
+        self.read = time.time()
+        return self.read
+
+    def sleep(self, seconds):
+        self.waited = seconds
+        time.sleep(seconds)
+
+
 def _worker(path, out):
-    gate = ProviderGate(path)
-    stamps = []
+    rec = _Recorder()
+    gate = ProviderGate(path, clock=rec.clock, sleep=rec.sleep)
+    starts = []
     for _ in range(10):
+        rec.waited = 0.0
         gate.reserve("musicbrainz", 60)
-        stamps.append(time.time())
-    out.put(stamps)
+        starts.append(rec.read + rec.waited)  # the slot the gate granted, free of wake-up jitter
+    out.put(starts)
 
 
 class ProviderGateTests(unittest.TestCase):
@@ -72,6 +90,33 @@ class ProviderGateTests(unittest.TestCase):
         self.t.now -= 3600  # clock stepped back an hour
         self.assertTrue(self.gate.reserve("musicbrainz", 5))
         self.assertEqual(self.t.slept, [])
+
+    def test_clock_step_back_after_penalty_does_not_freeze_provider(self):
+        self.gate.penalize("musicbrainz", 30)
+        self.t.now -= 3600
+        self.assertTrue(self.gate.reserve("musicbrainz", 60))
+        self.assertEqual(self.t.slept, [])
+
+    def test_penalty_after_clock_step_back_still_blocks(self):
+        self.gate.penalize("musicbrainz", 30)
+        self.t.now -= 3600
+        self.gate.penalize("musicbrainz", 30)  # a fresh 429 must not vanish into the stale block
+        self.assertFalse(self.gate.reserve("musicbrainz", 10))
+        self.assertTrue(self.gate.reserve("musicbrainz", 40))
+        self.assertAlmostEqual(self.t.slept[0], 30)
+
+    def test_fallback_clock_step_back_does_not_freeze_provider(self):
+        bad = ProviderGate(self.path, clock=self.t.clock, sleep=self.t.sleep)
+        with mock.patch("integrations.provider_gate.sqlite3.connect",
+                        side_effect=__import__("sqlite3").OperationalError("nope")):
+            with self.assertLogs("integrations.provider_gate", "WARNING"):
+                bad.penalize("musicbrainz", 30)
+                bad.reserve("musicbrainz", 60)
+                self.t.now -= 7200
+                self.assertTrue(bad.reserve("musicbrainz", 1))
+                bad.penalize("musicbrainz", 30)
+                self.assertFalse(bad.reserve("musicbrainz", 10))
+        self.assertEqual(self.t.slept, [30])
 
     def test_day_counter_rolls_over(self):
         for _ in range(3):
@@ -120,7 +165,7 @@ class MultiProcessTests(unittest.TestCase):
                 p.join(10)
             self.assertEqual(len(stamps), 20)
             gaps = [b - a for a, b in zip(stamps, stamps[1:])]
-            self.assertGreaterEqual(min(gaps), 1.1 - 0.05)  # timer jitter only
+            self.assertGreaterEqual(min(gaps), 1.1 - 1e-6)  # granted slots, so no jitter allowance
 
 
 if __name__ == "__main__":

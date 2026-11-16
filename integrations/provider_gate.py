@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 GATE_FILE = "provider_gate.sqlite3"
 INTERVALS = {"musicbrainz": 1.1}  # seconds between slots; other providers keep their own pacing
 MAX_FUTURE_SLOT = 60.0  # a next_at further ahead than this is a clock step, not a queue
-MAX_PENALTY = 3600.0
+MAX_PENALTY = 3600.0  # also the furthest a block can legitimately sit ahead of now
 FALLBACK_FACTOR = 2.0
 
 _SCHEMA = """
@@ -73,8 +73,10 @@ class ProviderGate:
             conn.execute("BEGIN IMMEDIATE")
             try:
                 row = self._row(conn, provider, now)
-                blocked = max(row[1], now + seconds)
-                conn.execute("UPDATE gate SET blocked_until=? WHERE provider=?", (blocked, provider))
+                next_at, blocked = _clamp(now, row[0], row[1])
+                blocked = max(blocked, now + seconds)
+                conn.execute("UPDATE gate SET next_at=?, blocked_until=? WHERE provider=?",
+                             (next_at, blocked, provider))
                 conn.execute("COMMIT")
             except BaseException:
                 conn.execute("ROLLBACK")
@@ -82,7 +84,8 @@ class ProviderGate:
         except (sqlite3.Error, OSError) as exc:
             self._warn(exc)
             with self._memory_lock:
-                state = self._memory.setdefault(provider, [0.0, 0.0])
+                state = self._memory.setdefault(provider, [now, 0.0])
+                state[0], state[1] = _clamp(now, state[0], state[1])
                 state[1] = max(state[1], now + seconds)
 
     def snapshot(self) -> dict:
@@ -145,8 +148,7 @@ class ProviderGate:
         try:
             now = self._clock()  # read after the lock, so waiting for it cannot make it stale
             next_at, blocked, day, count = self._row(conn, provider, now)
-            if next_at - max(now, blocked) > MAX_FUTURE_SLOT:
-                next_at = now  # clock step; do not freeze the provider
+            next_at, blocked = _clamp(now, next_at, blocked)
             start = max(now, next_at, blocked)
             if start - now > max_wait:
                 conn.execute("ROLLBACK")
@@ -154,8 +156,8 @@ class ProviderGate:
             today = time.strftime("%Y-%m-%d", time.localtime(now))
             count = count + 1 if day == today else 1
             conn.execute(
-                "UPDATE gate SET next_at=?, day=?, day_count=? WHERE provider=?",
-                (start + interval, today, count, provider))
+                "UPDATE gate SET next_at=?, blocked_until=?, day=?, day_count=? WHERE provider=?",
+                (start + interval, blocked, today, count, provider))
             conn.execute("COMMIT")
         except BaseException:
             try:
@@ -172,6 +174,7 @@ class ProviderGate:
         with self._memory_lock:
             now = self._clock()
             state = self._memory.setdefault(provider, [now, 0.0])
+            state[0], state[1] = _clamp(now, state[0], state[1])
             start = max(now, state[0], state[1])
             if start - now > max_wait:
                 return None
@@ -183,6 +186,20 @@ class ProviderGate:
             self._warned = True
             logger.warning("Provider gate %s unavailable (%s); pacing in-process at %gx",
                            self.path, exc, FALLBACK_FACTOR)
+
+
+def _clamp(now, next_at, blocked):
+    """Undo a wall-clock step back so it cannot freeze a provider.
+
+    A block never sits more than MAX_PENALTY ahead and a queued slot never more than
+    MAX_FUTURE_SLOT past the block; anything further ahead means the clock moved back.
+    A step back smaller than these bounds still delays by the step.
+    """
+    if blocked - now > MAX_PENALTY:
+        blocked = now
+    if next_at - max(now, blocked) > MAX_FUTURE_SLOT:
+        next_at = now
+    return next_at, blocked
 
 
 _default: ProviderGate | None = None
