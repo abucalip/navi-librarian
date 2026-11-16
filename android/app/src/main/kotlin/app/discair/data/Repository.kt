@@ -415,7 +415,18 @@ class LibrarianRepository(
      */
     private fun streamSections(segments: List<String>, query: Map<String, String?>, onBody: (String) -> Unit) {
         if (ReadMode.isCacheOnly) return onBody(fetch(segments, query))
+        val key = cacheKey(segments, query)
         val sections = linkedMapOf<String, kotlinx.serialization.json.JsonElement>()
+        // Start from the saved copy, which the screen is already showing: each live section replaces its saved one. Starting empty made
+        // the first live section replace the whole page, so a revisited page shrank to its header and grew back over the seconds the
+        // network sections take (tracks, description, similar albums), on every theme.
+        val saved = try {
+            cache.get(key)?.body?.let { (ApiJson.parseToJsonElement(it) as? JsonObject)?.get("sections") as? JsonObject }
+        } catch (e: Exception) {
+            null
+        }
+        saved?.let { sections.putAll(it) }
+        var live = 0
         var done: kotlinx.serialization.json.JsonElement? = null
         fun page(): String = JsonObject(buildMap {
             put("sections", JsonObject(sections))
@@ -427,6 +438,7 @@ class LibrarianRepository(
                     "section" -> (ApiJson.parseToJsonElement(data) as? JsonObject)?.let { o ->
                         val section = (o["section"] as? kotlinx.serialization.json.JsonPrimitive)?.content ?: return@let
                         sections[section] = JsonObject(o.filterKeys { it != "section" })
+                        live++
                         onBody(page())
                     }
                     "done" -> done = ApiJson.parseToJsonElement(data)
@@ -437,11 +449,11 @@ class LibrarianRepository(
             onBody(fetch(segments, query))
             return
         }
-        if (sections.isEmpty()) {
+        if (live == 0) {
             onBody(fetch(segments, query))
             return
         }
-        cache.put(cacheKey(segments, query), page())
+        cache.put(key, page())
         stale = null
     }
 

@@ -280,6 +280,13 @@ def album_sections(
         "quality": album_quality_label(s for s in data.songs if s["album_id"] == album["id"]) if album and data else None,
     })
 
+    # TEMPORARY, until the efficiency plan's prefetch is built (docs/efficiency.md K3, after K1, K2 and W1): an owned album sends the
+    # library's tracklist at once, so the page is not empty while the provider race below runs (0.75 s on a cold cache). The
+    # provider's tracklist follows as a second `tracks` section and replaces it; clients keep the last section of each name.
+    early_tracks = owned_tracks(data, album["id"]) if album and data else []
+    if early_tracks:
+        yield _available("tracks", "items", early_tracks)
+
     shown_artist = album["artist"] if album else artist
     shown_name = album["name"] if album else name
     rg_mbid = (album or {}).get("release_group_mbid") or release_group_mbid
@@ -346,6 +353,9 @@ def album_sections(
             done, _ = wait(set(pending), timeout=max(0.0, remaining()), return_when=FIRST_COMPLETED)
             if not done:
                 for future, section in pending.items():
+                    # The library's tracklist already went out; a late provider must not blank it (temporary, see early_tracks).
+                    if section == "tracks" and early_tracks:
+                        continue
                     yield _incomplete(section, "deadline", _payload_key(section))
                     if section == "similar_artists":
                         yield _incomplete("similar_albums", "deadline", "items")
@@ -358,6 +368,8 @@ def album_sections(
                     result = _incomplete(section, "deadline", _payload_key(section))
                 except Exception:
                     result = _incomplete(section, "source_failed", _payload_key(section))
+                if section == "tracks" and early_tracks and not result.get("available"):
+                    continue
                 yield result
                 if section == "similar_artists":
                     if network.lastfm is None:

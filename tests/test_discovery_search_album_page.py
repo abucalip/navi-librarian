@@ -176,6 +176,34 @@ class TrackOwnershipTests(unittest.TestCase):
                          [("Everything In Its Right Place", True), ("The National Anthem", True)])
 
 
+class EarlyLibraryTracksTests(unittest.TestCase):
+    """Temporary until the efficiency plan's prefetch (docs/efficiency.md K3): an owned album's library tracklist goes out first."""
+
+    def stream(self, network):
+        data = owned()
+        return list(album_sections(network, data, album=find_album(data, "radiohead", "kid a", None),
+                                   artist="Radiohead", artist_key="radiohead", name="Kid A", year=2000, release_group_mbid="rg1"))
+
+    def test_the_library_tracklist_comes_before_the_provider_and_the_provider_replaces_it(self):
+        sections = self.stream(make_network(deezer_tracks=lambda a, b: [track(1, "Everything In Its Right Place"), track(2, "Kid A")]))
+        tracks = [s for s in sections if s["section"] == "tracks"]
+        self.assertEqual(len(tracks), 2)
+        self.assertEqual([t["title"] for t in tracks[0]["items"]], ["Everything In Its Right Place", "The National Anthem"])
+        self.assertLess(sections.index(tracks[0]), [s["section"] for s in sections].index("similar_artists"))
+        self.assertIn("Kid A", [t["title"] for t in tracks[-1]["items"]])
+
+    def test_a_late_provider_does_not_blank_the_library_tracklist(self):
+        network = make_network(deezer_tracks=lambda a, b: time.sleep(1) or [track(1, "x")], deadline_seconds=0.2)
+        tracks = [s for s in self.stream(network) if s["section"] == "tracks"]
+        # Every tracks section sent (the early one, and the library fallback if the race gave up in time) lists the library's songs.
+        self.assertTrue(all(t["available"] and len(t["items"]) == 2 for t in tracks))
+
+    def test_an_unowned_album_sends_one_tracklist(self):
+        sections = list(album_sections(make_network(deezer_tracks=lambda a, b: [track(1, "x")]), None, album=None,
+                                       artist="Radiohead", artist_key="radiohead", name="Kid A", year=2000, release_group_mbid="rg1"))
+        self.assertEqual(len([s for s in sections if s["section"] == "tracks"]), 1)
+
+
 class GenreTests(unittest.TestCase):
     def test_the_library_genre_is_emitted_at_once_without_a_lookup(self):
         data = build_owned_data(
