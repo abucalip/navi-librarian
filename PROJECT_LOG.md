@@ -1,4 +1,10 @@
-## 2026-11-16 — Android Gallery theme: design system and mockups (PR open)
+## 2026-11-16 — Android Gallery theme G1: palettes, fonts, icons, kit and shell (merged)
+
+- PR [#1117](https://github.com/abucalip/navi-librarian/pull/1117), squash `d6868845`. `Layout.Gallery`, eight palettes, optional `control`/`onControl`/`mat` roles, `FontPairs.Gallery` with three subset font files, `GalleryIcons`, `GalleryKit`, `GalleryShell` (dock bar with sliding marker, mini player, bars, snackbar, sheet), Gallery branches in the shared controls, chart, seek, nav rules, motion family and a Gallery group in Appearance. Pages are unchanged until G2 to G6.
+- Deviation: Day 1 muted text is `5D6169` (draft `5E626A` was 4.4996:1 on PaletteTest's hue-120 pastel wash); `tokens.json`, `palettes.css` and the spec carry it, the mockup pages still show the old value.
+- Tests run (focused, JDK 17): `GalleryTest` (new), `PaletteTest`, `ExistingLayoutsTest`, `NavRulesTest`, `FlowTest`, `SoftBrutTest`, `CoverStackSettingsRulesTest`; `assembleDebug` builds. Not run on a device; no screenshot comparison with `pages/components` yet; the print shadow and bar marker are unchecked visually. Next: owner checks G1 on the phone, then G2 Home.
+
+## 2026-11-16 — Android Gallery theme: design system and mockups (merged, #1116)
 
 - Three theme proposals (Gallery, Aura, Index) shown to the owner; Gallery chosen, Radio section added to Home, palettes reviewed in three rounds (eight kept). Docs only: `docs/GALLERY_THEME.md` and `docs/design/gallery/` (tokens.json, palettes.css, gallery.css, pages/*.html and .png, icons, fonts, _src/build.py, _src/check_contrast.py).
 - Checks run: `check_contrast.py` (all eight palettes pass the PaletteTest rules plus Gallery roles); the live motion page click-tested headless in Chrome (album open and back, Now Playing rise and fall, sheet, snackbar). No app code changed; no Android tests run (none affected). Fonts: Fraunces and Manrope from Google Fonts (OFL), subset with fontTools.
