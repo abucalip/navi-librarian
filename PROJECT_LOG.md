@@ -1028,3 +1028,10 @@ Earlier project log entries are preserved verbatim in [PROJECT_LOG_HISTORY.md](d
 - Not changed: stored lens lists, the Today's picks week archive, Deep Dives output. A save or dismissal of an extra counts to its lens in the feedback summary.
 - Tests run (filtered): `test_discovery_deep_dive_bridge`, `test_discovery_lens_storage`, `test_discovery_genre_block`, `test_discovery_list_payload`, `test_discovery_lens_lists`, `test_lens_lists_ui_contract`, `test_dashboard_service`. Not run: the full suite, a live server, a browser or phone check, the Android build.
 - Next action: owner check on a running server after a Deep Dives refresh.
+
+## 2026-11-16 - Deep Dives bridge into Personal, Classics and New releases
+
+- Owner request: bridge the three other lists as well, after the lens lists (PR #1129, which this branch builds on).
+- Built: `build_cached_discovery_list_response(bridge=...)` calls `navidrome_server._bridge_deep_dives` for `personal`, `classics` and `new_releases` only. The same caps apply (2 per genre family, 10 in all). The extras skip what the list itself hides (dismissed, saved, imported, owned, blocked genre) through one shared `hidden` check, which also covers owned albums on Personal. They follow the requested count, carry `source: "deep_dive"`, `bridge_label` and `reason` "Discover more <artist>", and no `lens`. The response gains `bridged_count`; Personal's `recommendations` includes them.
+- Known mismatch: New releases extras are not new releases and carry no release date, and Classics extras keep the Deep Dives "Similar to" anchor line. Tuning these is the owner's call after a look.
+- Web: `reasonLine` and the New releases card show the label; Android: the default row model shows it. Tests run (filtered): the bridge, list payload, lens storage, genre block, lens lists, dashboard service and UI-contract suites; Android `DiscoveryTest` to follow in the PR. Not run: the full suite, a live server, browser or phone.

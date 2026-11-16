@@ -2,7 +2,7 @@ import json
 import unittest
 
 from discovery.deep_dive_bridge import bridge_albums, deep_dive_pool, lens_families
-from discovery.list_payload import build_lens_list_response
+from discovery.list_payload import build_cached_discovery_list_response, build_lens_list_response
 
 
 def music_key(value):
@@ -123,6 +123,59 @@ class ResponseTests(unittest.TestCase):
         body = json.loads(build_lens_list_response("current_tastes", 10, self.cached, None))
         self.assertEqual(len(body["items"]), 1)
         self.assertEqual(body["bridged_count"], 0)
+
+
+class OtherListsTests(unittest.TestCase):
+    def test_genres_and_stored_families_drive_the_match_and_no_lens_is_set(self):
+        shown = [{"artist": "P", "album": "Q", "genres": ["black metal"]}]
+        out = bridge_albums(None, shown, [], PAYLOAD, music_key)
+        self.assertEqual([a["album"] for a in out], ["Metal One"])
+        self.assertNotIn("lens", out[0])
+        stored = [{"artist": "P", "album": "Q", "genre_families": ["hip_hop"]}]
+        payload = {"items": [dive("S", "Sw", ["x"], families=["hip-hop"])]}
+        self.assertEqual([a["album"] for a in bridge_albums(None, stored, [], payload, music_key)], ["Sw"])
+
+    def respond(self, name, items, *, bridge, count=10, feedback=(), key="items"):
+        cached = {"generated_at": 1.0, "payload": {key: items}}
+        return json.loads(build_cached_discovery_list_response(
+            name, count, lambda _n: cached, list(feedback), {}, music_key,
+            lambda item: bool(item.get("album")), bridge=bridge))
+
+    def test_each_list_is_bridged_after_its_own_items(self):
+        for name, key in (("personal", "recommendations"), ("classics", "items"), ("new_releases", "items")):
+            items = [{"artist": "P", "album": "Q", "genres": ["black metal"]}]
+            seen = []
+
+            def bridge(shown, hidden):
+                seen.append(hidden({"artist": "P", "album": "Q"}))
+                return bridge_albums(None, shown, [], PAYLOAD, music_key, is_excluded=hidden)
+
+            body = self.respond(name, items, bridge=bridge, key=key)
+            self.assertEqual([i["album"] for i in body["items"]], ["Q", "Metal One"], name)
+            self.assertEqual(body["bridged_count"], 1)
+            self.assertEqual(body["count"], 1)
+            if name == "personal":
+                self.assertEqual(len(body["recommendations"]), 2)
+
+    def test_hidden_covers_dismissed_albums(self):
+        feedback = [{"scope": "album", "status": "not_for_me", "artist_key": "m1", "album_key": "metalone"}]
+        items = [{"artist": "P", "album": "Q", "genres": ["black metal"]}]
+        body = self.respond("classics", items, feedback=feedback, bridge=lambda shown, hidden: bridge_albums(
+            None, shown, [], PAYLOAD, music_key, is_excluded=hidden))
+        self.assertEqual([i["album"] for i in body["items"]], ["Q"])
+
+    def test_other_lists_and_failures_are_untouched(self):
+        items = [{"artist": "P", "album": "Q", "genres": ["black metal"]}]
+        body = self.respond("artist_deep_dive", items, bridge=lambda s, h: [{"album": "no"}])
+        self.assertEqual(len(body["items"]), 1)
+        self.assertNotIn("bridged_count", body)
+
+        def boom(_s, _h):
+            raise RuntimeError("x")
+        body = self.respond("classics", items, bridge=boom)
+        self.assertEqual(len(body["items"]), 1)
+        self.assertEqual(body["bridged_count"], 0)
+        self.assertNotIn("bridged_count", self.respond("classics", items, bridge=None))
 
 
 if __name__ == "__main__":

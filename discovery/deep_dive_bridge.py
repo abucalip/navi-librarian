@@ -1,8 +1,10 @@
-"""Bridge from the lens lists to the stored Artist Deep Dives list.
+"""Bridge from the other discovery lists to the stored Artist Deep Dives list.
 
 Pure: the caller supplies the built lens list and the stored Deep Dives payload; no I/O, no clock,
 no provider call. The genres a lens list represents (the genre families of its albums' tags and of
 its seed tags) pick extra albums out of Deep Dives, so the list grows from lookups already made.
+The same bridge serves Personal, Classics and New releases, whose albums carry ``genres`` (or
+``genre_families``) in place of the lens lists' ``tags``; their extras carry no ``lens``.
 
 The per-artist cap of the Deep Dives list does not apply here: the extras come from the Deep Dives
 items plus ``extra_items``, the ranked candidates its diversity pass held back (stored beside
@@ -31,16 +33,32 @@ def _tag_keys(tags: Iterable[Any]) -> set[str]:
     return {" ".join(str(tag).split()).casefold() for tag in tags if str(tag or "").strip()}
 
 
+def _album_tags(album: Mapping[str, Any]) -> list[Any]:
+    """The genre names an album carries: ``tags`` (lens lists) then ``genres`` (the other lists)."""
+    found: list[Any] = []
+    for field in ("tags", "genres"):
+        value = album.get(field)
+        if isinstance(value, (list, tuple)):
+            found.extend(value)
+    return found
+
+
 def lens_families(albums: Iterable[Mapping[str, Any]], seed_tags: Iterable[Any] = ()) -> list[str]:
-    """Genre families the lens list represents, most common first (ties in first-seen order)."""
+    """Genre families the list represents, most common first (ties in first-seen order)."""
     counts: Counter[str] = Counter()
-    for tags in [[tag] for tag in seed_tags] + [
-            album.get("tags") for album in albums if isinstance(album, Mapping)]:
-        if not isinstance(tags, (list, tuple)):
+    groups: list[list[str]] = [
+        [_family(f) for f in deep_dive_genre_families([tag])] for tag in seed_tags]
+    for album in albums:
+        if not isinstance(album, Mapping):
             continue
-        for family in dict.fromkeys(_family(f) for f in deep_dive_genre_families(tags)):
-            if family:
-                counts[family] += 1
+        stored = album.get("genre_families")
+        if isinstance(stored, list) and any(_family(f) for f in stored):
+            groups.append([_family(f) for f in stored])
+        else:
+            groups.append([_family(f) for f in deep_dive_genre_families(_album_tags(album))])
+    for group in groups:
+        for family in dict.fromkeys(f for f in group if f):
+            counts[family] += 1
     return [family for family, _count in counts.most_common()]
 
 
@@ -66,12 +84,13 @@ def deep_dive_pool(payload: Mapping[str, Any] | None) -> list[Mapping[str, Any]]
     return pool
 
 
-def _as_lens_album(item: Mapping[str, Any], lens: str) -> dict[str, Any]:
+def _as_lens_album(item: Mapping[str, Any], lens: str | None) -> dict[str, Any]:
     artist = str(item.get("artist") or "").strip()
     genres = [str(g) for g in item.get("genres") or [] if g] if isinstance(item.get("genres"), list) else []
+    extra = {"lens": lens} if lens else {}
     return {
         **item,
-        "lens": lens,
+        **extra,
         "artist": artist,
         "primary_artist": artist,
         "album": str(item.get("album") or "").strip(),
@@ -89,7 +108,7 @@ def _as_lens_album(item: Mapping[str, Any], lens: str) -> dict[str, Any]:
 
 
 def bridge_albums(
-    lens: str,
+    lens: str | None,
     lens_albums: Iterable[Mapping[str, Any]],
     seed_tags: Iterable[Any],
     deep_dive_payload: Mapping[str, Any] | None,
@@ -99,7 +118,8 @@ def bridge_albums(
     per_family: int = PER_FAMILY,
     total: int = TOTAL,
 ) -> list[dict[str, Any]]:
-    """Extra albums for one lens list, in lens-list shape, without a rank.
+    """Extra albums for one list, in lens-list shape, without a rank. ``lens`` is the lens name, or
+    None for the Personal, Classics and New releases lists (the extras then carry no ``lens``).
 
     Each represented family (most common first) takes up to ``per_family`` Deep Dives albums,
     those sharing the most tags with the lens list first, then the Deep Dives order; ``total`` caps the
@@ -109,7 +129,7 @@ def bridge_albums(
     families = lens_families(albums, seed_tags)
     if not families:
         return []
-    lens_tags = _tag_keys(tag for album in albums if isinstance(album.get("tags"), list) for tag in album["tags"])
+    lens_tags = _tag_keys(tag for album in albums for tag in _album_tags(album))
     lens_tags |= _tag_keys(seed_tags)
     seen = {(music_key(a.get("artist") or ""), music_key(a.get("album") or "")) for a in albums}
     candidates: list[tuple[Mapping[str, Any], list[str]]] = []
