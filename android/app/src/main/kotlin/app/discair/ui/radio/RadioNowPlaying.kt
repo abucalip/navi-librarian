@@ -104,6 +104,15 @@ fun RadioNowPlayingSheet(
     LaunchedEffect(item.coverUrl) { if (item.coverUrl.isBlank()) tint = null }
     val artwork = radioArtworkUrl(item.coverUrl)
     val blurred = canBlur && !artwork.isNullOrBlank() && !flow
+    // Gallery: a full-screen page that rises from the bottom, as Now Playing does (GalleryRadio.kt).
+    if (app.discair.ui.common.isGallery()) {
+        app.discair.ui.player.GalleryPlayerFrame(onDismiss) { close ->
+            androidx.compose.foundation.layout.Box(Modifier.fillMaxSize().background(palette.ink)) {
+                GalleryRadioNow(state, controller, radio, sleep, live, item, artwork, radioStatusText(state, live), close, onOpenHeard)
+            }
+        }
+        return
+    }
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true), containerColor = Ink.Ink, shape = RectangleShape) {
         app.discair.ui.common.TransparentNavigationBar()
         Box {

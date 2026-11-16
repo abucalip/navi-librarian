@@ -71,6 +71,7 @@ fun RadioScreen(onBack: () -> Unit, onOpenHeard: () -> Unit, onOpenPlayer: () ->
     val repo = LocalRepository.current
     val radio = LocalRadio.current
     val onAir by radio.state.collectAsState()
+    val playing = app.discair.ui.player.LocalPlayingNow.current?.isPlaying == true
     val stations = rememberLoad("radio_stations") { repo.radioStations() }
     val live = remember { mutableStateMapOf<String, RadioNow>() }
     val favourites = remember { mutableStateMapOf<String, Boolean>() }
@@ -119,6 +120,15 @@ fun RadioScreen(onBack: () -> Unit, onOpenHeard: () -> Unit, onOpenPlayer: () ->
         CoverStackStations(
             onBack, onOpenHeard, stations.state, stations.reload, message,
             favourite = { favourites[it.id] ?: it.favourite }, now = { live[it.id] }, onAirId = onAir.stationId,
+            onPlay = playStation, onFavourite = { toggleFavourite(it, favourites[it.id] ?: it.favourite) },
+        )
+        return
+    }
+    // Gallery draws its own page the same way (GalleryRadio.kt).
+    if (app.discair.ui.common.isGallery()) {
+        GalleryStations(
+            onBack, onOpenHeard, stations.state, stations.reload, message,
+            favourite = { favourites[it.id] ?: it.favourite }, now = { live[it.id] }, onAirId = onAir.stationId, playing = playing,
             onPlay = playStation, onFavourite = { toggleFavourite(it, favourites[it.id] ?: it.favourite) },
         )
         return
