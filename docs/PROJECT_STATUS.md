@@ -1,11 +1,12 @@
 # Project status
 
-Last checked: 2026-11-16. GitHub `main` is authoritative; this update is based on main at `034341ea` (PR #1140 merged).
+Last checked: 2026-11-16. GitHub `main` is authoritative; this update is based on main at `a1407e69` (PR #1141 merged).
 
 **Server V2 work queue:** `docs/ServerV2.md` now contains only remaining client slices and verification; the former full plan and completed-work history is preserved in `docs/archive/ServerV2_HISTORY_2026-11-09.md`.
 
 ## Current state
 
+- **Server efficiency M1 merged (2026-11-16):** PR [#1141](https://github.com/abucalip/navi-librarian/pull/1141), squash `a1407e69`; `app/services/runtime_metrics.py` counts provider requests (provider and outcome class only), gate waits and store opens (slow and locked logged); `GET /api/diagnostics/runtime` returns web counters plus the worker snapshot saved to `meta` every 5 minutes. Focused tests only; not deployed. CI on head `7f8b8512`: `compile` and `test-and-build` were still in progress at merge (19:34 UTC); check them. Not covered: the Navidrome client (P2), clients outside `_EXTERNAL_HTTP`, per-statement store timing. **Next action:** M2 (baseline script, Haiku, Medium) or W1 (Sonnet, High); M3 and C1 (Haiku) can run in parallel.
 - **Server efficiency R5 merged (2026-11-16):** PR [#1140](https://github.com/abucalip/navi-librarian/pull/1140), squash `034341ea`; the insights refresh loop keeps its last refresh time in `meta` and waits out a restart inside `CHECK_SECONDS`, stops a provider tick before its next request on shutdown, and the worker joins its loop threads within 25 s while it holds `worker.lock` (compose `stop_grace_period: 30s`). Focused tests only (75 passed); not deployed. CI on head `efd564d4`: `compile` and `test-and-build` were still in progress at merge (19:08 UTC) and had not concluded at 19:12 UTC; check them. **Next action:** W1 (table-driven worker scheduler), Sonnet, High; C1 (Haiku, Low) can run in parallel.
 - **Server efficiency R4 follow-up merged (2026-11-16):** PR [#1139](https://github.com/abucalip/navi-librarian/pull/1139), squash `e11f81c7`; `GET /api/knowledge/paths` reads read-only and opens a writer only to save a path-cache miss, so R4 is complete (no GET under `/api/knowledge/` holds a write connection for its read). Focused tests only; not deployed. **Next action:** C1 or R5 (worker loop lifecycle), Sonnet, Low to Medium.
 - **Server efficiency R4 merged (2026-11-16):** PR [#1138](https://github.com/abucalip/navi-librarian/pull/1138), squash `961f002f`; `ensure_store` at web and worker startup, read routes use `open_readonly`, write routes `open_writer` (no migration). Focused tests only; not deployed. The paths-cache exception was closed by #1139 (above).
