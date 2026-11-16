@@ -7,10 +7,10 @@ from pathlib import Path
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from app.api import capabilities, insights, knowledge, popularity, smart_playlists
+from app.api import insights, knowledge, popularity, smart_playlists
 from app.api.dependencies import get_librarian
 from app.api.insights import STORE_FILE
-from intelligence.store import ensure_store, open_readonly, open_store, open_writer, repositories as repo
+from intelligence.store import ensure_store, open_readonly, open_writer, repositories as repo
 from intelligence.store import db as store_db
 
 
