@@ -108,6 +108,8 @@ Each finding cites where it was read. Severity: **C** correctness or reliability
 | `open_readonly` unused | Intended design never wired | Wire it (R4); do not remove |
 | "Compatibility adapter" functions in `navidrome_server.py` (about 50) | Many are reached as `librarian.<name>` attributes, which a plain import search does not show | Remove only those with zero references of any form (C2); no size-only refactor |
 
+**F13 (P). Empty popularity answers are never cached, so the artist page calls ListenBrainz on every request.** `integrations/listenbrainz/popularity.py::fetch_release_group_popularity` writes `lb:popularity:release-group:{mbid}` only when ListenBrainz returns both listen and user counts. A release group with no listen data is sent again on every request, and the artist page's popularity callable (`app/api/search.py::artist_network_for`) sends all of them in one POST. Measured on the test instance (2026-11-16, M2 live run): 14 of the cold test artist's 28 release-group MBIDs had no row, and the warm artist page made exactly one ListenBrainz call per request (median 418 ms, p95 512 ms). Ruled out from the same tables: the similar-artist records and top-recordings, both of which hit the cache. The album page is fully cached when warm. Source: code read plus the local cache tables, read-only; ListenBrainz itself was not re-queried for the uncached groups.
+
 `music_tag_audit.py`, `recommendation_run_metrics.py` and `recommendation_feedback.py` are in use and stay.
 
 ## 5. Target architecture
@@ -363,6 +365,19 @@ Each step quotes M2 numbers before and after. They are independent of one anothe
 - **Verification:** request-count test (two `album_gaps` requests cause one inventory read); ingest equivalence test on a fixture library before removing `_ingest_step`.
 - **Acceptance criteria:** repeated `album_gaps` requests within the maximum age make at most one `getScanStatus` call each and no inventory paging; one documented ingest path, or a written reason for two.
 - **Model:** Sonnet, Medium. Needs judgement on equivalence and data freshness.
+
+#### P6. Cache empty ListenBrainz popularity answers
+
+- **Objective:** stop the artist page from re-sending release groups that ListenBrainz has no listen data for.
+- **Current state:** F13. The warm artist page makes one ListenBrainz popularity POST per request (M2 live run, 2026-11-16); the album page makes none when warm.
+- **Proposed changes:** in `integrations/listenbrainz/popularity.py::fetch_release_group_popularity`, when a chunk answers 200 and a release group comes back with no counts (or is missing from the answer), write a short-lived negative entry under the same prefix (for example `{"negative": true, "at": <time>}`), with a one-hour TTL, the same as the negative TTL in `discovery/search/cache.py`. The read side treats a fresh negative entry as "no popularity" and skips it; a positive entry keeps its 30-day TTL. Do not cache a non-200 response or an exception as negative: those are failures, not "no data". The bonus formula and the `found` shape stay unchanged.
+- **Affected components:** `integrations/listenbrainz/popularity.py`, its tests, and `docs/SEARCH_CONTRACT.md` if the contract states the caching rule (check before editing).
+- **Implementation guidance:** keep the single batched POST per request for the groups that are not cached; keep the existing pacing and budgets. The cache write uses the existing `cache_set` callable, so no new storage.
+- **Dependencies:** none. Independent of P1 to P5.
+- **Risks:** a group that ListenBrainz gains data for stays "no data" for up to an hour; a failed response must not be stored as negative.
+- **Verification:** unit tests: a group with no counts is not re-sent within the TTL; a group with counts is cached positive; a 500 response writes nothing; a group becomes positive after the negative entry expires. Then a live warm run with `scripts/efficiency_baseline.py` on the same targets: ListenBrainz per request should drop from 1.0 to 0 once the negative entries exist.
+- **Acceptance criteria:** the warm artist page makes no ListenBrainz popularity call once the negative entries exist; the failure cases above write nothing; the PR quotes before and after from the baseline script.
+- **Model:** Haiku, Medium. Small change to one module with a fixed spec; check the contract wording first.
 
 ### Phase W: finish the worker split
 
