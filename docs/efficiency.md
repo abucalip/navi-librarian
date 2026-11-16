@@ -205,7 +205,7 @@ Step identifiers are stable; refer to them in PR titles. **Model** names the sin
 #### R2. Shared provider gate module
 
 - **Objective:** one reservation point for provider slots across processes and threads.
-- **Current state:** F2. Not implemented.
+- **Current state:** done, merged in PR #1134 (2026-11-16) with the clock-step fix in PR #1135: a block more than `MAX_PENALTY` ahead is capped, not cleared. No callers yet. Was F2.
 - **Proposed changes:** add `integrations/provider_gate.py` as specified in 6.1, with `reserve`, `penalize`, `snapshot()` (for diagnostics) and injectable clock and sleep.
 - **Affected components:** new module; new file `/data/provider_gate.sqlite3`. No caller changes in this step.
 - **Implementation guidance:** follow 6.1 exactly. Path from `DATA_DIR`. Create the table on first open per process, not per call. Expose a process-wide default instance and allow tests to construct their own on a temporary path.
