@@ -1,3 +1,9 @@
+## 2026-11-16 — Server efficiency R1: single-worker lock and restart recovery
+
+- PR [#1133](https://github.com/abucalip/navi-librarian/pull/1133), squash `254c74fc`, head `760e022f`. `app/worker.py` takes an exclusive non-blocking `flock` on `DATA_DIR/worker.lock` (a second worker exits 1); then, before any thread starts, `recover_running` (new, `intelligence/jobs/runner.py`) requeues `running` rows of `WORKER_JOBS` (insights gems, provider lenses, API fill, Wikidata ingest, popularity) with progress kept, and marks an interrupted `musicbrainz_slice` run `failed`; web-owned jobs are untouched. `prune_finished` runs at start and daily. `paths_warm` recovers by age (`max_seconds` + 600 s).
+- Tests run: `test_worker_lock.py` (new), `test_intelligence_jobs.py`, `test_intelligence_musicbrainz_auto_fill.py`, `test_intelligence_paths_warm.py`, `test_api_paths_warm_routes.py`, `test_server_v2_phase6_exit.py`. CI passed on the head (compile, test-and-build, container-smoke, lint-changed, validate-container, validate-release-workflow). The first head failed the Phase 6 gate because the worker imported `intelligence.taste`; the popularity job is now named by string, pinned by a test.
+- Limitations: not published or deployed; not run against a real killed worker in the container. `insights_refresh._loop` still ignores the stop event (F4, W1). The "only writer" wording in `compose.yaml` is left to R4.
+
 ## 2026-11-16 — Android: app version 1.8.2
 
 - Pushed to `main` at the owner's request (no PR). Version bump only: app 1.8.2 (versionCode 20).

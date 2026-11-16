@@ -192,7 +192,7 @@ Step identifiers are stable; refer to them in PR titles. **Model** names the sin
 #### R1. Stale-run recovery and single-worker lock
 
 - **Objective:** a worker restart never leaves a job stuck, and two workers can never run at once.
-- **Current state:** F1. No lock; nothing stops a second `python -m app.worker`.
+- **Current state:** done, merged in PR #1133 (2026-11-16). Was F1: no lock; nothing stopped a second `python -m app.worker`.
 - **Proposed changes:** (a) at worker start take a non-blocking exclusive `fcntl.flock` on `DATA_DIR/worker.lock`, hold it for the process lifetime, exit with a clear log line and non-zero status if it is held; (b) define `WORKER_JOBS` (the job names only the worker runs) and, after taking the lock and before starting threads, requeue every `running` row for those names; (c) call `prune_finished` once per day.
 - **Affected components:** `app/worker.py`, `intelligence/jobs/runner.py` (add `recover_running(db, jobs)`), the `JOB` constants in `intelligence/insights/runtime.py`, `provider_runtime.py`, `intelligence/musicbrainz/api_fill.py`, `intelligence/wikidata/ingest.py`, `intelligence/taste/popularity_job.py`.
 - **Implementation guidance:** requeue with `UPDATE job_runs SET state='queued' WHERE state='running' AND job IN (...)`; keep `started_at` and `progress` so the run resumes from its checkpoint. Do not touch jobs the web runs (`taste` refresh already recovers by age; give `paths_warm` the same age-based recovery with a threshold above its `max_seconds`). Do not requeue the slice import automatically; mark it `failed` with an explanatory error instead, because resuming a multi-gigabyte import needs an explicit decision.

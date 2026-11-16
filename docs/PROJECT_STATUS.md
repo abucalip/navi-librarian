@@ -6,6 +6,7 @@ Last checked: 2026-11-13. GitHub `main` is authoritative; this archive update is
 
 ## Current state
 
+- **Server efficiency R1 merged (2026-11-16):** PR [#1133](https://github.com/abucalip/navi-librarian/pull/1133), squash `254c74fc`; worker lock (`worker.lock`), restart recovery of worker-owned `running` jobs, daily prune, `paths_warm` age recovery. Focused tests only; not deployed. **Next action:** R2 (shared provider gate, `integrations/provider_gate.py`), Sonnet, High; R4 and C1 can run in parallel.
 - **macOS Play after Stop and phone handoff fixes (2026-11-15, PR open):** Play after stopping a station goes to the queue's current song (also a song paused earlier, a restored queue, a loading song); Continue on this Mac carries the phone's position into the load, skips the growing download and re-reads the queue at click time. Focused tests `LiveSessionTests|PlayerModelTests` passed; owner check in the installed app pending.
 - **Android Gallery theme G2 Home merged (2026-11-16):** PR [#1118](https://github.com/abucalip/navi-librarian/pull/1118), squash `68426668`; Home with the Radio section. Focused tests only; not seen on a device. **Next action:** the owner checks G2 on the phone, then G3 Album, Artist, Genre.
 - **Android Gallery theme G1 merged (2026-11-16):** PR [#1117](https://github.com/abucalip/navi-librarian/pull/1117), squash `d6868845`; palettes, fonts, icons, kit and shell (no screens yet). Focused tests only; not seen on a device. Details in `PROJECT_LOG.md`. **Next action:** the owner checks G1 on the phone, then G2 Home.
