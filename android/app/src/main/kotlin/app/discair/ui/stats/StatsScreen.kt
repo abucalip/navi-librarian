@@ -28,6 +28,7 @@ import app.discair.ui.common.CoverStackTitle
 import app.discair.ui.common.CoverStackTopBar
 import app.discair.ui.common.isCoverStack
 import app.discair.ui.common.isFlow
+import app.discair.ui.common.isGallery
 import app.discair.ui.common.FlowLargeTitle
 import app.discair.ui.common.FlowPageBar
 import app.discair.ui.common.ChartState
@@ -64,18 +65,21 @@ fun StatsScreen(onBack: () -> Unit) {
     Column(Modifier.fillMaxSize()) {
         val softBrut = isCoverStack() // Soft Brut: a cover-stack bar and title, word chips and outlined cards (CoverStackStats.kt)
         val flow = isFlow() // Flow: its own bar, large title, capsule chips and white cards (FlowStats.kt)
-        if (softBrut) CoverStackTopBar(onBack, emptyList(), title = "Library stats") else if (flow) FlowPageBar(onBack, emptyList(), title = "Library stats") else BackBar(onBack)
+        val gallery = isGallery() // Gallery: a page bar, a catalogue line over the title, a word switch and hairline sections (GalleryStats.kt)
+        if (gallery) app.discair.ui.common.GalleryPageBar("Library stats", onBack) else if (softBrut) CoverStackTopBar(onBack, emptyList(), title = "Library stats") else if (flow) FlowPageBar(onBack, emptyList(), title = "Library stats") else BackBar(onBack)
         LazyColumn(
             Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(start = 16.dp, end = if (softBrut) 19.dp else 16.dp, top = 0.dp, bottom = 24.dp + app.discair.ui.LocalBottomClearance.current),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+            contentPadding = PaddingValues(start = if (gallery) 0.dp else 16.dp, end = if (gallery) 0.dp else if (softBrut) 19.dp else 16.dp, top = 0.dp, bottom = 24.dp + app.discair.ui.LocalBottomClearance.current),
+            verticalArrangement = Arrangement.spacedBy(if (gallery) 0.dp else 16.dp),
         ) {
             item(key = "title") {
-                if (softBrut) CoverStackTitle("Library stats", maxLines = 1)
+                if (gallery) app.discair.ui.common.GalleryPageHead("Library stats", eyebrow = "Library")
+                else if (softBrut) CoverStackTitle("Library stats", maxLines = 1)
                 else if (flow) FlowLargeTitle("Library stats")
                 else Text("Library stats", style = MaterialTheme.typography.headlineMedium, modifier = Modifier.semantics { heading() })
             }
-            if (softBrut) item(key = "ranges") { CoverStackRanges(range) { range = it } }
+            if (gallery) item(key = "ranges") { GalleryRanges(range) { range = it } }
+            else if (softBrut) item(key = "ranges") { CoverStackRanges(range) { range = it } }
             else if (flow) item(key = "ranges") { FlowRanges(range) { range = it } }
             else item(key = "ranges") {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -108,7 +112,7 @@ private fun CollectionCard(
         }
         if (series != null) {
             val today = StatsRules.dateWords(now.atZone(ZoneOffset.UTC).toLocalDate())
-            if (!isCoverStack() && !isFlow()) Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            if (!isCoverStack() && !isFlow() && !isGallery()) Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
                     app.discair.ui.common.ChartRules.formatCount(series.total.toDouble()), style = discairType().displayMetric,
                     modifier = Modifier.semantics { contentDescription = "${series.total} albums on $today" },
@@ -124,6 +128,8 @@ private fun CollectionCard(
             // Soft Brut puts the figure under the eyebrow, inside the chart's frame (mockup frame 2).
             header = if (isCoverStack() && series != null) ({
                 CoverStackFigure(app.discair.ui.common.ChartRules.formatCount(series.total.toDouble()), "albums on " + StatsRules.dateWords(now.atZone(ZoneOffset.UTC).toLocalDate()))
+            }) else if (isGallery() && series != null) ({
+                GalleryFigure(app.discair.ui.common.ChartRules.formatCount(series.total.toDouble()), "albums on " + StatsRules.dateWords(now.atZone(ZoneOffset.UTC).toLocalDate()))
             }) else if (isFlow() && series != null) ({
                 FlowFigure(app.discair.ui.common.ChartRules.formatCount(series.total.toDouble()), "albums on " + StatsRules.dateWords(now.atZone(ZoneOffset.UTC).toLocalDate()))
             }) else null,
@@ -176,5 +182,5 @@ private fun TimeOfDayCard(taste: app.discair.model.TasteResponse?, loading: Bool
 /** A stats card: the Standard dashboard card, Soft Brut's outlined one, or Flow's white one. */
 @Composable
 private fun StatsCard(content: @Composable () -> Unit) {
-    if (isCoverStack()) app.discair.ui.discover.CoverStackCardBox(content = content) else if (isFlow()) FlowStatsCard(content) else DashCard(content = content)
+    if (isGallery()) GalleryStatsCard(content) else if (isCoverStack()) app.discair.ui.discover.CoverStackCardBox(content = content) else if (isFlow()) FlowStatsCard(content) else DashCard(content = content)
 }

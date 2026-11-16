@@ -111,7 +111,8 @@ fun ChartFrame(
     val p = LocalPalette.current
     Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
         // Soft Brut: the title is the card's mono eyebrow (mockup `.eb`); [header] is the headline figure under it. Every other theme is unchanged.
-        if (isCoverStack()) Text(
+        if (isGallery()) Text(title, style = GalleryType.section, color = p.text) // Gallery: the chart's name is the section's Fraunces heading
+        else if (isCoverStack()) Text(
             title.uppercase(), color = p.textMuted,
             style = MaterialTheme.typography.labelSmall.copy(fontFamily = app.discair.ui.theme.LocalFontPair.current.mono, fontSize = 11.sp, lineHeight = 16.sp, fontWeight = FontWeight.Medium, letterSpacing = 0.88.sp),
         ) else if (isFlow()) FlowEyebrow(title) // Flow: the same caption in Inter capitals (flow.css `.eb`)
