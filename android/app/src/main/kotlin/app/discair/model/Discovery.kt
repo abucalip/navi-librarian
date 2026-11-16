@@ -49,6 +49,8 @@ data class DiscoveryItem(
     @SerialName("lastfm_listeners") val listeners: Long? = null,
     @SerialName("album_listeners") val albumListeners: Long? = null,
     @SerialName("seed_tag") val seedTag: String? = null,
+    /** "Discover more <artist>" on a lens-list album bridged in from Artist Deep Dives. */
+    @SerialName("bridge_label") val bridgeLabel: String? = null,
     val reason: String = "",
     val genres: List<String> = emptyList(),
     @SerialName("similar_to") val similarTo: List<String> = emptyList(),

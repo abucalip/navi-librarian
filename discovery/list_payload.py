@@ -188,6 +188,7 @@ def build_lens_list_response(
     cached: Mapping[str, Any] | None,
     is_owned: Callable[[Mapping[str, Any]], bool] | None,
     is_dismissed: Callable[[Mapping[str, Any]], bool] | None = None,
+    bridge: Callable[[list[Mapping[str, Any]], list[Any]], list[Mapping[str, Any]]] | None = None,
 ) -> str:
     """Build the JSON response for one stored lens list (Engine 2, Phase 4, slices 3 and 5).
 
@@ -195,6 +196,10 @@ def build_lens_list_response(
     ``is_dismissed`` (None when the feedback could not be read) removes "Not for me" albums the
     same way. The stored order and ranks are kept. The response reports which checks ran and
     aggregate counts only.
+
+    ``bridge`` (``discovery.deep_dive_bridge``) is called with the served albums and the seed tags
+    and returns extra albums, which follow the first ``count`` with the ranks continuing; they do not
+    count against ``count``. An error in it leaves the list as it was.
     """
     if not cached:
         return json.dumps({
@@ -219,6 +224,14 @@ def build_lens_list_response(
         stored_albums = []
     usable = [album for album in stored_albums if isinstance(album, Mapping)]
     albums = [{**album, "rank": position} for position, album in enumerate(usable, start=1)]
+    shown = albums[:count]
+    extras: list[Mapping[str, Any]] = []
+    if bridge is not None and shown:
+        try:
+            extras = bridge(shown, payload.get("seed_tags") or [])
+        except Exception:
+            extras = []
+    shown = shown + [{**extra, "rank": position} for position, extra in enumerate(extras, start=len(shown) + 1)]
     return json.dumps({
         "list": lens_name,
         "label": payload.get("label"),
@@ -226,7 +239,8 @@ def build_lens_list_response(
         "generated_at": cached["generated_at"],
         "total_before_filter": len(stored),
         "count": min(count, len(albums)),
-        "items": albums[:count],
+        "bridged_count": len(extras),
+        "items": shown,
         "seed_tags": payload.get("seed_tags", []),
         "read_filter": read_filter,
     }, ensure_ascii=False, indent=2)

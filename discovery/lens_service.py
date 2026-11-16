@@ -27,6 +27,7 @@ from discovery.lens_feedback import lens_acquisition_summary, lens_feedback_summ
 from discovery.discovery_mode import discovery_knobs
 from discovery.lens_lists import LENS_LIST_ORDER, build_lens_lists, history_artist_mbids, usable_listens
 from discovery.lens_storage import lens_day, lens_storage_name
+from discovery.deep_dive_bridge import bridge_albums
 from discovery.genre_block import blocked_genre_keys
 from discovery.list_payload import build_lens_list_response, dismissed_predicate, owned_predicate
 from settings import service as settings_service
@@ -86,9 +87,18 @@ def list_response(librarian: Any, lens_name: str, count: int) -> str:
             "message": "Lens lists are off. Set engine2_lens_lists_enabled to turn them on.",
         }, ensure_ascii=False, indent=2)
     cached = librarian._discovery_read_list(lens_storage_name(lens_name))
-    return build_lens_list_response(
-        lens_name, count, cached, _owned_or_none(librarian), _dismissed_or_none(librarian),
-    )
+    is_owned, is_dismissed = _owned_or_none(librarian), _dismissed_or_none(librarian)
+
+    def bridge(albums, seed_tags):
+        # Albums from the stored Deep Dives list that match the genres this list represents.
+        stored = librarian._discovery_read_list("artist_deep_dive")
+        payload = stored.get("payload") if isinstance(stored, Mapping) else None
+        return bridge_albums(
+            lens_name, albums, seed_tags, payload, librarian._music_key,
+            is_excluded=lambda item: bool((is_owned and is_owned(item)) or (is_dismissed and is_dismissed(item))),
+        )
+
+    return build_lens_list_response(lens_name, count, cached, is_owned, is_dismissed, bridge=bridge)
 
 
 def feedback_summary(librarian: Any) -> dict[str, Any]:

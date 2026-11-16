@@ -1874,7 +1874,7 @@ function buildLensCard(item, name) {
   const listeners = Number(item.album_listeners);
   return buildListCard(item, {
     tag: item.seed_tag || LENS_LISTS[name],
-    meta: [Number.isFinite(listeners) && listeners > 0 ? listeners.toLocaleString() + ' listeners' : ''],
+    meta: [item.bridge_label || '', Number.isFinite(listeners) && listeners > 0 ? listeners.toLocaleString() + ' listeners' : ''],
     listName: 'lens_lists',
     onDismiss: (artist, album, metadata, card) => sendFeedback('dismiss', artist, album, metadata, 'lens_lists', card)
   });
@@ -2593,7 +2593,7 @@ function buildLensRow(item) {
   const row = buildRecommendationRow(item, item.rank, {
     indexed: true,
     meta: [
-      item.seed_tag ? 'Seed tag: ' + item.seed_tag : '',
+      item.bridge_label || (item.seed_tag ? 'Seed tag: ' + item.seed_tag : ''),
       Number.isFinite(listeners) && listeners > 0 ? listeners.toLocaleString() + ' listeners' : ''
     ],
     listName: 'lens_lists',

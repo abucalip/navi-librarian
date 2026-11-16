@@ -1018,3 +1018,13 @@ Earlier project log entries are preserved verbatim in [PROJECT_LOG_HISTORY.md](d
 - Tests run locally (JDK 17, filtered): `FlowTest`, `ExistingLayoutsTest`, `DiscoveryTest`, `InsightsTest`, `FlowPagesRulesTest`, `SoftBrutTest`, `NavRulesTest`, `FlowDiscoverRulesTest`; all pass. Full suite not run (owner rule).
 - Not done: no device check. The owner's phone check is still open: each of the seven lists, the sheet, swipes across all seven, a night palette. Open point O1 (Save and ⋯ touch size) is still the owner's.
 - Next action: the owner's phone check after D4 merges.
+
+## 2026-11-16 - Deep Dives bridge into the lens lists
+
+- Owner request: grow each lens list (Current tastes first, and the other three) with Deep Dives albums of the same genres, with no new lookups.
+- Built: `discovery/deep_dive_bridge.py` (pure). At read time `lens_service.list_response` passes the served list and the stored `artist_deep_dive` payload to it. The genre families of the list's tags and seed tags pick up to 2 Deep Dives albums per family, 10 in all, those sharing the most tags first. Owned, dismissed and blocked-genre albums are skipped through the lens list's own predicates. Extras follow the requested `count` (ranks continue, `bridged_count` reports them) and carry `source: "deep_dive"`, `lens`, `bridge_label` and `reason` set to "Discover more <artist>".
+- Owner choice: the one-album-per-artist cap does not apply to the extras. The Deep Dives build now also stores `extra_items`, the ranked candidates its diversity pass held back (up to 150); Deep Dives itself still shows `items` only. A list stored before this change bridges from `items` alone until the next Deep Dives refresh.
+- Clients: the web list rows and cards and the Android Daily rows show the label; Gallery tiles show it as the reason line. No other client change.
+- Not changed: stored lens lists, the Today's picks week archive, Deep Dives output. A save or dismissal of an extra counts to its lens in the feedback summary.
+- Tests run (filtered): `test_discovery_deep_dive_bridge`, `test_discovery_lens_storage`, `test_discovery_genre_block`, `test_discovery_list_payload`, `test_discovery_lens_lists`, `test_lens_lists_ui_contract`, `test_dashboard_service`. Not run: the full suite, a live server, a browser or phone check, the Android build.
+- Next action: owner check on a running server after a Deep Dives refresh.

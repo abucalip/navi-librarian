@@ -1138,6 +1138,9 @@ def _build_artist_deep_dive_list():
         "artists_with_three_or_more_owned_albums": len(anchors),
         "missing_albums_and_similar_artist_candidates": len(ranked),
         "items": diversified[:150],
+        # Ranked candidates the diversity pass held back (artist, anchor and family caps). Deep Dives does
+        # not show them; the lens lists bridge from them (discovery/deep_dive_bridge.py), uncapped by artist.
+        "extra_items": [item for item in ranked if id(item) not in {id(shown) for shown in diversified[:150]}][:150],
         "limitations": [
             "Artist similarity is sourced from Last.fm and is not a guarantee of musical fit.",
             "Popularity is deliberately down-weighted and candidates rotate across genres and artists.",
