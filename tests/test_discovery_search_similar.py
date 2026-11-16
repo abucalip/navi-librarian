@@ -407,7 +407,7 @@ class SimilarSectionTests(unittest.TestCase):
         self.assertEqual(section["reason"], "deadline")
         self.assertEqual([i["name"] for i in section["items"]], ["Thom Yorke"])
 
-    def test_an_incomplete_tag_refresh_leaves_the_previous_cache_entry_unchanged(self):
+    def test_a_rate_limited_tag_refresh_still_stores_the_complete_provider_records(self):
         import time
         store = Store()
         key = "similar:mb-rh:radiohead:lastfm3:listenbrainz0"
@@ -424,6 +424,34 @@ class SimilarSectionTests(unittest.TestCase):
         )
         self.assertFalse(section["complete"])
         self.assertEqual(section["reason"], "deadline")
+        self.assertEqual([r["name"] for r in store.data[key]["results"]], ["New"])
+
+    def test_a_rate_limited_tag_lookup_does_not_refetch_the_records_on_the_next_request(self):
+        store = Store()
+        musicbrainz = self.MusicBrainz(tags={"mb-rh": ["rock"]}, rate_limited=True)
+        lastfm = self.Fake([{"name": "Thom Yorke", "mbid": None, "match": 0.9}])
+        listenbrainz = self.Fake([{"name": "Atoms for Peace", "mbid": "mb-afp", "match": None}])
+        self.run_similar(self.network(lastfm=lastfm, listenbrainz=listenbrainz, store=store, musicbrainz=musicbrainz))
+        second = self.run_similar(self.network(lastfm=lastfm, listenbrainz=listenbrainz, store=store, musicbrainz=musicbrainz))
+        self.assertEqual((lastfm.calls, listenbrainz.calls), (1, 1))
+        self.assertEqual(second["reason"], "deadline")
+
+    def test_a_failed_provider_refresh_leaves_the_previous_cache_entry_unchanged(self):
+        import time
+        store = Store()
+        key = "similar:mb-rh:radiohead:lastfm3:listenbrainz0"
+        previous = {"at": time.time(), "results": [{"source": "lastfm", "name": "Old", "mbid": None, "match": 0.1}]}
+        store.data[key] = previous
+        net = self.network(
+            lastfm=self.Fake(fail=True),
+            listenbrainz=self.Fake([{"name": "New", "mbid": "mb-new", "match": None}]),
+            store=store,
+        )
+        section = similar_items(
+            net, "Radiohead", None, owned_keys(),
+            remaining=lambda: 10.0, cancelled=never_cancelled(), refresh=True,
+        )
+        self.assertEqual(section["reason"], "source_failed")
         self.assertIs(store.data[key], previous)
 
     def test_refresh_skips_the_cached_records_and_calls_the_sources(self):
