@@ -64,6 +64,27 @@ def _clear():
     return OwnershipStatus.CLEAR
 
 
+class BuilderExclusionTests(unittest.TestCase):
+    """Classics and Deep Dives drop blocked-genre candidates before choosing the list."""
+
+    def test_dict_items_with_a_blocked_genre_are_dropped(self):
+        blocked = genre_block.blocked_genre_keys([BLOCK], music_key)
+        items = [{"artist": "A", "genres": ["Shoegaze", "rock"]}, {"artist": "B", "genres": ["jazz"]},
+                 {"artist": "C", "tags": ["shoegaze"]}, {"artist": "D"}]
+        kept = genre_block.drop_blocked_items(iter(items), blocked, music_key)
+        self.assertEqual([i["artist"] for i in kept], ["B", "D"])
+
+    def test_nothing_blocked_keeps_every_item(self):
+        items = [{"artist": "A", "genres": ["shoegaze"]}]
+        self.assertEqual(genre_block.drop_blocked_items(items, frozenset(), music_key), items)
+
+    def test_unreadable_feedback_blocks_nothing(self):
+        def broken():
+            raise RuntimeError("db locked")
+        self.assertEqual(genre_block.current_blocked_keys(broken, music_key), frozenset())
+        self.assertEqual(genre_block.current_blocked_keys(lambda: [BLOCK], music_key), frozenset({music_key("Shoegaze")}))
+
+
 class ReadTimeTests(unittest.TestCase):
     def test_personal_classics_hide_blocked_genre_and_owned_albums_untouched(self):
         rows = [{"artist": "A", "album": "Dreamy", "genres": ["Shoegaze"]},

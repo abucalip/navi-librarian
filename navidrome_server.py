@@ -1039,6 +1039,9 @@ def _build_classics_list():
         _lastfm_artist_genres,
         _deep_dive_genre_families,
     )
+    # A blocked genre leaves the pool before the list is chosen (it is also hidden at read time).
+    from discovery.genre_block import current_blocked_keys, drop_blocked_items
+    ranked = drop_blocked_items(ranked, current_blocked_keys(_discovery_feedback_rows, _music_key), _music_key)
 
     # Re-sort after enriching the broader pool; add fresh jitter so a manual
     # refresh can rotate recommendations even when upstream API caches are warm.
@@ -1116,9 +1119,10 @@ def _build_artist_deep_dive_list():
         genre_families=_deep_dive_genre_families,
         music_key=_music_key,
     )
+    from discovery.genre_block import current_blocked_keys, drop_blocked_items
     from discovery.recommendations import rank_and_diversify_deep_dive_candidates
     ranked, diversified = rank_and_diversify_deep_dive_candidates(
-        candidates.values(),
+        drop_blocked_items(candidates.values(), current_blocked_keys(_discovery_feedback_rows, _music_key), _music_key),
         music_key=_music_key,
         is_album_candidate=_discovery_is_album_candidate,
         jitter=random.uniform,

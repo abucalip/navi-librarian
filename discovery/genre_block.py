@@ -8,6 +8,10 @@ A block hides picks, never the library: it applies to the personal list, the len
 classics and the other discovery lists, at selection time (so the list is built without
 them) and at read time (so a stored list changes at once). Owned albums, the library pages
 and "For me" are not touched. A block with no matching item changes nothing.
+
+Selection-time coverage: Personal (``cooldown.prepare_ranking_inputs``), the lens lists, Classics and Deep Dives
+(``drop_blocked_items`` after their genre enrichment). New releases candidates carry no genres at build, so
+that list is not excluded at build time.
 """
 from __future__ import annotations
 
@@ -78,6 +82,30 @@ def drop_blocked_candidates(
     if not blocked:
         return candidates
     return [c for c in candidates if not has_blocked_genre(c.tags, blocked, music_key)]
+
+
+def drop_blocked_items(
+    items: Iterable[Any],
+    blocked: frozenset[str],
+    music_key: Callable[[Any], str],
+) -> list[Any]:
+    """Selection-time exclusion for list builders that hold dict candidates (``genres`` or ``tags``)."""
+    items = list(items)
+    if not blocked:
+        return items
+    return [i for i in items
+            if not (isinstance(i, Mapping) and has_blocked_genre(item_genres(i), blocked, music_key))]
+
+
+def current_blocked_keys(
+    feedback_fn: Callable[[], Iterable[Mapping[str, Any]]],
+    music_key: Callable[[Any], str],
+) -> frozenset[str]:
+    """Blocked genre keys now; empty when the feedback cannot be read (the read-time check still applies)."""
+    try:
+        return blocked_genre_keys(feedback_fn(), music_key)
+    except Exception:
+        return frozenset()
 
 
 def list_blocked(db_path: Any) -> list[dict[str, Any]]:

@@ -1041,3 +1041,10 @@ Earlier project log entries are preserved verbatim in [PROJECT_LOG_HISTORY.md](d
 - Owner report: the Home slideshow on both clients showed the same suggestions for days. Cause: `/api/dashboard-picks` shuffled only the week's stored Current tastes albums (a small pool once owned and dismissed albums are removed), and the Deep Dives bridge only grows the served list at read time, so the picks never saw it.
 - Changed: `app/services/lens_week_picks.picks` adds the bridged Deep Dives albums of the same genres to the pool (4 per genre family, 30 in all, wider than a list's 2 and 10 because the pool is reshuffled on every visit; owned and dismissed skipped; a failed bridge leaves the week's albums). A bridged pick keeps its "Discover more <artist>" reason. Clients unchanged: they already ask again on each Home visit.
 - Tests run (filtered): `test_lens_week` (new), `test_dashboard_routes`, `test_dashboard_service`, `test_discovery_deep_dive_bridge`, `test_discovery_lens_storage`: 71 passed. Not run: full suite, live server, devices. The caps 4 and 30 are my starting values, for the owner to tune.
+
+## 2026-11-16 - Blocked genres leave Classics and Deep Dives at build time
+
+- Owner request: apply the build-time exclusion of blocked genres to Classics, Deep Dives and New releases (it already covered Personal and the lens lists; all lists were also hidden at read time).
+- Built: `genre_block.drop_blocked_items` and `current_blocked_keys` (unreadable feedback blocks nothing). Classics drops blocked-genre items after `enrich_classic_genres`, before re-sorting and diversifying. Deep Dives drops them after genre enrichment, before ranking, so neither the shown `items` nor `extra_items` holds one.
+- Not done: New releases. Its candidates come from MusicBrainz release groups with no genre field at build time, so there is nothing to test; it stays hidden by the read-time check only when an item carries genres (none do). Excluding it needs a genre lookup per artist, which is the owner's call.
+- Tests run (filtered): `test_discovery_genre_block` (3 new), classics and Deep Dives suites, `test_lens_week`: 58 passed. Not run: full suite, a live build.
