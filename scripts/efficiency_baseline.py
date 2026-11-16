@@ -5,6 +5,12 @@ Against a running instance, the script logs in, reads ``/api/diagnostics/runtime
 list of routes ``--runs`` times each, records the wall time and the ``Server-Timing`` duration of every
 response, reads the diagnostics route again, and writes one JSON file and a short Markdown table.
 
+Attribution (M2 follow-up): each route is run as its own block, with a runtime snapshot before and after the
+block, so ``per_route_runtime`` shows the outbound requests (by provider; ``other`` is the Navidrome LAN
+server) that each route caused. Routes run one after another, not interleaved, so the delta belongs to one
+route. Background threads in the web process that call a provider or Navidrome during a block are counted
+too; compare with a no-request window if that matters.
+
 Only standard library is used. The password is read from the environment variable named by
 ``--password-env`` and is never printed or written. Output contains route labels and aggregate numbers
 only: no artist or album keys, no paths with keys, no library names, no cookies.
@@ -53,16 +59,32 @@ def parse_server_timing(header: str | None) -> float | None:
     return float(match.group(1)) if match else None
 
 
+def zero_like(value: Any) -> Any:
+    """A snapshot shaped like ``value`` with every numeric leaf set to zero (a counter not yet seen)."""
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, (int, float)):
+        return 0
+    if isinstance(value, dict):
+        return {key: zero_like(item) for key, item in value.items()}
+    return None
+
+
 def numeric_delta(before: Any, after: Any) -> Any:
-    """Recursively subtract numeric leaves of two snapshots; keys present on one side only are skipped."""
+    """Recursively subtract numeric leaves of two snapshots.
+
+    A key that appears only in ``after`` counts from zero, so a provider first seen during a block is kept.
+    A key that appears only in ``before`` is skipped.
+    """
     if isinstance(before, bool) or isinstance(after, bool):
         return None
     if isinstance(before, (int, float)) and isinstance(after, (int, float)):
         return after - before
     if isinstance(before, dict) and isinstance(after, dict):
         out = {}
-        for key in before.keys() & after.keys():
-            value = numeric_delta(before[key], after[key])
+        for key in after:
+            base = before[key] if key in before else zero_like(after[key])
+            value = numeric_delta(base, after[key])
             if value is not None and value != {}:
                 out[key] = value
         return out
@@ -163,30 +185,46 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     routes = build_routes(args.artist_key, args.album_key, args.artist_id, args.artist_name)
     runtime_before = read_runtime(client)
     samples: dict[str, list[tuple[float, float | None, int]]] = {label: [] for label, _ in routes}
-    for _ in range(args.runs):
-        for label, path in routes:
+    per_route_runtime: dict[str, Any] = {}
+    for label, path in routes:
+        route_before = read_runtime(client)
+        for _ in range(args.runs):
             status, wall_ms, timing, _ = client.get(path)
             samples[label].append((wall_ms, parse_server_timing(timing), status))
+        per_route_runtime[label] = numeric_delta(route_before, read_runtime(client))
     runtime_after = read_runtime(client)
 
     return {
         "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "runs": args.runs,
         "routes": {label: summarize(samples[label]) for label, _ in routes},
+        "per_route_runtime": per_route_runtime,
         "runtime_delta": numeric_delta(runtime_before, runtime_after),
+    }
+
+
+def outbound_per_run(delta: Any, runs: int) -> dict[str, float]:
+    """Requests per run by provider from one route's runtime delta (``other`` is the Navidrome LAN server)."""
+    requests = (delta or {}).get("requests", {}) if isinstance(delta, dict) else {}
+    return {
+        provider: round(row["count"] / runs, 2)
+        for provider, row in sorted(requests.items())
+        if isinstance(row, dict) and row.get("count")
     }
 
 
 def markdown_table(result: dict[str, Any]) -> str:
     lines = [
-        "| Route | Count | Statuses | Wall median ms | Wall p95 ms | Server median ms | Server p95 ms |",
-        "|---|---|---|---|---|---|---|",
+        "| Route | Count | Statuses | Wall median ms | Wall p95 ms | Server median ms | Server p95 ms | Outbound per run |",
+        "|---|---|---|---|---|---|---|---|",
     ]
     for label, stats in result["routes"].items():
         statuses = ", ".join(f"{code}×{n}" for code, n in sorted(stats["statuses"].items()))
+        outbound = outbound_per_run(result.get("per_route_runtime", {}).get(label), result["runs"])
+        outbound_text = ", ".join(f"{k} {v}" for k, v in outbound.items()) or "none"
         lines.append(
             f"| {label} | {stats['count']} | {statuses} | {stats['wall_median_ms']} | {stats['wall_p95_ms']} "
-            f"| {stats['server_median_ms']} | {stats['server_p95_ms']} |"
+            f"| {stats['server_median_ms']} | {stats['server_p95_ms']} | {outbound_text} |"
         )
     return "\n".join(lines)
 

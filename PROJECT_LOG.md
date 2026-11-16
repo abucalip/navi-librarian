@@ -1,3 +1,9 @@
+## 2026-11-16 — Server efficiency M2: per-route Navidrome attribution
+
+- Branch `efficiency-m2-route-attribution` from `main` at `0b9d3722`; PR opened (not merged). Changes `scripts/efficiency_baseline.py` (per-route runtime snapshots, `per_route_runtime` in the JSON, "Outbound per run" table column; `numeric_delta` counts new keys from zero) and `tests/test_efficiency_baseline.py`. Evidence log entry in `docs/efficiency.md` section 13.
+- Tests run: `.venv/bin/python -m pytest -q tests/test_efficiency_baseline.py`, 9 passed (stub server). Not run: full unit suite (not allowed by CLAUDE.md), any live instance run.
+- Limitations: no live measurement yet; the owner's test password and artist/album keys were not available to this session. Routes are timed warm-only, one at a time; background web threads are counted in the same window.
+
 ## 2026-11-16 — Server efficiency M2 follow-up: CI test fix and similar-records caching
 
 - PR [#1144](https://github.com/abucalip/navi-librarian/pull/1144), squash `1c3d0af4`, head `c78612a1`, merged 2026-11-16 22:43 UTC. `tests/test_efficiency_baseline.py` rewritten for unittest (CI's `unittest discover` has no pytest; `compile` and `test-and-build` failed on `05963eda` and `e09a4adc`). `discovery/search/artist_sections.py` `similar_items` now caches the provider records when every provider answered, even if tag lookups were rate-limited (owner decision 2026-11-16); a failed provider still writes nothing. The old rule came from the #622 review (sections 5.2 and 8.1 applied to the whole section); the cache holds only provider records, and tags are cached on their own. Contract line in `docs/SEARCH_CONTRACT.md` and `similar_precompute.py` docstrings updated.

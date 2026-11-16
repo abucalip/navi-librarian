@@ -38,7 +38,17 @@ class BaselineHelperTests(unittest.TestCase):
     def test_numeric_delta_subtracts_leaves_and_skips_one_sided_keys(self):
         before = {"web": {"requests": 5, "name": "a"}, "gone": 1}
         after = {"web": {"requests": 9, "name": "a"}, "new": 2}
-        self.assertEqual(baseline.numeric_delta(before, after), {"web": {"requests": 4}})
+        self.assertEqual(baseline.numeric_delta(before, after), {"web": {"requests": 4}, "new": 2})
+
+    def test_outbound_per_run_attributes_provider_requests_to_one_route(self):
+        before = {"requests": {"other": {"count": 4, "seconds": 1.0, "outcomes": {"ok": 4}}}}
+        after = {"requests": {
+            "other": {"count": 64, "seconds": 9.0, "outcomes": {"ok": 64}},
+            "listenbrainz": {"count": 3, "seconds": 0.5, "outcomes": {"ok": 3}},
+        }}
+        delta = baseline.numeric_delta(before, after)
+        self.assertEqual(baseline.outbound_per_run(delta, 20), {"listenbrainz": 0.15, "other": 3.0})
+        self.assertEqual(baseline.outbound_per_run(None, 20), {})
 
     def test_build_routes_labels_carry_no_keys(self):
         routes = baseline.build_routes("Artist Key/with slash", "album-id-123", "artist-id-9", "Artist Name")
@@ -69,7 +79,7 @@ class BaselineHelperTests(unittest.TestCase):
 
 
 class _StubHandler(BaseHTTPRequestHandler):
-    snapshots = [0]
+    served = [0]
 
     def log_message(self, *args):  # keep test output quiet
         return
@@ -97,9 +107,9 @@ class _StubHandler(BaseHTTPRequestHandler):
             self._send(401, {"detail": "Authentication required."})
             return
         if self.path.startswith("/api/diagnostics/runtime"):
-            _StubHandler.snapshots[0] += 1
-            self._send(200, {"web": {"requests": _StubHandler.snapshots[0] * 10}, "worker": None})
+            self._send(200, {"web": {"requests": _StubHandler.served[0]}, "worker": None})
             return
+        _StubHandler.served[0] += 1
         if self.path.startswith("/api/search"):
             self._send(404, {"detail": "not here"}, {"Server-Timing": "app;dur=3"})
             return
@@ -108,7 +118,7 @@ class _StubHandler(BaseHTTPRequestHandler):
 
 class StubServerBaselineTests(unittest.TestCase):
     def setUp(self):
-        _StubHandler.snapshots = [0]
+        _StubHandler.served = [0]
         self.server = ThreadingHTTPServer(("127.0.0.1", 0), _StubHandler)
         thread = threading.Thread(target=self.server.serve_forever, daemon=True)
         thread.start()
@@ -117,7 +127,7 @@ class StubServerBaselineTests(unittest.TestCase):
     def tearDown(self):
         self.server.shutdown()
         self.server.server_close()
-        _StubHandler.snapshots = [0]
+        _StubHandler.served = [0]
 
     def test_end_to_end_writes_comparable_json_twice(self):
         outputs = []
@@ -140,8 +150,12 @@ class StubServerBaselineTests(unittest.TestCase):
         for stats in first["routes"].values():
             self.assertEqual(stats["count"], 3)
             self.assertIn(stats["server_median_ms"], (3.0, 4.0))
-        self.assertEqual(first["runtime_delta"], {"web": {"requests": 10}})
-        self.assertEqual(second["runtime_delta"], {"web": {"requests": 10}})
+        # 7 routes x 3 runs = 21 app requests; the diagnostics reads themselves are not counted.
+        self.assertEqual(first["runtime_delta"], {"web": {"requests": 21}})
+        self.assertEqual(second["runtime_delta"], {"web": {"requests": 21}})
+        for label in first["routes"]:
+            self.assertEqual(first["per_route_runtime"][label], {"web": {"requests": 3}})
+        self.assertEqual(set(first["per_route_runtime"]), set(first["routes"]))
         # No keys, password or cookie in the output.
         text = json.dumps(first)
         self.assertNotIn("stub-token", text)
@@ -151,6 +165,7 @@ class StubServerBaselineTests(unittest.TestCase):
         table = captured.getvalue()
         self.assertIn("| Route |", table)
         self.assertIn("library_artists", table)
+        self.assertIn("Outbound per run", table)
 
     def test_wrong_password_exits_without_writing(self):
         with mock.patch.dict(os.environ, {"NAVI_BASELINE_PASSWORD": "wrong"}), \
