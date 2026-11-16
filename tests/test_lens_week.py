@@ -53,6 +53,50 @@ class PoolTests(unittest.TestCase):
         self.assertEqual(out["items"][0]["dashboard_category"], "Current tastes")
         self.assertEqual(pool[0]["artist"], "A")  # the pool itself is not reordered
 
+    def test_a_bridged_album_keeps_its_discover_more_label(self):
+        out = lens_week.build_week_picks(
+            [{"artist": "A", "album": "1", "seed_tag": "x", "bridge_label": "Discover more A"}], 1, lambda v: None)
+        self.assertEqual(out["items"][0]["reason"], "Discover more A")
+
+
+class WeekPicksServiceTests(unittest.TestCase):
+    """The picks pool is the week's Current tastes albums plus the bridged Deep Dives albums."""
+
+    def librarian(self, deep_items):
+        from types import SimpleNamespace
+        from datetime import datetime
+        from discovery.lens_storage import lens_day, lens_storage_name
+
+        live = {"payload": {"day": lens_day(datetime.now()), "seed_tags": ["shoegaze"],
+                            "albums": [{"artist": "A", "album": "1", "tags": ["shoegaze"]}]}}
+        db = {lens_storage_name(lens_week.LENS): live, "artist_deep_dive": {"payload": {"items": deep_items}}}
+        return SimpleNamespace(
+            _discovery_read_list=lambda name: db.get(name),
+            _discovery_write_list=db.__setitem__,
+            _music_key=KEY,
+            _is_owned=None,
+        )
+
+    def test_picks_include_deep_dives_albums_of_the_same_genres(self):
+        from app.services import lens_week_picks
+
+        deep = [{"artist": "Slowdive", "album": "Souvlaki", "genres": ["shoegaze"]},
+                {"artist": "Miles", "album": "Kind of Blue", "genres": ["jazz"]}]
+        out = lens_week_picks.picks(self.librarian(deep), 10, shuffle=lambda v: None)
+        names = [(i["artist"], i["album"]) for i in out["items"]]
+        self.assertIn(("A", "1"), names)
+        self.assertIn(("Slowdive", "Souvlaki"), names)
+        self.assertNotIn(("Miles", "Kind of Blue"), names)
+
+    def test_a_failing_bridge_leaves_the_week_albums(self):
+        from app.services import lens_week_picks
+
+        lib = self.librarian([])
+        real = lib._discovery_read_list
+        lib._discovery_read_list = lambda n: (_ for _ in ()).throw(RuntimeError) if n == "artist_deep_dive" else real(n)
+        out = lens_week_picks.picks(lib, 10, shuffle=lambda v: None)
+        self.assertEqual([i["artist"] for i in out["items"]], ["A"])
+
 
 if __name__ == "__main__":
     unittest.main()

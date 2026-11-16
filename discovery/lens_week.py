@@ -95,7 +95,7 @@ def to_pick(album: Mapping[str, Any]) -> dict[str, Any]:
         "album": str(album.get("album") or ""),
         "dashboard_category": CATEGORY,
         "genres": [str(t) for t in album.get("tags") or []][:4],
-        "reason": f"From your current tastes: {tag}" if tag else "From your current tastes",
+        "reason": album.get("bridge_label") or (f"From your current tastes: {tag}" if tag else "From your current tastes"),
         "release_group_mbid": album.get("release_group_mbid"),
         "lastfm_listeners": album.get("album_listeners"),
     }
