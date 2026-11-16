@@ -5,6 +5,7 @@ from intelligence.graph import paths
 from intelligence.ingest.navidrome import REL_CREDITED_TO
 from intelligence.musicbrainz import auto_fill
 from intelligence.musicbrainz.api_fill import ApiError, Paced
+from tests.test_intelligence_musicbrainz_api_fill import FreeLane
 from intelligence.store import generations, repositories as repo
 from intelligence.store.db import open_store
 from tests.test_intelligence_musicbrainz_api_fill import ARTIST, REL, REL2, release_payload
@@ -76,7 +77,7 @@ class AutoFillCycleTests(unittest.TestCase):
         return auto_fill.run_cycle(
             self.db, scan_status=lambda: nd.scan, newest=nd.newest, full=nd.full, get_album=nd.get_album,
             get_artist=lambda i: {"name": "Alpha", "musicBrainzId": ARTIST},
-            paced=Paced(lambda u: self.fetch(u), interval=0, retry_pause=0, sleep=lambda s: None),
+            paced=Paced(lambda u: self.fetch(u), lane=FreeLane(), retry_pause=0),
             clock=lambda: self.t, **kw)
 
     def test_first_poll_is_a_silent_baseline(self):

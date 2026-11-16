@@ -31,18 +31,30 @@ BROWSE_PAGE_SIZE = 100
 DEFAULT_MAX_PAGES = 5
 
 
+def _retry_after(response: Any) -> float | None:
+    try:
+        return float((getattr(response, "headers", None) or {}).get("Retry-After"))
+    except (TypeError, ValueError):
+        return None
+
+
 def _request(
     get: Callable[..., Any], url: str, params: Mapping[str, Any], headers: Mapping[str, str],
     timeout: float, sleep: Callable[[float], Any] | None, spacing: float, provider: str, call: str,
+    lane: Any = None,
 ) -> Any:
     from recommendation_run_metrics import record_provider_call
 
     record_provider_call(provider, call)
+    if lane is not None and not lane.acquire():   # MusicBrainz: a slot from the shared gate
+        raise RuntimeError(f"{provider} {call} rate limited")
     try:
         response = get(url, params=dict(params), headers=dict(headers), timeout=timeout)
     finally:
-        if sleep is not None:
+        if lane is None and sleep is not None:
             sleep(spacing)
+    if lane is not None and response.status_code in (429, 503):
+        lane.penalize(_retry_after(response))
     if response.status_code == 404:
         return None
     if response.status_code != 200:
@@ -55,6 +67,7 @@ def build_set_fetchers(
     *,
     headers: Mapping[str, str],
     sleep: Callable[[float], Any] | None = None,
+    lane: Any = None,
     timeout: float = 30,
     max_pages: int = DEFAULT_MAX_PAGES,
 ) -> SetFetchers:
@@ -69,7 +82,7 @@ def build_set_fetchers(
                 get, MUSICBRAINZ_RELEASE_GROUP_URL,
                 {"artist": artist_mbid, "type": "album", "limit": BROWSE_PAGE_SIZE,
                  "offset": page * BROWSE_PAGE_SIZE, "fmt": "json"},
-                headers, timeout, sleep, MUSICBRAINZ_SPACING_SECONDS, "musicbrainz", "release_group_browse",
+                headers, timeout, sleep, MUSICBRAINZ_SPACING_SECONDS, "musicbrainz", "release_group_browse", lane,
             )
             if not isinstance(body, Mapping):
                 if page == 0:
@@ -99,7 +112,7 @@ def build_set_fetchers(
     def series(series_mbid: str) -> Mapping[str, Any] | None:
         body = _request(
             get, f"{MUSICBRAINZ_SERIES_URL}{series_mbid}", {"inc": "release-group-rels", "fmt": "json"},
-            headers, timeout, sleep, MUSICBRAINZ_SPACING_SECONDS, "musicbrainz", "series_lookup",
+            headers, timeout, sleep, MUSICBRAINZ_SPACING_SECONDS, "musicbrainz", "series_lookup", lane,
         )
         return body if isinstance(body, Mapping) else None
 

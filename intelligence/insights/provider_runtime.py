@@ -13,7 +13,7 @@ Owner-approved provider traffic (2026-11-05), bounded and slow. Each call is one
    library would show gaps that are not real.
 
 Every HTTP call goes through a counting wrapper that raises :class:`BudgetSpent` before the call
-that would exceed the budget; the fetchers pace themselves (MusicBrainz 1.1 s, ListenBrainz 0.5 s).
+that would exceed the budget; MusicBrainz slots come from the shared provider gate, ListenBrainz paces itself (0.5 s).
 A provider failure stops the tick and fails the run (cached documents are kept, so the next tick
 resumes). Nothing here changes an ownership flag or a recommendation weight.
 
@@ -39,6 +39,8 @@ from collections import Counter
 from datetime import date
 from typing import Any, Callable, Iterable, Mapping
 
+from integrations.provider_gate import musicbrainz_lane
+
 from ..editions import sweep_owned_releases
 from ..jobs import RunResult, run_job
 from . import provider_cache as cache
@@ -52,7 +54,7 @@ from .card_persistence import (
 )
 from .hidden_canon import WorldAlbum, find_hidden_canon
 from .series_completion import SeriesConfig, find_series_progress
-from .set_fetchers import MUSICBRAINZ_SPACING_SECONDS, build_set_fetchers
+from .set_fetchers import _retry_after, build_set_fetchers
 from .set_job import owned_artists, owned_group_mbids
 
 JOB = "insights_provider_lenses"
@@ -63,6 +65,7 @@ BROWSE_PAGES = 5
 TOP_GENRES = 8
 
 Get = Callable[..., Any]
+_SHARED = object()   # lane default: the shared MusicBrainz gate; tests pass None or their own lane
 
 
 class BudgetSpent(Exception):
@@ -82,13 +85,12 @@ class CountingGet:
         return self._get(url, **kwargs)
 
 
-def _paced_json(get: Get, url: str, params: Mapping[str, Any], headers: Mapping[str, str],
-                sleep: Callable[[float], Any] | None) -> Any:
-    try:
-        response = get(url, params=dict(params), headers=dict(headers), timeout=30)
-    finally:
-        if sleep is not None:
-            sleep(MUSICBRAINZ_SPACING_SECONDS)
+def _paced_json(get: Get, url: str, params: Mapping[str, Any], headers: Mapping[str, str], lane: Any) -> Any:
+    if lane is not None and not lane.acquire():
+        raise RuntimeError("musicbrainz rate limited")
+    response = get(url, params=dict(params), headers=dict(headers), timeout=30)
+    if lane is not None and response.status_code in (429, 503):
+        lane.penalize(_retry_after(response))
     if response.status_code == 404:
         return None
     if response.status_code != 200:
@@ -96,13 +98,13 @@ def _paced_json(get: Get, url: str, params: Mapping[str, Any], headers: Mapping[
     return response.json()
 
 
-def _release_browse(get: Get, artist_mbid: str, headers, sleep) -> dict[str, dict]:
+def _release_browse(get: Get, artist_mbid: str, headers, lane) -> dict[str, dict]:
     """All of an artist's releases with their release groups, keyed by lower-case release MBID."""
     docs: dict[str, dict] = {}
     for page in range(BROWSE_PAGES):
         body = _paced_json(get, f"{MUSICBRAINZ}/release",
                            {"artist": artist_mbid, "inc": "release-groups", "limit": 100,
-                            "offset": page * 100, "fmt": "json"}, headers, sleep)
+                            "offset": page * 100, "fmt": "json"}, headers, lane)
         batch = (body or {}).get("releases") if isinstance(body, Mapping) else None
         if not isinstance(batch, list):
             break
@@ -112,22 +114,22 @@ def _release_browse(get: Get, artist_mbid: str, headers, sleep) -> dict[str, dic
     return docs
 
 
-def _life_span(get: Get, artist_mbid: str, headers, sleep) -> Mapping[str, Any] | None:
-    body = _paced_json(get, f"{MUSICBRAINZ}/artist/{artist_mbid}", {"fmt": "json"}, headers, sleep)
+def _life_span(get: Get, artist_mbid: str, headers, lane) -> Mapping[str, Any] | None:
+    body = _paced_json(get, f"{MUSICBRAINZ}/artist/{artist_mbid}", {"fmt": "json"}, headers, lane)
     if not isinstance(body, Mapping):
         return None
     span = body.get("life-span") if isinstance(body.get("life-span"), Mapping) else {}
     return {"name": body.get("name"), "type": body.get("type"), "begin": span.get("begin"), "end": span.get("end")}
 
 
-def _artist_series(get: Get, artist_mbid: str, headers, sleep) -> Mapping[str, Any]:
+def _artist_series(get: Get, artist_mbid: str, headers, lane) -> Mapping[str, Any]:
     """Series ids per release group for one artist, from paged browses (not one lookup per group)."""
     groups: dict[str, list[str]] = {}
     total = None
     for page in range(BROWSE_PAGES):
         body = _paced_json(get, f"{MUSICBRAINZ}/release-group",
                            {"artist": artist_mbid, "inc": "series-rels", "limit": 100,
-                            "offset": page * 100, "fmt": "json"}, headers, sleep)
+                            "offset": page * 100, "fmt": "json"}, headers, lane)
         batch = body.get("release-groups") if isinstance(body, Mapping) else None
         if not isinstance(batch, list):
             break
@@ -237,14 +239,14 @@ def _needs(db: sqlite3.Connection, kind: str, mbid: str, now: float, ttl: float)
     return (0, 0.0) if entry is None else (1, entry[0])
 
 
-def _series_steps(db, counting, fetchers, headers, sleep, now, ttl, progress) -> bool:
+def _series_steps(db, counting, fetchers, headers, lane, now, ttl, progress) -> bool:
     """Steps 5 and 6. Returns True when the budget ran out."""
     artists = [m for m, _ in owned_artists(db)]
     todo = [a for a in artists if not cache.is_fresh(cache.get(db, "artistseries", a), now, ttl)]
     todo.sort(key=lambda a: _needs(db, "artistseries", a, now, ttl))
     try:
         for artist in todo:
-            cache.put(db, "artistseries", artist, _artist_series(counting, artist, headers, sleep), now)
+            cache.put(db, "artistseries", artist, _artist_series(counting, artist, headers, lane), now)
         ids = discovered_series_ids(db, artists, owned_group_mbids(db))
         pending = [s for s in ids if not cache.is_fresh(cache.get(db, "series", s), now, ttl)]
         pending.sort(key=lambda s: _needs(db, "series", s, now, ttl))
@@ -260,7 +262,8 @@ def refresh_provider_lenses(
     *,
     get: Get,
     headers: Mapping[str, str],
-    sleep: Callable[[float], Any] | None = time.sleep,
+    sleep: Callable[[float], Any] | None = time.sleep,   # spaces ListenBrainz; MusicBrainz uses the lane
+    lane: Any = _SHARED,
     ingest_step: Callable[[sqlite3.Connection], Any] | None = None,
     budget: int = DEFAULT_BUDGET,
     ttl: float = DEFAULT_TTL,
@@ -273,12 +276,14 @@ def refresh_provider_lenses(
     now = time.time() if now is None else now
     today = today or date.fromtimestamp(now)
     counting = CountingGet(get, budget)
+    if lane is _SHARED:
+        lane = musicbrainz_lane()
 
     def work(ctx) -> bool:
         progress: dict[str, Any] = {}
         if ingest_step is not None:
             ingest_step(db)
-        fetchers = build_set_fetchers(counting, headers=headers, sleep=sleep)
+        fetchers = build_set_fetchers(counting, headers=headers, sleep=sleep, lane=lane)
         artists = owned_artists(db)
         spent = False
         # 2. ownership: browse artists whose releases are not yet linked or whose marker is stale
@@ -288,7 +293,7 @@ def refresh_provider_lenses(
             for mbid, _ in artists:
                 if cache.is_fresh(cache.get(db, "browse", mbid), now, ttl):
                     continue
-                release_docs.update(_release_browse(counting, mbid, headers, sleep))
+                release_docs.update(_release_browse(counting, mbid, headers, lane))
                 cache.put(db, "browse", mbid, {}, now)  # only after a complete browse
                 browsed += 1
         except BudgetSpent:
@@ -303,14 +308,14 @@ def refresh_provider_lenses(
                       if not cache.is_fresh(cache.get(db, kind, mbid), now, ttl)]
             wanted.sort(key=lambda w: _needs(db, w[0], w[1], now, ttl))
             fetch = {"studio": fetchers.studio, "lb": fetchers.listenbrainz,
-                     "life": lambda m: _life_span(counting, m, headers, sleep)}
+                     "life": lambda m: _life_span(counting, m, headers, lane)}
             try:
                 for kind, mbid in wanted:
                     cache.put(db, kind, mbid, fetch[kind](mbid), now)
             except BudgetSpent:
                 spent = True
         if series and not spent:
-            spent = _series_steps(db, counting, fetchers, headers, sleep, now, ttl, progress)
+            spent = _series_steps(db, counting, fetchers, headers, lane, now, ttl, progress)
         progress["stopped"] = "budget" if spent else None
         progress["requests"] = counting.used
 

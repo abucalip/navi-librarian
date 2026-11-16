@@ -215,3 +215,31 @@ def default_gate(data_dir) -> ProviderGate:
         if _default is None or _default.path != path:
             _default = ProviderGate(path)
         return _default
+
+
+WORKER_MAX_WAIT = 600.0  # background callers queue for a slot; they never refuse in practice
+
+
+class Lane:
+    """One provider's view of a gate: what a caller holds instead of a private pacer."""
+
+    def __init__(self, gate: ProviderGate, provider: str, max_wait: float = WORKER_MAX_WAIT):
+        self.gate, self.provider, self.max_wait = gate, provider, max_wait
+
+    def acquire(self) -> bool:
+        """Wait for the next slot; False only when it is further off than ``max_wait``."""
+        return self.gate.reserve(self.provider, self.max_wait)
+
+    def penalize(self, seconds: float | None, default: float = 60.0) -> None:
+        """Block the provider after a 429 or 503 (``seconds`` is Retry-After when it was sent)."""
+        self.gate.penalize(self.provider, seconds if seconds and seconds > 0 else default)
+
+
+def shared_gate() -> ProviderGate:
+    """The gate for the configured data directory (same resolution as the server's DATA_DIR)."""
+    from settings.data_directory import resolve_data_dir
+    return default_gate(resolve_data_dir(os.environ, Path(__file__).resolve().parent.parent / "navidrome_server.py"))
+
+
+def musicbrainz_lane(max_wait: float = WORKER_MAX_WAIT) -> Lane:
+    return Lane(shared_gate(), "musicbrainz", max_wait)

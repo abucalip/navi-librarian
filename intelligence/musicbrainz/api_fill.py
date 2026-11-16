@@ -33,6 +33,8 @@ from urllib.error import HTTPError
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
+from integrations import provider_gate
+
 from ..jobs import runner
 from ..store import repositories as repo
 from ..store import source_state
@@ -45,7 +47,6 @@ OP_RELEASE = "release_lookup"
 OP_ARTISTS = "artist_search"
 BASE = "https://musicbrainz.org/ws/2/"
 USER_AGENT = "Discair/1.0 (personal music discovery)"
-MIN_INTERVAL = 1.1
 RETRY_PAUSE = 3.0
 ARTIST_BATCH = 25
 REFRESH_TTL = 30 * 24 * 3600.0
@@ -80,28 +81,24 @@ def http_fetch(url: str) -> dict:
 
 
 class Paced:
-    """Wraps a fetch: at least ``interval`` seconds between requests, one retry after a 503/429."""
+    """Wraps a fetch: each request takes a MusicBrainz slot from the shared gate, one retry after a 503/429."""
 
-    def __init__(self, fetch: Fetch = http_fetch, *, interval: float = MIN_INTERVAL, retry_pause: float = RETRY_PAUSE,
-                 sleep: Callable[[float], None] = time.sleep, monotonic: Callable[[], float] = time.monotonic):
-        self._fetch, self._interval, self._pause = fetch, interval, retry_pause
-        self._sleep, self._mono = sleep, monotonic
-        self._last: float | None = None
+    def __init__(self, fetch: Fetch = http_fetch, *, lane=None, retry_pause: float = RETRY_PAUSE):
+        self._fetch, self._pause = fetch, retry_pause
+        self._lane = lane or provider_gate.musicbrainz_lane()
         self.requests = 0
 
     def __call__(self, url: str) -> dict:
         for attempt in range(2):
-            if self._last is not None:
-                wait = (self._interval if attempt == 0 else self._pause) - (self._mono() - self._last)
-                if wait > 0:
-                    self._sleep(wait)
-            self._last = self._mono()
+            if not self._lane.acquire():
+                raise ApiError(None, "rate_limited")
             self.requests += 1
             try:
                 return self._fetch(url)
             except ApiError as exc:
                 if exc.status not in (429, 503) or attempt:
                     raise
+                self._lane.penalize(self._pause)
         raise AssertionError("unreachable")
 
 

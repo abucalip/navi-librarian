@@ -35,7 +35,7 @@ from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
 from ..jobs import runner
-from ..musicbrainz.api_fill import ApiError, Paced, slice_loaded
+from ..musicbrainz.api_fill import ApiError, slice_loaded
 from ..store import repositories as repo
 from ..store import source_state
 
@@ -45,6 +45,7 @@ OPERATION = "entity_claims"
 BASE = "https://www.wikidata.org/w/api.php"
 USER_AGENT = "Discair/1.0 (personal music discovery)"
 MIN_INTERVAL = 1.0
+RETRY_PAUSE = 3.0
 BATCH = 50
 REFRESH_TTL = 30 * 24 * 3600.0
 MAX_FAILURES_IN_A_ROW = 3
@@ -66,6 +67,32 @@ def http_fetch(url: str) -> dict:
         raise ApiError(exc.code) from exc
     except Exception as exc:
         raise ApiError(None, type(exc).__name__) from exc
+
+
+class Paced:
+    """Wraps a fetch: at least ``interval`` seconds between requests, one retry after a 503/429 (Wikidata only)."""
+
+    def __init__(self, fetch=None, *, interval: float = MIN_INTERVAL, retry_pause: float = RETRY_PAUSE,
+                 sleep: Callable[[float], None] = time.sleep, monotonic: Callable[[], float] = time.monotonic):
+        self._fetch, self._interval, self._pause = fetch, interval, retry_pause
+        self._sleep, self._mono = sleep, monotonic
+        self._last: float | None = None
+        self.requests = 0
+
+    def __call__(self, url: str) -> dict:
+        for attempt in range(2):
+            if self._last is not None:
+                wait = (self._interval if attempt == 0 else self._pause) - (self._mono() - self._last)
+                if wait > 0:
+                    self._sleep(wait)
+            self._last = self._mono()
+            self.requests += 1
+            try:
+                return self._fetch(url)
+            except ApiError as exc:
+                if exc.status not in (429, 503) or attempt:
+                    raise
+        raise AssertionError("unreachable")
 
 
 @dataclass
