@@ -2349,9 +2349,18 @@ def discovery_get_list(list_name: str = "personal", count: int = 30) -> str:
         _discovery_is_album_candidate, _discovery_library_snapshot,
         today=date.today().isoformat(),
         acquired=acquired,
+        bridge=lambda shown, hidden: _bridge_deep_dives(shown, hidden),
         on_stale=lambda cached: discovery_refresh.revalidate_on_read(
             "personal", cached, lambda _name: _discovery_refresh_personal(20, origin="read"), _discovery_settings_read),
     )
+
+
+def _bridge_deep_dives(shown, hidden):
+    """Deep Dives albums of the genres a Personal, Classics or New releases list shows (read time)."""
+    from discovery.deep_dive_bridge import bridge_albums
+    stored = _discovery_read_list("artist_deep_dive")
+    payload = stored.get("payload") if isinstance(stored, dict) else None
+    return bridge_albums(None, shown, [], payload, _music_key, is_excluded=hidden)
 
 
 def _discovery_refresh_all():

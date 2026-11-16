@@ -1855,6 +1855,7 @@ function buildNewReleaseCard(item) {
   const parts = releaseDateParts(item.first_release_date);
   return buildListCard(item, {
     tag: parts ? parts.label : 'New release',
+    meta: [item.bridge_label || ''],
     listName: 'new_releases',
     onDismiss: (artist, album, metadata, card) => sendFeedback('dismiss', artist, album, metadata, 'new_releases', card)
   });
@@ -2832,6 +2833,7 @@ const BECAUSE_WORDING = new Map([
 // usable names, gives no `because` reason. An older server sends only `similar_to` (the same genre
 // overlap), which the adjacent category shows with the overlap wording as a fallback.
 function reasonLine(item) {
+  if (item.bridge_label) return item.bridge_label;
   const because = item.because;
   const word = because && BECAUSE_WORDING.get(because.kind);
   const names = Array.isArray(because && because.names) ? because.names.filter(Boolean).map(String) : [];
