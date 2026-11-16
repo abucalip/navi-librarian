@@ -2,7 +2,6 @@ package app.discair.ui.player
 
 import android.provider.Settings
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.MutableTransitionState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInVertically
@@ -35,7 +34,11 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
@@ -46,7 +49,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.layout
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.LiveRegionMode
@@ -67,6 +72,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import kotlin.math.roundToInt
+import kotlinx.coroutines.launch
 import app.discair.lyrics.LyricsTimeline
 import app.discair.lyrics.LyricsUiState
 import app.discair.lyrics.lyricsFailureText
@@ -78,6 +85,9 @@ import app.discair.player.RepeatMode
 import app.discair.player.qualityLabel
 import app.discair.ui.common.Cover
 import app.discair.ui.common.GalleryButton
+import app.discair.ui.common.GalleryFlight
+import app.discair.ui.common.GalleryPlayerFlight
+import app.discair.ui.common.GalleryTravel
 import app.discair.ui.common.GalleryButtonKind
 import app.discair.ui.common.GalleryIconButton
 import app.discair.ui.common.GalleryIcons
@@ -96,6 +106,7 @@ import app.discair.ui.common.LocalRepository
 import app.discair.ui.common.TransparentSystemBars
 import app.discair.ui.common.gallerySpot
 import app.discair.ui.theme.GalleryFaces
+import app.discair.ui.theme.GalleryMotion
 import app.discair.ui.theme.LocalPalette
 import app.discair.ui.theme.MotionFamily
 import app.discair.ui.theme.MotionRules
@@ -120,10 +131,6 @@ object GalleryPlayerRules {
     /** The share of the muted text colour a lyric line keeps once sung (`.was`) and while it waits (`.lyr p`). */
     const val LYRIC_SUNG_ALPHA = 0.8f
     const val LYRIC_WAITING_ALPHA = 0.55f
-
-    /** Motion (docs/GALLERY_THEME.md section 8): the page rises in 440ms and falls in 360ms. */
-    const val RISE_MS = 440
-    const val FALL_MS = 360
 
     /** The bar's catalogue line: "Playing from Laughing Stock" on the player, the page's name on the other two. */
     fun barTitle(view: Int, album: String): String = when (view) {
@@ -162,33 +169,83 @@ object GalleryPlayerRules {
     }
 }
 
-private val RiseEase = CubicBezierEasing(0.3f, 0f, 0.1f, 1f)
+private val RiseEase = GalleryTravel
 
 /**
- * The player's frame: a full-screen page that rises from the bottom (440ms) and falls back (360ms, then it is dismissed). It is a dialog window, so the mini
- * player's cover cannot travel into the print (docs/GALLERY_THEME.md G3: where a screen is not under the shared-element layout it falls back to the rise).
- * [content] gets [close] to run the fall; the system back button and the scrim-less edge use it too.
+ * The player's frame: a full-screen page that rises from the bottom (440ms) and falls back (360ms, then it is dismissed), while the dock slides away and back.
+ * It is a dialog window, outside the shared-element layout, so the mini player's cover is flown by hand: [GalleryFlight] holds where the mini cover sat, the
+ * print reports its cover's place, and the frame draws the cover travelling between the two over the rise and the fall, with the print faded until it lands.
+ * [content] gets [close] to run the fall; the system back button uses it too.
  */
 @Composable
 fun GalleryPlayerFrame(onDismiss: () -> Unit, content: @Composable (close: () -> Unit) -> Unit) {
     val p = LocalPalette.current
     val reduced = rememberReducedMotion()
+    val flight = GalleryFlight
+    val scope = rememberCoroutineScope()
     val visible = remember { MutableTransitionState(false).apply { targetState = true } }
-    val close: () -> Unit = { visible.targetState = false }
+    val rise = MotionRules.duration(GalleryMotion.PLAYER_RISE_MS, MotionFamily.Standard, reduced)
+    val fall = MotionRules.duration(GalleryMotion.PLAYER_FALL_MS, MotionFamily.Standard, reduced)
+    val close: () -> Unit = {
+        if (visible.targetState) {
+            visible.targetState = false
+            flight.playerUp = false
+            // The cover flies back to the dock while the page falls, when both ends are known.
+            if (!reduced && flight.mini != null && flight.target() != null) scope.launch {
+                flight.flying = true
+                flight.progress.animateTo(0f, tween(fall, easing = RiseEase))
+            }
+        }
+    }
     LaunchedEffect(visible.currentState, visible.targetState) { if (!visible.currentState && !visible.targetState) onDismiss() }
-    val rise = MotionRules.duration(GalleryPlayerRules.RISE_MS, MotionFamily.Standard, reduced)
-    val fall = MotionRules.duration(GalleryPlayerRules.FALL_MS, MotionFamily.Standard, reduced)
+    LaunchedEffect(Unit) {
+        flight.playerUp = true
+        if (reduced || flight.mini == null) return@LaunchedEffect
+        flight.progress.snapTo(0f)
+        // The print is laid out in the first frame of the page (still below the screen); without one (another view, no room) the page just rises.
+        // The flight starts only once both ends are known, since the flying cover reads them when it is composed.
+        withFrameNanos { }
+        if (flight.target() == null) { flight.progress.snapTo(1f); return@LaunchedEffect }
+        flight.flying = true
+        flight.progress.animateTo(1f, tween(rise, easing = RiseEase))
+        flight.flying = false
+    }
+    DisposableEffect(Unit) {
+        onDispose {
+            // progress is only read while flying, and every flight sets it first, so it needs no reset here.
+            flight.playerUp = false; flight.flying = false; flight.page = null; flight.cover = null
+        }
+    }
     Dialog(
         onDismissRequest = close,
         properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false, dismissOnBackPress = false),
     ) {
         TransparentSystemBars(lightBars = p.light)
-        AnimatedVisibility(
-            visibleState = visible,
-            enter = slideInVertically(tween(rise, easing = RiseEase)) { it },
-            exit = slideOutVertically(tween(fall, easing = RiseEase)) { it },
-        ) { content(close) }
+        Box(Modifier.fillMaxSize()) {
+            AnimatedVisibility(
+                visibleState = visible,
+                enter = slideInVertically(tween(rise, easing = RiseEase)) { it },
+                exit = slideOutVertically(tween(fall, easing = RiseEase)) { it },
+            ) { Box(Modifier.fillMaxSize().onGloballyPositioned { flight.page = it }) { content(close) } }
+            if (flight.flying) FlyingCover(flight)
+        }
     }
+}
+
+/** The cover in flight: from the mini cover's place to the print's cover, at the flight's progress. Only its own small layout runs each frame. */
+@Composable
+private fun FlyingCover(flight: GalleryPlayerFlight) {
+    val from = flight.mini ?: return
+    val to = flight.target() ?: return
+    Box(
+        Modifier.fillMaxSize().layout { measurable, constraints ->
+            val r = androidx.compose.ui.geometry.lerp(from, to, flight.progress.value)
+            val w = r.width.roundToInt().coerceAtLeast(1)
+            val h = r.height.roundToInt().coerceAtLeast(1)
+            val placeable = measurable.measure(androidx.compose.ui.unit.Constraints.fixed(w, h))
+            layout(constraints.maxWidth, constraints.maxHeight) { placeable.place(r.left.roundToInt(), r.top.roundToInt()) }
+        },
+    ) { Cover(flight.coverUrl, Modifier.fillMaxSize(), rect = true) }
 }
 
 /** A negative top margin: the element is drawn [by] higher and the next one follows it up. */
@@ -258,8 +315,14 @@ private fun GalleryNowView(
         // The print takes the room the rest leaves, up to 300dp square and never wider than the screen less 20dp each side.
         BoxWithConstraints(Modifier.weight(1f, fill = true).fillMaxWidth().gallerySpot(p).padding(top = 14.dp), contentAlignment = Alignment.TopCenter) {
             val side = minOf(maxWidth - 40.dp, maxHeight, GalleryPlayerRules.PRINT.dp).coerceAtLeast(GalleryPlayerRules.PRINT_MIN.dp)
-            GalleryPrint(side, Modifier.size(side), player = true) {
-                Cover(playerArtworkUrl(item.coverUrl), Modifier.fillMaxSize(), rect = true)
+            val flight = GalleryFlight
+            val url = playerArtworkUrl(item.coverUrl)
+            SideEffect { flight.coverUrl = url }
+            // While the cover flies in from the dock (or back), the print fades with it and its own cover waits hidden (GalleryPlayerFrame).
+            GalleryPrint(side, Modifier.size(side).graphicsLayer { alpha = if (flight.flying) flight.progress.value else 1f }, player = true) {
+                Cover(
+                    url, Modifier.fillMaxSize().onGloballyPositioned { flight.cover = it }.graphicsLayer { alpha = if (flight.flying) 0f else 1f }, rect = true,
+                )
             }
         }
         Row(

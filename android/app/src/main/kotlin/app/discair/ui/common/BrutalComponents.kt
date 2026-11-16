@@ -485,7 +485,7 @@ private fun BrutalSliderTrackBar(fraction: Float, modifier: Modifier) {
 @Composable
 fun SnackbarHost(hostState: SnackbarHostState, modifier: Modifier = Modifier) {
     if (isFlow()) { androidx.compose.material3.SnackbarHost(hostState, modifier) { data -> FlowSnackbar(data) }; return }
-    if (isGallery()) { androidx.compose.material3.SnackbarHost(hostState, modifier) { data -> GallerySnackbar(data) }; return }
+    if (isGallery()) { GallerySnackbarHost(hostState, modifier); return }
     if (!LocalPalette.current.brutal) {
         androidx.compose.material3.SnackbarHost(hostState, modifier)
         return

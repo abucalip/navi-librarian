@@ -10,6 +10,9 @@ object GalleryPagesRules {
     const val CAPTION_PRINT_DP = 151
     const val SIMILAR_PRINT_DP = 104
     const val ROW_PRINT_DP = 48
+
+    /** The print in a menu sheet's header (docs/GALLERY_THEME.md 7.3, Sheet: "small print 58"). */
+    const val MENU_PRINT_DP = 58
     const val PHOTO_PRINT_DP = 52
     const val SONGS_SHOWN = 5
     const val ALBUMS_SHOWN = 6
@@ -38,6 +41,9 @@ object GalleryPagesRules {
 
     /** "3:07" for a song's length. */
     fun clock(seconds: Int): String = "%d:%02d".format(seconds / 60, seconds % 60)
+
+    /** A menu sheet's catalogue line (mockup sheets): the parts it has, in order, joined by " · " ("Talk Talk · Laughing Stock · 7:39"); blanks are left out. */
+    fun menuLine(vararg parts: String?): String = parts.mapNotNull { it?.trim()?.ifEmpty { null } }.joinToString(" · ")
 
     /** "1981 to 1991", a single year when they agree, null with none. */
     fun yearSpan(years: List<Int?>): String? {

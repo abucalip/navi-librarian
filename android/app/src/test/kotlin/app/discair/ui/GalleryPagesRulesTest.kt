@@ -70,4 +70,10 @@ class GalleryPagesRulesTest {
         assertEquals("3 songs are not in your library.", R.note(true, 3))
         assertNull(R.note(true, 0))
     }
+
+    @Test fun aMenuSheetLineJoinsWhatIsKnown() {
+        assertEquals("Talk Talk · Laughing Stock · 7:39", R.menuLine("Talk Talk", "Laughing Stock", R.clock(459)))
+        assertEquals("Bark Psychosis", R.menuLine("Bark Psychosis", null, " "))
+        assertEquals("", R.menuLine(null, ""))
+    }
 }

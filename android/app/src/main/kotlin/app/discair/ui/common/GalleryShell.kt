@@ -1,6 +1,9 @@
 package app.discair.ui.common
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.AnimationVector1D
 import androidx.compose.animation.core.CubicBezierEasing
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -23,17 +26,40 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.SnackbarData
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.ui.platform.LocalAccessibilityManager
+import kotlinx.coroutines.delay
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Stable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.LayoutCoordinates
+import androidx.compose.ui.layout.boundsInWindow
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -48,6 +74,7 @@ import androidx.compose.ui.unit.sp
 import app.discair.player.PlayerController
 import app.discair.player.PlayerUiState
 import app.discair.ui.player.playerSubtitle
+import app.discair.ui.theme.GalleryMotion
 import app.discair.ui.theme.LocalPalette
 import app.discair.ui.theme.LocalThemePalette
 import app.discair.ui.theme.Palette
@@ -58,8 +85,98 @@ import app.discair.ui.theme.rememberReducedMotion
  * the mini player (58dp) sits above the bar (62dp), divided by a 1dp rule; the page bars are plain, with no fill of their own and no rule under them.
  */
 
-/** The curve of the bar marker, the sheet and the snackbar: cubic-bezier(0.2, 0.8, 0.2, 1). */
-private val GalleryEase = CubicBezierEasing(0.2f, 0.8f, 0.2f, 1f)
+/** The curve of the bar marker, the sheet, the snackbar and the page's rising blocks: cubic-bezier(0.2, 0.8, 0.2, 1). */
+private val GalleryEase = GalleryMotion.SETTLE.let { CubicBezierEasing(it.x1, it.y1, it.x2, it.y2) }
+
+// ---------------------------------------------------------------- page arrival (docs/GALLERY_THEME.md section 8)
+
+/** The arriving page's clock, in milliseconds since it started to arrive; null outside a Gallery page (previews, tests, other themes). */
+val LocalGalleryArrival = compositionLocalOf<Animatable<Float, AnimationVector1D>?> { null }
+
+/**
+ * Starts a page's arrival clock when the page enters (a push, Back, or a tab), so its first six blocks rise in turn with [galleryArrive]. The clock runs once
+ * per arrival and then stands at its end, so blocks scrolled into view later are already in place. With animations removed it starts at the end.
+ */
+@Composable
+fun GalleryArrival(content: @Composable () -> Unit) {
+    val reduced = rememberReducedMotion()
+    val total = GalleryMotion.arrivalMs(false).toFloat()
+    val clock = remember { Animatable(if (reduced) total else 0f) }
+    LaunchedEffect(Unit) { if (!reduced) clock.animateTo(total, tween(total.toInt(), easing = LinearEasing)) }
+    CompositionLocalProvider(LocalGalleryArrival provides clock) { content() }
+}
+
+/**
+ * Block [index] of an arriving page fades in and rises 10dp over 420ms, 40ms after the block before it; blocks from the seventh on arrive with the page's
+ * fade. The clock is read in the draw layer only, so the rise redraws the block and never recomposes the page.
+ */
+@Composable
+fun Modifier.galleryArrive(index: Int): Modifier {
+    val clock = LocalGalleryArrival.current ?: return this
+    if (index < 0 || index >= GalleryMotion.RISE_MAX_ITEMS) return this
+    val rise = with(LocalDensity.current) { GalleryMotion.RISE_DP.dp.toPx() }
+    return graphicsLayer {
+        val f = GalleryEase.transform(GalleryMotion.riseFraction(index, clock.value))
+        alpha = f
+        translationY = (1f - f) * rise
+    }
+}
+
+// ---------------------------------------------------------------- Now Playing flight (docs/GALLERY_THEME.md section 8)
+
+/**
+ * The mini cover in the dock and the cover in the player's print, so the cover can fly between them. The player page is its own window, outside the
+ * shared-element layout, so the flight is drawn by hand over that window: [mini] is measured here in the dock, the print by the player, and both are in
+ * screen coordinates (the app and the player window are both full-screen). [dock] is how far the dock has slid away (0 in place, 1 off the bottom).
+ */
+@Stable
+class GalleryPlayerFlight {
+    /** The mini cover's bounds on screen, measured only while the dock is in place. Null until the dock has a song. */
+    var mini by mutableStateOf<Rect?>(null)
+
+    /** True from the moment Now Playing opens until it starts to fall: the dock is away. */
+    var playerUp by mutableStateOf(false)
+
+    val dock = Animatable(0f)
+
+    /** 0 the cover is at the mini cover, 1 it is in the print. */
+    val progress = Animatable(1f)
+
+    /** True while the cover flies: the player draws its own print faded and its cover hidden. */
+    var flying by mutableStateOf(false)
+
+    var coverUrl by mutableStateOf<String?>(null)
+
+    /** The player page's root and its cover, set by the player while they are laid out. */
+    var page: LayoutCoordinates? = null
+    var cover: LayoutCoordinates? = null
+
+    /** The cover's place once the page has settled (its root at the top of the screen), or null when the player view has no print on screen. */
+    fun target(): Rect? {
+        val root = page ?: return null
+        val c = cover ?: return null
+        if (!root.isAttached || !c.isAttached) return null
+        return root.localBoundingBoxOf(c, clipBounds = false)
+    }
+}
+
+/** The app's one flight: there is one player and one dock. */
+val GalleryFlight = GalleryPlayerFlight()
+
+/** The dock (the mini player and the bar) slides off the bottom while Now Playing is up, and back up over the player's fall (360ms). */
+@Composable
+fun Modifier.galleryDockMotion(): Modifier {
+    val flight = GalleryFlight
+    val reduced = rememberReducedMotion()
+    LaunchedEffect(flight.playerUp) {
+        if (flight.playerUp) flight.dock.snapTo(1f)
+        else flight.dock.animateTo(0f, tween(if (reduced) 0 else GalleryMotion.PLAYER_FALL_MS, easing = GalleryTravel))
+    }
+    return graphicsLayer { translationY = flight.dock.value * size.height }
+}
+
+/** The curve of the cover's flight and the player's rise and fall: cubic-bezier(0.3, 0, 0.1, 1). */
+val GalleryTravel = GalleryMotion.TRAVEL.let { CubicBezierEasing(it.x1, it.y1, it.x2, it.y2) }
 
 /** The bar: four equal cells with a 22dp icon over a Manrope 600 11 label; the selected cell is `control`, with a 22 by 2dp marker on its top edge that slides between cells. */
 @Composable
@@ -76,7 +193,7 @@ fun GalleryNavBar(
             val cell = maxWidth / 4
             val markerX by animateDpAsState(
                 cell * (selected.coerceAtLeast(0)) + (cell - 22.dp) / 2,
-                tween(if (reduced) 0 else 450, easing = GalleryEase), label = "galleryMarker",
+                tween(if (reduced) 0 else GalleryMotion.NAV_MARKER_MS, easing = GalleryEase), label = "galleryMarker",
             )
             Row(Modifier.fillMaxSize()) {
                 GalleryCell(palette, "Home", GalleryIcons.Home, homeSelected, onHome)
@@ -119,7 +236,11 @@ fun GalleryMiniPlayer(state: PlayerUiState, controller: PlayerController, onOpen
             }.padding(start = 16.dp, end = 8.dp),
             verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            GalleryPrint(38.dp, bare = true) { Cover(item.coverUrl.ifBlank { null }, Modifier.fillMaxSize(), rect = true) }
+            // The cover's place on screen, for Now Playing's flight; measured only while the dock is in place (not sliding).
+            val measure = Modifier.onGloballyPositioned { c ->
+                if (GalleryFlight.dock.value == 0f && !GalleryFlight.dock.isRunning) GalleryFlight.mini = c.boundsInWindow()
+            }
+            GalleryPrint(38.dp, measure, bare = true) { Cover(item.coverUrl.ifBlank { null }, Modifier.fillMaxSize(), rect = true) }
             Column(
                 Modifier.weight(1f).heightIn(min = 48.dp).clickable(onClickLabel = "Open now playing", role = Role.Button, onClick = onOpen),
                 verticalArrangement = Arrangement.Center,
@@ -171,6 +292,39 @@ fun GalleryPageHead(title: String, modifier: Modifier = Modifier, eyebrow: Strin
     Column(modifier.fillMaxWidth().padding(start = GalleryRules.GUTTER.dp, end = GalleryRules.GUTTER.dp, top = 6.dp)) {
         if (eyebrow != null) Text(eyebrow.uppercase(), style = GalleryType.catalogue, color = p.textMuted, modifier = Modifier.padding(bottom = 4.dp))
         Text(title, style = GalleryType.largeTitle, color = p.text)
+    }
+}
+
+/**
+ * Gallery's snackbar host (docs/GALLERY_THEME.md section 8): the toast fades in and rises 14dp over 280ms, holds 4s (longer when the phone's accessibility
+ * settings ask for more time, as Material's host does), then fades out. Material's own host scales the toast in, which Gallery's calm does not have.
+ */
+@Composable
+fun GallerySnackbarHost(hostState: SnackbarHostState, modifier: Modifier = Modifier) {
+    val reduced = rememberReducedMotion()
+    val current = hostState.currentSnackbarData
+    val a11y = LocalAccessibilityManager.current
+    LaunchedEffect(current) {
+        if (current == null) return@LaunchedEffect
+        val base = when (current.visuals.duration) {
+            SnackbarDuration.Short -> GalleryMotion.SNACK_HOLD_MS
+            SnackbarDuration.Long -> 10_000L
+            SnackbarDuration.Indefinite -> Long.MAX_VALUE
+        }
+        val hold = a11y?.calculateRecommendedTimeoutMillis(base, containsIcons = false, containsText = true, containsControls = current.visuals.actionLabel != null) ?: base
+        delay(hold)
+        current.dismiss()
+    }
+    // The last toast stays drawn while it fades out.
+    val last = remember { arrayOfNulls<SnackbarData>(1) }
+    if (current != null) last[0] = current
+    val rise = with(LocalDensity.current) { GalleryMotion.SNACK_DP.dp.roundToPx() }
+    Box(modifier.fillMaxWidth()) {
+        AnimatedVisibility(
+            visible = current != null,
+            enter = if (reduced) EnterTransition.None else fadeIn(tween(GalleryMotion.SNACK_IN_MS, easing = GalleryEase)) + slideInVertically(tween(GalleryMotion.SNACK_IN_MS, easing = GalleryEase)) { rise },
+            exit = if (reduced) ExitTransition.None else fadeOut(tween(GalleryMotion.PAGE_FADE_OUT_MS)),
+        ) { last[0]?.let { GallerySnackbar(it) } }
     }
 }
 

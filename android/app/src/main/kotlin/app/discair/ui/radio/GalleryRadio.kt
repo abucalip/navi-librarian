@@ -73,6 +73,7 @@ import app.discair.ui.common.GalleryPageBar
 import app.discair.ui.common.GalleryPageHead
 import app.discair.ui.common.GalleryPlayingBars
 import app.discair.ui.common.GalleryPrint
+import app.discair.ui.common.galleryArrive
 import app.discair.ui.common.GalleryRow
 import app.discair.ui.common.GalleryRules
 import app.discair.ui.common.GalleryState
@@ -167,7 +168,7 @@ internal fun GalleryStations(
         LazyColumn(Modifier.fillMaxWidth(), contentPadding = PaddingValues(bottom = 24.dp + LocalBottomClearance.current)) {
             item {
                 val count = (stations as? Load.Ready)?.value?.size ?: 0
-                GalleryPageHead("Radio", eyebrow = GalleryRadioRules.stationCount(count).ifEmpty { null })
+                GalleryPageHead("Radio", Modifier.galleryArrive(0), eyebrow = GalleryRadioRules.stationCount(count).ifEmpty { null })
                 Spacer(Modifier.height(12.dp))
             }
             message?.let { text ->
@@ -180,10 +181,10 @@ internal fun GalleryStations(
                 is Load.Failed -> item { Inline(stations.failure.message, reload) }
                 is Load.Ready -> {
                     if (stations.value.isEmpty()) item { Muted("No radio stations. Add them in Navidrome and they appear here.") }
-                    itemsIndexed(stations.value, key = { _, s -> s.id }) { _, station ->
+                    itemsIndexed(stations.value, key = { _, s -> s.id }) { i, station ->
                         val fav = favourite(station)
                         val onAir = onAirId == station.id
-                        Column(Modifier.animateItem().padding(horizontal = GalleryRules.GUTTER.dp)) {
+                        Column(Modifier.animateItem().galleryArrive(i + 1).padding(horizontal = GalleryRules.GUTTER.dp)) {
                             GalleryRow(
                                 station.name, sub = stripText(station, now(station)), onClick = { onPlay(station) },
                                 modifier = Modifier.semantics { if (onAir) stateDescription = "On air" },
@@ -216,10 +217,10 @@ internal fun GalleryHeard(onBack: () -> Unit, plays: Load<List<RadioPlay>>, relo
         LazyColumn(Modifier.fillMaxWidth(), contentPadding = PaddingValues(bottom = 24.dp + LocalBottomClearance.current)) {
             item {
                 val eyebrow = (plays as? Load.Ready)?.value?.let { GalleryRadioRules.heardEyebrow(it, Instant.now()) }.orEmpty()
-                GalleryPageHead("Heard on radio", eyebrow = eyebrow.ifEmpty { null })
+                GalleryPageHead("Heard on radio", Modifier.galleryArrive(0), eyebrow = eyebrow.ifEmpty { null })
                 Text(
                     "Songs the stations played while you listened", style = GalleryType.body(), color = p.textMuted,
-                    modifier = Modifier.padding(start = GalleryRules.GUTTER.dp, end = GalleryRules.GUTTER.dp, top = 4.dp, bottom = 12.dp),
+                    modifier = Modifier.galleryArrive(0).padding(start = GalleryRules.GUTTER.dp, end = GalleryRules.GUTTER.dp, top = 4.dp, bottom = 12.dp),
                 )
             }
             live.message?.let { text ->
@@ -230,8 +231,8 @@ internal fun GalleryHeard(onBack: () -> Unit, plays: Load<List<RadioPlay>>, relo
                 is Load.Failed -> item { Inline(plays.failure.message, reload) }
                 is Load.Ready -> {
                     if (plays.value.isEmpty()) item { Muted("Nothing heard yet. A song is logged once you have listened to it for about 30 seconds.") }
-                    itemsIndexed(plays.value, key = { _, play -> play.id }) { _, play ->
-                        Column(Modifier.animateItem().padding(horizontal = GalleryRules.GUTTER.dp)) {
+                    itemsIndexed(plays.value, key = { _, play -> play.id }) { i, play ->
+                        Column(Modifier.animateItem().galleryArrive(i + 1).padding(horizontal = GalleryRules.GUTTER.dp)) {
                             HeardRow(play, live.downloadFor(play.id, play.grabbed, play.inLibrary), live.failed[play.id]) { onDownload(play.id) }
                         }
                     }

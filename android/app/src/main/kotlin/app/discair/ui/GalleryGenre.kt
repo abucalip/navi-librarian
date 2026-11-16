@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -29,6 +30,7 @@ import app.discair.ui.common.GalleryPageBar
 import app.discair.ui.common.GalleryPageHead
 import app.discair.ui.common.GalleryPagesRules
 import app.discair.ui.common.GalleryPrint
+import app.discair.ui.common.galleryArrive
 import app.discair.ui.common.GalleryRow
 import app.discair.ui.common.GalleryRules
 import app.discair.ui.common.GalleryState
@@ -54,21 +56,21 @@ internal fun GalleryGenre(route: GenreRoute, loaded: Loaded<GenrePage>, open: Op
             val albums = page.sections.albums.items
             LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 32.dp + LocalBottomClearance.current)) {
                 item {
-                    GalleryPageHead(route.name, Modifier.semantics { heading() }, eyebrow = GalleryPagesRules.genreEyebrow(albums.size, artists.size))
+                    GalleryPageHead(route.name, Modifier.galleryArrive(0).semantics { heading() }, eyebrow = GalleryPagesRules.genreEyebrow(albums.size, artists.size))
                 }
                 if (artists.isEmpty() && albums.isEmpty()) item { GalleryMuted("Nothing found for this genre.", Modifier.padding(gutter)) }
                 else {
-                    item { GalleryTabs(listOf("Albums", "Artists"), tab, { tab = it }, Modifier.padding(top = 16.dp)) }
+                    item { GalleryTabs(listOf("Albums", "Artists"), tab, { tab = it }, Modifier.galleryArrive(1).padding(top = 16.dp)) }
                     if (tab == 0) {
                         if (albums.isEmpty()) item { GalleryMuted("No albums for this genre.", Modifier.padding(gutter)) }
                         else {
                             item { Box(Modifier.padding(top = 20.dp)) }
-                            items(albums.chunked(2)) { pair ->
-                                Row(Modifier.fillMaxWidth().padding(horizontal = gutter).padding(bottom = 20.dp), horizontalArrangement = Arrangement.spacedBy(18.dp)) {
+                            itemsIndexed(albums.chunked(2)) { row, pair ->
+                                Row(Modifier.fillMaxWidth().galleryArrive(2 + row).padding(horizontal = gutter).padding(bottom = 20.dp), horizontalArrangement = Arrangement.spacedBy(18.dp)) {
                                     pair.forEach { a ->
                                         GalleryCaption(
                                             a.name, GalleryPagesRules.maker(a.artist, a.year), Modifier.weight(1f), state = if (a.owned) "In library" else null,
-                                            onClick = { open.album(a.key, a.artist, a.name, a.id, a.year) },
+                                            sharedKey = a.key, onClick = { open.album(a.key, a.artist, a.name, a.id, a.year) },
                                         ) { AlbumCover(a.artist, a.name, null, Modifier.fillMaxWidth().aspectRatio(1f), rect = true) }
                                     }
                                     if (pair.size == 1) Box(Modifier.weight(1f))

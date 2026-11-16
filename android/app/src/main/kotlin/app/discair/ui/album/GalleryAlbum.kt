@@ -55,6 +55,9 @@ import app.discair.ui.common.GalleryPageBar
 import app.discair.ui.common.GalleryPagesRules
 import app.discair.ui.common.GalleryPlayingBars
 import app.discair.ui.common.GalleryPrint
+import app.discair.ui.common.GalleryMenuItem
+import app.discair.ui.common.GalleryMenuHeader
+import app.discair.ui.common.galleryArrive
 import app.discair.ui.common.GalleryReadMore
 import app.discair.ui.common.GalleryRule
 import app.discair.ui.common.GalleryRules
@@ -67,7 +70,6 @@ import app.discair.ui.common.Load
 import app.discair.ui.common.LocalRepository
 import app.discair.ui.common.pageMetadata
 import app.discair.ui.common.rememberLoad
-import app.discair.ui.common.sharedCover
 import app.discair.ui.player.LocalPlayActions
 import app.discair.ui.player.LocalPlayingNow
 import app.discair.ui.theme.LocalPalette
@@ -107,13 +109,13 @@ internal fun GalleryAlbumContent(d: CoverStackAlbumData, open: Opener, list: Laz
     LazyColumn(Modifier.fillMaxSize(), state = list, contentPadding = PaddingValues(bottom = 32.dp + app.discair.ui.LocalBottomClearance.current)) {
         item { GalleryPageBar("Album", open.back, action = { GalleryMenuButton("More for ${d.title}", menu) }) }
         item {
-            Box(Modifier.fillMaxWidth().padding(top = 20.dp), contentAlignment = Alignment.TopCenter) {
+            Box(Modifier.fillMaxWidth().galleryArrive(0).padding(top = 20.dp), contentAlignment = Alignment.TopCenter) {
                 val print = GalleryPagesRules.ALBUM_PRINT_DP.dp
                 val cover = print - (GalleryRules.MAT_LARGE * 2).dp
-                GalleryPrint(print) {
+                GalleryPrint(print, sharedKey = d.route.key) {
                     FlipCover(d.backs, cover) {
                         Box(Modifier.size(cover)) {
-                            AlbumCover(d.artist, d.title, d.coverUrl, Modifier.size(cover).sharedCover(d.route.key), rect = true)
+                            AlbumCover(d.artist, d.title, d.coverUrl, Modifier.size(cover), rect = true)
                             if (d.canPickEdition) EditionStack(d.editionCount, d.onPickEdition, Modifier.align(Alignment.BottomStart))
                         }
                     }
@@ -121,7 +123,7 @@ internal fun GalleryAlbumContent(d: CoverStackAlbumData, open: Opener, list: Laz
             }
         }
         item {
-            Column(Modifier.fillMaxWidth().padding(start = gutter, end = gutter, top = 22.dp), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+            Column(Modifier.fillMaxWidth().galleryArrive(1).padding(start = gutter, end = gutter, top = 22.dp), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                 GalleryEyebrow(GalleryPagesRules.albumEyebrow(d.year, d.tracks.size, d.tracks.sumOf { it.durationSeconds ?: 0 }, d.info?.quality))
                 Text(d.title, Modifier.padding(top = 4.dp).semantics { heading() }, color = p.text, style = GalleryType.workXL)
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -139,7 +141,7 @@ internal fun GalleryAlbumContent(d: CoverStackAlbumData, open: Opener, list: Laz
         }
         item {
             FlowRow(
-                Modifier.fillMaxWidth().padding(start = gutter, end = gutter, top = 16.dp),
+                Modifier.fillMaxWidth().galleryArrive(2).padding(start = gutter, end = gutter, top = 16.dp),
                 horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp), itemVerticalAlignment = Alignment.CenterVertically,
             ) {
                 if (albumId != null) {
@@ -157,27 +159,30 @@ internal fun GalleryAlbumContent(d: CoverStackAlbumData, open: Opener, list: Laz
             // Every song of an album in the library keeps its own Get; the album-level Get stays until every track is in the library (ACQ-08).
             GalleryNote(note, Modifier.padding(top = 14.dp), trailing = if (d.owned) ({ GalleryGetAlbumButton(d.artist, d.title, metadata, primary = false) }) else null)
         }
-        item { GalleryTabs(tabs, tab, { chosen = tabs[it] }, Modifier.padding(top = if (d.owned) 24.dp else 20.dp)) }
+        item { GalleryTabs(tabs, tab, { chosen = tabs[it] }, Modifier.galleryArrive(3).padding(top = if (d.owned) 24.dp else 20.dp)) }
         when (tabs[tab]) {
             "Songs" -> {
                 for (i in d.tracks.indices) {
-                    if (startsDisc(d.tracks, i)) item(key = "disc-${d.tracks[i].disc}") { GalleryDiscHeading(d.tracks[i].disc ?: 1) }
-                    item { SongRow(d, i, albumId) }
+                    // The song list rises as one block, after the tabs.
+                    if (startsDisc(d.tracks, i)) item(key = "disc-${d.tracks[i].disc}") { GalleryDiscHeading(d.tracks[i].disc ?: 1, Modifier.galleryArrive(4)) }
+                    item { Box(Modifier.galleryArrive(4)) { SongRow(d, i, albumId) } }
                 }
             }
-            "Info" -> item { InfoTab(d) }
-            "Reviews" -> item { ReviewsTab(d.artist, d.title) }
-            "Booklet" -> d.booklet?.let { b -> item { BookletTab(b) } }
+            "Info" -> item { Box(Modifier.galleryArrive(4)) { InfoTab(d) } }
+            "Reviews" -> item { Box(Modifier.galleryArrive(4)) { ReviewsTab(d.artist, d.title) } }
+            "Booklet" -> d.booklet?.let { b -> item { Box(Modifier.galleryArrive(4)) { BookletTab(b) } } }
         }
         if (d.similarAlbums.isNotEmpty()) {
-            item { GallerySectionHead("Similar albums") }
+            item { Box(Modifier.galleryArrive(5)) { GallerySectionHead("Similar albums") } }
             item {
-                LazyRow(contentPadding = PaddingValues(horizontal = gutter), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                LazyRow(Modifier.galleryArrive(5), contentPadding = PaddingValues(horizontal = gutter), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
                     itemsIndexed(d.similarAlbums, key = { i, it -> "$i|${it.key}|${it.name}" }) { _, album ->
                         val said = listOfNotNull(album.name, album.artist.ifBlank { null }, album.year?.toString(), if (album.owned) "in your library" else null).joinToString(", ")
                         GalleryPrint(
                             GalleryPagesRules.SIMILAR_PRINT_DP.dp,
                             Modifier.clickable(role = Role.Button) { open.album(album.key, album.artist, album.name, null, album.year) }.semantics { contentDescription = said },
+                            // The page's own print already carries this album's key; a similar album travels into the page it opens.
+                            sharedKey = album.key.takeIf { it != d.route.key },
                         ) { AlbumCover(album.artist, album.name, null, Modifier.fillMaxWidth().aspectRatio(1f), rect = true) }
                     }
                 }
@@ -247,10 +252,13 @@ private fun SongRow(d: CoverStackAlbumData, i: Int, albumId: String?) {
             else if (albumId != null) GalleryMenuButton(
                 "More ways to play ${t.title}",
                 listOf(
-                    "Play next" to { play.queueTrack(albumId, t.title, t.number, next = true, disc = t.disc) },
-                    "Add to queue" to { play.queueTrack(albumId, t.title, t.number, next = false, disc = t.disc) },
-                    "Download to device" to { play.downloadTrack(albumId, t.title, t.number, disc = t.disc) },
+                    GalleryMenuItem("Play next", GalleryIcons.Next) { play.queueTrack(albumId, t.title, t.number, next = true, disc = t.disc) },
+                    GalleryMenuItem("Add to queue", GalleryIcons.QueueAdd) { play.queueTrack(albumId, t.title, t.number, next = false, disc = t.disc) },
+                    GalleryMenuItem("Download to device", GalleryIcons.Download) { play.downloadTrack(albumId, t.title, t.number, disc = t.disc) },
                 ),
+                header = GalleryMenuHeader(t.title, GalleryPagesRules.menuLine(d.artist, d.title, t.durationSeconds?.let(GalleryPagesRules::clock))) {
+                    AlbumCover(d.artist, d.title, d.coverUrl, Modifier.fillMaxSize(), rect = true)
+                },
             ) else Box(Modifier.size(48.dp))
         }
         GalleryRule()

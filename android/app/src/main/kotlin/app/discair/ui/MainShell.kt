@@ -92,6 +92,7 @@ import app.discair.data.AcquisitionHub
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Badge
 import app.discair.ui.common.SnackbarHost
+import app.discair.ui.common.galleryDockMotion
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -118,7 +119,10 @@ import app.discair.ui.library.LibraryScreen
 @Composable
 private fun androidx.compose.animation.AnimatedVisibilityScope.Opaque(content: @Composable () -> Unit) {
     androidx.compose.runtime.CompositionLocalProvider(app.discair.ui.common.LocalNavVisibilityScope provides this) {
-        Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) { content() }
+        Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+            // A Gallery page's first blocks rise in turn as it arrives; every other theme draws the page as it is.
+            if (app.discair.ui.common.isGallery()) app.discair.ui.common.GalleryArrival(content) else content()
+        }
     }
 }
 
@@ -208,6 +212,10 @@ fun MainShell(state: UiState, model: AppViewModel, container: AppContainer) {
     val axisPlan = MotionPlans.sharedAxisX(motionFamily, reducedMotion)
     val risePx = with(density) { fadePlan.riseDp.dp.roundToPx() }
     val slidePx = with(density) { axisPlan.slideDp.dp.roundToPx() }
+    // Gallery pages do not slide: the leaving page fades out (180ms) and the new one fades in (260ms after 80ms) while its blocks rise (docs/GALLERY_THEME.md 8).
+    val galleryNav = app.discair.ui.common.isGallery()
+    val galleryIn = fadeIn(androidx.compose.animation.core.tween(app.discair.ui.theme.GalleryMotion.PAGE_FADE_IN_MS, app.discair.ui.theme.GalleryMotion.PAGE_FADE_IN_DELAY_MS, androidx.compose.animation.core.LinearEasing))
+    val galleryOut = fadeOut(androidx.compose.animation.core.tween(app.discair.ui.theme.GalleryMotion.PAGE_FADE_OUT_MS, easing = androidx.compose.animation.core.LinearEasing))
     val tabs = listOf(
         Tab(HomeRoute, "Home", ArtIcons.Home),
         Tab(DiscoverRoute, "Discover", ArtIcons.Disc),
@@ -342,6 +350,7 @@ fun MainShell(state: UiState, model: AppViewModel, container: AppContainer) {
                     val tabToTab = indexOf(initialState) >= 0 && indexOf(targetState) >= 0
                     when {
                         reducedMotion -> EnterTransition.None
+                        galleryNav -> galleryIn
                         tabToTab -> fadeIn(fadePlan.arrive.toTween(fadePlan.arriveDelayMs)) +
                             slideInVertically(fadePlan.arrive.toTween(fadePlan.arriveDelayMs)) { risePx }
                         else -> slideInHorizontally(axisPlan.arrive.toTween()) { slidePx } + fadeIn(axisPlan.arrive.toTween())
@@ -351,6 +360,7 @@ fun MainShell(state: UiState, model: AppViewModel, container: AppContainer) {
                     val tabToTab = indexOf(initialState) >= 0 && indexOf(targetState) >= 0
                     when {
                         reducedMotion -> ExitTransition.None
+                        galleryNav -> galleryOut
                         tabToTab -> fadeOut(fadePlan.leave.toTween())
                         else -> slideOutHorizontally(axisPlan.leave.toTween()) { -slidePx } + fadeOut(axisPlan.leave.toTween())
                     }
@@ -359,6 +369,7 @@ fun MainShell(state: UiState, model: AppViewModel, container: AppContainer) {
                     val tabToTab = indexOf(initialState) >= 0 && indexOf(targetState) >= 0
                     when {
                         reducedMotion -> EnterTransition.None
+                        galleryNav -> galleryIn
                         tabToTab -> fadeIn(fadePlan.arrive.toTween(fadePlan.arriveDelayMs))
                         else -> slideInHorizontally(axisPlan.arrive.toTween()) { -slidePx } + fadeIn(axisPlan.arrive.toTween())
                     }
@@ -366,6 +377,7 @@ fun MainShell(state: UiState, model: AppViewModel, container: AppContainer) {
                 popExitTransition = {
                     when {
                         reducedMotion -> ExitTransition.None
+                        galleryNav -> galleryOut
                         else -> slideOutHorizontally(axisPlan.leave.toTween()) { slidePx } + fadeOut(axisPlan.leave.toTween())
                     }
                 },
@@ -395,7 +407,9 @@ fun MainShell(state: UiState, model: AppViewModel, container: AppContainer) {
         // The bottom navigation floats over the pages, with no bar behind it; a wide screen (600 dp and over) has the rail instead.
         // It is drawn over a dark artwork tint, so it keeps light icons on every theme. The mini player (Cassette Deck only) sits
         // above its bar while a song is queued. The hidden cover load below gives the island its tint.
-        Column(Modifier.align(Alignment.BottomCenter).onSizeChanged { islandPx = it.height }) {
+        // Gallery's dock slides away while Now Playing is up and back as it falls (docs/GALLERY_THEME.md section 8).
+        val dockMotion = if (app.discair.ui.common.isGallery()) Modifier.galleryDockMotion() else Modifier
+        Column(Modifier.align(Alignment.BottomCenter).onSizeChanged { islandPx = it.height }.then(dockMotion)) {
             if (app.discair.ui.common.TapeDeckRules.miniPlayerShown(app.discair.ui.theme.LocalPalette.current.layout, playerState.current != null)) {
                 app.discair.ui.player.TapeMiniPlayer(playerState, player, onOpen = { if (playerState.visible) nowPlayingOpen = true })
             }

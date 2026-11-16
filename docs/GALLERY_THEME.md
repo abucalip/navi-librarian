@@ -219,6 +219,8 @@ Values are in `tokens.json` → `motion`. Try them on the live page [`pages/moti
 
 There are no springs with overshoot, no parallax and no looping background motion. The calm is part of the identity.
 
+As built (G7): every row above except the Sheet. Material 1.3.2's `ModalBottomSheet` has no setting for its animation, so Gallery's sheets keep Material's slide and scrim timing (about 300ms). The player is a dialog window, so its cover flight is drawn by hand from the dock's mini cover to the print (`GalleryFlight` in `GalleryShell.kt`) rather than through the shared-element layout.
+
 ## 9. Home
 
 Mockup: [`pages/home`](design/gallery/pages/home.html) (six frames). From top to bottom:
