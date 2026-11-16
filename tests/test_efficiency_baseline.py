@@ -61,6 +61,17 @@ class BaselineHelperTests(unittest.TestCase):
         self.assertEqual(paths["artist_page"], "/api/artists/Artist%20Name?id=artist-id-9")
         self.assertIn("kind=album_gaps", paths["knowledge_paths_album_gaps"])
 
+    def test_build_routes_knowledge_type_is_configurable(self):
+        default = dict(baseline.build_routes("a", "album-1", "c", "d"))
+        self.assertIn("type=release_group", default["knowledge_connections"])
+        self.assertIn("type=release_group", default["knowledge_paths_album_gaps"])
+        release = dict(baseline.build_routes("a", "album-1", "c", "d", "release"))
+        self.assertIn("type=release&", release["knowledge_connections"] + "&")
+        self.assertIn("type=release&", release["knowledge_paths_album_gaps"] + "&")
+        self.assertNotIn("release_group", release["knowledge_paths_album_gaps"])
+        # Non-knowledge routes do not depend on the knowledge type.
+        self.assertEqual(default["album_page"], release["album_page"])
+
     def test_summarize_counts_statuses_and_server_samples(self):
         stats = baseline.summarize([(10.0, 5.0, 200), (30.0, None, 200), (20.0, 7.0, 500)])
         self.assertEqual(stats["count"], 3)
