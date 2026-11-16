@@ -153,14 +153,14 @@ object GalleryType {
 /**
  * A cover in its mat (section 7.1): the `mat` colour round it, no corner radius, a soft wall shadow, and the night palettes' spot is [GallerySpot].
  * [size] is the cover's width in dp and picks the mat and the shadow (5dp mats under 72dp); [player] takes the 14dp mat of Now Playing;
- * [bare] is the mini player's cover (no mat, no shadow).
+ * [bare] is the mini player's cover (no mat, no shadow); [small] forces the 5dp mat and the small shadow on a wider cover (Home's "Played lately" prints).
  */
 @Composable
-fun GalleryPrint(size: Dp, modifier: Modifier = Modifier, player: Boolean = false, bare: Boolean = false, content: @Composable () -> Unit) {
+fun GalleryPrint(size: Dp, modifier: Modifier = Modifier, player: Boolean = false, bare: Boolean = false, small: Boolean = false, content: @Composable () -> Unit) {
     val p = LocalPalette.current
     if (bare) { Box(modifier.size(size)) { content() }; return }
-    val large = size.value >= GalleryRules.SMALL_BELOW
-    val mat = GalleryRules.mat(size.value, player).dp
+    val large = !small && size.value >= GalleryRules.SMALL_BELOW
+    val mat = (if (small) GalleryRules.MAT_SMALL else GalleryRules.mat(size.value, player)).dp
     Box(modifier.galleryShadow(large, p).background(p.mat).padding(mat)) { content() }
 }
 

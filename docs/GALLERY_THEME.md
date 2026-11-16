@@ -1,6 +1,6 @@
 # Gallery theme for Android: design system and build plan
 
-Status: **design approved by the owner** (2026-11-16); **G1 built** (PR `claude/gallery-g1`). This document is the spec implementing agents build from. The mockups beside it are the spec for every screen ("the mockups are the spec", Round 3 owner rule).
+Status: **design approved by the owner** (2026-11-16); **G1 built** (#1117); **G2 Home built** (PR `claude/gallery-g2`). This document is the spec implementing agents build from. The mockups beside it are the spec for every screen ("the mockups are the spec", Round 3 owner rule).
 
 Package: [`docs/design/gallery/`](design/gallery/). Start with its [`README.md`](design/gallery/README.md).
 
