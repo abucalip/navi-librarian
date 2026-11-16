@@ -24,6 +24,7 @@ from app.services.fallback_artwork import (
 )
 from app.services.deezer_artwork import pick_artist, select_album_artwork, select_artist_artwork
 from app.services.deezer_album_details import shape_album_match
+from app.services import runtime_metrics
 from app.services import album_links, album_reviews, album_wikipedia, persistent_metadata
 from app.services.apple_description import parse_editorial_notes
 from app.services.deezer_album_matching import exact_album_matches, exact_album_release_year, release_year
@@ -35,7 +36,7 @@ from integrations.musicbrainz.album_year import (
 
 router = APIRouter()
 
-_EXTERNAL_HTTP = httpx.Client(
+_EXTERNAL_HTTP = runtime_metrics.MeteredClient(
     timeout=httpx.Timeout(3.0, connect=1.5),
     # httpx closes idle connections after 5 s, so a burst of lookups after a short pause paid a
     # fresh TCP and TLS handshake each. Keep them open for a minute.
