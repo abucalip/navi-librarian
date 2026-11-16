@@ -87,7 +87,7 @@ def record_gate(provider: str, waited: float, granted: bool) -> None:
         entry[2] += max(0.0, waited)
 
 
-def record_store(operation: str, seconds: float, locked: bool = False) -> None:
+def record_store(operation: str, seconds: float, locked: bool = False, table: str | None = None) -> None:
     slow = seconds > SLOW_STORE_SECONDS
     with _lock:
         entry = _store.setdefault(operation, [0, 0.0, 0, 0])
@@ -96,9 +96,9 @@ def record_store(operation: str, seconds: float, locked: bool = False) -> None:
         entry[2] += slow
         entry[3] += locked
     if locked:
-        logger.warning("Store %s: database is locked after %.0f ms", operation, seconds * 1000)
+        logger.warning("Store %s%s: database is locked after %.0f ms", operation, f" on {table}" if table else "", seconds * 1000)
     elif slow:
-        logger.warning("Store %s took %.0f ms", operation, seconds * 1000)
+        logger.warning("Store %s%s took %.0f ms", operation, f" on {table}" if table else "", seconds * 1000)
 
 
 _ORIGINAL_SEND = httpx.Client.send

@@ -97,6 +97,27 @@ class CountersTests(unittest.TestCase):
         self.assertEqual(snap["other"]["outcomes"], {"error": 1})
         self.assertNotIn("SECRET", json.dumps(snap))
 
+    def test_statements_are_timed_by_verb_without_text_or_values(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "k.sqlite3"
+            with patch.object(store_db, "_observer", rm.record_store):
+                db = store_db.connect(path)
+                db.execute("CREATE TABLE t (a TEXT)")
+                db.execute("INSERT INTO t (a) VALUES (?)", ("SECRET-VALUE",))
+                db.executemany("INSERT INTO t (a) VALUES (?)", [("x",), ("y",)])
+                db.execute("SELECT a FROM t WHERE a = ?", ("SECRET-VALUE",)).fetchall()
+                with self.assertRaises(Exception):
+                    db.execute("SELECT * FROM missing_table")
+                with self.assertLogs(rm.logger, "WARNING") as logs, patch.object(rm, "SLOW_STORE_SECONDS", -1):
+                    db.execute("SELECT a FROM t")
+                db.close()
+        store = rm.snapshot()["store"]
+        self.assertEqual(store["sql_insert"]["count"], 2)
+        self.assertEqual(store["sql_select"]["count"], 3)
+        self.assertIn("sql_other", store)
+        self.assertIn("on t", logs.output[0])
+        self.assertNotIn("SECRET", json.dumps(store) + "".join(logs.output))
+
     def test_gate_reports_waits_and_refusals(self):
         with tempfile.TemporaryDirectory() as tmp:
             now = [1000.0]

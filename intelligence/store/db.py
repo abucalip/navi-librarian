@@ -1,6 +1,7 @@
 """Connection helper for the Server V2 database (decision D-7: a dedicated file)."""
 from __future__ import annotations
 
+import re
 import sqlite3
 import threading
 import time
@@ -16,7 +17,7 @@ _observer = None
 
 
 def set_observer(fn) -> None:
-    """Report each open as ``fn(operation, seconds, locked)`` (runtime metrics)."""
+    """Report each open and statement as ``fn(operation, seconds, locked[, table])`` (runtime metrics)."""
     global _observer
     _observer = fn
 
@@ -37,6 +38,48 @@ def _observed(operation, opener):
                 pass
 
 
+_TABLE = re.compile(r"\b(?:FROM|INTO|UPDATE|JOIN)\s+([A-Za-z_][\w.]*)", re.IGNORECASE)
+
+
+def _statement_label(sql) -> tuple[str, str | None]:
+    """``("sql_select", "table")`` for a statement: its verb and first table name, never its text or values."""
+    text = sql if isinstance(sql, str) else ""
+    words = text.split(None, 1)
+    verb = re.sub(r"\W", "", words[0]).lower() if words else ""
+    if verb not in ("select", "insert", "update", "delete", "replace", "with", "pragma", "attach", "begin", "commit"):
+        verb = "other"
+    match = _TABLE.search(text) if verb in ("select", "insert", "update", "delete", "replace", "with") else None
+    return "sql_" + verb, match.group(1) if match else None
+
+
+class _TimedConnection(sqlite3.Connection):
+    """Times ``execute``/``executemany`` for runtime metrics (cursor-level calls and row fetching are not timed)."""
+
+    def _timed(self, call, sql, *args):
+        if _observer is None:
+            return call(sql, *args)
+        started = time.perf_counter()
+        locked = False
+        try:
+            return call(sql, *args)
+        except sqlite3.OperationalError as exc:
+            locked = "locked" in str(exc)
+            raise
+        finally:
+            elapsed = time.perf_counter() - started
+            try:
+                operation, table = _statement_label(sql)
+                _observer(operation, elapsed, locked, table)
+            except Exception:  # metrics must never break a request
+                pass
+
+    def execute(self, sql, *args):
+        return self._timed(super().execute, sql, *args)
+
+    def executemany(self, sql, *args):
+        return self._timed(super().executemany, sql, *args)
+
+
 _ensured: set[tuple[str, str]] = set()
 _ensure_lock = threading.Lock()
 
@@ -48,7 +91,7 @@ def connect(database_path: str | PathLike[str]) -> sqlite3.Connection:
     up to ``BUSY_TIMEOUT_SECONDS`` instead of failing at once. WAL keeps readers
     unblocked while a job writes.
     """
-    db = sqlite3.connect(database_path, timeout=BUSY_TIMEOUT_SECONDS)
+    db = sqlite3.connect(database_path, timeout=BUSY_TIMEOUT_SECONDS, factory=_TimedConnection)
     db.row_factory = sqlite3.Row
     db.execute("PRAGMA foreign_keys = ON")
     if str(database_path) != ":memory:":
@@ -111,7 +154,7 @@ def _open_readonly(
     Does not migrate or create anything; the files must exist and be at the current version.
     Any write on this connection fails.
     """
-    db = sqlite3.connect(f"file:{Path(database_path).resolve()}?mode=ro", uri=True, timeout=BUSY_TIMEOUT_SECONDS)
+    db = sqlite3.connect(f"file:{Path(database_path).resolve()}?mode=ro", uri=True, timeout=BUSY_TIMEOUT_SECONDS, factory=_TimedConnection)
     db.row_factory = sqlite3.Row
     state = state_path if state_path is not None else default_state_path(database_path)
     db.execute("ATTACH DATABASE ? AS state", (f"file:{Path(state).resolve()}?mode=ro",))
