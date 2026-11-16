@@ -5,20 +5,81 @@ groups returns listen and user counts. Best-effort and never raises; a release g
 that is missing, null or fails to load simply gets no popularity bonus, like a Last.fm
 miss did. Counts are stored under the existing ``listeners`` (user count) and
 ``playcount`` (listen count) names so the bounded bonus formula is unchanged.
+
+A 200 answer that has no counts for a release group is cached as a short negative entry
+(``{"negative": True, "at": <time>}``), so the group is not sent again for an hour. Failed
+requests and malformed bodies write nothing.
 """
+import time
 from typing import Any, Callable, Iterable, Mapping
 
 LISTENBRAINZ_POPULARITY_URL = "https://api.listenbrainz.org/1/popularity/release-group"
 POPULARITY_CACHE_PREFIX = "lb:popularity:release-group:"
 POPULARITY_TTL_SECONDS = 30 * 24 * 60 * 60
+# Same negative TTL as discovery/search/cache.py. Enforced from the entry's own "at" time,
+# because the metadata cache only applies the 30-day positive TTL to its rows.
+NEGATIVE_TTL_SECONDS = 60 * 60
 # The documented cap (MAX_ITEMS_PER_GET) is not published; 50 matches the measured
 # safe size of the sibling release-group metadata endpoint.
 POPULARITY_CHUNK = 50
+
+_FRESH_NEGATIVE = object()
 
 
 def _chunks(values: list[str], size: int):
     for start in range(0, len(values), size):
         yield values[start:start + size]
+
+
+def _classify_cached(value: Any, now: float) -> Any:
+    """Return the stored stats, ``_FRESH_NEGATIVE`` for a fresh "no data" entry, or None."""
+    if isinstance(value, dict) and value.get("negative"):
+        at = value.get("at")
+        if isinstance(at, (int, float)) and 0 <= now - at < NEGATIVE_TTL_SECONDS:
+            return _FRESH_NEGATIVE
+        return None
+    return value
+
+
+def _parse_counts(body: list, chunk: list[str]) -> dict[str, dict[str, Any]]:
+    """Map the groups in one 200 answer that carry both counts. Raises on malformed counts."""
+    counts: dict[str, dict[str, Any]] = {}
+    for entry in body:
+        if not isinstance(entry, dict):
+            continue
+        mbid = str(entry.get("release_group_mbid") or "")
+        listens = entry.get("total_listen_count")
+        users = entry.get("total_user_count")
+        if mbid not in chunk or listens is None or users is None:
+            continue
+        counts[mbid] = {"listeners": int(users), "playcount": int(listens), "tags": []}
+    return counts
+
+
+def _store(cache_set: Callable[[str, Any], None], mbid: str, value: Any) -> None:
+    try:
+        cache_set(f"{POPULARITY_CACHE_PREFIX}{mbid}", value)
+    except Exception:
+        pass
+
+
+def _split_cached(mbids, cache_get, clock) -> tuple[dict[str, dict[str, Any]], list[str]]:
+    """Return (known stats, release groups that still need a request)."""
+    found: dict[str, dict[str, Any]] = {}
+    uncached: list[str] = []
+    for mbid in dict.fromkeys(str(m) for m in mbids if m):
+        try:
+            cached = cache_get(f"{POPULARITY_CACHE_PREFIX}{mbid}", ttl_seconds=POPULARITY_TTL_SECONDS)
+        except Exception:
+            cached = None
+        state = _classify_cached(cached, clock())
+        if state is _FRESH_NEGATIVE:
+            continue
+        if state is not None:
+            found[mbid] = state
+        else:
+            uncached.append(mbid)
+    return found, uncached
 
 
 def fetch_release_group_popularity(
@@ -29,22 +90,12 @@ def fetch_release_group_popularity(
     *,
     headers: Mapping[str, str],
     timeout: float = 15,
+    clock: Callable[[], float] = time.time,
 ) -> dict[str, dict[str, Any]]:
     """Return {release_group_mbid: {"listeners", "playcount", "tags"}} for known groups."""
     from recommendation_run_metrics import record_provider_call
 
-    found: dict[str, dict[str, Any]] = {}
-    uncached: list[str] = []
-    for mbid in dict.fromkeys(str(m) for m in mbids if m):
-        try:
-            known = cache_get(f"{POPULARITY_CACHE_PREFIX}{mbid}", ttl_seconds=POPULARITY_TTL_SECONDS)
-        except Exception:
-            known = None
-        if known is not None:
-            found[mbid] = known
-        else:
-            uncached.append(mbid)
-
+    found, uncached = _split_cached(mbids, cache_get, clock)
     for chunk in _chunks(uncached, POPULARITY_CHUNK):
         try:
             record_provider_call("listenbrainz", "popularity_batch")
@@ -59,22 +110,16 @@ def fetch_release_group_popularity(
             body = response.json()
             if not isinstance(body, list):
                 continue
-            for entry in body:
-                if not isinstance(entry, dict):
-                    continue
-                mbid = str(entry.get("release_group_mbid") or "")
-                listens = entry.get("total_listen_count")
-                users = entry.get("total_user_count")
-                if mbid not in chunk or listens is None or users is None:
-                    continue
-                stats = {"listeners": int(users), "playcount": int(listens), "tags": []}
-                found[mbid] = stats
-                try:
-                    cache_set(f"{POPULARITY_CACHE_PREFIX}{mbid}", stats)
-                except Exception:
-                    pass
+            # Parse the whole body before any write: a malformed body writes nothing.
+            counts = _parse_counts(body, chunk)
         except Exception:
             continue
+        found.update(counts)
+        for mbid in chunk:
+            if mbid in counts:
+                _store(cache_set, mbid, counts[mbid])
+            else:
+                _store(cache_set, mbid, {"negative": True, "at": clock()})
     return found
 
 
