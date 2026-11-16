@@ -45,6 +45,28 @@ class CountersTests(unittest.TestCase):
         for leaked in ("SECRET", "1234", "/ok", "token"):
             self.assertNotIn(leaked, text)
 
+    def test_install_counts_plain_httpx_callers_once(self):
+        def handler(request):
+            return httpx.Response(200)
+        self.addCleanup(setattr, httpx.Client, "send", rm._ORIGINAL_SEND)
+        self.addCleanup(setattr, httpx.AsyncClient, "send", rm._ORIGINAL_ASEND)
+        rm.count_all_httpx()
+        rm.count_all_httpx()
+        with httpx.Client(transport=httpx.MockTransport(handler)) as plain:
+            plain.get("https://api.deezer.com/x?q=SECRET")
+        with rm.MeteredClient(transport=httpx.MockTransport(handler)) as metered:
+            metered.get("https://api.deezer.com/y")
+        import asyncio
+
+        async def run():
+            async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as c:
+                await c.get("https://last.fm/z")
+        asyncio.run(run())
+        snap = rm.snapshot()["requests"]
+        self.assertEqual(snap["deezer"]["count"], 2)
+        self.assertEqual(snap["lastfm"]["count"], 1)
+        self.assertNotIn("SECRET", json.dumps(snap))
+
     def test_gate_reports_waits_and_refusals(self):
         with tempfile.TemporaryDirectory() as tmp:
             now = [1000.0]

@@ -99,19 +99,52 @@ def record_store(operation: str, seconds: float, locked: bool = False) -> None:
         logger.warning("Store %s took %.0f ms", operation, seconds * 1000)
 
 
+_ORIGINAL_SEND = httpx.Client.send
+_ORIGINAL_ASEND = httpx.AsyncClient.send
+
+
+def _counted_send(request, call):
+    provider = provider_for_url(request.url)
+    started = time.perf_counter()
+    try:
+        response = call()
+    except Exception as exc:
+        record_request(provider, outcome_for_exception(exc), time.perf_counter() - started)
+        raise
+    record_request(provider, outcome_for_status(response.status_code), time.perf_counter() - started)
+    return response
+
+
 class MeteredClient(httpx.Client):
     """An ``httpx.Client`` that counts each request by provider and outcome class."""
 
     def send(self, request, **kwargs):
-        provider = provider_for_url(request.url)
-        started = time.perf_counter()
-        try:
-            response = super().send(request, **kwargs)
-        except Exception as exc:
-            record_request(provider, outcome_for_exception(exc), time.perf_counter() - started)
-            raise
-        record_request(provider, outcome_for_status(response.status_code), time.perf_counter() - started)
-        return response
+        return _counted_send(request, lambda: _ORIGINAL_SEND(self, request, **kwargs))
+
+
+def _patched_send(self, request, **kwargs):
+    return _counted_send(request, lambda: _ORIGINAL_SEND(self, request, **kwargs))
+
+
+async def _patched_asend(self, request, **kwargs):
+    provider = provider_for_url(request.url)
+    started = time.perf_counter()
+    try:
+        response = await _ORIGINAL_ASEND(self, request, **kwargs)
+    except Exception as exc:
+        record_request(provider, outcome_for_exception(exc), time.perf_counter() - started)
+        raise
+    record_request(provider, outcome_for_status(response.status_code), time.perf_counter() - started)
+    return response
+
+
+def count_all_httpx() -> None:
+    """Count every httpx request in this process (``httpx.get``/``post``, any ``Client``, ``AsyncClient``).
+
+    Idempotent. A ``MeteredClient`` bypasses the patched method, so nothing is counted twice.
+    """
+    httpx.Client.send = _patched_send
+    httpx.AsyncClient.send = _patched_asend
 
 
 def snapshot() -> dict:
@@ -143,6 +176,7 @@ def install() -> None:
     """Connect the gate and the store to these counters (call once at web and worker startup)."""
     from integrations import provider_gate
     from intelligence.store import db
+    count_all_httpx()
     provider_gate.set_observer(record_gate)
     db.set_observer(record_store)
 
