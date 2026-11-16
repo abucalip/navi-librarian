@@ -6,6 +6,7 @@ import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.ui.Modifier
+import app.discair.ui.theme.GalleryMotion
 import app.discair.ui.theme.MotionPlans
 import app.discair.ui.theme.currentMotionFamily
 import app.discair.ui.theme.rememberReducedMotion
@@ -33,11 +34,14 @@ fun coverElementKey(routeKey: String): String = "cover/$routeKey"
 fun Modifier.sharedCover(routeKey: String): Modifier {
     val scope = LocalSharedTransitionScope.current ?: return this
     val visibility = LocalNavVisibilityScope.current ?: return this
-    val plan = MotionPlans.sharedCover(currentMotionFamily(), rememberReducedMotion()) ?: return this
+    val reduced = rememberReducedMotion()
+    val plan = MotionPlans.sharedCover(currentMotionFamily(), reduced) ?: return this
+    // Gallery's print travels over 420ms on its own curve (docs/GALLERY_THEME.md section 8); every other theme keeps the plan's timing.
+    val bounds = if (isGallery()) GalleryMotion.sharedCover(reduced) else plan.bounds
     return with(scope) {
         this@sharedCover.sharedElement(
             rememberSharedContentState(coverElementKey(routeKey)), visibility,
-            boundsTransform = { _, _ -> plan.bounds.toTween() },
+            boundsTransform = { _, _ -> bounds.toTween() },
         )
     }
 }

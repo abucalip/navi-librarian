@@ -44,6 +44,9 @@ import app.discair.ui.common.GalleryMenuButton
 import app.discair.ui.common.GalleryPageBar
 import app.discair.ui.common.GalleryPagesRules
 import app.discair.ui.common.GalleryPrint
+import app.discair.ui.common.GalleryMenuItem
+import app.discair.ui.common.GalleryMenuHeader
+import app.discair.ui.common.galleryArrive
 import app.discair.ui.common.GalleryReadMore
 import app.discair.ui.common.GalleryRow
 import app.discair.ui.common.GalleryRules
@@ -52,7 +55,6 @@ import app.discair.ui.common.GalleryType
 import app.discair.ui.common.GetAlbumButton
 import app.discair.ui.common.GetSongButton
 import app.discair.ui.common.pageMetadata
-import app.discair.ui.common.sharedCover
 import app.discair.ui.player.LocalPlayActions
 import app.discair.ui.theme.LocalPalette
 
@@ -81,14 +83,14 @@ internal fun GalleryArtistContent(d: CoverStackArtistData, open: Opener, list: L
     LazyColumn(Modifier.fillMaxSize(), state = list, contentPadding = PaddingValues(bottom = 32.dp + app.discair.ui.LocalBottomClearance.current)) {
         item { GalleryPageBar("Artist", open.back, action = { GalleryMenuButton("More for ${d.name}", menu) }) }
         item {
-            Box(Modifier.fillMaxWidth().padding(top = 8.dp), contentAlignment = Alignment.TopCenter) {
+            Box(Modifier.fillMaxWidth().galleryArrive(0).padding(top = 8.dp), contentAlignment = Alignment.TopCenter) {
                 GalleryPrint(GalleryPagesRules.ARTIST_PRINT_DP.dp) {
                     ArtistPhoto(d.name, owned.firstOrNull()?.artworkUrl, Modifier.fillMaxWidth().aspectRatio(1f), rect = true)
                 }
             }
         }
         item {
-            Column(Modifier.fillMaxWidth().padding(start = gutter, end = gutter, top = 22.dp), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+            Column(Modifier.fillMaxWidth().galleryArrive(1).padding(start = gutter, end = gutter, top = 22.dp), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                 GalleryEyebrow(GalleryPagesRules.artistEyebrow(d.inLibrary, d.ownedAlbumCount ?: owned.size, owned.map { it.year }))
                 Text(d.name, Modifier.padding(top = 4.dp).semantics { heading() }, color = p.text, style = GalleryType.workXL, maxLines = 3, overflow = TextOverflow.Ellipsis)
                 if (genres.isNotEmpty()) Row {
@@ -103,7 +105,7 @@ internal fun GalleryArtistContent(d: CoverStackArtistData, open: Opener, list: L
         }
         if (artistId != null || d.canPaths) item {
             FlowRow(
-                Modifier.fillMaxWidth().padding(start = gutter, end = gutter, top = 16.dp),
+                Modifier.fillMaxWidth().galleryArrive(2).padding(start = gutter, end = gutter, top = 16.dp),
                 horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp), itemVerticalAlignment = Alignment.CenterVertically,
             ) {
                 if (artistId != null) {
@@ -116,19 +118,19 @@ internal fun GalleryArtistContent(d: CoverStackArtistData, open: Opener, list: L
         val allSongs = d.sections.topSongs.items
         if (allSongs.isNotEmpty()) {
             val more = allSongs.size > GalleryPagesRules.SONGS_SHOWN && !showAllSongs
-            item { GallerySectionHead("Top songs", link = if (more) "All top songs" else null, onLink = onAllSongs) }
+            item { Box(Modifier.galleryArrive(3)) { GallerySectionHead("Top songs", link = if (more) "All top songs" else null, onLink = onAllSongs) } }
             val shown = if (showAllSongs) allSongs else allSongs.take(GalleryPagesRules.SONGS_SHOWN)
-            itemsIndexed(shown) { i, song -> TopSongRow(d, song, i < shown.lastIndex) }
+            itemsIndexed(shown) { i, song -> Box(Modifier.galleryArrive(3)) { TopSongRow(d, song, i < shown.lastIndex) } }
         }
         if (owned.isNotEmpty()) {
             val more = owned.size > GalleryPagesRules.ALBUMS_SHOWN && !showAllAlbums
-            item { GallerySectionHead("In your library", link = if (more) "All albums" else null, onLink = { showAllAlbums = true }) }
+            item { Box(Modifier.galleryArrive(4)) { GallerySectionHead("In your library", link = if (more) "All albums" else null, onLink = { showAllAlbums = true }) } }
             val shown = if (showAllAlbums) owned else owned.take(GalleryPagesRules.ALBUMS_SHOWN)
             items2(shown) { pair ->
                 Row(Modifier.fillMaxWidth().padding(horizontal = gutter).padding(bottom = 20.dp), horizontalArrangement = Arrangement.spacedBy(18.dp)) {
                     pair.forEach { album ->
-                        GalleryCaption(album.name, album.year?.toString().orEmpty(), Modifier.weight(1f), onClick = { open.album(album.key, d.name, album.name, album.id, album.year) }) {
-                            AlbumCover(d.name, album.name, album.artworkUrl, Modifier.fillMaxWidth().aspectRatio(1f).sharedCover(album.key), rect = true)
+                        GalleryCaption(album.name, album.year?.toString().orEmpty(), Modifier.weight(1f), sharedKey = album.key, onClick = { open.album(album.key, d.name, album.name, album.id, album.year) }) {
+                            AlbumCover(d.name, album.name, album.artworkUrl, Modifier.fillMaxWidth().aspectRatio(1f), rect = true)
                         }
                     }
                     if (pair.size == 1) Box(Modifier.weight(1f))
@@ -184,10 +186,13 @@ private fun TopSongRow(d: CoverStackArtistData, song: TopSong, divider: Boolean)
             if (song.owned && albumId != null) GalleryMenuButton(
                 "More ways to play ${song.name}",
                 listOf(
-                    "Play next" to { play.queueTrack(albumId, song.name, null, next = true) },
-                    "Add to queue" to { play.queueTrack(albumId, song.name, null, next = false) },
-                    "Download to device" to { play.downloadTrack(albumId, song.name, null) },
+                    GalleryMenuItem("Play next", GalleryIcons.Next) { play.queueTrack(albumId, song.name, null, next = true) },
+                    GalleryMenuItem("Add to queue", GalleryIcons.QueueAdd) { play.queueTrack(albumId, song.name, null, next = false) },
+                    GalleryMenuItem("Download to device", GalleryIcons.Download) { play.downloadTrack(albumId, song.name, null) },
                 ),
+                header = GalleryMenuHeader(song.name, GalleryPagesRules.menuLine(d.name, onAlbum)) {
+                    AlbumCover(d.name, onAlbum ?: song.name, ownedAlbum?.artworkUrl, Modifier.fillMaxSize(), rect = true)
+                },
             )
         },
     )

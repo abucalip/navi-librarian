@@ -21,8 +21,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -80,8 +78,13 @@ import app.discair.ui.common.gallerySpot
 import app.discair.ui.common.pageMetadata
 import app.discair.ui.common.rememberAlbumYear
 import app.discair.ui.common.rememberLoad
+import app.discair.ui.common.galleryArrive
+import app.discair.ui.common.GalleryMenuItem
+import app.discair.ui.common.GalleryMenuHeader
+import app.discair.ui.common.GalleryMenuSheet
+import app.discair.ui.common.GalleryPagesRules
+import androidx.compose.foundation.layout.fillMaxSize
 import app.discair.ui.common.routeKey
-import app.discair.ui.common.sharedCover
 import app.discair.ui.discover.lensName
 import app.discair.ui.player.LocalPlayActions
 import app.discair.ui.radio.LocalRadio
@@ -129,21 +132,29 @@ internal fun GalleryHome(
     val artistTotal = (artistPage.state as? Load.Ready)?.value?.total
     val listeningKnown = recent.state !is Load.Loading && frequent.state !is Load.Loading
     var tab by remember { mutableStateOf(FlowHomeRules.tabOf(readTab(context))) }
+    // The hero's album: Played lately leaves that album's print out of the shared transition, so one key is never on the page twice.
+    var heroKey by remember { mutableStateOf<String?>(null) }
     val bottom = 24.dp + app.discair.ui.LocalBottomClearance.current
 
     LazyColumn(Modifier.fillMaxWidth(), contentPadding = PaddingValues(top = 0.dp, bottom = bottom)) {
+        // Each block rises in turn as the page arrives (galleryArrive); the count follows the blocks actually shown.
+        var block = 0
         data.banner?.let { item(key = "banner") { GalleryBanner(it, link = "Server", onLink = onServer) } }
+        val heroAt = block++
         item(key = "hero") {
-            Hero(tab, { tab = it; writeTab(context, it) }, data, newest.state, newest.reload, recent.state, recent.reload, open, feedback)
+            Box(Modifier.galleryArrive(heroAt)) {
+                Hero(tab, { tab = it; writeTab(context, it) }, data, newest.state, newest.reload, recent.state, recent.reload, open, feedback, onShownKey = { heroKey = it })
+            }
         }
-        if (recentList.isNotEmpty()) item(key = "lately") { PlayedLately(recentList.take(GalleryHomeRules.PLAYED_SHOWN), open, onLibrary) }
-        item(key = "artists") { ArtistsBlock(artists, counts, listeningKnown, open, onLibrary) }
+        if (recentList.isNotEmpty()) { val at = block++; item(key = "lately") { Box(Modifier.galleryArrive(at)) { PlayedLately(recentList.take(GalleryHomeRules.PLAYED_SHOWN), open, onLibrary, heroKey) } } }
+        val artistsAt = block++
+        item(key = "artists") { Box(Modifier.galleryArrive(artistsAt)) { ArtistsBlock(artists, counts, listeningKnown, open, onLibrary) } }
         val stationList = (stations.state as? Load.Ready)?.value.orEmpty()
-        if (stationList.isNotEmpty()) item(key = "radio") {
-            RadioBlock(stationList, (plays.state as? Load.Ready)?.value.orEmpty(), now, onRadio, onOpenPlayer)
-        }
-        data.insight?.let { card -> item(key = "week") { ThisWeek(card, open) } }
-        if (data.arrivals.isNotEmpty()) item(key = "arrivals") { Arrivals(data.arrivals.take(2), open, onDownloads) }
+        if (stationList.isNotEmpty()) { val at = block++; item(key = "radio") {
+            Box(Modifier.galleryArrive(at)) { RadioBlock(stationList, (plays.state as? Load.Ready)?.value.orEmpty(), now, onRadio, onOpenPlayer) }
+        } }
+        data.insight?.let { card -> val at = block++; item(key = "week") { Box(Modifier.galleryArrive(at)) { ThisWeek(card, open) } } }
+        if (data.arrivals.isNotEmpty()) { val at = block++; item(key = "arrivals") { Box(Modifier.galleryArrive(at)) { Arrivals(data.arrivals.take(2), open, onDownloads) } } }
         item(key = "genres") { Genres(data.genres, open, onLibrary) }
         item(key = "library") { LibraryLine(GalleryHomeRules.libraryLine(data.hero, artistTotal), onStats) }
     }
@@ -200,7 +211,7 @@ private fun Load<List<ShelfAlbum>>.heroes(): Load<List<HeroItem>> = when (this) 
 private fun Hero(
     tab: FlowHomeRules.Tab, onTab: (FlowHomeRules.Tab) -> Unit, data: GalleryHomeData,
     newest: Load<List<ShelfAlbum>>, retryNewest: () -> Unit, recent: Load<List<ShelfAlbum>>, retryRecent: () -> Unit,
-    open: Opener, feedback: (FeedbackAction, Pick) -> Unit,
+    open: Opener, feedback: (FeedbackAction, Pick) -> Unit, onShownKey: (String?) -> Unit,
 ) {
     val p = LocalPalette.current
     val density = LocalDensity.current
@@ -218,6 +229,8 @@ private fun Hero(
     var index by remember(tab) { mutableIntStateOf(0) }
     val at = FlowHomeRules.clamp(index, items.size)
     val item = items.getOrNull(at)
+    val shownKey = item?.let { routeKey(it.artist, it.title) }
+    androidx.compose.runtime.SideEffect { onShownKey(shownKey) }
     val step = { delta: Int -> index = FlowHomeRules.step(at, items.size, delta) }
     Column {
         GallerySourceSwitch(FlowHomeRules.labels, tab.ordinal, { onTab(FlowHomeRules.Tab.entries[it]) }, Modifier.padding(top = 6.dp))
@@ -254,8 +267,8 @@ private fun Hero(
                     val year = if (tab == FlowHomeRules.Tab.Picks) rememberAlbumYear(item.artist, item.title, item.year) else item.year
                     val key = routeKey(item.artist, item.title)
                     val openAlbum = { open.album(key, item.artist, item.title, item.albumId, year) }
-                    GalleryPrint(width, Modifier.clickable(role = Role.Button, onClickLabel = "Open ${item.title}", onClick = openAlbum)) {
-                        AlbumCover(item.artist, item.title, item.artworkUrl, Modifier.fillMaxWidth().aspectRatio(1f).sharedCover(key), rect = true)
+                    GalleryPrint(width, Modifier.clickable(role = Role.Button, onClickLabel = "Open ${item.title}", onClick = openAlbum), sharedKey = key) {
+                        AlbumCover(item.artist, item.title, item.artworkUrl, Modifier.fillMaxWidth().aspectRatio(1f), rect = true)
                     }
                     Column(Modifier.width(width).padding(top = 20.dp), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
@@ -318,10 +331,17 @@ private fun androidx.compose.foundation.layout.RowScope.PickActions(pick: Pick, 
     GalleryButton(if (saved) "Saved" else "Save", { saved = true; onFeedback(FeedbackAction.Save, pick) }, kind = GalleryButtonKind.Text, icon = GalleryIcons.Bookmark, enabled = !saved)
     Box(modifier, contentAlignment = Alignment.CenterEnd) {
         app.discair.ui.common.GalleryIconButton(GalleryIcons.More, "More for ${pick.album}", { menu = true })
-        DropdownMenu(menu, onDismissRequest = { menu = false }) {
-            DropdownMenuItem(text = { Text("Not this album") }, onClick = { menu = false; onFeedback(FeedbackAction.Dismiss, pick) })
-            DropdownMenuItem(text = { Text("Never suggest artist") }, onClick = { menu = false; onFeedback(FeedbackAction.DismissArtist, pick) })
-        }
+        // The pick menu (mockup sheets, frame 1): the pick's print and catalogue line, then the two ways to say no with what each does.
+        if (menu) GalleryMenuSheet(
+            listOf(
+                GalleryMenuItem("Not this album", GalleryIcons.Close, "It leaves your picks") { onFeedback(FeedbackAction.Dismiss, pick) },
+                GalleryMenuItem("Never suggest artist", GalleryIcons.Ban, "${pick.artist} leaves every list") { onFeedback(FeedbackAction.DismissArtist, pick) },
+            ),
+            onDismiss = { menu = false },
+            header = GalleryMenuHeader(pick.album, GalleryPagesRules.menuLine(pick.artist, pick.year?.toString())) {
+                AlbumCover(pick.artist, pick.album, null, Modifier.fillMaxSize(), rect = true)
+            },
+        )
     }
 }
 
@@ -335,17 +355,23 @@ private fun androidx.compose.foundation.layout.RowScope.PlayActions(item: HeroIt
     GalleryButton("Shuffle", { id?.let { play.playAlbum(it, shuffle = true) } }, kind = GalleryButtonKind.Text, icon = GalleryIcons.Shuffle, enabled = id != null)
     Box(modifier, contentAlignment = Alignment.CenterEnd) {
         app.discair.ui.common.GalleryIconButton(GalleryIcons.More, "More for ${item.title}", { menu = true })
-        DropdownMenu(menu, onDismissRequest = { menu = false }) {
-            DropdownMenuItem(text = { Text("Play next") }, enabled = id != null, onClick = { menu = false; id?.let { play.queueAlbum(it, next = true) } })
-            DropdownMenuItem(text = { Text("Add to queue") }, enabled = id != null, onClick = { menu = false; id?.let { play.queueAlbum(it, next = false) } })
-        }
+        if (menu) GalleryMenuSheet(
+            listOf(
+                GalleryMenuItem("Play next", GalleryIcons.Next, enabled = id != null) { id?.let { play.queueAlbum(it, next = true) } },
+                GalleryMenuItem("Add to queue", GalleryIcons.QueueAdd, enabled = id != null) { id?.let { play.queueAlbum(it, next = false) } },
+            ),
+            onDismiss = { menu = false },
+            header = GalleryMenuHeader(item.title, GalleryPagesRules.menuLine(item.artist, item.year?.toString())) {
+                AlbumCover(item.artist, item.title, item.artworkUrl, Modifier.fillMaxSize(), rect = true)
+            },
+        )
     }
 }
 
 // ----- 4. played lately ----------------------------------------------------------------------------------------
 
 @Composable
-private fun PlayedLately(albums: List<ShelfAlbum>, open: Opener, onAll: () -> Unit) {
+private fun PlayedLately(albums: List<ShelfAlbum>, open: Opener, onAll: () -> Unit, heroKey: String?) {
     val p = LocalPalette.current
     GallerySectionHead("Played lately", link = "All", onLink = onAll)
     Row(Modifier.fillMaxWidth().padding(horizontal = Gutter), horizontalArrangement = Arrangement.spacedBy(18.dp)) {
@@ -355,7 +381,7 @@ private fun PlayedLately(albums: List<ShelfAlbum>, open: Opener, onAll: () -> Un
                 Modifier.weight(1f).clickable(role = Role.Button) { open.album(key, album.artist, album.name, album.id.ifBlank { null }, album.year) },
                 verticalArrangement = Arrangement.spacedBy(9.dp),
             ) {
-                GalleryPrint(151.dp, Modifier.fillMaxWidth(), small = true) {
+                GalleryPrint(151.dp, Modifier.fillMaxWidth(), small = true, sharedKey = key.takeIf { it != heroKey }) {
                     AlbumCover(album.artist, album.name, album.artworkUrl, Modifier.fillMaxWidth().aspectRatio(1f), rect = true)
                 }
                 Text(album.name, color = p.text, style = GalleryType.rowWork, maxLines = 1, overflow = TextOverflow.Ellipsis)

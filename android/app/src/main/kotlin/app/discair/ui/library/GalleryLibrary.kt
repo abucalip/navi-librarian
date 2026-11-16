@@ -19,6 +19,7 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -55,12 +56,14 @@ import app.discair.ui.common.GalleryMuted
 import app.discair.ui.common.GalleryPageHead
 import app.discair.ui.common.GalleryPagesRules
 import app.discair.ui.common.GalleryPrint
+import app.discair.ui.common.GalleryMenuItem
+import app.discair.ui.common.GalleryMenuHeader
+import app.discair.ui.common.galleryArrive
 import app.discair.ui.common.GalleryRow
 import app.discair.ui.common.GalleryRules
 import app.discair.ui.common.GalleryTabs
 import app.discair.ui.common.LocalRepository
 import app.discair.ui.common.plural
-import app.discair.ui.common.sharedCover
 import app.discair.ui.player.LocalPlayActions
 import app.discair.ui.theme.LocalPalette
 
@@ -131,9 +134,9 @@ private fun ArtistRows(state: LibraryState, model: LibraryViewModel, open: Opene
             .collect { last -> if (last >= list.layoutInfo.totalItemsCount - 6) model.loadMore() }
     }
     LazyColumn(Modifier.fillMaxSize(), state = list, contentPadding = PaddingValues(top = 4.dp, bottom = LocalBottomClearance.current)) {
-        items(state.artists, key = { it.id }) { artist ->
+        itemsIndexed(state.artists, key = { _, it -> it.id }) { i, artist ->
             GalleryRow(
-                artist.name, Modifier.animateItem().padding(horizontal = Gutter), sub = plural(artist.albumCount, "album"),
+                artist.name, Modifier.animateItem().galleryArrive(i).padding(horizontal = Gutter), sub = plural(artist.albumCount, "album"),
                 onClick = { open.artist(artist.name, artist.key, artist.id, null) },
                 lead = {
                     GalleryPrint(GalleryPagesRules.PHOTO_PRINT_DP.dp, Modifier.width(GalleryPagesRules.PHOTO_PRINT_DP.dp)) {
@@ -145,11 +148,14 @@ private fun ArtistRows(state: LibraryState, model: LibraryViewModel, open: Opene
                     GalleryMenuButton(
                         "More ways to play ${artist.name}",
                         listOf(
-                            "Play" to { play.playArtist(artist.id, shuffle = false) },
-                            "Shuffle" to { play.playArtist(artist.id, shuffle = true) },
-                            "Play next" to { play.queueArtist(artist.id, next = true) },
-                            "Add to queue" to { play.queueArtist(artist.id, next = false) },
+                            GalleryMenuItem("Play", GalleryIcons.Play) { play.playArtist(artist.id, shuffle = false) },
+                            GalleryMenuItem("Shuffle", GalleryIcons.Shuffle) { play.playArtist(artist.id, shuffle = true) },
+                            GalleryMenuItem("Play next", GalleryIcons.Next) { play.queueArtist(artist.id, next = true) },
+                            GalleryMenuItem("Add to queue", GalleryIcons.QueueAdd) { play.queueArtist(artist.id, next = false) },
                         ),
+                        header = GalleryMenuHeader(artist.name, plural(artist.albumCount, "album")) {
+                            Cover(artist.artworkUrl?.let { repo.absolute(it) }, Modifier.fillMaxSize(), rect = true)
+                        },
                     )
                     Icon(GalleryIcons.Chevron, null, tint = p.control, modifier = Modifier.size(GalleryRules.ICON_INLINE.dp))
                 },
@@ -182,9 +188,9 @@ private fun AlbumGrid(state: LibraryState, model: LibraryViewModel, open: Opener
         items(state.albums.size, key = { state.albums[it].id }) { i ->
             val album = state.albums[i]
             GalleryCaption(
-                album.name, GalleryPagesRules.maker(album.artist, album.year), Modifier.animateItem(),
+                album.name, GalleryPagesRules.maker(album.artist, album.year), Modifier.animateItem().galleryArrive(i / 2), sharedKey = album.key,
                 onClick = { open.album(album.key, album.artist, album.name, album.id, album.year) },
-            ) { Cover(album.artworkUrl?.let { repo.absolute(it) }, Modifier.fillMaxWidth().aspectRatio(1f).sharedCover(album.key), rect = true) }
+            ) { Cover(album.artworkUrl?.let { repo.absolute(it) }, Modifier.fillMaxWidth().aspectRatio(1f), rect = true) }
         }
     }
 }

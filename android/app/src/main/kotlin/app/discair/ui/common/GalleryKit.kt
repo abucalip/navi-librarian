@@ -156,12 +156,17 @@ object GalleryType {
  * [bare] is the mini player's cover (no mat, no shadow); [small] forces the 5dp mat and the small shadow on a wider cover (Home's "Played lately" prints).
  */
 @Composable
-fun GalleryPrint(size: Dp, modifier: Modifier = Modifier, player: Boolean = false, bare: Boolean = false, small: Boolean = false, content: @Composable () -> Unit) {
+fun GalleryPrint(
+    size: Dp, modifier: Modifier = Modifier, player: Boolean = false, bare: Boolean = false, small: Boolean = false, sharedKey: String? = null,
+    content: @Composable () -> Unit,
+) {
     val p = LocalPalette.current
-    if (bare) { Box(modifier.size(size)) { content() }; return }
+    // [sharedKey] is the album's route key: the whole print, mat and shadow included, travels into the album page's print (docs/GALLERY_THEME.md section 8).
+    val shared = if (sharedKey != null) modifier.sharedCover(sharedKey) else modifier
+    if (bare) { Box(shared.size(size)) { content() }; return }
     val large = !small && size.value >= GalleryRules.SMALL_BELOW
     val mat = (if (small) GalleryRules.MAT_SMALL else GalleryRules.mat(size.value, player)).dp
-    Box(modifier.galleryShadow(large, p).background(p.mat).padding(mat)) { content() }
+    Box(shared.galleryShadow(large, p).background(p.mat).padding(mat)) { content() }
 }
 
 /** The wall shadow of a print: each layer of [GalleryRules.shadow] drawn as a blurred rectangle, inflated by its (negative) spread and shifted down. */

@@ -40,6 +40,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.serialization.json.JsonObject
@@ -51,33 +52,70 @@ import app.discair.ui.theme.LocalPalette
  * mockup: docs/design/gallery/pages/album-artist-genre.html. The measurements are gallery.css (1 CSS px = 1dp).
  */
 
+/** One option of a Gallery menu sheet: a 22dp icon, the label (Manrope 600 15) and an optional small explanation under it. */
+data class GalleryMenuItem(val label: String, val icon: ImageVector? = null, val detail: String? = null, val enabled: Boolean = true, val run: () -> Unit)
+
+/** The sheet's header (mockup sheets, frames 1 and 2): a 58dp print, the work title (Fraunces italic) and its catalogue line, then a rule. */
+class GalleryMenuHeader(val title: String, val line: String, val cover: @Composable () -> Unit)
+
 /** The three-dot button of a page bar or a row, with the menu it opens. Draws nothing when there is nothing to offer. */
 @Composable
 fun GalleryMenuButton(label: String, items: List<Pair<String, () -> Unit>>, modifier: Modifier = Modifier) {
+    GalleryMenuButton(label, items.map { (text, run) -> GalleryMenuItem(text, run = run) }, modifier, header = null)
+}
+
+/** The three-dot button with a sheet of [items] under an optional [header]. Draws nothing when there is nothing to offer. */
+@Composable
+fun GalleryMenuButton(label: String, items: List<GalleryMenuItem>, modifier: Modifier = Modifier, header: GalleryMenuHeader?) {
     if (items.isEmpty()) return
     var open by remember { mutableStateOf(false) }
     Box(modifier) {
         GalleryIconButton(GalleryIcons.More, label, { open = true })
-        if (open) GalleryMenuSheet(items, onDismiss = { open = false })
+        if (open) GalleryMenuSheet(items, onDismiss = { open = false }, header = header)
     }
 }
 
 /**
- * The pick and song menus as Gallery draws them (mockup sheets, frames 1 and 2): a bottom sheet of 62dp option rows, Manrope 600 15, divided by hairlines.
- * Choosing a row closes the sheet and runs it; a swipe, the scrim and Back close it without running anything.
+ * The pick and song menus as Gallery draws them (mockup sheets, frames 1 and 2): a bottom sheet with the optional print header, then 62dp option rows
+ * (icon 22, Manrope 600 15, a small explanation) divided by hairlines. Choosing a row closes the sheet and runs it; a swipe, the scrim and Back close it
+ * without running anything.
  */
 @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
-fun GalleryMenuSheet(items: List<Pair<String, () -> Unit>>, onDismiss: () -> Unit) {
+fun GalleryMenuSheet(items: List<GalleryMenuItem>, onDismiss: () -> Unit, header: GalleryMenuHeader? = null) {
     val p = LocalPalette.current
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = androidx.compose.material3.rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
         Column(Modifier.fillMaxWidth().padding(horizontal = GalleryRules.GUTTER.dp).padding(bottom = 16.dp)) {
-            items.forEachIndexed { i, (text, run) ->
+            if (header != null) {
+                Row(
+                    Modifier.fillMaxWidth().padding(bottom = 14.dp).semantics(mergeDescendants = true) { },
+                    horizontalArrangement = Arrangement.spacedBy(14.dp), verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    GalleryPrint(GalleryPagesRules.MENU_PRINT_DP.dp, Modifier.width(GalleryPagesRules.MENU_PRINT_DP.dp), small = true) {
+                        Box(Modifier.fillMaxWidth().aspectRatio(1f)) { header.cover() }
+                    }
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                        Text(header.title, color = p.text, style = GalleryType.workM, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                        if (header.line.isNotEmpty()) GalleryEyebrow(header.line)
+                    }
+                }
+                GalleryRule()
+            }
+            items.forEachIndexed { i, item ->
                 if (i > 0) GalleryRule()
-                Box(
-                    Modifier.fillMaxWidth().heightIn(min = 62.dp).clickable(role = Role.Button, onClick = { onDismiss(); run() }),
-                    contentAlignment = Alignment.CenterStart,
-                ) { Text(text, color = p.text, style = GalleryType.rowTitle()) }
+                val tint = if (item.enabled) p.text else p.textMuted
+                Row(
+                    Modifier.fillMaxWidth().heightIn(min = 62.dp)
+                        .clickable(enabled = item.enabled, role = Role.Button, onClick = { onDismiss(); item.run() })
+                        .semantics(mergeDescendants = true) { },
+                    horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    item.icon?.let { Icon(it, null, tint = if (item.enabled) p.control else p.textMuted, modifier = Modifier.size(GalleryRules.ICON.dp)) }
+                    Column(Modifier.weight(1f).padding(vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        Text(item.label, color = tint, style = GalleryType.rowTitle())
+                        item.detail?.let { Text(it, color = p.textMuted, style = GalleryType.small()) }
+                    }
+                }
             }
         }
     }
@@ -171,14 +209,14 @@ fun GalleryPlayingBars(playing: Boolean, modifier: Modifier = Modifier) {
 /** A cover in a print with its caption under it: the work in Fraunces italic, then a small line (gallery.css `.cap`). Two sit side by side in a grid. */
 @Composable
 fun GalleryCaption(
-    title: String, sub: String, modifier: Modifier = Modifier, state: String? = null, onClick: () -> Unit, cover: @Composable () -> Unit,
+    title: String, sub: String, modifier: Modifier = Modifier, state: String? = null, sharedKey: String? = null, onClick: () -> Unit, cover: @Composable () -> Unit,
 ) {
     val p = LocalPalette.current
     Column(
         modifier.clickable(role = Role.Button, onClick = onClick).semantics(mergeDescendants = true) { contentDescription = if (sub.isEmpty()) title else "$title, $sub" },
         verticalArrangement = Arrangement.spacedBy(9.dp),
     ) {
-        GalleryPrint(GalleryPagesRules.CAPTION_PRINT_DP.dp, Modifier.fillMaxWidth(), small = true) { cover() }
+        GalleryPrint(GalleryPagesRules.CAPTION_PRINT_DP.dp, Modifier.fillMaxWidth(), small = true, sharedKey = sharedKey) { cover() }
         Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
             Text(title, color = p.text, style = GalleryType.rowWork.copy(lineHeight = 19.sp), maxLines = 1, overflow = TextOverflow.Ellipsis)
             if (sub.isNotEmpty()) Text(sub, color = p.textMuted, style = GalleryType.small().copy(fontSize = 12.sp, lineHeight = 14.sp), maxLines = 1, overflow = TextOverflow.Ellipsis)

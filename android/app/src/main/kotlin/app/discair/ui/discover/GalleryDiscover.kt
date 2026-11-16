@@ -75,6 +75,7 @@ import app.discair.ui.common.GalleryTabs
 import app.discair.ui.common.GalleryType
 import app.discair.ui.common.SaveState
 import app.discair.ui.common.rememberAlbumYear
+import app.discair.ui.common.galleryArrive
 import app.discair.ui.common.routeKey
 import app.discair.ui.theme.LocalPalette
 import java.time.LocalDate
@@ -126,14 +127,22 @@ internal fun GalleryDiscoverList(
         empty()
         return
     }
+    // An album can sit in two lens rows; only its first entry carries the shared print, so one key is never on the page twice.
+    val sharedOwner = remember(sections) {
+        buildMap { for (sec in sections) for (e in sec.entries) putIfAbsent(routeKey(e.item.artistName, e.item.album), FlowDiscoverRules.itemKey(sec, e)) }
+    }
     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(top = 6.dp, bottom = 16.dp + LocalBottomClearance.current)) {
+        var block = 0 // the first six headings and entries rise in turn as the page arrives
         for (section in sections) {
             val title = section.title
-            if (title != null) item(key = "h:$title") { GallerySectionHead(title) }
+            if (title != null) { val at = block++; item(key = "h:$title") { GallerySectionHead(title, Modifier.galleryArrive(at)) } }
+            val first = block
+            block += section.entries.size
             section.note?.let { note -> item(key = "n:${section.title}") { GalleryMuted(note, Modifier.padding(horizontal = Gutter, vertical = 8.dp)) } }
             itemsIndexedEntries(section) { index, entry ->
+                val albumKey = routeKey(entry.item.artistName, entry.item.album)
                 GalleryDiscoverEntry(
-                    index, entry, open, saves[entry.key] ?: if (defaultSaved) SaveState.Saved else SaveState.Idle, { onSave(entry) }, { artistToo -> onDismiss(entry, artistToo) },
+                    first + index, index, entry, albumKey.takeIf { sharedOwner[it] == FlowDiscoverRules.itemKey(section, entry) }, open, saves[entry.key] ?: if (defaultSaved) SaveState.Saved else SaveState.Idle, { onSave(entry) }, { artistToo -> onDismiss(entry, artistToo) },
                 )
             }
         }
@@ -149,7 +158,7 @@ private fun androidx.compose.foundation.lazy.LazyListScope.itemsIndexedEntries(
 /** One entry (mockup frame 1): a 104dp print, "No. 01 · Post-rock", the work in Fraunces italic, "Artist, year", the reason in italic, then the actions. */
 @Composable
 private fun androidx.compose.foundation.lazy.LazyItemScope.GalleryDiscoverEntry(
-    index: Int, entry: DiscoveryEntry, open: Opener, saveState: SaveState, onSave: () -> Unit, onDismiss: (artistToo: Boolean) -> Unit,
+    block: Int, index: Int, entry: DiscoveryEntry, sharedKey: String?, open: Opener, saveState: SaveState, onSave: () -> Unit, onDismiss: (artistToo: Boolean) -> Unit,
 ) {
     val p = LocalPalette.current
     val item = entry.item
@@ -157,9 +166,9 @@ private fun androidx.compose.foundation.lazy.LazyItemScope.GalleryDiscoverEntry(
     val year = rememberAlbumYear(artist, item.album, item.year)
     val openAlbum = { open.album(routeKey(artist, item.album), artist, item.album, null, item.year) }
     val reason = pickReason(item.because, item.similarTo)
-    Column(Modifier.animateItem().padding(horizontal = Gutter)) {
+    Column(Modifier.animateItem().galleryArrive(block).padding(horizontal = Gutter)) {
         Row(Modifier.fillMaxWidth().padding(vertical = 18.dp), horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.Top) {
-            GalleryPrint(GalleryListsRules.ENTRY_PRINT_DP.dp, Modifier.width(GalleryListsRules.ENTRY_PRINT_DP.dp), small = true) {
+            GalleryPrint(GalleryListsRules.ENTRY_PRINT_DP.dp, Modifier.width(GalleryListsRules.ENTRY_PRINT_DP.dp), small = true, sharedKey = sharedKey) {
                 AlbumCover(artist, item.album, null, Modifier.fillMaxWidth().aspectRatio(1f).clickable(role = Role.Button, onClick = openAlbum), rect = true)
             }
             Column(Modifier.weight(1f)) {
