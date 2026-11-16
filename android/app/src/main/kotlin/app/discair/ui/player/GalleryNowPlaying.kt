@@ -4,6 +4,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.animation.core.Animatable
 import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.gestures.draggable
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.foundation.gestures.Orientation
 import android.provider.Settings
 import androidx.compose.animation.AnimatedVisibility
@@ -233,20 +234,44 @@ fun GalleryPlayerFrame(onDismiss: () -> Unit, content: @Composable (close: () ->
                 exit = slideOutVertically(tween(fall, easing = RiseEase)) { it },
             ) {
                 // Swipe down lowers the page: it follows the finger, and past a quarter of the screen (or on a quick flick) it falls; otherwise it springs back.
-                // Lists inside (Queue, Lyrics) keep their own scrolling; the drag is taken where nothing else scrolls (the print, the transport, the bar).
+                // Where nothing scrolls (the print, the transport, the bar) the page takes the drag itself. On Queue and Lyrics the list scrolls first: once
+                // it is at its top, the rest of a downward drag lowers the page (nested scroll), and an upward drag lifts a lowered page before the list moves.
                 val drag = remember { Animatable(0f) }
                 val density = LocalDensity.current
+                val flickPx = with(density) { 1200.dp.toPx() }
+                suspend fun release(velocity: Float) {
+                    val far = drag.value > (flight.page?.size?.height ?: 0) / 4f
+                    if (far || velocity > flickPx) close() else drag.animateTo(0f, tween(220, easing = RiseEase))
+                }
+                val lists = remember(drag) {
+                    object : androidx.compose.ui.input.nestedscroll.NestedScrollConnection {
+                        override fun onPreScroll(available: androidx.compose.ui.geometry.Offset, source: androidx.compose.ui.input.nestedscroll.NestedScrollSource): androidx.compose.ui.geometry.Offset {
+                            if (drag.value <= 0f || available.y >= 0f) return androidx.compose.ui.geometry.Offset.Zero
+                            val used = maxOf(available.y, -drag.value)
+                            scope.launch { drag.snapTo(drag.value + used) }
+                            return androidx.compose.ui.geometry.Offset(0f, used)
+                        }
+                        override fun onPostScroll(consumed: androidx.compose.ui.geometry.Offset, available: androidx.compose.ui.geometry.Offset, source: androidx.compose.ui.input.nestedscroll.NestedScrollSource): androidx.compose.ui.geometry.Offset {
+                            // Only the finger lowers the page: a fling that reaches the list's top stops there.
+                            if (available.y <= 0f || source != androidx.compose.ui.input.nestedscroll.NestedScrollSource.UserInput) return androidx.compose.ui.geometry.Offset.Zero
+                            scope.launch { drag.snapTo(drag.value + available.y) }
+                            return androidx.compose.ui.geometry.Offset(0f, available.y)
+                        }
+                        override suspend fun onPreFling(available: androidx.compose.ui.unit.Velocity): androidx.compose.ui.unit.Velocity {
+                            if (drag.value <= 0f) return androidx.compose.ui.unit.Velocity.Zero
+                            release(available.y)
+                            return available
+                        }
+                    }
+                }
                 Box(
                     Modifier.fillMaxSize()
                         .graphicsLayer { translationY = drag.value }
+                        .nestedScroll(lists)
                         .draggable(
                             rememberDraggableState { d -> scope.launch { drag.snapTo((drag.value + d).coerceAtLeast(0f)) } },
                             Orientation.Vertical,
-                            onDragStopped = { v ->
-                                val far = drag.value > (flight.page?.size?.height ?: 0) / 4f
-                                val flick = v > with(density) { 1200.dp.toPx() }
-                                if (far || flick) close() else drag.animateTo(0f, tween(220, easing = RiseEase))
-                            },
+                            onDragStopped = { v -> release(v) },
                         )
                         .onGloballyPositioned { flight.page = it },
                 ) { content(close) }

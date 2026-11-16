@@ -66,4 +66,11 @@ class GalleryMotionTest {
         assertEquals(1f, GalleryMotion.riseFraction(5, GalleryMotion.arrivalMs(false).toFloat()), 0f)
         assertEquals(0, GalleryMotion.arrivalMs(reduced = true))
     }
+
+    @Test fun theHeroSlidesOnTheTravelCurve() {
+        assertEquals(380, GalleryMotion.heroSlide(reduced = false).durationMs)
+        assertEquals(Curve.Curved(GalleryMotion.TRAVEL), GalleryMotion.heroSlide(reduced = false).curve)
+        // With animations removed the album changes in place.
+        assertEquals(0, GalleryMotion.heroSlide(reduced = true).durationMs)
+    }
 }
