@@ -218,7 +218,7 @@ Step identifiers are stable; refer to them in PR titles. **Model** names the sin
 #### R3. Route every MusicBrainz call through the gate
 
 - **Objective:** total MusicBrainz traffic from this host never exceeds one request per 1.1 s.
-- **Current state:** the pacers and direct callers listed in F2.
+- **Current state:** part 1 (worker side: `api_fill.Paced`, `provider_runtime`, `set_fetchers`) merged in PR #1136 (2026-11-16). Part 2 (web side: `discovery/` callers, `integrations/musicbrainz/album_year.py`, `rating_client.py`, `recording_album.py`, artwork `HostPacer`, `SourceLimiter`) open; the pending modules are the `PENDING` set in `tests/test_musicbrainz_gate_boundary.py`. Pacers and direct callers were listed in F2.
 - **Proposed changes:** replace each private MusicBrainz pacer with `provider_gate.reserve("musicbrainz", max_wait)`; add the reservation to direct callers that have none; call `penalize` on 429 and 503. Then delete the superseded pacing code (`Paced` interval logic, `_paced_json` spacing, `album_year` lock and `_last_request`, the `musicbrainz` entry of `SourceLimiter`).
 - **Affected components:** the files listed in F2.
 - **Implementation guidance:** first produce the call-site inventory in the PR description (file, function, current pacing, caller's deadline). Keep each function's injected `sleep` or `pause` parameters where tests use them, defaulting to the gate. Preserve retry counts and budgets exactly; this step changes spacing only. Split into two PRs if the diff is large: worker-side (`intelligence/`) first, then web-side (`discovery/`, `integrations/`).
