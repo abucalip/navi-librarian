@@ -615,8 +615,8 @@ class GateSlotTests(unittest.TestCase):
     def test_every_attempt_takes_a_slot_and_a_refusal_sends_nothing(self):
         lane, client = FreeLane(), _ScriptedClient([503, 200])
         _get_with_bounded_retry(client, "https://musicbrainz.org/ws/2/x", params={}, headers={}, lane=lane)
-        self.assertEqual((lane.acquired, len(client.calls)), (2, 2))
+        self.assertEqual((lane.acquired, client.calls), (2, 2))
         refused, silent = FreeLane(grant=False), _ScriptedClient([200])
         with self.assertRaises(RuntimeError):
             _get_with_bounded_retry(silent, "https://musicbrainz.org/ws/2/x", params={}, headers={}, lane=refused)
-        self.assertEqual(silent.calls, [])
+        self.assertEqual(silent.calls, 0)
