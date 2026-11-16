@@ -99,11 +99,11 @@ class Runtime(unittest.TestCase):
                 ingest_album(self.db, album(n, aid, am, rel_mbid(base, k)), now=1.0)
 
     def tick(self, fake, budget, ttl=30 * 86400.0, now=NOW):
-        return refresh_provider_lenses(self.db, get=fake, headers={"User-Agent": "t"}, sleep=None,
+        return refresh_provider_lenses(self.db, get=fake, headers={"User-Agent": "t"}, sleep=None, lane=None,
                                        budget=budget, ttl=ttl, now=now, today=TODAY)
 
     def series_tick(self, fake, budget, now=NOW, ttl=30 * 86400.0):
-        return refresh_provider_lenses(self.db, get=fake, headers={"User-Agent": "t"}, sleep=None,
+        return refresh_provider_lenses(self.db, get=fake, headers={"User-Agent": "t"}, sleep=None, lane=None,
                                        budget=budget, ttl=ttl, now=now, today=TODAY, series=True)
 
     def cards(self):
@@ -155,7 +155,7 @@ class Runtime(unittest.TestCase):
         empty = open_store(Path(self.tmp.name) / "empty.sqlite3")
         self.addCleanup(empty.close)
         fake = FakeProviders()
-        result = refresh_provider_lenses(empty, get=fake, headers={}, sleep=None, budget=10, now=NOW, today=TODAY)
+        result = refresh_provider_lenses(empty, get=fake, headers={}, sleep=None, lane=None, budget=10, now=NOW, today=TODAY)
         self.assertEqual(fake.calls, [])
         self.assertFalse(result.progress["complete"])
 
@@ -223,3 +223,40 @@ class Runtime(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class GateLaneTests(unittest.TestCase):
+    """MusicBrainz requests of the provider lenses take their slots from the shared gate lane."""
+
+    class Lane:
+        def __init__(self):
+            self.acquired, self.penalties = 0, []
+
+        def acquire(self):
+            self.acquired += 1
+            return True
+
+        def penalize(self, seconds, default=60.0):
+            self.penalties.append(seconds)
+
+    class Response:
+        def __init__(self, status, headers=None):
+            self.status_code, self.headers = status, headers or {}
+
+        def json(self):
+            return {}
+
+    def test_each_request_takes_a_slot(self):
+        from intelligence.insights import provider_runtime
+        lane = self.Lane()
+        get = lambda url, **kw: self.Response(200)
+        provider_runtime._paced_json(get, "u", {}, {}, lane)
+        provider_runtime._paced_json(get, "u", {}, {}, lane)
+        self.assertEqual(lane.acquired, 2)
+
+    def test_503_blocks_the_provider_for_retry_after(self):
+        from intelligence.insights import provider_runtime
+        lane = self.Lane()
+        with self.assertRaises(RuntimeError):
+            provider_runtime._paced_json(lambda url, **kw: self.Response(503, {"Retry-After": "30"}), "u", {}, {}, lane)
+        self.assertEqual(lane.penalties, [30.0])

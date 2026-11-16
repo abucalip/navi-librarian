@@ -1,10 +1,11 @@
 import unittest
 from urllib.parse import parse_qs, urlparse
 
-from intelligence.musicbrainz.api_fill import ApiError, Paced
+from intelligence.musicbrainz.api_fill import ApiError
 from intelligence.store import repositories as repo
 from intelligence.store.db import open_store
 from intelligence.wikidata import ingest
+from intelligence.wikidata.ingest import Paced
 
 
 def item(qid, statement="S", rank="normal"):

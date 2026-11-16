@@ -1,7 +1,10 @@
+import tempfile
+from pathlib import Path
 import unittest
 from urllib.parse import parse_qs, urlparse
 
 from intelligence.musicbrainz import api_fill
+from integrations.provider_gate import GATE_FILE, Lane, ProviderGate
 from intelligence.musicbrainz.api_fill import ApiError, Paced
 from intelligence.store import repositories as repo
 from intelligence.store import source_state
@@ -39,6 +42,20 @@ def release_payload(mbid=REL):
     }
 
 
+class FreeLane:
+    """Stands in for the shared gate: grants every slot at once and remembers what happened."""
+
+    def __init__(self, grant=True):
+        self.grant, self.acquired, self.penalties = grant, 0, []
+
+    def acquire(self):
+        self.acquired += 1 if self.grant else 0
+        return self.grant
+
+    def penalize(self, seconds, default=60.0):
+        self.penalties.append(seconds)
+
+
 class Clock:
     def __init__(self):
         self.t = 1000.0
@@ -69,7 +86,7 @@ class ApiFillTests(unittest.TestCase):
         return out
 
     def run_fill(self, **kw):
-        kw.setdefault("fetch", Paced(self.fetch, sleep=lambda s: None))
+        kw.setdefault("fetch", Paced(self.fetch, lane=FreeLane()))
         return api_fill.run_api_fill(self.db, clock=self.clock, **kw)
 
     def edges(self, source=api_fill.SOURCE):
@@ -179,7 +196,7 @@ class ApiFillTests(unittest.TestCase):
         self.assertGreater(state["next_refresh_at"], self.clock.t)
 
     def test_503_is_retried_once_after_a_pause(self):
-        calls, sleeps = [], []
+        calls, lane = [], FreeLane()
 
         def flaky(url):
             calls.append(url)
@@ -187,19 +204,41 @@ class ApiFillTests(unittest.TestCase):
                 raise ApiError(503)
             return {"artists": []}
 
-        paced = Paced(flaky, sleep=sleeps.append, monotonic=lambda: 0.0)
+        paced = Paced(flaky, lane=lane)
         paced("u")
         self.assertEqual(len(calls), 2)
-        self.assertEqual(sleeps, [api_fill.RETRY_PAUSE])
+        self.assertEqual(lane.penalties, [api_fill.RETRY_PAUSE])
+        self.assertEqual(lane.acquired, 2)
 
-    def test_requests_are_spaced(self):
-        sleeps, now = [], [0.0]
-        paced = Paced(lambda u: {}, sleep=sleeps.append, monotonic=lambda: now[0])
+    def test_every_request_takes_a_gate_slot(self):
+        lane = FreeLane()
+        paced = Paced(lambda u: {}, lane=lane)
         paced("a")
-        now[0] = 0.2
         paced("b")
-        self.assertEqual(len(sleeps), 1)
-        self.assertAlmostEqual(sleeps[0], api_fill.MIN_INTERVAL - 0.2)
+        self.assertEqual((lane.acquired, paced.requests), (2, 2))
+
+    def test_a_refused_slot_sends_no_request(self):
+        lane, calls = FreeLane(grant=False), []
+        paced = Paced(lambda u: calls.append(u) or {}, lane=lane)
+        with self.assertRaises(ApiError):
+            paced("a")
+        self.assertEqual((calls, paced.requests), ([], 0))
+
+    def test_requests_are_spaced_by_the_shared_gate(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            now, slept = [1000.0], []
+
+            def sleep(seconds):
+                slept.append(seconds)
+                now[0] += seconds
+
+            gate = ProviderGate(Path(tmp) / GATE_FILE, clock=lambda: now[0], sleep=sleep)
+            paced = Paced(lambda u: {}, lane=Lane(gate, "musicbrainz"))
+            paced("a")
+            paced("b")
+            gate.close()
+        self.assertEqual(len(slept), 1)
+        self.assertAlmostEqual(slept[0], 1.1)
 
     def test_artists_are_batched_25_to_a_request(self):
         for n in range(3, 33):
