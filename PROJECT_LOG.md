@@ -1133,3 +1133,4 @@ Earlier project log entries are preserved verbatim in [PROJECT_LOG_HISTORY.md](d
 - Result: no ListenBrainz, MusicBrainz or other provider requests during the measured run; album page median 410 ms, p95 1.3 s, all on the Navidrome LAN bucket. Knowledge routes 404 on this instance (no ingested MusicBrainz data), so they are not a real baseline.
 - Not done: no code change, no per-route attribution of the 120 LAN requests (the script does not split them by route), no deploy. Limitation: one machine, one library, one album and one artist.
 - Tests run: none (docs and a measurement only; the script was not changed).
+- Merged: PR #1145, squash `f376e726`, merged 2026-11-16. CI at merge: `container-smoke`, `lint-changed`, `validate-container` passed; `compile` and `test-and-build` still pending at merge, check them. Docs-only follow-up to record the merge went straight to `main`, per CLAUDE.md.
