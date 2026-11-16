@@ -57,6 +57,10 @@ data class DiscoveryItem(
     @SerialName("saved_at") val savedAt: Double? = null,
     val acquired: Boolean = false,
     @SerialName("genre_row_label") val genreRowLabel: String? = null,
+    /** The lens a lens-list album came from (`repeated_tracks`, `deep_cuts`, ...); with [seedTag] it says why the album is there. */
+    val lens: String? = null,
+    /** Collection (classics): how many albums by this artist the library holds. */
+    @SerialName("artist_library_album_count") val libraryAlbumCount: Int? = null,
 ) {
     val artistName get() = artist.ifBlank { albumArtist }
 }
