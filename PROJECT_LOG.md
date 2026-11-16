@@ -1018,3 +1018,20 @@ Earlier project log entries are preserved verbatim in [PROJECT_LOG_HISTORY.md](d
 - Tests run locally (JDK 17, filtered): `FlowTest`, `ExistingLayoutsTest`, `DiscoveryTest`, `InsightsTest`, `FlowPagesRulesTest`, `SoftBrutTest`, `NavRulesTest`, `FlowDiscoverRulesTest`; all pass. Full suite not run (owner rule).
 - Not done: no device check. The owner's phone check is still open: each of the seven lists, the sheet, swipes across all seven, a night palette. Open point O1 (Save and ⋯ touch size) is still the owner's.
 - Next action: the owner's phone check after D4 merges.
+
+## 2026-11-16 - Deep Dives bridge into the lens lists
+
+- Owner request: grow each lens list (Current tastes first, and the other three) with Deep Dives albums of the same genres, with no new lookups.
+- Built: `discovery/deep_dive_bridge.py` (pure). At read time `lens_service.list_response` passes the served list and the stored `artist_deep_dive` payload to it. The genre families of the list's tags and seed tags pick up to 2 Deep Dives albums per family, 10 in all, those sharing the most tags first. Owned, dismissed and blocked-genre albums are skipped through the lens list's own predicates. Extras follow the requested `count` (ranks continue, `bridged_count` reports them) and carry `source: "deep_dive"`, `lens`, `bridge_label` and `reason` set to "Discover more <artist>".
+- Owner choice: the one-album-per-artist cap does not apply to the extras. The Deep Dives build now also stores `extra_items`, the ranked candidates its diversity pass held back (up to 150); Deep Dives itself still shows `items` only. A list stored before this change bridges from `items` alone until the next Deep Dives refresh.
+- Clients: the web list rows and cards and the Android Daily rows show the label; Gallery tiles show it as the reason line. No other client change.
+- Not changed: stored lens lists, the Today's picks week archive, Deep Dives output. A save or dismissal of an extra counts to its lens in the feedback summary.
+- Tests run (filtered): `test_discovery_deep_dive_bridge`, `test_discovery_lens_storage`, `test_discovery_genre_block`, `test_discovery_list_payload`, `test_discovery_lens_lists`, `test_lens_lists_ui_contract`, `test_dashboard_service`. Not run: the full suite, a live server, a browser or phone check, the Android build.
+- Next action: owner check on a running server after a Deep Dives refresh.
+
+## 2026-11-16 - Deep Dives bridge into Personal, Classics and New releases
+
+- Owner request: bridge the three other lists as well, after the lens lists (PR #1129, which this branch builds on).
+- Built: `build_cached_discovery_list_response(bridge=...)` calls `navidrome_server._bridge_deep_dives` for `personal`, `classics` and `new_releases` only. The same caps apply (2 per genre family, 10 in all). The extras skip what the list itself hides (dismissed, saved, imported, owned, blocked genre) through one shared `hidden` check, which also covers owned albums on Personal. They follow the requested count, carry `source: "deep_dive"`, `bridge_label` and `reason` "Discover more <artist>", and no `lens`. The response gains `bridged_count`; Personal's `recommendations` includes them.
+- Known mismatch: New releases extras are not new releases and carry no release date, and Classics extras keep the Deep Dives "Similar to" anchor line. Tuning these is the owner's call after a look.
+- Web: `reasonLine` and the New releases card show the label; Android: the default row model shows it. Tests run (filtered): the bridge, list payload, lens storage, genre block, lens lists, dashboard service and UI-contract suites; Android `DiscoveryTest` to follow in the PR. Not run: the full suite, a live server, browser or phone.

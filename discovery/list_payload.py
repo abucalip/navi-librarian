@@ -10,6 +10,10 @@ from discovery.lens_storage import serve_lens_list
 from discovery.snapshot import serve_snapshot
 
 
+# Lists that grow with Deep Dives albums at read time (the lens lists use build_lens_list_response).
+BRIDGED_LISTS = frozenset({"personal", "classics", "new_releases"})
+
+
 def owned_predicate(
     snapshot: Mapping[str, Any],
     music_key: Callable[[Any], str],
@@ -35,6 +39,7 @@ def build_cached_discovery_list_response(
     on_stale: Callable[[Mapping[str, Any]], Any] | None = None,
     today: str | None = None,
     acquired: set[tuple[str, str]] | None = None,
+    bridge: Callable[[list[Any], Callable[[Mapping[str, Any]], bool]], list[Mapping[str, Any]]] | None = None,
 ) -> str:
     """Build the legacy JSON response for a cached discovery list.
 
@@ -48,6 +53,10 @@ def build_cached_discovery_list_response(
     ``acquired`` contains normalized identities already imported by the app and hides
     them from every list while the library snapshot catches up with Navidrome.
     Non-personal lists are also re-checked against the library snapshot on read.
+    ``bridge`` (``discovery.deep_dive_bridge``; personal, classics and new_releases only) is called
+    with the shown items and a ``hidden`` check (dismissed, saved, imported, owned, blocked genre)
+    and returns extra Deep Dives albums, which follow the first ``count`` and do not count against
+    it. An error in it leaves the list as it was.
     """
     cached = read_list(list_name)
     if not cached:
@@ -67,12 +76,14 @@ def build_cached_discovery_list_response(
     source_items = payload.get("recommendations", []) if list_name == "personal" else payload.get("items", [])
     stored_total = len(source_items)
     read_filter = None
+    personal_owned = None
     if list_name == "personal" and library_snapshot is not None:
         try:
             owned = owned_predicate(library_snapshot(), music_key)
         except Exception:
             read_filter = {"ownership_checked": False}
         else:
+            personal_owned = owned
             served_payload, counts = serve_snapshot(payload, owned)
             payload = served_payload
             source_items = payload.get("recommendations", [])
@@ -95,20 +106,20 @@ def build_cached_discovery_list_response(
             library_owned = owned_predicate(library_snapshot(), music_key)
         except Exception:
             library_owned = None
-    visible = []
-    for item in source_items:
+    def hidden(item: Mapping[str, Any]) -> bool:
         artist_key = music_key(item.get("artist", ""))
         album_key = music_key(item.get("album", ""))
         identity = (artist_key, album_key)
+        return bool(
+            identity in dismissed_albums or artist_key in dismissed_artists
+            or identity in saved or genre_blocked(item) or identity in acquired
+            or (library_owned or personal_owned or (lambda _item: False))(item))
+
+    visible = []
+    for item in source_items:
         if list_name != "for_me" and not is_album_candidate(item):
             continue
-        if identity in dismissed_albums or artist_key in dismissed_artists:
-            continue
-        if identity in saved:
-            continue
-        if genre_blocked(item):
-            continue
-        if identity in acquired or (library_owned is not None and library_owned(item)):
+        if hidden(item):
             continue
         if (
             list_name == "new_releases"
@@ -118,17 +129,26 @@ def build_cached_discovery_list_response(
             continue
         visible.append(item)
 
+    shown = visible[:count]
+    extras: list[Mapping[str, Any]] = []
+    if bridge is not None and list_name in BRIDGED_LISTS and shown:
+        try:
+            extras = list(bridge(shown, hidden))
+        except Exception:
+            extras = []
     result = {
         "list": list_name,
         "generated_at": cached["generated_at"],
         "total_before_feedback": stored_total,
         "count": min(count, len(visible)),
-        "items": visible[:count],
+        "items": shown + extras,
         "source": payload.get("source"),
         "limitations": payload.get("limitations", []),
     }
+    if bridge is not None and list_name in BRIDGED_LISTS:
+        result["bridged_count"] = len(extras)
     if list_name == "personal":
-        result["recommendations"] = visible[:count]
+        result["recommendations"] = shown + extras
         result["diagnostics"] = {
             key: payload.get(key)
             for key in (
@@ -188,6 +208,7 @@ def build_lens_list_response(
     cached: Mapping[str, Any] | None,
     is_owned: Callable[[Mapping[str, Any]], bool] | None,
     is_dismissed: Callable[[Mapping[str, Any]], bool] | None = None,
+    bridge: Callable[[list[Mapping[str, Any]], list[Any]], list[Mapping[str, Any]]] | None = None,
 ) -> str:
     """Build the JSON response for one stored lens list (Engine 2, Phase 4, slices 3 and 5).
 
@@ -195,6 +216,10 @@ def build_lens_list_response(
     ``is_dismissed`` (None when the feedback could not be read) removes "Not for me" albums the
     same way. The stored order and ranks are kept. The response reports which checks ran and
     aggregate counts only.
+
+    ``bridge`` (``discovery.deep_dive_bridge``) is called with the served albums and the seed tags
+    and returns extra albums, which follow the first ``count`` with the ranks continuing; they do not
+    count against ``count``. An error in it leaves the list as it was.
     """
     if not cached:
         return json.dumps({
@@ -219,6 +244,14 @@ def build_lens_list_response(
         stored_albums = []
     usable = [album for album in stored_albums if isinstance(album, Mapping)]
     albums = [{**album, "rank": position} for position, album in enumerate(usable, start=1)]
+    shown = albums[:count]
+    extras: list[Mapping[str, Any]] = []
+    if bridge is not None and shown:
+        try:
+            extras = bridge(shown, payload.get("seed_tags") or [])
+        except Exception:
+            extras = []
+    shown = shown + [{**extra, "rank": position} for position, extra in enumerate(extras, start=len(shown) + 1)]
     return json.dumps({
         "list": lens_name,
         "label": payload.get("label"),
@@ -226,7 +259,8 @@ def build_lens_list_response(
         "generated_at": cached["generated_at"],
         "total_before_filter": len(stored),
         "count": min(count, len(albums)),
-        "items": albums[:count],
+        "bridged_count": len(extras),
+        "items": shown,
         "seed_tags": payload.get("seed_tags", []),
         "read_filter": read_filter,
     }, ensure_ascii=False, indent=2)

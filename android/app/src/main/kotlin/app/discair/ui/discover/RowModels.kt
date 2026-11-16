@@ -47,11 +47,14 @@ private fun buildRow(list: DiscoveryList, item: app.discair.model.DiscoveryItem,
         )
         DiscoveryList.Daily -> RowModel(
             item.artistName, item.album, item.year, RowLead.Rank(position),
-            listOfNotNull(item.seedTag?.takeIf { it.isNotBlank() }?.let { "Seed tag: $it" }, listeners), bio = false,
+            listOfNotNull(
+                item.bridgeLabel?.takeIf { it.isNotBlank() } ?: item.seedTag?.takeIf { it.isNotBlank() }?.let { "Seed tag: $it" },
+                listeners,
+            ), bio = false,
         )
         else -> RowModel(
             item.artistName, item.album, item.year, RowLead.Rank(position),
-            listOfNotNull(item.year?.toString(), listeners), bio = true,
+            listOfNotNull(item.bridgeLabel?.takeIf { it.isNotBlank() }, item.year?.toString(), listeners), bio = true,
         )
     }
 }
