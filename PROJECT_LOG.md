@@ -1,4 +1,10 @@
-## 2026-11-16 — Server efficiency M2: baseline capture script and live-run findings
+## 2026-11-16 — Server efficiency M2 follow-up: CI test fix and similar-records caching
+
+- PR [#1144](https://github.com/abucalip/navi-librarian/pull/1144), squash `1c3d0af4`, head `c78612a1`, merged 2026-11-16 22:43 UTC. `tests/test_efficiency_baseline.py` rewritten for unittest (CI's `unittest discover` has no pytest; `compile` and `test-and-build` failed on `05963eda` and `e09a4adc`). `discovery/search/artist_sections.py` `similar_items` now caches the provider records when every provider answered, even if tag lookups were rate-limited (owner decision 2026-11-16); a failed provider still writes nothing. The old rule came from the #622 review (sections 5.2 and 8.1 applied to the whole section); the cache holds only provider records, and tags are cached on their own. Contract line in `docs/SEARCH_CONTRACT.md` and `similar_precompute.py` docstrings updated.
+- Tests run: `test_efficiency_baseline` under unittest (8 OK); `test_discovery_search_similar.py`, `_similar_precompute.py`, `_artist_sections.py`, `_album_page.py` (105 passed) and `_genre.py` (32 passed). The two new similar tests fail without the fix. Lint changed files: 0 new findings. Full suite not run locally.
+- CI on `c78612a1`: `container-smoke`, `lint-changed`, `validate-container` passed; `compile` and `test-and-build` pending at merge.
+- Limitations: not deployed; no live run after the fix, so the drop in ListenBrainz calls is not yet measured; no warm baseline yet.
+
 
 - PR [#1143](https://github.com/abucalip/navi-librarian/pull/1143), squash `05963eda`, head `c9d138d2`, merged 2026-11-16 20:15 UTC. Adds `scripts/efficiency_baseline.py` (stdlib only: logs in, reads `/api/diagnostics/runtime`, times seven fixed routes N times with wall and `Server-Timing` medians and p95, writes JSON and a table) and `tests/test_efficiency_baseline.py`. Route fixes in `9cfb05de`: the artist route needs the artist name and `id`, the album route needs the `id` query parameter.
 - Tests run: `tests/test_efficiency_baseline.py`, 8 passed (against a stub HTTP server). Lint changed files: 0 new findings. Full suite not run. The script was run against a fresh local test instance (port 8090, isolated data) with the owner account from the local config; outputs are in the local test folder, not committed.
