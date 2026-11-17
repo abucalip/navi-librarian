@@ -358,7 +358,7 @@ def _apple_album_url(artist: str, album: str):
         store_ttl=persistent_metadata.LINKS_TTL, stored_ttl=3600)
 
 
-_album_description_cache = {}
+_album_description_cache = LayeredCache("album-description")
 _DESCRIPTION_TTL = 7 * 24 * 60 * 60
 _DESCRIPTION_MISS_TTL = 24 * 60 * 60
 _APPLE_PAGE_HEADERS = {
@@ -408,27 +408,21 @@ def album_description(artist: str, album: str) -> dict:
     not cached, so the next visit retries.
     """
     key = (artist.casefold(), album.casefold())
-    cached = _album_description_cache.get(key)
-    if cached:
-        ttl = _DESCRIPTION_TTL if cached["value"]["paragraphs"] else _DESCRIPTION_MISS_TTL
-        if monotonic() - cached["time"] < ttl:
-            return cached["value"]
-    store_key = "album-description:v1:" + key[0] + ":" + key[1]
-    stored = persistent_metadata.read(store_key)
-    if stored and stored.get("paragraphs"):
-        _album_description_cache[key] = {"time": monotonic(), "value": stored}
-        return stored
-    value, apple_answered = _apple_description(artist, album)
-    wikipedia_answered = True
-    if not value["paragraphs"]:
-        wikipedia, wikipedia_answered = _wikipedia_description(artist, album)
-        if wikipedia:
-            value = wikipedia
-    if value["paragraphs"]:
-        persistent_metadata.write(store_key, value)
-    if value["paragraphs"] or (apple_answered and wikipedia_answered):
-        _album_description_cache[key] = {"time": monotonic(), "value": value}
-    return value
+
+    def load():
+        value, apple_answered = _apple_description(artist, album)
+        wikipedia_answered = True
+        if not value["paragraphs"]:
+            wikipedia, wikipedia_answered = _wikipedia_description(artist, album)
+            if wikipedia:
+                value = wikipedia
+        if value["paragraphs"]:
+            return Loaded(value, memory_ttl=_DESCRIPTION_TTL, persist=True)
+        return Loaded(value, memory_ttl=_DESCRIPTION_MISS_TTL if apple_answered and wikipedia_answered else None)
+
+    return _album_description_cache.get_or_load(
+        key, load, store_key="album-description:v1:" + key[0] + ":" + key[1],
+        accept_stored=lambda stored: bool(stored and stored.get("paragraphs")), stored_ttl=_DESCRIPTION_TTL)
 
 
 @router.get("/api/album-description")
