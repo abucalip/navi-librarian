@@ -440,7 +440,7 @@ def album_description_route(artist: str = "", album: str = ""):
 _REVIEWS_TTL = 7 * 24 * 60 * 60
 _REVIEWS_PARTIAL_TTL = 10 * 60
 _REVIEWS_DEADLINE = 6.0
-_review_cache = {}
+_review_cache = LayeredCache("album-reviews")
 _REVIEW_PAGE_TIMEOUT = httpx.Timeout(4.0, connect=1.5)
 _WORDPRESS_REVIEW_SITES = (
     ("PopMatters", "https://www.popmatters.com"),
@@ -563,14 +563,13 @@ def album_reviews_for(artist: str, album: str) -> dict:
     the browser does not keep such an answer.
     """
     key = (artist.casefold(), album.casefold())
-    cached = _review_cache.get(key)
-    if cached and monotonic() - cached["time"] < cached["ttl"]:
-        return cached["value"]
-    store_key = "album-reviews:v1:" + key[0] + ":" + key[1]
-    stored = persistent_metadata.read(store_key, _REVIEWS_TTL)
-    if stored and stored.get("reviews"):
-        _review_cache[key] = {"time": monotonic(), "ttl": 3600, "value": stored}
-        return stored
+    return _review_cache.get_or_load(
+        key, lambda: _load_album_reviews(artist, album), store_key="album-reviews:v1:" + key[0] + ":" + key[1],
+        store_ttl=_REVIEWS_TTL, accept_stored=lambda stored: bool(stored and stored.get("reviews")),
+        stored_ttl=3600)
+
+
+def _load_album_reviews(artist: str, album: str):
     futures = [_review_pool.submit(source) for source in _review_sources(artist, album)]
     done, pending = wait(futures, timeout=_REVIEWS_DEADLINE)
     found, failed = [], bool(pending)
@@ -588,10 +587,8 @@ def album_reviews_for(artist: str, album: str) -> dict:
     partial = failed and len(value["reviews"]) < album_reviews.MAX_REVIEWS
     if partial:
         value["retryable"] = True
-    _review_cache[key] = {"time": monotonic(), "ttl": _REVIEWS_PARTIAL_TTL if partial else 3600, "value": value}
-    if value["reviews"] and not partial:
-        persistent_metadata.write(store_key, value)
-    return value
+    return Loaded(value, memory_ttl=_REVIEWS_PARTIAL_TTL if partial else 3600,
+                  persist=bool(value["reviews"]) and not partial)
 
 
 @router.get("/api/album-reviews")
