@@ -1,6 +1,6 @@
 # Project status
 
-Last checked: 2026-11-17. GitHub `main` is authoritative; this update is based on main at `8eb8dfcc` (PR #1182 merged).
+Last checked: 2026-11-17. GitHub `main` is authoritative; this update is based on main at `a3a9d383` (PR #1182 closed out).
 
 **Server V2 work queue:** `docs/ServerV2.md` now contains only remaining client slices and verification; the former full plan and completed-work history is preserved in `docs/archive/ServerV2_HISTORY_2026-11-09.md`.
 
@@ -8,6 +8,14 @@ Last checked: 2026-11-17. GitHub `main` is authoritative; this update is based o
 
 - **CI suite runs in about 1 minute (2026-11-17, PR #1182):** CI now runs the unit suite with pytest. `tests/conftest.py`, which gives each test a no-wait private provider gate, now applies, so MusicBrainz calls no longer sleep 1.1 s each on the shared gate. The test step went from 40 min to 69 s and the job takes about 2 min. Job timeout is 15 min.
   - **Next action:** none. Run focused modules that touch MusicBrainz with pytest, not `unittest`.
+
+- **macOS Paths and Booklet design proposed (2026-11-17):** a docs-only PR, opened at the owner's request, with [`docs/MACOS_PATHS_BOOKLET.md`](MACOS_PATHS_BOOKLET.md) and [`docs/design/macos-paths-booklet/`](design/macos-paths-booklet/). It contains:
+  - the design system: `CU` role mapping, Booklet dark roles, type, spacing, SF Symbols, motion, contrast checked in Day and Night over 72 accent hues
+  - 19 mockup states
+  - build slices P0 to P2 (Paths) and B1 to B4 (Booklet)
+
+  No code.
+  - **Next action:** the owner reviews and answers D1 to D6; then P0 and B1 (model and palette, nothing visible).
 
 - **Web client Listening Room design proposed (2026-11-17):** a docs-only PR, opened at the owner's request, with [`docs/LISTENING_ROOM_WEB.md`](LISTENING_ROOM_WEB.md) and [`docs/design/listening-room/`](design/listening-room/). It holds the design system (tokens, components, 35 icons, Instrument Sans) and the Home, reasons and states mockups. Reasons are built only from fields the server sends (R1 to R12). Build slices L0 to L6 are planned. No code.
   - **Next action:** the owner reviews the design and answers D1 to D4; then L0, the server audit.

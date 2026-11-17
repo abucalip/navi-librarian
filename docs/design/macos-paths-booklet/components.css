@@ -1,0 +1,174 @@
+/* macOS Paths sheet and Booklet sheet: every component as the app draws it.
+   Colours come from tokens.css (--pb-* = CU roles, --bk-* = CU.Booklet). Sizes and spacing are the snapped values of
+   tokens.json (CU.Space 4/8/16/24/32 plus the named exceptions). Read measures from here when the spec is silent.
+   1 px here = 1 pt in SwiftUI. The window frame (.win, .lights) is page chrome: in the app both are sheets. */
+
+/* ---------- sheet frame (page chrome, not app design) ---------- */
+.win { border-radius: 12px; overflow: hidden; box-shadow: 0 0 0 .5px rgba(0,0,0,.25), 0 24px 60px -12px rgba(0,0,0,.35); margin: 0 auto; position: relative }
+.lights { display: flex; gap: 8px }
+.lights i { width: 12px; height: 12px; border-radius: 50%; background: #ff5f57; display: block }
+.lights i:nth-child(2) { background: #febc2e } .lights i:nth-child(3) { background: #28c840 }
+button { font: inherit; color: inherit; cursor: pointer; margin: 0 }
+
+/* ---------- covers (shared) ---------- */
+.cov { position: relative; border-radius: 6px; overflow: hidden; flex: none; box-shadow: inset 0 0 0 .5px rgba(0,0,0,.15) }
+.cov.round { border-radius: 50% }
+.cov .sym { position: absolute; inset: 0; display: grid; place-items: center; color: var(--pb-ink-2); background: var(--pb-chrome); font-size: 40%; }
+
+/* ================= PATHS ================= */
+.paths { width: 1040px; height: 680px; background: var(--pb-ground); color: var(--pb-ink); display: grid; grid-template-rows: auto auto 1fr auto; font: 400 13px/20px var(--pb-sans) }
+.paths.min { width: 820px; height: 520px }
+.paths.short { height: auto; grid-template-rows: auto auto 1fr }
+
+/* Header: start cover 56, eyebrow, title (title2), artist line; close button at the trailing edge. */
+.p-head { display: grid; grid-template-columns: auto 1fr auto; gap: 16px; align-items: center; padding: 16px 24px 8px }
+.p-start { display: flex; gap: 16px; align-items: center; min-width: 0 }
+.p-start .cov { width: 56px; height: 56px }
+.p-start .eb { color: var(--pb-ink-2) }
+.p-start .ttl { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
+.p-start .sub { color: var(--pb-ink-2) }
+.p-close { width: 26px; height: 26px; border-radius: 50%; border: 0; background: var(--pb-chrome); display: grid; place-items: center; color: var(--pb-ink-2); font-size: 12px; font-weight: 600 }
+
+/* Tabs: text tabs 24 apart with a 3 pt accent underline on the chosen one; count only for loaded tabs. */
+.p-tabs { display: flex; gap: 24px; padding: 0 24px; border-bottom: 1px solid var(--pb-rule) }
+.p-tabs button { border: 0; background: none; padding: 8px 0; color: var(--pb-ink-2); position: relative; display: flex; gap: 4px; align-items: baseline; font: 400 13px/20px var(--pb-sans) }
+.p-tabs button[aria-selected="true"] { color: var(--pb-ink); font-weight: 600 }
+.p-tabs button[aria-selected="true"]::after { content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 3px; border-radius: 2px; background: var(--pb-accent) }
+.p-tabs .n { font: 500 11px/16px var(--pb-sans); color: var(--pb-ink-2); font-variant-numeric: tabular-nums }
+
+/* Summary and the client-side filter. */
+.p-body { overflow: hidden; display: grid; grid-template-rows: auto 1fr; min-height: 0 }
+.p-summary { padding: 8px 24px 4px; color: var(--pb-ink-2); display: flex; justify-content: space-between; gap: 24px; align-items: baseline }
+.p-summary > span { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden }
+.filter { display: flex; gap: 2px; background: var(--pb-chrome); padding: 2px; border-radius: 7px; flex: none }
+.filter button { border: 0; background: none; padding: 3px 10px; border-radius: 5px; font: 400 12px/18px var(--pb-sans); color: var(--pb-ink-2) }
+.filter button.on { background: var(--pb-ground); color: var(--pb-ink); box-shadow: 0 .5px 1.5px rgba(0,0,0,.2) }
+
+/* Trail: groups on a 2 pt rail with a 12 pt accent dot each. */
+.trail { overflow: auto; padding: 8px 24px 16px; position: relative }
+.link { display: grid; grid-template-columns: 22px 1fr; column-gap: 12px; position: relative; padding-top: 16px }
+.link::before { content: ""; position: absolute; left: 10px; top: 0; bottom: 0; width: 2px; background: var(--pb-rule) }
+.link:first-child::before { top: 26px }
+.link:last-child::before { bottom: calc(100% - 28px) }
+.link:only-child::before { display: none }
+.dot { width: 12px; height: 12px; border-radius: 50%; background: var(--pb-accent); box-shadow: 0 0 0 3px var(--pb-ground); margin: 5px 0 0 5px; position: relative; z-index: 1 }
+.link-head { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; min-width: 0 }
+.pill { background: var(--pb-accent-tint); color: var(--pb-pill-ink); border-radius: 999px; padding: 3px 11px; font: 400 13px/20px var(--pb-sans) }
+.pill b { font-weight: 600 }
+.link-head .role { color: var(--pb-ink-2); font: 400 12px/18px var(--pb-sans); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0 }
+.link-head .role i { font-style: italic }
+.link-head .count { margin-left: auto; color: var(--pb-ink-2); font: 400 12px/18px var(--pb-sans); font-variant-numeric: tabular-nums }
+.stops { grid-column: 2; display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 12px; margin-top: 8px }
+.capnote, .p-notes p { grid-column: 2; font: 400 12px/18px var(--pb-sans); color: var(--pb-ink-2); margin: 4px 0 0 }
+.p-notes { padding: 8px 24px 0 58px; display: grid; gap: 2px }
+.p-notes p { margin: 0 }
+/* Ungrouped answers (Sonic): no rail and no pill; the cards start at the trail's leading edge. */
+.trail.flat .stops { grid-column: 1 / -1; margin-top: 0 }
+
+/* Stop card: 170 minimum, square cover, title (two lines), artist, extra line, ownership badge. */
+.stop { border-radius: 10px; padding: 8px; display: grid; gap: 0; align-content: start; cursor: pointer; border: 1px solid transparent; text-align: left; background: none; color: inherit }
+.stop:hover { background: var(--pb-hover) }
+.stop.sel { background: var(--pb-accent-tint); border-color: var(--pb-selected-edge) }
+.stop.sel .a { color: var(--pb-selected-ink-2) }
+.stop .cov { width: 100%; aspect-ratio: 1; height: auto; margin-bottom: 8px }
+.stop .t { font: 600 13px/18px var(--pb-sans); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden }
+.stop .a { color: var(--pb-ink-2); font: 400 12px/18px var(--pb-sans); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
+.stop .x { font: 400 11px/16px var(--pb-sans); color: var(--pb-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
+.own { display: inline-flex; gap: 4px; align-items: center; font: 600 11px/16px var(--pb-sans); border-radius: 5px; padding: 1px 6px; width: max-content; margin-top: 4px }
+.own.out { color: var(--pb-accent-strong); box-shadow: inset 0 0 0 1px var(--pb-out-edge) }
+.own.in { color: var(--pb-in-ink); background: var(--pb-in-ground) }
+.badge-corner { position: absolute; top: 6px; right: 6px; z-index: 2; font: 600 11px/1 var(--pb-sans); padding: 3px 5px; border-radius: 4px; background: var(--pb-badge-ground); color: var(--pb-accent-strong) }
+
+/* Detail bar: 72 cover, title line, story (three lines at most), evidence and keys, actions. Ground CU.bgPanel. */
+.p-detail { border-top: 1px solid var(--pb-rule); background: var(--pb-hover); display: grid; grid-template-columns: 72px 1fr auto; gap: 16px; padding: 16px 24px; align-items: center; min-height: 104px }
+.p-detail .cov { width: 72px; height: 72px }
+.p-detail .ttl { font: 600 13px/20px var(--pb-sans); white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
+.p-detail .story { font: 400 13px/20px var(--pb-sans); max-width: 560px; margin-top: 4px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden }
+.p-detail .story b { font-weight: 600 } .p-detail .story i { font-style: italic }
+.p-detail .ev { font: 400 11px/16px var(--pb-sans); color: var(--pb-ink-2); margin-top: 4px }
+.p-detail .extra-slot { margin-top: 8px; display: flex; gap: 8px; align-items: center; font: 400 11px/16px var(--pb-sans); color: var(--pb-ink-2) }
+.p-detail .extra-slot .ph { width: 96px; height: 64px; border-radius: 4px; background: linear-gradient(140deg,#6d6a66,#2a2826); filter: grayscale(1) }
+.p-detail .play-card { display: inline-grid; margin-top: 8px; padding: 4px 8px; border-radius: 8px; background: var(--pb-ground); box-shadow: inset 0 0 0 .5px var(--pb-rule) }
+.p-detail .play-card small { font: 700 11px/16px var(--pb-sans); letter-spacing: .06em; text-transform: uppercase; color: var(--pb-ink-2) }
+.p-detail .play-card b { font: 600 13px/20px var(--pb-sans) }
+.acts { display: flex; gap: 8px; align-items: center }
+.btn { height: 28px; border-radius: 8px; padding: 0 12px; font: 600 13px/1 var(--pb-sans); border: 1px solid var(--pb-button-edge); background: var(--pb-button-ground); color: var(--pb-ink); display: inline-flex; gap: 6px; align-items: center; white-space: nowrap }
+.btn.pri { background: var(--pb-accent); color: var(--pb-on-accent); border-color: transparent }
+.btn[disabled] { opacity: .45 }
+kbd { font: 500 11px var(--pb-mono); color: var(--pb-ink-2); border: 1px solid var(--pb-rule); border-radius: 4px; padding: 0 4px; background: var(--pb-ground) }
+
+/* Phases: loading, failed, empty fill the trail area, centred. */
+.p-phase { display: grid; place-items: center; gap: 12px; padding: 48px 32px; text-align: center; color: var(--pb-ink-2); min-height: 220px }
+.p-phase .spin { width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--pb-rule); border-top-color: var(--pb-ink-2) }
+.p-phase .fail { color: var(--pb-danger); display: flex; gap: 8px; align-items: center }
+.p-phase .row { display: flex; gap: 12px }
+.p-phase small { font: 400 11px/16px var(--pb-sans) }
+/* Loading placeholders keep the layout of the trail: no motion (no shimmer). */
+.skel { background: var(--pb-chrome); border-radius: 6px }
+
+button:focus-visible, .stop:focus-visible, .ed:focus-visible, .thumbspread:focus-visible { outline: 2px solid var(--pb-accent); outline-offset: 2px }
+
+/* ================= BOOKLET ================= */
+.booklet { width: 1120px; height: 740px; background: var(--bk-ground); color: var(--bk-ink); display: grid; grid-template-columns: 232px 1fr; grid-template-rows: 46px 1fr; font: 400 13px/20px var(--pb-sans); color-scheme: dark }
+.booklet.nosidebar { grid-template-columns: 1fr }
+.booklet.min { width: 760px; height: 600px; grid-template-columns: 1fr }
+.b-bar { grid-column: 1 / -1; display: grid; grid-template-columns: 232px 1fr auto; align-items: center; border-bottom: 1px solid var(--bk-rule); background: var(--bk-bar) }
+.booklet.nosidebar .b-bar, .booklet.min .b-bar { grid-template-columns: 0 1fr auto }
+.b-bar .lights { padding-left: 16px }
+.b-title { display: flex; gap: 8px; align-items: baseline; min-width: 0; padding-left: 16px; white-space: nowrap; overflow: hidden }
+.b-title b { font: 600 13px/20px var(--pb-sans) }
+.b-title span { color: var(--bk-ink-2); overflow: hidden; text-overflow: ellipsis }
+.b-tools { display: flex; gap: 4px; align-items: center; padding-right: 16px }
+.seg { display: flex; background: var(--bk-control); border-radius: 7px; padding: 2px; margin-right: 8px }
+.seg button { border: 0; background: none; color: var(--bk-ink-2); padding: 3px 10px; border-radius: 5px; font: 400 12px/18px var(--pb-sans) }
+.seg button.on { background: var(--bk-control-on); color: var(--bk-ink) }
+.ib { width: 28px; height: 26px; border-radius: 7px; border: 0; background: var(--bk-control); color: var(--bk-ink); display: grid; place-items: center; font: 600 12px/1 var(--pb-sans) }
+.ib.done { width: auto; padding: 0 12px; margin-left: 8px; background: var(--bk-control-on) }
+.zoomval { font: 400 12px/18px var(--pb-mono); color: var(--bk-ink-2); width: 44px; text-align: center }
+.b-side { background: var(--bk-panel); border-right: 1px solid var(--bk-rule); overflow: auto; padding: 16px 8px; display: grid; gap: 16px; align-content: start }
+.b-side h4 { margin: 0 8px 8px; font: 700 11px/16px var(--pb-sans); letter-spacing: .06em; text-transform: uppercase; color: var(--bk-ink-2) }
+.eds { display: grid; gap: 2px }
+.ed { display: grid; grid-template-columns: 40px 1fr; gap: 8px; padding: 8px; border-radius: 8px; border: 0; background: none; text-align: left; width: 100%; color: var(--bk-ink) }
+.ed:hover { background: var(--bk-hover) }
+.ed.on { background: var(--bk-selected-row); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--bk-stage-accent) 60%, transparent) }
+.ed.on small { color: var(--bk-selected-ink-2) }
+.ed .mini { width: 40px; height: 40px; border-radius: 3px; position: relative; overflow: hidden; display: grid; place-items: center; color: var(--bk-ink-2) }
+.ed b { font: 600 13px/18px var(--pb-sans); display: block }
+.ed small { color: var(--bk-ink-2); font: 400 11px/16px var(--pb-sans); display: block; font-variant-numeric: tabular-nums }
+.ed .tag { display: inline-block; margin-top: 4px; font: 600 11px/14px var(--pb-sans); padding: 1px 5px; border-radius: 4px; background: var(--bk-tag); color: var(--bk-tag-ink) }
+.ed .tag.owned { background: var(--bk-owned-tag); color: var(--bk-owned-tag-ink) }
+.extras { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px }
+.extra { display: grid; gap: 4px; justify-items: center; font: 400 11px/16px var(--pb-sans); color: var(--bk-ink-2); border: 0; background: none; padding: 4px; border-radius: 6px }
+.extra:hover { background: var(--bk-hover) }
+.extra.on { color: var(--bk-ink) }
+.extra.on .x { box-shadow: 0 0 0 2px var(--bk-stage-accent) }
+.extra .x { width: 56px; height: 56px; border-radius: 4px }
+.b-main { display: grid; grid-template-rows: 1fr auto auto; min-height: 0; min-width: 0 }
+.booklet.nosidebar .b-main, .booklet.min .b-main { grid-column: 1 / -1 }
+.spread-stage { display: grid; grid-template-columns: 36px 1fr 36px; align-items: center; padding: 16px 8px 8px; min-height: 0 }
+.arrow { width: 32px; height: 56px; border-radius: 8px; border: 0; background: transparent; color: var(--bk-ink-2); font-size: 22px }
+.arrow:hover { background: var(--bk-arrow-hover); color: var(--bk-ink) }
+.arrow[disabled] { opacity: .35 }
+.spread { justify-self: center; align-self: center; display: grid; grid-template-columns: 1fr 1fr; width: 100%; max-width: 921px; height: auto; aspect-ratio: 2 / 1.02; box-shadow: 0 18px 40px rgba(0,0,0,.6); position: relative; max-width: 100% }
+.spread.one { grid-template-columns: 1fr; aspect-ratio: 1 / 1.02; width: auto; height: 470px }
+.spread.one::after { display: none }
+.spread.sq { aspect-ratio: 1; grid-template-columns: 1fr; width: auto; height: 470px }
+.spread::after { content: ""; position: absolute; top: 0; bottom: 0; left: 50%; width: 46px; transform: translateX(-50%); background: linear-gradient(90deg, transparent, rgba(0,0,0,.18) 45%, rgba(0,0,0,.28) 50%, rgba(0,0,0,.18) 55%, transparent); pointer-events: none }
+.booklet.min .spread.one, .booklet.min .spread.sq { height: 360px }
+.caption { text-align: center; padding: 8px 56px; display: grid; gap: 2px }
+.caption b { font: 600 13px/20px var(--pb-sans) }
+.caption span { color: var(--bk-ink-2); font: 400 12px/18px var(--pb-sans) }
+.caption q { color: var(--bk-quote); font: 400 12px/18px var(--pb-sans); quotes: "\201C" "\201D" }
+.strip { border-top: 1px solid var(--bk-rule); padding: 8px 16px 16px; display: flex; gap: 8px; overflow-x: auto; align-items: end }
+.thumbspread { display: grid; gap: 4px; justify-items: center; border: 0; background: none; padding: 4px; border-radius: 6px; color: var(--bk-ink-2); font: 400 11px/16px var(--pb-sans); font-variant-numeric: tabular-nums; flex: none }
+.thumbspread .tp { display: flex; gap: 1px; padding: 2px; border-radius: 3px }
+.thumbspread .tp i { width: 30px; height: 38px; display: block; position: relative }
+.thumbspread.on .tp { box-shadow: 0 0 0 2px var(--bk-stage-accent) }
+.thumbspread.on { color: var(--bk-ink) }
+.strip .sep { width: 1px; align-self: stretch; background: var(--bk-rule); margin: 0 4px; flex: none }
+/* PDF booklet: PDFKit, one page wide, continuous; no spread stage and no filmstrip. */
+.pdfview { display: grid; justify-items: center; gap: 16px; padding: 24px; overflow: hidden }
+.pdfview .pg { width: 440px; height: 560px; box-shadow: 0 18px 40px rgba(0,0,0,.6) }
+.b-phase { display: grid; place-items: center; gap: 8px; color: var(--bk-ink-2) }
+.b-phase .spin { width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--bk-rule); border-top-color: var(--bk-ink-2) }
+@media (prefers-reduced-motion: no-preference) { .stop, .ed, .thumbspread, .extra { transition: background-color .12s ease-out, box-shadow .12s ease-out } }
