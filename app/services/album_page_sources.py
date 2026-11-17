@@ -289,15 +289,33 @@ def year_store_key(artist: str, album: str) -> str:
     return "album-year:v1:" + mb_year.normalize(artist) + ":" + mb_year.normalize(album)
 
 
-def deezer_year(get, artist, album):
-    """The release year of an exact Deezer match, else None (a failure is also None; nothing is stored for it)."""
+def deezer_year_answer(get, artist, album):
+    """``(release year of an exact Deezer match or None, answered)``; ``answered`` is False when the request failed."""
     try:
         query = urlencode({"q": f'artist:"{artist}" album:"{album}"', "limit": 20})
         response = get("https://api.deezer.com/search/album?" + query)
         response.raise_for_status()
-        return exact_album_release_year(response.json().get("data") or [], artist, album)
+        return exact_album_release_year(deezer_albums(response), artist, album), True
     except Exception:
+        return None, False
+
+
+def deezer_year(get, artist, album):
+    """The release year of an exact Deezer match, else None (a failure is also None; nothing is stored for it)."""
+    return deezer_year_answer(get, artist, album)[0]
+
+
+def deezer_year_remembered(read, write, get, artist, album):
+    """`deezer_year`, skipped while a ``deezer-year`` no-match mark lives; an answer without a year writes one (K5).
+
+    Its own mark: this search asks for 20 results, not the details' and links' 12, so it is a different question.
+    """
+    if no_match_is_live(read, "deezer-year", artist, album):
         return None
+    year, answered = deezer_year_answer(get, artist, album)
+    if answered and not year:
+        mark_no_match(write, "deezer-year", artist, album)
+    return year
 
 
 def prefetch_year(read, write, mb_fetch, deezer_get, artist, album):
@@ -320,7 +338,7 @@ def prefetch_year(read, write, mb_fetch, deezer_get, artist, album):
     if not answered:
         return None
     if not year and deezer_get is not None:
-        year = deezer_year(deezer_get, artist, album)
+        year = deezer_year_remembered(read, write, deezer_get, artist, album)
     if year:
         write(key, int(year))
     return year

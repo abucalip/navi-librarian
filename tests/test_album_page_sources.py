@@ -397,6 +397,23 @@ class NoMatchTests(unittest.TestCase):
         aps.prefetch_links(self.store.read, self.store.write, get, ARTIST, ALBUM, MBID)
         self.assertEqual([url for url in get.calls if "deezer" in url], [])
 
+    def test_a_deezer_year_without_a_year_is_skipped_within_the_hour(self):
+        get = no_match_get()
+        for _ in range(2):
+            self.assertIsNone(aps.deezer_year_remembered(self.store.read, self.store.write, get, ARTIST, ALBUM))
+        self.assertEqual(len(get.calls), 1)
+        self.assertEqual(list(self.store.data), [aps.no_match_store_key("deezer-year", ARTIST, ALBUM)])
+        self.now[0] += aps.NO_MATCH_TTL + 1
+        aps.deezer_year_remembered(self.store.read, self.store.write, get, ARTIST, ALBUM)
+        self.assertEqual(len(get.calls), 2)
+
+    def test_a_failed_deezer_year_writes_no_mark_and_a_found_year_is_unaffected(self):
+        self.assertIsNone(aps.deezer_year_remembered(
+            self.store.read, self.store.write, no_match_get(down=("deezer",)), ARTIST, ALBUM))
+        self.assertEqual(self.store.data, {})
+        self.assertEqual(aps.deezer_year_remembered(self.store.read, self.store.write, fake_get(), ARTIST, ALBUM), 1994)
+        self.assertEqual(self.store.data, {})
+
 
 class RouteNoMatchTests(unittest.TestCase):
     """Efficiency K5 on the routes: a restart within the hour sends no Deezer or Apple request for a no-match."""
@@ -428,6 +445,15 @@ class RouteNoMatchTests(unittest.TestCase):
         self.assertEqual(sent, 2)
         self.assertEqual(len(get.calls), 2, "nothing asked again within the hour")
         self.assertNotIn("album-links:v1:" + "|".join((ARTIST.casefold(), ALBUM.casefold(), MBID)), self.store.data)
+
+    def test_the_year_route_skips_the_deezer_fallback_within_the_hour(self):
+        get = no_match_get()
+        with patch.object(metadata, "_musicbrainz_album_year", return_value=None), \
+                patch.object(metadata, "_EXTERNAL_HTTP") as client:
+            client.get.side_effect = get
+            for _ in range(2):
+                self.assertIsNone(metadata.album_year(artist=ARTIST, album=ALBUM, librarian=None)["year"])
+        self.assertEqual(len(get.calls), 1)
 
     def test_a_failed_route_lookup_writes_no_mark(self):
         with patch.object(metadata, "_EXTERNAL_HTTP") as client:

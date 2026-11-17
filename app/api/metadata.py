@@ -231,7 +231,8 @@ def album_year(artist: str = "", album: str = "", librarian=Depends(get_libraria
     # MusicBrainz is primary. Deezer is a fallback only for an exact normalized
     # artist AND album match; fuzzy or artist-only results are never trusted.
     if not year:
-        year = album_page_sources.deezer_year(_EXTERNAL_HTTP.get, artist, album)
+        year = album_page_sources.deezer_year_remembered(
+            persistent_metadata.read, persistent_metadata.write, _EXTERNAL_HTTP.get, artist, album)
         if year is not None:
             source = "Deezer"
 
