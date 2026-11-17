@@ -23,7 +23,7 @@ Last checked: 2026-11-17. GitHub `main` is authoritative; this update is based o
   - the pick reasons showcased.
 
   What is in the package:
-  - 23 page mockups at 1440 and 390, beside Home, reasons and states;
+  - 25 page mockups at 1440 and 390, beside Home, reasons and states;
   - 52 icons;
   - a reason panel with its own fill, rule, label and larger type;
   - the page specs (section 8);

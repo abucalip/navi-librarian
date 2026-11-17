@@ -8,7 +8,7 @@
   - a 3-line reason strip on grid cards.
 
   On ranked rows, the panel sits beside the title.
-- **Pages.** `_src/pages.py` writes 23 pages from shared parts:
+- **Pages.** `_src/pages.py` writes 25 pages from shared parts:
   - Discover with one list switch over the six lists;
   - Library (list and grid);
   - Artist;
@@ -20,7 +20,7 @@
   - Blocklist;
   - Acquisitions (every tone);
   - Radio and Heard;
-  - Settings (Navidrome, slskd with the quality priority list, Last.fm/ListenBrainz/Discogs, Appearance);
+  - Settings (each of the six tabs);
   - Sign in.
 
   `build.py` renders each page at 1440 and 390 at a measured height. Home and states lost Paths; the rail gained Blocklist.
@@ -30,10 +30,22 @@
   - L0 item 3 is now the page-fields check.
 - **Checks.**
   - `check_contrast.py`: all pairs pass, including the new reason pairs and the hero reason fill and rule over 1,301 tints (lowest hero text ratio 8.57).
-  - `build.py` wrote 50 PNGs.
-  - Checked by eye: discover-daily, home, album, artist, acquisitions, discover-phone, search and settings-slskd. That review led to fixes: the line clamp, the phone toolbar, Get on phone rows, Similar albums as cards, and a link-wrapped button in Search.
-  - Not run: pylint on `_src/` (design tooling outside the app; it reports long lines, as the existing `build.py` did) and the unit suite (docs only).
-- **Limits.** Mockups only, no code. The owner decisions D1 to D4 are still open. Fields the pages print that L0 must confirm are listed in plan section 9.3.
+  - `build.py` wrote 54 PNGs.
+  - Checked by eye: home (1440 and 390), reasons, states, discover-daily, discover-phone, album, artist, album-modal, acquisitions (1440 and 390), library-phone, search and settings-slskd. That review led to fixes:
+    - the reason-strip clamp;
+    - the phone toolbar;
+    - Get on phone rows;
+    - Similar albums as cards;
+    - a button inside a link in Search;
+    - the phone genre chips and mini grids;
+    - phone shelves cut to four covers;
+    - one Save per settings tab (Last.fm, ListenBrainz and Discogs each get their own page);
+    - Home's tablet badge;
+    - the R5/R11 sheets and the Sizes note on the reasons page.
+  - `scripts/check_lint_changed.py --base origin/main`: 0 new findings.
+  - Not run: the unit suite (docs only).
+  - Not opened: the other phone PNGs, which were generated but not viewed.
+- **Limits.** Mockups only, no code. The acquisition and station helper sentences in the mockups are stand-in copy; the build shows the server's `details.message` (plan 8.10, 8.11). The owner decisions D1 to D4 are still open. Fields the pages print that L0 must confirm are listed in plan section 9.3.
 
 ## 2026-11-17 — CI optimization: unit suite under pytest, 40 min to 69 s (merged)
 

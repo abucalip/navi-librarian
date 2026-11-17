@@ -78,7 +78,7 @@
   <header>
     <p class="lr-eyebrow">Listening Room · reason block</p>
     <h1 class="lr-type-page-title" style="margin-top: 8px;">Why this pick: every reason kind</h1>
-    <p class="lr-section-sub" style="max-width: 75ch;">One sentence, then evidence chips. The first kind that applies wins, in the order R1 to R12 (LISTENING_ROOM_WEB.md section 6). Every word comes from a field the server sends; when nothing applies the card shows no reason line.</p>
+    <p class="lr-section-sub" style="max-width: 75ch;">Each reason is a panel: the label, one sentence, then evidence chips. The first kind that applies wins, in the order R1 to R12 (LISTENING_ROOM_WEB.md section 6). Every word comes from a field the server sends; when nothing applies the card shows no reason line.</p>
   </header>
 
   <section class="lr-hero" aria-label="Hero size" style="--lr-hero-tint: #203C34; grid-template-columns: 200px minmax(0, 1fr);">
@@ -127,11 +127,11 @@
     <article class="lr-panel kind">
       <p class="lr-eyebrow">R5 · lens + seed tag</p>
       <div style="display: flex; flex-direction: column; gap: 8px;">
-        <p class="lr-reason-label"><svg class="lr-icon-sm"><use href="#lr-layers"/></svg>Why this pick</p><p class="lr-reason-head"><span class="lr-reason-text">Deep cuts: A lesser-known record from the {tag} you play</span></p>
-        <p class="lr-reason-label"><svg class="lr-icon-sm"><use href="#lr-spark"/></svg>Why this pick</p><p class="lr-reason-head"><span class="lr-reason-text">Current tastes: Close to the {tag} you play lately</span></p>
-        <p class="lr-reason-label"><svg class="lr-icon-sm"><use href="#lr-compass-spread"/></svg>Why this pick</p><p class="lr-reason-head"><span class="lr-reason-text">Genre spread: Through the {tag} you play</span></p>
-        <p class="lr-reason-label"><svg class="lr-icon-sm"><use href="#lr-repeat"/></svg>Why this pick</p><p class="lr-reason-head"><span class="lr-reason-text">Repeated tracks: From the {tag} you keep repeating</span></p>
-        <p class="lr-reason-label"><svg class="lr-icon-sm"><use href="#lr-flame"/></svg>Why this pick</p><p class="lr-reason-head"><span class="lr-reason-text">Obsessions: From your {tag} obsession</span></p>
+        <div class="lr-reason"><p class="lr-reason-label"><svg class="lr-icon-sm"><use href="#lr-layers"/></svg>Why this pick · Deep cuts</p><p class="lr-reason-head"><span class="lr-reason-text">A lesser-known record from the {tag} you play</span></p></div>
+        <div class="lr-reason"><p class="lr-reason-label"><svg class="lr-icon-sm"><use href="#lr-spark"/></svg>Why this pick · Current tastes</p><p class="lr-reason-head"><span class="lr-reason-text">Close to the {tag} you play lately</span></p></div>
+        <div class="lr-reason"><p class="lr-reason-label"><svg class="lr-icon-sm"><use href="#lr-compass-spread"/></svg>Why this pick · Genre spread</p><p class="lr-reason-head"><span class="lr-reason-text">Through the {tag} you play</span></p></div>
+        <div class="lr-reason"><p class="lr-reason-label"><svg class="lr-icon-sm"><use href="#lr-repeat"/></svg>Why this pick · Repeated tracks</p><p class="lr-reason-head"><span class="lr-reason-text">From the {tag} you keep repeating</span></p></div>
+        <div class="lr-reason"><p class="lr-reason-label"><svg class="lr-icon-sm"><use href="#lr-flame"/></svg>Why this pick · Obsessions</p><p class="lr-reason-head"><span class="lr-reason-text">From your {tag} obsession</span></p></div>
       </div>
       <p class="src"><b>lens</b>, <b>seed_tag</b>. Chips: Seed tag, <b>album_listeners</b> as "41k listeners", 2 of <b>tags</b>. Same sentences as Android GalleryListsRules.lensReason.</p>
     </article>
@@ -179,10 +179,10 @@
     <article class="lr-panel kind">
       <p class="lr-eyebrow">R11 · Discover music category</p>
       <div style="display: flex; flex-direction: column; gap: 8px;">
-        <p class="lr-reason-label"><svg class="lr-icon-sm"><use href="#lr-discover"/></svg>Why this pick</p><p class="lr-reason-head"><span class="lr-reason-text">adjacent: Close to genres you already love</span></p>
-        <p class="lr-reason-label"><svg class="lr-icon-sm"><use href="#lr-compass-spread"/></svg>Why this pick</p><p class="lr-reason-head"><span class="lr-reason-text">cross_genre: A bridge between {family} and {family}, both in your listening</span></p>
-        <p class="lr-reason-label"><svg class="lr-icon-sm"><use href="#lr-spark"/></svg>Why this pick</p><p class="lr-reason-head"><span class="lr-reason-text">adventurous: A step away from your usual genres</span></p>
-        <p class="lr-reason-label"><svg class="lr-icon-sm"><use href="#lr-info"/></svg>Why this pick</p><p class="lr-reason-head"><span class="lr-reason-text">unclassified: Few genre tags, so the fit is a guess</span></p>
+        <div class="lr-reason"><p class="lr-reason-label"><svg class="lr-icon-sm"><use href="#lr-discover"/></svg>Why this pick · adjacent</p><p class="lr-reason-head"><span class="lr-reason-text">Close to genres you already love</span></p></div>
+        <div class="lr-reason"><p class="lr-reason-label"><svg class="lr-icon-sm"><use href="#lr-compass-spread"/></svg>Why this pick · cross_genre</p><p class="lr-reason-head"><span class="lr-reason-text">A bridge between {family} and {family}, both in your listening</span></p></div>
+        <div class="lr-reason"><p class="lr-reason-label"><svg class="lr-icon-sm"><use href="#lr-spark"/></svg>Why this pick · adventurous</p><p class="lr-reason-head"><span class="lr-reason-text">A step away from your usual genres</span></p></div>
+        <div class="lr-reason"><p class="lr-reason-label"><svg class="lr-icon-sm"><use href="#lr-info"/></svg>Why this pick · unclassified</p><p class="lr-reason-head"><span class="lr-reason-text">Few genre tags, so the fit is a guess</span></p></div>
       </div>
       <p class="src"><b>discovery_category</b>, <b>genre_families</b> ∩ <b>recent_profile_families</b>. Chips: "Similar to {anchor_artist}" with photo, <b>lastfm_listeners</b>. The server's long category sentence is replaced by these.</p>
     </article>
@@ -196,7 +196,7 @@
 
   <section class="lr-panel" aria-label="Line size">
     <p class="lr-eyebrow">Sizes</p>
-    <p class="lr-reason-text"><b style="color: var(--lr-text);">Hero</b>: reason-hero type (Instrument Sans 600, 20/28), 20px icon, up to 4 chips. <b style="color: var(--lr-text);">Card</b> (row cards, Deep Dive): reason type (Inter 400, 14/21), 16px icon, up to 3 chips. <b style="color: var(--lr-text);">Line</b> (grid cards, Up next, mini grids): meta type, 2 lines, ellipsis, no icon, no chips; one evidence value may follow as a meta line (listeners or year).</p>
+    <p class="lr-field-help" style="max-width: none; font-size: 14px; line-height: 21px;"><b style="color: var(--lr-text);">Every size is a showcase:</b> a filled reason panel (<code>reason-fill</code>, 3px <code>reason-rule</code> on the left), a "Why this pick" label with the kind's 16px icon, then the sentence at full text strength. Left-aligned, never centred. <b style="color: var(--lr-text);">Hero</b> (lead pick, album page, album modal): reason-hero type, Instrument Sans 600 24/32 (phone 20/28), up to 4 chips. <b style="color: var(--lr-text);">Card</b> (ranked rows, row cards, Deep Dives, Missing albums): reason type, Instrument Sans 600 18/26 (phone 16/24), up to 4 chips; beside the title in ranked rows. <b style="color: var(--lr-text);">Line</b> (grid cards, Up next, mini grids): reason-line type, Inter 600 14/20, a strip with the same fill and rule, 3 lines, no label or chips; one evidence value may follow as a meta line.</p>
   </section>
 </div>
 </body>

@@ -27,12 +27,12 @@ A dark, quiet room built around one album. Home opens on a single **lead pick**:
 | `components.css` | Every component's measurements on the tokens (section 5), and the tablet and phone layouts |
 | `art.css` | Stand-in covers and artist photos for the mockups only. **Not for the app** |
 | `pages/home.html` + `home.png` (1440) + `home-phone.png` (390) | The Home mockup |
-| `pages/<page>.html` + `<page>.png` + `<page>-phone.png` | Every other page at 1440 and 390 (section 8): 23 pages, written by `_src/pages.py` |
+| `pages/<page>.html` + `<page>.png` + `<page>-phone.png` | Every other page at 1440 and 390 (section 8): 25 pages, written by `_src/pages.py` |
 | `pages/reasons.html` + `.png` | Every reason kind, at the hero and card sizes |
 | `pages/states.html` + `.png` | Loading, empty, off, failed, Get states, feedback, the "…" menu, the phone More sheet, toast, badge, skip link, hero tint examples |
 | `icons/*.svg`, `icons/icons.svg` | 52 icons on a 24 grid with a 1.75 stroke, and one `<symbol>` sprite (`#lr-<name>`) |
 | `fonts/` | Instrument Sans 600 and 700 (Latin woff2) and the OFL licence |
-| `_src/pages.py` | Writes the 23 page mockups beyond Home from shared parts (shell, reason panel, ranked row, card, track row), so every page uses identical markup. The written HTML is the spec |
+| `_src/pages.py` | Writes the 25 page mockups beyond Home from shared parts (shell, reason panel, ranked row, card, track row), so every page uses identical markup. The written HTML is the spec |
 | `_src/build.py` | Writes `tokens.css` and the icons, runs `pages.py`, puts the sprite into each page, and renders PNGs with Google Chrome (each page's height is measured) |
 | `_src/check_contrast.py` | Checks every contrast pair, and the hero tint over 1,301 cover colours |
 
@@ -325,7 +325,7 @@ Each page below has `pages/<name>.html` (open it to measure), `<name>.png` (1440
 
 ### 8.2 Library (`library`, `library-albums`)
 
-- The three shelves moved from Home (Recently played, Most played, Newly added), each a row of six covers. No reasons: these are your own albums.
+- The three shelves moved from Home (Recently played, Most played, Newly added), each a row of six covers (four on phones). No reasons: these are your own albums.
 - **Browse:** search your library; Show (Artists / Albums); Sort by (Artists: Name, Album count, Date added; Albums: Album name, Artist, Album year, Date added, Track count) with the direction button; Display (list / grid); the thumbnail-size slider (110–320, step 10) only in grid. The sorts and their default directions are today's `LIBRARY_TABS` and `LIBRARY_DEFAULT_ORDER`.
 - Artists list: photo (or initials), name, "{n} albums · added {date}". Albums grid: `lr-tiles` with `--tile` set from the slider. "Load more" at the end.
 
@@ -355,7 +355,7 @@ The quick view from any card (`role="dialog"`, `aria-modal`): tinted like the he
 
 ### 8.7 Search (`search`)
 
-The results panel under the top bar (`lr-searchpanel`): the count line, then groups: Artists, Albums and Songs in your library, then **Not in your library** (each row with its own Get). The match is shown in accent, each row has a type pill, and arrow keys move through the rows (`role="listbox"`). With an empty field, focus shows Recent searches, each with a remove button. "/" focuses the field. On phones the panel takes the full width under the field.
+The results panel under the top bar (`lr-searchpanel`): the count line, then groups: Artists, Albums and Songs in your library, then **Not in your library** (each row with its own Get). The match is shown in accent and each row has a type pill. Each row's title is a link and its Get is a separate button, so Tab moves through them in order; Escape closes the panel and returns focus to the field. The rows are plain lists, not a `listbox`, because each row holds two controls. With an empty field, focus shows Recent searches, each with a remove button. "/" focuses the field. On phones the panel takes the full width under the field.
 
 ### 8.8 Saved (`saved`)
 
@@ -372,12 +372,13 @@ Three sections as today: Blocked genres (Unblock), Artists hidden with Not this 
 - **State** (`lr-state`): icon + words from `ACQUISITION_STATUS_TABLE`. Tone: active → `text`; caution (`?` statuses such as Needs review) → `text-soft` with the alert icon; error → `danger`; Imported → `ok`; Dismissed → `text-muted`. Colour is never the only signal.
 - **Downloading** adds the progress bar, "{n}% complete", speed, total and remaining size, and tracks remaining; the first active row is drawn larger (`lr-acq-big`). "Use next source ({s}s)" appears during a stall, as today.
 - **Actions:** Try again on retryable errors, Dismiss, Refresh status. Getting now is not shown in the rail on this page.
+- **The line under each state is `details.message` (or `details.error`) as the server sends it.** The sentences in the mockup ("Waiting for the peer to start", "Two candidate folders match…", "Checking tags and moving files…", "No source offered the album…") are stand-in copy. Do not write a sentence per status.
 
 ### 8.11 Radio (`radio`)
 
-"Grab the radio" with today's explanation; **App address** (field, help, Save); **Stations**, each with a **Grab** switch (`role="switch"`, "Grabbing" when on); **Heard**, newest first: time, cover, title (link), artist · album · station, then Get (or "Requested"), Save and Remove. Refresh and Clear all sit on the Heard head.
+"Grab the radio" with today's explanation; **App address** (field, help, Save); **Stations**, each with a **Grab** switch (`role="switch"`, "Grabbing" when on); **Heard**, newest first: time, cover, title (link), artist · album · station, then Get (or "Requested"), Save and Remove. Refresh and Clear all sit on the Heard head. A station's second line ("Navidrome station · relayed through this app") is stand-in copy: show only what the station payload carries.
 
-### 8.12 Settings (`settings`, `settings-slskd`, `settings-services`, `settings-appearance`)
+### 8.12 Settings (`settings`, `settings-slskd`, `settings-lastfm`, `settings-listenbrainz`, `settings-discogs`, `settings-appearance`)
 
 - A tab column (Navidrome, slskd, Last.fm, ListenBrainz, Discogs, Appearance; `role="tablist"`, vertical) beside the form; on smaller screens the tabs sit above the form and scroll sideways.
 - Forms use `lr-field`: label above, 16px input, help below. **Secrets** are never shown: a saved secret shows the lock line "A key is saved. It is never shown." and the field stays empty.
@@ -457,7 +458,7 @@ Each slice is one PR, branched from `main`. Each runs its focused tests only and
 | Blocklist | `blocklist` | 8.9 | L11 |
 | Acquisitions | `acquisitions` | 8.10 | L12 |
 | Radio and Heard | `radio` | 8.11 | L12 |
-| Settings | `settings`, `settings-slskd`, `settings-services`, `settings-appearance` | 8.12 | L13 |
+| Settings | `settings`, `settings-slskd`, `settings-lastfm`, `settings-listenbrainz`, `settings-discogs`, `settings-appearance` | 8.12 | L13 |
 | Sign in | `login` | 8.13 | L13 |
 | Reasons, states, menus, sheets | `reasons`, `states` | 6, 5.13 | L3, L6 |
 

@@ -409,7 +409,7 @@ SHELF_ART = [("art-talk", "Spirit of Eden", "Talk Talk"), ("art-alice", "Ptah, t
 
 def shelf(ident, title, sub, items):
     cards = "".join(card(a, t, m, card_tools=False) for a, t, m in items)
-    return section(ident, title, sub, f'        <div class="lr-grid">{cards}</div>')
+    return section(ident, title, sub, f'        <div class="lr-grid lr-shelf">{cards}</div>')
 
 
 def library_toolbar(tab, display):
@@ -639,24 +639,24 @@ def genre_page():
 def search_page():
     def res(face, title, meta, kind, tool=""):
         # The title is the link; a row's Get is a sibling button, never inside the link.
-        return (f'<li class="lr-sres" role="option">{face}<span style="min-width: 0;"><a class="lr-card-title" href="#" style="color: var(--lr-text); text-decoration: none;">{title}</a>'
+        return (f'<li class="lr-sres">{face}<span style="min-width: 0;"><a class="lr-card-title" href="#" style="color: var(--lr-text); text-decoration: none;">{title}</a>'
                 f'<span class="lr-meta" style="display: block;">{e(meta)}</span></span><span class="lr-row">{tool}<span class="lr-pill">{e(kind)}</span></span></li>')
     get = lambda t: f'<button type="button" class="lr-btn lr-btn-icon lr-btn-quiet" aria-label="Get {e(t)}">{icon("get")}</button>'  # noqa: E731
     mark = lambda s: s.replace("Alice", "<mark>Alice</mark>")  # noqa: E731
     panel = f'''      <div class="lr-searchpanel" role="region" aria-label="Search results">
         <p class="lr-status-line" role="status" style="padding: 8px 16px 0;">9 results for “alice”</p>
-        <div class="lr-sgroup"><p class="lr-eyebrow lr-sgroup-head">Artists in your library</p><ul class="lr-list" role="listbox" aria-label="Artists">
+        <div class="lr-sgroup"><p class="lr-eyebrow lr-sgroup-head">Artists in your library</p><ul class="lr-list" aria-label="Artists">
           {res('<span class="lr-person-photo photo-a" aria-hidden="true"></span>', mark("Alice Coltrane"), "4 albums", "Artist")}
           {res('<span class="lr-person-photo photo-d" aria-hidden="true"></span>', mark("Alice Phoebe Lou"), "1 album", "Artist")}
         </ul></div>
-        <div class="lr-sgroup"><p class="lr-eyebrow lr-sgroup-head">Albums in your library</p><ul class="lr-list" role="listbox" aria-label="Albums">
+        <div class="lr-sgroup"><p class="lr-eyebrow lr-sgroup-head">Albums in your library</p><ul class="lr-list" aria-label="Albums">
           {res('<span class="lr-cover art-alice"></span>', "Journey in Satchidananda", "Alice Coltrane · 1971", "Album")}
           {res('<span class="lr-cover art-russ4"></span>', "Ptah, the El Daoud", "Alice Coltrane · 1970", "Album")}
         </ul></div>
-        <div class="lr-sgroup"><p class="lr-eyebrow lr-sgroup-head">Songs in your library</p><ul class="lr-list" role="listbox" aria-label="Songs">
+        <div class="lr-sgroup"><p class="lr-eyebrow lr-sgroup-head">Songs in your library</p><ul class="lr-list" aria-label="Songs">
           {res('<span class="lr-logo" style="width: 40px; height: 40px; border-radius: 4px;">' + icon("note") + '</span>', "Blue Nile", "Alice Coltrane · Ptah, the El Daoud", "Song")}
         </ul></div>
-        <div class="lr-sgroup"><p class="lr-eyebrow lr-sgroup-head">Not in your library</p><ul class="lr-list" role="listbox" aria-label="Not in your library">
+        <div class="lr-sgroup"><p class="lr-eyebrow lr-sgroup-head">Not in your library</p><ul class="lr-list" aria-label="Not in your library">
           {res('<span class="lr-cover art-khru"></span>', "Turiya Sings", "Alice Coltrane · 1982", "Album", get("Turiya Sings"))}
           {res('<span class="lr-cover art-grouper2"></span>', "Transfiguration", "Alice Coltrane · 1978", "Album", get("Transfiguration"))}
           {res('<span class="lr-person-photo photo-b" aria-hidden="true"></span>', mark("Alice Damon"), "MusicBrainz artist", "Artist")}
@@ -845,17 +845,19 @@ def settings_pages():
           <div class="lr-choices" role="radiogroup" aria-label="Theme">{choices}</div></div>
           <div class="lr-form-group"><h2 class="lr-section-title">Font</h2>
           <div class="lr-note">{icon("info")}<div><p class="lr-note-title">Listening Room uses its own fonts</p><p class="lr-note-text">Instrument Sans for titles and reasons, Inter for text. The font choice applies to the older themes only.</p></div></div></div>''')
-    # The other three tabs use the same parts; drawn here so nothing is left to guess.
-    settings_page("settings-services", "Last.fm", f'''          <div class="lr-form-group"><h2 class="lr-section-title">Last.fm API</h2>
+    settings_page("settings-lastfm", "Last.fm", f'''          <div class="lr-form-group"><h2 class="lr-section-title">Last.fm API</h2>
           <p class="lr-field-help">Optional. Used to enrich recommendations with album popularity and artist tags.</p>
           {field("Username", "owner_fm", help_text="Your Last.fm username is used to read your listening history for Daily picks.")}
           {field("API key", placeholder="Leave blank to keep the saved key", kind="password", help_text="A key is saved. It is never shown.", secret=True)}</div>
-          {form_actions()}
-          <div class="lr-form-group" style="margin-top: var(--lr-space-16);"><h2 class="lr-section-title">ListenBrainz profile (same parts)</h2>
+          {form_actions()}''')
+    settings_page("settings-listenbrainz", "ListenBrainz", f'''          <div class="lr-form-group"><h2 class="lr-section-title">ListenBrainz profile</h2>
+          <p class="lr-field-help">Used for recent listening context and personalized recommendations. The public username is enough; an optional user token is sent with requests to ListenBrainz.</p>
           {field("Username", "owner_lb")}
           {field("User token (optional)", placeholder="Leave blank to keep the saved token", kind="password")}</div>
-          <div class="lr-form-group"><h2 class="lr-section-title">Discogs (same parts)</h2>
-          {field("Personal access token", placeholder="Enter a token to set or replace it", kind="password", help_text="Optional. Adds Discogs styles to similar artists and genre pages. Data provided by Discogs.")}</div>
+          {form_actions()}''')
+    settings_page("settings-discogs", "Discogs", f'''          <div class="lr-form-group"><h2 class="lr-section-title">Discogs</h2>
+          <p class="lr-field-help">Optional. Adds Discogs styles to similar artists and genre pages. Create a personal access token in your Discogs developer settings. Data provided by Discogs.</p>
+          {field("Personal access token", placeholder="Enter a token to set or replace it", kind="password", help_text="A token is saved. It is never shown.", secret=True)}</div>
           {form_actions(extra=f'<button type="button" class="lr-btn">{icon("trash")}Remove saved token</button>')}''')
 
 
@@ -896,7 +898,7 @@ ALL = [discover_music, discover_daily, discover_dives, discover_others, library_
 # Every generated page name, for build.py's renders.
 NAMES = ["discover", "discover-daily", "discover-dives", "discover-personal", "discover-collection", "discover-new", "library", "library-albums",
          "artist", "album", "album-owned", "album-modal", "genre", "search", "saved", "blocklist", "acquisitions", "radio",
-         "settings", "settings-slskd", "settings-appearance", "settings-services", "login"]
+         "settings", "settings-slskd", "settings-lastfm", "settings-listenbrainz", "settings-discogs", "settings-appearance", "login"]
 
 
 def write_all():
