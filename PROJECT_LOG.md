@@ -5,14 +5,14 @@
 - Provider requests: about 450 in all (pass A 215, prefetch 148, pass B 85, plus 45 in a 6-album re-check). Pass B still made 65 Last.fm requests (not attributed to a section).
 - Owner decision the same day: keep "library tracklist first" permanently. The "temporary" label is dropped in PR #1177 (comment in `discovery/search/album_page.py`, test docstring, `docs/SEARCH_CONTRACT.md`); behaviour unchanged. Raw output: `local-test/k3m-*.json` (outside the repo).
 
-## 2026-11-17 — Efficiency finishing up: K3 reviews prefetch (off), K2 fetched_at, M1 Navidrome label (PR open)
+## 2026-11-17 — Efficiency finishing up: K3 reviews prefetch (off), K2 fetched_at, M1 Navidrome label (merged)
 
-- PR [#1177](https://github.com/abucalip/navi-librarian/pull/1177), branch `efficiency-finishing-up`, not merged. It covers the "Left out of merged steps" list in `docs/efficiency.md`, at the owner's request.
+- PR [#1177](https://github.com/abucalip/navi-librarian/pull/1177) (squash `a4804473`, head `1c0ace77`, merged 2026-11-17 13:31 UTC; CI queued at merge; not deployed). GitHub confirms `MERGED`. CI (compile, lint-changed, test-and-build, container-smoke, validate-container, validate-release-workflow) never started on any of the PR's heads: runners were queued, as for `main`'s own runs since 12:55. It covers the "Left out of merged steps" list in `docs/efficiency.md`, at the owner's request.
 - M1: no production Navidrome call outside the shared client was found. The `client_factory` branch now sends the `navidrome` label.
 - K2: `LayeredCache(stale_fetched_at=True)` gives stale album reviews and links answers a `fetched_at` field (UTC ISO 8601). Fresh and stored values never carry it. `docs/SEARCH_CONTRACT.md` is updated.
 - K3: the review outlets moved to `app/services/album_review_sources.py`, and the worker prefetches reviews under a new `reviews` cap. It stores outlet answers only, never the list, so a worker without `GUARDIAN_API_KEY` cannot hide a Guardian review on the route. The compose default does not name the cap, so this stays off (owner decision needed). The artist biography stays out (K1 measured 0 requests).
 - Not done, each behind its gate: the "library tracklist first" removal (needs a measurement) and wider K2 scope (needs evidence).
-- Tests: 14 focused files, 237 passed (`test_album_review_sources.py` is new, with 12 tests). Lint on changed files: 0 new findings. Full suite not run. No live run, no provider traffic, not deployed.
+- Tests: 14 focused files, 237 passed (`test_album_review_sources.py` is new, with 12 tests); `test_discovery_search_album_page.py` 29 passed after the label change. Full suite not run. Lint on changed files: 0 new findings. Full suite not run. No live run, no provider traffic, not deployed.
 
 ## 2026-11-17 — K3 part 2 caps and coverage target (merged)
 
