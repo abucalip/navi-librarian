@@ -8,6 +8,8 @@ import SwiftUI
 struct PathRowThumb<Usual: View>: View {
     let step: PathStep
     let size: CGFloat
+    /// The corner radius of the alternate covers shown on hover; the usual cover is clipped by its own view. Defaults to size / 7.
+    var radius: CGFloat? = nil
     @ViewBuilder let usual: () -> Usual
     @Environment(\.artwork) private var store
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -20,7 +22,7 @@ struct PathRowThumb<Usual: View>: View {
             if hovering, !faces.isEmpty {
                 AlbumPictureView(picture: faces[current % faces.count], size: .thumb)
                     .frame(width: size, height: size)
-                    .clipShape(RoundedRectangle(cornerRadius: size / 7, style: .continuous))
+                    .clipShape(RoundedRectangle(cornerRadius: radius ?? size / 7, style: .continuous))
                     .accessibilityHidden(true)
             } else {
                 usual()

@@ -1,73 +1,92 @@
 import DiscairLibrarian
 import SwiftUI
 
-/// The Paths sheet of an album or an artist: a tab bar of paths, the server's steps as a list in its own order, and a
-/// trailing inspector with the selected step's story. Its size is fixed so nothing is cut off, and its accent is the
-/// active theme's, so it reads as part of the theme rather than as a system dialog.
+/// The Paths sheet of an album or an artist (docs/MACOS_PATHS_BOOKLET.md, section 4): a header, text tabs, the summary with a
+/// filter, the Trail of steps grouped under what links them to the start, and a detail bar for the selected step. It can be
+/// resized, and every colour is a CU role, so it follows the theme, Night and the owner's accent.
 struct PathsSheet: View {
     let state: AppState
     @Bindable var model: PathsSheetModel
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    static let size = CGSize(width: 820, height: 520)
-    private static let inspectorWidth: CGFloat = 300
-
-    private var accent: Color { CU.accent }
+    private var lookup: PathStepLookup { PathStepLookup(state: state) }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            VStack(alignment: .leading, spacing: 10) {
-                Text(model.heading).font(.title2.bold()).lineLimit(1).truncationMode(.tail).accessibilityAddTraits(.isHeader)
-                tabBar
-                Text(model.summary).foregroundStyle(.secondary).lineLimit(2).fixedSize(horizontal: false, vertical: true)
-            }
-            .padding(.horizontal, 24).padding(.top, 20).padding(.bottom, 12)
-            Divider()
+            header
+            tabBar
             content.frame(maxWidth: .infinity, maxHeight: .infinity)
-            Divider()
-            footer
         }
-        .frame(width: Self.size.width, height: Self.size.height)
-        .tint(accent)
+        .frame(minWidth: CU.PathsSheet.minSize.width, idealWidth: CU.PathsSheet.idealSize.width, maxWidth: .infinity,
+               minHeight: CU.PathsSheet.minSize.height, idealHeight: CU.PathsSheet.idealSize.height, maxHeight: .infinity)
+        .background(CU.content)
+        .tint(CU.accent)
     }
 
     // MARK: Header
 
+    private var header: some View {
+        HStack(spacing: CU.Space.m) {
+            startCover.frame(width: CU.PathsSheet.startCover, height: CU.PathsSheet.startCover)
+            VStack(alignment: .leading, spacing: 0) {
+                Text("Paths from").cuRole(CU.Font.eyebrow).textCase(.uppercase).foregroundStyle(CU.textSecondary)
+                Text(model.title).cuRole(CU.Font.title2).foregroundStyle(CU.text).lineLimit(1).truncationMode(.tail).accessibilityAddTraits(.isHeader)
+                if let line = subtitle { Text(line).cuRole(CU.Font.body).foregroundStyle(CU.textSecondary).lineLimit(1) }
+            }
+            Spacer(minLength: CU.Space.m)
+            Button { state.paths = nil } label: {
+                Image(systemName: "xmark").font(CU.Icon.small(.semibold)).foregroundStyle(CU.textSecondary)
+                    .frame(width: CU.PathsSheet.closeButton, height: CU.PathsSheet.closeButton).background(CU.bgFill, in: Circle())
+            }
+            .buttonStyle(.plain).keyboardShortcut(.cancelAction).accessibilityLabel("Close")
+        }
+        .padding(.horizontal, CU.Space.l).padding(.top, CU.Space.m).padding(.bottom, CU.Space.s)
+    }
+
+    @ViewBuilder private var startCover: some View {
+        if model.subject == .album {
+            CoverView(album: lookup.startAlbum(title: model.title, artist: model.artist), px: 224)
+                .clipShape(RoundedRectangle(cornerRadius: CU.PathsSheet.startCoverRadius, style: .continuous))
+        } else {
+            ArtistPhoto(name: model.title, size: CU.PathsSheet.startCover)
+        }
+    }
+
+    /// "artist · year" on an album sheet; "Person", "Group" or "Artist" on an artist sheet.
+    private var subtitle: String? {
+        if model.subject == .album { return [model.artist, model.year.map(String.init) ?? ""].filter { !$0.isEmpty }.joined(separator: " · ") }
+        switch model.answer?.startType { case "person": return "Person"; case "group": return "Group"; default: return "Artist" }
+    }
+
+    // MARK: Tabs
+
     private var tabBar: some View {
-        HStack(spacing: 2) {
+        HStack(spacing: CU.Space.l) {
             ForEach(model.tabLabels, id: \.id) { tab in
                 let on = tab.id == model.tabID
+                let count = model.count(for: tab.id)
                 Button {
                     model.choose(tab.id); state.loadPathsTab()
                 } label: {
-                    Text(tab.label).font(.system(size: 13, weight: on ? .semibold : .regular)).lineLimit(1)
-                        .frame(maxWidth: .infinity).padding(.vertical, 5)
-                        .background { if on { RoundedRectangle(cornerRadius: 7, style: .continuous).fill(Color(nsColor: .controlBackgroundColor)).shadow(color: .black.opacity(0.18), radius: 1, y: 0.5) } }
-                        .contentShape(Rectangle())
+                    HStack(alignment: .firstTextBaseline, spacing: CU.Space.xs) {
+                        Text(tab.label).font(on ? CU.Font.headline.font : CU.Font.body.font).lineLimit(1)
+                        if let count { Text("\(count)").font(CU.Font.caption.weighted(.medium)).monospacedDigit().foregroundStyle(CU.textSecondary) }
+                    }
+                    .foregroundStyle(on ? CU.text : CU.textSecondary)
+                    .padding(.vertical, CU.Space.s)
+                    .overlay(alignment: .bottom) {
+                        if on { RoundedRectangle(cornerRadius: 2, style: .continuous).fill(CU.accent).frame(height: CU.PathsSheet.tabUnderline).offset(y: 1) }
+                    }
+                    .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel(count.map { "\(tab.label), \($0) paths" } ?? tab.label)
                 .accessibilityAddTraits(on ? .isSelected : [])
             }
+            Spacer(minLength: 0)
         }
-        .padding(2)
-        .background(RoundedRectangle(cornerRadius: 9, style: .continuous).fill(Color.primary.opacity(0.07)))
-    }
-
-    // MARK: Footer
-
-    private var footer: some View {
-        HStack {
-            Button("Close") { state.paths = nil }.keyboardShortcut(.cancelAction).buttonStyle(SheetButtonStyle(accent: accent))
-            Spacer()
-            if let step = model.step { Text("Step \(step.id + 1) of \(model.steps.count)").foregroundStyle(.secondary).monospacedDigit() }
-            Spacer()
-            if model.subject == .album, let album = model.step.flatMap(libraryAlbum) {
-                Button { state.paths = nil; state.actions.play(album: album) } label: { Label("Play Album", systemImage: "play.fill") }
-                    .buttonStyle(SheetButtonStyle(accent: accent))
-            }
-            Button(model.step?.target?.label ?? "Open") { open(model.step) }
-                .keyboardShortcut(.defaultAction).buttonStyle(SheetButtonStyle(accent: accent, prominent: true)).disabled(model.step?.target == nil)
-        }
-        .padding(.horizontal, 24).padding(.vertical, 12)
+        .padding(.horizontal, CU.Space.l)
+        .overlay(alignment: .bottom) { Rectangle().fill(CU.separator).frame(height: 1) }
     }
 
     // MARK: Body
@@ -75,148 +94,91 @@ struct PathsSheet: View {
     @ViewBuilder private var content: some View {
         switch model.phase {
         case .loading:
-            ProgressView("Finding the paths…")
+            ProgressView("Finding the paths…").frame(maxWidth: .infinity, minHeight: 220)
         case .failed(let message):
-            VStack(spacing: 12) {
-                Text(message).foregroundStyle(.red).multilineTextAlignment(.center)
-                HStack(spacing: 12) {
-                    Button("Try Again") { state.loadPathsTab(retry: true) }.buttonStyle(SheetButtonStyle(accent: accent))
+            VStack(spacing: CU.Space.s) {
+                Label { Text(message).foregroundStyle(CU.danger).multilineTextAlignment(.center) } icon: { Image(systemName: "exclamationmark.triangle").foregroundStyle(CU.danger) }
+                    .font(CU.Font.body.font)
+                HStack(spacing: CU.Space.s) {
+                    Button("Try Again") { state.loadPathsTab(retry: true) }.buttonStyle(PathButtonStyle())
                     if model.canRequestUpdate {
                         let librarian = state.session?.librarian
                         Button("Request update") { Task { await model.requestUpdate(librarian: librarian) } }
-                            .buttonStyle(SheetButtonStyle(accent: accent)).disabled(model.updating)
+                            .buttonStyle(PathButtonStyle()).disabled(model.updating)
                     }
                 }
-                if let note = model.updateNote { Text(note).font(.caption).foregroundStyle(.secondary) }
+                if let note = model.updateNote { Text(note).cuRole(CU.Font.caption).foregroundStyle(CU.textSecondary) }
             }
-            .padding(.horizontal, 32)
+            .padding(.horizontal, CU.Space.xl).frame(maxWidth: .infinity, minHeight: 220)
         case .ready(let answer):
-            if answer.steps.isEmpty {
-                Text(model.emptyText).foregroundStyle(.secondary).multilineTextAlignment(.center).padding(.horizontal, 32)
-            } else {
-                HStack(spacing: 0) {
-                    VStack(spacing: 0) {
-                        list(answer.steps)
-                        if !model.looseNotes.isEmpty {
-                            VStack(alignment: .leading, spacing: 2) {
-                                ForEach(model.looseNotes, id: \.self) { Text($0).font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true) }
-                            }
-                            .frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 16).padding(.vertical, 6)
-                        }
-                    }
-                    Divider()
-                    inspector.frame(width: Self.inspectorWidth)
+            VStack(spacing: 0) {
+                summaryRow
+                if answer.steps.isEmpty {
+                    Text(model.emptyText).cuRole(CU.Font.body).foregroundStyle(CU.textSecondary).multilineTextAlignment(.center)
+                        .padding(.horizontal, CU.Space.xl).frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else {
+                    trail(answer)
+                    if let step = model.step { PathDetailBar(step: step, model: model, lookup: lookup, state: state, open: open) }
                 }
             }
         }
     }
 
-    private var albumSheet: Bool { model.subject == .album }
-
-    private func list(_ steps: [PathStep]) -> some View {
-        VStack(spacing: 0) {
-            HStack(spacing: 8) {
-                Text("#").frame(width: 22, alignment: .trailing)
-                Text(albumSheet ? "Album" : "Step").frame(maxWidth: .infinity, alignment: .leading)
-                Text(albumSheet ? "Artist" : "Detail").frame(width: 140, alignment: .leading)
-                Text("Why").frame(width: 150, alignment: .leading)
-            }
-            .font(.system(size: 12, weight: .semibold)).foregroundStyle(.secondary)
-            .padding(.horizontal, 12).frame(height: 28)
-            Divider()
-            ScrollViewReader { proxy in
-                ScrollView {
-                    LazyVStack(spacing: 0) {
-                        ForEach(steps) { s in row(s).id(s.id) }
-                    }
-                }
-                .onChange(of: model.selected) { _, new in if let new { withAnimation(.easeOut(duration: 0.12)) { proxy.scrollTo(new) } } }
-            }
-            .focusable().focusEffectDisabled()
-            .onKeyPress(.downArrow) { model.move(by: 1); return .handled }
-            .onKeyPress(.upArrow) { model.move(by: -1); return .handled }
-            .onKeyPress(.return) { open(model.step); return model.step?.target == nil ? .ignored : .handled }
+    private var summaryRow: some View {
+        HStack(alignment: .firstTextBaseline, spacing: CU.Space.l) {
+            Text(model.summary).cuRole(CU.Font.body).foregroundStyle(CU.textSecondary).lineLimit(2).fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 0)
+            if model.offersFilter { PathFilterControl(filter: model.activeFilter) { model.setFilter($0) } }
         }
+        .padding(.horizontal, CU.Space.l).padding(.top, CU.Space.s).padding(.bottom, CU.Space.xs)
     }
 
-    private func row(_ s: PathStep) -> some View {
-        let on = model.selected == s.id
-        return HStack(spacing: 8) {
-            Text("\(s.id + 1)").monospacedDigit().foregroundStyle(.secondary).frame(width: 22, alignment: .trailing)
-            HStack(spacing: 8) {
-                PathRowThumb(step: s, size: 28) { thumb(s, 28) }
-                Text(s.name).lineLimit(1).truncationMode(.tail)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            Text(s.detail).lineLimit(1).truncationMode(.tail).frame(width: 140, alignment: .leading)
-            Text(s.why).foregroundStyle(.secondary).lineLimit(1).truncationMode(.tail).frame(width: 150, alignment: .leading)
-        }
-        .padding(.horizontal, 12).frame(height: 40)
-        .background(on ? accent.opacity(0.14) : (s.id.isMultiple(of: 2) ? Color.clear : Color.primary.opacity(0.035)))
-        .contentShape(Rectangle())
-        .onTapGesture { model.selected = s.id }
-        .accessibilityElement(children: .combine)
-        .accessibilityAddTraits(on ? .isSelected : [])
-    }
+    // MARK: Trail
 
-    @ViewBuilder private func thumb(_ s: PathStep, _ size: CGFloat) -> some View {
-        if let c = s.cover {
-            CoverView(album: item(c), px: Int(size * 2)).frame(width: size, height: size).clipShape(RoundedRectangle(cornerRadius: size / 7, style: .continuous))
-        } else {
-            Image(systemName: s.symbol).font(.system(size: size * 0.5)).foregroundStyle(.secondary).frame(width: size, height: size)
-                .background(.quaternary, in: RoundedRectangle(cornerRadius: size / 7, style: .continuous))
-                .accessibilityHidden(true)
-        }
-    }
-
-    // MARK: Inspector
-
-    @ViewBuilder private var inspector: some View {
-        if let s = model.step {
+    private func trail(_ answer: PathAnswer) -> some View {
+        let groups = model.groups
+        let totals = Dictionary(model.allGroups.map { ($0.id, $0.stepIDs.count) }, uniquingKeysWith: { a, _ in a })
+        let steps = Dictionary(answer.steps.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
+        let flat = !groups.contains { $0.link != nil }
+        let context = model.context ?? .album(.studioCrew)
+        return ScrollViewReader { proxy in
             ScrollView {
-                VStack(alignment: .leading, spacing: 8) {
-                    thumb(s, 104)
-                    if model.tabID == AlbumPathTab.sameRoom.id, model.subject == .album, let cover = s.cover {
-                        SameRoomPhotos(startTitle: model.title, startArtist: model.artist, otherTitle: cover.title, otherArtist: cover.artist)
-                    }
-                    Text(s.name).font(.headline).lineLimit(2).fixedSize(horizontal: false, vertical: true)
-                    Text([s.detail, s.year.map(String.init) ?? "", s.owned ? "In your library" : "Not in your library"].filter { !$0.isEmpty }.joined(separator: " · "))
-                        .foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
-                    if let play = s.play { card { Text("YOUR LISTENING").font(.caption2.weight(.semibold)).foregroundStyle(.secondary); Text(play).fontWeight(.semibold) } }
-                    if !s.story.isEmpty || s.evidence != nil {
-                        card {
-                            ForEach(Array(s.story.enumerated()), id: \.offset) { _, paragraph in
-                                Text(Self.attributed(paragraph)).font(.callout).fixedSize(horizontal: false, vertical: true)
-                            }
-                            if let e = s.evidence { Text(e).font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true) }
-                        }
-                    } else {
-                        ForEach(Array(s.reasons.prefix(3).enumerated()), id: \.offset) { _, r in
-                            card {
-                                Text(r.eyebrow.uppercased()).font(.caption2.weight(.semibold)).foregroundStyle(.secondary)
-                                if let via = r.via { Text(via).fontWeight(.semibold) }
-                                Text(r.text).font(.callout).fixedSize(horizontal: false, vertical: true)
-                            }
+                VStack(alignment: .leading, spacing: 0) {
+                    ForEach(Array(groups.enumerated()), id: \.element.id) { index, group in
+                        if flat {
+                            PathStopGrid(ids: group.stepIDs, steps: steps, context: context, selected: model.selected, lookup: lookup, state: state,
+                                         select: { model.selected = $0 }, open: open)
+                        } else {
+                            PathGroupView(group: group, total: totals[group.id] ?? group.stepIDs.count, context: context, steps: steps, selected: model.selected,
+                                          first: index == 0, last: index == groups.count - 1, lookup: lookup, state: state,
+                                          select: { model.selected = $0 }, open: open)
                         }
                     }
-                    if let by = s.artistName, s.target != .artist(name: by) {
-                        Button("Open Artist") { state.paths = nil; state.openArtist(named: by) }.buttonStyle(SheetButtonStyle(accent: accent))
-                    }
+                    notes(flat: flat)
                 }
-                .padding(16).frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, CU.Space.l).padding(.top, CU.Space.s).padding(.bottom, CU.Space.m)
+                .animation(pathMotion(reduceMotion, 0.15), value: model.activeFilter)
             }
-            .background(Color.primary.opacity(0.03))
-        } else {
-            Text("Select a step to see why it is here.").foregroundStyle(.secondary).multilineTextAlignment(.center)
-                .frame(maxWidth: .infinity, maxHeight: .infinity).padding(24)
+            .onChange(of: model.selected) { _, new in
+                if let new { withAnimation(pathMotion(reduceMotion, 0.12)) { proxy.scrollTo(new) } }
+            }
         }
+        .focusable().focusEffectDisabled()
+        .onKeyPress(.leftArrow) { model.move(by: -1); return .handled }
+        .onKeyPress(.upArrow) { model.move(by: -1); return .handled }
+        .onKeyPress(.rightArrow) { model.move(by: 1); return .handled }
+        .onKeyPress(.downArrow) { model.move(by: 1); return .handled }
     }
 
-    private func card<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
-        VStack(alignment: .leading, spacing: 6, content: content)
-            .padding(12).frame(maxWidth: .infinity, alignment: .leading)
-            .background(Color(nsColor: .controlBackgroundColor), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(Color.primary.opacity(0.12), lineWidth: 0.5))
+    @ViewBuilder private func notes(flat: Bool) -> some View {
+        let loose = model.looseNotes
+        if !loose.isEmpty {
+            VStack(alignment: flat ? .center : .leading, spacing: 2) {
+                ForEach(loose, id: \.self) { Text($0).cuRole(CU.Font.callout).foregroundStyle(CU.textSecondary).fixedSize(horizontal: false, vertical: true) }
+            }
+            .frame(maxWidth: .infinity, alignment: flat ? .center : .leading)
+            .padding(.leading, flat ? 0 : CU.PathsSheet.railColumn + CU.PathsSheet.railGap).padding(.top, CU.Space.s)
+        }
     }
 
     /// A story as one styled run: people and places bold, albums, songs and works italic.
@@ -234,36 +196,7 @@ struct PathsSheet: View {
         return out
     }
 
-    // MARK: Library lookups
-
-    /// The cover's album item. A step the server names only by title and artist borrows its Navidrome ids from the library
-    /// album of that name; one outside the library is marked not owned so its cover is looked up by artist and title.
-    private func item(_ c: PathStep.AlbumCover) -> AlbumItem {
-        let hue = Double(abs(c.title.hashValue % 360))
-        if c.coverArt != nil || c.albumID != nil {
-            return AlbumItem(id: -1, title: c.title, artist: c.artist, year: 0, genre: "", format: "", owned: true, hue: hue, remoteID: c.albumID, coverArt: c.coverArt)
-        }
-        if let a = library(title: c.title, artist: c.artist) {
-            return AlbumItem(id: -1, title: c.title, artist: c.artist, year: 0, genre: "", format: "", owned: true, hue: hue,
-                             remoteID: a.remoteID, coverArt: a.coverArt ?? a.remoteID.map { "al-\($0)" })
-        }
-        return AlbumItem(id: 0, title: c.title, artist: c.artist, year: 0, genre: "", format: "", owned: false, hue: hue)
-    }
-
-    /// Every album in the library, not only the page of them the library screen shows.
-    private var libraryAlbums: [AlbumItem] { state.library.searchableAlbums }
-
-    private func library(title: String, artist: String) -> AlbumItem? {
-        libraryAlbums.first { LibrarySearch.fold($0.title) == LibrarySearch.fold(title) && LibrarySearch.fold($0.artist) == LibrarySearch.fold(artist) }
-    }
-
-    /// The step's album in the library, by Navidrome id or by title and artist. An album the server marks as outside the library has none.
-    private func libraryAlbum(_ s: PathStep) -> AlbumItem? {
-        guard s.owned, case .album(let title, let artist, let id)? = s.target else { return nil }
-        return libraryAlbums.first {
-            ($0.remoteID != nil && $0.remoteID == id) || (LibrarySearch.fold($0.title) == LibrarySearch.fold(title) && LibrarySearch.fold($0.artist) == LibrarySearch.fold(artist))
-        }
-    }
+    // MARK: Opening
 
     private func open(_ s: PathStep?) {
         guard let s, let target = s.target else { return }
@@ -272,25 +205,7 @@ struct PathsSheet: View {
         case .artist(let name): state.openArtist(named: name)
         case .album(let title, let artist, _):
             // An album outside the library opens as one the page can look up (its Get button works there).
-            state.open(album: libraryAlbum(s) ?? AlbumItem(id: -1, title: title, artist: artist, year: 0, genre: "", format: "", owned: false, hue: Double(abs(title.hashValue % 360))))
+            state.open(album: lookup.libraryAlbum(s) ?? lookup.notOwned(title: title, artist: artist))
         }
-    }
-}
-
-/// The sheet's buttons: a bordered pill, or a pill filled with the theme's accent. Drawn by hand so the accent shows in every
-/// context (the system prominent style takes the system colour and does not render offscreen).
-private struct SheetButtonStyle: ButtonStyle {
-    let accent: Color
-    var prominent = false
-    @Environment(\.isEnabled) private var enabled
-
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .font(.system(size: 14, weight: .semibold))
-            .foregroundStyle(prominent ? CU.onAccent : Color.primary)
-            .padding(.horizontal, 14).padding(.vertical, 6)
-            .background(RoundedRectangle(cornerRadius: 9, style: .continuous).fill(prominent ? accent : Color(nsColor: .controlBackgroundColor)))
-            .overlay(RoundedRectangle(cornerRadius: 9, style: .continuous).stroke(prominent ? Color.clear : Color.primary.opacity(0.25), lineWidth: 1))
-            .opacity(!enabled ? 0.45 : configuration.isPressed ? 0.8 : 1)
     }
 }
