@@ -109,11 +109,14 @@ import DiscairLibrarian
         #expect(PathAnswer(album: e).notes == ["1 track has no sound analysis and was skipped."])
     }
 
-    @Test func cappedIsSaidInWords() throws {
+    @Test func cappedStaysStructuredAndOutOfTheNotes() throws {
         let json = #"{"kind":"album_crew","status":"ok","start":{"mbid":"m","canonical_name":"X","type":"release","owned":true},"capped":[{"via":"Rudy van Gelder","more":12},{"via":"Al","more":1}],"truncated":"time","stops":[]}"#
         let a = PathAnswer(album: try JSONDecoder().decode(KnowledgePaths.self, from: Data(json.utf8)))
-        #expect(a.notes == ["12 more albums with Rudy van Gelder are not shown.", "1 more album with Al is not shown.",
-                            "The server stopped this path early (time limit), so later steps may be missing."])
+        #expect(a.notes == ["The server stopped this path early (time limit), so later steps may be missing."])
+        #expect(a.capped.map(\.via) == ["Rudy van Gelder", "Al"] && a.capped.map(\.more) == [12, 1])
+        // The sheet still says them: with no group to carry them, every one is a loose note.
+        #expect(PathTrail.looseNotes(a, groups: []) == ["The server stopped this path early (time limit), so later steps may be missing.",
+                                                       "12 more albums with Rudy van Gelder are not shown.", "1 more album with Al is not shown."])
     }
 
     @Test func moveStaysInsideTheList() throws {
@@ -121,6 +124,11 @@ import DiscairLibrarian
         #expect(m.tabID == "studioCrew" && m.selected == nil)
         m.move(by: 1)
         #expect(m.selected == nil)
+    }
+
+    @Test func yearIsLeftOutWhenZero() {
+        #expect(PathsSheetModel(albumTitle: "A", artist: "B", albumID: "1", year: 1957, sonicAvailable: false).year == 1957)
+        #expect(PathsSheetModel(albumTitle: "A", artist: "B", albumID: "1", sonicAvailable: false).year == nil)
     }
 
     @Test func artistPathsHaveFiveTabsWithAndroidWording() {

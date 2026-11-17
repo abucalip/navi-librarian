@@ -97,9 +97,9 @@ struct PathsSheet: View {
                 HStack(spacing: 0) {
                     VStack(spacing: 0) {
                         list(answer.steps)
-                        if !answer.notes.isEmpty {
+                        if !model.looseNotes.isEmpty {
                             VStack(alignment: .leading, spacing: 2) {
-                                ForEach(answer.notes, id: \.self) { Text($0).font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true) }
+                                ForEach(model.looseNotes, id: \.self) { Text($0).font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true) }
                             }
                             .frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 16).padding(.vertical, 6)
                         }

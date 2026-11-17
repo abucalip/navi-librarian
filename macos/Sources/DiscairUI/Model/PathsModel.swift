@@ -92,7 +92,8 @@ public struct PathStepReason: Equatable, Sendable {
     public let text: String
     public let via: String?
     /// "Production credit", "Same label"...: the small label above the reason.
-    public var eyebrow: String {
+    public var eyebrow: String { Self.eyebrow(for: code) }
+    static func eyebrow(for code: String) -> String {
         switch code {
         case "crew_on": "Production credit"
         case "guest_on": "Guest credit"
@@ -119,7 +120,7 @@ public enum PathTarget: Equatable, Sendable {
 /// One step of a path. `detail` and `why` are the table's second and third columns; `symbol` replaces the cover for a step
 /// that is not an album (an artist, a song).
 public struct PathStep: Identifiable, Equatable, Sendable {
-    public let id: Int
+    public private(set) var id: Int
     public let name: String
     public let detail: String
     public let why: String
@@ -135,6 +136,20 @@ public struct PathStep: Identifiable, Equatable, Sendable {
     public var play: String? = nil
     /// Album paths: the story of why the step is here, one paragraph per person, place or work.
     public var story: [[StorySpan]] = []
+    /// What the Trail groups by (`PathTrail`): the first reason's `via` and code, the role of the first credit it carries
+    /// (`evidence[0].relation`: "producer", "mix"...), and the start-side `anchor` of the reasons that share the first reason's link.
+    public var firstVia: KnowledgeEntity? = nil
+    public var firstCode: String = ""
+    public var creditRole: String? = nil
+    public var anchors: [KnowledgeEntity] = []
+    /// The start-side anchors of the reasons that share the first reason's link (same code, same `via`), so a group's role line
+    /// never shows an anchor that belongs to another link of the same step.
+    static func linkAnchors(_ reasons: [PathReason]) -> [KnowledgeEntity] {
+        guard let first = reasons.first else { return [] }
+        return reasons.filter { $0.code == first.code && $0.via?.mbid == first.via?.mbid && $0.via?.name == first.via?.name }.compactMap(\.anchor)
+    }
+    /// The same step under another id; every other field, the story and the Trail inputs included, is kept.
+    func with(id: Int) -> PathStep { var copy = self; copy.id = id; return copy }
     public struct AlbumCover: Equatable, Sendable { public let title: String; public let artist: String; public let albumID: String?; public let coverArt: String? }
 }
 
@@ -146,6 +161,14 @@ public struct PathAnswer: Equatable, Sendable {
     public var startType: String = ""
     /// Said instead of the generic empty line when the server's own figures explain why nothing is listed.
     public var empty: String?
+    /// Album paths: people or works whose albums the server cut at its cap. Kept structured so the Trail can put each under its
+    /// group; `notes` does not hold them (`PathTrail.looseNotes` adds back the ones no group matches).
+    public var capped: [PathCapped] = []
+
+    /// "12 more albums with Rudy van Gelder are not shown."
+    public static func cappedSentence(via: String, more: Int) -> String {
+        "\(more) more \(more == 1 ? "album" : "albums") with \(via) \(more == 1 ? "is" : "are") not shown."
+    }
 
     /// What a Gaps answer's play history means for the list, in words. Never reads a count as taste.
     static func historyNotes(_ h: PathHistory?) -> [String] {
@@ -168,8 +191,8 @@ public struct PathAnswer: Equatable, Sendable {
         return "The server stopped this path early (\(words)), so later steps may be missing."
     }
 
-    public init(steps: [PathStep], notes: [String], seeds: Int = 0, startType: String = "", empty: String? = nil) {
-        self.steps = steps; self.notes = notes; self.seeds = seeds; self.startType = startType; self.empty = empty
+    public init(steps: [PathStep], notes: [String], seeds: Int = 0, startType: String = "", empty: String? = nil, capped: [PathCapped] = []) {
+        self.steps = steps; self.notes = notes; self.seeds = seeds; self.startType = startType; self.empty = empty; self.capped = capped
     }
 
     static func evidence(_ r: PathReason?) -> String? {
@@ -188,15 +211,18 @@ public struct PathAnswer: Equatable, Sendable {
                 reasons: stop.reasons.map { PathStepReason(code: $0.code, text: $0.text, via: $0.via?.name) },
                 evidence: Self.evidence(first), target: .album(title: stop.entity.name, artist: by, albumID: nil),
                 artistName: by.isEmpty ? nil : by, owned: stop.entity.owned, play: stop.play,
-                story: PathStory.compose(stop.reasons, start: p.start.name, stop: stop.entity.name))
+                story: PathStory.compose(stop.reasons, start: p.start.name, stop: stop.entity.name),
+                firstVia: first?.via, firstCode: first?.code ?? "", creditRole: first?.evidence.first?.relation,
+                anchors: PathStep.linkAnchors(stop.reasons))
         }
         if let h = p.history, h.state == "ok", steps.isEmpty, h.filteredOut > 0 {
             let most = h.littlePlaysBelow - 1
             empty = "Every album these credits reach is one you have already played more than \(most) \(most == 1 ? "time" : "times"), so there is no gap to list."
         }
-        var n = Self.historyNotes(p.history) + p.capped.map { "\($0.more) more \($0.more == 1 ? "album" : "albums") with \($0.via) \($0.more == 1 ? "is" : "are") not shown." }
+        var n = Self.historyNotes(p.history)
         if let t = p.truncated { n.append(Self.truncation(t)) }
         notes = n
+        capped = p.capped
         startType = p.start.type
     }
 
@@ -229,7 +255,9 @@ public struct PathAnswer: Equatable, Sendable {
             func step(_ n: String, _ detail: String, _ why: String, symbol: String, cover: PathStep.AlbumCover? = nil,
                       target: PathTarget?, artist: String?) -> PathStep {
                 PathStep(id: i, name: n, detail: detail, why: why, year: nil, cover: cover, symbol: symbol, reasons: reasons,
-                         evidence: Self.evidence(first), target: target, artistName: artist, owned: owned)
+                         evidence: Self.evidence(first), target: target, artistName: artist, owned: owned,
+                         firstVia: first?.via, firstCode: first?.code ?? "", creditRole: first?.evidence.first?.relation,
+                         anchors: PathStep.linkAnchors(stop.reasons))
             }
             switch kind {
             case .followTheMusician:
@@ -263,8 +291,7 @@ public struct PathAnswer: Equatable, Sendable {
             steps = steps.filter { s in
                 guard let key = (s.artistName.map { $0.lowercased() }) else { return true }
                 return seen.insert(kind == .followTheMusician ? "song:" + s.name.lowercased() : key).inserted
-            }.enumerated().map { i, s in PathStep(id: i, name: s.name, detail: s.detail, why: s.why, year: s.year, cover: s.cover, symbol: s.symbol,
-                                                  reasons: s.reasons, evidence: s.evidence, target: s.target, artistName: s.artistName, owned: s.owned) }
+            }.enumerated().map { i, s in s.with(id: i) }
         }
         notes = p.truncated.map { [Self.truncation($0)] } ?? []
         startType = p.start.type
@@ -293,7 +320,12 @@ public final class PathsSheetModel: Identifiable {
     public let albumID: String?
     let tabs: [PathTabSpec]
     public var tabID: String
+    /// The `PathStep.id` of the selected step (a server index).
     public var selected: Int?
+    /// The album's year, for the header line; nil when it is not known (0).
+    public let year: Int?
+    /// Which steps the trail shows. Starts at All each time the sheet opens, and applies only where `offersFilter` is true.
+    public private(set) var filter: PathFilter = .all
     public private(set) var phases: [String: Phase] = [:]
     /// The Navidrome id of the artist or album, for "Request update".
     public var subjectID: String?
@@ -303,8 +335,9 @@ public final class PathsSheetModel: Identifiable {
     public private(set) var updateNote: String?
     public private(set) var updating = false
 
-    init(subject: Subject, title: String, artist: String, albumID: String?, tabs: [PathTabSpec]) {
+    init(subject: Subject, title: String, artist: String, albumID: String?, year: Int = 0, tabs: [PathTabSpec]) {
         self.subject = subject; self.title = title; self.artist = artist; self.albumID = albumID; self.tabs = tabs
+        self.year = year > 0 ? year : nil
         subjectID = albumID
         tabID = tabs[0].id
     }
@@ -335,7 +368,7 @@ public final class PathsSheetModel: Identifiable {
     }
 
     /// An album's sheet: Neighbours by Ear only when sonic similarity is reported.
-    public convenience init(albumTitle: String, artist: String, albumID: String, sonicAvailable: Bool) {
+    public convenience init(albumTitle: String, artist: String, albumID: String, year: Int = 0, sonicAvailable: Bool) {
         let tabs = AlbumPathTab.available(sonic: sonicAvailable).map { t in
             PathTabSpec(
                 id: t.id, label: t.label, summary: { t.summary(album: albumTitle, seeds: $0?.seeds ?? 0) },
@@ -345,7 +378,7 @@ public final class PathsSheetModel: Identifiable {
                     return PathAnswer(album: try await lib.sonicAlbumNeighbours(albumID: albumID))
                 })
         }
-        self.init(subject: .album, title: albumTitle, artist: artist, albumID: albumID, tabs: tabs)
+        self.init(subject: .album, title: albumTitle, artist: artist, albumID: albumID, year: year, tabs: tabs)
     }
 
     /// An artist's sheet: the five kinds. `mbid` resolves the artist's MusicBrainz id (it needs the Navidrome artist record).
@@ -370,13 +403,58 @@ public final class PathsSheetModel: Identifiable {
     public var answer: PathAnswer? { if case .ready(let a) = phase { a } else { nil } }
     public var summary: String { tab.summary(answer) }
     public var steps: [PathStep] { answer?.steps ?? [] }
-    public var step: PathStep? { selected.flatMap { i in steps.indices.contains(i) ? steps[i] : nil } }
+    public var step: PathStep? { selected.flatMap { id in steps.first { $0.id == id } } }
     public var heading: String { "Paths from \(title)" }
 
-    public func choose(_ id: String) { tabID = id; selected = nil }
+    // MARK: Trail
+
+    /// What the chosen tab's steps are, for the Trail's link rules; nil for a tab id this sheet does not know.
+    func context(for id: String) -> PathContext? {
+        switch subject {
+        case .album: AlbumPathTab(rawValue: id).map(PathContext.album)
+        case .artist: PathKind(rawValue: id).map(PathContext.artist)
+        }
+    }
+    var context: PathContext? { context(for: tabID) }
+    /// What the Trail calls the start: the album's title or the artist's name.
+    private var start: String { subject == .album ? title : artist }
+
+    /// Every group of the chosen tab's answer, before the filter.
+    public var allGroups: [PathTrailGroup] {
+        guard let answer, let context else { return [] }
+        return PathTrail.groups(answer, context: context, start: start)
+    }
+    /// The filter is offered only when the answer holds both owned and not-owned steps and is not flat.
+    public var offersFilter: Bool { answer.map { PathTrail.offersFilter($0, groups: allGroups) } ?? false }
+    /// The filter in force: All wherever the filter is not offered.
+    public var activeFilter: PathFilter { offersFilter ? filter : .all }
+    /// The groups the trail draws.
+    public var groups: [PathTrailGroup] { PathTrail.visible(allGroups, steps: steps, filter: activeFilter) }
+    /// Step ids in the order the trail shows them, which the arrow keys walk.
+    public var order: [Int] { PathTrail.order(groups) }
+    /// The notes under the trail: the answer's own and the capped sentences no group carries.
+    public var looseNotes: [String] { answer.map { PathTrail.looseNotes($0, groups: allGroups) } ?? [] }
+    /// How many steps a tab holds, once it has been read (the count beside its name); nil before.
+    public func count(for tab: String) -> Int? { if case .ready(let a)? = phases[tab] { a.steps.count } else { nil } }
+
+    public func choose(_ id: String) { tabID = id; selected = nil; selectFirstIfNeeded() }
+
+    /// Changes the filter; a selected step it hides gives way to the first step it shows.
+    public func setFilter(_ f: PathFilter) { filter = f; selectFirstIfNeeded() }
+
+    /// Keeps a step selected whenever one is shown: the first in the trail's order, so the bar is never empty.
+    private func selectFirstIfNeeded() {
+        let shown = order
+        if let selected, shown.contains(selected) { return }
+        selected = shown.first
+    }
+
+    /// Moves to the previous (`d < 0`) or next step in the trail's order and stops at the ends.
     public func move(by d: Int) {
-        guard !steps.isEmpty else { return }
-        selected = min(max((selected ?? (d > 0 ? -1 : steps.count)) + d, 0), steps.count - 1)
+        let shown = order
+        guard !shown.isEmpty else { return }
+        let at = selected.flatMap { shown.firstIndex(of: $0) } ?? (d > 0 ? -1 : shown.count)
+        selected = shown[min(max(at + d, 0), shown.count - 1)]
     }
 
     static func failure(_ error: Error, subject: Subject) -> String {
@@ -395,6 +473,13 @@ public final class PathsSheetModel: Identifiable {
         return AcquisitionModel.text(e)
     }
 
+    /// Keeps a read answer. The first step in the trail's order is selected when the tab is the one shown, so the pane and the
+    /// buttons are never empty.
+    func receive(_ answer: PathAnswer, for id: String) {
+        phases[id] = .ready(answer)
+        if tabID == id, selected == nil { selectFirstIfNeeded() }
+    }
+
     /// Reads the chosen tab once (a read answer is kept); `retry` asks again after a failure.
     public func load(librarian: LibrarianClient?, retry: Bool = false) async {
         let id = tabID, spec = tab
@@ -404,9 +489,7 @@ public final class PathsSheetModel: Identifiable {
         guard let librarian else { phases[id] = .failed("Paths need the server."); return }
         do {
             let answer = try await spec.load(librarian)
-            phases[id] = .ready(answer)
-            // The first step is selected, so the pane and the buttons are never empty.
-            if tabID == id, selected == nil, !answer.steps.isEmpty { selected = 0 }
+            receive(answer, for: id)
         } catch {
             if case DiscairError.server(404, _) = error { notInStore.insert(id) }
             phases[id] = .failed(Self.failure(error, subject: subject))
