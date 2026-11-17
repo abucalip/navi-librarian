@@ -6,6 +6,8 @@ Last checked: 2026-11-17. GitHub `main` is authoritative; this update is based o
 
 ## Current state
 
+- **Server efficiency follow-ups merged (2026-11-17):** the items in `docs/efficiency.md` that needed no owner decision. PR [#1173](https://github.com/abucalip/navi-librarian/pull/1173) (squash `c81bca22`): diagnostics count Last.fm's API host as `lastfm` and the shared Navidrome client as `navidrome`. PR [#1174](https://github.com/abucalip/navi-librarian/pull/1174) (squash `07f0dd96`): the MusicBrainz auto fill stops mid-run on worker shutdown and resumes on the next poll; it also fixes two `WorkerTests` that had failed on `main` since W3. PR [#1175](https://github.com/abucalip/navi-librarian/pull/1175) (squash `b6ff452d`): per-key lock entries in radio logos and the artwork service are dropped once unused. Focused tests only; CI pending at merge. Not deployed. **Next action:** check CI on `d9d020fd`, `60b53896` and `52c3a1e4` (and on `503929cb` from #1172), and open a fix PR if one fails. Then the owner's decisions: K3 caps for `deezer`, `apple` and `wikipedia`, and the coverage target.
+
 - **Server efficiency C2 rerun merged (2026-11-17):** PR [#1172](https://github.com/abucalip/navi-librarian/pull/1172) (squash `0391e5e0`, head `503929cb`, merged 12:19 UTC; GitHub confirms `MERGED`). `navidrome_server.py` went from 2,285 to 2,123 lines with no behaviour change. The changes:
   - removed three unused imports and two unused locals;
   - moved the 12 settings wrappers into `app/api/settings.py`, which now calls `settings/service.py` directly;

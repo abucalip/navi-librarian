@@ -1,3 +1,11 @@
+## 2026-11-17 — Server efficiency follow-ups with no owner decision: metrics labels, auto-fill shutdown, lock pruning (merged)
+
+- PR [#1173](https://github.com/abucalip/navi-librarian/pull/1173), squash `c81bca22`, head `d9d020fd`: `runtime_metrics` maps `audioscrobbler.com` to `lastfm` and reads a request's `metrics_provider` extension (known names only) after the call; the shared Navidrome client sets it to `navidrome` with a request event hook; `prefetch_state.provider_of` drops its Last.fm special case. Tests: `test_runtime_metrics`, `test_owned_prefetch`, `test_navidrome_client`, `test_navidrome_cover_art`: 50 passed.
+- PR [#1174](https://github.com/abucalip/navi-librarian/pull/1174), squash `07f0dd96`, head `60b53896`: `run_api_fill(should_stop=)`, `run_cycle(should_stop=)` and `library_enrich` check the worker's stop event before each fill request, `getAlbum`, search-sweep album, the fill itself, path rebuilds and each manual update request; a stopped fill is left `queued` (`stopped = "shutdown"`) and resumed. Also fixed two `WorkerTests` that had failed on `main` since W3 (two scheduler `start` calls), and made the thread test stop its worker on a failed assertion (it hung pytest). Tests: api_fill, auto_fill, library_enrich_find_artist, update_requests, worker_shutdown, worker_lock, slice import script: 68 passed.
+- PR [#1175](https://github.com/abucalip/navi-librarian/pull/1175), squash `b6ff452d`, head `52c3a1e4`: `logos._lock_for` and `ArtworkService._key_lock` count holders and waiters and drop the entry when the last leaves (appendix A5.5). Tests: radio logos, artwork cache, artwork, owned artwork and radio routes, artwork choice: 96 passed.
+- Lint on changed files clean for all three. CI queued at merge on all three heads. Full suite not run. Not deployed.
+- Limitations: Navidrome calls outside the shared client still count as `other`; no real SIGTERM during a live fill was tried.
+
 ## 2026-11-17 — Server efficiency C2 rerun: unused code and owner-approved single-caller adapters removed from navidrome_server.py (merged)
 
 - PR [#1172](https://github.com/abucalip/navi-librarian/pull/1172), squash `0391e5e0`, head `503929cb`, merged 2026-11-17 12:19 UTC (GitHub confirms `MERGED`).
