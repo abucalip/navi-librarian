@@ -1,11 +1,13 @@
 # Project status
 
-Last checked: 2026-11-17. GitHub `main` is authoritative; this update is based on main at `9a9f271f` (PR #1178 merged).
+Last checked: 2026-11-17. GitHub `main` is authoritative; this update is based on main at `4153075b` (PR #1179 merged).
 
 **Server V2 work queue:** `docs/ServerV2.md` now contains only remaining client slices and verification; the former full plan and completed-work history is preserved in `docs/archive/ServerV2_HISTORY_2026-11-09.md`.
 
 ## Current state
 
+- **CI hang fixed and CI trimmed (2026-11-17):** PR [#1179](https://github.com/abucalip/navi-librarian/pull/1179) (squash `4153075b`, head `9112d5b8`, merged 2026-11-17 14:57 UTC; CI queued at merge; not deployed); GitHub confirms `MERGED`. Cause of the slow CI since about 02:30 UTC: after #1160 a failing test left `worker.main()` running in a non-daemon thread, so the unit suite finished but never exited. The suite jobs had no timeout, so each held a runner for 6 hours; 20 of them filled every slot (test fixed in #1174). 65 hung or pre-fix unit-test runs were cancelled by hand. #1179 runs the unit suite once per push (only in `Validate Docker packaging`, owner decision), adds job timeouts (60 / 15 / 10 min) and cancels a pull request's older run on a new push; `main` keeps one run per SHA.
+  - **Next action:** once the queue drains, check that CI on `9112d5b8` and `4153075b` passes and that the unit suite exits within its timeout; then check CI on `f6a62962`, `9a9f271f` and `a4804473`.
 - **K2 `fetched_at` on page sections merged (2026-11-17):** PR [#1178](https://github.com/abucalip/navi-librarian/pull/1178) (squash `9a9f271f`, head `f6a62962`, merged 2026-11-17 14:02 UTC; CI pending at merge; not deployed); GitHub confirms `MERGED`. Artist and album page sections served stale from the discovery search cache state `fetched_at` (oldest stale row's store time; the identity lookup does not count). Every ungated K2 item is done; wider K2 scope stays gated on evidence. Focused tests 296 passed (14 new); full suite not run.
   - **Next action:** check CI on `f6a62962`, `9a9f271f` and the still-queued `a4804473` once runners start, and open a fix PR if one fails; then the owner decides whether to set a `reviews` cap (recommendation: leave it off).
 - **Efficiency finishing up merged (2026-11-17):** PR [#1177](https://github.com/abucalip/navi-librarian/pull/1177) (squash `a4804473`, head `1c0ace77`, merged 2026-11-17 13:31 UTC; CI queued at merge; not deployed); GitHub confirms `MERGED`. It implements `efficiency.md` "Left out of merged steps":
