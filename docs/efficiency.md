@@ -428,7 +428,7 @@ Each step quotes M2 numbers before and after. They are independent of one anothe
 
 - **Objective:** decide from data which routes still wait on providers and how often.
 - **Process-local state:** Appendix A2 rows for the metadata caches, `_EXTERNAL_HTTP` and the provider gate.
-- **Current state:** done (2026-11-17). One owner-approved scripted session; the table and the K2/K3 decision are in "K1 results" below. Script: `scripts/efficiency_inventory.py`.
+- **Current state:** done (2026-11-17). One owner-approved scripted session; the table and the K2/K3 decision are in "K1 results" below. Script: `scripts/efficiency_inventory.py`. Rerun on an aged copy of the live cache the same day ("K1 rerun on an aged cache"): expiry is 29% of first-view misses on owned pages, so K2's gate is met.
 - **Proposed changes:** using M1 and M2 output, add a table to this document: route, providers called, cache hit rate, median and p95 provider wait, miss causes.
 - **Affected components:** documentation.
 - **Implementation guidance:** one week of real use by the owner, or a scripted session over 50 owned and 20 unowned entities with the owner's approval for the traffic.
@@ -522,10 +522,68 @@ Miss causes, from the cache rows each request wrote:
 - The unowned artist page made 0 provider requests cold and 0.52 per request warm: its first data had probably been cached by the agent's earlier smoke run (`k1-smoke.json`). The warm calls are MusicBrainz and ListenBrainz work the gate had refused, as in point 3.
 - Review-outlet timings are per outlet, summed within a request, so they exceed the route's wall time.
 
+##### K1 rerun on an aged cache (2026-11-17)
+
+**Why.** K1 could not measure expiry, because its cache was hours old. The rerun measures it on a copy of the live server's stores, where 69% of the 48,245 metadata-cache rows were older than 7 days. Of those, 32,297 were 7 to 30 days old and 605 were over 30 days.
+
+**Setup.**
+- The owner approved the copy and the provider traffic.
+- The live stores were copied with SQLite's backup API inside the running container. The live files were only read, and the temporary copy was removed afterwards. The copy went to `local-test/data-live`, outside the repo; it holds credentials.
+- The copy was served by `main` at `f8f0c191` on port 8092. Only the web process ran, without reload, with slskd unset and sandboxed music and download folders.
+- There were 70 new targets with the same mix as K1: 25 owned albums, 25 owned artists, 10 unowned albums and 10 unowned artists. Each was picked from rows older than 7 days (album description, review source, details, artist bio, image). Ownership was checked against Navidrome.
+- The run made one first-view pass and one repeat pass. K1's five repeat passes were not repeated, because the first view on an aged store is the new evidence. Quiet windows were 20 s before and after the session, and both showed 0 provider calls.
+- The session made 537 provider requests (cap 1,000, not reached).
+- Raw output: `local-test/k1r-session.json`. Targets: `local-test/k1r-targets.json`. Both are outside the repo.
+
+**Totals, first view (pass 0, 230 requests each).** In the aged-store column, the in-memory caches are empty but the store holds the rows.
+
+| | K1 fresh store, cold | Aged store, pass 0 | Aged store, pass 1 |
+|---|---|---|---|
+| Requests with a provider call | 184 | 139 | 19 |
+| Provider requests | 682 | 498 | 39 |
+| Expired misses (requests) | 0 | **41** | 3 |
+| Never fetched | 140 | 50 | 5 |
+| Not cached (answer not stored) | 31 | 37 | 9 |
+| Failure | 13 | 11 | 2 |
+
+**Expired misses on first view.**
+- 41 of 139 requests with a provider call (29%) were expired misses, and so were 132 of 498 provider requests (27%).
+- They took 77 s of the 319 s total wall time in pass 0.
+- The rewritten rows had a median age of 9.2 days.
+
+| Route (owned) | Expired requests (of 25) | Wall ms median (max) | Rewritten row age, median days |
+|---|---|---|---|
+| album reviews | 11 | 4,167 (4,233) | 7.3 |
+| album links | 13 | 306 (406) | 11.7 |
+| artist page | 12 | 456 (6,396) | 3.2 |
+| album page | 5 | 2,031 (4,849) | 12.1 |
+
+- Unowned routes had no expired misses. Their calls were never-fetched or not-cached answers, as in K1.
+- Review rows expire after 7 days (`_REVIEWS_TTL`). An expired review list sends the route back to every outlet, and the route then answers at its deadline (about 4.2 s). That accounts for 46 s of the 77 s.
+- The artist page's expired rows are 3.2 days old. They are MusicBrainz, ListenBrainz and Discogs entries with short TTLs, not metadata-route rows.
+
+**Reading.**
+1. On a week-old cache, expiry is a material share of the provider waits on first views of owned pages: 29% of requests with a provider call, 27% of provider requests and 24% of pass-0 wall time. In K1 it was 1 in 203.
+2. The stored rows still help. On the album page, the aged store made 0.92 provider requests per request against K1's 5.2 on a fresh store, and the artist page made 0.96 against 2.48. The remaining wait is the expired rows.
+3. Repeat views on the aged store are almost free: 19 of 230 requests had a provider call. So the cost of expiry falls on the first view after the TTL passes. That is the case stale-while-revalidate addresses.
+4. The not-cached and failure misses from K1 remain: 48 requests in pass 0, mostly Deezer and Apple no-match answers. The two negative-cache candidates are still open.
+
+**Decision.**
+- **K2: the evidence gate is met; recommend opening it.** The owner decides.
+- Scope it to the namespaces with expired first views: album reviews (largest cost), album links, the album page's stored metadata, and the artist page's provider rows.
+- The plan's 10-times-TTL maximum staleness would keep a 7-day review list servable for 70 days. The owner should confirm that for reviews.
+
+**Limitations.**
+- One copy of one store and one session, with one repeat pass.
+- `expired` is a lower bound. An expiry-triggered re-fetch that then fails, or whose answer is not stored, is classed as `failure` or `not_cached`.
+- The web process starts with empty in-memory caches, so pass 0 is a fresh process on an aged store. A long-running server may hold some values in memory past the store's rows.
+- The live settings include a Discogs token, so Discogs calls appear (16 in pass 0). K1's copy made none.
+- Targets were picked from aged rows, so they over-represent entities viewed more than a week ago. That is the population K2 targets.
+
 #### K2. Stale-while-revalidate for metadata routes
 
 - **Objective:** a page never waits on a provider when any earlier answer exists.
-- **Current state:** an expired entry is a miss and the request waits for the provider.
+- **Current state:** an expired entry is a miss and the request waits for the provider. Evidence gate met by the K1 rerun (2026-11-17): 41 of 139 first-view misses on an aged cache were expired rows, mostly owned album reviews (about 4.2 s each), album links, the album page and the artist page. Not started; the owner decides whether to open it and the maximum staleness for reviews.
 - **Proposed changes:** extend the P4 helper: when a value exists but is past its TTL, return it and schedule one background refresh (bounded pool, single-flight, through the gate). Store `fetched_at` alongside values so responses can state age where the contract allows.
 - **Affected components:** `app/services/layered_cache.py`, `metadata_cache.py` (read with expiry information), `app/api/metadata.py`.
 - **Implementation guidance:** needs `MetadataCache.get` to return the timestamp; add a new method, keep the old one. Hard maximum staleness per namespace (for example 10 times the TTL) after which the value is treated as missing. Background refresh failures leave the stale value and follow the existing error rules.

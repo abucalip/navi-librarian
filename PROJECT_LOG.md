@@ -1,3 +1,11 @@
+## 2026-11-17 — Server efficiency K1 rerun on an aged cache (documentation)
+
+- The owner approved copying the live stores and the provider traffic. The live stores were copied with the SQLite backup API inside the running `discair` container, read only; the temporary copy was removed. The copy went to `local-test/data-live`, outside the repo; it holds credentials. 69% of 48,245 metadata-cache rows were older than 7 days.
+- `main` `f8f0c191` served it on port 8092 (web only, no reload, slskd unset, sandboxed folders); the server was stopped afterwards. `scripts/efficiency_inventory.py --warm-runs 1 --quiet-seconds 20 --max-provider-requests 1000 --data-dir local-test/data-live` was run over 70 new targets picked from aged rows (`local-test/k1r-targets.json`). The session made 537 provider requests; quiet windows showed 0 calls. Output: `local-test/k1r-session.json`.
+- Result: on first view, 41 of 139 requests with a provider call (29%) were expired misses, accounting for 132 of 498 provider requests and 77 s of 319 s wall time. Owned album reviews were the largest cost (11 requests, about 4.2 s each); album links, the artist page and the album page followed. On the repeat pass, 19 of 230 requests had a provider call.
+- Decision recorded in `docs/efficiency.md`: K2's evidence gate is met and opening it is recommended; the owner decides, including the maximum staleness for reviews.
+- No code changed and no tests run (documentation only). Not deployed.
+
 ## 2026-11-17 — Server efficiency C3, C2, R3 live check and K1 (merged)
 
 - All five merged by squash at the owner's instruction without waiting for CI; GitHub confirms `MERGED`. C3, C2, R3 and K1's script were written by subagents (Sonnet, medium effort), the #1163 follow-up and K1's analysis in the parent session; every diff reviewed before merge. Not deployed.
