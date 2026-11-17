@@ -107,7 +107,8 @@ def _due_queue(db, releases, artists, now):
     return due & (set(releases) | set(artists))
 
 
-def _search_sweep(db, summary, seen, untagged, releases, artists, touched_artists, get_album, get_artist, paced, now) -> None:
+def _search_sweep(db, summary, seen, untagged, releases, artists, touched_artists, get_album, get_artist, paced, now,
+                  should_stop=lambda: False) -> None:
     """Daily pass: give the identity ladder's search to albums added without a release MBID.
 
     Only albums whose tracks already carry MBIDs qualify (they have been through MBID tagging, for
@@ -124,6 +125,9 @@ def _search_sweep(db, summary, seen, untagged, releases, artists, touched_artist
             raise
     for album_id in sorted(untagged, key=untagged.get):
         if summary["searched"] >= SEARCH_ALBUMS_PER_PASS:
+            break
+        if should_stop():
+            summary["stopped"] = "shutdown"
             break
         state = source_state.get_state(db, api_fill.SOURCE, OP_SEARCH, album_id)
         if album_id not in seen or seen[album_id] or (
@@ -170,9 +174,14 @@ def run_cycle(
     max_new: int = MAX_NEW_ALBUMS,
     max_requests: int = MAX_REQUESTS,
     clock: Callable[[], float] = time.time,
+    should_stop: Callable[[], bool] = lambda: False,
 ) -> dict[str, Any]:
     """One poll. Returns a small summary (counts only; no names, paths or secrets); ``{"idle": True}``
     when nothing needed doing.
+
+    ``should_stop`` (the worker's stop event) ends the poll early on shutdown: albums not yet
+    ingested stay in the pending list, the search sweep and the fill stop before their next
+    request, and path rebuilding is skipped. Everything left is picked up by the next poll.
 
     ``newest(offset, size)`` and ``full()`` return album stubs (``id``, ``artistId``, ``musicBrainzId``);
     ``get_album`` / ``get_artist`` return the Subsonic ``album`` / ``artist`` object or None.
@@ -230,6 +239,9 @@ def run_cycle(
     failed = False
     done: set[str] = set()
     for stub in fresh[:max_new]:
+        if should_stop():
+            summary["stopped"] = "shutdown"
+            break
         album = get_album(str(stub["id"]))
         if not album:
             failed = True
@@ -265,7 +277,8 @@ def run_cycle(
     _put(db, PENDING_KEY, leftover)
     summary["searched"] = summary["resolved_by_search"] = 0
     if do_full and seen_raw is not None:
-        _search_sweep(db, summary, seen, untagged, releases, artists, touched_artists, get_album, get_artist, paced, now)
+        _search_sweep(db, summary, seen, untagged, releases, artists, touched_artists, get_album, get_artist, paced, now,
+                      should_stop)
     for gone in set(untagged) - set(seen):
         untagged.pop(gone)
     _put(db, SEEN_KEY, seen)
@@ -282,8 +295,9 @@ def run_cycle(
     summary["queued_releases"], summary["queued_artists"] = len(open_releases), len(open_artists)
     only = frozenset(open_releases) | frozenset(open_artists)
 
-    if only and _due_queue(db, open_releases, open_artists, now):
-        run = api_fill.run_api_fill(db, fetch=paced, max_requests=paced.requests + max_requests, only=only, clock=clock)
+    if only and not should_stop() and _due_queue(db, open_releases, open_artists, now):
+        run = api_fill.run_api_fill(db, fetch=paced, max_requests=paced.requests + max_requests, only=only, clock=clock,
+                                    should_stop=should_stop)
         progress = run.progress or {}
         summary["filled"] = {"state": run.state, **{k: progress.get(k) for k in (
             "requests", "releases_filled", "releases_absent", "artists_filled", "edges_created", "failures", "stopped")}}
@@ -295,7 +309,7 @@ def run_cycle(
             started = time.monotonic()
             for entity_id in sorted(ids_to_warm):
                 for kind in paths.PATH_KINDS:
-                    if time.monotonic() - started > WARM_MAX_SECONDS:
+                    if time.monotonic() - started > WARM_MAX_SECONDS or should_stop():
                         break
                     paths.cached_path(db, entity_id, kind)
                     summary["paths_rebuilt"] += 1

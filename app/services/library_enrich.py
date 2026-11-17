@@ -38,8 +38,8 @@ def poll_seconds(environ=None):
     return max(value, MIN_POLL) if value > 0 else None
 
 
-def poll_once(librarian, db):
-    """One poll against an open store; returns the cycle summary."""
+def poll_once(librarian, db, should_stop=lambda: False):
+    """One poll against an open store; returns the cycle summary. ``should_stop`` ends it early on shutdown."""
     def call(method, **params):
         return librarian.api_call(method, **params)
 
@@ -54,6 +54,7 @@ def poll_once(librarian, db):
         full=lambda: fetch_album_inventory(librarian.api_call, librarian.items),
         get_album=lambda album_id: call("getAlbum", id=album_id).get("album"),
         get_artist=lambda artist_id: call("getArtist", id=artist_id).get("artist"),
+        should_stop=should_stop,
     )
 
 
@@ -80,13 +81,16 @@ def find_artist_id(librarian, db, mbid):
     return None
 
 
-def handle_requests(librarian, db):
-    """Process queued manual update requests (the "Request update" button); returns how many ran."""
+def handle_requests(librarian, db, should_stop=lambda: False):
+    """Process queued manual update requests (the "Request update" button); returns how many ran.
+
+    ``should_stop`` is checked between requests, so shutdown never waits for the rest of the queue.
+    """
     def find_artist(mbid):
         return find_artist_id(librarian, db, mbid)
 
     ran = 0
-    while update_requests.process_next(
+    while not should_stop() and update_requests.process_next(
         db,
         get_album=lambda album_id: librarian.api_call("getAlbum", id=album_id).get("album"),
         get_artist=lambda artist_id: librarian.api_call("getArtist", id=artist_id).get("artist"),
@@ -110,8 +114,8 @@ def run_forever(librarian, stop, environ=None):
                 if db is None:
                     db = open_store(librarian.DATA_DIR / STORE_FILE)
                     update_requests.recover_running(db)
-                handle_requests(librarian, db)
-                summary = poll_once(librarian, db)
+                handle_requests(librarian, db, stop.is_set)
+                summary = poll_once(librarian, db, stop.is_set)
             last_error = None
             if not summary.get("idle"):
                 logger.info("Auto fill (%s): %s new, %s ingested, %s without MBID", summary.get("mode"),

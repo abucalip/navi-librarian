@@ -172,6 +172,23 @@ class ApiFillTests(unittest.TestCase):
         self.assertEqual(len(self.urls), 1)
         self.assertIsNone(again.progress["stopped"])
 
+    def test_shutdown_ends_the_run_after_the_request_in_flight_and_leaves_it_queued(self):
+        repo.upsert_entity(self.db, "release", "Two", mbid=REL2, owned=True)
+        result = self.run_fill(should_stop=lambda: bool(self.urls))   # set once the first request is sent
+        self.assertEqual(len(self.urls), 1)
+        self.assertEqual(result.state, "queued")
+        self.assertEqual(result.progress["stopped"], "shutdown")
+        self.urls.clear()
+        again = self.run_fill()                                        # the next run resumes the same row
+        self.assertEqual(again.run_id, result.run_id)
+        self.assertEqual(again.state, "succeeded")
+        self.assertEqual(len(self.urls), 2)                            # the two releases; the artist is done
+
+    def test_stop_set_before_the_run_sends_nothing(self):
+        result = self.run_fill(should_stop=lambda: True)
+        self.assertEqual(self.urls, [])
+        self.assertEqual(result.state, "queued")
+
     def test_missing_release_is_recorded_not_found_and_not_retried(self):
         self.responses[REL] = ApiError(404)
         self.run_fill()

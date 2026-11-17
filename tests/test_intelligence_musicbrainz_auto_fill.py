@@ -115,6 +115,34 @@ class AutoFillCycleTests(unittest.TestCase):
         self.assertEqual(auto_fill._get(self.db, auto_fill.QUEUE_KEY, None), {"releases": [], "artists": []})
         self.assertEqual(self.poll(), {"idle": True})
 
+    def test_shutdown_before_ingest_keeps_new_albums_pending_for_the_next_poll(self):
+        self.poll()
+        self.nd.add("a2", REL2)
+        self.nd.calls.clear()
+        out = self.poll(should_stop=lambda: True)
+        self.assertEqual((out["ingested"], out["stopped"]), (0, "shutdown"))
+        self.assertNotIn("getAlbum", self.nd.calls)
+        self.assertEqual(self.urls, [])                                 # no MusicBrainz request either
+        self.assertEqual([a["id"] for a in auto_fill._get(self.db, auto_fill.PENDING_KEY, [])], ["a2"])
+        out = self.poll()
+        self.assertEqual(out["ingested"], 1)
+        self.assertEqual(out["filled"]["releases_filled"], 1)
+
+    def test_shutdown_during_the_fill_keeps_the_queue_and_skips_path_rebuilds(self):
+        self.poll()
+        self.nd.albums["a3"] = REL
+        self.nd.add("a2", REL2)
+        out = self.poll(should_stop=lambda: any("/release/" in u for u in self.urls))
+        self.assertEqual(out["filled"]["stopped"], "shutdown")
+        self.assertEqual(out["paths_rebuilt"], 0)
+        self.assertEqual(len([u for u in self.urls if "/release/" in u]), 1)
+        queued = auto_fill._get(self.db, auto_fill.QUEUE_KEY, {})["releases"]
+        self.assertEqual(len(queued), 1)                                # the release not yet asked
+        self.urls.clear()
+        out = self.poll()
+        self.assertEqual(out["filled"]["releases_filled"], 1)
+        self.assertEqual(auto_fill._get(self.db, auto_fill.QUEUE_KEY, None), {"releases": [], "artists": []})
+
     def test_album_without_mbid_is_counted_and_not_filled(self):
         self.poll()
         self.nd.add("a2", "")
@@ -294,7 +322,9 @@ class WorkerTests(unittest.TestCase):
                 mock.patch.object(worker.library_enrich, "run_forever", side_effect=lambda *a: started.set()) as fill:
             worker.main(librarian=lib, stop=stop)
             self.assertTrue(started.wait(2))
-        entries, store_path, passed_stop = insights.call_args.args
+        # Two scheduler threads since W3: the main one (insights) and the discovery one.
+        self.assertEqual(insights.call_count, 2)
+        entries, store_path, passed_stop = insights.call_args_list[0].args
         self.assertIn("insights_refresh", [entry.name for entry in entries])
         self.assertEqual(store_path, lib.DATA_DIR / worker.STORE_FILE)
         self.assertIs(passed_stop, stop)
@@ -305,6 +335,7 @@ class WorkerTests(unittest.TestCase):
         from unittest import mock
         import app.worker as worker
         stop = threading.Event()
+        self.addCleanup(stop.set)               # a failed assertion must not leave the worker thread running
         result = []
         with mock.patch.object(worker.worker_schedule, "start") as insights, \
                 mock.patch.dict("os.environ", {library_enrich.POLL_ENV: "off"}):
@@ -312,7 +343,7 @@ class WorkerTests(unittest.TestCase):
             thread.start()
             thread.join(0.5)
             self.assertTrue(thread.is_alive())      # auto fill returned at once; the worker did not exit
-            insights.assert_called_once()
+            self.assertEqual(insights.call_count, 2)   # the main and the discovery scheduler
             stop.set()
             thread.join(2)
         self.assertEqual(result, [0])
@@ -325,6 +356,26 @@ class PollTests(unittest.TestCase):
         self.assertIsNone(library_enrich.poll_seconds({library_enrich.POLL_ENV: "0"}))
         self.assertEqual(library_enrich.poll_seconds({library_enrich.POLL_ENV: "1"}), library_enrich.MIN_POLL)
         self.assertEqual(library_enrich.poll_seconds({library_enrich.POLL_ENV: "5"}), 5.0)
+
+    def test_manual_requests_stop_between_requests_on_shutdown(self):
+        from unittest import mock
+        stop = __import__("threading").Event()
+        handled = []
+
+        def process_next(db, **kw):
+            handled.append(1)
+            stop.set()                  # shutdown arrives while the first request runs
+            return {"state": "done"}
+        with mock.patch.object(library_enrich.update_requests, "process_next", side_effect=process_next):
+            self.assertEqual(library_enrich.handle_requests(object(), None, stop.is_set), 1)
+        self.assertEqual(handled, [1])
+
+    def test_poll_passes_the_stop_check_to_the_cycle(self):
+        from unittest import mock
+        stop = __import__("threading").Event()
+        with mock.patch.object(library_enrich.auto_fill, "run_cycle", return_value={"idle": True}) as cycle:
+            library_enrich.poll_once(object(), None, stop.is_set)
+        self.assertEqual(cycle.call_args.kwargs["should_stop"], stop.is_set)
 
 
 if __name__ == "__main__":
