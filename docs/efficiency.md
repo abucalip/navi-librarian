@@ -428,7 +428,7 @@ Each step quotes M2 numbers before and after. They are independent of one anothe
 
 - **Objective:** decide from data which routes still wait on providers and how often.
 - **Process-local state:** Appendix A2 rows for the metadata caches, `_EXTERNAL_HTTP` and the provider gate.
-- **Current state:** unknown; revision 2 assumed artist and album pages are the problem.
+- **Current state:** done (2026-11-17). One owner-approved scripted session; the table and the K2/K3 decision are in "K1 results" below. Script: `scripts/efficiency_inventory.py`.
 - **Proposed changes:** using M1 and M2 output, add a table to this document: route, providers called, cache hit rate, median and p95 provider wait, miss causes.
 - **Affected components:** documentation.
 - **Implementation guidance:** one week of real use by the owner, or a scripted session over 50 owned and 20 unowned entities with the owner's approval for the traffic.
@@ -437,6 +437,90 @@ Each step quotes M2 numbers before and after. They are independent of one anothe
 - **Verification:** numbers trace to recorded output files.
 - **Acceptance criteria:** the table exists and K2 and K3 are confirmed, narrowed or cancelled in writing.
 - **Model:** Sonnet, Low. Analysis and a decision, little code.
+
+##### K1 results (2026-11-17)
+
+**Setup.** One scripted session, approved by the owner, on the local instance at port 8091 serving the copied ingested store (`local-test/data-mb`, outside the repo). The script is `scripts/efficiency_inventory.py`. There were 70 targets: 25 owned artists, 25 owned albums, 10 unowned artists and 10 unowned albums. Each target had every route its page uses requested once cold, then 5 warm passes. Requests were strictly sequential, and each request's provider calls were read from `/api/diagnostics/runtime` before and after it. Cache rows were read (read-only) to class each miss. The 60 s quiet window before the session and the 30 s one after it showed 0 background provider calls. The session made 1,135 provider requests (cap 1,500, not reached):
+
+| Provider | Requests |
+|---|---|
+| review outlets | 475 |
+| Deezer | 259 |
+| MusicBrainz | 121 |
+| Apple | 116 |
+| ListenBrainz | 83 |
+| Wikipedia | 58 |
+| Wikidata | 15 |
+| Qobuz | 8 |
+
+Raw output: `local-test/k1-session.json` and `k1-offline-ttl.json` (outside the repo).
+
+**Totals.**
+
+| Phase | Requests | With a provider call | Provider requests |
+|---|---|---|---|
+| Cold (pass 0) | 230 | 184 | 682 |
+| Warm (passes 1 to 5) | 1,150 | 203 (18%) | 453 |
+
+Warm passes 1 to 5 made 30, 166, 66, 33 and 158 provider requests, so the warm path did not settle to zero.
+
+**Per route.** "Prov/req" is provider requests per request. "Hit" is the share of requests that made no provider call. Times are medians, with p95 in brackets.
+
+| Target / route | Cold prov/req | Cold wall ms | Warm prov/req | Warm hit | Warm wall ms | Warm gate wait p95 s | Warm miss causes |
+|---|---|---|---|---|---|---|---|
+| owned album / album page | 5.2 | 3,749 (8,017) | 0.47 | 0.70 | 118 (6,254) | 12.3 | not cached 24, never fetched 10, failure 3, expired 1 |
+| owned album / album links | 1.92 | 132 (3,851) | 0.67 | 0.62 | 3 (343) | 0 | not cached 44, failure 4 |
+| owned album / album reviews | 8.12 | 4,159 (4,427) | 1.28 | 0.62 | 2 (4,252) | 0 | failure 37 (outlet timeouts), never fetched 11 |
+| owned artist / artist page | 2.48 | 2,432 (4,837) | 0.18 | 0.94 | 27 (4,538) | 13.1 | never fetched 6, failure 2 |
+| owned artist / artist image | 1.0 | 198 (366) | 0 | 1.0 | 2 (4) | n/a | none |
+| owned artist / artist bio | 0 | 23 (94) | 0 | 1.0 | 2 (3) | n/a | none |
+| unowned album / album page | 7.1 | 3,954 (8,020) | 0.60 | 0.48 | 116 (7,414) | 7.6 | not cached 23, never fetched 3 |
+| unowned album / album reviews | 8.1 | 4,140 (4,244) | 0.72 | 0.78 | 2 (4,245) | 13.8 | failure 8, never fetched 3 |
+| unowned album / album links | 1.6 | 141 (239) | 0.24 | 0.86 | 2 (273) | 2.0 | not cached 6, failure 1 |
+| unowned album / album artwork | 1.6 | 136 (1,764) | 0.36 | 0.88 | 2 (2,156) | 0 | not cached 6 |
+| unowned artist / artist page | 0 | 487 (1,208) | 0.52 | 0.84 | 494 (7,813) | 13.2 | never fetched 6, failure 2 |
+| unowned artist / artist bio | 2.0 | 277 (918) | 0.12 | 0.94 | 2 (285) | 0 | never fetched 2, failure 1 |
+| unowned artist / artist image | 1.0 | 215 (265) | 0 | 1.0 | 2 (4) | n/a | none |
+| unowned album / album details | 0 | 2 (3) | 0 | 1.0 | 2 (4) | n/a | none |
+
+Miss causes, from the cache rows each request wrote:
+- **expired:** an existing row was rewritten.
+- **never fetched:** a new row was created.
+- **not cached:** the provider answered but nothing was stored.
+- **failure:** a timeout or error, which is not stored by design.
+
+**Warm misses by cause.** Across all routes there were 203 warm requests with a provider call:
+
+| Cause | Requests |
+|---|---|
+| not cached | 103 |
+| failure | 58 |
+| never fetched | 41 |
+| expired | 1 |
+
+**Reading.**
+1. **Expiry is not what makes warm pages wait in this session.** Only 1 of 203 warm misses was an expired row. This session cannot measure expiry fairly, though: every cache row was under one day old (`k1-offline-ttl.json`, max age 0.28 days), and the shortest TTLs in use are 1 to 7 days.
+2. **Most warm provider calls are answers the routes deliberately do not keep.**
+   - Album links and the album page re-ask Deezer and Apple when there is no match.
+   - Album reviews re-ask review outlets that timed out: 141 of 160 warm outlet requests on owned albums were timeouts. Their provider time is 12 s median, while the route answers at its deadline (about 4.2 s at p95).
+   - These are negative-caching gaps of the same kind as F13 and P6, not stale-while-revalidate cases.
+3. **Never-fetched misses on warm passes are mostly MusicBrainz work refused at the gate on an earlier pass** (`rate_limited` outcomes; warm gate wait p95 12 to 14 s on the artist and album pages). The value is fetched on a later request.
+4. **First views are slow.** Owned album page cold: 3.7 s median, 8.0 s p95, 5.2 provider requests. Owned artist page cold: 2.4 s median, 4.8 s p95.
+
+**Decision.**
+- **K2 (stale-while-revalidate): deferred, not cancelled.** This session gives no evidence for it (1 expired miss in 203), but it could not show expiry either, because the cache was hours old. Re-measure with `scripts/efficiency_inventory.py` on an instance whose cache is older than 7 days, or from a week of the owner's real use. Open K2 only if expired misses then become a material share of warm provider calls.
+- **K3 (prefetch for owned entities): confirmed, narrowed.** Narrowed to the namespaces behind the owned album page and the owned artist page. Album reviews are left out until outlet failures are handled, because prefetch would only repeat timeouts. The plan lists K2 as a K3 dependency; this evidence does not support that, since prefetch fills the same keys whether or not K2 exists. The owner decides whether to drop the dependency. K3 still needs the owner's approval for its provider traffic.
+- **New candidates, not started, for the owner to decide:**
+  - Short negative caching for review-outlet timeouts and errors (per outlet and album, for example 1 h, like P6).
+  - Short negative caching for Deezer and Apple "no match" answers in album links and the album page.
+  - Both follow the P6 pattern and would remove most of the 161 "not cached" and "failure" warm misses.
+
+**Limitations.**
+- One machine, one copied store, one session.
+- The cache was hours old, so expiry is under-represented.
+- Gate waits include refusals caused by the session's own earlier requests.
+- The unowned artist page made 0 provider requests cold and 0.52 per request warm: its first data had probably been cached by the agent's earlier smoke run (`k1-smoke.json`). The warm calls are MusicBrainz and ListenBrainz work the gate had refused, as in point 3.
+- Review-outlet timings are per outlet, summed within a request, so they exceed the route's wall time.
 
 #### K2. Stale-while-revalidate for metadata routes
 
