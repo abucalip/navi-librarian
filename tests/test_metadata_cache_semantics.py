@@ -4,6 +4,7 @@ Written against the hand-rolled dict caches before efficiency P4 moved them onto
 `app.services.layered_cache`, and kept unchanged afterwards, so both versions answer the same way.
 """
 import contextlib
+import threading
 import unittest
 from unittest.mock import patch
 
@@ -346,6 +347,49 @@ class ArtistBioTests(_Case):
         local.assert_called_once()
         client.get.assert_not_called()
         self.assertEqual(self.store.data, {})
+
+
+class ConcurrentRequestTests(_Case):
+    def test_identical_concurrent_requests_make_one_provider_call(self):
+        """Efficiency P4: the second request waits for the first one's answer instead of asking again."""
+        from app.services import layered_cache
+
+        arrived = threading.Semaphore(0)
+
+        class Done(threading.Event):
+            def wait(self, timeout=None):
+                arrived.release()
+                return super().wait(timeout)
+
+        class Flight(layered_cache._Flight):
+            def __init__(self):
+                super().__init__()
+                self.done = Done()
+
+        started, release = threading.Event(), threading.Event()
+        calls, results = [], []
+
+        def get(url):
+            calls.append(url)
+            started.set()
+            release.wait(5)
+            raise RuntimeError("down")  # a failure is not cached, so only single-flight can share it
+
+        with patch.object(layered_cache, "_Flight", Flight), patch.object(metadata, "_EXTERNAL_HTTP") as client:
+            client.get.side_effect = get
+            first = threading.Thread(target=lambda: results.append(metadata.artist_image("Portishead")))
+            first.start()
+            self.assertTrue(started.wait(5))
+            second = threading.Thread(target=lambda: results.append(metadata.artist_image("Portishead")))
+            second.start()
+            self.assertTrue(arrived.acquire(timeout=5))
+            release.set()
+            first.join(5)
+            second.join(5)
+            self.assertEqual(len(calls), 1)
+            self.assertEqual([r["retryable"] for r in results], [True, True])
+            metadata.artist_image("Portishead")
+            self.assertEqual(len(calls), 2)
 
 
 if __name__ == "__main__":
