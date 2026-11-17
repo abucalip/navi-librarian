@@ -10,6 +10,8 @@ Rules:
 - A run that returns, or raises, is recorded. A raising run is logged by error type only and still
   records its time, so a broken job waits for its next window instead of spinning.
 - A run that returns while ``stop`` is set was cut short by shutdown: it is not recorded and stays due.
+- A run that returns ``NOT_READY`` could not do its work yet (its input is unavailable): it is not recorded
+  and is tried again after the entry's ``retry_seconds`` (kept in memory only; a restart makes it due again).
 - ``stop`` is checked before each entry, so shutdown never starts the next job.
 
 This module imports no job module: ``app/worker.py`` builds the entries, and the diagnostics route reads
@@ -28,6 +30,7 @@ logger = logging.getLogger(__name__)
 
 KEY_PREFIX = "schedule:"
 TICK_SECONDS = 60.0      # how often the scheduler thread evaluates the due rules
+NOT_READY = object()     # returned by a run whose input is not usable yet: not recorded, retried later
 
 
 @dataclass(frozen=True)
@@ -36,6 +39,7 @@ class Entry:
     due: Callable[[float, Optional[float]], bool]
     run: Callable[[], object]
     legacy_key: Optional[str] = None     # meta key read when ``schedule:<name>`` is missing (upgrade path)
+    retry_seconds: float = 1800.0        # wait after a ``NOT_READY`` return before trying again
 
 
 def interval(seconds: float) -> Callable[[float, Optional[float]], bool]:
@@ -99,6 +103,7 @@ class Scheduler:
         self.store_path = store_path
         self.clock = clock
         self._last = None
+        self._retry_at = {}      # entry name -> clock time before which a NOT_READY entry is not retried
 
     def _load(self):
         db = open_store(self.store_path)
@@ -128,12 +133,20 @@ class Scheduler:
                 break
             if not entry.due(self.clock(), self._last.get(entry.name)):
                 continue
+            retry_at = self._retry_at.get(entry.name)
+            if retry_at is not None and 0 < retry_at - self.clock() <= entry.retry_seconds:
+                continue     # waiting to retry; a wait longer than retry_seconds means the clock stepped back
+            result = None
             try:
-                entry.run()
+                result = entry.run()
             except Exception as exc:
                 logger.error("Scheduled job %s failed (%s)", entry.name, type(exc).__name__)
             if stop.is_set():
                 break        # cut short by shutdown: not recorded, so it stays due
+            if result is NOT_READY:
+                self._retry_at[entry.name] = self.clock() + entry.retry_seconds
+                continue
+            self._retry_at.pop(entry.name, None)
             self._save(entry.name, self.clock())
             ran.append(entry.name)
         return ran

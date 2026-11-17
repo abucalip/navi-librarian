@@ -114,7 +114,7 @@ python -m unittest discover -s tests -p 'test_discovery_search_providers.py' -v
 python -m unittest discover -s tests -p 'test_discovery_search_runner.py' -v
 python -m unittest discover -s tests -p 'test_discovery_search_merge.py' -v
 python -m unittest discover -s tests -p 'test_discovery_search_artist_sections.py' -v
-# P3 and P3b similar artists, shared tags, owner boost, daily precompute and its cursor
+# P3 and P3b similar artists, shared tags, owner boost, daily precompute and its cursor (worker entry, efficiency W2)
 python -m unittest discover -s tests -p 'test_discovery_search_similar.py' -v
 python -m unittest discover -s tests -p 'test_discovery_search_similar_precompute.py' -v
 python -m unittest discover -s tests -p 'test_similar_precompute_schedule.py' -v

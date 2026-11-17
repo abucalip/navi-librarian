@@ -89,9 +89,14 @@ def _start_discovery_background():
     _bump_discogs_generation_at_startup(librarian)
     librarian._start_discovery_scheduler()
     lens_service.start_daily_refresh(librarian)
-    from app.api.search import start_similar_precompute
+    # The similar-artist precompute runs in the worker (efficiency W2). Only start building the web
+    # process's owned index now, once, so the first search does not wait for it.
+    from app.api.search import owned_view
 
-    start_similar_precompute(librarian)
+    try:
+        owned_view(librarian)
+    except Exception:
+        pass    # a warm-up only: the first search starts the build again
 
 
 def _schedule_discovery_scheduler_startup():

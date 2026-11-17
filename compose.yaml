@@ -29,7 +29,8 @@ services:
 
   worker:
     # Background worker: the only writer of knowledge facts in the Server V2 store and the only caller of
-    # MusicBrainz for it (web routes write only owner records and caches) (automatic API fill, insights refresh). Same image, configuration and data volume.
+    # MusicBrainz for it (web routes write only owner records and caches) (automatic API fill, insights refresh,
+    # daily similar-artist precompute). Same image, configuration and data volume.
     image: ghcr.io/abucalip/navi-librarian:latest
     container_name: discair-worker
     restart: unless-stopped
@@ -45,6 +46,8 @@ services:
       NAVIDROME_PASSWORD: ${NAVIDROME_PASSWORD:-}
       NAVI_AUTO_FILL_POLL_SECONDS: ${NAVI_AUTO_FILL_POLL_SECONDS:-}
       LISTENBRAINZ_USERNAME: ${LISTENBRAINZ_USERNAME:-}
+      # The similar-artist precompute uses Last.fm; the key's default comes from here, as in the web service.
+      LASTFM_API_KEY: ${LASTFM_API_KEY:-}
     volumes:
       - librarian_data:/data
 
