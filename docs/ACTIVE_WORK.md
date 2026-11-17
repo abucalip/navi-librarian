@@ -287,7 +287,14 @@ Done: Genres grid and four album shelves on the dashboard, the Recommended slide
 
 - The owner picked direction A ("Listening Room") on 2026-11-17 from three Home mockups, and asked for fuller reasons for each pick (as in direction C). The design system and build plan are in [`LISTENING_ROOM_WEB.md`](LISTENING_ROOM_WEB.md), with the package in [`design/listening-room/`](design/listening-room/): tokens, components, icons, fonts, and Home, reasons and states mockups at 1440 and 390. The owner asked for a docs PR.
 - Open owner decisions D1 to D4 are in section 10 of the plan. The recommendations: the server builds a shared `why` object; Listening Room becomes the web default, and the old web layouts are retired only after the owner's check; Discover music stays on Home; covers that cannot be sampled get the fallback tint.
-- **Next action:** after the owner's review, start L0 (server audit and missing reason fields, plan section 9), then L1 to L6. Only Home is designed; every other web page needs mockups before it is built.
+- 2026-11-17, second round: the owner asked for mockups of all pages, with no Paths on the web, and for the reasons behind each pick to be showcased (prominent, not centre-aligned). Now drawn:
+  - 23 pages at 1440 and 390: Discover (six lists), Library (two views), Artist, Album (two states), Album modal, Genre, Search, Saved, Blocklist, Acquisitions, Radio, Settings (four tabs) and Sign in;
+  - the reason panel (plan 5.6 and 6.3);
+  - page specs in section 8;
+  - slices L7 to L14.
+
+  Paths is gone from the web design.
+- **Next action:** after the owner's review, start L0 (server audit and missing fields, plan section 9), then L1 to L6 (Home), then L7 to L14.
 
 ## 2r. macOS Paths and Booklet sheets redesign: design proposed, no code yet
 

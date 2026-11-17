@@ -17,8 +17,20 @@ Last checked: 2026-11-17. GitHub `main` is authoritative; this update is based o
   No code.
   - **Next action:** the owner reviews and answers D1 to D6; then P0 and B1 (model and palette, nothing visible).
 
-- **Web client Listening Room design proposed (2026-11-17):** a docs-only PR, opened at the owner's request, with [`docs/LISTENING_ROOM_WEB.md`](LISTENING_ROOM_WEB.md) and [`docs/design/listening-room/`](design/listening-room/). It holds the design system (tokens, components, 35 icons, Instrument Sans) and the Home, reasons and states mockups. Reasons are built only from fields the server sends (R1 to R12). Build slices L0 to L6 are planned. No code.
-  - **Next action:** the owner reviews the design and answers D1 to D4; then L0, the server audit.
+- **Web client Listening Room design: every page drawn (2026-11-17):** [`docs/LISTENING_ROOM_WEB.md`](LISTENING_ROOM_WEB.md) and [`docs/design/listening-room/`](design/listening-room/) now cover every web page. The owner asked for:
+  - mockups of all pages;
+  - no Paths on the web;
+  - the pick reasons showcased.
+
+  What is in the package:
+  - 23 page mockups at 1440 and 390, beside Home, reasons and states;
+  - 52 icons;
+  - a reason panel with its own fill, rule, label and larger type;
+  - the page specs (section 8);
+  - build slices L0 to L14.
+
+  Docs only, pushed to `main`. No code.
+  - **Next action:** the owner reviews the pages and answers D1 to D4; then L0, the server audit.
 
 - **Android Bento and Index design systems proposed (2026-11-17):** a docs-only PR, opened at the owner's request, with `docs/BENTO_THEME.md`, `docs/INDEX_THEME.md`, `docs/design/bento/`, `docs/design/index/` and `docs/design/_kit/`. It contains:
   - mockups of every page in one palette each, Paths included;

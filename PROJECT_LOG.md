@@ -1,3 +1,40 @@
+## 2026-11-17 — Web Listening Room: mockups for every page, reasons showcased, no Paths (docs, on main)
+
+- **Request.** The owner asked for mockups of all web pages, without Paths (Paths stays on Android and macOS). They also asked for the texts that explain each pick to be "centred" in the sense of showcased: given a prominent place of their own, not centre-aligned. An earlier attempt was interrupted and thrown away at the owner's request; this round started fresh from `main` at `d3c4ed67`.
+- **Reasons.** Every reason now sits in a reason panel:
+  - new tokens: `reason-fill` `#1D2027` and `reason-rule` `#8A90A0`, plus hero variants;
+  - a "Why this pick" label carrying the kind's icon;
+  - the sentence in Instrument Sans 600 at 24/32 on heroes and 18/26 elsewhere, at full text strength;
+  - a 3-line reason strip on grid cards.
+
+  On ranked rows, the panel sits beside the title.
+- **Pages.** `_src/pages.py` writes 23 pages from shared parts:
+  - Discover with one list switch over the six lists;
+  - Library (list and grid);
+  - Artist;
+  - Album (not owned and owned);
+  - Album modal;
+  - Genre;
+  - Search;
+  - Saved;
+  - Blocklist;
+  - Acquisitions (every tone);
+  - Radio and Heard;
+  - Settings (Navidrome, slskd with the quality priority list, Last.fm/ListenBrainz/Discogs, Appearance);
+  - Sign in.
+
+  `build.py` renders each page at 1440 and 390 at a measured height. Home and states lost Paths; the rail gained Blocklist.
+- **Package.**
+  - 52 icons (18 added, `paths` removed); new components 5.14 to 5.30 in `components.css`.
+  - The plan gained section 8 (a spec for each page), section 12 (the page list) and slices L7 to L14.
+  - L0 item 3 is now the page-fields check.
+- **Checks.**
+  - `check_contrast.py`: all pairs pass, including the new reason pairs and the hero reason fill and rule over 1,301 tints (lowest hero text ratio 8.57).
+  - `build.py` wrote 50 PNGs.
+  - Checked by eye: discover-daily, home, album, artist, acquisitions, discover-phone, search and settings-slskd. That review led to fixes: the line clamp, the phone toolbar, Get on phone rows, Similar albums as cards, and a link-wrapped button in Search.
+  - Not run: pylint on `_src/` (design tooling outside the app; it reports long lines, as the existing `build.py` did) and the unit suite (docs only).
+- **Limits.** Mockups only, no code. The owner decisions D1 to D4 are still open. Fields the pages print that L0 must confirm are listed in plan section 9.3.
+
 ## 2026-11-17 — CI optimization: unit suite under pytest, 40 min to 69 s (merged)
 
 - Cause: CI ran `python -m unittest discover`, which does not load `tests/conftest.py`. Since R3 part 2 (#1137) put every MusicBrainz call behind the shared provider gate, each such call in a test slept 1.1 s on the real gate file. In run 44127218306 (`Ran 4426 tests in 2375s`), almost all of the time was in discovery files (candidate_gathering 907 s, save_tag_seed 321 s, replenishment 170 s, ...), with gaps in exact multiples of 1.1 s.
