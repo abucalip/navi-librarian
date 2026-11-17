@@ -1,3 +1,11 @@
+## 2026-11-17 — Server efficiency M3: process-local state inventory
+
+- Branch `docs/efficiency-m3-state-inventory` from `main` at `cc14fb51`. Changes: `docs/efficiency.md` (new Appendix A: threads and pools, caches and registries, locks in `navidrome_server.py` and route modules, process-wide patches, findings A5.1 to A5.5, cross-references from W2, W3 and K1; M3 status; evidence log), `docs/PROJECT_STATUS.md`, this log.
+- Method: grep for `threading.Thread(`, `ThreadPoolExecutor(`, `threading.Lock/RLock/Event/Semaphore(`, `lru_cache` (none in server code) and module-level mutable containers in the server packages and `navidrome_server.py`; each hit read. Constant tables excluded.
+- Open item: `navidrome_server._DISCOVERY_ACQUIRE_ACTIVE` has no writer in its own module; the writer must be found before W3.
+- Tests run: none. Documentation only; no code changed. Not run: any test, lint or full suite. Not deployed.
+- PR opened as the owner asked, although `CLAUDE.md` allows documentation-only changes straight to `main`.
+
 ## 2026-11-17 — Server efficiency M2: knowledge-route and full baseline
 
 - Branch `efficiency-m2-knowledge-baseline` from `main` at `5437669c`. Changes: `scripts/efficiency_baseline.py` gains `--knowledge-type` (default `release_group`, unchanged) and `build_routes(..., knowledge_type)`; `tests/test_efficiency_baseline.py` gains `test_build_routes_knowledge_type_is_configurable`; `docs/efficiency.md` (M2 status and evidence log) and `docs/PROJECT_STATUS.md`.

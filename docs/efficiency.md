@@ -287,7 +287,7 @@ Step identifiers are stable; refer to them in PR titles. **Model** names the sin
 #### M3. Process-local state inventory
 
 - **Objective:** one table of module globals, locks, caches and threads, each classified (immutable, rebuildable cache, shared mutable, singleton side effect).
-- **Current state:** partial lists in this document only.
+- **Current state:** done. Appendix A (survey at `cc14fb51`, 2026-11-17) holds the table; W2, W3 and K1 reference it.
 - **Proposed changes:** add the table as an appendix to this document. No code.
 - **Affected components:** documentation.
 - **Implementation guidance:** search for module-level dicts and locks, `threading.Thread(`, `ThreadPoolExecutor(`, `lru_cache`. Start from the thread list in F2, F8 and section 3.
@@ -397,6 +397,7 @@ Each step quotes M2 numbers before and after. They are independent of one anothe
 #### W2. Move similar-artist precompute to the worker
 
 - **Objective:** no periodic loop in `app/api/search.py`.
+- **Process-local state:** Appendix A rows for `start_similar_precompute` and the owned index.
 - **Current state:** started from web startup; daily flag in memory; depends on the owned index, which is process-local.
 - **Proposed changes:** register the precompute in the scheduler (daily, with its persisted cursor); remove `start_similar_precompute` from web startup.
 - **Affected components:** `app/api/search.py`, `app/main.py`, `app/worker_schedule.py`.
@@ -410,6 +411,7 @@ Each step quotes M2 numbers before and after. They are independent of one anothe
 #### W3. Move lens refresh and the discovery scheduler to the worker
 
 - **Objective:** web startup starts no periodic work.
+- **Process-local state:** Appendix A rows for the lens and scheduler threads and the `_DISCOVERY_*` guards, and finding A5.4 (the unexplained writer).
 - **Current state:** `lens_service.start_daily_refresh` and `navidrome_server._start_discovery_scheduler` run in the web process; manual refreshes also run there under process-local locks.
 - **Proposed changes:** register both in the scheduler with their existing cadences and due rules (`_due`, `refresh_stale_lists`, `automatic_refill_enabled`); wrap each list refresh, scheduled and manual, in `run_job` with a per-list scope so the two processes cannot refresh the same list at once; delete `_start_discovery_background` and its timer from `app/main.py`.
 - **Affected components:** `app/main.py`, `navidrome_server.py` (scheduler functions), `discovery/lens_service.py`, `discovery/refresh.py`, `app/worker_schedule.py`.
@@ -425,6 +427,7 @@ Each step quotes M2 numbers before and after. They are independent of one anothe
 #### K1. Request-time provider call inventory
 
 - **Objective:** decide from data which routes still wait on providers and how often.
+- **Process-local state:** Appendix A2 rows for the metadata caches, `_EXTERNAL_HTTP` and the provider gate.
 - **Current state:** unknown; revision 2 assumed artist and album pages are the problem.
 - **Proposed changes:** using M1 and M2 output, add a table to this document: route, providers called, cache hit rate, median and p95 provider wait, miss causes.
 - **Affected components:** documentation.
@@ -672,3 +675,94 @@ Findings: (1) the artist page still makes one ListenBrainz popularity call per r
 - 2026-11-16 (R5): Worker loop lifecycle implemented in PR #1140, squash `034341ea`, head `efd564d4`. Persisted refresh cadence (`meta` key `insights_refresh.last_run_at`), a stop hook in the provider tick (`should_stop`), stop-aware waits and a bounded join of the loop threads before the worker lock is released; compose `stop_grace_period: 30s`. Focused tests only: 75 passed across seven files; lint changed files 0 new findings. Full suite not run locally. Not deployed. CI on the head: `compile` and `test-and-build` were still in progress at merge.
 - 2026-11-11 (revision 5): Full rewrite against `main` at `b5a90bf3`. Adds findings F1 to F12 read from source (stuck jobs after a worker kill, unshared MusicBrainz pacing, write transaction on every knowledge read, settings and HTTP client churn, unbounded caches, duplicate ingest, dead code). Replaces the generic dispatcher, the strict single-egress rule and the cache-folding proposal with smaller designs; defers profile read models, lanes and multi-worker web. Corrects status: the worker process, `source_state`, the state-file split, `KnowledgeReader` routes and one real slice import exist; the shared limiter and scheduler do not. Adds a per-step roadmap with model assignments. Documentation only: nothing was executed or measured, and no code, tests, configuration, provider traffic, publication or deployment changed.
 - 2026-11-06 (revisions 1 to 4): Combined the provider batching audit with the worker-separation plan; added the review of revision 1, the knowledge-store section, the shared-limiter requirement, the dump-slice decision (D-1), the state-file split, stale-versus-missing rules and cold-start requirements. Full text is in the git history of this file.
+
+## Appendix A. Process-local state inventory (M3)
+
+Survey at `main` `cc14fb51`, 2026-11-17. Documentation only; no code, tests or runtime changed. Scope: the server packages in `docs/ARCHITECTURE.md` and `navidrome_server.py`; tests excluded. Method: grep for `threading.Thread(`, `ThreadPoolExecutor(`, `threading.Lock/RLock/Event/Semaphore(`, `lru_cache` (none in server code) and module-level assignments of mutable containers, then read each hit. Line numbers are as of `cc14fb51`; cite by symbol. About 100 constant tables (labels, host maps, header dicts, tuning values) are immutable and are not listed.
+
+Classes: **rebuildable cache** (can be dropped without losing data), **shared mutable** (state or a lock that more than one thread uses), **singleton side effect** (starts a thread, patches a global, or runs once per process). "Process" means one web or worker process: every row is per process unless it says otherwise.
+
+### A1. Threads and pools
+
+| Where (symbol) | Process | Starts | Class | Notes |
+|---|---|---|---|---|
+| `navidrome_server.py` `_start_discovery_scheduler`, `_discovery_scheduler_thread` (~2458) | web | daemon scheduler loop | singleton side effect | W3 moves it to the worker. |
+| `discovery/lens_service.py` `start_daily_refresh` (`navidrome-lens-lists`) | web | daily loop | singleton side effect | W3. |
+| `discovery/lens_service.py` manual refresh (`navidrome-lens-lists-manual`) | web | one per request | shared mutable | Guarded by `_REFRESH_LOCK` (41). W3. |
+| `app/api/search.py` `start_similar_precompute` (`navidrome-similar-artists`) | web | daily loop | singleton side effect | W2; reads the process-local owned index. |
+| `navidrome_server.py` refresh threads (`navidrome-refresh-<list>`, ~2393) | web | one per manual refresh | shared mutable | Guarded by `_DISCOVERY_REFRESH_LOCK` (708). |
+| `navidrome_server.py` import recovery (`navidrome-import-recovery`, ~1586) | web | one per watched import | shared mutable | Guarded by `_DISCOVERY_IMPORT_ACTIVE` (A3). Safety-critical (import). |
+| `discovery/refresh.py` revalidation (`navidrome-revalidate-<list>`, ~416) | web | one per revalidation | shared mutable | `_revalidate_in_flight`, `_revalidate_last_start` under `_revalidate_lock` (359-361). |
+| `discovery/identity.py` `_work` (~218) | web | one per run | shared mutable | `_running` under `self._lock` (207). |
+| `acquisition/track_service.py` track thread (`navidrome-track-<id>`, ~294) | web | one per track request | shared mutable | `_ACTIVE` under `_ACTIVE_LOCK` (45-46). Safety-critical (acquisition). |
+| `app/api/radio.py` `_scrobble_in_background` (~222) | web | one per play | one-shot | Fire and forget; no shared state. |
+| `discovery/search/index.py` `_run_build` (~344) | web | one per index generation | shared mutable | Started without the lock held; `self._lock` (285). |
+| `discovery/search/network.py` purge thread (~65) | web | one per scheduled purge | shared mutable | `_purge_scheduled` under `_purge_lock` (46-47). |
+| `discovery/search/runner.py` per-part thread (~218) | web | one per search part | shared mutable | `_inflight` under `RLock` (49-50). |
+| `app/worker.py` `insights-refresh` (`insights_refresh.start`, ~111) | worker | six-hourly loop | singleton side effect | Stop `Event` from `main` (96); joined within 25 s (R5). |
+| `app/worker.py` `library-enrich` (~112) | worker | loop | singleton side effect | `_LOCK` (`library_enrich.py` 25). Does not stop mid-run (R5 limitation). |
+| `app/worker.py` `_metrics_loop` (~114, line 79) | worker | every 5 min | singleton side effect | Writes the runtime snapshot to `meta`. |
+| `app/api/metadata.py` `_review_pool` (473) | web | module-level pool, 8 workers | singleton side effect | Lives for the process. |
+| `app/api/metadata.py` per-request pools (124, 669) | web | per request | one-shot | No shared state. |
+| `discovery/search/album_page.py` (183, 336), `artist_sections.py` (586), `genre_page.py` (195), `artist_tag_fallback.py` (184), `lb_tag_lane.py` (115) | web | per request | one-shot | Per-request pools; `artist_sections.identity_lock` (542) is per request. |
+| `intelligence/artwork/service.py` `_pool` (31) | per process | one worker per `ArtworkService` | singleton side effect | `_building_lock` (33); `_image_slot` semaphore of 1 (34); `_keyed` per-key locks (36, 162) grow with each key. |
+| `intelligence/waveform/peaks.py` `_pool` (89), `_running` (91) | web | per `PeakService` | shared mutable | `_running` under `_lock` (90). |
+
+### A2. Caches and registries
+
+| Where (symbol) | Process | Class | Notes |
+|---|---|---|---|
+| `app/api/metadata.py` `_artist_bio_cache` (57), `_artwork_cache` (159), `_album_details_cache` (266), `_artist_image_cache` (335), `_album_links_cache` (336), `_apple_url_cache` (350), `_album_description_cache` (376), `_review_cache` (464) | web | rebuildable cache | F8. Unbounded; the file has no `pop`, `del` or `clear` (checked at `cc14fb51`). Each repeats the memory, store, provider lookup by hand, with no single-flight. They are the first K1 and K2 targets. |
+| `app/api/metadata.py` `_EXTERNAL_HTTP` (39) | web | singleton side effect | Shared `MeteredClient`. The process-wide patch in A4 also counts its calls. |
+| `integrations/musicbrainz/album_year.py` `year_cache` (14), `_year_lock` (15) | web and worker | rebuildable cache | One lookup per pair at a time; spacing comes from the provider gate. |
+| `app/api/artwork.py` `_SERVICES` (29), `_LOCK` (30) | web | shared mutable | One `ArtworkService` per key. |
+| `app/api/radio.py` `_STORES` (22), `_STORES_LOCK` (23) | web | shared mutable | One radio store per key. |
+| `app/api/search.py` `_owned_index` (53), `_owned_index_lock` (53) | web | shared mutable | Process-local owned index; the reason W2 needs the worker to own similar-artist precompute. |
+| `app/api/auth.py` `_LOGIN_ATTEMPTS` (10), `_LOGIN_ATTEMPTS_LOCK` (11), `AUTH_LOCK` (9) | web | shared mutable | Authentication. The lockout counter is per process, so with several web workers (D in section 10) the effective limit multiplies. |
+| `integrations/provider_gate.py` `_default_lock` (226), `Gate._memory_lock` (57) | web and worker | shared mutable | The in-process half of the gate. The cross-process state is `provider_gate.sqlite3`. |
+| `discovery/search/limiter.py` `SourceLimiter._next_at`, `_lock` (29) | web | shared mutable | Search-source pacing (F2). Not shared with the worker. |
+| `intelligence/artwork/fetchers.py` `HostPacer._lock` (70) | web | shared mutable | The MusicBrainz host runs through the gate (R3 part 2). |
+| `app/services/runtime_metrics.py` `_requests` (43), `_gate` (44), `_store` (45), `_lock` (41) | web and worker | shared mutable | Counters only. The worker saves a snapshot to `meta` every 5 min. `_HOSTS` (27) is a fixed table. |
+| `integrations/lastfm/client.py` `_request_lock` (46) | per process | shared mutable | One lock per client instance unless one is injected. |
+| `intelligence/store/db.py` `_ensured` (83), `_ensure_lock` (84) | web and worker | singleton side effect | One migration per store path per process; `ensure_store` runs at web and worker startup only. |
+| `intelligence/sonic/cache.py` `_lock` (29), `intelligence/sonic/detect.py` `_lock` (30) | per process | shared mutable | Lock around per-process cache state (contents not read in detail). |
+| `intelligence/artwork/store.py` `RLock` (68) | per process | shared mutable | Lock around the artwork store handle. |
+| `integrations/radio/now.py` `_connections`, `_lock` (28) | web | shared mutable | ICY relay connection state. |
+| `integrations/radio/logos.py` `_LOCKS` (29), `_LOCKS_GUARD` (30) | web | shared mutable | One lock per station id; never removed, so it grows with stations. |
+| `recommendation/replay.py` `_CLAIMED_CAPTURE_PATHS` (318), `_CAPTURE_CLAIM_LOCK` (317) | tooling | shared mutable | In-process claim of capture files. |
+| `acquisition/import_hooks.py` `_listeners` (11) | per process | singleton side effect | Mutable listener registry, no lock. |
+| `acquisition/progress_snapshots.py` `_snapshots` (14), `_lock` (15) | per process | shared mutable | Acquisition progress. |
+| `discovery/library_resync.py` `_pending`, `_lock` (33) | per process | shared mutable | Timer-based resync; the timer factory is injected. |
+| `discovery/refresh.py` `_revalidate_in_flight`, `_revalidate_last_start`, `_revalidate_lock` (359-361) | web | shared mutable | Revalidation guard. |
+| `discovery/search/network.py` `_purge_scheduled`, `_purge_lock` (46-47) | web | shared mutable | Purge scheduling guard. |
+
+### A3. Locks and guards in `navidrome_server.py` and the route modules
+
+| Where (symbol) | Process | Class | Notes |
+|---|---|---|---|
+| `navidrome_server.py` `_DISCOVERY_IMPORT_ACTIVE` (1442), guarded by `_DISCOVERY_IMPORT_LOCK` (1438) and `_DISCOVERY_IMPORT_TRANSITION_LOCK` (1441) | web | shared mutable | Also read by the status routes (1885, 2221). |
+| `navidrome_server.py` `_DISCOVERY_ACQUIRE_ACTIVE` (1443) | web | shared mutable | **Open:** the only use in `navidrome_server.py` is a read (2222). No writer was found in that file, and no search was made elsewhere. Find the writer before W3. |
+| `navidrome_server.py` `_DISCOVERY_REFRESH_LOCK` (708) | web | shared mutable | Guard for manual list refreshes. |
+| `app/api/popularity.py` `_LOCK` (35), `app/api/taste_refresh.py` `_LOCK` (22), `app/api/paths_warm.py` `_LOCK` (24), `app/api/smart_playlists.py` `_LOCK` (27), `app/api/feedback.py` `_LOCK` (24), `app/api/insights.py` `_LOCK` (49) | web | shared mutable | One lock per route module, serialising that route's in-process work. Route bodies were not read in detail. |
+| `app/worker.py` `stop` `Event` (96), `worker.lock` file lock | worker | singleton side effect | Process lifecycle; R1 and R5. |
+
+### A4. Process-wide patches
+
+| Where (symbol) | Process | Class | Notes |
+|---|---|---|---|
+| `app/services/runtime_metrics.py` `install()` | web and worker | singleton side effect | Patches `httpx.Client.send`, `httpx.AsyncClient.send` and `urllib.request.OpenerDirector.open` for the whole process at startup. Any library that uses them is counted. |
+
+### A5. Findings from the survey
+
+1. Several daemon loops start from web startup (`navidrome_server._start_discovery_scheduler`, `lens_service.start_daily_refresh`, `search.start_similar_precompute`). This is the W2 and W3 scope. Their state (the owned index, `_REFRESH_LOCK`, `_DISCOVERY_REFRESH_LOCK`) is process-local, so moving them requires moving that state too.
+2. The web process has no cross-process lock for anything in A2 or A3. The provider gate's SQLite file is the only cross-process state for provider traffic. Any second web worker (D) therefore doubles each in-memory cache and each lockout counter.
+3. The eight metadata caches in A2 are unbounded and never evict. They are the first K1 and K2 targets.
+4. `_DISCOVERY_ACQUIRE_ACTIVE` has no writer in `navidrome_server.py`. Resolve this before W3 moves the status routes.
+5. Per-key lock dictionaries (`logos._LOCKS`, `artwork/service._keyed`) grow with stations and artwork keys and are never pruned. This is a small leak, not an error.
+
+### A6. Cross-references
+
+- W2 (similar-artist precompute): A1 rows for `start_similar_precompute` and the owned index in A2.
+- W3 (lens refresh and discovery scheduler): A1 rows for the lens and scheduler threads, A3 rows for `_DISCOVERY_*` guards, and finding 4.
+- K1 (request-time provider call inventory): A2 rows for the metadata caches, `_EXTERNAL_HTTP` and the gate.
+- 2026-11-17 (M3): Process-local state inventory added as Appendix A, from a survey at `main` `cc14fb51` (grep for threads, pools, locks, `lru_cache` and module-level mutable containers, then each hit read). Documentation only; no code, tests, provider traffic, publication or deployment changed. Findings A5.1 to A5.5 recorded; the open item is the writer of `_DISCOVERY_ACQUIRE_ACTIVE` (A3). W2, W3 and K1 now reference the table.
