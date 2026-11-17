@@ -1,3 +1,11 @@
+## 2026-11-17 — CI optimization: unit suite under pytest, 40 min to 69 s (merged)
+
+- Cause: CI ran `python -m unittest discover`, which does not load `tests/conftest.py`. Since R3 part 2 (#1137) put every MusicBrainz call behind the shared provider gate, each such call in a test slept 1.1 s on the real gate file. In run 44127218306 (`Ran 4426 tests in 2375s`), almost all of the time was in discovery files (candidate_gathering 907 s, save_tag_seed 321 s, replenishment 170 s, ...), with gaps in exact multiples of 1.1 s.
+- PR [#1182](https://github.com/abucalip/navi-librarian/pull/1182) (squash `8eb8dfcc`, head `4d7b26a1`): `docker-test.yml` installs `pytest==9.1.1` (CI only) and runs `pytest tests -q -p no:cacheprovider --durations=25`; the job timeout went from 60 to 15 min. Three test modules aliased imported production `test_*` functions so pytest does not collect them. `docs/TEST_PLAN.md`: the full-suite command is pytest, with the reason.
+- Same tests: unittest IDs from the CI log and `pytest --collect-only` match. pytest adds only `test_intelligence_taste_library_genres.py::test_newest_observation_wins_and_untagged_tracks_are_skipped`, which unittest never ran.
+- Tests: locally, pytest on the ten slowest files plus the three edited files and the new test: 198 passed in 1.6 s. CI on the head: `4424 passed, 2 skipped, 1 xfailed, 1148 subtests passed in 69.00s`; all checks passed. The full suite was not run locally.
+- Remaining: the slowest test is `test_provider_gate.py::MultiProcessTests::test_two_processes_never_get_slots_closer_than_the_interval` at 21 s, an intended real-time check. Docs-only pushes to `main` still run the suite; that now costs about 2 min.
+
 ## 2026-11-17 — Android Bento and Index design systems (docs PR, owner review pending)
 
 - **Background.**
