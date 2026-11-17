@@ -76,6 +76,9 @@ struct PathStepCover: View {
                 PathRowThumb(step: step, size: size, radius: radius) {
                     CoverView(album: lookup.item(c), px: px).frame(width: size, height: size).clipShape(RoundedRectangle(cornerRadius: radius, style: .continuous))
                 }
+            } else if case .artist(let name)? = step.target {
+                // An artist step (Sideman, Scene, a Composition recording's artist) shows the artist's round photo.
+                ArtistPhoto(name: name, size: size)
             } else {
                 Image(systemName: step.symbol).font(.system(size: size * 0.5)).foregroundStyle(CU.textSecondary)
                     .frame(width: size, height: size)
@@ -400,7 +403,7 @@ struct PathDetailBar: View {
         if model.subject == .album, model.tabID == AlbumPathTab.sameRoom.id, let cover = step.cover {
             SameRoomPhotos(startTitle: model.title, startArtist: model.artist, otherTitle: cover.title, otherArtist: cover.artist)
                 .frame(maxWidth: 2 * 96 + CU.Space.s).padding(.top, CU.Space.s)
-        } else if let play = step.play {
+        } else if model.subject == .album, model.tabID == AlbumPathTab.listenThroughGaps.id, let play = step.play {
             VStack(alignment: .leading, spacing: 0) {
                 Text("Your listening").cuRole(CU.Font.eyebrow).textCase(.uppercase).foregroundStyle(CU.textSecondary)
                 Text(play).cuRole(CU.Font.headline).foregroundStyle(CU.text)

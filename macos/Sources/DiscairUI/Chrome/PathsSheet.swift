@@ -94,34 +94,46 @@ struct PathsSheet: View {
     @ViewBuilder private var content: some View {
         switch model.phase {
         case .loading:
-            ProgressView("Finding the paths…").frame(maxWidth: .infinity, minHeight: 220)
-        case .failed(let message):
-            VStack(spacing: CU.Space.s) {
-                Label { Text(message).foregroundStyle(CU.danger).multilineTextAlignment(.center) } icon: { Image(systemName: "exclamationmark.triangle").foregroundStyle(CU.danger) }
-                    .font(CU.Font.body.font)
-                HStack(spacing: CU.Space.s) {
-                    Button("Try Again") { state.loadPathsTab(retry: true) }.buttonStyle(PathButtonStyle())
-                    if model.canRequestUpdate {
-                        let librarian = state.session?.librarian
-                        Button("Request update") { Task { await model.requestUpdate(librarian: librarian) } }
-                            .buttonStyle(PathButtonStyle()).disabled(model.updating)
-                    }
-                }
-                if let note = model.updateNote { Text(note).cuRole(CU.Font.caption).foregroundStyle(CU.textSecondary) }
-            }
-            .padding(.horizontal, CU.Space.xl).frame(maxWidth: .infinity, minHeight: 220)
-        case .ready(let answer):
             VStack(spacing: 0) {
                 summaryRow
-                if answer.steps.isEmpty {
-                    Text(model.emptyText).cuRole(CU.Font.body).foregroundStyle(CU.textSecondary).multilineTextAlignment(.center)
-                        .padding(.horizontal, CU.Space.xl).frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else {
+                ProgressView("Finding the paths…").frame(maxWidth: .infinity, minHeight: 220, maxHeight: .infinity)
+            }
+        case .failed(let message):
+            VStack(spacing: 0) {
+                summaryRow
+                failure(message)
+            }
+        case .ready(let answer):
+            if answer.steps.isEmpty {
+                // Nothing to summarise: the empty line alone, as in the mockup.
+                Text(model.emptyText).cuRole(CU.Font.body).foregroundStyle(CU.textSecondary).multilineTextAlignment(.center)
+                    .padding(.horizontal, CU.Space.xl).frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                VStack(spacing: 0) {
+                    summaryRow
                     trail(answer)
                     if let step = model.step { PathDetailBar(step: step, model: model, lookup: lookup, state: state, open: open) }
                 }
             }
         }
+    }
+
+    /// The failure sentence in the danger colour, then Try Again and (when the server can be asked) Request update.
+    private func failure(_ message: String) -> some View {
+        VStack(spacing: CU.Space.s) {
+            Label { Text(message).foregroundStyle(CU.danger).multilineTextAlignment(.center) } icon: { Image(systemName: "exclamationmark.triangle").foregroundStyle(CU.danger) }
+                .font(CU.Font.body.font)
+            HStack(spacing: CU.Space.s) {
+                Button("Try Again") { state.loadPathsTab(retry: true) }.buttonStyle(PathButtonStyle())
+                if model.canRequestUpdate {
+                    let librarian = state.session?.librarian
+                    Button("Request update") { Task { await model.requestUpdate(librarian: librarian) } }
+                        .buttonStyle(PathButtonStyle()).disabled(model.updating)
+                }
+            }
+            if let note = model.updateNote { Text(note).cuRole(CU.Font.caption).foregroundStyle(CU.textSecondary) }
+        }
+        .padding(.horizontal, CU.Space.xl).frame(maxWidth: .infinity, minHeight: 220, maxHeight: .infinity)
     }
 
     private var summaryRow: some View {

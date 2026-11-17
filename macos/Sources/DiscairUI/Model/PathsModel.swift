@@ -457,6 +457,15 @@ public final class PathsSheetModel: Identifiable {
         selected = shown[min(max(at + d, 0), shown.count - 1)]
     }
 
+    /// Puts a tab back to loading, for the render tests.
+    func clearForPreview(_ tab: String) { phases[tab] = nil }
+
+    /// Shows a failed tab without a server, for the render tests (the sentence is the one `failure` gives a 404).
+    func showForPreview(failed tab: String, notInStore: Bool = true) {
+        phases[tab] = .failed(Self.failure(DiscairError.server(status: 404, message: nil), subject: subject))
+        if notInStore { self.notInStore.insert(tab) }
+    }
+
     static func failure(_ error: Error, subject: Subject) -> String {
         let thing = subject == .album ? "album" : "artist"
         guard let e = error as? DiscairError else { return "Could not read this path." }

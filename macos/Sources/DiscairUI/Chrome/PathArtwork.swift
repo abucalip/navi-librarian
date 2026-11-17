@@ -20,7 +20,7 @@ struct PathRowThumb<Usual: View>: View {
     var body: some View {
         ZStack {
             if hovering, !faces.isEmpty {
-                AlbumPictureView(picture: faces[current % faces.count], size: .thumb)
+                AlbumPictureView(picture: faces[current % faces.count], size: size > 64 ? .display : .thumb)
                     .frame(width: size, height: size)
                     .clipShape(RoundedRectangle(cornerRadius: radius ?? size / 7, style: .continuous))
                     .accessibilityHidden(true)
@@ -58,7 +58,7 @@ struct SameRoomPhotos: View {
     var body: some View {
         Group {
             if hasRoomPhotos(start, other) {
-                HStack(alignment: .top, spacing: 10) {
+                HStack(alignment: .top, spacing: CU.Space.s) {
                     column(startTitle, start)
                     column(otherTitle, other)
                 }
@@ -73,17 +73,17 @@ struct SameRoomPhotos: View {
         }
     }
 
+    /// Each photo is 96 x 64 with its album's name under it (the mockup's Room bar).
     private func column(_ title: String, _ photos: [ArtworkPicture]) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(title).font(.caption.weight(.semibold)).lineLimit(1).truncationMode(.tail)
-            if photos.isEmpty { Text("No session photos").font(.caption).foregroundStyle(.secondary) }
-            ForEach(photos) { photo in
+        VStack(alignment: .leading, spacing: 2) {
+            if photos.isEmpty { Text("No session photos").cuRole(CU.Font.caption).foregroundStyle(CU.textSecondary) }
+            ForEach(photos.prefix(1)) { photo in
                 AlbumPictureView(picture: photo, size: .display)
-                    .frame(maxWidth: .infinity).aspectRatio(1.5, contentMode: .fit)
+                    .frame(width: 96, height: 64)
                     .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
                     .accessibilityLabel(photo.label)
             }
+            Text(title).cuRole(CU.Font.caption).foregroundStyle(CU.textSecondary).lineLimit(1).truncationMode(.tail).frame(width: 96, alignment: .leading)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
