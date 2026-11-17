@@ -18,13 +18,12 @@ import os
 import threading
 import time
 from datetime import datetime
-from urllib.parse import urlsplit
 from typing import Callable, Optional
 
 import httpx
 
 from app import worker_schedule
-from app.services.runtime_metrics import provider_for_host
+from app.services.runtime_metrics import provider_for_url
 
 ENV_BUDGETS = "OWNED_PREFETCH_BUDGETS"
 SPENT_KEY = "prefetch:spent"
@@ -37,17 +36,8 @@ PROVIDERS = ("musicbrainz", "listenbrainz", "lastfm", "discogs", "deezer", "appl
 
 
 def provider_of(url) -> str:
-    """The provider a URL belongs to, by the diagnostics host table plus Last.fm's API host.
-
-    ``runtime_metrics`` counts ``ws.audioscrobbler.com`` as ``other``; a cap must name Last.fm's real API host.
-    """
-    try:
-        host = (urlsplit(str(url)).hostname or "").lower()
-    except ValueError:
-        return "other"
-    if host == "audioscrobbler.com" or host.endswith(".audioscrobbler.com"):
-        return "lastfm"
-    return provider_for_host(host)
+    """The provider a URL belongs to, by the diagnostics host table (which names Last.fm's API host)."""
+    return provider_for_url(url)
 
 
 class BudgetExhausted(httpx.TransportError):

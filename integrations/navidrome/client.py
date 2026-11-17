@@ -34,6 +34,16 @@ def _signed_request(config_provider, params, salt_factory):
     return base_url, query
 
 
+# Labels the shared client's requests "navidrome" in the runtime counters (efficiency M1):
+# Navidrome's host is configured, so the fixed host table cannot name it. Read by
+# ``app/services/runtime_metrics.py``; httpx ignores extension keys it does not know.
+METRICS_LABEL = ("metrics_provider", "navidrome")
+
+
+def _label_request(request):
+    request.extensions[METRICS_LABEL[0]] = METRICS_LABEL[1]
+
+
 _SHARED_CLIENT = None
 _SHARED_CLIENT_LOCK = threading.Lock()
 
@@ -49,6 +59,7 @@ def _build_shared_client():
         timeout=30,
         follow_redirects=False,
         limits=httpx.Limits(max_keepalive_connections=10, keepalive_expiry=30.0),
+        event_hooks={"request": [_label_request]},
     )
 
 
