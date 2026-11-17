@@ -6,6 +6,9 @@ Last checked: 2026-11-17. GitHub `main` is authoritative; this update is based o
 
 ## Current state
 
+- **Web client Listening Room design proposed (2026-11-17):** a docs-only PR, opened at the owner's request, with [`docs/LISTENING_ROOM_WEB.md`](LISTENING_ROOM_WEB.md) and [`docs/design/listening-room/`](design/listening-room/). It holds the design system (tokens, components, 35 icons, Instrument Sans) and the Home, reasons and states mockups. Reasons are built only from fields the server sends (R1 to R12). Build slices L0 to L6 are planned. No code.
+  - **Next action:** the owner reviews the design and answers D1 to D4; then L0, the server audit.
+
 - **Android Bento and Index design systems proposed (2026-11-17):** a docs-only PR, opened at the owner's request, with `docs/BENTO_THEME.md`, `docs/INDEX_THEME.md`, `docs/design/bento/`, `docs/design/index/` and `docs/design/_kit/`. It contains:
   - mockups of every page in one palette each, Paths included;
   - the other palettes as tokens;
