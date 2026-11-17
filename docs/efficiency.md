@@ -220,14 +220,14 @@ Step identifiers are stable; refer to them in PR titles. **Model** names the sin
 #### R3. Route every MusicBrainz call through the gate
 
 - **Objective:** total MusicBrainz traffic from this host never exceeds one request per 1.1 s.
-- **Current state:** part 1 (worker side: `api_fill.Paced`, `provider_runtime`, `set_fetchers`) merged in PR #1136 (2026-11-16). Part 2 (web side: `discovery/` callers, `integrations/musicbrainz/*`, search providers, artwork `HostPacer`) merged in PR #1137 (2026-11-16); `PENDING` in `tests/test_musicbrainz_gate_boundary.py` is empty. Still open: the live web+worker timestamp check (gaps >= 1.1 s). Pacers and direct callers were listed in F2.
+- **Current state:** part 1 (worker side: `api_fill.Paced`, `provider_runtime`, `set_fetchers`) merged in PR #1136 (2026-11-16). Part 2 (web side: `discovery/` callers, `integrations/musicbrainz/*`, search providers, artwork `HostPacer`) merged in PR #1137 (2026-11-16); `PENDING` in `tests/test_musicbrainz_gate_boundary.py` is empty. Live web+worker check done in PR #1164 (squash `34687dc1`, `scripts/gate_spacing_check.py`, fake MusicBrainz, no real provider traffic): 129 requests (web 80, worker 49, interleaved); gate slot starts never closer than 1.1 s; arrivals at the fake server up to 13.7 ms under 1.1 s (min 1.086 s), which is grant-to-wire jitter. The owner kept the 1.1 s interval (MusicBrainz allows 1 per second; jitter does not accumulate because each slot is spaced from the previous slot) and the acceptance wording below was corrected to match. Not exercised: the 429/503 `penalize` path and the artist page route. Pacers and direct callers were listed in F2.
 - **Proposed changes:** replace each private MusicBrainz pacer with `provider_gate.reserve("musicbrainz", max_wait)`; add the reservation to direct callers that have none; call `penalize` on 429 and 503. Then delete the superseded pacing code (`Paced` interval logic, `_paced_json` spacing, `album_year` lock and `_last_request`, the `musicbrainz` entry of `SourceLimiter`).
 - **Affected components:** the files listed in F2.
 - **Implementation guidance:** first produce the call-site inventory in the PR description (file, function, current pacing, caller's deadline). Keep each function's injected `sleep` or `pause` parameters where tests use them, defaulting to the gate. Preserve retry counts and budgets exactly; this step changes spacing only. Split into two PRs if the diff is large: worker-side (`intelligence/`) first, then web-side (`discovery/`, `integrations/`).
 - **Dependencies:** R2.
 - **Risks:** slower background jobs when the web is active (intended); a missed call site (mitigate with the test below).
 - **Verification:** a test that fails if any module outside `integrations/provider_gate.py` contains the MusicBrainz host string without importing the gate (allow-list for URL constants only); existing provider tests still pass; request-count assertions unchanged.
-- **Acceptance criteria:** search for private MusicBrainz sleeps returns none; the boundary test is in CI; with web and worker both active in a local fake-provider run, recorded request timestamps are never closer than 1.1 s.
+- **Acceptance criteria:** search for private MusicBrainz sleeps returns none; the boundary test is in CI; with web and worker both active in a local fake-provider run, granted gate slots are never closer than 1.1 s; request arrival may vary by a few milliseconds of grant-to-wire jitter (measured at most 14 ms), so arrivals stay above MusicBrainz's 1 s limit.
 - **Model:** Sonnet, Medium. Many call sites with differing semantics; pattern is fixed by R2.
 
 #### R4. Read-only knowledge reads
@@ -598,7 +598,7 @@ Deferred until the owner wants a second import. Before any recurring import: def
 #### C2. Remove unreferenced compatibility adapters
 
 - **Objective:** shrink `navidrome_server.py` only where code is provably unused.
-- **Current state:** about 50 adapters; unknown how many are unreferenced.
+- **Current state:** done. PR #1162 (squash `6ccb6bcd`) removed six unreferenced adapters (`library_overview`, `search_music`, `get_album_details`, `find_missing_mbids`, `_lastfm_cached_call`, `_discovery_settings_init`), two now-unused imports and two adapter-only tests; `navidrome_server.py` 2,382 to 2,285 lines. The reference table (119 top-level symbols, whole-word search across all tracked files) is in the PR body. Follow-up PR #1163 (squash `652e72f7`, owner-approved) removed the three payload helpers in `integrations/navidrome/client.py` that only those adapters used.
 - **Proposed changes:** produce a table (adapter, references found by import, by attribute, by string, in tests only). Remove those with no references outside tests, together with tests that exist only to exercise the adapter.
 - **Affected components:** `navidrome_server.py`, tests.
 - **Implementation guidance:** this is not a modularization pass; do not move or rename anything that is used. An adapter passed as a callback inside `navidrome_server.py` itself counts as used.
@@ -611,7 +611,7 @@ Deferred until the owner wants a second import. Before any recurring import: def
 #### C3. Container runtime settings
 
 - **Objective:** basic runtime hygiene for the two services.
-- **Current state:** no healthchecks, no init process, default stop timeout.
+- **Current state:** done except memory limits. PR #1161 (squash `11798294`): `init: true` on both services; web healthcheck on the public `/api/auth/status` (Python `urllib` one-liner); worker healthcheck `python -m app.services.worker_heartbeat`, which fails when `DATA_DIR/worker.heartbeat` is missing or older than 300 s. A `worker-heartbeat` thread rewrites the stamp every 30 s only while both scheduler threads are alive, so a long precompute stays healthy and a dead scheduler turns the worker unhealthy. Interval 60 s, timeout 10 s, retries 5, start period 120 s. Not verified: `docker compose up` (no Docker on the dev machine) and `container-smoke`. `restart: unless-stopped` does not restart an unhealthy container; `docs/DEPLOYMENT.md` gives the manual restart. Memory limits stay open: M2 measured time and calls, not memory.
 - **Proposed changes:** `init: true` on both services; a web healthcheck against an unauthenticated lightweight route; a worker healthcheck that checks the age of a heartbeat value the scheduler writes; `stop_grace_period` (from R5). Memory limits only after M2 gives real numbers.
 - **Affected components:** `compose.yaml`, `DOCKER.md`, `docs/DEPLOYMENT.md`.
 - **Implementation guidance:** the image has no `curl`; use a Python one-liner for healthchecks. Do not add packages.
