@@ -45,3 +45,28 @@ struct CupertinoTokensTests {
         #expect(CU.heatRGB.map(\.hex) == [0xECECF0, 0xF6C5D0, 0xEE8FA5, 0xE2537A, 0xD61F4A])
     }
 }
+
+/// The Booklet is always dark, so its accent is the Night accent of the owner's hue (docs/MACOS_PATHS_BOOKLET.md, section 3.2).
+@Suite struct BookletStageAccentTests {
+    private func ratio(_ a: CURGB, _ b: CURGB) -> Double { a.contrast(with: b) }
+
+    @Test func stageAccentIsTheNightAccentInBothModes() {
+        #expect(CUPalette.day.stageAccent == CUPalette.nightAccentDefault)
+        #expect(CUPalette.night.stageAccent == CUPalette.nightAccentDefault)
+        for hue in stride(from: 0.0, through: 355, by: 5) {
+            #expect(CUPalette.make(.day, accentHue: hue).stageAccent == CUPalette.make(.night, accentHue: hue).accent, "hue \(hue)")
+        }
+    }
+
+    @Test func stageAccentAndSelectedRowReadOnTheBookletGround() {
+        let ground = CURGB(0x171717), panel = CURGB(0x202022), ink = CURGB(0xF5F5F7)
+        for mode in [AppearanceMode.day, .night] {
+            for hue in [nil] + stride(from: 0.0, through: 355, by: 5).map({ Optional($0) }) {
+                let p = CUPalette.make(mode, accentHue: hue)
+                let row = panel.mixed(with: p.stageAccent, 0.18)
+                #expect(ratio(p.stageAccent, ground) >= 3, "\(mode) hue \(String(describing: hue)) ring")
+                #expect(ratio(ink, row) >= 4.5, "\(mode) hue \(String(describing: hue)) selected row")
+            }
+        }
+    }
+}

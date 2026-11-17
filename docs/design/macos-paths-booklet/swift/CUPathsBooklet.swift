@@ -44,7 +44,7 @@ extension CU {
     enum Booklet {
         static let idealSize = CGSize(width: 1120, height: 740)
         static let minSize = CGSize(width: 760, height: 600)
-        static let bar: CGFloat = 46
+        static let barHeight: CGFloat = 46
         static let sidebar: CGFloat = 232
         static let sidebarCollapsesBelow: CGFloat = 900
         static let editionMini: CGFloat = 40

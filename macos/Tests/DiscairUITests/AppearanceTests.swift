@@ -38,11 +38,11 @@ struct AppearanceTests {
         }
     }
 
-    @Test func aHueChangesOnlyTheAccentAndTheHeatRamp() {
+    @Test func aHueChangesOnlyTheAccentTheHeatRampAndTheStageAccent() {
         let base = CUPalette.make(.night, accentHue: nil)
         var custom = CUPalette.make(.night, accentHue: 200)
         #expect(custom.accent != base.accent && custom.heat != base.heat)
-        custom.accent = base.accent; custom.accentStrong = base.accentStrong; custom.accentTint = base.accentTint; custom.heat = base.heat
+        custom.accent = base.accent; custom.accentStrong = base.accentStrong; custom.accentTint = base.accentTint; custom.heat = base.heat; custom.stageAccent = base.stageAccent
         #expect(custom == base)
     }
 
