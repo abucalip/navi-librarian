@@ -510,7 +510,7 @@ Miss causes, from the cache rows each request wrote:
 **Decision.**
 - **K2 (stale-while-revalidate): deferred, not cancelled.** This session gives no evidence for it (1 expired miss in 203), but it could not show expiry either, because the cache was hours old. Re-measure with `scripts/efficiency_inventory.py` on an instance whose cache is older than 7 days, or from a week of the owner's real use. Open K2 only if expired misses then become a material share of warm provider calls.
 - **K3 (prefetch for owned entities): confirmed, narrowed.** Narrowed to the namespaces behind the owned album page and the owned artist page. Album reviews are left out until outlet failures are handled, because prefetch would only repeat timeouts. The plan lists K2 as a K3 dependency; this evidence does not support that, since prefetch fills the same keys whether or not K2 exists. The owner decides whether to drop the dependency. K3 still needs the owner's approval for its provider traffic.
-- **New candidates, not started, for the owner to decide:**
+- **New candidates (approved by the owner 2026-11-17 as K4 and K5, see below; not started):**
   - Short negative caching for review-outlet timeouts and errors (per outlet and album, for example 1 h, like P6).
   - Short negative caching for Deezer and Apple "no match" answers in album links and the album page.
   - Both follow the P6 pattern and would remove most of the 161 "not cached" and "failure" warm misses.
@@ -569,9 +569,10 @@ Miss causes, from the cache rows each request wrote:
 4. The not-cached and failure misses from K1 remain: 48 requests in pass 0, mostly Deezer and Apple no-match answers. The two negative-cache candidates are still open.
 
 **Decision.**
-- **K2: the evidence gate is met; recommend opening it.** The owner decides.
-- Scope it to the namespaces with expired first views: album reviews (largest cost), album links, the album page's stored metadata, and the artist page's provider rows.
-- The plan's 10-times-TTL maximum staleness would keep a 7-day review list servable for 70 days. The owner should confirm that for reviews.
+- **K2: the evidence gate is met. The owner opened K2 on 2026-11-17.**
+- It is scoped to the namespaces with expired first views: album reviews (largest cost), album links, the album page's stored metadata, and the artist page's provider rows.
+- **Maximum staleness for reviews: 70 days** (10 times the 7-day TTL), confirmed by the owner on 2026-11-17.
+- The negative-cache candidates were approved the same day as K4 and K5.
 
 **Limitations.**
 - One copy of one store and one session, with one repeat pass.
@@ -583,7 +584,11 @@ Miss causes, from the cache rows each request wrote:
 #### K2. Stale-while-revalidate for metadata routes
 
 - **Objective:** a page never waits on a provider when any earlier answer exists.
-- **Current state:** an expired entry is a miss and the request waits for the provider. Evidence gate met by the K1 rerun (2026-11-17): 41 of 139 first-view misses on an aged cache were expired rows, mostly owned album reviews (about 4.2 s each), album links, the album page and the artist page. Not started; the owner decides whether to open it and the maximum staleness for reviews.
+- **Current state:** an expired entry is a miss and the request waits for the provider. Evidence gate met by the K1 rerun (2026-11-17): 41 of 139 first-view misses on an aged cache were expired rows, mostly owned album reviews (about 4.2 s each), album links, the album page and the artist page. **Opened by the owner on 2026-11-17; not started.**
+- **Owner decisions (2026-11-17):**
+  - Scope: album reviews, album links, the album page's stored metadata and the artist page's provider rows. Other namespaces keep today's expiry until evidence shows them.
+  - Maximum staleness for album reviews: 70 days (10 times the 7-day TTL). Other namespaces use the plan's 10-times-TTL rule, unless a later decision changes it.
+  - Provider traffic must not rise. Each background refresh goes through the gate, under today's pacing and budgets.
 - **Proposed changes:** extend the P4 helper: when a value exists but is past its TTL, return it and schedule one background refresh (bounded pool, single-flight, through the gate). Store `fetched_at` alongside values so responses can state age where the contract allows.
 - **Affected components:** `app/services/layered_cache.py`, `metadata_cache.py` (read with expiry information), `app/api/metadata.py`.
 - **Implementation guidance:** needs `MetadataCache.get` to return the timestamp; add a new method, keep the old one. Hard maximum staleness per namespace (for example 10 times the TTL) after which the value is treated as missing. Background refresh failures leave the stale value and follow the existing error rules.
@@ -605,6 +610,38 @@ Miss causes, from the cache rows each request wrote:
 - **Verification:** request-budget tests; resume tests.
 - **Acceptance criteria:** stated coverage percentage of owned entities within a stated number of days, both set from K1.
 - **Model:** Sonnet, Medium. Follows established job patterns.
+
+#### K4. Negative cache for review-outlet failures
+
+- **Objective:** a warm album-reviews request does not re-ask an outlet that just timed out or failed.
+- **Current state:** approved by the owner on 2026-11-17 and not started. Today a timeout or error is not stored, so every view re-asks the outlet. In K1, 141 of 160 warm outlet requests on owned albums were timeouts, and each such request waited until the route deadline (about 4.2 s).
+- **Proposed changes:** remember a failure per outlet and album for a short time (for example 1 h), following the P6 pattern. While that entry is live, skip the outlet, and report the reviews as partial, as today.
+- **Affected components:** `app/api/metadata.py` (album reviews), the review-outlet fetch code it calls, and their tests.
+- **Implementation guidance:** keep the entry in memory or in the store with its own short TTL. Never cache a timeout as "no review". A later success replaces the entry.
+- **Dependencies:** K1 (done). It is independent of K2.
+- **Risks:** a review found later by an outlet that has recovered appears up to the TTL late.
+- **Verification:**
+  - A failed outlet is skipped within the TTL and asked again after it.
+  - A success is unaffected.
+  - Partial results are still marked partial.
+- **Acceptance criteria:** on a K1-style warm pass, the failure misses on album reviews fall to near zero.
+- **Model:** Haiku, Medium. Follows P6.
+
+#### K5. Negative cache for Deezer and Apple no-match answers
+
+- **Objective:** a warm request for album links or the album page does not re-ask Deezer or Apple for an album they have just said they do not have.
+- **Current state:** approved by the owner on 2026-11-17 and not started. A "no match" answer is not stored. In K1, it was most of the 103 "not cached" warm misses, and 37 in the rerun's first view.
+- **Proposed changes:** store a definitive no-match per provider and album with a short TTL (for example 1 h), following the P6 pattern. Errors and timeouts are not definitive and are not stored.
+- **Affected components:** `app/api/metadata.py` (album links, Apple album URL, album page artwork and links lookups) and their tests.
+- **Implementation guidance:** tell a definitive no-match (a 200 with no match) apart from failures. Keep the existing store keys; add a negative marker, or a separate short-lived key.
+- **Dependencies:** K1 (done). It is independent of K2.
+- **Risks:** a newly listed album appears up to the TTL late.
+- **Verification:**
+  - A no-match is skipped within the TTL and asked again after it.
+  - An error is not cached.
+  - A match is unaffected.
+- **Acceptance criteria:** on a K1-style warm pass, the "not cached" misses on album links and the album page fall to near zero.
+- **Model:** Haiku, Medium. Follows P6.
 
 ### Phase S: store hygiene
 

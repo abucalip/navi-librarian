@@ -5,6 +5,11 @@
 - Result: on first view, 41 of 139 requests with a provider call (29%) were expired misses, accounting for 132 of 498 provider requests and 77 s of 319 s wall time. Owned album reviews were the largest cost (11 requests, about 4.2 s each); album links, the artist page and the album page followed. On the repeat pass, 19 of 230 requests had a provider call.
 - Decision recorded in `docs/efficiency.md`: K2's evidence gate is met and opening it is recommended; the owner decides, including the maximum staleness for reviews.
 - No code changed and no tests run (documentation only). Not deployed.
+- Owner decisions, same day:
+  - K2 is opened, scoped to album reviews, album links, the album page's stored metadata and the artist page's provider rows.
+  - Maximum staleness for album reviews is 70 days.
+  - K4 (review-outlet failure negative cache) and K5 (Deezer/Apple no-match negative cache) are approved.
+  - Recorded in `docs/efficiency.md` and ACTIVE_WORK section 2p. Work is deferred to later sessions.
 
 ## 2026-11-17 — Server efficiency C3, C2, R3 live check and K1 (merged)
 
