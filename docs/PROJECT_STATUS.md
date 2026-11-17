@@ -6,6 +6,9 @@ Last checked: 2026-11-18. GitHub `main` is authoritative; this update is based o
 
 ## Current state
 
+- **Index theme I0 audit done (2026-11-18, docs PR):** 7 of 13 data rows missing on the server; list and build order in `docs/INDEX_THEME.md` section 11a.
+  - **Next action:** owner answers I0-1 (played rows), then the small server PRs start with `/api/health` version and latency.
+
 - **CI suite runs in about 1 minute (2026-11-17, PR #1182):** CI now runs the unit suite with pytest. `tests/conftest.py`, which gives each test a no-wait private provider gate, now applies, so MusicBrainz calls no longer sleep 1.1 s each on the shared gate. The test step went from 40 min to 69 s and the job takes about 2 min. Job timeout is 15 min.
   - **Next action:** none. Run focused modules that touch MusicBrainz with pytest, not `unittest`.
 
