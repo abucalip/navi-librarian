@@ -41,7 +41,14 @@ _LOCK = threading.Lock()
 
 
 def _ingest_step(librarian, db, stopping=lambda: False):
-    """Record a slice of the owned library (Navidrome only), artists with an MBID, oldest first."""
+    """Record a slice of the owned library (Navidrome only), artists with an MBID, oldest first.
+
+    Kept beside auto fill on purpose (efficiency P5): auto fill's first run only records the albums
+    already in the library as its baseline and never ingests them, and it re-ingests a seen album only
+    when it gains a release MBID. This step is what records those older albums and, every
+    ``INGEST_TTL_SECONDS``, picks up later tag edits (track MBIDs, ISRCs) on albums already seen. It runs
+    only while a provider lens is on and is bounded to ``INGEST_ARTISTS_PER_TICK`` artists per refresh.
+    """
     now = time.time()
     root = librarian.api_call("getArtists")
     artists = [a for index in root.get("artists", {}).get("index", []) for a in librarian.items(index.get("artist"))]
