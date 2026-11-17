@@ -37,11 +37,11 @@ class Entries(unittest.TestCase):
 
     def test_the_lens_entry_refreshes_only_when_due(self):
         with mock.patch.object(lens_service, "_due", return_value=False), \
-                mock.patch.object(lens_service, "refresh") as refresh:
+                mock.patch.object(lens_service, "refresh_exclusive") as refresh:
             self.entries["lens_lists"].run()
         refresh.assert_not_called()
         with mock.patch.object(lens_service, "_due", return_value=True), \
-                mock.patch.object(lens_service, "refresh", return_value={"ok": True}) as refresh:
+                mock.patch.object(lens_service, "refresh_exclusive", return_value={"ok": True}) as refresh:
             self.assertEqual(self.entries["lens_lists"].run(), {"ok": True})
         refresh.assert_called_once_with(self.lib)
 
@@ -80,6 +80,8 @@ class WorkerWiring(unittest.TestCase):
         tmp = tempfile.TemporaryDirectory()
         self.addCleanup(tmp.cleanup)
         self.dir = Path(tmp.name)
+        from discovery import refresh_guard
+        self.addCleanup(refresh_guard.set_process, "web")
 
     def test_the_worker_runs_the_discovery_entries_on_their_own_schedule_thread(self):
         stop = threading.Event()

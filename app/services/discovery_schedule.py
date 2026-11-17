@@ -9,9 +9,10 @@ entries of a worker scheduler (``app/worker_schedule.py``), each checked hourly 
   automatic refill is off. Each list goes through ``librarian._discovery_scheduler_refresh_one``, so the
   personal list keeps ``origin="scheduler"``.
 - ``lens_lists``: when ``lens_service._due`` (the setting is on and a lens list is not from today), run
-  ``lens_service.refresh``.
+  ``lens_service.refresh_exclusive``.
 
-The entries run on their
+Each list refresh, here and in the web, goes through ``discovery/refresh_guard.py``, so the worker and a
+manual or read-triggered refresh in the web never refresh the same list at once. The entries run on their
 own scheduler thread (``worker-schedule-discovery``), so the long similar-artist precompute on the main
 schedule thread does not hold them back.
 
@@ -61,7 +62,7 @@ def refresh_lens_lists_once(librarian):
     """One pass of the old daily lens loop: refresh when a lens list is missing or not from today."""
     try:
         if lens_service._due(librarian):
-            return lens_service.refresh(librarian)
+            return lens_service.refresh_exclusive(librarian)
     except Exception as exc:
         # Bounded diagnostics: the error type only, never provider details.
         logger.error("Lens list refresh failed (%s)", type(exc).__name__)

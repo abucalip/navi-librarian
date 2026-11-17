@@ -44,7 +44,7 @@ from acquisition import state as _acquisition_state
 from acquisition.source_switch import switch_to_next_source_locked as _switch_to_next_source_locked
 from acquisition.recovery import reconcile_interrupted_import as _reconcile_interrupted_import
 from acquisition.cleanup import clean_acquisition_source as _clean_acquisition_source
-from discovery import refresh as discovery_refresh
+from discovery import refresh as discovery_refresh, refresh_guard
 from recommendation import listening_profile
 from acquisition.import_files import import_matched_album_files as _acquisition_import_matched_album_files
 from acquisition.completion import (
@@ -767,16 +767,17 @@ def _discovery_save_feedback(scope, artist, album, status, metadata=None):
 
 
 def _discovery_refresh_personal(count=20, origin="manual"):
-    return discovery_refresh.refresh_personal(
-        _DISCOVERY_REFRESH_LOCK,
-        lambda **kwargs: recommend_new_music(**kwargs, _refresh_origin=origin),
-        _discovery_write_list,
-        count=count, origin=origin,
-        record_outcome=lambda outcome: discovery_store.record_discovery_refresh_outcome(
-            DISCOVERY_DB, **outcome
-        ),
-        read_previous=_discovery_read_list,
-    )
+    def refresh(lock):
+        return discovery_refresh.refresh_personal(
+            lock,
+            lambda **kwargs: recommend_new_music(**kwargs, _refresh_origin=origin),
+            _discovery_write_list,
+            count=count, origin=origin,
+            record_outcome=lambda outcome: discovery_store.record_discovery_refresh_outcome(DISCOVERY_DB, **outcome),
+            read_previous=_discovery_read_list,
+        )
+    return refresh_guard.run_exclusive(
+        DATA_DIR, "personal", lambda: refresh(_DISCOVERY_REFRESH_LOCK), lambda: refresh(refresh_guard.REFUSED))
 
 
 def discovery_set_feedback(
@@ -1115,20 +1116,17 @@ def _build_artist_deep_dive_list():
 
 
 def _discovery_refresh_other(list_name):
-    return discovery_refresh.refresh_other(
-        list_name,
-        {
-            "classics": _CLASSICS_REFRESH_LOCK,
-            "artist_deep_dive": _DEEP_DIVE_REFRESH_LOCK,
-            "new_releases": _NEW_RELEASES_REFRESH_LOCK,
-        },
-        {
-            "classics": _build_classics_list,
-            "artist_deep_dive": _build_artist_deep_dive_list,
-            "new_releases": _build_new_releases_list,
-        },
-        _discovery_write_list,
-    )
+    lock = {"classics": _CLASSICS_REFRESH_LOCK, "artist_deep_dive": _DEEP_DIVE_REFRESH_LOCK,
+            "new_releases": _NEW_RELEASES_REFRESH_LOCK}.get(list_name)
+    builders = {"classics": _build_classics_list, "artist_deep_dive": _build_artist_deep_dive_list,
+                "new_releases": _build_new_releases_list}
+
+    def refresh(held):
+        return discovery_refresh.refresh_other(
+            list_name, {list_name: held} if held is not None else {}, builders, _discovery_write_list)
+    if lock is None:
+        return refresh(None)
+    return refresh_guard.run_exclusive(DATA_DIR, list_name, lambda: refresh(lock), lambda: refresh(refresh_guard.REFUSED))
 
 
 _CLASSICS_REFRESH_LOCK = __import__("threading").Lock()
@@ -2382,4 +2380,3 @@ def _discovery_scheduler_refresh_one(list_name):
     if list_name == "listening_profile":
         return _refresh_listening_profile_background()
     return _discovery_refresh_other(list_name)
-

@@ -6,7 +6,7 @@ the same adapter pattern the discovery routes use. The pure policy stays in
 ``discovery.lens_storage``, ``discovery.refresh.refresh_lens_lists`` and
 ``discovery.list_payload.build_lens_list_response``; this module only connects them to the
 providers, the library and the store. The worker runs the daily refresh (``_due``, then
-``refresh``, from ``app/services/discovery_schedule.py``, efficiency W3); the web runs
+``refresh_exclusive``, from ``app/services/discovery_schedule.py``, efficiency W3); the web runs
 only the manual one. Behind
 ``engine2_lens_lists_enabled`` (default on): nothing here reads the library or calls a provider
 while the setting is off. See docs/engine2.md (Phase 4).
@@ -24,7 +24,7 @@ from datetime import datetime
 from typing import Any
 
 from discovery import history_fetch
-from discovery import refresh as discovery_refresh
+from discovery import refresh as discovery_refresh, refresh_guard
 from discovery.lens_feedback import lens_acquisition_summary, lens_feedback_summary
 from discovery.discovery_mode import discovery_knobs
 from discovery.lens_lists import LENS_LIST_ORDER, build_lens_lists, history_artist_mbids, usable_listens
@@ -39,6 +39,7 @@ logger = logging.getLogger(__name__)
 # Listening history read for the lens lists. Obsessions and Repeated tracks need more than the
 # 30-day default; the page bound of the ListenBrainz client still applies.
 DAILY_CHECK_SECONDS = 3600      # the worker checks ``_due`` this often (app/services/discovery_schedule.py)
+LENS_SCOPE = "lens_lists"       # the cross-process guard's scope for the lens refresh
 MUSICBRAINZ_USER_AGENT = "Discair/1.0 (personal music discovery)"
 _REFRESH_LOCK = threading.Lock()
 
@@ -239,14 +240,27 @@ def _due(librarian: Any) -> bool:
     return False
 
 
+def refresh_exclusive(librarian: Any) -> dict[str, Any]:
+    """``refresh``, unless a lens refresh is already running in this or the other process (efficiency W3).
+
+    The worker's scheduled refresh and the web's manual one both come here. When one is already running,
+    the answer is the one ``refresh`` gives while its lock is held, and nothing runs.
+    """
+    return refresh_guard.run_exclusive(
+        getattr(librarian, "DATA_DIR", None), LENS_SCOPE, lambda: refresh(librarian),
+        lambda: {"ok": False, "status": "already_running", "list": "lens_lists"},
+    )
+
+
 def start_refresh(librarian: Any) -> threading.Thread:
     """Run one lens refresh in the background, for a manual trigger from the app layer.
 
-    Returns at once. The refresh takes the same lock as the scheduled refresh, so the two never overlap
-    in one process; while the setting is off it returns "disabled" without touching the library or the store.
+    Returns at once. The refresh takes the same lock and the same cross-process guard as the worker's
+    scheduled refresh, so the two never overlap; while the setting is off it returns "disabled" without
+    touching the library or the discovery store.
     """
     thread = threading.Thread(
-        target=refresh, args=(librarian,), name="navidrome-lens-lists-manual", daemon=True,
+        target=refresh_exclusive, args=(librarian,), name="navidrome-lens-lists-manual", daemon=True,
     )
     thread.start()
     return thread

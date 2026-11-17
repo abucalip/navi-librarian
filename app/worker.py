@@ -28,6 +28,7 @@ from app.api.insights import STORE_FILE
 from app.api.dependencies import get_librarian
 from app import worker_schedule
 from app.services import discovery_schedule, insights_refresh, library_enrich, runtime_metrics, similar_precompute
+from discovery import refresh_guard
 from intelligence.insights.provider_runtime import JOB as PROVIDER_LENSES_JOB
 from intelligence.insights.runtime import JOB as FORGOTTEN_GEMS_JOB
 from intelligence.jobs import prune_finished, recover_running
@@ -148,6 +149,8 @@ def main(librarian=None, stop=None) -> int:
         runtime_metrics.install()
         ensure_store(librarian.DATA_DIR / STORE_FILE)
         _maintain(librarian.DATA_DIR, recover=True)   # before any thread starts, so no run is live
+        refresh_guard.set_process("worker")
+        refresh_guard.recover_process(librarian.DATA_DIR / STORE_FILE, "worker")
         schedule_thread = worker_schedule.start(schedule_entries(librarian, stop),
                                                 librarian.DATA_DIR / STORE_FILE, stop)
         # The list refreshes get their own thread, so the hours-long precompute cannot delay them (W3).

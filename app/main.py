@@ -94,8 +94,12 @@ def _prepare_knowledge_store():
     from app.api.insights import STORE_FILE
     from intelligence.store import ensure_store
 
+    from discovery import refresh_guard
+
     try:
         ensure_store(get_librarian().DATA_DIR / STORE_FILE)
+        # List refreshes this process left running when it stopped are over (efficiency W3).
+        refresh_guard.recover_process(get_librarian().DATA_DIR / STORE_FILE, "web")
     except Exception:
         logging.getLogger(__name__).exception("Could not prepare the knowledge store")
 
