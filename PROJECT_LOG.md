@@ -1,13 +1,13 @@
 ## 2026-11-17 — Server efficiency P3: fix the legacy metadata cache
 
-- PR [#1152](https://github.com/abucalip/navi-librarian/pull/1152), branch `efficiency-p3-metadata-cache` from `main` at `0866e3a1`, head `fa12f1ca`. Open, not merged, not deployed.
+- PR [#1152](https://github.com/abucalip/navi-librarian/pull/1152), branch `efficiency-p3-metadata-cache` from `main` at `0866e3a1`, head `fa12f1ca`, squash `1cd9fb6e`, merged 2026-11-17 00:43 UTC (GitHub confirms `MERGED`). Not deployed.
 - Fixes F7. `metadata_cache.py`: one connection per thread; the table and a `cached_at` index are created once per process per file (keyed by pid and inode); WAL with `synchronous = NORMAL`; SELECTs read fully; `prune(older_than_seconds, batch=500)` deletes in committed batches. `app/worker.py`: `_daily_maintenance` runs the job-history prune and the cache prune (400-day cutoff, `PRUNE_AFTER_SECONDS`), each isolated.
 - Tests, with `python -m unittest discover -s tests -p ...`: `test_metadata_*.py` 66 OK (new `test_metadata_cache_lifecycle.py` 9, new `test_worker_metadata_prune.py` in the `test_worker_*` run); `test_worker_*.py` 14 OK; `test_musicbrainz_rating_client.py` 6 OK. The full unit suite was not run locally; CI runs it on the head.
 - Lint: `scripts/check_lint_changed.py --base origin/main`, 4 files checked, 0 new finding groups.
 - Local micro-timing (temp DB, 200 rows, median of 2,000 operations): `get` 130 µs before, 12 µs after; `set` 533 µs before, 40 µs after. M2 does not cover this file.
-- CI: at the time of this entry all six checks on `fa12f1ca` were pending. The four `main` runs for P2 were still queued since 00:33 UTC. Results are not recorded here yet.
+- CI at merge: all six checks on `fa12f1ca` were still pending (`compile`, `container-smoke`, `lint-changed`, `test-and-build`, `validate-container`, `validate-release-workflow`); the P2 runs on `main` had been queued since 00:33 UTC. The owner merged before they finished. Their results are not recorded here yet.
 - Limitations: the file does not shrink after a prune (SQLite reuses free pages; no VACUUM); the index is built on the first operation after start, which is slow on a large existing file; WAL adds `-wal` and `-shm` files, so backups must use the SQLite backup API.
-- Next action: check the six PR checks on `fa12f1ca`; the owner decides on the merge.
+- Next action: check the six checks on `1cd9fb6e` and record the results; then the owner picks the next Phase P step (P4 or P5, both Sonnet, Medium).
 
 ## 2026-11-17 — Server efficiency P2: reuse the Navidrome HTTP client
 
