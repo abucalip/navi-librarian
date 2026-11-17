@@ -1,12 +1,12 @@
 ## 2026-11-17 — Server efficiency P4: bounded single-flight cache for the metadata routes
 
-- PR [#1153](https://github.com/abucalip/navi-librarian/pull/1153), branch `efficiency-p4-layered-cache` from `main` at `77019429`, head `b03913f0`. Open, not merged, not deployed.
+- PR [#1153](https://github.com/abucalip/navi-librarian/pull/1153), branch `efficiency-p4-layered-cache` from `main` at `77019429`, head `ae239d45` (code and tests as at `b03913f0`; the last commit is a doc note). Open, not merged, not deployed.
 - Fixes F8. New `app/services/layered_cache.py` (`LayeredCache`: bounded LRU, 2,000 entries per namespace; reads `persistent_metadata` when given a store key; single-flight per key, waiters share the leader's answer or exception; `Loaded(value, memory_ttl, persist)` decides caching per answer). The eight dicts in `app/api/metadata.py` moved onto it one commit each; keys, store keys, TTLs, negative and partial TTLs and the not-cached cases are unchanged.
-- Tests, with `python -m unittest`: new `test_metadata_cache_semantics` (17; 16 passed against the old dicts first, then unchanged after the migration; one route test, two concurrent identical `artist_image` requests make one provider call), new `test_layered_cache` (11, run 5 times), plus `test_metadata_routes`, `test_artwork_retry`, `test_fallback_artwork`, `test_metadata_persistent_cache`, `test_album_links`, `test_metadata_album_info_reviews`, `test_discovery_search_album_page`, `test_discovery_search_artist_sections`, `test_artist_bio_service`: 166 OK. The full unit suite was not run locally; CI runs it on the head.
+- Tests, with `python -m unittest`: new `test_metadata_cache_semantics` (17; 16 passed against the old dicts first, then unchanged after the migration; one route test, two concurrent identical `artist_image` requests make one provider call), new `test_layered_cache` (11, run 5 times), plus `test_metadata_routes`, `test_artwork_retry`, `test_fallback_artwork`, `test_metadata_persistent_cache`, `test_album_links`, `test_metadata_album_info_reviews`, `test_discovery_search_album_page`, `test_discovery_search_artist_sections`, `test_artist_bio_service`: 167 OK on `b03913f0`. The full unit suite was not run locally; CI runs it on the head.
 - Lint: `scripts/check_lint_changed.py --base origin/main`, 7 files checked, 0 new finding groups.
-- CI: all six PR checks on `b03913f0` were pending at the time of this entry; the `main` runs for `77019429` and `1cd9fb6e` were still queued.
-- Limitations: M2 not run (the step bounds memory and coalesces concurrent calls; warm timing is unchanged by design); expired entries are removed on read or eviction, not swept; the bound is per namespace (8 × 2,000).
-- Next action: check the six PR checks on `b03913f0`; the owner decides on the merge.
+- CI: all six PR checks on `b03913f0` were pending; the head is now `ae239d45` at the time of this entry; the `main` runs for `77019429` and `1cd9fb6e` were still queued.
+- Limitations: `_musicbrainz_year_cache` (owned by `integrations/musicbrainz/album_year.py`, not one of F8's eight) stays an unbounded dict, a follow-up; M2 not run (the step bounds memory and coalesces concurrent calls; warm timing is unchanged by design); expired entries are removed on read or eviction, not swept; the bound is per namespace (8 × 2,000).
+- Next action: check the six PR checks on `ae239d45`; the owner decides on the merge.
 
 ## 2026-11-17 — Server efficiency P3: fix the legacy metadata cache
 
