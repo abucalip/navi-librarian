@@ -27,7 +27,7 @@ from discovery.search.artist_sections import (
     similar_items,
     tag_items,
 )
-from discovery.search.cache import provider_cache_key
+from discovery.search.cache import SIMILAR_TTL_SECONDS, provider_cache_key, read_or_revalidate
 from discovery.search.disc_layout import disc_of, is_multi_disc, place_unmatched
 from discovery.search.index import OwnedData
 from discovery.search.merge import OwnedKeys
@@ -163,12 +163,25 @@ def mark_owned_tracks(provider: list[dict[str, Any]], songs: list[dict[str, Any]
 def race_tracks(
     network: ArtistNetwork, artist: str, album: str, release_group_mbid: str | None, *, remaining, cancelled,
 ) -> list[dict[str, Any]]:
-    """The first non-empty tracklist from any source; cached for a week once found."""
-    key = provider_cache_key("tracks", 0, f"{normalize_key(artist)}/{normalize_key(album)}", "tracks")
-    hit = _read_tracks(network, key)
-    if hit is not None:
-        return hit
+    """The first non-empty tracklist from any source; cached for a week once found.
 
+    A tracklist past its week but under ten times it is served while one background race runs (K2).
+    """
+    key = provider_cache_key("tracks", 0, f"{normalize_key(artist)}/{normalize_key(album)}", "tracks")
+    hit = read_or_revalidate(
+        network.cache_read, key, submit=network.refresh_submit, positive_ttl=SIMILAR_TTL_SECONDS,
+        refetch=lambda remaining, cancelled: _race_and_store(
+            network, key, artist, album, release_group_mbid, remaining=remaining, cancelled=cancelled),
+    )
+    if hit:
+        return hit
+    return _race_and_store(network, key, artist, album, release_group_mbid, remaining=remaining, cancelled=cancelled)
+
+
+def _race_and_store(
+    network: ArtistNetwork, key: str, artist: str, album: str, release_group_mbid: str | None, *, remaining, cancelled,
+) -> list[dict[str, Any]]:
+    """Race the tracklist sources; store the first non-empty answer that arrives in time."""
     attempts = []
     if network.deezer_tracks is not None:
         attempts.append(lambda: network.deezer_tracks(artist, album))
@@ -203,12 +216,6 @@ def race_tracks(
         return []
     finally:
         pool.shutdown(wait=False, cancel_futures=True)
-
-
-def _read_tracks(network: ArtistNetwork, key: str) -> list[dict[str, Any]] | None:
-    from discovery.search.cache import SIMILAR_TTL_SECONDS, read_cached
-
-    return read_cached(network.cache_read, key, time.time(), positive_ttl=SIMILAR_TTL_SECONDS) or None
 
 
 def similar_albums(

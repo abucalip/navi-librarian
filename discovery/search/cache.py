@@ -7,6 +7,8 @@ written: failures, timeouts and cancelled work never reach this module.
 
 from __future__ import annotations
 
+import threading
+import time
 from collections.abc import Callable
 from typing import Any
 
@@ -71,3 +73,72 @@ def write_cached(
     now: float,
 ) -> None:
     write(key, {"at": now, "results": records})
+
+
+# Stale-while-revalidate for the artist and album pages' provider rows (efficiency K2 part 2).
+# An entry past its TTL but under STALE_FACTOR times that TTL is served while one background
+# refresh asks the provider again; past that it is a miss, as before.
+STALE_FACTOR = 10
+REFRESH_DEADLINE_SECONDS = 20.0
+REFRESH_KEY_PREFIX = "discovery:"
+
+
+def read_cached_state(
+    read: Callable[[str], Any],
+    key: str,
+    now: float,
+    positive_ttl: int = POSITIVE_TTL_SECONDS,
+) -> tuple[list[dict[str, Any]] | None, bool]:
+    """``(records, stale)``: like ``read_cached``, but an entry past its TTL and under
+    ``STALE_FACTOR`` times it comes back with ``stale=True``. Older, missing or malformed
+    entries are ``(None, False)``. The TTL is the one ``read_cached`` applies (one hour for an
+    empty answer)."""
+    entry = read(key)
+    if not isinstance(entry, dict):
+        return None, False
+    records = entry.get("results")
+    at = entry.get("at")
+    if not isinstance(records, list) or not isinstance(at, (int, float)):
+        return None, False
+    ttl = positive_ttl if records else NEGATIVE_TTL_SECONDS
+    age = now - at
+    if age <= ttl:
+        return records, False
+    if age <= ttl * STALE_FACTOR:
+        return records, True
+    return None, False
+
+
+def refresh_budget(
+    clock: Callable[[], float] = time.monotonic,
+    seconds: float = REFRESH_DEADLINE_SECONDS,
+) -> tuple[Callable[[], float], threading.Event]:
+    """A fresh ``(remaining, cancelled)`` pair for one background refresh. The request's own pair
+    is spent or set by the time the refresh runs, and would block its write."""
+    deadline = clock() + seconds
+    return (lambda: max(0.0, deadline - clock())), threading.Event()
+
+
+def read_or_revalidate(
+    read: Callable[[str], Any],
+    key: str,
+    *,
+    submit: Callable[[str, Callable[[], None]], bool] | None,
+    refetch: Callable[[Callable[[], float], threading.Event], Any],
+    positive_ttl: int = POSITIVE_TTL_SECONDS,
+    now: float | None = None,
+) -> list[dict[str, Any]] | None:
+    """Fresh records, or stale ones with one refresh handed to ``submit``, or None for a miss.
+
+    ``refetch(remaining, cancelled)`` is the caller's own fetch-and-store, so the refresh keeps
+    the caller's write rules (nothing is written when it fails). Without ``submit`` an expired
+    entry is a miss, as before. A refresh ``submit`` refuses (already pending, queue full) still
+    serves the stale records.
+    """
+    at = time.time() if now is None else now
+    if submit is None:
+        return read_cached(read, key, at, positive_ttl=positive_ttl)
+    records, stale = read_cached_state(read, key, at, positive_ttl=positive_ttl)
+    if records is not None and stale:
+        submit(REFRESH_KEY_PREFIX + key, lambda: refetch(*refresh_budget()))
+    return records

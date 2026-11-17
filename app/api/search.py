@@ -16,6 +16,7 @@ from app.api.dependencies import get_librarian
 from app.services.similar_precompute import cache_reader as _cache_reader
 from app.services.similar_precompute import network_kwargs
 from app.services.similar_precompute import snapshot_lists as _snapshot_lists
+from app.services.stale_refresh import DISCOVERY_REFRESHER
 from discovery import store as discovery_store
 from discovery.identity import IdentityJob, load_identities
 from discovery.search.album_page import ALBUM_SECTION_ORDER, album_sections, find_album
@@ -337,6 +338,9 @@ def artist_network_for(librarian):
         deezer_tracks=deezer_tracks,
         album_year=album_year,
         album_description=album_description,
+        # The pages serve expired provider rows while one background refresh runs (efficiency K2).
+        # The worker precompute builds its network without it, so its expiry is unchanged.
+        refresh_submit=DISCOVERY_REFRESHER.submit,
         **network_kwargs(librarian),
     )
 

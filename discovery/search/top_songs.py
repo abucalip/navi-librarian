@@ -10,7 +10,7 @@ from __future__ import annotations
 import time
 from typing import Any
 
-from discovery.search.cache import provider_cache_key, read_cached, write_cached
+from discovery.search.cache import provider_cache_key, read_or_revalidate, write_cached
 from discovery.search.index import OwnedData
 from discovery.search.normalize import normalize_key
 from discovery.search.providers import LASTFM, LISTENBRAINZ, ProviderError
@@ -36,37 +36,53 @@ def _owned_titles(data: OwnedData | None, artist_id: str | None) -> set[str]:
     return {song["name_key"] for song in data.songs if song["artist_id"] == artist_id}
 
 
+def _source_records(network, key: str, fetch, *, remaining, cancelled):
+    """Cached or fetched records for one source; None when the fetch failed. Late answers are not cached.
+
+    An expired row under ten times its TTL is served while one background refresh runs (K2).
+    """
+
+    def fetch_and_store(remaining, cancelled):
+        records = _dedupe(fetch(remaining=remaining, cancelled=cancelled))
+        if remaining() > 0 and not cancelled.is_set():
+            write_cached(network.cache_write, key, records, time.time())
+        return records
+
+    records = read_or_revalidate(
+        network.cache_read, key, submit=network.refresh_submit, refetch=fetch_and_store,
+    )
+    if records is not None:
+        return records
+    try:
+        return fetch_and_store(remaining, cancelled)
+    except Exception:
+        return None
+
+
 def _fetch(network, name: str, mbid: str | None, *, remaining, cancelled):
     """``(source, records)`` from the first source that has songs. Raises when every source failed."""
     attempted = failed = 0
     if network.listenbrainz is not None and mbid:
         attempted += 1
-        key = provider_cache_key("listenbrainz", 0, f"artist-top:{mbid}", "top-recordings")
-        records = read_cached(network.cache_read, key, time.time())
+        records = _source_records(
+            network, provider_cache_key("listenbrainz", 0, f"artist-top:{mbid}", "top-recordings"),
+            lambda **budget: network.listenbrainz.top_recordings(mbid, **budget),
+            remaining=remaining, cancelled=cancelled,
+        )
         if records is None:
-            try:
-                records = network.listenbrainz.top_recordings(mbid, remaining=remaining, cancelled=cancelled)
-            except Exception:
-                failed += 1
-            else:
-                records = _dedupe(records)
-                if remaining() > 0 and not cancelled.is_set():
-                    write_cached(network.cache_write, key, records, time.time())
+            failed += 1
         if records:
             return LISTENBRAINZ, records
     if network.lastfm is not None:
         attempted += 1
-        key = provider_cache_key("lastfm", network.lastfm_generation, f"artist-top:{normalize_key(name)}", "top-tracks")
-        records = read_cached(network.cache_read, key, time.time())
+        records = _source_records(
+            network,
+            provider_cache_key("lastfm", network.lastfm_generation, f"artist-top:{normalize_key(name)}", "top-tracks"),
+            lambda **budget: network.lastfm.top_tracks(name, **budget),
+            remaining=remaining, cancelled=cancelled,
+        )
         if records is None:
-            try:
-                records = network.lastfm.top_tracks(name, remaining=remaining, cancelled=cancelled)
-            except Exception:
-                failed += 1
-            else:
-                records = _dedupe(records)
-                if remaining() > 0 and not cancelled.is_set():
-                    write_cached(network.cache_write, key, records, time.time())
+            failed += 1
         if records:
             return LASTFM, records
     if attempted == 0:
