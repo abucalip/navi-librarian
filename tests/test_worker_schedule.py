@@ -150,6 +150,34 @@ class Running(Store):
         self.assertEqual(ws.last_runs(self.db()), {"b": 1000.0, "broken": 1000.0})
         self.assertEqual(scheduler.run_due(self.stop), [])     # recorded, so it waits for its window
 
+    def test_a_not_ready_run_is_not_recorded_and_waits_its_retry_delay(self):
+        results = [ws.NOT_READY, ws.NOT_READY, {"done": 1}]
+        entry = ws.Entry("p", ws.daily(), lambda: results.pop(0), retry_seconds=HOUR)
+        scheduler = self.scheduler([entry], local(2026, 11, 17, 9))
+        self.assertEqual(scheduler.run_due(self.stop), [])
+        self.assertIsNone(ws.read_last_run(self.db(), entry))      # the day stays undone
+        scheduler.clock.now += HOUR - 1
+        self.assertEqual(scheduler.run_due(self.stop), [])          # inside the retry delay: not run
+        self.assertEqual(len(results), 2)
+        scheduler.clock.now += 1
+        self.assertEqual(scheduler.run_due(self.stop), [])          # retried, still not ready
+        scheduler.clock.now += HOUR
+        self.assertEqual(scheduler.run_due(self.stop), ["p"])       # ready: recorded, done for the day
+        scheduler.clock.now += HOUR
+        self.assertEqual(scheduler.run_due(self.stop), [])
+
+    def test_a_not_ready_entry_does_not_hold_up_the_next(self):
+        entries = [ws.Entry("p", ws.daily(), lambda: ws.NOT_READY), self.entry("b")]
+        self.assertEqual(self.scheduler(entries, 1000.0).run_due(self.stop), ["b"])
+
+    def test_a_clock_stepped_back_does_not_freeze_the_retry(self):
+        results = [ws.NOT_READY, None]
+        entry = ws.Entry("p", ws.daily(), lambda: results.pop(0), retry_seconds=HOUR)
+        scheduler = self.scheduler([entry], local(2026, 11, 17, 12))
+        scheduler.run_due(self.stop)
+        scheduler.clock.now -= 3 * HOUR                             # the retry time is now 4 h away
+        self.assertEqual(scheduler.run_due(self.stop), ["p"])
+
     def test_run_forever_returns_when_stop_is_set_while_it_waits(self):
         scheduler = self.scheduler([self.entry("a")], 1000.0)
         thread = threading.Thread(target=scheduler.run_forever, args=(self.stop, 3600), daemon=True)
@@ -173,9 +201,9 @@ class WorkerEntries(unittest.TestCase):
     def entries(self):
         return {e.name: e for e in worker.schedule_entries(self.lib, self.stop)}
 
-    def test_maintenance_then_insights_in_a_fixed_order(self):
+    def test_maintenance_then_insights_then_precompute_in_a_fixed_order(self):
         self.assertEqual([e.name for e in worker.schedule_entries(self.lib, self.stop)],
-                         ["daily_maintenance", "insights_refresh"])
+                         ["daily_maintenance", "insights_refresh", "similar_precompute"])
 
     def test_daily_maintenance_entry_runs_the_maintenance_once_a_day(self):
         entry = self.entries()["daily_maintenance"]
@@ -192,6 +220,18 @@ class WorkerEntries(unittest.TestCase):
         with mock.patch.object(insights_refresh, "refresh_once") as refresh:
             entry.run()
         refresh.assert_called_once_with(self.lib, stop=self.stop)
+
+    def test_precompute_entry_is_daily_retries_after_30_minutes_and_passes_stop(self):
+        from app.services import similar_precompute
+
+        entry = self.entries()["similar_precompute"]
+        self.assertIsNone(entry.legacy_key)          # the old web loop kept its day in memory only
+        self.assertEqual(entry.retry_seconds, 1800.0)
+        self.assertFalse(entry.due(local(2026, 11, 17, 23), local(2026, 11, 17, 1)))
+        self.assertTrue(entry.due(local(2026, 11, 18, 1), local(2026, 11, 17, 23)))
+        with mock.patch.object(similar_precompute, "run_once") as run_once:
+            entry.run()
+        run_once.assert_called_once_with(self.lib, stop=self.stop)
 
 
 if __name__ == "__main__":

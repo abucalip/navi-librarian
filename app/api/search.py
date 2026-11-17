@@ -5,25 +5,23 @@ HTTP adapters only. Matching, ranking and index lifecycle live in ``discovery/se
 
 from __future__ import annotations
 
-import logging
-import os
 import threading
 import time
-from datetime import date
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel
 
 from app.api.dependencies import get_librarian
+from app.services.similar_precompute import cache_reader as _cache_reader
+from app.services.similar_precompute import network_kwargs
+from app.services.similar_precompute import snapshot_lists as _snapshot_lists
 from discovery import store as discovery_store
 from discovery.identity import IdentityJob, load_identities
-from discovery.library_snapshot import build_library_snapshot
 from discovery.search.album_page import ALBUM_SECTION_ORDER, album_sections, find_album
 from discovery.search.artist_page import artist_page, drain_deferred, json_sections, section_events
 from discovery.search.events import NOT_IN_BUILD, search_events, sse
 from discovery.search.index import STATE_FRESH, STATE_STALE, OwnedIndex, fetch_song_inventory
-from discovery.search.merge import OwnedKeys
 from discovery.search.genre_page import (
     SECTION_ORDER as GENRE_SECTION_ORDER,
     genre_capabilities,
@@ -32,10 +30,9 @@ from discovery.search.genre_page import (
     normalize_tag,
 )
 from discovery.search.network import artist_network, external_search, genre_network
-from discovery.search.similar_precompute import run_precompute
 from discovery.search.normalize import normalize_key, normalize_query
 from discovery.search.query import SEARCH_TYPES
-from settings.service import discogs_generation, discogs_token_and_source, lastfm_generation, navidrome_generation
+from settings.service import navidrome_generation
 
 router = APIRouter()
 
@@ -51,30 +48,6 @@ def clean_navidrome_bio(raw) -> str | None:
 
 _owned_index: OwnedIndex | None = None
 _owned_index_lock = threading.Lock()
-
-
-def _snapshot_lists(librarian, generation):
-    """Artists and albums from the library snapshot, keyed by Navidrome generation (section 5.2)."""
-    suffix = f":navidrome{generation}"
-
-    def read(name):
-        return librarian._discovery_read_list(name + suffix)
-
-    def write(name, payload):
-        librarian._discovery_write_list(name + suffix, payload)
-
-    snapshot = build_library_snapshot(librarian.api_call, librarian.items, read, write)
-    return snapshot["artists"], snapshot["albums"]
-
-
-def _cache_reader(librarian):
-    """Reader for provider cache entries. The store wraps each entry as ``{"payload": entry, ...}``."""
-
-    def read(name):
-        stored = librarian._discovery_read_list(name)
-        return stored.get("payload") if isinstance(stored, dict) else None
-
-    return read
 
 
 _identity_job = IdentityJob()
@@ -310,71 +283,6 @@ def search(
     )
 
 
-PRECOMPUTE_CHECK_SECONDS = 1800
-logger = logging.getLogger(__name__)
-
-
-PRECOMPUTE_CURSOR = "similar-precompute-cursor"
-
-
-def _precompute_cursor(librarian) -> dict:
-    """Where the last precompute pass stopped: ``{"next": position}`` in the owned artist list."""
-    stored = librarian._discovery_read_list(PRECOMPUTE_CURSOR)
-    payload = stored.get("payload") if isinstance(stored, dict) else None
-    return payload if isinstance(payload, dict) else {}
-
-
-def _precompute_once(librarian):
-    """One precompute pass over the library, or None when the owned index is not usable yet."""
-    view = owned_view(librarian)
-    if view.data is None or view.state not in (STATE_FRESH, STATE_STALE):
-        return None
-    artists = list(view.data.artists)
-    cursor = _precompute_cursor(librarian)
-    return run_precompute(
-        artists, artist_network_for(librarian), OwnedKeys(view.data),
-        start=cursor.get("next", 0) if isinstance(cursor.get("next", 0), int) else 0,
-        on_progress=lambda position: librarian._discovery_write_list(PRECOMPUTE_CURSOR, {"next": position}),
-    )
-
-
-def _precompute_step(librarian, last_day: str | None) -> str | None:
-    """Run the day's precompute if it has not run yet; return the day that is now done.
-
-    A day that is not usable yet (the owned index is still building) stays undone and is retried
-    on the next check. A run that raises counts as done, so a broken run is not retried in a loop.
-    """
-    today = date.today().isoformat()
-    if today == last_day:
-        return last_day
-    try:
-        counts = _precompute_once(librarian)
-    except Exception as exc:
-        # Bounded diagnostics: the error type only, never provider details.
-        logger.error("Similar-artist precompute failed (%s)", type(exc).__name__)
-        return today
-    if counts is None:
-        return last_day
-    logger.info("Similar-artist precompute finished: %s", counts)
-    return today
-
-
-def _precompute_loop(librarian) -> None:
-    last_day = None
-    while True:
-        last_day = _precompute_step(librarian, last_day)
-        time.sleep(PRECOMPUTE_CHECK_SECONDS)
-
-
-def start_similar_precompute(librarian) -> threading.Thread:
-    """Start the background loop that precomputes similar artists once per local day."""
-    thread = threading.Thread(
-        target=_precompute_loop, args=(librarian,), name="navidrome-similar-artists", daemon=True,
-    )
-    thread.start()
-    return thread
-
-
 def artist_network_for(librarian):
     """Route adapter: ListenBrainz popularity and the existing bio service feed the artist page."""
     import httpx
@@ -402,11 +310,6 @@ def artist_network_for(librarian):
     def bio(name):
         return artist_bio(artist=name)["bio"]
 
-    def navidrome_mbid(artist_id):
-        # One read-only Navidrome call per artist page; the library tags MBIDs on many artists.
-        artist = librarian.api_call("getArtist", id=artist_id).get("artist", {})
-        return artist.get("musicBrainzId") or None
-
     def deezer_tracks(artist, album):
         from app.api.metadata import album_details
 
@@ -427,21 +330,14 @@ def artist_network_for(librarian):
         info = librarian.api_call("getArtistInfo2", id=artist_id).get("artistInfo2", {})
         return clean_navidrome_bio(info.get("biography"))
 
-    settings = librarian._discovery_settings_read()
     return artist_network(
-        cache_read=_cache_reader(librarian),
-        cache_write=librarian._discovery_write_list,
         popularity=popularity,
         bio=bio,
-        navidrome_mbid=navidrome_mbid,
         navidrome_bio=navidrome_bio,
         deezer_tracks=deezer_tracks,
         album_year=album_year,
         album_description=album_description,
-        lastfm_api_key=str(settings.get("lastfm_api_key") or "").strip(),
-        lastfm_gen=lastfm_generation(librarian._discovery_settings_read),
-        discogs_token=discogs_token_and_source(librarian._discovery_settings_read, os.environ)[0],
-        discogs_gen=discogs_generation(librarian._discovery_settings_read),
+        **network_kwargs(librarian),
     )
 
 

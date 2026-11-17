@@ -6,6 +6,8 @@ also stores the provider records (the section is still counted ``partial``); a f
 nothing, which keeps the previous entry (contract section 5.2). The run stops at its time budget; artists it does not reach keep
 their entries. A run starts at ``start`` and wraps around the list, and ``on_progress`` reports the
 position to start the next run at, so a pass that runs out of budget is continued, not restarted.
+``stop`` (shutdown) is checked before each artist and passed to the providers as ``cancelled``; artists a
+stopped run does not reach are counted ``not_reached`` and the cursor resumes from them next time.
 
 The network and the owned data are injected, so the scheduling stays in the app layer.
 """
@@ -35,6 +37,7 @@ def run_precompute(
     similar: Callable[..., dict[str, Any]] = similar_items,
     start: int = 0,
     on_progress: Callable[[int], None] | None = None,
+    stop: threading.Event | None = None,
 ) -> dict[str, int]:
     """Compute and store similar artists for each artist, in order, until the budget ends.
 
@@ -47,7 +50,7 @@ def run_precompute(
     total = len(artists)
     start = start % total if total else 0
     for done in range(total):
-        if clock() >= stop_at:
+        if clock() >= stop_at or (stop is not None and stop.is_set()):
             counts["not_reached"] = total - done
             break
         position = (start + done) % total
@@ -60,11 +63,17 @@ def run_precompute(
                 artist["id"],
                 owned,
                 remaining=lambda deadline_at=deadline_at: deadline_at - clock(),
-                cancelled=threading.Event(),
+                cancelled=stop if stop is not None else threading.Event(),
                 known_mbid=artist.get("mbid"),
                 refresh=True,
             )
         except Exception:
+            section = None
+        if stop is not None and stop.is_set():
+            # Cut short by shutdown: the providers were cancelled, so this artist is retried next run.
+            counts["not_reached"] = total - done
+            break
+        if section is None:
             counts["failed"] += 1
             if on_progress is not None:
                 on_progress((position + 1) % total)

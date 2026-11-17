@@ -115,6 +115,34 @@ class PrecomputeTests(unittest.TestCase):
         self.assertEqual(counts["complete"], 1)
         self.assertEqual(counts["not_reached"], 4)
 
+    def test_stop_before_an_artist_ends_the_run_and_keeps_the_cursor_on_it(self):
+        import threading
+
+        stop = threading.Event()
+        seen, progress = [], []
+
+        def similar(net, name, artist_id, own, **kwargs):
+            seen.append(artist_id)
+            self.assertIs(kwargs["cancelled"], stop)        # shutdown cancels the provider calls
+            stop.set()                                     # shutdown arrives during the first artist
+            return {"available": False, "complete": False}
+
+        counts = run_precompute(artists(3), network(), owned(), similar=similar, start=1,
+                                on_progress=progress.append, stop=stop)
+        self.assertEqual(seen, ["ar1"])
+        self.assertEqual(progress, [])                     # the cut-short artist is retried next run
+        self.assertEqual(counts["not_reached"], 3)
+        self.assertEqual(counts["unavailable"], 0)
+
+    def test_a_set_stop_runs_no_artist(self):
+        import threading
+
+        stop = threading.Event()
+        stop.set()
+        counts = run_precompute(artists(2), network(), owned(), stop=stop,
+                                similar=lambda *a, **k: self.fail("no artist may run"))
+        self.assertEqual(counts["not_reached"], 2)
+
     def test_an_empty_library_runs_nothing(self):
         self.assertEqual(
             run_precompute([], network(), owned(), start=5),

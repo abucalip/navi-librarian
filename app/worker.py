@@ -4,9 +4,10 @@ Start with ``python -m app.worker``. It uses the same image, configuration and `
 web app and is the only process that writes knowledge facts to the Server V2 store and calls MusicBrainz
 for it (web routes write only owner records and caches; reads there are read-only). It runs until SIGTERM or SIGINT. Jobs owned here: the automatic API fill and the insights refresh
 (Forgotten Gems and provider lenses, which write the knowledge store and call providers). The insights
-refresh and the daily maintenance (job-history prune, R1, and the legacy metadata-cache prune of rows
-older than 400 days, P3) are entries of the table-driven scheduler in ``app/worker_schedule.py``
-(efficiency W1), which runs them one at a time and keeps their last runs in the store. Auto fill and the
+refresh, the daily maintenance (job-history prune, R1, and the legacy metadata-cache prune of rows
+older than 400 days, P3) and the daily similar-artist precompute (``app/services/similar_precompute.py``,
+W2) are entries of the table-driven scheduler in ``app/worker_schedule.py`` (efficiency W1), which runs
+them one at a time and keeps their last runs in the store. Auto fill and the
 runtime-metrics save keep their own threads: auto fill must stay responsive.
 
 Exactly one worker runs: it takes an exclusive lock on ``DATA_DIR/worker.lock`` and exits non-zero if
@@ -24,7 +25,7 @@ import metadata_cache
 from app.api.insights import STORE_FILE
 from app.api.dependencies import get_librarian
 from app import worker_schedule
-from app.services import insights_refresh, library_enrich, runtime_metrics
+from app.services import insights_refresh, library_enrich, runtime_metrics, similar_precompute
 from intelligence.insights.provider_runtime import JOB as PROVIDER_LENSES_JOB
 from intelligence.insights.runtime import JOB as FORGOTTEN_GEMS_JOB
 from intelligence.jobs import prune_finished, recover_running
@@ -97,6 +98,10 @@ def schedule_entries(librarian, stop):
         worker_schedule.Entry("insights_refresh", insights_refresh.is_due,
                               lambda: insights_refresh.refresh_once(librarian, stop=stop),
                               legacy_key=insights_refresh.LAST_RUN_KEY),
+        # Last: it can run for hours (6 h budget), so the shorter jobs go first when several are due.
+        worker_schedule.Entry("similar_precompute", worker_schedule.daily(),
+                              lambda: similar_precompute.run_once(librarian, stop=stop),
+                              retry_seconds=similar_precompute.RETRY_SECONDS),
     )
 
 
