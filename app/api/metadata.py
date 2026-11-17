@@ -259,7 +259,7 @@ def album_year(artist: str = "", album: str = "", librarian=Depends(get_libraria
     return {"artist": artist, "album": album, "year": year, "source": source}
 
 
-_album_details_cache = {}
+_album_details_cache = LayeredCache("album-details")
 _DETAILS_MISS_TTL = 60 * 60
 
 
@@ -276,22 +276,15 @@ def album_details(artist: str = "", album: str = ""):
         raise HTTPException(status_code=400, detail="artist and album are required")
 
     key = (artist.casefold(), album.casefold())
-    cached = _album_details_cache.get(key)
-    if cached and monotonic() < cached[0]:
-        return cached[1]
-    store_key = "album-details:v1:" + key[0] + ":" + key[1]
-    stored = persistent_metadata.read(store_key)
-    if stored:
-        _album_details_cache[key] = (monotonic() + _ARTWORK_CACHE_TTL, stored)
-        return stored
 
-    result, definitive_miss = _fetch_album_details(artist, album)
-    if result["tracks"]:
-        _album_details_cache[key] = (monotonic() + _ARTWORK_CACHE_TTL, result)
-        persistent_metadata.write(store_key, result)
-    elif definitive_miss:
-        _album_details_cache[key] = (monotonic() + _DETAILS_MISS_TTL, result)
-    return result
+    def load():
+        result, definitive_miss = _fetch_album_details(artist, album)
+        if result["tracks"]:
+            return Loaded(result, memory_ttl=_ARTWORK_CACHE_TTL, persist=True)
+        return Loaded(result, memory_ttl=_DETAILS_MISS_TTL if definitive_miss else None)
+
+    return _album_details_cache.get_or_load(
+        key, load, store_key="album-details:v1:" + key[0] + ":" + key[1], stored_ttl=_ARTWORK_CACHE_TTL)
 
 
 def _fetch_album_details(artist, album):

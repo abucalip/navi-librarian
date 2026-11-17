@@ -69,7 +69,7 @@ class PersistentMetadataCacheTests(unittest.TestCase):
             result = metadata.album_details(artist="A", album="B")
             self.assertEqual(result["tracks"], [])
             self.assertEqual(self.store.data, {})
-            self.assertEqual(metadata._album_details_cache, {})
+            self.assertEqual(len(metadata._album_details_cache), 0)
 
     def test_a_definite_catalog_miss_is_kept_in_memory_only(self):
         with patch.object(metadata, "_EXTERNAL_HTTP") as client:
