@@ -1104,11 +1104,6 @@ def _slskd_quality_tier(file_record, filename, priority):
 
     return quality_tier(file_record, filename, priority)
 
-def _discovery_expected_track_count(metadata):
-    """Compatibility adapter for expected slskd album track-count extraction."""
-    from integrations.slskd.search import expected_track_count
-
-    return expected_track_count(metadata)
 def _slskd_track_identity(filename):
     """Compatibility wrapper for slskd track identity normalization."""
     from integrations.slskd.search import track_identity
@@ -1120,18 +1115,6 @@ def _slskd_album_path_match(album, text):
     from integrations.slskd.search import album_path_match
 
     return album_path_match(album, text)
-
-def _slskd_search_queries(artist, album):
-    """Compatibility wrapper for bounded slskd query generation."""
-    from integrations.slskd.search import search_queries
-
-    return search_queries(artist, album)
-
-def _slskd_search_response_items(payload):
-    """Compatibility wrapper for slskd response normalization."""
-    from integrations.slskd.search import response_items
-
-    return response_items(payload)
 
 def _slskd_path_match_diagnostics(payload, artist, album, limit=10):
     """Compatibility wrapper for bounded slskd path diagnostics."""
@@ -1365,11 +1348,6 @@ def _discovery_import_watcher_entry(artist, album, candidate, settings, identity
             _DISCOVERY_IMPORT_ACTIVE.discard(identity)
 
 
-def _discovery_filename_key(value):
-    """Compatibility wrapper; implementation lives in acquisition.completion."""
-    return _acquisition_filename_key(value)
-
-
 def _discovery_match_completed_album_files(folder, candidate):
     """Compatibility wrapper for strict completion-file matching."""
     return _acquisition_match_completed_album_files(folder, candidate)
@@ -1381,7 +1359,7 @@ def _discovery_inspect_completed_album(download_root, candidate):
         download_root,
         candidate,
         safe_folder_name=_discovery_safe_folder_name,
-        filename_key=_discovery_filename_key,
+        filename_key=_acquisition_filename_key,
         match_files=_discovery_match_completed_album_files,
     )
 
@@ -1685,7 +1663,8 @@ def _discovery_acquire_album_impl(
                            "album": album, "message": message}, ensure_ascii=False)
     priority = settings.get("quality_priority", _DISCOVERY_SETTINGS_DEFAULTS["quality_priority"])
     headers = {"X-API-KEY": api_key}
-    search_queries = _slskd_search_queries(artist, album)
+    from integrations.slskd import search as slskd_search
+    search_queries = slskd_search.search_queries(artist, album)
     try:
         from integrations.slskd.search_polling import collect_search_responses
 
@@ -1697,14 +1676,14 @@ def _discovery_acquire_album_impl(
             monotonic=time.monotonic,
             sleep=time.sleep,
             new_search_id=lambda: str(uuid.uuid4()),
-            response_items=_slskd_search_response_items,
+            response_items=slskd_search.response_items,
         )
         search_id = search_result["search_id"]
         search_attempts = search_result["search_attempts"]
         reported_response_count = search_result["reported_response_count"]
         reported_file_count = search_result["reported_file_count"]
         payload_by_peer = search_result["payload_by_peer"]
-        expected_track_count = _discovery_expected_track_count(metadata)
+        expected_track_count = slskd_search.expected_track_count(metadata)
         candidates = _slskd_extract_candidates(
             list(payload_by_peer.values()), artist, album, priority,
             expected_track_count=expected_track_count,
