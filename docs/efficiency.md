@@ -824,6 +824,30 @@ Kept from revision 4, shortened. These are product rules for any step that fills
 | Gating providers other than MusicBrainz across processes | M1 shows rate-limit responses from them |
 | Recurring slice import (S3) | The owner asks for a refresh |
 
+## Finishing Up
+
+Every roadmap step is merged. This is the implementation work still left (as of 2026-11-17, after PRs #1173 to #1175). Tests, measurements and acceptance runs are not listed here; each step's own entry above tracks them.
+
+### Needs an owner decision first
+
+- **K3 caps for the part 2 hooks.** No caps are approved yet for `deezer` (tracklist, year, artist image, album links), `apple` and `wikipedia` (description, album links). Until they are, those hooks send nothing.
+- **K3 coverage target.** No target ("X % of owned entities within N days") has been stated. Work it out from the library's counts with `(artists × 2.5 + albums × 5) ÷ daily cap`.
+
+### Left out of merged steps
+
+- **K3:** album reviews and artist biographies are not prefetched. Reviews were waiting on K4, which is now merged. Biographies were left out because K1 measured 0 provider requests for owned artists.
+- **K3:** the temporary "library tracklist first" in `discovery/search/album_page.py` stays until part 2 has been measured.
+- **K2:** responses do not state the age of a stale value (`fetched_at`, "where the contract allows"); API shapes are unchanged.
+- **K2:** outside the owner's scope, and still expiring as before: similar-artist records, candidates' tag lookups, and the search and genre pages. Extend only when evidence shows them.
+- **M1:** Navidrome calls made outside the shared client in `integrations/navidrome/client.py` still count as `other`.
+
+### Waiting on evidence
+
+- **S1 retention:** not started. Open it only if a later size report on the live store shows `observations` growing materially.
+- **C3 memory limits:** wait for real memory numbers. M2 measured time and calls, not memory.
+- **S3 slice refresh:** deferred until the owner wants a second MusicBrainz dump import.
+- **Section 10:** each deferred item there opens only on its stated condition.
+
 ## 11. Old section labels
 
 Code comments and older documents cite the previous structure. Mapping:
