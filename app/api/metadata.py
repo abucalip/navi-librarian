@@ -25,7 +25,7 @@ from app.services.fallback_artwork import (
 from app.services.deezer_artwork import pick_artist, select_album_artwork, select_artist_artwork
 from app.services.deezer_album_details import shape_album_match
 from app.services import runtime_metrics
-from app.services import album_links, album_reviews, album_wikipedia, persistent_metadata
+from app.services import album_links, album_reviews, album_wikipedia, persistent_metadata, stale_refresh
 from app.services.apple_description import parse_editorial_notes
 from app.services.layered_cache import LayeredCache, Loaded
 from app.services.deezer_album_matching import exact_album_matches, exact_album_release_year, release_year
@@ -337,13 +337,21 @@ def _json_or_none(url, **kwargs):
 
 
 _apple_url_cache = LayeredCache("apple-album-url")
+# Efficiency K2: a stored page or link set past its 7-day TTL is served while one background refresh
+# runs, for at most ten times that TTL.
+_LINKS_MAX_STALE = 10 * persistent_metadata.LINKS_TTL
 
 
-def _apple_album_url(artist: str, album: str):
+def _apple_album_url(artist: str, album: str, allow_stale=False):
     """The exactly matching Apple Music album page for an artist and album, or None.
 
     The album page asks twice (for its links and for its description), so a found page is kept for an hour.
     """
+    return _apple_album_url_state(artist, album, allow_stale)[0]
+
+
+def _apple_album_url_state(artist: str, album: str, allow_stale=False):
+    """``(url, stale)``; with `allow_stale` a stored page past its TTL is returned and refreshed in the background."""
     key = (artist.casefold(), album.casefold())
 
     def load():
@@ -353,9 +361,10 @@ def _apple_album_url(artist: str, album: str):
         # No page is not remembered: it may be a failed request as well as a real miss.
         return Loaded(url, memory_ttl=3600, persist=True) if url else Loaded(url)
 
-    return _apple_url_cache.get_or_load(
+    return _apple_url_cache.get_or_load_state(
         key, load, store_key="apple-album-url:v1:" + key[0] + ":" + key[1],
-        store_ttl=persistent_metadata.LINKS_TTL, stored_ttl=3600)
+        store_ttl=persistent_metadata.LINKS_TTL, stored_ttl=3600,
+        max_stale=_LINKS_MAX_STALE if allow_stale else None)
 
 
 _album_description_cache = LayeredCache("album-description")
@@ -374,7 +383,8 @@ def _apple_description(artist: str, album: str):
     have any. ``answered`` is False when a fetch failed, so the caller does not remember the miss.
     """
     empty = {"paragraphs": [], "source": "Apple Music", "url": None}
-    url = _apple_album_url(artist, album)
+    # A stale page address is fine here: the page itself is fetched now, and a failed fetch is not cached.
+    url = _apple_album_url(artist, album, allow_stale=True)
     if not url:
         return empty, True
     try:
@@ -439,6 +449,9 @@ def album_description_route(artist: str = "", album: str = ""):
 # minutes, so a flaky outlet neither hides its review for long nor is asked again on every visit.
 _REVIEWS_TTL = 7 * 24 * 60 * 60
 _REVIEWS_PARTIAL_TTL = 10 * 60
+# Efficiency K2 (owner decision 2026-11-17): a stored review list or outlet answer past its TTL is
+# served for up to 70 days while one background refresh asks again.
+_REVIEWS_MAX_STALE = 70 * 24 * 60 * 60
 _REVIEWS_DEADLINE = 6.0
 _review_cache = LayeredCache("album-reviews")
 _REVIEW_PAGE_TIMEOUT = httpx.Timeout(4.0, connect=1.5)
@@ -531,46 +544,76 @@ _SOURCE_FOUND_TTL = 30 * 24 * 60 * 60
 _SOURCE_MISS_TTL = 3 * 24 * 60 * 60
 
 
-def _outlet_review(name: str, artist: str, album: str, ask):
-    """The outlet's review (or None) from its own stored answer, else ``ask()``; an exception is not stored."""
-    store_key = f"album-review-source:v1:{name}:{artist.casefold()}:{album.casefold()}"
-    stored = persistent_metadata.read(store_key, _SOURCE_FOUND_TTL)
-    if isinstance(stored, dict) and "review" in stored and (
-            stored["review"] or time.time() - float(stored.get("checked") or 0) < _SOURCE_MISS_TTL):
-        return stored["review"]
+def _ask_outlet(store_key, ask):
     found = ask()
     persistent_metadata.write(store_key, {"review": found, "checked": time.time()})
     return found
 
 
-def _review_sources(artist: str, album: str):
+def _outlet_answer_is_fresh(stored, age):
+    if stored["review"]:
+        return age <= _SOURCE_FOUND_TTL
+    return time.time() - float(stored.get("checked") or 0) < _SOURCE_MISS_TTL
+
+
+def _outlet_review(name: str, artist: str, album: str, ask, allow_stale=False, stale=None):
+    """The outlet's review (or None) from its own stored answer, else ``ask()``; an exception is not stored.
+
+    With `allow_stale` (efficiency K2), a stored answer past its TTL but under 70 days old is returned at
+    once, `name` is added to `stale`, and one background ``ask()`` replaces it; a failed ask leaves it.
+    """
+    store_key = f"album-review-source:v1:{name}:{artist.casefold()}:{album.casefold()}"
+    if allow_stale and persistent_metadata.can_read_age():
+        stored, age = persistent_metadata.read_with_age(store_key, _REVIEWS_MAX_STALE) or (None, None)
+        if isinstance(stored, dict) and "review" in stored:
+            if _outlet_answer_is_fresh(stored, age):
+                return stored["review"]
+            stale_refresh.REFRESHER.submit(("album-review-source", store_key), lambda: _ask_outlet(store_key, ask))
+            if stale is not None:
+                stale.append(name)
+            return stored["review"]
+        return _ask_outlet(store_key, ask)
+    stored = persistent_metadata.read(store_key, _SOURCE_FOUND_TTL)
+    if isinstance(stored, dict) and "review" in stored and (
+            stored["review"] or time.time() - float(stored.get("checked") or 0) < _SOURCE_MISS_TTL):
+        return stored["review"]
+    return _ask_outlet(store_key, ask)
+
+
+def _review_sources(artist: str, album: str, allow_stale=False, stale=None):
     """The source lookups in display order, each a no-argument callable returning a review or None.
 
-    The Guardian is left out without a key, so a missing key is never stored as "no review".
+    The Guardian is left out without a key, so a missing key is never stored as "no review". With
+    `allow_stale`, an outlet's stale answer may be used; the outlet's name is then added to `stale`.
     """
     asks = [("Pitchfork", lambda: _pitchfork_review(artist, album))]
     if os.environ.get("GUARDIAN_API_KEY", "").strip():
         asks.append(("The Guardian", lambda: _guardian_review(artist, album)))
     asks += [(name, lambda n=name, site=site: _wordpress_review(n, site, artist, album))
              for name, site in _WORDPRESS_REVIEW_SITES]
-    return [lambda n=name, ask=ask: _outlet_review(n, artist, album, ask) for name, ask in asks]
+    return [lambda n=name, ask=ask: _outlet_review(n, artist, album, ask, allow_stale, stale) for name, ask in asks]
 
 
 def album_reviews_for(artist: str, album: str) -> dict:
     """``{"reviews": [{"source", "quote", "url"}, ...]}`` with at most three entries.
 
     ``retryable`` is added when an outlet failed or was too slow and fewer than three were found;
-    the browser does not keep such an answer.
+    the browser does not keep such an answer. A stored list past its 7-day TTL is answered at once and
+    refreshed in the background, for up to 70 days (efficiency K2).
     """
     key = (artist.casefold(), album.casefold())
     return _review_cache.get_or_load(
-        key, lambda: _load_album_reviews(artist, album), store_key="album-reviews:v1:" + key[0] + ":" + key[1],
+        key, lambda: _load_album_reviews(artist, album, allow_stale=True),
+        store_key="album-reviews:v1:" + key[0] + ":" + key[1],
         store_ttl=_REVIEWS_TTL, accept_stored=lambda stored: bool(stored and stored.get("reviews")),
-        stored_ttl=3600)
+        stored_ttl=3600, max_stale=_REVIEWS_MAX_STALE, refresh=lambda: _load_album_reviews(artist, album))
 
 
-def _load_album_reviews(artist: str, album: str):
-    futures = [_review_pool.submit(source) for source in _review_sources(artist, album)]
+def _load_album_reviews(artist: str, album: str, allow_stale=False):
+    """The reviews as a `Loaded`. A list built from any stale outlet answer is kept in memory briefly and
+    not stored, so it is never stamped as fresh; the outlets' own refreshes fill the store."""
+    stale = []
+    futures = [_review_pool.submit(source) for source in _review_sources(artist, album, allow_stale, stale)]
     done, pending = wait(futures, timeout=_REVIEWS_DEADLINE)
     found, failed = [], bool(pending)
     for future in futures:
@@ -587,8 +630,9 @@ def _load_album_reviews(artist: str, album: str):
     partial = failed and len(value["reviews"]) < album_reviews.MAX_REVIEWS
     if partial:
         value["retryable"] = True
-    return Loaded(value, memory_ttl=_REVIEWS_PARTIAL_TTL if partial else 3600,
-                  persist=bool(value["reviews"]) and not partial)
+    short = partial or bool(stale)
+    return Loaded(value, memory_ttl=_REVIEWS_PARTIAL_TTL if short else 3600,
+                  persist=bool(value["reviews"]) and not short)
 
 
 @router.get("/api/album-reviews")
@@ -611,13 +655,16 @@ def album_page_links(artist: str = "", album: str = "", mbid: str = ""):
         raise HTTPException(status_code=400, detail="artist and album are required")
     key = (artist.casefold(), album.casefold(), mbid)
     return _album_links_cache.get_or_load(
-        key, lambda: _load_album_links(artist, album, mbid), store_key="album-links:v1:" + "|".join(key),
-        store_ttl=persistent_metadata.LINKS_TTL, stored_ttl=_ALBUM_LINKS_TTL)
+        key, lambda: _load_album_links(artist, album, mbid, allow_stale=True),
+        store_key="album-links:v1:" + "|".join(key),
+        store_ttl=persistent_metadata.LINKS_TTL, stored_ttl=_ALBUM_LINKS_TTL,
+        max_stale=_LINKS_MAX_STALE, refresh=lambda: _load_album_links(artist, album, mbid))
 
 
-def _load_album_links(artist: str, album: str, mbid: str):
+def _load_album_links(artist: str, album: str, mbid: str, allow_stale=False):
+    """The links as a `Loaded`. A set that used a stale Apple page is kept for minutes and not stored."""
     def apple():
-        return _apple_album_url(artist, album)
+        return _apple_album_url_state(artist, album, allow_stale)
 
     def deezer():
         data = _json_or_none("https://api.deezer.com/search/album?" + urlencode(
@@ -641,7 +688,7 @@ def _load_album_links(artist: str, album: str, mbid: str):
 
     with ThreadPoolExecutor(max_workers=3) as pool:
         apple_future, deezer_future, mb_future = pool.submit(apple), pool.submit(deezer), pool.submit(musicbrainz)
-        apple_url, deezer_page, group_id = apple_future.result(), deezer_future.result(), mb_future.result()
+        (apple_url, apple_stale), deezer_page, group_id = apple_future.result(), deezer_future.result(), mb_future.result()
 
     links = {}
     if apple_url:
@@ -653,7 +700,8 @@ def _load_album_links(artist: str, album: str, mbid: str):
         links["listenbrainz"] = f"https://listenbrainz.org/album/{group_id}"
     # A missing service may only have been slow or busy, so an incomplete answer is kept for minutes, not a day.
     complete = "musicbrainz" in links and "apple_music" in links and "deezer" in links
-    return Loaded(links, memory_ttl=_ALBUM_LINKS_TTL if complete else 10 * 60, persist=complete)
+    keep = complete and not apple_stale
+    return Loaded(links, memory_ttl=_ALBUM_LINKS_TTL if keep else 10 * 60, persist=keep)
 
 
 @router.get("/api/artist-image")
