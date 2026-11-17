@@ -321,7 +321,7 @@ def _fetch_album_details(artist, album):
         return result, False
 
 
-_artist_image_cache = {}
+_artist_image_cache = LayeredCache("artist-image")
 _album_links_cache = LayeredCache("album-links")
 _ALBUM_LINKS_TTL = 24 * 60 * 60
 
@@ -662,14 +662,16 @@ def artist_image(name: str = ""):
     name = name.strip()[:180]
     if not name:
         raise HTTPException(status_code=400, detail="name is required")
-    cached = _artist_image_cache.get(name.casefold())
-    if cached and monotonic() - cached["time"] < _ARTWORK_CACHE_TTL:
-        return cached["data"]
-    store_key = "artist-image:v2:" + name.casefold()
-    stored = persistent_metadata.read(store_key)
-    if stored and stored.get("artwork_url"):
-        _artist_image_cache[name.casefold()] = {"time": monotonic(), "data": stored}
-        return stored
+    return _artist_image_cache.get_or_load(
+        name.casefold(), lambda: _load_artist_image(name), store_key="artist-image:v2:" + name.casefold(),
+        accept_stored=_has_artwork, stored_ttl=_ARTWORK_CACHE_TTL)
+
+
+def _has_artwork(stored):
+    return bool(stored and stored.get("artwork_url"))
+
+
+def _load_artist_image(name: str):
     result = {"artwork_url": None, "image_kind": "artist", "source": "Deezer"}
     try:
         response = _EXTERNAL_HTTP.get("https://api.deezer.com/search/artist?" + urlencode({"q": name, "limit": 8}))
@@ -682,11 +684,8 @@ def artist_image(name: str = ""):
             result = {**match, "artwork_url": (photo or match["artwork_url"]).replace("http://", "https://", 1)}
     except Exception:
         # A provider outage is not cached, so the next visit retries.
-        return {**result, "retryable": True}
-    _artist_image_cache[name.casefold()] = {"time": monotonic(), "data": result}
-    if result.get("artwork_url"):
-        persistent_metadata.write(store_key, result)
-    return result
+        return Loaded({**result, "retryable": True})
+    return Loaded(result, memory_ttl=_ARTWORK_CACHE_TTL, persist=bool(result.get("artwork_url")))
 
 
 def _fallback_album_artwork(artist: str, album: str):
