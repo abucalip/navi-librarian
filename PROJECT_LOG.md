@@ -1,3 +1,19 @@
+## 2026-11-17 — Server efficiency P1: cache settings reads (PR open)
+
+- PR [#1150](https://github.com/abucalip/navi-librarian/pull/1150), branch `efficiency-p1-settings-cache` from `main` at `ace556d9`, head `324001de`. Not merged.
+- Fixes F5. `settings/persistence.py` keeps one long-lived read connection and re-reads only when `PRAGMA data_version` changes or after a local write. `initialize()` runs once per file and process; the connection reopens when the file's inode or the process id changes. `read()` returns a deep copy (the plan said shallow; the dict holds lists). Writes keep their own short connection. The migrations and `chmod` run on reload only.
+- Tests run, with `python -m unittest`:
+  - `test_settings_persistence` (10 new tests), `test_auth_settings`, `test_quality_priority`, `test_settings_routes`, `test_service_settings`, `test_discogs_settings`: 74 OK.
+  - `test_app_auth`, `test_app_login_middleware`, `test_auth_configuration`, `test_auth_cookie`, `test_auth_routes_integration`, `test_auth_secret`, `test_auth_settings`, `test_login_ui_contract`, `test_api_identity_routes`, `test_discovery_save_bookmark`: 74 OK.
+  - Lint changed files: 0 new findings.
+  - Under pytest, `test_service_settings.py` and `test_discogs_settings.py` show 4 collection errors (production `test_*` functions imported from `settings/service.py`). The same errors appear on unchanged `main`.
+- Timing on a temp DB with 40 saved keys, 2,000 reads: median 313 µs before, 43 µs after.
+- CI: all five checks were still pending on `324001de` when this entry was written; check them before merging.
+- Limitations:
+  - M2's store counters do not cover the settings file, so M2 cannot show this change.
+  - `DISCOVERY_DB` is shared with other tables, so any commit to that file invalidates the cache (correct, but it lowers the hit rate; not measured).
+  - No live run; not deployed.
+
 ## 2026-11-17 — Server efficiency M3: process-local state inventory
 
 - PR [#1149](https://github.com/abucalip/navi-librarian/pull/1149), squash `9cb57a1a`, head `7ad0677f`, merged 2026-11-17 00:06 UTC (GitHub confirms `MERGED`). CI at merge: `validate-container` passed; `compile`, `lint-changed`, `container-smoke` and `test-and-build` were pending. Closeout (this entry and the status update) committed directly to `main`, as the owner asked.
