@@ -1,11 +1,13 @@
 # Project status
 
-Last checked: 2026-11-17. GitHub `main` is authoritative; this update is based on main at `a4804473` (PR #1177 merged).
+Last checked: 2026-11-17. GitHub `main` is authoritative; this update is based on main at `9a9f271f` (PR #1178 merged).
 
 **Server V2 work queue:** `docs/ServerV2.md` now contains only remaining client slices and verification; the former full plan and completed-work history is preserved in `docs/archive/ServerV2_HISTORY_2026-11-09.md`.
 
 ## Current state
 
+- **K2 `fetched_at` on page sections merged (2026-11-17):** PR [#1178](https://github.com/abucalip/navi-librarian/pull/1178) (squash `9a9f271f`, head `f6a62962`, merged 2026-11-17 14:02 UTC; CI pending at merge; not deployed); GitHub confirms `MERGED`. Artist and album page sections served stale from the discovery search cache state `fetched_at` (oldest stale row's store time; the identity lookup does not count). Every ungated K2 item is done; wider K2 scope stays gated on evidence. Focused tests 296 passed (14 new); full suite not run.
+  - **Next action:** check CI on `f6a62962`, `9a9f271f` and the still-queued `a4804473` once runners start, and open a fix PR if one fails; then the owner decides whether to set a `reviews` cap (recommendation: leave it off).
 - **Efficiency finishing up merged (2026-11-17):** PR [#1177](https://github.com/abucalip/navi-librarian/pull/1177) (squash `a4804473`, head `1c0ace77`, merged 2026-11-17 13:31 UTC; CI queued at merge; not deployed); GitHub confirms `MERGED`. It implements `efficiency.md` "Left out of merged steps":
   - M1: the `navidrome` label is now set outside the shared client.
   - K2: stale album reviews and links state `fetched_at`.
