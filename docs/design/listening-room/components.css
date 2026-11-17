@@ -50,6 +50,7 @@ p, h1, h2, h3 { margin: 0; }
 .lr-btn-quiet { background: transparent; border-color: transparent; color: var(--lr-text-soft); }
 .lr-btn-quiet:hover { background: var(--lr-raised); color: var(--lr-text); }
 .lr-btn[aria-busy="true"] { cursor: progress; }
+.lr-btn:disabled { opacity: 0.45; cursor: not-allowed; }
 .lr-btn-done { border-color: var(--lr-ok); color: var(--lr-ok); background: transparent; }
 
 /* 5.4 Section head */
@@ -77,7 +78,7 @@ p, h1, h2, h3 { margin: 0; }
 .lr-upnext a { display: grid; grid-template-columns: var(--lr-cover-thumb) 1fr; gap: var(--lr-space-16); align-items: center; padding: var(--lr-space-8);
   border-radius: var(--lr-radius-control); text-decoration: none; color: var(--lr-hero-text); min-height: var(--lr-target); }
 .lr-upnext a:hover { background: var(--lr-hero-button-fill); }
-.lr-upnext .lr-reason-line { color: var(--lr-hero-text); background: var(--lr-hero-reason-fill); border-left-color: var(--lr-hero-reason-rule); margin-top: var(--lr-space-4); }
+.lr-upnext .lr-reason-line { color: var(--lr-hero-text); background: transparent; border-color: transparent; border-left-color: var(--lr-hero-reason-rule); margin-top: var(--lr-space-4); }
 
 /* 5.6 Reason block: the "why this pick" panel, the showcase of every pick (sizes: hero, card, line).
    It is its own filled block with a 3px rule on the left, a "Why this pick" label carrying the kind's
@@ -94,8 +95,10 @@ p, h1, h2, h3 { margin: 0; }
 .lr-hero .lr-reason { padding: var(--lr-space-24); background: var(--lr-hero-reason-fill); border-left-color: var(--lr-hero-reason-rule); }
 .lr-hero .lr-reason-label, .lr-hero .lr-reason-label .lr-icon { color: var(--lr-hero-eyebrow); }
 /* Line size: grid cards, Up next, mini grids. A strip with the same fill and rule, 3 lines at most. */
-.lr-reason-line { font: 600 14px/20px var(--lr-font-text); color: var(--lr-text); padding: var(--lr-space-8) var(--lr-space-8) var(--lr-space-8) var(--lr-space-16);
-  border-radius: var(--lr-radius-cover); background: var(--lr-reason-fill); border-left: 3px solid var(--lr-reason-rule);
+/* The top and bottom 8px are borders in the fill colour, not padding, so the 3-line clamp never shows a
+   sliver of a 4th line (overflow clips at the padding box). */
+.lr-reason-line { font: 600 14px/20px var(--lr-font-text); color: var(--lr-text); padding: 0 var(--lr-space-8) 0 var(--lr-space-16);
+  border-radius: var(--lr-radius-cover); background: var(--lr-reason-fill); border: 8px solid var(--lr-reason-fill); border-left: 3px solid var(--lr-reason-rule);
   display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 .lr-evidence { display: flex; flex-wrap: wrap; gap: var(--lr-space-8); padding: 0; margin: var(--lr-space-4) 0 0; list-style: none; }
 .lr-chip { display: inline-flex; align-items: center; gap: var(--lr-space-8); min-height: 32px; padding: 0 var(--lr-space-8) 0 var(--lr-space-8);
@@ -247,3 +250,251 @@ a.lr-chip:hover { background: var(--lr-raised); color: var(--lr-text); }
 .lr-badge-host { position: relative; }
 .lr-badge { position: absolute; top: 4px; right: 4px; min-width: 18px; height: 18px; padding: 0 4px; border-radius: 9px; background: var(--lr-accent);
   color: var(--lr-on-accent); font: 600 11px/18px var(--lr-font-text); text-align: center; }
+
+/* ================================================================================================
+   Pages beyond Home (LISTENING_ROOM_WEB.md section 8). Same tokens; every page uses the shell above.
+   ================================================================================================ */
+.lr-badge-rail { display: none; }
+@media (max-width: 1079px) { .lr-badge-rail { display: block; } }
+.lr-rail-sep { height: 1px; margin: var(--lr-space-8) var(--lr-space-16); background: var(--lr-edge); }
+@media (max-width: 1079px) { .lr-rail-sep { width: 32px; margin: var(--lr-space-8) auto; } }
+.lr-stack { display: flex; flex-direction: column; gap: var(--lr-space-16); min-width: 0; }
+.lr-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--lr-space-8); }
+.lr-spacer { flex: 1; }
+
+/* 5.14 Page head and back link */
+.lr-pagehead { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: var(--lr-space-16); }
+.lr-page-title { font: 700 40px/44px var(--lr-font-display); letter-spacing: -0.02em; color: var(--lr-text); }
+.lr-page-sub { margin-top: var(--lr-space-8); font: 400 16px/25px var(--lr-font-text); color: var(--lr-text-muted); max-width: 70ch; }
+.lr-back { align-self: flex-start; }
+.lr-status-line { font: 400 14px/21px var(--lr-font-text); color: var(--lr-text-muted); }
+
+/* 5.15 List switch (Discover): the six lists as one tablist of pills; each may carry a count. */
+.lr-listswitch { display: flex; flex-wrap: wrap; gap: var(--lr-space-8); }
+.lr-tab-count { font-weight: 400; color: inherit; opacity: 0.8; }
+
+/* 5.16 Fields, selects, toolbars, icon segments, range */
+.lr-toolbar { display: flex; flex-wrap: wrap; align-items: end; gap: var(--lr-space-16); padding: var(--lr-space-16); border-radius: var(--lr-radius-control);
+  background: var(--lr-surface); border: 1px solid var(--lr-edge); }
+.lr-field { display: flex; flex-direction: column; gap: var(--lr-space-4); min-width: 0; }
+.lr-field-label { font: 600 13px/18px var(--lr-font-text); color: var(--lr-text-soft); }
+.lr-field-help { font: 400 13px/18px var(--lr-font-text); color: var(--lr-text-muted); max-width: 70ch; }
+.lr-input, .lr-select { min-height: var(--lr-target); padding: 0 var(--lr-space-16); border-radius: var(--lr-radius-control); background: var(--lr-surface-2);
+  border: 1px solid var(--lr-edge-strong); color: var(--lr-text); font: 400 16px/20px var(--lr-font-text); min-width: 0; }
+.lr-input::placeholder { color: var(--lr-text-muted); }
+.lr-input-icon { display: flex; align-items: center; gap: var(--lr-space-8); padding-left: var(--lr-space-16); }
+.lr-input-icon .lr-input { border: 0; padding-left: 0; background: transparent; flex: 1; min-height: 42px; }
+.lr-input-wrap { display: flex; align-items: center; border-radius: var(--lr-radius-control); background: var(--lr-surface-2); border: 1px solid var(--lr-edge-strong); color: var(--lr-text-muted); }
+.lr-select { appearance: none; padding-right: 40px; background-image: linear-gradient(45deg, transparent 50%, var(--lr-text-soft) 50%), linear-gradient(135deg, var(--lr-text-soft) 50%, transparent 50%);
+  background-position: calc(100% - 20px) 50%, calc(100% - 15px) 50%; background-size: 5px 5px; background-repeat: no-repeat; }
+.lr-iconseg { display: inline-flex; padding: var(--lr-space-4); gap: var(--lr-space-4); border-radius: var(--lr-radius-control); background: var(--lr-surface-2); border: 1px solid var(--lr-edge-strong); }
+.lr-iconseg button { width: 36px; height: 36px; display: grid; place-items: center; border: 0; border-radius: 4px; background: transparent; color: var(--lr-text-soft); cursor: pointer; }
+.lr-iconseg button[aria-pressed="true"] { background: var(--lr-raised); color: var(--lr-text); box-shadow: inset 0 0 0 1px var(--lr-edge-strong); }
+.lr-range { width: 160px; accent-color: var(--lr-text); min-height: var(--lr-target); }
+.lr-details { border-radius: var(--lr-radius-control); border: 1px solid var(--lr-edge); background: var(--lr-surface); }
+.lr-details > summary { min-height: var(--lr-target); padding: 0 var(--lr-space-16); display: flex; align-items: center; gap: var(--lr-space-8); cursor: pointer;
+  font: 600 14px/20px var(--lr-font-text); color: var(--lr-text-soft); list-style: none; }
+.lr-details > summary::-webkit-details-marker { display: none; }
+.lr-details[open] > summary .lr-icon { transform: rotate(180deg); }
+.lr-details-body { padding: 0 var(--lr-space-16) var(--lr-space-16); }
+.lr-mono { font: 400 13px/20px ui-monospace, 'SF Mono', Menlo, monospace; color: var(--lr-text-soft); overflow-wrap: anywhere; margin: 0; }
+
+/* 5.17 Ranked row: rank, cover, the pick with its reason panel, tools. Used by every Discover list,
+   Saved, Missing albums and Similar albums. The reason panel sits beside the title block, not under it,
+   so it gets the row's full height and reads first after the title. */
+.lr-ranked { display: flex; flex-direction: column; gap: var(--lr-space-16); padding: 0; margin: 0; list-style: none; }
+.lr-rank { display: grid; grid-template-columns: 32px var(--lr-cover-row) minmax(200px, 1fr) minmax(0, 1.6fr) auto; gap: var(--lr-space-16); align-items: center;
+  padding: var(--lr-space-16); border-radius: var(--lr-radius-control); background: var(--lr-surface); border: 1px solid var(--lr-edge); }
+.lr-rank-n { font: 600 22px/28px var(--lr-font-display); color: var(--lr-text-muted); text-align: right; font-variant-numeric: tabular-nums; }
+.lr-rank-main { min-width: 0; display: flex; flex-direction: column; gap: var(--lr-space-4); }
+.lr-rank-tools { display: flex; gap: var(--lr-space-4); align-items: center; }
+.lr-rank.lr-rank-norank { grid-template-columns: var(--lr-cover-row) minmax(200px, 1fr) minmax(0, 1.6fr) auto; }
+.lr-pill { display: inline-flex; align-items: center; gap: var(--lr-space-4); min-height: 24px; padding: 0 var(--lr-space-8); border-radius: var(--lr-radius-chip);
+  border: 1px solid var(--lr-edge-strong); font: 600 12px/16px var(--lr-font-text); color: var(--lr-text-soft); width: fit-content; }
+.lr-pill-ok { border-color: var(--lr-ok); color: var(--lr-ok); }
+
+/* 5.18 Page hero: album and artist pages reuse the lead pick's tinted panel with two columns. */
+.lr-hero.lr-hero-page { grid-template-columns: minmax(240px, 320px) minmax(0, 1fr); }
+.lr-hero-meta { display: flex; flex-wrap: wrap; gap: var(--lr-space-8); align-items: center; font: 400 14px/20px var(--lr-font-text); color: var(--lr-hero-text-soft); }
+.lr-hero .lr-pill { border-color: var(--lr-hero-button-edge); color: var(--lr-hero-text); }
+.lr-hero a:not(.lr-btn):not(.lr-chip) { color: var(--lr-hero-text); }
+.lr-hero-artist a { color: var(--lr-hero-text); }
+.lr-hero.lr-hero-artistpage { grid-template-columns: minmax(240px, 320px) minmax(0, 1fr) minmax(280px, 340px); }
+.lr-artist-photo { width: 100%; aspect-ratio: 1; border-radius: 50%; overflow: hidden; box-shadow: var(--lr-shadow-cover-lead); }
+.lr-bio { font: 400 16px/25px var(--lr-font-text); color: var(--lr-hero-text-soft); max-width: 62ch; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+.lr-tagrow { display: flex; flex-wrap: wrap; gap: var(--lr-space-8); padding: 0; margin: 0; list-style: none; }
+
+/* 5.19 Tracklist and top songs */
+.lr-tracks { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--lr-edge); }
+.lr-track { display: grid; grid-template-columns: 32px minmax(0, 1fr) 56px var(--lr-target); gap: var(--lr-space-16); align-items: center; min-height: 52px;
+  padding: 0 var(--lr-space-8); border-bottom: 1px solid var(--lr-edge); font: 400 15px/22px var(--lr-font-text); }
+.lr-track-n, .lr-track-time { color: var(--lr-text-muted); font: 400 13px/18px var(--lr-font-text); font-variant-numeric: tabular-nums; }
+.lr-track-n { text-align: right; }
+.lr-track-time { text-align: right; }
+.lr-track-owned { width: var(--lr-target); height: var(--lr-target); display: grid; place-items: center; color: var(--lr-ok); }
+.lr-disc { font: 600 12px/16px var(--lr-font-text); letter-spacing: 0.08em; text-transform: uppercase; color: var(--lr-text-muted); padding: var(--lr-space-16) var(--lr-space-8) var(--lr-space-8); }
+.lr-hero .lr-tracks { border-top-color: rgba(255,255,255,0.16); }
+.lr-hero .lr-track { border-bottom-color: rgba(255,255,255,0.16); }
+.lr-hero .lr-track-n, .lr-hero .lr-track-time { color: var(--lr-hero-text-soft); }
+.lr-album-body { display: grid; grid-template-columns: minmax(0, 3fr) minmax(300px, 2fr); gap: var(--lr-space-32); align-items: start; }
+
+/* 5.20 About tabs and reviews */
+.lr-review { display: flex; flex-direction: column; gap: var(--lr-space-8); padding: var(--lr-space-16); border-radius: var(--lr-radius-control); background: var(--lr-surface); border: 1px solid var(--lr-edge); }
+.lr-review-head { display: flex; align-items: center; gap: var(--lr-space-8); font: 600 14px/20px var(--lr-font-text); }
+.lr-score { margin-left: auto; min-width: 44px; padding: 0 var(--lr-space-8); border-radius: var(--lr-radius-cover); border: 1px solid var(--lr-edge-strong); font: 600 14px/28px var(--lr-font-display); text-align: center; }
+.lr-review-text { font: 400 15px/23px var(--lr-font-text); color: var(--lr-text-soft); }
+.lr-source { font: 400 13px/18px var(--lr-font-text); color: var(--lr-text-muted); }
+
+/* 5.21 Music-service links */
+.lr-platforms { display: flex; flex-wrap: wrap; gap: var(--lr-space-8); }
+
+/* 5.22 People (similar artists, genre artists) */
+.lr-people { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: var(--lr-space-16); padding: 0; margin: 0; list-style: none; }
+.lr-person { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: var(--lr-space-16); align-items: center; padding: var(--lr-space-8);
+  border-radius: var(--lr-radius-control); color: var(--lr-text); text-decoration: none; min-height: 80px; }
+.lr-person:hover { background: var(--lr-raised); color: var(--lr-text); }
+.lr-person-photo { width: 64px; height: 64px; border-radius: 50%; }
+.lr-initials { display: grid; place-items: center; background: var(--lr-raised); color: var(--lr-text-soft); font: 600 18px/1 var(--lr-font-display); }
+
+/* 5.23 Library: list rows and the sized tile grid */
+.lr-liblist { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.lr-librow { display: grid; grid-template-columns: var(--lr-avatar-artist) minmax(0, 1fr) auto; gap: var(--lr-space-16); align-items: center; min-height: 64px;
+  padding: var(--lr-space-8) var(--lr-space-16); border-bottom: 1px solid var(--lr-edge); color: var(--lr-text); text-decoration: none; }
+.lr-librow:hover { background: var(--lr-raised); color: var(--lr-text); }
+.lr-librow .lr-person-photo { width: var(--lr-avatar-artist); height: var(--lr-avatar-artist); }
+.lr-tiles { --tile: 180px; display: grid; grid-template-columns: repeat(auto-fill, minmax(var(--tile), 1fr)); gap: var(--lr-space-24); }
+.lr-owned-mark { position: absolute; right: var(--lr-space-8); bottom: var(--lr-space-8); width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--lr-bg); color: var(--lr-ok); border: 1px solid var(--lr-ok); }
+.lr-owned-mark .lr-icon { width: 16px; height: 16px; }
+.lr-letters { display: flex; flex-wrap: wrap; gap: var(--lr-space-4); }
+.lr-letters a { min-width: 32px; min-height: 32px; display: grid; place-items: center; border-radius: 4px; color: var(--lr-text-soft); text-decoration: none; font: 600 13px/16px var(--lr-font-text); }
+
+/* 5.24 Search panel (global search results under the top bar) */
+.lr-searchpanel { width: min(720px, 100%); padding: var(--lr-space-8); border-radius: var(--lr-radius-panel); background: var(--lr-raised); border: 1px solid var(--lr-edge-strong);
+  box-shadow: var(--lr-shadow-menu); display: flex; flex-direction: column; gap: var(--lr-space-8); }
+.lr-sgroup { display: flex; flex-direction: column; }
+.lr-sgroup-head { padding: var(--lr-space-8) var(--lr-space-16); }
+.lr-sres { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; gap: var(--lr-space-16); align-items: center; min-height: 56px; padding: var(--lr-space-8) var(--lr-space-16);
+  border-radius: var(--lr-radius-control); color: var(--lr-text); text-decoration: none; }
+.lr-sres:hover, .lr-sres[aria-selected="true"] { background: var(--lr-surface-2); color: var(--lr-text); }
+.lr-sres .lr-cover, .lr-sres .lr-person-photo { width: 40px; height: 40px; }
+.lr-sres mark { background: transparent; color: var(--lr-accent); font-weight: 600; }
+.lr-kbd { font: 600 12px/20px var(--lr-font-text); padding: 0 var(--lr-space-8); border-radius: 4px; border: 1px solid var(--lr-edge-strong); color: var(--lr-text-muted); }
+
+/* 5.25 Acquisition row */
+.lr-acq { display: grid; grid-template-columns: 72px minmax(0, 1fr) minmax(220px, 280px) auto; gap: var(--lr-space-16); align-items: start;
+  padding: var(--lr-space-16); border-radius: var(--lr-radius-control); background: var(--lr-surface); border: 1px solid var(--lr-edge); }
+.lr-acq .lr-cover { width: 72px; }
+.lr-acq-main { min-width: 0; display: flex; flex-direction: column; gap: var(--lr-space-4); }
+.lr-acq-state { display: flex; flex-direction: column; gap: var(--lr-space-4); }
+.lr-state { display: flex; align-items: center; gap: var(--lr-space-8); font: 600 14px/20px var(--lr-font-text); color: var(--lr-text); }
+.lr-state .lr-icon { width: 18px; height: 18px; }
+.lr-state-caution { color: var(--lr-text-soft); }
+.lr-state-error { color: var(--lr-danger); }
+.lr-state-ok { color: var(--lr-ok); }
+.lr-state-muted { color: var(--lr-text-muted); }
+.lr-acq .lr-progress { margin-top: var(--lr-space-4); }
+.lr-acq-big { grid-template-columns: 160px minmax(0, 1fr) minmax(260px, 320px) auto; padding: var(--lr-space-24); }
+.lr-acq-big .lr-cover { width: 160px; }
+
+/* 5.26 Radio: station rows with a Grab switch, Heard rows */
+.lr-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--lr-space-8); }
+.lr-station-row { display: grid; grid-template-columns: var(--lr-avatar-artist) minmax(0, 1fr) auto; gap: var(--lr-space-16); align-items: center;
+  padding: var(--lr-space-16); border-radius: var(--lr-radius-control); background: var(--lr-surface); border: 1px solid var(--lr-edge); }
+.lr-logo { width: var(--lr-avatar-artist); height: var(--lr-avatar-artist); border-radius: 50%; display: grid; place-items: center; background: var(--lr-raised); color: var(--lr-text-soft); }
+.lr-switch { display: inline-flex; align-items: center; gap: var(--lr-space-8); min-height: var(--lr-target); padding: 0 var(--lr-space-8); border: 0; background: transparent;
+  color: var(--lr-text); font: 600 14px/16px var(--lr-font-text); cursor: pointer; }
+.lr-switch-track { width: 44px; height: 26px; border-radius: 13px; border: 1px solid var(--lr-edge-strong); background: var(--lr-surface-2); position: relative; flex: none; }
+.lr-switch-track::after { content: ""; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: var(--lr-text-soft); transition: transform var(--lr-motion-press); }
+.lr-switch[aria-checked="true"] .lr-switch-track { background: var(--lr-text); border-color: var(--lr-text); }
+.lr-switch[aria-checked="true"] .lr-switch-track::after { transform: translateX(18px); background: var(--lr-bg); }
+.lr-heard { display: grid; grid-template-columns: 64px var(--lr-cover-thumb) minmax(0, 1fr) auto; gap: var(--lr-space-16); align-items: center;
+  padding: var(--lr-space-8) var(--lr-space-16); border-bottom: 1px solid var(--lr-edge); }
+.lr-heard .lr-cover { width: var(--lr-cover-thumb); }
+.lr-time { font: 400 13px/18px var(--lr-font-text); color: var(--lr-text-muted); font-variant-numeric: tabular-nums; }
+
+/* 5.27 Settings: tab column + form panel; quality priority list; appearance choices */
+.lr-settings { display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: var(--lr-space-32); align-items: start; }
+.lr-vtabs { display: flex; flex-direction: column; gap: var(--lr-space-4); }
+.lr-vtabs .lr-nav { width: 100%; border: 0; background: transparent; cursor: pointer; text-align: left; }
+.lr-vtabs .lr-nav[aria-selected="true"] { background: var(--lr-raised); color: var(--lr-text); box-shadow: inset 3px 0 0 var(--lr-text); }
+.lr-form { display: flex; flex-direction: column; gap: var(--lr-space-24); max-width: 720px; }
+.lr-form-group { display: flex; flex-direction: column; gap: var(--lr-space-16); }
+.lr-secret { display: flex; align-items: center; gap: var(--lr-space-8); font: 400 13px/18px var(--lr-font-text); color: var(--lr-text-muted); }
+.lr-priority { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--lr-space-8); counter-reset: pr; }
+.lr-priority li { display: grid; grid-template-columns: var(--lr-target) 32px minmax(0, 1fr) auto; gap: var(--lr-space-8); align-items: center; min-height: 56px;
+  padding: 0 var(--lr-space-8); border-radius: var(--lr-radius-control); background: var(--lr-surface); border: 1px solid var(--lr-edge-strong); }
+.lr-priority li.is-dragging { background: var(--lr-raised); box-shadow: var(--lr-shadow-menu); }
+.lr-grip { width: var(--lr-target); height: var(--lr-target); display: grid; place-items: center; color: var(--lr-text-muted); cursor: grab; border: 0; background: transparent; }
+.lr-choices { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: var(--lr-space-16); }
+.lr-choice { display: flex; flex-direction: column; gap: var(--lr-space-8); padding: var(--lr-space-16); border-radius: var(--lr-radius-control); background: var(--lr-surface);
+  border: 1px solid var(--lr-edge-strong); color: var(--lr-text); text-align: left; cursor: pointer; font: 600 14px/20px var(--lr-font-text); }
+.lr-choice[aria-checked="true"] { border: 2px solid var(--lr-text); padding: 15px; }
+.lr-swatch { height: 72px; border-radius: 4px; display: flex; overflow: hidden; }
+.lr-swatch span { flex: 1; }
+
+/* 5.28 Blocklist rows */
+.lr-blockrow { display: grid; grid-template-columns: var(--lr-avatar-artist) minmax(0, 1fr) auto; gap: var(--lr-space-16); align-items: center; min-height: 64px;
+  padding: var(--lr-space-8) var(--lr-space-16); border-bottom: 1px solid var(--lr-edge); }
+
+/* 5.29 Dialog: the album modal. Centred panel on desktop; a full-height sheet on phones. */
+.lr-dialog { width: min(920px, calc(100% - 64px)); max-height: calc(100vh - 64px); overflow: auto; padding: var(--lr-space-32); border-radius: var(--lr-radius-panel);
+  background: var(--lr-hero-tint, var(--lr-hero-fallback)); color: var(--lr-hero-text); box-shadow: var(--lr-shadow-menu); position: relative;
+  display: grid; grid-template-columns: 280px minmax(0, 1fr); gap: var(--lr-space-32); }
+.lr-dialog-close { position: absolute; top: var(--lr-space-16); right: var(--lr-space-16); }
+
+/* 5.30 Login */
+.lr-login { width: min(420px, 100%); padding: var(--lr-space-32); border-radius: var(--lr-radius-panel); background: var(--lr-surface); border: 1px solid var(--lr-edge);
+  display: flex; flex-direction: column; gap: var(--lr-space-24); }
+
+/* Pages: tablet */
+@media (max-width: 1079px) {
+  .lr-rank { grid-template-columns: 32px var(--lr-cover-row) minmax(0, 1fr) auto; }
+  .lr-rank.lr-rank-norank { grid-template-columns: var(--lr-cover-row) minmax(0, 1fr) auto; }
+  .lr-rank > .lr-reason { grid-column: 2 / -1; grid-row: 2; }
+  .lr-rank.lr-rank-norank > .lr-reason { grid-column: 1 / -1; }
+  .lr-rank > .lr-rank-tools { grid-column: -2; grid-row: 1; }
+  .lr-hero.lr-hero-artistpage { grid-template-columns: minmax(200px, 280px) minmax(0, 1fr); }
+  .lr-hero.lr-hero-artistpage > .lr-upnext { grid-column: 1 / -1; }
+  .lr-album-body { grid-template-columns: 1fr; }
+  .lr-acq, .lr-acq-big { grid-template-columns: 72px minmax(0, 1fr) auto; }
+  .lr-acq-big .lr-cover { width: 72px; }
+  .lr-acq > .lr-acq-state { grid-column: 2 / -1; }
+  .lr-settings { grid-template-columns: 1fr; }
+  .lr-vtabs { flex-direction: row; flex-wrap: wrap; }
+  .lr-vtabs .lr-nav { width: auto; padding: 0 var(--lr-space-16); }
+  .lr-vtabs .lr-nav[aria-selected="true"] { box-shadow: inset 0 -3px 0 var(--lr-text); }
+  .lr-dialog { grid-template-columns: 200px minmax(0, 1fr); }
+}
+
+/* Pages: phone */
+@media (max-width: 719px) {
+  .lr-page-title { font-size: 30px; line-height: 34px; }
+  .lr-listswitch, .lr-vtabs { flex-wrap: nowrap; overflow-x: auto; margin: 0 calc(var(--lr-space-16) * -1); padding: 0 var(--lr-space-16); }
+  .lr-listswitch .lr-tab, .lr-vtabs .lr-nav { flex: none; }
+  .lr-toolbar { flex-direction: column; align-items: stretch; }
+  .lr-toolbar > * { flex: 0 0 auto !important; }
+  .lr-rank-tools .lr-card-get { display: inline-flex; }
+  .lr-rank, .lr-rank.lr-rank-norank { grid-template-columns: 72px minmax(0, 1fr); gap: var(--lr-space-8) var(--lr-space-16); padding: var(--lr-space-16); }
+  .lr-rank .lr-cover { width: 72px; }
+  .lr-rank-n { display: none; }
+  .lr-rank > .lr-rank-main { grid-column: 2; grid-row: 1; }
+  .lr-rank > .lr-cover { grid-column: 1; grid-row: 1; }
+  .lr-rank > .lr-reason, .lr-rank.lr-rank-norank > .lr-reason { grid-column: 1 / -1; grid-row: 2; }
+  .lr-rank > .lr-rank-tools { grid-column: 1 / -1; grid-row: 3; }
+  .lr-hero.lr-hero-page, .lr-hero.lr-hero-artistpage { grid-template-columns: 1fr; }
+  .lr-hero-page .lr-hero-cover, .lr-artist-photo { max-width: 280px; }
+  .lr-track { grid-template-columns: 24px minmax(0, 1fr) 48px var(--lr-target); gap: var(--lr-space-8); padding: 0; }
+  .lr-people { grid-template-columns: 1fr; }
+  .lr-tiles { --tile: 150px !important; gap: var(--lr-space-16); }
+  .lr-acq, .lr-acq-big { grid-template-columns: 56px minmax(0, 1fr); }
+  .lr-acq .lr-cover, .lr-acq-big .lr-cover { width: 56px; }
+  .lr-acq > .lr-acq-state, .lr-acq > .lr-rank-tools { grid-column: 1 / -1; }
+  .lr-heard { grid-template-columns: var(--lr-cover-thumb) minmax(0, 1fr); }
+  .lr-heard .lr-time { grid-column: 2; grid-row: 2; }
+  .lr-heard > .lr-rank-tools { grid-column: 1 / -1; }
+  .lr-searchpanel { border-radius: var(--lr-radius-control); }
+  .lr-dialog { width: 100%; max-height: none; border-radius: var(--lr-radius-panel) var(--lr-radius-panel) 0 0; padding: var(--lr-space-16); grid-template-columns: 1fr; gap: var(--lr-space-16); }
+  .lr-login { padding: var(--lr-space-24); }
+  .lr-range { width: 100%; }
+}

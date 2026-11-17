@@ -12,8 +12,12 @@ Design tooling only: nothing imports it and no test collects it.
 """
 import json
 import os
+import re
 import subprocess
 import sys
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import pages  # noqa: E402  (sibling module: writes the generated page mockups)
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.normpath(os.path.join(HERE, ".."))
@@ -178,12 +182,33 @@ def write_tokens_css():
         handle.write("\n".join(lines) + "\n" + type_rules())
 
 
-# Page name -> list of (suffix, width, height) renders.
+# Page name -> list of (suffix, width, height) renders. Height None: measured from the page itself.
 RENDERS = {
-    "home": [("", 1440, 3000), ("-phone", 390, 4600)],
-    "reasons": [("", 1440, 2240)],
-    "states": [("", 1440, 1960)],
+    "home": [("", 1440, None), ("-phone", 390, None)],
+    "reasons": [("", 1440, None)],
+    "states": [("", 1440, None)],
 }
+for _name in pages.NAMES:
+    RENDERS[_name] = [("", 1440, None), ("-phone", 390, None)]
+
+
+def chrome(*args):
+    """Run headless Chrome with the shared flags."""
+    return subprocess.run([CHROME, "--headless=new", "--disable-gpu", "--hide-scrollbars", "--allow-file-access-from-files",
+                           "--virtual-time-budget=4000", *args], capture_output=True, text=True, check=False)
+
+
+def measure(page, width):
+    """The page's full height at `width`, read from an iframe (file:// needs --allow-file-access-from-files)."""
+    probe = os.path.join(OUT, "pages", "_measure.html")
+    with open(probe, "w", encoding="utf-8") as handle:
+        handle.write(f'<!doctype html><body><iframe id="f" src="{page}.html" style="width:{width}px;height:900px;border:0"></iframe>'
+                     '<pre id="out"></pre><script>f.onload=()=>setTimeout(()=>{out.textContent="H="+'
+                     'f.contentDocument.documentElement.scrollHeight},400)</script></body>')
+    result = chrome(f"--window-size={max(width, 600)},900", "--dump-dom", "file://" + probe)
+    os.remove(probe)
+    found = re.search(r"H=(\d+)", result.stdout)
+    return int(found.group(1)) if found else 2400
 
 
 def render(only):
@@ -196,6 +221,7 @@ def render(only):
             continue
         path = os.path.join(OUT, "pages", f"{page}.html")
         for suffix, width, height in sizes:
+            height = height or measure(page, width)
             target = os.path.join(OUT, "pages", f"{page}{suffix}.png")
             source, frame = path, None
             if width < 600:
@@ -207,14 +233,11 @@ def render(only):
                                  f'style="border:0;width:{width}px;height:{height}px;display:block;margin-left:{(600 - width) // 2}px">'
                                  '</iframe></body>')
                 source = frame
-            subprocess.run([CHROME, "--headless=new", "--disable-gpu", "--hide-scrollbars",
-                            f"--window-size={max(width, 600)},{height}", "--virtual-time-budget=4000",
-                            f"--screenshot={target}", "file://" + source],
-                           stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL, check=False)
+            chrome(f"--window-size={max(width, 600)},{height}", f"--screenshot={target}", "file://" + source)
             if frame:
                 os.remove(frame)
                 crop(target, width)
-            print("wrote", os.path.relpath(target, OUT))
+            print("wrote", os.path.relpath(target, OUT), height)
 
 
 def crop(target, width):
@@ -227,5 +250,6 @@ def crop(target, width):
 
 if __name__ == "__main__":
     write_tokens_css()
+    pages.write_all()
     inline_sprite(write_icons())
     render(sys.argv[1] if len(sys.argv) > 1 else "")

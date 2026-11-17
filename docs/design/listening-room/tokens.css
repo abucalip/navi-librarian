@@ -24,6 +24,8 @@
   --lr-ok: #7FD69A;
   --lr-danger: #FF8A7A;
   --lr-skeleton: #1F2228;
+  --lr-reason-fill: #1D2027;
+  --lr-reason-rule: #8A90A0;
   --lr-scrim: rgba(0,0,0,0.55);
   --lr-hero-fallback: #2A1F33;
   --lr-hero-text: #FFFFFF;
@@ -32,6 +34,8 @@
   --lr-hero-button-fill: rgba(255,255,255,0.10);
   --lr-hero-button-edge: rgba(255,255,255,0.44);
   --lr-hero-aside-fill: rgba(0,0,0,0.28);
+  --lr-hero-reason-fill: rgba(0,0,0,0.32);
+  --lr-hero-reason-rule: rgba(255,255,255,0.72);
   --lr-space-4: 4px;
   --lr-space-8: 8px;
   --lr-space-16: 16px;
@@ -71,8 +75,10 @@
 .lr-type-page-title { font-family: 'Instrument Sans', system-ui, -apple-system, 'Segoe UI', sans-serif; font-weight: 700; font-size: 40px; line-height: 44px; letter-spacing: -0.02em; }
 .lr-type-section-title { font-family: 'Instrument Sans', system-ui, -apple-system, 'Segoe UI', sans-serif; font-weight: 600; font-size: 22px; line-height: 28px; letter-spacing: -0.01em; }
 .lr-type-card-title { font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif; font-weight: 600; font-size: 14px; line-height: 20px; }
-.lr-type-reason-hero { font-family: 'Instrument Sans', system-ui, -apple-system, 'Segoe UI', sans-serif; font-weight: 600; font-size: 20px; line-height: 28px; letter-spacing: -0.005em; }
-.lr-type-reason { font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif; font-weight: 400; font-size: 14px; line-height: 21px; }
+.lr-type-reason-hero { font-family: 'Instrument Sans', system-ui, -apple-system, 'Segoe UI', sans-serif; font-weight: 600; font-size: 24px; line-height: 32px; letter-spacing: -0.01em; }
+.lr-type-reason { font-family: 'Instrument Sans', system-ui, -apple-system, 'Segoe UI', sans-serif; font-weight: 600; font-size: 18px; line-height: 26px; letter-spacing: -0.005em; }
+.lr-type-reason-line { font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif; font-weight: 600; font-size: 14px; line-height: 20px; }
+.lr-type-reason-label { font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif; font-weight: 600; font-size: 12px; line-height: 16px; letter-spacing: 0.08em; text-transform: uppercase; }
 .lr-type-body { font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif; font-weight: 400; font-size: 16px; line-height: 25px; }
 .lr-type-meta { font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif; font-weight: 400; font-size: 13px; line-height: 18px; }
 .lr-type-eyebrow { font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif; font-weight: 600; font-size: 12px; line-height: 16px; letter-spacing: 0.08em; text-transform: uppercase; }
@@ -82,5 +88,6 @@
 @media (max-width: 719px) {
   .lr-type-hero-title { font-size: 36px; line-height: 40px; }
   .lr-type-page-title { font-size: 30px; line-height: 34px; }
-  .lr-type-reason-hero { font-size: 18px; line-height: 26px; }
+  .lr-type-reason-hero { font-size: 20px; line-height: 28px; }
+  .lr-type-reason { font-size: 16px; line-height: 24px; }
 }
