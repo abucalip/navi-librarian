@@ -2,6 +2,7 @@
 
 import hashlib
 import secrets
+import threading
 
 import httpx
 
@@ -33,25 +34,68 @@ def _signed_request(config_provider, params, salt_factory):
     return base_url, query
 
 
+_SHARED_CLIENT = None
+_SHARED_CLIENT_LOCK = threading.Lock()
+
+
+def _build_shared_client():
+    """Build the process-wide Navidrome client (efficiency P2).
+
+    Idle connections stay open for 30 s so a burst of library and cover calls reuses
+    one TCP connection instead of a new handshake each. Only keep-alive connections
+    are capped; requests are never queued behind a total-connection limit.
+    """
+    return httpx.Client(
+        timeout=30,
+        follow_redirects=False,
+        limits=httpx.Limits(max_keepalive_connections=10, keepalive_expiry=30.0),
+    )
+
+
+def _shared_client():
+    """Return the process-wide client, built on first use under a lock. ``httpx.Client`` is thread-safe."""
+    global _SHARED_CLIENT
+    if _SHARED_CLIENT is None:
+        with _SHARED_CLIENT_LOCK:
+            if _SHARED_CLIENT is None:
+                _SHARED_CLIENT = _build_shared_client()
+    return _SHARED_CLIENT
+
+
+def _reset_shared_client():
+    """Close and forget the shared client so tests start from a clean state."""
+    global _SHARED_CLIENT
+    with _SHARED_CLIENT_LOCK:
+        if _SHARED_CLIENT is not None:
+            _SHARED_CLIENT.close()
+        _SHARED_CLIENT = None
+
+
+def _get(url, query, client_factory):
+    """GET one Navidrome URL.
+
+    A caller-supplied ``client_factory`` (tests) gets its own client, closed after the
+    call, exactly as before. Otherwise the shared client is used and left open.
+    """
+    if client_factory is not None:
+        with client_factory(timeout=30, follow_redirects=False) as client:
+            return client.get(url, params=query)
+    return _shared_client().get(url, params=query)
+
+
 def api_call(method, config_provider, *, client_factory=None, salt_factory=None, **params):
     """Call Navidrome using token authentication and validate its response.
 
     Dependencies are supplied by the caller so the legacy server can retain its
     configured settings while this transport boundary remains directly testable.
     """
-    if client_factory is None:
-        client_factory = httpx.Client
     if salt_factory is None:
         salt_factory = lambda: secrets.token_hex(12)
 
     base_url, query = _signed_request(config_provider, params, salt_factory)
-    with client_factory(timeout=30, follow_redirects=False) as client:
-        response = client.get(
-            f"{base_url}/rest/{method}.view",
-            params=query,
-        )
-        response.raise_for_status()
-        data = response.json()
+    response = _get(f"{base_url}/rest/{method}.view", query, client_factory)
+    response.raise_for_status()
+    data = response.json()
 
     root = data.get("subsonic-response", {})
     if root.get("status") != "ok":
@@ -70,16 +114,13 @@ def cover_art(config_provider, cover_id, *, size, client_factory=None, salt_fact
     Only supported raster images are returned. A Subsonic error body, an SVG or other
     type not in ``RASTER_IMAGE_TYPES``, or an oversized body raises ``CoverArtUnavailable``.
     """
-    if client_factory is None:
-        client_factory = httpx.Client
     if salt_factory is None:
         salt_factory = lambda: secrets.token_hex(12)
 
     base_url, query = _signed_request(
         config_provider, {"id": cover_id, "size": size}, salt_factory,
     )
-    with client_factory(timeout=30, follow_redirects=False) as client:
-        response = client.get(f"{base_url}/rest/getCoverArt.view", params=query)
+    response = _get(f"{base_url}/rest/getCoverArt.view", query, client_factory)
     if response.status_code == 404:
         raise CoverArtUnavailable("Navidrome has no cover art for this ID.")
     response.raise_for_status()
