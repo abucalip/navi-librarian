@@ -10,9 +10,16 @@ on:
       - main
       - feature/acquisition-integration-hardening
 
+concurrency:
+  # A newer push to the same pull request cancels the older run; every push to a branch keeps its own run.
+  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.event.pull_request.number || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   compile:
     runs-on: ubuntu-latest
+    # The unit suite takes about 40 minutes; a hung test must not hold a runner for the 6-hour default.
+    timeout-minutes: 60
     steps:
       - name: Check out source
         uses: actions/checkout@v4

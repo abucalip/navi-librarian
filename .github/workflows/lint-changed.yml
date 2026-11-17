@@ -5,9 +5,15 @@ on:
     branches:
       - main
 
+concurrency:
+  # A newer push to the same pull request cancels the older run; every push to a branch keeps its own run.
+  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.event.pull_request.number || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   lint-changed:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Check out source with history
         uses: actions/checkout@v4
