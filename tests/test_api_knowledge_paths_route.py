@@ -138,6 +138,29 @@ class AlbumPathsRoute(PathsRoute):
         for leaked in ("navidrome_id", "built_from", "generation_id", "presentation_version"):
             self.assertNotIn(leaked, r.text)
 
+    def test_two_gaps_requests_page_the_inventory_once(self):
+        calls = []
+
+        class Navidrome(FakeLibrarian):
+            def api_call(self, method, **params):
+                calls.append(method)
+                if method == "getScanStatus":
+                    return {"scanStatus": {"scanning": False, "lastScan": "t1", "count": 1}}
+                return {"albumList2": {"album": [{"id": "al1", "name": "Alpha LP", "playCount": 3}]}}
+
+            @staticmethod
+            def items(value):
+                return value or []
+
+        routes._INVENTORY.clear()
+        self.addCleanup(routes._INVENTORY.clear)
+        self.client.app.dependency_overrides[get_librarian] = lambda: Navidrome(self.tmp.name)
+        for _ in range(2):
+            r = self.get_album(kind="album_gaps")
+            self.assertEqual(r.status_code, 200, r.text)
+            self.assertNotEqual(r.json()["history"]["state"], "unavailable")
+        self.assertEqual(calls, ["getScanStatus", "getAlbumList2"])
+
     def test_gaps_kind_needs_a_release_start(self):
         self.assertEqual(self.get_album(kind="album_gaps", type="artist", mbid="a-gid").status_code, 400)
 

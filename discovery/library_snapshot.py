@@ -2,9 +2,13 @@
 
 from __future__ import annotations
 
+import threading
 import time
 from collections.abc import Callable
 from typing import Any
+
+RECHECK_SECONDS = 30.0
+MAX_AGE_SECONDS = 5 * 60.0
 
 
 class AlbumInventoryLimitError(RuntimeError):
@@ -54,6 +58,67 @@ def fetch_album_inventory(
     if not complete:
         raise AlbumInventoryLimitError(len(albums))
     return albums
+
+
+class AlbumInventorySnapshot:
+    """A process-level copy of the raw album inventory, keyed by the Navidrome scan marker (efficiency P5).
+
+    The marker is ``getScanStatus`` ``lastScan`` and ``count``. Within ``recheck_seconds`` of the last
+    check the copy is served with no Navidrome call; after that one ``getScanStatus`` call decides: an
+    unchanged marker (and no scan running) keeps the copy. Play counts, last-played times, stars and
+    ratings change without a scan, so a copy older than ``max_age_seconds`` is paged again whatever the
+    marker says. Failures are not cached, nothing is cached while a scan runs or when the marker cannot
+    be read, and callers get their own copies of the album dicts.
+    """
+
+    def __init__(self, *, recheck_seconds: float = RECHECK_SECONDS, max_age_seconds: float = MAX_AGE_SECONDS,
+                 now: Callable[[], float] = time.monotonic):
+        self._recheck = recheck_seconds
+        self._max_age = max_age_seconds
+        self._now = now
+        self._lock = threading.Lock()
+        self.clear()
+
+    def clear(self) -> None:
+        """Drop the copy (tests, or when the Navidrome connection changes)."""
+        self._albums: list[dict[str, Any]] | None = None
+        self._marker: tuple[Any, Any] | None = None
+        self._fetched_at = 0.0
+        self._checked_at = 0.0
+
+    def get(self, api_call: Callable[..., dict[str, Any]], items: Callable[[Any], list[Any]]) -> list[dict[str, Any]]:
+        """The album inventory, from the copy when it is still valid; raises what ``fetch_album_inventory`` raises."""
+        with self._lock:
+            now = self._now()
+            if self._albums is not None and now - self._fetched_at < self._max_age:
+                if now - self._checked_at < self._recheck:
+                    return self._copy()
+                marker = self._read_marker(api_call)
+                if marker is not None and marker == self._marker:
+                    self._checked_at = now
+                    return self._copy()
+            else:
+                marker = self._read_marker(api_call)
+            self._albums = None
+            albums = fetch_album_inventory(api_call, items)
+            if marker is not None:   # read before paging, so a scan ending mid-page is caught next time
+                self._albums, self._marker = albums, marker
+                self._fetched_at = self._checked_at = now
+            return [dict(album) for album in albums]
+
+    def _copy(self) -> list[dict[str, Any]]:
+        return [dict(album) for album in self._albums or ()]
+
+    @staticmethod
+    def _read_marker(api_call: Callable[..., dict[str, Any]]) -> tuple[Any, Any] | None:
+        """``(lastScan, count)``, or None when it cannot be read or a scan is running."""
+        try:
+            status = api_call("getScanStatus").get("scanStatus") or {}
+        except Exception:  # pylint: disable=broad-except  # an unreadable marker only means "do not cache"
+            return None
+        if status.get("scanning"):
+            return None
+        return (status.get("lastScan"), status.get("count"))
 
 
 def build_library_snapshot(
