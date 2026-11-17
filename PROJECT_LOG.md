@@ -1,3 +1,10 @@
+## 2026-11-17 — K3 part 2 measured: "library tracklist first" (owner-approved provider traffic)
+
+- Two backup copies of `local-test/data-live` on ports 8095 (cold) and 8096 (prefetched with the approved compose caps, limited to 24 cold owned albums), PR #1177 head. One first view of each album page per copy, each tracks section timed.
+- Provider tracks section, median / p95 / max: cold 458 / 1,178 / 2,413 ms; prefetched 21 / 870 / 3,667 ms. Library tracks section: 17 ms in both. 4 of 24 albums have no provider tracklist and wait on every view.
+- Provider requests: about 450 in all (pass A 215, prefetch 148, pass B 85, plus 45 in a 6-album re-check). Pass B still made 65 Last.fm requests (not attributed to a section).
+- Recommendation recorded in `docs/efficiency.md` K3: keep "library tracklist first" permanently. Owner decision; no code changed. Raw output: `local-test/k3m-*.json` (outside the repo).
+
 ## 2026-11-17 — Efficiency finishing up: K3 reviews prefetch (off), K2 fetched_at, M1 Navidrome label (PR open)
 
 - PR [#1177](https://github.com/abucalip/navi-librarian/pull/1177), branch `efficiency-finishing-up`, not merged. It covers the "Left out of merged steps" list in `docs/efficiency.md`, at the owner's request.
