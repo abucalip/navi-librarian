@@ -155,7 +155,7 @@ def write_swift():
          "    enum Booklet {",
          "        static let idealSize = %s" % swift_size(bs["sheetIdeal"]),
          "        static let minSize = %s" % swift_size(bs["sheetMin"]),
-         "        static let bar: CGFloat = %d" % bs["bar"],
+         "        static let barHeight: CGFloat = %d" % bs["bar"],
          "        static let sidebar: CGFloat = %d" % bs["sidebar"],
          "        static let sidebarCollapsesBelow: CGFloat = %d" % bs["sidebarCollapsesBelow"],
          "        static let editionMini: CGFloat = %d" % bs["editionMini"],

@@ -61,6 +61,8 @@ struct CUPalette: Equatable, Sendable {
     var glassTint: CURGB
     var glassOpacity: Double
     var isNight: Bool
+    /// The Night accent of the same accent setting in both modes. The Booklet is always dark, so its ring and edge use this.
+    var stageAccent = CUPalette.nightAccentDefault
 
     /// The shipped Cupertino colours (section 4.1 of `docs/redesign.md`).
     static let day = CUPalette(
@@ -144,6 +146,7 @@ struct CUPalette: Equatable, Sendable {
         let a = mode == .night ? nightAccent(hue: hue, panel: p.panel) : dayAccent(hue: hue, panel: p.panel, content: p.content)
         p.accent = a.accent; p.accentStrong = a.strong; p.accentTint = a.tint
         p.heat = heatRamp(from: p.fill, to: a.accent)
+        p.stageAccent = mode == .night ? a.accent : nightAccent(hue: hue, panel: night.panel).accent
         return p
     }
 
