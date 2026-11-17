@@ -212,7 +212,6 @@ def recommend_new_music(
     listens = gathered["listens"]
     recent_artists = gathered["recent_artists"]
     recent_artist_play_counts = gathered.get("recent_artist_play_counts", recent_artists)
-    recent_artist_mbid_counts = gathered["recent_artist_mbid_counts"]
     albums = gathered["albums"]
     failures = gathered["failures"]
     library_albums = gathered["library_albums"]
@@ -222,7 +221,6 @@ def recommend_new_music(
     recent_family_play_counts = gathered.get("recent_family_play_counts", recent_family_counts)
     core_families = gathered["core_families"]
     exploration_families = gathered["exploration_families"]
-    profile_families = gathered["profile_families"]
     regional_candidates_added = gathered["regional_candidates_added"]
     regional_results_seen = gathered["regional_results_seen"]
 
