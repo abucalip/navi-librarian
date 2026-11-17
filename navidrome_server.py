@@ -105,43 +105,6 @@ def items(value):
     return _navidrome_client.items(value)
 
 
-def get_server_source(start_line: int = 1, end_line: int = 200) -> str:
-    """Read a bounded section of the legacy service module's own source code.
-
-    Read-only. Only reads this Python file; does not accept file paths.
-    Returns at most 250 lines per request.
-    """
-    import json
-    from pathlib import Path
-    from server_source_redaction import redact_assignment
-
-    source_path = Path(__file__).resolve()
-    lines = source_path.read_text(encoding="utf-8").splitlines()
-
-    if start_line < 1 or end_line < start_line:
-        return json.dumps({"error": "Invalid line range."})
-
-    if end_line - start_line + 1 > 250:
-        return json.dumps({
-            "error": "Maximum 250 lines per request.",
-            "hint": "Request a smaller line range."
-        })
-
-    end_line = min(end_line, len(lines))
-    result = []
-    for number in range(start_line, end_line + 1):
-        line = redact_assignment(lines[number - 1])
-        result.append(f"{number:4}: {line}")
-
-    return json.dumps({
-        "file": source_path.name,
-        "total_lines": len(lines),
-        "start_line": start_line,
-        "end_line": end_line,
-        "source": "\n".join(result),
-    }, ensure_ascii=False, indent=2)
-
-
 def library_overview() -> str:
     """Summarize the artists and albums recently added to Navidrome."""
     artists_root = api_call("getArtists")
