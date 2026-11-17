@@ -9,6 +9,9 @@ Last checked: 2026-11-17. GitHub `main` is authoritative; this update is based o
 - **CI suite runs in about 1 minute (2026-11-17, PR #1182):** CI now runs the unit suite with pytest. `tests/conftest.py`, which gives each test a no-wait private provider gate, now applies, so MusicBrainz calls no longer sleep 1.1 s each on the shared gate. The test step went from 40 min to 69 s and the job takes about 2 min. Job timeout is 15 min.
   - **Next action:** none. Run focused modules that touch MusicBrainz with pytest, not `unittest`.
 
+- **macOS Paths P1 merged (2026-11-17, PR #1185, squash `c5d9b6d8`):** the Paths sheet now has the Trail layout (header, text tabs with counts, summary and filter, groups on a rail, stop cards, detail bar, resizable sheet, arrow keys in visual order). Owner decisions D2(a), D5(a), D6(a).
+  - **Next action:** P2 (Paths details: flat Sonic polish, Room photos, artist round photos, phases, min-size reflow, accessibility, `PathsRenderTests`); B1 (Booklet base) can run in parallel; D1, D3, D4 are needed before B2.
+
 - **macOS Paths P0 merged (2026-11-17, PR #1184, squash `5ec4ac56`):** pure Trail model (`PathTrail.swift`, `PathStep` Trail fields, structured `capped`, `PathsSheetModel` filter, year, visual order); no visible change.
   - **Next action:** P1 (Paths layout) needs owner answers D1, D2, D5, D6 (section 8 of the plan); B1 (Booklet base) can start now.
 

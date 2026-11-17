@@ -1,3 +1,11 @@
+## 2026-11-17 — macOS Paths P1 layout (PR #1185)
+
+- **Merged:** PR #1185, squash `c5d9b6d864a867d3bdf16cfdb0d40711d9fe3738`. Slice P1 of `docs/MACOS_PATHS_BOOKLET.md`: `Themes/Cupertino/CUPathsBooklet.swift` (Paths part), `Chrome/PathTrailViews.swift`, `Chrome/PathsSheet.swift` rewritten, `PathRowThumb` optional radius.
+- **Owner decisions:** D2(a) resizable (ideal 1040 × 680, minimum 820 × 520), D5(a) filter back to All on each open, D6(a) all four arrows move in visual order.
+- **Tests run:** `swift build`; `swift test --filter 'PathsModelTests|PathTrailTests'`, 43 tests, all pass. A throwaway offscreen render of the Crew tab (Day, sample data) matched `paths-crew.png`; not committed.
+- **CI:** all five checks reported success on the PR.
+- **Limitations:** the CPU measurement (five cases) was not taken; not checked in a real window; Night, the other tabs and keyboard behaviour were not exercised; no render test yet (P2). Not published or deployed.
+
 ## 2026-11-17 — macOS Paths P0 model (PR #1184)
 
 - **Merged:** PR #1184, squash `5ec4ac568a9221ae4ff4545e64ee12dc0c0531af`. Slice P0 of `docs/MACOS_PATHS_BOOKLET.md`: `Model/PathTrail.swift`; `PathStep` gains `firstVia`, `firstCode`, `creditRole`, `anchors` and `with(id:)` (the artist dedupe no longer rebuilds steps by hand); `PathAnswer.capped` kept structured; `PathsSheetModel` gains `year`, `filter`, `groups`, `order`, `looseNotes`, `count(for:)`, and `move(by:)` follows the visual order. The current sheet shows capped sentences through `looseNotes` (now after the other notes).
