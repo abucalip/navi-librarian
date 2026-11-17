@@ -617,7 +617,7 @@ Miss causes, from the cache rows each request wrote:
 #### K4. Negative cache for review-outlet failures
 
 - **Objective:** a warm album-reviews request does not re-ask an outlet that just timed out or failed.
-- **Current state:** approved by the owner on 2026-11-17 and not started. Today a timeout or error is not stored, so every view re-asks the outlet. In K1, 141 of 160 warm outlet requests on owned albums were timeouts, and each such request waited until the route deadline (about 4.2 s).
+- **Current state:** **implemented in the K4/K5 PR (2026-11-17, not merged when written; not deployed).** `_ask_outlet` in `app/api/metadata.py` writes a dated failure mark (`app/services/negative_marks.py`) under its own key `album-review-source-failed:v1:{outlet}:{artist}:{album}` when the outlet raises, in the pool thread, so an outlet that fails after the 6 s route deadline is marked too; while the mark is under 1 h old (`_SOURCE_FAILURE_TTL`) the outlet is skipped by raising `OutletResting`, so the list stays partial (`retryable`, not stored). The outlet's answer key is never written for a failure; a success writes it as before. A K2 background refresh of an outlet's stale answer sends nothing while a mark lives (it stops at the same check). Tests: `tests/test_metadata_album_info_reviews.py` (5 new, 1 changed: a failed outlet is now asked again after its hour, not at once), `tests/test_negative_marks.py` (3). Warm pass: see "K4/K5 warm pass on the aged store" below (acceptance met). Before K4: a timeout or error was not stored, so every view re-asked the outlet. In K1, 141 of 160 warm outlet requests on owned albums were timeouts, and each such request waited until the route deadline (about 4.2 s).
 - **Proposed changes:** remember a failure per outlet and album for a short time (for example 1 h), following the P6 pattern. While that entry is live, skip the outlet, and report the reviews as partial, as today.
 - **Affected components:** `app/api/metadata.py` (album reviews), the review-outlet fetch code it calls, and their tests.
 - **Implementation guidance:** keep the entry in memory or in the store with its own short TTL. Never cache a timeout as "no review". A later success replaces the entry.
@@ -630,10 +630,27 @@ Miss causes, from the cache rows each request wrote:
 - **Acceptance criteria:** on a K1-style warm pass, the failure misses on album reviews fall to near zero.
 - **Model:** Haiku, Medium. Follows P6.
 
+##### K4/K5 warm pass on the aged store (2026-11-17)
+
+Owner-approved provider traffic. Two fresh copies of `local-test/data-live` (the K1-rerun store), served side by side by `main` (`0f83b7fe`, port 8093) and the PR head (port 8094), sharing one MusicBrainz gate file so pacing stayed at one slot per 1.1 s overall. Targets: the 35 album targets of `local-test/k1r-targets.json` (K4 and K5 touch only album routes). `scripts/efficiency_inventory.py`, one first-view pass and one warm pass, then each server restarted on its store and run again (the restart's first view is the case the stored marks are for). About 1,150 provider requests in all; quiet windows clean except for one background Deezer and one MusicBrainz call in the after-window of both. Raw output in the session scratchpad (not kept).
+
+| Album routes, 35 targets | `main` | K4/K5 |
+|---|---|---|
+| First view after restart: requests with a provider call | 93 | 45 |
+| First view after restart: provider requests | 231 | 80 |
+| First view after restart: wall time | 205 s | 38 s |
+| Review-outlet requests after restart (owned + unowned) | 81 | 0 |
+| Album links, unowned, after restart: provider requests | 22 | 1 |
+| Warm pass, album page "not cached" misses (with the year fix) | 8 | 0 |
+
+- **K4 met:** after a restart no review outlet was asked (failure marks and stored answers), and album reviews took 0.1 s in all instead of 141 s.
+- **K5:** the first measurement left 9 Deezer requests per warm pass on the unowned album page: the album year route's Deezer fallback, which never kept a "no year" answer. A third commit gives it its own mark (`deezer-year`); the rerun shows 0 on the warm pass.
+- **Not removed (outside K5's no-match rule):** owned album links still ask Deezer after a restart (18 to 20 requests): Deezer *matched*, but Apple had no match, so the set is incomplete and never stored, and the found Deezer page is not kept on its own. Wikipedia "no article" on the album description (10 after a restart) is not a Deezer or Apple answer. Both are candidates for the owner: keep a found Deezer link on its own, or a Wikipedia no-match mark.
+
 #### K5. Negative cache for Deezer and Apple no-match answers
 
 - **Objective:** a warm request for album links or the album page does not re-ask Deezer or Apple for an album they have just said they do not have.
-- **Current state:** approved by the owner on 2026-11-17 and not started. A "no match" answer is not stored. In K1, it was most of the 103 "not cached" warm misses, and 37 in the rerun's first view.
+- **Current state:** **implemented in the K4/K5 PR (2026-11-17, not merged when written; not deployed).** `app/services/album_page_sources.py` writes a dated no-match mark under its own key `album-no-match:v1:{deezer|apple}:{artist}:{album}` for 1 h (`NO_MATCH_TTL`), only after a provider answer with no exact match: Deezer's album search (`fetch_album_details_remembered`, and the links' Deezer lookup, which sends the same query and matcher, so they share one mark) and Apple's album search (`apple_search_url_remembered`, used by `_apple_album_url_state` and so by the links and the description, and by the worker's `apple_page_url`). A failed or refused request, and a Deezer error body sent with status 200 (`deezer_albums` now raises on it, so album details also no longer keeps such an answer an hour as a no-match), write nothing. The route and the worker read and write the same marks. A links set without a match is still incomplete: kept 10 minutes in memory and never stored, so a no-match lasts its hour, not the links' week. `/api/artwork` is unchanged (its chain ends at Qobuz and keeps P4's 5-minute memory-only miss). Tests: `tests/test_album_page_sources.py` (10 new, 1 changed), `tests/test_metadata_persistent_cache.py` (1 changed: a definite Deezer miss now leaves the mark row only). Warm pass: see "K4/K5 warm pass on the aged store" (album page met after the year fix; album links met for no-match answers, a found Deezer link in an incomplete set is still re-asked). Before K5: a "no match" answer was not stored. In K1, it was most of the 103 "not cached" warm misses, and 37 in the rerun's first view.
 - **Proposed changes:** store a definitive no-match per provider and album with a short TTL (for example 1 h), following the P6 pattern. Errors and timeouts are not definitive and are not stored.
 - **Affected components:** `app/api/metadata.py` (album links, Apple album URL, album page artwork and links lookups) and their tests.
 - **Implementation guidance:** tell a definitive no-match (a 200 with no match) apart from failures. Keep the existing store keys; add a negative marker, or a separate short-lived key.

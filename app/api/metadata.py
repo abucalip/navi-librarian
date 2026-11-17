@@ -22,7 +22,9 @@ from app.services.fallback_artwork import (
 )
 from app.services.deezer_artwork import select_album_artwork, select_artist_artwork
 from app.services import runtime_metrics
-from app.services import album_links, album_page_sources, album_reviews, persistent_metadata, stale_refresh
+from app.services import (
+    album_links, album_page_sources, album_reviews, negative_marks, persistent_metadata, stale_refresh,
+)
 from app.services.layered_cache import LayeredCache, Loaded
 from app.services.deezer_album_matching import release_year
 from integrations.musicbrainz.album_year import (
@@ -229,7 +231,8 @@ def album_year(artist: str = "", album: str = "", librarian=Depends(get_libraria
     # MusicBrainz is primary. Deezer is a fallback only for an exact normalized
     # artist AND album match; fuzzy or artist-only results are never trusted.
     if not year:
-        year = album_page_sources.deezer_year(_EXTERNAL_HTTP.get, artist, album)
+        year = album_page_sources.deezer_year_remembered(
+            persistent_metadata.read, persistent_metadata.write, _EXTERNAL_HTTP.get, artist, album)
         if year is not None:
             source = "Deezer"
 
@@ -245,7 +248,8 @@ def album_details(artist: str = "", album: str = ""):
     """Return a carefully matched Deezer album and its tracklist for the card popup.
 
     A complete answer (with a tracklist) is kept for a month, in memory and on disk; an album the
-    catalog definitely does not have is remembered for an hour. A provider failure is not cached.
+    catalog definitely does not have is remembered for an hour, in memory and as a store mark (K5) that
+    the worker shares. A provider failure is not cached.
     """
     artist = str(artist or "").strip()[:180]
     album = str(album or "").strip()[:180]
@@ -263,7 +267,8 @@ def album_details(artist: str = "", album: str = ""):
 
 def _fetch_album_details(artist, album):
     """The Deezer answer and whether an empty one is final (no exact catalog match)."""
-    return album_page_sources.fetch_album_details(_EXTERNAL_HTTP.get, artist, album)
+    return album_page_sources.fetch_album_details_remembered(
+        persistent_metadata.read, persistent_metadata.write, _EXTERNAL_HTTP.get, artist, album)
 
 
 _artist_image_cache = LayeredCache("artist-image")
@@ -287,6 +292,13 @@ _apple_url_cache = LayeredCache("apple-album-url")
 _LINKS_MAX_STALE = 10 * persistent_metadata.LINKS_TTL
 
 
+def _apple_search(artist: str, album: str):
+    """``(exactly matching Apple Music page or None, answered)``; ``answered`` is False when the search failed."""
+    data = _json_or_none("https://itunes.apple.com/search", params={
+        "term": f"{artist} {album}", "entity": "album", "limit": 10})
+    return album_links.apple_music_url((data or {}).get("results") or [], artist, album), data is not None
+
+
 def _apple_album_url(artist: str, album: str, allow_stale=False):
     """The exactly matching Apple Music album page for an artist and album, or None.
 
@@ -300,10 +312,10 @@ def _apple_album_url_state(artist: str, album: str, allow_stale=False):
     key = (artist.casefold(), album.casefold())
 
     def load():
-        data = _json_or_none("https://itunes.apple.com/search", params={
-            "term": f"{artist} {album}", "entity": "album", "limit": 10})
-        url = album_links.apple_music_url((data or {}).get("results") or [], artist, album)
-        # No page is not remembered: it may be a failed request as well as a real miss.
+        # A failed search is not remembered; an answered one without an exact match is, as an hour's
+        # store mark (K5), never under the page address key.
+        url, _answered = album_page_sources.apple_search_url_remembered(
+            persistent_metadata.read, persistent_metadata.write, artist, album, lambda: _apple_search(artist, album))
         return Loaded(url, memory_ttl=3600, persist=True) if url else Loaded(url)
 
     return _apple_url_cache.get_or_load_state(
@@ -455,14 +467,37 @@ def _wordpress_review(name: str, site: str, artist: str, album: str):
 
 
 # Each outlet's answer is kept on its own: a review for a month, "nothing there" for three days, a failure
-# not at all. A retry after a partial answer then asks only the outlets that failed, and an album the
-# outlets never reviewed is not asked about again after a restart.
+# only as an hour's failure mark (K4), never as "nothing there". A retry after a partial answer then asks
+# only the outlets that failed (once their mark is over), and an album the outlets never reviewed is not
+# asked about again after a restart.
 _SOURCE_FOUND_TTL = 30 * 24 * 60 * 60
 _SOURCE_MISS_TTL = 3 * 24 * 60 * 60
+# Efficiency K4 (owner approval 2026-11-17): an outlet that timed out or failed for an album is not asked
+# about that album again for an hour. The mark has its own key, so it never reads as "no review".
+_SOURCE_FAILURE_TTL = 60 * 60
+
+
+class OutletResting(Exception):
+    """The outlet failed for this album within `_SOURCE_FAILURE_TTL`; it is skipped, so the list stays partial."""
+
+
+def _outlet_failure_key(store_key):
+    return "album-review-source-failed:v1:" + store_key.removeprefix("album-review-source:v1:")
 
 
 def _ask_outlet(store_key, ask):
-    found = ask()
+    """``ask()`` and store its answer. A failure is stored only as a short failure mark, then re-raised.
+
+    The mark is written here, in the pool thread, so an outlet that fails after the route's deadline is marked too.
+    """
+    failure_key = _outlet_failure_key(store_key)
+    if negative_marks.is_live(persistent_metadata.read, failure_key, _SOURCE_FAILURE_TTL):
+        raise OutletResting(store_key)
+    try:
+        found = ask()
+    except Exception:
+        negative_marks.mark(persistent_metadata.write, failure_key)
+        raise
     persistent_metadata.write(store_key, {"review": found, "checked": time.time()})
     return found
 
@@ -582,7 +617,8 @@ def _load_album_links(artist: str, album: str, mbid: str, allow_stale=False):
     """The links as a `Loaded`. A set that used a stale Apple page is kept for minutes and not stored."""
     return album_page_sources.load_album_links(
         artist, album, mbid, apple=lambda: _apple_album_url_state(artist, album, allow_stale),
-        json_get=lambda *a, **k: _json_or_none(*a, **k), mb_get=lambda *a, **k: _EXTERNAL_HTTP.get(*a, **k))
+        json_get=lambda *a, **k: _json_or_none(*a, **k), mb_get=lambda *a, **k: _EXTERNAL_HTTP.get(*a, **k),
+        read=persistent_metadata.read, write=persistent_metadata.write)
 
 
 @router.get("/api/artist-image")

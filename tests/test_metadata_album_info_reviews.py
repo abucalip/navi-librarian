@@ -261,20 +261,72 @@ class OutletCacheTests(StoreCase):
         self.assertEqual(pitchfork.call_count, 1)
         self.assertEqual(wordpress.call_count, len(metadata._WORDPRESS_REVIEW_SITES))
 
-    def test_a_failed_outlet_is_asked_again_but_the_ones_that_answered_are_not(self):
-        with patch.object(metadata, "_pitchfork_review", side_effect=[RuntimeError("down"), review("Pitchfork")]) as pitchfork, \
+    def run_catching(self, sources):
+        results = []
+        for source in sources:
+            try:
+                results.append(source())
+            except metadata.OutletResting:
+                results.append("resting")
+            except (RuntimeError, TimeoutError):
+                results.append("failed")
+        return results
+
+    def test_a_failed_outlet_is_asked_again_after_its_mark_but_the_ones_that_answered_are_not(self):
+        now = [1_000_000.0]
+        with patch.object(metadata.time, "time", lambda: now[0]), \
+                patch.object(metadata, "_pitchfork_review", side_effect=[RuntimeError("down"), review("Pitchfork")]) as pitchfork, \
                 patch.object(metadata, "_wordpress_review", return_value=None) as wordpress:
-            first = self.sources()
-            results = []
-            for source in first:
-                try:
-                    results.append(source())
-                except RuntimeError:
-                    results.append("failed")
-            self.assertEqual(results[0], "failed")
-            self.run_sources(self.sources())
+            self.assertEqual(self.run_catching(self.sources())[0], "failed")
+            now[0] += metadata._SOURCE_FAILURE_TTL + 1
+            self.assertEqual(self.run_catching(self.sources())[0], review("Pitchfork"))
         self.assertEqual(pitchfork.call_count, 2)
         self.assertEqual(wordpress.call_count, len(metadata._WORDPRESS_REVIEW_SITES), "answered outlets are not re-asked")
+
+    def test_a_failed_outlet_is_skipped_within_the_hour_and_its_mark_is_not_a_review(self):
+        now = [1_000_000.0]
+        with patch.object(metadata.time, "time", lambda: now[0]), \
+                patch.object(metadata, "_pitchfork_review", side_effect=TimeoutError("slow")) as pitchfork, \
+                patch.object(metadata, "_wordpress_review", return_value=None):
+            self.assertEqual(self.run_catching(self.sources())[0], "failed")
+            now[0] += metadata._SOURCE_FAILURE_TTL - 60
+            self.assertEqual(self.run_catching(self.sources())[0], "resting")
+        self.assertEqual(pitchfork.call_count, 1, "the outlet is not asked while its mark lives")
+        self.assertNotIn("album-review-source:v1:Pitchfork:opeth:watershed", self.store.data,
+                         "a failure is never stored as an outlet answer")
+        self.assertTrue(self.store.data["album-review-source-failed:v1:Pitchfork:opeth:watershed"]["negative"])
+
+    def test_a_skipped_outlet_still_makes_the_list_partial_and_unstored(self):
+        with patch.dict(os.environ, {"GUARDIAN_API_KEY": ""}), \
+                patch.object(metadata, "_pitchfork_review", side_effect=RuntimeError("down")) as pitchfork, \
+                patch.object(metadata, "_wordpress_review", return_value=None):
+            first = metadata.album_reviews_for("Opeth", "Watershed")
+            clear_caches()
+            second = metadata.album_reviews_for("Opeth", "Watershed")
+        self.assertEqual(pitchfork.call_count, 1)
+        self.assertEqual(first, {"reviews": [], "retryable": True})
+        self.assertEqual(second, {"reviews": [], "retryable": True}, "a resting outlet is reported as partial")
+        self.assertNotIn("album-reviews:v1:opeth:watershed", self.store.data)
+
+    def test_an_outlet_failing_after_the_deadline_is_marked(self):
+        def slow_failure():
+            time.sleep(0.4)
+            raise TimeoutError("slow")
+        with patch.dict(os.environ, {"GUARDIAN_API_KEY": ""}), patch.object(metadata, "_REVIEWS_DEADLINE", 0.1), \
+                patch.object(metadata, "_pitchfork_review", side_effect=slow_failure), \
+                patch.object(metadata, "_wordpress_review", return_value=None):
+            self.assertTrue(metadata.album_reviews_for("Opeth", "Watershed")["retryable"])
+            deadline = time.monotonic() + 3
+            key = "album-review-source-failed:v1:Pitchfork:opeth:watershed"
+            while key not in self.store.data and time.monotonic() < deadline:
+                time.sleep(0.05)
+        self.assertIn(key, self.store.data)
+
+    def test_a_success_is_stored_as_before_and_writes_no_mark(self):
+        with patch.object(metadata, "_pitchfork_review", return_value=review("Pitchfork")), \
+                patch.object(metadata, "_wordpress_review", return_value=None):
+            self.run_sources(self.sources())
+        self.assertFalse(any(key.startswith("album-review-source-failed:") for key in self.store.data))
 
     def test_a_miss_is_asked_again_after_three_days_but_a_review_is_kept_for_a_month(self):
         now = [1_000_000.0]
