@@ -336,7 +336,7 @@ def _json_or_none(url, **kwargs):
         return None
 
 
-_apple_url_cache = {}
+_apple_url_cache = LayeredCache("apple-album-url")
 
 
 def _apple_album_url(artist: str, album: str):
@@ -345,21 +345,17 @@ def _apple_album_url(artist: str, album: str):
     The album page asks twice (for its links and for its description), so a found page is kept for an hour.
     """
     key = (artist.casefold(), album.casefold())
-    cached = _apple_url_cache.get(key)
-    if cached and monotonic() - cached[0] < 3600:
-        return cached[1]
-    store_key = "apple-album-url:v1:" + key[0] + ":" + key[1]
-    stored = persistent_metadata.read(store_key, persistent_metadata.LINKS_TTL)
-    if stored:
-        _apple_url_cache[key] = (monotonic(), stored)
-        return stored
-    data = _json_or_none("https://itunes.apple.com/search", params={
-        "term": f"{artist} {album}", "entity": "album", "limit": 10})
-    url = album_links.apple_music_url((data or {}).get("results") or [], artist, album)
-    if url:
-        _apple_url_cache[key] = (monotonic(), url)
-        persistent_metadata.write(store_key, url)
-    return url
+
+    def load():
+        data = _json_or_none("https://itunes.apple.com/search", params={
+            "term": f"{artist} {album}", "entity": "album", "limit": 10})
+        url = album_links.apple_music_url((data or {}).get("results") or [], artist, album)
+        # No page is not remembered: it may be a failed request as well as a real miss.
+        return Loaded(url, memory_ttl=3600, persist=True) if url else Loaded(url)
+
+    return _apple_url_cache.get_or_load(
+        key, load, store_key="apple-album-url:v1:" + key[0] + ":" + key[1],
+        store_ttl=persistent_metadata.LINKS_TTL, stored_ttl=3600)
 
 
 _album_description_cache = {}
