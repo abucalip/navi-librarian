@@ -172,7 +172,7 @@ From `tokens.json` → `type`. Sizes and line heights are in sp.
 
 ## 6. Icons
 
-[`icons/`](design/index/icons/) holds the same 49 glyphs as Bento, drawn with a **2dp stroke, square caps and mitred joins**, plus [`icons/IndexIcons.kt.txt`](design/index/icons/IndexIcons.kt.txt), a ready `IndexIcons` object.
+[`icons/`](design/index/icons/) holds the same 48 glyphs as Bento, drawn with a **2dp stroke, square caps and mitred joins**, plus [`icons/IndexIcons.kt.txt`](design/index/icons/IndexIcons.kt.txt), a ready `IndexIcons` object.
 
 - **Builder.** Use the `ArtIcons` builder with `strokeLineWidth = 2f`, `StrokeCap.Square` and `StrokeJoin.Miter`.
 - **Sizes:**
@@ -242,27 +242,30 @@ Index's character is **firm and directional**:
        const val ROW_MAX = 12; const val ROW_FROM_DP = -12; const val SIGNAL_MS = 380; const val SOURCE_BAR_MS = 260
        const val PLAYER_RISE_MS = 420; const val PLAYER_FALL_MS = 320; const val SHEET_IN_MS = 260; const val SHEET_OUT_MS = 200
        const val NUMERAL_MS = 420; const val NUMERAL_DIGIT_DELAY_MS = 40; const val RULE_MS = 360; const val SNACK_MS = 220
-       fun firm(ms: Int, reduced: Boolean) = tween<Float>(MotionRules.duration(ms, MotionFamily.Standard, reduced), easing = Firm)
+       /** Generic, so the same call serves Float, Dp and IntOffset (slides) animations. */
+       fun <T> firm(ms: Int, reduced: Boolean, delayMs: Int = 0): TweenSpec<T> =
+           tween(MotionRules.duration(ms, MotionFamily.Standard, reduced), if (reduced) 0 else delayMs, Firm)
        fun tabDirection(from: Int, to: Int): Int = if (to > from) 1 else -1   // bar order: Home, Discover, Library, Search
    }
    ```
    `IndexMotionTest` pins every constant to `tokens.json`.
-3. **No continuous motion**, except the playing bars and the pending Get icon. Both run only while their state holds and the screen is resumed.
+3. **Shorthand in the table below.** A plain `tween(ms, …)` in section 8.2 stands for `IndexMotion.firm<T>(ms, reduced)` (or the same tween with the `Settle` or `Exit` curve, through `MotionRules.duration`). Never call Compose's own `tween` directly in Index code.
+4. **No continuous motion**, except the playing bars and the pending Get icon. Both run only while their state holds and the screen is resumed.
 
 ### 8.2 The animations
 
 | # | Moment | Values | How to build it in Compose |
 |---|---|---|---|
-| 1 | **Tab change** (bar) | `tabSlide` 380ms Firm; full width; no fade | In the NavHost, for routes that are bar destinations: `enterTransition = { slideIntoContainer(if (dir > 0) Left else Right, IndexMotion.firm(380, reduced).toIntOffset()) }` and `exitTransition = { slideOutOfContainer(…same direction…) }`. Here `dir = IndexMotion.tabDirection(indexOf(initialState), indexOf(targetState))`. Use `tween<IntOffset>(d, easing = Firm)`, since the slide spec is an `IntOffset` tween. Add no `fadeIn`/`fadeOut`. When reduced, use `EnterTransition.None` / `ExitTransition.None` |
+| 1 | **Tab change** (bar) | `tabSlide` 380ms Firm; full width; no fade | In the NavHost, for routes that are bar destinations: `enterTransition = { slideIntoContainer(if (dir > 0) SlideDirection.Left else SlideDirection.Right, IndexMotion.firm<IntOffset>(380, reduced)) }` and `exitTransition = { slideOutOfContainer(…same direction…, IndexMotion.firm<IntOffset>(380, reduced)) }`. Here `dir = IndexMotion.tabDirection(indexOf(initialState), indexOf(targetState))`. Add no `fadeIn`/`fadeOut`. When reduced, use `EnterTransition.None` / `ExitTransition.None` |
 | 2 | **Push** (open album, artist, genre, settings page) | `pushSlide` 340ms Firm; enter from +30% width with a fade; exit to −12% and dim to 85% | `enterTransition = slideInHorizontally(tween(340, easing = Firm)) { (it * 0.3f).toInt() } + fadeIn(tween(200))`; `exitTransition = slideOutHorizontally(tween(340, easing = Firm)) { -(it * 0.12f).toInt() }`. For the dim, draw a scrim on the leaving page with `graphicsLayer { alpha }`, or use `fadeOut(targetAlpha = 0.85f)`. `popEnter`/`popExit` mirror them. Covers keep `Modifier.sharedCover(routeKey)`, so a tapped cover travels to the album's 200dp cover |
 | 3 | **Signal block** (bar) | `signalBlock` 380ms Firm | One `Box` 3dp × 14% of the bar width at the top edge. `val x by animateDpAsState(cellCenter(selected) - blockWidth / 2, tween(380, easing = Firm))` → `Modifier.offset { IntOffset(x.roundToPx(), 0) }`. Selected label and icon colours change at once (no tween), as the mockup does |
 | 4 | **Source switch / tabs bar** | `sourceBar` 260ms Firm | The 3dp bar under the selected word moves and resizes to it. Measure each word with `onGloballyPositioned`, then `animateDpAsState` for x and width. Tabs (lenses, path kinds) use the same code |
 | 5 | **Row cascade** (a list arrives) | `rowCascade` 300ms Settle; from −12dp x and alpha 0; stagger 20ms; at most 12 | Per visible row `i < 12`: `Animatable(0f)`, then `delay(i * 20L)`, then `animateTo(1f, tween(300, easing = Settle))`, read in `graphicsLayer { translationX = (1 - p) * -12.dp.toPx(); alpha = p }`. Run it on the first arrival of a list and when a tab or lens changes the list, not on scroll and not when Back returns. In `LazyColumn` use stable keys and `Modifier.animateItem(fadeInSpec = null, placementSpec = tween(260, easing = Firm))` for later inserts and removals (Dismiss, Undo) |
 | 6 | **Rules draw** | `ruleDraw` 360ms Firm | The page-head rule and each section rule draw left to right on arrival: `Animatable(0f)` → `graphicsLayer { scaleX = p; transformOrigin = TransformOrigin(0f, 0.5f) }`. They start with the row cascade |
-| 7 | **Numeral roll** | `numeralRoll` 420ms Firm, 40ms per digit | For the anniversary number, Stats numerals, the crossfade seconds and download percentages. Split the formatted number into characters. Each digit is `AnimatedContent(targetState = digit, transitionSpec = { (slideInVertically(tween(420, delayMillis = index * 40, easing = Firm)) { it } togetherWith slideOutVertically(tween(420, easing = Firm)) { -it }) using SizeTransform(clip = true) })`. On first arrival the old value is blank, so digits rise in. The spoken label is the final value |
+| 7 | **Numeral roll** | `numeralRoll` 420ms Firm, 40ms per digit | For the anniversary number, Stats numerals, the crossfade seconds and download percentages. Split the formatted number into characters. Each digit is `AnimatedContent(targetState = digit, transitionSpec = { (slideInVertically(IndexMotion.firm<IntOffset>(420, reduced, delayMs = index * 40)) { it } togetherWith slideOutVertically(IndexMotion.firm<IntOffset>(420, reduced)) { -it }) using SizeTransform(clip = true) })`. On first arrival the old value is blank, so digits rise in. The spoken label is the final value |
 | 8 | **Now Playing opens / closes** | `playerRise` 420ms Firm; `playerFall` 320ms Firm | A full white page slides up from the strip: `slideInVertically(tween(420, easing = Firm)) { it }`, no fade. The strip's 38dp cover flies to the 328dp cover. The player is a dialog window, so draw the flight by hand from the strip cover's bounds, as `GalleryFlight` does: interpolate the rect only, square corners throughout. The bar stays; the strip slides away under the page |
 | 9 | **Sheets** | `sheetIn` 260ms Settle; `sheetOut` 200ms Exit; scrim 200ms | Firm stop, no bounce. Material's `ModalBottomSheet` timing cannot be set (as Gallery found); decision I4. The lettered options cascade (#5) once the sheet is up |
-| 10 | **Snackbar** | `snackIn` 220ms Firm from 56dp below; hold 4s | `slideInVertically(tween(220, easing = Firm)) { 56.dp } ` with no fade; exit the reverse at 180ms |
+| 10 | **Snackbar** | `snackIn` 220ms Firm from 56dp below; hold 4s | `val off = with(LocalDensity.current) { 56.dp.roundToPx() }`, then `slideInVertically(IndexMotion.firm<IntOffset>(220, reduced)) { off }` with no fade; exit `slideOutVertically(IndexMotion.firm<IntOffset>(180, reduced)) { off }` |
 | 11 | **Get morph** | 220ms Firm | `AnimatedContent(state)` with `fadeIn(tween(120)) togetherWith fadeOut(tween(80)) using SizeTransform { _, _ -> tween(220, easing = Firm) }`. Pending: the refresh icon turns with an infinite rotation, only in that branch |
 | 12 | **Seek and progress** | linear | The strip's top line and the seek fill track position directly (no tween), as today's `SeekBar` does |
 | 13 | **Playing bars** | `playingBars` 800ms, 3 → 12dp, phases 0 / −300 / −600 | As Bento #13, in `accent`, 3dp wide; static at 7dp when reduced |
@@ -308,8 +311,8 @@ Each page is an `.html` and a `.png` in [`docs/design/index/pages/`](design/inde
 | File | Frames |
 |---|---|
 | `home` | First screen; scrolled (Artists, Radio, Heard); end (This week, Arrivals, Genres, library line); states |
-| `album-artist-genre` | Album owned with the fifth song playing (cover beside "05 / 10" and the data list, title, Play/Shuffle/Paths, tabs, numbered tracks); album not in the library (pick number, data grid, Get album/Save/Paths, Why, Similar); Artist (photo with data list, Top songs/Paths/Shuffle, numbered top songs, albums with GET under missing ones); Genre (head with count, artists, albums) |
-| `paths` | **Album Paths** sheet: header (cover, PATHS · FROM, title, kinds and steps counts), kinds as tabs, numbered steps with the server's sentence and library state. **Album Paths step opened**: STUDIO CREW · STEP 01 / 04, the album, lettered reasons (A · MUSICIAN, B · SAME YEAR, SAME ROOM) under heavy rules, Open album / the person. **Artist Paths** sheet: kinds (Follow the musician, Sideman, Label, Composition, Scene), numbered musicians with photo, sentence and state. **Artist Paths step opened**: the musician with a data list (Plays, With, Owned), the link, Albums together with states, Open artist / Next step |
+| `album-artist-genre` | Album owned with the fifth song playing (cover beside "05 / 10 PLAYING" and the data list, title, Play/Shuffle/Paths, tabs, numbered tracks); album not in the library (pick number, data grid, Get album/Save/Paths, Why, Similar); Artist (photo with data list, Top songs/Paths/Shuffle, numbered top songs, albums with GET under missing ones); Genre (head with count, artists, albums) |
+| `paths` | **Album Paths** sheet: header (cover, PATHS · FROM, title, kinds and steps counts), kinds as tabs, numbered steps with the server's sentence and library state. **Album Paths step opened**: STUDIO CREW · STEP 01 / 04, the album, lettered reasons (A · MUSICIAN, B · ERA) under heavy rules, Open album / the person. **Artist Paths** sheet: kinds (Follow the musician, Sideman, Label, Composition, Scene), numbered musicians with photo, sentence and state. **Artist Paths step opened**: the musician with a data list (Plays, With, Owned), the link, Albums together with states, Open artist / Next step |
 | `player` | Now Playing (white page, square cover, quality tag, seek, transport, LYRICS / QUEUE / EQ / FADE cells); Queue (now band in the strip colour, numbered up next); Lyrics with time stamps (stand-in text) |
 | `discover` | Lists (lens tabs, numbered entries: genre, title, maker, reason, Get / Requested / Try again; Undo snackbar); Insights (taste bars, This week block, Never played); taste sheet (lettered options) |
 | `library-search` | Albums (count tabs, sort line, two-column grid); Artists (rows with the A–Z index); Search (Artist, In your library, Not in your library, each with counts) |
@@ -317,16 +320,13 @@ Each page is an `.html` and a `.png` in [`docs/design/index/pages/`](design/inde
 | `downloads-stats-server` | Downloads (numbered, tracker, percent numerals, actions); Stats (four numerals under heavy rules, column chart); Server |
 | `settings` | Settings (numbered rows in ruled groups); Appearance (the four palettes); Equalizer; Crossfade |
 | `sheets` | Pick menu; song menu (with "Paths from this album"); Dismiss confirmation; snackbar with Undo |
+| `extras-a` | Setup (numbered fields for both servers, Connect); Unavailable (Try again, Open Tailscale, Edit servers); the Newly added sheet; Discover's Saved list |
+| `extras-b` | Album Booklet tab (page pager with a segment bar); cover picker sheet (numbered editions); Album Paths, Neighbours by ear (only with sonic data); Sonic path sheet from a Queue row |
 | `palettes` | Home in all four palettes (colour only) |
-| `components` | Token swatches for all four palettes, the type scale, controls, the dock and the 49 icons |
+| `components` | Token swatches for all four palettes, the type scale, controls, the dock and the 48 icons |
 | `motion` | Live prototype: tab slide, signal block, row cascade, numeral roll |
 
-Not drawn; build these with the components above:
-- tablet widths;
-- the Booklet and cover picker sheets;
-- Sonic path;
-- the Saved list;
-- empty states other than Home's.
+Every route in `ui/Routes.kt` and every sheet the screens open has a frame. Not drawn: tablet widths, and empty or error states beyond Home's frame 4 (each uses the same banner, skeleton and one-line message).
 
 **Paths behaviour stays as built.** The server is asked only when the sheet is open and a kind is chosen, and Back from an opened album returns to the sheet at the same step. Index changes only the drawing: numbered steps, lettered reasons, rules.
 

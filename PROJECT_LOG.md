@@ -8,7 +8,7 @@
     - Index: Signal Blue, Newsprint Red, Graphite Orange and Field Green.
 - **Added:**
   - `docs/BENTO_THEME.md` and `docs/INDEX_THEME.md` (spec, colour, type, icons, components, motion with Compose build steps, Home, page list, files, build steps, open decisions);
-  - `docs/design/bento/` and `docs/design/index/`: tokens, generated `palettes.css`, component CSS, 49 icons each with a Kotlin object, mockups as HTML and PNG (12 pages each: Home, Album/Artist/Genre, album and artist Paths, Player, Discover, Library/Search, Radio, Downloads/Stats/Server, Settings, Sheets, Palettes, Components), a live `motion.html`, `_src/build.py` and `_src/check_contrast.py`;
+  - `docs/design/bento/` and `docs/design/index/`: tokens, generated `palettes.css`, component CSS, 48 icons each with a Kotlin object, mockups as HTML and PNG (14 pages each, 46 to 47 frames: Home, Album/Artist/Genre, album and artist Paths, Player, Discover, Library/Search, Radio, Downloads/Stats/Server, Settings, Sheets, Setup/Unavailable/Newly added/Saved, Booklet/Cover picker/Neighbours by ear/Sonic path, Palettes, Components), a live `motion.html`, `_src/build.py` and `_src/check_contrast.py`;
   - `docs/design/_kit/` (shared sample data, icon paths, contrast maths, page wrapper, stand-in art).
 - **Fonts.**
   - Bento ships `gabarito_bento.ttf` (88 KB) and `figtree_bento.ttf` (43 KB): Latin subsets made with fontTools from Google Fonts' variable sources, OFL licences included.

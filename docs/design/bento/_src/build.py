@@ -246,7 +246,7 @@ def album_paths_step():
     reasons = "".join(f'<section class="tile sm t-{tone}" style="margin-bottom:8px"><div class="lbl" style="text-transform:uppercase;letter-spacing:.06em">{kind}</div>'
                       f'<b style="font:800 17px Gabarito;display:block;margin:4px 0">{who}</b><div style="font:500 14px/20px Figtree">{s}</div></section>'
                       for kind, who, s, tone in [("Musician", "Pharoah Sanders", "Tenor saxophone on Promises; leads Karma.", "warm"),
-                                                 ("Same year, same room", "Van Gelder Studio", "Karma was recorded at Van Gelder Studio in 1969.", "sky")])
+                                                 ("Era", "1969 and 2021", "Pharoah Sanders recorded Karma in 1969 and Promises in 2021, 52 years apart.", "sky")])
     tiles = "".join(f'<div class="tile sm" style="flex:1;display:flex;gap:10px;align-items:center;background:var(--ink)">{x}<b style="font:700 13px Figtree">{n}</b></div>'
                     for x, n in ((ph("pharoah", 40, c="round"), "Pharoah Sanders"), (cv("kar", 40, c="cvr xs"), "Open Karma")))
     inner = (f'<div class="handle"></div><div style="display:flex;align-items:center;gap:8px;margin-bottom:12px"><span class="icb s">{ic("back", "s")}</span><span class="lbl">Studio crew · step 1 of 4</span></div>'
@@ -521,7 +521,7 @@ def sheets():
                f'<h2 class="tt" style="margin:12px 0 6px">Dismiss this download?</h2><div class="mut" style="font-size:14px">Elevation stops and leaves the list. Files already imported stay.</div>'
                f'<div style="display:flex;gap:8px;margin-top:18px"><span class="btn o w">Keep</span><span class="btn danger w">Dismiss</span></div></div>')
     snack = home_top() + '<div class="snack" style="bottom:160px">Hex will not be suggested again<u>Undo</u></div>'
-    fr = [frame("1 · Pick menu", screen(sheet(pick, 420), nodock=True)), frame("2 · Song menu", screen(sheet(song, 300), nodock=True)),
+    fr = [frame("1 · Pick menu", screen(home_top() + sheet(pick, 420), nodock=True)), frame("2 · Song menu", screen(queue() + sheet(song, 300), nodock=True)),
           frame("3 · Dismiss confirmation", screen(downloads() + sheet(confirm, 480), nodock=True)), frame("4 · Snackbar with Undo", screen(snack))]
     return kit.page("Bento · Sheets and snackbar (Sorbet)", HEAD, fr), 4
 
@@ -549,6 +549,85 @@ def components():
                 f'<section class="tile t-warm"><div class="lbl">tile · 28</div></section><section class="tile sm t-leaf"><div class="lbl">small tile · 22</div></section><section class="tile t-deep span2"><div class="eb">deep tile</div><div class="tn">Text on deep</div></section></div></div>' + dock(1)),
           frame(f"{len(kit.ICONS)} icons, 1.8 stroke, round caps (icons/)", f'<div style="padding:14px;display:grid;grid-template-columns:repeat(6,1fr);gap:10px 4px">{icons}</div>')]
     return kit.page("Bento · Components", HEAD, fr), 4
+
+
+# ------------------------------------------------------------------------------------------------ Extras: start, lists, album sheets
+
+def setup():
+    f = lambda l, v, on=False: f'<div style="margin-top:10px"><div class="lbl" style="margin:0 6px 4px">{l}</div><div class="field{" on" if on else ""}" style="color:var(--text)">{v}</div></div>'
+    return (f'<div style="padding:40px 16px 0"><div class="tile t-warm" style="height:150px;display:flex;align-items:flex-end;justify-content:space-between"><span class="pt">discair</span>{cv("mor", 70, c="cvr s")}</div>'
+            f'<h1 class="lt" style="margin:18px 4px 4px">Connect</h1><div class="mut" style="margin:0 4px 6px">Your Librarian and Navidrome servers</div>'
+            f'<section class="tile" style="margin-top:8px;padding:12px">{"<div class=eb>Librarian</div>"}{f("Address", "https://librarian.home.arpa", True)}{f("User name", "owner")}{f("Password", "••••••••")}</section>'
+            f'<section class="tile t-sky" style="margin-top:10px;padding:12px"><div class="eb" style="color:var(--onTone)">Navidrome</div>{f("Address", "https://music.home.arpa")}</section>'
+            f'<div style="display:flex;gap:8px;margin-top:14px"><span class="btn o w">Cancel</span><span class="btn w">Connect</span></div></div>')
+
+
+def unavailable():
+    return (f'<div style="padding:70px 16px 0"><section class="tile t-warm" style="text-align:center;padding:30px 20px"><span class="icb" style="margin:0 auto;background:var(--chip);color:var(--text)">{ic("warning")}</span>'
+            f'<h1 class="ht" style="margin:14px 0 6px">Server unreachable</h1><div class="tm" style="font-size:15px">Is Tailscale connected?</div></section>'
+            f'<div style="display:grid;gap:8px;margin-top:12px"><span class="btn w">{ic("refresh")}Try again</span><span class="btn o w">Open Tailscale</span><span class="btn o w">Edit servers</span></div></div>')
+
+
+def recently_added():
+    rows = "".join(row(cv(k, 50, c="cvr r"), A[k][0], f"{A[k][1]} · added {w}", ic("chev")) for k, w in (("end", "today"), ("spc", "2 days ago"), ("vul", "5 days ago"), ("prm", "1 week ago"), ("sim", "2 weeks ago"), ("tit", "3 weeks ago")))
+    return home_top() + sheet(f'<div class="handle"></div><h2 class="tt" style="margin:0 6px 2px">Newly added</h2><div class="mut" style="margin:0 6px 8px;font-size:13px">Every album added in the last month, newest first</div>'
+                             f'<section class="tile" style="background:var(--ink);padding:4px 12px">{rows}</section>', 120)
+
+
+def saved():
+    chips = "".join(f'<span class="chip{" on" if l == "Saved" else ""}">{l}</span>' for l in ("Saved", "Personal discoveries", "Daily picks"))
+    tiles = "".join(f'<article class="tile sm t-{c}" style="padding:8px">{cv(k, 141, c="cvr s")}<div style="padding:8px 4px 0"><b style="font:700 14px Figtree;display:block">{A[k][0]}</b><small class="tm">{A[k][1]}</small>'
+                    f'<div style="display:flex;gap:6px;margin-top:8px">{get_btn(st)}<span class="icb s" style="margin-left:auto">{ic("bookmark", "s")}</span></div></div></article>'
+                    for k, c, st in (("hlv", "sun", "idle"), ("ntr", "leaf", "pending"), ("pta", "bloom", "idle"), ("ele", "sky", "requested")))
+    return hdr("", "Discover") + f'<div class="chips">{chips}</div><div class="lbl" style="padding:12px 18px 8px">4 saved · tap the bookmark to remove</div><div class="grid">{tiles}</div>'
+
+
+def booklet():
+    return (topbar() + f'<div class="seg" style="padding-top:8px"><span class="chip sm">Songs</span><span class="chip sm">Info</span><span class="chip sm">Reviews</span><span class="chip sm on">Booklet</span></div>'
+            f'<section class="tile t-warm" style="margin:12px 14px 0;padding:12px">{cv("mor", 308, 380, style="border-radius:18px")}<div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px">'
+            f'<span class="icb">{ic("back")}</span><b style="font:700 14px Figtree">Page 2 of 8</b><span class="icb">{ic("chev")}</span></div></section>'
+            '<div style="display:flex;gap:6px;justify-content:center;padding-top:12px">' + "".join(f'<i style="width:{18 if i == 1 else 6}px;height:6px;border-radius:3px;background:{"var(--control)" if i == 1 else "var(--raised)"}"></i>' for i in range(8)) + "</div>")
+
+
+def cover_picker():
+    grid = "".join(f'<figure style="margin:0;min-width:0">{cv(k, 98, c="cvr s", style="box-shadow:inset 0 0 0 3px var(--control)" if i == 0 else "")}<figcaption style="font:600 11.5px Figtree;margin-top:5px">{e}</figcaption></figure>'
+                   for i, (k, e) in enumerate((("mor", "2020 · Dead Oceans"), ("afr", "2020 JP CD"), ("hlv", "2021 LP"), ("nts", "2020 Deluxe"), ("cru", "2020 cassette"), ("blu", "2022 repress"))))
+    return album_owned() + sheet(f'<div class="handle"></div><h2 class="tt" style="margin:0 6px 2px">Choose a cover</h2><div class="mut" style="margin:0 6px 12px;font-size:13px">6 editions of Mordechai</div>'
+                                f'<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px">{grid}</div><span class="btn o w" style="margin-top:14px;width:100%;justify-content:center">Use the automatic cover</span>', 250)
+
+
+def neighbours():
+    tabs = "".join(f'<span class="chip sm{" on" if t == "Neighbours by ear" else ""}" style="background:{"" if t == "Neighbours by ear" else "var(--ink)"}">{t}</span>' for t in ("Listen-through gaps", "Neighbours by ear"))
+    steps = "".join(f'<section class="tile sm t-{tone}" style="display:flex;gap:12px;align-items:center;margin-bottom:8px">{cv(k, 60, c="cvr r")}<div style="flex:1;min-width:0"><b style="font:700 15px Figtree;display:block">{A[k][0]}</b>'
+                    f'<small class="tm">{A[k][1]}</small><div style="display:flex;gap:4px;margin-top:6px">' + "".join(f'<i style="width:14px;height:6px;border-radius:3px;background:{"var(--control)" if j < n else "var(--chip)"}"></i>' for j in range(5)) +
+                    f'<span style="font:600 11.5px Figtree;margin-left:6px">{w}</span></div></div>{get_btn("owned" if A[k][4] else "idle")}</section>'
+                    for k, tone, n, w in (("spc", "leaf", 5, "very close"), ("sat", "sun", 4, "close"), ("end", "bloom", 4, "close"), ("tit", "sky", 3, "near")))
+    inner = (f'<div class="handle"></div><div style="display:flex;gap:12px;align-items:center;padding:0 4px 12px">{cv("prm", 52, c="cvr r")}<div><div class="eb">Paths</div><div class="tn">Promises</div></div></div>'
+             f'<div style="display:flex;gap:6px;overflow:hidden;margin-bottom:12px">{tabs}</div><div class="lbl" style="margin:0 4px 8px">Albums that sound like Promises (shown only when the server has sonic data)</div>{steps}')
+    return album_owned_bg() + sheet(inner, 70)
+
+
+def sonic_path():
+    steps = ""
+    for i, (k, t, a) in enumerate((("mor", "Pelota", "Khruangbin"), ("vul", "Mohabbat", "Arooj Aftab"), ("spc", "Space 3", "Nala Sinephro"), ("sat", "Journey in Satchidananda", "Alice Coltrane"))):
+        dot = f'<span style="width:12px;height:12px;border-radius:6px;background:{"var(--control)" if i in (0, 3) else "var(--chip)"};box-shadow:0 0 0 3px var(--control);flex:none"></span>'
+        steps += f'<div style="display:flex;gap:12px;align-items:center;position:relative;padding:8px 0">{dot}{cv(k, 48, c="cvr r")}<span style="flex:1"><b style="font:700 15px Figtree;display:block">{t}</b><small class="mut">{a}</small></span>{"<span class=tag>Start</span>" if i == 0 else ("<span class=tag>Target</span>" if i == 3 else "")}</div>'
+    inner = (f'<div class="handle"></div><div class="eb" style="margin:0 6px">Sonic path</div><h2 class="tt" style="margin:4px 6px 4px">From Pelota to Journey in Satchidananda</h2><div class="mut" style="margin:0 6px 12px;font-size:13px">4 steps, in the server\'s order</div>'
+             f'<section class="tile t-sky" style="padding:6px 14px;position:relative"><i style="position:absolute;left:19px;top:24px;bottom:24px;width:2px;background:var(--control);opacity:.4"></i>{steps}</section>'
+             f'<div style="display:flex;gap:8px;margin-top:12px"><span class="btn w">{ic("play")}Play the path</span><span class="btn o">{ic("qadd")}Queue</span></div>')
+    return queue() + sheet(inner, 220)
+
+
+def extras_a():
+    fr = [frame("1 · Setup: Librarian and Navidrome addresses, Connect", screen(setup(), nodock=True)), frame("2 · Unavailable: server unreachable, Try again, Tailscale, Edit servers", screen(unavailable(), nodock=True)),
+          frame("3 · Newly added sheet (See all from Home)", screen(recently_added(), nodock=True)), frame("4 · Discover, Saved list", screen(saved(), 2))]
+    return kit.page("Bento · Setup, Unavailable, Newly added, Saved (Sorbet)", HEAD, fr), 4
+
+
+def extras_b():
+    fr = [frame("1 · Album Booklet tab: page pager", screen(booklet(), 1)), frame("2 · Cover picker sheet: editions, automatic cover", screen(cover_picker(), nodock=True)),
+          frame("3 · Album Paths, Neighbours by ear (sonic data only)", screen(neighbours(), nodock=True)), frame("4 · Sonic path sheet, opened from a Queue row", screen(sonic_path(), nodock=True))]
+    return kit.page("Bento · Booklet, Cover picker, Neighbours by ear, Sonic path (Sorbet)", HEAD, fr), 4
 
 
 MOTION = """<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Bento motion</title>
@@ -581,7 +660,7 @@ enter();</script></body></html>"""
 # ------------------------------------------------------------------------------------------------ main
 
 ALL = {"home": home, "album-artist-genre": album_artist_genre, "paths": paths, "player": player, "discover": discover, "library-search": library_search,
-       "radio": radio, "downloads-stats-server": downloads_stats_server, "settings": settings, "sheets": sheets, "palettes": palettes, "components": components}
+       "radio": radio, "downloads-stats-server": downloads_stats_server, "settings": settings, "sheets": sheets, "extras-a": extras_a, "extras-b": extras_b, "palettes": palettes, "components": components}
 
 
 def main(names):

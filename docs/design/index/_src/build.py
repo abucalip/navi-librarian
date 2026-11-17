@@ -161,7 +161,7 @@ def kv(pairs): return '<div class="kv">' + "".join(f'<div>{m(k, "mu")}<b>{v}</b>
 def album_owned():
     t, a, y, _, _ = A["mor"]
     return (bar("Album 0418 / 1284") + f'<div class="rv" style="padding:4px 16px 0;display:grid;grid-template-columns:200px 1fr;gap:12px">{cv("mor", 200)}<div style="display:grid;align-content:space-between">'
-            f'<span class="d sig" style="font-size:36px;line-height:1">05<span class="m mu" style="font-size:10.5px;margin-left:4px">/ 10</span></span>'
+            f'<span class="d sig" style="font-size:36px;line-height:1">05<span class="m mu" style="font-size:10.5px;margin-left:4px">/ 10</span><span class="m sig" style="display:block;font-size:10.5px;letter-spacing:.06em;margin-top:2px">Playing</span></span>'
             f'<dl class="dl"><dt class="m">Artist</dt><dd>{a}</dd><dt class="m">Year</dt><dd>{y}</dd><dt class="m">Length</dt><dd>44:12</dd><dt class="m">Format</dt><dd>FLAC</dd></dl></div></div>'
             + f'<h1 class="d rv" style="font-size:46px;line-height:42px;margin:14px 16px 0">{t}</h1>'
             + f'<div class="acts"><span class="btn">{ic("play")}Play</span><span class="btn g">{ic("shuffle")}Shuffle</span><span class="btn g">{ic("path")}Paths</span></div>'
@@ -221,7 +221,7 @@ def album_paths_list():
 def album_paths_step():
     t, a, y, _, _ = A["kar"]
     reasons = "".join(f'<section style="border-top:2px solid var(--text);padding:10px 0 12px">{m(f"{chr(65 + i)} · {kind}", "sig")}<h4 class="d" style="font-size:20px;margin:6px 0 4px">{who}</h4><p style="margin:0;font:400 14px/21px Inter">{s}</p></section>'
-                      for i, (kind, who, s) in enumerate([("Musician", "Pharoah Sanders", "Tenor saxophone on Promises; leads Karma."), ("Same year, same room", "Van Gelder Studio", "Karma was recorded at Van Gelder Studio in 1969.")]))
+                      for i, (kind, who, s) in enumerate([("Musician", "Pharoah Sanders", "Tenor saxophone on Promises; leads Karma."), ("Era", "1969 and 2021", "Pharoah Sanders recorded Karma in 1969 and Promises in 2021, 52 years apart.")]))
     inner = (f'<div class="handle"></div><div class="bar" style="padding:0 10px">{"<span class=ib>" + ic("back") + "</span>"}{m("Studio crew · step 01 / 04", "mu")}<span style="width:44px"></span></div>'
              f'<div class="shd">{cv("kar", 72)}<div>{m(f"{y} · in library", "st ok")}<h3 class="d" style="font-size:30px;line-height:28px;margin:4px 0 2px">{t}</h3>{m(a, "mu")}</div></div>'
              f'<div style="padding:12px 16px 0">{reasons}</div><div class="acts"><span class="btn">{ic("album")}Open Karma</span><span class="btn g">{ic("place")}Pharoah Sanders</span></div>')
@@ -271,7 +271,7 @@ def now_playing():
 
 
 def queue():
-    q = "".join(rw(f"0{i + 6}", cv(k, 48), t, a, f'<span class="ib" style="width:36px;color:var(--textMuted)">{ic("more", "s")}</span>') for i, (k, t, a) in
+    q = "".join(rw(f"{i + 6:02d}", cv(k, 48), t, a, f'<span class="ib" style="width:36px;color:var(--textMuted)">{ic("more", "s")}</span>') for i, (k, t, a) in
                 enumerate((("mor", "One to Remember", "Khruangbin · 5:07"), ("mor", "Dearest Alfred", "Khruangbin · 4:39"), ("vul", "Mohabbat", "Arooj Aftab · 6:33"), ("spc", "Space 1", "Nala Sinephro · 5:59"), ("tit", "Andromeda", "Weyes Blood · 4:43"))))
     return (bar("Queue · 14").replace(ic("back"), ic("down")) + head("Queue", "14")
             + f'<div style="margin:12px 16px 0;background:var(--strip);color:var(--onStrip);padding:10px 12px;display:flex;gap:12px;align-items:center">{cv("mor", 48)}<span style="flex:1"><b style="font:600 15px Inter">Pelota</b><br>'
@@ -281,7 +281,7 @@ def queue():
 
 def lyrics():
     lines = ["Ooh, the sun on my face", "We dance in the street", "Pelota, pelota", "Rolling over the hill", "Light as the morning", "Pelota, pelota", "Under the trees"]
-    body = "".join(f'<div style="display:grid;grid-template-columns:30px 1fr;gap:8px;align-items:baseline;padding:8px 0;border-bottom:1px solid var(--edge)">{m(f"0:{12 + i * 9:02d}", "sig" if i == 2 else "mu")}'
+    body = "".join(f'<div style="display:grid;grid-template-columns:30px 1fr;gap:8px;align-items:baseline;padding:8px 0;border-bottom:1px solid var(--edge)">{m(f"{(12 + i * 9) // 60}:{(12 + i * 9) % 60:02d}", "sig" if i == 2 else "mu")}'
                    f'<span class="d" style="font-size:{26 if i == 2 else 22}px;line-height:1.1;color:{"var(--text)" if i == 2 else "var(--textMuted)"}">{l}</span></div>' for i, l in enumerate(lines))
     return (bar("Lyrics").replace(ic("back"), ic("down")) + f'<div style="padding:8px 16px 0">{body}<p class="m mu" style="margin:12px 0 0">Stand-in lines; the app shows lyrics from the existing source.</p></div>')
 
@@ -413,7 +413,7 @@ def stats():
 def server():
     svc = "".join(rw(f"0{i + 1}", "", n, s, m(w, "st ok" if ok else "st bad"), "nn") for i, (n, s, w, ok) in enumerate(
         (("Librarian", "v0.3.9 · 84 ms", "Working", True), ("Navidrome", "Scan done 13:40", "Working", True), ("slskd", "No answer since 14:02", "Needs attention", False), ("Radio", "5 stations", "Working", True))))
-    act = rw("", "", "Lists refreshed", "Today 09:12", "", "nn") + rw("", "", "Imported Endlessness", "Today 08:40", "", "nn")
+    act = rw("", "", "Lists refreshed", "Today 09:12", "", "nx") + rw("", "", "Imported Endlessness", "Today 08:40", "", "nx")
     return top() + head("Server", "") + f'<section class="sec" style="padding-top:16px">{sh("Services", "4")}<ul class="rows">{svc}</ul></section><section class="sec">{sh("Activity", "")}<ul class="rows">{act}</ul></section>'
 
 
@@ -439,21 +439,21 @@ def appearance():
                  f'<span class="d" style="position:absolute;right:8px;top:6px;color:{p["text"]};font-size:20px">Aa</span></div><b style="font:600 13px Inter;display:block;margin-top:6px">{p["name"]}</b>'
                  f'{m(("Day" if p["light"] else "Night") + (" · default" if p.get("default") or p.get("defaultDark") else ""), "mu")}</div>' for p in TOKENS["palettes"])
     return (bar("Appearance", "check") + head("Appearance", "4") + '<div class="tabs m" style="margin-top:12px"><span class="on">Follow the phone</span><span>One theme</span></div>'
-            + f'<div class="grid2" style="padding:16px">{sw}</div><ul class="rows" style="padding:0 16px">' + rw("", "", "Type", "Inter Tight, Inter, IBM Plex Mono (suggested)", ic("chev", "s"), "nn") + rw("", "", "Layout", "Index", ic("chev", "s"), "nn") + "</ul>")
+            + f'<div class="grid2" style="padding:16px">{sw}</div><ul class="rows" style="padding:0 16px">' + rw("", "", "Type", "Inter Tight, Inter, IBM Plex Mono (suggested)", ic("chev", "s"), "nx") + rw("", "", "Layout", "Index", ic("chev", "s"), "nx") + "</ul>")
 
 
 def equalizer():
     bands = "".join(f'<div style="display:grid;justify-items:center;gap:6px"><div style="width:8px;height:200px;background:var(--edge);position:relative"><i style="position:absolute;left:0;right:0;bottom:0;height:{h}%;background:var(--accent)"></i><b style="position:absolute;left:-8px;bottom:calc({h}% - 6px);width:24px;height:12px;background:var(--text)"></b></div>{m(f, "mu")}{m(db, "")}</div>'
                     for f, h, db in (("60", 62, "+2"), ("230", 55, "+1"), ("910", 48, "0"), ("3.6k", 52, "+1"), ("14k", 66, "+3")))
     pre = '<div class="tabs m" style="margin-top:12px"><span>Flat</span><span class="on">Warm</span><span>Bass</span><span>Vocal</span></div>'
-    return (bar("Equalizer", "refresh") + head("Equalizer", "") + f'<ul class="rows" style="padding:0 16px">{rw("", "", "Equalizer on", "", "<i class=\"sw on\"></i>", "nn")}</ul>' + pre
+    return (bar("Equalizer", "refresh") + head("Equalizer", "") + f'<ul class="rows" style="padding:0 16px">{rw("", "", "Equalizer on", "", "<i class=\"sw on\"></i>", "nx")}</ul>' + pre
             + f'<div style="display:flex;justify-content:space-around;padding:24px 16px">{bands}</div>')
 
 
 def crossfade():
     return (bar("Crossfade") + head("Crossfade", "") + '<div style="padding:24px 16px 0"><span class="d" style="font-size:92px;line-height:80px">4<span class="m mu" style="font-size:14px;margin-left:6px">seconds</span></span>'
             + '<div class="seek" style="margin-top:18px"><i style="right:67%"></i></div><div style="display:flex;justify-content:space-between;margin-top:6px" class="m mu"><span>Off</span><span>12 s</span></div></div>'
-            + '<ul class="rows" style="padding:16px 16px 0">' + rw("", "", "Not inside an album", "Gapless albums play as recorded", '<i class="sw on"></i>', "nn") + rw("", "", "Fade on skip", "", '<i class="sw"></i>', "nn") + "</ul>")
+            + '<ul class="rows" style="padding:16px 16px 0">' + rw("", "", "Not inside an album", "Gapless albums play as recorded", '<i class="sw on"></i>', "nx") + rw("", "", "Fade on skip", "", '<i class="sw"></i>', "nx") + "</ul>")
 
 
 def settings():
@@ -472,7 +472,7 @@ def sheets():
     confirm = (f'<div class="handle"></div><div style="padding:0 16px">{m("Downloads · 03", "mu")}<h3 class="d" style="font-size:30px;margin:4px 0 8px">Dismiss Elevation?</h3>'
                f'<p style="margin:0;font:400 14px/21px Inter">It stops and leaves the list. Files already imported stay.</p><div style="display:flex;gap:8px;margin-top:16px"><span class="btn g" style="flex:1;justify-content:center">Keep</span><span class="btn danger" style="flex:1;justify-content:center">Dismiss</span></div></div>')
     snack = home_top() + '<div class="snack" style="bottom:128px">Hex removed from picks<u class="m">Undo</u></div>'
-    fr = [frame("1 · Pick menu, options lettered", screen(sheet(pick, 420), nodock=True)), frame("2 · Song menu", screen(sheet(song, 320), nodock=True)),
+    fr = [frame("1 · Pick menu, options lettered", screen(home_top() + sheet(pick, 420), nodock=True)), frame("2 · Song menu", screen(queue() + sheet(song, 320), nodock=True)),
           frame("3 · Dismiss confirmation", screen(downloads() + sheet(confirm, 500), nodock=True)), frame("4 · Snackbar with Undo", screen(snack))]
     return kit.page("Index · Sheets and snackbar (Signal Blue)", HEAD, fr), 4
 
@@ -501,6 +501,79 @@ def components():
     return kit.page("Index · Components", HEAD, fr), 4
 
 
+# ------------------------------------------------------------------------------------------------ Extras: start, lists, album sheets
+
+def setup():
+    fld = lambda n, l, v, on=False: (f'<div style="display:grid;grid-template-columns:26px 1fr;gap:8px;align-items:center;margin-top:10px">{m(n, "sig")}<div>{m(l, "mu")}'
+                                     f'<div class="field" style="height:44px;margin-top:4px;font-size:15px;{"" if on else "box-shadow:inset 0 0 0 1.5px var(--edge)"}">{v}</div></div></div>')
+    return ('<header class="top"><span class="d wm">discair</span></header>' + head("Connect", "2") + f'<section class="sec" style="padding-top:16px">{sh("Librarian", "Server 1")}{fld("01", "Address", "https://librarian.home.arpa", True)}{fld("02", "User name", "owner")}{fld("03", "Password", "••••••••")}</section>'
+            f'<section class="sec" style="padding-top:18px">{sh("Navidrome", "Server 2")}{fld("04", "Address", "https://music.home.arpa")}</section>'
+            f'<div class="acts" style="padding-top:18px"><span class="btn g" style="flex:1;justify-content:center">Cancel</span><span class="btn" style="flex:1;justify-content:center">Connect</span></div>')
+
+
+def unavailable():
+    return ('<header class="top"><span class="d wm">discair</span></header>' + f'<div style="padding:40px 16px 0"><span style="color:var(--caution)">{ic("warning")}</span><h1 class="d" style="font-size:46px;line-height:42px;margin:12px 0 10px">Server unreachable</h1>'
+            f'<div class="rule draw" style="margin:0"></div><dl class="dl" style="margin-top:12px"><dt class="m">Librarian</dt><dd>No answer</dd><dt class="m">Navidrome</dt><dd>No answer</dd><dt class="m">Hint</dt><dd>Is Tailscale connected?</dd></dl></div>'
+            f'<div class="acts" style="flex-direction:column;padding-top:20px"><span class="btn" style="justify-content:center">{ic("refresh")}Try again</span><span class="btn g" style="justify-content:center">Open Tailscale</span><span class="btn g" style="justify-content:center">Edit servers</span></div>')
+
+
+def recently_added():
+    rows = "".join(rw(f"0{i + 1}", cv(k, 48), A[k][0], f"{A[k][1]} · {w}", ic("chev", "s")) for i, (k, w) in enumerate((("end", "today"), ("spc", "2 days"), ("vul", "5 days"), ("prm", "1 week"), ("sim", "2 weeks"), ("tit", "3 weeks"))))
+    return home_top() + sheet(f'<div class="handle"></div><div style="padding:0 16px 12px;border-bottom:2px solid var(--text)">{m("Last 30 days", "mu")}<h3 class="d" style="font-size:30px;margin:4px 0 0">Newly added<sup class="cnt">6</sup></h3></div><ul class="rows" style="padding:0 16px">{rows}</ul>', 150)
+
+
+def saved():
+    tabs = '<div class="tabs m" style="margin-top:12px">' + "".join(f'<span class="{"on" if t == "Saved" else ""}">{t}</span>' for t in ("Personal", "Daily picks", "Saved", "Deep dives")) + "</div>"
+    ents = "".join(f'<li class="rw" style="grid-template-columns:26px 64px 1fr;align-items:start;padding:12px 0">{m(f"0{i + 1}", "n")}{cv(k, 64)}<span><b>{A[k][0]}</b>{m(f"{A[k][1]} · saved {w}", "mu")}'
+                   f'<span style="display:flex;gap:6px;margin-top:8px">{get_btn(st)}<span class="btn s g">{ic("bookmark")}Remove</span></span></span></li>'
+                   for i, (k, w, st) in enumerate((("hlv", "today", "idle"), ("ntr", "2 days ago", "pending"), ("pta", "last week", "idle"), ("ele", "last week", "requested"))))
+    return top() + head("Discover", "4") + tabs + f'<ul class="rows" style="padding:0 16px">{ents}</ul>'
+
+
+def booklet():
+    dots = "".join(f'<i style="flex:1;height:3px;background:{"var(--accent)" if i == 1 else "var(--edge)"}"></i>' for i in range(8))
+    return (bar("Album 0418 / 1284") + '<div class="tabs m"><span>Songs</span><span>Info</span><span>Reviews</span><span class="on">Booklet</span></div>'
+            + f'<div style="padding:12px 16px 0">{cv("mor", 328, 410)}<div style="display:flex;gap:4px;margin-top:10px">{dots}</div>'
+            + f'<div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px"><span class="ib">{ic("back")}</span>{m("Page 02 / 08", "")}<span class="ib">{ic("chev")}</span></div></div>')
+
+
+def cover_picker():
+    grid = "".join(f'<figure style="margin:0;display:grid;gap:4px">{cv(k, 98, style="box-shadow:inset 0 0 0 3px var(--accent)" if i == 0 else "")}{m(f"0{i + 1}", "sig" if i == 0 else "mu")}<span style="font:500 12px Inter">{e}</span></figure>'
+                   for i, (k, e) in enumerate((("mor", "2020 · Dead Oceans"), ("afr", "2020 JP CD"), ("hlv", "2021 LP"), ("nts", "2020 Deluxe"), ("cru", "2020 cassette"), ("blu", "2022 repress"))))
+    return album_owned() + sheet(f'<div class="handle"></div><div style="padding:0 16px 12px;border-bottom:2px solid var(--text)">{m("Mordechai", "mu")}<h3 class="d" style="font-size:30px;margin:4px 0 0">Choose a cover<sup class="cnt">6</sup></h3></div>'
+                                f'<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px 8px;padding:14px 16px 0">{grid}</div><div class="acts"><span class="btn g" style="flex:1;justify-content:center">Use the automatic cover</span></div>', 230)
+
+
+def neighbours():
+    tabs = '<div class="tabs m" style="padding:0 16px">' + "".join(f'<span class="{"on" if t == "Neighbours by ear" else ""}">{t}</span>' for t in ("Same room", "Listen-through gaps", "Neighbours by ear")) + "</div>"
+    steps = "".join(f'<li class="rw" style="grid-template-columns:26px 56px 1fr auto;padding:10px 0">{m(f"0{i + 1}", "n")}{cv(k, 56)}<span><b>{A[k][0]}</b>{m(A[k][1], "mu")}'
+                    f'<span style="display:flex;gap:2px;margin-top:6px">' + "".join(f'<i style="width:16px;height:4px;background:{"var(--accent)" if j < n else "var(--edge)"}"></i>' for j in range(5)) + f'</span></span>{get_btn("owned" if A[k][4] else "idle")}</li>'
+                    for i, (k, n) in enumerate((("spc", 5), ("sat", 4), ("end", 4), ("tit", 3))))
+    inner = (f'<div class="handle"></div><div class="shd">{cv("prm", 72)}<div>{m("Paths · from", "mu")}<h3 class="d" style="font-size:30px;line-height:28px;margin:4px 0 4px">Promises</h3>{m("Sonic data · 4 neighbours", "mu")}</div></div>'
+             f'{tabs}<ul class="rows" style="padding:0 16px">{steps}</ul><p class="m mu" style="padding:10px 16px 0;margin:0">Shown only when the server reports sonic similarity</p>')
+    return bg_album() + sheet(inner, 60)
+
+
+def sonic_path():
+    steps = "".join(rw(f"0{i + 1}", cv(k, 48), t, a, m(tag, "sig") if tag else "") for i, (k, t, a, tag) in enumerate(
+        (("mor", "Pelota", "Khruangbin", "Start"), ("vul", "Mohabbat", "Arooj Aftab", ""), ("spc", "Space 3", "Nala Sinephro", ""), ("sat", "Journey in Satchidananda", "Alice Coltrane", "Target"))))
+    inner = (f'<div class="handle"></div><div style="padding:0 16px 12px;border-bottom:2px solid var(--text)">{m("Sonic path · 4 steps", "mu")}<h3 class="d" style="font-size:26px;line-height:26px;margin:4px 0 0">Pelota → Journey in Satchidananda</h3></div>'
+             f'<ul class="rows" style="padding:0 16px">{steps}</ul><p class="m mu" style="padding:8px 16px 0;margin:0">Steps in the server\'s order</p><div class="acts"><span class="btn">{ic("play")}Play the path</span><span class="btn g">{ic("qadd")}Queue</span></div>')
+    return queue() + sheet(inner, 230)
+
+
+def extras_a():
+    fr = [frame("1 · Setup: numbered fields for both servers, Connect", screen(setup(), nodock=True)), frame("2 · Unavailable: Try again, Tailscale, Edit servers", screen(unavailable(), nodock=True)),
+          frame("3 · Newly added sheet (All from Home)", screen(recently_added(), nodock=True)), frame("4 · Discover, Saved list", screen(saved(), 1))]
+    return kit.page("Index · Setup, Unavailable, Newly added, Saved (Signal Blue)", HEAD, fr), 4
+
+
+def extras_b():
+    fr = [frame("1 · Album Booklet tab: page pager", screen(booklet(), 2)), frame("2 · Cover picker sheet: numbered editions, automatic cover", screen(cover_picker(), nodock=True)),
+          frame("3 · Album Paths, Neighbours by ear (sonic data only)", screen(neighbours(), nodock=True)), frame("4 · Sonic path sheet, opened from a Queue row", screen(sonic_path(), nodock=True))]
+    return kit.page("Index · Booklet, Cover picker, Neighbours by ear, Sonic path (Signal Blue)", HEAD, fr), 4
+
+
 MOTION = """<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Index motion</title>
 <link rel="stylesheet" href="../palettes.css"><link rel="stylesheet" href="../index.css"><link rel="stylesheet" href="../../_kit/art.css">
 <style>body{margin:0;background:#E9E9E6;font-family:system-ui}.wrap{display:flex;gap:40px;padding:30px}.scr{width:360px;height:780px;position:relative;overflow:hidden;box-shadow:0 0 0 1px rgba(0,0,0,.12)}
@@ -524,7 +597,7 @@ n.querySelectorAll('span').forEach((s,i)=>s.animate([{transform:'translateY(100%
 cascade();</script></body></html>"""
 
 ALL = {"home": home, "album-artist-genre": album_artist_genre, "paths": paths, "player": player, "discover": discover, "library-search": library_search,
-       "radio": radio, "downloads-stats-server": downloads_stats_server, "settings": settings, "sheets": sheets, "palettes": palettes, "components": components}
+       "radio": radio, "downloads-stats-server": downloads_stats_server, "settings": settings, "sheets": sheets, "extras-a": extras_a, "extras-b": extras_b, "palettes": palettes, "components": components}
 
 
 def main(names):

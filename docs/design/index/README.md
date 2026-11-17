@@ -8,7 +8,7 @@ The design system for the Android **Index** theme. The spec is [`docs/INDEX_THEM
 | [`palettes.css`](palettes.css) | Generated from `tokens.json`: one block of CSS variables per palette (`data-p="<id>"`) |
 | [`index.css`](index.css) | Every component's measurements in dp (1 CSS px = 1dp). It loads the app's own font files from `android/app/src/main/res/font/` |
 | [`pages/`](pages/) | The mockups: `.html` to open and measure, `.png` to look at. Drawn in Signal Blue, except `palettes`. `motion.html` is live (no PNG) |
-| [`icons/`](icons/) | 49 SVG icons (24 grid, 2 stroke, square caps, mitred) and `IndexIcons.kt.txt`, a ready Kotlin object |
+| [`icons/`](icons/) | 48 SVG icons (24 grid, 2 stroke, square caps, mitred) and `IndexIcons.kt.txt`, a ready Kotlin object |
 | [`_src/build.py`](_src/build.py) | Writes `palettes.css`, the icons and every page, and renders the PNGs with Google Chrome |
 | [`_src/check_contrast.py`](_src/check_contrast.py) | Checks all four palettes against the `PaletteTest` rules plus Index's tones |
 | [`../_kit/`](../_kit/) | Shared with Bento: sample data, the icon paths, contrast maths, the page wrapper, and the stand-in artwork (`art.css`, not for the app) |

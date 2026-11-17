@@ -8,7 +8,7 @@ The design system for the Android **Bento** theme. The spec is [`docs/BENTO_THEM
 | [`palettes.css`](palettes.css) | Generated from `tokens.json`: one block of CSS variables per palette (`data-p="<id>"`) |
 | [`bento.css`](bento.css) | Every component's measurements in dp (1 CSS px = 1dp) |
 | [`pages/`](pages/) | The mockups: `.html` to open and measure, `.png` to look at. Drawn in Sorbet, except `palettes`. `motion.html` is live (no PNG) |
-| [`icons/`](icons/) | 49 SVG icons (24 grid, 1.8 stroke, round) and `BentoIcons.kt.txt`, a ready Kotlin object |
+| [`icons/`](icons/) | 48 SVG icons (24 grid, 1.8 stroke, round) and `BentoIcons.kt.txt`, a ready Kotlin object |
 | [`fonts/`](fonts/) | `gabarito_bento.ttf` and `figtree_bento.ttf` (Latin subsets), with their OFL licences |
 | [`_src/build.py`](_src/build.py) | Writes `palettes.css`, the icons and every page, and renders the PNGs with Google Chrome |
 | [`_src/check_contrast.py`](_src/check_contrast.py) | Checks all three palettes against the `PaletteTest` rules plus Bento's tones |

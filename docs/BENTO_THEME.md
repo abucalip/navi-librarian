@@ -182,7 +182,7 @@ From `tokens.json` → `type`. Sizes and line heights are in sp.
 
 ## 6. Icons
 
-[`icons/`](design/bento/icons/) holds 49 SVGs (24 by 24), plus [`icons/BentoIcons.kt.txt`](design/bento/icons/BentoIcons.kt.txt), a ready `BentoIcons` object written by the build script.
+[`icons/`](design/bento/icons/) holds 48 SVGs (24 by 24), plus [`icons/BentoIcons.kt.txt`](design/bento/icons/BentoIcons.kt.txt), a ready `BentoIcons` object written by the build script.
 
 - **Builder.** Use the same `stroked`/`filled` builder as `ArtIcons`, with `strokeLineWidth = 1.8f` and round caps and joins.
 - **Names.** Property names match `ArtIcons` one for one, plus:
@@ -271,10 +271,11 @@ Bento's character is **springy and tactile**: tiles pop in, the pill stretches, 
 2. **Springs.** For springs use a helper in `ui/theme/BentoMotion.kt`, modelled on `GalleryMotion.kt`:
    ```kotlin
    object BentoMotion {
+       // Fully qualified calls: inside this object, plain spring()/tween() would call these same functions.
        fun <T> spring(damping: Float, stiffness: Float, reduced: Boolean): FiniteAnimationSpec<T> =
-           if (reduced) snap() else spring(dampingRatio = damping, stiffness = stiffness)
-       fun <T> tween(ms: Int, curve: Easing, reduced: Boolean): FiniteAnimationSpec<T> =
-           tween(MotionRules.duration(ms, MotionFamily.Standard, reduced), easing = curve)
+           if (reduced) snap() else androidx.compose.animation.core.spring(dampingRatio = damping, stiffness = stiffness)
+       fun <T> tween(ms: Int, curve: Easing, reduced: Boolean, delayMs: Int = 0): FiniteAnimationSpec<T> =
+           androidx.compose.animation.core.tween(MotionRules.duration(ms, MotionFamily.Standard, reduced), if (reduced) 0 else delayMs, curve)
        val Emphasized = CubicBezierEasing(0.2f, 0f, 0f, 1f)        // tileToPage, playerRise, getMorph, statCount
        val EmphasizedExit = CubicBezierEasing(0.3f, 0f, 0.8f, 0.15f) // pageToTile, playerFall
        val Exit = CubicBezierEasing(0.4f, 0f, 1f, 1f)               // sheetOut
@@ -283,7 +284,8 @@ Bento's character is **springy and tactile**: tiles pop in, the pill stretches, 
    ```
 3. **Animate with `graphicsLayer`.** Use `graphicsLayer { }` for scale, translation and alpha, never `Modifier.scale`/`offset` with recomposition, so a moving tile redraws only itself.
 4. **Grid items.** In lazy grids, give every item a stable `key` and use `Modifier.animateItem()` so reordering and inserts move rather than jump.
-5. **No continuous motion.** Do not use `rememberInfiniteTransition`, except for:
+5. **Shorthand in the table below.** A plain `tween(ms, delay)` in section 8.2 stands for `BentoMotion.tween(ms, curve, reduced, delay)`, and a plain `spring(d, s)` for `BentoMotion.spring(d, s, reduced)`. Never call Compose's own `tween`/`spring` directly in Bento code, so Remove animations always reaches every animation.
+6. **No continuous motion.** Do not use `rememberInfiniteTransition`, except for:
    - the three playing bars, only while `isPlaying`;
    - the pending Get icon, only while pending.
 
@@ -298,10 +300,10 @@ Bento's character is **springy and tactile**: tiles pop in, the pill stretches, 
 | 3 | **Page → tile** (Back) | `pageToTile`: 380ms, EmphasizedExit | Same shared bounds in reverse. No extra code |
 | 4 | **Other page changes** (tabs) | `pageCrossfade`: 220ms linear | NavHost `enterTransition = fadeIn(tween(220))`, `exitTransition = fadeOut(tween(220))`, then the arriving page runs #1 |
 | 5 | **Press** | `press`: scale 0.97, spring 0.6 / 800 | `val pressed by interaction.collectIsPressedAsState(); val s by animateFloatAsState(if (pressed) 0.97f else 1f, BentoMotion.spring(0.6f, 800f, reduced))` → `graphicsLayer { scaleX = s; scaleY = s }`. On tiles, rows and buttons. A long-pressed (dragged) tile also takes the lift shadow |
-| 6 | **Nav pill** | `navPill`: spring 0.8 / 500; label fades 150ms after a 60ms delay | Each cell is a `Row` with `Modifier.animateContentSize(BentoMotion.spring(0.8f, 500f, reduced))`. The pill fill is `animateColorAsState(if (selected) control else Transparent, tween(200))`, and the icon colour animates the same way. The label is `AnimatedVisibility(selected, enter = fadeIn(tween(150, delayMillis = 60)) + expandHorizontally(), exit = fadeOut(tween(90)) + shrinkHorizontally())`. Do not build one sliding pill: each cell grows and shrinks, which reads as the pill moving |
+| 6 | **Nav pill** | `navPill`: spring 0.8 / 500; label fades 150ms after a 60ms delay | Each cell is a `Row` with `Modifier.animateContentSize(BentoMotion.spring(0.8f, 500f, reduced))`. The pill fill is `animateColorAsState(if (selected) control else Transparent, tween(200))`, and the icon colour animates the same way. The label is `AnimatedVisibility(selected, enter = fadeIn(tween(150, delayMillis = 60)) + expandHorizontally(BentoMotion.spring(0.8f, 500f, reduced)), exit = fadeOut(tween(90)) + shrinkHorizontally(BentoMotion.spring(0.8f, 500f, reduced)))`. Do not build one sliding pill: each cell grows and shrinks, which reads as the pill moving |
 | 7 | **Now Playing opens / closes** | `playerRise` 420ms Emphasized; `playerFall` 320ms EmphasizedExit | The player is a dialog window today, so fly the cover by hand as Gallery does (`GalleryFlight`). Capture the mini cover's bounds with `onGloballyPositioned`, and draw a cover that interpolates its rect and corner (14 → 28dp) to the player cover. The page rises with `slideInVertically { it } + fadeIn` and the dock slides down by its own height. Reverse on close |
 | 8 | **Sheets** | `sheetIn` spring 0.85 / 420 (no visible overshoot); `sheetOut` 240ms Exit; scrim 220ms | With Material 1.3.2, `ModalBottomSheet` cannot take a custom spec (Gallery found the same). Option A (recommended, decision B4): keep Material's sheet and accept its timing. Option B: a custom `BentoSheet` (`Box` + scrim + `Animatable` offset `animateTo(0f, spring(0.85f, 420f))`, drag-to-dismiss with `draggable` and a velocity threshold of 1,000dp/s) |
-| 9 | **Snackbar** | `snackIn` spring 0.75 / 500 from 24dp below; hold 4s | `AnimatedVisibility(visible, enter = slideInVertically(spring(0.75f, 500f)) { 24.dp } + fadeIn(tween(150)), exit = fadeOut(tween(150)) + slideOutVertically { 24.dp })`. Hold with `delay(4000)` in the host, after TalkBack's longer wait where the app already uses one |
+| 9 | **Snackbar** | `snackIn` spring 0.75 / 500 from 24dp below; hold 4s | `val d = LocalDensity.current; val off = with(d) { 24.dp.roundToPx() }` then `AnimatedVisibility(visible, enter = slideInVertically(BentoMotion.spring(0.75f, 500f, reduced)) { off } + fadeIn(tween(150)), exit = fadeOut(tween(150)) + slideOutVertically { off })` (the lambda returns pixels, so convert once with the density). Hold with `delay(4000)` in the host, after TalkBack's longer wait where the app already uses one |
 | 10 | **Get button morph** | `getMorph` 260ms Emphasized; the pending icon turns once per 900ms | `AnimatedContent(state, transitionSpec = { fadeIn(tween(160, 60)) togetherWith fadeOut(tween(100)) using SizeTransform(clip = false) { _, _ -> tween(260, easing = Emphasized) } })`. The pending icon uses `rememberInfiniteTransition` only inside the pending branch, so it stops when the state leaves |
 | 11 | **Cover stack fan** (Recently played) | `coverStackFan` spring 0.7 / 300; angles −10°, +6°, 0° | On first composition the three covers start at 0° stacked and spring to their angles (`Animatable` per cover, `rotationZ` in `graphicsLayer`), 60ms apart. On press the back two open 4° more |
 | 12 | **Stat count-up** | `statCount` 700ms Emphasized | `val shown by animateIntAsState(target, tween(700, easing = Emphasized))` on the first arrival only. Show the final value at once when reduced or when TalkBack is on (the spoken label is always the final value) |
@@ -356,16 +358,13 @@ Each page is an `.html` (open it in a browser to measure) and a `.png` in [`docs
 | `downloads-stats-server` | Downloads (tracker, Use next source, Try again, Dismiss); Library stats; Server |
 | `settings` | Settings in grouped tiles; Appearance (the three palettes as swatch tiles); Equalizer; Crossfade |
 | `sheets` | Pick menu; song menu (with "Paths from this album"); Dismiss confirmation; snackbar with Undo |
+| `extras-a` | Setup (Librarian and Navidrome addresses, Connect); Unavailable (Try again, Open Tailscale, Edit servers); the Newly added sheet (See all from Home); Discover's Saved list |
+| `extras-b` | Album Booklet tab (page pager); cover picker sheet (editions, "Use the automatic cover"); Album Paths, Neighbours by ear (only with sonic data); Sonic path sheet opened from a Queue row |
 | `palettes` | Home in all three palettes (colour only) |
-| `components` | Token swatches for all three palettes, the type scale, every control, tiles, the dock and the 49 icons |
+| `components` | Token swatches for all three palettes, the type scale, every control, tiles, the dock and the 48 icons |
 | `motion` | Live prototype: tile entry, tile to page, pill bar, press, Remove animations |
 
-Not drawn; build these with the components above and no new arrangement:
-- tablet widths;
-- the album Booklet and cover picker sheets;
-- Sonic path;
-- the Saved list;
-- empty states other than Home's.
+Every route in `ui/Routes.kt` and every sheet the screens open has a frame. Not drawn: tablet widths, and empty or error states beyond Home's frame 4 (each uses the same banner tile, skeleton tiles and empty-state tile).
 
 **Paths behaviour stays as built.** The server is asked only when the sheet is open and a kind is chosen, and Back from an opened album returns to the sheet at the same step (`ArtistPaths.kt`, `AlbumPathsSheet.kt`). Bento changes only how a step and its reasons are drawn.
 
