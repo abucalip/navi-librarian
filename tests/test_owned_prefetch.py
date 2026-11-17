@@ -221,7 +221,7 @@ class RunTests(StoreCase):
                 stop.set()
             return True
 
-        first, warmed, _ = self.run_job(stop=stop, warm=warm)
+        first, _, _ = self.run_job(stop=stop, warm=warm)
         self.assertEqual(first["stopped"], "shutdown")
         saved = self.read(ps.load_cursor)
         self.assertEqual(saved, {"artists": 1, "albums": 1})               # the third (cut short) was not passed over
