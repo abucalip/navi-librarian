@@ -58,6 +58,8 @@ class AttributionTests(unittest.TestCase):
         self.assertEqual(use["providers"]["musicbrainz"]["outcomes"], {"ok": 1, "rate_limited": 1})
         self.assertEqual((use["navidrome"], use["gate_wait_seconds"], use["gate_refused"]), (4, 0.75, 1))
         self.assertEqual(inventory.provider_use({})["providers"], {})
+        outlets = inventory.provider_use({"web": {"requests": {"other": {"count": 3, "seconds": 2.0, "outcomes": {"ok": 3}}}}}, outlets=True)
+        self.assertEqual((outlets["providers"]["review_outlets"]["count"], outlets["navidrome"]), (3, 0))
 
     def test_classify_miss(self):
         before = {"t:a": 1.0, "t:b": 1.0}

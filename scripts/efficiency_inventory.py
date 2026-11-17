@@ -39,6 +39,7 @@ from typing import Any
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from efficiency_baseline import Client, numeric_delta, percentile, read_runtime  # noqa: E402
 
+OUTLET_ROUTES = ("album_reviews",)  # this route calls review outlets (hosts the gate table does not name) and no Navidrome
 PAGE_ROUTES = ("artist_page", "album_page")  # the clients open these as an event stream (Accept: text/event-stream)
 KINDS = ("owned_artist", "owned_album", "unowned_artist", "unowned_album")
 CACHE_TABLES = (
@@ -86,11 +87,12 @@ def routes_for(target: dict[str, Any]) -> list[tuple[str, str]]:
     return routes + [("album_reviews", f"/api/album-reviews?{pair}"), ("album_links", links)]
 
 
-def provider_use(delta: Any) -> dict[str, Any]:
+def provider_use(delta: Any, outlets: bool = False) -> dict[str, Any]:
     """From one request's runtime delta: provider requests, outcomes, seconds and gate wait.
 
     ``other`` (the Navidrome LAN server) is reported separately and is not a provider. Only the web
-    process is read.
+    process is read. With ``outlets`` the ``other`` row is the review outlets (a route that makes no
+    Navidrome call), so it is reported as the provider ``review_outlets``.
     """
     web = delta.get("web") if isinstance(delta, dict) else None
     web = web if isinstance(web, dict) else {}
@@ -105,9 +107,15 @@ def provider_use(delta: Any) -> dict[str, Any]:
             "outcomes": dict(row.get("outcomes") or {}),
         }
     other = requests.get("other") if isinstance(requests.get("other"), dict) else {}
+    if outlets and other.get("count"):
+        providers["review_outlets"] = {
+            "count": other["count"], "seconds": round(other.get("seconds", 0.0), 3), "outcomes": dict(other.get("outcomes") or {}),
+        }
+        other = {}
     return {
         "providers": providers,
         "navidrome": other.get("count", 0),
+        "navidrome_seconds": round(other.get("seconds", 0.0), 3),
         "gate_wait_seconds": round(sum(row.get("wait_seconds", 0.0) for row in gate.values() if isinstance(row, dict)), 3),
         "gate_refused": sum(row.get("refused", 0) for row in gate.values() if isinstance(row, dict)),
     }
@@ -180,6 +188,7 @@ def summarize(records: list[dict[str, Any]]) -> dict[str, Any]:
         "provider_requests_per_request": round(sum(totals) / count, 2) if count else None,
         "by_provider": dict(sorted(per_provider.items())),
         "outcomes": dict(sorted(outcomes.items())),
+        "navidrome_per_request": round(sum(r["navidrome"] for r in records) / count, 2) if count else None,
         "hit_rate": round(1 - len(called) / count, 3) if count else None,
         "requests_with_provider_call": len(called),
         "provider_seconds_median": round(statistics.median(waits), 3) if waits else None,
@@ -248,7 +257,8 @@ def run_session(client: Client, targets: list[dict[str, Any]], warm_runs: int, d
                     status, wall_ms, _, _ = client.get(path, "text/event-stream" if label in PAGE_ROUTES else None)
                 except OSError:  # a timeout or refused connection is a recorded failure, not the end of the session
                     status, wall_ms = 0, 0.0
-                use = provider_use(numeric_delta(before, settled_runtime(client, settle_interval, settle_limit, sleep)))
+                use = provider_use(
+                    numeric_delta(before, settled_runtime(client, settle_interval, settle_limit, sleep)), label in OUTLET_ROUTES)
                 record = {
                     "pass": pass_number, "target": index, "kind": target["kind"], "route": label, "t": round(started_at, 1),
                     "status": status, "wall_ms": round(wall_ms, 1), **use,
