@@ -343,7 +343,8 @@ def _apple_description(artist: str, album: str):
 
 def _wikipedia_description(artist: str, album: str):
     """The album's Wikipedia lead as ``(description or None, answered)``."""
-    return album_page_sources.wikipedia_description(_EXTERNAL_HTTP.get, artist, album)
+    return album_page_sources.wikipedia_description_remembered(
+        persistent_metadata.read, persistent_metadata.write, _EXTERNAL_HTTP.get, artist, album)
 
 
 def album_description(artist: str, album: str) -> dict:

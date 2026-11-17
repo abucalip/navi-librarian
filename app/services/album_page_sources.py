@@ -19,6 +19,11 @@ album details and the album links share) or from Apple's album search is remembe
 key (``no_match_store_key``), through the same ``read``/``write`` callables, so the route and the worker skip
 the provider for that album. Only a provider answer writes the mark; a failure, a refusal or a Deezer error
 body does not.
+
+Efficiency K6: a found Deezer album page is kept on its own (``deezer_url_store_key``, the links' 7 days, like the
+Apple page address) so an incomplete links set does not ask Deezer again, and a Wikipedia search that answered
+with no matching article is remembered for an hour (``no_match_store_key("wikipedia", ...)``); a failed request
+writes neither.
 """
 import threading
 from concurrent.futures import ThreadPoolExecutor
@@ -74,6 +79,10 @@ def description_store_key(artist: str, album: str) -> str:
 
 def apple_url_store_key(artist: str, album: str) -> str:
     return "apple-album-url:v1:" + artist.casefold() + ":" + album.casefold()
+
+
+def deezer_url_store_key(artist: str, album: str) -> str:
+    return "album-deezer-url:v1:" + artist.casefold() + ":" + album.casefold()
 
 
 def no_match_store_key(provider: str, artist: str, album: str) -> str:
@@ -221,20 +230,32 @@ def apple_notes(get, artist, album, url):
     return {"paragraphs": parse_editorial_notes(response.text) or [], "source": "Apple Music", "url": url}, True
 
 
-def wikipedia_description(get, artist, album):
-    """The album's Wikipedia lead as ``(description or None, answered)``."""
+def wikipedia_description(get, artist, album, on_no_article=None):
+    """The album's Wikipedia lead as ``(description or None, answered)``.
+
+    ``on_no_article()`` is called when the search answered and no article matched (never after a failure).
+    """
     try:
         search = get("https://en.wikipedia.org/w/rest.php/v1/search/page", params={
             "q": f"{album_reviews.search_text(artist, album)} album", "limit": 5})
         search.raise_for_status()
         key = album_wikipedia.pick_album_article(search.json().get("pages"), artist, album)
         if not key:
+            if on_no_article:
+                on_no_article()
             return None, True
         summary = get("https://en.wikipedia.org/api/rest_v1/page/summary/" + quote(key, safe=""))
         summary.raise_for_status()
         return album_wikipedia.description_from_summary(summary.json()), True
     except Exception:
         return None, False
+
+
+def wikipedia_description_remembered(read, write, get, artist, album):
+    """`wikipedia_description`, skipped while a Wikipedia no-article mark lives; a search with no match writes one (K6)."""
+    if no_match_is_live(read, "wikipedia", artist, album):
+        return None, True
+    return wikipedia_description(get, artist, album, lambda: mark_no_match(write, "wikipedia", artist, album))
 
 
 def load_description(apple, wikipedia, *, require_apple_answer=False) -> Loaded:
@@ -277,7 +298,8 @@ def prefetch_description(read, write, get, artist, album) -> dict:
             return dict(EMPTY_DESCRIPTION), answered
         return apple_notes(get, artist, album, url)
 
-    loaded = load_description(apple, lambda: wikipedia_description(get, artist, album), require_apple_answer=True)
+    loaded = load_description(apple, lambda: wikipedia_description_remembered(read, write, get, artist, album),
+        require_apple_answer=True)
     if loaded.persist:
         write(key, loaded.value)
     return loaded.value
@@ -366,11 +388,15 @@ def load_album_links(artist, album, mbid, *, apple, json_get, mb_get, read, writ
     """The album's page on each service that matched exactly, as a `Loaded`.
 
     ``apple()`` returns ``(page address or None, stale)``; ``json_get(url, **kw)`` a JSON answer or None;
-    ``mb_get`` is the raw HTTP get for MusicBrainz; ``read``/``write`` hold the Deezer no-match mark (K5). A set
+    ``mb_get`` is the raw HTTP get for MusicBrainz; ``read``/``write`` hold the Deezer no-match mark (K5) and the found Deezer page (K6). A set
     that is incomplete (a service slow, busy, refused or without a match) or used a stale Apple page is kept for
     minutes and not stored, so a no-match is remembered for its hour only, never for the links' week.
     """
     def deezer():
+        page_key = deezer_url_store_key(artist, album)
+        kept = read(page_key, persistent_metadata.LINKS_TTL)
+        if kept:
+            return kept
         if no_match_is_live(read, "deezer", artist, album):
             return None
         data = json_get("https://api.deezer.com/search/album?" + urlencode(
@@ -379,7 +405,10 @@ def load_album_links(artist, album, mbid, *, apple, json_get, mb_get, read, writ
         albums = (data.get("data") or []) if answered else []
         if answered and not exact_album_matches(albums, artist, album):
             mark_no_match(write, "deezer", artist, album)
-        return album_links.deezer_url(albums, artist, album)
+        page = album_links.deezer_url(albums, artist, album)
+        if page:
+            write(page_key, page)
+        return page
 
     def musicbrainz():
         if mbid:
