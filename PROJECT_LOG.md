@@ -1,3 +1,10 @@
+## 2026-11-17 — macOS Paths P2 details (PR #1186)
+
+- **Merged:** PR #1186, squash `d20d2e93bd796d2e522c9e86528d89d83527c11b`. Slice P2 of `docs/MACOS_PATHS_BOOKLET.md`: artist steps show the round `ArtistPhoto`; `PathRowThumb` asks `.display` above 64 pt; Room photos 96 × 64 under the album name; the "Your listening" card on the Gaps tab only; the summary is drawn while loading and after a failure, and an empty tab shows only its empty line. New `Tests/DiscairUITests/PathsRenderTests.swift`; `PathsSheetModel` gains `showForPreview(failed:)` and `clearForPreview`.
+- **Tests run:** `swift build`; `swift test --filter PathsRenderTests` (10 passed), `PathTrailTests` (26), `PathsModelTests` (17). `select-tests.sh` answered "all", so the full suite was not run. Renders compared by eye with the PNGs for artist-sideman, gaps, room and min.
+- **CI:** not checked by me; the owner merged.
+- **Limitations:** the Room renders show no session photos (no artwork store in the test), so the 96 × 64 layout is unseen; generated covers and initials, not real art; no CPU measurement (no new motion); not checked in a real window. Not published or deployed.
+
 ## 2026-11-17 — macOS Paths P1 layout (PR #1185)
 
 - **Merged:** PR #1185, squash `c5d9b6d864a867d3bdf16cfdb0d40711d9fe3738`. Slice P1 of `docs/MACOS_PATHS_BOOKLET.md`: `Themes/Cupertino/CUPathsBooklet.swift` (Paths part), `Chrome/PathTrailViews.swift`, `Chrome/PathsSheet.swift` rewritten, `PathRowThumb` optional radius.
