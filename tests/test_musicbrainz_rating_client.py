@@ -3,7 +3,6 @@ from unittest.mock import patch
 
 import httpx
 
-import musicbrainz_rating_client as legacy_client
 from gate_fakes import FreeLane
 from integrations.musicbrainz.rating_client import critical_rating
 
@@ -22,9 +21,6 @@ class FakeResponse:
 
 
 class MusicBrainzRatingClientTests(unittest.TestCase):
-    def test_legacy_shim_reexports_canonical_implementation(self):
-        self.assertIs(legacy_client.critical_rating, critical_rating)
-
     def setUp(self):
         self.cache = {}
         self.requests = []

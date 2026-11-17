@@ -11,7 +11,7 @@ from discovery import store as discovery_store
 from integrations.slskd import transfers as _slskd_transfers_module
 from integrations.listenbrainz import client as _listenbrainz_client
 from integrations.lastfm import client as _lastfm_client_module
-import musicbrainz_rating_client as _musicbrainz_rating_client
+from integrations.musicbrainz import rating_client as _musicbrainz_rating_client
 from settings import service as _service_settings
 from settings.music_paths import default_music_dir as _default_music_dir_from_environment
 from integrations.navidrome import client as _navidrome_client
