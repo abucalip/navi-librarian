@@ -1,3 +1,14 @@
+## 2026-11-17 — Server efficiency P2: reuse the Navidrome HTTP client
+
+- PR [#1151](https://github.com/abucalip/navi-librarian/pull/1151), branch `efficiency-p2-navidrome-client-reuse` from `main` at `8e782faa`, head `d1a8042a`, not merged, not deployed.
+- Fixes F6. `integrations/navidrome/client.py`: `api_call` and `cover_art` share one process-wide `httpx.Client`, built lazily under a lock (timeout 30 s, `follow_redirects=False`, `max_keepalive_connections=10`, `keepalive_expiry=30`). A caller-supplied `client_factory` keeps the old per-call client. `navidrome_server.py` is untouched.
+- Tests, with `python -m unittest`: `tests.test_navidrome_client` and `tests.test_navidrome_cover_art`, 26 OK. The new `SharedNavidromeClientTests` cover: one shared client across calls, cover art and calls sharing one client, the factory bypass, the limits, eight threads on first use, and a real loopback server showing one TCP connection for two calls. Not run: the full suite (agents do not run it).
+- Lint: `scripts/check_lint_changed.py --base origin/main`, 2 files checked, 0 new finding groups.
+- Loopback micro-timing (scratchpad, not committed), 300 calls per round, one threaded server: median 6.21 ms before, 0.46 ms after; 300 connections before, 1 after. Not measured: the LAN Navidrome server and M2.
+- CI: pending on `d1a8042a` when the owner asked the agent not to wait; not checked.
+- Limitations: the shared client keeps a cookie jar (per-call clients never sent cookies back; Navidrome uses token parameters); a request racing a Navidrome restart can fail once; Navidrome calls are counted under `other` in runtime metrics.
+- Next action: check the five CI checks on `d1a8042a`, then merge if they pass.
+
 ## 2026-11-17 — Server efficiency P1: cache settings reads
 
 - PR [#1150](https://github.com/abucalip/navi-librarian/pull/1150), branch `efficiency-p1-settings-cache` from `main` at `ace556d9`, head `324001de`, squash `713c0949`, merged 2026-11-17 00:23 UTC (GitHub confirms `MERGED`).
