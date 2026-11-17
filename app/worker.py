@@ -4,7 +4,8 @@ Start with ``python -m app.worker``. It uses the same image, configuration and `
 web app and is the only process that writes knowledge facts to the Server V2 store and calls MusicBrainz
 for it (web routes write only owner records and caches; reads there are read-only). It runs until SIGTERM or SIGINT. Jobs owned here: the automatic API fill and the insights refresh
 (Forgotten Gems and provider lenses, which write the knowledge store and call providers). There is no
-dispatcher yet; further loops move here one at a time (efficiency.md A4).
+dispatcher yet; further loops move here one at a time (efficiency.md A4). Once a day the worker also prunes
+the legacy metadata cache (rows older than 400 days, efficiency.md P3).
 
 Exactly one worker runs: it takes an exclusive lock on ``DATA_DIR/worker.lock`` and exits non-zero if
 another holds it. Holding the lock makes it safe to requeue ``running`` rows left by a killed worker.
@@ -17,6 +18,7 @@ import signal
 import threading
 import time
 
+import metadata_cache
 from app.api.insights import STORE_FILE
 from app.api.dependencies import get_librarian
 from app.services import insights_refresh, library_enrich, runtime_metrics
@@ -63,6 +65,27 @@ def _maintain(data_dir, recover=False):
         prune_finished(db)
     finally:
         db.close()
+
+
+def _prune_metadata_cache(librarian):
+    """Drop legacy metadata-cache rows older than the cutoff (efficiency P3). No-op if the librarian has no cache."""
+    cache = getattr(librarian, "_metadata_cache", None)
+    if cache is None:
+        return
+    removed = cache.prune(metadata_cache.PRUNE_AFTER_SECONDS)
+    logger.info("Metadata cache prune removed %s rows", removed)
+
+
+def _daily_maintenance(librarian):
+    # Each step is isolated: a failure in one is logged by type only and does not stop the other.
+    try:
+        _maintain(librarian.DATA_DIR)
+    except Exception as exc:
+        logger.error("Job history prune failed (%s)", type(exc).__name__)
+    try:
+        _prune_metadata_cache(librarian)
+    except Exception as exc:
+        logger.error("Metadata cache prune failed (%s)", type(exc).__name__)
 
 
 def _save_metrics(data_dir):
@@ -115,10 +138,7 @@ def main(librarian=None, stop=None) -> int:
                                           name="runtime-metrics", daemon=True)
         metrics_thread.start()
         while not stop.wait(PRUNE_SECONDS):
-            try:
-                _maintain(librarian.DATA_DIR)
-            except Exception as exc:
-                logger.error("Job history prune failed (%s)", type(exc).__name__)
+            _daily_maintenance(librarian)
         _wait_for_threads((insights_thread, enrich_thread, metrics_thread))
         return 0
     finally:
