@@ -67,9 +67,6 @@ app = FastAPI(
     version="0.1.0",
 )
 
-_discovery_scheduler_start_timer = None
-
-
 def _bump_discogs_generation_at_startup(librarian):
     """Separate Discogs cache entries written under an earlier DISCOGS_TOKEN value (contract 5.2)."""
     import os
@@ -79,42 +76,6 @@ def _bump_discogs_generation_at_startup(librarian):
     bump_discogs_generation_for_environment(
         librarian._discovery_settings_read, librarian._discovery_settings_write, os.environ
     )
-
-
-def _start_discovery_background():
-    """Start the legacy scheduler and the daily lens-list refresh (Engine 2, Phase 4)."""
-    from discovery import lens_service
-
-    librarian = get_librarian()
-    _bump_discogs_generation_at_startup(librarian)
-    librarian._start_discovery_scheduler()
-    lens_service.start_daily_refresh(librarian)
-    # The similar-artist precompute runs in the worker (efficiency W2). Only start building the web
-    # process's owned index now, once, so the first search does not wait for it.
-    from app.api.search import owned_view
-
-    try:
-        owned_view(librarian)
-    except Exception:
-        pass    # a warm-up only: the first search starts the build again
-
-
-def _schedule_discovery_scheduler_startup():
-    """Start the legacy service scheduler after web startup has settled."""
-    import threading
-
-    global _discovery_scheduler_start_timer
-    if (
-        _discovery_scheduler_start_timer is not None
-        and _discovery_scheduler_start_timer.is_alive()
-    ):
-        return
-    _discovery_scheduler_start_timer = threading.Timer(
-        10,
-        _start_discovery_background,
-    )
-    _discovery_scheduler_start_timer.daemon = True
-    _discovery_scheduler_start_timer.start()
 
 
 @app.on_event("startup")
@@ -148,9 +109,25 @@ def _install_library_resync():
 
 
 @app.on_event("startup")
-def _start_discovery_scheduler():
-    """Schedule refresh startup without blocking authentication or route startup."""
-    _schedule_discovery_scheduler_startup()
+def _discovery_startup():
+    """Bump the Discogs generation and start the owned-index warm-up. Starts no periodic work.
+
+    The discovery list and lens list refreshes run in the worker (efficiency W3), the similar-artist
+    precompute too (W2). The warm-up is one background build, so the first search does not wait for it.
+    """
+    import logging
+
+    from app.api.search import owned_view
+
+    librarian = get_librarian()
+    try:
+        _bump_discogs_generation_at_startup(librarian)
+    except Exception as exc:
+        logging.getLogger(__name__).error("Discogs generation bump failed (%s)", type(exc).__name__)
+    try:
+        owned_view(librarian)
+    except Exception:
+        pass    # a warm-up only: the first search starts the build again
 
 _APP_ROOT = Path(__file__).resolve().parent.parent
 _STATIC_DIR = _APP_ROOT / "static"

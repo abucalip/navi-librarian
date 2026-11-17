@@ -36,15 +36,17 @@ class MCPRetirementTests(unittest.TestCase):
         self.assertNotIn('transport="streamable-http"', service)
         self.assertNotIn("port=8000", service)
 
-    def test_web_entry_point_keeps_scheduler_startup(self):
+    def test_web_entry_point_starts_no_list_scheduler(self):
+        # Efficiency W3: the discovery and lens list refreshes are worker schedule entries.
         app_source = (ROOT / "app" / "main.py").read_text(encoding="utf-8")
         service_source = (ROOT / "navidrome_server.py").read_text(encoding="utf-8")
+        worker_source = (ROOT / "app" / "worker.py").read_text(encoding="utf-8")
         self.assertIn('@app.on_event("startup")', app_source)
-        self.assertIn("threading.Timer(\n        10,", app_source)
-        self.assertIn("def _start_discovery_background()", app_source)
-        self.assertIn("librarian._start_discovery_scheduler()", app_source)
-        self.assertIn("lens_service.start_daily_refresh(librarian)", app_source)
-        self.assertIn("def _start_discovery_scheduler()", service_source)
+        self.assertNotIn("threading.Timer", app_source)
+        self.assertNotIn("_start_discovery_background", app_source)
+        self.assertNotIn("_start_discovery_scheduler", app_source + service_source)
+        self.assertNotIn("start_daily_refresh", app_source)
+        self.assertIn("discovery_schedule.entries(librarian)", worker_source)
 
 
 if __name__ == "__main__":

@@ -7,7 +7,9 @@ for it (web routes write only owner records and caches; reads there are read-onl
 refresh, the daily maintenance (job-history prune, R1, and the legacy metadata-cache prune of rows
 older than 400 days, P3) and the daily similar-artist precompute (``app/services/similar_precompute.py``,
 W2) are entries of the table-driven scheduler in ``app/worker_schedule.py`` (efficiency W1), which runs
-them one at a time and keeps their last runs in the store. Auto fill and the
+them one at a time and keeps their last runs in the store. The hourly discovery list and lens list
+refreshes (``app/services/discovery_schedule.py``, W3) are entries of a second scheduler on their own
+thread, so the long precompute does not delay them. Auto fill and the
 runtime-metrics save keep their own threads: auto fill must stay responsive.
 
 Exactly one worker runs: it takes an exclusive lock on ``DATA_DIR/worker.lock`` and exits non-zero if
@@ -25,7 +27,7 @@ import metadata_cache
 from app.api.insights import STORE_FILE
 from app.api.dependencies import get_librarian
 from app import worker_schedule
-from app.services import insights_refresh, library_enrich, runtime_metrics, similar_precompute
+from app.services import discovery_schedule, insights_refresh, library_enrich, runtime_metrics, similar_precompute
 from intelligence.insights.provider_runtime import JOB as PROVIDER_LENSES_JOB
 from intelligence.insights.runtime import JOB as FORGOTTEN_GEMS_JOB
 from intelligence.jobs import prune_finished, recover_running
@@ -148,6 +150,10 @@ def main(librarian=None, stop=None) -> int:
         _maintain(librarian.DATA_DIR, recover=True)   # before any thread starts, so no run is live
         schedule_thread = worker_schedule.start(schedule_entries(librarian, stop),
                                                 librarian.DATA_DIR / STORE_FILE, stop)
+        # The list refreshes get their own thread, so the hours-long precompute cannot delay them (W3).
+        discovery_thread = worker_schedule.start(discovery_schedule.entries(librarian),
+                                                 librarian.DATA_DIR / STORE_FILE, stop,
+                                                 name=discovery_schedule.THREAD_NAME)
         # Auto fill runs on its own thread too: switching it off must not end the worker or the other jobs.
         enrich_thread = threading.Thread(target=library_enrich.run_forever, args=(librarian, stop),
                                          name="library-enrich", daemon=True)
@@ -157,7 +163,7 @@ def main(librarian=None, stop=None) -> int:
         metrics_thread.start()
         while not stop.wait(60):
             pass
-        _wait_for_threads((schedule_thread, enrich_thread, metrics_thread))
+        _wait_for_threads((schedule_thread, discovery_thread, enrich_thread, metrics_thread))
         return 0
     finally:
         lock.close()

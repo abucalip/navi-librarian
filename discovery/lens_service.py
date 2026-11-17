@@ -5,7 +5,9 @@ Lives outside ``navidrome_server.py`` (D-016). Each function takes the librarian
 the same adapter pattern the discovery routes use. The pure policy stays in
 ``discovery.lens_storage``, ``discovery.refresh.refresh_lens_lists`` and
 ``discovery.list_payload.build_lens_list_response``; this module only connects them to the
-providers, the library and the store, and starts the daily refresh. Behind
+providers, the library and the store. The worker runs the daily refresh (``_due``, then
+``refresh``, from ``app/services/discovery_schedule.py``, efficiency W3); the web runs
+only the manual one. Behind
 ``engine2_lens_lists_enabled`` (default on): nothing here reads the library or calls a provider
 while the setting is off. See docs/engine2.md (Phase 4).
 """
@@ -36,7 +38,7 @@ logger = logging.getLogger(__name__)
 
 # Listening history read for the lens lists. Obsessions and Repeated tracks need more than the
 # 30-day default; the page bound of the ListenBrainz client still applies.
-DAILY_CHECK_SECONDS = 3600
+DAILY_CHECK_SECONDS = 3600      # the worker checks ``_due`` this often (app/services/discovery_schedule.py)
 MUSICBRAINZ_USER_AGENT = "Discair/1.0 (personal music discovery)"
 _REFRESH_LOCK = threading.Lock()
 
@@ -237,34 +239,14 @@ def _due(librarian: Any) -> bool:
     return False
 
 
-def _daily_loop(librarian: Any) -> None:
-    while True:
-        try:
-            if _due(librarian):
-                refresh(librarian)
-        except Exception as exc:
-            # Bounded diagnostics: the error type only, never provider details.
-            logger.error("Lens list refresh failed (%s)", type(exc).__name__)
-        time.sleep(DAILY_CHECK_SECONDS)
-
-
 def start_refresh(librarian: Any) -> threading.Thread:
     """Run one lens refresh in the background, for a manual trigger from the app layer.
 
-    Returns at once. The refresh takes the same lock as the daily loop, so the two never overlap;
-    while the setting is off it returns "disabled" without touching the library or the store.
+    Returns at once. The refresh takes the same lock as the scheduled refresh, so the two never overlap
+    in one process; while the setting is off it returns "disabled" without touching the library or the store.
     """
     thread = threading.Thread(
         target=refresh, args=(librarian,), name="navidrome-lens-lists-manual", daemon=True,
-    )
-    thread.start()
-    return thread
-
-
-def start_daily_refresh(librarian: Any) -> threading.Thread:
-    """Start the background loop that rebuilds the lens lists once per local day."""
-    thread = threading.Thread(
-        target=_daily_loop, args=(librarian,), name="navidrome-lens-lists", daemon=True,
     )
     thread.start()
     return thread
