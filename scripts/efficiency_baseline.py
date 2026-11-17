@@ -159,8 +159,11 @@ class Client:
             raise SystemExit("Login did not return a session cookie.")
         self.cookie = f"{SESSION_COOKIE}={match.group(1)}"
 
-    def get(self, path: str) -> tuple[int, float, str | None, bytes]:
-        request = urllib.request.Request(self.base_url + path, headers={"Cookie": self.cookie or ""})
+    def get(self, path: str, accept: str | None = None) -> tuple[int, float, str | None, bytes]:
+        headers = {"Cookie": self.cookie or ""}
+        if accept:
+            headers["Accept"] = accept
+        request = urllib.request.Request(self.base_url + path, headers=headers)
         started = time.perf_counter()
         try:
             with urllib.request.urlopen(request, timeout=TIMEOUT_SECONDS) as response:
