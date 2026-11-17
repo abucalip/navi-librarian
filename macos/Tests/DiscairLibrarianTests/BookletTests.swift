@@ -43,6 +43,16 @@ import Testing
         #expect(index.bookletView?.pages.map(\.imageID) == [1, 2])
     }
 
+    @Test func fromOwnedReachesTheViewAndDefaultsToFalse() throws {
+        let object: [String: Any] = ["status": "ok", "rgid": "rg", "slots": [String: Any](),
+            "booklets": [["release": "a", "edition": "1999 JP CD", "image_ids": [1], "from_owned": false],
+                         ["release": "b", "edition": "2004 DE CD", "image_ids": [2], "from_owned": true],
+                         ["release": "c", "edition": "2010 US CD", "image_ids": [3]]],
+            "images": [1, 2, 3].map { ["image_id": $0, "release": "a", "releases": ["a"], "edition": "", "types": ["Booklet"], "format": "jpg", "approved": true] as [String: Any] }]
+        let index = try JSONDecoder().decode(ArtworkIndex.self, from: JSONSerialization.data(withJSONObject: object))
+        #expect(index.bookletViews.map(\.fromOwned) == [false, true, false])
+    }
+
     @Test func anOlderServerWithoutTheListStillGivesTheOneBooklet() throws {
         let view = try index(pages: [pic(1, "Booklet"), pic(2, "Booklet")])
         #expect(view.bookletViews.count == 1)

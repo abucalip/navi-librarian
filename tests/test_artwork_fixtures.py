@@ -77,6 +77,11 @@ class ArtworkFixtures(unittest.TestCase):
         self.assertEqual(doc["best_front"], 2001)                 # larger approved Front, not the owned 1001
         self.assertEqual(doc["images"][0]["image_id"], 2001)       # served order is the quality order
 
+    def test_every_booklet_entry_says_from_owned(self):
+        for fixture in FIXTURES.glob("artwork_index*.json"):
+            for b in body(fixture.name).get("booklets", []):
+                self.assertIsInstance(b["from_owned"], bool, fixture.name)
+
     def test_booklet_is_one_release_in_caa_order(self):
         booklet = body("artwork_index.json")["booklet"]
         self.assertEqual(booklet["image_ids"], [2002, 2003, 2005])

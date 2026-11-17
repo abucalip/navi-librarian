@@ -14,6 +14,7 @@
       "best_front": 2001,
       "booklet": {
         "edition": "1999 JP CD",
+        "from_owned": false,
         "image_ids": [
           2002,
           2003,
@@ -24,6 +25,7 @@
       "booklets": [
         {
           "edition": "1999 JP CD",
+          "from_owned": false,
           "image_ids": [
             2002,
             2003,

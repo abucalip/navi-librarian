@@ -140,6 +140,17 @@ class SelectionTests(unittest.TestCase):
         self.assertEqual([b["release"] for b in view["booklets"]][0], R2)
         self.assertEqual(len({b["release"] for b in view["booklets"]}), len(view["booklets"]))
 
+    def test_booklets_say_which_one_is_the_owned_release(self):
+        idx, _ = build([rel(R1, "2000"), rel(R2, "1990")],
+                       {R1: ok(img(1, ["Booklet"])), R2: ok(img(2, ["Booklet"]), img(3, ["Booklet"]))}, owned_release=R1)
+        view = slots_view(idx)
+        self.assertEqual([(b["release"], b["from_owned"]) for b in view["booklets"]], [(R2, False), (R1, True)])
+        self.assertFalse(view["booklet"]["from_owned"])
+
+    def test_no_owned_release_means_no_booklet_is_from_owned(self):
+        idx, _ = build([rel(R1, "2000")], {R1: ok(img(1, ["Booklet"]))}, owned_release=None)
+        self.assertEqual([b["from_owned"] for b in slots_view(idx)["booklets"]], [False])
+
     def test_no_booklet_means_empty_booklets(self):
         idx, _ = build([rel(R1, "2000")], {R1: ok(img(1, ["Front"]))}, owned_release=R1)
         view = slots_view(idx)
