@@ -1,3 +1,13 @@
+## 2026-11-17 — Server efficiency K4 + K5: short negative caches for review-outlet failures and Deezer/Apple no-match answers (merged)
+
+- PR [#1170](https://github.com/abucalip/navi-librarian/pull/1170), squash `9cdc3ba3`, head `3c6e1600`, merged 2026-11-17 11:54 UTC (GitHub confirms `MERGED`).
+- What changed: new `app/services/negative_marks.py` (dated `{"negative": true, "at"}` marks under their own keys). K4: `_ask_outlet` in `app/api/metadata.py` marks an outlet that raised (`album-review-source-failed:v1:*`, 1 h), in the pool thread so failures after the 6 s deadline count; a marked outlet raises `OutletResting`, so the list stays partial and unstored. K5: `album_page_sources.py` marks a definitive no-match for 1 h (`album-no-match:v1:{deezer|apple|deezer-year}:*`) from Deezer's album search (details and links share it), Apple's album search and the album year's Deezer fallback; route and worker share the marks. A failed or refused request, or a Deezer error body sent with status 200, writes nothing; an incomplete links set is still never stored. `/api/artwork` unchanged.
+- Tests run: focused pytest, 185 passed over 13 files, plus 103 over the 5 files of the year commit; the changed files also under unittest; `check_lint_changed.py`: 7 files, 0 new findings. Three tests changed to pin the new rules (failed outlet re-asked after its hour; a definite Deezer miss leaves only the mark row, route and worker).
+- Warm pass (owner-approved provider traffic): `main` and the branch side by side on two fresh copies of the aged live store, one shared MusicBrainz gate file, 35 album targets. After a restart: 80 provider requests in 38 s against 231 in 205 s on `main`; review outlets 0 against 81. The pass found the album year's Deezer fallback re-asked on every view; fixed in the PR (`deezer-year` mark), warm-pass album-page "not cached" misses 8 to 0. About 1,100 provider requests in all. Details: `docs/efficiency.md`, "K4/K5 warm pass on the aged store".
+- CI: six checks on `3c6e1600` pending at merge.
+- Not run: the full suite. Not deployed.
+- Limitations: two calls remain, recorded as K6 (a found Deezer page in an incomplete links set is re-asked; Wikipedia "no article" is re-asked after a restart). A details no-match read from a mark late in its hour is kept a fresh hour in that process's memory.
+
 ## 2026-11-17 — Server efficiency K3 part 2: prefetch of album tracklist, description, year, links and artist image (merged, off)
 
 - PR [#1169](https://github.com/abucalip/navi-librarian/pull/1169), squash `36b582dd`, head `102bd6ba`, merged 2026-11-17 11:10 UTC (GitHub confirms `MERGED`).
