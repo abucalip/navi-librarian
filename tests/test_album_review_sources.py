@@ -3,7 +3,6 @@
 No test reaches the network: outlets are replaced, or ``httpx.get`` is patched.
 """
 import os
-import time
 import unittest
 from types import SimpleNamespace
 from unittest import mock
