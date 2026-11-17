@@ -25,7 +25,7 @@ from app.services import runtime_metrics
 from app.services import (
     album_links, album_page_sources, album_reviews, negative_marks, persistent_metadata, stale_refresh,
 )
-from app.services.layered_cache import LayeredCache, Loaded
+from app.services.layered_cache import LayeredCache, Loaded, with_fetched_at
 from app.services.deezer_album_matching import release_year
 from integrations.musicbrainz.album_year import (
     lookup_album_year as _lookup_musicbrainz_album_year,
@@ -513,7 +513,8 @@ def _outlet_review(name: str, artist: str, album: str, ask, allow_stale=False, s
     """The outlet's review (or None) from its own stored answer, else ``ask()``; an exception is not stored.
 
     With `allow_stale` (efficiency K2), a stored answer past its TTL but under 70 days old is returned at
-    once, `name` is added to `stale`, and one background ``ask()`` replaces it; a failed ask leaves it.
+    once, when it was stored is added to `stale`, and one background ``ask()`` replaces it; a failed ask
+    leaves it.
     """
     store_key = f"album-review-source:v1:{name}:{artist.casefold()}:{album.casefold()}"
     if allow_stale and persistent_metadata.can_read_age():
@@ -523,7 +524,7 @@ def _outlet_review(name: str, artist: str, album: str, ask, allow_stale=False, s
                 return stored["review"]
             stale_refresh.REFRESHER.submit(("album-review-source", store_key), lambda: _ask_outlet(store_key, ask))
             if stale is not None:
-                stale.append(name)
+                stale.append(time.time() - age)
             return stored["review"]
         return _ask_outlet(store_key, ask)
     stored = persistent_metadata.read(store_key, _SOURCE_FOUND_TTL)
@@ -537,7 +538,7 @@ def _review_sources(artist: str, album: str, allow_stale=False, stale=None):
     """The source lookups in display order, each a no-argument callable returning a review or None.
 
     The Guardian is left out without a key, so a missing key is never stored as "no review". With
-    `allow_stale`, an outlet's stale answer may be used; the outlet's name is then added to `stale`.
+    `allow_stale`, an outlet's stale answer may be used; when it was checked is then added to `stale`.
     """
     asks = [("Pitchfork", lambda: _pitchfork_review(artist, album))]
     if os.environ.get("GUARDIAN_API_KEY", "").strip():
@@ -552,19 +553,22 @@ def album_reviews_for(artist: str, album: str) -> dict:
 
     ``retryable`` is added when an outlet failed or was too slow and fewer than three were found;
     the browser does not keep such an answer. A stored list past its 7-day TTL is answered at once and
-    refreshed in the background, for up to 70 days (efficiency K2).
+    refreshed in the background, for up to 70 days (efficiency K2); such an answer, or one built from a
+    stale outlet answer, carries ``fetched_at`` (UTC, the oldest answer it used).
     """
     key = (artist.casefold(), album.casefold())
     return _review_cache.get_or_load(
         key, lambda: _load_album_reviews(artist, album, allow_stale=True),
         store_key="album-reviews:v1:" + key[0] + ":" + key[1],
         store_ttl=_REVIEWS_TTL, accept_stored=lambda stored: bool(stored and stored.get("reviews")),
-        stored_ttl=3600, max_stale=_REVIEWS_MAX_STALE, refresh=lambda: _load_album_reviews(artist, album))
+        stored_ttl=3600, max_stale=_REVIEWS_MAX_STALE, refresh=lambda: _load_album_reviews(artist, album),
+        stale_fetched_at=True)
 
 
 def _load_album_reviews(artist: str, album: str, allow_stale=False):
     """The reviews as a `Loaded`. A list built from any stale outlet answer is kept in memory briefly and
-    not stored, so it is never stamped as fresh; the outlets' own refreshes fill the store."""
+    not stored, so it is never stamped as fresh; the outlets' own refreshes fill the store. It states the
+    oldest stale answer's time as ``fetched_at``."""
     stale = []
     futures = [_review_pool.submit(source) for source in _review_sources(artist, album, allow_stale, stale)]
     done, pending = wait(futures, timeout=_REVIEWS_DEADLINE)
@@ -584,6 +588,8 @@ def _load_album_reviews(artist: str, album: str, allow_stale=False):
     if partial:
         value["retryable"] = True
     short = partial or bool(stale)
+    if stale:
+        value = with_fetched_at(value, min(stale))
     return Loaded(value, memory_ttl=_REVIEWS_PARTIAL_TTL if short else 3600,
                   persist=bool(value["reviews"]) and not short)
 
@@ -611,7 +617,8 @@ def album_page_links(artist: str = "", album: str = "", mbid: str = ""):
         key, lambda: _load_album_links(artist, album, mbid, allow_stale=True),
         store_key="album-links:v1:" + "|".join(key),
         store_ttl=persistent_metadata.LINKS_TTL, stored_ttl=_ALBUM_LINKS_TTL,
-        max_stale=_LINKS_MAX_STALE, refresh=lambda: _load_album_links(artist, album, mbid))
+        max_stale=_LINKS_MAX_STALE, refresh=lambda: _load_album_links(artist, album, mbid),
+        stale_fetched_at=True)
 
 
 def _load_album_links(artist: str, album: str, mbid: str, allow_stale=False):
