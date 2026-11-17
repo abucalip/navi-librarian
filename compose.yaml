@@ -30,7 +30,8 @@ services:
   worker:
     # Background worker: the only writer of knowledge facts in the Server V2 store and the only caller of
     # MusicBrainz for it (web routes write only owner records and caches) (automatic API fill, insights refresh,
-    # daily similar-artist precompute). Same image, configuration and data volume.
+    # daily similar-artist precompute, scheduled discovery and lens list refreshes). Same image, configuration and
+    # data volume. While it is down, recommendation lists are not refreshed on schedule.
     image: ghcr.io/abucalip/navi-librarian:latest
     container_name: discair-worker
     restart: unless-stopped

@@ -1,6 +1,6 @@
 # Deployment runbook
 
-Last updated: 2026-10-12
+Last updated: 2026-11-17
 
 ## Target environment
 
@@ -60,6 +60,14 @@ volumes:
 The ListenBrainz user token is optional and is entered in Settings, under ListenBrainz, not in Compose. When saved, ListenBrainz requests also send `Authorization: Token <token>` alongside the app's honest `User-Agent`; when blank, behavior is unchanged. It is stored in the app's settings database (mode 0600, like the other saved credentials), never returned by the API and never sent to MusicBrainz. A `LISTENBRAINZ_TOKEN` environment variable is still read as a fallback but is no longer in the Compose file.
 
 Preserve all existing service definitions and secret values. Do not copy redacted placeholders such as `******` into a live Compose file. Confirm whether the app actually needs write access to each bind mount before granting it; follow the current acquisition safety requirements.
+
+## Background worker
+
+The `worker` service in `compose.yaml` (`python -m app.worker`, same image and `/data` volume as `discair`) runs all scheduled work: the automatic API fill, the insights refresh, the daily similar-artist precompute and, since efficiency W3, the scheduled refreshes of the recommendation lists (Personal, Classics, Artist Deep Dives, New releases, the listening profile and the daily lens lists). The web service starts no scheduler.
+
+- **While the worker is down, recommendation lists do not refresh on schedule.** The app keeps serving the last stored lists; a manual refresh from the app still runs in the web service, and a stale Personal list read still starts its rebuild there. Check the worker with `docker compose ps worker` and `docker compose logs worker` when lists stop changing.
+- Web and worker never refresh the same list at once: both record each list refresh as a job run in the knowledge store (`intelligence.sqlite3`, job `discovery_list_refresh`), and a refresh that finds its list running does nothing.
+- Deploy both services from the same image version. An older web image still starts its own list scheduler, so during a mixed rollout lists can be refreshed twice.
 
 ## Preflight and deploy
 
