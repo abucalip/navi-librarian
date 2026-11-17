@@ -399,12 +399,46 @@ These existing files each gain one `isBento()` branch, as Gallery did:
 
 Add the `Bento*` files to `ARCHITECTURE.md` in B1.
 
+## 11a. Server data the theme needs: build what is missing
+
+**Rule (owner decision, 2026-11-17).** If a theme element needs data or a route the server does not provide, the server part is **built**, not dropped and not faked on the phone. This applies to both Bento and Index.
+
+1. **Audit first (step B0).** Before the first client step, the implementing agent checks every row of the table below against the current server code and the Android decoders, and marks each one *served* or *missing*. Rows marked *check* are the ones this spec could not confirm.
+2. **Build the missing parts on the server.**
+   - Each missing item becomes a server PR **before** the client step that draws it.
+   - Domain logic stays server-side and the app only presents it.
+   - New code goes in a new module in the owning package from `ARCHITECTURE.md` (`discovery/`, `intelligence/`, `integrations/`, `app/api/` for the route), never in `navidrome_server.py` (D-016). The module is tested by direct import, and gets an `ARCHITECTURE.md` row.
+   - The route or field is added to the contract the client reads (`docs/ANDROID_CLIENT_CONTRACT.md`, `docs/SEARCH_CONTRACT.md` or `docs/SERVER_V2_CONTRACT.md`), with a recorded fixture under the existing fixture folders.
+   - Prefer a new **optional field** on an existing response over a new route when the data belongs to that response. Clients ignore unknown keys (Android `ignoreUnknownKeys`, Swift `JSONDecoder`, the web), so nothing else changes.
+   - Provider data uses batch lookups where the provider offers them, with the existing pacing, budgets and owner approvals (provider rule). Safety-critical code (acquisition, import, deletion, paths) keeps its own review rules.
+   - Each server PR carries focused tests for the new code (never the full suite), and CI must pass on its final head.
+3. **The client step that follows** decodes the new field with a fixture test, and draws the element only when the field is present. An older server that lacks the field hides the element and closes up the layout, with no placeholder number. Merge is not deployment: until the owner deploys the server, the element stays hidden on the phone, and the PR says so.
+4. If building a route needs a new provider, more provider traffic than today's budgets, or a change to a parked decision, the agent stops and asks the owner before writing it.
+
+| Element (page) | Data needed | Status | If missing, build |
+|---|---|---|---|
+| Stat tile, five weekly bars (Home) | Listening hours for each of the last five weeks | check (hours this month is served today) | An optional `weeks` list on the existing listening-hours source |
+| Artist tile "5 albums · 31 plays" (Home), artist rows (Library) | Play count per artist | check | An optional `play_count` on Home artists and `/api/library/artists` items, from Navidrome play counts |
+| Library chips "Unplayed" and "Lossless" | Filter albums by never played / lossless format | missing (`/api/library/albums` sorts only: `discovery/search/query.py` `ALBUM_SORTS`) | An optional `filter=unplayed\|lossless` query on `/api/library/albums`, filtering the owned index by Navidrome play count and file suffix / bit depth; paging and counts stay correct |
+| Artist page "5 of 9 albums · 4 to get", Get tags on missing albums | Studio albums owned and not owned per artist | check (the parked `missing_count` contract proposal) | `owned_count`, `album_count` and the missing albums on `/api/artists/{key}`, from the MusicBrainz studio-album list the page already reads (batch browse per artist) |
+| Album Paths, Neighbours by ear closeness meter | A closeness value per neighbour | served (`matchCount` on `/api/sonic/album-neighbours`) | Map `match_count` to the five segments; no server work |
+| Artist Paths step: "With 1968 – 1971", "Albums together" with library states | Years the two worked together; the shared albums | check (`begin_year` is served on path stops) | Optional `years` and `shared_albums` (title, year, owned) on each `/api/knowledge/paths` stop |
+| Album Paths reason tiles: kind, who, sentence | The reason kind and its subject | served (reasons with credits) | none |
+| Discover teaser "3 new albums picked for today" (Home) | New items in a lens list since the last visit | check | An optional `new_count` (since the client's `since` time) on `/api/discovery/{list_name}` |
+| Radio tile "On air now" (Home), stations "Last heard" | Current play per station; newest play per station | served (`/api/radio/now`, `/api/radio/plays`) | none |
+| Server page "answered in 84 ms", version | Response time and version per service | check (`/api/health`) | Optional `version` and `latency_ms` per service on `/api/health` |
+| Cover picker editions "2020 JP CD" | Edition labels for cover choices | served (`/api/artwork/choices`) | none |
+| Sonic path steps | Ordered steps between two songs | served (`/api/sonic/path`) | none |
+
+The table lists every element in the mockups whose data is not plainly on today's screens. When an audit finds another gap, add a row and follow the same rule.
+
 ## 12. Build steps
 
-Each step is one PR with focused tests (JDK 17; never the full suite), in this order.
+Each step is one PR with focused tests (JDK 17 for Android; never the full suite), in this order. B0 may be several server PRs; a server item can also be built just before the client step that needs it, as long as it merges first.
 
 | Step | Objective | Acceptance |
 |---|---|---|
+| **B0** Server data audit and missing routes | Section 11a: check every row against the code; build each missing route or field as its own server PR (new module, contract entry, fixture, focused tests, `ARCHITECTURE.md`) | The audit table filled in B0's PR; every *missing* row either merged on the server or explicitly dropped by the owner; CI green on each server PR's final head |
 | **B1** Palettes, fonts, shell | `Layout.Bento`; the three palettes; `BentoTones`; font files and `FontPairs.Bento`; `BentoIcons`; `BentoKit` components; dock with the pill bar (#6), header, sheet, snackbar (#9); press (#5); `familyFor` | `pages/components` matched; Bento choosable in Appearance (Day: Sorbet, Riviera; Night: Licorice); `PaletteTest` and `ExistingLayoutsTest` pass; `BentoTest` pins the palettes and tones to `tokens.json`; `BentoMotionTest` |
 | **B2** Home | Section 9; tile entry (#1), tile to page (#2, #3, #4), Get morph (#10), cover stack (#11), stat count (#12) | `pages/home` matched in all four frames; `BentoHomeRulesTest` (greeting by hour, tile order, empty tiles dropped, tone rotation never repeats a neighbour) |
 | **B3** Album, Artist, Genre, Paths | Album owned and missing, Artist, Genre; Paths sheet steps and opened steps for album and artist | `pages/album-artist-genre`, `pages/paths` matched |

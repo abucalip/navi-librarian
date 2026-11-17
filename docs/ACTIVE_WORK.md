@@ -267,7 +267,8 @@ Done: Genres grid and four album shelves on the dashboard, the Recommended slide
 - Packages: `docs/design/bento/`, `docs/design/index/` and the shared `docs/design/_kit/`. They hold tokens, palette CSS, component CSS, icons with a Kotlin object, fonts (Bento only), mockups of every page (Paths included) as HTML and PNG, a live motion page, the build scripts and the contrast checkers.
 - **Next:**
   1. The owner reviews and approves the specs, and answers decisions B1–B7 and I1–I6.
-  2. Then B1 or I1 starts. The two are independent, but their first steps should not run at the same time, because both branch `Palette.kt`, `Theme.kt` and `Motion.kt`.
+  2. Then B0 or I0 runs: an audit of the server data each theme needs (section 11a of each spec). By owner rule, every missing route or field is built on the server, in its own PR, before the client step that draws it.
+  3. Then B1 or I1 starts. The two are independent, but their first steps should not run at the same time, because both branch `Palette.kt`, `Theme.kt` and `Motion.kt`.
 - Colours changed from the proposal for contrast are listed in section 4.2 of each spec.
 
 ## 2p. Server efficiency — K2 merged (parts 1 and 2); K3 parts 1 and 2 merged (off); K4, K5 and K6 merged

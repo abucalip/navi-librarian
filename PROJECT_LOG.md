@@ -18,6 +18,9 @@
   - Newsprint Red `#C8231B` → `#B81F18`;
   - Field Green `#0B7A4B` → `#086F43`;
   - a separate `stripProgress` tone for Index's player strip.
+- **Owner rule added (2026-11-17):** if a theme element needs a route or field the server lacks, it is built server-side, not dropped. Section 11a of each spec holds the audit table (served, check or missing) and step B0/I0. Known missing:
+  - album filters (Unplayed, Lossless);
+  - Index's library position.
 - **Checks run:**
   - `check_contrast.py` for both themes: all seven palettes pass.
   - Both `build.py` scripts ran and rendered every PNG with Chrome.

@@ -354,12 +354,47 @@ These existing files each gain one `isIndex()` branch, the same list as Bento (`
 
 Add the `Index*` files to `ARCHITECTURE.md` in I1.
 
+## 11a. Server data the theme needs: build what is missing
+
+**Rule (owner decision, 2026-11-17).** If a theme element needs data or a route the server does not provide, the server part is **built**, not dropped and not faked on the phone. This applies to both Bento and Index.
+
+1. **Audit first (step I0).** Before the first client step, the implementing agent checks every row of the table below against the current server code and the Android decoders, and marks each one *served* or *missing*. Rows marked *check* are the ones this spec could not confirm.
+2. **Build the missing parts on the server.**
+   - Each missing item becomes a server PR **before** the client step that draws it.
+   - Domain logic stays server-side and the app only presents it.
+   - New code goes in a new module in the owning package from `ARCHITECTURE.md` (`discovery/`, `intelligence/`, `integrations/`, `app/api/` for the route), never in `navidrome_server.py` (D-016). The module is tested by direct import, and gets an `ARCHITECTURE.md` row.
+   - The route or field is added to the contract the client reads (`docs/ANDROID_CLIENT_CONTRACT.md`, `docs/SEARCH_CONTRACT.md` or `docs/SERVER_V2_CONTRACT.md`), with a recorded fixture under the existing fixture folders.
+   - Prefer a new **optional field** on an existing response over a new route when the data belongs to that response. Clients ignore unknown keys (Android `ignoreUnknownKeys`, Swift `JSONDecoder`, the web), so nothing else changes.
+   - Provider data uses batch lookups where the provider offers them, with the existing pacing, budgets and owner approvals (provider rule). Safety-critical code (acquisition, import, deletion, paths) keeps its own review rules.
+   - Each server PR carries focused tests for the new code (never the full suite), and CI must pass on its final head.
+3. **The client step that follows** decodes the new field with a fixture test, and draws the element only when the field is present. An older server that lacks the field hides the element and closes up the layout, with no placeholder number. Merge is not deployment: until the owner deploys the server, the element stays hidden on the phone, and the PR says so.
+4. If building a route needs a new provider, more provider traffic than today's budgets, or a change to a parked decision, the agent stops and asks the owner before writing it.
+
+| Element (page) | Data needed | Status | If missing, build |
+|---|---|---|---|
+| Lead pick data list (Artist, Year, Genre, Owned) (Home) | Genre and owned state per pick | check (picks carry artist and year) | Optional `genre` and `owned` on `/api/dashboard-picks` items |
+| Played rows "14 plays" (Home), artist rows "212 plays" (Library) | Play count per album this week; per artist overall | check | Optional `play_count` (with a `window`) on recently played albums and on `/api/library/artists` items |
+| Artist data list: Owned "5 of 9", Plays, Active "1967 – 2007" | Owned and total studio albums, plays, active years | check (the parked `missing_count` proposal; life span is in the knowledge store) | `owned_count`, `album_count`, `play_count` and `active_years` on `/api/artists/{key}`, the years from the stored MusicBrainz artist life span |
+| Album head "0418 / 1284" | The album's position in the library by name | missing | An optional `library_position` and `library_total` on `/api/albums/{artist_key}/{album_key}`, from the owned index; or the owner drops the number (decision I7) |
+| Album "05 / 10 PLAYING" | Track number and count | served (album tracks) | none; client only |
+| Genres with counts (Home) | Albums per genre | check (`/api/dashboard/genres`) | An optional `album_count` per genre |
+| Library tabs with counts "Artists 312 · Albums 1284 · Genres 48" | Totals | check (library pages return totals) | `total` on the first page of each library list; a genre total on `/api/dashboard/genres` |
+| Downloads tabs "Active 3 · Done 14 · Failed 1" | Counts per state | served (`/api/acquisitions` lists every record) | none; client counts |
+| Lyrics time stamps | Synced lyrics | check (the existing lyrics source) | When the source has synced lyrics, pass the times through; when not, the stamps are hidden and plain lyrics show |
+| Artist Paths step data list "With 1968 – 1971", "Owned 2 of 4", Albums together | Years together, shared albums with states | check (`begin_year` is served) | Optional `years` and `shared_albums` on each `/api/knowledge/paths` stop (same as Bento) |
+| Neighbours by ear segment meter | Closeness per neighbour | served (`matchCount`) | none |
+| Server page "v0.3.9 · 84 ms" | Version and latency per service | check (`/api/health`) | Optional `version` and `latency_ms` per service (same as Bento) |
+| Library "Unplayed", "Lossless" (if the owner wants Index to have them too) | Album filters | missing | Same `filter` query as Bento; shared work, built once |
+
+The table lists every element in the mockups whose data is not plainly on today's screens. When an audit finds another gap, add a row and follow the same rule.
+
 ## 12. Build steps
 
-Each step is one PR with focused tests (JDK 17; never the full suite), in this order.
+Each step is one PR with focused tests (JDK 17 for Android; never the full suite), in this order. I0 may be several server PRs; a server item can also be built just before the client step that needs it, as long as it merges first.
 
 | Step | Objective | Acceptance |
 |---|---|---|
+| **I0** Server data audit and missing routes | Section 11a: check every row against the code; build each missing route or field as its own server PR (new module, contract entry, fixture, focused tests, `ARCHITECTURE.md`) | The audit table filled in I0's PR; every *missing* row either merged on the server or explicitly dropped by the owner; CI green on each server PR's final head |
 | **I1** Palettes, pair, shell | `Layout.Index`; four palettes; `IndexTones`; `FontPairs.Index`; `IndexIcons`; `IndexKit`; strip and bar; top bars; sheet; snackbar; motion #1–#4, #9, #10 | `pages/components` matched; Index choosable in Appearance; `PaletteTest`, `ExistingLayoutsTest`, `IndexTest` (palettes and tones pinned to `tokens.json`) and `IndexMotionTest` pass |
 | **I2** Home | Section 9; motion #5–#7, #11 | `pages/home` matched; `IndexHomeRulesTest` |
 | **I3** Album, Artist, Genre, Paths | | `pages/album-artist-genre`, `pages/paths` matched |
@@ -379,6 +414,7 @@ Bento and Index are independent. Either can be built first, or both in parallel 
 | I4 | Sheet timing | Keep Material's `ModalBottomSheet` timing (as Gallery G7), unless the owner wants a custom sheet |
 | I5 | "Follow the phone" defaults | Signal Blue (light) and Graphite Orange (dark) |
 | I6 | The colour changes in 4.2 made for contrast | Accept them; the owner can compare in `pages/palettes` |
+| I7 | The album's library position "0418 / 1284" needs a new field (11a) | Build it as an optional field; or drop the number and keep "ALBUM" |
 
 ## 14. Verification for each step
 
