@@ -1,11 +1,9 @@
-import hashlib
 import json
 import os
 import random
 import shutil
 import sqlite3
 import time
-import unicodedata
 from discovery.pick_because import build_pick_context_lookup
 from discovery import store as discovery_store
 from integrations.slskd import transfers as _slskd_transfers_module
@@ -54,7 +52,6 @@ from acquisition.completion import (
     safe_folder_name as _acquisition_safe_folder_name,
 )
 from pathlib import Path
-from urllib.parse import urlparse
 from settings.data_directory import resolve_data_dir
 
 import httpx
