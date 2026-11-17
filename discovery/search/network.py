@@ -198,11 +198,14 @@ def artist_network(
     limiter: SourceLimiter | None = None,
     clock: Callable[[], float] = time.monotonic,
     deadline_seconds: float = PAGE_DEADLINE_SECONDS,
+    refresh_submit: Callable[[str, Callable[[], None]], bool] | None = None,
 ) -> ArtistNetwork:
     """Build the network side of one artist page: MusicBrainz identity and albums, ListenBrainz popularity, bio.
 
     ``popularity`` and ``bio`` are injected by the route adapter, which owns the app-level
-    cache and bio service; the discovery layer does not import them.
+    cache and bio service; the discovery layer does not import them. ``refresh_submit`` (the
+    page routes' background refresher, efficiency K2) lets expired provider rows be served while
+    they refresh; without it they expire as before.
     """
     get = http_get or httpx.get
     rate_limiter = limiter or LIMITER
@@ -236,6 +239,7 @@ def artist_network(
         sources=sources,
         clock=clock,
         deadline_seconds=deadline_seconds,
+        refresh_submit=refresh_submit,
     )
 
 

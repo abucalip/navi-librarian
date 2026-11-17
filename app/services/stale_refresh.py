@@ -11,7 +11,8 @@ the request path.
 - A refresh that raises is swallowed: the stale value stays and nothing is written.
 
 The pool is separate from the review-outlet pool, so a backlog of refreshes cannot delay a
-foreground lookup.
+foreground lookup. `REFRESHER` serves the metadata routes (part 1); `DISCOVERY_REFRESHER` serves
+the artist and album pages' provider rows (part 2), so neither can fill the other's queue.
 """
 import threading
 from concurrent.futures import ThreadPoolExecutor
@@ -79,3 +80,6 @@ class BackgroundRefresher:
 
 
 REFRESHER = BackgroundRefresher()
+# The artist and album pages' provider rows (discovery search cache, K2 part 2) refresh on their
+# own pool, so a page of stale rows cannot crowd out the metadata routes' refreshes above.
+DISCOVERY_REFRESHER = BackgroundRefresher()

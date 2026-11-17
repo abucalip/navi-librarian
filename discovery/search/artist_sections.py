@@ -20,7 +20,7 @@ from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
 from dataclasses import dataclass, field
 from typing import Any
 
-from discovery.search.cache import SIMILAR_TTL_SECONDS, provider_cache_key, read_cached, write_cached
+from discovery.search.cache import SIMILAR_TTL_SECONDS, provider_cache_key, read_cached, read_or_revalidate, write_cached
 from discovery.search.index import OwnedData
 from discovery.search.merge import OwnedKeys, same_entity
 from discovery.search.normalize import album_match_key, normalize_key
@@ -73,17 +73,24 @@ class ArtistNetwork:
     sources: Mapping[str, dict[str, Any]] = field(default_factory=dict)
     clock: Callable[[], float] = time.monotonic
     deadline_seconds: float = SEARCH_DEADLINE_SECONDS
+    # Efficiency K2: ``submit(key, refresh)`` runs one background refresh. When set, a provider row
+    # past its TTL (under ten times it) is served at once and refreshed; None keeps today's expiry.
+    refresh_submit: Callable[[str, Callable[[], None]], bool] | None = None
 
 
 def _cached_records(network: ArtistNetwork, key: str, fetch, remaining, cancelled):
     """Return cached records for ``key`` or fetch and cache them. Late answers are not cached."""
-    hit = read_cached(network.cache_read, key, time.time())
+
+    def fetch_and_store(remaining, cancelled):
+        records = fetch(remaining=remaining, cancelled=cancelled)
+        if remaining() > 0 and not cancelled.is_set():
+            write_cached(network.cache_write, key, records, time.time())
+        return records
+
+    hit = read_or_revalidate(network.cache_read, key, submit=network.refresh_submit, refetch=fetch_and_store)
     if hit is not None:
         return hit
-    records = fetch(remaining=remaining, cancelled=cancelled)
-    if remaining() > 0 and not cancelled.is_set():
-        write_cached(network.cache_write, key, records, time.time())
-    return records
+    return fetch_and_store(remaining, cancelled)
 
 
 def resolve_identity(
@@ -312,44 +319,61 @@ def _shape_items(
     return items
 
 
-def _tags_for(network: ArtistNetwork, mbid: str, *, remaining, cancelled) -> tuple[set[str] | None, bool]:
-    """MusicBrainz tags for one MBID, as ``(tags, hit_deadline)``.
+def _tag_records(network: ArtistNetwork, key: str, fetch, *, remaining, cancelled, seed: bool):
+    """``(tags, hit_deadline)`` for one tag-like lookup (MusicBrainz tags, Discogs styles).
 
     ``tags`` is None when the lookup failed; a failure contributes no tags and is not cached.
     ``hit_deadline`` is True when the call was rate-limited, so the section is incomplete.
+    Only the seed artist's rows are served stale (K2); a candidate's expired row is a miss, as
+    before, so a page of stale candidates cannot queue more lookups than it used to make.
     """
-    key = provider_cache_key("musicbrainz", 0, f"artist-tags:{mbid}", "tags")
-    hit = read_cached(network.cache_read, key, time.time(), positive_ttl=TAG_TTL_SECONDS)
+
+    def fetch_and_store(remaining, cancelled):
+        records = fetch(remaining=remaining, cancelled=cancelled)
+        if remaining() > 0 and not cancelled.is_set():
+            write_cached(network.cache_write, key, records, time.time())
+        return records
+
+    if seed:
+        hit = read_or_revalidate(
+            network.cache_read, key, submit=network.refresh_submit, refetch=fetch_and_store,
+            positive_ttl=TAG_TTL_SECONDS,
+        )
+    else:
+        hit = read_cached(network.cache_read, key, time.time(), positive_ttl=TAG_TTL_SECONDS)
     if hit is not None:
         return {record["name"] for record in hit}, False
     try:
-        records = network.musicbrainz.artist_tags(mbid, remaining=remaining, cancelled=cancelled)
+        records = fetch_and_store(remaining, cancelled)
     except ProviderError as exc:
         return None, exc.state == "rate_limited"
     except Exception:
         return None, False
-    if remaining() > 0 and not cancelled.is_set():
-        write_cached(network.cache_write, key, records, time.time())
     return {record["name"] for record in records}, False
 
 
-def _styles_for(network: ArtistNetwork, name: str, *, remaining, cancelled) -> tuple[set[str] | None, bool]:
-    """Discogs styles of one artist, as ``(styles, hit_deadline)``; same failure rules as ``_tags_for``."""
+def _tags_for(
+    network: ArtistNetwork, mbid: str, *, remaining, cancelled, seed: bool = False,
+) -> tuple[set[str] | None, bool]:
+    """MusicBrainz tags for one MBID, as ``(tags, hit_deadline)`` (see ``_tag_records``)."""
+    key = provider_cache_key("musicbrainz", 0, f"artist-tags:{mbid}", "tags")
+    return _tag_records(
+        network, key, lambda **budget: network.musicbrainz.artist_tags(mbid, **budget),
+        remaining=remaining, cancelled=cancelled, seed=seed,
+    )
+
+
+def _styles_for(
+    network: ArtistNetwork, name: str, *, remaining, cancelled, seed: bool = False,
+) -> tuple[set[str] | None, bool]:
+    """Discogs styles of one artist, as ``(styles, hit_deadline)``; same rules as ``_tags_for``."""
     if network.discogs is None:
         return set(), False
     key = provider_cache_key("discogs", network.discogs_generation, f"artist-styles:{normalize_key(name)}", "styles")
-    hit = read_cached(network.cache_read, key, time.time(), positive_ttl=TAG_TTL_SECONDS)
-    if hit is not None:
-        return {record["name"] for record in hit}, False
-    try:
-        records = network.discogs.artist_styles(name, remaining=remaining, cancelled=cancelled)
-    except ProviderError as exc:
-        return None, exc.state == "rate_limited"
-    except Exception:
-        return None, False
-    if remaining() > 0 and not cancelled.is_set():
-        write_cached(network.cache_write, key, records, time.time())
-    return {record["name"] for record in records}, False
+    return _tag_records(
+        network, key, lambda **budget: network.discogs.artist_styles(name, **budget),
+        remaining=remaining, cancelled=cancelled, seed=seed,
+    )
 
 
 def similar_items(
@@ -414,9 +438,9 @@ def similar_items(
     candidate_styles: dict[str, set[str]] = {}
     tags_hit_deadline = False
     if mbid:
-        seed_tags, tags_hit_deadline = _tags_for(network, mbid, remaining=remaining, cancelled=cancelled)
+        seed_tags, tags_hit_deadline = _tags_for(network, mbid, remaining=remaining, cancelled=cancelled, seed=True)
         seed_tags = seed_tags or set()
-    seed_styles, hit = _styles_for(network, name, remaining=remaining, cancelled=cancelled)
+    seed_styles, hit = _styles_for(network, name, remaining=remaining, cancelled=cancelled, seed=True)
     tags_hit_deadline = tags_hit_deadline or hit
     seed_styles = seed_styles or set()
     seed_tags = seed_tags | seed_styles
@@ -485,10 +509,10 @@ def tag_items(
     names: list[str] = [library_genre.casefold()] if library_genre else []
     incomplete = False
     if mbid:
-        tags, hit = _tags_for(network, mbid, remaining=remaining, cancelled=cancelled)
+        tags, hit = _tags_for(network, mbid, remaining=remaining, cancelled=cancelled, seed=True)
         incomplete = incomplete or hit
         names += sorted(tags or ())
-    styles, hit = _styles_for(network, name, remaining=remaining, cancelled=cancelled)
+    styles, hit = _styles_for(network, name, remaining=remaining, cancelled=cancelled, seed=True)
     incomplete = incomplete or hit
     names += sorted(styles or ())
     unique = list(dict.fromkeys(names))[:TAG_DISPLAY_LIMIT]
