@@ -1,6 +1,6 @@
 # macOS Paths and Booklet sheets: design system and build plan
 
-Status: **design proposed; P0 (model) merged in PR #1184, P1 (Paths layout) in PR #1185 and P2 (Paths details) in PR #1186; B1 (Booklet base) in PR #1187.** Written 2026-11-17. In an earlier session the owner was shown one mockup of the Paths sheet and one of the Booklet sheet ([artifact](https://claude.ai/artifact/4SiJAn6umw5gJ4aqdp8msa)). The owner asked for a design system with exact specs and a detailed build plan, delivered as a docs PR. The owner decisions in section 8 come before P1 and B2.
+Status: **design proposed; P0 (model) merged in PR #1184, P1 (Paths layout) in PR #1185 and P2 (Paths details) in PR #1186; B1 (Booklet base) in PR #1187; B2 (Booklet layout) in PR #1188.** Written 2026-11-17. In an earlier session the owner was shown one mockup of the Paths sheet and one of the Booklet sheet ([artifact](https://claude.ai/artifact/4SiJAn6umw5gJ4aqdp8msa)). The owner asked for a design system with exact specs and a detailed build plan, delivered as a docs PR. The owner decisions in section 8 come before P1 and B2.
 
 The mockups are the spec:
 

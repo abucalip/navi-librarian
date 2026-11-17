@@ -1,3 +1,10 @@
+## 2026-11-17 — macOS Booklet layout B2 (PR #1188)
+
+- **Merged:** PR #1188, squash `e13bd1d64e89207e5f60a1782d1f25b08e39f866`. Slice B2 of `docs/MACOS_PATHS_BOOKLET.md` with owner decision D1 (a): the Booklet stays a sheet, closed by Done or Escape. New bar (album title, "Booklet · edition · position", Page/Spread switch, Done), editions and extras sidebar (left out for one booklet with no extras), spread stage (pages fitted to the stage height, gutter shade, spread shadow, turn arrows, 0.15 s cross-fade, zoom per spread), three-line caption; "Another booklet" and its notice removed. `title:` added to `BookletSheet` and `BookletOpener`, passed by `CupertinoAlbum`, `AlbumBookletTab`, `PlayerBarCover` and `NowPlayingBookletBadge` (a fourth opener the plan did not list). Pure helpers `barDetail`, `showsSidebar`, `aspect`, `fit`, `index(of:)` in `BookletLayout`; views in new `Chrome/BookletParts.swift`.
+- **Spec choices:** the bar title starts above the main column, as in the mockup; below 900 wide the sidebar is still drawn (the pop-up is B3). D4 unanswered: no language tag (recommended b).
+- **Tests run:** `swift test --filter BookletLayoutTests` (23 passed, 5 new), `swift test --filter BookletTests` (11 passed); `swift build` clean. Not run: the full suite, other targets. A throwaway offscreen render matched the mockup's bar, sidebar and caption; page images were empty (no artwork store), so the spread was not seen.
+- **Limitations:** no real-window check; the B2 CPU measurement (`top -l 4 -s 4`, five cases) was not taken; both belong to the owner check after B3. Filmstrip, zoom buttons, PDF zoom, narrow layout and loading/failed texts are B3. Not published or deployed.
+
 ## 2026-11-17 — macOS Booklet B1 base (PR #1187)
 
 - **Merged:** PR #1187, squash `a16dc62054ffc5c887186a025344b34137c62305`. Slice B1 of `docs/MACOS_PATHS_BOOKLET.md`: `CUPalette.stageAccent`, the `CU.Booklet` part of `CUPathsBooklet.swift`, `Model/BookletLayout.swift`. The generated geometry constant `bar` clashed with the `bar` colour, so it is `barHeight` in `build.py` and the package copy. `AppearanceTests` hue test also lets `stageAccent` change.

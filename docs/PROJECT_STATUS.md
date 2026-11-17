@@ -9,6 +9,9 @@ Last checked: 2026-11-17. GitHub `main` is authoritative; this update is based o
 - **CI suite runs in about 1 minute (2026-11-17, PR #1182):** CI now runs the unit suite with pytest. `tests/conftest.py`, which gives each test a no-wait private provider gate, now applies, so MusicBrainz calls no longer sleep 1.1 s each on the shared gate. The test step went from 40 min to 69 s and the job takes about 2 min. Job timeout is 15 min.
   - **Next action:** none. Run focused modules that touch MusicBrainz with pytest, not `unittest`.
 
+- **macOS Booklet B2 merged (2026-11-17, PR #1188, squash `e13bd1d6`):** the Booklet sheet has the new bar, editions and extras sidebar, spread stage with Page/Spread, caption and Done (D1 a); "Another booklet" removed. No CPU measurement or real-window check yet.
+  - **Next action:** B3 (filmstrip, zoom buttons and shortcuts, PDF zoom, narrow layout, loading and failed states, `BookletRenderTests`); owner check of the Paths sheet is still open.
+
 - **macOS Booklet B1 merged (2026-11-17, PR #1187, squash `a16dc620`):** `CUPalette.stageAccent`, `CU.Booklet` constants, pure `BookletLayout` rules and tests; no visible change.
   - **Next action:** owner answers D1, D3, D4, then B2 (Booklet layout); owner check of the Paths sheet is still open.
 
