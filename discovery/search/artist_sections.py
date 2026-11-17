@@ -20,7 +20,10 @@ from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
 from dataclasses import dataclass, field
 from typing import Any
 
-from discovery.search.cache import SIMILAR_TTL_SECONDS, provider_cache_key, read_cached, read_or_revalidate, write_cached
+from discovery.search.cache import (
+    SIMILAR_TTL_SECONDS, provider_cache_key, read_cached, read_or_revalidate, run_noting_stale, with_fetched_at,
+    write_cached,
+)
 from discovery.search.index import OwnedData
 from discovery.search.merge import OwnedKeys, same_entity
 from discovery.search.normalize import album_match_key, normalize_key
@@ -78,8 +81,11 @@ class ArtistNetwork:
     refresh_submit: Callable[[str, Callable[[], None]], bool] | None = None
 
 
-def _cached_records(network: ArtistNetwork, key: str, fetch, remaining, cancelled):
-    """Return cached records for ``key`` or fetch and cache them. Late answers are not cached."""
+def _cached_records(network: ArtistNetwork, key: str, fetch, remaining, cancelled, *, note_stale: bool = True):
+    """Return cached records for ``key`` or fetch and cache them. Late answers are not cached.
+
+    ``note_stale=False`` keeps a stale row out of the section's ``fetched_at`` (see ``read_or_revalidate``).
+    """
 
     def fetch_and_store(remaining, cancelled):
         records = fetch(remaining=remaining, cancelled=cancelled)
@@ -87,7 +93,9 @@ def _cached_records(network: ArtistNetwork, key: str, fetch, remaining, cancelle
             write_cached(network.cache_write, key, records, time.time())
         return records
 
-    hit = read_or_revalidate(network.cache_read, key, submit=network.refresh_submit, refetch=fetch_and_store)
+    hit = read_or_revalidate(
+        network.cache_read, key, submit=network.refresh_submit, refetch=fetch_and_store, note_stale=note_stale,
+    )
     if hit is not None:
         return hit
     return fetch_and_store(remaining, cancelled)
@@ -105,7 +113,8 @@ def resolve_identity(
     """The artist's MBID: the stored identity when known, else Navidrome's tag, else the first
     exact-name MusicBrainz match.
 
-    The name lookup shares the search cache entry for the same name.
+    The name lookup shares the search cache entry for the same name. A stale name row does not set a
+    section's ``fetched_at``: the MBID is not shown, and the job that looks it up first varies.
     """
     if known_mbid:
         return known_mbid
@@ -124,6 +133,7 @@ def resolve_identity(
         lambda remaining, cancelled: network.musicbrainz.artists(name, remaining=remaining, cancelled=cancelled),
         remaining,
         cancelled,
+        note_stale=False,
     )
     for record in records:
         if record["key"] == key and record["mbid"]:
@@ -609,7 +619,8 @@ def iter_network_sections(
     }
     pool = ThreadPoolExecutor(max_workers=len(jobs))
     try:
-        pending = {pool.submit(job): section for section, (_, job) in jobs.items()}
+        # Each job notes the stale rows it serves; its sections then state the oldest as ``fetched_at`` (K2).
+        pending = {pool.submit(run_noting_stale, job): section for section, (_, job) in jobs.items()}
         while pending:
             done, _ = wait(set(pending), timeout=max(0.0, remaining()), return_when=FIRST_COMPLETED)
             if not done:
@@ -620,16 +631,16 @@ def iter_network_sections(
             for future in done:
                 section = pending.pop(future)
                 try:
-                    result = future.result()
+                    result, oldest = future.result()
                 except Exception:
                     yield from _failed_sections(section, "source_failed", jobs, progress)
                     continue
                 if section == "catalog":
                     catalog = result["albums"]
-                    yield _available("albums", "items", catalog[:CATALOG_LIMIT])
-                    yield _available("missing_albums", "items", unowned_only(catalog))
+                    yield with_fetched_at(_available("albums", "items", catalog[:CATALOG_LIMIT]), oldest)
+                    yield with_fetched_at(_available("missing_albums", "items", unowned_only(catalog)), oldest)
                 else:
-                    yield result
+                    yield with_fetched_at(result, oldest)
     finally:
         cancelled.set()
         pool.shutdown(wait=False, cancel_futures=True)

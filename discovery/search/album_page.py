@@ -27,7 +27,9 @@ from discovery.search.artist_sections import (
     similar_items,
     tag_items,
 )
-from discovery.search.cache import SIMILAR_TTL_SECONDS, provider_cache_key, read_or_revalidate
+from discovery.search.cache import (
+    SIMILAR_TTL_SECONDS, provider_cache_key, read_or_revalidate, run_noting_stale, with_fetched_at,
+)
 from discovery.search.disc_layout import disc_of, is_multi_disc, place_unmatched
 from discovery.search.index import OwnedData
 from discovery.search.merge import OwnedKeys
@@ -342,21 +344,26 @@ def album_sections(
 
     # The year is in the section at once when the library or the caller knows it; otherwise it is looked up.
     pool = ThreadPoolExecutor(max_workers=6)
+
+    def submit(job):
+        # Each job notes the stale rows it serves; its section then states the oldest as ``fetched_at`` (K2).
+        return pool.submit(run_noting_stale, job)
+
     try:
         pending = {
-            pool.submit(tracks_job): "tracks",
-            pool.submit(similar_job): "similar_artists",
-            pool.submit(description_job): "description",
+            submit(tracks_job): "tracks",
+            submit(similar_job): "similar_artists",
+            submit(description_job): "description",
         }
         library_genre = (album or {}).get("genre") or (owned_artist or {}).get("genre")
         if library_genre:
             yield _available("genre", "genre", library_genre.casefold())
         else:
-            pending[pool.submit(genre_job)] = "genre"
+            pending[submit(genre_job)] = "genre"
         if known_year is not None:
             yield _available("year", "year", known_year)
         else:
-            pending[pool.submit(year_job)] = "year"
+            pending[submit(year_job)] = "year"
         while pending:
             done, _ = wait(set(pending), timeout=max(0.0, remaining()), return_when=FIRST_COMPLETED)
             if not done:
@@ -371,7 +378,8 @@ def album_sections(
             for future in done:
                 section = pending.pop(future)
                 try:
-                    result = future.result()
+                    result, oldest = future.result()
+                    result = with_fetched_at(result, oldest)
                 except TimeoutError:
                     result = _incomplete(section, "deadline", _payload_key(section))
                 except Exception:
@@ -385,7 +393,7 @@ def album_sections(
                                "reason": "source_disabled", "items": []}
                     else:
                         items = result.get("items") or []
-                        pending[pool.submit(lambda items=items: {
+                        pending[submit(lambda items=items: {
                             "section": "similar_albums", "available": True, "complete": result["complete"],
                             "reason": None if result["complete"] else result["reason"],
                             "items": similar_albums(network, items, owned, remaining=remaining, cancelled=cancelled),
