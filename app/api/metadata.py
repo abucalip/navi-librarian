@@ -27,6 +27,7 @@ from app.services.deezer_album_details import shape_album_match
 from app.services import runtime_metrics
 from app.services import album_links, album_reviews, album_wikipedia, persistent_metadata
 from app.services.apple_description import parse_editorial_notes
+from app.services.layered_cache import LayeredCache, Loaded
 from app.services.deezer_album_matching import exact_album_matches, exact_album_release_year, release_year
 from integrations.musicbrainz.album_year import (
     lookup_album_year as _lookup_musicbrainz_album_year,
@@ -54,7 +55,7 @@ _EXTERNAL_HTTP = runtime_metrics.MeteredClient(
 # that exact Wikidata item. This prevents name collisions (e.g. Rainbow the band
 # versus the optical phenomenon) from producing unrelated summaries.
 _ARTIST_BIO_CACHE_TTL = 24 * 60 * 60
-_artist_bio_cache = {}
+_artist_bio_cache = LayeredCache("artist-bio")
 
 def _navidrome_artist_bio(librarian, name):
     """The library's own biography for an artist, or "" when Navidrome has none.
@@ -82,11 +83,11 @@ def artist_bio_route(artist: str, librarian=Depends(get_librarian)):
     name = str(artist or "").strip()
     if name and len(name) <= 180:
         key = name.casefold()
-        cached = _artist_bio_cache.get(key)
-        if not (cached and monotonic() - cached["time"] < _ARTIST_BIO_CACHE_TTL):
+        if key not in _artist_bio_cache:
             bio = _navidrome_artist_bio(librarian, name)
             if bio:
-                _artist_bio_cache[key] = {"time": monotonic(), "bio": bio}
+                # Memory only: the library's own bio is not written to the persistent store.
+                _artist_bio_cache.put(key, bio, _ARTIST_BIO_CACHE_TTL)
     return artist_bio(artist)
 
 
@@ -95,16 +96,13 @@ def artist_bio(artist: str):
     if not name or len(name) > 180:
         raise HTTPException(status_code=400, detail="A valid artist name is required.")
     key = name.casefold()
-    now = monotonic()
-    cached = _artist_bio_cache.get(key)
-    if cached and now - cached["time"] < _ARTIST_BIO_CACHE_TTL:
-        return {"artist": name, "bio": cached["bio"]}
-    stored = persistent_metadata.read("artist-bio:v1:" + key)
-    if stored:
-        _artist_bio_cache[key] = {"time": monotonic(), "bio": stored}
-        return {"artist": name, "bio": stored}
+    bio = _artist_bio_cache.get_or_load(
+        key, lambda: _load_artist_bio(name), store_key="artist-bio:v1:" + key,
+        stored_ttl=_ARTIST_BIO_CACHE_TTL)
+    return {"artist": name, "bio": bio}
 
-    bio = ""
+
+def _load_artist_bio(name):
     params = {
         "action": "wbsearchentities",
         "search": name,
@@ -146,11 +144,9 @@ def artist_bio(artist: str):
     bio = resolve_artist_bio(name, entities, page)
 
     # A failed Wikidata lookup is not "this artist has no bio": do not cache it for a day.
-    if search_ok:
-        _artist_bio_cache[key] = {"time": monotonic(), "bio": bio}
-        if bio:
-            persistent_metadata.write("artist-bio:v1:" + key, bio)
-    return {"artist": name, "bio": bio}
+    if not search_ok:
+        return Loaded(bio)
+    return Loaded(bio, memory_ttl=_ARTIST_BIO_CACHE_TTL, persist=bool(bio))
 
 
 # Artwork is optional presentation metadata; discovery works without it.
