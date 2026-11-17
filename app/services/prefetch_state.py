@@ -90,15 +90,19 @@ class Spend:
     def __init__(self, caps: dict, spent: Optional[dict] = None, *, get=None, post=None):
         self.caps = dict(caps)
         self.spent = {name: int((spent or {}).get(name, 0)) for name in PROVIDERS}
-        self.refused = set()      # providers whose cap stopped a request in this run
+        self.cap_reached = set()  # named providers whose cap stopped a request in this run
+        self.not_named = set()    # providers asked for that have no cap at all (a failed source, not a reason to stop)
         self._get, self._post = get, post
         self._lock = threading.Lock()
 
     def take(self, url) -> None:
         provider = provider_of(url)
         with self._lock:
-            if self.spent.get(provider, 0) >= self.caps.get(provider, 0):
-                self.refused.add(provider)
+            if provider not in self.caps:
+                self.not_named.add(provider)
+                raise BudgetExhausted(f"no cap set for {provider}")
+            if self.spent.get(provider, 0) >= self.caps[provider]:
+                self.cap_reached.add(provider)
                 raise BudgetExhausted(f"daily cap reached for {provider}")
             self.spent[provider] += 1
 
@@ -111,9 +115,9 @@ class Spend:
         return (self._post or httpx.post)(url, **kwargs)
 
     def exhausted(self) -> bool:
-        """True once any capped provider has no requests left, or a request was refused."""
+        """True once any capped provider has no requests left (a request to an unnamed provider does not count)."""
         with self._lock:
-            return bool(self.refused) or any(self.spent[name] >= cap for name, cap in self.caps.items())
+            return bool(self.cap_reached) or any(self.spent[name] >= cap for name, cap in self.caps.items())
 
     def snapshot(self) -> dict:
         with self._lock:

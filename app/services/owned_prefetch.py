@@ -8,7 +8,9 @@ rows, under the same keys, that a first view would have fetched on demand; there
 to drift. A row that is still fresh costs no request, so a repeated pass over a warm library is cheap.
 
 Off unless the owner sets daily caps (``prefetch_state.ENV_BUDGETS``). Every request goes through
-``prefetch_state.Spend``, which refuses a request past its provider's cap or to an unlisted provider.
+``prefetch_state.Spend``, which refuses a request past its provider's cap or to an unlisted provider. Last.fm
+and Discogs without a cap are switched off for the run; MusicBrainz and ListenBrainz are used by both pages,
+so a cap set without them makes those sections fail (the entity is counted ``partial``, the walk moves on).
 The run ends when a cap is reached, on shutdown, after ``RUN_SECONDS``, or after one pass over both lists.
 The walk resumes from a checkpoint saved after each entity, whatever its outcome, except that an entity
 cut short by a cap is not passed over: it is tried again on the next day.
@@ -73,9 +75,15 @@ def prefetch_network(librarian, spend):
             spend.post, librarian._metadata_cache_get, cache_set, mbids,
             headers=request_headers(), timeout=REQUEST_TIMEOUT)
 
+    shared = similar_precompute.network_kwargs(librarian)
+    # A source with no cap is switched off, as on an instance without its key: its sections say so and send nothing,
+    # instead of being refused on every entity. MusicBrainz and ListenBrainz are used by both pages, so they need caps.
+    if "lastfm" not in spend.caps:
+        shared["lastfm_api_key"] = ""
+    if "discogs" not in spend.caps:
+        shared["discogs_token"] = ""
     return artist_network(
-        popularity=popularity, bio=lambda name: None, http_get=spend.get, deadline_seconds=ENTITY_SECONDS,
-        **similar_precompute.network_kwargs(librarian))
+        popularity=popularity, bio=lambda name: None, http_get=spend.get, deadline_seconds=ENTITY_SECONDS, **shared)
 
 
 def _warm_artist(network, view, artist) -> bool:
@@ -148,7 +156,7 @@ def _walk(librarian, db, data, spend, date, stop, clock):
         if stop is not None and stop.is_set():
             stopped = "shutdown"      # cut short by shutdown: the checkpoint is not moved
             break
-        if spend.refused:
+        if spend.cap_reached:
             stopped = "budget"        # cut short by a cap: tried again on the next day, not passed over
             break
         counts["failed" if finished is None else "complete" if finished else "partial"] += 1

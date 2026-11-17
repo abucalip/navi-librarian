@@ -78,6 +78,8 @@ class SpendTests(unittest.TestCase):
         post.assert_not_called()
         self.assertEqual(spend.snapshot()["musicbrainz"], 2)
         self.assertTrue(spend.exhausted())
+        self.assertEqual(spend.cap_reached, {"musicbrainz"})
+        self.assertEqual(spend.not_named, {"deezer", "lastfm", "listenbrainz"})
 
     def test_spent_counts_are_per_provider_and_start_from_the_stored_day(self):
         spend = ps.Spend({"lastfm": 5, "musicbrainz": 5}, {"lastfm": 4})
@@ -240,6 +242,39 @@ class RunTests(StoreCase):
         result, _, _ = self.run_job(warm=warm)
         self.assertEqual(result["counts"], {"complete": 4, "partial": 1, "failed": 1})
         self.assertEqual(result["stopped"], "pass")
+
+
+    # A provider the owner did not name must never freeze the walk on one entity.
+    def test_a_refused_unnamed_provider_fails_that_source_and_the_walk_moves_on(self):
+        def warm(kind, entry, spend):
+            with mock.patch("httpx.get"):
+                spend.get("https://musicbrainz.org/ws/2/x")
+                try:
+                    spend.get("https://api.listenbrainz.org/1/x")      # always used, but no cap was given
+                except httpx.TransportError:
+                    return False
+            return True
+
+        result, warmed, _ = self.run_job({"OWNED_PREFETCH_BUDGETS": "musicbrainz=100"}, warm=warm)
+        self.assertEqual(result["stopped"], "pass")
+        self.assertEqual(len(warmed), 6)
+        self.assertEqual(result["counts"], {"complete": 0, "partial": 6, "failed": 0})
+        self.assertEqual(self.read(ps.load_cursor), {"artists": 0, "albums": 0})   # moved past every entity and wrapped
+
+    def test_sources_without_a_cap_are_switched_off_in_the_network(self):
+        librarian = SimpleNamespace(
+            _discovery_read_list=lambda name: None, _discovery_write_list=mock.Mock(),
+            _discovery_settings_read=lambda: {"lastfm_api_key": "k", "discogs_token": "t"},
+            api_call=mock.Mock(), _metadata_cache_get=lambda key, ttl: None, _metadata_cache_set=mock.Mock())
+        with mock.patch.object(op.similar_precompute, "network_kwargs", side_effect=lambda lib: {
+                "cache_read": lambda name: None, "cache_write": mock.Mock(), "navidrome_mbid": None,
+                "lastfm_api_key": "k", "lastfm_gen": 1, "discogs_token": "t", "discogs_gen": 1}):
+            bare = op.prefetch_network(librarian, ps.Spend({"musicbrainz": 5, "listenbrainz": 5}))
+            full = op.prefetch_network(librarian, ps.Spend({"musicbrainz": 5, "lastfm": 5, "discogs": 5}))
+        self.assertIsNone(bare.lastfm)
+        self.assertIsNone(bare.discogs)
+        self.assertIsNotNone(full.lastfm)
+        self.assertIsNotNone(full.discogs)
 
 
 class RealPagesTests(StoreCase):
