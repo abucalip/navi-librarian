@@ -30,6 +30,8 @@ Open `http://<docker-host>:8080` (or the port set with `WEB_PORT`). Complete the
 
 `docker compose up -d` also starts `discair-worker` (same image and data volume, command `python -m app.worker`). It is the only process that writes the Server V2 knowledge store and calls MusicBrainz for it: it polls Navidrome's scan status every 5 seconds and enriches newly added albums. Set `NAVI_AUTO_FILL_POLL_SECONDS=off` in `.env` to switch it off. The web container never runs it.
 
+Both services run with `init: true` (Docker's tini reaps child processes such as ffmpeg and forwards signals; the image has no init of its own) and have a healthcheck, shown by `docker compose ps`. The web check requests the public `/api/auth/status` route from inside the container. The worker check passes while `worker.heartbeat` in the data volume is under 5 minutes old; the worker refreshes it every 30 seconds only while both of its scheduler threads are alive, so a long job does not make it unhealthy. Both use Python, since the image has no curl, and wait 2 minutes after start before failing. Healthchecks only report; they do not restart containers.
+
 ## Persistent data and upgrades
 
 The named volume `librarian_data` stores the app's database and authentication key. Keep this volume when upgrading; deleting it resets the app's persistent state and authentication.

@@ -5,6 +5,14 @@ services:
     image: ghcr.io/abucalip/navi-librarian:latest
     container_name: discair
     restart: unless-stopped
+    init: true
+    # Python one-liner: the image has no curl. /api/auth/status is public and touches no provider or store.
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request as u; u.urlopen('http://127.0.0.1:8080/api/auth/status', timeout=8)"]
+      interval: 60s
+      timeout: 10s
+      retries: 5
+      start_period: 120s
     ports:
       - "${WEB_PORT:-8080}:8080"
     environment:
@@ -36,6 +44,15 @@ services:
     container_name: discair-worker
     restart: unless-stopped
     command: ["python", "-m", "app.worker"]
+    init: true
+    # Exits 1 unless the heartbeat file (app/services/worker_heartbeat.py) is under 5 minutes old; the heartbeat
+    # only advances while both scheduler threads are alive, so a long precompute is still healthy.
+    healthcheck:
+      test: ["CMD", "python", "-m", "app.services.worker_heartbeat"]
+      interval: 60s
+      timeout: 10s
+      retries: 5
+      start_period: 120s
     # Longer than app/worker.py SHUTDOWN_GRACE_SECONDS (25 s), so the loops can stop before Docker kills the process.
     stop_grace_period: 30s
     depends_on:

@@ -10,7 +10,8 @@ W2) are entries of the table-driven scheduler in ``app/worker_schedule.py`` (eff
 them one at a time and keeps their last runs in the store. The hourly discovery list and lens list
 refreshes (``app/services/discovery_schedule.py``, W3) are entries of a second scheduler on their own
 thread, so the long precompute does not delay them. Auto fill and the
-runtime-metrics save keep their own threads: auto fill must stay responsive.
+runtime-metrics save keep their own threads: auto fill must stay responsive. A heartbeat thread
+(``app/services/worker_heartbeat.py``, C3) stamps a file for the container healthcheck while both schedulers live.
 
 Exactly one worker runs: it takes an exclusive lock on ``DATA_DIR/worker.lock`` and exits non-zero if
 another holds it. Holding the lock makes it safe to requeue ``running`` rows left by a killed worker.
@@ -27,7 +28,8 @@ import metadata_cache
 from app.api.insights import STORE_FILE
 from app.api.dependencies import get_librarian
 from app import worker_schedule
-from app.services import discovery_schedule, insights_refresh, library_enrich, runtime_metrics, similar_precompute
+from app.services import (discovery_schedule, insights_refresh, library_enrich, runtime_metrics, similar_precompute,
+                          worker_heartbeat)
 from discovery import refresh_guard
 from intelligence.insights.provider_runtime import JOB as PROVIDER_LENSES_JOB
 from intelligence.insights.runtime import JOB as FORGOTTEN_GEMS_JOB
@@ -164,9 +166,11 @@ def main(librarian=None, stop=None) -> int:
         metrics_thread = threading.Thread(target=_metrics_loop, args=(librarian.DATA_DIR, stop),
                                           name="runtime-metrics", daemon=True)
         metrics_thread.start()
+        # Liveness stamp for the container healthcheck (C3): written only while both scheduler threads are alive.
+        heartbeat_thread = worker_heartbeat.start(librarian.DATA_DIR, (schedule_thread, discovery_thread), stop)
         while not stop.wait(60):
             pass
-        _wait_for_threads((schedule_thread, discovery_thread, enrich_thread, metrics_thread))
+        _wait_for_threads((schedule_thread, discovery_thread, enrich_thread, metrics_thread, heartbeat_thread))
         return 0
     finally:
         lock.close()
