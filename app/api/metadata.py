@@ -22,7 +22,9 @@ from app.services.fallback_artwork import (
 )
 from app.services.deezer_artwork import select_album_artwork, select_artist_artwork
 from app.services import runtime_metrics
-from app.services import album_links, album_page_sources, album_reviews, persistent_metadata, stale_refresh
+from app.services import (
+    album_links, album_page_sources, album_reviews, negative_marks, persistent_metadata, stale_refresh,
+)
 from app.services.layered_cache import LayeredCache, Loaded
 from app.services.deezer_album_matching import release_year
 from integrations.musicbrainz.album_year import (
@@ -455,14 +457,37 @@ def _wordpress_review(name: str, site: str, artist: str, album: str):
 
 
 # Each outlet's answer is kept on its own: a review for a month, "nothing there" for three days, a failure
-# not at all. A retry after a partial answer then asks only the outlets that failed, and an album the
-# outlets never reviewed is not asked about again after a restart.
+# only as an hour's failure mark (K4), never as "nothing there". A retry after a partial answer then asks
+# only the outlets that failed (once their mark is over), and an album the outlets never reviewed is not
+# asked about again after a restart.
 _SOURCE_FOUND_TTL = 30 * 24 * 60 * 60
 _SOURCE_MISS_TTL = 3 * 24 * 60 * 60
+# Efficiency K4 (owner approval 2026-11-17): an outlet that timed out or failed for an album is not asked
+# about that album again for an hour. The mark has its own key, so it never reads as "no review".
+_SOURCE_FAILURE_TTL = 60 * 60
+
+
+class OutletResting(Exception):
+    """The outlet failed for this album within `_SOURCE_FAILURE_TTL`; it is skipped, so the list stays partial."""
+
+
+def _outlet_failure_key(store_key):
+    return "album-review-source-failed:v1:" + store_key.removeprefix("album-review-source:v1:")
 
 
 def _ask_outlet(store_key, ask):
-    found = ask()
+    """``ask()`` and store its answer. A failure is stored only as a short failure mark, then re-raised.
+
+    The mark is written here, in the pool thread, so an outlet that fails after the route's deadline is marked too.
+    """
+    failure_key = _outlet_failure_key(store_key)
+    if negative_marks.is_live(persistent_metadata.read, failure_key, _SOURCE_FAILURE_TTL):
+        raise OutletResting(store_key)
+    try:
+        found = ask()
+    except Exception:
+        negative_marks.mark(persistent_metadata.write, failure_key)
+        raise
     persistent_metadata.write(store_key, {"review": found, "checked": time.time()})
     return found
 
