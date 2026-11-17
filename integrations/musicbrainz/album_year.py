@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import threading
+from collections import OrderedDict
 from time import monotonic
 from urllib.error import HTTPError
 from urllib.parse import urlencode
@@ -11,7 +12,35 @@ from urllib.request import Request, urlopen
 from integrations import provider_gate
 
 YEAR_CACHE_TTL = 180 * 24 * 60 * 60
-year_cache = {}
+# Found years are also kept in the persistent metadata store by the routes, so an evicted pair is read
+# back from there rather than asked again.
+YEAR_CACHE_MAX_ENTRIES = 2000
+
+
+class _BoundedYearCache(OrderedDict):
+    """A dict that keeps at most `max_entries` pairs, dropping the least recently read or written."""
+
+    def __init__(self, max_entries):
+        super().__init__()
+        self.max_entries = max_entries
+        self._lock = threading.Lock()
+
+    def get(self, key, default=None):
+        with self._lock:
+            if key not in self:
+                return default
+            self.move_to_end(key)
+            return self[key]
+
+    def __setitem__(self, key, value):
+        with self._lock:
+            super().__setitem__(key, value)
+            self.move_to_end(key)
+            while len(self) > self.max_entries:
+                self.popitem(last=False)
+
+
+year_cache = _BoundedYearCache(YEAR_CACHE_MAX_ENTRIES)
 _year_lock = threading.Lock()  # one lookup per pair at a time; spacing comes from the shared gate
 LOOKUP_MAX_WAIT = 20.0  # a page render does not queue behind more than this for a slot
 
