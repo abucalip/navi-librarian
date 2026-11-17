@@ -322,7 +322,7 @@ def _fetch_album_details(artist, album):
 
 
 _artist_image_cache = {}
-_album_links_cache = {}
+_album_links_cache = LayeredCache("album-links")
 _ALBUM_LINKS_TTL = 24 * 60 * 60
 
 
@@ -610,15 +610,12 @@ def album_page_links(artist: str = "", album: str = "", mbid: str = ""):
     if not artist or not album:
         raise HTTPException(status_code=400, detail="artist and album are required")
     key = (artist.casefold(), album.casefold(), mbid)
-    cached = _album_links_cache.get(key)
-    if cached and monotonic() - cached["time"] < _ALBUM_LINKS_TTL:
-        return cached["links"]
-    store_key = "album-links:v1:" + "|".join(key)
-    stored = persistent_metadata.read(store_key, persistent_metadata.LINKS_TTL)
-    if stored:
-        _album_links_cache[key] = {"time": monotonic(), "links": stored}
-        return stored
+    return _album_links_cache.get_or_load(
+        key, lambda: _load_album_links(artist, album, mbid), store_key="album-links:v1:" + "|".join(key),
+        store_ttl=persistent_metadata.LINKS_TTL, stored_ttl=_ALBUM_LINKS_TTL)
 
+
+def _load_album_links(artist: str, album: str, mbid: str):
     def apple():
         return _apple_album_url(artist, album)
 
@@ -656,10 +653,7 @@ def album_page_links(artist: str = "", album: str = "", mbid: str = ""):
         links["listenbrainz"] = f"https://listenbrainz.org/album/{group_id}"
     # A missing service may only have been slow or busy, so an incomplete answer is kept for minutes, not a day.
     complete = "musicbrainz" in links and "apple_music" in links and "deezer" in links
-    _album_links_cache[key] = {"time": monotonic() - (0 if complete else _ALBUM_LINKS_TTL - 10 * 60), "links": links}
-    if complete:
-        persistent_metadata.write(store_key, links)
-    return links
+    return Loaded(links, memory_ttl=_ALBUM_LINKS_TTL if complete else 10 * 60, persist=complete)
 
 
 @router.get("/api/artist-image")
