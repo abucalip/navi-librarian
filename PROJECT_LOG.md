@@ -21,6 +21,7 @@
 - **Owner rule added (2026-11-17):** if a theme element needs a route or field the server lacks, it is built server-side, not dropped. Section 11a of each spec holds the audit table (served, check or missing) and step B0/I0. Known missing:
   - album filters (Unplayed, Lossless);
   - Index's library position.
+- **Decisions (2026-11-17):** the owner took every proposed answer, B1 to B7 and I1 to I7, and kept both Bento font files (Figtree is not swapped for Inter). I7: build the library position field.
 - **Checks run:**
   - `check_contrast.py` for both themes: all seven palettes pass.
   - Both `build.py` scripts ran and rendered every PNG with Chrome.

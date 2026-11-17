@@ -1,6 +1,6 @@
 # Index theme for Android: design system and build plan
 
-Status: **design proposed for the owner's approval** (2026-11-17). Nothing is built. This document is the spec that implementing agents build from. The mockups beside it are the spec for every screen ("the mockups are the spec", Round 3 owner rule).
+Status: **design approved by the owner** (2026-11-17); every decision in section 13 is decided as proposed. Nothing is built; I0 is next. This document is the spec that implementing agents build from. The mockups beside it are the spec for every screen ("the mockups are the spec", Round 3 owner rule).
 
 Package: [`docs/design/index/`](design/index/). Start with its [`README.md`](design/index/README.md). The shared mockup kit is [`docs/design/_kit/`](design/_kit/).
 
@@ -375,7 +375,7 @@ Add the `Index*` files to `ARCHITECTURE.md` in I1.
 | Lead pick data list (Artist, Year, Genre, Owned) (Home) | Genre and owned state per pick | check (picks carry artist and year) | Optional `genre` and `owned` on `/api/dashboard-picks` items |
 | Played rows "14 plays" (Home), artist rows "212 plays" (Library) | Play count per album this week; per artist overall | check | Optional `play_count` (with a `window`) on recently played albums and on `/api/library/artists` items |
 | Artist data list: Owned "5 of 9", Plays, Active "1967 – 2007" | Owned and total studio albums, plays, active years | check (the parked `missing_count` proposal; life span is in the knowledge store) | `owned_count`, `album_count`, `play_count` and `active_years` on `/api/artists/{key}`, the years from the stored MusicBrainz artist life span |
-| Album head "0418 / 1284" | The album's position in the library by name | missing | An optional `library_position` and `library_total` on `/api/albums/{artist_key}/{album_key}`, from the owned index; or the owner drops the number (decision I7) |
+| Album head "0418 / 1284" | The album's position in the library by name | missing | An optional `library_position` and `library_total` on `/api/albums/{artist_key}/{album_key}`, from the owned index (decision I7: build it) |
 | Album "05 / 10 PLAYING" | Track number and count | served (album tracks) | none; client only |
 | Genres with counts (Home) | Albums per genre | check (`/api/dashboard/genres`) | An optional `album_count` per genre |
 | Library tabs with counts "Artists 312 · Albums 1284 · Genres 48" | Totals | check (library pages return totals) | `total` on the first page of each library list; a genre total on `/api/dashboard/genres` |
@@ -384,7 +384,7 @@ Add the `Index*` files to `ARCHITECTURE.md` in I1.
 | Artist Paths step data list "With 1968 – 1971", "Owned 2 of 4", Albums together | Years together, shared albums with states | check (`begin_year` is served) | Optional `years` and `shared_albums` on each `/api/knowledge/paths` stop (same as Bento) |
 | Neighbours by ear segment meter | Closeness per neighbour | served (`matchCount`) | none |
 | Server page "v0.3.9 · 84 ms" | Version and latency per service | check (`/api/health`) | Optional `version` and `latency_ms` per service (same as Bento) |
-| Library "Unplayed", "Lossless" (if the owner wants Index to have them too) | Album filters | missing | Same `filter` query as Bento; shared work, built once |
+| Library "Unplayed", "Lossless" | Album filters (Bento needs them; Index can offer the same sort-line options once built) | missing | Same `filter` query as Bento; shared work, built once |
 
 The table lists every element in the mockups whose data is not plainly on today's screens. When an audit finds another gap, add a row and follow the same rule.
 
@@ -404,17 +404,19 @@ Each step is one PR with focused tests (JDK 17 for Android; never the full suite
 
 Bento and Index are independent. Either can be built first, or both in parallel by different agents. Only `Palette.kt`, `Theme.kt`, `Motion.kt` and the shared screen files receive a branch from each, so the two B1 and I1 PRs should not run at the same time.
 
-## 13. Open decisions
+## 13. Decisions
 
-| # | Point | Proposed answer |
+The owner decided every point as proposed on 2026-11-17.
+
+| # | Point | Decision |
 |---|---|---|
 | I1 | Where the strip and insight colours live | In `IndexTones` in `IndexKit.kt`, keyed by palette id; `Palette` gains no field |
 | I2 | Signal Blue's primary button is ink, the others use the signal colour | Keep as the owner approved the palettes: the original stays as proposed on 16 November |
 | I3 | Directional tab slides use the bar order Home, Discover, Library, Search | The Index bar keeps that order (as in the mockups); other themes keep theirs |
-| I4 | Sheet timing | Keep Material's `ModalBottomSheet` timing (as Gallery G7), unless the owner wants a custom sheet |
+| I4 | Sheet timing | Keep Material's `ModalBottomSheet` timing (as Gallery G7); no custom sheet |
 | I5 | "Follow the phone" defaults | Signal Blue (light) and Graphite Orange (dark) |
 | I6 | The colour changes in 4.2 made for contrast | Accept them; the owner can compare in `pages/palettes` |
-| I7 | The album's library position "0418 / 1284" needs a new field (11a) | Build it as an optional field; or drop the number and keep "ALBUM" |
+| I7 | The album's library position "0418 / 1284" needs a new field (11a) | Build it on the server as an optional field (`library_position`, `library_total`) in I0; the number stays |
 
 ## 14. Verification for each step
 

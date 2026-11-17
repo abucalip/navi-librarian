@@ -1,6 +1,6 @@
 # Bento theme for Android: design system and build plan
 
-Status: **design proposed for the owner's approval** (2026-11-17). Nothing is built. This document is the spec that implementing agents build from. The mockups beside it are the spec for every screen ("the mockups are the spec", Round 3 owner rule).
+Status: **design approved by the owner** (2026-11-17); every decision in section 13 is decided as proposed, and both font files are kept. Nothing is built; B0 is next. This document is the spec that implementing agents build from. The mockups beside it are the spec for every screen ("the mockups are the spec", Round 3 owner rule).
 
 Package: [`docs/design/bento/`](design/bento/). Start with its [`README.md`](design/bento/README.md). The shared mockup kit is [`docs/design/_kit/`](design/_kit/).
 
@@ -147,7 +147,7 @@ Bento ships two new files, subset to Latin (Basic Latin, Latin-1, Latin Extended
 | [`gabarito_bento.ttf`](design/bento/fonts/gabarito_bento.ttf) | Google Fonts `ofl/gabarito/Gabarito[wght].ttf` | `wght` 500–900 | 88 KB |
 | [`figtree_bento.ttf`](design/bento/fonts/figtree_bento.ttf) | `ofl/figtree/Figtree[wght].ttf` | `wght` 400–800 | 43 KB |
 
-Both are under the SIL Open Font License 1.1; the licence texts are in [`fonts/`](design/bento/fonts/). The subset commands are in the package README. Together they add about 131 KB to the APK.
+Both are under the SIL Open Font License 1.1; the licence texts are in [`fonts/`](design/bento/fonts/). The subset commands are in the package README. Together they add about 131 KB to the APK. Both ship (decision B2).
 
 ### 5.2 Font pair
 
@@ -302,7 +302,7 @@ Bento's character is **springy and tactile**: tiles pop in, the pill stretches, 
 | 5 | **Press** | `press`: scale 0.97, spring 0.6 / 800 | `val pressed by interaction.collectIsPressedAsState(); val s by animateFloatAsState(if (pressed) 0.97f else 1f, BentoMotion.spring(0.6f, 800f, reduced))` → `graphicsLayer { scaleX = s; scaleY = s }`. On tiles, rows and buttons. A long-pressed (dragged) tile also takes the lift shadow |
 | 6 | **Nav pill** | `navPill`: spring 0.8 / 500; label fades 150ms after a 60ms delay | Each cell is a `Row` with `Modifier.animateContentSize(BentoMotion.spring(0.8f, 500f, reduced))`. The pill fill is `animateColorAsState(if (selected) control else Transparent, tween(200))`, and the icon colour animates the same way. The label is `AnimatedVisibility(selected, enter = fadeIn(tween(150, delayMillis = 60)) + expandHorizontally(BentoMotion.spring(0.8f, 500f, reduced)), exit = fadeOut(tween(90)) + shrinkHorizontally(BentoMotion.spring(0.8f, 500f, reduced)))`. Do not build one sliding pill: each cell grows and shrinks, which reads as the pill moving |
 | 7 | **Now Playing opens / closes** | `playerRise` 420ms Emphasized; `playerFall` 320ms EmphasizedExit | The player is a dialog window today, so fly the cover by hand as Gallery does (`GalleryFlight`). Capture the mini cover's bounds with `onGloballyPositioned`, and draw a cover that interpolates its rect and corner (14 → 28dp) to the player cover. The page rises with `slideInVertically { it } + fadeIn` and the dock slides down by its own height. Reverse on close |
-| 8 | **Sheets** | `sheetIn` spring 0.85 / 420 (no visible overshoot); `sheetOut` 240ms Exit; scrim 220ms | With Material 1.3.2, `ModalBottomSheet` cannot take a custom spec (Gallery found the same). Option A (recommended, decision B4): keep Material's sheet and accept its timing. Option B: a custom `BentoSheet` (`Box` + scrim + `Animatable` offset `animateTo(0f, spring(0.85f, 420f))`, drag-to-dismiss with `draggable` and a velocity threshold of 1,000dp/s) |
+| 8 | **Sheets** | `sheetIn` spring 0.85 / 420 (no visible overshoot); `sheetOut` 240ms Exit; scrim 220ms | With Material 1.3.2, `ModalBottomSheet` cannot take a custom spec (Gallery found the same). Decided (B4): keep Material's sheet and accept its timing. Not built: a custom `BentoSheet` (`Box` + scrim + `Animatable` offset `animateTo(0f, spring(0.85f, 420f))`, drag-to-dismiss with `draggable` and a velocity threshold of 1,000dp/s) |
 | 9 | **Snackbar** | `snackIn` spring 0.75 / 500 from 24dp below; hold 4s | `val d = LocalDensity.current; val off = with(d) { 24.dp.roundToPx() }` then `AnimatedVisibility(visible, enter = slideInVertically(BentoMotion.spring(0.75f, 500f, reduced)) { off } + fadeIn(tween(150)), exit = fadeOut(tween(150)) + slideOutVertically { off })` (the lambda returns pixels, so convert once with the density). Hold with `delay(4000)` in the host, after TalkBack's longer wait where the app already uses one |
 | 10 | **Get button morph** | `getMorph` 260ms Emphasized; the pending icon turns once per 900ms | `AnimatedContent(state, transitionSpec = { fadeIn(tween(160, 60)) togetherWith fadeOut(tween(100)) using SizeTransform(clip = false) { _, _ -> tween(260, easing = Emphasized) } })`. The pending icon uses `rememberInfiniteTransition` only inside the pending branch, so it stops when the state leaves |
 | 11 | **Cover stack fan** (Recently played) | `coverStackFan` spring 0.7 / 300; angles −10°, +6°, 0° | On first composition the three covers start at 0° stacked and spring to their angles (`Animatable` per cover, `rotationZ` in `graphicsLayer`), 60ms apart. On press the back two open 4° more |
@@ -446,17 +446,19 @@ Each step is one PR with focused tests (JDK 17 for Android; never the full suite
 | **B5** Now Playing, Queue, Lyrics, Radio | Player rise and fall (#7), playing bars (#13) | `pages/player`, `pages/radio` matched |
 | **B6** Downloads, Stats, Server, Settings, sheets; closeout | | `pages/downloads-stats-server`, `pages/settings`, `pages/sheets` matched; `ACTIVE_WORK.md` updated |
 
-## 13. Open decisions
+## 13. Decisions
 
-| # | Point | Proposed answer |
+The owner decided every point as proposed on 2026-11-17, and said not to drop a font.
+
+| # | Point | Decision |
 |---|---|---|
 | B1 | Where the five tones and the bar/deep colours live | In `BentoTones` inside `BentoKit.kt`, keyed by palette id, so `Palette` gains no field. The alternative is three to five optional `Palette` fields, as Gallery added `mat` |
-| B2 | Two new font files (about 131 KB) | Needed: no font in the app is a rounded geometric display face. Figtree could be dropped for Inter (already in the app) to save 43 KB, at some loss of character |
+| B2 | Two new font files (about 131 KB) | **Ship both** `gabarito_bento.ttf` and `figtree_bento.ttf`. Figtree is not replaced by Inter (owner, 2026-11-17) |
 | B3 | Tile to page | `sharedBounds` in the existing `SharedTransitionLayout` (Compose BOM 2025.04.01). Pages opened from somewhere other than a tile use #4 |
-| B4 | Sheet springs | Keep Material's `ModalBottomSheet` timing (as Gallery G7 did), unless the owner wants the custom sheet in 8.2 #8 |
+| B4 | Sheet springs | Keep Material's `ModalBottomSheet` timing (as Gallery G7 did); no custom sheet (8.2 #8, option A) |
 | B5 | "Follow the phone" defaults | Sorbet (light) and Licorice (dark) |
 | B6 | Lyrics in the mockup | Stand-in text; the screen shows the real lyrics from the existing source |
-| B7 | Bar order | As drawn and approved on 17 November: Home, Library, Discover, Search (other themes use Home, Discover, Library, Search). Bento owns its bar, so only Bento changes |
+| B7 | Bar order | As drawn: Home, Library, Discover, Search (other themes use Home, Discover, Library, Search). Bento owns its bar, so only Bento changes |
 
 ## 14. Verification for each step
 
