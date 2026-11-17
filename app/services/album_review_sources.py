@@ -8,8 +8,10 @@ and ``write`` injected, so they read and write the same rows under the same keys
 - ``album-review-source:v1:{outlet}:{artist}:{album}``: one outlet's answer, ``{"review", "checked"}``; a review
   is kept a month, "nothing there" three days;
 - ``album-review-source-failed:v1:...``: an hour's failure mark (efficiency K4), never read as "no review";
-- ``album-reviews:v1:{artist}:{album}``: the list, ``{"reviews": [...]}``, stored only when it has a review and
-  is not partial.
+- ``album-reviews:v1:{artist}:{album}``: the list, ``{"reviews": [...]}``, stored by the route only, when it has a
+  review and is not partial. The worker never writes it: its outlet set can lack the Guardian (no key in its
+  environment), and a stored list would hide the Guardian on the route; the route builds the list from the
+  stored outlet answers without a request.
 
 Nothing here imports a route module.
 """
@@ -189,12 +191,12 @@ def stored_list_value(found, failed):
 # --- Worker prefetch (efficiency K3) ----------------------------------------------------------------
 
 def prefetch_reviews(read, write, get, artist, album, guardian_key="", refused=()):
-    """Ask, one after another, each outlet with no fresh stored answer, and store as the route does.
+    """Ask, one after another, each outlet with no fresh stored answer, and store its answer as the route does.
 
-    Outlet answers and failure marks are written by ``ask_outlet``; the list is written under the route's key
-    only when it has a review and is not partial. A resting outlet counts as failed, as on the route. A
-    `refused` exception (cap reached, or a host with no cap) ends the album: nothing is marked for it, and the
-    remaining outlets are left for the first view. Returns ``True`` when the list is complete.
+    Outlet answers and failure marks are written by ``ask_outlet``; the list is not written (see the module
+    docstring). A resting outlet counts as failed, as on the route. A `refused` exception (cap reached, or a
+    host with no cap) ends the album: nothing is marked for it, and the remaining outlets are left for the
+    first view. Returns ``True`` when every outlet has an answer (the list would not be partial).
     """
     found, failed = [], False
     for name, ask in outlet_asks(get, read, write, artist, album, guardian_key):
@@ -210,7 +212,4 @@ def prefetch_reviews(read, write, get, artist, album, guardian_key="", refused=(
         except Exception:
             found.append(None)
             failed = True
-    value, partial = stored_list_value(found, failed)
-    if value["reviews"] and not partial:
-        write(list_store_key(artist, album), value)
-    return not partial
+    return not stored_list_value(found, failed)[1]

@@ -65,12 +65,12 @@ class _Case(unittest.TestCase):
 
 
 class PrefetchTests(_Case):
-    def test_a_complete_list_is_stored_under_the_route_s_keys(self):
+    def test_outlet_answers_are_stored_under_the_route_s_keys_and_the_list_is_left_to_the_route(self):
         asked = self.outlets({"Pitchfork": review("Pitchfork"), "Treble": review("Treble")})
         self.assertTrue(self.prefetch())
         self.assertEqual(len(asked), 1 + len(ars.WORDPRESS_REVIEW_SITES), "every outlet, one after another")
-        self.assertEqual(self.store.data["album-reviews:v1:opeth:watershed"],
-                         {"reviews": [review("Pitchfork"), review("Treble")]})
+        self.assertNotIn("album-reviews:v1:opeth:watershed", self.store.data,
+                         "a worker list without the Guardian would hide it on the route")
         self.assertEqual(self.store.data["album-review-source:v1:Treble:opeth:watershed"]["review"], review("Treble"))
         self.assertIsNone(self.store.data["album-review-source:v1:PopMatters:opeth:watershed"]["review"])
 
@@ -128,6 +128,16 @@ class ParityTests(_Case):
             answer = metadata.album_reviews_for("Opeth", "Watershed")
         self.assertEqual(answer, {"reviews": [review("Pitchfork"), review("Consequence")]})
         failing.get.assert_not_called()
+        self.assertEqual(self.store.data["album-reviews:v1:opeth:watershed"], answer, "the route stores its own list")
+
+    def test_the_route_still_asks_the_guardian_when_the_worker_had_no_key(self):
+        self.outlets({"Pitchfork": review("Pitchfork")})
+        self.prefetch()
+        with mock.patch.dict(os.environ, {"GUARDIAN_API_KEY": "k"}), \
+                mock.patch.object(metadata, "_guardian_review", return_value=review("The Guardian")) as guardian:
+            answer = metadata.album_reviews_for("Opeth", "Watershed")
+        guardian.assert_called_once()
+        self.assertEqual([r["source"] for r in answer["reviews"]], ["Pitchfork", "The Guardian"])
 
     def test_prefetched_outlet_answers_serve_the_route_when_the_list_was_not_stored(self):
         self.outlets({})

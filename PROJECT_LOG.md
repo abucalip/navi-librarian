@@ -3,9 +3,9 @@
 - PR [#1177](https://github.com/abucalip/navi-librarian/pull/1177), branch `efficiency-finishing-up`, not merged. It covers the "Left out of merged steps" list in `docs/efficiency.md`, at the owner's request.
 - M1: no production Navidrome call outside the shared client was found. The `client_factory` branch now sends the `navidrome` label.
 - K2: `LayeredCache(stale_fetched_at=True)` gives stale album reviews and links answers a `fetched_at` field (UTC ISO 8601). Fresh and stored values never carry it. `docs/SEARCH_CONTRACT.md` is updated.
-- K3: the review outlets moved to `app/services/album_review_sources.py`, and the worker prefetches reviews under a new `reviews` cap. The compose default does not name the cap, so this stays off (owner decision needed). The artist biography stays out (K1 measured 0 requests).
+- K3: the review outlets moved to `app/services/album_review_sources.py`, and the worker prefetches reviews under a new `reviews` cap. It stores outlet answers only, never the list, so a worker without `GUARDIAN_API_KEY` cannot hide a Guardian review on the route. The compose default does not name the cap, so this stays off (owner decision needed). The artist biography stays out (K1 measured 0 requests).
 - Not done, each behind its gate: the "library tracklist first" removal (needs a measurement) and wider K2 scope (needs evidence).
-- Tests: 14 focused files, 236 passed (`test_album_review_sources.py` is new, with 11 tests). Lint on changed files: 0 new findings. Full suite not run. No live run, no provider traffic, not deployed.
+- Tests: 14 focused files, 237 passed (`test_album_review_sources.py` is new, with 12 tests). Lint on changed files: 0 new findings. Full suite not run. No live run, no provider traffic, not deployed.
 
 ## 2026-11-17 — K3 part 2 caps and coverage target (merged)
 
