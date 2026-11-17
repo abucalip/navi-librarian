@@ -28,8 +28,8 @@ import metadata_cache
 from app.api.insights import STORE_FILE
 from app.api.dependencies import get_librarian
 from app import worker_schedule
-from app.services import (discovery_schedule, insights_refresh, library_enrich, runtime_metrics, similar_precompute,
-                          worker_heartbeat)
+from app.services import (discovery_schedule, insights_refresh, library_enrich, owned_prefetch, prefetch_state,
+                          runtime_metrics, similar_precompute, worker_heartbeat)
 from discovery import refresh_guard
 from intelligence.insights.provider_runtime import JOB as PROVIDER_LENSES_JOB
 from intelligence.insights.runtime import JOB as FORGOTTEN_GEMS_JOB
@@ -103,6 +103,10 @@ def schedule_entries(librarian, stop):
         worker_schedule.Entry("insights_refresh", insights_refresh.is_due,
                               lambda: insights_refresh.refresh_once(librarian, stop=stop),
                               legacy_key=insights_refresh.LAST_RUN_KEY),
+        # K3: off unless the owner sets daily provider caps; at most an hour a day, so it goes before the precompute.
+        worker_schedule.Entry("owned_prefetch", prefetch_state.due(),
+                              lambda: owned_prefetch.run_once(librarian, librarian.DATA_DIR / STORE_FILE, stop=stop),
+                              retry_seconds=owned_prefetch.RETRY_SECONDS),
         # Last: it can run for hours (6 h budget), so the shorter jobs go first when several are due.
         worker_schedule.Entry("similar_precompute", worker_schedule.daily(),
                               lambda: similar_precompute.run_once(librarian, stop=stop),
