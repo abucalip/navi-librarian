@@ -411,7 +411,7 @@ Each step quotes M2 numbers before and after. They are independent of one anothe
 #### W3. Move lens refresh and the discovery scheduler to the worker
 
 - **Objective:** web startup starts no periodic work.
-- **Process-local state:** Appendix A rows for the lens and scheduler threads and the `_DISCOVERY_*` guards, and finding A5.4 (the unexplained writer).
+- **Process-local state:** Appendix A rows for the lens and scheduler threads and the `_DISCOVERY_*` guards, and finding A5.4 (resolved: acquisition guard, no move needed).
 - **Current state:** `lens_service.start_daily_refresh` and `navidrome_server._start_discovery_scheduler` run in the web process; manual refreshes also run there under process-local locks.
 - **Proposed changes:** register both in the scheduler with their existing cadences and due rules (`_due`, `refresh_stale_lists`, `automatic_refill_enabled`); wrap each list refresh, scheduled and manual, in `run_job` with a per-list scope so the two processes cannot refresh the same list at once; delete `_start_discovery_background` and its timer from `app/main.py`.
 - **Affected components:** `app/main.py`, `navidrome_server.py` (scheduler functions), `discovery/lens_service.py`, `discovery/refresh.py`, `app/worker_schedule.py`.
@@ -741,7 +741,7 @@ Classes: **rebuildable cache** (can be dropped without losing data), **shared mu
 | Where (symbol) | Process | Class | Notes |
 |---|---|---|---|
 | `navidrome_server.py` `_DISCOVERY_IMPORT_ACTIVE` (1442), guarded by `_DISCOVERY_IMPORT_LOCK` (1438) and `_DISCOVERY_IMPORT_TRANSITION_LOCK` (1441) | web | shared mutable | Also read by the status routes (1885, 2221). |
-| `navidrome_server.py` `_DISCOVERY_ACQUIRE_ACTIVE` (1443) | web | shared mutable | **Open:** the only use in `navidrome_server.py` is a read (2222). No writer was found in that file, and no search was made elsewhere. Find the writer before W3. |
+| `navidrome_server.py` `_DISCOVERY_ACQUIRE_ACTIVE` (1443) | web | shared mutable | **Resolved 2026-11-17.** Written by `acquisition/request_coordinator.py` (through `reserve_acquisition_request` in `acquisition/orchestration.py`, which the caller guards with `_DISCOVERY_IMPORT_TRANSITION_LOCK`; the discard runs in the same guard) and by `acquisition/track_service.py` (add near line 159, discard near 164, both under `_DISCOVERY_IMPORT_TRANSITION_LOCK`). `navidrome_server.py` line 2222 only passes the set into the coordinator. An acquisition guard, not a status-route read. |
 | `navidrome_server.py` `_DISCOVERY_REFRESH_LOCK` (708) | web | shared mutable | Guard for manual list refreshes. |
 | `app/api/popularity.py` `_LOCK` (35), `app/api/taste_refresh.py` `_LOCK` (22), `app/api/paths_warm.py` `_LOCK` (24), `app/api/smart_playlists.py` `_LOCK` (27), `app/api/feedback.py` `_LOCK` (24), `app/api/insights.py` `_LOCK` (49) | web | shared mutable | One lock per route module, serialising that route's in-process work. Route bodies were not read in detail. |
 | `app/worker.py` `stop` `Event` (96), `worker.lock` file lock | worker | singleton side effect | Process lifecycle; R1 and R5. |
@@ -757,7 +757,7 @@ Classes: **rebuildable cache** (can be dropped without losing data), **shared mu
 1. Several daemon loops start from web startup (`navidrome_server._start_discovery_scheduler`, `lens_service.start_daily_refresh`, `search.start_similar_precompute`). This is the W2 and W3 scope. Their state (the owned index, `_REFRESH_LOCK`, `_DISCOVERY_REFRESH_LOCK`) is process-local, so moving them requires moving that state too.
 2. The web process has no cross-process lock for anything in A2 or A3. The provider gate's SQLite file is the only cross-process state for provider traffic. Any second web worker (D) therefore doubles each in-memory cache and each lockout counter.
 3. The eight metadata caches in A2 are unbounded and never evict. They are the first K1 and K2 targets.
-4. `_DISCOVERY_ACQUIRE_ACTIVE` has no writer in `navidrome_server.py`. Resolve this before W3 moves the status routes.
+4. Resolved: `_DISCOVERY_ACQUIRE_ACTIVE` is written by `acquisition/request_coordinator.py` and `acquisition/track_service.py`, both under `_DISCOVERY_IMPORT_TRANSITION_LOCK`. It is an acquisition guard, so W3 does not need to move it.
 5. Per-key lock dictionaries (`logos._LOCKS`, `artwork/service._keyed`) grow with stations and artwork keys and are never pruned. This is a small leak, not an error.
 
 ### A6. Cross-references
@@ -765,4 +765,4 @@ Classes: **rebuildable cache** (can be dropped without losing data), **shared mu
 - W2 (similar-artist precompute): A1 rows for `start_similar_precompute` and the owned index in A2.
 - W3 (lens refresh and discovery scheduler): A1 rows for the lens and scheduler threads, A3 rows for `_DISCOVERY_*` guards, and finding 4.
 - K1 (request-time provider call inventory): A2 rows for the metadata caches, `_EXTERNAL_HTTP` and the gate.
-- 2026-11-17 (M3): Process-local state inventory added as Appendix A, from a survey at `main` `cc14fb51` (grep for threads, pools, locks, `lru_cache` and module-level mutable containers, then each hit read). Documentation only; no code, tests, provider traffic, publication or deployment changed. Findings A5.1 to A5.5 recorded; the open item is the writer of `_DISCOVERY_ACQUIRE_ACTIVE` (A3). W2, W3 and K1 now reference the table.
+- 2026-11-17 (M3): Process-local state inventory added as Appendix A, from a survey at `main` `cc14fb51` (grep for threads, pools, locks, `lru_cache` and module-level mutable containers, then each hit read). Documentation only; no code, tests, provider traffic, publication or deployment changed. Findings A5.1 to A5.5 recorded. The writer of `_DISCOVERY_ACQUIRE_ACTIVE` was resolved the same day (A3, A5.4). W2, W3 and K1 now reference the table.
