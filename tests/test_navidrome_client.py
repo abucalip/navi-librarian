@@ -37,8 +37,8 @@ class FakeClient:
     def __exit__(self, exc_type, exc, traceback):
         return False
 
-    def get(self, url, *, params):
-        self.request = {"url": url, "params": params}
+    def get(self, url, *, params, extensions=None):
+        self.request = {"url": url, "params": params, "extensions": extensions}
         return self.response
 
 
@@ -198,6 +198,30 @@ class SharedNavidromeClientTests(unittest.TestCase):
                               salt_factory=lambda: "salt")
         build.assert_not_called()
         self.assertEqual(result, {"status": "ok"})
+
+    def test_explicit_client_factory_labels_its_request_navidrome(self):
+        # Efficiency M1: a call outside the shared client is counted as navidrome, not by host as other.
+        fake = FakeClient(FakeResponse({"subsonic-response": {"status": "ok"}}))
+        api_call("ping", _config, client_factory=lambda **kwargs: fake, salt_factory=lambda: "salt")
+        self.assertEqual(fake.request["extensions"], {"metrics_provider": "navidrome"})
+
+    def test_explicit_httpx_client_is_counted_as_navidrome(self):
+        import httpx
+
+        from app.services import runtime_metrics
+
+        def handler(request):
+            return httpx.Response(200, json={"subsonic-response": {"status": "ok"}})
+
+        runtime_metrics.reset()
+        self.addCleanup(runtime_metrics.reset)
+        api_call("ping", lambda: ("http://192.168.1.20:4533", "listener", "secret"),
+                 client_factory=lambda **kwargs: runtime_metrics.MeteredClient(
+                     transport=httpx.MockTransport(handler), **kwargs),
+                 salt_factory=lambda: "salt")
+        requests = runtime_metrics.snapshot()["requests"]
+        self.assertEqual(requests["navidrome"]["count"], 1)
+        self.assertNotIn("other", requests)
 
     def test_shared_client_is_built_with_timeout_redirects_and_keepalive_limits(self):
         with mock.patch.object(nav_client.httpx, "Client") as constructor:

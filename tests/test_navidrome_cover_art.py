@@ -28,7 +28,7 @@ class FakeHttp:
     def __exit__(self, *_exc):
         return False
 
-    def get(self, url, *, params):
+    def get(self, url, *, params, extensions=None):
         self.requests.append((url, params))
         return self.response
 
