@@ -30,8 +30,10 @@ ENV_BUDGETS = "OWNED_PREFETCH_BUDGETS"
 SPENT_KEY = "prefetch:spent"
 CURSOR_KEY = "prefetch:cursor"
 COVERAGE_KEY = "prefetch:coverage"
-# The only sources the artist and album page networks call. A name outside this set is ignored.
-PROVIDERS = ("musicbrainz", "listenbrainz", "lastfm", "discogs")
+# The only sources the artist and album page networks call. A name outside this set is ignored. Deezer, Apple and
+# Wikipedia (K3 part 2) feed only the album page's tracklist and description hooks, which are given to the
+# network only when their providers are named (``owned_prefetch.prefetch_network``).
+PROVIDERS = ("musicbrainz", "listenbrainz", "lastfm", "discogs", "deezer", "apple", "wikipedia")
 
 
 def provider_of(url) -> str:

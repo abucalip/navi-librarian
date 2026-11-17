@@ -15,17 +15,17 @@ The run ends when a cap is reached, on shutdown, after ``RUN_SECONDS``, or after
 The walk resumes from a checkpoint saved after each entity, whatever its outcome, except that an entity
 cut short by a cap is not passed over: it is tried again on the next day.
 
-Not covered here (part 2): the Deezer, Apple and Wikipedia metadata namespaces (album links, artist image,
-album details and description), whose loaders still live in ``app/api/metadata.py``; this module and its
-worker never import a route module. Album reviews are left out until K4. The page hooks for the artist
-biography, Deezer tracklist, album year and album description are not given to the network, so sections
-that only those hooks fill stay empty here.
+Part 2 adds the album page's Deezer tracklist and Apple/Wikipedia description hooks, on their own caps
+(``deezer``; ``apple`` and ``wikipedia``), the album year (MusicBrainz, counted), the album links
+(``apple``, ``deezer``, ``musicbrainz``) and the artist photo (``deezer``), through ``app/services/album_page_sources.py`` (shared with the
+routes; this module and its worker never import a route module). Not covered: album reviews (until K4) and the
+artist biography. Sections that only those hooks fill stay empty here.
 """
 import logging
 import time
 
 from app import worker_schedule
-from app.services import prefetch_state, similar_precompute
+from app.services import album_page_sources, prefetch_state, similar_precompute
 from discovery.search.album_page import album_sections
 from discovery.search.artist_page import artist_page
 from discovery.search.index import STATE_FRESH, IndexView
@@ -33,6 +33,7 @@ from discovery.search.network import artist_network
 from discovery.search.providers import REQUEST_TIMEOUT
 from integrations.listenbrainz.client import request_headers
 from integrations.listenbrainz.popularity import fetch_release_group_popularity
+from integrations.musicbrainz import album_year as mb_year
 from intelligence.store import open_store
 
 logger = logging.getLogger(__name__)
@@ -82,8 +83,56 @@ def prefetch_network(librarian, spend):
         shared["lastfm_api_key"] = ""
     if "discogs" not in spend.caps:
         shared["discogs_token"] = ""
+    hooks = album_page_hooks(librarian, spend)
     return artist_network(
-        popularity=popularity, bio=lambda name: None, http_get=spend.get, deadline_seconds=ENTITY_SECONDS, **shared)
+        popularity=popularity, bio=lambda name: None, http_get=spend.get, deadline_seconds=ENTITY_SECONDS,
+        **hooks, **shared)
+
+
+def album_page_hooks(librarian, spend) -> dict:
+    """The album page's Deezer tracklist and description hooks (K3 part 2), each only when its providers have caps.
+
+    They read and write the metadata store under the route's own keys (``app.services.album_page_sources``), so a
+    first view finds the row. The description needs Apple and Wikipedia both: without either, its hook is left out
+    and the page's section stays for the first view. The year hook is asked only for an album with no library year;
+    its MusicBrainz request is counted through ``spend`` (and Deezer's fallback only with a ``deezer`` cap).
+    """
+    read, write = librarian._metadata_cache_get, librarian._metadata_cache_set
+    get = album_page_sources.counting_get(spend.get)
+    hooks = {}
+
+    def mb_fetch(query, limit):
+        spend.take(mb_year.RELEASE_GROUP_URL)
+        return mb_year.fetch_release_groups(query, limit)
+
+    hooks["album_year"] = lambda artist, album: album_page_sources.prefetch_year(
+        read, write, mb_fetch, get if "deezer" in spend.caps else None, artist, album)
+    if "deezer" in spend.caps:
+        hooks["deezer_tracks"] = lambda artist, album: album_page_sources.prefetch_tracks(read, write, get, artist, album)
+    if "apple" in spend.caps and "wikipedia" in spend.caps:
+        hooks["album_description"] = lambda artist, album: album_page_sources.prefetch_description(
+            read, write, get, artist, album)
+    return hooks
+
+
+def entity_extras(librarian, spend) -> dict:
+    """What each entity's pages ask for outside the page builders (K3 part 2), each only when its providers have caps.
+
+    Artist: the artist photo (``deezer``). Album: the album links (``apple``, ``deezer`` and ``musicbrainz``, or the
+    set could never be complete), under the strings the clients send: the album page's artist, album and
+    release-group id. The year is not here: it comes through the page's own year hook.
+    """
+    extras = {"artists": [], "albums": []}
+    if not any(name in spend.caps for name in ("deezer", "apple")):
+        return extras
+    read, write = librarian._metadata_cache_get, librarian._metadata_cache_set
+    get = album_page_sources.counting_get(spend.get)
+    if "deezer" in spend.caps:
+        extras["artists"].append(lambda a: album_page_sources.prefetch_artist_image(read, write, get, a["name"]))
+    if all(name in spend.caps for name in ("apple", "deezer", "musicbrainz")):
+        extras["albums"].append(lambda a: album_page_sources.prefetch_links(
+            read, write, get, a["artist"], a["name"], a["release_group_mbid"] or ""))
+    return extras
 
 
 def _warm_artist(network, view, artist) -> bool:
@@ -124,8 +173,21 @@ def _walk(librarian, db, data, spend, date, stop, clock):
     albums = order_albums(data.albums, data.artists)
     view = IndexView(STATE_FRESH, data, None)
     network = prefetch_network(librarian, spend)
-    walks = {"artists": (artists, lambda n: _warm_artist(network, view, n)),
-             "albums": (albums, lambda n: _warm_album(network, data, n))}
+    extras = entity_extras(librarian, spend)
+
+    def with_extras(name, warm):
+        def run(entry):
+            finished = warm(entry)
+            for extra in extras[name]:
+                try:
+                    extra(entry)
+                except Exception as exc:
+                    logger.warning("Prefetch extra for one %s failed (%s)", name[:-1], type(exc).__name__)
+            return finished
+        return run
+
+    walks = {"artists": (artists, with_extras("artists", lambda n: _warm_artist(network, view, n))),
+             "albums": (albums, with_extras("albums", lambda n: _warm_album(network, data, n)))}
     cursor = prefetch_state.load_cursor(db)
     done = {name: 0 for name in walks}         # entities handled in this run, per list
     counts = {"complete": 0, "partial": 0, "failed": 0}
