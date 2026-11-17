@@ -1,3 +1,14 @@
+## 2026-11-17 — Server efficiency W1: table-driven worker scheduler (merged)
+
+- PR [#1155](https://github.com/abucalip/navi-librarian/pull/1155), branch `efficiency-w1-scheduler` from `main` at `b3a0143e`, squash `87afd87e`, head `21b4805d`, merged 2026-11-17 01:33 UTC (GitHub confirms `MERGED`). Not deployed.
+- New `app/worker_schedule.py` (efficiency section 6.2): `Entry(name, due, run)`, `interval()` and `daily()` (local date) due rules, and a `Scheduler` that runs due entries one at a time in a fixed order on one `worker-schedule` thread (60 s tick), persisting `schedule:<name>` in the store's `meta`. A run that returns or raises is recorded (a raise is logged by type only); a run that returns with `stop` set is not; `stop` is checked before each entry. The module imports no job module.
+- `app/worker.py::schedule_entries` registers `daily_maintenance` (R1 job-history prune and P3 metadata-cache prune), then `insights_refresh` (`insights_refresh.is_due`: lens on and `CHECK_SECONDS` elapsed). The insights entry falls back to R5's `insights_refresh.last_run_at` until it writes its own key, so the first start after the upgrade does not re-run the refresh. `insights_refresh._loop`, `start`, `_seconds_until_due`, `_record_run` and `worker.PRUNE_SECONDS` removed. Auto fill and the metrics save keep their own threads.
+- `GET /api/diagnostics/runtime` adds `schedule: {name: last_run}` (additive).
+- Behaviour changes: daily maintenance runs at the first start and then once per local day (was only after 24 h of uptime); a failing insights refresh is recorded and waits its 6 h window across restarts (was an unrecorded in-memory wait).
+- Tests run (unittest, 90 OK): `tests.test_worker_schedule` (new), `tests.test_insights_refresh_schedule` (R5 cases ported to `is_due` and the scheduler), `tests.test_insights_refresh`, `tests.test_insights_refresh_status`, `tests.test_worker_lock`, `tests.test_worker_shutdown`, `tests.test_worker_metadata_prune`, `tests.test_intelligence_musicbrainz_auto_fill`, `tests.test_runtime_metrics`. Lint changed files: 0 new findings in 10 files. Not run: full suite, M2, live worker.
+- CI at merge: all six checks on `21b4805d` (`compile`, `container-smoke`, `lint-changed`, `test-and-build`, `validate-container`, `validate-release-workflow`) were still pending (runner backlog; `main` runs for `ae64633b`, `4e31c325` and `b3a0143e` also still queued).
+- Limitations: only two entries so far; W2 and W3 move the similar-artist precompute, lens refresh and discovery scheduler in.
+
 ## 2026-11-17 — Server efficiency P5: inventory snapshot and ingest consolidation (merged)
 
 - PR [#1154](https://github.com/abucalip/navi-librarian/pull/1154), branch `efficiency-p5-inventory-snapshot` from `main` at `ae64633b`, squash `4e31c325`, head `76d92a74`, merged 2026-11-17 01:22 UTC (GitHub confirms `MERGED`). Not deployed.
