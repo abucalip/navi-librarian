@@ -77,17 +77,27 @@ p, h1, h2, h3 { margin: 0; }
 .lr-upnext a { display: grid; grid-template-columns: var(--lr-cover-thumb) 1fr; gap: var(--lr-space-16); align-items: center; padding: var(--lr-space-8);
   border-radius: var(--lr-radius-control); text-decoration: none; color: var(--lr-hero-text); min-height: var(--lr-target); }
 .lr-upnext a:hover { background: var(--lr-hero-button-fill); }
-.lr-upnext .lr-reason-line { color: var(--lr-hero-text-soft); }
+.lr-upnext .lr-reason-line { color: var(--lr-hero-text); background: var(--lr-hero-reason-fill); border-left-color: var(--lr-hero-reason-rule); margin-top: var(--lr-space-4); }
 
-/* 5.6 Reason block: the "why this pick" component (sizes: hero, card, line) */
-.lr-reason { display: flex; flex-direction: column; gap: var(--lr-space-8); }
-.lr-reason-head { display: flex; align-items: start; gap: var(--lr-space-8); }
-.lr-reason-head .lr-icon, .lr-reason-head .lr-icon-sm { margin-top: 3px; color: var(--lr-text-muted); }
-.lr-reason-hero { font: 600 20px/28px var(--lr-font-display); letter-spacing: -0.005em; color: var(--lr-hero-text); max-width: 46ch; }
-.lr-hero .lr-reason-head .lr-icon { color: var(--lr-hero-text-soft); margin-top: 4px; }
-.lr-reason-text { font: 400 14px/21px var(--lr-font-text); color: var(--lr-text-soft); }
-.lr-reason-line { font: 400 13px/18px var(--lr-font-text); color: var(--lr-text-soft); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.lr-evidence { display: flex; flex-wrap: wrap; gap: var(--lr-space-8); padding: 0; margin: 0; list-style: none; }
+/* 5.6 Reason block: the "why this pick" panel, the showcase of every pick (sizes: hero, card, line).
+   It is its own filled block with a 3px rule on the left, a "Why this pick" label carrying the kind's
+   icon, the sentence in Instrument Sans, then the evidence chips. Left-aligned like everything else;
+   prominence comes from the fill, the rule, the size and full-strength text, never from centring. */
+.lr-reason { display: flex; flex-direction: column; gap: var(--lr-space-8); padding: var(--lr-space-16) var(--lr-space-16) var(--lr-space-16) var(--lr-space-16);
+  border-radius: var(--lr-radius-control); background: var(--lr-reason-fill); border-left: 3px solid var(--lr-reason-rule); min-width: 0; }
+.lr-reason-label { display: flex; align-items: center; gap: var(--lr-space-8); font: 600 12px/16px var(--lr-font-text); letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--lr-text-muted); }
+.lr-reason-label .lr-icon, .lr-reason-label .lr-icon-sm { color: var(--lr-text-soft); }
+.lr-reason-head { display: block; }
+.lr-reason-hero { font: 600 24px/32px var(--lr-font-display); letter-spacing: -0.01em; color: var(--lr-hero-text); max-width: 40ch; }
+.lr-reason-text { font: 600 18px/26px var(--lr-font-display); letter-spacing: -0.005em; color: var(--lr-text); }
+.lr-hero .lr-reason { padding: var(--lr-space-24); background: var(--lr-hero-reason-fill); border-left-color: var(--lr-hero-reason-rule); }
+.lr-hero .lr-reason-label, .lr-hero .lr-reason-label .lr-icon { color: var(--lr-hero-eyebrow); }
+/* Line size: grid cards, Up next, mini grids. A strip with the same fill and rule, 3 lines at most. */
+.lr-reason-line { font: 600 14px/20px var(--lr-font-text); color: var(--lr-text); padding: var(--lr-space-8) var(--lr-space-8) var(--lr-space-8) var(--lr-space-16);
+  border-radius: var(--lr-radius-cover); background: var(--lr-reason-fill); border-left: 3px solid var(--lr-reason-rule);
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.lr-evidence { display: flex; flex-wrap: wrap; gap: var(--lr-space-8); padding: 0; margin: var(--lr-space-4) 0 0; list-style: none; }
 .lr-chip { display: inline-flex; align-items: center; gap: var(--lr-space-8); min-height: 32px; padding: 0 var(--lr-space-8) 0 var(--lr-space-8);
   border-radius: var(--lr-radius-chip); background: var(--lr-surface); border: 1px solid var(--lr-edge-strong); color: var(--lr-text);
   font: 600 13px/16px var(--lr-font-text); text-decoration: none; }
@@ -184,7 +194,9 @@ a.lr-chip:hover { background: var(--lr-raised); color: var(--lr-text); }
   .lr-segment button { flex: 1; min-width: 0; }
   .lr-hero { grid-template-columns: 1fr; padding: var(--lr-space-16); gap: var(--lr-space-16); border-radius: var(--lr-radius-control); }
   .lr-hero-title { font-size: 36px; line-height: 40px; }
-  .lr-reason-hero { font-size: 18px; line-height: 26px; }
+  .lr-reason-hero { font-size: 20px; line-height: 28px; }
+  .lr-reason-text { font-size: 16px; line-height: 24px; }
+  .lr-hero .lr-reason { padding: var(--lr-space-16); }
   .lr-upnext { flex-direction: row; overflow-x: auto; scroll-snap-type: x mandatory; padding: var(--lr-space-8); }
   .lr-upnext .lr-eyebrow { display: none; }
   .lr-upnext a { flex: 0 0 240px; scroll-snap-align: start; }

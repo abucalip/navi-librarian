@@ -84,9 +84,12 @@ def check_hero(failures):
         button = over(1.0, 0.10, panel)
         edge = over(1.0, edge_alpha, panel)
         aside = over(0.0, 0.28, panel)
+        reason = over(0.0, 0.32, panel)
+        rule = over(1.0, 0.72, reason)
         accent = TOKENS["color"]["accent"]["value"]
         checks = [(hero["text"], panel, 4.5), (hero["text-soft"], panel, 4.5), (hero["text"], button, 4.5),
-                  (hero["text-soft"], aside, 4.5), (accent, panel, 3.0), (edge, panel, 3.0)]
+                  (hero["text-soft"], aside, 4.5), (hero["text"], reason, 4.5),
+                  (hero["text-soft"], reason, 4.5), (rule, reason, 3.0), (accent, reason, 3.0), (accent, panel, 3.0), (edge, panel, 3.0)]
         for fore, back, minimum in checks:
             got = ratio(fore, back)
             if minimum >= 4.5:

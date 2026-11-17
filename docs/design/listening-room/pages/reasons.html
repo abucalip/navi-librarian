@@ -69,7 +69,7 @@
     <div class="lr-hero-body">
       <p class="lr-eyebrow">Hero size · R5 with a seed tag · Daily picks lead pick</p>
       <div class="lr-reason">
-        <p class="lr-reason-head"><svg class="lr-icon"><use href="#lr-repeat"/></svg><span class="lr-reason-hero">From the art rock you keep repeating.</span></p>
+        <p class="lr-reason-label"><svg class="lr-icon-sm"><use href="#lr-repeat"/></svg>Why this pick</p><p class="lr-reason-head"><span class="lr-reason-hero">From the art rock you keep repeating.</span></p>
         <ul class="lr-evidence"><li><a class="lr-chip" href="#"><svg class="lr-icon-sm"><use href="#lr-tag"/></svg><span class="lr-chip-k">Seed tag</span>art rock</a></li><li><span class="lr-chip"><svg class="lr-icon-sm"><use href="#lr-listeners"/></svg>96k listeners</span></li><li><a class="lr-chip" href="#"><span class="lr-chip-k">Tag</span>post-rock</a></li></ul>
       </div>
     </div>
@@ -79,14 +79,14 @@
     <article class="lr-panel kind">
       <p class="lr-eyebrow">R1 · bridge label</p>
       <div class="lr-rowcard" style="background: var(--lr-bg);"><div class="lr-cover art-russ3"></div><div class="lr-rowcard-body"><div><p class="lr-card-title">Calling Out of Context</p><p class="lr-meta">Arthur Russell · 2004</p></div>
-        <div class="lr-reason"><p class="lr-reason-head"><svg class="lr-icon-sm"><use href="#lr-layers"/></svg><span class="lr-reason-text">Discover more Arthur Russell</span></p></div></div></div>
+        <div class="lr-reason"><p class="lr-reason-label"><svg class="lr-icon-sm"><use href="#lr-layers"/></svg>Why this pick</p><p class="lr-reason-head"><span class="lr-reason-text">Discover more Arthur Russell</span></p></div></div></div>
       <p class="src"><b>bridge_label</b> shown as sent. No chips. Lens lists and Personal, Classics, New releases when the Deep Dives bridge adds the album.</p>
     </article>
 
     <article class="lr-panel kind">
       <p class="lr-eyebrow">R2 · seed tags (because.kind = tag)</p>
       <div class="lr-rowcard" style="background: var(--lr-bg);"><div class="lr-cover art-nala"></div><div class="lr-rowcard-body"><div><p class="lr-card-title">Space 1.8</p><p class="lr-meta">Nala Sinephro · 2021</p></div>
-        <div class="lr-reason"><p class="lr-reason-head"><svg class="lr-icon-sm"><use href="#lr-tag"/></svg><span class="lr-reason-text">Because you listen to spiritual jazz, ambient</span></p>
+        <div class="lr-reason"><p class="lr-reason-label"><svg class="lr-icon-sm"><use href="#lr-tag"/></svg>Why this pick</p><p class="lr-reason-head"><span class="lr-reason-text">Because you listen to spiritual jazz, ambient</span></p>
         <ul class="lr-evidence"><li><a class="lr-chip" href="#">spiritual jazz</a></li><li><a class="lr-chip" href="#">ambient</a></li></ul></div></div></div>
       <p class="src"><b>because.names</b> (max 3) → "Because you listen to {names, comma}". Chips: one per tag, linking to its genre page.</p>
     </article>
@@ -94,7 +94,7 @@
     <article class="lr-panel kind">
       <p class="lr-eyebrow">R3 · shared genres (because.kind = similar_artists)</p>
       <div class="lr-rowcard" style="background: var(--lr-bg);"><div class="lr-cover art-khru"></div><div class="lr-rowcard-body"><div><p class="lr-card-title">Con Todo El Mundo</p><p class="lr-meta">Khruangbin · 2018</p></div>
-        <div class="lr-reason"><p class="lr-reason-head"><svg class="lr-icon-sm"><use href="#lr-people"/></svg><span class="lr-reason-text">Shares genres with Mdou Moctar, Tinariwen and 1 more</span></p>
+        <div class="lr-reason"><p class="lr-reason-label"><svg class="lr-icon-sm"><use href="#lr-people"/></svg>Why this pick</p><p class="lr-reason-head"><span class="lr-reason-text">Shares genres with Mdou Moctar, Tinariwen and 1 more</span></p>
         <ul class="lr-evidence"><li><a class="lr-chip" href="#"><span class="lr-chip-avatar photo-c" aria-hidden="true"></span>Mdou Moctar</a></li><li><a class="lr-chip" href="#"><span class="lr-chip-avatar photo-a" aria-hidden="true"></span>Tinariwen</a></li><li><span class="lr-chip">+1</span></li></ul></div></div></div>
       <p class="src"><b>because.names</b> → "Shares genres with {A}, {B} and {n} more". Never "because you play": it is tag overlap. Chips: artist photo + name (artist page), 2 then "+n".</p>
     </article>
@@ -102,7 +102,7 @@
     <article class="lr-panel kind">
       <p class="lr-eyebrow">R4 · similar_to (older server)</p>
       <div class="lr-rowcard" style="background: var(--lr-bg);"><div class="lr-cover art-broadcast"></div><div class="lr-rowcard-body"><div><p class="lr-card-title">Tender Buttons</p><p class="lr-meta">Broadcast · 2005</p></div>
-        <div class="lr-reason"><p class="lr-reason-head"><svg class="lr-icon-sm"><use href="#lr-people"/></svg><span class="lr-reason-text">Shares genres with Stereolab</span></p>
+        <div class="lr-reason"><p class="lr-reason-label"><svg class="lr-icon-sm"><use href="#lr-people"/></svg>Why this pick</p><p class="lr-reason-head"><span class="lr-reason-text">Shares genres with Stereolab</span></p>
         <ul class="lr-evidence"><li><a class="lr-chip" href="#"><span class="lr-chip-avatar photo-b" aria-hidden="true"></span>Stereolab</a></li></ul></div></div></div>
       <p class="src"><b>similar_to</b> when there is no <b>because</b> and discovery_category = adjacent. Same wording and chips as R3.</p>
     </article>
@@ -110,11 +110,11 @@
     <article class="lr-panel kind">
       <p class="lr-eyebrow">R5 · lens + seed tag</p>
       <div style="display: flex; flex-direction: column; gap: 8px;">
-        <p class="lr-reason-head"><svg class="lr-icon-sm"><use href="#lr-layers"/></svg><span class="lr-reason-text">Deep cuts: A lesser-known record from the {tag} you play</span></p>
-        <p class="lr-reason-head"><svg class="lr-icon-sm"><use href="#lr-spark"/></svg><span class="lr-reason-text">Current tastes: Close to the {tag} you play lately</span></p>
-        <p class="lr-reason-head"><svg class="lr-icon-sm"><use href="#lr-compass-spread"/></svg><span class="lr-reason-text">Genre spread: Through the {tag} you play</span></p>
-        <p class="lr-reason-head"><svg class="lr-icon-sm"><use href="#lr-repeat"/></svg><span class="lr-reason-text">Repeated tracks: From the {tag} you keep repeating</span></p>
-        <p class="lr-reason-head"><svg class="lr-icon-sm"><use href="#lr-flame"/></svg><span class="lr-reason-text">Obsessions: From your {tag} obsession</span></p>
+        <p class="lr-reason-label"><svg class="lr-icon-sm"><use href="#lr-layers"/></svg>Why this pick</p><p class="lr-reason-head"><span class="lr-reason-text">Deep cuts: A lesser-known record from the {tag} you play</span></p>
+        <p class="lr-reason-label"><svg class="lr-icon-sm"><use href="#lr-spark"/></svg>Why this pick</p><p class="lr-reason-head"><span class="lr-reason-text">Current tastes: Close to the {tag} you play lately</span></p>
+        <p class="lr-reason-label"><svg class="lr-icon-sm"><use href="#lr-compass-spread"/></svg>Why this pick</p><p class="lr-reason-head"><span class="lr-reason-text">Genre spread: Through the {tag} you play</span></p>
+        <p class="lr-reason-label"><svg class="lr-icon-sm"><use href="#lr-repeat"/></svg>Why this pick</p><p class="lr-reason-head"><span class="lr-reason-text">Repeated tracks: From the {tag} you keep repeating</span></p>
+        <p class="lr-reason-label"><svg class="lr-icon-sm"><use href="#lr-flame"/></svg>Why this pick</p><p class="lr-reason-head"><span class="lr-reason-text">Obsessions: From your {tag} obsession</span></p>
       </div>
       <p class="src"><b>lens</b>, <b>seed_tag</b>. Chips: Seed tag, <b>album_listeners</b> as "41k listeners", 2 of <b>tags</b>. Same sentences as Android GalleryListsRules.lensReason.</p>
     </article>
@@ -122,7 +122,7 @@
     <article class="lr-panel kind">
       <p class="lr-eyebrow">R6 · lens without a seed tag</p>
       <div class="lr-rowcard" style="background: var(--lr-bg);"><div class="lr-cover art-grouper"></div><div class="lr-rowcard-body"><div><p class="lr-card-title">Ruins</p><p class="lr-meta">Grouper · 2014</p></div>
-        <div class="lr-reason"><p class="lr-reason-head"><svg class="lr-icon-sm"><use href="#lr-layers"/></svg><span class="lr-reason-text">From your Deep cuts lens</span></p>
+        <div class="lr-reason"><p class="lr-reason-label"><svg class="lr-icon-sm"><use href="#lr-layers"/></svg>Why this pick</p><p class="lr-reason-head"><span class="lr-reason-text">From your Deep cuts lens</span></p>
         <ul class="lr-evidence"><li><span class="lr-chip"><svg class="lr-icon-sm"><use href="#lr-listeners"/></svg>12k listeners</span></li></ul></div></div></div>
       <p class="src"><b>lens</b> label → "From your {label} lens". Lens <b>reason</b> from /api/dashboard-picks ("From your current tastes: {tag}") is shown as sent.</p>
     </article>
@@ -130,7 +130,7 @@
     <article class="lr-panel kind">
       <p class="lr-eyebrow">R7 · Deep Dive, missing album</p>
       <div class="lr-rowcard" style="background: var(--lr-bg);"><div class="lr-cover art-russ2"></div><div class="lr-rowcard-body"><div><p class="lr-card-title">Another Thought</p><p class="lr-meta">Arthur Russell · 1994</p></div>
-        <div class="lr-reason"><p class="lr-reason-head"><svg class="lr-icon-sm"><use href="#lr-library"/></svg><span class="lr-reason-text">You have 3 albums by Arthur Russell. This one is not in your library yet.</span></p>
+        <div class="lr-reason"><p class="lr-reason-label"><svg class="lr-icon-sm"><use href="#lr-library"/></svg>Why this pick</p><p class="lr-reason-head"><span class="lr-reason-text">You have 3 albums by Arthur Russell. This one is not in your library yet.</span></p>
         <ul class="lr-evidence"><li><span class="lr-chip"><svg class="lr-icon-sm"><use href="#lr-disc"/></svg>3 in your library</span></li></ul></div></div></div>
       <p class="src"><b>anchor_artist</b>, <b>anchor_album_count</b> (same artist). The server <b>reason</b> here is internal ("additional resolved candidate…"): never shown.</p>
     </article>
@@ -138,7 +138,7 @@
     <article class="lr-panel kind">
       <p class="lr-eyebrow">R8 · Deep Dive, similar artist</p>
       <div class="lr-rowcard" style="background: var(--lr-bg);"><div class="lr-cover art-floating"></div><div class="lr-rowcard-body"><div><p class="lr-card-title">Promises</p><p class="lr-meta">Floating Points · 2021</p></div>
-        <div class="lr-reason"><p class="lr-reason-head"><svg class="lr-icon-sm"><use href="#lr-people"/></svg><span class="lr-reason-text">Close to Pharoah Sanders, who is well covered in your library. Nothing by this artist yet.</span></p>
+        <div class="lr-reason"><p class="lr-reason-label"><svg class="lr-icon-sm"><use href="#lr-people"/></svg>Why this pick</p><p class="lr-reason-head"><span class="lr-reason-text">Close to Pharoah Sanders, who is well covered in your library. Nothing by this artist yet.</span></p>
         <ul class="lr-evidence"><li><a class="lr-chip" href="#"><span class="lr-chip-avatar photo-a" aria-hidden="true"></span><span class="lr-chip-k">Close to</span>Pharoah Sanders</a></li></ul></div></div></div>
       <p class="src"><b>anchor_artist</b> differs from the album artist. Which field tells R7 and R8 apart is settled in slice L0 (section 9).</p>
     </article>
@@ -146,7 +146,7 @@
     <article class="lr-panel kind">
       <p class="lr-eyebrow">R9 · New releases</p>
       <div class="lr-rowcard" style="background: var(--lr-bg);"><div class="lr-cover art-mdou2"></div><div class="lr-rowcard-body"><div><p class="lr-card-title">Funeral for Justice</p><p class="lr-meta">Mdou Moctar · 2026</p></div>
-        <div class="lr-reason"><p class="lr-reason-head"><svg class="lr-icon-sm"><use href="#lr-calendar"/></svg><span class="lr-reason-text">New in 2026 from an artist with a full album in your library</span></p>
+        <div class="lr-reason"><p class="lr-reason-label"><svg class="lr-icon-sm"><use href="#lr-calendar"/></svg>Why this pick</p><p class="lr-reason-head"><span class="lr-reason-text">New in 2026 from an artist with a full album in your library</span></p>
         <ul class="lr-evidence"><li><span class="lr-chip"><svg class="lr-icon-sm"><use href="#lr-disc"/></svg>2 albums in your library</span></li></ul></div></div></div>
       <p class="src"><b>year</b>, <b>artist_library_album_count</b>. Grid size: "New in {year} · {n} albums in your library".</p>
     </article>
@@ -154,7 +154,7 @@
     <article class="lr-panel kind">
       <p class="lr-eyebrow">R10 · Add to your collection</p>
       <div class="lr-rowcard" style="background: var(--lr-bg);"><div class="lr-cover art-can"></div><div class="lr-rowcard-body"><div><p class="lr-card-title">Ege Bamyasi</p><p class="lr-meta">Can · 1972</p></div>
-        <div class="lr-reason"><p class="lr-reason-head"><svg class="lr-icon-sm"><use href="#lr-disc"/></svg><span class="lr-reason-text">A well-known album; you have 4 albums by this artist</span></p>
+        <div class="lr-reason"><p class="lr-reason-label"><svg class="lr-icon-sm"><use href="#lr-disc"/></svg>Why this pick</p><p class="lr-reason-head"><span class="lr-reason-text">A well-known album; you have 4 albums by this artist</span></p>
         <ul class="lr-evidence"><li><span class="lr-chip"><svg class="lr-icon-sm"><use href="#lr-listeners"/></svg>310k listeners</span></li></ul></div></div></div>
       <p class="src"><b>artist_library_album_count</b>, <b>lastfm_listeners</b>. Same sentence as Android tileReason.</p>
     </article>
@@ -162,10 +162,10 @@
     <article class="lr-panel kind">
       <p class="lr-eyebrow">R11 · Discover music category</p>
       <div style="display: flex; flex-direction: column; gap: 8px;">
-        <p class="lr-reason-head"><svg class="lr-icon-sm"><use href="#lr-discover"/></svg><span class="lr-reason-text">adjacent: Close to genres you already love</span></p>
-        <p class="lr-reason-head"><svg class="lr-icon-sm"><use href="#lr-compass-spread"/></svg><span class="lr-reason-text">cross_genre: A bridge between {family} and {family}, both in your listening</span></p>
-        <p class="lr-reason-head"><svg class="lr-icon-sm"><use href="#lr-spark"/></svg><span class="lr-reason-text">adventurous: A step away from your usual genres</span></p>
-        <p class="lr-reason-head"><svg class="lr-icon-sm"><use href="#lr-info"/></svg><span class="lr-reason-text">unclassified: Few genre tags, so the fit is a guess</span></p>
+        <p class="lr-reason-label"><svg class="lr-icon-sm"><use href="#lr-discover"/></svg>Why this pick</p><p class="lr-reason-head"><span class="lr-reason-text">adjacent: Close to genres you already love</span></p>
+        <p class="lr-reason-label"><svg class="lr-icon-sm"><use href="#lr-compass-spread"/></svg>Why this pick</p><p class="lr-reason-head"><span class="lr-reason-text">cross_genre: A bridge between {family} and {family}, both in your listening</span></p>
+        <p class="lr-reason-label"><svg class="lr-icon-sm"><use href="#lr-spark"/></svg>Why this pick</p><p class="lr-reason-head"><span class="lr-reason-text">adventurous: A step away from your usual genres</span></p>
+        <p class="lr-reason-label"><svg class="lr-icon-sm"><use href="#lr-info"/></svg>Why this pick</p><p class="lr-reason-head"><span class="lr-reason-text">unclassified: Few genre tags, so the fit is a guess</span></p>
       </div>
       <p class="src"><b>discovery_category</b>, <b>genre_families</b> ∩ <b>recent_profile_families</b>. Chips: "Similar to {anchor_artist}" with photo, <b>lastfm_listeners</b>. The server's long category sentence is replaced by these.</p>
     </article>
