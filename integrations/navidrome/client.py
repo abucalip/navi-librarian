@@ -86,11 +86,12 @@ def _get(url, query, client_factory):
     """GET one Navidrome URL.
 
     A caller-supplied ``client_factory`` (tests) gets its own client, closed after the
-    call, exactly as before. Otherwise the shared client is used and left open.
+    call, exactly as before; its request carries the same ``navidrome`` label as the
+    shared client's (efficiency M1). Otherwise the shared client is used and left open.
     """
     if client_factory is not None:
         with client_factory(timeout=30, follow_redirects=False) as client:
-            return client.get(url, params=query)
+            return client.get(url, params=query, extensions=dict([METRICS_LABEL]))
     return _shared_client().get(url, params=query)
 
 

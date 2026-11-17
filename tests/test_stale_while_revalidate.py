@@ -200,6 +200,34 @@ class LayeredCacheStaleTests(_Case):
         value = cache.get_or_load("k", lambda: Loaded("new"), store_key="s", store_ttl=7 * DAY, stored_ttl=3600)
         self.assertEqual(value, "new")
 
+    def test_a_stale_dict_answer_states_when_it_was_fetched_and_nothing_else_does(self):
+        cache = LayeredCache("t")
+        self.store.set("s", {"v": 1})
+        self.store.age("s", 8 * DAY)
+        value, stale = self.lookup(cache, self.fail, stale_fetched_at=True)
+        self.assertTrue(stale)
+        self.assertEqual(value, {"v": 1, "fetched_at": layered_cache.iso_utc(self.now - 8 * DAY)})
+        self.assertEqual(self.store.rows["s"][0], {"v": 1}, "the stored value is not changed")
+        self.assertEqual(self.lookup(cache, self.fail, stale_fetched_at=True), (value, True), "memory keeps the copy")
+        self.executor.tasks.clear()
+        cache.clear()
+        self.store.set("s", {"v": 2})
+        self.assertEqual(self.lookup(cache, self.fail, stale_fetched_at=True), ({"v": 2}, False),
+                         "a fresh answer has no fetched_at")
+
+    def test_fetched_at_is_off_unless_asked_and_skips_non_dict_values(self):
+        cache = LayeredCache("t")
+        self.store.set("s", {"v": 1})
+        self.store.age("s", 8 * DAY)
+        self.assertEqual(self.lookup(cache, self.fail), ({"v": 1}, True))
+        cache.clear()
+        self.store.set("s", "text")
+        self.store.age("s", 8 * DAY)
+        self.assertEqual(self.lookup(cache, self.fail, stale_fetched_at=True), ("text", True))
+
+    def test_iso_utc_matches_the_contract_format(self):
+        self.assertEqual(layered_cache.iso_utc(1761408000), "2025-10-25T16:00:00Z")
+
     def test_a_store_without_ages_never_serves_stale(self):
         persistent_metadata.attach(self.store.get, self.store.set)
         cache = LayeredCache("t")
@@ -230,7 +258,8 @@ class ReviewTests(_Case):
             self.now += metadata._SOURCE_MISS_TTL + 60
             metadata._review_cache.clear()
             started = time.monotonic()
-            self.assertEqual(metadata.album_reviews_for("Opeth", "Watershed"), {"reviews": []})
+            self.assertEqual(metadata.album_reviews_for("Opeth", "Watershed"),
+                             {"reviews": [], "fetched_at": layered_cache.iso_utc(self.now - metadata._SOURCE_MISS_TTL - 60)})
             self.assertLess(time.monotonic() - started, 2.0)
             self.assertEqual(pitchfork.call_count + wordpress.call_count, outlets, "no outlet asked on the request path")
             self.assertEqual(len(self.executor.tasks), outlets)
@@ -253,11 +282,29 @@ class ReviewTests(_Case):
                 patch.object(metadata, "_wordpress_review", side_effect=AssertionError("asked inline")):
             self.assertEqual(metadata.album_reviews_for("Opeth", "Watershed")["reviews"], [old])
         self.assertEqual(self.store.writes, [], "nothing re-stamped on the request path")
+        served = metadata.album_reviews_for("Opeth", "Watershed")
+        self.assertEqual(served["fetched_at"], layered_cache.iso_utc(self.now - 40 * DAY))
         new = review("Pitchfork") | {"quote": "Updated."}
         with patch.object(metadata, "_pitchfork_review", return_value=new), \
                 patch.object(metadata, "_wordpress_review", return_value=None):
             self.executor.run_all()
         self.assertEqual(self.store.rows[top][0]["reviews"], [new], "the background refresh stores the new list")
+
+    def test_a_list_built_from_stale_outlets_states_the_oldest_answer_and_is_not_stored(self):
+        with patch.object(metadata, "_pitchfork_review", return_value=review("Pitchfork")), \
+                patch.object(metadata, "_wordpress_review", return_value=None):
+            metadata.album_reviews_for("Opeth", "Watershed")
+        ages = iter((40 * DAY, 35 * DAY))
+        for key in list(self.store.rows):
+            if key.startswith("album-review-source:"):
+                self.store.age(key, next(ages, 4 * DAY))
+        del self.store.rows["album-reviews:v1:opeth:watershed"]
+        metadata._review_cache.clear()
+        self.store.writes.clear()
+        value = metadata._load_album_reviews("Opeth", "Watershed", allow_stale=True)
+        self.assertEqual(value.value["fetched_at"], layered_cache.iso_utc(self.now - 40 * DAY))
+        self.assertFalse(value.persist)
+        self.assertEqual(self.store.writes, [])
 
     def test_an_outlet_answer_past_seventy_days_is_asked_inline(self):
         with patch.object(metadata, "_pitchfork_review", return_value=review("Pitchfork")) as pitchfork, \
@@ -279,7 +326,7 @@ class ReviewTests(_Case):
         with patch.object(metadata, "_pitchfork_review", side_effect=TimeoutError()):
             self.assertEqual(metadata._review_sources("Opeth", "Watershed", True, stale)[0](), review("Pitchfork"))
             self.executor.run_all()
-        self.assertEqual(stale, ["Pitchfork"])
+        self.assertEqual(stale, [self.now - 31 * DAY], "when the stale answer was checked")
         self.assertEqual(self.store.rows[key][0]["review"], review("Pitchfork"))
         self.assertEqual(self.refresher.failed, 1)
 
@@ -311,7 +358,8 @@ class LinksTests(_Case):
         self.store.set("apple-album-url:v1:a:b", "https://music.apple.com/old")
         self.store.age("apple-album-url:v1:a:b", 8 * DAY)
         with patch.object(metadata, "_load_album_links", wraps=metadata._load_album_links) as load:
-            self.assertEqual(metadata.album_page_links("A", "B", mbid="m"), {"deezer": "d"})
+            self.assertEqual(metadata.album_page_links("A", "B", mbid="m"),
+                             {"deezer": "d", "fetched_at": layered_cache.iso_utc(self.now - 8 * DAY)})
             load.assert_not_called()
             with patch.object(metadata, "_json_or_none", return_value=None), \
                     patch.object(metadata.album_links, "deezer_url", return_value="https://deezer.com/1"), \
