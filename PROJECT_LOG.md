@@ -1,3 +1,11 @@
+## 2026-11-17 — macOS Paths P0 model (PR #1184)
+
+- **Merged:** PR #1184, squash `5ec4ac568a9221ae4ff4545e64ee12dc0c0531af`. Slice P0 of `docs/MACOS_PATHS_BOOKLET.md`: `Model/PathTrail.swift`; `PathStep` gains `firstVia`, `firstCode`, `creditRole`, `anchors` and `with(id:)` (the artist dedupe no longer rebuilds steps by hand); `PathAnswer.capped` kept structured; `PathsSheetModel` gains `year`, `filter`, `groups`, `order`, `looseNotes`, `count(for:)`, and `move(by:)` follows the visual order. The current sheet shows capped sentences through `looseNotes` (now after the other notes).
+- **Owner decisions:** role-line anchors only from the reasons that share the first reason's link; `creditRole` reads `evidence.relation` (the fixtures send `role` null for crew).
+- **Tests run:** `swift build`; `swift test --filter 'PathsModelTests|PathTrailTests'`, 43 tests, all pass. Not run: the rest of the UI suite, CPU measurement (no visible change).
+- **CI:** not checked by me on the final head before the owner merged.
+- **Limitations:** no visible change; P1 needs decisions D1, D2, D5, D6.
+
 ## 2026-11-17 — Web Listening Room: mockups for every page, reasons showcased, no Paths (docs, on main)
 
 - **Request.** The owner asked for mockups of all web pages, without Paths (Paths stays on Android and macOS). They also asked for the texts that explain each pick to be "centred" in the sense of showcased: given a prominent place of their own, not centre-aligned. An earlier attempt was interrupted and thrown away at the owner's request; this round started fresh from `main` at `d3c4ed67`.

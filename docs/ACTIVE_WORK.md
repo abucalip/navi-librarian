@@ -296,7 +296,7 @@ Done: Genres grid and four album shelves on the dashboard, the Recommended slide
   Paths is gone from the web design.
 - **Next action:** after the owner's review, start L0 (server audit and missing fields, plan section 9), then L1 to L6 (Home), then L7 to L14.
 
-## 2r. macOS Paths and Booklet sheets redesign: design proposed, no code yet
+## 2r. macOS Paths and Booklet sheets redesign: P0 merged, P1 and B1 next
 
 - The owner asked on 2026-11-17 for a design system and a detailed build plan, delivered as a docs PR. They are based on the Paths and Booklet mockups from an earlier session. The spec and plan are in [`MACOS_PATHS_BOOKLET.md`](MACOS_PATHS_BOOKLET.md). The package is in [`design/macos-paths-booklet/`](design/macos-paths-booklet/). It holds:
   - tokens mapped to `CU` roles
@@ -306,6 +306,7 @@ Done: Genres grid and four album shelves on the dashboard, the Recommended slide
   - a generated Swift tokens file
   - contrast and build tools
 - Before P1 and B2, the owner answers decisions D1 to D6 (section 8). The recommendations: the Booklet stays a sheet with a Done button; the Paths sheet becomes resizable; "Your edition" only after B3, as optional server slice B4; no language tag; the filter goes back to All on each open; arrow keys move in visual order.
+- **P0 merged** in PR [#1184](https://github.com/abucalip/navi-librarian/pull/1184), squash `5ec4ac568a9221ae4ff4545e64ee12dc0c0531af` (2026-11-17): `Model/PathTrail.swift`, `PathStep` Trail fields and `with(id:)`, structured `PathAnswer.capped`, `PathsSheetModel` year, filter, groups, order and `move(by:)` in visual order. Owner decisions in P0: role-line anchors come only from reasons sharing the first reason's link; the crew role is read from `evidence.relation`. No visible change. P1 waits for D1, D2, D5, D6; B1 can start.
 - Slices: P0 (model) → P1 → P2 for Paths; B1 (palette and layout helpers) → B2 → B3 for Booklet; optional B4. P0 and B1 change nothing visible and can start once the PR is merged.
 
 ## 2n. Simplification candidates

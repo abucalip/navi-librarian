@@ -1,6 +1,6 @@
 # macOS Paths and Booklet sheets: design system and build plan
 
-Status: **design proposed, no code.** Written 2026-11-17. In an earlier session the owner was shown one mockup of the Paths sheet and one of the Booklet sheet ([artifact](https://claude.ai/artifact/4SiJAn6umw5gJ4aqdp8msa)). The owner asked for a design system with exact specs and a detailed build plan, delivered as a docs PR. The owner decisions in section 8 come before P1 and B2.
+Status: **design proposed; P0 (model) merged in PR #1184, no visible change yet.** Written 2026-11-17. In an earlier session the owner was shown one mockup of the Paths sheet and one of the Booklet sheet ([artifact](https://claude.ai/artifact/4SiJAn6umw5gJ4aqdp8msa)). The owner asked for a design system with exact specs and a detailed build plan, delivered as a docs PR. The owner decisions in section 8 come before P1 and B2.
 
 The mockups are the spec:
 
@@ -307,8 +307,8 @@ The `PathStep` additions, filled in the existing `PathAnswer` initialisers:
 
 - `firstVia: KnowledgeEntity?`
 - `firstCode: String`
-- `creditRole: String?`: the first evidence role
-- `anchors: [KnowledgeEntity]`: from all reasons
+- `creditRole: String?`: the relation of the first evidence credit (`producer`, `engineer`, `mix`, `mastering`; the server sends `role` null for crew)
+- `anchors: [KnowledgeEntity]`: from the reasons that share the first reason's link (same code and `via`), so a role line never shows another link's anchor (owner decision, P0)
 
 `KnowledgeEntity` is already `Hashable, Sendable`. Do not use tuples: they would break `PathStep`'s synthesized `Equatable`.
 
