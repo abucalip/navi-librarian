@@ -128,15 +128,6 @@ class LastFmClientTests(unittest.TestCase):
         missing = self.make_client(http_get=lambda *_a, **_k: FakeResponse({"error": 6}))
         self.assertEqual(missing.similar_artists("Anchor"), [])
 
-    def test_similar_artists_legacy_adapter_delegates(self):
-        import navidrome_server
-        expected = [{"artist": "Similar", "similarity": 0.8}]
-        with patch.object(navidrome_server._lastfm_client, "similar_artists",
-                          return_value=expected) as call:
-            self.assertIs(navidrome_server._lastfm_similar_artists("Anchor", limit=4), expected)
-        call.assert_called_once_with("Anchor", limit=4)
-
-
     def test_album_popularity_fetches_normalizes_tags_and_caches_legacy_key(self):
         payload = {
             "album": {

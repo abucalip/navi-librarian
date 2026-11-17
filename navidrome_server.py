@@ -67,12 +67,7 @@ def _metadata_cache_set(key, value):
 
 # Environment variables provide first-run defaults; service settings are persistent.
 
-def _default_music_dir():
-    """Compatibility adapter for the extracted music-path default policy."""
-    return _default_music_dir_from_environment(os.environ, lambda path: path.is_dir())
-
-
-MUSIC_DIR = _default_music_dir()
+MUSIC_DIR = _default_music_dir_from_environment(os.environ, lambda path: path.is_dir())
 
 
 def api_call(method, **params):
@@ -762,11 +757,6 @@ def _lastfm_artist_genres(artist):
 def _deep_dive_genre_families(tags):
     from discovery.recommendations import deep_dive_genre_families
     return deep_dive_genre_families(tags)
-def _lastfm_similar_artists(artist, limit=8):
-    """Compatibility adapter for cached Last.fm similar-artist results."""
-    return _lastfm_client.similar_artists(artist, limit=limit)
-
-
 def _musicbrainz_critical_rating(mbid, include_year=False):
     """Compatibility adapter for cached MusicBrainz release-group ratings."""
     return _musicbrainz_rating_client.critical_rating(
@@ -777,9 +767,6 @@ def _musicbrainz_critical_rating(mbid, include_year=False):
     )
 
 
-def _discovery_exact_artist_credit_matches(artist_credit, artist_name):
-    from discovery.recommendations import exact_artist_credit_matches
-    return exact_artist_credit_matches(artist_credit, artist_name)
 def _discovery_is_various_artists(value):
     from discovery.recommendations import is_various_artists
     return is_various_artists(value)
@@ -827,6 +814,7 @@ def _build_new_releases_list():
             continue
 
         from discovery.new_releases import select_artist_release_candidates
+        from discovery.recommendations import exact_artist_credit_matches
         artist_candidates = select_artist_release_candidates(
             payload if isinstance(payload, list) else [],
             artist=artist,
@@ -837,7 +825,7 @@ def _build_new_releases_list():
             today=date.today().isoformat(),
             music_key=_music_key,
             is_album_candidate=_discovery_is_album_candidate,
-            exact_artist_credit_matches=_discovery_exact_artist_credit_matches,
+            exact_artist_credit_matches=exact_artist_credit_matches,
             is_various_artists=_discovery_is_various_artists,
         )
         from discovery.new_releases import merge_release_candidates
@@ -964,7 +952,7 @@ def _build_artist_deep_dive_list():
     )
     collect_similar_artist_candidates(
         anchors, owned_artists, owned_albums, candidates,
-        similar_artists_lookup=_lastfm_similar_artists,
+        similar_artists_lookup=_lastfm_client.similar_artists,
         top_albums_lookup=_lastfm_top_albums, music_key=_music_key, pause=pause,
     )
     enrich_candidate_genres(
@@ -2087,10 +2075,6 @@ def _bridge_deep_dives(shown, hidden):
     return bridge_albums(None, shown, [], payload, _music_key, is_excluded=hidden)
 
 
-def _discovery_refresh_all():
-    return discovery_refresh.refresh_all(_discovery_refresh_personal, _discovery_refresh_other)
-
-
 def discovery_refresh_list(list_name: str = "personal", count: int = 10) -> str:
     """Refresh personal, classics, artist_deep_dive, new_releases, or all lists.
 
@@ -2110,8 +2094,10 @@ def discovery_refresh_list(list_name: str = "personal", count: int = 10) -> str:
     if list_name == "personal":
         return json.dumps(_discovery_refresh_personal(count), ensure_ascii=False, indent=2)
 
-    target = _discovery_refresh_all if list_name == "all" else _discovery_refresh_other
-    args = () if list_name == "all" else (list_name,)
+    if list_name == "all":
+        target, args = discovery_refresh.refresh_all, (_discovery_refresh_personal, _discovery_refresh_other)
+    else:
+        target, args = _discovery_refresh_other, (list_name,)
     thread = threading.Thread(
         target=target,
         args=args,
@@ -2127,17 +2113,11 @@ def discovery_refresh_list(list_name: str = "personal", count: int = 10) -> str:
     }, ensure_ascii=False)
 
 
-def _refresh_listening_profile_background():
-    """Compatibility adapter for the extracted background profile refresh."""
-    return listening_profile.refresh_and_persist_background_profile(
-        recent_listening_profile,
-        _discovery_write_list,
-    )
-
-
 def _discovery_scheduler_refresh_one(list_name):
     if list_name == "personal":
         return _discovery_refresh_personal(20, origin="scheduler")
     if list_name == "listening_profile":
-        return _refresh_listening_profile_background()
+        return listening_profile.refresh_and_persist_background_profile(
+            recent_listening_profile, _discovery_write_list,
+        )
     return _discovery_refresh_other(list_name)
