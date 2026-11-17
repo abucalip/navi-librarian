@@ -10,6 +10,7 @@ from __future__ import annotations
 import threading
 import time
 from collections.abc import Callable
+from contextvars import ContextVar
 from typing import Any
 
 DEPTH = 50
@@ -93,20 +94,63 @@ def read_cached_state(
     ``STALE_FACTOR`` times it comes back with ``stale=True``. Older, missing or malformed
     entries are ``(None, False)``. The TTL is the one ``read_cached`` applies (one hour for an
     empty answer)."""
+    records, stale, _ = read_cached_entry(read, key, now, positive_ttl=positive_ttl)
+    return records, stale
+
+
+def read_cached_entry(
+    read: Callable[[str], Any],
+    key: str,
+    now: float,
+    positive_ttl: int = POSITIVE_TTL_SECONDS,
+) -> tuple[list[dict[str, Any]] | None, bool, float | None]:
+    """``(records, stale, at)``: ``read_cached_state`` plus the row's store time (None on a miss)."""
     entry = read(key)
     if not isinstance(entry, dict):
-        return None, False
+        return None, False, None
     records = entry.get("results")
     at = entry.get("at")
     if not isinstance(records, list) or not isinstance(at, (int, float)):
-        return None, False
+        return None, False, None
     ttl = positive_ttl if records else NEGATIVE_TTL_SECONDS
     age = now - at
     if age <= ttl:
-        return records, False
+        return records, False, at
     if age <= ttl * STALE_FACTOR:
-        return records, True
-    return None, False
+        return records, True, at
+    return None, False, None
+
+
+# Efficiency K2 ``fetched_at`` on page sections. ``run_noting_stale`` runs one section's job with a
+# fresh list here; every stale row ``read_or_revalidate`` serves inside it adds its store time. Pool
+# threads do not inherit context, and the token reset keeps one job's marks out of the next job.
+_stale_marks: ContextVar[list[float] | None] = ContextVar("discovery_stale_marks", default=None)
+FETCHED_AT = "fetched_at"
+
+
+def run_noting_stale(job: Callable[[], Any]) -> tuple[Any, float | None]:
+    """``(job(), oldest)``: ``oldest`` is the earliest store time of a stale row served during the
+    job, or None when every row it read was fresh or fetched."""
+    marks: list[float] = []
+    token = _stale_marks.set(marks)
+    try:
+        result = job()
+    finally:
+        _stale_marks.reset(token)
+    return result, (min(marks) if marks else None)
+
+
+def fetched_at_text(epoch_seconds: float) -> str:
+    """UTC ISO 8601 with a ``Z``, such as ``2026-10-25T16:00:00Z`` (the format the contracts use)."""
+    return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(epoch_seconds))
+
+
+def with_fetched_at(section: dict[str, Any], oldest: float | None) -> dict[str, Any]:
+    """``section`` with ``fetched_at`` added when it is available and built from a stale row; a
+    copy, so no shared dict gains the key. Otherwise ``section`` unchanged."""
+    if oldest is None or not section.get("available"):
+        return section
+    return {**section, FETCHED_AT: fetched_at_text(oldest)}
 
 
 def refresh_budget(
@@ -127,18 +171,23 @@ def read_or_revalidate(
     refetch: Callable[[Callable[[], float], threading.Event], Any],
     positive_ttl: int = POSITIVE_TTL_SECONDS,
     now: float | None = None,
+    note_stale: bool = True,
 ) -> list[dict[str, Any]] | None:
     """Fresh records, or stale ones with one refresh handed to ``submit``, or None for a miss.
 
     ``refetch(remaining, cancelled)`` is the caller's own fetch-and-store, so the refresh keeps
     the caller's write rules (nothing is written when it fails). Without ``submit`` an expired
     entry is a miss, as before. A refresh ``submit`` refuses (already pending, queue full) still
-    serves the stale records.
+    serves the stale records. A stale row served inside ``run_noting_stale`` adds its store time
+    there, unless ``note_stale`` is False (a lookup whose records are not shown, such as identity).
     """
     at = time.time() if now is None else now
     if submit is None:
         return read_cached(read, key, at, positive_ttl=positive_ttl)
-    records, stale = read_cached_state(read, key, at, positive_ttl=positive_ttl)
+    records, stale, stored_at = read_cached_entry(read, key, at, positive_ttl=positive_ttl)
     if records is not None and stale:
         submit(REFRESH_KEY_PREFIX + key, lambda: refetch(*refresh_budget()))
+        marks = _stale_marks.get()
+        if note_stale and marks is not None:
+            marks.append(stored_at)
     return records
