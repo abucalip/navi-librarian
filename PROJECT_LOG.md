@@ -1,4 +1,6 @@
-## 2026-11-17 — K3 part 2 caps and coverage target (PR open)
+## 2026-11-17 — K3 part 2 caps and coverage target (merged)
+
+- PR [#1176](https://github.com/abucalip/navi-librarian/pull/1176), squash `75c7728d`, head `bf5fd8b3`, merged 12:55 UTC. CI (compile, lint-changed, test-and-build, container-smoke, validate-container) pending at merge.
 
 - Owner decision on the recommendation: `OWNED_PREFETCH_BUDGETS=musicbrainz=600,listenbrainz=300,lastfm=600,deezer=600,apple=400,wikipedia=300`; coverage target: every owned artist and album handled once within 21 days of switching on, at least 90 % `complete`.
 - Inputs: Navidrome `getArtists`/`getAlbumList2` counts (705 artists, 1,739 albums, read-only); K1 pass-0 per-provider costs per owned entity (`local-test/k1-session.json`, outside the repo). ListenBrainz binds (about 2.7 per artist-album pair, about 110 pairs a day); the new caps are 1.5 to 2.3 times their need at that rate.
