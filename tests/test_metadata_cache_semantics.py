@@ -9,7 +9,7 @@ import unittest
 from unittest.mock import patch
 
 from app.api import metadata
-from app.services import persistent_metadata
+from app.services import album_page_sources, persistent_metadata
 
 HOUR = 60 * 60
 DAY = 24 * HOUR
@@ -37,7 +37,7 @@ class _Clock:
     @contextlib.contextmanager
     def patched(self):
         with contextlib.ExitStack() as stack:
-            stack.enter_context(patch.object(metadata, "monotonic", lambda: self.now))
+            stack.enter_context(patch.object(album_page_sources, "monotonic", lambda: self.now))
             try:
                 from app.services import layered_cache
             except ImportError:

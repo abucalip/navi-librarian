@@ -9,7 +9,6 @@ import os
 import re
 import time
 from concurrent.futures import ThreadPoolExecutor, wait
-from time import monotonic
 from urllib.parse import urlencode
 
 import httpx
@@ -21,11 +20,11 @@ from app.services.artist_bio import resolve_artist_bio
 from app.services.fallback_artwork import (
     parse_qobuz_albums, select_apple_artwork, select_qobuz_artwork,
 )
-from app.services.deezer_artwork import pick_artist, select_album_artwork, select_artist_artwork
+from app.services.deezer_artwork import select_album_artwork, select_artist_artwork
 from app.services import runtime_metrics
 from app.services import album_links, album_page_sources, album_reviews, persistent_metadata, stale_refresh
 from app.services.layered_cache import LayeredCache, Loaded
-from app.services.deezer_album_matching import exact_album_release_year, release_year
+from app.services.deezer_album_matching import release_year
 from integrations.musicbrainz.album_year import (
     lookup_album_year as _lookup_musicbrainz_album_year,
     lookup_album_years as _lookup_musicbrainz_album_years,
