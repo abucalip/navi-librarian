@@ -7,9 +7,14 @@ time. A refresh that finds its list already running returns the caller's ``busy(
 passes the one it already gave when its in-process lock was held) and runs nothing.
 
 The refresh itself is unchanged: it runs on the calling thread with its own in-process lock, and its result
-or exception is passed back as before. A run left ``running`` by a killed process is failed when its owning
-process starts again (``recover_process``) or once it is older than ``STALE_AFTER_SECONDS``, so a crash
-cannot block a list for good.
+or exception is passed back as before.
+
+While a refresh runs, a heartbeat thread moves the run's ``started_at`` to the current time every
+``HEARTBEAT_SECONDS``, so for these rows ``started_at`` is the last time the run was seen alive. That keeps a
+live run out of ``runner.recover_stale``, which other jobs call without a job filter (taste refresh, paths
+warm: 15 minutes) and which would otherwise hand a long refresh to the other process. A run left ``running``
+by a killed process stops moving: it is failed when its owning process starts again (``recover_process``)
+or once its heartbeat is older than ``STALE_AFTER_SECONDS``, so a crash cannot block a list for long.
 
 Without a usable knowledge store (the file is missing or not migrated) the refresh runs as before, guarded
 by its in-process lock only, and the reason is logged once by error type. This module never creates a file.
@@ -18,6 +23,7 @@ from __future__ import annotations
 
 import logging
 import sqlite3
+import threading
 import time
 from pathlib import Path
 from typing import Any, Callable
@@ -29,7 +35,8 @@ logger = logging.getLogger(__name__)
 
 JOB = "discovery_list_refresh"
 STORE_FILE = "intelligence.sqlite3"     # the knowledge store, prepared by ``ensure_store`` at web and worker start
-STALE_AFTER_SECONDS = 3 * 3600.0        # a run still "running" after this long belonged to a killed process
+HEARTBEAT_SECONDS = 60.0                # how often a live run moves its ``started_at`` forward
+STALE_AFTER_SECONDS = 15 * 60.0         # a "running" row whose heartbeat is this old belonged to a killed process
 _process = "web"                        # which process this is; the worker sets "worker" at start
 _warned = False
 
@@ -64,10 +71,9 @@ def _warn_once(reason: str) -> None:
         logger.warning("Discovery list refreshes run without the cross-process guard (%s)", reason)
 
 
-def _open(data_dir) -> sqlite3.Connection | None:
-    if data_dir is None:
+def _open(path: Path | None) -> sqlite3.Connection | None:
+    if path is None:
         return None
-    path = Path(data_dir) / STORE_FILE
     if not path.is_file():
         _warn_once("no knowledge store")
         return None
@@ -76,6 +82,25 @@ def _open(data_dir) -> sqlite3.Connection | None:
     except Exception as exc:
         _warn_once(type(exc).__name__)
         return None
+
+
+def _heartbeat(path: Path, run_id: int, stop: threading.Event) -> None:
+    """Move the live run's ``started_at`` forward until ``stop`` is set (own connection: another thread)."""
+    try:
+        db = connect(path)
+    except Exception as exc:
+        logger.warning("Discovery list refresh heartbeat could not start (%s)", type(exc).__name__)
+        return
+    try:
+        while not stop.wait(HEARTBEAT_SECONDS):
+            try:
+                with db:
+                    db.execute("UPDATE job_runs SET started_at = ? WHERE id = ? AND state = 'running'",
+                               (time.time(), run_id))
+            except Exception as exc:
+                logger.warning("Discovery list refresh heartbeat failed (%s)", type(exc).__name__)
+    finally:
+        db.close()
 
 
 def _fail_stale(db: sqlite3.Connection, scope: str, now: float) -> int:
@@ -111,18 +136,26 @@ def recover_process(store_path, process: str, now: float | None = None) -> int:
 def run_exclusive(data_dir, scope: str, run: Callable[[], Any], busy: Callable[[], Any],
                   clock: Callable[[], float] = time.time) -> Any:
     """Return ``run()`` unless a refresh of ``scope`` is already running in either process; then ``busy()``."""
-    db = _open(data_dir)
+    path = None if data_dir is None else Path(data_dir) / STORE_FILE
+    db = _open(path)
     if db is None:
         return run()
     outcome: dict[str, Any] = {}
 
     def work(ctx) -> bool:
         ctx.checkpoint({"process": _process})
+        stop = threading.Event()
+        beat = threading.Thread(target=_heartbeat, args=(path, ctx.run_id, stop),
+                                name="discovery-refresh-heartbeat", daemon=True)
+        beat.start()
         try:
             outcome["result"] = run()
         except Exception as exc:
             outcome["error"] = exc
             raise _RefreshFailed(type(exc).__name__) from None
+        finally:
+            stop.set()
+            beat.join(5)
         return True     # the refresh ended (whatever it reported), so the run is finished
 
     try:

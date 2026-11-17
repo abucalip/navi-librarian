@@ -231,6 +231,43 @@ class GuardMechanics(StoreCase):
         self.assertEqual(second, "busy")
         self.assertEqual(ran, ["first"])
 
+    def test_a_live_long_run_keeps_its_heartbeat_so_a_global_recover_stale_cannot_hand_it_over(self):
+        from intelligence.jobs import recover_stale
+
+        entered, release, ran = threading.Event(), threading.Event(), []
+
+        def slow():
+            ran.append("first")
+            entered.set()
+            release.wait(5)
+            return "first"
+
+        with mock.patch.object(refresh_guard, "HEARTBEAT_SECONDS", 0.05):
+            first = threading.Thread(
+                target=lambda: refresh_guard.run_exclusive(self.dir, "personal", slow, lambda: "busy"))
+            first.start()
+            self.assertTrue(entered.wait(5))
+            db = open_store(self.store)
+            try:
+                # The run looks an hour old, as a refresh past the taste refresh's 15-minute rule would.
+                db.execute("UPDATE job_runs SET started_at = ? WHERE job = ? AND state = 'running'",
+                           (time.time() - 3600, JOB))
+                db.commit()
+                deadline = time.time() + 5
+                while db.execute("SELECT started_at FROM job_runs WHERE job = ? AND state = 'running'",
+                                 (JOB,)).fetchone()[0] < time.time() - 60:
+                    self.assertLess(time.time(), deadline, "no heartbeat")
+                    time.sleep(0.02)
+                self.assertEqual(recover_stale(db, time.time(), 900), 0)
+            finally:
+                db.close()
+            second = refresh_guard.run_exclusive(self.dir, "personal", lambda: ran.append("second"), lambda: "busy")
+            release.set()
+            first.join(5)
+        self.assertEqual(second, "busy")
+        self.assertEqual(ran, ["first"])
+        self.assertEqual(self.state("personal")["state"], "succeeded")
+
     def test_a_stale_running_row_is_failed_and_the_refresh_runs(self):
         old = self.hold("personal", started_at=time.time() - refresh_guard.STALE_AFTER_SECONDS - 60)
         self.assertEqual(refresh_guard.run_exclusive(self.dir, "personal", lambda: "ran", lambda: "busy"), "ran")
