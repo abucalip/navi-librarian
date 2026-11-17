@@ -1,6 +1,8 @@
 import struct
 import tempfile
 import unittest
+import time
+import threading
 import zlib
 from pathlib import Path
 from unittest import mock
@@ -272,3 +274,49 @@ class SafeFetchTests(unittest.TestCase):
         self.assertEqual(safe_fetch.sniff_image(b"\xff\xd8\xff\xe0rest"), "image/jpeg")
         self.assertEqual(safe_fetch.sniff_image(b"RIFF\x00\x00\x00\x00WEBPVP8 "), "image/webp")
         self.assertIsNone(safe_fetch.sniff_image(b"<svg xmlns='http://www.w3.org/2000/svg'></svg>"))
+
+
+class StationLockTests(unittest.TestCase):
+    def check(self, lock_for, table, key):
+        inside = threading.Event()
+        release = threading.Event()
+        order = []
+
+        def first():
+            with lock_for():
+                inside.set()
+                release.wait(2)
+                order.append("first")
+
+        def second():
+            with lock_for():
+                order.append("second")
+        a = threading.Thread(target=first)
+        a.start()
+        self.assertTrue(inside.wait(2))
+        b = threading.Thread(target=second)
+        b.start()
+        for _ in range(200):                       # wait until the second thread is queued on the lock
+            if table.get(key, [None, 0])[1] == 2:
+                break
+            time.sleep(0.005)
+        self.assertEqual(table[key][1], 2)         # one holder, one waiter share one entry
+        release.set()
+        a.join(2)
+        b.join(2)
+        self.assertEqual(order, ["first", "second"])   # still exclusive
+        self.assertNotIn(key, table)               # dropped once nobody uses it
+
+    def check_error(self, lock_for, table, key):
+        with self.assertRaises(ValueError):
+            with lock_for():
+                raise ValueError("boom")
+        self.assertNotIn(key, table)
+        with lock_for():                           # the lock was released
+            pass
+
+    def test_station_locks_are_exclusive_and_dropped_when_unused(self):
+        self.check(lambda: logos._lock_for("s1"), logos._LOCKS, "s1")
+
+    def test_an_error_inside_releases_and_drops_the_station_lock(self):
+        self.check_error(lambda: logos._lock_for("s2"), logos._LOCKS, "s2")

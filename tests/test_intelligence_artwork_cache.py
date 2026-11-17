@@ -2,6 +2,7 @@ import json
 import tempfile
 import threading
 import unittest
+import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
@@ -293,6 +294,66 @@ class ServiceTests(unittest.TestCase):
         self.fetch.fetch_image = lambda *a, **k: (UNAVAILABLE, b"", "")
         self.assertEqual(self.service.image(10, "full")[0], UNAVAILABLE)
         self.assertIsNone(self.store.get_file(10, "full"))
+
+
+class KeyLockTests(unittest.TestCase):
+    def check(self, lock_for, table, key):
+        inside = threading.Event()
+        release = threading.Event()
+        order = []
+
+        def first():
+            with lock_for():
+                inside.set()
+                release.wait(2)
+                order.append("first")
+
+        def second():
+            with lock_for():
+                order.append("second")
+        a = threading.Thread(target=first)
+        a.start()
+        self.assertTrue(inside.wait(2))
+        b = threading.Thread(target=second)
+        b.start()
+        for _ in range(200):                       # wait until the second thread is queued on the lock
+            if table.get(key, [None, 0])[1] == 2:
+                break
+            time.sleep(0.005)
+        self.assertEqual(table[key][1], 2)         # one holder, one waiter share one entry
+        release.set()
+        a.join(2)
+        b.join(2)
+        self.assertEqual(order, ["first", "second"])   # still exclusive
+        self.assertNotIn(key, table)               # dropped once nobody uses it
+
+    def check_error(self, lock_for, table, key):
+        with self.assertRaises(ValueError):
+            with lock_for():
+                raise ValueError("boom")
+        self.assertNotIn(key, table)
+        with lock_for():                           # the lock was released
+            pass
+
+    def setUp(self):
+        self.service = ArtworkService(store=None, fetchers=None, executor=None)
+
+    def test_image_locks_are_exclusive_and_dropped_when_unused(self):
+        self.check(lambda: self.service._key_lock(10, "full"), self.service._keyed, (10, "full"))
+
+    def test_an_error_inside_releases_and_drops_the_image_lock(self):
+        self.check_error(lambda: self.service._key_lock(11, "250"), self.service._keyed, (11, "250"))
+
+    def test_serving_an_image_leaves_no_lock_entry(self):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        store, _ = make_store(tmp.name, budget=1_000_000)
+        pool = ThreadPoolExecutor(max_workers=1)
+        self.addCleanup(pool.shutdown)
+        service = ArtworkService(store, FakeFetchers(), executor=pool)
+        service.build_now(RG)
+        self.assertEqual(service.image(10, "full")[0], OK)
+        self.assertEqual(service._keyed, {})
 
 
 if __name__ == "__main__":
