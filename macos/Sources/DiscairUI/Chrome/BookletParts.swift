@@ -160,6 +160,7 @@ struct BookletEditionRow: View {
 
     private var name: String { BookletLayout.editionName(booklet, number: number) }
     private var detail: String { BookletLayout.editionDetail(booklet) }
+    private var tag: String? { BookletLayout.editionTag(booklet) }
 
     var body: some View {
         Button(action: action) {
@@ -170,6 +171,7 @@ struct BookletEditionRow: View {
                     Text(name).font(CU.Font.headline.font).foregroundStyle(CU.Booklet.ink).lineLimit(1)
                     Text(detail).font(CU.Font.caption.font).monospacedDigit()
                         .foregroundStyle(selected ? CU.Booklet.selectedInk2 : CU.Booklet.ink2).lineLimit(1)
+                    if let tag { EditionTag(text: tag) }
                 }
                 Spacer(minLength: 0)
             }
@@ -180,7 +182,7 @@ struct BookletEditionRow: View {
         }
         .buttonStyle(.plain)
         .onHover { h in withAnimation(reduceMotion ? nil : .easeOut(duration: 0.12)) { hovering = h } }
-        .accessibilityLabel("\(name), \(detail)")
+        .accessibilityLabel(tag.map { "\(name), \(detail), \($0)" } ?? "\(name), \(detail)")
         .accessibilityAddTraits(selected ? .isSelected : [])
     }
 
@@ -190,6 +192,18 @@ struct BookletEditionRow: View {
         } else {
             Image(systemName: "doc.richtext").font(.system(size: 18)).foregroundStyle(CU.Booklet.ink2)
         }
+    }
+}
+
+/// "Your edition": 4 pt above, `caption` semibold with +0.03 em tracking, 1 × 5 pt padding, radius 4, `ownedTag` ground.
+private struct EditionTag: View {
+    let text: String
+    var body: some View {
+        Text(text).font(CU.Font.caption.weighted(.semibold)).tracking(0.3)
+            .foregroundStyle(CU.Booklet.ownedTagInk).lineLimit(1)
+            .padding(.horizontal, 5).padding(.vertical, 1)
+            .background(CU.Booklet.ownedTag, in: RoundedRectangle(cornerRadius: 4, style: .continuous))
+            .padding(.top, 4)
     }
 }
 

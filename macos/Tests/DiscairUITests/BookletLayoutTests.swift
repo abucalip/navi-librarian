@@ -91,6 +91,13 @@ import Testing
 
     // MARK: Editions
 
+    @Test func onlyTheOwnedEditionGetsTheYourEditionTag() {
+        #expect(BookletLayout.editionTag(view(pages: 3)) == nil)
+        var owned = view(pages: 3)
+        owned.fromOwned = true
+        #expect(BookletLayout.editionTag(owned) == "Your edition")
+    }
+
     @Test func editionDetailCoversPagesWidthUnknownWidthAndPdf() {
         #expect(BookletLayout.editionDetail(view(pages: 16)) == "16 pages · 1200 px")
         #expect(BookletLayout.editionDetail(view(pages: 1)) == "1 page · 1200 px")

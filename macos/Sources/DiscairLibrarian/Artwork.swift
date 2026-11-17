@@ -101,12 +101,15 @@ public struct ArtworkBooklet: Decodable, Equatable, Sendable {
     public let release: String
     public let edition: String
     public let imageIDs: [Int]
-    enum CodingKeys: String, CodingKey { case release, edition, imageIDs = "image_ids" }
+    /// True when this booklet's release is the owned release; false from a server that does not send it.
+    public let fromOwned: Bool
+    enum CodingKeys: String, CodingKey { case release, edition, imageIDs = "image_ids", fromOwned = "from_owned" }
     public init(from decoder: any Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         release = c.text(.release) ?? ""
         edition = c.text(.edition) ?? ""
         imageIDs = (try? c.decodeIfPresent([Int].self, forKey: .imageIDs)) ?? []
+        fromOwned = c.flag(.fromOwned)
     }
 }
 
@@ -372,6 +375,8 @@ public struct BookletView: Equatable, Sendable {
     public let edition: String
     public let pages: [ArtworkPicture]
     public let extras: [ArtworkPicture]
+    /// The booklet is the owned release's: the sidebar row says "Your edition" (docs/MACOS_PATHS_BOOKLET.md, section 5.2).
+    public var fromOwned: Bool = false
 
     /// Pages then extras, each image once.
     public var items: [ArtworkPicture] { pages + extras }
@@ -406,7 +411,7 @@ extension ArtworkIndex {
             guard !pages.isEmpty else { return nil }
             var seen = Set(pages.map(\.imageID))
             let extras = ["Sticker", "Obi", "Poster"].compactMap { slotImage($0) }.filter { seen.insert($0.imageID).inserted }
-            return BookletView(edition: b.edition, pages: pages, extras: extras)
+            return BookletView(edition: b.edition, pages: pages, extras: extras, fromOwned: b.fromOwned)
         }
     }
 }

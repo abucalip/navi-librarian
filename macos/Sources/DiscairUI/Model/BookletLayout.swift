@@ -182,6 +182,9 @@ enum BookletLayout {
         return "\(pages) · \(w) px"
     }
 
+    /// The row's tag: "Your edition" only for the owned release's booklet (section 5.2, D3); a language tag is D4 and not built.
+    static func editionTag(_ view: BookletView) -> String? { view.fromOwned ? "Your edition" : nil }
+
     static func editionsHeading(count: Int) -> String { "Editions · \(count) \(count == 1 ? "booklet" : "booklets")" }
 
     /// The VoiceOver announcement when a row is chosen (section 5.2).

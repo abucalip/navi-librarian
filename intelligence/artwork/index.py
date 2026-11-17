@@ -291,7 +291,8 @@ def slots_view(index: GroupIndex) -> dict:
         own = bool(owned and owned in win.releases)
         slots[kind] = {"image_id": win.image_id, "release": owned if own else win.release,
                        "edition": index.labels.get(owned, "") if own else win.edition, "from_owned": own}
-    booklets = [{"release": rel, "edition": index.labels.get(rel, ""), "image_ids": [p.image_id for p in pages]}
+    booklets = [{"release": rel, "edition": index.labels.get(rel, ""), "image_ids": [p.image_id for p in pages],
+                 "from_owned": bool(owned and rel == owned)}
                 for rel, pages in _booklets(index.images, owned, index.dates)]
     return {"slots": slots, "booklet": booklets[0] if booklets else None, "booklets": booklets}
 
