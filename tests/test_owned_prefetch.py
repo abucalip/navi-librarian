@@ -71,6 +71,12 @@ class RecommendedCapsTests(unittest.TestCase):
         self.assertEqual(ps.parse_budgets(self.RECOMMENDED), {
             "musicbrainz": 600, "listenbrainz": 300, "lastfm": 600, "deezer": 600, "apple": 400, "wikipedia": 300})
 
+    def test_compose_defaults_the_worker_to_these_caps_and_off_switches_it_off(self):
+        compose = (Path(__file__).resolve().parents[1] / "compose.yaml").read_text()
+        self.assertIn("OWNED_PREFETCH_BUDGETS: ${OWNED_PREFETCH_BUDGETS:-" + self.RECOMMENDED + "}", compose)
+        self.assertEqual(ps.parse_budgets("off"), {})
+        self.assertFalse(ps.due({"OWNED_PREFETCH_BUDGETS": "off"})(NOON, None))
+
     def test_the_part_2_hooks_and_extras_are_all_given_to_the_walk(self):
         spend = ps.Spend(ps.parse_budgets(self.RECOMMENDED))
         librarian = SimpleNamespace(_metadata_cache_get=lambda key: None, _metadata_cache_set=lambda key, value: None)
