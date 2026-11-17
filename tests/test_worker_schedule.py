@@ -201,9 +201,9 @@ class WorkerEntries(unittest.TestCase):
     def entries(self):
         return {e.name: e for e in worker.schedule_entries(self.lib, self.stop)}
 
-    def test_maintenance_then_insights_then_precompute_in_a_fixed_order(self):
+    def test_maintenance_then_insights_then_prefetch_then_precompute_in_a_fixed_order(self):
         self.assertEqual([e.name for e in worker.schedule_entries(self.lib, self.stop)],
-                         ["daily_maintenance", "insights_refresh", "similar_precompute"])
+                         ["daily_maintenance", "insights_refresh", "owned_prefetch", "similar_precompute"])
 
     def test_daily_maintenance_entry_runs_the_maintenance_once_a_day(self):
         entry = self.entries()["daily_maintenance"]
@@ -220,6 +220,22 @@ class WorkerEntries(unittest.TestCase):
         with mock.patch.object(insights_refresh, "refresh_once") as refresh:
             entry.run()
         refresh.assert_called_once_with(self.lib, stop=self.stop)
+
+    def test_prefetch_entry_is_off_without_caps_and_passes_the_store_and_stop(self):
+        from app.services import owned_prefetch, prefetch_state
+
+        entry = self.entries()["owned_prefetch"]
+        with mock.patch.dict("os.environ", {}, clear=False) as env:
+            env.pop(prefetch_state.ENV_BUDGETS, None)
+            self.assertFalse(entry.due(local(2026, 11, 18, 1), None))
+        with mock.patch.dict("os.environ", {prefetch_state.ENV_BUDGETS: "musicbrainz=10"}):
+            self.assertTrue(entry.due(local(2026, 11, 18, 1), local(2026, 11, 17, 23)))
+            self.assertFalse(entry.due(local(2026, 11, 17, 23), local(2026, 11, 17, 1)))
+        with mock.patch.object(owned_prefetch, "run_once") as run:
+            entry.run()
+        run.assert_called_once()
+        self.assertEqual(run.call_args.args[0], self.lib)
+        self.assertEqual(run.call_args.kwargs["stop"], self.stop)
 
     def test_precompute_entry_is_daily_retries_after_30_minutes_and_passes_stop(self):
         from app.services import similar_precompute

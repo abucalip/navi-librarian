@@ -210,6 +210,7 @@ class RouteTests(unittest.TestCase):
         self.assertEqual(data["web"]["requests"]["deezer"]["count"], 1)
         self.assertEqual(data["worker"]["requests"]["deezer"]["count"], 1)
         self.assertEqual(data["schedule"], {"insights_refresh": 1234.5})   # W1: each entry's last run
+        self.assertIsNone(data["prefetch"])                                  # K3: the prefetch has not run
 
 
 if __name__ == "__main__":
