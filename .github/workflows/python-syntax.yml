@@ -18,8 +18,8 @@ concurrency:
 jobs:
   compile:
     runs-on: ubuntu-latest
-    # The unit suite takes about 40 minutes; a hung test must not hold a runner for the 6-hour default.
-    timeout-minutes: 60
+    # The unit suite runs once, in docker-test.yml (Validate Docker packaging); this job only compiles and checks structure.
+    timeout-minutes: 15
     steps:
       - name: Check out source
         uses: actions/checkout@v4
@@ -57,5 +57,3 @@ jobs:
           path: dependency-map.json
           if-no-files-found: error
           retention-days: 14
-      - name: Run acquisition safety regressions
-        run: python -m unittest discover -s tests -v
