@@ -463,5 +463,51 @@ class RouteNoMatchTests(unittest.TestCase):
         self.assertEqual(self.store.data, {})
 
 
+class K6Tests(unittest.TestCase):
+    """Efficiency K6: a found Deezer page is kept on its own; a Wikipedia no-article answer is marked for an hour."""
+
+    def setUp(self):
+        self.store = Store()
+        self.now = [1_000_000.0]
+        clock = patch.object(aps.negative_marks.time, "time", lambda: self.now[0])
+        clock.start()
+        self.addCleanup(clock.stop)
+
+    def links(self, get):
+        return aps.prefetch_links(self.store.read, self.store.write, get, ARTIST, ALBUM, MBID)
+
+    def test_a_found_deezer_page_is_stored_and_reused_while_the_set_stays_incomplete(self):
+        get = no_match_get(deezer=DEEZER_SEARCH)
+        self.assertEqual(self.links(get)["deezer"], "https://www.deezer.com/album/7")
+        self.assertEqual(self.store.data[aps.deezer_url_store_key(ARTIST, ALBUM)], "https://www.deezer.com/album/7")
+        self.assertNotIn(aps.links_store_key(ARTIST, ALBUM, MBID), self.store.data, "the incomplete set is not stored")
+        before = len([u for u in get.calls if "deezer" in u])
+        self.assertEqual(self.links(get)["deezer"], "https://www.deezer.com/album/7")
+        self.assertEqual(len([u for u in get.calls if "deezer" in u]), before, "no second Deezer request")
+
+    def test_a_deezer_failure_stores_no_page(self):
+        self.links(no_match_get(down=("deezer",)))
+        self.assertNotIn(aps.deezer_url_store_key(ARTIST, ALBUM), self.store.data)
+
+    def wikipedia(self, get):
+        return aps.wikipedia_description_remembered(self.store.read, self.store.write, get, ARTIST, ALBUM)
+
+    def test_a_wikipedia_no_article_is_skipped_within_the_hour_and_asked_after_it(self):
+        get = lambda url, **kw: (calls.append(url), Resp({"pages": []}))[1]
+        calls = []
+        self.assertEqual(self.wikipedia(get), (None, True))
+        self.assertEqual(self.wikipedia(get), (None, True))
+        self.assertEqual(len(calls), 1)
+        self.assertEqual(list(self.store.data), [aps.no_match_store_key("wikipedia", ARTIST, ALBUM)])
+        self.now[0] += aps.NO_MATCH_TTL + 1
+        self.wikipedia(get)
+        self.assertEqual(len(calls), 2, "the mark does not renew itself")
+
+    def test_a_wikipedia_failure_or_a_found_article_writes_no_mark(self):
+        self.assertEqual(self.wikipedia(fake_get(down=("wikipedia",))), (None, False))
+        self.assertEqual(self.wikipedia(fake_get())[1], True)
+        self.assertEqual(self.store.data, {})
+
+
 if __name__ == "__main__":
     unittest.main()
