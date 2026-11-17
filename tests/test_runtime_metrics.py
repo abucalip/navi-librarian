@@ -2,6 +2,7 @@
 import json
 import tempfile
 import unittest
+import urllib.request
 from pathlib import Path
 from unittest.mock import patch
 
@@ -25,6 +26,41 @@ class CountersTests(unittest.TestCase):
         self.assertEqual(rm.provider_for_url("https://api.deezer.com/search"), "deezer")
         self.assertEqual(rm.provider_for_url("https://example.test/x"), "other")
         self.assertEqual(rm.provider_for_url("not a url"), "other")
+        self.assertEqual(rm.provider_for_url("https://ws.audioscrobbler.com/2.0/?api_key=SECRET"), "lastfm")
+
+    def test_request_label_names_configured_hosts_and_unknown_labels_fall_back(self):
+        def handler(request):
+            return httpx.Response(200)
+        client = rm.MeteredClient(transport=httpx.MockTransport(handler))
+        client.get("http://nas.local:4533/rest/ping.view", extensions={rm.PROVIDER_EXTENSION: "navidrome"})
+        client.get("http://nas.local:4533/rest/ping.view", extensions={rm.PROVIDER_EXTENSION: "free text"})
+        client.get("http://nas.local:4533/rest/ping.view")
+        snap = rm.snapshot()["requests"]
+        self.assertEqual(snap["navidrome"]["count"], 1)
+        self.assertEqual(snap["other"]["count"], 2)
+        self.assertNotIn("free text", json.dumps(snap))
+
+    def test_shared_navidrome_client_is_counted_as_navidrome(self):
+        from integrations.navidrome import client as nav
+        def handler(request):
+            return httpx.Response(200, json={"subsonic-response": {"status": "ok"}})
+        self.addCleanup(setattr, httpx.Client, "send", rm._ORIGINAL_SEND)
+        self.addCleanup(setattr, httpx.AsyncClient, "send", rm._ORIGINAL_ASEND)
+        self.addCleanup(setattr, urllib.request.OpenerDirector, "open", rm._ORIGINAL_OPEN)
+        self.addCleanup(nav._reset_shared_client)
+        rm.count_all_httpx()
+        nav._reset_shared_client()
+        real_build = nav._build_shared_client
+
+        def build():
+            built = real_build()
+            built._transport = httpx.MockTransport(handler)   # keep the real hooks, stub the network
+            return built
+        with patch.object(nav, "_build_shared_client", build):
+            nav.api_call("ping", lambda: ("http://nas.local:4533", "u", "p"))
+        snap = rm.snapshot()["requests"]
+        self.assertEqual(snap["navidrome"]["count"], 1)
+        self.assertNotIn("other", snap)
 
     def test_client_counts_outcomes_without_urls(self):
         def handler(request):

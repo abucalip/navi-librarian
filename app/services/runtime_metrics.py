@@ -24,6 +24,8 @@ SLOW_STORE_SECONDS = 0.25
 OUTCOMES = ("ok", "not_found", "rate_limited", "timeout", "error")
 
 # Fixed host -> provider table. A host not listed here counts as "other".
+# A request whose host is configured, not fixed (Navidrome), names its provider in the request
+# extension ``PROVIDER_EXTENSION``; only names in ``_LABELS`` are accepted.
 _HOSTS = {
     "musicbrainz.org": "musicbrainz",
     "coverartarchive.org": "coverartarchive",
@@ -35,8 +37,12 @@ _HOSTS = {
     "qobuz.com": "qobuz",
     "discogs.com": "discogs",
     "last.fm": "lastfm",
+    "audioscrobbler.com": "lastfm",   # Last.fm's API host (ws.audioscrobbler.com)
     "listenbrainz.org": "listenbrainz",
 }
+
+PROVIDER_EXTENSION = "metrics_provider"
+_LABELS = frozenset(_HOSTS.values()) | {"navidrome"}
 
 _lock = threading.Lock()
 _started = time.time()
@@ -59,6 +65,12 @@ def provider_for_url(url) -> str:
         return provider_for_host(urlsplit(str(url)).hostname)
     except ValueError:
         return "other"
+
+
+def provider_for_request(request) -> str:
+    """The provider for an httpx request: its ``PROVIDER_EXTENSION`` label when known, else its host."""
+    label = (getattr(request, "extensions", None) or {}).get(PROVIDER_EXTENSION)
+    return label if label in _LABELS else provider_for_url(request.url)
 
 
 def outcome_for_status(status: int) -> str:
@@ -106,14 +118,14 @@ _ORIGINAL_ASEND = httpx.AsyncClient.send
 
 
 def _counted_send(request, call):
-    provider = provider_for_url(request.url)
+    # The provider is read after the call: a client's request event hook (Navidrome) sets its label then.
     started = time.perf_counter()
     try:
         response = call()
     except Exception as exc:
-        record_request(provider, outcome_for_exception(exc), time.perf_counter() - started)
+        record_request(provider_for_request(request), outcome_for_exception(exc), time.perf_counter() - started)
         raise
-    record_request(provider, outcome_for_status(response.status_code), time.perf_counter() - started)
+    record_request(provider_for_request(request), outcome_for_status(response.status_code), time.perf_counter() - started)
     return response
 
 
@@ -129,14 +141,13 @@ def _patched_send(self, request, **kwargs):
 
 
 async def _patched_asend(self, request, **kwargs):
-    provider = provider_for_url(request.url)
     started = time.perf_counter()
     try:
         response = await _ORIGINAL_ASEND(self, request, **kwargs)
     except Exception as exc:
-        record_request(provider, outcome_for_exception(exc), time.perf_counter() - started)
+        record_request(provider_for_request(request), outcome_for_exception(exc), time.perf_counter() - started)
         raise
-    record_request(provider, outcome_for_status(response.status_code), time.perf_counter() - started)
+    record_request(provider_for_request(request), outcome_for_status(response.status_code), time.perf_counter() - started)
     return response
 
 
