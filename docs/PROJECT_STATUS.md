@@ -10,8 +10,9 @@ Last checked: 2026-11-17. GitHub `main` is authoritative; this update is based o
   - M1: the `navidrome` label is now set outside the shared client.
   - K2: stale album reviews and links state `fetched_at`.
   - K3: the album reviews prefetch is built behind a new `reviews` cap and is off by default.
-  - Still gated: the "library tracklist first" removal (needs a measurement) and wider K2 scope (needs evidence). Focused tests 237 passed; not merged, not deployed.
-  - **Next action:** check CI on the PR head and merge if green, then the owner decides whether to set a `reviews` cap.
+  - K3 part 2 measured (24 cold owned albums, about 450 provider requests): with prefetch, provider tracks arrive in a median 21 ms instead of 458 ms, but 4 of 24 albums have no provider tracklist. The owner kept "library tracklist first" permanently; the "temporary" label is dropped in the same PR.
+  - Still gated: wider K2 scope (needs evidence). Focused tests 237 passed; not merged, not deployed.
+  - **Next action:** check CI on the PR head and merge if green, then the owner decides whether to set a `reviews` cap (recommendation: leave it off).
 
 - **K3 part 2 caps and coverage target merged (2026-11-17):** PR [#1176](https://github.com/abucalip/navi-librarian/pull/1176) (squash `75c7728d`, head `bf5fd8b3`, merged 12:55 UTC; GitHub confirms `MERGED`; CI pending at merge). the owner took the recommendation: `deezer=600,apple=400,wikipedia=300` on top of the approved part 1 caps, and a target of every owned artist and album (705 and 1,739 in Navidrome) handled once within 21 days, at least 90 % `complete`. ListenBrainz's 300 binds at about 110 artist-album pairs a day (about 16 days for the albums). Recorded in `docs/efficiency.md` K3 and `docs/DEPLOYMENT.md`; new `RecommendedCapsTests` in `tests/test_owned_prefetch.py`. At the owner's request the caps are the worker's default in `compose.yaml`, so the job starts on the next deployment (`OWNED_PREFETCH_BUDGETS=off` switches it off); deployment is still paused. **Next action:** check CI on `bf5fd8b3` and `75c7728d` and open a fix PR if one fails; after the next deployment, measure the 21-day coverage.
 

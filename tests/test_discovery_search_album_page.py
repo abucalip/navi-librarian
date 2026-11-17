@@ -177,7 +177,7 @@ class TrackOwnershipTests(unittest.TestCase):
 
 
 class EarlyLibraryTracksTests(unittest.TestCase):
-    """Temporary until the efficiency plan's prefetch (docs/efficiency.md K3): an owned album's library tracklist goes out first."""
+    """An owned album's library tracklist goes out first (permanent, docs/efficiency.md K3 "K3 part 2 measured")."""
 
     def stream(self, network):
         data = owned()

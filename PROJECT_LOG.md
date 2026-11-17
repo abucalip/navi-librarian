@@ -3,7 +3,7 @@
 - Two backup copies of `local-test/data-live` on ports 8095 (cold) and 8096 (prefetched with the approved compose caps, limited to 24 cold owned albums), PR #1177 head. One first view of each album page per copy, each tracks section timed.
 - Provider tracks section, median / p95 / max: cold 458 / 1,178 / 2,413 ms; prefetched 21 / 870 / 3,667 ms. Library tracks section: 17 ms in both. 4 of 24 albums have no provider tracklist and wait on every view.
 - Provider requests: about 450 in all (pass A 215, prefetch 148, pass B 85, plus 45 in a 6-album re-check). Pass B still made 65 Last.fm requests (not attributed to a section).
-- Recommendation recorded in `docs/efficiency.md` K3: keep "library tracklist first" permanently. Owner decision; no code changed. Raw output: `local-test/k3m-*.json` (outside the repo).
+- Owner decision the same day: keep "library tracklist first" permanently. The "temporary" label is dropped in PR #1177 (comment in `discovery/search/album_page.py`, test docstring, `docs/SEARCH_CONTRACT.md`); behaviour unchanged. Raw output: `local-test/k3m-*.json` (outside the repo).
 
 ## 2026-11-17 — Efficiency finishing up: K3 reviews prefetch (off), K2 fetched_at, M1 Navidrome label (PR open)
 
