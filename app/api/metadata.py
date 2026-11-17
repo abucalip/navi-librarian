@@ -27,6 +27,7 @@ from app.services.deezer_album_details import shape_album_match
 from app.services import runtime_metrics
 from app.services import album_links, album_reviews, album_wikipedia, persistent_metadata
 from app.services.apple_description import parse_editorial_notes
+from app.services.layered_cache import LayeredCache, Loaded
 from app.services.deezer_album_matching import exact_album_matches, exact_album_release_year, release_year
 from integrations.musicbrainz.album_year import (
     lookup_album_year as _lookup_musicbrainz_album_year,
@@ -54,7 +55,7 @@ _EXTERNAL_HTTP = runtime_metrics.MeteredClient(
 # that exact Wikidata item. This prevents name collisions (e.g. Rainbow the band
 # versus the optical phenomenon) from producing unrelated summaries.
 _ARTIST_BIO_CACHE_TTL = 24 * 60 * 60
-_artist_bio_cache = {}
+_artist_bio_cache = LayeredCache("artist-bio")
 
 def _navidrome_artist_bio(librarian, name):
     """The library's own biography for an artist, or "" when Navidrome has none.
@@ -82,11 +83,11 @@ def artist_bio_route(artist: str, librarian=Depends(get_librarian)):
     name = str(artist or "").strip()
     if name and len(name) <= 180:
         key = name.casefold()
-        cached = _artist_bio_cache.get(key)
-        if not (cached and monotonic() - cached["time"] < _ARTIST_BIO_CACHE_TTL):
+        if key not in _artist_bio_cache:
             bio = _navidrome_artist_bio(librarian, name)
             if bio:
-                _artist_bio_cache[key] = {"time": monotonic(), "bio": bio}
+                # Memory only: the library's own bio is not written to the persistent store.
+                _artist_bio_cache.put(key, bio, _ARTIST_BIO_CACHE_TTL)
     return artist_bio(artist)
 
 
@@ -95,16 +96,13 @@ def artist_bio(artist: str):
     if not name or len(name) > 180:
         raise HTTPException(status_code=400, detail="A valid artist name is required.")
     key = name.casefold()
-    now = monotonic()
-    cached = _artist_bio_cache.get(key)
-    if cached and now - cached["time"] < _ARTIST_BIO_CACHE_TTL:
-        return {"artist": name, "bio": cached["bio"]}
-    stored = persistent_metadata.read("artist-bio:v1:" + key)
-    if stored:
-        _artist_bio_cache[key] = {"time": monotonic(), "bio": stored}
-        return {"artist": name, "bio": stored}
+    bio = _artist_bio_cache.get_or_load(
+        key, lambda: _load_artist_bio(name), store_key="artist-bio:v1:" + key,
+        stored_ttl=_ARTIST_BIO_CACHE_TTL)
+    return {"artist": name, "bio": bio}
 
-    bio = ""
+
+def _load_artist_bio(name):
     params = {
         "action": "wbsearchentities",
         "search": name,
@@ -146,17 +144,15 @@ def artist_bio(artist: str):
     bio = resolve_artist_bio(name, entities, page)
 
     # A failed Wikidata lookup is not "this artist has no bio": do not cache it for a day.
-    if search_ok:
-        _artist_bio_cache[key] = {"time": monotonic(), "bio": bio}
-        if bio:
-            persistent_metadata.write("artist-bio:v1:" + key, bio)
-    return {"artist": name, "bio": bio}
+    if not search_ok:
+        return Loaded(bio)
+    return Loaded(bio, memory_ttl=_ARTIST_BIO_CACHE_TTL, persist=bool(bio))
 
 
 # Artwork is optional presentation metadata; discovery works without it.
 _ARTWORK_CACHE_TTL = 6 * 60 * 60
 _ARTWORK_NEGATIVE_CACHE_TTL = 5 * 60
-_artwork_cache = {}
+_artwork_cache = LayeredCache("album-artwork")
 
 
 def _musicbrainz_album_year(artist: str, album: str):
@@ -263,7 +259,7 @@ def album_year(artist: str = "", album: str = "", librarian=Depends(get_libraria
     return {"artist": artist, "album": album, "year": year, "source": source}
 
 
-_album_details_cache = {}
+_album_details_cache = LayeredCache("album-details")
 _DETAILS_MISS_TTL = 60 * 60
 
 
@@ -280,22 +276,15 @@ def album_details(artist: str = "", album: str = ""):
         raise HTTPException(status_code=400, detail="artist and album are required")
 
     key = (artist.casefold(), album.casefold())
-    cached = _album_details_cache.get(key)
-    if cached and monotonic() < cached[0]:
-        return cached[1]
-    store_key = "album-details:v1:" + key[0] + ":" + key[1]
-    stored = persistent_metadata.read(store_key)
-    if stored:
-        _album_details_cache[key] = (monotonic() + _ARTWORK_CACHE_TTL, stored)
-        return stored
 
-    result, definitive_miss = _fetch_album_details(artist, album)
-    if result["tracks"]:
-        _album_details_cache[key] = (monotonic() + _ARTWORK_CACHE_TTL, result)
-        persistent_metadata.write(store_key, result)
-    elif definitive_miss:
-        _album_details_cache[key] = (monotonic() + _DETAILS_MISS_TTL, result)
-    return result
+    def load():
+        result, definitive_miss = _fetch_album_details(artist, album)
+        if result["tracks"]:
+            return Loaded(result, memory_ttl=_ARTWORK_CACHE_TTL, persist=True)
+        return Loaded(result, memory_ttl=_DETAILS_MISS_TTL if definitive_miss else None)
+
+    return _album_details_cache.get_or_load(
+        key, load, store_key="album-details:v1:" + key[0] + ":" + key[1], stored_ttl=_ARTWORK_CACHE_TTL)
 
 
 def _fetch_album_details(artist, album):
@@ -332,8 +321,8 @@ def _fetch_album_details(artist, album):
         return result, False
 
 
-_artist_image_cache = {}
-_album_links_cache = {}
+_artist_image_cache = LayeredCache("artist-image")
+_album_links_cache = LayeredCache("album-links")
 _ALBUM_LINKS_TTL = 24 * 60 * 60
 
 
@@ -347,7 +336,7 @@ def _json_or_none(url, **kwargs):
         return None
 
 
-_apple_url_cache = {}
+_apple_url_cache = LayeredCache("apple-album-url")
 
 
 def _apple_album_url(artist: str, album: str):
@@ -356,24 +345,20 @@ def _apple_album_url(artist: str, album: str):
     The album page asks twice (for its links and for its description), so a found page is kept for an hour.
     """
     key = (artist.casefold(), album.casefold())
-    cached = _apple_url_cache.get(key)
-    if cached and monotonic() - cached[0] < 3600:
-        return cached[1]
-    store_key = "apple-album-url:v1:" + key[0] + ":" + key[1]
-    stored = persistent_metadata.read(store_key, persistent_metadata.LINKS_TTL)
-    if stored:
-        _apple_url_cache[key] = (monotonic(), stored)
-        return stored
-    data = _json_or_none("https://itunes.apple.com/search", params={
-        "term": f"{artist} {album}", "entity": "album", "limit": 10})
-    url = album_links.apple_music_url((data or {}).get("results") or [], artist, album)
-    if url:
-        _apple_url_cache[key] = (monotonic(), url)
-        persistent_metadata.write(store_key, url)
-    return url
+
+    def load():
+        data = _json_or_none("https://itunes.apple.com/search", params={
+            "term": f"{artist} {album}", "entity": "album", "limit": 10})
+        url = album_links.apple_music_url((data or {}).get("results") or [], artist, album)
+        # No page is not remembered: it may be a failed request as well as a real miss.
+        return Loaded(url, memory_ttl=3600, persist=True) if url else Loaded(url)
+
+    return _apple_url_cache.get_or_load(
+        key, load, store_key="apple-album-url:v1:" + key[0] + ":" + key[1],
+        store_ttl=persistent_metadata.LINKS_TTL, stored_ttl=3600)
 
 
-_album_description_cache = {}
+_album_description_cache = LayeredCache("album-description")
 _DESCRIPTION_TTL = 7 * 24 * 60 * 60
 _DESCRIPTION_MISS_TTL = 24 * 60 * 60
 _APPLE_PAGE_HEADERS = {
@@ -423,27 +408,21 @@ def album_description(artist: str, album: str) -> dict:
     not cached, so the next visit retries.
     """
     key = (artist.casefold(), album.casefold())
-    cached = _album_description_cache.get(key)
-    if cached:
-        ttl = _DESCRIPTION_TTL if cached["value"]["paragraphs"] else _DESCRIPTION_MISS_TTL
-        if monotonic() - cached["time"] < ttl:
-            return cached["value"]
-    store_key = "album-description:v1:" + key[0] + ":" + key[1]
-    stored = persistent_metadata.read(store_key)
-    if stored and stored.get("paragraphs"):
-        _album_description_cache[key] = {"time": monotonic(), "value": stored}
-        return stored
-    value, apple_answered = _apple_description(artist, album)
-    wikipedia_answered = True
-    if not value["paragraphs"]:
-        wikipedia, wikipedia_answered = _wikipedia_description(artist, album)
-        if wikipedia:
-            value = wikipedia
-    if value["paragraphs"]:
-        persistent_metadata.write(store_key, value)
-    if value["paragraphs"] or (apple_answered and wikipedia_answered):
-        _album_description_cache[key] = {"time": monotonic(), "value": value}
-    return value
+
+    def load():
+        value, apple_answered = _apple_description(artist, album)
+        wikipedia_answered = True
+        if not value["paragraphs"]:
+            wikipedia, wikipedia_answered = _wikipedia_description(artist, album)
+            if wikipedia:
+                value = wikipedia
+        if value["paragraphs"]:
+            return Loaded(value, memory_ttl=_DESCRIPTION_TTL, persist=True)
+        return Loaded(value, memory_ttl=_DESCRIPTION_MISS_TTL if apple_answered and wikipedia_answered else None)
+
+    return _album_description_cache.get_or_load(
+        key, load, store_key="album-description:v1:" + key[0] + ":" + key[1],
+        accept_stored=lambda stored: bool(stored and stored.get("paragraphs")), stored_ttl=_DESCRIPTION_TTL)
 
 
 @router.get("/api/album-description")
@@ -461,7 +440,7 @@ def album_description_route(artist: str = "", album: str = ""):
 _REVIEWS_TTL = 7 * 24 * 60 * 60
 _REVIEWS_PARTIAL_TTL = 10 * 60
 _REVIEWS_DEADLINE = 6.0
-_review_cache = {}
+_review_cache = LayeredCache("album-reviews")
 _REVIEW_PAGE_TIMEOUT = httpx.Timeout(4.0, connect=1.5)
 _WORDPRESS_REVIEW_SITES = (
     ("PopMatters", "https://www.popmatters.com"),
@@ -584,14 +563,13 @@ def album_reviews_for(artist: str, album: str) -> dict:
     the browser does not keep such an answer.
     """
     key = (artist.casefold(), album.casefold())
-    cached = _review_cache.get(key)
-    if cached and monotonic() - cached["time"] < cached["ttl"]:
-        return cached["value"]
-    store_key = "album-reviews:v1:" + key[0] + ":" + key[1]
-    stored = persistent_metadata.read(store_key, _REVIEWS_TTL)
-    if stored and stored.get("reviews"):
-        _review_cache[key] = {"time": monotonic(), "ttl": 3600, "value": stored}
-        return stored
+    return _review_cache.get_or_load(
+        key, lambda: _load_album_reviews(artist, album), store_key="album-reviews:v1:" + key[0] + ":" + key[1],
+        store_ttl=_REVIEWS_TTL, accept_stored=lambda stored: bool(stored and stored.get("reviews")),
+        stored_ttl=3600)
+
+
+def _load_album_reviews(artist: str, album: str):
     futures = [_review_pool.submit(source) for source in _review_sources(artist, album)]
     done, pending = wait(futures, timeout=_REVIEWS_DEADLINE)
     found, failed = [], bool(pending)
@@ -609,10 +587,8 @@ def album_reviews_for(artist: str, album: str) -> dict:
     partial = failed and len(value["reviews"]) < album_reviews.MAX_REVIEWS
     if partial:
         value["retryable"] = True
-    _review_cache[key] = {"time": monotonic(), "ttl": _REVIEWS_PARTIAL_TTL if partial else 3600, "value": value}
-    if value["reviews"] and not partial:
-        persistent_metadata.write(store_key, value)
-    return value
+    return Loaded(value, memory_ttl=_REVIEWS_PARTIAL_TTL if partial else 3600,
+                  persist=bool(value["reviews"]) and not partial)
 
 
 @router.get("/api/album-reviews")
@@ -634,15 +610,12 @@ def album_page_links(artist: str = "", album: str = "", mbid: str = ""):
     if not artist or not album:
         raise HTTPException(status_code=400, detail="artist and album are required")
     key = (artist.casefold(), album.casefold(), mbid)
-    cached = _album_links_cache.get(key)
-    if cached and monotonic() - cached["time"] < _ALBUM_LINKS_TTL:
-        return cached["links"]
-    store_key = "album-links:v1:" + "|".join(key)
-    stored = persistent_metadata.read(store_key, persistent_metadata.LINKS_TTL)
-    if stored:
-        _album_links_cache[key] = {"time": monotonic(), "links": stored}
-        return stored
+    return _album_links_cache.get_or_load(
+        key, lambda: _load_album_links(artist, album, mbid), store_key="album-links:v1:" + "|".join(key),
+        store_ttl=persistent_metadata.LINKS_TTL, stored_ttl=_ALBUM_LINKS_TTL)
 
+
+def _load_album_links(artist: str, album: str, mbid: str):
     def apple():
         return _apple_album_url(artist, album)
 
@@ -680,10 +653,7 @@ def album_page_links(artist: str = "", album: str = "", mbid: str = ""):
         links["listenbrainz"] = f"https://listenbrainz.org/album/{group_id}"
     # A missing service may only have been slow or busy, so an incomplete answer is kept for minutes, not a day.
     complete = "musicbrainz" in links and "apple_music" in links and "deezer" in links
-    _album_links_cache[key] = {"time": monotonic() - (0 if complete else _ALBUM_LINKS_TTL - 10 * 60), "links": links}
-    if complete:
-        persistent_metadata.write(store_key, links)
-    return links
+    return Loaded(links, memory_ttl=_ALBUM_LINKS_TTL if complete else 10 * 60, persist=complete)
 
 
 @router.get("/api/artist-image")
@@ -692,14 +662,16 @@ def artist_image(name: str = ""):
     name = name.strip()[:180]
     if not name:
         raise HTTPException(status_code=400, detail="name is required")
-    cached = _artist_image_cache.get(name.casefold())
-    if cached and monotonic() - cached["time"] < _ARTWORK_CACHE_TTL:
-        return cached["data"]
-    store_key = "artist-image:v2:" + name.casefold()
-    stored = persistent_metadata.read(store_key)
-    if stored and stored.get("artwork_url"):
-        _artist_image_cache[name.casefold()] = {"time": monotonic(), "data": stored}
-        return stored
+    return _artist_image_cache.get_or_load(
+        name.casefold(), lambda: _load_artist_image(name), store_key="artist-image:v2:" + name.casefold(),
+        accept_stored=_has_artwork, stored_ttl=_ARTWORK_CACHE_TTL)
+
+
+def _has_artwork(stored):
+    return bool(stored and stored.get("artwork_url"))
+
+
+def _load_artist_image(name: str):
     result = {"artwork_url": None, "image_kind": "artist", "source": "Deezer"}
     try:
         response = _EXTERNAL_HTTP.get("https://api.deezer.com/search/artist?" + urlencode({"q": name, "limit": 8}))
@@ -712,11 +684,8 @@ def artist_image(name: str = ""):
             result = {**match, "artwork_url": (photo or match["artwork_url"]).replace("http://", "https://", 1)}
     except Exception:
         # A provider outage is not cached, so the next visit retries.
-        return {**result, "retryable": True}
-    _artist_image_cache[name.casefold()] = {"time": monotonic(), "data": result}
-    if result.get("artwork_url"):
-        persistent_metadata.write(store_key, result)
-    return result
+        return Loaded({**result, "retryable": True})
+    return Loaded(result, memory_ttl=_ARTWORK_CACHE_TTL, persist=bool(result.get("artwork_url")))
 
 
 def _fallback_album_artwork(artist: str, album: str):
@@ -742,20 +711,13 @@ def album_artwork(artist: str = "", album: str = ""):
         raise HTTPException(status_code=400, detail="artist or album is required")
 
     key = (artist.casefold(), album.casefold())
-    now = monotonic()
-    cached = _artwork_cache.get(key)
-    if cached:
-        ttl = _ARTWORK_CACHE_TTL if cached["data"].get("artwork_url") else _ARTWORK_NEGATIVE_CACHE_TTL
-        if now - cached["time"] < ttl:
-            return cached["data"]
-    store_key = "album-artwork:v2:" + key[0] + ":" + key[1]
-    stored = persistent_metadata.read(store_key)
-    if stored and stored.get("artwork_url"):
-        _artwork_cache[key] = {"time": monotonic(), "data": stored}
-        return stored
+    return _artwork_cache.get_or_load(
+        key, lambda: _load_album_artwork(artist, album), store_key="album-artwork:v2:" + key[0] + ":" + key[1],
+        accept_stored=_has_artwork, stored_ttl=_ARTWORK_CACHE_TTL)
 
+
+def _load_album_artwork(artist: str, album: str):
     result = {"artwork_url": None, "image_kind": "album", "source": "Deezer"}
-    lookup_failed = False
     try:
         if artist and album:
             query = urlencode({"q": f'artist:"{artist}" album:"{album}"', "limit": 8})
@@ -795,13 +757,10 @@ def album_artwork(artist: str = "", album: str = ""):
     except Exception:
         # A provider outage must not poison the negative cache for five minutes.
         # Tell the browser this result is transient so it can retry with backoff.
-        lookup_failed = True
         result["retryable"] = True
+        return Loaded(result)
 
-    if not lookup_failed:
-        _artwork_cache[key] = {"time": monotonic(), "data": result}
-        if result.get("artwork_url"):
-            persistent_metadata.write(store_key, result)
-    return result
+    found = bool(result.get("artwork_url"))
+    return Loaded(result, memory_ttl=_ARTWORK_CACHE_TTL if found else _ARTWORK_NEGATIVE_CACHE_TTL, persist=found)
 
 

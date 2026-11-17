@@ -3,6 +3,7 @@ import unittest
 from unittest.mock import patch
 
 from app.api import metadata
+from app.services.layered_cache import LayeredCache
 
 
 class FailingArtworkProvider:
@@ -12,7 +13,7 @@ class FailingArtworkProvider:
 
 class ArtworkRetryTests(unittest.TestCase):
     def test_provider_timeout_is_retryable_and_not_negative_cached(self):
-        cache = {}
+        cache = LayeredCache("album-artwork")
         with patch.object(metadata, "_EXTERNAL_HTTP", FailingArtworkProvider()), \
              patch.object(metadata, "_artwork_cache", cache):
             result = metadata.album_artwork(
@@ -22,7 +23,7 @@ class ArtworkRetryTests(unittest.TestCase):
 
         self.assertIsNone(result["artwork_url"])
         self.assertTrue(result["retryable"])
-        self.assertEqual(cache, {})
+        self.assertEqual(len(cache), 0)
 
 
 if __name__ == "__main__":

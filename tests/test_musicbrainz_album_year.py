@@ -49,6 +49,49 @@ class MusicBrainzAlbumYearTests(unittest.TestCase):
                 request.assert_not_called()
 
 
+class _FreeLane:
+    def acquire(self):
+        return True
+
+    def penalize(self, *args):
+        pass
+
+
+class YearCacheBoundTests(unittest.TestCase):
+    def setUp(self):
+        service.year_cache.clear()
+        self.addCleanup(service.year_cache.clear)
+        lane = patch.object(service, "_lane", return_value=_FreeLane())  # no pacing: the fetch is fake
+        lane.start()
+        self.addCleanup(lane.stop)
+
+    def test_the_cache_keeps_at_most_two_thousand_pairs(self):
+        self.assertEqual(service.YEAR_CACHE_MAX_ENTRIES, 2000)
+        pairs = [(f"Artist {i}", f"Album {i}") for i in range(2100)]
+        service.lookup_album_years(pairs, fetch=lambda q, n: [])
+        self.assertEqual(len(service.year_cache), 2000)
+        self.assertNotIn(("artist0", "album0"), service.year_cache)
+        self.assertIn(("artist2099", "album2099"), service.year_cache)
+
+    def test_a_recently_read_pair_survives_eviction(self):
+        cache = service._BoundedYearCache(3)
+        for key in "abc":
+            cache[key] = {"time": 0, "year": None}
+        self.assertIsNotNone(cache.get("a"))
+        cache["d"] = {"time": 0, "year": None}
+        self.assertEqual(list(cache), ["c", "a", "d"])
+        self.assertIsNone(cache.get("b"))
+        self.assertEqual(cache.get("b", "x"), "x")
+
+    def test_an_evicted_pair_is_asked_again(self):
+        calls = []
+        with patch.object(service, "YEAR_CACHE_MAX_ENTRIES", 2), \
+             patch.object(service, "year_cache", service._BoundedYearCache(2)):
+            for pair in [("A", "One"), ("B", "Two"), ("C", "Three"), ("A", "One")]:
+                service.lookup_album_years([pair], fetch=lambda q, n: calls.append(q) or [])
+        self.assertEqual(len(calls), 4)
+
+
 class BatchAlbumYearTests(unittest.TestCase):
     def setUp(self):
         from integrations.musicbrainz import album_year
