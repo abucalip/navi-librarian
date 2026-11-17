@@ -296,7 +296,7 @@ Done: Genres grid and four album shelves on the dashboard, the Recommended slide
   Paths is gone from the web design.
 - **Next action:** after the owner's review, start L0 (server audit and missing fields, plan section 9), then L1 to L6 (Home), then L7 to L14.
 
-## 2r. macOS Paths and Booklet sheets redesign: P0 to P2 and B1 to B3 merged, owner check next
+## 2r. macOS Paths and Booklet sheets redesign: all slices merged (P0 to P2, B1 to B4), owner check next
 
 - The owner asked on 2026-11-17 for a design system and a detailed build plan, delivered as a docs PR. They are based on the Paths and Booklet mockups from an earlier session. The spec and plan are in [`MACOS_PATHS_BOOKLET.md`](MACOS_PATHS_BOOKLET.md). The package is in [`design/macos-paths-booklet/`](design/macos-paths-booklet/). It holds:
   - tokens mapped to `CU` roles
@@ -312,6 +312,7 @@ Done: Genres grid and four album shelves on the dashboard, the Recommended slide
 - **B1 merged** in PR [#1187](https://github.com/abucalip/navi-librarian/pull/1187), squash `a16dc62054ffc5c887186a025344b34137c62305` (2026-11-17): `CUPalette.stageAccent`, the `CU.Booklet` constants (height renamed `barHeight`), pure `Model/BookletLayout.swift`, `BookletLayoutTests`. No visible change. B2 needs owner answers D1 and D4 (and D3 only for B4).
 - **B2 merged** in PR [#1188](https://github.com/abucalip/navi-librarian/pull/1188), squash `e13bd1d64e89207e5f60a1782d1f25b08e39f866` (2026-11-17): bar, editions and extras sidebar, spread stage, caption, Done (D1 a), `title:` on four openers. Left for B3: filmstrip, zoom buttons and shortcuts, PDF zoom, narrow layout with the edition pop-up, loading and failed texts, `BookletRenderTests`. The B2 CPU measurement and a real-window look are not done. D3 and D4 are still unanswered (recommended: B4 after B3 if wanted; no language tag).
 - **B3 merged** in PR [#1189](https://github.com/abucalip/navi-librarian/pull/1189), squash `0f01a519b37666345dfdd3e04de615f18fa8a0e4` (2026-11-18): filmstrip, zoom buttons and shortcuts, PDF zoom, edition pop-up below 900 wide, loading and failed page states, `BookletRenderTests`. Left: the owner check of both sheets in a real window, the CPU measurements (P1 five cases, B2 and B3 Booklet open), and optional B4 if the owner answers D3 (a); D4 still unanswered (recommended: no language tag).
+- **B4 merged** in PR [#1190](https://github.com/abucalip/navi-librarian/pull/1190), squash `c284e1e483c85010872831d9f0a1c69284547e49` (2026-11-18, D3 (a)): server `booklets[].from_owned`, contract and fixtures, "Your edition" tag on the editions row. The build plan is complete. Left: the owner check of both sheets in a real window, and the CPU measurements (P1 five cases, B2 and B3 Booklet open). D4 unanswered (recommended: no language tag).
 - Slices: P0 (model) → P1 → P2 for Paths; B1 (palette and layout helpers) → B2 → B3 for Booklet; optional B4. P0 and B1 change nothing visible and can start once the PR is merged.
 
 ## 2n. Simplification candidates

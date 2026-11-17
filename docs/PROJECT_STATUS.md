@@ -9,8 +9,11 @@ Last checked: 2026-11-18. GitHub `main` is authoritative; this update is based o
 - **CI suite runs in about 1 minute (2026-11-17, PR #1182):** CI now runs the unit suite with pytest. `tests/conftest.py`, which gives each test a no-wait private provider gate, now applies, so MusicBrainz calls no longer sleep 1.1 s each on the shared gate. The test step went from 40 min to 69 s and the job takes about 2 min. Job timeout is 15 min.
   - **Next action:** none. Run focused modules that touch MusicBrainz with pytest, not `unittest`.
 
+- **macOS Booklet B4 merged (2026-11-18, PR #1190, squash `c284e1e4`):** the owner answered D3 (a). The artwork index adds `from_owned` per `booklets` entry (contract and fixtures updated); the Mac editions row shows the "Your edition" tag. The Paths and Booklet build plan is complete. No CPU measurement or real-window check yet.
+  - **Next action:** owner check of the Paths and Booklet sheets in a real window against the PNGs, plus the CPU measurements.
+
 - **macOS Booklet B3 merged (2026-11-18, PR #1189, squash `0f01a519`):** filmstrip, zoom buttons and ⌘+ ⌘− ⌘0, PDF zoom, edition pop-up below 900 wide, loading and failed page states, `BookletRenderTests`. No CPU measurement or real-window check yet.
-  - **Next action:** owner check of the Paths and Booklet sheets in a real window against the PNGs; B4 only if the owner answers D3 (a).
+  - **Next action:** superseded by B4 above.
 
 - **macOS Booklet B2 merged (2026-11-17, PR #1188, squash `e13bd1d6`):** the Booklet sheet has the new bar, editions and extras sidebar, spread stage with Page/Spread, caption and Done (D1 a); "Another booklet" removed. No CPU measurement or real-window check yet.
   - **Next action:** B3 (filmstrip, zoom buttons and shortcuts, PDF zoom, narrow layout, loading and failed states, `BookletRenderTests`); owner check of the Paths sheet is still open.
