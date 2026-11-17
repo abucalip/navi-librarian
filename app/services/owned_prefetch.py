@@ -18,14 +18,16 @@ cut short by a cap is not passed over: it is tried again on the next day.
 Part 2 adds the album page's Deezer tracklist and Apple/Wikipedia description hooks, on their own caps
 (``deezer``; ``apple`` and ``wikipedia``), the album year (MusicBrainz, counted), the album links
 (``apple``, ``deezer``, ``musicbrainz``) and the artist photo (``deezer``), through ``app/services/album_page_sources.py`` (shared with the
-routes; this module and its worker never import a route module). Not covered: album reviews (until K4) and the
-artist biography. Sections that only those hooks fill stay empty here.
+routes; this module and its worker never import a route module). Album reviews are prefetched only with a
+``reviews`` cap (``app/services/album_review_sources.py``; the Guardian only when the worker has
+``GUARDIAN_API_KEY``). Not covered: the artist biography (K1 measured no provider request for it on owned artists).
 """
 import logging
+import os
 import time
 
 from app import worker_schedule
-from app.services import album_page_sources, prefetch_state, similar_precompute
+from app.services import album_page_sources, album_review_sources, prefetch_state, similar_precompute
 from discovery.search.album_page import album_sections
 from discovery.search.artist_page import artist_page
 from discovery.search.index import STATE_FRESH, IndexView
@@ -120,9 +122,15 @@ def entity_extras(librarian, spend) -> dict:
 
     Artist: the artist photo (``deezer``). Album: the album links (``apple``, ``deezer`` and ``musicbrainz``, or the
     set could never be complete), under the strings the clients send: the album page's artist, album and
-    release-group id. The year is not here: it comes through the page's own year hook.
+    release-group id; and the album reviews (``reviews``), stored as ``/api/album-reviews`` stores them. The year
+    is not here: it comes through the page's own year hook.
     """
     extras = {"artists": [], "albums": []}
+    if "reviews" in spend.caps:
+        extras["albums"].append(lambda a: album_review_sources.prefetch_reviews(
+            librarian._metadata_cache_get, librarian._metadata_cache_set, album_page_sources.counting_get(spend.get),
+            a["artist"], a["name"], os.environ.get("GUARDIAN_API_KEY", "").strip(),
+            refused=(prefetch_state.BudgetExhausted,)))
     if not any(name in spend.caps for name in ("deezer", "apple")):
         return extras
     read, write = librarian._metadata_cache_get, librarian._metadata_cache_set

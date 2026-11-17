@@ -6,7 +6,6 @@ invalid request parameters; discovery itself does not depend on metadata.
 """
 import json
 import os
-import re
 import time
 from concurrent.futures import ThreadPoolExecutor, wait
 from urllib.parse import urlencode
@@ -23,7 +22,7 @@ from app.services.fallback_artwork import (
 from app.services.deezer_artwork import select_album_artwork, select_artist_artwork
 from app.services import runtime_metrics
 from app.services import (
-    album_links, album_page_sources, album_reviews, negative_marks, persistent_metadata, stale_refresh,
+    album_links, album_page_sources, album_review_sources, persistent_metadata, stale_refresh,
 )
 from app.services.layered_cache import LayeredCache, Loaded, with_fetched_at
 from app.services.deezer_album_matching import release_year
@@ -384,129 +383,45 @@ _REVIEWS_PARTIAL_TTL = 10 * 60
 _REVIEWS_MAX_STALE = 70 * 24 * 60 * 60
 _REVIEWS_DEADLINE = 6.0
 _review_cache = LayeredCache("album-reviews")
-_REVIEW_PAGE_TIMEOUT = httpx.Timeout(4.0, connect=1.5)
-_WORDPRESS_REVIEW_SITES = (
-    ("PopMatters", "https://www.popmatters.com"),
-    ("Consequence", "https://consequence.net"),
-    ("The Quietus", "https://thequietus.com"),
-    ("Treble", "https://www.treblezine.com"),
-    ("Angry Metal Guy", "https://www.angrymetalguy.com"),
-)
 _review_pool = ThreadPoolExecutor(max_workers=8, thread_name_prefix="album-reviews")
+# The outlets, their stored answers and failure marks live in `album_review_sources`, shared with the worker's
+# owned prefetch (efficiency K3); the names below keep the route's call sites and tests as they were.
+_WORDPRESS_REVIEW_SITES = album_review_sources.WORDPRESS_REVIEW_SITES
+_SOURCE_FOUND_TTL = album_review_sources.SOURCE_FOUND_TTL
+_SOURCE_MISS_TTL = album_review_sources.SOURCE_MISS_TTL
+_SOURCE_FAILURE_TTL = album_review_sources.SOURCE_FAILURE_TTL
+OutletResting = album_review_sources.OutletResting
+_guardian_text = album_review_sources.guardian_text
+
+
+def _review_get(*args, **kwargs):
+    return _EXTERNAL_HTTP.get(*args, **kwargs)
+
+
+def _guardian_key():
+    return os.environ.get("GUARDIAN_API_KEY", "").strip()
 
 
 def _pitchfork_review(artist: str, album: str):
-    response = _EXTERNAL_HTTP.get(
-        "https://pitchfork.com/search/", params={"q": album_reviews.search_text(artist, album)},
-        headers=_APPLE_PAGE_HEADERS, follow_redirects=True, timeout=_REVIEW_PAGE_TIMEOUT)
-    response.raise_for_status()
-    return album_reviews.pick_pitchfork(album_reviews.parse_pitchfork_search(response.text), artist, album)
-
-
-def _guardian_get(api_key: str, path: str, **params):
-    response = _EXTERNAL_HTTP.get(
-        "https://content.guardianapis.com/" + path, params={**params, "api-key": api_key}, timeout=_REVIEW_PAGE_TIMEOUT)
-    response.raise_for_status()
-    return response.json()
-
-
-def _guardian_text(text: str) -> str:
-    """Query text the Guardian accepts: it answers 400 to colons, brackets and similar inside a phrase."""
-    return re.sub(r"\s+", " ", re.sub(r"[^\w'\u2019 -]+", " ", text)).strip()
-
-
-def _guardian_artist_tag(api_key: str, artist: str):
-    """The Guardian's tag for an artist, remembered for a month once found.
-
-    A collaboration ("Tony Allen & Hugh Masekela") has no tag of its own, so the first name is tried next.
-    """
-    store_key = "guardian-artist-tag:v1:" + artist.casefold()
-    stored = persistent_metadata.read(store_key)
-    if stored:
-        return stored
-    names = [artist] + [part for part in re.split(r"\s+(?:&|and|with|feat\.?|featuring|/)\s+|,\s*", artist)[:1] if part != artist]
-    for name in names:
-        query = _guardian_text(album_reviews.search_text(name, ""))
-        tag = album_reviews.pick_guardian_tag(
-            _guardian_get(api_key, "tags", q=query, type="keyword", **{"page-size": 5}), name) if query else None
-        if tag:
-            persistent_metadata.write(store_key, tag)
-            return tag
-    return None
+    return album_review_sources.pitchfork_review(_review_get, artist, album)
 
 
 def _guardian_review(artist: str, album: str):
     """The Guardian's album review: through the artist's tag when it has one, else by text search."""
-    api_key = os.environ.get("GUARDIAN_API_KEY", "").strip()
-    if not api_key:
-        return None
-    album_text = _guardian_text(album_reviews.search_text("", album))
-    if not album_text:
-        return None
-    tag = _guardian_artist_tag(api_key, artist)
-    if tag:
-        query = {"tag": f"{tag},tone/albumreview", "q": f'"{album_text}"'}
-    else:
-        query = {"tag": "tone/albumreview", "q": f'"{_guardian_text(album_reviews.search_text(artist, ""))}" "{album_text}"'}
-    payload = _guardian_get(api_key, "search", **query, **{"order-by": "relevance", "show-fields": "trailText", "page-size": 10})
-    return album_reviews.pick_guardian(payload, artist, album)
+    return album_review_sources.guardian_review(
+        _review_get, persistent_metadata.read, persistent_metadata.write, _guardian_key(), artist, album)
 
 
 def _wordpress_review(name: str, site: str, artist: str, album: str):
-    search = _EXTERNAL_HTTP.get(
-        site + "/wp-json/wp/v2/search", params={
-            "search": album_reviews.search_text(artist, album), "subtype": "post", "per_page": 8},
-        headers={**_APPLE_PAGE_HEADERS, "Accept": "application/json"}, follow_redirects=True,
-        timeout=_REVIEW_PAGE_TIMEOUT)
-    search.raise_for_status()
-    url = album_reviews.pick_wordpress_post(search.json(), artist, album)
-    if not url:
-        return None
-    page = _EXTERNAL_HTTP.get(url, headers=_APPLE_PAGE_HEADERS, follow_redirects=True, timeout=_REVIEW_PAGE_TIMEOUT)
-    page.raise_for_status()
-    return album_reviews.review(name, album_reviews.page_dek(page.text), url)
-
-
-# Each outlet's answer is kept on its own: a review for a month, "nothing there" for three days, a failure
-# only as an hour's failure mark (K4), never as "nothing there". A retry after a partial answer then asks
-# only the outlets that failed (once their mark is over), and an album the outlets never reviewed is not
-# asked about again after a restart.
-_SOURCE_FOUND_TTL = 30 * 24 * 60 * 60
-_SOURCE_MISS_TTL = 3 * 24 * 60 * 60
-# Efficiency K4 (owner approval 2026-11-17): an outlet that timed out or failed for an album is not asked
-# about that album again for an hour. The mark has its own key, so it never reads as "no review".
-_SOURCE_FAILURE_TTL = 60 * 60
-
-
-class OutletResting(Exception):
-    """The outlet failed for this album within `_SOURCE_FAILURE_TTL`; it is skipped, so the list stays partial."""
-
-
-def _outlet_failure_key(store_key):
-    return "album-review-source-failed:v1:" + store_key.removeprefix("album-review-source:v1:")
+    return album_review_sources.wordpress_review(_review_get, name, site, artist, album)
 
 
 def _ask_outlet(store_key, ask):
-    """``ask()`` and store its answer. A failure is stored only as a short failure mark, then re-raised.
+    """``ask()`` and store its answer; a failure is stored only as a short failure mark (K4), then re-raised.
 
-    The mark is written here, in the pool thread, so an outlet that fails after the route's deadline is marked too.
+    It runs in the pool thread, so an outlet that fails after the route's deadline is marked too.
     """
-    failure_key = _outlet_failure_key(store_key)
-    if negative_marks.is_live(persistent_metadata.read, failure_key, _SOURCE_FAILURE_TTL):
-        raise OutletResting(store_key)
-    try:
-        found = ask()
-    except Exception:
-        negative_marks.mark(persistent_metadata.write, failure_key)
-        raise
-    persistent_metadata.write(store_key, {"review": found, "checked": time.time()})
-    return found
-
-
-def _outlet_answer_is_fresh(stored, age):
-    if stored["review"]:
-        return age <= _SOURCE_FOUND_TTL
-    return time.time() - float(stored.get("checked") or 0) < _SOURCE_MISS_TTL
+    return album_review_sources.ask_outlet(persistent_metadata.read, persistent_metadata.write, store_key, ask)
 
 
 def _outlet_review(name: str, artist: str, album: str, ask, allow_stale=False, stale=None):
@@ -516,21 +431,20 @@ def _outlet_review(name: str, artist: str, album: str, ask, allow_stale=False, s
     once, when it was stored is added to `stale`, and one background ``ask()`` replaces it; a failed ask
     leaves it.
     """
-    store_key = f"album-review-source:v1:{name}:{artist.casefold()}:{album.casefold()}"
+    store_key = album_review_sources.outlet_store_key(name, artist, album)
     if allow_stale and persistent_metadata.can_read_age():
         stored, age = persistent_metadata.read_with_age(store_key, _REVIEWS_MAX_STALE) or (None, None)
         if isinstance(stored, dict) and "review" in stored:
-            if _outlet_answer_is_fresh(stored, age):
+            if album_review_sources.answer_is_fresh(stored, age):
                 return stored["review"]
             stale_refresh.REFRESHER.submit(("album-review-source", store_key), lambda: _ask_outlet(store_key, ask))
             if stale is not None:
                 stale.append(time.time() - age)
             return stored["review"]
         return _ask_outlet(store_key, ask)
-    stored = persistent_metadata.read(store_key, _SOURCE_FOUND_TTL)
-    if isinstance(stored, dict) and "review" in stored and (
-            stored["review"] or time.time() - float(stored.get("checked") or 0) < _SOURCE_MISS_TTL):
-        return stored["review"]
+    fresh, review = album_review_sources.fresh_stored_answer(persistent_metadata.read, store_key)
+    if fresh:
+        return review
     return _ask_outlet(store_key, ask)
 
 
@@ -541,7 +455,7 @@ def _review_sources(artist: str, album: str, allow_stale=False, stale=None):
     `allow_stale`, an outlet's stale answer may be used; when it was checked is then added to `stale`.
     """
     asks = [("Pitchfork", lambda: _pitchfork_review(artist, album))]
-    if os.environ.get("GUARDIAN_API_KEY", "").strip():
+    if _guardian_key():
         asks.append(("The Guardian", lambda: _guardian_review(artist, album)))
     asks += [(name, lambda n=name, site=site: _wordpress_review(n, site, artist, album))
              for name, site in _WORDPRESS_REVIEW_SITES]
@@ -559,7 +473,7 @@ def album_reviews_for(artist: str, album: str) -> dict:
     key = (artist.casefold(), album.casefold())
     return _review_cache.get_or_load(
         key, lambda: _load_album_reviews(artist, album, allow_stale=True),
-        store_key="album-reviews:v1:" + key[0] + ":" + key[1],
+        store_key=album_review_sources.list_store_key(artist, album),
         store_ttl=_REVIEWS_TTL, accept_stored=lambda stored: bool(stored and stored.get("reviews")),
         stored_ttl=3600, max_stale=_REVIEWS_MAX_STALE, refresh=lambda: _load_album_reviews(artist, album),
         stale_fetched_at=True)
@@ -583,10 +497,7 @@ def _load_album_reviews(artist: str, album: str, allow_stale=False):
         except Exception:
             found.append(None)
             failed = True
-    value = {"reviews": album_reviews.pick_reviews(found)}
-    partial = failed and len(value["reviews"]) < album_reviews.MAX_REVIEWS
-    if partial:
-        value["retryable"] = True
+    value, partial = album_review_sources.stored_list_value(found, failed)
     short = partial or bool(stale)
     if stale:
         value = with_fetched_at(value, min(stale))

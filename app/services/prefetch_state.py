@@ -31,8 +31,10 @@ CURSOR_KEY = "prefetch:cursor"
 COVERAGE_KEY = "prefetch:coverage"
 # The only sources the artist and album page networks call. A name outside this set is ignored. Deezer, Apple and
 # Wikipedia (K3 part 2) feed only the album page's tracklist and description hooks, which are given to the
-# network only when their providers are named (``owned_prefetch.prefetch_network``).
-PROVIDERS = ("musicbrainz", "listenbrainz", "lastfm", "discogs", "deezer", "apple", "wikipedia")
+# network only when their providers are named (``owned_prefetch.prefetch_network``). ``reviews`` is the album
+# review outlets together (``album_review_sources``); it has no default, so reviews are prefetched only once the
+# owner names a cap for it.
+PROVIDERS = ("musicbrainz", "listenbrainz", "lastfm", "discogs", "deezer", "apple", "wikipedia", "reviews")
 
 
 def provider_of(url) -> str:

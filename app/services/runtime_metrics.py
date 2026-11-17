@@ -39,6 +39,15 @@ _HOSTS = {
     "last.fm": "lastfm",
     "audioscrobbler.com": "lastfm",   # Last.fm's API host (ws.audioscrobbler.com)
     "listenbrainz.org": "listenbrainz",
+    # Album review outlets (``app/services/album_review_sources.py``), one label so the owned prefetch can cap
+    # them together (efficiency K3, ``reviews``).
+    "pitchfork.com": "reviews",
+    "guardianapis.com": "reviews",
+    "popmatters.com": "reviews",
+    "consequence.net": "reviews",
+    "thequietus.com": "reviews",
+    "treblezine.com": "reviews",
+    "angrymetalguy.com": "reviews",
 }
 
 PROVIDER_EXTENSION = "metrics_provider"
