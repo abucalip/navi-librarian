@@ -501,7 +501,7 @@ Deferred until the owner wants a second import. Before any recurring import: def
 #### C1. Remove verified dead code
 
 - **Objective:** delete the items in F12 marked "Remove".
-- **Current state:** F12.
+- **Current state:** F12. Done in the C1 PR (one commit per item, awaiting merge); search results are in the PR body.
 - **Proposed changes:** remove `read_only_command_policy.py` and its test; `get_server_source`, `server_source_redaction.py` and its test; the `musicbrainz_rating_client.py` shim after repointing its two importers; `Dockerfile-E`; the matching entries in the Dockerfile `COPY` line.
 - **Affected components:** repository root, `navidrome_server.py`, `Dockerfile`, tests.
 - **Implementation guidance:** before each deletion repeat the search for the symbol as an import, as an attribute (`librarian.<name>`, `getattr`), as a string, and in `scripts/`, `.github/` and docs. Paste the search results in the PR. One commit per item.
