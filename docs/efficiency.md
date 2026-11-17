@@ -469,7 +469,7 @@ Each step quotes M2 numbers before and after. They are independent of one anothe
 #### S1. Size and growth report, then retention
 
 - **Objective:** know what grows, then bound it.
-- **Current state:** `observations` is append-only with no retention; growth is unmeasured.
+- **Current state:** `observations` is append-only with no retention; growth is unmeasured. Report part done in the S1 report PR (`scripts/store_size_report.py`, read-only, tested; open, not merged). Retention not started; it waits on the report's numbers from the owner's store.
 - **Proposed changes:** first a read-only script reporting row counts and bytes per table for each SQLite file (`dbstat` where available). Then, only for tables shown to grow, a tested retention job: for observations, keep the newest row per `(source, entity_hint)` plus any row referenced by `source_state.observation_id`.
 - **Affected components:** new script; later `intelligence/store/` and a scheduler entry.
 - **Implementation guidance:** two PRs. The append-only trigger blocks `UPDATE`, not `DELETE`; deletion is deliberate and must run in bounded batches inside short transactions. Never touch the state file.
