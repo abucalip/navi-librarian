@@ -556,7 +556,7 @@ public final class AppState {
     public func showAlbumPaths() {
         guard canShowAlbumPaths, let id = selectedAlbum.remoteID else { return }
         let a = selectedAlbum
-        let model = PathsSheetModel(albumTitle: a.title, artist: a.artist, albumID: id, sonicAvailable: radio.sonicAvailable)
+        let model = PathsSheetModel(albumTitle: a.title, artist: a.artist, albumID: id, year: a.year, sonicAvailable: radio.sonicAvailable)
         paths = model
         let librarian = session?.librarian
         Task { await model.load(librarian: librarian) }
