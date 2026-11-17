@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mac Paths and Booklet</title>
+<link rel="stylesheet" href="../tokens.css">
+<link rel="stylesheet" href="../components.css">
+<link rel="stylesheet" href="../art.css">
+<style>
+/* The page around the mockups (titles, captions, the Day/Night switch). Not app design. */
+body { margin: 0; background: #f3f2f4; color: #1d1c20; font: 14px/1.45 var(--pb-sans) }
+.wrap { max-width: 1240px; margin: 0 auto; padding: 32px 16px 64px; display: grid; gap: 48px }
+header h1 { font: 700 28px/1.2 var(--pb-display); margin: 0 0 6px; letter-spacing: -0.02em }
+header p { margin: 0; color: #6b6870; max-width: 76ch }
+.switch { display: inline-flex; gap: 2px; background: #e4e2e6; padding: 2px; border-radius: 8px; margin-top: 12px }
+.switch button { border: 0; background: none; padding: 4px 12px; border-radius: 6px; font: 500 13px var(--pb-sans) }
+.switch button.on { background: #fff; box-shadow: 0 .5px 1.5px rgba(0,0,0,.2) }
+section.state { display: grid; gap: 8px }
+section.state .eyebrow { font: 600 11px/1 var(--pb-sans); letter-spacing: .09em; text-transform: uppercase; color: #6b6870 }
+section.state h2 { font: 700 20px/1.2 var(--pb-display); margin: 0 }
+section.state p.note { margin: 0; color: #6b6870; max-width: 90ch; font-size: 13px }
+.stage { overflow-x: auto; padding: 16px 4px 24px }
+body.only { background: #e9e8eb }
+body.only .wrap { padding: 24px 16px; max-width: none }
+body.only header, body.only section.state > :not(.stage) { display: none }
+body.only .stage { padding: 0; overflow: visible }
+</style>
+</head>
+<body>
+<div class="wrap" id="root">
+  <header>
+    <h1>macOS Paths and Booklet: every state</h1>
+    <p>The spec for <code>docs/MACOS_PATHS_BOOKLET.md</code>. Names, counts and sentences are sample data; the pictures are placeholders. The Paths sheet follows the app's Day or Night mode, and the Booklet is always dark. The switch changes every Paths drawing except the one marked Night.</p>
+    <div class="switch" role="group" aria-label="Mode"><button class="on" data-mode="day">Day</button><button data-mode="night">Night</button></div>
+  </header>
+</div>
+<script src="mockups.js"></script>
+</body>
+</html>

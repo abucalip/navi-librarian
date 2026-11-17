@@ -289,6 +289,18 @@ Done: Genres grid and four album shelves on the dashboard, the Recommended slide
 - Open owner decisions D1 to D4 are in section 10 of the plan. The recommendations: the server builds a shared `why` object; Listening Room becomes the web default, and the old web layouts are retired only after the owner's check; Discover music stays on Home; covers that cannot be sampled get the fallback tint.
 - **Next action:** after the owner's review, start L0 (server audit and missing reason fields, plan section 9), then L1 to L6. Only Home is designed; every other web page needs mockups before it is built.
 
+## 2r. macOS Paths and Booklet sheets redesign: design proposed, no code yet
+
+- The owner asked on 2026-11-17 for a design system and a detailed build plan, delivered as a docs PR. They are based on the Paths and Booklet mockups from an earlier session. The spec and plan are in [`MACOS_PATHS_BOOKLET.md`](MACOS_PATHS_BOOKLET.md). The package is in [`design/macos-paths-booklet/`](design/macos-paths-booklet/). It holds:
+  - tokens mapped to `CU` roles
+  - Booklet dark roles
+  - type, spacing and SF Symbols tables
+  - 19 mockup states with PNGs
+  - a generated Swift tokens file
+  - contrast and build tools
+- Before P1 and B2, the owner answers decisions D1 to D6 (section 8). The recommendations: the Booklet stays a sheet with a Done button; the Paths sheet becomes resizable; "Your edition" only after B3, as optional server slice B4; no language tag; the filter goes back to All on each open; arrow keys move in visual order.
+- Slices: P0 (model) → P1 → P2 for Paths; B1 (palette and layout helpers) → B2 → B3 for Booklet; optional B4. P0 and B1 change nothing visible and can start once the PR is merged.
+
 ## 2n. Simplification candidates
 
 One line each: file, what could be simplified, why it was not done in the PR that found it (see "Opportunistic simplification" in [DEVELOPMENT_WORKFLOW.md](DEVELOPMENT_WORKFLOW.md)). Remove the line when it is done or no longer true.

@@ -1,0 +1,37 @@
+/* Stand-in pictures for the mockups only: covers, artist photos, booklet pages and extras. Not app design.
+   In the app these are CoverView / ArtistPhoto / the booklet images. The paper colours and Georgia type below draw fake
+   pages; they are not tokens. */
+.cov.art { display: grid; place-items: end start; color: rgba(255,255,255,.92); font: 700 11px/1.1 var(--pb-display); padding: 7px }
+.cov.art::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 45%, var(--pb-cover-scrim, rgba(0,0,0,.35))) }
+.cov.art > span:not(.badge-corner) { position: relative; z-index: 1 }
+.cov.round.art { place-items: center; font-size: 28px; padding: 0 }
+.cov.round.art::after { display: none }
+
+/* Booklet paper pages */
+.pg { background: #efe9dc; color: #3a352c; padding: 34px 34px 26px; display: grid; align-content: start; gap: 12px; font-family: Georgia, "Times New Roman", serif; position: relative; overflow: hidden }
+.pg h5 { margin: 0; font: italic 400 22px/1.15 Georgia, serif; letter-spacing: .01em }
+.pg .cap { font: 600 9px/1 var(--pb-sans); letter-spacing: .14em; text-transform: uppercase; color: #8a7f6a }
+.pg .lines { display: grid; gap: 6px }
+.pg .lines i { display: block; height: 5px; border-radius: 1px; background: #cbbfa6 }
+.pg .photo { height: 190px; border-radius: 1px; background: radial-gradient(120% 90% at 30% 35%, #77706a, #2c2a28 70%); filter: grayscale(1) contrast(1.05); position: relative }
+.pg .photo::after { content: "Session photo"; position: absolute; left: 8px; bottom: 6px; font: 9px var(--pb-sans); color: rgba(255,255,255,.65); letter-spacing: .05em }
+.pg .credits { display: grid; grid-template-columns: auto 1fr; gap: 5px 14px; font: 11px/1.35 Georgia, serif }
+.pg .credits span:nth-child(odd) { font: 600 8.5px/1.6 var(--pb-sans); letter-spacing: .12em; text-transform: uppercase; color: #8a7f6a }
+.pg .folio { position: absolute; bottom: 12px; font: 10px var(--pb-sans); color: #8a7f6a }
+.pg.l .folio { left: 34px } .pg.r .folio { right: 34px }
+.pg.coverpg { background: linear-gradient(140deg, #c0392b, #5b1010); color: #fff; place-content: end start }
+.pg.coverpg h5 { font: 700 30px/1.05 var(--pb-display); font-style: normal }
+.pg.obi { background: linear-gradient(90deg, #efe9dc 0 70%, #b0262c 70%) }
+.mini.paper { background: #efe9dc }
+.mini.paper::before { content: ""; position: absolute; inset: 8px 7px; background: repeating-linear-gradient(#b9ad95 0 2px, transparent 2px 5px) }
+.tp i.paper { background: #efe9dc }
+.tp i.paper::before { content: ""; position: absolute; inset: 6px 5px 10px; background: repeating-linear-gradient(#c2b69c 0 1.5px, transparent 1.5px 4px) }
+.tp i.ph::before { inset: 5px 4px 16px; background: #5b5652 }
+.tp i.cv { background: linear-gradient(140deg, #c0392b, #5b1010) }
+.tp i.ob { background: linear-gradient(90deg, #efe9dc 0 70%, #b0262c 70%) }
+.tp i.st { background: radial-gradient(circle, #e8c547 0 45%, #1b1b1d 46%) }
+.tp i.po { background: linear-gradient(160deg, #3d5a80, #0b1320) }
+.session { display: flex; gap: 8px }
+.session figure { margin: 0; display: grid; gap: 2px }
+.session .ph { width: 96px; height: 64px; border-radius: 4px; background: radial-gradient(120% 90% at 30% 35%, #77706a, #2c2a28 70%); filter: grayscale(1) }
+.session figcaption { font: 400 11px/16px var(--pb-sans); color: var(--pb-ink-2); max-width: 96px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
