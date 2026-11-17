@@ -11,6 +11,7 @@ import os
 import re
 import threading
 import time
+from contextlib import contextmanager
 from dataclasses import dataclass
 from html.parser import HTMLParser
 from pathlib import Path
@@ -26,7 +27,9 @@ MAX_UPLOAD_BYTES = safe_fetch.IMAGE_MAX_BYTES
 NEGATIVE_TTL_SECONDS = 7 * 24 * 3600
 RADIO_BROWSER_BASE = "https://all.api.radio-browser.info"
 _ID_PATTERN = re.compile(r"[A-Za-z0-9_-]{1,64}")
-_LOCKS: dict[str, threading.Lock] = {}
+# Per-station locks: [lock, users]. An entry is removed when its last holder or waiter leaves,
+# so the dict holds only stations being worked on (efficiency appendix A5.5).
+_LOCKS: dict[str, list] = {}
 _LOCKS_GUARD = threading.Lock()
 OVERRIDE = "override"
 GENERATED = "generated"
@@ -45,9 +48,20 @@ def logo_dir(data_dir: Path | str, station_id: str) -> Path:
     return Path(data_dir) / "radio-logos" / station_id
 
 
-def _lock_for(station_id: str) -> threading.Lock:
+@contextmanager
+def _lock_for(station_id: str):
+    """Hold this station's lock; the entry is dropped once nobody holds or waits for it."""
     with _LOCKS_GUARD:
-        return _LOCKS.setdefault(station_id, threading.Lock())
+        entry = _LOCKS.setdefault(station_id, [threading.Lock(), 0])
+        entry[1] += 1
+    try:
+        with entry[0]:
+            yield
+    finally:
+        with _LOCKS_GUARD:
+            entry[1] -= 1
+            if entry[1] == 0:
+                del _LOCKS[station_id]
 
 
 def _write_atomic(path: Path, data: bytes) -> None:

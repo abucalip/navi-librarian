@@ -11,6 +11,7 @@ Nothing here reads taste or play data. All traffic goes through the fetchers' sh
 from __future__ import annotations
 
 import threading
+from contextlib import contextmanager
 from concurrent.futures import ThreadPoolExecutor
 from typing import Callable
 
@@ -32,7 +33,7 @@ class ArtworkService:
         self._building: set[str] = set()
         self._building_lock = threading.Lock()
         self._image_slot = threading.Semaphore(1)        # one image download at a time
-        self._keyed: dict[tuple[int, str], threading.Lock] = {}
+        self._keyed: dict[tuple[int, str], list] = {}   # (image, size) -> [lock, users]; dropped when unused
         self._keyed_lock = threading.Lock()
 
     # ---- index -------------------------------------------------------------------------------
@@ -157,9 +158,21 @@ class ArtworkService:
             finally:
                 self._image_slot.release()
 
-    def _key_lock(self, image_id: int, size: str) -> threading.Lock:
+    @contextmanager
+    def _key_lock(self, image_id: int, size: str):
+        """Hold the lock for one image size; the entry is dropped once nobody holds or waits for it."""
+        key = (image_id, size)
         with self._keyed_lock:
-            return self._keyed.setdefault((image_id, size), threading.Lock())
+            entry = self._keyed.setdefault(key, [threading.Lock(), 0])
+            entry[1] += 1
+        try:
+            with entry[0]:
+                yield
+        finally:
+            with self._keyed_lock:
+                entry[1] -= 1
+                if entry[1] == 0:
+                    del self._keyed[key]
 
 
 def _trim_doc(doc: dict) -> dict:
