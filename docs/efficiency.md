@@ -67,7 +67,7 @@ Shared provider gate; scheduler; store retention; any structured provider or dat
 
 - How the slice reached the server: `docs/PROJECT_STATUS.md` says it was merged into the server store by owner-local scripts that are not in the repository. That path is not reproducible from the repository.
 - Real traffic shape: provider requests per day, per-route provider wait, cache hit rates, SQLite busy waits, memory.
-- Backup and restore of the seven or more SQLite files under `/data`.
+- Backup and restore of the SQLite files under `/data` (script and procedure written in S2; not run against the live host).
 - Provider storage terms (Last.fm, Deezer, Apple, review sites). Unchanged from revision 2: check before storing more than facts, links and short attributed excerpts.
 
 ## 4. Findings
@@ -482,7 +482,7 @@ Each step quotes M2 numbers before and after. They are independent of one anothe
 #### S2. Backup and restore procedure
 
 - **Objective:** a verified way to copy every store while the app runs.
-- **Current state:** unverified (section 3).
+- **Current state:** script, tests and the DEPLOYMENT.md "Backup and restore" section written (PR open, not merged, not run against the live host). `scripts/backup_stores.py` copies the eight stores with the backup API into a 0700 directory with 0600 files; tests in `tests/test_backup_stores.py` cover a held write transaction, a concurrent writer, modes, skipped and corrupt stores, the store list against the code, and a state-file restore after a knowledge wipe.
 - **Proposed changes:** `scripts/backup_stores.py` using `sqlite3.Connection.backup` for each file under `/data`, and a restore section in `docs/DEPLOYMENT.md`.
 - **Affected components:** new script, documentation.
 - **Implementation guidance:** enumerate the store files from the code constants, not a glob. The settings store contains credentials: keep mode `0o600` on its copy.
