@@ -1,3 +1,12 @@
+## 2026-11-17 — Server efficiency K6: Deezer album page store and Wikipedia no-article mark (merged)
+
+- PR [#1171](https://github.com/abucalip/navi-librarian/pull/1171), squash `f26b1e2f`, head `350e4ad3, merged 2026-11-17 12:00 UTC (GitHub confirms `MERGED`).
+- What changed: in `app/services/album_page_sources.py`, `load_album_links` reads and writes a found Deezer page under `album-deezer-url:v1:*` (7-day links TTL) before asking Deezer; the complete-sets-only rule for the links row is unchanged. `wikipedia_description_remembered` skips Wikipedia for an hour after a search that answered with no matching article (`album-no-match:v1:wikipedia:*`, through `negative_marks`); used by `app/api/metadata.py` and `prefetch_description`. A failed request writes neither. `docs/ARCHITECTURE.md` updated.
+- Tests run: `pytest` on `test_album_page_sources` (new `K6Tests`: page stored and reused while the set stays incomplete, failure stores no page, no-article skipped within the hour and asked after, failure or found article writes no mark), `test_metadata_album_info_reviews`, `test_metadata_cache_semantics`, `test_stale_while_revalidate`: 106 passed. `check_lint_changed.py --base origin/main`: 3 files, 0 new findings.
+- CI: six checks on `350e4ad3` pending at merge.
+- Not run: the full suite; the restart side-by-side pass (K6 acceptance); any provider traffic. Not deployed.
+- Limitations: a stored Deezer page that Deezer later removes stays up to 7 days; a Wikipedia article written later appears up to an hour late.
+
 ## 2026-11-17 — Server efficiency K4 + K5: short negative caches for review-outlet failures and Deezer/Apple no-match answers (merged)
 
 - PR [#1170](https://github.com/abucalip/navi-librarian/pull/1170), squash `9cdc3ba3`, head `3c6e1600`, merged 2026-11-17 11:54 UTC (GitHub confirms `MERGED`).
