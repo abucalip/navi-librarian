@@ -1,11 +1,9 @@
-import hashlib
 import json
 import os
 import random
 import shutil
 import sqlite3
 import time
-import unicodedata
 from discovery.pick_because import build_pick_context_lookup
 from discovery import store as discovery_store
 from integrations.slskd import transfers as _slskd_transfers_module
@@ -19,20 +17,9 @@ from acquisition.candidate_queue import normalize_reviewed_candidate_files as _n
 from settings.persistence import SettingsPersistence
 from metadata_cache import MetadataCache
 from settings.service import (
-    get_lastfm_settings as _service_get_lastfm_settings,
-    set_lastfm_settings as _service_set_lastfm_settings,
-    get_navidrome_settings as _service_get_navidrome_settings,
     listenbrainz_username as _service_listenbrainz_username,
     navidrome_config as _service_navidrome_config,
-    get_listenbrainz_settings as _service_get_listenbrainz_settings,
-    set_listenbrainz_settings as _service_set_listenbrainz_settings,
-    set_navidrome_settings as _service_set_navidrome_settings,
-    get_slskd_settings as _service_get_slskd_settings,
-    set_slskd_settings as _service_set_slskd_settings,
     slskd_config as _service_slskd_config,
-    test_navidrome_connection as _service_test_navidrome_connection,
-    test_lastfm_connection as _service_test_lastfm_connection,
-    test_listenbrainz_connection as _service_test_listenbrainz_connection,
 )
 from acquisition import lifecycle as _acquisition_lifecycle
 from acquisition.candidate_start import candidate_start_state as _module_candidate_start_state
@@ -54,7 +41,6 @@ from acquisition.completion import (
     safe_folder_name as _acquisition_safe_folder_name,
 )
 from pathlib import Path
-from urllib.parse import urlparse
 from settings.data_directory import resolve_data_dir
 
 import httpx
@@ -81,12 +67,7 @@ def _metadata_cache_set(key, value):
 
 # Environment variables provide first-run defaults; service settings are persistent.
 
-def _default_music_dir():
-    """Compatibility adapter for the extracted music-path default policy."""
-    return _default_music_dir_from_environment(os.environ, lambda path: path.is_dir())
-
-
-MUSIC_DIR = _default_music_dir()
+MUSIC_DIR = _default_music_dir_from_environment(os.environ, lambda path: path.is_dir())
 
 
 def api_call(method, **params):
@@ -215,7 +196,6 @@ def recommend_new_music(
     listens = gathered["listens"]
     recent_artists = gathered["recent_artists"]
     recent_artist_play_counts = gathered.get("recent_artist_play_counts", recent_artists)
-    recent_artist_mbid_counts = gathered["recent_artist_mbid_counts"]
     albums = gathered["albums"]
     failures = gathered["failures"]
     library_albums = gathered["library_albums"]
@@ -225,7 +205,6 @@ def recommend_new_music(
     recent_family_play_counts = gathered.get("recent_family_play_counts", recent_family_counts)
     core_families = gathered["core_families"]
     exploration_families = gathered["exploration_families"]
-    profile_families = gathered["profile_families"]
     regional_candidates_added = gathered["regional_candidates_added"]
     regional_results_seen = gathered["regional_results_seen"]
 
@@ -778,11 +757,6 @@ def _lastfm_artist_genres(artist):
 def _deep_dive_genre_families(tags):
     from discovery.recommendations import deep_dive_genre_families
     return deep_dive_genre_families(tags)
-def _lastfm_similar_artists(artist, limit=8):
-    """Compatibility adapter for cached Last.fm similar-artist results."""
-    return _lastfm_client.similar_artists(artist, limit=limit)
-
-
 def _musicbrainz_critical_rating(mbid, include_year=False):
     """Compatibility adapter for cached MusicBrainz release-group ratings."""
     return _musicbrainz_rating_client.critical_rating(
@@ -793,9 +767,6 @@ def _musicbrainz_critical_rating(mbid, include_year=False):
     )
 
 
-def _discovery_exact_artist_credit_matches(artist_credit, artist_name):
-    from discovery.recommendations import exact_artist_credit_matches
-    return exact_artist_credit_matches(artist_credit, artist_name)
 def _discovery_is_various_artists(value):
     from discovery.recommendations import is_various_artists
     return is_various_artists(value)
@@ -843,6 +814,7 @@ def _build_new_releases_list():
             continue
 
         from discovery.new_releases import select_artist_release_candidates
+        from discovery.recommendations import exact_artist_credit_matches
         artist_candidates = select_artist_release_candidates(
             payload if isinstance(payload, list) else [],
             artist=artist,
@@ -853,7 +825,7 @@ def _build_new_releases_list():
             today=date.today().isoformat(),
             music_key=_music_key,
             is_album_candidate=_discovery_is_album_candidate,
-            exact_artist_credit_matches=_discovery_exact_artist_credit_matches,
+            exact_artist_credit_matches=exact_artist_credit_matches,
             is_various_artists=_discovery_is_various_artists,
         )
         from discovery.new_releases import merge_release_candidates
@@ -980,7 +952,7 @@ def _build_artist_deep_dive_list():
     )
     collect_similar_artist_candidates(
         anchors, owned_artists, owned_albums, candidates,
-        similar_artists_lookup=_lastfm_similar_artists,
+        similar_artists_lookup=_lastfm_client.similar_artists,
         top_albums_lookup=_lastfm_top_albums, music_key=_music_key, pause=pause,
     )
     enrich_candidate_genres(
@@ -1109,114 +1081,9 @@ _listenbrainz_client.set_token_source(
 )
 
 
-def discovery_get_navidrome_settings() -> str:
-    """Return Navidrome settings without exposing the saved password."""
-    return _service_get_navidrome_settings(_discovery_settings_read, MUSIC_DIR)
-
-
-def discovery_set_navidrome_settings(
-    navidrome_url: str,
-    username: str,
-    password: str = "",
-    music_library_path: str | None = None,
-) -> str:
-    """Save Navidrome connection settings; a blank password preserves the saved password."""
-    def set_music_dir(path):
-        global MUSIC_DIR
-        MUSIC_DIR = path
-
-    return _service_set_navidrome_settings(
-        _discovery_settings_read,
-        _discovery_settings_write,
-        lambda: MUSIC_DIR,
-        set_music_dir,
-        navidrome_url,
-        username,
-        password,
-        music_library_path,
-    )
-
-
-def discovery_test_navidrome_connection() -> str:
-    """Compatibility adapter for the extracted Navidrome connection service."""
-    return _service_test_navidrome_connection(api_call, json.dumps)
-
-
-def discovery_get_lastfm_settings() -> str:
-    """Return Last.fm configuration status without exposing the API key."""
-    return _service_get_lastfm_settings(_discovery_settings_read)
-
-
-def discovery_set_lastfm_settings(api_key: str = "", username: str | None = None) -> str:
-    """Save a Last.fm API key and username; a blank key preserves the saved key."""
-    return _service_set_lastfm_settings(
-        _discovery_settings_read, _discovery_settings_write, api_key, username
-    )
-
-
-def discovery_test_lastfm_connection() -> str:
-    """Compatibility adapter for the extracted Last.fm connection service."""
-    return _service_test_lastfm_connection(_discovery_settings_read, httpx.get, json.dumps)
-
-
-def discovery_get_listenbrainz_settings() -> str:
-    """Return the configured ListenBrainz username and whether a token is saved."""
-    return _service_get_listenbrainz_settings(_discovery_settings_read, _listenbrainz_username())
-
-
-def discovery_set_listenbrainz_settings(username: str, token: str = "") -> str:
-    """Save a ListenBrainz username and, when given, its token."""
-    return _service_set_listenbrainz_settings(_discovery_settings_write, username, token)
-
-
-def discovery_test_listenbrainz_connection() -> str:
-    """Compatibility adapter for the extracted ListenBrainz connection service."""
-    return _service_test_listenbrainz_connection(_listenbrainz_username, httpx.get, json.dumps)
-
-
 def _slskd_config():
     """Compatibility adapter for validated slskd configuration."""
     return _service_slskd_config(_discovery_settings_read)
-
-
-def discovery_get_slskd_settings() -> str:
-    """Read acquisition settings without returning the stored API key."""
-    return _service_get_slskd_settings(
-        _discovery_settings_read, MUSIC_DIR, _DISCOVERY_SETTINGS_DEFAULTS
-    )
-
-
-def discovery_set_slskd_settings(
-    slskd_url: str = "",
-    api_key: str = "",
-    quality_priority_json: str = '["mp3_320","mp3_193_319","mp3_192","flac_cd","flac_16_44","flac_hires"]',
-    slskd_downloads_path: str | None = None,
-    music_library_path: str | None = None,
-) -> str:
-    """Save acquisition settings and paths. Blank API key preserves the saved key."""
-    def set_music_dir(path):
-        global MUSIC_DIR
-        MUSIC_DIR = path
-
-    return _service_set_slskd_settings(
-        _discovery_settings_read,
-        _discovery_settings_write,
-        lambda: MUSIC_DIR,
-        set_music_dir,
-        _DISCOVERY_SETTINGS_DEFAULTS,
-        slskd_url,
-        api_key,
-        quality_priority_json,
-        slskd_downloads_path,
-        music_library_path,
-    )
-
-
-def discovery_test_slskd_connection() -> str:
-    """Compatibility adapter for the extracted slskd connectivity probe."""
-    from integrations.slskd.client import test_connection
-
-    return test_connection(_slskd_config)
 
 
 def _slskd_quality_tier(file_record, filename, priority):
@@ -1225,11 +1092,6 @@ def _slskd_quality_tier(file_record, filename, priority):
 
     return quality_tier(file_record, filename, priority)
 
-def _discovery_expected_track_count(metadata):
-    """Compatibility adapter for expected slskd album track-count extraction."""
-    from integrations.slskd.search import expected_track_count
-
-    return expected_track_count(metadata)
 def _slskd_track_identity(filename):
     """Compatibility wrapper for slskd track identity normalization."""
     from integrations.slskd.search import track_identity
@@ -1241,18 +1103,6 @@ def _slskd_album_path_match(album, text):
     from integrations.slskd.search import album_path_match
 
     return album_path_match(album, text)
-
-def _slskd_search_queries(artist, album):
-    """Compatibility wrapper for bounded slskd query generation."""
-    from integrations.slskd.search import search_queries
-
-    return search_queries(artist, album)
-
-def _slskd_search_response_items(payload):
-    """Compatibility wrapper for slskd response normalization."""
-    from integrations.slskd.search import response_items
-
-    return response_items(payload)
 
 def _slskd_path_match_diagnostics(payload, artist, album, limit=10):
     """Compatibility wrapper for bounded slskd path diagnostics."""
@@ -1486,11 +1336,6 @@ def _discovery_import_watcher_entry(artist, album, candidate, settings, identity
             _DISCOVERY_IMPORT_ACTIVE.discard(identity)
 
 
-def _discovery_filename_key(value):
-    """Compatibility wrapper; implementation lives in acquisition.completion."""
-    return _acquisition_filename_key(value)
-
-
 def _discovery_match_completed_album_files(folder, candidate):
     """Compatibility wrapper for strict completion-file matching."""
     return _acquisition_match_completed_album_files(folder, candidate)
@@ -1502,7 +1347,7 @@ def _discovery_inspect_completed_album(download_root, candidate):
         download_root,
         candidate,
         safe_folder_name=_discovery_safe_folder_name,
-        filename_key=_discovery_filename_key,
+        filename_key=_acquisition_filename_key,
         match_files=_discovery_match_completed_album_files,
     )
 
@@ -1806,7 +1651,8 @@ def _discovery_acquire_album_impl(
                            "album": album, "message": message}, ensure_ascii=False)
     priority = settings.get("quality_priority", _DISCOVERY_SETTINGS_DEFAULTS["quality_priority"])
     headers = {"X-API-KEY": api_key}
-    search_queries = _slskd_search_queries(artist, album)
+    from integrations.slskd import search as slskd_search
+    search_queries = slskd_search.search_queries(artist, album)
     try:
         from integrations.slskd.search_polling import collect_search_responses
 
@@ -1818,14 +1664,14 @@ def _discovery_acquire_album_impl(
             monotonic=time.monotonic,
             sleep=time.sleep,
             new_search_id=lambda: str(uuid.uuid4()),
-            response_items=_slskd_search_response_items,
+            response_items=slskd_search.response_items,
         )
         search_id = search_result["search_id"]
         search_attempts = search_result["search_attempts"]
         reported_response_count = search_result["reported_response_count"]
         reported_file_count = search_result["reported_file_count"]
         payload_by_peer = search_result["payload_by_peer"]
-        expected_track_count = _discovery_expected_track_count(metadata)
+        expected_track_count = slskd_search.expected_track_count(metadata)
         candidates = _slskd_extract_candidates(
             list(payload_by_peer.values()), artist, album, priority,
             expected_track_count=expected_track_count,
@@ -2229,10 +2075,6 @@ def _bridge_deep_dives(shown, hidden):
     return bridge_albums(None, shown, [], payload, _music_key, is_excluded=hidden)
 
 
-def _discovery_refresh_all():
-    return discovery_refresh.refresh_all(_discovery_refresh_personal, _discovery_refresh_other)
-
-
 def discovery_refresh_list(list_name: str = "personal", count: int = 10) -> str:
     """Refresh personal, classics, artist_deep_dive, new_releases, or all lists.
 
@@ -2252,8 +2094,10 @@ def discovery_refresh_list(list_name: str = "personal", count: int = 10) -> str:
     if list_name == "personal":
         return json.dumps(_discovery_refresh_personal(count), ensure_ascii=False, indent=2)
 
-    target = _discovery_refresh_all if list_name == "all" else _discovery_refresh_other
-    args = () if list_name == "all" else (list_name,)
+    if list_name == "all":
+        target, args = discovery_refresh.refresh_all, (_discovery_refresh_personal, _discovery_refresh_other)
+    else:
+        target, args = _discovery_refresh_other, (list_name,)
     thread = threading.Thread(
         target=target,
         args=args,
@@ -2269,17 +2113,11 @@ def discovery_refresh_list(list_name: str = "personal", count: int = 10) -> str:
     }, ensure_ascii=False)
 
 
-def _refresh_listening_profile_background():
-    """Compatibility adapter for the extracted background profile refresh."""
-    return listening_profile.refresh_and_persist_background_profile(
-        recent_listening_profile,
-        _discovery_write_list,
-    )
-
-
 def _discovery_scheduler_refresh_one(list_name):
     if list_name == "personal":
         return _discovery_refresh_personal(20, origin="scheduler")
     if list_name == "listening_profile":
-        return _refresh_listening_profile_background()
+        return listening_profile.refresh_and_persist_background_profile(
+            recent_listening_profile, _discovery_write_list,
+        )
     return _discovery_refresh_other(list_name)
