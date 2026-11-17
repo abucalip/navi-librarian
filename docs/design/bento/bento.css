@@ -1,0 +1,134 @@
+/* Bento components. Measurements are dp (1 CSS px = 1dp), type sizes are sp. Colours come from palettes.css
+   (generated from tokens.json). Spec: docs/BENTO_THEME.md, section 7. The stand-in artwork is ../_kit (not for the app). */
+@font-face{font-family:Gabarito;src:url(fonts/gabarito_bento.ttf);font-weight:500 900}
+@font-face{font-family:Figtree;src:url(fonts/figtree_bento.ttf);font-weight:400 800}
+
+.scr{background:var(--ink);color:var(--text);font:400 14px/20px Figtree,system-ui,sans-serif}
+.scr *{box-sizing:border-box}
+.ic{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.ic.f{fill:currentColor;stroke:none}
+.ic.s{width:18px;height:18px}
+.g{font-family:Gabarito,sans-serif;font-weight:800}
+.mut{color:var(--textMuted)}
+.body{position:absolute;inset:0;overflow:hidden;padding-bottom:150px}
+
+/* header */
+.hdr{display:flex;align-items:flex-end;justify-content:space-between;padding:22px 14px 14px 16px}
+.greet{font:600 13px/16px Figtree;color:var(--textMuted)}
+.lt{margin:2px 0 0;font:800 34px/36px Gabarito;letter-spacing:-.02em}
+.ib{width:44px;height:44px;border-radius:22px;background:var(--surface);color:var(--control);display:grid;place-items:center;position:relative;flex:none}
+.ib.flat{background:transparent}
+.bdg{position:absolute;top:-2px;right:-2px;min-width:18px;height:18px;border-radius:9px;background:var(--accent);color:var(--onAccent);font:700 11px/18px Figtree;text-align:center;padding:0 4px}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:14px 14px 0}
+
+/* tiles */
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;padding:0 14px}
+.tile{border-radius:28px;padding:14px;background:var(--surface);color:var(--text);position:relative;overflow:hidden;min-width:0}
+.tile.sm{border-radius:22px;padding:12px}
+.span2{grid-column:span 2}.tall{grid-row:span 2}
+.t-warm{background:var(--warm);color:var(--onTone)}.t-sun{background:var(--sun);color:var(--onTone)}.t-leaf{background:var(--leaf);color:var(--onTone)}
+.t-bloom{background:var(--bloom);color:var(--onTone)}.t-sky{background:var(--sky);color:var(--onTone)}
+.t-deep{background:var(--deep);color:var(--onDeep)}.t-ink{background:var(--ink)}
+.t-warm .lbl,.t-sun .lbl,.t-leaf .lbl,.t-bloom .lbl,.t-sky .lbl,[class*=t-] .tm{color:var(--onToneMuted)}
+.lbl{font:600 12px/15px Figtree;color:var(--textMuted)}
+.eb{font:700 12px/15px Figtree;letter-spacing:.06em;text-transform:uppercase;color:var(--control)}
+.t-deep .eb{color:var(--deepEyebrow)}
+.tt{margin:0;font:800 20px/21px Gabarito}
+.tn{font:800 18px/20px Gabarito}
+.ht{margin:0;font:800 30px/31px Gabarito;letter-spacing:-.01em}
+.pt{margin:0;font:800 36px/37px Gabarito;letter-spacing:-.02em}
+.stat{font:900 40px/40px Gabarito;letter-spacing:-.01em}
+.sh{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px}
+.lnk{font:700 14px Figtree;color:var(--control)}
+
+/* artwork */
+.cvr{border-radius:18px}.cvr.s{border-radius:14px}.cvr.r{border-radius:12px}.cvr.xs{border-radius:10px}
+.photo{border-radius:20px}.round{border-radius:50%}
+
+/* buttons, chips, tags */
+.btn{height:44px;padding:0 18px;border-radius:22px;background:var(--control);color:var(--onControl);font:700 15px/18px Figtree;display:inline-flex;align-items:center;gap:8px;flex:none;white-space:nowrap}
+.btn .ic{width:18px;height:18px}
+.btn.s{height:36px;padding:0 14px;border-radius:18px;font-size:13px}
+.btn.o{background:var(--ink);color:var(--control)}
+.tile:not([class*=t-]) .btn.o{background:var(--ink)}
+[class*=t-] .btn.o{background:var(--chip);color:var(--text)}
+.btn.w{flex:1;justify-content:center}
+.btn.danger{background:var(--chartRedText);color:#fff}
+.icb{width:44px;height:44px;border-radius:22px;background:var(--ink);color:var(--control);display:grid;place-items:center;flex:none}
+.icb.s{width:40px;height:40px}
+[class*=t-] .icb{background:var(--chip);color:var(--text)}
+.icb.solid{background:var(--control);color:var(--onControl)}
+.chips{display:flex;gap:8px;padding:0 14px;overflow:hidden;white-space:nowrap}
+.chip{height:40px;padding:0 16px;border-radius:20px;background:var(--surface);color:var(--text);font:700 14px/40px Figtree;flex:none}
+.chip.on{background:var(--deep);color:var(--onDeep)}
+.chip.sm{height:32px;line-height:32px;padding:0 12px;font-size:13px}
+.tag{display:inline-block;font:600 12px/16px Figtree;padding:3px 8px;border-radius:999px;background:var(--warm);color:var(--onTone)}
+.tag.ok{background:var(--leaf)}
+.st{font:700 13px Figtree;display:inline-flex;align-items:center;gap:5px}
+.st.ok{color:var(--ok)}.st.mu{color:var(--textMuted)}.st.bad{color:var(--chartRedText)}
+.seg{display:flex;gap:6px;padding:0 14px}
+
+/* rows */
+.row{display:flex;align-items:center;gap:12px;min-height:60px}
+.row+.row{border-top:1px solid var(--edge)}
+[class*=t-] .row+.row{border-top-color:rgba(0,0,0,.08)}
+.row .tx{flex:1;min-width:0}
+.row b{display:block;font:700 15px/20px Figtree;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row small{display:block;font:500 13px/17px Figtree;color:var(--textMuted)}
+[class*=t-] .row small{color:var(--onToneMuted)}
+.rank{width:22px;font:800 18px Gabarito;color:var(--control);font-variant-numeric:tabular-nums}
+.n{width:22px;font:800 15px Gabarito;color:var(--textMuted)}
+.on-row b,.on-row .n{color:var(--control)}
+
+/* dock: mini-player tile and the floating pill bar */
+.dock{position:absolute;left:0;right:0;bottom:0;padding:24px 12px 14px;background:linear-gradient(color-mix(in srgb,var(--ink) 0%,transparent),var(--ink) 30%)}
+.mini{display:flex;align-items:center;gap:12px;padding:8px;border-radius:24px;background:var(--surface);box-shadow:var(--float);position:relative;overflow:hidden}
+.mini .cvr{width:48px;height:48px;border-radius:14px}
+.mini b{display:block;font:700 15px Figtree}.mini small{display:block;font:500 13px Figtree;color:var(--textMuted)}
+.mini .prog{position:absolute;left:0;bottom:0;height:3px;width:42%;background:var(--accent)}
+.nav{margin-top:10px;height:64px;border-radius:32px;background:var(--bar);display:flex;align-items:center;justify-content:space-between;padding:0 8px;box-shadow:var(--float)}
+.nav span{width:56px;height:48px;color:var(--barIcon);display:grid;place-items:center}
+.nav .pill{width:auto;height:48px;padding:0 18px 0 14px;border-radius:24px;background:var(--control);color:var(--onControl);display:flex;gap:8px;font:700 15px Figtree}
+
+/* sheets, scrim, snackbar */
+.scrim{position:absolute;inset:0;background:rgba(10,10,10,.45)}
+.sheet{position:absolute;left:0;right:0;bottom:0;background:var(--surface);border-radius:28px 28px 0 0;padding:10px 14px 22px}
+.handle{width:40px;height:5px;border-radius:3px;background:var(--edgeStrong);opacity:.5;margin:0 auto 14px}
+.opt{display:flex;align-items:center;gap:14px;min-height:60px;padding:0 6px;border-radius:20px}
+.opt .ico{width:44px;height:44px;border-radius:22px;background:var(--ink);color:var(--control);display:grid;place-items:center}
+.opt b{display:block;font:700 15px Figtree}.opt small{display:block;font:500 13px Figtree;color:var(--textMuted)}
+.snack{position:absolute;left:12px;right:12px;height:52px;border-radius:26px;background:var(--deep);color:var(--onDeep);display:flex;align-items:center;justify-content:space-between;padding:0 8px 0 18px;font:600 14px Figtree}
+.snack u{text-decoration:none;font-weight:800;color:var(--deepEyebrow);padding:0 12px}
+
+/* player */
+.seek{height:6px;border-radius:3px;background:var(--raised);position:relative}
+.seek i{position:absolute;left:0;top:0;bottom:0;width:42%;border-radius:3px;background:var(--control)}
+.seek b{position:absolute;left:42%;top:-5px;width:16px;height:16px;margin-left:-8px;border-radius:8px;background:var(--control);box-shadow:0 0 0 4px var(--ink)}
+.times{display:flex;justify-content:space-between;font:500 12.5px Figtree;color:var(--textMuted);font-variant-numeric:tabular-nums;margin-top:8px}
+.trans{display:flex;justify-content:space-between;align-items:center}
+.trans .ic{width:28px;height:28px}
+.play{width:76px;height:76px;border-radius:38px;background:var(--control);color:var(--onControl);display:grid;place-items:center}
+.play .ic{width:30px;height:30px}
+.bars{display:inline-flex;align-items:flex-end;gap:2px;height:14px;width:22px}
+.bars i{width:3px;border-radius:1px;background:var(--accent);animation:eq .9s ease-in-out infinite alternate}
+.bars i:nth-child(2){animation-delay:-.3s}.bars i:nth-child(3){animation-delay:-.6s}
+@keyframes eq{from{height:4px}to{height:14px}}
+
+/* controls */
+.sw{width:52px;height:32px;border-radius:16px;background:var(--raised);position:relative;flex:none}
+.sw::after{content:"";position:absolute;left:4px;top:4px;width:24px;height:24px;border-radius:12px;background:var(--surface);box-shadow:0 1px 3px rgba(0,0,0,.3)}
+.sw.on{background:var(--control)}.sw.on::after{left:24px;background:var(--onControl)}
+.field{display:flex;align-items:center;gap:10px;height:48px;padding:0 16px;border-radius:24px;background:var(--surface);color:var(--textMuted);font:500 15px Figtree}
+.field.on{color:var(--text);box-shadow:inset 0 0 0 2px var(--control)}
+.track{display:flex;gap:4px;margin-top:10px}.track i{flex:1;height:6px;border-radius:3px;background:var(--raised)}.track i.d{background:var(--control)}.track i.x{background:var(--chartRedText)}
+.slider{height:6px;border-radius:3px;background:var(--raised);position:relative}
+.slider i{position:absolute;left:0;top:0;bottom:0;border-radius:3px;background:var(--control)}
+.slider b{position:absolute;top:-7px;width:20px;height:20px;margin-left:-10px;border-radius:10px;background:var(--surface);box-shadow:0 0 0 3px var(--control)}
+.vbar{display:flex;align-items:flex-end;gap:6px;height:120px}
+.vbar i{flex:1;border-radius:8px 8px 4px 4px;background:var(--chart3)}.vbar i.a{background:var(--accent)}
+.skel{background:var(--raised);border-radius:14px}
+
+/* entry motion (one shot; spec section 8) */
+.rv{animation:pop .7s cubic-bezier(.2,1.25,.4,1) both;animation-delay:var(--d,0s)}
+@keyframes pop{from{opacity:0;transform:translateY(14px) scale(.94)}}
+@media (prefers-reduced-motion:reduce){.rv,.bars i{animation:none}}

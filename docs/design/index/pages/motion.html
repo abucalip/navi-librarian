@@ -1,0 +1,21 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Index motion</title>
+<link rel="stylesheet" href="../palettes.css"><link rel="stylesheet" href="../index.css"><link rel="stylesheet" href="../../_kit/art.css">
+<style>body{margin:0;background:#E9E9E6;font-family:system-ui}.wrap{display:flex;gap:40px;padding:30px}.scr{width:360px;height:780px;position:relative;overflow:hidden;box-shadow:0 0 0 1px rgba(0,0,0,.12)}
+.notes{max-width:420px;font:14px/1.5 system-ui}.notes button{margin:4px 4px 0 0;padding:8px 12px}.pane{position:absolute;inset:0 0 120px;background:var(--ink);padding:20px 16px}
+.nav span{cursor:pointer}.nav i.blk{transition:left .38s cubic-bezier(.77,0,.18,1)}.num{display:inline-flex;overflow:hidden;height:92px}.num span{display:block;transition:transform .42s cubic-bezier(.77,0,.18,1)}</style></head><body><div class="wrap">
+<div class="scr"><div id="panes"></div><div class="dock"><div class="mini"><b>Pelota</b></div><nav class="nav" id="nav"><i class="blk" id="blk" style="left:5.5%"></i></nav></div></div>
+<div class="notes"><h2>Index motion, live</h2><p>Values: tokens.json → motion. Build steps: docs/INDEX_THEME.md section 8.</p>
+<button onclick="cascade()">Replay row cascade</button><button onclick="roll()">Roll the numeral</button>
+<p><b>Tap a bar cell</b>: the page slides left or right by bar order (380ms, firm curve, no fade) and the signal block slides along the top edge.<br><b>Row cascade</b>: rows enter 20ms apart from 12dp left.<br><b>Numeral</b>: each digit rolls up, 40ms apart.</p></div></div>
+<script>const names=['Home','Discover','Library','Search'];let cur=0;const panes=document.getElementById('panes'),nav=document.getElementById('nav');
+function pane(i){const p=document.createElement('div');p.className='pane';p.innerHTML=`<h1 class="d h1">${names[i]}</h1><div class="rule"></div><div class="num d" style="font-size:92px;margin-top:20px"><span>35</span></div><ul class="rows">${[1,2,3,4,5,6].map(n=>`<li class="rw nn"><span class="m n">0${n}</span><b>Row ${n}</b><span class="m mu">data</span></li>`).join('')}</ul>`;return p}
+panes.appendChild(pane(0));
+names.forEach((n,i)=>{const s=document.createElement('span');s.className=i?'':'on';s.textContent=n;s.onclick=()=>go(i);nav.appendChild(s)});
+function go(i){if(i===cur)return;const dir=i>cur?1:-1,old=panes.lastChild,nw=pane(i);panes.appendChild(nw);const e='cubic-bezier(.77,0,.18,1)';
+old.animate([{transform:'translateX(0)'},{transform:`translateX(${-dir*100}%)`}],{duration:380,easing:e,fill:'forwards'}).onfinish=()=>old.remove();
+nw.animate([{transform:`translateX(${dir*100}%)`},{transform:'translateX(0)'}],{duration:380,easing:e});
+document.getElementById('blk').style.left=(5.5+i*25)+'%';[...nav.querySelectorAll('span')].forEach((s,j)=>s.className=j===i?'on':'');cur=i}
+function cascade(){panes.lastChild.querySelectorAll('.rw').forEach((r,i)=>r.animate([{opacity:0,transform:'translateX(-12px)'},{opacity:1,transform:'none'}],{duration:300,delay:i*20,easing:'cubic-bezier(.2,0,0,1)',fill:'backwards'}))}
+function roll(){const n=panes.lastChild.querySelector('.num');n.innerHTML='3 5'.split(' ').map((d,i)=>`<span style="display:inline-block">${d}</span>`).join('');
+n.querySelectorAll('span').forEach((s,i)=>s.animate([{transform:'translateY(100%)',opacity:0},{transform:'none',opacity:1}],{duration:420,delay:i*40,easing:'cubic-bezier(.77,0,.18,1)',fill:'backwards'}))}
+cascade();</script></body></html>

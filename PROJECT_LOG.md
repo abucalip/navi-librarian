@@ -1,3 +1,29 @@
+## 2026-11-17 — Android Bento and Index design systems (docs PR, owner review pending)
+
+- **Background.**
+  - The owner picked Bento from four new proposals (Bento, Orbit, Darkroom, Spectrum, drawn as Design canvas artifacts and not in the repo).
+  - They brought back Index from the 16 November proposal.
+  - They kept these palettes:
+    - Bento: Sorbet, Licorice and Riviera;
+    - Index: Signal Blue, Newsprint Red, Graphite Orange and Field Green.
+- **Added:**
+  - `docs/BENTO_THEME.md` and `docs/INDEX_THEME.md` (spec, colour, type, icons, components, motion with Compose build steps, Home, page list, files, build steps, open decisions);
+  - `docs/design/bento/` and `docs/design/index/`: tokens, generated `palettes.css`, component CSS, 49 icons each with a Kotlin object, mockups as HTML and PNG (12 pages each: Home, Album/Artist/Genre, album and artist Paths, Player, Discover, Library/Search, Radio, Downloads/Stats/Server, Settings, Sheets, Palettes, Components), a live `motion.html`, `_src/build.py` and `_src/check_contrast.py`;
+  - `docs/design/_kit/` (shared sample data, icon paths, contrast maths, page wrapper, stand-in art).
+- **Fonts.**
+  - Bento ships `gabarito_bento.ttf` (88 KB) and `figtree_bento.ttf` (43 KB): Latin subsets made with fontTools from Google Fonts' variable sources, OFL licences included.
+  - Index uses fonts already in `res/font`.
+- **Colours changed for contrast:**
+  - Sorbet's control `#C8381A` → `#B8321A`;
+  - Newsprint Red `#C8231B` → `#B81F18`;
+  - Field Green `#0B7A4B` → `#086F43`;
+  - a separate `stripProgress` tone for Index's player strip.
+- **Checks run:**
+  - `check_contrast.py` for both themes: all seven palettes pass.
+  - Both `build.py` scripts ran and rendered every PNG with Chrome.
+  - pylint with the `check_lint_changed.py` checks on the five new Python files: 10.00/10.
+  - No app code changed and no Android tests were run (none apply).
+
 ## 2026-11-17 — CI hang: unit suite never exited; CI runs the suite once, with timeouts (merged)
 
 - Symptom: from about 02:30 UTC, CI runs stayed queued for hours or ended `cancelled` after 6 hours. Not a GitHub incident (status page: last Actions incident resolved 2026-11-16 16:26 UTC).

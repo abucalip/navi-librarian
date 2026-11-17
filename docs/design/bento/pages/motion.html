@@ -1,0 +1,26 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Bento motion</title>
+<link rel="stylesheet" href="../palettes.css"><link rel="stylesheet" href="../bento.css"><link rel="stylesheet" href="../../_kit/art.css">
+<style>body{margin:0;background:#E9E9E6;font-family:system-ui}.wrap{display:flex;gap:40px;padding:30px}.scr{width:360px;height:780px;position:relative;overflow:hidden;border-radius:22px;box-shadow:0 0 0 1px rgba(0,0,0,.12)}
+.notes{max-width:420px;font:14px/1.5 system-ui}.notes button{margin:4px 4px 0 0;padding:8px 12px}
+.page{position:absolute;inset:0;background:var(--warm);border-radius:0;transform-origin:var(--ox) var(--oy);display:none}
+.nav span{transition:none}.nav .cell{width:56px;height:48px;border-radius:24px;display:flex;align-items:center;justify-content:center;gap:8px;color:var(--barIcon);font:700 15px Figtree;overflow:hidden;white-space:nowrap;transition:width .45s cubic-bezier(.3,1.35,.5,1),background .2s}
+.nav .cell.on{width:122px;background:var(--control);color:var(--onControl)}.nav .cell em{font-style:normal;opacity:0;transition:opacity .15s .06s}.nav .cell.on em{opacity:1}
+.tile{transition:transform .25s cubic-bezier(.3,1.5,.5,1)}.tile:active{transform:scale(.97)}</style></head><body><div class="wrap">
+<div class="scr" id="s"><div class="body" id="b"></div><div class="dock"><nav class="nav" id="nav"></nav></div><div class="page" id="pg"></div></div>
+<div class="notes"><h2>Bento motion, live</h2><p>Values: tokens.json → motion. Build steps: docs/BENTO_THEME.md section 8.</p>
+<button onclick="enter()">Replay tile entry</button><button onclick="toggleReduce()">Toggle Remove animations</button>
+<p><b>Tap a tile</b>: it grows into its page (container transform, 450ms, corners 28 → 0); tap the page to shrink it back (380ms).<br><b>Tap a bar icon</b>: the active pill moves and stretches (spring 0.8 / 500), its label fades in 60ms later.<br><b>Press a tile</b>: it dips to 0.97.</p></div></div>
+<script>
+const tones=['warm','sun','leaf','bloom','sky','warm'];const b=document.getElementById('b');let reduce=false;
+b.innerHTML='<header class="hdr"><div><div class="greet">Tuesday evening</div><h1 class="lt">Your library</h1></div></header><div class="grid" id="g">'+tones.map((t,i)=>`<section class="tile t-${t} ${i==0?'span2':''}" style="height:${i==0?150:130}px" data-i="${i}"><div class="lbl">Tile ${i+1}</div></section>`).join('')+'</div>';
+function enter(){document.querySelectorAll('#g .tile').forEach((el,i)=>{if(reduce)return;el.animate([{opacity:0,transform:'translateY(14px) scale(.94)'},{opacity:1,transform:'none'}],{duration:700,delay:i*40,easing:'cubic-bezier(.2,1.25,.4,1)',fill:'backwards'})})}
+const pg=document.getElementById('pg');
+document.querySelectorAll('#g .tile').forEach(el=>el.onclick=()=>{const r=el.getBoundingClientRect(),s=document.getElementById('s').getBoundingClientRect();pg.style.display='block';pg.style.background=getComputedStyle(el).backgroundColor;
+ const from=`inset(${r.top-s.top}px ${s.right-r.right}px ${s.bottom-r.bottom}px ${r.left-s.left}px round 28px)`;pg.innerHTML='<div style="padding:22px"><h1 class="lt">Page</h1><p>Content fades in after 150ms.</p></div>';
+ pg.animate([{clipPath:from},{clipPath:'inset(0 0 0 0 round 0px)'}],{duration:reduce?0:450,easing:'cubic-bezier(.2,0,0,1)',fill:'forwards'});pg.firstChild.animate([{opacity:0},{opacity:1}],{duration:reduce?0:200,delay:reduce?0:150,fill:'backwards'});
+ pg.onclick=()=>{pg.animate([{clipPath:'inset(0 0 0 0 round 0px)'},{clipPath:from}],{duration:reduce?0:380,easing:'cubic-bezier(.3,0,.8,.15)',fill:'forwards'}).onfinish=()=>pg.style.display='none'}});
+const icons={home:'M4 10.5 12 4l8 6.5V20h-5.5v-5.5h-5V20H4z',lib:'M5 4.5v15M9.5 4.5v15M14 5l5 14',disc:'M3.5 12a8.5 8.5 0 1 0 17 0a8.5 8.5 0 1 0-17 0M15.2 8.8l-1.9 4.5-4.5 1.9 1.9-4.5z',search:'M4.5 10.5a6 6 0 1 0 12 0a6 6 0 1 0-12 0M15 15l5 5'};
+const nav=document.getElementById('nav');nav.innerHTML=[['home','Home'],['lib','Library'],['disc','Discover'],['search','Search']].map(([k,l],i)=>`<span class="cell ${i?'':'on'}"><svg class="ic" viewBox="0 0 24 24"><path d="${icons[k]}"/></svg><em>${l}</em></span>`).join('');
+nav.querySelectorAll('.cell').forEach(c=>c.onclick=()=>{nav.querySelectorAll('.cell').forEach(x=>x.classList.remove('on'));c.classList.add('on')});
+function toggleReduce(){reduce=!reduce;document.body.style.setProperty('--r',reduce?1:0);nav.querySelectorAll('.cell').forEach(c=>c.style.transition=reduce?'none':'')}
+enter();</script></body></html>
