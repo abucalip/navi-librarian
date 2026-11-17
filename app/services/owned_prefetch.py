@@ -15,17 +15,17 @@ The run ends when a cap is reached, on shutdown, after ``RUN_SECONDS``, or after
 The walk resumes from a checkpoint saved after each entity, whatever its outcome, except that an entity
 cut short by a cap is not passed over: it is tried again on the next day.
 
-Not covered here (part 2): the Deezer, Apple and Wikipedia metadata namespaces (album links, artist image,
-album details and description), whose loaders still live in ``app/api/metadata.py``; this module and its
-worker never import a route module. Album reviews are left out until K4. The page hooks for the artist
-biography, Deezer tracklist, album year and album description are not given to the network, so sections
-that only those hooks fill stay empty here.
+Part 2 adds the album page's Deezer tracklist and Apple/Wikipedia description hooks, on their own caps
+(``deezer``; ``apple`` and ``wikipedia``), through ``app/services/album_page_sources.py`` (shared with the
+routes; this module and its worker never import a route module). Not covered: album links and the artist image
+(clients ask for those themselves, under their own keys), the album year (its MusicBrainz lookup is not counted
+here), album reviews (until K4) and the artist biography. Sections that only those hooks fill stay empty here.
 """
 import logging
 import time
 
 from app import worker_schedule
-from app.services import prefetch_state, similar_precompute
+from app.services import album_page_sources, prefetch_state, similar_precompute
 from discovery.search.album_page import album_sections
 from discovery.search.artist_page import artist_page
 from discovery.search.index import STATE_FRESH, IndexView
@@ -82,8 +82,29 @@ def prefetch_network(librarian, spend):
         shared["lastfm_api_key"] = ""
     if "discogs" not in spend.caps:
         shared["discogs_token"] = ""
+    hooks = album_page_hooks(librarian, spend)
     return artist_network(
-        popularity=popularity, bio=lambda name: None, http_get=spend.get, deadline_seconds=ENTITY_SECONDS, **shared)
+        popularity=popularity, bio=lambda name: None, http_get=spend.get, deadline_seconds=ENTITY_SECONDS,
+        **hooks, **shared)
+
+
+def album_page_hooks(librarian, spend) -> dict:
+    """The album page's Deezer tracklist and description hooks (K3 part 2), each only when its providers have caps.
+
+    They read and write the metadata store under the route's own keys (``app.services.album_page_sources``), so a
+    first view finds the row. The description needs Apple and Wikipedia both: without either, its hook is left out
+    and the page's section stays for the first view. The year hook is not given: the page asks for a year only for
+    an album with none in the library, and its MusicBrainz lookup does not go through ``spend``.
+    """
+    read, write = librarian._metadata_cache_get, librarian._metadata_cache_set
+    get = album_page_sources.counting_get(spend.get)
+    hooks = {}
+    if "deezer" in spend.caps:
+        hooks["deezer_tracks"] = lambda artist, album: album_page_sources.prefetch_tracks(read, write, get, artist, album)
+    if "apple" in spend.caps and "wikipedia" in spend.caps:
+        hooks["album_description"] = lambda artist, album: album_page_sources.prefetch_description(
+            read, write, get, artist, album)
+    return hooks
 
 
 def _warm_artist(network, view, artist) -> bool:

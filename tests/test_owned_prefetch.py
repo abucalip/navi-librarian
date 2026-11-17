@@ -49,7 +49,7 @@ class StoreCase(unittest.TestCase):
 
 class BudgetTextTests(unittest.TestCase):
     def test_only_named_positive_provider_caps_count(self):
-        self.assertEqual(ps.parse_budgets("musicbrainz=300, LastFM=5,deezer=9,discogs=0,listenbrainz=x,=4,lastfm"),
+        self.assertEqual(ps.parse_budgets("musicbrainz=300, LastFM=5,qobuz=9,discogs=0,listenbrainz=x,=4,lastfm"),
                          {"musicbrainz": 300, "lastfm": 5})
         self.assertEqual(ps.parse_budgets(None), {})
         self.assertEqual(ps.parse_budgets("musicbrainz=-4"), {})
@@ -151,7 +151,7 @@ class RunTests(StoreCase):
         return result, warmed, built
 
     def test_with_no_caps_nothing_is_read_or_requested_and_nothing_is_stored(self):
-        for environ in ({}, {"OWNED_PREFETCH_BUDGETS": ""}, {"OWNED_PREFETCH_BUDGETS": "deezer=50"}):
+        for environ in ({}, {"OWNED_PREFETCH_BUDGETS": ""}, {"OWNED_PREFETCH_BUDGETS": "qobuz=50"}):
             result, warmed, built = self.run_job(environ)
             self.assertIsNone(result)
             self.assertEqual(warmed, [])
