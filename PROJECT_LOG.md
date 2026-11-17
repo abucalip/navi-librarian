@@ -1,3 +1,12 @@
+## 2026-11-17 — Efficiency finishing up: K3 reviews prefetch (off), K2 fetched_at, M1 Navidrome label (PR open)
+
+- PR [#1177](https://github.com/abucalip/navi-librarian/pull/1177), branch `efficiency-finishing-up`, not merged. It covers the "Left out of merged steps" list in `docs/efficiency.md`, at the owner's request.
+- M1: no production Navidrome call outside the shared client was found. The `client_factory` branch now sends the `navidrome` label.
+- K2: `LayeredCache(stale_fetched_at=True)` gives stale album reviews and links answers a `fetched_at` field (UTC ISO 8601). Fresh and stored values never carry it. `docs/SEARCH_CONTRACT.md` is updated.
+- K3: the review outlets moved to `app/services/album_review_sources.py`, and the worker prefetches reviews under a new `reviews` cap. The compose default does not name the cap, so this stays off (owner decision needed). The artist biography stays out (K1 measured 0 requests).
+- Not done, each behind its gate: the "library tracklist first" removal (needs a measurement) and wider K2 scope (needs evidence).
+- Tests: 14 focused files, 236 passed (`test_album_review_sources.py` is new, with 11 tests). Lint on changed files: 0 new findings. Full suite not run. No live run, no provider traffic, not deployed.
+
 ## 2026-11-17 — K3 part 2 caps and coverage target (merged)
 
 - PR [#1176](https://github.com/abucalip/navi-librarian/pull/1176), squash `75c7728d`, head `bf5fd8b3`, merged 12:55 UTC. CI (compile, lint-changed, test-and-build, container-smoke, validate-container) pending at merge.
