@@ -91,11 +91,11 @@ class TracklistTests(unittest.TestCase):
         self.assertEqual(aps.prefetch_tracks(store.read, store.write, fake_get(down=("deezer",)), ARTIST, ALBUM), [])
         self.assertEqual(store.data, {})
 
-    def test_a_definite_no_match_is_not_stored_by_the_worker(self):
+    def test_a_definite_no_match_is_stored_by_the_worker_only_as_a_no_match_mark(self):
         store = Store()
         get = lambda url, **kw: Resp({"data": []})
         self.assertEqual(aps.prefetch_tracks(store.read, store.write, get, ARTIST, ALBUM), [])
-        self.assertEqual(store.data, {})
+        self.assertEqual(list(store.data), [aps.no_match_store_key("deezer", ARTIST, ALBUM)])
 
 
 class DescriptionTests(unittest.TestCase):
@@ -305,6 +305,136 @@ class RouteParityTests(unittest.TestCase):
             self.assertEqual(metadata.album_page_links(ARTIST, ALBUM, MBID), links)
             self.assertEqual(metadata.album_year(ARTIST, ALBUM)["year"], year)
             self.assertEqual(metadata.artist_image(ARTIST), image)
+
+
+def no_match_get(deezer=None, itunes=None, down=()):
+    """A ``get`` whose Deezer and iTunes searches answer with the given payloads (default: nothing matches)."""
+    calls = []
+
+    def get(url, **kwargs):
+        calls.append(url)
+        if any(host in url for host in down):
+            raise RuntimeError("refused")
+        if "api.deezer.com/search/album" in url:
+            return Resp(deezer if deezer is not None else {"data": []})
+        if "itunes.apple.com" in url:
+            return Resp(itunes if itunes is not None else {"results": []})
+        raise AssertionError(url)
+    get.calls = calls
+    return get
+
+
+class NoMatchTests(unittest.TestCase):
+    """Efficiency K5: a definitive Deezer or Apple no-match is remembered for an hour; a failure is not."""
+
+    def setUp(self):
+        self.store = Store()
+        self.now = [1_000_000.0]
+        clock = patch.object(aps.negative_marks.time, "time", lambda: self.now[0])
+        clock.start()
+        self.addCleanup(clock.stop)
+
+    def tracks(self, get):
+        return aps.prefetch_tracks(self.store.read, self.store.write, get, ARTIST, ALBUM)
+
+    def apple(self, get):
+        return aps.apple_page_url(self.store.read, self.store.write, get, ARTIST, ALBUM)
+
+    def test_a_deezer_no_match_is_skipped_within_the_hour_and_asked_again_after_it(self):
+        get = no_match_get()
+        self.tracks(get)
+        self.now[0] += aps.NO_MATCH_TTL - 60
+        self.tracks(get)
+        self.assertEqual(len(get.calls), 1)
+        self.now[0] += 120
+        self.tracks(get)
+        self.assertEqual(len(get.calls), 2, "the mark does not renew itself")
+
+    def test_a_deezer_failure_or_error_body_writes_no_mark(self):
+        self.tracks(no_match_get(down=("deezer",)))
+        self.tracks(no_match_get(deezer={"error": {"type": "Exception", "message": "Quota limit exceeded", "code": 4}}))
+        self.assertEqual(self.store.data, {})
+
+    def test_a_deezer_match_is_unaffected(self):
+        self.assertEqual([t["title"] for t in self.tracks(fake_get())], ["Mysterons"])
+        self.assertEqual(list(self.store.data), [aps.details_store_key(ARTIST, ALBUM)])
+
+    def test_an_apple_no_match_is_skipped_within_the_hour_and_never_stored_as_a_page(self):
+        get = no_match_get()
+        self.assertEqual(self.apple(get), (None, True))
+        self.assertEqual(self.apple(get), (None, True))
+        self.assertEqual(len(get.calls), 1)
+        self.assertNotIn(aps.apple_url_store_key(ARTIST, ALBUM), self.store.data)
+        self.now[0] += aps.NO_MATCH_TTL + 1
+        self.apple(get)
+        self.assertEqual(len(get.calls), 2)
+
+    def test_an_apple_failure_writes_no_mark_and_a_match_is_stored_as_before(self):
+        self.assertEqual(self.apple(no_match_get(down=("itunes",))), (None, False))
+        self.assertEqual(self.store.data, {})
+        url, answered = self.apple(fake_get())
+        self.assertEqual((url, answered), ("https://music.apple.com/us/album/dummy/1", True))
+        self.assertEqual(list(self.store.data), [aps.apple_url_store_key(ARTIST, ALBUM)])
+
+    def test_links_skip_both_marked_services_and_the_set_is_not_stored(self):
+        get = no_match_get()
+        links = aps.prefetch_links(self.store.read, self.store.write, get, ARTIST, ALBUM, MBID)
+        self.assertEqual(set(links), {"musicbrainz", "listenbrainz"})
+        self.assertEqual(len(get.calls), 2)
+        self.assertEqual(sorted(self.store.data), sorted(
+            [aps.no_match_store_key("deezer", ARTIST, ALBUM), aps.no_match_store_key("apple", ARTIST, ALBUM)]),
+            "only the marks: an incomplete set is never kept for the links' week")
+        aps.prefetch_links(self.store.read, self.store.write, get, ARTIST, ALBUM, MBID)
+        self.assertEqual(len(get.calls), 2, "no Deezer or Apple request within the hour")
+
+    def test_a_refused_links_lookup_writes_no_mark(self):
+        aps.prefetch_links(self.store.read, self.store.write, no_match_get(down=("deezer", "itunes")), ARTIST, ALBUM, MBID)
+        self.assertEqual(self.store.data, {})
+
+    def test_the_album_details_mark_also_spares_the_links_deezer_search(self):
+        self.tracks(no_match_get())
+        get = no_match_get(itunes=ITUNES)
+        aps.prefetch_links(self.store.read, self.store.write, get, ARTIST, ALBUM, MBID)
+        self.assertEqual([url for url in get.calls if "deezer" in url], [])
+
+
+class RouteNoMatchTests(unittest.TestCase):
+    """Efficiency K5 on the routes: a restart within the hour sends no Deezer or Apple request for a no-match."""
+
+    def setUp(self):
+        self.store = Store()
+        persistent_metadata.attach(self.store.read, self.store.write)
+        self.addCleanup(persistent_metadata.detach)
+        self.caches = (metadata._album_details_cache, metadata._apple_url_cache, metadata._album_links_cache,
+                       metadata._album_description_cache)
+        self.clear()
+        self.addCleanup(self.clear)
+
+    def clear(self):
+        for cache in self.caches:
+            cache.clear()
+
+    def test_album_details_links_and_apple_page_read_the_marks(self):
+        get = no_match_get()
+        with patch.object(metadata, "_EXTERNAL_HTTP") as client:
+            client.get.side_effect = get
+            self.assertEqual(metadata.album_details(artist=ARTIST, album=ALBUM)["tracks"], [])
+            self.assertIsNone(metadata._apple_album_url(ARTIST, ALBUM))
+            sent = len(get.calls)
+            self.clear()
+            self.assertEqual(metadata.album_details(artist=ARTIST, album=ALBUM)["tracks"], [])
+            self.assertEqual(set(metadata.album_page_links(ARTIST, ALBUM, mbid=MBID)), {"musicbrainz", "listenbrainz"})
+            self.assertIsNone(metadata._apple_album_url(ARTIST, ALBUM))
+        self.assertEqual(sent, 2)
+        self.assertEqual(len(get.calls), 2, "nothing asked again within the hour")
+        self.assertNotIn("album-links:v1:" + "|".join((ARTIST.casefold(), ALBUM.casefold(), MBID)), self.store.data)
+
+    def test_a_failed_route_lookup_writes_no_mark(self):
+        with patch.object(metadata, "_EXTERNAL_HTTP") as client:
+            client.get.side_effect = no_match_get(down=("deezer", "itunes"))
+            metadata.album_details(artist=ARTIST, album=ALBUM)
+            metadata._apple_album_url(ARTIST, ALBUM)
+        self.assertEqual(self.store.data, {})
 
 
 if __name__ == "__main__":

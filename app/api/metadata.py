@@ -247,7 +247,8 @@ def album_details(artist: str = "", album: str = ""):
     """Return a carefully matched Deezer album and its tracklist for the card popup.
 
     A complete answer (with a tracklist) is kept for a month, in memory and on disk; an album the
-    catalog definitely does not have is remembered for an hour. A provider failure is not cached.
+    catalog definitely does not have is remembered for an hour, in memory and as a store mark (K5) that
+    the worker shares. A provider failure is not cached.
     """
     artist = str(artist or "").strip()[:180]
     album = str(album or "").strip()[:180]
@@ -265,7 +266,8 @@ def album_details(artist: str = "", album: str = ""):
 
 def _fetch_album_details(artist, album):
     """The Deezer answer and whether an empty one is final (no exact catalog match)."""
-    return album_page_sources.fetch_album_details(_EXTERNAL_HTTP.get, artist, album)
+    return album_page_sources.fetch_album_details_remembered(
+        persistent_metadata.read, persistent_metadata.write, _EXTERNAL_HTTP.get, artist, album)
 
 
 _artist_image_cache = LayeredCache("artist-image")
@@ -289,6 +291,13 @@ _apple_url_cache = LayeredCache("apple-album-url")
 _LINKS_MAX_STALE = 10 * persistent_metadata.LINKS_TTL
 
 
+def _apple_search(artist: str, album: str):
+    """``(exactly matching Apple Music page or None, answered)``; ``answered`` is False when the search failed."""
+    data = _json_or_none("https://itunes.apple.com/search", params={
+        "term": f"{artist} {album}", "entity": "album", "limit": 10})
+    return album_links.apple_music_url((data or {}).get("results") or [], artist, album), data is not None
+
+
 def _apple_album_url(artist: str, album: str, allow_stale=False):
     """The exactly matching Apple Music album page for an artist and album, or None.
 
@@ -302,10 +311,10 @@ def _apple_album_url_state(artist: str, album: str, allow_stale=False):
     key = (artist.casefold(), album.casefold())
 
     def load():
-        data = _json_or_none("https://itunes.apple.com/search", params={
-            "term": f"{artist} {album}", "entity": "album", "limit": 10})
-        url = album_links.apple_music_url((data or {}).get("results") or [], artist, album)
-        # No page is not remembered: it may be a failed request as well as a real miss.
+        # A failed search is not remembered; an answered one without an exact match is, as an hour's
+        # store mark (K5), never under the page address key.
+        url, _answered = album_page_sources.apple_search_url_remembered(
+            persistent_metadata.read, persistent_metadata.write, artist, album, lambda: _apple_search(artist, album))
         return Loaded(url, memory_ttl=3600, persist=True) if url else Loaded(url)
 
     return _apple_url_cache.get_or_load_state(
@@ -607,7 +616,8 @@ def _load_album_links(artist: str, album: str, mbid: str, allow_stale=False):
     """The links as a `Loaded`. A set that used a stale Apple page is kept for minutes and not stored."""
     return album_page_sources.load_album_links(
         artist, album, mbid, apple=lambda: _apple_album_url_state(artist, album, allow_stale),
-        json_get=lambda *a, **k: _json_or_none(*a, **k), mb_get=lambda *a, **k: _EXTERNAL_HTTP.get(*a, **k))
+        json_get=lambda *a, **k: _json_or_none(*a, **k), mb_get=lambda *a, **k: _EXTERNAL_HTTP.get(*a, **k),
+        read=persistent_metadata.read, write=persistent_metadata.write)
 
 
 @router.get("/api/artist-image")

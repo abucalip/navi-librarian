@@ -71,13 +71,16 @@ class PersistentMetadataCacheTests(unittest.TestCase):
             self.assertEqual(self.store.data, {})
             self.assertEqual(len(metadata._album_details_cache), 0)
 
-    def test_a_definite_catalog_miss_is_kept_in_memory_only(self):
+    def test_a_definite_catalog_miss_is_kept_in_memory_and_only_as_a_no_match_mark(self):
         with patch.object(metadata, "_EXTERNAL_HTTP") as client:
             self._deezer(client, [{"data": []}])
             metadata.album_details(artist="A", album="B")
             metadata.album_details(artist="A", album="B")
             self.assertEqual(client.get.call_count, 1)
-            self.assertEqual(self.store.data, {})
+            self.assertEqual(list(self.store.data), ["album-no-match:v1:deezer:a:b"], "no answer row (K5)")
+            metadata._album_details_cache.clear()
+            metadata.album_details(artist="A", album="B")
+            self.assertEqual(client.get.call_count, 1, "a restart within the hour reads the mark")
 
     def test_found_artist_bio_survives_a_restart_and_a_missing_one_is_not_stored(self):
         metadata._artist_bio_cache.clear()
