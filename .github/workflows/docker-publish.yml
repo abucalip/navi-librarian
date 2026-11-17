@@ -10,6 +10,11 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  # A newer push to the same pull request cancels the older run; every push to a branch keeps its own run.
+  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.event.pull_request.number || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   validate-container:
     runs-on: ubuntu-latest

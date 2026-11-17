@@ -10,9 +10,16 @@ on:
       - main
       - feature/acquisition-integration-hardening
 
+concurrency:
+  # A newer push to the same pull request cancels the older run; every push to a branch keeps its own run.
+  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.event.pull_request.number || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   compile:
     runs-on: ubuntu-latest
+    # The unit suite runs once, in docker-test.yml (Validate Docker packaging); this job only compiles and checks structure.
+    timeout-minutes: 15
     steps:
       - name: Check out source
         uses: actions/checkout@v4
@@ -50,5 +57,3 @@ jobs:
           path: dependency-map.json
           if-no-files-found: error
           retention-days: 14
-      - name: Run acquisition safety regressions
-        run: python -m unittest discover -s tests -v
