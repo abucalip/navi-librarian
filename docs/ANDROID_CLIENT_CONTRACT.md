@@ -67,7 +67,7 @@ Out of scope for v1:
 | Need | Endpoint |
 |---|---|
 | Dashboard picks | `GET /api/dashboard-picks?count=` |
-| Dashboard shelves, genres | `GET /api/dashboard/albums/{shelf}`, `GET /api/dashboard/genres` |
+| Dashboard shelves, genres | `GET /api/dashboard/albums/{shelf}`, `GET /api/dashboard/genres`; the `recent` shelf items also carry optional `play_count` (plays in the last 7 days, from ListenBrainz; 0 when none) and `window` (`week`), both absent when the listens cannot be read: a client hides the count then |
 | Recommendations | `GET /api/recommendations?count=` (1–30) |
 | Discovery lists | `GET /api/discovery/{personal\|for_me\|classics\|artist_deep_dive\|new_releases\|<lens>}?count=` (1–150) |
 | List refresh | `POST /api/discovery/{list}/refresh` (`count` JSON integer 1–20) |
