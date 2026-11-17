@@ -21,7 +21,15 @@ struct BookletCaption: Equatable, Sendable {
     let detail: String
 }
 
+/// Where one page of the spread is in its loading.
+enum BookletPageLoad: Equatable, Sendable { case loading, loaded, failed }
+
+/// What the stage draws for a spread (section 5.9): the pages (each unresolved one keeps its place), or one message for the
+/// whole stage while no page has arrived.
+enum BookletStage: Equatable, Sendable { case pages, loading, failed }
+
 enum BookletLayout {
+    static let loadFailedText = "This page could not be loaded."
     static let zoomRange: ClosedRange<Double> = 1...6
     static let zoomStep = 1.25
     static let keysHint = "← → turn · pinch to zoom · double-click to fit"
@@ -97,7 +105,41 @@ enum BookletLayout {
         return ["Booklet", name.isEmpty ? nil : name, position(item, pageCount: pageCount)].compactMap { $0 }.joined(separator: " · ")
     }
 
+    /// The bar's detail line when the sidebar is replaced by the edition pop-up: the pop-up names the edition (section 5.1).
+    static func narrowBarDetail(item: BookletItem, pageCount: Int) -> String { position(item, pageCount: pageCount) }
+
+    /// The bar's detail line for a PDF booklet, "Booklet · 1999 EU CD · PDF, 12 pages"; "PDF, n pages" only once the document is loaded.
+    static func pdfBarDetail(edition: String, pages: Int?) -> String {
+        let name = edition.trimmingCharacters(in: .whitespacesAndNewlines)
+        let count = pages.map { "PDF, \($0) \($0 == 1 ? "page" : "pages")" }
+        return ["Booklet", name.isEmpty ? nil : name, count].compactMap { $0 }.joined(separator: " · ")
+    }
+
     // MARK: Stage
+
+    /// Below 900 wide the sidebar gives way to the edition pop-up (section 5.1).
+    static func isNarrow(width: CGFloat) -> Bool { width < CU.Booklet.sidebarCollapsesBelow }
+
+    /// The pop-up is only offered when there is more than one edition to choose from.
+    static func showsEditionMenu(_ booklets: [BookletView], narrow: Bool) -> Bool { narrow && booklets.count > 1 }
+
+    /// "Loading pages 4–5…", "Loading page 4…", "Loading Obi…".
+    static func loadingText(_ item: BookletItem) -> String {
+        guard let first = item.numbers.first, let last = item.numbers.last else { return "Loading \(extraName(item))…" }
+        return first == last ? "Loading page \(first)…" : "Loading pages \(first)–\(last)…"
+    }
+
+    /// One message over the whole stage while no page of the spread has arrived (loading, or all of them failed); otherwise each
+    /// page draws its own state in its own place.
+    static func stage(_ loads: [BookletPageLoad]) -> BookletStage {
+        guard !loads.isEmpty, !loads.contains(.loaded) else { return .pages }
+        return loads.contains(.loading) ? .loading : .failed
+    }
+
+    /// The filmstrip's items: the pages' (or spreads') indices, then the extras' (they come after a separator).
+    static func filmstrip(_ items: [BookletItem]) -> (pages: [Int], extras: [Int]) {
+        (items.indices.filter { !items[$0].isExtra }, items.indices.filter { items[$0].isExtra })
+    }
 
     /// The sidebar is drawn unless there is one booklet and no extras (section 5.1).
     static func showsSidebar(_ booklets: [BookletView]) -> Bool {
@@ -149,6 +191,12 @@ enum BookletLayout {
 
     static func zoomedIn(_ zoom: Double) -> Double { min(zoom * zoomStep, zoomRange.upperBound) }
     static func zoomedOut(_ zoom: Double) -> Double { max(zoom / zoomStep, zoomRange.lowerBound) }
+
+    static func canZoomIn(_ zoom: Double) -> Bool { zoom < zoomRange.upperBound - 0.001 }
+    static func canZoomOut(_ zoom: Double) -> Bool { zoom > zoomRange.lowerBound + 0.001 }
+
+    /// The PDF viewer's value: "Fit" while it fits the width itself, otherwise its scale as a percentage (section 5.8).
+    static func pdfZoomLabel(scale: Double, autoScales: Bool) -> String { autoScales ? "Fit" : "\(Int((scale * 100).rounded())) %" }
 
     /// "Fit" at 1, otherwise "{n} %".
     static func zoomLabel(_ zoom: Double) -> String {

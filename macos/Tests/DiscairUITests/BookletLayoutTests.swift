@@ -191,4 +191,59 @@ import Testing
         #expect(BookletLayout.index(of: v.extras[0], in: pages) == 4)
         #expect(BookletLayout.index(of: pic(999), in: spreads) == nil)
     }
+
+    // MARK: B3: filmstrip, narrow layout, loading, PDF, zoom limits
+
+    @Test func theFilmstripPutsExtrasAfterThePages() {
+        let v = view(pages: 4, extras: ["Obi", "Sticker"])
+        let spreads = BookletLayout.filmstrip(BookletLayout.items(v, mode: .spread))
+        #expect(spreads.pages == [0, 1, 2] && spreads.extras == [3, 4])
+        let pages = BookletLayout.filmstrip(BookletLayout.items(v, mode: .page))
+        #expect(pages.pages == [0, 1, 2, 3] && pages.extras == [4, 5])
+        #expect(BookletLayout.filmstrip(BookletLayout.items(view(pages: 2), mode: .spread)).extras.isEmpty)
+    }
+
+    @Test func theSidebarGivesWayBelowNineHundredAndOnlyMoreThanOneEditionGetsAPopUp() {
+        #expect(BookletLayout.isNarrow(width: 899) && !BookletLayout.isNarrow(width: 900))
+        #expect(BookletLayout.showsEditionMenu([view(pages: 4), view(pages: 2)], narrow: true))
+        #expect(!BookletLayout.showsEditionMenu([view(pages: 4), view(pages: 2)], narrow: false))
+        #expect(!BookletLayout.showsEditionMenu([view(pages: 4, extras: ["Obi"])], narrow: true))
+        let item = BookletLayout.items(view(pages: 16), mode: .spread)[2]
+        #expect(BookletLayout.narrowBarDetail(item: item, pageCount: 16) == "Pages 4–5 of 16")
+    }
+
+    @Test func loadingTextNamesTheSpreadOrExtra() {
+        let items = BookletLayout.items(view(pages: 6, extras: ["Obi"]), mode: .spread)
+        #expect(BookletLayout.loadingText(items[2]) == "Loading pages 4–5…")
+        #expect(BookletLayout.loadingText(items[0]) == "Loading page 1…")
+        #expect(BookletLayout.loadingText(items[4]) == "Loading Obi…")
+    }
+
+    @Test func theStageSaysLoadingOrFailedOnlyWhileNoPageHasArrived() {
+        #expect(BookletLayout.stage([.loading, .loading]) == .loading)
+        #expect(BookletLayout.stage([.loading, .failed]) == .loading)
+        #expect(BookletLayout.stage([.failed, .failed]) == .failed)
+        #expect(BookletLayout.stage([.loaded, .loading]) == .pages)
+        #expect(BookletLayout.stage([.loaded, .failed]) == .pages)
+        #expect(BookletLayout.stage([.failed]) == .failed)
+        #expect(BookletLayout.stage([]) == .pages)
+        #expect(BookletLayout.loadFailedText == "This page could not be loaded.")
+    }
+
+    @Test func pdfBarDetailCountsPagesOnlyOnceLoaded() {
+        #expect(BookletLayout.pdfBarDetail(edition: "1999 EU CD", pages: nil) == "Booklet · 1999 EU CD")
+        #expect(BookletLayout.pdfBarDetail(edition: "1999 EU CD", pages: 12) == "Booklet · 1999 EU CD · PDF, 12 pages")
+        #expect(BookletLayout.pdfBarDetail(edition: " ", pages: 1) == "Booklet · PDF, 1 page")
+    }
+
+    @Test func pdfZoomLabelIsFitUntilTheScaleIsSet() {
+        #expect(BookletLayout.pdfZoomLabel(scale: 0.83, autoScales: true) == "Fit")
+        #expect(BookletLayout.pdfZoomLabel(scale: 1.25, autoScales: false) == "125 %")
+    }
+
+    @Test func zoomButtonsStopAtTheEnds() {
+        #expect(!BookletLayout.canZoomOut(1) && BookletLayout.canZoomOut(1.25))
+        #expect(BookletLayout.canZoomIn(5) && !BookletLayout.canZoomIn(6))
+        #expect(BookletLayout.canZoomIn(BookletLayout.zoomedOut(1)))
+    }
 }
