@@ -10,7 +10,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 
 from app.api.dependencies import get_librarian
 from app.api.insights import STORE_FILE
-from discovery.library_snapshot import fetch_album_inventory
+from discovery.library_snapshot import AlbumInventorySnapshot
 from intelligence.graph import Limits
 from intelligence.graph.paths import PATH_KINDS
 from intelligence.knowledge import KnowledgeReader
@@ -147,10 +147,14 @@ def connections(mbid: str | None = None, navidrome_id: str | None = None, type: 
         direction=direction, limits=limits, cursor=cursor))
 
 
+# Album inventory for the gaps path: re-paged when the scan marker changes or after 5 minutes (play data).
+_INVENTORY = AlbumInventorySnapshot()
+
+
 def _play_records(librarian):
     """Album play records from Navidrome, or None when they cannot be read (the path then says so)."""
     try:
-        albums = fetch_album_inventory(librarian.api_call, librarian.items)
+        albums = _INVENTORY.get(librarian.api_call, librarian.items)
     except Exception:
         return None
     return [r for r in (album_to_record(a) for a in albums) if r is not None]
