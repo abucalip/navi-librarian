@@ -1,16 +1,30 @@
 """Settings API routes.
 
-These handlers intentionally delegate all configuration and connection behavior to
-the existing librarian domain functions; this module only adapts HTTP payloads.
+These handlers delegate configuration and connection behavior to ``settings.service``
+with the librarian's settings store and music directory; this module only adapts HTTP payloads.
 """
 import json
 import os
+
+import httpx
 
 from fastapi import APIRouter, Depends, HTTPException
 
 from app.api.dependencies import get_librarian
 from app.api.utils import parse_result
+from integrations.slskd.client import test_connection as _test_slskd_connection
 from settings.service import (
+    get_lastfm_settings as _get_lastfm_settings,
+    get_listenbrainz_settings as _get_listenbrainz_settings,
+    get_navidrome_settings as _get_navidrome_settings,
+    get_slskd_settings as _get_slskd_settings,
+    set_lastfm_settings as _set_lastfm_settings,
+    set_listenbrainz_settings as _set_listenbrainz_settings,
+    set_navidrome_settings as _set_navidrome_settings,
+    set_slskd_settings as _set_slskd_settings,
+    test_lastfm_connection as _test_lastfm_connection,
+    test_listenbrainz_connection as _test_listenbrainz_connection,
+    test_navidrome_connection as _test_navidrome_connection,
     discogs_token_and_source as _discogs_token_and_source,
     get_discogs_settings as _get_discogs_settings,
     set_discogs_settings as _set_discogs_settings,
@@ -167,7 +181,7 @@ def set_recommendation_diversity_settings(payload: dict, librarian=Depends(get_l
 @router.get("/api/settings/navidrome")
 def get_navidrome_settings(librarian=Depends(get_librarian)):
     try:
-        return parse_result(librarian.discovery_get_navidrome_settings())
+        return parse_result(_get_navidrome_settings(librarian._discovery_settings_read, librarian.MUSIC_DIR))
     except Exception:
         raise HTTPException(status_code=502, detail="Could not read Navidrome settings.")
 
@@ -175,7 +189,11 @@ def get_navidrome_settings(librarian=Depends(get_librarian)):
 @router.put("/api/settings/navidrome")
 def set_navidrome_settings(payload: dict, librarian=Depends(get_librarian)):
     try:
-        result = parse_result(librarian.discovery_set_navidrome_settings(
+        result = parse_result(_set_navidrome_settings(
+            librarian._discovery_settings_read,
+            librarian._discovery_settings_write,
+            lambda: librarian.MUSIC_DIR,
+            librarian._set_music_dir,
             navidrome_url=str(payload.get("navidrome_url") or ""),
             username=str(payload.get("username") or ""),
             password=str(payload.get("password") or ""),
@@ -193,7 +211,7 @@ def set_navidrome_settings(payload: dict, librarian=Depends(get_librarian)):
 @router.post("/api/settings/navidrome/test")
 def test_navidrome_settings(librarian=Depends(get_librarian)):
     try:
-        return parse_result(librarian.discovery_test_navidrome_connection())
+        return parse_result(_test_navidrome_connection(librarian.api_call, json.dumps))
     except Exception:
         raise HTTPException(status_code=502, detail="Could not test the Navidrome connection.")
 
@@ -201,7 +219,7 @@ def test_navidrome_settings(librarian=Depends(get_librarian)):
 @router.get("/api/settings/lastfm")
 def get_lastfm_settings(librarian=Depends(get_librarian)):
     try:
-        return parse_result(librarian.discovery_get_lastfm_settings())
+        return parse_result(_get_lastfm_settings(librarian._discovery_settings_read))
     except Exception:
         raise HTTPException(status_code=502, detail="Could not read Last.fm settings.")
 
@@ -210,7 +228,9 @@ def get_lastfm_settings(librarian=Depends(get_librarian)):
 def set_lastfm_settings(payload: dict, librarian=Depends(get_librarian)):
     try:
         username = payload.get("username")
-        result = parse_result(librarian.discovery_set_lastfm_settings(
+        result = parse_result(_set_lastfm_settings(
+            librarian._discovery_settings_read,
+            librarian._discovery_settings_write,
             api_key=str(payload.get("api_key") or ""),
             username=None if username is None else str(username),
         ))
@@ -226,7 +246,7 @@ def set_lastfm_settings(payload: dict, librarian=Depends(get_librarian)):
 @router.post("/api/settings/lastfm/test")
 def test_lastfm_settings(librarian=Depends(get_librarian)):
     try:
-        return parse_result(librarian.discovery_test_lastfm_connection())
+        return parse_result(_test_lastfm_connection(librarian._discovery_settings_read, httpx.get, json.dumps))
     except Exception:
         raise HTTPException(status_code=502, detail="Could not test the Last.fm connection.")
 
@@ -234,7 +254,9 @@ def test_lastfm_settings(librarian=Depends(get_librarian)):
 @router.get("/api/settings/listenbrainz")
 def get_listenbrainz_settings(librarian=Depends(get_librarian)):
     try:
-        return parse_result(librarian.discovery_get_listenbrainz_settings())
+        return parse_result(_get_listenbrainz_settings(
+            librarian._discovery_settings_read, librarian._listenbrainz_username()
+        ))
     except Exception:
         raise HTTPException(status_code=502, detail="Could not read ListenBrainz settings.")
 
@@ -242,7 +264,8 @@ def get_listenbrainz_settings(librarian=Depends(get_librarian)):
 @router.put("/api/settings/listenbrainz")
 def set_listenbrainz_settings(payload: dict, librarian=Depends(get_librarian)):
     try:
-        result = parse_result(librarian.discovery_set_listenbrainz_settings(
+        result = parse_result(_set_listenbrainz_settings(
+            librarian._discovery_settings_write,
             username=str(payload.get("username") or ""), token=str(payload.get("token") or "")))
         if isinstance(result, dict) and not result.get("ok"):
             raise HTTPException(status_code=400, detail=result.get("error", "Invalid settings"))
@@ -256,7 +279,7 @@ def set_listenbrainz_settings(payload: dict, librarian=Depends(get_librarian)):
 @router.post("/api/settings/listenbrainz/test")
 def test_listenbrainz_settings(librarian=Depends(get_librarian)):
     try:
-        return parse_result(librarian.discovery_test_listenbrainz_connection())
+        return parse_result(_test_listenbrainz_connection(librarian._listenbrainz_username, httpx.get, json.dumps))
     except Exception:
         raise HTTPException(status_code=502, detail="Could not test the ListenBrainz connection.")
 
@@ -264,7 +287,9 @@ def test_listenbrainz_settings(librarian=Depends(get_librarian)):
 @router.get("/api/settings/slskd")
 def get_slskd_settings(librarian=Depends(get_librarian)):
     try:
-        return parse_result(librarian.discovery_get_slskd_settings())
+        return parse_result(_get_slskd_settings(
+            librarian._discovery_settings_read, librarian.MUSIC_DIR, librarian._DISCOVERY_SETTINGS_DEFAULTS
+        ))
     except Exception:
         raise HTTPException(status_code=502, detail="Could not read slskd settings.")
 
@@ -277,7 +302,12 @@ def set_slskd_settings(payload: dict, librarian=Depends(get_librarian)):
     if quality is None:
         quality = ["mp3_320", "mp3_193_319", "mp3_192", "flac_cd", "flac_16_44", "flac_hires"]
     try:
-        result = parse_result(librarian.discovery_set_slskd_settings(
+        result = parse_result(_set_slskd_settings(
+            librarian._discovery_settings_read,
+            librarian._discovery_settings_write,
+            lambda: librarian.MUSIC_DIR,
+            librarian._set_music_dir,
+            librarian._DISCOVERY_SETTINGS_DEFAULTS,
             slskd_url=url,
             api_key=api_key,
             quality_priority_json=json.dumps(quality),
@@ -304,7 +334,7 @@ def set_slskd_settings(payload: dict, librarian=Depends(get_librarian)):
 @router.post("/api/settings/slskd/test")
 def test_slskd_settings(librarian=Depends(get_librarian)):
     try:
-        return parse_result(librarian.discovery_test_slskd_connection())
+        return parse_result(_test_slskd_connection(librarian._slskd_config))
     except Exception:
         raise HTTPException(status_code=502, detail="Could not test the slskd connection.")
 
@@ -337,8 +367,6 @@ def set_discogs_settings(payload: dict, librarian=Depends(get_librarian)):
 
 @router.post("/api/settings/discogs/test")
 def test_discogs_settings(librarian=Depends(get_librarian)):
-    import httpx
-
     try:
         token, _ = _discogs_token_and_source(librarian._discovery_settings_read, os.environ)
         return parse_result(_test_discogs_connection(token, httpx.get, json.dumps))

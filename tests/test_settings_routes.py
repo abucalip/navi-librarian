@@ -1,7 +1,9 @@
 """Regression tests for the settings API router's injected service boundary."""
 import json
 import unittest
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
+
+import httpx
 
 from fastapi import HTTPException
 from fastapi.params import Depends
@@ -62,34 +64,71 @@ class SettingsRoutesTests(unittest.TestCase):
             self.assertIsInstance(dependency, Depends)
             self.assertIs(dependency.dependency, get_librarian)
 
-    def test_get_navidrome_settings_parses_json_string(self):
-        self.librarian.discovery_get_navidrome_settings.return_value = '{"ok": true}'
-        self.assertEqual(settings.get_navidrome_settings(librarian=self.librarian), {"ok": True})
-        self.librarian.discovery_get_navidrome_settings.assert_called_once_with()
+    def test_get_navidrome_settings_reads_the_librarian_store(self):
+        self.librarian._discovery_settings_read.return_value = {
+            "navidrome_url": "http://music.local", "navidrome_user": "owner", "navidrome_password": "x",
+        }
+        self.librarian.MUSIC_DIR = "/music"
+        self.assertEqual(settings.get_navidrome_settings(librarian=self.librarian), {
+            "navidrome_url": "http://music.local", "username": "owner",
+            "password_configured": True, "music_library_path": "/music",
+        })
 
     def test_set_navidrome_settings_preserves_payload_mapping(self):
-        self.librarian.discovery_set_navidrome_settings.return_value = '{"ok": true}'
-        result = settings.set_navidrome_settings({
-            "navidrome_url": "http://music.local", "username": "owner",
-            "password": "secret", "music_library_path": "/music",
-        }, librarian=self.librarian)
+        with patch.object(settings, "_set_navidrome_settings", return_value='{"ok": true}') as call:
+            result = settings.set_navidrome_settings({
+                "navidrome_url": "http://music.local", "username": "owner",
+                "password": "secret", "music_library_path": "/music",
+            }, librarian=self.librarian)
         self.assertEqual(result, {"ok": True})
-        self.librarian.discovery_set_navidrome_settings.assert_called_once_with(
-            navidrome_url="http://music.local", username="owner", password="secret",
-            music_library_path="/music",
+        args, kwargs = call.call_args
+        self.assertIs(args[0], self.librarian._discovery_settings_read)
+        self.assertIs(args[1], self.librarian._discovery_settings_write)
+        self.librarian.MUSIC_DIR = "/now"
+        self.assertEqual(args[2](), "/now")
+        self.assertIs(args[3], self.librarian._set_music_dir)
+        self.assertEqual(kwargs, {
+            "navidrome_url": "http://music.local", "username": "owner", "password": "secret",
+            "music_library_path": "/music",
+        })
+
+    def test_test_connections_pass_the_librarian_callbacks(self):
+        with patch.object(settings, "_test_navidrome_connection", return_value='{"ok": true}') as call:
+            self.assertEqual(settings.test_navidrome_settings(librarian=self.librarian), {"ok": True})
+        call.assert_called_once_with(self.librarian.api_call, json.dumps)
+        with patch.object(settings, "_test_lastfm_connection", return_value='{"ok": true}') as call:
+            settings.test_lastfm_settings(librarian=self.librarian)
+        call.assert_called_once_with(self.librarian._discovery_settings_read, httpx.get, json.dumps)
+        with patch.object(settings, "_test_listenbrainz_connection", return_value='{"ok": true}') as call:
+            settings.test_listenbrainz_settings(librarian=self.librarian)
+        call.assert_called_once_with(self.librarian._listenbrainz_username, httpx.get, json.dumps)
+        with patch.object(settings, "_test_slskd_connection", return_value='{"ok": true}') as call:
+            settings.test_slskd_settings(librarian=self.librarian)
+        call.assert_called_once_with(self.librarian._slskd_config)
+
+    def test_get_lastfm_listenbrainz_and_slskd_settings_use_the_librarian_store(self):
+        self.librarian._discovery_settings_read.return_value = {"listenbrainz_token": "t"}
+        self.librarian._listenbrainz_username.return_value = "lb_user"
+        self.assertEqual(settings.get_listenbrainz_settings(librarian=self.librarian),
+                         {"username": "lb_user", "token_configured": True})
+        with patch.object(settings, "_get_lastfm_settings", return_value='{"ok": true}') as call:
+            settings.get_lastfm_settings(librarian=self.librarian)
+        call.assert_called_once_with(self.librarian._discovery_settings_read)
+        with patch.object(settings, "_get_slskd_settings", return_value='{"ok": true}') as call:
+            settings.get_slskd_settings(librarian=self.librarian)
+        call.assert_called_once_with(
+            self.librarian._discovery_settings_read, self.librarian.MUSIC_DIR,
+            self.librarian._DISCOVERY_SETTINGS_DEFAULTS,
         )
 
     def test_set_listenbrainz_returns_client_validation_error(self):
-        self.librarian.discovery_set_listenbrainz_settings.return_value = '{"ok": false, "error": "invalid"}'
         with self.assertRaises(HTTPException) as raised:
-            settings.set_listenbrainz_settings({"username": "bad"}, librarian=self.librarian)
+            settings.set_listenbrainz_settings({"username": "bad user"}, librarian=self.librarian)
         self.assertEqual(raised.exception.status_code, 400)
-        self.assertEqual(raised.exception.detail, "invalid")
+        self.assertIn("valid ListenBrainz username", raised.exception.detail)
+        self.librarian._discovery_settings_write.assert_not_called()
 
     def test_set_lastfm_returns_400_with_message_for_invalid_username(self):
-        self.librarian.discovery_set_lastfm_settings.return_value = (
-            '{"ok": false, "error": "Enter a valid Last.fm username (letters, numbers, hyphen or underscore)."}'
-        )
         with self.assertRaises(HTTPException) as raised:
             settings.set_lastfm_settings({"api_key": "", "username": "bad user"}, librarian=self.librarian)
         self.assertEqual(raised.exception.status_code, 400)
@@ -99,29 +138,37 @@ class SettingsRoutesTests(unittest.TestCase):
         )
 
     def test_set_lastfm_returns_saved_username_and_forwards_it(self):
-        self.librarian.discovery_set_lastfm_settings.return_value = '{"ok": true, "username": "listener_fm"}'
-        result = settings.set_lastfm_settings({"api_key": "", "username": "listener_fm"}, librarian=self.librarian)
+        with patch.object(settings, "_set_lastfm_settings",
+                          return_value='{"ok": true, "username": "listener_fm"}') as call:
+            result = settings.set_lastfm_settings({"api_key": "", "username": "listener_fm"}, librarian=self.librarian)
         self.assertEqual(result, {"ok": True, "username": "listener_fm"})
-        self.librarian.discovery_set_lastfm_settings.assert_called_once_with(api_key="", username="listener_fm")
+        call.assert_called_once_with(
+            self.librarian._discovery_settings_read, self.librarian._discovery_settings_write,
+            api_key="", username="listener_fm",
+        )
 
     def test_set_lastfm_without_username_leaves_it_unchanged(self):
-        self.librarian.discovery_set_lastfm_settings.return_value = '{"ok": true}'
-        settings.set_lastfm_settings({"api_key": "k"}, librarian=self.librarian)
-        self.librarian.discovery_set_lastfm_settings.assert_called_once_with(api_key="k", username=None)
+        with patch.object(settings, "_set_lastfm_settings", return_value='{"ok": true}') as call:
+            settings.set_lastfm_settings({"api_key": "k"}, librarian=self.librarian)
+        self.assertEqual(call.call_args.kwargs, {"api_key": "k", "username": None})
 
-    def test_set_listenbrainz_forwards_token_to_the_librarian(self):
-        self.librarian.discovery_set_listenbrainz_settings.return_value = '{"ok": true}'
-        settings.set_listenbrainz_settings({"username": "u", "token": "tok"}, librarian=self.librarian)
-        self.librarian.discovery_set_listenbrainz_settings.assert_called_once_with(username="u", token="tok")
+    def test_set_listenbrainz_forwards_token_to_the_store(self):
+        with patch.object(settings, "_set_listenbrainz_settings", return_value='{"ok": true}') as call:
+            settings.set_listenbrainz_settings({"username": "u", "token": "tok"}, librarian=self.librarian)
+        call.assert_called_once_with(self.librarian._discovery_settings_write, username="u", token="tok")
 
     def test_slskd_defaults_quality_priority_and_trims_optional_paths(self):
-        self.librarian.discovery_set_slskd_settings.return_value = '{"ok": true}'
-        result = settings.set_slskd_settings({
-            "slskd_url": "http://slskd.local", "api_key": "secret",
-            "slskd_downloads_path": " /downloads ", "music_library_path": " /music ",
-        }, librarian=self.librarian)
+        with patch.object(settings, "_set_slskd_settings", return_value='{"ok": true}') as call:
+            result = settings.set_slskd_settings({
+                "slskd_url": "http://slskd.local", "api_key": "secret",
+                "slskd_downloads_path": " /downloads ", "music_library_path": " /music ",
+            }, librarian=self.librarian)
         self.assertEqual(result, {"ok": True})
-        kwargs = self.librarian.discovery_set_slskd_settings.call_args.kwargs
+        args, kwargs = call.call_args
+        self.assertIs(args[0], self.librarian._discovery_settings_read)
+        self.assertIs(args[1], self.librarian._discovery_settings_write)
+        self.assertIs(args[3], self.librarian._set_music_dir)
+        self.assertIs(args[4], self.librarian._DISCOVERY_SETTINGS_DEFAULTS)
         self.assertEqual(kwargs["slskd_url"], "http://slskd.local")
         self.assertEqual(kwargs["api_key"], "secret")
         self.assertEqual(json.loads(kwargs["quality_priority_json"]), [
@@ -171,18 +218,19 @@ class SettingsRoutesTests(unittest.TestCase):
                 self.librarian._discovery_settings_write.assert_not_called()
 
     def test_connection_error_is_sanitized(self):
-        self.librarian.discovery_test_slskd_connection.side_effect = RuntimeError("sensitive upstream detail")
-        with self.assertRaises(HTTPException) as raised:
+        with patch.object(settings, "_test_slskd_connection",
+                          side_effect=RuntimeError("sensitive upstream detail")), \
+                self.assertRaises(HTTPException) as raised:
             settings.test_slskd_settings(librarian=self.librarian)
         self.assertEqual(raised.exception.status_code, 502)
         self.assertEqual(raised.exception.detail, "Could not test the slskd connection.")
 
     def test_invalid_settings_remain_client_errors(self):
-        self.librarian.discovery_set_navidrome_settings.return_value = '{"ok": false, "error": "bad input"}'
         with self.assertRaises(HTTPException) as raised:
             settings.set_navidrome_settings({}, librarian=self.librarian)
         self.assertEqual(raised.exception.status_code, 400)
-        self.assertEqual(raised.exception.detail, "bad input")
+        self.assertIn("URL", raised.exception.detail)
+        self.librarian._discovery_settings_write.assert_not_called()
 
 
 if __name__ == "__main__":

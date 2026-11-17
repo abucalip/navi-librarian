@@ -17,20 +17,9 @@ from acquisition.candidate_queue import normalize_reviewed_candidate_files as _n
 from settings.persistence import SettingsPersistence
 from metadata_cache import MetadataCache
 from settings.service import (
-    get_lastfm_settings as _service_get_lastfm_settings,
-    set_lastfm_settings as _service_set_lastfm_settings,
-    get_navidrome_settings as _service_get_navidrome_settings,
     listenbrainz_username as _service_listenbrainz_username,
     navidrome_config as _service_navidrome_config,
-    get_listenbrainz_settings as _service_get_listenbrainz_settings,
-    set_listenbrainz_settings as _service_set_listenbrainz_settings,
-    set_navidrome_settings as _service_set_navidrome_settings,
-    get_slskd_settings as _service_get_slskd_settings,
-    set_slskd_settings as _service_set_slskd_settings,
     slskd_config as _service_slskd_config,
-    test_navidrome_connection as _service_test_navidrome_connection,
-    test_lastfm_connection as _service_test_lastfm_connection,
-    test_listenbrainz_connection as _service_test_listenbrainz_connection,
 )
 from acquisition import lifecycle as _acquisition_lifecycle
 from acquisition.candidate_start import candidate_start_state as _module_candidate_start_state
@@ -1104,114 +1093,9 @@ _listenbrainz_client.set_token_source(
 )
 
 
-def discovery_get_navidrome_settings() -> str:
-    """Return Navidrome settings without exposing the saved password."""
-    return _service_get_navidrome_settings(_discovery_settings_read, MUSIC_DIR)
-
-
-def discovery_set_navidrome_settings(
-    navidrome_url: str,
-    username: str,
-    password: str = "",
-    music_library_path: str | None = None,
-) -> str:
-    """Save Navidrome connection settings; a blank password preserves the saved password."""
-    def set_music_dir(path):
-        global MUSIC_DIR
-        MUSIC_DIR = path
-
-    return _service_set_navidrome_settings(
-        _discovery_settings_read,
-        _discovery_settings_write,
-        lambda: MUSIC_DIR,
-        set_music_dir,
-        navidrome_url,
-        username,
-        password,
-        music_library_path,
-    )
-
-
-def discovery_test_navidrome_connection() -> str:
-    """Compatibility adapter for the extracted Navidrome connection service."""
-    return _service_test_navidrome_connection(api_call, json.dumps)
-
-
-def discovery_get_lastfm_settings() -> str:
-    """Return Last.fm configuration status without exposing the API key."""
-    return _service_get_lastfm_settings(_discovery_settings_read)
-
-
-def discovery_set_lastfm_settings(api_key: str = "", username: str | None = None) -> str:
-    """Save a Last.fm API key and username; a blank key preserves the saved key."""
-    return _service_set_lastfm_settings(
-        _discovery_settings_read, _discovery_settings_write, api_key, username
-    )
-
-
-def discovery_test_lastfm_connection() -> str:
-    """Compatibility adapter for the extracted Last.fm connection service."""
-    return _service_test_lastfm_connection(_discovery_settings_read, httpx.get, json.dumps)
-
-
-def discovery_get_listenbrainz_settings() -> str:
-    """Return the configured ListenBrainz username and whether a token is saved."""
-    return _service_get_listenbrainz_settings(_discovery_settings_read, _listenbrainz_username())
-
-
-def discovery_set_listenbrainz_settings(username: str, token: str = "") -> str:
-    """Save a ListenBrainz username and, when given, its token."""
-    return _service_set_listenbrainz_settings(_discovery_settings_write, username, token)
-
-
-def discovery_test_listenbrainz_connection() -> str:
-    """Compatibility adapter for the extracted ListenBrainz connection service."""
-    return _service_test_listenbrainz_connection(_listenbrainz_username, httpx.get, json.dumps)
-
-
 def _slskd_config():
     """Compatibility adapter for validated slskd configuration."""
     return _service_slskd_config(_discovery_settings_read)
-
-
-def discovery_get_slskd_settings() -> str:
-    """Read acquisition settings without returning the stored API key."""
-    return _service_get_slskd_settings(
-        _discovery_settings_read, MUSIC_DIR, _DISCOVERY_SETTINGS_DEFAULTS
-    )
-
-
-def discovery_set_slskd_settings(
-    slskd_url: str = "",
-    api_key: str = "",
-    quality_priority_json: str = '["mp3_320","mp3_193_319","mp3_192","flac_cd","flac_16_44","flac_hires"]',
-    slskd_downloads_path: str | None = None,
-    music_library_path: str | None = None,
-) -> str:
-    """Save acquisition settings and paths. Blank API key preserves the saved key."""
-    def set_music_dir(path):
-        global MUSIC_DIR
-        MUSIC_DIR = path
-
-    return _service_set_slskd_settings(
-        _discovery_settings_read,
-        _discovery_settings_write,
-        lambda: MUSIC_DIR,
-        set_music_dir,
-        _DISCOVERY_SETTINGS_DEFAULTS,
-        slskd_url,
-        api_key,
-        quality_priority_json,
-        slskd_downloads_path,
-        music_library_path,
-    )
-
-
-def discovery_test_slskd_connection() -> str:
-    """Compatibility adapter for the extracted slskd connectivity probe."""
-    from integrations.slskd.client import test_connection
-
-    return test_connection(_slskd_config)
 
 
 def _slskd_quality_tier(file_record, filename, priority):
