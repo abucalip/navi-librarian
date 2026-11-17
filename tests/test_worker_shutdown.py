@@ -62,11 +62,11 @@ class MainShutdown(unittest.TestCase):
         stop = threading.Event()
         stop.set()
         seen = []
-        insights = FakeThread("insights-refresh", on_join=lambda: seen.append(worker.acquire_lock(self.dir)))
-        with mock.patch.object(worker.insights_refresh, "start", return_value=insights) as start, \
+        insights = FakeThread("worker-schedule", on_join=lambda: seen.append(worker.acquire_lock(self.dir)))
+        with mock.patch.object(worker.worker_schedule, "start", return_value=insights) as start, \
                 mock.patch.object(worker.library_enrich, "run_forever"):
             self.assertEqual(worker.main(librarian=self.lib, stop=stop), 0)
-        start.assert_called_once_with(self.lib, stop)
+        self.assertEqual(start.call_args.args[1:], (self.dir / worker.STORE_FILE, stop))
         self.assertEqual(seen, [None])
         self.assertLessEqual(insights.timeouts[0], worker.SHUTDOWN_GRACE_SECONDS)
         again = worker.acquire_lock(self.dir)

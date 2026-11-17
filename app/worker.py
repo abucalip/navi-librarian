@@ -3,9 +3,11 @@
 Start with ``python -m app.worker``. It uses the same image, configuration and ``/data`` volume as the
 web app and is the only process that writes knowledge facts to the Server V2 store and calls MusicBrainz
 for it (web routes write only owner records and caches; reads there are read-only). It runs until SIGTERM or SIGINT. Jobs owned here: the automatic API fill and the insights refresh
-(Forgotten Gems and provider lenses, which write the knowledge store and call providers). There is no
-dispatcher yet; further loops move here one at a time (efficiency.md A4). Once a day the worker also prunes
-the legacy metadata cache (rows older than 400 days, efficiency.md P3).
+(Forgotten Gems and provider lenses, which write the knowledge store and call providers). The insights
+refresh and the daily maintenance (job-history prune, R1, and the legacy metadata-cache prune of rows
+older than 400 days, P3) are entries of the table-driven scheduler in ``app/worker_schedule.py``
+(efficiency W1), which runs them one at a time and keeps their last runs in the store. Auto fill and the
+runtime-metrics save keep their own threads: auto fill must stay responsive.
 
 Exactly one worker runs: it takes an exclusive lock on ``DATA_DIR/worker.lock`` and exits non-zero if
 another holds it. Holding the lock makes it safe to requeue ``running`` rows left by a killed worker.
@@ -21,6 +23,7 @@ import time
 import metadata_cache
 from app.api.insights import STORE_FILE
 from app.api.dependencies import get_librarian
+from app import worker_schedule
 from app.services import insights_refresh, library_enrich, runtime_metrics
 from intelligence.insights.provider_runtime import JOB as PROVIDER_LENSES_JOB
 from intelligence.insights.runtime import JOB as FORGOTTEN_GEMS_JOB
@@ -33,7 +36,6 @@ from intelligence.wikidata.ingest import JOB as WIKIDATA_JOB
 logger = logging.getLogger(__name__)
 
 LOCK_FILE = "worker.lock"
-PRUNE_SECONDS = 24 * 3600
 METRICS_SECONDS = 300            # how often the worker saves its runtime counters for the diagnostics route
 SHUTDOWN_GRACE_SECONDS = 25      # below compose's stop_grace_period (30 s), so the process ends before Docker kills it
 # The popularity job is named by string: the Phase 6 gate keeps taste imports out of app/ (a test pins the value).
@@ -88,6 +90,16 @@ def _daily_maintenance(librarian):
         logger.error("Metadata cache prune failed (%s)", type(exc).__name__)
 
 
+def schedule_entries(librarian, stop):
+    """The scheduler's entries, in the order they run when several are due at once."""
+    return (
+        worker_schedule.Entry("daily_maintenance", worker_schedule.daily(), lambda: _daily_maintenance(librarian)),
+        worker_schedule.Entry("insights_refresh", insights_refresh.is_due,
+                              lambda: insights_refresh.refresh_once(librarian, stop=stop),
+                              legacy_key=insights_refresh.LAST_RUN_KEY),
+    )
+
+
 def _save_metrics(data_dir):
     try:
         db = open_store(data_dir / STORE_FILE)
@@ -129,7 +141,8 @@ def main(librarian=None, stop=None) -> int:
         runtime_metrics.install()
         ensure_store(librarian.DATA_DIR / STORE_FILE)
         _maintain(librarian.DATA_DIR, recover=True)   # before any thread starts, so no run is live
-        insights_thread = insights_refresh.start(librarian, stop)   # six-hourly loop on its own daemon thread
+        schedule_thread = worker_schedule.start(schedule_entries(librarian, stop),
+                                                librarian.DATA_DIR / STORE_FILE, stop)
         # Auto fill runs on its own thread too: switching it off must not end the worker or the other jobs.
         enrich_thread = threading.Thread(target=library_enrich.run_forever, args=(librarian, stop),
                                          name="library-enrich", daemon=True)
@@ -137,9 +150,9 @@ def main(librarian=None, stop=None) -> int:
         metrics_thread = threading.Thread(target=_metrics_loop, args=(librarian.DATA_DIR, stop),
                                           name="runtime-metrics", daemon=True)
         metrics_thread.start()
-        while not stop.wait(PRUNE_SECONDS):
-            _daily_maintenance(librarian)
-        _wait_for_threads((insights_thread, enrich_thread, metrics_thread))
+        while not stop.wait(60):
+            pass
+        _wait_for_threads((schedule_thread, enrich_thread, metrics_thread))
         return 0
     finally:
         lock.close()

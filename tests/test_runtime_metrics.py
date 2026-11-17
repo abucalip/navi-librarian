@@ -183,6 +183,8 @@ class RouteTests(unittest.TestCase):
         db = store_db.open_store(data_dir / STORE_FILE)
         rm.record_request("deezer", "ok", 0.1)
         rm.save_worker_snapshot(db)
+        from app import worker_schedule
+        worker_schedule.record_run(db, "insights_refresh", 1234.5)
         db.close()
         librarian = FakeLibrarian(data_dir, {})
         import hashlib
@@ -207,6 +209,7 @@ class RouteTests(unittest.TestCase):
         data = body.json()
         self.assertEqual(data["web"]["requests"]["deezer"]["count"], 1)
         self.assertEqual(data["worker"]["requests"]["deezer"]["count"], 1)
+        self.assertEqual(data["schedule"], {"insights_refresh": 1234.5})   # W1: each entry's last run
 
 
 if __name__ == "__main__":
