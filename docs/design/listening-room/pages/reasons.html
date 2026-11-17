@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Listening Room · Reasons</title>
+<link rel="stylesheet" href="../tokens.css">
+<link rel="stylesheet" href="../components.css">
+<link rel="stylesheet" href="../art.css">
+<style>
+  .sheet { max-width: 1360px; margin: 0 auto; padding: 32px; display: flex; flex-direction: column; gap: 32px; }
+  .kinds { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; }
+  .kind { display: flex; flex-direction: column; gap: 16px; }
+  .src { font: 400 12px/18px ui-monospace, Menlo, monospace; color: var(--lr-text-muted); background: var(--lr-bg); border-radius: 4px; padding: 8px; overflow-wrap: anywhere; }
+  .src b { color: var(--lr-text-soft); font-weight: 400; }
+  @media (max-width: 1079px) { .kinds { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 719px) { .kinds { grid-template-columns: 1fr; } .sheet { padding: 16px; } }
+</style>
+</head>
+<body>
+<!--sprite-->
+<svg xmlns="http://www.w3.org/2000/svg" style="display:none">
+  <symbol id="lr-home" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5V21h-6v-6H9v6H3z"/></symbol>
+  <symbol id="lr-discover" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2 5-5 2 2-5z"/></symbol>
+  <symbol id="lr-library" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4v16M9 4v16M14 5l5 15"/></symbol>
+  <symbol id="lr-saved" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12v18l-6-4-6 4z"/></symbol>
+  <symbol id="lr-paths" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="18" r="2"/><circle cx="19" cy="6" r="2"/><path d="M7 18h4a4 4 0 0 0 4-4v-4a4 4 0 0 1 4-4"/></symbol>
+  <symbol id="lr-radio" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="13" rx="2"/><path d="m7 3 10 5"/><circle cx="15" cy="14.5" r="2.5"/><path d="M6 13h3M6 16h3"/></symbol>
+  <symbol id="lr-acquisitions" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0-4-4m4 4 4-4M4 17v3h16v-3"/></symbol>
+  <symbol id="lr-settings" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9 7 7M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"/></symbol>
+  <symbol id="lr-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></symbol>
+  <symbol id="lr-get" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11m0 0-4-4m4 4 4-4M5 20h14"/></symbol>
+  <symbol id="lr-more" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="19" cy="12" r="1.2"/></symbol>
+  <symbol id="lr-prev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m15 6-6 6 6 6"/></symbol>
+  <symbol id="lr-next" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></symbol>
+  <symbol id="lr-chev-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></symbol>
+  <symbol id="lr-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6 6 18"/></symbol>
+  <symbol id="lr-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"/></symbol>
+  <symbol id="lr-refresh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></symbol>
+  <symbol id="lr-skip" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5l9 7-9 7zM19 5v14"/></symbol>
+  <symbol id="lr-lean-more" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></symbol>
+  <symbol id="lr-lean-less" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12h8"/></symbol>
+  <symbol id="lr-block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m5.6 5.6 12.8 12.8"/></symbol>
+  <symbol id="lr-tag" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12V4a1 1 0 0 1 1-1h8l9 9-9 9z"/><circle cx="8" cy="8" r="1.5"/></symbol>
+  <symbol id="lr-people" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.6 3.4-5.5 6.5-5.5s5.7 1.9 6.5 5.5"/><path d="M15.5 4.8a3.5 3.5 0 0 1 0 6.4M18 14.8c1.8.8 3 2.6 3.5 5.2"/></symbol>
+  <symbol id="lr-listeners" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14v-2a8 8 0 0 1 16 0v2"/><rect x="3" y="14" width="4" height="7" rx="1.5"/><rect x="17" y="14" width="4" height="7" rx="1.5"/></symbol>
+  <symbol id="lr-disc" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="2.5"/></symbol>
+  <symbol id="lr-calendar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></symbol>
+  <symbol id="lr-layers" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 9 5-9 5-9-5z"/><path d="m3 13 9 5 9-5"/></symbol>
+  <symbol id="lr-repeat" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2l3 3-3 3"/><path d="M4 11V9a4 4 0 0 1 4-4h12"/><path d="M7 22l-3-3 3-3"/><path d="M20 13v2a4 4 0 0 1-4 4H4"/></symbol>
+  <symbol id="lr-flame" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21a7 7 0 0 0 7-7c0-4-3-6-4-10-2 2-3 4-3 6-1-1-2-2-2-4-2 2-5 5-5 8a7 7 0 0 0 7 7z"/></symbol>
+  <symbol id="lr-compass-spread" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="18" r="2.5"/><circle cx="12" cy="12" r="2.5"/></symbol>
+  <symbol id="lr-spark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M6 18l2.5-2.5M15.5 8.5 18 6"/></symbol>
+  <symbol id="lr-info" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/></symbol>
+  <symbol id="lr-alert" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 2 20h20z"/><path d="M12 10v4M12 17v.5"/></symbol>
+  <symbol id="lr-external" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></symbol>
+  <symbol id="lr-menu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
+</svg>
+<!--/sprite-->
+<div class="sheet">
+  <header>
+    <p class="lr-eyebrow">Listening Room · reason block</p>
+    <h1 class="lr-type-page-title" style="margin-top: 8px;">Why this pick: every reason kind</h1>
+    <p class="lr-section-sub" style="max-width: 75ch;">One sentence, then evidence chips. The first kind that applies wins, in the order R1 to R12 (LISTENING_ROOM_WEB.md section 6). Every word comes from a field the server sends; when nothing applies the card shows no reason line.</p>
+  </header>
+
+  <section class="lr-hero" aria-label="Hero size" style="--lr-hero-tint: #203C34; grid-template-columns: 200px minmax(0, 1fr);">
+    <div class="lr-hero-cover art-talk"></div>
+    <div class="lr-hero-body">
+      <p class="lr-eyebrow">Hero size · R5 with a seed tag · Daily picks lead pick</p>
+      <div class="lr-reason">
+        <p class="lr-reason-head"><svg class="lr-icon"><use href="#lr-repeat"/></svg><span class="lr-reason-hero">From the art rock you keep repeating.</span></p>
+        <ul class="lr-evidence"><li><a class="lr-chip" href="#"><svg class="lr-icon-sm"><use href="#lr-tag"/></svg><span class="lr-chip-k">Seed tag</span>art rock</a></li><li><span class="lr-chip"><svg class="lr-icon-sm"><use href="#lr-listeners"/></svg>96k listeners</span></li><li><a class="lr-chip" href="#"><span class="lr-chip-k">Tag</span>post-rock</a></li></ul>
+      </div>
+    </div>
+  </section>
+
+  <div class="kinds">
+    <article class="lr-panel kind">
+      <p class="lr-eyebrow">R1 · bridge label</p>
+      <div class="lr-rowcard" style="background: var(--lr-bg);"><div class="lr-cover art-russ3"></div><div class="lr-rowcard-body"><div><p class="lr-card-title">Calling Out of Context</p><p class="lr-meta">Arthur Russell · 2004</p></div>
+        <div class="lr-reason"><p class="lr-reason-head"><svg class="lr-icon-sm"><use href="#lr-layers"/></svg><span class="lr-reason-text">Discover more Arthur Russell</span></p></div></div></div>
+      <p class="src"><b>bridge_label</b> shown as sent. No chips. Lens lists and Personal, Classics, New releases when the Deep Dives bridge adds the album.</p>
+    </article>
+
+    <article class="lr-panel kind">
+      <p class="lr-eyebrow">R2 · seed tags (because.kind = tag)</p>
+      <div class="lr-rowcard" style="background: var(--lr-bg);"><div class="lr-cover art-nala"></div><div class="lr-rowcard-body"><div><p class="lr-card-title">Space 1.8</p><p class="lr-meta">Nala Sinephro · 2021</p></div>
+        <div class="lr-reason"><p class="lr-reason-head"><svg class="lr-icon-sm"><use href="#lr-tag"/></svg><span class="lr-reason-text">Because you listen to spiritual jazz, ambient</span></p>
+        <ul class="lr-evidence"><li><a class="lr-chip" href="#">spiritual jazz</a></li><li><a class="lr-chip" href="#">ambient</a></li></ul></div></div></div>
+      <p class="src"><b>because.names</b> (max 3) → "Because you listen to {names, comma}". Chips: one per tag, linking to its genre page.</p>
+    </article>
+
+    <article class="lr-panel kind">
+      <p class="lr-eyebrow">R3 · shared genres (because.kind = similar_artists)</p>
+      <div class="lr-rowcard" style="background: var(--lr-bg);"><div class="lr-cover art-khru"></div><div class="lr-rowcard-body"><div><p class="lr-card-title">Con Todo El Mundo</p><p class="lr-meta">Khruangbin · 2018</p></div>
+        <div class="lr-reason"><p class="lr-reason-head"><svg class="lr-icon-sm"><use href="#lr-people"/></svg><span class="lr-reason-text">Shares genres with Mdou Moctar, Tinariwen and 1 more</span></p>
+        <ul class="lr-evidence"><li><a class="lr-chip" href="#"><span class="lr-chip-avatar photo-c" aria-hidden="true"></span>Mdou Moctar</a></li><li><a class="lr-chip" href="#"><span class="lr-chip-avatar photo-a" aria-hidden="true"></span>Tinariwen</a></li><li><span class="lr-chip">+1</span></li></ul></div></div></div>
+      <p class="src"><b>because.names</b> → "Shares genres with {A}, {B} and {n} more". Never "because you play": it is tag overlap. Chips: artist photo + name (artist page), 2 then "+n".</p>
+    </article>
+
+    <article class="lr-panel kind">
+      <p class="lr-eyebrow">R4 · similar_to (older server)</p>
+      <div class="lr-rowcard" style="background: var(--lr-bg);"><div class="lr-cover art-broadcast"></div><div class="lr-rowcard-body"><div><p class="lr-card-title">Tender Buttons</p><p class="lr-meta">Broadcast · 2005</p></div>
+        <div class="lr-reason"><p class="lr-reason-head"><svg class="lr-icon-sm"><use href="#lr-people"/></svg><span class="lr-reason-text">Shares genres with Stereolab</span></p>
+        <ul class="lr-evidence"><li><a class="lr-chip" href="#"><span class="lr-chip-avatar photo-b" aria-hidden="true"></span>Stereolab</a></li></ul></div></div></div>
+      <p class="src"><b>similar_to</b> when there is no <b>because</b> and discovery_category = adjacent. Same wording and chips as R3.</p>
+    </article>
+
+    <article class="lr-panel kind">
+      <p class="lr-eyebrow">R5 · lens + seed tag</p>
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <p class="lr-reason-head"><svg class="lr-icon-sm"><use href="#lr-layers"/></svg><span class="lr-reason-text">Deep cuts: A lesser-known record from the {tag} you play</span></p>
+        <p class="lr-reason-head"><svg class="lr-icon-sm"><use href="#lr-spark"/></svg><span class="lr-reason-text">Current tastes: Close to the {tag} you play lately</span></p>
+        <p class="lr-reason-head"><svg class="lr-icon-sm"><use href="#lr-compass-spread"/></svg><span class="lr-reason-text">Genre spread: Through the {tag} you play</span></p>
+        <p class="lr-reason-head"><svg class="lr-icon-sm"><use href="#lr-repeat"/></svg><span class="lr-reason-text">Repeated tracks: From the {tag} you keep repeating</span></p>
+        <p class="lr-reason-head"><svg class="lr-icon-sm"><use href="#lr-flame"/></svg><span class="lr-reason-text">Obsessions: From your {tag} obsession</span></p>
+      </div>
+      <p class="src"><b>lens</b>, <b>seed_tag</b>. Chips: Seed tag, <b>album_listeners</b> as "41k listeners", 2 of <b>tags</b>. Same sentences as Android GalleryListsRules.lensReason.</p>
+    </article>
+
+    <article class="lr-panel kind">
+      <p class="lr-eyebrow">R6 · lens without a seed tag</p>
+      <div class="lr-rowcard" style="background: var(--lr-bg);"><div class="lr-cover art-grouper"></div><div class="lr-rowcard-body"><div><p class="lr-card-title">Ruins</p><p class="lr-meta">Grouper · 2014</p></div>
+        <div class="lr-reason"><p class="lr-reason-head"><svg class="lr-icon-sm"><use href="#lr-layers"/></svg><span class="lr-reason-text">From your Deep cuts lens</span></p>
+        <ul class="lr-evidence"><li><span class="lr-chip"><svg class="lr-icon-sm"><use href="#lr-listeners"/></svg>12k listeners</span></li></ul></div></div></div>
+      <p class="src"><b>lens</b> label → "From your {label} lens". Lens <b>reason</b> from /api/dashboard-picks ("From your current tastes: {tag}") is shown as sent.</p>
+    </article>
+
+    <article class="lr-panel kind">
+      <p class="lr-eyebrow">R7 · Deep Dive, missing album</p>
+      <div class="lr-rowcard" style="background: var(--lr-bg);"><div class="lr-cover art-russ2"></div><div class="lr-rowcard-body"><div><p class="lr-card-title">Another Thought</p><p class="lr-meta">Arthur Russell · 1994</p></div>
+        <div class="lr-reason"><p class="lr-reason-head"><svg class="lr-icon-sm"><use href="#lr-library"/></svg><span class="lr-reason-text">You have 3 albums by Arthur Russell. This one is not in your library yet.</span></p>
+        <ul class="lr-evidence"><li><span class="lr-chip"><svg class="lr-icon-sm"><use href="#lr-disc"/></svg>3 in your library</span></li></ul></div></div></div>
+      <p class="src"><b>anchor_artist</b>, <b>anchor_album_count</b> (same artist). The server <b>reason</b> here is internal ("additional resolved candidate…"): never shown.</p>
+    </article>
+
+    <article class="lr-panel kind">
+      <p class="lr-eyebrow">R8 · Deep Dive, similar artist</p>
+      <div class="lr-rowcard" style="background: var(--lr-bg);"><div class="lr-cover art-floating"></div><div class="lr-rowcard-body"><div><p class="lr-card-title">Promises</p><p class="lr-meta">Floating Points · 2021</p></div>
+        <div class="lr-reason"><p class="lr-reason-head"><svg class="lr-icon-sm"><use href="#lr-people"/></svg><span class="lr-reason-text">Close to Pharoah Sanders, who is well covered in your library. Nothing by this artist yet.</span></p>
+        <ul class="lr-evidence"><li><a class="lr-chip" href="#"><span class="lr-chip-avatar photo-a" aria-hidden="true"></span><span class="lr-chip-k">Close to</span>Pharoah Sanders</a></li></ul></div></div></div>
+      <p class="src"><b>anchor_artist</b> differs from the album artist. Which field tells R7 and R8 apart is settled in slice L0 (section 9).</p>
+    </article>
+
+    <article class="lr-panel kind">
+      <p class="lr-eyebrow">R9 · New releases</p>
+      <div class="lr-rowcard" style="background: var(--lr-bg);"><div class="lr-cover art-mdou2"></div><div class="lr-rowcard-body"><div><p class="lr-card-title">Funeral for Justice</p><p class="lr-meta">Mdou Moctar · 2026</p></div>
+        <div class="lr-reason"><p class="lr-reason-head"><svg class="lr-icon-sm"><use href="#lr-calendar"/></svg><span class="lr-reason-text">New in 2026 from an artist with a full album in your library</span></p>
+        <ul class="lr-evidence"><li><span class="lr-chip"><svg class="lr-icon-sm"><use href="#lr-disc"/></svg>2 albums in your library</span></li></ul></div></div></div>
+      <p class="src"><b>year</b>, <b>artist_library_album_count</b>. Grid size: "New in {year} · {n} albums in your library".</p>
+    </article>
+
+    <article class="lr-panel kind">
+      <p class="lr-eyebrow">R10 · Add to your collection</p>
+      <div class="lr-rowcard" style="background: var(--lr-bg);"><div class="lr-cover art-can"></div><div class="lr-rowcard-body"><div><p class="lr-card-title">Ege Bamyasi</p><p class="lr-meta">Can · 1972</p></div>
+        <div class="lr-reason"><p class="lr-reason-head"><svg class="lr-icon-sm"><use href="#lr-disc"/></svg><span class="lr-reason-text">A well-known album; you have 4 albums by this artist</span></p>
+        <ul class="lr-evidence"><li><span class="lr-chip"><svg class="lr-icon-sm"><use href="#lr-listeners"/></svg>310k listeners</span></li></ul></div></div></div>
+      <p class="src"><b>artist_library_album_count</b>, <b>lastfm_listeners</b>. Same sentence as Android tileReason.</p>
+    </article>
+
+    <article class="lr-panel kind">
+      <p class="lr-eyebrow">R11 · Discover music category</p>
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <p class="lr-reason-head"><svg class="lr-icon-sm"><use href="#lr-discover"/></svg><span class="lr-reason-text">adjacent: Close to genres you already love</span></p>
+        <p class="lr-reason-head"><svg class="lr-icon-sm"><use href="#lr-compass-spread"/></svg><span class="lr-reason-text">cross_genre: A bridge between {family} and {family}, both in your listening</span></p>
+        <p class="lr-reason-head"><svg class="lr-icon-sm"><use href="#lr-spark"/></svg><span class="lr-reason-text">adventurous: A step away from your usual genres</span></p>
+        <p class="lr-reason-head"><svg class="lr-icon-sm"><use href="#lr-info"/></svg><span class="lr-reason-text">unclassified: Few genre tags, so the fit is a guess</span></p>
+      </div>
+      <p class="src"><b>discovery_category</b>, <b>genre_families</b> ∩ <b>recent_profile_families</b>. Chips: "Similar to {anchor_artist}" with photo, <b>lastfm_listeners</b>. The server's long category sentence is replaced by these.</p>
+    </article>
+
+    <article class="lr-panel kind">
+      <p class="lr-eyebrow">R12 · owned, and nothing to say</p>
+      <div class="lr-card" style="max-width: 176px;"><div class="lr-cover art-alice"></div><p class="lr-card-title">Journey in Satchidananda</p><p class="lr-meta">Alice Coltrane · 1971</p><p class="lr-reason-line">In your library</p></div>
+      <p class="src"><b>owned</b> → "In your library". With no field at all: no reason line and no chips. Never invent one.</p>
+    </article>
+  </div>
+
+  <section class="lr-panel" aria-label="Line size">
+    <p class="lr-eyebrow">Sizes</p>
+    <p class="lr-reason-text"><b style="color: var(--lr-text);">Hero</b>: reason-hero type (Instrument Sans 600, 20/28), 20px icon, up to 4 chips. <b style="color: var(--lr-text);">Card</b> (row cards, Deep Dive): reason type (Inter 400, 14/21), 16px icon, up to 3 chips. <b style="color: var(--lr-text);">Line</b> (grid cards, Up next, mini grids): meta type, 2 lines, ellipsis, no icon, no chips; one evidence value may follow as a meta line (listeners or year).</p>
+  </section>
+</div>
+</body>
+</html>

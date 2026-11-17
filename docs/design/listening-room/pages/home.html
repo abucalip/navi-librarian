@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Listening Room · Home</title>
+<link rel="stylesheet" href="../tokens.css">
+<link rel="stylesheet" href="../components.css">
+<link rel="stylesheet" href="../art.css">
+</head>
+<body>
+<!--sprite-->
+<svg xmlns="http://www.w3.org/2000/svg" style="display:none">
+  <symbol id="lr-home" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5V21h-6v-6H9v6H3z"/></symbol>
+  <symbol id="lr-discover" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2 5-5 2 2-5z"/></symbol>
+  <symbol id="lr-library" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4v16M9 4v16M14 5l5 15"/></symbol>
+  <symbol id="lr-saved" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12v18l-6-4-6 4z"/></symbol>
+  <symbol id="lr-paths" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="18" r="2"/><circle cx="19" cy="6" r="2"/><path d="M7 18h4a4 4 0 0 0 4-4v-4a4 4 0 0 1 4-4"/></symbol>
+  <symbol id="lr-radio" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="13" rx="2"/><path d="m7 3 10 5"/><circle cx="15" cy="14.5" r="2.5"/><path d="M6 13h3M6 16h3"/></symbol>
+  <symbol id="lr-acquisitions" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0-4-4m4 4 4-4M4 17v3h16v-3"/></symbol>
+  <symbol id="lr-settings" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9 7 7M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"/></symbol>
+  <symbol id="lr-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></symbol>
+  <symbol id="lr-get" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11m0 0-4-4m4 4 4-4M5 20h14"/></symbol>
+  <symbol id="lr-more" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="19" cy="12" r="1.2"/></symbol>
+  <symbol id="lr-prev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m15 6-6 6 6 6"/></symbol>
+  <symbol id="lr-next" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></symbol>
+  <symbol id="lr-chev-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></symbol>
+  <symbol id="lr-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6 6 18"/></symbol>
+  <symbol id="lr-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"/></symbol>
+  <symbol id="lr-refresh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></symbol>
+  <symbol id="lr-skip" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5l9 7-9 7zM19 5v14"/></symbol>
+  <symbol id="lr-lean-more" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></symbol>
+  <symbol id="lr-lean-less" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12h8"/></symbol>
+  <symbol id="lr-block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m5.6 5.6 12.8 12.8"/></symbol>
+  <symbol id="lr-tag" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12V4a1 1 0 0 1 1-1h8l9 9-9 9z"/><circle cx="8" cy="8" r="1.5"/></symbol>
+  <symbol id="lr-people" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.6 3.4-5.5 6.5-5.5s5.7 1.9 6.5 5.5"/><path d="M15.5 4.8a3.5 3.5 0 0 1 0 6.4M18 14.8c1.8.8 3 2.6 3.5 5.2"/></symbol>
+  <symbol id="lr-listeners" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14v-2a8 8 0 0 1 16 0v2"/><rect x="3" y="14" width="4" height="7" rx="1.5"/><rect x="17" y="14" width="4" height="7" rx="1.5"/></symbol>
+  <symbol id="lr-disc" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="2.5"/></symbol>
+  <symbol id="lr-calendar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></symbol>
+  <symbol id="lr-layers" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 9 5-9 5-9-5z"/><path d="m3 13 9 5 9-5"/></symbol>
+  <symbol id="lr-repeat" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2l3 3-3 3"/><path d="M4 11V9a4 4 0 0 1 4-4h12"/><path d="M7 22l-3-3 3-3"/><path d="M20 13v2a4 4 0 0 1-4 4H4"/></symbol>
+  <symbol id="lr-flame" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21a7 7 0 0 0 7-7c0-4-3-6-4-10-2 2-3 4-3 6-1-1-2-2-2-4-2 2-5 5-5 8a7 7 0 0 0 7 7z"/></symbol>
+  <symbol id="lr-compass-spread" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="18" r="2.5"/><circle cx="12" cy="12" r="2.5"/></symbol>
+  <symbol id="lr-spark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M6 18l2.5-2.5M15.5 8.5 18 6"/></symbol>
+  <symbol id="lr-info" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/></symbol>
+  <symbol id="lr-alert" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 2 20h20z"/><path d="M12 10v4M12 17v.5"/></symbol>
+  <symbol id="lr-external" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></symbol>
+  <symbol id="lr-menu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
+</svg>
+<!--/sprite-->
+<div class="lr-shell">
+
+  <nav class="lr-rail" aria-label="Main">
+    <a class="lr-brand" href="#"><svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="14" r="13" fill="#F5B544"/><circle cx="14" cy="14" r="4" fill="#0C0D10"/></svg><span class="lr-brand-word">discair</span></a>
+    <a class="lr-nav" href="#" aria-current="page" aria-label="Home"><svg class="lr-icon"><use href="#lr-home"/></svg><span class="lr-nav-label">Home</span></a>
+    <a class="lr-nav" href="#" aria-label="Discover"><svg class="lr-icon"><use href="#lr-discover"/></svg><span class="lr-nav-label">Discover</span></a>
+    <a class="lr-nav" href="#" aria-label="Library"><svg class="lr-icon"><use href="#lr-library"/></svg><span class="lr-nav-label">Library</span></a>
+    <a class="lr-nav" href="#" aria-label="Saved"><svg class="lr-icon"><use href="#lr-saved"/></svg><span class="lr-nav-label">Saved</span></a>
+    <a class="lr-nav" href="#" aria-label="Paths"><svg class="lr-icon"><use href="#lr-paths"/></svg><span class="lr-nav-label">Paths</span></a>
+    <a class="lr-nav" href="#" aria-label="Radio"><svg class="lr-icon"><use href="#lr-radio"/></svg><span class="lr-nav-label">Radio</span></a>
+    <a class="lr-nav" href="#" aria-label="Acquisitions"><svg class="lr-icon"><use href="#lr-acquisitions"/></svg><span class="lr-nav-label">Acquisitions</span></a>
+    <a class="lr-nav" href="#" aria-label="Settings"><svg class="lr-icon"><use href="#lr-settings"/></svg><span class="lr-nav-label">Settings</span></a>
+    <section class="lr-getting" aria-label="Getting now">
+      <p class="lr-eyebrow">Getting now</p>
+      <div class="lr-getting-row">
+        <div class="lr-cover art-khru" style="width: 40px;"></div>
+        <div style="min-width: 0;">
+          <p class="lr-card-title" style="font-size: 13px;">Con Todo El Mundo</p>
+          <div class="lr-progress" role="progressbar" aria-label="Con Todo El Mundo download" aria-valuenow="62" aria-valuemin="0" aria-valuemax="100"><span style="width: 62%;"></span></div>
+        </div>
+      </div>
+      <p class="lr-meta">1 downloading · 1 importing</p>
+    </section>
+  </nav>
+
+  <main class="lr-main">
+    <div class="lr-column">
+
+      <header class="lr-topbar">
+        <label class="lr-search"><svg class="lr-icon"><use href="#lr-search"/></svg><span class="lr-sr">Search</span><input type="search" placeholder="Artists, albums, genres"></label>
+        <div class="lr-mode">
+          <span class="lr-mode-label" id="mode-label">Discovery mode</span>
+          <div class="lr-segment" role="group" aria-labelledby="mode-label">
+            <button type="button" aria-pressed="false">Safer</button>
+            <button type="button" aria-pressed="true">Balanced</button>
+            <button type="button" aria-pressed="false">Deeper</button>
+          </div>
+        </div>
+      </header>
+
+      <!-- 1. Lead pick -->
+      <section class="lr-hero" aria-labelledby="lead-title" style="--lr-hero-tint: #311E48;">
+        <div class="lr-hero-cover art-alice"><span class="art-mark" style="color: #F2C14E;">ALICE COLTRANE</span></div>
+        <div class="lr-hero-body">
+          <p class="lr-eyebrow">Daily picks · Deep cuts · Lead pick</p>
+          <h1 class="lr-hero-title" id="lead-title">Journey in Satchidananda</h1>
+          <p class="lr-hero-artist"><span class="lr-chip-avatar photo-a" style="width: 44px; height: 44px; margin: 0;" aria-hidden="true"></span>Alice Coltrane <span>· 1971</span></p>
+          <div class="lr-reason">
+            <p class="lr-reason-head"><svg class="lr-icon"><use href="#lr-layers"/></svg><span class="lr-reason-hero">A lesser-known record from the spiritual jazz you play.</span></p>
+            <ul class="lr-evidence" aria-label="Why this pick">
+              <li><a class="lr-chip" href="#"><svg class="lr-icon-sm"><use href="#lr-tag"/></svg><span class="lr-chip-k">Seed tag</span>spiritual jazz</a></li>
+              <li><span class="lr-chip"><svg class="lr-icon-sm"><use href="#lr-listeners"/></svg>41k listeners</span></li>
+              <li><a class="lr-chip" href="#"><span class="lr-chip-k">Tag</span>free jazz</a></li>
+              <li><a class="lr-chip" href="#"><span class="lr-chip-k">Tag</span>harp</a></li>
+            </ul>
+          </div>
+          <div class="lr-actions">
+            <button type="button" class="lr-btn lr-btn-primary"><svg class="lr-icon"><use href="#lr-get"/></svg>Get this album</button>
+            <button type="button" class="lr-btn"><svg class="lr-icon"><use href="#lr-lean-more"/></svg>More like this</button>
+            <button type="button" class="lr-btn"><svg class="lr-icon"><use href="#lr-skip"/></svg>Skip</button>
+            <button type="button" class="lr-btn lr-btn-icon" aria-label="More actions for Journey in Satchidananda"><svg class="lr-icon"><use href="#lr-more"/></svg></button>
+          </div>
+        </div>
+        <aside class="lr-upnext" aria-label="Up next in Deep cuts">
+          <p class="lr-eyebrow">Up next in Deep cuts</p>
+          <a href="#"><div class="lr-cover art-broadcast"></div><div style="min-width: 0;"><p class="lr-card-title">Tender Buttons</p><p class="lr-reason-line">From the dream pop you play</p></div></a>
+          <a href="#"><div class="lr-cover art-nala"></div><div style="min-width: 0;"><p class="lr-card-title">Space 1.8</p><p class="lr-reason-line">From the spiritual jazz you play</p></div></a>
+          <a href="#"><div class="lr-cover art-grouper"></div><div style="min-width: 0;"><p class="lr-card-title">Ruins</p><p class="lr-reason-line">From the ambient you play</p></div></a>
+          <a href="#"><div class="lr-cover art-stereo"></div><div style="min-width: 0;"><p class="lr-card-title">Dots and Loops</p><p class="lr-reason-line">From the krautrock you play</p></div></a>
+        </aside>
+      </section>
+
+      <!-- 2. Daily picks -->
+      <section class="lr-section" aria-labelledby="daily">
+        <div class="lr-section-head">
+          <div><h2 class="lr-section-title" id="daily">Daily picks</h2><p class="lr-section-sub">Five lenses on your listening, refreshed this morning.</p></div>
+          <div class="lr-tabs" role="tablist" aria-label="Lens">
+            <button type="button" class="lr-tab" role="tab" aria-selected="true"><svg class="lr-icon-sm"><use href="#lr-layers"/></svg>Deep cuts</button>
+            <button type="button" class="lr-tab" role="tab" aria-selected="false"><svg class="lr-icon-sm"><use href="#lr-spark"/></svg>Current tastes</button>
+            <button type="button" class="lr-tab" role="tab" aria-selected="false"><svg class="lr-icon-sm"><use href="#lr-compass-spread"/></svg>Genre spread</button>
+            <button type="button" class="lr-tab" role="tab" aria-selected="false"><svg class="lr-icon-sm"><use href="#lr-repeat"/></svg>Repeated tracks</button>
+            <button type="button" class="lr-tab" role="tab" aria-selected="false"><svg class="lr-icon-sm"><use href="#lr-flame"/></svg>Obsessions</button>
+          </div>
+        </div>
+        <div class="lr-grid" role="tabpanel">
+          <article class="lr-card"><div class="lr-cover art-mdou"></div><div class="lr-card-row"><div class="lr-card-text"><p class="lr-card-title"><a href="#">Afrique Victime</a></p><p class="lr-meta">Mdou Moctar · 2021</p></div><div class="lr-card-tools"><button type="button" class="lr-btn lr-btn-icon lr-btn-quiet lr-card-get" aria-label="Get Afrique Victime"><svg class="lr-icon"><use href="#lr-get"/></svg></button><button type="button" class="lr-btn lr-btn-icon lr-btn-quiet" aria-label="More actions for Afrique Victime"><svg class="lr-icon"><use href="#lr-more"/></svg></button></div></div><p class="lr-reason-line">A lesser-known record from the desert blues you play</p><p class="lr-meta">18k listeners</p></article>
+          <article class="lr-card"><div class="lr-cover art-cleo"><span class="art-mark" style="color: #4A1E14;">CLEO SOL</span></div><div class="lr-card-row"><div class="lr-card-text"><p class="lr-card-title"><a href="#">Mother</a></p><p class="lr-meta">Cleo Sol · 2021</p></div><div class="lr-card-tools"><button type="button" class="lr-btn lr-btn-icon lr-btn-quiet lr-card-get" aria-label="Get Mother"><svg class="lr-icon"><use href="#lr-get"/></svg></button><button type="button" class="lr-btn lr-btn-icon lr-btn-quiet" aria-label="More actions for Mother"><svg class="lr-icon"><use href="#lr-more"/></svg></button></div></div><p class="lr-reason-line">A lesser-known record from the neo-soul you play</p><p class="lr-meta">9.6k listeners</p></article>
+          <article class="lr-card"><div class="lr-cover art-yussef"></div><div class="lr-card-row"><div class="lr-card-text"><p class="lr-card-title"><a href="#">Black Classical Music</a></p><p class="lr-meta">Yussef Dayes · 2023</p></div><div class="lr-card-tools"><button type="button" class="lr-btn lr-btn-icon lr-btn-quiet lr-card-get" aria-label="Get Black Classical Music"><svg class="lr-icon"><use href="#lr-get"/></svg></button><button type="button" class="lr-btn lr-btn-icon lr-btn-quiet" aria-label="More actions for Black Classical Music"><svg class="lr-icon"><use href="#lr-more"/></svg></button></div></div><p class="lr-reason-line">A lesser-known record from the jazz you play</p><p class="lr-meta">22k listeners</p></article>
+          <article class="lr-card"><div class="lr-cover art-sault"><span class="art-mark" style="color: #F2F1EE;">RISE</span></div><div class="lr-card-row"><div class="lr-card-text"><p class="lr-card-title"><a href="#">Untitled (Rise)</a></p><p class="lr-meta">Sault · 2020</p></div><div class="lr-card-tools"><button type="button" class="lr-btn lr-btn-icon lr-btn-quiet lr-card-get" aria-label="Get Untitled (Rise)"><svg class="lr-icon"><use href="#lr-get"/></svg></button><button type="button" class="lr-btn lr-btn-icon lr-btn-quiet" aria-label="More actions for Untitled (Rise)"><svg class="lr-icon"><use href="#lr-more"/></svg></button></div></div><p class="lr-reason-line">A lesser-known record from the soul you play</p><p class="lr-meta">31k listeners</p></article>
+          <article class="lr-card"><div class="lr-cover art-floating"></div><div class="lr-card-row"><div class="lr-card-text"><p class="lr-card-title"><a href="#">Promises</a></p><p class="lr-meta">Floating Points · 2021</p></div><div class="lr-card-tools"><button type="button" class="lr-btn lr-btn-icon lr-btn-quiet lr-card-get" aria-label="Get Promises"><svg class="lr-icon"><use href="#lr-get"/></svg></button><button type="button" class="lr-btn lr-btn-icon lr-btn-quiet" aria-label="More actions for Promises"><svg class="lr-icon"><use href="#lr-more"/></svg></button></div></div><p class="lr-reason-line">A lesser-known record from the spiritual jazz you play</p><p class="lr-meta">47k listeners</p></article>
+          <article class="lr-card"><div class="lr-cover art-tina"></div><div class="lr-card-row"><div class="lr-card-text"><p class="lr-card-title"><a href="#">Amassakoul</a></p><p class="lr-meta">Tinariwen · 2004</p></div><div class="lr-card-tools"><button type="button" class="lr-btn lr-btn-icon lr-btn-quiet lr-card-get" aria-label="Get Amassakoul"><svg class="lr-icon"><use href="#lr-get"/></svg></button><button type="button" class="lr-btn lr-btn-icon lr-btn-quiet" aria-label="More actions for Amassakoul"><svg class="lr-icon"><use href="#lr-more"/></svg></button></div></div><p class="lr-reason-line">A lesser-known record from the desert blues you play</p><p class="lr-meta">15k listeners</p></article>
+        </div>
+      </section>
+
+      <!-- 3. Artist Deep Dive -->
+      <section class="lr-panel lr-dive" aria-labelledby="dive">
+        <div class="lr-dive-photo photo-dive" role="img" aria-label="Arthur Russell"></div>
+        <div style="display: flex; flex-direction: column; gap: var(--lr-space-16); min-width: 0;">
+          <p class="lr-eyebrow">Artist Deep Dives</p>
+          <h2 class="lr-dive-name" id="dive">Arthur Russell</h2>
+          <div class="lr-reason">
+            <p class="lr-reason-head"><svg class="lr-icon"><use href="#lr-library"/></svg><span class="lr-reason-text">You have 3 albums by Arthur Russell. These are the ones not in your library yet.</span></p>
+            <ul class="lr-evidence" aria-label="Why this artist">
+              <li><span class="lr-chip"><svg class="lr-icon-sm"><use href="#lr-disc"/></svg>3 in your library</span></li>
+              <li><a class="lr-chip" href="#"><span class="lr-chip-k">Tag</span>avant-garde</a></li>
+              <li><a class="lr-chip" href="#"><span class="lr-chip-k">Tag</span>disco</a></li>
+            </ul>
+          </div>
+          <div class="lr-dive-albums">
+            <a class="lr-card" href="#" style="text-decoration: none;"><div class="lr-cover art-russ2"></div><p class="lr-card-title">Another Thought</p><p class="lr-meta">1994</p></a>
+            <a class="lr-card" href="#" style="text-decoration: none;"><div class="lr-cover art-russ3"></div><p class="lr-card-title">Calling Out of Context</p><p class="lr-meta">2004</p></a>
+            <a class="lr-card" href="#" style="text-decoration: none;"><div class="lr-cover art-russ4"></div><p class="lr-card-title">Love Is Overtaking Me</p><p class="lr-meta">2008</p></a>
+            <a class="lr-card" href="#" style="text-decoration: none;"><div class="lr-cover art-russ5"></div><p class="lr-card-title">Iowa Dream</p><p class="lr-meta">2019</p></a>
+          </div>
+          <div class="lr-actions"><a class="lr-btn" href="#">Open the deep dive</a><button type="button" class="lr-btn"><svg class="lr-icon"><use href="#lr-next"/></svg>Next artist</button></div>
+        </div>
+      </section>
+
+      <!-- 4. Personal Discoveries -->
+      <section class="lr-section" aria-labelledby="personal">
+        <div class="lr-section-head">
+          <div><h2 class="lr-section-title" id="personal">Personal Discoveries</h2><p class="lr-section-sub">New artists close to what you already play.</p></div>
+          <a href="#">See all</a>
+        </div>
+        <div class="lr-rows">
+          <article class="lr-rowcard"><div class="lr-cover art-nala"></div><div class="lr-rowcard-body"><div><p class="lr-card-title"><a href="#">Space 1.8</a></p><p class="lr-meta">Nala Sinephro · 2021</p></div>
+            <div class="lr-reason"><p class="lr-reason-head"><svg class="lr-icon-sm"><use href="#lr-tag"/></svg><span class="lr-reason-text">Because you listen to spiritual jazz, ambient</span></p>
+            <ul class="lr-evidence"><li><a class="lr-chip" href="#">spiritual jazz</a></li><li><a class="lr-chip" href="#">ambient</a></li></ul></div></div></article>
+          <article class="lr-rowcard"><div class="lr-cover art-broadcast"></div><div class="lr-rowcard-body"><div><p class="lr-card-title"><a href="#">Tender Buttons</a></p><p class="lr-meta">Broadcast · 2005</p></div>
+            <div class="lr-reason"><p class="lr-reason-head"><svg class="lr-icon-sm"><use href="#lr-people"/></svg><span class="lr-reason-text">Shares genres with Stereolab and Grouper</span></p>
+            <ul class="lr-evidence"><li><a class="lr-chip" href="#"><span class="lr-chip-avatar photo-b" aria-hidden="true"></span>Stereolab</a></li><li><a class="lr-chip" href="#"><span class="lr-chip-avatar photo-d" aria-hidden="true"></span>Grouper</a></li></ul></div></div></article>
+          <article class="lr-rowcard"><div class="lr-cover art-khru"></div><div class="lr-rowcard-body"><div><p class="lr-card-title"><a href="#">Con Todo El Mundo</a></p><p class="lr-meta">Khruangbin · 2018</p></div>
+            <div class="lr-reason"><p class="lr-reason-head"><svg class="lr-icon-sm"><use href="#lr-people"/></svg><span class="lr-reason-text">Shares genres with Mdou Moctar, Tinariwen and 1 more</span></p>
+            <ul class="lr-evidence"><li><a class="lr-chip" href="#"><span class="lr-chip-avatar photo-c" aria-hidden="true"></span>Mdou Moctar</a></li><li><a class="lr-chip" href="#"><span class="lr-chip-avatar photo-a" aria-hidden="true"></span>Tinariwen</a></li><li><span class="lr-chip">+1</span></li></ul></div></div></article>
+        </div>
+      </section>
+
+      <!-- 5. Discover music -->
+      <section class="lr-section" aria-labelledby="recs">
+        <div class="lr-section-head">
+          <div><h2 class="lr-section-title" id="recs">Discover music</h2><p class="lr-section-sub">The full recommendation list, best fit first.</p></div>
+          <a href="#">Open Discover</a>
+        </div>
+        <div class="lr-rows">
+          <article class="lr-rowcard"><div class="lr-cover art-stereo"></div><div class="lr-rowcard-body"><div><p class="lr-card-title"><a href="#">Dots and Loops</a></p><p class="lr-meta">Stereolab · 1997</p></div>
+            <div class="lr-reason"><p class="lr-reason-head"><svg class="lr-icon-sm"><use href="#lr-discover"/></svg><span class="lr-reason-text">Close to genres you already love</span></p>
+            <ul class="lr-evidence"><li><a class="lr-chip" href="#"><span class="lr-chip-avatar photo-b" aria-hidden="true"></span><span class="lr-chip-k">Similar to</span>Broadcast</a></li><li><span class="lr-chip"><svg class="lr-icon-sm"><use href="#lr-listeners"/></svg>52k listeners</span></li></ul></div></div></article>
+          <article class="lr-rowcard"><div class="lr-cover art-tina"></div><div class="lr-rowcard-body"><div><p class="lr-card-title"><a href="#">Amassakoul</a></p><p class="lr-meta">Tinariwen · 2004</p></div>
+            <div class="lr-reason"><p class="lr-reason-head"><svg class="lr-icon-sm"><use href="#lr-compass-spread"/></svg><span class="lr-reason-text">A bridge between rock and African music, both in your listening</span></p>
+            <ul class="lr-evidence"><li><a class="lr-chip" href="#">rock</a></li><li><a class="lr-chip" href="#">african</a></li></ul></div></div></article>
+          <article class="lr-rowcard"><div class="lr-cover art-floating"></div><div class="lr-rowcard-body"><div><p class="lr-card-title"><a href="#">Promises</a></p><p class="lr-meta">Floating Points · 2021</p></div>
+            <div class="lr-reason"><p class="lr-reason-head"><svg class="lr-icon-sm"><use href="#lr-spark"/></svg><span class="lr-reason-text">A step away from your usual genres</span></p>
+            <ul class="lr-evidence"><li><a class="lr-chip" href="#">electronic</a></li><li><span class="lr-chip"><svg class="lr-icon-sm"><use href="#lr-listeners"/></svg>47k listeners</span></li></ul></div></div></article>
+        </div>
+      </section>
+
+      <!-- 6. Collection + New releases -->
+      <div class="lr-pair">
+        <section class="lr-section" aria-labelledby="classics">
+          <div><h2 class="lr-section-title" id="classics">Add to your collection</h2><p class="lr-section-sub">Well-known albums by artists you already keep.</p></div>
+          <div class="lr-mini-grid">
+            <article class="lr-card"><div class="lr-cover art-talk"></div><p class="lr-card-title"><a href="#">Spirit of Eden</a></p><p class="lr-meta">Talk Talk · 1988</p><p class="lr-reason-line">You have 2 albums by this artist</p></article>
+            <article class="lr-card"><div class="lr-cover art-can"></div><p class="lr-card-title"><a href="#">Ege Bamyasi</a></p><p class="lr-meta">Can · 1972</p><p class="lr-reason-line">You have 4 albums by this artist</p></article>
+            <article class="lr-card"><div class="lr-cover art-fela"></div><p class="lr-card-title"><a href="#">Zombie</a></p><p class="lr-meta">Fela Kuti · 1976</p><p class="lr-reason-line">You have 1 album by this artist</p></article>
+          </div>
+        </section>
+        <section class="lr-section" aria-labelledby="fresh">
+          <div><h2 class="lr-section-title" id="fresh">New releases</h2><p class="lr-section-sub">From artists with a full album in your library.</p></div>
+          <div class="lr-mini-grid">
+            <article class="lr-card"><div class="lr-cover art-nala2"></div><p class="lr-card-title"><a href="#">Endlessness</a></p><p class="lr-meta">Nala Sinephro</p><p class="lr-reason-line">New in 2026 · 1 album in your library</p></article>
+            <article class="lr-card"><div class="lr-cover art-mdou2"></div><p class="lr-card-title"><a href="#">Funeral for Justice</a></p><p class="lr-meta">Mdou Moctar</p><p class="lr-reason-line">New in 2026 · 2 albums in your library</p></article>
+            <article class="lr-card"><div class="lr-cover art-grouper2"></div><p class="lr-card-title"><a href="#">Shine a Light</a></p><p class="lr-meta">Grouper</p><p class="lr-reason-line">New in 2026 · 5 albums in your library</p></article>
+          </div>
+        </section>
+      </div>
+
+      <!-- 7. Paths, Genres, Radio -->
+      <div class="lr-trio">
+        <section class="lr-panel" aria-labelledby="paths">
+          <div><h2 class="lr-section-title" id="paths">Paths</h2><p class="lr-section-sub">From an album you own to one you don't, one shared musician at a time.</p></div>
+          <div class="lr-path" aria-label="Spirit of Eden, World of Echo, Journey in Satchidananda, Promises"><div class="lr-cover art-talk"></div><span class="lr-path-link"></span><div class="lr-cover art-arthur"></div><span class="lr-path-link"></span><div class="lr-cover art-alice"></div><span class="lr-path-link"></span><div class="lr-cover art-floating"></div></div>
+          <a href="#">Start a path from any album</a>
+        </section>
+        <section class="lr-panel" aria-labelledby="genres">
+          <div><h2 class="lr-section-title" id="genres">Genres</h2><p class="lr-section-sub">The genres in your library.</p></div>
+          <div class="lr-tabs"><a class="lr-genre" href="#">Spiritual jazz</a><a class="lr-genre" href="#">Desert blues</a><a class="lr-genre" href="#">Dream pop</a><a class="lr-genre" href="#">Krautrock</a><a class="lr-genre" href="#">Ambient</a><a class="lr-genre" href="#">Afrobeat</a></div>
+        </section>
+        <section class="lr-panel" aria-labelledby="radio">
+          <div><h2 class="lr-section-title" id="radio">Radio</h2><p class="lr-section-sub">Stations play in the app. Heard is what they played.</p></div>
+          <a class="lr-station" href="#"><span class="lr-cover art-alice"></span>Grab the radio</a>
+          <a class="lr-station" href="#"><span class="lr-cover art-sault"></span>Heard</a>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <nav class="lr-tabbar" aria-label="Main">
+    <a href="#" aria-current="page"><svg class="lr-icon"><use href="#lr-home"/></svg>Home</a>
+    <a href="#"><svg class="lr-icon"><use href="#lr-discover"/></svg>Discover</a>
+    <a href="#"><svg class="lr-icon"><use href="#lr-library"/></svg>Library</a>
+    <a href="#"><svg class="lr-icon"><use href="#lr-acquisitions"/></svg>Getting</a>
+    <a href="#"><svg class="lr-icon"><use href="#lr-menu"/></svg>More</a>
+  </nav>
+</div>
+</body>
+</html>
