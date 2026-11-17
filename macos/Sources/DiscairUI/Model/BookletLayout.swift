@@ -91,6 +91,38 @@ enum BookletLayout {
 
     private static func extraName(_ item: BookletItem) -> String { item.pictures.first?.types.first ?? "Image" }
 
+    /// The bar's detail line: "Booklet · 2001 US CD · Pages 4–5 of 16" (section 5.1); the edition is left out when empty.
+    static func barDetail(edition: String, item: BookletItem, pageCount: Int) -> String {
+        let name = edition.trimmingCharacters(in: .whitespacesAndNewlines)
+        return ["Booklet", name.isEmpty ? nil : name, position(item, pageCount: pageCount)].compactMap { $0 }.joined(separator: " · ")
+    }
+
+    // MARK: Stage
+
+    /// The sidebar is drawn unless there is one booklet and no extras (section 5.1).
+    static func showsSidebar(_ booklets: [BookletView]) -> Bool {
+        booklets.count > 1 || booklets.contains { !$0.extras.isEmpty }
+    }
+
+    /// width / height of a page; 1 when the server did not give the size, so a page that is still loading keeps a place.
+    static func aspect(_ picture: ArtworkPicture) -> CGFloat {
+        guard let w = picture.width, let h = picture.height, w > 0, h > 0 else { return 1 }
+        return CGFloat(w) / CGFloat(h)
+    }
+
+    /// Each page's size on a stage of `size`: every page has the same height, as tall as fits, and keeps its own aspect (section 5.3).
+    static func fit(aspects: [CGFloat], in size: CGSize) -> [CGSize] {
+        let total = aspects.reduce(0, +)
+        guard total > 0, size.width > 0, size.height > 0 else { return aspects.map { _ in .zero } }
+        let height = min(size.height, size.width / total)
+        return aspects.map { CGSize(width: $0 * height, height: height) }
+    }
+
+    /// The item that shows `picture` first, so choosing an extra jumps to it.
+    static func index(of picture: ArtworkPicture, in items: [BookletItem]) -> Int? {
+        items.firstIndex { $0.pictures.first?.imageID == picture.imageID }
+    }
+
     // MARK: Editions
 
     /// The row name: the edition, or "Booklet {n}" (1-based) when it is empty.

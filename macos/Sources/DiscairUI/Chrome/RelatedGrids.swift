@@ -177,7 +177,7 @@ struct AlbumBookletTab: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .center)
-        .sheet(isPresented: $showing) { if !allBooklets.isEmpty { BookletSheet(booklets: allBooklets) { showing = false } } }
+        .sheet(isPresented: $showing) { if !allBooklets.isEmpty { BookletSheet(title: state.selectedAlbum.title, booklets: allBooklets) { showing = false } } }
         .task(id: "\(state.related.releaseGroupMBID ?? "")|\(store?.generation ?? 0)") {
             booklet = nil; allBooklets = []; loaded = false
             guard let rg = state.related.releaseGroupMBID, !rg.isEmpty, let store else { return }
