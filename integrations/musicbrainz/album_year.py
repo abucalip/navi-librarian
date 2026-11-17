@@ -11,6 +11,7 @@ from urllib.request import Request, urlopen
 
 from integrations import provider_gate
 
+RELEASE_GROUP_URL = "https://musicbrainz.org/ws/2/release-group/"  # what a counting caller names
 YEAR_CACHE_TTL = 180 * 24 * 60 * 60
 # Found years are also kept in the persistent metadata store by the routes, so an evicted pair is read
 # back from there rather than asked again.
@@ -58,6 +59,9 @@ def _norm(value):
     return "".join(ch.casefold() for ch in str(value or "") if ch.isalnum())
 
 
+normalize = _norm  # the store key of a year is built from it
+
+
 def _exact_year(groups, artist: str, album: str):
     """Earliest first-release year among groups whose title and artist credit match exactly."""
     exact_dates = []
@@ -78,6 +82,17 @@ def _exact_year(groups, artist: str, album: str):
         if year_text.isdigit() and 1900 <= int(year_text) <= 2100:
             exact_dates.append((date_text or year_text, int(year_text)))
     return min(exact_dates, key=lambda entry: entry[0])[1] if exact_dates else None
+
+
+def _single_query(artist: str, album: str) -> str:
+    """The URL query string of the one-pair release-group search."""
+    escaped_artist = artist.replace("\\\\", "\\\\\\\\").replace('"', '\\"')
+    escaped_album = album.replace("\\\\", "\\\\\\\\").replace('"', '\\"')
+    return urlencode({
+        "query": f'artist:"{escaped_artist}" AND releasegroup:"{escaped_album}"',
+        "fmt": "json",
+        "limit": 25,
+    })
 
 
 def lookup_album_year(artist: str, album: str):
@@ -107,13 +122,7 @@ def lookup_album_year(artist: str, album: str):
             lane = _lane()
             if not lane.acquire():
                 return None  # no slot soon enough: not cached, so a later call retries
-            escaped_artist = artist.replace("\\\\", "\\\\\\\\").replace('"', '\\"')
-            escaped_album = album.replace("\\\\", "\\\\\\\\").replace('"', '\\"')
-            query = urlencode({
-                "query": f'artist:"{escaped_artist}" AND releasegroup:"{escaped_album}"',
-                "fmt": "json",
-                "limit": 25,
-            })
+            query = _single_query(artist, album)
             request = Request(
                 "https://musicbrainz.org/ws/2/release-group/?" + query,
                 headers={"User-Agent": "Discair/1.0 (personal music discovery)"},
@@ -153,6 +162,34 @@ def _fetch_release_groups(query: str, limit: int):
     )
     with urlopen(request, timeout=10) as response:
         return json.loads(response.read().decode("utf-8")).get("release-groups") or []
+
+
+fetch_release_groups = _fetch_release_groups
+
+
+def lookup_album_year_counted(artist: str, album: str, fetch):
+    """``(year or None, answered)`` for one pair through the caller's ``fetch(query, limit)``.
+
+    For a caller that must count or cap its requests (the worker's prefetch). Takes a slot from the shared gate,
+    uses no process cache and never hides a failure: ``answered`` is False when no slot came or the request failed,
+    so the caller does not store "no year" for it. Same exact title and artist-credit rule as `lookup_album_year`.
+    """
+    artist = str(artist or "").strip()
+    album = str(album or "").strip()
+    if not artist or not album:
+        return None, True
+    lane = _lane()
+    try:
+        if not lane.acquire():
+            return None, False
+        try:
+            groups = fetch(_single_query(artist, album), 25)
+        except Exception as exc:
+            _penalize_on_throttle(lane, exc)
+            raise
+    except Exception:
+        return None, False
+    return _exact_year(groups, artist, album), True
 
 
 def lookup_album_years(pairs, fetch=_fetch_release_groups):

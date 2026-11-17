@@ -166,13 +166,8 @@ class AlbumYearsRequest(BaseModel):
 # survives restarts (the in-memory catalog cache does not). Only found years are stored: an album
 # with no match may be matched later. `librarian` is the route dependency; called without it
 # (direct calls, tests) the store is simply skipped.
-_YEAR_STORE_TTL = 365 * 24 * 60 * 60
-
-
-def _year_store_key(artist, album):
-    from integrations.musicbrainz.album_year import _norm
-
-    return "album-year:v1:" + _norm(artist) + ":" + _norm(album)
+_YEAR_STORE_TTL = album_page_sources.YEAR_STORE_TTL
+_year_store_key = album_page_sources.year_store_key
 
 
 def _stored_year(librarian, artist, album):
@@ -235,18 +230,9 @@ def album_year(artist: str = "", album: str = "", librarian=Depends(get_libraria
     # MusicBrainz is primary. Deezer is a fallback only for an exact normalized
     # artist AND album match; fuzzy or artist-only results are never trusted.
     if not year:
-        try:
-            query = urlencode({"q": f'artist:"{artist}" album:"{album}"', "limit": 20})
-            response = _EXTERNAL_HTTP.get("https://api.deezer.com/search/album?" + query)
-            response.raise_for_status()
-            matched_year = exact_album_release_year(
-                response.json().get("data") or [], artist, album
-            )
-            if matched_year is not None:
-                year = matched_year
-                source = "Deezer"
-        except Exception:
-            pass
+        year = album_page_sources.deezer_year(_EXTERNAL_HTTP.get, artist, album)
+        if year is not None:
+            source = "Deezer"
 
     _store_year(librarian, artist, album, year)
     return {"artist": artist, "album": album, "year": year, "source": source}
@@ -595,45 +581,9 @@ def album_page_links(artist: str = "", album: str = "", mbid: str = ""):
 
 def _load_album_links(artist: str, album: str, mbid: str, allow_stale=False):
     """The links as a `Loaded`. A set that used a stale Apple page is kept for minutes and not stored."""
-    def apple():
-        return _apple_album_url_state(artist, album, allow_stale)
-
-    def deezer():
-        data = _json_or_none("https://api.deezer.com/search/album?" + urlencode(
-            {"q": f'artist:"{artist}" album:"{album}"', "limit": 12}))
-        return album_links.deezer_url((data or {}).get("data") or [], artist, album)
-
-    def musicbrainz():
-        if mbid:
-            return mbid
-        import threading
-
-        from discovery.search.providers import MusicBrainzSearch
-
-        deadline = monotonic() + 4.0
-        try:
-            groups = MusicBrainzSearch(get=_EXTERNAL_HTTP.get).release_groups_named(
-                artist, album, remaining=lambda: deadline - monotonic(), cancelled=threading.Event())
-        except Exception:
-            return None
-        return album_links.musicbrainz_group_id(groups, artist, album)
-
-    with ThreadPoolExecutor(max_workers=3) as pool:
-        apple_future, deezer_future, mb_future = pool.submit(apple), pool.submit(deezer), pool.submit(musicbrainz)
-        (apple_url, apple_stale), deezer_page, group_id = apple_future.result(), deezer_future.result(), mb_future.result()
-
-    links = {}
-    if apple_url:
-        links["apple_music"] = apple_url
-    if deezer_page:
-        links["deezer"] = deezer_page
-    if group_id:
-        links["musicbrainz"] = f"https://musicbrainz.org/release-group/{group_id}"
-        links["listenbrainz"] = f"https://listenbrainz.org/album/{group_id}"
-    # A missing service may only have been slow or busy, so an incomplete answer is kept for minutes, not a day.
-    complete = "musicbrainz" in links and "apple_music" in links and "deezer" in links
-    keep = complete and not apple_stale
-    return Loaded(links, memory_ttl=_ALBUM_LINKS_TTL if keep else 10 * 60, persist=keep)
+    return album_page_sources.load_album_links(
+        artist, album, mbid, apple=lambda: _apple_album_url_state(artist, album, allow_stale),
+        json_get=lambda *a, **k: _json_or_none(*a, **k), mb_get=lambda *a, **k: _EXTERNAL_HTTP.get(*a, **k))
 
 
 @router.get("/api/artist-image")
@@ -643,29 +593,15 @@ def artist_image(name: str = ""):
     if not name:
         raise HTTPException(status_code=400, detail="name is required")
     return _artist_image_cache.get_or_load(
-        name.casefold(), lambda: _load_artist_image(name), store_key="artist-image:v2:" + name.casefold(),
+        name.casefold(), lambda: _load_artist_image(name), store_key=album_page_sources.artist_image_store_key(name),
         accept_stored=_has_artwork, stored_ttl=_ARTWORK_CACHE_TTL)
 
 
-def _has_artwork(stored):
-    return bool(stored and stored.get("artwork_url"))
+_has_artwork = album_page_sources.has_artwork
 
 
 def _load_artist_image(name: str):
-    result = {"artwork_url": None, "image_kind": "artist", "source": "Deezer"}
-    try:
-        response = _EXTERNAL_HTTP.get("https://api.deezer.com/search/artist?" + urlencode({"q": name, "limit": 8}))
-        response.raise_for_status()
-        artists = response.json().get("data") or []
-        match = select_artist_artwork(artists, name)
-        if match is not None:
-            # The larger photo of the artist that was matched, not of another artist with the same name.
-            photo = (pick_artist(artists, name) or {}).get("picture_xl")
-            result = {**match, "artwork_url": (photo or match["artwork_url"]).replace("http://", "https://", 1)}
-    except Exception:
-        # A provider outage is not cached, so the next visit retries.
-        return Loaded({**result, "retryable": True})
-    return Loaded(result, memory_ttl=_ARTWORK_CACHE_TTL, persist=bool(result.get("artwork_url")))
+    return album_page_sources.load_artist_image(_EXTERNAL_HTTP.get, name)
 
 
 def _fallback_album_artwork(artist: str, album: str):
