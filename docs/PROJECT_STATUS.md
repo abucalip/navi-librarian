@@ -9,6 +9,9 @@ Last checked: 2026-11-17. GitHub `main` is authoritative; this update is based o
 - **CI suite runs in about 1 minute (2026-11-17, PR #1182):** CI now runs the unit suite with pytest. `tests/conftest.py`, which gives each test a no-wait private provider gate, now applies, so MusicBrainz calls no longer sleep 1.1 s each on the shared gate. The test step went from 40 min to 69 s and the job takes about 2 min. Job timeout is 15 min.
   - **Next action:** none. Run focused modules that touch MusicBrainz with pytest, not `unittest`.
 
+- **macOS Booklet B1 merged (2026-11-17, PR #1187, squash `a16dc620`):** `CUPalette.stageAccent`, `CU.Booklet` constants, pure `BookletLayout` rules and tests; no visible change.
+  - **Next action:** owner answers D1, D3, D4, then B2 (Booklet layout); owner check of the Paths sheet is still open.
+
 - **macOS Paths P2 merged (2026-11-17, PR #1186, squash `d20d2e93`):** round artist photos on artist steps, `.display` covers above 64 pt, 96 × 64 Room photos, Gaps card on the Gaps tab only, summary shown while loading and after a failure, new `PathsRenderTests` (10 renders). The Paths sheet is complete; the owner checks it in a real window against the PNGs.
   - **Next action:** owner check of the Paths sheet; B1 (Booklet base) can start; D1, D3, D4 are needed before B2.
 

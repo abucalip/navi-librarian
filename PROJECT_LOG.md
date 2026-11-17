@@ -1,3 +1,11 @@
+## 2026-11-17 — macOS Booklet B1 base (PR #1187)
+
+- **Merged:** PR #1187, squash `a16dc62054ffc5c887186a025344b34137c62305`. Slice B1 of `docs/MACOS_PATHS_BOOKLET.md`: `CUPalette.stageAccent`, the `CU.Booklet` part of `CUPathsBooklet.swift`, `Model/BookletLayout.swift`. The generated geometry constant `bar` clashed with the `bar` colour, so it is `barHeight` in `build.py` and the package copy. `AppearanceTests` hue test also lets `stageAccent` change.
+- **Spec gaps decided:** a one-page spread reads "Page 1 of 16"; "1 page" singular; an empty edition drops the ", edition" suffix in the caption.
+- **Tests run:** `swift test --filter 'BookletLayoutTests|BookletStageAccentTests|CupertinoTokensTests|AppearanceTests|BookletTests'`, 48 tests in 5 suites, all passed; `check_contrast.py` 0 failing. Not run: the full suite.
+- **CI:** all five checks reported success on the PR.
+- **Limitations:** no visible change; no CPU measurement (no motion). Not published or deployed.
+
 ## 2026-11-17 — macOS Paths P2 details (PR #1186)
 
 - **Merged:** PR #1186, squash `d20d2e93bd796d2e522c9e86528d89d83527c11b`. Slice P2 of `docs/MACOS_PATHS_BOOKLET.md`: artist steps show the round `ArtistPhoto`; `PathRowThumb` asks `.display` above 64 pt; Room photos 96 × 64 under the album name; the "Your listening" card on the Gaps tab only; the summary is drawn while loading and after a failure, and an empty tab shows only its empty line. New `Tests/DiscairUITests/PathsRenderTests.swift`; `PathsSheetModel` gains `showForPreview(failed:)` and `clearForPreview`.

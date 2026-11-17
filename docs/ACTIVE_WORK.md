@@ -296,7 +296,7 @@ Done: Genres grid and four album shelves on the dashboard, the Recommended slide
   Paths is gone from the web design.
 - **Next action:** after the owner's review, start L0 (server audit and missing fields, plan section 9), then L1 to L6 (Home), then L7 to L14.
 
-## 2r. macOS Paths and Booklet sheets redesign: P0 to P2 merged, owner check and B1 next
+## 2r. macOS Paths and Booklet sheets redesign: P0 to P2 and B1 merged, owner check and B2 next
 
 - The owner asked on 2026-11-17 for a design system and a detailed build plan, delivered as a docs PR. They are based on the Paths and Booklet mockups from an earlier session. The spec and plan are in [`MACOS_PATHS_BOOKLET.md`](MACOS_PATHS_BOOKLET.md). The package is in [`design/macos-paths-booklet/`](design/macos-paths-booklet/). It holds:
   - tokens mapped to `CU` roles
@@ -309,6 +309,7 @@ Done: Genres grid and four album shelves on the dashboard, the Recommended slide
 - **P0 merged** in PR [#1184](https://github.com/abucalip/navi-librarian/pull/1184), squash `5ec4ac568a9221ae4ff4545e64ee12dc0c0531af` (2026-11-17): `Model/PathTrail.swift`, `PathStep` Trail fields and `with(id:)`, structured `PathAnswer.capped`, `PathsSheetModel` year, filter, groups, order and `move(by:)` in visual order. Owner decisions in P0: role-line anchors come only from reasons sharing the first reason's link; the crew role is read from `evidence.relation`. No visible change. P1 waits for D1, D2, D5, D6; B1 can start.
 - **P1 merged** in PR [#1185](https://github.com/abucalip/navi-librarian/pull/1185), squash `c5d9b6d864a867d3bdf16cfdb0d40711d9fe3738` (2026-11-17): the Trail layout of the Paths sheet, resizable, filter, detail bar. CPU measurement and a real-window check were not done; they belong to the owner check after P2.
 - **P2 merged** in PR [#1186](https://github.com/abucalip/navi-librarian/pull/1186), squash `d20d2e93bd796d2e522c9e86528d89d83527c11b` (2026-11-17): artist photos, `.display` covers, Room photos, Gaps card, phases, `PathsRenderTests`. Left: the owner check of the Paths sheet in a real window, and the five-case CPU measurement from P1.
+- **B1 merged** in PR [#1187](https://github.com/abucalip/navi-librarian/pull/1187), squash `a16dc62054ffc5c887186a025344b34137c62305` (2026-11-17): `CUPalette.stageAccent`, the `CU.Booklet` constants (height renamed `barHeight`), pure `Model/BookletLayout.swift`, `BookletLayoutTests`. No visible change. B2 needs owner answers D1 and D4 (and D3 only for B4).
 - Slices: P0 (model) → P1 → P2 for Paths; B1 (palette and layout helpers) → B2 → B3 for Booklet; optional B4. P0 and B1 change nothing visible and can start once the PR is merged.
 
 ## 2n. Simplification candidates
