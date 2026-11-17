@@ -1,0 +1,105 @@
+/* Index components. Measurements are dp (1 CSS px = 1dp), type sizes are sp. Colours come from palettes.css
+   (generated from tokens.json). Spec: docs/INDEX_THEME.md, section 7. Fonts are the app's own files in res/font. */
+@font-face{font-family:"Inter Tight";src:url(../../../android/app/src/main/res/font/inter_tight_800.ttf);font-weight:800}
+@font-face{font-family:Inter;src:url(../../../android/app/src/main/res/font/inter_variable.ttf);font-weight:100 900}
+@font-face{font-family:"IBM Plex Mono";src:url(../../../android/app/src/main/res/font/ibm_plex_mono_400.ttf);font-weight:400}
+@font-face{font-family:"IBM Plex Mono";src:url(../../../android/app/src/main/res/font/ibm_plex_mono_500.ttf);font-weight:500}
+@font-face{font-family:"IBM Plex Mono";src:url(../../../android/app/src/main/res/font/ibm_plex_mono_600.ttf);font-weight:600}
+
+.scr{background:var(--ink);color:var(--text);font:400 14px/21px Inter,system-ui,sans-serif;border-radius:22px}
+.scr *{box-sizing:border-box}
+.ic{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:square;stroke-linejoin:miter;flex:none}
+.ic.f{fill:currentColor;stroke:none}.ic.s{width:18px;height:18px}
+.d{font-family:"Inter Tight",Inter,sans-serif;font-weight:800;letter-spacing:-.035em}
+.m{font:500 10.5px/14px "IBM Plex Mono",monospace;letter-spacing:.06em;text-transform:uppercase}
+.mu{color:var(--textMuted)}.sig{color:var(--accent)}
+.body{position:absolute;inset:0;overflow:hidden;padding-bottom:120px}
+
+/* top bar and page head */
+.top{display:flex;align-items:center;padding:10px 6px 0 16px;height:54px}
+.top .wm{font-size:22px}
+.top .date{margin-left:10px;margin-right:auto;color:var(--textMuted)}
+.ib{width:44px;height:44px;display:grid;place-items:center;position:relative;color:var(--text);flex:none}
+.bdg{position:absolute;top:8px;right:6px;min-width:15px;height:15px;background:var(--accent);color:var(--onAccent);font:600 9.5px/15px "IBM Plex Mono";text-align:center;padding:0 3px}
+.bar{display:flex;align-items:center;justify-content:space-between;padding:4px 6px;height:52px}
+.hd{display:flex;align-items:flex-end;justify-content:space-between;padding:14px 16px 0}
+.h1{margin:0;font-size:52px;line-height:44px}
+.h1 sup,.cnt{font:600 13px "IBM Plex Mono";letter-spacing:0;vertical-align:top;margin-left:4px;color:var(--accent)}
+.src{display:flex;position:relative}
+.src span{padding:10px 7px;color:var(--textMuted)}
+.src span.on{color:var(--text);box-shadow:inset 0 -3px 0 var(--accent)}
+.rule{height:2px;background:var(--text);margin:12px 16px 0}
+
+/* sections and rows */
+.sec{padding:28px 16px 0}
+.sh{display:flex;align-items:baseline;gap:8px;border-top:2px solid var(--text);padding-top:10px;margin-bottom:6px}
+.sh h3{margin:0;font-size:24px;line-height:24px}
+.sh a{margin-left:auto;color:var(--accent)}
+.rows{list-style:none;margin:0;padding:0}
+.rw{display:grid;grid-template-columns:26px 48px 1fr auto;gap:12px;align-items:center;min-height:64px;border-bottom:1px solid var(--edge)}
+.rw.nl{grid-template-columns:48px 1fr auto}.rw.nn{grid-template-columns:26px 1fr auto}.rw.nx{grid-template-columns:1fr auto}
+.rw>:last-child{white-space:nowrap}
+.rw b{display:block;font:600 15px/20px Inter;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rw .n{color:var(--accent)}
+.kv{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border-top:1px solid var(--edge)}
+.kv div{padding:9px 0;display:grid;gap:2px;border-bottom:1px solid var(--edge)}
+.kv b{font:500 13px Inter}
+.dl{display:grid;grid-template-columns:auto 1fr;gap:3px 8px;margin:0;font:500 12.5px/18px Inter}
+.dl dt{color:var(--textMuted);font-size:10px;line-height:18px}
+.dl dd{margin:0}
+.grid4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px 8px}
+
+/* controls */
+.btn{height:44px;padding:0 16px;display:inline-flex;align-items:center;gap:8px;font:600 14px Inter;background:var(--control);color:var(--onControl);border-radius:3px;white-space:nowrap;flex:none}
+.btn .ic{width:18px;height:18px}
+.btn.s{height:36px;padding:0 12px;font-size:13px}
+.btn.g{background:transparent;color:var(--text);box-shadow:inset 0 0 0 1.5px var(--edge)}
+.btn.sig{background:var(--accent);color:var(--onAccent)}
+.btn.danger{background:var(--chartRedText);color:#fff}
+.acts{display:flex;gap:6px;padding:14px 16px 0}
+.st{display:inline-flex;align-items:center;gap:5px}
+.st.ok{color:var(--ok)}.st.bad{color:var(--chartRedText)}
+.tag{font:600 10px "IBM Plex Mono";letter-spacing:.06em;background:var(--text);color:var(--ink);padding:5px 7px;white-space:nowrap}
+.tabs{display:flex;gap:16px;border-bottom:1px solid var(--edge);padding:0 16px;white-space:nowrap;overflow:hidden}
+.tabs span{height:40px;line-height:40px;color:var(--textMuted)}
+.tabs span.on{color:var(--text);box-shadow:inset 0 -3px 0 var(--accent);font-weight:600}
+.field{display:flex;align-items:center;gap:10px;height:52px;padding:0 12px;box-shadow:inset 0 0 0 2px var(--text);background:var(--surface);font:600 17px Inter}
+.sw{width:44px;height:24px;background:var(--edge);position:relative;flex:none}
+.sw::after{content:"";position:absolute;left:3px;top:3px;width:18px;height:18px;background:var(--surface)}
+.sw.on{background:var(--control)}.sw.on::after{left:23px;background:var(--onControl)}
+.seek{height:6px;background:var(--edge);position:relative}.seek i{position:absolute;inset:0 58% 0 0;background:var(--accent)}
+.track{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-top:8px}.track i{height:4px;background:var(--edge)}.track i.d{background:var(--text)}.track i.x{background:var(--chartRedText)}
+.cols{display:flex;align-items:flex-end;gap:5px;height:120px;border-bottom:1px solid var(--edgeStrong)}.cols i{flex:1;background:var(--chart3)}.cols i.a{background:var(--accent)}
+.bars{display:inline-flex;align-items:flex-end;gap:2px;height:12px}.bars i{width:3px;background:var(--accent);animation:eq .8s ease-in-out infinite alternate}
+.bars i:nth-child(2){animation-delay:-.3s}.bars i:nth-child(3){animation-delay:-.6s}
+@keyframes eq{from{height:3px}to{height:12px}}
+.skel{background:var(--raised)}
+
+/* dock: ink strip and the four-cell bar */
+.dock{position:absolute;left:0;right:0;bottom:0;background:var(--rail)}
+.mini{display:flex;align-items:center;gap:12px;height:56px;padding:0 6px 0 12px;background:var(--strip);color:var(--onStrip);position:relative}
+.mini::before{content:"";position:absolute;top:0;left:0;height:3px;width:42%;background:var(--stripProgress)}
+.mini b{display:block;font:600 14px Inter}.mini small{color:var(--stripMuted)}
+.mini .ib{color:var(--onStrip)}
+.nav{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));height:60px;position:relative;border-top:1px solid var(--edge)}
+.nav span{display:grid;justify-items:center;align-content:center;gap:4px;font:500 9.5px "IBM Plex Mono";letter-spacing:.07em;text-transform:uppercase;color:var(--textMuted)}
+.nav span.on{color:var(--text)}
+.nav i.blk{position:absolute;top:-1px;height:3px;width:14%;background:var(--accent)}
+
+/* sheet, scrim, snackbar */
+.scrim{position:absolute;inset:0;background:rgba(10,10,12,.5)}
+.sheet{position:absolute;left:0;right:0;bottom:0;background:var(--surface);border-radius:6px 6px 0 0;padding:8px 0 22px}
+.handle{width:32px;height:3px;background:var(--text);margin:0 auto 14px}
+.shd{display:grid;grid-template-columns:72px 1fr;gap:14px;padding:0 16px 14px;border-bottom:2px solid var(--text)}
+.opt{display:grid;grid-template-columns:28px 1fr 22px;gap:14px;align-items:center;min-height:62px;padding:0 16px;border-bottom:1px solid var(--edge)}
+.opt b{display:block;font:600 15px Inter}.opt small{font-size:12.5px;color:var(--textMuted)}
+.snack{position:absolute;left:12px;right:12px;height:52px;background:var(--strip);color:var(--onStrip);border-radius:3px;display:flex;align-items:center;justify-content:space-between;padding:0 14px;font:500 14px Inter}
+.snack u{text-decoration:none;color:var(--stripProgress)}
+
+/* entry motion (one shot; spec section 8) */
+.rv{animation:rv .3s cubic-bezier(.2,0,0,1) both;animation-delay:var(--d,0s)}
+@keyframes rv{from{opacity:0;transform:translateX(-12px)}}
+.draw{transform-origin:left;animation:draw .36s cubic-bezier(.77,0,.18,1) both}
+@keyframes draw{from{transform:scaleX(0)}}
+@media (prefers-reduced-motion:reduce){.rv,.draw,.bars i{animation:none}}
