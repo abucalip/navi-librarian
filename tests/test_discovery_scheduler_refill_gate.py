@@ -1,17 +1,13 @@
 """Regression tests for the scheduler's automatic-refill gate (roadmap 3.4).
 
-These run one cycle of the real scheduler loop. The sleep after the cycle raises
-a non-Exception to break out of the infinite loop, and the settings, cache read,
-and refresh callbacks are replaced with recorders.
+These run one pass of the discovery scheduler, now the worker's ``discovery_lists`` entry
+(``app/services/discovery_schedule.py``, efficiency W3). The settings, cache read, and refresh
+callbacks are replaced with recorders on a stand-in librarian.
 """
 import unittest
-from unittest.mock import patch
+from types import SimpleNamespace
 
-import navidrome_server as server
-
-
-class _StopScheduler(BaseException):
-    """Raised from the patched sleep to end the scheduler loop after one cycle."""
+from app.services import discovery_schedule
 
 
 class SchedulerRefillGateTests(unittest.TestCase):
@@ -31,12 +27,12 @@ class SchedulerRefillGateTests(unittest.TestCase):
             refreshes.append(list_name)
             return {"ok": True}
 
-        with patch.object(server, "_discovery_settings_read", lambda: settings), \
-                patch.object(server, "_discovery_read_list", read_list), \
-                patch.object(server, "_discovery_scheduler_refresh_one", refresh_one), \
-                patch.object(server.time, "sleep", side_effect=_StopScheduler):
-            with self.assertRaises(_StopScheduler):
-                server._discovery_scheduler()
+        librarian = SimpleNamespace(
+            _discovery_settings_read=lambda: settings,
+            _discovery_read_list=read_list,
+            _discovery_scheduler_refresh_one=refresh_one,
+        )
+        discovery_schedule.refresh_stale_lists_once(librarian)
         return reads, refreshes
 
     def test_disabled_switch_reads_no_caches_and_refreshes_nothing(self):

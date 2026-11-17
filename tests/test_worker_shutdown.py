@@ -67,7 +67,7 @@ class MainShutdown(unittest.TestCase):
                 mock.patch.object(worker.library_enrich, "run_forever"):
             self.assertEqual(worker.main(librarian=self.lib, stop=stop), 0)
         self.assertEqual(start.call_args.args[1:], (self.dir / worker.STORE_FILE, stop))
-        self.assertEqual(seen, [None])
+        self.assertEqual(seen, [None, None])     # both schedule threads (W3: discovery has its own) joined under the lock
         self.assertLessEqual(insights.timeouts[0], worker.SHUTDOWN_GRACE_SECONDS)
         again = worker.acquire_lock(self.dir)
         self.assertIsNotNone(again)

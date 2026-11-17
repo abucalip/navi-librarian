@@ -160,9 +160,9 @@ class Scheduler:
             stop.wait(tick)
 
 
-def start(entries, store_path, stop):
+def start(entries, store_path, stop, name="worker-schedule"):
     """Start the scheduler on its own daemon thread and return the thread."""
     scheduler = Scheduler(entries, store_path)
-    thread = threading.Thread(target=scheduler.run_forever, args=(stop,), name="worker-schedule", daemon=True)
+    thread = threading.Thread(target=scheduler.run_forever, args=(stop,), name=name, daemon=True)
     thread.start()
     return thread

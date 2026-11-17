@@ -134,10 +134,10 @@ class WebStartupTests(unittest.TestCase):
         before = {t.name for t in threading.enumerate()}
         with mock.patch.object(main, "get_librarian", return_value=lib), \
                 mock.patch.object(main, "_bump_discogs_generation_at_startup"), \
-                mock.patch.object(lens_service, "start_daily_refresh"), \
                 mock.patch.object(search, "owned_view") as warm:
-            main._start_discovery_background()
-        lib._start_discovery_scheduler.assert_called_once_with()
+            main._discovery_startup()
+        lib._start_discovery_scheduler.assert_not_called()    # the list refreshes run in the worker (W3)
+        self.assertFalse(hasattr(lens_service, "start_daily_refresh"))
         warm.assert_called_once_with(lib)                     # one-shot index warm-up only
         names = {t.name for t in threading.enumerate()} - before
         self.assertNotIn("navidrome-similar-artists", names)
