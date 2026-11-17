@@ -271,7 +271,10 @@ Done: Genres grid and four album shelves on the dashboard, the Recommended slide
 
 One line each: file, what could be simplified, why it was not done in the PR that found it (see "Opportunistic simplification" in [DEVELOPMENT_WORKFLOW.md](DEVELOPMENT_WORKFLOW.md)). Remove the line when it is done or no longer true.
 
-- None yet.
+- `navidrome_server.py`: acquisition adapters `_slskd_track_identity`, `_slskd_path_match_diagnostics`, `_slskd_extract_candidates`, `_discovery_import_matched_album_files`, `_discovery_switch_to_next_source(_locked)`, `_discovery_import_completed_source(_locked)`. Not done in #1172: they bind `_music_key`, locks and other module callbacks, several are patched in `tests/test_acquisition_safety.py`, and the code is safety-critical.
+- `navidrome_server.py`: `_discovery_is_various_artists`, a plain forward to `discovery.recommendations.is_various_artists`. Not done in #1172: it has three callers, and that pass only took single-caller code.
+- `navidrome_server.py`: `_bridge_deep_dives` (one caller, six lines of logic). Not done in #1172: it would have to move into `discovery/deep_dive_bridge.py`, which is a move, not a removal.
+- `navidrome_server.py`: `discovery_skip_acquisition_source` (one caller, `app/api/acquisitions.py`). Not done in #1172: it binds the acquisition lock, the database connection and the lifecycle.
 
 ## 3. Recommendation engine — gated
 

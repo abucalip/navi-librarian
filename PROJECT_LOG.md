@@ -1,3 +1,20 @@
+## 2026-11-17 — Server efficiency C2 rerun: unused code and owner-approved single-caller adapters removed from navidrome_server.py (merged)
+
+- PR [#1172](https://github.com/abucalip/navi-librarian/pull/1172), squash `0391e5e0`, head `503929cb`, merged 2026-11-17 12:19 UTC (GitHub confirms `MERGED`).
+- What changed (5 commits): `navidrome_server.py` went from 2,285 to 2,123 lines.
+  - The C2 table was rebuilt on `52b202d1`: 170 symbols, imports included, with a reachability walk from real external references. No adapter was unreferenced; three unused imports (`hashlib`, `unicodedata`, `urlparse`) and two unused locals in `recommend_new_music` went.
+  - Owner-approved: the 12 `discovery_{get,set,test}_*` settings wrappers moved into `app/api/settings.py`, which calls `settings/service.py` with the librarian's store, `MUSIC_DIR`, `_set_music_dir`, defaults and callbacks.
+  - Owner-approved, acquisition, own commit: `_slskd_search_queries`, `_slskd_search_response_items`, `_discovery_expected_track_count` and `_discovery_filename_key` were replaced by the `integrations.slskd.search` and `acquisition.completion` functions.
+  - Owner-approved, other: `_lastfm_similar_artists` and `_discovery_exact_artist_credit_matches` were replaced by their targets; `_default_music_dir`, `_discovery_refresh_all` and `_refresh_listening_profile_background` were folded into their only caller.
+  - Two adapter-only tests were removed.
+- Tests run:
+  - `pytest` on 18 files (acquisition recovery, safety and track; discovery routes, refresh guard, schedule, refill gate, new releases, lens storage, list payload, API injection; settings routes; Last.fm client; slskd search; music paths; quality priority; song peaks; the `recommend_new_music` characterization): 289 passed.
+  - New `tests/test_legacy_server_wiring.py`: 7 passed. A line trace showed the 8 changed call-site lines ran in no existing test; with the new file it shows 8 of 8.
+  - `check_lint_changed.py --base origin/main`: 6 files, 0 new findings.
+- CI: six checks on `503929cb` pending at merge.
+- Not run: the full suite. Not deployed.
+- Limitations: `discovery_refresh_list("all")` now looks up the two refresh functions when the thread is created instead of when it starts (same functions). The adapters left are listed in ACTIVE_WORK 2n.
+
 ## 2026-11-17 — Server efficiency K6: Deezer album page store and Wikipedia no-article mark (merged)
 
 - PR [#1171](https://github.com/abucalip/navi-librarian/pull/1171), squash `f26b1e2f`, head `350e4ad3`, merged 2026-11-17 12:00 UTC (GitHub confirms `MERGED`).
