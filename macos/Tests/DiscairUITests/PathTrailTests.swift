@@ -171,6 +171,15 @@ import DiscairLibrarian
         #expect(try role(.sameYearSameScene, [("Round Midnight", "recording")], code: "same_period_label") == "")
     }
 
+    @Test func roleLineIgnoresAnchorsOfOtherLinksOnTheSameStep() throws {
+        let a = try album([stop("S", reasons: [
+            reason("crew_on", via: ("Ann", "artist"), anchor: ("Round Midnight", "recording"), relation: "producer"),
+            reason("crew_on", via: ("Bo", "artist"), anchor: ("Round About Midnight", "release"), relation: "mix"),
+            reason("crew_on", via: ("Ann", "artist"), anchor: ("Ah-Leu-Cha", "recording"), relation: "producer")])])
+        #expect(a.steps[0].anchors.map(\.name) == ["Round Midnight", "Ah-Leu-Cha"])
+        #expect(text(PathTrail.groups(a, context: .album(.studioCrew), start: "Round About Midnight")[0].role) == "On Round Midnight and Ah-Leu-Cha")
+    }
+
     @Test func roleLineTitlesAreItalicAndTheRestIsPlain() throws {
         let a = try album([stop("S", reasons: [reason("crew_on", via: ("V", "artist"), anchor: ("Round Midnight", "recording"), relation: "producer")])])
         let spans = PathTrail.groups(a, context: .album(.studioCrew), start: "X")[0].role

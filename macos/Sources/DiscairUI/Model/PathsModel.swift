@@ -137,11 +137,17 @@ public struct PathStep: Identifiable, Equatable, Sendable {
     /// Album paths: the story of why the step is here, one paragraph per person, place or work.
     public var story: [[StorySpan]] = []
     /// What the Trail groups by (`PathTrail`): the first reason's `via` and code, the role of the first credit it carries
-    /// (`evidence[0].relation`: "producer", "mix"...), and the start-side `anchor` of every reason.
+    /// (`evidence[0].relation`: "producer", "mix"...), and the start-side `anchor` of the reasons that share the first reason's link.
     public var firstVia: KnowledgeEntity? = nil
     public var firstCode: String = ""
     public var creditRole: String? = nil
     public var anchors: [KnowledgeEntity] = []
+    /// The start-side anchors of the reasons that share the first reason's link (same code, same `via`), so a group's role line
+    /// never shows an anchor that belongs to another link of the same step.
+    static func linkAnchors(_ reasons: [PathReason]) -> [KnowledgeEntity] {
+        guard let first = reasons.first else { return [] }
+        return reasons.filter { $0.code == first.code && $0.via?.mbid == first.via?.mbid && $0.via?.name == first.via?.name }.compactMap(\.anchor)
+    }
     /// The same step under another id; every other field, the story and the Trail inputs included, is kept.
     func with(id: Int) -> PathStep { var copy = self; copy.id = id; return copy }
     public struct AlbumCover: Equatable, Sendable { public let title: String; public let artist: String; public let albumID: String?; public let coverArt: String? }
@@ -207,7 +213,7 @@ public struct PathAnswer: Equatable, Sendable {
                 artistName: by.isEmpty ? nil : by, owned: stop.entity.owned, play: stop.play,
                 story: PathStory.compose(stop.reasons, start: p.start.name, stop: stop.entity.name),
                 firstVia: first?.via, firstCode: first?.code ?? "", creditRole: first?.evidence.first?.relation,
-                anchors: stop.reasons.compactMap(\.anchor))
+                anchors: PathStep.linkAnchors(stop.reasons))
         }
         if let h = p.history, h.state == "ok", steps.isEmpty, h.filteredOut > 0 {
             let most = h.littlePlaysBelow - 1
@@ -251,7 +257,7 @@ public struct PathAnswer: Equatable, Sendable {
                 PathStep(id: i, name: n, detail: detail, why: why, year: nil, cover: cover, symbol: symbol, reasons: reasons,
                          evidence: Self.evidence(first), target: target, artistName: artist, owned: owned,
                          firstVia: first?.via, firstCode: first?.code ?? "", creditRole: first?.evidence.first?.relation,
-                         anchors: stop.reasons.compactMap(\.anchor))
+                         anchors: PathStep.linkAnchors(stop.reasons))
             }
             switch kind {
             case .followTheMusician:
