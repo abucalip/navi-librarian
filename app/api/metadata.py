@@ -152,7 +152,7 @@ def _load_artist_bio(name):
 # Artwork is optional presentation metadata; discovery works without it.
 _ARTWORK_CACHE_TTL = 6 * 60 * 60
 _ARTWORK_NEGATIVE_CACHE_TTL = 5 * 60
-_artwork_cache = {}
+_artwork_cache = LayeredCache("album-artwork")
 
 
 def _musicbrainz_album_year(artist: str, album: str):
@@ -711,20 +711,13 @@ def album_artwork(artist: str = "", album: str = ""):
         raise HTTPException(status_code=400, detail="artist or album is required")
 
     key = (artist.casefold(), album.casefold())
-    now = monotonic()
-    cached = _artwork_cache.get(key)
-    if cached:
-        ttl = _ARTWORK_CACHE_TTL if cached["data"].get("artwork_url") else _ARTWORK_NEGATIVE_CACHE_TTL
-        if now - cached["time"] < ttl:
-            return cached["data"]
-    store_key = "album-artwork:v2:" + key[0] + ":" + key[1]
-    stored = persistent_metadata.read(store_key)
-    if stored and stored.get("artwork_url"):
-        _artwork_cache[key] = {"time": monotonic(), "data": stored}
-        return stored
+    return _artwork_cache.get_or_load(
+        key, lambda: _load_album_artwork(artist, album), store_key="album-artwork:v2:" + key[0] + ":" + key[1],
+        accept_stored=_has_artwork, stored_ttl=_ARTWORK_CACHE_TTL)
 
+
+def _load_album_artwork(artist: str, album: str):
     result = {"artwork_url": None, "image_kind": "album", "source": "Deezer"}
-    lookup_failed = False
     try:
         if artist and album:
             query = urlencode({"q": f'artist:"{artist}" album:"{album}"', "limit": 8})
@@ -764,13 +757,10 @@ def album_artwork(artist: str = "", album: str = ""):
     except Exception:
         # A provider outage must not poison the negative cache for five minutes.
         # Tell the browser this result is transient so it can retry with backoff.
-        lookup_failed = True
         result["retryable"] = True
+        return Loaded(result)
 
-    if not lookup_failed:
-        _artwork_cache[key] = {"time": monotonic(), "data": result}
-        if result.get("artwork_url"):
-            persistent_metadata.write(store_key, result)
-    return result
+    found = bool(result.get("artwork_url"))
+    return Loaded(result, memory_ttl=_ARTWORK_CACHE_TTL if found else _ARTWORK_NEGATIVE_CACHE_TTL, persist=found)
 
 

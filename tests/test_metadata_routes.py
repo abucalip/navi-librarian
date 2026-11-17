@@ -297,9 +297,8 @@ class MetadataRoutesTests(unittest.TestCase):
         self.assertEqual(raised.exception.status_code, 400)
 
         cached = {"artwork_url": "https://example.test/cover.jpg", "image_kind": "album"}
-        metadata._artwork_cache[("artist", "album")] = {"time": 99.0, "data": cached}
-        with patch.object(metadata, "monotonic", return_value=100.0), \
-             patch.object(metadata, "_EXTERNAL_HTTP") as client:
+        metadata._artwork_cache.put(("artist", "album"), cached, 60)
+        with patch.object(metadata, "_EXTERNAL_HTTP") as client:
             self.assertEqual(metadata.album_artwork("Artist", "Album"), cached)
         client.get.assert_not_called()
 
