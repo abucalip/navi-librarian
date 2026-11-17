@@ -1,3 +1,14 @@
+## 2026-11-17 — Server efficiency K3 part 1: worker prefetch of owned artist and album page rows (merged, off by default)
+
+- PR [#1168](https://github.com/abucalip/navi-librarian/pull/1168), squash `7f86842b`, head `e1dc9f29`, merged 2026-11-17 10:53 UTC (GitHub confirms `MERGED`).
+- What changed: `app/services/owned_prefetch.py` is a worker scheduler entry (`owned_prefetch`, before `similar_precompute`). It walks owned artists and albums one of each in turn (50 newest additions first, then by listens) through the page routes' own `artist_page` and `album_sections` with a worker-built network, so it fills the same discovery search-cache and ListenBrainz popularity rows under the same keys. `app/services/prefetch_state.py` holds the caps, the counting `Spend` (a request past a cap or to an unnamed provider is refused before it is sent), per-date spent counts, cursors and coverage in the knowledge store's `meta`. `/api/diagnostics/runtime` gains `prefetch`. `compose.yaml` passes `OWNED_PREFETCH_BUDGETS` to the worker; empty means off. `navidrome_server.py` untouched.
+- Behaviour: Last.fm and Discogs without a cap are switched off for the run; a reached cap ends the run and the cut-short entity is retried next day; a refusal for an unnamed provider only fails that source (a review caught a version that froze the walk on one entity). Run limit one hour, one pass per list.
+- Owner decision (2026-11-17): caps `musicbrainz=600,listenbrainz=300,lastfm=600`, Discogs off, approved. Not yet set anywhere; deployment is paused.
+- Tests run: `pytest` on `test_owned_prefetch` (18 new), `test_worker_schedule`, `test_runtime_metrics`, `test_musicbrainz_gate_boundary`, `test_app_legacy_import_boundary`, `test_worker_heartbeat`, `test_worker_shutdown`, `test_worker_lock`, `test_worker_metadata_prune`, `test_insights_refresh_schedule`, `test_similar_precompute_schedule`: 96 passed, 5 subtests. `check_lint_changed.py --base origin/main`: 0 new findings.
+- CI: six checks on `e1dc9f29` pending at merge and still pending afterwards.
+- Not run: the full suite, M2, a live worker, any provider traffic, a coverage measurement. Not deployed.
+- Limitations: Deezer, Apple and Wikipedia namespaces (album links, details, year, description, artist image) are part 2 and need their loaders extracted from `app/api/metadata.py` and `persistent_metadata.attach` in the worker; album reviews wait for K4. `runtime_metrics` labels Last.fm's API host `other`; the prefetch counts it as `lastfm`.
+
 ## 2026-11-17 — Server efficiency K2 part 2: stale-while-revalidate for artist and album page provider rows (merged)
 
 - PR [#1167](https://github.com/abucalip/navi-librarian/pull/1167), squash `1fbb61c4`, head `8c5f9585`, merged 2026-11-17 10:39 UTC (GitHub confirms `MERGED`).
