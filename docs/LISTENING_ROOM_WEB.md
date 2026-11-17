@@ -26,14 +26,14 @@ A dark, quiet room built around one album. Home opens on a single **lead pick**:
 | `art.css` | Stand-in covers and artist photos for the mockups only. **Not for the app** |
 | `pages/home.html` + `home.png` (1440) + `home-phone.png` (390) | The Home mockup |
 | `pages/reasons.html` + `.png` | Every reason kind, at the hero and card sizes |
-| `pages/states.html` + `.png` | Loading, empty, off, failed, Get states, feedback toasts, hero tint examples |
-| `icons/*.svg`, `icons/icons.svg` | 36 icons on a 24 grid with a 1.75 stroke, and one `<symbol>` sprite (`#lr-<name>`) |
+| `pages/states.html` + `.png` | Loading, empty, off, failed, Get states, feedback, the "…" menu, the phone More sheet, toast, badge, skip link, hero tint examples |
+| `icons/*.svg`, `icons/icons.svg` | 35 icons on a 24 grid with a 1.75 stroke, and one `<symbol>` sprite (`#lr-<name>`) |
 | `fonts/` | Instrument Sans 600 and 700 (Latin woff2) and the OFL licence |
 | `_src/build.py` | Writes `tokens.css` and the icons, puts the sprite into each page, and renders PNGs with Google Chrome |
 | `_src/check_contrast.py` | Checks every contrast pair, and the hero tint over 1,301 cover colours |
 
 ```sh
-python3 docs/design/listening-room/_src/check_contrast.py   # exit 0: all pass (lowest hero text ratio 6.43)
+python3 docs/design/listening-room/_src/check_contrast.py   # exit 0: all pass (lowest hero text ratio 8.57)
 python3 docs/design/listening-room/_src/build.py            # tokens, icons, every PNG; or: build.py home
 ```
 
@@ -103,7 +103,7 @@ Rules (from `UI_DESIGN_RULES.md`):
 
 ### 3.4 Icons
 
-- 36 icons: one 24px grid, 1.75 stroke, round caps and joins, `currentColor`. They are listed in `_src/build.py` (`ICONS`).
+- 35 icons: one 24px grid, 1.75 stroke, round caps and joins, `currentColor`. They are listed in `_src/build.py` (`ICONS`).
 - Use the sprite with `<svg class="lr-icon" aria-hidden="true"><use href="#lr-get"/></svg>`. Slice L1 puts it into `index.html` once.
 - An icon-only button always has an `aria-label`.
 - **Reason kinds and their icons:**
@@ -162,9 +162,11 @@ function heroTint(img) {                         // img: the loaded lead cover <
 // of 0.01 until relative luminance <= 0.04 (never below 0.06). Then set --lr-hero-tint.
 ```
 
-- **Owned covers** (`/api/owned/artwork/<id>`) are same-origin and always work.
-- **Covers for albums you don't own** come from the URL that `/api/artwork` returns, which is usually a provider's image host. Load them with `crossOrigin="anonymous"`. If the host sends no CORS header, reading the canvas throws, and the panel keeps the fallback `#2A1F33`. Slice L3 records how often that happens; if it happens often, D4 applies.
-- **Contrast stays safe whatever the colour.** The clamp caps the panel's luminance at 0.04, so white text, the soft text `#E4E1E8`, the neutral buttons and the side panel pass 4.5:1 on every possible tint. `check_contrast.py` checks 1,301 colours, both ends included; the lowest ratio is 6.43.
+- **The cover you see is never put at risk by sampling.** With `crossOrigin` set, an `<img>` whose host sends no CORS header fails to load at all. So the visible cover is a normal `<img>` without `crossOrigin`, and sampling uses a second, hidden image.
+- **Owned covers** (`/api/owned/artwork/<id>`) are same-origin, so they are sampled straight from the visible `<img>` after it loads.
+- **Covers for albums you don't own** come from the URL that `/api/artwork` returns, which is usually a provider's image host. They are sampled from a second `const probe = new Image(); probe.crossOrigin = 'anonymous'; probe.src = url;`, which is never put into the page. If `probe` fails to load, or `getImageData` throws, the panel keeps the fallback `#2A1F33`. The visible cover is unaffected either way.
+- **How often it fails.** Most lead picks are not owned, so slice L3 records how often the fallback is used. If it is used often, D4 applies.
+- **Contrast stays safe whatever the colour.** The clamp caps the panel's luminance at 0.04, so white text, the soft text `#E4E1E8` and the neutral buttons' labels pass 4.5:1 on every possible tint, and their edges (`rgba(255,255,255,0.44)`) and the accent pass 3:1. `check_contrast.py` checks 1,301 colours, both ends included; the lowest text ratio is 8.57.
 - **No text sits over the art.** Text never lies on the cover, so no scrim is needed.
 
 ## 5. Components
@@ -180,11 +182,12 @@ Class names are the names in `components.css`. The app may rename them but must 
 | 5.5 | Lead pick: `lr-hero`, `lr-hero-cover`, `lr-upnext` | Three columns: cover, body, Up next. The body runs eyebrow → title → artist (avatar 44) · year → reason block (hero size) → actions |
 | 5.6 | **Reason block:** `lr-reason`, `lr-reason-head`, `lr-evidence`, `lr-chip`, `lr-chip-avatar`, `lr-reason-line` | Three sizes (section 6.3). Chips are links when they lead somewhere (tag → genre page, artist → artist page), plain spans when not |
 | 5.7 | Lens tabs: `lr-tab` | `role="tablist"`, arrow keys move between tabs, and the selected tab is filled `chip-selected` |
-| 5.8 | Album card (grid): `lr-card`, `lr-cover`, `lr-card-tools` | Cover → title (link to the album) and artist · year → Get icon and "…" → reason line (2 lines) → one evidence value as meta. On phones Get moves into "…" |
+| 5.8 | Album card (grid): `lr-card`, `lr-cover`, `lr-card-tools` | Cover → title (link to the album, 2 lines) and artist · year → reason line (2 lines) → one evidence value as meta → Get icon and "…" at the bottom left. On phones Get moves into "…" |
 | 5.9 | Row card: `lr-rowcard` | 96 cover; title, meta, then the reason block at card size with up to 3 chips |
 | 5.10 | Panels: `lr-panel`, `lr-dive`, `lr-path`, `lr-genre`, `lr-station` | The Deep Dive panel's artist photo is at least 400 tall, cropped `object-position: 50% 30%` |
 | 5.11 | Getting now: `lr-getting`, `lr-progress` | `role="progressbar"` with a value. Shown only while an acquisition is active |
 | 5.12 | States: `lr-skel`, `lr-note`, `lr-error-text`, `lr-ok-text` | See `pages/states.html` |
+| 5.13 | Overlays and small parts: `lr-skip`, `lr-menu` (+ `-item`, `-sep`, `-danger`), `lr-scrim` + `lr-sheet`, `lr-toast`, `lr-badge` | Drawn on `pages/states.html`. The menu is `role="menu"` (arrow keys, Escape returns focus); on phones it opens as a sheet. The sheet traps focus and closes on Escape, the scrim or a drag down. The toast is `role="status"`, lasts 6 s and is held while hovered or focused. The badge counts active acquisitions, and the link's `aria-label` says the count |
 
 The "…" menu on an album holds the actions that already exist: Get (on phones), Save, More like this, Less like this, Not this artist, Block this genre, Find on music services. The wording is the same as today. Feedback calls `/api/discovery/feedback` and `/api/discovery/artist-lean` as the current code does.
 
@@ -224,6 +227,12 @@ This is the order today's `reasonLine` in `static/app.js` uses, extended. It is 
 | R10 | Add to your collection | `artist_library_album_count`, `lastfm_listeners` | "A well-known album; you have {n} albums by this artist" | listeners | yes (`classics_candidates.py`) |
 | R11 | Discover music | `discovery_category`, `genre_families`, `recent_profile_families`, `anchor_artist`, `lastfm_listeners` | adjacent "Close to genres you already love"; cross_genre "A bridge between {family} and {family}, both in your listening"; adventurous "A step away from your usual genres"; unclassified "Few genre tags, so the fit is a guess" | "Similar to {anchor_artist}" with photo; listeners | yes. The server's long category sentence is replaced by these |
 | R12 | any | `owned` | "In your library" | none | yes |
+
+**Short forms** (line size, section 6.3; drawn in `pages/home.html`):
+- R5: the same sentences as in the table.
+- R7 on the Deep Dive panel, which covers several albums: "You have {n} albums by {artist}. These are the ones not in your library yet."
+- R9: "New in {year} · {n} albums in your library".
+- R10: the same sentence as in the table.
 
 **Not sent, and what the design does without it:**
 - The seed artist behind a lens pick: nothing. The lens tells you the tag, not the artist, so no lens sentence names an artist.

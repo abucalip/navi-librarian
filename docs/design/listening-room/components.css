@@ -109,11 +109,11 @@ a.lr-chip:hover { background: var(--lr-raised); color: var(--lr-text); }
 .lr-cover { width: 100%; aspect-ratio: 1; border-radius: var(--lr-radius-cover); position: relative; overflow: hidden; display: block; }
 .lr-card-row { display: flex; gap: var(--lr-space-8); align-items: start; }
 .lr-card-text { flex: 1; min-width: 0; }
-.lr-card-title { font: 600 14px/20px var(--lr-font-text); color: var(--lr-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lr-card-title { font: 600 14px/20px var(--lr-font-text); color: var(--lr-text); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .lr-card-title a { color: inherit; text-decoration: none; }
 .lr-card-title a:hover { text-decoration: underline; }
 .lr-meta { font: 400 13px/18px var(--lr-font-text); color: var(--lr-text-muted); }
-.lr-card-tools { display: flex; gap: var(--lr-space-4); margin-left: calc(var(--lr-space-8) * -1); }
+.lr-card-tools { display: flex; gap: var(--lr-space-4); margin: calc(var(--lr-space-4) * -1) 0 0 calc(var(--lr-space-16) * -1 + 4px); }
 
 /* 5.9 Row card (Personal Discoveries) */
 .lr-rows { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: var(--lr-space-24); }
@@ -198,3 +198,40 @@ a.lr-chip:hover { background: var(--lr-raised); color: var(--lr-text); }
   .lr-tab { flex: none; }
   .lr-card-get { display: none; }
 }
+
+/* 5.13 Overlays and small parts ------------------------------------------------------------------ */
+/* Skip link: first focusable element, hidden until focused. */
+.lr-skip { position: absolute; left: var(--lr-space-16); top: var(--lr-space-16); z-index: 30; transform: translateY(-200%);
+  min-height: var(--lr-target); padding: 0 var(--lr-space-16); display: inline-flex; align-items: center; border-radius: var(--lr-radius-control);
+  background: var(--lr-accent); color: var(--lr-on-accent); font: 600 14px/16px var(--lr-font-text); text-decoration: none; }
+.lr-skip:focus { transform: none; }
+
+/* "…" menu: opens below its button, aligned to its right edge; flips above when there is no room. */
+.lr-menu { min-width: 240px; padding: var(--lr-space-8); border-radius: var(--lr-radius-control); background: var(--lr-raised);
+  border: 1px solid var(--lr-edge-strong); box-shadow: var(--lr-shadow-menu); display: flex; flex-direction: column; list-style: none; margin: 0; }
+.lr-menu-item { display: flex; align-items: center; gap: var(--lr-space-16); width: 100%; min-height: var(--lr-target); padding: 0 var(--lr-space-16);
+  border: 0; border-radius: 4px; background: transparent; color: var(--lr-text); font: 400 14px/20px var(--lr-font-text); text-align: left; cursor: pointer; }
+.lr-menu-item:hover, .lr-menu-item:focus-visible { background: var(--lr-surface-2); }
+.lr-menu-item .lr-icon { color: var(--lr-text-muted); }
+.lr-menu-sep { height: 1px; margin: var(--lr-space-4) 0; background: var(--lr-edge); }
+.lr-menu-danger { color: var(--lr-danger); }
+
+/* Phone bottom sheet (More tab, and the "…" menu on phones). */
+.lr-scrim { position: fixed; inset: 0; background: var(--lr-scrim); z-index: 20; }
+.lr-sheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 21; padding: var(--lr-space-8) var(--lr-space-16) var(--lr-space-32);
+  border-radius: var(--lr-radius-panel) var(--lr-radius-panel) 0 0; background: var(--lr-raised); border-top: 1px solid var(--lr-edge-strong);
+  transition: transform var(--lr-motion-sheet); }
+.lr-sheet-handle { width: 32px; height: 4px; border-radius: 2px; background: var(--lr-edge-strong); margin: 0 auto var(--lr-space-16); }
+.lr-sheet-title { font: 600 16px/24px var(--lr-font-text); margin-bottom: var(--lr-space-8); }
+
+/* Toast: bottom-left on desktop, above the tab bar on phones; 6 s, held while hovered or focused. */
+.lr-toast { position: fixed; left: calc(var(--lr-rail-width) + var(--lr-space-24)); bottom: var(--lr-space-24); z-index: 25; max-width: 420px;
+  display: flex; align-items: center; gap: var(--lr-space-16); padding: var(--lr-space-16); border-radius: var(--lr-radius-control);
+  background: var(--lr-raised); border: 1px solid var(--lr-edge-strong); box-shadow: var(--lr-shadow-menu); color: var(--lr-text); font: 400 14px/21px var(--lr-font-text); }
+@media (max-width: 1079px) { .lr-toast { left: calc(72px + var(--lr-space-16)); } }
+@media (max-width: 719px) { .lr-toast { left: var(--lr-space-16); right: var(--lr-space-16); bottom: calc(var(--lr-tabbar-height) + var(--lr-space-16)); max-width: none; } }
+
+/* Badge on the Acquisitions item (icon rail) and the Getting tab (phone): count of active acquisitions. */
+.lr-badge-host { position: relative; }
+.lr-badge { position: absolute; top: 4px; right: 4px; min-width: 18px; height: 18px; padding: 0 4px; border-radius: 9px; background: var(--lr-accent);
+  color: var(--lr-on-accent); font: 600 11px/18px var(--lr-font-text); text-align: center; }

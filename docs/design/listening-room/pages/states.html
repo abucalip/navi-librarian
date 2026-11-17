@@ -57,7 +57,7 @@
 <div class="sheet">
   <header>
     <p class="lr-eyebrow">Listening Room · states</p>
-    <h1 class="lr-type-page-title" style="margin-top: 8px;">Loading, empty, off, failed, and Get</h1>
+    <h1 class="lr-type-page-title" style="margin-top: 8px;">States, menus, sheets and toasts</h1>
     <p class="lr-section-sub" style="max-width: 75ch;">Each Home section loads and fails on its own; one section's error never blanks the page. Messages say what happened and what to do, in words.</p>
   </header>
 
@@ -114,6 +114,51 @@
       <div class="lr-note" role="status"><svg class="lr-icon"><use href="#lr-check"/></svg><div><p class="lr-note-title">Skipped Afrique Victime</p><p class="lr-note-text">It will not come back in this list.</p></div></div>
       <div class="lr-note" role="status"><svg class="lr-icon"><use href="#lr-lean-more"/></svg><div><p class="lr-note-title">More like Mdou Moctar</p><p class="lr-note-text">Counts the next time the lists are built. Change it in <a href="#">Settings</a>.</p></div></div>
       <p class="lr-meta">A toast in the bottom-left on desktop, above the tab bar on phones, 6 s, and it stays while focused or hovered.</p>
+    </section>
+  </div>
+
+
+  <div class="three">
+    <section class="lr-panel" aria-label="Album menu">
+      <p class="lr-eyebrow">"…" menu (desktop)</p>
+      <ul class="lr-menu" style="position: static;">
+        <li><button type="button" class="lr-menu-item"><svg class="lr-icon"><use href="#lr-get"/></svg>Get this album</button></li>
+        <li><button type="button" class="lr-menu-item"><svg class="lr-icon"><use href="#lr-saved"/></svg>Save</button></li>
+        <li><button type="button" class="lr-menu-item"><svg class="lr-icon"><use href="#lr-lean-more"/></svg>More like this</button></li>
+        <li><button type="button" class="lr-menu-item"><svg class="lr-icon"><use href="#lr-lean-less"/></svg>Less like this</button></li>
+        <li><button type="button" class="lr-menu-item"><svg class="lr-icon"><use href="#lr-external"/></svg>Find on music services</button></li>
+        <li class="lr-menu-sep" role="separator"></li>
+        <li><button type="button" class="lr-menu-item lr-menu-danger"><svg class="lr-icon"><use href="#lr-block"/></svg>Not this artist</button></li>
+        <li><button type="button" class="lr-menu-item lr-menu-danger"><svg class="lr-icon"><use href="#lr-tag"/></svg>Block this genre</button></li>
+      </ul>
+      <p class="lr-meta">role="menu" on the list, role="menuitem" on each button; arrow keys move, Escape closes and returns focus to "…". Get is in the menu on phones only. Destructive items ask to confirm with a sheet or dialog that names the artist or genre.</p>
+    </section>
+
+    <section class="lr-panel" aria-label="More sheet">
+      <p class="lr-eyebrow">Phone · More sheet</p>
+      <div style="position: relative; height: 360px; border-radius: 8px; overflow: hidden; background: var(--lr-bg); border: 1px solid var(--lr-edge);">
+        <div class="lr-scrim" style="position: absolute;"></div>
+        <div class="lr-sheet" style="position: absolute;" role="dialog" aria-label="More">
+          <div class="lr-sheet-handle"></div>
+          <p class="lr-sheet-title">More</p>
+          <a class="lr-nav" href="#"><svg class="lr-icon"><use href="#lr-saved"/></svg>Saved</a>
+          <a class="lr-nav" href="#"><svg class="lr-icon"><use href="#lr-paths"/></svg>Paths</a>
+          <a class="lr-nav" href="#"><svg class="lr-icon"><use href="#lr-radio"/></svg>Radio</a>
+          <a class="lr-nav" href="#"><svg class="lr-icon"><use href="#lr-settings"/></svg>Settings</a>
+        </div>
+      </div>
+      <p class="lr-meta">Rises in 200 ms (0 under reduced motion). Focus moves into the sheet and is kept there; Escape, the scrim or a downward drag closes it.</p>
+    </section>
+
+    <section class="lr-panel" aria-label="Toast, badge, skip link">
+      <p class="lr-eyebrow">Toast · badge · skip link</p>
+      <div class="lr-toast" role="status" style="position: static; max-width: none;"><svg class="lr-icon"><use href="#lr-check"/></svg><span>Requested Afrique Victime. <a href="#">Follow it</a></span></div>
+      <div style="display: flex; gap: 24px; align-items: center;">
+        <span class="lr-badge-host lr-nav" style="flex: none; width: 44px; height: 44px; padding: 0; justify-content: center; background: var(--lr-rail);"><svg class="lr-icon"><use href="#lr-acquisitions"/></svg><span class="lr-badge" aria-hidden="true">2</span></span>
+        <p class="lr-meta">Icon rail and phone Getting tab: count of active acquisitions; the link's aria-label says "Acquisitions, 2 active".</p>
+      </div>
+      <a class="lr-skip" href="#" style="position: static; transform: none; align-self: start;">Skip to content</a>
+      <p class="lr-meta">The skip link is shown only while focused, top-left.</p>
     </section>
   </div>
 

@@ -72,22 +72,25 @@ def check_pairs(failures):
 
 
 def check_hero(failures):
-    """Hero text, soft text and button labels pass on every clamped tint, both ends included."""
+    """Hero text, soft text, button labels and control edges pass on every clamped tint, both ends included."""
     hero = TOKENS["hero"]
     samples = [None, (1.0, 1.0, 1.0), (0.0, 0.0, 0.0), (1.0, 1.0, 0.0), (0.0, 1.0, 1.0)]
     samples += [colorsys.hls_to_rgb(h / 360, l / 10, s / 10)
                 for h in range(0, 360, 10) for l in range(0, 11, 2) for s in range(0, 11, 2)]
+    edge_alpha = float(hero["button-edge"].rstrip(")").split(",")[-1])
     worst = (99.0, None)
     for sample in samples:
         panel = hero_tint(sample)
         button = over(1.0, 0.10, panel)
+        edge = over(1.0, edge_alpha, panel)
         aside = over(0.0, 0.28, panel)
         accent = TOKENS["color"]["accent"]["value"]
         checks = [(hero["text"], panel, 4.5), (hero["text-soft"], panel, 4.5), (hero["text"], button, 4.5),
-                  (hero["text-soft"], aside, 4.5), (accent, panel, 3.0)]
+                  (hero["text-soft"], aside, 4.5), (accent, panel, 3.0), (edge, panel, 3.0)]
         for fore, back, minimum in checks:
             got = ratio(fore, back)
-            worst = min(worst, (got, (fore, sample)), key=lambda item: item[0])
+            if minimum >= 4.5:
+                worst = min(worst, (got, (fore, sample)), key=lambda item: item[0])
             if got < minimum:
                 failures.append(f"hero {fore} on tint of {sample}: {got:.2f}")
     print(f"hero: {len(samples)} samples, lowest text ratio {worst[0]:.2f}")
