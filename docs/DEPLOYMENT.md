@@ -89,6 +89,42 @@ For a future deployment/update:
 6. For destructive dismissal, use a known test album/folder and verify only the intended files are removed.
 7. Record deployed image tag **and digest**, date/time, host, smoke-test result, and any deviations in `PROJECT_LOG.md`.
 
+## Backup and restore
+
+`scripts/backup_stores.py` copies every SQLite store under the data directory while the app and worker keep running. It uses the SQLite online backup API (`sqlite3.Connection.backup`), never a file copy: the stores run in WAL mode, so the main file alone (or a copy taken between its `-wal` and `-shm` files) is not a consistent snapshot. The source is never written. The script lists the stores explicitly (no glob); `tests/test_backup_stores.py` checks the list against the code that owns each file name.
+
+Stores covered (relative to the data directory): `navidrome_discovery.sqlite3` (settings and saved credentials, acquisitions, discovery lists), `intelligence.sqlite3` (knowledge store, rebuildable), `intelligence.state.sqlite3` (owner decisions, not rebuildable), `navidrome_metadata_cache.sqlite3`, `provider_gate.sqlite3`, `radio.sqlite3`, `artwork/artwork.sqlite3` (image index) and `song_peaks.sqlite3`. A store that does not exist yet is reported as `skipped`. Not covered: `app_auth.key` (the web-session signing key; copy it with its mode 0600, or lose only the current logins), the cached artwork image files, and the music library.
+
+The settings file holds credentials. Each copy is created with mode `0600` inside a backup directory with mode `0700`; keep it off shared or world-readable locations. The summary prints file names, sizes and `ok` / `skipped` / `failed (ErrorType)` only, never contents. Exit code 0 means every present store was copied and passed `PRAGMA integrity_check`; 1 means a copy failed or no store was found (usually a wrong data directory).
+
+Run on the host, from a source checkout and its virtual environment, with the data directory of the deployment (for a Docker named volume, the volume's path on the host, or use the container form):
+
+```sh
+DISCAIR_DATA_DIR=/path/to/data python scripts/backup_stores.py --dest /path/to/backups
+```
+
+Inside the running container (the image does not include `scripts/`, so copy the script in first; it needs only the modules already in `/app`):
+
+```sh
+docker cp scripts/backup_stores.py discair:/tmp/backup_stores.py
+docker exec -e PYTHONPATH=/app discair python /tmp/backup_stores.py --dest /tmp/backups
+docker cp discair:/tmp/backups ./discair-backups
+```
+
+Each run writes a new `stores-<UTC timestamp>` subdirectory under `--dest`. The script refuses a destination inside the data directory (a backup stored in the volume it protects is not a backup), so the container form writes to `/tmp` and copies out; delete the temporary copy afterwards (`docker exec discair rm -rf /tmp/backups`), since it holds credentials.
+
+Restore (stops all writers; the backup copies are single files with no `-wal` or `-shm`):
+
+1. `docker compose stop discair` (the web process and the worker both run in this service; make sure nothing else writes to the data directory).
+2. Keep the current files aside, for example `mv /data /data.before-restore`, or copy the ones you will replace.
+3. Copy the wanted files from the backup directory into the data directory under the same relative names, and delete any stale `<name>-wal` and `<name>-shm` beside each replaced file. A leftover WAL from the old file would be replayed onto the restored one.
+4. Set the mode of every restored file to `0600` and make sure the container user owns them (`chown`).
+5. `docker compose up -d discair`, then check `docker compose logs --tail=100 discair` and sign in.
+
+Partial restore: to recover only owner decisions after a knowledge-store wipe, restore `intelligence.state.sqlite3` alone and let the knowledge store rebuild; it attaches the state file beside it and the decisions are read again (covered by `tests/test_backup_stores.py`).
+
+Not verified here: a run against the live host and its production-size stores, and the time a copy takes on a large knowledge store.
+
 ## Rollback
 
 - Keep the previous working image tag/digest recorded before an upgrade.
