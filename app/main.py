@@ -249,6 +249,8 @@ app.include_router(metadata_router)
 persistent_metadata.attach(
     lambda key, ttl: get_librarian()._metadata_cache_get(key, ttl),
     lambda key, value: get_librarian()._metadata_cache_set(key, value),
+    # Efficiency K2: ages for stale-while-revalidate, read from the same store.
+    get_with_age=lambda key, max_age: get_librarian()._metadata_cache.get_with_age(key, max_age),
 )
 app.include_router(dashboard_router)
 app.include_router(radio_router)

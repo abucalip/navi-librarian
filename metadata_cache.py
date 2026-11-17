@@ -67,6 +67,26 @@ class MetadataCache:
             # A cache problem must never prevent recommendations from working.
             return None
 
+    def get_with_age(self, key, max_age_seconds):
+        """``(value, age_seconds)`` for a row no older than ``max_age_seconds``, else None.
+
+        For stale-while-revalidate (efficiency K2): the caller decides whether the age is fresh or
+        stale. ``get`` is unchanged. Cache errors are misses.
+        """
+        try:
+            rows = self._execute(
+                "SELECT value_json, cached_at FROM metadata_cache WHERE cache_key = ?",
+                (key,),
+            )
+            if not rows:
+                return None
+            age = max(0.0, self._clock() - rows[0][1])
+            if age > max_age_seconds:
+                return None
+            return json.loads(rows[0][0]), age
+        except (sqlite3.Error, ValueError, TypeError):
+            return None
+
     def set(self, key, value):
         """Store JSON-compatible metadata; cache errors are non-fatal."""
         try:
