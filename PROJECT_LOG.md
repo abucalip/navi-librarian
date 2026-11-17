@@ -1,10 +1,11 @@
 ## 2026-11-17 — Server efficiency M3: process-local state inventory
 
+- PR [#1149](https://github.com/abucalip/navi-librarian/pull/1149), squash `9cb57a1a`, head `7ad0677f`, merged 2026-11-17 00:06 UTC (GitHub confirms `MERGED`). CI at merge: `validate-container` passed; `compile`, `lint-changed`, `container-smoke` and `test-and-build` were pending. Closeout (this entry and the status update) committed directly to `main`, as the owner asked.
 - Branch `docs/efficiency-m3-state-inventory` from `main` at `cc14fb51`. Changes: `docs/efficiency.md` (new Appendix A: threads and pools, caches and registries, locks in `navidrome_server.py` and route modules, process-wide patches, findings A5.1 to A5.5, cross-references from W2, W3 and K1; M3 status; evidence log), `docs/PROJECT_STATUS.md`, this log.
 - Method: grep for `threading.Thread(`, `ThreadPoolExecutor(`, `threading.Lock/RLock/Event/Semaphore(`, `lru_cache` (none in server code) and module-level mutable containers in the server packages and `navidrome_server.py`; each hit read. Constant tables excluded.
 - Open item: `navidrome_server._DISCOVERY_ACQUIRE_ACTIVE` has no writer in its own module; the writer must be found before W3.
 - Tests run: none. Documentation only; no code changed. Not run: any test, lint or full suite. Not deployed.
-- PR opened as the owner asked, although `CLAUDE.md` allows documentation-only changes straight to `main`.
+- Merged through a PR, as the owner asked.
 
 ## 2026-11-17 — Server efficiency M2: knowledge-route and full baseline
 
