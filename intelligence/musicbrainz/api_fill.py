@@ -113,7 +113,7 @@ class FillResult:
     failures: int = 0
     pending_artists: int = 0
     pending_releases: int = 0
-    stopped: str | None = None  # no_slice | request_budget | failures
+    stopped: str | None = None  # no_slice | request_budget | failures | shutdown
 
     def summary(self) -> dict[str, Any]:
         return dict(self.__dict__)
@@ -269,11 +269,14 @@ def run_api_fill(
     require_slice: bool = True,
     only: frozenset[str] | None = None,
     clock: Callable[[], float] = time.time,
+    should_stop: Callable[[], bool] = lambda: False,
 ) -> runner.RunResult:
     """Fill what is missing for owned entities, within ``max_requests``; safe to repeat.
 
     ``only`` (lowercase MBIDs) limits the run to those entities, so a caller that knows which
-    albums are new spends no requests on the rest of the library.
+    albums are new spends no requests on the rest of the library. ``should_stop`` (the worker's
+    stop event) is checked before each request; when it is set the run ends after the request in
+    flight, is recorded ``stopped = "shutdown"`` and left queued, so the next run resumes it.
     """
     paced = fetch if isinstance(fetch, Paced) else Paced(fetch or http_fetch)
 
@@ -290,6 +293,9 @@ def run_api_fill(
         failures = 0  # consecutive failed requests
 
         def spent() -> bool:
+            if should_stop():
+                result.stopped = "shutdown"
+                return True
             return paced.requests >= max_requests or failures >= MAX_FAILURES_IN_A_ROW or not ctx.has_budget()
 
         def record_failure(operation: str, mbids) -> None:
@@ -341,6 +347,9 @@ def run_api_fill(
             ctx.checkpoint(result.summary(), items=1)
 
         result.requests = paced.requests
+        if result.stopped == "shutdown":
+            ctx.checkpoint(result.summary())
+            return False
         result.pending_artists = len(wanted(pending_artists(db, clock())))
         result.pending_releases = len(wanted(pending_releases(db, clock())))
         if failures >= MAX_FAILURES_IN_A_ROW:
