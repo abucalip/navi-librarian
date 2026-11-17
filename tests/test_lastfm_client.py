@@ -89,15 +89,6 @@ class LastFmClientTests(unittest.TestCase):
         bad_json = self.make_client(http_get=lambda *_a, **_k: FakeResponse(ValueError("bad json")))
         self.assertIsNone(bad_json.cached_call("artist.getTopAlbums", artist="A"))
 
-    def test_legacy_server_adapter_delegates(self):
-        import navidrome_server
-        expected = {"ok": True}
-        with patch.object(navidrome_server._lastfm_client, "cached_call", return_value=expected) as call:
-            self.assertIs(navidrome_server._lastfm_cached_call("artist.getSimilar", ttl_seconds=60, artist="A"), expected)
-        call.assert_called_once_with("artist.getSimilar", ttl_seconds=60, artist="A")
-
-
-
     def test_similar_artists_normalizes_scores_and_preserves_request_contract(self):
         payload = {"similarartists": {"artist": [
             {"name": " Artist One ", "match": "0.75"},

@@ -56,11 +56,9 @@ from acquisition.completion import (
 from pathlib import Path
 from urllib.parse import urlparse
 from settings.data_directory import resolve_data_dir
-from music_tag_audit import scan_missing_mbids
 
 import httpx
 from dotenv import load_dotenv
-from mutagen import File
 load_dotenv(Path(__file__).with_name(".env"))
 
 # Mutable application state lives outside the source tree when configured (e.g. Docker /data).
@@ -103,91 +101,6 @@ def api_call(method, **params):
 def items(value):
     """Compatibility adapter for Subsonic collection normalization."""
     return _navidrome_client.items(value)
-
-
-def library_overview() -> str:
-    """Summarize the artists and albums recently added to Navidrome."""
-    artists_root = api_call("getArtists")
-    indexes = artists_root.get("artists", {}).get("index", [])
-    artists = [
-        artist
-        for index in indexes
-        for artist in items(index.get("artist"))
-    ]
-
-    albums_root = api_call(
-        "getAlbumList2",
-        type="newest",
-        size=20,
-        offset=0,
-    )
-    albums = items(
-        albums_root.get("albumList2", {}).get("album")
-    )
-
-    from integrations.navidrome.client import library_overview_payload
-    return json.dumps(
-        library_overview_payload(artists, albums),
-        ensure_ascii=False,
-        indent=2,
-    )
-
-
-def search_music(query: str, category: str = "all") -> str:
-    """Search Navidrome for artists, albums, or tracks.
-
-    category must be all, artist, album, or track.
-    """
-    if not query.strip():
-        return "Please provide a search query."
-
-    if category not in {"all", "artist", "album", "track"}:
-        return "Invalid category. Use all, artist, album, or track."
-
-    root = api_call(
-        "search3",
-        query=query.strip(),
-        artistCount=10,
-        albumCount=10,
-        songCount=20,
-    )
-    result = root.get("searchResult3", {})
-
-    from integrations.navidrome.client import search_result_payload
-    return json.dumps(
-        search_result_payload(result, category, items),
-        ensure_ascii=False,
-        indent=2,
-    )
-
-
-def get_album_details(album_id: str) -> str:
-    """Get album metadata and track listings using an album ID from search_music."""
-    if not album_id.strip():
-        return "Please provide an album ID."
-
-    root = api_call("getAlbum", id=album_id)
-    album = root.get("album", {})
-
-    from integrations.navidrome.client import album_details_payload
-    return json.dumps(
-        album_details_payload(album, items),
-        ensure_ascii=False,
-        indent=2,
-    )
-
-
-def find_missing_mbids(max_files: int = 1000, offset: int = 0) -> str:
-    """Read audio tags and report missing MusicBrainz IDs without modifying files."""
-    result = scan_missing_mbids(
-        MUSIC_DIR,
-        max_files=max_files,
-        offset=offset,
-        audio_file_reader=File,
-    )
-    if isinstance(result, str):
-        return result
-    return json.dumps(result, ensure_ascii=False, indent=2)
 
 
 def _listenbrainz_recent(days=30, page_limit=3):
@@ -838,11 +751,6 @@ _lastfm_client = _lastfm_client_module.LastFmClient(
 )
 
 
-def _lastfm_cached_call(method, ttl_seconds=30 * 24 * 60 * 60, **params):
-    """Compatibility adapter for the extracted Last.fm client."""
-    return _lastfm_client.cached_call(method, ttl_seconds=ttl_seconds, **params)
-
-
 def _discovery_library_snapshot():
     """Compatibility adapter for cached Navidrome library inventory assembly."""
     from discovery.library_snapshot import build_library_snapshot
@@ -1170,11 +1078,6 @@ _settings_persistence = SettingsPersistence(
 def _set_music_dir(path):
     global MUSIC_DIR
     MUSIC_DIR = path
-
-
-def _discovery_settings_init():
-    """Compatibility wrapper for initializing the persistent settings store."""
-    return _settings_persistence.initialize()
 
 
 def _discovery_settings_read():
