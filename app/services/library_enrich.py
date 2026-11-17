@@ -16,6 +16,7 @@ from app.api.insights import STORE_FILE
 from discovery.library_snapshot import fetch_album_inventory
 from intelligence.musicbrainz import auto_fill, update_requests
 from intelligence.store import open_store
+from intelligence.store import repositories as repo
 
 logger = logging.getLogger(__name__)
 
@@ -56,14 +57,33 @@ def poll_once(librarian, db):
     )
 
 
+def find_artist_id(librarian, db, mbid):
+    """The Navidrome id of the library artist with this (lower-case) MusicBrainz id, or None.
+
+    The store's artist entity usually carries the Navidrome id already (efficiency P5): one
+    ``getArtist`` call confirms it still names this artist. Navidrome ids can change after a rescan,
+    so a missing, changed or failing id falls back to reading the full ``getArtists`` index.
+    """
+    entity = repo.find_entity(db, "artist", mbid=mbid)
+    known = entity.get("navidrome_id") if entity else None
+    if known:
+        try:
+            artist = librarian.api_call("getArtist", id=known).get("artist") or {}
+        except RuntimeError:   # Navidrome no longer knows this id
+            artist = {}
+        if str(artist.get("musicBrainzId") or "").lower() == mbid:
+            return known
+    for index in librarian.api_call("getArtists").get("artists", {}).get("index", []):
+        for artist in librarian.items(index.get("artist")):
+            if str(artist.get("musicBrainzId") or "").lower() == mbid:
+                return artist.get("id")
+    return None
+
+
 def handle_requests(librarian, db):
     """Process queued manual update requests (the "Request update" button); returns how many ran."""
     def find_artist(mbid):
-        for index in librarian.api_call("getArtists").get("artists", {}).get("index", []):
-            for artist in librarian.items(index.get("artist")):
-                if str(artist.get("musicBrainzId") or "").lower() == mbid:
-                    return artist.get("id")
-        return None
+        return find_artist_id(librarian, db, mbid)
 
     ran = 0
     while update_requests.process_next(
