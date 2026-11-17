@@ -1,11 +1,12 @@
-"""Insights refresh cadence and stop handling (efficiency R5). No real provider or Navidrome call is made."""
+"""Insights refresh cadence and stop handling (efficiency R5, scheduled by W1). No real provider or Navidrome call is made."""
 import tempfile
 import threading
-import time
 import unittest
 from pathlib import Path
 from unittest import mock
 
+import app.worker as worker
+from app import worker_schedule
 from app.api.insights import LENSES_ENV, STORE_FILE
 from app.services import insights_refresh as ir
 from intelligence.insights.forgotten_gems import CARD_KIND as GEMS_KIND
@@ -47,52 +48,24 @@ class Resp:
         return {}
 
 
-class Schedule(unittest.TestCase):
-    def setUp(self):
-        tmp = tempfile.TemporaryDirectory()
-        self.addCleanup(tmp.cleanup)
-        self.lib = Lib(tmp.name)
-        self.store_path = self.lib.DATA_DIR / STORE_FILE
-        ensure_store(self.store_path)
+class Due(unittest.TestCase):
+    """``is_due`` is the scheduler's rule for this job: R5's window and edge cases, now with the last run passed in."""
 
-    def stored(self):
-        db = open_store(self.store_path)
-        self.addCleanup(db.close)
-        return db
-
-    def test_lens_off_opens_no_store(self):
-        fresh = tempfile.TemporaryDirectory()
-        self.addCleanup(fresh.cleanup)
-        lib = Lib(fresh.name)
-        self.assertEqual(ir._seconds_until_due(lib, NOW, {LENSES_ENV: ""}), 0.0)
-        self.assertFalse((Path(fresh.name) / STORE_FILE).exists())
+    def test_lens_off_is_never_due(self):
+        self.assertFalse(ir.is_due(NOW, None, {LENSES_ENV: ""}))
 
     def test_never_refreshed_is_due(self):
-        self.assertEqual(ir._seconds_until_due(self.lib, NOW, GEMS_ENV), 0.0)
+        self.assertTrue(ir.is_due(NOW, None, GEMS_ENV))
 
     def test_recent_refresh_waits_the_rest_of_the_window(self):
-        ir._record_run(self.lib, NOW)
-        self.assertEqual(ir._seconds_until_due(self.lib, NOW + 100, GEMS_ENV), CHECK - 100)
+        self.assertFalse(ir.is_due(NOW + 100, NOW, GEMS_ENV))
+        self.assertFalse(ir.is_due(NOW + CHECK - 1, NOW, GEMS_ENV))
 
     def test_refresh_at_the_window_edge_is_due(self):
-        ir._record_run(self.lib, NOW)
-        self.assertEqual(ir._seconds_until_due(self.lib, NOW + CHECK, GEMS_ENV), 0.0)
+        self.assertTrue(ir.is_due(NOW + CHECK, NOW, GEMS_ENV))
 
     def test_stored_time_ahead_of_the_clock_is_due_not_frozen(self):
-        ir._record_run(self.lib, NOW + 5000)
-        self.assertEqual(ir._seconds_until_due(self.lib, NOW, GEMS_ENV), 0.0)
-
-    def test_unreadable_stored_time_is_due(self):
-        db = self.stored()
-        db.execute("INSERT INTO meta (key, value) VALUES (?, 'not a time')", (ir.LAST_RUN_KEY,))
-        db.commit()
-        self.assertEqual(ir._seconds_until_due(self.lib, NOW, GEMS_ENV), 0.0)
-
-    def test_record_overwrites_the_previous_time(self):
-        ir._record_run(self.lib, NOW)
-        ir._record_run(self.lib, NOW + 10)
-        rows = self.stored().execute("SELECT value FROM meta WHERE key = ?", (ir.LAST_RUN_KEY,)).fetchall()
-        self.assertEqual([float(r["value"]) for r in rows], [NOW + 10])
+        self.assertTrue(ir.is_due(NOW, NOW + 5000, GEMS_ENV))
 
 
 class CountingStop(unittest.TestCase):
@@ -113,63 +86,61 @@ class CountingStop(unittest.TestCase):
         self.assertEqual(get.used, 2)
 
 
-class Loop(unittest.TestCase):
+class ScheduledRun(unittest.TestCase):
+    """The worker's insights entry under the real scheduler (efficiency W1)."""
+
     def setUp(self):
         tmp = tempfile.TemporaryDirectory()
         self.addCleanup(tmp.cleanup)
         self.lib = Lib(tmp.name)
-        ensure_store(self.lib.DATA_DIR / STORE_FILE)
+        self.path = self.lib.DATA_DIR / STORE_FILE
+        ensure_store(self.path)
+        self.stop = threading.Event()
+        lenses = mock.patch.object(ir, "enabled_lenses", return_value={GEMS_KIND})
+        lenses.start()
+        self.addCleanup(lenses.stop)
 
-    def run_loop(self, stop):
-        thread = threading.Thread(target=ir._loop, args=(self.lib, stop), daemon=True)
-        thread.start()
-        return thread
+    def scheduler(self, now):
+        entries = [e for e in worker.schedule_entries(self.lib, self.stop) if e.name == "insights_refresh"]
+        return worker_schedule.Scheduler(entries, self.path, clock=lambda: now)
 
-    def test_stop_ends_the_loop_while_it_waits(self):
-        entered, stop = threading.Event(), threading.Event()
-
-        def lens_off(environ=None):
-            entered.set()
-            return set()
-
-        with mock.patch.object(ir, "enabled_lenses", side_effect=lens_off):
-            thread = self.run_loop(stop)
-            self.assertTrue(entered.wait(2))
-            stop.set()
-            thread.join(2)
-        # With time.sleep(CHECK) this join would time out after 2 s.
-        self.assertFalse(thread.is_alive())
+    def stored(self):
+        db = open_store(self.path)
+        self.addCleanup(db.close)
+        return worker_schedule.last_runs(db)
 
     def test_run_cut_short_by_shutdown_is_not_recorded(self):
-        stop = threading.Event()
-
         def cut_short(librarian, environ=None, stop=None):
             stop.set()
             return {}
 
-        with mock.patch.object(ir, "enabled_lenses", return_value={GEMS_KIND}), \
-                mock.patch.object(ir, "refresh_once", side_effect=cut_short):
-            self.run_loop(stop).join(2)
-        self.assertEqual(ir._seconds_until_due(self.lib, time.time(), GEMS_ENV), 0.0)
-        rows = open_store(self.lib.DATA_DIR / STORE_FILE).execute(
-            "SELECT 1 FROM meta WHERE key = ?", (ir.LAST_RUN_KEY,)).fetchall()
-        self.assertEqual(rows, [])
+        with mock.patch.object(ir, "refresh_once", side_effect=cut_short):
+            self.assertEqual(self.scheduler(NOW).run_due(self.stop), [])
+        self.assertEqual(self.stored(), {})
 
     def test_completed_run_is_recorded_and_the_next_start_waits(self):
-        stop = threading.Event()
+        with mock.patch.object(ir, "refresh_once", return_value={"forgotten_gem": "succeeded"}) as refresh:
+            self.assertEqual(self.scheduler(NOW).run_due(self.stop), ["insights_refresh"])
+            self.assertEqual(self.scheduler(NOW + CHECK - 1).run_due(self.stop), [])   # restart inside the window
+            self.assertEqual(self.scheduler(NOW + CHECK).run_due(self.stop), ["insights_refresh"])
+        self.assertEqual(refresh.call_count, 2)
+        self.assertEqual(self.stored(), {"insights_refresh": NOW + CHECK})
 
-        def done(librarian, environ=None, stop=None):
-            return {"forgotten_gem": "succeeded"}
+    def test_first_start_after_the_upgrade_honours_the_r5_time(self):
+        db = open_store(self.path)
+        with db:
+            db.execute("INSERT INTO meta (key, value) VALUES (?, ?)", (ir.LAST_RUN_KEY, str(NOW)))
+        db.close()
+        with mock.patch.object(ir, "refresh_once") as refresh:
+            self.assertEqual(self.scheduler(NOW + 100).run_due(self.stop), [])
+        refresh.assert_not_called()
 
-        with mock.patch.object(ir, "enabled_lenses", return_value={GEMS_KIND}), \
-                mock.patch.object(ir, "refresh_once", side_effect=done):
-            thread = self.run_loop(stop)
-            deadline = time.time() + 5
-            while time.time() < deadline and ir._seconds_until_due(self.lib, time.time(), GEMS_ENV) == 0.0:
-                time.sleep(0.02)
-            stop.set()
-            thread.join(2)
-        self.assertGreater(ir._seconds_until_due(self.lib, time.time(), GEMS_ENV), 0.0)
+    def test_lens_off_runs_and_records_nothing(self):
+        with mock.patch.object(ir, "enabled_lenses", return_value=set()), \
+                mock.patch.object(ir, "refresh_once") as refresh:
+            self.assertEqual(self.scheduler(NOW).run_due(self.stop), [])
+        refresh.assert_not_called()
+        self.assertEqual(self.stored(), {})
 
 
 class ProviderStop(unittest.TestCase):

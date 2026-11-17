@@ -273,7 +273,7 @@ class WorkerTests(unittest.TestCase):
         import app.worker as worker
         stop = threading.Event()
         stop.set()
-        with __import__("unittest").mock.patch.object(worker.insights_refresh, "start"):
+        with __import__("unittest").mock.patch.object(worker.worker_schedule, "start"):
             self.assertEqual(worker.main(librarian=self.lib(), stop=stop), 0)
 
     def test_web_startup_starts_no_knowledge_store_writer(self):
@@ -290,11 +290,14 @@ class WorkerTests(unittest.TestCase):
         stop.set()                      # main() returns as soon as both jobs are started
         started = threading.Event()
         lib = self.lib()
-        with mock.patch.object(worker.insights_refresh, "start") as insights, \
+        with mock.patch.object(worker.worker_schedule, "start") as insights, \
                 mock.patch.object(worker.library_enrich, "run_forever", side_effect=lambda *a: started.set()) as fill:
             worker.main(librarian=lib, stop=stop)
             self.assertTrue(started.wait(2))
-        insights.assert_called_once_with(lib, stop)
+        entries, store_path, passed_stop = insights.call_args.args
+        self.assertIn("insights_refresh", [entry.name for entry in entries])
+        self.assertEqual(store_path, lib.DATA_DIR / worker.STORE_FILE)
+        self.assertIs(passed_stop, stop)
         fill.assert_called_once_with(lib, stop)
 
     def test_switching_auto_fill_off_keeps_the_worker_and_insights_running(self):
@@ -303,7 +306,7 @@ class WorkerTests(unittest.TestCase):
         import app.worker as worker
         stop = threading.Event()
         result = []
-        with mock.patch.object(worker.insights_refresh, "start") as insights, \
+        with mock.patch.object(worker.worker_schedule, "start") as insights, \
                 mock.patch.dict("os.environ", {library_enrich.POLL_ENV: "off"}):
             thread = threading.Thread(target=lambda: result.append(worker.main(librarian=self.lib(), stop=stop)))
             thread.start()

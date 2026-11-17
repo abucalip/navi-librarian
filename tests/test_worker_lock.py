@@ -44,7 +44,7 @@ class WorkerLockTests(unittest.TestCase):
     def test_main_returns_1_without_starting_jobs_when_lock_is_held(self):
         held = worker.acquire_lock(self.dir)
         self.addCleanup(held.close)
-        with mock.patch.object(worker.insights_refresh, "start") as insights:
+        with mock.patch.object(worker.worker_schedule, "start") as insights:
             self.assertEqual(worker.main(librarian=self.lib, stop=threading.Event()), 1)
         insights.assert_not_called()
 
@@ -58,7 +58,7 @@ class WorkerLockTests(unittest.TestCase):
         db.close()
         stop = threading.Event()
         stop.set()
-        with mock.patch.object(worker.insights_refresh, "start"), \
+        with mock.patch.object(worker.worker_schedule, "start"), \
                 mock.patch.object(worker.library_enrich, "run_forever"):
             self.assertEqual(worker.main(librarian=self.lib, stop=stop), 0)
         db = open_store(self.dir / worker.STORE_FILE)
@@ -70,7 +70,7 @@ class WorkerLockTests(unittest.TestCase):
     def test_lock_is_released_when_main_returns(self):
         stop = threading.Event()
         stop.set()
-        with mock.patch.object(worker.insights_refresh, "start"), mock.patch.object(worker.library_enrich, "run_forever"):
+        with mock.patch.object(worker.worker_schedule, "start"), mock.patch.object(worker.library_enrich, "run_forever"):
             worker.main(librarian=self.lib, stop=stop)
         again = worker.acquire_lock(self.dir)
         self.assertIsNotNone(again)
