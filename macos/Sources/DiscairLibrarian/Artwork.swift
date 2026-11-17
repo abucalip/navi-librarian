@@ -398,7 +398,7 @@ extension ArtworkIndex {
 
     public var bookletView: BookletView? { bookletViews.first }
 
-    /// Every booklet the index holds, best first, for the sheet's "Another booklet" button. Each is one release's pages; the album's
+    /// Every booklet the index holds, best first, for the Booklet sheet's edition list. Each is one release's pages; the album's
     /// Sticker, Obi and Poster follow every one. A booklet whose pages were trimmed from the served images is left out.
     public var bookletViews: [BookletView] {
         booklets.compactMap { b in

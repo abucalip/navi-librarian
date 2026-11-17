@@ -50,7 +50,7 @@ struct CupertinoAlbumBanner: View {
                                 .buttonStyle(CapsuleButtonStyle(primary: true))
                             Button { } label: { Label("Shuffle", systemImage: "shuffle") }
                                 .buttonStyle(CapsuleButtonStyle(translucent: true))
-                            BookletOpener(rgid: state.related.releaseGroupMBID) { open in
+                            BookletOpener(title: a.title, rgid: state.related.releaseGroupMBID) { open in
                                 Button(action: open) { Label("Booklet", systemImage: "book") }
                                     .buttonStyle(CapsuleButtonStyle(translucent: true))
                                     .help("The album's booklet pages from the Cover Art Archive")

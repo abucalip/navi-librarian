@@ -148,4 +148,47 @@ import Testing
         #expect(BookletLayout.index(after: .spread, from: .page, at: 6, in: v) == 4)
         #expect(BookletLayout.index(after: .spread, from: .spread, at: 2, in: v) == 0)
     }
+
+    // MARK: Bar, sidebar and stage (B2)
+
+    @Test func barDetailNamesEditionAndPosition() {
+        let v = view(pages: 16, extras: ["Obi"])
+        let items = BookletLayout.items(v, mode: .spread)
+        #expect(BookletLayout.barDetail(edition: "2001 US CD", item: items[2], pageCount: 16) == "Booklet · 2001 US CD · Pages 4–5 of 16")
+        #expect(BookletLayout.barDetail(edition: " ", item: items[0], pageCount: 16) == "Booklet · Page 1 of 16")
+        #expect(BookletLayout.barDetail(edition: "2001 US CD", item: items.last!, pageCount: 16) == "Booklet · 2001 US CD · Obi")
+    }
+
+    @Test func sidebarIsDrawnUnlessOneBookletAndNoExtras() {
+        #expect(!BookletLayout.showsSidebar([view(pages: 4)]))
+        #expect(BookletLayout.showsSidebar([view(pages: 4, extras: ["Obi"])]))
+        #expect(BookletLayout.showsSidebar([view(pages: 4), view(pages: 2)]))
+    }
+
+    @Test func pagesShareTheStageHeightAndKeepTheirAspect() {
+        // two square pages on a wide stage: limited by height
+        let wide = BookletLayout.fit(aspects: [1, 1], in: CGSize(width: 1000, height: 400))
+        #expect(wide == [CGSize(width: 400, height: 400), CGSize(width: 400, height: 400)])
+        // on a narrow stage: limited by width, height shrinks to match
+        let narrow = BookletLayout.fit(aspects: [1, 1], in: CGSize(width: 400, height: 400))
+        #expect(narrow == [CGSize(width: 200, height: 200), CGSize(width: 200, height: 200)])
+        // unequal pages keep their own widths at one height
+        let mixed = BookletLayout.fit(aspects: [0.5, 1], in: CGSize(width: 600, height: 300))
+        #expect(mixed == [CGSize(width: 150, height: 300), CGSize(width: 300, height: 300)])
+        #expect(BookletLayout.fit(aspects: [1], in: .zero) == [.zero])
+    }
+
+    @Test func aspectFallsBackToSquareWhenTheSizeIsUnknown() {
+        #expect(BookletLayout.aspect(pic(1, w: 900, h: 600)) == 1.5)
+        #expect(BookletLayout.aspect(pic(1, w: nil, h: nil)) == 1)
+        #expect(BookletLayout.aspect(pic(1, w: 0, h: 10)) == 1)
+    }
+
+    @Test func choosingAnExtraJumpsToItsItem() {
+        let v = view(pages: 4, extras: ["Obi", "Poster"])
+        let spreads = BookletLayout.items(v, mode: .spread), pages = BookletLayout.items(v, mode: .page)
+        #expect(BookletLayout.index(of: v.extras[1], in: spreads) == 4)
+        #expect(BookletLayout.index(of: v.extras[0], in: pages) == 4)
+        #expect(BookletLayout.index(of: pic(999), in: spreads) == nil)
+    }
 }

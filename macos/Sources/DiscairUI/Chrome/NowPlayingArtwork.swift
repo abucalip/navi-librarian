@@ -323,11 +323,12 @@ struct SlideshowKeyframes {
 /// A small badge on the Now Playing cover that opens the album's booklet (docs/artwork.md, idea 2). Shown only when the playing
 /// album has booklet pages; nothing otherwise. The cover's click still flips it (idea 1); this badge is a separate control.
 struct NowPlayingBookletBadge: View {
+    let title: String
     let index: ArtworkIndex?
     var dark = true
 
     var body: some View {
-        BookletOpener(rgid: nil, index: index) { open in
+        BookletOpener(title: title, rgid: nil, index: index) { open in
             if let text = index?.bookletView?.badgeText {
                 Button(action: open) {
                     Label(text, systemImage: "book.closed.fill").font(.system(size: 11, weight: .semibold))
@@ -388,7 +389,7 @@ struct PlayerBarCover<Cover: View>: View {
         .buttonStyle(.plain)
         .help(booklet == nil ? "Open Now Playing" : "Open the booklet")
         .accessibilityLabel(booklet == nil ? "Open Now Playing" : "Open booklet, \(booklet?.badgeText ?? "")")
-        .sheet(isPresented: $showing) { if let all = index?.bookletViews, !all.isEmpty { BookletSheet(booklets: all) { showing = false } } }
+        .sheet(isPresented: $showing) { if let all = index?.bookletViews, !all.isEmpty { BookletSheet(title: album, booklets: all) { showing = false } } }
         .task(id: "\(artist)|\(album)|\(store?.generation ?? 0)") {
             index = nil
             guard let store else { return }
