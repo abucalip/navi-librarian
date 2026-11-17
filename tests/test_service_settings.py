@@ -20,9 +20,9 @@ from settings.service import (
     set_listenbrainz_settings,
     set_lastfm_settings,
     set_navidrome_settings,
-    test_navidrome_connection,
-    test_lastfm_connection,
-    test_listenbrainz_connection,
+    test_navidrome_connection as check_navidrome_connection,
+    test_lastfm_connection as check_lastfm_connection,
+    test_listenbrainz_connection as check_listenbrainz_connection,
 )
 
 
@@ -316,11 +316,11 @@ class ServiceSettingsTests(unittest.TestCase):
 
 
     def test_navidrome_connection_service_preserves_result_contract(self):
-        result = json.loads(test_navidrome_connection(
+        result = json.loads(check_navidrome_connection(
             lambda method: self.assertEqual(method, "ping"), json.dumps
         ))
         self.assertEqual(result["status"], "connected")
-        failed = json.loads(test_navidrome_connection(
+        failed = json.loads(check_navidrome_connection(
             lambda method: (_ for _ in ()).throw(ValueError("Configure credentials")),
             json.dumps,
         ))
@@ -335,11 +335,11 @@ class ServiceSettingsTests(unittest.TestCase):
         def http_get(*args, **kwargs):
             calls.append((args, kwargs))
             return Response()
-        result = json.loads(test_lastfm_connection(self.read_settings, http_get, json.dumps))
+        result = json.loads(check_lastfm_connection(self.read_settings, http_get, json.dumps))
         self.assertEqual(result["status"], "authentication_failed")
         self.assertNotIn("lastfm-secret", json.dumps(result))
         self.assertEqual(calls[0][1]["params"]["api_key"], "lastfm-secret")
-        empty = json.loads(test_lastfm_connection(
+        empty = json.loads(check_lastfm_connection(
             lambda: {"lastfm_api_key": ""}, http_get, json.dumps
         ))
         self.assertEqual(empty["status"], "not_configured")
@@ -348,7 +348,7 @@ class ServiceSettingsTests(unittest.TestCase):
         class Response:
             status_code = 404
             def raise_for_status(self): pass
-        result = json.loads(test_listenbrainz_connection(
+        result = json.loads(check_listenbrainz_connection(
             lambda: "listener", lambda *args, **kwargs: Response(), json.dumps
         ))
         self.assertEqual(result["status"], "not_found")

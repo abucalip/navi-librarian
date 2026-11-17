@@ -5,7 +5,7 @@ from unittest.mock import Mock
 
 import httpx
 
-from integrations.slskd.client import test_connection
+from integrations.slskd.client import test_connection as check_connection
 
 
 class SlskdConnectionTests(unittest.TestCase):
@@ -16,7 +16,7 @@ class SlskdConnectionTests(unittest.TestCase):
         self.config = Mock(return_value=("http://slskd.test", "secret-key", "/downloads"))
 
     def payload(self):
-        return json.loads(test_connection(self.config, http_get=self.http_get))
+        return json.loads(check_connection(self.config, http_get=self.http_get))
 
     def test_success_preserves_request_and_response_contract(self):
         result = self.payload()

@@ -7,7 +7,7 @@ from settings.service import (
     discogs_generation,
     get_discogs_settings,
     set_discogs_settings,
-    test_discogs_connection,
+    test_discogs_connection as check_discogs_connection,
 )
 
 SECRET = "tok_secret-123"
@@ -100,7 +100,7 @@ class DiscogsConnectionTests(unittest.TestCase):
                 raise RuntimeError(SECRET)
             return self.Response(status)
 
-        return json.loads(test_discogs_connection(token, get, json.dumps)), seen
+        return json.loads(check_discogs_connection(token, get, json.dumps)), seen
 
     def test_no_token(self):
         self.assertFalse(self.run_test("")[0]["ok"])
