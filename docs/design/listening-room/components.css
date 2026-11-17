@@ -210,6 +210,8 @@ a.lr-chip:hover { background: var(--lr-raised); color: var(--lr-text); }
   .lr-dive-name { font-size: 30px; line-height: 34px; }
   .lr-dive-albums { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .lr-tabs { flex-wrap: nowrap; overflow-x: auto; }
+  .lr-panel .lr-tabs { flex-wrap: wrap; overflow: visible; }  /* genre chips wrap; only lens tabs and Up next scroll */
+  .lr-mini-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .lr-tab { flex: none; }
   .lr-card-get { display: none; }
 }
