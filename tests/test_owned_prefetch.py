@@ -62,6 +62,37 @@ class BudgetTextTests(unittest.TestCase):
         self.assertTrue(on(NEXT_DAY, NOON))
 
 
+class RecommendedCapsTests(unittest.TestCase):
+    """The full cap string in ``docs/DEPLOYMENT.md`` (owner-approved, efficiency K3) switches every part 2 hook on."""
+
+    RECOMMENDED = "musicbrainz=600,listenbrainz=300,lastfm=600,deezer=600,apple=400,wikipedia=300"
+
+    def test_every_provider_parses(self):
+        self.assertEqual(ps.parse_budgets(self.RECOMMENDED), {
+            "musicbrainz": 600, "listenbrainz": 300, "lastfm": 600, "deezer": 600, "apple": 400, "wikipedia": 300})
+
+    def test_compose_defaults_the_worker_to_these_caps_and_off_switches_it_off(self):
+        compose = (Path(__file__).resolve().parents[1] / "compose.yaml").read_text()
+        self.assertIn("OWNED_PREFETCH_BUDGETS: ${OWNED_PREFETCH_BUDGETS:-" + self.RECOMMENDED + "}", compose)
+        self.assertEqual(ps.parse_budgets("off"), {})
+        self.assertFalse(ps.due({"OWNED_PREFETCH_BUDGETS": "off"})(NOON, None))
+
+    def test_the_part_2_hooks_and_extras_are_all_given_to_the_walk(self):
+        spend = ps.Spend(ps.parse_budgets(self.RECOMMENDED))
+        librarian = SimpleNamespace(_metadata_cache_get=lambda key: None, _metadata_cache_set=lambda key, value: None)
+        self.assertEqual(set(op.album_page_hooks(librarian, spend)), {"album_year", "deezer_tracks", "album_description"})
+        extras = op.entity_extras(librarian, spend)
+        self.assertEqual((len(extras["artists"]), len(extras["albums"])), (1, 1))
+
+    def test_each_hook_host_is_counted_under_its_named_cap(self):
+        for url, provider in (("https://api.deezer.com/search/album?q=x", "deezer"),
+                              ("https://itunes.apple.com/search", "apple"),
+                              ("https://music.apple.com/us/album/x/1", "apple"),
+                              ("https://en.wikipedia.org/w/rest.php/v1/search/page", "wikipedia"),
+                              ("https://musicbrainz.org/ws/2/release-group", "musicbrainz")):
+            self.assertEqual(ps.provider_of(url), provider, url)
+
+
 class SpendTests(unittest.TestCase):
     def test_a_request_past_the_cap_or_to_an_unlisted_provider_is_refused_before_it_is_sent(self):
         spend = ps.Spend({"musicbrainz": 2})
