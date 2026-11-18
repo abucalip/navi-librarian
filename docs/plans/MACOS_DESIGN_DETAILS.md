@@ -1,6 +1,6 @@
 # macOS design details: fine fixes plan
 
-Status: D1 built (2026-11-18, PR open); D2 to D8 not started. Source: the owner's 12 screenshots of the Cupertino macOS client (`macos screenshots/`, local, not in the repo), taken 2026-11-18 between 02.20 and 02.37. This is a polish pass: alignments, overlaps, spacings, text sizes, small navigation details. It does not redesign any page.
+Status: D1 is on main at `dd95d6f9`; D2 implemented on `macos/d2-album-artist-hero-alignment` (PR pending); D3 to D8 not started. Source: the owner's 12 screenshots of the Cupertino macOS client (`macos screenshots/`, local, not in the repo), taken 2026-11-18 between 02.20 and 02.37. This is a polish pass: alignments, overlaps, spacings, text sizes, small navigation details. It does not redesign any page.
 
 ## How to read this plan
 
@@ -133,6 +133,19 @@ Status: D1 built (2026-11-18, PR open); D2 to D8 not started. Source: the owner'
 **D2.9 Track table: the "⋯" menu floats far from the row's data** (02.20.02)
 - **What is wrong:** about 120 pt of empty space sits between the Quality column and "⋯".
 - **Fix:** either let the Track column take the spare width (Duration and Quality move right next to "⋯"), or cap the table width. Recommendation: the first.
+
+
+**D2 implementation record (2026-11-18; branch `macos/d2-album-artist-hero-alignment`).**
+
+- D2.1: Album and Artist use one shared 76 pt hero top inset.
+- D2.2: the Spine strip is drawn inside the Album cover frame, so the cover's full left edge meets the back button.
+- D2.3: the Album tabs, track table and related grids are left-aligned to the hero column; the Artist body column is left-aligned to the portrait edge.
+- D2.4: the Artist text block has the specified 55% to clear left-to-right scrim; the menu is separated by 12 pt and raised 6 pt; action capsules use a 14 pt gap.
+- D2.5: collage tile frames are pixel-rounded and overlap by 1 pt. D2.6: translucent media capsules receive a hairline edge; the scrim also improves their ground.
+- D2.7: source review found the recommended hierarchy already present: 20 pt top-level headings and small-caps subgroup labels under "Not in your library". No duplicate style change was made.
+- D2.8: the playing-row quality badge uses accent text on a white fill. D2.9: the overflow action is leading-aligned within its trailing cell, beside Quality.
+- Added `HeroAlignmentTests` for shared inset/action metrics, pixel alignment and overlap across the 2–5 tile layouts.
+- **Verification not yet done:** no Swift test execution here; run `swift test --filter HeroAlignmentTests` on a Mac. Visual acceptance still needs same-size Album and Artist before/after screenshots in Day and Night, the collage seam crop at 400%, and a contrast check over the lightest tile. The source changes are not a substitute for those checks.
 
 ## Slice D3: bottom insets and the Pipeline dock
 
