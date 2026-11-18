@@ -57,7 +57,7 @@ struct CapsuleButtonStyle: ButtonStyle {
     var small = false
     var outlined = false
     var large = false
-    /// White text on a 28% white fill, for buttons over a banner image.
+    /// White text on a dark translucent fill with a light hairline, for buttons over banner media.
     var translucent = false
     var destructive = false
     @Environment(\.cuInPanel) private var inPanel
@@ -91,7 +91,7 @@ struct CapsuleButtonStyle: ButtonStyle {
 
     private func fill(neutral: Color, pressed: Bool) -> Color {
         if primary { return isEnabled ? (pressed ? CU.accentStrong : CU.accent) : CU.bgFill }
-        if translucent { return CU.onMedia.opacity(0.28) }
+        if translucent { return CU.shadowInk.opacity(0.38) }
         return outlined ? .clear : neutral
     }
 }
