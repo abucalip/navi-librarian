@@ -50,10 +50,7 @@ Status: plan only, no code yet (2026-11-18). Source: the owner's 12 screenshots 
   - The banner is drawn under the sidebar (`CupertinoTheme.swift:227-228`), so a sliver of the collage shows in the gutter left of and above the sidebar.
   - The sliver stops with a hard horizontal edge at the banner's bottom (about 356 pt from the top), while the sidebar continues below it.
   - On the busy collage this reads as a glitch. On the dark album blur it is barely visible.
-- **Fix (Owner):** choose one.
-  - (a) Keep the hero under the sidebar but fade it out to `CU.content` over the last 40 pt, so the gutter has no hard edge.
-  - (b) Start the hero at the sidebar's trailing edge, so the gutter is always plain window ground.
-  - Recommendation: (a). It keeps the edge-to-edge look the design asked for.
+- **Fix (owner decision, 2026-11-18: (a)):** keep the hero under the sidebar but fade it out to `CU.content` over its last 40 pt, so the gutter has no hard edge. This keeps the edge-to-edge look the design asked for. (Not chosen: start the hero at the sidebar's trailing edge.)
 - **Acceptance:** left-edge crop of Artist and Album at the banner's bottom shows no hard step in the gutter.
 
 **D1.3 Hard cut where content scrolls under the fixed hero** (02.20.21, 02.21.06: the line about 356 pt from the top)
@@ -67,10 +64,11 @@ Status: plan only, no code yet (2026-11-18). Source: the owner's 12 screenshots 
 
 **D1.4 Fixed 356 pt hero takes a third of the window on every scroll** (02.20.21, 02.21.06)
 - **What is wrong:** after scrolling, the hero keeps 356 pt. In a 940 pt high window only about 400 pt of list stays visible.
-- **Fix (Owner):** choose one.
-  - (a) Keep it fixed. This is the current documented design (`macos/DESIGN.md`, "Album banner").
-  - (b) Collapse it to a compact 96 pt bar on scroll: small cover, title, Play.
-  - Option (b) must use one resize driven by the scroll offset, not a looping animation. Owner decision, because it changes a documented layout.
+- **Fix (owner decision, 2026-11-18: collapse):** the hero shrinks to a compact 96 pt bar as the content scrolls: small cover (or portrait on Artist), title, Play. Scrolling back to the top restores the full hero.
+  - The height follows the scroll offset directly (one resize, no looping animation, no timer). Under Reduce Motion it switches between the two heights with no tween.
+  - The compact bar keeps the back button, on the same line as in D2.1.
+  - This changes the documented banner (`macos/DESIGN.md`, "Album banner" and the Artist section, "the banner is fixed"); update those lines in the same PR.
+  - Acceptance: scroll Album and Artist down and back up. The hero shrinks and grows with no jump. In a 940 pt high window, at least 700 pt of list shows when it is compact. Measure CPU while scrolling, following the macOS motion and CPU rules.
 
 ## Slice D2: album and artist hero alignment
 
@@ -164,11 +162,24 @@ Status: plan only, no code yet (2026-11-18). Source: the owner's 12 screenshots 
   - Radio "Stations / Heard": pink accent fill.
   - Connections "Graph / List" and "1 / 2 / 3 steps", Downloads "All / Active / Needs you / Arrived": dark fill with white text.
   - Radio tag chips "All / Jazz": a white pill.
-- **Fix (Owner):**
-  - The owner picks one selected look for segmented controls. Recommendation: the dark neutral one (Connections, Downloads), keeping pink for the single main action.
-  - Then use `CUSegmented` (`CupertinoKit.swift:99`) everywhere instead of the system `Picker(.segmented)`. Files using `Picker` today: `AtlasView.swift`, `TimelineView.swift`, `GraphExplorerView.swift`, `CupertinoDownloads.swift`, `CupertinoStations.swift`, `CupertinoConnections.swift`, and others listed by `grep -n "pickerStyle(.segmented)"`.
-  - Filter chips stay a separate, documented style.
-- **Acceptance:** a screenshot of each page shows the same selected look.
+- **Fix (owner decision, 2026-11-18): the neutral style everywhere.** Pink (accent) stays for the single main action on a page (Play, Get album, Try again), never for a selected tab. The neutral style is the default `CUSegmented` (`CupertinoKit.swift:99`) without `accented`. Its roles already come from `CUPalette`:
+
+  | Part | Night (dark neutral) | Day (light neutral) |
+  |---|---|---|
+  | Track (the control's ground) | `CU.bgFill` #202025; on a panel `CU.bgFillOnPanel` #26262B | `CU.bgFill` #ECECF0; on a panel `CU.bgFillOnPanel` #E6E6EB |
+  | Selected segment | `CU.content` #0B0B0D, a chip darker than the track, inset 2 pt, radius 4 | `CU.content` #FFFFFF, a white chip lifted off the grey track, inset 2 pt, radius 4 |
+  | Selected text | `CU.text` #F2F2F4, semibold | `CU.text` #1D1D1F, semibold |
+  | Other segments | `CU.textSecondary` #9E9EA7, medium, no fill | `CU.textSecondary` #636368, medium, no fill |
+  | Edge of the selected chip | 1 pt hairline in `CU.separator` (the drop shadow does not show on near black) | hairline drop shadow as today (`shadowInk` 14% at 1.5 pt, y 1, plus 6% at 0.5 pt); no border |
+  | Hover on an unselected segment | text goes to `CU.text`; no fill | text goes to `CU.text`; no fill |
+  | Size | track radius 8, padding 2; segment 24 pt high, 28 pt in a control bar | same |
+
+  - The Day style is the Night style inverted: in Night the selected chip is darker than its track; in Day it is lighter (white on light grey, like the standard macOS segmented control). In both, the selection is shown by the chip and the semibold weight, never by colour alone.
+  - Only code change in `CUSegmented`: the Night hairline on the selected chip, added when the palette mode is Night. The fills, text and sizes are already as above.
+  - Then use `CUSegmented` everywhere instead of the system `Picker(.segmented)`, which draws the system blue. Files using `Picker` today: `AtlasView.swift`, `TimelineView.swift`, `GraphExplorerView.swift`, `CupertinoDownloads.swift`, `CupertinoStations.swift`, `CupertinoConnections.swift`, and others listed by `grep -n "pickerStyle(.segmented)"`. Radio "Stations / Heard" drops `accented: true`.
+  - Filter chips (Radio "All / Jazz") stay a separate, documented style. They use the same roles: selected chip `CU.text` ground with `CU.content` text, unselected `CU.bgFill` with `CU.textSecondary`.
+  - Contrast check (`docs/UI_DESIGN_RULES.md`, 4.5:1): selected and unselected text on their grounds in both modes. Add the pairs to `CUPalette.contrastPairs` if they are not there.
+- **Acceptance:** screenshots of Timeline, Atlas, Radio, Connections and Downloads, in Night and in Day, show the same selected look, with no system blue.
 
 **D4.2 Capsule buttons in one row differ in height** (02.21.45, 02.37.08: Home "More" against "Get album / Save / Not for me"; Home "Resume")
 - **What is wrong:** "More" is about 19 pt tall against about 25 pt for its neighbours. "Resume" is also shorter than other primary capsules.
@@ -241,7 +252,7 @@ Status: plan only, no code yet (2026-11-18). Source: the owner's 12 screenshots 
 
 **D5.7 Trailing inspectors start in different places** (02.26.06 Timeline, 02.27.57 Atlas vs 02.37.08 Queue)
 - **What is wrong:** the Timeline and Atlas inspectors start under the toolbar (about 85 pt down) on a lighter ground. The queue inspector runs the full window height.
-- **Fix (Owner):** one rule for trailing panels. Recommendation: full height like the queue, with the toolbar stopping at the panel edge as it already does for the queue.
+- **Fix (owner decision, 2026-11-18):** all trailing panels run full height like the queue, with the toolbar stopping at the panel edge, as it already does for the queue. The panel's title sits on the toolbar's centre line (same as D5.5).
 
 **D5.8 Radio station logos are cropped** (02.24.02: "3j Radio" shows "Ra")
 - **What is wrong:** logos use fill, so wide logos are cut.
@@ -326,16 +337,21 @@ Status: plan only, no code yet (2026-11-18). Source: the owner's 12 screenshots 
 - **Home hero with the queue open** (02.37.08): the hero backdrop shows two vertical bands (about 460 pt and 920 pt in). Same fix as D2.5 if it is a tiled backdrop. "Next picks" moves under the cover and leaves the right half of the card empty; check the narrow layout. (D2)
 - **Home shelf play buttons** (02.21.45): the round play buttons on covers are cut by the player bar edge. Covered by D3.2.
 - **Album hero badges** (02.20.02): "MP3 320" and "7 of 7 owned" are about 11 pt bold on a translucent ground; low contrast over a light blur. Check at least 4.5:1, or add a darker badge ground on media. (D2)
-- **Artist bio** (02.20.44): justified text leaves visible rivers ("he scored an / unexpected hit"). The justified bio is a documented choice (`ArtistPageParts.swift:14`). See Owner questions; do not change it in a slice without the owner.
+- **Artist bio** (02.20.44): justified text leaves visible rivers ("he scored an / unexpected hit"). Owner decision (2026-11-18): the bio becomes left-aligned (ragged right), keeping the centred column and its width. This replaces the documented justified bio (`ArtistPageParts.swift:14`, the `.justified` paragraph style at `:52`); update that comment. (D2)
 
-## Owner questions
+## Owner decisions (2026-11-18)
 
-1. D1.2: hero in the sidebar gutter: (a) fade, or (b) start at the sidebar edge? Recommended: (a).
-2. D1.4: keep the fixed 356 pt hero, or collapse it on scroll? Recommended: collapse, only if the owner wants more list room.
-3. D4.1: which segmented control look wins? Recommended: dark neutral.
-4. D5.7: trailing inspectors full height (like the queue), or under the toolbar? Recommended: full height.
-5. Artist bio: keep it justified (documented) or switch to left-aligned to avoid rivers? Recommended: left-aligned, or keep justified with hyphenation on.
-6. Player bar: the cover shows twice (large in the sidebar slot and small with the disc in the bar). Keep both? No recommendation; it is a layout choice.
+The owner took every recommendation and added one detail for D4.1.
+
+1. D1.2: the hero fades out in the sidebar gutter.
+2. D1.4: the hero collapses to a compact bar on scroll.
+3. D4.1: the dark neutral selected style in Night, and its Day equivalent (white chip on a light grey track). The full spec is in D4.1.
+4. D5.7: trailing inspectors run full height, like the queue.
+5. Artist bio: left-aligned.
+
+Still open:
+
+6. Player bar: the cover shows twice (large in the sidebar slot and small with the disc in the bar). Keep both? No recommendation was made, so nothing changes until the owner decides.
 
 ## Out of scope: data, not design
 
@@ -345,4 +361,4 @@ Status: plan only, no code yet (2026-11-18). Source: the owner's 12 screenshots 
 
 ## Order
 
-D1 → D2 → D3 first (they cover the owner's main complaint and the overlaps), then D4, D5, D6, D7 and D8 in any order. D1.2, D1.4, D4.1, D5.7 and the bio item wait for the owner's answers. Everything else can start now.
+D1 → D2 → D3 first (they cover the owner's main complaint and the overlaps), then D4, D5, D6, D7 and D8 in any order. All items can start now. Only the twice-shown cover (owner decision 6) waits, and it is not part of any slice.

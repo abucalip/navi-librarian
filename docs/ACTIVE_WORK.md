@@ -329,7 +329,12 @@ Done: Genres grid and four album shelves on the dashboard, the Recommended slide
   - D6: Now Playing
   - D7: graph and map labels
   - D8: copy
-- Six owner questions are listed in the plan (gutter fade, collapsing hero, segmented style, inspector height, justified bio, cover shown twice). Items that do not depend on them can start now, beginning with D1.
+- The owner's decisions (2026-11-18), all as recommended:
+  - the hero fades in the sidebar gutter and collapses on scroll;
+  - selected tabs use the dark neutral style in Night and a white chip on a light grey track in Day;
+  - inspectors run full height;
+  - the artist bio is left-aligned.
+- Still open: the cover shown twice. It is not in any slice. Next: D1.
 
 ## 2n. Simplification candidates
 

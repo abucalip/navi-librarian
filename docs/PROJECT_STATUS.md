@@ -6,7 +6,7 @@ Last checked: 2026-11-18. GitHub `main` is authoritative; this update is based o
 
 ## Current state
 
-- **macOS design details plan written (2026-11-18, docs only):** `docs/MACOS_DESIGN_DETAILS.md` lists fine fixes from the owner's screenshots, in slices D1 to D8 (corners and hero edges, hero alignment, dock and bottom insets, controls, list columns, Now Playing, labels, copy). No code yet. **Next action:** the owner answers the six questions in the plan, then D1 (window corners and hero edges).
+- **macOS design details plan written (2026-11-18, docs only):** `docs/MACOS_DESIGN_DETAILS.md` lists fine fixes from the owner's screenshots, in slices D1 to D8 (corners and hero edges, hero alignment, dock and bottom insets, controls, list columns, Now Playing, labels, copy). No code yet. Owner decisions recorded 2026-11-18 (all as recommended; neutral selected-tab style in Night and Day). **Next action:** D1 (window corners and hero edges).
 
 - **Index theme I2 merged (2026-11-18):** PR #1198, squash `05b3df3c`. Index Home (`IndexHome.kt`), row cascade, rule draw, numeral roll, Get morph, data list and insight block. Not deployed or published; not yet checked against the mockup on a phone. **Next action:** the owner checks I2 on the phone, then I3 Album, Artist, Genre, Paths.
 
