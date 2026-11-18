@@ -1,6 +1,6 @@
 # Index theme for Android: design system and build plan
 
-Status: **design approved by the owner** (2026-11-17); every decision in section 13 is decided as proposed. Nothing is built; I0 audit is done (section 11a), the server PRs it lists come next. This document is the spec that implementing agents build from. The mockups beside it are the spec for every screen ("the mockups are the spec", Round 3 owner rule).
+Status: **design approved by the owner** (2026-11-17); every decision in section 13 is decided as proposed. **I0 is done** (section 11a; every missing server row is built) and **I1 (palettes, pair, shell) is built in a PR** (`ui/common/IndexKit.kt`, `IndexIcons.kt`, `IndexShell.kt`, `ui/theme/IndexMotion.kt`); I2 to I6 are not built. This document is the spec that implementing agents build from. The mockups beside it are the spec for every screen ("the mockups are the spec", Round 3 owner rule).
 
 Package: [`docs/design/index/`](design/index/). Start with its [`README.md`](design/index/README.md). The shared mockup kit is [`docs/design/_kit/`](design/_kit/).
 

@@ -62,7 +62,7 @@ class FlowTest {
         assertTrue(NavRules.discoverInBar(Layout.Flow))
         assertTrue(!NavRules.discoverInTopBar(Layout.Flow, rail = false))
         assertTrue(!NavRules.playerButtonShown(Layout.Flow))
-        for (l in Layout.values().filter { it != Layout.CoverStack && it != Layout.TapeDeck && it != Layout.Flow && it != Layout.Gallery }) {
+        for (l in Layout.values().filter { it != Layout.CoverStack && it != Layout.TapeDeck && it != Layout.Flow && it != Layout.Gallery && it != Layout.Index }) {
             assertTrue(!NavRules.discoverInBar(l)); assertTrue(NavRules.playerButtonShown(l))
         }
     }

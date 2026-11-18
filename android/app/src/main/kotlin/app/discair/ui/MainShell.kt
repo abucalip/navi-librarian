@@ -216,6 +216,9 @@ fun MainShell(state: UiState, model: AppViewModel, container: AppContainer) {
     val galleryNav = app.discair.ui.common.isGallery()
     val galleryIn = fadeIn(androidx.compose.animation.core.tween(app.discair.ui.theme.GalleryMotion.PAGE_FADE_IN_MS, app.discair.ui.theme.GalleryMotion.PAGE_FADE_IN_DELAY_MS, androidx.compose.animation.core.LinearEasing))
     val galleryOut = fadeOut(androidx.compose.animation.core.tween(app.discair.ui.theme.GalleryMotion.PAGE_FADE_OUT_MS, easing = androidx.compose.animation.core.LinearEasing))
+    // Index pages slide: between bar pages in the bar's direction, every other move as a push (docs/INDEX_THEME.md 8.2 #1 and #2).
+    // The NavHost keeps the lambdas of its first composition, so the choice is read through a state that stays current when the theme is changed in Appearance.
+    val indexNavNow = androidx.compose.runtime.rememberUpdatedState(app.discair.ui.common.isIndex())
     val tabs = listOf(
         Tab(HomeRoute, "Home", ArtIcons.Home),
         Tab(DiscoverRoute, "Discover", ArtIcons.Disc),
@@ -333,6 +336,7 @@ fun MainShell(state: UiState, model: AppViewModel, container: AppContainer) {
                     val tabToTab = indexOf(initialState) >= 0 && indexOf(targetState) >= 0
                     when {
                         reducedMotion -> EnterTransition.None
+                        indexNavNow.value -> app.discair.ui.common.IndexNav.enter(indexOf(initialState), indexOf(targetState), reducedMotion)
                         galleryNav -> galleryIn
                         tabToTab -> fadeIn(fadePlan.arrive.toTween(fadePlan.arriveDelayMs)) +
                             slideInVertically(fadePlan.arrive.toTween(fadePlan.arriveDelayMs)) { risePx }
@@ -343,6 +347,7 @@ fun MainShell(state: UiState, model: AppViewModel, container: AppContainer) {
                     val tabToTab = indexOf(initialState) >= 0 && indexOf(targetState) >= 0
                     when {
                         reducedMotion -> ExitTransition.None
+                        indexNavNow.value -> app.discair.ui.common.IndexNav.exit(indexOf(initialState), indexOf(targetState), reducedMotion)
                         galleryNav -> galleryOut
                         tabToTab -> fadeOut(fadePlan.leave.toTween())
                         else -> slideOutHorizontally(axisPlan.leave.toTween()) { -slidePx } + fadeOut(axisPlan.leave.toTween())
@@ -352,6 +357,7 @@ fun MainShell(state: UiState, model: AppViewModel, container: AppContainer) {
                     val tabToTab = indexOf(initialState) >= 0 && indexOf(targetState) >= 0
                     when {
                         reducedMotion -> EnterTransition.None
+                        indexNavNow.value -> app.discair.ui.common.IndexNav.popEnter(indexOf(initialState), indexOf(targetState), reducedMotion)
                         galleryNav -> galleryIn
                         tabToTab -> fadeIn(fadePlan.arrive.toTween(fadePlan.arriveDelayMs))
                         else -> slideInHorizontally(axisPlan.arrive.toTween()) { -slidePx } + fadeIn(axisPlan.arrive.toTween())
@@ -360,6 +366,7 @@ fun MainShell(state: UiState, model: AppViewModel, container: AppContainer) {
                 popExitTransition = {
                     when {
                         reducedMotion -> ExitTransition.None
+                        indexNavNow.value -> app.discair.ui.common.IndexNav.popExit(indexOf(initialState), indexOf(targetState), reducedMotion)
                         galleryNav -> galleryOut
                         else -> slideOutHorizontally(axisPlan.leave.toTween()) { slidePx } + fadeOut(axisPlan.leave.toTween())
                     }
@@ -422,6 +429,9 @@ fun MainShell(state: UiState, model: AppViewModel, container: AppContainer) {
             if (app.discair.ui.theme.LocalPalette.current.layout == app.discair.ui.theme.Layout.Gallery && playerState.current != null) {
                 app.discair.ui.common.GalleryMiniPlayer(playerState, player, onOpen = { if (playerState.visible) nowPlayingOpen = true })
             }
+            if (app.discair.ui.theme.LocalPalette.current.layout == app.discair.ui.theme.Layout.Index && playerState.current != null) {
+                app.discair.ui.common.IndexMiniPlayer(playerState, player, onOpen = { if (playerState.visible) nowPlayingOpen = true })
+            }
             if (!rail) app.discair.ui.theme.OnArtwork {
                 NavIsland(
                     tint = islandTint,
@@ -461,6 +471,10 @@ private fun AppHeader(active: Int, showDiscover: Boolean, onDiscover: () -> Unit
     }
     if (app.discair.ui.theme.LocalPalette.current.layout == app.discair.ui.theme.Layout.Gallery) {
         app.discair.ui.common.GalleryHomeBar(active, onDownloads, onSettings, showDiscover = showDiscover, onDiscover = onDiscover)
+        return
+    }
+    if (app.discair.ui.theme.LocalPalette.current.layout == app.discair.ui.theme.Layout.Index) {
+        app.discair.ui.common.IndexHomeBar(active, onDownloads, onSettings, showDiscover = showDiscover, onDiscover = onDiscover)
         return
     }
     Column(Modifier.background(app.discair.ui.theme.Ink.Rail)) {

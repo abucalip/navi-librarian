@@ -98,7 +98,7 @@ enum class Family(val label: String) { Classic("Classic"), Brutal("Brutal") }
  */
 enum class Layout(val label: String) {
     Standard("Standard"), TapeDeck("Cassette Deck"), SheetStack("Sheet Stack"), StickerWall("Sticker Wall"),
-    CoverStack("Cover Stack"), Flow("Flow"), Gallery("Gallery"),
+    CoverStack("Cover Stack"), Flow("Flow"), Gallery("Gallery"), Index("Index"),
 }
 
 /**
@@ -626,11 +626,53 @@ object Palettes {
         layout = Layout.Gallery, suggestedFontId = "gallery",
     )
 
+    // Index (docs/INDEX_THEME.md 4.2): three day and one night palette, one layout. Values are docs/design/index/tokens.json; the dims are the derived defaults.
+    // The strip and insight tones are not Palette fields (decision I1): they live in IndexTones (ui/common/IndexKit.kt), keyed by id.
+    val Index = Palette(
+        "index", "Index · Signal Blue", true,
+        rail = c(0xFFFFFF), ink = c(0xF6F7F8), surface = c(0xFFFFFF), raised = c(0xECEEF0), edge = c(0xD9DCE0), edgeStrong = c(0x80868F),
+        text = c(0x0B0C0E), textMuted = c(0x5B6068), accent = c(0x2B4BFF), onAccent = c(0xFFFFFF),
+        chartRed = c(0xB3261E), chartRedText = c(0xB3261E), ok = c(0x1B6B3A), caution = c(0x8A5300), info = c(0x1F5A8A),
+        chart2 = c(0x80868F), chart3 = c(0xD9DCE0),
+        control = c(0x0B0C0E), onControl = c(0xFFFFFF), mat = c(0xFFFFFF), minAccentContrast = 4.5,
+        layout = Layout.Index, suggestedFontId = "index",
+    )
+
+    val IndexNewsprint = Palette(
+        "index_newsprint", "Index · Newsprint Red", true,
+        rail = c(0xFBF9F4), ink = c(0xF1EDE4), surface = c(0xFBF9F4), raised = c(0xE7E1D5), edge = c(0xD8D1C4), edgeStrong = c(0x857E71),
+        text = c(0x141210), textMuted = c(0x5C564E), accent = c(0xB81F18), onAccent = c(0xFFFFFF),
+        chartRed = c(0x9E1B14), chartRedText = c(0x9E1B14), ok = c(0x1B6B3A), caution = c(0x7F4A00), info = c(0x1F5A8A),
+        chart2 = c(0x857E71), chart3 = c(0xD8D1C4),
+        control = c(0xB81F18), onControl = c(0xFFFFFF), mat = c(0xFBF9F4), minAccentContrast = 4.5,
+        layout = Layout.Index, suggestedFontId = "index",
+    )
+
+    val IndexGraphite = Palette(
+        "index_graphite", "Index · Graphite Orange", false,
+        rail = c(0x1D1F21), ink = c(0x141516), surface = c(0x1D1F21), raised = c(0x26292B), edge = c(0x2E3134), edgeStrong = c(0x767A78),
+        text = c(0xEDEEEA), textMuted = c(0xA0A39E), accent = c(0xFF6A1A), onAccent = c(0x141516),
+        chartRed = c(0xFF8A73), chartRedText = c(0xFF8A73), ok = c(0x8FD6A0), caution = c(0xF2C45A), info = c(0x8FB8E8),
+        chart2 = c(0x767A78), chart3 = c(0x3A3E41),
+        control = c(0xFF6A1A), onControl = c(0x141516), mat = c(0x1D1F21), minAccentContrast = 4.5,
+        layout = Layout.Index, suggestedFontId = "index",
+    )
+
+    val IndexField = Palette(
+        "index_field", "Index · Field Green", true,
+        rail = c(0xFFFFFF), ink = c(0xEDF1EB), surface = c(0xFFFFFF), raised = c(0xE0E7E1), edge = c(0xCFD8D0), edgeStrong = c(0x76837B),
+        text = c(0x0E1A14), textMuted = c(0x4F5C55), accent = c(0x086F43), onAccent = c(0xFFFFFF),
+        chartRed = c(0xB3261E), chartRedText = c(0xB3261E), ok = c(0x1B6B3A), caution = c(0x7F4A00), info = c(0x1F5A8A),
+        chart2 = c(0x76837B), chart3 = c(0xCFD8D0),
+        control = c(0x086F43), onControl = c(0xFFFFFF), mat = c(0xFFFFFF), minAccentContrast = 4.5,
+        layout = Layout.Index, suggestedFontId = "index",
+    )
+
     /** Light themes in the order the picker shows them; the first is the default day theme. */
-    val Light: List<Palette> = listOf(Sand, Paper, Mist, Sage, Blush, BrutLavender, BrutMint, BrutLemon, BrutCream, BrutSky, BrutPoster, TapeLime, TapeCobalt, TapeTangerine, SheetDaylight, StickerPeach, SoftBrut, SoftBrutMint, SoftBrutPeach, SoftBrutSky, SoftBrutLemon, Flow, FlowForest, FlowRaspberry, FlowViolet, Gallery, GalleryCeladon, GalleryMist, GalleryBlush, GalleryButter)
+    val Light: List<Palette> = listOf(Sand, Paper, Mist, Sage, Blush, BrutLavender, BrutMint, BrutLemon, BrutCream, BrutSky, BrutPoster, TapeLime, TapeCobalt, TapeTangerine, SheetDaylight, StickerPeach, SoftBrut, SoftBrutMint, SoftBrutPeach, SoftBrutSky, SoftBrutLemon, Flow, FlowForest, FlowRaspberry, FlowViolet, Gallery, GalleryCeladon, GalleryMist, GalleryBlush, GalleryButter, Index, IndexNewsprint, IndexField)
 
     /** Dark themes in the order the picker shows them; the first is the default night theme. */
-    val Dark: List<Palette> = listOf(Night, Amoled, Forest, Ocean, Ember, Graphite, HighContrast, BrutInk, BrutMidnight, SheetViolet, SheetAcid, SoftBrutMidnightMint, SoftBrutPlumPeach, SoftBrutNavySky, FlowEmber, FlowMoss, FlowPlum, GalleryGraphite, GalleryOxblood, GalleryMoss)
+    val Dark: List<Palette> = listOf(Night, Amoled, Forest, Ocean, Ember, Graphite, HighContrast, BrutInk, BrutMidnight, SheetViolet, SheetAcid, SoftBrutMidnightMint, SoftBrutPlumPeach, SoftBrutNavySky, FlowEmber, FlowMoss, FlowPlum, GalleryGraphite, GalleryOxblood, GalleryMoss, IndexGraphite)
 
     val All: List<Palette> = Light + Dark
 

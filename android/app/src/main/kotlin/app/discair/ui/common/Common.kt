@@ -581,5 +581,6 @@ fun RowDivider(modifier: Modifier = Modifier) {
     if (isCoverStack()) { CoverStackDivider(modifier); return }
     if (isFlow()) { FlowDivider(modifier); return }
     if (isGallery()) { GalleryRule(modifier); return }
+    if (isIndex()) { IndexRule(modifier); return }
     Box(modifier.fillMaxWidth().height(1.dp).background(Ink.Edge))
 }

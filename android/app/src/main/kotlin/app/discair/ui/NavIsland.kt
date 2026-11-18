@@ -65,6 +65,7 @@ val LocalBottomClearance = androidx.compose.runtime.compositionLocalOf { 0.dp }
  *
  * - Cassette Deck: a ruled bar with Home, Discover, Library and Search; the mini player sits above it.
  * - Gallery: a plain bar on the dock with Home, Discover, Library and Search; the mini player sits above it.
+ * - Index: a white four-cell bar with mono labels and a sliding signal block; the ink strip sits above it.
  * - Flow: a floating capsule with Home, Discover, Library and Search; the mini player sits above it.
  * - Cover Stack: one outlined bar with Home, Discover, Library and Search; the mini player sits above it.
  * - Sticker Wall: a pill with Search, Home, Library and the player.
@@ -128,6 +129,11 @@ fun NavIsland(
     // Gallery: a plain bar on the dock with Home, Discover, Library and Search; the mini player sits above it.
     if (deckTheme.layout == app.discair.ui.theme.Layout.Gallery) {
         app.discair.ui.common.GalleryNavBar(deckTheme, homeSelected, discoverSelected, librarySelected, onHome, onDiscover, onLibrary, onSearch, modifier)
+        return
+    }
+    // Index: a white four-cell bar with mono labels and the signal block; the ink strip sits above it.
+    if (deckTheme.layout == app.discair.ui.theme.Layout.Index) {
+        app.discair.ui.common.IndexNavBar(deckTheme, homeSelected, discoverSelected, librarySelected, onHome, onDiscover, onLibrary, onSearch, modifier)
         return
     }
     // Sticker Wall: a floating pill (Search, Home, Library, Player) in the owner's theme.

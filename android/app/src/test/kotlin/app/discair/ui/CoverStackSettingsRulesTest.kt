@@ -41,7 +41,7 @@ class CoverStackSettingsRulesTest {
 
     @Test fun themeGroupsSectionEveryPaletteOnce() {
         val all = Palettes.All
-        assertEquals(listOf("Standard", "Flow", "Brut", "Tape", "Sheet", "Sticker", "Soft Brut", "Gallery"), ThemeGroups.All)
+        assertEquals(listOf("Standard", "Flow", "Brut", "Tape", "Sheet", "Sticker", "Soft Brut", "Gallery", "Index"), ThemeGroups.All)
         assertEquals(all.size, ThemeGroups.All.sumOf { ThemeGroups.shown(all, it).size })
         assertTrue(ThemeGroups.All.all { ThemeGroups.shown(all, it).isNotEmpty() })
         assertEquals("Soft Brut", ThemeGroups.of(Palettes.byId("softbrut")))

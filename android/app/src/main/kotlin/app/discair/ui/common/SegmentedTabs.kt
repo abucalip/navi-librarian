@@ -63,6 +63,7 @@ fun SegmentedTabs(
     if (isCoverStack()) { CoverStackTabs(labels, selectedIndex, onSelect, modifier); return }
     if (isFlow()) { FlowTabs(labels, selectedIndex, onSelect, modifier); return }
     if (isGallery()) { GalleryTabs(labels, selectedIndex, onSelect, modifier); return }
+    if (isIndex()) { IndexTabs(labels, selectedIndex, onSelect, modifier); return }
     val TrackShape = themeShape(9.dp)
     val ThumbShape = themeShape(7.dp)
     val brutal = LocalPalette.current.brutal
