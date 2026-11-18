@@ -25,6 +25,47 @@ class LibraryArtistPlaysTests(unittest.TestCase):
         self.assertEqual(items[0]["plays"], 212)
 
 
+class LibraryAlbumFilterTests(unittest.TestCase):
+    def data(self):
+        def song(i, album, suffix, plays):
+            return {"id": f"s{i}", "title": f"T{i}", "artist": "Ash", "artistId": "s", "album": album,
+                    "albumId": album, "duration": 1, "suffix": suffix, "bitRate": 320, "playCount": plays}
+        albums = [{"id": a, "artist": "Ash", "artist_id": "s", "album": a.upper(), "year": 2000, "song_count": 1}
+                  for a in ("flacplayed", "mp3fresh", "flacfresh", "nosongs")]
+        songs = [song(1, "flacplayed", "flac", 3), song(2, "mp3fresh", "mp3", 0), song(3, "flacfresh", "flac", 0)]
+        return build_owned_data(generation="g", built_at=0, artists=[{"id": "s", "name": "Ash", "album_count": 4}],
+                                albums=albums, songs=songs)
+
+    def names(self, **kwargs):
+        args = {"query": "", "sort": "name", "offset": 0, "limit": 60}
+        args.update(kwargs)
+        items, _, total = library_albums_page(self.data(), **args)
+        return [a["name"] for a in items], total
+
+    def test_unplayed_keeps_albums_with_no_plays(self):
+        self.assertEqual(self.names(filter="unplayed"), (["FLACFRESH", "MP3FRESH", "NOSONGS"], 3))
+
+    def test_lossless_needs_a_lossless_format(self):
+        self.assertEqual(self.names(filter="lossless"), (["FLACFRESH", "FLACPLAYED"], 2))
+
+    def test_no_filter_keeps_everything_and_total_counts_the_filtered_set(self):
+        self.assertEqual(self.names()[1], 4)
+        items, next_offset, total = library_albums_page(
+            self.data(), query="", sort="name", offset=0, limit=1, filter="lossless")
+        self.assertEqual((len(items), next_offset, total), (1, 1, 2))
+
+    def test_cursor_is_bound_to_the_filter(self):
+        cursor = encode_cursor(offset=1, query="", sort="name", order="asc", filter="lossless")
+        self.assertEqual(decode_cursor(cursor, query="", sort="name", order="asc", filter="lossless"), 1)
+        with self.assertRaises(CursorError):
+            decode_cursor(cursor, query="", sort="name", order="asc")
+        with self.assertRaises(CursorError):
+            decode_cursor(cursor, query="", sort="name", order="asc", filter="unplayed")
+        plain = encode_cursor(offset=1, query="", sort="name", order="asc")
+        with self.assertRaises(CursorError):
+            decode_cursor(plain, query="", sort="name", order="asc", filter="lossless")
+
+
 class LibraryAlbumsPageTests(unittest.TestCase):
     def data(self):
         albums = [

@@ -16,6 +16,7 @@ from typing import Any
 
 from discovery.recommendations import is_various_artists
 from discovery.search.normalize import normalize_key
+from discovery.search.quality_label import album_quality_label
 
 SONG_PAGE_SIZE = 500
 MAX_SONGS = 200_000
@@ -226,7 +227,15 @@ def build_owned_data(
         artist["mbid"] = (identities.get(f"artist:{artist['id']}") or {}).get("mbid") or None
         # Owner play count across the artist's songs (contract 4.1 owned data; used by the similar boost).
         artist["plays"] = plays_by_artist.get(artist["id"], 0)
+    plays_by_album: dict[str, int] = {}
+    songs_by_album: dict[str, list[dict[str, Any]]] = {}
+    for song in song_entries:
+        plays_by_album[song["album_id"]] = plays_by_album.get(song["album_id"], 0) + song["plays"]
+        songs_by_album.setdefault(song["album_id"], []).append(song)
     for album in album_entries:
+        # Plays and the file-quality tag feed the library filters (``album_filters``).
+        album["plays"] = plays_by_album.get(album["id"], 0)
+        album["quality"] = album_quality_label(songs_by_album.get(album["id"], ()))
         album["release_group_mbid"] = (
             (identities.get(f"album:{album['id']}") or {}).get("release_group_mbid") or None
         )
