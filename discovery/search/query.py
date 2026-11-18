@@ -7,6 +7,7 @@ import json
 from collections.abc import Iterable
 from typing import Any
 
+from discovery.search.album_filters import apply_filter
 from discovery.search.index import OwnedData
 from discovery.search.normalize import normalize_key
 from discovery.search.quality_label import quality_label
@@ -211,13 +212,16 @@ def library_albums_page(
     offset: int,
     limit: int,
     order: str | None = None,
+    filter: str = "",
 ) -> tuple[list[dict[str, Any]], int | None, int]:
     """Return one page of albums, the next offset (or None), and the filtered total.
 
-    The query matches the album name or its artist's name.
+    The query matches the album name or its artist's name; ``filter`` (``album_filters``) keeps
+    only unplayed or lossless albums, and the total counts the filtered albums.
     """
     order = order or ALBUM_SORTS[sort]
     matching = [a for a in data.albums if not query or query in a["name_key"] or query in a["artist_key"]]
+    matching = apply_filter(matching, filter)
     field = {"name": "name_key", "artist": "artist_key"}.get(sort, sort)
     tie = ("name_key", "id") if sort == "artist" else ("artist_key", "name_key", "id")
     matching = _sorted(matching, field, order, tie)
@@ -241,18 +245,21 @@ def library_albums_page(
     return items, next_offset, total
 
 
-def encode_cursor(*, offset: int, query: str, sort: str, order: str = "") -> str:
-    raw = json.dumps({"o": offset, "q": query, "s": sort, "r": order}, separators=(",", ":"))
+def encode_cursor(*, offset: int, query: str, sort: str, order: str = "", filter: str = "") -> str:
+    payload = {"o": offset, "q": query, "s": sort, "r": order}
+    if filter:
+        payload["f"] = filter
+    raw = json.dumps(payload, separators=(",", ":"))
     return base64.urlsafe_b64encode(raw.encode("utf-8")).decode("ascii").rstrip("=")
 
 
-def decode_cursor(cursor: str, *, query: str, sort: str, order: str = "") -> int:
-    """Return the offset stored in ``cursor``; refuse one issued for another query, sort or order."""
+def decode_cursor(cursor: str, *, query: str, sort: str, order: str = "", filter: str = "") -> int:
+    """Return the offset stored in ``cursor``; refuse one issued for another query, sort, order or filter."""
     try:
         padded = cursor + "=" * (-len(cursor) % 4)
         payload = json.loads(base64.urlsafe_b64decode(padded.encode("ascii")))
         offset = payload["o"]
-        matches = payload["q"] == query and payload["s"] == sort and payload.get("r", "") == order
+        matches = payload["q"] == query and payload["s"] == sort and payload.get("r", "") == order and payload.get("f", "") == filter
     except (ValueError, KeyError, TypeError):
         raise CursorError("cursor is not valid")
     if not isinstance(offset, int) or offset < 0 or not matches:

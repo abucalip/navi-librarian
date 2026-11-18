@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from app.api.dependencies import get_librarian
 from app.api.search import owned_view
+from discovery.search.album_filters import ALBUM_FILTERS
 from discovery.search.normalize import normalize_query
 from discovery.search.query import (
     ALBUM_SORTS,
@@ -39,12 +40,15 @@ def _parse_limit(raw: str | None) -> int:
     return value
 
 
-def _library_response(sorts, page_fn, q, sort, order, cursor, limit, librarian):
+def _library_response(sorts, page_fn, q, sort, order, cursor, limit, librarian, filters=(), filter=None):
     """Shared body of the artist and album library routes."""
     if sort not in sorts:
         raise HTTPException(status_code=400, detail="sort must be one of: " + ", ".join(sorts) + ".")
     if order is not None and order not in LIBRARY_ORDERS:
         raise HTTPException(status_code=400, detail="order must be asc or desc.")
+    if filter and filter not in filters:
+        raise HTTPException(status_code=400, detail="filter must be one of: " + ", ".join(filters) + ".")
+    extra = {"filter": filter} if filter else {}
     page_size = _parse_limit(limit)
     query = normalize_query(q or "")
     # The effective direction goes into the cursor, so a page request cannot change it midway.
@@ -64,17 +68,17 @@ def _library_response(sorts, page_fn, q, sort, order, cursor, limit, librarian):
     offset = 0
     if cursor:
         try:
-            offset = decode_cursor(cursor, query=query, sort=sort, order=effective)
+            offset = decode_cursor(cursor, query=query, sort=sort, order=effective, **extra)
         except CursorError:
             raise HTTPException(status_code=400, detail="cursor is not valid for this request.")
 
     items, next_offset, total = page_fn(
-        view.data, query=query, sort=sort, offset=offset, limit=page_size, order=effective,
+        view.data, query=query, sort=sort, offset=offset, limit=page_size, order=effective, **extra,
     )
     return {
         "items": items,
         "next_cursor": None if next_offset is None else encode_cursor(
-            offset=next_offset, query=query, sort=sort, order=effective,
+            offset=next_offset, query=query, sort=sort, order=effective, **extra,
         ),
         "total": total,
         "index_state": view.state,
@@ -103,8 +107,10 @@ def library_albums(
     order: str | None = None,
     cursor: str | None = None,
     limit: str | None = None,
+    filter: str | None = None,
     librarian=Depends(get_librarian),
 ):
     return _library_response(
         ALBUM_SORTS, library_albums_page, q, sort, order, cursor, limit, librarian,
+        filters=ALBUM_FILTERS, filter=filter,
     )

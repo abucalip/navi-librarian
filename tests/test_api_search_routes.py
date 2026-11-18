@@ -360,6 +360,16 @@ class SearchRouteTests(unittest.TestCase):
             params={"limit": "1", "sort": "year", "order": "asc", "cursor": first["next_cursor"]},
         ).status_code, 400)
 
+    def test_library_albums_filter_is_validated_and_bound_to_the_cursor(self):
+        self.assertEqual(self.client.get("/api/library/albums", params={"filter": "loud"}).status_code, 400)
+        ok = self.client.get("/api/library/albums", params={"filter": "unplayed"})
+        self.assertEqual(ok.status_code, 200)
+        first = self.client.get("/api/library/albums", params={"limit": "1", "filter": "unplayed"}).json()
+        if first["next_cursor"]:
+            self.assertEqual(self.client.get(
+                "/api/library/albums", params={"limit": "1", "cursor": first["next_cursor"]},
+            ).status_code, 400)
+
     def test_library_albums_building_is_not_an_empty_library(self):
         self.building_index()
         self.assertEqual(self.client.get("/api/library/albums").json()["index_state"], "building")
