@@ -129,8 +129,8 @@ object IndexPlayerRules {
     /** The cover on Now Playing is the width less the gutters (328dp on the mockup's 360dp screen), and never smaller than this on a short screen. */
     const val COVER_MIN = 120
 
-    /** Height the player view needs under the cover (title, seek, transport, tools); the cover takes what is left, up to [COVER]. */
-    const val BELOW_COVER = 300
+    /** Height the player view needs under the cover (a two-line title, the status or lyric line, seek, transport, tools); the cover takes what is left. */
+    const val BELOW_COVER = 340
     const val QUEUE_COVER = 48
     const val PLAY_BUTTON = 64
     const val TOOL_HEIGHT = 56
