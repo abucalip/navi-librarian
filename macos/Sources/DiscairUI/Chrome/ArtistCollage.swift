@@ -29,7 +29,7 @@ enum CollageLayout {
     static let tileOverlap: CGFloat = 1
 
     /// Pixel-align a collage tile and extend each shared edge by half an overlap so neighbouring tiles cannot expose a seam.
-    static func tileFrame(for slot: CGRect, in size: CGSize, scale: CGFloat, overlap: CGFloat = tileOverlap) -> CGRect {
+    static func tileFrame(for slot: CGRect, in size: CGSize, scale: CGFloat, overlap: CGFloat = 1) -> CGRect {
         let pixels = max(scale, 1)
         let x = (slot.minX * size.width * pixels).rounded() / pixels
         let y = (slot.minY * size.height * pixels).rounded() / pixels
