@@ -97,7 +97,7 @@ struct FlipCover<Front: View>: View {
             if let albumID, let groupID { EditionPickerSheet(albumID: albumID, rgid: groupID, editions: editions) }
         }
         .overlay(alignment: .leading) {
-            if spineStrip, let spine { SpineStrip(picture: spine).offset(x: -SpineStrip.width) }
+            if spineStrip, let spine { SpineStrip(picture: spine) }
         }
         .overlay(alignment: .bottom) {
             if caption, face != 0, backs.indices.contains(face - 1) {
