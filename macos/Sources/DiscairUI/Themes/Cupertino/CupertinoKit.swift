@@ -74,7 +74,10 @@ struct CapsuleButtonStyle: ButtonStyle {
             .frame(minHeight: size.height)
             .foregroundStyle(labelColor)
             .background(fill(neutral: neutral, pressed: configuration.isPressed), in: Capsule())
-            .overlay { if outlined && !primary { Capsule(style: .circular).inset(by: 0.5).stroke(CU.separatorStrong, lineWidth: 1) } }
+            .overlay {
+                if translucent { Capsule(style: .circular).inset(by: 0.5).stroke(CU.onMedia.opacity(0.7), lineWidth: 1) }
+                else if outlined && !primary { Capsule(style: .circular).inset(by: 0.5).stroke(CU.separatorStrong, lineWidth: 1) }
+            }
             .opacity(configuration.isPressed && !primary ? 0.8 : 1)
     }
 
