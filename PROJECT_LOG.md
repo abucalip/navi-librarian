@@ -1,3 +1,10 @@
+## 2026-11-18 — Index theme I3, Album, Artist, Genre and Paths (PR #1199)
+
+- **Merged:** PR #1199, squash `39cc5d08ed3e5651643df5552e6beb825b4d6965` (head `dd22d8e2`). `IndexAlbum`, `IndexArtist`, `IndexGenre`, `IndexAlbumPaths`, `IndexArtistPaths`, `IndexPagesRules`; kit: key/value grid, sheet header, `IndexPlayingBars` (#13, with `IndexMotion.barHeightDp`), baseline-aligned `IndexDataList`, `IndexSectionHead(rule=)`; Index sheets get `statusBarsPadding`; DTOs decode `library_position`/`library_total`, artist `play_count`/`active_years`, `albums` counts, path stop `years`/`shared_albums`. `ARCHITECTURE.md` row and `INDEX_THEME.md` 11a (three new missing rows) amended.
+- **Tests run:** `IndexPagesRulesTest` (new), `IndexMotionTest`, `ExistingLayoutsTest`, `IndexHomeRulesTest`, `PathsTest`, `DtoFixtureTest`, `IndexTest`, `PaletteTest` (JDK 17): 107 tests, 0 failures. CI on head `dd22d8e2`: compile, lint-changed, test-and-build, container-smoke, validate-container all passed. Not run: full suite.
+- **Emulator:** Signal Blue only, live server: both album pages, artist, genre, album and artist Paths with opened steps; Open album then Back returns to the step. System Back with a Paths step open closes the whole sheet on Standard too (pre-existing, not fixed).
+- **Limitations:** mockup departures listed in the PR (Play instead of Top songs, no Get on path steps, no Shuffle genre / Discover more, no artist position, pick number or genre artist counts until the owner decides). Other palettes, moving playing bars, reduced motion and a phone unchecked. Not published or deployed.
+
 ## 2026-11-18 — Index theme I2, Home (PR #1198)
 
 - **Merged:** PR #1198, squash `05b3df3c3cf42c417f787b274ac531a35e96a39c` (head `f20fa89a`). `IndexHome`, `IndexHomeRules`, kit additions (`indexArrive`, `indexRuleDraw`, `IndexNumeral`, `IndexGetButton`, `IndexDataList`, `IndexInsightBlock`), `IndexMotion.rowDelayMs`/`digitDelayMs`, `ShelfAlbum.playCount`; `ARCHITECTURE.md` row amended.

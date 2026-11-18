@@ -1,10 +1,12 @@
 # Project status
 
-Last checked: 2026-11-18. GitHub `main` is authoritative; this update is based on main at `a3a9d383` (PR #1182 closed out).
+Last checked: 2026-11-18. GitHub `main` is authoritative; this update is based on main at `39cc5d08` (PR #1199 closed out).
 
 **Server V2 work queue:** `docs/ServerV2.md` now contains only remaining client slices and verification; the former full plan and completed-work history is preserved in `docs/archive/ServerV2_HISTORY_2026-11-09.md`.
 
 ## Current state
+
+- **Index theme I3 merged (2026-11-18):** PR #1199, squash `39cc5d08`. Index Album, Artist, Genre and the album and artist Paths drawing (`IndexAlbum.kt`, `IndexArtist.kt`, `IndexGenre.kt`, `IndexAlbumPaths.kt`, `IndexArtistPaths.kt`, `IndexPagesRules.kt`); the app decodes the I0 fields (album library place, artist plays and active years, owned of total, path stop years and shared albums), shown only once the I0 server is deployed. Also fixed: the data list's key/value drift (Home too) and Index sheets drawn under the status bar. Three new data rows in `INDEX_THEME.md` 11a await the owner's answer. Not deployed or published; checked on the emulator in Signal Blue only. **Next action:** the owner answers the three 11a questions and checks I3 on the phone, then I4 Discover, Library, Search.
 
 - **macOS design details plan written (2026-11-18, docs only):** `docs/MACOS_DESIGN_DETAILS.md` lists fine fixes from the owner's screenshots, in slices D1 to D8 (corners and hero edges, hero alignment, dock and bottom insets, controls, list columns, Now Playing, labels, copy). No code yet. Owner decisions recorded 2026-11-18 (all as recommended; neutral selected-tab style in Night and Day). **Next action:** D1 (window corners and hero edges).
 
