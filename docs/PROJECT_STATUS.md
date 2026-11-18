@@ -1,10 +1,12 @@
 # Project status
 
-Last checked: 2026-11-18. GitHub `main` is authoritative; this update is based on main at `825f056d` (PR #1201 closed out).
+Last checked: 2026-11-18. GitHub `main` is authoritative; this update is based on main at `735372a3` (PR #1204; docs tidy #1205 closed out).
 
 **Server V2 work queue:** `docs/plans/ServerV2.md` now contains only remaining client slices and verification; the former full plan and completed-work history is preserved in `docs/archive/ServerV2_HISTORY_2026-11-09.md`.
 
 ## Current state
+
+- **Index theme I6 merged, then two follow-ups (2026-11-18):** PR #1202 (squash `0f069d4e`): Index Downloads, Stats, Server, Settings, Appearance, Equalizer, Crossfade and every menu as one lettered sheet (`IndexSheets.kt`, `IndexDownloads.kt`, `IndexStats.kt`, `IndexSettings.kt`, `IndexEqCrossfade.kt`); the app decodes the optional `/api/health` `version` and `latency_ms`. PR #1203 (squash `6d49fb33`): at the owner's request the album and artist Paths use the shared layout again (`IndexAlbumPaths.kt` and `IndexArtistPaths.kt` removed; Index keeps its fonts and colours). PR #1204 (squash `735372a3`): the Index Home lead is a swipe pager (380ms Firm, no overshoot). All steps I1 to I6 are built; none is deployed, published or checked by the owner on a phone. Open owner decisions: the three 11a rows from I6 (Stats hours, Stats lossless share, the pick sheet's "Why this pick?"), the taste sheet, and the two live-radio rows. PR #1191 (I0 audit docs) is still open. **Next action:** the owner checks Index I3 to I6 on the phone and answers the open 11a rows; then Bento B0 or the macOS design details D1.
 
 - **Docs folder tidied (2026-11-18):** PR #1205, squash `a1fa8b73`. Contracts are in `docs/contracts/`, plans with open steps in `docs/plans/`, finished plans in `docs/archive/` (see `docs/README.md` and `docs/archive/README.md`). Old pointer stubs removed; all `docs/...` paths and relative links rewritten. No behaviour change.
 
