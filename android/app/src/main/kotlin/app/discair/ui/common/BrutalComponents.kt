@@ -250,7 +250,7 @@ fun OutlinedTextField(
 ) {
     val p = LocalPalette.current
     if (isIndex()) {
-        // Index: a square 52dp field on `surface` with a 2dp `text` outline inside it, Inter 600 17 (index.css `.field`); the outline is `accent` when focused.
+        // Index: a square 52dp field on `surface` with a 2dp `text` outline inside it, Inter 600 17 (index.css `.field`); the outline turns `chartRedText` on an error.
         val clear = Color.Transparent
         androidx.compose.material3.TextField(
             value, onValueChange, modifier.heightIn(min = IndexRules.SEARCH_FIELD.dp).border(IndexRules.RULE_HEAVY.dp, if (isError) p.chartRedText else p.text), enabled, readOnly, IndexType.field().copy(color = p.text), label, placeholder, leadingIcon, trailingIcon, null, null,

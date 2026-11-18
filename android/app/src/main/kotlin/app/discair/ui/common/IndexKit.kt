@@ -22,6 +22,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
@@ -278,17 +279,16 @@ fun IndexButtonBody(kind: IndexButtonKind, onClick: () -> Unit, modifier: Modifi
         IndexButtonKind.Ghost -> p.text
     }
     val h = if (small) IndexRules.BUTTON_SMALL_HEIGHT else IndexRules.BUTTON_HEIGHT
-    // The visible button keeps its drawn height; the touch area around it is 48dp high.
-    Box(modifier.heightIn(min = IndexRules.TOUCH_MIN.dp).clickable(enabled = enabled, role = Role.Button, onClick = onClick), contentAlignment = Alignment.Center) {
-        Row(
-            Modifier.heightIn(min = h.dp).clip(shape).background(fill)
-                .then(if (kind == IndexButtonKind.Ghost) Modifier.border(1.5.dp, p.edge, shape) else Modifier)
-                .padding(horizontal = if (small) 12.dp else 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally), verticalAlignment = Alignment.CenterVertically,
-        ) {
-            CompositionLocalProvider(androidx.compose.material3.LocalContentColor provides (if (enabled) ink else ink.copy(alpha = 0.38f))) {
-                androidx.compose.material3.ProvideTextStyle(if (small) IndexType.buttonSmall() else IndexType.button()) { content() }
-            }
+    // The caller's modifier goes on the drawn body, so a full-width or weighted button fills its slot. The drawn height stays 44 (36 small); the touch area around it is 48dp high.
+    Row(
+        modifier.minimumInteractiveComponentSize().heightIn(min = h.dp).clip(shape).background(fill)
+            .then(if (kind == IndexButtonKind.Ghost) Modifier.border(1.5.dp, p.edge, shape) else Modifier)
+            .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
+            .padding(horizontal = if (small) 12.dp else 16.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally), verticalAlignment = Alignment.CenterVertically,
+    ) {
+        CompositionLocalProvider(androidx.compose.material3.LocalContentColor provides (if (enabled) ink else ink.copy(alpha = 0.38f))) {
+            androidx.compose.material3.ProvideTextStyle(if (small) IndexType.buttonSmall() else IndexType.button()) { content() }
         }
     }
 }
@@ -356,7 +356,7 @@ fun IndexTracker(reached: Int, modifier: Modifier = Modifier, failedAt: Int = -1
 // ---------------------------------------------------------------- source switch and tabs (motion #4)
 
 /** One word's place inside its row: its left edge and its width, in px. */
-private class WordSpan(val x: Int, val width: Int)
+private data class WordSpan(val x: Int, val width: Int)
 
 /**
  * The shared body of the source switch and the tabs (docs/INDEX_THEME.md 8.2 #4): mono words, the chosen one in `text`, and one 3dp `accent` bar under it that
@@ -380,7 +380,11 @@ private fun IndexWords(
                 val on = i == selectedIndex
                 Box(
                     Modifier.height(IndexRules.TOUCH_MIN.dp)
-                        .onGloballyPositioned { c -> val pos = c.positionInParent(); spans = spans.toMutableList().also { l -> if (i < l.size) l[i] = WordSpan(pos.x.toInt(), c.size.width) } }
+                        // Written only when the word has moved or resized: this fires on every scroll frame of a page the tabs sit in.
+                        .onGloballyPositioned { c ->
+                            val now = WordSpan(c.positionInParent().x.toInt(), c.size.width)
+                            if (i < spans.size && spans[i] != now) spans = spans.toMutableList().also { l -> l[i] = now }
+                        }
                         .clickable(role = Role.Tab, onClick = { onSelect(i) }).semantics { selected = on }.padding(horizontal = cellPadding),
                     contentAlignment = Alignment.BottomCenter,
                 ) {
