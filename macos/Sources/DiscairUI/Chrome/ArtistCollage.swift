@@ -26,6 +26,18 @@ final class ArtistCollageModel {
 /// shows through the rest); five or more fill all of it, in tiles of different sizes. Pure, so a test can drive it.
 enum CollageLayout {
     static let maxSlots = 5
+    static let tileOverlap: CGFloat = 1
+
+    /// Pixel-align a collage tile and extend each shared edge by half an overlap so neighbouring tiles cannot expose a seam.
+    static func tileFrame(for slot: CGRect, in size: CGSize, scale: CGFloat, overlap: CGFloat = 1) -> CGRect {
+        let pixels = max(scale, 1)
+        let x = (slot.minX * size.width * pixels).rounded() / pixels
+        let y = (slot.minY * size.height * pixels).rounded() / pixels
+        let right = (slot.maxX * size.width * pixels).rounded() / pixels
+        let bottom = (slot.maxY * size.height * pixels).rounded() / pixels
+        return CGRect(x: x - overlap / 2, y: y - overlap / 2,
+                      width: right - x + overlap, height: bottom - y + overlap)
+    }
 
     static func slots(count: Int) -> [CGRect] {
         func r(_ x: CGFloat, _ y: CGFloat, _ w: CGFloat, _ h: CGFloat) -> CGRect { CGRect(x: x, y: y, width: w, height: h) }
@@ -164,16 +176,17 @@ private struct CollageSlotLayer: NSViewRepresentable {
 struct CollageHeroBackdrop: View {
     let entries: [CollageEntry]
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.displayScale) private var displayScale
     /// The picture each slot shows, as an index into `entries`.
     @State private var shown: [Int] = []
     private var still: Bool { reduceMotion || RenderMode.offscreenScreenshot }
-    private let seam: CGFloat = 3
 
     var body: some View {
         GeometryReader { g in
             let slots = CollageLayout.slots(count: entries.count)
             ZStack(alignment: .topLeading) {
                 ForEach(Array(slots.enumerated()), id: \.offset) { i, f in
+                    let frame = CollageLayout.tileFrame(for: f, in: g.size, scale: displayScale)
                     ZStack {
                         if shown.indices.contains(i), entries.indices.contains(shown[i]) {
                             if RenderMode.offscreenScreenshot {
@@ -183,9 +196,9 @@ struct CollageHeroBackdrop: View {
                             }
                         }
                     }
-                    .frame(width: max(f.width * g.size.width - seam, 0), height: max(f.height * g.size.height - seam, 0))
+                    .frame(width: frame.width, height: frame.height)
                     .clipped()
-                    .offset(x: f.minX * g.size.width + seam / 2, y: f.minY * g.size.height + seam / 2)
+                    .offset(x: frame.minX, y: frame.minY)
                 }
             }
         }

@@ -14,6 +14,10 @@ enum ArtistSpacing {
 }
 enum CupertinoArtistLayout {
     static let bannerHeight: CGFloat = 356
+    /// Shared Album and Artist hero geometry: the toolbar-relative back-button line and body-column edge.
+    static let heroTopInset: CGFloat = 76
+    static let heroLeadingInset: CGFloat = CU.Shell.contentLeading + CU.Space.xl
+    static let actionGap: CGFloat = 14
     /// The hero's height once the page has scrolled (D1.4): back button, small picture, title and Play on one line.
     static let compactHeight: CGFloat = 96
     /// The scroll distance over which the hero shrinks from `bannerHeight` to `compactHeight`.
@@ -140,12 +144,12 @@ struct CupertinoArtistBanner: View {
                         .overlay(Circle().stroke(CU.onMedia.opacity(0.85), lineWidth: 4))
                         .shadow(color: CU.shadowInk.opacity(0.35), radius: 14, y: 6)
                     VStack(alignment: .leading, spacing: 0) {
-                        HStack(alignment: .lastTextBaseline, spacing: 8) {
+                        HStack(alignment: .lastTextBaseline, spacing: 12) {
                             Text(state.selectedArtist.name).font(CU.Font.heroMetric.weighted(.bold)).tracking(-1.5).lineLimit(1).minimumScaleFactor(0.5)
-                            artistMenu
+                            artistMenu.offset(y: -6)
                         }
                         Text(state.selectedArtistIsUnowned ? "Not in your library" : lib.isLive ? "\(state.shownArtistOwnedCount) of \(state.shownArtistOwnedCount + state.shownArtistMissingCount) albums owned" : "3 of 5 albums owned · Post-rock, Synth-pop").opacity(0.85).padding(.top, 8).padding(.bottom, 16)
-                        HStack(spacing: 8) {
+                        HStack(spacing: CupertinoArtistLayout.actionGap) {
                             if !state.selectedArtistIsUnowned {
                             Button { state.actions.play(album: lib.artistAlbums.first ?? Fixtures.albums[1]) } label: { Label("Play", systemImage: "play.fill") }
                                 .buttonStyle(CapsuleButtonStyle(primary: true))
@@ -161,10 +165,31 @@ struct CupertinoArtistBanner: View {
                             }
                         }
                     }
+                    .frame(maxWidth: 620, alignment: .leading)
+                    .padding(.horizontal, 24).padding(.vertical, 20)
+                    // Keep the contrast aid local to the text group. Overscan and blur the elliptical
+                    // falloff so it dissolves into the collage without exposing a panel-shaped boundary.
+                    .background {
+                        EllipticalGradient(
+                            stops: [
+                                .init(color: CU.shadowInk.opacity(0.55), location: 0),
+                                .init(color: CU.shadowInk.opacity(0.42), location: 0.38),
+                                .init(color: CU.shadowInk.opacity(0.18), location: 0.76),
+                                .init(color: .clear, location: 1)
+                            ],
+                            center: UnitPoint(x: 0.24, y: 0.5),
+                            startRadiusFraction: 0.04,
+                            endRadiusFraction: 1
+                        )
+                        // Overscan before blurring so the feather extends beyond the gradient's
+                        // original bounds instead of revealing its rectangular layout edge.
+                        .padding(-40)
+                        .blur(radius: 34)
+                    }
                 }
             }
             .foregroundStyle(CU.onMedia)
-            .padding(.leading, 236 + CU.Space.xl).padding(.top, 50)       // 236 sidebar column + 32 margin
+            .padding(.leading, CupertinoArtistLayout.heroLeadingInset).padding(.top, CupertinoArtistLayout.heroTopInset)
             .padding(.trailing, state.queueOpen ? CupertinoQueueInspector.width + 40 : 40)
             .opacity(p > 0.5 ? 0 : 1 - p * 2).allowsHitTesting(p <= 0.5)
         }
@@ -197,7 +222,7 @@ struct CupertinoArtist: View {
                 }
                 // The bio and the albums on the left; the numbered top songs on the right (the page is the web's, in this theme).
                 HStack(alignment: .top, spacing: 32) {
-                    // One centred column: the bio, the album grid and the similar artists share its two edges.
+                    // One left-aligned column: the bio, the album grid and the similar artists share the portrait's leading edge.
                     VStack(alignment: .leading, spacing: 0) {
                         if state.library.isLive { ArtistBio(state: state) }
                         if state.library.isLive, state.related.loading || state.related.incomplete { relatedStatus }
@@ -209,7 +234,7 @@ struct CupertinoArtist: View {
                         if state.library.isLive { ArtistSimilarRow(state: state) }
                     }
                     .frame(maxWidth: ArtistSpacing.columnWidth, alignment: .leading)
-                    .frame(maxWidth: .infinity)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                     if state.library.isLive { TopSongsPanel(state: state).padding(.top, 16) }
                 }
             }

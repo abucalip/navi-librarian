@@ -1,3 +1,23 @@
+## 2026-11-19 — D2.4 artist hero scrim correction (draft PR #1208)
+
+- The owner reported that the original left-to-right scrim rendered as a broad dark rectangle with hard edges, extending across the hero. Root cause: the scrim background was attached to a text stack stretched to the available width.
+- Corrected CupertinoArtistBanner: constrain the text group to 620 pt, add local breathing room, and use a 55%-centre elliptical gradient that fades smoothly to transparent on every edge. This keeps the contrast aid behind the name, count and actions without a visible panel boundary.
+- **Not yet verified:** no macOS build, Swift tests, or visual review of the revised scrim in a running app. Required: check Day and Night, long and short artist names, collage behind the actions, and contrast over the brightest tile on exact head ff79abff59b25428b343f67dcc70bd94c623da6c.
+- No merge, publication, deployment or runtime verification is claimed.
+
+---
+
+## 2026-11-18 — macOS design details D2, Album and Artist hero alignment (draft PR #1208)
+
+- **Branch/base:** `macos/d2-album-artist-hero-alignment-clean`, draft PR #1208, based on GitHub `main` at `dd95d6f9ceb54033d04dd341568bba131668b420` (D1 is present on main). Implementation commit: `079bed3efa8729644fef332bbeed92d961fcdb93`.
+- **Changes:** shared 76 pt Album/Artist hero top inset and common leading inset; Album spine moved inside the cover frame; Album tabs, track table and related grids left-aligned; Artist body and biography text aligned to portrait; Artist name/menu spacing and capsule rhythm corrected; 55% to clear text scrim; collage tiles pixel-rounded with 1 pt overlap; translucent capsule dark fill and light hairline; playing quality badge changed to accent-on-white; overflow menu moved to the leading edge of its trailing cell. D2.7 needed no code change: current Album and Artist headings already follow the recommended top-level/subgroup hierarchy.
+- **Regression tests added:** `macos/Tests/DiscairUITests/HeroAlignmentTests.swift` checks shared hero metrics and collage pixel alignment/overlap for 2–5 tile layouts.
+- **Tests/CI:** not run here. macOS Swift tests must run on the owner's Mac; the selector maps the changed UI sources to `DiscairUITests`; run `swift test --filter DiscairUITests` on the exact PR head. No claim of test or CI success.
+- **Visual acceptance:** not done. Same-size before/after Album and Artist screenshots in Day and Night, the 400% collage seam crop, and contrast over the lightest collage tile remain owner checks. No merge, publication, deployment or runtime verification claimed.
+- **Next action:** run the focused Swift test on the exact PR head, then complete the Day/Night visual checks.
+
+---
+
 ## 2026-11-18 — Index theme I6 and two follow-ups (PRs #1202, #1203, #1204)
 
 - **Merged:** #1202 squash `0f069d4e38b5c1894f977c5de5d1f332ca86181c` (head `b61b14f6`): `IndexSheets.kt` (lettered menu sheet used by every Index menu, confirm body), `IndexDownloads.kt`, `IndexStats.kt`, `IndexSettings.kt` (Settings, Server, Appearance), `IndexEqCrossfade.kt`; `PickFeedback.kt` shares actions as pairs; `ServerRead.kt` decodes `/api/health` `version` and `latency_ms`. #1203 squash `6d49fb3399ca727a2d09191f9e47f407a2e24aa7` (head `71c9873e`): Index Paths use the shared layout; Index-only Paths files and branches removed. #1204 squash `735372a3d9b0802aa56b9796d5edd19123a8cf29` (head `9951463a`): Index Home lead is a swipe pager using `IndexMotion` tabSlide.

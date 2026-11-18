@@ -64,7 +64,7 @@ enum AlbumColumn {
 
 /// The album page's related lists (Cupertino), each a single row of six that fills the track table's width: similar artists in the
 /// library, then "Not in your library" with its similar artists as circles in one row and its albums as squares in the row below.
-/// Each block is centred under the table, with its heading on the block's left edge.
+/// Each block starts at the track table's left edge, with its heading on the block's left edge.
 struct AlbumRelatedGrids: View {
     let state: AppState
     @State private var salt = UInt64.random(in: 0...UInt64.max)
@@ -86,7 +86,7 @@ struct AlbumRelatedGrids: View {
         let owned = RandomPick.pick(r.ownedArtists, 6, salt: salt)
         let others = RandomPick.pick(r.otherArtists, 6, salt: salt)
         let albums = RandomPick.pick(r.albums, 6, salt: salt)
-        VStack(alignment: .center, spacing: 0) {
+        VStack(alignment: .leading, spacing: 0) {
             if !owned.isEmpty {
                 VStack(alignment: .leading, spacing: 0) {
                     heading("Similar artists")
@@ -104,7 +104,7 @@ struct AlbumRelatedGrids: View {
                 Text("Looking for similar artists…").font(.system(size: 12)).foregroundStyle(CU.textSecondary).padding(.top, 14)
             }
         }
-        .frame(maxWidth: .infinity, alignment: .center)
+        .frame(maxWidth: .infinity, alignment: .leading)
         .onChange(of: state.selectedAlbum.id) { _, _ in salt = .random(in: 0...UInt64.max) }
     }
 
