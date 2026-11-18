@@ -156,7 +156,7 @@ struct CupertinoAlbum: View {
 
     @ViewBuilder private func tracksTab(_ a: AlbumItem) -> some View {
         // One column as wide as the track table: the table, "More by" and the related lists share its edges, and each row of
-        // covers or photos is centred in it.
+        // covers or photos starts at the same leading edge.
         VStack(alignment: .leading, spacing: 0) {
             trackTable.frame(maxWidth: .infinity, alignment: .leading)
             let more = state.library.more(by: a)
