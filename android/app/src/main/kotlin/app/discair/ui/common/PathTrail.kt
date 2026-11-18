@@ -141,6 +141,7 @@ fun TrailHeader(name: String, picture: @Composable () -> Unit, modifier: Modifie
 @Composable
 fun TrailTabs(labels: List<String>, selected: Int, onSelect: (Int) -> Unit, modifier: Modifier = Modifier) {
     if (isGallery()) { GalleryTabs(labels, selected, onSelect, modifier); return }
+    if (isIndex()) { IndexTabs(labels, selected, onSelect, modifier); return }
     val state = rememberLazyListState()
     // A tab restored off screen (Back from an album) is brought into view; one already visible is left where it is.
     LaunchedEffect(selected) {

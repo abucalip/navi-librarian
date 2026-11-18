@@ -328,7 +328,7 @@ Each page is an `.html` and a `.png` in [`docs/design/index/pages/`](design/inde
 
 Every route in `ui/Routes.kt` and every sheet the screens open has a frame. Not drawn: tablet widths, and empty or error states beyond Home's frame 4 (each uses the same banner, skeleton and one-line message).
 
-**Owner change (2026-11-18): the album and artist Paths sheets use the shared layout of Flow and the other themes, in Index's own fonts and colours; Index draws no Paths layout of its own.** **Paths behaviour stays as built.** The server is asked only when the sheet is open and a kind is chosen, and Back from an opened album returns to the sheet at the same step. Index changes only the drawing: numbered steps, lettered reasons, rules.
+**Owner change (2026-11-18): the album and artist Paths sheets use the shared layout of Flow and the other themes, in Index's own fonts and colours; Index draws no Paths layout of its own, but keeps its square art, mono tabs with the moving bar, fonts and colours.** **Paths behaviour stays as built.** The server is asked only when the sheet is open and a kind is chosen, and Back from an opened album returns to the sheet at the same step. 
 
 ## 11. Where the code goes
 

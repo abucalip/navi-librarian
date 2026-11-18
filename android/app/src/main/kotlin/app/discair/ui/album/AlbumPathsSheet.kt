@@ -149,7 +149,7 @@ private fun AlbumPathList(
     onTab: (AlbumTab) -> Unit, onStep: (Int) -> Unit, onRetry: () -> Unit,
 ) {
     Column(Modifier.fillMaxSize()) {
-        TrailHeader(albumName, { PathAlbumCover(artistName, albumName, Modifier.size(TrailSizes.HeaderPicture).clip(RoundedCornerShape(4.dp))) }, Modifier.padding(horizontal = 16.dp))
+        TrailHeader(albumName, { PathAlbumCover(artistName, albumName, Modifier.size(TrailSizes.HeaderPicture).clip(RoundedCornerShape(if (app.discair.ui.common.isIndex()) 0.dp else 4.dp))) }, Modifier.padding(horizontal = 16.dp))
         TrailTabs(tabs.map { it.label }, tabs.indexOf(tab), { onTab(tabs[it]) })
         Text(
             albumTabDescription(tab, albumName, seeds), style = if (app.discair.ui.common.isGallery()) app.discair.ui.common.GalleryType.small() else MaterialTheme.typography.bodyMedium, color = Ink.TextMuted,
