@@ -1,3 +1,9 @@
+## 2026-11-18 — Index theme I0 server PR 2 (PR #1193)
+
+- **Merged:** PR #1193, squash `2e169cf4034265fd6fd9f3def47e5fc5b773ad37`. Three of the missing I0 rows, all optional fields with no new provider traffic: `/api/health` `version` and `latency_ms`; `plays` on `/api/library/artists` items; `library_position` and `library_total` on the album page `album` section (new `discovery/search/album_position.py`). Contract (`SEARCH_CONTRACT.md` 14.5), `ARCHITECTURE.md` row and the audit table updated. The three share one PR at the owner's request (the spec says one each).
+- **Tests run:** `test_health_route`, `test_album_position`, `test_discovery_search_album_page`, `test_discovery_search_query`, `test_dashboard_routes` (all passed); `check_lint_changed.py` clean. CI first failed on `test_dashboard_routes` (it pinned the exact health body); fixed in the PR. Not run: full suite.
+- **Limitations:** no recorded fixture added for the new fields; Android decoders not opened. Not built: artist page fields, path stop `years` and `shared_albums`, library `filter`. Not published or deployed.
+
 ## 2026-11-18 — Index theme I0 server data audit (docs PR)
 
 - **Done:** audited the 13 rows of `docs/INDEX_THEME.md` section 11a against `main` (`9e810191`): 6 served, 7 missing (played counts, artist plays, artist page counts and years, album library position, path stop years and shared albums, `/api/health` version and latency, library filters). Table filled in the spec.
