@@ -63,6 +63,8 @@ data class ShelfAlbum(
     val year: Int? = null,
     @SerialName("artwork_url") val artworkUrl: String? = null,
     val owned: Boolean = true,
+    /** Plays in the last seven days (the `recent` shelf only, from ListenBrainz); null when the server could not read the listens. */
+    @SerialName("play_count") val playCount: Int? = null,
 )
 
 @Serializable
