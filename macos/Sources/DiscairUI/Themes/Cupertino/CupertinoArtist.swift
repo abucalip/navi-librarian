@@ -166,7 +166,6 @@ struct CupertinoArtistBanner: View {
                         }
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(12)
                     .background {
                         LinearGradient(colors: [CU.shadowInk.opacity(0.55), .clear], startPoint: .leading, endPoint: .trailing)
                     }
