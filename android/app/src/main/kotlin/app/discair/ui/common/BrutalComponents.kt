@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -567,8 +568,9 @@ fun ModalBottomSheet(
     }
     if (isIndex()) {
         // Index: `surface`, a 6dp top radius, a 32 by 3dp `text` handle and the fixed scrim. Material's own timing is kept (decision I4).
+        // A full-height sheet (Paths) stops under the status bar, so its small handle and header are not drawn beneath the clock.
         androidx.compose.material3.ModalBottomSheet(
-            onDismissRequest, modifier, sheetState, shape = shape ?: RoundedCornerShape(topStart = IndexRules.SHEET_TOP_RADIUS.dp, topEnd = IndexRules.SHEET_TOP_RADIUS.dp),
+            onDismissRequest, modifier.statusBarsPadding(), sheetState, shape = shape ?: RoundedCornerShape(topStart = IndexRules.SHEET_TOP_RADIUS.dp, topEnd = IndexRules.SHEET_TOP_RADIUS.dp),
             containerColor = containerColor ?: p.surface, scrimColor = IndexRules.SCRIM, tonalElevation = 0.dp,
             dragHandle = { IndexSheetHandle() }, content = content,
         )

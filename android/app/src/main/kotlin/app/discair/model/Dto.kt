@@ -129,6 +129,22 @@ data class ArtistInfo(
     val owned: Boolean = false,
     @SerialName("album_count") val albumCount: Int = 0,
     val genre: String? = null,
+    /** The artist's summed song plays (Index theme I0); `0` when none, absent from an older server. */
+    @SerialName("play_count") val playCount: Int? = null,
+    /** The stored MusicBrainz life span in years (Index theme I0); `null` when no begin year is stored or the server is older. */
+    @SerialName("active_years") val activeYears: ActiveYears? = null,
+)
+
+/** An artist's active years: [end] is `null` while active or when MusicBrainz states none; [ended] says which. */
+@Serializable
+data class ActiveYears(val begin: Int? = null, val end: Int? = null, val ended: Boolean = false)
+
+/** The artist page's `albums` section counts (Index theme I0, "Owned 5 of 9"): provider-listed albums, owned and total. Absent when no provider listed any. */
+@Serializable
+data class AlbumCounts(
+    val available: Boolean = false,
+    @SerialName("owned_count") val ownedCount: Int? = null,
+    @SerialName("album_count") val albumCount: Int? = null,
 )
 
 @Serializable
@@ -182,6 +198,8 @@ data class ArtistSections(
     @SerialName("top_songs") val topSongs: Section<TopSong> = Section(),
     @SerialName("missing_albums") val missingAlbums: Section<MissingAlbum> = Section(),
     val similar: Section<SimilarArtist> = Section(),
+    /** Only its counts are read (Index theme); the items repeat the catalog the other sections already show. */
+    val albums: AlbumCounts = AlbumCounts(),
 )
 
 @Serializable
@@ -206,6 +224,9 @@ data class AlbumInfo(
     @SerialName("artwork_choice") val artworkChoice: Long? = null,
     /** One file-quality tag for the whole album ("FLAC", "lossless", "320k"); absent when unknown. */
     val quality: String? = null,
+    /** The album's place among the owned albums by name, from 1, and their number (Index theme I0, decision I7); both `null` when not owned. */
+    @SerialName("library_position") val libraryPosition: Int? = null,
+    @SerialName("library_total") val libraryTotal: Int? = null,
 )
 
 @Serializable

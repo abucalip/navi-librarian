@@ -35,6 +35,7 @@ fun GenreScreen(route: GenreRoute, open: Opener) {
     if (app.discair.ui.common.isCoverStack()) { CoverStackGenre(route, loaded, open); return }
     if (app.discair.ui.common.isFlow()) { FlowGenre(route, loaded, open); return }
     if (app.discair.ui.common.isGallery()) { GalleryGenre(route, loaded, open); return }
+    if (app.discair.ui.common.isIndex()) { IndexGenre(route, loaded, open); return }
     Column(Modifier.fillMaxSize()) {
         BackBar(open.back)
         LoadView(loaded) { page ->

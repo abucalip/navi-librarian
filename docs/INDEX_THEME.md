@@ -1,6 +1,6 @@
 # Index theme for Android: design system and build plan
 
-Status: **design approved by the owner** (2026-11-17); every decision in section 13 is decided as proposed. **I0 is done** (section 11a; every missing server row is built) and **I1 (palettes, pair, shell) is merged (#1197)** (`ui/common/IndexKit.kt`, `IndexIcons.kt`, `IndexShell.kt`, `ui/theme/IndexMotion.kt`); **I2 (Home) is merged (#1198)** (`ui/home/IndexHome.kt`, `IndexHomeRules.kt`); I3 to I6 are not built. This document is the spec that implementing agents build from. The mockups beside it are the spec for every screen ("the mockups are the spec", Round 3 owner rule).
+Status: **design approved by the owner** (2026-11-17); every decision in section 13 is decided as proposed. **I0 is done** (section 11a; every missing server row is built) and **I1 (palettes, pair, shell) is merged (#1197)** (`ui/common/IndexKit.kt`, `IndexIcons.kt`, `IndexShell.kt`, `ui/theme/IndexMotion.kt`); **I2 (Home) is merged (#1198)** (`ui/home/IndexHome.kt`, `IndexHomeRules.kt`); **I3 (Album, Artist, Genre, Paths) is in review** (`IndexAlbum.kt`, `IndexArtist.kt`, `IndexGenre.kt`, `IndexAlbumPaths.kt`, `IndexArtistPaths.kt`, `IndexPagesRules.kt`); I4 to I6 are not built. This document is the spec that implementing agents build from. The mockups beside it are the spec for every screen ("the mockups are the spec", Round 3 owner rule).
 
 Package: [`docs/design/index/`](design/index/). Start with its [`README.md`](design/index/README.md). The shared mockup kit is [`docs/design/_kit/`](design/_kit/).
 
@@ -406,6 +406,9 @@ Checked in the server code (routes, read models, stores) only. The Android decod
 | Neighbours by ear meter | **Served** (per spec; not re-read) | `matchCount` per spec | none |
 | Server page "v0.3.9 · 84 ms" | **Missing** | `/api/health` answers `status`, `service`, `message` only; no version or latency | Optional `version` and `latency_ms` on `/api/health`, timed around the existing Navidrome `ping`. **Built** (I0 server PR 2) |
 | Library "Unplayed", "Lossless" | **Missing** | `/api/library/albums` has `q`, `sort`, `order`, `cursor`, `limit`; no filter | Shared `filter` query with Bento, built once. Needs per-album play and quality data on the index entry. **Built** (I0 server PR 5, #1196; `discovery/search/album_filters.py`) |
+| Artist head "ARTIST 0031 / 312" (found in I3) | **Missing** | `/api/artists/{key}` has no place among the owned artists | Optional `library_position` and `library_total` on the `artist` section, as for albums (I3 shows "ARTIST" until the owner decides) |
+| Unowned album "PICK 03 / 12" and "Why this pick" (found in I3) | **Missing** | The album page does not know which pick list, if any, opened it, nor the pick's reason | Either the route carries the pick's place and reason from Home or Discover, or the album page looks the album up in the stored picks (I3 leaves both out until the owner decides) |
+| Genre artists "5 ALBUMS" (found in I3) | **Missing** | `/api/genres/{tag}` artist items carry `owned`, `id`, `key`, `name` only | Optional `album_count` on genre artist items (I3 shows the library state instead) |
 
 **Stops and questions for the owner.** None of the builds above needs a new provider or more provider traffic. I0-1 is decided and built. Suggested server PR order, smallest first: `/api/health` fields; `plays` on library artists; `library_position` and `library_total`; artist page fields; path stop `years` and `shared_albums`; the library `filter`.
 
