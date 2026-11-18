@@ -205,7 +205,7 @@ struct CupertinoArtist: View {
                 }
                 // The bio and the albums on the left; the numbered top songs on the right (the page is the web's, in this theme).
                 HStack(alignment: .top, spacing: 32) {
-                    // One centred column: the bio, the album grid and the similar artists share its two edges.
+                    // One left-aligned column: the bio, the album grid and the similar artists share the portrait's leading edge.
                     VStack(alignment: .leading, spacing: 0) {
                         if state.library.isLive { ArtistBio(state: state) }
                         if state.library.isLive, state.related.loading || state.related.incomplete { relatedStatus }
