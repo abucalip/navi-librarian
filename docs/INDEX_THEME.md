@@ -405,7 +405,7 @@ Checked in the server code (routes, read models, stores) only. The Android decod
 | Artist Paths step: With, Owned, Albums together | **Missing** | Stops carry `begin_year` and `anchor_begin_year` for `scene_path` only; no years together, no shared albums with states | Optional `years` and `shared_albums` on stops, in `intelligence/graph/` (same as Bento). **Built** (I0 server PR 4, #1195; `sideman_to_leader` stops, under `presentation`) |
 | Neighbours by ear meter | **Served** (per spec; not re-read) | `matchCount` per spec | none |
 | Server page "v0.3.9 · 84 ms" | **Missing** | `/api/health` answers `status`, `service`, `message` only; no version or latency | Optional `version` and `latency_ms` on `/api/health`, timed around the existing Navidrome `ping`. **Built** (I0 server PR 2) |
-| Library "Unplayed", "Lossless" | **Missing** | `/api/library/albums` has `q`, `sort`, `order`, `cursor`, `limit`; no filter | Shared `filter` query with Bento, built once. Needs per-album play and quality data on the index entry |
+| Library "Unplayed", "Lossless" | **Missing** | `/api/library/albums` has `q`, `sort`, `order`, `cursor`, `limit`; no filter | Shared `filter` query with Bento, built once. Needs per-album play and quality data on the index entry. **Built** (I0 server PR 5, #1196; `discovery/search/album_filters.py`) |
 
 **Stops and questions for the owner.** None of the builds above needs a new provider or more provider traffic. I0-1 is decided and built. Suggested server PR order, smallest first: `/api/health` fields; `plays` on library artists; `library_position` and `library_total`; artist page fields; path stop `years` and `shared_albums`; the library `filter`.
 

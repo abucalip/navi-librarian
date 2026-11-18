@@ -1,3 +1,9 @@
+## 2026-11-18 — Index theme I0 server PR 5, library filter (PR #1196)
+
+- **Merged:** PR #1196, squash `5b87060a4a042c492c63b692ddb4230f8cb96f35`. Optional `filter=unplayed|lossless` on `/api/library/albums` (400 on any other value); total counts the filtered albums; the cursor is bound to the filter. Index album entries gain `plays` and `quality` from existing song data (no provider traffic). New `discovery/search/album_filters.py`; contract (`SEARCH_CONTRACT.md` 14.1) and `ARCHITECTURE.md` updated. Shared with Bento. This was the last missing I0 row: **I0 is complete.**
+- **Tests run:** `pytest tests/test_discovery_search_query.py tests/test_api_search_routes.py tests/test_quality_label.py` (103 passed). CI on the final head (`d9c7ad8a`) not re-checked here. Not run: full suite.
+- **Limitations:** no recorded fixture (no response fields added); the route test for a cursor from another filter only runs when a second page exists; Android decoders not opened. Not published or deployed.
+
 ## 2026-11-18 — Index theme I0 server PR 4 (PR #1195)
 
 - **Merged:** PR #1195, squash `3744190728a4bb072e415fd88999b8be231d0c51`. Optional `presentation.shared_albums` (`{album, year, owned}`, oldest first, at most 12) and `presentation.years` (`{from, to}`) on `sideman_to_leader` stops, from the releases behind the stop's reasons and `release_facts.date`. New `intelligence/graph/path_stop_facts.py`; `presentation_version` 8 rebuilds cached paths; contract (`SERVER_V2_CONTRACT.md`) and `ARCHITECTURE.md` updated. No provider traffic.
