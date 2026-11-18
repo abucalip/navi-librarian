@@ -1,3 +1,12 @@
+## 2026-11-19 — D2.4 artist hero scrim correction (draft PR #1208)
+
+- The owner reported that the original left-to-right scrim rendered as a broad dark rectangle with hard edges, extending across the hero. Root cause: the scrim background was attached to a text stack stretched to the available width.
+- Corrected CupertinoArtistBanner: constrain the text group to 620 pt, add local breathing room, and use a 55%-centre elliptical gradient that fades smoothly to transparent on every edge. This keeps the contrast aid behind the name, count and actions without a visible panel boundary.
+- **Not yet verified:** no macOS build, Swift tests, or visual review of the revised scrim in a running app. Required: check Day and Night, long and short artist names, collage behind the actions, and contrast over the brightest tile on exact head ff79abff59b25428b343f67dcc70bd94c623da6c.
+- No merge, publication, deployment or runtime verification is claimed.
+
+---
+
 ## 2026-11-18 — macOS design details D2, Album and Artist hero alignment (draft PR #1208)
 
 - **Branch/base:** `macos/d2-album-artist-hero-alignment-clean`, draft PR #1208, based on GitHub `main` at `dd95d6f9ceb54033d04dd341568bba131668b420` (D1 is present on main). Implementation commit: `079bed3efa8729644fef332bbeed92d961fcdb93`.
