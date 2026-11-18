@@ -140,12 +140,12 @@ Status: D1 is on main at `dd95d6f9`; D2 implemented in draft PR #1208 on `macos/
 - D2.1: Album and Artist use one shared 76 pt hero top inset.
 - D2.2: the Spine strip is drawn inside the Album cover frame, so the cover's full left edge meets the back button.
 - D2.3: the Album tabs, track table and related grids are left-aligned to the hero column; the Artist body column and biography text are left-aligned to the portrait edge.
-- D2.4: the Artist text block has the specified 55% to clear left-to-right scrim; the menu is separated by 12 pt and raised 6 pt; action capsules use a 14 pt gap.
+- D2.4: the Artist text group is constrained to a local 620 pt width and backed by a 55%-centre elliptical scrim that feathers to transparent on all edges; no rectangular panel or hero-wide fill. The menu is separated by 12 pt and raised 6 pt; action capsules use a 14 pt gap. Corrected in commit `ff79abff59b25428b343f67dcc70bd94c623da6c` after owner visual feedback.
 - D2.5: collage tile frames are pixel-rounded and overlap by 1 pt. D2.6: translucent media capsules use a dark fill and light hairline; the scrim also improves their ground.
 - D2.7: source review found the recommended hierarchy already present: 20 pt top-level headings and small-caps subgroup labels under "Not in your library". No duplicate style change was made.
 - D2.8: the playing-row quality badge uses accent text on the on-accent surface (white in Day, dark in Night). D2.9: the overflow action is leading-aligned within its trailing cell, beside Quality.
 - Added `HeroAlignmentTests` for shared inset/action metrics, pixel alignment and overlap across the 2–5 tile layouts.
-- **Verification not yet done:** no Swift test execution here; the selector maps these UI changes to `DiscairUITests`; run `swift test --filter DiscairUITests` on a Mac. Visual acceptance still needs same-size Album and Artist before/after screenshots in Day and Night, the collage seam crop at 400%, and a contrast check over the lightest tile. The source changes are not a substitute for those checks.
+- **Verification not yet done:** the revised scrim has not yet been built or seen in a running app; no Swift test execution is recorded here. The selector maps these UI changes to `DiscairUITests`; run `swift test --filter DiscairUITests` on a Mac. Visual acceptance still needs same-size Album and Artist before/after screenshots in Day and Night, the collage seam crop at 400%, and a contrast check over the lightest tile. The source changes are not a substitute for those checks.
 
 ## Slice D3: bottom insets and the Pipeline dock
 
