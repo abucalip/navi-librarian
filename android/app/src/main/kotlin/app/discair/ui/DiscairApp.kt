@@ -230,7 +230,9 @@ fun SettingsScreen(state: UiState, model: AppViewModel, onBack: () -> Unit, onEq
     // The page scrolls because the playback choices make it taller than a phone in landscape or at large text.
     // Soft Brut draws its own grouped page (settings/CoverStackSettings.kt); the sign-out sheet below is shared.
     // Flow draws its own grouped page (settings/FlowSettings.kt), also with the same sign-out sheet.
-    if (app.discair.ui.common.isGallery()) app.discair.ui.settings.GallerySettingsPage(
+    if (app.discair.ui.common.isIndex()) app.discair.ui.settings.IndexSettingsPage(
+        state, model, container, onBack, onEqualizer, onCrossfade, onAppearance, onServer, onSignOut = { confirmSignOut = true },
+    ) else if (app.discair.ui.common.isGallery()) app.discair.ui.settings.GallerySettingsPage(
         state, model, container, onBack, onEqualizer, onCrossfade, onAppearance, onServer, onSignOut = { confirmSignOut = true },
     ) else if (app.discair.ui.common.isFlow()) app.discair.ui.settings.FlowSettingsPage(
         state, model, container, onBack, onEqualizer, onCrossfade, onAppearance, onServer, onSignOut = { confirmSignOut = true },
@@ -307,7 +309,7 @@ internal fun LibrarySettings() {
             problem = "Could not read this option from the server."
         }
     }
-    val softBrut = app.discair.ui.common.isCoverStack() || app.discair.ui.common.isFlow() || app.discair.ui.common.isGallery() // all group it as a row with a switch
+    val softBrut = app.discair.ui.common.isCoverStack() || app.discair.ui.common.isFlow() || app.discair.ui.common.isGallery() || app.discair.ui.common.isIndex() // all group it as a row with a switch
     if (!softBrut) Section("Library", bold = true)
     val current = value
     val toggle: (Boolean) -> Unit = { on ->

@@ -66,19 +66,24 @@ fun StatsScreen(onBack: () -> Unit) {
         val softBrut = isCoverStack() // Soft Brut: a cover-stack bar and title, word chips and outlined cards (CoverStackStats.kt)
         val flow = isFlow() // Flow: its own bar, large title, capsule chips and white cards (FlowStats.kt)
         val gallery = isGallery() // Gallery: a page bar, a catalogue line over the title, a word switch and hairline sections (GalleryStats.kt)
-        if (gallery) app.discair.ui.common.GalleryPageBar("Library stats", onBack) else if (softBrut) CoverStackTopBar(onBack, emptyList(), title = "Library stats") else if (flow) FlowPageBar(onBack, emptyList(), title = "Library stats") else BackBar(onBack)
+        val index = app.discair.ui.common.isIndex() // Index: a page bar, the Display title, the figures under heavy rules, mono range tabs, ruled sections (IndexStats.kt)
+        if (index) app.discair.ui.common.IndexPageBar("Library", onBack)
+        else if (gallery) app.discair.ui.common.GalleryPageBar("Library stats", onBack) else if (softBrut) CoverStackTopBar(onBack, emptyList(), title = "Library stats") else if (flow) FlowPageBar(onBack, emptyList(), title = "Library stats") else BackBar(onBack)
         LazyColumn(
             Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(start = if (gallery) 0.dp else 16.dp, end = if (gallery) 0.dp else if (softBrut) 19.dp else 16.dp, top = 0.dp, bottom = 24.dp + app.discair.ui.LocalBottomClearance.current),
-            verticalArrangement = Arrangement.spacedBy(if (gallery) 0.dp else 16.dp),
+            contentPadding = PaddingValues(start = if (gallery || index) 0.dp else 16.dp, end = if (gallery || index) 0.dp else if (softBrut) 19.dp else 16.dp, top = 0.dp, bottom = 24.dp + app.discair.ui.LocalBottomClearance.current),
+            verticalArrangement = Arrangement.spacedBy(if (gallery || index) 0.dp else 16.dp),
         ) {
             item(key = "title") {
-                if (gallery) app.discair.ui.common.GalleryPageHead("Library stats", eyebrow = "Library")
+                if (index) app.discair.ui.common.IndexPageHead("Stats")
+                else if (gallery) app.discair.ui.common.GalleryPageHead("Library stats", eyebrow = "Library")
                 else if (softBrut) CoverStackTitle("Library stats", maxLines = 1)
                 else if (flow) FlowLargeTitle("Library stats")
                 else Text("Library stats", style = MaterialTheme.typography.headlineMedium, modifier = Modifier.semantics { heading() })
             }
-            if (gallery) item(key = "ranges") { GalleryRanges(range) { range = it } }
+            if (index) item(key = "figures") { IndexStatsFigures(read?.total) }
+            if (index) item(key = "ranges") { IndexRanges(range) { range = it } }
+            else if (gallery) item(key = "ranges") { GalleryRanges(range) { range = it } }
             else if (softBrut) item(key = "ranges") { CoverStackRanges(range) { range = it } }
             else if (flow) item(key = "ranges") { FlowRanges(range) { range = it } }
             else item(key = "ranges") {
@@ -104,7 +109,7 @@ private fun CollectionCard(
     read: StatsRead?, loading: Boolean, state: Load<StatsRead>, retry: () -> Unit, range: StatsRange, now: Instant,
 ) {
     val series = remember(read, range) { read?.let { StatsRules.collection(it, range, now) } }
-    StatsCard {
+    StatsCard("collection") {
         if (state is Load.Failed) {
             Text("Collection over time", style = MaterialTheme.typography.titleLarge, modifier = Modifier.semantics { heading() })
             Inline(state.failure.message, retry)
@@ -112,7 +117,7 @@ private fun CollectionCard(
         }
         if (series != null) {
             val today = StatsRules.dateWords(now.atZone(ZoneOffset.UTC).toLocalDate())
-            if (!isCoverStack() && !isFlow() && !isGallery()) Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            if (!isCoverStack() && !isFlow() && !isGallery() && !app.discair.ui.common.isIndex()) Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
                     app.discair.ui.common.ChartRules.formatCount(series.total.toDouble()), style = discairType().displayMetric,
                     modifier = Modifier.semantics { contentDescription = "${series.total} albums on $today" },
@@ -141,7 +146,7 @@ private fun CollectionCard(
 @Composable
 private fun DecadesCard(read: StatsRead?, taste: app.discair.model.TasteResponse?, loading: Boolean) {
     val shares = remember(read, taste) { StatsRules.decades(read, taste?.profiles) }
-    StatsCard {
+    StatsCard("decades") {
         val title = "Own and play, by decade"
         when {
             loading -> RankedBars(title, "Share of the albums you own", emptyList(), state = ChartState.Loading)
@@ -159,7 +164,7 @@ private fun DecadesCard(read: StatsRead?, taste: app.discair.model.TasteResponse
 
 @Composable
 private fun ShelfLifeCard() {
-    StatsCard {
+    StatsCard("shelf") {
         // No Android source for last-played dates, so the chart says so instead of drawing zeros; no button is offered.
         ColumnChart(
             "Shelf life", "Albums by time since the last play", emptyList(),
@@ -171,7 +176,7 @@ private fun ShelfLifeCard() {
 @Composable
 private fun TimeOfDayCard(taste: app.discair.model.TasteResponse?, loading: Boolean, failed: Boolean) {
     val points = remember(taste) { StatsRules.timeOfDay(taste?.timeOfDay) }
-    StatsCard {
+    StatsCard("listen") {
         ColumnChart(
             "When you listen", StatsRules.timeOfDaySubtitle(taste?.timeOfDayZone ?: "UTC"), points.orEmpty(),
             state = if (failed) ChartState.Unavailable("The taste profile could not be read.") else StatsRules.timeOfDayState(points, loading),
@@ -181,6 +186,7 @@ private fun TimeOfDayCard(taste: app.discair.model.TasteResponse?, loading: Bool
 
 /** A stats card: the Standard dashboard card, Soft Brut's outlined one, or Flow's white one. */
 @Composable
-private fun StatsCard(content: @Composable () -> Unit) {
-    if (isGallery()) GalleryStatsCard(content) else if (isCoverStack()) app.discair.ui.discover.CoverStackCardBox(content = content) else if (isFlow()) FlowStatsCard(content) else DashCard(content = content)
+private fun StatsCard(key: String, content: @Composable () -> Unit) {
+    if (app.discair.ui.common.isIndex()) IndexStatsCard(key, content)
+    else if (isGallery()) GalleryStatsCard(content) else if (isCoverStack()) app.discair.ui.discover.CoverStackCardBox(content = content) else if (isFlow()) FlowStatsCard(content) else DashCard(content = content)
 }

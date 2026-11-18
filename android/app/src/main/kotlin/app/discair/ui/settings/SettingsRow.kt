@@ -41,6 +41,8 @@ fun SettingsRow(
     if (app.discair.ui.common.isCoverStack()) { CoverStackSettingsRow(icon, title, state, modifier, stateColor, onClick, trailing, divider); return }
     // Flow: a 32dp icon tile in a white grouped card (FlowSettings.kt).
     if (app.discair.ui.common.isGallery()) { GallerySettingsRow(icon, title, state, modifier, stateColor, onClick, trailing, divider); return }
+    // Index: no icon; the name over its state in mono capitals, a rule between rows (IndexSettings.kt).
+    if (app.discair.ui.common.isIndex()) { IndexSettingsRow(icon, title, state, modifier, stateColor, onClick, trailing, divider); return }
     if (app.discair.ui.common.isFlow()) { FlowSettingsRow(icon, title, state, modifier, stateColor, onClick, trailing, divider); return }
     Column(modifier) {
         RowDivider()

@@ -97,6 +97,7 @@ fun AppearanceScreen(appearance: Appearance, onBack: () -> Unit) {
     // Soft Brut draws its own page (CoverStackAppearance.kt); the choices and where they are kept are Appearance's.
     if (app.discair.ui.common.isCoverStack()) { CoverStackAppearance(appearance, onBack); return }
     if (app.discair.ui.common.isGallery()) { GalleryAppearance(appearance, onBack); return }
+    if (app.discair.ui.common.isIndex()) { IndexAppearance(appearance, onBack); return }
     // Flow draws its own page too (FlowAppearance.kt).
     if (app.discair.ui.common.isFlow()) { FlowAppearance(appearance, onBack); return }
     var picking by rememberSaveable { mutableStateOf<String?>(null) }

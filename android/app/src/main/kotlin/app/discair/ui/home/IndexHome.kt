@@ -21,8 +21,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -62,7 +60,10 @@ import app.discair.ui.common.IndexButtonKind
 import app.discair.ui.common.IndexDataList
 import app.discair.ui.common.IndexGet
 import app.discair.ui.common.IndexGetButton
-import app.discair.ui.common.IndexIconButton
+import app.discair.ui.common.IndexMenuButton
+import app.discair.ui.common.IndexMenuHeader
+import app.discair.ui.common.IndexMenuItem
+import app.discair.ui.common.IndexSheetRules
 import app.discair.ui.common.IndexIcons
 import app.discair.ui.common.IndexInsightBlock
 import app.discair.ui.common.IndexLabel
@@ -157,7 +158,7 @@ internal fun IndexHome(
                     state is Load.Loading -> LeadSkeleton()
                     state is Load.Failed -> Failed(state.failure.message, retry)
                     items.isEmpty() -> Muted(IndexHomeRules.empty(tab), Modifier.padding(horizontal = Gutter, vertical = 16.dp))
-                    else -> Lead(tab, items[at], at, data.pickList.getOrNull(at), open, feedback)
+                    else -> Lead(tab, items[at], at, items.size, data.pickList.getOrNull(at), open, feedback)
                 }
             }
         }
@@ -256,7 +257,7 @@ private fun LeadSkeleton() {
 }
 
 @Composable
-private fun Lead(tab: FlowHomeRules.Tab, item: LeadItem, at: Int, pick: Pick?, open: Opener, feedback: (FeedbackAction, Pick) -> Unit) {
+private fun Lead(tab: FlowHomeRules.Tab, item: LeadItem, at: Int, total: Int, pick: Pick?, open: Opener, feedback: (FeedbackAction, Pick) -> Unit) {
     val p = LocalPalette.current
     val year = if (tab == FlowHomeRules.Tab.Picks) rememberAlbumYear(item.artist, item.title, item.year) else item.year
     val key = routeKey(item.artist, item.title)
@@ -278,44 +279,52 @@ private fun Lead(tab: FlowHomeRules.Tab, item: LeadItem, at: Int, pick: Pick?, o
         }
     }
     Row(Modifier.fillMaxWidth().padding(start = Gutter, end = 4.dp, top = 14.dp), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
-        if (tab == FlowHomeRules.Tab.Picks) { if (pick != null) PickActions(pick, feedback) } else PlayActions(item)
+        // The sheets' header: the cover, "PICK 01 / 12 · ARTIST" (or ALBUM for New and Played) and the title (mockup sheets, frame 1).
+        val header = IndexMenuHeader(item.title, IndexSheetRules.eyebrow(if (tab == FlowHomeRules.Tab.Picks) "Pick" else "Album", at + 1, total, item.artist)) {
+            AlbumCover(item.artist, item.title, item.artworkUrl, Modifier.size(IndexSheetRules.HEADER_ART.dp), rect = true)
+        }
+        if (tab == FlowHomeRules.Tab.Picks) { if (pick != null) PickActions(pick, feedback, header) } else PlayActions(item, header)
     }
 }
 
-/** Picks: Get album, Save and the three dots with "Not this album" and "Never suggest artist". */
+/** Picks: Get album, Save and the three dots with the lettered sheet: Not this album and Never suggest this artist. */
 @Composable
-private fun androidx.compose.foundation.layout.RowScope.PickActions(pick: Pick, onFeedback: (FeedbackAction, Pick) -> Unit) {
+private fun androidx.compose.foundation.layout.RowScope.PickActions(pick: Pick, onFeedback: (FeedbackAction, Pick) -> Unit, header: IndexMenuHeader) {
     val hub = LocalAcquisitions.current
     var saved by remember(pick) { mutableStateOf(false) }
-    var menu by remember(pick) { mutableStateOf(false) }
     IndexGetButton(
         indexGetOf(hub.getState(pick.artist, pick.album)), { hub.getAlbum(pick.artist, pick.album, pageMetadata(pick.artist, pick.album, pick.year, pick.releaseGroupMbid)) },
         idleLabel = "Get album", small = false,
     )
     IndexButton(if (saved) "Saved" else "Save", { saved = true; onFeedback(FeedbackAction.Save, pick) }, kind = IndexButtonKind.Ghost, icon = IndexIcons.Bookmark, enabled = !saved)
     Box(Modifier.weight(1f), contentAlignment = Alignment.CenterEnd) {
-        IndexIconButton(IndexIcons.More, "More for ${pick.album}", { menu = true })
-        DropdownMenu(menu, onDismissRequest = { menu = false }) {
-            DropdownMenuItem(text = { Text("Not this album") }, onClick = { menu = false; onFeedback(FeedbackAction.Dismiss, pick) })
-            DropdownMenuItem(text = { Text("Never suggest artist") }, onClick = { menu = false; onFeedback(FeedbackAction.DismissArtist, pick) })
-        }
+        IndexMenuButton(
+            "More for ${pick.album}",
+            listOf(
+                IndexMenuItem("Not this album", detail = "It leaves your picks") { onFeedback(FeedbackAction.Dismiss, pick) },
+                IndexMenuItem("Never suggest this artist", detail = "${pick.artist} leaves every list") { onFeedback(FeedbackAction.DismissArtist, pick) },
+            ),
+            header = header,
+        )
     }
 }
 
 /** New and Played: Play, Shuffle and the three dots with Play next and Add to queue. Only an album in the library can play. */
 @Composable
-private fun androidx.compose.foundation.layout.RowScope.PlayActions(item: LeadItem) {
+private fun androidx.compose.foundation.layout.RowScope.PlayActions(item: LeadItem, header: IndexMenuHeader) {
     val play = LocalPlayActions.current
     val id = item.albumId
-    var menu by remember(item) { mutableStateOf(false) }
     IndexButton("Play", { id?.let { play.playAlbum(it) } }, icon = IndexIcons.Play, enabled = id != null)
     IndexButton("Shuffle", { id?.let { play.playAlbum(it, shuffle = true) } }, kind = IndexButtonKind.Ghost, icon = IndexIcons.Shuffle, enabled = id != null)
     Box(Modifier.weight(1f), contentAlignment = Alignment.CenterEnd) {
-        IndexIconButton(IndexIcons.More, "More for ${item.title}", { menu = true })
-        DropdownMenu(menu, onDismissRequest = { menu = false }) {
-            DropdownMenuItem(text = { Text("Play next") }, enabled = id != null, onClick = { menu = false; id?.let { play.queueAlbum(it, next = true) } })
-            DropdownMenuItem(text = { Text("Add to queue") }, enabled = id != null, onClick = { menu = false; id?.let { play.queueAlbum(it, next = false) } })
-        }
+        IndexMenuButton(
+            "More for ${item.title}",
+            listOf(
+                IndexMenuItem("Play next", enabled = id != null) { id?.let { play.queueAlbum(it, next = true) } },
+                IndexMenuItem("Add to queue", enabled = id != null) { id?.let { play.queueAlbum(it, next = false) } },
+            ),
+            header = header,
+        )
     }
 }
 

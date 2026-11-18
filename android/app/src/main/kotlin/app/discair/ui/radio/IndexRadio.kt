@@ -22,8 +22,6 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -243,9 +241,11 @@ private fun StationRow(
                 }
             },
         )
-        DropdownMenu(menu, onDismissRequest = { menu = false }) {
-            DropdownMenuItem(text = { Text(if (favourite) "Remove from favourites" else "Add to favourites") }, onClick = { menu = false; onFavourite() })
-        }
+        if (menu) app.discair.ui.common.IndexMenuSheet(
+            listOf(app.discair.ui.common.IndexMenuItem(if (favourite) "Remove from favourites" else "Add to favourites", icon = IndexIcons.Heart) { onFavourite() }),
+            onDismiss = { menu = false },
+            header = app.discair.ui.common.IndexMenuHeader(station.name, "Station") { StationTile(station.name, radioLogoRequest(repo.absolute(station.logoUrl), 128), app.discair.ui.common.IndexSheetRules.HEADER_ART.dp, 16) },
+        )
     }
 }
 

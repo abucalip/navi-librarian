@@ -96,6 +96,7 @@ fun ServerScreen(navidromeDirect: Boolean?, onBack: () -> Unit) {
     // Soft Brut draws its own page (CoverStackServer.kt); the reads and the words are shared.
     if (app.discair.ui.common.isCoverStack()) { CoverStackServer(reads.state, reads.reload, onBack); return }
     if (app.discair.ui.common.isGallery()) { GalleryServer(reads.state, reads.reload, onBack); return }
+    if (app.discair.ui.common.isIndex()) { IndexServer(reads.state, reads.reload, onBack); return }
     if (app.discair.ui.common.isFlow()) { FlowServer(reads.state, reads.reload, onBack); return }
     Column(Modifier.fillMaxSize()) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {

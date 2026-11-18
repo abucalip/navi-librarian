@@ -17,8 +17,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -256,16 +254,10 @@ private fun MissingHead(d: CoverStackAlbumData) {
     }
 }
 
-/** The three dots with a plain list of what else the page can do. */
+/** The three dots with the lettered sheet of what else the page or row can do, under an optional [header] (the song menu's cover and "SONG 05 / 10"). */
 @Composable
-internal fun MoreMenu(label: String, items: List<Pair<String, () -> Unit>>) {
-    var shown by remember { mutableStateOf(false) }
-    Box {
-        IndexIconButton(IndexIcons.More, label, { shown = true })
-        DropdownMenu(shown, onDismissRequest = { shown = false }) {
-            items.forEach { (text, action) -> DropdownMenuItem(text = { Text(text) }, onClick = { shown = false; action() }) }
-        }
-    }
+internal fun MoreMenu(label: String, items: List<Pair<String, () -> Unit>>, header: app.discair.ui.common.IndexMenuHeader? = null) {
+    app.discair.ui.common.IndexMenuButton(label, app.discair.ui.common.indexMenuItems(items), header = header)
 }
 
 /** Save for an album that is not in the library: the same feedback the picks send, with its states in words. Saved cannot be pressed again. */
@@ -323,6 +315,10 @@ private fun SongRow(d: CoverStackAlbumData, i: Int, albumId: String?) {
                     "Add to queue" to { play.queueTrack(albumId, t.title, t.number, next = false, disc = t.disc) },
                     "Download to device" to { play.downloadTrack(albumId, t.title, t.number, disc = t.disc) },
                 ),
+                // The song menu's header (mockup sheets, frame 2): the album cover, "SONG 05 / 10 · ARTIST" and the song.
+                header = app.discair.ui.common.IndexMenuHeader(t.title, app.discair.ui.common.IndexSheetRules.eyebrow("Song", i + 1, d.tracks.size, d.artist)) {
+                    app.discair.ui.common.AlbumCover(d.artist, d.title, d.coverUrl, Modifier.size(app.discair.ui.common.IndexSheetRules.HEADER_ART.dp), rect = true)
+                },
             ) else Box(Modifier.size(48.dp))
         }
         IndexRule()

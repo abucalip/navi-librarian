@@ -24,6 +24,12 @@ import kotlinx.coroutines.withContext
  */
 @Composable
 fun PickFeedbackItems(entry: DiscoveryEntry, close: () -> Unit) {
+    pickFeedbackActions(entry).forEach { (label, run) -> DropdownMenuItem(text = { Text(label) }, onClick = { close(); run() }) }
+}
+
+/** The same entries as label and action pairs, for a theme that draws its menu as a sheet (Index). Each action closes nothing itself. */
+@Composable
+fun pickFeedbackActions(entry: DiscoveryEntry): List<Pair<String, () -> Unit>> {
     val repo = LocalRepository.current
     val context = LocalContext.current
     val artist = entry.item.artistName
@@ -31,7 +37,6 @@ fun PickFeedbackItems(entry: DiscoveryEntry, close: () -> Unit) {
     val lens = entryLens(entry)
 
     fun run(done: String, call: () -> Unit) {
-        close()
         // Not the menu's own scope: closing the menu leaves composition and would cancel the request with it.
         CoroutineScope(Dispatchers.IO).launch {
             val message = try {
@@ -44,16 +49,9 @@ fun PickFeedbackItems(entry: DiscoveryEntry, close: () -> Unit) {
         }
     }
 
-    DropdownMenuItem(
-        text = { Text("More like this artist") },
-        onClick = { run("More like $artist next time.") { repo.setArtistLean(artist, Lean.More, genres, lens) } },
-    )
-    DropdownMenuItem(
-        text = { Text("Less like this artist") },
-        onClick = { run("Fewer picks like $artist. Nothing is hidden.") { repo.setArtistLean(artist, Lean.Less, genres, lens) } },
-    )
-    for (genre in genres) DropdownMenuItem(
-        text = { Text("Block genre: $genre") },
-        onClick = { run("Blocked $genre. Your library is not affected.") { repo.blockGenre(genre) } },
-    )
+    return buildList {
+        add("More like this artist" to { run("More like $artist next time.") { repo.setArtistLean(artist, Lean.More, genres, lens) } })
+        add("Less like this artist" to { run("Fewer picks like $artist. Nothing is hidden.") { repo.setArtistLean(artist, Lean.Less, genres, lens) } })
+        for (genre in genres) add("Block genre: $genre" to { run("Blocked $genre. Your library is not affected.") { repo.blockGenre(genre) } })
+    }
 }

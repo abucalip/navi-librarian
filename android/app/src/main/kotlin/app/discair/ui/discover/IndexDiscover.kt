@@ -15,8 +15,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -211,20 +209,26 @@ private fun EntryGet(entry: DiscoveryEntry) {
     IndexGetButton(state, { hub.getAlbum(item.artistName, item.album, entry.raw) }, Modifier.semantics { contentDescription = "Get album ${item.album}" })
 }
 
-/** The X: one ghost square that opens the two ways to say no (Not this album, Not this artist), then the More / Less like this items every theme offers. */
+/** The X: one ghost square that opens the lettered sheet with both ways to say no (Not this album, Not this artist), then the More / Less like this items every theme offers. */
 @Composable
 private fun DismissMenu(entry: DiscoveryEntry, onDismiss: (artistToo: Boolean) -> Unit) {
     var menu by remember { mutableStateOf(false) }
+    val item = entry.item
+    val items = listOf(
+        app.discair.ui.common.IndexMenuItem("Not this album", detail = "It leaves this list") { onDismiss(false) },
+        app.discair.ui.common.IndexMenuItem("Not this artist", detail = "${item.artistName} leaves every list") { onDismiss(true) },
+    ) + app.discair.ui.common.indexMenuItems(pickFeedbackActions(entry))
     Box {
         IndexButtonBody(
-            IndexButtonKind.Ghost, { menu = true }, Modifier.semantics { contentDescription = IndexListsRules.dismissMenuDescription(entry.item.album) },
+            IndexButtonKind.Ghost, { menu = true }, Modifier.semantics { contentDescription = IndexListsRules.dismissMenuDescription(item.album) },
             enabled = true, small = true,
         ) { Icon(IndexIcons.Close, null, Modifier.size(IndexRules.ICON_INLINE.dp)) }
-        DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
-            DropdownMenuItem(text = { Text("Not this album") }, onClick = { menu = false; onDismiss(false) })
-            DropdownMenuItem(text = { Text("Not this artist") }, onClick = { menu = false; onDismiss(true) })
-            PickFeedbackItems(entry) { menu = false }
-        }
+        if (menu) app.discair.ui.common.IndexMenuSheet(
+            items, onDismiss = { menu = false },
+            header = app.discair.ui.common.IndexMenuHeader(item.album, item.artistName) {
+                AlbumCover(item.artistName, item.album, null, Modifier.size(app.discair.ui.common.IndexSheetRules.HEADER_ART.dp), rect = true)
+            },
+        )
     }
 }
 
@@ -296,7 +300,6 @@ private fun Anniversary(card: InsightCard, open: Opener, onDismiss: (InsightCard
 private fun InsightRow(card: InsightCard, index: Int, open: Opener, onDismiss: (InsightCard) -> Unit) {
     val p = LocalPalette.current
     var why by remember(card.id) { mutableStateOf(false) }
-    var menu by remember { mutableStateOf(false) }
     val artist = card.subject.artist
     val title = card.subject.title
     val openAlbum: (() -> Unit)? = if (artist != null && title != null) { { open.album(routeKey(artist, title), artist, title, null, card.subject.year) } } else null
@@ -315,13 +318,14 @@ private fun InsightRow(card: InsightCard, index: Int, open: Opener, onDismiss: (
             if (openAlbum != null) IndexButtonBody(IndexButtonKind.Ghost, openAlbum, Modifier.semantics { contentDescription = "Open ${card.title}" }, enabled = true, small = true) {
                 Icon(IndexIcons.Play, null, Modifier.size(IndexRules.ICON_INLINE.dp))
             }
-            Box {
-                app.discair.ui.common.IndexIconButton(IndexIcons.More, "Options for ${card.title}", { menu = true }, size = 20.dp)
-                DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
-                    DropdownMenuItem(text = { Text(if (why) "Hide why" else "Why this?") }, onClick = { menu = false; why = !why })
-                    if (card.dismissible) DropdownMenuItem(text = { Text("Dismiss") }, onClick = { menu = false; onDismiss(card) })
-                }
-            }
+            app.discair.ui.common.IndexMenuButton(
+                "Options for ${card.title}",
+                listOfNotNull(
+                    app.discair.ui.common.IndexMenuItem(if (why) "Hide why" else "Why this?") { why = !why },
+                    if (card.dismissible) app.discair.ui.common.IndexMenuItem("Dismiss") { onDismiss(card) } else null,
+                ),
+                size = 20.dp,
+            )
         }
         for (run in card.missingRuns) {
             val span = if (run.firstPosition == run.lastPosition) "${run.firstPosition}" else "${run.firstPosition} to ${run.lastPosition}"
