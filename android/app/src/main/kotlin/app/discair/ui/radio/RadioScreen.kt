@@ -133,6 +133,15 @@ fun RadioScreen(onBack: () -> Unit, onOpenHeard: () -> Unit, onOpenPlayer: () ->
         )
         return
     }
+    // Index draws its own page the same way (IndexRadio.kt), with Stations and Heard as two tabs.
+    if (app.discair.ui.common.isIndex()) {
+        IndexRadioPage(
+            onBack, stations.state, stations.reload, message,
+            favourite = { favourites[it.id] ?: it.favourite }, now = { live[it.id] }, onAirId = onAir.stationId, playing = playing,
+            onPlay = playStation, onFavourite = { toggleFavourite(it, favourites[it.id] ?: it.favourite) },
+        )
+        return
+    }
     // Flow draws its own page the same way (FlowRadio.kt).
     if (app.discair.ui.common.isFlow()) {
         FlowStations(

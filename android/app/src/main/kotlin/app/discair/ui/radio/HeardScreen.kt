@@ -52,6 +52,10 @@ fun HeardScreen(radio: RadioPlayback, onBack: () -> Unit) {
         GalleryHeard(onBack, plays.state, plays.reload, live) { radio.download(it) }
         return
     }
+    if (app.discair.ui.common.isIndex()) {
+        IndexHeard(onBack, plays.state, plays.reload, live) { radio.download(it) }
+        return
+    }
     if (app.discair.ui.common.isFlow()) {
         FlowHeard(onBack, plays.state, plays.reload, live) { radio.download(it) }
         return

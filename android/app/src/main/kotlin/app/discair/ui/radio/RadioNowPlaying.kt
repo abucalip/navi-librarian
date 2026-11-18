@@ -113,6 +113,14 @@ fun RadioNowPlayingSheet(
         }
         return
     }
+    // Index: the same rising page as its Now Playing (IndexRadio.kt); there is no cover to fly, so the page just rises.
+    if (app.discair.ui.common.isIndex()) {
+        app.discair.ui.player.IndexPlayerFrame(onDismiss) { close ->
+            androidx.activity.compose.BackHandler { close() }
+            IndexRadioNow(state, controller, radio, sleep, live, item, artwork, radioStatusText(state, live), close, onOpenHeard)
+        }
+        return
+    }
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true), containerColor = Ink.Ink, shape = RectangleShape) {
         app.discair.ui.common.TransparentNavigationBar()
         Box {
