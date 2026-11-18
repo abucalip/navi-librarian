@@ -120,6 +120,12 @@ class OwnedAlbumTests(unittest.TestCase):
         self.assertTrue(sections["album"]["album"]["owned"])
         self.assertTrue(sections["album"]["album"]["artwork_url"].endswith("al1"))
         self.assertEqual(len(sections["tracks"]["items"]), 2)
+        self.assertEqual((sections["album"]["album"]["library_position"], sections["album"]["album"]["library_total"]), (1, 1))
+
+    def test_an_album_not_owned_has_no_library_position(self):
+        album = run(make_network())["album"]["album"]
+        self.assertIsNone(album["library_position"])
+        self.assertIsNone(album["library_total"])
 
 
 class TrackOwnershipTests(unittest.TestCase):

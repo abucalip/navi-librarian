@@ -194,6 +194,7 @@ def library_page(
             "key": a["key"],
             "name": a["name"],
             "album_count": a["album_count"],
+            "plays": a.get("plays", 0),
             "added": a.get("added"),
             "artwork_url": artwork_url(a["id"]),
         }

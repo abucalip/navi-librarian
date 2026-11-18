@@ -5,10 +5,12 @@ and Navidrome connectivity remain owned by the existing service implementation.
 """
 import functools
 import random
+import time
 
 from fastapi import APIRouter, Depends, HTTPException
 
 from app.api.dependencies import get_librarian
+from app.version import app_version
 from discovery import week_plays
 from app.services import lens_week_picks
 from app.services.dashboard_sections import SHELF_TYPES, album_shelf, genre_tiles
@@ -29,15 +31,24 @@ def _week_reader(librarian):
     return functools.partial(history_fetch.listenbrainz_window, username, get=httpx.get, headers=request_headers())
 
 
+@functools.lru_cache(maxsize=1)
+def _version() -> str:
+    """The build label, read once (``app_version`` may run git)."""
+    return app_version()
+
+
 @router.get("/api/health")
 def health(librarian=Depends(get_librarian)):
     """Check whether Navidrome responds to an authenticated API request."""
+    started = time.monotonic()
     try:
         result = librarian.api_call("ping")
         return {
             "status": "ok",
             "service": "Navidrome",
             "message": result.get("status", "Connected"),
+            "version": _version(),
+            "latency_ms": round((time.monotonic() - started) * 1000),
         }
     except Exception:
         raise HTTPException(

@@ -14,6 +14,17 @@ from discovery.search.query import (
 )
 
 
+class LibraryArtistPlaysTests(unittest.TestCase):
+    def test_artist_items_carry_their_plays(self):
+        artists = [{"id": "r", "name": "Radiohead", "album_count": 1}]
+        albums = [{"id": "a1", "artist": "Radiohead", "artist_id": "r", "album": "Kid A", "year": 2000, "song_count": 1}]
+        songs = [{"id": "s1", "title": "Idioteque", "artist": "Radiohead", "artistId": "r", "album": "Kid A",
+                  "albumId": "a1", "duration": 1, "playCount": 212}]
+        data = build_owned_data(generation="g", built_at=0, artists=artists, albums=albums, songs=songs)
+        items, _, _ = library_page(data, query="", sort="name", offset=0, limit=10)
+        self.assertEqual(items[0]["plays"], 212)
+
+
 class LibraryAlbumsPageTests(unittest.TestCase):
     def data(self):
         albums = [
