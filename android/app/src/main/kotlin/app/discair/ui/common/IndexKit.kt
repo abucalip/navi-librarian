@@ -393,6 +393,7 @@ private data class WordSpan(val x: Int, val width: Int)
 @Composable
 private fun IndexWords(
     labels: List<String>, selectedIndex: Int, onSelect: (Int) -> Unit, modifier: Modifier, gap: Dp, cellPadding: Dp, visibleHeight: Dp, semiboldWhenSelected: Boolean,
+    scroll: androidx.compose.foundation.ScrollState? = null,
 ) {
     val p = LocalPalette.current
     val reduced = rememberReducedMotion()
@@ -401,6 +402,10 @@ private fun IndexWords(
     val span = spans.getOrNull(selectedIndex) ?: WordSpan(0, 0)
     val x by animateDpAsState(with(density) { span.x.toDp() }, IndexMotion.firm<Dp>(IndexMotion.SOURCE_BAR_MS, reduced), label = "indexSourceBarX")
     val w by animateDpAsState(with(density) { span.width.toDp() }, IndexMotion.firm<Dp>(IndexMotion.SOURCE_BAR_MS, reduced), label = "indexSourceBarW")
+    // A row wider than the screen (Discover's seven lists) brings the chosen word to its left edge, so a swipe to Saved or Insights shows its tab.
+    LaunchedEffect(selectedIndex, span) {
+        if (scroll != null && span.width > 0) scroll.animateScrollTo(span.x.coerceAtMost(scroll.maxValue), IndexMotion.firm(IndexMotion.SOURCE_BAR_MS, reduced))
+    }
     Box(modifier.height(IndexRules.TOUCH_MIN.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(gap)) {
             labels.forEachIndexed { i, label ->
@@ -444,8 +449,9 @@ fun IndexSourceSwitch(labels: List<String>, selectedIndex: Int, onSelect: (Int) 
 fun IndexTabs(labels: List<String>, selectedIndex: Int, onSelect: (Int) -> Unit, modifier: Modifier = Modifier) {
     val p = LocalPalette.current
     Column(modifier.fillMaxWidth()) {
-        Box(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = IndexRules.GUTTER.dp)) {
-            IndexWords(labels, selectedIndex, onSelect, Modifier, gap = 16.dp, cellPadding = 0.dp, visibleHeight = IndexRules.TABS_HEIGHT.dp, semiboldWhenSelected = true)
+        val scroll = rememberScrollState()
+        Box(Modifier.fillMaxWidth().horizontalScroll(scroll).padding(horizontal = IndexRules.GUTTER.dp)) {
+            IndexWords(labels, selectedIndex, onSelect, Modifier, gap = 16.dp, cellPadding = 0.dp, visibleHeight = IndexRules.TABS_HEIGHT.dp, semiboldWhenSelected = true, scroll = scroll)
         }
         Box(Modifier.fillMaxWidth().height(1.dp).background(p.edge))
     }

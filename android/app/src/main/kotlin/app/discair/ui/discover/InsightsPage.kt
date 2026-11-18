@@ -65,6 +65,10 @@ fun InsightsPage(
 ) {
     val cs = app.discair.ui.common.isCoverStack() && open != null
     val fl = app.discair.ui.common.isFlow() && open != null
+    if (app.discair.ui.common.isIndex() && open != null) {
+        IndexInsights(response, hidden, onDismiss, taste, tasteLoaded, showTaste, open)
+        return
+    }
     if (app.discair.ui.common.isGallery() && open != null) {
         GalleryInsights(response, hidden, onDismiss, taste, tasteLoaded, showTaste, open)
         return
