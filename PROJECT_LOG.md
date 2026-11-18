@@ -1,3 +1,14 @@
+## 2026-11-19 — macOS design details D2 merged (PR #1208)
+
+- **Merged:** PR [#1208](https://github.com/abucalip/navi-librarian/pull/1208), squash commit `5071453c8ba8a2b1dbd7b510349121726b253375`, from exact PR head `0c306579c3fabfabd6e6076f782473814f99b30e`; merged 2026-11-18 23:46:51 UTC. D2 aligns the Album and Artist hero top inset and leading edge, moves the Album spine inside its cover frame, aligns Album body content, aligns the Artist body and biography to the portrait, corrects Artist menu and capsule spacing, softens and contains the artist scrim, pixel-rounds and overlaps collage tiles, improves translucent capsule contrast, and fixes the playing-row quality badge and overflow action. D2.7 required no code change because the existing hierarchy already matched the plan. Added `HeroAlignmentTests`.
+- **Tests:** the owner reports that the complete macOS Swift test suite passed on the PR revision. An earlier full-suite invocation reported the timestamp-freshness assertion in `dismissQueuesOneCardEventKeyedBySubject()` (`abs(event.occurredAt - Date().timeIntervalSince1970) < 60`); the test passed when run alone, and the owner subsequently confirmed the complete suite successful. The assertion was not weakened.
+- **Visual review:** the owner approved the visual checks, including the final softened scrim. The earlier broad, hard-edged rectangular scrim was corrected; the final scrim is locally bounded and feathers to transparent on every edge.
+- **GitHub CI on exact PR head `0c306579`:** all five associated workflows completed successfully: Validate Docker image (publishing paused), Validate Docker packaging, Lint changed files, Python syntax check, and Container runtime smoke test.
+- **Not claimed:** no release publication, deployment, or runtime verification. The full test and visual results above are owner-reported; the CI results were independently checked on GitHub.
+- **Next:** D3, bottom insets and the Pipeline dock.
+
+---
+
 ## 2026-11-19 — D2.4 artist hero scrim correction (draft PR #1208)
 
 - The owner reported that the original left-to-right scrim rendered as a broad dark rectangle with hard edges, extending across the hero. Root cause: the scrim background was attached to a text stack stretched to the available width.

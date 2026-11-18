@@ -1,6 +1,6 @@
 # macOS design details: fine fixes plan
 
-Status: D1 is on main at `dd95d6f9`; D2 implemented in draft PR #1208 on `macos/d2-album-artist-hero-alignment-clean` (implementation commit `079bed3efa8729644fef332bbeed92d961fcdb93`); D3 to D8 not started. Source: the owner's 12 screenshots of the Cupertino macOS client (`macos screenshots/`, local, not in the repo), taken 2026-11-18 between 02.20 and 02.37. This is a polish pass: alignments, overlaps, spacings, text sizes, small navigation details. It does not redesign any page.
+Status: D1 (`dd95d6f9`) and D2 (PR #1208, squash `5071453c8ba8a2b1dbd7b510349121726b253375`, PR head `0c306579c3fabfabd6e6076f782473814f99b30e`) are merged to main; D3 to D8 not started. Source: the owner's 12 screenshots of the Cupertino macOS client (`macos screenshots/`, local, not in the repo), taken 2026-11-18 between 02.20 and 02.37. This is a polish pass: alignments, overlaps, spacings, text sizes, small navigation details. It does not redesign any page.
 
 ## How to read this plan
 
@@ -135,17 +135,21 @@ Status: D1 is on main at `dd95d6f9`; D2 implemented in draft PR #1208 on `macos/
 - **Fix:** either let the Track column take the spare width (Duration and Quality move right next to "⋯"), or cap the table width. Recommendation: the first.
 
 
-**D2 implementation record (2026-11-18; draft PR #1208, branch `macos/d2-album-artist-hero-alignment-clean`).**
+**D2 implementation record (2026-11-19; merged PR #1208).**
 
+- **Merge:** PR [#1208](https://github.com/abucalip/navi-librarian/pull/1208), squash commit `5071453c8ba8a2b1dbd7b510349121726b253375`; exact PR head `0c306579c3fabfabd6e6076f782473814f99b30e`.
 - D2.1: Album and Artist use one shared 76 pt hero top inset.
 - D2.2: the Spine strip is drawn inside the Album cover frame, so the cover's full left edge meets the back button.
 - D2.3: the Album tabs, track table and related grids are left-aligned to the hero column; the Artist body column and biography text are left-aligned to the portrait edge.
-- D2.4: the Artist text group is constrained to a local 620 pt width and backed by a 55%-centre elliptical scrim that feathers to transparent on all edges; no rectangular panel or hero-wide fill. The menu is separated by 12 pt and raised 6 pt; action capsules use a 14 pt gap. Corrected in commit `ff79abff59b25428b343f67dcc70bd94c623da6c` after owner visual feedback.
+- D2.4: the Artist text group is constrained to a local 620 pt width and backed by a 55%-centre elliptical scrim that feathers to transparent on all edges; no rectangular panel or hero-wide fill. The menu is separated by 12 pt and raised 6 pt; action capsules use a 14 pt gap. The final scrim correction was made in commit `0c306579c3fabfabd6e6076f782473814f99b30e` after owner visual feedback; the owner approved the final appearance.
 - D2.5: collage tile frames are pixel-rounded and overlap by 1 pt. D2.6: translucent media capsules use a dark fill and light hairline; the scrim also improves their ground.
 - D2.7: source review found the recommended hierarchy already present: 20 pt top-level headings and small-caps subgroup labels under "Not in your library". No duplicate style change was made.
 - D2.8: the playing-row quality badge uses accent text on the on-accent surface (white in Day, dark in Night). D2.9: the overflow action is leading-aligned within its trailing cell, beside Quality.
 - Added `HeroAlignmentTests` for shared inset/action metrics, pixel alignment and overlap across the 2–5 tile layouts.
-- **Verification not yet done:** the revised scrim has not yet been built or seen in a running app; no Swift test execution is recorded here. The selector maps these UI changes to `DiscairUITests`; run `swift test --filter DiscairUITests` on a Mac. Visual acceptance still needs same-size Album and Artist before/after screenshots in Day and Night, the collage seam crop at 400%, and a contrast check over the lightest tile. The source changes are not a substitute for those checks.
+- **Tests:** the owner reports the complete macOS Swift test suite passed on the PR revision. An earlier full-suite invocation reported the timestamp-freshness assertion in `dismissQueuesOneCardEventKeyedBySubject()`; the test passed when run alone, and the owner subsequently confirmed the complete suite successful. The assertion was not weakened.
+- **CI:** all five GitHub Actions workflows on exact PR head `0c306579` passed: Validate Docker image (publishing paused), Validate Docker packaging, Lint changed files, Python syntax check, and Container runtime smoke test.
+- **Visual acceptance:** approved by the owner. The final soft scrim was checked after the hard-edged rectangular version was rejected.
+- **Release/deployment:** no publication, deployment or runtime verification is claimed.
 
 ## Slice D3: bottom insets and the Pipeline dock
 
