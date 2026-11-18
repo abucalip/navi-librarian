@@ -1,10 +1,12 @@
 # Project status
 
-Last checked: 2026-11-18. GitHub `main` is authoritative; this update is based on main at `39cc5d08` (PR #1199 closed out).
+Last checked: 2026-11-18. GitHub `main` is authoritative; this update is based on main at `c0b3a845` (PR #1200 closed out).
 
 **Server V2 work queue:** `docs/ServerV2.md` now contains only remaining client slices and verification; the former full plan and completed-work history is preserved in `docs/archive/ServerV2_HISTORY_2026-11-09.md`.
 
 ## Current state
+
+- **Index theme I4 merged (2026-11-18):** PR #1200, squash `c0b3a845`. Index Discover (numbered entries with Get / Save / X, the seven lists as tabs, Insights with Taste bars, the anniversary block and numbered lens rows), Library (Artists / Albums / Genres tabs with counts, letter rail, two-column albums) and Search (Artist / In your library / Not in your library) in `IndexDiscover.kt`, `IndexLibrary.kt`, `IndexSearch.kt`, `IndexListsRules.kt`; `LibraryArtist.plays` decoded (shown once the I0 server is deployed). The discover mockup's lettered taste sheet is not built: it is new behaviour and needs the owner's decision. Not deployed or published; checked on the emulator in Signal Blue only. **Next action:** the owner checks I3 and I4 on the phone and decides on the taste sheet, then I5 Now Playing, Queue, Lyrics, Radio.
 
 - **Index theme I3 merged (2026-11-18):** PR #1199, squash `39cc5d08`. Index Album, Artist, Genre and the album and artist Paths drawing (`IndexAlbum.kt`, `IndexArtist.kt`, `IndexGenre.kt`, `IndexAlbumPaths.kt`, `IndexArtistPaths.kt`, `IndexPagesRules.kt`); the app decodes the I0 fields (album library place, artist plays and active years, owned of total, path stop years and shared albums), shown only once the I0 server is deployed. Also fixed: the data list's key/value drift (Home too) and Index sheets drawn under the status bar. Three new data rows in `INDEX_THEME.md` 11a await the owner's answer. Not deployed or published; checked on the emulator in Signal Blue only. **Next action:** the owner answers the three 11a questions and checks I3 on the phone, then I4 Discover, Library, Search.
 
