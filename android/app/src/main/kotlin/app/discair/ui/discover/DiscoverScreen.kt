@@ -264,6 +264,10 @@ fun DiscoverScreen(open: Opener) {
             else if (app.discair.ui.common.isFlow()) FlowDiscoverSwitch(list) { sheetOpen = true }
             // Gallery: the date line and title, then Flow's one switch row in Gallery's type; it opens the same list sheet (GalleryDiscover.kt).
             else if (app.discair.ui.common.isGallery()) GalleryDiscoverHead(list) { sheetOpen = true }
+            // Index: "Discover" with the entry count, then the seven lists as mono tabs in swipe order (IndexDiscover.kt).
+            else if (app.discair.ui.common.isIndex()) IndexDiscoverHead(
+                list, app.discair.ui.common.IndexListsRules.headCount(list, (loaded.state as? Load.Ready)?.value?.let { s -> FlowDiscoverRules.sections(list, s, hidden).map { it.count } }), choose,
+            )
             else {
             PageHeading("Discover", Modifier.padding(start = 16.dp, top = 16.dp, end = 16.dp), large = true)
             // List names as chips in one scrolling row (docs/redesign.md 8.2).
@@ -390,6 +394,11 @@ private fun ListBody(
                 OutlinedButton(onClick = onRefresh, Modifier.heightIn(min = Target)) { Text("Build this list") }
             }
         }
+    }
+    // Index: numbered entries under a section head per lens or genre row (IndexDiscover.kt); sideways swipes are the screen's (switchBy).
+    if (app.discair.ui.common.isIndex()) {
+        IndexDiscoverList(list, FlowDiscoverRules.sections(list, sections, hidden), open, saves, list == DiscoveryList.Saved, onSave, onDismiss, emptyNote)
+        return
     }
     // Gallery: Flow's grid in Gallery's type, tiles under hairline headings, no pager; sideways swipes are the screen's (switchBy).
     if (app.discair.ui.common.isGallery()) {

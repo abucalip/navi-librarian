@@ -22,6 +22,8 @@ data class LibraryArtist(
     @SerialName("album_count") val albumCount: Int = 0,
     val added: String? = null,
     @SerialName("artwork_url") val artworkUrl: String? = null,
+    /** Plays of the artist's owned albums (Index theme I0, optional): null from an older server, so the play count is hidden rather than shown as 0. */
+    val plays: Int? = null,
 )
 
 @Serializable
