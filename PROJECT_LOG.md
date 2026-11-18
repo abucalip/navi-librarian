@@ -1,3 +1,9 @@
+## 2026-11-18 — Index theme I0 server PR 4 (PR #1195)
+
+- **Merged:** PR #1195, squash `3744190728a4bb072e415fd88999b8be231d0c51`. Optional `presentation.shared_albums` (`{album, year, owned}`, oldest first, at most 12) and `presentation.years` (`{from, to}`) on `sideman_to_leader` stops, from the releases behind the stop's reasons and `release_facts.date`. New `intelligence/graph/path_stop_facts.py`; `presentation_version` 8 rebuilds cached paths; contract (`SERVER_V2_CONTRACT.md`) and `ARCHITECTURE.md` updated. No provider traffic.
+- **Tests run:** `test_intelligence_paths` and `test_intelligence_paths_warm` (35 passed, incl. 2 new). CI on the final head not checked here. Not run: full suite.
+- **Limitations:** recorded `paths_sideman_to_leader*.json` fixtures not re-recorded; other kinds carry no shared albums; Android decoders not opened. Not built: library `filter`. Not published or deployed.
+
 ## 2026-11-18 — Index theme I0 server PR 3 (PR #1194)
 
 - **Merged:** PR #1194, squash `9cc0f746e78658748abf8cc4721b18bcc72c15e3`. Artist page fields: `play_count` and `active_years` (`{begin, end, ended}` from the stored life span, read-only by MBID) on the `artist` section; `owned_count` and `album_count` (provider-listed albums only) on the `albums` section. New `discovery/search/artist_facts.py` and `intelligence/knowledge/artist_years.py`; contract (`SEARCH_CONTRACT.md` 14.5), `ARCHITECTURE.md` and `INDEX_THEME.md` updated. No new provider traffic.

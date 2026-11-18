@@ -402,7 +402,7 @@ Checked in the server code (routes, read models, stores) only. The Android decod
 | Library tabs with counts | **Served** | Artists and albums pages return `total`; the genre count is the length of `/api/dashboard/genres` (limit up to 200) | none |
 | Downloads tabs with counts | **Served** | `/api/acquisitions` lists every record | none (client counts) |
 | Lyrics time stamps | **Served** | Read from Navidrome directly (`ANDROID_LYRICS_CONTRACT.md`): `synced` and per-line `start` | none; hide stamps for plain lyrics, as the contract says |
-| Artist Paths step: With, Owned, Albums together | **Missing** | Stops carry `begin_year` and `anchor_begin_year` for `scene_path` only; no years together, no shared albums with states | Optional `years` and `shared_albums` on stops, in `intelligence/graph/` (same as Bento) |
+| Artist Paths step: With, Owned, Albums together | **Missing** | Stops carry `begin_year` and `anchor_begin_year` for `scene_path` only; no years together, no shared albums with states | Optional `years` and `shared_albums` on stops, in `intelligence/graph/` (same as Bento). **Built** (I0 server PR 4, #1195; `sideman_to_leader` stops, under `presentation`) |
 | Neighbours by ear meter | **Served** (per spec; not re-read) | `matchCount` per spec | none |
 | Server page "v0.3.9 · 84 ms" | **Missing** | `/api/health` answers `status`, `service`, `message` only; no version or latency | Optional `version` and `latency_ms` on `/api/health`, timed around the existing Navidrome `ping`. **Built** (I0 server PR 2) |
 | Library "Unplayed", "Lossless" | **Missing** | `/api/library/albums` has `q`, `sort`, `order`, `cursor`, `limit`; no filter | Shared `filter` query with Bento, built once. Needs per-album play and quality data on the index entry |
