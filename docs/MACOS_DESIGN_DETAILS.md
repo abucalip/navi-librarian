@@ -1,0 +1,348 @@
+# macOS design details: fine fixes plan
+
+Status: plan only, no code yet (2026-11-18). Source: the owner's 12 screenshots of the Cupertino macOS client (`macos screenshots/`, local, not in the repo), taken 2026-11-18 between 02.20 and 02.37. This is a polish pass: alignments, overlaps, spacings, text sizes, small navigation details. It does not redesign any page.
+
+## How to read this plan
+
+- **Screenshots** are named by time: `02.20.02` is `Screenshot 2026-11-18 at 02.20.02.png`. Short list:
+  - Album: 02.20.02 (Blue Train, top), 02.20.21 (Blue Train, scrolled)
+  - Artist: 02.20.44 (John Coltrane, top), 02.21.06 (scrolled)
+  - Home: 02.21.45, and 02.37.08 (queue open)
+  - Now Playing: 02.23.44
+  - Radio: 02.24.02
+  - Connections: 02.24.56
+  - Timeline: 02.26.06
+  - Downloads: 02.26.49
+  - Atlas: 02.27.57
+- **Sizes are in points (pt).** The screenshots are 3046 px wide at 2x, so 1 pt = 2 px of the original file. Measurements are estimates from the images (about ±2 pt).
+- **Each item lists:**
+  - where it is and what is wrong;
+  - the proposed fix;
+  - a file pointer (a starting point only; the implementer confirms it);
+  - the acceptance check;
+  - "Owner" when the owner must decide first.
+- **Out of scope:** missing covers, placeholder art and dates. These are data issues, listed at the end.
+
+## Rules for implementers
+
+- Follow `docs/LOCAL_UI_TESTING.md`, `docs/UI_DESIGN_RULES.md` and `macos/DESIGN.md`.
+- Do not add continuous or looping SwiftUI motion (CLAUDE.md, `docs/DEVELOPMENT_WORKFLOW.md` "macOS client motion and CPU rules").
+- Tests: filtered only. Choose targets with `macos/scripts/select-tests.sh`, then run `swift test --filter <target>`. Report what ran and what did not.
+- Acceptance is visual. For each slice, take before and after screenshots of the same pages at the same window size, Night and Day, and crop the area named in the item. Add any render test the existing screenshot tests can carry.
+- One slice per PR. Each slice is small and touches only presentation. No domain logic moves into the UI.
+
+## Slice D1: window shell, corners and hero edges
+
+**D1.1 Hero does not meet the window's rounded corners** (02.20.02, 02.20.44, 02.23.44: top-right and top-left corners)
+- **What is wrong:**
+  - A thin dark rim runs along the top and right edges between the hero (blurred cover or collage) and the window edge, and it gets thicker in the corner.
+  - The window content is clipped to a hard-coded `CU.windowRadius = 26` (`CupertinoTheme.swift:151`, applied at `:246`, `CupertinoNowPlaying.swift:80`, `CupertinoNowPlayingLive.swift:31`).
+  - The system window corner is likely a different radius, and the content may also be inset by a point or two from the frame.
+- **Fix:**
+  1. Measure the real system corner radius on this macOS version from a zoomed corner crop (or read it at runtime), and derive the clip from it rather than a constant.
+  2. Make the hero draw to the very edge, with no inset under the window border.
+  3. If the system radius cannot be read, the clip shape must at least be concentric with the frame (`docs/UI_DESIGN_RULES.md`, "Nested corners").
+  4. Do not guess a number in code without the crop check.
+- **Acceptance:** crops of all four corners on Album, Artist and Now Playing, before and after, show no dark crescent and no light seam at 400% zoom.
+
+**D1.2 Hero shows through the strip around the floating sidebar** (02.20.44, 02.21.06: left edge of the window, beside and above the sidebar)
+- **What is wrong:**
+  - The banner is drawn under the sidebar (`CupertinoTheme.swift:227-228`), so a sliver of the collage shows in the gutter left of and above the sidebar.
+  - The sliver stops with a hard horizontal edge at the banner's bottom (about 356 pt from the top), while the sidebar continues below it.
+  - On the busy collage this reads as a glitch. On the dark album blur it is barely visible.
+- **Fix (Owner):** choose one.
+  - (a) Keep the hero under the sidebar but fade it out to `CU.content` over the last 40 pt, so the gutter has no hard edge.
+  - (b) Start the hero at the sidebar's trailing edge, so the gutter is always plain window ground.
+  - Recommendation: (a). It keeps the edge-to-edge look the design asked for.
+- **Acceptance:** left-edge crop of Artist and Album at the banner's bottom shows no hard step in the gutter.
+
+**D1.3 Hard cut where content scrolls under the fixed hero** (02.20.21, 02.21.06: the line about 356 pt from the top)
+- **What is wrong:**
+  - The hero is fixed and the content scrolls under it.
+  - Rows and covers are sliced by a straight edge (track 7 in 02.20.21; album covers in 02.21.06), with no shadow or fade.
+- **Fix:** add the system hard scroll-edge effect, or a 12 to 16 pt fade from the hero's bottom colour, on the album and artist scroll views.
+  - `macos/DESIGN.md` prefers a hard-edged scroll effect under floating bars.
+  - Radio already uses `.scrollEdgeEffectStyle(.hard, for: .top)` (`CupertinoStations.swift:93`); use the same here.
+- **Acceptance:** scroll the Blue Train tracks halfway under the hero. The cut reads as a deliberate edge, not as clipped content.
+
+**D1.4 Fixed 356 pt hero takes a third of the window on every scroll** (02.20.21, 02.21.06)
+- **What is wrong:** after scrolling, the hero keeps 356 pt. In a 940 pt high window only about 400 pt of list stays visible.
+- **Fix (Owner):** choose one.
+  - (a) Keep it fixed. This is the current documented design (`macos/DESIGN.md`, "Album banner").
+  - (b) Collapse it to a compact 96 pt bar on scroll: small cover, title, Play.
+  - Option (b) must use one resize driven by the scroll offset, not a looping animation. Owner decision, because it changes a documented layout.
+
+## Slice D2: album and artist hero alignment
+
+**D2.1 Back button sits at a different height on Album and Artist** (02.20.02 vs 02.20.44)
+- **What is wrong:**
+  - Album: the back button's top is about 100 pt from the window top. Artist: about 74 pt.
+  - Going Artist → Album → back, the button jumps by about 26 pt.
+  - Cause: `CupertinoAlbum.swift:78` `.padding(.top, 76)` vs `CupertinoArtist.swift:97` `.padding(.top, 50)`.
+- **Fix:** one shared top inset for the back button on both banners, aligned to the toolbar's centre line or a fixed distance under it.
+- **Acceptance:** switching between the two pages leaves the back button in the same place.
+
+**D2.2 Album cover is out of line with the back button and the title block** (02.20.02)
+- **What is wrong:**
+  - The cover's left edge, including the white spine strip, sits about 12 pt left of the back button's left edge.
+  - The spine (`FlipCover(... spineStrip: true)`, `CupertinoAlbum.swift:30`) is drawn outside the cover box.
+- **Fix:** put the spine inside the cover's frame, or offset the cover so its left edge (spine included) lines up with the back button's left edge.
+- **Acceptance:** one vertical line touches the back button's left edge and the cover's left edge.
+
+**D2.3 Hero column and body column never line up** (02.20.02, 02.20.44)
+- **What is wrong:**
+  - On Album, the hero content starts at sidebar + 32 pt (about 264 pt from the window edge). The tab bar and track table below are centred in the content (table starts about 566 pt).
+  - On Artist, the bio and Albums start about 386 pt and Top songs about 1167 pt. None of these share an edge with the hero (about 276 pt).
+  - The page reads as two unrelated layouts.
+- **Fix:**
+  - Pick one content column per page and make the hero's leading edge equal to the body's leading edge.
+  - Album: either left-align tabs and table to the hero, or move the hero content into the same centred column as the table. Recommendation: left-align the body to the hero edge, with the table at its current max width.
+  - Artist: align the bio and Albums leading edge with the portrait's leading edge.
+- **Acceptance:** one vertical guide touches the hero's leading edge and the first column of the body on both pages.
+
+**D2.4 Artist name and actions sit on a busy collage with no scrim** (02.20.44, 02.21.06)
+- **What is wrong:**
+  - "John Coltrane" (60 pt), "12 of 23 albums owned" and the capsules sit straight on dense print and photos.
+  - The ⋮ button is tight against the name, and its centre is about 6 pt below the name's cap-height centre.
+  - The Radio and Paths capsules are 8 pt apart, against about 14 pt between the others; Paths straddles a collage seam.
+- **Fix:**
+  - Add a left-to-right dark scrim (about 55% → 0% over the text block's width) behind the name, count and buttons.
+  - Space the ⋮ button 12 pt from the name and centre it on the name's cap height.
+  - Use one spacing token for all capsules in the row.
+- **Acceptance:** text contrast of at least 4.5:1 over the worst collage tile (`docs/UI_DESIGN_RULES.md`); equal gaps between the capsules.
+
+**D2.5 Collage tiles show seams** (02.20.44, 02.21.06: vertical lines about 460 pt and 880 pt in, horizontal about 147 pt down)
+- **What is wrong:** thin light or teal lines and a 1 to 2 pt gap show between tiles (`ArtistCollage.swift`, `CollageHeroBackdrop`).
+- **Fix:** let tiles overlap by 1 pt, or draw them on a black ground with no gaps. Pixel-round each tile's frame.
+- **Acceptance:** a 400% crop shows no light line between tiles.
+
+**D2.6 Translucent capsules lose their edge on light covers** (02.20.44: Shuffle, Radio, Paths)
+- **What is wrong:** over the white liner-note scans, the translucent capsules almost vanish.
+- **Fix:** with the scrim from D2.4 this mostly goes away. Otherwise give `CapsuleButtonStyle(translucent:)` a hairline border or a slightly darker fill on media.
+
+**D2.7 Section heading styles differ between Album and Artist** (02.20.21 vs 02.21.06)
+- **What is wrong:**
+  - Album: "Not in your library" (title) then "SIMILAR ARTISTS" and "ALBUMS" (small caps, grey).
+  - Artist: "Similar artists" and "Albums" as 20 pt titles.
+- **Fix:** one heading style for the same kind of section on both pages. Recommendation: the 20 pt title, with small caps used only for sub-groups inside a titled section.
+- **Pointers:** `RelatedSections.swift`, `CupertinoArtist.swift:119,130`.
+
+**D2.8 Playing row in the track table hides its quality badge** (02.20.02: "I'm Old Fashioned")
+- **What is wrong:** on the pink playing row, the "MP3 320" badge is pink on pink and can barely be read.
+- **Fix:** on the selected or playing row, draw badges in the row's foreground colour (white outline or white fill with accent text).
+- **Acceptance:** the badge on the playing row has a contrast of at least 4.5:1.
+
+**D2.9 Track table: the "⋯" menu floats far from the row's data** (02.20.02)
+- **What is wrong:** about 120 pt of empty space sits between the Quality column and "⋯".
+- **Fix:** either let the Track column take the spare width (Duration and Quality move right next to "⋯"), or cap the table width. Recommendation: the first.
+
+## Slice D3: bottom insets and the Pipeline dock
+
+**D3.1 Pipeline dock covers content** (02.20.02, 02.20.21, 02.21.45, 02.24.02, 02.27.57, 02.37.08)
+- **What is wrong:** "Pipeline 1 failed" (bottom right, about 200 × 32 pt) sits over:
+  - similar-artist and album rows (Album);
+  - the last shelf cover (Home);
+  - the third shelf cover (Home with the queue open; the dock moves to the main column's right edge and straddles the column and the queue edge);
+  - inspector rows (Atlas);
+  - the On Air column ground (Radio).
+- **Fix:**
+  - Give every scroll view a bottom content inset equal to the dock height + 16 pt while the dock shows, so the last row can scroll clear of it.
+  - With the queue open, anchor the dock inside the main column with the same 16 pt margin.
+  - Pointers: `PipelineDock.swift`, `CupertinoTheme.swift:238`. `macos/DESIGN.md` says the dock was moved to the bottom left at one point; check which side is current and the reason.
+- **Acceptance:** on each listed page, scroll to the end. Nothing is hidden under the dock.
+
+**D3.2 Lists end under the player bar** (02.24.02 Radio: "Pool FM" cut; 02.26.49 Downloads: "Solar Wind" stepper cut; 02.20.02 similar-artist circles cut)
+- **What is wrong:** the last row cannot be scrolled fully into view, or is clipped by a hard line above the bar.
+- **Fix:** one shared bottom inset for all content scroll views (player bar gap + `CU.Space.xl`), applied in the shell rather than per page.
+- **Acceptance:** scroll each page to the end. The last row sits fully above the bar with the standard gap.
+
+## Slice D4: controls and type consistency
+
+**D4.1 Four styles of segmented control**
+- **What is wrong:**
+  - Timeline "By year / By decade" and Atlas "Map / List": system blue fill.
+  - Radio "Stations / Heard": pink accent fill.
+  - Connections "Graph / List" and "1 / 2 / 3 steps", Downloads "All / Active / Needs you / Arrived": dark fill with white text.
+  - Radio tag chips "All / Jazz": a white pill.
+- **Fix (Owner):**
+  - The owner picks one selected look for segmented controls. Recommendation: the dark neutral one (Connections, Downloads), keeping pink for the single main action.
+  - Then use `CUSegmented` (`CupertinoKit.swift:99`) everywhere instead of the system `Picker(.segmented)`. Files using `Picker` today: `AtlasView.swift`, `TimelineView.swift`, `GraphExplorerView.swift`, `CupertinoDownloads.swift`, `CupertinoStations.swift`, `CupertinoConnections.swift`, and others listed by `grep -n "pickerStyle(.segmented)"`.
+  - Filter chips stay a separate, documented style.
+- **Acceptance:** a screenshot of each page shows the same selected look.
+
+**D4.2 Capsule buttons in one row differ in height** (02.21.45, 02.37.08: Home "More" against "Get album / Save / Not for me"; Home "Resume")
+- **What is wrong:** "More" is about 19 pt tall against about 25 pt for its neighbours. "Resume" is also shorter than other primary capsules.
+- **Fix:** every capsule in a row uses the same size variant. Check `CapsuleButtonStyle(small:)` use in `CupertinoHomeMarquee.swift` and `CupertinoHomeRadio.swift`.
+
+**D4.3 Phone banner text is off-centre** (02.21.45, 02.37.08: "Playing on your phone …")
+- **What is wrong:** the text line sits about 3 pt above the banner's centre, while the info icon and "Continue on this Mac" are centred.
+- **Fix:** centre-align the text, the icon and the button on one line (`.firstTextBaseline` or centre alignment in the `HStack`).
+- **Pointer:** the Home banner in `CupertinoHome.swift` or `CupertinoHomeParts.swift`.
+
+**D4.4 Page title leading edge differs** (02.26.06 Timeline, 02.27.57 Atlas vs Home, Radio, Connections, Downloads)
+- **What is wrong:** "Timeline" and "Atlas" start about 3 pt further left than the other titles. Their search field and map share that offset.
+- **Fix:** use the shared page header padding (`TimelineView`, `AtlasView` in Cupertino style).
+
+**D4.5 Quality badge has two looks** (player bar outlined "MP3 320"; track table filled grey)
+- **Fix:** one badge style across the player bar, track table and album header.
+
+**D4.6 Sidebar group headers differ**
+- **What is wrong:**
+  - "Discover" is a large grey label with a disclosure chevron. "Playlists" is a small bold grey label.
+  - The gap above "Smart Playlists" (about 45 pt) is larger than the gap above "Playlists" (about 25 pt).
+- **Fix:** one header style (the small "Playlists" style, with the chevron where the group folds) and equal group spacing.
+- **Pointer:** `CupertinoSidebar`, in `CupertinoTheme.swift`.
+
+**D4.7 Selected sidebar sub-item highlight starts at the indent** (02.24.56 "Connections", 02.26.06 "Timeline", 02.27.57 "Atlas")
+- **What is wrong:** the highlight for Discover sub-items starts about 16 pt right of the top-level highlights ("Home", "Radio", "Downloads"), so the pills have two left edges.
+- **Fix:** keep the highlight's leading edge the same for every row and indent only the icon and label.
+
+**D4.8 Search field shortcut hint** (all pages: "Search ⌘K")
+- **What is wrong:** "⌘K" follows the placeholder one space later in the same colour, so it reads as part of the text.
+- **Fix:** move "⌘K" to the field's trailing edge in the tertiary text colour (a key-cap look is optional).
+
+## Slice D5: columns in lists
+
+**D5.1 Downloads stepper columns move from row to row** (02.26.49)
+- **What is wrong:**
+  - The four dots (Found, Downloading, Importing, In library) drift by up to about 6 pt between rows. In library is at about 597 pt in row 1 and about 603 pt in row 2.
+  - The trailing button stack is wider in row 1 (Try again + Dismiss) and the stepper fills what is left.
+- **Fix:** give the stepper a fixed width and fixed column widths, and give the trailing action stack a fixed width.
+- **Pointer:** `CupertinoDownloads.swift`.
+- **Acceptance:** one vertical guide passes through each step's dot in every row.
+
+**D5.2 Downloads stepper has no connectors; done rows look identical** (02.26.49)
+- **What is wrong:** the four dots are not joined. A finished row (all white) carries the same visual weight as an active row.
+- **Fix:**
+  - Draw a 2 pt line between dots, filled up to the current step.
+  - For rows already in the library, show the stepper at reduced emphasis (or hide it and keep "✓ In your library").
+- Static drawing only; no looping motion.
+
+**D5.3 Downloads list is half the page wide** (02.26.49)
+- **What is wrong:** the card stops at about 730 pt, while "Clear 42 imported" floats at the page's right edge over empty space.
+- **Fix:** let the card fill the content width (with a sensible max width), or align "Clear 42 imported" to the card's right edge. Recommendation: fill the width and keep the button aligned with it.
+
+**D5.4 Queue: durations do not share a column** (02.37.08)
+- **What is wrong:**
+  - Rows without the "⋯" button put the time at the right edge; rows with it move the time about 29 pt left.
+  - On the playing row, the "playing bars" icon also pushes the time left.
+  - "6 to come · 16 min" in the header lines up with neither.
+- **Fix:** reserve the "⋯" slot on every row (shown on hover or for upcoming rows only) and the playing icon slot before the title, so the time column is fixed. Align the header count's trailing edge with that column.
+- **Pointer:** `CupertinoQueue.swift`.
+
+**D5.5 Queue panel has empty space above its tabs** (02.37.08)
+- **What is wrong:** the queue inspector runs from the window top, but its first control (Queue / Saved) starts about 70 pt down. The band above is empty while the toolbar stops at the panel's edge.
+- **Fix:** put Queue / Saved and the count on the toolbar's centre line (about 43 pt from the top), and let the list start higher.
+
+**D5.6 Timeline year labels are not on the card title's baseline** (02.26.06)
+- **What is wrong:** "1961" sits about 9 pt above "My Favorite Things".
+- **Fix:** align the year with the card title's first baseline (`.firstTextBaseline`).
+- **Pointer:** `TimelineView.swift`.
+
+**D5.7 Trailing inspectors start in different places** (02.26.06 Timeline, 02.27.57 Atlas vs 02.37.08 Queue)
+- **What is wrong:** the Timeline and Atlas inspectors start under the toolbar (about 85 pt down) on a lighter ground. The queue inspector runs the full window height.
+- **Fix (Owner):** one rule for trailing panels. Recommendation: full height like the queue, with the toolbar stopping at the panel edge as it already does for the queue.
+
+**D5.8 Radio station logos are cropped** (02.24.02: "3j Radio" shows "Ra")
+- **What is wrong:** logos use fill, so wide logos are cut.
+- **Fix:** aspect-fit inside the rounded square, with 3 pt padding on a white or neutral ground when the logo is not square.
+- **Pointer:** `CupertinoStations.swift`.
+
+**D5.9 Radio "On Air" panel and "Add station"** (02.24.02)
+- **What is wrong:** the empty On Air panel is about 120 pt tall with about 60 pt of empty bottom space. "Add station" sits outside it with no clear tie to it.
+- **Fix:** shrink the empty state to its content, and place "Add station" under the list's header (or in the toolbar row with Stations / Heard).
+
+## Slice D6: Now Playing
+
+**D6.1 Window buttons jump when Now Playing opens** (02.23.44 vs any library page)
+- **What is wrong:**
+  - Library pages: the traffic lights are inside the sidebar card, about 33 pt from the left and 27 pt from the window top.
+  - Now Playing: about 18 pt and 18 pt.
+  - The collapse chevron sits about 30 pt from the traffic lights. "Photos on" and "Up Next" are about 8 pt lower than the traffic lights' centre line.
+- **Fix:** keep the traffic lights in one place in both screens (or accept the move and document it), and put the chevron and the top-right chips on the traffic lights' centre line.
+
+**D6.2 Album name wraps as a hanging block** (02.23.44)
+- **What is wrong:** "Aretha Franklin — The Electrifying / Aretha Franklin" is laid out as artist + "—" + a two-line album name in a column of its own.
+- **Fix:** one `Text` (artist, "—", album) that wraps as a paragraph, or the album on its own line under the artist, at most 2 lines with tail truncation. Both names stay clickable (they open their pages).
+- **Pointer:** `CupertinoNowPlaying.swift` / `CupertinoNowPlayingLive.swift`.
+
+**D6.3 Vinyl disc touches the lyrics** (02.23.44)
+- **What is wrong:** the slid-out disc's right edge meets the lyrics column's left edge (0 to 2 pt gap). "I didn't want to do it" touches the label.
+- **Fix:** move the lyrics column right by the disc's overhang plus 32 pt, or limit the slide-out so the disc stays 32 pt clear.
+
+**D6.4 Lyrics and chips are out of line with the left column** (02.23.44)
+- **What is wrong:**
+  - "These lyrics are not timed." sits about 7 pt above the cover's top. The first lyric line starts about 155 pt below it, so the note looks orphaned.
+  - The EQ / Crossfade / Quality / MP3 chips sit about 177 pt below the transport, with no alignment to the left column's bottom (volume slider).
+  - The "MP3" chip has a filled look the others lack.
+- **Fix:**
+  - Put the "not timed" note directly above the first lyric line.
+  - Align the chips' baseline with the volume slider row.
+  - Give the MP3 chip the same style as the others, unless it is a toggle in its on state; if so, label it so.
+
+## Slice D7: graph and map labels
+
+**D7.1 Connections: graph edges run through labels** (02.24.56)
+- **What is wrong:** the edges to Giant Steps and Crescent cross the centre label "John Coltrane". "PEOPLE" and "ALBUMS" sit on top of edges.
+- **Fix:** draw labels on a small halo or backing (`CU.content` at 80%, 4 pt padding, rounded), and draw the edges under the node and its label. Place the cluster labels in the gap between edges, or drop them when a cluster has fewer than 2 nodes.
+- **Pointer:** `GraphExplorerView.swift`.
+
+**D7.2 Atlas: pin labels collide and clip** (02.27.57)
+- **What is wrong:**
+  - The top label "Studios, Studios, Studio 2" is overlapped and clipped by the map's top edge.
+  - Around London and the Benelux, dozens of pins pile up on top of one another.
+- **Fix:** turn on MapKit clustering for close pins (a numbered cluster), set label collision priority so lower-count labels hide first, and keep labels inside the map bounds.
+- **Pointer:** `AtlasView.swift`.
+
+**D7.3 Atlas inspector rows reserve an empty line** (02.27.57: "! (foreword)", "Ashes (major)")
+- **What is wrong:** rows without an album still keep the album line, so they have a blank gap.
+- **Fix:** collapse the line when it is empty.
+
+**D7.4 Footer legends wrap** (02.27.57 Atlas, 02.26.06 Timeline)
+- **What is wrong:** the legend wraps to two lines in the middle of a sentence, beside a right-aligned "Showing the first … only."
+- **Fix:** let the legend wrap as one block with the "showing" note on its own line, or shorten the text (see D8).
+
+## Slice D8: user-facing copy
+
+**D8.1 Internal source codes shown** (02.27.57 Atlas inspector)
+- **What is wrong:** each row shows "musicbrainz_dump · source_explicit · exact_mbid".
+- **Fix:** map these to plain words on the server or in a client display map ("MusicBrainz · stated place · exact match"), or move them into a tooltip.
+- Keep the mapping in one place, and server-side if the labels are shared with other clients.
+
+**D8.2 Raw status text** (02.26.49 Downloads, row 2: "Destination Exists")
+- **What is wrong:** a raw title-case status code is shown to the user.
+- **Fix:** a sentence ("Already in your library folder; nothing was copied") and the right action (Dismiss, or Try again if the server allows). Check where the text comes from: the client display map or the server message.
+
+**D8.3 Developer wording in the Connections notice** (02.24.56)
+- **What is wrong:** "The server stops a walk at 200 rows or 2 seconds."
+- **Fix:** "Showing the first 8 connections. Turn on Credits only, lower the reach, or use List to see them all." Keep the Switch to List button.
+
+**D8.4 Truncated names where space exists** (player bar: "Aretha Franklin — The Electrifying…" while the centre fact has about 300 pt free on each side)
+- **Fix:** let the title block take up to 40% of the bar before truncating. Centre the fact text in the space left between the title block and the controls, not on the whole bar.
+
+## Smaller details (fold into the nearest slice)
+
+- **Player bar waveform under text** (all pages): the waveform runs behind the second line ("John Coltrane — Blue Train"). Lower the waveform's opacity under the text block or start it after the text block. Static only. (D4)
+- **Home hero with the queue open** (02.37.08): the hero backdrop shows two vertical bands (about 460 pt and 920 pt in). Same fix as D2.5 if it is a tiled backdrop. "Next picks" moves under the cover and leaves the right half of the card empty; check the narrow layout. (D2)
+- **Home shelf play buttons** (02.21.45): the round play buttons on covers are cut by the player bar edge. Covered by D3.2.
+- **Album hero badges** (02.20.02): "MP3 320" and "7 of 7 owned" are about 11 pt bold on a translucent ground; low contrast over a light blur. Check at least 4.5:1, or add a darker badge ground on media. (D2)
+- **Artist bio** (02.20.44): justified text leaves visible rivers ("he scored an / unexpected hit"). The justified bio is a documented choice (`ArtistPageParts.swift:14`). See Owner questions; do not change it in a slice without the owner.
+
+## Owner questions
+
+1. D1.2: hero in the sidebar gutter: (a) fade, or (b) start at the sidebar edge? Recommended: (a).
+2. D1.4: keep the fixed 356 pt hero, or collapse it on scroll? Recommended: collapse, only if the owner wants more list room.
+3. D4.1: which segmented control look wins? Recommended: dark neutral.
+4. D5.7: trailing inspectors full height (like the queue), or under the toolbar? Recommended: full height.
+5. Artist bio: keep it justified (documented) or switch to left-aligned to avoid rivers? Recommended: left-aligned, or keep justified with hyphenation on.
+6. Player bar: the cover shows twice (large in the sidebar slot and small with the disc in the bar). Keep both? No recommendation; it is a layout choice.
+
+## Out of scope: data, not design
+
+- Missing covers: Home Today's Pick "Nigeria 70" shows a plain gradient; Downloads rows; Connections "A Love Supreme" blank, "Live at the Village Vanguard" purple.
+- Timeline dates are reissue years (Blue Train 1997, Kind of Blue 1987). This is a data or source question for `TimelineModel` and the server, not a design fix.
+- Radio tags: only FIP Jazz shows a tag, because the others have none.
+
+## Order
+
+D1 → D2 → D3 first (they cover the owner's main complaint and the overlaps), then D4, D5, D6, D7 and D8 in any order. D1.2, D1.4, D4.1, D5.7 and the bio item wait for the owner's answers. Everything else can start now.

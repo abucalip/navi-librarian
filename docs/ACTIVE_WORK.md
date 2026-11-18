@@ -317,6 +317,20 @@ Done: Genres grid and four album shelves on the dashboard, the Recommended slide
 - **B4 merged** in PR [#1190](https://github.com/abucalip/navi-librarian/pull/1190), squash `c284e1e483c85010872831d9f0a1c69284547e49` (2026-11-18, D3 (a)): server `booklets[].from_owned`, contract and fixtures, "Your edition" tag on the editions row. The build plan is complete. Left: the owner check of both sheets in a real window, and the CPU measurements (P1 five cases, B2 and B3 Booklet open). D4 unanswered (recommended: no language tag).
 - Slices: P0 (model) → P1 → P2 for Paths; B1 (palette and layout helpers) → B2 → B3 for Booklet; optional B4. P0 and B1 change nothing visible and can start once the PR is merged.
 
+## 2s. macOS design details polish: plan written, no code yet
+
+- The owner asked on 2026-11-18 for a fine-detail review of the Cupertino macOS client from 12 screenshots. The issues covered are alignment, overlaps, spacing, text sizes and small navigation details, including the album and artist hero not meeting the window's round corners.
+- The plan is [`MACOS_DESIGN_DETAILS.md`](MACOS_DESIGN_DETAILS.md). It has slices D1 to D8:
+  - D1: shell, corners and hero edges
+  - D2: hero alignment
+  - D3: bottom insets and the Pipeline dock
+  - D4: control consistency
+  - D5: list columns
+  - D6: Now Playing
+  - D7: graph and map labels
+  - D8: copy
+- Six owner questions are listed in the plan (gutter fade, collapsing hero, segmented style, inspector height, justified bio, cover shown twice). Items that do not depend on them can start now, beginning with D1.
+
 ## 2n. Simplification candidates
 
 One line each: file, what could be simplified, why it was not done in the PR that found it (see "Opportunistic simplification" in [DEVELOPMENT_WORKFLOW.md](DEVELOPMENT_WORKFLOW.md)). Remove the line when it is done or no longer true.
