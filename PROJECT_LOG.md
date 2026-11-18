@@ -1,3 +1,14 @@
+## 2026-11-18 — macOS design details D2, Album and Artist hero alignment (implementation PR pending)
+
+- **Branch/base:** `macos/d2-album-artist-hero-alignment`, based on GitHub `main` at `dd95d6f9ceb54033d04dd341568bba131668b420` (D1 is present on main). Code commits are on the branch; the final PR head will be recorded in the closeout.
+- **Changes:** shared 76 pt Album/Artist hero top inset and common leading inset; Album spine moved inside the cover frame; Album tabs, track table and related grids left-aligned; Artist body aligned to portrait; Artist name/menu spacing and capsule rhythm corrected; 55% to clear text scrim; collage tiles pixel-rounded with 1 pt overlap; translucent capsule hairline; playing quality badge changed to accent-on-white; overflow menu moved to the leading edge of its trailing cell. D2.7 needed no code change: current Album and Artist headings already follow the recommended top-level/subgroup hierarchy.
+- **Regression tests added:** `macos/Tests/DiscairUITests/HeroAlignmentTests.swift` checks shared hero metrics and collage pixel alignment/overlap for 2–5 tile layouts.
+- **Tests/CI:** not run here. macOS Swift tests must run on the owner's Mac; run `swift test --filter HeroAlignmentTests` on the exact PR head. No claim of test or CI success.
+- **Visual acceptance:** not done. Same-size before/after Album and Artist screenshots in Day and Night, the 400% collage seam crop, and contrast over the lightest collage tile remain owner checks. No merge, publication, deployment or runtime verification claimed.
+- **Next action:** run the focused Swift test on the exact PR head, then complete the Day/Night visual checks.
+
+---
+
 ## 2026-11-18 — Index theme I6 and two follow-ups (PRs #1202, #1203, #1204)
 
 - **Merged:** #1202 squash `0f069d4e38b5c1894f977c5de5d1f332ca86181c` (head `b61b14f6`): `IndexSheets.kt` (lettered menu sheet used by every Index menu, confirm body), `IndexDownloads.kt`, `IndexStats.kt`, `IndexSettings.kt` (Settings, Server, Appearance), `IndexEqCrossfade.kt`; `PickFeedback.kt` shares actions as pairs; `ServerRead.kt` decodes `/api/health` `version` and `latency_ms`. #1203 squash `6d49fb3399ca727a2d09191f9e47f407a2e24aa7` (head `71c9873e`): Index Paths use the shared layout; Index-only Paths files and branches removed. #1204 squash `735372a3d9b0802aa56b9796d5edd19123a8cf29` (head `9951463a`): Index Home lead is a swipe pager using `IndexMotion` tabSlide.
