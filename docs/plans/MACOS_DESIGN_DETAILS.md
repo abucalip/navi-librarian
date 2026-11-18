@@ -1,6 +1,6 @@
 # macOS design details: fine fixes plan
 
-Status: D1 is on main at `dd95d6f9`; D2 implemented in draft PR #1208 on `macos/d2-album-artist-hero-alignment-clean` (implementation commit recorded in PR #1208); D3 to D8 not started. Source: the owner's 12 screenshots of the Cupertino macOS client (`macos screenshots/`, local, not in the repo), taken 2026-11-18 between 02.20 and 02.37. This is a polish pass: alignments, overlaps, spacings, text sizes, small navigation details. It does not redesign any page.
+Status: D1 is on main at `dd95d6f9`; D2 implemented in draft PR #1208 on `macos/d2-album-artist-hero-alignment-clean` (implementation commit `079bed3efa8729644fef332bbeed92d961fcdb93`); D3 to D8 not started. Source: the owner's 12 screenshots of the Cupertino macOS client (`macos screenshots/`, local, not in the repo), taken 2026-11-18 between 02.20 and 02.37. This is a polish pass: alignments, overlaps, spacings, text sizes, small navigation details. It does not redesign any page.
 
 ## How to read this plan
 
