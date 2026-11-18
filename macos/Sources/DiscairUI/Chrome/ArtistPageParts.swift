@@ -11,8 +11,7 @@ struct ArtistBio: View {
         if let text = state.related.bio { cupertinoBody(text) }
     }
 
-    /// Cupertino: a centred column of justified text with equal room either side, split into paragraphs; the biography
-    /// starts well below the banner.
+    /// Cupertino: a justified biography in the same left-aligned column as the portrait and album grid, split into paragraphs.
     private func cupertinoBody(_ text: String) -> some View {
         let paragraphs = BioParagraphs.split(text)
         return VStack(alignment: .leading, spacing: 10) {
