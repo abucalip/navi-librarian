@@ -14,6 +14,7 @@ from discovery.search.events import (
     source_capabilities,
 )
 from discovery.search.artist_sections import ArtistNetwork, iter_network_sections, network_sections
+from discovery.search.artist_facts import ActiveYearsReader, active_years
 from discovery.search.index import IndexView
 from discovery.search.query import find_artist, owned_albums
 
@@ -81,6 +82,7 @@ def artist_page(
     name: str | None = None,
     mbid: str | None = None,
     defer_network: bool = False,
+    life_span: ActiveYearsReader | None = None,
 ) -> ArtistPage:
     """Build every section for one artist key, or report why the key cannot be served.
 
@@ -123,6 +125,9 @@ def artist_page(
                 "owned": True,
                 "album_count": artist["album_count"],
                 "genre": artist.get("genre"),
+                # Index theme data list: summed song plays and the stored active years (null when unknown).
+                "play_count": artist.get("plays", 0),
+                "active_years": _years(life_span, artist.get("mbid")),
             },
         },
         "owned_albums": {
@@ -141,6 +146,15 @@ def artist_page(
         )
         return _attach(page, view, network_part)
     return _finish(page, view)
+
+
+def _years(reader: ActiveYearsReader | None, mbid: str | None) -> dict[str, Any] | None:
+    if reader is None or not mbid:
+        return None
+    try:
+        return active_years(reader(mbid))
+    except Exception:
+        return None
 
 
 def _attach(page: ArtistPage, view: IndexView, network_part: Any) -> ArtistPage:

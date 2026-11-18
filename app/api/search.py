@@ -17,6 +17,7 @@ from app.services.similar_precompute import cache_reader as _cache_reader
 from app.services.similar_precompute import network_kwargs
 from app.services.similar_precompute import snapshot_lists as _snapshot_lists
 from app.services.stale_refresh import DISCOVERY_REFRESHER
+from app.api.insights import STORE_FILE
 from discovery import store as discovery_store
 from discovery.identity import IdentityJob, load_identities
 from discovery.search.album_page import ALBUM_SECTION_ORDER, album_sections, find_album
@@ -33,6 +34,7 @@ from discovery.search.genre_page import (
 from discovery.search.network import artist_network, external_search, genre_network
 from discovery.search.normalize import normalize_key, normalize_query
 from discovery.search.query import SEARCH_TYPES
+from intelligence.knowledge.artist_years import read_life_span
 from settings.service import navidrome_generation
 
 router = APIRouter()
@@ -369,6 +371,7 @@ def artist(
             name=(name or "").strip()[:200] or None,
             mbid=mbid,
             defer_network=_wants_stream(request),
+            life_span=lambda m: read_life_span(librarian.DATA_DIR / STORE_FILE, m),
         )
     except Exception:
         return JSONResponse(

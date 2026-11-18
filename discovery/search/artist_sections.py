@@ -20,6 +20,7 @@ from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
 from dataclasses import dataclass, field
 from typing import Any
 
+from discovery.search.artist_facts import album_counts
 from discovery.search.cache import (
     SIMILAR_TTL_SECONDS, provider_cache_key, read_cached, read_or_revalidate, run_noting_stale, with_fetched_at,
     write_cached,
@@ -637,7 +638,12 @@ def iter_network_sections(
                     continue
                 if section == "catalog":
                     catalog = result["albums"]
-                    yield with_fetched_at(_available("albums", "items", catalog[:CATALOG_LIMIT]), oldest)
+                    albums = _available("albums", "items", catalog[:CATALOG_LIMIT])
+                    counts = album_counts(catalog)
+                    if counts:
+                        # Index theme data list "Owned 5 of 9": provider-listed albums, owned and total.
+                        albums["owned_count"], albums["album_count"] = counts
+                    yield with_fetched_at(albums, oldest)
                     yield with_fetched_at(_available("missing_albums", "items", unowned_only(catalog)), oldest)
                 else:
                     yield with_fetched_at(result, oldest)
