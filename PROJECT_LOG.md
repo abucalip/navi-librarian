@@ -9,12 +9,12 @@
 
 ---
 
-## 2026-11-19 — D2.4 artist hero scrim correction (draft PR #1208)
+## 2026-11-19 — D2.4 artist hero scrim correction (PR #1208 closeout)
 
 - The owner reported that the original left-to-right scrim rendered as a broad dark rectangle with hard edges, extending across the hero. Root cause: the scrim background was attached to a text stack stretched to the available width.
 - Corrected CupertinoArtistBanner: constrain the text group to 620 pt, add local breathing room, and use a 55%-centre elliptical gradient that fades smoothly to transparent on every edge. This keeps the contrast aid behind the name, count and actions without a visible panel boundary.
-- **Not yet verified:** no macOS build, Swift tests, or visual review of the revised scrim in a running app. Required: check Day and Night, long and short artist names, collage behind the actions, and contrast over the brightest tile on exact head ff79abff59b25428b343f67dcc70bd94c623da6c.
-- No merge, publication, deployment or runtime verification is claimed.
+- The final correction is included in PR #1208 head `0c306579c3fabfabd6e6076f782473814f99b30e`, merged as `5071453c8ba8a2b1dbd7b510349121726b253375`. The owner approved the revised appearance and reports that the complete macOS Swift test suite passed. The earlier timestamp-freshness assertion passed when run alone; the owner subsequently confirmed the full suite successful.
+- All five GitHub Actions workflows on the exact PR head passed. No publication, deployment or runtime verification is claimed.
 
 ---
 
