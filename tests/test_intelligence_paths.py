@@ -85,6 +85,36 @@ class PathTests(unittest.TestCase):
         self.assertEqual((reason["code"], reason["via"]["id"], reason["anchor"]["id"]), ("sideman_on", rel, rec))
         self.assertEqual(len(reason["evidence"]), 3)
 
+    def test_sideman_stop_carries_shared_albums_and_years_together(self):
+        a, _, _ = self.library()
+        leader = self.ent("artist", "Leader")
+        albums = {}
+        for title, date, owned in (("Late LP", "1971-05-01", False), ("Early LP", "1968", True), ("Undated LP", None, False)):
+            rel = self.ent("release", title, owned=owned)
+            rec = self.ent("recording", title + " Take")
+            if date:
+                self.db.execute("INSERT INTO release_facts (entity_id, date) VALUES (?, ?)", (rel, date))
+            self.edge(a, rec, "instrument")
+            self.edge(rec, rel, "track_on", src="musicbrainz_dump_releases")
+            self.edge(rel, leader, "release_artist", src="musicbrainz_dump_releases")
+            albums[title] = rel
+        presentation = build_path(self.db, a, "sideman_to_leader")["stops"][0]["presentation"]
+        self.assertEqual(presentation["shared_albums"], [
+            {"album": "Early LP", "year": 1968, "owned": True},
+            {"album": "Late LP", "year": 1971, "owned": False},
+            {"album": "Undated LP", "year": None, "owned": False},
+        ])
+        self.assertEqual(presentation["years"], {"from": 1968, "to": 1971})
+
+    def test_other_kinds_carry_no_shared_albums(self):
+        a, _, rec = self.library()
+        player, song = self.ent("artist", "Player"), self.ent("recording", "Their Song")
+        self.edge(player, rec, "instrument", role="guitar")
+        self.edge(player, song, "instrument", role="guitar")
+        presentation = build_path(self.db, a, "follow_the_musician")["stops"][0]["presentation"]
+        self.assertNotIn("shared_albums", presentation)
+        self.assertNotIn("years", presentation)
+
     def test_sideman_to_leader_skips_the_start_a_release_it_leads_and_uncertain_links(self):
         a, _, _ = self.library()
         rec = self.ent("recording", "Take")
@@ -391,7 +421,7 @@ class PathTests(unittest.TestCase):
         )
         self.db.commit()
         rebuilt = cached_path(self.db, a, "follow_the_musician")
-        self.assertEqual(rebuilt["presentation_version"], 7)
+        self.assertEqual(rebuilt["presentation_version"], 8)
         self.assertEqual(rebuilt["stops"][0]["presentation"]["title"], "Player")
 
     def test_cache_hit_refresh_and_staleness(self):
