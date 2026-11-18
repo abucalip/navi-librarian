@@ -2,7 +2,7 @@
 
 Read-only measurement over the knowledge store; no provider traffic and nothing is written to the
 store (scratch tables are TEMP). It answers the Phase 5 kill rule with numbers before any path
-builder exists (docs/ServerV2.md, Phase 5: "if a path kind needs more than a day of precompute or
+builder exists (docs/plans/ServerV2.md, Phase 5: "if a path kind needs more than a day of precompute or
 yields mostly empty results, drop that kind").
 
 A path starts at an owned artist (the anchor). A *stop* is an entity the store can reach from the

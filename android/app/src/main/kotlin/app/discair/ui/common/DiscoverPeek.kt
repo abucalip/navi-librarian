@@ -30,7 +30,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 /**
- * Up to three covers of one album under a Discover row (docs/artwork.md, idea 9): the Back, the first booklet page and the
+ * Up to three covers of one album under a Discover row (docs/archive/completed/artwork.md, idea 9): the Back, the first booklet page and the
  * Medium. Composed only while the reader has opened the row's covers, so the lookup happens then and not while scrolling.
  * Nothing shows while loading, when the album has no such pictures or when the lookup fails.
  */

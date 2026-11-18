@@ -1,7 +1,7 @@
 # macOS radio mockups (stage 2)
 
 The spec for internet radio in the Mac client. The build steps are in
-[`../../RADIO_PLAYBACK_PROPOSAL.md`](../../RADIO_PLAYBACK_PROPOSAL.md), "Stage 2 detailed plan".
+[`../../RADIO_PLAYBACK_PROPOSAL.md`](../../plans/RADIO_PLAYBACK_PROPOSAL.md), "Stage 2 detailed plan".
 
 Owner's choices (2026-11-13): **A2 · B2 · C1 · D2 · E1 E5 E7**. The page opens on them and marks them "chosen". The
 other options are kept for the record and are not built.

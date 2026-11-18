@@ -21,7 +21,7 @@ import app.discair.ui.common.GalleryType
 import app.discair.ui.theme.LocalPalette
 
 /*
- * Gallery's Library stats pieces (G6). Spec: docs/GALLERY_THEME.md sections 5.3 and 7; mockup: docs/design/gallery/pages/downloads-stats-server.html,
+ * Gallery's Library stats pieces (G6). Spec: docs/archive/completed/GALLERY_THEME.md sections 5.3 and 7; mockup: docs/design/gallery/pages/downloads-stats-server.html,
  * frame 2. StatsScreen reaches these behind isGallery(); the ranges (CoverStackStatsRules words), the series and the charts are the Standard page's.
  */
 

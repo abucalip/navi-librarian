@@ -17,7 +17,7 @@
    - macOS: the audio engine's 20 ms ticker keeps running after pause, for as long as the song stays open (step M1).
    - macOS: the player bar's title marquee redraws at the full display refresh rate with no cap and no pause (step M2).
    - Android: the Now Playing slideshow recomposes on every display frame (step A1).
-3. The first survey's memory concerns were partly overstated. The Librarian's `display` images are 500 px and `thumb` images 250 px (`docs/artwork.md`), so a 12-image slideshow is about 11 MiB decoded (arithmetic, not a measurement). The real unbounded cases on macOS are originals: artist photos, looked-up covers and full-resolution booklet pages, none of which are downsampled or costed correctly (step M3).
+3. The first survey's memory concerns were partly overstated. The Librarian's `display` images are 500 px and `thumb` images 250 px (`docs/archive/completed/artwork.md`), so a 12-image slideshow is about 11 MiB decoded (arithmetic, not a measurement). The real unbounded cases on macOS are originals: artist photos, looked-up covers and full-resolution booklet pages, none of which are downsampled or costed correctly (step M3).
 4. Custom GPU work (Metal, OpenGL, Vulkan) is not recommended anywhere. The one GPU question worth measuring is live blur over moving content. If it is costly, the fix is to blur less (a small pre-blurred image on macOS, a downscaled layer on Android), not to add a renderer (steps M5 and A3, both conditional).
 5. Playback buffering on Android stays as it is. It was tuned for lossless streams over Tailscale, and no evidence suggests the memory is a problem.
 
@@ -275,7 +275,7 @@ Steps on different clients are independent and can be interleaved. Each code ste
 
 - **Objective:** make every later measurement repeatable and comparable.
 - **Current problem:** no baseline exists and no agreed way to take one.
-- **Proposed solution:** add `docs/client_efficiency_results.md` with the scenario scripts, exact commands and empty result tables.
+- **Proposed solution:** add `docs/plans/client_efficiency_results.md` with the scenario scripts, exact commands and empty result tables.
 - **Implementation details:** copy scenarios S1–S11 and the cheap-tool commands from section 8. For each scenario write numbered manual steps (which album, which song, how long). Add a header block per run: app SHA, build type, device, OS, refresh rate, power state, network, server version. One table per client with a row per scenario and columns for CPU, wakeups or RenderThread CPU, memory lines, frame percentiles and notes. Add a small shell script per client under `scripts/perf/` that runs the cheap commands and prints a table row; it must not need a private path or credential.
 - **Dependencies:** none.
 - **Risks:** none to the app. A vague scenario script makes later numbers incomparable.
@@ -478,7 +478,7 @@ Steps on different clients are independent and can be interleaved. Each code ste
 - **Objective:** one honest before/after record.
 - **Current problem:** per-step measurements do not show the combined effect or interactions.
 - **Proposed solution:** rerun the full baseline once on the final SHA and write the comparison.
-- **Implementation details:** rerun S1–S11 on macOS and S1–S10 on Android with the P0-1 scripts. Fill a before/after table in `docs/client_efficiency_results.md`. Change each hypothesis in this document's section 13 to "verified", "refuted" or "still open", with the numbers. Update `docs/PROJECT_STATUS.md` and `PROJECT_LOG.md` as the workflow requires.
+- **Implementation details:** rerun S1–S11 on macOS and S1–S10 on Android with the P0-1 scripts. Fill a before/after table in `docs/plans/client_efficiency_results.md`. Change each hypothesis in this document's section 13 to "verified", "refuted" or "still open", with the numbers. Update `docs/PROJECT_STATUS.md` and `PROJECT_LOG.md` as the workflow requires.
 - **Dependencies:** all steps that were carried out.
 - **Risks:** drift in the test library or network since the baseline; note any difference.
 - **Verification:** three runs per scenario.
@@ -493,7 +493,7 @@ These apply on top of each step's own verification. A step that touches an area 
 |---|---|---|
 | Audio fidelity | No change to the EQ, mixer, sample-rate matching or decode path in any step; bit-identical playback is assumed because those files are not edited. A step that edits them is out of scope. | M1 |
 | Gapless playback | `EngineOutputTests` gapless cases; manual same-format and cross-format album joins | M1 |
-| Crossfade | Fade level tests through `levelsForTests`; manual fade after seek, and pause and resume inside a fade. Android crossfade is untouched; `docs/ANDROID_CROSSFADE_CONTRACT.md` checks apply only if a step edits the player package. | M1 |
+| Crossfade | Fade level tests through `levelsForTests`; manual fade after seek, and pause and resume inside a fade. Android crossfade is untouched; `docs/contracts/ANDROID_CROSSFADE_CONTRACT.md` checks apply only if a step edits the player package. | M1 |
 | Growing-download playback | `GrowingPlaybackTests`; S11 on a throttled link, including a forced stall and a pause during the stall | M1 |
 | Playback continuity | S10 on LAN and Tailscale with no new rebuffering; a 30-minute mixed session per client at closeout | M1, A2, P4-1 |
 | Artwork quality | Side-by-side screenshots at the same window or screen size; the owner's sign-off | M3, M5, A2, A3 |
@@ -502,7 +502,7 @@ These apply on top of each step's own verification. A step that touches an area 
 | Reduce Motion | With it on: no disc spin, no slideshow drift, no marquee, on both clients | A1, M2, M5, M6, A3 |
 | macOS Low Power Mode | Slideshow still; marquee still (new in M2) | M2, M5, M6 |
 | Android Battery Saver | Slideshow still | A1, A3 |
-| Client/server contracts | No request, size parameter or endpoint changes except the `thumb` request in M5, which is an existing size. Check `docs/MACOS_CLIENT_CONTRACT.md`, `docs/ANDROID_PLAYER_CONTRACT.md` and `docs/artwork.md`. | M3, M5 |
+| Client/server contracts | No request, size parameter or endpoint changes except the `thumb` request in M5, which is an existing size. Check `docs/contracts/MACOS_CLIENT_CONTRACT.md`, `docs/contracts/ANDROID_PLAYER_CONTRACT.md` and `docs/archive/completed/artwork.md`. | M3, M5 |
 
 Testing rules from `docs/DEVELOPMENT_WORKFLOW.md` apply: focused tests only (`swift test --filter …`, `./gradlew testDebugUnitTest --tests …` with JDK 17), never the full suite; Swift tests run locally on the Mac; report exactly what ran.
 
@@ -551,6 +551,6 @@ Testing rules from `docs/DEVELOPMENT_WORKFLOW.md` apply: focused tests only (`sw
 - Android pixel reads: `ui/common/Common.kt` (`dominantColor`), `ui/MainShell.kt` (`radioArtworkBytes`)
 - Android booklet: `ui/album/Booklet.kt`
 - Android playback: `player/PlaybackService.kt`, `player/PlayerController.kt`
-- Image sizes: `docs/artwork.md` (thumb 250 px, display 500 px)
+- Image sizes: `docs/archive/completed/artwork.md` (thumb 250 px, display 500 px)
 
 **Verification boundary.** This revision is a source review. No profiler, device run or listening test was performed, and no code, setting or buffer value was changed.

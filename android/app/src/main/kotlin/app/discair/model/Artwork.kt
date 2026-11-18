@@ -11,8 +11,8 @@ import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.longOrNull
 
 /**
- * An album's images from the Librarian (`GET /api/artwork/index?rgid=&release=`, docs/artwork.md and the "Album artwork"
- * section of docs/SERVER_V2_CONTRACT.md). The server talks to MusicBrainz and the Cover Art Archive; the app only reads
+ * An album's images from the Librarian (`GET /api/artwork/index?rgid=&release=`, docs/archive/completed/artwork.md and the "Album artwork"
+ * section of docs/contracts/SERVER_V2_CONTRACT.md). The server talks to MusicBrainz and the Cover Art Archive; the app only reads
  * this index and the image bytes. Nothing here reads taste or play data, and nothing is shown for an album with no images.
  */
 sealed interface ArtworkIndexResult {
@@ -118,7 +118,7 @@ fun parseArtworkIndex(body: String): ArtworkIndexResult {
             if (index.images.isEmpty()) ArtworkIndexResult.Empty else ArtworkIndexResult.Ready(index)
         }
         "empty" -> ArtworkIndexResult.Empty
-        // "pending" is the knowledge-base name for the same state (docs/efficiency.md, E1): a fetch is queued, ask again.
+        // "pending" is the knowledge-base name for the same state (docs/plans/efficiency.md, E1): a fetch is queued, ask again.
         "not_loaded", "pending" -> ArtworkIndexResult.NotLoaded((root.num("retry_after") ?: DEFAULT_RETRY_SECONDS).coerceIn(1, MAX_RETRY_SECONDS))
         else -> ArtworkIndexResult.Unavailable
     }

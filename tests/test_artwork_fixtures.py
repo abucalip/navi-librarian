@@ -1,4 +1,4 @@
-"""Artwork index fixtures keep the contract the route promises (docs/artwork.md, "Contract fixtures").
+"""Artwork index fixtures keep the contract the route promises (docs/archive/completed/artwork.md, "Contract fixtures").
 
 The files in android/contract-fixtures/librarian/artwork_index*.json are written by
 scripts/write_artwork_fixtures.py through the real route with canned provider answers. These tests read

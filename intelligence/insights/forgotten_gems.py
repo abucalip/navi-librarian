@@ -142,7 +142,7 @@ def find_forgotten_gems(
 
 
 def gem_card(gem: Gem) -> dict[str, Any]:
-    """Generic insight card (docs/ServerV2.md section 8): clients that do not know the kind can still draw it."""
+    """Generic insight card (docs/plans/ServerV2.md section 8): clients that do not know the kind can still draw it."""
     r = gem.record
     years, rest = divmod(gem.days_dormant, 365)
     quiet = f"{years} year{'s' if years != 1 else ''}" if years else f"{max(rest // 30, 1)} months"

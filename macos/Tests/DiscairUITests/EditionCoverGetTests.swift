@@ -2,7 +2,7 @@ import DiscairLibrarian
 import Testing
 @testable import DiscairUI
 
-/// A Get carries the album's release group so its Downloads row can show the covers (docs/artwork.md, idea 13). Feedback does not.
+/// A Get carries the album's release group so its Downloads row can show the covers (docs/archive/completed/artwork.md, idea 13). Feedback does not.
 @MainActor
 @Suite struct EditionCoverGetTests {
     private func album(_ rgid: String?) -> AlbumItem {

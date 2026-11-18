@@ -1,7 +1,7 @@
 package app.discair.model
 
 /**
- * The artist photo strip (docs/artwork.md, idea 8): session and band pictures from the artist's owned albums. Chosen by type and
+ * The artist photo strip (docs/archive/completed/artwork.md, idea 8): session and band pictures from the artist's owned albums. Chosen by type and
  * comment words only (a plain string match; nothing recognises what a picture shows). Mirrors the macOS rules
  * (`qualifiesForCollage` and `artistCollage` in `macos/Sources/DiscairLibrarian/Artwork.swift`). Taste and play data play no part.
  */

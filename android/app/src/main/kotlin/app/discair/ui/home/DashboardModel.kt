@@ -21,7 +21,7 @@ import java.util.Locale
 import kotlin.math.abs
 
 /*
- * The pure half of the Android dashboard (docs/redesign.md 8.1, step A6): every figure and state the modules draw, computed
+ * The pure half of the Android dashboard (docs/plans/redesign.md 8.1, step A6): every figure and state the modules draw, computed
  * from existing models only. Missing is never zero: a figure that cannot be known is null and its module says so in words.
  */
 
@@ -56,7 +56,7 @@ object DashboardRules {
     const val READ_DAYS = 400L
     const val MAX_PAGES = 20
 
-    /** The two-pane layout starts here (docs/redesign.md 7.1). */
+    /** The two-pane layout starts here (docs/plans/redesign.md 7.1). */
     const val TWO_PANE_MIN_DP = 840
 
     fun parseAdded(added: String?): Instant? {

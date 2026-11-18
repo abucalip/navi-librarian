@@ -89,7 +89,7 @@ This is a profile-responsiveness experiment, not a chronological future-listen h
 
 ## Global search P1 focused checks
 
-Run these focused modules for changes to the owned search index, routes and settings generation (contract P1, `docs/SEARCH_CONTRACT.md` section 11):
+Run these focused modules for changes to the owned search index, routes and settings generation (contract P1, `docs/contracts/SEARCH_CONTRACT.md` section 11):
 
 ```sh
 python -m unittest discover -s tests -p 'test_discovery_search_*.py' -v
@@ -106,7 +106,7 @@ The index tests run builds inline (`background=False`); the route tests inject a
 
 ## Global search P2 to P4 focused checks
 
-Focused modules per phase (contract `docs/SEARCH_CONTRACT.md` section 8.1 lists the required cases). None calls a live provider; stubs and fakes stand in.
+Focused modules per phase (contract `docs/contracts/SEARCH_CONTRACT.md` section 8.1 lists the required cases). None calls a live provider; stubs and fakes stand in.
 
 ```sh
 # P2 network sources, deadline runner, artist-page sections, provider cache
@@ -127,7 +127,7 @@ python -m unittest discover -s tests -p 'test_api_search_routes.py' -v
 
 ## Library pages and album page focused checks
 
-For changes to the artist, album and genre pages, the in-app links, the album page endpoints and the album service links (`docs/SEARCH_CONTRACT.md` section 14). None calls a live provider.
+For changes to the artist, album and genre pages, the in-app links, the album page endpoints and the album service links (`docs/contracts/SEARCH_CONTRACT.md` section 14). None calls a live provider.
 
 ```sh
 python -m unittest discover -s tests -p 'test_discovery_search_album_page.py' -v
@@ -148,7 +148,7 @@ Manual (owner): artist page for an owned and an unowned artist; album page for a
 
 ## Global search P5 latency measurement
 
-Measure the section 2.1 targets of `docs/SEARCH_CONTRACT.md` with the script, against the owner's real Navidrome library, using an isolated data directory so the app's own data is untouched:
+Measure the section 2.1 targets of `docs/contracts/SEARCH_CONTRACT.md` with the script, against the owner's real Navidrome library, using an isolated data directory so the app's own data is untouched:
 
 ```sh
 set -a; source /path/to/config.env; set +a
@@ -160,7 +160,7 @@ Focused tests: `python -m unittest discover -s tests -p 'test_search_latency_scr
 
 ## Android player focused checks (PLAYER-01 to PLAYER-04)
 
-Contract: `docs/ANDROID_PLAYER_CONTRACT.md`. Unit tests in `android/app/src/test`; focused runs only, the owner runs the full suite.
+Contract: `docs/contracts/ANDROID_PLAYER_CONTRACT.md`. Unit tests in `android/app/src/test`; focused runs only, the owner runs the full suite.
 
 - **Stream URL builder:** only `id`, allowlisted `maxBitRate` and `format`; `format=raw`, repeats and unknown values are rejected; fresh salt per URL; no password, token or salt in logs, errors or exception text.
 - **Queue:** restore paused; corrupt or old data dropped; shuffle off restores order; 500 cap message; play album replaces, play next and add to queue append.
@@ -171,7 +171,7 @@ Contract: `docs/ANDROID_PLAYER_CONTRACT.md`. Unit tests in `android/app/src/test
 
 ## Android lyrics focused checks (LYRICS-01 to LYRICS-04)
 
-Contract: `docs/ANDROID_LYRICS_CONTRACT.md`. Unit tests in `android/app/src/test`; focused runs only, the owner runs the full suite. Fixtures use placeholder text with the structure of the real answer; no real lyrics anywhere in the repository.
+Contract: `docs/contracts/ANDROID_LYRICS_CONTRACT.md`. Unit tests in `android/app/src/test`; focused runs only, the owner runs the full suite. Fixtures use placeholder text with the structure of the real answer; no real lyrics anywhere in the repository.
 
 - **Parsing and choice:** timed, plain and empty answers; several entries; phone-language preference; timed before plain.
 - **Cleaning:** unsorted starts, missing or negative `start`, an `offset`, over-long lines (500), over-many lines (2,000), control characters, equal or backward starts treated as plain.
@@ -183,7 +183,7 @@ Contract: `docs/ANDROID_LYRICS_CONTRACT.md`. Unit tests in `android/app/src/test
 
 ## Android equalizer focused checks (EQ-01 to EQ-04)
 
-Contract: `docs/ANDROID_EQ_CONTRACT.md`. Unit tests in `android/app/src/test`; focused runs only, the owner runs the full suite.
+Contract: `docs/contracts/ANDROID_EQ_CONTRACT.md`. Unit tests in `android/app/src/test`; focused runs only, the owner runs the full suite.
 
 - **Filter:** each band's response at several sample rates within 0.1 dB at its centre; a flat curve is bit-exact bypass; bands above Nyquist bypassed; coefficient changes are smooth.
 - **Headroom:** automatic pre-gain for several curves; a full-scale sine through +12 dB does not exceed full scale after the limiter.
@@ -196,7 +196,7 @@ Contract: `docs/ANDROID_EQ_CONTRACT.md`. Unit tests in `android/app/src/test`; f
 
 ## Android crossfade focused checks (XFADE-01 to XFADE-04)
 
-Contract: `docs/ANDROID_CROSSFADE_CONTRACT.md`. Unit tests in `android/app/src/test`; focused runs only, the owner runs the full suite.
+Contract: `docs/contracts/ANDROID_CROSSFADE_CONTRACT.md`. Unit tests in `android/app/src/test`; focused runs only, the owner runs the full suite.
 
 - **Curve:** gains at progress 0, 0.5 and 1; the sum of squares is 1 across the ramp; monotonic; no step larger than the set bound per update.
 - **Planner:** every refusal reason has a test (crossfade off, manual change, no next song, repeat-one, unknown or short duration, next song not ready, same-album rule); a short song gets a shorter fade; repeat-all at the end of the queue; shuffle; hostile lengths are clamped.

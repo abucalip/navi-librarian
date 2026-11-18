@@ -2,7 +2,7 @@ import AppKit
 import DiscairLibrarian
 import SwiftUI
 
-/// The Track images of the playing album (docs/artwork.md, idea 6): each a picture with its type and edition under it, drawn in the
+/// The Track images of the playing album (docs/archive/completed/artwork.md, idea 6): each a picture with its type and edition under it, drawn in the
 /// queue while that album plays. The album's index is read here (the same lookup Now Playing uses, once per album). Nothing is drawn
 /// when the album has no Track image, and a picture appears only once it has loaded. The caption is hidden from VoiceOver because the
 /// picture carries the same label.

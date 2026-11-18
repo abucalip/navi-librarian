@@ -93,7 +93,7 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
 /*
- * Index's (Layout.Index) Radio pages. Spec: docs/INDEX_THEME.md step I5; mockup: docs/design/index/pages/radio, frames 1 to 3. RadioScreen, HeardScreen and
+ * Index's (Layout.Index) Radio pages. Spec: docs/plans/INDEX_THEME.md step I5; mockup: docs/design/index/pages/radio, frames 1 to 3. RadioScreen, HeardScreen and
  * RadioNowPlayingSheet reach this behind isIndex(); the data, polling, favourites, playing and Get are theirs, unchanged. Radio's Stations and Heard are two tabs
  * of one page, as the mockup draws them; the Heard route (from Home and from the live page) shows the same Heard list on its own.
  */

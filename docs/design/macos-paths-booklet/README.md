@@ -1,6 +1,6 @@
 # macOS Paths and Booklet design package
 
-This is the design system for the Mac client's redesigned **Paths sheet** (album and artist) and **Booklet sheet**. It comes from the mockups the owner was shown in an earlier session, and those mockups are redrawn here with every state. The spec and the build plan are in [`docs/MACOS_PATHS_BOOKLET.md`](../../MACOS_PATHS_BOOKLET.md). This folder holds the files that document refers to.
+This is the design system for the Mac client's redesigned **Paths sheet** (album and artist) and **Booklet sheet**. It comes from the mockups the owner was shown in an earlier session, and those mockups are redrawn here with every state. The spec and the build plan are in [`docs/plans/MACOS_PATHS_BOOKLET.md`](../../plans/MACOS_PATHS_BOOKLET.md). This folder holds the files that document refers to.
 
 | Path | What it is |
 |---|---|

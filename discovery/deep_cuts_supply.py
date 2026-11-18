@@ -1,6 +1,6 @@
 """Deep cuts candidate supply: tiered tag radio with a MusicBrainz tag-search tail.
 
-Owner-approved definition (docs/engine2.md, lens catalog): the ListenBrainz tag radio at the
+Owner-approved definition (docs/plans/engine2.md, lens catalog): the ListenBrainz tag radio at the
 50-75% popularity band comes first, then the 75-100% band, then the MusicBrainz tag search.
 Each later tier runs only for the queries the earlier tiers left without an album.
 

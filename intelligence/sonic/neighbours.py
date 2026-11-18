@@ -1,6 +1,6 @@
 """Neighbours by Ear (``album_sonic_neighbours``): owned albums that sound like one album.
 
-Composed from the Sonic routes, not a graph path (docs/ALBUM_PATHS_PROPOSAL.md, path 8). Pure logic: the
+Composed from the Sonic routes, not a graph path (docs/archive/completed/ALBUM_PATHS_PROPOSAL.md, path 8). Pure logic: the
 Navidrome call is injected, so nothing here touches the network, the store or a provider.
 
 Rules (owner decisions 2026-11-09):

@@ -252,12 +252,12 @@ This order is a recommendation, not an approved schedule. Each item should be sp
 
 ### Discair
 
-- [macOS client contract](MACOS_CLIENT_CONTRACT.md)
+- [macOS client contract](../contracts/MACOS_CLIENT_CONTRACT.md)
 - [Server V2 remaining work](ServerV2.md)
-- [Server V2 API contract](SERVER_V2_CONTRACT.md)
-- [Requirements](REQUIREMENTS.md)
-- [Architecture overview](ARCHITECTURE.md)
-- [Development workflow](DEVELOPMENT_WORKFLOW.md)
+- [Server V2 API contract](../contracts/SERVER_V2_CONTRACT.md)
+- [Requirements](../REQUIREMENTS.md)
+- [Architecture overview](../ARCHITECTURE.md)
+- [Development workflow](../DEVELOPMENT_WORKFLOW.md)
 
 ## Decision requested
 

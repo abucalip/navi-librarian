@@ -3,7 +3,7 @@ import DiscairLibrarian
 import Foundation
 import Observation
 
-/// The tabs of the Cupertino Settings page (`docs/redesign.md` section 5.3 and 6.2).
+/// The tabs of the Cupertino Settings page (`docs/plans/redesign.md` section 5.3 and 6.2).
 public enum SettingsTab: String, CaseIterable, Sendable {
     case services = "Services", playback = "Playback", radio = "Radio", blocklist = "Blocklist", appearance = "Appearance", musicFolder = "Music folder", profiles = "Profiles"
 }

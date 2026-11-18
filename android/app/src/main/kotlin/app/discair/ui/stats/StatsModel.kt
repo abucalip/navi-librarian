@@ -16,7 +16,7 @@ import java.time.format.TextStyle
 import java.util.Locale
 
 /*
- * The pure half of the Library stats screen (docs/redesign.md 8.2, step A7): the series and shares each chart draws, computed from
+ * The pure half of the Library stats screen (docs/plans/redesign.md 8.2, step A7): the series and shares each chart draws, computed from
  * the library list and the taste body only. Missing is never zero: a figure that cannot be known is null and its chart says so.
  */
 

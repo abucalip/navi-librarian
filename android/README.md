@@ -1,6 +1,6 @@
 # Discair (Android client)
 
-Native Android client for Librarian and Navidrome. Contract: [`docs/ANDROID_CLIENT_CONTRACT.md`](../docs/ANDROID_CLIENT_CONTRACT.md). Design decisions: [`DESIGN.md`](DESIGN.md). Recorded payloads: [`contract-fixtures/`](contract-fixtures/README.md).
+Native Android client for Librarian and Navidrome. Contract: [`docs/contracts/ANDROID_CLIENT_CONTRACT.md`](../docs/contracts/ANDROID_CLIENT_CONTRACT.md). Design decisions: [`DESIGN.md`](DESIGN.md). Recorded payloads: [`contract-fixtures/`](contract-fixtures/README.md).
 
 ## Build and test
 

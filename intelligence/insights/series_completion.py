@@ -171,7 +171,7 @@ def _runs(members: list[SetItem], owned: set[str]) -> tuple[MissingRun, ...]:
 
 
 def series_card(progress: SeriesProgress, config: SeriesConfig | None = None) -> dict[str, Any]:
-    """Generic insight card (docs/ServerV2.md section 8). States counts and chapters; never advice."""
+    """Generic insight card (docs/plans/ServerV2.md section 8). States counts and chapters; never advice."""
     cap = (config or SeriesConfig()).max_runs_listed
     s = progress.set
     return {

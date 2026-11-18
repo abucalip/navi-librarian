@@ -2,7 +2,7 @@ import AppKit
 import DiscairLibrarian
 import SwiftUI
 
-/// Session and band pictures from the artist's albums (docs/artwork.md, idea 8). The pictures are chosen by type and comment words only
+/// Session and band pictures from the artist's albums (docs/archive/completed/artwork.md, idea 8). The pictures are chosen by type and comment words only
 /// (`ArtworkPicture.qualifiesForCollage`); nothing here reads taste or play data. With too few pictures the model is empty and the
 /// page keeps its usual hero: no placeholder, no empty frame.
 @MainActor @Observable

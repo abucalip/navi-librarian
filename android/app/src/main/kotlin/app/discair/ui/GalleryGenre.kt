@@ -40,7 +40,7 @@ import app.discair.ui.common.Loaded
 import app.discair.ui.theme.LocalPalette
 
 /*
- * Gallery's Genre page (Layout.Gallery). Spec: docs/GALLERY_THEME.md section 10; mockup: docs/design/gallery/pages/album-artist-genre.html, frame 4.
+ * Gallery's Genre page (Layout.Gallery). Spec: docs/archive/completed/GALLERY_THEME.md section 10; mockup: docs/design/gallery/pages/album-artist-genre.html, frame 4.
  * The catalogue line with the counts, the genre's name as the large title, tabs Albums / Artists, then albums as two columns of captioned prints or artists as rows
  * with photo prints. Which items are in the library is said in words. The data and the taps are the page every theme has; only the arrangement is new.
  */

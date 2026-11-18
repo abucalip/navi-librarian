@@ -7,7 +7,7 @@
 .nav .cell.on{width:122px;background:var(--control);color:var(--onControl)}.nav .cell em{font-style:normal;opacity:0;transition:opacity .15s .06s}.nav .cell.on em{opacity:1}
 .tile{transition:transform .25s cubic-bezier(.3,1.5,.5,1)}.tile:active{transform:scale(.97)}</style></head><body><div class="wrap">
 <div class="scr" id="s"><div class="body" id="b"></div><div class="dock"><nav class="nav" id="nav"></nav></div><div class="page" id="pg"></div></div>
-<div class="notes"><h2>Bento motion, live</h2><p>Values: tokens.json → motion. Build steps: docs/BENTO_THEME.md section 8.</p>
+<div class="notes"><h2>Bento motion, live</h2><p>Values: tokens.json → motion. Build steps: docs/plans/BENTO_THEME.md section 8.</p>
 <button onclick="enter()">Replay tile entry</button><button onclick="toggleReduce()">Toggle Remove animations</button>
 <p><b>Tap a tile</b>: it grows into its page (container transform, 450ms, corners 28 → 0); tap the page to shrink it back (380ms).<br><b>Tap a bar icon</b>: the active pill moves and stretches (spring 0.8 / 500), its label fades in 60ms later.<br><b>Press a tile</b>: it dips to 0.97.</p></div></div>
 <script>

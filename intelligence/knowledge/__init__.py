@@ -1,4 +1,4 @@
-"""The one read path to Server V2 knowledge (docs/efficiency.md E5).
+"""The one read path to Server V2 knowledge (docs/plans/efficiency.md E5).
 
 Routes, pages and lenses read through :class:`KnowledgeReader`; they do not query tables or call
 providers. The package imports no provider client and no web module (tested)."""

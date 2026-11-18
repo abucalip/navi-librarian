@@ -24,7 +24,7 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** The link of each Paths tab and how steps group under their links (docs/pathsredesign.md, section 5). */
+/** The link of each Paths tab and how steps group under their links (docs/archive/completed/pathsredesign.md, section 5). */
 class PathTrailTest {
     private fun body(name: String): String = Json.parseToJsonElement(
         javaClass.classLoader!!.getResource("librarian/$name.json")!!.readText(),

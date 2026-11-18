@@ -10,7 +10,7 @@ Enrichments: the regional spine (the area the window's weight sits in) and the e
 (the decade of the window) rank candidates through ``ranking_boost``; their data comes from
 ``discovery.artist_profiles`` and the release search dates. Similar-artist and collaborator
 links widen the window weights at a discount, but nothing fetches them yet, so the daily list
-does not use them. See docs/engine2.md.
+does not use them. See docs/plans/engine2.md.
 """
 from __future__ import annotations
 

@@ -27,10 +27,10 @@ import app.discair.ui.common.rememberLoad
 import app.discair.ui.theme.LocalPalette
 
 /*
- * Index's Library stats pieces (I6). Spec: docs/INDEX_THEME.md sections 7 and 10; mockup: docs/design/index/pages/downloads-stats-server.html, frame 2.
+ * Index's Library stats pieces (I6). Spec: docs/plans/INDEX_THEME.md sections 7 and 10; mockup: docs/design/index/pages/downloads-stats-server.html, frame 2.
  * StatsScreen reaches these behind isIndex(); the ranges, the series and the charts are the Standard page's. The figures are the ones the phone can know:
  * the albums (the library list's total) and the artists (the artist list's total). The mockup's hours this month and lossless share are not served yet
- * (docs/INDEX_THEME.md 11a), so they are not drawn.
+ * (docs/plans/INDEX_THEME.md 11a), so they are not drawn.
  */
 
 /** The pure words of the figures block. */

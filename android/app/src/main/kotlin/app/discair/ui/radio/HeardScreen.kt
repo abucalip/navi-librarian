@@ -34,7 +34,7 @@ import app.discair.ui.home.Muted
 import app.discair.ui.theme.Ink
 
 /**
- * Songs heard on the radio (docs/RADIO_PLAYBACK_CONTRACT.md section 4), newest first from `GET /api/radio/plays`, each with the
+ * Songs heard on the radio (docs/contracts/RADIO_PLAYBACK_CONTRACT.md section 4), newest first from `GET /api/radio/plays`, each with the
  * same Download states as Now Playing: Download, Downloading, Downloaded, Owned, Try again. The list is read each time the page
  * opens; the Download request is the existing `POST /api/radio/plays/{id}/get`.
  */

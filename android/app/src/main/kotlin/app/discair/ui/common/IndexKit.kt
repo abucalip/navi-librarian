@@ -83,7 +83,7 @@ import app.discair.ui.theme.Palette
 import app.discair.ui.theme.rememberReducedMotion
 
 /**
- * Index's measurements (docs/INDEX_THEME.md sections 3 and 7; the numbers are docs/design/index/tokens.json and index.css, 1 CSS px = 1dp).
+ * Index's measurements (docs/plans/INDEX_THEME.md sections 3 and 7; the numbers are docs/design/index/tokens.json and index.css, 1 CSS px = 1dp).
  * Pure, so the tests can pin them.
  */
 object IndexRules {
@@ -125,7 +125,7 @@ object IndexRules {
 }
 
 /**
- * Index's own colours (docs/INDEX_THEME.md 4.1 and 4.2, decision I1): the mini-player strip and the insight block. They are not [Palette] fields, so no
+ * Index's own colours (docs/plans/INDEX_THEME.md 4.1 and 4.2, decision I1): the mini-player strip and the insight block. They are not [Palette] fields, so no
  * other theme carries them. Keyed by palette id; the values are `tones` in docs/design/index/tokens.json (IndexTest pins them).
  */
 class IndexTones(
@@ -159,7 +159,7 @@ fun isIndex(): Boolean = LocalPalette.current.layout == Layout.Index
 fun indexTones(): IndexTones = IndexTones.of((LocalThemePalette.current ?: LocalPalette.current).id)
 
 /**
- * Index's text styles (docs/INDEX_THEME.md 5.3). The faces come from the owner's font pair, so another pair chosen in Appearance keeps Index's layout (D4):
+ * Index's text styles (docs/plans/INDEX_THEME.md 5.3). The faces come from the owner's font pair, so another pair chosen in Appearance keeps Index's layout (D4):
  * heads and numerals use the pair's title and numeral faces, text its body face and the data keys its mono. Sizes and tracking are the spec's.
  */
 object IndexType {
@@ -386,7 +386,7 @@ fun IndexTracker(reached: Int, modifier: Modifier = Modifier, failedAt: Int = -1
 private data class WordSpan(val x: Int, val width: Int)
 
 /**
- * The shared body of the source switch and the tabs (docs/INDEX_THEME.md 8.2 #4): mono words, the chosen one in `text`, and one 3dp `accent` bar under it that
+ * The shared body of the source switch and the tabs (docs/plans/INDEX_THEME.md 8.2 #4): mono words, the chosen one in `text`, and one 3dp `accent` bar under it that
  * moves and resizes to the chosen word over 260ms. Each word is measured, then the bar's x and width are animated. A word's cell is 48dp high for the touch
  * rule; [visibleHeight] of it, at the bottom, is what the mockup draws, so the bar sits on the visible bottom edge.
  */

@@ -2,7 +2,7 @@ import Foundation
 import Testing
 @testable import DiscairLibrarian
 
-/// Which album images make the artist collage and in what order (docs/artwork.md, idea 8).
+/// Which album images make the artist collage and in what order (docs/archive/completed/artwork.md, idea 8).
 @Suite struct ArtistCollageTests {
     private func pic(_ id: Int, _ types: [String], comment: String = "", format: String = "jpg") -> ArtworkPicture {
         ArtworkPicture(imageID: id, release: "r", types: types, comment: comment, format: format)

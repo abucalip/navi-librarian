@@ -29,7 +29,7 @@ data class QueueItem(
     /** A live radio stream address. Never saved with the queue (a relay token is not stored) and never logged. Empty for a song. */
     @kotlinx.serialization.Transient val liveUrl: String = "",
 ) {
-    /** A radio station, not a song: no seek bar, no scrobble to Navidrome, no saved queue (docs/RADIO_PLAYBACK_CONTRACT.md section 4). */
+    /** A radio station, not a song: no seek bar, no scrobble to Navidrome, no saved queue (docs/contracts/RADIO_PLAYBACK_CONTRACT.md section 4). */
     val isRadio: Boolean get() = songId.startsWith(RADIO_ID_PREFIX)
 }
 

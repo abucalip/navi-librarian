@@ -13,7 +13,7 @@ import app.discair.ui.theme.rememberReducedMotion
 import app.discair.ui.theme.toTween
 
 /*
- * Cover to Album page (docs/redesign.md 7.4): the cover on a shelf or grid grows into the album header. The shell provides the
+ * Cover to Album page (docs/plans/redesign.md 7.4): the cover on a shelf or grid grows into the album header. The shell provides the
  * two scopes; a screen outside it (a preview, a test) finds none and draws its cover as before. When the cover is not on
  * screen, nothing matches, and the page's own shared-axis push runs instead.
  */
@@ -36,7 +36,7 @@ fun Modifier.sharedCover(routeKey: String): Modifier {
     val visibility = LocalNavVisibilityScope.current ?: return this
     val reduced = rememberReducedMotion()
     val plan = MotionPlans.sharedCover(currentMotionFamily(), reduced) ?: return this
-    // Gallery's print travels over 420ms on its own curve (docs/GALLERY_THEME.md section 8); every other theme keeps the plan's timing.
+    // Gallery's print travels over 420ms on its own curve (docs/archive/completed/GALLERY_THEME.md section 8); every other theme keeps the plan's timing.
     val bounds = if (isGallery()) GalleryMotion.sharedCover(reduced) else plan.bounds
     return with(scope) {
         this@sharedCover.sharedElement(

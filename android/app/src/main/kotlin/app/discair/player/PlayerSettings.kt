@@ -20,7 +20,7 @@ interface PlayerSettings {
     var showLyricLine: Boolean
     var showFacts: Boolean
 
-    /** The session and booklet photos drifting behind the lyrics on Now Playing (docs/artwork.md, idea 4). On by default. */
+    /** The session and booklet photos drifting behind the lyrics on Now Playing (docs/archive/completed/artwork.md, idea 4). On by default. */
     var showSlideshow: Boolean
 
     /** Called after any setting is saved; close the result to stop. */

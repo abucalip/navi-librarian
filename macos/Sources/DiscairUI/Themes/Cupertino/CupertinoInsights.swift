@@ -57,7 +57,7 @@ struct CupertinoInsights: View {
         }
     }
 
-    /// The charts that used to sit on Home (`docs/MACOS_HOME_MARQUEE_PLAN.md`, H2): collection 2:1 decades, then shelf life; one column under 860 pt wide. Taste is not repeated: `CupertinoTaste` above is the taste page.
+    /// The charts that used to sit on Home (`docs/archive/completed/MACOS_HOME_MARQUEE_PLAN.md`, H2): collection 2:1 decades, then shelf life; one column under 860 pt wide. Taste is not repeated: `CupertinoTaste` above is the taste page.
     private var collection: some View {
         VStack(alignment: .leading, spacing: CU.Space.m) {
             Text("Your collection").cuRole(CU.Font.title1).foregroundStyle(CU.text).accessibilityAddTraits(.isHeader)

@@ -9,7 +9,7 @@ uses. A song is one row of the acquisition table whose "album" is a synthetic na
 
 The policy is the owner's: the best file is chosen automatically, the song goes to the folder
 the library already uses for its album (a new ``<artist>/<album>`` only when there is none),
-and dismissing a song removes only its own download. See docs/ALBUM_PAGE_REDESIGN_PROPOSAL.md.
+and dismissing a song removes only its own download. See docs/archive/completed/ALBUM_PAGE_REDESIGN_PROPOSAL.md.
 """
 from __future__ import annotations
 

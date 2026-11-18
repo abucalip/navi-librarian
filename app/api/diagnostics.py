@@ -1,4 +1,4 @@
-"""Runtime diagnostics route (docs/efficiency.md M1).
+"""Runtime diagnostics route (docs/plans/efficiency.md M1).
 
 HTTP adapter only; counters live in ``app.services.runtime_metrics``. Read-only, and behind the same
 login as every other ``/api/`` route (``app_login_middleware``). Reports this web process's counters and

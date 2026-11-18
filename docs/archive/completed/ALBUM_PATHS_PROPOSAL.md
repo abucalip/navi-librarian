@@ -2,7 +2,7 @@
 
 **Status:** owner decisions recorded 2026-11-09 (see "Decisions recorded"). Approved for build in slices. Built and merged so far: the probe script (PR #921), the recording-places audit (PR #922), the builders for Studio Crew, Guest List and Covers and Sources (PR #924, squash `3901673d599079e80cfa41319d4e6d2fe55751fe`) the Same Year, Same Scene builder (PR #925, squash `adf7454da321543e78aff8d3526f0987b7e7c497`) and the Neighbours by Ear composition (PR #926, squash `934a1c0786f78f4daa2ce257888ee6b189278e3b`) and the Listen-through Gaps filter (PR #927, squash `b257a07db070e7f1086732015bedc6d90d6723de`) and the contract section (PR #928, squash `646a0dd93e03ecc22056f45f6aada05f241e85cb`) and the route wiring with recorded fixtures (PR #929, squash `cca08807bc93267f784bdffdbafe851c66e905ca`). The Same Room builder, route and fixtures merged in PR #933 (see "Same Room builder"). Nothing is published or deployed.
 **Date:** 2026-11-09
-**Context:** The Paths button on an album page. Contract context: [Server V2 contract](../../SERVER_V2_CONTRACT.md) (`GET /api/knowledge/paths`), [Server V2 remaining work](../../ServerV2.md), builders in `intelligence/graph/paths.py`.
+**Context:** The Paths button on an album page. Contract context: [Server V2 contract](../../contracts/SERVER_V2_CONTRACT.md) (`GET /api/knowledge/paths`), [Server V2 remaining work](../../plans/ServerV2.md), builders in `intelligence/graph/paths.py`.
 
 ## Goal
 

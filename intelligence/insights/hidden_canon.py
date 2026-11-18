@@ -159,7 +159,7 @@ def find_hidden_canon(
 
 
 def canon_card(pick: CanonPick) -> dict[str, Any]:
-    """Generic insight card (docs/ServerV2.md section 8). States facts; never advice."""
+    """Generic insight card (docs/plans/ServerV2.md section 8). States facts; never advice."""
     a = pick.album
     return {
         "kind": CARD_KIND,

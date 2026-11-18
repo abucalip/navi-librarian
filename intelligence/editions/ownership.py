@@ -1,4 +1,4 @@
-"""Edition awareness for "do I own this?" (docs/ServerV2.md Phase 2, item 5).
+"""Edition awareness for "do I own this?" (docs/plans/ServerV2.md Phase 2, item 5).
 
 The ownership matcher (``OwnedKeys`` and ``_owned_match``) decides *owned or not* from the album
 name key and year, and it is left exactly as it was. This module adds a second, separate answer

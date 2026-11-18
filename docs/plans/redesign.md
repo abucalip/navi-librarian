@@ -4,7 +4,7 @@ Status: **proposal; M1 to M9 built and merged (audit follow-ups F1 to F13 listed
 
 Scope: the macOS client's Cupertino theme, and the Android client. The macOS Zine theme and the web client are out of scope and are not touched.
 
-Mockups: [`docs/design/redesign/`](design/redesign/). Each screen is an HTML file with a PNG render beside it. The design tokens are the custom properties at the top of [`cupertino.css`](design/redesign/macos/cupertino/cupertino.css) and [`android.css`](design/redesign/android/android.css); where this document and a stylesheet disagree, the stylesheet is right.
+Mockups: [`docs/design/redesign/`](../design/redesign/). Each screen is an HTML file with a PNG render beside it. The design tokens are the custom properties at the top of [`cupertino.css`](../design/redesign/macos/cupertino/cupertino.css) and [`android.css`](../design/redesign/android/android.css); where this document and a stylesheet disagree, the stylesheet is right.
 
 ## 0. Read this first
 
@@ -153,11 +153,11 @@ The sizes 13.5 and 12.5 are removed.
 - Icons: SF Symbols, regular weight, 16 pt in rows and 12 in small buttons. Outline symbols; filled only for play and pause.
 - Key caps: 24 high, radius 8, white with a 1 pt border.
 
-Mockup: [`components--tokens-and-controls.png`](design/redesign/macos/cupertino/components--tokens-and-controls.png).
+Mockup: [`components--tokens-and-controls.png`](../design/redesign/macos/cupertino/components--tokens-and-controls.png).
 
 ### 4.4 Graph rules
 
-Mockup and specimen of every type and state: [`charts--specimens.png`](design/redesign/macos/cupertino/charts--specimens.png). Build with Swift Charts.
+Mockup and specimen of every type and state: [`charts--specimens.png`](../design/redesign/macos/cupertino/charts--specimens.png). Build with Swift Charts.
 
 | Aspect | Rule |
 |---|---|
@@ -183,11 +183,11 @@ Mockup and specimen of every type and state: [`charts--specimens.png`](design/re
 
 ## 5. macOS screens
 
-Every mockup is in [`docs/design/redesign/macos/cupertino/`](design/redesign/macos/cupertino/).
+Every mockup is in [`docs/design/redesign/macos/cupertino/`](../design/redesign/macos/cupertino/).
 
 ### 5.1 Home
 
-The Home in the app is the "Marquee" layout, built from [`MACOS_HOME_MARQUEE_PLAN.md`](MACOS_HOME_MARQUEE_PLAN.md) (the plan holds the measures, rules and wording) and the mockups in [`design/macos-home-marquee/`](design/macos-home-marquee/), which are the spec. The earlier eleven-module Home (briefing band, charts, lens rows, Arrivals, Recently added) is gone from Home; its charts live on Insights ("Your collection") and its Server activity panel in Settings, Services. The design system in section 4 still applies in full.
+The Home in the app is the "Marquee" layout, built from [`MACOS_HOME_MARQUEE_PLAN.md`](../archive/completed/MACOS_HOME_MARQUEE_PLAN.md) (the plan holds the measures, rules and wording) and the mockups in [`design/macos-home-marquee/`](../design/macos-home-marquee/), which are the spec. The earlier eleven-module Home (briefing band, charts, lens rows, Arrivals, Recently added) is gone from Home; its charts live on Insights ("Your collection") and its Server activity panel in Settings, Services. The design system in section 4 still applies in full.
 
 Parts, top to bottom, at most 980 wide at the 1280 window; under 860 wide (or with the queue inspector open) the cover shrinks, the shelves show three covers a row and the taste sentence takes its own line:
 
@@ -362,11 +362,11 @@ Per theme: Day and Night as above. **Tape** is mechanical: durations at 60% of t
 
 Reduced motion: when the system animator scale is 0 (the check already in `TapeDeck.kt`), every transition becomes a 100 ms fade or nothing; no count-up, no stagger, no shimmer.
 
-Live demo: open [`android/day/motion.html`](design/redesign/android/day/motion.html) in a browser and reload to replay. It shows the enter stagger, chart growth and the sheet; the PNG is a still.
+Live demo: open [`android/day/motion.html`](../design/redesign/android/day/motion.html) in a browser and reload to replay. It shows the enter stagger, chart growth and the sheet; the PNG is a still.
 
 ## 8. Android screens
 
-Mockups are in [`docs/design/redesign/android/day/`](design/redesign/android/day/), Day · Sand, normal state only.
+Mockups are in [`docs/design/redesign/android/day/`](../design/redesign/android/day/), Day · Sand, normal state only.
 
 ### 8.1 Dashboard (`dashboard`, `dashboard-tablet`)
 

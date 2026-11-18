@@ -6,7 +6,7 @@ import app.discair.model.ShelfAlbum
 data class HomeArtist(val name: String, val id: String)
 
 /**
- * The artists the owner has been playing (docs/ANDROID_ART_THEMES_PROPOSAL.md, section 7). No endpoint is needed: take the
+ * The artists the owner has been playing (docs/archive/completed/ANDROID_ART_THEMES_PROPOSAL.md, section 7). No endpoint is needed: take the
  * Recent and Frequent shelves already loaded for Home, keep the distinct artists in order of first appearance (Recent first),
  * up to [LIMIT].
  */

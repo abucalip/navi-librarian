@@ -64,7 +64,7 @@ import app.discair.ui.theme.toTween
 import kotlin.math.abs
 
 /*
- * The chart kit (docs/redesign.md 4.4, 7.2 and 7.3, step A4), drawn on Compose Canvas: line, columns, paired bars, dumbbell,
+ * The chart kit (docs/plans/redesign.md 4.4, 7.2 and 7.3, step A4), drawn on Compose Canvas: line, columns, paired bars, dumbbell,
  * ranked bars and the acquisition tracker. Every chart takes a [ChartState]; a chart that is not Ready shows its own sentence
  * and never a zero or a blank. The marks follow the theme's family through [ChartRules.style]. What is measured and decided
  * lives in ChartMath.kt.

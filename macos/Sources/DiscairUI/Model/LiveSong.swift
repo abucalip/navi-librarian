@@ -7,7 +7,7 @@ public protocol LiveNowSource: Sendable {
 }
 extension LibrarianClient: LiveNowSource {}
 
-/// The words and parts of the live song, pure so a test can drive them (docs/RADIO_PLAYBACK_CONTRACT.md section 6).
+/// The words and parts of the live song, pure so a test can drive them (docs/contracts/RADIO_PLAYBACK_CONTRACT.md section 6).
 /// A song is shown only for the state `ok`; every other state is a sentence that takes the artist line's place.
 struct LiveSongLine: Equatable {
     /// The song title, or the raw title a station sent that could not be split. Nil when no title is known.

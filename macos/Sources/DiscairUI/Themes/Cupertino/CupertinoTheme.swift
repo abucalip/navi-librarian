@@ -34,7 +34,7 @@ struct CURGB: Equatable, Sendable {
     }
 }
 
-/// Cupertino (macOS) tokens. Values are section 4.1 of `docs/redesign.md`; the stylesheet named there is the tie-breaker.
+/// Cupertino (macOS) tokens. Values are section 4.1 of `docs/plans/redesign.md`; the stylesheet named there is the tie-breaker.
 /// The old names (`accent`, `muted`, `ink`, `card`, `fill`) are kept as aliases of the new roles, so views that use them compile unchanged.
 enum CU {
     // MARK: Colour roles

@@ -1,9 +1,9 @@
 import DiscairLibrarian
 import Foundation
 
-// The Trail layout of the macOS Paths sheet (docs/MACOS_PATHS_BOOKLET.md, section 4.2): the link that joins a step to the
+// The Trail layout of the macOS Paths sheet (docs/plans/MACOS_PATHS_BOOKLET.md, section 4.2): the link that joins a step to the
 // start, the grouping of steps under their links, the filter, the visual order the keys walk, and the notes no group owns.
-// Pure: no SwiftUI. The same grouping rules as Android's `model/PathTrail.kt` (docs/pathsredesign.md, section 5).
+// Pure: no SwiftUI. The same grouping rules as Android's `model/PathTrail.kt` (docs/archive/completed/pathsredesign.md, section 5).
 
 /// What connects a step to the start: the person, studio, work, label or place it goes through (`name`) and what that link is
 /// (`kind`, lower case: "same label"). A step whose first reason names nothing to link through has an empty `name` and is

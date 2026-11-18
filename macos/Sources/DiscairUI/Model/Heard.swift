@@ -1,7 +1,7 @@
 import DiscairLibrarian
 import Foundation
 
-/// The Heard list's rules, pure so a test can drive them (docs/RADIO_PLAYBACK_PROPOSAL.md S2-3 items 3 to 5). The list is the
+/// The Heard list's rules, pure so a test can drive them (docs/plans/RADIO_PLAYBACK_PROPOSAL.md S2-3 items 3 to 5). The list is the
 /// server's `GET /api/radio/plays`, newest first; nothing here reads the network or the clock (it is passed in).
 enum HeardRules {
     /// "Heard on (station) tonight": the last 12 hours, at most 8 rows (Now Playing).

@@ -97,7 +97,7 @@ import app.discair.ui.theme.LocalPalette
 import java.time.LocalDate
 
 /*
- * Gallery's Discover (Layout.Gallery). Spec: docs/GALLERY_THEME.md sections 9 and 10; mockup: docs/design/gallery/pages/discover.html, frames 1 to 3.
+ * Gallery's Discover (Layout.Gallery). Spec: docs/archive/completed/GALLERY_THEME.md sections 9 and 10; mockup: docs/design/gallery/pages/discover.html, frames 1 to 3.
  * The date line and "Discover" as the large title, tabs Lists / Insights, the list names as a Fraunces source switch, then each list as catalogue entries
  * (a 104dp print, "No. 01 · genre", the work in italic, the maker, the reason, Get / Save / the three-dot menu). Insights are hairline sections: the taste
  * card (a headline, ranked bars, the listen counts), then one section per lens. The data, the saves and the dismissals are the page every theme has.
@@ -112,7 +112,7 @@ internal fun Modifier.bleed(by: Dp): Modifier = layout { measurable, constraints
     layout(placeable.width - 2 * px, placeable.height) { placeable.place(-px, 0) }
 }
 
-// ----- the head: the title and the one switch (docs/Discover_page.md 4.1, in Gallery's type) ----------------------------
+// ----- the head: the title and the one switch (docs/archive/completed/Discover_page.md 4.1, in Gallery's type) ----------------------------
 
 /** The date line and the large title, then the switch row: the list on screen in Fraunces italic with a chevron, and one dash per list. */
 @Composable
@@ -208,7 +208,7 @@ internal fun GalleryListSheet(list: DiscoveryList, onSelect: (DiscoveryList) -> 
     }
 }
 
-// ----- the lists: one grid of tiles (docs/Discover_page.md 4.3 to 4.5, in Gallery's type) ------------------------------------
+// ----- the lists: one grid of tiles (docs/archive/completed/Discover_page.md 4.3 to 4.5, in Gallery's type) ------------------------------------
 
 /**
  * A list as one two-column grid: a hairline section heading with its count per lens (Daily picks) or genre row (Deep dives), a muted note for a lens with
@@ -377,7 +377,7 @@ private fun EntryMenu(entry: DiscoveryEntry, onDismiss: (artistToo: Boolean) -> 
 // ----- insights ------------------------------------------------------------------------------------------------
 
 /**
- * Insights (docs/Discover_page.md 4.6 in Gallery's type): the taste card, then every visible card in the server's lens order with no lens headings (an
+ * Insights (docs/archive/completed/Discover_page.md 4.6 in Gallery's type): the taste card, then every visible card in the server's lens order with no lens headings (an
  * anniversary card still names its lens), then one muted line naming the lenses that are off or have nothing today. A dismissed card leaves at once and
  * [onDismiss] offers Undo.
  */

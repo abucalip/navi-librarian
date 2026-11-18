@@ -248,7 +248,7 @@ fun SettingsScreen(state: UiState, model: AppViewModel, onBack: () -> Unit, onEq
         Text("Connected to your servers.", style = MaterialTheme.typography.bodyLarge)
         CheckLine("Librarian", state.librarian)
         CheckLine("Navidrome", state.navidrome)
-        // A grouped row with its state in words, first in the list (docs/redesign.md 8.2).
+        // A grouped row with its state in words, first in the list (docs/plans/redesign.md 8.2).
         val serverLine = app.discair.ui.downloads.SettingsRules.serverLine(state.librarian, state.navidrome)
         app.discair.ui.settings.SettingsRow(
             app.discair.ui.player.PlayerIcons.Server, "Server and services", serverLine.text, onClick = onServer,

@@ -3,7 +3,7 @@
 Pure logic: the Navidrome call is injected (``api_call(method, **params)``, the legacy client's shape), so
 nothing here touches the network, the store or a provider. No audio analysis of our own.
 
-Rules measured by the 2026-11-07 probe (docs/ServerV2.md, Phase 7):
+Rules measured by the 2026-11-07 probe (docs/plans/ServerV2.md, Phase 7):
 - Similarity sits in a narrow band (median 0.92), so matches keep Navidrome's order and the score is
   informational only; callers must not threshold on it.
 - Near-duplicates of the seed (another edition or language version of the same recording) appear among

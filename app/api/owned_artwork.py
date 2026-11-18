@@ -64,7 +64,7 @@ def owned_artwork(cover_id: str, size: str | None = None, librarian=Depends(get_
     if not _ID_PATTERN.fullmatch(cover_id):
         raise HTTPException(status_code=400, detail="artwork ID is not valid.")
     pixels = _parse_size(size)
-    # The owner's pick wins on every screen (docs/artwork.md slice 4).
+    # The owner's pick wins on every screen (docs/archive/completed/artwork.md slice 4).
     chosen = service.store.get_choice(cover_id)
     if chosen is not None:
         picked = _alternate(service, chosen, pixels)

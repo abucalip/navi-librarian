@@ -270,7 +270,7 @@ fun DiscoverScreen(open: Opener) {
             )
             else {
             PageHeading("Discover", Modifier.padding(start = 16.dp, top = 16.dp, end = 16.dp), large = true)
-            // List names as chips in one scrolling row (docs/redesign.md 8.2).
+            // List names as chips in one scrolling row (docs/plans/redesign.md 8.2).
             androidx.compose.foundation.lazy.LazyRow(
                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),

@@ -1,8 +1,8 @@
 """Loop that enriches newly added owned albums (Server V2, automatic API fill).
 
 Runs only in the dedicated worker process (``python -m app.worker``): the worker is the single writer
-of the knowledge store and the single MusicBrainz egress, the web process only reads (docs/ServerV2.md,
-docs/efficiency.md A/E). The work is ``intelligence.musicbrainz.auto_fill.run_cycle``. On by default
+of the knowledge store and the single MusicBrainz egress, the web process only reads (docs/plans/ServerV2.md,
+docs/plans/efficiency.md A/E). The work is ``intelligence.musicbrainz.auto_fill.run_cycle``. On by default
 (owner approved): polls every ``DEFAULT_POLL`` seconds; ``NAVI_AUTO_FILL_POLL_SECONDS`` changes the
 interval and ``0`` or ``off`` switches it off. Each poll costs one ``getScanStatus`` call (about 300
 bytes); Navidrome is read further, and MusicBrainz asked, only when the scan marker changed. A full

@@ -42,7 +42,7 @@ import androidx.compose.ui.unit.dp
 import app.discair.ui.theme.Palette
 
 /**
- * Pure rules for the Cassette Deck layout (docs/BRUT_LAYOUTS_PLAN.md section 7), apart from the drawing so they are unit-tested.
+ * Pure rules for the Cassette Deck layout (docs/archive/completed/BRUT_LAYOUTS_PLAN.md section 7), apart from the drawing so they are unit-tested.
  */
 object TapeDeckRules {
     /** The meter moves only while a song is really playing: not paused, not buffering, and not when the phone reduces motion. */

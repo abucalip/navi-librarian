@@ -6,7 +6,7 @@ Output is aggregate counts and timings only (no titles, paths or credentials).
 
     python scripts/server_v2_phase1_exit.py --sample 200 --out phase1_exit.json
 
-Checks (docs/ServerV2.md, Phase 1 exit):
+Checks (docs/plans/ServerV2.md, Phase 1 exit):
   1. a bounded sample is fully resolved or explicitly unresolved, and re-ingest changes nothing
   2. the health report is identical across two independent fetches of the real library
   3. a failing provider search leaves stored rows and the health body unchanged

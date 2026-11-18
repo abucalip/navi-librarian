@@ -112,7 +112,7 @@ fun InChosenTheme(content: @Composable () -> Unit) {
 internal fun variable(res: Int, weight: Int) =
     Font(res, FontWeight(weight), variationSettings = FontVariation.Settings(FontVariation.weight(weight)))
 
-/** Gallery's font files (docs/GALLERY_THEME.md 5.1): Fraunces with `opsz` and `wght` axes (upright and italic) and Manrope 400 to 800. */
+/** Gallery's font files (docs/archive/completed/GALLERY_THEME.md 5.1): Fraunces with `opsz` and `wght` axes (upright and italic) and Manrope 400 to 800. */
 @OptIn(androidx.compose.ui.text.ExperimentalTextApi::class)
 object GalleryFaces {
     /** Fraunces at [weight] and optical size [opsz], upright or italic. */
@@ -126,7 +126,7 @@ object GalleryFaces {
 
     val manrope: FontFamily = FontFamily(listOf(400, 500, 600, 700, 800).map { variable(R.font.manrope_gallery, it) })
 
-    /** The catalogue and time face: DM Mono, whatever font pair the owner chose (docs/GALLERY_THEME.md 5.2). */
+    /** The catalogue and time face: DM Mono, whatever font pair the owner chose (docs/archive/completed/GALLERY_THEME.md 5.2). */
     val mono: FontFamily = FontFamily(Font(R.font.dm_mono_400, FontWeight.Normal), Font(R.font.dm_mono_500, FontWeight.Medium))
 }
 
@@ -295,7 +295,7 @@ object FontPairs {
     }
 
     /**
-     * Gallery (docs/GALLERY_THEME.md 5.2): Fraunces for titles, Manrope for text, DM Mono for catalogue lines. The title family holds the upright and
+     * Gallery (docs/archive/completed/GALLERY_THEME.md 5.2): Fraunces for titles, Manrope for text, DM Mono for catalogue lines. The title family holds the upright and
      * italic files; `GalleryKit` builds each text style with its own weight and optical size ([GalleryFaces.fraunces]).
      */
     val Gallery = run {
@@ -309,7 +309,7 @@ object FontPairs {
     }
 
     /**
-     * Index (docs/INDEX_THEME.md 5.2): Inter Tight 800 for titles and numerals, Inter for text, IBM Plex Mono for the data keys. It differs from
+     * Index (docs/plans/INDEX_THEME.md 5.2): Inter Tight 800 for titles and numerals, Inter for text, IBM Plex Mono for the data keys. It differs from
      * `brut_swiss` only by naming IBM Plex Mono (400, 500 and 600) as its mono. `IndexKit` reads the faces through `LocalFontPair`.
      */
     val Index = run {
@@ -383,7 +383,7 @@ private fun colorScheme(p: Palette): ColorScheme {
 private fun style(family: FontFamily, weight: FontWeight, size: Int, line: Int) =
     TextStyle(fontFamily = family, fontWeight = weight, fontSize = size.sp, lineHeight = line.sp)
 
-/** Roles that Material's [Typography] has no slot for (docs/redesign.md 7.2). Read them with [discairType]. */
+/** Roles that Material's [Typography] has no slot for (docs/plans/redesign.md 7.2). Read them with [discairType]. */
 class DiscairTypography(val displayMetric: TextStyle, val headlineSentence: TextStyle)
 
 internal fun discairTypography(f: FontPair) = DiscairTypography(

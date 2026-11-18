@@ -76,7 +76,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /*
- * Index's Library (Layout.Index). Spec: docs/INDEX_THEME.md step I4; mockup: docs/design/index/pages/library-search.html, frames 1 and 2.
+ * Index's Library (Layout.Index). Spec: docs/plans/INDEX_THEME.md step I4; mockup: docs/design/index/pages/library-search.html, frames 1 and 2.
  * "Library" with the tab's count as a superscript, tabs Artists / Albums / Genres each with its count once known, the sort line, then artists as rows with the
  * letter in the number column and a letter rail (A to Z by name only), albums as a two-column grid, genres as numbered rows. The paging, the sort and every tap
  * are the page every theme has (LibraryScreen); Genres is Index's own tab over the same genre list as Home.

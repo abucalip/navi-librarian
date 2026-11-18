@@ -4,7 +4,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** The confirmation sheet's actions (docs/redesign.md 7.2, step A5): safe first and outlined, destructive named, nothing before confirm. */
+/** The confirmation sheet's actions (docs/plans/redesign.md 7.2, step A5): safe first and outlined, destructive named, nothing before confirm. */
 class ConfirmSheetTest {
     @Test fun theSafeActionIsDrawnFirstForEveryConfirmation() {
         listOf(

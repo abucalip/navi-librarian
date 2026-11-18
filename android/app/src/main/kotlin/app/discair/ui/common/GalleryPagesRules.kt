@@ -1,7 +1,7 @@
 package app.discair.ui.common
 
 /**
- * The words on Gallery's Album, Artist and Genre pages (docs/GALLERY_THEME.md section 10, mockup gallery/pages/album-artist-genre).
+ * The words on Gallery's Album, Artist and Genre pages (docs/archive/completed/GALLERY_THEME.md section 10, mockup gallery/pages/album-artist-genre).
  * Pure, so the tests can pin them. The catalogue lines are set in DM Mono capitals by the screens; these return plain text.
  */
 object GalleryPagesRules {
@@ -11,7 +11,7 @@ object GalleryPagesRules {
     const val SIMILAR_PRINT_DP = 104
     const val ROW_PRINT_DP = 48
 
-    /** The print in a menu sheet's header (docs/GALLERY_THEME.md 7.3, Sheet: "small print 58"). */
+    /** The print in a menu sheet's header (docs/archive/completed/GALLERY_THEME.md 7.3, Sheet: "small print 58"). */
     const val MENU_PRINT_DP = 58
     const val PHOTO_PRINT_DP = 52
     const val SONGS_SHOWN = 5

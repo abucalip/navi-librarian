@@ -5,7 +5,7 @@ import java.time.format.TextStyle
 import java.util.Locale
 
 /**
- * The words on Gallery's Discover, Library and Search pages (docs/GALLERY_THEME.md section 10, mockups gallery/pages/discover and library-search).
+ * The words on Gallery's Discover, Library and Search pages (docs/archive/completed/GALLERY_THEME.md section 10, mockups gallery/pages/discover and library-search).
  * Pure, so the tests can pin them. The catalogue lines are set in DM Mono capitals by the screens; these return plain text.
  */
 object GalleryListsRules {
@@ -13,7 +13,7 @@ object GalleryListsRules {
     const val INSIGHT_PRINT_DP = 96
     const val BARS_SHOWN = 4
 
-    // Discover's one switch and grid of tiles (Flow's design in Gallery's type; docs/Discover_page.md 4.1 to 4.5).
+    // Discover's one switch and grid of tiles (Flow's design in Gallery's type; docs/archive/completed/Discover_page.md 4.1 to 4.5).
     const val SWITCH_DP = 52
     const val DASH_DP = 8
     const val DASH_CURRENT_DP = 20

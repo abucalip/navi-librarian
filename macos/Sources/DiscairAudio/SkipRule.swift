@@ -1,6 +1,6 @@
 import Foundation
 
-/// Decides whether an abandoned track counts as a skip (`docs/SERVER_V2_CONTRACT.md`, `POST /api/feedback/events`).
+/// Decides whether an abandoned track counts as a skip (`docs/contracts/SERVER_V2_CONTRACT.md`, `POST /api/feedback/events`).
 /// A skip is a track the owner moved away from before `min(30 s, 50 % of its length)` of played time, and not at the end of
 /// the queue. The numbers are starting values, not measured. The server stores what is reported and never re-derives it.
 public enum SkipRule {

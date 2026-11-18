@@ -3,7 +3,7 @@ import DiscairLibrarian
 import Foundation
 import Observation
 
-/// The menu bar item's switches, kept in `UserDefaults` (docs/RADIO_PLAYBACK_PROPOSAL.md S2-5 item 3). Both are on by default.
+/// The menu bar item's switches, kept in `UserDefaults` (docs/plans/RADIO_PLAYBACK_PROPOSAL.md S2-5 item 3). Both are on by default.
 public enum MenuBarSettings {
     public static let showKey = "discair.menubar.show"
     public static let showTitleKey = "discair.menubar.showTitle"

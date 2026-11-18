@@ -1,6 +1,6 @@
 # Index design package
 
-The design system for the Android **Index** theme. The spec is [`docs/INDEX_THEME.md`](../../INDEX_THEME.md); this folder holds everything it refers to.
+The design system for the Android **Index** theme. The spec is [`docs/plans/INDEX_THEME.md`](../../plans/INDEX_THEME.md); this folder holds everything it refers to.
 
 | Path | What it is |
 |---|---|

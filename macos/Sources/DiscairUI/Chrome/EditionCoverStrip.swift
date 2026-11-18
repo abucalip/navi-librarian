@@ -1,7 +1,7 @@
 import DiscairLibrarian
 import SwiftUI
 
-/// The covers of the release group a Downloads row is fetching (docs/artwork.md, idea 13): up to three Front images, each labelled
+/// The covers of the release group a Downloads row is fetching (docs/archive/completed/artwork.md, idea 13): up to three Front images, each labelled
 /// with its edition. Read-only; it does not change the download. The server does not record which pressing was matched, so the
 /// caption says these are the album's editions. Nothing is drawn while loading, when the group has no Front image or when the
 /// lookup fails.

@@ -1,4 +1,4 @@
-"""Job framework wrapper for Server V2 background work (docs/ServerV2.md Phase 1 item 7)."""
+"""Job framework wrapper for Server V2 background work (docs/plans/ServerV2.md Phase 1 item 7)."""
 from .runner import (
     JobContext,
     RunResult,

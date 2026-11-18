@@ -1,6 +1,6 @@
 #!/bin/bash
 # Cheap Android measurement for one run of a client-efficiency scenario.
-# Plan: docs/client_efficiency.md (section 8) and docs/client_efficiency_results.md.
+# Plan: docs/plans/client_efficiency.md (section 8) and docs/plans/client_efficiency_results.md.
 #
 # Usage: scripts/perf/android_cheap.sh <scenario> <run> [samples] [interval_seconds]
 #   scenario  e.g. S3, S5, S8 (label only; written to the row and the raw folder)

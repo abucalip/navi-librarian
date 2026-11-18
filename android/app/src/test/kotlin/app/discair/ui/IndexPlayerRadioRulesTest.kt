@@ -11,7 +11,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
 
-/** docs/INDEX_THEME.md step I5: the words and numbers of Index's Now Playing, Queue, Lyrics and Radio pages. */
+/** docs/plans/INDEX_THEME.md step I5: the words and numbers of Index's Now Playing, Queue, Lyrics and Radio pages. */
 class IndexPlayerRadioRulesTest {
     private val zone = ZoneId.of("Europe/Paris")
     private val now = Instant.parse("2026-11-17T15:00:00Z") // Tuesday 17 Nov, 16:00 in Paris

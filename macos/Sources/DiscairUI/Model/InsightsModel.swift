@@ -85,7 +85,7 @@ public final class InsightsModel {
         }
     }
 
-    /// Queues a `dismiss` event for the card, keyed by its subject key (`docs/SERVER_V2_CONTRACT.md`, `POST /api/feedback/events`).
+    /// Queues a `dismiss` event for the card, keyed by its subject key (`docs/contracts/SERVER_V2_CONTRACT.md`, `POST /api/feedback/events`).
     /// Queued even when the server is offline, so the outbox sends it later. Nothing is sent for a card without a key.
     private func recordDismissal(_ card: InsightCard) {
         let key = card.subject.key

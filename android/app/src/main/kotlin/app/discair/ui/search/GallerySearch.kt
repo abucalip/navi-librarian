@@ -57,7 +57,7 @@ import app.discair.ui.player.LocalPlayActions
 import app.discair.ui.theme.LocalPalette
 
 /*
- * Gallery's Search (Layout.Gallery). Spec: docs/GALLERY_THEME.md section 10; mockup: docs/design/gallery/pages/library-search.html, frame 3.
+ * Gallery's Search (Layout.Gallery). Spec: docs/archive/completed/GALLERY_THEME.md section 10; mockup: docs/design/gallery/pages/library-search.html, frame 3.
  * "Search" as the catalogue line over "What are you looking for?", the field as Fraunces text over a 1.5dp rule, then results in groups (Artists, Albums, Songs,
  * Genres) with a count at the right of each heading; owned is said in words ("In library"), a missing album has a small Get. The query, the streaming and every
  * tap are the page every theme has (SearchScreen).

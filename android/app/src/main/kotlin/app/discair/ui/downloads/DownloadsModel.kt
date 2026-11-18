@@ -4,7 +4,7 @@ import app.discair.Check
 import app.discair.model.AcquisitionJob
 
 /**
- * Pure rules for the A8 restyle (docs/redesign.md 8.2): where a record sits on the four-step tracker, the line under the
+ * Pure rules for the A8 restyle (docs/plans/redesign.md 8.2): where a record sits on the four-step tracker, the line under the
  * Downloads title, the count line under Library's tabs and the state line on Settings' Server row. Nothing here draws.
  */
 object DownloadsRules {

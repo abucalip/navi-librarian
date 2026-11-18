@@ -7,7 +7,7 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** Chart kit rules (docs/redesign.md 4.4, 7.2, 7.3; step A4): scales, slots, selection, per-family style, states and summaries. */
+/** Chart kit rules (docs/plans/redesign.md 4.4, 7.2, 7.3; step A4): scales, slots, selection, per-family style, states and summaries. */
 class ChartMathTest {
     @Test fun ticksAreFewAndNiceAndCoverTheRange() {
         assertEquals(listOf(0.0, 500.0, 1000.0, 1500.0), ChartRules.niceTicks(0.0, 1300.0))

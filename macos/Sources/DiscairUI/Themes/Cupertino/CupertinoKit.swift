@@ -1,6 +1,6 @@
 import SwiftUI
 
-// Cupertino controls (redesign M2). Spec: section 4.3 of `docs/redesign.md` and `components--tokens-and-controls`.
+// Cupertino controls (redesign M2). Spec: section 4.3 of `docs/plans/redesign.md` and `components--tokens-and-controls`.
 
 // MARK: Panel ground
 

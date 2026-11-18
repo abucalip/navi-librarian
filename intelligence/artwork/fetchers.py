@@ -1,4 +1,4 @@
-"""The two provider fetchers for ``build_group_index`` (docs/artwork.md, slice 1).
+"""The two provider fetchers for ``build_group_index`` (docs/archive/completed/artwork.md, slice 1).
 
 * ``fetch_releases(rgid)``: one MusicBrainz browse of the group's releases, 100 per page with
   ``inc=media`` (the batch form; there is no per-release lookup). MusicBrainz does not accept

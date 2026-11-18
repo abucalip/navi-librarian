@@ -1,6 +1,6 @@
 """Album paths probe: how many owned albums have evidence-backed stops for each kept album path kind.
 
-Offline, read-only measurement (docs/ALBUM_PATHS_PROPOSAL.md, "Probe plan"). The store is opened with
+Offline, read-only measurement (docs/archive/completed/ALBUM_PATHS_PROPOSAL.md, "Probe plan"). The store is opened with
 SQLite's read-only mode; nothing is written and there is no provider traffic. Output is aggregate counts
 only, written to --out (keep it outside the repo until a decision is recorded).
 

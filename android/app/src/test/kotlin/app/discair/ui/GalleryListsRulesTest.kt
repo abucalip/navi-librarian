@@ -6,7 +6,7 @@ import java.util.Locale
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
-/** Step G4 of docs/GALLERY_THEME.md: the words behind Gallery's Discover, Library and Search pages. */
+/** Step G4 of docs/archive/completed/GALLERY_THEME.md: the words behind Gallery's Discover, Library and Search pages. */
 class GalleryListsRulesTest {
     @Test fun theDateLineNamesTheDayAndMonth() {
         assertEquals("Monday 16 November", R.dateLine(LocalDate.of(2026, 11, 16), Locale.ENGLISH))

@@ -1,7 +1,7 @@
 import Foundation
 
 // Server V2 Phase 5/7 graph data for the macOS graph explorer, atlas and timeline:
-// `GET /api/knowledge/connections`, `/paths`, `/place` and `/event` (shapes in docs/SERVER_V2_CONTRACT.md).
+// `GET /api/knowledge/connections`, `/paths`, `/place` and `/event` (shapes in docs/contracts/SERVER_V2_CONTRACT.md).
 // Decoding is tolerant like Knowledge.swift: a missing or unknown field becomes an empty value.
 
 private extension KeyedDecodingContainer {

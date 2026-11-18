@@ -1,4 +1,4 @@
-"""Insight card routes (Server V2 Phase 3, docs/SERVER_V2_CONTRACT.md).
+"""Insight card routes (Server V2 Phase 3, docs/contracts/SERVER_V2_CONTRACT.md).
 
 HTTP adapters only: bodies come from ``intelligence.api.build_insights_body`` and the dismiss,
 restore and accept actions are the existing service functions in ``intelligence.insights``.

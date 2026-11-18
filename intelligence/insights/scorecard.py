@@ -18,7 +18,7 @@ Metrics (all 0..1 unless noted):
 
 Verdict: ``pass`` (all gates met), ``fail`` (a measured gate missed) or
 ``insufficient_evidence`` (too few cards or judged outcomes). Only ``pass`` allows a lens to
-be on by default; ``fail`` and ``insufficient_evidence`` keep it off (docs/ServerV2.md Phase 3 kill rule).
+be on by default; ``fail`` and ``insufficient_evidence`` keep it off (docs/plans/ServerV2.md Phase 3 kill rule).
 """
 from __future__ import annotations
 

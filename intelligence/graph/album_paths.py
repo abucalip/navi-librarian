@@ -1,6 +1,6 @@
 """Album paths: ordered stops from an owned album, each with the credit that puts it there.
 
-Kinds built here (docs/ALBUM_PATHS_PROPOSAL.md): ``album_crew`` (Studio Crew), ``album_guests``
+Kinds built here (docs/archive/completed/ALBUM_PATHS_PROPOSAL.md): ``album_crew`` (Studio Crew), ``album_guests``
 (Guest List), ``album_works`` (Covers and Sources), ``album_room`` (Same Room) and ``album_moment``
 (Same Year, Same Scene). A stop
 is an owned album other than the start.

@@ -1,7 +1,7 @@
 import DiscairCore
 import Foundation
 
-// Client side of the Librarian's connected-service routes (`docs/redesign.md` section 6, step M6). The ListenBrainz pair
+// Client side of the Librarian's connected-service routes (`docs/plans/redesign.md` section 6, step M6). The ListenBrainz pair
 // lives in `ListenBrainz.swift`. No route here ever returns a secret: each says only whether one is stored.
 
 /// `GET /api/settings/navidrome`.

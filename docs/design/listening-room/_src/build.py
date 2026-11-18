@@ -3,7 +3,7 @@
 
 Writes ../tokens.css (CSS custom properties and @font-face), ../icons/<name>.svg and the sprite
 ../icons/icons.svg, then renders every page in ../pages to PNG with Google Chrome (default macOS
-path; the PNGs are skipped when Chrome is missing). Spec: docs/LISTENING_ROOM_WEB.md.
+path; the PNGs are skipped when Chrome is missing). Spec: docs/plans/LISTENING_ROOM_WEB.md.
 
     python3 build.py            # everything
     python3 build.py home       # tokens, icons and only pages whose name starts with "home"

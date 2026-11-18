@@ -71,7 +71,7 @@ fun pageMetadata(artist: String, album: String, year: Int?, releaseGroupMbid: St
 fun GetButton(noun: String, name: String, state: GetState, onClick: () -> Unit, modifier: Modifier = Modifier, overlay: Boolean = false) {
     val family = currentMotionFamily()
     val reduced = rememberReducedMotion()
-    // A failed request shakes once it appears (docs/redesign.md 7.4). The first composition never shakes, so a
+    // A failed request shakes once it appears (docs/plans/redesign.md 7.4). The first composition never shakes, so a
     // row that scrolls back into view does not repeat a failure it already showed.
     val failed = state is GetState.Failed
     val shake = remember { Animatable(0f) }

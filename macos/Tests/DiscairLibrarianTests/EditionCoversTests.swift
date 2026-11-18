@@ -2,7 +2,7 @@ import Foundation
 import Testing
 @testable import DiscairLibrarian
 
-/// The Downloads row's covers (docs/artwork.md, idea 13): Front images only, never a PDF, at most three, and the release group a Get
+/// The Downloads row's covers (docs/archive/completed/artwork.md, idea 13): Front images only, never a PDF, at most three, and the release group a Get
 /// carries back from the server.
 @Suite struct EditionCoversTests {
     private func index(_ images: [ArtworkPicture]) -> ArtworkIndex {

@@ -3,7 +3,7 @@ import DiscairLibrarian
 import PDFKit
 import SwiftUI
 
-/// Presents the album's booklet (docs/artwork.md, idea 2). The index is asked for once the release group is known (the store keeps
+/// Presents the album's booklet (docs/archive/completed/artwork.md, idea 2). The index is asked for once the release group is known (the store keeps
 /// a built one, so the cover's own lookup and this one share it); with no booklet this draws nothing: no button, no placeholder.
 /// The theme draws its own button through `button`.
 struct BookletOpener<Button: View>: View {
@@ -31,7 +31,7 @@ struct BookletOpener<Button: View>: View {
     }
 }
 
-/// The Booklet (docs/MACOS_PATHS_BOOKLET.md, section 5; D1 a: a sheet, closed by Done or Escape). A bar with the album title, the
+/// The Booklet (docs/plans/MACOS_PATHS_BOOKLET.md, section 5; D1 a: a sheet, closed by Done or Escape). A bar with the album title, the
 /// Page/Spread switch and the zoom buttons; a sidebar of editions and extras (left out for one booklet with no extras, and below
 /// 900 wide replaced by an edition pop-up in the bar); the spread on a dark stage with turn arrows; a caption; a filmstrip. Arrow
 /// keys turn; ⌘+ ⌘− ⌘0 and pinch zoom, and a zoom past 1.25 loads the full-resolution file. A PDF booklet opens in

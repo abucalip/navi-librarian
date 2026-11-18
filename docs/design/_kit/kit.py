@@ -1,4 +1,4 @@
-"""Shared mockup kit for the Bento and Index Android theme packages (docs/BENTO_THEME.md, docs/INDEX_THEME.md).
+"""Shared mockup kit for the Bento and Index Android theme packages (docs/plans/BENTO_THEME.md, docs/plans/INDEX_THEME.md).
 
 Design tooling only: nothing in the app imports it and no test collects it. It holds what both packages share:
 the stand-in artwork (covers and artist photos drawn in CSS), the sample data every mockup shows, the icon path table,

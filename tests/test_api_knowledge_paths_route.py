@@ -106,7 +106,7 @@ class PathsRoute(unittest.TestCase):
 
 
 class AlbumPathsRoute(PathsRoute):
-    """Album kinds on the same route (docs/SERVER_V2_CONTRACT.md, "Album paths")."""
+    """Album kinds on the same route (docs/contracts/SERVER_V2_CONTRACT.md, "Album paths")."""
 
     def setUp(self):
         super().setUp()

@@ -2,7 +2,7 @@ import DiscairLibrarian
 import SwiftUI
 
 /// A path row's cover that cycles through the album's alternate covers while the pointer is over the row's thumbnail
-/// (docs/artwork.md, idea 10). The index is read only on the first hover, from the release group the Librarian's album page names;
+/// (docs/archive/completed/artwork.md, idea 10). The index is read only on the first hover, from the release group the Librarian's album page names;
 /// an album with fewer than two covers, or one that cannot be looked up, keeps its usual cover. Under Reduce Motion nothing cycles:
 /// hovering shows the first alternate cover and holds it. Chosen by type only; nothing is said about the album.
 struct PathRowThumb<Usual: View>: View {

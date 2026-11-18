@@ -2,7 +2,7 @@ import Foundation
 
 // Album paths (`GET /api/knowledge/paths?type=release`, the Paths button on an album page) and the album sonic
 // neighbours (`GET /api/sonic/album-neighbours`). Same bodies and tolerant decoding as KnowledgeGraph.swift and
-// Sonic.swift; shapes in docs/SERVER_V2_CONTRACT.md. `album_room` and `album_gaps` are read the same way (Gaps adds `play` and `history`).
+// Sonic.swift; shapes in docs/contracts/SERVER_V2_CONTRACT.md. `album_room` and `album_gaps` are read the same way (Gaps adds `play` and `history`).
 
 /// The album graph kinds the server builds for a release start.
 public enum AlbumPathKind: String, Sendable, CaseIterable {

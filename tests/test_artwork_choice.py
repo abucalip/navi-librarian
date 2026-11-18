@@ -1,4 +1,4 @@
-"""Edition picker and grid fallback (docs/artwork.md, slice 4)."""
+"""Edition picker and grid fallback (docs/archive/completed/artwork.md, slice 4)."""
 import struct
 import tempfile
 import unittest

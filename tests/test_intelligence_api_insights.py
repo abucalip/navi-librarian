@@ -1,4 +1,4 @@
-"""The /api/insights body and the Phase 3 exit rules (docs/SERVER_V2_CONTRACT.md, ServerV2.md Phase 3)."""
+"""The /api/insights body and the Phase 3 exit rules (docs/contracts/SERVER_V2_CONTRACT.md, ServerV2.md Phase 3)."""
 import json
 import re
 import tempfile

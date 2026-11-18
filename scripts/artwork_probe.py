@@ -1,4 +1,4 @@
-"""Artwork probe (docs/artwork.md, slice 0): what does the Cover Art Archive hold per owned release group?
+"""Artwork probe (docs/archive/completed/artwork.md, slice 0): what does the Cover Art Archive hold per owned release group?
 
 Measurement only. The intelligence store is opened read-only; nothing is written except the --out JSON
 (keep it outside the repo until a decision is recorded). Provider traffic is paced at one request per

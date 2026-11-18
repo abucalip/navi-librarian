@@ -2,7 +2,7 @@ import Foundation
 import Testing
 @testable import DiscairLibrarian
 
-/// The disc and the slideshow (docs/artwork.md, ideas 3 and 4): what is picked, and the pure timing rules.
+/// The disc and the slideshow (docs/archive/completed/artwork.md, ideas 3 and 4): what is picked, and the pure timing rules.
 @Suite struct NowPlayingArtworkTests {
     private func index(_ images: [ArtworkPicture], slots: [String: Int] = [:], booklet: [Int] = []) -> ArtworkIndex {
         var slotJSON: [String: Any] = [:]

@@ -10,7 +10,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
 
-/** Step G6 of docs/GALLERY_THEME.md: the words and choices behind Gallery's Downloads, Server, Settings, Appearance and confirmation sheets. */
+/** Step G6 of docs/archive/completed/GALLERY_THEME.md: the words and choices behind Gallery's Downloads, Server, Settings, Appearance and confirmation sheets. */
 class GalleryStatusRulesTest {
     private fun job(status: String, percent: Double? = null) = AcquisitionJob(
         "A", "B", status, 1.0, null,

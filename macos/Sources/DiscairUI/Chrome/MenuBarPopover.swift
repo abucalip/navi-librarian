@@ -3,7 +3,7 @@ import DiscairAudio
 import DiscairLibrarian
 import SwiftUI
 
-/// The menu bar item's label (docs/RADIO_PLAYBACK_PROPOSAL.md S2-5 item 1): the `radio` symbol while a station plays, a note for a
+/// The menu bar item's label (docs/plans/RADIO_PLAYBACK_PROPOSAL.md S2-5 item 1): the `radio` symbol while a station plays, a note for a
 /// library song, and the title cut at 30 characters while "Show title" is on. Reads `AppState` only.
 public struct MenuBarLabel: View {
     let state: AppState

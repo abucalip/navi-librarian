@@ -221,7 +221,7 @@ fun NowPlayingSheet(state: PlayerUiState, controller: PlayerController, lyrics: 
             { showLyrics = !showLyrics; settings.showLyricLine = showLyrics }, { showFacts = !showFacts; settings.showFacts = showFacts },
         )
         val blurred = canBlur && !sticker && !coverStack && !flow && !gallery && item.coverUrl.isNotBlank()
-        // The playing album's disc and session photos (docs/artwork.md, ideas 3 and 4); nothing extra while they load or when there are none.
+        // The playing album's disc and session photos (docs/archive/completed/artwork.md, ideas 3 and 4); nothing extra while they load or when there are none.
         val artIndex = rememberAlbumArtIndex(item)
         val slides = remember(artIndex) { app.discair.model.slideshowImages(artIndex) }
         val disc = remember(artIndex, item.disc) { app.discair.model.discImage(artIndex, item.disc) }

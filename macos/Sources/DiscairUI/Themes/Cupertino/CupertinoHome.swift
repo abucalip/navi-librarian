@@ -2,7 +2,7 @@ import DiscairLibrarian
 import DiscairNavidrome
 import SwiftUI
 
-/// Home, the "Marquee" layout (`docs/MACOS_HOME_MARQUEE_PLAN.md`): today's pick over its own blurred cover, two shelves of covers
+/// Home, the "Marquee" layout (`docs/archive/completed/MACOS_HOME_MARQUEE_PLAN.md`): today's pick over its own blurred cover, two shelves of covers
 /// ("New on the shelf", "Waiting longest") and a one-line summary. Mockups: `docs/design/macos-home-marquee/`.
 /// Figures come from `HomeDashboard`, wording from `HomeScreen`. Home does not request the lens cards: Insights owns them.
 struct CupertinoHome: View {

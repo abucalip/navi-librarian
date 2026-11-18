@@ -1,6 +1,6 @@
 # Discair for Mac: logic package
 
-Phase M1 of [`docs/MACOS_CLIENT_CONTRACT.md`](../docs/MACOS_CLIENT_CONTRACT.md) (decision D-025). A Swift package with the logic only: no UI, no audio, no themes. The app shell (Xcode project) starts in M4 and depends on these products.
+Phase M1 of [`docs/contracts/MACOS_CLIENT_CONTRACT.md`](../docs/contracts/MACOS_CLIENT_CONTRACT.md) (decision D-025). A Swift package with the logic only: no UI, no audio, no themes. The app shell (Xcode project) starts in M4 and depends on these products.
 
 Swift 6, macOS 26, Apple Silicon. No third-party dependencies.
 

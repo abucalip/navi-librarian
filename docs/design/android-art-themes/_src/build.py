@@ -382,7 +382,7 @@ def write(t, name):
             '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@700&display=swap">'
             f'<link rel="stylesheet" href="../shared.css"><link rel="stylesheet" href="../{folder}.css"></head><body>{SPRITE}'
             f'<div class="doc"><h1>{label} · {TITLES[name]}</h1><p>Android, 360 × 780 dp, 1 px = 1 dp. Covers, artist photos and station logos are drawn stand-ins. '
-            f'Spec: docs/ANDROID_ART_THEMES_PROPOSAL.md.</p></div>{page(t, name)}</body></html>')
+            f'Spec: docs/archive/completed/ANDROID_ART_THEMES_PROPOSAL.md.</p></div>{page(t, name)}</body></html>')
     path = os.path.join(OUT, folder, name + ".html")
     open(path, "w").write(html)
     if os.path.exists(CHROME):

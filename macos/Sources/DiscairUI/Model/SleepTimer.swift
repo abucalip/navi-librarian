@@ -1,7 +1,7 @@
 import Foundation
 import Observation
 
-/// The sleep timer (docs/RADIO_PLAYBACK_PROPOSAL.md S2-4 item 2; the same lengths as Android's `SleepTimer`). Generic: it does not
+/// The sleep timer (docs/plans/RADIO_PLAYBACK_PROPOSAL.md S2-4 item 2; the same lengths as Android's `SleepTimer`). Generic: it does not
 /// know about stations. When time is up it calls `onExpire` once (the player stops a station or pauses a song). It runs on the wall
 /// clock, so a Mac that slept through the end stops on wake.
 @MainActor @Observable

@@ -22,7 +22,7 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** Step I1 of docs/INDEX_THEME.md: the four palettes and the tones (pinned to docs/design/index/tokens.json), the font pair, the icons and the shell rules. */
+/** Step I1 of docs/plans/INDEX_THEME.md: the four palettes and the tones (pinned to docs/design/index/tokens.json), the font pair, the icons and the shell rules. */
 class IndexTest {
     private val ids = listOf("index", "index_newsprint", "index_graphite", "index_field")
     private val index = ids.map { Palettes.byId(it) ?: error("missing $it") }

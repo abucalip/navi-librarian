@@ -31,7 +31,7 @@ import androidx.compose.ui.unit.sp
 import app.discair.ui.theme.LocalPalette
 
 /*
- * Index's sheets (I6). Spec: docs/INDEX_THEME.md section 7 (Sheet) and 8.2 #9; mockup: docs/design/index/pages/sheets.html, frames 1 to 3.
+ * Index's sheets (I6). Spec: docs/plans/INDEX_THEME.md section 7 (Sheet) and 8.2 #9; mockup: docs/design/index/pages/sheets.html, frames 1 to 3.
  * The pick, song and row menus are one lettered sheet: an optional header (cover, mono eyebrow, the Lead title at 30, the heavy rule), then 62dp options
  * lettered A, B, C in mono `accent`, each with an optional line under it and a trailing glyph. The sheet keeps Material's timing (decision I4); the options
  * cascade in once it is up (motion #5). Choosing an option closes the sheet and runs it; a swipe, the scrim and Back close it and run nothing.

@@ -1,6 +1,6 @@
 # Server V2 plan — historical snapshot (2026-11-09)
 
-> Archived when `docs/ServerV2.md` was reduced to an active remaining-work tracker. This is the complete previous document, preserved for implementation history and context. Its status statements and open-work lists are historical; use the active document and `docs/PROJECT_STATUS.md` for current state.
+> Archived when `docs/plans/ServerV2.md` was reduced to an active remaining-work tracker. This is the complete previous document, preserved for implementation history and context. Its status statements and open-work lists are historical; use the active document and `docs/PROJECT_STATUS.md` for current state.
 
 # Server V2: Music Intelligence Plan
 

@@ -1,4 +1,4 @@
-"""Insight lens refresh status route (redesign D3, docs/SERVER_V2_CONTRACT.md).
+"""Insight lens refresh status route (redesign D3, docs/contracts/SERVER_V2_CONTRACT.md).
 
 HTTP adapter only; logic is ``intelligence.insights.refresh_status``. Read-only: no provider call and
 no job is started. The loop cadence (``CHECK_SECONDS`` in ``app/services/insights_refresh.py``) is the

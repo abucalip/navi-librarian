@@ -113,7 +113,7 @@ fun TapePlayer(
                             .wrapContentHeight(Alignment.CenterVertically),
                     )
                 }
-                // The disc label (docs/artwork.md, idea 3): it turns while the song plays and stands still otherwise.
+                // The disc label (docs/archive/completed/artwork.md, idea 3): it turns while the song plays and stands still otherwise.
                 if (disc != null) DiscImage(disc, 56.dp, state.isPlaying, Modifier.padding(start = 8.dp))
             }
             if (item.album.isNotBlank()) Text(

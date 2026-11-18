@@ -9,7 +9,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** Round 2, Sticker Wall (docs/BRUT_LAYOUTS_PLAN.md, D-023): the one palette and the pure composition rules. */
+/** Round 2, Sticker Wall (docs/archive/completed/BRUT_LAYOUTS_PLAN.md, D-023): the one palette and the pure composition rules. */
 class StickerWallTest {
     private fun lin(v: Float): Double = v.toDouble().let { if (it <= 0.03928) it / 12.92 else ((it + 0.055) / 1.055).pow(2.4) }
     private fun lum(c: Color) = 0.2126 * lin(c.red) + 0.7152 * lin(c.green) + 0.0722 * lin(c.blue)

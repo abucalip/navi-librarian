@@ -11,7 +11,7 @@ These files preserve completed roadmaps, redesign specifications, measurements, 
 
 ## Recently completed proposals and plans
 
-The following documents were moved here after their implementation/build plans closed. The original paths contain short pointers for source-comment and contract compatibility:
+The following documents were moved here after their implementation/build plans closed. The old pointer stubs are gone; links now point here:
 
 - `completed/ALBUM_PAGE_REDESIGN_PROPOSAL.md` and `completed/ARTIST_PAGE_REDESIGN_PROPOSAL.md`: page layouts and API additions merged in PRs #634–#636; contract sections are authoritative. Browser verification was not claimed.
 - `completed/ALBUM_PATHS_PROPOSAL.md`: all seven album path kinds, routes, fixtures and client screens built; owner checks after deployment remain.
@@ -27,9 +27,22 @@ The following documents were moved here after their implementation/build plans c
 - `completed/PYTHON_PACKAGE_LAYOUT_ROADMAP.md`: root-module package-layout migration.
 - `completed/MCP_RETIREMENT_PLAN.md`: repository-level MCP retirement. External-client migration remains unverified.
 
+## Built plans, moved in the docs tidy (2026-11-18)
+
+Build is complete; owner device or browser checks may remain and stay in `../ACTIVE_WORK.md`. The pointer stubs that used to sit at the old paths were removed and every link was updated.
+
+- `completed/GALLERY_THEME.md`: Android Gallery theme spec, G1 to G7 built.
+- `completed/pathsredesign.md`: Android Paths sheets, Trail layout.
+- `completed/Discover_page.md`: Flow Discover, option B, D1 to D4.
+- `completed/MACOS_HOME_MARQUEE_PLAN.md`: macOS Home Marquee, H1 to H3 (H4 is the owner's check).
+- `completed/PLAYER_PROPOSAL.md`: Android player proposal; built under `../contracts/ANDROID_PLAYER_CONTRACT.md`.
+- `completed/MACOS_M1_PROMPT.md`: session prompt for macOS phase M1.
+- `recommendations/RECOMMENDATION_ENGINE_IMPROVEMENTS_ARCHIVE.md`: earlier archive of the engine improvements log.
+- `research/SERVER_V2_PHASE0_AUDIT.md`: Server V2 Phase 0 measurement audit.
+
 ## Recommendation research and parked work
 
-- `recommendations/RECOMMENDATION_ENGINE_IMPROVEMENTS_HISTORY.md`: full measurement log, experiments, and earlier task sequencing. The short active gates remain in `../RECOMMENDATION_ENGINE_IMPROVEMENTS.md`.
+- `recommendations/RECOMMENDATION_ENGINE_IMPROVEMENTS_HISTORY.md`: full measurement log, experiments, and earlier task sequencing. The short active gates remain in `../plans/RECOMMENDATION_ENGINE_IMPROVEMENTS.md`.
 - `research/CF_PAGES_PROPOSAL_2026-10-20.md` and `research/REPEAT_RATE_MEASUREMENT_2026-10-20.md`: historical CF/repeat-rate findings; current interpretation belongs in the recommendation history.
 - `parked/DIVERSITY_SETTING_ROADMAP.md`: diversity UI/calibration is paused.
 - `parked/V0.2_DROPPEDNEEDLE_LESSONS.md`: optional ideas, not commitments.

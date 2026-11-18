@@ -64,7 +64,7 @@ internal fun readLogo(open: () -> java.io.InputStream?): ByteArray? = try {
 }
 
 /**
- * Radio settings (docs/RADIO_PLAYBACK_CONTRACT.md section 4): the scrobbling switch, the app address the phone reaches the relay at
+ * Radio settings (docs/contracts/RADIO_PLAYBACK_CONTRACT.md section 4): the scrobbling switch, the app address the phone reaches the relay at
  * (read only here: changing it rewrites the stations in Navidrome, which stays on the web Radio page), and a logo picker per station.
  * Everything lives on the server, so it is read live and written back.
  */

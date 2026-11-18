@@ -1,4 +1,4 @@
-"""Disk cache for the artwork index and image files (docs/artwork.md, slice 1: cache).
+"""Disk cache for the artwork index and image files (docs/archive/completed/artwork.md, slice 1: cache).
 
 One SQLite file plus an ``images/`` folder under the artwork directory:
 

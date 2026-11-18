@@ -2,7 +2,7 @@ import DiscairLibrarian
 import DiscairNavidrome
 import Foundation
 
-/// The figures behind the redesigned Cupertino Home (`docs/redesign.md` section 5.1, step M5). Pure: every figure is computed
+/// The figures behind the redesigned Cupertino Home (`docs/plans/redesign.md` section 5.1, step M5). Pure: every figure is computed
 /// from models the app already holds, with no network and no SwiftUI, so it can run off the main thread and be tested from
 /// fixtures. The views (step M8) only draw these values.
 ///

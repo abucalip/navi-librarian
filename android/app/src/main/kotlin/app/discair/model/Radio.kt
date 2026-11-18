@@ -10,7 +10,7 @@ import kotlinx.serialization.json.doubleOrNull
 import kotlinx.serialization.json.intOrNull
 
 /**
- * Internet radio (docs/RADIO_PLAYBACK_CONTRACT.md sections 3.1 to 3.5). The server owns "what is playing"; these
+ * Internet radio (docs/contracts/RADIO_PLAYBACK_CONTRACT.md sections 3.1 to 3.5). The server owns "what is playing"; these
  * types only read what it says. Nothing here splits artist and title or decides what can be downloaded beyond the
  * contract's one rule ([RadioNow.canDownload]).
  */

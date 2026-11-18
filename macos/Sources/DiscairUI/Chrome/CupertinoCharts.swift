@@ -1,7 +1,7 @@
 import Charts
 import SwiftUI
 
-// Cupertino charts (redesign M4). Spec: section 4.4 of `docs/redesign.md` and `charts--specimens`.
+// Cupertino charts (redesign M4). Spec: section 4.4 of `docs/plans/redesign.md` and `charts--specimens`.
 // Geometry follows the chart functions in `docs/design/redesign/_src/mac_shell.py`.
 //
 // Layout of this file:

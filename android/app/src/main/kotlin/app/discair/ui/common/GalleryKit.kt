@@ -59,7 +59,7 @@ import app.discair.ui.theme.LocalPalette
 import app.discair.ui.theme.Palette
 
 /**
- * Gallery's measurements (docs/GALLERY_THEME.md sections 3 and 7; the numbers are docs/design/gallery/tokens.json and gallery.css, 1 CSS px = 1dp).
+ * Gallery's measurements (docs/archive/completed/GALLERY_THEME.md sections 3 and 7; the numbers are docs/design/gallery/tokens.json and gallery.css, 1 CSS px = 1dp).
  * Pure, so the tests can pin them.
  */
 object GalleryRules {
@@ -115,7 +115,7 @@ object GalleryRules {
 @androidx.compose.runtime.ReadOnlyComposable
 fun isGallery(): Boolean = LocalPalette.current.layout == Layout.Gallery
 
-/** Gallery's text styles (docs/GALLERY_THEME.md 5.3). Fraunces and DM Mono are Gallery's own; the body face follows the owner's font pair. */
+/** Gallery's text styles (docs/archive/completed/GALLERY_THEME.md 5.3). Fraunces and DM Mono are Gallery's own; the body face follows the owner's font pair. */
 object GalleryType {
     private fun fr(weight: Int, opsz: Float, italic: Boolean, size: Float, line: Float, tracking: Float = 0f, features: String? = null) = TextStyle(
         fontFamily = GalleryFaces.fraunces(weight, opsz, italic), fontWeight = FontWeight(weight),
@@ -163,7 +163,7 @@ fun GalleryPrint(
     content: @Composable () -> Unit,
 ) {
     val p = LocalPalette.current
-    // [sharedKey] is the album's route key: the whole print, mat and shadow included, travels into the album page's print (docs/GALLERY_THEME.md section 8).
+    // [sharedKey] is the album's route key: the whole print, mat and shadow included, travels into the album page's print (docs/archive/completed/GALLERY_THEME.md section 8).
     val shared = if (sharedKey != null) modifier.sharedCover(sharedKey) else modifier
     if (bare) { Box(shared.size(size)) { content() }; return }
     val large = !small && size.value >= GalleryRules.SMALL_BELOW

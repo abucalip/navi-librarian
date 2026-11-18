@@ -1,4 +1,4 @@
-"""The unresolved queue: ambiguous matches waiting for the owner (docs/ServerV2.md 6.5).
+"""The unresolved queue: ambiguous matches waiting for the owner (docs/plans/ServerV2.md 6.5).
 
 The ladder queues a library item here with its candidate list instead of guessing. The
 owner can confirm one candidate or reject them all; either answer is final, so the

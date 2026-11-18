@@ -46,7 +46,7 @@ import app.discair.ui.theme.LocalPalette
 import app.discair.ui.theme.Palette
 
 /**
- * Soft Brut's "Cover Stack" layout (docs/ANDROID_ART_THEMES_PROPOSAL.md section 3). Its one recipe is a 1.5dp ink outline with a 3dp
+ * Soft Brut's "Cover Stack" layout (docs/archive/completed/ANDROID_ART_THEMES_PROPOSAL.md section 3). Its one recipe is a 1.5dp ink outline with a 3dp
  * ink shadow to the lower right on a surface fill; the numbers come from the palette's [Palette.shape], so nothing here is fixed in code.
  */
 object CoverStackRules {

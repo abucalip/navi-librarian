@@ -1,7 +1,7 @@
 import DiscairLibrarian
 import Foundation
 
-/// The radio page's rules, pure so a test can drive them (docs/RADIO_PLAYBACK_PROPOSAL.md, S2-1 item 4; the words match
+/// The radio page's rules, pure so a test can drive them (docs/plans/RADIO_PLAYBACK_PROPOSAL.md, S2-1 item 4; the words match
 /// Android's `model/Radio.kt`). Nothing here reads the network, the clock (it is passed in) or a view.
 enum StationRules {
     /// What the Add station pop-up sends, already trimmed.

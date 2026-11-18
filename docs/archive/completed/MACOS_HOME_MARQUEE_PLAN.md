@@ -2,9 +2,9 @@
 
 Status: **H1 merged.** Item 1 (PR #1075, squash `ed3faa84`: `HomeDashboard` data) and item 2 (PR #1076, squash `92a73182`: `HomeScreen` rules and their tests) are in `main`, with no visible change. H1 item 3 (tests) and item 4 (filtered run, 84 tests in `HomeDashboardTests` and `HomeScreenTests`) are merged in PR [#1077](https://github.com/abucalip/navi-librarian/pull/1077), squash `304ae87a`. H2 items 1 and 2 (panels moved, Insights "Your collection") merged in PR [#1078](https://github.com/abucalip/navi-librarian/pull/1078), squash `897d6bfa`; the duplicate taste panel was then removed from Insights (the page already shows taste). H2 items 3 to 5 (Server activity in Settings, Services; Home unchanged; render test) merged in PR [#1079](https://github.com/abucalip/navi-librarian/pull/1079), squash `606b606c`; H3 item 1 (the new Home page) merged in PR [#1080](https://github.com/abucalip/navi-librarian/pull/1080), squash `192d3fda`; H3 items 2 and 3 (old Home modules and the lens request removed) merged in PR [#1081](https://github.com/abucalip/navi-librarian/pull/1081), squash `574d33a9`; H3 items 4 and 5 (unused Home helpers deleted; skeleton and narrow layout checked against the mockups) merged in PR [#1082](https://github.com/abucalip/navi-librarian/pull/1082), squash `40f5b4a8`; H3 items 6 to 8 (accessibility, seven-state render tests, documents) merged in PR #1083, squash `36ee2b35`; H3 is complete and H4 (owner check) is next. Originally: **plan only, nothing built.** The owner chose this layout on 2026-11-13 from three mockups. The owner's reason for the change: the current Home is too number-driven; Home should be artwork-driven, with only a few statistics.
 
-The mockups are the spec: [`design/macos-home-marquee/mockups.html`](design/macos-home-marquee/mockups.html) (open in a browser, no network needed). Where this text and a mockup differ, the mockup wins, except for the corrections listed in section 9.
+The mockups are the spec: [`design/macos-home-marquee/mockups.html`](../../design/macos-home-marquee/mockups.html) (open in a browser, no network needed). Where this text and a mockup differ, the mockup wins, except for the corrections listed in section 9.
 
-This plan replaces section 5.1 of [`redesign.md`](redesign.md) for the layout of Home. The design system in section 4 of that document (colour roles, type roles, spacing, controls) still applies in full.
+This plan replaces section 5.1 of [`redesign.md`](../../plans/redesign.md) for the layout of Home. The design system in section 4 of that document (colour roles, type roles, spacing, controls) still applies in full.
 
 ## 1. What changes
 
@@ -38,7 +38,7 @@ No figure is deleted from the app. Every chart is still one click away, on Insig
 
 ## 2. Layout and measures
 
-Sizes are points. Content is 980 wide at the 1280 window, as today. All spacing uses `CU.Space` (4, 8, 16, 24, 32). The CSS the mockups use is in [`design/macos-home-marquee/home-marquee.css`](design/macos-home-marquee/home-marquee.css); read the measures from it when this table is silent.
+Sizes are points. Content is 980 wide at the 1280 window, as today. All spacing uses `CU.Space` (4, 8, 16, 24, 32). The CSS the mockups use is in [`design/macos-home-marquee/home-marquee.css`](../../design/macos-home-marquee/home-marquee.css); read the measures from it when this table is silent.
 
 | Element | Measure |
 |---|---|

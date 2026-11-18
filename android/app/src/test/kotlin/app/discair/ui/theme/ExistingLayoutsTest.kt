@@ -6,7 +6,7 @@ import org.junit.Assert.assertNull
 import org.junit.Test
 
 /**
- * Step 0 of docs/ANDROID_ART_THEMES_PROPOSAL.md: every theme that exists today resolves to the layout and the shape it has always had,
+ * Step 0 of docs/archive/completed/ANDROID_ART_THEMES_PROPOSAL.md: every theme that exists today resolves to the layout and the shape it has always had,
  * so adding a layout (or letting BrutalShape hold fractions) changes no existing theme.
  */
 class ExistingLayoutsTest {

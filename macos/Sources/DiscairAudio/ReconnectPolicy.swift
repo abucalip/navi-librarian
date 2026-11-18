@@ -1,6 +1,6 @@
 import Foundation
 
-/// When to try a live station again (docs/RADIO_PLAYBACK_PROPOSAL.md S2-4 item 1; the same rule as Android's `DEFAULT_BACKOFF_MS`).
+/// When to try a live station again (docs/plans/RADIO_PLAYBACK_PROPOSAL.md S2-4 item 1; the same rule as Android's `DEFAULT_BACKOFF_MS`).
 /// Pure: the model feeds it drops and sound and does the waiting. After a drop, an error status, or 20 s without sound, the
 /// tries come after 2, 5, 10, 20 and 30 s; sound resets the count; when the fifth try has also failed the station is unreachable.
 public struct ReconnectPolicy: Equatable, Sendable {

@@ -1,4 +1,4 @@
-"""Evaluation metrics for lens lists and for the set of lists (docs/engine2.md).
+"""Evaluation metrics for lens lists and for the set of lists (docs/plans/engine2.md).
 
 Pure functions over allocation results and the candidates they refer to. They
 describe a list (spread, score, tags, obscurity); they do not judge listening

@@ -1,7 +1,7 @@
 import DiscairLibrarian
 import SwiftUI
 
-/// The Radio page, mockup A2 "Tuner" (docs/design/macos-radio/mockups.html; docs/RADIO_PLAYBACK_PROPOSAL.md S2-1 item 7):
+/// The Radio page, mockup A2 "Tuner" (docs/design/macos-radio/mockups.html; docs/plans/RADIO_PLAYBACK_PROPOSAL.md S2-1 item 7):
 /// the title, the tag chips, the station list (logo, name, state in words, first tag, star) and the fixed On Air panel.
 /// A row click (or Return on the selected row) plays the station; the playing row has the accent tint and the On Air panel shows
 /// the station with the time since tuning in, the live song, Download and Stop (S2-2 item 4, S2-3), then the station's last three

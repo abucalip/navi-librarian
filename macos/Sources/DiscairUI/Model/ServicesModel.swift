@@ -2,7 +2,7 @@ import DiscairCore
 import DiscairLibrarian
 import Foundation
 
-/// The state of every connected service, the summary sentence and the diagram (`docs/redesign.md` section 6, step M6).
+/// The state of every connected service, the summary sentence and the diagram (`docs/plans/redesign.md` section 6, step M6).
 /// Pure: it is built from answers the app already has (settings, test results, capabilities, its own reachability checks), with
 /// no network and no SwiftUI, so it can be tested from fixtures. The views (step M9) only draw these values.
 ///

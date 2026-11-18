@@ -1,5 +1,5 @@
 /* Discair macOS · Cupertino redesign tokens and mockup styles.
-   The custom properties in :root are the design tokens named in docs/redesign.md section 4.
+   The custom properties in :root are the design tokens named in docs/plans/redesign.md section 4.
    Everything below :root only draws the mockups. Light only: the Cupertino theme fixes its colour scheme. */
 :root {
   /* surfaces */

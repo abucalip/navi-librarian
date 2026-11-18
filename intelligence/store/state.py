@@ -1,6 +1,6 @@
 """The owner-state file: decisions that must survive a wipe or rebuild of the knowledge file.
 
-Server V2 data is split in two (docs/efficiency.md section E, D-026 consequence 4):
+Server V2 data is split in two (docs/plans/efficiency.md section E, D-026 consequence 4):
 
 * the **knowledge file** (``intelligence.sqlite3``): observations, entities, edges, insights, job
   runs. Derived or fetched, so it can be wiped and rebuilt;

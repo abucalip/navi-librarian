@@ -3,7 +3,7 @@ import CoreImage
 import DiscairLibrarian
 import SwiftUI
 
-/// The record that turns on Now Playing (docs/artwork.md, idea 3): the album's Medium image (vinyl label, CD face) cut to a disc with
+/// The record that turns on Now Playing (docs/archive/completed/artwork.md, idea 3): the album's Medium image (vinyl label, CD face) cut to a disc with
 /// a spindle hole. It turns only while `spinning`, and never under Reduce Motion. Draws nothing until the image arrives.
 struct DiscView: View {
     let picture: ArtworkPicture
@@ -320,7 +320,7 @@ struct SlideshowKeyframes {
 }
 
 
-/// A small badge on the Now Playing cover that opens the album's booklet (docs/artwork.md, idea 2). Shown only when the playing
+/// A small badge on the Now Playing cover that opens the album's booklet (docs/archive/completed/artwork.md, idea 2). Shown only when the playing
 /// album has booklet pages; nothing otherwise. The cover's click still flips it (idea 1); this badge is a separate control.
 struct NowPlayingBookletBadge: View {
     let title: String
@@ -345,7 +345,7 @@ struct NowPlayingBookletBadge: View {
     }
 }
 
-/// The small cover in the player bar (docs/artwork.md, ideas 1, 3 and 5 on the bar). Hovering turns it to the album's Back; a click opens
+/// The small cover in the player bar (docs/archive/completed/artwork.md, ideas 1, 3 and 5 on the bar). Hovering turns it to the album's Back; a click opens
 /// the album's booklet when it has one and otherwise does what the bar's cover did before (`fallback`, Now Playing); the disc slides
 /// out from behind it and turns while playing. The playing album's index comes by artist and title (`nowPlayingIndex`), so with no
 /// index, no Back, no booklet or no Medium image it is the plain cover. The theme passes its cover and its edge treatment.

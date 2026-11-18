@@ -1,4 +1,4 @@
-"""Dedicated background worker process (docs/efficiency.md A2).
+"""Dedicated background worker process (docs/plans/efficiency.md A2).
 
 Start with ``python -m app.worker``. It uses the same image, configuration and ``/data`` volume as the
 web app and is the only process that writes knowledge facts to the Server V2 store and calls MusicBrainz

@@ -2,7 +2,7 @@
 import Foundation
 import Testing
 
-/// Which covers the edition picker offers (docs/artwork.md, idea 7).
+/// Which covers the edition picker offers (docs/archive/completed/artwork.md, idea 7).
 @Suite struct EditionPickerTests {
     private func index(_ pictures: [ArtworkPicture]) -> ArtworkIndex {
         let body: [String: Any] = ["status": "ok", "rgid": "r", "best_front": NSNull(), "slots": [:], "booklet": NSNull(), "images": pictures.map {

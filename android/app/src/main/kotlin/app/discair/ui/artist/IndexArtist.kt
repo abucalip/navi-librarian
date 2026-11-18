@@ -62,7 +62,7 @@ private val Gutter = IndexRules.GUTTER.dp
 private class GridAlbum(val name: String, val year: Int?, val key: String, val id: String?, val artworkUrl: String?, val owned: Boolean)
 
 /*
- * Index's Artist page (Layout.Index). Spec: docs/INDEX_THEME.md step I3; mockup: docs/design/index/pages/album-artist-genre.html, frame 3.
+ * Index's Artist page (Layout.Index). Spec: docs/plans/INDEX_THEME.md step I3; mockup: docs/design/index/pages/album-artist-genre.html, frame 3.
  * A 150 by 180 photo beside the name and the data list (Genre, Owned "5 of 9", Plays, Active), then Play / Paths / Shuffle, numbered top songs, the albums as
  * a four-column grid with the ones to get, the biography, the photo strip and similar artists. The data is [CoverStackArtistData]; the new I0 fields
  * (plays, active years, owned of total) are shown only when the server sends them.

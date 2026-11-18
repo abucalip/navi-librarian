@@ -92,7 +92,7 @@ import app.discair.ui.theme.accentText
  */
 
 /**
- * The grid card (frames B1, B3; docs/Discover_page.md 4.5): the square cover with Get on it, then the title, "artist · year" and the reason line, with Save and
+ * The grid card (frames B1, B3; docs/archive/completed/Discover_page.md 4.5): the square cover with Get on it, then the title, "artist · year" and the reason line, with Save and
  * the three-dot menu beside the title. The cover opens the album, the artist line the artist.
  */
 @Composable
@@ -162,7 +162,7 @@ internal fun FlowDiscoverGridCard(
     }
 }
 
-/** The muted box a section note sits in (docs/Discover_page.md 4.4): `raised`, radius 12, 13/18 sp. */
+/** The muted box a section note sits in (docs/archive/completed/Discover_page.md 4.4): `raised`, radius 12, 13/18 sp. */
 @Composable
 internal fun FlowSectionNote(text: String, modifier: Modifier = Modifier) {
     val p = LocalPalette.current
@@ -207,7 +207,7 @@ internal fun FlowDiscoverGrid(
     }
 }
 
-// ----- The list switch and its sheet (docs/Discover_page.md 4.1, 4.2; mockup flow/discover-b frames B1 and B2) ----------------
+// ----- The list switch and its sheet (docs/archive/completed/Discover_page.md 4.1, 4.2; mockup flow/discover-b frames B1 and B2) ----------------
 
 /** The numbers and tables of Flow's one-switch Discover. Kept here, not in the composables, so a unit test can hold them. */
 internal object FlowDiscoverRules {
@@ -220,7 +220,7 @@ internal object FlowDiscoverRules {
     const val GET_ON_COVER = 34
     const val MORE = "More"
 
-    /** One section of the grid (docs/Discover_page.md 4.3, 4.4): a heading with a count ([title] null draws no heading), its cards, or a note when there are none. */
+    /** One section of the grid (docs/archive/completed/Discover_page.md 4.3, 4.4): a heading with a count ([title] null draws no heading), its cards, or a note when there are none. */
     class GridSection(val title: String?, val entries: List<DiscoveryEntry>, val note: String? = null) {
         val count get() = entries.size
     }

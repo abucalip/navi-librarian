@@ -5,7 +5,7 @@ public struct FeedbackUnavailable: Error, Sendable {
     public init() {}
 }
 
-/// Holds skip events until the Librarian has taken them (`docs/SERVER_V2_CONTRACT.md`, `POST /api/feedback/events`).
+/// Holds skip events until the Librarian has taken them (`docs/contracts/SERVER_V2_CONTRACT.md`, `POST /api/feedback/events`).
 ///
 /// Events are kept in a JSON file so they survive a restart. A flush sends them in batches of at most 100 and removes an
 /// event once the server settles it: `accepted`, `duplicate` (a replay counts as accepted) or `rejected`. A rejected event is

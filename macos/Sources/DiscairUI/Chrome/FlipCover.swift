@@ -45,7 +45,7 @@ private struct FlipCard<Front: View, Back: View>: View, @preconcurrency Animatab
 }
 
 /// The album cover as a card that a click turns over to its Back image, then Tray and Spine when the album has them
-/// (docs/artwork.md, idea 1). The index is asked for once the album's release group is known; with no Back image, or while
+/// (docs/archive/completed/artwork.md, idea 1). The index is asked for once the album's release group is known; with no Back image, or while
 /// the lookup is pending, empty or failed, this is just `front`: no gesture, no hint, nothing claimed about the album.
 /// Reduced motion cross-fades the faces instead of turning the card.
 struct FlipCover<Front: View>: View {

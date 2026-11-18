@@ -1,4 +1,4 @@
-"""Sonic similarity proxy (docs/ServerV2.md Phase 7): Navidrome's sonic endpoints with Librarian rules on top."""
+"""Sonic similarity proxy (docs/plans/ServerV2.md Phase 7): Navidrome's sonic endpoints with Librarian rules on top."""
 from .neighbours import album_neighbours
 from .proxy import MAX_COUNT, SonicResult, sonic_path, similar_tracks
 

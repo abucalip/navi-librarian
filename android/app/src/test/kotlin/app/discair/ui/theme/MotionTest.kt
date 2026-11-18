@@ -5,7 +5,7 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** Motion kit (docs/redesign.md 7.4, step A2): the token table, the per-family scaling and the reduced-motion rules. */
+/** Motion kit (docs/plans/redesign.md 7.4, step A2): the token table, the per-family scaling and the reduced-motion rules. */
 class MotionTest {
     private val standard = MotionFamily.Standard
     private val tape = MotionFamily.Tape

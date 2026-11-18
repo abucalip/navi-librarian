@@ -3,7 +3,7 @@ import DiscairLibrarian
 import DiscairNavidrome
 import Foundation
 
-/// The checks, tests and saves behind the Services screen (`docs/redesign.md` section 6, step M9). `ServicesModel` decides what the
+/// The checks, tests and saves behind the Services screen (`docs/plans/redesign.md` section 6, step M9). `ServicesModel` decides what the
 /// answers mean; this only asks. Each read fails on its own, so one service that does not answer never hides the others.
 extension AppState {
 

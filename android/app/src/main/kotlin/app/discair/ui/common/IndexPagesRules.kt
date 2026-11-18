@@ -5,7 +5,7 @@ import app.discair.model.PathYears
 import app.discair.model.SharedAlbum
 
 /**
- * The pure rules behind Index's Album, Artist, Genre and Paths (docs/INDEX_THEME.md step I3; mockups index/pages/album-artist-genre and paths): the catalogue
+ * The pure rules behind Index's Album, Artist, Genre and Paths (docs/plans/INDEX_THEME.md step I3; mockups index/pages/album-artist-genre and paths): the catalogue
  * lines, the data lists, the album's big numeral, the numbers and letters of steps and reasons. No Compose here, so each rule has a unit test. A fact the
  * server did not send is left out, never filled in.
  */

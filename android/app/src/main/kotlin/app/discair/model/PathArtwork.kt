@@ -1,7 +1,7 @@
 package app.discair.model
 
 /**
- * Pictures on the Paths screens (docs/artwork.md, idea 10). Chosen by type and comment words only; nothing recognises what a
+ * Pictures on the Paths screens (docs/archive/completed/artwork.md, idea 10). Chosen by type and comment words only; nothing recognises what a
  * picture shows, and taste and play data play no part. Mirrors the macOS rules in `macos/Sources/DiscairLibrarian/Artwork.swift`.
  */
 

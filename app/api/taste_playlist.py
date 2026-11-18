@@ -1,4 +1,4 @@
-"""Taste playlist route (docs/redesign.md A8b item 1).
+"""Taste playlist route (docs/plans/redesign.md A8b item 1).
 
 HTTP adapter only; logic is ``intelligence.api.taste_playlist``. ``POST /api/playlists/taste`` with
 ``{"genre": "<value>"}`` writes a Navidrome playlist of up to 50 random songs of that genre from the

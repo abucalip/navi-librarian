@@ -375,7 +375,7 @@ public final class GraphExplorerModel {
         return nextCursor != nil ? "\(n) \(word) so far" : "\(n) \(word)"
     }
 
-    /// The truncated-walk sentence, with the server's limits named (docs/redesign.md section 5.2).
+    /// The truncated-walk sentence, with the server's limits named (docs/plans/redesign.md section 5.2).
     public var truncatedNotice: (lead: String, message: String)? {
         guard truncated != nil else { return nil }
         return ("Showing the first \(nodes.count) connections.",

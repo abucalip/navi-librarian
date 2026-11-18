@@ -1,4 +1,4 @@
-"""In-process runtime counters: provider requests, gate waits and store opens (docs/efficiency.md M1).
+"""In-process runtime counters: provider requests, gate waits and store opens (docs/plans/efficiency.md M1).
 
 Labels are a provider name from a fixed table and an outcome class, or a store operation name.
 No URL, query string, identifier or name is ever recorded. Each update is a dict increment under

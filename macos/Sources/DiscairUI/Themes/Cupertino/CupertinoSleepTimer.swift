@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// The sleep timer's menu (docs/RADIO_PLAYBACK_PROPOSAL.md S2-4 item 2; mockup "Small pieces", "Sleep timer menu"): Off, then
+/// The sleep timer's menu (docs/plans/RADIO_PLAYBACK_PROPOSAL.md S2-4 item 2; mockup "Small pieces", "Sleep timer menu"): Off, then
 /// 15 to 90 minutes, a check mark on the running length. The moon shows the minutes left while it runs.
 struct SleepTimerMenu: View {
     enum Style { case icon, pill, neutral }

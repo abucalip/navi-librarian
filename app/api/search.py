@@ -185,7 +185,7 @@ def owned_index_for(librarian) -> OwnedIndex:
 
 
 def _artwork_choice(librarian, album) -> int | None:
-    """The owner's picked cover for this owned album (docs/artwork.md slice 4), or None."""
+    """The owner's picked cover for this owned album (docs/archive/completed/artwork.md slice 4), or None."""
     if not album:
         return None
     from app.api.artwork import get_service

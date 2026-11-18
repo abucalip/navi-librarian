@@ -12,7 +12,7 @@ lookup here is keyed by MusicBrainz identifiers:
 
 Pure functions over injected HTTP callables and cache callables, so tests use stubs
 and never touch the network. Everything is best-effort and bounded: a failed call
-leaves a candidate without a value and never raises. See docs/engine2.md.
+leaves a candidate without a value and never raises. See docs/plans/engine2.md.
 """
 from typing import Any, Callable, Mapping
 

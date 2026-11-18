@@ -15,7 +15,7 @@ A store with no owned MBIDs has no seeds, so a real run on a fresh store needs `
 
 The store is ``<data dir>/intelligence.sqlite3``; the data directory comes from ``--data-dir``,
 else ``DISCAIR_DATA_DIR`` (the server's own setting). Budgets are the owner-approved ones in
-docs/ServerV2.md (Phase 4); a breach before the load ends as ``fallback_api_only`` without writing.
+docs/plans/ServerV2.md (Phase 4); a breach before the load ends as ``fallback_api_only`` without writing.
 """
 from __future__ import annotations
 

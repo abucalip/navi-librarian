@@ -1,4 +1,4 @@
-"""Builds the Flow Home Threads and Shelf mixer spec (docs/Home_threads_mixer.md).
+"""Builds the Flow Home Threads and Shelf mixer spec (docs/plans/Home_threads_mixer.md).
 
 Run from the repo root: python3 docs/design/android-art-themes/_src/build_home_threads_mixer.py
 Then re-render the PNG (see the plan, section 1). The page is self-contained: shared.css, flow.css and the icon symbols are inlined."""
@@ -318,7 +318,7 @@ parts = ['<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name=
          '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap">'
          f'<style>{shared}\n{flow}\n{CSS}\n{EXTRA_CSS}</style></head><body>{defs}'
          '<div class="doc"><h1>Flow · Home: Threads and Shelf mixer</h1>'
-         '<p>The spec for docs/Home_threads_mixer.md. Android, Flow warm white, 360 × 780 dp, 1 px = 1 dp. Covers are drawn stand-ins. Both sections sit on Home after Artists and the Insight card, before Genres: Threads first, then the Shelf mixer. Frames T are Threads, M the Shelf mixer, K the components board. The mockups are the spec; where the plan and a frame disagree, ask the owner.</p></div>'
+         '<p>The spec for docs/plans/Home_threads_mixer.md. Android, Flow warm white, 360 × 780 dp, 1 px = 1 dp. Covers are drawn stand-ins. Both sections sit on Home after Artists and the Insight card, before Genres: Threads first, then the Shelf mixer. Frames T are Threads, M the Shelf mixer, K the components board. The mockups are the spec; where the plan and a frame disagree, ask the owner.</p></div>'
          '<section class="prop" style="margin-top:8px;border:0;padding-top:0"><h2><span class="lt2">T</span>Threads</h2><div class="frames">' + T1 + T2 + T3 + T4 + T5 + '</div></section>'
          '<section class="prop"><h2><span class="lt2">M</span>Shelf mixer</h2><div class="frames">' + M1 + M2 + M3 + '</div></section>'
          '<section class="prop"><h2><span class="lt2">K</span>Components</h2><div class="frames">' + BOARD + '</div></section>'

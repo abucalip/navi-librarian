@@ -1,4 +1,4 @@
-"""Artist-page ``top_songs`` section (docs/SEARCH_CONTRACT.md section 14.3)."""
+"""Artist-page ``top_songs`` section (docs/contracts/SEARCH_CONTRACT.md section 14.3)."""
 
 import threading
 import unittest

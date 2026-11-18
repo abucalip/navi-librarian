@@ -99,7 +99,7 @@ import java.time.Instant
 /*
  * Soft Brut's Home (Layout.CoverStack): the owner's pick of dashboard N1 plus the Radio tile from N3. One column, in this order:
  * Today's picks (a pile of sleeves), In rotation, Arrival, Radio, Recently added, Recently played, Insight, Genres, Stat strip.
- * Spec: docs/ANDROID_ART_THEMES_PROPOSAL.md section 6.1; mockup: docs/design/android-art-themes/soft-brut/home.html.
+ * Spec: docs/archive/completed/ANDROID_ART_THEMES_PROPOSAL.md section 6.1; mockup: docs/design/android-art-themes/soft-brut/home.html.
  * Behaviour is the Home every theme has: the same data, Get, Save, the menu, the arrivals and the links.
  */
 

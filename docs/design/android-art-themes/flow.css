@@ -1,7 +1,7 @@
 /*
  * Flow · Warm white. An iOS-inspired theme: no outlines, no hard shadows. Large titles, continuous corners, soft depth,
  * translucent bars, capsule buttons, grouped lists. The artwork supplies the colour. All values are dp (1 CSS px = 1 dp).
- * The token block is the spec: docs/ANDROID_ART_THEMES_PROPOSAL.md section 4 maps each token to a Palette role.
+ * The token block is the spec: docs/archive/completed/ANDROID_ART_THEMES_PROPOSAL.md section 4 maps each token to a Palette role.
  */
 .fl{
   /* colour roles */

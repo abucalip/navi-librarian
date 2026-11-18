@@ -3,7 +3,7 @@ import DiscairCore
 import DiscairNavidrome
 import Foundation
 
-// discair-audio-spike: M2 measurements (docs/MACOS_CLIENT_CONTRACT.md section 12).
+// discair-audio-spike: M2 measurements (docs/contracts/MACOS_CLIENT_CONTRACT.md section 12).
 // Offline tests (eq, crossfade, gapless, device) need nothing and play no sound.
 // Library tests need DISCAIR_NAVIDROME_* in the environment; nothing secret is printed.
 

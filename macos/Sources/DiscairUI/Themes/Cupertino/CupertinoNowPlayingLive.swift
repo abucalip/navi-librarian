@@ -2,7 +2,7 @@ import AppKit
 import DiscairLibrarian
 import SwiftUI
 
-/// Now Playing while a station plays, mockup C1 "Song first" (docs/design/macos-radio/mockups.html; docs/RADIO_PLAYBACK_PROPOSAL.md
+/// Now Playing while a station plays, mockup C1 "Song first" (docs/design/macos-radio/mockups.html; docs/plans/RADIO_PLAYBACK_PROPOSAL.md
 /// S2-3 item 3). Built like the song's Now Playing: on the left the cover when the server sent one for the song (it is in the
 /// library), else the station's logo, 230 pt with a 12 pt radius; LIVE and "station · time", the title, the artist, then Download and
 /// Favourite. On the right, where the lyrics are, "Heard on (station) tonight": this station's plays of the last 12 hours, newest

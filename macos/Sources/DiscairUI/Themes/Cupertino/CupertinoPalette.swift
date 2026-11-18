@@ -64,7 +64,7 @@ struct CUPalette: Equatable, Sendable {
     /// The Night accent of the same accent setting in both modes. The Booklet is always dark, so its ring and edge use this.
     var stageAccent = CUPalette.nightAccentDefault
 
-    /// The shipped Cupertino colours (section 4.1 of `docs/redesign.md`).
+    /// The shipped Cupertino colours (section 4.1 of `docs/plans/redesign.md`).
     static let day = CUPalette(
         content: CURGB(0xFFFFFF), panel: CURGB(0xF5F5F7), fill: CURGB(0xECECF0), fillOnPanel: CURGB(0xE6E6EB),
         text: CURGB(0x1D1D1F), textSecondary: CURGB(0x636368), textTertiary: CURGB(0x8E8E93),

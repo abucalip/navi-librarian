@@ -3,7 +3,7 @@ package app.discair.model
 import java.time.LocalDate
 
 /**
- * The liner note of the day (docs/artwork.md, idea 12): one picture of an album on Home, cropped by a fixed centre rule, with the
+ * The liner note of the day (docs/archive/completed/artwork.md, idea 12): one picture of an album on Home, cropped by a fixed centre rule, with the
  * album revealed on tap. Chosen by day and by type only; taste and play data play no part in the picture. Mirrors the macOS rules in
  * `macos/Sources/DiscairLibrarian/LinerNote.swift`.
  */

@@ -5,7 +5,7 @@ MusicBrainz artist lookup with ``inc=artist-rels``, keeping relations that link 
 a band, a collaboration, a production or a performance role. Each answer is cached for 90 days (an
 empty answer too), at most ``LINK_MAX_CALLS`` provider calls run per kind per run, and a failed
 call leaves its artist uncached so a later run asks again. Never raises. Injected callables keep
-tests offline. See docs/engine2.md.
+tests offline. See docs/plans/engine2.md.
 """
 from __future__ import annotations
 

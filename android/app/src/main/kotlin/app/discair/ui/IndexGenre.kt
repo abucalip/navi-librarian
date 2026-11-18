@@ -49,7 +49,7 @@ private const val ARTISTS_SHOWN = 5
 private const val ALBUMS_SHOWN = 12
 
 /*
- * Index's Genre page (Layout.Index). Spec: docs/INDEX_THEME.md step I3; mockup: docs/design/index/pages/album-artist-genre.html, frame 4.
+ * Index's Genre page (Layout.Index). Spec: docs/plans/INDEX_THEME.md step I3; mockup: docs/design/index/pages/album-artist-genre.html, frame 4.
  * The genre as a Display head with its album count, numbered artist rows with their library state, and the albums in a two-column grid. The page has no
  * play action on any theme, so the mockup's Shuffle genre and Discover more are not drawn (listed in the I3 PR).
  */

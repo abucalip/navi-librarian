@@ -85,7 +85,7 @@ internal fun StatusLabel(status: StatusWord, modifier: Modifier = Modifier) {
 }
 
 /**
- * The Server page (docs/redesign.md 8.2, frame 3 of `downloads-settings-server`): a summary card, the connected services with
+ * The Server page (docs/plans/redesign.md 8.2, frame 3 of `downloads-settings-server`): a summary card, the connected services with
  * their state words, and server activity. Read only on the phone: addresses are edited in the existing setup flow.
  * [navidromeDirect] is the phone's own check of Navidrome, kept when the Librarian does not answer.
  */

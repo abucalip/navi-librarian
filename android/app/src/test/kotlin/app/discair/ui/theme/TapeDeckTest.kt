@@ -8,7 +8,7 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** Round 2, Cassette Deck (docs/BRUT_LAYOUTS_PLAN.md, D-023): the layout field, the three palettes and the pure composition rules. */
+/** Round 2, Cassette Deck (docs/archive/completed/BRUT_LAYOUTS_PLAN.md, D-023): the layout field, the three palettes and the pure composition rules. */
 class TapeDeckTest {
     private fun lin(v: Float): Double = v.toDouble().let { if (it <= 0.03928) it / 12.92 else ((it + 0.055) / 1.055).pow(2.4) }
     private fun lum(c: Color) = 0.2126 * lin(c.red) + 0.7152 * lin(c.green) + 0.0722 * lin(c.blue)

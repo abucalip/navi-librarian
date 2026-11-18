@@ -12,7 +12,7 @@ public struct DashboardPick: Codable, Equatable, Sendable {
     public let similarTo: [String]?
     public let dashboardCategory: String?
     public let discoveryCategory: String?
-    /// The album's MusicBrainz release group, when the server sent `release_group_mbid` (docs/artwork.md, idea 9).
+    /// The album's MusicBrainz release group, when the server sent `release_group_mbid` (docs/archive/completed/artwork.md, idea 9).
     public var releaseGroupMBID: String?
     /// The new-releases list sends its release group as `mbid`; other lists do not use this field for it.
     public var mbid: String?
@@ -155,7 +155,7 @@ public struct LibrarianClient: Sendable {
         return try decode(DashboardPicks.self, data, http).items
     }
 
-    /// `GET /api/insights` (provisional route, not served yet; docs/SERVER_V2_CONTRACT.md). Only lenses the server marks enabled carry cards.
+    /// `GET /api/insights` (provisional route, not served yet; docs/contracts/SERVER_V2_CONTRACT.md). Only lenses the server marks enabled carry cards.
     public func insights(limit: Int = 20) async throws -> InsightsResponse {
         let (data, http) = try await authedSend("GET", "api/insights?limit=\(min(max(limit, 1), 100))", body: nil)
         return try decode(InsightsResponse.self, data, http)

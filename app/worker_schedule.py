@@ -1,4 +1,4 @@
-"""Table-driven worker scheduler (docs/efficiency.md section 6.2, step W1).
+"""Table-driven worker scheduler (docs/plans/efficiency.md section 6.2, step W1).
 
 Not a queue. A fixed list of ``Entry(name, due, run)`` evaluated in order by one scheduler thread. Jobs
 run one at a time on that thread. ``due(now, last_run)`` decides whether an entry runs now; ``last_run``

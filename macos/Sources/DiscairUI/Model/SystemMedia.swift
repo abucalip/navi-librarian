@@ -148,7 +148,7 @@ final class SystemMedia {
 
     /// Fetches the cover of a new song once; a late answer for a song that is no longer playing is dropped.
     private func loadCoverIfNeeded(for item: QueueItem) {
-        // The owner's chosen cover (docs/artwork.md, idea 7) is what the system shows, so a new pick is a new cover. One cover per song:
+        // The owner's chosen cover (docs/archive/completed/artwork.md, idea 7) is what the system shows, so a new pick is a new cover. One cover per song:
         // alternate sleeves per play are not built (open decision 2, off by default).
         let key = Self.coverKey(item, pick: item.albumID.flatMap { artwork?.choices[$0] })
         guard key != coverID else { return }

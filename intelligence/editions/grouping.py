@@ -1,4 +1,4 @@
-"""Edition grouping and tracklist differences (docs/ServerV2.md Phase 2, item 2).
+"""Edition grouping and tracklist differences (docs/plans/ServerV2.md Phase 2, item 2).
 
 Every release in one release group is an *edition* of the same album. This module reads
 what the store already holds (``member_of`` edges from slice 1, the stored MusicBrainz

@@ -212,11 +212,11 @@ fun MainShell(state: UiState, model: AppViewModel, container: AppContainer) {
     val axisPlan = MotionPlans.sharedAxisX(motionFamily, reducedMotion)
     val risePx = with(density) { fadePlan.riseDp.dp.roundToPx() }
     val slidePx = with(density) { axisPlan.slideDp.dp.roundToPx() }
-    // Gallery pages do not slide: the leaving page fades out (180ms) and the new one fades in (260ms after 80ms) while its blocks rise (docs/GALLERY_THEME.md 8).
+    // Gallery pages do not slide: the leaving page fades out (180ms) and the new one fades in (260ms after 80ms) while its blocks rise (docs/archive/completed/GALLERY_THEME.md 8).
     val galleryNav = app.discair.ui.common.isGallery()
     val galleryIn = fadeIn(androidx.compose.animation.core.tween(app.discair.ui.theme.GalleryMotion.PAGE_FADE_IN_MS, app.discair.ui.theme.GalleryMotion.PAGE_FADE_IN_DELAY_MS, androidx.compose.animation.core.LinearEasing))
     val galleryOut = fadeOut(androidx.compose.animation.core.tween(app.discair.ui.theme.GalleryMotion.PAGE_FADE_OUT_MS, easing = androidx.compose.animation.core.LinearEasing))
-    // Index pages slide: between bar pages in the bar's direction, every other move as a push (docs/INDEX_THEME.md 8.2 #1 and #2).
+    // Index pages slide: between bar pages in the bar's direction, every other move as a push (docs/plans/INDEX_THEME.md 8.2 #1 and #2).
     // The NavHost keeps the lambdas of its first composition, so the choice is read through a state that stays current when the theme is changed in Appearance.
     val indexNavNow = androidx.compose.runtime.rememberUpdatedState(app.discair.ui.common.isIndex())
     val tabs = listOf(
@@ -414,7 +414,7 @@ fun MainShell(state: UiState, model: AppViewModel, container: AppContainer) {
         // The bottom navigation floats over the pages, with no bar behind it; a wide screen (600 dp and over) has the rail instead.
         // It is drawn over a dark artwork tint, so it keeps light icons on every theme. The mini player (Cassette Deck only) sits
         // above its bar while a song is queued. The hidden cover load below gives the island its tint.
-        // Gallery's dock slides away while Now Playing is up and back as it falls (docs/GALLERY_THEME.md section 8).
+        // Gallery's dock slides away while Now Playing is up and back as it falls (docs/archive/completed/GALLERY_THEME.md section 8).
         val dockMotion = if (app.discair.ui.common.isGallery()) Modifier.galleryDockMotion() else Modifier
         Column(Modifier.align(Alignment.BottomCenter).onSizeChanged { islandPx = it.height }.then(dockMotion)) {
             if (app.discair.ui.common.TapeDeckRules.miniPlayerShown(app.discair.ui.theme.LocalPalette.current.layout, playerState.current != null)) {

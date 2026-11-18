@@ -1,7 +1,7 @@
 import Foundation
 
 // Server V2 Phase 7 sonic similarity: `GET /api/sonic/similar`, `GET /api/sonic/path` and the `sonic_available`
-// flag of `GET /api/capabilities` (shapes in docs/SERVER_V2_CONTRACT.md). Tolerant decoding like Knowledge.swift.
+// flag of `GET /api/capabilities` (shapes in docs/contracts/SERVER_V2_CONTRACT.md). Tolerant decoding like Knowledge.swift.
 // Every track is a song in the owner's Navidrome. `similarity` is informational only: the band is narrow
 // (median 0.92) and path steps carry none, so nothing here sorts or filters on it.
 

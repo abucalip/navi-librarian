@@ -49,7 +49,7 @@ import app.discair.ui.theme.Palette
 import app.discair.ui.theme.brutalShadow
 import app.discair.ui.theme.themeShape
 
-/** Pure rules for the Sheet Stack layout (docs/BRUT_LAYOUTS_PLAN.md section 7), apart from the drawing so they are unit-tested. */
+/** Pure rules for the Sheet Stack layout (docs/archive/completed/BRUT_LAYOUTS_PLAN.md section 7), apart from the drawing so they are unit-tested. */
 object SheetStackRules {
     /** The request words of Home's list: Fetching, Queued, Done; any other status keeps the app's own label (never a bare colour). */
     fun requestWord(status: String, label: String): String = when (status.lowercase()) {

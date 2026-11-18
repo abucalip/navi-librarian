@@ -30,7 +30,7 @@ import androidx.compose.ui.unit.dp
 import kotlin.math.roundToInt
 
 /*
- * The motion kit (docs/redesign.md section 7.4, step A2). Pure rules first, so they are unit-tested without a device:
+ * The motion kit (docs/plans/redesign.md section 7.4, step A2). Pure rules first, so they are unit-tested without a device:
  * [MotionRules] turns a token, a layout family and the reduced-motion flag into a duration, a curve, a spring or a
  * stagger. The composables at the bottom only apply those values to Compose.
  */

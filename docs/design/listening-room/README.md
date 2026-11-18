@@ -1,6 +1,6 @@
 # Listening Room design package
 
-The design system for the web client's **Listening Room** redesign. The spec and build plan are in [`docs/LISTENING_ROOM_WEB.md`](../../LISTENING_ROOM_WEB.md); this folder is what that document refers to.
+The design system for the web client's **Listening Room** redesign. The spec and build plan are in [`docs/plans/LISTENING_ROOM_WEB.md`](../../plans/LISTENING_ROOM_WEB.md); this folder is what that document refers to.
 
 | Path | What it is |
 |---|---|

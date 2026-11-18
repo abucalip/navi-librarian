@@ -75,7 +75,7 @@ import java.util.Locale
 import kotlinx.coroutines.delay
 
 /**
- * Index's shell (docs/INDEX_THEME.md 7, mockups index/pages/components and sheets): the dock is the ink strip (56dp) over a white four-cell bar (60dp) with
+ * Index's shell (docs/plans/INDEX_THEME.md 7, mockups index/pages/components and sheets): the dock is the ink strip (56dp) over a white four-cell bar (60dp) with
  * the signal block on its top edge; the Home bar (54dp) carries the wordmark and the mono date; the page bar (52dp) a back button, a mono catalogue line and an
  * action. Nothing has a shadow.
  */
@@ -104,7 +104,7 @@ object IndexShellRules {
 // ---------------------------------------------------------------- navigation transitions (motion #1 and #2)
 
 /**
- * The NavHost's transitions for Index (docs/INDEX_THEME.md 8.2 #1 and #2). [from] and [to] are bar positions (Home 0, Discover 1, Library 2) or -1 for any
+ * The NavHost's transitions for Index (docs/plans/INDEX_THEME.md 8.2 #1 and #2). [from] and [to] are bar positions (Home 0, Discover 1, Library 2) or -1 for any
  * other page. Between two bar pages the page slides the full width in the direction of the bar order, with no fade, whether the move is a push or a pop
  * (Home from Library pops, and must still slide the right way). Every other move is a push: the new page enters from +30% of the width with a 200ms
  * fade and the page under it leaves to -12% and dims to 85%; Back mirrors it.
@@ -206,7 +206,7 @@ fun IndexMiniPlayer(state: PlayerUiState, controller: PlayerController, onOpen: 
 }
 
 /**
- * Index's one player flight (docs/INDEX_THEME.md 8.2 #8): the strip cover's place, the player's cover and the flight's progress. Its own instance of the shape
+ * Index's one player flight (docs/plans/INDEX_THEME.md 8.2 #8): the strip cover's place, the player's cover and the flight's progress. Its own instance of the shape
  * Gallery uses, so the two themes never share state.
  */
 val IndexFlight = GalleryPlayerFlight()
@@ -297,7 +297,7 @@ fun IndexPageBar(catalogue: String, onBack: () -> Unit, modifier: Modifier = Mod
 // ---------------------------------------------------------------- snackbar and sheet
 
 /**
- * Index's snackbar host (docs/INDEX_THEME.md 8.2 #10): the toast slides up from 56dp below over 220ms with no fade, holds 4s (longer when the phone's
+ * Index's snackbar host (docs/plans/INDEX_THEME.md 8.2 #10): the toast slides up from 56dp below over 220ms with no fade, holds 4s (longer when the phone's
  * accessibility settings ask for more time) and slides back down over 180ms.
  */
 @Composable

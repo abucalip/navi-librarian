@@ -117,7 +117,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /*
- * Index (Layout.Index): Now Playing, Queue and Lyrics. Spec: docs/INDEX_THEME.md step I5; mockup: docs/design/index/pages/player (three frames). Reached only
+ * Index (Layout.Index): Now Playing, Queue and Lyrics. Spec: docs/plans/INDEX_THEME.md step I5; mockup: docs/design/index/pages/player (three frames). Reached only
  * from NowPlayingSheet's Index branch. One full-screen page that rises from the strip (motion #8) with three views (0 player, 1 lyrics, 2 queue); every control
  * does what its Standard twin does. The live radio page uses the same frame (IndexRadio.kt).
  */
@@ -174,7 +174,7 @@ object IndexPlayerRules {
 // ---------------------------------------------------------------- the frame (motion #8)
 
 /**
- * The player's frame (docs/INDEX_THEME.md 8.2 #8): a full-screen page that slides up from the strip over 420ms on the Firm curve, with no fade, and back down
+ * The player's frame (docs/plans/INDEX_THEME.md 8.2 #8): a full-screen page that slides up from the strip over 420ms on the Firm curve, with no fade, and back down
  * over 320ms before it is dismissed. The strip's 38dp cover flies to the player's cover: the page is a dialog window outside the shared-element layout, so the
  * flight is drawn by hand from the strip cover's bounds ([IndexFlight]), interpolating the rectangle only, square throughout. The player's own cover waits hidden
  * until the flying one lands. With no cover on screen (Queue, Lyrics, live radio) the page just rises. A downward drag lowers the page; past a quarter of the
@@ -642,7 +642,7 @@ private fun IndexQueueView(state: PlayerUiState, controller: PlayerController) {
                 Modifier.padding(start = IndexRules.GUTTER.dp, top = 14.dp), kind = IndexButtonKind.Ghost, icon = IndexIcons.Wave, small = true,
             )
         }
-        // The playing album's Track images (docs/artwork.md, idea 6): a card each, shown only when the album has some.
+        // The playing album's Track images (docs/archive/completed/artwork.md, idea 6): a card each, shown only when the album has some.
         item(key = "trackimages") { TrackImageCards(trackImages(rememberAlbumArtIndex(playing)), Modifier.padding(horizontal = IndexRules.GUTTER.dp, vertical = 12.dp)) }
     }
 }

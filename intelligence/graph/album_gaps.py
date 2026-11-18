@@ -1,6 +1,6 @@
 """Listen-through Gaps (``album_gaps``): the Studio Crew and Guest List stops the owner has played little or never.
 
-Owner decision, 2026-11-09 (docs/ALBUM_PATHS_PROPOSAL.md, "Open decisions resolved", item 3): play history may
+Owner decision, 2026-11-09 (docs/archive/completed/ALBUM_PATHS_PROPOSAL.md, "Open decisions resolved", item 3): play history may
 *select and label* stops that already have a credit-grade reason. It never adds a stop, never reorders stops
 by affinity, and never feeds recommendation ranking.
 

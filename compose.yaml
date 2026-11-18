@@ -66,7 +66,7 @@ services:
       LISTENBRAINZ_USERNAME: ${LISTENBRAINZ_USERNAME:-}
       # The similar-artist precompute uses Last.fm; the key's default comes from here, as in the web service.
       LASTFM_API_KEY: ${LASTFM_API_KEY:-}
-      # K3 owned prefetch: daily per-provider caps; the default is the owner-approved set (docs/efficiency.md, K3).
+      # K3 owned prefetch: daily per-provider caps; the default is the owner-approved set (docs/plans/efficiency.md, K3).
       # Set OWNED_PREFETCH_BUDGETS=off to switch it off (an empty value falls back to this default).
       OWNED_PREFETCH_BUDGETS: ${OWNED_PREFETCH_BUDGETS:-musicbrainz=600,listenbrainz=300,lastfm=600,deezer=600,apple=400,wikipedia=300}
     volumes:

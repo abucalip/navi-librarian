@@ -9,7 +9,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** Flow's one-switch Discover, step D1 (docs/Discover_page.md 4.1, 4.2, 8): the switch names, the dots and the sheet's rows. */
+/** Flow's one-switch Discover, step D1 (docs/archive/completed/Discover_page.md 4.1, 4.2, 8): the switch names, the dots and the sheet's rows. */
 class FlowDiscoverRulesTest {
     @Test fun theSheetHasOneRowPerListInEntryOrderWithTheFullLabel() {
         val rows = FlowDiscoverRules.sheetRows
@@ -45,7 +45,7 @@ class FlowDiscoverRulesTest {
         assertEquals(18, FlowDiscoverRules.DOT_CURRENT)
     }
 
-    // ----- D2: sections, keys and the third line (docs/Discover_page.md 4.3, 4.4, 4.5, 8) -----
+    // ----- D2: sections, keys and the third line (docs/archive/completed/Discover_page.md 4.3, 4.4, 4.5, 8) -----
 
     private fun entry(artist: String, album: String, row: String? = null) = DiscoveryEntry(DiscoveryItem(artist = artist, album = album, genreRowLabel = row), JsonObject(emptyMap()))
     private fun section(title: String?, vararg e: DiscoveryEntry, error: String? = null, message: String? = null, disabled: Boolean = false) =

@@ -1,6 +1,6 @@
 # Bento design package
 
-The design system for the Android **Bento** theme. The spec is [`docs/BENTO_THEME.md`](../../BENTO_THEME.md); this folder holds everything it refers to.
+The design system for the Android **Bento** theme. The spec is [`docs/plans/BENTO_THEME.md`](../../plans/BENTO_THEME.md); this folder holds everything it refers to.
 
 | Path | What it is |
 |---|---|

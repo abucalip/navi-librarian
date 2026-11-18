@@ -1,4 +1,4 @@
-"""Album artwork index (docs/artwork.md, slice 1: server index and merge)."""
+"""Album artwork index (docs/archive/completed/artwork.md, slice 1: server index and merge)."""
 from .fetchers import ArtworkFetchers, HostPacer
 from .service import ArtworkService
 from .store import ArtworkStore

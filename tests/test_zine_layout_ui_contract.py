@@ -1,4 +1,4 @@
-"""Zine Spread layout (D-024, docs/BRUT_ROUND3_PLAN.md, phase P1): its palette, the scoping of its rules and its hidden-by-default hooks."""
+"""Zine Spread layout (D-024, docs/plans/BRUT_ROUND3_PLAN.md, phase P1): its palette, the scoping of its rules and its hidden-by-default hooks."""
 
 import re
 import unittest

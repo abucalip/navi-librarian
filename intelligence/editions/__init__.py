@@ -1,4 +1,4 @@
-"""Editions and duplicates (docs/ServerV2.md Phase 2)."""
+"""Editions and duplicates (docs/plans/ServerV2.md Phase 2)."""
 from .advisor import AdviceReport, EditionAdvice, EditionComparison, EditionMeasures, MetricDelta, advise, edition_track_ids
 from .duplicates import (
     DuplicateAlbum, DuplicateRecording, DuplicateReport, find_duplicate_albums, find_duplicate_recordings,

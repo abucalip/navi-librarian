@@ -35,7 +35,7 @@ public final class PlayerBarOptions {
     /// Facts about the song, album and artist, in the same place when no lyric line is showing.
     public var showFacts: Bool { didSet { defaults.set(showFacts, forKey: Self.factsKey) } }
 
-    /// The session and booklet photos drifting behind the lyrics on Now Playing (docs/artwork.md, idea 4); on until turned off.
+    /// The session and booklet photos drifting behind the lyrics on Now Playing (docs/archive/completed/artwork.md, idea 4); on until turned off.
     public var showSlideshow: Bool { didSet { defaults.set(showSlideshow, forKey: Self.slideshowKey) } }
 
     public init(defaults: UserDefaults = .standard) {

@@ -85,7 +85,7 @@ data class Pick(
     val reason: String = "",
     @SerialName("similar_to") val similarTo: List<String> = emptyList(),
     @SerialName("suggested_tracks") val suggestedTracks: List<String> = emptyList(),
-    /** The MusicBrainz release group, when the list carries one (the liner note of the day, docs/artwork.md, idea 12). */
+    /** The MusicBrainz release group, when the list carries one (the liner note of the day, docs/archive/completed/artwork.md, idea 12). */
     @SerialName("release_group_mbid") val releaseGroupMbid: String? = null,
 )
 

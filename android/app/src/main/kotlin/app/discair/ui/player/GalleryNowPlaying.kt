@@ -686,7 +686,7 @@ private fun GalleryQueueView(state: PlayerUiState, controller: PlayerController)
                 Modifier.padding(start = GalleryRules.GUTTER.dp, top = 6.dp), kind = GalleryButtonKind.Outlined, icon = GalleryIcons.Wave,
             )
         }
-        // The playing album's Track images (docs/artwork.md, idea 6): a card each, shown only when the album has some.
+        // The playing album's Track images (docs/archive/completed/artwork.md, idea 6): a card each, shown only when the album has some.
         item(key = "trackimages") { TrackImageCards(trackImages(rememberAlbumArtIndex(playing)), Modifier.padding(horizontal = GalleryRules.GUTTER.dp, vertical = 12.dp)) }
     }
 }

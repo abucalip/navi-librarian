@@ -2,7 +2,7 @@
 
 Feeds the tag-lane seed selection (``discovery.tag_queries``) with a window's artists
 instead of the default 30-day profile. Pure: the caller supplies the listens.
-See docs/engine2.md (Phase 3).
+See docs/plans/engine2.md (Phase 3).
 """
 from __future__ import annotations
 

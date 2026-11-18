@@ -1,6 +1,6 @@
 import Foundation
 
-/// Liner note of the day (docs/artwork.md, idea 12): one picture of an album on Home, cropped by a fixed rule, with the album
+/// Liner note of the day (docs/archive/completed/artwork.md, idea 12): one picture of an album on Home, cropped by a fixed rule, with the album
 /// revealed on tap. Chosen by day and by type only; taste and play data play no part in the picture.
 
 /// A stable number for a day or a key. Swift's `hashValue` changes between launches, so this uses FNV-1a instead, so the same day

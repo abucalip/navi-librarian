@@ -6,7 +6,7 @@ Pure: no I/O, no clock, no provider call. Every lens album carries its ``lens`` 
 
 Counts are current state, not history: a save removed with "remove" or a dismissal replaced by
 a later save no longer counts. Rates are shown only where there is at least one action, and no
-quality claim is made from them (docs/engine2.md, Phase 5).
+quality claim is made from them (docs/plans/engine2.md, Phase 5).
 """
 from __future__ import annotations
 

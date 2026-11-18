@@ -9,7 +9,7 @@ import androidx.compose.ui.graphics.vector.PathParser
 import androidx.compose.ui.unit.dp
 
 /**
- * The Gallery theme's 46 icons (docs/GALLERY_THEME.md section 6), generated into docs/design/gallery/icons by _src/build.py: 24 by 24, 1.4 stroke,
+ * The Gallery theme's 46 icons (docs/archive/completed/GALLERY_THEME.md section 6), generated into docs/design/gallery/icons by _src/build.py: 24 by 24, 1.4 stroke,
  * round caps and joins, outline only except play, pause, next, previous and the three dots. Names match [ArtIcons], plus Ban, RepeatOne and MusicNote.
  * Colour comes from the `Icon` tint (always `control`).
  */

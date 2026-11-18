@@ -9,7 +9,7 @@ providers, the library and the store. The worker runs the daily refresh (``_due`
 ``refresh_exclusive``, from ``app/services/discovery_schedule.py``, efficiency W3); the web runs
 only the manual one. Behind
 ``engine2_lens_lists_enabled`` (default on): nothing here reads the library or calls a provider
-while the setting is off. See docs/engine2.md (Phase 4).
+while the setting is off. See docs/plans/engine2.md (Phase 4).
 """
 from __future__ import annotations
 

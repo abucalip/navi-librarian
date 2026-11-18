@@ -3,7 +3,7 @@ import DiscairLibrarian
 import DiscairNavidrome
 import Foundation
 
-// discair-checks: the two M1 checks of docs/MACOS_CLIENT_CONTRACT.md section 9, run against the owner's servers.
+// discair-checks: the two M1 checks of docs/contracts/MACOS_CLIENT_CONTRACT.md section 9, run against the owner's servers.
 // Logins come from environment variables only. Nothing secret is printed: not passwords, tokens, salts or URLs.
 
 let usage = """

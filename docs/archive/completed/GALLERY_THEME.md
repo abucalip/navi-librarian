@@ -2,14 +2,14 @@
 
 Status: **design approved by the owner** (2026-11-16); **G1 built** (#1117); **G2 Home built** (#1118); **G3 Album, Artist, Genre built** (#1119); **G4 Discover, Library, Search built** (#1120); **G5 Now Playing, Queue, Lyrics, Radio built**; **G6 Downloads, Stats, Server, Settings, sheets built**. This document is the spec implementing agents build from. The mockups beside it are the spec for every screen ("the mockups are the spec", Round 3 owner rule).
 
-Package: [`docs/design/gallery/`](design/gallery/). Start with its [`README.md`](design/gallery/README.md).
+Package: [`docs/design/gallery/`](../../design/gallery/). Start with its [`README.md`](../../design/gallery/README.md).
 
 ## 1. What the owner asked for
 
 1. Three new Android theme directions were proposed on 2026-11-16 (A Gallery, B Aura, C Index). The owner chose **A, Gallery**: an editorial theme where every cover is treated as a framed print on a gallery wall, with italic serif titles, a small mono font for catalogue lines, and thin lines (hairlines) instead of cards.
 2. The owner asked for a **Radio section on Home, directly below "Artists you return to"**.
 3. Palettes were reviewed in three rounds. The owner kept **Day 1 to Day 5 and Night 1 to Night 3** (section 4). Day 1 is the proposal as drawn and is the default.
-4. Every mockup is drawn in **Day 1**. The other seven palettes are **colour variations only**: same layout, components, type and icons; only the colour values change. [`pages/palettes`](design/gallery/pages/palettes.html) shows Home and the Radio section in all eight.
+4. Every mockup is drawn in **Day 1**. The other seven palettes are **colour variations only**: same layout, components, type and icons; only the colour values change. [`pages/palettes`](../../design/gallery/pages/palettes.html) shows Home and the Radio section in all eight.
 5. The package holds everything an implementing agent needs: tokens, colour codes, fonts, icons, component measurements, motion values, the Home data sources and the build steps.
 
 ## 2. Rules
@@ -18,7 +18,7 @@ Package: [`docs/design/gallery/`](design/gallery/). Start with its [`README.md`]
 2. **Behaviour is unchanged.** A theme changes how a screen is arranged, never what it does (D-023). Get album, Save, Not this album, Never suggest this artist, Play, Dismiss with its confirmation, the downloads badge, Settings, the mini player and the four destinations stay reachable, with text labels where they have them today.
 3. **The mockups are the spec.** Build each screen element by element from its mockup. List anything dropped in the PR.
 4. **Artwork first.** Covers are the only large colour on most screens. Colour on controls carries meaning (section 4.1), never decoration.
-5. **Contrast.** Every palette passes `PaletteTest` as written, and the Gallery roles pass the extra checks in [`_src/check_contrast.py`](design/gallery/_src/check_contrast.py) (all pass today). The rest of the existing rules still apply: 48dp touch targets, state never shown by colour alone, Remove animations respected, missing data said in words.
+5. **Contrast.** Every palette passes `PaletteTest` as written, and the Gallery roles pass the extra checks in [`_src/check_contrast.py`](../../design/gallery/_src/check_contrast.py) (all pass today). The rest of the existing rules still apply: 48dp touch targets, state never shown by colour alone, Remove animations respected, missing data said in words.
 
 ## 3. Identity in six rules
 
@@ -33,7 +33,7 @@ Package: [`docs/design/gallery/`](design/gallery/). Start with its [`README.md`]
 
 ### 4.1 Roles
 
-The CSS variables in [`palettes.css`](design/gallery/palettes.css) use the `Palette` field names, so the mapping is one to one.
+The CSS variables in [`palettes.css`](../../design/gallery/palettes.css) use the `Palette` field names, so the mapping is one to one.
 
 | Role | Used for |
 |---|---|
@@ -53,11 +53,11 @@ The CSS variables in [`palettes.css`](design/gallery/palettes.css) use the `Pale
 | `ok`, `caution`, `chartRedText`, `info` | Status words: In library, needs attention, failed or Dismiss, information |
 | `chart2`, `chart3` | Second and pale chart series |
 
-Dims (`accentDim`, `okDim`, `cautionDim`, `dangerDim`, `infoDim`) are not drawn by Gallery. Give them the derived default (colour at 10% over `surface`); [`check_contrast.py`](design/gallery/_src/check_contrast.py) prints the exact values. `chart1` = `accent`, `chartGhost` = `raised`, `chartGrid` = `edge`, `chartBase` = `edgeStrong`, `chartRed` = `chartRedText`.
+Dims (`accentDim`, `okDim`, `cautionDim`, `dangerDim`, `infoDim`) are not drawn by Gallery. Give them the derived default (colour at 10% over `surface`); [`check_contrast.py`](../../design/gallery/_src/check_contrast.py) prints the exact values. `chart1` = `accent`, `chartGhost` = `raised`, `chartGrid` = `edge`, `chartBase` = `edgeStrong`, `chartRed` = `chartRedText`.
 
 ### 4.2 The eight palettes
 
-Single source: [`tokens.json`](design/gallery/tokens.json). `family = Classic`, `shape = null`, `layout = Layout.Gallery`, `suggestedFontId = "gallery"` on all eight.
+Single source: [`tokens.json`](../../design/gallery/tokens.json). `family = Classic`, `shape = null`, `layout = Layout.Gallery`, `suggestedFontId = "gallery"` on all eight.
 
 | Role | Day 1 · Gallery White | Day 2 · Celadon | Day 3 · Mist Teal | Day 4 · Blush Paper | Day 5 · Butter and Cobalt | Night 1 · Graphite Amber | Night 2 · Oxblood Dark | Night 3 · Moss Black |
 |---|---|---|---|---|---|---|---|---|
@@ -97,12 +97,12 @@ The app's existing `fraunces_variable.ttf` is cut down to weights 600 to 800, up
 
 | File (copy into `android/app/src/main/res/font/`) | Source | Axes kept | Size |
 |---|---|---|---|
-| [`fraunces_gallery.ttf`](design/gallery/fonts/fraunces_gallery.ttf) | Google Fonts `ofl/fraunces/Fraunces[SOFT,WONK,opsz,wght].ttf`, SOFT=0, WONK=0 | `opsz` 9–144, `wght` 300–600 | 133 KB |
-| [`fraunces_gallery_italic.ttf`](design/gallery/fonts/fraunces_gallery_italic.ttf) | `Fraunces-Italic[SOFT,WONK,opsz,wght].ttf`, SOFT=0, WONK=0 | `opsz` 9–144, `wght` 300–600 | 156 KB |
-| [`manrope_gallery.ttf`](design/gallery/fonts/manrope_gallery.ttf) | `ofl/manrope/Manrope[wght].ttf` | `wght` 400–800 | 81 KB |
+| [`fraunces_gallery.ttf`](../../design/gallery/fonts/fraunces_gallery.ttf) | Google Fonts `ofl/fraunces/Fraunces[SOFT,WONK,opsz,wght].ttf`, SOFT=0, WONK=0 | `opsz` 9–144, `wght` 300–600 | 133 KB |
+| [`fraunces_gallery_italic.ttf`](../../design/gallery/fonts/fraunces_gallery_italic.ttf) | `Fraunces-Italic[SOFT,WONK,opsz,wght].ttf`, SOFT=0, WONK=0 | `opsz` 9–144, `wght` 300–600 | 156 KB |
+| [`manrope_gallery.ttf`](../../design/gallery/fonts/manrope_gallery.ttf) | `ofl/manrope/Manrope[wght].ttf` | `wght` 400–800 | 81 KB |
 | `dm_mono_400.ttf`, `dm_mono_500.ttf` | already in `res/font` | — | — |
 
-All three are under the SIL Open Font License; the licence texts are in [`fonts/`](design/gallery/fonts/). Together they add about 370 KB to the APK (G2). The subsets were made with fontTools `instancer` and `subset`; the commands are in the fonts README.
+All three are under the SIL Open Font License; the licence texts are in [`fonts/`](../../design/gallery/fonts/). Together they add about 370 KB to the APK (G2). The subsets were made with fontTools `instancer` and `subset`; the commands are in the fonts README.
 
 ### 5.2 Font pair
 
@@ -139,7 +139,7 @@ Rule: **a work's name (album, song, station show) is italic; a person's or place
 
 ## 6. Icons
 
-[`icons/`](design/gallery/icons/) holds 46 SVGs (24 by 24) and [`icons/GalleryIcons.kt.txt`](design/gallery/icons/GalleryIcons.kt.txt), a ready `GalleryIcons` object written by the build script. It has the same `stroked`/`filled` builder as `ArtIcons` with `strokeLineWidth = 1.4f`, round caps and joins, and property names that match `ArtIcons` one for one, plus `Ban` (Never suggest), `RepeatOne` and `MusicNote`. Circles are written as arcs so `PathParser` reads them.
+[`icons/`](../../design/gallery/icons/) holds 46 SVGs (24 by 24) and [`icons/GalleryIcons.kt.txt`](../../design/gallery/icons/GalleryIcons.kt.txt), a ready `GalleryIcons` object written by the build script. It has the same `stroked`/`filled` builder as `ArtIcons` with `strokeLineWidth = 1.4f`, round caps and joins, and property names that match `ArtIcons` one for one, plus `Ban` (Never suggest), `RepeatOne` and `MusicNote`. Circles are written as arcs so `PathParser` reads them.
 
 - Stroke 1.4dp, round caps and joins, outline only. Play, pause, next, previous and the three dots are the only filled glyphs.
 - Sizes: 22dp default (bar, top bar, rows); 18dp inline (pager arrows, chevrons, Sort); 26dp transport; 28dp inside the 68dp Play circle; 19dp in buttons, 16dp in small buttons.
@@ -151,7 +151,7 @@ In Gallery, read icons through a small switch (`GalleryIcons` when `isGallery()`
 
 ## 7. Components
 
-Every measurement is in [`gallery.css`](design/gallery/gallery.css) (1 CSS px = 1dp). The board is [`pages/components`](design/gallery/pages/components.html).
+Every measurement is in [`gallery.css`](../../design/gallery/gallery.css) (1 CSS px = 1dp). The board is [`pages/components`](../../design/gallery/pages/components.html).
 
 ### 7.1 Prints
 
@@ -203,7 +203,7 @@ Every measurement is in [`gallery.css`](design/gallery/gallery.css) (1 CSS px = 
 
 ## 8. Motion
 
-Values are in `tokens.json` → `motion`. Try them on the live page [`pages/motion`](design/gallery/pages/motion.html) (tap the Laughing Stock print, the back arrow, the mini player, the down arrow and the three dots beside Save). Every duration goes through `MotionRules.duration`, so it becomes 0 when the phone removes animations. Add `Layout.Gallery` to `MotionRules.familyFor` → `MotionFamily.Standard`.
+Values are in `tokens.json` → `motion`. Try them on the live page [`pages/motion`](../../design/gallery/pages/motion.html) (tap the Laughing Stock print, the back arrow, the mini player, the down arrow and the three dots beside Save). Every duration goes through `MotionRules.duration`, so it becomes 0 when the phone removes animations. Add `Layout.Gallery` to `MotionRules.familyFor` → `MotionFamily.Standard`.
 
 | Moment | What moves | Duration | Curve |
 |---|---|---|---|
@@ -223,7 +223,7 @@ As built (G7): every row above except the Sheet. Material 1.3.2's `ModalBottomSh
 
 ## 9. Home
 
-Mockup: [`pages/home`](design/gallery/pages/home.html) (six frames). From top to bottom:
+Mockup: [`pages/home`](../../design/gallery/pages/home.html) (six frames). From top to bottom:
 
 | # | Section | Content | Data |
 |---|---|---|---|
@@ -242,7 +242,7 @@ States (frame 6): a service banner above the switch; skeleton print and placard 
 
 ## 10. Every page and its file
 
-Each page is an `.html` (open it in a browser and measure) and a `.png` in [`docs/design/gallery/pages/`](design/gallery/pages/). Frames are 360 × 780dp.
+Each page is an `.html` (open it in a browser and measure) and a `.png` in [`docs/design/gallery/pages/`](../../design/gallery/pages/). Frames are 360 × 780dp.
 
 | File | Frames |
 |---|---|

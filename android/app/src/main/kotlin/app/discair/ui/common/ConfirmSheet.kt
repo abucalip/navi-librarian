@@ -15,7 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
 /*
- * The confirmation bottom sheet (docs/redesign.md 7.2, step A5). It replaces the centred dialogs for the two
+ * The confirmation bottom sheet (docs/plans/redesign.md 7.2, step A5). It replaces the centred dialogs for the two
  * destructive confirmations: Dismiss on Downloads and Sign out. The rules are pure so they are unit-tested
  * without a device: [ConfirmSpecs] writes the words and [ConfirmRules] fixes the order the actions are drawn in.
  */

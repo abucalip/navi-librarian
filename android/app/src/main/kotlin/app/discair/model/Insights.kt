@@ -11,7 +11,7 @@ import kotlinx.serialization.json.doubleOrNull
 import kotlinx.serialization.json.intOrNull
 
 /**
- * Insight cards (docs/SERVER_V2_CONTRACT.md, `GET /api/insights`). The server writes the title and body; the app shows
+ * Insight cards (docs/contracts/SERVER_V2_CONTRACT.md, `GET /api/insights`). The server writes the title and body; the app shows
  * them as they are and never computes a card. Parsing is forgiving: a card the app cannot explain (no key or no
  * reasons) is dropped rather than shown unexplained, and unknown fields and lens kinds are kept out of the way.
  */

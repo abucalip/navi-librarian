@@ -856,7 +856,7 @@ Merged at 9b3cf481a46282d2f980709091d57aea36144029 from exact tested head b74f6a
 
 ## 2026-10-16 — Personal recommendation allocation boundary probe
 
-- Added `docs/PERSONAL_RECOMMENDATION_ALLOCATION_CONTRACT.md` and immutable data-contract types in `discovery_allocation_contract.py`, with direct-import contract tests.
+- Added `docs/contracts/PERSONAL_RECOMMENDATION_ALLOCATION_CONTRACT.md` and immutable data-contract types in `discovery_allocation_contract.py`, with direct-import contract tests.
 - The proposed interface supplies prepared candidate values, explicit ownership status, policy targets, and count limits; returns candidate IDs, review IDs, decisions, counts, and checked count. It requires no callbacks or shared mutable state.
 - **Do not move the shortlist-selection loops in this change.** Current `consider()` mixes selection policy with candidate identity tracking, ownership lookup, manual-review payload creation, response shaping, and diagnostics. The contract tests only validate the interface invariants, not allocator semantics. Proceed to a separate extraction only after this contract is tested and the implementation can remain pure; refine/stop if that cannot be achieved without callbacks or mutable shared state.
 
@@ -2725,7 +2725,7 @@ Never record credentials, API keys, cookies, or other secrets in documentation.
 ## 2026-10-16 — Personal recommendation allocation contract designed
 
 - Current GitHub base: `9376d5f0d55815067aeb5cadf9015b4b775a9848` (PR #220 merge). Open PR audit was empty at session start; recent `main` workflow run `38915170332` succeeded.
-- Added `discovery_allocation_contract.py`, `tests/test_discovery_allocation_contract.py`, and `docs/PERSONAL_RECOMMENDATION_ALLOCATION_CONTRACT.md` on branch `refactor/personal-allocation-contract`.
+- Added `discovery_allocation_contract.py`, `tests/test_discovery_allocation_contract.py`, and `docs/contracts/PERSONAL_RECOMMENDATION_ALLOCATION_CONTRACT.md` on branch `refactor/personal-allocation-contract`.
 - The contract is data-only: prepared candidates have stable IDs, normalized identity keys, category/style/family/score, and precomputed ownership status; request contains immutable policy mappings and bounded count/check limits; result carries selected IDs, ownership-review IDs, decision reasons, category counts, and check count. No callbacks, provider/library access, candidate payload copies, or shared mutable counters are part of the interface.
 - **The shortlist-selection loops remain unchanged and have not been moved.** This is a contract-design PR, not an allocator implementation. Tests cover input/output invariants, ownership-state representation, duplicate IDs, immutable mappings, and bounds; they do not claim to test allocation policy.
 - Test execution and exact-head CI are pending PR creation. No publication, deployment, or runtime verification.
@@ -2734,7 +2734,7 @@ Never record credentials, API keys, cookies, or other secrets in documentation.
 ## 2026-10-16 — PR #221 merged: personal allocation interface contract
 
 - PR #221 (`test: define personal recommendation allocation contract`) merged from exact tested head `9d17a0ef32782db35b19b5226d3b8c052f8775d6`; squash merge/current main at closeout `820556799fa9d3ec663e5117b36c68084281b20a`.
-- Added `discovery_allocation_contract.py`, direct-import tests in `tests/test_discovery_allocation_contract.py`, and `docs/PERSONAL_RECOMMENDATION_ALLOCATION_CONTRACT.md`. Updated status, test plan, roadmap, and project log.
+- Added `discovery_allocation_contract.py`, direct-import tests in `tests/test_discovery_allocation_contract.py`, and `docs/contracts/PERSONAL_RECOMMENDATION_ALLOCATION_CONTRACT.md`. Updated status, test plan, roadmap, and project log.
 - All four required workflows passed on exact PR head `9d17a0ef32782db35b19b5226d3b8c052f8775d6`: Python syntax run `38916419736`; Docker packaging/full unit suite/build run `38916419709`; container runtime smoke run `38916419958`; validation-only multi-architecture image validation run `38916419701` (publishing remains paused). The packaging workflow's unit-test step passed. Assistant-side local test commands were not run independently.
 - **Important scope boundary:** this PR only defines and tests the immutable data contract. It does not move or test the actual shortlist-selection loops, and does not prove allocation policy parity. No provider/library I/O, response assembly, legacy caller, or MCP interface changed.
 - No publication, deployment, or production runtime verification is claimed.

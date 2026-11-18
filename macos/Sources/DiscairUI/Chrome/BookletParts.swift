@@ -4,7 +4,7 @@ import Observation
 import PDFKit
 import SwiftUI
 
-/// The pieces of the Booklet sheet (docs/MACOS_PATHS_BOOKLET.md, section 5): the spread on the stage, one page of it, the turn
+/// The pieces of the Booklet sheet (docs/plans/MACOS_PATHS_BOOKLET.md, section 5): the spread on the stage, one page of it, the turn
 /// arrows, the edition rows and extras of the sidebar, and the PDF viewer.
 
 /// One spread (one or two pages, or one extra) on the stage. Each page is as tall as fits and keeps its aspect; a pair sits

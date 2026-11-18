@@ -4,7 +4,7 @@
 Every page is built from the same parts below (shell, reason panel, ranked row, card, track row...),
 so the menu, the reason panel and the tools are identical everywhere. The written HTML is the spec;
 this file only keeps the pages consistent. build.py imports it, then inlines the icon sprite and
-renders the PNGs. Spec: docs/LISTENING_ROOM_WEB.md section 8.
+renders the PNGs. Spec: docs/plans/LISTENING_ROOM_WEB.md section 8.
 
     python3 pages.py            # write every page
 

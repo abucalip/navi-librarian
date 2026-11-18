@@ -49,7 +49,7 @@ public struct Acquisition: Decodable, Equatable, Sendable, Identifiable {
         public let trackTitle: String?
         public let message: String?
         public let liveProgress: LiveProgress?
-        /// The MusicBrainz release group the Get was made for, when the request carried one (docs/artwork.md, idea 13).
+        /// The MusicBrainz release group the Get was made for, when the request carried one (docs/archive/completed/artwork.md, idea 13).
         public let releaseGroupMBID: String?
 
         enum CodingKeys: String, CodingKey {

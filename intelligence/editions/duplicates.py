@@ -1,4 +1,4 @@
-"""Duplicate finder (docs/ServerV2.md Phase 2, item 3).
+"""Duplicate finder (docs/plans/ServerV2.md Phase 2, item 3).
 
 Two kinds of suggestion, both read-only and both built from what the store already holds:
 

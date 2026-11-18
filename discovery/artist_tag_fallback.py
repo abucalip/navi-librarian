@@ -7,7 +7,7 @@ Deep cuts gates reject their albums. Last.fm top tags cover most of them but are
 
 Pure functions over injected HTTP and cache callables, so tests use stubs and never touch the
 network. Everything is best-effort and bounded: a failed call leaves an artist without extra
-tags and never raises. Unwired; see docs/engine2.md.
+tags and never raises. Unwired; see docs/plans/engine2.md.
 """
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Callable, Iterable, Mapping, Sequence

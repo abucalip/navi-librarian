@@ -3,7 +3,7 @@
 Every process (web, worker) reserves a slot here before calling a provider, so the
 spacing a provider's terms require holds for the whole host. State lives in its own
 SQLite file (``provider_gate.sqlite3``) so a reservation never queues behind a long
-knowledge-store write. See docs/efficiency.md section 6.1.
+knowledge-store write. See docs/plans/efficiency.md section 6.1.
 
 Wall-clock time is used because monotonic clocks are not comparable across processes.
 If the gate file cannot be used, an in-process pacer at twice the interval takes over;

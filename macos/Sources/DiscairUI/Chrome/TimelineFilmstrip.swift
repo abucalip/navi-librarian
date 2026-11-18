@@ -1,7 +1,7 @@
 import DiscairLibrarian
 import SwiftUI
 
-/// A Timeline entry's filmstrip (docs/artwork.md, idea 11): the album's pictures in one row of thumbnails, opened by the
+/// A Timeline entry's filmstrip (docs/archive/completed/artwork.md, idea 11): the album's pictures in one row of thumbnails, opened by the
 /// "Pictures" button on the selected card. The index is read only once it is open. Nothing is drawn while loading, when the album
 /// has fewer than two pictures, or when the lookup fails; the animation is a plain appearance under Reduce Motion.
 struct TimelineFilmstrip: View {
@@ -45,7 +45,7 @@ struct TimelineFilmstrip: View {
     }
 }
 
-/// An Atlas disc node (docs/artwork.md, idea 11): the album's Medium image cut to a small record, shown next to an album in the
+/// An Atlas disc node (docs/archive/completed/artwork.md, idea 11): the album's Medium image cut to a small record, shown next to an album in the
 /// place inspector. It never turns. Draws nothing when the album has no Medium image or the lookup fails.
 struct AlbumDisc: View {
     let rgid: String

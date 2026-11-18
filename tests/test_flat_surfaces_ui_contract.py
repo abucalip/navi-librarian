@@ -24,7 +24,7 @@ class FlatSurfaceUIContractTests(unittest.TestCase):
         cls.css = APP_CSS.read_text(encoding="utf-8")
 
     def test_stylesheet_has_no_gradients_except_the_artist_photo_scrim(self):
-        # The owner asked for the artist name over a large photo (docs/ARTIST_PAGE_REDESIGN_PROPOSAL.md).
+        # The owner asked for the artist name over a large photo (docs/archive/completed/ARTIST_PAGE_REDESIGN_PROPOSAL.md).
         # The one scrim keeps the name legible on a light photo; nothing else may use a gradient except the album page backdrop below.
         scrim = rule_body(self.css, ".artist-stage::after")
         self.assertEqual(scrim.count("linear-gradient"), 1)

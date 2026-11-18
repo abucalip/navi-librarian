@@ -1,7 +1,7 @@
 package app.discair.model
 
 /**
- * The covers an owner can pick from (docs/artwork.md, idea 7): Front images of the album's release group, best first,
+ * The covers an owner can pick from (docs/archive/completed/artwork.md, idea 7): Front images of the album's release group, best first,
  * never a PDF. The server checks the same rule on `PUT /api/artwork/choice`, so a pick it would refuse is never offered.
  * With one or none there is nothing to choose, so no stack and no sheet.
  */

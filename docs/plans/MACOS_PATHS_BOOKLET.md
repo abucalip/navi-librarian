@@ -4,10 +4,10 @@ Status: **design proposed; P0 (model) merged in PR #1184, P1 (Paths layout) in P
 
 The mockups are the spec:
 
-- [`design/macos-paths-booklet/pages/mockups.html`](design/macos-paths-booklet/pages/mockups.html): open it in a browser. It needs no network and has a Day/Night switch. It covers 19 states.
-- [`design/macos-paths-booklet/pages/png/`](design/macos-paths-booklet/pages/png/): one PNG per state.
+- [`design/macos-paths-booklet/pages/mockups.html`](../design/macos-paths-booklet/pages/mockups.html): open it in a browser. It needs no network and has a Day/Night switch. It covers 19 states.
+- [`design/macos-paths-booklet/pages/png/`](../design/macos-paths-booklet/pages/png/): one PNG per state.
 
-When this text and a mockup differ, the mockup wins, except for the corrections in section 9. Measures come from [`components.css`](design/macos-paths-booklet/components.css). Colours, type, spacing, icons, motion and contrast come from [`tokens.json`](design/macos-paths-booklet/tokens.json). The package README lists every file.
+When this text and a mockup differ, the mockup wins, except for the corrections in section 9. Measures come from [`components.css`](../design/macos-paths-booklet/components.css). Colours, type, spacing, icons, motion and contrast come from [`tokens.json`](../design/macos-paths-booklet/tokens.json). The package README lists every file.
 
 The Cupertino design system in section 4 of [`redesign.md`](redesign.md) still applies in full: colour roles, type roles, the spacing scale and the control rules. So do the motion rules in `DEVELOPMENT_WORKFLOW.md` ("macOS client motion and CPU rules").
 

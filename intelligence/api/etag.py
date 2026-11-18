@@ -1,4 +1,4 @@
-"""ETag helpers built from ``data_version`` counters (docs/ServerV2.md 6.4, 8)."""
+"""ETag helpers built from ``data_version`` counters (docs/plans/ServerV2.md 6.4, 8)."""
 from __future__ import annotations
 
 

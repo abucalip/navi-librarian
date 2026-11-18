@@ -3,7 +3,7 @@
 Every lens is a pure function of an immutable pool, so many lists cost no extra
 provider calls. `partition_lenses` runs lenses in order and removes what each one
 selected (by artist) before the next, so an album appears in at most one list.
-See docs/engine2.md (Phase 2).
+See docs/plans/engine2.md (Phase 2).
 """
 from __future__ import annotations
 

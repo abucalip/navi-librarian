@@ -44,7 +44,7 @@ private val SWIPE_THRESHOLD = 48.dp
 
 /**
  * The album cover as a card that swipes over to its Back image, then Tray and Spine when the album has them
- * (docs/artwork.md, idea 1). With no [backs] it is just [front]: no gesture, no hint. A tap does the same as a swipe, for
+ * (docs/archive/completed/artwork.md, idea 1). With no [backs] it is just [front]: no gesture, no hint. A tap does the same as a swipe, for
  * switch access and TalkBack, which also gets a "Flip cover" action. Reduced motion (animations removed in system
  * settings) swaps the faces with a cross-fade instead of turning the card.
  */

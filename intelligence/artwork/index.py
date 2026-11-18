@@ -2,7 +2,7 @@
 
 No network and no store here: the caller passes the two fetchers, so the rules (merge, de-duplication,
 best front, per-type slots, caps, ``truncated``) are tested directly and the cache and endpoint slices
-wrap this unchanged. Limits are the ones recorded in docs/artwork.md ("Limits (set from the probe)").
+wrap this unchanged. Limits are the ones recorded in docs/archive/completed/artwork.md ("Limits (set from the probe)").
 
 Rules:
 

@@ -1,4 +1,4 @@
-"""Server V2 contract fixtures match the builders and carry no secrets (docs/SERVER_V2_CONTRACT.md)."""
+"""Server V2 contract fixtures match the builders and carry no secrets (docs/contracts/SERVER_V2_CONTRACT.md)."""
 import json
 import sys
 import tempfile

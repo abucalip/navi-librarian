@@ -1,4 +1,4 @@
-"""``/api/insights/taste`` body: the saved taste profiles (docs/SERVER_V2_CONTRACT.md, Phase 6 item 1).
+"""``/api/insights/taste`` body: the saved taste profiles (docs/contracts/SERVER_V2_CONTRACT.md, Phase 6 item 1).
 
 A pure builder over the saved row. ``profiles`` is null until a run has saved some, so clients can
 tell "not computed yet" from "computed, but low sample" (the per-window and per-dimension

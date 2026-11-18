@@ -36,7 +36,7 @@ import app.discair.ui.theme.LocalPalette
 import app.discair.ui.theme.Palette
 
 /*
- * Gallery's Downloads page (G6). Spec: docs/GALLERY_THEME.md sections 7 and 10; mockup: docs/design/gallery/pages/downloads-stats-server.html, frame 1.
+ * Gallery's Downloads page (G6). Spec: docs/archive/completed/GALLERY_THEME.md sections 7 and 10; mockup: docs/design/gallery/pages/downloads-stats-server.html, frame 1.
  * DownloadsScreen reaches this behind isGallery(); the stream, the order, the actions (Play, Skip this source, Try again, Dismiss) and the
  * confirmation are the Standard page's. The state is always words; the tone colour only backs them up.
  */

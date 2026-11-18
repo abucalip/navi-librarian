@@ -10,7 +10,7 @@ import kotlin.math.log10
 import kotlin.math.pow
 
 /*
- * The pure half of the chart kit (docs/redesign.md 4.4 and 7.2, step A4): scales, slots, selection, per-family style,
+ * The pure half of the chart kit (docs/plans/redesign.md 4.4 and 7.2, step A4): scales, slots, selection, per-family style,
  * states and the summary sentences TalkBack reads. Nothing here touches Compose, so it is unit-tested without a device.
  * Charts.kt draws what these functions decide.
  */

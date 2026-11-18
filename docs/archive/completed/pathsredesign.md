@@ -21,10 +21,10 @@ What stays exactly as it is: the tabs and their order, the description line unde
 
 | File | What it is |
 |---|---|
-| [`design/paths-trail/tokens.css`](design/paths-trail/tokens.css) | Colour roles, mapped to `Palette` / `Ink`, with the codes of four reference palettes |
-| [`design/paths-trail/trail.css`](design/paths-trail/trail.css) | Every component, with its sizes. 1 CSS px is 1 dp |
-| [`design/paths-trail/mockups.html`](design/paths-trail/mockups.html) | All 12 tabs, closed and with a step open, with a palette switch. Open it in a browser |
-| [`design/paths-trail/shots/`](design/paths-trail/shots/) | Stills of the mockups, used in section 7 |
+| [`design/paths-trail/tokens.css`](../../design/paths-trail/tokens.css) | Colour roles, mapped to `Palette` / `Ink`, with the codes of four reference palettes |
+| [`design/paths-trail/trail.css`](../../design/paths-trail/trail.css) | Every component, with its sizes. 1 CSS px is 1 dp |
+| [`design/paths-trail/mockups.html`](../../design/paths-trail/mockups.html) | All 12 tabs, closed and with a step open, with a palette switch. Open it in a browser |
+| [`design/paths-trail/shots/`](../../design/paths-trail/shots/) | Stills of the mockups, used in section 7 |
 
 The CSS is the specification of sizes and colours. The app is Jetpack Compose, so nothing is copied from it: build with the existing components named in section 9.
 
@@ -73,7 +73,7 @@ The same tab on three other palettes:
 
 | Night | Soft Brut | Flow |
 |---|---|---|
-| ![Night](design/paths-trail/shots/palette-night.png) | ![Soft Brut](design/paths-trail/shots/palette-softbrut.png) | ![Flow](design/paths-trail/shots/palette-flow.png) |
+| ![Night](../../design/paths-trail/shots/palette-night.png) | ![Soft Brut](../../design/paths-trail/shots/palette-softbrut.png) | ![Flow](../../design/paths-trail/shots/palette-flow.png) |
 
 ## 5. Links and grouping
 
@@ -129,53 +129,53 @@ Left: the list. Right: the first step opened. The opened body is today's pane co
 
 **Studio crew.** Open: the reason card (eyebrow from the code, then the person), the server's sentence, then the person and the album to open (`FindRow`).
 
-![Studio crew](design/paths-trail/shots/album-crew.png)
+![Studio crew](../../design/paths-trail/shots/album-crew.png)
 
 **Guest list.** Open: as Studio crew, with the guest.
 
-![Guest list](design/paths-trail/shots/album-guests.png)
+![Guest list](../../design/paths-trail/shots/album-guests.png)
 
 **Covers and sources.** Open: the work as the reason card, the sentence, the album to open. The same work can head two links when one is "same work" and the other "related work".
 
-![Covers and sources](design/paths-trail/shots/album-works.png)
+![Covers and sources](../../design/paths-trail/shots/album-works.png)
 
 **Same year, same scene.** Open: the link and the period side by side (today's two cards; the period card only when `yearGap` finds it), the sentence, the album.
 
-![Same year, same scene](design/paths-trail/shots/album-moment.png)
+![Same year, same scene](../../design/paths-trail/shots/album-moment.png)
 
 **Same room.** Open: the two albums side by side (`SameRoomPhotos`), the place as the reason card, the sentence, the album.
 
-![Same room](design/paths-trail/shots/album-room.png)
+![Same room](../../design/paths-trail/shots/album-room.png)
 
 **Listen-through gaps.** Closed rows carry the play label. Open: the "Your listening" card first, then the reason card, the sentence, the person and the album. The history notes stay under the trail.
 
-![Listen-through gaps](design/paths-trail/shots/album-gaps.png)
+![Listen-through gaps](../../design/paths-trail/shots/album-gaps.png)
 
 **Neighbours by ear** (offered only when the server reports sonic similarity). Links are the matched track counts, the only measure shown; `similarity` is still never read. Open: the "Sounds alike" card, the sentence when sent, the album.
 
-![Neighbours by ear](design/paths-trail/shots/album-ear.png)
+![Neighbours by ear](../../design/paths-trail/shots/album-ear.png)
 
 ### Artist Paths
 
 **Follow the musician.** Steps are songs. Open: the song with "on album", "by artist" and the library line, the story sentence, then the musician and the album (`SongPane`).
 
-![Follow the musician](design/paths-trail/shots/artist-musician.png)
+![Follow the musician](../../design/paths-trail/shots/artist-musician.png)
 
 **Sideman.** Steps are artists, so pictures are circles. Open: the leader, then "Records {name} led" with one button per record (`LeaderPane`). The header's picture and name open the leader's page; the chevron closes the step (decision D3 covers the split).
 
-![Sideman](design/paths-trail/shots/artist-sideman.png)
+![Sideman](../../design/paths-trail/shots/artist-sideman.png)
 
 **Label.** Open: the label card with "Same label as:" and the owner's album, then the artist and the album (`LabelPane`).
 
-![Label](design/paths-trail/shots/artist-label.png)
+![Label](../../design/paths-trail/shots/artist-label.png)
 
 **Composition.** Open: the work card with the owner's recording, the "also recorded" sentence, then the performer and the album (`RecordingPane`).
 
-![Composition](design/paths-trail/shots/artist-composition.png)
+![Composition](../../design/paths-trail/shots/artist-composition.png)
 
 **Scene.** Steps are artists. Open: Same place and Same era side by side, the sentence, the artist to open (`PlacePane`). When the place, anchor or era is missing, the server's sentence alone, as today.
 
-![Scene](design/paths-trail/shots/artist-scene.png)
+![Scene](../../design/paths-trail/shots/artist-scene.png)
 
 ## 8. What is removed
 

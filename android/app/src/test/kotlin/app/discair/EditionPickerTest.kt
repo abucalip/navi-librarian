@@ -14,7 +14,7 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** Which covers the picker offers, and how a pick changes the cover address (docs/artwork.md, idea 7). */
+/** Which covers the picker offers, and how a pick changes the cover address (docs/archive/completed/artwork.md, idea 7). */
 class EditionPickerTest {
     private fun image(id: Long, type: String, format: String = "jpg") =
         ArtworkImage(id, "r", listOf("r"), "199$id JP CD", listOf(type), "", true, 500, 500, format)

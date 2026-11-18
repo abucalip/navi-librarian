@@ -1,7 +1,7 @@
 import DiscairLibrarian
 import SwiftUI
 
-// The panels that used to fill Home with figures. Home is artwork-led now (`docs/MACOS_HOME_MARQUEE_PLAN.md`); the charts live on
+// The panels that used to fill Home with figures. Home is artwork-led now (`docs/archive/completed/MACOS_HOME_MARQUEE_PLAN.md`); the charts live on
 // Insights under "Your collection", and Server activity under Settings > Services. Each panel reads `state` and draws what the
 // Home dashboard computes, exactly as before (slice H2: a move, no change to what is drawn).
 

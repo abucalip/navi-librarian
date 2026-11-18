@@ -7,7 +7,7 @@ aggregate counts and store ids only (no titles, paths or credentials).
 
     python scripts/server_v2_phase5_exit.py --store ~/discair-mb-test/intelligence.sqlite3 --out phase5_exit.json
 
-Checks (docs/ServerV2.md, Phase 5 exit and kill rule):
+Checks (docs/plans/ServerV2.md, Phase 5 exit and kill rule):
   1. each stop explainable: for every owned artist and every built path kind, every stop has at
      least one reason; every reason names its code, readable text, the entity in between (via), the
      library entity it hangs on (anchor) and stored evidence; no stop is the start or repeats

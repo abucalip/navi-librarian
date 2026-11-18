@@ -7,7 +7,7 @@ import app.discair.ui.common.titleLetterSpacing
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
-/** The type roles of docs/redesign.md 7.2, checked on the default Discair pair. */
+/** The type roles of docs/plans/redesign.md 7.2, checked on the default Discair pair. */
 class TypeRolesTest {
     @Test fun bodySmallIsTwelveOverEighteen() {
         val small = typography(FontPairs.Discair).bodySmall

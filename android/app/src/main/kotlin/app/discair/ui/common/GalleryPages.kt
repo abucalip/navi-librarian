@@ -48,7 +48,7 @@ import app.discair.model.GetState
 import app.discair.ui.theme.LocalPalette
 
 /*
- * Pieces shared by Gallery's Album, Artist and Genre pages (G3). Spec: docs/GALLERY_THEME.md sections 7 and 10;
+ * Pieces shared by Gallery's Album, Artist and Genre pages (G3). Spec: docs/archive/completed/GALLERY_THEME.md sections 7 and 10;
  * mockup: docs/design/gallery/pages/album-artist-genre.html. The measurements are gallery.css (1 CSS px = 1dp).
  */
 

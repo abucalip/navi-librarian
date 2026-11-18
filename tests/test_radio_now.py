@@ -1,5 +1,5 @@
 """Live "now" holder, the /now state rules, the library match and the eager 30-second log
-(docs/RADIO_PLAYBACK_CONTRACT.md sections 3.2, 3.3 and 3.8)."""
+(docs/contracts/RADIO_PLAYBACK_CONTRACT.md sections 3.2, 3.3 and 3.8)."""
 import tempfile
 import unittest
 from pathlib import Path

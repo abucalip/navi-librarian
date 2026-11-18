@@ -39,7 +39,7 @@ import app.discair.ui.theme.themeShape
 /** The words on the Sticker Wall's stickers. Always text: the tilt and colour only decorate them. */
 enum class Sticker(val word: String) { New("New"), Missing("Missing") }
 
-/** Pure rules for the Sticker Wall layout (docs/BRUT_LAYOUTS_PLAN.md section 7), apart from the drawing so they are unit-tested. */
+/** Pure rules for the Sticker Wall layout (docs/archive/completed/BRUT_LAYOUTS_PLAN.md section 7), apart from the drawing so they are unit-tested. */
 object StickerWallRules {
     /** How many tiles each Home wall shows. */
     const val WALL_TILES = 6
